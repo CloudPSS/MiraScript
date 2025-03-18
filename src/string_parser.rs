@@ -1,12 +1,11 @@
-use std::{borrow::Cow, ops::Deref};
+use std::borrow::Cow;
 
 use winnow::{
     ModalResult, Parser,
-    ascii::hex_digit0,
     combinator::{alt, preceded, repeat},
     error::{ContextError, ErrMode},
     stream::{AsChar, Stream},
-    token::{any, one_of, take, take_till, take_while},
+    token::{any, one_of, take_till, take_while},
 };
 
 use crate::tokenizer::{Input, Range, TokenError, TokenKind};
@@ -41,7 +40,7 @@ pub(crate) fn string<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
                 str.push_str(&i[r.clone()]);
                 i.reset(&cp);
                 r.start -= 1;
-                errors.push(TokenError::new(r, "invalid escape sequence"));
+                errors.push(TokenError::new(r, "Invalid escape sequence"));
             }
         }
         str

@@ -1,34 +1,14 @@
-use core::num;
 use std::borrow::Cow;
-use std::fmt;
-use std::fmt::{Debug, Display, Formatter};
-use std::process::Command;
 
+use num_bigint::BigUint;
+use num_traits::cast::ToPrimitive;
 use unicode_ident::{is_xid_continue, is_xid_start};
-use winnow::ascii::{line_ending, multispace1, till_line_ending};
-use winnow::combinator::{cut_err, repeat_till, seq, trace};
-use winnow::error::{AddContext, ErrMode, ParserError, StrContext, StrContextValue};
+use winnow::LocatingSlice;
+use winnow::ascii::{digit0, digit1, line_ending, till_line_ending};
+use winnow::combinator::{alt, cut_err, dispatch, eof, fail, opt, peek, trace};
+use winnow::error::{StrContext, StrContextValue};
 use winnow::prelude::*;
-use winnow::stream::AsChar;
-use winnow::token::{none_of, take, take_until, take_while};
-use winnow::{LocatingSlice, Result};
-use winnow::{
-    ascii::{digit1 as digits, multispace0},
-    combinator::alt,
-    combinator::dispatch,
-    combinator::eof,
-    combinator::fail,
-    combinator::opt,
-    combinator::peek,
-    combinator::repeat,
-    combinator::{delimited, preceded, terminated},
-    error::ContextError,
-    stream::TokenSlice,
-    token::any,
-    token::literal,
-    token::one_of,
-    token::take_till,
-};
+use winnow::token::{any, one_of, take, take_until, take_while};
 
 pub(crate) type Input<'a> = LocatingSlice<&'a str>;
 pub(crate) type Range = std::ops::Range<usize>;
@@ -191,25 +171,103 @@ fn identifier<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
 }
 
 fn number<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
-    dispatch! {peek(opt(take(2usize)));
-        Some("0x") => cut_err(take_while(1.., is_xid_continue).verify(|s: &str| s.chars().all(|c| c.is_ascii_hexdigit())))
-            .context(StrContext::Label("digit"))
-            .context(StrContext::Expected(StrContextValue::Description("hexadecimal"))),
-        Some("0o") => cut_err(take_while(1.., is_xid_continue).verify(|s: &str| s.chars().all(|c| ('0'..='7').contains(&c))))
-            .context(StrContext::Label("digit"))
-            .context(StrContext::Expected(StrContextValue::Description("octal"))),
-        Some("0b") => cut_err(take_while(1.., is_xid_continue).verify(|s: &str| s.chars().all(|c| c == '0' || c == '1')))
-            .context(StrContext::Label("digit"))
-            .context(StrContext::Expected(StrContextValue::Description("binary"))),
-        _ => cut_err((
-                 digits,
-                 opt(('.', digits)),
-                 opt((one_of(['e', 'E']), opt(one_of(['+', '-'])), digits)),
-             )
-            .take()),
-    }
-    .context(StrContext::Label("number"))
-    .map(|s: &str| TokenKind::Number(s.parse().unwrap()))
+    trace("number", move |i: &mut Input<'a>| {
+        let initial = (peek(opt(take(2usize)))).parse_next(i)?;
+        match initial {
+            Some(prefix)
+                if (prefix.starts_with('0')
+                    && !prefix.ends_with('_')
+                    && !prefix.ends_with('.')
+                    && !prefix.ends_with('e')
+                    && !prefix.ends_with('E')) =>
+            {
+                (take_while(2.., is_xid_continue)
+                    .with_span()
+                    .map(|(s, r): (&str, Range)| {
+                        let ends_with_underscore = s.ends_with("_");
+                        let radix;
+                        let is_valid_char = if s.starts_with("0x") {
+                            radix = 16;
+                            |c: char| c.is_ascii_hexdigit()
+                        } else if s.starts_with("0o") {
+                            radix = 8;
+                            |c: char| ('0'..='7').contains(&c)
+                        } else if s.starts_with("0b") {
+                            radix = 2;
+                            |c: char| c == '0' || c == '1'
+                        } else {
+                            return TokenKind::unknown(
+                                TokenKind::Number(0.0),
+                                vec![TokenError::new(r, "Invalid base prefix for number literal")],
+                            );
+                        };
+
+                        let s = &s[2..];
+                        let mut errors = vec![];
+                        let num = if s.chars().all(is_valid_char) {
+                            if s.is_empty() {
+                                errors.push(TokenError::new(
+                                    r.clone(),
+                                    "No valid digits for number literal",
+                                ));
+                            }
+                            BigUint::parse_bytes(s.as_bytes(), radix)
+                        } else {
+                            let mut num = String::new();
+                            for (i, c) in s.char_indices() {
+                                if c == '_' {
+                                    continue;
+                                } else if is_valid_char(c) {
+                                    num.push(c);
+                                } else {
+                                    let mut range = r.clone();
+                                    range.start += i + 2;
+                                    range.end = range.start + c.len_utf8();
+                                    errors.push(TokenError::new(
+                                        range,
+                                        "Invalid character in number literal",
+                                    ));
+                                }
+                            }
+                            if num.is_empty() {
+                                errors.push(TokenError::new(
+                                    r.clone(),
+                                    "No valid digits for number literal",
+                                ));
+                            }
+                            BigUint::parse_bytes(num.as_bytes(), radix)
+                        }
+                        .unwrap_or_default();
+                        let float = num.to_f64().unwrap();
+                        if ends_with_underscore {
+                            errors.push(TokenError::new(
+                                r.clone(),
+                                "Number literal cannot end with underscore",
+                            ));
+                        }
+                        if float.is_infinite() {
+                            errors.push(TokenError::new(r, "Number literal is too large"));
+                        }
+                        if !errors.is_empty() {
+                            TokenKind::unknown(TokenKind::Number(float), errors)
+                        } else {
+                            TokenKind::Number(float)
+                        }
+                    }))
+                .parse_next(i)
+            }
+            _ => (cut_err(
+                (
+                    digit0,
+                    opt(('.', digit1)),
+                    opt((one_of(['e', 'E']), opt(one_of(['+', '-'])), digit1)),
+                )
+                    .take()
+                    .map(|s: &str| TokenKind::Number(s.parse().expect("valid float"))),
+            ))
+            .parse_next(i),
+        }
+    })
     .parse_next(i)
 }
 
@@ -281,12 +339,13 @@ pub(crate) fn tokenizer<'a>(
             '}' => any.map(|_| TokenKind::Operator(Operator::CloseBrace)),
             c if c.is_ascii_whitespace() => trace("spaces", take_while(1.., |c: char| c.is_ascii_whitespace()).map(|_| TokenKind::Whitespace(Whitespace::Spaces))),
             c if is_xid_start(c) => identifier,
-            _ => any.span().map(|range| TokenKind::Unknown {
-                recovered: None,
-                errors: vec![TokenError::new(range, "Unknown token")],
-            }),
+            _ => fail,
         },
         eof.map(|_|TokenKind::Eof),
+        any.span().map(|range| TokenKind::Unknown {
+            recovered: None,
+            errors: vec![TokenError::new(range, "Unknown token")],
+        }),
     ))
     .with_span()
     .map(|(kind, range)| Token { range, kind })

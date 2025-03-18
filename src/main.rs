@@ -30,6 +30,7 @@ use winnow::{
     token::take_till,
 };
 
+mod lexer;
 mod string_parser;
 mod tokenizer;
 
@@ -180,29 +181,7 @@ fn expression<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
 }
 
 fn main() {
-    let text = r##"
-let a = "dawsfd\0\x00\x\"";
-fn x(a, b, c) {
-    return a + b * c;
-}
-fn y(a, b, c) {
-    a + b * c
-}
-fn z(p) {
-    p.1.2 + 1.2
-}
-loop {
-    break;
-}
-for x in y {
-    continue;
-}
-let b = a + if x {
-    1
-} else {
-    2
-}
-"##;
+    let text = r##"0.0f1sadfg[]asdg8234%&*^"##;
 
     let mut input = LocatingSlice::new(text);
     let mut result: Option<tokenizer::Token<'_>> = None;
