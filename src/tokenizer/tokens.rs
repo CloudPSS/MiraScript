@@ -3,122 +3,13 @@ use std::borrow::Cow;
 use num_bigint::BigUint;
 use num_traits::cast::ToPrimitive;
 use unicode_ident::{is_xid_continue, is_xid_start};
-use winnow::LocatingSlice;
 use winnow::ascii::{digit0, digit1, line_ending, till_line_ending};
 use winnow::combinator::{alt, cut_err, dispatch, eof, fail, opt, peek, trace};
 use winnow::error::{StrContext, StrContextValue};
 use winnow::prelude::*;
 use winnow::token::{any, one_of, take, take_until, take_while};
 
-pub(crate) type Input<'a> = LocatingSlice<&'a str>;
-pub(crate) type Range = std::ops::Range<usize>;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Whitespace {
-    LineComment,
-    BlockComment,
-    Spaces,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Operator {
-    OpenParen = '(' as isize,
-    CloseParen = ')' as isize,
-    Colon = ':' as isize,
-    Comma = ',' as isize,
-
-    Dot = '.' as isize,
-
-    Plus = '+' as isize,
-    Minus = '-' as isize,
-
-    Caret = '^' as isize,
-
-    Star = '*' as isize,
-    Slash = '/' as isize,
-    Percent = '%' as isize,
-
-    Equal = '=' as isize,
-    EqualEqual = (('=' as isize) << 8) + ('=' as isize),
-    NotEqual = (('!' as isize) << 8) + ('=' as isize),
-    Greater = ('>' as isize),
-    GreaterEqual = ((('>' as isize) << 8) + ('=' as isize)),
-    Less = ('<' as isize),
-    LessEqual = ((('<' as isize) << 8) + ('=' as isize)),
-
-    Semicolon = ';' as isize,
-    OpenBrace = '{' as isize,
-    CloseBrace = '}' as isize,
-}
-
-#[allow(non_camel_case_types)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Keyword {
-    and,
-    or,
-    not,
-
-    r#if,
-    r#else,
-    r#match,
-    r#for,
-    r#in,
-    r#while,
-    r#loop,
-    r#break,
-    r#continue,
-    r#return,
-
-    r#fn,
-    op,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct TokenError<'a> {
-    pub range: Range,
-    pub error: Cow<'a, str>,
-}
-
-impl<'a> TokenError<'a> {
-    pub fn new<E: Into<Cow<'a, str>>>(range: Range, error: E) -> Self {
-        TokenError {
-            range,
-            error: error.into(),
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum TokenKind<'a> {
-    Eof,
-    Whitespace(Whitespace),
-    Identifier(Cow<'a, str>),
-    Ordinal(u64),
-    Number(f64),
-    String(Cow<'a, str>),
-    Operator(Operator),
-    Keyword(Keyword),
-
-    Unknown {
-        recovered: Option<Box<TokenKind<'a>>>,
-        errors: Vec<TokenError<'a>>,
-    },
-}
-
-impl<'a> TokenKind<'a> {
-    pub(crate) fn unknown(recovered: TokenKind<'a>, errors: Vec<TokenError<'a>>) -> Self {
-        TokenKind::Unknown {
-            recovered: Some(Box::new(recovered)),
-            errors,
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct Token<'a> {
-    pub range: Range,
-    pub kind: TokenKind<'a>,
-}
+use super::{Input, Keyword, Operator, Range, Token, TokenError, TokenKind, Whitespace, string};
 
 fn line_comment(i: &mut Input<'_>) -> ModalResult<()> {
     ("//", till_line_ending, opt(line_ending))
@@ -290,22 +181,22 @@ fn ordinal<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
     .parse_next(i)
 }
 
-pub(crate) fn tokenizer<'a>(
+pub(super) fn token<'a>(
     input: &mut Input<'a>,
-    prev_token: &Option<Token<'a>>,
+    prev_token: &Option<&Token<'a>>,
 ) -> ModalResult<Token<'a>> {
     alt((
         dispatch! {peek(any);
-            '0'..='9' => if prev_token.as_ref().map(|t| &t.kind) == Some(&TokenKind::Operator(Operator::Dot)) {
+            '0'..='9' => if prev_token.map(|t| &t.kind) == Some(&TokenKind::Operator(Operator::Dot)) {
                 ordinal
             } else {
                 number
             },
-            '"' | '\'' | '`' => crate::string_parser::string,
+            '"' | '\'' | '`' => string::string,
             '+' => any.map(|_| TokenKind::Operator(Operator::Plus)),
             '-' => any.map(|_| TokenKind::Operator(Operator::Minus)),
             '^' => any.map(|_| TokenKind::Operator(Operator::Caret)),
-            '*' => any.map(|_| TokenKind::Operator(Operator::Star)),
+            '*' => any.map(|_| TokenKind::Operator(Operator::Asterisk)),
             '%' => any.map(|_| TokenKind::Operator(Operator::Percent)),
             '=' => dispatch! {peek(opt(take(2usize)));
                 Some("==") => take(2usize).map(|_| TokenKind::Operator(Operator::EqualEqual)),

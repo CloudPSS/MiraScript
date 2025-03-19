@@ -1,9 +1,9 @@
 use std::borrow::Cow;
 
 use winnow::{
-    ModalResult, Parser,
     combinator::{alt, preceded, repeat},
     error::{ContextError, ErrMode},
+    prelude::*,
     stream::{AsChar, Stream},
     token::{any, one_of, take_till, take_while},
 };
@@ -17,7 +17,7 @@ enum StringFragment<'a> {
     InvalidEscapedChar(Range),
 }
 
-pub(crate) fn string<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
+pub(super) fn string<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
     let quote_begin = any
         .verify(|ch| *ch == '\'' || *ch == '"' || *ch == '`')
         .parse_next(i)?;
