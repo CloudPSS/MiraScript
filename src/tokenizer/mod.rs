@@ -3,6 +3,8 @@ use std::borrow::Cow;
 use winnow::{LocatingSlice, ModalResult};
 
 mod display;
+mod eq;
+mod from_str;
 mod string;
 mod tokens;
 
@@ -47,26 +49,43 @@ pub enum Operator {
     CloseBrace = '}' as isize,
 }
 
-#[allow(non_camel_case_types)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Keyword {
-    and,
-    or,
-    not,
+    // constants
+    True,
+    False,
+    Nil,
 
-    r#if,
-    r#else,
-    r#match,
-    r#for,
-    r#in,
-    r#while,
-    r#loop,
-    r#break,
-    r#continue,
-    r#return,
+    // logical operators
+    And,
+    Or,
+    Not,
 
-    r#fn,
-    op,
+    // control flow
+    If,
+    Else,
+    Match,
+    For,
+    In,
+    While,
+    Loop,
+    Break,
+    Continue,
+    Return,
+
+    // declaration
+    Fn,
+    Op, // Reserved for future use
+    Let,
+    Const,
+    Record, // Reserved for future use
+
+    // algebraic effects
+    Effect,  // Reserved for future use
+    Try,     // Reserved for future use
+    Handle,  // Reserved for future use
+    Perform, // Reserved for future use
+    Resume,  // Reserved for future use
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -84,7 +103,7 @@ impl<'a> TokenError<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub enum TokenKind<'a> {
     Eof,
     Whitespace(Whitespace),
@@ -123,52 +142,10 @@ impl<'a> Token<'a> {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq)]
 pub struct Token<'a> {
     pub range: Range,
     pub kind: TokenKind<'a>,
-}
-
-impl PartialEq for Token<'_> {
-    fn eq(&self, other: &Self) -> bool {
-        self.kind == other.kind
-    }
-}
-
-impl PartialEq<Token<'_>> for TokenKind<'_> {
-    fn eq(&self, other: &Token<'_>) -> bool {
-        self == &other.kind
-    }
-}
-
-impl PartialEq<TokenKind<'_>> for Token<'_> {
-    fn eq(&self, other: &TokenKind<'_>) -> bool {
-        self.kind == *other
-    }
-}
-
-impl PartialEq<Token<'_>> for Operator {
-    fn eq(&self, other: &Token<'_>) -> bool {
-        matches!(other.kind, TokenKind::Operator(op) if op == *self)
-    }
-}
-
-impl PartialEq<Operator> for Token<'_> {
-    fn eq(&self, other: &Operator) -> bool {
-        matches!(self.kind, TokenKind::Operator(op) if op == *other)
-    }
-}
-
-impl PartialEq<Token<'_>> for Keyword {
-    fn eq(&self, other: &Token<'_>) -> bool {
-        matches!(other.kind, TokenKind::Keyword(kw) if kw == *self)
-    }
-}
-
-impl PartialEq<Keyword> for Token<'_> {
-    fn eq(&self, other: &Keyword) -> bool {
-        matches!(self.kind, TokenKind::Keyword(kw) if kw == *other)
-    }
 }
 
 pub fn to_input(text: &str) -> Input<'_> {

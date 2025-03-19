@@ -1,23 +1,20 @@
 use winnow::combinator::{alt, dispatch, fail, opt, peek, preceded, repeat, seq, terminated};
 use winnow::prelude::*;
-use winnow::token::{any, one_of};
+use winnow::token::{any, literal, one_of};
 
 use crate::tokenizer::{Keyword, Operator, Range, Token, TokenError, TokenKind};
 
-use super::expression::expression;
+use super::expressions::expression;
 use super::{Expression, Input, TokenRef};
-
-fn literal<'a, V: PartialEq<Token<'a>>>(
-    op: V,
-) -> impl Fn(&mut Input<'a>) -> ModalResult<TokenRef<'a>> {
-    move |i: &mut Input<'a>| one_of(|t: TokenRef<'a>| op == *t).parse_next(i)
-}
 
 fn value<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
     one_of(|t: TokenRef<'a>| {
         matches!(&t.kind, &TokenKind::Identifier(_))
             || matches!(&t.kind, &TokenKind::Number(_))
             || matches!(&t.kind, &TokenKind::String(_))
+            || *t == Keyword::True
+            || *t == Keyword::False
+            || *t == Keyword::Nil
     })
     .map(Expression::Value)
     .parse_next(i)
@@ -53,9 +50,9 @@ fn tuple_like_part<'a>(i: &mut Input<'a>) -> ModalResult<TupleLikePart<'a>> {
     )
         .with_taken()
         .map(|((name, exp, tail), taken)| {
-            let tail_comma = *tail == Operator::Comma;
+            let tail_comma = tail[0] == Operator::Comma;
             let mut range = taken[0].range.clone();
-            range.end = tail.range.start;
+            range.end = tail[0].range.start;
             TupleLikePart {
                 name,
                 value: exp,
@@ -174,7 +171,7 @@ fn unary<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
     dispatch! {peek(any);
         token if *token == Operator::Plus => seq!(Expression::Plus(_: any, unary.map(Box::new))),
         token if *token == Operator::Minus => seq!(Expression::Negate(_: any, unary.map(Box::new))),
-        token if *token == Keyword::not =>seq!(Expression::Not(_: any, unary.map(Box::new))),
+        token if *token == Keyword::Not =>seq!(Expression::Not(_: any, unary.map(Box::new))),
         &Token{..} => function,
     }
     .parse_next(i)
@@ -265,15 +262,63 @@ fn term<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
         }))
 }
 
-fn and<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
+fn comparison<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
     let first = term.parse_next(i)?;
-    let ands: Vec<(TokenRef<'a>, Expression<'a>)> =
-        repeat(0.., (one_of(|t: TokenRef<'a>| *t == Keyword::and), term))
-            .fold(Vec::new, |mut v, t| {
-                v.push(t);
-                v
-            })
-            .parse_next(i)?;
+    let comparisons: Vec<(TokenRef<'a>, Expression<'a>)> = repeat(
+        0..,
+        (
+            one_of(|t: TokenRef<'a>| {
+                *t == Operator::EqualEqual
+                    || *t == Operator::NotEqual
+                    || *t == Operator::Less
+                    || *t == Operator::LessEqual
+                    || *t == Operator::Greater
+                    || *t == Operator::GreaterEqual
+            }),
+            term,
+        ),
+    )
+    .fold(Vec::new, |mut v, t| {
+        v.push(t);
+        v
+    })
+    .parse_next(i)?;
+    if comparisons.is_empty() {
+        return Ok(first);
+    }
+    // left-associative
+    Ok(comparisons.into_iter().fold(first, |acc, (t, exp)| {
+        if let Token {
+            kind: TokenKind::Operator(op),
+            ..
+        } = t
+        {
+            match op {
+                Operator::EqualEqual => Expression::Equal(Box::new(acc), Box::new(exp)),
+                Operator::NotEqual => Expression::NotEqual(Box::new(acc), Box::new(exp)),
+                Operator::Less => Expression::Less(Box::new(acc), Box::new(exp)),
+                Operator::LessEqual => Expression::LessEqual(Box::new(acc), Box::new(exp)),
+                Operator::Greater => Expression::Greater(Box::new(acc), Box::new(exp)),
+                Operator::GreaterEqual => Expression::GreaterEqual(Box::new(acc), Box::new(exp)),
+                _ => unreachable!(),
+            }
+        } else {
+            unreachable!()
+        }
+    }))
+}
+
+fn and<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
+    let first = comparison.parse_next(i)?;
+    let ands: Vec<(TokenRef<'a>, Expression<'a>)> = repeat(
+        0..,
+        (one_of(|t: TokenRef<'a>| *t == Keyword::And), comparison),
+    )
+    .fold(Vec::new, |mut v, t| {
+        v.push(t);
+        v
+    })
+    .parse_next(i)?;
     if ands.is_empty() {
         return Ok(first);
     }
@@ -281,15 +326,15 @@ fn and<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
     Ok(ands
         .into_iter()
         .fold(first, |acc, (op, exp)| match op.kind {
-            TokenKind::Keyword(Keyword::and) => Expression::And(Box::new(acc), Box::new(exp)),
+            TokenKind::Keyword(Keyword::And) => Expression::And(Box::new(acc), Box::new(exp)),
             _ => unreachable!(),
         }))
 }
 
-pub(super) fn or<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
+fn or<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
     let first = and.parse_next(i)?;
     let ors: Vec<(TokenRef<'a>, Expression<'a>)> =
-        repeat(0.., (one_of(|t: TokenRef<'a>| *t == Keyword::or), and))
+        repeat(0.., (one_of(|t: TokenRef<'a>| *t == Keyword::Or), and))
             .fold(Vec::new, |mut v, t| {
                 v.push(t);
                 v
@@ -300,7 +345,11 @@ pub(super) fn or<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
     }
     // left-associative
     Ok(ors.into_iter().fold(first, |acc, (op, exp)| match op.kind {
-        TokenKind::Keyword(Keyword::or) => Expression::Or(Box::new(acc), Box::new(exp)),
+        TokenKind::Keyword(Keyword::Or) => Expression::Or(Box::new(acc), Box::new(exp)),
         _ => unreachable!(),
     }))
+}
+
+pub(super) fn basic_expression<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
+    or.parse_next(i)
 }

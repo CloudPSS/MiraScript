@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::str::FromStr;
 
 use num_bigint::BigUint;
 use num_traits::cast::ToPrimitive;
@@ -36,26 +37,12 @@ fn identifier<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
             take_while(0.., |c: char| c == '$' || is_xid_continue(c)),
         )
             .take()
-            .map(|s| match s {
-                "and" => TokenKind::Keyword(Keyword::and),
-                "or" => TokenKind::Keyword(Keyword::or),
-                "not" => TokenKind::Keyword(Keyword::not),
-
-                "if" => TokenKind::Keyword(Keyword::r#if),
-                "else" => TokenKind::Keyword(Keyword::r#else),
-                "match" => TokenKind::Keyword(Keyword::r#match),
-                "for" => TokenKind::Keyword(Keyword::r#for),
-                "in" => TokenKind::Keyword(Keyword::r#in),
-                "while" => TokenKind::Keyword(Keyword::r#while),
-                "loop" => TokenKind::Keyword(Keyword::r#loop),
-                "break" => TokenKind::Keyword(Keyword::r#break),
-                "continue" => TokenKind::Keyword(Keyword::r#continue),
-                "return" => TokenKind::Keyword(Keyword::r#return),
-
-                "fn" => TokenKind::Keyword(Keyword::r#fn),
-                "op" => TokenKind::Keyword(Keyword::op),
-
-                s => TokenKind::Identifier(Cow::Borrowed(s)),
+            .map(|s| {
+                if let Ok(kw) = Keyword::from_str(s) {
+                    TokenKind::Keyword(kw)
+                } else {
+                    TokenKind::Identifier(Cow::Borrowed(s))
+                }
             }),
     )
     .parse_next(i)
@@ -63,15 +50,9 @@ fn identifier<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
 
 fn number<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
     trace("number", move |i: &mut Input<'a>| {
-        let initial = (peek(opt(take(2usize)))).parse_next(i)?;
+        let initial = (peek(opt((any, any)))).parse_next(i)?;
         match initial {
-            Some(prefix)
-                if (prefix.starts_with('0')
-                    && !prefix.ends_with('_')
-                    && !prefix.ends_with('.')
-                    && !prefix.ends_with('e')
-                    && !prefix.ends_with('E')) =>
-            {
+            Some(('0', ch1)) if is_xid_continue(ch1) && ch1 != '_' && ch1 != 'e' && ch1 != 'E' => {
                 (take_while(2.., is_xid_continue)
                     .with_span()
                     .map(|(s, r): (&str, Range)| {

@@ -1,6 +1,42 @@
-use std::fmt::Display;
+use std::fmt::{Display, Write};
 
 use super::{Keyword, Operator, Token, TokenKind, Whitespace};
+
+impl Display for Keyword {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut d = format!("{:?}", self);
+        d.make_ascii_lowercase();
+        f.write_str(&d)
+    }
+}
+
+impl Display for Operator {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let v = *self as u32;
+        if v < 0x80 {
+            let c = v as u8 as char;
+            if c.is_ascii_graphic() {
+                return f.write_char(c);
+            }
+        }
+        if v < 0x8000 {
+            let c1 = (v >> 8) as u8 as char;
+            let c2 = v as u8 as char;
+            return write!(f, "{}{}", c1, c2);
+        }
+        if v < 0x800000 {
+            let c1 = (v >> 16) as u8 as char;
+            let c2 = (v >> 8) as u8 as char;
+            let c3 = v as u8 as char;
+            return write!(f, "{}{}{}", c1, c2, c3);
+        }
+        let c1 = (v >> 24) as u8 as char;
+        let c2 = (v >> 16) as u8 as char;
+        let c3 = (v >> 8) as u8 as char;
+        let c4 = v as u8 as char;
+        write!(f, "{}{}{}{}", c1, c2, c3, c4)
+    }
+}
 
 impl Display for TokenKind<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -12,7 +48,7 @@ impl Display for TokenKind<'_> {
             Self::Identifier(s) => write!(f, "{}", s),
             Self::Ordinal(n) => write!(f, "{}", n),
             Self::Number(n) => write!(f, "{}", n),
-            Self::String(s) => write!(f, "{}", s),
+            Self::String(s) => write!(f, "{:?}", s),
             Self::Operator(op) => write!(
                 f,
                 "{}",
@@ -40,27 +76,7 @@ impl Display for TokenKind<'_> {
                     Operator::CloseBrace => "}",
                 }
             ),
-            Self::Keyword(kw) => write!(
-                f,
-                "{}",
-                match kw {
-                    Keyword::and => "and",
-                    Keyword::or => "or",
-                    Keyword::not => "not",
-                    Keyword::r#if => "if",
-                    Keyword::r#else => "else",
-                    Keyword::r#match => "match",
-                    Keyword::r#for => "for",
-                    Keyword::r#in => "in",
-                    Keyword::r#while => "while",
-                    Keyword::r#loop => "loop",
-                    Keyword::r#break => "break",
-                    Keyword::r#continue => "continue",
-                    Keyword::r#return => "return",
-                    Keyword::r#fn => "fn",
-                    Keyword::op => "op",
-                }
-            ),
+            Self::Keyword(kw) => write!(f, "{}", kw),
             Self::Unknown { recovered, .. } => {
                 if let Some(recovered) = recovered {
                     write!(f, "<{}>", recovered)
@@ -74,6 +90,6 @@ impl Display for TokenKind<'_> {
 
 impl Display for Token<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.kind.fmt(f)
+        <TokenKind as Display>::fmt(&self.kind, f)
     }
 }
