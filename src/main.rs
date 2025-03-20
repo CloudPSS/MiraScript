@@ -9,10 +9,12 @@ mod parser;
 fn main() {
     let text = r##"fn main {
        var a = "${x} + ${y} = ${x + "${z}"}"; // comment
+       /*
     }"##;
 
     let mut input = lexer::to_input(text);
-    let result = lexer::lex(&mut input, true).unwrap();
+    let result = lexer::lex(&mut input, false).unwrap();
+    println!("{:?}", result);
 
     let mut input = parser::to_input(&result);
     let exp = parser::parse(&mut input);

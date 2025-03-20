@@ -4,28 +4,37 @@ use std::str::FromStr;
 use num_bigint::BigUint;
 use num_traits::cast::ToPrimitive;
 use winnow::ascii::{digit0, digit1, line_ending, till_line_ending};
-use winnow::combinator::{alt, cut_err, dispatch, eof, fail, opt, peek, preceded, trace};
+use winnow::combinator::{alt, cut_err, dispatch, eof, fail, opt, peek, preceded, repeat, trace};
 use winnow::error::{StrContext, StrContextValue};
 use winnow::prelude::*;
 use winnow::token::{any, one_of, take, take_until, take_while};
 
 use super::{Comment, Input, Keyword, Operator, Range, Token, TokenError, TokenKind, string};
 
-fn line_comment(i: &mut Input<'_>) -> ModalResult<()> {
+fn line_comment<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
     ("//", till_line_ending, opt(line_ending))
-        .void()
+        .value(TokenKind::Comment(Comment::Line))
         .parse_next(i)
 }
 
-fn block_comment(i: &mut Input<'_>) -> ModalResult<()> {
-    (
+fn block_comment<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
+    preceded(
         "/*",
-        take_until(0.., "*/").context(StrContext::Expected(StrContextValue::StringLiteral("*/"))),
-        "*/",
+        alt((
+            (take_until(0.., "*/"), "*/").value(TokenKind::Comment(Comment::Block)),
+            repeat(0.., any)
+                .fold(|| (), |_: (), _| ())
+                .span()
+                .map(|r: Range| {
+                    TokenKind::unknown_range(
+                        TokenKind::Comment(Comment::Block),
+                        r,
+                        "Unterminated block comment",
+                    )
+                }),
+        )),
     )
-        .context(StrContext::Label("block comment"))
-        .void()
-        .parse_next(i)
+    .parse_next(i)
 }
 
 fn is_identifier_start(c: char) -> bool {
@@ -217,8 +226,8 @@ pub(super) fn token<'a>(
             },
 
             '/' => dispatch! {peek(opt(take(2usize)));
-                Some("/*") => block_comment.map(|_| TokenKind::Comment(Comment::Block)),
-                Some("//") => line_comment.map(|_| TokenKind::Comment(Comment::Line)),
+                Some("/*") => block_comment,
+                Some("//") => line_comment,
                 _ => any.map(|_| TokenKind::Operator(Operator::Slash)),
             },
             ';' => any.map(|_| TokenKind::Operator(Operator::Semicolon)),
@@ -232,8 +241,9 @@ pub(super) fn token<'a>(
             recovered: None,
             errors: vec![TokenError::new(range, "Unknown token")],
         }),
-    )))
+    ))
     .with_span()
     .map(|(kind, range)| Token { range, kind })
+    )
     .parse_next(input)
 }
