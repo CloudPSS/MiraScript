@@ -27,7 +27,7 @@ fn empty_statement<'a>(i: &mut Input<'a>) -> ModalResult<Statement<'a>> {
 fn fn_statement<'a>(i: &mut Input<'a>) -> ModalResult<Statement<'a>> {
     seq!(Statement::Function(
         _: literal(Keyword::Fn),
-        variable_token(true),
+        variable_token(false, false),
         parameter_list,
         block_expression,
     ))
@@ -61,7 +61,7 @@ fn continue_statement<'a>(i: &mut Input<'a>) -> ModalResult<Statement<'a>> {
 fn bind_statement<'a>(i: &mut Input<'a>) -> ModalResult<Statement<'a>> {
     seq!(Statement::Bind(
         one_of(|t: TokenRef<'a>| *t == Keyword::Var || *t == Keyword::Val),
-        variable_token(true),
+        variable_token(false, false),
         _: literal(Operator::Equal),
         expression,
         _: literal(Operator::Semicolon),

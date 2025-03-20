@@ -59,22 +59,29 @@ pub(super) fn interpolation_token<'a>(i: &mut Input<'a>) -> ModalResult<TokenRef
 
 pub(super) fn variable_token<'a>(
     include_underscore: bool,
+    include_global: bool,
 ) -> impl Parser<Input<'a>, TokenRef<'a>, ErrMode<ContextError>> {
     move |i: &mut Input<'a>| {
         let t = one_of(|t: TokenRef<'a>| {
-            matches!(&t.kind, &TokenKind::Identifier(_)) || (*t == Keyword::Underscore)
+            matches!(&t.kind, &TokenKind::Identifier(_))
+                || (*t == Keyword::Underscore)
+                || (*t == Keyword::Global)
         })
         .parse_next(i)?;
         let e = if !include_underscore && *t == Keyword::Underscore {
             let u = i.state.add_token(Token::unknown(
                 t.range.clone(),
                 t.kind.clone(),
-                vec![TokenError::new(
-                    t.range.clone(),
-                    "Unexpected `_`, it is a reserved variable name",
-                )],
+                "Unexpected `_`, it is a reserved variable name",
             ));
             u
+        } else if !include_global && *t == Keyword::Global {
+            let g = i.state.add_token(Token::unknown(
+                t.range.clone(),
+                t.kind.clone(),
+                "Unexpected `global`, it is a reserved variable name",
+            ));
+            g
         } else {
             t
         };

@@ -2,250 +2,305 @@
 enum OpCode {
     // debugging
     /// No operation
-    NOOP = 0x00,
-    /// Halt the program
-    HALT = 0x01,
-    /// Interrupt the program
-    INT = 0x02,
+    Noop = 0x00,
 
     // constatns
     /// Push number `-1` onto the stack
-    MINUS_ONE = 0x0F,
+    MinusOne = 0x0F,
     /// Push number `0` onto the stack
-    ZERO,
+    Zero,
     /// Push number `1` onto the stack
-    ONE,
+    One,
     /// Push number `2` onto the stack
-    TWO,
+    Two,
     /// Push number `3` onto the stack
-    THREE,
+    Three,
     /// Push number `4` onto the stack
-    FOUR,
+    Four,
     /// Push number `5` onto the stack
-    FIVE,
+    Five,
     /// Push `nil` onto the stack
-    NIL,
+    Nil,
     /// Push `true` onto the stack
-    TRUE,
+    True,
     /// Push `false` onto the stack
-    FALSE,
+    False,
     /// CONSTANT `u8`
     /// Push a constant onto the stack
-    CONSTANT,
+    Constant,
     /// CONSTANT `u24`
     /// Push a constant onto the stack
-    CONSTANT_WIDE,
+    ConstantWide,
 
     // operators
     /// Add the top two values on the stack
-    ADD,
+    Add = 0x20,
     /// Subtract the top two values on the stack
-    SUB,
+    Sub,
     /// Multiply the top two values on the stack
-    MUL,
+    Mul,
     /// Divide the top two values on the stack
-    DIV,
+    Div,
     /// Modulo the top two values on the stack
-    MOD,
+    Mod,
     /// Exponent the top two values on the stack
-    EXP,
+    Exp,
     /// Negate the top value on the stack
-    NEG,
+    Neg,
     /// Not the top value on the stack
-    NOT,
+    Not,
     /// Unary plus the top value on the stack
-    PLUS,
+    Plus,
     /// Equal the top two values on the stack
-    EQ,
+    Eq,
     /// Not equal the top two values on the stack
-    NE,
+    Neq,
     /// Less than the top two values on the stack
-    LT,
+    Lt,
     /// Less than or equal the top two values on the stack
-    LE,
+    Leq,
     /// Greater than the top two values on the stack
-    GT,
+    Gt,
     /// Greater than or equal the top two values on the stack
-    GE,
+    Geq,
 
     // pop / push
     /// Pop the top value from the stack
-    POP,
+    Pop = 0x40,
     /// POP_N `u8`
     /// Pop the top `n` values from the stack
-    POP_N,
+    PopN,
     /// Duplicate the top value on the stack
-    DUP,
+    Dup,
     /// DUP_N `u8`
     /// Duplicate the top `n`th value on the stack
-    DUP_N,
+    DupN,
     /// DUP_N_WIDE `u24`
     /// Duplicate the top `n`th value on the stack
-    DUP_N_WIDE,
+    DupNWide,
     /// Swap the top two values on the stack
-    SWAP,
+    Swap,
     /// SWAP_N `u8`
     /// Swap the top `n`th value and the top value on the stack
-    SWAP_N,
+    SwapN,
     /// SWAP_N_WIDE `u24`
     /// Swap the top `n`th value and the top value on the stack
-    SWAP_N_WIDE,
+    SwapNWide,
     /// INIT_LOCAL `n`
     /// Push `n` uninitialized values onto the stack
-    INIT_LOCAL,
+    InitLocal,
     /// INIT_LOCAL_WIDE `u24`
     /// Push `n` uninitialized values onto the stack
-    INIT_LOCAL_WIDE,
+    InitLocalWide,
     /// GET_LOCAL `n`
     /// Push the `n`th local value onto the stack
-    GET_LOCAL,
+    GetLocal,
     /// GET_LOCAL_WIDE `u24`
     /// Push the `n`th local value onto the stack
-    GET_LOCAL_WIDE,
+    GetLocalWide,
     /// SET_LOCAL `n`
     /// Pop the top value from the stack and set the `n`th local value
-    SET_LOCAL,
+    SetLocal,
     /// SET_LOCAL_WIDE `u24`
     /// Pop the top value from the stack and set the `n`th local value
-    SET_LOCAL_WIDE,
+    SetLocalWide,
     /// GET_GLOBAL `u8`
     /// Push the global value with the given name onto the stack
-    GET_GLOBAL,
+    GetGlobal,
     /// GET_GLOBAL_WIDE `u24`
     /// Push the global value with the given name onto the stack
-    GET_GLOBAL_WIDE,
+    GetGlobalWide,
+    /// GET_GLOBAL_DYN
+    /// Pop the top value from the stack and push the global value with the given name onto the stack
+    GetGlobalDyn,
+    /// SET_GLOBAL `u8`
+    /// Pop the top value from the stack and set the global value with the given name
+    SetGlobal,
+    /// SET_GLOBAL_WIDE `u24`
+    /// Pop the top value from the stack and set the global value with the given name
+    SetGlobalWide,
+    /// SET_GLOBAL_DYN
+    /// Pop the top two values from the stack and set the global value with the given name
+    SetGlobalDyn,
 
     // closures
     /// CLOSURE `u8` (`u8` `u8`)*
     /// Create a new closure with the given function and upvalues
-    CLOSURE,
+    Closure = 0x60,
     /// CLOSURE_WIDE `u24` (`u8` `u24`)*
     /// Create a new closure with the given function and upvalues
-    CLOSURE_WIDE,
+    ClosureWide,
     /// GET_UPVALUE `u8`
     /// Push the upvalue with the given index onto the stack
-    GET_UPVALUE,
+    GetUpvalue,
     /// GET_UPVALUE_WIDE `u24`
     /// Push the upvalue with the given index onto the stack
-    GET_UPVALUE_WIDE,
+    GetUpvalueWide,
     /// SET_UPVALUE `u8`
     /// Pop the top value from the stack and set the upvalue with the given index
-    SET_UPVALUE,
+    SetUpvalue,
     /// SET_UPVALUE_WIDE `u24`
     /// Pop the top value from the stack and set the upvalue with the given index
-    SET_UPVALUE_WIDE,
+    SetUpvalueWide,
     /// Pop the upvalue from the stack and close the upvalue
-    CLOSE_UPVALUE,
+    CloseUpvalue,
     /// CLOSE_UPVALUE_N `u8`
     /// Pop the top `n` values from the stack and close the upvalues
-    CLOSE_UPVALUE_N,
+    CloseUpvalueN,
 
     // objects
-    /// Create a new editable tuple, pushing it onto the stack
-    TUPLE,
-    /// TUPLE_INIT `u8`
-    /// Pop value from the stack and add it to the peek tuple, with the given key
-    TUPLE_INIT,
-    /// TUPLE_INIT_WIDE `u24`
-    /// Pop value from the stack and add it to the peek tuple, with the given key
-    TUPLE_INIT_WIDE,
-    /// Pop tuple from the stack, copy all pairs to the peek tuple
-    TUPLE_ASSIGN,
-    /// Finish tuple construction
-    TUPLE_FREEZE,
+    /// Create a new editable record, pushing it onto the stack
+    Record = 0x70,
+    /// RECORD_INIT `u8`
+    /// Pop value from the stack and add it to the peek record, with the given key
+    RecordInit,
+    /// RECORD_INIT_WIDE `u24`
+    /// Pop value from the stack and add it to the peek record, with the given key
+    RecordInitWide,
+    /// Pop record from the stack, copy all pairs to the peek record
+    RecordAssign,
+    /// Finish record construction
+    RecordFreeze,
     /// Create a new editable array, pushing it onto the stack
-    ARRAY,
+    Array,
     /// Pop value from the stack and add it to the peek array
-    ARRAY_INIT,
+    ArrayInit,
     /// Pop array from the stack, copy all values to the peek array
-    ARRAY_APPEND,
+    ArrayAppend,
     /// Finish array construction
-    ARRAY_FREEZE,
+    ArrayFreeze,
     /// GET_INDEX `u8`
-    /// Get the value with the given index from the peek array or tuple
-    GET_INDEX,
+    /// Get the value with the given index from the peek array or record
+    GetIndex,
     /// GET_INDEX_WIDE `u24`
-    /// Get the value with the given index from the peek array or tuple
-    GET_INDEX_WIDE,
-    /// GET_INDEX_LONG `u48`
-    /// Get the value with the given index from the peek array or tuple
-    GET_INDEX_LONG,
+    /// Get the value with the given index from the peek array or record
+    GetIndexWide,
+    /// GET_INDEX_INT `u32`
+    /// Get the value with the given index from the peek array or record
+    GetIndexInt,
     /// GET `u8`
-    /// Get the value with the given key from the peek array or tuple
-    GET,
+    /// Get the value with the given key from the peek array or record
+    Get,
     /// GET_WIDE `u24`
-    /// Get the value with the given key from the peek array or tuple
-    GET_WIDE,
+    /// Get the value with the given key from the peek array or record
+    GetWide,
     /// GET_DYN
-    /// Pop key and get the value from the peek array or tuple
-    GET_DYN,
+    /// Pop key and get the value from the peek array or record
+    GetDyn,
+    /// SET `u8`
+    /// Pop value and set the value in the peek external object
+    Set,
+    /// SET_WIDE `u24`
+    /// Pop value and set the value in the peek external object
+    SetWide,
+    /// SET_DYN
+    /// Pop key and value and set the value in the peek external object
+    SetDyn,
+
+    // control flow
+    /// JUMP `u8`
+    /// Jump to the given offset
+    Jump = 0x90,
+    /// JUMP_WIDE `u24`
+    /// Jump to the given offset
+    JumpWide,
+    /// JUMP_IF_TRUE `u8`
+    /// Pop the top value from the stack and jump to the given offset if it is truthy
+    JumpIfTrue,
+    /// JUMP_IF_TRUE_WIDE `u24`
+    /// Pop the top value from the stack and jump to the given offset if it is truthy
+    JumpIfTrueWide,
+    /// JUMP_IF_FALSE `u8`
+    /// Pop the top value from the stack and jump to the given offset if it is falsy
+    JumpIfFalse,
+    /// JUMP_IF_FALSE_WIDE `u24`
+    /// Pop the top value from the stack and jump to the given offset if it is falsy
+    JumpIfFalseWide,
+    /// LOOP `u8`
+    /// Jump to the given negative offset
+    Loop,
+    /// LOOP_WIDE `u24`
+    /// Jump to the given negative offset
+    LoopWide,
+    /// LOOP_IF_TRUE `u8`
+    /// Pop the top value from the stack and jump to the given negative offset if it is truthy
+    LoopIfTrue,
+    /// LOOP_IF_TRUE_WIDE `u24`
+    /// Pop the top value from the stack and jump to the given negative offset if it is truthy
+    LoopIfTrueWide,
+    /// LOOP_IF_FALSE `u8`
+    /// Pop the top value from the stack and jump to the given negative offset if it is falsy
+    LoopIfFalse,
+    /// LOOP_IF_FALSE_WIDE `u24`
+    /// Pop the top value from the stack and jump to the given negative offset if it is falsy
+    LoopIfFalseWide,
 
     // call
     /// Call the top value on the stack
-    CALL_0,
+    Call0 = 0xA0,
     /// Call the second value on the stack with the top value on the stack
-    CALL_1,
+    Call1,
     /// Call the third value on the stack with the top two values on the stack
-    CALL_2,
+    Call2,
     /// Call the fourth value on the stack with the top three values on the stack
-    CALL_3,
+    Call3,
     /// Call the fifth value on the stack with the top four values on the stack
-    CALL_4,
+    Call4,
     /// Call the sixth value on the stack with the top five values on the stack
-    CALL_5,
+    Call5,
     /// Call the seventh value on the stack with the top six values on the stack
-    CALL_6,
+    Call6,
     /// Call the eighth value on the stack with the top seven values on the stack
-    CALL_7,
+    Call7,
     /// Call the ninth value on the stack with the top eight values on the stack
-    CALL_8,
+    Call8,
     /// CALL `u8`
     /// Call the `n`th value on the stack with the top `n-1` values on the stack
-    CALL,
+    Call,
     /// CALL_WIDE `u24`
     /// Call the `n`th value on the stack with the top `n-1` values on the stack
-    CALL_WIDE,
+    CallWide,
     /// CALL_VIRT_0 `u8`
     /// Call by name from constant pool with no arguments
-    CALL_VIRT_0,
+    CallVirt0 = 0xB0,
     /// CALL_VIRT_1 `u8`
     /// Call by name from constant pool with one argument
-    CALL_VIRT_1,
+    CallVirt1,
     /// CALL_VIRT_2 `u8`
     /// Call by name from constant pool with two arguments
-    CALL_VIRT_2,
+    CallVirt2,
     /// CALL_VIRT_3 `u8`
     /// Call by name from constant pool with three arguments
-    CALL_VIRT_3,
+    CallVirt3,
     /// CALL_VIRT_4 `u8`
     /// Call by name from constant pool with four arguments
-    CALL_VIRT_4,
+    CallVirt4,
     /// CALL_VIRT_5 `u8`
     /// Call by name from constant pool with five arguments
-    CALL_VIRT_5,
+    CallVirt5,
     /// CALL_VIRT_6 `u8`
     /// Call by name from constant pool with six arguments
-    CALL_VIRT_6,
+    CallVirt6,
     /// CALL_VIRT_7 `u8`
     /// Call by name from constant pool with seven arguments
-    CALL_VIRT_7,
+    CallVirt7,
     /// CALL_VIRT_8 `u8`
     /// Call by name from constant pool with eight arguments
-    CALL_VIRT_8,
+    CallVirt8,
     /// CALL_VIRT `u8` `u8`
     /// Call by name from constant pool with `n` arguments
-    CALL_VIRT,
+    CallVirt,
     /// CALL_VIRT_WIDE `u24` `u24`
     /// Call by name from constant pool with `n` arguments
-    CALL_VIRT_WIDE,
+    CallVirtWide,
     /// CALL_VIRT_DYN `u8`
     /// Call by name from stack with `n` arguments
-    CALL_VIRT_DYN,
+    CallVirtDyn,
     /// CALL_VIRT_DYN_WIDE `u24`
     /// Call by name from stack with `n` arguments
-    CALL_VIRT_DYN_WIDE,
+    CallVirtDynWide,
     /// Return from the current function with the top value on the stack
-    RETURN,
+    Return = 0xC0,
 }
 
 impl From<OpCode> for u8 {

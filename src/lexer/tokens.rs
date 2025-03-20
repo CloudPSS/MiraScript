@@ -4,12 +4,12 @@ use std::str::FromStr;
 use num_bigint::BigUint;
 use num_traits::cast::ToPrimitive;
 use winnow::ascii::{digit0, digit1, line_ending, till_line_ending};
-use winnow::combinator::{alt, cut_err, dispatch, eof, fail, opt, peek, trace};
+use winnow::combinator::{alt, cut_err, dispatch, eof, fail, opt, peek, preceded, trace};
 use winnow::error::{StrContext, StrContextValue};
 use winnow::prelude::*;
 use winnow::token::{any, one_of, take, take_until, take_while};
 
-use super::{Input, Keyword, Operator, Range, Token, TokenError, TokenKind, Whitespace, string};
+use super::{Comment, Input, Keyword, Operator, Range, Token, TokenError, TokenKind, string};
 
 fn line_comment(i: &mut Input<'_>) -> ModalResult<()> {
     ("//", till_line_ending, opt(line_ending))
@@ -76,9 +76,10 @@ fn number<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
                             radix = 2;
                             |c: char| c == '0' || c == '1'
                         } else {
-                            return TokenKind::unknown(
+                            return TokenKind::unknown_range(
                                 TokenKind::Number(0.0),
-                                vec![TokenError::new(r, "Invalid base prefix for number literal")],
+                                r,
+                                "Invalid base prefix for number literal",
                             );
                         };
 
@@ -129,7 +130,7 @@ fn number<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
                             errors.push(TokenError::new(r, "Number literal is too large"));
                         }
                         if !errors.is_empty() {
-                            TokenKind::unknown(TokenKind::Number(float), errors)
+                            TokenKind::unknown_errors(TokenKind::Number(float), errors)
                         } else {
                             TokenKind::Number(float)
                         }
@@ -175,7 +176,7 @@ pub(super) fn token<'a>(
     input: &mut Input<'a>,
     prev_token: &Option<&Token<'a>>,
 ) -> ModalResult<Token<'a>> {
-    alt((
+    preceded(take_while(0.., |c: char| c.is_ascii_whitespace()),  alt((
         dispatch! {peek(any);
             '0'..='9' => if prev_token.map(|t| &t.kind) == Some(&TokenKind::Operator(Operator::Dot)) {
                 ordinal
@@ -216,14 +217,13 @@ pub(super) fn token<'a>(
             },
 
             '/' => dispatch! {peek(opt(take(2usize)));
-                Some("/*") => block_comment.map(|_| TokenKind::Whitespace(Whitespace::BlockComment)),
-                Some("//") => line_comment.map(|_| TokenKind::Whitespace(Whitespace::LineComment)),
+                Some("/*") => block_comment.map(|_| TokenKind::Comment(Comment::Block)),
+                Some("//") => line_comment.map(|_| TokenKind::Comment(Comment::Line)),
                 _ => any.map(|_| TokenKind::Operator(Operator::Slash)),
             },
             ';' => any.map(|_| TokenKind::Operator(Operator::Semicolon)),
             '{' => any.map(|_| TokenKind::Operator(Operator::OpenBrace)),
             '}' => any.map(|_| TokenKind::Operator(Operator::CloseBrace)),
-            c if c.is_ascii_whitespace() => trace("spaces", take_while(1.., |c: char| c.is_ascii_whitespace()).map(|_| TokenKind::Whitespace(Whitespace::Spaces))),
             c if is_identifier_start(c) => identifier,
             _ => fail,
         },
@@ -232,7 +232,7 @@ pub(super) fn token<'a>(
             recovered: None,
             errors: vec![TokenError::new(range, "Unknown token")],
         }),
-    ))
+    )))
     .with_span()
     .map(|(kind, range)| Token { range, kind })
     .parse_next(input)

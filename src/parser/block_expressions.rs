@@ -80,7 +80,7 @@ pub(super) fn match_expression<'a>(i: &mut Input<'a>) -> ModalResult<Expression<
 pub(super) fn for_in_expression<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
     seq!(Expression::ForIn(
         _: literal(Keyword::For),
-        variable_token(true),
+        variable_token(true, false),
         _: literal(Keyword::In),
         expression.map(Box::new),
         block_expression.map(Box::new),

@@ -3,7 +3,7 @@ use winnow::error::{ContextError, ErrMode};
 use winnow::prelude::*;
 use winnow::token::{any, literal, one_of};
 
-use crate::lexer::{Keyword, Operator, Range, Token, TokenError, TokenKind};
+use crate::lexer::{Keyword, Operator, Range, Token, TokenKind};
 
 use super::block_expressions::block_like_expression;
 use super::expressions::expression;
@@ -95,12 +95,9 @@ fn tuple_like<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
         range.end = range.start;
         let recovered = TokenKind::Ordinal(pos as u64);
         let token = Token::unknown(
-            range.clone(),
+            range,
             recovered,
-            vec![TokenError::new(
-                range,
-                "All tuple elements must be named or unnamed",
-            )],
+            "All tuple elements must be named or unnamed",
         );
         let name = i.state.add_token(token);
         items.push((name, part.value));
@@ -133,7 +130,7 @@ fn primary<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
         block_like_expression,
         literal_token.map(Expression::Literal),
         interpolation_token.map(Expression::InterpolatedString),
-        variable_token(false).map(Expression::Variable),
+        variable_token(false, true).map(Expression::Variable),
         preceded(literal(Operator::OpenParen), tuple_like),
         preceded(literal(Operator::OpenBracket), array),
     )))

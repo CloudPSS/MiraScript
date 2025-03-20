@@ -1,6 +1,7 @@
 use std::ops::Deref;
 
 mod analyzer;
+mod ansi;
 mod emitter;
 mod lexer;
 mod parser;

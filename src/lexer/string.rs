@@ -96,7 +96,7 @@ pub(super) fn string<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
         TokenKind::String(Cow::Owned(result))
     };
     if !errors.is_empty() {
-        return Ok(TokenKind::unknown(token, errors));
+        return Ok(TokenKind::unknown_errors(token, errors));
     }
     Ok(token)
 }
