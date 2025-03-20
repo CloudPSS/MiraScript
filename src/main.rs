@@ -1,16 +1,19 @@
+use std::ops::Deref;
+
 mod lexer;
-mod tokenizer;
+mod parser;
 
 fn main() {
-    let text = r##"fn { it == true or it > 0 or it == "
-    " }"##;
+    let text = r##"fn {
+       a = 3;
+    }"##;
 
-    let mut input = tokenizer::to_input(text);
-    let result = tokenizer::tokenize(&mut input, true).unwrap();
+    let mut input = lexer::to_input(text);
+    let result = lexer::lex(&mut input, true).unwrap();
 
-    let mut input = lexer::to_input(&result);
-    let exp = lexer::lex(&mut input);
+    let mut input = parser::to_input(&result);
+    let exp = parser::parse(&mut input);
 
-    println!("{:?}", input);
+    println!("{:?}", input.input.deref());
     println!("{:#}", exp.unwrap());
 }

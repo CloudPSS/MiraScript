@@ -8,7 +8,7 @@ use winnow::{
     token::{any, one_of, take_till, take_while},
 };
 
-use crate::tokenizer::{Input, Range, TokenError, TokenKind};
+use crate::lexer::{Input, Range, TokenError, TokenKind};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum StringFragment<'a> {

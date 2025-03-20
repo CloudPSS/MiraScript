@@ -11,6 +11,8 @@ impl FromStr for Keyword {
             "false" => Ok(Keyword::False),
             "nil" => Ok(Keyword::Nil),
 
+            "_" => Ok(Keyword::Underscore),
+
             "and" => Ok(Keyword::And),
             "or" => Ok(Keyword::Or),
             "not" => Ok(Keyword::Not),
@@ -28,8 +30,8 @@ impl FromStr for Keyword {
 
             "fn" => Ok(Keyword::Fn),
             "op" => Ok(Keyword::Op),
-            "let" => Ok(Keyword::Let),
-            "const" => Ok(Keyword::Const),
+            "var" => Ok(Keyword::Var),
+            "val" => Ok(Keyword::Val),
             "record" => Ok(Keyword::Record),
 
             "effect" => Ok(Keyword::Effect),

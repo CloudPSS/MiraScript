@@ -3,7 +3,6 @@ use std::str::FromStr;
 
 use num_bigint::BigUint;
 use num_traits::cast::ToPrimitive;
-use unicode_ident::{is_xid_continue, is_xid_start};
 use winnow::ascii::{digit0, digit1, line_ending, till_line_ending};
 use winnow::combinator::{alt, cut_err, dispatch, eof, fail, opt, peek, trace};
 use winnow::error::{StrContext, StrContextValue};
@@ -29,12 +28,20 @@ fn block_comment(i: &mut Input<'_>) -> ModalResult<()> {
         .parse_next(i)
 }
 
+fn is_identifier_start(c: char) -> bool {
+    c == '_' || c == '$' || unicode_ident::is_xid_start(c)
+}
+
+fn is_identifier_continue(c: char) -> bool {
+    c == '$' || unicode_ident::is_xid_continue(c)
+}
+
 fn identifier<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
     trace(
         "identifier",
         (
-            one_of(|c: char| c == '_' || c == '$' || is_xid_start(c)),
-            take_while(0.., |c: char| c == '$' || is_xid_continue(c)),
+            one_of(is_identifier_start),
+            take_while(0.., is_identifier_continue),
         )
             .take()
             .map(|s| {
@@ -52,10 +59,11 @@ fn number<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
     trace("number", move |i: &mut Input<'a>| {
         let initial = (peek(opt((any, any)))).parse_next(i)?;
         match initial {
-            Some(('0', ch1)) if is_xid_continue(ch1) && ch1 != '_' && ch1 != 'e' && ch1 != 'E' => {
-                (take_while(2.., is_xid_continue)
-                    .with_span()
-                    .map(|(s, r): (&str, Range)| {
+            Some(('0', ch1))
+                if is_identifier_continue(ch1) && ch1 != '_' && ch1 != 'e' && ch1 != 'E' =>
+            {
+                (take_while(2.., is_identifier_continue).with_span().map(
+                    |(s, r): (&str, Range)| {
                         let ends_with_underscore = s.ends_with("_");
                         let radix;
                         let is_valid_char = if s.starts_with("0x") {
@@ -125,7 +133,8 @@ fn number<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
                         } else {
                             TokenKind::Number(float)
                         }
-                    }))
+                    },
+                ))
                 .parse_next(i)
             }
             _ => (cut_err(
@@ -148,7 +157,7 @@ fn ordinal<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
     trace(
         "ordinal",
         cut_err(
-            take_while(1.., |c: char| c == '$' || is_xid_continue(c))
+            take_while(1.., is_identifier_continue)
                 .verify(|s: &str| {
                     s == "0" || !s.starts_with('0') && s.chars().all(|c| c.is_ascii_digit())
                 })
@@ -197,9 +206,14 @@ pub(super) fn token<'a>(
             },
             '(' => any.map(|_| TokenKind::Operator(Operator::OpenParen)),
             ')' => any.map(|_| TokenKind::Operator(Operator::CloseParen)),
+            '[' => any.map(|_| TokenKind::Operator(Operator::OpenBracket)),
+            ']' => any.map(|_| TokenKind::Operator(Operator::CloseBracket)),
             ':' => any.map(|_| TokenKind::Operator(Operator::Colon)),
             ',' => any.map(|_| TokenKind::Operator(Operator::Comma)),
-            '.' => any.map(|_| TokenKind::Operator(Operator::Dot)),
+            '.' => dispatch! {peek(opt(take(2usize)));
+                Some("..") => take(2usize).map(|_| TokenKind::Operator(Operator::DotDot)),
+                _ => any.map(|_| TokenKind::Operator(Operator::Dot)),
+            },
 
             '/' => dispatch! {peek(opt(take(2usize)));
                 Some("/*") => block_comment.map(|_| TokenKind::Whitespace(Whitespace::BlockComment)),
@@ -210,7 +224,7 @@ pub(super) fn token<'a>(
             '{' => any.map(|_| TokenKind::Operator(Operator::OpenBrace)),
             '}' => any.map(|_| TokenKind::Operator(Operator::CloseBrace)),
             c if c.is_ascii_whitespace() => trace("spaces", take_while(1.., |c: char| c.is_ascii_whitespace()).map(|_| TokenKind::Whitespace(Whitespace::Spaces))),
-            c if is_xid_start(c) => identifier,
+            c if is_identifier_start(c) => identifier,
             _ => fail,
         },
         eof.map(|_|TokenKind::Eof),

@@ -1,24 +1,14 @@
 use winnow::combinator::{alt, dispatch, fail, opt, peek, preceded, repeat, seq, terminated};
+use winnow::error::{ContextError, ErrMode};
 use winnow::prelude::*;
 use winnow::token::{any, literal, one_of};
 
-use crate::tokenizer::{Keyword, Operator, Range, Token, TokenError, TokenKind};
+use crate::lexer::{Keyword, Operator, Range, Token, TokenError, TokenKind};
 
+use super::block_expressions::block_like_expression;
 use super::expressions::expression;
+use super::helper::{literal_token, variable_token};
 use super::{Expression, Input, TokenRef};
-
-fn value<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
-    one_of(|t: TokenRef<'a>| {
-        matches!(&t.kind, &TokenKind::Identifier(_))
-            || matches!(&t.kind, &TokenKind::Number(_))
-            || matches!(&t.kind, &TokenKind::String(_))
-            || *t == Keyword::True
-            || *t == Keyword::False
-            || *t == Keyword::Nil
-    })
-    .map(Expression::Value)
-    .parse_next(i)
-}
 
 struct TupleLikePart<'a> {
     name: Option<TokenRef<'a>>,
@@ -27,40 +17,47 @@ struct TupleLikePart<'a> {
     tail_comma: bool,
 }
 
-fn tuple_like_part<'a>(i: &mut Input<'a>) -> ModalResult<TupleLikePart<'a>> {
-    let first = peek(any).parse_next(i)?;
-    if *first == Operator::CloseParen {
-        return fail.parse_next(i);
+fn tuple_like_part<'a, V>(
+    close: V,
+) -> impl Parser<Input<'a>, TupleLikePart<'a>, ErrMode<ContextError>>
+where
+    Token<'a>: PartialEq<V> + PartialEq + PartialEq<Operator>,
+{
+    move |i: &mut Input<'a>| {
+        let first = peek(any).parse_next(i)?;
+        if *first == close {
+            return fail.parse_next(i);
+        }
+        (
+            opt(terminated(
+                one_of(|t: TokenRef<'a>| {
+                    matches!(
+                        t.kind,
+                        TokenKind::Identifier(_) | TokenKind::Ordinal(_) | TokenKind::Number(_)
+                    )
+                }),
+                literal(Operator::Colon),
+            )),
+            expression,
+            alt((
+                literal(Operator::Comma),
+                peek(literal(Operator::CloseParen)),
+            )),
+        )
+            .with_taken()
+            .map(|((name, exp, tail), taken)| {
+                let tail_comma = tail[0] == Operator::Comma;
+                let mut range = taken[0].range.clone();
+                range.end = tail[0].range.start;
+                TupleLikePart {
+                    name,
+                    value: exp,
+                    range,
+                    tail_comma,
+                }
+            })
+            .parse_next(i)
     }
-    (
-        opt(terminated(
-            one_of(|t: TokenRef<'a>| {
-                matches!(
-                    t.kind,
-                    TokenKind::Identifier(_) | TokenKind::Ordinal(_) | TokenKind::Number(_)
-                )
-            }),
-            literal(Operator::Colon),
-        )),
-        expression,
-        alt((
-            literal(Operator::Comma),
-            peek(literal(Operator::CloseParen)),
-        )),
-    )
-        .with_taken()
-        .map(|((name, exp, tail), taken)| {
-            let tail_comma = tail[0] == Operator::Comma;
-            let mut range = taken[0].range.clone();
-            range.end = tail[0].range.start;
-            TupleLikePart {
-                name,
-                value: exp,
-                range,
-                tail_comma,
-            }
-        })
-        .parse_next(i)
 }
 
 fn tuple_like<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
@@ -69,7 +66,8 @@ fn tuple_like<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
         any.parse_next(i)?;
         return Ok(Expression::Tuple(Vec::new()));
     }
-    let parts: Vec<TupleLikePart<'a>> = repeat(1.., tuple_like_part).parse_next(i)?;
+    let parts: Vec<TupleLikePart<'a>> =
+        repeat(1.., tuple_like_part(Operator::CloseParen)).parse_next(i)?;
     one_of(|t: TokenRef<'a>| *t == Operator::CloseParen).parse_next(i)?;
     if parts.len() == 1 {
         let part = parts.into_iter().next().unwrap();
@@ -110,8 +108,35 @@ fn tuple_like<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
     Ok(Expression::NamedTuple(items))
 }
 
+fn array<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
+    let elements: Vec<Expression<'a>> = terminated(
+        (
+            repeat(0.., terminated(expression, literal(Operator::Comma))),
+            opt(expression),
+        )
+            .map(
+                |(mut v, e): (Vec<Expression<'a>>, Option<Expression<'a>>)| {
+                    if let Some(e) = e {
+                        v.push(e);
+                    }
+                    v
+                },
+            ),
+        literal(Operator::CloseBracket),
+    )
+    .parse_next(i)?;
+    Ok(Expression::Array(elements))
+}
+
 fn primary<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
-    (alt((value, preceded(literal(Operator::OpenParen), tuple_like)))).parse_next(i)
+    (alt((
+        block_like_expression,
+        literal_token.map(Expression::Literal),
+        variable_token(false).map(Expression::Variable),
+        preceded(literal(Operator::OpenParen), tuple_like),
+        preceded(literal(Operator::OpenBracket), array),
+    )))
+    .parse_next(i)
 }
 
 fn arg_list<'a>(i: &mut Input<'a>) -> ModalResult<Vec<Expression<'a>>> {
