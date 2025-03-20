@@ -1,6 +1,8 @@
-use std::borrow::Cow;
+use std::{borrow::Cow, cell::Cell, fmt::Debug};
 
-use winnow::{LocatingSlice, ModalResult};
+use winnow::{LocatingSlice, ModalResult, Stateful};
+
+use crate::parser::Expression;
 
 mod display;
 mod eq;
@@ -8,8 +10,27 @@ mod from_str;
 mod string;
 mod tokens;
 
-pub type Input<'a> = LocatingSlice<&'a str>;
+pub type Input<'a> = Stateful<LocatingSlice<&'a str>, State<'a>>;
 pub type Range = std::ops::Range<usize>;
+
+pub struct State<'a> {
+    tokens: Vec<Box<[Token<'a>]>>,
+}
+
+impl Debug for State<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("State").finish()
+    }
+}
+
+impl<'a> State<'a> {
+    pub fn add_tokens(&mut self, tokens: Vec<Token<'a>>) -> &'a [Token<'a>] {
+        let cell = tokens.into_boxed_slice();
+        let ptr = &*cell as *const [Token<'a>];
+        self.tokens.push(cell);
+        unsafe { &*ptr }
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Whitespace {
@@ -117,6 +138,7 @@ pub enum TokenKind<'a> {
     Ordinal(u64),
     Number(f64),
     String(Cow<'a, str>),
+    InterpolatedString(Vec<Cow<'a, str>>, Vec<Expression<'a>>),
     Operator(Operator),
     Keyword(Keyword),
 
@@ -155,7 +177,10 @@ pub struct Token<'a> {
 }
 
 pub fn to_input(text: &str) -> Input<'_> {
-    LocatingSlice::new(text)
+    Stateful {
+        input: LocatingSlice::new(text),
+        state: State { tokens: vec![] },
+    }
 }
 
 pub fn lex<'a>(input: &mut Input<'a>, ignore_whitespaces: bool) -> ModalResult<Vec<Token<'a>>> {

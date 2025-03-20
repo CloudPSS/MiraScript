@@ -1,11 +1,13 @@
 use std::ops::Deref;
 
+mod analyzer;
+mod emitter;
 mod lexer;
 mod parser;
 
 fn main() {
-    let text = r##"fn {
-       a = 3;
+    let text = r##"fn main {
+       var a = "${x} + ${y} = ${x + "${z}"}"; // comment
     }"##;
 
     let mut input = lexer::to_input(text);

@@ -1,10 +1,17 @@
 use std::fmt::{Display, Write};
 
+use anstyle::{AnsiColor, Reset, Style};
+
 use super::{Keyword, Operator, Token, TokenKind, Whitespace};
+
+const KEYWORD: Style = AnsiColor::BrightBlue.on_default();
+const STRING: Style = AnsiColor::BrightMagenta.on_default();
+const INTERPOLATED: Style = STRING.bold();
+const RESET: Reset = Reset;
 
 impl Display for Keyword {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut d = format!("{:?}", self);
+        let mut d = format!("{KEYWORD}{:?}{RESET}", self);
         d.make_ascii_lowercase();
         f.write_str(&d)
     }
@@ -48,7 +55,21 @@ impl Display for TokenKind<'_> {
             Self::Identifier(s) => write!(f, "{}", s),
             Self::Ordinal(n) => write!(f, "{}", n),
             Self::Number(n) => write!(f, "{}", n),
-            Self::String(s) => write!(f, "{:?}", s),
+            Self::String(s) => {
+                write!(f, "{STRING}\"{}\"{RESET}", s.escape_debug())
+            }
+            Self::InterpolatedString(s, e) => {
+                write!(f, "{STRING}\"")?;
+                for (s, e) in s.iter().zip(e.iter()) {
+                    write!(f, "{}", s.escape_debug())?;
+                    write!(
+                        f,
+                        "{RESET}{INTERPOLATED}${{{RESET}{}{INTERPOLATED}}}{RESET}{STRING}",
+                        e
+                    )?;
+                }
+                write!(f, "\"{RESET}")
+            }
             Self::Operator(op) => write!(f, "{}", op),
             Self::Keyword(kw) => write!(f, "{}", kw),
             Self::Unknown { recovered, .. } => {

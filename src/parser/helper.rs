@@ -53,6 +53,10 @@ pub(super) fn literal_token<'a>(i: &mut Input<'a>) -> ModalResult<TokenRef<'a>> 
     .parse_next(i)
 }
 
+pub(super) fn interpolation_token<'a>(i: &mut Input<'a>) -> ModalResult<TokenRef<'a>> {
+    one_of(|t: TokenRef<'a>| matches!(&t.kind, &TokenKind::InterpolatedString(_, _))).parse_next(i)
+}
+
 pub(super) fn variable_token<'a>(
     include_underscore: bool,
 ) -> impl Parser<Input<'a>, TokenRef<'a>, ErrMode<ContextError>> {

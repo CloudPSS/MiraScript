@@ -7,7 +7,7 @@ use crate::lexer::{Keyword, Operator, Range, Token, TokenError, TokenKind};
 
 use super::block_expressions::block_like_expression;
 use super::expressions::expression;
-use super::helper::{literal_token, variable_token};
+use super::helper::{interpolation_token, literal_token, variable_token};
 use super::{Expression, Input, TokenRef};
 
 struct TupleLikePart<'a> {
@@ -132,6 +132,7 @@ fn primary<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
     (alt((
         block_like_expression,
         literal_token.map(Expression::Literal),
+        interpolation_token.map(Expression::InterpolatedString),
         variable_token(false).map(Expression::Variable),
         preceded(literal(Operator::OpenParen), tuple_like),
         preceded(literal(Operator::OpenBracket), array),

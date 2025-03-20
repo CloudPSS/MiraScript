@@ -1,10 +1,12 @@
-use std::fmt::Debug;
+use std::{fmt::Debug, ops::Deref};
 
 use winnow::Stateful;
+use winnow::combinator::peek;
 use winnow::prelude::*;
 use winnow::stream::TokenSlice;
+use winnow::token::any;
 
-use crate::lexer::Token;
+use crate::lexer::{Token, TokenKind};
 
 mod basic_expressions;
 mod block_expressions;
@@ -13,7 +15,9 @@ mod expressions;
 mod helper;
 mod statements;
 
-#[derive(Debug)]
+pub use expressions::expression;
+
+#[derive(Debug, Clone)]
 pub struct State<'a> {
     #[allow(clippy::vec_box)]
     // Boxed to ensure that the reference is stable
@@ -39,11 +43,15 @@ pub type Input<'a> = Stateful<TokenSlice<'a, Token<'a>>, State<'a>>;
 
 type TokenRef<'a> = &'a Token<'a>;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Expression<'a> {
     // primary
     /// literal | 'true' | 'false' | 'nil'
     Literal(TokenRef<'a>),
+    /// interpolated_string
+    ///
+    /// Holds a ref of [TokenKind::InterpolatedString].
+    InterpolatedString(TokenRef<'a>),
     /// identifier
     Variable(TokenRef<'a>),
     /// `(` expression `)`
@@ -173,7 +181,7 @@ pub enum Expression<'a> {
     Function(Option<Vec<TokenRef<'a>>>, Box<Expression<'a>>),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Statement<'a> {
     /// `;`
     ///
@@ -218,6 +226,17 @@ pub enum Statement<'a> {
     Continue,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct Script<'a>(Vec<Statement<'a>>);
+
+impl<'a> Deref for Script<'a> {
+    type Target = Vec<Statement<'a>>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
 pub fn to_input<'a>(tokens: &'a [Token<'a>]) -> Input<'a> {
     Stateful {
         input: TokenSlice::new(tokens),
@@ -225,6 +244,16 @@ pub fn to_input<'a>(tokens: &'a [Token<'a>]) -> Input<'a> {
     }
 }
 
-pub fn parse<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
-    expressions::expression.parse_next(i)
+pub fn parse<'a>(i: &mut Input<'a>) -> ModalResult<Script<'a>> {
+    let mut statements = vec![];
+    loop {
+        let token = peek(any).parse_next(i)?;
+        if *token == TokenKind::Eof {
+            any.parse_next(i)?;
+            break;
+        }
+        let statement = statements::statement.parse_next(i)?;
+        statements.push(statement);
+    }
+    Ok(Script(statements))
 }

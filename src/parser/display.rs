@@ -1,11 +1,12 @@
 use std::fmt::{self, Display, Formatter};
 
-use super::{Expression, Statement};
+use super::{Expression, Script, Statement};
 
 impl Display for Expression<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             Expression::Literal(token) => write!(f, "{}", token),
+            Expression::InterpolatedString(token) => write!(f, "{}", token),
             Expression::Variable(token) => write!(f, "{}", token),
             Expression::Grouping(exp) => write!(f, "({})", exp),
             Expression::Tuple(exps) => {
@@ -161,5 +162,14 @@ impl Display for Statement<'_> {
             Statement::Break(None) => writeln!(f, "break;"),
             Statement::Continue => writeln!(f, "continue;"),
         }
+    }
+}
+
+impl Display for Script<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        for statement in self.iter() {
+            write!(f, "{}", statement)?;
+        }
+        Ok(())
     }
 }
