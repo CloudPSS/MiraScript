@@ -1,6 +1,12 @@
-use std::fmt::{self, Display, Formatter};
+use std::{
+    borrow::Cow,
+    fmt::{self, Display, Formatter},
+};
 
-use crate::lexer::Token;
+use crate::{
+    lexer::Token,
+    utils::{Range, SourceError},
+};
 
 use super::Statement;
 
@@ -137,6 +143,47 @@ pub enum Expression<'a> {
     /// Just like function declarations, but without the identifier.
     /// See [Statement::Function] for more details.
     Function(Option<Vec<Token<'a>>>, Box<Expression<'a>>),
+    /// Unknown expression
+    Unknown {
+        tokens: Vec<Token<'a>>,
+        errors: Vec<SourceError>,
+    },
+}
+
+impl<'a> Expression<'a> {
+    pub(crate) fn unknown<T: Into<Vec<Token<'a>>>, E: Into<Cow<'static, str>>>(
+        tokens: T,
+        error: E,
+    ) -> Self {
+        let tokens = tokens.into();
+        assert!(!tokens.is_empty());
+        let mut range = tokens[0].range.clone();
+        range.end = tokens.last().unwrap().range.end;
+        Expression::Unknown {
+            tokens,
+            errors: vec![SourceError::new(range, error)],
+        }
+    }
+    pub(crate) fn unknown_range<T: Into<Vec<Token<'a>>>, E: Into<Cow<'static, str>>>(
+        tokens: T,
+        error_range: Range,
+        error: E,
+    ) -> Self {
+        Expression::Unknown {
+            tokens: tokens.into(),
+            errors: vec![SourceError::new(error_range, error)],
+        }
+    }
+
+    pub(crate) fn unknown_errors<T: Into<Vec<Token<'a>>>, E: Into<Vec<SourceError>>>(
+        tokens: T,
+        errors: E,
+    ) -> Self {
+        Expression::Unknown {
+            tokens: tokens.into(),
+            errors: errors.into(),
+        }
+    }
 }
 
 impl Display for Expression<'_> {
@@ -268,6 +315,7 @@ impl Display for Expression<'_> {
                 }
                 write!(f, ") {}", block)
             }
+            Expression::Unknown { .. } => write!(f, "(<???>)"),
         }
     }
 }

@@ -7,12 +7,11 @@ mod ansi;
 mod emitter;
 mod lexer;
 mod parser;
+mod utils;
 
 fn main() {
-    let text = r##"fn main {
-       var a = "${x} + ${y} = ${x + "${z}"}"; // comment
-       /**/
-    }"##;
+    let text = r##"{var a =1;}
+    "__${12 + 1 + xx}""##;
 
     let mut input = lexer::to_input(text);
     let result = lexer::lex(&mut input, true).unwrap();

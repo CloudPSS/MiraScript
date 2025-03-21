@@ -2,8 +2,9 @@ use std::{borrow::Cow, fmt::Display};
 
 use crate::ansi::{INTERPOLATED, RESET, STRING};
 use crate::parser::Expression;
+use crate::utils::{Range, SourceError};
 
-use super::{Comment, Keyword, Operator, Range, Token, TokenError};
+use super::{Comment, Keyword, Operator, Token};
 
 #[derive(Debug, Clone)]
 pub enum TokenKind<'a> {
@@ -18,7 +19,7 @@ pub enum TokenKind<'a> {
     Keyword(Keyword),
     Unknown {
         recovered: Option<Box<TokenKind<'a>>>,
-        errors: Vec<TokenError>,
+        errors: Vec<SourceError>,
     },
 }
 
@@ -30,11 +31,11 @@ impl<'a> TokenKind<'a> {
     ) -> Self {
         TokenKind::Unknown {
             recovered: Some(Box::new(recovered)),
-            errors: vec![TokenError::new(error_range, error)],
+            errors: vec![SourceError::new(error_range, error)],
         }
     }
 
-    pub(crate) fn unknown_errors<T: Into<Vec<TokenError>>>(
+    pub(crate) fn unknown_errors<T: Into<Vec<SourceError>>>(
         recovered: TokenKind<'a>,
         errors: T,
     ) -> Self {
@@ -101,13 +102,17 @@ impl Display for TokenKind<'_> {
             }
             Self::InterpolatedString(s, e) => {
                 write!(f, "{STRING}\"")?;
-                for (s, e) in s.iter().zip(e.iter()) {
-                    write!(f, "{}", s.escape_debug())?;
+                assert_eq!(s.len(), e.len() + 1, "Invalid string interpolation");
+                let mut s_iter = s.iter();
+                let first = s_iter.next().ok_or(std::fmt::Error)?;
+                write!(f, "{}", first.escape_debug())?;
+                for (s, e) in s_iter.zip(e.iter()) {
                     write!(
                         f,
                         "{RESET}{INTERPOLATED}${{{RESET}{}{INTERPOLATED}}}{RESET}{STRING}",
                         e
                     )?;
+                    write!(f, "{}", s.escape_debug())?;
                 }
                 write!(f, "\"{RESET}")
             }

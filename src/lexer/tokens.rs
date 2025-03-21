@@ -9,7 +9,9 @@ use winnow::error::{StrContext, StrContextValue};
 use winnow::prelude::*;
 use winnow::token::{any, one_of, take, take_until, take_while};
 
-use super::{Comment, Input, Keyword, Operator, Range, Token, TokenError, TokenKind, string};
+use crate::utils::{Range, SourceError};
+
+use super::{Comment, Input, Keyword, Operator, Token, TokenKind, string};
 
 fn line_comment<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
     ("//", till_line_ending, opt(line_ending))
@@ -97,7 +99,7 @@ fn number<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
                         let mut errors = vec![];
                         let num = if s.chars().all(is_valid_char) {
                             if s.is_empty() {
-                                errors.push(TokenError::new(
+                                errors.push(SourceError::new(
                                     r.clone(),
                                     "No valid digits for number literal",
                                 ));
@@ -114,14 +116,14 @@ fn number<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
                                     let mut range = r.clone();
                                     range.start += i + 2;
                                     range.end = range.start + c.len_utf8();
-                                    errors.push(TokenError::new(
+                                    errors.push(SourceError::new(
                                         range,
                                         "Invalid character in number literal",
                                     ));
                                 }
                             }
                             if num.is_empty() {
-                                errors.push(TokenError::new(
+                                errors.push(SourceError::new(
                                     r.clone(),
                                     "No valid digits for number literal",
                                 ));
@@ -131,13 +133,13 @@ fn number<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
                         .unwrap_or_default();
                         let float = num.to_f64().unwrap();
                         if ends_with_underscore {
-                            errors.push(TokenError::new(
+                            errors.push(SourceError::new(
                                 r.clone(),
                                 "Number literal cannot end with underscore",
                             ));
                         }
                         if float.is_infinite() {
-                            errors.push(TokenError::new(r, "Number literal is too large"));
+                            errors.push(SourceError::new(r, "Number literal is too large"));
                         }
                         if !errors.is_empty() {
                             TokenKind::unknown_errors(TokenKind::Number(float), errors)
@@ -240,7 +242,7 @@ pub(super) fn token<'a>(
         eof.map(|_|TokenKind::Eof),
         any.span().map(|range| TokenKind::Unknown {
             recovered: None,
-            errors: vec![TokenError::new(range, "Unknown token")],
+            errors: vec![SourceError::new(range, "Unknown token")],
         }),
     ))
     .with_span()

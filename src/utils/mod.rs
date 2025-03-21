@@ -1,16 +1,16 @@
 use std::borrow::Cow;
 
-use super::Range;
+pub type Range = std::ops::Range<usize>;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct TokenError {
+pub struct SourceError {
     pub range: Range,
     pub error: Cow<'static, str>,
 }
 
-impl TokenError {
+impl SourceError {
     pub fn new<E: Into<Cow<'static, str>>>(range: Range, error: E) -> Self {
-        TokenError {
+        SourceError {
             range,
             error: error.into(),
         }

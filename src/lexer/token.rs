@@ -1,6 +1,8 @@
 use std::{borrow::Cow, fmt::Display};
 
-use super::{Range, TokenError, TokenKind};
+use crate::utils::{Range, SourceError};
+
+use super::TokenKind;
 
 #[derive(Debug, Clone, Eq)]
 pub struct Token<'a> {
@@ -31,10 +33,10 @@ impl<'a> Token<'a> {
         }
     }
 
-    pub(crate) fn unknown_errors<T: Into<Vec<TokenError>>>(
+    pub(crate) fn unknown_errors<E: Into<Vec<SourceError>>>(
         range: Range,
         recovered: TokenKind<'a>,
-        errors: T,
+        errors: E,
     ) -> Self {
         Token {
             range,

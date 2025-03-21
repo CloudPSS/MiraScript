@@ -1,16 +1,17 @@
-use std::borrow::Cow;
+use std::{borrow::Cow, ops::Deref};
 
 use winnow::{
-    combinator::{alt, dispatch, eof, fail, repeat},
+    combinator::{alt, dispatch, eof, fail, peek, repeat, seq, terminated},
     error::{ContextError, ErrMode},
     prelude::*,
     stream::{AsChar, Stream},
-    token::{any, one_of, take, take_till, take_while},
+    token::{any, literal, one_of, take, take_till, take_until, take_while},
 };
 
 use crate::{
-    lexer::{Input, Operator, Range, Token, TokenError, TokenKind},
+    lexer::{Input, Operator, Token, TokenKind},
     parser::{Expression, expression, to_input},
+    utils::{Range, SourceError},
 };
 
 use super::lex_balanced;
@@ -40,7 +41,7 @@ pub(super) fn string<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
     }
     let mut errors = vec![];
     if let Ok(r) = unterminated {
-        errors.push(TokenError::new(r, "Unterminated string"));
+        errors.push(SourceError::new(r, "Unterminated string"));
     }
     let has_interpolation = content
         .iter()
@@ -52,7 +53,7 @@ pub(super) fn string<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
         let s = &i[range.clone()];
         i.reset(&cp);
         range.start -= 1;
-        errors.push(TokenError::new(range, "Invalid escape sequence"));
+        errors.push(SourceError::new(range, "Invalid escape sequence"));
         Cow::Borrowed(s)
     };
     let token = if has_interpolation {
@@ -182,30 +183,48 @@ fn interpolation<'a>(i: &mut Input<'a>) -> ModalResult<StringFragment<'a>> {
     let cp = i.checkpoint();
 
     // lex until '}'
-    let tokens = match lex_balanced(i, true, Operator::OpenBrace, Operator::CloseBrace) {
+    let mut tokens = match lex_balanced(i, true, Operator::OpenBrace, Operator::CloseBrace) {
         Ok(tokens) => tokens,
         Err(e) => {
             i.reset(&cp);
             return Err(e);
         }
     };
-    let mut token_input = to_input(tokens.as_slice());
-    let expr = match expression.parse_next(&mut token_input) {
-        Ok(expr) => expr,
-        Err(e) => {
-            i.reset(&cp);
-            return Err(e);
+    println!("input: {:?}", tokens);
+    let expr: ModalResult<Expression<'_>> = {
+        let mut token_input = to_input(tokens.as_slice());
+        seq!(
+            expression,
+            _: one_of(|t: &Token<'a>| *t == Operator::CloseBrace || *t == TokenKind::Eof),
+            _: eof,
+        )
+        .map(|(e,)| e)
+        .parse_next(&mut token_input)
+    };
+    let (expr, next) = match expr {
+        Ok(expr) => (expr, tokens.pop().unwrap()),
+        Err(_) => {
+            let last_token = tokens.pop().unwrap();
+            let error = if last_token == TokenKind::Eof {
+                "Unterminated interpolation expression"
+            } else if tokens.is_empty() {
+                "Empty interpolation expression"
+            } else {
+                "Bad interpolation expression"
+            };
+            let expr = if tokens.is_empty() {
+                let range = Range {
+                    start: last_token.range.start,
+                    end: last_token.range.start,
+                };
+                Expression::unknown_range(tokens, range, error)
+            } else {
+                Expression::unknown(tokens, error)
+            };
+            (expr, last_token)
         }
     };
-    let next_token =
-        match one_of(|t: &Token<'a>| *t == Operator::CloseBrace).parse_next(&mut token_input) {
-            Ok(token) => token,
-            Err(e) => {
-                i.reset(&cp);
-                return Err(e);
-            }
-        };
     i.reset_to_start();
-    take(next_token.range.end).parse_next(i)?;
+    take(next.range.end).parse_next(i)?;
     Ok(StringFragment::Interpolation(expr))
 }

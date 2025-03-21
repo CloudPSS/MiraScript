@@ -3,7 +3,8 @@ use winnow::error::{ContextError, ErrMode};
 use winnow::prelude::*;
 use winnow::token::{any, literal, one_of};
 
-use crate::lexer::{Keyword, Operator, Range, Token, TokenKind};
+use crate::lexer::{Keyword, Operator, Token, TokenKind};
+use crate::utils::Range;
 
 use super::block_expressions::block_like_expression;
 use super::expressions::expression;

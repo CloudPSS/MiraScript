@@ -5,7 +5,6 @@ mod keyword;
 mod operator;
 mod string;
 mod token;
-mod token_error;
 mod token_kind;
 mod tokens;
 
@@ -13,11 +12,9 @@ pub use comment::Comment;
 pub use keyword::Keyword;
 pub use operator::Operator;
 pub use token::Token;
-pub use token_error::TokenError;
 pub use token_kind::TokenKind;
 
 pub type Input<'a> = LocatingSlice<&'a str>;
-pub type Range = std::ops::Range<usize>;
 
 pub fn to_input(text: &str) -> Input<'_> {
     LocatingSlice::new(text)
