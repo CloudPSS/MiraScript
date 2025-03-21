@@ -8,7 +8,7 @@ use super::statements::statement;
 use super::{Expression, Input};
 use crate::lexer::{Keyword, Operator, Token};
 
-pub(super) fn if_expression<'t, 'a: 't>(i: &mut Input<'t, 'a>) -> ModalResult<Expression<'a>> {
+pub(super) fn if_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
     seq!(Expression::If(
         _: literal(Keyword::If),
         expression.map(Box::new),
@@ -21,7 +21,7 @@ pub(super) fn if_expression<'t, 'a: 't>(i: &mut Input<'t, 'a>) -> ModalResult<Ex
     .parse_next(i)
 }
 
-pub(super) fn block_expression<'t, 'a: 't>(i: &mut Input<'t, 'a>) -> ModalResult<Expression<'a>> {
+pub(super) fn block_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
     seq!(Expression::Block(
         _: literal(Operator::OpenBrace),
         repeat(0.., statement),
@@ -31,7 +31,7 @@ pub(super) fn block_expression<'t, 'a: 't>(i: &mut Input<'t, 'a>) -> ModalResult
     .parse_next(i)
 }
 
-pub(super) fn fn_expression<'t, 'a: 't>(i: &mut Input<'t, 'a>) -> ModalResult<Expression<'a>> {
+pub(super) fn fn_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
     seq!(Expression::Function(
         _: literal(Keyword::Fn),
         parameter_list,
@@ -40,7 +40,7 @@ pub(super) fn fn_expression<'t, 'a: 't>(i: &mut Input<'t, 'a>) -> ModalResult<Ex
     .parse_next(i)
 }
 
-pub(super) fn loop_expression<'t, 'a: 't>(i: &mut Input<'t, 'a>) -> ModalResult<Expression<'a>> {
+pub(super) fn loop_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
     seq!(Expression::Loop(
         _: literal(Keyword::Loop),
         block_expression.map(Box::new),
@@ -48,7 +48,7 @@ pub(super) fn loop_expression<'t, 'a: 't>(i: &mut Input<'t, 'a>) -> ModalResult<
     .parse_next(i)
 }
 
-pub(super) fn while_expression<'t, 'a: 't>(i: &mut Input<'t, 'a>) -> ModalResult<Expression<'a>> {
+pub(super) fn while_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
     seq!(Expression::While(
         _: literal(Keyword::While),
         expression.map(Box::new),
@@ -57,7 +57,7 @@ pub(super) fn while_expression<'t, 'a: 't>(i: &mut Input<'t, 'a>) -> ModalResult
     .parse_next(i)
 }
 
-pub(super) fn match_expression<'t, 'a: 't>(i: &mut Input<'t, 'a>) -> ModalResult<Expression<'a>> {
+pub(super) fn match_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
     seq!(Expression::Match(
         _: literal(Keyword::Match),
         expression.map(Box::new),
@@ -77,7 +77,7 @@ pub(super) fn match_expression<'t, 'a: 't>(i: &mut Input<'t, 'a>) -> ModalResult
     .parse_next(i)
 }
 
-pub(super) fn for_in_expression<'t, 'a: 't>(i: &mut Input<'t, 'a>) -> ModalResult<Expression<'a>> {
+pub(super) fn for_in_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
     seq!(Expression::ForIn(
         _: literal(Keyword::For),
         variable_token(true, false).map(Box::new),
@@ -88,9 +88,7 @@ pub(super) fn for_in_expression<'t, 'a: 't>(i: &mut Input<'t, 'a>) -> ModalResul
     .parse_next(i)
 }
 
-pub(super) fn block_like_expression<'t, 'a: 't>(
-    i: &mut Input<'t, 'a>,
-) -> ModalResult<Expression<'a>> {
+pub(super) fn block_like_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
     dispatch! {peek(any);
         t if *t == Operator::OpenBrace => block_expression,
         t if *t == Keyword::If => if_expression,

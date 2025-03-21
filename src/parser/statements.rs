@@ -9,7 +9,7 @@ use crate::lexer::{Keyword, Operator, Token};
 
 use super::{Input, Statement};
 
-fn expression_statement<'t, 'a: 't>(i: &mut Input<'t, 'a>) -> ModalResult<Statement<'a>> {
+fn expression_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {
     seq!(Statement::Expression(
         expression.map(Box::new),
         _: literal(Operator::Semicolon),
@@ -17,13 +17,13 @@ fn expression_statement<'t, 'a: 't>(i: &mut Input<'t, 'a>) -> ModalResult<Statem
     .parse_next(i)
 }
 
-fn empty_statement<'t, 'a: 't>(i: &mut Input<'t, 'a>) -> ModalResult<Statement<'a>> {
+fn empty_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {
     literal(Operator::Semicolon)
         .map(|_| Statement::Empty)
         .parse_next(i)
 }
 
-fn fn_statement<'t, 'a: 't>(i: &mut Input<'t, 'a>) -> ModalResult<Statement<'a>> {
+fn fn_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {
     seq!(Statement::Function(
         _: literal(Keyword::Fn),
         variable_token(false, false).map(Box::new),
@@ -33,7 +33,7 @@ fn fn_statement<'t, 'a: 't>(i: &mut Input<'t, 'a>) -> ModalResult<Statement<'a>>
     .parse_next(i)
 }
 
-fn return_statement<'t, 'a: 't>(i: &mut Input<'t, 'a>) -> ModalResult<Statement<'a>> {
+fn return_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {
     seq!(Statement::Return(
         _: literal(Keyword::Return),
         opt(expression.map(Box::new)),
@@ -42,7 +42,7 @@ fn return_statement<'t, 'a: 't>(i: &mut Input<'t, 'a>) -> ModalResult<Statement<
     .parse_next(i)
 }
 
-fn break_statement<'t, 'a: 't>(i: &mut Input<'t, 'a>) -> ModalResult<Statement<'a>> {
+fn break_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {
     seq!(Statement::Break(
         _: literal(Keyword::Break),
         opt(expression.map(Box::new)),
@@ -51,13 +51,13 @@ fn break_statement<'t, 'a: 't>(i: &mut Input<'t, 'a>) -> ModalResult<Statement<'
     .parse_next(i)
 }
 
-fn continue_statement<'t, 'a: 't>(i: &mut Input<'t, 'a>) -> ModalResult<Statement<'a>> {
+fn continue_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {
     (literal(Keyword::Continue), literal(Operator::Semicolon))
         .map(|_| Statement::Continue)
         .parse_next(i)
 }
 
-fn bind_statement<'t, 'a: 't>(i: &mut Input<'t, 'a>) -> ModalResult<Statement<'a>> {
+fn bind_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {
     seq!(Statement::Bind(
         one_of(|t: &Token<'a>| *t == Keyword::Var || *t == Keyword::Val).map(|t: &Token<'a>| Box::new(t.to_owned())),
         variable_token(false, false).map(Box::new),
@@ -68,7 +68,7 @@ fn bind_statement<'t, 'a: 't>(i: &mut Input<'t, 'a>) -> ModalResult<Statement<'a
     .parse_next(i)
 }
 
-fn rebind_assign_statement<'t, 'a: 't>(i: &mut Input<'t, 'a>) -> ModalResult<Statement<'a>> {
+fn rebind_assign_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {
     let cp = i.checkpoint();
     let (left, right) = seq!((
         expression,
@@ -86,7 +86,7 @@ fn rebind_assign_statement<'t, 'a: 't>(i: &mut Input<'t, 'a>) -> ModalResult<Sta
     fail.parse_next(i)
 }
 
-pub(super) fn statement<'t, 'a: 't>(i: &mut Input<'t, 'a>) -> ModalResult<Statement<'a>> {
+pub(super) fn statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {
     dispatch! {peek(any);
         t if *t == Operator::OpenBrace => block_expression.map(Box::new).map(Statement::BlockExpression),
         t if *t == Keyword::If => if_expression.map(Box::new).map(Statement::BlockExpression),

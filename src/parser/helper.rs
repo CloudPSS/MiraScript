@@ -7,7 +7,7 @@ use crate::lexer::{Keyword, Operator, Token, TokenKind};
 
 use super::Input;
 
-pub(super) fn parameter_list<'t, 'a:'t>(i: &mut Input<'t, 'a>) -> ModalResult<Option<Vec<Token<'a>>>> {
+pub(super) fn parameter_list<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Option<Vec<Token<'a>>>> {
     let t = peek(any).parse_next(i)?;
     if *t != Operator::OpenParen {
         return Ok(None);
@@ -42,7 +42,7 @@ pub(super) fn parameter_list<'t, 'a:'t>(i: &mut Input<'t, 'a>) -> ModalResult<Op
     .parse_next(i)
 }
 
-pub(super) fn literal_token<'t, 'a:'t>(i: &mut Input<'t, 'a>) -> ModalResult<Token<'a>> {
+pub(super) fn literal_token<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Token<'a>> {
     one_of(|t: &Token<'a>| {
         matches!(&t.kind, &TokenKind::Number(_))
             || matches!(&t.kind, &TokenKind::String(_))
@@ -54,7 +54,7 @@ pub(super) fn literal_token<'t, 'a:'t>(i: &mut Input<'t, 'a>) -> ModalResult<Tok
     .parse_next(i)
 }
 
-pub(super) fn interpolation_token<'t, 'a:'t>(i: &mut Input<'t, 'a>) -> ModalResult<Token<'a>> {
+pub(super) fn interpolation_token<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Token<'a>> {
     one_of(|t: &Token<'a>| matches!(&t.kind, &TokenKind::InterpolatedString(_, _)))
         .map(|t: &Token<'a>| t.to_owned())
         .parse_next(i)

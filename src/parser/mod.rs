@@ -21,11 +21,11 @@ pub use statement::Statement;
 
 pub type Input<'t, 'a> = TokenSlice<'t, Token<'a>>;
 
-pub fn to_input<'t, 'a: 't>(tokens: &'t [Token<'a>]) -> Input<'t, 'a> {
+pub fn to_input<'t, 'a>(tokens: &'t [Token<'a>]) -> Input<'t, 'a> {
     TokenSlice::new(tokens)
 }
 
-pub fn parse<'t, 'a: 't>(i: &mut Input<'t, 'a>) -> ModalResult<Script<'a>> {
+pub fn parse<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Script<'a>> {
     let mut statements = vec![];
     loop {
         let token = peek(any).parse_next(i)?;

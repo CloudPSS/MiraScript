@@ -189,7 +189,7 @@ fn interpolation<'a>(i: &mut Input<'a>) -> ModalResult<StringFragment<'a>> {
             return Err(e);
         }
     };
-    let mut token_input = to_input::<'_, 'a>(tokens.as_slice());
+    let mut token_input = to_input(tokens.as_slice());
     let expr = match expression.parse_next(&mut token_input) {
         Ok(expr) => expr,
         Err(e) => {
