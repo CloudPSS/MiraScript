@@ -1,11 +1,11 @@
-use std::{borrow::Cow, ops::Deref};
+use std::borrow::Cow;
 
 use winnow::{
-    combinator::{alt, dispatch, eof, fail, peek, repeat, seq, terminated},
+    combinator::{alt, dispatch, eof, fail, repeat, seq},
     error::{ContextError, ErrMode},
     prelude::*,
     stream::{AsChar, Stream},
-    token::{any, literal, one_of, take, take_till, take_until, take_while},
+    token::{any, one_of, take, take_till, take_while},
 };
 
 use crate::{

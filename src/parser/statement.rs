@@ -9,9 +9,9 @@ pub enum Statement<'a> {
     /// `;`
     ///
     /// An empty statement.
-    Empty,
+    Empty(Box<Token<'a>>),
     /// `expression;`
-    Expression(Box<Expression<'a>>),
+    Expression(Box<Expression<'a>>, Box<Token<'a>>),
     /// `expression_ends_with_block`
     ///
     /// No trailing semicolon in this case. For expressions that end with a semicolon, use [Statement::Expression].
@@ -51,8 +51,8 @@ pub enum Statement<'a> {
 impl Display for Statement<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Statement::Empty => writeln!(f, ";"),
-            Statement::Expression(expr) => writeln!(f, "{};", expr),
+            Statement::Empty(s) => writeln!(f, "{}", s),
+            Statement::Expression(expr, s) => writeln!(f, "{}{}", expr, s),
             Statement::BlockExpression(expr) => writeln!(f, "{}", expr),
             Statement::Bind(keyword, id, expr) => writeln!(f, "{} {} = {};", keyword, id, expr),
             Statement::Rebind(id, expr) => writeln!(f, "{} = {};", id, expr),

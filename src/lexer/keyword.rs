@@ -46,6 +46,12 @@ pub enum Keyword {
     Resume,  // Reserved for future use
 }
 
+impl From<Keyword> for TokenKind<'_> {
+    fn from(kw: Keyword) -> Self {
+        TokenKind::Keyword(kw)
+    }
+}
+
 impl PartialEq<Token<'_>> for Keyword {
     fn eq(&self, other: &Token<'_>) -> bool {
         matches!(&other.kind, TokenKind::Keyword(kw) if kw == self)

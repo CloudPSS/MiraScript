@@ -296,9 +296,7 @@ fn comparison<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
         0..,
         (
             one_of(|t: &Token<'a>| {
-                *t == Operator::EqualEqual
-                    || *t == Operator::NotEqual
-                    || *t == Operator::Less
+                *t == Operator::Less
                     || *t == Operator::LessEqual
                     || *t == Operator::Greater
                     || *t == Operator::GreaterEqual
@@ -322,8 +320,6 @@ fn comparison<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
         } = t
         {
             match op {
-                Operator::EqualEqual => Expression::Equal(Box::new(acc), Box::new(exp)),
-                Operator::NotEqual => Expression::NotEqual(Box::new(acc), Box::new(exp)),
                 Operator::Less => Expression::Less(Box::new(acc), Box::new(exp)),
                 Operator::LessEqual => Expression::LessEqual(Box::new(acc), Box::new(exp)),
                 Operator::Greater => Expression::Greater(Box::new(acc), Box::new(exp)),
@@ -336,17 +332,50 @@ fn comparison<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
     }))
 }
 
-fn and<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
+fn equality<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
     let first = comparison.parse_next(i)?;
-    let ands: Vec<(&Token<'a>, Expression<'a>)> = repeat(
+    let eqs: Vec<(&Token<'a>, Expression<'a>)> = repeat(
         0..,
-        (one_of(|t: &Token<'a>| *t == Keyword::And), comparison),
+        (
+            one_of(|t: &Token<'a>| *t == Operator::EqualEqual || *t == Operator::NotEqual),
+            comparison,
+        ),
     )
     .fold(Vec::new, |mut v, t| {
         v.push(t);
         v
     })
     .parse_next(i)?;
+    if eqs.is_empty() {
+        return Ok(first);
+    }
+    // left-associative
+    Ok(eqs.into_iter().fold(first, |acc, (t, exp)| {
+        if let Token {
+            kind: TokenKind::Operator(op),
+            ..
+        } = t
+        {
+            match op {
+                Operator::EqualEqual => Expression::Equal(Box::new(acc), Box::new(exp)),
+                Operator::NotEqual => Expression::NotEqual(Box::new(acc), Box::new(exp)),
+                _ => unreachable!(),
+            }
+        } else {
+            unreachable!()
+        }
+    }))
+}
+
+fn and<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
+    let first = equality.parse_next(i)?;
+    let ands: Vec<(&Token<'a>, Expression<'a>)> =
+        repeat(0.., (one_of(|t: &Token<'a>| *t == Keyword::And), equality))
+            .fold(Vec::new, |mut v, t| {
+                v.push(t);
+                v
+            })
+            .parse_next(i)?;
     if ands.is_empty() {
         return Ok(first);
     }

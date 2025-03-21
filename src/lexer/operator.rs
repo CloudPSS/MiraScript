@@ -36,6 +36,12 @@ pub enum Operator {
     CloseBrace = '}' as isize,
 }
 
+impl From<Operator> for TokenKind<'_> {
+    fn from(op: Operator) -> Self {
+        TokenKind::Operator(op)
+    }
+}
+
 impl PartialEq<Token<'_>> for Operator {
     fn eq(&self, other: &Token<'_>) -> bool {
         matches!(&other.kind, TokenKind::Operator(op) if op == self)

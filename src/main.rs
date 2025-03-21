@@ -10,8 +10,10 @@ mod parser;
 mod utils;
 
 fn main() {
-    let text = r##"{var a =1;}
-    "__${12 + 1 + xx}""##;
+    let text = r##"{
+     a=1 let b =2 var c=3 d=5 val e=7 x
+    }
+    y"##;
 
     let mut input = lexer::to_input(text);
     let result = lexer::lex(&mut input, true).unwrap();
@@ -21,5 +23,5 @@ fn main() {
     let exp = parser::parse(&mut input);
 
     println!("{:?}", input.deref());
-    println!("{:#}", exp.unwrap());
+    println!("{:#}", exp.as_ref().unwrap());
 }

@@ -1,25 +1,46 @@
+use std::ops::Range;
+
 use winnow::combinator::{alt, dispatch, fail, opt, peek, seq};
 use winnow::prelude::*;
+use winnow::stream::Location;
 use winnow::token::{any, literal, one_of};
 
 use super::expressions::expression;
 use super::helper::{parameter_list, variable_token};
 use super::{Expression, block_expressions::*};
-use crate::lexer::{Keyword, Operator, Token};
+use crate::lexer::{Keyword, Operator, Token, TokenKind};
 
 use super::{Input, Statement};
+
+fn semicolon<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Token<'a>> {
+    let pos = Location::previous_token_end(i);
+    opt(one_of(|t: &Token<'a>| *t == Operator::Semicolon))
+        .map(|t: Option<&Token<'a>>| match t {
+            Some(t) => t.to_owned(),
+            None => Token::unknown(
+                Range {
+                    start: pos,
+                    end: pos,
+                },
+                Operator::Semicolon,
+                "Missing semicolon",
+            ),
+        })
+        .parse_next(i)
+}
 
 fn expression_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {
     seq!(Statement::Expression(
         expression.map(Box::new),
-        _: literal(Operator::Semicolon),
+        _: peek(one_of(|t: &Token<'a>| *t != Operator::CloseBrace && *t != TokenKind::Eof)),
+        semicolon.map(Box::new)
     ))
     .parse_next(i)
 }
 
 fn empty_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {
-    literal(Operator::Semicolon)
-        .map(|_| Statement::Empty)
+    one_of(|t: &Token<'a>| *t == Operator::Semicolon)
+        .map(|t: &Token<'a>| Statement::Empty(Box::new(t.to_owned())))
         .parse_next(i)
 }
 
@@ -37,7 +58,7 @@ fn return_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {
     seq!(Statement::Return(
         _: literal(Keyword::Return),
         opt(expression.map(Box::new)),
-        _: literal(Operator::Semicolon),
+        _: semicolon,
     ))
     .parse_next(i)
 }
@@ -46,13 +67,13 @@ fn break_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {
     seq!(Statement::Break(
         _: literal(Keyword::Break),
         opt(expression.map(Box::new)),
-        _: literal(Operator::Semicolon),
+        _: semicolon,
     ))
     .parse_next(i)
 }
 
 fn continue_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {
-    (literal(Keyword::Continue), literal(Operator::Semicolon))
+    (literal(Keyword::Continue), semicolon)
         .map(|_| Statement::Continue)
         .parse_next(i)
 }
@@ -63,7 +84,7 @@ fn bind_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {
         variable_token(false, false).map(Box::new),
         _: literal(Operator::Equal),
         expression.map(Box::new),
-        _: literal(Operator::Semicolon),
+        _: semicolon,
     ))
     .parse_next(i)
 }
@@ -74,7 +95,7 @@ fn rebind_assign_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'
         expression,
         _: literal(Operator::Equal),
         expression.map(Box::new),
-        _: literal(Operator::Semicolon),
+        _: semicolon,
     ))
     .parse_next(i)?;
     if let Expression::Variable(id) = left {

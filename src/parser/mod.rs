@@ -1,7 +1,7 @@
-use winnow::combinator::{opt, peek, repeat, seq};
+use winnow::combinator::{opt, repeat, seq};
 use winnow::prelude::*;
 use winnow::stream::TokenSlice;
-use winnow::token::{any, literal};
+use winnow::token::literal;
 
 use crate::lexer::{Token, TokenKind};
 

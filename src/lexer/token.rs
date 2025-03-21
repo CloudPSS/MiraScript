@@ -1,5 +1,7 @@
 use std::{borrow::Cow, fmt::Display};
 
+use winnow::stream::Location;
+
 use crate::utils::{Range, SourceError};
 
 use super::TokenKind;
@@ -10,10 +12,20 @@ pub struct Token<'a> {
     pub range: Range,
 }
 
+impl Location for Token<'_> {
+    fn current_token_start(&self) -> usize {
+        self.range.start
+    }
+
+    fn previous_token_end(&self) -> usize {
+        self.range.end
+    }
+}
+
 impl<'a> Token<'a> {
-    pub(crate) fn unknown<E: Into<Cow<'static, str>>>(
+    pub(crate) fn unknown<E: Into<Cow<'static, str>>, R: Into<TokenKind<'a>>>(
         range: Range,
-        recovered: TokenKind<'a>,
+        recovered: R,
         error: E,
     ) -> Self {
         Token {
@@ -21,9 +33,9 @@ impl<'a> Token<'a> {
             kind: TokenKind::unknown_range(recovered, range, error),
         }
     }
-    pub(crate) fn unknown_range<E: Into<Cow<'static, str>>>(
+    pub(crate) fn unknown_range<E: Into<Cow<'static, str>>, R: Into<TokenKind<'a>>>(
         token_range: Range,
-        recovered: TokenKind<'a>,
+        recovered: R,
         error_range: Range,
         error: E,
     ) -> Self {
@@ -33,9 +45,9 @@ impl<'a> Token<'a> {
         }
     }
 
-    pub(crate) fn unknown_errors<E: Into<Vec<SourceError>>>(
+    pub(crate) fn unknown_errors<E: Into<Vec<SourceError>>, R: Into<TokenKind<'a>>>(
         range: Range,
-        recovered: TokenKind<'a>,
+        recovered: R,
         errors: E,
     ) -> Self {
         Token {

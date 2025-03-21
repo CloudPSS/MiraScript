@@ -24,23 +24,23 @@ pub enum TokenKind<'a> {
 }
 
 impl<'a> TokenKind<'a> {
-    pub(crate) fn unknown_range<E: Into<Cow<'static, str>>>(
-        recovered: TokenKind<'a>,
+    pub(crate) fn unknown_range<E: Into<Cow<'static, str>>, R: Into<TokenKind<'a>>>(
+        recovered: R,
         error_range: Range,
         error: E,
     ) -> Self {
         TokenKind::Unknown {
-            recovered: Some(Box::new(recovered)),
+            recovered: Some(Box::new(recovered.into())),
             errors: vec![SourceError::new(error_range, error)],
         }
     }
 
-    pub(crate) fn unknown_errors<T: Into<Vec<SourceError>>>(
-        recovered: TokenKind<'a>,
-        errors: T,
+    pub(crate) fn unknown_errors<E: Into<Vec<SourceError>>, R: Into<TokenKind<'a>>>(
+        recovered: R,
+        errors: E,
     ) -> Self {
         TokenKind::Unknown {
-            recovered: Some(Box::new(recovered)),
+            recovered: Some(Box::new(recovered.into())),
             errors: errors.into(),
         }
     }
