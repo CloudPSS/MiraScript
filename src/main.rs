@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::ops::Deref;
 
 mod analyzer;
@@ -9,16 +11,16 @@ mod parser;
 fn main() {
     let text = r##"fn main {
        var a = "${x} + ${y} = ${x + "${z}"}"; // comment
-       /*
+       /**/
     }"##;
 
     let mut input = lexer::to_input(text);
-    let result = lexer::lex(&mut input, false).unwrap();
+    let result = lexer::lex(&mut input, true).unwrap();
     println!("{:?}", result);
 
     let mut input = parser::to_input(&result);
     let exp = parser::parse(&mut input);
 
-    println!("{:?}", input.input.deref());
+    println!("{:?}", input.deref());
     println!("{:#}", exp.unwrap());
 }

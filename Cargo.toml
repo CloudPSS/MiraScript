@@ -8,4 +8,4 @@ unicode-ident = "1.0"
 num-bigint = "0.4"
 num-traits = "0.2"
 anstyle = "1.0"
-winnow = { version = "0.7", features = [] }
+winnow = { version = "0.7", features = ["unstable-recover"] }

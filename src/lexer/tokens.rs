@@ -25,7 +25,8 @@ fn block_comment<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
             repeat(0.., any)
                 .fold(|| (), |_: (), _| ())
                 .span()
-                .map(|r: Range| {
+                .map(|mut r: Range| {
+                    r.start = r.end;
                     TokenKind::unknown_range(
                         TokenKind::Comment(Comment::Block),
                         r,

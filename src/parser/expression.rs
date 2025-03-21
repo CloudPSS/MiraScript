@@ -1,6 +1,143 @@
 use std::fmt::{self, Display, Formatter};
 
-use super::{Expression, Script, Statement};
+use crate::lexer::Token;
+
+use super::Statement;
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Expression<'a> {
+    // primary
+    /// literal | 'true' | 'false' | 'nil'
+    Literal(Box<Token<'a>>),
+    /// interpolated_string
+    ///
+    /// Holds a [crate::lexer::TokenKind::InterpolatedString].
+    InterpolatedString(Box<Token<'a>>),
+    /// identifier
+    Variable(Box<Token<'a>>),
+    /// `(` expression `)`
+    Grouping(Box<Expression<'a>>),
+    /// `(` expression (`,` expression)* `)`
+    ///
+    /// Use `()` for an empty tuple.
+    ///
+    /// For a single-element tuple, use `(expression,)`.
+    Tuple(Vec<Expression<'a>>),
+    /// `(` name `:` expression (`,` name `:` expression)* `)`
+    ///
+    /// Name should be an identifier or an ordinal.
+    ///
+    /// All elements must be named or unnamed.
+    NamedTuple(Vec<(Token<'a>, Expression<'a>)>),
+    /// `[` expression (`,` expression)* `]`
+    ///
+    /// Use `[]` for an empty list.
+    Array(Vec<Expression<'a>>),
+
+    // function
+    /// expression `(` arguments `)`
+    ///
+    /// Arguments are a list of expressions, trailing comma is optional.
+    Call(Box<Expression<'a>>, Vec<Expression<'a>>),
+    /// expression `.` field
+    ///
+    /// Field must be an identifier or an ordinal.
+    Access(Box<Expression<'a>>, Box<Token<'a>>),
+
+    // unary
+    /// `not` expression
+    Not(Box<Expression<'a>>),
+    /// `-` expression
+    Negate(Box<Expression<'a>>),
+    /// `+` expression
+    Plus(Box<Expression<'a>>),
+
+    // exponent
+    /// expression `^` expression
+    Exponent(Box<Expression<'a>>, Box<Expression<'a>>),
+
+    // factor
+    /// expression `*` expression
+    Multiply(Box<Expression<'a>>, Box<Expression<'a>>),
+    /// expression `/` expression
+    Divide(Box<Expression<'a>>, Box<Expression<'a>>),
+    /// expression `%` expression
+    Modulo(Box<Expression<'a>>, Box<Expression<'a>>),
+
+    // term
+    /// expression `+` expression
+    Add(Box<Expression<'a>>, Box<Expression<'a>>),
+    /// expression `-` expression
+    Subtract(Box<Expression<'a>>, Box<Expression<'a>>),
+
+    // comparison
+    /// expression `==` expression
+    Equal(Box<Expression<'a>>, Box<Expression<'a>>),
+    /// expression `!=` expression
+    NotEqual(Box<Expression<'a>>, Box<Expression<'a>>),
+    /// expression `<` expression
+    Less(Box<Expression<'a>>, Box<Expression<'a>>),
+    /// expression `<=` expression
+    LessEqual(Box<Expression<'a>>, Box<Expression<'a>>),
+    /// expression `>` expression
+    Greater(Box<Expression<'a>>, Box<Expression<'a>>),
+    /// expression `>=` expression
+    GreaterEqual(Box<Expression<'a>>, Box<Expression<'a>>),
+
+    // and
+    /// expression `and` expression
+    And(Box<Expression<'a>>, Box<Expression<'a>>),
+
+    // or
+    /// expression `or` expression
+    Or(Box<Expression<'a>>, Box<Expression<'a>>),
+
+    // block-like
+    /// `{` statements* expression? `}`
+    ///
+    /// The value of the block is the value of the last expression.
+    /// If no expression is present, the value is `nil`.
+    Block(Vec<Statement<'a>>, Option<Box<Expression<'a>>>),
+    /// `loop` block_expression
+    ///
+    /// The final expression of the block must not present.
+    ///
+    /// The value of the block is the expression of the `break` statement if present. Otherwise, `nil`.
+    Loop(Box<Expression<'a>>),
+    /// `while` expression block_expression
+    ///
+    /// The final expression of the block must not present.
+    ///
+    /// The value of the block is `nil`.
+    While(Box<Expression<'a>>, Box<Expression<'a>>),
+    /// `for` identifier `in` expression block_expression
+    ///
+    /// The final expression of the block must not present.
+    ///
+    /// The value of the block is `nil`.
+    ForIn(Box<Token<'a>>, Box<Expression<'a>>, Box<Expression<'a>>),
+    /// `if` expression block_expression (`else` expression)?
+    ///
+    /// The `then_block` is a block expression.
+    ///
+    /// The `else_block` is a block expression or an if expression.
+    If(
+        Box<Expression<'a>>,
+        Box<Expression<'a>>,
+        Option<Box<Expression<'a>>>,
+    ),
+    /// `match` expression `{` ((literal | '_') block_expression)* `}`
+    ///
+    /// The value of the block is the value of the matched expression.
+    ///
+    /// If no match is found, the value is `nil`.
+    Match(Box<Expression<'a>>, Vec<(Expression<'a>, Expression<'a>)>),
+    /// `fn` (parameters) block_expression
+    ///
+    /// Just like function declarations, but without the identifier.
+    /// See [Statement::Function] for more details.
+    Function(Option<Vec<Token<'a>>>, Box<Expression<'a>>),
+}
 
 impl Display for Expression<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
@@ -132,44 +269,5 @@ impl Display for Expression<'_> {
                 write!(f, ") {}", block)
             }
         }
-    }
-}
-
-impl Display for Statement<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            Statement::Empty => writeln!(f, ";"),
-            Statement::Expression(expr) => writeln!(f, "{};", expr),
-            Statement::BlockExpression(expr) => writeln!(f, "{}", expr),
-            Statement::Bind(keyword, id, expr) => writeln!(f, "{} {} = {};", keyword, id, expr),
-            Statement::Rebind(id, expr) => writeln!(f, "{} = {};", id, expr),
-            Statement::Assign(exp, id, expr) => writeln!(f, "{}.{} = {};", exp, id, expr),
-            Statement::Function(id, None, body) => write!(f, "fn {} {}", id, body),
-            Statement::Function(id, Some(params), body) => {
-                write!(f, "fn {} (", id)?;
-                let mut iter = params.iter();
-                if let Some(param) = iter.next() {
-                    write!(f, "{}", param)?;
-                    for param in iter {
-                        write!(f, ", {}", param)?;
-                    }
-                }
-                write!(f, ") {}", body)
-            }
-            Statement::Return(Some(expr)) => writeln!(f, "return {};", expr),
-            Statement::Return(None) => writeln!(f, "return;"),
-            Statement::Break(Some(expr)) => writeln!(f, "break {};", expr),
-            Statement::Break(None) => writeln!(f, "break;"),
-            Statement::Continue => writeln!(f, "continue;"),
-        }
-    }
-}
-
-impl Display for Script<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        for statement in self.iter() {
-            write!(f, "{}", statement)?;
-        }
-        Ok(())
     }
 }

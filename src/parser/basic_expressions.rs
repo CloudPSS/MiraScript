@@ -8,29 +8,29 @@ use crate::lexer::{Keyword, Operator, Range, Token, TokenKind};
 use super::block_expressions::block_like_expression;
 use super::expressions::expression;
 use super::helper::{interpolation_token, literal_token, variable_token};
-use super::{Expression, Input, TokenRef};
+use super::{Expression, Input};
 
 struct TupleLikePart<'a> {
-    name: Option<TokenRef<'a>>,
+    name: Option<Token<'a>>,
     value: Expression<'a>,
     range: Range,
     tail_comma: bool,
 }
 
-fn tuple_like_part<'a, V>(
+fn tuple_like_part<'t, 'a: 't, V>(
     close: V,
-) -> impl Parser<Input<'a>, TupleLikePart<'a>, ErrMode<ContextError>>
+) -> impl Parser<Input<'t, 'a>, TupleLikePart<'a>, ErrMode<ContextError>>
 where
     Token<'a>: PartialEq<V> + PartialEq + PartialEq<Operator>,
 {
-    move |i: &mut Input<'a>| {
+    move |i: &mut Input<'t, 'a>| {
         let first = peek(any).parse_next(i)?;
         if *first == close {
             return fail.parse_next(i);
         }
         (
             opt(terminated(
-                one_of(|t: TokenRef<'a>| {
+                one_of(|t: &Token<'a>| {
                     matches!(
                         t.kind,
                         TokenKind::Identifier(_) | TokenKind::Ordinal(_) | TokenKind::Number(_)
@@ -50,7 +50,7 @@ where
                 let mut range = taken[0].range.clone();
                 range.end = tail[0].range.start;
                 TupleLikePart {
-                    name,
+                    name: name.cloned(),
                     value: exp,
                     range,
                     tail_comma,
@@ -60,7 +60,7 @@ where
     }
 }
 
-fn tuple_like<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
+fn tuple_like<'t, 'a: 't>(i: &mut Input<'t, 'a>) -> ModalResult<Expression<'a>> {
     let next = peek(any).parse_next(i)?;
     if *next == Operator::CloseParen {
         any.parse_next(i)?;
@@ -68,7 +68,7 @@ fn tuple_like<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
     }
     let parts: Vec<TupleLikePart<'a>> =
         repeat(1.., tuple_like_part(Operator::CloseParen)).parse_next(i)?;
-    one_of(|t: TokenRef<'a>| *t == Operator::CloseParen).parse_next(i)?;
+    one_of(|t: &Token<'a>| *t == Operator::CloseParen).parse_next(i)?;
     if parts.len() == 1 {
         let part = parts.into_iter().next().unwrap();
         if let Some(name) = part.name {
@@ -85,7 +85,7 @@ fn tuple_like<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
         ));
     }
 
-    let mut items: Vec<(TokenRef<'a>, Expression<'a>)> = Vec::new();
+    let mut items: Vec<(Token<'a>, Expression<'a>)> = Vec::new();
     for (pos, part) in parts.into_iter().enumerate() {
         if let Some(name) = part.name {
             items.push((name, part.value));
@@ -99,13 +99,12 @@ fn tuple_like<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
             recovered,
             "All tuple elements must be named or unnamed",
         );
-        let name = i.state.add_token(token);
-        items.push((name, part.value));
+        items.push((token, part.value));
     }
     Ok(Expression::NamedTuple(items))
 }
 
-fn array<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
+fn array<'t, 'a: 't>(i: &mut Input<'t, 'a>) -> ModalResult<Expression<'a>> {
     let elements: Vec<Expression<'a>> = terminated(
         (
             repeat(0.., terminated(expression, literal(Operator::Comma))),
@@ -125,19 +124,23 @@ fn array<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
     Ok(Expression::Array(elements))
 }
 
-fn primary<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
+fn primary<'t, 'a: 't>(i: &mut Input<'t, 'a>) -> ModalResult<Expression<'a>> {
     (alt((
         block_like_expression,
-        literal_token.map(Expression::Literal),
-        interpolation_token.map(Expression::InterpolatedString),
-        variable_token(false, true).map(Expression::Variable),
+        literal_token.map(Box::new).map(Expression::Literal),
+        interpolation_token
+            .map(Box::new)
+            .map(Expression::InterpolatedString),
+        variable_token(false, true)
+            .map(Box::new)
+            .map(Expression::Variable),
         preceded(literal(Operator::OpenParen), tuple_like),
         preceded(literal(Operator::OpenBracket), array),
     )))
     .parse_next(i)
 }
 
-fn arg_list<'a>(i: &mut Input<'a>) -> ModalResult<Vec<Expression<'a>>> {
+fn arg_list<'t, 'a: 't>(i: &mut Input<'t, 'a>) -> ModalResult<Vec<Expression<'a>>> {
     terminated(
         (
             repeat(0.., terminated(expression, literal(Operator::Comma))),
@@ -156,10 +159,10 @@ fn arg_list<'a>(i: &mut Input<'a>) -> ModalResult<Vec<Expression<'a>>> {
     .parse_next(i)
 }
 
-fn function<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
+fn function<'t, 'a: 't>(i: &mut Input<'t, 'a>) -> ModalResult<Expression<'a>> {
     enum Function<'a> {
         Call(Vec<Expression<'a>>),
-        Access(TokenRef<'a>),
+        Access(Box<Token<'a>>),
     }
     let first = primary.parse_next(i)?;
     let functions: Vec<Function<'a>> = repeat(
@@ -168,9 +171,10 @@ fn function<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
             preceded(literal(Operator::OpenParen), arg_list).map(Function::Call),
             preceded(
                 literal(Operator::Dot),
-                one_of(|t: TokenRef<'a>| {
+                one_of(|t: &Token<'a>| {
                     matches!(t.kind, TokenKind::Identifier(_) | TokenKind::Ordinal(_))
-                }),
+                })
+                .map(|t: &Token<'a>| Box::new(t.to_owned())),
             )
             .map(Function::Access),
         )),
@@ -190,7 +194,7 @@ fn function<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
     }))
 }
 
-fn unary<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
+fn unary<'t, 'a: 't>(i: &mut Input<'t, 'a>) -> ModalResult<Expression<'a>> {
     dispatch! {peek(any);
         token if *token == Operator::Plus => seq!(Expression::Plus(_: any, unary.map(Box::new))),
         token if *token == Operator::Minus => seq!(Expression::Negate(_: any, unary.map(Box::new))),
@@ -200,7 +204,7 @@ fn unary<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
     .parse_next(i)
 }
 
-fn exponent<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
+fn exponent<'t, 'a: 't>(i: &mut Input<'t, 'a>) -> ModalResult<Expression<'a>> {
     let first = unary.parse_next(i)?;
     let mut exponents: Vec<Expression<'a>> = repeat(0.., preceded(literal(Operator::Caret), unary))
         .fold(Vec::new, |mut v, t| {
@@ -220,12 +224,12 @@ fn exponent<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
     }))
 }
 
-fn factor<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
+fn factor<'t, 'a: 't>(i: &mut Input<'t, 'a>) -> ModalResult<Expression<'a>> {
     let first = exponent.parse_next(i)?;
-    let factors: Vec<(TokenRef<'a>, Expression<'a>)> = repeat(
+    let factors: Vec<(&Token<'a>, Expression<'a>)> = repeat(
         0..,
         (
-            one_of(|t: TokenRef<'a>| {
+            one_of(|t: &Token<'a>| {
                 *t == Operator::Asterisk || *t == Operator::Slash || *t == Operator::Percent
             }),
             exponent,
@@ -256,12 +260,12 @@ fn factor<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
         }))
 }
 
-fn term<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
+fn term<'t, 'a: 't>(i: &mut Input<'t, 'a>) -> ModalResult<Expression<'a>> {
     let first = factor.parse_next(i)?;
-    let terms: Vec<(TokenRef<'a>, Expression<'a>)> = repeat(
+    let terms: Vec<(&Token<'a>, Expression<'a>)> = repeat(
         0..,
         (
-            one_of(|t: TokenRef<'a>| *t == Operator::Plus || *t == Operator::Minus),
+            one_of(|t: &Token<'a>| *t == Operator::Plus || *t == Operator::Minus),
             factor,
         ),
     )
@@ -285,12 +289,12 @@ fn term<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
         }))
 }
 
-fn comparison<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
+fn comparison<'t, 'a: 't>(i: &mut Input<'t, 'a>) -> ModalResult<Expression<'a>> {
     let first = term.parse_next(i)?;
-    let comparisons: Vec<(TokenRef<'a>, Expression<'a>)> = repeat(
+    let comparisons: Vec<(&Token<'a>, Expression<'a>)> = repeat(
         0..,
         (
-            one_of(|t: TokenRef<'a>| {
+            one_of(|t: &Token<'a>| {
                 *t == Operator::EqualEqual
                     || *t == Operator::NotEqual
                     || *t == Operator::Less
@@ -331,11 +335,11 @@ fn comparison<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
     }))
 }
 
-fn and<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
+fn and<'t, 'a: 't>(i: &mut Input<'t, 'a>) -> ModalResult<Expression<'a>> {
     let first = comparison.parse_next(i)?;
-    let ands: Vec<(TokenRef<'a>, Expression<'a>)> = repeat(
+    let ands: Vec<(&Token<'a>, Expression<'a>)> = repeat(
         0..,
-        (one_of(|t: TokenRef<'a>| *t == Keyword::And), comparison),
+        (one_of(|t: &Token<'a>| *t == Keyword::And), comparison),
     )
     .fold(Vec::new, |mut v, t| {
         v.push(t);
@@ -354,10 +358,10 @@ fn and<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
         }))
 }
 
-fn or<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
+fn or<'t, 'a: 't>(i: &mut Input<'t, 'a>) -> ModalResult<Expression<'a>> {
     let first = and.parse_next(i)?;
-    let ors: Vec<(TokenRef<'a>, Expression<'a>)> =
-        repeat(0.., (one_of(|t: TokenRef<'a>| *t == Keyword::Or), and))
+    let ors: Vec<(&Token<'a>, Expression<'a>)> =
+        repeat(0.., (one_of(|t: &Token<'a>| *t == Keyword::Or), and))
             .fold(Vec::new, |mut v, t| {
                 v.push(t);
                 v
@@ -373,6 +377,6 @@ fn or<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
     }))
 }
 
-pub(super) fn basic_expression<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
+pub(super) fn basic_expression<'t, 'a: 't>(i: &mut Input<'t, 'a>) -> ModalResult<Expression<'a>> {
     or.parse_next(i)
 }

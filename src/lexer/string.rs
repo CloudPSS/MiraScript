@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use winnow::{
-    combinator::{alt, dispatch, fail, repeat},
+    combinator::{alt, dispatch, eof, fail, repeat},
     error::{ContextError, ErrMode},
     prelude::*,
     stream::{AsChar, Stream},
@@ -13,7 +13,7 @@ use crate::{
     parser::{Expression, expression, to_input},
 };
 
-use super::lex;
+use super::lex_balanced;
 
 #[derive(Debug, Clone, PartialEq)]
 enum StringFragment<'a> {
@@ -28,21 +28,27 @@ pub(super) fn string<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
         .verify(|ch| *ch == '\'' || *ch == '"' || *ch == '`')
         .parse_next(i)?;
     let content: Vec<_> = repeat(0.., fragment(quote_begin)).parse_next(i)?;
-    let quote_end = any.verify(|ch| *ch == quote_begin).parse_next(i)?;
-    assert_eq!(quote_begin, quote_end);
+    let unterminated: ModalResult<_> = eof.span().parse_next(i);
+    if unterminated.is_err() {
+        let quote_end = any.verify(|ch| *ch == quote_begin).parse_next(i)?;
+        assert_eq!(quote_begin, quote_end);
+    }
     if content.len() == 1 {
         if let StringFragment::Literal(s) = content[0] {
             return Ok(TokenKind::String(Cow::Borrowed(s)));
         }
     }
     let mut errors = vec![];
+    if let Ok(r) = unterminated {
+        errors.push(TokenError::new(r, "Unterminated string"));
+    }
     let has_interpolation = content
         .iter()
         .any(|frag| matches!(frag, StringFragment::Interpolation(_)));
 
     let mut extract_invalid = |mut range: Range| {
         let cp = i.checkpoint();
-        i.input.reset_to_start();
+        i.reset_to_start();
         let s = &i[range.clone()];
         i.reset(&cp);
         range.start -= 1;
@@ -172,16 +178,18 @@ fn interpolation<'a>(i: &mut Input<'a>) -> ModalResult<StringFragment<'a>> {
     // next character must be '{'
     one_of('{').parse_next(i)?;
 
+    // save cp
     let cp = i.checkpoint();
-    let tokens = match lex(i, true) {
+
+    // lex until '}'
+    let tokens = match lex_balanced(i, true, Operator::OpenBrace, Operator::CloseBrace) {
         Ok(tokens) => tokens,
         Err(e) => {
             i.reset(&cp);
             return Err(e);
         }
     };
-    let tokens = i.state.add_tokens(tokens);
-    let mut token_input = to_input(tokens);
+    let mut token_input = to_input(tokens.as_slice());
     let expr = match expression.parse_next(&mut token_input) {
         Ok(expr) => expr,
         Err(e) => {
@@ -197,7 +205,7 @@ fn interpolation<'a>(i: &mut Input<'a>) -> ModalResult<StringFragment<'a>> {
                 return Err(e);
             }
         };
-    i.input.reset_to_start();
+    i.reset_to_start();
     take(next_token.range.end).parse_next(i)?;
     Ok(StringFragment::Interpolation(expr))
 }

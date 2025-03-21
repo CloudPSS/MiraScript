@@ -6,6 +6,6 @@ use super::{
     block_expressions::block_like_expression,
 };
 
-pub fn expression<'a>(i: &mut Input<'a>) -> ModalResult<Expression<'a>> {
+pub fn expression<'t, 'a:'t>(i: &mut Input<'t, 'a>) -> ModalResult<Expression<'a>> {
     alt((block_like_expression, basic_expression)).parse_next(i)
 }
