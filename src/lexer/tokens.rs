@@ -7,9 +7,9 @@ use winnow::ascii::{digit0, digit1, line_ending, till_line_ending};
 use winnow::combinator::{alt, cut_err, dispatch, eof, fail, opt, peek, preceded, repeat, trace};
 use winnow::error::{StrContext, StrContextValue};
 use winnow::prelude::*;
-use winnow::token::{any, one_of, take, take_until, take_while};
+use winnow::token::{any, literal, one_of, take, take_until, take_while};
 
-use crate::utils::{Range, SourceError};
+use crate::utils::{SourceError, SourceRange};
 
 use super::{Comment, Input, Keyword, Operator, Token, TokenKind, string};
 
@@ -27,7 +27,7 @@ fn block_comment<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
             repeat(0.., any)
                 .fold(|| (), |_: (), _| ())
                 .span()
-                .map(|mut r: Range| {
+                .map(|mut r: SourceRange| {
                     r.start = r.end;
                     TokenKind::unknown_range(
                         TokenKind::Comment(Comment::Block),
@@ -75,7 +75,7 @@ fn number<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
                 if is_identifier_continue(ch1) && ch1 != '_' && ch1 != 'e' && ch1 != 'E' =>
             {
                 (take_while(2.., is_identifier_continue).with_span().map(
-                    |(s, r): (&str, Range)| {
+                    |(s, r): (&str, SourceRange)| {
                         let ends_with_underscore = s.ends_with("_");
                         let radix;
                         let is_valid_char = if s.starts_with("0x") {
@@ -196,46 +196,65 @@ pub(super) fn token<'a>(
                 number
             },
             '"' | '\'' | '`' => string::string,
-            '+' => any.map(|_| TokenKind::Operator(Operator::Plus)),
-            '-' => any.map(|_| TokenKind::Operator(Operator::Minus)),
-            '^' => any.map(|_| TokenKind::Operator(Operator::Caret)),
-            '*' => any.map(|_| TokenKind::Operator(Operator::Asterisk)),
-            '%' => any.map(|_| TokenKind::Operator(Operator::Percent)),
+            '+' => any.value(TokenKind::Operator(Operator::Plus)),
+            '-' => any.value(TokenKind::Operator(Operator::Minus)),
+            '^' => any.value(TokenKind::Operator(Operator::Caret)),
+            '*' => any.value(TokenKind::Operator(Operator::Asterisk)),
+            '%' => any.value(TokenKind::Operator(Operator::Percent)),
             '=' => dispatch! {peek(opt(take(2usize)));
-                Some("==") => take(2usize).map(|_| TokenKind::Operator(Operator::EqualEqual)),
-                _ => any.map(|_| TokenKind::Operator(Operator::Equal)),
+                Some("==") => take(2usize).value(TokenKind::Operator(Operator::EqualEqual)),
+                _ => any.value(TokenKind::Operator(Operator::Equal)),
             },
             '!' => dispatch! {peek(opt(take(2usize)));
-                Some("!=") => take(2usize).map(|_| TokenKind::Operator(Operator::NotEqual)),
-                _ => fail,
+                Some("!=") => take(2usize).value(TokenKind::Operator(Operator::NotEqual)),
+                _ => any.value(TokenKind::Operator(Operator::LogicalNot)),
             },
             '>' => dispatch! {peek(opt(take(2usize)));
-                Some(">=") => take(2usize).map(|_| TokenKind::Operator(Operator::GreaterEqual)),
-                _ => any.map(|_| TokenKind::Operator(Operator::Greater)),
+                Some(">=") => take(2usize).value(TokenKind::Operator(Operator::GreaterEqual)),
+                Some(">.") => alt((
+                    literal(">..<").value(TokenKind::Operator(Operator::ExclusiveRange)),
+                    literal(">..").value(TokenKind::Operator(Operator::RightExclusiveRange)),
+                    any.value(TokenKind::Operator(Operator::Greater)),
+                )),
+                _ => any.value(TokenKind::Operator(Operator::Greater)),
             },
             '<' => dispatch! {peek(opt(take(2usize)));
-                Some("<=") => take(2usize).map(|_| TokenKind::Operator(Operator::LessEqual)),
-                _ => any.map(|_| TokenKind::Operator(Operator::Less)),
+                Some("<=") => take(2usize).value(TokenKind::Operator(Operator::LessEqual)),
+                Some("<|") => take(2usize).value(TokenKind::Operator(Operator::BackwardPipe)),
+                _ => any.value(TokenKind::Operator(Operator::Less)),
             },
-            '(' => any.map(|_| TokenKind::Operator(Operator::OpenParen)),
-            ')' => any.map(|_| TokenKind::Operator(Operator::CloseParen)),
-            '[' => any.map(|_| TokenKind::Operator(Operator::OpenBracket)),
-            ']' => any.map(|_| TokenKind::Operator(Operator::CloseBracket)),
-            ':' => any.map(|_| TokenKind::Operator(Operator::Colon)),
-            ',' => any.map(|_| TokenKind::Operator(Operator::Comma)),
+            '&' => dispatch! {peek(opt(take(2usize)));
+                Some("&&") => take(2usize).value(TokenKind::Operator(Operator::LogicalAnd)),
+                _ => fail,
+            },
+            '|' => dispatch! {peek(opt(take(2usize)));
+                Some("||") => take(2usize).value(TokenKind::Operator(Operator::LogicalOr)),
+                Some("|>") => take(2usize).value(TokenKind::Operator(Operator::ForwardPipe)),
+                _ => fail,
+            },
+            '(' => any.value(TokenKind::Operator(Operator::OpenParen)),
+            ')' => any.value(TokenKind::Operator(Operator::CloseParen)),
+            '[' => any.value(TokenKind::Operator(Operator::OpenBracket)),
+            ']' => any.value(TokenKind::Operator(Operator::CloseBracket)),
+            ':' => any.value(TokenKind::Operator(Operator::Colon)),
+            ',' => any.value(TokenKind::Operator(Operator::Comma)),
             '.' => dispatch! {peek(opt(take(2usize)));
-                Some("..") => take(2usize).map(|_| TokenKind::Operator(Operator::DotDot)),
-                _ => any.map(|_| TokenKind::Operator(Operator::Dot)),
+                Some("..") => dispatch! {peek(opt(take(3usize)));
+                    Some("...") => take(3usize).value(TokenKind::Operator(Operator::Spread)),
+                    Some("..<") => take(3usize).value(TokenKind::Operator(Operator::RightExclusiveRange)),
+                    _ => take(2usize).value(TokenKind::Operator(Operator::InclusiveRange)),
+                },
+                _ => any.value(TokenKind::Operator(Operator::Dot)),
             },
 
             '/' => dispatch! {peek(opt(take(2usize)));
                 Some("/*") => block_comment,
                 Some("//") => line_comment,
-                _ => any.map(|_| TokenKind::Operator(Operator::Slash)),
+                _ => any.value(TokenKind::Operator(Operator::Slash)),
             },
-            ';' => any.map(|_| TokenKind::Operator(Operator::Semicolon)),
-            '{' => any.map(|_| TokenKind::Operator(Operator::OpenBrace)),
-            '}' => any.map(|_| TokenKind::Operator(Operator::CloseBrace)),
+            ';' => any.value(TokenKind::Operator(Operator::Semicolon)),
+            '{' => any.value(TokenKind::Operator(Operator::OpenBrace)),
+            '}' => any.value(TokenKind::Operator(Operator::CloseBrace)),
             c if is_identifier_start(c) => identifier,
             _ => fail,
         },

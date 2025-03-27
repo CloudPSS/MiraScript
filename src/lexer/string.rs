@@ -11,7 +11,7 @@ use winnow::{
 use crate::{
     lexer::{Input, Operator, Token, TokenKind},
     parser::{Expression, expression, to_input},
-    utils::{Range, SourceError},
+    utils::{SourceError, SourceRange},
 };
 
 use super::lex_balanced;
@@ -20,7 +20,7 @@ use super::lex_balanced;
 enum StringFragment<'a> {
     Literal(&'a str),
     EscapedChar(char),
-    InvalidEscapedChar(Range),
+    InvalidEscapedChar(SourceRange),
     Interpolation(Expression<'a>),
 }
 
@@ -47,7 +47,7 @@ pub(super) fn string<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
         .iter()
         .any(|frag| matches!(frag, StringFragment::Interpolation(_)));
 
-    let mut extract_invalid = |mut range: Range| {
+    let mut extract_invalid = |mut range: SourceRange| {
         let cp = i.checkpoint();
         i.reset_to_start();
         let s = &i[range.clone()];
@@ -213,7 +213,7 @@ fn interpolation<'a>(i: &mut Input<'a>) -> ModalResult<StringFragment<'a>> {
                 "Bad interpolation expression"
             };
             let expr = if tokens.is_empty() {
-                let range = Range {
+                let range = SourceRange {
                     start: last_token.range.start,
                     end: last_token.range.start,
                 };

@@ -57,7 +57,7 @@ impl Display for Statement<'_> {
             Statement::Bind(keyword, id, expr) => writeln!(f, "{} {} = {};", keyword, id, expr),
             Statement::Rebind(id, expr) => writeln!(f, "{} = {};", id, expr),
             Statement::Assign(exp, id, expr) => writeln!(f, "{}.{} = {};", exp, id, expr),
-            Statement::Function(id, None, body) => write!(f, "fn {} {}", id, body),
+            Statement::Function(id, None, body) => writeln!(f, "fn {} {}", id, body),
             Statement::Function(id, Some(params), body) => {
                 write!(f, "fn {} (", id)?;
                 let mut iter = params.iter();
@@ -67,7 +67,7 @@ impl Display for Statement<'_> {
                         write!(f, ", {}", param)?;
                     }
                 }
-                write!(f, ") {}", body)
+                writeln!(f, ") {}", body)
             }
             Statement::Return(Some(expr)) => writeln!(f, "return {};", expr),
             Statement::Return(None) => writeln!(f, "return;"),

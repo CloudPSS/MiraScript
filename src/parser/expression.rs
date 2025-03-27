@@ -4,11 +4,12 @@ use std::{
 };
 
 use crate::{
+    ansi::{RECOVER, RESET},
     lexer::Token,
-    utils::{Range, SourceError},
+    utils::{SourceError, SourceRange},
 };
 
-use super::Statement;
+use super::{Iterable, Statement};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expression<'a> {
@@ -49,6 +50,8 @@ pub enum Expression<'a> {
     ///
     /// Field must be an identifier or an ordinal.
     Access(Box<Expression<'a>>, Box<Token<'a>>),
+    /// expression `[` expression `]`
+    Index(Box<Expression<'a>>, Box<Expression<'a>>),
 
     // unary
     /// `not` expression
@@ -98,6 +101,12 @@ pub enum Expression<'a> {
     /// expression `or` expression
     Or(Box<Expression<'a>>, Box<Expression<'a>>),
 
+    // pipe
+    /// expression `|>` expression
+    ForwardPipe(Box<Expression<'a>>, Box<Expression<'a>>),
+    /// expression `<|` expression
+    BackwardPipe(Box<Expression<'a>>, Box<Expression<'a>>),
+
     // block-like
     /// `{` statements* expression? `}`
     ///
@@ -121,7 +130,7 @@ pub enum Expression<'a> {
     /// The final expression of the block must not present.
     ///
     /// The value of the block is `nil`.
-    ForIn(Box<Token<'a>>, Box<Expression<'a>>, Box<Expression<'a>>),
+    ForIn(Box<Token<'a>>, Box<Iterable<'a>>, Box<Expression<'a>>),
     /// `if` expression block_expression (`else` expression)?
     ///
     /// The `then_block` is a block expression.
@@ -166,7 +175,7 @@ impl<'a> Expression<'a> {
     }
     pub(crate) fn unknown_range<T: Into<Vec<Token<'a>>>, E: Into<Cow<'static, str>>>(
         tokens: T,
-        error_range: Range,
+        error_range: SourceRange,
         error: E,
     ) -> Self {
         Expression::Unknown {
@@ -255,7 +264,8 @@ impl Display for Expression<'_> {
                 write!(f, ")")
             }
             Expression::Access(exp, token) => write!(f, "{}.{}", exp, token),
-            Expression::Not(exp) => write!(f, "not {}", exp),
+            Expression::Index(exp1, exp2) => write!(f, "{}[{}]", exp1, exp2),
+            Expression::Not(exp) => write!(f, "!{}", exp),
             Expression::Negate(exp) => write!(f, "-{}", exp),
             Expression::Plus(exp) => write!(f, "+{}", exp),
             Expression::Exponent(exp1, exp2) => write!(f, "{} ^ {}", exp1, exp2),
@@ -270,9 +280,18 @@ impl Display for Expression<'_> {
             Expression::LessEqual(exp1, exp2) => write!(f, "{} <= {}", exp1, exp2),
             Expression::Greater(exp1, exp2) => write!(f, "{} > {}", exp1, exp2),
             Expression::GreaterEqual(exp1, exp2) => write!(f, "{} >= {}", exp1, exp2),
-            Expression::And(exp1, exp2) => write!(f, "{} and {}", exp1, exp2),
-            Expression::Or(exp1, exp2) => write!(f, "{} or {}", exp1, exp2),
+            Expression::And(exp1, exp2) => write!(f, "{} && {}", exp1, exp2),
+            Expression::Or(exp1, exp2) => write!(f, "{} || {}", exp1, exp2),
+            Expression::ForwardPipe(left, right) => write!(f, "{} |> {}", left, right),
+            Expression::BackwardPipe(left, right) => write!(f, "{} <| {}", left, right),
             Expression::Block(statements, expression) => {
+                if statements.is_empty() {
+                    if let Some(expression) = expression {
+                        return write!(f, "{{{}}}", expression);
+                    } else {
+                        return write!(f, "{{}}");
+                    }
+                }
                 writeln!(f, "{{")?;
                 for statement in statements {
                     write!(f, "{}", statement)?;
@@ -315,7 +334,7 @@ impl Display for Expression<'_> {
                 }
                 write!(f, ") {}", block)
             }
-            Expression::Unknown { .. } => write!(f, "(<???>)"),
+            Expression::Unknown { .. } => write!(f, "{RECOVER}(<???>){RESET}"),
         }
     }
 }

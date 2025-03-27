@@ -4,6 +4,7 @@ use winnow::token::{any, literal, one_of};
 
 use super::expressions::expression;
 use super::helper::{literal_token, parameter_list, variable_token};
+use super::iterables::iterable;
 use super::statements::statement;
 use super::{Expression, Input};
 use crate::lexer::{Keyword, Operator, Token};
@@ -82,7 +83,7 @@ pub(super) fn for_in_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expres
         _: literal(Keyword::For),
         variable_token(true, false).map(Box::new),
         _: literal(Keyword::In),
-        expression.map(Box::new),
+        iterable.map(Box::new),
         block_expression.map(Box::new),
     ))
     .parse_next(i)

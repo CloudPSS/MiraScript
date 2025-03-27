@@ -10,9 +10,15 @@ pub enum Operator {
     CloseBracket = ']' as isize,
     Colon = ':' as isize,
     Comma = ',' as isize,
-
     Dot = '.' as isize,
-    DotDot = (('.' as isize) << 8) + ('.' as isize),
+
+    Spread = (('.' as isize) << 16) + (('.' as isize) << 8) + ('.' as isize),
+
+    InclusiveRange = (('.' as isize) << 8) + ('.' as isize),
+    LeftExclusiveRange = (('>' as isize) << 16) + (('.' as isize) << 8) + ('.' as isize),
+    RightExclusiveRange = (('.' as isize) << 16) + (('.' as isize) << 8) + ('<' as isize),
+    ExclusiveRange =
+        (('>' as isize) << 24) + (('.' as isize) << 16) + (('.' as isize) << 8) + ('<' as isize),
 
     Plus = '+' as isize,
     Minus = '-' as isize,
@@ -22,6 +28,13 @@ pub enum Operator {
     Asterisk = '*' as isize,
     Slash = '/' as isize,
     Percent = '%' as isize,
+
+    LogicalNot = '!' as isize,
+    LogicalAnd = ((('&' as isize) << 8) + ('&' as isize)),
+    LogicalOr = ((('|' as isize) << 8) + ('|' as isize)),
+
+    ForwardPipe = ((('|' as isize) << 8) + ('>' as isize)),
+    BackwardPipe = ((('<' as isize) << 8) + ('|' as isize)),
 
     Equal = '=' as isize,
     EqualEqual = (('=' as isize) << 8) + ('=' as isize),

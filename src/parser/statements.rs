@@ -9,6 +9,7 @@ use super::expressions::expression;
 use super::helper::{parameter_list, variable_token};
 use super::{Expression, block_expressions::*};
 use crate::lexer::{Keyword, Operator, Token, TokenKind};
+use crate::utils::SourceRange;
 
 use super::{Input, Statement};
 
@@ -45,13 +46,27 @@ fn empty_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {
 }
 
 fn fn_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {
-    seq!(Statement::Function(
-        _: literal(Keyword::Fn),
-        variable_token(false, false).map(Box::new),
+    (
+        literal(Keyword::Fn),
+        opt(variable_token(false, false)),
         parameter_list,
         block_expression.map(Box::new),
-    ))
-    .parse_next(i)
+    )
+        .map(|(key, name, params, body)| {
+            let key = &key[0];
+            let name = Box::new(name.unwrap_or_else(|| {
+                Token::unknown(
+                    SourceRange {
+                        start: key.range.end,
+                        end: key.range.end,
+                    },
+                    TokenKind::Identifier("?".into()),
+                    "Missing function name",
+                )
+            }));
+            Statement::Function(name, params, body)
+        })
+        .parse_next(i)
 }
 
 fn return_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {

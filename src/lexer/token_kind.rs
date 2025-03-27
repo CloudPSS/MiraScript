@@ -1,8 +1,8 @@
 use std::{borrow::Cow, fmt::Display};
 
-use crate::ansi::{INTERPOLATED, RESET, STRING};
+use crate::ansi::{INTERPOLATED, RECOVER, RESET, STRING};
 use crate::parser::Expression;
-use crate::utils::{Range, SourceError};
+use crate::utils::{SourceError, SourceRange};
 
 use super::{Comment, Keyword, Operator, Token};
 
@@ -26,7 +26,7 @@ pub enum TokenKind<'a> {
 impl<'a> TokenKind<'a> {
     pub(crate) fn unknown_range<E: Into<Cow<'static, str>>, R: Into<TokenKind<'a>>>(
         recovered: R,
-        error_range: Range,
+        error_range: SourceRange,
         error: E,
     ) -> Self {
         TokenKind::Unknown {
@@ -120,9 +120,9 @@ impl Display for TokenKind<'_> {
             Self::Keyword(kw) => write!(f, "{}", kw),
             Self::Unknown { recovered, .. } => {
                 if let Some(recovered) = recovered {
-                    write!(f, "<{}>", recovered)
+                    write!(f, "{RECOVER}{}{RESET}", recovered)
                 } else {
-                    write!(f, "<?>")
+                    write!(f, "{RECOVER}<?>{RESET}")
                 }
             }
         }

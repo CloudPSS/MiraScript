@@ -10,12 +10,18 @@ mod block_expressions;
 mod expression;
 mod expressions;
 mod helper;
+mod iterable;
+mod iterables;
+mod range;
+mod ranges;
 mod script;
 mod statement;
 mod statements;
 
 pub use expression::Expression;
 pub use expressions::expression;
+pub use iterable::Iterable;
+pub use range::Range;
 pub use script::Script;
 pub use statement::Statement;
 

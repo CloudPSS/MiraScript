@@ -9,11 +9,8 @@ pub enum Keyword {
     True,
     False,
     Nil,
-
-    // logical operators
-    And,
-    Or,
-    Not,
+    Nan,
+    Inf,
 
     // pseudo variable
     Underscore,
@@ -37,6 +34,14 @@ pub enum Keyword {
     Var,
     Val,
     Record, // Reserved for future use
+
+    // record Date(string) { it |> matches(`(\d{4})-(\d{2})-(\d{2})`) }
+    // record Complex(number, number);
+    // record Color(red: number, green: number, blue: number) { red > 0 && red < 256 && green > 0 && green < 256 && blue > 0 && blue < 256 }
+    // Date("2021-01-01") -> "2021-01-01"
+    // Complex(1, 2) -> { 0: 1, 1: 2 }
+    // Color(1, 2, 3) -> { red: 1, green: 2, blue: 3 }
+    // Color(-1, 2, 3) -> nil
 
     // algebraic effects
     Effect,  // Reserved for future use
@@ -92,13 +97,11 @@ impl FromStr for Keyword {
             "true" => Ok(Keyword::True),
             "false" => Ok(Keyword::False),
             "nil" => Ok(Keyword::Nil),
+            "nan" => Ok(Keyword::Nan),
+            "inf" => Ok(Keyword::Inf),
 
             "_" => Ok(Keyword::Underscore),
             "global" => Ok(Keyword::Global),
-
-            "and" => Ok(Keyword::And),
-            "or" => Ok(Keyword::Or),
-            "not" => Ok(Keyword::Not),
 
             "if" => Ok(Keyword::If),
             "else" => Ok(Keyword::Else),

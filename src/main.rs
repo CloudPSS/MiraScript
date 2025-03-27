@@ -10,10 +10,23 @@ mod parser;
 mod utils;
 
 fn main() {
-    let text = r##"{
-     a=1 let b =2 var c=3 d=5 val e=7 x
+    let text = r##"
+    print <| "Hello ${"alice"}";
+    
+    [1,2,3] |> filter(fn {it % 2 == 0}) |> String
+    
+    for i in 1..<3 {
+        print <| i;
     }
-    y"##;
+
+    for i in [1,2,3] |> map(fn {it * 2}) {
+        print <| i;
+    }
+
+    fn  { it = 1 ;};
+
+    1
+    "##;
 
     let mut input = lexer::to_input(text);
     let result = lexer::lex(&mut input, true).unwrap();
@@ -23,5 +36,6 @@ fn main() {
     let exp = parser::parse(&mut input);
 
     println!("{:?}", input.deref());
+    println!("{:#?}", exp.as_ref().unwrap());
     println!("{:#}", exp.as_ref().unwrap());
 }
