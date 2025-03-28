@@ -9,7 +9,7 @@ use crate::{
     utils::{SourceError, SourceRange},
 };
 
-use super::{Iterable, Statement};
+use super::{ArrayInitElement, Iterable, RecordLikeElement, Statement};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expression<'a> {
@@ -24,22 +24,16 @@ pub enum Expression<'a> {
     Variable(Box<Token<'a>>),
     /// `(` expression `)`
     Grouping(Box<Expression<'a>>),
-    /// `(` expression (`,` expression)* `)`
+    /// `(` element (`,` element)* `)`
     ///
-    /// Use `()` for an empty tuple.
+    /// Use `()` for an empty record.
     ///
-    /// For a single-element tuple, use `(expression,)`.
-    Tuple(Vec<Expression<'a>>),
-    /// `(` name `:` expression (`,` name `:` expression)* `)`
-    ///
-    /// Name should be an identifier or an ordinal.
-    ///
-    /// All elements must be named or unnamed.
-    NamedTuple(Vec<(Token<'a>, Expression<'a>)>),
-    /// `[` expression (`,` expression)* `]`
+    /// For a single-element record, use `(element,)`.
+    Record(Vec<RecordLikeElement<'a>>),
+    /// `[` element (`,` element)* `]`
     ///
     /// Use `[]` for an empty list.
-    Array(Vec<Expression<'a>>),
+    Array(Vec<ArrayInitElement<'a>>),
 
     // function
     /// expression `(` arguments `)`
@@ -202,36 +196,15 @@ impl Display for Expression<'_> {
             Expression::InterpolatedString(token) => write!(f, "{}", token),
             Expression::Variable(token) => write!(f, "{}", token),
             Expression::Grouping(exp) => write!(f, "({})", exp),
-            Expression::Tuple(exps) => {
+            Expression::Record(exps) => {
                 if exps.is_empty() {
                     return write!(f, "()");
                 }
-                if exps.len() == 1 {
-                    return write!(f, "({},)", exps[0]);
-                }
                 write!(f, "(")?;
-                let mut iter = exps.iter();
-                if let Some(exp) = iter.next() {
+                for exp in exps {
                     write!(f, "{}", exp)?;
-                    for exp in iter {
-                        write!(f, ", {}", exp)?;
-                    }
-                } else {
-                    write!(f, ",")?;
-                }
-                write!(f, ")")?;
-                Ok(())
-            }
-            Expression::NamedTuple(exps) => {
-                if exps.is_empty() {
-                    return write!(f, "()");
-                }
-                write!(f, "(")?;
-                let mut iter = exps.iter();
-                if let Some((name, exp)) = iter.next() {
-                    write!(f, "{}: {}", name, exp)?;
-                    for (name, exp) in iter {
-                        write!(f, ", {}: {}", name, exp)?;
+                    if exp.has_tail_comma() {
+                        write!(f, " ")?;
                     }
                 }
                 write!(f, ")")?;

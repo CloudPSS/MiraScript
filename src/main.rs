@@ -26,6 +26,21 @@ fn main() {
     fn  { it = 1 ;};
 
     1
+
+    call(1, 2, 3)
+    call(a: 1, ...x)
+
+    var simple_array = [1, 2, 3, "4", [5], []];
+    var spread_array = [1, 2, 3, "4", ...[5]];
+    var range_array = [1..2, 1..<3,]
+    var array = [1,2,3, 7..8, ...[9,10,11..<20], ...7, ...()];
+
+    var parenthesis = (1);
+    var single_record = (1,);
+    var single_record2 = (a: 1);
+    var named_record = (hello: "world", foo: 1, bar: 2, 3 1 45.3 );
+    var simple_record = ("hello", 1, 2 ,3);
+    var spread_record = (...named_record, hello: "world", foo: 1, bar: 2,  ...simple_record);
     "##;
 
     let mut input = lexer::to_input(text);

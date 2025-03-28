@@ -7,12 +7,7 @@ use super::{Input, Range, basic_expressions::term};
 pub(super) fn range<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Range<'a>> {
     (
         term.map(Box::new),
-        one_of(|t: &Token<'a>| {
-            *t == Operator::InclusiveRange
-                || *t == Operator::RightExclusiveRange
-                || *t == Operator::LeftExclusiveRange
-                || *t == Operator::ExclusiveRange
-        }),
+        one_of(|t: &Token<'a>| *t == Operator::ClosedRange || *t == Operator::HalfOpenRange),
         term.map(Box::new),
     )
         .map(|(first, op, second)| {
@@ -24,10 +19,8 @@ pub(super) fn range<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Range<'a>> {
                 unreachable!();
             };
             match op {
-                Operator::InclusiveRange => Range::Inclusive(first, second),
-                Operator::RightExclusiveRange => Range::RightExclusive(first, second),
-                Operator::LeftExclusiveRange => Range::LeftExclusive(first, second),
-                Operator::ExclusiveRange => Range::Exclusive(first, second),
+                Operator::ClosedRange => Range::Closed(first, second),
+                Operator::HalfOpenRange => Range::HalfOpen(first, second),
                 _ => unreachable!(),
             }
         })

@@ -1,11 +1,30 @@
 use winnow::combinator::{delimited, opt, peek, repeat, terminated};
 use winnow::error::{ContextError, ErrMode};
 use winnow::prelude::*;
+use winnow::stream::Location;
 use winnow::token::{any, literal, one_of};
 
 use crate::lexer::{Keyword, Operator, Token, TokenKind};
+use crate::utils::SourceRange;
 
-use super::Input;
+use super::{Expression, Input, expression};
+
+pub(super) fn spread_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
+    let spread = literal(Operator::Spread).parse_next(i)?;
+    opt(expression)
+        .map(|e| {
+            if let Some(e) = e {
+                e
+            } else {
+                Expression::unknown_range(
+                    [],
+                    spread[0].range.clone(),
+                    "Expression expected after `...`",
+                )
+            }
+        })
+        .parse_next(i)
+}
 
 pub(super) fn parameter_list<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Option<Vec<Token<'a>>>> {
     let t = peek(any).parse_next(i)?;
@@ -88,5 +107,31 @@ pub(super) fn variable_token<'t, 'a: 't>(
             t.to_owned()
         };
         Ok(e)
+    }
+}
+
+pub(super) fn literal_or_insert<'t, 'a: 't, T>(
+    token: T,
+    error: &'static str,
+) -> impl Parser<Input<'t, 'a>, Token<'a>, ErrMode<ContextError>>
+where
+    T: Into<TokenKind<'a>> + Clone,
+    Token<'a>: PartialEq<T>,
+{
+    move |i: &mut Input<'_, 'a>| -> ModalResult<Token<'a>> {
+        let pos = Location::previous_token_end(i);
+        opt(one_of(|t: &Token<'a>| *t == token))
+            .map(|t: Option<&Token<'a>>| match t {
+                Some(t) => t.to_owned(),
+                None => Token::unknown(
+                    SourceRange {
+                        start: pos,
+                        end: pos,
+                    },
+                    token.clone(),
+                    error,
+                ),
+            })
+            .parse_next(i)
     }
 }

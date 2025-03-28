@@ -4,48 +4,76 @@ use super::{Token, TokenKind};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Operator {
+    /// `(`
     OpenParen = '(' as isize,
+    /// `)`
     CloseParen = ')' as isize,
+    /// `[`
     OpenBracket = '[' as isize,
+    /// `]`
     CloseBracket = ']' as isize,
+    /// `:`
     Colon = ':' as isize,
+    /// `,`
     Comma = ',' as isize,
+    /// `.`
     Dot = '.' as isize,
 
+    /// `...`
     Spread = (('.' as isize) << 16) + (('.' as isize) << 8) + ('.' as isize),
 
-    InclusiveRange = (('.' as isize) << 8) + ('.' as isize),
-    LeftExclusiveRange = (('>' as isize) << 16) + (('.' as isize) << 8) + ('.' as isize),
-    RightExclusiveRange = (('.' as isize) << 16) + (('.' as isize) << 8) + ('<' as isize),
-    ExclusiveRange =
-        (('>' as isize) << 24) + (('.' as isize) << 16) + (('.' as isize) << 8) + ('<' as isize),
+    /// `..`
+    ClosedRange = (('.' as isize) << 8) + ('.' as isize),
+    /// `..<`
+    HalfOpenRange = (('.' as isize) << 16) + (('.' as isize) << 8) + ('<' as isize),
 
+    /// `+`
     Plus = '+' as isize,
+    /// `-`
     Minus = '-' as isize,
 
+    /// `^`
     Caret = '^' as isize,
 
+    /// `*`
     Asterisk = '*' as isize,
+    /// `/`
     Slash = '/' as isize,
+    /// `%`
     Percent = '%' as isize,
 
+    /// `!`
     LogicalNot = '!' as isize,
+    /// `&&`
     LogicalAnd = ((('&' as isize) << 8) + ('&' as isize)),
+    /// `||`
     LogicalOr = ((('|' as isize) << 8) + ('|' as isize)),
 
+    /// `|>`
     ForwardPipe = ((('|' as isize) << 8) + ('>' as isize)),
+    /// `<|`
     BackwardPipe = ((('<' as isize) << 8) + ('|' as isize)),
 
+    /// `=`
     Equal = '=' as isize,
+    /// `==`
     EqualEqual = (('=' as isize) << 8) + ('=' as isize),
+    /// `!=`
     NotEqual = (('!' as isize) << 8) + ('=' as isize),
+    /// `>`
     Greater = ('>' as isize),
+    /// `>=`
     GreaterEqual = ((('>' as isize) << 8) + ('=' as isize)),
+    /// `<`
     Less = ('<' as isize),
+    /// `<=`
     LessEqual = ((('<' as isize) << 8) + ('=' as isize)),
 
+    /// `;`
     Semicolon = ';' as isize,
+    /// `{`
     OpenBrace = '{' as isize,
+    /// `}`
     CloseBrace = '}' as isize,
 }
 

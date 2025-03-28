@@ -190,7 +190,6 @@ fn interpolation<'a>(i: &mut Input<'a>) -> ModalResult<StringFragment<'a>> {
             return Err(e);
         }
     };
-    println!("input: {:?}", tokens);
     let expr: ModalResult<Expression<'_>> = {
         let mut token_input = to_input(tokens.as_slice());
         seq!(

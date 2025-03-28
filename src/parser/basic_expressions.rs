@@ -1,3 +1,5 @@
+use std::result;
+
 use winnow::combinator::{
     alt, delimited, dispatch, fail, opt, peek, preceded, repeat, seq, terminated,
 };
@@ -8,123 +10,29 @@ use winnow::token::{any, literal, one_of};
 use crate::lexer::{Operator, Token, TokenKind};
 use crate::utils::SourceRange;
 
+use super::array_expression::array_expression;
 use super::block_expressions::block_like_expression;
 use super::expressions::expression;
 use super::helper::{interpolation_token, literal_token, variable_token};
-use super::{Expression, Input};
-
-struct TupleLikePart<'a> {
-    name: Option<Token<'a>>,
-    value: Expression<'a>,
-    range: SourceRange,
-    tail_comma: bool,
-}
-
-fn tuple_like_part<'t, 'a, V>(
-    close: V,
-) -> impl Parser<Input<'t, 'a>, TupleLikePart<'a>, ErrMode<ContextError>>
-where
-    Token<'a>: PartialEq<V> + PartialEq + PartialEq<Operator>,
-{
-    move |i: &mut Input<'_, 'a>| {
-        let first = peek(any).parse_next(i)?;
-        if *first == close {
-            return fail.parse_next(i);
-        }
-        (
-            opt(terminated(
-                one_of(|t: &Token<'a>| {
-                    matches!(
-                        t.kind,
-                        TokenKind::Identifier(_) | TokenKind::Ordinal(_) | TokenKind::Number(_)
-                    )
-                }),
-                literal(Operator::Colon),
-            )),
-            expression,
-            alt((
-                literal(Operator::Comma),
-                peek(literal(Operator::CloseParen)),
-            )),
-        )
-            .with_taken()
-            .map(|((name, exp, tail), taken)| {
-                let tail_comma = tail[0] == Operator::Comma;
-                let mut range = taken[0].range.clone();
-                range.end = tail[0].range.start;
-                TupleLikePart {
-                    name: name.cloned(),
-                    value: exp,
-                    range,
-                    tail_comma,
-                }
-            })
-            .parse_next(i)
-    }
-}
+use super::record_like_expression::record_like_element;
+use super::{Expression, Input, RecordLikeElement};
 
 fn tuple_like<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
-    let next = peek(any).parse_next(i)?;
-    if *next == Operator::CloseParen {
-        any.parse_next(i)?;
-        return Ok(Expression::Tuple(Vec::new()));
-    }
-    let parts: Vec<TupleLikePart<'a>> =
-        repeat(1.., tuple_like_part(Operator::CloseParen)).parse_next(i)?;
+    let parts: Vec<_> = repeat(0.., record_like_element).parse_next(i)?;
     one_of(|t: &Token<'a>| *t == Operator::CloseParen).parse_next(i)?;
-    if parts.len() == 1 {
+    let result = if parts.is_empty() {
+        Expression::Record(Vec::new())
+    } else if parts.len() == 1 {
         let part = parts.into_iter().next().unwrap();
-        if let Some(name) = part.name {
-            return Ok(Expression::NamedTuple(vec![(name, part.value)]));
+        if let RecordLikeElement::Unnamed(exp, None) = part {
+            Expression::Grouping(exp)
+        } else {
+            Expression::Record(vec![part])
         }
-        if part.tail_comma {
-            return Ok(Expression::Tuple(vec![part.value]));
-        }
-        return Ok(Expression::Grouping(Box::new(part.value)));
-    }
-    if parts.iter().all(|part| part.name.is_none()) {
-        return Ok(Expression::Tuple(
-            parts.into_iter().map(|part| part.value).collect(),
-        ));
-    }
-
-    let mut items: Vec<(Token<'a>, Expression<'a>)> = Vec::new();
-    for (pos, part) in parts.into_iter().enumerate() {
-        if let Some(name) = part.name {
-            items.push((name, part.value));
-            continue;
-        }
-        let mut range = part.range;
-        range.end = range.start;
-        let recovered = TokenKind::Ordinal(pos as u64);
-        let token = Token::unknown(
-            range,
-            recovered,
-            "All tuple elements must be named or unnamed",
-        );
-        items.push((token, part.value));
-    }
-    Ok(Expression::NamedTuple(items))
-}
-
-fn array<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
-    let elements: Vec<Expression<'a>> = terminated(
-        (
-            repeat(0.., terminated(expression, literal(Operator::Comma))),
-            opt(expression),
-        )
-            .map(
-                |(mut v, e): (Vec<Expression<'a>>, Option<Expression<'a>>)| {
-                    if let Some(e) = e {
-                        v.push(e);
-                    }
-                    v
-                },
-            ),
-        literal(Operator::CloseBracket),
-    )
-    .parse_next(i)?;
-    Ok(Expression::Array(elements))
+    } else {
+        Expression::Record(parts)
+    };
+    Ok(result)
 }
 
 fn primary<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
@@ -138,7 +46,7 @@ fn primary<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
             .map(Box::new)
             .map(Expression::Variable),
         preceded(literal(Operator::OpenParen), tuple_like),
-        preceded(literal(Operator::OpenBracket), array),
+        array_expression,
     )))
     .parse_next(i)
 }

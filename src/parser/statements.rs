@@ -1,33 +1,17 @@
-use std::ops::Range;
-
 use winnow::combinator::{alt, dispatch, fail, opt, peek, seq};
 use winnow::prelude::*;
-use winnow::stream::Location;
 use winnow::token::{any, literal, one_of};
 
-use super::expressions::expression;
-use super::helper::{parameter_list, variable_token};
-use super::{Expression, block_expressions::*};
 use crate::lexer::{Keyword, Operator, Token, TokenKind};
 use crate::utils::SourceRange;
 
+use super::expressions::expression;
+use super::helper::{literal_or_insert, parameter_list, variable_token};
+use super::{Expression, block_expressions::*};
 use super::{Input, Statement};
 
 fn semicolon<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Token<'a>> {
-    let pos = Location::previous_token_end(i);
-    opt(one_of(|t: &Token<'a>| *t == Operator::Semicolon))
-        .map(|t: Option<&Token<'a>>| match t {
-            Some(t) => t.to_owned(),
-            None => Token::unknown(
-                Range {
-                    start: pos,
-                    end: pos,
-                },
-                Operator::Semicolon,
-                "Missing semicolon",
-            ),
-        })
-        .parse_next(i)
+    literal_or_insert(Operator::Semicolon, "Missing semicolon").parse_next(i)
 }
 
 fn expression_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {
@@ -60,7 +44,7 @@ fn fn_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {
                         start: key.range.end,
                         end: key.range.end,
                     },
-                    TokenKind::Identifier("?".into()),
+                    TokenKind::Identifier("<name>".into()),
                     "Missing function name",
                 )
             }));

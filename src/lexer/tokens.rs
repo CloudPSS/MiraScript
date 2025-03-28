@@ -211,11 +211,6 @@ pub(super) fn token<'a>(
             },
             '>' => dispatch! {peek(opt(take(2usize)));
                 Some(">=") => take(2usize).value(TokenKind::Operator(Operator::GreaterEqual)),
-                Some(">.") => alt((
-                    literal(">..<").value(TokenKind::Operator(Operator::ExclusiveRange)),
-                    literal(">..").value(TokenKind::Operator(Operator::RightExclusiveRange)),
-                    any.value(TokenKind::Operator(Operator::Greater)),
-                )),
                 _ => any.value(TokenKind::Operator(Operator::Greater)),
             },
             '<' => dispatch! {peek(opt(take(2usize)));
@@ -241,8 +236,8 @@ pub(super) fn token<'a>(
             '.' => dispatch! {peek(opt(take(2usize)));
                 Some("..") => dispatch! {peek(opt(take(3usize)));
                     Some("...") => take(3usize).value(TokenKind::Operator(Operator::Spread)),
-                    Some("..<") => take(3usize).value(TokenKind::Operator(Operator::RightExclusiveRange)),
-                    _ => take(2usize).value(TokenKind::Operator(Operator::InclusiveRange)),
+                    Some("..<") => take(3usize).value(TokenKind::Operator(Operator::HalfOpenRange)),
+                    _ => take(2usize).value(TokenKind::Operator(Operator::ClosedRange)),
                 },
                 _ => any.value(TokenKind::Operator(Operator::Dot)),
             },
