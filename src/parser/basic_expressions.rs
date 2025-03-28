@@ -1,14 +1,9 @@
-use std::result;
-
-use winnow::combinator::{
-    alt, delimited, dispatch, fail, opt, peek, preceded, repeat, seq, terminated,
-};
+use winnow::combinator::{alt, delimited, dispatch, opt, peek, preceded, repeat, seq, terminated};
 use winnow::error::{ContextError, ErrMode};
 use winnow::prelude::*;
 use winnow::token::{any, literal, one_of};
 
 use crate::lexer::{Operator, Token, TokenKind};
-use crate::utils::SourceRange;
 
 use super::array_expression::array_expression;
 use super::block_expressions::block_like_expression;

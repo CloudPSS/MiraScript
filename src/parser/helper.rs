@@ -110,6 +110,20 @@ pub(super) fn variable_token<'t, 'a: 't>(
     }
 }
 
+pub(super) fn literal_boxed<'t, 'a: 't, T>(
+    token: T,
+) -> impl Parser<Input<'t, 'a>, Box<Token<'a>>, ErrMode<ContextError>>
+where
+    T: Into<TokenKind<'a>> + Clone,
+    Token<'a>: PartialEq<T>,
+{
+    move |i: &mut Input<'_, 'a>| {
+        one_of(|t: &Token<'a>| *t == token)
+            .map(|t: &Token<'a>| Box::new(t.to_owned()))
+            .parse_next(i)
+    }
+}
+
 pub(super) fn literal_or_insert<'t, 'a: 't, T>(
     token: T,
     error: &'static str,

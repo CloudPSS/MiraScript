@@ -191,12 +191,13 @@ impl<'a> Expression<'a> {
 
 impl Display for Expression<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        use Expression::*;
         match self {
-            Expression::Literal(token) => write!(f, "{}", token),
-            Expression::InterpolatedString(token) => write!(f, "{}", token),
-            Expression::Variable(token) => write!(f, "{}", token),
-            Expression::Grouping(exp) => write!(f, "({})", exp),
-            Expression::Record(exps) => {
+            Literal(token) => write!(f, "{}", token),
+            InterpolatedString(token) => write!(f, "{}", token),
+            Variable(token) => write!(f, "{}", token),
+            Grouping(exp) => write!(f, "({})", exp),
+            Record(exps) => {
                 if exps.is_empty() {
                     return write!(f, "()");
                 }
@@ -210,7 +211,7 @@ impl Display for Expression<'_> {
                 write!(f, ")")?;
                 Ok(())
             }
-            Expression::Array(exps) => {
+            Array(exps) => {
                 if exps.is_empty() {
                     return write!(f, "[]");
                 }
@@ -225,7 +226,7 @@ impl Display for Expression<'_> {
                 write!(f, "]")?;
                 Ok(())
             }
-            Expression::Call(exp, args) => {
+            Call(exp, args) => {
                 write!(f, "{}(", exp)?;
                 let mut iter = args.iter();
                 if let Some(arg) = iter.next() {
@@ -236,28 +237,28 @@ impl Display for Expression<'_> {
                 }
                 write!(f, ")")
             }
-            Expression::Access(exp, token) => write!(f, "{}.{}", exp, token),
-            Expression::Index(exp1, exp2) => write!(f, "{}[{}]", exp1, exp2),
-            Expression::Not(exp) => write!(f, "!{}", exp),
-            Expression::Negate(exp) => write!(f, "-{}", exp),
-            Expression::Plus(exp) => write!(f, "+{}", exp),
-            Expression::Exponent(exp1, exp2) => write!(f, "{} ^ {}", exp1, exp2),
-            Expression::Multiply(exp1, exp2) => write!(f, "{} * {}", exp1, exp2),
-            Expression::Divide(exp1, exp2) => write!(f, "{} / {}", exp1, exp2),
-            Expression::Modulo(exp1, exp2) => write!(f, "{} % {}", exp1, exp2),
-            Expression::Add(exp1, exp2) => write!(f, "{} + {}", exp1, exp2),
-            Expression::Subtract(exp1, exp2) => write!(f, "{} - {}", exp1, exp2),
-            Expression::Equal(exp1, exp2) => write!(f, "{} == {}", exp1, exp2),
-            Expression::NotEqual(exp1, exp2) => write!(f, "{} != {}", exp1, exp2),
-            Expression::Less(exp1, exp2) => write!(f, "{} < {}", exp1, exp2),
-            Expression::LessEqual(exp1, exp2) => write!(f, "{} <= {}", exp1, exp2),
-            Expression::Greater(exp1, exp2) => write!(f, "{} > {}", exp1, exp2),
-            Expression::GreaterEqual(exp1, exp2) => write!(f, "{} >= {}", exp1, exp2),
-            Expression::And(exp1, exp2) => write!(f, "{} && {}", exp1, exp2),
-            Expression::Or(exp1, exp2) => write!(f, "{} || {}", exp1, exp2),
-            Expression::ForwardPipe(left, right) => write!(f, "{} |> {}", left, right),
-            Expression::BackwardPipe(left, right) => write!(f, "{} <| {}", left, right),
-            Expression::Block(statements, expression) => {
+            Access(exp, token) => write!(f, "{}.{}", exp, token),
+            Index(exp1, exp2) => write!(f, "{}[{}]", exp1, exp2),
+            Not(exp) => write!(f, "!{}", exp),
+            Negate(exp) => write!(f, "-{}", exp),
+            Plus(exp) => write!(f, "+{}", exp),
+            Exponent(exp1, exp2) => write!(f, "{} ^ {}", exp1, exp2),
+            Multiply(exp1, exp2) => write!(f, "{} * {}", exp1, exp2),
+            Divide(exp1, exp2) => write!(f, "{} / {}", exp1, exp2),
+            Modulo(exp1, exp2) => write!(f, "{} % {}", exp1, exp2),
+            Add(exp1, exp2) => write!(f, "{} + {}", exp1, exp2),
+            Subtract(exp1, exp2) => write!(f, "{} - {}", exp1, exp2),
+            Equal(exp1, exp2) => write!(f, "{} == {}", exp1, exp2),
+            NotEqual(exp1, exp2) => write!(f, "{} != {}", exp1, exp2),
+            Less(exp1, exp2) => write!(f, "{} < {}", exp1, exp2),
+            LessEqual(exp1, exp2) => write!(f, "{} <= {}", exp1, exp2),
+            Greater(exp1, exp2) => write!(f, "{} > {}", exp1, exp2),
+            GreaterEqual(exp1, exp2) => write!(f, "{} >= {}", exp1, exp2),
+            And(exp1, exp2) => write!(f, "{} && {}", exp1, exp2),
+            Or(exp1, exp2) => write!(f, "{} || {}", exp1, exp2),
+            ForwardPipe(left, right) => write!(f, "{} |> {}", left, right),
+            BackwardPipe(left, right) => write!(f, "{} <| {}", left, right),
+            Block(statements, expression) => {
                 if statements.is_empty() {
                     if let Some(expression) = expression {
                         return write!(f, "{{{}}}", expression);
@@ -274,29 +275,29 @@ impl Display for Expression<'_> {
                 }
                 write!(f, "}}")
             }
-            Expression::Loop(expression) => write!(f, "loop {}", expression),
-            Expression::While(expression, block) => {
+            Loop(expression) => write!(f, "loop {}", expression),
+            While(expression, block) => {
                 write!(f, "while {} {}", expression, block)
             }
-            Expression::ForIn(token, expression, block) => {
+            ForIn(token, expression, block) => {
                 write!(f, "for {} in {} {}", token, expression, block)
             }
-            Expression::If(expression, then_block, else_block) => {
+            If(expression, then_block, else_block) => {
                 if let Some(else_block) = else_block {
                     write!(f, "if {} {} else {}", expression, then_block, else_block)
                 } else {
                     write!(f, "if {} {}", expression, then_block)
                 }
             }
-            Expression::Match(expression, arms) => {
+            Match(expression, arms) => {
                 writeln!(f, "match {} {{", expression)?;
                 for (pattern, block) in arms {
                     writeln!(f, "{} {}", pattern, block)?;
                 }
                 write!(f, "}}")
             }
-            Expression::Function(None, block) => write!(f, "fn {}", block),
-            Expression::Function(Some(params), block) => {
+            Function(None, block) => write!(f, "fn {}", block),
+            Function(Some(params), block) => {
                 write!(f, "fn (")?;
                 let mut iter = params.iter();
                 if let Some(param) = iter.next() {
@@ -307,7 +308,7 @@ impl Display for Expression<'_> {
                 }
                 write!(f, ") {}", block)
             }
-            Expression::Unknown { .. } => write!(f, "{RECOVER}(<???>){RESET}"),
+            Unknown { .. } => write!(f, "{RECOVER}(<???>){RESET}"),
         }
     }
 }

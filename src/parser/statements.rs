@@ -1,26 +1,18 @@
-use winnow::combinator::{alt, dispatch, fail, opt, peek, seq};
+use winnow::combinator::{alt, dispatch, opt, peek, seq};
 use winnow::prelude::*;
 use winnow::token::{any, literal, one_of};
 
 use crate::lexer::{Keyword, Operator, Token, TokenKind};
+use crate::parser::helper::literal_boxed;
 use crate::utils::SourceRange;
 
+use super::block_expressions::*;
 use super::expressions::expression;
 use super::helper::{literal_or_insert, parameter_list, variable_token};
-use super::{Expression, block_expressions::*};
 use super::{Input, Statement};
 
 fn semicolon<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Token<'a>> {
     literal_or_insert(Operator::Semicolon, "Missing semicolon").parse_next(i)
-}
-
-fn expression_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {
-    seq!(Statement::Expression(
-        expression.map(Box::new),
-        _: peek(one_of(|t: &Token<'a>| *t != Operator::CloseBrace && *t != TokenKind::Eof)),
-        semicolon.map(Box::new)
-    ))
-    .parse_next(i)
 }
 
 fn empty_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {
@@ -31,24 +23,23 @@ fn empty_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {
 
 fn fn_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {
     (
-        literal(Keyword::Fn),
+        literal_boxed(Keyword::Fn),
         opt(variable_token(false, false)),
         parameter_list,
         block_expression.map(Box::new),
     )
-        .map(|(key, name, params, body)| {
-            let key = &key[0];
+        .map(|(kw, name, params, body)| {
             let name = Box::new(name.unwrap_or_else(|| {
                 Token::unknown(
                     SourceRange {
-                        start: key.range.end,
-                        end: key.range.end,
+                        start: kw.range.end,
+                        end: kw.range.end,
                     },
                     TokenKind::Identifier("<name>".into()),
                     "Missing function name",
                 )
             }));
-            Statement::Function(name, params, body)
+            Statement::Function(kw, name, params, body)
         })
         .parse_next(i)
 }
@@ -79,31 +70,33 @@ fn continue_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {
 
 fn bind_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {
     seq!(Statement::Bind(
-        one_of(|t: &Token<'a>| *t == Keyword::Var || *t == Keyword::Val).map(|t: &Token<'a>| Box::new(t.to_owned())),
+        one_of(|t: &Token<'a>| *t == Keyword::Var || *t == Keyword::Val)
+            .map(|t: &Token<'a>| Box::new(t.to_owned())),
         variable_token(false, false).map(Box::new),
-        _: literal(Operator::Equal),
+        literal_or_insert(Operator::Equal, "Missing `=`").map(Box::new),
         expression.map(Box::new),
-        _: semicolon,
+        semicolon.map(Box::new),
     ))
     .parse_next(i)
 }
 
-fn rebind_assign_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {
-    let cp = i.checkpoint();
-    let (left, right) = seq!((
-        expression,
-        _: literal(Operator::Equal),
+fn assign_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {
+    seq!(Statement::Assign(
         expression.map(Box::new),
-        _: semicolon,
+        literal_boxed(Operator::Equal),
+        expression.map(Box::new),
+        semicolon.map(Box::new),
     ))
-    .parse_next(i)?;
-    if let Expression::Variable(id) = left {
-        return Ok(Statement::Rebind(id, right));
-    } else if let Expression::Access(left, var) = left {
-        return Ok(Statement::Assign(left, var, right));
-    }
-    i.reset(&cp);
-    fail.parse_next(i)
+    .parse_next(i)
+}
+
+fn expression_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {
+    seq!(Statement::Expression(
+        expression.map(Box::new),
+        _: peek(one_of(|t: &Token<'a>| *t != Operator::CloseBrace && *t != TokenKind::Eof)),
+        semicolon.map(Box::new)
+    ))
+    .parse_next(i)
 }
 
 pub(super) fn statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {
@@ -125,7 +118,7 @@ pub(super) fn statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>>
         t if *t == Keyword::Var || *t == Keyword::Val => bind_statement,
 
         &Token{..} => alt((
-            rebind_assign_statement,
+            assign_statement,
             expression_statement,
         )),
     }

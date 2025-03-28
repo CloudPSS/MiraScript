@@ -1,16 +1,15 @@
 use winnow::{
     ModalResult, Parser,
     combinator::{fail, opt, peek, terminated},
-    stream::Location,
     token::{any, literal, one_of},
 };
 
-use crate::{
-    lexer::{Operator, Token, TokenKind},
-    utils::SourceRange,
-};
+use crate::lexer::{Operator, Token, TokenKind};
 
-use super::{Input, RecordLikeElement, expression, helper::spread_expression};
+use super::{
+    Input, RecordLikeElement, expression,
+    helper::{literal_or_insert, spread_expression},
+};
 
 fn record_name<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Token<'a>> {
     one_of(|t: &Token<'a>| {
@@ -54,18 +53,7 @@ pub(super) fn record_like_element<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Reco
     if *last == Operator::CloseParen {
         return Ok(result);
     }
-    let comma = if *last == Operator::Comma {
-        any.map(ToOwned::to_owned).parse_next(i)?
-    } else {
-        Token::unknown(
-            SourceRange {
-                start: i.previous_token_end(),
-                end: i.previous_token_end(),
-            },
-            Operator::Comma,
-            "Missing comma",
-        )
-    };
+    let comma = literal_or_insert(Operator::Comma, "Missing comma").parse_next(i)?;
     *(match &mut result {
         RecordLikeElement::Spread(_, c)
         | RecordLikeElement::Named(_, _, c)

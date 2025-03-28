@@ -11,7 +11,8 @@ mod utils;
 
 fn main() {
     let text = r##"
-    print <| "Hello ${"alice"}";
+    var name = "world"; //
+    print <| "Hello ${name}";
     
     [1,2,3] |> filter(fn {it % 2 == 0}) |> String
     
@@ -41,6 +42,10 @@ fn main() {
     var named_record = (hello: "world", foo: 1, bar: 2, 3 1 45.3 );
     var simple_record = ("hello", 1, 2 ,3);
     var spread_record = (...named_record, hello: "world", foo: 1, bar: 2,  ...simple_record);
+
+    val a = (1 2)
+    x.y = 12
+    z = 1
     "##;
 
     let mut input = lexer::to_input(text);
