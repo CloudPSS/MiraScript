@@ -10,7 +10,7 @@ use crate::utils::SourceRange;
 use super::{Expression, Input, expression};
 
 pub(super) fn spread_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
-    let spread = literal(Operator::Spread).parse_next(i)?;
+    let spread = literal(Operator::SpreadRange).parse_next(i)?;
     opt(expression)
         .map(|e| {
             if let Some(e) = e {
@@ -19,7 +19,7 @@ pub(super) fn spread_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expres
                 Expression::unknown_range(
                     [],
                     spread[0].range.clone(),
-                    "Expression expected after `...`",
+                    "Expression expected after `..`",
                 )
             }
         })

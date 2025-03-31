@@ -14,7 +14,7 @@ impl Display for ArrayInitElement<'_> {
         match self {
             ArrayInitElement::Expression(expr) => write!(f, "{}", expr),
             ArrayInitElement::Range(range) => write!(f, "{}", range),
-            ArrayInitElement::Spread(expr) => write!(f, "...{}", expr),
+            ArrayInitElement::Spread(expr) => write!(f, "..{}", expr),
         }
     }
 }

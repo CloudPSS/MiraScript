@@ -10,7 +10,7 @@ pub enum RecordLikeElement<'a> {
     Named(Box<Token<'a>>, Box<Expression<'a>>, Option<Box<Token<'a>>>),
     /// `value [,]`
     Unnamed(Box<Expression<'a>>, Option<Box<Token<'a>>>),
-    /// `...value [,]`
+    /// `..value [,]`
     Spread(Box<Expression<'a>>, Option<Box<Token<'a>>>),
 }
 
@@ -50,7 +50,7 @@ impl Display for RecordLikeElement<'_> {
                 write!(f, "{}", value)?;
             }
             RecordLikeElement::Spread(value, _) => {
-                write!(f, "...{}", value)?;
+                write!(f, "..{}", value)?;
             }
         }
         if let Some(tail_comma) = self.tail_comma() {

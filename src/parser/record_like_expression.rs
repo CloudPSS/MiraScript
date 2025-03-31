@@ -31,7 +31,7 @@ pub(super) fn record_like_element<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Reco
     if *first == Operator::CloseParen {
         return fail.parse_next(i);
     }
-    let mut result = if *first == Operator::Spread {
+    let mut result = if *first == Operator::SpreadRange {
         spread_expression
             .map(|e| RecordLikeElement::Spread(Box::new(e), None))
             .parse_next(i)?

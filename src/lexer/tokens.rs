@@ -7,7 +7,7 @@ use winnow::ascii::{digit0, digit1, line_ending, till_line_ending};
 use winnow::combinator::{alt, cut_err, dispatch, eof, fail, opt, peek, preceded, repeat, trace};
 use winnow::error::{StrContext, StrContextValue};
 use winnow::prelude::*;
-use winnow::token::{any, literal, one_of, take, take_until, take_while};
+use winnow::token::{any, one_of, take, take_until, take_while};
 
 use crate::utils::{SourceError, SourceRange};
 
@@ -235,9 +235,8 @@ pub(super) fn token<'a>(
             ',' => any.value(TokenKind::Operator(Operator::Comma)),
             '.' => dispatch! {peek(opt(take(2usize)));
                 Some("..") => dispatch! {peek(opt(take(3usize)));
-                    Some("...") => take(3usize).value(TokenKind::Operator(Operator::Spread)),
                     Some("..<") => take(3usize).value(TokenKind::Operator(Operator::HalfOpenRange)),
-                    _ => take(2usize).value(TokenKind::Operator(Operator::ClosedRange)),
+                    _ => take(2usize).value(TokenKind::Operator(Operator::SpreadRange)),
                 },
                 _ => any.value(TokenKind::Operator(Operator::Dot)),
             },

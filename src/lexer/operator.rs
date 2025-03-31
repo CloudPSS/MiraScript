@@ -19,11 +19,8 @@ pub enum Operator {
     /// `.`
     Dot = '.' as isize,
 
-    /// `...`
-    Spread = (('.' as isize) << 16) + (('.' as isize) << 8) + ('.' as isize),
-
     /// `..`
-    ClosedRange = (('.' as isize) << 8) + ('.' as isize),
+    SpreadRange = (('.' as isize) << 8) + ('.' as isize),
     /// `..<`
     HalfOpenRange = (('.' as isize) << 16) + (('.' as isize) << 8) + ('<' as isize),
 
