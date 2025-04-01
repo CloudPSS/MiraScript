@@ -16,8 +16,8 @@ fn semicolon<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Token<'a>> {
 }
 
 fn empty_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {
-    one_of(|t: &Token<'a>| *t == Operator::Semicolon)
-        .map(|t: &Token<'a>| Statement::Empty(Box::new(t.to_owned())))
+    literal_boxed(Operator::Semicolon)
+        .map(Statement::Empty)
         .parse_next(i)
 }
 
@@ -91,9 +91,15 @@ fn assign_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {
 }
 
 fn expression_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {
+    let mut p = peek(one_of(|t: &Token<'a>| {
+        *t != Operator::CloseBrace
+            && *t != TokenKind::Eof
+            && *t != Keyword::Case
+            && *t != Keyword::Else
+    }));
     seq!(Statement::Expression(
         expression.map(Box::new),
-        _: peek(one_of(|t: &Token<'a>| *t != Operator::CloseBrace && *t != TokenKind::Eof)),
+        _: p,
         semicolon.map(Box::new)
     ))
     .parse_next(i)

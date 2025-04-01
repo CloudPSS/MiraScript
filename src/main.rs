@@ -20,6 +20,8 @@ fn main() {
         print <| i;
     }
 
+
+    
     for i in [1,2,3] |> map(fn {it * 2}) {
         print <| i;
     }
@@ -30,6 +32,12 @@ fn main() {
 
     call(1, 2, 3)
     call(a: 1, ..x)
+
+    match x {
+        case 1  x 
+        case 2 { 3 }
+         _  4 
+    }
 
     var simple_array = [1, 2, 3, "4", [5], []];
     var spread_array = [1, 2, 3, "4", ..[5]];
@@ -46,6 +54,8 @@ fn main() {
     val a = (1 2)
     x.y = 12
     z = 1
+    {{{
+     if a b else c
     "##;
 
     let mut input = lexer::to_input(text);

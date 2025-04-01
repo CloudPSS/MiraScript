@@ -1,21 +1,22 @@
-use winnow::combinator::{alt, dispatch, fail, opt, peek, preceded, repeat, seq};
+use winnow::combinator::{alt, dispatch, fail, opt, peek, repeat, seq};
 use winnow::prelude::*;
-use winnow::token::{any, literal, one_of};
+use winnow::token::{any, one_of};
 
 use super::expressions::expression;
-use super::helper::{literal_token, parameter_list, variable_token};
+use super::helper::{literal_boxed, literal_token, parameter_list, variable_token};
 use super::iterables::iterable;
 use super::statements::statement;
 use super::{Expression, Input};
 use crate::lexer::{Keyword, Operator, Token};
+use crate::parser::helper::literal_or_insert;
 
 pub(super) fn if_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
     seq!(Expression::If(
-        _: literal(Keyword::If),
+        literal_boxed(Keyword::If),
         expression.map(Box::new),
         block_expression.map(Box::new),
-        opt(preceded(
-            literal(Keyword::Else),
+        opt((
+            literal_boxed(Keyword::Else),
             alt((block_expression, if_expression)).map(Box::new)
         )),
     ))
@@ -24,17 +25,17 @@ pub(super) fn if_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression
 
 pub(super) fn block_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
     seq!(Expression::Block(
-        _: literal(Operator::OpenBrace),
+        literal_or_insert(Operator::OpenBrace, "Missing '{'").map(Box::new),
         repeat(0.., statement),
         opt(expression.map(Box::new)),
-        _: literal(Operator::CloseBrace),
+        literal_or_insert(Operator::CloseBrace, "Missing '}'").map(Box::new),
     ))
     .parse_next(i)
 }
 
 pub(super) fn fn_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
     seq!(Expression::Function(
-        _: literal(Keyword::Fn),
+        literal_boxed(Keyword::Fn),
         parameter_list,
         block_expression.map(Box::new),
     ))
@@ -43,7 +44,7 @@ pub(super) fn fn_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression
 
 pub(super) fn loop_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
     seq!(Expression::Loop(
-        _: literal(Keyword::Loop),
+        literal_boxed(Keyword::Loop),
         block_expression.map(Box::new),
     ))
     .parse_next(i)
@@ -51,7 +52,7 @@ pub(super) fn loop_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expressi
 
 pub(super) fn while_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
     seq!(Expression::While(
-        _: literal(Keyword::While),
+        literal_boxed(Keyword::While),
         expression.map(Box::new),
         block_expression.map(Box::new),
     ))
@@ -60,29 +61,32 @@ pub(super) fn while_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Express
 
 pub(super) fn match_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
     seq!(Expression::Match(
-        _: literal(Keyword::Match),
+        literal_boxed(Keyword::Match),
         expression.map(Box::new),
-        _: literal(Operator::OpenBrace),
+        literal_or_insert(Operator::OpenBrace, "Missing '{'").map(Box::new),
         repeat(
             0..,
             (
+                literal_or_insert(Keyword::Case, "Missing 'case'"),
                 alt((
                     literal_token,
-                    one_of(|t: &Token<'a>| *t == Keyword::Underscore).map(|t: &Token<'a>| t.to_owned()),
-                )).map(|t: Token<'a>| Expression::Literal(Box::new(t))),
+                    one_of(|t: &Token<'a>| *t == Keyword::Underscore)
+                        .map(|t: &Token<'a>| t.to_owned()),
+                ))
+                .map(|t: Token<'a>| Expression::Literal(Box::new(t))),
                 block_expression,
             )
         ),
-        _: literal(Operator::CloseBrace),
+        literal_or_insert(Operator::CloseBrace, "Missing '{'").map(Box::new),
     ))
     .parse_next(i)
 }
 
 pub(super) fn for_in_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
     seq!(Expression::ForIn(
-        _: literal(Keyword::For),
+        literal_boxed(Keyword::For),
         variable_token(true, false).map(Box::new),
-        _: literal(Keyword::In),
+        literal_boxed(Keyword::In),
         iterable.map(Box::new),
         block_expression.map(Box::new),
     ))

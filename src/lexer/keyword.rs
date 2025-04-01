@@ -20,6 +20,7 @@ pub enum Keyword {
     If,
     Else,
     Match,
+    Case,
     For,
     In,
     While,
@@ -35,7 +36,11 @@ pub enum Keyword {
     Val,
     Record, // Reserved for future use
 
-    // record Date(string) { it |> matches(`(\d{4})-(\d{2})-(\d{2})`) }
+    // record Date(string) {
+    //   if it |> matches(`(\d{4})-(\d{2})-(\d{2})`) { it }
+    //   else if it |> matches(`(\d{4})/(\d{2})/(\d{2})`) { it |> replace("/", "-") }
+    //   else { nil }
+    // }
     // record Complex(number, number);
     // record Color(red: number, green: number, blue: number) { red > 0 && red < 256 && green > 0 && green < 256 && blue > 0 && blue < 256 }
     // Date("2021-01-01") -> "2021-01-01"
@@ -47,6 +52,7 @@ pub enum Keyword {
     Effect,  // Reserved for future use
     Try,     // Reserved for future use
     Handle,  // Reserved for future use
+    Finally, // Reserved for future use
     Perform, // Reserved for future use
     Resume,  // Reserved for future use
 }
@@ -83,9 +89,13 @@ impl PartialEq<Keyword> for TokenKind<'_> {
 
 impl Display for Keyword {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut d = format!("{KEYWORD}{:?}{RESET}", self);
-        d.make_ascii_lowercase();
-        f.write_str(&d)
+        if *self == Keyword::Underscore {
+            write!(f, "{KEYWORD}_{RESET}")
+        } else {
+            let mut d = format!("{:?}", self);
+            d.make_ascii_lowercase();
+            write!(f, "{KEYWORD}{d}{RESET}")
+        }
     }
 }
 
@@ -106,6 +116,7 @@ impl FromStr for Keyword {
             "if" => Ok(Keyword::If),
             "else" => Ok(Keyword::Else),
             "match" => Ok(Keyword::Match),
+            "case" => Ok(Keyword::Case),
             "for" => Ok(Keyword::For),
             "in" => Ok(Keyword::In),
             "while" => Ok(Keyword::While),
@@ -123,6 +134,7 @@ impl FromStr for Keyword {
             "effect" => Ok(Keyword::Effect),
             "try" => Ok(Keyword::Try),
             "handle" => Ok(Keyword::Handle),
+            "finally" => Ok(Keyword::Finally),
             "perform" => Ok(Keyword::Perform),
             "resume" => Ok(Keyword::Resume),
 

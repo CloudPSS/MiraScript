@@ -106,46 +106,64 @@ pub enum Expression<'a> {
     ///
     /// The value of the block is the value of the last expression.
     /// If no expression is present, the value is `nil`.
-    Block(Vec<Statement<'a>>, Option<Box<Expression<'a>>>),
+    Block(
+        Box<Token<'a>>,
+        Vec<Statement<'a>>,
+        Option<Box<Expression<'a>>>,
+        Box<Token<'a>>,
+    ),
     /// `loop` block_expression
     ///
     /// The final expression of the block must not present.
     ///
     /// The value of the block is the expression of the `break` statement if present. Otherwise, `nil`.
-    Loop(Box<Expression<'a>>),
+    Loop(Box<Token<'a>>, Box<Expression<'a>>),
     /// `while` expression block_expression
     ///
     /// The final expression of the block must not present.
     ///
     /// The value of the block is `nil`.
-    While(Box<Expression<'a>>, Box<Expression<'a>>),
+    While(Box<Token<'a>>, Box<Expression<'a>>, Box<Expression<'a>>),
     /// `for` identifier `in` expression block_expression
     ///
     /// The final expression of the block must not present.
     ///
     /// The value of the block is `nil`.
-    ForIn(Box<Token<'a>>, Box<Iterable<'a>>, Box<Expression<'a>>),
+    ForIn(
+        Box<Token<'a>>,
+        Box<Token<'a>>,
+        Box<Token<'a>>,
+        Box<Iterable<'a>>,
+        Box<Expression<'a>>,
+    ),
     /// `if` expression block_expression (`else` expression)?
     ///
     /// The `then_block` is a block expression.
     ///
     /// The `else_block` is a block expression or an if expression.
     If(
+        Box<Token<'a>>,
         Box<Expression<'a>>,
         Box<Expression<'a>>,
-        Option<Box<Expression<'a>>>,
+        Option<(Box<Token<'a>>, Box<Expression<'a>>)>,
     ),
-    /// `match` expression `{` ((literal | '_') block_expression)* `}`
+    /// `match` expression `{` `case` ((literal | '_') block_expression)* `}`
     ///
     /// The value of the block is the value of the matched expression.
     ///
     /// If no match is found, the value is `nil`.
-    Match(Box<Expression<'a>>, Vec<(Expression<'a>, Expression<'a>)>),
-    /// `fn` (parameters) block_expression
+    Match(
+        Box<Token<'a>>,
+        Box<Expression<'a>>,
+        Box<Token<'a>>,
+        Vec<(Token<'a>, Expression<'a>, Expression<'a>)>,
+        Box<Token<'a>>,
+    ),
+    /// `fn` parameters? block_expression
     ///
     /// Just like function declarations, but without the identifier.
     /// See [Statement::Function] for more details.
-    Function(Option<Vec<Token<'a>>>, Box<Expression<'a>>),
+    Function(Box<Token<'a>>, Option<Vec<Token<'a>>>, Box<Expression<'a>>),
     /// Unknown expression
     Unknown {
         tokens: Vec<Token<'a>>,
@@ -258,47 +276,46 @@ impl Display for Expression<'_> {
             Or(exp1, exp2) => write!(f, "{} || {}", exp1, exp2),
             ForwardPipe(left, right) => write!(f, "{} |> {}", left, right),
             BackwardPipe(left, right) => write!(f, "{} <| {}", left, right),
-            Block(statements, expression) => {
+            Block(op, statements, expression, ed) => {
                 if statements.is_empty() {
                     if let Some(expression) = expression {
-                        return write!(f, "{{{}}}", expression);
+                        return write!(f, "{op} {expression} {ed}");
                     } else {
-                        return write!(f, "{{}}");
+                        return write!(f, "{op}{ed}");
                     }
                 }
-                writeln!(f, "{{")?;
+                writeln!(f, "{op}")?;
                 for statement in statements {
-                    write!(f, "{}", statement)?;
+                    write!(f, "{statement}")?;
                 }
                 if let Some(expression) = expression {
-                    writeln!(f, "{}", expression)?;
+                    writeln!(f, "{expression}")?;
                 }
-                write!(f, "}}")
+                write!(f, "{ed}")
             }
-            Loop(expression) => write!(f, "loop {}", expression),
-            While(expression, block) => {
-                write!(f, "while {} {}", expression, block)
+            Loop(kw, expression) => write!(f, "{kw} {expression}"),
+            While(kw, expression, block) => {
+                write!(f, "{kw} {expression} {block}")
             }
-            ForIn(token, expression, block) => {
-                write!(f, "for {} in {} {}", token, expression, block)
+            ForIn(kw_for, token, kw_in, iter, block) => {
+                write!(f, "{kw_for} {token} {kw_in} {iter} {block}")
             }
-            If(expression, then_block, else_block) => {
-                if let Some(else_block) = else_block {
-                    write!(f, "if {} {} else {}", expression, then_block, else_block)
-                } else {
-                    write!(f, "if {} {}", expression, then_block)
+            If(kw_if, cond, then_block, Some((kw_else, else_block))) => {
+                write!(f, "{kw_if} {cond} {then_block} {kw_else} {else_block}")
+            }
+            If(kw_if, cond, then_block, None) => {
+                write!(f, "{kw_if} {cond} {then_block}")
+            }
+            Match(kw, expression, op, arms, ed) => {
+                writeln!(f, "{kw} {expression} {op}")?;
+                for (kw_case, pattern, block) in arms {
+                    writeln!(f, "{kw_case} {pattern} {block}")?;
                 }
+                write!(f, "{ed}")
             }
-            Match(expression, arms) => {
-                writeln!(f, "match {} {{", expression)?;
-                for (pattern, block) in arms {
-                    writeln!(f, "{} {}", pattern, block)?;
-                }
-                write!(f, "}}")
-            }
-            Function(None, block) => write!(f, "fn {}", block),
-            Function(Some(params), block) => {
-                write!(f, "fn (")?;
+            Function(kw, None, block) => write!(f, "{kw} {}", block),
+            Function(kw, Some(params), block) => {
+                write!(f, "{kw} (")?;
                 let mut iter = params.iter();
                 if let Some(param) = iter.next() {
                     write!(f, "{}", param)?;
