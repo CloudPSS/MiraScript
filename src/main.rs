@@ -12,7 +12,7 @@ mod utils;
 fn main() {
     let text = r##"
     var name = "world"; //
-    print <| "Hello ${name}";
+    print <| "Hello ${{var a = 1 ; "${a}name"}}";
     
     [1,2,3] |> filter(fn {it % 2 == 0}) |> String
     
@@ -57,6 +57,8 @@ fn main() {
     {{{
      if a b else c
     "##;
+
+    let text = r##"@@@"a\$$y|sdf\\${z}$$${t}"""@"@@@"##;
 
     let mut input = lexer::to_input(text);
     let result = lexer::lex(&mut input, true).unwrap();

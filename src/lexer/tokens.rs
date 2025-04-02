@@ -11,6 +11,7 @@ use winnow::token::{any, one_of, take, take_until, take_while};
 
 use crate::utils::{SourceError, SourceRange};
 
+use super::helper::{is_identifier_continue, is_identifier_start};
 use super::{Comment, Input, Keyword, Operator, Token, TokenKind, string};
 
 fn line_comment<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
@@ -40,15 +41,7 @@ fn block_comment<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
     .parse_next(i)
 }
 
-fn is_identifier_start(c: char) -> bool {
-    c == '_' || c == '$' || unicode_ident::is_xid_start(c)
-}
-
-fn is_identifier_continue(c: char) -> bool {
-    c == '$' || unicode_ident::is_xid_continue(c)
-}
-
-fn identifier<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
+pub(super) fn identifier<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
     trace(
         "identifier",
         (
@@ -195,6 +188,10 @@ pub(super) fn token<'a>(
             } else {
                 number
             },
+            '@' => alt((
+                string::string,
+                identifier,
+            )),
             '"' | '\'' | '`' => string::string,
             '+' => any.value(TokenKind::Operator(Operator::Plus)),
             '-' => any.value(TokenKind::Operator(Operator::Minus)),

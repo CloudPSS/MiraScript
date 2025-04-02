@@ -107,11 +107,7 @@ impl Display for TokenKind<'_> {
                 let first = s_iter.next().ok_or(std::fmt::Error)?;
                 write!(f, "{}", first.escape_debug())?;
                 for (s, e) in s_iter.zip(e.iter()) {
-                    write!(
-                        f,
-                        "{RESET}{INTERPOLATED}${{{RESET}{}{INTERPOLATED}}}{RESET}{STRING}",
-                        e
-                    )?;
+                    write!(f, "{RESET}{INTERPOLATED}${RESET}{e}{STRING}")?;
                     write!(f, "{}", s.escape_debug())?;
                 }
                 write!(f, "\"{RESET}")

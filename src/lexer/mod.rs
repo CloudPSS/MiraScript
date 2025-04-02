@@ -1,6 +1,7 @@
 use winnow::{LocatingSlice, ModalResult};
 
 mod comment;
+mod helper;
 mod keyword;
 mod operator;
 mod string;
@@ -45,7 +46,7 @@ pub fn lex_balanced<'a>(
 ) -> ModalResult<Vec<Token<'a>>> {
     let mut tokens = vec![];
     let mut depth = 0;
-    while depth >= 0 {
+    while tokens.is_empty() || depth > 0 {
         let prev_token = &tokens.last();
         let token = tokens::token(input, prev_token)?;
         if ignore_comments && matches!(token.kind, TokenKind::Comment(_)) {
