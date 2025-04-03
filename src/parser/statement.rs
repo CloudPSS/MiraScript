@@ -24,9 +24,13 @@ pub enum Statement<'a> {
         Box<Expression<'a>>,
         Box<Token<'a>>,
     ),
-    /// `(expression_variable | expression_access | expression_index) '=' expression ';'`
+    /// `expression ('=' | '+=' | '-=' | '*=' | '/=' | '%=' | '^=' | '&&=' | '||=') expression ';'`
     ///
-    /// expression must evaluate to an external.
+    /// The assigner must be one of the following:
+    /// - `identifier`
+    /// - `'_'` to discard the value
+    /// - `expression_access` where the accessed is an extern or `global`
+    /// - `expression_index` where the indexed is an extern or `global`
     Assign(
         Box<Expression<'a>>,
         Box<Token<'a>>,

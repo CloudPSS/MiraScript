@@ -83,7 +83,18 @@ fn bind_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {
 fn assign_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {
     seq!(Statement::Assign(
         expression.map(Box::new),
-        literal_boxed(Operator::Equal),
+        one_of(|t: &Token<'a>| {
+            *t == Operator::PlusEqual
+                || *t == Operator::MinusEqual
+                || *t == Operator::AsteriskEqual
+                || *t == Operator::SlashEqual
+                || *t == Operator::PercentEqual
+                || *t == Operator::CaretEqual
+                || *t == Operator::LogicalAndEqual
+                || *t == Operator::LogicalOrEqual
+                || *t == Operator::Equal
+        })
+        .map(|t: &Token<'a>| Box::new(t.to_owned())),
         expression.map(Box::new),
         semicolon.map(Box::new),
     ))
@@ -91,7 +102,7 @@ fn assign_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {
 }
 
 fn expression_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {
-    let mut p = peek(one_of(|t: &Token<'a>| {
+    let mut insert_semicolon = peek(one_of(|t: &Token<'a>| {
         *t != Operator::CloseBrace
             && *t != TokenKind::Eof
             && *t != Keyword::Case
@@ -99,7 +110,7 @@ fn expression_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>>
     }));
     seq!(Statement::Expression(
         expression.map(Box::new),
-        _: p,
+        _: insert_semicolon,
         semicolon.map(Box::new)
     ))
     .parse_next(i)

@@ -182,7 +182,7 @@ pub(super) fn token<'a>(
     prev_token: &Option<&Token<'a>>,
 ) -> ModalResult<Token<'a>> {
     preceded(take_while(0.., |c: char| c.is_ascii_whitespace()),  alt((
-        dispatch! {peek(any);
+        dispatch!{peek(any);
             '0'..='9' => if prev_token.map(|t| &t.kind) == Some(&TokenKind::Operator(Operator::Dot)) {
                 ordinal
             } else {
@@ -193,60 +193,74 @@ pub(super) fn token<'a>(
                 identifier,
             )),
             '"' | '\'' | '`' => string::string,
-            '+' => any.value(TokenKind::Operator(Operator::Plus)),
-            '-' => any.value(TokenKind::Operator(Operator::Minus)),
-            '^' => any.value(TokenKind::Operator(Operator::Caret)),
-            '*' => any.value(TokenKind::Operator(Operator::Asterisk)),
-            '%' => any.value(TokenKind::Operator(Operator::Percent)),
-            '=' => dispatch! {peek(opt(take(2usize)));
-                Some("==") => take(2usize).value(TokenKind::Operator(Operator::EqualEqual)),
-                _ => any.value(TokenKind::Operator(Operator::Equal)),
+            '+' => alt((
+                "+=".value(TokenKind::Operator(Operator::PlusEqual)),
+                any.value(TokenKind::Operator(Operator::Plus)),
+            )),
+            '-' => alt((
+                "-=".value(TokenKind::Operator(Operator::MinusEqual)),
+                any.value(TokenKind::Operator(Operator::Minus)),
+            )),
+            '*' => alt((
+                "*=".value(TokenKind::Operator(Operator::AsteriskEqual)),
+                any.value(TokenKind::Operator(Operator::Asterisk)),
+            )),
+            '/' => dispatch! {peek(opt(take(2usize)));
+                Some("/*") => block_comment,
+                Some("//") => line_comment,
+                Some("/=") => take(2usize).value(TokenKind::Operator(Operator::SlashEqual)),
+                _ => any.value(TokenKind::Operator(Operator::Slash)),
             },
-            '!' => dispatch! {peek(opt(take(2usize)));
-                Some("!=") => take(2usize).value(TokenKind::Operator(Operator::NotEqual)),
-                _ => any.value(TokenKind::Operator(Operator::LogicalNot)),
-            },
-            '>' => dispatch! {peek(opt(take(2usize)));
-                Some(">=") => take(2usize).value(TokenKind::Operator(Operator::GreaterEqual)),
-                _ => any.value(TokenKind::Operator(Operator::Greater)),
-            },
-            '<' => dispatch! {peek(opt(take(2usize)));
-                Some("<=") => take(2usize).value(TokenKind::Operator(Operator::LessEqual)),
-                Some("<|") => take(2usize).value(TokenKind::Operator(Operator::BackwardPipe)),
-                _ => any.value(TokenKind::Operator(Operator::Less)),
-            },
-            '&' => dispatch! {peek(opt(take(2usize)));
-                Some("&&") => take(2usize).value(TokenKind::Operator(Operator::LogicalAnd)),
-                _ => fail,
-            },
-            '|' => dispatch! {peek(opt(take(2usize)));
-                Some("||") => take(2usize).value(TokenKind::Operator(Operator::LogicalOr)),
-                Some("|>") => take(2usize).value(TokenKind::Operator(Operator::ForwardPipe)),
-                _ => fail,
-            },
+            '%' => alt((
+                "%=".value(TokenKind::Operator(Operator::PercentEqual)),
+                any.value(TokenKind::Operator(Operator::Percent)),
+            )),
+            '^' => alt((
+                "^=".value(TokenKind::Operator(Operator::CaretEqual)),
+                any.value(TokenKind::Operator(Operator::Caret)),
+            )),
+            '=' => alt((
+                "==".value(TokenKind::Operator(Operator::EqualEqual)),
+                any.value(TokenKind::Operator(Operator::Equal)),
+            )),
+            '~' => "~=".value(TokenKind::Operator(Operator::TildeEqual)),
+            '!' => alt((
+                "!=".value(TokenKind::Operator(Operator::NotEqual)),
+                "!~=".value(TokenKind::Operator(Operator::NotTildeEqual)),
+                any.value(TokenKind::Operator(Operator::LogicalNot)),
+            )),
+            '>' => alt((
+                ">=".value(TokenKind::Operator(Operator::GreaterEqual)),
+                ">".value(TokenKind::Operator(Operator::Greater)),
+            )),
+            '<' => alt((
+                "<=".value(TokenKind::Operator(Operator::LessEqual)),
+                "<|".value(TokenKind::Operator(Operator::BackwardPipe)),
+                "<".value(TokenKind::Operator(Operator::Less)),
+            )),
+            '&' => "&&".value(TokenKind::Operator(Operator::LogicalAnd)),
+            '|' => alt((
+                "||".value(TokenKind::Operator(Operator::LogicalOr)),
+                "|>".value(TokenKind::Operator(Operator::ForwardPipe)),
+            )),
             '(' => any.value(TokenKind::Operator(Operator::OpenParen)),
             ')' => any.value(TokenKind::Operator(Operator::CloseParen)),
             '[' => any.value(TokenKind::Operator(Operator::OpenBracket)),
             ']' => any.value(TokenKind::Operator(Operator::CloseBracket)),
             ':' => any.value(TokenKind::Operator(Operator::Colon)),
             ',' => any.value(TokenKind::Operator(Operator::Comma)),
-            '.' => dispatch! {peek(opt(take(2usize)));
-                Some("..") => dispatch! {peek(opt(take(3usize)));
-                    Some("..<") => take(3usize).value(TokenKind::Operator(Operator::HalfOpenRange)),
-                    _ => take(2usize).value(TokenKind::Operator(Operator::SpreadRange)),
-                },
-                _ => any.value(TokenKind::Operator(Operator::Dot)),
-            },
+            '.' => alt((
+                "..<".value(TokenKind::Operator(Operator::HalfOpenRange)),
+                "..".value(TokenKind::Operator(Operator::SpreadRange)),
+                ".".value(TokenKind::Operator(Operator::Dot)),
+            )),
 
-            '/' => dispatch! {peek(opt(take(2usize)));
-                Some("/*") => block_comment,
-                Some("//") => line_comment,
-                _ => any.value(TokenKind::Operator(Operator::Slash)),
-            },
             ';' => any.value(TokenKind::Operator(Operator::Semicolon)),
             '{' => any.value(TokenKind::Operator(Operator::OpenBrace)),
             '}' => any.value(TokenKind::Operator(Operator::CloseBrace)),
+
             c if is_identifier_start(c) => identifier,
+
             _ => fail,
         },
         eof.map(|_|TokenKind::Eof),

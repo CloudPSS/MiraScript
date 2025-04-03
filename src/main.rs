@@ -20,11 +20,17 @@ fn main() {
         print <| i;
     }
 
-
-    
-    for i in [1,2,3] |> map(fn {it * 2}) {
-        print <| i;
+    val w = while a > 0 {
+        a = a - 1;
+    } else {
+        10
     }
+    
+    var fr= for i in [1,2,3] |> map(fn {it * 2}) {
+        print <| i;
+    } else if a > 0 {
+        a = a - 1;
+    } 
 
     fn  { it = 1 ;};
 
@@ -57,8 +63,6 @@ fn main() {
     {{{
      if a b else c
     "##;
-
-    let text = r##"@@@"a\$$y|sdf\\${z}$$${t}"""@"@@@"##;
 
     let mut input = lexer::to_input(text);
     let result = lexer::lex(&mut input, true).unwrap();

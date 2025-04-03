@@ -10,15 +10,22 @@ use super::{Expression, Input};
 use crate::lexer::{Keyword, Operator, Token};
 use crate::parser::helper::literal_or_insert;
 
+fn optional_else<'a>(
+    i: &mut Input<'_, 'a>,
+) -> ModalResult<Option<(Box<Token<'a>>, Box<Expression<'a>>)>> {
+    opt((
+        literal_boxed(Keyword::Else),
+        alt((if_expression, block_expression)).map(Box::new),
+    ))
+    .parse_next(i)
+}
+
 pub(super) fn if_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
     seq!(Expression::If(
         literal_boxed(Keyword::If),
         expression.map(Box::new),
         block_expression.map(Box::new),
-        opt((
-            literal_boxed(Keyword::Else),
-            alt((block_expression, if_expression)).map(Box::new)
-        )),
+        optional_else,
     ))
     .parse_next(i)
 }
@@ -55,6 +62,7 @@ pub(super) fn while_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Express
         literal_boxed(Keyword::While),
         expression.map(Box::new),
         block_expression.map(Box::new),
+        optional_else,
     ))
     .parse_next(i)
 }
@@ -89,6 +97,7 @@ pub(super) fn for_in_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expres
         literal_boxed(Keyword::In),
         iterable.map(Box::new),
         block_expression.map(Box::new),
+        optional_else,
     ))
     .parse_next(i)
 }

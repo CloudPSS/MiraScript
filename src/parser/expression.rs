@@ -23,14 +23,14 @@ pub enum Expression<'a> {
     /// identifier
     Variable(Box<Token<'a>>),
     /// `(` expression `)`
-    Grouping(Box<Expression<'a>>),
-    /// `(` element (`,` element)* `)`
+    Grouping(Box<Token<'a>>, Box<Expression<'a>>, Box<Token<'a>>),
+    /// `(` element* `)`
     ///
     /// Use `()` for an empty record.
     ///
-    /// For a single-element record, use `(element,)`.
+    /// For a single-element-unnamed record, use `(` expression `,` `)`.
     Record(Vec<RecordLikeElement<'a>>),
-    /// `[` element (`,` element)* `]`
+    /// `[` element* `]`
     ///
     /// Use `[]` for an empty list.
     Array(Vec<ArrayInitElement<'a>>),
@@ -47,59 +47,27 @@ pub enum Expression<'a> {
     /// expression `[` expression `]`
     Index(Box<Expression<'a>>, Box<Expression<'a>>),
 
-    // unary
+    /// op expression
+    ///
+    /// Unary operators are:
+    /// - `!` logical not
+    /// - `-` negation
+    /// - `+` unary plus
     /// `not` expression
-    Not(Box<Expression<'a>>),
-    /// `-` expression
-    Negate(Box<Expression<'a>>),
-    /// `+` expression
-    Plus(Box<Expression<'a>>),
+    Unary(Box<Token<'a>>, Box<Expression<'a>>),
 
-    // exponent
-    /// expression `^` expression
-    Exponent(Box<Expression<'a>>, Box<Expression<'a>>),
-
-    // factor
-    /// expression `*` expression
-    Multiply(Box<Expression<'a>>, Box<Expression<'a>>),
-    /// expression `/` expression
-    Divide(Box<Expression<'a>>, Box<Expression<'a>>),
-    /// expression `%` expression
-    Modulo(Box<Expression<'a>>, Box<Expression<'a>>),
-
-    // term
-    /// expression `+` expression
-    Add(Box<Expression<'a>>, Box<Expression<'a>>),
-    /// expression `-` expression
-    Subtract(Box<Expression<'a>>, Box<Expression<'a>>),
-
-    // comparison
-    /// expression `==` expression
-    Equal(Box<Expression<'a>>, Box<Expression<'a>>),
-    /// expression `!=` expression
-    NotEqual(Box<Expression<'a>>, Box<Expression<'a>>),
-    /// expression `<` expression
-    Less(Box<Expression<'a>>, Box<Expression<'a>>),
-    /// expression `<=` expression
-    LessEqual(Box<Expression<'a>>, Box<Expression<'a>>),
-    /// expression `>` expression
-    Greater(Box<Expression<'a>>, Box<Expression<'a>>),
-    /// expression `>=` expression
-    GreaterEqual(Box<Expression<'a>>, Box<Expression<'a>>),
-
-    // and
-    /// expression `and` expression
-    And(Box<Expression<'a>>, Box<Expression<'a>>),
-
-    // or
-    /// expression `or` expression
-    Or(Box<Expression<'a>>, Box<Expression<'a>>),
-
-    // pipe
-    /// expression `|>` expression
-    ForwardPipe(Box<Expression<'a>>, Box<Expression<'a>>),
-    /// expression `<|` expression
-    BackwardPipe(Box<Expression<'a>>, Box<Expression<'a>>),
+    /// expression op expression
+    ///
+    /// Binary operators are:
+    /// 1. `^` exponentiation
+    /// 2. `*` `/` `%` multiplication, division, modulo
+    /// 3. `+` `-` addition, subtraction
+    /// 4. `>` `<` `>=` `<=` comparison
+    /// 5. `==` `!=` `~=` `!~=` equality
+    /// 6. `&&` logical and
+    /// 7. `||` logical or
+    /// 8. `|>` `<|` forward and backward pipe
+    Binary(Box<Expression<'a>>, Box<Token<'a>>, Box<Expression<'a>>),
 
     // block-like
     /// `{` statements* expression? `}`
@@ -118,23 +86,37 @@ pub enum Expression<'a> {
     ///
     /// The value of the block is the expression of the `break` statement if present. Otherwise, `nil`.
     Loop(Box<Token<'a>>, Box<Expression<'a>>),
-    /// `while` expression block_expression
+    /// `while` expression block_expression (`else` expression)?
     ///
     /// The final expression of the block must not present.
     ///
-    /// The value of the block is `nil`.
-    While(Box<Token<'a>>, Box<Expression<'a>>, Box<Expression<'a>>),
-    /// `for` identifier `in` expression block_expression
+    /// The `else_block` is a block expression or an if expression.
+    ///
+    /// The value of the block is the expression of the `break` statement if present.
+    /// Otherwise, if the `else_block` is present,
+    /// the value is the value of the `else_block`. Otherwise, `nil`.
+    While(
+        Box<Token<'a>>,
+        Box<Expression<'a>>,
+        Box<Expression<'a>>,
+        Option<(Box<Token<'a>>, Box<Expression<'a>>)>,
+    ),
+    /// `for` identifier `in` expression block_expression (`else` expression)?
     ///
     /// The final expression of the block must not present.
     ///
-    /// The value of the block is `nil`.
+    /// The `else_block` is a block expression or an if expression.
+    ///
+    /// The value of the block is the expression of the `break` statement if present.
+    /// Otherwise, if the `else_block` is present,
+    /// the value is the value of the `else_block`. Otherwise, `nil`.
     ForIn(
         Box<Token<'a>>,
         Box<Token<'a>>,
         Box<Token<'a>>,
         Box<Iterable<'a>>,
         Box<Expression<'a>>,
+        Option<(Box<Token<'a>>, Box<Expression<'a>>)>,
     ),
     /// `if` expression block_expression (`else` expression)?
     ///
@@ -211,10 +193,10 @@ impl Display for Expression<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         use Expression::*;
         match self {
-            Literal(token) => write!(f, "{}", token),
-            InterpolatedString(token) => write!(f, "{}", token),
-            Variable(token) => write!(f, "{}", token),
-            Grouping(exp) => write!(f, "({})", exp),
+            Literal(token) => write!(f, "{token}"),
+            InterpolatedString(token) => write!(f, "{token}"),
+            Variable(token) => write!(f, "{token}"),
+            Grouping(op, exp, cp) => write!(f, "{op}{exp}{cp}"),
             Record(exps) => {
                 if exps.is_empty() {
                     return write!(f, "()");
@@ -257,25 +239,8 @@ impl Display for Expression<'_> {
             }
             Access(exp, token) => write!(f, "{}.{}", exp, token),
             Index(exp1, exp2) => write!(f, "{}[{}]", exp1, exp2),
-            Not(exp) => write!(f, "!{}", exp),
-            Negate(exp) => write!(f, "-{}", exp),
-            Plus(exp) => write!(f, "+{}", exp),
-            Exponent(exp1, exp2) => write!(f, "{} ^ {}", exp1, exp2),
-            Multiply(exp1, exp2) => write!(f, "{} * {}", exp1, exp2),
-            Divide(exp1, exp2) => write!(f, "{} / {}", exp1, exp2),
-            Modulo(exp1, exp2) => write!(f, "{} % {}", exp1, exp2),
-            Add(exp1, exp2) => write!(f, "{} + {}", exp1, exp2),
-            Subtract(exp1, exp2) => write!(f, "{} - {}", exp1, exp2),
-            Equal(exp1, exp2) => write!(f, "{} == {}", exp1, exp2),
-            NotEqual(exp1, exp2) => write!(f, "{} != {}", exp1, exp2),
-            Less(exp1, exp2) => write!(f, "{} < {}", exp1, exp2),
-            LessEqual(exp1, exp2) => write!(f, "{} <= {}", exp1, exp2),
-            Greater(exp1, exp2) => write!(f, "{} > {}", exp1, exp2),
-            GreaterEqual(exp1, exp2) => write!(f, "{} >= {}", exp1, exp2),
-            And(exp1, exp2) => write!(f, "{} && {}", exp1, exp2),
-            Or(exp1, exp2) => write!(f, "{} || {}", exp1, exp2),
-            ForwardPipe(left, right) => write!(f, "{} |> {}", left, right),
-            BackwardPipe(left, right) => write!(f, "{} <| {}", left, right),
+            Unary(op, exp) => write!(f, "{op}{exp}"),
+            Binary(exp1, op, exp2) => write!(f, "{exp1} {op} {exp2}"),
             Block(op, statements, expression, ed) => {
                 if statements.is_empty() {
                     if let Some(expression) = expression {
@@ -294,11 +259,20 @@ impl Display for Expression<'_> {
                 write!(f, "{ed}")
             }
             Loop(kw, expression) => write!(f, "{kw} {expression}"),
-            While(kw, expression, block) => {
+            While(kw, expression, block, None) => {
                 write!(f, "{kw} {expression} {block}")
             }
-            ForIn(kw_for, token, kw_in, iter, block) => {
+            While(kw, expression, block, Some((kw_else, else_block))) => {
+                write!(f, "{kw} {expression} {block} {kw_else} {else_block}")
+            }
+            ForIn(kw_for, token, kw_in, iter, block, None) => {
                 write!(f, "{kw_for} {token} {kw_in} {iter} {block}")
+            }
+            ForIn(kw_for, token, kw_in, iter, block, Some((kw_else, else_block))) => {
+                write!(
+                    f,
+                    "{kw_for} {token} {kw_in} {iter} {block} {kw_else} {else_block}"
+                )
             }
             If(kw_if, cond, then_block, Some((kw_else, else_block))) => {
                 write!(f, "{kw_if} {cond} {then_block} {kw_else} {else_block}")

@@ -4,7 +4,7 @@ use winnow::{
     token::{any, literal, one_of},
 };
 
-use crate::lexer::{Operator, Token, TokenKind};
+use crate::lexer::{Keyword, Operator, Token, TokenKind};
 
 use super::{
     Input, RecordLikeElement, expression,
@@ -50,7 +50,20 @@ pub(super) fn record_like_element<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Reco
             .parse_next(i)?
     };
     let last = peek(any).parse_next(i)?;
-    if *last == Operator::CloseParen {
+    if *last == Operator::CloseParen
+        || *last == Operator::CloseBrace
+        || *last == Operator::CloseBracket
+        || *last == Operator::Semicolon
+        || *last == TokenKind::Eof
+        || *last == Keyword::Return
+        || *last == Keyword::Break
+        || *last == Keyword::Continue
+        || *last == Keyword::Case
+        || *last == Keyword::Else
+        || *last == Keyword::In
+        || *last == Keyword::Val
+        || *last == Keyword::Var
+    {
         return Ok(result);
     }
     let comma = literal_or_insert(Operator::Comma, "Missing comma").parse_next(i)?;

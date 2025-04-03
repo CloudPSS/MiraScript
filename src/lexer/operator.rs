@@ -26,25 +26,41 @@ pub enum Operator {
 
     /// `+`
     Plus = '+' as isize,
+    /// `+=`
+    PlusEqual = (('+' as isize) << 8) + ('=' as isize),
     /// `-`
     Minus = '-' as isize,
+    /// `-=`
+    MinusEqual = (('-' as isize) << 8) + ('=' as isize),
+    /// `*`
+    Asterisk = '*' as isize,
+    /// `*=`
+    AsteriskEqual = (('*' as isize) << 8) + ('=' as isize),
+    /// `/`
+    Slash = '/' as isize,
+    /// `/=`
+    SlashEqual = (('/' as isize) << 8) + ('=' as isize),
+    /// `%`
+    Percent = '%' as isize,
+    /// `%=`
+    PercentEqual = (('%' as isize) << 8) + ('=' as isize),
 
     /// `^`
     Caret = '^' as isize,
+    /// `^=`
+    CaretEqual = (('^' as isize) << 8) + ('=' as isize),
 
-    /// `*`
-    Asterisk = '*' as isize,
-    /// `/`
-    Slash = '/' as isize,
-    /// `%`
-    Percent = '%' as isize,
 
     /// `!`
     LogicalNot = '!' as isize,
     /// `&&`
     LogicalAnd = ((('&' as isize) << 8) + ('&' as isize)),
+    /// `&&=`
+    LogicalAndEqual = ((('&' as isize) << 16) + (('&' as isize) << 8) + ('=' as isize)),
     /// `||`
     LogicalOr = ((('|' as isize) << 8) + ('|' as isize)),
+    /// `||=`
+    LogicalOrEqual = ((('|' as isize) << 16) + (('|' as isize) << 8) + ('=' as isize)),
 
     /// `|>`
     ForwardPipe = ((('|' as isize) << 8) + ('>' as isize)),
@@ -57,6 +73,10 @@ pub enum Operator {
     EqualEqual = (('=' as isize) << 8) + ('=' as isize),
     /// `!=`
     NotEqual = (('!' as isize) << 8) + ('=' as isize),
+    /// `~=`
+    TildeEqual = (('~' as isize) << 8) + ('=' as isize),
+    /// `!~=`
+    NotTildeEqual = (('!' as isize) << 16) + (('~' as isize) << 8) + ('=' as isize),
     /// `>`
     Greater = ('>' as isize),
     /// `>=`
