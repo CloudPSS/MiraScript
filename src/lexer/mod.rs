@@ -1,4 +1,4 @@
-use winnow::{LocatingSlice, ModalResult};
+use winnow::{LocatingSlice, ModalResult, Parser};
 
 mod comment;
 mod helper;
@@ -23,6 +23,28 @@ pub fn to_input(text: &str) -> Input<'_> {
 
 pub fn lex<'a>(input: &mut Input<'a>, ignore_comments: bool) -> ModalResult<Vec<Token<'a>>> {
     let mut tokens = vec![];
+    loop {
+        let prev_token = &tokens.last();
+        let token = tokens::token(input, prev_token)?;
+        if ignore_comments && matches!(token.kind, TokenKind::Comment(_)) {
+            continue;
+        }
+        let eof = token.kind == TokenKind::Eof;
+        tokens.push(token);
+        if eof {
+            break;
+        }
+    }
+    Ok(tokens)
+}
+
+pub fn lex_string<'a>(input: &mut Input<'a>, ignore_comments: bool) -> ModalResult<Vec<Token<'a>>> {
+    let str = string::string_content(None, 1)
+        .with_span()
+        .map(|(s, range)| Token { kind: s, range })
+        .parse_next(input)?;
+
+    let mut tokens = vec![str];
     loop {
         let prev_token = &tokens.last();
         let token = tokens::token(input, prev_token)?;

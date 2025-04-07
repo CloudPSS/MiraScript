@@ -12,7 +12,7 @@ mod utils;
 fn main() {
     let text = r##"
     var name = "world"; //
-    print <| "Hello ${{var a = 1 ; "${a}name"}}";
+    print <| "Hello ${var a = 1; "${a}name"}";
     
     [1,2,3] |> filter(fn {it % 2 == 0}) |> String
     
@@ -62,6 +62,8 @@ fn main() {
     z = 1
     {{{
      if a b else c
+
+    @@"你好${ if  } 世界 $$ 再见@" $$if "@世界"@@
     "##;
 
     let mut input = lexer::to_input(text);
