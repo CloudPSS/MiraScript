@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use super::Expression;
+use super::{Expression, display_ident::DisplayIdent};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Range<'a> {
@@ -12,9 +12,23 @@ pub enum Range<'a> {
 
 impl Display for Range<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.fmt_ident(f, 0)
+    }
+}
+
+impl DisplayIdent for Range<'_> {
+    fn fmt_ident(&self, f: &mut std::fmt::Formatter<'_>, ident: usize) -> std::fmt::Result {
         match self {
-            Range::Closed(start, end) => write!(f, "{}..{}", start, end),
-            Range::HalfOpen(start, end) => write!(f, "{}..<{}", start, end),
+            Range::Closed(start, end) => {
+                start.fmt_ident(f, ident)?;
+                write!(f, "..")?;
+                end.fmt_ident(f, ident)
+            }
+            Range::HalfOpen(start, end) => {
+                start.fmt_ident(f, ident)?;
+                write!(f, "..<")?;
+                end.fmt_ident(f, ident)
+            }
         }
     }
 }

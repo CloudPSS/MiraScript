@@ -2,7 +2,7 @@ use std::fmt::{self, Display, Formatter};
 
 use crate::lexer::Token;
 
-use super::Expression;
+use super::{Expression, display_ident::DisplayIdent};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Statement<'a> {
@@ -66,20 +66,45 @@ pub enum Statement<'a> {
     /// `continue;`
     Continue,
 }
+
 impl Display for Statement<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        self.fmt_ident(f, 0)
+    }
+}
+
+impl DisplayIdent for Statement<'_> {
+    fn fmt_ident(&self, f: &mut Formatter<'_>, ident: usize) -> fmt::Result {
         use Statement::*;
+        Self::write_ident(f, ident)?;
         match self {
-            Empty(c) => writeln!(f, "{c}"),
-            Expression(expr, c) => writeln!(f, "{expr}{c}"),
-            BlockExpression(expr) => writeln!(f, "{}", expr),
+            Empty(c) => {
+                writeln!(f, "{c}")
+            }
+            Expression(expr, c) => {
+                expr.fmt_ident(f, ident)?;
+                writeln!(f, "{c}")
+            }
+            BlockExpression(expr) => {
+                expr.fmt_ident(f, ident)?;
+                writeln!(f)
+            }
             Bind(keyword, id, eq, expr, c) => {
-                writeln!(f, "{keyword} {id} {eq} {expr}{c}")
+                write!(f, "{keyword} {id} {eq} ")?;
+                expr.fmt_ident(f, ident)?;
+                writeln!(f, "{c}")
             }
             Assign(exp, eq, expr, c) => {
-                writeln!(f, "{exp} {eq} {expr}{c}")
+                exp.fmt_ident(f, ident)?;
+                write!(f, " {eq} ")?;
+                expr.fmt_ident(f, ident)?;
+                writeln!(f, "{c}")
             }
-            Function(kw, id, None, body) => writeln!(f, "{kw} {id} {body}"),
+            Function(kw, id, None, body) => {
+                write!(f, "{kw} {id} ")?;
+                body.fmt_ident(f, ident)?;
+                writeln!(f)
+            }
             Function(kw, id, Some(params), body) => {
                 write!(f, "{kw} {id} (")?;
                 let mut iter = params.iter();
@@ -89,11 +114,21 @@ impl Display for Statement<'_> {
                         write!(f, ", {param}")?;
                     }
                 }
-                writeln!(f, ") {body}")
+                write!(f, ") ")?;
+                body.fmt_ident(f, ident)?;
+                writeln!(f)
             }
-            Return(Some(expr)) => writeln!(f, "return {};", expr),
+            Return(Some(expr)) => {
+                write!(f, "return ")?;
+                expr.fmt_ident(f, ident)?;
+                writeln!(f, ";")
+            }
             Return(None) => writeln!(f, "return;"),
-            Break(Some(expr)) => writeln!(f, "break {};", expr),
+            Break(Some(expr)) => {
+                write!(f, "break ")?;
+                expr.fmt_ident(f, ident)?;
+                writeln!(f, ";")
+            }
             Break(None) => writeln!(f, "break;"),
             Continue => writeln!(f, "continue;"),
         }

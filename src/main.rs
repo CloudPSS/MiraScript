@@ -10,7 +10,7 @@ mod parser;
 mod utils;
 
 fn main() {
-    let text = r##"
+    let text = r##"{
     var name = "world"; //
     print <| "Hello ${var a = 1; "${a}name"}";
     
@@ -23,6 +23,7 @@ fn main() {
     val w = while a > 0 {
         a = a - 1;
     } else {
+        a;
         10
     }
     
@@ -32,20 +33,25 @@ fn main() {
         a = a - 1;
     } 
 
-    fn  { it = 1 ;};
+    fn (a,b,c) {
+        print <| {
+            var sum = a + b + c;
+            sum
+        };
+    };
 
     1
 
-    call(1, 2, 3)
+    call(1, if x {1}else{2;3}, {x;y})
     call(a: 1, ..x)
 
     match x {
         case 1  x 
-        case 2 { 3 }
+        case 2 { y;3 }
          _  4 
     }
 
-    var simple_array = [1, 2, 3, "4", [5], []];
+    var simple_array = [1, 2, {1;2;3}, "4", [5], []];
     var spread_array = [1, 2, 3, "4", ..[5]];
     var range_array = [1..2, 1..<3,]
     var array = [1,2,3, 7..8, ..[9,10,11..<20], ..7, ..()];
@@ -57,12 +63,14 @@ fn main() {
     var simple_record = ("hello", 1, 2 ,3);
     var spread_record = (..named_record, hello: "world", foo: 1, bar: 2,  ..simple_record);
 
-    val a = (1 2)
+    
+
+    val a = (1 2){}
     x.y = 12
     z = 1
     {{{
      if a b else c
-
+match {a}{}
     @@"你好${ if  } 世界 $$ 再见@" $$if "@世界"@@
     "##;
 

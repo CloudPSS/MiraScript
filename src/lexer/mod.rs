@@ -1,4 +1,4 @@
-use winnow::{LocatingSlice, ModalResult, Parser};
+use winnow::{LocatingSlice, ModalResult, Parser, error::ContextError};
 
 mod comment;
 mod helper;
@@ -38,26 +38,18 @@ pub fn lex<'a>(input: &mut Input<'a>, ignore_comments: bool) -> ModalResult<Vec<
     Ok(tokens)
 }
 
-pub fn lex_string<'a>(input: &mut Input<'a>, ignore_comments: bool) -> ModalResult<Vec<Token<'a>>> {
+pub fn lex_string<'a>(input: &mut Input<'a>) -> ModalResult<Vec<Token<'a>>> {
     let str = string::string_content(None, 1)
         .with_span()
         .map(|(s, range)| Token { kind: s, range })
         .parse_next(input)?;
+    let eof = tokens::token(input, &None)?;
 
-    let mut tokens = vec![str];
-    loop {
-        let prev_token = &tokens.last();
-        let token = tokens::token(input, prev_token)?;
-        if ignore_comments && matches!(token.kind, TokenKind::Comment(_)) {
-            continue;
-        }
-        let eof = token.kind == TokenKind::Eof;
-        tokens.push(token);
-        if eof {
-            break;
-        }
+    if eof != TokenKind::Eof {
+        return Err(winnow::error::ErrMode::Backtrack(ContextError::new()));
     }
-    Ok(tokens)
+
+    Ok(vec![str, eof])
 }
 
 pub fn lex_balanced<'a>(

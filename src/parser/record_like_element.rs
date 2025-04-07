@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use crate::lexer::Token;
 
-use super::Expression;
+use super::{Expression, display_ident::DisplayIdent};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum RecordLikeElement<'a> {
@@ -42,19 +42,27 @@ impl<'a> RecordLikeElement<'a> {
 
 impl Display for RecordLikeElement<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.fmt_ident(f, 0)
+    }
+}
+
+impl DisplayIdent for RecordLikeElement<'_> {
+    fn fmt_ident(&self, f: &mut std::fmt::Formatter<'_>, ident: usize) -> std::fmt::Result {
         match self {
             RecordLikeElement::Named(name, value, _) => {
-                write!(f, "{}: {}", name, value)?;
+                write!(f, "{name}: ")?;
+                value.fmt_ident(f, ident)?;
             }
             RecordLikeElement::Unnamed(value, _) => {
-                write!(f, "{}", value)?;
+                value.fmt_ident(f, ident)?;
             }
             RecordLikeElement::Spread(value, _) => {
-                write!(f, "..{}", value)?;
+                write!(f, "..")?;
+                value.fmt_ident(f, ident)?;
             }
         }
         if let Some(tail_comma) = self.tail_comma() {
-            write!(f, "{}", tail_comma)?;
+            write!(f, "{} ", tail_comma)?;
         }
         Ok(())
     }

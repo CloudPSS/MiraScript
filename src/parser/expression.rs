@@ -4,12 +4,14 @@ use std::{
 };
 
 use crate::{
-    ansi::{RECOVER, RESET},
-    lexer::Token,
+    ansi::{INTERPOLATED, RECOVER, RESET, STRING},
+    lexer::{Token, TokenKind},
     utils::{SourceError, SourceRange},
 };
 
-use super::{ArrayInitElement, Iterable, RecordLikeElement, Statement};
+use super::{
+    ArrayInitElement, Iterable, RecordLikeElement, Statement, display_ident::DisplayIdent,
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expression<'a> {
@@ -191,22 +193,50 @@ impl<'a> Expression<'a> {
 
 impl Display for Expression<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        self.fmt_ident(f, 0)
+    }
+}
+
+impl DisplayIdent for Expression<'_> {
+    fn fmt_ident(&self, f: &mut Formatter<'_>, ident: usize) -> fmt::Result {
         use Expression::*;
         match self {
             Literal(token) => write!(f, "{token}"),
-            InterpolatedString(token) => write!(f, "{token}"),
+            InterpolatedString(token) => {
+                let Token {
+                    kind: TokenKind::InterpolatedString(s, e),
+                    ..
+                } = &**token
+                else {
+                    return write!(f, "{RECOVER}(\"<???>\"){RESET}");
+                };
+                write!(f, "{STRING}\"")?;
+                assert_eq!(s.len(), e.len() + 1, "Invalid string interpolation");
+                let mut s_iter = s.iter();
+                let first = s_iter.next().ok_or(std::fmt::Error)?;
+                write!(f, "{}", first.escape_debug())?;
+                for (s, e) in s_iter.zip(e.iter()) {
+                    write!(f, "{RESET}{INTERPOLATED}${RESET}")?;
+                    e.fmt_ident(f, ident)?;
+                    write!(f, "{STRING}")?;
+                    write!(f, "{}", s.escape_debug())?;
+                }
+                write!(f, "\"{RESET}")
+            }
             Variable(token) => write!(f, "{token}"),
-            Grouping(op, exp, cp) => write!(f, "{op}{exp}{cp}"),
+            Grouping(op, exp, cp) => {
+                write!(f, "{op}")?;
+                exp.fmt_ident(f, ident)?;
+                write!(f, " {cp}")?;
+                Ok(())
+            }
             Record(exps) => {
                 if exps.is_empty() {
                     return write!(f, "()");
                 }
                 write!(f, "(")?;
                 for exp in exps {
-                    write!(f, "{}", exp)?;
-                    if exp.has_tail_comma() {
-                        write!(f, " ")?;
-                    }
+                    exp.fmt_ident(f, ident)?;
                 }
                 write!(f, ")")?;
                 Ok(())
@@ -218,29 +248,47 @@ impl Display for Expression<'_> {
                 write!(f, "[")?;
                 let mut iter = exps.iter();
                 if let Some(exp) = iter.next() {
-                    write!(f, "{}", exp)?;
+                    exp.fmt_ident(f, ident)?;
                     for exp in iter {
-                        write!(f, ", {}", exp)?;
+                        write!(f, ", ")?;
+                        exp.fmt_ident(f, ident)?;
                     }
                 }
                 write!(f, "]")?;
                 Ok(())
             }
             Call(exp, args) => {
-                write!(f, "{}(", exp)?;
+                exp.fmt_ident(f, ident)?;
+                write!(f, "(")?;
                 let mut iter = args.iter();
                 if let Some(arg) = iter.next() {
-                    write!(f, "{}", arg)?;
+                    arg.fmt_ident(f, ident)?;
                     for arg in iter {
-                        write!(f, ", {}", arg)?;
+                        write!(f, ", ")?;
+                        arg.fmt_ident(f, ident)?;
                     }
                 }
                 write!(f, ")")
             }
-            Access(exp, token) => write!(f, "{}.{}", exp, token),
-            Index(exp1, exp2) => write!(f, "{}[{}]", exp1, exp2),
-            Unary(op, exp) => write!(f, "{op}{exp}"),
-            Binary(exp1, op, exp2) => write!(f, "{exp1} {op} {exp2}"),
+            Access(exp, token) => {
+                exp.fmt_ident(f, ident)?;
+                write!(f, ".{token}")
+            }
+            Index(exp1, exp2) => {
+                exp1.fmt_ident(f, ident)?;
+                write!(f, "[")?;
+                exp2.fmt_ident(f, ident)?;
+                write!(f, "]")
+            }
+            Unary(op, exp) => {
+                write!(f, "{op}")?;
+                exp.fmt_ident(f, ident)
+            }
+            Binary(exp1, op, exp2) => {
+                exp1.fmt_ident(f, ident)?;
+                write!(f, " {op} ")?;
+                exp2.fmt_ident(f, ident)
+            }
             Block(op, statements, expression, ed) => {
                 if statements.is_empty() {
                     if let Some(expression) = expression {
@@ -251,43 +299,81 @@ impl Display for Expression<'_> {
                 }
                 writeln!(f, "{op}")?;
                 for statement in statements {
-                    write!(f, "{statement}")?;
+                    statement.fmt_ident(f, Self::next_ident(ident))?;
                 }
                 if let Some(expression) = expression {
+                    Self::write_ident(f, Self::next_ident(ident))?;
                     writeln!(f, "{expression}")?;
                 }
+                Self::write_ident(f, ident)?;
                 write!(f, "{ed}")
             }
-            Loop(kw, expression) => write!(f, "{kw} {expression}"),
+            Loop(kw, expression) => {
+                write!(f, "{kw} ")?;
+                expression.fmt_ident(f, ident)
+            }
             While(kw, expression, block, None) => {
-                write!(f, "{kw} {expression} {block}")
+                write!(f, "{kw} ")?;
+                expression.fmt_ident(f, ident)?;
+                write!(f, " ")?;
+                block.fmt_ident(f, ident)
             }
             While(kw, expression, block, Some((kw_else, else_block))) => {
-                write!(f, "{kw} {expression} {block} {kw_else} {else_block}")
+                write!(f, "{kw} ")?;
+                expression.fmt_ident(f, ident)?;
+                write!(f, " ")?;
+                block.fmt_ident(f, ident)?;
+                write!(f, " {kw_else} ")?;
+                else_block.fmt_ident(f, ident)
             }
             ForIn(kw_for, token, kw_in, iter, block, None) => {
-                write!(f, "{kw_for} {token} {kw_in} {iter} {block}")
+                write!(f, "{kw_for} {token} {kw_in} ")?;
+                iter.fmt_ident(f, ident)?;
+                write!(f, " ")?;
+                block.fmt_ident(f, ident)
             }
             ForIn(kw_for, token, kw_in, iter, block, Some((kw_else, else_block))) => {
-                write!(
-                    f,
-                    "{kw_for} {token} {kw_in} {iter} {block} {kw_else} {else_block}"
-                )
+                write!(f, "{kw_for} {token} {kw_in} ")?;
+                iter.fmt_ident(f, ident)?;
+                write!(f, " ")?;
+                block.fmt_ident(f, ident)?;
+                write!(f, " {kw_else} ")?;
+                else_block.fmt_ident(f, ident)
             }
             If(kw_if, cond, then_block, Some((kw_else, else_block))) => {
-                write!(f, "{kw_if} {cond} {then_block} {kw_else} {else_block}")
+                write!(f, "{kw_if} ")?;
+                cond.fmt_ident(f, ident)?;
+                write!(f, " ")?;
+                then_block.fmt_ident(f, ident)?;
+                write!(f, " {kw_else} ")?;
+                else_block.fmt_ident(f, ident)
             }
             If(kw_if, cond, then_block, None) => {
-                write!(f, "{kw_if} {cond} {then_block}")
+                write!(f, "{kw_if} ")?;
+                cond.fmt_ident(f, ident)?;
+                write!(f, " ")?;
+                then_block.fmt_ident(f, ident)
             }
             Match(kw, expression, op, arms, ed) => {
-                writeln!(f, "{kw} {expression} {op}")?;
+                write!(f, "{kw} ")?;
+                expression.fmt_ident(f, ident)?;
+                writeln!(f, " {op}")?;
+                let next_ident = Self::next_ident(ident);
                 for (kw_case, pattern, block) in arms {
-                    writeln!(f, "{kw_case} {pattern} {block}")?;
+                    Self::write_ident(f, next_ident)?;
+                    write!(f, "{kw_case} ")?;
+                    pattern.fmt_ident(f, next_ident)?;
+                    write!(f, " ")?;
+                    block.fmt_ident(f, next_ident)?;
+                    writeln!(f)?;
                 }
+                Self::write_ident(f, ident)?;
                 write!(f, "{ed}")
             }
-            Function(kw, None, block) => write!(f, "{kw} {}", block),
+            Function(kw, None, block) => {
+                write!(f, "{kw} ")?;
+                block.fmt_ident(f, ident)
+            }
             Function(kw, Some(params), block) => {
                 write!(f, "{kw} (")?;
                 let mut iter = params.iter();
@@ -297,7 +383,8 @@ impl Display for Expression<'_> {
                         write!(f, ", {}", param)?;
                     }
                 }
-                write!(f, ") {}", block)
+                write!(f, ") ")?;
+                block.fmt_ident(f, ident)
             }
             Unknown { .. } => write!(f, "{RECOVER}(<???>){RESET}"),
         }
