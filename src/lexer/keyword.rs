@@ -16,6 +16,9 @@ pub enum Keyword {
     Underscore,
     Global,
 
+    // operators
+    TypeOf,
+
     // control flow
     If,
     Else,
@@ -32,8 +35,8 @@ pub enum Keyword {
     // declaration
     Fn,
     Op, // Reserved for future use
-    Var,
-    Val,
+    Let,
+    Mut,
     Record, // Reserved for future use
 
     // record Date(string) {
@@ -113,6 +116,8 @@ impl FromStr for Keyword {
             "_" => Ok(Keyword::Underscore),
             "global" => Ok(Keyword::Global),
 
+            "typeof" => Ok(Keyword::TypeOf),
+
             "if" => Ok(Keyword::If),
             "else" => Ok(Keyword::Else),
             "match" => Ok(Keyword::Match),
@@ -127,8 +132,8 @@ impl FromStr for Keyword {
 
             "fn" => Ok(Keyword::Fn),
             "op" => Ok(Keyword::Op),
-            "var" => Ok(Keyword::Var),
-            "val" => Ok(Keyword::Val),
+            "let" => Ok(Keyword::Let),
+            "mut" => Ok(Keyword::Mut),
             "record" => Ok(Keyword::Record),
 
             "effect" => Ok(Keyword::Effect),
