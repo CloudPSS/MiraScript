@@ -1,7 +1,7 @@
-use std::borrow::Cow;
+use std::{borrow::Cow, vec};
 
 use winnow::{
-    combinator::{alt, dispatch, eof, fail, opt, peek, terminated},
+    combinator::{alt, dispatch, eof, fail, opt, peek},
     error::{ContextError, ErrMode},
     prelude::*,
     stream::{AsChar, Location, Stream},
@@ -10,7 +10,6 @@ use winnow::{
 
 use crate::{
     lexer::{Input, Operator, Token, TokenKind},
-    parser::{Expression, expression, to_input},
     utils::{SourceError, SourceRange},
 };
 
@@ -22,7 +21,7 @@ enum StringFragment<'a> {
     Literal(&'a str),
     EscapedChar(char),
     InvalidEscapedChar(SourceRange),
-    Interpolation(Expression<'a>),
+    Interpolation(Vec<Token<'a>>),
     EndOfString,
     EndOfFile,
 }
@@ -272,45 +271,19 @@ fn interpolation<'a>(
                 kind: id.0,
                 range: id.1,
             };
-            return Ok(StringFragment::Interpolation(Expression::Variable(
-                Box::new(id),
-            )));
+            return Ok(StringFragment::Interpolation(vec![id]));
         }
 
         // '$' '{' expression '}'
 
         // lex until '}'
-        let mut tokens = match lex_balanced(i, true, Operator::OpenBrace, Operator::CloseBrace) {
+        let tokens = match lex_balanced(i, true, Operator::OpenBrace, Operator::CloseBrace) {
             Ok(tokens) => tokens,
             Err(e) => {
                 i.reset(&cp);
                 return Err(e);
             }
         };
-        let expr: ModalResult<Expression<'_>> = {
-            let mut token_input = to_input(tokens.as_slice());
-            terminated(expression, eof).parse_next(&mut token_input)
-        };
-        let expr = match expr {
-            Ok(expr) => expr,
-            Err(_) => {
-                let last_token = tokens.pop().unwrap();
-                let error = if last_token == TokenKind::Eof {
-                    "Unterminated interpolation expression"
-                } else {
-                    "Bad interpolation expression"
-                };
-                if tokens.is_empty() {
-                    let range = SourceRange {
-                        start: last_token.range.start,
-                        end: last_token.range.start,
-                    };
-                    Expression::unknown_range(tokens, range, error)
-                } else {
-                    Expression::unknown(tokens, error)
-                }
-            }
-        };
-        Ok(StringFragment::Interpolation(expr))
+        Ok(StringFragment::Interpolation(tokens))
     }
 }

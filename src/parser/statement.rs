@@ -16,9 +16,10 @@ pub enum Statement<'a> {
     ///
     /// No trailing semicolon in this case. For expressions that end with a semicolon, use [Statement::Expression].
     BlockExpression(Box<Expression<'a>>),
-    /// `('var' | 'val') identifier '=' expression ';'`
+    /// `'let' 'mut'? identifier '=' expression ';'`
     Bind(
         Box<Token<'a>>,
+        Option<Box<Token<'a>>>,
         Box<Token<'a>>,
         Box<Token<'a>>,
         Box<Expression<'a>>,
@@ -89,8 +90,13 @@ impl DisplayIdent for Statement<'_> {
                 expr.fmt_ident(f, ident)?;
                 writeln!(f)
             }
-            Bind(keyword, id, eq, expr, c) => {
-                write!(f, "{keyword} {id} {eq} ")?;
+            Bind(kw_let, None, id, eq, expr, c) => {
+                write!(f, "{kw_let} {id} {eq} ")?;
+                expr.fmt_ident(f, ident)?;
+                writeln!(f, "{c}")
+            }
+            Bind(kw_let, Some(kw_mut), id, eq, expr, c) => {
+                write!(f, "{kw_let} {kw_mut} {id} {eq} ")?;
                 expr.fmt_ident(f, ident)?;
                 writeln!(f, "{c}")
             }

@@ -1,7 +1,6 @@
 use std::{borrow::Cow, fmt::Display};
 
 use crate::ansi::{INTERPOLATED, RECOVER, RESET, STRING};
-use crate::parser::Expression;
 use crate::utils::{SourceError, SourceRange};
 
 use super::{Comment, Keyword, Operator, Token};
@@ -14,7 +13,7 @@ pub enum TokenKind<'a> {
     Ordinal(u64),
     Number(f64),
     String(Cow<'a, str>),
-    InterpolatedString(Vec<Cow<'a, str>>, Vec<Expression<'a>>),
+    InterpolatedString(Vec<Cow<'a, str>>, Vec<Vec<Token<'a>>>),
     Operator(Operator),
     Keyword(Keyword),
     Unknown {
@@ -107,7 +106,11 @@ impl Display for TokenKind<'_> {
                 let first = s_iter.next().ok_or(std::fmt::Error)?;
                 write!(f, "{}", first.escape_debug())?;
                 for (s, e) in s_iter.zip(e.iter()) {
-                    write!(f, "{RESET}{INTERPOLATED}${RESET}{e}{STRING}")?;
+                    write!(f, "{RESET}{INTERPOLATED}${RESET}")?;
+                    for token in e {
+                        write!(f, "{token}")?;
+                    }
+                    write!(f, "{STRING}")?;
                     write!(f, "{}", s.escape_debug())?;
                 }
                 write!(f, "\"{RESET}")

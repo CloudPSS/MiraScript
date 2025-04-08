@@ -61,8 +61,7 @@ pub(super) fn record_like_element<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Reco
         || *last == Keyword::Case
         || *last == Keyword::Else
         || *last == Keyword::In
-        || *last == Keyword::Val
-        || *last == Keyword::Var
+        || *last == Keyword::Let
     {
         return Ok(result);
     }

@@ -1,18 +1,18 @@
-use winnow::combinator::{alt, delimited, dispatch, opt, peek, preceded, repeat, seq, terminated};
+use winnow::combinator::{
+    alt, delimited, dispatch, eof, opt, peek, preceded, repeat, seq, terminated,
+};
 use winnow::error::{ContextError, ErrMode};
 use winnow::prelude::*;
 use winnow::token::{any, literal, one_of};
 
-use crate::lexer::{Operator, Token, TokenKind};
+use crate::lexer::{Keyword, Operator, Token, TokenKind};
 
 use super::array_expression::array_expression;
 use super::block_expressions::block_like_expression;
 use super::expressions::expression;
-use super::helper::{
-    interpolation_token, literal_boxed, literal_or_insert, literal_token, variable_token,
-};
+use super::helper::{literal_boxed, literal_or_insert, literal_token, variable_token};
 use super::record_like_expression::record_like_element;
-use super::{Expression, Input, RecordLikeElement};
+use super::{Expression, Input, RecordLikeElement, to_input};
 
 fn tuple_like<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
     let open = literal_boxed(Operator::OpenParen).parse_next(i)?;
@@ -35,13 +35,44 @@ fn tuple_like<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
     Ok(result)
 }
 
+pub(super) fn interpolation<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
+    let token = one_of(|t: &Token<'a>| matches!(&t.kind, &TokenKind::InterpolatedString(_, _)))
+        .map(|t: &Token<'a>| t.to_owned())
+        .parse_next(i)?;
+
+    let TokenKind::InterpolatedString(_, e) = &token.kind else {
+        unreachable!("Expected InterpolatedString");
+    };
+    let expressions: Vec<_> = e
+        .iter()
+        .map(|tokens| {
+            let expr: ModalResult<Expression<'_>> = {
+                let mut token_input = to_input(tokens.as_slice());
+                terminated(expression, eof).parse_next(&mut token_input)
+            };
+            let expr = match expr {
+                Ok(expr) => expr,
+                Err(_) => {
+                    let last_token = tokens.last().unwrap();
+                    let error = if *last_token == TokenKind::Eof {
+                        "Unterminated interpolation expression"
+                    } else {
+                        "Bad interpolation expression"
+                    };
+                    Expression::unknown(tokens.clone(), error)
+                }
+            };
+            expr
+        })
+        .collect();
+    Ok(Expression::InterpolatedString(Box::new(token), expressions))
+}
+
 fn primary<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
     (alt((
         block_like_expression,
         literal_token.map(Box::new).map(Expression::Literal),
-        interpolation_token
-            .map(Box::new)
-            .map(Expression::InterpolatedString),
+        interpolation,
         variable_token(false, true)
             .map(Box::new)
             .map(Expression::Variable),
@@ -115,7 +146,7 @@ fn function<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
 
 fn unary<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
     dispatch! {peek(any);
-        token if *token == Operator::Plus || *token == Operator::Minus|| *token == Operator::LogicalNot =>
+        token if *token == Operator::Plus || *token == Operator::Minus|| *token == Operator::LogicalNot || *token == Keyword::TypeOf =>
             seq!(Expression::Unary(any.map(|t: &Token<'a>| Box::new(t.to_owned())), unary.map(Box::new))),
         &Token{..} => function,
     }
@@ -136,7 +167,7 @@ fn exponent<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
     // right-associative
     let mut iter = exponents.into_iter();
     let (mut op, mut acc) = iter.next().unwrap();
-    while let Some((next_op, next_exp)) = iter.next() {
+    for (next_op, next_exp) in iter {
         acc = Expression::Binary(Box::new(acc), op, Box::new(next_exp));
         op = next_op;
     }

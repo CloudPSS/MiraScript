@@ -70,8 +70,8 @@ fn continue_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {
 
 fn bind_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {
     seq!(Statement::Bind(
-        one_of(|t: &Token<'a>| *t == Keyword::Var || *t == Keyword::Val)
-            .map(|t: &Token<'a>| Box::new(t.to_owned())),
+        literal_boxed(Keyword::Let),
+        opt(literal_boxed(Keyword::Mut)),
         variable_token(false, false).map(Box::new),
         literal_or_insert(Operator::Equal, "Missing `=`").map(Box::new),
         expression.map(Box::new),
@@ -132,7 +132,7 @@ pub(super) fn statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>>
 
         t if *t == Operator::Semicolon => empty_statement,
 
-        t if *t == Keyword::Var || *t == Keyword::Val => bind_statement,
+        t if *t == Keyword::Let => bind_statement,
 
         &Token{..} => alt((
             assign_statement,

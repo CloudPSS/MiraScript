@@ -73,12 +73,6 @@ pub(super) fn literal_token<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Token<'a>>
     .parse_next(i)
 }
 
-pub(super) fn interpolation_token<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Token<'a>> {
-    one_of(|t: &Token<'a>| matches!(&t.kind, &TokenKind::InterpolatedString(_, _)))
-        .map(|t: &Token<'a>| t.to_owned())
-        .parse_next(i)
-}
-
 pub(super) fn variable_token<'t, 'a: 't>(
     include_underscore: bool,
     include_global: bool,

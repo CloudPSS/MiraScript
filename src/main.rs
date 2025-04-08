@@ -9,10 +9,12 @@ mod lexer;
 mod parser;
 mod utils;
 
+struct X(usize);
+
 fn main() {
     let text = r##"{
-    var name = "world"; //
-    print <| "Hello ${var a = 1; "${a}name"}";
+    let mut name = "world"; //
+    print <| "Hello ${let mut a = 1; "${a}name"}";
     
     [1,2,3] |> filter(fn {it % 2 == 0}) |> String
     
@@ -20,14 +22,14 @@ fn main() {
         print <| i;
     }
 
-    val w = while a > 0 {
+    let w = while a > 0 {
         a = a - 1;
     } else {
         a;
         10
     }
     
-    var fr= for i in [1,2,3] |> map(fn {it * 2}) {
+    let mut fr= for i in [1,2,3] |> map(fn {it * 2}) {
         print <| i;
     } else if a > 0 {
         a = a - 1;
@@ -35,7 +37,7 @@ fn main() {
 
     fn (a,b,c) {
         print <| {
-            var sum = a + b + c;
+            let mut sum = a + b + c;
             sum
         };
     };
@@ -51,27 +53,29 @@ fn main() {
          _  4 
     }
 
-    var simple_array = [1, 2, {1;2;3}, "4", [5], []];
-    var spread_array = [1, 2, 3, "4", ..[5]];
-    var range_array = [1..2, 1..<3,]
-    var array = [1,2,3, 7..8, ..[9,10,11..<20], ..7, ..()];
+    let mut simple_array = [1, 2, {1;2;3}, "4", [5], []];
+    let mut spread_array = [1, 2, 3, "4", ..[5]];
+    let mut range_array = [1..2, 1..<3,]
+    let mut array = [1,2,3, 7..8, ..[9,10,11..<20], ..7, ..()];
 
-    var parenthesis = (1);
-    var single_record = (1,);
-    var single_record2 = (a: 1);
-    var named_record = (hello: "world", foo: 1, bar: 2, 3 1 45.3 );
-    var simple_record = ("hello", 1, 2 ,3);
-    var spread_record = (..named_record, hello: "world", foo: 1, bar: 2,  ..simple_record);
+    let mut parenthesis = (1);
+    let mut single_record = (1,);
+    let mut single_record2 = (a: 1);
+    let mut named_record = (hello: "world", foo: 1, bar: 2, 3 1 45.3 );
+    let mut simple_record = ("hello", 1, 2 ,3);
+    let mut spread_record = (..named_record, hello: "world", foo: 1, bar: 2,  ..simple_record);
 
     
 
-    val a = (1 2){}
+    let a = (1 2){}
     x.y = 12
     z = 1
     {{{
      if a b else c
 match {a}{}
     @@"你好${ if  } 世界 $$ 再见@" $$if "@世界"@@
+
+    let t = typeof "x";
     "##;
 
     let mut input = lexer::to_input(text);

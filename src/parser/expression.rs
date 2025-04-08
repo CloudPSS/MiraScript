@@ -20,8 +20,9 @@ pub enum Expression<'a> {
     Literal(Box<Token<'a>>),
     /// interpolated_string
     ///
-    /// Holds a [crate::lexer::TokenKind::InterpolatedString].
-    InterpolatedString(Box<Token<'a>>),
+    /// Holds a [crate::lexer::TokenKind::InterpolatedString], and a list of expressions
+    /// that are interpolated into the string.
+    InterpolatedString(Box<Token<'a>>, Vec<Expression<'a>>),
     /// identifier
     Variable(Box<Token<'a>>),
     /// `(` expression `)`
@@ -55,7 +56,7 @@ pub enum Expression<'a> {
     /// - `!` logical not
     /// - `-` negation
     /// - `+` unary plus
-    /// `not` expression
+    /// - `typeof` get type of expression
     Unary(Box<Token<'a>>, Box<Expression<'a>>),
 
     /// expression op expression
@@ -202,9 +203,9 @@ impl DisplayIdent for Expression<'_> {
         use Expression::*;
         match self {
             Literal(token) => write!(f, "{token}"),
-            InterpolatedString(token) => {
+            InterpolatedString(token, e) => {
                 let Token {
-                    kind: TokenKind::InterpolatedString(s, e),
+                    kind: TokenKind::InterpolatedString(s, _),
                     ..
                 } = &**token
                 else {
@@ -281,7 +282,10 @@ impl DisplayIdent for Expression<'_> {
                 write!(f, "]")
             }
             Unary(op, exp) => {
-                write!(f, "{op}")?;
+                match op.kind {
+                    TokenKind::Operator(_) => write!(f, "{op}")?,
+                    _ => write!(f, "{op} ")?,
+                }
                 exp.fmt_ident(f, ident)
             }
             Binary(exp1, op, exp2) => {
