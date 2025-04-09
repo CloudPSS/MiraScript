@@ -1,7 +1,11 @@
 [package]
-name = "project-expression"
+name = "mirascript-core"
 version = "0.1.0"
 edition = "2024"
+
+# [lib]
+# name = "mira_core"
+# crate-type = ["lib"]
 
 [dependencies]
 unicode-ident = "1.0"

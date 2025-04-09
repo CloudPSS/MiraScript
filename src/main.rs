@@ -9,8 +9,6 @@ mod lexer;
 mod parser;
 mod utils;
 
-struct X(usize);
-
 fn main() {
     let text = r##"{
     let mut name = "world"; //
@@ -76,6 +74,16 @@ match {a}{}
     @@"你好${ if  } 世界 $$ 再见@" $$if "@世界"@@
 
     let t = typeof "x";
+
+    if x is y {
+        print <| "x is 1";
+    }
+    if "1" in ["1", "2", "3"] {
+        print <| "1 in [1, 2, 3]";
+    }
+    if "key" in ("key": "value") {
+        print <| "key in (key: value)";
+    }
     "##;
 
     let mut input = lexer::to_input(text);
