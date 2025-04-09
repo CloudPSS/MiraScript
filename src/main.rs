@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use std::ops::Deref;
 
 mod analyzer;
@@ -67,7 +65,7 @@ fn main() {
 
     let a = (1 2){}
     x.y = 12
-    z = 1
+    mut z 
     {{{
      if a b else c
 match {a}{}
@@ -84,6 +82,8 @@ match {a}{}
     if "key" in ("key": "value") {
         print <| "key in (key: value)";
     }
+    if a {} else for global in (1,2e7, 1.53e-12, : s)
+    let x.y = 1;
     "##;
 
     let mut input = lexer::to_input(text);
@@ -94,6 +94,5 @@ match {a}{}
     let exp = parser::parse(&mut input);
 
     println!("{:?}", input.deref());
-    println!("{:#?}", exp.as_ref().unwrap());
     println!("{:#}", exp.as_ref().unwrap());
 }

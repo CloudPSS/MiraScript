@@ -1,17 +1,15 @@
 use std::borrow::Cow;
 use std::str::FromStr;
 
-use num_bigint::BigUint;
-use num_traits::cast::ToPrimitive;
-use winnow::ascii::{digit0, digit1, line_ending, till_line_ending};
-use winnow::combinator::{alt, cut_err, dispatch, eof, fail, opt, peek, preceded, repeat, trace};
-use winnow::error::{StrContext, StrContextValue};
+use winnow::ascii::{line_ending, till_line_ending};
+use winnow::combinator::{alt, dispatch, eof, fail, opt, peek, preceded, repeat, trace};
 use winnow::prelude::*;
 use winnow::token::{any, one_of, take, take_until, take_while};
 
 use crate::utils::{SourceError, SourceRange};
 
 use super::helper::{is_identifier_continue, is_identifier_start};
+use super::numeric::{number, ordinal};
 use super::{Comment, Input, Keyword, Operator, Token, TokenKind, string};
 
 fn line_comment<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
@@ -56,123 +54,6 @@ pub(super) fn identifier<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
                     TokenKind::Identifier(Cow::Borrowed(s))
                 }
             }),
-    )
-    .parse_next(i)
-}
-
-fn number<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
-    trace("number", move |i: &mut Input<'a>| {
-        let initial = (peek(opt((any, any)))).parse_next(i)?;
-        match initial {
-            Some(('0', ch1))
-                if is_identifier_continue(ch1) && ch1 != '_' && ch1 != 'e' && ch1 != 'E' =>
-            {
-                (take_while(2.., is_identifier_continue).with_span().map(
-                    |(s, r): (&str, SourceRange)| {
-                        let ends_with_underscore = s.ends_with("_");
-                        let radix;
-                        let is_valid_char = if s.starts_with("0x") {
-                            radix = 16;
-                            |c: char| c.is_ascii_hexdigit()
-                        } else if s.starts_with("0o") {
-                            radix = 8;
-                            |c: char| ('0'..='7').contains(&c)
-                        } else if s.starts_with("0b") {
-                            radix = 2;
-                            |c: char| c == '0' || c == '1'
-                        } else {
-                            return TokenKind::unknown_range(
-                                TokenKind::Number(0.0),
-                                r,
-                                "Invalid base prefix for number literal",
-                            );
-                        };
-
-                        let s = &s[2..];
-                        let mut errors = vec![];
-                        let num = if s.chars().all(is_valid_char) {
-                            if s.is_empty() {
-                                errors.push(SourceError::new(
-                                    r.clone(),
-                                    "No valid digits for number literal",
-                                ));
-                            }
-                            BigUint::parse_bytes(s.as_bytes(), radix)
-                        } else {
-                            let mut num = String::new();
-                            for (i, c) in s.char_indices() {
-                                if c == '_' {
-                                    continue;
-                                } else if is_valid_char(c) {
-                                    num.push(c);
-                                } else {
-                                    let mut range = r.clone();
-                                    range.start += i + 2;
-                                    range.end = range.start + c.len_utf8();
-                                    errors.push(SourceError::new(
-                                        range,
-                                        "Invalid character in number literal",
-                                    ));
-                                }
-                            }
-                            if num.is_empty() {
-                                errors.push(SourceError::new(
-                                    r.clone(),
-                                    "No valid digits for number literal",
-                                ));
-                            }
-                            BigUint::parse_bytes(num.as_bytes(), radix)
-                        }
-                        .unwrap_or_default();
-                        let float = num.to_f64().unwrap();
-                        if ends_with_underscore {
-                            errors.push(SourceError::new(
-                                r.clone(),
-                                "Number literal cannot end with underscore",
-                            ));
-                        }
-                        if float.is_infinite() {
-                            errors.push(SourceError::new(r, "Number literal is too large"));
-                        }
-                        if !errors.is_empty() {
-                            TokenKind::unknown_errors(TokenKind::Number(float), errors)
-                        } else {
-                            TokenKind::Number(float)
-                        }
-                    },
-                ))
-                .parse_next(i)
-            }
-            _ => (cut_err(
-                (
-                    digit0,
-                    opt(('.', digit1)),
-                    opt((one_of(['e', 'E']), opt(one_of(['+', '-'])), digit1)),
-                )
-                    .take()
-                    .map(|s: &str| TokenKind::Number(s.parse().expect("valid float"))),
-            ))
-            .parse_next(i),
-        }
-    })
-    .parse_next(i)
-}
-
-fn ordinal<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
-    // must be integer with NO leading zeros
-    trace(
-        "ordinal",
-        cut_err(
-            take_while(1.., is_identifier_continue)
-                .verify(|s: &str| {
-                    s == "0" || !s.starts_with('0') && s.chars().all(|c| c.is_ascii_digit())
-                })
-                .context(StrContext::Label("ordinal"))
-                .context(StrContext::Expected(StrContextValue::Description(
-                    "integer",
-                ))),
-        )
-        .map(|s: &str| TokenKind::Ordinal(s.parse().unwrap())),
     )
     .parse_next(i)
 }

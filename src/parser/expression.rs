@@ -10,13 +10,13 @@ use crate::{
 };
 
 use super::{
-    ArrayInitElement, Iterable, RecordLikeElement, Statement, display_ident::DisplayIdent,
+    ArrayInitElement, Iterable, Pattern, RecordLikeElement, Statement, display_ident::DisplayIdent,
 };
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expression<'a> {
     // primary
-    /// literal | 'true' | 'false' | 'nil'
+    /// string | number | ordinal | `true` | `false` | `nil`
     Literal(Box<Token<'a>>),
     /// interpolated_string
     ///
@@ -38,7 +38,7 @@ pub enum Expression<'a> {
     /// Use `[]` for an empty list.
     Array(Vec<ArrayInitElement<'a>>),
 
-    // function
+    // access and call
     /// expression `(` arguments `)`
     ///
     /// Arguments are a list of expressions, trailing comma is optional.
@@ -63,14 +63,17 @@ pub enum Expression<'a> {
     ///
     /// Binary operators are:
     /// 1. `^` exponentiation
-    /// 2. `*` `/` `%` multiplication, division, modulo
-    /// 3. `+` `-` addition, subtraction
-    /// 4. `>` `<` `>=` `<=` comparison
-    /// 5. `==` `!=` `~=` `!~=` equality
-    /// 6. `&&` logical and
-    /// 7. `||` logical or
-    /// 8. `|>` `<|` forward and backward pipe
+    /// 1. `*` `/` `%` multiplicative
+    /// 1. `+` `-` additive
+    /// 1. `is` matching *Use [Expression::Is] for this
+    /// 1. `>` `<` `>=` `<=` `in` relational
+    /// 1. `==` `!=` `~=` `!~=` equality
+    /// 1. `&&` logical and
+    /// 1. `||` logical or
+    /// 1. `|>` `<|` forward and backward pipe
     Binary(Box<Expression<'a>>, Box<Token<'a>>, Box<Expression<'a>>),
+    /// expression `is` pattern
+    Is(Box<Expression<'a>>, Box<Token<'a>>, Box<Pattern<'a>>),
 
     // block-like
     /// `{` statements* expression? `}`
@@ -104,7 +107,7 @@ pub enum Expression<'a> {
         Box<Expression<'a>>,
         Option<(Box<Token<'a>>, Box<Expression<'a>>)>,
     ),
-    /// `for` identifier `in` expression block_expression (`else` expression)?
+    /// `for` pattern `in` expression block_expression (`else` expression)?
     ///
     /// The final expression of the block must not present.
     ///
@@ -115,7 +118,7 @@ pub enum Expression<'a> {
     /// the value is the value of the `else_block`. Otherwise, `nil`.
     ForIn(
         Box<Token<'a>>,
-        Box<Token<'a>>,
+        Box<Pattern<'a>>,
         Box<Token<'a>>,
         Box<Iterable<'a>>,
         Box<Expression<'a>>,
@@ -141,7 +144,7 @@ pub enum Expression<'a> {
         Box<Token<'a>>,
         Box<Expression<'a>>,
         Box<Token<'a>>,
-        Vec<(Token<'a>, Expression<'a>, Expression<'a>)>,
+        Vec<(Token<'a>, Pattern<'a>, Expression<'a>)>,
         Box<Token<'a>>,
     ),
     /// `fn` parameters? block_expression
@@ -157,6 +160,10 @@ pub enum Expression<'a> {
 }
 
 impl<'a> Expression<'a> {
+    pub(crate) fn is_unknown(&self) -> bool {
+        matches!(self, Expression::Unknown { .. })
+    }
+
     pub(crate) fn unknown<T: Into<Vec<Token<'a>>>, E: Into<Cow<'static, str>>>(
         tokens: T,
         error: E,
@@ -293,6 +300,11 @@ impl DisplayIdent for Expression<'_> {
                 write!(f, " {op} ")?;
                 exp2.fmt_ident(f, ident)
             }
+            Is(exp1, op, pattern) => {
+                exp1.fmt_ident(f, ident)?;
+                write!(f, " {op} ")?;
+                pattern.fmt_ident(f, ident)
+            }
             Block(op, statements, expression, ed) => {
                 if statements.is_empty() {
                     if let Some(expression) = expression {
@@ -330,14 +342,18 @@ impl DisplayIdent for Expression<'_> {
                 write!(f, " {kw_else} ")?;
                 else_block.fmt_ident(f, ident)
             }
-            ForIn(kw_for, token, kw_in, iter, block, None) => {
-                write!(f, "{kw_for} {token} {kw_in} ")?;
+            ForIn(kw_for, pattern, kw_in, iter, block, None) => {
+                write!(f, "{kw_for} ")?;
+                pattern.fmt_ident(f, ident)?;
+                write!(f, " {kw_in} ")?;
                 iter.fmt_ident(f, ident)?;
                 write!(f, " ")?;
                 block.fmt_ident(f, ident)
             }
-            ForIn(kw_for, token, kw_in, iter, block, Some((kw_else, else_block))) => {
-                write!(f, "{kw_for} {token} {kw_in} ")?;
+            ForIn(kw_for, pattern, kw_in, iter, block, Some((kw_else, else_block))) => {
+                write!(f, "{kw_for} ")?;
+                pattern.fmt_ident(f, ident)?;
+                write!(f, " {kw_in} ")?;
                 iter.fmt_ident(f, ident)?;
                 write!(f, " ")?;
                 block.fmt_ident(f, ident)?;
@@ -390,7 +406,13 @@ impl DisplayIdent for Expression<'_> {
                 write!(f, ") ")?;
                 block.fmt_ident(f, ident)
             }
-            Unknown { .. } => write!(f, "{RECOVER}(<???>){RESET}"),
+            Unknown { tokens, .. } => {
+                write!(f, "{RECOVER}<expression{RESET}")?;
+                for token in tokens {
+                    write!(f, " {token}")?;
+                }
+                write!(f, "{RECOVER}>{RESET}")
+            }
         }
     }
 }

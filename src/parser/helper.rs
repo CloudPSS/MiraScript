@@ -9,19 +9,21 @@ use crate::utils::SourceRange;
 
 use super::{Expression, Input, expression};
 
-pub(super) fn spread_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
-    let spread = literal(Operator::SpreadRange).parse_next(i)?;
-    opt(expression)
-        .map(|e| {
-            if let Some(e) = e {
+pub(super) fn spread_expression<'a>(
+    i: &mut Input<'_, 'a>,
+) -> ModalResult<(Token<'a>, Expression<'a>)> {
+    (token(Operator::SpreadRange), opt(expression))
+        .map(|(spread, e)| {
+            let e = if let Some(e) = e {
                 e
             } else {
                 Expression::unknown_range(
                     [],
-                    spread[0].range.clone(),
+                    spread.range.clone(),
                     "Expression expected after `..`",
                 )
-            }
+            };
+            (spread, e)
         })
         .parse_next(i)
 }
@@ -64,6 +66,7 @@ pub(super) fn parameter_list<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Option<Ve
 pub(super) fn literal_token<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Token<'a>> {
     one_of(|t: &Token<'a>| {
         matches!(&t.kind, &TokenKind::Number(_))
+            || matches!(&t.kind, &TokenKind::Ordinal(_))
             || matches!(&t.kind, &TokenKind::String(_))
             || *t == Keyword::True
             || *t == Keyword::False
@@ -104,7 +107,20 @@ pub(super) fn variable_token<'t, 'a: 't>(
     }
 }
 
-pub(super) fn literal_boxed<'t, 'a: 't, T>(
+pub(super) fn token<'t, 'a: 't, T>(
+    token: T,
+) -> impl Parser<Input<'t, 'a>, Token<'a>, ErrMode<ContextError>>
+where
+    T: Into<TokenKind<'a>> + Clone,
+    Token<'a>: PartialEq<T>,
+{
+    move |i: &mut Input<'_, 'a>| {
+        one_of(|t: &Token<'a>| *t == token)
+            .map(|t: &Token<'a>| t.to_owned())
+            .parse_next(i)
+    }
+}
+pub(super) fn token_boxed<'t, 'a: 't, T>(
     token: T,
 ) -> impl Parser<Input<'t, 'a>, Box<Token<'a>>, ErrMode<ContextError>>
 where
@@ -118,7 +134,7 @@ where
     }
 }
 
-pub(super) fn literal_or_insert<'t, 'a: 't, T>(
+pub(super) fn token_or_insert<'t, 'a: 't, T>(
     token: T,
     error: &'static str,
 ) -> impl Parser<Input<'t, 'a>, Token<'a>, ErrMode<ContextError>>

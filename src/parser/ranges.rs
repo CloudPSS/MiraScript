@@ -2,13 +2,13 @@ use winnow::{ModalResult, Parser, token::one_of};
 
 use crate::lexer::{Operator, Token, TokenKind};
 
-use super::{Input, Range, basic_expressions::term};
+use super::{Input, Range, basic_expressions::additive};
 
 pub(super) fn range<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Range<'a>> {
     (
-        term.map(Box::new),
+        additive.map(Box::new),
         one_of(|t: &Token<'a>| *t == Operator::SpreadRange || *t == Operator::HalfOpenRange),
-        term.map(Box::new),
+        additive.map(Box::new),
     )
         .map(|(first, op, second)| {
             let Token {

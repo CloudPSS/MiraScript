@@ -18,6 +18,8 @@ pub enum Keyword {
 
     // operators
     TypeOf,
+    Is,
+    In,
 
     // control flow
     If,
@@ -25,7 +27,6 @@ pub enum Keyword {
     Match,
     Case,
     For,
-    In,
     While,
     Loop,
     Break,
@@ -38,6 +39,7 @@ pub enum Keyword {
     Let,
     Mut,
     Record, // Reserved for future use
+    Where,  // Reserved for future use
 
     // record Date(string) {
     //   if it |> matches(`(\d{4})-(\d{2})-(\d{2})`) { it }
@@ -117,13 +119,14 @@ impl FromStr for Keyword {
             "global" => Ok(Keyword::Global),
 
             "typeof" => Ok(Keyword::TypeOf),
+            "is" => Ok(Keyword::Is),
+            "in" => Ok(Keyword::In),
 
             "if" => Ok(Keyword::If),
             "else" => Ok(Keyword::Else),
             "match" => Ok(Keyword::Match),
             "case" => Ok(Keyword::Case),
             "for" => Ok(Keyword::For),
-            "in" => Ok(Keyword::In),
             "while" => Ok(Keyword::While),
             "loop" => Ok(Keyword::Loop),
             "break" => Ok(Keyword::Break),
@@ -135,6 +138,7 @@ impl FromStr for Keyword {
             "let" => Ok(Keyword::Let),
             "mut" => Ok(Keyword::Mut),
             "record" => Ok(Keyword::Record),
+            "where" => Ok(Keyword::Where),
 
             "effect" => Ok(Keyword::Effect),
             "try" => Ok(Keyword::Try),

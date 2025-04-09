@@ -1,6 +1,6 @@
 use std::{borrow::Cow, fmt::Display};
 
-use crate::ansi::{INTERPOLATED, RECOVER, RESET, STRING};
+use crate::ansi::{INTERPOLATED, NUMBER, ORDINAL, RECOVER, RESET, STRING, VARIABLE};
 use crate::utils::{SourceError, SourceRange};
 
 use super::{Comment, Keyword, Operator, Token};
@@ -10,7 +10,7 @@ pub enum TokenKind<'a> {
     Eof,
     Comment(Comment),
     Identifier(Cow<'a, str>),
-    Ordinal(u64),
+    Ordinal(i32),
     Number(f64),
     String(Cow<'a, str>),
     InterpolatedString(Vec<Cow<'a, str>>, Vec<Vec<Token<'a>>>),
@@ -93,9 +93,9 @@ impl Display for TokenKind<'_> {
             Self::Eof => write!(f, "␀"),
             Self::Comment(Comment::Line) => writeln!(f, " //"),
             Self::Comment(Comment::Block) => write!(f, " /* */ "),
-            Self::Identifier(s) => write!(f, "{}", s),
-            Self::Ordinal(n) => write!(f, "{}", n),
-            Self::Number(n) => write!(f, "{}", n),
+            Self::Identifier(s) => write!(f, "{VARIABLE}{s}{RESET}"),
+            Self::Ordinal(n) => write!(f, "{ORDINAL}{n}{RESET}"),
+            Self::Number(n) => write!(f, "{NUMBER}{n}{RESET}"),
             Self::String(s) => {
                 write!(f, "{STRING}\"{}\"{RESET}", s.escape_debug())
             }

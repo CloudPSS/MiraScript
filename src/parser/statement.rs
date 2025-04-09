@@ -1,8 +1,15 @@
-use std::fmt::{self, Display, Formatter};
+use std::{
+    borrow::Cow,
+    fmt::{self, Display, Formatter},
+};
 
-use crate::lexer::Token;
+use crate::{
+    ansi::{RECOVER, RESET},
+    lexer::Token,
+    utils::{SourceError, SourceRange},
+};
 
-use super::{Expression, display_ident::DisplayIdent};
+use super::{Expression, Pattern, display_ident::DisplayIdent};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Statement<'a> {
@@ -16,11 +23,17 @@ pub enum Statement<'a> {
     ///
     /// No trailing semicolon in this case. For expressions that end with a semicolon, use [Statement::Expression].
     BlockExpression(Box<Expression<'a>>),
-    /// `'let' 'mut'? identifier '=' expression ';'`
+    /// `'let' pattern '=' expression ';'`
     Bind(
         Box<Token<'a>>,
-        Option<Box<Token<'a>>>,
+        Box<Pattern<'a>>,
         Box<Token<'a>>,
+        Box<Expression<'a>>,
+        Box<Token<'a>>,
+    ),
+    /// `pattern_rebind '=' expression ';'`
+    Rebind(
+        Box<Pattern<'a>>,
         Box<Token<'a>>,
         Box<Expression<'a>>,
         Box<Token<'a>>,
@@ -29,7 +42,6 @@ pub enum Statement<'a> {
     ///
     /// The assigner must be one of the following:
     /// - `identifier`
-    /// - `'_'` to discard the value
     /// - `expression_access` where the accessed is an extern or `global`
     /// - `expression_index` where the indexed is an extern or `global`
     Assign(
@@ -66,6 +78,52 @@ pub enum Statement<'a> {
     Break(Option<Box<Expression<'a>>>),
     /// `continue;`
     Continue,
+    /// Unknown statement.
+    Unknown {
+        tokens: Vec<Token<'a>>,
+        errors: Vec<SourceError>,
+    },
+}
+
+impl<'a> Statement<'a> {
+    pub(crate) fn is_unknown(&self) -> bool {
+        matches!(self, Statement::Unknown { .. })
+    }
+
+    pub(crate) fn unknown<T: Into<Vec<Token<'a>>>, E: Into<Cow<'static, str>>>(
+        tokens: T,
+        error: E,
+    ) -> Self {
+        let tokens = tokens.into();
+        assert!(!tokens.is_empty());
+        let mut range = tokens[0].range.clone();
+        range.end = tokens.last().unwrap().range.end;
+        Statement::Unknown {
+            tokens,
+            errors: vec![SourceError::new(range, error)],
+        }
+    }
+
+    pub(crate) fn unknown_range<T: Into<Vec<Token<'a>>>, E: Into<Cow<'static, str>>>(
+        tokens: T,
+        error_range: SourceRange,
+        error: E,
+    ) -> Self {
+        Statement::Unknown {
+            tokens: tokens.into(),
+            errors: vec![SourceError::new(error_range, error)],
+        }
+    }
+
+    pub(crate) fn unknown_errors<T: Into<Vec<Token<'a>>>, E: Into<Vec<SourceError>>>(
+        tokens: T,
+        errors: E,
+    ) -> Self {
+        Statement::Unknown {
+            tokens: tokens.into(),
+            errors: errors.into(),
+        }
+    }
 }
 
 impl Display for Statement<'_> {
@@ -90,13 +148,16 @@ impl DisplayIdent for Statement<'_> {
                 expr.fmt_ident(f, ident)?;
                 writeln!(f)
             }
-            Bind(kw_let, None, id, eq, expr, c) => {
-                write!(f, "{kw_let} {id} {eq} ")?;
+            Bind(kw_let, pattern, eq, expr, c) => {
+                write!(f, "{kw_let} ")?;
+                pattern.fmt_ident(f, ident)?;
+                write!(f, " {eq} ")?;
                 expr.fmt_ident(f, ident)?;
                 writeln!(f, "{c}")
             }
-            Bind(kw_let, Some(kw_mut), id, eq, expr, c) => {
-                write!(f, "{kw_let} {kw_mut} {id} {eq} ")?;
+            Rebind(pattern, eq, expr, c) => {
+                pattern.fmt_ident(f, ident)?;
+                write!(f, " {eq} ")?;
                 expr.fmt_ident(f, ident)?;
                 writeln!(f, "{c}")
             }
@@ -137,6 +198,13 @@ impl DisplayIdent for Statement<'_> {
             }
             Break(None) => writeln!(f, "break;"),
             Continue => writeln!(f, "continue;"),
+            Unknown { tokens, .. } => {
+                write!(f, "{RECOVER}<statement{RESET}")?;
+                for token in tokens {
+                    write!(f, " {token}")?;
+                }
+                writeln!(f, "{RECOVER}>{RESET}")
+            }
         }
     }
 }

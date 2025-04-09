@@ -23,6 +23,17 @@ impl Location for Token<'_> {
 }
 
 impl<'a> Token<'a> {
+    pub(crate) fn is_unknown(&self) -> bool {
+        matches!(self.kind, TokenKind::Unknown { .. })
+    }
+
+    pub(crate) fn wrap_as_unknown<T: Into<Cow<'static, str>>>(self, error: T) -> Self {
+        Token {
+            kind: TokenKind::unknown_range(self.kind, self.range.clone(), error),
+            range: self.range,
+        }
+    }
+
     pub(crate) fn unknown<E: Into<Cow<'static, str>>, R: Into<TokenKind<'a>>>(
         range: SourceRange,
         recovered: R,

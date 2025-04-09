@@ -3,6 +3,7 @@ use winnow::{LocatingSlice, ModalResult, Parser, error::ContextError};
 mod comment;
 mod helper;
 mod keyword;
+mod numeric;
 mod operator;
 mod string;
 mod token;

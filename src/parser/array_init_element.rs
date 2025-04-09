@@ -1,12 +1,14 @@
 use std::fmt::Display;
 
+use crate::lexer::Token;
+
 use super::{Expression, Range, display_ident::DisplayIdent};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ArrayInitElement<'a> {
     Expression(Box<Expression<'a>>),
     Range(Box<Range<'a>>),
-    Spread(Box<Expression<'a>>),
+    Spread(Box<Token<'a>>, Box<Expression<'a>>),
 }
 
 impl Display for ArrayInitElement<'_> {
@@ -20,8 +22,8 @@ impl DisplayIdent for ArrayInitElement<'_> {
         match self {
             ArrayInitElement::Expression(expr) => expr.fmt_ident(f, ident),
             ArrayInitElement::Range(range) => range.fmt_ident(f, ident),
-            ArrayInitElement::Spread(expr) => {
-                write!(f, "..")?;
+            ArrayInitElement::Spread(spread, expr) => {
+                write!(f, "{spread}")?;
                 expr.fmt_ident(f, ident)
             }
         }
