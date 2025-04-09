@@ -4,14 +4,12 @@ use std::{
 };
 
 use crate::{
-    ansi::{INTERPOLATED, RECOVER, RESET, STRING},
+    ansi::{DisplayIdent, INTERPOLATED, RECOVER, RESET, STRING},
     lexer::{Token, TokenKind},
     utils::{SourceError, SourceRange},
 };
 
-use super::{
-    ArrayInitElement, Iterable, Pattern, RecordLikeElement, Statement, display_ident::DisplayIdent,
-};
+use super::{ArrayInitElement, Iterable, Pattern, RecordElement, Statement};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expression<'a> {
@@ -32,7 +30,7 @@ pub enum Expression<'a> {
     /// Use `()` for an empty record.
     ///
     /// For a single-element-unnamed record, use `(` expression `,` `)`.
-    Record(Vec<RecordLikeElement<'a>>),
+    Record(Vec<RecordElement<'a>>),
     /// `[` element* `]`
     ///
     /// Use `[]` for an empty list.

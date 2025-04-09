@@ -4,12 +4,12 @@ use std::{
 };
 
 use crate::{
-    ansi::{RECOVER, RESET},
+    ansi::{DisplayIdent, RECOVER, RESET},
     lexer::Token,
     utils::{SourceError, SourceRange},
 };
 
-use super::display_ident::DisplayIdent;
+use super::RecordPattern;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Pattern<'a> {
@@ -25,6 +25,19 @@ pub enum Pattern<'a> {
     ///
     /// Matches and binds a value to a variable.
     Bind(Option<Box<Token<'a>>>, Box<Token<'a>>),
+    /// ``````antlr
+    /// pattern_record
+    ///     : '(' sub_pattern* ')'
+    ///     ;
+    /// sub_pattern
+    ///     : name ':' pattern ','?
+    ///     | ':' pattern_bind ','?
+    ///     | pattern ','?
+    ///     | '..' pattern ','?
+    ///     ;
+    /// ``````
+    /// Matches a record pattern.
+    Record(Box<Token<'a>>, Vec<RecordPattern<'a>>, Box<Token<'a>>),
 
     /// Unknown pattern.
     Unknown {
@@ -80,13 +93,20 @@ impl Display for Pattern<'_> {
 }
 
 impl DisplayIdent for Pattern<'_> {
-    fn fmt_ident(&self, f: &mut Formatter<'_>, _level: usize) -> fmt::Result {
+    fn fmt_ident(&self, f: &mut Formatter<'_>, ident: usize) -> fmt::Result {
         use Pattern::*;
         match self {
             Literal(token) => write!(f, "{token}"),
             Discard(token) => write!(f, "{token}"),
             Bind(None, token) => write!(f, "{token}"),
             Bind(Some(kw_mut), token) => write!(f, "{kw_mut} {token}"),
+            Record(start, sub_patterns, end) => {
+                write!(f, "{start}")?;
+                for sub_pattern in sub_patterns.iter() {
+                    sub_pattern.fmt_ident(f, ident)?;
+                }
+                write!(f, "{end}")
+            }
             Unknown { tokens, .. } => {
                 write!(f, "{RECOVER}<pattern{RESET}")?;
                 for token in tokens {

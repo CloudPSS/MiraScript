@@ -1,6 +1,8 @@
 use std::fmt::Display;
 
-use super::{Expression, Range, display_ident::DisplayIdent};
+use crate::ansi::DisplayIdent;
+
+use super::{Expression, Range};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Iterable<'a> {

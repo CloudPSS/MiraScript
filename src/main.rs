@@ -83,7 +83,13 @@ match {a}{}
         print <| "key in (key: value)";
     }
     if a {} else for global in (1,2e7, 1.53e-12, : s)
-    let x.y = 1;
+    let x.y = 1;}}}
+
+    for (key, mut v,:mut e, _,:12,) in entries((1,2,3)) {
+        a += 12;
+        print <| a;
+    }
+
     "##;
 
     let mut input = lexer::to_input(text);

@@ -4,12 +4,12 @@ use std::{
 };
 
 use crate::{
-    ansi::{RECOVER, RESET},
+    ansi::{DisplayIdent, RECOVER, RESET},
     lexer::Token,
     utils::{SourceError, SourceRange},
 };
 
-use super::{Expression, Pattern, display_ident::DisplayIdent};
+use super::{Expression, Pattern};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Statement<'a> {

@@ -2,7 +2,10 @@ use std::{borrow::Cow, fmt::Display};
 
 use winnow::stream::Location;
 
-use crate::utils::{SourceError, SourceRange};
+use crate::{
+    ansi::DisplayIdent,
+    utils::{SourceError, SourceRange},
+};
 
 use super::TokenKind;
 
@@ -77,5 +80,11 @@ impl PartialEq for Token<'_> {
 impl Display for Token<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         <TokenKind as Display>::fmt(&self.kind, f)
+    }
+}
+
+impl DisplayIdent for Token<'_> {
+    fn fmt_ident(&self, f: &mut std::fmt::Formatter<'_>, _ident: usize) -> std::fmt::Result {
+        self.fmt(f)
     }
 }

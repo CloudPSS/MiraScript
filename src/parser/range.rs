@@ -1,6 +1,8 @@
 use std::fmt::Display;
 
-use super::{Expression, display_ident::DisplayIdent};
+use crate::ansi::DisplayIdent;
+
+use super::Expression;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Range<'a> {

@@ -1,8 +1,8 @@
 use std::fmt::Display;
 
-use crate::lexer::Token;
+use crate::{ansi::DisplayIdent, lexer::Token};
 
-use super::{Expression, Range, display_ident::DisplayIdent};
+use super::{Expression, Range};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ArrayInitElement<'a> {

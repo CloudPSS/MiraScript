@@ -10,22 +10,22 @@ use crate::lexer::{Keyword, Operator, Token, TokenKind};
 use super::array_expression::array_expression;
 use super::block_expressions::block_like_expression;
 use super::expressions::expression;
-use super::helper::{literal_token, token_boxed, token_or_insert, variable_token};
+use super::helper::{literal_token, token_boxed, variable_token};
 use super::patterns::pattern;
-use super::record_like_expression::record_like_element;
-use super::{Expression, Input, RecordLikeElement, to_input};
+use super::record_helper::record_base;
+use super::{Expression, Input, RecordElement, to_input};
 
-fn tuple_like<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
-    let open = token_boxed(Operator::OpenParen).parse_next(i)?;
-    let parts: Vec<_> = repeat(0.., record_like_element).parse_next(i)?;
-    let close = token_or_insert(Operator::CloseParen, "Missing ')'")
-        .map(Box::new)
-        .parse_next(i)?;
-    let result = if parts.is_empty() {
-        Expression::Record(Vec::new())
-    } else if parts.len() == 1 {
+fn record_like<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
+    let (open, parts, close) = record_base(
+        expression,
+        variable_token(false, false),
+        expression,
+        expression,
+    )
+    .parse_next(i)?;
+    let result = if parts.len() == 1 {
         let part = parts.into_iter().next().unwrap();
-        if let RecordLikeElement::Unnamed(exp, None) = part {
+        if let RecordElement::Unnamed(exp, None) = part {
             Expression::Grouping(open, exp, close)
         } else {
             Expression::Record(vec![part])
@@ -77,7 +77,7 @@ pub(super) fn primary<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> 
         variable_token(false, true)
             .map(Box::new)
             .map(Expression::Variable),
-        tuple_like,
+        record_like,
         array_expression,
     )))
     .parse_next(i)
