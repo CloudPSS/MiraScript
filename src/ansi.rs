@@ -1,4 +1,4 @@
-use std::fmt::{Display, Write};
+use std::fmt::Write;
 
 use anstyle::{AnsiColor, Color, Reset, Style};
 
@@ -15,7 +15,7 @@ pub(crate) const GROUP: Style = AnsiColor::Blue.on_default();
 
 pub(crate) const RESET: Reset = Reset;
 
-pub(crate) trait DisplayIdent: Display {
+pub(crate) trait DisplayIdent {
     fn fmt_ident(&self, f: &mut std::fmt::Formatter<'_>, ident: usize) -> std::fmt::Result;
 
     fn write_ident(f: &mut std::fmt::Formatter<'_>, ident: usize) -> std::fmt::Result {
@@ -29,5 +29,33 @@ pub(crate) trait DisplayIdent: Display {
 
     fn next_ident(ident: usize) -> usize {
         ident + 2
+    }
+}
+
+impl<T: DisplayIdent> DisplayIdent for Box<T> {
+    fn fmt_ident(&self, f: &mut std::fmt::Formatter<'_>, ident: usize) -> std::fmt::Result {
+        T::fmt_ident(self, f, ident)
+    }
+    fn write_ident(f: &mut std::fmt::Formatter<'_>, ident: usize) -> std::fmt::Result {
+        T::write_ident(f, ident)
+    }
+    fn next_ident(ident: usize) -> usize {
+        T::next_ident(ident)
+    }
+}
+
+impl<T: DisplayIdent> DisplayIdent for Option<T> {
+    fn fmt_ident(&self, f: &mut std::fmt::Formatter<'_>, ident: usize) -> std::fmt::Result {
+        if let Some(t) = self {
+            t.fmt_ident(f, ident)
+        } else {
+            Ok(())
+        }
+    }
+    fn write_ident(f: &mut std::fmt::Formatter<'_>, ident: usize) -> std::fmt::Result {
+        T::write_ident(f, ident)
+    }
+    fn next_ident(ident: usize) -> usize {
+        T::next_ident(ident)
     }
 }

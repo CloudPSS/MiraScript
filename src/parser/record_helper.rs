@@ -1,14 +1,12 @@
 use winnow::{
     ModalResult, Parser,
-    combinator::{alt, fail, peek, repeat},
+    combinator::{Repeat, fail, peek, repeat},
     error::{ContextError, ErrMode},
+    stream::Stream,
     token::{any, one_of},
 };
 
-use crate::{
-    ansi::DisplayIdent,
-    lexer::{Keyword, Operator, Token, TokenKind},
-};
+use crate::lexer::{Keyword, Operator, Token, TokenKind};
 
 use super::{
     Input,
@@ -22,44 +20,86 @@ fn record_name<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Token<'a>> {
         .parse_next(i)
 }
 
-fn record_element_base<
+struct RecordBaseParser<
     't,
     'a: 't,
-    Named: DisplayIdent + Clone + PartialEq,
-    OmitNamed: DisplayIdent + Clone + PartialEq,
-    Unnamed: DisplayIdent + Clone + PartialEq,
-    Spread: DisplayIdent + Clone + PartialEq,
->(
-    named: impl Parser<Input<'t, 'a>, Named, ErrMode<ContextError>> + Copy,
-    omit_named: impl Parser<Input<'t, 'a>, OmitNamed, ErrMode<ContextError>> + Copy,
-    unnamed: impl Parser<Input<'t, 'a>, Unnamed, ErrMode<ContextError>> + Copy,
-    spread: impl Parser<Input<'t, 'a>, Spread, ErrMode<ContextError>> + Copy,
-) -> impl Parser<
-    Input<'t, 'a>,
-    RecordElementBase<'a, Named, OmitNamed, Unnamed, Spread>,
-    ErrMode<ContextError>,
-> + Copy {
-    move |i: &mut Input<'t, 'a>| {
+    Named,
+    OmitNamed,
+    Unnamed,
+    Spread,
+    NamedParser: Parser<Input<'t, 'a>, Named, ErrMode<ContextError>>,
+    OmitNamedParser: Parser<Input<'t, 'a>, OmitNamed, ErrMode<ContextError>>,
+    UnnamedParser: Parser<Input<'t, 'a>, Unnamed, ErrMode<ContextError>>,
+    SpreadParser: Parser<Input<'t, 'a>, Spread, ErrMode<ContextError>>,
+> {
+    named: NamedParser,
+    omit_named: OmitNamedParser,
+    unnamed: UnnamedParser,
+    spread: SpreadParser,
+
+    _phantom: std::marker::PhantomData<&'t &'a (Named, OmitNamed, Unnamed, Spread)>,
+}
+impl<
+    't,
+    'a: 't,
+    Named: Clone + PartialEq,
+    OmitNamed: Clone + PartialEq,
+    Unnamed: Clone + PartialEq,
+    Spread: Clone + PartialEq,
+    NamedParser: Parser<Input<'t, 'a>, Named, ErrMode<ContextError>>,
+    OmitNamedParser: Parser<Input<'t, 'a>, OmitNamed, ErrMode<ContextError>>,
+    UnnamedParser: Parser<Input<'t, 'a>, Unnamed, ErrMode<ContextError>>,
+    SpreadParser: Parser<Input<'t, 'a>, Spread, ErrMode<ContextError>>,
+>
+    Parser<
+        Input<'t, 'a>,
+        RecordElementBase<'a, Named, OmitNamed, Unnamed, Spread>,
+        ErrMode<ContextError>,
+    >
+    for &mut RecordBaseParser<
+        't,
+        'a,
+        Named,
+        OmitNamed,
+        Unnamed,
+        Spread,
+        NamedParser,
+        OmitNamedParser,
+        UnnamedParser,
+        SpreadParser,
+    >
+{
+    fn parse_next(
+        &mut self,
+        i: &mut Input<'t, 'a>,
+    ) -> ModalResult<RecordElementBase<'a, Named, OmitNamed, Unnamed, Spread>> {
         let first = peek(any).parse_next(i)?;
         if *first == Operator::CloseParen {
             return fail.parse_next(i);
         }
         let mut result = if *first == Operator::SpreadRange {
-            (token_boxed(Operator::SpreadRange), spread)
-                .map(|(s, e)| RecordElementBase::Spread(s, Box::new(e), None))
-                .parse_next(i)?
+            let s = token_boxed(Operator::SpreadRange).parse_next(i)?;
+            let e = self.spread.parse_next(i)?;
+            RecordElementBase::Spread(s, e, None)
         } else if *first == Operator::Colon {
-            (token_boxed(Operator::Colon), omit_named)
-                .map(|(c, o)| RecordElementBase::OmitNamed(c, Box::new(o), None))
-                .parse_next(i)?
+            let c = token_boxed(Operator::Colon).parse_next(i)?;
+            let o = self.omit_named.parse_next(i)?;
+            RecordElementBase::OmitNamed(c, o, None)
         } else {
-            alt((
-                (record_name, token_boxed(Operator::Colon), named).map(|(name, colon, exp)| {
-                    RecordElementBase::Named(Box::new(name), colon, Box::new(exp), None)
-                }),
-                unnamed.map(|o| RecordElementBase::Unnamed(Box::new(o), None)),
-            ))
-            .parse_next(i)?
+            let cp = i.checkpoint();
+            let record_name = record_name.parse_next(i);
+            let token_boxed = token_boxed(Operator::Colon).parse_next(i);
+            let e = self.named.parse_next(i);
+            if record_name.is_err() || token_boxed.is_err() || e.is_err() {
+                i.reset(&cp);
+                let o = self.unnamed.parse_next(i)?;
+                RecordElementBase::Unnamed(o, None)
+            } else {
+                let record_name = record_name.unwrap();
+                let token_boxed = token_boxed.unwrap();
+                let e = e.unwrap();
+                RecordElementBase::Named(Box::new(record_name), token_boxed, e, None)
+            }
         };
         let last = peek(any).parse_next(i)?;
         if *last == Operator::CloseParen
@@ -83,33 +123,78 @@ fn record_element_base<
     }
 }
 
-type RecordBase<'a, Named, OmitNamed, Unnamed, Spread> = (
+type RecordBaseParserResult<'a, Named, OmitNamed, Unnamed, Spread> = (
     Box<Token<'a>>,
     Vec<RecordElementBase<'a, Named, OmitNamed, Unnamed, Spread>>,
     Box<Token<'a>>,
 );
 
-pub(super) fn record_base<
+impl<
     't,
     'a: 't,
-    Named: DisplayIdent + Clone + PartialEq,
-    OmitNamed: DisplayIdent + Clone + PartialEq,
-    Unnamed: DisplayIdent + Clone + PartialEq,
-    Spread: DisplayIdent + Clone + PartialEq,
->(
-    named: impl Parser<Input<'t, 'a>, Named, ErrMode<ContextError>> + Copy,
-    omit_named: impl Parser<Input<'t, 'a>, OmitNamed, ErrMode<ContextError>> + Copy,
-    unnamed: impl Parser<Input<'t, 'a>, Unnamed, ErrMode<ContextError>> + Copy,
-    spread: impl Parser<Input<'t, 'a>, Spread, ErrMode<ContextError>> + Copy,
-) -> impl Parser<Input<'t, 'a>, RecordBase<'a, Named, OmitNamed, Unnamed, Spread>, ErrMode<ContextError>>
-+ Copy {
-    move |i: &mut Input<'t, 'a>| {
+    Named: Clone + PartialEq,
+    OmitNamed: Clone + PartialEq,
+    Unnamed: Clone + PartialEq,
+    Spread: Clone + PartialEq,
+    NamedParser: Parser<Input<'t, 'a>, Named, ErrMode<ContextError>>,
+    OmitNamedParser: Parser<Input<'t, 'a>, OmitNamed, ErrMode<ContextError>>,
+    UnnamedParser: Parser<Input<'t, 'a>, Unnamed, ErrMode<ContextError>>,
+    SpreadParser: Parser<Input<'t, 'a>, Spread, ErrMode<ContextError>>,
+>
+    Parser<
+        Input<'t, 'a>,
+        RecordBaseParserResult<'a, Named, OmitNamed, Unnamed, Spread>,
+        ErrMode<ContextError>,
+    >
+    for RecordBaseParser<
+        't,
+        'a,
+        Named,
+        OmitNamed,
+        Unnamed,
+        Spread,
+        NamedParser,
+        OmitNamedParser,
+        UnnamedParser,
+        SpreadParser,
+    >
+{
+    fn parse_next(
+        &mut self,
+        i: &mut Input<'t, 'a>,
+    ) -> ModalResult<RecordBaseParserResult<'a, Named, OmitNamed, Unnamed, Spread>> {
         let open = token_boxed(Operator::OpenParen).parse_next(i)?;
-        let parts: Vec<_> =
-            repeat(0.., record_element_base(named, omit_named, unnamed, spread)).parse_next(i)?;
+        let mut repeat: Repeat<_, _, RecordElementBase<'a, _, _, _, _>, _, _> = repeat(0.., self);
+        let parts: Vec<RecordElementBase<'a, Named, OmitNamed, Unnamed, Spread>> =
+            repeat.parse_next(i)?;
         let close = token_or_insert(Operator::CloseParen, "Missing ')'")
             .map(Box::new)
             .parse_next(i)?;
         Ok((open, parts, close))
+    }
+}
+pub(super) fn record_base<
+    't,
+    'a: 't,
+    Named: Clone + PartialEq + 'a,
+    OmitNamed: Clone + PartialEq + 'a,
+    Unnamed: Clone + PartialEq + 'a,
+    Spread: Clone + PartialEq + 'a,
+>(
+    named: impl Parser<Input<'t, 'a>, Named, ErrMode<ContextError>>,
+    omit_named: impl Parser<Input<'t, 'a>, OmitNamed, ErrMode<ContextError>>,
+    unnamed: impl Parser<Input<'t, 'a>, Unnamed, ErrMode<ContextError>>,
+    spread: impl Parser<Input<'t, 'a>, Spread, ErrMode<ContextError>>,
+) -> impl Parser<
+    Input<'t, 'a>,
+    RecordBaseParserResult<'a, Named, OmitNamed, Unnamed, Spread>,
+    ErrMode<ContextError>,
+> {
+    RecordBaseParser {
+        named,
+        omit_named,
+        unnamed,
+        spread,
+        _phantom: std::marker::PhantomData,
     }
 }

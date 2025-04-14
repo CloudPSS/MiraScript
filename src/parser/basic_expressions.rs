@@ -17,10 +17,10 @@ use super::{Expression, Input, RecordElement, to_input};
 
 fn record_like<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
     let (open, parts, close) = record_base(
-        expression,
-        variable_token(false, false),
-        expression,
-        expression,
+        expression.map(Box::new),
+        variable_token(false, false).map(Box::new),
+        expression.map(Box::new),
+        expression.map(Box::new),
     )
     .parse_next(i)?;
     let result = if parts.len() == 1 {

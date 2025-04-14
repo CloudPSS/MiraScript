@@ -80,8 +80,8 @@ match {a}{}
     if "1" in ["1", "2", "3"] {
         print <| "1 in [1, 2, 3]";
     }
-    if "key" in ("key": "value") {
-        print <| "key in (key: value)";
+    if "key" in (key: "value") {
+        print <| "key in (key: \"value\")";
     }
     if a {} else for global in (1,2e7, 1.53e-12, : s)
     let (x, mut y) = 1;}}}
@@ -94,6 +94,8 @@ match {a}{}
     a.1 = 2;
     a = (0: "x", 1:112, "a":u);
     (00, 0, 0x0, 0o0, 0b0, 0e0, 0.0)
+
+    let (.., _, ..`ht`, ..x, y, ..(1,2,3)) = x;
     "##;
 
     let mut input = lexer::to_input(text);

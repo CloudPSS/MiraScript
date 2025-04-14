@@ -79,7 +79,7 @@ pub(super) fn literal_token<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Token<'a>>
 pub(super) fn variable_token<'t, 'a: 't>(
     include_underscore: bool,
     include_global: bool,
-) -> impl Parser<Input<'t, 'a>, Token<'a>, ErrMode<ContextError>> + Copy {
+) -> impl Parser<Input<'t, 'a>, Token<'a>, ErrMode<ContextError>> {
     move |i: &mut Input<'t, 'a>| {
         let t = one_of(|t: &Token<'a>| {
             matches!(&t.kind, &TokenKind::Identifier(_))

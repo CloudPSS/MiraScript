@@ -33,14 +33,25 @@ pub enum Pattern<'a> {
     ///     : name ':' pattern ','?
     ///     | ':' pattern_bind ','?
     ///     | pattern ','?
-    ///     | '..' pattern ','?
+    ///     | '..' pattern? ','?
     ///     ;
     /// ``````
     /// Matches a record pattern.
     Record(Box<Token<'a>>, Vec<RecordPattern<'a>>, Box<Token<'a>>),
+    /// ```antlr
+    /// pattern_array
+    ///     : '[' sub_pattern* ']'
+    ///     ;
+    /// sub_pattern
+    ///     : pattern ','?
+    ///     | '..' pattern? ','?
+    ///     ;
+    /// ```
+    //Array(Box<Token<'a>>, Vec<Pattern<'a>>, Box<Token<'a>>),
 
     /// Unknown pattern.
     Unknown {
+        pattern: Option<Box<Pattern<'a>>>,
         tokens: Vec<Token<'a>>,
         errors: Vec<SourceError>,
     },
@@ -49,6 +60,22 @@ pub enum Pattern<'a> {
 impl<'a> Pattern<'a> {
     pub(crate) fn is_unknown(&self) -> bool {
         matches!(self, Pattern::Unknown { .. })
+    }
+
+    pub(crate) fn wrap_as_unknown<T: Into<Vec<Token<'a>>>, E: Into<Cow<'static, str>>>(
+        self,
+        tokens: T,
+        error: E,
+    ) -> Self {
+        let tokens = tokens.into();
+        assert!(!tokens.is_empty());
+        let mut range = tokens[0].range.clone();
+        range.end = tokens.last().unwrap().range.end;
+        Pattern::Unknown {
+            pattern: Some(Box::new(self)),
+            tokens,
+            errors: vec![SourceError::new(range, error)],
+        }
     }
 
     pub(crate) fn unknown<T: Into<Vec<Token<'a>>>, E: Into<Cow<'static, str>>>(
@@ -60,6 +87,7 @@ impl<'a> Pattern<'a> {
         let mut range = tokens[0].range.clone();
         range.end = tokens.last().unwrap().range.end;
         Pattern::Unknown {
+            pattern: None,
             tokens,
             errors: vec![SourceError::new(range, error)],
         }
@@ -70,6 +98,7 @@ impl<'a> Pattern<'a> {
         error: E,
     ) -> Self {
         Pattern::Unknown {
+            pattern: None,
             tokens: tokens.into(),
             errors: vec![SourceError::new(error_range, error)],
         }
@@ -80,6 +109,7 @@ impl<'a> Pattern<'a> {
         errors: E,
     ) -> Self {
         Pattern::Unknown {
+            pattern: None,
             tokens: tokens.into(),
             errors: errors.into(),
         }

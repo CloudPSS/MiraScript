@@ -7,40 +7,50 @@ use super::{Expression, Pattern};
 #[derive(Debug, Clone, PartialEq)]
 pub enum RecordElementBase<
     'a,
-    Named: DisplayIdent + Clone + PartialEq,
-    OmitNamed: DisplayIdent + Clone + PartialEq,
-    Unnamed: DisplayIdent + Clone + PartialEq,
-    Spread: DisplayIdent + Clone + PartialEq,
+    Named: Clone + PartialEq,
+    OmitNamed: Clone + PartialEq,
+    Unnamed: Clone + PartialEq,
+    Spread: Clone + PartialEq,
 > {
     /// name `:` Named `,`?
     Named(
         Box<Token<'a>>,
         Box<Token<'a>>,
-        Box<Named>,
+        Named,
         Option<Box<Token<'a>>>,
     ),
     /// `:` OmitNamed `,`?
-    OmitNamed(Box<Token<'a>>, Box<OmitNamed>, Option<Box<Token<'a>>>),
+    OmitNamed(Box<Token<'a>>, OmitNamed, Option<Box<Token<'a>>>),
     /// Unnamed `,`?
-    Unnamed(Box<Unnamed>, Option<Box<Token<'a>>>),
+    Unnamed(Unnamed, Option<Box<Token<'a>>>),
     /// `..` Spread `,`?
-    Spread(Box<Token<'a>>, Box<Spread>, Option<Box<Token<'a>>>),
+    Spread(Box<Token<'a>>, Spread, Option<Box<Token<'a>>>),
 }
 
 use RecordElementBase::*;
 
-pub type RecordElement<'a> =
-    RecordElementBase<'a, Expression<'a>, Token<'a>, Expression<'a>, Expression<'a>>;
+pub type RecordElement<'a> = RecordElementBase<
+    'a,
+    Box<Expression<'a>>,
+    Box<Token<'a>>,
+    Box<Expression<'a>>,
+    Box<Expression<'a>>,
+>;
 
-pub type RecordPattern<'a> =
-    RecordElementBase<'a, Pattern<'a>, Pattern<'a>, Pattern<'a>, Pattern<'a>>;
+pub type RecordPattern<'a> = RecordElementBase<
+    'a,
+    Box<Pattern<'a>>,
+    Box<Pattern<'a>>,
+    Box<Pattern<'a>>,
+    Option<Box<Pattern<'a>>>,
+>;
 
 impl<
     'a,
-    Named: DisplayIdent + Clone + PartialEq,
-    OmitNamed: DisplayIdent + Clone + PartialEq,
-    Unnamed: DisplayIdent + Clone + PartialEq,
-    Spread: DisplayIdent + Clone + PartialEq,
+    Named: Clone + PartialEq,
+    OmitNamed: Clone + PartialEq,
+    Unnamed: Clone + PartialEq,
+    Spread: Clone + PartialEq,
 > RecordElementBase<'a, Named, OmitNamed, Unnamed, Spread>
 {
     pub fn is_named(&self) -> bool {
@@ -77,11 +87,14 @@ impl<
 }
 
 impl<
-    Named: DisplayIdent + Clone + PartialEq,
-    OmitNamed: DisplayIdent + Clone + PartialEq,
-    Unnamed: DisplayIdent + Clone + PartialEq,
-    Spread: DisplayIdent + Clone + PartialEq,
-> Display for RecordElementBase<'_, Named, OmitNamed, Unnamed, Spread>
+    'a,
+    Named: Clone + PartialEq,
+    OmitNamed: Clone + PartialEq,
+    Unnamed: Clone + PartialEq,
+    Spread: Clone + PartialEq,
+> Display for RecordElementBase<'a, Named, OmitNamed, Unnamed, Spread>
+where
+    RecordElementBase<'a, Named, OmitNamed, Unnamed, Spread>: DisplayIdent,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.fmt_ident(f, 0)
@@ -97,18 +110,18 @@ impl<
 {
     fn fmt_ident(&self, f: &mut std::fmt::Formatter<'_>, ident: usize) -> std::fmt::Result {
         match self {
-            Named(name, colon, pattern, _) => {
+            Named(name, colon, value, _) => {
                 write!(f, "{name}{colon} ")?;
-                pattern.fmt_ident(f, ident)?;
+                value.fmt_ident(f, ident)?;
             }
-            OmitNamed(colon, pattern, _) => {
+            OmitNamed(colon, value, _) => {
                 write!(f, "{colon}")?;
-                pattern.fmt_ident(f, ident)?;
+                value.fmt_ident(f, ident)?;
             }
-            Unnamed(pattern, _) => pattern.fmt_ident(f, ident)?,
-            Spread(sp, pattern, _) => {
+            Unnamed(value, _) => value.fmt_ident(f, ident)?,
+            Spread(sp, value, _) => {
                 write!(f, "{sp}")?;
-                pattern.fmt_ident(f, ident)?;
+                value.fmt_ident(f, ident)?;
             }
         }
         if let Some(tail_comma) = self.tail_comma() {

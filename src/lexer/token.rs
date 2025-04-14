@@ -30,7 +30,7 @@ impl<'a> Token<'a> {
         matches!(self.kind, TokenKind::Unknown { .. })
     }
 
-    pub(crate) fn wrap_as_unknown<T: Into<Cow<'static, str>>>(self, error: T) -> Self {
+    pub(crate) fn wrap_as_unknown<E: Into<Cow<'static, str>>>(self, error: E) -> Self {
         Token {
             kind: TokenKind::unknown_range(self.kind, self.range.clone(), error),
             range: self.range,
