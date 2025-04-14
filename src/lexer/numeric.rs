@@ -152,7 +152,10 @@ pub(super) fn number<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
 
             if range == range_i {
                 // maybe ordinary number
-                return Ok(handle_ordinal(part_i_b, range_i));
+                let result = handle_ordinal(part_i_b, range_i);
+                if !result.is_unknown() {
+                    return Ok(result);
+                }
             }
 
             let bytes = part.as_bytes();

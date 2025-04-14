@@ -93,6 +93,7 @@ match {a}{}
     let (a) = (1);
     a.1 = 2;
     a = (0: "x", 1:112, "a":u);
+    (00, 0, 0x0, 0o0, 0b0, 0e0, 0.0)
     "##;
 
     let mut input = lexer::to_input(text);

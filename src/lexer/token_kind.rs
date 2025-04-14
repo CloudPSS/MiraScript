@@ -43,6 +43,10 @@ impl<'a> TokenKind<'a> {
             errors: errors.into(),
         }
     }
+
+    pub(crate) fn is_unknown(&self) -> bool {
+        matches!(self, Self::Unknown { .. })
+    }
 }
 
 impl Eq for TokenKind<'_> {}
