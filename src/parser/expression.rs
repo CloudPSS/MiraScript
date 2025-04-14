@@ -4,7 +4,7 @@ use std::{
 };
 
 use crate::{
-    ansi::{DisplayIdent, INTERPOLATED, RECOVER, RESET, STRING},
+    ansi::{DisplayIdent, GROUP, INTERPOLATED, RECOVER, RESET, STRING},
     lexer::{Token, TokenKind},
     utils::{SourceError, SourceRange},
 };
@@ -231,9 +231,9 @@ impl DisplayIdent for Expression<'_> {
             }
             Variable(token) => write!(f, "{token}"),
             Grouping(op, exp, cp) => {
-                write!(f, "{op}")?;
+                write!(f, "{GROUP}{op}{RESET}")?;
                 exp.fmt_ident(f, ident)?;
-                write!(f, " {cp}")?;
+                write!(f, "{GROUP}{cp}{RESET}")?;
                 Ok(())
             }
             Record(exps) => {
@@ -306,12 +306,12 @@ impl DisplayIdent for Expression<'_> {
             Block(op, statements, expression, ed) => {
                 if statements.is_empty() {
                     if let Some(expression) = expression {
-                        return write!(f, "{op} {expression} {ed}");
+                        return write!(f, "{GROUP}{op}{RESET} {expression} {GROUP}{ed}{RESET}");
                     } else {
-                        return write!(f, "{op}{ed}");
+                        return write!(f, "{GROUP}{op}{ed}{RESET}");
                     }
                 }
-                writeln!(f, "{op}")?;
+                writeln!(f, "{GROUP}{op}{RESET}")?;
                 for statement in statements {
                     statement.fmt_ident(f, Self::next_ident(ident))?;
                 }
@@ -320,7 +320,7 @@ impl DisplayIdent for Expression<'_> {
                     writeln!(f, "{expression}")?;
                 }
                 Self::write_ident(f, ident)?;
-                write!(f, "{ed}")
+                write!(f, "{GROUP}{ed}{RESET}")
             }
             Loop(kw, expression) => {
                 write!(f, "{kw} ")?;
@@ -375,7 +375,7 @@ impl DisplayIdent for Expression<'_> {
             Match(kw, expression, op, arms, ed) => {
                 write!(f, "{kw} ")?;
                 expression.fmt_ident(f, ident)?;
-                writeln!(f, " {op}")?;
+                writeln!(f, " {GROUP}{op}{RESET}")?;
                 let next_ident = Self::next_ident(ident);
                 for (kw_case, pattern, block) in arms {
                     Self::write_ident(f, next_ident)?;
@@ -386,7 +386,7 @@ impl DisplayIdent for Expression<'_> {
                     writeln!(f)?;
                 }
                 Self::write_ident(f, ident)?;
-                write!(f, "{ed}")
+                write!(f, "{GROUP}{ed}{RESET}")
             }
             Function(kw, None, block) => {
                 write!(f, "{kw} ")?;

@@ -17,17 +17,9 @@ use super::{
 };
 
 fn record_name<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Token<'a>> {
-    one_of(|t: &Token<'a>| {
-        matches!(
-            t.kind,
-            TokenKind::Identifier(_)
-                | TokenKind::Ordinal(_)
-                | TokenKind::String(_)
-                | TokenKind::InterpolatedString(_, _)
-        )
-    })
-    .map(ToOwned::to_owned)
-    .parse_next(i)
+    one_of(|t: &Token<'a>| matches!(t.kind, TokenKind::Identifier(_) | TokenKind::Ordinal(_)))
+        .map(ToOwned::to_owned)
+        .parse_next(i)
 }
 
 fn record_element_base<

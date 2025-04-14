@@ -57,6 +57,7 @@ fn main() {
     let mut parenthesis = (1);
     let mut single_record = (1,);
     let mut single_record2 = (a: 1);
+    let mut ordinal_record = (1: 1);
     let mut named_record = (hello: "world", foo: 1, bar: 2, 3 1 45.3 );
     let mut simple_record = ("hello", 1, 2 ,3);
     let mut spread_record = (..named_record, hello: "world", foo: 1, bar: 2,  ..simple_record);
@@ -83,13 +84,15 @@ match {a}{}
         print <| "key in (key: value)";
     }
     if a {} else for global in (1,2e7, 1.53e-12, : s)
-    let x.y = 1;}}}
+    let (x, mut y) = 1;}}}
 
-    for (key, mut v,:mut e, _,:12,) in entries((1,2,3)) {
+    for (key, mut v,:mut e, _,:12,) in entries <|(1,2,3) {
         a += 12;
         print <| a;
     }
-
+    let (a) = (1);
+    a.1 = 2;
+    a = (0: "x", 1:112, "a":u);
     "##;
 
     let mut input = lexer::to_input(text);

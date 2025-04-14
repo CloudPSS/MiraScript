@@ -6,6 +6,8 @@ use winnow::{
     token::{one_of, take_while},
 };
 
+use crate::utils::SourceRange;
+
 use super::helper::is_identifier_continue;
 use super::{Input, TokenKind};
 
@@ -134,7 +136,7 @@ pub(super) fn number<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
                     .parse_next(i)?
             } else if part_i_b.iter().any(|&b| b == b'e' || b == b'E') {
                 // float finished
-                (part_i, range_i)
+                (part_i, range_i.clone())
             } else {
                 // need ('.' float_part)? (('e' | 'E')? ('+' | '-')? number_part)?
                 i.reset(&cp);
@@ -147,6 +149,12 @@ pub(super) fn number<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
                     .with_span()
                     .parse_next(i)?
             };
+
+            if range == range_i {
+                // maybe ordinary number
+                return Ok(handle_ordinal(part_i_b, range_i));
+            }
+
             let bytes = part.as_bytes();
 
             let has_invalid_char = bytes.iter().any(|&b| b != b'_' && !is_valid_float_char(b));
@@ -185,29 +193,33 @@ pub(super) fn number<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
     .parse_next(i)
 }
 
+fn handle_ordinal(bytes: &[u8], range: SourceRange) -> TokenKind<'_> {
+    let p = parse_part(bytes, 10, |c| c.is_ascii_digit());
+
+    let result = if p.is_valid_ordinal {
+        TokenKind::Ordinal(p.ordinal)
+    } else {
+        TokenKind::Number(p.number)
+    };
+    if p.has_invalid_char {
+        return TokenKind::unknown_range(result, range, "Invalid number literal");
+    }
+    if p.has_leading_underscore || p.has_trailing_underscore {
+        return TokenKind::unknown_range(
+            result,
+            range,
+            "Number literal cannot start or end with underscore",
+        );
+    }
+    result
+}
+
 pub(super) fn ordinal<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
     trace(
         "ordinal",
-        number_part.with_span().map(|(s, r)| {
-            let p = parse_part(s.as_bytes(), 10, |c| c.is_ascii_digit());
-
-            let result = if p.is_valid_ordinal {
-                TokenKind::Ordinal(p.ordinal)
-            } else {
-                TokenKind::Number(p.number)
-            };
-            if p.has_invalid_char {
-                return TokenKind::unknown_range(result, r, "Invalid number literal");
-            }
-            if p.has_leading_underscore || p.has_trailing_underscore {
-                return TokenKind::unknown_range(
-                    result,
-                    r,
-                    "Number literal cannot start or end with underscore",
-                );
-            }
-            result
-        }),
+        number_part
+            .with_span()
+            .map(|(s, r)| handle_ordinal(s.as_bytes(), r)),
     )
     .parse_next(i)
 }

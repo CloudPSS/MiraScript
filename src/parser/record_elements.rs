@@ -77,12 +77,11 @@ impl<
 }
 
 impl<
-    'a,
     Named: DisplayIdent + Clone + PartialEq,
     OmitNamed: DisplayIdent + Clone + PartialEq,
     Unnamed: DisplayIdent + Clone + PartialEq,
     Spread: DisplayIdent + Clone + PartialEq,
-> Display for RecordElementBase<'a, Named, OmitNamed, Unnamed, Spread>
+> Display for RecordElementBase<'_, Named, OmitNamed, Unnamed, Spread>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.fmt_ident(f, 0)
@@ -90,12 +89,11 @@ impl<
 }
 
 impl<
-    'a,
     Named: DisplayIdent + Clone + PartialEq,
     OmitNamed: DisplayIdent + Clone + PartialEq,
     Unnamed: DisplayIdent + Clone + PartialEq,
     Spread: DisplayIdent + Clone + PartialEq,
-> DisplayIdent for RecordElementBase<'a, Named, OmitNamed, Unnamed, Spread>
+> DisplayIdent for RecordElementBase<'_, Named, OmitNamed, Unnamed, Spread>
 {
     fn fmt_ident(&self, f: &mut std::fmt::Formatter<'_>, ident: usize) -> std::fmt::Result {
         match self {
