@@ -17,18 +17,18 @@ pub enum Pattern<'a> {
     ///
     /// Grouping pattern.
     Grouping(Box<Token<'a>>, Box<Pattern<'a>>, Box<Token<'a>>),
-    /// literal
+    /// ( `+` | `-` )? literal
     ///
-    /// Matches against a literal value.
-    Literal(Box<Token<'a>>),
-    /// ( `>` | `>=` | `<=` | `<` | `==` | `!=` | `~=` | `!~=` ) literal
+    /// Matches against a constant value.
+    Constant(Option<Box<Token<'a>>>, Box<Token<'a>>),
+    /// ( `>` | `>=` | `<=` | `<` | `==` | `!=` | `~=` | `!~=` ) pattern_constant
     ///
-    /// Matches against a relation with literal values.
-    Relation(Box<Token<'a>>, Box<Token<'a>>),
-    /// literal ( `..` | `..<` ) literal
+    /// Matches against a relation with constant values.
+    Relation(Box<Token<'a>>, Box<Pattern<'a>>),
+    /// literal ( `..` | `..<` ) pattern_constant
     ///
-    /// Matches against a range of literal values.
-    Range(Box<Token<'a>>, Box<Token<'a>>, Box<Token<'a>>),
+    /// Matches against a range of constant values.
+    Range(Box<Pattern<'a>>, Box<Token<'a>>, Box<Pattern<'a>>),
     /// `_`
     ///
     /// Matches and discards a value.
@@ -165,9 +165,12 @@ impl DisplayIdent for Pattern<'_> {
                 p.fmt_ident(f, ident)?;
                 write!(f, "{GROUP}{cp}{RESET}")?;
             }
-            Literal(token) => write!(f, "{token}")?,
-            Relation(op, token) => {
-                write!(f, "{op} {token}")?;
+            Constant(Some(prefix), token) => write!(f, "{prefix}{token}")?,
+            Constant(None, token) => write!(f, "{token}")?,
+            Relation(op, constant) => {
+                op.fmt_ident(f, ident)?;
+                write!(f, " ")?;
+                constant.fmt_ident(f, ident)?;
             }
             Range(start, op, end) => {
                 start.fmt_ident(f, ident)?;

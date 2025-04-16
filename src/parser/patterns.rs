@@ -76,7 +76,7 @@ fn primary_pattern<'t, 'a: 't>(
             record_like_pattern(rebind),
             array_pattern(rebind),
             range_pattern,
-            literal_pattern,
+            constants_pattern,
             discard_bind_pattern(rebind),
             not_pattern(rebind),
             unknown_pattern,
@@ -121,9 +121,33 @@ fn or_pattern<'t, 'a: 't>(
     }
 }
 
-fn literal_pattern<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Pattern<'a>> {
-    literal_token
-        .map(|t| Pattern::Literal(Box::new(t)))
+fn constants_pattern<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Pattern<'a>> {
+    (
+        opt(one_of(|t: &Token<'a>| {
+            *t == Operator::Plus || *t == Operator::Minus || *t == Operator::Exclamation
+        })),
+        literal_token,
+    )
+        .map(|(t, l)| {
+            let Some(op) = t else {
+                return Pattern::Constant(None, Box::new(l));
+            };
+            let result = Pattern::Constant(Some(op.to_owned().into()), Box::new(l.clone()));
+            if *op == Operator::Exclamation {
+                return result
+                    .wrap_as_unknown([op.to_owned(), l], "Not operator is not allowed in pattern");
+            }
+            if !(matches!(l.kind, TokenKind::Number(..))
+                || matches!(l.kind, TokenKind::Ordinal(..))
+                || l == Keyword::Inf)
+            {
+                return result.wrap_as_unknown(
+                    [op.to_owned(), l],
+                    "Unexpected operator in pattern, only number is allowed",
+                );
+            }
+            result
+        })
         .parse_next(i)
 }
 
@@ -138,17 +162,17 @@ fn relation_pattern<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Pattern<'a>> {
             || *t == Operator::TildeEqual
             || *t == Operator::NotTildeEqual)
         .map(|t: &Token<'a>| Box::new(t.to_owned())),
-        literal_token.map(Box::new),
+        constants_pattern.map(Box::new),
     ))
     .parse_next(i)
 }
 
 fn range_pattern<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Pattern<'a>> {
     seq!(Pattern::Range(
-        literal_token.map(Box::new),
+        constants_pattern.map(Box::new),
         one_of(|t: &Token<'a>| *t == Operator::SpreadRange || *t == Operator::HalfOpenRange)
             .map(|t: &Token<'a>| Box::new(t.to_owned())),
-        literal_token.map(Box::new),
+        constants_pattern.map(Box::new),
     ))
     .parse_next(i)
 }
