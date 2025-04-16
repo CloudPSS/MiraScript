@@ -95,17 +95,37 @@ match {a}{}
     a = (0: "x", 1:112, "a":u);
     (00, 0, 0x0, 0o0, 0b0, 0e0, 0.0)
 
-    let (.., _, ..`ht`, ..x, y, ..(1,2,3)) = x;
+    let (.._, _, ..`ht`, ..x, y, ..(1,2,3)) = x;
 
     a!==1;
     a!~=1;
     a! ~=1;
-    a!.b!.c!['x']!(12)!;
+    a!.b!.c!['x']!(12)! 
     a!.b!['x']!.c!(12);
 
     a ?? 1;
     a ??= 1;
-    2147483647 + 2147483648;
+    2147483647 + 2147483648 
+    (z?:a, ?:b) = (!:a, !:b);
+
+    if a is not x {
+        print <| "a is not nan";
+    }
+
+      [x, .., y, ..[], (5..8), ..(not(>1 or 12),)] = [1, ..[], 5..8];
+let add = fn (x, y) {
+  x + y
+}; // add 是一个 `function` 类型的值
+let add_one = fn {
+  it + 1
+};
+      fn add(x, y) {
+  x + y
+}
+
+fn add_one {
+  it + 1
+}
     "##;
 
     let mut input = lexer::to_input(text);

@@ -4,19 +4,31 @@ use std::{
 };
 
 use crate::{
-    ansi::{DisplayIdent, RECOVER, RESET},
+    ansi::{DisplayIdent, GROUP, RANGE, RECOVER, RESET},
     lexer::Token,
     utils::{SourceError, SourceRange},
 };
 
-use super::RecordPattern;
+use super::{ArrayPattern, RecordPattern};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Pattern<'a> {
+    /// `(` pattern `)`
+    ///
+    /// Grouping pattern.
+    Grouping(Box<Token<'a>>, Box<Pattern<'a>>, Box<Token<'a>>),
     /// literal
     ///
     /// Matches against a literal value.
     Literal(Box<Token<'a>>),
+    /// ( `>` | `>=` | `<=` | `<` | `==` | `!=` | `~=` | `!~=` ) literal
+    ///
+    /// Matches against a relation with literal values.
+    Relation(Box<Token<'a>>, Box<Token<'a>>),
+    /// literal ( `..` | `..<` ) literal
+    ///
+    /// Matches against a range of literal values.
+    Range(Box<Token<'a>>, Box<Token<'a>>, Box<Token<'a>>),
     /// `_`
     ///
     /// Matches and discards a value.
@@ -33,7 +45,7 @@ pub enum Pattern<'a> {
     ///     : name colon pattern ','?
     ///     | colon pattern_bind ','?
     ///     | pattern ','?
-    ///     | '..' pattern? ','?
+    ///     | '..' pattern ','?
     ///     ;
     /// colon
     ///     : ':'
@@ -52,7 +64,24 @@ pub enum Pattern<'a> {
     ///     | '..' pattern? ','?
     ///     ;
     /// ```
-    Array(Box<Token<'a>>, Vec<Pattern<'a>>, Box<Token<'a>>),
+    Array(Box<Token<'a>>, Vec<ArrayPattern<'a>>, Box<Token<'a>>),
+    /// prefix<`..`>
+    ///
+    /// Used in [ArrayPattern]::Spread and [RecordPattern]::Spread.
+    SpreadDiscard,
+
+    /// pattern `and` pattern
+    ///
+    /// Matches all of the patterns.
+    And(Box<Pattern<'a>>, Box<Token<'a>>, Box<Pattern<'a>>),
+    /// pattern `or` pattern
+    ///
+    /// Matches any of the patterns.
+    Or(Box<Pattern<'a>>, Box<Token<'a>>, Box<Pattern<'a>>),
+    /// `not` pattern
+    ///
+    /// Matches if the pattern does not match.
+    Not(Box<Token<'a>>, Box<Pattern<'a>>),
 
     /// Unknown pattern.
     Unknown {
@@ -131,31 +160,62 @@ impl DisplayIdent for Pattern<'_> {
     fn fmt_ident(&self, f: &mut Formatter<'_>, ident: usize) -> fmt::Result {
         use Pattern::*;
         match self {
-            Literal(token) => write!(f, "{token}"),
-            Discard(token) => write!(f, "{token}"),
-            Bind(None, token) => write!(f, "{token}"),
-            Bind(Some(kw_mut), token) => write!(f, "{kw_mut} {token}"),
+            Grouping(op, p, cp) => {
+                write!(f, "{GROUP}{op}{RESET}")?;
+                p.fmt_ident(f, ident)?;
+                write!(f, "{GROUP}{cp}{RESET}")?;
+            }
+            Literal(token) => write!(f, "{token}")?,
+            Relation(op, token) => {
+                write!(f, "{op} {token}")?;
+            }
+            Range(start, op, end) => {
+                start.fmt_ident(f, ident)?;
+                write!(f, "{RANGE}{op}{RESET}")?;
+                end.fmt_ident(f, ident)?;
+            }
+            Discard(token) => write!(f, "{token}")?,
+            Bind(None, token) => write!(f, "{token}")?,
+            Bind(Some(kw_mut), token) => write!(f, "{kw_mut} {token}")?,
             Record(start, sub_patterns, end) => {
                 write!(f, "{start}")?;
                 for sub_pattern in sub_patterns.iter() {
                     sub_pattern.fmt_ident(f, ident)?;
                 }
-                write!(f, "{end}")
+                write!(f, "{end}")?;
             }
             Array(start, sub_patterns, end) => {
                 write!(f, "{start}")?;
                 for sub_pattern in sub_patterns.iter() {
                     sub_pattern.fmt_ident(f, ident)?;
                 }
-                write!(f, "{end}")
+                write!(f, "{end}")?;
+            }
+            SpreadDiscard => {}
+            And(left, op, right) | Or(left, op, right) => {
+                left.fmt_ident(f, ident)?;
+                write!(f, " {op} ")?;
+                right.fmt_ident(f, ident)?;
+            }
+            Not(op, pattern) => {
+                write!(f, "{op} ")?;
+                pattern.fmt_ident(f, ident)?;
+            }
+            Unknown {
+                pattern: Some(p), ..
+            } => {
+                write!(f, "{RECOVER}<pattern{RESET}")?;
+                p.fmt_ident(f, ident)?;
+                write!(f, "{RECOVER}>{RESET}")?;
             }
             Unknown { tokens, .. } => {
                 write!(f, "{RECOVER}<pattern{RESET}")?;
                 for token in tokens {
                     write!(f, " {token}")?;
                 }
-                write!(f, "{RECOVER}>{RESET}")
+                write!(f, "{RECOVER}>{RESET}")?;
             }
         }
+        Ok(())
     }
 }

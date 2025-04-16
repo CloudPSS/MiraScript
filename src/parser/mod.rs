@@ -5,8 +5,8 @@ use winnow::token::literal;
 
 use crate::lexer::{Token, TokenKind};
 
-mod array_expression;
-mod array_init_element;
+mod array_element;
+mod array_helper;
 mod basic_expressions;
 mod block_expressions;
 mod expression;
@@ -18,19 +18,19 @@ mod pattern;
 mod patterns;
 mod range;
 mod ranges;
-mod record_elements;
+mod record_element;
 mod record_helper;
 mod script;
 mod statement;
 mod statements;
 
-pub use array_init_element::ArrayInitElement;
+pub use array_element::{ArrayElement, ArrayPattern};
 pub use expression::Expression;
 pub use expressions::expression;
 pub use iterable::Iterable;
 pub use pattern::Pattern;
 pub use range::Range;
-pub use record_elements::{RecordElement, RecordPattern};
+pub use record_element::{RecordElement, RecordPattern};
 pub use script::Script;
 pub use statement::Statement;
 

@@ -4,7 +4,7 @@ use std::{
 };
 
 use crate::{
-    ansi::{DisplayIdent, RECOVER, RESET},
+    ansi::{DisplayIdent, GROUP, RECOVER, RESET},
     lexer::Token,
     utils::{SourceError, SourceRange},
 };
@@ -71,13 +71,13 @@ pub enum Statement<'a> {
     /// `return expression;` or `return;`
     ///
     /// If the expression is omitted, the return value is `nil`.
-    Return(Option<Box<Expression<'a>>>),
+    Return(Box<Token<'a>>, Option<Box<Expression<'a>>>, Box<Token<'a>>),
     /// `break expression;` or `break;`
     ///
     /// The expression is only allowed in a `loop` expression.
-    Break(Option<Box<Expression<'a>>>),
+    Break(Box<Token<'a>>, Option<Box<Expression<'a>>>, Box<Token<'a>>),
     /// `continue;`
-    Continue,
+    Continue(Box<Token<'a>>, Box<Token<'a>>),
     /// Unknown statement.
     Unknown {
         tokens: Vec<Token<'a>>,
@@ -135,20 +135,23 @@ impl Display for Statement<'_> {
 impl DisplayIdent for Statement<'_> {
     fn fmt_ident(&self, f: &mut Formatter<'_>, ident: usize) -> fmt::Result {
         use Statement::*;
-        Self::write_ident(f, ident)?;
         match self {
             Empty(c) => {
+                Self::write_ident(f, ident, "")?;
                 writeln!(f, "{c}")
             }
             Expression(expr, c) => {
+                Self::write_ident(f, ident, "")?;
                 expr.fmt_ident(f, ident)?;
                 writeln!(f, "{c}")
             }
             BlockExpression(expr) => {
+                Self::write_ident(f, ident, "")?;
                 expr.fmt_ident(f, ident)?;
                 writeln!(f)
             }
             Bind(kw_let, pattern, eq, expr, c) => {
+                Self::write_ident(f, ident, "")?;
                 write!(f, "{kw_let} ")?;
                 pattern.fmt_ident(f, ident)?;
                 write!(f, " {eq} ")?;
@@ -156,24 +159,28 @@ impl DisplayIdent for Statement<'_> {
                 writeln!(f, "{c}")
             }
             Rebind(pattern, eq, expr, c) => {
+                Self::write_ident(f, ident, "rebind")?;
                 pattern.fmt_ident(f, ident)?;
                 write!(f, " {eq} ")?;
                 expr.fmt_ident(f, ident)?;
                 writeln!(f, "{c}")
             }
             Assign(exp, eq, expr, c) => {
+                Self::write_ident(f, ident, "assign")?;
                 exp.fmt_ident(f, ident)?;
                 write!(f, " {eq} ")?;
                 expr.fmt_ident(f, ident)?;
                 writeln!(f, "{c}")
             }
             Function(kw, id, None, body) => {
+                Self::write_ident(f, ident, "declare")?;
                 write!(f, "{kw} {id} ")?;
                 body.fmt_ident(f, ident)?;
                 writeln!(f)
             }
             Function(kw, id, Some(params), body) => {
-                write!(f, "{kw} {id} (")?;
+                Self::write_ident(f, ident, "declare")?;
+                write!(f, "{kw} {id}{GROUP}({RESET}")?;
                 let mut iter = params.iter();
                 if let Some(param) = iter.next() {
                     write!(f, "{param}")?;
@@ -181,24 +188,26 @@ impl DisplayIdent for Statement<'_> {
                         write!(f, ", {param}")?;
                     }
                 }
-                write!(f, ") ")?;
+                write!(f, "{GROUP}){RESET} ")?;
                 body.fmt_ident(f, ident)?;
                 writeln!(f)
             }
-            Return(Some(expr)) => {
-                write!(f, "return ")?;
+            Return(kw, Some(expr), c) | Break(kw, Some(expr), c) => {
+                Self::write_ident(f, ident, "")?;
+                write!(f, "{kw} ")?;
                 expr.fmt_ident(f, ident)?;
-                writeln!(f, ";")
+                writeln!(f, "{c}")
             }
-            Return(None) => writeln!(f, "return;"),
-            Break(Some(expr)) => {
-                write!(f, "break ")?;
-                expr.fmt_ident(f, ident)?;
-                writeln!(f, ";")
+            Return(kw, None, c) | Break(kw, None, c) => {
+                Self::write_ident(f, ident, "")?;
+                writeln!(f, "{kw}{c}")
             }
-            Break(None) => writeln!(f, "break;"),
-            Continue => writeln!(f, "continue;"),
+            Continue(kw, c) => {
+                Self::write_ident(f, ident, "")?;
+                writeln!(f, "{kw}{c}")
+            }
             Unknown { tokens, .. } => {
+                Self::write_ident(f, ident, "???")?;
                 write!(f, "{RECOVER}<statement{RESET}")?;
                 for token in tokens {
                     write!(f, " {token}")?;

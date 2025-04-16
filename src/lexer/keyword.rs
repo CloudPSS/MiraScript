@@ -1,7 +1,7 @@
 use std::{fmt::Display, str::FromStr};
 
 use super::{Token, TokenKind};
-use crate::ansi::{KEYWORD, RESET};
+use crate::ansi::{KEYWORD, NUMBER, RESET};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Keyword {
@@ -103,12 +103,15 @@ impl PartialEq<Keyword> for TokenKind<'_> {
 
 impl Display for Keyword {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if *self == Keyword::Underscore {
-            write!(f, "{KEYWORD}_{RESET}")
-        } else {
-            let mut d = format!("{:?}", self);
-            d.make_ascii_lowercase();
-            write!(f, "{KEYWORD}{d}{RESET}")
+        use Keyword::*;
+        if matches!(self, Underscore) {
+            return write!(f, "{KEYWORD}_{RESET}");
+        }
+        let mut d = format!("{:?}", self);
+        d.make_ascii_lowercase();
+        match self {
+            Inf | Nan => write!(f, "{NUMBER}{d}{RESET}"),
+            _ => write!(f, "{KEYWORD}{d}{RESET}"),
         }
     }
 }

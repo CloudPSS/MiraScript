@@ -4,38 +4,72 @@ use winnow::combinator::{
 };
 use winnow::error::{ContextError, ErrMode};
 use winnow::prelude::*;
+use winnow::stream::Location;
 use winnow::token::{any, literal, one_of};
 
 use crate::lexer::{Keyword, Operator, Token, TokenKind};
 use crate::utils::SourceRange;
 
-use super::array_expression::array_expression;
+use super::array_helper::array_base;
 use super::block_expressions::block_like_expression;
 use super::expressions::expression;
 use super::helper::{literal_token, token_boxed, token_or_insert, variable_token};
 use super::patterns::pattern;
+use super::ranges::range;
 use super::record_helper::record_base;
 use super::{Expression, Input, RecordElement, to_input};
 
 fn record_like<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
-    let (open, parts, close) = record_base(
-        expression.map(Box::new),
-        variable_token(false, false).map(Box::new),
-        expression.map(Box::new),
-        expression.map(Box::new),
-    )
-    .parse_next(i)?;
+    let omit_named = |i: &mut Input<'_, 'a>| -> ModalResult<Expression<'a>> {
+        expression
+            .with_taken()
+            .map(|(e, t)| {
+                if matches!(e, Expression::Access(..)) || matches!(e, Expression::Variable(..)) {
+                    e
+                } else {
+                    Expression::unknown(t, "Can not infer key from expression")
+                }
+            })
+            .parse_next(i)
+    };
+    let (open, parts, close) =
+        record_base(expression, omit_named, expression, expression).parse_next(i)?;
     let result = if parts.len() == 1 {
         let part = parts.into_iter().next().unwrap();
         if let RecordElement::Unnamed(exp, None) = part {
             Expression::Grouping(open, exp, close)
         } else {
-            Expression::Record(vec![part])
+            Expression::Record(open, vec![part], close)
         }
     } else {
-        Expression::Record(parts)
+        Expression::Record(open, parts, close)
     };
     Ok(result)
+}
+
+fn array<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
+    let spread = |i: &mut Input<'_, 'a>| {
+        let pos = i.previous_token_end();
+        opt(expression)
+            .map(|e| {
+                if let Some(e) = e {
+                    e
+                } else {
+                    Expression::unknown_range(
+                        [],
+                        SourceRange {
+                            start: pos,
+                            end: pos,
+                        },
+                        "Expression expected after `..`",
+                    )
+                }
+            })
+            .parse_next(i)
+    };
+    array_base(expression, range, spread)
+        .map(|(open, parts, close)| Expression::Array(open, parts, close))
+        .parse_next(i)
 }
 
 pub(super) fn interpolation<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
@@ -103,7 +137,7 @@ pub(super) fn primary<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> 
             .map(Box::new)
             .map(Expression::Variable),
         record_like,
-        array_expression,
+        array,
     )))
     .parse_next(i)
 }

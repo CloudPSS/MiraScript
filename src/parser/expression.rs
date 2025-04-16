@@ -9,7 +9,7 @@ use crate::{
     utils::{SourceError, SourceRange},
 };
 
-use super::{ArrayInitElement, Iterable, Pattern, RecordElement, Statement};
+use super::{ArrayElement, Iterable, Pattern, RecordElement, Statement};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expression<'a> {
@@ -30,11 +30,11 @@ pub enum Expression<'a> {
     /// Use `()` for an empty record.
     ///
     /// For a single-element-unnamed record, use `(` expression `,` `)`.
-    Record(Vec<RecordElement<'a>>),
+    Record(Box<Token<'a>>, Vec<RecordElement<'a>>, Box<Token<'a>>),
     /// `[` element* `]`
     ///
     /// Use `[]` for an empty list.
-    Array(Vec<ArrayInitElement<'a>>),
+    Array(Box<Token<'a>>, Vec<ArrayElement<'a>>, Box<Token<'a>>),
 
     // postfix
     /// `type` `(` expression `)`
@@ -221,7 +221,7 @@ impl DisplayIdent for Expression<'_> {
     fn fmt_ident(&self, f: &mut Formatter<'_>, ident: usize) -> fmt::Result {
         use Expression::*;
         match self {
-            Literal(token) => write!(f, "{token}"),
+            Literal(token) => write!(f, "{token}")?,
             InterpolatedString(token, e) => {
                 let Token {
                     kind: TokenKind::InterpolatedString(s, _),
@@ -241,46 +241,38 @@ impl DisplayIdent for Expression<'_> {
                     write!(f, "{STRING}")?;
                     write!(f, "{}", s.escape_debug())?;
                 }
-                write!(f, "\"{RESET}")
+                write!(f, "\"{RESET}")?;
             }
-            Variable(token) => write!(f, "{token}"),
+            Variable(token) => write!(f, "{token}")?,
             Grouping(op, exp, cp) => {
                 write!(f, "{GROUP}{op}{RESET}")?;
                 exp.fmt_ident(f, ident)?;
                 write!(f, "{GROUP}{cp}{RESET}")?;
-                Ok(())
             }
-            Record(exps) => {
+            Record(op, exps, cp) => {
                 if exps.is_empty() {
-                    return write!(f, "()");
+                    return write!(f, "{op}{cp}");
                 }
-                write!(f, "(")?;
+                write!(f, "{op}")?;
                 for exp in exps {
                     exp.fmt_ident(f, ident)?;
                 }
-                write!(f, ")")?;
-                Ok(())
+                write!(f, "{cp}")?;
             }
-            Array(exps) => {
+            Array(op, exps, cp) => {
                 if exps.is_empty() {
-                    return write!(f, "[]");
+                    return write!(f, "{op}{cp}");
                 }
-                write!(f, "[")?;
-                let mut iter = exps.iter();
-                if let Some(exp) = iter.next() {
+                write!(f, "{op}")?;
+                for exp in exps {
                     exp.fmt_ident(f, ident)?;
-                    for exp in iter {
-                        write!(f, ", ")?;
-                        exp.fmt_ident(f, ident)?;
-                    }
                 }
-                write!(f, "]")?;
-                Ok(())
+                write!(f, "{cp}")?;
             }
             Type(kw_type, op, arg, cp) => {
                 write!(f, "{kw_type}{op}")?;
                 arg.fmt_ident(f, ident)?;
-                write!(f, "{cp}")
+                write!(f, "{cp}")?;
             }
             Call(exp, op, args, cp) => {
                 exp.fmt_ident(f, ident)?;
@@ -293,38 +285,38 @@ impl DisplayIdent for Expression<'_> {
                         arg.fmt_ident(f, ident)?;
                     }
                 }
-                write!(f, "{cp}")
+                write!(f, "{cp}")?;
             }
             Access(exp, token) => {
                 exp.fmt_ident(f, ident)?;
-                write!(f, ".{token}")
+                write!(f, ".{token}")?;
             }
             Index(exp1, exp2) => {
                 exp1.fmt_ident(f, ident)?;
                 write!(f, "[")?;
                 exp2.fmt_ident(f, ident)?;
-                write!(f, "]")
+                write!(f, "]")?;
             }
             NonNil(exp, op) => {
                 exp.fmt_ident(f, ident)?;
-                write!(f, "{op}")
+                write!(f, "{op}")?;
             }
             Prefix(op, exp) => {
                 match op.kind {
                     TokenKind::Operator(_) => write!(f, "{op}")?,
                     _ => write!(f, "{op} ")?,
                 }
-                exp.fmt_ident(f, ident)
+                exp.fmt_ident(f, ident)?;
             }
             Infix(exp1, op, exp2) => {
                 exp1.fmt_ident(f, ident)?;
                 write!(f, " {op} ")?;
-                exp2.fmt_ident(f, ident)
+                exp2.fmt_ident(f, ident)?;
             }
             Is(exp1, op, pattern) => {
                 exp1.fmt_ident(f, ident)?;
                 write!(f, " {op} ")?;
-                pattern.fmt_ident(f, ident)
+                pattern.fmt_ident(f, ident)?;
             }
             Block(op, statements, expression, ed) => {
                 if statements.is_empty() {
@@ -339,21 +331,21 @@ impl DisplayIdent for Expression<'_> {
                     statement.fmt_ident(f, Self::next_ident(ident))?;
                 }
                 if let Some(expression) = expression {
-                    Self::write_ident(f, Self::next_ident(ident))?;
+                    Self::write_ident(f, Self::next_ident(ident), "")?;
                     writeln!(f, "{expression}")?;
                 }
-                Self::write_ident(f, ident)?;
-                write!(f, "{GROUP}{ed}{RESET}")
+                Self::write_ident(f, ident, "")?;
+                write!(f, "{GROUP}{ed}{RESET}")?;
             }
             Loop(kw, expression) => {
                 write!(f, "{kw} ")?;
-                expression.fmt_ident(f, ident)
+                expression.fmt_ident(f, ident)?;
             }
             While(kw, expression, block, None) => {
                 write!(f, "{kw} ")?;
                 expression.fmt_ident(f, ident)?;
                 write!(f, " ")?;
-                block.fmt_ident(f, ident)
+                block.fmt_ident(f, ident)?;
             }
             While(kw, expression, block, Some((kw_else, else_block))) => {
                 write!(f, "{kw} ")?;
@@ -361,7 +353,7 @@ impl DisplayIdent for Expression<'_> {
                 write!(f, " ")?;
                 block.fmt_ident(f, ident)?;
                 write!(f, " {kw_else} ")?;
-                else_block.fmt_ident(f, ident)
+                else_block.fmt_ident(f, ident)?;
             }
             ForIn(kw_for, pattern, kw_in, iter, block, None) => {
                 write!(f, "{kw_for} ")?;
@@ -369,7 +361,7 @@ impl DisplayIdent for Expression<'_> {
                 write!(f, " {kw_in} ")?;
                 iter.fmt_ident(f, ident)?;
                 write!(f, " ")?;
-                block.fmt_ident(f, ident)
+                block.fmt_ident(f, ident)?;
             }
             ForIn(kw_for, pattern, kw_in, iter, block, Some((kw_else, else_block))) => {
                 write!(f, "{kw_for} ")?;
@@ -379,7 +371,7 @@ impl DisplayIdent for Expression<'_> {
                 write!(f, " ")?;
                 block.fmt_ident(f, ident)?;
                 write!(f, " {kw_else} ")?;
-                else_block.fmt_ident(f, ident)
+                else_block.fmt_ident(f, ident)?;
             }
             If(kw_if, cond, then_block, Some((kw_else, else_block))) => {
                 write!(f, "{kw_if} ")?;
@@ -387,13 +379,13 @@ impl DisplayIdent for Expression<'_> {
                 write!(f, " ")?;
                 then_block.fmt_ident(f, ident)?;
                 write!(f, " {kw_else} ")?;
-                else_block.fmt_ident(f, ident)
+                else_block.fmt_ident(f, ident)?;
             }
             If(kw_if, cond, then_block, None) => {
                 write!(f, "{kw_if} ")?;
                 cond.fmt_ident(f, ident)?;
                 write!(f, " ")?;
-                then_block.fmt_ident(f, ident)
+                then_block.fmt_ident(f, ident)?;
             }
             Match(kw, expression, op, arms, ed) => {
                 write!(f, "{kw} ")?;
@@ -401,22 +393,22 @@ impl DisplayIdent for Expression<'_> {
                 writeln!(f, " {GROUP}{op}{RESET}")?;
                 let next_ident = Self::next_ident(ident);
                 for (kw_case, pattern, block) in arms {
-                    Self::write_ident(f, next_ident)?;
+                    Self::write_ident(f, next_ident, "")?;
                     write!(f, "{kw_case} ")?;
                     pattern.fmt_ident(f, next_ident)?;
                     write!(f, " ")?;
                     block.fmt_ident(f, next_ident)?;
                     writeln!(f)?;
                 }
-                Self::write_ident(f, ident)?;
-                write!(f, "{GROUP}{ed}{RESET}")
+                Self::write_ident(f, ident, "")?;
+                write!(f, "{GROUP}{ed}{RESET}")?;
             }
             Function(kw, None, block) => {
                 write!(f, "{kw} ")?;
-                block.fmt_ident(f, ident)
+                block.fmt_ident(f, ident)?;
             }
             Function(kw, Some(params), block) => {
-                write!(f, "{kw} (")?;
+                write!(f, "{kw} {GROUP}({RESET}")?;
                 let mut iter = params.iter();
                 if let Some(param) = iter.next() {
                     write!(f, "{}", param)?;
@@ -424,16 +416,17 @@ impl DisplayIdent for Expression<'_> {
                         write!(f, ", {}", param)?;
                     }
                 }
-                write!(f, ") ")?;
-                block.fmt_ident(f, ident)
+                write!(f, "{GROUP}){RESET} ")?;
+                block.fmt_ident(f, ident)?;
             }
             Unknown { tokens, .. } => {
                 write!(f, "{RECOVER}<expression{RESET}")?;
                 for token in tokens {
                     write!(f, " {token}")?;
                 }
-                write!(f, "{RECOVER}>{RESET}")
+                write!(f, "{RECOVER}>{RESET}")?;
             }
         }
+        Ok(())
     }
 }

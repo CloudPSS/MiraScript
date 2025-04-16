@@ -12,14 +12,16 @@ pub(crate) const VARIABLE: Style = AnsiColor::BrightYellow.on_default();
 pub(crate) const RECOVER: Style = Style::new().bg_color(Some(Color::Ansi(AnsiColor::Red)));
 pub(crate) const SPACE: Style = AnsiColor::Black.on_default().dimmed();
 pub(crate) const GROUP: Style = AnsiColor::Blue.on_default();
+pub(crate) const INLINE_HINT: Style =
+    Style::new().bg_color(Some(Color::Ansi(AnsiColor::BrightBlack)));
 
 pub(crate) const RESET: Reset = Reset;
 
 pub(crate) trait DisplayIdent {
     fn fmt_ident(&self, f: &mut std::fmt::Formatter<'_>, ident: usize) -> std::fmt::Result;
 
-    fn write_ident(f: &mut std::fmt::Formatter<'_>, ident: usize) -> std::fmt::Result {
-        write!(f, "{SPACE}")?;
+    fn write_ident(f: &mut std::fmt::Formatter<'_>, ident: usize, mark: &str) -> std::fmt::Result {
+        write!(f, "{SPACE}{mark:8}|")?;
         for _ in 0..ident {
             f.write_char('·')?;
         }
@@ -36,8 +38,8 @@ impl<T: DisplayIdent> DisplayIdent for Box<T> {
     fn fmt_ident(&self, f: &mut std::fmt::Formatter<'_>, ident: usize) -> std::fmt::Result {
         T::fmt_ident(self, f, ident)
     }
-    fn write_ident(f: &mut std::fmt::Formatter<'_>, ident: usize) -> std::fmt::Result {
-        T::write_ident(f, ident)
+    fn write_ident(f: &mut std::fmt::Formatter<'_>, ident: usize, mark: &str) -> std::fmt::Result {
+        T::write_ident(f, ident, mark)
     }
     fn next_ident(ident: usize) -> usize {
         T::next_ident(ident)
@@ -52,8 +54,8 @@ impl<T: DisplayIdent> DisplayIdent for Option<T> {
             Ok(())
         }
     }
-    fn write_ident(f: &mut std::fmt::Formatter<'_>, ident: usize) -> std::fmt::Result {
-        T::write_ident(f, ident)
+    fn write_ident(f: &mut std::fmt::Formatter<'_>, ident: usize, mark: &str) -> std::fmt::Result {
+        T::write_ident(f, ident, mark)
     }
     fn next_ident(ident: usize) -> usize {
         T::next_ident(ident)

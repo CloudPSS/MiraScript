@@ -1,9 +1,9 @@
 use winnow::{
     ModalResult, Parser,
-    combinator::{alt, empty, opt},
+    combinator::{alt, empty, fail, opt, separated_foldl1, seq},
     error::{ContextError, ErrMode},
     stream::Location,
-    token::take_till,
+    token::{one_of, take_till},
 };
 
 use crate::{
@@ -12,7 +12,8 @@ use crate::{
 };
 
 use super::{
-    Input, Pattern,
+    Input, Pattern, RecordPattern,
+    array_helper::array_base,
     helper::{literal_token, token_boxed, variable_token},
     record_helper::record_base,
 };
@@ -41,7 +42,7 @@ fn unknown_pattern<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Pattern<'a>> {
 
 pub(super) fn pattern_or_insert<'t, 'a: 't>(
     rebind: bool,
-) -> impl Parser<Input<'t, 'a>, Pattern<'a>, ErrMode<ContextError>> {
+) -> impl Parser<Input<'t, 'a>, Pattern<'a>, ErrMode<ContextError>> + Copy {
     move |i: &mut Input<'_, 'a>| {
         let start = i.previous_token_end();
         alt((
@@ -61,13 +62,59 @@ pub(super) fn pattern_or_insert<'t, 'a: 't>(
 pub(super) fn pattern<'t, 'a: 't>(
     rebind: bool,
 ) -> impl Parser<Input<'t, 'a>, Pattern<'a>, ErrMode<ContextError>> {
+    move |i: &mut Input<'_, 'a>| or_pattern(rebind).parse_next(i)
+}
+
+fn primary_pattern<'t, 'a: 't>(
+    rebind: bool,
+) -> impl Parser<Input<'t, 'a>, Pattern<'a>, ErrMode<ContextError>> {
     move |i: &mut Input<'_, 'a>| {
         alt((
+            relation_pattern,
+            record_like_pattern(rebind),
+            array_pattern(rebind),
+            range_pattern,
             literal_pattern,
-            record_pattern(rebind),
             discard_bind_pattern(rebind),
+            not_pattern(rebind),
             unknown_pattern,
         ))
+        .parse_next(i)
+    }
+}
+
+fn not_pattern<'t, 'a: 't>(
+    rebind: bool,
+) -> impl Parser<Input<'t, 'a>, Pattern<'a>, ErrMode<ContextError>> {
+    move |i: &mut Input<'_, 'a>| {
+        (token_boxed(Keyword::Not), primary_pattern(rebind))
+            .map(|(kw_not, p)| Pattern::Not(kw_not, Box::new(p)))
+            .parse_next(i)
+    }
+}
+
+fn and_pattern<'t, 'a: 't>(
+    rebind: bool,
+) -> impl Parser<Input<'t, 'a>, Pattern<'a>, ErrMode<ContextError>> {
+    move |i: &mut Input<'_, 'a>| {
+        separated_foldl1(
+            primary_pattern(rebind),
+            token_boxed(Keyword::And),
+            |left, op, right| Pattern::And(Box::new(left), op, Box::new(right)),
+        )
+        .parse_next(i)
+    }
+}
+
+fn or_pattern<'t, 'a: 't>(
+    rebind: bool,
+) -> impl Parser<Input<'t, 'a>, Pattern<'a>, ErrMode<ContextError>> {
+    move |i: &mut Input<'_, 'a>| {
+        separated_foldl1(
+            and_pattern(rebind),
+            token_boxed(Keyword::Or),
+            |left, op, right| Pattern::Or(Box::new(left), op, Box::new(right)),
+        )
         .parse_next(i)
     }
 }
@@ -76,6 +123,32 @@ fn literal_pattern<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Pattern<'a>> {
     literal_token
         .map(|t| Pattern::Literal(Box::new(t)))
         .parse_next(i)
+}
+
+fn relation_pattern<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Pattern<'a>> {
+    seq!(Pattern::Relation(
+        one_of(|t: &Token<'a>| *t == Operator::Less
+            || *t == Operator::LessEqual
+            || *t == Operator::Greater
+            || *t == Operator::GreaterEqual
+            || *t == Operator::EqualEqual
+            || *t == Operator::NotEqual
+            || *t == Operator::TildeEqual
+            || *t == Operator::NotTildeEqual)
+        .map(|t: &Token<'a>| Box::new(t.to_owned())),
+        literal_token.map(Box::new),
+    ))
+    .parse_next(i)
+}
+
+fn range_pattern<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Pattern<'a>> {
+    seq!(Pattern::Range(
+        literal_token.map(Box::new),
+        one_of(|t: &Token<'a>| *t == Operator::SpreadRange || *t == Operator::HalfOpenRange)
+            .map(|t: &Token<'a>| Box::new(t.to_owned())),
+        literal_token.map(Box::new),
+    ))
+    .parse_next(i)
 }
 
 fn discard_bind_pattern<'t, 'a: 't>(
@@ -106,9 +179,30 @@ fn discard_bind_pattern<'t, 'a: 't>(
     }
 }
 
-fn record_pattern<'t, 'a: 't>(
+fn pattern_spread<'t, 'a: 't>(
     rebind: bool,
-) -> impl Parser<Input<'t, 'a>, Pattern<'a>, ErrMode<ContextError>> {
+) -> impl Parser<Input<'t, 'a>, Pattern<'a>, ErrMode<ContextError>> + Copy {
+    move |i: &mut Input<'_, 'a>| {
+        opt(pattern(rebind))
+            .with_taken()
+            .map(|(p, t)| {
+                if p.is_none() {
+                    return Pattern::SpreadDiscard;
+                }
+                let p = p.unwrap();
+                if matches!(p, Pattern::Discard(..)) {
+                    p.wrap_as_unknown(t, "Discard pattern should be omitted in spread pattern")
+                } else {
+                    p
+                }
+            })
+            .parse_next(i)
+    }
+}
+
+fn record_like_pattern<'t, 'a: 't>(
+    rebind: bool,
+) -> impl Parser<Input<'t, 'a>, Pattern<'a>, ErrMode<ContextError>> + Copy {
     let omit_named = move |i: &mut Input<'_, 'a>| -> ModalResult<Pattern<'a>> {
         pattern_or_insert(rebind)
             .with_taken()
@@ -121,32 +215,47 @@ fn record_pattern<'t, 'a: 't>(
             })
             .parse_next(i)
     };
-    let spread = move |i: &mut Input<'_, 'a>| -> ModalResult<Pattern<'a>> {
-        pattern(rebind)
+
+    move |i: &mut Input<'_, 'a>| {
+        let (open, parts, close) = record_base(
+            pattern_or_insert(rebind),
+            omit_named,
+            pattern_or_insert(rebind),
+            pattern_spread(rebind),
+        )
+        .parse_next(i)?;
+        let result = if parts.len() == 1 {
+            let part = parts.into_iter().next().unwrap();
+            if let RecordPattern::Unnamed(exp, None) = part {
+                Pattern::Grouping(open, exp, close)
+            } else {
+                Pattern::Record(open, vec![part], close)
+            }
+        } else {
+            Pattern::Record(open, parts, close)
+        };
+        Ok(result)
+    }
+}
+
+fn array_pattern<'t, 'a: 't>(
+    rebind: bool,
+) -> impl Parser<Input<'t, 'a>, Pattern<'a>, ErrMode<ContextError>> + Copy {
+    let element_pattern = move |i: &mut Input<'_, 'a>| {
+        pattern_or_insert(rebind)
             .with_taken()
             .map(|(p, t)| {
-                if matches!(p, Pattern::Bind(..))
-                    || matches!(p, Pattern::Record(..))
-                    || matches!(p, Pattern::Unknown { .. })
-                {
-                    p
-                } else if matches!(p, Pattern::Discard(..)) {
-                    p.wrap_as_unknown(t, "Discard pattern should be omitted in spread pattern")
+                if matches!(p, Pattern::Range(..)) {
+                    p.wrap_as_unknown(t, "Range pattern in array pattern should be parenthesised ")
                 } else {
-                    p.wrap_as_unknown(t, "Spread pattern only matches record")
+                    p
                 }
             })
             .parse_next(i)
     };
-
     move |i: &mut Input<'_, 'a>| {
-        let (open, parts, close) = record_base(
-            pattern_or_insert(rebind).map(Box::new),
-            omit_named.map(Box::new),
-            pattern_or_insert(rebind).map(Box::new),
-            opt(spread.map(Box::new)),
-        )
-        .parse_next(i)?;
-        Ok(Pattern::Record(open, parts, close))
+        let (open, parts, close) =
+            array_base(element_pattern, fail, pattern_spread(rebind)).parse_next(i)?;
+        Ok(Pattern::Array(open, parts, close))
     }
 }

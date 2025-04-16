@@ -5,54 +5,29 @@ use crate::{ansi::DisplayIdent, lexer::Token};
 use super::{Expression, Pattern};
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum RecordElementBase<
-    'a,
-    Named: Clone + PartialEq,
-    OmitNamed: Clone + PartialEq,
-    Unnamed: Clone + PartialEq,
-    Spread: Clone + PartialEq,
-> {
-    /// name `:` Named `,`?
+pub enum RecordElementBase<'a, E: Clone + PartialEq> {
+    /// name colon Named `,`?
     Named(
         Box<Token<'a>>,
         Box<Token<'a>>,
-        Named,
+        Box<E>,
         Option<Box<Token<'a>>>,
     ),
-    /// `:` OmitNamed `,`?
-    OmitNamed(Box<Token<'a>>, OmitNamed, Option<Box<Token<'a>>>),
+    /// colon OmitNamed `,`?
+    OmitNamed(Box<Token<'a>>, Box<E>, Option<Box<Token<'a>>>),
     /// Unnamed `,`?
-    Unnamed(Unnamed, Option<Box<Token<'a>>>),
+    Unnamed(Box<E>, Option<Box<Token<'a>>>),
     /// `..` Spread `,`?
-    Spread(Box<Token<'a>>, Spread, Option<Box<Token<'a>>>),
+    Spread(Box<Token<'a>>, Box<E>, Option<Box<Token<'a>>>),
 }
 
 use RecordElementBase::*;
 
-pub type RecordElement<'a> = RecordElementBase<
-    'a,
-    Box<Expression<'a>>,
-    Box<Token<'a>>,
-    Box<Expression<'a>>,
-    Box<Expression<'a>>,
->;
+pub type RecordElement<'a> = RecordElementBase<'a, Expression<'a>>;
 
-pub type RecordPattern<'a> = RecordElementBase<
-    'a,
-    Box<Pattern<'a>>,
-    Box<Pattern<'a>>,
-    Box<Pattern<'a>>,
-    Option<Box<Pattern<'a>>>,
->;
+pub type RecordPattern<'a> = RecordElementBase<'a, Pattern<'a>>;
 
-impl<
-    'a,
-    Named: Clone + PartialEq,
-    OmitNamed: Clone + PartialEq,
-    Unnamed: Clone + PartialEq,
-    Spread: Clone + PartialEq,
-> RecordElementBase<'a, Named, OmitNamed, Unnamed, Spread>
-{
+impl<'a, E: Clone + PartialEq> RecordElementBase<'a, E> {
     pub fn is_named(&self) -> bool {
         matches!(self, Named(..))
     }
@@ -86,28 +61,16 @@ impl<
     }
 }
 
-impl<
-    'a,
-    Named: Clone + PartialEq,
-    OmitNamed: Clone + PartialEq,
-    Unnamed: Clone + PartialEq,
-    Spread: Clone + PartialEq,
-> Display for RecordElementBase<'a, Named, OmitNamed, Unnamed, Spread>
+impl<'a, E: Clone + PartialEq> Display for RecordElementBase<'a, E>
 where
-    RecordElementBase<'a, Named, OmitNamed, Unnamed, Spread>: DisplayIdent,
+    RecordElementBase<'a, E>: DisplayIdent,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.fmt_ident(f, 0)
     }
 }
 
-impl<
-    Named: DisplayIdent + Clone + PartialEq,
-    OmitNamed: DisplayIdent + Clone + PartialEq,
-    Unnamed: DisplayIdent + Clone + PartialEq,
-    Spread: DisplayIdent + Clone + PartialEq,
-> DisplayIdent for RecordElementBase<'_, Named, OmitNamed, Unnamed, Spread>
-{
+impl<E: DisplayIdent + Clone + PartialEq> DisplayIdent for RecordElementBase<'_, E> {
     fn fmt_ident(&self, f: &mut std::fmt::Formatter<'_>, ident: usize) -> std::fmt::Result {
         match self {
             Named(name, colon, value, _) => {

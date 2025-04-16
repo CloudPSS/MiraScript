@@ -1,8 +1,7 @@
 use winnow::{
     ModalResult, Parser,
-    combinator::{Repeat, alt, fail, peek, repeat},
+    combinator::{alt, fail, peek, repeat},
     error::{ContextError, ErrMode},
-    stream::Stream,
     token::{any, one_of},
 };
 
@@ -11,7 +10,7 @@ use crate::lexer::{Keyword, Operator, Token, TokenKind};
 use super::{
     Input,
     helper::{token_boxed, token_or_insert, variable_token},
-    record_elements::RecordElementBase,
+    record_element::RecordElementBase,
 };
 
 fn record_name<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Token<'a>> {
@@ -22,86 +21,36 @@ fn record_name<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Token<'a>> {
     .parse_next(i)
 }
 
-struct RecordBaseParser<
-    't,
-    'a: 't,
-    Named,
-    OmitNamed,
-    Unnamed,
-    Spread,
-    NamedParser: Parser<Input<'t, 'a>, Named, ErrMode<ContextError>>,
-    OmitNamedParser: Parser<Input<'t, 'a>, OmitNamed, ErrMode<ContextError>>,
-    UnnamedParser: Parser<Input<'t, 'a>, Unnamed, ErrMode<ContextError>>,
-    SpreadParser: Parser<Input<'t, 'a>, Spread, ErrMode<ContextError>>,
-> {
-    named: NamedParser,
-    omit_named: OmitNamedParser,
-    unnamed: UnnamedParser,
-    spread: SpreadParser,
-
-    _phantom: std::marker::PhantomData<&'t &'a (Named, OmitNamed, Unnamed, Spread)>,
-}
-impl<
-    't,
-    'a: 't,
-    Named: Clone + PartialEq,
-    OmitNamed: Clone + PartialEq,
-    Unnamed: Clone + PartialEq,
-    Spread: Clone + PartialEq,
-    NamedParser: Parser<Input<'t, 'a>, Named, ErrMode<ContextError>>,
-    OmitNamedParser: Parser<Input<'t, 'a>, OmitNamed, ErrMode<ContextError>>,
-    UnnamedParser: Parser<Input<'t, 'a>, Unnamed, ErrMode<ContextError>>,
-    SpreadParser: Parser<Input<'t, 'a>, Spread, ErrMode<ContextError>>,
->
-    Parser<
-        Input<'t, 'a>,
-        RecordElementBase<'a, Named, OmitNamed, Unnamed, Spread>,
-        ErrMode<ContextError>,
-    >
-    for &mut RecordBaseParser<
-        't,
-        'a,
-        Named,
-        OmitNamed,
-        Unnamed,
-        Spread,
-        NamedParser,
-        OmitNamedParser,
-        UnnamedParser,
-        SpreadParser,
-    >
-{
-    fn parse_next(
-        &mut self,
-        i: &mut Input<'t, 'a>,
-    ) -> ModalResult<RecordElementBase<'a, Named, OmitNamed, Unnamed, Spread>> {
+fn record_element<'t, 'a: 't, E: Clone + PartialEq + 'a>(
+    named: impl Parser<Input<'t, 'a>, E, ErrMode<ContextError>> + Copy,
+    omit_named: impl Parser<Input<'t, 'a>, E, ErrMode<ContextError>> + Copy,
+    unnamed: impl Parser<Input<'t, 'a>, E, ErrMode<ContextError>> + Copy,
+    spread: impl Parser<Input<'t, 'a>, E, ErrMode<ContextError>> + Copy,
+) -> impl Parser<Input<'t, 'a>, RecordElementBase<'a, E>, ErrMode<ContextError>> + Copy {
+    let colon = |t: &Token<'a>| -> bool {
+        *t == Operator::Colon || *t == Operator::QuestionColon || *t == Operator::ExclamationColon
+    };
+    move |i: &mut Input<'t, 'a>| {
         let first = peek(any).parse_next(i)?;
         if *first == Operator::CloseParen {
             return fail.parse_next(i);
         }
         let mut result = if *first == Operator::SpreadRange {
-            let s = token_boxed(Operator::SpreadRange).parse_next(i)?;
-            let e = self.spread.parse_next(i)?;
-            RecordElementBase::Spread(s, e, None)
-        } else if *first == Operator::Colon {
-            let c = token_boxed(Operator::Colon).parse_next(i)?;
-            let o = self.omit_named.parse_next(i)?;
-            RecordElementBase::OmitNamed(c, o, None)
+            (token_boxed(Operator::SpreadRange), spread)
+                .map(|(s, e)| RecordElementBase::Spread(s, e.into(), None))
+                .parse_next(i)?
+        } else if colon(first) {
+            (one_of(colon), omit_named)
+                .map(|(c, o)| RecordElementBase::OmitNamed(c.to_owned().into(), o.into(), None))
+                .parse_next(i)?
         } else {
-            let cp = i.checkpoint();
-            let record_name = record_name.parse_next(i);
-            let token_boxed = token_boxed(Operator::Colon).parse_next(i);
-            let e = self.named.parse_next(i);
-            if record_name.is_err() || token_boxed.is_err() || e.is_err() {
-                i.reset(&cp);
-                let o = self.unnamed.parse_next(i)?;
-                RecordElementBase::Unnamed(o, None)
-            } else {
-                let record_name = record_name.unwrap();
-                let token_boxed = token_boxed.unwrap();
-                let e = e.unwrap();
-                RecordElementBase::Named(Box::new(record_name), token_boxed, e, None)
-            }
+            alt((
+                (record_name, one_of(colon), named).map(|(r, c, n)| {
+                    RecordElementBase::Named(Box::new(r), c.to_owned().into(), n.into(), None)
+                }),
+                unnamed.map(|u| RecordElementBase::Unnamed(u.into(), None)),
+            ))
+            .parse_next(i)?
         };
         let last = peek(any).parse_next(i)?;
         if *last == Operator::CloseParen
@@ -125,78 +74,27 @@ impl<
     }
 }
 
-type RecordBaseParserResult<'a, Named, OmitNamed, Unnamed, Spread> = (
-    Box<Token<'a>>,
-    Vec<RecordElementBase<'a, Named, OmitNamed, Unnamed, Spread>>,
-    Box<Token<'a>>,
-);
-
-impl<
-    't,
-    'a: 't,
-    Named: Clone + PartialEq,
-    OmitNamed: Clone + PartialEq,
-    Unnamed: Clone + PartialEq,
-    Spread: Clone + PartialEq,
-    NamedParser: Parser<Input<'t, 'a>, Named, ErrMode<ContextError>>,
-    OmitNamedParser: Parser<Input<'t, 'a>, OmitNamed, ErrMode<ContextError>>,
-    UnnamedParser: Parser<Input<'t, 'a>, Unnamed, ErrMode<ContextError>>,
-    SpreadParser: Parser<Input<'t, 'a>, Spread, ErrMode<ContextError>>,
->
-    Parser<
-        Input<'t, 'a>,
-        RecordBaseParserResult<'a, Named, OmitNamed, Unnamed, Spread>,
-        ErrMode<ContextError>,
-    >
-    for RecordBaseParser<
-        't,
-        'a,
-        Named,
-        OmitNamed,
-        Unnamed,
-        Spread,
-        NamedParser,
-        OmitNamedParser,
-        UnnamedParser,
-        SpreadParser,
-    >
-{
-    fn parse_next(
-        &mut self,
-        i: &mut Input<'t, 'a>,
-    ) -> ModalResult<RecordBaseParserResult<'a, Named, OmitNamed, Unnamed, Spread>> {
+pub(super) fn record_base<'t, 'a: 't, E: Clone + PartialEq + 'a>(
+    named: impl Parser<Input<'t, 'a>, E, ErrMode<ContextError>> + Copy,
+    omit_named: impl Parser<Input<'t, 'a>, E, ErrMode<ContextError>> + Copy,
+    unnamed: impl Parser<Input<'t, 'a>, E, ErrMode<ContextError>> + Copy,
+    spread: impl Parser<Input<'t, 'a>, E, ErrMode<ContextError>> + Copy,
+) -> impl Parser<
+    Input<'t, 'a>,
+    (
+        Box<Token<'a>>,
+        Vec<RecordElementBase<'a, E>>,
+        Box<Token<'a>>,
+    ),
+    ErrMode<ContextError>,
+> + Copy {
+    move |i: &mut Input<'t, 'a>| {
         let open = token_boxed(Operator::OpenParen).parse_next(i)?;
-        let mut repeat: Repeat<_, _, RecordElementBase<'a, _, _, _, _>, _, _> = repeat(0.., self);
-        let parts: Vec<RecordElementBase<'a, Named, OmitNamed, Unnamed, Spread>> =
-            repeat.parse_next(i)?;
+        let parts: Vec<_> =
+            repeat(0.., record_element(named, omit_named, unnamed, spread)).parse_next(i)?;
         let close = token_or_insert(Operator::CloseParen, "Missing ')'")
             .map(Box::new)
             .parse_next(i)?;
         Ok((open, parts, close))
-    }
-}
-pub(super) fn record_base<
-    't,
-    'a: 't,
-    Named: Clone + PartialEq + 'a,
-    OmitNamed: Clone + PartialEq + 'a,
-    Unnamed: Clone + PartialEq + 'a,
-    Spread: Clone + PartialEq + 'a,
->(
-    named: impl Parser<Input<'t, 'a>, Named, ErrMode<ContextError>>,
-    omit_named: impl Parser<Input<'t, 'a>, OmitNamed, ErrMode<ContextError>>,
-    unnamed: impl Parser<Input<'t, 'a>, Unnamed, ErrMode<ContextError>>,
-    spread: impl Parser<Input<'t, 'a>, Spread, ErrMode<ContextError>>,
-) -> impl Parser<
-    Input<'t, 'a>,
-    RecordBaseParserResult<'a, Named, OmitNamed, Unnamed, Spread>,
-    ErrMode<ContextError>,
-> {
-    RecordBaseParser {
-        named,
-        omit_named,
-        unnamed,
-        spread,
-        _phantom: std::marker::PhantomData,
     }
 }

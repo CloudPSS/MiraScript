@@ -81,7 +81,7 @@ pub(super) fn literal_token<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Token<'a>>
 pub(super) fn variable_token<'t, 'a: 't>(
     include_underscore: bool,
     include_global: bool,
-) -> impl Parser<Input<'t, 'a>, Token<'a>, ErrMode<ContextError>> {
+) -> impl Parser<Input<'t, 'a>, Token<'a>, ErrMode<ContextError>> + Copy {
     move |i: &mut Input<'t, 'a>| {
         let t = one_of(|t: &Token<'a>| {
             matches!(&t.kind, &TokenKind::Identifier(_))
@@ -109,28 +109,20 @@ pub(super) fn variable_token<'t, 'a: 't>(
     }
 }
 
-pub(super) fn token<'t, 'a: 't, T>(
-    token: T,
-) -> impl Parser<Input<'t, 'a>, Token<'a>, ErrMode<ContextError>>
-where
-    T: Into<TokenKind<'a>> + Clone,
-    Token<'a>: PartialEq<T>,
-{
-    move |i: &mut Input<'_, 'a>| {
-        one_of(|t: &Token<'a>| *t == token)
+pub(super) fn token<'t, 'a: 't>(
+    token: impl Into<TokenKind<'a>> + Clone + PartialEq<Token<'a>>,
+) -> impl Parser<Input<'t, 'a>, Token<'a>, ErrMode<ContextError>> {
+    move |i: &mut Input<'t, 'a>| {
+        one_of(|t: &Token<'a>| token == *t)
             .map(|t: &Token<'a>| t.to_owned())
             .parse_next(i)
     }
 }
-pub(super) fn token_boxed<'t, 'a: 't, T>(
-    token: T,
-) -> impl Parser<Input<'t, 'a>, Box<Token<'a>>, ErrMode<ContextError>>
-where
-    T: Into<TokenKind<'a>> + Clone,
-    Token<'a>: PartialEq<T>,
-{
-    move |i: &mut Input<'_, 'a>| {
-        one_of(|t: &Token<'a>| *t == token)
+pub(super) fn token_boxed<'t, 'a: 't>(
+    token: impl Into<TokenKind<'a>> + Clone + PartialEq<Token<'a>>,
+) -> impl Parser<Input<'t, 'a>, Box<Token<'a>>, ErrMode<ContextError>> {
+    move |i: &mut Input<'t, 'a>| {
+        one_of(|t: &Token<'a>| token == *t)
             .map(|t: &Token<'a>| Box::new(t.to_owned()))
             .parse_next(i)
     }
