@@ -17,9 +17,14 @@ pub enum Keyword {
     Global,
 
     // operators
-    TypeOf,
-    Is,
     In,
+    Is,
+    And,
+    Or,
+    Not,
+
+    // pseudo function
+    Type,
 
     // control flow
     If,
@@ -38,20 +43,24 @@ pub enum Keyword {
     Op, // Reserved for future use
     Let,
     Mut,
-    Record, // Reserved for future use
-    Where,  // Reserved for future use
+    // Type,  // Reserved for future use
+    Where, // Reserved for future use
 
-    // record Date(string) {
+    // type Date(string) {
     //   if it |> matches(`(\d{4})-(\d{2})-(\d{2})`) { it }
     //   else if it |> matches(`(\d{4})/(\d{2})/(\d{2})`) { it |> replace("/", "-") }
     //   else { nil }
     // }
-    // record Complex(number, number);
-    // record Color(red: number, green: number, blue: number) { red > 0 && red < 256 && green > 0 && green < 256 && blue > 0 && blue < 256 }
+    // type Complex(number, number);
+    // type Color(red: number, green: number, blue: number) { red > 0 && red < 256 && green > 0 && green < 256 && blue > 0 && blue < 256 }
     // Date("2021-01-01") -> "2021-01-01"
     // Complex(1, 2) -> { 0: 1, 1: 2 }
     // Color(1, 2, 3) -> { red: 1, green: 2, blue: 3 }
     // Color(-1, 2, 3) -> nil
+
+    // module
+    Import, // Reserved for future use
+    Export, // Reserved for future use
 
     // algebraic effects
     Effect,  // Reserved for future use
@@ -118,9 +127,13 @@ impl FromStr for Keyword {
             "_" => Ok(Keyword::Underscore),
             "global" => Ok(Keyword::Global),
 
-            "typeof" => Ok(Keyword::TypeOf),
-            "is" => Ok(Keyword::Is),
             "in" => Ok(Keyword::In),
+            "is" => Ok(Keyword::Is),
+            "and" => Ok(Keyword::And),
+            "or" => Ok(Keyword::Or),
+            "not" => Ok(Keyword::Not),
+
+            "type" => Ok(Keyword::Type),
 
             "if" => Ok(Keyword::If),
             "else" => Ok(Keyword::Else),
@@ -137,8 +150,10 @@ impl FromStr for Keyword {
             "op" => Ok(Keyword::Op),
             "let" => Ok(Keyword::Let),
             "mut" => Ok(Keyword::Mut),
-            "record" => Ok(Keyword::Record),
             "where" => Ok(Keyword::Where),
+
+            "import" => Ok(Keyword::Import),
+            "export" => Ok(Keyword::Export),
 
             "effect" => Ok(Keyword::Effect),
             "try" => Ok(Keyword::Try),

@@ -36,30 +36,44 @@ pub enum Expression<'a> {
     /// Use `[]` for an empty list.
     Array(Vec<ArrayInitElement<'a>>),
 
-    // access and call
+    // postfix
+    /// `type` `(` expression `)`
+    Type(
+        Box<Token<'a>>,
+        Box<Token<'a>>,
+        Box<Expression<'a>>,
+        Box<Token<'a>>,
+    ),
     /// expression `(` arguments `)`
     ///
     /// Arguments are a list of expressions, trailing comma is optional.
-    Call(Box<Expression<'a>>, Vec<Expression<'a>>),
+    Call(
+        Box<Expression<'a>>,
+        Box<Token<'a>>,
+        Vec<Expression<'a>>,
+        Box<Token<'a>>,
+    ),
     /// expression `.` field
     ///
     /// Field must be an identifier or an ordinal.
     Access(Box<Expression<'a>>, Box<Token<'a>>),
     /// expression `[` expression `]`
     Index(Box<Expression<'a>>, Box<Expression<'a>>),
+    /// expression `!`
+    NonNil(Box<Expression<'a>>, Box<Token<'a>>),
 
     /// op expression
     ///
-    /// Unary operators are:
+    /// Prefix operators are:
     /// - `!` logical not
     /// - `-` negation
     /// - `+` unary plus
-    /// - `typeof` get type of expression
-    Unary(Box<Token<'a>>, Box<Expression<'a>>),
+    Prefix(Box<Token<'a>>, Box<Expression<'a>>),
 
+    // infix
     /// expression op expression
     ///
-    /// Binary operators are:
+    /// Infix operators are:
     /// 1. `^` exponentiation
     /// 1. `*` `/` `%` multiplicative
     /// 1. `+` `-` additive
@@ -69,7 +83,7 @@ pub enum Expression<'a> {
     /// 1. `&&` logical and
     /// 1. `||` logical or
     /// 1. `|>` `<|` forward and backward pipe
-    Binary(Box<Expression<'a>>, Box<Token<'a>>, Box<Expression<'a>>),
+    Infix(Box<Expression<'a>>, Box<Token<'a>>, Box<Expression<'a>>),
     /// expression `is` pattern
     Is(Box<Expression<'a>>, Box<Token<'a>>, Box<Pattern<'a>>),
 
@@ -263,9 +277,14 @@ impl DisplayIdent for Expression<'_> {
                 write!(f, "]")?;
                 Ok(())
             }
-            Call(exp, args) => {
+            Type(kw_type, op, arg, cp) => {
+                write!(f, "{kw_type}{op}")?;
+                arg.fmt_ident(f, ident)?;
+                write!(f, "{cp}")
+            }
+            Call(exp, op, args, cp) => {
                 exp.fmt_ident(f, ident)?;
-                write!(f, "(")?;
+                write!(f, "{op}")?;
                 let mut iter = args.iter();
                 if let Some(arg) = iter.next() {
                     arg.fmt_ident(f, ident)?;
@@ -274,7 +293,7 @@ impl DisplayIdent for Expression<'_> {
                         arg.fmt_ident(f, ident)?;
                     }
                 }
-                write!(f, ")")
+                write!(f, "{cp}")
             }
             Access(exp, token) => {
                 exp.fmt_ident(f, ident)?;
@@ -286,14 +305,18 @@ impl DisplayIdent for Expression<'_> {
                 exp2.fmt_ident(f, ident)?;
                 write!(f, "]")
             }
-            Unary(op, exp) => {
+            NonNil(exp, op) => {
+                exp.fmt_ident(f, ident)?;
+                write!(f, "{op}")
+            }
+            Prefix(op, exp) => {
                 match op.kind {
                     TokenKind::Operator(_) => write!(f, "{op}")?,
                     _ => write!(f, "{op} ")?,
                 }
                 exp.fmt_ident(f, ident)
             }
-            Binary(exp1, op, exp2) => {
+            Infix(exp1, op, exp2) => {
                 exp1.fmt_ident(f, ident)?;
                 write!(f, " {op} ")?;
                 exp2.fmt_ident(f, ident)

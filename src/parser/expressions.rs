@@ -18,6 +18,7 @@ fn unknown_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> 
             || *t == Keyword::While
             || *t == Keyword::Match
             || *t == Keyword::For
+            || *t == Keyword::Let
             || *t == Operator::Semicolon
             || *t == Operator::OpenBrace
             || *t == Operator::CloseBrace

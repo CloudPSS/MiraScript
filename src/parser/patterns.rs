@@ -26,6 +26,7 @@ fn unknown_pattern<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Pattern<'a>> {
             || *t == Keyword::While
             || *t == Keyword::Match
             || *t == Keyword::For
+            || *t == Keyword::Let
             || *t == Operator::Comma
             || *t == Operator::Equal
             || *t == Operator::Semicolon

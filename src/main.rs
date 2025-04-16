@@ -72,7 +72,7 @@ fn main() {
 match {a}{}
     @@"你好${ if  } 世界 $$ 再见@" $$if "@世界"@@
 
-    let t = typeof "x";
+    let t = type "x";
 
     if x is y {
         print <| "x is 1";
@@ -96,13 +96,38 @@ match {a}{}
     (00, 0, 0x0, 0o0, 0b0, 0e0, 0.0)
 
     let (.., _, ..`ht`, ..x, y, ..(1,2,3)) = x;
+
+    a!==1;
+    a!~=1;
+    a! ~=1;
+    a!.b!.c!['x']!(12)!;
+    a!.b!['x']!.c!(12);
+
+    a ?? 1;
+    a ??= 1;
+    2147483647 + 2147483648;
     "##;
 
     let mut input = lexer::to_input(text);
     let result = lexer::lex(&mut input, true).unwrap();
     println!("{:?}", result);
 
-    let mut input = parser::to_input(&result);
+    let recovered_result: Vec<_> = result
+        .iter()
+        .filter_map(|t| match &t.kind {
+            lexer::TokenKind::Unknown {
+                recovered: Some(token),
+                ..
+            } => Some(lexer::Token {
+                kind: *token.to_owned(),
+                range: t.range.clone(),
+            }),
+            lexer::TokenKind::Unknown { .. } => None,
+            _ => Some(t.clone()),
+        })
+        .collect();
+
+    let mut input = parser::to_input(&recovered_result);
     let exp = parser::parse(&mut input);
 
     println!("{:?}", input.deref());

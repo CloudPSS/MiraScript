@@ -71,6 +71,8 @@ pub(super) fn literal_token<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Token<'a>>
             || *t == Keyword::True
             || *t == Keyword::False
             || *t == Keyword::Nil
+            || *t == Keyword::Nan
+            || *t == Keyword::Inf
     })
     .map(|t: &Token<'a>| t.to_owned())
     .parse_next(i)
@@ -92,13 +94,13 @@ pub(super) fn variable_token<'t, 'a: 't>(
             Token::unknown(
                 t.range,
                 t.kind,
-                "Unexpected `_`, it is a reserved variable name",
+                "Unexpected `_`, it is a reserved keyword for discarding",
             )
         } else if !include_global && t == Keyword::Global {
             Token::unknown(
                 t.range,
                 t.kind,
-                "Unexpected `global`, it is a reserved variable name",
+                "Unexpected `global`, it is a reserved keyword for global variable",
             )
         } else {
             t.to_owned()

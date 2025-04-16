@@ -14,6 +14,10 @@ pub enum Operator {
     CloseBracket = ']' as isize,
     /// `:`
     Colon = ':' as isize,
+    /// `?:`
+    QuestionColon = (('?' as isize) << 8) + (':' as isize),
+    /// `!:`
+    ExclamationColon = (('!' as isize) << 8) + (':' as isize),
     /// `,`
     Comma = ',' as isize,
     /// `.`
@@ -50,9 +54,8 @@ pub enum Operator {
     /// `^=`
     CaretEqual = (('^' as isize) << 8) + ('=' as isize),
 
-
     /// `!`
-    LogicalNot = '!' as isize,
+    Exclamation = '!' as isize,
     /// `&&`
     LogicalAnd = ((('&' as isize) << 8) + ('&' as isize)),
     /// `&&=`
@@ -61,6 +64,10 @@ pub enum Operator {
     LogicalOr = ((('|' as isize) << 8) + ('|' as isize)),
     /// `||=`
     LogicalOrEqual = ((('|' as isize) << 16) + (('|' as isize) << 8) + ('=' as isize)),
+    /// `??`
+    NullCoalescing = ((('?' as isize) << 8) + ('?' as isize)),
+    /// `??=`
+    NullCoalescingEqual = ((('?' as isize) << 16) + (('?' as isize) << 8) + ('=' as isize)),
 
     /// `|>`
     ForwardPipe = ((('|' as isize) << 8) + ('>' as isize)),

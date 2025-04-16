@@ -62,7 +62,7 @@ pub(super) fn token<'a>(
     input: &mut Input<'a>,
     prev_token: &Option<&Token<'a>>,
 ) -> ModalResult<Token<'a>> {
-    preceded(take_while(0.., |c: char| c.is_ascii_whitespace()),  alt((
+    preceded(take_while(0.., |c: char| c.is_ascii_whitespace()), alt((
         dispatch!{peek(any);
             '0'..='9' => if prev_token.map(|t| &t.kind) == Some(&TokenKind::Operator(Operator::Dot)) {
                 ordinal
@@ -106,9 +106,11 @@ pub(super) fn token<'a>(
             )),
             '~' => "~=".value(TokenKind::Operator(Operator::TildeEqual)),
             '!' => alt((
+                ("!", peek("==")).value(TokenKind::Operator(Operator::Exclamation)),
+                "!:".value(TokenKind::Operator(Operator::ExclamationColon)),
                 "!=".value(TokenKind::Operator(Operator::NotEqual)),
                 "!~=".value(TokenKind::Operator(Operator::NotTildeEqual)),
-                any.value(TokenKind::Operator(Operator::LogicalNot)),
+                any.value(TokenKind::Operator(Operator::Exclamation)),
             )),
             '>' => alt((
                 ">=".value(TokenKind::Operator(Operator::GreaterEqual)),
@@ -123,6 +125,11 @@ pub(super) fn token<'a>(
             '|' => alt((
                 "||".value(TokenKind::Operator(Operator::LogicalOr)),
                 "|>".value(TokenKind::Operator(Operator::ForwardPipe)),
+            )),
+            '?' => alt((
+                "?:".value(TokenKind::Operator(Operator::QuestionColon)),
+                "??=".value(TokenKind::Operator(Operator::NullCoalescingEqual)),
+                "??".value(TokenKind::Operator(Operator::NullCoalescing)),
             )),
             '(' => any.value(TokenKind::Operator(Operator::OpenParen)),
             ')' => any.value(TokenKind::Operator(Operator::CloseParen)),

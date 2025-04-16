@@ -101,6 +101,7 @@ fn assign_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {
                 || *t == Operator::CaretEqual
                 || *t == Operator::LogicalAndEqual
                 || *t == Operator::LogicalOrEqual
+                || *t == Operator::NullCoalescingEqual
                 || *t == Operator::Equal
         })
         .map(|t: &Token<'a>| Box::new(t.to_owned())),
