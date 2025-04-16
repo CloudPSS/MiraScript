@@ -7,12 +7,14 @@ use crate::{
     utils::{SourceError, SourceRange},
 };
 
-use super::TokenKind;
+use super::{TokenKind, Trivia};
 
-#[derive(Debug, Clone, Eq)]
+#[derive(Debug, Clone)]
 pub struct Token<'a> {
     pub kind: TokenKind<'a>,
     pub range: SourceRange,
+    pub leading_trivia: Vec<Trivia<'a>>,
+    pub trailing_trivia: Vec<Trivia<'a>>,
 }
 
 impl Location for Token<'_> {
@@ -34,6 +36,8 @@ impl<'a> Token<'a> {
         Token {
             kind: TokenKind::unknown_range(self.kind, self.range.clone(), error),
             range: self.range,
+            leading_trivia: self.leading_trivia,
+            trailing_trivia: self.trailing_trivia,
         }
     }
 
@@ -45,6 +49,8 @@ impl<'a> Token<'a> {
         Token {
             range: range.clone(),
             kind: TokenKind::unknown_range(recovered, range, error),
+            leading_trivia: vec![],
+            trailing_trivia: vec![],
         }
     }
     pub(crate) fn unknown_range<E: Into<Cow<'static, str>>, R: Into<TokenKind<'a>>>(
@@ -56,6 +62,8 @@ impl<'a> Token<'a> {
         Token {
             range: token_range,
             kind: TokenKind::unknown_range(recovered, error_range, error),
+            leading_trivia: vec![],
+            trailing_trivia: vec![],
         }
     }
 
@@ -67,6 +75,8 @@ impl<'a> Token<'a> {
         Token {
             range,
             kind: TokenKind::unknown_errors(recovered, errors),
+            leading_trivia: vec![],
+            trailing_trivia: vec![],
         }
     }
 }
@@ -79,12 +89,19 @@ impl PartialEq for Token<'_> {
 
 impl Display for Token<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        <TokenKind as Display>::fmt(&self.kind, f)
+        self.fmt_ident(f, 0)
     }
 }
 
 impl DisplayIdent for Token<'_> {
-    fn fmt_ident(&self, f: &mut std::fmt::Formatter<'_>, _ident: usize) -> std::fmt::Result {
-        self.fmt(f)
+    fn fmt_ident(&self, f: &mut std::fmt::Formatter<'_>, ident: usize) -> std::fmt::Result {
+        for trivia in &self.leading_trivia {
+            trivia.fmt_ident(f, ident)?;
+        }
+        <TokenKind as Display>::fmt(&self.kind, f)?;
+        for trivia in &self.trailing_trivia {
+            trivia.fmt_ident(f, ident)?;
+        }
+        Ok(())
     }
 }

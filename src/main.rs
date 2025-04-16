@@ -10,7 +10,8 @@ mod utils;
 fn main() {
     let text = r##"{
     let mut name = "world"; //
-    print <| "Hello ${let mut a = 1; "${a}name"}";
+    print <| "Hello ${let mut a = 1; // comment in string
+     "${a}name"}";
     
     [1,2,3] |> filter(fn {it % 2 == 0}) |> String
     
@@ -112,38 +113,31 @@ match {a}{}
         print <| "a is not nan";
     }
 
-      [x, .., y, ..[], (5..8), ..(not(>1 or 12),)] = [1, ..[], 5..8];
-let add = fn (x, y) {
-  x + y
-}; // add 是一个 `function` 类型的值
-let add_one = fn {
-  it + 1
-};
-      fn add(x, y) {
-  x + y
-}
-
-fn add_one {
-  it + 1
-}
-    "##;
+     /*1*/ [/*2*/x/*3*/,/*4*/ /*5*/.., y, ..[], (+5..8), ..(not(> 1 or 12),)] = [1, ..[], 5..8];}}}}
+x
+     /* EOF 
+  dd   */
+  
+  "##;
 
     let mut input = lexer::to_input(text);
-    let result = lexer::lex(&mut input, true).unwrap();
+    let result = lexer::lex(&mut input).unwrap();
     println!("{:?}", result);
 
     let recovered_result: Vec<_> = result
-        .iter()
-        .filter_map(|t| match &t.kind {
+        .into_iter()
+        .filter_map(|t| match t.kind {
             lexer::TokenKind::Unknown {
                 recovered: Some(token),
                 ..
             } => Some(lexer::Token {
-                kind: *token.to_owned(),
-                range: t.range.clone(),
+                kind: *token,
+                range: t.range,
+                leading_trivia: t.leading_trivia,
+                trailing_trivia: t.trailing_trivia,
             }),
             lexer::TokenKind::Unknown { .. } => None,
-            _ => Some(t.clone()),
+            _ => Some(t),
         })
         .collect();
 

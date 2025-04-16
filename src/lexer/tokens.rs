@@ -1,43 +1,16 @@
 use std::borrow::Cow;
 use std::str::FromStr;
 
-use winnow::ascii::{line_ending, till_line_ending};
-use winnow::combinator::{alt, dispatch, eof, fail, opt, peek, preceded, repeat, trace};
+use winnow::ascii::space0;
+use winnow::combinator::{alt, dispatch, eof, fail, opt, peek, preceded, trace};
 use winnow::prelude::*;
-use winnow::token::{any, one_of, take, take_until, take_while};
+use winnow::token::{any, one_of, take, take_while};
 
-use crate::utils::{SourceError, SourceRange};
+use crate::utils::SourceError;
 
 use super::helper::{is_identifier_continue, is_identifier_start};
 use super::numeric::{number, ordinal};
-use super::{Comment, Input, Keyword, Operator, Token, TokenKind, string};
-
-fn line_comment<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
-    ("//", till_line_ending, opt(line_ending))
-        .value(TokenKind::Comment(Comment::Line))
-        .parse_next(i)
-}
-
-fn block_comment<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
-    preceded(
-        "/*",
-        alt((
-            (take_until(0.., "*/"), "*/").value(TokenKind::Comment(Comment::Block)),
-            repeat(0.., any)
-                .fold(|| (), |_: (), _| ())
-                .span()
-                .map(|mut r: SourceRange| {
-                    r.start = r.end;
-                    TokenKind::unknown_range(
-                        TokenKind::Comment(Comment::Block),
-                        r,
-                        "Unterminated block comment",
-                    )
-                }),
-        )),
-    )
-    .parse_next(i)
-}
+use super::{Input, Keyword, Operator, Token, TokenKind, string};
 
 pub(super) fn identifier<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
     trace(
@@ -62,7 +35,7 @@ pub(super) fn token<'a>(
     input: &mut Input<'a>,
     prev_token: &Option<&Token<'a>>,
 ) -> ModalResult<Token<'a>> {
-    preceded(take_while(0.., |c: char| c.is_ascii_whitespace()), alt((
+    let token = |i: &mut Input<'a>| {
         dispatch!{peek(any);
             '0'..='9' => if prev_token.map(|t| &t.kind) == Some(&TokenKind::Operator(Operator::Dot)) {
                 ordinal
@@ -87,8 +60,8 @@ pub(super) fn token<'a>(
                 any.value(TokenKind::Operator(Operator::Asterisk)),
             )),
             '/' => dispatch! {peek(opt(take(2usize)));
-                Some("/*") => block_comment,
-                Some("//") => line_comment,
+                // Some("/*") => block_comment,
+                // Some("//") => line_comment,
                 Some("/=") => take(2usize).value(TokenKind::Operator(Operator::SlashEqual)),
                 _ => any.value(TokenKind::Operator(Operator::Slash)),
             },
@@ -150,15 +123,25 @@ pub(super) fn token<'a>(
             c if is_identifier_start(c) => identifier,
 
             _ => fail,
-        },
-        eof.map(|_|TokenKind::Eof),
-        any.span().map(|range| TokenKind::Unknown {
-            recovered: None,
-            errors: vec![SourceError::new(range, "Unknown token")],
+        }.parse_next(i)
+    };
+    preceded(
+        space0,
+        alt((
+            token,
+            eof.map(|_| TokenKind::Eof),
+            any.span().map(|range| TokenKind::Unknown {
+                recovered: None,
+                errors: vec![SourceError::new(range, "Unknown token")],
+            }),
+        ))
+        .with_span()
+        .map(|(kind, range)| Token {
+            range,
+            kind,
+            leading_trivia: vec![],
+            trailing_trivia: vec![],
         }),
-    ))
-    .with_span()
-    .map(|(kind, range)| Token { range, kind })
     )
     .parse_next(input)
 }

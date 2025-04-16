@@ -2,30 +2,32 @@ use winnow::combinator::{delimited, opt, peek, repeat, terminated};
 use winnow::error::{ContextError, ErrMode};
 use winnow::prelude::*;
 use winnow::stream::Location;
-use winnow::token::{any, literal, one_of};
+use winnow::token::{any, one_of};
 
 use crate::lexer::{Keyword, Operator, Token, TokenKind};
 use crate::utils::SourceRange;
 
-use super::{Expression, Input, expression};
+use super::statements::statement;
+use super::{Expression, Input, Statement, expression};
 
-pub(super) fn spread_expression<'a>(
+pub(super) fn statements_and_expression<'a>(
     i: &mut Input<'_, 'a>,
-) -> ModalResult<(Token<'a>, Expression<'a>)> {
-    (token(Operator::SpreadRange), opt(expression))
-        .map(|(spread, e)| {
-            let e = if let Some(e) = e {
-                e
-            } else {
-                Expression::unknown_range(
-                    [],
-                    spread.range.clone(),
-                    "Expression expected after `..`",
-                )
-            };
-            (spread, e)
-        })
-        .parse_next(i)
+) -> ModalResult<(Vec<Statement<'a>>, Option<Box<Expression<'a>>>)> {
+    let (mut statements, expression): (Vec<_>, _) =
+        (repeat(0.., statement), opt(expression.map(Box::new))).parse_next(i)?;
+    if expression.is_some() || statements.is_empty() {
+        return Ok((statements, expression));
+    }
+
+    let last_statement = statements.pop().unwrap();
+    let expression = match last_statement {
+        Statement::BlockExpression(e) => Some(e),
+        _ => {
+            statements.push(last_statement);
+            None
+        }
+    };
+    Ok((statements, expression))
 }
 
 pub(super) fn parameter_list<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Option<Vec<Token<'a>>>> {
@@ -35,13 +37,13 @@ pub(super) fn parameter_list<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Option<Ve
     }
 
     delimited(
-        literal(Operator::OpenParen),
+        token(Operator::OpenParen),
         (
             repeat(
                 0..,
                 terminated(
                     one_of(|t: &Token<'a>| matches!(&t.kind, &TokenKind::Identifier(_))),
-                    literal(Operator::Comma),
+                    token(Operator::Comma),
                 ),
             )
             .fold(Vec::new, |mut v, t: &Token<'a>| {
@@ -52,7 +54,7 @@ pub(super) fn parameter_list<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Option<Ve
                 matches!(&t.kind, &TokenKind::Identifier(_))
             })),
         ),
-        literal(Operator::CloseParen),
+        token(Operator::CloseParen),
     )
     .map(|(mut v, t): (Vec<Token<'a>>, Option<&Token<'a>>)| {
         if let Some(t) = t {

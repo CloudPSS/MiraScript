@@ -5,7 +5,7 @@ use winnow::combinator::{
 use winnow::error::{ContextError, ErrMode};
 use winnow::prelude::*;
 use winnow::stream::Location;
-use winnow::token::{any, literal, one_of};
+use winnow::token::{any, one_of};
 
 use crate::lexer::{Keyword, Operator, Token, TokenKind};
 use crate::utils::SourceRange;
@@ -13,7 +13,7 @@ use crate::utils::SourceRange;
 use super::array_helper::array_base;
 use super::block_expressions::block_like_expression;
 use super::expressions::expression;
-use super::helper::{literal_token, token_boxed, token_or_insert, variable_token};
+use super::helper::{literal_token, token, token_boxed, token_or_insert, variable_token};
 use super::patterns::pattern;
 use super::ranges::range;
 use super::record_helper::record_base;
@@ -145,7 +145,7 @@ pub(super) fn primary<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> 
 fn arg_list<'a>(i: &mut Input<'_, 'a>) -> ModalResult<(Vec<Expression<'a>>, Box<Token<'a>>)> {
     separated_pair(
         (
-            repeat(0.., terminated(expression, literal(Operator::Comma))),
+            repeat(0.., terminated(expression, token(Operator::Comma))),
             opt(expression),
         )
             .map(
@@ -182,7 +182,7 @@ pub(super) fn postfix<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> 
             token_boxed(Operator::Exclamation).map(Function::NonNil),
             (token_boxed(Operator::OpenParen), arg_list).map(|(o, (a, c))| Function::Call(o, a, c)),
             preceded(
-                literal(Operator::Dot),
+                token(Operator::Dot),
                 one_of(|t: &Token<'a>| {
                     matches!(t.kind, TokenKind::Identifier(_) | TokenKind::Ordinal(_))
                 })
@@ -190,9 +190,9 @@ pub(super) fn postfix<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> 
             )
             .map(Function::Access),
             delimited(
-                literal(Operator::OpenBracket),
+                token(Operator::OpenBracket),
                 expression,
-                literal(Operator::CloseBracket),
+                token(Operator::CloseBracket),
             )
             .map(Function::Index),
         )),

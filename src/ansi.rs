@@ -14,6 +14,7 @@ pub(crate) const SPACE: Style = AnsiColor::Black.on_default().dimmed();
 pub(crate) const GROUP: Style = AnsiColor::Blue.on_default();
 pub(crate) const INLINE_HINT: Style =
     Style::new().bg_color(Some(Color::Ansi(AnsiColor::BrightBlack)));
+pub(crate) const COMMENT: Style = AnsiColor::BrightBlack.on_default().italic();
 
 pub(crate) const RESET: Reset = Reset;
 

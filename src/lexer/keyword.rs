@@ -16,6 +16,16 @@ pub enum Keyword {
     Underscore,
     Global,
 
+    // types
+    Number,
+    String,
+    Boolean,
+    Array,
+    Record,
+    Function,
+    Extern,
+    Module,
+
     // operators
     In,
     Is,
@@ -129,6 +139,15 @@ impl FromStr for Keyword {
 
             "_" => Ok(Keyword::Underscore),
             "global" => Ok(Keyword::Global),
+
+            "number" => Ok(Keyword::Number),
+            "string" => Ok(Keyword::String),
+            "boolean" => Ok(Keyword::Boolean),
+            "array" => Ok(Keyword::Array),
+            "record" => Ok(Keyword::Record),
+            "function" => Ok(Keyword::Function),
+            "extern" => Ok(Keyword::Extern),
+            "module" => Ok(Keyword::Module),
 
             "in" => Ok(Keyword::In),
             "is" => Ok(Keyword::Is),

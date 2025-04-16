@@ -1,7 +1,5 @@
-use winnow::combinator::{opt, repeat, seq};
 use winnow::prelude::*;
 use winnow::stream::TokenSlice;
-use winnow::token::literal;
 
 use crate::lexer::{Token, TokenKind};
 
@@ -41,10 +39,10 @@ pub fn to_input<'t, 'a>(tokens: &'t [Token<'a>]) -> Input<'t, 'a> {
 }
 
 pub fn parse<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Script<'a>> {
-    seq!(Script(
-        repeat(0.., statements::statement),
-        opt(expression.map(Box::new)),
-        _: literal(TokenKind::Eof),
-    ))
-    .parse_next(i)
+    (
+        helper::statements_and_expression,
+        helper::token_boxed(TokenKind::Eof),
+    )
+        .map(|((statements, expression), eof)| Script(statements, expression, eof))
+        .parse_next(i)
 }

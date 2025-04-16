@@ -3,12 +3,12 @@ use winnow::prelude::*;
 use winnow::token::any;
 
 use crate::lexer::{Keyword, Operator, Token};
+use crate::parser::helper::statements_and_expression;
 
 use super::expressions::expression;
 use super::helper::{parameter_list, token, token_boxed, token_or_insert};
 use super::iterables::iterable;
 use super::patterns::{pattern, pattern_or_insert};
-use super::statements::statement;
 use super::{Expression, Input};
 
 fn optional_else<'a>(
@@ -36,13 +36,15 @@ pub(super) fn if_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression
 }
 
 pub(super) fn block_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
-    seq!(Expression::Block(
+    (
         token_or_insert(Operator::OpenBrace, "Missing '{'").map(Box::new),
-        repeat(0.., statement),
-        opt(expression.map(Box::new)),
+        statements_and_expression,
         token_or_insert(Operator::CloseBrace, "Missing '}'").map(Box::new),
-    ))
-    .parse_next(i)
+    )
+        .map(|(open, (statements, expression), close)| {
+            Expression::Block(open, statements, expression, close)
+        })
+        .parse_next(i)
 }
 
 pub(super) fn fn_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {

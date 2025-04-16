@@ -35,6 +35,8 @@ fn unknown_pattern<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Pattern<'a>> {
             || *t == Operator::CloseBrace
             || *t == Operator::OpenBracket
             || *t == Operator::CloseBracket
+            || *t == Operator::OpenParen
+            || *t == Operator::CloseParen
     })
     .map(|t: &[Token<'a>]| Pattern::unknown(t, "Unknown pattern"))
     .parse_next(i)

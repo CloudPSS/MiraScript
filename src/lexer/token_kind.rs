@@ -3,12 +3,11 @@ use std::{borrow::Cow, fmt::Display};
 use crate::ansi::{INTERPOLATED, NUMBER, ORDINAL, RECOVER, RESET, STRING, VARIABLE};
 use crate::utils::{SourceError, SourceRange};
 
-use super::{Comment, Keyword, Operator, Token};
+use super::{Keyword, Operator, Token};
 
 #[derive(Debug, Clone)]
 pub enum TokenKind<'a> {
     Eof,
-    Comment(Comment),
     Identifier(Cow<'a, str>),
     Ordinal(i32),
     Number(f64),
@@ -23,6 +22,13 @@ pub enum TokenKind<'a> {
 }
 
 impl<'a> TokenKind<'a> {
+    pub(crate) fn unknown<E: Into<Cow<'static, str>>>(error_range: SourceRange, error: E) -> Self {
+        TokenKind::Unknown {
+            recovered: None,
+            errors: vec![SourceError::new(error_range, error)],
+        }
+    }
+
     pub(crate) fn unknown_range<E: Into<Cow<'static, str>>, R: Into<TokenKind<'a>>>(
         recovered: R,
         error_range: SourceRange,
@@ -49,12 +55,9 @@ impl<'a> TokenKind<'a> {
     }
 }
 
-impl Eq for TokenKind<'_> {}
-
 impl PartialEq for TokenKind<'_> {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (Self::Comment(l0), Self::Comment(r0)) => l0 == r0,
             (Self::Identifier(l0), Self::Identifier(r0)) => l0 == r0,
             (Self::Ordinal(l0), Self::Ordinal(r0)) => l0 == r0,
             (Self::Number(l0), Self::Number(r0)) => (*l0).to_bits() == (*r0).to_bits(),
@@ -94,9 +97,7 @@ impl PartialEq<TokenKind<'_>> for Token<'_> {
 impl Display for TokenKind<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Eof => write!(f, "␀"),
-            Self::Comment(Comment::Line) => writeln!(f, " //"),
-            Self::Comment(Comment::Block) => write!(f, " /* */ "),
+            Self::Eof => write!(f, "␃"),
             Self::Identifier(s) => write!(f, "{VARIABLE}{s}{RESET}"),
             Self::Ordinal(n) => write!(f, "{ORDINAL}{n}{RESET}"),
             Self::Number(n) => write!(f, "{NUMBER}{n}{RESET}"),

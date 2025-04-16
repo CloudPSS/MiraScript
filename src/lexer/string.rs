@@ -270,6 +270,8 @@ fn interpolation<'a>(
             let id = Token {
                 kind: id.0,
                 range: id.1,
+                leading_trivia: vec![],
+                trailing_trivia: vec![],
             };
             return Ok(StringFragment::Interpolation(vec![id]));
         }
@@ -277,7 +279,7 @@ fn interpolation<'a>(
         // '$' '{' expression '}'
 
         // lex until '}'
-        let tokens = match lex_balanced(i, true, Operator::OpenBrace, Operator::CloseBrace) {
+        let tokens = match lex_balanced(i, Operator::OpenBrace, Operator::CloseBrace) {
             Ok(tokens) => tokens,
             Err(e) => {
                 i.reset(&cp);
