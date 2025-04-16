@@ -1,6 +1,6 @@
 use winnow::{
     ModalResult, Parser,
-    combinator::{Repeat, fail, peek, repeat},
+    combinator::{Repeat, alt, fail, peek, repeat},
     error::{ContextError, ErrMode},
     stream::Stream,
     token::{any, one_of},
@@ -10,14 +10,16 @@ use crate::lexer::{Keyword, Operator, Token, TokenKind};
 
 use super::{
     Input,
-    helper::{token_boxed, token_or_insert},
+    helper::{token_boxed, token_or_insert, variable_token},
     record_elements::RecordElementBase,
 };
 
 fn record_name<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Token<'a>> {
-    one_of(|t: &Token<'a>| matches!(t.kind, TokenKind::Identifier(_) | TokenKind::Ordinal(_)))
-        .map(ToOwned::to_owned)
-        .parse_next(i)
+    alt((
+        variable_token(false, false),
+        one_of(|t: &Token<'_>| matches!(t.kind, TokenKind::Ordinal(_))).map(ToOwned::to_owned),
+    ))
+    .parse_next(i)
 }
 
 struct RecordBaseParser<

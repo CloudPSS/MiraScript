@@ -30,10 +30,15 @@ pub enum Pattern<'a> {
     ///     : '(' sub_pattern* ')'
     ///     ;
     /// sub_pattern
-    ///     : name ':' pattern ','?
-    ///     | ':' pattern_bind ','?
+    ///     : name colon pattern ','?
+    ///     | colon pattern_bind ','?
     ///     | pattern ','?
     ///     | '..' pattern? ','?
+    ///     ;
+    /// colon
+    ///     : ':'
+    ///     | '?:'
+    ///     | '!:'
     ///     ;
     /// ``````
     /// Matches a record pattern.
@@ -47,7 +52,7 @@ pub enum Pattern<'a> {
     ///     | '..' pattern? ','?
     ///     ;
     /// ```
-    //Array(Box<Token<'a>>, Vec<Pattern<'a>>, Box<Token<'a>>),
+    Array(Box<Token<'a>>, Vec<Pattern<'a>>, Box<Token<'a>>),
 
     /// Unknown pattern.
     Unknown {
@@ -131,6 +136,13 @@ impl DisplayIdent for Pattern<'_> {
             Bind(None, token) => write!(f, "{token}"),
             Bind(Some(kw_mut), token) => write!(f, "{kw_mut} {token}"),
             Record(start, sub_patterns, end) => {
+                write!(f, "{start}")?;
+                for sub_pattern in sub_patterns.iter() {
+                    sub_pattern.fmt_ident(f, ident)?;
+                }
+                write!(f, "{end}")
+            }
+            Array(start, sub_patterns, end) => {
                 write!(f, "{start}")?;
                 for sub_pattern in sub_patterns.iter() {
                     sub_pattern.fmt_ident(f, ident)?;
