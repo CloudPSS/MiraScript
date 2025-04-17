@@ -176,6 +176,19 @@ impl<'a> Expression<'a> {
         matches!(self, Expression::Unknown { .. })
     }
 
+    pub(crate) fn is_block_like(&self) -> bool {
+        matches!(
+            self,
+            Expression::Block(..)
+                | Expression::Loop(..)
+                | Expression::While(..)
+                | Expression::ForIn(..)
+                | Expression::If(..)
+                | Expression::Match(..)
+                | Expression::Function(..)
+        )
+    }
+
     pub(crate) fn unknown<T: Into<Vec<Token<'a>>>, E: Into<Cow<'static, str>>>(
         tokens: T,
         error: E,
@@ -319,20 +332,34 @@ impl DisplayIdent for Expression<'_> {
                 pattern.fmt_ident(f, ident)?;
             }
             Block(op, statements, expression, ed) => {
+                let next_ident = Self::next_ident(ident);
                 if statements.is_empty() {
-                    if let Some(expression) = expression {
-                        return write!(f, "{GROUP}{op}{RESET} {expression} {GROUP}{ed}{RESET}");
+                    return if let Some(expression) = expression {
+                        write!(f, "{GROUP}{op}{RESET} ")?;
+                        if expression.is_block_like() {
+                            writeln!(f)?;
+                            Self::write_ident(f, next_ident, "block ret")?;
+                        }
+                        expression.fmt_ident(f, next_ident)?;
+                        if expression.is_block_like() {
+                            writeln!(f)?;
+                            Self::write_ident(f, ident, "")?;
+                            write!(f, "{GROUP}{ed}{RESET}")
+                        } else {
+                            write!(f, " {GROUP}{ed}{RESET}")
+                        }
                     } else {
-                        return write!(f, "{GROUP}{op}{ed}{RESET}");
-                    }
+                        write!(f, "{GROUP}{op} {ed}{RESET}")
+                    };
                 }
                 writeln!(f, "{GROUP}{op}{RESET}")?;
                 for statement in statements {
-                    statement.fmt_ident(f, Self::next_ident(ident))?;
+                    statement.fmt_ident(f, next_ident)?;
                 }
                 if let Some(expression) = expression {
-                    Self::write_ident(f, Self::next_ident(ident), "")?;
-                    writeln!(f, "{expression}")?;
+                    Self::write_ident(f, next_ident, "block ret")?;
+                    expression.fmt_ident(f, Self::next_ident(ident))?;
+                    writeln!(f)?;
                 }
                 Self::write_ident(f, ident, "")?;
                 write!(f, "{GROUP}{ed}{RESET}")?;

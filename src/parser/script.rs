@@ -37,7 +37,7 @@ impl DisplayIdent for Script<'_> {
             statement.fmt_ident(f, ident)?;
         }
         if let Some(expression) = &self.1 {
-            Self::write_ident(f, ident, "return")?;
+            Self::write_ident(f, ident, "top ret")?;
             expression.fmt_ident(f, ident)?;
             writeln!(f)?;
         }

@@ -19,10 +19,13 @@ pub(crate) const COMMENT: Style = AnsiColor::BrightBlack.on_default().italic();
 pub(crate) const RESET: Reset = Reset;
 
 pub(crate) trait DisplayIdent {
+    const GUTTER_WIDTH: usize = 10;
+    const INDENT_WIDTH: usize = 2;
+
     fn fmt_ident(&self, f: &mut std::fmt::Formatter<'_>, ident: usize) -> std::fmt::Result;
 
     fn write_ident(f: &mut std::fmt::Formatter<'_>, ident: usize, mark: &str) -> std::fmt::Result {
-        write!(f, "{SPACE}{mark:8}|")?;
+        write!(f, "{SPACE}{mark:width$}|", width = Self::GUTTER_WIDTH)?;
         for _ in 0..ident {
             f.write_char('·')?;
         }
@@ -31,7 +34,7 @@ pub(crate) trait DisplayIdent {
     }
 
     fn next_ident(ident: usize) -> usize {
-        ident + 2
+        ident + Self::INDENT_WIDTH
     }
 }
 

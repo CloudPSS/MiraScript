@@ -1,6 +1,6 @@
 use winnow::{
     ModalResult, Parser,
-    combinator::{alt, empty, fail, opt, separated_foldl1, seq},
+    combinator::{alt, empty, fail, opt, peek, preceded, separated_foldl1, seq},
     error::{ContextError, ErrMode},
     stream::Location,
     token::{one_of, take_till},
@@ -63,7 +63,7 @@ pub(super) fn pattern_or_insert<'t, 'a: 't>(
 
 pub(super) fn pattern<'t, 'a: 't>(
     rebind: bool,
-) -> impl Parser<Input<'t, 'a>, Pattern<'a>, ErrMode<ContextError>> {
+) -> impl Parser<Input<'t, 'a>, Pattern<'a>, ErrMode<ContextError>> + Copy {
     move |i: &mut Input<'_, 'a>| or_pattern(rebind).parse_next(i)
 }
 
@@ -242,11 +242,24 @@ fn record_like_pattern<'t, 'a: 't>(
             .parse_next(i)
     };
 
+    let unnamed = move |i: &mut Input<'_, 'a>| {
+        alt((
+            preceded(
+                peek(one_of(|t: &Token<'a>| {
+                    *t == Operator::Comma || *t == Operator::CloseParen
+                })),
+                pattern_or_insert(rebind),
+            ),
+            pattern(rebind),
+        ))
+        .parse_next(i)
+    };
+
     move |i: &mut Input<'_, 'a>| {
         let (open, parts, close) = record_base(
             pattern_or_insert(rebind),
             omit_named,
-            pattern_or_insert(rebind),
+            unnamed,
             pattern_spread(rebind),
         )
         .parse_next(i)?;

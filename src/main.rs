@@ -114,16 +114,19 @@ match {a}{}
     }
 
      /*1*/ [/*2*/x/*3*/,/*4*/ /*5*/.., y, ..[], (+5..8), ..(not(> 1 or +nan),)] = [1, ..[], 5..8];}}}}
-x
+     (if a {1} else {2}) - 3;
+     if a {1} else {2} - 3;
+     3- if a {1} else {2};
+x;
+(+1,_,mut a) = (1,2,3);
+(fn { print <| it }) <| "END"
      /* EOF 
   dd   */
-  
   "##;
 
     let mut input = lexer::to_input(text);
     let result = lexer::lex(&mut input).unwrap();
     println!("{:?}", result);
-
     let recovered_result: Vec<_> = result
         .into_iter()
         .filter_map(|t| match t.kind {
@@ -145,5 +148,6 @@ x
     let exp = parser::parse(&mut input);
 
     println!("{:?}", input.deref());
+    //   println!("{:?}", exp.as_ref().unwrap());
     println!("{:#}", exp.as_ref().unwrap());
 }

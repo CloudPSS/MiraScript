@@ -85,7 +85,7 @@ fn bind_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {
 
 fn rebind_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {
     seq!(Statement::Rebind(
-        pattern(false).map(Box::new),
+        pattern(true).map(Box::new),
         token_boxed(Operator::Equal),
         expression.map(Box::new),
         semicolon,
