@@ -9,14 +9,14 @@ mod utils;
 
 fn main() {
     let text = r##"{
-    let mut name = "world"; //
-    print <| "Hello ${let mut a = 1; // comment in string
-     "${a}name"}";
+    let mut name = "world"; // comment
+    print("Hello ${let mut a = 1; // comment in string
+     "${a}name"}");
     
-    [1,2,3] |> filter(fn {it % 2 == 0}) |> String
+    [1,2,3]::filter(fn {it % 2 == 0})::String()
     
     for i in 1..<3 {
-        print <| i;
+        print(i);
     }
 
     let w = while a > 0 {
@@ -26,17 +26,17 @@ fn main() {
         10
     }
     
-    let mut fr= for i in [1,2,3] |> map(fn {it * 2}) {
-        print <| i;
+    let mut fr= for i in [1,2,3]::map(fn {it * 2}) {
+        print(i);
     } else if a > 0 {
         a = a - 1;
     } 
 
     fn (a,b,c) {
-        print <| {
+        print({
             let mut sum = a + b + c;
             sum
-        };
+        });
     };
 
     1
@@ -76,20 +76,20 @@ match {a}{}
     let t = type "x";
 
     if x is y {
-        print <| "x is 1";
+        print("x is 1");
     }
     if "1" in ["1", "2", "3"] {
-        print <| "1 in [1, 2, 3]";
+        print("1 in [1, 2, 3]");
     }
     if "key" in (key: "value") {
-        print <| "key in (key: \"value\")";
+        print("key in (key: \"value\")");
     }
     if a {} else for global in (1,2e7, 1.53e-12, : s)
     let (x, mut y) = 1;}}}
 
-    for (key, mut v,:mut e, _,:12,) in entries <|(1,2,3) {
+    for (key, mut v,:mut e, _,:12,) in entries((1,2,3)) {
         a += 12;
-        print <| a;
+        print(a);
     }
     let (a) = (1);
     a.1 = 2;
@@ -110,7 +110,7 @@ match {a}{}
     (z?:a, ?:b) = (!:a, !:b);
 
     if a is not x {
-        print <| "a is not nan";
+        print("a is not nan");
     }
 
      /*1*/ [/*2*/x/*3*/,/*4*/ /*5*/.., y, ..[], (+5..8), ..(not(> 1 or +nan),)] = [1, ..[], 5..8];}}}}
@@ -119,9 +119,13 @@ match {a}{}
      3- if a {1} else {2};
 x;
 (+1,_,mut a) = (1,2,3);
-(fn { print <| it }) <| "END"
+((fn { print(it) }))("END");
+
+
      /* EOF 
-  dd   */
+  dd   */ 
+    (  a, b, [1, ..], ..) = x;
+      a::map.1.xx()::(fn{})()::a['x']::b();
   "##;
 
     let mut input = lexer::to_input(text);

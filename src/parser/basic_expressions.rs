@@ -1,6 +1,6 @@
 use winnow::combinator::{
-    alt, delimited, dispatch, eof, opt, peek, preceded, repeat, separated_foldl1, separated_foldr1,
-    separated_pair, seq, terminated,
+    alt, dispatch, eof, opt, peek, repeat, separated_foldl1, separated_foldr1, separated_pair, seq,
+    terminated,
 };
 use winnow::error::{ContextError, ErrMode};
 use winnow::prelude::*;
@@ -168,11 +168,49 @@ fn arg_list<'a>(i: &mut Input<'_, 'a>) -> ModalResult<(Vec<Expression<'a>>, Box<
     .parse_next(i)
 }
 
+fn access_token<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Box<Token<'a>>> {
+    one_of(|t: &Token<'a>| matches!(t.kind, TokenKind::Identifier(_) | TokenKind::Ordinal(_)))
+        .map(|t: &Token<'a>| Box::new(t.to_owned()))
+        .parse_next(i)
+}
+
+fn extension_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Box<Expression<'a>>> {
+    alt((
+        record_like.with_taken().map(|(r, t)| {
+            if matches!(r, Expression::Record(..)) {
+                r.wrap_as_unknown(t, "Grouping expected")
+            } else {
+                r
+            }
+        }),
+        (
+            variable_token(false, true),
+            repeat(0.., (token_boxed(Operator::Dot), access_token)),
+        )
+            .map(|(first, rest): (_, Vec<_>)| {
+                let mut acc = Expression::Variable(first.into());
+                for (dot, token) in rest {
+                    acc = Expression::Access(Box::new(acc), dot, token);
+                }
+                acc
+            }),
+    ))
+    .map(Box::new)
+    .parse_next(i)
+}
+
 pub(super) fn postfix<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
     enum Function<'a> {
         Call(Box<Token<'a>>, Vec<Expression<'a>>, Box<Token<'a>>),
-        Access(Box<Token<'a>>),
-        Index(Expression<'a>),
+        Extension(
+            Box<Token<'a>>,
+            Box<Expression<'a>>,
+            Box<Token<'a>>,
+            Vec<Expression<'a>>,
+            Box<Token<'a>>,
+        ),
+        Access(Box<Token<'a>>, Box<Token<'a>>),
+        Index(Box<Token<'a>>, Expression<'a>, Box<Token<'a>>),
         NonNil(Box<Token<'a>>),
     }
     let first = primary.parse_next(i)?;
@@ -181,20 +219,20 @@ pub(super) fn postfix<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> 
         alt((
             token_boxed(Operator::Exclamation).map(Function::NonNil),
             (token_boxed(Operator::OpenParen), arg_list).map(|(o, (a, c))| Function::Call(o, a, c)),
-            preceded(
-                token(Operator::Dot),
-                one_of(|t: &Token<'a>| {
-                    matches!(t.kind, TokenKind::Identifier(_) | TokenKind::Ordinal(_))
-                })
-                .map(|t: &Token<'a>| Box::new(t.to_owned())),
+            (token_boxed(Operator::Dot), access_token).map(|(d, i)| Function::Access(d, i)),
+            (
+                token_boxed(Operator::ColonColon),
+                extension_expression,
+                token_boxed(Operator::OpenParen),
+                arg_list,
             )
-            .map(Function::Access),
-            delimited(
-                token(Operator::OpenBracket),
+                .map(|(kw, ex, o, (a, c))| Function::Extension(kw, ex, o, a, c)),
+            (
+                token_boxed(Operator::OpenBracket),
                 expression,
-                token(Operator::CloseBracket),
+                token_boxed(Operator::CloseBracket),
             )
-            .map(Function::Index),
+                .map(|(o, e, c)| Function::Index(o, e, c)),
         )),
     )
     .fold(Vec::new, |mut v, t| {
@@ -208,8 +246,11 @@ pub(super) fn postfix<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> 
     // left-associative
     Ok(functions.into_iter().fold(first, |acc, exp| match exp {
         Function::Call(o, args, c) => Expression::Call(Box::new(acc), o, args, c),
-        Function::Access(token) => Expression::Access(Box::new(acc), token),
-        Function::Index(index) => Expression::Index(Box::new(acc), Box::new(index)),
+        Function::Extension(e, ex, o, arg, c) => {
+            Expression::Extension(Box::new(acc), e, ex, o, arg, c)
+        }
+        Function::Access(dot, token) => Expression::Access(Box::new(acc), dot, token),
+        Function::Index(l, index, r) => Expression::Index(Box::new(acc), l, Box::new(index), r),
         Function::NonNil(token) => Expression::NonNil(Box::new(acc), token),
     }))
 }
@@ -300,12 +341,6 @@ pub(super) fn null_coalescing<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expressi
     left_associative_infix(i, or, |t| *t == Operator::NullCoalescing)
 }
 
-pub(super) fn pipe<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
-    left_associative_infix(i, null_coalescing, |t| {
-        *t == Operator::ForwardPipe || *t == Operator::BackwardPipe
-    })
-}
-
 pub(super) fn basic_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
-    pipe.parse_next(i)
+    null_coalescing.parse_next(i)
 }

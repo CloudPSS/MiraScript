@@ -18,6 +18,8 @@ pub enum Operator {
     QuestionColon = (('?' as isize) << 8) + (':' as isize),
     /// `!:`
     ExclamationColon = (('!' as isize) << 8) + (':' as isize),
+    /// `::`
+    ColonColon = ((':' as isize) << 8) + (':' as isize),
     /// `,`
     Comma = ',' as isize,
     /// `.`
@@ -68,11 +70,6 @@ pub enum Operator {
     NullCoalescing = ((('?' as isize) << 8) + ('?' as isize)),
     /// `??=`
     NullCoalescingEqual = ((('?' as isize) << 16) + (('?' as isize) << 8) + ('=' as isize)),
-
-    /// `|>`
-    ForwardPipe = ((('|' as isize) << 8) + ('>' as isize)),
-    /// `<|`
-    BackwardPipe = ((('<' as isize) << 8) + ('|' as isize)),
 
     /// `=`
     Equal = '=' as isize,

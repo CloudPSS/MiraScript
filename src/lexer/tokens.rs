@@ -91,14 +91,10 @@ pub(super) fn token<'a>(
             )),
             '<' => alt((
                 "<=".value(TokenKind::Operator(Operator::LessEqual)),
-                "<|".value(TokenKind::Operator(Operator::BackwardPipe)),
                 "<".value(TokenKind::Operator(Operator::Less)),
             )),
             '&' => "&&".value(TokenKind::Operator(Operator::LogicalAnd)),
-            '|' => alt((
-                "||".value(TokenKind::Operator(Operator::LogicalOr)),
-                "|>".value(TokenKind::Operator(Operator::ForwardPipe)),
-            )),
+            '|' =>"||".value(TokenKind::Operator(Operator::LogicalOr)),
             '?' => alt((
                 "?:".value(TokenKind::Operator(Operator::QuestionColon)),
                 "??=".value(TokenKind::Operator(Operator::NullCoalescingEqual)),
@@ -108,7 +104,10 @@ pub(super) fn token<'a>(
             ')' => any.value(TokenKind::Operator(Operator::CloseParen)),
             '[' => any.value(TokenKind::Operator(Operator::OpenBracket)),
             ']' => any.value(TokenKind::Operator(Operator::CloseBracket)),
-            ':' => any.value(TokenKind::Operator(Operator::Colon)),
+            ':' => alt((
+                "::".value(TokenKind::Operator(Operator::ColonColon)),
+                any.value(TokenKind::Operator(Operator::Colon)),
+            )),
             ',' => any.value(TokenKind::Operator(Operator::Comma)),
             '.' => alt((
                 "..<".value(TokenKind::Operator(Operator::HalfOpenRange)),

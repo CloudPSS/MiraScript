@@ -53,12 +53,32 @@ pub enum Expression<'a> {
         Vec<Expression<'a>>,
         Box<Token<'a>>,
     ),
+    /// expression `::` extension `(` arguments `)`
+    /// extension
+    ///     : identifier (`.` ( identifier | ordinal ))*
+    ///     | `(` expression `)`
+    ///     ;
+    ///
+    /// Like `Call`, but `expression` is used as the first argument.
+    Extension(
+        Box<Expression<'a>>,
+        Box<Token<'a>>,
+        Box<Expression<'a>>,
+        Box<Token<'a>>,
+        Vec<Expression<'a>>,
+        Box<Token<'a>>,
+    ),
     /// expression `.` field
     ///
     /// Field must be an identifier or an ordinal.
-    Access(Box<Expression<'a>>, Box<Token<'a>>),
+    Access(Box<Expression<'a>>, Box<Token<'a>>, Box<Token<'a>>),
     /// expression `[` expression `]`
-    Index(Box<Expression<'a>>, Box<Expression<'a>>),
+    Index(
+        Box<Expression<'a>>,
+        Box<Token<'a>>,
+        Box<Expression<'a>>,
+        Box<Token<'a>>,
+    ),
     /// expression `!`
     NonNil(Box<Expression<'a>>, Box<Token<'a>>),
 
@@ -166,6 +186,7 @@ pub enum Expression<'a> {
     Function(Box<Token<'a>>, Option<Vec<Token<'a>>>, Box<Expression<'a>>),
     /// Unknown expression
     Unknown {
+        expression: Option<Box<Expression<'a>>>,
         tokens: Vec<Token<'a>>,
         errors: Vec<SourceError>,
     },
@@ -174,6 +195,22 @@ pub enum Expression<'a> {
 impl<'a> Expression<'a> {
     pub(crate) fn is_unknown(&self) -> bool {
         matches!(self, Expression::Unknown { .. })
+    }
+
+    pub(crate) fn wrap_as_unknown<T: Into<Vec<Token<'a>>>, E: Into<Cow<'static, str>>>(
+        self,
+        tokens: T,
+        error: E,
+    ) -> Self {
+        let tokens = tokens.into();
+        assert!(!tokens.is_empty());
+        let mut range = tokens[0].range.clone();
+        range.end = tokens.last().unwrap().range.end;
+        Expression::Unknown {
+            expression: Some(Box::new(self)),
+            tokens,
+            errors: vec![SourceError::new(range, error)],
+        }
     }
 
     pub(crate) fn is_block_like(&self) -> bool {
@@ -198,6 +235,7 @@ impl<'a> Expression<'a> {
         let mut range = tokens[0].range.clone();
         range.end = tokens.last().unwrap().range.end;
         Expression::Unknown {
+            expression: None,
             tokens,
             errors: vec![SourceError::new(range, error)],
         }
@@ -208,6 +246,7 @@ impl<'a> Expression<'a> {
         error: E,
     ) -> Self {
         Expression::Unknown {
+            expression: None,
             tokens: tokens.into(),
             errors: vec![SourceError::new(error_range, error)],
         }
@@ -218,6 +257,7 @@ impl<'a> Expression<'a> {
         errors: E,
     ) -> Self {
         Expression::Unknown {
+            expression: None,
             tokens: tokens.into(),
             errors: errors.into(),
         }
@@ -289,7 +329,7 @@ impl DisplayIdent for Expression<'_> {
             }
             Call(exp, op, args, cp) => {
                 exp.fmt_ident(f, ident)?;
-                write!(f, "{op}")?;
+                op.fmt_ident(f, ident)?;
                 let mut iter = args.iter();
                 if let Some(arg) = iter.next() {
                     arg.fmt_ident(f, ident)?;
@@ -298,17 +338,33 @@ impl DisplayIdent for Expression<'_> {
                         arg.fmt_ident(f, ident)?;
                     }
                 }
-                write!(f, "{cp}")?;
+                cp.fmt_ident(f, ident)?;
             }
-            Access(exp, token) => {
+            Extension(exp, e, ext, op, args, cp) => {
                 exp.fmt_ident(f, ident)?;
-                write!(f, ".{token}")?;
+                e.fmt_ident(f, ident)?;
+                ext.fmt_ident(f, ident)?;
+                op.fmt_ident(f, ident)?;
+                let mut iter = args.iter();
+                if let Some(arg) = iter.next() {
+                    arg.fmt_ident(f, ident)?;
+                    for arg in iter {
+                        write!(f, ", ")?;
+                        arg.fmt_ident(f, ident)?;
+                    }
+                }
+                cp.fmt_ident(f, ident)?;
             }
-            Index(exp1, exp2) => {
-                exp1.fmt_ident(f, ident)?;
-                write!(f, "[")?;
-                exp2.fmt_ident(f, ident)?;
-                write!(f, "]")?;
+            Access(exp, dot, token) => {
+                exp.fmt_ident(f, ident)?;
+                dot.fmt_ident(f, ident)?;
+                token.fmt_ident(f, ident)?;
+            }
+            Index(exp, l, index, r) => {
+                exp.fmt_ident(f, ident)?;
+                l.fmt_ident(f, ident)?;
+                index.fmt_ident(f, ident)?;
+                r.fmt_ident(f, ident)?;
             }
             NonNil(exp, op) => {
                 exp.fmt_ident(f, ident)?;
