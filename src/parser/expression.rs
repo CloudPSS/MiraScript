@@ -12,6 +12,30 @@ use crate::{
 use super::{ArrayElement, Iterable, Pattern, RecordElement, Statement};
 
 #[derive(Debug, Clone, PartialEq)]
+pub enum Callable<'a> {
+    /// `type`
+    Type(Token<'a>),
+    /// expression
+    Expression(Expression<'a>),
+}
+impl Display for Callable<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        self.fmt_ident(f, 0)
+    }
+}
+
+impl DisplayIdent for Callable<'_> {
+    fn fmt_ident(&self, f: &mut std::fmt::Formatter<'_>, ident: usize) -> std::fmt::Result {
+        use Callable::*;
+        match self {
+            Type(token) => token.fmt_ident(f, ident)?,
+            Expression(exp) => exp.fmt_ident(f, ident)?,
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum Expression<'a> {
     // primary
     /// string | number | ordinal | `true` | `false` | `nil`
@@ -37,18 +61,11 @@ pub enum Expression<'a> {
     Array(Box<Token<'a>>, Vec<ArrayElement<'a>>, Box<Token<'a>>),
 
     // postfix
-    /// `type` `(` expression `)`
-    Type(
-        Box<Token<'a>>,
-        Box<Token<'a>>,
-        Box<Expression<'a>>,
-        Box<Token<'a>>,
-    ),
-    /// expression `(` arguments `)`
+    /// callable `(` arguments `)`
     ///
     /// Arguments are a list of expressions, trailing comma is optional.
     Call(
-        Box<Expression<'a>>,
+        Box<Callable<'a>>,
         Box<Token<'a>>,
         Vec<Expression<'a>>,
         Box<Token<'a>>,
@@ -56,6 +73,7 @@ pub enum Expression<'a> {
     /// expression `::` extension `(` arguments `)`
     /// extension
     ///     : identifier (`.` ( identifier | ordinal ))*
+    ///     | pseudo_function
     ///     | `(` expression `)`
     ///     ;
     ///
@@ -63,7 +81,7 @@ pub enum Expression<'a> {
     Extension(
         Box<Expression<'a>>,
         Box<Token<'a>>,
-        Box<Expression<'a>>,
+        Box<Callable<'a>>,
         Box<Token<'a>>,
         Vec<Expression<'a>>,
         Box<Token<'a>>,
@@ -320,11 +338,6 @@ impl DisplayIdent for Expression<'_> {
                 for exp in exps {
                     exp.fmt_ident(f, ident)?;
                 }
-                write!(f, "{cp}")?;
-            }
-            Type(kw_type, op, arg, cp) => {
-                write!(f, "{kw_type}{op}")?;
-                arg.fmt_ident(f, ident)?;
                 write!(f, "{cp}")?;
             }
             Call(exp, op, args, cp) => {

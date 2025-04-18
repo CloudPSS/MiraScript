@@ -12,6 +12,7 @@ use crate::utils::SourceRange;
 
 use super::array_helper::array_base;
 use super::block_expressions::block_like_expression;
+use super::expression::Callable;
 use super::expressions::expression;
 use super::helper::{literal_token, token, token_boxed, token_or_insert, variable_token};
 use super::patterns::pattern;
@@ -105,31 +106,43 @@ pub(super) fn interpolation<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression
     Ok(Expression::InterpolatedString(Box::new(token), expressions))
 }
 
-fn pseudo_function<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
-    let (kw_type, open, (mut args, close)) = (
-        token_boxed(Keyword::Type),
-        token_or_insert(
-            Operator::OpenParen,
-            "`type` is a function-like keyword, add `(` here",
-        ),
-        arg_list,
-    )
-        .parse_next(i)?;
-    let exp = if args.len() != 1 {
-        Expression::unknown_range(
-            [],
-            SourceRange { start: 0, end: 0 },
-            "`type` call must have exactly one argument",
+type Call<'a> = (
+    Box<Callable<'a>>,
+    Box<Token<'a>>,
+    Vec<Expression<'a>>,
+    Box<Token<'a>>,
+);
+
+fn pseudo_function<'t, 'a: 't>(
+    extension_call: bool,
+) -> impl Parser<Input<'t, 'a>, Call<'a>, ErrMode<ContextError>> {
+    move |i: &mut Input<'_, 'a>| {
+        let provided = if extension_call { 1 } else { 0 };
+        let (kw_type, open, (args, close)) = (
+            token(Keyword::Type),
+            token_or_insert(
+                Operator::OpenParen,
+                "`type` is a function-like keyword, add `(` here",
+            ),
+            arg_list,
         )
-    } else {
-        args.pop().unwrap()
-    };
-    Ok(Expression::Type(kw_type, open.into(), exp.into(), close))
+            .parse_next(i)?;
+        let exp = if args.len() != (1 - provided) {
+            vec![Expression::unknown_range(
+                [],
+                SourceRange { start: 0, end: 0 },
+                "`type` call must have exactly one argument",
+            )]
+        } else {
+            args
+        };
+        Ok((Callable::Type(kw_type).into(), open.into(), exp, close))
+    }
 }
 
 pub(super) fn primary<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
     (alt((
-        pseudo_function,
+        pseudo_function(false).map(|(e, o, a, c)| Expression::Call(e, o, a, c)),
         block_like_expression,
         literal_token.map(Box::new).map(Expression::Literal),
         interpolation,
@@ -174,15 +187,20 @@ fn access_token<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Box<Token<'a>>> {
         .parse_next(i)
 }
 
-fn extension_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Box<Expression<'a>>> {
-    alt((
-        record_like.with_taken().map(|(r, t)| {
-            if matches!(r, Expression::Record(..)) {
-                r.wrap_as_unknown(t, "Grouping expected")
-            } else {
-                r
-            }
-        }),
+fn extension_call<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Call<'a>> {
+    let parenthesised = |i: &mut Input<'_, 'a>| {
+        record_like
+            .with_taken()
+            .map(|(r, t)| {
+                if matches!(r, Expression::Record(..)) {
+                    r.wrap_as_unknown(t, "Grouping expected")
+                } else {
+                    r
+                }
+            })
+            .parse_next(i)
+    };
+    let access_chain = |i: &mut Input<'_, 'a>| {
         (
             variable_token(false, true),
             repeat(0.., (token_boxed(Operator::Dot), access_token)),
@@ -193,9 +211,18 @@ fn extension_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Box<Expression
                     acc = Expression::Access(Box::new(acc), dot, token);
                 }
                 acc
-            }),
+            })
+            .parse_next(i)
+    };
+    alt((
+        (
+            alt((parenthesised, access_chain)).map(Callable::Expression),
+            token_boxed(Operator::OpenParen),
+            arg_list,
+        )
+            .map(|(e, o, (a, c))| (Box::new(e), o, a, c)),
+        pseudo_function(true),
     ))
-    .map(Box::new)
     .parse_next(i)
 }
 
@@ -204,7 +231,7 @@ pub(super) fn postfix<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> 
         Call(Box<Token<'a>>, Vec<Expression<'a>>, Box<Token<'a>>),
         Extension(
             Box<Token<'a>>,
-            Box<Expression<'a>>,
+            Box<Callable<'a>>,
             Box<Token<'a>>,
             Vec<Expression<'a>>,
             Box<Token<'a>>,
@@ -220,13 +247,8 @@ pub(super) fn postfix<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> 
             token_boxed(Operator::Exclamation).map(Function::NonNil),
             (token_boxed(Operator::OpenParen), arg_list).map(|(o, (a, c))| Function::Call(o, a, c)),
             (token_boxed(Operator::Dot), access_token).map(|(d, i)| Function::Access(d, i)),
-            (
-                token_boxed(Operator::ColonColon),
-                extension_expression,
-                token_boxed(Operator::OpenParen),
-                arg_list,
-            )
-                .map(|(kw, ex, o, (a, c))| Function::Extension(kw, ex, o, a, c)),
+            (token_boxed(Operator::ColonColon), extension_call)
+                .map(|(kw, (ex, o, a, c))| Function::Extension(kw, ex, o, a, c)),
             (
                 token_boxed(Operator::OpenBracket),
                 expression,
@@ -245,7 +267,9 @@ pub(super) fn postfix<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> 
     }
     // left-associative
     Ok(functions.into_iter().fold(first, |acc, exp| match exp {
-        Function::Call(o, args, c) => Expression::Call(Box::new(acc), o, args, c),
+        Function::Call(o, args, c) => {
+            Expression::Call(Box::new(Callable::Expression(acc)), o, args, c)
+        }
         Function::Extension(e, ex, o, arg, c) => {
             Expression::Extension(Box::new(acc), e, ex, o, arg, c)
         }

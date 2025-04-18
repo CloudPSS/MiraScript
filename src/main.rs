@@ -17,6 +17,7 @@ fn main() {
     
     for i in 1..<3 {
         print(i);
+    } else {
     }
 
     let w = while a > 0 {
@@ -125,7 +126,7 @@ x;
      /* EOF 
   dd   */ 
     (  a, b, [1, ..], ..) = x;
-      a::map.1.xx()::(fn{})()::a['x']::b();
+      a::map.1.xx()::(fn{})()::a['x']::b(); type(e); e::type();
   "##;
 
     let mut input = lexer::to_input(text);

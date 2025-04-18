@@ -11,6 +11,7 @@ pub(crate) const RANGE: Style = AnsiColor::Green.on_default();
 pub(crate) const VARIABLE: Style = AnsiColor::BrightYellow.on_default();
 pub(crate) const RECOVER: Style = Style::new().bg_color(Some(Color::Ansi(AnsiColor::Red)));
 pub(crate) const SPACE: Style = AnsiColor::Black.on_default().dimmed();
+pub(crate) const GUTTER: Style = AnsiColor::White.on_default().dimmed();
 pub(crate) const GROUP: Style = AnsiColor::Blue.on_default();
 pub(crate) const INLINE_HINT: Style =
     Style::new().bg_color(Some(Color::Ansi(AnsiColor::BrightBlack)));
@@ -25,7 +26,11 @@ pub(crate) trait DisplayIdent {
     fn fmt_ident(&self, f: &mut std::fmt::Formatter<'_>, ident: usize) -> std::fmt::Result;
 
     fn write_ident(f: &mut std::fmt::Formatter<'_>, ident: usize, mark: &str) -> std::fmt::Result {
-        write!(f, "{SPACE}{mark:width$}|", width = Self::GUTTER_WIDTH)?;
+        write!(
+            f,
+            "{GUTTER}{mark:width$}{RESET}{SPACE}|",
+            width = Self::GUTTER_WIDTH
+        )?;
         for _ in 0..ident {
             f.write_char('·')?;
         }
