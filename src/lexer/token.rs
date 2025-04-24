@@ -1,10 +1,14 @@
-use std::{borrow::Cow, fmt::Display};
+use std::{
+    borrow::Cow,
+    fmt::Display,
+    ops::{Deref, DerefMut},
+};
 
 use winnow::stream::Location;
 
 use crate::{
     ansi::DisplayIdent,
-    utils::{SourceError, SourceRange},
+    error::{ErrorCode, SourceError, SourceRange},
 };
 
 use super::{TokenKind, Trivia};
@@ -27,12 +31,22 @@ impl Location for Token<'_> {
     }
 }
 
-impl<'a> Token<'a> {
-    pub(crate) fn is_unknown(&self) -> bool {
-        matches!(self.kind, TokenKind::Unknown { .. })
-    }
+impl<'a> Deref for Token<'a> {
+    type Target = TokenKind<'a>;
 
-    pub(crate) fn wrap_as_unknown<E: Into<Cow<'static, str>>>(self, error: E) -> Self {
+    fn deref(&self) -> &Self::Target {
+        &self.kind
+    }
+}
+
+impl<'a> DerefMut for Token<'a> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.kind
+    }
+}
+
+impl<'a> Token<'a> {
+    pub(crate) fn wrap_as_unknown(self, error: ErrorCode) -> Self {
         Token {
             kind: TokenKind::unknown_range(self.kind, self.range.clone(), error),
             range: self.range,
@@ -41,10 +55,10 @@ impl<'a> Token<'a> {
         }
     }
 
-    pub(crate) fn unknown<E: Into<Cow<'static, str>>, R: Into<TokenKind<'a>>>(
+    pub(crate) fn unknown<R: Into<TokenKind<'a>>>(
         range: SourceRange,
         recovered: R,
-        error: E,
+        error: ErrorCode,
     ) -> Self {
         Token {
             range: range.clone(),
@@ -53,11 +67,11 @@ impl<'a> Token<'a> {
             trailing_trivia: vec![],
         }
     }
-    pub(crate) fn unknown_range<E: Into<Cow<'static, str>>, R: Into<TokenKind<'a>>>(
+    pub(crate) fn unknown_range<R: Into<TokenKind<'a>>>(
         token_range: SourceRange,
         recovered: R,
         error_range: SourceRange,
-        error: E,
+        error: ErrorCode,
     ) -> Self {
         Token {
             range: token_range,

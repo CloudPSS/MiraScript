@@ -6,7 +6,7 @@ use winnow::{
     token::{one_of, take_while},
 };
 
-use crate::utils::SourceRange;
+use crate::error::{ErrorCode, SourceRange};
 
 use super::helper::is_identifier_continue;
 use super::{Input, TokenKind};
@@ -109,14 +109,14 @@ pub(super) fn number<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
                         return Ok(TokenKind::unknown_range(
                             result,
                             range_i,
-                            "Invalid number literal",
+                            ErrorCode::InvalidNumberLiteral,
                         ));
                     }
                     if p.has_trailing_underscore {
                         return Ok(TokenKind::unknown_range(
                             result,
                             range_i,
-                            "Number literal cannot start or end with underscore",
+                            ErrorCode::InvalidNumberLiteralUnderscore,
                         ));
                     }
                     return Ok(result);
@@ -180,14 +180,14 @@ pub(super) fn number<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
                 return Ok(TokenKind::unknown_range(
                     TokenKind::Number(parsed_num),
                     range,
-                    "Invalid number literal",
+                    ErrorCode::InvalidNumberLiteral,
                 ));
             }
             if has_leading_underscore || has_trailing_underscore {
                 return Ok(TokenKind::unknown_range(
                     TokenKind::Number(parsed_num),
                     range,
-                    "Number literal cannot start or end with underscore",
+                    ErrorCode::InvalidNumberLiteralUnderscore,
                 ));
             }
             Ok(TokenKind::Number(parsed_num))
@@ -205,14 +205,10 @@ fn handle_ordinal(bytes: &[u8], range: SourceRange) -> TokenKind<'_> {
         TokenKind::Number(p.number)
     };
     if p.has_invalid_char {
-        return TokenKind::unknown_range(result, range, "Invalid number literal");
+        return TokenKind::unknown_range(result, range, ErrorCode::InvalidNumberLiteral);
     }
     if p.has_leading_underscore || p.has_trailing_underscore {
-        return TokenKind::unknown_range(
-            result,
-            range,
-            "Number literal cannot start or end with underscore",
-        );
+        return TokenKind::unknown_range(result, range, ErrorCode::InvalidNumberLiteralUnderscore);
     }
     result
 }

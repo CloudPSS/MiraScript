@@ -5,13 +5,13 @@ use std::{
 
 use crate::{
     ansi::{DisplayIdent, GROUP, RECOVER, RESET},
+    error::{ErrorCode, SourceError, SourceRange},
     lexer::Token,
-    utils::{SourceError, SourceRange},
 };
 
 use super::{Expression, Pattern};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, strum::EnumIs)]
 pub enum Statement<'a> {
     /// `';'`
     ///
@@ -86,14 +86,7 @@ pub enum Statement<'a> {
 }
 
 impl<'a> Statement<'a> {
-    pub(crate) fn is_unknown(&self) -> bool {
-        matches!(self, Statement::Unknown { .. })
-    }
-
-    pub(crate) fn unknown<T: Into<Vec<Token<'a>>>, E: Into<Cow<'static, str>>>(
-        tokens: T,
-        error: E,
-    ) -> Self {
+    pub(crate) fn unknown<T: Into<Vec<Token<'a>>>>(tokens: T, error: ErrorCode) -> Self {
         let tokens = tokens.into();
         assert!(!tokens.is_empty());
         let mut range = tokens[0].range.clone();
@@ -104,10 +97,10 @@ impl<'a> Statement<'a> {
         }
     }
 
-    pub(crate) fn unknown_range<T: Into<Vec<Token<'a>>>, E: Into<Cow<'static, str>>>(
+    pub(crate) fn unknown_range<T: Into<Vec<Token<'a>>>>(
         tokens: T,
         error_range: SourceRange,
-        error: E,
+        error: ErrorCode,
     ) -> Self {
         Statement::Unknown {
             tokens: tokens.into(),

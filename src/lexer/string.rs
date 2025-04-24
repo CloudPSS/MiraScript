@@ -9,8 +9,8 @@ use winnow::{
 };
 
 use crate::{
+    error::{ErrorCode, SourceError, SourceRange},
     lexer::{Input, Operator, Token, TokenKind},
-    utils::{SourceError, SourceRange},
 };
 
 use super::lex_balanced;
@@ -63,7 +63,7 @@ pub(super) fn string_content<'a>(
                     start: i.previous_token_end(),
                     end: i.previous_token_end(),
                 },
-                "Unterminated string",
+                ErrorCode::UnterminatedString,
             ));
         }
         let has_interpolation = content
@@ -76,7 +76,7 @@ pub(super) fn string_content<'a>(
             let s = &i[range.clone()];
             i.reset(&cp);
             range.start -= 1;
-            errors.push(SourceError::new(range, "Invalid escape sequence"));
+            errors.push(SourceError::new(range, ErrorCode::InvalidEscapeSequence));
             Cow::Borrowed(s)
         };
         let token = if has_interpolation {

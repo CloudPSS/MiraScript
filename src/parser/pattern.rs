@@ -5,13 +5,13 @@ use std::{
 
 use crate::{
     ansi::{DisplayIdent, GROUP, RANGE, RECOVER, RESET},
+    error::{ErrorCode, SourceError, SourceRange},
     lexer::Token,
-    utils::{SourceError, SourceRange},
 };
 
 use super::{ArrayPattern, RecordPattern};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, strum::EnumIs)]
 pub enum Pattern<'a> {
     /// `(` pattern `)`
     ///
@@ -67,7 +67,10 @@ pub enum Pattern<'a> {
     Array(Box<Token<'a>>, Vec<ArrayPattern<'a>>, Box<Token<'a>>),
     /// prefix<`..`>
     ///
-    /// Used in [ArrayPattern]::Spread and [RecordPattern]::Spread.
+    /// Contains no token.
+    /// Used in [ArrayPattern]::Spread and [RecordPattern]::Spread
+    /// as a placeholder since `_`
+    /// must be omitted in these cases.
     SpreadDiscard,
 
     /// pattern `and` pattern
@@ -92,14 +95,10 @@ pub enum Pattern<'a> {
 }
 
 impl<'a> Pattern<'a> {
-    pub(crate) fn is_unknown(&self) -> bool {
-        matches!(self, Pattern::Unknown { .. })
-    }
-
-    pub(crate) fn wrap_as_unknown<T: Into<Vec<Token<'a>>>, E: Into<Cow<'static, str>>>(
+    pub(crate) fn wrap_as_unknown<T: Into<Vec<Token<'a>>>>(
         self,
         tokens: T,
-        error: E,
+        error: ErrorCode,
     ) -> Self {
         let tokens = tokens.into();
         assert!(!tokens.is_empty());
@@ -112,10 +111,7 @@ impl<'a> Pattern<'a> {
         }
     }
 
-    pub(crate) fn unknown<T: Into<Vec<Token<'a>>>, E: Into<Cow<'static, str>>>(
-        tokens: T,
-        error: E,
-    ) -> Self {
+    pub(crate) fn unknown<T: Into<Vec<Token<'a>>>>(tokens: T, error: ErrorCode) -> Self {
         let tokens = tokens.into();
         assert!(!tokens.is_empty());
         let mut range = tokens[0].range.clone();
@@ -126,10 +122,10 @@ impl<'a> Pattern<'a> {
             errors: vec![SourceError::new(range, error)],
         }
     }
-    pub(crate) fn unknown_range<T: Into<Vec<Token<'a>>>, E: Into<Cow<'static, str>>>(
+    pub(crate) fn unknown_range<T: Into<Vec<Token<'a>>>>(
         tokens: T,
         error_range: SourceRange,
-        error: E,
+        error: ErrorCode,
     ) -> Self {
         Pattern::Unknown {
             pattern: None,

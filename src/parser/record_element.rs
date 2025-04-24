@@ -4,7 +4,7 @@ use crate::{ansi::DisplayIdent, lexer::Token};
 
 use super::{Expression, Pattern};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, strum::EnumIs)]
 pub enum RecordElementBase<'a, E: Clone + PartialEq> {
     /// name colon Named `,`?
     Named(
@@ -28,18 +28,6 @@ pub type RecordElement<'a> = RecordElementBase<'a, Expression<'a>>;
 pub type RecordPattern<'a> = RecordElementBase<'a, Pattern<'a>>;
 
 impl<'a, E: Clone + PartialEq> RecordElementBase<'a, E> {
-    pub fn is_named(&self) -> bool {
-        matches!(self, Named(..))
-    }
-    pub fn is_omit_named(&self) -> bool {
-        matches!(self, OmitNamed(..))
-    }
-    pub fn is_unnamed(&self) -> bool {
-        matches!(self, Unnamed(..))
-    }
-    pub fn is_spread(&self) -> bool {
-        matches!(self, Spread(..))
-    }
     pub fn has_tail_comma(&self) -> bool {
         self.tail_comma().is_some()
     }

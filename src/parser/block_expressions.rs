@@ -2,6 +2,7 @@ use winnow::combinator::{alt, dispatch, fail, opt, peek, repeat, seq};
 use winnow::prelude::*;
 use winnow::token::any;
 
+use crate::error::ErrorCode;
 use crate::lexer::{Keyword, Operator, Token};
 use crate::parser::helper::statements_and_expression;
 
@@ -37,9 +38,9 @@ pub(super) fn if_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression
 
 pub(super) fn block_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
     (
-        token_or_insert(Operator::OpenBrace, "Missing '{'").map(Box::new),
+        token_or_insert(Operator::OpenBrace, ErrorCode::MissingOpenBrace).map(Box::new),
         statements_and_expression,
-        token_or_insert(Operator::CloseBrace, "Missing '}'").map(Box::new),
+        token_or_insert(Operator::CloseBrace, ErrorCode::MissingCloseBrace).map(Box::new),
     )
         .map(|(open, (statements, expression), close)| {
             Expression::Block(open, statements, expression, close)
@@ -78,7 +79,7 @@ pub(super) fn match_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Express
     seq!(Expression::Match(
         token_boxed(Keyword::Match),
         expression.map(Box::new),
-        token_or_insert(Operator::OpenBrace, "Missing '{'").map(Box::new),
+        token_or_insert(Operator::OpenBrace, ErrorCode::MissingOpenBrace).map(Box::new),
         repeat(
             0..,
             alt((
@@ -90,13 +91,13 @@ pub(super) fn match_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Express
                     block_expression,
                 ),
                 (
-                    token_or_insert(Keyword::Case, "Missing 'case'"),
+                    token_or_insert(Keyword::Case, ErrorCode::MissingCase),
                     pattern(false),
                     block_expression,
                 ),
             ))
         ),
-        token_or_insert(Operator::CloseBrace, "Missing '{'").map(Box::new),
+        token_or_insert(Operator::CloseBrace, ErrorCode::MissingOpenBrace).map(Box::new),
     ))
     .parse_next(i)
 }

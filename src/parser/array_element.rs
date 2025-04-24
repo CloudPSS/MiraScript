@@ -4,7 +4,7 @@ use crate::{ansi::DisplayIdent, lexer::Token};
 
 use super::{Expression, Pattern, Range};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, strum::EnumIs)]
 pub enum ArrayElementBase<'a, E: Clone + PartialEq> {
     /// Element `,`?
     Element(Box<E>, Option<Box<Token<'a>>>),
@@ -21,15 +21,6 @@ pub type ArrayElement<'a> = ArrayElementBase<'a, Expression<'a>>;
 pub type ArrayPattern<'a> = ArrayElementBase<'a, Pattern<'a>>;
 
 impl<'a, E: Clone + PartialEq> ArrayElementBase<'a, E> {
-    pub fn is_element(&self) -> bool {
-        matches!(self, Element(..))
-    }
-    pub fn is_range(&self) -> bool {
-        matches!(self, ArrayElementBase::Range(..))
-    }
-    pub fn is_spread(&self) -> bool {
-        matches!(self, Spread(..))
-    }
     pub fn has_tail_comma(&self) -> bool {
         self.tail_comma().is_some()
     }

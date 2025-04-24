@@ -2,7 +2,10 @@ use winnow::combinator::alt;
 use winnow::prelude::*;
 use winnow::token::take_till;
 
-use crate::lexer::{Keyword, Operator, Token, TokenKind};
+use crate::{
+    error::ErrorCode,
+    lexer::{Keyword, Operator, Token, TokenKind},
+};
 
 use super::{
     Expression, Input, basic_expressions::basic_expression,
@@ -27,7 +30,7 @@ fn unknown_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> 
             || *t == Operator::OpenParen
             || *t == Operator::CloseParen
     })
-    .map(|t: &[Token<'a>]| Expression::unknown(t, "Unknown expression"))
+    .map(|t: &[Token<'a>]| Expression::unknown(t, ErrorCode::UnknownExpression))
     .parse_next(i)
 }
 

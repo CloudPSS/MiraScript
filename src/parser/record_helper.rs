@@ -5,7 +5,10 @@ use winnow::{
     token::{any, one_of},
 };
 
-use crate::lexer::{Keyword, Operator, Token, TokenKind};
+use crate::{
+    error::ErrorCode,
+    lexer::{Keyword, Operator, Token, TokenKind},
+};
 
 use super::{
     Input,
@@ -68,7 +71,7 @@ fn record_element<'t, 'a: 't, E: Clone + PartialEq + 'a>(
         {
             return Ok(result);
         }
-        let comma = token_or_insert(Operator::Comma, "Missing comma").parse_next(i)?;
+        let comma = token_or_insert(Operator::Comma, ErrorCode::MissingComma).parse_next(i)?;
         result.set_tail_comma(Box::new(comma));
         Ok(result)
     }
@@ -92,7 +95,7 @@ pub(super) fn record_base<'t, 'a: 't, E: Clone + PartialEq + 'a>(
         let open = token_boxed(Operator::OpenParen).parse_next(i)?;
         let parts: Vec<_> =
             repeat(0.., record_element(named, omit_named, unnamed, spread)).parse_next(i)?;
-        let close = token_or_insert(Operator::CloseParen, "Missing ')'")
+        let close = token_or_insert(Operator::CloseParen, ErrorCode::MissingCloseParen)
             .map(Box::new)
             .parse_next(i)?;
         Ok((open, parts, close))

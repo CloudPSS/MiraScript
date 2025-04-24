@@ -6,7 +6,7 @@ use winnow::combinator::{alt, dispatch, eof, fail, opt, peek, preceded, trace};
 use winnow::prelude::*;
 use winnow::token::{any, one_of, take, take_while};
 
-use crate::utils::SourceError;
+use crate::error::{ErrorCode, SourceError};
 
 use super::helper::{is_identifier_continue, is_identifier_start};
 use super::numeric::{number, ordinal};
@@ -131,7 +131,7 @@ pub(super) fn token<'a>(
             eof.map(|_| TokenKind::Eof),
             any.span().map(|range| TokenKind::Unknown {
                 recovered: None,
-                errors: vec![SourceError::new(range, "Unknown token")],
+                errors: vec![SourceError::new(range, ErrorCode::UnknownToken)],
             }),
         ))
         .with_span()

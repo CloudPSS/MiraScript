@@ -2,8 +2,8 @@ use winnow::combinator::{alt, dispatch, fail, opt, peek, seq};
 use winnow::prelude::*;
 use winnow::token::{any, one_of};
 
+use crate::error::{ErrorCode, SourceRange};
 use crate::lexer::{Keyword, Operator, Token, TokenKind};
-use crate::utils::SourceRange;
 
 use super::block_expressions::*;
 use super::expressions::expression;
@@ -12,7 +12,7 @@ use super::patterns::{pattern, pattern_or_insert};
 use super::{Input, Statement};
 
 fn semicolon<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Box<Token<'a>>> {
-    token_or_insert(Operator::Semicolon, "Missing semicolon")
+    token_or_insert(Operator::Semicolon, ErrorCode::MissingSemicolon)
         .map(Box::new)
         .parse_next(i)
 }
@@ -38,7 +38,7 @@ fn fn_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {
                         end: kw.range.end,
                     },
                     TokenKind::Identifier("<name>".into()),
-                    "Missing function name",
+                    ErrorCode::MissingFunctionName,
                 )
             }));
             Statement::Function(kw, name, params, body)
@@ -76,7 +76,7 @@ fn bind_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {
     seq!(Statement::Bind(
         token_boxed(Keyword::Let),
         pattern_or_insert(false).map(Box::new),
-        token_or_insert(Operator::Equal, "Missing `=`").map(Box::new),
+        token_or_insert(Operator::Equal, ErrorCode::MissingBindOperator).map(Box::new),
         expression.map(Box::new),
         semicolon,
     ))
@@ -131,7 +131,7 @@ fn expression_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>>
 }
 
 fn unknown_statement<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Statement<'a>> {
-    fail.map(|t: &[Token<'a>]| Statement::unknown(t, "Unknown statement"))
+    fail.map(|t: &[Token<'a>]| Statement::unknown(t, ErrorCode::UnknownStatement))
         .parse_next(i)
 }
 

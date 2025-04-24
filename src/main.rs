@@ -2,10 +2,11 @@ use std::ops::Deref;
 
 mod analyzer;
 mod ansi;
+mod compile;
 mod emitter;
 mod lexer;
 mod parser;
-mod utils;
+mod error;
 
 fn main() {
     let text = r##"{

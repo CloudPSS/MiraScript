@@ -1,12 +1,9 @@
-use std::{
-    borrow::Cow,
-    fmt::{self, Display, Formatter},
-};
+use std::fmt::{self, Display, Formatter};
 
 use crate::{
     ansi::{DisplayIdent, GROUP, INTERPOLATED, RECOVER, RESET, STRING},
+    error::{ErrorCode, SourceError, SourceRange},
     lexer::{Token, TokenKind},
-    utils::{SourceError, SourceRange},
 };
 
 use super::{ArrayElement, Iterable, Pattern, RecordElement, Statement};
@@ -35,7 +32,7 @@ impl DisplayIdent for Callable<'_> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, strum::EnumIs)]
 pub enum Expression<'a> {
     // primary
     /// string | number | ordinal | `true` | `false` | `nil`
@@ -211,14 +208,10 @@ pub enum Expression<'a> {
 }
 
 impl<'a> Expression<'a> {
-    pub(crate) fn is_unknown(&self) -> bool {
-        matches!(self, Expression::Unknown { .. })
-    }
-
-    pub(crate) fn wrap_as_unknown<T: Into<Vec<Token<'a>>>, E: Into<Cow<'static, str>>>(
+    pub(crate) fn wrap_as_unknown<T: Into<Vec<Token<'a>>>>(
         self,
         tokens: T,
-        error: E,
+        error: ErrorCode,
     ) -> Self {
         let tokens = tokens.into();
         assert!(!tokens.is_empty());
@@ -244,10 +237,7 @@ impl<'a> Expression<'a> {
         )
     }
 
-    pub(crate) fn unknown<T: Into<Vec<Token<'a>>>, E: Into<Cow<'static, str>>>(
-        tokens: T,
-        error: E,
-    ) -> Self {
+    pub(crate) fn unknown<T: Into<Vec<Token<'a>>>>(tokens: T, error: ErrorCode) -> Self {
         let tokens = tokens.into();
         assert!(!tokens.is_empty());
         let mut range = tokens[0].range.clone();
@@ -258,10 +248,10 @@ impl<'a> Expression<'a> {
             errors: vec![SourceError::new(range, error)],
         }
     }
-    pub(crate) fn unknown_range<T: Into<Vec<Token<'a>>>, E: Into<Cow<'static, str>>>(
+    pub(crate) fn unknown_range<T: Into<Vec<Token<'a>>>>(
         tokens: T,
         error_range: SourceRange,
-        error: E,
+        error: ErrorCode,
     ) -> Self {
         Expression::Unknown {
             expression: None,

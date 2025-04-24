@@ -1,101 +1,101 @@
-use std::fmt::{Display, Write};
+use std::fmt::Display;
 
 use super::{Token, TokenKind};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Operator {
     /// `(`
-    OpenParen = '(' as isize,
+    OpenParen,
     /// `)`
-    CloseParen = ')' as isize,
+    CloseParen,
     /// `[`
-    OpenBracket = '[' as isize,
+    OpenBracket,
     /// `]`
-    CloseBracket = ']' as isize,
+    CloseBracket,
     /// `:`
-    Colon = ':' as isize,
+    Colon,
     /// `?:`
-    QuestionColon = (('?' as isize) << 8) + (':' as isize),
+    QuestionColon,
     /// `!:`
-    ExclamationColon = (('!' as isize) << 8) + (':' as isize),
+    ExclamationColon,
     /// `::`
-    ColonColon = ((':' as isize) << 8) + (':' as isize),
+    ColonColon,
     /// `,`
-    Comma = ',' as isize,
+    Comma,
     /// `.`
-    Dot = '.' as isize,
+    Dot,
 
     /// `..`
-    SpreadRange = (('.' as isize) << 8) + ('.' as isize),
+    SpreadRange,
     /// `..<`
-    HalfOpenRange = (('.' as isize) << 16) + (('.' as isize) << 8) + ('<' as isize),
+    HalfOpenRange,
 
     /// `+`
-    Plus = '+' as isize,
+    Plus,
     /// `+=`
-    PlusEqual = (('+' as isize) << 8) + ('=' as isize),
+    PlusEqual,
     /// `-`
-    Minus = '-' as isize,
+    Minus,
     /// `-=`
-    MinusEqual = (('-' as isize) << 8) + ('=' as isize),
+    MinusEqual,
     /// `*`
-    Asterisk = '*' as isize,
+    Asterisk,
     /// `*=`
-    AsteriskEqual = (('*' as isize) << 8) + ('=' as isize),
+    AsteriskEqual,
     /// `/`
-    Slash = '/' as isize,
+    Slash,
     /// `/=`
-    SlashEqual = (('/' as isize) << 8) + ('=' as isize),
+    SlashEqual,
     /// `%`
-    Percent = '%' as isize,
+    Percent,
     /// `%=`
-    PercentEqual = (('%' as isize) << 8) + ('=' as isize),
+    PercentEqual,
 
     /// `^`
-    Caret = '^' as isize,
+    Caret,
     /// `^=`
-    CaretEqual = (('^' as isize) << 8) + ('=' as isize),
+    CaretEqual,
 
     /// `!`
-    Exclamation = '!' as isize,
+    Exclamation,
     /// `&&`
-    LogicalAnd = ((('&' as isize) << 8) + ('&' as isize)),
+    LogicalAnd,
     /// `&&=`
-    LogicalAndEqual = ((('&' as isize) << 16) + (('&' as isize) << 8) + ('=' as isize)),
+    LogicalAndEqual,
     /// `||`
-    LogicalOr = ((('|' as isize) << 8) + ('|' as isize)),
+    LogicalOr,
     /// `||=`
-    LogicalOrEqual = ((('|' as isize) << 16) + (('|' as isize) << 8) + ('=' as isize)),
+    LogicalOrEqual,
     /// `??`
-    NullCoalescing = ((('?' as isize) << 8) + ('?' as isize)),
+    NullCoalescing,
     /// `??=`
-    NullCoalescingEqual = ((('?' as isize) << 16) + (('?' as isize) << 8) + ('=' as isize)),
+    NullCoalescingEqual,
 
     /// `=`
-    Equal = '=' as isize,
+    Equal,
     /// `==`
-    EqualEqual = (('=' as isize) << 8) + ('=' as isize),
+    EqualEqual,
     /// `!=`
-    NotEqual = (('!' as isize) << 8) + ('=' as isize),
+    NotEqual,
     /// `~=`
-    TildeEqual = (('~' as isize) << 8) + ('=' as isize),
+    TildeEqual,
     /// `!~=`
-    NotTildeEqual = (('!' as isize) << 16) + (('~' as isize) << 8) + ('=' as isize),
+    NotTildeEqual,
     /// `>`
-    Greater = ('>' as isize),
+    Greater,
     /// `>=`
-    GreaterEqual = ((('>' as isize) << 8) + ('=' as isize)),
+    GreaterEqual,
     /// `<`
-    Less = ('<' as isize),
+    Less,
     /// `<=`
-    LessEqual = ((('<' as isize) << 8) + ('=' as isize)),
+    LessEqual,
 
     /// `;`
-    Semicolon = ';' as isize,
+    Semicolon,
     /// `{`
-    OpenBrace = '{' as isize,
+    OpenBrace,
     /// `}`
-    CloseBrace = '}' as isize,
+    CloseBrace,
 }
 
 impl From<Operator> for TokenKind<'_> {
@@ -130,26 +130,51 @@ impl PartialEq<Operator> for TokenKind<'_> {
 
 impl Display for Operator {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let v = *self as u32;
-        if v <= 0xFF {
-            let c = v as u8 as char;
-            return f.write_char(c);
+        use Operator::*;
+        match self {
+            OpenParen => f.write_str("("),
+            CloseParen => f.write_str(")"),
+            OpenBracket => f.write_str("["),
+            CloseBracket => f.write_str("]"),
+            Colon => f.write_str(":"),
+            QuestionColon => f.write_str("?:"),
+            ExclamationColon => f.write_str("!:"),
+            ColonColon => f.write_str("::"),
+            Comma => f.write_str(","),
+            Dot => f.write_str("."),
+            SpreadRange => f.write_str(".."),
+            HalfOpenRange => f.write_str("..<"),
+            Plus => f.write_str("+"),
+            PlusEqual => f.write_str("+="),
+            Minus => f.write_str("-"),
+            MinusEqual => f.write_str("-="),
+            Asterisk => f.write_str("*"),
+            AsteriskEqual => f.write_str("*="),
+            Slash => f.write_str("/"),
+            SlashEqual => f.write_str("/="),
+            Percent => f.write_str("%"),
+            PercentEqual => f.write_str("%="),
+            Caret => f.write_str("^"),
+            CaretEqual => f.write_str("^="),
+            Exclamation => f.write_str("!"),
+            LogicalAnd => f.write_str("&&"),
+            LogicalAndEqual => f.write_str("&&="),
+            LogicalOr => f.write_str("||"),
+            LogicalOrEqual => f.write_str("||="),
+            NullCoalescing => f.write_str("??"),
+            NullCoalescingEqual => f.write_str("??="),
+            Equal => f.write_str("="),
+            EqualEqual => f.write_str("=="),
+            NotEqual => f.write_str("!="),
+            TildeEqual => f.write_str("~="),
+            NotTildeEqual => f.write_str("!~="),
+            Greater => f.write_str(">"),
+            GreaterEqual => f.write_str(">="),
+            Less => f.write_str("<"),
+            LessEqual => f.write_str("<="),
+            Semicolon => f.write_str(";"),
+            OpenBrace => f.write_str("{"),
+            CloseBrace => f.write_str("}"),
         }
-        if v <= 0xFFFF {
-            let c1 = (v >> 8) as u8 as char;
-            let c2 = v as u8 as char;
-            return write!(f, "{}{}", c1, c2);
-        }
-        if v <= 0xFFFFFF {
-            let c1 = (v >> 16) as u8 as char;
-            let c2 = (v >> 8) as u8 as char;
-            let c3 = v as u8 as char;
-            return write!(f, "{}{}{}", c1, c2, c3);
-        }
-        let c1 = (v >> 24) as u8 as char;
-        let c2 = (v >> 16) as u8 as char;
-        let c3 = (v >> 8) as u8 as char;
-        let c4 = v as u8 as char;
-        write!(f, "{}{}{}{}", c1, c2, c3, c4)
     }
 }

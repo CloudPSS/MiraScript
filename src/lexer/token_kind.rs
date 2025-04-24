@@ -1,11 +1,11 @@
 use std::{borrow::Cow, fmt::Display};
 
 use crate::ansi::{INTERPOLATED, NUMBER, ORDINAL, RECOVER, RESET, STRING, VARIABLE};
-use crate::utils::{SourceError, SourceRange};
+use crate::error::{ErrorCode, SourceError, SourceRange};
 
 use super::{Keyword, Operator, Token};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, strum::EnumIs)]
 pub enum TokenKind<'a> {
     Eof,
     Identifier(Cow<'a, str>),
@@ -22,17 +22,17 @@ pub enum TokenKind<'a> {
 }
 
 impl<'a> TokenKind<'a> {
-    pub(crate) fn unknown<E: Into<Cow<'static, str>>>(error_range: SourceRange, error: E) -> Self {
+    pub(crate) fn unknown(error_range: SourceRange, error: ErrorCode) -> Self {
         TokenKind::Unknown {
             recovered: None,
             errors: vec![SourceError::new(error_range, error)],
         }
     }
 
-    pub(crate) fn unknown_range<E: Into<Cow<'static, str>>, R: Into<TokenKind<'a>>>(
+    pub(crate) fn unknown_range<R: Into<TokenKind<'a>>>(
         recovered: R,
         error_range: SourceRange,
-        error: E,
+        error: ErrorCode,
     ) -> Self {
         TokenKind::Unknown {
             recovered: Some(Box::new(recovered.into())),
@@ -48,10 +48,6 @@ impl<'a> TokenKind<'a> {
             recovered: Some(Box::new(recovered.into())),
             errors: errors.into(),
         }
-    }
-
-    pub(crate) fn is_unknown(&self) -> bool {
-        matches!(self, Self::Unknown { .. })
     }
 }
 

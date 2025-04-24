@@ -7,8 +7,8 @@ use winnow::{
 };
 
 use crate::{
+    error::{ErrorCode, SourceRange},
     lexer::{Keyword, Operator, Token, TokenKind},
-    utils::SourceRange,
 };
 
 use super::{
@@ -38,7 +38,7 @@ fn unknown_pattern<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Pattern<'a>> {
             || *t == Operator::OpenParen
             || *t == Operator::CloseParen
     })
-    .map(|t: &[Token<'a>]| Pattern::unknown(t, "Unknown pattern"))
+    .map(|t: &[Token<'a>]| Pattern::unknown(t, ErrorCode::UnknownPattern))
     .parse_next(i)
 }
 
@@ -53,7 +53,7 @@ pub(super) fn pattern_or_insert<'t, 'a: 't>(
                 Pattern::unknown_range(
                     vec![],
                     SourceRange { start, end: start },
-                    "Pattern expected",
+                    ErrorCode::PatternExpected,
                 )
             }),
         ))
@@ -135,7 +135,7 @@ fn constants_pattern<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Pattern<'a>> {
             let result = Pattern::Constant(Some(op.to_owned().into()), Box::new(l.clone()));
             if *op == Operator::Exclamation {
                 return result
-                    .wrap_as_unknown([op.to_owned(), l], "Not operator is not allowed in pattern");
+                    .wrap_as_unknown([op.to_owned(), l], ErrorCode::ExclamationInConstantsPattern);
             }
             if !(matches!(l.kind, TokenKind::Number(..))
                 || matches!(l.kind, TokenKind::Ordinal(..))
@@ -143,7 +143,7 @@ fn constants_pattern<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Pattern<'a>> {
             {
                 return result.wrap_as_unknown(
                     [op.to_owned(), l],
-                    "Unexpected operator in pattern, only number is allowed",
+                    ErrorCode::UnexpectedOperatorInConstantsPattern,
                 );
             }
             result
@@ -184,16 +184,14 @@ fn discard_bind_pattern<'t, 'a: 't>(
         (opt(token_boxed(Keyword::Mut)), variable_token(true, false))
             .map(|(kw_mut, id)| {
                 if rebind && kw_mut.is_some() {
-                    let kw_mut = kw_mut
-                        .unwrap()
-                        .wrap_as_unknown("'mut' is not allowed while rebinding");
+                    let kw_mut = kw_mut.unwrap().wrap_as_unknown(ErrorCode::MutInBindPattern);
                     return Pattern::Bind(Some(Box::new(kw_mut)), Box::new(id));
                 }
                 if id.kind == Keyword::Underscore {
                     if kw_mut.is_some() {
                         return Pattern::unknown(
                             vec![*kw_mut.unwrap(), id],
-                            "Can not use 'mut' in discard pattern",
+                            ErrorCode::MutInDiscardPattern,
                         );
                     }
                     Pattern::Discard(Box::new(id))
@@ -216,8 +214,8 @@ fn pattern_spread<'t, 'a: 't>(
                     return Pattern::SpreadDiscard;
                 }
                 let p = p.unwrap();
-                if matches!(p, Pattern::Discard(..)) {
-                    p.wrap_as_unknown(t, "Discard pattern should be omitted in spread pattern")
+                if p.is_discard() {
+                    p.wrap_as_unknown(t, ErrorCode::DiscardInSpreadPattern)
                 } else {
                     p
                 }
@@ -233,10 +231,10 @@ fn record_like_pattern<'t, 'a: 't>(
         pattern_or_insert(rebind)
             .with_taken()
             .map(|(p, t)| {
-                if matches!(p, Pattern::Bind(..)) || matches!(p, Pattern::Unknown { .. }) {
+                if p.is_bind() || p.is_unknown() {
                     p
                 } else {
-                    p.wrap_as_unknown(t, "Must be bind pattern while record field name omitted")
+                    p.wrap_as_unknown(t, ErrorCode::BadOmitKeyRecordPattern)
                 }
             })
             .parse_next(i)
@@ -285,7 +283,7 @@ fn array_pattern<'t, 'a: 't>(
             .with_taken()
             .map(|(p, t)| {
                 if matches!(p, Pattern::Range(..)) {
-                    p.wrap_as_unknown(t, "Range pattern in array pattern should be parenthesised ")
+                    p.wrap_as_unknown(t, ErrorCode::AmbiguousRangePattern)
                 } else {
                     p
                 }

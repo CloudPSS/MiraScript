@@ -1,9 +1,10 @@
-use std::{fmt::Display, str::FromStr};
+use strum::{Display, EnumString, VariantNames};
 
 use super::{Token, TokenKind};
-use crate::ansi::{KEYWORD, NUMBER, RESET};
+use crate::ansi::{DisplayIdent, KEYWORD, NUMBER, RESET};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumString, Display, VariantNames)]
+#[strum(serialize_all = "snake_case")]
 pub enum Keyword {
     // constants
     True,
@@ -13,6 +14,7 @@ pub enum Keyword {
     Inf,
 
     // pseudo variable
+    #[strum(to_string = "_")]
     Underscore,
     Global,
 
@@ -101,71 +103,42 @@ impl PartialEq<Keyword> for TokenKind<'_> {
     }
 }
 
-impl Display for Keyword {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl DisplayIdent for Keyword {
+    fn fmt_ident(&self, f: &mut std::fmt::Formatter<'_>, _ident: usize) -> std::fmt::Result {
         use Keyword::*;
-        if matches!(self, Underscore) {
-            return write!(f, "{KEYWORD}_{RESET}");
-        }
-        let mut d = format!("{:?}", self);
-        d.make_ascii_lowercase();
         match self {
-            Inf | Nan => write!(f, "{NUMBER}{d}{RESET}"),
-            _ => write!(f, "{KEYWORD}{d}{RESET}"),
+            Inf | Nan => write!(f, "{NUMBER}{self}{RESET}"),
+            _ => write!(f, "{KEYWORD}{self}{RESET}"),
         }
     }
 }
 
-impl FromStr for Keyword {
-    type Err = ();
+#[test]
+fn test_keyword() {
+    use std::str::FromStr;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "true" => Ok(Keyword::True),
-            "false" => Ok(Keyword::False),
-            "nil" => Ok(Keyword::Nil),
-            "nan" => Ok(Keyword::Nan),
-            "inf" => Ok(Keyword::Inf),
+    assert_eq!(Keyword::from_str("true"), Ok(Keyword::True));
+    assert_eq!(Keyword::from_str("false"), Ok(Keyword::False));
+    assert_eq!(Keyword::from_str("nil"), Ok(Keyword::Nil));
+    assert_eq!(Keyword::from_str("nan"), Ok(Keyword::Nan));
+    assert_eq!(Keyword::from_str("inf"), Ok(Keyword::Inf));
 
-            "_" => Ok(Keyword::Underscore),
-            "global" => Ok(Keyword::Global),
+    assert_eq!(Keyword::from_str("_"), Ok(Keyword::Underscore));
+    assert_eq!(Keyword::from_str("global"), Ok(Keyword::Global));
 
-            "in" => Ok(Keyword::In),
-            "is" => Ok(Keyword::Is),
-            "and" => Ok(Keyword::And),
-            "or" => Ok(Keyword::Or),
-            "not" => Ok(Keyword::Not),
+    assert_eq!(Keyword::from_str("in"), Ok(Keyword::In));
+    assert_eq!(Keyword::from_str("is"), Ok(Keyword::Is));
 
-            "type" => Ok(Keyword::Type),
-
-            "if" => Ok(Keyword::If),
-            "else" => Ok(Keyword::Else),
-            "match" => Ok(Keyword::Match),
-            "case" => Ok(Keyword::Case),
-            "for" => Ok(Keyword::For),
-            "while" => Ok(Keyword::While),
-            "loop" => Ok(Keyword::Loop),
-            "break" => Ok(Keyword::Break),
-            "continue" => Ok(Keyword::Continue),
-            "return" => Ok(Keyword::Return),
-
-            "fn" => Ok(Keyword::Fn),
-            "op" => Ok(Keyword::Op),
-            "let" => Ok(Keyword::Let),
-            "mut" => Ok(Keyword::Mut),
-            "where" => Ok(Keyword::Where),
-
-            "import" => Ok(Keyword::Import),
-            "export" => Ok(Keyword::Export),
-
-            "effect" => Ok(Keyword::Effect),
-            "try" => Ok(Keyword::Try),
-            "handle" => Ok(Keyword::Handle),
-            "finally" => Ok(Keyword::Finally),
-            "perform" => Ok(Keyword::Perform),
-            "resume" => Ok(Keyword::Resume),
-
-            _ => Err(()),
-        }
-    }
+    assert_eq!(
+        Keyword::from_str("Is"),
+        Err(strum::ParseError::VariantNotFound)
+    );
+    assert_eq!(
+        Keyword::from_str("Underscore"),
+        Err(strum::ParseError::VariantNotFound)
+    );
+    assert_eq!(
+        Keyword::from_str("underscore"),
+        Err(strum::ParseError::VariantNotFound)
+    );
 }

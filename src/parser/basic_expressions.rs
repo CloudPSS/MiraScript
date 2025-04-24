@@ -7,8 +7,8 @@ use winnow::prelude::*;
 use winnow::stream::Location;
 use winnow::token::{any, one_of};
 
+use crate::error::{ErrorCode, SourceRange};
 use crate::lexer::{Keyword, Operator, Token, TokenKind};
-use crate::utils::SourceRange;
 
 use super::array_helper::array_base;
 use super::block_expressions::block_like_expression;
@@ -28,7 +28,7 @@ fn record_like<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
                 if matches!(e, Expression::Access(..)) || matches!(e, Expression::Variable(..)) {
                     e
                 } else {
-                    Expression::unknown(t, "Can not infer key from expression")
+                    Expression::unknown(t, ErrorCode::BadOmitKeyRecordExpression)
                 }
             })
             .parse_next(i)
@@ -62,7 +62,7 @@ fn array<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
                             start: pos,
                             end: pos,
                         },
-                        "Expression expected after `..`",
+                        ErrorCode::BadArraySpread,
                     )
                 }
             })
@@ -93,9 +93,9 @@ pub(super) fn interpolation<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression
                 Err(_) => {
                     let last_token = tokens.last().unwrap();
                     let error = if *last_token == TokenKind::Eof {
-                        "Unterminated interpolation expression"
+                        ErrorCode::UnterminatedInterpolation
                     } else {
-                        "Bad interpolation expression"
+                        ErrorCode::BadInterpolation
                     };
                     Expression::unknown(tokens.clone(), error)
                 }
@@ -120,10 +120,7 @@ fn pseudo_function<'t, 'a: 't>(
         let provided = if extension_call { 1 } else { 0 };
         let (kw_type, open, (args, close)) = (
             token(Keyword::Type),
-            token_or_insert(
-                Operator::OpenParen,
-                "`type` is a function-like keyword, add `(` here",
-            ),
+            token_or_insert(Operator::OpenParen, ErrorCode::MissingOpenParenAfterType),
             arg_list,
         )
             .parse_next(i)?;
@@ -131,7 +128,7 @@ fn pseudo_function<'t, 'a: 't>(
             vec![Expression::unknown_range(
                 [],
                 SourceRange { start: 0, end: 0 },
-                "`type` call must have exactly one argument",
+                ErrorCode::InvalidTypeCall,
             )]
         } else {
             args
@@ -176,7 +173,7 @@ fn arg_list<'a>(i: &mut Input<'_, 'a>) -> ModalResult<(Vec<Expression<'a>>, Box<
                 || *t == Operator::CloseBrace
                 || *t == Operator::CloseBracket
         })),
-        token_or_insert(Operator::CloseParen, "Missing `)`").map(Box::new),
+        token_or_insert(Operator::CloseParen, ErrorCode::MissingCloseParen).map(Box::new),
     )
     .parse_next(i)
 }
@@ -192,8 +189,8 @@ fn extension_call<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Call<'a>> {
         record_like
             .with_taken()
             .map(|(r, t)| {
-                if matches!(r, Expression::Record(..)) {
-                    r.wrap_as_unknown(t, "Grouping expected")
+                if r.is_record() {
+                    r.wrap_as_unknown(t, ErrorCode::RecordLiteralInExtensionCaller)
                 } else {
                     r
                 }

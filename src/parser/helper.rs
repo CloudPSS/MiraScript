@@ -4,8 +4,8 @@ use winnow::prelude::*;
 use winnow::stream::Location;
 use winnow::token::{any, one_of};
 
+use crate::error::{ErrorCode, SourceRange};
 use crate::lexer::{Keyword, Operator, Token, TokenKind};
-use crate::utils::SourceRange;
 
 use super::statements::statement;
 use super::{Expression, Input, Statement, expression};
@@ -93,17 +93,9 @@ pub(super) fn variable_token<'t, 'a: 't>(
         .map(|t: &Token<'a>| t.to_owned())
         .parse_next(i)?;
         let e = if !include_underscore && t == Keyword::Underscore {
-            Token::unknown(
-                t.range,
-                t.kind,
-                "Unexpected `_`, it is a reserved keyword for discarding",
-            )
+            Token::unknown(t.range, t.kind, ErrorCode::UnexpectedGlobal)
         } else if !include_global && t == Keyword::Global {
-            Token::unknown(
-                t.range,
-                t.kind,
-                "Unexpected `global`, it is a reserved keyword for global variable",
-            )
+            Token::unknown(t.range, t.kind, ErrorCode::UnexpectedGlobal)
         } else {
             t.to_owned()
         };
@@ -132,7 +124,7 @@ pub(super) fn token_boxed<'t, 'a: 't>(
 
 pub(super) fn token_or_insert<'t, 'a: 't, T>(
     token: T,
-    error: &'static str,
+    error: ErrorCode,
 ) -> impl Parser<Input<'t, 'a>, Token<'a>, ErrMode<ContextError>>
 where
     T: Into<TokenKind<'a>> + Clone,
