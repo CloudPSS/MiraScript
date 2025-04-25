@@ -2,12 +2,21 @@ use std::fmt::Display;
 
 use crate::ansi::DisplayIdent;
 
-use super::{Expression, Range};
+use super::{AstVisitor, AstWalker, Expression, Range};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Iterable<'a> {
     Range(Box<Range<'a>>),
     Value(Box<Expression<'a>>),
+}
+
+impl<'a> AstWalker<'a> for Iterable<'a> {
+    fn walk(&mut self, visitor: &mut dyn AstVisitor<'a>) {
+        match self {
+            Iterable::Range(range) => range.walk(visitor),
+            Iterable::Value(value) => value.walk(visitor),
+        }
+    }
 }
 
 impl Display for Iterable<'_> {

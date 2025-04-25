@@ -1,11 +1,12 @@
 use std::{
+    collections::btree_map::IterMut,
     fmt::{self, Display, Formatter},
     ops::Deref,
 };
 
 use crate::{ansi::DisplayIdent, lexer::Token};
 
-use super::{Expression, Statement};
+use super::{AstVisitor, AstWalker, Expression, Statement};
 
 /// statement* expression? EOF
 ///
@@ -16,6 +17,20 @@ pub struct Script<'a>(
     pub Option<Box<Expression<'a>>>,
     pub Box<Token<'a>>,
 );
+
+struct ScriptIterMut<'a>(std::slice::Iter<'a, Statement<'a>>);
+
+impl<'a> AstWalker<'a> for Script<'a> {
+    fn walk(&mut self, visitor: &mut dyn AstVisitor<'a>) {
+        for statement in &mut self.0 {
+            statement.walk(visitor);
+        }
+        if let Some(expression) = &mut self.1 {
+            expression.walk(visitor);
+        }
+        self.2.walk(visitor);
+    }
+}
 
 impl<'a> Deref for Script<'a> {
     type Target = Vec<Statement<'a>>;

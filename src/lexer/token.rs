@@ -1,5 +1,4 @@
 use std::{
-    borrow::Cow,
     fmt::Display,
     ops::{Deref, DerefMut},
 };
@@ -39,7 +38,7 @@ impl<'a> Deref for Token<'a> {
     }
 }
 
-impl<'a> DerefMut for Token<'a> {
+impl DerefMut for Token<'_> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.kind
     }

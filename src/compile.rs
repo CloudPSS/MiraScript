@@ -1,28 +1,30 @@
+use std::cell::RefCell;
+
 use winnow::ModalResult;
 
 use crate::error::{ErrorCode, SourceError, SourceRange};
-use crate::lexer;
-use crate::parser;
+use crate::lexer::{self, Token, TokenKind};
+use crate::parser::{self, AstVisitor, AstWalker, walker};
 
-type CompileResult<'a> = Result<parser::Script<'a>, Vec<SourceError>>;
+type CompileResult<'a> = Result<parser::Script<'a>, (Option<parser::Script<'a>>, Vec<SourceError>)>;
 
 fn compile<'a>(
     input: &'a str,
     lexer: impl FnOnce(&mut lexer::Input<'a>) -> ModalResult<Vec<lexer::Token<'a>>>,
 ) -> CompileResult<'a> {
-    let mut errors: Vec<_> = vec![];
+    let mut error_collector: Vec<_> = vec![];
 
     // Lexing
     let mut input = lexer::to_input(input);
     let Ok(tokens) = lexer(&mut input) else {
-        errors.push(SourceError::new(
+        error_collector.push(SourceError::new(
             SourceRange {
                 start: 0,
                 end: input.len(),
             },
             ErrorCode::LexerError,
         ));
-        return Err(errors);
+        return Err((None, error_collector));
     };
     // Try to recover from lexing errors
     let recovered_tokens: Vec<_> = tokens
@@ -30,43 +32,81 @@ fn compile<'a>(
         .filter_map(|t| match t.kind {
             lexer::TokenKind::Unknown {
                 recovered: Some(token),
-                ..
-            } => Some(lexer::Token {
-                kind: *token,
-                range: t.range,
-                leading_trivia: t.leading_trivia,
-                trailing_trivia: t.trailing_trivia,
-            }),
-            lexer::TokenKind::Unknown { .. } => None,
+                errors,
+            } => {
+                error_collector.extend(errors);
+                Some(lexer::Token {
+                    kind: *token,
+                    range: t.range,
+                    leading_trivia: t.leading_trivia,
+                    trailing_trivia: t.trailing_trivia,
+                })
+            }
+            lexer::TokenKind::Unknown { errors, .. } => {
+                error_collector.extend(errors);
+                None
+            }
             _ => Some(t),
         })
         .collect();
 
     // Parsing
     let mut input = parser::to_input(&recovered_tokens);
-    let Ok(script) = parser::parse(&mut input) else {
-        errors.push(SourceError::new(
+    let Ok(mut script) = parser::parse(&mut input) else {
+        error_collector.push(SourceError::new(
             SourceRange {
                 start: 0,
                 end: input.len(),
             },
             ErrorCode::ParserError,
         ));
-        return Err(errors);
+        return Err((None, error_collector));
     };
-    // Try to recover from parsing errors
-    // let recovered_script = script
-    //     .into_iter()
-    //     .filter_map(|s| match s {
-    //         parser::Statement::Unknown { tokens, errors } => {
-    //             errors.extend(errors);
-    //             Some(parser::Statement::Unknown { tokens, errors })
-    //         }
-    //         _ => Some(s),
-    //     })
-    //     .collect();
-    if !errors.is_empty() {
-        return Err(errors);
+    {
+        let error_collector = RefCell::new(&mut error_collector);
+        let mut w = walker(
+            |token| {
+                let Token {
+                    kind: TokenKind::Unknown { recovered, errors },
+                    range,
+                    leading_trivia,
+                    trailing_trivia,
+                } = token
+                else {
+                    return;
+                };
+                error_collector.borrow_mut().extend(errors.drain(..));
+                if let Some(recovered) = std::mem::take(recovered) {
+                    *token = Token {
+                        kind: *recovered,
+                        range: range.clone(),
+                        leading_trivia: std::mem::take(leading_trivia),
+                        trailing_trivia: std::mem::take(trailing_trivia),
+                    };
+                }
+            },
+            |expression| {
+                if let parser::Expression::Unknown { errors, .. } = expression {
+                    error_collector.borrow_mut().extend(errors.drain(..));
+                }
+            },
+            |pattern| {
+                if let parser::Pattern::Unknown { errors, .. } = pattern {
+                    error_collector.borrow_mut().extend(errors.drain(..));
+                }
+            },
+            |statement| {
+                if let parser::Statement::Unknown { errors, .. } = statement {
+                    error_collector.borrow_mut().extend(errors.drain(..));
+                }
+            },
+        );
+        // Try to recover from parsing errors
+        script.walk(&mut w);
+    }
+
+    if !error_collector.is_empty() {
+        return Err((Some(script), error_collector));
     }
     Ok(script)
 }

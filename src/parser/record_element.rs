@@ -2,7 +2,7 @@ use std::fmt::{Debug, Display};
 
 use crate::{ansi::DisplayIdent, lexer::Token};
 
-use super::{Expression, Pattern};
+use super::{AstVisitor, AstWalker, Expression, Pattern};
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
 pub enum RecordElementBase<'a, E: Clone + PartialEq> {
@@ -45,6 +45,33 @@ impl<'a, E: Clone + PartialEq> RecordElementBase<'a, E> {
             | OmitNamed(.., tail_comma)
             | Unnamed(.., tail_comma)
             | Spread(.., tail_comma) => *tail_comma = Some(token),
+        }
+    }
+}
+
+impl<'a, E: Clone + PartialEq + AstWalker<'a>> AstWalker<'a> for RecordElementBase<'a, E> {
+    fn walk(&mut self, visitor: &mut dyn AstVisitor<'a>) {
+        match self {
+            Named(name, colon, value, tail_comma) => {
+                name.walk(visitor);
+                colon.walk(visitor);
+                value.walk(visitor);
+                tail_comma.walk(visitor);
+            }
+            OmitNamed(colon, value, tail_comma) => {
+                colon.walk(visitor);
+                value.walk(visitor);
+                tail_comma.walk(visitor);
+            }
+            Unnamed(value, tail_comma) => {
+                value.walk(visitor);
+                tail_comma.walk(visitor);
+            }
+            Spread(spread, value, tail_comma) => {
+                spread.walk(visitor);
+                value.walk(visitor);
+                tail_comma.walk(visitor);
+            }
         }
     }
 }

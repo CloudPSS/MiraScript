@@ -5,7 +5,7 @@ use crate::{
     lexer::Token,
 };
 
-use super::Expression;
+use super::{AstVisitor, AstWalker, Expression};
 
 /// A range expression.
 ///
@@ -16,6 +16,15 @@ pub struct Range<'a>(
     pub Box<Token<'a>>,
     pub Box<Expression<'a>>,
 );
+
+impl<'a> AstWalker<'a> for Range<'a> {
+    fn walk(&mut self, visitor: &mut dyn AstVisitor<'a>) {
+        let Range(start, op, end) = self;
+        start.walk(visitor);
+        op.walk(visitor);
+        end.walk(visitor);
+    }
+}
 
 impl Display for Range<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

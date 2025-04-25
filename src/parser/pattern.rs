@@ -1,7 +1,4 @@
-use std::{
-    borrow::Cow,
-    fmt::{self, Display, Formatter},
-};
+use std::fmt::{self, Display, Formatter};
 
 use crate::{
     ansi::{DisplayIdent, GROUP, RANGE, RECOVER, RESET},
@@ -9,7 +6,7 @@ use crate::{
     lexer::Token,
 };
 
-use super::{ArrayPattern, RecordPattern};
+use super::{ArrayPattern, AstVisitor, AstWalker, RecordPattern};
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
 pub enum Pattern<'a> {
@@ -142,6 +139,75 @@ impl<'a> Pattern<'a> {
             pattern: None,
             tokens: tokens.into(),
             errors: errors.into(),
+        }
+    }
+}
+
+impl<'a> AstWalker<'a> for Pattern<'a> {
+    fn walk(&mut self, visitor: &mut dyn AstVisitor<'a>) {
+        use Pattern::*;
+        visitor.visit_pattern(self);
+        match self {
+            Grouping(o, p, e) => {
+                o.walk(visitor);
+                p.walk(visitor);
+                e.walk(visitor);
+            }
+            Constant(p, t) => {
+                p.walk(visitor);
+                t.walk(visitor);
+            }
+            Relation(o, p) => {
+                o.walk(visitor);
+                p.walk(visitor);
+            }
+            Range(s, o, e) => {
+                s.walk(visitor);
+                o.walk(visitor);
+                e.walk(visitor);
+            }
+            Discard(t) => t.walk(visitor),
+            Bind(p, t) => {
+                p.walk(visitor);
+                t.walk(visitor);
+            }
+            Record(s, p, e) => {
+                s.walk(visitor);
+                for sub_pattern in p.iter_mut() {
+                    sub_pattern.walk(visitor);
+                }
+                e.walk(visitor);
+            }
+            Array(s, p, e) => {
+                s.walk(visitor);
+                for sub_pattern in p.iter_mut() {
+                    sub_pattern.walk(visitor);
+                }
+                e.walk(visitor);
+            }
+            SpreadDiscard => {}
+            And(l, o, r) => {
+                l.walk(visitor);
+                o.walk(visitor);
+                r.walk(visitor);
+            }
+            Or(l, o, r) => {
+                l.walk(visitor);
+                o.walk(visitor);
+                r.walk(visitor);
+            }
+            Not(o, p) => {
+                o.walk(visitor);
+                p.walk(visitor);
+            }
+            Unknown {
+                pattern,
+                tokens,
+                errors: _,
+            } => {
+                pattern.walk(visitor);
+                tokens.walk(visitor);
+            }
         }
     }
 }

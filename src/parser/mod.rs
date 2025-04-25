@@ -5,6 +5,7 @@ use crate::lexer::{Token, TokenKind};
 
 mod array_element;
 mod array_helper;
+mod ast_visitor;
 mod basic_expressions;
 mod block_expressions;
 mod expression;
@@ -23,6 +24,7 @@ mod statement;
 mod statements;
 
 pub use array_element::{ArrayElement, ArrayPattern};
+pub(crate) use ast_visitor::*;
 pub use expression::Expression;
 pub use expressions::expression;
 pub use iterable::Iterable;

@@ -1,7 +1,4 @@
-use std::{
-    borrow::Cow,
-    fmt::{self, Display, Formatter},
-};
+use std::fmt::{self, Display, Formatter};
 
 use crate::{
     ansi::{DisplayIdent, GROUP, RECOVER, RESET},
@@ -9,7 +6,7 @@ use crate::{
     lexer::Token,
 };
 
-use super::{Expression, Pattern};
+use super::{AstVisitor, Expression, Pattern, AstWalker};
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
 pub enum Statement<'a> {
@@ -115,6 +112,63 @@ impl<'a> Statement<'a> {
         Statement::Unknown {
             tokens: tokens.into(),
             errors: errors.into(),
+        }
+    }
+}
+
+impl<'a> AstWalker<'a> for Statement<'a> {
+    fn walk(&mut self, visitor: &mut dyn AstVisitor<'a>) {
+        use Statement::*;
+        visitor.visit_statement(self);
+        match self {
+            Empty(c) => c.walk(visitor),
+            Expression(expr, c) => {
+                expr.walk(visitor);
+                c.walk(visitor);
+            }
+            BlockExpression(expr) => expr.walk(visitor),
+            Bind(kw_let, pattern, eq, expr, c) => {
+                kw_let.walk(visitor);
+                pattern.walk(visitor);
+                eq.walk(visitor);
+                expr.walk(visitor);
+                c.walk(visitor);
+            }
+            Rebind(pattern, eq, expr, c) => {
+                pattern.walk(visitor);
+                eq.walk(visitor);
+                expr.walk(visitor);
+                c.walk(visitor);
+            }
+            Assign(exp, eq, expr, c) => {
+                exp.walk(visitor);
+                eq.walk(visitor);
+                expr.walk(visitor);
+                c.walk(visitor);
+            }
+            Function(kw, id, params, body) => {
+                kw.walk(visitor);
+                id.walk(visitor);
+                params.walk(visitor);
+                body.walk(visitor);
+            }
+            Return(kw, expr, c) => {
+                kw.walk(visitor);
+                expr.walk(visitor);
+                c.walk(visitor);
+            }
+            Break(kw, expr, c) => {
+                kw.walk(visitor);
+                expr.walk(visitor);
+                c.walk(visitor);
+            }
+            Continue(kw, c) => {
+                kw.walk(visitor);
+                c.walk(visitor);
+            }
+            Unknown { tokens, errors: _ } => {
+                tokens.walk(visitor);
+            }
         }
     }
 }

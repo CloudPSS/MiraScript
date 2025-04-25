@@ -6,15 +6,28 @@ use crate::{
     lexer::{Token, TokenKind},
 };
 
-use super::{ArrayElement, Iterable, Pattern, RecordElement, Statement};
+use super::{
+    ArrayElement, AstVisitor, Iterable, Pattern, RecordElement, Statement, AstWalker,
+};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, strum::EnumIs)]
 pub enum Callable<'a> {
     /// `type`
     Type(Token<'a>),
     /// expression
     Expression(Expression<'a>),
 }
+
+impl<'a> AstWalker<'a> for Callable<'a> {
+    fn walk(&mut self, visitor: &mut dyn AstVisitor<'a>) {
+        use Callable::*;
+        match self {
+            Type(token) => token.walk(visitor),
+            Expression(exp) => exp.walk(visitor),
+        }
+    }
+}
+
 impl Display for Callable<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         self.fmt_ident(f, 0)
@@ -268,6 +281,157 @@ impl<'a> Expression<'a> {
             expression: None,
             tokens: tokens.into(),
             errors: errors.into(),
+        }
+    }
+}
+
+impl<'a> AstWalker<'a> for Expression<'a> {
+    fn walk(&mut self, visitor: &mut dyn AstVisitor<'a>) {
+        use Expression::*;
+        visitor.visit_expression(self);
+        match self {
+            Literal(token) => token.walk(visitor),
+            InterpolatedString(token, exps) => {
+                token.walk(visitor);
+                exps.walk(visitor);
+            }
+            Variable(token) => token.walk(visitor),
+            Grouping(op, exp, cp) => {
+                op.walk(visitor);
+                exp.walk(visitor);
+                cp.walk(visitor);
+            }
+            Record(op, exps, cp) => {
+                op.walk(visitor);
+                exps.walk(visitor);
+                cp.walk(visitor);
+            }
+            Array(op, exps, cp) => {
+                op.walk(visitor);
+                exps.walk(visitor);
+                cp.walk(visitor);
+            }
+            Call(exp, op, args, cp) => {
+                exp.walk(visitor);
+                op.walk(visitor);
+                args.walk(visitor);
+                cp.walk(visitor);
+            }
+            Extension(exp, e, ext, op, args, cp) => {
+                exp.walk(visitor);
+                e.walk(visitor);
+                ext.walk(visitor);
+                op.walk(visitor);
+                args.walk(visitor);
+                cp.walk(visitor);
+            }
+            Access(exp, dot, token) => {
+                exp.walk(visitor);
+                dot.walk(visitor);
+                token.walk(visitor);
+            }
+            Index(exp, l, index, r) => {
+                exp.walk(visitor);
+                l.walk(visitor);
+                index.walk(visitor);
+                r.walk(visitor);
+            }
+            NonNil(exp, op) => {
+                exp.walk(visitor);
+                op.walk(visitor);
+            }
+            Prefix(op, exp) => {
+                op.walk(visitor);
+                exp.walk(visitor);
+            }
+            Infix(exp1, op, exp2) => {
+                exp1.walk(visitor);
+                op.walk(visitor);
+                exp2.walk(visitor);
+            }
+            Is(exp1, op, pattern) => {
+                exp1.walk(visitor);
+                op.walk(visitor);
+                pattern.walk(visitor);
+            }
+            Block(op, statements, expression, ed) => {
+                op.walk(visitor);
+                statements.walk(visitor);
+                expression.walk(visitor);
+                ed.walk(visitor);
+            }
+            Loop(kw, expression) => {
+                kw.walk(visitor);
+                expression.walk(visitor);
+            }
+            While(kw, expression, block, None) => {
+                kw.walk(visitor);
+                expression.walk(visitor);
+                block.walk(visitor);
+            }
+            While(kw, expression, block, Some((kw_else, else_block))) => {
+                kw.walk(visitor);
+                expression.walk(visitor);
+                block.walk(visitor);
+                kw_else.walk(visitor);
+                else_block.walk(visitor);
+            }
+            ForIn(kw_for, pattern, kw_in, iter, block, None) => {
+                kw_for.walk(visitor);
+                pattern.walk(visitor);
+                kw_in.walk(visitor);
+                iter.walk(visitor);
+                block.walk(visitor);
+            }
+            ForIn(kw_for, pattern, kw_in, iter, block, Some((kw_else, else_block))) => {
+                kw_for.walk(visitor);
+                pattern.walk(visitor);
+                kw_in.walk(visitor);
+                iter.walk(visitor);
+                block.walk(visitor);
+                kw_else.walk(visitor);
+                else_block.walk(visitor);
+            }
+            If(kw_if, cond, then_block, Some((kw_else, else_block))) => {
+                kw_if.walk(visitor);
+                cond.walk(visitor);
+                then_block.walk(visitor);
+                kw_else.walk(visitor);
+                else_block.walk(visitor);
+            }
+            If(kw_if, cond, then_block, None) => {
+                kw_if.walk(visitor);
+                cond.walk(visitor);
+                then_block.walk(visitor);
+            }
+            Match(kw, expression, op, arms, ed) => {
+                kw.walk(visitor);
+                expression.walk(visitor);
+                op.walk(visitor);
+                for (kw_case, pattern, block) in arms {
+                    kw_case.walk(visitor);
+                    pattern.walk(visitor);
+                    block.walk(visitor);
+                }
+                ed.walk(visitor);
+            }
+            Function(kw, None, block) => {
+                kw.walk(visitor);
+                block.walk(visitor);
+            }
+            Function(kw, Some(params), block) => {
+                kw.walk(visitor);
+                params.walk(visitor);
+                block.walk(visitor);
+            }
+            Unknown {
+                expression,
+                tokens,
+                errors: _,
+            } => {
+                expression.walk(visitor);
+                tokens.walk(visitor);
+            }
         }
     }
 }

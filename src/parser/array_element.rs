@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use crate::{ansi::DisplayIdent, lexer::Token};
 
-use super::{Expression, Pattern, Range};
+use super::{AstVisitor, AstWalker, Expression, Pattern, Range};
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
 pub enum ArrayElementBase<'a, E: Clone + PartialEq> {
@@ -19,6 +19,26 @@ use ArrayElementBase::*;
 pub type ArrayElement<'a> = ArrayElementBase<'a, Expression<'a>>;
 
 pub type ArrayPattern<'a> = ArrayElementBase<'a, Pattern<'a>>;
+
+impl<'a, E: Clone + PartialEq + AstWalker<'a>> AstWalker<'a> for ArrayElementBase<'a, E> {
+    fn walk(&mut self, visitor: &mut dyn AstVisitor<'a>) {
+        match self {
+            Element(value, c) => {
+                value.walk(visitor);
+                c.walk(visitor);
+            }
+            ArrayElementBase::Range(range, c) => {
+                range.walk(visitor);
+                c.walk(visitor);
+            }
+            Spread(sp, value, c) => {
+                sp.walk(visitor);
+                value.walk(visitor);
+                c.walk(visitor);
+            }
+        }
+    }
+}
 
 impl<'a, E: Clone + PartialEq> ArrayElementBase<'a, E> {
     pub fn has_tail_comma(&self) -> bool {
