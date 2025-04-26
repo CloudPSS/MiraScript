@@ -2,12 +2,23 @@
 name = "mira-core"
 version = "0.1.0"
 edition = "2024"
+publish = false
 
-# [lib]
-# name = "mira_core"
-# crate-type = ["lib"]
+[lib]
+name = "mira_core"
+
+[[bench]]
+name = "lexer"
+harness = false
+
+
+[dev-dependencies]
+divan = "0.1.21"
+mira-core = { path = "." }
 
 [dependencies]
+ariadne = "0.5"
+chumsky = "0.10"
 unicode-ident = "1.0"
 num-bigint = "0.4"
 num-traits = "0.2"
