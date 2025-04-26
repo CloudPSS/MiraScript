@@ -11,14 +11,14 @@ use super::{AstVisitor, AstWalker, Expression};
 ///
 /// `start..end` or `start..<end`
 #[derive(Debug, Clone, PartialEq)]
-pub struct Range<'a>(
-    pub Box<Expression<'a>>,
-    pub Box<Token<'a>>,
-    pub Box<Expression<'a>>,
+pub struct Range<'s>(
+    pub Box<Expression<'s>>,
+    pub Box<Token<'s>>,
+    pub Box<Expression<'s>>,
 );
 
-impl<'a> AstWalker<'a> for Range<'a> {
-    fn walk(&mut self, visitor: &mut dyn AstVisitor<'a>) {
+impl<'s> AstWalker<'s> for Range<'s> {
+    fn walk(&mut self, visitor: &mut dyn AstVisitor<'s>) {
         let Range(start, op, end) = self;
         start.walk(visitor);
         op.walk(visitor);

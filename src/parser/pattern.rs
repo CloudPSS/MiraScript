@@ -9,31 +9,31 @@ use crate::{
 use super::{ArrayPattern, AstVisitor, AstWalker, RecordPattern};
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
-pub enum Pattern<'a> {
+pub enum Pattern<'s> {
     /// `(` pattern `)`
     ///
     /// Grouping pattern.
-    Grouping(Box<Token<'a>>, Box<Pattern<'a>>, Box<Token<'a>>),
+    Grouping(Box<Token<'s>>, Box<Pattern<'s>>, Box<Token<'s>>),
     /// ( `+` | `-` )? literal
     ///
     /// Matches against a constant value.
-    Constant(Option<Box<Token<'a>>>, Box<Token<'a>>),
+    Constant(Option<Box<Token<'s>>>, Box<Token<'s>>),
     /// ( `>` | `>=` | `<=` | `<` | `==` | `!=` | `~=` | `!~=` ) pattern_constant
     ///
     /// Matches against a relation with constant values.
-    Relation(Box<Token<'a>>, Box<Pattern<'a>>),
+    Relation(Box<Token<'s>>, Box<Pattern<'s>>),
     /// literal ( `..` | `..<` ) pattern_constant
     ///
     /// Matches against a range of constant values.
-    Range(Box<Pattern<'a>>, Box<Token<'a>>, Box<Pattern<'a>>),
+    Range(Box<Pattern<'s>>, Box<Token<'s>>, Box<Pattern<'s>>),
     /// `_`
     ///
     /// Matches and discards a value.
-    Discard(Box<Token<'a>>),
+    Discard(Box<Token<'s>>),
     /// `mut`? identifier
     ///
     /// Matches and binds a value to a variable.
-    Bind(Option<Box<Token<'a>>>, Box<Token<'a>>),
+    Bind(Option<Box<Token<'s>>>, Box<Token<'s>>),
     /// ``````antlr
     /// pattern_record
     ///     : '(' sub_pattern* ')'
@@ -51,7 +51,7 @@ pub enum Pattern<'a> {
     ///     ;
     /// ``````
     /// Matches a record pattern.
-    Record(Box<Token<'a>>, Vec<RecordPattern<'a>>, Box<Token<'a>>),
+    Record(Box<Token<'s>>, Vec<RecordPattern<'s>>, Box<Token<'s>>),
     /// ```antlr
     /// pattern_array
     ///     : '[' sub_pattern* ']'
@@ -61,7 +61,7 @@ pub enum Pattern<'a> {
     ///     | '..' pattern? ','?
     ///     ;
     /// ```
-    Array(Box<Token<'a>>, Vec<ArrayPattern<'a>>, Box<Token<'a>>),
+    Array(Box<Token<'s>>, Vec<ArrayPattern<'s>>, Box<Token<'s>>),
     /// prefix<`..`>
     ///
     /// Contains no token.
@@ -73,26 +73,26 @@ pub enum Pattern<'a> {
     /// pattern `and` pattern
     ///
     /// Matches all of the patterns.
-    And(Box<Pattern<'a>>, Box<Token<'a>>, Box<Pattern<'a>>),
+    And(Box<Pattern<'s>>, Box<Token<'s>>, Box<Pattern<'s>>),
     /// pattern `or` pattern
     ///
     /// Matches any of the patterns.
-    Or(Box<Pattern<'a>>, Box<Token<'a>>, Box<Pattern<'a>>),
+    Or(Box<Pattern<'s>>, Box<Token<'s>>, Box<Pattern<'s>>),
     /// `not` pattern
     ///
     /// Matches if the pattern does not match.
-    Not(Box<Token<'a>>, Box<Pattern<'a>>),
+    Not(Box<Token<'s>>, Box<Pattern<'s>>),
 
     /// Unknown pattern.
     Unknown {
-        pattern: Option<Box<Pattern<'a>>>,
-        tokens: Vec<Token<'a>>,
+        pattern: Option<Box<Pattern<'s>>>,
+        tokens: Vec<Token<'s>>,
         errors: Vec<SourceError>,
     },
 }
 
-impl<'a> Pattern<'a> {
-    pub(crate) fn wrap_as_unknown<T: Into<Vec<Token<'a>>>>(
+impl<'s> Pattern<'s> {
+    pub(crate) fn wrap_as_unknown<T: Into<Vec<Token<'s>>>>(
         self,
         tokens: T,
         error: ErrorCode,
@@ -108,7 +108,7 @@ impl<'a> Pattern<'a> {
         }
     }
 
-    pub(crate) fn unknown<T: Into<Vec<Token<'a>>>>(tokens: T, error: ErrorCode) -> Self {
+    pub(crate) fn unknown<T: Into<Vec<Token<'s>>>>(tokens: T, error: ErrorCode) -> Self {
         let tokens = tokens.into();
         assert!(!tokens.is_empty());
         let mut range = tokens[0].range.clone();
@@ -119,7 +119,7 @@ impl<'a> Pattern<'a> {
             errors: vec![SourceError::new(range, error)],
         }
     }
-    pub(crate) fn unknown_range<T: Into<Vec<Token<'a>>>>(
+    pub(crate) fn unknown_range<T: Into<Vec<Token<'s>>>>(
         tokens: T,
         error_range: SourceRange,
         error: ErrorCode,
@@ -131,7 +131,7 @@ impl<'a> Pattern<'a> {
         }
     }
 
-    pub(crate) fn unknown_errors<T: Into<Vec<Token<'a>>>, E: Into<Vec<SourceError>>>(
+    pub(crate) fn unknown_errors<T: Into<Vec<Token<'s>>>, E: Into<Vec<SourceError>>>(
         tokens: T,
         errors: E,
     ) -> Self {
@@ -143,8 +143,8 @@ impl<'a> Pattern<'a> {
     }
 }
 
-impl<'a> AstWalker<'a> for Pattern<'a> {
-    fn walk(&mut self, visitor: &mut dyn AstVisitor<'a>) {
+impl<'s> AstWalker<'s> for Pattern<'s> {
+    fn walk(&mut self, visitor: &mut dyn AstVisitor<'s>) {
         use Pattern::*;
         visitor.visit_pattern(self);
         match self {

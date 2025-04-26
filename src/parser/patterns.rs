@@ -18,8 +18,8 @@ use super::{
     record_helper::record_base,
 };
 
-fn unknown_pattern<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Pattern<'a>> {
-    take_till(1.., |t: &Token<'a>| {
+fn unknown_pattern<'s>(i: &mut Input<'_, 's>) -> ModalResult<Pattern<'s>> {
+    take_till(1.., |t: &Token<'s>| {
         *t == TokenKind::Eof
             || *t == Keyword::If
             || *t == Keyword::Fn
@@ -38,14 +38,14 @@ fn unknown_pattern<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Pattern<'a>> {
             || *t == Operator::OpenParen
             || *t == Operator::CloseParen
     })
-    .map(|t: &[Token<'a>]| Pattern::unknown(t, ErrorCode::UnknownPattern))
+    .map(|t: &[Token<'s>]| Pattern::unknown(t, ErrorCode::UnknownPattern))
     .parse_next(i)
 }
 
-pub(super) fn pattern_or_insert<'t, 'a: 't>(
+pub(super) fn pattern_or_insert<'t, 's: 't>(
     rebind: bool,
-) -> impl Parser<Input<'t, 'a>, Pattern<'a>, ErrMode<ContextError>> + Copy {
-    move |i: &mut Input<'_, 'a>| {
+) -> impl Parser<Input<'t, 's>, Pattern<'s>, ErrMode<ContextError>> + Copy {
+    move |i: &mut Input<'_, 's>| {
         let start = i.previous_token_end();
         alt((
             pattern(rebind),
@@ -61,16 +61,16 @@ pub(super) fn pattern_or_insert<'t, 'a: 't>(
     }
 }
 
-pub(super) fn pattern<'t, 'a: 't>(
+pub(super) fn pattern<'t, 's: 't>(
     rebind: bool,
-) -> impl Parser<Input<'t, 'a>, Pattern<'a>, ErrMode<ContextError>> + Copy {
-    move |i: &mut Input<'_, 'a>| or_pattern(rebind).parse_next(i)
+) -> impl Parser<Input<'t, 's>, Pattern<'s>, ErrMode<ContextError>> + Copy {
+    move |i: &mut Input<'_, 's>| or_pattern(rebind).parse_next(i)
 }
 
-fn primary_pattern<'t, 'a: 't>(
+fn primary_pattern<'t, 's: 't>(
     rebind: bool,
-) -> impl Parser<Input<'t, 'a>, Pattern<'a>, ErrMode<ContextError>> {
-    move |i: &mut Input<'_, 'a>| {
+) -> impl Parser<Input<'t, 's>, Pattern<'s>, ErrMode<ContextError>> {
+    move |i: &mut Input<'_, 's>| {
         alt((
             relation_pattern,
             record_like_pattern(rebind),
@@ -85,20 +85,20 @@ fn primary_pattern<'t, 'a: 't>(
     }
 }
 
-fn not_pattern<'t, 'a: 't>(
+fn not_pattern<'t, 's: 't>(
     rebind: bool,
-) -> impl Parser<Input<'t, 'a>, Pattern<'a>, ErrMode<ContextError>> {
-    move |i: &mut Input<'_, 'a>| {
+) -> impl Parser<Input<'t, 's>, Pattern<'s>, ErrMode<ContextError>> {
+    move |i: &mut Input<'_, 's>| {
         (token_boxed(Keyword::Not), primary_pattern(rebind))
             .map(|(kw_not, p)| Pattern::Not(kw_not, Box::new(p)))
             .parse_next(i)
     }
 }
 
-fn and_pattern<'t, 'a: 't>(
+fn and_pattern<'t, 's: 't>(
     rebind: bool,
-) -> impl Parser<Input<'t, 'a>, Pattern<'a>, ErrMode<ContextError>> {
-    move |i: &mut Input<'_, 'a>| {
+) -> impl Parser<Input<'t, 's>, Pattern<'s>, ErrMode<ContextError>> {
+    move |i: &mut Input<'_, 's>| {
         separated_foldl1(
             primary_pattern(rebind),
             token_boxed(Keyword::And),
@@ -108,10 +108,10 @@ fn and_pattern<'t, 'a: 't>(
     }
 }
 
-fn or_pattern<'t, 'a: 't>(
+fn or_pattern<'t, 's: 't>(
     rebind: bool,
-) -> impl Parser<Input<'t, 'a>, Pattern<'a>, ErrMode<ContextError>> {
-    move |i: &mut Input<'_, 'a>| {
+) -> impl Parser<Input<'t, 's>, Pattern<'s>, ErrMode<ContextError>> {
+    move |i: &mut Input<'_, 's>| {
         separated_foldl1(
             and_pattern(rebind),
             token_boxed(Keyword::Or),
@@ -121,9 +121,9 @@ fn or_pattern<'t, 'a: 't>(
     }
 }
 
-fn constants_pattern<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Pattern<'a>> {
+fn constants_pattern<'s>(i: &mut Input<'_, 's>) -> ModalResult<Pattern<'s>> {
     (
-        opt(one_of(|t: &Token<'a>| {
+        opt(one_of(|t: &Token<'s>| {
             *t == Operator::Plus || *t == Operator::Minus || *t == Operator::Exclamation
         })),
         literal_token,
@@ -151,9 +151,9 @@ fn constants_pattern<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Pattern<'a>> {
         .parse_next(i)
 }
 
-fn relation_pattern<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Pattern<'a>> {
+fn relation_pattern<'s>(i: &mut Input<'_, 's>) -> ModalResult<Pattern<'s>> {
     seq!(Pattern::Relation(
-        one_of(|t: &Token<'a>| *t == Operator::Less
+        one_of(|t: &Token<'s>| *t == Operator::Less
             || *t == Operator::LessEqual
             || *t == Operator::Greater
             || *t == Operator::GreaterEqual
@@ -161,26 +161,26 @@ fn relation_pattern<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Pattern<'a>> {
             || *t == Operator::NotEqual
             || *t == Operator::TildeEqual
             || *t == Operator::NotTildeEqual)
-        .map(|t: &Token<'a>| Box::new(t.to_owned())),
+        .map(|t: &Token<'s>| Box::new(t.to_owned())),
         constants_pattern.map(Box::new),
     ))
     .parse_next(i)
 }
 
-fn range_pattern<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Pattern<'a>> {
+fn range_pattern<'s>(i: &mut Input<'_, 's>) -> ModalResult<Pattern<'s>> {
     seq!(Pattern::Range(
         constants_pattern.map(Box::new),
-        one_of(|t: &Token<'a>| *t == Operator::SpreadRange || *t == Operator::HalfOpenRange)
-            .map(|t: &Token<'a>| Box::new(t.to_owned())),
+        one_of(|t: &Token<'s>| *t == Operator::SpreadRange || *t == Operator::HalfOpenRange)
+            .map(|t: &Token<'s>| Box::new(t.to_owned())),
         constants_pattern.map(Box::new),
     ))
     .parse_next(i)
 }
 
-fn discard_bind_pattern<'t, 'a: 't>(
+fn discard_bind_pattern<'t, 's: 't>(
     rebind: bool,
-) -> impl Parser<Input<'t, 'a>, Pattern<'a>, ErrMode<ContextError>> {
-    move |i: &mut Input<'_, 'a>| {
+) -> impl Parser<Input<'t, 's>, Pattern<'s>, ErrMode<ContextError>> {
+    move |i: &mut Input<'_, 's>| {
         (opt(token_boxed(Keyword::Mut)), variable_token(true, false))
             .map(|(kw_mut, id)| {
                 if rebind && kw_mut.is_some() {
@@ -203,10 +203,10 @@ fn discard_bind_pattern<'t, 'a: 't>(
     }
 }
 
-fn pattern_spread<'t, 'a: 't>(
+fn pattern_spread<'t, 's: 't>(
     rebind: bool,
-) -> impl Parser<Input<'t, 'a>, Pattern<'a>, ErrMode<ContextError>> + Copy {
-    move |i: &mut Input<'_, 'a>| {
+) -> impl Parser<Input<'t, 's>, Pattern<'s>, ErrMode<ContextError>> + Copy {
+    move |i: &mut Input<'_, 's>| {
         opt(pattern(rebind))
             .with_taken()
             .map(|(p, t)| {
@@ -224,10 +224,10 @@ fn pattern_spread<'t, 'a: 't>(
     }
 }
 
-fn record_like_pattern<'t, 'a: 't>(
+fn record_like_pattern<'t, 's: 't>(
     rebind: bool,
-) -> impl Parser<Input<'t, 'a>, Pattern<'a>, ErrMode<ContextError>> + Copy {
-    let omit_named = move |i: &mut Input<'_, 'a>| -> ModalResult<Pattern<'a>> {
+) -> impl Parser<Input<'t, 's>, Pattern<'s>, ErrMode<ContextError>> + Copy {
+    let omit_named = move |i: &mut Input<'_, 's>| -> ModalResult<Pattern<'s>> {
         pattern_or_insert(rebind)
             .with_taken()
             .map(|(p, t)| {
@@ -240,10 +240,10 @@ fn record_like_pattern<'t, 'a: 't>(
             .parse_next(i)
     };
 
-    let unnamed = move |i: &mut Input<'_, 'a>| {
+    let unnamed = move |i: &mut Input<'_, 's>| {
         alt((
             preceded(
-                peek(one_of(|t: &Token<'a>| {
+                peek(one_of(|t: &Token<'s>| {
                     *t == Operator::Comma || *t == Operator::CloseParen
                 })),
                 pattern_or_insert(rebind),
@@ -253,7 +253,7 @@ fn record_like_pattern<'t, 'a: 't>(
         .parse_next(i)
     };
 
-    move |i: &mut Input<'_, 'a>| {
+    move |i: &mut Input<'_, 's>| {
         let (open, parts, close) = record_base(
             pattern_or_insert(rebind),
             omit_named,
@@ -275,10 +275,10 @@ fn record_like_pattern<'t, 'a: 't>(
     }
 }
 
-fn array_pattern<'t, 'a: 't>(
+fn array_pattern<'t, 's: 't>(
     rebind: bool,
-) -> impl Parser<Input<'t, 'a>, Pattern<'a>, ErrMode<ContextError>> + Copy {
-    let element_pattern = move |i: &mut Input<'_, 'a>| {
+) -> impl Parser<Input<'t, 's>, Pattern<'s>, ErrMode<ContextError>> + Copy {
+    let element_pattern = move |i: &mut Input<'_, 's>| {
         pattern_or_insert(rebind)
             .with_taken()
             .map(|(p, t)| {
@@ -290,7 +290,7 @@ fn array_pattern<'t, 'a: 't>(
             })
             .parse_next(i)
     };
-    move |i: &mut Input<'_, 'a>| {
+    move |i: &mut Input<'_, 's>| {
         let (open, parts, close) =
             array_base(element_pattern, fail, pattern_spread(rebind)).parse_next(i)?;
         Ok(Pattern::Array(open, parts, close))

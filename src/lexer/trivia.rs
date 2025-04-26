@@ -10,10 +10,10 @@ use crate::ansi::{COMMENT, DisplayIdent, RECOVER, RESET};
 use super::Input;
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Trivia<'a> {
-    LineComment(&'a str),
-    BlockComment(&'a str),
-    UnterminatedBlockComment(&'a str),
+pub enum Trivia<'s> {
+    LineComment(&'s str),
+    BlockComment(&'s str),
+    UnterminatedBlockComment(&'s str),
     EmptyLine,
 }
 
@@ -64,13 +64,13 @@ impl DisplayIdent for Trivia<'_> {
     }
 }
 
-fn line_comment<'a>(i: &mut Input<'a>) -> ModalResult<Trivia<'a>> {
+fn line_comment<'s>(i: &mut Input<'s>) -> ModalResult<Trivia<'s>> {
     delimited((space0, "//"), till_line_ending, opt(line_ending))
         .map(|s: &str| Trivia::LineComment(s))
         .parse_next(i)
 }
 
-fn block_comment<'a>(i: &mut Input<'a>) -> ModalResult<Trivia<'a>> {
+fn block_comment<'s>(i: &mut Input<'s>) -> ModalResult<Trivia<'s>> {
     preceded(
         (space0, "/*"),
         alt((
@@ -88,16 +88,16 @@ fn block_comment<'a>(i: &mut Input<'a>) -> ModalResult<Trivia<'a>> {
     .parse_next(i)
 }
 
-fn empty_line<'a>(i: &mut Input<'a>) -> ModalResult<Trivia<'a>> {
+fn empty_line<'s>(i: &mut Input<'s>) -> ModalResult<Trivia<'s>> {
     (space0, line_ending)
         .map(|_| Trivia::EmptyLine)
         .parse_next(i)
 }
 
-pub(super) fn trivia<'a>(i: &mut Input<'a>) -> ModalResult<Trivia<'a>> {
+pub(super) fn trivia<'s>(i: &mut Input<'s>) -> ModalResult<Trivia<'s>> {
     alt((line_comment, block_comment, empty_line)).parse_next(i)
 }
 
-pub(super) fn trivia_list<'a>(i: &mut Input<'a>) -> ModalResult<Vec<Trivia<'a>>> {
+pub(super) fn trivia_list<'s>(i: &mut Input<'s>) -> ModalResult<Vec<Trivia<'s>>> {
     repeat(0.., trivia).parse_next(i)
 }

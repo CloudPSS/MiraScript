@@ -34,13 +34,13 @@ pub use record_element::{RecordElement, RecordPattern};
 pub use script::Script;
 pub use statement::Statement;
 
-pub type Input<'t, 'a> = TokenSlice<'t, Token<'a>>;
+pub type Input<'t, 's> = TokenSlice<'t, Token<'s>>;
 
-pub fn to_input<'t, 'a>(tokens: &'t [Token<'a>]) -> Input<'t, 'a> {
+pub fn to_input<'t, 's>(tokens: &'t [Token<'s>]) -> Input<'t, 's> {
     TokenSlice::new(tokens)
 }
 
-pub fn parse<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Script<'a>> {
+pub fn parse<'s>(i: &mut Input<'_, 's>) -> ModalResult<Script<'s>> {
     (
         helper::statements_and_expression,
         helper::token_boxed(TokenKind::Eof),

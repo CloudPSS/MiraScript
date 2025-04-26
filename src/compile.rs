@@ -6,12 +6,12 @@ use crate::error::{ErrorCode, SourceError, SourceRange};
 use crate::lexer::{self, Token, TokenKind};
 use crate::parser::{self, AstVisitor, AstWalker, walker};
 
-type CompileResult<'a> = Result<parser::Script<'a>, (Option<parser::Script<'a>>, Vec<SourceError>)>;
+type CompileResult<'s> = Result<parser::Script<'s>, (Option<parser::Script<'s>>, Vec<SourceError>)>;
 
-fn compile<'a>(
-    input: &'a str,
-    lexer: impl FnOnce(&mut lexer::Input<'a>) -> ModalResult<Vec<lexer::Token<'a>>>,
-) -> CompileResult<'a> {
+fn compile<'s>(
+    input: &'s str,
+    lexer: impl FnOnce(&mut lexer::Input<'s>) -> ModalResult<Vec<lexer::Token<'s>>>,
+) -> CompileResult<'s> {
     let mut error_collector: Vec<_> = vec![];
 
     // Lexing

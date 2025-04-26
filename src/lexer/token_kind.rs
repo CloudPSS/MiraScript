@@ -6,22 +6,22 @@ use crate::error::{ErrorCode, SourceError, SourceRange};
 use super::{Keyword, Operator, Token};
 
 #[derive(Debug, Clone, strum::EnumIs)]
-pub enum TokenKind<'a> {
+pub enum TokenKind<'s> {
     Eof,
-    Identifier(Cow<'a, str>),
+    Identifier(Cow<'s, str>),
     Ordinal(i32),
     Number(f64),
-    String(Cow<'a, str>),
-    InterpolatedString(Vec<Cow<'a, str>>, Vec<Vec<Token<'a>>>),
+    String(Cow<'s, str>),
+    InterpolatedString(Vec<Cow<'s, str>>, Vec<Vec<Token<'s>>>),
     Operator(Operator),
     Keyword(Keyword),
     Unknown {
-        recovered: Option<Box<TokenKind<'a>>>,
+        recovered: Option<Box<TokenKind<'s>>>,
         errors: Vec<SourceError>,
     },
 }
 
-impl<'a> TokenKind<'a> {
+impl<'s> TokenKind<'s> {
     pub(crate) fn unknown(error_range: SourceRange, error: ErrorCode) -> Self {
         TokenKind::Unknown {
             recovered: None,
@@ -29,7 +29,7 @@ impl<'a> TokenKind<'a> {
         }
     }
 
-    pub(crate) fn unknown_range<R: Into<TokenKind<'a>>>(
+    pub(crate) fn unknown_range<R: Into<TokenKind<'s>>>(
         recovered: R,
         error_range: SourceRange,
         error: ErrorCode,
@@ -40,7 +40,7 @@ impl<'a> TokenKind<'a> {
         }
     }
 
-    pub(crate) fn unknown_errors<E: Into<Vec<SourceError>>, R: Into<TokenKind<'a>>>(
+    pub(crate) fn unknown_errors<E: Into<Vec<SourceError>>, R: Into<TokenKind<'s>>>(
         recovered: R,
         errors: E,
     ) -> Self {

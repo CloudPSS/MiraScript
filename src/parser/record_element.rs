@@ -5,33 +5,33 @@ use crate::{ansi::DisplayIdent, lexer::Token};
 use super::{AstVisitor, AstWalker, Expression, Pattern};
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
-pub enum RecordElementBase<'a, E: Clone + PartialEq> {
+pub enum RecordElementBase<'s, E: Clone + PartialEq> {
     /// name colon Named `,`?
     Named(
-        Box<Token<'a>>,
-        Box<Token<'a>>,
+        Box<Token<'s>>,
+        Box<Token<'s>>,
         Box<E>,
-        Option<Box<Token<'a>>>,
+        Option<Box<Token<'s>>>,
     ),
     /// colon OmitNamed `,`?
-    OmitNamed(Box<Token<'a>>, Box<E>, Option<Box<Token<'a>>>),
+    OmitNamed(Box<Token<'s>>, Box<E>, Option<Box<Token<'s>>>),
     /// Unnamed `,`?
-    Unnamed(Box<E>, Option<Box<Token<'a>>>),
+    Unnamed(Box<E>, Option<Box<Token<'s>>>),
     /// `..` Spread `,`?
-    Spread(Box<Token<'a>>, Box<E>, Option<Box<Token<'a>>>),
+    Spread(Box<Token<'s>>, Box<E>, Option<Box<Token<'s>>>),
 }
 
 use RecordElementBase::*;
 
-pub type RecordElement<'a> = RecordElementBase<'a, Expression<'a>>;
+pub type RecordElement<'s> = RecordElementBase<'s, Expression<'s>>;
 
-pub type RecordPattern<'a> = RecordElementBase<'a, Pattern<'a>>;
+pub type RecordPattern<'s> = RecordElementBase<'s, Pattern<'s>>;
 
-impl<'a, E: Clone + PartialEq> RecordElementBase<'a, E> {
+impl<'s, E: Clone + PartialEq> RecordElementBase<'s, E> {
     pub fn has_tail_comma(&self) -> bool {
         self.tail_comma().is_some()
     }
-    pub fn tail_comma(&self) -> Option<&Token<'a>> {
+    pub fn tail_comma(&self) -> Option<&Token<'s>> {
         match self {
             Named(.., tail_comma)
             | OmitNamed(.., tail_comma)
@@ -39,7 +39,7 @@ impl<'a, E: Clone + PartialEq> RecordElementBase<'a, E> {
             | Spread(.., tail_comma) => tail_comma.as_deref(),
         }
     }
-    pub(super) fn set_tail_comma(&mut self, token: Box<Token<'a>>) {
+    pub(super) fn set_tail_comma(&mut self, token: Box<Token<'s>>) {
         match self {
             Named(.., tail_comma)
             | OmitNamed(.., tail_comma)
@@ -49,8 +49,8 @@ impl<'a, E: Clone + PartialEq> RecordElementBase<'a, E> {
     }
 }
 
-impl<'a, E: Clone + PartialEq + AstWalker<'a>> AstWalker<'a> for RecordElementBase<'a, E> {
-    fn walk(&mut self, visitor: &mut dyn AstVisitor<'a>) {
+impl<'s, E: Clone + PartialEq + AstWalker<'s>> AstWalker<'s> for RecordElementBase<'s, E> {
+    fn walk(&mut self, visitor: &mut dyn AstVisitor<'s>) {
         match self {
             Named(name, colon, value, tail_comma) => {
                 name.walk(visitor);
@@ -76,9 +76,9 @@ impl<'a, E: Clone + PartialEq + AstWalker<'a>> AstWalker<'a> for RecordElementBa
     }
 }
 
-impl<'a, E: Clone + PartialEq> Display for RecordElementBase<'a, E>
+impl<'s, E: Clone + PartialEq> Display for RecordElementBase<'s, E>
 where
-    RecordElementBase<'a, E>: DisplayIdent,
+    RecordElementBase<'s, E>: DisplayIdent,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.fmt_ident(f, 0)

@@ -2,7 +2,7 @@ use winnow::{ModalResult, Parser, combinator::alt};
 
 use super::{Input, Iterable, expression, ranges::range};
 
-pub(super) fn iterable<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Iterable<'a>> {
+pub(super) fn iterable<'s>(i: &mut Input<'_, 's>) -> ModalResult<Iterable<'s>> {
     alt((
         range.map(|r| Iterable::Range(Box::new(r))),
         expression.map(|e| Iterable::Value(Box::new(e))),

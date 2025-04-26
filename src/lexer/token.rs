@@ -13,11 +13,11 @@ use crate::{
 use super::{TokenKind, Trivia};
 
 #[derive(Debug, Clone)]
-pub struct Token<'a> {
-    pub kind: TokenKind<'a>,
+pub struct Token<'s> {
+    pub kind: TokenKind<'s>,
     pub range: SourceRange,
-    pub leading_trivia: Vec<Trivia<'a>>,
-    pub trailing_trivia: Vec<Trivia<'a>>,
+    pub leading_trivia: Vec<Trivia<'s>>,
+    pub trailing_trivia: Vec<Trivia<'s>>,
 }
 
 impl Location for Token<'_> {
@@ -30,8 +30,8 @@ impl Location for Token<'_> {
     }
 }
 
-impl<'a> Deref for Token<'a> {
-    type Target = TokenKind<'a>;
+impl<'s> Deref for Token<'s> {
+    type Target = TokenKind<'s>;
 
     fn deref(&self) -> &Self::Target {
         &self.kind
@@ -44,7 +44,7 @@ impl DerefMut for Token<'_> {
     }
 }
 
-impl<'a> Token<'a> {
+impl<'s> Token<'s> {
     pub(crate) fn wrap_as_unknown(self, error: ErrorCode) -> Self {
         Token {
             kind: TokenKind::unknown_range(self.kind, self.range.clone(), error),
@@ -54,7 +54,7 @@ impl<'a> Token<'a> {
         }
     }
 
-    pub(crate) fn unknown<R: Into<TokenKind<'a>>>(
+    pub(crate) fn unknown<R: Into<TokenKind<'s>>>(
         range: SourceRange,
         recovered: R,
         error: ErrorCode,
@@ -66,7 +66,7 @@ impl<'a> Token<'a> {
             trailing_trivia: vec![],
         }
     }
-    pub(crate) fn unknown_range<R: Into<TokenKind<'a>>>(
+    pub(crate) fn unknown_range<R: Into<TokenKind<'s>>>(
         token_range: SourceRange,
         recovered: R,
         error_range: SourceRange,
@@ -80,7 +80,7 @@ impl<'a> Token<'a> {
         }
     }
 
-    pub(crate) fn unknown_errors<E: Into<Vec<SourceError>>, R: Into<TokenKind<'a>>>(
+    pub(crate) fn unknown_errors<E: Into<Vec<SourceError>>, R: Into<TokenKind<'s>>>(
         range: SourceRange,
         recovered: R,
         errors: E,

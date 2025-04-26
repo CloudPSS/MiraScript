@@ -12,8 +12,8 @@ use super::{
     block_expressions::block_like_expression,
 };
 
-fn unknown_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
-    take_till(1.., |t: &Token<'a>| {
+fn unknown_expression<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
+    take_till(1.., |t: &Token<'s>| {
         *t == TokenKind::Eof
             || *t == Keyword::If
             || *t == Keyword::Fn
@@ -30,10 +30,10 @@ fn unknown_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> 
             || *t == Operator::OpenParen
             || *t == Operator::CloseParen
     })
-    .map(|t: &[Token<'a>]| Expression::unknown(t, ErrorCode::UnknownExpression))
+    .map(|t: &[Token<'s>]| Expression::unknown(t, ErrorCode::UnknownExpression))
     .parse_next(i)
 }
 
-pub fn expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
+pub fn expression<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
     alt((block_like_expression, basic_expression, unknown_expression)).parse_next(i)
 }

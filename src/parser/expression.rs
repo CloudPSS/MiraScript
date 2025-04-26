@@ -11,15 +11,15 @@ use super::{
 };
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
-pub enum Callable<'a> {
+pub enum Callable<'s> {
     /// `type`
-    Type(Token<'a>),
+    Type(Token<'s>),
     /// expression
-    Expression(Expression<'a>),
+    Expression(Expression<'s>),
 }
 
-impl<'a> AstWalker<'a> for Callable<'a> {
-    fn walk(&mut self, visitor: &mut dyn AstVisitor<'a>) {
+impl<'s> AstWalker<'s> for Callable<'s> {
+    fn walk(&mut self, visitor: &mut dyn AstVisitor<'s>) {
         use Callable::*;
         match self {
             Type(token) => token.walk(visitor),
@@ -46,39 +46,39 @@ impl DisplayIdent for Callable<'_> {
 }
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
-pub enum Expression<'a> {
+pub enum Expression<'s> {
     // primary
     /// string | number | ordinal | `true` | `false` | `nil`
-    Literal(Box<Token<'a>>),
+    Literal(Box<Token<'s>>),
     /// interpolated_string
     ///
     /// Holds a [crate::lexer::TokenKind::InterpolatedString], and a list of expressions
     /// that are interpolated into the string.
-    InterpolatedString(Box<Token<'a>>, Vec<Expression<'a>>),
+    InterpolatedString(Box<Token<'s>>, Vec<Expression<'s>>),
     /// identifier
-    Variable(Box<Token<'a>>),
+    Variable(Box<Token<'s>>),
     /// `(` expression `)`
-    Grouping(Box<Token<'a>>, Box<Expression<'a>>, Box<Token<'a>>),
+    Grouping(Box<Token<'s>>, Box<Expression<'s>>, Box<Token<'s>>),
     /// `(` element* `)`
     ///
     /// Use `()` for an empty record.
     ///
     /// For a single-element-unnamed record, use `(` expression `,` `)`.
-    Record(Box<Token<'a>>, Vec<RecordElement<'a>>, Box<Token<'a>>),
+    Record(Box<Token<'s>>, Vec<RecordElement<'s>>, Box<Token<'s>>),
     /// `[` element* `]`
     ///
     /// Use `[]` for an empty list.
-    Array(Box<Token<'a>>, Vec<ArrayElement<'a>>, Box<Token<'a>>),
+    Array(Box<Token<'s>>, Vec<ArrayElement<'s>>, Box<Token<'s>>),
 
     // postfix
     /// callable `(` arguments `)`
     ///
     /// Arguments are a list of expressions, trailing comma is optional.
     Call(
-        Box<Callable<'a>>,
-        Box<Token<'a>>,
-        Vec<Expression<'a>>,
-        Box<Token<'a>>,
+        Box<Callable<'s>>,
+        Box<Token<'s>>,
+        Vec<Expression<'s>>,
+        Box<Token<'s>>,
     ),
     /// expression `::` extension `(` arguments `)`
     /// extension
@@ -89,26 +89,26 @@ pub enum Expression<'a> {
     ///
     /// Like `Call`, but `expression` is used as the first argument.
     Extension(
-        Box<Expression<'a>>,
-        Box<Token<'a>>,
-        Box<Callable<'a>>,
-        Box<Token<'a>>,
-        Vec<Expression<'a>>,
-        Box<Token<'a>>,
+        Box<Expression<'s>>,
+        Box<Token<'s>>,
+        Box<Callable<'s>>,
+        Box<Token<'s>>,
+        Vec<Expression<'s>>,
+        Box<Token<'s>>,
     ),
     /// expression `.` field
     ///
     /// Field must be an identifier or an ordinal.
-    Access(Box<Expression<'a>>, Box<Token<'a>>, Box<Token<'a>>),
+    Access(Box<Expression<'s>>, Box<Token<'s>>, Box<Token<'s>>),
     /// expression `[` expression `]`
     Index(
-        Box<Expression<'a>>,
-        Box<Token<'a>>,
-        Box<Expression<'a>>,
-        Box<Token<'a>>,
+        Box<Expression<'s>>,
+        Box<Token<'s>>,
+        Box<Expression<'s>>,
+        Box<Token<'s>>,
     ),
     /// expression `!`
-    NonNil(Box<Expression<'a>>, Box<Token<'a>>),
+    NonNil(Box<Expression<'s>>, Box<Token<'s>>),
 
     /// op expression
     ///
@@ -116,7 +116,7 @@ pub enum Expression<'a> {
     /// - `!` logical not
     /// - `-` negation
     /// - `+` unary plus
-    Prefix(Box<Token<'a>>, Box<Expression<'a>>),
+    Prefix(Box<Token<'s>>, Box<Expression<'s>>),
 
     // infix
     /// expression op expression
@@ -131,9 +131,9 @@ pub enum Expression<'a> {
     /// 1. `&&` logical and
     /// 1. `||` logical or
     /// 1. `|>` `<|` forward and backward pipe
-    Infix(Box<Expression<'a>>, Box<Token<'a>>, Box<Expression<'a>>),
+    Infix(Box<Expression<'s>>, Box<Token<'s>>, Box<Expression<'s>>),
     /// expression `is` pattern
-    Is(Box<Expression<'a>>, Box<Token<'a>>, Box<Pattern<'a>>),
+    Is(Box<Expression<'s>>, Box<Token<'s>>, Box<Pattern<'s>>),
 
     // block-like
     /// `{` statements* expression? `}`
@@ -141,17 +141,17 @@ pub enum Expression<'a> {
     /// The value of the block is the value of the last expression.
     /// If no expression is present, the value is `nil`.
     Block(
-        Box<Token<'a>>,
-        Vec<Statement<'a>>,
-        Option<Box<Expression<'a>>>,
-        Box<Token<'a>>,
+        Box<Token<'s>>,
+        Vec<Statement<'s>>,
+        Option<Box<Expression<'s>>>,
+        Box<Token<'s>>,
     ),
     /// `loop` block_expression
     ///
     /// The final expression of the block must not present.
     ///
     /// The value of the block is the expression of the `break` statement if present. Otherwise, `nil`.
-    Loop(Box<Token<'a>>, Box<Expression<'a>>),
+    Loop(Box<Token<'s>>, Box<Expression<'s>>),
     /// `while` expression block_expression (`else` expression)?
     ///
     /// The final expression of the block must not present.
@@ -162,10 +162,10 @@ pub enum Expression<'a> {
     /// Otherwise, if the `else_block` is present,
     /// the value is the value of the `else_block`. Otherwise, `nil`.
     While(
-        Box<Token<'a>>,
-        Box<Expression<'a>>,
-        Box<Expression<'a>>,
-        Option<(Box<Token<'a>>, Box<Expression<'a>>)>,
+        Box<Token<'s>>,
+        Box<Expression<'s>>,
+        Box<Expression<'s>>,
+        Option<(Box<Token<'s>>, Box<Expression<'s>>)>,
     ),
     /// `for` pattern `in` expression block_expression (`else` expression)?
     ///
@@ -177,12 +177,12 @@ pub enum Expression<'a> {
     /// Otherwise, if the `else_block` is present,
     /// the value is the value of the `else_block`. Otherwise, `nil`.
     ForIn(
-        Box<Token<'a>>,
-        Box<Pattern<'a>>,
-        Box<Token<'a>>,
-        Box<Iterable<'a>>,
-        Box<Expression<'a>>,
-        Option<(Box<Token<'a>>, Box<Expression<'a>>)>,
+        Box<Token<'s>>,
+        Box<Pattern<'s>>,
+        Box<Token<'s>>,
+        Box<Iterable<'s>>,
+        Box<Expression<'s>>,
+        Option<(Box<Token<'s>>, Box<Expression<'s>>)>,
     ),
     /// `if` expression block_expression (`else` expression)?
     ///
@@ -190,10 +190,10 @@ pub enum Expression<'a> {
     ///
     /// The `else_block` is a block expression or an if expression.
     If(
-        Box<Token<'a>>,
-        Box<Expression<'a>>,
-        Box<Expression<'a>>,
-        Option<(Box<Token<'a>>, Box<Expression<'a>>)>,
+        Box<Token<'s>>,
+        Box<Expression<'s>>,
+        Box<Expression<'s>>,
+        Option<(Box<Token<'s>>, Box<Expression<'s>>)>,
     ),
     /// `match` expression `{` `case` ((literal | '_') block_expression)* `}`
     ///
@@ -201,27 +201,27 @@ pub enum Expression<'a> {
     ///
     /// If no match is found, the value is `nil`.
     Match(
-        Box<Token<'a>>,
-        Box<Expression<'a>>,
-        Box<Token<'a>>,
-        Vec<(Token<'a>, Pattern<'a>, Expression<'a>)>,
-        Box<Token<'a>>,
+        Box<Token<'s>>,
+        Box<Expression<'s>>,
+        Box<Token<'s>>,
+        Vec<(Token<'s>, Pattern<'s>, Expression<'s>)>,
+        Box<Token<'s>>,
     ),
     /// `fn` parameters? block_expression
     ///
     /// Just like function declarations, but without the identifier.
     /// See [Statement::Function] for more details.
-    Function(Box<Token<'a>>, Option<Vec<Token<'a>>>, Box<Expression<'a>>),
+    Function(Box<Token<'s>>, Option<Vec<Token<'s>>>, Box<Expression<'s>>),
     /// Unknown expression
     Unknown {
-        expression: Option<Box<Expression<'a>>>,
-        tokens: Vec<Token<'a>>,
+        expression: Option<Box<Expression<'s>>>,
+        tokens: Vec<Token<'s>>,
         errors: Vec<SourceError>,
     },
 }
 
-impl<'a> Expression<'a> {
-    pub(crate) fn wrap_as_unknown<T: Into<Vec<Token<'a>>>>(
+impl<'s> Expression<'s> {
+    pub(crate) fn wrap_as_unknown<T: Into<Vec<Token<'s>>>>(
         self,
         tokens: T,
         error: ErrorCode,
@@ -250,7 +250,7 @@ impl<'a> Expression<'a> {
         )
     }
 
-    pub(crate) fn unknown<T: Into<Vec<Token<'a>>>>(tokens: T, error: ErrorCode) -> Self {
+    pub(crate) fn unknown<T: Into<Vec<Token<'s>>>>(tokens: T, error: ErrorCode) -> Self {
         let tokens = tokens.into();
         assert!(!tokens.is_empty());
         let mut range = tokens[0].range.clone();
@@ -261,7 +261,7 @@ impl<'a> Expression<'a> {
             errors: vec![SourceError::new(range, error)],
         }
     }
-    pub(crate) fn unknown_range<T: Into<Vec<Token<'a>>>>(
+    pub(crate) fn unknown_range<T: Into<Vec<Token<'s>>>>(
         tokens: T,
         error_range: SourceRange,
         error: ErrorCode,
@@ -273,7 +273,7 @@ impl<'a> Expression<'a> {
         }
     }
 
-    pub(crate) fn unknown_errors<T: Into<Vec<Token<'a>>>, E: Into<Vec<SourceError>>>(
+    pub(crate) fn unknown_errors<T: Into<Vec<Token<'s>>>, E: Into<Vec<SourceError>>>(
         tokens: T,
         errors: E,
     ) -> Self {
@@ -285,8 +285,8 @@ impl<'a> Expression<'a> {
     }
 }
 
-impl<'a> AstWalker<'a> for Expression<'a> {
-    fn walk(&mut self, visitor: &mut dyn AstVisitor<'a>) {
+impl<'s> AstWalker<'s> for Expression<'s> {
+    fn walk(&mut self, visitor: &mut dyn AstVisitor<'s>) {
         use Expression::*;
         visitor.visit_expression(self);
         match self {

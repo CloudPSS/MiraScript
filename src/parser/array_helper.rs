@@ -16,12 +16,12 @@ use super::{
     helper::{token_boxed, token_or_insert},
 };
 
-fn array_element<'t, 'a: 't, E: Clone + PartialEq + 'a>(
-    element: impl Parser<Input<'t, 'a>, E, ErrMode<ContextError>> + Copy,
-    range: impl Parser<Input<'t, 'a>, Range<'a>, ErrMode<ContextError>> + Copy,
-    spread: impl Parser<Input<'t, 'a>, E, ErrMode<ContextError>> + Copy,
-) -> impl Parser<Input<'t, 'a>, ArrayElementBase<'a, E>, ErrMode<ContextError>> + Copy {
-    move |i: &mut Input<'t, 'a>| {
+fn array_element<'t, 's: 't, E: Clone + PartialEq + 's>(
+    element: impl Parser<Input<'t, 's>, E, ErrMode<ContextError>> + Copy,
+    range: impl Parser<Input<'t, 's>, Range<'s>, ErrMode<ContextError>> + Copy,
+    spread: impl Parser<Input<'t, 's>, E, ErrMode<ContextError>> + Copy,
+) -> impl Parser<Input<'t, 's>, ArrayElementBase<'s, E>, ErrMode<ContextError>> + Copy {
+    move |i: &mut Input<'t, 's>| {
         let first = peek(any).parse_next(i)?;
         if *first == Operator::CloseBracket {
             return fail.parse_next(i);
@@ -59,16 +59,16 @@ fn array_element<'t, 'a: 't, E: Clone + PartialEq + 'a>(
     }
 }
 
-pub(super) fn array_base<'t, 'a: 't, E: Clone + PartialEq + 'a>(
-    element: impl Parser<Input<'t, 'a>, E, ErrMode<ContextError>> + Copy,
-    range: impl Parser<Input<'t, 'a>, Range<'a>, ErrMode<ContextError>> + Copy,
-    spread: impl Parser<Input<'t, 'a>, E, ErrMode<ContextError>> + Copy,
+pub(super) fn array_base<'t, 's: 't, E: Clone + PartialEq + 's>(
+    element: impl Parser<Input<'t, 's>, E, ErrMode<ContextError>> + Copy,
+    range: impl Parser<Input<'t, 's>, Range<'s>, ErrMode<ContextError>> + Copy,
+    spread: impl Parser<Input<'t, 's>, E, ErrMode<ContextError>> + Copy,
 ) -> impl Parser<
-    Input<'t, 'a>,
-    (Box<Token<'a>>, Vec<ArrayElementBase<'a, E>>, Box<Token<'a>>),
+    Input<'t, 's>,
+    (Box<Token<'s>>, Vec<ArrayElementBase<'s, E>>, Box<Token<'s>>),
     ErrMode<ContextError>,
 > + Copy {
-    move |i: &mut Input<'t, 'a>| {
+    move |i: &mut Input<'t, 's>| {
         let open = token_boxed(Operator::OpenBracket).parse_next(i)?;
         let parts: Vec<_> = repeat(0.., array_element(element, range, spread)).parse_next(i)?;
         let close = token_or_insert(Operator::CloseBracket, ErrorCode::MissingCloseBracket)

@@ -5,23 +5,23 @@ use crate::{ansi::DisplayIdent, lexer::Token};
 use super::{AstVisitor, AstWalker, Expression, Pattern, Range};
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
-pub enum ArrayElementBase<'a, E: Clone + PartialEq> {
+pub enum ArrayElementBase<'s, E: Clone + PartialEq> {
     /// Element `,`?
-    Element(Box<E>, Option<Box<Token<'a>>>),
+    Element(Box<E>, Option<Box<Token<'s>>>),
     /// Range `,`?
-    Range(Box<Range<'a>>, Option<Box<Token<'a>>>),
+    Range(Box<Range<'s>>, Option<Box<Token<'s>>>),
     /// `..` Spread `,`?
-    Spread(Box<Token<'a>>, Box<E>, Option<Box<Token<'a>>>),
+    Spread(Box<Token<'s>>, Box<E>, Option<Box<Token<'s>>>),
 }
 
 use ArrayElementBase::*;
 
-pub type ArrayElement<'a> = ArrayElementBase<'a, Expression<'a>>;
+pub type ArrayElement<'s> = ArrayElementBase<'s, Expression<'s>>;
 
-pub type ArrayPattern<'a> = ArrayElementBase<'a, Pattern<'a>>;
+pub type ArrayPattern<'s> = ArrayElementBase<'s, Pattern<'s>>;
 
-impl<'a, E: Clone + PartialEq + AstWalker<'a>> AstWalker<'a> for ArrayElementBase<'a, E> {
-    fn walk(&mut self, visitor: &mut dyn AstVisitor<'a>) {
+impl<'s, E: Clone + PartialEq + AstWalker<'s>> AstWalker<'s> for ArrayElementBase<'s, E> {
+    fn walk(&mut self, visitor: &mut dyn AstVisitor<'s>) {
         match self {
             Element(value, c) => {
                 value.walk(visitor);
@@ -40,18 +40,18 @@ impl<'a, E: Clone + PartialEq + AstWalker<'a>> AstWalker<'a> for ArrayElementBas
     }
 }
 
-impl<'a, E: Clone + PartialEq> ArrayElementBase<'a, E> {
+impl<'s, E: Clone + PartialEq> ArrayElementBase<'s, E> {
     pub fn has_tail_comma(&self) -> bool {
         self.tail_comma().is_some()
     }
-    pub fn tail_comma(&self) -> Option<&Token<'a>> {
+    pub fn tail_comma(&self) -> Option<&Token<'s>> {
         match self {
             Element(.., tail_comma)
             | ArrayElementBase::Range(.., tail_comma)
             | Spread(.., tail_comma) => tail_comma.as_deref(),
         }
     }
-    pub(super) fn set_tail_comma(&mut self, token: Box<Token<'a>>) {
+    pub(super) fn set_tail_comma(&mut self, token: Box<Token<'s>>) {
         match self {
             Element(.., tail_comma)
             | ArrayElementBase::Range(.., tail_comma)
@@ -60,9 +60,9 @@ impl<'a, E: Clone + PartialEq> ArrayElementBase<'a, E> {
     }
 }
 
-impl<'a, E: Clone + PartialEq> Display for ArrayElementBase<'a, E>
+impl<'s, E: Clone + PartialEq> Display for ArrayElementBase<'s, E>
 where
-    ArrayElementBase<'a, E>: DisplayIdent,
+    ArrayElementBase<'s, E>: DisplayIdent,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.fmt_ident(f, 0)

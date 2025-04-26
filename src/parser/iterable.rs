@@ -5,13 +5,13 @@ use crate::ansi::DisplayIdent;
 use super::{AstVisitor, AstWalker, Expression, Range};
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Iterable<'a> {
-    Range(Box<Range<'a>>),
-    Value(Box<Expression<'a>>),
+pub enum Iterable<'s> {
+    Range(Box<Range<'s>>),
+    Value(Box<Expression<'s>>),
 }
 
-impl<'a> AstWalker<'a> for Iterable<'a> {
-    fn walk(&mut self, visitor: &mut dyn AstVisitor<'a>) {
+impl<'s> AstWalker<'s> for Iterable<'s> {
+    fn walk(&mut self, visitor: &mut dyn AstVisitor<'s>) {
         match self {
             Iterable::Range(range) => range.walk(visitor),
             Iterable::Value(value) => value.walk(visitor),

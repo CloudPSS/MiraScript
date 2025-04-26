@@ -12,16 +12,16 @@ use super::{AstVisitor, AstWalker, Expression, Statement};
 ///
 /// A script is a source file that contains a sequence of statements and an optional expression.
 #[derive(Debug, Clone, PartialEq)]
-pub struct Script<'a>(
-    pub Vec<Statement<'a>>,
-    pub Option<Box<Expression<'a>>>,
-    pub Box<Token<'a>>,
+pub struct Script<'s>(
+    pub Vec<Statement<'s>>,
+    pub Option<Box<Expression<'s>>>,
+    pub Box<Token<'s>>,
 );
 
-struct ScriptIterMut<'a>(std::slice::Iter<'a, Statement<'a>>);
+struct ScriptIterMut<'s>(std::slice::Iter<'s, Statement<'s>>);
 
-impl<'a> AstWalker<'a> for Script<'a> {
-    fn walk(&mut self, visitor: &mut dyn AstVisitor<'a>) {
+impl<'s> AstWalker<'s> for Script<'s> {
+    fn walk(&mut self, visitor: &mut dyn AstVisitor<'s>) {
         for statement in &mut self.0 {
             statement.walk(visitor);
         }
@@ -32,8 +32,8 @@ impl<'a> AstWalker<'a> for Script<'a> {
     }
 }
 
-impl<'a> Deref for Script<'a> {
-    type Target = Vec<Statement<'a>>;
+impl<'s> Deref for Script<'s> {
+    type Target = Vec<Statement<'s>>;
 
     fn deref(&self) -> &Self::Target {
         &self.0

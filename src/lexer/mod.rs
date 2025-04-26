@@ -16,13 +16,13 @@ pub use token::Token;
 pub use token_kind::TokenKind;
 pub use trivia::Trivia;
 
-pub type Input<'a> = LocatingSlice<&'a str>;
+pub type Input<'s> = LocatingSlice<&'s str>;
 
 pub fn to_input(text: &str) -> Input<'_> {
     LocatingSlice::new(text)
 }
 
-pub fn lex<'a>(input: &mut Input<'a>) -> ModalResult<Vec<Token<'a>>> {
+pub fn lex<'s>(input: &mut Input<'s>) -> ModalResult<Vec<Token<'s>>> {
     let mut tokens = vec![];
     // let mut trivia = vec![];
     loop {
@@ -40,7 +40,7 @@ pub fn lex<'a>(input: &mut Input<'a>) -> ModalResult<Vec<Token<'a>>> {
     Ok(tokens)
 }
 
-pub fn lex_string<'a>(input: &mut Input<'a>) -> ModalResult<Vec<Token<'a>>> {
+pub fn lex_string<'s>(input: &mut Input<'s>) -> ModalResult<Vec<Token<'s>>> {
     let str = string::string_content(None, 1)
         .with_span()
         .map(|(s, range)| Token {
@@ -59,11 +59,11 @@ pub fn lex_string<'a>(input: &mut Input<'a>) -> ModalResult<Vec<Token<'a>>> {
     Ok(vec![str, eof])
 }
 
-pub fn lex_balanced<'a>(
-    input: &mut Input<'a>,
+pub fn lex_balanced<'s>(
+    input: &mut Input<'s>,
     open: Operator,
     close: Operator,
-) -> ModalResult<Vec<Token<'a>>> {
+) -> ModalResult<Vec<Token<'s>>> {
     let mut tokens = vec![];
     let mut depth = 0;
     while tokens.is_empty() || depth > 0 {

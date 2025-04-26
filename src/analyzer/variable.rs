@@ -12,8 +12,8 @@ pub(crate) enum BindType {
     RestParameter,
 }
 
-pub(crate) struct Variable<'a> {
-    pub name: Cow<'a, str>,
+pub(crate) struct Variable<'s> {
+    pub name: Cow<'s, str>,
     pub is_mutable: bool,
     pub bind_type: BindType,
 }

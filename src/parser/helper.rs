@@ -10,9 +10,9 @@ use crate::lexer::{Keyword, Operator, Token, TokenKind};
 use super::statements::statement;
 use super::{Expression, Input, Statement, expression};
 
-pub(super) fn statements_and_expression<'a>(
-    i: &mut Input<'_, 'a>,
-) -> ModalResult<(Vec<Statement<'a>>, Option<Box<Expression<'a>>>)> {
+pub(super) fn statements_and_expression<'s>(
+    i: &mut Input<'_, 's>,
+) -> ModalResult<(Vec<Statement<'s>>, Option<Box<Expression<'s>>>)> {
     let (mut statements, expression): (Vec<_>, _) =
         (repeat(0.., statement), opt(expression.map(Box::new))).parse_next(i)?;
     if expression.is_some() || statements.is_empty() {
@@ -30,7 +30,7 @@ pub(super) fn statements_and_expression<'a>(
     Ok((statements, expression))
 }
 
-pub(super) fn parameter_list<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Option<Vec<Token<'a>>>> {
+pub(super) fn parameter_list<'s>(i: &mut Input<'_, 's>) -> ModalResult<Option<Vec<Token<'s>>>> {
     let t = peek(any).parse_next(i)?;
     if *t != Operator::OpenParen {
         return Ok(None);
@@ -42,21 +42,21 @@ pub(super) fn parameter_list<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Option<Ve
             repeat(
                 0..,
                 terminated(
-                    one_of(|t: &Token<'a>| matches!(&t.kind, &TokenKind::Identifier(_))),
+                    one_of(|t: &Token<'s>| matches!(&t.kind, &TokenKind::Identifier(_))),
                     token(Operator::Comma),
                 ),
             )
-            .fold(Vec::new, |mut v, t: &Token<'a>| {
+            .fold(Vec::new, |mut v, t: &Token<'s>| {
                 v.push(t.to_owned());
                 v
             }),
-            opt(one_of(|t: &Token<'a>| {
+            opt(one_of(|t: &Token<'s>| {
                 matches!(&t.kind, &TokenKind::Identifier(_))
             })),
         ),
         token(Operator::CloseParen),
     )
-    .map(|(mut v, t): (Vec<Token<'a>>, Option<&Token<'a>>)| {
+    .map(|(mut v, t): (Vec<Token<'s>>, Option<&Token<'s>>)| {
         if let Some(t) = t {
             v.push(t.to_owned());
         }
@@ -65,8 +65,8 @@ pub(super) fn parameter_list<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Option<Ve
     .parse_next(i)
 }
 
-pub(super) fn literal_token<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Token<'a>> {
-    one_of(|t: &Token<'a>| {
+pub(super) fn literal_token<'s>(i: &mut Input<'_, 's>) -> ModalResult<Token<'s>> {
+    one_of(|t: &Token<'s>| {
         matches!(&t.kind, &TokenKind::Number(_))
             || matches!(&t.kind, &TokenKind::Ordinal(_))
             || matches!(&t.kind, &TokenKind::String(_))
@@ -76,21 +76,21 @@ pub(super) fn literal_token<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Token<'a>>
             || *t == Keyword::Nan
             || *t == Keyword::Inf
     })
-    .map(|t: &Token<'a>| t.to_owned())
+    .map(|t: &Token<'s>| t.to_owned())
     .parse_next(i)
 }
 
-pub(super) fn variable_token<'t, 'a: 't>(
+pub(super) fn variable_token<'t, 's: 't>(
     include_underscore: bool,
     include_global: bool,
-) -> impl Parser<Input<'t, 'a>, Token<'a>, ErrMode<ContextError>> + Copy {
-    move |i: &mut Input<'t, 'a>| {
-        let t = one_of(|t: &Token<'a>| {
+) -> impl Parser<Input<'t, 's>, Token<'s>, ErrMode<ContextError>> + Copy {
+    move |i: &mut Input<'t, 's>| {
+        let t = one_of(|t: &Token<'s>| {
             matches!(&t.kind, &TokenKind::Identifier(_))
                 || (*t == Keyword::Underscore)
                 || (*t == Keyword::Global)
         })
-        .map(|t: &Token<'a>| t.to_owned())
+        .map(|t: &Token<'s>| t.to_owned())
         .parse_next(i)?;
         let e = if !include_underscore && t == Keyword::Underscore {
             Token::unknown(t.range, t.kind, ErrorCode::UnexpectedGlobal)
@@ -103,37 +103,37 @@ pub(super) fn variable_token<'t, 'a: 't>(
     }
 }
 
-pub(super) fn token<'t, 'a: 't>(
-    token: impl Into<TokenKind<'a>> + Clone + PartialEq<Token<'a>>,
-) -> impl Parser<Input<'t, 'a>, Token<'a>, ErrMode<ContextError>> {
-    move |i: &mut Input<'t, 'a>| {
-        one_of(|t: &Token<'a>| token == *t)
-            .map(|t: &Token<'a>| t.to_owned())
+pub(super) fn token<'t, 's: 't>(
+    token: impl Into<TokenKind<'s>> + Clone + PartialEq<Token<'s>>,
+) -> impl Parser<Input<'t, 's>, Token<'s>, ErrMode<ContextError>> {
+    move |i: &mut Input<'t, 's>| {
+        one_of(|t: &Token<'s>| token == *t)
+            .map(|t: &Token<'s>| t.to_owned())
             .parse_next(i)
     }
 }
-pub(super) fn token_boxed<'t, 'a: 't>(
-    token: impl Into<TokenKind<'a>> + Clone + PartialEq<Token<'a>>,
-) -> impl Parser<Input<'t, 'a>, Box<Token<'a>>, ErrMode<ContextError>> {
-    move |i: &mut Input<'t, 'a>| {
-        one_of(|t: &Token<'a>| token == *t)
-            .map(|t: &Token<'a>| Box::new(t.to_owned()))
+pub(super) fn token_boxed<'t, 's: 't>(
+    token: impl Into<TokenKind<'s>> + Clone + PartialEq<Token<'s>>,
+) -> impl Parser<Input<'t, 's>, Box<Token<'s>>, ErrMode<ContextError>> {
+    move |i: &mut Input<'t, 's>| {
+        one_of(|t: &Token<'s>| token == *t)
+            .map(|t: &Token<'s>| Box::new(t.to_owned()))
             .parse_next(i)
     }
 }
 
-pub(super) fn token_or_insert<'t, 'a: 't, T>(
+pub(super) fn token_or_insert<'t, 's: 't, T>(
     token: T,
     error: ErrorCode,
-) -> impl Parser<Input<'t, 'a>, Token<'a>, ErrMode<ContextError>>
+) -> impl Parser<Input<'t, 's>, Token<'s>, ErrMode<ContextError>>
 where
-    T: Into<TokenKind<'a>> + Clone,
-    Token<'a>: PartialEq<T>,
+    T: Into<TokenKind<'s>> + Clone,
+    Token<'s>: PartialEq<T>,
 {
-    move |i: &mut Input<'_, 'a>| -> ModalResult<Token<'a>> {
+    move |i: &mut Input<'_, 's>| -> ModalResult<Token<'s>> {
         let pos = Location::previous_token_end(i);
-        opt(one_of(|t: &Token<'a>| *t == token))
-            .map(|t: Option<&Token<'a>>| match t {
+        opt(one_of(|t: &Token<'s>| *t == token))
+            .map(|t: Option<&Token<'s>>| match t {
                 Some(t) => t.to_owned(),
                 None => Token::unknown(
                     SourceRange {

@@ -12,9 +12,9 @@ use super::iterables::iterable;
 use super::patterns::{pattern, pattern_or_insert};
 use super::{Expression, Input};
 
-fn optional_else<'a>(
-    i: &mut Input<'_, 'a>,
-) -> ModalResult<Option<(Box<Token<'a>>, Box<Expression<'a>>)>> {
+fn optional_else<'s>(
+    i: &mut Input<'_, 's>,
+) -> ModalResult<Option<(Box<Token<'s>>, Box<Expression<'s>>)>> {
     let Some(kw_else) = opt(token_boxed(Keyword::Else)).parse_next(i)? else {
         return Ok(None);
     };
@@ -26,7 +26,7 @@ fn optional_else<'a>(
     Ok(Some((kw_else, block)))
 }
 
-pub(super) fn if_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
+pub(super) fn if_expression<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
     seq!(Expression::If(
         token_boxed(Keyword::If),
         expression.map(Box::new),
@@ -36,7 +36,7 @@ pub(super) fn if_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression
     .parse_next(i)
 }
 
-pub(super) fn block_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
+pub(super) fn block_expression<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
     (
         token_or_insert(Operator::OpenBrace, ErrorCode::MissingOpenBrace).map(Box::new),
         statements_and_expression,
@@ -48,7 +48,7 @@ pub(super) fn block_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Express
         .parse_next(i)
 }
 
-pub(super) fn fn_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
+pub(super) fn fn_expression<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
     seq!(Expression::Function(
         token_boxed(Keyword::Fn),
         parameter_list,
@@ -57,7 +57,7 @@ pub(super) fn fn_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression
     .parse_next(i)
 }
 
-pub(super) fn loop_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
+pub(super) fn loop_expression<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
     seq!(Expression::Loop(
         token_boxed(Keyword::Loop),
         block_expression.map(Box::new),
@@ -65,7 +65,7 @@ pub(super) fn loop_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expressi
     .parse_next(i)
 }
 
-pub(super) fn while_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
+pub(super) fn while_expression<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
     seq!(Expression::While(
         token_boxed(Keyword::While),
         expression.map(Box::new),
@@ -75,7 +75,7 @@ pub(super) fn while_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Express
     .parse_next(i)
 }
 
-pub(super) fn match_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
+pub(super) fn match_expression<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
     seq!(Expression::Match(
         token_boxed(Keyword::Match),
         expression.map(Box::new),
@@ -102,7 +102,7 @@ pub(super) fn match_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Express
     .parse_next(i)
 }
 
-pub(super) fn for_in_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
+pub(super) fn for_in_expression<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
     seq!(Expression::ForIn(
         token_boxed(Keyword::For),
         pattern_or_insert(false).map(Box::new),
@@ -114,7 +114,7 @@ pub(super) fn for_in_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expres
     .parse_next(i)
 }
 
-pub(super) fn block_like_expression<'a>(i: &mut Input<'_, 'a>) -> ModalResult<Expression<'a>> {
+pub(super) fn block_like_expression<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
     dispatch! {peek(any);
         t if *t == Operator::OpenBrace => block_expression,
         t if *t == Keyword::If => if_expression,

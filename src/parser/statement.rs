@@ -6,34 +6,34 @@ use crate::{
     lexer::Token,
 };
 
-use super::{AstVisitor, Expression, Pattern, AstWalker};
+use super::{AstVisitor, AstWalker, Expression, Pattern};
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
-pub enum Statement<'a> {
+pub enum Statement<'s> {
     /// `';'`
     ///
     /// An empty statement.
-    Empty(Box<Token<'a>>),
+    Empty(Box<Token<'s>>),
     /// `expression ';'`
-    Expression(Box<Expression<'a>>, Box<Token<'a>>),
+    Expression(Box<Expression<'s>>, Box<Token<'s>>),
     /// `expression_ends_with_block`
     ///
     /// No trailing semicolon in this case. For expressions that end with a semicolon, use [Statement::Expression].
-    BlockExpression(Box<Expression<'a>>),
+    BlockExpression(Box<Expression<'s>>),
     /// `'let' pattern '=' expression ';'`
     Bind(
-        Box<Token<'a>>,
-        Box<Pattern<'a>>,
-        Box<Token<'a>>,
-        Box<Expression<'a>>,
-        Box<Token<'a>>,
+        Box<Token<'s>>,
+        Box<Pattern<'s>>,
+        Box<Token<'s>>,
+        Box<Expression<'s>>,
+        Box<Token<'s>>,
     ),
     /// `pattern_rebind '=' expression ';'`
     Rebind(
-        Box<Pattern<'a>>,
-        Box<Token<'a>>,
-        Box<Expression<'a>>,
-        Box<Token<'a>>,
+        Box<Pattern<'s>>,
+        Box<Token<'s>>,
+        Box<Expression<'s>>,
+        Box<Token<'s>>,
     ),
     /// `expression ('=' | '+=' | '-=' | '*=' | '/=' | '%=' | '^=' | '&&=' | '||=') expression ';'`
     ///
@@ -42,10 +42,10 @@ pub enum Statement<'a> {
     /// - `expression_access` where the accessed is an extern or `global`
     /// - `expression_index` where the indexed is an extern or `global`
     Assign(
-        Box<Expression<'a>>,
-        Box<Token<'a>>,
-        Box<Expression<'a>>,
-        Box<Token<'a>>,
+        Box<Expression<'s>>,
+        Box<Token<'s>>,
+        Box<Expression<'s>>,
+        Box<Token<'s>>,
     ),
     /// `'fn' identifier (parameters) block_expression`
     ///
@@ -60,30 +60,30 @@ pub enum Statement<'a> {
     ///
     /// The function body is a block expression.
     Function(
-        Box<Token<'a>>,
-        Box<Token<'a>>,
-        Option<Vec<Token<'a>>>,
-        Box<Expression<'a>>,
+        Box<Token<'s>>,
+        Box<Token<'s>>,
+        Option<Vec<Token<'s>>>,
+        Box<Expression<'s>>,
     ),
     /// `return expression;` or `return;`
     ///
     /// If the expression is omitted, the return value is `nil`.
-    Return(Box<Token<'a>>, Option<Box<Expression<'a>>>, Box<Token<'a>>),
+    Return(Box<Token<'s>>, Option<Box<Expression<'s>>>, Box<Token<'s>>),
     /// `break expression;` or `break;`
     ///
     /// The expression is only allowed in a `loop` expression.
-    Break(Box<Token<'a>>, Option<Box<Expression<'a>>>, Box<Token<'a>>),
+    Break(Box<Token<'s>>, Option<Box<Expression<'s>>>, Box<Token<'s>>),
     /// `continue;`
-    Continue(Box<Token<'a>>, Box<Token<'a>>),
+    Continue(Box<Token<'s>>, Box<Token<'s>>),
     /// Unknown statement.
     Unknown {
-        tokens: Vec<Token<'a>>,
+        tokens: Vec<Token<'s>>,
         errors: Vec<SourceError>,
     },
 }
 
-impl<'a> Statement<'a> {
-    pub(crate) fn unknown<T: Into<Vec<Token<'a>>>>(tokens: T, error: ErrorCode) -> Self {
+impl<'s> Statement<'s> {
+    pub(crate) fn unknown<T: Into<Vec<Token<'s>>>>(tokens: T, error: ErrorCode) -> Self {
         let tokens = tokens.into();
         assert!(!tokens.is_empty());
         let mut range = tokens[0].range.clone();
@@ -94,7 +94,7 @@ impl<'a> Statement<'a> {
         }
     }
 
-    pub(crate) fn unknown_range<T: Into<Vec<Token<'a>>>>(
+    pub(crate) fn unknown_range<T: Into<Vec<Token<'s>>>>(
         tokens: T,
         error_range: SourceRange,
         error: ErrorCode,
@@ -105,7 +105,7 @@ impl<'a> Statement<'a> {
         }
     }
 
-    pub(crate) fn unknown_errors<T: Into<Vec<Token<'a>>>, E: Into<Vec<SourceError>>>(
+    pub(crate) fn unknown_errors<T: Into<Vec<Token<'s>>>, E: Into<Vec<SourceError>>>(
         tokens: T,
         errors: E,
     ) -> Self {
@@ -116,8 +116,8 @@ impl<'a> Statement<'a> {
     }
 }
 
-impl<'a> AstWalker<'a> for Statement<'a> {
-    fn walk(&mut self, visitor: &mut dyn AstVisitor<'a>) {
+impl<'s> AstWalker<'s> for Statement<'s> {
+    fn walk(&mut self, visitor: &mut dyn AstVisitor<'s>) {
         use Statement::*;
         visitor.visit_statement(self);
         match self {

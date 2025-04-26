@@ -12,7 +12,7 @@ use super::helper::{is_identifier_continue, is_identifier_start};
 use super::numeric::{number, ordinal};
 use super::{Input, Keyword, Operator, Token, TokenKind, string};
 
-pub(super) fn identifier<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
+pub(super) fn identifier<'s>(i: &mut Input<'s>) -> ModalResult<TokenKind<'s>> {
     trace(
         "identifier",
         (
@@ -31,11 +31,11 @@ pub(super) fn identifier<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
     .parse_next(i)
 }
 
-pub(super) fn token<'a>(
-    input: &mut Input<'a>,
-    prev_token: &Option<&Token<'a>>,
-) -> ModalResult<Token<'a>> {
-    let token = |i: &mut Input<'a>| {
+pub(super) fn token<'s>(
+    input: &mut Input<'s>,
+    prev_token: &Option<&Token<'s>>,
+) -> ModalResult<Token<'s>> {
+    let token = |i: &mut Input<'s>| {
         dispatch!{peek(any);
             '0'..='9' => if prev_token.map(|t| &t.kind) == Some(&TokenKind::Operator(Operator::Dot)) {
                 ordinal

@@ -17,28 +17,28 @@ use super::lex_balanced;
 use super::{helper::is_identifier_start, tokens::identifier};
 
 #[derive(Debug, Clone, PartialEq)]
-enum StringFragment<'a> {
-    Literal(&'a str),
+enum StringFragment<'s> {
+    Literal(&'s str),
     EscapedChar(char),
     InvalidEscapedChar(SourceRange),
-    Interpolation(Vec<Token<'a>>),
+    Interpolation(Vec<Token<'s>>),
     EndOfString,
     EndOfFile,
 }
 
 const QUOTES: [char; 3] = ['\'', '"', '`'];
 
-pub(super) fn string<'a>(i: &mut Input<'a>) -> ModalResult<TokenKind<'a>> {
+pub(super) fn string<'s>(i: &mut Input<'s>) -> ModalResult<TokenKind<'s>> {
     let leading_ats = take_while(0.., ['@']).map(str::len).parse_next(i)?;
     let quote_begin = one_of(QUOTES).parse_next(i)?;
     string_content(Some(quote_begin), leading_ats).parse_next(i)
 }
 
-pub(super) fn string_content<'a>(
+pub(super) fn string_content<'s>(
     quote_begin: Option<char>,
     leading_ats: usize,
-) -> impl Parser<Input<'a>, TokenKind<'a>, ErrMode<ContextError>> {
-    move |i: &mut Input<'a>| {
+) -> impl Parser<Input<'s>, TokenKind<'s>, ErrMode<ContextError>> {
+    move |i: &mut Input<'s>| {
         let mut content: Vec<_> = vec![];
         let unterminated = loop {
             let frag = fragment(quote_begin, leading_ats).parse_next(i)?;
@@ -132,11 +132,11 @@ pub(super) fn string_content<'a>(
     }
 }
 
-fn fragment<'a>(
+fn fragment<'s>(
     quote_begin: Option<char>,
     leading_ats: usize,
-) -> impl Parser<Input<'a>, StringFragment<'a>, ErrMode<ContextError>> {
-    move |i: &mut Input<'a>| {
+) -> impl Parser<Input<'s>, StringFragment<'s>, ErrMode<ContextError>> {
+    move |i: &mut Input<'s>| {
         alt((
             literal_str(quote_begin, leading_ats > 0).map(StringFragment::Literal),
             escaped_char(leading_ats),
@@ -147,11 +147,11 @@ fn fragment<'a>(
     }
 }
 
-fn maybe_end_of_string<'a>(
+fn maybe_end_of_string<'s>(
     quote: Option<char>,
     ats: usize,
-) -> impl Parser<Input<'a>, StringFragment<'a>, ErrMode<ContextError>> {
-    move |i: &mut Input<'a>| {
+) -> impl Parser<Input<'s>, StringFragment<'s>, ErrMode<ContextError>> {
+    move |i: &mut Input<'s>| {
         let Some(quote) = quote else {
             return fail.parse_next(i);
         };
@@ -168,11 +168,11 @@ fn maybe_end_of_string<'a>(
     }
 }
 
-fn literal_str<'a>(
+fn literal_str<'s>(
     quote: Option<char>,
     verbatim: bool,
-) -> impl Parser<Input<'a>, &'a str, ErrMode<ContextError>> {
-    move |i: &mut Input<'a>| {
+) -> impl Parser<Input<'s>, &'s str, ErrMode<ContextError>> {
+    move |i: &mut Input<'s>| {
         take_till(1.., |ch| {
             ch == '$' || (!verbatim && ch == '\\') || (quote.is_some() && quote.unwrap() == ch)
         })
@@ -180,10 +180,10 @@ fn literal_str<'a>(
     }
 }
 
-fn escaped_char<'a>(
+fn escaped_char<'s>(
     ats: usize,
-) -> impl Parser<Input<'a>, StringFragment<'a>, ErrMode<ContextError>> {
-    move |i: &mut Input<'a>| {
+) -> impl Parser<Input<'s>, StringFragment<'s>, ErrMode<ContextError>> {
+    move |i: &mut Input<'s>| {
         if ats == 0 {
             dispatch! {one_of(['\\','$']);
                 '\\' => escaped_char_impl,
@@ -205,7 +205,7 @@ fn escaped_char<'a>(
     }
 }
 
-fn escaped_char_impl<'a>(i: &mut Input<'a>) -> ModalResult<StringFragment<'a>> {
+fn escaped_char_impl<'s>(i: &mut Input<'s>) -> ModalResult<StringFragment<'s>> {
     alt((
         'r'.value(StringFragment::EscapedChar('\r')),
         'n'.value(StringFragment::EscapedChar('\n')),
@@ -246,10 +246,10 @@ fn escaped_char_impl<'a>(i: &mut Input<'a>) -> ModalResult<StringFragment<'a>> {
     .parse_next(i)
 }
 
-fn interpolation<'a>(
+fn interpolation<'s>(
     dollar_count: usize,
-) -> impl Parser<Input<'a>, StringFragment<'a>, ErrMode<ContextError>> {
-    move |i: &mut Input<'a>| {
+) -> impl Parser<Input<'s>, StringFragment<'s>, ErrMode<ContextError>> {
+    move |i: &mut Input<'s>| {
         // save cp
         let cp = i.checkpoint();
 

@@ -2,8 +2,8 @@ use crate::parser::Expression;
 
 use super::{Closure, Variable};
 
-pub(crate) struct Block<'a> {
-    pub variables: Vec<Variable<'a>>,
-    pub functions: Vec<Closure<'a>>,
-    pub expression: Expression<'a>,
+pub(crate) struct Block<'s> {
+    pub variables: Vec<Variable<'s>>,
+    pub functions: Vec<Closure<'s>>,
+    pub expression: Expression<'s>,
 }
