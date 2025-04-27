@@ -4,7 +4,7 @@ use std::str::FromStr;
 use winnow::ascii::space0;
 use winnow::combinator::{alt, dispatch, eof, fail, opt, peek, preceded, trace};
 use winnow::prelude::*;
-use winnow::token::{any, one_of, take, take_while};
+use winnow::token::{any, take, take_while};
 
 use crate::error::{ErrorCode, SourceError};
 
@@ -16,7 +16,7 @@ pub(super) fn identifier<'s>(i: &mut Input<'s>) -> ModalResult<TokenKind<'s>> {
     trace(
         "identifier",
         (
-            one_of(is_identifier_start),
+            take_while(1.., is_identifier_start),
             take_while(0.., is_identifier_continue),
         )
             .take()
