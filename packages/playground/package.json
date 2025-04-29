@@ -1,5 +1,10 @@
 {
   "dependencies": {
-    "mira-wasm": "workspace:*"
+    "mira-wasm": "workspace:*",
+    "monaco-editor": "^0.52.2"
+  },
+  "devDependencies": {
+    "vite": "^6.3.3",
+    "vite-plugin-checker": "^0.9.1"
   }
 }

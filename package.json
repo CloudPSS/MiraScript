@@ -1,4 +1,25 @@
 {
+  "name": "mira",
+  "version": "0.0.1",
   "private": true,
-  "packageManager": "pnpm@10.10.0"
+  "packageManager": "pnpm@10.10.0",
+  "type": "module",
+  "scripts": {
+    "prepare": "husky || echo Failed to initialize husky",
+    "format": "prettier --cache --cache-strategy content --ignore-path .gitignore --write .",
+    "lint": "eslint --cache --cache-location node_modules/.cache/eslint/ --cache-strategy content"
+  },
+  "prettier": "@cloudpss/prettier-config",
+  "commitlint": {
+    "extends": "@cloudpss"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "@cloudpss/commitlint-config": "^3.0.21",
+    "@cloudpss/eslint-config": "^3.0.21",
+    "@cloudpss/lint-staged-config": "^3.0.21",
+    "@cloudpss/prettier-config": "^3.0.21",
+    "@cloudpss/tsconfig": "^3.0.21",
+    "husky": "^9.1.7"
+  }
 }
