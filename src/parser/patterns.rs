@@ -132,21 +132,17 @@ fn constants_pattern<'s>(i: &mut Input<'_, 's>) -> ModalResult<Pattern<'s>> {
             let Some(op) = t else {
                 return Pattern::Constant(None, Box::new(l));
             };
-            let result = Pattern::Constant(Some(op.to_owned().into()), Box::new(l.clone()));
             if *op == Operator::Exclamation {
-                return result
+                return Pattern::Constant(None, Box::from(l.clone()))
                     .wrap_as_unknown([op.to_owned(), l], ErrorCode::ExclamationInConstantsPattern);
             }
-            if !(matches!(l.kind, TokenKind::Number(..))
-                || matches!(l.kind, TokenKind::Ordinal(..))
-                || l == Keyword::Inf)
-            {
-                return result.wrap_as_unknown(
-                    [op.to_owned(), l],
+            if !(l.is_number() || l.is_ordinal() || l == Keyword::Inf) {
+                return Pattern::Constant(None, Box::from(l.clone())).wrap_as_unknown(
+                    [op.to_owned(), l.clone()],
                     ErrorCode::UnexpectedOperatorInConstantsPattern,
                 );
             }
-            result
+            Pattern::Constant(Some(op.to_owned().into()), Box::new(l.clone()))
         })
         .parse_next(i)
 }

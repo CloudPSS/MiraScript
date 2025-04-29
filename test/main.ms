@@ -116,5 +116,4 @@ x;
      /* EOF 
   dd   */ 
     (  a, b, [1, ..], ..) = x;
-      a::map.1.xx()::(fn{})()::a['x']::b(); type(e); e::type();
-  
+      a::map.1.xx()::(fn{})()::a['x']::b(); type(e); e::type();\

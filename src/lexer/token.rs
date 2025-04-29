@@ -111,7 +111,7 @@ impl DisplayIdent for Token<'_> {
         for trivia in &self.leading_trivia {
             trivia.fmt_ident(f, ident)?;
         }
-        <TokenKind as Display>::fmt(&self.kind, f)?;
+        self.kind.fmt_ident(f, ident)?;
         for trivia in &self.trailing_trivia {
             trivia.fmt_ident(f, ident)?;
         }

@@ -1,6 +1,6 @@
 use std::{borrow::Cow, fmt::Display};
 
-use crate::ansi::{INTERPOLATED, NUMBER, ORDINAL, RECOVER, RESET, STRING, VARIABLE};
+use crate::ansi::{DisplayIdent, INTERPOLATED, NUMBER, ORDINAL, RECOVER, RESET, STRING, VARIABLE};
 use crate::error::{ErrorCode, SourceError, SourceRange};
 
 use super::{Keyword, Operator, Token};
@@ -94,6 +94,44 @@ impl Display for TokenKind<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Eof => write!(f, "␃"),
+            Self::Identifier(s) => write!(f, "{s}"),
+            Self::Ordinal(n) => write!(f, "{n}"),
+            Self::Number(n) => write!(f, "{n}"),
+            Self::String(s) => {
+                write!(f, "\"{}\"", s.escape_debug())
+            }
+            Self::InterpolatedString(s, e) => {
+                write!(f, "\"")?;
+                assert_eq!(s.len(), e.len() + 1, "Invalid string interpolation");
+                let mut s_iter = s.iter();
+                let first = s_iter.next().ok_or(std::fmt::Error)?;
+                write!(f, "{}", first.escape_debug())?;
+                for (s, e) in s_iter.zip(e.iter()) {
+                    write!(f, "$")?;
+                    for token in e {
+                        write!(f, "{token}")?;
+                    }
+                    write!(f, "{}", s.escape_debug())?;
+                }
+                write!(f, "\"")
+            }
+            Self::Operator(op) => write!(f, "{}", op),
+            Self::Keyword(kw) => write!(f, "{}", kw),
+            Self::Unknown { recovered, .. } => {
+                if let Some(recovered) = recovered {
+                    write!(f, "{recovered}")
+                } else {
+                    write!(f, "<?>")
+                }
+            }
+        }
+    }
+}
+
+impl DisplayIdent for TokenKind<'_> {
+    fn fmt_ident(&self, f: &mut std::fmt::Formatter<'_>, ident: usize) -> std::fmt::Result {
+        match self {
+            Self::Eof => write!(f, "␃"),
             Self::Identifier(s) => write!(f, "{VARIABLE}{s}{RESET}"),
             Self::Ordinal(n) => write!(f, "{ORDINAL}{n}{RESET}"),
             Self::Number(n) => write!(f, "{NUMBER}{n}{RESET}"),
@@ -117,7 +155,7 @@ impl Display for TokenKind<'_> {
                 write!(f, "\"{RESET}")
             }
             Self::Operator(op) => write!(f, "{}", op),
-            Self::Keyword(kw) => write!(f, "{}", kw),
+            Self::Keyword(kw) => kw.fmt_ident(f, ident),
             Self::Unknown { recovered, .. } => {
                 if let Some(recovered) = recovered {
                     write!(f, "{RECOVER}{}{RESET}", recovered)

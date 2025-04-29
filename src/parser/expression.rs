@@ -6,9 +6,7 @@ use crate::{
     lexer::{Token, TokenKind},
 };
 
-use super::{
-    ArrayElement, AstVisitor, Iterable, Pattern, RecordElement, Statement, AstWalker,
-};
+use super::{ArrayElement, AstVisitor, AstWalker, Iterable, Pattern, RecordElement, Statement};
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
 pub enum Callable<'s> {
@@ -442,11 +440,18 @@ impl Display for Expression<'_> {
     }
 }
 
+fn write_grouping(f: &mut Formatter<'_>, ident: usize, token: &Token<'_>) -> fmt::Result {
+    write!(f, "{GROUP}")?;
+    token.fmt_ident(f, ident)?;
+    write!(f, "{RESET}")?;
+    Ok(())
+}
+
 impl DisplayIdent for Expression<'_> {
     fn fmt_ident(&self, f: &mut Formatter<'_>, ident: usize) -> fmt::Result {
         use Expression::*;
         match self {
-            Literal(token) => write!(f, "{token}")?,
+            Literal(token) => token.fmt_ident(f, ident)?,
             InterpolatedString(token, e) => {
                 let Token {
                     kind: TokenKind::InterpolatedString(s, _),
@@ -468,31 +473,25 @@ impl DisplayIdent for Expression<'_> {
                 }
                 write!(f, "\"{RESET}")?;
             }
-            Variable(token) => write!(f, "{token}")?,
+            Variable(token) => token.fmt_ident(f, ident)?,
             Grouping(op, exp, cp) => {
-                write!(f, "{GROUP}{op}{RESET}")?;
+                write_grouping(f, ident, op)?;
                 exp.fmt_ident(f, ident)?;
-                write!(f, "{GROUP}{cp}{RESET}")?;
+                write_grouping(f, ident, cp)?;
             }
             Record(op, exps, cp) => {
-                if exps.is_empty() {
-                    return write!(f, "{op}{cp}");
-                }
-                write!(f, "{op}")?;
+                op.fmt_ident(f, ident)?;
                 for exp in exps {
                     exp.fmt_ident(f, ident)?;
                 }
-                write!(f, "{cp}")?;
+                cp.fmt_ident(f, ident)?;
             }
             Array(op, exps, cp) => {
-                if exps.is_empty() {
-                    return write!(f, "{op}{cp}");
-                }
-                write!(f, "{op}")?;
+                op.fmt_ident(f, ident)?;
                 for exp in exps {
                     exp.fmt_ident(f, ident)?;
                 }
-                write!(f, "{cp}")?;
+                cp.fmt_ident(f, ident)?;
             }
             Call(exp, op, args, cp) => {
                 exp.fmt_ident(f, ident)?;
@@ -535,30 +534,35 @@ impl DisplayIdent for Expression<'_> {
             }
             NonNil(exp, op) => {
                 exp.fmt_ident(f, ident)?;
-                write!(f, "{op}")?;
+                op.fmt_ident(f, ident)?;
             }
             Prefix(op, exp) => {
-                match op.kind {
-                    TokenKind::Operator(_) => write!(f, "{op}")?,
-                    _ => write!(f, "{op} ")?,
+                op.fmt_ident(f, ident)?;
+                if !op.is_operator() {
+                    write!(f, " ")?;
                 }
                 exp.fmt_ident(f, ident)?;
             }
             Infix(exp1, op, exp2) => {
                 exp1.fmt_ident(f, ident)?;
-                write!(f, " {op} ")?;
+                write!(f, " ")?;
+                op.fmt_ident(f, ident)?;
+                write!(f, " ")?;
                 exp2.fmt_ident(f, ident)?;
             }
             Is(exp1, op, pattern) => {
                 exp1.fmt_ident(f, ident)?;
-                write!(f, " {op} ")?;
+                write!(f, " ")?;
+                op.fmt_ident(f, ident)?;
+                write!(f, " ")?;
                 pattern.fmt_ident(f, ident)?;
             }
             Block(op, statements, expression, ed) => {
                 let next_ident = Self::next_ident(ident);
+                write_grouping(f, ident, op)?;
                 if statements.is_empty() {
-                    return if let Some(expression) = expression {
-                        write!(f, "{GROUP}{op}{RESET} ")?;
+                    if let Some(expression) = expression {
+                        write!(f, " ")?;
                         if expression.is_block_like() {
                             writeln!(f)?;
                             Self::write_ident(f, next_ident, "block ret")?;
@@ -567,98 +571,121 @@ impl DisplayIdent for Expression<'_> {
                         if expression.is_block_like() {
                             writeln!(f)?;
                             Self::write_ident(f, ident, "")?;
-                            write!(f, "{GROUP}{ed}{RESET}")
                         } else {
-                            write!(f, " {GROUP}{ed}{RESET}")
+                            write!(f, " ")?;
                         }
                     } else {
-                        write!(f, "{GROUP}{op} {ed}{RESET}")
+                        write!(f, " ")?;
                     };
-                }
-                writeln!(f, "{GROUP}{op}{RESET}")?;
-                for statement in statements {
-                    statement.fmt_ident(f, next_ident)?;
-                }
-                if let Some(expression) = expression {
-                    Self::write_ident(f, next_ident, "block ret")?;
-                    expression.fmt_ident(f, Self::next_ident(ident))?;
+                } else {
                     writeln!(f)?;
+                    for statement in statements {
+                        statement.fmt_ident(f, next_ident)?;
+                    }
+                    if let Some(expression) = expression {
+                        Self::write_ident(f, next_ident, "block ret")?;
+                        expression.fmt_ident(f, Self::next_ident(ident))?;
+                        writeln!(f)?;
+                    }
+                    Self::write_ident(f, ident, "")?;
                 }
-                Self::write_ident(f, ident, "")?;
-                write!(f, "{GROUP}{ed}{RESET}")?;
+                write_grouping(f, ident, ed)?;
             }
             Loop(kw, expression) => {
-                write!(f, "{kw} ")?;
+                kw.fmt_ident(f, ident)?;
+                write!(f, " ")?;
                 expression.fmt_ident(f, ident)?;
             }
             While(kw, expression, block, None) => {
-                write!(f, "{kw} ")?;
+                kw.fmt_ident(f, ident)?;
+                write!(f, " ")?;
                 expression.fmt_ident(f, ident)?;
                 write!(f, " ")?;
                 block.fmt_ident(f, ident)?;
             }
             While(kw, expression, block, Some((kw_else, else_block))) => {
-                write!(f, "{kw} ")?;
+                kw.fmt_ident(f, ident)?;
+                write!(f, " ")?;
                 expression.fmt_ident(f, ident)?;
                 write!(f, " ")?;
                 block.fmt_ident(f, ident)?;
-                write!(f, " {kw_else} ")?;
+                write!(f, " ")?;
+                kw_else.fmt_ident(f, ident)?;
+                write!(f, " ")?;
                 else_block.fmt_ident(f, ident)?;
             }
             ForIn(kw_for, pattern, kw_in, iter, block, None) => {
-                write!(f, "{kw_for} ")?;
+                kw_for.fmt_ident(f, ident)?;
+                write!(f, " ")?;
                 pattern.fmt_ident(f, ident)?;
-                write!(f, " {kw_in} ")?;
+                write!(f, " ")?;
+                kw_in.fmt_ident(f, ident)?;
+                write!(f, " ")?;
                 iter.fmt_ident(f, ident)?;
                 write!(f, " ")?;
                 block.fmt_ident(f, ident)?;
             }
             ForIn(kw_for, pattern, kw_in, iter, block, Some((kw_else, else_block))) => {
-                write!(f, "{kw_for} ")?;
+                kw_for.fmt_ident(f, ident)?;
+                write!(f, " ")?;
                 pattern.fmt_ident(f, ident)?;
-                write!(f, " {kw_in} ")?;
+                write!(f, " ")?;
+                kw_in.fmt_ident(f, ident)?;
+                write!(f, " ")?;
                 iter.fmt_ident(f, ident)?;
                 write!(f, " ")?;
                 block.fmt_ident(f, ident)?;
-                write!(f, " {kw_else} ")?;
+                write!(f, " ")?;
+                kw_else.fmt_ident(f, ident)?;
+                write!(f, " ")?;
                 else_block.fmt_ident(f, ident)?;
             }
             If(kw_if, cond, then_block, Some((kw_else, else_block))) => {
-                write!(f, "{kw_if} ")?;
+                kw_if.fmt_ident(f, ident)?;
+                write!(f, " ")?;
                 cond.fmt_ident(f, ident)?;
                 write!(f, " ")?;
                 then_block.fmt_ident(f, ident)?;
-                write!(f, " {kw_else} ")?;
+                write!(f, " ")?;
+                kw_else.fmt_ident(f, ident)?;
+                write!(f, " ")?;
                 else_block.fmt_ident(f, ident)?;
             }
             If(kw_if, cond, then_block, None) => {
-                write!(f, "{kw_if} ")?;
+                kw_if.fmt_ident(f, ident)?;
+                write!(f, " ")?;
                 cond.fmt_ident(f, ident)?;
                 write!(f, " ")?;
                 then_block.fmt_ident(f, ident)?;
             }
             Match(kw, expression, op, arms, ed) => {
-                write!(f, "{kw} ")?;
+                kw.fmt_ident(f, ident)?;
+                write!(f, " ")?;
                 expression.fmt_ident(f, ident)?;
-                writeln!(f, " {GROUP}{op}{RESET}")?;
+                write!(f, " ")?;
+                write_grouping(f, ident, op)?;
+                writeln!(f)?;
                 let next_ident = Self::next_ident(ident);
                 for (kw_case, pattern, block) in arms {
                     Self::write_ident(f, next_ident, "")?;
-                    write!(f, "{kw_case} ")?;
+                    kw_case.fmt_ident(f, next_ident)?;
+                    write!(f, " ")?;
                     pattern.fmt_ident(f, next_ident)?;
                     write!(f, " ")?;
                     block.fmt_ident(f, next_ident)?;
                     writeln!(f)?;
                 }
                 Self::write_ident(f, ident, "")?;
-                write!(f, "{GROUP}{ed}{RESET}")?;
+                write_grouping(f, ident, ed)?;
             }
             Function(kw, None, block) => {
-                write!(f, "{kw} ")?;
+                kw.fmt_ident(f, ident)?;
+                write!(f, " ")?;
                 block.fmt_ident(f, ident)?;
             }
             Function(kw, Some(params), block) => {
-                write!(f, "{kw} {GROUP}({RESET}")?;
+                kw.fmt_ident(f, ident)?;
+                write!(f, " {GROUP}({RESET}")?;
                 let mut iter = params.iter();
                 if let Some(param) = iter.next() {
                     write!(f, "{}", param)?;
