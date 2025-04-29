@@ -1,6 +1,6 @@
 {#
     let mut name = "world"; // comment
-    print("Hello ${let mut a = 1; // comment in string
+    print("Hello ${let mut /** comment in string */a = 1; // comment in string
      "${a}name"}");
     
     [1,2,3]::filter(fn {it % 2 == 0})::String()
