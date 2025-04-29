@@ -14,7 +14,7 @@ use crate::{
 };
 
 use super::lex_balanced;
-use super::{helper::is_identifier_start, tokens::identifier};
+use super::{identifier::is_identifier_start, tokens::identifier};
 
 #[derive(Debug, Clone, PartialEq)]
 enum StringFragment<'s> {

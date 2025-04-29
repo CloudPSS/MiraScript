@@ -8,28 +8,9 @@ use winnow::token::{any, take, take_while};
 
 use crate::error::{ErrorCode, SourceError};
 
-use super::helper::{is_identifier_continue, is_identifier_start};
+use super::identifier::{identifier, is_identifier_start};
 use super::numeric::{number, ordinal};
 use super::{Input, Keyword, Operator, Token, TokenKind, string};
-
-pub(super) fn identifier<'s>(i: &mut Input<'s>) -> ModalResult<TokenKind<'s>> {
-    trace(
-        "identifier",
-        (
-            take_while(1.., is_identifier_start),
-            take_while(0.., is_identifier_continue),
-        )
-            .take()
-            .map(|s| {
-                if let Ok(kw) = Keyword::from_str(s) {
-                    TokenKind::Keyword(kw)
-                } else {
-                    TokenKind::Identifier(Cow::Borrowed(s))
-                }
-            }),
-    )
-    .parse_next(i)
-}
 
 pub(super) fn token<'s>(
     input: &mut Input<'s>,

@@ -8,7 +8,7 @@ use winnow::{
 
 use crate::error::{ErrorCode, SourceRange};
 
-use super::helper::is_identifier_continue;
+use super::identifier::is_identifier_continue;
 use super::{Input, TokenKind};
 
 struct ParsedPart {
