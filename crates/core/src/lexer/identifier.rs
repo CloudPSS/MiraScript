@@ -1,15 +1,11 @@
 use std::borrow::Cow;
 use std::str::FromStr;
 
-use winnow::ascii::space0;
-use winnow::combinator::{alt, dispatch, eof, fail, opt, peek, preceded, repeat, trace};
+use winnow::combinator::{alt, repeat, trace};
 use winnow::prelude::*;
-use winnow::token::{any, literal, one_of, take, take_while};
+use winnow::token::{literal, one_of, take_while};
 
-use crate::error::{ErrorCode, SourceError};
-
-use super::numeric::{number, ordinal};
-use super::{Input, Keyword, Operator, Token, TokenKind, string};
+use super::{Input, Keyword, TokenKind};
 
 pub(super) const IDENTIFIER_SPECIAL: &[char] = &['_', '$', '@'];
 
