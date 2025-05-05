@@ -128,7 +128,6 @@ pub enum Expression<'s> {
     /// 1. `==` `!=` `~=` `!~=` equality
     /// 1. `&&` logical and
     /// 1. `||` logical or
-    /// 1. `|>` `<|` forward and backward pipe
     Infix(Box<Expression<'s>>, Box<Token<'s>>, Box<Expression<'s>>),
     /// expression `is` pattern
     Is(Box<Expression<'s>>, Box<Token<'s>>, Box<Pattern<'s>>),

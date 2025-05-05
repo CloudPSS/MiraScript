@@ -1,16 +1,13 @@
-use std::borrow::Cow;
-use std::str::FromStr;
-
 use winnow::ascii::space0;
-use winnow::combinator::{alt, dispatch, eof, fail, opt, peek, preceded, trace};
+use winnow::combinator::{alt, dispatch, eof, fail, opt, peek, preceded};
 use winnow::prelude::*;
-use winnow::token::{any, take, take_while};
+use winnow::token::{any, take};
 
 use crate::error::{ErrorCode, SourceError};
 
 use super::identifier::{identifier, is_identifier_start};
 use super::numeric::{number, ordinal};
-use super::{Input, Keyword, Operator, Token, TokenKind, string};
+use super::{Input, Operator, Token, TokenKind, string};
 
 pub(super) fn token<'s>(
     input: &mut Input<'s>,
@@ -34,6 +31,7 @@ pub(super) fn token<'s>(
             )),
             '-' => alt((
                 "-=".value(TokenKind::Operator(Operator::MinusEqual)),
+                "->".value(TokenKind::Operator(Operator::Arrow)),
                 any.value(TokenKind::Operator(Operator::Minus)),
             )),
             '*' => alt((

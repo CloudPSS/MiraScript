@@ -13,8 +13,10 @@ use crate::{
     lexer::{Input, Operator, Token, TokenKind},
 };
 
-use super::lex_balanced;
-use super::{identifier::is_identifier_start, tokens::identifier};
+use super::{
+    identifier::{identifier, is_identifier_special, is_identifier_start},
+    lex_balanced,
+};
 
 #[derive(Debug, Clone, PartialEq)]
 enum StringFragment<'s> {
@@ -256,7 +258,9 @@ fn interpolation<'s>(
         let first = peek(opt(any)).parse_next(i)?;
 
         if first != Some('{') {
-            if first.is_none() || !is_identifier_start(first.unwrap()) {
+            if first.is_none()
+                || !is_identifier_start(first.unwrap()) && !is_identifier_special(first.unwrap())
+            {
                 // invalid identifier
                 let end = i.previous_token_end();
                 let start = end - dollar_count;
