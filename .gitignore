@@ -6,6 +6,8 @@
 /packages/*/deb-dist/
 /*.deb
 /packages/*/*.deb
+/crates/*/bin/
+/crates/*/pkg/
 
 target/
 doc/out/

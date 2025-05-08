@@ -5,11 +5,23 @@ const container = document.createElement('div');
 container.id = 'editor';
 document.body.append(container);
 
+editor.defineTheme('xx', {
+    base: 'vs',
+    inherit: true,
+    rules: [
+        { token: 'parameter', foreground: '#66ccff' },
+        { token: 'parameter.xx', fontStyle: 'italic' },
+    ],
+    colors: {},
+});
+
 const e = editor.create(container, {
     language: 'mirascript',
     fontFamily: 'Sarasa Mono SC',
     fontLigatures: true,
     automaticLayout: true,
+    theme: 'xx',
+    'semanticHighlighting.enabled': true,
     value:
         localStorage.getItem('source') ||
         `{#

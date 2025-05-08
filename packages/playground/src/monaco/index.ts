@@ -1,4 +1,4 @@
-import * as monaco from 'monaco-editor';
+import type * as monaco from 'monaco-editor';
 
 /**
  * monaco 运行环境
@@ -38,10 +38,5 @@ const MonacoEnvironment: monaco.Environment = {
 
 Object.defineProperty(globalThis, 'MonacoEnvironment', { value: MonacoEnvironment });
 
-monaco.languages.register({
-    id: 'mirascript',
-    extensions: ['.mira'],
-    mimetypes: ['text/x-mirascript'],
-});
-monaco.languages.onLanguage('mirascript', () => void import('./mira'));
+import './mira/index.js';
 export * from 'monaco-editor';

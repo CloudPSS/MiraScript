@@ -1,63 +1,23 @@
-import * as monaco from 'monaco-editor';
-
-const REG_IDENTIFIER = /(?:_+|@+|\$+|\p{XID_Start}+)\p{XID_Continue}*/u;
-const REG_HEX = /0[xX][a-fA-F0-9_]+/u;
-const REG_OCT = /0[oO][0-7_]+/u;
-const REG_BIN = /0[bB][01_]+/u;
-const REG_ORDINAL =
-    /(?:0|[1-9]\d{0,8}|1\d{9}|20\d{8}|21[0-3]\d{7}|214[0-6]\d{6}|2147[0-3]\d{5}|21474[0-7]\d{4}|214748[0-2]\d{3}|2147483[0-5]\d{2}|21474836[0-3]\d|214748364[0-7])/u;
-const REG_NUMBER = /(?<!\.\s*)\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/u;
-const REG_WHITESPACE = /[ \t\v\f\r\n]/u;
-
-monaco.languages.setLanguageConfiguration('mirascript', {
-    comments: {
-        lineComment: '//',
-        blockComment: ['/*', '*/'],
-    },
-    brackets: [
-        ['(', ')'],
-        ['[', ']'],
-        ['{', '}'],
-    ],
-    wordPattern: new RegExp(
-        `(${REG_IDENTIFIER.source}|${REG_HEX.source}|${REG_OCT.source}|${REG_BIN.source}|${REG_NUMBER.source}|\\d+)`,
-        'gu',
-    ),
-    autoClosingPairs: [
-        {
-            open: '{',
-            close: '}',
-        },
-        {
-            open: '[',
-            close: ']',
-        },
-        {
-            open: '(',
-            close: ')',
-        },
-        {
-            open: '"',
-            close: '"',
-            notIn: ['string', 'string_double'],
-        },
-        {
-            open: "'",
-            close: "'",
-            notIn: ['string', 'string_single'],
-        },
-        {
-            open: '`',
-            close: '`',
-            notIn: ['string', 'string_backtick'],
-        },
-    ],
-    autoCloseBefore: ')}];, ',
-});
+import { languages } from 'monaco-editor';
+import { keywords } from 'mira-wasm';
+import { REG_WHITESPACE, REG_ORDINAL, REG_OCT, REG_BIN, REG_HEX, REG_NUMBER, REG_IDENTIFIER } from './constants';
 
 const MAX_VERBATIM_LENGTH = 16;
 
-monaco.languages.setMonarchTokensProvider('mirascript', {
+/** 匹配 identifier */
+function identifierCases(
+    data?: Partial<languages.IExpandedMonarchLanguageAction>,
+): Record<string, languages.IExpandedMonarchLanguageAction> {
+    return {
+        '@numericConstants': { ...data, token: 'number.constant.$0' },
+        '@constants': { ...data, token: 'keyword.constant.$0' },
+        '@keywords': { ...data, token: 'keyword.$0' },
+        '@type': { ...data, token: 'type.$0' },
+        '@default': { ...data, token: 'identifier.$0' },
+    };
+}
+
+languages.setMonarchTokensProvider('mirascript', {
     ignoreCase: false,
     unicode: true,
     includeLF: false,
@@ -88,7 +48,7 @@ monaco.languages.setMonarchTokensProvider('mirascript', {
             ],
             [REG_OCT, 'number.octal'],
             [REG_BIN, 'number.binary'],
-            [REG_HEX, 'number.hexadecimal'],
+            [REG_HEX, 'number.hex'],
             [
                 REG_NUMBER,
                 {
@@ -101,20 +61,7 @@ monaco.languages.setMonarchTokensProvider('mirascript', {
             { include: '@operator' },
             [REG_ORDINAL, 'number.ordinal'],
         ],
-        identifier: [
-            [
-                REG_IDENTIFIER,
-                {
-                    cases: {
-                        '@keywords': { token: 'keyword.$0' },
-                        '@reservedKeywords': { token: 'keyword.reserved.$0' },
-                        '@numericConstants': { token: 'number.constant.$0' },
-                        '@constants': { token: 'keyword.constant.$0' },
-                        '@default': { token: 'identifier.$0' },
-                    },
-                },
-            ],
-        ],
+        identifier: [[REG_IDENTIFIER, { cases: identifierCases() }]],
         operator: [
             [/(!)(==)/gu, ['operator.exclamation', 'operator.equal-equal']],
             [/(!~=)/gu, 'operator.not-tilde-equal'],
@@ -158,13 +105,19 @@ monaco.languages.setMonarchTokensProvider('mirascript', {
         ],
         whitespace: [
             [new RegExp(REG_WHITESPACE.source + '+', 'ug'), ''],
-            [/\/\/.+$/gu, 'comment'],
-            [/\/\*/gu, 'comment', '@block_comment'],
+            [/\/\/.+$/gu, 'comment.line'],
+            [/\/\*\*/gu, { token: 'comment.doc', next: '@doc_comment' }],
+            [/\/\*/gu, 'comment.block', '@block_comment'],
+        ],
+        doc_comment: [
+            [/\*\//gu, { token: 'comment.doc', next: '@pop' }],
+            [/[^*]+/, { token: 'comment.doc' }],
+            [/\*/, { token: 'comment.doc' }],
         ],
         block_comment: [
-            [/\*\//gu, 'comment', '@pop'],
-            [/[^*]+/, 'comment'],
-            [/\*/, 'comment'],
+            [/\*\//gu, { token: 'comment.block', next: '@pop' }],
+            [/[^*]+/, { token: 'comment.block' }],
+            [/\*/, { token: 'comment.block' }],
         ],
         string: [
             [/(@*)"/gu, { token: 'string.quote.open.$1', next: '@string_double.$1', bracket: '@open' }],
@@ -255,69 +208,18 @@ monaco.languages.setMonarchTokensProvider('mirascript', {
         ),
         string_interpolation: [[/\$*/gu, 'string', '@pop']],
         string_interpolation_identifier: [
-            [
-                REG_IDENTIFIER,
-                {
-                    cases: {
-                        '@keywords': { token: 'keyword.$0', next: '@pop' },
-                        '@reservedKeywords': { token: 'keyword.$0', next: '@pop' },
-                        '@numericConstants': { token: 'number.constant.$0', next: '@pop' },
-                        '@constants': { token: 'keyword.constant.$0', next: '@pop' },
-                        '@default': { token: 'identifier.$0', next: '@pop' },
-                    },
-                },
-            ],
+            [REG_IDENTIFIER, { cases: identifierCases({ next: '@pop' }) }],
             ['', '', '@pop'],
         ],
         string_interpolation_expression: [
             [/\{/gu, { token: '@brackets', next: '@push' }],
             [/\}/gu, { token: '@brackets', next: '@pop' }],
+            [/[[\]()]/gu, '@brackets'],
             { include: '@common' },
         ],
     },
-    keywords: [
-        // pseudo variable
-        '_',
-        'global',
-        // operators
-        'in',
-        'is',
-        'and',
-        'or',
-        'not',
-        // pseudo function
-        'type',
-        // control flow
-        'if',
-        'else',
-        'match',
-        'case',
-        'for',
-        'while',
-        'loop',
-        'break',
-        'continue',
-        'return',
-        // declaration
-        'fn',
-        'let',
-        'mut',
-    ],
-    reservedKeywords: [
-        // declaration reserved
-        'op',
-        'where',
-        // module reserved
-        'import',
-        'export',
-        // algebraic effects reserved
-        'effect',
-        'try',
-        'handle',
-        'finally',
-        'perform',
-        'resume',
-    ],
+    keywords: keywords(),
     constants: ['true', 'false', 'nil'],
     numericConstants: ['nan', 'inf'],
+    type: ['String', 'Number', 'Boolean'],
 });

@@ -1,10 +1,14 @@
 {
+  "scripts": {
+    "start": "vite"
+  },
   "dependencies": {
     "mira-wasm": "workspace:*",
     "monaco-editor": "^0.52.2"
   },
   "devDependencies": {
     "vite": "^6.3.3",
-    "vite-plugin-checker": "^0.9.1"
+    "vite-plugin-checker": "^0.9.1",
+    "vite-plugin-wasm": "^3.4.1"
   }
 }
