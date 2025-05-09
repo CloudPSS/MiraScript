@@ -45,6 +45,7 @@ pub enum Keyword {
     Op, // Reserved for future use
     Let,
     Mut,
+    Const, // Reserved for future use
     // Type,  // Reserved for future use
     Where, // Reserved for future use
 

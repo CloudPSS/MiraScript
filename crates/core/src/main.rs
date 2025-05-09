@@ -11,7 +11,7 @@ mod lexer;
 mod parser;
 
 fn main() {
-    let text = fs::read_to_string("test/main.ms").unwrap();
+    let text = fs::read_to_string("../../test/main.ms").unwrap();
 
     let result = compile_script(&text);
 
