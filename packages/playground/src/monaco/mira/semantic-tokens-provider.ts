@@ -7,6 +7,10 @@ class DocumentSemanticTokensProvider implements languages.DocumentSemanticTokens
     get onDidChange(): IEvent<void> {
         return this._onDidChange.event;
     }
+    /** 触发 onDidChange */
+    emitDidChange(): void {
+        this._onDidChange.fire();
+    }
     /** @inheritdoc */
     getLegend(): languages.SemanticTokensLegend {
         return {
@@ -20,9 +24,11 @@ class DocumentSemanticTokensProvider implements languages.DocumentSemanticTokens
         lastResultId: string | null,
         token: CancellationToken,
     ): languages.ProviderResult<languages.SemanticTokens | languages.SemanticTokensEdits> {
+        // data 长度是 5 的倍数
+        // [diffRow, diffCol, length, tokenType(index), tokenModifiers(bit field)]
         return {
             resultId: 'x',
-            data: new Uint32Array([1, 0, 2, 0, 1, 0, 3, 2, 1, 0]),
+            data: new Uint32Array([]),
         };
     }
     /** @inheritdoc */

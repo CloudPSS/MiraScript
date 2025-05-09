@@ -1,19 +1,23 @@
 import { languages } from 'monaco-editor';
-import { keywords } from 'mira-wasm';
+import { keywords, control_keywords, numeric_keywords, constant_keywords } from 'mira-wasm';
 import { REG_WHITESPACE, REG_ORDINAL, REG_OCT, REG_BIN, REG_HEX, REG_NUMBER, REG_IDENTIFIER } from './constants';
 
 const MAX_VERBATIM_LENGTH = 16;
 
 /** 匹配 identifier */
 function identifierCases(
+    capture = 0,
     data?: Partial<languages.IExpandedMonarchLanguageAction>,
+    defaultToken = 'variable',
 ): Record<string, languages.IExpandedMonarchLanguageAction> {
     return {
-        '@numericConstants': { ...data, token: 'number.constant.$0' },
-        '@constants': { ...data, token: 'keyword.constant.$0' },
-        '@keywords': { ...data, token: 'keyword.$0' },
-        '@type': { ...data, token: 'type.$0' },
-        '@default': { ...data, token: 'identifier.$0' },
+        '@numericKeywords': { ...data, token: `constant.numeric.$${capture}` },
+        '@constantKeywords': { ...data, token: `constant.language.$${capture}` },
+        '@controlKeywords': { ...data, token: `keyword.control.$${capture}` },
+        '@keywords': { ...data, token: `keyword.$${capture}` },
+        '@type': { ...data, token: `type.$${capture}` },
+        '[@]+.*': { ...data, token: `variable.other.constant.$${capture}` },
+        '@default': { ...data, token: `${defaultToken}.$${capture}` },
     };
 }
 
@@ -26,15 +30,42 @@ languages.setMonarchTokensProvider('mirascript', {
         { open: '[', close: ']', token: 'delimiter.square' },
         { open: '(', close: ')', token: 'delimiter.parenthesis' },
     ],
-    // defaultToken: 'invalid',
+    //defaultToken: 'invalid',
+
+    whitespace: REG_WHITESPACE,
+    identifier: REG_IDENTIFIER,
+
+    keywords: keywords(),
+    controlKeywords: control_keywords(),
+    constantKeywords: constant_keywords(),
+    numericKeywords: numeric_keywords(),
+    type: ['String', 'Number', 'Boolean'],
+
     tokenizer: {
         root: [[/[[\](){}]/gu, '@brackets'], { include: '@common' }],
         common: [
-            { include: '@whitespace' },
-            { include: '@string' },
-            { include: '@identifier' },
             [
-                new RegExp(`(\\.)(${REG_WHITESPACE.source}*)(\\d+)`, 'gu'),
+                /(let|const)(@whitespace+)(@identifier)(@whitespace*)(=)/gu,
+                [
+                    { token: 'keyword.$1' },
+                    '',
+                    { cases: identifierCases(3, undefined, 'variable.other.constant') },
+                    '',
+                    'operator.equal',
+                ],
+            ],
+            [
+                /(fn)(@whitespace+)(@identifier)(@whitespace*)(\(|\{)/gu,
+                [
+                    { token: 'keyword.$1' },
+                    '',
+                    { cases: identifierCases(3, undefined, 'entity.name.function') },
+                    '',
+                    '@brackets',
+                ],
+            ],
+            [
+                /(\.)(@whitespace*)(\d+)/gu,
                 [
                     'operator.dot',
                     '',
@@ -46,6 +77,18 @@ languages.setMonarchTokensProvider('mirascript', {
                     },
                 ],
             ],
+            [
+                /(@identifier)(\()/gu,
+                [
+                    {
+                        cases: identifierCases(1, undefined, `entity.name.function`),
+                    },
+                    '@brackets',
+                ],
+            ],
+            { include: '@whitespace' },
+            { include: '@string' },
+            { include: '@identifier' },
             [REG_OCT, 'number.octal'],
             [REG_BIN, 'number.binary'],
             [REG_HEX, 'number.hex'],
@@ -61,7 +104,7 @@ languages.setMonarchTokensProvider('mirascript', {
             { include: '@operator' },
             [REG_ORDINAL, 'number.ordinal'],
         ],
-        identifier: [[REG_IDENTIFIER, { cases: identifierCases() }]],
+        identifier: [[/(@identifier)/gu, { cases: identifierCases() }]],
         operator: [
             [/(!)(==)/gu, ['operator.exclamation', 'operator.equal-equal']],
             [/(!~=)/gu, 'operator.not-tilde-equal'],
@@ -78,8 +121,8 @@ languages.setMonarchTokensProvider('mirascript', {
             [/\|\|/gu, 'operator.logical-or'],
             [/\?\?=/gu, 'operator.null-coalescing-equal'],
             [/\?\?/gu, 'operator.null-coalescing'],
-            [/(\.{2}<)/gu, 'operator.half-open-range'],
-            [/(\.{2})/gu, 'operator.spread-range'],
+            [/(\.\.<)/gu, 'operator.half-open-range'],
+            [/(\.\.)/gu, 'operator.spread-range'],
             [/(\+=)/gu, 'operator.plus-equal'],
             [/(\+)/gu, 'operator.plus'],
             [/(-=)/gu, 'operator.minus-equal'],
@@ -104,7 +147,7 @@ languages.setMonarchTokensProvider('mirascript', {
             [/;/gu, 'delimiter.semicolon'],
         ],
         whitespace: [
-            [new RegExp(REG_WHITESPACE.source + '+', 'ug'), ''],
+            [/(@whitespace)+/gu, ''],
             [/\/\/.+$/gu, 'comment.line'],
             [/\/\*\*/gu, { token: 'comment.doc', next: '@doc_comment' }],
             [/\/\*/gu, 'comment.block', '@block_comment'],
@@ -187,13 +230,13 @@ languages.setMonarchTokensProvider('mirascript', {
                     [
                         [
                             new RegExp(`(${dollarRegex})(?=${REG_IDENTIFIER.source})`, 'gu'),
-                            `string.interpolation.$1`,
+                            `punctuation.section.embedded.$1`,
                             '@string_interpolation_identifier',
                         ],
                         [
                             new RegExp(`(${dollarRegex})(\\{)`, 'gu'),
                             [
-                                'string.interpolation',
+                                { token: 'punctuation.section.embedded.$1' },
                                 {
                                     token: '@brackets',
                                     next: '@string_interpolation_expression',
@@ -208,7 +251,7 @@ languages.setMonarchTokensProvider('mirascript', {
         ),
         string_interpolation: [[/\$*/gu, 'string', '@pop']],
         string_interpolation_identifier: [
-            [REG_IDENTIFIER, { cases: identifierCases({ next: '@pop' }) }],
+            [REG_IDENTIFIER, { cases: identifierCases(0, { next: '@pop' }) }],
             ['', '', '@pop'],
         ],
         string_interpolation_expression: [
@@ -218,8 +261,4 @@ languages.setMonarchTokensProvider('mirascript', {
             { include: '@common' },
         ],
     },
-    keywords: keywords(),
-    constants: ['true', 'false', 'nil'],
-    numericConstants: ['nan', 'inf'],
-    type: ['String', 'Number', 'Boolean'],
 });
