@@ -6,7 +6,7 @@ use crate::error::{ErrorCode, SourceError, SourceRange};
 use crate::lexer::{self, Token, TokenKind};
 use crate::parser::{self, AstVisitor, AstWalker, walker};
 
-type CompileResult<'s> = Result<parser::Script<'s>, (Option<parser::Script<'s>>, Vec<SourceError>)>;
+type CompileResult<'s> = (Option<parser::Script<'s>>, Vec<SourceError>);
 
 fn compile<'s>(
     input: &'s str,
@@ -24,7 +24,7 @@ fn compile<'s>(
             },
             ErrorCode::LexerError,
         ));
-        return Err((None, error_collector));
+        return (None, error_collector);
     };
     // Try to recover from lexing errors
     let recovered_tokens: Vec<_> = tokens
@@ -60,7 +60,7 @@ fn compile<'s>(
             },
             ErrorCode::ParserError,
         ));
-        return Err((None, error_collector));
+        return (None, error_collector);
     };
     {
         let error_collector = RefCell::new(&mut error_collector);
@@ -105,10 +105,7 @@ fn compile<'s>(
         script.walk(&mut w);
     }
 
-    if !error_collector.is_empty() {
-        return Err((Some(script), error_collector));
-    }
-    Ok(script)
+    (Some(script), error_collector)
 }
 
 #[allow(dead_code)]
