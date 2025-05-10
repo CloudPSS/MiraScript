@@ -1,8 +1,9 @@
 use std::fmt::Display;
 
-use strum::EnumMessage;
+use strum::{EnumMessage, FromRepr};
 
-#[derive(Debug, Clone, Copy, PartialEq, EnumMessage)]
+#[derive(Debug, Clone, Copy, PartialEq, EnumMessage, FromRepr)]
+#[repr(u16)]
 pub enum ErrorCode {
     // Internal error 1 ~ 999
     #[strum(message = "Unknown internal error")]
@@ -177,9 +178,27 @@ pub enum ErrorCode {
     OptimizerReference = 45000,
 }
 
+impl From<ErrorCode> for u16 {
+    fn from(val: ErrorCode) -> Self {
+        val.code()
+    }
+}
+
+impl TryInto<ErrorCode> for u16 {
+    type Error = ();
+
+    fn try_into(self) -> Result<ErrorCode, Self::Error> {
+        ErrorCode::from_repr(self).ok_or(())
+    }
+}
+
 impl ErrorCode {
-    pub fn code(&self) -> usize {
-        *self as usize
+    pub fn code(&self) -> u16 {
+        *self as u16
+    }
+
+    pub fn from_code(code: u16) -> Option<Self> {
+        ErrorCode::from_repr(code)
     }
 
     pub fn message(&self) -> &'static str {

@@ -33,3 +33,20 @@ pub fn constant_keywords() -> Vec<String> {
     use mira_core::lexer::Keyword::*;
     [True, False, Nil].iter().map(|s| s.to_string()).collect()
 }
+
+#[wasm_bindgen]
+pub fn get_error_message(code: u16) -> Option<String> {
+    let code: mira_core::error::ErrorCode = code.try_into().ok()?;
+    code.message().to_string().into()
+}
+
+#[wasm_bindgen]
+pub fn compile_script(script: &str) -> Vec<usize> {
+    use mira_core::compile::compile_script;
+
+    let (_, errors) = compile_script(script);
+    errors
+        .into_iter()
+        .flat_map(|s| [s.range.start, s.range.end, s.error.code() as usize])
+        .collect()
+}
