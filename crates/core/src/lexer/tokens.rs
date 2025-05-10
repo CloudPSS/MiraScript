@@ -5,7 +5,7 @@ use winnow::token::{any, take};
 
 use crate::error::{ErrorCode, SourceError};
 
-use super::identifier::{identifier, is_identifier_start};
+use super::identifier::{identifier, is_identifier_special, is_identifier_start};
 use super::numeric::{number, ordinal};
 use super::{Input, Operator, Token, TokenKind, string};
 
@@ -98,7 +98,7 @@ pub(super) fn token<'s>(
             '{' => any.value(TokenKind::Operator(Operator::OpenBrace)),
             '}' => any.value(TokenKind::Operator(Operator::CloseBrace)),
 
-            c if is_identifier_start(c) => identifier,
+            c if is_identifier_start(c) || is_identifier_special(c) => identifier,
 
             _ => fail,
         }.parse_next(i)

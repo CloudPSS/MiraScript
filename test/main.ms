@@ -1,4 +1,5 @@
 {#
+    "\u{aaa}"
     let mut name = "world"; // comment
     print("Hello ${let mut /** comment in string */a = 1; // comment in string
      "${a}name"}");
@@ -116,4 +117,5 @@ x;
      /* EOF 
   dd   */ 
     (  a, b, [1, ..], ..) = x;
-      a::map.1.xx()::(fn{})()::a['x']::b(); type(e); e::type();\
+      a::map.1.xx()::(fn{})()::a['x']::b(); type(e); e::type();
+    @$_123;

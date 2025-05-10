@@ -1,4 +1,4 @@
-export const REG_IDENTIFIER = /(?:_+|@+|\$+|\p{XID_Start}+)\p{XID_Continue}*/u;
+export const REG_IDENTIFIER = /(?:_+|@+|\$+|\p{XID_Start})\p{XID_Continue}*/u;
 export const REG_HEX = /0[xX][a-fA-F0-9_]+/u;
 export const REG_OCT = /0[oO][0-7_]+/u;
 export const REG_BIN = /0[bB][01_]+/u;
