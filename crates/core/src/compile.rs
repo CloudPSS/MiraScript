@@ -1,10 +1,11 @@
 use std::cell::RefCell;
 
 use winnow::ModalResult;
+use winnow::stream::{Location, Stream};
 
 use crate::error::{ErrorCode, SourceError, SourceRange};
 use crate::lexer::{self, Token, TokenKind};
-use crate::parser::{self, AstVisitor, AstWalker, walker};
+use crate::parser::{self, AstWalker, walker};
 
 type CompileResult<'s> = (Option<parser::Script<'s>>, Vec<SourceError>);
 
@@ -15,16 +16,27 @@ fn compile<'s>(
     let mut error_collector: Vec<_> = vec![];
 
     // Lexing
-    let mut input = lexer::to_input(input);
-    let Ok(tokens) = lexer(&mut input) else {
-        error_collector.push(SourceError::new(
-            SourceRange {
-                start: 0,
-                end: input.len(),
-            },
-            ErrorCode::LexerError,
-        ));
-        return (None, error_collector);
+    let tokens = {
+        let mut input = lexer::to_input(input);
+        let result = lexer(&mut input);
+        if let Err(err) = result {
+            eprintln!("Lexer error: {:?} {:?}", err, input);
+            let remaining = input.peek_finish();
+            let range = if remaining.is_empty() {
+                SourceRange {
+                    start: 0,
+                    end: input.len(),
+                }
+            } else {
+                SourceRange {
+                    start: input.current_token_start(),
+                    end: input.len(),
+                }
+            };
+            error_collector.push(SourceError::new(range, ErrorCode::LexerError));
+            return (None, error_collector);
+        }
+        result.unwrap()
     };
     // Try to recover from lexing errors
     let recovered_tokens: Vec<_> = tokens
@@ -51,17 +63,30 @@ fn compile<'s>(
         .collect();
 
     // Parsing
-    let mut input = parser::to_input(&recovered_tokens);
-    let Ok(mut script) = parser::parse(&mut input) else {
-        error_collector.push(SourceError::new(
-            SourceRange {
-                start: 0,
-                end: input.len(),
-            },
-            ErrorCode::ParserError,
-        ));
-        return (None, error_collector);
+    let mut script = {
+        let mut tokens = parser::to_input(&recovered_tokens);
+        let result = parser::parse(&mut tokens);
+        if let Err(err) = result {
+            eprintln!("Parser error: {:?} {:?}", err, tokens);
+            let remaining = tokens.peek_finish();
+            let range = if remaining.is_empty() {
+                SourceRange {
+                    start: 0,
+                    end: input.len(),
+                }
+            } else {
+                SourceRange {
+                    start: remaining.first().unwrap().range.start,
+                    end: remaining.last().unwrap().range.end,
+                }
+            };
+            error_collector.push(SourceError::new(range, ErrorCode::ParserError));
+            return (None, error_collector);
+        }
+        result.unwrap()
     };
+
+    // collect and recover from parsing errors
     {
         let error_collector = RefCell::new(&mut error_collector);
         let mut w = walker(
