@@ -62,8 +62,8 @@ languages.setLanguageConfiguration('mirascript', {
     autoCloseBefore: ')}];,:. \n\t',
     folding: {
         markers: {
-            start: /^\s*\/\/\s*#?region\b/gu,
-            end: /^\s*\/\/\s*#?endregion\b/gu,
+            start: /^\s*\/\/#?\s*?region\b/gu,
+            end: /^\s*\/\/#?\s*?endregion\b/gu,
         },
     },
 });

@@ -28,6 +28,8 @@ editor.defineTheme('vs-dark', {
 const e = editor.create(container, {
     language: 'mirascript',
     fontFamily: 'Sarasa Mono SC',
+    formatOnType: true,
+    formatOnPaste: true,
     fontLigatures: true,
     automaticLayout: true,
     theme: 'vs-dark',
