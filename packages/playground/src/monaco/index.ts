@@ -39,4 +39,5 @@ const MonacoEnvironment: monaco.Environment = {
 Object.defineProperty(globalThis, 'MonacoEnvironment', { value: MonacoEnvironment });
 
 import './mira/index.js';
+import './themes.js';
 export * from 'monaco-editor';

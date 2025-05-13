@@ -5,26 +5,6 @@ const container = document.createElement('div');
 container.id = 'editor';
 document.body.append(container);
 
-editor.defineTheme('vs-dark', {
-    base: 'vs-dark',
-    inherit: true,
-    rules: [
-        { token: 'number.hex', foreground: '#b5cea8' },
-        { token: 'constant.numeric', foreground: '#b5cea8' },
-        { token: 'keyword.control', foreground: '#C586C0' },
-        { token: 'string.escape', foreground: '#d7ba7d' },
-        { token: 'entity.name.function', foreground: '#DCDCAA' },
-        { token: 'entity.name.variable', foreground: '#9CDCFE' },
-        { token: 'punctuation.definition.template-expression.begin', foreground: '#569cd6' },
-        { token: 'punctuation.definition.template-expression.end', foreground: '#569cd6' },
-        { token: 'punctuation.section.embedded', foreground: '#569cd6' },
-        { token: 'variable', foreground: '#9CDCFE' },
-        { token: 'variable.other.constant', foreground: '#4FC1FF' },
-        { token: 'variable.other.enummember', foreground: '#4FC1FF' },
-    ],
-    colors: {},
-});
-
 const e = editor.create(container, {
     language: 'mirascript',
     fontFamily: 'Sarasa Mono SC',
@@ -161,7 +141,6 @@ x;
 `,
 });
 setTimeout(() => {
-    void e.getAction('editor.action.inspectTokens')?.run();
     e.onDidChangeModelContent(() => {
         localStorage.setItem('source', e.getValue());
     });
