@@ -1,10 +1,12 @@
-import { editor } from './monaco';
+import { localize } from '@private/monaco-editor/localize';
 import './index.css';
+
+await localize();
 
 const container = document.createElement('div');
 container.id = 'editor';
 document.body.append(container);
-
+const { editor } = await import('./monaco');
 const e = editor.create(container, {
     language: 'mirascript',
     fontFamily: 'Sarasa Mono SC',

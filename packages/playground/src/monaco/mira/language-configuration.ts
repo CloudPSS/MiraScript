@@ -1,4 +1,4 @@
-import { languages } from 'monaco-editor';
+import { languages } from '@private/monaco-editor';
 import { REG_IDENTIFIER, REG_HEX, REG_OCT, REG_BIN, REG_NUMBER } from './constants.js';
 
 languages.setLanguageConfiguration('mirascript', {

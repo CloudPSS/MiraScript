@@ -1,4 +1,4 @@
-import { languages, type editor, type IRange, Range, type CancellationToken } from 'monaco-editor';
+import { languages, type editor, type IRange, Range, type CancellationToken } from '@private/monaco-editor';
 
 /** @inheritdoc */
 function format(

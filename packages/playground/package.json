@@ -1,10 +1,14 @@
 {
+  "name": "mira-playground",
+  "private": true,
   "scripts": {
-    "start": "vite"
+    "start": "vite",
+    "build": "vite build",
+    "serve": "vite preview"
   },
   "dependencies": {
-    "mira-wasm": "workspace:*",
-    "monaco-editor": "^0.52.2"
+    "@private/monaco-editor": "^0.0.7",
+    "mira-wasm": "workspace:*"
   },
   "devDependencies": {
     "vite": "^6.3.3",

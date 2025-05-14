@@ -1,4 +1,4 @@
-import { type CancellationToken, type editor, Emitter, type IEvent, languages } from 'monaco-editor';
+import { type CancellationToken, type editor, Emitter, type IEvent, languages } from '@private/monaco-editor';
 
 /** @inheritdoc */
 class DocumentSemanticTokensProvider implements languages.DocumentSemanticTokensProvider {

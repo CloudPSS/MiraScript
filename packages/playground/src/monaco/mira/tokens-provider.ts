@@ -1,4 +1,4 @@
-import { languages } from 'monaco-editor';
+import { languages } from '@private/monaco-editor';
 import { REG_WHITESPACE, REG_ORDINAL, REG_OCT, REG_BIN, REG_HEX, REG_NUMBER, REG_IDENTIFIER } from './constants';
 import { callWorker } from './worker-helper.js';
 

@@ -1,4 +1,4 @@
-import { languages } from 'monaco-editor';
+import { languages } from '@private/monaco-editor';
 
 languages.registerCodeActionProvider('mirascript', {
     provideCodeActions(model, range, context, token) {

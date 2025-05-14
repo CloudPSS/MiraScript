@@ -1,4 +1,4 @@
-import { languages } from 'monaco-editor';
+import { languages } from '@private/monaco-editor';
 
 languages.register({
     id: 'mirascript',

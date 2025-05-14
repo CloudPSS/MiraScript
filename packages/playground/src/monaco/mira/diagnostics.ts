@@ -1,4 +1,4 @@
-import { editor, Uri, type IDisposable } from 'monaco-editor';
+import { editor, Uri, type IDisposable } from '@private/monaco-editor';
 import { callWorker } from './worker-helper.js';
 
 const errorMessages = new Map<number, string | undefined>();

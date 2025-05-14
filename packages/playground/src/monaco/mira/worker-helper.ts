@@ -8,7 +8,7 @@ const calls = new Map<number, [(result: unknown) => void, (error: unknown) => vo
 async function getWorker(): Promise<Worker> {
     if (worker) return worker;
     worker = new Promise((resolve, reject) => {
-        const w = new Worker(new URL('./worker.js', import.meta.url), { name: 'mirascript.worker', type: 'module' });
+        const w = new Worker(new URL('./worker.js', import.meta.url), { name: '@mirascript/worker', type: 'module' });
         w.addEventListener('message', (ev) => {
             if (ev.data === 'ready') {
                 resolve(w);
