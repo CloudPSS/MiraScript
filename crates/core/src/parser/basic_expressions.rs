@@ -106,6 +106,7 @@ pub(super) fn interpolation<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression
     Ok(Expression::InterpolatedString(Box::new(token), expressions))
 }
 
+/// callable '(' ...args ')'
 type Call<'s> = (
     Box<Callable<'s>>,
     Box<Token<'s>>,
@@ -178,10 +179,28 @@ fn arg_list<'s>(i: &mut Input<'_, 's>) -> ModalResult<(Vec<Expression<'s>>, Box<
     .parse_next(i)
 }
 
-fn access_token<'s>(i: &mut Input<'_, 's>) -> ModalResult<Box<Token<'s>>> {
-    one_of(|t: &Token<'s>| matches!(t.kind, TokenKind::Identifier(_) | TokenKind::Ordinal(_)))
-        .map(|t: &Token<'s>| Box::new(t.to_owned()))
-        .parse_next(i)
+enum AccessIndex<'s> {
+    /// '.' identifier
+    Access(Box<Token<'s>>, Box<Token<'s>>),
+    /// '[' expression ']'
+    Index(Box<Token<'s>>, Box<Expression<'s>>, Box<Token<'s>>),
+}
+fn access_index<'s>(i: &mut Input<'_, 's>) -> ModalResult<AccessIndex<'s>> {
+    let access_token = |i: &mut Input<'_, 's>| {
+        one_of(|t: &Token<'s>| matches!(t.kind, TokenKind::Identifier(_) | TokenKind::Ordinal(_)))
+            .map(|t: &Token<'s>| Box::new(t.to_owned()))
+            .parse_next(i)
+    };
+    alt((
+        (token_boxed(Operator::Dot), access_token).map(|(d, i)| AccessIndex::Access(d, i)),
+        (
+            token_boxed(Operator::OpenBracket),
+            expression,
+            token_boxed(Operator::CloseBracket),
+        )
+            .map(|(o, e, c)| AccessIndex::Index(o, Box::new(e), c)),
+    ))
+    .parse_next(i)
 }
 
 fn extension_call<'s>(i: &mut Input<'_, 's>) -> ModalResult<Call<'s>> {
@@ -198,14 +217,18 @@ fn extension_call<'s>(i: &mut Input<'_, 's>) -> ModalResult<Call<'s>> {
             .parse_next(i)
     };
     let access_chain = |i: &mut Input<'_, 's>| {
-        (
-            variable_token(false, true),
-            repeat(0.., (token_boxed(Operator::Dot), access_token)),
-        )
+        (variable_token(false, true), repeat(0.., access_index))
             .map(|(first, rest): (_, Vec<_>)| {
                 let mut acc = Expression::Variable(first.into());
-                for (dot, token) in rest {
-                    acc = Expression::Access(Box::new(acc), dot, token);
+                for access_index in rest {
+                    match access_index {
+                        AccessIndex::Access(dot, token) => {
+                            acc = Expression::Access(Box::new(acc), dot, token);
+                        }
+                        AccessIndex::Index(open, exp, close) => {
+                            acc = Expression::Index(Box::new(acc), open, exp, close);
+                        }
+                    }
                 }
                 acc
             })
@@ -234,7 +257,7 @@ pub(super) fn postfix<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> 
             Box<Token<'s>>,
         ),
         Access(Box<Token<'s>>, Box<Token<'s>>),
-        Index(Box<Token<'s>>, Expression<'s>, Box<Token<'s>>),
+        Index(Box<Token<'s>>, Box<Expression<'s>>, Box<Token<'s>>),
         NonNil(Box<Token<'s>>),
     }
     let first = primary.parse_next(i)?;
@@ -243,15 +266,12 @@ pub(super) fn postfix<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> 
         alt((
             token_boxed(Operator::Exclamation).map(Function::NonNil),
             (token_boxed(Operator::OpenParen), arg_list).map(|(o, (a, c))| Function::Call(o, a, c)),
-            (token_boxed(Operator::Dot), access_token).map(|(d, i)| Function::Access(d, i)),
             (token_boxed(Operator::ColonColon), extension_call)
                 .map(|(kw, (ex, o, a, c))| Function::Extension(kw, ex, o, a, c)),
-            (
-                token_boxed(Operator::OpenBracket),
-                expression,
-                token_boxed(Operator::CloseBracket),
-            )
-                .map(|(o, e, c)| Function::Index(o, e, c)),
+            access_index.map(|t| match t {
+                AccessIndex::Access(dot, token) => Function::Access(dot, token),
+                AccessIndex::Index(open, exp, close) => Function::Index(open, exp, close),
+            }),
         )),
     )
     .fold(Vec::new, |mut v, t| {
@@ -271,7 +291,7 @@ pub(super) fn postfix<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> 
             Expression::Extension(Box::new(acc), e, ex, o, arg, c)
         }
         Function::Access(dot, token) => Expression::Access(Box::new(acc), dot, token),
-        Function::Index(l, index, r) => Expression::Index(Box::new(acc), l, Box::new(index), r),
+        Function::Index(l, index, r) => Expression::Index(Box::new(acc), l, index, r),
         Function::NonNil(token) => Expression::NonNil(Box::new(acc), token),
     }))
 }
