@@ -25,17 +25,19 @@ async function validate(model: editor.ITextModel): Promise<void> {
     const version = model.getVersionId();
     const errors = await callWorker('compile_script', text);
     const markers: editor.IMarkerData[] = [];
-    for (let i = 0; i < errors.length; i += 3) {
-        const start = model.getPositionAt(errors[i]);
-        const end = model.getPositionAt(errors[i + 1]);
-        const error = errors[i + 2];
+    for (let i = 0; i < errors.length; i += 5) {
+        const startLineNumber = errors[i];
+        const startColumn = errors[i + 1];
+        const endLineNumber = errors[i + 2];
+        const endColumn = errors[i + 3];
+        const error = errors[i + 4];
         const message = (await getErrorMessage(error)) ?? 'Unknown error';
         markers.push({
-            startLineNumber: start.lineNumber,
-            startColumn: start.column,
-            endLineNumber: end.lineNumber,
-            endColumn: end.column,
-            message, //: `${message} (${start.lineNumber}:${start.column}-${end.lineNumber}:${end.column}/${errors[i]}-${errors[i + 1]})`,
+            startLineNumber,
+            startColumn,
+            endLineNumber,
+            endColumn,
+            message, //: `${message} (${startLineNumber}:${startColumn}-${endLineNumber}:${endColumn})`,
             modelVersionId: version,
             severity: 8,
             source: 'mira',

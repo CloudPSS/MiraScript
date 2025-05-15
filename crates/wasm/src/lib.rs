@@ -1,38 +1,7 @@
+mod constants;
 mod utils;
-use strum::VariantNames;
 
 use wasm_bindgen::prelude::*;
-
-#[wasm_bindgen]
-pub fn keywords() -> Vec<String> {
-    mira_core::lexer::Keyword::VARIANTS
-        .iter()
-        .map(|s| s.to_string())
-        .collect()
-}
-
-#[wasm_bindgen]
-pub fn control_keywords() -> Vec<String> {
-    use mira_core::lexer::Keyword::*;
-    [
-        If, Else, Match, Case, For, While, Loop, Break, Continue, Return,
-    ]
-    .iter()
-    .map(|s| s.to_string())
-    .collect()
-}
-
-#[wasm_bindgen]
-pub fn numeric_keywords() -> Vec<String> {
-    use mira_core::lexer::Keyword::*;
-    [Nan, Inf].iter().map(|s| s.to_string()).collect()
-}
-
-#[wasm_bindgen]
-pub fn constant_keywords() -> Vec<String> {
-    use mira_core::lexer::Keyword::*;
-    [True, False, Nil].iter().map(|s| s.to_string()).collect()
-}
 
 #[wasm_bindgen]
 pub fn get_error_message(code: u16) -> Option<String> {
@@ -45,8 +14,27 @@ pub fn compile_script(script: &str) -> Vec<usize> {
     use mira_core::compile::compile_script;
 
     let (_, errors) = compile_script(script);
+    // offsets of line starts
+    let lines = script
+        .lines()
+        .map(|line| line.as_ptr() as usize - script.as_ptr() as usize)
+        .collect::<Vec<_>>();
+    let pos_to_line_col = |pos: usize| {
+        let line = lines
+            .iter()
+            .position(|&line| line > pos)
+            .unwrap_or(lines.len())
+            - 1;
+        let str = &script[lines[line]..pos];
+        let col = str.encode_utf16().count();
+        (line + 1, col + 1)
+    };
     errors
         .into_iter()
-        .flat_map(|s| [s.range.start, s.range.end, s.error.code() as usize])
+        .flat_map(|s| {
+            let start = pos_to_line_col(s.range.start);
+            let end = pos_to_line_col(s.range.end);
+            [start.0, start.1, end.0, end.1, s.error.code() as usize]
+        })
         .collect()
 }

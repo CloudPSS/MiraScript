@@ -1,5 +1,7 @@
 import * as wasm from 'mira-wasm';
 
+wasm.set_panic_hook();
+
 /** 工作线程请求 */
 export type Req<M extends keyof typeof wasm> = [number, M, ...Parameters<(typeof wasm)[M]>];
 /** 工作线程请求 */
