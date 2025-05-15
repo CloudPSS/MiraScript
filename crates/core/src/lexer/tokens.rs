@@ -1,22 +1,19 @@
 use winnow::ascii::space0;
-use winnow::combinator::{alt, dispatch, eof, fail, opt, peek};
+use winnow::combinator::{alt, dispatch, eof, fail, opt, peek, preceded};
 use winnow::prelude::*;
 use winnow::token::{any, take};
 
-use crate::error::{ErrorCode, SourceError, SourceRange};
+use crate::error::{ErrorCode, SourceError};
 
-use super::char_count::count_chars;
 use super::identifier::{identifier, is_identifier_special, is_identifier_start};
 use super::numeric::{number, ordinal};
-use super::string::apply_interpolation_offset;
 use super::{Input, Operator, Token, TokenKind, string};
 
 pub(super) fn token<'s>(
     input: &mut Input<'s>,
-    prev_index: usize,
     prev_token: &Option<&Token<'s>>,
 ) -> ModalResult<Token<'s>> {
-    let token_parser = |i: &mut Input<'s>| {
+    let token = |i: &mut Input<'s>| {
         dispatch!{peek(any);
             '0'..='9' => if prev_token.map(|t| &t.kind) == Some(&TokenKind::Operator(Operator::Dot)) {
                 ordinal
@@ -106,27 +103,23 @@ pub(super) fn token<'s>(
             _ => fail,
         }.parse_next(i)
     };
-    let (sp, token) = (
+    preceded(
         space0,
         alt((
-            token_parser,
+            token,
             eof.map(|_| TokenKind::Eof),
             any.span().map(|range| TokenKind::Unknown {
                 recovered: None,
                 errors: vec![SourceError::new(range, ErrorCode::UnknownToken)],
             }),
         ))
-        .with_taken(),
+        .with_span()
+        .map(|(kind, range)| Token {
+            range,
+            kind,
+            leading_trivia: vec![],
+            trailing_trivia: vec![],
+        }),
     )
-        .parse_next(input)?;
-    let start = prev_index + count_chars(sp);
-    let end = start + count_chars(token.1);
-    let mut t = Token {
-        kind: token.0,
-        range: SourceRange { start, end },
-        leading_trivia: vec![],
-        trailing_trivia: vec![],
-    };
-    apply_interpolation_offset(&mut t, start);
-    Ok(t)
+    .parse_next(input)
 }

@@ -96,6 +96,6 @@ pub(super) fn trivia<'s>(i: &mut Input<'s>) -> ModalResult<Trivia<'s>> {
     alt((line_comment, block_comment, empty_line)).parse_next(i)
 }
 
-pub(super) fn trivia_list<'s>(i: &mut Input<'s>) -> ModalResult<(Vec<Trivia<'s>>, &'s str)> {
-    repeat(0.., trivia).with_taken().parse_next(i)
+pub(super) fn trivia_list<'s>(i: &mut Input<'s>) -> ModalResult<Vec<Trivia<'s>>> {
+    repeat(0.., trivia).parse_next(i)
 }
