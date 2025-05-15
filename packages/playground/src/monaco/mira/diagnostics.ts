@@ -35,7 +35,7 @@ async function validate(model: editor.ITextModel): Promise<void> {
             startColumn: start.column,
             endLineNumber: end.lineNumber,
             endColumn: end.column,
-            message,
+            message, //: `${message} (${start.lineNumber}:${start.column}-${end.lineNumber}:${end.column}/${errors[i]}-${errors[i + 1]})`,
             modelVersionId: version,
             severity: 8,
             source: 'mira',

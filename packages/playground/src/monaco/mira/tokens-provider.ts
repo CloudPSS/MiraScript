@@ -47,16 +47,6 @@ async function getTokensProvider(): Promise<languages.IMonarchLanguage> {
             root: [[/[[\](){}]/gu, '@brackets'], { include: '@common' }],
             common: [
                 [
-                    /(let|const)(@whitespace+)(@identifier)(@whitespace*)(=)/gu,
-                    [
-                        { token: 'keyword.$1' },
-                        '',
-                        { cases: identifierCases(3, undefined, 'variable.other.constant') },
-                        '',
-                        'operator.equal',
-                    ],
-                ],
-                [
                     /(fn)(@whitespace+)(@identifier)(@whitespace*)$/gu,
                     [{ token: 'keyword.$1' }, '', { cases: identifierCases(3, undefined, 'entity.name.function') }, ''],
                 ],
