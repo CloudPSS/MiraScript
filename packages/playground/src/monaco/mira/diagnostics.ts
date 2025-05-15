@@ -41,7 +41,7 @@ async function validate(model: editor.ITextModel): Promise<void> {
             source: 'mira',
             code: {
                 value: `${error}`,
-                target: Uri.parse(`https://mira.com/${error}`),
+                target: Uri.parse(`https://mira.cloudpss.net/code/${error}`),
             },
         });
     }

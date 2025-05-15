@@ -1,5 +1,4 @@
 import { languages } from '@private/monaco-editor';
-import { REG_IDENTIFIER, REG_HEX, REG_OCT, REG_BIN, REG_NUMBER } from './constants.js';
 
 languages.setLanguageConfiguration('mirascript', {
     comments: {
@@ -11,10 +10,7 @@ languages.setLanguageConfiguration('mirascript', {
         ['[', ']'],
         ['{', '}'],
     ],
-    wordPattern: new RegExp(
-        `(${REG_IDENTIFIER.source}|${REG_HEX.source}|${REG_OCT.source}|${REG_BIN.source}|${REG_NUMBER.source}|\\d+)`,
-        'gu',
-    ),
+    wordPattern: /(-?\d+\.\w+([+-]\w*)?)|([^`~!#%^&*()\-=+[{\]}\\|;:'",.<>/?\s]+)/g,
     autoClosingPairs: [
         { open: '{', close: '}' },
         { open: '[', close: ']' },

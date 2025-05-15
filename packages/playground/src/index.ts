@@ -1,15 +1,12 @@
-import { localize } from '@private/monaco-editor/localize';
-import './index.css';
+import { createOverlayRoot, editor } from './monaco';
 
-await localize();
-
-const container = document.createElement('div');
-container.id = 'editor';
-document.body.append(container);
-const { editor } = await import('./monaco');
+const container = document.querySelector<HTMLDivElement>('#editor')!;
+const overlay = createOverlayRoot(container);
 const e = editor.create(container, {
     language: 'mirascript',
     fontFamily: 'Sarasa Mono SC',
+    useShadowDOM: true,
+    overflowWidgetsDomNode: overlay,
     formatOnType: true,
     formatOnPaste: true,
     fontLigatures: true,
@@ -142,6 +139,7 @@ x;
     @$_123;
 `,
 });
+e.onDidDispose(() => overlay.dispose());
 setTimeout(() => {
     e.onDidChangeModelContent(() => {
         localStorage.setItem('source', e.getValue());

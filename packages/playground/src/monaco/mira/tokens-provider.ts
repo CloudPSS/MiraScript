@@ -57,14 +57,8 @@ async function getTokensProvider(): Promise<languages.IMonarchLanguage> {
                     ],
                 ],
                 [
-                    /(fn)(@whitespace+)(@identifier)(@whitespace*)(\(|\{)/gu,
-                    [
-                        { token: 'keyword.$1' },
-                        '',
-                        { cases: identifierCases(3, undefined, 'entity.name.function') },
-                        '',
-                        '@brackets',
-                    ],
+                    /(fn)(@whitespace+)(@identifier)(@whitespace*)$/gu,
+                    [{ token: 'keyword.$1' }, '', { cases: identifierCases(3, undefined, 'entity.name.function') }, ''],
                 ],
                 [
                     /(\.)(@whitespace*)(\d+)/gu,
