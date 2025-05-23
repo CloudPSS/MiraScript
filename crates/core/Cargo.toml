@@ -11,12 +11,17 @@ name = "mira_core"
 name = "lexer"
 harness = false
 
+[features]
+default = []
+wasm = ["dep:wasm-bindgen"]
+
 [dev-dependencies]
 divan = "0.1.21"
 mira-core = { path = "." }
 
 [dependencies]
 # ariadne = "0.5"
+wasm-bindgen = { version = "0.2", optional = true }
 unicode-ident = "1.0"
 num-bigint = "0.4"
 num-traits = "0.2"

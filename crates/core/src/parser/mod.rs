@@ -25,7 +25,7 @@ mod statements;
 
 pub use array_element::{ArrayElement, ArrayPattern};
 pub(crate) use ast_visitor::*;
-pub use expression::Expression;
+pub use expression::{Callable, Expression};
 pub use expressions::expression;
 pub use iterable::Iterable;
 pub use pattern::Pattern;

@@ -72,8 +72,14 @@ pub(super) fn token<'s>(
                 "<=".value(TokenKind::Operator(Operator::LessEqual)),
                 "<".value(TokenKind::Operator(Operator::Less)),
             )),
-            '&' => "&&".value(TokenKind::Operator(Operator::LogicalAnd)),
-            '|' =>"||".value(TokenKind::Operator(Operator::LogicalOr)),
+            '&' => alt((
+                "&&=".value(TokenKind::Operator(Operator::LogicalAndEqual)),
+                "&&".value(TokenKind::Operator(Operator::LogicalAnd)),
+            )),
+            '|' => alt((
+                "||=".value(TokenKind::Operator(Operator::LogicalOrEqual)),
+                "||".value(TokenKind::Operator(Operator::LogicalOr)),
+            )),
             '?' => alt((
                 "?:".value(TokenKind::Operator(Operator::QuestionColon)),
                 "??=".value(TokenKind::Operator(Operator::NullCoalescingEqual)),

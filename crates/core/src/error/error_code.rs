@@ -1,7 +1,9 @@
 use std::fmt::Display;
-
 use strum::{EnumMessage, FromRepr};
+#[cfg(feature = "wasm")]
+use wasm_bindgen::prelude::*;
 
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 #[derive(Debug, Clone, Copy, PartialEq, EnumMessage, FromRepr)]
 #[repr(u16)]
 pub enum ErrorCode {
@@ -85,17 +87,23 @@ pub enum ErrorCode {
     #[strum(message = "Range pattern in array pattern should be parenthesised")]
     AmbiguousRangePattern,
 
-    // Analyzer error 3000 ~ 3999
-    #[strum(message = "Unknown analyzer error")]
-    AnalyzerError = 3000,
-
-    // Emitter error 4000 ~ 4999
+    // Emitter error 3000 ~ 3999
     #[strum(message = "Unknown emitter error")]
-    EmitterError = 4000,
+    EmitterError = 3000,
+    #[strum(message = "Cannot assign to an undeclared variable")]
+    UndefinedVariableAssignment,
+    #[strum(message = "Cannot assign to an immutable variable")]
+    ImmutableVariableAssignment,
+    #[strum(message = "Cannot access a variable before it is declared")]
+    UninitializedVariable,
+    #[strum(message = "The variable is already declared")]
+    DuplicateVariableDeclaration,
+    #[strum(message = "The variable is already declared as a parameter")]
+    DuplicateParameterDeclaration,
 
-    // Optimizer error 5000 ~ 5999
+    // Optimizer error 4000 ~ 4999
     #[strum(message = "Unknown optimizer error")]
-    OptimizerError = 5000,
+    OptimizerError = 4000,
 
     // Lexer warning 11000 ~ 11999
     #[strum(message = "Unknown lexer warning")]
@@ -105,17 +113,13 @@ pub enum ErrorCode {
     #[strum(message = "Unknown parser warning")]
     ParserWarning = 12000,
 
-    // Analyzer warning 13000 ~ 13999
-    #[strum(message = "Unknown analyzer warning")]
-    AnalyzerWarning = 13000,
-
-    // Emitter warning 14000 ~ 14999
+    // Emitter warning 13000 ~ 13999
     #[strum(message = "Unknown emitter warning")]
-    EmitterWarning = 14000,
+    EmitterWarning = 13000,
 
-    // Optimizer warning 15000 ~ 15999
+    // Optimizer warning 14000 ~ 14999
     #[strum(message = "Unknown optimizer warning")]
-    OptimizerWarning = 15000,
+    OptimizerWarning = 14000,
 
     // Lexer info 21000 ~ 21999
     #[strum(message = "Unknown lexer info")]
@@ -125,17 +129,13 @@ pub enum ErrorCode {
     #[strum(message = "Unknown parser info")]
     ParserInfo = 22000,
 
-    // Analyzer info 23000 ~ 23999
-    #[strum(message = "Unknown analyzer info")]
-    AnalyzerInfo = 23000,
-
-    // Emitter info 24000 ~ 24999
+    // Emitter info 23000 ~ 23999
     #[strum(message = "Unknown emitter info")]
-    EmitterInfo = 24000,
+    EmitterInfo = 23000,
 
-    // Optimizer info 25000 ~ 25999
+    // Optimizer info 24000 ~ 24999
     #[strum(message = "Unknown optimizer info")]
-    OptimizerInfo = 25000,
+    OptimizerInfo = 24000,
 
     // Lexer hint 31000 ~ 31999
     #[strum(message = "Unknown lexer hint")]
@@ -145,17 +145,13 @@ pub enum ErrorCode {
     #[strum(message = "Unknown parser hint")]
     ParserHint = 32000,
 
-    // Analyzer hint 33000 ~ 33999
-    #[strum(message = "Unknown analyzer hint")]
-    AnalyzerHint = 33000,
-
-    // Emitter hint 34000 ~ 34999
+    // Emitter hint 33000 ~ 33999
     #[strum(message = "Unknown emitter hint")]
-    EmitterHint = 34000,
+    EmitterHint = 33000,
 
-    // Optimizer hint 35000 ~ 35999
+    // Optimizer hint 34000 ~ 34999
     #[strum(message = "Unknown optimizer hint")]
-    OptimizerHint = 35000,
+    OptimizerHint = 34000,
 
     // Lexer reference 41000 ~ 41999
     #[strum(message = "Unknown lexer reference")]
@@ -165,17 +161,13 @@ pub enum ErrorCode {
     #[strum(message = "Unknown parser reference")]
     ParserReference = 42000,
 
-    // Analyzer reference 43000 ~ 43999
-    #[strum(message = "Unknown analyzer reference")]
-    AnalyzerReference = 43000,
-
-    // Emitter reference 44000 ~ 44999
+    // Emitter reference 43000 ~ 43999
     #[strum(message = "Unknown emitter reference")]
-    EmitterReference = 44000,
+    EmitterReference = 43000,
 
-    // Optimizer reference 45000 ~ 45999
+    // Optimizer reference 44000 ~ 44999
     #[strum(message = "Unknown optimizer reference")]
-    OptimizerReference = 45000,
+    OptimizerReference = 44000,
 }
 
 impl From<ErrorCode> for u16 {

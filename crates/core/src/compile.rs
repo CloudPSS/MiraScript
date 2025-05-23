@@ -3,11 +3,12 @@ use std::cell::RefCell;
 use winnow::ModalResult;
 use winnow::stream::{Location, Stream};
 
+use crate::emitter::emit;
 use crate::error::{ErrorCode, SourceError, SourceRange};
 use crate::lexer::{self, Token, TokenKind};
 use crate::parser::{self, AstWalker, walker};
 
-type CompileResult<'s> = (Option<parser::Script<'s>>, Vec<SourceError>);
+type CompileResult<'s> = (Option<Box<[u8]>>, Vec<SourceError>);
 
 fn compile<'s>(
     input: &'s str,
@@ -130,7 +131,15 @@ fn compile<'s>(
         script.walk(&mut w);
     }
 
-    (Some(script), error_collector)
+    // Emitting
+    let (errors, bytecode) = emit(&script);
+    error_collector.extend(errors);
+
+    if error_collector.iter().any(|e| e.is_error()) {
+        return (None, error_collector);
+    }
+
+    (Some(bytecode), error_collector)
 }
 
 #[allow(dead_code)]

@@ -18,8 +18,6 @@ pub struct Script<'s>(
     pub Box<Token<'s>>,
 );
 
-struct ScriptIterMut<'s>(std::slice::Iter<'s, Statement<'s>>);
-
 impl<'s> AstWalker<'s> for Script<'s> {
     fn walk(&mut self, visitor: &mut dyn AstVisitor<'s>) {
         for statement in &mut self.0 {

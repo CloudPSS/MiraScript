@@ -2,7 +2,6 @@ use std::fs;
 
 use compile::compile_script;
 
-mod analyzer;
 mod ansi;
 mod compile;
 mod emitter;
@@ -13,14 +12,14 @@ mod parser;
 fn main() {
     let text = fs::read_to_string("../../test/main.ms").unwrap();
 
-    let (script, errors) = compile_script(&text);
+    let (code, errors) = compile_script(&text);
 
     for error in errors {
         eprintln!("{error}");
     }
-    let Some(script) = script else {
+    let Some(code) = code else {
         eprintln!("Failed to compile script");
         return;
     };
-    println!("{}", script);
+    println!("{:?}", code);
 }

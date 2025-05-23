@@ -1,310 +1,300 @@
+use std::ops::{Deref, DerefMut};
+
+use strum::{Display, VariantArray};
+#[cfg(feature = "wasm")]
+use wasm_bindgen::prelude::*;
+
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 #[repr(u8)]
-enum OpCode {
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, VariantArray, Display)]
+pub enum OpCode {
     // debugging
     /// No operation
     Noop = 0x00,
 
-    // constatns
-    /// Push number `-1` onto the stack
-    MinusOne = 0x0F,
-    /// Push number `0` onto the stack
-    Zero,
-    /// Push number `1` onto the stack
-    One,
-    /// Push number `2` onto the stack
-    Two,
-    /// Push number `3` onto the stack
-    Three,
-    /// Push number `4` onto the stack
-    Four,
-    /// Push number `5` onto the stack
-    Five,
-    /// Push `nil` onto the stack
-    Nil,
-    /// Push `true` onto the stack
-    True,
-    /// Push `false` onto the stack
-    False,
-    /// CONSTANT `u8`
-    /// Push a constant onto the stack
-    Constant,
-    /// CONSTANT `u24`
-    /// Push a constant onto the stack
-    ConstantWide,
-
     // operators
-    /// Add the top two values on the stack
-    Add = 0x20,
-    /// Subtract the top two values on the stack
+    /// ADD %ret %1 %2\
+    /// %ret = %1 + %2
+    Add = 0x10,
+    /// SUB %ret %1 %2\
+    /// %ret = %1 - %2
     Sub,
-    /// Multiply the top two values on the stack
+    /// MUL %ret %1 %2\
+    /// %ret = %1 * %2
     Mul,
-    /// Divide the top two values on the stack
+    /// DIV %ret %1 %2\
+    /// %ret = %1 / %2
     Div,
-    /// Modulo the top two values on the stack
+    /// MOD %ret %1 %2\
+    /// %ret = %1 % %2
     Mod,
-    /// Exponent the top two values on the stack
-    Exp,
-    /// Negate the top value on the stack
+    /// EXP %ret %1 %2\
+    /// %ret = %1 ^ %2
+    Pow,
+    /// POS %ret %1\
+    /// %ret = +%1
+    Pos,
+    /// NEG %ret %1\
+    /// %ret = -%1
     Neg,
-    /// Not the top value on the stack
+    /// NOT %ret %1\
+    /// %ret = !%1
     Not,
-    /// Unary plus the top value on the stack
+    /// PLUS %ret %1\
+    /// %ret = +%1
     Plus,
-    /// Equal the top two values on the stack
+    /// EQ %ret %1 %2\
+    /// %ret = %1 == %2
     Eq,
-    /// Not equal the top two values on the stack
+    /// NEQ %ret %1 %2\
+    /// %ret = %1 != %2
     Neq,
-    /// Less than the top two values on the stack
+    /// LT %ret %1 %2\
+    /// %ret = %1 < %2
     Lt,
-    /// Less than or equal the top two values on the stack
+    /// LEQ %ret %1 %2\
+    /// %ret = %1 <= %2
     Leq,
-    /// Greater than the top two values on the stack
+    /// GT %ret %1 %2\
+    /// %ret = %1 > %2
     Gt,
-    /// Greater than or equal the top two values on the stack
+    /// GEQ %ret %1 %2\
+    /// %ret = %1 >= %2
     Geq,
+    /// AEQ %ret %1 %2\
+    /// %ret = %1 ~= %2
+    Aeq,
+    /// NAEQ %ret %1 %2\
+    /// %ret = %1 !~= %2
+    Naeq,
+    /// CONCAT %ret `n` %1 %2 ... %n\
+    /// %ret = %1 .. %2 .. ... .. %n
+    Concat,
+    /// AND %ret %1 %2\
+    /// %ret = %1 && %2
+    And,
+    /// OR %ret %1 %2\
+    /// %ret = %1 || %2
+    Or,
+    /// TYPE %ret %1\
+    /// %ret = type(%1)
+    Type,
 
-    // pop / push
-    /// Pop the top value from the stack
-    Pop = 0x40,
-    /// POP_N `u8`
-    /// Pop the top `n` values from the stack
-    PopN,
-    /// Duplicate the top value on the stack
-    Dup,
-    /// DUP_N `u8`
-    /// Duplicate the top `n`th value on the stack
-    DupN,
-    /// DUP_N_WIDE `u24`
-    /// Duplicate the top `n`th value on the stack
-    DupNWide,
-    /// Swap the top two values on the stack
+    // variable management
+    /// CONSTANT %reg `index`\
+    /// %reg = CONSTANTS\[index]
+    Constant = 0x30,
+    /// ASSIGN %ret %1\
+    /// %ret = %1
+    Assign,
+    /// SWAP %1 %2\
+    /// (%1, %2) = (%2, %1)
     Swap,
-    /// SWAP_N `u8`
-    /// Swap the top `n`th value and the top value on the stack
-    SwapN,
-    /// SWAP_N_WIDE `u24`
-    /// Swap the top `n`th value and the top value on the stack
-    SwapNWide,
-    /// INIT_LOCAL `n`
-    /// Push `n` uninitialized values onto the stack
-    InitLocal,
-    /// INIT_LOCAL_WIDE `u24`
-    /// Push `n` uninitialized values onto the stack
-    InitLocalWide,
-    /// GET_LOCAL `n`
-    /// Push the `n`th local value onto the stack
-    GetLocal,
-    /// GET_LOCAL_WIDE `u24`
-    /// Push the `n`th local value onto the stack
-    GetLocalWide,
-    /// SET_LOCAL `n`
-    /// Pop the top value from the stack and set the `n`th local value
-    SetLocal,
-    /// SET_LOCAL_WIDE `u24`
-    /// Pop the top value from the stack and set the `n`th local value
-    SetLocalWide,
-    /// GET_GLOBAL `u8`
-    /// Push the global value with the given name onto the stack
-    GetGlobal,
-    /// GET_GLOBAL_WIDE `u24`
-    /// Push the global value with the given name onto the stack
-    GetGlobalWide,
-    /// GET_GLOBAL_DYN
-    /// Pop the top value from the stack and push the global value with the given name onto the stack
-    GetGlobalDyn,
-    /// SET_GLOBAL `u8`
-    /// Pop the top value from the stack and set the global value with the given name
-    SetGlobal,
-    /// SET_GLOBAL_WIDE `u24`
-    /// Pop the top value from the stack and set the global value with the given name
-    SetGlobalWide,
-    /// SET_GLOBAL_DYN
-    /// Pop the top two values from the stack and set the global value with the given name
-    SetGlobalDyn,
-
-    // closures
-    /// CLOSURE `u8` (`u8` `u8`)*
-    /// Create a new closure with the given function and upvalues
-    Closure = 0x60,
-    /// CLOSURE_WIDE `u24` (`u8` `u24`)*
-    /// Create a new closure with the given function and upvalues
-    ClosureWide,
-    /// GET_UPVALUE `u8`
-    /// Push the upvalue with the given index onto the stack
+    /// GET_UPVALUE %ret `level` %%up\
+    /// %ret = UPVALUES\[level]\[%%up]
     GetUpvalue,
-    /// GET_UPVALUE_WIDE `u24`
-    /// Push the upvalue with the given index onto the stack
-    GetUpvalueWide,
-    /// SET_UPVALUE `u8`
-    /// Pop the top value from the stack and set the upvalue with the given index
+    /// SET_UPVALUE %value `level` %%up \
+    /// UPVALUES\[level]\[%%up] = %value
     SetUpvalue,
-    /// SET_UPVALUE_WIDE `u24`
-    /// Pop the top value from the stack and set the upvalue with the given index
-    SetUpvalueWide,
-    /// Pop the upvalue from the stack and close the upvalue
-    CloseUpvalue,
-    /// CLOSE_UPVALUE_N `u8`
-    /// Pop the top `n` values from the stack and close the upvalues
-    CloseUpvalueN,
+    /// GET_GLOBAL %ret `name` \
+    /// %ret = GLOBALS\[CONSTANTS\[name]]
+    GetGlobal,
+    /// GET_GLOBAL_DYN %ret %name \
+    /// %ret = GLOBALS\[%name]
+    GetGlobalDyn,
 
     // objects
-    /// Create a new editable record, pushing it onto the stack
-    Record = 0x70,
-    /// RECORD_INIT `u8`
-    /// Pop value from the stack and add it to the peek record, with the given key
-    RecordInit,
-    /// RECORD_INIT_WIDE `u24`
-    /// Pop value from the stack and add it to the peek record, with the given key
-    RecordInitWide,
-    /// Pop record from the stack, copy all pairs to the peek record
-    RecordAssign,
-    /// Finish record construction
-    RecordFreeze,
-    /// Create a new editable array, pushing it onto the stack
+    /// RECORD %ret\
+    /// %ret = (
+    Record = 0x40,
+    /// FIELD `name` %field\
+    /// \[CONSTANTS\[name]]: %field,
+    Field,
+    /// FIELD_DYN %name %field\
+    /// \[%name]: %field,
+    FieldDyn,
+    /// ARRAY %ret\
+    /// %ret = \[
     Array,
-    /// Pop value from the stack and add it to the peek array
-    ArrayInit,
-    /// Pop array from the stack, copy all values to the peek array
-    ArrayAppend,
-    /// Finish array construction
-    ArrayFreeze,
-    /// GET_INDEX `u8`
-    /// Get the value with the given index from the peek array or record
-    GetIndex,
-    /// GET_INDEX_WIDE `u24`
-    /// Get the value with the given index from the peek array or record
-    GetIndexWide,
-    /// GET_INDEX_INT `u32`
-    /// Get the value with the given index from the peek array or record
-    GetIndexInt,
-    /// GET `u8`
-    /// Get the value with the given key from the peek array or record
+    /// ELEMENT %elem\
+    /// %elem,
+    Element,
+    /// RANGE %start %end\
+    /// %start..%end,
+    Range,
+    /// RANGE_EXCLUSIVE %start %end\
+    /// %start..<%end,
+    RangeExclusive,
+    /// EXPAND %var\
+    /// ..%var,
+    Expand,
+    /// FREEZE
+    /// ) for record or ] for array\
+    Freeze,
+    /// GET %ret %var `key`\
+    /// %ret = %var\[CONSTANTS\[key]]
     Get,
-    /// GET_WIDE `u24`
-    /// Get the value with the given key from the peek array or record
-    GetWide,
-    /// GET_DYN
-    /// Pop key and get the value from the peek array or record
+    /// GET_DYN %ret %var %key\
+    /// %ret = %var\[%key]
     GetDyn,
-    /// SET `u8`
-    /// Pop value and set the value in the peek external object
+    /// GET_INDEX %ret %var `index`\
+    /// %ret = %var\[index]
+    GetIndex,
+    /// SET %value %var `key`\
+    /// %var\[CONSTANTS\[key]] = %value
     Set,
-    /// SET_WIDE `u24`
-    /// Pop value and set the value in the peek external object
-    SetWide,
-    /// SET_DYN
-    /// Pop key and value and set the value in the peek external object
+    /// SET_DYN %value %var %key\
+    /// %var\[%key] = %value
     SetDyn,
+    /// SET_INDEX %value %var `index`\
+    /// %var\[index] = %value
+    SetIndex,
+    /// SLICE %ret %var `start` `end`\
+    /// %ret = %var\[start..end]
+    Slice,
+    /// SLICE_START %ret %var `end`\
+    /// %ret = %var\[..end]
+    SliceStart,
+    /// SLICE_END %ret %var `start`\
+    /// %ret = %var\[start..]
+    SliceEnd,
+    /// SLICE_DYN %ret %var %start %end\
+    /// %ret = %var\[%start..%end]
+    SliceDyn,
+    /// SLICE_EXCLUSIVE_DYN %ret %var %start %end\
+    /// %ret = %var\[%start..<%end]
+    SliceExclusiveDyn,
 
     // control flow
-    /// JUMP `u8`
-    /// Jump to the given offset
-    Jump = 0x90,
-    /// JUMP_WIDE `u24`
-    /// Jump to the given offset
-    JumpWide,
-    /// JUMP_IF_TRUE `u8`
-    /// Pop the top value from the stack and jump to the given offset if it is truthy
-    JumpIfTrue,
-    /// JUMP_IF_TRUE_WIDE `u24`
-    /// Pop the top value from the stack and jump to the given offset if it is truthy
-    JumpIfTrueWide,
-    /// JUMP_IF_FALSE `u8`
-    /// Pop the top value from the stack and jump to the given offset if it is falsy
-    JumpIfFalse,
-    /// JUMP_IF_FALSE_WIDE `u24`
-    /// Pop the top value from the stack and jump to the given offset if it is falsy
-    JumpIfFalseWide,
-    /// LOOP `u8`
-    /// Jump to the given negative offset
-    Loop,
-    /// LOOP_WIDE `u24`
-    /// Jump to the given negative offset
-    LoopWide,
-    /// LOOP_IF_TRUE `u8`
-    /// Pop the top value from the stack and jump to the given negative offset if it is truthy
-    LoopIfTrue,
-    /// LOOP_IF_TRUE_WIDE `u24`
-    /// Pop the top value from the stack and jump to the given negative offset if it is truthy
-    LoopIfTrueWide,
-    /// LOOP_IF_FALSE `u8`
-    /// Pop the top value from the stack and jump to the given negative offset if it is falsy
-    LoopIfFalse,
-    /// LOOP_IF_FALSE_WIDE `u24`
-    /// Pop the top value from the stack and jump to the given negative offset if it is falsy
-    LoopIfFalseWide,
-
-    // call
-    /// Call the top value on the stack
-    Call0 = 0xA0,
-    /// Call the second value on the stack with the top value on the stack
-    Call1,
-    /// Call the third value on the stack with the top two values on the stack
-    Call2,
-    /// Call the fourth value on the stack with the top three values on the stack
-    Call3,
-    /// Call the fifth value on the stack with the top four values on the stack
-    Call4,
-    /// Call the sixth value on the stack with the top five values on the stack
-    Call5,
-    /// Call the seventh value on the stack with the top six values on the stack
-    Call6,
-    /// Call the eighth value on the stack with the top seven values on the stack
-    Call7,
-    /// Call the ninth value on the stack with the top eight values on the stack
-    Call8,
-    /// CALL `u8`
-    /// Call the `n`th value on the stack with the top `n-1` values on the stack
+    /// LOOP\
+    /// loop {
+    Loop = 0x60,
+    /// LOOP_END\
+    /// }
+    LoopEnd,
+    /// BREAK\
+    /// break;
+    Break,
+    /// CONTINUE\
+    /// continue;
+    Continue,
+    /// IF %cond\
+    /// if (%cond) {
+    If,
+    /// ELSE\
+    /// } else {
+    Else,
+    /// IF_END\
+    /// }
+    IfEnd,
+    /// FUNC %f `argn` `regn`\
+    /// %f = (%1, %2, ... , %argn) => { let %argn+1, ... , %regn;
+    Func,
+    /// FUNC_VARG %f `argn` `regn`\
+    /// %f = (%1, %2, ... , %argn-1, ...%argn) => { let %argn+1, ... , %regn;
+    FuncVarg,
+    /// FUNC_END\
+    /// }
+    FuncEnd,
+    /// RETURN %value\
+    /// return %value;
+    Return,
+    /// CALL %ret `f` `argn` %1 %2 ... %argn\
+    /// %ret = GLOBAL[CONSTANTS[f]](%1, %2, ... , %argn);
     Call,
-    /// CALL_WIDE `u24`
-    /// Call the `n`th value on the stack with the top `n-1` values on the stack
-    CallWide,
-    /// CALL_VIRT_0 `u8`
-    /// Call by name from constant pool with no arguments
-    CallVirt0 = 0xB0,
-    /// CALL_VIRT_1 `u8`
-    /// Call by name from constant pool with one argument
-    CallVirt1,
-    /// CALL_VIRT_2 `u8`
-    /// Call by name from constant pool with two arguments
-    CallVirt2,
-    /// CALL_VIRT_3 `u8`
-    /// Call by name from constant pool with three arguments
-    CallVirt3,
-    /// CALL_VIRT_4 `u8`
-    /// Call by name from constant pool with four arguments
-    CallVirt4,
-    /// CALL_VIRT_5 `u8`
-    /// Call by name from constant pool with five arguments
-    CallVirt5,
-    /// CALL_VIRT_6 `u8`
-    /// Call by name from constant pool with six arguments
-    CallVirt6,
-    /// CALL_VIRT_7 `u8`
-    /// Call by name from constant pool with seven arguments
-    CallVirt7,
-    /// CALL_VIRT_8 `u8`
-    /// Call by name from constant pool with eight arguments
-    CallVirt8,
-    /// CALL_VIRT `u8` `u8`
-    /// Call by name from constant pool with `n` arguments
+    /// CALL_DYN %ret %f `argn` %1 %2 ... %argn\
+    /// %ret = %f(%1, %2, ... , %argn);
+    CallDyn,
+    /// CALL_VIRT %ret `f` `argn` %1 %2 ... %argn\
+    /// %ret = %1::(GLOBAL[CONSTANTS[f]])(%2, ... , %argn);
     CallVirt,
-    /// CALL_VIRT_WIDE `u24` `u24`
-    /// Call by name from constant pool with `n` arguments
-    CallVirtWide,
-    /// CALL_VIRT_DYN `u8`
-    /// Call by name from stack with `n` arguments
+    /// CALL_VIRT_DYN %f `argn` %1 %2 ... %argn\
+    /// %ret = %1::%f( %2, ... , %argn);
     CallVirtDyn,
-    /// CALL_VIRT_DYN_WIDE `u24`
-    /// Call by name from stack with `n` arguments
-    CallVirtDynWide,
-    /// Return from the current function with the top value on the stack
-    Return = 0xC0,
+    /// INVOKE %ret %self `f` `argn` %1 %2 ... %argn\
+    /// %ret = %self[GLOBAL[CONSTANTS[f]]]!(%1, %2, ... , %argn);
+    Invoke,
+    /// INVOKE_DYN %ret %self %f `argn` %1 %2 ... %argn\
+    /// %ret = %self[%f]!(%1, %2, ... , %argn);
+    InvokeDyn,
+    /// INVOKE_VIRT %ret %self `f` `argn` %1 %2 ... %argn\
+    /// %ret = %self[GLOBAL[CONSTANTS[f]]](%1, %2, ... , %argn);
+    InvokeVirt,
+    /// INVOKE_VIRT_DYN %ret %self %f `argn` %1 %2 ... %argn\
+    /// %ret = %self[%f](%1, %2, ... , %argn);
+    InvokeVirtDyn,
 }
 
 impl From<OpCode> for u8 {
     fn from(op: OpCode) -> u8 {
         op as u8
+    }
+}
+
+impl OpCode {
+    pub const WIDE_MASK: u8 = 0x80;
+    pub const PARAM_MAX: usize = u8::MAX as usize;
+    pub const PARAM_WIDE_MAX: usize = u32::MAX as usize;
+
+    pub fn code(&self) -> u8 {
+        *self as u8
+    }
+    pub fn wide_code(&self) -> u8 {
+        *self as u8 | Self::WIDE_MASK
+    }
+}
+
+pub trait OpParamTrait {
+    fn value(&self) -> usize;
+    fn is_wide(&self) -> bool {
+        self.value() > OpCode::PARAM_MAX
+    }
+    fn code(&self) -> u8 {
+        debug_assert!(!self.is_wide());
+        self.value() as u8
+    }
+    fn wide_code(&self) -> [u8; 4] {
+        (self.value() as u32).to_le_bytes()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Register(usize);
+
+impl Register {
+    pub fn new(index: usize) -> Self {
+        debug_assert!(index != 0);
+        Self(index)
+    }
+
+    /// Write to this register will be ignored
+    /// Reading from this register will always return `nil`
+    pub const EMPTY: Self = Self(0);
+}
+
+impl OpParamTrait for Register {
+    fn value(&self) -> usize {
+        self.0
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct OpParam(usize);
+
+impl OpParam {
+    pub fn new(value: usize) -> Self {
+        Self(value)
+    }
+}
+
+impl OpParamTrait for OpParam {
+    fn value(&self) -> usize {
+        self.0
+    }
+}
+
+impl From<usize> for OpParam {
+    fn from(param: usize) -> Self {
+        Self(param)
     }
 }

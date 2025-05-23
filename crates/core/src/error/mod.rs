@@ -1,4 +1,4 @@
-use std::{error::Error, fmt::Display};
+use std::{error::Error, fmt::Display, ops::Deref};
 
 mod error_code;
 
@@ -31,4 +31,12 @@ impl Error for SourceError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         None
     }
+}
+
+impl Deref for SourceError {
+    fn deref(&self) -> &ErrorCode {
+        &self.error
+    }
+
+    type Target = ErrorCode;
 }

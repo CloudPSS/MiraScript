@@ -39,8 +39,8 @@ pub enum Statement<'s> {
     ///
     /// The assigner must be one of the following:
     /// - `identifier`
-    /// - `expression_access` where the accessed is an extern or `global`
-    /// - `expression_index` where the indexed is an extern or `global`
+    /// - `expression_access` where the accessed is an extern
+    /// - `expression_index` where the indexed is an extern
     Assign(
         Box<Expression<'s>>,
         Box<Token<'s>>,

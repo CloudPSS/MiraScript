@@ -1,4 +1,3 @@
-pub mod analyzer;
 pub mod ansi;
 pub mod compile;
 pub mod emitter;
