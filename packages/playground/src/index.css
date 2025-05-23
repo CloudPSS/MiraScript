@@ -1,9 +1,24 @@
+:root {
+  color-scheme: dark light;
+}
+
 body {
   margin: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-flow: row;
 }
 
 #editor {
-  width: 100vw;
-  height: 100vh;
+  flex: 1;
   contain: strict;
+}
+
+#disassembly {
+  flex: 1;
+  contain: strict;
+  white-space: pre-wrap;
+  font-family: monospace;
+  overflow: auto;
 }

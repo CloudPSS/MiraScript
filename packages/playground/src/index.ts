@@ -1,8 +1,10 @@
-import { createOverlayRoot, editor } from './monaco';
+import { disassemble } from './disassembler';
+import * as monaco from './monaco';
+import { getCompileResult } from './monaco/mira/worker-helper';
 
-const container = document.querySelector<HTMLDivElement>('#editor')!;
-const overlay = createOverlayRoot(container);
-const e = editor.create(container, {
+const elEditor = document.querySelector<HTMLDivElement>('#editor')!;
+const overlay = monaco.utils.createOverflowWidgetsDomNode(elEditor);
+const editor = monaco.editor.create(elEditor, {
     language: 'mirascript',
     fontFamily: 'Sarasa Mono SC',
     useShadowDOM: true,
@@ -139,9 +141,17 @@ x;
     @$_123;
 `,
 });
-e.onDidDispose(() => overlay.dispose());
+editor.onDidDispose(() => overlay.dispose());
 setTimeout(() => {
-    e.onDidChangeModelContent(() => {
-        localStorage.setItem('source', e.getValue());
+    editor.onDidChangeModelContent(() => {
+        localStorage.setItem('source', editor.getValue());
     });
-}, 1000);
+}, 1);
+
+const elDisassembly = document.querySelector<HTMLDivElement>('#disassembly')!;
+elDisassembly.addEventListener('click', () => {
+    const result = getCompileResult(editor.getModel()!.uri);
+    if (!result) return;
+    const lines = disassemble(result.chunk);
+    elDisassembly.textContent = lines;
+});

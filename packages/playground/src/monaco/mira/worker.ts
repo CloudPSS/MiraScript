@@ -1,28 +1,29 @@
 import * as wasm from 'mira-wasm';
+import { initialize, type Uri, type worker } from '@private/monaco-editor/worker';
 
-wasm.set_panic_hook();
+/** Host functions */
+export interface Host {
+    /** 更新编译结果 */
+    updateCompileResult(uri: string, errors: ArrayBuffer, chunk: ArrayBuffer | undefined): void;
+}
 
-/** 工作线程请求 */
-export type Req<M extends keyof typeof wasm> = [number, M, ...Parameters<(typeof wasm)[M]>];
-/** 工作线程请求 */
-export type Res<M extends keyof typeof wasm> = [number, M, ReturnType<(typeof wasm)[M]>];
-
-addEventListener('message', (ev) => {
-    const data = ev.data as Req<keyof typeof wasm>;
-    if (data.length < 2) return;
-    const [id, method, ...args] = data;
-    if (typeof id !== 'number' || typeof method !== 'string') return;
-    if (!(method in wasm)) return;
-    try {
-        const result = wasm[method as 'keywords'](...(args as []));
-        if (ArrayBuffer.isView(result)) {
-            postMessage([id, method, result] as Res<typeof method>, { transfer: [result.buffer] });
-        } else {
-            postMessage([id, method, result] as Res<typeof method>);
-        }
-    } catch (ex) {
-        postMessage([id, method, ex] as Res<typeof method>);
-    }
+initialize((ctx: worker.IWorkerContext<Host>) => {
+    context = ctx;
+    return { ...wasm, compile_script };
 });
+let context: worker.IWorkerContext<Host>;
 
-setTimeout(() => postMessage('ready'));
+export { keywords, control_keywords, constant_keywords, numeric_keywords, get_error_message, opcodes } from 'mira-wasm';
+/** 编译 */
+export async function compile_script(uri: Uri): Promise<void> {
+    const model = context.getMirrorModels().find((v) => v.uri.toString() === uri.toString());
+    if (!model) {
+        throw new Error(`Model not found for URI: ${uri.toString()}`);
+    }
+    const script = model.getValue();
+    const result = wasm.compile_script(script);
+    const error = result.errors().buffer;
+    const chunk = result.chunk()?.buffer;
+    result.free();
+    await Promise.resolve(context.host.updateCompileResult(uri.toString(), error, chunk));
+}

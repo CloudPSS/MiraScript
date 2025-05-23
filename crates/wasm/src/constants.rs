@@ -1,4 +1,4 @@
-use strum::{VariantArray, VariantNames};
+use strum::VariantNames;
 
 use wasm_bindgen::prelude::*;
 
@@ -37,16 +37,4 @@ pub fn numeric_keywords() -> Vec<String> {
 pub fn constant_keywords() -> Vec<String> {
     use mira_core::lexer::Keyword::*;
     [True, False, Nil].iter().map(|s| s.to_string()).collect()
-}
-
-#[wasm_bindgen]
-pub fn opcodes() -> Vec<String> {
-    use mira_core::emitter::OpCode;
-    OpCode::VARIANTS
-        .iter()
-        .flat_map(|s| {
-            let code: u8 = (*s).into();
-            [code.to_string(), s.to_string()]
-        })
-        .collect()
 }

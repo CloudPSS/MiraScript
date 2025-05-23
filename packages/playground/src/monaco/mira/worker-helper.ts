@@ -1,52 +1,47 @@
-import type * as wasm from 'mira-wasm';
-import type { Res } from './worker.js';
+import type * as worker from './worker.js';
+import { utils, editor, Uri } from '@private/monaco-editor';
 
-let id = 0;
-let worker: Promise<Worker> | undefined;
-const calls = new Map<number, [(result: unknown) => void, (error: unknown) => void]>();
-/** 准备 worker */
-async function getWorker(): Promise<Worker> {
-    if (worker) return worker;
-    worker = new Promise((resolve, reject) => {
-        const w = new Worker(new URL('./worker.js', import.meta.url), { name: '@mirascript/worker', type: 'module' });
-        w.addEventListener('message', (ev) => {
-            if (ev.data === 'ready') {
-                resolve(w);
-            } else {
-                const [id, _, result] = ev.data as Res<keyof typeof wasm>;
-                if (typeof id !== 'number') return;
-                const call = calls.get(id);
-                if (!call) return;
-                calls.delete(id);
-                const [resolve, reject] = call;
-                if (result instanceof Error) {
-                    reject(result);
-                } else {
-                    resolve(result);
-                }
-            }
-        });
-        w.addEventListener('error', (ev) => {
-            reject(new Error(`Worker error: ${ev.message}`));
-        });
-    });
-    return worker;
+utils.registerWorker(
+    'mirascript',
+    () => new Worker(new URL('./worker.js', import.meta.url), { name: '@mirascript/worker', type: 'module' }),
+);
+
+/** 编译结果 */
+export interface CompileResult {
+    /** 错误信息 */
+    errors: Uint32Array;
+    /** 代码信息 */
+    chunk?: Uint8Array;
+}
+const compileResult = new Map<string, CompileResult>();
+const monacoWorker = editor.createWebWorker({
+    label: 'mirascript',
+    moduleId: '@mirascript/worker',
+    createData: {},
+    host: {
+        updateCompileResult(uri, errors, chunk) {
+            compileResult.set(uri, {
+                errors: new Uint32Array(errors),
+                chunk: chunk ? new Uint8Array(chunk) : undefined,
+            });
+        },
+    } satisfies worker.Host,
+});
+
+/** 获取编译结果 */
+export function getCompileResult(uri: Uri): CompileResult | undefined {
+    return compileResult.get(uri.toString());
 }
 
 /** 调用 worker 方法 */
-export async function callWorker<const M extends keyof typeof wasm>(
+export async function callWorker<const M extends keyof typeof worker>(
     method: M,
-    ...args: Parameters<(typeof wasm)[M]>
-): Promise<ReturnType<(typeof wasm)[M]>> {
-    const w = await getWorker();
-    const callId = id++;
-    if (id >= Number.MAX_SAFE_INTEGER) id = 0;
-    const transfer = [];
-    for (const a of args) {
-        if (ArrayBuffer.isView(a)) transfer.push(a.buffer);
-    }
-    w.postMessage([callId, method, ...args], { transfer });
-    return new Promise((resolve, reject) => {
-        calls.set(callId, [resolve as (result: unknown) => void, reject]);
-    });
+    ...args: Parameters<(typeof worker)[M]>
+): Promise<ReturnType<(typeof worker)[M]>> {
+    const resources = args.filter((a) => a instanceof Uri);
+    const passArgs = args.map((arg) => (arg instanceof Uri ? arg.toString() : arg));
+    const proxy = resources.length ? await monacoWorker.withSyncedResources(resources) : await monacoWorker.getProxy();
+    return await ((proxy as typeof worker)[method as 'keywords'](...(passArgs as [])) as unknown as Promise<
+        ReturnType<(typeof worker)[M]>
+    >);
 }

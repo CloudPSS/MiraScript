@@ -1,5 +1,5 @@
 import { editor, Uri, type IDisposable } from '@private/monaco-editor';
-import { callWorker } from './worker-helper.js';
+import { callWorker, getCompileResult } from './worker-helper.js';
 
 const errorMessages = new Map<number, string | undefined>();
 /** 获取错误消息 */
@@ -21,9 +21,11 @@ async function validate(model: editor.ITextModel): Promise<void> {
         editor.setModelMarkers(model, 'mirascript', []);
         return;
     }
-    const text = model.getValue();
     const version = model.getVersionId();
-    const errors = await callWorker('compile_script', text);
+    await callWorker('compile_script', model.uri);
+    const result = getCompileResult(model.uri);
+    if (!result) return;
+    const { errors } = result;
     const markers: editor.IMarkerData[] = [];
     for (let i = 0; i < errors.length; i += 5) {
         const startLineNumber = errors[i];
