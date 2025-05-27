@@ -6,7 +6,7 @@ use winnow::stream::{Location, Stream};
 use crate::emitter::emit;
 use crate::error::{ErrorCode, SourceError, SourceRange};
 use crate::lexer::{self, Token, TokenKind};
-use crate::parser::{self, AstWalker, walker};
+use crate::parser::{self, AstWalker, walker_mut};
 
 type CompileResult<'s> = (Option<Box<[u8]>>, Vec<SourceError>);
 
@@ -90,7 +90,7 @@ fn compile<'s>(
     // collect and recover from parsing errors
     {
         let error_collector = RefCell::new(&mut error_collector);
-        let mut w = walker(
+        let mut w = walker_mut(
             |token| {
                 let Token {
                     kind: TokenKind::Unknown { recovered, errors },
@@ -128,7 +128,7 @@ fn compile<'s>(
             },
         );
         // Try to recover from parsing errors
-        script.walk(&mut w);
+        script.walk_mut(&mut w);
     }
 
     // Emitting

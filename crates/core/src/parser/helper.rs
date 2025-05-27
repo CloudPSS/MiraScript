@@ -93,7 +93,7 @@ pub(super) fn variable_token<'t, 's: 't>(
         .map(|t: &Token<'s>| t.to_owned())
         .parse_next(i)?;
         let e = if !include_underscore && t == Keyword::Underscore {
-            Token::unknown(t.range, t.kind, ErrorCode::UnexpectedGlobal)
+            Token::unknown(t.range, t.kind, ErrorCode::UnexpectedUnderscore)
         } else if !include_global && t == Keyword::Global {
             Token::unknown(t.range, t.kind, ErrorCode::UnexpectedGlobal)
         } else {

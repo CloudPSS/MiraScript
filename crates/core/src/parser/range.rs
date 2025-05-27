@@ -5,7 +5,7 @@ use crate::{
     lexer::{Operator, Token},
 };
 
-use super::{AstVisitor, AstWalker, Expression};
+use super::{AstVisitor, AstVisitorMut, AstWalker, Expression};
 
 /// A range expression.
 ///
@@ -24,7 +24,13 @@ impl<'s> Range<'s> {
 }
 
 impl<'s> AstWalker<'s> for Range<'s> {
-    fn walk(&mut self, visitor: &mut dyn AstVisitor<'s>) {
+    fn walk_mut(&mut self, visitor: &mut dyn AstVisitorMut<'s>) {
+        let Range(start, op, end) = self;
+        start.walk_mut(visitor);
+        op.walk_mut(visitor);
+        end.walk_mut(visitor);
+    }
+    fn walk(&self, visitor: &mut dyn AstVisitor<'s>) {
         let Range(start, op, end) = self;
         start.walk(visitor);
         op.walk(visitor);

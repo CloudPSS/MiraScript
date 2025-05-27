@@ -100,6 +100,10 @@ pub enum ErrorCode {
     DuplicateVariableDeclaration,
     #[strum(message = "The variable is already declared as a parameter")]
     DuplicateParameterDeclaration,
+    #[strum(message = "Unexpected `break` outside of loop")]
+    UnexpectedBreakOutsideLoop,
+    #[strum(message = "Unexpected `continue` outside of loop")]
+    UnexpectedContinueOutsideLoop,
 
     // Optimizer error 4000 ~ 4999
     #[strum(message = "Unknown optimizer error")]

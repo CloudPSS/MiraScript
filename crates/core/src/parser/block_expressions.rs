@@ -2,15 +2,16 @@ use winnow::combinator::{alt, dispatch, fail, opt, peek, repeat, seq};
 use winnow::prelude::*;
 use winnow::token::any;
 
-use crate::error::ErrorCode;
-use crate::lexer::{Keyword, Operator, Token};
+use crate::error::{ErrorCode, SourceRange};
+use crate::lexer::{Keyword, Operator, Token, TokenKind};
 use crate::parser::helper::statements_and_expression;
 
 use super::expressions::expression;
 use super::helper::{parameter_list, token, token_boxed, token_or_insert};
 use super::iterables::iterable;
 use super::patterns::{pattern, pattern_or_insert};
-use super::{Expression, Input};
+use super::statements::statement;
+use super::{AstWalker, Expression, Input, Statement};
 
 fn optional_else<'s>(
     i: &mut Input<'_, 's>,
@@ -48,6 +49,37 @@ pub(super) fn block_expression<'s>(i: &mut Input<'_, 's>) -> ModalResult<Express
         .parse_next(i)
 }
 
+pub(super) fn block_expression_no_expr<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
+    (
+        token_or_insert(Operator::OpenBrace, ErrorCode::MissingOpenBrace).map(Box::new),
+        statements_and_expression,
+        token_or_insert(Operator::CloseBrace, ErrorCode::MissingCloseBrace).map(Box::new),
+    )
+        .map(|(open, (mut statements, expr), close)| {
+            if let Some(expr) = expr {
+                if expr.is_block_like() {
+                    statements.push(Statement::BlockExpression(expr));
+                } else {
+                    let pos = expr.range();
+                    let pos = SourceRange {
+                        start: pos.end,
+                        end: pos.end,
+                    };
+                    statements.push(Statement::Expression(
+                        expr,
+                        Box::new(Token::unknown(
+                            pos.clone(),
+                            Operator::Semicolon,
+                            ErrorCode::MissingSemicolon,
+                        )),
+                    ));
+                }
+            }
+            Expression::Block(open, statements, None, close)
+        })
+        .parse_next(i)
+}
+
 pub(super) fn fn_expression<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
     seq!(Expression::Function(
         token_boxed(Keyword::Fn),
@@ -60,7 +92,7 @@ pub(super) fn fn_expression<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression
 pub(super) fn loop_expression<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
     seq!(Expression::Loop(
         token_boxed(Keyword::Loop),
-        block_expression.map(Box::new),
+        block_expression_no_expr.map(Box::new),
     ))
     .parse_next(i)
 }
@@ -69,7 +101,7 @@ pub(super) fn while_expression<'s>(i: &mut Input<'_, 's>) -> ModalResult<Express
     seq!(Expression::While(
         token_boxed(Keyword::While),
         expression.map(Box::new),
-        block_expression.map(Box::new),
+        block_expression_no_expr.map(Box::new),
         optional_else,
     ))
     .parse_next(i)
@@ -108,7 +140,7 @@ pub(super) fn for_in_expression<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expres
         pattern_or_insert(false).map(Box::new),
         token_boxed(Keyword::In),
         iterable.map(Box::new),
-        block_expression.map(Box::new),
+        block_expression_no_expr.map(Box::new),
         optional_else,
     ))
     .parse_next(i)

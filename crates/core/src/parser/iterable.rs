@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use crate::ansi::DisplayIdent;
 
-use super::{AstVisitor, AstWalker, Expression, Range};
+use super::{AstVisitor, AstVisitorMut, AstWalker, Expression, Range};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Iterable<'s> {
@@ -11,7 +11,13 @@ pub enum Iterable<'s> {
 }
 
 impl<'s> AstWalker<'s> for Iterable<'s> {
-    fn walk(&mut self, visitor: &mut dyn AstVisitor<'s>) {
+    fn walk_mut(&mut self, visitor: &mut dyn AstVisitorMut<'s>) {
+        match self {
+            Iterable::Range(range) => range.walk_mut(visitor),
+            Iterable::Value(value) => value.walk_mut(visitor),
+        }
+    }
+    fn walk(&self, visitor: &mut dyn AstVisitor<'s>) {
         match self {
             Iterable::Range(range) => range.walk(visitor),
             Iterable::Value(value) => value.walk(visitor),

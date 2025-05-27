@@ -136,6 +136,9 @@ impl<'s> Emitter<'s> {
         let const_id = self.add_const_string(value);
         self.op_const(reg, const_id);
     }
+    pub fn op_uninit(&mut self, reg: Register) {
+        self.op_1(OpCode::Uninit, reg);
+    }
     pub fn op_unary(&mut self, ret: Register, op: OpCode, reg: Register) {
         self.op_2(op, ret, reg);
     }

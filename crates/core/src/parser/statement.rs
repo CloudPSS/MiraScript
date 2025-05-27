@@ -6,7 +6,7 @@ use crate::{
     lexer::Token,
 };
 
-use super::{AstVisitor, AstWalker, Expression, Pattern};
+use super::{AstVisitor, AstVisitorMut, AstWalker, Expression, Pattern};
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
 pub enum Statement<'s> {
@@ -117,7 +117,61 @@ impl<'s> Statement<'s> {
 }
 
 impl<'s> AstWalker<'s> for Statement<'s> {
-    fn walk(&mut self, visitor: &mut dyn AstVisitor<'s>) {
+    fn walk_mut(&mut self, visitor: &mut dyn AstVisitorMut<'s>) {
+        use Statement::*;
+        visitor.visit_statement(self);
+        match self {
+            Empty(c) => c.walk_mut(visitor),
+            Expression(expr, c) => {
+                expr.walk_mut(visitor);
+                c.walk_mut(visitor);
+            }
+            BlockExpression(expr) => expr.walk_mut(visitor),
+            Bind(kw_let, pattern, eq, expr, c) => {
+                kw_let.walk_mut(visitor);
+                pattern.walk_mut(visitor);
+                eq.walk_mut(visitor);
+                expr.walk_mut(visitor);
+                c.walk_mut(visitor);
+            }
+            Rebind(pattern, eq, expr, c) => {
+                pattern.walk_mut(visitor);
+                eq.walk_mut(visitor);
+                expr.walk_mut(visitor);
+                c.walk_mut(visitor);
+            }
+            Assign(exp, eq, expr, c) => {
+                exp.walk_mut(visitor);
+                eq.walk_mut(visitor);
+                expr.walk_mut(visitor);
+                c.walk_mut(visitor);
+            }
+            Function(kw, id, params, body) => {
+                kw.walk_mut(visitor);
+                id.walk_mut(visitor);
+                params.walk_mut(visitor);
+                body.walk_mut(visitor);
+            }
+            Return(kw, expr, c) => {
+                kw.walk_mut(visitor);
+                expr.walk_mut(visitor);
+                c.walk_mut(visitor);
+            }
+            Break(kw, expr, c) => {
+                kw.walk_mut(visitor);
+                expr.walk_mut(visitor);
+                c.walk_mut(visitor);
+            }
+            Continue(kw, c) => {
+                kw.walk_mut(visitor);
+                c.walk_mut(visitor);
+            }
+            Unknown { tokens, errors: _ } => {
+                tokens.walk_mut(visitor);
+            }
+        }
+    }
+    fn walk(&self, visitor: &mut dyn AstVisitor<'s>) {
         use Statement::*;
         visitor.visit_statement(self);
         match self {

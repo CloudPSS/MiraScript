@@ -6,7 +6,9 @@ use crate::{
     lexer::{Token, TokenKind},
 };
 
-use super::{ArrayElement, AstVisitor, AstWalker, Iterable, Pattern, RecordElement, Statement};
+use super::{
+    ArrayElement, AstVisitor, AstVisitorMut, AstWalker, Iterable, Pattern, RecordElement, Statement,
+};
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
 pub enum Callable<'s> {
@@ -17,7 +19,14 @@ pub enum Callable<'s> {
 }
 
 impl<'s> AstWalker<'s> for Callable<'s> {
-    fn walk(&mut self, visitor: &mut dyn AstVisitor<'s>) {
+    fn walk_mut(&mut self, visitor: &mut dyn AstVisitorMut<'s>) {
+        use Callable::*;
+        match self {
+            Type(token) => token.walk_mut(visitor),
+            Expression(exp) => exp.walk_mut(visitor),
+        }
+    }
+    fn walk(&self, visitor: &mut dyn AstVisitor<'s>) {
         use Callable::*;
         match self {
             Type(token) => token.walk(visitor),
@@ -243,7 +252,6 @@ impl<'s> Expression<'s> {
                 | Expression::ForIn(..)
                 | Expression::If(..)
                 | Expression::Match(..)
-                | Expression::Function(..)
         )
     }
 
@@ -283,7 +291,156 @@ impl<'s> Expression<'s> {
 }
 
 impl<'s> AstWalker<'s> for Expression<'s> {
-    fn walk(&mut self, visitor: &mut dyn AstVisitor<'s>) {
+    fn walk_mut(&mut self, visitor: &mut dyn AstVisitorMut<'s>) {
+        use Expression::*;
+        visitor.visit_expression(self);
+        match self {
+            Literal(token) => token.walk_mut(visitor),
+            InterpolatedString(token, exps) => {
+                token.walk_mut(visitor);
+                exps.walk_mut(visitor);
+            }
+            Variable(token) => token.walk_mut(visitor),
+            Grouping(op, exp, cp) => {
+                op.walk_mut(visitor);
+                exp.walk_mut(visitor);
+                cp.walk_mut(visitor);
+            }
+            Record(op, exps, cp) => {
+                op.walk_mut(visitor);
+                exps.walk_mut(visitor);
+                cp.walk_mut(visitor);
+            }
+            Array(op, exps, cp) => {
+                op.walk_mut(visitor);
+                exps.walk_mut(visitor);
+                cp.walk_mut(visitor);
+            }
+            Call(exp, op, args, cp) => {
+                exp.walk_mut(visitor);
+                op.walk_mut(visitor);
+                args.walk_mut(visitor);
+                cp.walk_mut(visitor);
+            }
+            Extension(exp, e, ext, op, args, cp) => {
+                exp.walk_mut(visitor);
+                e.walk_mut(visitor);
+                ext.walk_mut(visitor);
+                op.walk_mut(visitor);
+                args.walk_mut(visitor);
+                cp.walk_mut(visitor);
+            }
+            Access(exp, dot, token) => {
+                exp.walk_mut(visitor);
+                dot.walk_mut(visitor);
+                token.walk_mut(visitor);
+            }
+            Index(exp, l, index, r) => {
+                exp.walk_mut(visitor);
+                l.walk_mut(visitor);
+                index.walk_mut(visitor);
+                r.walk_mut(visitor);
+            }
+            NonNil(exp, op) => {
+                exp.walk_mut(visitor);
+                op.walk_mut(visitor);
+            }
+            Prefix(op, exp) => {
+                op.walk_mut(visitor);
+                exp.walk_mut(visitor);
+            }
+            Infix(exp1, op, exp2) => {
+                exp1.walk_mut(visitor);
+                op.walk_mut(visitor);
+                exp2.walk_mut(visitor);
+            }
+            Is(exp1, op, pattern) => {
+                exp1.walk_mut(visitor);
+                op.walk_mut(visitor);
+                pattern.walk_mut(visitor);
+            }
+            Block(op, statements, expression, ed) => {
+                op.walk_mut(visitor);
+                statements.walk_mut(visitor);
+                expression.walk_mut(visitor);
+                ed.walk_mut(visitor);
+            }
+            Loop(kw, expression) => {
+                kw.walk_mut(visitor);
+                expression.walk_mut(visitor);
+            }
+            While(kw, expression, block, None) => {
+                kw.walk_mut(visitor);
+                expression.walk_mut(visitor);
+                block.walk_mut(visitor);
+            }
+            While(kw, expression, block, Some((kw_else, else_block))) => {
+                kw.walk_mut(visitor);
+                expression.walk_mut(visitor);
+                block.walk_mut(visitor);
+                kw_else.walk_mut(visitor);
+                else_block.walk_mut(visitor);
+            }
+            ForIn(kw_for, pattern, kw_in, iter, block, None) => {
+                kw_for.walk_mut(visitor);
+                pattern.walk_mut(visitor);
+                kw_in.walk_mut(visitor);
+                iter.walk_mut(visitor);
+                block.walk_mut(visitor);
+            }
+            ForIn(kw_for, pattern, kw_in, iter, block, Some((kw_else, else_block))) => {
+                kw_for.walk_mut(visitor);
+                pattern.walk_mut(visitor);
+                kw_in.walk_mut(visitor);
+                iter.walk_mut(visitor);
+                block.walk_mut(visitor);
+                kw_else.walk_mut(visitor);
+                else_block.walk_mut(visitor);
+            }
+            If(kw_if, cond, then_block, Some((kw_else, else_block))) => {
+                kw_if.walk_mut(visitor);
+                cond.walk_mut(visitor);
+                then_block.walk_mut(visitor);
+                kw_else.walk_mut(visitor);
+                else_block.walk_mut(visitor);
+            }
+            If(kw_if, cond, then_block, None) => {
+                kw_if.walk_mut(visitor);
+                cond.walk_mut(visitor);
+                then_block.walk_mut(visitor);
+            }
+            Match(kw, expression, op, arms, ed) => {
+                kw.walk_mut(visitor);
+                expression.walk_mut(visitor);
+                op.walk_mut(visitor);
+                for (kw_case, pattern, block) in arms {
+                    kw_case.walk_mut(visitor);
+                    pattern.walk_mut(visitor);
+                    block.walk_mut(visitor);
+                }
+                ed.walk_mut(visitor);
+            }
+            Function(kw, None, block) => {
+                kw.walk_mut(visitor);
+                block.walk_mut(visitor);
+            }
+            Function(kw, Some(params), block) => {
+                kw.walk_mut(visitor);
+                params.walk_mut(visitor);
+                block.walk_mut(visitor);
+            }
+            Unknown {
+                expression,
+                tokens,
+                errors: _,
+            } => {
+                expression.walk_mut(visitor);
+                tokens.walk_mut(visitor);
+            }
+        }
+    }
+
+    fn walk(&self, visitor: &mut dyn AstVisitor<'s>) {
         use Expression::*;
         visitor.visit_expression(self);
         match self {
@@ -562,12 +719,12 @@ impl DisplayIdent for Expression<'_> {
                 if statements.is_empty() {
                     if let Some(expression) = expression {
                         write!(f, " ")?;
-                        if expression.is_block_like() {
+                        if expression.is_block_like() || expression.is_function() {
                             writeln!(f)?;
                             Self::write_ident(f, next_ident, "block ret")?;
                         }
                         expression.fmt_ident(f, next_ident)?;
-                        if expression.is_block_like() {
+                        if expression.is_block_like() || expression.is_function() {
                             writeln!(f)?;
                             Self::write_ident(f, ident, "")?;
                         } else {

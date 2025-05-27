@@ -2,7 +2,7 @@ use std::fmt::{Debug, Display};
 
 use crate::{ansi::DisplayIdent, lexer::Token};
 
-use super::{AstVisitor, AstWalker, Expression, Pattern};
+use super::{AstVisitor, AstVisitorMut, AstWalker, Expression, Pattern};
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
 pub enum RecordElementBase<'s, E: Clone + PartialEq> {
@@ -50,7 +50,31 @@ impl<'s, E: Clone + PartialEq> RecordElementBase<'s, E> {
 }
 
 impl<'s, E: Clone + PartialEq + AstWalker<'s>> AstWalker<'s> for RecordElementBase<'s, E> {
-    fn walk(&mut self, visitor: &mut dyn AstVisitor<'s>) {
+    fn walk_mut(&mut self, visitor: &mut dyn AstVisitorMut<'s>) {
+        match self {
+            Named(name, colon, value, tail_comma) => {
+                name.walk_mut(visitor);
+                colon.walk_mut(visitor);
+                value.walk_mut(visitor);
+                tail_comma.walk_mut(visitor);
+            }
+            OmitNamed(colon, value, tail_comma) => {
+                colon.walk_mut(visitor);
+                value.walk_mut(visitor);
+                tail_comma.walk_mut(visitor);
+            }
+            Unnamed(value, tail_comma) => {
+                value.walk_mut(visitor);
+                tail_comma.walk_mut(visitor);
+            }
+            Spread(spread, value, tail_comma) => {
+                spread.walk_mut(visitor);
+                value.walk_mut(visitor);
+                tail_comma.walk_mut(visitor);
+            }
+        }
+    }
+    fn walk(&self, visitor: &mut dyn AstVisitor<'s>) {
         match self {
             Named(name, colon, value, tail_comma) => {
                 name.walk(visitor);

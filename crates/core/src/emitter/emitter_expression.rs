@@ -2,9 +2,9 @@ use crate::{
     error::{ErrorCode, SourceError},
     lexer::{Keyword, Operator, TokenKind},
     parser::{
-        self, ArrayElement, Callable,
+        self, ArrayElement, AstWalker, Callable,
         Expression::{self, *},
-        Range, RecordElement, Statement,
+        Iterable, Range, RecordElement, Statement,
     },
 };
 
@@ -82,12 +82,12 @@ impl<'s> Emitter<'s> {
             Unknown { .. } => (),
         }
     }
-    pub fn emit_expression_reg(&mut self, expr: &'s Expression<'s>) -> Register {
+    pub fn emit_expression_reg(&mut self, expr: &'s Expression<'s>, brk: Register) -> Register {
         let reg = self.add_reg();
-        self.emit_expression(expr, reg);
+        self.emit_expression(expr, reg, brk);
         reg
     }
-    pub fn emit_expression(&mut self, expr: &'s Expression<'s>, ret: Register) {
+    pub fn emit_expression(&mut self, expr: &'s Expression<'s>, ret: Register, brk: Register) {
         match expr {
             Literal(token) => match &token.kind {
                 TokenKind::String(s) => self.op_string(ret, s),
@@ -118,7 +118,7 @@ impl<'s> Emitter<'s> {
                     }
                     if let Some(expression) = e_iter.next() {
                         let reg = self.add_reg();
-                        self.emit_expression(expression, reg);
+                        self.emit_expression(expression, reg, brk);
                         args_reg.push(reg);
                     }
                 }
@@ -154,29 +154,29 @@ impl<'s> Emitter<'s> {
                     self.op_global(ret, id);
                 }
             }
-            Grouping(_, expression, _) => self.emit_expression(expression, ret),
+            Grouping(_, expression, _) => self.emit_expression(expression, ret, brk),
             Record(_, elements, _) => {
                 let mut elements_regs = vec![];
                 for element in elements {
                     match element {
                         RecordElement::Named(_, _, expression, _) => {
                             let reg = self.add_reg();
-                            self.emit_expression(expression, reg);
+                            self.emit_expression(expression, reg, brk);
                             elements_regs.push(reg);
                         }
                         RecordElement::OmitNamed(_, expression, _) => {
                             let reg = self.add_reg();
-                            self.emit_expression(expression, reg);
+                            self.emit_expression(expression, reg, brk);
                             elements_regs.push(reg);
                         }
                         RecordElement::Unnamed(expression, _) => {
                             let reg = self.add_reg();
-                            self.emit_expression(expression, reg);
+                            self.emit_expression(expression, reg, brk);
                             elements_regs.push(reg);
                         }
                         RecordElement::Spread(_, expression, _) => {
                             let reg = self.add_reg();
-                            self.emit_expression(expression, reg);
+                            self.emit_expression(expression, reg, brk);
                             elements_regs.push(reg);
                         }
                     }
@@ -218,17 +218,17 @@ impl<'s> Emitter<'s> {
                 for item in items {
                     match item {
                         ArrayElement::Element(expression, _) => {
-                            let reg = self.emit_expression_reg(expression);
+                            let reg = self.emit_expression_reg(expression, brk);
                             items_regs.push(reg);
                         }
                         ArrayElement::Spread(_, expression, _) => {
-                            let reg = self.emit_expression_reg(expression);
+                            let reg = self.emit_expression_reg(expression, brk);
                             items_regs.push(reg);
                         }
                         ArrayElement::Range(range, _) => {
                             let Range(start, _, end) = range.as_ref();
-                            let start = self.emit_expression_reg(start);
-                            let end = self.emit_expression_reg(end);
+                            let start = self.emit_expression_reg(start, brk);
+                            let end = self.emit_expression_reg(end, brk);
                             items_regs.push(start);
                             items_regs.push(end);
                         }
@@ -268,13 +268,13 @@ impl<'s> Emitter<'s> {
                 let mut args_reg = vec![];
                 for expression in args {
                     let reg = self.add_reg();
-                    self.emit_expression(expression, reg);
+                    self.emit_expression(expression, reg, brk);
                     args_reg.push(reg);
                 }
                 match callable.as_ref() {
                     Callable::Expression(expression) => {
                         let reg = self.add_reg();
-                        self.emit_expression(expression, reg);
+                        self.emit_expression(expression, reg, brk);
                         self.op_call_dyn(ret, reg, args_reg);
                     }
                     Callable::Type(_) => {
@@ -284,18 +284,18 @@ impl<'s> Emitter<'s> {
             }
             Extension(expression, _, callable, _, args, _) => {
                 let self_reg = self.add_reg();
-                self.emit_expression(expression, self_reg);
+                self.emit_expression(expression, self_reg, brk);
                 let mut args_reg = vec![];
                 for expression in args {
                     let reg = self.add_reg();
-                    self.emit_expression(expression, reg);
+                    self.emit_expression(expression, reg, brk);
                     args_reg.push(reg);
                 }
                 match callable.as_ref() {
                     Callable::Expression(expression) => {
                         let reg = self.add_reg();
                         args_reg.insert(0, self_reg);
-                        self.emit_expression(expression, reg);
+                        self.emit_expression(expression, reg, brk);
                         self.op_call_dyn(ret, reg, args_reg);
                     }
                     Callable::Type(_) => {
@@ -304,7 +304,7 @@ impl<'s> Emitter<'s> {
                 }
             }
             Access(expression, _, id) => {
-                self.emit_expression(expression, ret);
+                self.emit_expression(expression, ret, brk);
                 match &id.kind {
                     TokenKind::Identifier(id) => self.op_get(ret, ret, id),
                     TokenKind::Ordinal(ord) => self.op_get_num(ret, ret, *ord as f64),
@@ -313,12 +313,12 @@ impl<'s> Emitter<'s> {
             }
             Index(expression, token, expression1, token1) => todo!(),
             NonNil(expression, token) => {
-                self.emit_expression(expression, ret);
+                self.emit_expression(expression, ret, brk);
                 self.op_non_nil(ret);
             }
             Prefix(token, expression) => {
                 let reg = self.add_reg();
-                self.emit_expression(expression, reg);
+                self.emit_expression(expression, reg, brk);
                 let op = match token.kind {
                     TokenKind::Operator(Operator::Plus) => OpCode::Pos,
                     TokenKind::Operator(Operator::Minus) => OpCode::Neg,
@@ -329,14 +329,14 @@ impl<'s> Emitter<'s> {
             }
             Infix(left, token, right) => {
                 if **token == Operator::LogicalAnd {
-                    self.emit_expression(left, ret);
+                    self.emit_expression(left, ret, brk);
                     self.op_if(OpCode::If, ret);
-                    self.emit_expression(right, ret);
+                    self.emit_expression(right, ret, brk);
                     self.op_if_end();
                 } else if **token == Operator::LogicalOr {
-                    self.emit_expression(left, ret);
+                    self.emit_expression(left, ret, brk);
                     self.op_if(OpCode::IfNot, ret);
-                    self.emit_expression(right, ret);
+                    self.emit_expression(right, ret, brk);
                     self.op_if_end();
                 } else {
                     let op = match token.kind {
@@ -363,28 +363,73 @@ impl<'s> Emitter<'s> {
                     };
                     let left_reg = self.add_reg();
                     let right_reg = self.add_reg();
-                    self.emit_expression(left, left_reg);
-                    self.emit_expression(right, right_reg);
+                    self.emit_expression(left, left_reg, brk);
+                    self.emit_expression(right, right_reg, brk);
                     self.op_binary(ret, op, left_reg, right_reg);
                 }
             }
             Is(expression, token, pattern) => todo!(),
             Block(_, stmts, expr, _) => {
                 self.enter_scope();
-                self.emit_block(ret, stmts, expr);
+                self.emit_block(stmts, expr, ret, brk);
                 self.exit_scope();
             }
             Loop(token, expression) => todo!(),
             While(token, expression, expression1, _) => todo!(),
-            ForIn(token, pattern, token1, iterable, expression, _) => todo!(),
+            ForIn(_, pattern, _, iterable, expression, else_part) => {
+                self.enter_scope();
+                self.declare_pattern(pattern, Some(BindType::Init));
+                let iterable_reg = match iterable.as_ref() {
+                    Iterable::Value(expr) => self.emit_expression_reg(expr, Register::EMPTY),
+                    Iterable::Range(range) => {
+                        let start = self.emit_expression_reg(range.0.as_ref(), Register::EMPTY);
+                        let end = self.emit_expression_reg(range.2.as_ref(), Register::EMPTY);
+                        let ret = self.add_reg();
+                        self.op_1(OpCode::Array, ret);
+                        self.op_2(
+                            if range.exclusive() {
+                                OpCode::ItemRangeExclusiveDyn
+                            } else {
+                                OpCode::ItemRangeDyn
+                            },
+                            start,
+                            end,
+                        );
+                        self.op(OpCode::Freeze);
+                        ret
+                    }
+                };
+                let iterator = self.add_reg();
+                self.op_uninit(ret);
+                self.op_2(OpCode::LoopFor, iterator, iterable_reg);
+                self.emit_pattern(pattern, iterator, Some(BindType::Init));
+                let Expression::Block(_, stmts, expr, _) = expression.as_ref() else {
+                    unreachable!("Expected block expression");
+                };
+
+                self.emit_block(stmts, expr, Register::EMPTY, ret);
+                self.op(OpCode::LoopEnd);
+                self.exit_scope();
+
+                self.op_if(OpCode::IfNotInit, ret);
+                if let Some((_, else_expr)) = else_part {
+                    let Expression::Block(_, stmts, expr, _) = else_expr.as_ref() else {
+                        unreachable!("Expected block expression");
+                    };
+                    self.emit_block(stmts, expr, ret, Register::EMPTY);
+                } else {
+                    self.op_nil(ret);
+                }
+                self.op_if_end();
+            }
             If(_, cond, then_expr, else_part) => {
                 let cond_reg = self.add_reg();
-                self.emit_expression(cond, cond_reg);
+                self.emit_expression(cond, cond_reg, brk);
                 self.op_if(OpCode::If, cond_reg);
-                self.emit_expression(then_expr, ret);
+                self.emit_expression(then_expr, ret, brk);
                 if let Some((_, else_expr)) = else_part {
                     self.op_else();
-                    self.emit_expression(else_expr, ret);
+                    self.emit_expression(else_expr, ret, brk);
                 } else if !ret.is_empty() {
                     self.op_else();
                     self.op_nil(ret);

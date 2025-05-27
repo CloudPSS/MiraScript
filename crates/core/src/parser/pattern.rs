@@ -6,7 +6,7 @@ use crate::{
     lexer::Token,
 };
 
-use super::{ArrayPattern, AstVisitor, AstWalker, RecordPattern};
+use super::{ArrayPattern, AstVisitor, AstVisitorMut, AstWalker, RecordPattern};
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
 pub enum Pattern<'s> {
@@ -144,7 +144,73 @@ impl<'s> Pattern<'s> {
 }
 
 impl<'s> AstWalker<'s> for Pattern<'s> {
-    fn walk(&mut self, visitor: &mut dyn AstVisitor<'s>) {
+    fn walk_mut(&mut self, visitor: &mut dyn AstVisitorMut<'s>) {
+        use Pattern::*;
+        visitor.visit_pattern(self);
+        match self {
+            Grouping(o, p, e) => {
+                o.walk_mut(visitor);
+                p.walk_mut(visitor);
+                e.walk_mut(visitor);
+            }
+            Constant(p, t) => {
+                p.walk_mut(visitor);
+                t.walk_mut(visitor);
+            }
+            Relation(o, p) => {
+                o.walk_mut(visitor);
+                p.walk_mut(visitor);
+            }
+            Range(s, o, e) => {
+                s.walk_mut(visitor);
+                o.walk_mut(visitor);
+                e.walk_mut(visitor);
+            }
+            Discard(t) => t.walk_mut(visitor),
+            Bind(p, t) => {
+                p.walk_mut(visitor);
+                t.walk_mut(visitor);
+            }
+            Record(s, p, e) => {
+                s.walk_mut(visitor);
+                for sub_pattern in p.iter_mut() {
+                    sub_pattern.walk_mut(visitor);
+                }
+                e.walk_mut(visitor);
+            }
+            Array(s, p, e) => {
+                s.walk_mut(visitor);
+                for sub_pattern in p.iter_mut() {
+                    sub_pattern.walk_mut(visitor);
+                }
+                e.walk_mut(visitor);
+            }
+            SpreadDiscard => {}
+            And(l, o, r) => {
+                l.walk_mut(visitor);
+                o.walk_mut(visitor);
+                r.walk_mut(visitor);
+            }
+            Or(l, o, r) => {
+                l.walk_mut(visitor);
+                o.walk_mut(visitor);
+                r.walk_mut(visitor);
+            }
+            Not(o, p) => {
+                o.walk_mut(visitor);
+                p.walk_mut(visitor);
+            }
+            Unknown {
+                pattern,
+                tokens,
+                errors: _,
+            } => {
+                pattern.walk_mut(visitor);
+                tokens.walk_mut(visitor);
+            }
+        }
+    }
+    fn walk(&self, visitor: &mut dyn AstVisitor<'s>) {
         use Pattern::*;
         visitor.visit_pattern(self);
         match self {
@@ -173,14 +239,14 @@ impl<'s> AstWalker<'s> for Pattern<'s> {
             }
             Record(s, p, e) => {
                 s.walk(visitor);
-                for sub_pattern in p.iter_mut() {
+                for sub_pattern in p.iter() {
                     sub_pattern.walk(visitor);
                 }
                 e.walk(visitor);
             }
             Array(s, p, e) => {
                 s.walk(visitor);
-                for sub_pattern in p.iter_mut() {
+                for sub_pattern in p.iter() {
                     sub_pattern.walk(visitor);
                 }
                 e.walk(visitor);

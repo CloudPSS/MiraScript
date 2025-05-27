@@ -1,5 +1,5 @@
 use crate::{
-    error::{ErrorCode, SourceError},
+    error::{ErrorCode, SourceError, SourceRange},
     lexer::{Operator, TokenKind},
     parser::{
         self,
@@ -12,32 +12,32 @@ use super::{Emitter, OpCode, opcode::Register, variable::BindType};
 impl<'s> Emitter<'s> {
     pub fn declare_statement(&mut self, stmt: &'s Statement<'s>) {
         match stmt {
-            Expression(expression, _) | BlockExpression(expression) => (),
-            Bind(_, pattern, _, expression, _) => {
+            Expression(_, _) | BlockExpression(_) => (),
+            Bind(_, pattern, _, _, _) => {
                 self.declare_pattern(pattern, Some(BindType::Let));
             }
-            Rebind(pattern, _, expression, _) => {
+            Rebind(pattern, _, _, _) => {
                 self.declare_pattern(pattern, None);
             }
-            Assign(expression, token, expression1, token1) => (),
+            Assign(_, _, _, _) => (),
             Function(_, name, _, _) => {
                 let TokenKind::Identifier(name) = &name.kind else {
                     unreachable!("Expected identifier token");
                 };
                 self.declare_variable(name, false, BindType::Func);
             }
-            Return(token, expression, token1) => (),
-            Break(token, expression, token1) => todo!(),
-            Continue(token, token1) => todo!(),
+            Return(_, _, _) => (),
+            Break(_, _, _) => (),
+            Continue(_, _) => (),
             Empty(_) | Unknown { .. } => (),
         }
     }
-    pub fn emit_statement(&mut self, stmt: &'s Statement<'s>) -> bool {
+    pub fn emit_statement(&mut self, stmt: &'s Statement<'s>, brk: Register) -> bool {
         match stmt {
             Expression(expression, _) | BlockExpression(expression) => {
                 self.enter_scope();
                 self.declare_expression(expression);
-                self.emit_expression(expression, Register::EMPTY);
+                self.emit_expression(expression, Register::EMPTY, brk);
                 self.exit_scope();
                 false
             }
@@ -45,7 +45,7 @@ impl<'s> Emitter<'s> {
                 let value_reg = self.add_reg();
                 self.enter_scope();
                 self.declare_expression(expression);
-                self.emit_expression(expression, value_reg);
+                self.emit_expression(expression, value_reg, brk);
                 self.exit_scope();
                 self.emit_pattern(pattern, value_reg, Some(BindType::Let));
                 false
@@ -54,7 +54,7 @@ impl<'s> Emitter<'s> {
                 let value_reg = self.add_reg();
                 self.enter_scope();
                 self.declare_expression(expression);
-                self.emit_expression(expression, value_reg);
+                self.emit_expression(expression, value_reg, brk);
                 self.exit_scope();
                 self.emit_pattern(pattern, value_reg, None);
                 false
@@ -91,20 +91,20 @@ impl<'s> Emitter<'s> {
                 if **op == Operator::Equal {
                     self.enter_scope();
                     self.declare_expression(expression);
-                    self.emit_expression(expression, assignee_reg);
+                    self.emit_expression(expression, assignee_reg, brk);
                     self.exit_scope();
                 } else if **op == Operator::LogicalAndEqual {
                     self.op_if(OpCode::If, assignee_reg);
                     self.enter_scope();
                     self.declare_expression(expression);
-                    self.emit_expression(expression, assignee_reg);
+                    self.emit_expression(expression, assignee_reg, brk);
                     self.exit_scope();
                     self.op_if_end();
                 } else if **op == Operator::LogicalOrEqual {
                     self.op_if(OpCode::IfNot, assignee_reg);
                     self.enter_scope();
                     self.declare_expression(expression);
-                    self.emit_expression(expression, assignee_reg);
+                    self.emit_expression(expression, assignee_reg, brk);
                     self.exit_scope();
                     self.op_if_end();
                 } else {
@@ -120,7 +120,7 @@ impl<'s> Emitter<'s> {
                     let right_reg = self.add_reg();
                     self.enter_scope();
                     self.declare_expression(expression);
-                    self.emit_expression(expression, right_reg);
+                    self.emit_expression(expression, right_reg, brk);
                     self.exit_scope();
                     self.op_binary(assignee_reg, op, assignee_reg, right_reg);
                 }
@@ -144,7 +144,7 @@ impl<'s> Emitter<'s> {
                     let ret_reg = self.add_reg();
                     self.enter_scope();
                     self.declare_expression(expression);
-                    self.emit_expression(expression, ret_reg);
+                    self.emit_expression(expression, ret_reg, brk);
                     self.exit_scope();
                     self.op_return(ret_reg);
                 } else {
@@ -152,8 +152,42 @@ impl<'s> Emitter<'s> {
                 }
                 true
             }
-            Break(token, expression, token1) => todo!(),
-            Continue(token, token1) => todo!(),
+            Break(kw, expression, comma) => {
+                if brk.is_empty() {
+                    self.errors.push(SourceError::new(
+                        SourceRange {
+                            start: kw.range.start,
+                            end: comma.range.end,
+                        },
+                        ErrorCode::UnexpectedBreakOutsideLoop,
+                    ));
+                    return false;
+                }
+                if let Some(expression) = expression {
+                    self.enter_scope();
+                    self.declare_expression(expression);
+                    self.emit_expression(expression, brk, brk);
+                    self.exit_scope();
+                } else {
+                    self.op_nil(brk);
+                }
+                self.op(OpCode::Break);
+                true
+            }
+            Continue(kw, comma) => {
+                if brk.is_empty() {
+                    self.errors.push(SourceError::new(
+                        SourceRange {
+                            start: kw.range.start,
+                            end: comma.range.end,
+                        },
+                        ErrorCode::UnexpectedContinueOutsideLoop,
+                    ));
+                    return false;
+                }
+                self.op(OpCode::Continue);
+                true
+            }
             Empty(_) | Unknown { .. } => false,
         }
     }

@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use crate::{ansi::DisplayIdent, lexer::Token};
 
-use super::{AstVisitor, AstWalker, Expression, Pattern, Range};
+use super::{AstVisitor, AstVisitorMut, AstWalker, Expression, Pattern, Range};
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
 pub enum ArrayElementBase<'s, E: Clone + PartialEq> {
@@ -21,7 +21,24 @@ pub type ArrayElement<'s> = ArrayElementBase<'s, Expression<'s>>;
 pub type ArrayPattern<'s> = ArrayElementBase<'s, Pattern<'s>>;
 
 impl<'s, E: Clone + PartialEq + AstWalker<'s>> AstWalker<'s> for ArrayElementBase<'s, E> {
-    fn walk(&mut self, visitor: &mut dyn AstVisitor<'s>) {
+    fn walk_mut(&mut self, visitor: &mut dyn AstVisitorMut<'s>) {
+        match self {
+            Element(value, c) => {
+                value.walk_mut(visitor);
+                c.walk_mut(visitor);
+            }
+            ArrayElementBase::Range(range, c) => {
+                range.walk_mut(visitor);
+                c.walk_mut(visitor);
+            }
+            Spread(sp, value, c) => {
+                sp.walk_mut(visitor);
+                value.walk_mut(visitor);
+                c.walk_mut(visitor);
+            }
+        }
+    }
+    fn walk(&self, visitor: &mut dyn AstVisitor<'s>) {
         match self {
             Element(value, c) => {
                 value.walk(visitor);

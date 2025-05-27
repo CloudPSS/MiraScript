@@ -6,7 +6,7 @@ use std::{
 
 use crate::{ansi::DisplayIdent, lexer::Token};
 
-use super::{AstVisitor, AstWalker, Expression, Statement};
+use super::{AstVisitor, AstVisitorMut, AstWalker, Expression, Statement};
 
 /// statement* expression? EOF
 ///
@@ -19,11 +19,20 @@ pub struct Script<'s>(
 );
 
 impl<'s> AstWalker<'s> for Script<'s> {
-    fn walk(&mut self, visitor: &mut dyn AstVisitor<'s>) {
+    fn walk_mut(&mut self, visitor: &mut dyn AstVisitorMut<'s>) {
         for statement in &mut self.0 {
-            statement.walk(visitor);
+            statement.walk_mut(visitor);
         }
         if let Some(expression) = &mut self.1 {
+            expression.walk_mut(visitor);
+        }
+        self.2.walk_mut(visitor);
+    }
+    fn walk(&self, visitor: &mut dyn AstVisitor<'s>) {
+        for statement in &self.0 {
+            statement.walk(visitor);
+        }
+        if let Some(expression) = &self.1 {
             expression.walk(visitor);
         }
         self.2.walk(visitor);

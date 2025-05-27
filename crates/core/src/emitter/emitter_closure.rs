@@ -1,7 +1,7 @@
 use crate::{
-    error::SourceError,
+    error::{ErrorCode, SourceError},
     lexer::{Token, TokenKind},
-    parser::{Expression, Script, Statement},
+    parser::{AstWalker, Expression, Script, Statement},
 };
 
 use super::{
@@ -27,9 +27,10 @@ impl<'s> Emitter<'s> {
     }
     pub fn emit_block(
         &mut self,
-        ret: Register,
         stmts: &'s Vec<Statement<'s>>,
         expr: &'s Option<Box<Expression<'s>>>,
+        ret: Register,
+        brk: Register,
     ) -> bool {
         for stmt in stmts {
             if matches!(stmt, Statement::Function(..)) {
@@ -43,22 +44,22 @@ impl<'s> Emitter<'s> {
         }
         for stmt in stmts {
             if matches!(stmt, Statement::Function(..)) {
-                self.emit_statement(stmt);
+                self.emit_statement(stmt, brk);
             }
         }
         let mut has_never = false;
         for stmt in stmts {
             if !matches!(stmt, Statement::Function(..)) {
-                let never = self.emit_statement(stmt);
+                let never = self.emit_statement(stmt, brk);
                 has_never |= never;
             }
         }
         if let Some(expr) = expr {
             self.enter_scope();
             self.declare_expression(expr);
-            self.emit_expression(expr, ret);
+            self.emit_expression(expr, ret, brk);
             self.exit_scope();
-        } else if !has_never {
+        } else if !has_never && !ret.is_empty() {
             self.op_nil(ret);
         };
         has_never
@@ -106,7 +107,7 @@ impl<'s> Emitter<'s> {
         }
 
         let ret_reg = self.add_reg();
-        let never = self.emit_block(ret_reg, stmts, expr);
+        let never = self.emit_block(stmts, expr, ret_reg, Register::EMPTY);
         if !never {
             self.op_return(ret_reg);
         }

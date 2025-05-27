@@ -96,6 +96,9 @@ pub enum OpCode {
     /// CONSTANT %reg `index`\
     /// %reg = CONSTANTS\[index]
     Constant = 0x30,
+    /// UNINIT %reg
+    /// %reg = uninitialized
+    Uninit,
     /// ASSIGN %ret %1\
     /// %ret = %1
     Assign,
@@ -187,19 +190,12 @@ pub enum OpCode {
     /// LOOP\
     /// loop {
     Loop = 0x60,
-    /// LOOP_IF IF*\
-    /// loop if *** {
-    /// This instruction must be followed by an `IF*` instruction,
-    /// if the condition is false, the loop will be skipped\
-    LoopIf,
+    /// LOOP_FOR %iterator %iterable\
+    /// for %iterator in %iterable {
+    LoopFor,
     /// LOOP_END\
     /// }
     LoopEnd,
-    /// LOOP_END_IF IF*\
-    /// } if ***;
-    /// This instruction must be followed by an `IF*` instruction\
-    /// if the condition is false, the loop will be skipped
-    LoopEndIf,
     /// BREAK\
     /// break;
     Break,

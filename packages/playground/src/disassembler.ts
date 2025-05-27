@@ -65,6 +65,14 @@ class Extern {
         }
         return null;
     }
+    /** Iterate over value */
+    keys(): string[] {
+        const keys: string[] = [];
+        for (const key in this.value) {
+            if (this.has(key)) keys.push(key);
+        }
+        return keys;
+    }
     /** Convert the object to JSON */
     toJSON() {
         return String(this.value);
@@ -144,6 +152,13 @@ const ENV = (global: Record<string, unknown>) => {
     const $RecordSpread = (record: object): object => {
         return record;
     };
+    const $Iterable = (value: unknown): unknown[] => {
+        if (value == null) return [];
+        if (value instanceof Extern) return value.keys().map((key) => value.get(key));
+        if (Array.isArray(value)) return value;
+        if (typeof value == 'object') return Object.values(value);
+        return [value];
+    };
     return {
         $Mul,
         $Add,
@@ -167,6 +182,7 @@ const ENV = (global: Record<string, unknown>) => {
         $ArrayRangeExclusive,
         $ArraySpread,
         $RecordSpread,
+        $Iterable,
     };
 };
 
@@ -216,10 +232,12 @@ export function disassemble(chunk: Uint8Array | undefined): string {
             ...args: [callbackfn: (value: unknown, index: number, array: unknown[]) => unknown, thisArg?: unknown]
         ) => Array.prototype.map.apply(self, args),
     });
-    // eslint-disable-next-line @typescript-eslint/no-implied-eval, @typescript-eslint/no-unsafe-call
-    const fn = new Function(...Object.keys(env), `let _; ${code}; return _;`)(...Object.values(env)) as () => unknown;
     let r;
     try {
+        // eslint-disable-next-line @typescript-eslint/no-implied-eval, @typescript-eslint/no-unsafe-call
+        const fn = new Function(...Object.keys(env), `let _; ${code}; return _;`)(
+            ...Object.values(env),
+        ) as () => unknown;
         r = fn();
     } catch (e) {
         r = e;
@@ -358,12 +376,12 @@ class Disassembler {
         }
     }
 
-    /** 读取 if 结束 */
-    private readIfEnd(): void {
+    /** 读取块结束 */
+    private readBlockEnd(end: OpCode): void {
         while (this.codeOffset < this.codeSize) {
             const opcode_raw = this.codeReader.getUint8(this.codeOffset);
             const opcode = opcode_raw & 0x7f;
-            if (opcode !== OpCode.IfEnd) {
+            if (opcode !== end) {
                 this.readCode();
                 continue;
             }
@@ -389,7 +407,7 @@ class Disassembler {
             const opcode_raw = this.codeReader.getUint8(this.codeOffset);
             const opcode = opcode_raw & 0x7f;
             if (opcode === OpCode.IfEnd) {
-                return this.readIfEnd();
+                return this.readBlockEnd(OpCode.IfEnd);
             }
             if (opcode !== OpCode.Else) {
                 this.readCode();
@@ -407,7 +425,7 @@ class Disassembler {
             this.codeLines.push(body);
             break;
         }
-        return this.readIfEnd();
+        return this.readBlockEnd(OpCode.IfEnd);
     }
 
     /** 读取 record */
@@ -566,24 +584,18 @@ class Disassembler {
                 code = `${this.wv(f)} = (${Array.from({ length: argn }, (_, i) => this.wv(i + 1, -1)).join(', ')}) => { let ${Array.from({ length: regn - argn + 1 }, (_, i) => (i ? this.wv(i + argn, -1) : this.wv(0, -1))).join(', ')};`;
                 break;
             }
-            case OpCode.If: {
-                const cond = read();
-                body = `If ${this.reg(cond)}`;
-                code = `if ($ToBool(${this.rv(cond)})) {`;
-                break;
-            }
-            case OpCode.IfNot: {
-                const cond = read();
-                body = `IfNot ${this.reg(cond)}`;
-                code = `if (!$ToBool(${this.rv(cond)})) {`;
-                break;
-            }
             case OpCode.Constant: {
                 const reg = read();
                 const i = read();
                 const c = this.constants[i];
                 body = `${this.reg(reg)} = Const ${i} ; ${c}`;
                 code = `${this.wv(reg)} = ${c};`;
+                break;
+            }
+            case OpCode.Uninit: {
+                const reg = read();
+                body = `${this.reg(reg)} = Uninit`;
+                code = `${this.wv(reg)} = undefined;`;
                 break;
             }
             case OpCode.Return: {
@@ -597,7 +609,15 @@ class Disassembler {
             case OpCode.Mul:
             case OpCode.Div:
             case OpCode.Mod:
-            case OpCode.Pow: {
+            case OpCode.Pow:
+            case OpCode.Gt:
+            case OpCode.Geq:
+            case OpCode.Lt:
+            case OpCode.Leq:
+            case OpCode.Eq:
+            case OpCode.Neq:
+            case OpCode.Aeq:
+            case OpCode.Naeq: {
                 const ret = read();
                 const left = read();
                 const right = read();
@@ -710,6 +730,37 @@ class Disassembler {
                 code = `${this.wv(ret)} = [`;
                 break;
             }
+            case OpCode.If: {
+                const cond = read();
+                body = `If ${this.reg(cond)}`;
+                code = `if ($ToBool(${this.rv(cond)})) {`;
+                break;
+            }
+            case OpCode.IfNot: {
+                const cond = read();
+                body = `IfNot ${this.reg(cond)}`;
+                code = `if (!$ToBool(${this.rv(cond)})) {`;
+                break;
+            }
+            case OpCode.IfInit: {
+                const cond = read();
+                body = `IfInit ${this.reg(cond)}`;
+                code = `if (${this.rv(cond)} !== undefined) {`;
+                break;
+            }
+            case OpCode.IfNotInit: {
+                const cond = read();
+                body = `IfNotInit ${this.reg(cond)}`;
+                code = `if (${this.rv(cond)} === undefined) {`;
+                break;
+            }
+            case OpCode.LoopFor: {
+                const iterator = read();
+                const iterable = read();
+                body = `LoopFor ${this.reg(iterator)} ${this.reg(iterable)}`;
+                code = `for (${this.rv(iterator)} of $Iterable(${this.rv(iterable)})) {`;
+                break;
+            }
             default: {
                 body = `?${OpCode[opcode] ?? opcode}`;
                 code = `;`;
@@ -735,6 +786,12 @@ class Disassembler {
             case OpCode.IfInit:
             case OpCode.IfNotInit: {
                 this.readIfElse();
+                break;
+            }
+            case OpCode.Loop:
+            case OpCode.LoopFor: {
+                this.identCounter++;
+                this.readBlockEnd(OpCode.LoopEnd);
                 break;
             }
             case OpCode.Record: {
