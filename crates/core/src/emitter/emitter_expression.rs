@@ -194,7 +194,7 @@ impl<'s> Emitter<'s> {
                     }
                 }
                 self.op_1(OpCode::Record, ret);
-                let mut i = 0;
+                let mut reg_index = 0;
                 for element in elements.iter() {
                     match element {
                         RecordElement::Named(token, _, _, _) => {
@@ -202,15 +202,15 @@ impl<'s> Emitter<'s> {
                                 unreachable!("Expected identifier token");
                             };
                             let const_id = self.add_const_string(id);
-                            let reg = elements_regs[i];
-                            i += 1;
+                            let reg = elements_regs[reg_index];
                             self.op_2(OpCode::Field, const_id, reg);
+                            reg_index += 1;
                         }
                         RecordElement::CalculatedNamed(_, _, _, _, _, _) => {
-                            let name_reg = elements_regs[i];
-                            let reg = elements_regs[i + 1];
-                            i += 2;
+                            let name_reg = elements_regs[reg_index];
+                            let reg = elements_regs[reg_index + 1];
                             self.op_2(OpCode::FieldDyn, name_reg, reg);
+                            reg_index += 2;
                         }
                         RecordElement::OmitNamed(_, expression, _) => {
                             let Expression::Variable(id) = expression.as_ref() else {
@@ -220,19 +220,19 @@ impl<'s> Emitter<'s> {
                                 unreachable!("Expected identifier token");
                             };
                             let const_id = self.add_const_string(id);
-                            let reg = elements_regs[i];
-                            i += 1;
+                            let reg = elements_regs[reg_index];
                             self.op_2(OpCode::Field, const_id, reg);
+                            reg_index += 1;
                         }
                         RecordElement::Unnamed(_, _) => {
-                            let reg = elements_regs[i];
-                            i += 1;
-                            self.op_2(OpCode::FieldIndex, OpParam::new(i), reg);
+                            let reg = elements_regs[reg_index];
+                            self.op_2(OpCode::FieldIndex, OpParam::new(reg_index), reg);
+                            reg_index += 1;
                         }
                         RecordElement::Spread(_, _, _) => {
-                            let reg = elements_regs[i];
-                            i += 1;
+                            let reg = elements_regs[reg_index];
                             self.op_1(OpCode::Spread, reg);
+                            reg_index += 1;
                         }
                     }
                 }
@@ -336,7 +336,12 @@ impl<'s> Emitter<'s> {
                     _ => unreachable!("Expected identifier token"),
                 };
             }
-            Index(expression, token, expression1, token1) => todo!(),
+            Index(expression, _, index, _) => {
+                self.emit_expression(expression, ret, brk);
+                let index_reg = self.add_reg();
+                self.emit_expression(index, index_reg, brk);
+                self.op_get_dyn(ret, ret, index_reg);
+            }
             NonNil(expression, token) => {
                 self.emit_expression(expression, ret, brk);
                 self.op_non_nil(ret);
@@ -409,7 +414,36 @@ impl<'s> Emitter<'s> {
                 self.op(OpCode::LoopEnd);
                 self.exit_scope();
             }
-            While(token, expression, expression1, _) => todo!(),
+            While(_, cond, body, else_part) => {
+                self.enter_scope();
+                let cond_reg = self.add_reg();
+                self.declare_expression(cond);
+                self.op_uninit(ret);
+                self.op(OpCode::Loop);
+                self.emit_expression(cond, cond_reg, ret);
+                self.op_if(OpCode::IfNot, cond_reg);
+                self.op(OpCode::Break);
+                self.op_if_end();
+
+                let Expression::Block(_, stmts, expr, _) = body.as_ref() else {
+                    unreachable!("Expected block expression");
+                };
+                self.emit_block(stmts, expr, Register::EMPTY, ret);
+
+                self.op(OpCode::LoopEnd);
+                self.exit_scope();
+
+                self.op_if(OpCode::IfNotInit, ret);
+                if let Some((_, else_expr)) = else_part {
+                    let Expression::Block(_, stmts, expr, _) = else_expr.as_ref() else {
+                        unreachable!("Expected block expression");
+                    };
+                    self.emit_block(stmts, expr, ret, Register::EMPTY);
+                } else {
+                    self.op_nil(ret);
+                }
+                self.op_if_end();
+            }
             ForIn(_, pattern, _, iterable, expression, else_part) => {
                 self.enter_scope();
                 self.declare_pattern(pattern, Some(BindType::Init));
@@ -437,10 +471,10 @@ impl<'s> Emitter<'s> {
                 self.op_uninit(ret);
                 self.op_2(OpCode::LoopFor, iterator, iterable_reg);
                 self.emit_pattern(pattern, iterator, Some(BindType::Init));
+
                 let Expression::Block(_, stmts, expr, _) = expression.as_ref() else {
                     unreachable!("Expected block expression");
                 };
-
                 self.emit_block(stmts, expr, Register::EMPTY, ret);
                 self.op(OpCode::LoopEnd);
                 self.exit_scope();

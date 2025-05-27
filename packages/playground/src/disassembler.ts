@@ -719,6 +719,14 @@ class Disassembler {
                 code = `${this.wv(ret)} = $Get(${this.rv(obj)}, ${index});`;
                 break;
             }
+            case OpCode.GetDyn: {
+                const ret = read();
+                const obj = read();
+                const index = read();
+                body = `${this.reg(ret)} = ${OpCode[opcode]} ${this.reg(obj)} ${this.reg(index)}`;
+                code = `${this.wv(ret)} = $Get(${this.rv(obj)}, ${this.rv(index)});`;
+                break;
+            }
             case OpCode.GetGlobal: {
                 const reg = read();
                 const i = read();
