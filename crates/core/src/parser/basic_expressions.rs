@@ -34,7 +34,7 @@ fn record_like<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
             .parse_next(i)
     };
     let (open, parts, close) =
-        record_base(expression, omit_named, expression, expression).parse_next(i)?;
+        record_base(expression, expression, omit_named, expression, expression).parse_next(i)?;
     let result = if parts.len() == 1 {
         let part = parts.into_iter().next().unwrap();
         if let RecordElement::Unnamed(exp, None) = part {

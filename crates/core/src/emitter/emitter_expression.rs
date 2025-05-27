@@ -30,6 +30,10 @@ impl<'s> Emitter<'s> {
                 | RecordElement::Spread(_, exp, _) => {
                     self.declare_expression(exp);
                 }
+                RecordElement::CalculatedNamed(_, name_exp, _, _, exp, _) => {
+                    self.declare_expression(name_exp);
+                    self.declare_expression(exp);
+                }
             }),
             Array(_, elements, _) => elements.iter().for_each(|element| match element {
                 ArrayElement::Spread(_, exp, _) | ArrayElement::Element(exp, _) => {
@@ -164,6 +168,14 @@ impl<'s> Emitter<'s> {
                             self.emit_expression(expression, reg, brk);
                             elements_regs.push(reg);
                         }
+                        RecordElement::CalculatedNamed(_, name_expression, _, _, expression, _) => {
+                            let name_reg = self.add_reg();
+                            self.emit_expression(name_expression, name_reg, brk);
+                            let reg = self.add_reg();
+                            self.emit_expression(expression, reg, brk);
+                            elements_regs.push(name_reg);
+                            elements_regs.push(reg);
+                        }
                         RecordElement::OmitNamed(_, expression, _) => {
                             let reg = self.add_reg();
                             self.emit_expression(expression, reg, brk);
@@ -182,16 +194,23 @@ impl<'s> Emitter<'s> {
                     }
                 }
                 self.op_1(OpCode::Record, ret);
-                for (element, (i, reg)) in
-                    elements.iter().zip(elements_regs.into_iter().enumerate())
-                {
+                let mut i = 0;
+                for element in elements.iter() {
                     match element {
                         RecordElement::Named(token, _, _, _) => {
                             let TokenKind::Identifier(id) = &token.kind else {
                                 unreachable!("Expected identifier token");
                             };
                             let const_id = self.add_const_string(id);
+                            let reg = elements_regs[i];
+                            i += 1;
                             self.op_2(OpCode::Field, const_id, reg);
+                        }
+                        RecordElement::CalculatedNamed(_, _, _, _, _, _) => {
+                            let name_reg = elements_regs[i];
+                            let reg = elements_regs[i + 1];
+                            i += 2;
+                            self.op_2(OpCode::FieldDyn, name_reg, reg);
                         }
                         RecordElement::OmitNamed(_, expression, _) => {
                             let Expression::Variable(id) = expression.as_ref() else {
@@ -201,12 +220,18 @@ impl<'s> Emitter<'s> {
                                 unreachable!("Expected identifier token");
                             };
                             let const_id = self.add_const_string(id);
+                            let reg = elements_regs[i];
+                            i += 1;
                             self.op_2(OpCode::Field, const_id, reg);
                         }
                         RecordElement::Unnamed(_, _) => {
+                            let reg = elements_regs[i];
+                            i += 1;
                             self.op_2(OpCode::FieldIndex, OpParam::new(i), reg);
                         }
                         RecordElement::Spread(_, _, _) => {
+                            let reg = elements_regs[i];
+                            i += 1;
                             self.op_1(OpCode::Spread, reg);
                         }
                     }
@@ -354,7 +379,7 @@ impl<'s> Emitter<'s> {
                         TokenKind::Operator(Operator::Less) => OpCode::Lt,
                         TokenKind::Operator(Operator::LessEqual) => OpCode::Leq,
 
-                        TokenKind::Operator(Operator::Equal) => OpCode::Eq,
+                        TokenKind::Operator(Operator::EqualEqual) => OpCode::Eq,
                         TokenKind::Operator(Operator::NotEqual) => OpCode::Neq,
                         TokenKind::Operator(Operator::TildeEqual) => OpCode::Aeq,
                         TokenKind::Operator(Operator::NotTildeEqual) => OpCode::Naeq,
@@ -374,7 +399,16 @@ impl<'s> Emitter<'s> {
                 self.emit_block(stmts, expr, ret, brk);
                 self.exit_scope();
             }
-            Loop(token, expression) => todo!(),
+            Loop(_, expression) => {
+                self.enter_scope();
+                self.op(OpCode::Loop);
+                let Expression::Block(_, stmts, expr, _) = expression.as_ref() else {
+                    unreachable!("Expected block expression");
+                };
+                self.emit_block(stmts, expr, Register::EMPTY, ret);
+                self.op(OpCode::LoopEnd);
+                self.exit_scope();
+            }
             While(token, expression, expression1, _) => todo!(),
             ForIn(_, pattern, _, iterable, expression, else_part) => {
                 self.enter_scope();

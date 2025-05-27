@@ -82,6 +82,8 @@ pub enum ErrorCode {
     MutInDiscardPattern,
     #[strum(message = "Discard pattern should be omitted in spread pattern")]
     DiscardInSpreadPattern,
+    #[strum(message = "Calculated name is not allowed in record pattern")]
+    CalculatedNameRecordPattern,
     #[strum(message = "Must be bind pattern while record field name omitted")]
     BadOmitKeyRecordPattern,
     #[strum(message = "Range pattern in array pattern should be parenthesised")]

@@ -85,6 +85,12 @@ const ENV = (global: Record<string, unknown>) => {
     const $Sub = (a: number, b: number) => $ToNumber(a) - $ToNumber(b);
     const $Div = (a: number, b: number) => $ToNumber(a) / $ToNumber(b);
     const $Pow = (a: number, b: number) => $ToNumber(a) ** $ToNumber(b);
+    const $Gt = (a: number, b: number) => $ToNumber(a) > $ToNumber(b);
+    const $Gte = (a: number, b: number) => $ToNumber(a) >= $ToNumber(b);
+    const $Lt = (a: number, b: number) => $ToNumber(a) < $ToNumber(b);
+    const $Lte = (a: number, b: number) => $ToNumber(a) <= $ToNumber(b);
+    const $Eq = (a: unknown, b: unknown) => a === b;
+    const $Neq = (a: unknown, b: unknown) => !$Eq(a, b);
     const $Concat = (...args: string[]) => {
         return args.map($ToString).join('');
     };
@@ -159,13 +165,32 @@ const ENV = (global: Record<string, unknown>) => {
         if (typeof value == 'object') return Object.values(value);
         return [value];
     };
+    let cp: number = Number.NaN;
+    const $Cp = (): void => {
+        if (!cp) {
+            cp = Date.now();
+        } else if (Date.now() - cp > 100) {
+            throw new RangeError('Execution timeout');
+        }
+    };
+    const $ClearCp = (): void => {
+        cp = Number.NaN;
+    };
     return {
+        $Cp,
+        $ClearCp,
         $Mul,
         $Add,
         $Sub,
         $Div,
         $Pow,
         $Concat,
+        $Gt,
+        $Gte,
+        $Lt,
+        $Lte,
+        $Eq,
+        $Neq,
         $Pos,
         $Neg,
         $Not,
@@ -452,7 +477,7 @@ class Disassembler {
                     const field = read();
                     const value = read();
                     body = `FieldDyn ${field} ${this.reg(value)}`;
-                    code = `[${this.rv(field)}]: ${this.rv(value)},`;
+                    code = `[$ToString(${this.rv(field)})]: ${this.rv(value)},`;
                     break;
                 }
                 case OpCode.FieldIndex: {
@@ -471,7 +496,7 @@ class Disassembler {
                 case OpCode.Freeze: {
                     this.identCounter--;
                     body = `Freeze`;
-                    code = `};`;
+                    code = `});`;
                     break;
                 }
                 default: {
@@ -542,7 +567,7 @@ class Disassembler {
                 case OpCode.Freeze: {
                     this.identCounter--;
                     body = `Freeze`;
-                    code = `];`;
+                    code = `]);`;
                     break;
                 }
                 default: {
@@ -581,7 +606,7 @@ class Disassembler {
                 const argn = read();
                 const regn = read();
                 body = `${this.reg(f)} = fn (${Array.from({ length: argn }, (_, i) => this.reg(i + 1)).join(', ')}) { maxreg ${regn}`;
-                code = `${this.wv(f)} = (${Array.from({ length: argn }, (_, i) => this.wv(i + 1, -1)).join(', ')}) => { let ${Array.from({ length: regn - argn + 1 }, (_, i) => (i ? this.wv(i + argn, -1) : this.wv(0, -1))).join(', ')};`;
+                code = `${this.wv(f)} = (${Array.from({ length: argn }, (_, i) => this.wv(i + 1, -1)).join(', ')}) => { $Cp(); let ${Array.from({ length: regn - argn + 1 }, (_, i) => (i ? this.wv(i + argn, -1) : this.wv(0, -1))).join(', ')};`;
                 break;
             }
             case OpCode.Constant: {
@@ -721,13 +746,13 @@ class Disassembler {
             case OpCode.Record: {
                 const ret = read();
                 body = `${this.reg(ret)} = Record`;
-                code = `${this.wv(ret)} = {`;
+                code = `${this.wv(ret)} = ({`;
                 break;
             }
             case OpCode.Array: {
                 const ret = read();
                 body = `${this.reg(ret)} = Array`;
-                code = `${this.wv(ret)} = [`;
+                code = `${this.wv(ret)} = ([`;
                 break;
             }
             case OpCode.If: {
@@ -758,7 +783,22 @@ class Disassembler {
                 const iterator = read();
                 const iterable = read();
                 body = `LoopFor ${this.reg(iterator)} ${this.reg(iterable)}`;
-                code = `for (${this.rv(iterator)} of $Iterable(${this.rv(iterable)})) {`;
+                code = `for (${this.rv(iterator)} of $Iterable(${this.rv(iterable)})) { $Cp();`;
+                break;
+            }
+            case OpCode.Loop: {
+                body = `Loop`;
+                code = `while (true) { $Cp();`;
+                break;
+            }
+            case OpCode.Break: {
+                body = `Break`;
+                code = `break;`;
+                break;
+            }
+            case OpCode.Continue: {
+                body = `Continue`;
+                code = `continue;`;
                 break;
             }
             default: {

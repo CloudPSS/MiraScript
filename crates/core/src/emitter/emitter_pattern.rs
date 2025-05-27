@@ -37,6 +37,7 @@ impl<'s> Emitter<'s> {
                 for element in elements {
                     match element {
                         RecordPattern::Named(_, _, pattern, _)
+                        | RecordPattern::CalculatedNamed(_, _, _, _, pattern, _)
                         | RecordPattern::OmitNamed(_, pattern, _)
                         | RecordPattern::Unnamed(pattern, _)
                         | RecordPattern::Spread(_, pattern, _) => {
@@ -103,6 +104,7 @@ impl<'s> Emitter<'s> {
                             self.op_get(ret, value, id);
                             self.emit_pattern(pattern, ret, bind_type);
                         }
+                        RecordPattern::CalculatedNamed(..) => {}
                         RecordPattern::OmitNamed(_, pattern, _) => {
                             let Pattern::Bind(_, id) = pattern.as_ref() else {
                                 unreachable!("Expected identifier token");
