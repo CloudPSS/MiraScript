@@ -1,27 +1,45 @@
 import { OpCode } from 'mira-wasm';
 
+/**
+ * 可外部调用的对象
+ */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+type ExternObject = Record<string, unknown> & Function;
+
+/** Wrapper for `extern` objects */
 class Extern {
-    constructor(readonly value: Record<string, unknown>) {}
-    has(key: string | number): boolean {
+    constructor(
+        readonly value: ExternObject,
+        readonly caller: Extern | null = null,
+    ) {}
+
+    /** Check if the object has a property */
+    protected access(key: string | number, read: boolean): boolean {
         if (typeof this.value == 'function' && (key === 'prototype' || key === 'arguments' || key === 'caller'))
             return false;
         if (Object.hasOwn(this.value, key)) return true;
         if (key === '__proto__') return false;
+        if (!read) return true;
         const prop = this.value[key];
         if (key in Function.prototype && prop === Function.prototype[key as keyof (() => void)]) return false;
         if (key in Array.prototype && prop === Array.prototype[key as keyof unknown[]]) return false;
         if (key in Object.prototype && prop === Object.prototype[key as keyof object]) return false;
         return true;
     }
+
+    /** Check if the object has a property */
+    has(key: string | number): boolean {
+        return this.access(key, true);
+    }
+    /** Get a property from the object */
     get(key: string | number): unknown {
         if (!this.has(key)) return null;
         const prop = this.value[key] ?? null;
         if (prop == null) return null;
         switch (typeof prop) {
             case 'function':
-                return new Extern(prop.bind(this.value) as Record<string, unknown>);
             case 'object':
-                return new Extern(prop as Record<string, unknown>);
+                return new Extern(prop as ExternObject, this);
             case 'string':
             case 'number':
             case 'boolean':
@@ -34,6 +52,20 @@ class Extern {
                 return null;
         }
     }
+    /** Set a property on the object */
+    set(key: string | number, value: unknown): boolean {
+        if (!this.access(key, false)) return false;
+        this.value[key] = value;
+        return true;
+    }
+    /** Call extern value */
+    call(...args: unknown[]): unknown {
+        if (typeof this.value == 'function') {
+            return this.value.apply(this.caller?.value ?? null, args);
+        }
+        return null;
+    }
+    /** Convert the object to JSON */
     toJSON() {
         return String(this.value);
     }
@@ -178,7 +210,7 @@ export function disassemble(chunk: Uint8Array | undefined): string {
     const env = ENV({
         // eslint-disable-next-line no-console
         print: console.log,
-        globalThis: new Extern(globalThis),
+        globalThis: new Extern(globalThis as unknown as ExternObject),
         map: (
             self: unknown[],
             ...args: [callbackfn: (value: unknown, index: number, array: unknown[]) => unknown, thisArg?: unknown]
