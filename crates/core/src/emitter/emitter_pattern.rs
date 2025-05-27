@@ -1,7 +1,10 @@
 use crate::{
     error::{ErrorCode, SourceError},
     lexer::TokenKind,
-    parser::Pattern::{self, *},
+    parser::{
+        Pattern::{self, *},
+        RecordPattern,
+    },
 };
 
 use super::{
@@ -13,7 +16,7 @@ use super::{
 impl<'s> Emitter<'s> {
     pub fn declare_pattern(&mut self, pattern: &'s Pattern<'s>, bind_type: Option<BindType>) {
         match pattern {
-            Grouping(token, pattern, token1) => todo!(),
+            Grouping(_, pattern, _) => self.declare_pattern(pattern, bind_type),
             Constant(token, token1) => todo!(),
             Relation(token, pattern) => todo!(),
             Range(pattern, token, pattern1) => todo!(),
@@ -30,7 +33,18 @@ impl<'s> Emitter<'s> {
                     self.declare_variable(id, mut_token.is_some(), bind_type);
                 }
             }
-            Record(token, record_element_bases, token1) => todo!(),
+            Record(_, elements, _) => {
+                for element in elements {
+                    match element {
+                        RecordPattern::Named(_, _, pattern, _)
+                        | RecordPattern::OmitNamed(_, pattern, _)
+                        | RecordPattern::Unnamed(pattern, _)
+                        | RecordPattern::Spread(_, pattern, _) => {
+                            self.declare_pattern(pattern, bind_type);
+                        }
+                    }
+                }
+            }
             Array(token, array_element_bases, token1) => todo!(),
             SpreadDiscard => todo!(),
             And(pattern, token, pattern1) => todo!(),
@@ -41,7 +55,7 @@ impl<'s> Emitter<'s> {
     }
     pub fn emit_pattern(
         &mut self,
-        pattern: &Pattern<'s>,
+        pattern: &'s Pattern<'s>,
         value: Register,
         bind_type: Option<BindType>,
     ) {
@@ -78,7 +92,39 @@ impl<'s> Emitter<'s> {
                     ));
                 }
             }
-            Record(token, record_element_bases, token1) => todo!(),
+            Record(_, elements, _) => {
+                for (i, element) in elements.iter().enumerate() {
+                    match element {
+                        RecordPattern::Named(token, _, pattern, _) => {
+                            let TokenKind::Identifier(id) = &token.kind else {
+                                unreachable!("Expected identifier token");
+                            };
+                            let ret = self.add_reg();
+                            self.op_get(ret, value, id);
+                            self.emit_pattern(pattern, ret, bind_type);
+                        }
+                        RecordPattern::OmitNamed(_, pattern, _) => {
+                            let Pattern::Bind(_, id) = pattern.as_ref() else {
+                                unreachable!("Expected identifier token");
+                            };
+                            let TokenKind::Identifier(id) = &id.kind else {
+                                unreachable!("Expected identifier token");
+                            };
+                            let ret = self.add_reg();
+                            self.op_get(ret, value, id);
+                            self.emit_pattern(pattern, ret, bind_type);
+                        }
+                        RecordPattern::Unnamed(pattern, _) => {
+                            let ret = self.add_reg();
+                            self.op_get_index(ret, value, i);
+                            self.emit_pattern(pattern, ret, bind_type);
+                        }
+                        RecordPattern::Spread(_, pattern, _) => {
+                            todo!()
+                        }
+                    }
+                }
+            }
             Array(token, array_element_bases, token1) => todo!(),
             SpreadDiscard => todo!(),
             And(pattern, token, pattern1) => todo!(),

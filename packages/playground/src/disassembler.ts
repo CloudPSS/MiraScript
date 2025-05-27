@@ -1,31 +1,167 @@
 import { OpCode } from 'mira-wasm';
 
-const ENV = (global: Record<string, unknown>) => ({
-    $Mul: (a: number, b: number) => Number(a) * Number(b),
-    $Add: (a: number, b: number) => Number(a) + Number(b),
-    $Sub: (a: number, b: number) => Number(a) - Number(b),
-    $Div: (a: number, b: number) => Number(a) / Number(b),
-    $Pow: (a: number, b: number) => Number(a) ** Number(b),
-    $Concat: (...args: string[]) => args.join(''),
-    $Pos: Number,
-    $Neg: (a: number) => -Number(a),
-    $Not: (a: boolean) => !a,
-    $And: (a: boolean, b: boolean) => a && b,
-    $Or: (a: boolean, b: boolean) => a || b,
-    $Call: (name: string, ...args: unknown[]) => {
+class Extern {
+    constructor(readonly value: Record<string, unknown>) {}
+    has(key: string | number): boolean {
+        if (typeof this.value == 'function' && (key === 'prototype' || key === 'arguments' || key === 'caller'))
+            return false;
+        if (Object.hasOwn(this.value, key)) return true;
+        if (key === '__proto__') return false;
+        const prop = this.value[key];
+        if (key in Function.prototype && prop === Function.prototype[key as keyof (() => void)]) return false;
+        if (key in Array.prototype && prop === Array.prototype[key as keyof unknown[]]) return false;
+        if (key in Object.prototype && prop === Object.prototype[key as keyof object]) return false;
+        return true;
+    }
+    get(key: string | number): unknown {
+        if (!this.has(key)) return null;
+        const prop = this.value[key] ?? null;
+        if (prop == null) return null;
+        switch (typeof prop) {
+            case 'function':
+                return new Extern(prop.bind(this.value) as Record<string, unknown>);
+            case 'object':
+                return new Extern(prop as Record<string, unknown>);
+            case 'string':
+            case 'number':
+            case 'boolean':
+                return prop;
+            case 'bigint':
+                return Number(prop);
+            case 'symbol':
+            case 'undefined':
+            default:
+                return null;
+        }
+    }
+    toJSON() {
+        return String(this.value);
+    }
+}
+
+const ENV = (global: Record<string, unknown>) => {
+    const $Mul = (a: number, b: number) => $ToNumber(a) * $ToNumber(b);
+    const $Add = (a: number, b: number) => $ToNumber(a) + $ToNumber(b);
+    const $Sub = (a: number, b: number) => $ToNumber(a) - $ToNumber(b);
+    const $Div = (a: number, b: number) => $ToNumber(a) / $ToNumber(b);
+    const $Pow = (a: number, b: number) => $ToNumber(a) ** $ToNumber(b);
+    const $Concat = (...args: string[]) => {
+        return args.map($ToString).join('');
+    };
+    const $Pos = (a: number) => $ToNumber(a);
+    const $Neg = (a: number) => -$ToNumber(a);
+    const $Not = (a: boolean) => !$ToBool(a);
+    const $Call = (name: string, ...args: unknown[]) => {
         return (global[name] as (...args: unknown[]) => unknown)(...args) ?? null;
-    },
-    $CallDyn: (func: (...args: unknown[]) => unknown, ...args: unknown[]) => {
+    };
+    const $CallDyn = (func: (...args: unknown[]) => unknown, ...args: unknown[]) => {
+        if (func instanceof Extern) {
+            func = func.value as unknown as (...args: unknown[]) => unknown;
+        }
+        if (typeof func != 'function') {
+            throw new TypeError(`Expected function, got ${$Type(func)}`);
+        }
         return func(...args) ?? null;
-    },
-    $GetGlobal: (name: string) => global[name] ?? null,
-});
+    };
+    const $GetGlobal = (name: string) => $Get(global, name);
+    const $Type = (value: unknown) => {
+        if (value === null) return 'nil';
+        if (Array.isArray(value)) return 'array';
+        if (typeof value == 'object') return 'record';
+        return typeof value;
+    };
+    const $ToBool = (value: unknown) => {
+        return value != null && value !== false;
+    };
+    const $ToString = (value: unknown) => {
+        if (value === null) return '';
+        if (Array.isArray(value)) return value.map(toJavascript).join(', ');
+        if (typeof value == 'object') return JSON.stringify(value);
+        if (typeof value == 'function') return `<function ${value.name}>`;
+        return String(value);
+    };
+    const $ToNumber = Number;
+    const $NonNil = (value: unknown): asserts value is NonNullable<unknown> => {
+        if (value === null) throw new Error('Expected non-nil value');
+    };
+    const $Get = (obj: unknown, key: string | number) => {
+        if (obj == null || typeof obj != 'object') return null;
+        if (obj instanceof Extern) {
+            return obj.get(key);
+        }
+        if (!Object.hasOwn(obj, key)) return null;
+        return (obj as Record<string, unknown>)[key] ?? null;
+    };
+    const $ArrayRange = (start: number, end: number): unknown[] => {
+        const arr: unknown[] = [];
+        for (let i = start; i <= end; i++) {
+            arr.push(i);
+        }
+        return arr;
+    };
+    const $ArrayRangeExclusive = (start: number, end: number): unknown[] => {
+        const arr: unknown[] = [];
+        for (let i = start; i < end; i++) {
+            arr.push(i);
+        }
+        return arr;
+    };
+    const $ArraySpread = (array: unknown[]): unknown[] => {
+        return array;
+    };
+    const $RecordSpread = (record: object): object => {
+        return record;
+    };
+    return {
+        $Mul,
+        $Add,
+        $Sub,
+        $Div,
+        $Pow,
+        $Concat,
+        $Pos,
+        $Neg,
+        $Not,
+        $Call,
+        $CallDyn,
+        $GetGlobal,
+        $Get,
+        $Type,
+        $ToString,
+        $ToBool,
+        $ToNumber,
+        $NonNil,
+        $ArrayRange,
+        $ArrayRangeExclusive,
+        $ArraySpread,
+        $RecordSpread,
+    };
+};
 
 /** 将值转为 JS */
+function toJavascript(value: unknown): string {
+    if (value === null) return 'null';
+    if (value === undefined) return 'undefined';
+    if (typeof value == 'object' || typeof value == 'string') {
+        return JSON.stringify(value);
+    }
+    return String(value);
+}
+
+/** 将值转为显示 */
 function print(value: unknown): string {
     if (value === null) return 'null';
     if (value === undefined) return 'undefined';
     if (typeof value == 'object' || typeof value == 'string') {
+        if (value instanceof Extern) {
+            return `Extern ${print(value.value)}`;
+        }
+        if (value instanceof Error) {
+            return String(value);
+        }
+        if (Array.isArray(value)) {
+            return `[${value.map(print).join(', ')}]`;
+        }
         return JSON.stringify(value);
     }
     return String(value);
@@ -42,10 +178,20 @@ export function disassemble(chunk: Uint8Array | undefined): string {
     const env = ENV({
         // eslint-disable-next-line no-console
         print: console.log,
+        globalThis: new Extern(globalThis),
+        map: (
+            self: unknown[],
+            ...args: [callbackfn: (value: unknown, index: number, array: unknown[]) => unknown, thisArg?: unknown]
+        ) => Array.prototype.map.apply(self, args),
     });
     // eslint-disable-next-line @typescript-eslint/no-implied-eval, @typescript-eslint/no-unsafe-call
     const fn = new Function(...Object.keys(env), `let _; ${code}; return _;`)(...Object.values(env)) as () => unknown;
-    const r = fn();
+    let r;
+    try {
+        r = fn();
+    } catch (e) {
+        r = e;
+    }
     return [
         `Chunk length: ${disassembler.chunkSize}`,
         '',
@@ -54,7 +200,7 @@ export function disassemble(chunk: Uint8Array | undefined): string {
         '',
         `Code length: ${disassembler.codeSize}`,
         ...disassembler.disassembly.map((d) => {
-            return `  [${d.index}]:\t${OpCode[d.opcode].padEnd(8)}${d.wide ? 'W' : ''} \t${d.body}`;
+            return `  [${d.index}]:\t${String(OpCode[d.opcode] ?? d.opcode).padEnd(8)}${d.wide ? 'W' : ''} \t${d.body}`;
         }),
         '',
         `Code:`,
@@ -109,7 +255,7 @@ class Disassembler {
     private readConsts(): void {
         for (let i = 0, index = 0; i < this.constSize; index++) {
             const [constant, size] = readConst(this.constReader, i);
-            this.constants.push(print(constant));
+            this.constants.push(toJavascript(constant));
             i += size;
         }
     }
@@ -232,6 +378,143 @@ class Disassembler {
         return this.readIfEnd();
     }
 
+    /** 读取 record */
+    private readRecord(): void {
+        this.identCounter++;
+        while (this.codeOffset < this.codeSize) {
+            const index = this.codeOffset;
+            const opcode_raw = this.codeReader.getUint8(this.codeOffset++);
+            const opcode = opcode_raw & 0x7f;
+            const wide = opcode_raw >= 0x80;
+            const read = () => this.readParam(wide);
+            let body = '';
+            let code = '';
+            switch (opcode) {
+                case OpCode.Field: {
+                    const field = read();
+                    const field_name = this.constants[field];
+                    const value = read();
+                    body = `Field ${field} ${this.reg(value)} ; ${field_name}`;
+                    code = `${field_name}: ${this.rv(value)},`;
+                    break;
+                }
+                case OpCode.FieldDyn: {
+                    const field = read();
+                    const value = read();
+                    body = `FieldDyn ${field} ${this.reg(value)}`;
+                    code = `[${this.rv(field)}]: ${this.rv(value)},`;
+                    break;
+                }
+                case OpCode.FieldIndex: {
+                    const field = read();
+                    const value = read();
+                    body = `FieldIndex ${field} ${this.reg(value)}`;
+                    code = `${field}: ${this.rv(value)},`;
+                    break;
+                }
+                case OpCode.Spread: {
+                    const value = read();
+                    body = `Spread ${this.reg(value)}`;
+                    code = `...$RecordSpread(${this.rv(value)}),`;
+                    break;
+                }
+                case OpCode.Freeze: {
+                    this.identCounter--;
+                    body = `Freeze`;
+                    code = `};`;
+                    break;
+                }
+                default: {
+                    body = `?${OpCode[opcode] ?? opcode}`;
+                    code = `;`;
+                    break;
+                }
+            }
+            const ident = this.ident();
+            this.codeLines.push(ident + code);
+            this.disassembly.push({
+                index,
+                opcode,
+                wide,
+                body: ident + body,
+            });
+            if (opcode === OpCode.Freeze) {
+                return;
+            }
+        }
+    }
+
+    /** 读取 array */
+    private readArray(): void {
+        this.identCounter++;
+        while (this.codeOffset < this.codeSize) {
+            const index = this.codeOffset;
+            const opcode_raw = this.codeReader.getUint8(this.codeOffset++);
+            const opcode = opcode_raw & 0x7f;
+            const wide = opcode_raw >= 0x80;
+            const read = () => this.readParam(wide);
+            let body = '';
+            let code = '';
+            switch (opcode) {
+                case OpCode.Item: {
+                    const value = read();
+                    body = `Item ${this.reg(value)}`;
+                    code = `${this.rv(value)},`;
+                    break;
+                }
+                case OpCode.ItemRange: {
+                    const start = read();
+                    const end = read();
+                    body = `ItemRange ${start} ${end}`;
+                    code = `...$ArrayRange(${start}, ${end}),`;
+                    break;
+                }
+                case OpCode.ItemRangeDyn: {
+                    const start = read();
+                    const end = read();
+                    body = `ItemRangeDyn ${this.reg(start)} ${this.reg(end)}`;
+                    code = `...$ArrayRange(${this.rv(start)}, ${this.rv(end)}),`;
+                    break;
+                }
+                case OpCode.ItemRangeExclusiveDyn: {
+                    const start = read();
+                    const end = read();
+                    body = `ItemRangeExclusiveDyn ${this.reg(start)} ${this.reg(end)}`;
+                    code = `...$ArrayRangeExclusive(${this.rv(start)}, ${this.rv(end)}),`;
+                    break;
+                }
+                case OpCode.Spread: {
+                    const value = read();
+                    body = `Spread ${this.reg(value)}`;
+                    code = `...$ArraySpread(${this.rv(value)}),`;
+                    break;
+                }
+                case OpCode.Freeze: {
+                    this.identCounter--;
+                    body = `Freeze`;
+                    code = `];`;
+                    break;
+                }
+                default: {
+                    body = `?${OpCode[opcode] ?? opcode}`;
+                    code = `;`;
+                    break;
+                }
+            }
+            const ident = this.ident();
+            this.codeLines.push(ident + code);
+            this.disassembly.push({
+                index,
+                opcode,
+                wide,
+                body: ident + body,
+            });
+            if (opcode === OpCode.Freeze) {
+                return;
+            }
+        }
+    }
+
     /** 读取代码 */
     private readCode(): void {
         const index = this.codeOffset;
@@ -253,15 +536,21 @@ class Disassembler {
             }
             case OpCode.If: {
                 const cond = read();
-                body = `if (${this.reg(cond)}) {`;
-                code = `if (${this.rv(cond)}) {`;
+                body = `If ${this.reg(cond)}`;
+                code = `if ($ToBool(${this.rv(cond)})) {`;
+                break;
+            }
+            case OpCode.IfNot: {
+                const cond = read();
+                body = `IfNot ${this.reg(cond)}`;
+                code = `if (!$ToBool(${this.rv(cond)})) {`;
                 break;
             }
             case OpCode.Constant: {
                 const reg = read();
                 const i = read();
                 const c = this.constants[i];
-                body = `${this.reg(reg)} = const ${i} ; ${c}`;
+                body = `${this.reg(reg)} = Const ${i} ; ${c}`;
                 code = `${this.wv(reg)} = ${c};`;
                 break;
             }
@@ -321,11 +610,36 @@ class Disassembler {
             case OpCode.Pos:
             case OpCode.Neg:
             case OpCode.Not:
-            case OpCode.Type: {
+            case OpCode.Type:
+            case OpCode.ToBool:
+            case OpCode.ToNumber:
+            case OpCode.ToString: {
                 const ret = read();
                 const value = read();
                 body = `${this.reg(ret)} = ${OpCode[opcode]} ${this.reg(value)};`;
                 code = `${this.wv(ret)} = $${OpCode[opcode]}(${this.rv(value)});`;
+                break;
+            }
+            case OpCode.NonNil: {
+                const value = read();
+                body = `NonNil ${this.reg(value)}`;
+                code = `$NonNil(${this.rv(value)})`;
+                break;
+            }
+            case OpCode.Get: {
+                const ret = read();
+                const obj = read();
+                const prop = this.constants[read()];
+                body = `${this.reg(ret)} = ${OpCode[opcode]} ${this.reg(obj)} ${prop}`;
+                code = `${this.wv(ret)} = $Get(${this.rv(obj)}, ${prop});`;
+                break;
+            }
+            case OpCode.GetIndex: {
+                const ret = read();
+                const obj = read();
+                const index = read();
+                body = `${this.reg(ret)} = ${OpCode[opcode]} ${this.reg(obj)} ${index}`;
+                code = `${this.wv(ret)} = $Get(${this.rv(obj)}, ${index});`;
                 break;
             }
             case OpCode.GetGlobal: {
@@ -352,6 +666,18 @@ class Disassembler {
                 code = `${this.rv(up, level)} = ${this.wv(v)};`;
                 break;
             }
+            case OpCode.Record: {
+                const ret = read();
+                body = `${this.reg(ret)} = Record`;
+                code = `${this.wv(ret)} = {`;
+                break;
+            }
+            case OpCode.Array: {
+                const ret = read();
+                body = `${this.reg(ret)} = Array`;
+                code = `${this.wv(ret)} = [`;
+                break;
+            }
             default: {
                 body = `?${OpCode[opcode] ?? opcode}`;
                 code = `;`;
@@ -370,8 +696,21 @@ class Disassembler {
                 this.readClosure();
                 break;
             }
-            case OpCode.If: {
+            case OpCode.If:
+            case OpCode.IfNot:
+            case OpCode.IfNil:
+            case OpCode.IfNotNil:
+            case OpCode.IfInit:
+            case OpCode.IfNotInit: {
                 this.readIfElse();
+                break;
+            }
+            case OpCode.Record: {
+                this.readRecord();
+                break;
+            }
+            case OpCode.Array: {
+                this.readArray();
                 break;
             }
         }

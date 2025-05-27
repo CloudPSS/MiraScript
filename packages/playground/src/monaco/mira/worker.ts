@@ -13,7 +13,7 @@ initialize((ctx: worker.IWorkerContext<Host>) => {
 });
 let context: worker.IWorkerContext<Host>;
 
-export { keywords, control_keywords, constant_keywords, numeric_keywords, get_error_message, opcodes } from 'mira-wasm';
+export { keywords, control_keywords, constant_keywords, numeric_keywords, get_error_message } from 'mira-wasm';
 /** 编译 */
 export async function compile_script(uri: Uri): Promise<void> {
     const model = context.getMirrorModels().find((v) => v.uri.toString() === uri.toString());

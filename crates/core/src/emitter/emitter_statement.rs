@@ -32,13 +32,14 @@ impl<'s> Emitter<'s> {
             Empty(_) | Unknown { .. } => (),
         }
     }
-    pub fn emit_statement(&mut self, stmt: &'s Statement<'s>) {
+    pub fn emit_statement(&mut self, stmt: &'s Statement<'s>) -> bool {
         match stmt {
             Expression(expression, _) | BlockExpression(expression) => {
                 self.enter_scope();
                 self.declare_expression(expression);
                 self.emit_expression(expression, Register::EMPTY);
                 self.exit_scope();
+                false
             }
             Bind(_, pattern, _, expression, _) => {
                 let value_reg = self.add_reg();
@@ -47,6 +48,7 @@ impl<'s> Emitter<'s> {
                 self.emit_expression(expression, value_reg);
                 self.exit_scope();
                 self.emit_pattern(pattern, value_reg, Some(BindType::Let));
+                false
             }
             Rebind(pattern, _, expression, _) => {
                 let value_reg = self.add_reg();
@@ -55,6 +57,7 @@ impl<'s> Emitter<'s> {
                 self.emit_expression(expression, value_reg);
                 self.exit_scope();
                 self.emit_pattern(pattern, value_reg, None);
+                false
             }
             Assign(assignee, op, expression, _) => {
                 let assignee_reg = match &**assignee {
@@ -91,15 +94,14 @@ impl<'s> Emitter<'s> {
                     self.emit_expression(expression, assignee_reg);
                     self.exit_scope();
                 } else if **op == Operator::LogicalAndEqual {
-                    self.op_if(assignee_reg);
+                    self.op_if(OpCode::If, assignee_reg);
                     self.enter_scope();
                     self.declare_expression(expression);
                     self.emit_expression(expression, assignee_reg);
                     self.exit_scope();
                     self.op_if_end();
                 } else if **op == Operator::LogicalOrEqual {
-                    self.op_if(assignee_reg);
-                    self.op_else();
+                    self.op_if(OpCode::IfNot, assignee_reg);
                     self.enter_scope();
                     self.declare_expression(expression);
                     self.emit_expression(expression, assignee_reg);
@@ -122,6 +124,7 @@ impl<'s> Emitter<'s> {
                     self.exit_scope();
                     self.op_binary(assignee_reg, op, assignee_reg, right_reg);
                 }
+                false
             }
             Function(_, name, args, expression) => {
                 let TokenKind::Identifier(name) = &name.kind else {
@@ -134,6 +137,7 @@ impl<'s> Emitter<'s> {
                     unreachable!("Expected block expression");
                 };
                 self.emit_closure(func_reg, args, stmts, expr);
+                false
             }
             Return(_, expression, _) => {
                 if let Some(expression) = expression {
@@ -146,10 +150,11 @@ impl<'s> Emitter<'s> {
                 } else {
                     self.op_return(Register::EMPTY);
                 }
+                true
             }
             Break(token, expression, token1) => todo!(),
             Continue(token, token1) => todo!(),
-            Empty(_) | Unknown { .. } => (),
+            Empty(_) | Unknown { .. } => false,
         }
     }
 }

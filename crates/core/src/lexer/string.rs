@@ -270,7 +270,7 @@ fn interpolation<'s>(
                 return Ok(StringFragment::Literal(result));
             }
             // '$' identifier
-            let id = identifier.with_span().parse_next(i)?;
+            let id = identifier(true).with_span().parse_next(i)?;
             let id = Token {
                 kind: id.0,
                 range: id.1,

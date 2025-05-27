@@ -30,7 +30,7 @@ impl<'s> Emitter<'s> {
         ret: Register,
         stmts: &'s Vec<Statement<'s>>,
         expr: &'s Option<Box<Expression<'s>>>,
-    ) {
+    ) -> bool {
         for stmt in stmts {
             if matches!(stmt, Statement::Function(..)) {
                 self.declare_statement(stmt);
@@ -46,9 +46,11 @@ impl<'s> Emitter<'s> {
                 self.emit_statement(stmt);
             }
         }
+        let mut has_never = false;
         for stmt in stmts {
             if !matches!(stmt, Statement::Function(..)) {
-                self.emit_statement(stmt);
+                let never = self.emit_statement(stmt);
+                has_never |= never;
             }
         }
         if let Some(expr) = expr {
@@ -56,9 +58,10 @@ impl<'s> Emitter<'s> {
             self.declare_expression(expr);
             self.emit_expression(expr, ret);
             self.exit_scope();
-        } else {
+        } else if !has_never {
             self.op_nil(ret);
         };
+        has_never
     }
     pub fn emit_closure(
         &mut self,
@@ -75,13 +78,13 @@ impl<'s> Emitter<'s> {
         let pos = self.chunk.code.len();
         if !wide {
             self.chunk.add_code(OpCode::Func);
-            self.chunk.add_reg(ret);
+            self.chunk.add_param(ret);
             self.chunk.add_param(narg);
             // Placeholder for nreg
             self.chunk.add_param(narg);
         } else {
             self.chunk.add_code_wide(OpCode::Func);
-            self.chunk.add_reg_wide(ret);
+            self.chunk.add_param_wide(ret);
             self.chunk.add_param_wide(narg);
             // Placeholder for nreg
             self.chunk.add_param_wide(narg);
@@ -103,8 +106,10 @@ impl<'s> Emitter<'s> {
         }
 
         let ret_reg = self.add_reg();
-        self.emit_block(ret_reg, stmts, expr);
-        self.op_return(ret_reg);
+        let never = self.emit_block(ret_reg, stmts, expr);
+        if !never {
+            self.op_return(ret_reg);
+        }
         self.op(OpCode::FuncEnd);
 
         let nreg: OpParam = self.current_closure().reg_len().into();

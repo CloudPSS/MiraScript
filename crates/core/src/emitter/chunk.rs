@@ -1,8 +1,6 @@
-use crate::emitter::opcode::OpParamTrait;
-
 use super::{
     constant::Constant,
-    opcode::{OpCode, OpParam, Register},
+    opcode::{OpCode, OpParam, OpParamTrait},
 };
 
 const LEN_SIZE: usize = 4;
@@ -74,22 +72,12 @@ impl<'s> Chunk<'s> {
     }
 
     /// Add u8 parameter to the code.
-    pub fn add_param(&mut self, param: OpParam) {
+    pub fn add_param(&mut self, param: impl OpParamTrait) {
         self.code.push(param.code());
     }
 
     /// Add u32 parameter to the code.
-    pub fn add_param_wide(&mut self, param: OpParam) {
+    pub fn add_param_wide(&mut self, param: impl OpParamTrait) {
         self.code.extend_from_slice(&param.wide_code());
-    }
-
-    /// Add u8 register to the code.
-    pub fn add_reg(&mut self, reg: Register) {
-        self.code.push(reg.code());
-    }
-
-    /// Add u32 register to the code.
-    pub fn add_reg_wide(&mut self, reg: Register) {
-        self.code.extend_from_slice(&reg.wide_code());
     }
 }

@@ -75,11 +75,17 @@ async function getTokensProvider(): Promise<languages.IMonarchLanguage> {
                     ],
                 ],
                 [
-                    /(@identifier)(\()/gu,
+                    /(\.)(@whitespace*)(@identifier)(@whitespace*)(\()/gu,
+                    ['operator.dot', '', { token: 'entity.name.function' }, '', '@brackets'],
+                ],
+                [/(\.)(@whitespace*)(@identifier)/gu, ['operator.dot', '', { token: 'variable.$3' }]],
+                [
+                    /(@identifier)(@whitespace*)(\()/gu,
                     [
                         {
                             cases: identifierCases(1, undefined, `entity.name.function`),
                         },
+                        '',
                         '@brackets',
                     ],
                 ],

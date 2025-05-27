@@ -38,8 +38,8 @@ export async function callWorker<const M extends keyof typeof worker>(
     method: M,
     ...args: Parameters<(typeof worker)[M]>
 ): Promise<ReturnType<(typeof worker)[M]>> {
-    const resources = args.filter((a) => a instanceof Uri);
-    const passArgs = args.map((arg) => (arg instanceof Uri ? arg.toString() : arg));
+    const resources = args.filter((a: unknown) => a instanceof Uri);
+    const passArgs = args.map((arg: unknown) => (arg instanceof Uri ? arg.toString() : arg));
     const proxy = resources.length ? await monacoWorker.withSyncedResources(resources) : await monacoWorker.getProxy();
     return await ((proxy as typeof worker)[method as 'keywords'](...(passArgs as [])) as unknown as Promise<
         ReturnType<(typeof worker)[M]>

@@ -128,7 +128,10 @@ fn pseudo_function<'t, 's: 't>(
         let exp = if args.len() != (1 - provided) {
             vec![Expression::unknown_range(
                 [],
-                SourceRange { start: 0, end: 0 },
+                SourceRange {
+                    start: kw_type.range.start,
+                    end: close.range.end,
+                },
                 ErrorCode::InvalidTypeCall,
             )]
         } else {

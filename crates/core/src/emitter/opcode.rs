@@ -76,9 +76,21 @@ pub enum OpCode {
     /// OR %ret %1 %2\
     /// %ret = %1 || %2
     Or,
+    /// NON_NIL %v\
+    /// assert(%v != nil)
+    NonNil,
     /// TYPE %ret %1\
     /// %ret = type(%1)
     Type,
+    /// TO_BOOL %ret %1\
+    /// %ret = bool(%1)
+    ToBool,
+    /// TO_NUMBER %ret %1\
+    /// %ret = number(%1)
+    ToNumber,
+    /// TO_STRING %ret %1\
+    /// %ret = string(%1)
+    ToString,
 
     // variable management
     /// CONSTANT %reg `index`\
@@ -113,23 +125,29 @@ pub enum OpCode {
     /// FIELD_DYN %name %field\
     /// \[%name]: %field,
     FieldDyn,
+    /// FIELD_DYN `index` %field\
+    /// \[index]: %field,
+    FieldIndex,
     /// ARRAY %ret\
     /// %ret = \[
     Array,
-    /// ELEMENT %elem\
-    /// %elem,
-    Element,
-    /// RANGE %start %end\
+    /// ITEM %item\
+    /// %item,
+    Item,
+    /// ITEM_RANGE `start` `end`\
+    /// `start`..`end`,
+    ItemRange,
+    /// ITEM_RANGE_DYN %start %end\
     /// %start..%end,
-    Range,
-    /// RANGE_EXCLUSIVE %start %end\
+    ItemRangeDyn,
+    /// ITEM_RANGE_EXCLUSIVE_DYN %start %end\
     /// %start..<%end,
-    RangeExclusive,
-    /// EXPAND %var\
+    ItemRangeExclusiveDyn,
+    /// SPREAD %var\
     /// ..%var,
-    Expand,
-    /// FREEZE
-    /// ) for record or ] for array\
+    Spread,
+    /// FREEZE\
+    /// ) for record or ] for array
     Freeze,
     /// GET %ret %var `key`\
     /// %ret = %var\[CONSTANTS\[key]]
@@ -169,9 +187,19 @@ pub enum OpCode {
     /// LOOP\
     /// loop {
     Loop = 0x60,
+    /// LOOP_IF IF*\
+    /// loop if *** {
+    /// This instruction must be followed by an `IF*` instruction,
+    /// if the condition is false, the loop will be skipped\
+    LoopIf,
     /// LOOP_END\
     /// }
     LoopEnd,
+    /// LOOP_END_IF IF*\
+    /// } if ***;
+    /// This instruction must be followed by an `IF*` instruction\
+    /// if the condition is false, the loop will be skipped
+    LoopEndIf,
     /// BREAK\
     /// break;
     Break,
@@ -181,9 +209,28 @@ pub enum OpCode {
     /// IF %cond\
     /// if (%cond) {
     If,
+    /// IF_NOT %cond\
+    /// if (!%cond) {
+    IfNot,
+    /// IF_INIT %var\
+    /// if (initialized(%var)) {
+    IfInit,
+    /// IF_NOT_INIT %var\
+    /// if (!initialized(%var)) {
+    IfNotInit,
+    /// IF_NIL %var\
+    /// if (%var == nil) {
+    IfNil,
+    /// IF_NOT_NIL %var\
+    /// if (%var != nil) {
+    IfNotNil,
     /// ELSE\
     /// } else {
     Else,
+    /// EL_IF IF*\
+    /// } else if *** {\
+    /// This instruction must be followed by an `IF*` instruction\
+    ElIf,
     /// IF_END\
     /// }
     IfEnd,
@@ -205,24 +252,6 @@ pub enum OpCode {
     /// CALL_DYN %ret %f `argn` %1 %2 ... %argn\
     /// %ret = %f(%1, %2, ... , %argn);
     CallDyn,
-    /// CALL_VIRT %ret `f` `argn` %1 %2 ... %argn\
-    /// %ret = %1::(GLOBAL[CONSTANTS[f]])(%2, ... , %argn);
-    CallVirt,
-    /// CALL_VIRT_DYN %f `argn` %1 %2 ... %argn\
-    /// %ret = %1::%f( %2, ... , %argn);
-    CallVirtDyn,
-    /// INVOKE %ret %self `f` `argn` %1 %2 ... %argn\
-    /// %ret = %self[GLOBAL[CONSTANTS[f]]]!(%1, %2, ... , %argn);
-    Invoke,
-    /// INVOKE_DYN %ret %self %f `argn` %1 %2 ... %argn\
-    /// %ret = %self[%f]!(%1, %2, ... , %argn);
-    InvokeDyn,
-    /// INVOKE_VIRT %ret %self `f` `argn` %1 %2 ... %argn\
-    /// %ret = %self[GLOBAL[CONSTANTS[f]]](%1, %2, ... , %argn);
-    InvokeVirt,
-    /// INVOKE_VIRT_DYN %ret %self %f `argn` %1 %2 ... %argn\
-    /// %ret = %self[%f](%1, %2, ... , %argn);
-    InvokeVirtDyn,
 }
 
 impl From<OpCode> for u8 {
@@ -270,6 +299,10 @@ impl Register {
     /// Write to this register will be ignored
     /// Reading from this register will always return `nil`
     pub const EMPTY: Self = Self(0);
+
+    pub fn is_empty(&self) -> bool {
+        self.0 == 0
+    }
 }
 
 impl OpParamTrait for Register {

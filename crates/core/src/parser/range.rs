@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use crate::{
     ansi::{DisplayIdent, RANGE, RESET},
-    lexer::Token,
+    lexer::{Operator, Token},
 };
 
 use super::{AstVisitor, AstWalker, Expression};
@@ -16,6 +16,12 @@ pub struct Range<'s>(
     pub Box<Token<'s>>,
     pub Box<Expression<'s>>,
 );
+
+impl<'s> Range<'s> {
+    pub fn exclusive(&self) -> bool {
+        *self.1.as_ref() == Operator::HalfOpenRange
+    }
+}
 
 impl<'s> AstWalker<'s> for Range<'s> {
     fn walk(&mut self, visitor: &mut dyn AstVisitor<'s>) {

@@ -13,16 +13,17 @@ pub(super) fn token<'s>(
     input: &mut Input<'s>,
     prev_token: &Option<&Token<'s>>,
 ) -> ModalResult<Token<'s>> {
+    let dot = prev_token.is_some_and(|t| *t == Operator::Dot);
     let token = |i: &mut Input<'s>| {
-        dispatch!{peek(any);
-            '0'..='9' => if prev_token.map(|t| &t.kind) == Some(&TokenKind::Operator(Operator::Dot)) {
+        dispatch! {peek(any);
+            '0'..='9' => if dot {
                 ordinal
             } else {
                 number
             },
             '@' => alt((
                 string::string,
-                identifier,
+                identifier(!dot),
             )),
             '"' | '\'' | '`' => string::string,
             '+' => alt((
@@ -104,10 +105,11 @@ pub(super) fn token<'s>(
             '{' => any.value(TokenKind::Operator(Operator::OpenBrace)),
             '}' => any.value(TokenKind::Operator(Operator::CloseBrace)),
 
-            c if is_identifier_start(c) || is_identifier_special(c) => identifier,
+            c if is_identifier_start(c) || is_identifier_special(c) => identifier(!dot),
 
             _ => fail,
-        }.parse_next(i)
+        }
+        .parse_next(i)
     };
     preceded(
         space0,
