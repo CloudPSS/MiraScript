@@ -54,6 +54,7 @@ impl<'s> Emitter<'s> {
             Unknown { .. } => (),
         }
     }
+
     pub fn emit_pattern(
         &mut self,
         pattern: &'s Pattern<'s>,

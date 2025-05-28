@@ -79,7 +79,7 @@ class Extern {
     }
 }
 
-const ENV = (global: Record<string, unknown>) => {
+const ENV = () => {
     const $Mul = (a: number, b: number) => $ToNumber(a) * $ToNumber(b);
     const $Add = (a: number, b: number) => $ToNumber(a) + $ToNumber(b);
     const $Sub = (a: number, b: number) => $ToNumber(a) - $ToNumber(b);
@@ -97,9 +97,6 @@ const ENV = (global: Record<string, unknown>) => {
     const $Pos = (a: number) => $ToNumber(a);
     const $Neg = (a: number) => -$ToNumber(a);
     const $Not = (a: boolean) => !$ToBool(a);
-    const $Call = (name: string, ...args: unknown[]) => {
-        return (global[name] as (...args: unknown[]) => unknown)(...args) ?? null;
-    };
     const $CallDyn = (func: (...args: unknown[]) => unknown, ...args: unknown[]) => {
         if (func instanceof Extern) {
             func = func.value as unknown as (...args: unknown[]) => unknown;
@@ -109,7 +106,6 @@ const ENV = (global: Record<string, unknown>) => {
         }
         return func(...args) ?? null;
     };
-    const $GetGlobal = (name: string) => $Get(global, name);
     const $Type = (value: unknown) => {
         if (value === null) return 'nil';
         if (Array.isArray(value)) return 'array';
@@ -194,9 +190,7 @@ const ENV = (global: Record<string, unknown>) => {
         $Pos,
         $Neg,
         $Not,
-        $Call,
         $CallDyn,
-        $GetGlobal,
         $Get,
         $Type,
         $ToString,
@@ -248,21 +242,20 @@ export function disassemble(chunk: Uint8Array | undefined): string {
     const code = disassembler.codeLines.map((line) => `  ${line}`).join('\n');
     // eslint-disable-next-line no-console
     console.log(code);
-    const env = ENV({
-        // eslint-disable-next-line no-console
-        print: console.log,
-        globalThis: new Extern(globalThis as unknown as ExternObject),
-        map: (
-            self: unknown[],
-            ...args: [callbackfn: (value: unknown, index: number, array: unknown[]) => unknown, thisArg?: unknown]
-        ) => Array.prototype.map.apply(self, args),
-    });
+    const env = ENV();
     let r;
     try {
         // eslint-disable-next-line @typescript-eslint/no-implied-eval, @typescript-eslint/no-unsafe-call
-        const fn = new Function(...Object.keys(env), `let _; ${code}; return _;`)(
-            ...Object.values(env),
-        ) as () => unknown;
+        const fn = new Function(...Object.keys(env), 'global', `let _; ${code}; return _;`)(...Object.values(env), {
+            if: 12,
+            // eslint-disable-next-line no-console
+            print: console.log,
+            globalThis: new Extern(globalThis as unknown as ExternObject),
+            map: (
+                self: unknown[],
+                ...args: [callbackfn: (value: unknown, index: number, array: unknown[]) => unknown, thisArg?: unknown]
+            ) => Array.prototype.map.apply(self, args),
+        }) as () => unknown;
         r = fn();
     } catch (e) {
         r = e;
@@ -271,11 +264,13 @@ export function disassemble(chunk: Uint8Array | undefined): string {
         `Chunk length: ${disassembler.chunkSize}`,
         '',
         `Constants length: ${disassembler.constSize}`,
-        ...disassembler.constants.map((c, i) => `  [${i}]:\t${c}`),
+        ...disassembler.constants.map(
+            (c, i) => `  [${i.toString().padStart(disassembler.constSize.toString().length)}]:\t${c}`,
+        ),
         '',
         `Code length: ${disassembler.codeSize}`,
         ...disassembler.disassembly.map((d) => {
-            return `  [${d.index}]:\t${String(OpCode[d.opcode] ?? d.opcode).padEnd(8)}${d.wide ? 'W' : ''} \t${d.body}`;
+            return `  [${d.index.toString().padStart(disassembler.codeSize.toString().length)}]: ${String(OpCode[d.opcode] ?? d.opcode).padEnd(12)}${d.wide ? 'W' : ''}  ${d.body}`;
         }),
         '',
         `Code:`,
@@ -665,7 +660,7 @@ class Disassembler {
                 const args = Array.from({ length: n }, (_, i) => read());
                 const funcName = this.constants[func];
                 body = `${this.reg(ret)} = ${OpCode[opcode]} ${funcName} (${args.map((a) => this.reg(a)).join(' ')})`;
-                code = `${this.wv(ret)} = $${OpCode[opcode]}(${funcName}, ${args.map((a) => this.rv(a)).join(', ')});`;
+                code = `${this.wv(ret)} = $CallDyn($Get(global, ${funcName}), ${args.map((a) => this.rv(a)).join(', ')});`;
                 break;
             }
             case OpCode.CallDyn: {
@@ -674,7 +669,7 @@ class Disassembler {
                 const n = read();
                 const args = Array.from({ length: n }, (_, i) => read());
                 body = `${this.reg(ret)} = ${OpCode[opcode]} ${this.reg(func)} (${args.map((a) => this.reg(a)).join(' ')})`;
-                code = `${this.wv(ret)} = $${OpCode[opcode]}(${this.rv(func)}, ${args.map((a) => this.rv(a)).join(', ')});`;
+                code = `${this.wv(ret)} = $CallDyn(${this.rv(func)}, ${args.map((a) => this.rv(a)).join(', ')});`;
                 break;
             }
             case OpCode.Assign: {
@@ -732,7 +727,7 @@ class Disassembler {
                 const i = read();
                 const c = this.constants[i];
                 body = `${this.reg(reg)} = ${OpCode[opcode]} ${i} ; ${c}`;
-                code = `${this.wv(reg)} = $${OpCode[opcode]}(${c});`;
+                code = `${this.wv(reg)} = $Get(global, ${c});`;
                 break;
             }
             case OpCode.GetUpvalue: {

@@ -22,7 +22,13 @@ async function validate(model: editor.ITextModel): Promise<void> {
         return;
     }
     const version = model.getVersionId();
-    await callWorker('compile_script', model.uri);
+    try {
+        await callWorker('compile_script', model.uri);
+    } catch (ex) {
+        // eslint-disable-next-line no-console
+        console.error(ex);
+        return;
+    }
     const result = getCompileResult(model.uri);
     if (!result) return;
     const { errors } = result;

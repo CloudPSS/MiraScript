@@ -2,7 +2,7 @@ use crate::{
     error::{ErrorCode, SourceError, SourceRange},
     lexer::{Operator, TokenKind},
     parser::{
-        self,
+        self, Expression,
         Statement::{self, *},
     },
 };
@@ -60,8 +60,9 @@ impl<'s> Emitter<'s> {
                 false
             }
             Assign(assignee, op, expression, _) => {
+                let mut final_op: Option<Box<dyn FnOnce(&mut Self)>> = None;
                 let assignee_reg = match &**assignee {
-                    parser::Expression::Variable(id_token) => {
+                    Expression::Variable(id_token) => {
                         let TokenKind::Identifier(id) = &id_token.kind else {
                             unreachable!();
                         };
@@ -76,7 +77,14 @@ impl<'s> Emitter<'s> {
                             } else if level == self.closures.len() {
                                 variable.register()
                             } else {
-                                todo!()
+                                let up_reg = variable.register();
+                                let level = self.closures.len() - level;
+                                let ret = self.add_reg();
+                                final_op = Some(Box::new(move |s| {
+                                    s.op_set_upvalue(ret, level, up_reg);
+                                }));
+
+                                ret
                             }
                         } else {
                             self.errors.push(SourceError::new(
@@ -85,6 +93,12 @@ impl<'s> Emitter<'s> {
                             ));
                             Register::EMPTY
                         }
+                    }
+                    Expression::Access(obj, _, prop) => {
+                        todo!()
+                    }
+                    Expression::Index(obj, _, prop_expr, _) => {
+                        todo!()
                     }
                     _ => unreachable!(),
                 };
@@ -123,6 +137,9 @@ impl<'s> Emitter<'s> {
                     self.emit_expression(expression, right_reg, brk);
                     self.exit_scope();
                     self.op_binary(assignee_reg, op, assignee_reg, right_reg);
+                }
+                if let Some(final_op) = final_op {
+                    final_op(self);
                 }
                 false
             }

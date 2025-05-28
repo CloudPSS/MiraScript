@@ -121,6 +121,13 @@ impl<'s> Emitter<'s> {
         let const_id = self.add_const_string(name);
         self.op_2(GetGlobal, reg, const_id);
     }
+    pub fn op_global_num(&mut self, reg: Register, name: f64) {
+        let const_id = self.add_const_number(name);
+        self.op_2(GetGlobal, reg, const_id);
+    }
+    pub fn op_global_dyn(&mut self, reg: Register, name: Register) {
+        self.op_2(GetGlobalDyn, reg, name);
+    }
     pub fn op_nil(&mut self, reg: Register) {
         self.op_unary(reg, Assign, Register::EMPTY);
     }

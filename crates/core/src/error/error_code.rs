@@ -106,6 +106,8 @@ pub enum ErrorCode {
     UnexpectedBreakOutsideLoop,
     #[strum(message = "Unexpected `continue` outside of loop")]
     UnexpectedContinueOutsideLoop,
+    #[strum(message = "`global` keyword can only be used as `global.<name>` or `global[<name>]`")]
+    MisuseOfGlobalKeyword,
 
     // Optimizer error 4000 ~ 4999
     #[strum(message = "Unknown optimizer error")]

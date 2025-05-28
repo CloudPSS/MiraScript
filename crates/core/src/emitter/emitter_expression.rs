@@ -14,6 +14,10 @@ use super::{
     variable::{BindType, Variable},
 };
 
+fn is_global_expression(expr: &Expression) -> bool {
+    matches!(expr, Variable(token) if token.kind == Keyword::Global)
+}
+
 impl<'s> Emitter<'s> {
     pub fn declare_expression(&mut self, expr: &'s Expression<'s>) {
         match expr {
@@ -136,7 +140,13 @@ impl<'s> Emitter<'s> {
             }
             Variable(token) => {
                 let TokenKind::Identifier(id) = &token.kind else {
-                    unreachable!("Expected identifier token");
+                    if token.kind == Keyword::Global {
+                        self.errors.push(SourceError::new(
+                            token.range.clone(),
+                            ErrorCode::MisuseOfGlobalKeyword,
+                        ));
+                    }
+                    return;
                 };
                 let var = self.scopes.find_variable(id);
                 if let Some((level, variable)) = var {
@@ -329,18 +339,32 @@ impl<'s> Emitter<'s> {
                 }
             }
             Access(expression, _, id) => {
-                self.emit_expression(expression, ret, brk);
-                match &id.kind {
-                    TokenKind::Identifier(id) => self.op_get(ret, ret, id),
-                    TokenKind::Ordinal(ord) => self.op_get_num(ret, ret, *ord as f64),
-                    _ => unreachable!("Expected identifier token"),
-                };
+                if !is_global_expression(expression) {
+                    self.emit_expression(expression, ret, brk);
+                    match &id.kind {
+                        TokenKind::Identifier(id) => self.op_get(ret, ret, id),
+                        TokenKind::Ordinal(ord) => self.op_get_num(ret, ret, *ord as f64),
+                        _ => unreachable!("Expected identifier token"),
+                    };
+                } else {
+                    match &id.kind {
+                        TokenKind::Identifier(id) => self.op_global(ret, id),
+                        TokenKind::Ordinal(ord) => self.op_global_num(ret, *ord as f64),
+                        _ => unreachable!("Expected identifier token"),
+                    };
+                }
             }
             Index(expression, _, index, _) => {
-                self.emit_expression(expression, ret, brk);
-                let index_reg = self.add_reg();
-                self.emit_expression(index, index_reg, brk);
-                self.op_get_dyn(ret, ret, index_reg);
+                if !is_global_expression(expression) {
+                    self.emit_expression(expression, ret, brk);
+                    let index_reg = self.add_reg();
+                    self.emit_expression(index, index_reg, brk);
+                    self.op_get_dyn(ret, ret, index_reg);
+                } else {
+                    let index_reg = self.add_reg();
+                    self.emit_expression(index, index_reg, brk);
+                    self.op_global_dyn(ret, index_reg);
+                }
             }
             NonNil(expression, token) => {
                 self.emit_expression(expression, ret, brk);
@@ -353,7 +377,7 @@ impl<'s> Emitter<'s> {
                     TokenKind::Operator(Operator::Plus) => OpCode::Pos,
                     TokenKind::Operator(Operator::Minus) => OpCode::Neg,
                     TokenKind::Operator(Operator::Exclamation) => OpCode::Not,
-                    _ => todo!(),
+                    _ => unreachable!(),
                 };
                 self.op_unary(ret, op, reg);
             }
