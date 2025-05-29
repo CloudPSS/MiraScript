@@ -137,9 +137,18 @@ pub enum OpCode {
     /// FIELD_DYN %name %field\
     /// \[%name]: %field,
     FieldDyn,
-    /// FIELD_DYN `index` %field\
+    /// FIELD_INDEX `index` %field\
     /// \[index]: %field,
     FieldIndex,
+    /// FIELD_OPT `name` %field\
+    /// \[CONSTANTS\[name]]?: %field,
+    FieldOpt,
+    /// FIELD_OPT_DYN %name %field\
+    /// \[%name]?: %field,
+    FieldOptDyn,
+    /// FIELD_OPT_INDEX `index` %field\
+    /// \[index]?: %field,
+    FieldOptIndex,
     /// ARRAY %ret\
     /// %ret = \[
     Array,

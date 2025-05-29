@@ -47,7 +47,6 @@ pub enum Pattern<'s> {
     /// colon
     ///     : ':'
     ///     | '?:'
-    ///     | '!:'
     ///     ;
     /// ``````
     /// Matches a record pattern.

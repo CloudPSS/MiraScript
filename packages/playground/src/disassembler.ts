@@ -205,8 +205,18 @@ const ENV = () => {
     const $ArraySpread = (array: unknown[]): unknown[] => {
         return array;
     };
+    const $ArrayFreeze = (array: unknown[]): void => {
+        // Noop
+    };
     const $RecordSpread = (record: object): object => {
         return record;
+    };
+    const $RecordFreeze = (record: Record<string, unknown>, optional: readonly string[]): void => {
+        for (const field of optional) {
+            if (record[field] == null) {
+                delete record[field];
+            }
+        }
     };
     const $Iterable = (value: unknown): unknown[] => {
         if (value == null) return [];
@@ -259,7 +269,9 @@ const ENV = () => {
         $ArrayRange,
         $ArrayRangeExclusive,
         $ArraySpread,
+        $ArrayFreeze,
         $RecordSpread,
+        $RecordFreeze,
         $Iterable,
     };
 };
@@ -508,8 +520,9 @@ class Disassembler {
     }
 
     /** 读取 record */
-    private readRecord(): void {
+    private readRecord(obj: number): void {
         this.identCounter++;
+        const optional: string[] = [];
         while (this.codeOffset < this.codeSize) {
             const index = this.codeOffset;
             const opcode_raw = this.codeReader.getUint8(this.codeOffset++);
@@ -519,27 +532,39 @@ class Disassembler {
             let body = '';
             let code = '';
             switch (opcode) {
+                case OpCode.FieldOpt:
                 case OpCode.Field: {
                     const field = read();
                     const field_name = this.constants[field];
                     const value = read();
-                    body = `Field ${field} ${this.reg(value)} ; ${field_name}`;
+                    body = `${OpCode[opcode]} ${field} ${this.reg(value)} ; ${field_name}`;
                     // Use computed property names to avoid prototype pollution
                     code = `[${field_name}]: ${this.rv(value)},`;
+                    if (opcode === OpCode.FieldOpt) {
+                        optional.push(field_name);
+                    }
                     break;
                 }
+                case OpCode.FieldOptDyn:
                 case OpCode.FieldDyn: {
                     const field = read();
                     const value = read();
-                    body = `FieldDyn ${field} ${this.reg(value)}`;
+                    body = `${OpCode[opcode]} ${field} ${this.reg(value)}`;
                     code = `[$ToString(${this.rv(field)})]: ${this.rv(value)},`;
+                    if (opcode === OpCode.FieldOptDyn) {
+                        optional.push(this.rv(field));
+                    }
                     break;
                 }
+                case OpCode.FieldOptIndex:
                 case OpCode.FieldIndex: {
                     const field = read();
                     const value = read();
-                    body = `FieldIndex ${field} ${this.reg(value)}`;
+                    body = `${OpCode[opcode]} ${field} ${this.reg(value)}`;
                     code = `[${field}]: ${this.rv(value)},`;
+                    if (opcode === OpCode.FieldOptIndex) {
+                        optional.push(this.rv(field));
+                    }
                     break;
                 }
                 case OpCode.Spread: {
@@ -551,7 +576,7 @@ class Disassembler {
                 case OpCode.Freeze: {
                     this.identCounter--;
                     body = `Freeze`;
-                    code = `});`;
+                    code = `}); $RecordFreeze(${this.rv(obj)}, [${optional.join(', ')}])`;
                     break;
                 }
                 default: {
@@ -575,7 +600,7 @@ class Disassembler {
     }
 
     /** 读取 array */
-    private readArray(): void {
+    private readArray(arr: number): void {
         this.identCounter++;
         while (this.codeOffset < this.codeSize) {
             const index = this.codeOffset;
@@ -622,7 +647,7 @@ class Disassembler {
                 case OpCode.Freeze: {
                     this.identCounter--;
                     body = `Freeze`;
-                    code = `]);`;
+                    code = `]); $ArrayFreeze(${this.rv(arr)})`;
                     break;
                 }
                 default: {
@@ -655,17 +680,18 @@ class Disassembler {
         const ident = this.ident();
         let body = '';
         let code = '';
+        let reg = 0;
         switch (opcode) {
             case OpCode.Func: {
-                const f = read();
+                reg = read();
                 const argn = read();
                 const regn = read();
-                body = `${this.reg(f)} = fn (${Array.from({ length: argn }, (_, i) => this.reg(i + 1)).join(', ')}) { maxreg ${regn}`;
-                code = `${this.wv(f)} = (${Array.from({ length: argn }, (_, i) => this.wv(i + 1, -1)).join(', ')}) => { $Cp(); let ${Array.from({ length: regn - argn + 1 }, (_, i) => (i ? this.wv(i + argn, -1) : this.wv(0, -1))).join(', ')};`;
+                body = `${this.reg(reg)} = fn (${Array.from({ length: argn }, (_, i) => this.reg(i + 1)).join(', ')}) { maxreg ${regn}`;
+                code = `${this.wv(reg)} = (${Array.from({ length: argn }, (_, i) => this.wv(i + 1, -1)).join(', ')}) => { $Cp(); let ${Array.from({ length: regn - argn + 1 }, (_, i) => (i ? this.wv(i + argn, -1) : this.wv(0, -1))).join(', ')};`;
                 break;
             }
             case OpCode.Constant: {
-                const reg = read();
+                reg = read();
                 const i = read();
                 const c = this.constants[i];
                 body = `${this.reg(reg)} = Const ${i} ; ${c}`;
@@ -673,15 +699,15 @@ class Disassembler {
                 break;
             }
             case OpCode.Uninit: {
-                const reg = read();
+                reg = read();
                 body = `${this.reg(reg)} = Uninit`;
                 code = `${this.wv(reg)} = undefined;`;
                 break;
             }
             case OpCode.Return: {
-                const value = read();
-                body = `return ${this.reg(value)}`;
-                code = `return ${this.rv(value)};`;
+                reg = read();
+                body = `return ${this.reg(reg)}`;
+                code = `return ${this.rv(reg)};`;
                 break;
             }
             case OpCode.Add:
@@ -699,45 +725,45 @@ class Disassembler {
             case OpCode.Aeq:
             case OpCode.Naeq:
             case OpCode.In: {
-                const ret = read();
+                reg = read();
                 const left = read();
                 const right = read();
-                body = `${this.reg(ret)} = ${OpCode[opcode]} ${this.reg(left)} ${this.reg(right)}`;
-                code = `${this.wv(ret)} = $${OpCode[opcode]}(${this.rv(left)}, ${this.rv(right)});`;
+                body = `${this.reg(reg)} = ${OpCode[opcode]} ${this.reg(left)} ${this.reg(right)}`;
+                code = `${this.wv(reg)} = $${OpCode[opcode]}(${this.rv(left)}, ${this.rv(right)});`;
                 break;
             }
             case OpCode.Concat: {
-                const ret = read();
+                reg = read();
                 const n = read();
                 const args = Array.from({ length: n }, (_, i) => read());
-                body = `${this.reg(ret)} = ${OpCode[opcode]} ${args.map((a) => this.reg(a)).join(' ')}`;
-                code = `${this.wv(ret)} = $${OpCode[opcode]}(${args.map((a) => this.rv(a)).join(', ')});`;
+                body = `${this.reg(reg)} = ${OpCode[opcode]} ${args.map((a) => this.reg(a)).join(' ')}`;
+                code = `${this.wv(reg)} = $${OpCode[opcode]}(${args.map((a) => this.rv(a)).join(', ')});`;
                 break;
             }
             case OpCode.Call: {
-                const ret = read();
+                reg = read();
                 const func = read();
                 const n = read();
                 const args = Array.from({ length: n }, (_, i) => read());
                 const funcName = this.constants[func];
-                body = `${this.reg(ret)} = ${OpCode[opcode]} ${funcName} (${args.map((a) => this.reg(a)).join(' ')})`;
-                code = `${this.wv(ret)} = $CallDyn($Get(global, ${funcName}), ${args.map((a) => this.rv(a)).join(', ')});`;
+                body = `${this.reg(reg)} = ${OpCode[opcode]} ${funcName} (${args.map((a) => this.reg(a)).join(' ')})`;
+                code = `${this.wv(reg)} = $CallDyn($Get(global, ${funcName}), ${args.map((a) => this.rv(a)).join(', ')});`;
                 break;
             }
             case OpCode.CallDyn: {
-                const ret = read();
+                reg = read();
                 const func = read();
                 const n = read();
                 const args = Array.from({ length: n }, (_, i) => read());
-                body = `${this.reg(ret)} = ${OpCode[opcode]} ${this.reg(func)} (${args.map((a) => this.reg(a)).join(' ')})`;
-                code = `${this.wv(ret)} = $CallDyn(${this.rv(func)}, ${args.map((a) => this.rv(a)).join(', ')});`;
+                body = `${this.reg(reg)} = ${OpCode[opcode]} ${this.reg(func)} (${args.map((a) => this.reg(a)).join(' ')})`;
+                code = `${this.wv(reg)} = $CallDyn(${this.rv(func)}, ${args.map((a) => this.rv(a)).join(', ')});`;
                 break;
             }
             case OpCode.Assign: {
-                const ret = read();
+                reg = read();
                 const value = read();
-                body = `${this.reg(ret)} = ${this.reg(value)}`;
-                code = `${this.wv(ret)} = ${this.rv(value)};`;
+                body = `${this.reg(reg)} = ${this.reg(value)}`;
+                code = `${this.wv(reg)} = ${this.rv(value)};`;
                 break;
             }
             case OpCode.Pos:
@@ -747,44 +773,44 @@ class Disassembler {
             case OpCode.ToBool:
             case OpCode.ToNumber:
             case OpCode.ToString: {
-                const ret = read();
+                reg = read();
                 const value = read();
-                body = `${this.reg(ret)} = ${OpCode[opcode]} ${this.reg(value)};`;
-                code = `${this.wv(ret)} = $${OpCode[opcode]}(${this.rv(value)});`;
+                body = `${this.reg(reg)} = ${OpCode[opcode]} ${this.reg(value)};`;
+                code = `${this.wv(reg)} = $${OpCode[opcode]}(${this.rv(value)});`;
                 break;
             }
             case OpCode.NonNil: {
-                const value = read();
-                body = `NonNil ${this.reg(value)}`;
-                code = `$NonNil(${this.rv(value)})`;
+                reg = read();
+                body = `NonNil ${this.reg(reg)}`;
+                code = `$NonNil(${this.rv(reg)})`;
                 break;
             }
             case OpCode.Get: {
-                const ret = read();
+                reg = read();
                 const obj = read();
                 const prop = this.constants[read()];
-                body = `${this.reg(ret)} = ${OpCode[opcode]} ${this.reg(obj)} ${prop}`;
-                code = `${this.wv(ret)} = $Get(${this.rv(obj)}, ${prop});`;
+                body = `${this.reg(reg)} = ${OpCode[opcode]} ${this.reg(obj)} ${prop}`;
+                code = `${this.wv(reg)} = $Get(${this.rv(obj)}, ${prop});`;
                 break;
             }
             case OpCode.GetIndex: {
-                const ret = read();
+                reg = read();
                 const obj = read();
                 const index = read();
-                body = `${this.reg(ret)} = ${OpCode[opcode]} ${this.reg(obj)} ${index}`;
-                code = `${this.wv(ret)} = $Get(${this.rv(obj)}, ${index});`;
+                body = `${this.reg(reg)} = ${OpCode[opcode]} ${this.reg(obj)} ${index}`;
+                code = `${this.wv(reg)} = $Get(${this.rv(obj)}, ${index});`;
                 break;
             }
             case OpCode.GetDyn: {
-                const ret = read();
+                reg = read();
                 const obj = read();
                 const index = read();
-                body = `${this.reg(ret)} = ${OpCode[opcode]} ${this.reg(obj)} ${this.reg(index)}`;
-                code = `${this.wv(ret)} = $Get(${this.rv(obj)}, ${this.rv(index)});`;
+                body = `${this.reg(reg)} = ${OpCode[opcode]} ${this.reg(obj)} ${this.reg(index)}`;
+                code = `${this.wv(reg)} = $Get(${this.rv(obj)}, ${this.rv(index)});`;
                 break;
             }
             case OpCode.GetGlobal: {
-                const reg = read();
+                reg = read();
                 const i = read();
                 const c = this.constants[i];
                 body = `${this.reg(reg)} = ${OpCode[opcode]} ${i} ; ${c}`;
@@ -792,38 +818,38 @@ class Disassembler {
                 break;
             }
             case OpCode.GetGlobalDyn: {
-                const reg = read();
+                reg = read();
                 const name = read();
                 body = `${this.reg(reg)} = ${OpCode[opcode]} ${this.reg(name)}`;
                 code = `${this.wv(reg)} = $Get(global, ${this.rv(name)});`;
                 break;
             }
             case OpCode.GetUpvalue: {
-                const v = read();
+                reg = read();
                 const level = read();
                 const up = read();
-                body = `${this.reg(v)} = up ${level} %${this.reg(up)}`;
-                code = `${this.wv(v)} = ${this.rv(up, level)};`;
+                body = `${this.reg(reg)} = up ${level} %${this.reg(up)}`;
+                code = `${this.wv(reg)} = ${this.rv(up, level)};`;
                 break;
             }
             case OpCode.SetUpvalue: {
-                const v = read();
+                reg = read();
                 const level = read();
                 const up = read();
-                body = `up ${level} %${this.reg(up)} = ${this.reg(v)}`;
-                code = `${this.rv(up, level)} = ${this.wv(v)};`;
+                body = `up ${level} %${this.reg(up)} = ${this.reg(reg)}`;
+                code = `${this.rv(up, level)} = ${this.wv(reg)};`;
                 break;
             }
             case OpCode.Record: {
-                const ret = read();
-                body = `${this.reg(ret)} = Record`;
-                code = `${this.wv(ret)} = ({`;
+                reg = read();
+                body = `${this.reg(reg)} = Record`;
+                code = `${this.wv(reg)} = ({`;
                 break;
             }
             case OpCode.Array: {
-                const ret = read();
-                body = `${this.reg(ret)} = Array`;
-                code = `${this.wv(ret)} = ([`;
+                reg = read();
+                body = `${this.reg(reg)} = Array`;
+                code = `${this.wv(reg)} = ([`;
                 break;
             }
             case OpCode.If: {
@@ -918,11 +944,11 @@ class Disassembler {
                 break;
             }
             case OpCode.Record: {
-                this.readRecord();
+                this.readRecord(reg);
                 break;
             }
             case OpCode.Array: {
-                this.readArray();
+                this.readArray(reg);
                 break;
             }
         }

@@ -60,8 +60,6 @@ pub(super) fn token<'s>(
             '~' => "~=".value(TokenKind::Operator(Operator::TildeEqual)),
             '!' => alt((
                 ("!", peek("==")).value(TokenKind::Operator(Operator::Exclamation)),
-                ("!", peek("::")).value(TokenKind::Operator(Operator::Exclamation)),
-                "!:".value(TokenKind::Operator(Operator::ExclamationColon)),
                 "!=".value(TokenKind::Operator(Operator::NotEqual)),
                 "!~=".value(TokenKind::Operator(Operator::NotTildeEqual)),
                 any.value(TokenKind::Operator(Operator::Exclamation)),
@@ -131,9 +129,7 @@ pub(super) fn token<'s>(
         }),
     )
     .parse_next(input)?;
-    if (cur_token == Operator::Colon
-        || cur_token == Operator::QuestionColon
-        || cur_token == Operator::ExclamationColon)
+    if (cur_token == Operator::Colon || cur_token == Operator::QuestionColon)
         && matches!(prev_token.as_deref(), Some(prev_token) if prev_token.is_keyword())
     {
         let Some(prev_token) = prev_token else {

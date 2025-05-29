@@ -206,24 +206,47 @@ impl<'s> Emitter<'s> {
                 self.op_1(OpCode::Record, ret);
                 let mut reg_index = 0;
                 for element in elements.iter() {
+                    let opt = element
+                        .colon()
+                        .is_some_and(|c| c.kind == Operator::QuestionColon);
                     match element {
                         RecordElement::Named(token, _, _, _) => {
                             let reg = elements_regs[reg_index];
                             if let TokenKind::Ordinal(id) = &token.kind {
-                                self.op_2(OpCode::FieldIndex, OpParam::new(*id as usize), reg);
+                                self.op_2(
+                                    if opt {
+                                        OpCode::FieldOptIndex
+                                    } else {
+                                        OpCode::FieldIndex
+                                    },
+                                    OpParam::new(*id as usize),
+                                    reg,
+                                );
                             } else {
                                 let Some(id) = token.to_prop_name() else {
                                     unreachable!("Expected identifier token");
                                 };
                                 let const_id = self.add_const_string(id);
-                                self.op_2(OpCode::Field, const_id, reg);
+                                self.op_2(
+                                    if opt { OpCode::FieldOpt } else { OpCode::Field },
+                                    const_id,
+                                    reg,
+                                );
                             }
                             reg_index += 1;
                         }
                         RecordElement::InterpolateNamed(_, _, _, _) => {
                             let name_reg = elements_regs[reg_index];
                             let reg = elements_regs[reg_index + 1];
-                            self.op_2(OpCode::FieldDyn, name_reg, reg);
+                            self.op_2(
+                                if opt {
+                                    OpCode::FieldOptDyn
+                                } else {
+                                    OpCode::FieldDyn
+                                },
+                                name_reg,
+                                reg,
+                            );
                             reg_index += 2;
                         }
                         RecordElement::OmitNamed(_, expression, _) => {
@@ -249,12 +272,24 @@ impl<'s> Emitter<'s> {
                             };
                             let const_id = self.add_const_string(id);
                             let reg = elements_regs[reg_index];
-                            self.op_2(OpCode::Field, const_id, reg);
+                            self.op_2(
+                                if opt { OpCode::FieldOpt } else { OpCode::Field },
+                                const_id,
+                                reg,
+                            );
                             reg_index += 1;
                         }
                         RecordElement::Unnamed(_, _) => {
                             let reg = elements_regs[reg_index];
-                            self.op_2(OpCode::FieldIndex, OpParam::new(reg_index), reg);
+                            self.op_2(
+                                if opt {
+                                    OpCode::FieldOptIndex
+                                } else {
+                                    OpCode::FieldIndex
+                                },
+                                OpParam::new(reg_index),
+                                reg,
+                            );
                             reg_index += 1;
                         }
                         RecordElement::Spread(_, _, _) => {

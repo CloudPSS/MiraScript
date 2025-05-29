@@ -51,6 +51,14 @@ impl<'s, E: Clone + PartialEq, I: Clone + PartialEq> RecordElementBase<'s, E, I>
             | Spread(.., tail_comma) => *tail_comma = Some(token),
         }
     }
+    pub fn colon(&self) -> Option<&Token<'s>> {
+        match self {
+            Named(_, colon, _, _) | InterpolateNamed(_, colon, _, _) | OmitNamed(colon, _, _) => {
+                Some(colon)
+            }
+            Unnamed(_, _) | Spread(_, _, _) => None,
+        }
+    }
 }
 
 impl<'s, E: Clone + PartialEq + AstWalker<'s>, I: Clone + PartialEq + AstWalker<'s>> AstWalker<'s>

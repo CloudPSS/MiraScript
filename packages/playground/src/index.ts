@@ -118,7 +118,7 @@ match {a}{}
     a ?? 1;
     a ??= 1;
     2147483647 + 2147483648 
-    (z?:a, ?:b) = (!:a, !:b);
+    (z?:a, ?:b) = (:a, :b);
 
     if a is not x {
         print("a is not nan");

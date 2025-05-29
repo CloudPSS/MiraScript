@@ -160,18 +160,22 @@ println(@@"hello, $name: $$name"@@); // 输出 "hello, $name: world"
 
 表示一个 `record` 类型的值。使用 `()` 括起来，记录的键值对用逗号分隔。记录的键必须是字符串，值可以是任意类型。
 
+使用 `?:` 省略值为 `nil` 的键。
+
 ```rust
 let simple_record = (key1: "value1", key2: 2, key3: true); // 简单键名必须为合法的标识符
 let ordinal_record = (0: 1, 1: 2, 2: 3);                   // 或序数
-let unnamed_record = ("value1", 2, true);                  // 未命名键被自动命名为 "0"、"1"、"2"
+let unnamed_record = ("value1", 2, true);                  // 未命名键被自动命名为 `0`、`1`、`2`
 let spread_record = (key1: "new", ..simple_record, key3: false);
-// 按照顺序覆盖，spread_record 的值为 (key1: "value1", key2: 2, key3: false)
+// 按照顺序覆盖，`spread_record` 的值为 `(key1: "value1", key2: 2, key3: false)`
 let empty_record = ();                                    // 空记录
 let single_record = (key1: "value1");                     // 单个键值对的记录
+let special_name_record = ("name\n": "value1");           // 键名不是有效标识符
 let single_unnamed_record = ("value1", );                 // 为了避免歧义，必须使用逗号
-let calculated_name_record = ([1 + 2]: "value1");         // 键名为表达式的值，即 "3"
-let omit_name_record = (:simple_record);                  // 键名推断为 "simple_record"
+let interpolated_name_record = (`${1 + 2}`: "value1");    // 键名为插值字符串的值，即 `3`
+let omit_name_record = (:simple_record);                  // 键名推断为 `simple_record`
 let invalid_mix = (..simple_record, "new");               // 错误，为避免歧义，未命名的键值对不能与其他构造混用
+let skip_nil = (nil?: nil, no_nil?: "no_nil");            // 使用 `?:` 省略值为 `nil` 的键，值为 `(no_nil: "no_nil")`
 ```
 
 使用 `.`、`[]` 操作符访问记录的属性：
@@ -415,16 +419,17 @@ x == y; // false
 
 对于 `number` 类型，当两个操作数的相对误差或绝对误差小于 `1e-15` 时，返回 `true`，否则返回 `false`。
 
-对于其他类型，`~=` 运算符的行为与 `==` 运算符相同。
-
 当其中一个操作数为 `nan` 时，`~=` 运算符始终返回 `false`。
+
+对于 `string` 类型，`~=` 运算符进行大小写和重音符号不敏感的比较。
 
 ```rust
 1 ~= 1.0000000000000002; // true
 "1" ~= 1; // true
-"1" ~= "1.0000000000000002"; // true
+"1" ~= "1.0000000000000002"; // false
+"A" ~= "a"; // true
 "a" ~= nan; // "a" 转换为 number 类型 nan，返回 false
-(1) ~= (1.0000000000000002); // 非 `number` 类型，返回 false
+(1) ~= (1.0000000000000002); // 两侧转为 number 类型均为 nan，返回 false
 ```
 
 ##### 扩展调用运算符
@@ -480,15 +485,14 @@ x == y; // false
 
 ##### 类型检查和隐式类型转换
 
-部分操作符对其操作数有一定的类型要求。MiraScript 按以下规则进行重载决议。
+部分操作符对其操作数有一定的类型要求。MiraScript 按以下规则进行运行时重载决议。
 
 1. 列出所有重载。
-1. 从左到右，使用可以静态推断类型的参数对重载进行过滤。
-1. 从左到右，使用 `number` 类型的参数对重载进行过滤。
-1. 从左到右，使用 `boolean` 类型的参数对重载进行过滤。
-1. 从左到右，使用 `string` 类型的参数对重载进行过滤。
-1. 从左到右，使用 `nil` 类型的参数对重载进行过滤。
-1. 从左到右，使用剩余参数的类型对重载进行过滤。
+2. 从左到右，使用 `number` 类型的参数对重载进行过滤。
+3. 从左到右，使用 `boolean` 类型的参数对重载进行过滤。
+4. 从左到右，使用 `string` 类型的参数对重载进行过滤。
+5. 从左到右，使用 `nil` 类型的参数对重载进行过滤。
+6. 从左到右，使用剩余参数的类型对重载进行过滤。
 
 当在任何一步结束后，如果只剩下一个重载，则使用该重载；如果剩下多个重载，则继续后面的步骤；如果没有剩下任何重载，则抛出 `TypeError` 异常或编译错误。
 
@@ -700,7 +704,7 @@ _ = x + y; // 匹配 x + y 的值，但不绑定该值
 
   具名模式用于匹配记录的键值对。具名模式的语法为 `<key>: <pattern>`。其中 `<key>` 是一个标识符、序数，或由 `[]` 括起来的字面量模式，表示记录的键；`<pattern>` 是一个模式，匹配记录的值。
 
-  可以使用 `?:` 语法表示该模式是可选的，此时对不存在的键会匹配到 `nil`；使用 `!:` 语法表示该模式是非空的，此时对值为 `nil` 的键会匹配失败。
+  可以使用 `?:` 语法表示该模式是可选的，此时对不存在的键会匹配到 `nil`；此时对值为 `nil` 的键会匹配失败。
 
   ```rust
   let record = (key1: "value1", key2: 2, key3: true);

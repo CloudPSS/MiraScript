@@ -16,8 +16,6 @@ pub enum Operator {
     Colon,
     /// `?:`
     QuestionColon,
-    /// `!:`
-    ExclamationColon,
     /// `::`
     ColonColon,
     /// `,`
@@ -140,7 +138,6 @@ impl Display for Operator {
             CloseBracket => f.write_str("]"),
             Colon => f.write_str(":"),
             QuestionColon => f.write_str("?:"),
-            ExclamationColon => f.write_str("!:"),
             ColonColon => f.write_str("::"),
             Comma => f.write_str(","),
             Dot => f.write_str("."),

@@ -21,10 +21,8 @@ fn record_name<'s>(i: &mut Input<'_, 's>) -> ModalResult<Token<'s>> {
         // (x: ..)
         variable_token(true, true),
         one_of(|t: &Token<'_>| {
-            // (1: ..)
-            t.is_ordinal() || 
-            // (`x`: ..)
-            t.is_string()
+            // (1: ..)     || (`x`: ..)
+            t.is_ordinal() || t.is_string()
         })
         .map(ToOwned::to_owned),
     ))
@@ -38,9 +36,7 @@ fn record_element<'t, 's: 't, E: Clone + PartialEq + 's, I: Clone + PartialEq + 
     unnamed: impl Parser<Input<'t, 's>, E, ErrMode<ContextError>> + Copy,
     spread: impl Parser<Input<'t, 's>, E, ErrMode<ContextError>> + Copy,
 ) -> impl Parser<Input<'t, 's>, RecordElementBase<'s, E, I>, ErrMode<ContextError>> + Copy {
-    let colon = |t: &Token<'s>| -> bool {
-        *t == Operator::Colon || *t == Operator::QuestionColon || *t == Operator::ExclamationColon
-    };
+    let colon = |t: &Token<'s>| -> bool { *t == Operator::Colon || *t == Operator::QuestionColon };
     move |i: &mut Input<'t, 's>| {
         let first = peek(any).parse_next(i)?;
         if *first == Operator::CloseParen {
@@ -51,11 +47,14 @@ fn record_element<'t, 's: 't, E: Clone + PartialEq + 's, I: Clone + PartialEq + 
                 .map(|(s, e)| RecordElementBase::Spread(s, e.into(), None)),
             (one_of(colon), omit_named)
                 .map(|(c, o)| RecordElementBase::OmitNamed(c.to_owned().into(), o.into(), None)),
-            (one_of(|t:&Token<'s>| t.is_interpolated_string()), one_of(colon), named
+            (
+                one_of(|t: &Token<'s>| t.is_interpolated_string()),
+                one_of(colon),
+                named,
             )
                 .map(|(r, c, n)| {
                     RecordElementBase::InterpolateNamed(
-                        Box::new(interpolate_name(r)), 
+                        Box::new(interpolate_name(r)),
                         c.to_owned().into(),
                         n.into(),
                         None,
