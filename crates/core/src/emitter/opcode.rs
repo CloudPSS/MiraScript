@@ -67,6 +67,15 @@ pub enum OpCode {
     /// NAEQ %ret %1 %2\
     /// %ret = %1 !~= %2
     Naeq,
+    /// SAME %ret %1 %2\
+    /// %ret = %1 === %2 // Same value zero
+    Same,
+    /// Nsame %ret %1 %2\
+    /// %ret = %1 !== %2
+    Nsame,
+    /// IN %ret %1 %2\
+    /// %ret = %1 in %2
+    In,
     /// CONCAT %ret `n` %1 %2 ... %n\
     /// %ret = %1 .. %2 .. ... .. %n
     Concat,

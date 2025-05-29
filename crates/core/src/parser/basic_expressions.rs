@@ -20,21 +20,44 @@ use super::ranges::range;
 use super::record_helper::record_base;
 use super::{Expression, Input, RecordElement, to_input};
 
-fn record_like<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
-    let omit_named = |i: &mut Input<'_, 's>| -> ModalResult<Expression<'s>> {
-        expression
-            .with_taken()
-            .map(|(e, t)| {
-                if matches!(e, Expression::Access(..)) || matches!(e, Expression::Variable(..)) {
-                    e
-                } else {
-                    Expression::unknown(t, ErrorCode::BadOmitKeyRecordExpression)
-                }
-            })
-            .parse_next(i)
+fn to_interpolate_expr(token: Token<'_>) -> Expression<'_> {
+    let TokenKind::InterpolatedString(_, e) = &token.kind else {
+        unreachable!("Expected InterpolatedString");
     };
-    let (open, parts, close) =
-        record_base(expression, expression, omit_named, expression, expression).parse_next(i)?;
+    let expressions: Vec<_> = e
+        .iter()
+        .map(|tokens| {
+            let expr: ModalResult<Expression<'_>> = {
+                let mut token_input = to_input(tokens.as_slice());
+                terminated(expression, eof).parse_next(&mut token_input)
+            };
+            let expr = match expr {
+                Ok(expr) => expr,
+                Err(_) => {
+                    let last_token = tokens.last().unwrap();
+                    let error = if *last_token == TokenKind::Eof {
+                        ErrorCode::UnterminatedInterpolation
+                    } else {
+                        ErrorCode::BadInterpolation
+                    };
+                    Expression::unknown(tokens.clone(), error)
+                }
+            };
+            expr
+        })
+        .collect();
+    Expression::InterpolatedString(Box::new(token), expressions)
+}
+
+fn record_like<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
+    let (open, parts, close) = record_base(
+        expression,
+        |t| to_interpolate_expr(t.to_owned()),
+        expression,
+        expression,
+        expression,
+    )
+    .parse_next(i)?;
     let result = if parts.len() == 1 {
         let part = parts.into_iter().next().unwrap();
         if let RecordElement::Unnamed(exp, None) = part {
@@ -77,33 +100,7 @@ pub(super) fn interpolation<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression
     let token = one_of(|t: &Token<'s>| matches!(&t.kind, &TokenKind::InterpolatedString(_, _)))
         .map(|t: &Token<'s>| t.to_owned())
         .parse_next(i)?;
-
-    let TokenKind::InterpolatedString(_, e) = &token.kind else {
-        unreachable!("Expected InterpolatedString");
-    };
-    let expressions: Vec<_> = e
-        .iter()
-        .map(|tokens| {
-            let expr: ModalResult<Expression<'_>> = {
-                let mut token_input = to_input(tokens.as_slice());
-                terminated(expression, eof).parse_next(&mut token_input)
-            };
-            let expr = match expr {
-                Ok(expr) => expr,
-                Err(_) => {
-                    let last_token = tokens.last().unwrap();
-                    let error = if *last_token == TokenKind::Eof {
-                        ErrorCode::UnterminatedInterpolation
-                    } else {
-                        ErrorCode::BadInterpolation
-                    };
-                    Expression::unknown(tokens.clone(), error)
-                }
-            };
-            expr
-        })
-        .collect();
-    Ok(Expression::InterpolatedString(Box::new(token), expressions))
+    Ok(to_interpolate_expr(token))
 }
 
 /// callable '(' ...args ')'

@@ -28,8 +28,6 @@ pub enum ErrorCode {
     // Parser error 2000 ~ 2999
     #[strum(message = "Unknown parser error")]
     ParserError = 2000,
-    #[strum(message = "Can not infer key from expression")]
-    BadOmitKeyRecordExpression,
     #[strum(message = "Expression expected after `..`")]
     BadArraySpread,
     #[strum(message = "Unterminated interpolation expression")]
@@ -82,8 +80,8 @@ pub enum ErrorCode {
     MutInDiscardPattern,
     #[strum(message = "Discard pattern should be omitted in spread pattern")]
     DiscardInSpreadPattern,
-    #[strum(message = "Calculated name is not allowed in record pattern")]
-    CalculatedNameRecordPattern,
+    #[strum(message = "Interpolated name is not allowed in record pattern")]
+    InterpolatedNameRecordPattern,
     #[strum(message = "Must be bind pattern while record field name omitted")]
     BadOmitKeyRecordPattern,
     #[strum(message = "Range pattern in array pattern should be parenthesised")]
@@ -108,6 +106,8 @@ pub enum ErrorCode {
     UnexpectedContinueOutsideLoop,
     #[strum(message = "`global` keyword can only be used as `global.<name>` or `global[<name>]`")]
     MisuseOfGlobalKeyword,
+    #[strum(message = "Can not infer key from expression")]
+    BadOmitKeyRecordExpression,
 
     // Optimizer error 4000 ~ 4999
     #[strum(message = "Unknown optimizer error")]

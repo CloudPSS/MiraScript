@@ -1,4 +1,4 @@
-use std::io::Write;
+use std::{borrow::Cow, io::Write};
 use strum::{EnumDiscriminants, IntoDiscriminant};
 
 #[derive(EnumDiscriminants, Clone, Debug)]
@@ -8,7 +8,7 @@ pub enum Constant<'s> {
     True = 1,
     False = 2,
     Number(f64),
-    String(&'s str),
+    String(Cow<'s, str>),
 }
 
 impl PartialEq for Constant<'_> {

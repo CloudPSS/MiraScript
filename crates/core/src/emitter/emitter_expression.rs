@@ -1,5 +1,5 @@
 use crate::{
-    error::{ErrorCode, SourceError},
+    error::{ErrorCode, SourceError, SourceRange},
     lexer::{Keyword, Operator, TokenKind},
     parser::{
         self, ArrayElement, AstWalker, Callable,
@@ -34,7 +34,7 @@ impl<'s> Emitter<'s> {
                 | RecordElement::Spread(_, exp, _) => {
                     self.declare_expression(exp);
                 }
-                RecordElement::CalculatedNamed(_, name_exp, _, _, exp, _) => {
+                RecordElement::InterpolateNamed(name_exp, _, exp, _) => {
                     self.declare_expression(name_exp);
                     self.declare_expression(exp);
                 }
@@ -98,7 +98,7 @@ impl<'s> Emitter<'s> {
     pub fn emit_expression(&mut self, expr: &'s Expression<'s>, ret: Register, brk: Register) {
         match expr {
             Literal(token) => match &token.kind {
-                TokenKind::String(s) => self.op_string(ret, s),
+                TokenKind::String(s) => self.op_string(ret, s.as_ref()),
                 TokenKind::Number(n) => self.op_number(ret, *n),
                 TokenKind::Ordinal(o) => self.op_number(ret, *o as f64),
                 TokenKind::Keyword(Keyword::Nil) => self.op_nil(ret),
@@ -121,7 +121,7 @@ impl<'s> Emitter<'s> {
                     };
                     if !str.is_empty() {
                         let reg = self.add_reg();
-                        self.op_string(reg, str);
+                        self.op_string(reg, str.as_ref());
                         args_reg.push(reg);
                     }
                     if let Some(expression) = e_iter.next() {
@@ -165,7 +165,7 @@ impl<'s> Emitter<'s> {
                         self.op_get_upvalue(ret, level, up_reg);
                     }
                 } else {
-                    self.op_global(ret, id);
+                    self.op_global(ret, id.as_ref());
                 }
             }
             Grouping(_, expression, _) => self.emit_expression(expression, ret, brk),
@@ -178,7 +178,7 @@ impl<'s> Emitter<'s> {
                             self.emit_expression(expression, reg, brk);
                             elements_regs.push(reg);
                         }
-                        RecordElement::CalculatedNamed(_, name_expression, _, _, expression, _) => {
+                        RecordElement::InterpolateNamed(name_expression, _, expression, _) => {
                             let name_reg = self.add_reg();
                             self.emit_expression(name_expression, name_reg, brk);
                             let reg = self.add_reg();
@@ -208,26 +208,44 @@ impl<'s> Emitter<'s> {
                 for element in elements.iter() {
                     match element {
                         RecordElement::Named(token, _, _, _) => {
-                            let TokenKind::Identifier(id) = &token.kind else {
-                                unreachable!("Expected identifier token");
-                            };
-                            let const_id = self.add_const_string(id);
                             let reg = elements_regs[reg_index];
-                            self.op_2(OpCode::Field, const_id, reg);
+                            if let TokenKind::Ordinal(id) = &token.kind {
+                                self.op_2(OpCode::FieldIndex, OpParam::new(*id as usize), reg);
+                            } else {
+                                let Some(id) = token.to_prop_name() else {
+                                    unreachable!("Expected identifier token");
+                                };
+                                let const_id = self.add_const_string(id);
+                                self.op_2(OpCode::Field, const_id, reg);
+                            }
                             reg_index += 1;
                         }
-                        RecordElement::CalculatedNamed(_, _, _, _, _, _) => {
+                        RecordElement::InterpolateNamed(_, _, _, _) => {
                             let name_reg = elements_regs[reg_index];
                             let reg = elements_regs[reg_index + 1];
                             self.op_2(OpCode::FieldDyn, name_reg, reg);
                             reg_index += 2;
                         }
                         RecordElement::OmitNamed(_, expression, _) => {
-                            let Expression::Variable(id) = expression.as_ref() else {
-                                unreachable!("Expected identifier token");
+                            let id = if let Expression::Variable(id)
+                            | Expression::Access(_, _, id) = expression.as_ref()
+                            {
+                                id.to_prop_name()
+                            } else if let Expression::Index(_, _, id, _) = expression.as_ref() {
+                                if let Expression::Literal(literal) = id.as_ref() {
+                                    literal.to_prop_name()
+                                } else {
+                                    None
+                                }
+                            } else {
+                                None
                             };
-                            let TokenKind::Identifier(id) = &id.kind else {
-                                unreachable!("Expected identifier token");
+                            let Some(id) = id else {
+                                self.errors.push(SourceError::new(
+                                    expression.range(),
+                                    ErrorCode::BadOmitKeyRecordExpression,
+                                ));
+                                return;
                             };
                             let const_id = self.add_const_string(id);
                             let reg = elements_regs[reg_index];
@@ -342,13 +360,13 @@ impl<'s> Emitter<'s> {
                 if !is_global_expression(expression) {
                     self.emit_expression(expression, ret, brk);
                     match &id.kind {
-                        TokenKind::Identifier(id) => self.op_get(ret, ret, id),
+                        TokenKind::Identifier(id) => self.op_get(ret, ret, id.as_ref()),
                         TokenKind::Ordinal(ord) => self.op_get_num(ret, ret, *ord as f64),
                         _ => unreachable!("Expected identifier token"),
                     };
                 } else {
                     match &id.kind {
-                        TokenKind::Identifier(id) => self.op_global(ret, id),
+                        TokenKind::Identifier(id) => self.op_global(ret, id.as_ref()),
                         TokenKind::Ordinal(ord) => self.op_global_num(ret, *ord as f64),
                         _ => unreachable!("Expected identifier token"),
                     };
@@ -392,6 +410,11 @@ impl<'s> Emitter<'s> {
                     self.op_if(OpCode::IfNot, ret);
                     self.emit_expression(right, ret, brk);
                     self.op_if_end();
+                } else if **token == Operator::NullCoalescing {
+                    self.emit_expression(left, ret, brk);
+                    self.op_if(OpCode::IfNil, ret);
+                    self.emit_expression(right, ret, brk);
+                    self.op_if_end();
                 } else {
                     let op = match token.kind {
                         TokenKind::Operator(Operator::Caret) => OpCode::Pow,
@@ -412,6 +435,7 @@ impl<'s> Emitter<'s> {
                         TokenKind::Operator(Operator::NotEqual) => OpCode::Neq,
                         TokenKind::Operator(Operator::TildeEqual) => OpCode::Aeq,
                         TokenKind::Operator(Operator::NotTildeEqual) => OpCode::Naeq,
+                        TokenKind::Keyword(Keyword::In) => OpCode::In,
 
                         _ => unreachable!("Unexpected infix operator"),
                     };

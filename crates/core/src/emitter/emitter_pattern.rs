@@ -20,10 +20,10 @@ impl<'s> Emitter<'s> {
             Constant(token, token1) => todo!(),
             Relation(token, pattern) => todo!(),
             Range(pattern, token, pattern1) => todo!(),
-            Discard(token) => todo!(),
+            Discard(_) => (),
             Bind(mut_token, id_token) => {
                 let TokenKind::Identifier(id) = &id_token.kind else {
-                    unreachable!("Expected identifier token");
+                    return;
                 };
                 if let Some(bind_type) = bind_type {
                     if let Some(err) = self.scopes.check_local_variable(id) {
@@ -37,7 +37,7 @@ impl<'s> Emitter<'s> {
                 for element in elements {
                     match element {
                         RecordPattern::Named(_, _, pattern, _)
-                        | RecordPattern::CalculatedNamed(_, _, _, _, pattern, _)
+                        | RecordPattern::InterpolateNamed(_, _, pattern, _)
                         | RecordPattern::OmitNamed(_, pattern, _)
                         | RecordPattern::Unnamed(pattern, _)
                         | RecordPattern::Spread(_, pattern, _) => {
@@ -66,20 +66,32 @@ impl<'s> Emitter<'s> {
             Constant(token, token1) => todo!(),
             Relation(token, pattern) => todo!(),
             Range(pattern, token, pattern1) => todo!(),
-            Discard(token) => todo!(),
+            Discard(_) => (),
             Bind(_, id_token) => {
                 let TokenKind::Identifier(id) = &id_token.kind else {
-                    unreachable!("Expected identifier token");
+                    return;
                 };
                 let var = self.scopes.find_variable(id);
                 if let Some((level, variable)) = var {
-                    variable.initialize();
-                    if !variable.mutable() && bind_type.is_none() {
+                    let bind = bind_type.is_some();
+                    let initialized = if bind {
+                        variable.initialize();
+                        true
+                    } else {
+                        variable.initialized()
+                    };
+                    if !variable.mutable() && !bind {
                         self.errors.push(SourceError::new(
                             id_token.range.clone(),
                             ErrorCode::ImmutableVariableAssignment,
                         ));
                     } else if level == self.closures.len() {
+                        if !initialized {
+                            self.errors.push(SourceError::new(
+                                id_token.range.clone(),
+                                ErrorCode::UninitializedVariable,
+                            ));
+                        }
                         let register = variable.register();
                         self.op_unary(register, OpCode::Assign, value);
                     } else {
@@ -98,14 +110,14 @@ impl<'s> Emitter<'s> {
                 for (i, element) in elements.iter().enumerate() {
                     match element {
                         RecordPattern::Named(token, _, pattern, _) => {
-                            let TokenKind::Identifier(id) = &token.kind else {
+                            let Some(id) = token.to_prop_name() else {
                                 unreachable!("Expected identifier token");
                             };
                             let ret = self.add_reg();
                             self.op_get(ret, value, id);
                             self.emit_pattern(pattern, ret, bind_type);
                         }
-                        RecordPattern::CalculatedNamed(..) => {}
+                        RecordPattern::InterpolateNamed(..) => {}
                         RecordPattern::OmitNamed(_, pattern, _) => {
                             let Pattern::Bind(_, id) = pattern.as_ref() else {
                                 unreachable!("Expected identifier token");
@@ -114,7 +126,7 @@ impl<'s> Emitter<'s> {
                                 unreachable!("Expected identifier token");
                             };
                             let ret = self.add_reg();
-                            self.op_get(ret, value, id);
+                            self.op_get(ret, value, id.as_ref());
                             self.emit_pattern(pattern, ret, bind_type);
                         }
                         RecordPattern::Unnamed(pattern, _) => {

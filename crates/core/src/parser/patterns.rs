@@ -252,27 +252,7 @@ fn record_like_pattern<'t, 's: 't>(
     move |i: &mut Input<'_, 's>| {
         let (open, parts, close) = record_base(
             pattern_or_insert(rebind),
-            |i: &mut Input<'_, 's>| {
-                take_till(0.., |t: &Token<'s>| {
-                    *t == TokenKind::Eof
-                        || *t == Operator::CloseBracket
-                        || *t == Operator::CloseParen
-                        || *t == Operator::CloseBrace
-                        || *t == Keyword::If
-                        || *t == Keyword::Fn
-                        || *t == Keyword::Loop
-                        || *t == Keyword::While
-                        || *t == Keyword::Match
-                        || *t == Keyword::For
-                        || *t == Keyword::Let
-                        || *t == Operator::Comma
-                        || *t == Operator::Colon
-                        || *t == Operator::QuestionColon
-                        || *t == Operator::ExclamationColon
-                })
-                .map(|t: &[Token<'s>]| Pattern::unknown(t, ErrorCode::CalculatedNameRecordPattern))
-                .parse_next(i)
-            },
+            |t| Pattern::unknown([t.to_owned()], ErrorCode::InterpolatedNameRecordPattern),
             omit_named,
             unnamed,
             pattern_spread(rebind),

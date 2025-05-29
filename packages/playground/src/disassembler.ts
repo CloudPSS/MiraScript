@@ -89,8 +89,61 @@ const ENV = () => {
     const $Gte = (a: number, b: number) => $ToNumber(a) >= $ToNumber(b);
     const $Lt = (a: number, b: number) => $ToNumber(a) < $ToNumber(b);
     const $Lte = (a: number, b: number) => $ToNumber(a) <= $ToNumber(b);
-    const $Eq = (a: unknown, b: unknown) => a === b;
+    const $Eq = (a: unknown, b: unknown) => {
+        if (typeof a == 'number' && typeof b == 'number') return a === b;
+        return $Same(a, b);
+    };
     const $Neq = (a: unknown, b: unknown) => !$Eq(a, b);
+    const $Aeq = (a: unknown, b: unknown) => {
+        const EPS = 1e-15;
+        const an = $ToNumber(a);
+        const bn = $ToNumber(b);
+        if (Number.isNaN(an) || Number.isNaN(bn)) return false;
+        const absoluteDifference = Math.abs(an - bn);
+        if (absoluteDifference < EPS) return true;
+        const base = Math.min(Math.abs(an), Math.abs(bn));
+        return absoluteDifference < base * EPS;
+    };
+    const $Naeq = (a: unknown, b: unknown) => !$Aeq(a, b);
+    const $Same = (a: unknown, b: unknown) => {
+        // Check all primitive types, and fast path for reference equality
+        if (a === b) return true;
+        // Check for NaN
+        if (typeof a == 'number' && typeof b == 'number') return a === b || (Number.isNaN(a) && Number.isNaN(b));
+        if (typeof a != 'object' || typeof b != 'object') return false;
+        if (a === null || b === null) return false;
+        if (a instanceof Extern || b instanceof Extern) {
+            return a instanceof Extern && b instanceof Extern && a.value === b.value;
+        }
+        if (Array.isArray(a) && Array.isArray(b)) {
+            if (a.length !== b.length) return false;
+            for (let i = 0; i < a.length; i++) {
+                if (!$Same(a[i], b[i])) return false;
+            }
+            return true;
+        }
+        if (!Array.isArray(a) && !Array.isArray(b)) {
+            const aKeys = Object.keys(a);
+            const bKeys = Object.keys(b);
+            if (aKeys.length !== bKeys.length) return false;
+            for (const key of aKeys) {
+                if (
+                    !Object.hasOwn(b, key) ||
+                    !$Same((a as Record<string, unknown>)[key] ?? null, (b as Record<string, unknown>)[key] ?? null)
+                )
+                    return false;
+            }
+            return true;
+        }
+        return false;
+    };
+    const $Nsame = (a: unknown, b: unknown) => !$Same(a, b);
+    const $In = (value: unknown, iterable: unknown): boolean => {
+        if (iterable == null) return false;
+        if (Array.isArray(iterable)) return iterable.includes(value);
+        if (typeof iterable == 'object') return Object.hasOwn(iterable, $ToString(value));
+        return false;
+    };
     const $Concat = (...args: string[]) => {
         return args.map($ToString).join('');
     };
@@ -108,6 +161,7 @@ const ENV = () => {
     };
     const $Type = (value: unknown) => {
         if (value === null) return 'nil';
+        if (value instanceof Extern) return 'extern';
         if (Array.isArray(value)) return 'array';
         if (typeof value == 'object') return 'record';
         return typeof value;
@@ -187,6 +241,11 @@ const ENV = () => {
         $Lte,
         $Eq,
         $Neq,
+        $Aeq,
+        $Naeq,
+        $Same,
+        $Nsame,
+        $In,
         $Pos,
         $Neg,
         $Not,
@@ -465,7 +524,8 @@ class Disassembler {
                     const field_name = this.constants[field];
                     const value = read();
                     body = `Field ${field} ${this.reg(value)} ; ${field_name}`;
-                    code = `${field_name}: ${this.rv(value)},`;
+                    // Use computed property names to avoid prototype pollution
+                    code = `[${field_name}]: ${this.rv(value)},`;
                     break;
                 }
                 case OpCode.FieldDyn: {
@@ -479,7 +539,7 @@ class Disassembler {
                     const field = read();
                     const value = read();
                     body = `FieldIndex ${field} ${this.reg(value)}`;
-                    code = `${field}: ${this.rv(value)},`;
+                    code = `[${field}]: ${this.rv(value)},`;
                     break;
                 }
                 case OpCode.Spread: {
@@ -637,7 +697,8 @@ class Disassembler {
             case OpCode.Eq:
             case OpCode.Neq:
             case OpCode.Aeq:
-            case OpCode.Naeq: {
+            case OpCode.Naeq:
+            case OpCode.In: {
                 const ret = read();
                 const left = read();
                 const right = read();
@@ -730,6 +791,13 @@ class Disassembler {
                 code = `${this.wv(reg)} = $Get(global, ${c});`;
                 break;
             }
+            case OpCode.GetGlobalDyn: {
+                const reg = read();
+                const name = read();
+                body = `${this.reg(reg)} = ${OpCode[opcode]} ${this.reg(name)}`;
+                code = `${this.wv(reg)} = $Get(global, ${this.rv(name)});`;
+                break;
+            }
             case OpCode.GetUpvalue: {
                 const v = read();
                 const level = read();
@@ -780,6 +848,18 @@ class Disassembler {
                 const cond = read();
                 body = `IfNotInit ${this.reg(cond)}`;
                 code = `if (${this.rv(cond)} === undefined) {`;
+                break;
+            }
+            case OpCode.IfNil: {
+                const cond = read();
+                body = `IfNil ${this.reg(cond)}`;
+                code = `if (${this.rv(cond)} === null) {`;
+                break;
+            }
+            case OpCode.IfNotNil: {
+                const cond = read();
+                body = `IfNotNil ${this.reg(cond)}`;
+                code = `if (${this.rv(cond)} !== null) {`;
                 break;
             }
             case OpCode.LoopFor: {

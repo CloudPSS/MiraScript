@@ -31,7 +31,7 @@ fn lex_balanced_impl<'s, OP: PartialEq<TokenKind<'s>>, CP: PartialEq<TokenKind<'
     let mut tokens = vec![];
     while tokens.is_empty() || depth > 0 {
         let t = trivia::trivia_list(input)?;
-        let prev_token = &tokens.last();
+        let prev_token = tokens.last_mut();
         let mut token = tokens::token(input, prev_token)?;
         token.leading_trivia = t;
         let eof = token.kind == TokenKind::Eof;
@@ -61,7 +61,7 @@ pub(crate) fn lex_balanced<'s, OP: PartialEq<TokenKind<'s>>, CP: PartialEq<Token
 }
 
 pub fn lex_string<'s>(input: &mut Input<'s>) -> ModalResult<Vec<Token<'s>>> {
-    let str = string::string_content(None, 0)
+    let mut str = string::string_content(None, 0)
         .with_span()
         .map(|(s, range)| Token {
             kind: s,
@@ -70,7 +70,7 @@ pub fn lex_string<'s>(input: &mut Input<'s>) -> ModalResult<Vec<Token<'s>>> {
             trailing_trivia: vec![],
         })
         .parse_next(input)?;
-    let eof = tokens::token(input, &Some(&str))?;
+    let eof = tokens::token(input, Some(&mut str))?;
 
     if eof != TokenKind::Eof {
         return Err(winnow::error::ErrMode::Backtrack(ContextError::new()));

@@ -47,6 +47,20 @@ async function getTokensProvider(): Promise<languages.IMonarchLanguage> {
             root: [[/[[\](){}]/gu, '@brackets'], { include: '@common' }],
             common: [
                 [
+                    /(@identifier)(@whitespace*)(\?:|!:|:)(?!:)/gu,
+                    [
+                        { token: 'variable.$3' },
+                        '',
+                        {
+                            cases: {
+                                '\\?:': 'operator.question-colon',
+                                '!:': 'operator.exclamation',
+                                ':': 'operator.colon',
+                            },
+                        },
+                    ],
+                ],
+                [
                     /(fn)(@whitespace+)(@identifier)(@whitespace*)($|[({])/gu,
                     [
                         { token: 'keyword.$1' },
@@ -110,6 +124,7 @@ async function getTokensProvider(): Promise<languages.IMonarchLanguage> {
             identifier: [[/(@identifier)/gu, { cases: identifierCases() }]],
             operator: [
                 [/(!)(==)/gu, ['operator.exclamation', 'operator.equal-equal']],
+                [/(!)(::)/gu, ['operator.exclamation', 'operator.colon-colon']],
                 [/(!~=)/gu, 'operator.not-tilde-equal'],
                 [/(!=)/gu, 'operator.not-equal'],
                 [/(~=)/gu, 'operator.tilde-equal'],

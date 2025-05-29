@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use super::{
     Emitter,
     constant::Constant as C,
@@ -8,8 +10,8 @@ use super::{
 };
 
 impl<'s> Emitter<'s> {
-    pub fn add_const_string(&mut self, value: &'s str) -> OpParam {
-        self.chunk.add_constant(C::String(value))
+    pub fn add_const_string(&mut self, value: impl Into<Cow<'s, str>>) -> OpParam {
+        self.chunk.add_constant(C::String(value.into()))
     }
     pub fn add_const_number(&mut self, value: f64) -> OpParam {
         self.chunk.add_constant(C::Number(value))
@@ -117,7 +119,7 @@ impl<'s> Emitter<'s> {
     fn op_const(&mut self, reg: Register, const_id: OpParam) {
         self.op_2(Constant, reg, const_id);
     }
-    pub fn op_global(&mut self, reg: Register, name: &'s str) {
+    pub fn op_global(&mut self, reg: Register, name: impl Into<Cow<'s, str>>) {
         let const_id = self.add_const_string(name);
         self.op_2(GetGlobal, reg, const_id);
     }
@@ -139,7 +141,7 @@ impl<'s> Emitter<'s> {
         let const_id = self.add_const_bool(value);
         self.op_const(reg, const_id);
     }
-    pub fn op_string(&mut self, reg: Register, value: &'s str) {
+    pub fn op_string(&mut self, reg: Register, value: impl Into<Cow<'s, str>>) {
         let const_id = self.add_const_string(value);
         self.op_const(reg, const_id);
     }
@@ -188,9 +190,9 @@ impl<'s> Emitter<'s> {
         self.op_1(Return, ret);
     }
 
-    pub fn op_call(&mut self, ret: Register, func: &'s str, args: Vec<Register>) {
+    pub fn op_call(&mut self, ret: Register, func: impl Into<Cow<'s, str>>, args: Vec<Register>) {
         let narg: OpParam = args.len().into();
-        let f = self.chunk.add_constant(C::String(func));
+        let f = self.add_const_string(func);
         if !narg.is_wide() && !ret.is_wide() && !f.is_wide() && !args.iter().any(|r| r.is_wide()) {
             self.chunk.add_code(Call);
             self.chunk.add_param(ret);
@@ -242,13 +244,13 @@ impl<'s> Emitter<'s> {
         self.op_3(SetUpvalue, reg, level, up_reg);
     }
 
-    pub fn op_get(&mut self, ret: Register, obj: Register, name: &'s str) {
-        let const_id = self.chunk.add_constant(C::String(name));
+    pub fn op_get(&mut self, ret: Register, obj: Register, name: impl Into<Cow<'s, str>>) {
+        let const_id = self.add_const_string(name);
         self.op_3(Get, ret, obj, const_id);
     }
 
     pub fn op_get_num(&mut self, ret: Register, obj: Register, index: f64) {
-        let const_id = self.chunk.add_constant(C::Number(index));
+        let const_id = self.add_const_number(index);
         self.op_3(Get, ret, obj, const_id);
     }
 

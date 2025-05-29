@@ -121,6 +121,13 @@ impl<'s> Emitter<'s> {
                     self.emit_expression(expression, assignee_reg, brk);
                     self.exit_scope();
                     self.op_if_end();
+                } else if **op == Operator::NullCoalescingEqual {
+                    self.op_if(OpCode::IfNil, assignee_reg);
+                    self.enter_scope();
+                    self.declare_expression(expression);
+                    self.emit_expression(expression, assignee_reg, brk);
+                    self.exit_scope();
+                    self.op_if_end();
                 } else {
                     let op = match op.kind {
                         TokenKind::Operator(Operator::PlusEqual) => OpCode::Add,

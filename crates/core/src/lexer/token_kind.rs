@@ -49,6 +49,16 @@ impl<'s> TokenKind<'s> {
             errors: errors.into(),
         }
     }
+
+    pub(crate) fn to_prop_name(&'s self) -> Option<Cow<'s, str>> {
+        match self {
+            Self::Keyword(kw) => Some(kw.to_string().into()),
+            Self::Identifier(name) => Some(Cow::Borrowed(name)),
+            Self::Ordinal(n) => Some(n.to_string().into()),
+            Self::String(s) => Some(Cow::Borrowed(s)),
+            _ => None,
+        }
+    }
 }
 
 impl PartialEq for TokenKind<'_> {

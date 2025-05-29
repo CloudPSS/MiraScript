@@ -18,19 +18,26 @@ use super::{
 
 fn record_name<'s>(i: &mut Input<'_, 's>) -> ModalResult<Token<'s>> {
     alt((
-        variable_token(false, false),
-        one_of(|t: &Token<'_>| matches!(t.kind, TokenKind::Ordinal(_))).map(ToOwned::to_owned),
+        // (x: ..)
+        variable_token(true, true),
+        one_of(|t: &Token<'_>| {
+            // (1: ..)
+            t.is_ordinal() || 
+            // (`x`: ..)
+            t.is_string()
+        })
+        .map(ToOwned::to_owned),
     ))
     .parse_next(i)
 }
 
-fn record_element<'t, 's: 't, E: Clone + PartialEq + 's, CE: Clone + PartialEq + 's>(
+fn record_element<'t, 's: 't, E: Clone + PartialEq + 's, I: Clone + PartialEq + 's>(
     named: impl Parser<Input<'t, 's>, E, ErrMode<ContextError>> + Copy,
-    calculated_name: impl Parser<Input<'t, 's>, CE, ErrMode<ContextError>> + Copy,
+    mut interpolate_name: impl FnMut(&Token<'s>) -> I + Copy,
     omit_named: impl Parser<Input<'t, 's>, E, ErrMode<ContextError>> + Copy,
     unnamed: impl Parser<Input<'t, 's>, E, ErrMode<ContextError>> + Copy,
     spread: impl Parser<Input<'t, 's>, E, ErrMode<ContextError>> + Copy,
-) -> impl Parser<Input<'t, 's>, RecordElementBase<'s, E, CE>, ErrMode<ContextError>> + Copy {
+) -> impl Parser<Input<'t, 's>, RecordElementBase<'s, E, I>, ErrMode<ContextError>> + Copy {
     let colon = |t: &Token<'s>| -> bool {
         *t == Operator::Colon || *t == Operator::QuestionColon || *t == Operator::ExclamationColon
     };
@@ -39,42 +46,27 @@ fn record_element<'t, 's: 't, E: Clone + PartialEq + 's, CE: Clone + PartialEq +
         if *first == Operator::CloseParen {
             return fail.parse_next(i);
         }
-        let mut result = if *first == Operator::SpreadRange {
+        let mut result = alt((
             (token_boxed(Operator::SpreadRange), spread)
-                .map(|(s, e)| RecordElementBase::Spread(s, e.into(), None))
-                .parse_next(i)?
-        } else if *first == Operator::OpenBracket {
-            (
-                token_boxed(Operator::OpenBracket),
-                calculated_name,
-                token_boxed(Operator::CloseBracket),
-                one_of(colon),
-                named,
+                .map(|(s, e)| RecordElementBase::Spread(s, e.into(), None)),
+            (one_of(colon), omit_named)
+                .map(|(c, o)| RecordElementBase::OmitNamed(c.to_owned().into(), o.into(), None)),
+            (one_of(|t:&Token<'s>| t.is_interpolated_string()), one_of(colon), named
             )
-                .map(|(op, r, cp, c, n)| {
-                    RecordElementBase::CalculatedNamed(
-                        op,
-                        r.into(),
-                        cp,
+                .map(|(r, c, n)| {
+                    RecordElementBase::InterpolateNamed(
+                        Box::new(interpolate_name(r)), 
                         c.to_owned().into(),
                         n.into(),
                         None,
                     )
-                })
-                .parse_next(i)?
-        } else if colon(first) {
-            (one_of(colon), omit_named)
-                .map(|(c, o)| RecordElementBase::OmitNamed(c.to_owned().into(), o.into(), None))
-                .parse_next(i)?
-        } else {
-            alt((
-                (record_name, one_of(colon), named).map(|(r, c, n)| {
-                    RecordElementBase::Named(Box::new(r), c.to_owned().into(), n.into(), None)
                 }),
-                unnamed.map(|u| RecordElementBase::Unnamed(u.into(), None)),
-            ))
-            .parse_next(i)?
-        };
+            (record_name, one_of(colon), named).map(|(r, c, n)| {
+                RecordElementBase::Named(Box::new(r), c.to_owned().into(), n.into(), None)
+            }),
+            unnamed.map(|u| RecordElementBase::Unnamed(u.into(), None)),
+        ))
+        .parse_next(i)?;
         let last = peek(any).parse_next(i)?;
         if *last == Operator::CloseParen
             || *last == Operator::CloseBrace
@@ -97,9 +89,9 @@ fn record_element<'t, 's: 't, E: Clone + PartialEq + 's, CE: Clone + PartialEq +
     }
 }
 
-pub(super) fn record_base<'t, 's: 't, E: Clone + PartialEq + 's, CE: Clone + PartialEq + 's>(
+pub(super) fn record_base<'t, 's: 't, E: Clone + PartialEq + 's, I: Clone + PartialEq + 's>(
     named: impl Parser<Input<'t, 's>, E, ErrMode<ContextError>> + Copy,
-    calculated_name: impl Parser<Input<'t, 's>, CE, ErrMode<ContextError>> + Copy,
+    interpolate_name: impl FnMut(&Token<'s>) -> I + Copy,
     omit_named: impl Parser<Input<'t, 's>, E, ErrMode<ContextError>> + Copy,
     unnamed: impl Parser<Input<'t, 's>, E, ErrMode<ContextError>> + Copy,
     spread: impl Parser<Input<'t, 's>, E, ErrMode<ContextError>> + Copy,
@@ -107,7 +99,7 @@ pub(super) fn record_base<'t, 's: 't, E: Clone + PartialEq + 's, CE: Clone + Par
     Input<'t, 's>,
     (
         Box<Token<'s>>,
-        Vec<RecordElementBase<'s, E, CE>>,
+        Vec<RecordElementBase<'s, E, I>>,
         Box<Token<'s>>,
     ),
     ErrMode<ContextError>,
@@ -116,7 +108,7 @@ pub(super) fn record_base<'t, 's: 't, E: Clone + PartialEq + 's, CE: Clone + Par
         let open = token_boxed(Operator::OpenParen).parse_next(i)?;
         let parts: Vec<_> = repeat(
             0..,
-            record_element(named, calculated_name, omit_named, unnamed, spread),
+            record_element(named, interpolate_name, omit_named, unnamed, spread),
         )
         .parse_next(i)?;
         let close = token_or_insert(Operator::CloseParen, ErrorCode::MissingCloseParen)

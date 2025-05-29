@@ -11,10 +11,10 @@ use super::{Input, Operator, Token, TokenKind, string};
 
 pub(super) fn token<'s>(
     input: &mut Input<'s>,
-    prev_token: &Option<&Token<'s>>,
+    prev_token: Option<&mut Token<'s>>,
 ) -> ModalResult<Token<'s>> {
-    let dot = prev_token.is_some_and(|t| *t == Operator::Dot);
-    let token = |i: &mut Input<'s>| {
+    let dot = prev_token.as_deref().is_some_and(|t| *t == Operator::Dot);
+    let token_parser = |i: &mut Input<'s>| {
         dispatch! {peek(any);
             '0'..='9' => if dot {
                 ordinal
@@ -60,6 +60,7 @@ pub(super) fn token<'s>(
             '~' => "~=".value(TokenKind::Operator(Operator::TildeEqual)),
             '!' => alt((
                 ("!", peek("==")).value(TokenKind::Operator(Operator::Exclamation)),
+                ("!", peek("::")).value(TokenKind::Operator(Operator::Exclamation)),
                 "!:".value(TokenKind::Operator(Operator::ExclamationColon)),
                 "!=".value(TokenKind::Operator(Operator::NotEqual)),
                 "!~=".value(TokenKind::Operator(Operator::NotTildeEqual)),
@@ -111,10 +112,10 @@ pub(super) fn token<'s>(
         }
         .parse_next(i)
     };
-    preceded(
+    let cur_token = preceded(
         space0,
         alt((
-            token,
+            token_parser,
             eof.map(|_| TokenKind::Eof),
             any.span().map(|range| TokenKind::Unknown {
                 recovered: None,
@@ -129,5 +130,19 @@ pub(super) fn token<'s>(
             trailing_trivia: vec![],
         }),
     )
-    .parse_next(input)
+    .parse_next(input)?;
+    if (cur_token == Operator::Colon
+        || cur_token == Operator::QuestionColon
+        || cur_token == Operator::ExclamationColon)
+        && matches!(prev_token.as_deref(), Some(prev_token) if prev_token.is_keyword())
+    {
+        let Some(prev_token) = prev_token else {
+            unreachable!();
+        };
+        let TokenKind::Keyword(kw) = prev_token.kind else {
+            unreachable!();
+        };
+        prev_token.kind = TokenKind::Identifier(kw.to_string().into());
+    }
+    Ok(cur_token)
 }
