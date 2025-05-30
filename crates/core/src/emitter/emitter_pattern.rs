@@ -22,15 +22,8 @@ impl<'s> Emitter<'s> {
             Range(pattern, token, pattern1) => todo!(),
             Discard(_) => (),
             Bind(mut_token, id_token) => {
-                let TokenKind::Identifier(id) = &id_token.kind else {
-                    return;
-                };
                 if let Some(bind_type) = bind_type {
-                    if let Some(err) = self.scopes.check_local_variable(id) {
-                        self.errors
-                            .push(SourceError::new(id_token.range.clone(), err));
-                    }
-                    self.declare_variable(id, mut_token.is_some(), bind_type);
+                    self.declare_variable(id_token, mut_token.is_some(), bind_type);
                 }
             }
             Record(_, elements, _) => {

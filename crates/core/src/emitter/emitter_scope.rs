@@ -2,7 +2,7 @@ use std::ops::{Deref, DerefMut};
 
 use crate::{
     error::{ErrorCode, SourceError},
-    lexer::Operator,
+    lexer::{Operator, Token, TokenKind},
     parser::{Expression, Script, Statement},
 };
 
@@ -36,7 +36,7 @@ impl<'s> Scopes<'s> {
         self.current().find_variable(name)
     }
 
-    pub fn check_local_variable(&mut self, name: &str) -> Option<ErrorCode> {
+    fn check_local_variable(&mut self, name: &str) -> Option<ErrorCode> {
         let var = self.find_local_variable(name);
         var.map(|var| {
             if matches!(
@@ -71,7 +71,7 @@ impl<'s> Emitter<'s> {
     pub fn exit_scope(&mut self) {
         self.scopes.pop();
     }
-    pub fn declare_variable(&mut self, name: &'s str, mutable: bool, bind_type: BindType) {
+    pub fn declare_implicit_variable(&mut self, name: &'s str, mutable: bool, bind_type: BindType) {
         let register = match bind_type {
             BindType::Parameter => self.current_closure().add_arg(),
             BindType::RestParameter => self.current_closure().add_var_arg(),
@@ -79,5 +79,22 @@ impl<'s> Emitter<'s> {
         };
         let var = Variable::new(name, mutable, bind_type, register);
         self.scopes.current().declare_variable(var);
+    }
+    pub fn declare_variable(
+        &mut self,
+        id_token: &'s Token<'s>,
+        mutable: bool,
+        bind_type: BindType,
+    ) -> bool {
+        let TokenKind::Identifier(id) = &id_token.kind else {
+            return false;
+        };
+        if let Some(err) = self.scopes.check_local_variable(id) {
+            self.errors
+                .push(SourceError::new(id_token.range.clone(), err));
+            return false;
+        }
+        self.declare_implicit_variable(id, mutable, bind_type);
+        true
     }
 }

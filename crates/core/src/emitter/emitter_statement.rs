@@ -21,9 +21,6 @@ impl<'s> Emitter<'s> {
             }
             Assign(_, _, _, _) => (),
             Function(_, name, _, _) => {
-                let TokenKind::Identifier(name) = &name.kind else {
-                    unreachable!("Expected identifier token");
-                };
                 self.declare_variable(name, false, BindType::Func);
             }
             Return(_, _, _) => (),

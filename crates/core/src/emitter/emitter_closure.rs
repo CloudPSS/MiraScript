@@ -93,17 +93,14 @@ impl<'s> Emitter<'s> {
 
         if let Some(args) = args {
             for arg in args {
-                if let TokenKind::Identifier(name) = &arg.kind {
-                    if let Some(err) = self.scopes.check_local_variable(name) {
-                        self.errors.push(SourceError::new(arg.range.clone(), err));
-                    }
-                    self.declare_variable(name, false, BindType::Parameter);
+                if arg.is_identifier() {
+                    self.declare_variable(arg, false, BindType::Parameter);
                 } else {
-                    self.declare_variable("<unnamed param>", false, BindType::Parameter);
+                    self.declare_implicit_variable("<unnamed param>", false, BindType::Parameter);
                 }
             }
         } else {
-            self.declare_variable("it", false, BindType::Parameter);
+            self.declare_implicit_variable("it", false, BindType::Parameter);
         }
 
         let ret_reg = self.add_reg();
