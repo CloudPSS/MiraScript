@@ -1,280 +1,7 @@
 import { OpCode } from 'mira-wasm';
-
-/**
- * 可外部调用的对象
- */
-// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-type ExternObject = Record<string, unknown> & Function;
-
-/** Wrapper for `extern` objects */
-class Extern {
-    constructor(
-        readonly value: ExternObject,
-        readonly caller: Extern | null = null,
-    ) {}
-
-    /** Check if the object has a property */
-    protected access(key: string | number, read: boolean): boolean {
-        if (typeof this.value == 'function' && (key === 'prototype' || key === 'arguments' || key === 'caller'))
-            return false;
-        if (Object.hasOwn(this.value, key)) return true;
-        if (key === '__proto__') return false;
-        if (!read) return true;
-        const prop = this.value[key];
-        if (key in Function.prototype && prop === Function.prototype[key as keyof (() => void)]) return false;
-        if (key in Array.prototype && prop === Array.prototype[key as keyof unknown[]]) return false;
-        if (key in Object.prototype && prop === Object.prototype[key as keyof object]) return false;
-        return true;
-    }
-
-    /** Check if the object has a property */
-    has(key: string | number): boolean {
-        return this.access(key, true);
-    }
-    /** Get a property from the object */
-    get(key: string | number): unknown {
-        if (!this.has(key)) return null;
-        const prop = this.value[key] ?? null;
-        if (prop == null) return null;
-        switch (typeof prop) {
-            case 'function':
-            case 'object':
-                return new Extern(prop as ExternObject, this);
-            case 'string':
-            case 'number':
-            case 'boolean':
-                return prop;
-            case 'bigint':
-                return Number(prop);
-            case 'symbol':
-            case 'undefined':
-            default:
-                return null;
-        }
-    }
-    /** Set a property on the object */
-    set(key: string | number, value: unknown): boolean {
-        if (!this.access(key, false)) return false;
-        this.value[key] = value;
-        return true;
-    }
-    /** Call extern value */
-    call(...args: unknown[]): unknown {
-        if (typeof this.value == 'function') {
-            return this.value.apply(this.caller?.value ?? null, args);
-        }
-        return null;
-    }
-    /** Iterate over value */
-    keys(): string[] {
-        const keys: string[] = [];
-        for (const key in this.value) {
-            if (this.has(key)) keys.push(key);
-        }
-        return keys;
-    }
-    /** Convert the object to JSON */
-    toJSON() {
-        return String(this.value);
-    }
-}
-
-const ENV = () => {
-    const $Mul = (a: number, b: number) => $ToNumber(a) * $ToNumber(b);
-    const $Add = (a: number, b: number) => $ToNumber(a) + $ToNumber(b);
-    const $Sub = (a: number, b: number) => $ToNumber(a) - $ToNumber(b);
-    const $Div = (a: number, b: number) => $ToNumber(a) / $ToNumber(b);
-    const $Pow = (a: number, b: number) => $ToNumber(a) ** $ToNumber(b);
-    const $Gt = (a: number, b: number) => $ToNumber(a) > $ToNumber(b);
-    const $Gte = (a: number, b: number) => $ToNumber(a) >= $ToNumber(b);
-    const $Lt = (a: number, b: number) => $ToNumber(a) < $ToNumber(b);
-    const $Lte = (a: number, b: number) => $ToNumber(a) <= $ToNumber(b);
-    const $Eq = (a: unknown, b: unknown) => {
-        if (typeof a == 'number' && typeof b == 'number') return a === b;
-        return $Same(a, b);
-    };
-    const $Neq = (a: unknown, b: unknown) => !$Eq(a, b);
-    const $Aeq = (a: unknown, b: unknown) => {
-        const EPS = 1e-15;
-        const an = $ToNumber(a);
-        const bn = $ToNumber(b);
-        if (Number.isNaN(an) || Number.isNaN(bn)) return false;
-        const absoluteDifference = Math.abs(an - bn);
-        if (absoluteDifference < EPS) return true;
-        const base = Math.min(Math.abs(an), Math.abs(bn));
-        return absoluteDifference < base * EPS;
-    };
-    const $Naeq = (a: unknown, b: unknown) => !$Aeq(a, b);
-    const $Same = (a: unknown, b: unknown) => {
-        // Check all primitive types, and fast path for reference equality
-        if (a === b) return true;
-        // Check for NaN
-        if (typeof a == 'number' && typeof b == 'number') return a === b || (Number.isNaN(a) && Number.isNaN(b));
-        if (typeof a != 'object' || typeof b != 'object') return false;
-        if (a === null || b === null) return false;
-        if (a instanceof Extern || b instanceof Extern) {
-            return a instanceof Extern && b instanceof Extern && a.value === b.value;
-        }
-        if (Array.isArray(a) && Array.isArray(b)) {
-            if (a.length !== b.length) return false;
-            for (let i = 0; i < a.length; i++) {
-                if (!$Same(a[i], b[i])) return false;
-            }
-            return true;
-        }
-        if (!Array.isArray(a) && !Array.isArray(b)) {
-            const aKeys = Object.keys(a);
-            const bKeys = Object.keys(b);
-            if (aKeys.length !== bKeys.length) return false;
-            for (const key of aKeys) {
-                if (
-                    !Object.hasOwn(b, key) ||
-                    !$Same((a as Record<string, unknown>)[key] ?? null, (b as Record<string, unknown>)[key] ?? null)
-                )
-                    return false;
-            }
-            return true;
-        }
-        return false;
-    };
-    const $Nsame = (a: unknown, b: unknown) => !$Same(a, b);
-    const $In = (value: unknown, iterable: unknown): boolean => {
-        if (iterable == null) return false;
-        if (Array.isArray(iterable)) return iterable.includes(value);
-        if (typeof iterable == 'object') return Object.hasOwn(iterable, $ToString(value));
-        return false;
-    };
-    const $Concat = (...args: string[]) => {
-        return args.map($ToString).join('');
-    };
-    const $Pos = (a: number) => $ToNumber(a);
-    const $Neg = (a: number) => -$ToNumber(a);
-    const $Not = (a: boolean) => !$ToBool(a);
-    const $CallDyn = (func: (...args: unknown[]) => unknown, ...args: unknown[]) => {
-        if (func instanceof Extern) {
-            func = func.value as unknown as (...args: unknown[]) => unknown;
-        }
-        if (typeof func != 'function') {
-            throw new TypeError(`Expected function, got ${$Type(func)}`);
-        }
-        return func(...args) ?? null;
-    };
-    const $Type = (value: unknown) => {
-        if (value === null) return 'nil';
-        if (value instanceof Extern) return 'extern';
-        if (Array.isArray(value)) return 'array';
-        if (typeof value == 'object') return 'record';
-        return typeof value;
-    };
-    const $ToBool = (value: unknown) => {
-        return value != null && value !== false;
-    };
-    const $ToString = (value: unknown) => {
-        if (value === null) return '';
-        if (Array.isArray(value)) return value.map(toJavascript).join(', ');
-        if (typeof value == 'object') return JSON.stringify(value);
-        if (typeof value == 'function') return `<function ${value.name}>`;
-        return String(value);
-    };
-    const $ToNumber = Number;
-    const $NonNil = (value: unknown): asserts value is NonNullable<unknown> => {
-        if (value === null) throw new Error('Expected non-nil value');
-    };
-    const $Get = (obj: unknown, key: string | number) => {
-        if (obj == null || typeof obj != 'object') return null;
-        if (obj instanceof Extern) {
-            return obj.get(key);
-        }
-        if (!Object.hasOwn(obj, key)) return null;
-        return (obj as Record<string, unknown>)[key] ?? null;
-    };
-    const $ArrayRange = (start: number, end: number): unknown[] => {
-        const arr: unknown[] = [];
-        for (let i = start; i <= end; i++) {
-            arr.push(i);
-        }
-        return arr;
-    };
-    const $ArrayRangeExclusive = (start: number, end: number): unknown[] => {
-        const arr: unknown[] = [];
-        for (let i = start; i < end; i++) {
-            arr.push(i);
-        }
-        return arr;
-    };
-    const $ArraySpread = (array: unknown[]): unknown[] => {
-        return array;
-    };
-    const $ArrayFreeze = (array: unknown[]): void => {
-        // Noop
-    };
-    const $RecordSpread = (record: object): object => {
-        return record;
-    };
-    const $RecordFreeze = (record: Record<string, unknown>, optional: readonly string[]): void => {
-        for (const field of optional) {
-            if (record[field] == null) {
-                delete record[field];
-            }
-        }
-    };
-    const $Iterable = (value: unknown): unknown[] => {
-        if (value == null) return [];
-        if (value instanceof Extern) return value.keys().map((key) => value.get(key));
-        if (Array.isArray(value)) return value;
-        if (typeof value == 'object') return Object.values(value);
-        return [value];
-    };
-    let cp: number = Number.NaN;
-    const $Cp = (): void => {
-        if (!cp) {
-            cp = Date.now();
-        } else if (Date.now() - cp > 100) {
-            throw new RangeError('Execution timeout');
-        }
-    };
-    const $ClearCp = (): void => {
-        cp = Number.NaN;
-    };
-    return {
-        $Cp,
-        $ClearCp,
-        $Mul,
-        $Add,
-        $Sub,
-        $Div,
-        $Pow,
-        $Concat,
-        $Gt,
-        $Gte,
-        $Lt,
-        $Lte,
-        $Eq,
-        $Neq,
-        $Aeq,
-        $Naeq,
-        $Same,
-        $Nsame,
-        $In,
-        $Pos,
-        $Neg,
-        $Not,
-        $CallDyn,
-        $Get,
-        $Type,
-        $ToString,
-        $ToBool,
-        $ToNumber,
-        $NonNil,
-        $ArrayRange,
-        $ArrayRangeExclusive,
-        $ArraySpread,
-        $ArrayFreeze,
-        $RecordSpread,
-        $RecordFreeze,
-        $Iterable,
-    };
-};
+import * as ENV from './operations.js';
+import { VmExtern } from './extern';
+import type { VmPrimitive } from './types';
 
 /** 将值转为 JS */
 function toJavascript(value: unknown): string {
@@ -291,7 +18,7 @@ function print(value: unknown): string {
     if (value === null) return 'null';
     if (value === undefined) return 'undefined';
     if (typeof value == 'object' || typeof value == 'string') {
-        if (value instanceof Extern) {
+        if (value instanceof VmExtern) {
             return `Extern ${print(value.value)}`;
         }
         if (value instanceof Error) {
@@ -313,20 +40,20 @@ export function disassemble(chunk: Uint8Array | undefined): string {
     const code = disassembler.codeLines.map((line) => `  ${line}`).join('\n');
     // eslint-disable-next-line no-console
     console.log(code);
-    const env = ENV();
     let r;
     try {
         // eslint-disable-next-line @typescript-eslint/no-implied-eval, @typescript-eslint/no-unsafe-call
-        const fn = new Function(...Object.keys(env), 'global', `let _; ${code}; return _;`)(...Object.values(env), {
+        const fn = new Function(...Object.keys(ENV), 'global', `let _; ${code}; return _;`)(...Object.values(ENV), {
             if: 12,
             // eslint-disable-next-line no-console
             print: console.log,
-            globalThis: new Extern(globalThis as unknown as ExternObject),
+            globalThis: new VmExtern(globalThis),
             map: (
                 self: unknown[],
                 ...args: [callbackfn: (value: unknown, index: number, array: unknown[]) => unknown, thisArg?: unknown]
             ) => Array.prototype.map.apply(self, args),
         }) as () => unknown;
+        ENV.$ClearCp();
         r = fn();
     } catch (e) {
         r = e;
@@ -352,7 +79,7 @@ export function disassemble(chunk: Uint8Array | undefined): string {
 }
 
 /** 解析常量 */
-function readConst(reader: DataView, offset: number): [Constant, number] {
+function readConst(reader: DataView, offset: number): [VmPrimitive, number] {
     const type = reader.getUint8(offset);
     switch (type) {
         case 0:
@@ -374,9 +101,6 @@ function readConst(reader: DataView, offset: number): [Constant, number] {
             throw new Error(`Unknown constant type: ${type}`);
     }
 }
-
-/** 常量表中的常量 */
-type Constant = number | string | boolean | null;
 
 /** 反编译/代码生成 */
 class Disassembler {
@@ -536,6 +260,7 @@ class Disassembler {
                 case OpCode.Field: {
                     const field = read();
                     const field_name = this.constants[field];
+                    if (!field_name) throw new Error(`Unknown field ${field}`);
                     const value = read();
                     body = `${OpCode[opcode]} ${field} ${this.reg(value)} ; ${field_name}`;
                     // Use computed property names to avoid prototype pollution

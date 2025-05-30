@@ -34,11 +34,11 @@ async function validate(model: editor.ITextModel): Promise<void> {
     const { errors } = result;
     const markers: editor.IMarkerData[] = [];
     for (let i = 0; i < errors.length; i += 5) {
-        const startLineNumber = errors[i];
-        const startColumn = errors[i + 1];
-        const endLineNumber = errors[i + 2];
-        const endColumn = errors[i + 3];
-        const error = errors[i + 4];
+        const startLineNumber = errors[i]!;
+        const startColumn = errors[i + 1]!;
+        const endLineNumber = errors[i + 2]!;
+        const endColumn = errors[i + 3]!;
+        const error = errors[i + 4]!;
         const message = (await getErrorMessage(error)) ?? 'Unknown error';
         markers.push({
             startLineNumber,

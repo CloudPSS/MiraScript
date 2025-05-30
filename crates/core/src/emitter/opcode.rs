@@ -79,12 +79,15 @@ pub enum OpCode {
     /// CONCAT %ret `n` %1 %2 ... %n\
     /// %ret = %1 .. %2 .. ... .. %n
     Concat,
-    /// AND %ret %1 %2\
-    /// %ret = %1 && %2
-    And,
-    /// OR %ret %1 %2\
-    /// %ret = %1 || %2
-    Or,
+    // /// AND %ret %1 %2\
+    // /// %ret = %1 && %2
+    // And,
+    // /// OR %ret %1 %2\
+    // /// %ret = %1 || %2
+    // Or,
+    /// INIT %v\
+    /// assert(%v != uninitialized)
+    Init,
     /// NON_NIL %v\
     /// assert(%v != nil)
     NonNil,

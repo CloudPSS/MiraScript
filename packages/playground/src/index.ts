@@ -1,4 +1,4 @@
-import { disassemble } from './disassembler';
+import { disassemble } from './vm/codegen.js';
 import * as monaco from './monaco';
 import { getCompileResult } from './monaco/mira/worker-helper';
 
