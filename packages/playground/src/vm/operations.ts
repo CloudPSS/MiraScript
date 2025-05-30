@@ -1,23 +1,20 @@
 import { VmError } from './error.js';
-import { VmExtern } from './extern.js';
-import { VmModule } from './module.js';
 import {
     isVmArray,
+    VmModule,
+    VmExtern,
     isVmRecord,
+    getVmFunctionInfo,
     type TypeName,
     type VmAny,
-    type VmArray,
     type VmConst,
     type VmImmutable,
     type VmRecord,
     type VmValue,
-} from './types.js';
-import { VmWrapper } from './wrapper.js';
+    isVmFunction,
+} from './types/index.js';
+import { VmWrapper } from './types/wrapper.js';
 
-/**
- * 将只读属性转换为可写属性
- */
-type Mutable<T> = { -readonly [K in keyof T]: T[K] };
 const { hasOwn, keys } = Object;
 const { isNaN } = Number;
 const { abs, min } = Math;
@@ -107,14 +104,17 @@ export const $Not = (a: VmAny): boolean => !$ToBool(a);
 export const $Init: (value: VmAny) => asserts value is VmValue = (value) => {
     if (value === undefined) throw new VmError(`Uninitialized value`);
 };
-export const $CallDyn = (func: (...args: unknown[]) => unknown, ...args: unknown[]): unknown => {
-    if (func instanceof VmExtern) {
-        func = func.value as unknown as (...args: unknown[]) => unknown;
+export const $CallDyn = (func: VmValue, args: readonly VmAny[]): VmValue => {
+    for (const a of args) {
+        $Init(a);
     }
-    if (typeof func != 'function') {
+    if (func instanceof VmExtern) {
+        return func.call(args as readonly VmValue[]) ?? null;
+    }
+    if (!isVmFunction(func)) {
         throw new TypeError(`Expected function, got ${$Type(func)}`);
     }
-    return func(...args) ?? null;
+    return func(...(args as readonly VmValue[])) ?? null;
 };
 export const $Type = (value: VmAny): TypeName => {
     if (value === undefined) return 'nil';
@@ -133,10 +133,18 @@ export const $ToBool = (value: VmAny): boolean => {
 /** 将值转为字符串 */
 function innerToString(value: VmAny): string {
     if (value == null) return 'nil';
-    if (value instanceof VmModule || value instanceof VmExtern) return value.toString();
-    if (Array.isArray(value)) return `[${value.map(innerToString).join(', ')}]`;
-    if (typeof value == 'object') return JSON.stringify(value);
-    if (typeof value == 'function') return `<function ${value.name}>`;
+    if (value instanceof VmWrapper) return value.toString();
+    if (typeof value == 'function') {
+        const name = getVmFunctionInfo(value)?.fullName;
+        return name ? `<function ${name}>` : `<function>`;
+    }
+    if (isVmArray(value)) return `[${value.map(innerToString).join(', ')}]`;
+    if (typeof value == 'object') {
+        const entries = keys(value).map(
+            (key) => `${key}: ${innerToString((value as Record<string, VmImmutable>)[key])}`,
+        );
+        return `(${entries.join(', ')})`;
+    }
     return String(value);
 }
 export const $ToString = (value: VmAny): string => {
@@ -157,44 +165,6 @@ export const $Get = (obj: VmAny, key: VmAny): VmValue => {
     if (!hasOwn(obj, pk)) return null;
     return (obj as Record<string, VmImmutable>)[pk] ?? null;
 };
-export const $ArrayRange = (start: VmAny, end: VmAny): VmArray => {
-    const arr = [];
-    const s = $ToNumber(start);
-    const e = $ToNumber(end);
-    for (let i = s; i <= e; i++) {
-        arr.push(i);
-    }
-    return arr;
-};
-export const $ArrayRangeExclusive = (start: VmAny, end: VmAny): VmArray => {
-    const arr = [];
-    const s = $ToNumber(start);
-    const e = $ToNumber(end);
-    for (let i = s; i < e; i++) {
-        arr.push(i);
-    }
-    return arr;
-};
-export const $ArraySpread = (array: VmAny): Iterable<VmValue> => {
-    $Init(array);
-    if (!isVmArray(array)) throw new VmError(`Expected array, got ${$Type(array)}`);
-    return array;
-};
-export const $ArrayFreeze = (array: Mutable<VmArray>): void => {
-    // Noop
-};
-export const $RecordSpread = (record: VmAny): VmRecord | null => {
-    $Init(record);
-    if (!isVmRecord(record)) return null;
-    return record;
-};
-export const $RecordFreeze = (record: Mutable<VmRecord>, optional: readonly string[]): void => {
-    for (const field of optional) {
-        if (record[field] == null) {
-            delete record[field];
-        }
-    }
-};
 export const $Iterable = (value: VmAny): Iterable<VmValue> => {
     $Init(value);
     if (value instanceof VmWrapper) return value.keys();
@@ -204,18 +174,14 @@ export const $Iterable = (value: VmAny): Iterable<VmValue> => {
     throw new VmError(`Value is not iterable`);
 };
 
-let cp = Number.NaN;
-let cpTimeout = 100; // Default timeout in milliseconds
-export const $Cp = (): void => {
-    if (!cp) {
-        cp = Date.now();
-    } else if (Date.now() - cp > cpTimeout) {
-        throw new VmError('Execution timeout');
-    }
+export const $RecordSpread = (record: VmAny): VmRecord | null => {
+    $Init(record);
+    if (!isVmRecord(record)) return null;
+    return record;
 };
-export const $ClearCp = (): void => {
-    cp = Number.NaN;
-};
-export const $ConfigCp = (timeout?: number): void => {
-    cpTimeout = timeout ?? 100;
+
+export const $ArraySpread = (array: VmAny): Iterable<VmValue> => {
+    $Init(array);
+    if (!isVmArray(array)) throw new VmError(`Expected array, got ${$Type(array)}`);
+    return array;
 };

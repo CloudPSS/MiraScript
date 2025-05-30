@@ -1,4 +1,4 @@
-import type { TypeName, VmAny, VmValue } from './types';
+import type { TypeName, VmAny, VmValue } from '.';
 import { VmWrapper } from './wrapper';
 
 const { hasOwn, keys } = Object;

@@ -1,8 +1,38 @@
-import { VmError } from './error';
-import type { TypeName, VmAny, VmValue } from './types';
-import { VmWrapper } from './wrapper';
+import { VmError } from '../error.js';
+import { isVmFunction, type TypeName, type VmAny, type VmModule, type VmValue } from './index.js';
+import { VmWrapper } from './wrapper.js';
 
 const { apply } = Reflect;
+
+/** 包装为 Mirascript 类型 */
+export function wrapToVmValue(value: unknown, caller: VmExtern | null): VmValue {
+    if (value == null) return null;
+    switch (typeof value) {
+        case 'function':
+            if (isVmFunction(value)) return value;
+            return new VmExtern(value);
+        case 'object':
+            if (value instanceof VmWrapper) return value as VmModule | VmExtern;
+            return new VmExtern(value, caller);
+        case 'string':
+        case 'number':
+        case 'boolean':
+            return value;
+        case 'bigint':
+            return Number(value);
+        case 'symbol':
+        case 'undefined':
+        default:
+            return null;
+    }
+}
+
+/** 取消 Mirascript 类型包装  */
+export function unwrapFromVmValue(value: VmAny): unknown {
+    if (value == null || typeof value != 'object') return value;
+    if (value instanceof VmExtern) return value.value;
+    return value;
+}
 
 /** 包装 Mirascript `extern` 类型的对象 */
 export class VmExtern<const T extends object = object> extends VmWrapper<T> {
@@ -29,27 +59,6 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
         return true;
     }
 
-    /** 包装获取的值 */
-    protected wrap(value: unknown): VmAny {
-        if (value == null) return value;
-        switch (typeof value) {
-            case 'function':
-                return new VmExtern(value, this);
-            case 'object':
-                return new VmExtern(value, null);
-            case 'string':
-            case 'number':
-            case 'boolean':
-                return value;
-            case 'bigint':
-                return Number(value);
-            case 'symbol':
-            case 'undefined':
-            default:
-                return null;
-        }
-    }
-
     /** @inheritdoc */
     override has(key: string): boolean {
         return this.access(key, true);
@@ -58,12 +67,12 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
     override get(key: string): VmAny {
         if (!this.has(key)) return undefined;
         const prop = (this.value as Record<string, unknown>)[key];
-        return this.wrap(prop);
+        return wrapToVmValue(prop, this);
     }
     /** Set a property on the object */
     set(key: string, value: VmValue): boolean {
         if (!this.access(key, false)) return false;
-        const prop = value instanceof VmWrapper ? value.value : value;
+        const prop = unwrapFromVmValue(value);
         (this.value as Record<string, unknown>)[key] = prop;
         return true;
     }
@@ -74,8 +83,9 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
             throw new VmError(`Not a callable extern`);
         }
         const caller = this.caller?.value ?? null;
-        const ret: unknown = apply(value, caller, args);
-        return this.wrap(ret);
+        const unwrappedArgs = args.map(unwrapFromVmValue);
+        const ret: unknown = apply(value, caller, unwrappedArgs);
+        return wrapToVmValue(ret, this);
     }
     /** @inheritdoc */
     override keys(): string[] {
@@ -96,6 +106,6 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
     }
     /** @inheritdoc */
     override describe(): string {
-        return Object.prototype.toString.call(this.value);
+        return Object.prototype.toString.call(this.value).slice(8, -1);
     }
 }

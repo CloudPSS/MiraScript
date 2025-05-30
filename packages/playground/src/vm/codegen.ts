@@ -1,7 +1,9 @@
 import { OpCode } from 'mira-wasm';
-import * as ENV from './operations.js';
-import { VmExtern } from './extern';
-import type { VmPrimitive } from './types';
+import { keys, values } from './env.js';
+import { type VmAny, type VmPrimitive, isVmPrimitive, VmExtern } from './types/index.js';
+import { clearCheckpoint } from './helpers.js';
+import { $ToString } from './operations.js';
+import { createGlobal } from './global.js';
 
 /** 将值转为 JS */
 function toJavascript(value: unknown): string {
@@ -14,22 +16,12 @@ function toJavascript(value: unknown): string {
 }
 
 /** 将值转为显示 */
-function print(value: unknown): string {
-    if (value === null) return 'null';
-    if (value === undefined) return 'undefined';
-    if (typeof value == 'object' || typeof value == 'string') {
-        if (value instanceof VmExtern) {
-            return `Extern ${print(value.value)}`;
-        }
-        if (value instanceof Error) {
-            return String(value);
-        }
-        if (Array.isArray(value)) {
-            return `[${value.map(print).join(', ')}]`;
-        }
-        return JSON.stringify(value);
-    }
-    return String(value);
+function print(value: VmAny | Error): string {
+    if (value === null) return 'nil';
+    if (value === undefined) return '<uninitialized>';
+    if (value instanceof Error) return value.toString();
+    if (isVmPrimitive(value)) return JSON.stringify(value);
+    return $ToString(value);
 }
 
 /** 反编译 */
@@ -42,21 +34,25 @@ export function disassemble(chunk: Uint8Array | undefined): string {
     console.log(code);
     let r;
     try {
-        // eslint-disable-next-line @typescript-eslint/no-implied-eval, @typescript-eslint/no-unsafe-call
-        const fn = new Function(...Object.keys(ENV), 'global', `let _; ${code}; return _;`)(...Object.values(ENV), {
-            if: 12,
+        const global = createGlobal({
+            array: [1, 2, 'x'],
             // eslint-disable-next-line no-console
             print: console.log,
+            now: new Date(),
             globalThis: new VmExtern(globalThis),
+            g: () => globalThis,
+            id: (v) => v,
             map: (
                 self: unknown[],
                 ...args: [callbackfn: (value: unknown, index: number, array: unknown[]) => unknown, thisArg?: unknown]
             ) => Array.prototype.map.apply(self, args),
-        }) as () => unknown;
-        ENV.$ClearCp();
+        });
+        // eslint-disable-next-line @typescript-eslint/no-implied-eval, @typescript-eslint/no-unsafe-call
+        const fn = new Function(...keys, 'global', `let _; ${code}; return _;`)(...values, global) as () => VmAny;
+        clearCheckpoint();
         r = fn();
     } catch (e) {
-        r = e;
+        r = e as Error;
     }
     return [
         `Chunk length: ${disassembler.chunkSize}`,
@@ -177,7 +173,7 @@ class Disassembler {
             }
             const index = this.codeOffset;
             this.codeOffset++;
-            const body = this.ident(-1) + `};`;
+            const body = this.ident(-1) + `});`;
             this.disassembly.push({
                 index,
                 opcode,
@@ -275,7 +271,7 @@ class Disassembler {
                     const field = read();
                     const value = read();
                     body = `${OpCode[opcode]} ${field} ${this.reg(value)}`;
-                    code = `[$ToString(${this.rv(field)})]: ${this.rv(value)},`;
+                    code = `[${this.rv(field)}]: ${this.rv(value)},`;
                     if (opcode === OpCode.FieldOptDyn) {
                         optional.push(this.rv(field));
                     }
@@ -301,7 +297,7 @@ class Disassembler {
                 case OpCode.Freeze: {
                     this.identCounter--;
                     body = `Freeze`;
-                    code = `}); $RecordFreeze(${this.rv(obj)}, [${optional.join(', ')}])`;
+                    code = optional.length ? `}); RecordFreeze(${this.rv(obj)}, [${optional.join(', ')}]);` : `});`;
                     break;
                 }
                 default: {
@@ -346,21 +342,21 @@ class Disassembler {
                     const start = read();
                     const end = read();
                     body = `ItemRange ${start} ${end}`;
-                    code = `...$ArrayRange(${start}, ${end}),`;
+                    code = `...ArrayRange(${start}, ${end}),`;
                     break;
                 }
                 case OpCode.ItemRangeDyn: {
                     const start = read();
                     const end = read();
                     body = `ItemRangeDyn ${this.reg(start)} ${this.reg(end)}`;
-                    code = `...$ArrayRange(${this.rv(start)}, ${this.rv(end)}),`;
+                    code = `...ArrayRange(${this.rv(start)}, ${this.rv(end)}),`;
                     break;
                 }
                 case OpCode.ItemRangeExclusiveDyn: {
                     const start = read();
                     const end = read();
                     body = `ItemRangeExclusiveDyn ${this.reg(start)} ${this.reg(end)}`;
-                    code = `...$ArrayRangeExclusive(${this.rv(start)}, ${this.rv(end)}),`;
+                    code = `...ArrayRangeExclusive(${this.rv(start)}, ${this.rv(end)}),`;
                     break;
                 }
                 case OpCode.Spread: {
@@ -372,7 +368,7 @@ class Disassembler {
                 case OpCode.Freeze: {
                     this.identCounter--;
                     body = `Freeze`;
-                    code = `]); $ArrayFreeze(${this.rv(arr)})`;
+                    code = `]);`;
                     break;
                 }
                 default: {
@@ -412,7 +408,7 @@ class Disassembler {
                 const argn = read();
                 const regn = read();
                 body = `${this.reg(reg)} = fn (${Array.from({ length: argn }, (_, i) => this.reg(i + 1)).join(', ')}) { maxreg ${regn}`;
-                code = `${this.wv(reg)} = (${Array.from({ length: argn }, (_, i) => this.wv(i + 1, -1)).join(', ')}) => { $Cp(); let ${Array.from({ length: regn - argn + 1 }, (_, i) => (i ? this.wv(i + argn, -1) : this.wv(0, -1))).join(', ')};`;
+                code = `${this.wv(reg)} = Function((${Array.from({ length: argn }, (_, i) => this.wv(i + 1, -1)).join(', ')}) => { Cp(); let ${Array.from({ length: regn - argn + 1 }, (_, i) => (i ? this.wv(i + argn, -1) : this.wv(0, -1))).join(', ')};`;
                 break;
             }
             case OpCode.Constant: {
@@ -432,7 +428,7 @@ class Disassembler {
             case OpCode.Return: {
                 reg = read();
                 body = `return ${this.reg(reg)}`;
-                code = `return ${this.rv(reg)};`;
+                code = `Cp(); return ${this.rv(reg)};`;
                 break;
             }
             case OpCode.Add:
@@ -472,7 +468,7 @@ class Disassembler {
                 const args = Array.from({ length: n }, (_, i) => read());
                 const funcName = this.constants[func];
                 body = `${this.reg(reg)} = ${OpCode[opcode]} ${funcName} (${args.map((a) => this.reg(a)).join(' ')})`;
-                code = `${this.wv(reg)} = $CallDyn($Get(global, ${funcName}), ${args.map((a) => this.rv(a)).join(', ')});`;
+                code = `${this.wv(reg)} = $CallDyn(global[${funcName}], [${args.map((a) => this.rv(a)).join(', ')}]);`;
                 break;
             }
             case OpCode.CallDyn: {
@@ -481,7 +477,7 @@ class Disassembler {
                 const n = read();
                 const args = Array.from({ length: n }, (_, i) => read());
                 body = `${this.reg(reg)} = ${OpCode[opcode]} ${this.reg(func)} (${args.map((a) => this.reg(a)).join(' ')})`;
-                code = `${this.wv(reg)} = $CallDyn(${this.rv(func)}, ${args.map((a) => this.rv(a)).join(', ')});`;
+                code = `${this.wv(reg)} = $CallDyn(${this.rv(func)}, [${args.map((a) => this.rv(a)).join(', ')}]);`;
                 break;
             }
             case OpCode.Assign: {
@@ -539,14 +535,14 @@ class Disassembler {
                 const i = read();
                 const c = this.constants[i];
                 body = `${this.reg(reg)} = ${OpCode[opcode]} ${i} ; ${c}`;
-                code = `${this.wv(reg)} = $Get(global, ${c});`;
+                code = `${this.wv(reg)} = global[${c}] ?? null;`;
                 break;
             }
             case OpCode.GetGlobalDyn: {
                 reg = read();
                 const name = read();
                 body = `${this.reg(reg)} = ${OpCode[opcode]} ${this.reg(name)}`;
-                code = `${this.wv(reg)} = $Get(global, ${this.rv(name)});`;
+                code = `${this.wv(reg)} = global[${this.rv(name)}] ?? null;`;
                 break;
             }
             case OpCode.GetUpvalue: {
@@ -617,12 +613,12 @@ class Disassembler {
                 const iterator = read();
                 const iterable = read();
                 body = `LoopFor ${this.reg(iterator)} ${this.reg(iterable)}`;
-                code = `for (${this.rv(iterator)} of $Iterable(${this.rv(iterable)})) { $Cp();`;
+                code = `for (${this.rv(iterator)} of $Iterable(${this.rv(iterable)})) { Cp();`;
                 break;
             }
             case OpCode.Loop: {
                 body = `Loop`;
-                code = `while (true) { $Cp();`;
+                code = `while (true) { Cp();`;
                 break;
             }
             case OpCode.Break: {

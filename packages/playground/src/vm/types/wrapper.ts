@@ -1,4 +1,4 @@
-import type { TypeName, VmAny } from './types.js';
+import type { TypeName, VmAny } from './index.js';
 
 /**
  * Mirascript 特殊值的包装器
