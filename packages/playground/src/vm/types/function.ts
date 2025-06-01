@@ -4,8 +4,11 @@ import type { VmAny, VmValue } from './index.js';
 
 const kVmFunction = Symbol.for('mirascript.vm.function');
 
+/** Mirascript 函数签名 */
+export type VmFunctionLike = (...args: VmValue[]) => VmAny;
+
 /** Mirascript 函数 */
-export type VmFunction = { (...args: VmValue[]): VmAny; readonly [kVmFunction]: VmFunctionInfo };
+export type VmFunction = VmFunctionLike & { readonly [kVmFunction]: VmFunctionInfo };
 
 /** Mirascript 函数信息 */
 export interface VmFunctionInfo {
@@ -36,7 +39,7 @@ export function getVmFunctionInfo(value: unknown): VmFunctionInfo | undefined {
 }
 
 /** 创建 Mirascript 函数 */
-export function VmFunction(fn: (...args: VmValue[]) => VmAny, option: VmFunctionOption = {}): VmFunction {
+export function VmFunction(fn: VmFunctionLike, option: VmFunctionOption = {}): VmFunction {
     if (typeof fn != 'function') throw new TypeError('Invalid function');
     if (isVmFunction(fn)) {
         // 如果已经是 VmFunction，则直接返回

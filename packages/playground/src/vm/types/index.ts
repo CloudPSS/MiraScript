@@ -97,4 +97,15 @@ export function isVmModule(value: unknown): value is VmModule {
     return value instanceof VmModule;
 }
 
+export {
+    type VmGlobal,
+    type VmSharedGlobal,
+    isVmGlobal,
+    defineVmGlobalFunction,
+    defineVmGlobalValue,
+    createVmGlobal,
+} from './global.js';
+
+export { type VmScript, isVmScript } from './script.js';
+
 export { isVmAny, isVmConst, isVmImmutable, isVmValue } from './checker.js';

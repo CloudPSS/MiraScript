@@ -1,6 +1,8 @@
-import { disassemble } from './vm/codegen.js';
+/* eslint-disable no-console */
 import * as monaco from './monaco';
-import { getCompileResult } from './monaco/mira/worker-helper';
+import { type VmAny, createVmGlobal, isVmPrimitive } from './vm/index.js';
+import { $ToString } from './vm/operations.js';
+import { transpile } from './transpiler';
 
 const elEditor = document.querySelector<HTMLDivElement>('#editor')!;
 const overlay = monaco.utils.createOverflowWidgetsDomNode(elEditor);
@@ -148,10 +150,29 @@ setTimeout(() => {
     });
 }, 1);
 
+/** 将值转为显示 */
+function print(value: VmAny | Error): string {
+    if (value === null) return 'nil';
+    if (value === undefined) return '<uninitialized>';
+    if (value instanceof Error) return value.toString();
+    if (isVmPrimitive(value)) return JSON.stringify(value);
+    return $ToString(value);
+}
+
 const elDisassembly = document.querySelector<HTMLDivElement>('#disassembly')!;
 elDisassembly.addEventListener('click', () => {
-    const result = getCompileResult(editor.getModel()!.uri);
-    if (!result) return;
-    const lines = disassemble(result.chunk);
-    elDisassembly.textContent = lines;
+    console.time('transpile');
+    void transpile(editor.getValue(), { pretty: true }).then((result) => {
+        console.timeEnd('transpile');
+        let content = result.toString();
+        try {
+            console.time('execute');
+            const ret = result(createVmGlobal());
+            console.timeEnd('execute');
+            content += `\nResult:\n  ${print(ret)}`;
+        } catch (ex) {
+            content += `\n${String(ex)}`;
+        }
+        elDisassembly.textContent = content;
+    });
 });

@@ -1,5 +1,6 @@
 import { VmError } from './error.js';
 import { $ToNumber } from './operations.js';
+import { createVmGlobal, type VmGlobal } from './types/global.js';
 import { VmFunction, type VmAny, type VmArray, type VmRecord } from './types/index.js';
 import type { Mutable } from './utils.js';
 
@@ -33,6 +34,7 @@ export const RecordFreeze = (record: Mutable<VmRecord>, optional: readonly strin
     }
 };
 
+let cpDepth = 0;
 let cp = Number.NaN;
 let cpTimeout = 100; // Default timeout in milliseconds
 /** 检查点 */
@@ -43,11 +45,27 @@ export function Cp(): void {
         throw new VmError('Execution timeout');
     }
 }
-/** 清除检查点超时时间 */
-export function clearCheckpoint(): void {
-    cp = Number.NaN;
+/** 检查点 */
+export function CpEnter(): void {
+    if (cpDepth <= 0) {
+        cp = Date.now();
+        cpDepth = 0;
+    }
+    cpDepth++;
+}
+/** 检查点 */
+export function CpExit(): void {
+    cpDepth--;
+    if (cpDepth <= 0) {
+        cp = Number.NaN;
+        cpDepth = 0;
+    }
 }
 /** 设置检查点超时时间 */
 export function configCheckpoint(timeout?: number): void {
     cpTimeout = timeout ?? 100;
+}
+/** 默认全局环境 */
+export function GlobalFallback(): VmGlobal {
+    return createVmGlobal();
 }

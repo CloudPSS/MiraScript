@@ -79,10 +79,17 @@ function isVmConstInner(value: unknown, depth: number): value is VmConst {
             return false; // Other types are not valid
     }
 }
+
 /**
  * 检查是否为 Mirascript 值语义值
- * @param value - 要检查的值
- * @param checkDeep - 是否深度检查数组和对象
+ */
+export function isVmConst(value: VmAny): value is VmConst;
+/**
+ * 检查是否为 Mirascript 值语义值
+ */
+export function isVmConst(value: unknown, checkDeep: boolean): value is VmConst;
+/**
+ * 检查是否为 Mirascript 值语义值
  */
 export function isVmConst(value: unknown, checkDeep = false): value is VmConst {
     switch (typeof value) {

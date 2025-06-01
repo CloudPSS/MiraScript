@@ -3,7 +3,7 @@ import { utils, editor, Uri } from '@private/monaco-editor';
 
 utils.registerWorker(
     'mirascript',
-    () => new Worker(new URL('./worker.js', import.meta.url), { name: '@mirascript/worker', type: 'module' }),
+    () => new Worker(new URL('./worker.js', import.meta.url), { name: '@mirascript/lsp-server', type: 'module' }),
 );
 
 /** 编译结果 */
@@ -16,7 +16,7 @@ export interface CompileResult {
 const compileResult = new Map<string, CompileResult>();
 const monacoWorker = editor.createWebWorker({
     label: 'mirascript',
-    moduleId: '@mirascript/worker',
+    moduleId: '@mirascript/lsp-server',
     createData: {},
     host: {
         updateCompileResult(uri, errors, chunk) {
