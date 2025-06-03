@@ -21,6 +21,6 @@ use opcode::Register;
 pub fn emit(script: &Script<'_>) -> (Vec<SourceError>, Box<[u8]>) {
     let mut emitter: Emitter<'_> = Emitter::new();
     let args = Some(vec![]);
-    emitter.emit_closure(Register::EMPTY, &args, &script.0, &script.1);
+    emitter.emit_fn(Register::EMPTY, &args, &script.0, &script.1);
     (emitter.errors, emitter.chunk.to_bytes())
 }

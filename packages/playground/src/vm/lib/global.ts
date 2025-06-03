@@ -1,7 +1,8 @@
 import { Cp } from '../helpers';
 import { $CallDyn, $ToNumber } from '../operations';
-import { isVmArray, isVmConst, type VmArray, type VmConst, type VmValue } from '../types';
+import { isVmArray, isVmConst, type VmArray, type VmConst, type VmValue } from '../types/index.js';
 import type { VmFunctionLike } from '../types/function.js';
+import { VmError } from '../error';
 
 /** Get the minimum and maximum numbers from the arguments. */
 function getMinMaxNumbers(args: VmValue[]): number[] {
@@ -21,7 +22,7 @@ export const min: VmFunctionLike = (...args) => {
 
 export const map: VmFunctionLike = (arr, fn) => {
     if (!isVmArray(arr)) {
-        throw new TypeError('First argument must be an array');
+        throw new VmError('First argument must be an array');
     }
     return arr.map((item: VmConst, index: number, arr: VmArray) => {
         Cp();
@@ -29,4 +30,11 @@ export const map: VmFunctionLike = (arr, fn) => {
         if (!isVmConst(ret)) return null;
         return ret;
     });
+};
+
+export const len: VmFunctionLike = (arr) => {
+    if (!isVmArray(arr)) {
+        throw new VmError('First argument must be an array');
+    }
+    return arr.length;
 };

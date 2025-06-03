@@ -1,5 +1,3 @@
-use std::ops::{Deref, DerefMut};
-
 use strum::{Display, VariantArray};
 #[cfg(feature = "wasm")]
 use wasm_bindgen::prelude::*;
@@ -208,11 +206,11 @@ pub enum OpCode {
     SliceExclusiveDyn,
 
     // control flow
-    /// LOOP\
-    /// loop {
+    /// LOOP `regn`\
+    /// loop { let %1, .. ,%regn;
     Loop = 0x60,
-    /// LOOP_FOR %iterator %iterable\
-    /// for %iterator in %iterable {
+    /// LOOP_FOR `regn` %iterable\
+    /// for %1 in %iterable { let %2, .. ,%regn;
     LoopFor,
     /// LOOP_END\
     /// }

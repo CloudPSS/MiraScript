@@ -139,6 +139,9 @@ class CodeGenerator {
             }
             this.codeOffset++;
             this.identCounter--;
+            if (end === OpCode.LoopEnd) {
+                this.closureCounter--;
+            }
             const body = this.ident() + `};`;
             this.codeLines.push(body);
             break;
@@ -445,7 +448,7 @@ class CodeGenerator {
                 reg = read();
                 const level = read();
                 const up = read();
-                code = `${this.rv(up, level)} = ${this.wv(reg)};`;
+                code = `${this.wv(up, level)} = ${this.rv(reg)};`;
                 break;
             }
             case OpCode.Record: {
@@ -489,13 +492,16 @@ class CodeGenerator {
                 break;
             }
             case OpCode.LoopFor: {
-                const iterator = read();
+                const nreg = read();
                 const iterable = read();
-                code = `for (${this.rv(iterator)} of $Iterable(${this.rv(iterable)})) { Cp();`;
+                const regs = Array.from({ length: nreg - 1 }, (_, i) => this.wv(i + 2, -1)).join(', ');
+                code = `for (let ${this.rv(1, -1)} of $Iterable(${this.rv(iterable)})) { Cp(); let _, ${regs};`;
                 break;
             }
             case OpCode.Loop: {
-                code = `while (true) { Cp();`;
+                const nreg = read();
+                const regs = Array.from({ length: nreg }, (_, i) => this.wv(i + 1, -1)).join(', ');
+                code = `while (true) { Cp(); let _, ${regs};`;
                 break;
             }
             case OpCode.Break: {
@@ -529,6 +535,7 @@ class CodeGenerator {
             case OpCode.Loop:
             case OpCode.LoopFor: {
                 this.identCounter++;
+                this.closureCounter++;
                 this.readBlockEnd(OpCode.LoopEnd);
                 break;
             }

@@ -77,6 +77,7 @@ impl<'s> Emitter<'s> {
                                 let up_reg = variable.register();
                                 let level = self.closures.len() - level;
                                 let ret = self.add_reg();
+                                self.op_get_upvalue(ret, level, up_reg);
                                 final_op = Some(Box::new(move |s| {
                                     s.op_set_upvalue(ret, level, up_reg);
                                 }));
@@ -157,7 +158,7 @@ impl<'s> Emitter<'s> {
                 let parser::Expression::Block(_, stmts, expr, _) = &**expression else {
                     unreachable!("Expected block expression");
                 };
-                self.emit_closure(func_reg, args, stmts, expr);
+                self.emit_fn(func_reg, args, stmts, expr);
                 false
             }
             Return(_, expression, _) => {
@@ -187,10 +188,12 @@ impl<'s> Emitter<'s> {
                 if let Some(expression) = expression {
                     self.enter_scope();
                     self.declare_expression(expression);
-                    self.emit_expression(expression, brk, Some(brk));
+                    let brk_ret = self.add_reg();
+                    self.emit_expression(expression, brk_ret, Some(brk));
+                    self.op_set_upvalue(brk_ret, 1, brk);
                     self.exit_scope();
                 } else if !brk.is_empty() {
-                    self.op_nil(brk);
+                    self.op_set_upvalue(Register::EMPTY, 1, brk);
                 }
                 self.op(OpCode::Break);
                 true
