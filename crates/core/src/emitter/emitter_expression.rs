@@ -1,17 +1,17 @@
 use crate::{
-    error::{ErrorCode, SourceError, SourceRange},
+    error::{ErrorCode, SourceError},
     lexer::{Keyword, Operator, TokenKind},
     parser::{
         self, ArrayElement, AstWalker, Callable,
         Expression::{self, *},
-        Iterable, Range, RecordElement, Statement,
+        Iterable, Range, RecordElement,
     },
 };
 
 use super::{
     Emitter, OpCode,
     opcode::{OpParam, Register},
-    variable::{BindType, Variable},
+    variable::BindType,
 };
 
 fn is_global_expression(expr: &Expression) -> bool {
@@ -90,12 +90,21 @@ impl<'s> Emitter<'s> {
             Unknown { .. } => (),
         }
     }
-    pub fn emit_expression_reg(&mut self, expr: &'s Expression<'s>, brk: Register) -> Register {
+    pub fn emit_expression_reg(
+        &mut self,
+        expr: &'s Expression<'s>,
+        brk: Option<Register>,
+    ) -> Register {
         let reg = self.add_reg();
         self.emit_expression(expr, reg, brk);
         reg
     }
-    pub fn emit_expression(&mut self, expr: &'s Expression<'s>, ret: Register, brk: Register) {
+    pub fn emit_expression(
+        &mut self,
+        expr: &'s Expression<'s>,
+        ret: Register,
+        brk: Option<Register>,
+    ) {
         match expr {
             Literal(token) => match &token.kind {
                 TokenKind::String(s) => self.op_string(ret, s.as_ref()),
@@ -493,7 +502,7 @@ impl<'s> Emitter<'s> {
                 let Expression::Block(_, stmts, expr, _) = expression.as_ref() else {
                     unreachable!("Expected block expression");
                 };
-                self.emit_block(stmts, expr, Register::EMPTY, ret);
+                self.emit_block(stmts, expr, Register::EMPTY, Some(ret));
                 self.op(OpCode::LoopEnd);
                 self.exit_scope();
             }
@@ -503,7 +512,7 @@ impl<'s> Emitter<'s> {
                 self.declare_expression(cond);
                 self.op_uninit(ret);
                 self.op(OpCode::Loop);
-                self.emit_expression(cond, cond_reg, ret);
+                self.emit_expression(cond, cond_reg, Some(ret));
                 self.op_if(OpCode::IfNot, cond_reg);
                 self.op(OpCode::Break);
                 self.op_if_end();
@@ -511,7 +520,7 @@ impl<'s> Emitter<'s> {
                 let Expression::Block(_, stmts, expr, _) = body.as_ref() else {
                     unreachable!("Expected block expression");
                 };
-                self.emit_block(stmts, expr, Register::EMPTY, ret);
+                self.emit_block(stmts, expr, Register::EMPTY, Some(ret));
 
                 self.op(OpCode::LoopEnd);
                 self.exit_scope();
@@ -521,7 +530,7 @@ impl<'s> Emitter<'s> {
                     let Expression::Block(_, stmts, expr, _) = else_expr.as_ref() else {
                         unreachable!("Expected block expression");
                     };
-                    self.emit_block(stmts, expr, ret, Register::EMPTY);
+                    self.emit_block(stmts, expr, ret, None);
                 } else {
                     self.op_nil(ret);
                 }
@@ -531,10 +540,10 @@ impl<'s> Emitter<'s> {
                 self.enter_scope();
                 self.declare_pattern(pattern, Some(BindType::Init));
                 let iterable_reg = match iterable.as_ref() {
-                    Iterable::Value(expr) => self.emit_expression_reg(expr, Register::EMPTY),
+                    Iterable::Value(expr) => self.emit_expression_reg(expr, None),
                     Iterable::Range(range) => {
-                        let start = self.emit_expression_reg(range.0.as_ref(), Register::EMPTY);
-                        let end = self.emit_expression_reg(range.2.as_ref(), Register::EMPTY);
+                        let start = self.emit_expression_reg(range.0.as_ref(), None);
+                        let end = self.emit_expression_reg(range.2.as_ref(), None);
                         let ret = self.add_reg();
                         self.op_1(OpCode::Array, ret);
                         self.op_2(
@@ -558,7 +567,7 @@ impl<'s> Emitter<'s> {
                 let Expression::Block(_, stmts, expr, _) = expression.as_ref() else {
                     unreachable!("Expected block expression");
                 };
-                self.emit_block(stmts, expr, Register::EMPTY, ret);
+                self.emit_block(stmts, expr, Register::EMPTY, Some(ret));
                 self.op(OpCode::LoopEnd);
                 self.exit_scope();
 
@@ -567,7 +576,7 @@ impl<'s> Emitter<'s> {
                     let Expression::Block(_, stmts, expr, _) = else_expr.as_ref() else {
                         unreachable!("Expected block expression");
                     };
-                    self.emit_block(stmts, expr, ret, Register::EMPTY);
+                    self.emit_block(stmts, expr, ret, None);
                 } else {
                     self.op_nil(ret);
                 }

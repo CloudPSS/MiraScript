@@ -29,7 +29,7 @@ impl<'s> Emitter<'s> {
             Empty(_) | Unknown { .. } => (),
         }
     }
-    pub fn emit_statement(&mut self, stmt: &'s Statement<'s>, brk: Register) -> bool {
+    pub fn emit_statement(&mut self, stmt: &'s Statement<'s>, brk: Option<Register>) -> bool {
         match stmt {
             Expression(expression, _) | BlockExpression(expression) => {
                 self.enter_scope();
@@ -174,7 +174,7 @@ impl<'s> Emitter<'s> {
                 true
             }
             Break(kw, expression, comma) => {
-                if brk.is_empty() {
+                let Some(brk) = brk else {
                     self.errors.push(SourceError::new(
                         SourceRange {
                             start: kw.range.start,
@@ -183,20 +183,20 @@ impl<'s> Emitter<'s> {
                         ErrorCode::UnexpectedBreakOutsideLoop,
                     ));
                     return false;
-                }
+                };
                 if let Some(expression) = expression {
                     self.enter_scope();
                     self.declare_expression(expression);
-                    self.emit_expression(expression, brk, brk);
+                    self.emit_expression(expression, brk, Some(brk));
                     self.exit_scope();
-                } else {
+                } else if !brk.is_empty() {
                     self.op_nil(brk);
                 }
                 self.op(OpCode::Break);
                 true
             }
             Continue(kw, comma) => {
-                if brk.is_empty() {
+                if brk.is_none() {
                     self.errors.push(SourceError::new(
                         SourceRange {
                             start: kw.range.start,

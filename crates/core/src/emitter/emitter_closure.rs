@@ -1,15 +1,13 @@
 use crate::{
-    error::{ErrorCode, SourceError},
-    lexer::{Token, TokenKind},
-    parser::{AstWalker, Expression, Script, Statement},
+    lexer::Token,
+    parser::{Expression, Statement},
 };
 
 use super::{
     Emitter, OpCode,
     closure::Closure,
     opcode::{OpParam, OpParamTrait, Register},
-    scope::Scope,
-    variable::{BindType, Variable},
+    variable::BindType,
 };
 
 impl<'s> Emitter<'s> {
@@ -30,7 +28,7 @@ impl<'s> Emitter<'s> {
         stmts: &'s Vec<Statement<'s>>,
         expr: &'s Option<Box<Expression<'s>>>,
         ret: Register,
-        brk: Register,
+        brk: Option<Register>,
     ) -> bool {
         for stmt in stmts {
             if matches!(stmt, Statement::Function(..)) {
@@ -104,7 +102,7 @@ impl<'s> Emitter<'s> {
         }
 
         let ret_reg = self.add_reg();
-        let never = self.emit_block(stmts, expr, ret_reg, Register::EMPTY);
+        let never = self.emit_block(stmts, expr, ret_reg, None);
         if !never {
             self.op_return(ret_reg);
         }
