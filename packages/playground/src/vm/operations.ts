@@ -5,9 +5,9 @@ import {
     VmExtern,
     isVmRecord,
     getVmFunctionInfo,
+    isVmPrimitive,
     type TypeName,
     type VmAny,
-    type VmConst,
     type VmImmutable,
     type VmRecord,
     type VmValue,
@@ -19,10 +19,10 @@ const { hasOwn, keys } = Object;
 const { isNaN } = Number;
 const { abs, min } = Math;
 const isSame = (a: VmValue, b: VmValue): boolean => {
-    // Check all primitive types, and fast path for reference equality
-    if (a === b) return true;
     // Check for NaN
     if (typeof a == 'number' && typeof b == 'number') return a === b || (isNaN(a) && isNaN(b));
+    // Check all primitive types, and fast path for reference equality
+    if (a === b) return true;
     // Any primitives arrive here are not equal
     if (typeof a != 'object' || typeof b != 'object') return false;
     // Handle nil values
@@ -90,7 +90,11 @@ export const $In = (value: VmAny, iterable: VmAny): boolean => {
     $Init(value);
     $Init(iterable);
     if (iterable == null) return false;
-    if (isVmArray(iterable)) return iterable.includes(value as VmConst);
+    if (isVmArray(iterable)) {
+        // JS %SameValueZero is same with `isSame` in this context
+        if (isVmPrimitive(value)) return iterable.includes(value);
+        return iterable.some((item) => isSame(item, value));
+    }
     if (iterable instanceof VmExtern) return iterable.has($ToString(value));
     if (typeof iterable == 'object') return hasOwn(iterable, $ToString(value));
     return false;

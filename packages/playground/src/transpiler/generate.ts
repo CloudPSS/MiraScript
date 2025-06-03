@@ -187,7 +187,7 @@ class CodeGenerator {
                     if (!field_name) throw new Error(`Unknown field ${field}`);
                     const value = read();
                     // Use computed property names to avoid prototype pollution
-                    code = `[${field_name}]: ${this.rv(value)},`;
+                    code = `[${field_name}]: Element(${this.rv(value)}),`;
                     if (opcode === OpCode.FieldOpt) {
                         optional.push(field_name);
                     }
@@ -197,7 +197,7 @@ class CodeGenerator {
                 case OpCode.FieldDyn: {
                     const field = read();
                     const value = read();
-                    code = `[${this.rv(field)}]: ${this.rv(value)},`;
+                    code = `[${this.rv(field)}]: Element(${this.rv(value)}),`;
                     if (opcode === OpCode.FieldOptDyn) {
                         optional.push(this.rv(field));
                     }
@@ -207,7 +207,7 @@ class CodeGenerator {
                 case OpCode.FieldIndex: {
                     const field = read();
                     const value = read();
-                    code = `[${field}]: ${this.rv(value)},`;
+                    code = `[${field}]: Element(${this.rv(value)}),`;
                     if (opcode === OpCode.FieldOptIndex) {
                         optional.push(this.rv(field));
                     }
@@ -248,7 +248,7 @@ class CodeGenerator {
             switch (opcode) {
                 case OpCode.Item: {
                     const value = read();
-                    code = `${this.rv(value)},`;
+                    code = `Element(${this.rv(value)}),`;
                     break;
                 }
                 case OpCode.ItemRange: {

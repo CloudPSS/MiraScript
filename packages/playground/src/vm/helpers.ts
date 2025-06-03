@@ -1,8 +1,14 @@
 import { VmError } from './error.js';
-import { $ToNumber } from './operations.js';
+import { $Init, $ToNumber } from './operations.js';
 import { createVmGlobal, type VmGlobal } from './types/global.js';
-import { VmFunction, type VmAny, type VmArray, type VmRecord } from './types/index.js';
+import { isVmConst, VmFunction, type VmConst, type VmAny, type VmArray, type VmRecord } from './types/index.js';
 import type { Mutable } from './utils.js';
+
+export const Element = (value: VmAny): VmConst => {
+    $Init(value);
+    if (!isVmConst(value)) return null;
+    return value;
+};
 
 export const Function = (fn: (...args: VmAny[]) => VmAny): VmFunction => {
     return VmFunction(fn, { isLib: false, injectCp: false });
