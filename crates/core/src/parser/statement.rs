@@ -2,7 +2,7 @@ use std::fmt::{self, Display, Formatter};
 
 use crate::{
     ansi::{DisplayIdent, GROUP, RECOVER, RESET},
-    error::{ErrorCode, SourceError, SourceRange},
+    diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
     lexer::Token,
 };
 
@@ -78,34 +78,34 @@ pub enum Statement<'s> {
     /// Unknown statement.
     Unknown {
         tokens: Vec<Token<'s>>,
-        errors: Vec<SourceError>,
+        errors: Vec<SourceDiagnostic>,
     },
 }
 
 impl<'s> Statement<'s> {
-    pub(crate) fn unknown<T: Into<Vec<Token<'s>>>>(tokens: T, error: ErrorCode) -> Self {
+    pub(crate) fn unknown<T: Into<Vec<Token<'s>>>>(tokens: T, error: DiagnosticCode) -> Self {
         let tokens = tokens.into();
         assert!(!tokens.is_empty());
         let mut range = tokens[0].range.clone();
         range.end = tokens.last().unwrap().range.end;
         Statement::Unknown {
             tokens,
-            errors: vec![SourceError::new(range, error)],
+            errors: vec![SourceDiagnostic::new(range, error)],
         }
     }
 
     pub(crate) fn unknown_range<T: Into<Vec<Token<'s>>>>(
         tokens: T,
         error_range: SourceRange,
-        error: ErrorCode,
+        error: DiagnosticCode,
     ) -> Self {
         Statement::Unknown {
             tokens: tokens.into(),
-            errors: vec![SourceError::new(error_range, error)],
+            errors: vec![SourceDiagnostic::new(error_range, error)],
         }
     }
 
-    pub(crate) fn unknown_errors<T: Into<Vec<Token<'s>>>, E: Into<Vec<SourceError>>>(
+    pub(crate) fn unknown_errors<T: Into<Vec<Token<'s>>>, E: Into<Vec<SourceDiagnostic>>>(
         tokens: T,
         errors: E,
     ) -> Self {

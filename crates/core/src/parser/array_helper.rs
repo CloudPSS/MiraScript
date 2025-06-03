@@ -6,7 +6,7 @@ use winnow::{
 };
 
 use crate::{
-    error::ErrorCode,
+    diagnostic::DiagnosticCode,
     lexer::{Keyword, Operator, Token, TokenKind},
 };
 
@@ -53,7 +53,7 @@ fn array_element<'t, 's: 't, E: Clone + PartialEq + 's>(
         {
             return Ok(result);
         }
-        let comma = token_or_insert(Operator::Comma, ErrorCode::MissingComma).parse_next(i)?;
+        let comma = token_or_insert(Operator::Comma, DiagnosticCode::MissingComma).parse_next(i)?;
         result.set_tail_comma(Box::new(comma));
         Ok(result)
     }
@@ -71,7 +71,7 @@ pub(super) fn array_base<'t, 's: 't, E: Clone + PartialEq + 's>(
     move |i: &mut Input<'t, 's>| {
         let open = token_boxed(Operator::OpenBracket).parse_next(i)?;
         let parts: Vec<_> = repeat(0.., array_element(element, range, spread)).parse_next(i)?;
-        let close = token_or_insert(Operator::CloseBracket, ErrorCode::MissingCloseBracket)
+        let close = token_or_insert(Operator::CloseBracket, DiagnosticCode::MissingCloseBracket)
             .map(Box::new)
             .parse_next(i)?;
         Ok((open, parts, close))

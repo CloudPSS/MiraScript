@@ -1,10 +1,10 @@
-import { editor, Uri, type IDisposable } from '@private/monaco-editor';
-import { callWorker, getCompileResult } from './worker-helper.js';
+import { editor, MarkerSeverity, Uri, type IDisposable } from '@private/monaco-editor';
+import { callWorker, Provider } from './worker-helper.js';
+import { DiagnosticCode } from 'mira-wasm';
 
-const errorMessages = new Map<number, string | undefined>();
+const errorMessages = new Map<DiagnosticCode, string | undefined>();
 /** 获取错误消息 */
-async function getErrorMessage(code: number): Promise<string | undefined> {
-    if (code < 0 || code >= 65536) return undefined;
+async function getErrorMessage(code: DiagnosticCode): Promise<string | undefined> {
     if (errorMessages.has(code)) return errorMessages.get(code);
     const message = await callWorker('get_error_message', code);
     errorMessages.set(code, message);
@@ -21,25 +21,25 @@ async function validate(model: editor.ITextModel): Promise<void> {
         editor.setModelMarkers(model, 'mirascript', []);
         return;
     }
-    const version = model.getVersionId();
-    try {
-        await callWorker('compile_script', model.uri);
-    } catch (ex) {
-        // eslint-disable-next-line no-console
-        console.error(ex);
-        return;
-    }
-    const result = getCompileResult(model.uri);
+    const result = await Provider.getCompileResult(model);
     if (!result) return;
-    const { errors } = result;
+    const { diagnostics, version } = result;
     const markers: editor.IMarkerData[] = [];
-    for (let i = 0; i < errors.length; i += 5) {
-        const startLineNumber = errors[i]!;
-        const startColumn = errors[i + 1]!;
-        const endLineNumber = errors[i + 2]!;
-        const endColumn = errors[i + 3]!;
-        const error = errors[i + 4]!;
-        const message = (await getErrorMessage(error)) ?? 'Unknown error';
+    for (const diagnostic of diagnostics) {
+        const { startLineNumber, startColumn, endLineNumber, endColumn, code } = diagnostic;
+        const message = (await getErrorMessage(code)) ?? 'Unknown error';
+        let severity: MarkerSeverity;
+        if (code > DiagnosticCode.ErrorStart && code < DiagnosticCode.ErrorEnd) {
+            severity = MarkerSeverity.Error;
+        } else if (code > DiagnosticCode.WarningStart && code < DiagnosticCode.WarningEnd) {
+            severity = MarkerSeverity.Warning;
+        } else if (code > DiagnosticCode.InfoStart && code < DiagnosticCode.InfoEnd) {
+            severity = MarkerSeverity.Info;
+        } else if (code > DiagnosticCode.HintStart && code < DiagnosticCode.HintEnd) {
+            severity = MarkerSeverity.Hint;
+        } else {
+            continue;
+        }
         markers.push({
             startLineNumber,
             startColumn,
@@ -47,11 +47,11 @@ async function validate(model: editor.ITextModel): Promise<void> {
             endColumn,
             message, //: `${message} (${startLineNumber}:${startColumn}-${endLineNumber}:${endColumn})`,
             modelVersionId: version,
-            severity: 8,
+            severity,
             source: 'mira',
             code: {
-                value: `${error}`,
-                target: Uri.parse(`https://mira.cloudpss.net/code/${error}`),
+                value: `${code}`,
+                target: Uri.parse(`https://mira.cloudpss.net/code/${code}`),
             },
         });
     }

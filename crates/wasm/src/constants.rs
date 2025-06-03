@@ -1,10 +1,10 @@
+use mira_core::diagnostic::DiagnosticCode;
 use strum::VariantNames;
 
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
-pub fn get_error_message(code: u16) -> Option<String> {
-    let code: mira_core::error::ErrorCode = code.try_into().ok()?;
+pub fn get_error_message(code: DiagnosticCode) -> Option<String> {
     code.message().to_string().into()
 }
 

@@ -1,7 +1,7 @@
 use std::ops::{Deref, DerefMut};
 
 use crate::{
-    error::{ErrorCode, SourceError},
+    diagnostic::{DiagnosticCode, SourceDiagnostic},
     lexer::{Operator, Token, TokenKind},
     parser::{Expression, Script, Statement},
 };
@@ -36,16 +36,16 @@ impl<'s> Scopes<'s> {
         self.current().find_variable(name)
     }
 
-    fn check_local_variable(&mut self, name: &str) -> Option<ErrorCode> {
+    fn check_local_variable(&mut self, name: &str) -> Option<DiagnosticCode> {
         let var = self.find_local_variable(name);
         var.map(|var| {
             if matches!(
                 var.bind_type(),
                 BindType::Parameter | BindType::RestParameter
             ) {
-                ErrorCode::DuplicateParameterDeclaration
+                DiagnosticCode::DuplicateParameterDeclaration
             } else {
-                ErrorCode::DuplicateVariableDeclaration
+                DiagnosticCode::DuplicateVariableDeclaration
             }
         })
     }
@@ -90,8 +90,8 @@ impl<'s> Emitter<'s> {
             return false;
         };
         if let Some(err) = self.scopes.check_local_variable(id) {
-            self.errors
-                .push(SourceError::new(id_token.range.clone(), err));
+            self.diagnostics
+                .push(SourceDiagnostic::new(id_token.range.clone(), err));
             return false;
         }
         self.declare_implicit_variable(id, mutable, bind_type);

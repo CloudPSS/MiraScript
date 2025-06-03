@@ -1,21 +1,27 @@
-use crate::error::SourceError;
+use crate::diagnostic::SourceDiagnostic;
 
-use super::{chunk::Chunk, closure::Closure, emitter_scope::Scopes, scope::Scope};
+use super::{chunk::Chunk, closure::Closure, emitter_scope::Scopes};
 
 pub(super) struct Emitter<'s> {
     pub chunk: Chunk<'s>,
     pub closures: Vec<Closure>,
     pub scopes: Scopes<'s>,
-    pub errors: Vec<SourceError>,
+    pub diagnostics: Vec<SourceDiagnostic>,
 }
 
-impl<'s> Emitter<'s> {
+impl Emitter<'_> {
     pub fn new() -> Self {
         Self {
             chunk: Chunk::new(),
             closures: vec![],
             scopes: Scopes::new(),
-            errors: vec![],
+            diagnostics: vec![],
         }
+    }
+}
+
+impl Default for Emitter<'_> {
+    fn default() -> Self {
+        Self::new()
     }
 }

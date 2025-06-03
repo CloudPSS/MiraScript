@@ -7,7 +7,7 @@ use winnow::prelude::*;
 use winnow::stream::Location;
 use winnow::token::{any, one_of};
 
-use crate::error::{ErrorCode, SourceRange};
+use crate::diagnostic::{DiagnosticCode, SourceRange};
 use crate::lexer::{Keyword, Operator, Token, TokenKind};
 
 use super::array_helper::array_base;
@@ -36,9 +36,9 @@ fn to_interpolate_expr(token: Token<'_>) -> Expression<'_> {
                 Err(_) => {
                     let last_token = tokens.last().unwrap();
                     let error = if *last_token == TokenKind::Eof {
-                        ErrorCode::UnterminatedInterpolation
+                        DiagnosticCode::UnterminatedInterpolation
                     } else {
-                        ErrorCode::BadInterpolation
+                        DiagnosticCode::BadInterpolation
                     };
                     Expression::unknown(tokens.clone(), error)
                 }
@@ -85,7 +85,7 @@ fn array<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
                             start: pos,
                             end: pos,
                         },
-                        ErrorCode::BadArraySpread,
+                        DiagnosticCode::BadArraySpread,
                     )
                 }
             })
@@ -118,7 +118,10 @@ fn pseudo_function<'t, 's: 't>(
         let provided = if extension_call { 1 } else { 0 };
         let (kw_type, open, (args, close)) = (
             token(Keyword::Type),
-            token_or_insert(Operator::OpenParen, ErrorCode::MissingOpenParenAfterType),
+            token_or_insert(
+                Operator::OpenParen,
+                DiagnosticCode::MissingOpenParenAfterType,
+            ),
             arg_list,
         )
             .parse_next(i)?;
@@ -129,7 +132,7 @@ fn pseudo_function<'t, 's: 't>(
                     start: kw_type.range.start,
                     end: close.range.end,
                 },
-                ErrorCode::InvalidTypeCall,
+                DiagnosticCode::InvalidTypeCall,
             )]
         } else {
             args
@@ -174,7 +177,7 @@ fn arg_list<'s>(i: &mut Input<'_, 's>) -> ModalResult<(Vec<Expression<'s>>, Box<
                 || *t == Operator::CloseBrace
                 || *t == Operator::CloseBracket
         })),
-        token_or_insert(Operator::CloseParen, ErrorCode::MissingCloseParen).map(Box::new),
+        token_or_insert(Operator::CloseParen, DiagnosticCode::MissingCloseParen).map(Box::new),
     )
     .parse_next(i)
 }
@@ -209,7 +212,7 @@ fn extension_call<'s>(i: &mut Input<'_, 's>) -> ModalResult<Call<'s>> {
             .with_taken()
             .map(|(r, t)| {
                 if r.is_record() {
-                    r.wrap_as_unknown(t, ErrorCode::RecordLiteralInExtensionCaller)
+                    r.wrap_as_unknown(t, DiagnosticCode::RecordLiteralInExtensionCaller)
                 } else {
                     r
                 }

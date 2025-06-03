@@ -1,5 +1,5 @@
 use crate::{
-    error::{ErrorCode, SourceError, SourceRange},
+    diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
     lexer::{Operator, TokenKind},
     parser::{
         self, Expression,
@@ -65,10 +65,13 @@ impl<'s> Emitter<'s> {
                         };
                         let var = self.scopes.find_variable(id);
                         if let Some((level, variable)) = var {
+                            let hint = variable.hint();
+                            self.diagnostics
+                                .push(SourceDiagnostic::new(id_token.range.clone(), hint));
                             if !variable.mutable() {
-                                self.errors.push(SourceError::new(
+                                self.diagnostics.push(SourceDiagnostic::new(
                                     id_token.range.clone(),
-                                    ErrorCode::ImmutableVariableAssignment,
+                                    DiagnosticCode::ImmutableVariableAssignment,
                                 ));
                                 Register::EMPTY
                             } else if level == self.closures.len() {
@@ -85,9 +88,9 @@ impl<'s> Emitter<'s> {
                                 ret
                             }
                         } else {
-                            self.errors.push(SourceError::new(
+                            self.diagnostics.push(SourceDiagnostic::new(
                                 id_token.range.clone(),
-                                ErrorCode::UndefinedVariableAssignment,
+                                DiagnosticCode::UndefinedVariableAssignment,
                             ));
                             Register::EMPTY
                         }
@@ -148,8 +151,8 @@ impl<'s> Emitter<'s> {
                 }
                 false
             }
-            Function(_, name, args, expression) => {
-                let TokenKind::Identifier(name) = &name.kind else {
+            Function(_, name_token, args, expression) => {
+                let TokenKind::Identifier(name) = &name_token.kind else {
                     unreachable!("Expected identifier token");
                 };
                 let func_var = self.scopes.find_local_variable(name).unwrap();
@@ -158,6 +161,15 @@ impl<'s> Emitter<'s> {
                 let parser::Expression::Block(_, stmts, expr, _) = &**expression else {
                     unreachable!("Expected block expression");
                 };
+                if args.is_none() {
+                    self.diagnostics.push(SourceDiagnostic::new(
+                        SourceRange {
+                            start: name_token.range.end,
+                            end: name_token.range.end,
+                        },
+                        DiagnosticCode::OmittedFunctionArgument,
+                    ));
+                }
                 self.emit_fn(func_reg, args, stmts, expr);
                 false
             }
@@ -176,12 +188,12 @@ impl<'s> Emitter<'s> {
             }
             Break(kw, expression, comma) => {
                 let Some(brk) = brk else {
-                    self.errors.push(SourceError::new(
+                    self.diagnostics.push(SourceDiagnostic::new(
                         SourceRange {
                             start: kw.range.start,
                             end: comma.range.end,
                         },
-                        ErrorCode::UnexpectedBreakOutsideLoop,
+                        DiagnosticCode::UnexpectedBreakOutsideLoop,
                     ));
                     return false;
                 };
@@ -200,12 +212,12 @@ impl<'s> Emitter<'s> {
             }
             Continue(kw, comma) => {
                 if brk.is_none() {
-                    self.errors.push(SourceError::new(
+                    self.diagnostics.push(SourceDiagnostic::new(
                         SourceRange {
                             start: kw.range.start,
                             end: comma.range.end,
                         },
-                        ErrorCode::UnexpectedContinueOutsideLoop,
+                        DiagnosticCode::UnexpectedContinueOutsideLoop,
                     ));
                     return false;
                 }

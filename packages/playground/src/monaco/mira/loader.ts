@@ -4,3 +4,4 @@ import './semantic-tokens-provider.js';
 import './formatter.js';
 import './code-action.js';
 import './diagnostics.js';
+import './inlay-hints-provider.js';

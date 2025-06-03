@@ -1,5 +1,5 @@
 use crate::{
-    error::{ErrorCode, SourceError},
+    diagnostic::{DiagnosticCode, SourceDiagnostic},
     lexer::TokenKind,
     parser::{
         Pattern::{self, *},
@@ -67,6 +67,9 @@ impl<'s> Emitter<'s> {
                 let var = self.scopes.find_variable(id);
                 if let Some((level, variable)) = var {
                     let bind = bind_type.is_some();
+                    let hint = variable.hint();
+                    self.diagnostics
+                        .push(SourceDiagnostic::new(id_token.range.clone(), hint));
                     let initialized = if bind {
                         variable.initialize();
                         true
@@ -74,15 +77,15 @@ impl<'s> Emitter<'s> {
                         variable.initialized()
                     };
                     if !variable.mutable() && !bind {
-                        self.errors.push(SourceError::new(
+                        self.diagnostics.push(SourceDiagnostic::new(
                             id_token.range.clone(),
-                            ErrorCode::ImmutableVariableAssignment,
+                            DiagnosticCode::ImmutableVariableAssignment,
                         ));
                     } else if level == self.closures.len() {
                         if !initialized {
-                            self.errors.push(SourceError::new(
+                            self.diagnostics.push(SourceDiagnostic::new(
                                 id_token.range.clone(),
-                                ErrorCode::UninitializedVariable,
+                                DiagnosticCode::UninitializedVariable,
                             ));
                         }
                         let register = variable.register();
@@ -93,9 +96,9 @@ impl<'s> Emitter<'s> {
                         self.op_set_upvalue(value, level, register);
                     }
                 } else {
-                    self.errors.push(SourceError::new(
+                    self.diagnostics.push(SourceDiagnostic::new(
                         id_token.range.clone(),
-                        ErrorCode::UndefinedVariableAssignment,
+                        DiagnosticCode::UndefinedVariableAssignment,
                     ));
                 }
             }

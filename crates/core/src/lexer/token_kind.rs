@@ -1,7 +1,7 @@
 use std::{borrow::Cow, fmt::Display};
 
 use crate::ansi::{DisplayIdent, INTERPOLATED, NUMBER, ORDINAL, RECOVER, RESET, STRING, VARIABLE};
-use crate::error::{ErrorCode, SourceError, SourceRange};
+use crate::diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange};
 
 use super::{Keyword, Operator, Token};
 
@@ -17,30 +17,30 @@ pub enum TokenKind<'s> {
     Keyword(Keyword),
     Unknown {
         recovered: Option<Box<TokenKind<'s>>>,
-        errors: Vec<SourceError>,
+        errors: Vec<SourceDiagnostic>,
     },
 }
 
 impl<'s> TokenKind<'s> {
-    pub(crate) fn unknown(error_range: SourceRange, error: ErrorCode) -> Self {
+    pub(crate) fn unknown(error_range: SourceRange, error: DiagnosticCode) -> Self {
         TokenKind::Unknown {
             recovered: None,
-            errors: vec![SourceError::new(error_range, error)],
+            errors: vec![SourceDiagnostic::new(error_range, error)],
         }
     }
 
     pub(crate) fn unknown_range<R: Into<TokenKind<'s>>>(
         recovered: R,
         error_range: SourceRange,
-        error: ErrorCode,
+        error: DiagnosticCode,
     ) -> Self {
         TokenKind::Unknown {
             recovered: Some(Box::new(recovered.into())),
-            errors: vec![SourceError::new(error_range, error)],
+            errors: vec![SourceDiagnostic::new(error_range, error)],
         }
     }
 
-    pub(crate) fn unknown_errors<E: Into<Vec<SourceError>>, R: Into<TokenKind<'s>>>(
+    pub(crate) fn unknown_errors<E: Into<Vec<SourceDiagnostic>>, R: Into<TokenKind<'s>>>(
         recovered: R,
         errors: E,
     ) -> Self {

@@ -16,12 +16,12 @@ export async function compile(code: string, _options: CompileOptions): Promise<[
     }
     const chunk = compile_script(code);
     try {
-        const errors = chunk.errors();
+        const diagnostics = chunk.diagnostics();
         const bytecode = chunk.chunk();
         if (bytecode == null) {
-            return [undefined, errors];
+            return [undefined, diagnostics];
         }
-        return [bytecode, errors];
+        return [bytecode, diagnostics];
     } finally {
         chunk.free();
     }

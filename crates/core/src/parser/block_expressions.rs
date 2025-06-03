@@ -2,7 +2,7 @@ use winnow::combinator::{alt, dispatch, fail, opt, peek, repeat, seq};
 use winnow::prelude::*;
 use winnow::token::any;
 
-use crate::error::{ErrorCode, SourceRange};
+use crate::diagnostic::{DiagnosticCode, SourceRange};
 use crate::lexer::{Keyword, Operator, Token, TokenKind};
 use crate::parser::helper::statements_and_expression;
 
@@ -39,9 +39,9 @@ pub(super) fn if_expression<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression
 
 pub(super) fn block_expression<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
     (
-        token_or_insert(Operator::OpenBrace, ErrorCode::MissingOpenBrace).map(Box::new),
+        token_or_insert(Operator::OpenBrace, DiagnosticCode::MissingOpenBrace).map(Box::new),
         statements_and_expression,
-        token_or_insert(Operator::CloseBrace, ErrorCode::MissingCloseBrace).map(Box::new),
+        token_or_insert(Operator::CloseBrace, DiagnosticCode::MissingCloseBrace).map(Box::new),
     )
         .map(|(open, (statements, expression), close)| {
             Expression::Block(open, statements, expression, close)
@@ -51,9 +51,9 @@ pub(super) fn block_expression<'s>(i: &mut Input<'_, 's>) -> ModalResult<Express
 
 pub(super) fn block_expression_no_expr<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
     (
-        token_or_insert(Operator::OpenBrace, ErrorCode::MissingOpenBrace).map(Box::new),
+        token_or_insert(Operator::OpenBrace, DiagnosticCode::MissingOpenBrace).map(Box::new),
         statements_and_expression,
-        token_or_insert(Operator::CloseBrace, ErrorCode::MissingCloseBrace).map(Box::new),
+        token_or_insert(Operator::CloseBrace, DiagnosticCode::MissingCloseBrace).map(Box::new),
     )
         .map(|(open, (mut statements, expr), close)| {
             if let Some(expr) = expr {
@@ -70,7 +70,7 @@ pub(super) fn block_expression_no_expr<'s>(i: &mut Input<'_, 's>) -> ModalResult
                         Box::new(Token::unknown(
                             pos.clone(),
                             Operator::Semicolon,
-                            ErrorCode::MissingSemicolon,
+                            DiagnosticCode::MissingSemicolon,
                         )),
                     ));
                 }
@@ -111,7 +111,7 @@ pub(super) fn match_expression<'s>(i: &mut Input<'_, 's>) -> ModalResult<Express
     seq!(Expression::Match(
         token_boxed(Keyword::Match),
         expression.map(Box::new),
-        token_or_insert(Operator::OpenBrace, ErrorCode::MissingOpenBrace).map(Box::new),
+        token_or_insert(Operator::OpenBrace, DiagnosticCode::MissingOpenBrace).map(Box::new),
         repeat(
             0..,
             alt((
@@ -123,13 +123,13 @@ pub(super) fn match_expression<'s>(i: &mut Input<'_, 's>) -> ModalResult<Express
                     block_expression,
                 ),
                 (
-                    token_or_insert(Keyword::Case, ErrorCode::MissingCase),
+                    token_or_insert(Keyword::Case, DiagnosticCode::MissingCase),
                     pattern(false),
                     block_expression,
                 ),
             ))
         ),
-        token_or_insert(Operator::CloseBrace, ErrorCode::MissingOpenBrace).map(Box::new),
+        token_or_insert(Operator::CloseBrace, DiagnosticCode::MissingOpenBrace).map(Box::new),
     ))
     .parse_next(i)
 }

@@ -3,18 +3,18 @@ use std::cell::RefCell;
 use winnow::ModalResult;
 use winnow::stream::{Location, Stream};
 
+use crate::diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange};
 use crate::emitter::emit;
-use crate::error::{ErrorCode, SourceError, SourceRange};
 use crate::lexer::{self, Token, TokenKind};
 use crate::parser::{self, AstWalker, walker_mut};
 
-type CompileResult<'s> = (Option<Box<[u8]>>, Vec<SourceError>);
+type CompileResult<'s> = (Option<Box<[u8]>>, Vec<SourceDiagnostic>);
 
 fn compile<'s>(
     input: &'s str,
     lexer: impl FnOnce(&mut lexer::Input<'s>) -> ModalResult<Vec<lexer::Token<'s>>>,
 ) -> CompileResult<'s> {
-    let mut error_collector: Vec<_> = vec![];
+    let mut diagnostics_collector: Vec<_> = vec![];
 
     // Lexing
     let tokens = {
@@ -34,8 +34,8 @@ fn compile<'s>(
                     end: input.len(),
                 }
             };
-            error_collector.push(SourceError::new(range, ErrorCode::LexerError));
-            return (None, error_collector);
+            diagnostics_collector.push(SourceDiagnostic::new(range, DiagnosticCode::LexerError));
+            return (None, diagnostics_collector);
         }
         result.unwrap()
     };
@@ -47,7 +47,7 @@ fn compile<'s>(
                 recovered: Some(token),
                 errors,
             } => {
-                error_collector.extend(errors);
+                diagnostics_collector.extend(errors);
                 Some(lexer::Token {
                     kind: *token,
                     range: t.range,
@@ -56,7 +56,7 @@ fn compile<'s>(
                 })
             }
             lexer::TokenKind::Unknown { errors, .. } => {
-                error_collector.extend(errors);
+                diagnostics_collector.extend(errors);
                 None
             }
             _ => Some(t),
@@ -81,15 +81,15 @@ fn compile<'s>(
                     end: remaining.last().unwrap().range.end,
                 }
             };
-            error_collector.push(SourceError::new(range, ErrorCode::ParserError));
-            return (None, error_collector);
+            diagnostics_collector.push(SourceDiagnostic::new(range, DiagnosticCode::ParserError));
+            return (None, diagnostics_collector);
         }
         result.unwrap()
     };
 
     // collect and recover from parsing errors
     {
-        let error_collector = RefCell::new(&mut error_collector);
+        let diagnostics_collector = RefCell::new(&mut diagnostics_collector);
         let mut w = walker_mut(
             |token| {
                 let Token {
@@ -101,7 +101,7 @@ fn compile<'s>(
                 else {
                     return;
                 };
-                error_collector.borrow_mut().extend(errors.drain(..));
+                diagnostics_collector.borrow_mut().extend(errors.drain(..));
                 if let Some(recovered) = std::mem::take(recovered) {
                     *token = Token {
                         kind: *recovered,
@@ -113,17 +113,17 @@ fn compile<'s>(
             },
             |expression| {
                 if let parser::Expression::Unknown { errors, .. } = expression {
-                    error_collector.borrow_mut().extend(errors.drain(..));
+                    diagnostics_collector.borrow_mut().extend(errors.drain(..));
                 }
             },
             |pattern| {
                 if let parser::Pattern::Unknown { errors, .. } = pattern {
-                    error_collector.borrow_mut().extend(errors.drain(..));
+                    diagnostics_collector.borrow_mut().extend(errors.drain(..));
                 }
             },
             |statement| {
                 if let parser::Statement::Unknown { errors, .. } = statement {
-                    error_collector.borrow_mut().extend(errors.drain(..));
+                    diagnostics_collector.borrow_mut().extend(errors.drain(..));
                 }
             },
         );
@@ -132,14 +132,14 @@ fn compile<'s>(
     }
 
     // Emitting
-    let (errors, bytecode) = emit(&script);
-    error_collector.extend(errors);
+    let (diagnostics, bytecode) = emit(&script);
+    diagnostics_collector.extend(diagnostics);
 
-    if error_collector.iter().any(|e| e.is_error()) {
-        return (None, error_collector);
+    if diagnostics_collector.iter().any(|e| e.is_error()) {
+        return (None, diagnostics_collector);
     }
 
-    (Some(bytecode), error_collector)
+    (Some(bytecode), diagnostics_collector)
 }
 
 #[allow(dead_code)]

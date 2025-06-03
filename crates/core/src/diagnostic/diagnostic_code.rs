@@ -4,12 +4,13 @@ use strum::{EnumMessage, FromRepr};
 use wasm_bindgen::prelude::*;
 
 #[cfg_attr(feature = "wasm", wasm_bindgen)]
-#[derive(Debug, Clone, Copy, PartialEq, EnumMessage, FromRepr)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, EnumMessage, FromRepr)]
 #[repr(u16)]
-pub enum ErrorCode {
+pub enum DiagnosticCode {
     // Internal error 1 ~ 999
+    ErrorStart = 0,
     #[strum(message = "Unknown internal error")]
-    InternalError = 0,
+    InternalError = 1,
 
     // Lexer error 1000 ~ 1999
     #[strum(message = "Unknown lexer error")]
@@ -113,6 +114,9 @@ pub enum ErrorCode {
     #[strum(message = "Unknown optimizer error")]
     OptimizerError = 4000,
 
+    ErrorEnd = 9999,
+    WarningStart = 10000,
+
     // Lexer warning 11000 ~ 11999
     #[strum(message = "Unknown lexer warning")]
     LexerWarning = 11000,
@@ -128,6 +132,9 @@ pub enum ErrorCode {
     // Optimizer warning 14000 ~ 14999
     #[strum(message = "Unknown optimizer warning")]
     OptimizerWarning = 14000,
+
+    WarningEnd = 19999,
+    InfoStart = 20000,
 
     // Lexer info 21000 ~ 21999
     #[strum(message = "Unknown lexer info")]
@@ -145,6 +152,9 @@ pub enum ErrorCode {
     #[strum(message = "Unknown optimizer info")]
     OptimizerInfo = 24000,
 
+    InfoEnd = 29999,
+    HintStart = 30000,
+
     // Lexer hint 31000 ~ 31999
     #[strum(message = "Unknown lexer hint")]
     LexerHint = 31000,
@@ -161,6 +171,9 @@ pub enum ErrorCode {
     #[strum(message = "Unknown optimizer hint")]
     OptimizerHint = 34000,
 
+    HintEnd = 39999,
+    ReferenceStart = 40000,
+
     // Lexer reference 41000 ~ 41999
     #[strum(message = "Unknown lexer reference")]
     LexerReference = 41000,
@@ -176,29 +189,38 @@ pub enum ErrorCode {
     // Optimizer reference 44000 ~ 44999
     #[strum(message = "Unknown optimizer reference")]
     OptimizerReference = 44000,
+
+    ReferenceEnd = 49999,
+
+    // Tags 50000 ~ 50999
+    GlobalVariable = 50000,
+    LocalImmutable,
+    LocalVariable,
+    LocalFunction,
+    OmittedFunctionArgument,
 }
 
-impl From<ErrorCode> for u16 {
-    fn from(val: ErrorCode) -> Self {
+impl From<DiagnosticCode> for u16 {
+    fn from(val: DiagnosticCode) -> Self {
         val.code()
     }
 }
 
-impl TryInto<ErrorCode> for u16 {
+impl TryInto<DiagnosticCode> for u16 {
     type Error = ();
 
-    fn try_into(self) -> Result<ErrorCode, Self::Error> {
-        ErrorCode::from_repr(self).ok_or(())
+    fn try_into(self) -> Result<DiagnosticCode, Self::Error> {
+        DiagnosticCode::from_repr(self).ok_or(())
     }
 }
 
-impl ErrorCode {
+impl DiagnosticCode {
     pub fn code(&self) -> u16 {
         *self as u16
     }
 
     pub fn from_code(code: u16) -> Option<Self> {
-        ErrorCode::from_repr(code)
+        DiagnosticCode::from_repr(code)
     }
 
     pub fn message(&self) -> &'static str {
@@ -222,27 +244,27 @@ impl ErrorCode {
     }
 
     pub fn is_error(&self) -> bool {
-        self.code() < 10000
+        *self > DiagnosticCode::ErrorStart && *self < DiagnosticCode::ErrorEnd
     }
 
     pub fn is_warning(&self) -> bool {
-        self.code() >= 10000 && self.code() < 20000
+        *self >= DiagnosticCode::WarningStart && *self < DiagnosticCode::WarningEnd
     }
 
     pub fn is_info(&self) -> bool {
-        self.code() >= 20000 && self.code() < 30000
+        *self >= DiagnosticCode::InfoStart && *self < DiagnosticCode::InfoEnd
     }
 
     pub fn is_hint(&self) -> bool {
-        self.code() >= 30000 && self.code() < 40000
+        *self >= DiagnosticCode::HintStart && *self < DiagnosticCode::HintEnd
     }
 
     pub fn is_reference(&self) -> bool {
-        self.code() >= 40000 && self.code() < 50000
+        *self >= DiagnosticCode::ReferenceStart && *self < DiagnosticCode::ReferenceEnd
     }
 }
 
-impl Display for ErrorCode {
+impl Display for DiagnosticCode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(self.message())
     }

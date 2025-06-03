@@ -7,7 +7,7 @@ use winnow::{
 };
 
 use crate::{
-    error::{ErrorCode, SourceRange},
+    diagnostic::{DiagnosticCode, SourceRange},
     lexer::{Keyword, Operator, Token, TokenKind},
 };
 
@@ -38,7 +38,7 @@ fn unknown_pattern<'s>(i: &mut Input<'_, 's>) -> ModalResult<Pattern<'s>> {
             || *t == Operator::OpenParen
             || *t == Operator::CloseParen
     })
-    .map(|t: &[Token<'s>]| Pattern::unknown(t, ErrorCode::UnknownPattern))
+    .map(|t: &[Token<'s>]| Pattern::unknown(t, DiagnosticCode::UnknownPattern))
     .parse_next(i)
 }
 
@@ -53,7 +53,7 @@ pub(super) fn pattern_or_insert<'t, 's: 't>(
                 Pattern::unknown_range(
                     vec![],
                     SourceRange { start, end: start },
-                    ErrorCode::PatternExpected,
+                    DiagnosticCode::PatternExpected,
                 )
             }),
         ))
@@ -134,12 +134,12 @@ fn constants_pattern<'s>(i: &mut Input<'_, 's>) -> ModalResult<Pattern<'s>> {
             };
             if *op == Operator::Exclamation {
                 return Pattern::Constant(None, Box::from(l.clone()))
-                    .wrap_as_unknown([op.to_owned(), l], ErrorCode::ExclamationInConstantsPattern);
+                    .wrap_as_unknown([op.to_owned(), l], DiagnosticCode::ExclamationInConstantsPattern);
             }
             if !(l.is_number() || l.is_ordinal() || l == Keyword::Inf) {
                 return Pattern::Constant(None, Box::from(l.clone())).wrap_as_unknown(
                     [op.to_owned(), l.clone()],
-                    ErrorCode::UnexpectedOperatorInConstantsPattern,
+                    DiagnosticCode::UnexpectedOperatorInConstantsPattern,
                 );
             }
             Pattern::Constant(Some(op.to_owned().into()), Box::new(l.clone()))
@@ -180,14 +180,14 @@ fn discard_bind_pattern<'t, 's: 't>(
         (opt(token_boxed(Keyword::Mut)), variable_token(true, false))
             .map(|(kw_mut, id)| {
                 if rebind && kw_mut.is_some() {
-                    let kw_mut = kw_mut.unwrap().wrap_as_unknown(ErrorCode::MutInBindPattern);
+                    let kw_mut = kw_mut.unwrap().wrap_as_unknown(DiagnosticCode::MutInBindPattern);
                     return Pattern::Bind(Some(Box::new(kw_mut)), Box::new(id));
                 }
                 if id.kind == Keyword::Underscore {
                     if kw_mut.is_some() {
                         return Pattern::unknown(
                             vec![*kw_mut.unwrap(), id],
-                            ErrorCode::MutInDiscardPattern,
+                            DiagnosticCode::MutInDiscardPattern,
                         );
                     }
                     Pattern::Discard(Box::new(id))
@@ -211,7 +211,7 @@ fn pattern_spread<'t, 's: 't>(
                 }
                 let p = p.unwrap();
                 if p.is_discard() {
-                    p.wrap_as_unknown(t, ErrorCode::DiscardInSpreadPattern)
+                    p.wrap_as_unknown(t, DiagnosticCode::DiscardInSpreadPattern)
                 } else {
                     p
                 }
@@ -230,7 +230,7 @@ fn record_like_pattern<'t, 's: 't>(
                 if p.is_bind() || p.is_unknown() {
                     p
                 } else {
-                    p.wrap_as_unknown(t, ErrorCode::BadOmitKeyRecordPattern)
+                    p.wrap_as_unknown(t, DiagnosticCode::BadOmitKeyRecordPattern)
                 }
             })
             .parse_next(i)
@@ -252,7 +252,7 @@ fn record_like_pattern<'t, 's: 't>(
     move |i: &mut Input<'_, 's>| {
         let (open, parts, close) = record_base(
             pattern_or_insert(rebind),
-            |t| Pattern::unknown([t.to_owned()], ErrorCode::InterpolatedNameRecordPattern),
+            |t| Pattern::unknown([t.to_owned()], DiagnosticCode::InterpolatedNameRecordPattern),
             omit_named,
             unnamed,
             pattern_spread(rebind),
@@ -280,7 +280,7 @@ fn array_pattern<'t, 's: 't>(
             .with_taken()
             .map(|(p, t)| {
                 if matches!(p, Pattern::Range(..)) {
-                    p.wrap_as_unknown(t, ErrorCode::AmbiguousRangePattern)
+                    p.wrap_as_unknown(t, DiagnosticCode::AmbiguousRangePattern)
                 } else {
                     p
                 }

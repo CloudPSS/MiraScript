@@ -3,7 +3,7 @@ use winnow::combinator::{alt, dispatch, eof, fail, opt, peek, preceded};
 use winnow::prelude::*;
 use winnow::token::{any, take};
 
-use crate::error::{ErrorCode, SourceError};
+use crate::diagnostic::{DiagnosticCode, SourceDiagnostic};
 
 use super::identifier::{identifier, is_identifier_special, is_identifier_start};
 use super::numeric::{number, ordinal};
@@ -117,7 +117,7 @@ pub(super) fn token<'s>(
             eof.map(|_| TokenKind::Eof),
             any.span().map(|range| TokenKind::Unknown {
                 recovered: None,
-                errors: vec![SourceError::new(range, ErrorCode::UnknownToken)],
+                errors: vec![SourceDiagnostic::new(range, DiagnosticCode::UnknownToken)],
             }),
         ))
         .with_span()

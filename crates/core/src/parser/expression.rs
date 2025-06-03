@@ -2,7 +2,7 @@ use std::fmt::{self, Display, Formatter};
 
 use crate::{
     ansi::{DisplayIdent, GROUP, INTERPOLATED, RECOVER, RESET, STRING},
-    error::{ErrorCode, SourceError, SourceRange},
+    diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
     lexer::{Token, TokenKind},
 };
 
@@ -222,7 +222,7 @@ pub enum Expression<'s> {
     Unknown {
         expression: Option<Box<Expression<'s>>>,
         tokens: Vec<Token<'s>>,
-        errors: Vec<SourceError>,
+        errors: Vec<SourceDiagnostic>,
     },
 }
 
@@ -230,7 +230,7 @@ impl<'s> Expression<'s> {
     pub(crate) fn wrap_as_unknown<T: Into<Vec<Token<'s>>>>(
         self,
         tokens: T,
-        error: ErrorCode,
+        error: DiagnosticCode,
     ) -> Self {
         let tokens = tokens.into();
         assert!(!tokens.is_empty());
@@ -239,7 +239,7 @@ impl<'s> Expression<'s> {
         Expression::Unknown {
             expression: Some(Box::new(self)),
             tokens,
-            errors: vec![SourceError::new(range, error)],
+            errors: vec![SourceDiagnostic::new(range, error)],
         }
     }
 
@@ -255,7 +255,7 @@ impl<'s> Expression<'s> {
         )
     }
 
-    pub(crate) fn unknown<T: Into<Vec<Token<'s>>>>(tokens: T, error: ErrorCode) -> Self {
+    pub(crate) fn unknown<T: Into<Vec<Token<'s>>>>(tokens: T, error: DiagnosticCode) -> Self {
         let tokens = tokens.into();
         assert!(!tokens.is_empty());
         let mut range = tokens[0].range.clone();
@@ -263,22 +263,22 @@ impl<'s> Expression<'s> {
         Expression::Unknown {
             expression: None,
             tokens,
-            errors: vec![SourceError::new(range, error)],
+            errors: vec![SourceDiagnostic::new(range, error)],
         }
     }
     pub(crate) fn unknown_range<T: Into<Vec<Token<'s>>>>(
         tokens: T,
         error_range: SourceRange,
-        error: ErrorCode,
+        error: DiagnosticCode,
     ) -> Self {
         Expression::Unknown {
             expression: None,
             tokens: tokens.into(),
-            errors: vec![SourceError::new(error_range, error)],
+            errors: vec![SourceDiagnostic::new(error_range, error)],
         }
     }
 
-    pub(crate) fn unknown_errors<T: Into<Vec<Token<'s>>>, E: Into<Vec<SourceError>>>(
+    pub(crate) fn unknown_errors<T: Into<Vec<Token<'s>>>, E: Into<Vec<SourceDiagnostic>>>(
         tokens: T,
         errors: E,
     ) -> Self {

@@ -4,8 +4,8 @@ use compile::compile_script;
 
 mod ansi;
 mod compile;
+mod diagnostic;
 mod emitter;
-mod error;
 mod lexer;
 mod parser;
 

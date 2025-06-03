@@ -2,7 +2,7 @@ use winnow::combinator::{alt, dispatch, fail, opt, peek, seq};
 use winnow::prelude::*;
 use winnow::token::{any, one_of};
 
-use crate::error::{ErrorCode, SourceRange};
+use crate::diagnostic::{DiagnosticCode, SourceRange};
 use crate::lexer::{Keyword, Operator, Token, TokenKind};
 
 use super::block_expressions::*;
@@ -12,7 +12,7 @@ use super::patterns::{pattern, pattern_or_insert};
 use super::{Input, Statement};
 
 fn semicolon<'s>(i: &mut Input<'_, 's>) -> ModalResult<Box<Token<'s>>> {
-    token_or_insert(Operator::Semicolon, ErrorCode::MissingSemicolon)
+    token_or_insert(Operator::Semicolon, DiagnosticCode::MissingSemicolon)
         .map(Box::new)
         .parse_next(i)
 }
@@ -38,7 +38,7 @@ fn fn_statement<'s>(i: &mut Input<'_, 's>) -> ModalResult<Statement<'s>> {
                         end: kw.range.end,
                     },
                     TokenKind::Identifier("<name>".into()),
-                    ErrorCode::MissingFunctionName,
+                    DiagnosticCode::MissingFunctionName,
                 )
             }));
             Statement::Function(kw, name, params, body)
@@ -76,7 +76,7 @@ fn bind_statement<'s>(i: &mut Input<'_, 's>) -> ModalResult<Statement<'s>> {
     seq!(Statement::Bind(
         token_boxed(Keyword::Let),
         pattern_or_insert(false).map(Box::new),
-        token_or_insert(Operator::Equal, ErrorCode::MissingBindOperator).map(Box::new),
+        token_or_insert(Operator::Equal, DiagnosticCode::MissingBindOperator).map(Box::new),
         expression.map(Box::new),
         semicolon,
     ))
@@ -131,7 +131,7 @@ fn expression_statement<'s>(i: &mut Input<'_, 's>) -> ModalResult<Statement<'s>>
 }
 
 fn unknown_statement<'s>(i: &mut Input<'_, 's>) -> ModalResult<Statement<'s>> {
-    fail.map(|t: &[Token<'s>]| Statement::unknown(t, ErrorCode::UnknownStatement))
+    fail.map(|t: &[Token<'s>]| Statement::unknown(t, DiagnosticCode::UnknownStatement))
         .parse_next(i)
 }
 

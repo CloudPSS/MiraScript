@@ -1,42 +1,42 @@
 use std::{error::Error, fmt::Display, ops::Deref};
 
-mod error_code;
+mod diagnostic_code;
 
-pub use error_code::ErrorCode;
+pub use diagnostic_code::DiagnosticCode;
 pub type SourceRange = std::ops::Range<usize>;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct SourceError {
+pub struct SourceDiagnostic {
     pub range: SourceRange,
-    pub error: ErrorCode,
+    pub error: DiagnosticCode,
 }
 
-impl SourceError {
-    pub fn new(range: SourceRange, error: ErrorCode) -> Self {
-        SourceError { range, error }
+impl SourceDiagnostic {
+    pub fn new(range: SourceRange, error: DiagnosticCode) -> Self {
+        SourceDiagnostic { range, error }
     }
 }
 
-impl Display for SourceError {
+impl Display for SourceDiagnostic {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "Error at {}:{}: {}",
+            "at {}:{}: {}",
             self.range.start, self.range.end, self.error
         )
     }
 }
 
-impl Error for SourceError {
+impl Error for SourceDiagnostic {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         None
     }
 }
 
-impl Deref for SourceError {
-    fn deref(&self) -> &ErrorCode {
+impl Deref for SourceDiagnostic {
+    fn deref(&self) -> &DiagnosticCode {
         &self.error
     }
 
-    type Target = ErrorCode;
+    type Target = DiagnosticCode;
 }

@@ -1,5 +1,5 @@
 use crate::{
-    error::{ErrorCode, SourceError},
+    diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
     lexer::{Keyword, Operator, TokenKind},
     parser::{
         self, ArrayElement, AstWalker, Callable,
@@ -150,23 +150,26 @@ impl<'s> Emitter<'s> {
             Variable(token) => {
                 let TokenKind::Identifier(id) = &token.kind else {
                     if token.kind == Keyword::Global {
-                        self.errors.push(SourceError::new(
+                        self.diagnostics.push(SourceDiagnostic::new(
                             token.range.clone(),
-                            ErrorCode::MisuseOfGlobalKeyword,
+                            DiagnosticCode::MisuseOfGlobalKeyword,
                         ));
                     }
                     return;
                 };
                 let var = self.scopes.find_variable(id);
                 if let Some((level, variable)) = var {
+                    let register = variable.register();
+                    let hint = variable.hint();
+                    self.diagnostics
+                        .push(SourceDiagnostic::new(token.range.clone(), hint));
                     if level == self.closures.len() {
                         if !variable.initialized() {
-                            self.errors.push(SourceError::new(
+                            self.diagnostics.push(SourceDiagnostic::new(
                                 token.range.clone(),
-                                ErrorCode::UninitializedVariable,
+                                DiagnosticCode::UninitializedVariable,
                             ));
                         }
-                        let register = variable.register();
                         self.op_unary(ret, OpCode::Assign, register);
                     } else {
                         let up_reg = variable.register();
@@ -273,9 +276,9 @@ impl<'s> Emitter<'s> {
                                 None
                             };
                             let Some(id) = id else {
-                                self.errors.push(SourceError::new(
+                                self.diagnostics.push(SourceDiagnostic::new(
                                     expression.range(),
-                                    ErrorCode::BadOmitKeyRecordExpression,
+                                    DiagnosticCode::BadOmitKeyRecordExpression,
                                 ));
                                 return;
                             };
@@ -653,10 +656,19 @@ impl<'s> Emitter<'s> {
                 self.op_if_end();
             }
             Match(token, expression, token1, items, token2) => todo!(),
-            Function(_, args, expression) => {
+            Function(kw, args, expression) => {
                 let parser::Expression::Block(_, stmts, expr, _) = &**expression else {
                     unreachable!("Expected block expression");
                 };
+                if args.is_none() {
+                    self.diagnostics.push(SourceDiagnostic::new(
+                        SourceRange {
+                            start: kw.range.end,
+                            end: kw.range.end,
+                        },
+                        DiagnosticCode::OmittedFunctionArgument,
+                    ));
+                }
                 self.emit_fn(ret, args, stmts, expr);
             }
             Unknown { .. } => {

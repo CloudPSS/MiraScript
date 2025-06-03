@@ -7,7 +7,7 @@ use winnow::stream::Location;
 
 use crate::{
     ansi::DisplayIdent,
-    error::{ErrorCode, SourceError, SourceRange},
+    diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
 };
 
 use super::{TokenKind, Trivia};
@@ -45,7 +45,7 @@ impl DerefMut for Token<'_> {
 }
 
 impl<'s> Token<'s> {
-    pub(crate) fn wrap_as_unknown(self, error: ErrorCode) -> Self {
+    pub(crate) fn wrap_as_unknown(self, error: DiagnosticCode) -> Self {
         Token {
             kind: TokenKind::unknown_range(self.kind, self.range.clone(), error),
             range: self.range,
@@ -57,7 +57,7 @@ impl<'s> Token<'s> {
     pub(crate) fn unknown<R: Into<TokenKind<'s>>>(
         range: SourceRange,
         recovered: R,
-        error: ErrorCode,
+        error: DiagnosticCode,
     ) -> Self {
         Token {
             range: range.clone(),
@@ -70,7 +70,7 @@ impl<'s> Token<'s> {
         token_range: SourceRange,
         recovered: R,
         error_range: SourceRange,
-        error: ErrorCode,
+        error: DiagnosticCode,
     ) -> Self {
         Token {
             range: token_range,
@@ -80,7 +80,7 @@ impl<'s> Token<'s> {
         }
     }
 
-    pub(crate) fn unknown_errors<E: Into<Vec<SourceError>>, R: Into<TokenKind<'s>>>(
+    pub(crate) fn unknown_errors<E: Into<Vec<SourceDiagnostic>>, R: Into<TokenKind<'s>>>(
         range: SourceRange,
         recovered: R,
         errors: E,

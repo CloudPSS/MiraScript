@@ -1,5 +1,7 @@
 use std::borrow::Cow;
 
+use crate::diagnostic::DiagnosticCode;
+
 use super::opcode::Register;
 
 /// Represents the type of binding for a variable.
@@ -58,5 +60,15 @@ impl<'s> Variable<'s> {
 
     pub fn register(&self) -> Register {
         self.register
+    }
+
+    pub fn hint(&self) -> DiagnosticCode {
+        if matches!(self.bind_type, BindType::Func) {
+            return DiagnosticCode::LocalFunction;
+        }
+        if !self.mutable {
+            return DiagnosticCode::LocalImmutable;
+        }
+        DiagnosticCode::LocalVariable
     }
 }

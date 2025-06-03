@@ -3,7 +3,7 @@ use winnow::prelude::*;
 use winnow::token::take_till;
 
 use crate::{
-    error::ErrorCode,
+    diagnostic::DiagnosticCode,
     lexer::{Keyword, Operator, Token, TokenKind},
 };
 
@@ -30,7 +30,7 @@ fn unknown_expression<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> 
             || *t == Operator::OpenParen
             || *t == Operator::CloseParen
     })
-    .map(|t: &[Token<'s>]| Expression::unknown(t, ErrorCode::UnknownExpression))
+    .map(|t: &[Token<'s>]| Expression::unknown(t, DiagnosticCode::UnknownExpression))
     .parse_next(i)
 }
 

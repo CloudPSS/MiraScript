@@ -4,7 +4,7 @@ use winnow::prelude::*;
 use winnow::stream::Location;
 use winnow::token::{any, one_of};
 
-use crate::error::{ErrorCode, SourceRange};
+use crate::diagnostic::{DiagnosticCode, SourceRange};
 use crate::lexer::{Keyword, Operator, Token, TokenKind};
 
 use super::statements::statement;
@@ -93,9 +93,9 @@ pub(super) fn variable_token<'t, 's: 't>(
         .map(|t: &Token<'s>| t.to_owned())
         .parse_next(i)?;
         let e = if !include_underscore && t == Keyword::Underscore {
-            Token::unknown(t.range, t.kind, ErrorCode::UnexpectedUnderscore)
+            Token::unknown(t.range, t.kind, DiagnosticCode::UnexpectedUnderscore)
         } else if !include_global && t == Keyword::Global {
-            Token::unknown(t.range, t.kind, ErrorCode::UnexpectedGlobal)
+            Token::unknown(t.range, t.kind, DiagnosticCode::UnexpectedGlobal)
         } else {
             t.to_owned()
         };
@@ -124,7 +124,7 @@ pub(super) fn token_boxed<'t, 's: 't>(
 
 pub(super) fn token_or_insert<'t, 's: 't, T>(
     token: T,
-    error: ErrorCode,
+    error: DiagnosticCode,
 ) -> impl Parser<Input<'t, 's>, Token<'s>, ErrMode<ContextError>>
 where
     T: Into<TokenKind<'s>> + Clone,

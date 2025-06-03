@@ -6,7 +6,7 @@ use winnow::{
     token::{one_of, take_while},
 };
 
-use crate::error::{ErrorCode, SourceRange};
+use crate::diagnostic::{DiagnosticCode, SourceRange};
 
 use super::identifier::is_identifier_continue;
 use super::{Input, TokenKind};
@@ -109,14 +109,14 @@ pub(super) fn number<'s>(i: &mut Input<'s>) -> ModalResult<TokenKind<'s>> {
                         return Ok(TokenKind::unknown_range(
                             result,
                             range_i,
-                            ErrorCode::InvalidNumberLiteral,
+                            DiagnosticCode::InvalidNumberLiteral,
                         ));
                     }
                     if p.has_trailing_underscore {
                         return Ok(TokenKind::unknown_range(
                             result,
                             range_i,
-                            ErrorCode::InvalidNumberLiteralUnderscore,
+                            DiagnosticCode::InvalidNumberLiteralUnderscore,
                         ));
                     }
                     return Ok(result);
@@ -180,14 +180,14 @@ pub(super) fn number<'s>(i: &mut Input<'s>) -> ModalResult<TokenKind<'s>> {
                 return Ok(TokenKind::unknown_range(
                     TokenKind::Number(parsed_num),
                     range,
-                    ErrorCode::InvalidNumberLiteral,
+                    DiagnosticCode::InvalidNumberLiteral,
                 ));
             }
             if has_leading_underscore || has_trailing_underscore {
                 return Ok(TokenKind::unknown_range(
                     TokenKind::Number(parsed_num),
                     range,
-                    ErrorCode::InvalidNumberLiteralUnderscore,
+                    DiagnosticCode::InvalidNumberLiteralUnderscore,
                 ));
             }
             Ok(TokenKind::Number(parsed_num))
@@ -205,10 +205,10 @@ fn handle_ordinal(bytes: &[u8], range: SourceRange) -> TokenKind<'_> {
         TokenKind::Number(p.number)
     };
     if p.has_invalid_char {
-        return TokenKind::unknown_range(result, range, ErrorCode::InvalidNumberLiteral);
+        return TokenKind::unknown_range(result, range, DiagnosticCode::InvalidNumberLiteral);
     }
     if p.has_leading_underscore || p.has_trailing_underscore {
-        return TokenKind::unknown_range(result, range, ErrorCode::InvalidNumberLiteralUnderscore);
+        return TokenKind::unknown_range(result, range, DiagnosticCode::InvalidNumberLiteralUnderscore);
     }
     result
 }

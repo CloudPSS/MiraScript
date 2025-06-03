@@ -6,7 +6,7 @@ use winnow::{
 };
 
 use crate::{
-    error::ErrorCode,
+    diagnostic::DiagnosticCode,
     lexer::{Keyword, Operator, Token, TokenKind},
 };
 
@@ -82,7 +82,7 @@ fn record_element<'t, 's: 't, E: Clone + PartialEq + 's, I: Clone + PartialEq + 
         {
             return Ok(result);
         }
-        let comma = token_or_insert(Operator::Comma, ErrorCode::MissingComma).parse_next(i)?;
+        let comma = token_or_insert(Operator::Comma, DiagnosticCode::MissingComma).parse_next(i)?;
         result.set_tail_comma(Box::new(comma));
         Ok(result)
     }
@@ -110,7 +110,7 @@ pub(super) fn record_base<'t, 's: 't, E: Clone + PartialEq + 's, I: Clone + Part
             record_element(named, interpolate_name, omit_named, unnamed, spread),
         )
         .parse_next(i)?;
-        let close = token_or_insert(Operator::CloseParen, ErrorCode::MissingCloseParen)
+        let close = token_or_insert(Operator::CloseParen, DiagnosticCode::MissingCloseParen)
             .map(Box::new)
             .parse_next(i)?;
         Ok((open, parts, close))

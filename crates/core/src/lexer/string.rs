@@ -9,7 +9,7 @@ use winnow::{
 };
 
 use crate::{
-    error::{ErrorCode, SourceError, SourceRange},
+    diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
     lexer::{Input, Operator, Token, TokenKind},
 };
 
@@ -60,12 +60,12 @@ pub(super) fn string_content<'s>(
         }
         let mut errors = vec![];
         if unterminated {
-            errors.push(SourceError::new(
+            errors.push(SourceDiagnostic::new(
                 SourceRange {
                     start: i.previous_token_end(),
                     end: i.previous_token_end(),
                 },
-                ErrorCode::UnterminatedString,
+                DiagnosticCode::UnterminatedString,
             ));
         }
         let has_interpolation = content
@@ -78,7 +78,7 @@ pub(super) fn string_content<'s>(
             let s = &i[range.clone()];
             i.reset(&cp);
             range.start -= 1;
-            errors.push(SourceError::new(range, ErrorCode::InvalidEscapeSequence));
+            errors.push(SourceDiagnostic::new(range, DiagnosticCode::InvalidEscapeSequence));
             Cow::Borrowed(s)
         };
         let token = if has_interpolation {

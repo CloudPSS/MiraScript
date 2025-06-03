@@ -1,4 +1,4 @@
-use crate::{error::SourceError, parser::Script};
+use crate::{diagnostic::SourceDiagnostic, parser::Script};
 
 mod chunk;
 mod closure;
@@ -18,9 +18,9 @@ use emitter_struct::Emitter;
 pub use opcode::OpCode;
 use opcode::Register;
 
-pub fn emit(script: &Script<'_>) -> (Vec<SourceError>, Box<[u8]>) {
+pub fn emit(script: &Script<'_>) -> (Vec<SourceDiagnostic>, Box<[u8]>) {
     let mut emitter: Emitter<'_> = Emitter::new();
     let args = Some(vec![]);
     emitter.emit_fn(Register::EMPTY, &args, &script.0, &script.1);
-    (emitter.errors, emitter.chunk.to_bytes())
+    (emitter.diagnostics, emitter.chunk.to_bytes())
 }

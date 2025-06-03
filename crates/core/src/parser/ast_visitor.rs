@@ -3,7 +3,7 @@ use std::{
     ops::{Deref, DerefMut},
 };
 
-use crate::{error::SourceRange, lexer::Token};
+use crate::{diagnostic::SourceRange, lexer::Token};
 
 use super::{Expression, Pattern, Statement};
 
