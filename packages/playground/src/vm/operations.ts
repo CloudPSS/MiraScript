@@ -112,7 +112,7 @@ export const $CallDyn = (func: VmValue, args: readonly VmAny[]): VmValue => {
     for (const a of args) {
         $Init(a);
     }
-    if (func instanceof VmExtern && func.callable()) {
+    if (func instanceof VmExtern && func.callable) {
         return func.call(args as readonly VmValue[]) ?? null;
     }
     if (isVmFunction(func)) {
