@@ -60,6 +60,7 @@ export function CpEnter(): void {
 }
 /** 检查点 */
 export function CpExit(): void {
+    Cp();
     cpDepth--;
     if (cpDepth <= 0) {
         cp = Number.NaN;
