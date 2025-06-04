@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 import * as monaco from './monaco';
-import { type VmAny, createVmGlobal, isVmPrimitive } from './vm/index.js';
+import { type VmAny, VmExtern, createVmGlobal, isVmPrimitive } from './vm/index.js';
 import { $ToString } from './vm/operations.js';
 import { transpile } from './transpiler';
 
@@ -167,7 +167,7 @@ elDisassembly.addEventListener('click', () => {
         let content = result.toString();
         try {
             console.time('execute');
-            const ret = result(createVmGlobal());
+            const ret = result(createVmGlobal({ globalThis, e: new VmExtern([1, 2, [1, 2], { x: 0 }]) }));
             console.timeEnd('execute');
             content += `\nResult:\n  ${print(ret)}`;
         } catch (ex) {

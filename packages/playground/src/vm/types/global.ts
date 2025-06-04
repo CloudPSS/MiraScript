@@ -47,5 +47,6 @@ export function createVmGlobal(
 
 /** 检查是否为全局环境 */
 export function isVmGlobal(global: unknown): global is VmGlobal {
+    if (global == null || typeof global != 'object') return false;
     return getPrototypeOf(global) === VmSharedGlobal;
 }

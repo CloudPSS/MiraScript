@@ -1,8 +1,11 @@
-import { VmFunction } from '../types';
+import { VmFunction } from '../types/index.js';
 import { VmSharedGlobal } from '../types/global';
 
 import * as global from './global.js';
+import type { VmFunctionLike } from '../types/function.js';
 
 for (const [name, value] of Object.entries(global)) {
-    VmSharedGlobal[name] = VmFunction(value, { isLib: true, fullName: `global.${name}` });
+    if (typeof value == 'function') {
+        VmSharedGlobal[name] = VmFunction(value as VmFunctionLike, { isLib: true, fullName: `global.${name}` });
+    }
 }

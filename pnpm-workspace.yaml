@@ -1,3 +1,5 @@
 packages:
   - packages/*
   - crates/wasm/pkg
+onlyBuiltDependencies:
+  - esbuild

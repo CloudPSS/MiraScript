@@ -56,7 +56,7 @@ export interface VmValueMap {
  */
 export function isVmArray(value: VmAny): value is VmArray {
     if (!isArray(value)) return false;
-    value satisfies VmArray;
+    value as VmArray satisfies VmArray;
     return true;
 }
 

@@ -154,7 +154,7 @@ function innerToString(value: VmAny): string {
 export const $ToString = (value: VmAny): string => {
     $Init(value);
     if (value === null) return '';
-    if (Array.isArray(value)) return value.map(innerToString).join(', ');
+    if (isVmArray(value)) return value.map(innerToString).join(', ');
     return innerToString(value);
 };
 export const $ToNumber = Number;
@@ -180,8 +180,8 @@ export const $Iterable = (value: VmAny): Iterable<VmValue> => {
 
 export const $RecordSpread = (record: VmAny): VmRecord | null => {
     $Init(record);
-    if (!isVmRecord(record)) return null;
-    return record;
+    if (record == null || isVmRecord(record)) return record;
+    throw new VmError(`Expected record or nil, got ${$Type(record)}`);
 };
 
 export const $ArraySpread = (array: VmAny): Iterable<VmValue> => {
