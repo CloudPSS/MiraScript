@@ -115,21 +115,21 @@ function mapImpl(
     throw new VmError('First argument must be primitive, array, record, or extern', null);
 }
 
-export const map: VmFunctionLike = (data, fn) => {
-    return mapImpl(data, 'f', fn, (fn, value, key, data) => {
+export const map: VmFunctionLike = (data, f) => {
+    return mapImpl(data, 'f', f, (fn, value, key, data) => {
         return $CallDyn(fn, [value, key, data]);
     });
 };
 
-export const filter: VmFunctionLike = (data, fn) => {
-    return mapImpl(data, 'predicate', fn, (fn, value, key, data) => {
+export const filter: VmFunctionLike = (data, predicate) => {
+    return mapImpl(data, 'predicate', predicate, (fn, value, key, data) => {
         const ret = $CallDyn(fn, [value, key, data]);
         return $ToBool(ret) ? value : undefined;
     });
 };
 
-export const filter_map: VmFunctionLike = (data, fn) => {
-    return mapImpl(data, 'f', fn, (fn, value, key, data) => {
+export const filter_map: VmFunctionLike = (data, f) => {
+    return mapImpl(data, 'f', f, (fn, value, key, data) => {
         const ret = $CallDyn(fn, [value, key, data]);
         return ret ?? undefined;
     });
@@ -159,3 +159,6 @@ export const from_json: VmFunctionLike = (json, fallback) => {
         rethrowError('Invalid JSON', ex, fallback ?? null);
     }
 };
+
+const { PI, E } = Math;
+export { PI as '@pi', E as '@e' };

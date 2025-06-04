@@ -71,13 +71,23 @@ impl<'s> Variable<'s> {
     }
 
     pub fn hint(&self) -> DiagnosticCode {
-        if matches!(self.bind_type, BindType::Func) {
-            return DiagnosticCode::LocalFunction;
-        }
         if !self.mutable {
-            return DiagnosticCode::LocalImmutable;
+            match self.bind_type {
+                BindType::Let => DiagnosticCode::LocalImmutable,
+                BindType::Init => DiagnosticCode::LocalImmutable,
+                BindType::Func => DiagnosticCode::LocalFunction,
+                BindType::Parameter => DiagnosticCode::ParameterImmutable,
+                BindType::RestParameter => DiagnosticCode::ParameterImmutableRest,
+            }
+        } else {
+            match self.bind_type {
+                BindType::Let => DiagnosticCode::LocalMutable,
+                BindType::Init => DiagnosticCode::LocalMutable,
+                BindType::Func => DiagnosticCode::LocalFunction,
+                BindType::Parameter => DiagnosticCode::ParameterMutable,
+                BindType::RestParameter => DiagnosticCode::ParameterMutableRest,
+            }
         }
-        DiagnosticCode::LocalMutable
     }
 
     pub fn mark_used(&mut self) {

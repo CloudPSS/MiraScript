@@ -200,7 +200,7 @@ pub enum DiagnosticCode {
 
     // Tags 50000 ~ 50999
     GlobalVariable = 50000,
-    GlobalFunction,
+    GlobalDynamicAccess,
 
     LocalImmutable,
     LocalMutable,

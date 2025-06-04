@@ -15,9 +15,9 @@ function identifierCases(
         '@constantKeywords': { ...data, token: `constant.language.$${capture}` },
         '@controlKeywords': { ...data, token: `keyword.control.$${capture}` },
         '@keywords': { ...data, token: `keyword.$${capture}` },
-        '@type': { ...data, token: `type.$${capture}` },
-        '[@]+.*': { ...data, token: `variable.other.constant.$${capture}` },
-        '@default': { ...data, token: `${defaultToken}.$${capture}` },
+        '@type': { ...data, token: `type` },
+        '[@]+.*': { ...data, token: `variable.other.constant` },
+        '@default': { ...data, token: defaultToken },
     };
 }
 
@@ -46,6 +46,23 @@ async function getTokensProvider(): Promise<languages.IMonarchLanguage> {
         tokenizer: {
             root: [[/[[\](){}]/gu, '@brackets'], { include: '@common' }],
             common: [
+                [
+                    /(\0\(parameter\))(\s*)(..|)(\s*)(mut)(\s+)(@identifier)/g,
+                    ['entity.name.label', '', 'operator.spread-range', '', 'keyword.mut', '', 'variable.emphasis'],
+                ],
+                [
+                    /(\0\(parameter\))(\s*)(..|)(\s*)(@identifier)/g,
+                    ['entity.name.label', '', 'operator.spread-range', '', 'variable.other.constant.emphasis'],
+                ],
+                [/(\0\(@identifier\))/g, 'entity.name.label'],
+                [
+                    /(let)(\s+)(@identifier)/g,
+                    ['constant.language', '', { cases: identifierCases(3, undefined, 'variable.other.constant') }],
+                ],
+                [
+                    /(let)(\s+)(mut)(\s+)(@identifier)/g,
+                    ['constant.language', '', 'keyword.mut', '', { cases: identifierCases(3, undefined, 'variable') }],
+                ],
                 [
                     /(@identifier)(@whitespace*)(\?:|:)(?!:)/gu,
                     [

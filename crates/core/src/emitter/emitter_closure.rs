@@ -75,13 +75,13 @@ impl<'s> Emitter<'s> {
             for arg in args {
                 if arg.is_identifier() {
                     self.declare_variable(arg, false, BindType::Parameter);
-                    self.diagnostics.push(SourceDiagnostic::new(
-                        arg.range(),
-                        DiagnosticCode::ParameterImmutable,
-                    ));
                 } else {
                     self.declare_implicit_variable("<unnamed param>", false, BindType::Parameter);
                 }
+                self.diagnostics.push(SourceDiagnostic::new(
+                    arg.range(),
+                    DiagnosticCode::ParameterImmutable,
+                ));
             }
         } else {
             self.declare_implicit_variable("it", false, BindType::Parameter);

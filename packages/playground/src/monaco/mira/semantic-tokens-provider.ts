@@ -1,14 +1,16 @@
 import { type CancellationToken, type editor, languages } from '@private/monaco-editor';
 import { Provider } from './worker-helper';
 import { DiagnosticCode } from 'mira-wasm';
+import { VmSharedGlobal } from '../../vm/types/global.js';
+import { isVmFunction } from '../../vm';
 
 /** @inheritdoc */
 class DocumentSemanticTokensProvider extends Provider implements languages.DocumentSemanticTokensProvider {
     /** @inheritdoc */
     getLegend(): languages.SemanticTokensLegend {
         return {
-            tokenTypes: ['variable', 'entity.name.function', 'variable.other.constant', 'support.type.property-name'],
-            tokenModifiers: [],
+            tokenTypes: ['', 'variable', 'entity.name.function', 'variable.other.constant'],
+            tokenModifiers: ['strong', 'emphasis', 'underline', 'strikethrough'],
         };
     }
     /** @inheritdoc */
@@ -28,28 +30,41 @@ class DocumentSemanticTokensProvider extends Provider implements languages.Docum
         const data = [];
         for (const diagnostic of compiled.diagnostics) {
             let tokenType = -1;
+            let tokenModifiers = 0;
             const { code } = diagnostic;
             // eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check
             switch (code) {
-                // case DiagnosticCode.GlobalVariable:
+                case DiagnosticCode.GlobalVariable: {
+                    const id = model.getValueInRange(diagnostic);
+                    tokenType = id.startsWith('@') ? 3 : isVmFunction(VmSharedGlobal[id]) ? 2 : 1;
+                    break;
+                }
                 case DiagnosticCode.ParameterMutable:
                 case DiagnosticCode.ParameterMutableRest:
                 case DiagnosticCode.LocalMutable: {
-                    tokenType = 0;
+                    tokenType = 1;
                     break;
                 }
-                // case DiagnosticCode.GlobalFunction:
                 case DiagnosticCode.LocalFunction: {
-                    tokenType = 1;
+                    tokenType = 2;
                     break;
                 }
                 case DiagnosticCode.ParameterImmutable:
                 case DiagnosticCode.ParameterImmutableRest:
                 case DiagnosticCode.LocalImmutable:
                 case DiagnosticCode.RecordFieldIdName: {
-                    tokenType = 2;
+                    tokenType = 3;
                     break;
                 }
+            }
+            if (tokenType < 0) continue;
+            if (
+                code === DiagnosticCode.ParameterImmutable ||
+                code === DiagnosticCode.ParameterImmutableRest ||
+                code === DiagnosticCode.ParameterMutable ||
+                code === DiagnosticCode.ParameterMutableRest
+            ) {
+                tokenModifiers |= 1 << 1;
             }
             const { startLineNumber, startColumn, endColumn } = diagnostic;
             const length = endColumn - startColumn;
@@ -58,6 +73,7 @@ class DocumentSemanticTokensProvider extends Provider implements languages.Docum
                 col: startColumn - 1,
                 length,
                 tokenType,
+                tokenModifiers,
             });
         }
         data.sort((a, b) => {
@@ -77,7 +93,7 @@ class DocumentSemanticTokensProvider extends Provider implements languages.Docum
                     col -= prev.col;
                 }
             }
-            bin.set([row, col, current.length, current.tokenType], i * 5);
+            bin.set([row, col, current.length, current.tokenType, current.tokenModifiers], i * 5);
         }
         return {
             resultId,

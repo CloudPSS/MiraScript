@@ -471,7 +471,7 @@ impl<'s> Emitter<'s> {
                 } else {
                     self.diagnostics.push(SourceDiagnostic::new(
                         index.range(),
-                        DiagnosticCode::GlobalVariable,
+                        DiagnosticCode::GlobalDynamicAccess,
                     ));
                     let index_reg = self.add_reg();
                     self.emit_expression(index, index_reg, brk);

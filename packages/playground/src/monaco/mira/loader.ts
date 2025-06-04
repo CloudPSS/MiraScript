@@ -5,3 +5,4 @@ import './formatter.js';
 import './code-action.js';
 import './diagnostics.js';
 import './inlay-hints-provider.js';
+import './hover-provider.js';

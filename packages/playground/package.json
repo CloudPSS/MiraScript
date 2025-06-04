@@ -7,7 +7,7 @@
     "serve": "vite preview"
   },
   "dependencies": {
-    "@private/monaco-editor": "^0.0.19",
+    "@private/monaco-editor": "^0.0.20",
     "mira-wasm": "workspace:*"
   },
   "devDependencies": {
