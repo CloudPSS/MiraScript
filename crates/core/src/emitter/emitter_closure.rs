@@ -32,15 +32,9 @@ impl<'s> Emitter<'s> {
         brk: Option<Register>,
     ) -> bool {
         for stmt in stmts {
-            if matches!(stmt, Statement::Function(..)) {
-                self.declare_statement(stmt);
-            }
+            self.declare_statement(stmt);
         }
-        for stmt in stmts {
-            if !matches!(stmt, Statement::Function(..)) {
-                self.declare_statement(stmt);
-            }
-        }
+        // 提升函数实现
         for stmt in stmts {
             if matches!(stmt, Statement::Function(..)) {
                 self.emit_statement(stmt, brk);

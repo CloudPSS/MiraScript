@@ -1,12 +1,14 @@
 import { Cp } from '../helpers';
-import { $CallDyn, $ToNumber } from '../operations';
+import { $CallDyn, $ToBool, $ToNumber, $ToString } from '../operations';
 import {
     isVmArray,
     isVmConst,
     isVmExtern,
+    isVmModule,
     isVmPrimitive,
     isVmRecord,
     VmExtern,
+    type VmAny,
     type VmArray,
     type VmConst,
     type VmRecord,
@@ -14,12 +16,18 @@ import {
 } from '../types/index.js';
 import type { VmFunctionLike } from '../types/function.js';
 import { VmError } from '../error';
+import { arrayRequired, required, rethrowError } from './helpers';
 
 /** Get the minimum and maximum numbers from the arguments. */
-function getMinMaxNumbers(args: VmValue[]): number[] {
+function getMinMaxNumbers(args: readonly VmAny[]): number[] {
     if (args.length === 0) return [];
-    if (!isVmArray(args[0])) return args.map($ToNumber);
-    return args[0].map($ToNumber);
+    if (isVmArray(args[0])) args = args[0];
+    const numbers: number[] = [];
+    for (const arg of args) {
+        if (arg === undefined) continue;
+        numbers.push($ToNumber(arg));
+    }
+    return numbers;
 }
 
 export const max: VmFunctionLike = (...args) => {
@@ -31,27 +39,45 @@ export const min: VmFunctionLike = (...args) => {
     return Math.min(...numbers);
 };
 
-export const map: VmFunctionLike = (data, fn) => {
+/** map 和 filter 的实现 */
+function mapImpl(
+    data: VmAny,
+    fn: VmAny,
+    mapper: (fn: VmValue, value: VmValue, index: number | string | null, data: VmValue) => VmValue | undefined,
+): VmValue {
+    required('data', data, null);
+    required('fn', fn, data);
     if (isVmPrimitive(data)) {
-        return $CallDyn(fn, [data, null, data]);
+        return mapper(fn, data, null, data) ?? null;
     }
     if (isVmArray(data)) {
-        return data.map((item: VmConst, index: number, arr: VmArray) => {
+        const result: VmConst[] = [];
+        const { length } = data;
+        for (let i = 0; i < length; i++) {
             Cp();
-            const ret = $CallDyn(fn, [item, index, arr]);
-            if (!isVmConst(ret)) return null;
-            return ret;
-        });
+            const ret = mapper(fn, data[i] ?? null, i, data);
+            if (ret === undefined) continue;
+            if (isVmConst(ret)) {
+                result.push(ret);
+            } else {
+                result.push(null);
+            }
+        }
+        return result;
     }
     if (isVmRecord(data)) {
-        return Object.fromEntries(
-            Object.entries(data).map(([key, value]) => {
-                Cp();
-                const ret = $CallDyn(fn, [value, key, data]);
-                if (!isVmConst(ret)) return [key, null] as const;
-                return [key, ret] as const;
-            }),
-        );
+        const entries: Array<[string, VmConst]> = [];
+        for (const [key, value] of Object.entries(data)) {
+            Cp();
+            const ret = mapper(fn, value, key, data);
+            if (ret === undefined) continue;
+            if (isVmConst(ret)) {
+                entries.push([key, ret]);
+            } else {
+                entries.push([key, null]);
+            }
+        }
+        return Object.fromEntries(entries);
     }
     if (isVmExtern(data)) {
         if (Array.isArray(data.value)) {
@@ -60,11 +86,12 @@ export const map: VmFunctionLike = (data, fn) => {
             const { length } = data.value;
             for (let i = 0; i < length; i++) {
                 Cp();
-                const ret = $CallDyn(fn, [data.get(String(i)), i, data]);
-                result.push(ret);
+                const ret = mapper(fn, data.get(String(i)) ?? null, i, data);
+                if (ret === undefined) continue;
                 if (!isVmConst(ret)) {
                     isConst = false;
                 }
+                result.push(ret);
             }
             if (isConst) return result as VmArray;
             return new VmExtern(result);
@@ -73,7 +100,8 @@ export const map: VmFunctionLike = (data, fn) => {
         const result: Array<[string, VmValue]> = [];
         for (const key of data.keys()) {
             Cp();
-            const ret = $CallDyn(fn, [data.get(key), key, data]);
+            const ret = mapper(fn, data.get(key) ?? null, key, data);
+            if (ret === undefined) continue;
             if (!isVmConst(ret)) {
                 isConst = false;
             }
@@ -83,12 +111,50 @@ export const map: VmFunctionLike = (data, fn) => {
         if (isConst) return obj as VmRecord;
         return new VmExtern(obj);
     }
-    throw new VmError('First argument must be primitive, array, record, or extern');
+    throw new VmError('First argument must be primitive, array, record, or extern', null);
+}
+
+export const map: VmFunctionLike = (data, fn) => {
+    return mapImpl(data, fn, (fn, value, key, data) => {
+        return $CallDyn(fn, [value, key, data]);
+    });
+};
+
+export const filter: VmFunctionLike = (data, fn) => {
+    return mapImpl(data, fn, (fn, value, key, data) => {
+        const ret = $CallDyn(fn, [value, key, data]);
+        return $ToBool(ret) ? value : undefined;
+    });
+};
+
+export const filter_map: VmFunctionLike = (data, fn) => {
+    return mapImpl(data, fn, (fn, value, key, data) => {
+        const ret = $CallDyn(fn, [value, key, data]);
+        return ret ?? undefined;
+    });
 };
 
 export const len: VmFunctionLike = (arr) => {
-    if (!isVmArray(arr)) {
-        throw new VmError('First argument must be an array');
-    }
+    arrayRequired(0, arr, Number.NaN);
     return arr.length;
+};
+
+export const to_json: VmFunctionLike = (data) => {
+    if (isVmExtern(data)) {
+        return JSON.stringify(data.value);
+    }
+    if (isVmModule(data)) {
+        return '{}';
+    }
+    return JSON.stringify(data);
+};
+
+export const from_json: VmFunctionLike = (json, fallback) => {
+    required('json', json, null);
+    if (typeof json != 'string') return json;
+    try {
+        return JSON.parse($ToString(json));
+    } catch (ex) {
+        rethrowError('Invalid JSON', ex, fallback ?? null);
+    }
 };

@@ -1,13 +1,137 @@
 /* eslint-disable no-console */
 import * as monaco from './monaco';
-import { type VmAny, VmExtern, createVmGlobal, isVmPrimitive } from './vm/index.js';
+import { type VmAny, VmExtern, createVmGlobal } from './vm/index.js';
 import { $ToString } from './vm/operations.js';
 import { transpile } from './transpiler';
 
+const value =
+    localStorage.getItem('source') ||
+    `{#
+"\\u{aaa}"
+let mut name = "world"; // comment
+print("Hello \${let mut /** comment in string */a = 1; // comment in string
+"\${a}name"}");
+
+[1,2,3]::filter(fn {it % 2 == 0})::String()
+
+for i in 1..<3 {
+print(i);
+} else {
+}
+
+let w = while a > 0 {
+a = a - 1;
+} else {
+a;
+10
+}
+
+let mut fr= for i in [1,2,3]::map(fn {it * 2}) {
+print(i);
+} else if a > 0 {
+a = a - 1;
+} 
+
+fn (a,b,c) {
+print({
+    let mut sum = a + b + c;
+    sum
+});
+};
+
+1
+
+call(1, if x {1}else{2;3}, {x;y})
+call(a: 1, ..x)
+
+match x {
+case 1  x 
+case 2 { y;3 }
+ _  4 
+}
+
+let mut simple_array = [1, 2, {1;2;3}, "4", [5], []];
+let mut spread_array = [1, 2, 3, "4", ..[5]];
+let mut range_array = [1..2, 1..<3,]
+let mut array = [1,2,3, 7..8, ..[9,10,11..<20], ..7, ..()];
+
+let mut parenthesis = (1);
+let mut single_record = (1,);
+let mut single_record2 = (a: 1);
+let mut ordinal_record = (1: 1);
+let mut named_record = (hello: "world", foo: 1, bar: 2, 3 1 45.3 );
+let mut simple_record = ("hello", 1, 2 ,3);
+let mut spread_record = (..named_record, hello: "world", foo: 1, bar: 2,  ..simple_record);
+
+
+
+let a = (1 2){}
+x.y = 12
+mut z 
+{{{
+if a b else c
+match {a}{}
+@@"你好\${ if  } 世界 $$ 再见@" $$if "@世界"@@
+
+let t = type "x";
+
+if x is y {
+print("x is 1");
+}
+if "1" in ["1", "2", "3"] {
+print("1 in [1, 2, 3]");
+}
+if "key" in (key: "value") {
+print("key in (key: \\"value\\")");
+}
+if a {} else for global in (1,2e7, 1.53e-12, : s)
+let (x, mut y) = 1;}}}
+
+for (key, mut v,:mut e, _,:12,) in entries((1,2,3)) {
+a += 12;
+print(a);
+}
+let (a) = (1);
+a.1 = 2;
+a = (0: "x", 1:112, "a":u);
+(00, 0, 0x0, 0o0, 0b0, 0e0, 0.0)
+
+let (.._, _, ..\`ht\`, ..x, y, ..(1,2,3)) = x;
+
+a!==1;
+a!~=1;
+a! ~=1;
+a!.b!.c!['x']!(12)! 
+a!.b!['x']!.c!(12);
+
+a ?? 1;
+a ??= 1;
+2147483647 + 2147483648 
+(z?:a, ?:b) = (:a, :b);
+
+if a is not x {
+print("a is not nan");
+}
+
+/*1*/ [/*2*/x/*3*/,/*4*/ /*5*/.., y, ..[], (+5..8), ..(not(> 1 or +nan),)] = [1, ..[], 5..8];}}}}
+(if a {1} else {2}) - 3;
+if a {1} else {2} - 3;
+3- if a {1} else {2};
+x;
+(+1,_,mut a) = (1,2,3);
+((fn { print(it) }))("END");
+
+
+/* EOF 
+dd   */ 
+(  a, b, [1, ..], ..) = x;
+a::map.1.xx()::(fn{})()::a['x']::b(); type(e); e::type();\
+
+@$_123;
+`;
 const elEditor = document.querySelector<HTMLDivElement>('#editor')!;
 const overlay = monaco.utils.createOverflowWidgetsDomNode(elEditor);
 const editor = monaco.editor.create(elEditor, {
-    language: 'mirascript',
     fontFamily: 'Sarasa Mono SC',
     useShadowDOM: true,
     overflowWidgetsDomNode: overlay,
@@ -17,131 +141,7 @@ const editor = monaco.editor.create(elEditor, {
     automaticLayout: true,
     theme: 'vs-dark',
     'semanticHighlighting.enabled': true,
-    value:
-        localStorage.getItem('source') ||
-        `{#
-    "\\u{aaa}"
-    let mut name = "world"; // comment
-    print("Hello \${let mut /** comment in string */a = 1; // comment in string
-     "\${a}name"}");
-    
-    [1,2,3]::filter(fn {it % 2 == 0})::String()
-    
-    for i in 1..<3 {
-        print(i);
-    } else {
-    }
-
-    let w = while a > 0 {
-        a = a - 1;
-    } else {
-        a;
-        10
-    }
-    
-    let mut fr= for i in [1,2,3]::map(fn {it * 2}) {
-        print(i);
-    } else if a > 0 {
-        a = a - 1;
-    } 
-
-    fn (a,b,c) {
-        print({
-            let mut sum = a + b + c;
-            sum
-        });
-    };
-
-    1
-
-    call(1, if x {1}else{2;3}, {x;y})
-    call(a: 1, ..x)
-
-    match x {
-        case 1  x 
-        case 2 { y;3 }
-         _  4 
-    }
-
-    let mut simple_array = [1, 2, {1;2;3}, "4", [5], []];
-    let mut spread_array = [1, 2, 3, "4", ..[5]];
-    let mut range_array = [1..2, 1..<3,]
-    let mut array = [1,2,3, 7..8, ..[9,10,11..<20], ..7, ..()];
-
-    let mut parenthesis = (1);
-    let mut single_record = (1,);
-    let mut single_record2 = (a: 1);
-    let mut ordinal_record = (1: 1);
-    let mut named_record = (hello: "world", foo: 1, bar: 2, 3 1 45.3 );
-    let mut simple_record = ("hello", 1, 2 ,3);
-    let mut spread_record = (..named_record, hello: "world", foo: 1, bar: 2,  ..simple_record);
-
-    
-
-    let a = (1 2){}
-    x.y = 12
-    mut z 
-    {{{
-     if a b else c
-match {a}{}
-    @@"你好\${ if  } 世界 $$ 再见@" $$if "@世界"@@
-
-    let t = type "x";
-
-    if x is y {
-        print("x is 1");
-    }
-    if "1" in ["1", "2", "3"] {
-        print("1 in [1, 2, 3]");
-    }
-    if "key" in (key: "value") {
-        print("key in (key: \\"value\\")");
-    }
-    if a {} else for global in (1,2e7, 1.53e-12, : s)
-    let (x, mut y) = 1;}}}
-
-    for (key, mut v,:mut e, _,:12,) in entries((1,2,3)) {
-        a += 12;
-        print(a);
-    }
-    let (a) = (1);
-    a.1 = 2;
-    a = (0: "x", 1:112, "a":u);
-    (00, 0, 0x0, 0o0, 0b0, 0e0, 0.0)
-
-    let (.._, _, ..\`ht\`, ..x, y, ..(1,2,3)) = x;
-
-    a!==1;
-    a!~=1;
-    a! ~=1;
-    a!.b!.c!['x']!(12)! 
-    a!.b!['x']!.c!(12);
-
-    a ?? 1;
-    a ??= 1;
-    2147483647 + 2147483648 
-    (z?:a, ?:b) = (:a, :b);
-
-    if a is not x {
-        print("a is not nan");
-    }
-
-     /*1*/ [/*2*/x/*3*/,/*4*/ /*5*/.., y, ..[], (+5..8), ..(not(> 1 or +nan),)] = [1, ..[], 5..8];}}}}
-     (if a {1} else {2}) - 3;
-     if a {1} else {2} - 3;
-     3- if a {1} else {2};
-x;
-(+1,_,mut a) = (1,2,3);
-((fn { print(it) }))("END");
-
-
-     /* EOF 
-  dd   */ 
-    (  a, b, [1, ..], ..) = x;
-      a::map.1.xx()::(fn{})()::a['x']::b(); type(e); e::type();\
-
-    @$_123;
-`,
+    model: monaco.editor.createModel(value, 'mirascript', monaco.Uri.parse('file:///main.mira')),
 });
 editor.onDidDispose(() => overlay.dispose());
 setTimeout(() => {
@@ -155,7 +155,7 @@ function print(value: VmAny | Error): string {
     if (value === null) return 'nil';
     if (value === undefined) return '<uninitialized>';
     if (value instanceof Error) return value.toString();
-    if (isVmPrimitive(value)) return JSON.stringify(value);
+    if (typeof value == 'string') return JSON.stringify(value);
     return $ToString(value);
 }
 
@@ -167,7 +167,18 @@ elDisassembly.addEventListener('click', () => {
         let content = result.toString();
         try {
             console.time('execute');
-            const ret = result(createVmGlobal({ globalThis, e: new VmExtern([1, 2, [1, 2], { x: 0 }]) }));
+            const ret = result(
+                createVmGlobal(
+                    {
+                        e: new VmExtern([1, 2, [1, 2], { x: 0 }]),
+                        o: {},
+                        x: [1, 2, 3],
+                    },
+                    {
+                        globalThis,
+                    },
+                ),
+            );
             console.timeEnd('execute');
             content += `\nResult:\n  ${print(ret)}`;
         } catch (ex) {

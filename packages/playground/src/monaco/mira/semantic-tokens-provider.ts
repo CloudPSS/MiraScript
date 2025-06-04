@@ -7,7 +7,7 @@ class DocumentSemanticTokensProvider extends Provider implements languages.Docum
     /** @inheritdoc */
     getLegend(): languages.SemanticTokensLegend {
         return {
-            tokenTypes: ['entity.name.function', 'variable.other.constant', 'support.type.property-name'],
+            tokenTypes: ['variable', 'entity.name.function', 'variable.other.constant', 'support.type.property-name'],
             tokenModifiers: [],
         };
     }
@@ -28,25 +28,29 @@ class DocumentSemanticTokensProvider extends Provider implements languages.Docum
         const data = [];
         for (const diagnostic of compiled.diagnostics) {
             let tokenType = -1;
+            const { code } = diagnostic;
             // eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check
-            switch (diagnostic.code) {
-                case DiagnosticCode.GlobalFunction:
-                case DiagnosticCode.LocalFunction: {
+            switch (code) {
+                // case DiagnosticCode.GlobalVariable:
+                case DiagnosticCode.ParameterMutable:
+                case DiagnosticCode.ParameterMutableRest:
+                case DiagnosticCode.LocalMutable: {
                     tokenType = 0;
+                    break;
+                }
+                // case DiagnosticCode.GlobalFunction:
+                case DiagnosticCode.LocalFunction: {
+                    tokenType = 1;
                     break;
                 }
                 case DiagnosticCode.ParameterImmutable:
                 case DiagnosticCode.ParameterImmutableRest:
-                case DiagnosticCode.LocalImmutable: {
-                    tokenType = 1;
-                    break;
-                }
+                case DiagnosticCode.LocalImmutable:
                 case DiagnosticCode.RecordFieldIdName: {
-                    tokenType = 1;
+                    tokenType = 2;
                     break;
                 }
             }
-            if (tokenType < 0) continue;
             const { startLineNumber, startColumn, endColumn } = diagnostic;
             const length = endColumn - startColumn;
             data.push({
@@ -54,7 +58,6 @@ class DocumentSemanticTokensProvider extends Provider implements languages.Docum
                 col: startColumn - 1,
                 length,
                 tokenType,
-                tokenModifiers: 0,
             });
         }
         data.sort((a, b) => {
@@ -74,7 +77,7 @@ class DocumentSemanticTokensProvider extends Provider implements languages.Docum
                     col -= prev.col;
                 }
             }
-            bin.set([row, col, current.length, current.tokenType, current.tokenModifiers], i * 5);
+            bin.set([row, col, current.length, current.tokenType], i * 5);
         }
         return {
             resultId,

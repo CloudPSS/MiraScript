@@ -2,8 +2,9 @@ use std::ops::{Deref, DerefMut};
 
 use crate::{
     diagnostic::{DiagnosticCode, SourceDiagnostic},
-    lexer::{Operator, Token, TokenKind},
-    parser::{Expression, Script, Statement},
+    emitter::opcode::Register,
+    lexer::{Token, TokenKind},
+    parser::AstWalker,
 };
 
 use super::{
@@ -35,20 +36,6 @@ impl<'s> Scopes<'s> {
     pub fn find_local_variable(&mut self, name: &str) -> Option<&mut Variable<'s>> {
         self.current().find_variable(name)
     }
-
-    fn check_local_variable(&mut self, name: &str) -> Option<DiagnosticCode> {
-        let var = self.find_local_variable(name);
-        var.map(|var| {
-            if matches!(
-                var.bind_type(),
-                BindType::Parameter | BindType::RestParameter
-            ) {
-                DiagnosticCode::DuplicateParameterDeclaration
-            } else {
-                DiagnosticCode::DuplicateVariableDeclaration
-            }
-        })
-    }
 }
 
 impl<'s> Deref for Scopes<'s> {
@@ -69,15 +56,48 @@ impl<'s> Emitter<'s> {
         self.scopes.push(Scope::new(self.closures.len()));
     }
     pub fn exit_scope(&mut self) {
-        self.scopes.pop();
+        let Some(scope) = self.scopes.pop() else {
+            return;
+        };
+        for var in scope.variables {
+            if let Some(diagnostic) = var.exit() {
+                self.diagnostics.push(diagnostic);
+            }
+        }
     }
-    pub fn declare_implicit_variable(&mut self, name: &'s str, mutable: bool, bind_type: BindType) {
-        let register = match bind_type {
+
+    fn add_variable_reg(&mut self, bind_type: BindType) -> Register {
+        match bind_type {
             BindType::Parameter => self.current_closure().add_arg(),
             BindType::RestParameter => self.current_closure().add_var_arg(),
             _ => self.current_closure().add_reg(),
+        }
+    }
+
+    fn check_local_variable(&mut self, access: &Token<'s>, name: &str) -> Option<&Variable<'s>> {
+        let var = self.scopes.find_local_variable(name)?;
+        let code = {
+            if matches!(
+                var.bind_type(),
+                BindType::Parameter | BindType::RestParameter
+            ) {
+                DiagnosticCode::DuplicateParameterDeclaration
+            } else {
+                DiagnosticCode::DuplicateVariableDeclaration
+            }
         };
-        let var = Variable::new(name, mutable, bind_type, register);
+        self.diagnostics
+            .push(SourceDiagnostic::new(access.range(), code));
+        if let Some(decl) = var.declaration() {
+            self.diagnostics
+                .push(SourceDiagnostic::new(decl, DiagnosticCode::DeclaredHere));
+        }
+        Some(var)
+    }
+
+    pub fn declare_implicit_variable(&mut self, name: &'s str, mutable: bool, bind_type: BindType) {
+        let register = self.add_variable_reg(bind_type);
+        let var = Variable::new(name, None, mutable, bind_type, register);
         self.scopes.current().declare_variable(var);
     }
     pub fn declare_variable(
@@ -89,12 +109,18 @@ impl<'s> Emitter<'s> {
         let TokenKind::Identifier(id) = &id_token.kind else {
             return false;
         };
-        if let Some(err) = self.scopes.check_local_variable(id) {
-            self.diagnostics
-                .push(SourceDiagnostic::new(id_token.range.clone(), err));
+        if self.check_local_variable(id_token, id).is_some() {
             return false;
         }
-        self.declare_implicit_variable(id, mutable, bind_type);
+        let register = self.add_variable_reg(bind_type);
+        let var = Variable::new(
+            id,
+            Some(id_token.range.clone()),
+            mutable,
+            bind_type,
+            register,
+        );
+        self.scopes.current().declare_variable(var);
         true
     }
 }

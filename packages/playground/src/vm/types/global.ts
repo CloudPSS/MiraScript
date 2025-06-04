@@ -1,14 +1,5 @@
-import {
-    VmFunction,
-    type VmExtern,
-    type VmModule,
-    type VmAny,
-    type VmImmutable,
-    type VmPrimitive,
-    type VmValue,
-    wrapToVmValue,
-} from '.';
-const { getPrototypeOf, create, keys } = Object;
+import { VmFunction, type VmAny, type VmImmutable, type VmValue, wrapToVmValue, isVmValue } from '.';
+const { getPrototypeOf, create, entries } = Object;
 
 /** MiraScript 全局环境的基础，仅包含标准库 */
 export type VmSharedGlobal = Record<string, VmImmutable>;
@@ -33,12 +24,18 @@ export function defineVmGlobalValue(name: string, value: VmImmutable, override =
 
 /** 创建用于执行脚本的全局环境 */
 export function createVmGlobal(
-    override?: Record<string, VmFunction | VmExtern | VmPrimitive | VmModule | object>,
+    vmValues?: Record<string, VmValue | undefined>,
+    externValues?: Record<string, unknown>,
 ): VmGlobal {
     const env = create(VmSharedGlobal) as VmGlobal;
-    if (override) {
-        for (const key of keys(override)) {
-            const value = override[key];
+    if (vmValues) {
+        for (const [key, value] of entries(vmValues)) {
+            if (!isVmValue(value, false)) continue;
+            env[key] = value;
+        }
+    }
+    if (externValues) {
+        for (const [key, value] of entries(externValues)) {
             env[key] = wrapToVmValue(value, null);
         }
     }

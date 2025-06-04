@@ -80,7 +80,7 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
     call(args: readonly VmValue[]): VmAny {
         const { value } = this;
         if (typeof value != 'function') {
-            throw new VmError(`Not a callable extern`);
+            throw new VmError(`Not a callable extern`, null);
         }
         const caller = this.caller?.value ?? null;
         const unwrappedArgs = args.map(unwrapFromVmValue);

@@ -159,6 +159,7 @@ impl<'s> Emitter<'s> {
                 };
                 let var = self.scopes.find_variable(id);
                 if let Some((level, variable)) = var {
+                    variable.mark_used();
                     let register = variable.register();
                     let hint = variable.hint();
                     self.diagnostics
@@ -179,6 +180,10 @@ impl<'s> Emitter<'s> {
                         self.op_get_upvalue(ret, level, up_reg);
                     }
                 } else {
+                    self.diagnostics.push(SourceDiagnostic::new(
+                        token.range(),
+                        DiagnosticCode::GlobalVariable,
+                    ));
                     self.op_global(ret, id.as_ref());
                 }
             }
@@ -446,6 +451,10 @@ impl<'s> Emitter<'s> {
                         _ => unreachable!("Expected identifier token"),
                     };
                 } else {
+                    self.diagnostics.push(SourceDiagnostic::new(
+                        id.range(),
+                        DiagnosticCode::GlobalVariable,
+                    ));
                     match &id.kind {
                         TokenKind::Identifier(id) => self.op_global(ret, id.as_ref()),
                         TokenKind::Ordinal(ord) => self.op_global_num(ret, *ord as f64),
@@ -460,6 +469,10 @@ impl<'s> Emitter<'s> {
                     self.emit_expression(index, index_reg, brk);
                     self.op_get_dyn(ret, ret, index_reg);
                 } else {
+                    self.diagnostics.push(SourceDiagnostic::new(
+                        index.range(),
+                        DiagnosticCode::GlobalVariable,
+                    ));
                     let index_reg = self.add_reg();
                     self.emit_expression(index, index_reg, brk);
                     self.op_global_dyn(ret, index_reg);

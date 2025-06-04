@@ -49,7 +49,7 @@ async function getTokensProvider(): Promise<languages.IMonarchLanguage> {
                 [
                     /(@identifier)(@whitespace*)(\?:|:)(?!:)/gu,
                     [
-                        { token: 'variable.$3' },
+                        { token: 'variable.$1' },
                         '',
                         {
                             cases: {

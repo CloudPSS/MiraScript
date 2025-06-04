@@ -1,6 +1,4 @@
-use std::borrow::Cow;
-
-use crate::diagnostic::DiagnosticCode;
+use crate::diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange};
 
 use super::opcode::Register;
 
@@ -21,20 +19,30 @@ pub(crate) enum BindType {
 
 pub(crate) struct Variable<'s> {
     name: &'s str,
+    declaration: SourceRange,
     mutable: bool,
     bind_type: BindType,
     register: Register,
     initialized: bool,
+    used: bool,
 }
 
 impl<'s> Variable<'s> {
-    pub fn new(name: &'s str, mutable: bool, bind_type: BindType, register: Register) -> Self {
+    pub fn new(
+        name: &'s str,
+        declaration: Option<SourceRange>,
+        mutable: bool,
+        bind_type: BindType,
+        register: Register,
+    ) -> Self {
         Self {
             name,
+            declaration: declaration.unwrap_or_default(),
             mutable,
             bind_type,
             register,
             initialized: matches!(bind_type, BindType::Parameter | BindType::RestParameter),
+            used: false,
         }
     }
 
@@ -70,5 +78,32 @@ impl<'s> Variable<'s> {
             return DiagnosticCode::LocalImmutable;
         }
         DiagnosticCode::LocalMutable
+    }
+
+    pub fn mark_used(&mut self) {
+        self.used = true;
+    }
+
+    pub fn declaration(&self) -> Option<SourceRange> {
+        if self.declaration == SourceRange::default() {
+            None
+        } else {
+            Some(self.declaration.clone())
+        }
+    }
+
+    pub fn exit(self) -> Option<SourceDiagnostic> {
+        if self.used || self.declaration == SourceRange::default() {
+            None
+        } else {
+            Some(SourceDiagnostic::new(
+                self.declaration,
+                if self.bind_type == BindType::Func {
+                    DiagnosticCode::LocalUnusedFunction
+                } else {
+                    DiagnosticCode::LocalUnusedVariable
+                },
+            ))
+        }
     }
 }

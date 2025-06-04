@@ -1,4 +1,4 @@
-import { editor, MarkerSeverity, Uri, type IDisposable } from '@private/monaco-editor';
+import { editor, MarkerSeverity, MarkerTag, Uri, type IDisposable } from '@private/monaco-editor';
 import { callWorker, Provider } from './worker-helper.js';
 import { DiagnosticCode } from 'mira-wasm';
 
@@ -25,7 +25,8 @@ async function validate(model: editor.ITextModel): Promise<void> {
     if (!result) return;
     const { diagnostics, version } = result;
     const markers: editor.IMarkerData[] = [];
-    for (const diagnostic of diagnostics) {
+    for (let i = 0; i < diagnostics.length; i++) {
+        const diagnostic = diagnostics[i]!;
         const { startLineNumber, startColumn, endLineNumber, endColumn, code } = diagnostic;
         const message = (await getErrorMessage(code)) ?? 'Unknown error';
         let severity: MarkerSeverity;
@@ -40,7 +41,7 @@ async function validate(model: editor.ITextModel): Promise<void> {
         } else {
             continue;
         }
-        markers.push({
+        const marker: editor.IMarkerData = {
             startLineNumber,
             startColumn,
             endLineNumber,
@@ -53,7 +54,26 @@ async function validate(model: editor.ITextModel): Promise<void> {
                 value: `${code}`,
                 target: Uri.parse(`https://mira.cloudpss.net/code/${code}`),
             },
-        });
+        };
+        if (code === DiagnosticCode.LocalUnusedVariable || code === DiagnosticCode.LocalUnusedFunction) {
+            marker.tags = [MarkerTag.Unnecessary];
+        } else if (
+            code === DiagnosticCode.DuplicateParameterDeclaration ||
+            code === DiagnosticCode.DuplicateVariableDeclaration
+        ) {
+            const ref = diagnostics[i + 1];
+            if (ref?.code === DiagnosticCode.DeclaredHere) {
+                i++;
+                marker.relatedInformation = [
+                    {
+                        message: (await getErrorMessage(ref.code)) ?? 'Declared here',
+                        resource: model.uri,
+                        ...ref,
+                    },
+                ];
+            }
+        }
+        markers.push(marker);
     }
     editor.setModelMarkers(model, 'mirascript', markers);
 }

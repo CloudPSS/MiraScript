@@ -128,6 +128,10 @@ pub enum DiagnosticCode {
     // Emitter warning 13000 ~ 13999
     #[strum(message = "Unknown emitter warning")]
     EmitterWarning = 13000,
+    #[strum(message = "Local variable is unused, consider removing it, or use `_` to ignore it")]
+    LocalUnusedVariable,
+    #[strum(message = "Local function is unused, consider removing it")]
+    LocalUnusedFunction,
 
     // Optimizer warning 14000 ~ 14999
     #[strum(message = "Unknown optimizer warning")]
@@ -185,6 +189,8 @@ pub enum DiagnosticCode {
     // Emitter reference 43000 ~ 43999
     #[strum(message = "Unknown emitter reference")]
     EmitterReference = 43000,
+    #[strum(message = "…here")]
+    DeclaredHere,
 
     // Optimizer reference 44000 ~ 44999
     #[strum(message = "Unknown optimizer reference")]

@@ -1,11 +1,14 @@
-import type { Mutable } from '../utils.js';
-import { Cp } from '../helpers.js';
+import { CpEnter, CpExit } from '../helpers.js';
 import type { VmAny, VmValue } from './index.js';
 
 const kVmFunction = Symbol.for('mirascript.vm.function');
 
-/** Mirascript 函数签名 */
-export type VmFunctionLike = (...args: VmValue[]) => VmAny;
+/**
+ * Mirascript 函数签名
+ *
+ * 虽然所有输入参数的类型均为 {@linkcode VmValue}，但当参数不足时，对应的参数会被填充为 `undefined`。
+ */
+export type VmFunctionLike = (...args: ReadonlyArray<VmValue | undefined>) => VmAny;
 
 /** Mirascript 函数 */
 export type VmFunction = VmFunctionLike & { readonly [kVmFunction]: VmFunctionInfo };
@@ -17,7 +20,7 @@ export interface VmFunctionInfo {
     /** 是否为库函数 */
     readonly isLib: boolean;
     /** 如果添加了包装，返回原函数 */
-    readonly original?: (...args: VmValue[]) => VmAny;
+    readonly original?: (...args: VmAny[]) => VmAny;
 }
 
 /** Mirascript 函数创建选项 */
@@ -45,7 +48,7 @@ export function VmFunction(fn: VmFunctionLike, option: VmFunctionOption = {}): V
         // 如果已经是 VmFunction，则直接返回
         return fn;
     }
-    const info: Mutable<VmFunctionInfo> = {
+    const info: Writable<VmFunctionInfo> = {
         fullName: option.fullName ?? fn.name,
         isLib: option.isLib ?? false,
     };
@@ -53,10 +56,13 @@ export function VmFunction(fn: VmFunctionLike, option: VmFunctionOption = {}): V
         const original = fn;
         info.original = original;
         fn = ((...args) => {
-            Cp();
-            const ret = original(...args);
-            Cp();
-            return ret;
+            CpEnter();
+            try {
+                const ret = original(...args);
+                return ret;
+            } finally {
+                CpExit();
+            }
         }) as typeof fn;
         Object.defineProperty(fn, 'name', {
             value: fn.name,

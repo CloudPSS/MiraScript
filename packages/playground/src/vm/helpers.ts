@@ -1,8 +1,7 @@
-import { VmError } from './error.js';
 import { $Init, $ToNumber } from './operations.js';
+import type { VmFunctionLike } from './types/function.js';
 import { createVmGlobal, type VmGlobal } from './types/global.js';
 import { isVmConst, VmFunction, type VmConst, type VmAny, type VmArray, type VmRecord } from './types/index.js';
-import type { Mutable } from './utils.js';
 
 export const Element = (value: VmAny): VmConst => {
     $Init(value);
@@ -10,7 +9,7 @@ export const Element = (value: VmAny): VmConst => {
     return value;
 };
 
-export const Function = (fn: (...args: VmAny[]) => VmAny): VmFunction => {
+export const Function = (fn: VmFunctionLike): VmFunction => {
     return VmFunction(fn, { isLib: false, injectCp: false });
 };
 
@@ -32,7 +31,7 @@ export const ArrayRangeExclusive = (start: VmAny, end: VmAny): VmArray => {
     }
     return arr;
 };
-export const RecordFreeze = (record: Mutable<VmRecord>, optional: readonly string[]): void => {
+export const RecordFreeze = (record: Writable<VmRecord>, optional: readonly string[]): void => {
     for (const field of optional) {
         if (record[field] == null) {
             delete record[field];
@@ -48,7 +47,7 @@ export function Cp(): void {
     if (!cp) {
         cp = Date.now();
     } else if (Date.now() - cp > cpTimeout) {
-        throw new VmError('Execution timeout');
+        throw new RangeError('Execution timeout');
     }
 }
 /** 检查点 */

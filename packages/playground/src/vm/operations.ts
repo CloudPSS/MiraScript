@@ -106,7 +106,7 @@ export const $Pos = (a: VmAny): number => $ToNumber(a);
 export const $Neg = (a: VmAny): number => -$ToNumber(a);
 export const $Not = (a: VmAny): boolean => !$ToBool(a);
 export const $Init: (value: VmAny) => asserts value is VmValue = (value) => {
-    if (value === undefined) throw new VmError(`Uninitialized value`);
+    if (value === undefined) throw new TypeError(`Uninitialized value`);
 };
 export const $CallDyn = (func: VmValue, args: readonly VmAny[]): VmValue => {
     for (const a of args) {
@@ -118,7 +118,8 @@ export const $CallDyn = (func: VmValue, args: readonly VmAny[]): VmValue => {
     if (!isVmFunction(func)) {
         throw new TypeError(`Expected function, got ${$Type(func)}`);
     }
-    return func(...(args as readonly VmValue[])) ?? null;
+    const ret = func(...(args as readonly VmValue[]));
+    return ret ?? null;
 };
 export const $Type = (value: VmAny): TypeName => {
     if (value === undefined) return 'nil';
@@ -149,6 +150,12 @@ function innerToString(value: VmAny): string {
         );
         return `(${entries.join(', ')})`;
     }
+    if (typeof value == 'number') {
+        if (isNaN(value)) return 'nan';
+        if (value === Infinity) return 'inf';
+        if (value === -Infinity) return '-inf';
+        return String(value);
+    }
     return String(value);
 }
 export const $ToString = (value: VmAny): string => {
@@ -175,17 +182,17 @@ export const $Iterable = (value: VmAny): Iterable<VmValue> => {
     if (isVmArray(value)) return value;
     if (value != null && typeof value == 'object') return keys(value);
     if (typeof value == 'string') return value;
-    throw new VmError(`Value is not iterable`);
+    throw new VmError(`Value is not iterable`, isVmFunction(value) ? [] : [value]);
 };
 
 export const $RecordSpread = (record: VmAny): VmRecord | null => {
     $Init(record);
     if (record == null || isVmRecord(record)) return record;
-    throw new VmError(`Expected record or nil, got ${$Type(record)}`);
+    throw new VmError(`Expected record or nil, got ${$Type(record)}`, null);
 };
 
 export const $ArraySpread = (array: VmAny): Iterable<VmValue> => {
     $Init(array);
-    if (!isVmArray(array)) throw new VmError(`Expected array, got ${$Type(array)}`);
+    if (!isVmArray(array)) throw new VmError(`Expected array, got ${$Type(array)}`, []);
     return array;
 };
