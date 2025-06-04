@@ -2,7 +2,7 @@ use crate::{
     diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
     lexer::{Operator, TokenKind},
     parser::{
-        self, Expression,
+        self, AstWalker, Expression,
         Statement::{self, *},
     },
 };
@@ -67,10 +67,16 @@ impl<'s> Emitter<'s> {
                         if let Some((level, variable)) = var {
                             let hint = variable.hint();
                             self.diagnostics
-                                .push(SourceDiagnostic::new(id_token.range.clone(), hint));
+                                .push(SourceDiagnostic::new(id_token.range(), hint));
+                            if !variable.initialized() {
+                                self.diagnostics.push(SourceDiagnostic::new(
+                                    id_token.range(),
+                                    DiagnosticCode::UninitializedVariable,
+                                ));
+                            }
                             if !variable.mutable() {
                                 self.diagnostics.push(SourceDiagnostic::new(
-                                    id_token.range.clone(),
+                                    id_token.range(),
                                     DiagnosticCode::ImmutableVariableAssignment,
                                 ));
                                 Register::EMPTY

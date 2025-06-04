@@ -2,17 +2,23 @@ use super::opcode::Register;
 
 pub struct Closure {
     arg_len: usize,
-    has_var_args: bool,
     reg_len: usize,
+    has_var_args: bool,
+    late_binding: bool,
 }
 
 impl Closure {
-    pub fn new() -> Self {
+    pub fn new(late_binding: bool) -> Self {
         Self {
+            late_binding,
             arg_len: 0,
             has_var_args: false,
             reg_len: 0,
         }
+    }
+
+    pub fn late_binding(&self) -> bool {
+        self.late_binding
     }
 
     pub fn arg_len(&self) -> usize {

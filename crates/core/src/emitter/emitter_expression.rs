@@ -163,13 +163,15 @@ impl<'s> Emitter<'s> {
                     let hint = variable.hint();
                     self.diagnostics
                         .push(SourceDiagnostic::new(token.range.clone(), hint));
+                    if !variable.initialized()
+                        && self.closures[level..].iter().all(|c| !c.late_binding())
+                    {
+                        self.diagnostics.push(SourceDiagnostic::new(
+                            token.range(),
+                            DiagnosticCode::UninitializedVariable,
+                        ));
+                    }
                     if level == self.closures.len() {
-                        if !variable.initialized() {
-                            self.diagnostics.push(SourceDiagnostic::new(
-                                token.range.clone(),
-                                DiagnosticCode::UninitializedVariable,
-                            ));
-                        }
                         self.op_unary(ret, OpCode::Assign, register);
                     } else {
                         let up_reg = variable.register();
@@ -532,7 +534,7 @@ impl<'s> Emitter<'s> {
                 self.exit_scope();
             }
             Loop(_, expression) => {
-                self.enter_closure();
+                self.enter_closure(false);
                 self.enter_scope();
                 let pos = self.chunk.code.len();
                 self.op(OpCode::Loop);
@@ -563,7 +565,7 @@ impl<'s> Emitter<'s> {
                     Register::EMPTY
                 };
 
-                self.enter_closure();
+                self.enter_closure(false);
                 self.enter_scope();
 
                 let cond_reg = self.add_reg();
@@ -634,7 +636,7 @@ impl<'s> Emitter<'s> {
                     Register::EMPTY
                 };
 
-                self.enter_closure();
+                self.enter_closure(false);
                 self.enter_scope();
                 let iterator = self.add_reg();
                 self.declare_pattern(pattern, Some(BindType::Init));

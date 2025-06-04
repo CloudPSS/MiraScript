@@ -12,8 +12,8 @@ use super::{
 };
 
 impl<'s> Emitter<'s> {
-    pub fn enter_closure(&mut self) {
-        self.closures.push(Closure::new());
+    pub fn enter_closure(&mut self, late_binding: bool) {
+        self.closures.push(Closure::new(late_binding));
     }
     pub fn exit_closure(&mut self) {
         self.closures.pop();
@@ -70,7 +70,7 @@ impl<'s> Emitter<'s> {
         stmts: &'s Vec<Statement<'s>>,
         expr: &'s Option<Box<Expression<'s>>>,
     ) {
-        self.enter_closure();
+        self.enter_closure(true);
         self.enter_scope();
 
         let narg: OpParam = args.as_ref().map_or(1, |args| args.len()).into();

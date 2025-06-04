@@ -73,18 +73,18 @@ impl<'s> Emitter<'s> {
                     } else {
                         variable.initialized()
                     };
+                    if !initialized && self.closures[level..].iter().all(|c| !c.late_binding()) {
+                        self.diagnostics.push(SourceDiagnostic::new(
+                            id_token.range(),
+                            DiagnosticCode::UninitializedVariable,
+                        ));
+                    }
                     if !variable.mutable() && !bind {
                         self.diagnostics.push(SourceDiagnostic::new(
-                            id_token.range.clone(),
+                            id_token.range(),
                             DiagnosticCode::ImmutableVariableAssignment,
                         ));
                     } else if level == self.closures.len() {
-                        if !initialized {
-                            self.diagnostics.push(SourceDiagnostic::new(
-                                id_token.range.clone(),
-                                DiagnosticCode::UninitializedVariable,
-                            ));
-                        }
                         let register = variable.register();
                         self.op_unary(register, OpCode::Assign, value);
                     } else {
