@@ -50,12 +50,16 @@ impl<'s> TokenKind<'s> {
         }
     }
 
-    pub(crate) fn to_prop_name(&'s self) -> Option<Cow<'s, str>> {
+    pub(crate) fn to_field_name(&'s self) -> Option<(DiagnosticCode, Cow<'s, str>)> {
         match self {
-            Self::Keyword(kw) => Some(kw.to_string().into()),
-            Self::Identifier(name) => Some(Cow::Borrowed(name)),
-            Self::Ordinal(n) => Some(n.to_string().into()),
-            Self::String(s) => Some(Cow::Borrowed(s)),
+            Self::Keyword(kw) => Some((DiagnosticCode::RecordFieldIdName, kw.to_string().into())),
+            Self::Identifier(name) => {
+                Some((DiagnosticCode::RecordFieldIdName, Cow::Borrowed(name)))
+            }
+            Self::Ordinal(n) => {
+                Some((DiagnosticCode::RecordFieldOrdinalName, n.to_string().into()))
+            }
+            Self::String(s) => Some((DiagnosticCode::RecordFieldStringName, Cow::Borrowed(s))),
             _ => None,
         }
     }

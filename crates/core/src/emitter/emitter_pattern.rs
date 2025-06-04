@@ -1,17 +1,14 @@
 use crate::{
-    diagnostic::{DiagnosticCode, SourceDiagnostic},
+    diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
     lexer::TokenKind,
     parser::{
+        AstWalker,
         Pattern::{self, *},
         RecordPattern,
     },
 };
 
-use super::{
-    Emitter, OpCode,
-    opcode::Register,
-    variable::{self, BindType, Variable},
-};
+use super::{Emitter, OpCode, opcode::Register, variable::BindType};
 
 impl<'s> Emitter<'s> {
     pub fn declare_pattern(&mut self, pattern: &'s Pattern<'s>, bind_type: Option<BindType>) {
@@ -106,27 +103,55 @@ impl<'s> Emitter<'s> {
                 for (i, element) in elements.iter().enumerate() {
                     match element {
                         RecordPattern::Named(token, _, pattern, _) => {
-                            let Some(id) = token.to_prop_name() else {
+                            let Some((id_type, id)) = token.to_field_name() else {
                                 unreachable!("Expected identifier token");
                             };
+                            self.diagnostics
+                                .push(SourceDiagnostic::new(token.range(), id_type));
                             let ret = self.add_reg();
                             self.op_get(ret, value, id);
                             self.emit_pattern(pattern, ret, bind_type);
                         }
                         RecordPattern::InterpolateNamed(..) => {}
-                        RecordPattern::OmitNamed(_, pattern, _) => {
-                            let Pattern::Bind(_, id) = pattern.as_ref() else {
+                        RecordPattern::OmitNamed(colon, pattern, _) => {
+                            let Pattern::Bind(_, id_token) = pattern.as_ref() else {
                                 unreachable!("Expected identifier token");
                             };
-                            let TokenKind::Identifier(id) = &id.kind else {
+                            let TokenKind::Identifier(id) = &id_token.kind else {
                                 unreachable!("Expected identifier token");
                             };
+                            self.diagnostics.push(SourceDiagnostic::new(
+                                colon.range(),
+                                DiagnosticCode::OmitNamedRecordField,
+                            ));
+                            self.diagnostics.push(SourceDiagnostic::new(
+                                id_token.range(),
+                                DiagnosticCode::OmitNamedRecordFieldName,
+                            ));
                             let ret = self.add_reg();
                             self.op_get(ret, value, id.as_ref());
                             self.emit_pattern(pattern, ret, bind_type);
                         }
                         RecordPattern::Unnamed(pattern, _) => {
                             let ret = self.add_reg();
+                            let code = match i {
+                                0 => DiagnosticCode::UnnamedRecordField0,
+                                1 => DiagnosticCode::UnnamedRecordField1,
+                                2 => DiagnosticCode::UnnamedRecordField2,
+                                3 => DiagnosticCode::UnnamedRecordField3,
+                                4 => DiagnosticCode::UnnamedRecordField4,
+                                5 => DiagnosticCode::UnnamedRecordField5,
+                                6 => DiagnosticCode::UnnamedRecordField6,
+                                7 => DiagnosticCode::UnnamedRecordField7,
+                                8 => DiagnosticCode::UnnamedRecordField8,
+                                9 => DiagnosticCode::UnnamedRecordField9,
+                                _ => DiagnosticCode::UnnamedRecordFieldN,
+                            };
+                            let start = pattern.range().start;
+                            self.diagnostics.push(SourceDiagnostic::new(
+                                SourceRange { start, end: start },
+                                code,
+                            ));
                             self.op_get_index(ret, value, i);
                             self.emit_pattern(pattern, ret, bind_type);
                         }

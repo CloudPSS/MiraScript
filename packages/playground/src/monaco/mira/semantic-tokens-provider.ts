@@ -7,7 +7,7 @@ class DocumentSemanticTokensProvider extends Provider implements languages.Docum
     /** @inheritdoc */
     getLegend(): languages.SemanticTokensLegend {
         return {
-            tokenTypes: ['entity.name.function', 'variable.other.constant'],
+            tokenTypes: ['entity.name.function', 'variable.other.constant', 'support.type.property-name'],
             tokenModifiers: [],
         };
     }
@@ -30,11 +30,18 @@ class DocumentSemanticTokensProvider extends Provider implements languages.Docum
             let tokenType = -1;
             // eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check
             switch (diagnostic.code) {
+                case DiagnosticCode.GlobalFunction:
                 case DiagnosticCode.LocalFunction: {
                     tokenType = 0;
                     break;
                 }
+                case DiagnosticCode.ParameterImmutable:
+                case DiagnosticCode.ParameterImmutableRest:
                 case DiagnosticCode.LocalImmutable: {
+                    tokenType = 1;
+                    break;
+                }
+                case DiagnosticCode.RecordFieldIdName: {
                     tokenType = 1;
                     break;
                 }

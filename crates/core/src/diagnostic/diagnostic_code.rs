@@ -194,10 +194,34 @@ pub enum DiagnosticCode {
 
     // Tags 50000 ~ 50999
     GlobalVariable = 50000,
+    GlobalFunction,
+
     LocalImmutable,
-    LocalVariable,
+    LocalMutable,
     LocalFunction,
+
+    ParameterImmutable,
+    ParameterMutable,
+    ParameterImmutableRest,
+    ParameterMutableRest,
+
+    RecordFieldIdName,
+    RecordFieldOrdinalName,
+    RecordFieldStringName,
     OmittedFunctionArgument,
+    UnnamedRecordField0,
+    UnnamedRecordField1,
+    UnnamedRecordField2,
+    UnnamedRecordField3,
+    UnnamedRecordField4,
+    UnnamedRecordField5,
+    UnnamedRecordField6,
+    UnnamedRecordField7,
+    UnnamedRecordField8,
+    UnnamedRecordField9,
+    UnnamedRecordFieldN,
+    OmitNamedRecordField,
+    OmitNamedRecordFieldName,
 }
 
 impl From<DiagnosticCode> for u16 {

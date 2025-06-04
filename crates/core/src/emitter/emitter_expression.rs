@@ -225,6 +225,10 @@ impl<'s> Emitter<'s> {
                         RecordElement::Named(token, _, _, _) => {
                             let reg = elements_regs[reg_index];
                             if let TokenKind::Ordinal(id) = &token.kind {
+                                self.diagnostics.push(SourceDiagnostic::new(
+                                    token.range(),
+                                    DiagnosticCode::RecordFieldOrdinalName,
+                                ));
                                 self.op_2(
                                     if opt {
                                         OpCode::FieldOptIndex
@@ -235,9 +239,11 @@ impl<'s> Emitter<'s> {
                                     reg,
                                 );
                             } else {
-                                let Some(id) = token.to_prop_name() else {
+                                let Some((id_type, id)) = token.to_field_name() else {
                                     unreachable!("Expected identifier token");
                                 };
+                                self.diagnostics
+                                    .push(SourceDiagnostic::new(token.range(), id_type));
                                 let const_id = self.add_const_string(id);
                                 self.op_2(
                                     if opt { OpCode::FieldOpt } else { OpCode::Field },
@@ -261,27 +267,35 @@ impl<'s> Emitter<'s> {
                             );
                             reg_index += 2;
                         }
-                        RecordElement::OmitNamed(_, expression, _) => {
-                            let id = if let Expression::Variable(id)
+                        RecordElement::OmitNamed(colon, expression, _) => {
+                            let id_token = if let Expression::Variable(id)
                             | Expression::Access(_, _, id) = expression.as_ref()
                             {
-                                id.to_prop_name()
+                                Some(id)
                             } else if let Expression::Index(_, _, id, _) = expression.as_ref() {
                                 if let Expression::Literal(literal) = id.as_ref() {
-                                    literal.to_prop_name()
+                                    Some(literal)
                                 } else {
                                     None
                                 }
                             } else {
                                 None
                             };
-                            let Some(id) = id else {
+                            let Some((_, id)) = id_token.and_then(|id| id.to_field_name()) else {
                                 self.diagnostics.push(SourceDiagnostic::new(
                                     expression.range(),
                                     DiagnosticCode::BadOmitKeyRecordExpression,
                                 ));
                                 return;
                             };
+                            self.diagnostics.push(SourceDiagnostic::new(
+                                colon.range(),
+                                DiagnosticCode::OmitNamedRecordField,
+                            ));
+                            self.diagnostics.push(SourceDiagnostic::new(
+                                id_token.unwrap().range(),
+                                DiagnosticCode::OmitNamedRecordFieldName,
+                            ));
                             let const_id = self.add_const_string(id);
                             let reg = elements_regs[reg_index];
                             self.op_2(
@@ -291,7 +305,7 @@ impl<'s> Emitter<'s> {
                             );
                             reg_index += 1;
                         }
-                        RecordElement::Unnamed(_, _) => {
+                        RecordElement::Unnamed(exp, _) => {
                             let reg = elements_regs[reg_index];
                             self.op_2(
                                 if opt {
@@ -302,6 +316,24 @@ impl<'s> Emitter<'s> {
                                 OpParam::new(reg_index),
                                 reg,
                             );
+                            let code = match reg_index {
+                                0 => DiagnosticCode::UnnamedRecordField0,
+                                1 => DiagnosticCode::UnnamedRecordField1,
+                                2 => DiagnosticCode::UnnamedRecordField2,
+                                3 => DiagnosticCode::UnnamedRecordField3,
+                                4 => DiagnosticCode::UnnamedRecordField4,
+                                5 => DiagnosticCode::UnnamedRecordField5,
+                                6 => DiagnosticCode::UnnamedRecordField6,
+                                7 => DiagnosticCode::UnnamedRecordField7,
+                                8 => DiagnosticCode::UnnamedRecordField8,
+                                9 => DiagnosticCode::UnnamedRecordField9,
+                                _ => DiagnosticCode::UnnamedRecordFieldN,
+                            };
+                            let start = exp.range().start;
+                            self.diagnostics.push(SourceDiagnostic::new(
+                                SourceRange { start, end: start },
+                                code,
+                            ));
                             reg_index += 1;
                         }
                         RecordElement::Spread(_, _, _) => {

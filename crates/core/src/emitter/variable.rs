@@ -69,6 +69,6 @@ impl<'s> Variable<'s> {
         if !self.mutable {
             return DiagnosticCode::LocalImmutable;
         }
-        DiagnosticCode::LocalVariable
+        DiagnosticCode::LocalMutable
     }
 }

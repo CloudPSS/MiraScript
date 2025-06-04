@@ -45,16 +45,16 @@ impl<
 
 pub(crate) trait AstVisitorMut<'s> {
     fn visit_token(&mut self, token: &mut Token<'s>) {
-        token;
+        _ = token;
     }
     fn visit_expression(&mut self, expression: &mut Expression<'s>) {
-        expression;
+        _ = expression;
     }
     fn visit_pattern(&mut self, pattern: &mut Pattern<'s>) {
-        pattern;
+        _ = pattern;
     }
     fn visit_statement(&mut self, statement: &mut Statement<'s>) {
-        statement;
+        _ = statement;
     }
 }
 pub(crate) fn walker_mut<'s>(
@@ -110,16 +110,16 @@ impl<
 
 pub(crate) trait AstVisitor<'s> {
     fn visit_token(&mut self, token: &Token<'s>) {
-        token;
+        _ = token;
     }
     fn visit_expression(&mut self, expression: &Expression<'s>) {
-        expression;
+        _ = expression;
     }
     fn visit_pattern(&mut self, pattern: &Pattern<'s>) {
-        pattern;
+        _ = pattern;
     }
     fn visit_statement(&mut self, statement: &Statement<'s>) {
-        statement;
+        _ = statement;
     }
 }
 pub(crate) fn walker<'s>(
@@ -166,6 +166,9 @@ impl<'s> AstWalker<'s> for Token<'s> {
     fn walk_mut(&mut self, visitor: &mut dyn AstVisitorMut<'s>) {
         visitor.visit_token(self);
     }
+    fn range(&self) -> SourceRange {
+        self.range.clone()
+    }
 }
 
 impl<'s, E: AstWalker<'s>> AstWalker<'s> for Vec<E> {
@@ -178,6 +181,18 @@ impl<'s, E: AstWalker<'s>> AstWalker<'s> for Vec<E> {
         for item in self.iter_mut() {
             item.walk_mut(visitor);
         }
+    }
+    fn range(&self) -> SourceRange {
+        let mut range = SourceRange {
+            start: usize::MAX,
+            end: usize::MIN,
+        };
+        for item in self.iter() {
+            let item_range = item.range();
+            range.start = min(range.start, item_range.start);
+            range.end = max(range.end, item_range.end);
+        }
+        range
     }
 }
 
@@ -192,6 +207,16 @@ impl<'s, E: AstWalker<'s>> AstWalker<'s> for Option<E> {
             item.walk_mut(visitor);
         }
     }
+    fn range(&self) -> SourceRange {
+        if let Some(item) = self {
+            item.range()
+        } else {
+            SourceRange {
+                start: usize::MAX,
+                end: usize::MIN,
+            }
+        }
+    }
 }
 
 impl<'s, E: AstWalker<'s>> AstWalker<'s> for Box<E> {
@@ -200,5 +225,8 @@ impl<'s, E: AstWalker<'s>> AstWalker<'s> for Box<E> {
     }
     fn walk_mut(&mut self, visitor: &mut dyn AstVisitorMut<'s>) {
         self.deref_mut().walk_mut(visitor);
+    }
+    fn range(&self) -> SourceRange {
+        self.deref().range()
     }
 }
