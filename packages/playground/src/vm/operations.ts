@@ -112,14 +112,13 @@ export const $CallDyn = (func: VmValue, args: readonly VmAny[]): VmValue => {
     for (const a of args) {
         $Init(a);
     }
-    if (func instanceof VmExtern) {
+    if (func instanceof VmExtern && func.callable()) {
         return func.call(args as readonly VmValue[]) ?? null;
     }
-    if (!isVmFunction(func)) {
-        throw new TypeError(`Expected function, got ${$Type(func)}`);
+    if (isVmFunction(func)) {
+        return func(...(args as readonly VmValue[])) ?? null;
     }
-    const ret = func(...(args as readonly VmValue[]));
-    return ret ?? null;
+    throw new TypeError(`Expected callable, got ${$Type(func)}`);
 };
 export const $Type = (value: VmAny): TypeName => {
     if (value === undefined) return 'nil';

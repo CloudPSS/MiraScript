@@ -31,11 +31,11 @@ export class VmModule<const T extends Record<string, VmValue> = Record<string, V
         return this === other;
     }
     /** @inheritdoc */
-    override type(): TypeName {
+    override get type(): TypeName {
         return 'module';
     }
     /** @inheritdoc */
-    override describe(): string {
+    override get describe(): string {
         return this.name;
     }
 }

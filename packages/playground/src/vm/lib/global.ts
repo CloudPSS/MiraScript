@@ -16,7 +16,7 @@ import {
 } from '../types/index.js';
 import type { VmFunctionLike } from '../types/function.js';
 import { VmError } from '../error';
-import { arrayRequired, required, rethrowError } from './helpers';
+import { expectArray, expectCallable, required, rethrowError } from './helpers';
 
 /** Get the minimum and maximum numbers from the arguments. */
 function getMinMaxNumbers(args: readonly VmAny[]): number[] {
@@ -42,11 +42,12 @@ export const min: VmFunctionLike = (...args) => {
 /** map 和 filter 的实现 */
 function mapImpl(
     data: VmAny,
+    fnName: string,
     fn: VmAny,
     mapper: (fn: VmValue, value: VmValue, index: number | string | null, data: VmValue) => VmValue | undefined,
 ): VmValue {
     required('data', data, null);
-    required('fn', fn, data);
+    expectCallable(fnName, fn, data);
     if (isVmPrimitive(data)) {
         return mapper(fn, data, null, data) ?? null;
     }
@@ -115,27 +116,27 @@ function mapImpl(
 }
 
 export const map: VmFunctionLike = (data, fn) => {
-    return mapImpl(data, fn, (fn, value, key, data) => {
+    return mapImpl(data, 'f', fn, (fn, value, key, data) => {
         return $CallDyn(fn, [value, key, data]);
     });
 };
 
 export const filter: VmFunctionLike = (data, fn) => {
-    return mapImpl(data, fn, (fn, value, key, data) => {
+    return mapImpl(data, 'predicate', fn, (fn, value, key, data) => {
         const ret = $CallDyn(fn, [value, key, data]);
         return $ToBool(ret) ? value : undefined;
     });
 };
 
 export const filter_map: VmFunctionLike = (data, fn) => {
-    return mapImpl(data, fn, (fn, value, key, data) => {
+    return mapImpl(data, 'f', fn, (fn, value, key, data) => {
         const ret = $CallDyn(fn, [value, key, data]);
         return ret ?? undefined;
     });
 };
 
 export const len: VmFunctionLike = (arr) => {
-    arrayRequired(0, arr, Number.NaN);
+    expectArray(0, arr, Number.NaN);
     return arr.length;
 };
 

@@ -14,15 +14,15 @@ export abstract class VmWrapper<T extends object> {
     /** 与其他值比较 */
     abstract same(other: VmAny): boolean;
     /** 获取类型 */
-    abstract type(): TypeName;
+    abstract get type(): TypeName;
     /** 获取描述 */
-    abstract describe(): string;
+    abstract get describe(): string;
     /** Convert the object to JSON */
     toJSON(): undefined {
         return undefined;
     }
     /** 转为字符串 */
     toString(): string {
-        return `<${this.type()} ${this.describe()}>`;
+        return `<${this.type} ${this.describe}>`;
     }
 }

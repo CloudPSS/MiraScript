@@ -87,6 +87,10 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
         const ret: unknown = apply(value, caller, unwrappedArgs);
         return wrapToVmValue(ret, this);
     }
+    /** Can extern value be called */
+    get callable(): boolean {
+        return typeof this.value === 'function';
+    }
     /** @inheritdoc */
     override keys(): string[] {
         const keys: string[] = [];
@@ -101,11 +105,11 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
         return this.value === other.value && this.caller === other.caller;
     }
     /** @inheritdoc */
-    override type(): TypeName {
+    override get type(): TypeName {
         return 'extern';
     }
     /** @inheritdoc */
-    override describe(): string {
+    override get describe(): string {
         return Object.prototype.toString.call(this.value).slice(8, -1);
     }
 }
