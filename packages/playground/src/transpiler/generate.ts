@@ -332,7 +332,7 @@ class CodeGenerator {
             }
             case OpCode.Return: {
                 reg = read();
-                code = `Cp(); return ${this.rv(reg)};`;
+                code = `return ${this.rv(reg)};`;
                 break;
             }
             case OpCode.Add:
