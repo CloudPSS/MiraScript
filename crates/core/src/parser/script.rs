@@ -1,5 +1,4 @@
 use std::{
-    collections::btree_map::IterMut,
     fmt::{self, Display, Formatter},
     ops::Deref,
 };

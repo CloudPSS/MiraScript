@@ -25,6 +25,8 @@ pub enum DiagnosticCode {
 
     #[strum(message = "Unknown token")]
     UnknownToken,
+    #[strum(message = "Unexpected token")]
+    UnexpectedToken,
     #[strum(message = "Number literal cannot start or end with underscore")]
     InvalidNumberLiteralUnderscore,
     #[strum(message = "Invalid number literal")]
@@ -69,6 +71,12 @@ pub enum DiagnosticCode {
     MissingCase,
     #[strum(message = "Unknown expression")]
     UnknownExpression,
+    #[strum(message = "Unmatched `}`")]
+    UnmatchedCloseBrace,
+    #[strum(message = "Unmatched `]`")]
+    UnmatchedCloseBracket,
+    #[strum(message = "Unmatched `)`")]
+    UnmatchedCloseParen,
     #[strum(message = "Unknown pattern")]
     UnknownPattern,
     #[strum(message = "Unknown statement")]

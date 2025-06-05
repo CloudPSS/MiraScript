@@ -11,7 +11,7 @@ use super::helper::{parameter_list, token_boxed, token_or_insert, variable_token
 use super::patterns::{pattern, pattern_or_insert};
 use super::{Input, Statement};
 
-fn semicolon<'s>(i: &mut Input<'_, 's>) -> ModalResult<Box<Token<'s>>> {
+pub(super) fn semicolon<'s>(i: &mut Input<'_, 's>) -> ModalResult<Box<Token<'s>>> {
     token_or_insert(Operator::Semicolon, DiagnosticCode::MissingSemicolon)
         .map(Box::new)
         .parse_next(i)

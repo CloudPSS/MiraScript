@@ -3,14 +3,13 @@ use winnow::prelude::*;
 use winnow::token::any;
 
 use crate::diagnostic::{DiagnosticCode, SourceRange};
-use crate::lexer::{Keyword, Operator, Token, TokenKind};
+use crate::lexer::{Keyword, Operator, Token};
 use crate::parser::helper::statements_and_expression;
 
 use super::expressions::expression;
 use super::helper::{parameter_list, token, token_boxed, token_or_insert};
 use super::iterables::iterable;
 use super::patterns::{pattern, pattern_or_insert};
-use super::statements::statement;
 use super::{AstWalker, Expression, Input, Statement};
 
 fn optional_else<'s>(

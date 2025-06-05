@@ -1,7 +1,7 @@
 use winnow::prelude::*;
 use winnow::stream::TokenSlice;
 
-use crate::lexer::{Token, TokenKind};
+use crate::lexer::Token;
 
 mod array_element;
 mod array_helper;
@@ -20,13 +20,13 @@ mod ranges;
 mod record_element;
 mod record_helper;
 mod script;
+mod scripts;
 mod statement;
 mod statements;
 
 pub use array_element::{ArrayElement, ArrayPattern};
 pub(crate) use ast_visitor::*;
 pub use expression::{Callable, Expression};
-pub use expressions::expression;
 pub use iterable::Iterable;
 pub use pattern::Pattern;
 pub use range::Range;
@@ -41,10 +41,5 @@ pub fn to_input<'t, 's>(tokens: &'t [Token<'s>]) -> Input<'t, 's> {
 }
 
 pub fn parse<'s>(i: &mut Input<'_, 's>) -> ModalResult<Script<'s>> {
-    (
-        helper::statements_and_expression,
-        helper::token_boxed(TokenKind::Eof),
-    )
-        .map(|((statements, expression), eof)| Script(statements, expression, eof))
-        .parse_next(i)
+    scripts::script.parse_next(i)
 }

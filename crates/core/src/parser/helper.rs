@@ -7,16 +7,15 @@ use winnow::token::{any, one_of};
 use crate::diagnostic::{DiagnosticCode, SourceRange};
 use crate::lexer::{Keyword, Operator, Token, TokenKind};
 
-use super::statements::statement;
-use super::{Expression, Input, Statement, expression};
+use super::{Expression, Input, Statement, expressions::expression, statements::statement};
 
-pub(super) fn statements_and_expression<'s>(
-    i: &mut Input<'_, 's>,
-) -> ModalResult<(Vec<Statement<'s>>, Option<Box<Expression<'s>>>)> {
-    let (mut statements, expression): (Vec<_>, _) =
-        (repeat(0.., statement), opt(expression.map(Box::new))).parse_next(i)?;
+pub(super) fn construct_statements_and_expression<'s>(
+    mut statements: Vec<Statement<'s>>,
+    expression: Option<Expression<'s>>,
+) -> (Vec<Statement<'s>>, Option<Box<Expression<'s>>>) {
+    let expression = expression.map(Box::new);
     if expression.is_some() || statements.is_empty() {
-        return Ok((statements, expression));
+        return (statements, expression);
     }
 
     let last_statement = statements.pop().unwrap();
@@ -27,7 +26,15 @@ pub(super) fn statements_and_expression<'s>(
             None
         }
     };
-    Ok((statements, expression))
+    (statements, expression)
+}
+
+pub(super) fn statements_and_expression<'s>(
+    i: &mut Input<'_, 's>,
+) -> ModalResult<(Vec<Statement<'s>>, Option<Box<Expression<'s>>>)> {
+    let (statements, expression): (Vec<_>, _) =
+        (repeat(0.., statement), opt(expression)).parse_next(i)?;
+    Ok(construct_statements_and_expression(statements, expression))
 }
 
 pub(super) fn parameter_list<'s>(i: &mut Input<'_, 's>) -> ModalResult<Option<Vec<Token<'s>>>> {

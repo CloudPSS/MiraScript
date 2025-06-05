@@ -43,6 +43,16 @@ class HoverProvider extends Provider implements languages.HoverProvider {
                         value: codeblock(`\0(parameter) mut ${model.getValueInRange(diagnostic)}`),
                     };
                     break;
+                case DiagnosticCode.ParameterImmutableIt:
+                    content = {
+                        value: codeblock(`\0(parameter) it`),
+                    };
+                    break;
+                case DiagnosticCode.ParameterMutableIt:
+                    content = {
+                        value: codeblock(`\0(parameter) mut it`),
+                    };
+                    break;
                 case DiagnosticCode.ParameterImmutableRest:
                     content = {
                         value: codeblock(`\0(parameter) ..${model.getValueInRange(diagnostic)}`),
@@ -51,6 +61,11 @@ class HoverProvider extends Provider implements languages.HoverProvider {
                 case DiagnosticCode.ParameterMutableRest:
                     content = {
                         value: codeblock(`\0(parameter) ..mut ${model.getValueInRange(diagnostic)}`),
+                    };
+                    break;
+                case DiagnosticCode.LocalFunction:
+                    content = {
+                        value: codeblock(`fn ${model.getValueInRange(diagnostic)}`),
                     };
                     break;
                 case DiagnosticCode.LocalImmutable:

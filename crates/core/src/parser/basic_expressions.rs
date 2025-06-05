@@ -18,6 +18,7 @@ use super::helper::{literal_token, token, token_boxed, token_or_insert, variable
 use super::patterns::pattern;
 use super::ranges::range;
 use super::record_helper::record_base;
+use super::scripts::script;
 use super::{Expression, Input, RecordElement, to_input};
 
 fn to_interpolate_expr(token: Token<'_>) -> Expression<'_> {
@@ -28,8 +29,27 @@ fn to_interpolate_expr(token: Token<'_>) -> Expression<'_> {
         .iter()
         .map(|tokens| {
             let expr: ModalResult<Expression<'_>> = {
-                let mut token_input = to_input(tokens.as_slice());
-                terminated(expression, eof).parse_next(&mut token_input)
+                let len = tokens.len();
+                if tokens.len() >= 2
+                    && tokens[0].kind == Operator::OpenBrace
+                    && tokens[len - 1].kind == Operator::CloseBrace
+                {
+                    let [op, tokens @ .., cp] = &tokens[..] else {
+                        unreachable!();
+                    };
+                    let mut token_input = to_input(tokens);
+                    script.parse_next(&mut token_input).map(|script| {
+                        Expression::Block(
+                            op.to_owned().into(),
+                            script.0,
+                            script.1,
+                            cp.to_owned().into(),
+                        )
+                    })
+                } else {
+                    let mut token_input = to_input(tokens);
+                    terminated(expression, eof).parse_next(&mut token_input)
+                }
             };
             let expr = match expr {
                 Ok(expr) => expr,
