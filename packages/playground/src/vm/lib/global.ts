@@ -310,40 +310,201 @@ _with_.paramsType = {
 _with_.returnsType = 'type(data)';
 
 export const to_string: VmLib = (data) => $ToString(data);
+to_string.summary = '将数据转换为字符串';
+to_string.params = { data: '要转换的数据' };
+to_string.paramsType = { data: 'any' };
+to_string.returnsType = 'string';
 
 export const to_number: VmLib = (data) => $ToNumber(data);
+to_number.summary = '将数据转换为数字';
+to_number.params = { data: '要转换的数据' };
+to_number.paramsType = { data: 'any' };
+to_number.returnsType = 'number';
 
 export const to_boolean: VmLib = (data) => $ToBoolean(data);
+to_boolean.summary = '将数据转换为布尔值';
+to_boolean.params = { data: '要转换的数据' };
+to_boolean.paramsType = { data: 'any' };
+to_boolean.returnsType = 'boolean';
 
-export const _abs_: VmLib = (value) => abs($ToNumber(value));
-export const _acos_: VmLib = (value) => acos($ToNumber(value));
-export const _acosh_: VmLib = (value) => acosh($ToNumber(value));
-export const _asin_: VmLib = (value) => asin($ToNumber(value));
-export const _asinh_: VmLib = (value) => asinh($ToNumber(value));
-export const _atan_: VmLib = (value) => atan($ToNumber(value));
+export const _abs_: VmLib = (x) => abs($ToNumber(x));
+_abs_.summary = '返回数值的绝对值';
+_abs_.params = { x: '要取绝对值的数' };
+_abs_.paramsType = { x: 'number' };
+_abs_.returnsType = 'number';
+
+export const _acos_: VmLib = (x) => acos($ToNumber(x));
+_acos_.summary = '返回数值的反余弦值（弧度）';
+_acos_.params = { x: '要计算反余弦的数' };
+_acos_.paramsType = { x: 'number' };
+_acos_.returnsType = 'number';
+
+export const _acosh_: VmLib = (x) => acosh($ToNumber(x));
+_acosh_.summary = '返回数值的反双曲余弦值';
+_acosh_.params = { x: '要计算反双曲余弦的数' };
+_acosh_.paramsType = { x: 'number' };
+_acosh_.returnsType = 'number';
+
+export const _asin_: VmLib = (x) => asin($ToNumber(x));
+_asin_.summary = '返回数值的反正弦值（弧度）';
+_asin_.params = { x: '要计算反正弦的数' };
+_asin_.paramsType = { x: 'number' };
+_asin_.returnsType = 'number';
+
+export const _asinh_: VmLib = (x) => asinh($ToNumber(x));
+_asinh_.summary = '返回数值的反双曲正弦值';
+_asinh_.params = { x: '要计算反双曲正弦的数' };
+_asinh_.paramsType = { x: 'number' };
+_asinh_.returnsType = 'number';
+
+export const _atan_: VmLib = (x) => atan($ToNumber(x));
+_atan_.summary = '返回数值的反正切值（弧度）';
+_atan_.params = { x: '要计算反正切的数' };
+_atan_.paramsType = { x: 'number' };
+_atan_.returnsType = 'number';
+
 export const _atan2_: VmLib = (x, y) => atan2($ToNumber(x), $ToNumber(y));
-export const _atanh_: VmLib = (value) => atanh($ToNumber(value));
-export const _cbrt_: VmLib = (value) => cbrt($ToNumber(value));
-export const _ceil_: VmLib = (value) => ceil($ToNumber(value));
-export const _cos_: VmLib = (value) => cos($ToNumber(value));
-export const _cosh_: VmLib = (value) => cosh($ToNumber(value));
-export const _exp_: VmLib = (value) => exp($ToNumber(value));
-export const _expm1_: VmLib = (value) => expm1($ToNumber(value));
-export const _floor_: VmLib = (value) => floor($ToNumber(value));
+_atan2_.summary = '返回从原点到点 (x, y) 的角度（弧度）';
+_atan2_.params = { x: 'x 坐标', y: 'y 坐标' };
+_atan2_.paramsType = { x: 'number', y: 'number' };
+_atan2_.returnsType = 'number';
+
+export const _atanh_: VmLib = (x) => atanh($ToNumber(x));
+_atanh_.summary = '返回数值的反双曲正切值';
+_atanh_.params = { x: '要计算反双曲正切的数' };
+_atanh_.paramsType = { x: 'number' };
+_atanh_.returnsType = 'number';
+
+export const _cbrt_: VmLib = (x) => cbrt($ToNumber(x));
+_cbrt_.summary = '返回数值的立方根';
+_cbrt_.params = { x: '要计算立方根的数' };
+_cbrt_.paramsType = { x: 'number' };
+_cbrt_.returnsType = 'number';
+
+export const _ceil_: VmLib = (x) => ceil($ToNumber(x));
+_ceil_.summary = '返回大于等于给定数的最小整数';
+_ceil_.params = { x: '要向上取整的数' };
+_ceil_.paramsType = { x: 'number' };
+_ceil_.returnsType = 'number';
+
+export const _cos_: VmLib = (x) => cos($ToNumber(x));
+_cos_.summary = '返回数值的余弦值';
+_cos_.params = { x: '要计算余弦的数（弧度）' };
+_cos_.paramsType = { x: 'number' };
+_cos_.returnsType = 'number';
+
+export const _cosh_: VmLib = (x) => cosh($ToNumber(x));
+_cosh_.summary = '返回数值的双曲余弦值';
+_cosh_.params = { x: '要计算双曲余弦的数' };
+_cosh_.paramsType = { x: 'number' };
+_cosh_.returnsType = 'number';
+
+export const _exp_: VmLib = (x) => exp($ToNumber(x));
+_exp_.summary = '返回 e 的指定次幂';
+_exp_.params = { x: '指数' };
+_exp_.paramsType = { x: 'number' };
+_exp_.returnsType = 'number';
+
+export const _expm1_: VmLib = (x) => expm1($ToNumber(x));
+_expm1_.summary = '返回 e 的 x 次幂减 1';
+_expm1_.params = { x: '指数' };
+_expm1_.paramsType = { x: 'number' };
+_expm1_.returnsType = 'number';
+
+export const _floor_: VmLib = (x) => floor($ToNumber(x));
+_floor_.summary = '返回小于等于给定数的最大整数';
+_floor_.params = { x: '要向下取整的数' };
+_floor_.paramsType = { x: 'number' };
+_floor_.returnsType = 'number';
+
 export const _hypot_: VmLib = (...values) => hypot(...values.map($ToNumber));
-export const _log_: VmLib = (value) => log($ToNumber(value));
-export const _log10_: VmLib = (value) => log10($ToNumber(value));
-export const _log1p_: VmLib = (value) => log1p($ToNumber(value));
-export const _log2_: VmLib = (value) => log2($ToNumber(value));
+_hypot_.summary = '返回所有参数平方和的平方根';
+_hypot_.params = { '..values': '要计算的数值' };
+_hypot_.paramsType = { '..values': '[number]' };
+_hypot_.returnsType = 'number';
+
+export const _log_: VmLib = (x) => log($ToNumber(x));
+_log_.summary = '返回数值的自然对数（以 e 为底）';
+_log_.params = { x: '要取对数的数' };
+_log_.paramsType = { x: 'number' };
+_log_.returnsType = 'number';
+
+export const _log10_: VmLib = (x) => log10($ToNumber(x));
+_log10_.summary = '返回数值的以 10 为底的对数';
+_log10_.params = { x: '要取对数的数' };
+_log10_.paramsType = { x: 'number' };
+_log10_.returnsType = 'number';
+
+export const _log1p_: VmLib = (x) => log1p($ToNumber(x));
+_log1p_.summary = '返回 1 加上数值的自然对数';
+_log1p_.params = { x: '要取对数的数' };
+_log1p_.paramsType = { x: 'number' };
+_log1p_.returnsType = 'number';
+
+export const _log2_: VmLib = (x) => log2($ToNumber(x));
+_log2_.summary = '返回数值的以 2 为底的对数';
+_log2_.params = { x: '要取对数的数' };
+_log2_.paramsType = { x: 'number' };
+_log2_.returnsType = 'number';
+
 export const _pow_: VmLib = (x, y) => pow($ToNumber(x), $ToNumber(y));
+_pow_.summary = '返回 x 的 y 次幂';
+_pow_.params = { x: '底数', y: '指数' };
+_pow_.paramsType = { x: 'number', y: 'number' };
+_pow_.returnsType = 'number';
+
 export const _random_: VmLib = () => random();
-export const _round_: VmLib = (value) => round($ToNumber(value));
-export const _sign_: VmLib = (value) => sign($ToNumber(value));
-export const _sin_: VmLib = (value) => sin($ToNumber(value));
-export const _sinh_: VmLib = (value) => sinh($ToNumber(value));
-export const _sqrt_: VmLib = (value) => sqrt($ToNumber(value));
-export const _tan_: VmLib = (value) => tan($ToNumber(value));
-export const _tanh_: VmLib = (value) => tanh($ToNumber(value));
-export const _trunc_: VmLib = (value) => trunc($ToNumber(value));
+_random_.summary = '返回 0 到 1 之间的伪随机数';
+_random_.params = {};
+_random_.paramsType = {};
+_random_.returnsType = 'number';
+
+export const _round_: VmLib = (x) => round($ToNumber(x));
+_round_.summary = '返回四舍五入后的整数';
+_round_.params = { x: '要四舍五入的数' };
+_round_.paramsType = { x: 'number' };
+_round_.returnsType = 'number';
+
+export const _sign_: VmLib = (x) => sign($ToNumber(x));
+_sign_.summary = '返回数值的符号（正数为 1，负数为 -1，零为 0）';
+_sign_.params = { x: '要判断符号的数' };
+_sign_.paramsType = { x: 'number' };
+_sign_.returnsType = 'number';
+
+export const _sin_: VmLib = (x) => sin($ToNumber(x));
+_sin_.summary = '返回数值的正弦值';
+_sin_.params = { x: '要计算正弦的数（弧度）' };
+_sin_.paramsType = { x: 'number' };
+_sin_.returnsType = 'number';
+
+export const _sinh_: VmLib = (x) => sinh($ToNumber(x));
+_sinh_.summary = '返回数值的双曲正弦值';
+_sinh_.params = { x: '要计算双曲正弦的数' };
+_sinh_.paramsType = { x: 'number' };
+_sinh_.returnsType = 'number';
+
+export const _sqrt_: VmLib = (x) => sqrt($ToNumber(x));
+_sqrt_.summary = '返回数值的平方根';
+_sqrt_.params = { x: '要开平方的数' };
+_sqrt_.paramsType = { x: 'number' };
+_sqrt_.returnsType = 'number';
+
+export const _tan_: VmLib = (x) => tan($ToNumber(x));
+_tan_.summary = '返回数值的正切值';
+_tan_.params = { x: '要计算正切的数（弧度）' };
+_tan_.paramsType = { x: 'number' };
+_tan_.returnsType = 'number';
+
+export const _tanh_: VmLib = (x) => tanh($ToNumber(x));
+_tanh_.summary = '返回数值的双曲正切值';
+_tanh_.params = { x: '要计算双曲正切的数' };
+_tanh_.paramsType = { x: 'number' };
+_tanh_.returnsType = 'number';
+
+export const _trunc_: VmLib = (x) => trunc($ToNumber(x));
+_trunc_.summary = '返回数值的整数部分（去除小数）';
+_trunc_.params = { x: '要取整数部分的数' };
+_trunc_.paramsType = { x: 'number' };
+_trunc_.returnsType = 'number';
 
 export { PI as '@pi', E as '@e' };
