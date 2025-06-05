@@ -3,7 +3,7 @@ import { Provider } from './worker-helper';
 import { VmSharedGlobal } from '../../vm/types/global.js';
 import { getVmFunctionInfo } from '../../vm';
 import { $Type } from '../../vm/operations';
-import { codeblock, signature } from './utils';
+import { codeblock, document } from './utils';
 import { keywords } from 'mira-wasm';
 
 const DESC_GLOBAL = '(global)';
@@ -150,7 +150,7 @@ class CompletionItemProvider extends Provider implements languages.CompletionIte
             const info = getVmFunctionInfo(element);
             if (info) {
                 item.documentation = {
-                    value: codeblock(signature(label, info)) + (info.summary ?? ''),
+                    value: document(label, info),
                 };
             } else if (label.startsWith('@')) {
                 item.documentation = {

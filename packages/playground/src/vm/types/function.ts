@@ -63,6 +63,9 @@ export function VmFunction(fn: VmFunctionLike, option: VmFunctionOption = {}): V
         isLib: option.isLib ?? false,
         summary: option.summary || undefined,
         params: option.params,
+        paramsType: option.paramsType,
+        returns: option.returns || undefined,
+        returnsType: option.returnsType || undefined,
     };
     if (option.injectCp) {
         const original = fn;

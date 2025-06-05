@@ -15,7 +15,6 @@ function identifierCases(
         '@constantKeywords': { ...data, token: `constant.language.$${capture}` },
         '@controlKeywords': { ...data, token: `keyword.control.$${capture}` },
         '@keywords': { ...data, token: `keyword.$${capture}` },
-        '@type': { ...data, token: `type` },
         '[@]+.*': { ...data, token: `variable.other.constant` },
         '@default': { ...data, token: defaultToken },
     };
@@ -41,17 +40,17 @@ async function getTokensProvider(): Promise<languages.IMonarchLanguage> {
         controlKeywords: await callWorker('control_keywords'),
         constantKeywords: await callWorker('constant_keywords'),
         numericKeywords: await callWorker('numeric_keywords'),
-        type: ['String', 'Number', 'Boolean'],
 
         tokenizer: {
             root: [[/[[\](){}]/gu, '@brackets'], { include: '@common' }],
             common: [
+                [/\0fn/g, 'keyword.fn.doc', '@fn_doc'],
                 [
-                    /(\0\(parameter\))(\s*)(..|)(\s*)(mut)(\s+)(@identifier)/g,
+                    /(\0\(parameter\))(@whitespace*)(..|)(@whitespace*)(mut)(@whitespace+)(@identifier)/g,
                     ['entity.name.label', '', 'operator.spread-range', '', 'keyword.mut', '', 'variable.emphasis'],
                 ],
                 [
-                    /(\0\(parameter\))(\s*)(..|)(\s*)(@identifier)/g,
+                    /(\0\(parameter\))(@whitespace*)(..|)(@whitespace*)(@identifier)/g,
                     ['entity.name.label', '', 'operator.spread-range', '', 'variable.other.constant.emphasis'],
                 ],
                 [/(\0\(@identifier\))/g, 'entity.name.label'],
@@ -286,6 +285,33 @@ async function getTokensProvider(): Promise<languages.IMonarchLanguage> {
                 [/\}/gu, { token: '@brackets', next: '@pop' }],
                 [/[[\]()]/gu, '@brackets'],
                 { include: '@common' },
+            ],
+
+            fn_doc: [
+                [/(@identifier)(\()/gu, ['entity.name.function.doc', '@brackets']],
+                [/@whitespace+/, ''],
+                [
+                    /(@identifier)(\s*)(:)/gu,
+                    ['variable.other.constant.emphasis.doc', '', { token: 'operator.colon', next: '@type_doc' }],
+                ],
+                [
+                    /(\.\.|)(@identifier)(\s*)(,)/gu,
+                    ['operator.spread-range', 'variable.other.constant.emphasis.doc', '', 'operator.comma'],
+                ],
+                [/[()]/gu, '@brackets'],
+                [/(->)/gu, 'operator.arrow', '@type_doc'],
+            ],
+            type_doc: [{ include: '@type_doc_inner' }, [/,/, 'operator.comma', '@pop']],
+            type_doc_inner: [
+                [/fn\b/gu, 'type', '@fn_doc'],
+                [
+                    /(type)(\()(@identifier)(\))/gu,
+                    ['type', '@brackets', 'variable.other.constant.emphasis.doc', '@brackets'],
+                ],
+                [/@identifier/, 'type'],
+                [/[[(]/, '@brackets', '@type_doc_inner'],
+                [/[\])]/, '@brackets', '@pop'],
+                [/@whitespace+/, ''],
             ],
         },
     };

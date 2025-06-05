@@ -2,9 +2,34 @@ import type { VmFunctionInfo } from '../../vm/types/function';
 
 /** 生成函数签名 */
 export function signature(id: string | undefined, info: VmFunctionInfo): string {
-    const prefix = id ? `fn ${id}` : 'fn';
-    const params = info.params ? `(${Object.keys(info.params).join(', ')})` : '(..)';
-    return `${prefix}${params}`;
+    const prefix = id ? `\0fn ${id}` : 'fn';
+    const params = info.params
+        ? `(${Object.keys(info.params)
+              .map((key) => {
+                  const type = info.paramsType?.[key];
+                  const typeStr = type ? `: ${type}` : '';
+                  return `${key}${typeStr}`;
+              })
+              .join(', ')})`
+        : '(..)';
+    const returns = info.returnsType ? ` -> ${info.returnsType}` : '';
+    return `${prefix}${params}${returns}`;
+}
+
+/** 生成函数文档 */
+export function document(id: string | undefined, info: VmFunctionInfo): string {
+    const signatureStr = signature(id, info);
+    const doc = [
+        codeblock(signatureStr),
+        info.summary || '',
+        info.params
+            ? Object.entries(info.params)
+                  .map(([key, value]) => `- \`${key}\`: ${value}`)
+                  .join('\n')
+            : '',
+        info.returns ? `**返回值**: ${info.returns}` : '',
+    ];
+    return doc.join('\n\n');
 }
 
 const CODEBLOCK_FENCE = '`'.repeat(16);
