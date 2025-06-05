@@ -3,15 +3,22 @@ import type { VmFunctionInfo } from '../../vm/types/function';
 /** 生成函数签名 */
 export function signature(id: string | undefined, info: VmFunctionInfo): string {
     const prefix = id ? `\0fn ${id}` : 'fn';
-    const params = info.params
-        ? `(${Object.keys(info.params)
-              .map((key) => {
-                  const type = info.paramsType?.[key];
-                  const typeStr = type ? `: ${type}` : '';
-                  return `${key}${typeStr}`;
-              })
-              .join(', ')})`
-        : '(..)';
+    let params;
+    if (!info.params) {
+        params = '(..)';
+    } else {
+        const paramItems = Object.keys(info.params).map((key) => {
+            const type = info.paramsType?.[key];
+            const typeStr = type ? `: ${type}` : '';
+            return `${key}${typeStr}`;
+        });
+        const len = paramItems.reduce((acc, item) => acc + item.length, 0);
+        if (len <= 60) {
+            params = `(${paramItems.join(', ')})`;
+        } else {
+            params = `(\n${paramItems.map((item) => `  ${item},`).join('\n')}\n)`;
+        }
+    }
     const returns = info.returnsType ? ` -> ${info.returnsType}` : '';
     return `${prefix}${params}${returns}`;
 }
