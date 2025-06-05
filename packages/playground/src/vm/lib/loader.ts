@@ -2,13 +2,11 @@ import { VmFunction, type VmImmutable } from '../types/index.js';
 import { VmSharedGlobal } from '../types/global';
 
 import * as global from './global.js';
-import type { VmFunctionLike } from '../types/function.js';
+import type { VmFunctionInfo, VmFunctionLike } from '../types/function.js';
 
 /** 库函数 */
-export type VmLib = VmFunctionLike & {
-    summary?: string;
-    params?: Record<string, string>;
-};
+export type VmLib = VmFunctionLike &
+    Pick<Writable<VmFunctionInfo>, 'summary' | 'params' | 'paramsType' | 'returns' | 'returnsType'>;
 
 for (const [name, value] of Object.entries(global)) {
     let e = name;
@@ -23,6 +21,9 @@ for (const [name, value] of Object.entries(global)) {
             fullName: `global.${e}`,
             summary: f.summary,
             params: f.params,
+            paramsType: f.paramsType,
+            returns: f.returns,
+            returnsType: f.returnsType,
         });
     } else {
         VmSharedGlobal[e] = value as VmImmutable;

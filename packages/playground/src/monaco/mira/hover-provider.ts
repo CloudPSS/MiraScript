@@ -11,12 +11,7 @@ import { DiagnosticCode } from 'mira-wasm';
 import { VmSharedGlobal } from '../../vm/types/global.js';
 import { getVmFunctionInfo } from '../../vm';
 import { $ToString } from '../../vm/operations';
-
-const CODEBLOCK_FENCE = '`'.repeat(16);
-/** 获取代码块格式化字符串 */
-function codeblock(value: string): string {
-    return `\n${CODEBLOCK_FENCE}mirascript\n${value}\n${CODEBLOCK_FENCE}\n`;
-}
+import { signature, codeblock } from './utils';
 
 /** @inheritdoc */
 class HoverProvider extends Provider implements languages.HoverProvider {
@@ -82,11 +77,7 @@ class HoverProvider extends Provider implements languages.HoverProvider {
                     let doc = '';
                     const info = getVmFunctionInfo(value);
                     if (info) {
-                        let params = '(..)';
-                        if (info.params) {
-                            params = '(' + Object.keys(info.params).join(', ') + ')';
-                        }
-                        description = `fn ${id}${params}`;
+                        description = signature(id, info);
                         doc = info.summary ?? '';
                     } else if (value !== undefined) {
                         description = `${id} = ${$ToString(value)}`;
@@ -112,5 +103,4 @@ class HoverProvider extends Provider implements languages.HoverProvider {
         return hover;
     }
 }
-export const hoverProvider = new HoverProvider();
-languages.registerHoverProvider('mirascript', hoverProvider);
+languages.registerHoverProvider('mirascript', new HoverProvider());

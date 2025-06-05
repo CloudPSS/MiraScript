@@ -396,7 +396,7 @@ class CodeGenerator {
             case OpCode.Neg:
             case OpCode.Not:
             case OpCode.Type:
-            case OpCode.ToBool:
+            case OpCode.ToBoolean:
             case OpCode.ToNumber:
             case OpCode.ToString: {
                 reg = read();
@@ -469,12 +469,12 @@ class CodeGenerator {
             }
             case OpCode.If: {
                 const cond = read();
-                code = `if ($ToBool(${this.rv(cond)})) {`;
+                code = `if ($ToBoolean(${this.rv(cond)})) {`;
                 break;
             }
             case OpCode.IfNot: {
                 const cond = read();
-                code = `if (!$ToBool(${this.rv(cond)})) {`;
+                code = `if (!$ToBoolean(${this.rv(cond)})) {`;
                 break;
             }
             case OpCode.IfInit: {

@@ -23,6 +23,12 @@ export interface VmFunctionInfo {
     readonly summary?: string;
     /** 文档字符串 */
     readonly params?: Record<string, string>;
+    /** 文档字符串 */
+    readonly paramsType?: Record<string, string>;
+    /** 文档字符串 */
+    readonly returns?: string;
+    /** 文档字符串 */
+    readonly returnsType?: string;
     /** 如果添加了包装，返回原函数 */
     readonly original?: (...args: VmAny[]) => VmAny;
 }

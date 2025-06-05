@@ -95,9 +95,9 @@ pub enum OpCode {
     /// TYPE %ret %1\
     /// %ret = type(%1)
     Type,
-    /// TO_BOOL %ret %1\
-    /// %ret = bool(%1)
-    ToBool,
+    /// TO_BOOLEAN %ret %1\
+    /// %ret = boolean(%1)
+    ToBoolean,
     /// TO_NUMBER %ret %1\
     /// %ret = number(%1)
     ToNumber,

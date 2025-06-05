@@ -104,7 +104,7 @@ export const $Concat = (...args: string[]): string => {
 };
 export const $Pos = (a: VmAny): number => $ToNumber(a);
 export const $Neg = (a: VmAny): number => -$ToNumber(a);
-export const $Not = (a: VmAny): boolean => !$ToBool(a);
+export const $Not = (a: VmAny): boolean => !$ToBoolean(a);
 export const $Init: (value: VmAny) => asserts value is VmValue = (value) => {
     if (value === undefined) throw new TypeError(`Uninitialized value`);
 };
@@ -129,7 +129,7 @@ export const $Type = (value: VmAny): TypeName => {
     if (typeof value == 'object') return 'record';
     return typeof value as TypeName;
 };
-export const $ToBool = (value: VmAny): boolean => {
+export const $ToBoolean = (value: VmAny): boolean => {
     $Init(value);
     return value != null && value !== false;
 };

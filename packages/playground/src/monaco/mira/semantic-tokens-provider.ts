@@ -110,5 +110,4 @@ class DocumentSemanticTokensProvider extends Provider implements languages.Docum
     }
 }
 
-export const documentSemanticTokensProvider = new DocumentSemanticTokensProvider();
-languages.registerDocumentSemanticTokensProvider('mirascript', documentSemanticTokensProvider);
+languages.registerDocumentSemanticTokensProvider('mirascript', new DocumentSemanticTokensProvider());
