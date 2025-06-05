@@ -74,6 +74,9 @@ pub enum OpCode {
     /// IN %ret %1 %2\
     /// %ret = %1 in %2
     In,
+    /// IN_GLOBAL %ret %1 %2\
+    /// %ret = %1 in global
+    InGlobal,
     /// CONCAT %ret `n` %1 %2 ... %n\
     /// %ret = %1 .. %2 .. ... .. %n
     Concat,

@@ -19,6 +19,10 @@ export interface VmFunctionInfo {
     readonly fullName: string;
     /** 是否为库函数 */
     readonly isLib: boolean;
+    /** 文档字符串 */
+    readonly summary?: string;
+    /** 文档字符串 */
+    readonly params?: Record<string, string>;
     /** 如果添加了包装，返回原函数 */
     readonly original?: (...args: VmAny[]) => VmAny;
 }
@@ -51,6 +55,8 @@ export function VmFunction(fn: VmFunctionLike, option: VmFunctionOption = {}): V
     const info: Writable<VmFunctionInfo> = {
         fullName: option.fullName ?? fn.name,
         isLib: option.isLib ?? false,
+        summary: option.summary || undefined,
+        params: option.params,
     };
     if (option.injectCp) {
         const original = fn;

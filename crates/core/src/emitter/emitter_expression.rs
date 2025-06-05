@@ -510,6 +510,10 @@ impl<'s> Emitter<'s> {
                     self.op_if(OpCode::IfNil, ret);
                     self.emit_expression(right, ret, brk);
                     self.op_if_end();
+                } else if **token == Keyword::In && is_global_expression(right) {
+                    let left_reg = self.add_reg();
+                    self.emit_expression(left, left_reg, brk);
+                    self.op_unary(ret, OpCode::InGlobal, left_reg);
                 } else {
                     let op = match token.kind {
                         TokenKind::Operator(Operator::Caret) => OpCode::Pow,

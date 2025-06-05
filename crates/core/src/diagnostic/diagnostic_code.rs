@@ -103,7 +103,9 @@ pub enum DiagnosticCode {
     UnexpectedBreakOutsideLoop,
     #[strum(message = "Unexpected `continue` outside of loop")]
     UnexpectedContinueOutsideLoop,
-    #[strum(message = "`global` keyword can only be used as `global.<name>` or `global[<name>]`")]
+    #[strum(
+        message = "`global` keyword can only be used as `global.<name>`, `global[<name>]` or right-hand side of `in` operator"
+    )]
     MisuseOfGlobalKeyword,
     #[strum(message = "Can not infer key from expression")]
     BadOmitKeyRecordExpression,

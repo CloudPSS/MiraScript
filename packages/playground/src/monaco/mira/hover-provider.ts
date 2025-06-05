@@ -9,13 +9,13 @@ import {
 import { Provider } from './worker-helper';
 import { DiagnosticCode } from 'mira-wasm';
 import { VmSharedGlobal } from '../../vm/types/global.js';
-import { isVmFunction } from '../../vm';
+import { getVmFunctionInfo } from '../../vm';
 import { $ToString } from '../../vm/operations';
 
 const CODEBLOCK_FENCE = '`'.repeat(16);
 /** 获取代码块格式化字符串 */
 function codeblock(value: string): string {
-    return `${CODEBLOCK_FENCE}mirascript\n${value}\n${CODEBLOCK_FENCE}`;
+    return `\n${CODEBLOCK_FENCE}mirascript\n${value}\n${CODEBLOCK_FENCE}\n`;
 }
 
 /** @inheritdoc */
@@ -79,16 +79,20 @@ class HoverProvider extends Provider implements languages.HoverProvider {
                     const id = model.getValueInRange(diagnostic);
                     const value = VmSharedGlobal[id];
                     let description = id;
-                    if (isVmFunction(value)) {
-                        const params = /\(.*?\)/.exec(value.toString());
-                        if (params) {
-                            description = `fn ${id}${params[0]}`;
+                    let doc = '';
+                    const info = getVmFunctionInfo(value);
+                    if (info) {
+                        let params = '(..)';
+                        if (info.params) {
+                            params = '(' + Object.keys(info.params).join(', ') + ')';
                         }
+                        description = `fn ${id}${params}`;
+                        doc = info.summary ?? '';
                     } else if (value !== undefined) {
                         description = `${id} = ${$ToString(value)}`;
                     }
                     content = {
-                        value: codeblock(`\0(global) ${description}`),
+                        value: codeblock(`\0(global) ${description}`) + doc,
                     };
                     break;
                 }

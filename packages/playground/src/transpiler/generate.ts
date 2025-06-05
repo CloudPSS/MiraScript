@@ -356,6 +356,12 @@ class CodeGenerator {
                 code = `${this.wv(reg)} = $${OpCode[opcode]}(${this.rv(left)}, ${this.rv(right)});`;
                 break;
             }
+            case OpCode.InGlobal: {
+                reg = read();
+                const left = read();
+                code = `${this.wv(reg)} = global[${this.rv(left)}] !== undefined;`;
+                break;
+            }
             case OpCode.Concat: {
                 reg = read();
                 const n = read();

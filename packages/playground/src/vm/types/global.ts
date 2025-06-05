@@ -1,4 +1,4 @@
-import { VmFunction, type VmAny, type VmImmutable, type VmValue, wrapToVmValue, isVmValue } from '.';
+import { VmFunction, type VmAny, type VmImmutable, type VmValue, wrapToVmValue, isVmAny } from '.';
 const { getPrototypeOf, create, entries } = Object;
 
 /** MiraScript 全局环境的基础，仅包含标准库 */
@@ -30,13 +30,13 @@ export function createVmGlobal(
     const env = create(VmSharedGlobal) as VmGlobal;
     if (vmValues) {
         for (const [key, value] of entries(vmValues)) {
-            if (!isVmValue(value, false)) continue;
+            if (!isVmAny(value, false)) continue;
             env[key] = value;
         }
     }
     if (externValues) {
         for (const [key, value] of entries(externValues)) {
-            env[key] = wrapToVmValue(value, null);
+            env[key] = value === undefined ? undefined : wrapToVmValue(value, null);
         }
     }
     return env;

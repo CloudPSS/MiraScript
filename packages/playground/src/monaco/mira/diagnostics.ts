@@ -49,7 +49,7 @@ async function validate(model: editor.ITextModel): Promise<void> {
             message, //: `${message} (${startLineNumber}:${startColumn}-${endLineNumber}:${endColumn})`,
             modelVersionId: version,
             severity,
-            source: 'mira',
+            source: 'MiraScript',
             code: {
                 value: `${code}`,
                 target: Uri.parse(`https://mira.cloudpss.net/code/${code}`),

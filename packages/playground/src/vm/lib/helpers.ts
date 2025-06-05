@@ -1,5 +1,5 @@
-import { VmError } from '../error';
-import { $Type } from '../operations';
+import { VmError } from '../error.js';
+import { $Type } from '../operations.js';
 import {
     isVmArray,
     isVmExtern,
@@ -9,7 +9,9 @@ import {
     type VmAny,
     type VmArray,
     type VmValue,
-} from '../types';
+    isVmRecord,
+    type VmRecord,
+} from '../types/index.js';
 
 /** 抛出异常 */
 export function throwError(message: string, recovered: VmAny | (() => VmAny)): never {
@@ -58,6 +60,30 @@ export function expectArray(
     required(name, value, recovered);
     if (!isVmArray(value)) {
         throwUnexpectedTypeError(name, 'array', value, recovered);
+    }
+}
+
+/** 标记参数为记录 */
+export function expectRecord(
+    name: string | number,
+    value: VmAny,
+    recovered: VmAny | (() => VmAny),
+): asserts value is VmRecord {
+    required(name, value, recovered);
+    if (!isVmRecord(value)) {
+        throwUnexpectedTypeError(name, 'record', value, recovered);
+    }
+}
+
+/** 标记参数为数组或记录 */
+export function expectArrayOrRecord(
+    name: string | number,
+    value: VmAny,
+    recovered: VmAny | (() => VmAny),
+): asserts value is VmArray | VmRecord {
+    required(name, value, recovered);
+    if (!isVmArray(value) && !isVmRecord(value)) {
+        throwUnexpectedTypeError(name, 'array or record', value, recovered);
     }
 }
 

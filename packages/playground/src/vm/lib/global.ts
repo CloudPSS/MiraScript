@@ -1,4 +1,4 @@
-import { Cp } from '../helpers';
+import { Cp, Element } from '../helpers';
 import { $CallDyn, $ToBool, $ToNumber, $ToString } from '../operations';
 import {
     isVmArray,
@@ -14,14 +14,14 @@ import {
     type VmRecord,
     type VmValue,
 } from '../types/index.js';
-import type { VmFunctionLike } from '../types/function.js';
 import { VmError } from '../error';
-import { expectArray, expectCallable, required, rethrowError } from './helpers';
+import { expectArray, expectArrayOrRecord, expectCallable, required, rethrowError } from './helpers';
+import type { VmLib } from './loader';
 
 /** Get the minimum and maximum numbers from the arguments. */
 function getMinMaxNumbers(args: readonly VmAny[]): number[] {
     if (args.length === 0) return [];
-    if (isVmArray(args[0])) args = args[0];
+    if (args.length === 1 && isVmArray(args[0])) args = args[0];
     const numbers: number[] = [];
     for (const arg of args) {
         if (arg === undefined) continue;
@@ -30,11 +30,12 @@ function getMinMaxNumbers(args: readonly VmAny[]): number[] {
     return numbers;
 }
 
-export const max: VmFunctionLike = (...args) => {
+export const max: VmLib = (...args) => {
     const numbers = getMinMaxNumbers(args);
     return Math.max(...numbers);
 };
-export const min: VmFunctionLike = (...args) => {
+max.summary = '返回一组数中的最大值';
+export const min: VmLib = (...args) => {
     const numbers = getMinMaxNumbers(args);
     return Math.min(...numbers);
 };
@@ -115,37 +116,37 @@ function mapImpl(
     throw new VmError('First argument must be primitive, array, record, or extern', null);
 }
 
-export const map: VmFunctionLike = (data, f) => {
+export const map: VmLib = (data, f) => {
     return mapImpl(data, 'f', f, (fn, value, key, data) => {
         return $CallDyn(fn, [value, key, data]);
     });
 };
 
-export const filter: VmFunctionLike = (data, predicate) => {
+export const filter: VmLib = (data, predicate) => {
     return mapImpl(data, 'predicate', predicate, (fn, value, key, data) => {
         const ret = $CallDyn(fn, [value, key, data]);
         return $ToBool(ret) ? value : undefined;
     });
 };
 
-export const filter_map: VmFunctionLike = (data, f) => {
+export const filter_map: VmLib = (data, f) => {
     return mapImpl(data, 'f', f, (fn, value, key, data) => {
         const ret = $CallDyn(fn, [value, key, data]);
         return ret ?? undefined;
     });
 };
 
-export const len: VmFunctionLike = (arr) => {
+export const len: VmLib = (arr) => {
     expectArray(0, arr, Number.NaN);
     return arr.length;
 };
 
-export const chars: VmFunctionLike = (str) => {
+export const chars: VmLib = (str) => {
     required('str', str, null);
     return [...$ToString(str)];
 };
 
-export const to_json: VmFunctionLike = (data) => {
+export const to_json: VmLib = (data) => {
     if (isVmExtern(data)) {
         return JSON.stringify(data.value);
     }
@@ -155,13 +156,41 @@ export const to_json: VmFunctionLike = (data) => {
     return JSON.stringify(data);
 };
 
-export const from_json: VmFunctionLike = (json, fallback) => {
+export const from_json: VmLib = (json, fallback) => {
     required('json', json, null);
     if (typeof json != 'string') return json;
     try {
         return JSON.parse($ToString(json));
     } catch (ex) {
         rethrowError('Invalid JSON', ex, fallback ?? null);
+    }
+};
+
+export const _with_: VmLib = (data, ...entries) => {
+    expectArrayOrRecord('data', data, data);
+    if (entries.length % 2 !== 0) {
+        throw new VmError('Invalid number of arguments, expected even number of arguments', data);
+    }
+    if (isVmArray(data)) {
+        const result: VmConst[] = [...data];
+        for (let i = 0; i < entries.length; i += 2) {
+            const index = Math.trunc($ToNumber(entries[i]));
+            if (!Number.isFinite(index) || index < 0 || index >= Number.MAX_SAFE_INTEGER) continue;
+            const value = entries[i + 1];
+            while (index > result.length) {
+                result.push(null);
+            }
+            result[index] = Element(value);
+        }
+        return result;
+    } else {
+        const result: Record<string, VmConst> = { ...data };
+        for (let i = 0; i < entries.length; i += 2) {
+            const key = $ToString(entries[i]);
+            const value = entries[i + 1];
+            result[key] = Element(value);
+        }
+        return result;
     }
 };
 
