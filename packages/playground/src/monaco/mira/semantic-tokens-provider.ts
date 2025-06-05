@@ -40,6 +40,7 @@ class DocumentSemanticTokensProvider extends Provider implements languages.Docum
                     break;
                 }
                 case DiagnosticCode.ParameterMutable:
+                case DiagnosticCode.ParameterMutableIt:
                 case DiagnosticCode.ParameterMutableRest:
                 case DiagnosticCode.LocalMutable: {
                     tokenType = 1;
@@ -50,6 +51,7 @@ class DocumentSemanticTokensProvider extends Provider implements languages.Docum
                     break;
                 }
                 case DiagnosticCode.ParameterImmutable:
+                case DiagnosticCode.ParameterImmutableIt:
                 case DiagnosticCode.ParameterImmutableRest:
                 case DiagnosticCode.LocalImmutable:
                 case DiagnosticCode.RecordFieldIdName: {
@@ -60,8 +62,10 @@ class DocumentSemanticTokensProvider extends Provider implements languages.Docum
             if (tokenType < 0) continue;
             if (
                 code === DiagnosticCode.ParameterImmutable ||
+                code === DiagnosticCode.ParameterImmutableIt ||
                 code === DiagnosticCode.ParameterImmutableRest ||
                 code === DiagnosticCode.ParameterMutable ||
+                code === DiagnosticCode.ParameterMutableIt ||
                 code === DiagnosticCode.ParameterMutableRest
             ) {
                 tokenModifiers |= 1 << 1;

@@ -73,12 +73,14 @@ impl<'s> Emitter<'s> {
                                     id_token.range(),
                                     DiagnosticCode::UninitializedVariable,
                                 ));
+                                variable.put_declaration(&mut self.diagnostics);
                             }
                             if !variable.mutable() {
                                 self.diagnostics.push(SourceDiagnostic::new(
                                     id_token.range(),
                                     DiagnosticCode::ImmutableVariableAssignment,
                                 ));
+                                variable.put_declaration(&mut self.diagnostics);
                                 Register::EMPTY
                             } else if level == self.closures.len() {
                                 variable.register()
@@ -157,7 +159,7 @@ impl<'s> Emitter<'s> {
                 }
                 false
             }
-            Function(_, name_token, args, expression) => {
+            Function(kw, name_token, args, expression) => {
                 let TokenKind::Identifier(name) = &name_token.kind else {
                     unreachable!("Expected identifier token");
                 };
@@ -176,7 +178,7 @@ impl<'s> Emitter<'s> {
                         DiagnosticCode::OmittedFunctionArgument,
                     ));
                 }
-                self.emit_fn(func_reg, args, stmts, expr);
+                self.emit_fn(func_reg, name_token, args, stmts, expr);
                 false
             }
             Return(_, expression, _) => {

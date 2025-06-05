@@ -1,7 +1,7 @@
 use std::ops::{Deref, DerefMut};
 
 use crate::{
-    diagnostic::{DiagnosticCode, SourceDiagnostic},
+    diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
     emitter::opcode::Register,
     lexer::{Token, TokenKind},
     parser::AstWalker,
@@ -60,9 +60,7 @@ impl<'s> Emitter<'s> {
             return;
         };
         for var in scope.variables {
-            if let Some(diagnostic) = var.exit() {
-                self.diagnostics.push(diagnostic);
-            }
+            var.exit(&mut self.diagnostics);
         }
     }
 
@@ -76,28 +74,24 @@ impl<'s> Emitter<'s> {
 
     fn check_local_variable(&mut self, access: &Token<'s>, name: &str) -> Option<&Variable<'s>> {
         let var = self.scopes.find_local_variable(name)?;
-        let code = {
-            if matches!(
-                var.bind_type(),
-                BindType::Parameter | BindType::RestParameter
-            ) {
-                DiagnosticCode::DuplicateParameterDeclaration
-            } else {
-                DiagnosticCode::DuplicateVariableDeclaration
-            }
-        };
-        self.diagnostics
-            .push(SourceDiagnostic::new(access.range(), code));
-        if let Some(decl) = var.declaration() {
-            self.diagnostics
-                .push(SourceDiagnostic::new(decl, DiagnosticCode::DeclaredHere));
-        }
+        self.diagnostics.push(SourceDiagnostic::new(
+            access.range(),
+            DiagnosticCode::DuplicateVariableDeclaration,
+        ));
+
+        var.put_declaration(&mut self.diagnostics);
         Some(var)
     }
 
-    pub fn declare_implicit_variable(&mut self, name: &'s str, mutable: bool, bind_type: BindType) {
+    pub fn declare_implicit_variable(
+        &mut self,
+        name: &'s str,
+        range: SourceRange,
+        mutable: bool,
+        bind_type: BindType,
+    ) {
         let register = self.add_variable_reg(bind_type);
-        let var = Variable::new(name, None, mutable, bind_type, register);
+        let var = Variable::new(name, range, mutable, bind_type, register);
         self.scopes.current().declare_variable(var);
     }
     pub fn declare_variable(
@@ -113,13 +107,7 @@ impl<'s> Emitter<'s> {
             return false;
         }
         let register = self.add_variable_reg(bind_type);
-        let var = Variable::new(
-            id,
-            Some(id_token.range.clone()),
-            mutable,
-            bind_type,
-            register,
-        );
+        let var = Variable::new(id, id_token.range(), mutable, bind_type, register);
         self.scopes.current().declare_variable(var);
         true
     }

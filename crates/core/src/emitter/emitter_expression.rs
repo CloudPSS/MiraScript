@@ -171,6 +171,7 @@ impl<'s> Emitter<'s> {
                             token.range(),
                             DiagnosticCode::UninitializedVariable,
                         ));
+                        variable.put_declaration(&mut self.diagnostics);
                     }
                     if level == self.closures.len() {
                         self.op_unary(ret, OpCode::Assign, register);
@@ -552,7 +553,8 @@ impl<'s> Emitter<'s> {
                 let pos = self.chunk.code.len();
                 self.op(OpCode::Loop);
                 let Expression::Block(_, stmts, expr, _) = expression.as_ref() else {
-                    unreachable!("Expected block expression");
+                    // unreachable!("Expected block expression");
+                    return;
                 };
                 self.emit_block(stmts, expr, Register::EMPTY, Some(ret));
                 self.op(OpCode::LoopEnd);
@@ -592,7 +594,8 @@ impl<'s> Emitter<'s> {
                 self.op_if_end();
 
                 let Expression::Block(_, stmts, expr, _) = body.as_ref() else {
-                    unreachable!("Expected block expression");
+                    // unreachable!("Expected block expression");
+                    return;
                 };
                 self.emit_block(stmts, expr, Register::EMPTY, Some(ret));
                 self.op(OpCode::LoopEnd);
@@ -611,7 +614,8 @@ impl<'s> Emitter<'s> {
                 self.op_if(OpCode::IfNotInit, ret);
                 if let Some((_, else_expr)) = else_part {
                     let Expression::Block(_, stmts, expr, _) = else_expr.as_ref() else {
-                        unreachable!("Expected block expression");
+                        // unreachable!("Expected block expression");
+                        return;
                     };
                     self.emit_block(stmts, expr, ret, None);
                 } else {
@@ -658,7 +662,8 @@ impl<'s> Emitter<'s> {
                 self.emit_pattern(pattern, iterator, Some(BindType::Init));
 
                 let Expression::Block(_, stmts, expr, _) = expression.as_ref() else {
-                    unreachable!("Expected block expression");
+                    // unreachable!("Expected block expression");
+                    return;
                 };
                 self.emit_block(stmts, expr, Register::EMPTY, Some(ret));
                 self.op(OpCode::LoopEnd);
@@ -680,7 +685,8 @@ impl<'s> Emitter<'s> {
                 self.op_if(OpCode::IfNotInit, ret);
                 if let Some((_, else_expr)) = else_part {
                     let Expression::Block(_, stmts, expr, _) = else_expr.as_ref() else {
-                        unreachable!("Expected block expression");
+                        // unreachable!("Expected block expression");
+                        return;
                     };
                     self.emit_block(stmts, expr, ret, None);
                 } else {
@@ -705,7 +711,8 @@ impl<'s> Emitter<'s> {
             Match(token, expression, token1, items, token2) => todo!(),
             Function(kw, args, expression) => {
                 let parser::Expression::Block(_, stmts, expr, _) = &**expression else {
-                    unreachable!("Expected block expression");
+                    // unreachable!("Expected block expression");
+                    return;
                 };
                 if args.is_none() {
                     self.diagnostics.push(SourceDiagnostic::new(
@@ -716,7 +723,7 @@ impl<'s> Emitter<'s> {
                         DiagnosticCode::OmittedFunctionArgument,
                     ));
                 }
-                self.emit_fn(ret, args, stmts, expr);
+                self.emit_fn(ret, kw, args, stmts, expr);
             }
             Unknown { .. } => {
                 // Load nil as result of unknown expression

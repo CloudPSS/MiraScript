@@ -8,11 +8,11 @@ import { compile } from './compile';
 export async function transpileCore(
     code: string,
     options: TranspileOptions,
-): Promise<[string | undefined, Uint32Array]> {
-    const [bytecode, errors] = await compile(code, options);
+): Promise<[Uint8Array, string | undefined, Uint32Array]> {
+    const [codeBuf, bytecode, errors] = await compile(code, options);
     if (bytecode == null) {
-        return [undefined, errors];
+        return [codeBuf, undefined, errors];
     }
     const generatedCode = generate(bytecode, options);
-    return [generatedCode, errors];
+    return [codeBuf, generatedCode, errors];
 }

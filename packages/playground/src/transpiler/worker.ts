@@ -6,8 +6,8 @@ addEventListener('message', (ev) => {
     const [seq, code, options] = data;
     if (typeof seq != 'number') return;
     void transpileCore(code, options)
-        .then(([script, errors]) => {
-            postMessage([seq, script, errors], { transfer: [errors.buffer] });
+        .then(([buf, script, errors]) => {
+            postMessage([seq, buf, script, errors], { transfer: [buf.buffer, errors.buffer] });
         })
         .catch((error) => {
             postMessage([seq, undefined, error instanceof Error ? error.message : String(error)]);

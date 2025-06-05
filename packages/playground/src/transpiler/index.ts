@@ -24,21 +24,24 @@ async function getWorker(): Promise<Worker> {
 /**
  * 生成 MiraScript 对应的 JavaScript 代码
  */
-async function transpileWorker(code: string, options: TranspileOptions): Promise<[string | undefined, Uint32Array]> {
+async function transpileWorker(
+    code: string,
+    options: TranspileOptions,
+): Promise<[Uint8Array, string | undefined, Uint32Array]> {
     const worker = await getWorker();
     const seq = Math.random();
     worker.postMessage([seq, code, options]);
-    return await new Promise<[string | undefined, Uint32Array]>((resolve, reject) => {
+    return await new Promise<[Uint8Array, string | undefined, Uint32Array]>((resolve, reject) => {
         const callback = (ev: MessageEvent) => {
-            const data = ev.data as [number, string | undefined, Uint32Array | string];
+            const data = ev.data as [number, Uint8Array, string | undefined, Uint32Array] | [number, undefined, string];
             if (!Array.isArray(data)) return;
-            const [retSeq, script, errors] = data;
+            const [retSeq, ...rest] = data;
             if (seq !== retSeq) return; // Ignore messages not matching the request
             worker.removeEventListener('message', callback);
-            if (typeof errors == 'string') {
-                reject(new Error(errors));
+            if (rest[0] == null) {
+                reject(new Error(rest[1]));
             } else {
-                resolve([script, errors]);
+                resolve(rest);
             }
         };
         worker.addEventListener('message', callback);
@@ -49,7 +52,7 @@ async function transpileWorker(code: string, options: TranspileOptions): Promise
  * 生成 MiraScript 对应的 JavaScript 代码
  */
 export async function transpile(source: string, options: TranspileOptions = {}): Promise<VmScript> {
-    const [code, errors] =
+    const [_, code, errors] =
         source.length < WORKER_MIN_LEN ? await transpileCore(source, options) : await transpileWorker(source, options);
     if (!code) {
         throw new Error(`Failed to transpile code: ${errors.join(', ')}`);

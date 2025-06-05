@@ -21,8 +21,40 @@ impl CompileResult {
 }
 
 #[wasm_bindgen]
-pub fn compile_script(script: &str) -> CompileResult {
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CompileFlag {
+    UseUtf16,
+    HideDiagnosticError,
+    HideDiagnosticWarning,
+    HideDiagnosticInfo,
+    HideDiagnosticHint,
+    HideDiagnosticReference,
+    HideDiagnosticOther,
+
+    MAX,
+}
+
+const COMPILE_FLAGS_LEN: usize = (CompileFlag::MAX as usize).div_ceil(8);
+type CompileFlagsData = [u8; COMPILE_FLAGS_LEN];
+struct CompileFlags<'a>(&'a CompileFlagsData);
+
+impl<'a> CompileFlags<'a> {
+    pub fn new(flags: &'a CompileFlagsData) -> Self {
+        CompileFlags(flags)
+    }
+
+    #[inline]
+    pub fn get(&self, flag: CompileFlag) -> bool {
+        (self.0[flag as usize / 8] & (1 << (flag as usize % 8))) != 0
+    }
+}
+
+#[wasm_bindgen]
+pub fn compile_script(script: &[u8], flags: &[u8]) -> CompileResult {
     use mira_core::compile::compile_script;
+
+    let flags = CompileFlags::new(flags.try_into().expect("Invalid flags length"));
+    let script = unsafe { std::str::from_utf8_unchecked(script) };
 
     let (chunk, diagnostics) = compile_script(script);
     // offsets of line starts
@@ -30,6 +62,7 @@ pub fn compile_script(script: &str) -> CompileResult {
         .lines()
         .map(|line| line.as_ptr() as usize - script.as_ptr() as usize)
         .collect::<Vec<_>>();
+    let utf16 = flags.get(CompileFlag::UseUtf16);
     let pos_to_line_col = |pos: usize| {
         let line = lines
             .iter()
@@ -37,11 +70,36 @@ pub fn compile_script(script: &str) -> CompileResult {
             .unwrap_or(lines.len())
             - 1;
         let str = &script[lines[line]..pos];
-        let col = str.encode_utf16().count();
+        let col = if utf16 {
+            str.encode_utf16().count()
+        } else {
+            str.len()
+        };
         (line + 1, col + 1)
     };
     let diagnostics = diagnostics
         .into_iter()
+        .filter(|s| {
+            if flags.get(CompileFlag::HideDiagnosticError) && s.error.is_error() {
+                return false;
+            }
+            if flags.get(CompileFlag::HideDiagnosticWarning) && s.error.is_warning() {
+                return false;
+            }
+            if flags.get(CompileFlag::HideDiagnosticInfo) && s.error.is_info() {
+                return false;
+            }
+            if flags.get(CompileFlag::HideDiagnosticHint) && s.error.is_hint() {
+                return false;
+            }
+            if flags.get(CompileFlag::HideDiagnosticReference) && s.error.is_reference() {
+                return false;
+            }
+            if flags.get(CompileFlag::HideDiagnosticOther) && s.error.is_other() {
+                return false;
+            }
+            true
+        })
         .flat_map(|s| {
             let start = pos_to_line_col(s.range.start);
             let end = pos_to_line_col(s.range.end);

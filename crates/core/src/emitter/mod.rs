@@ -1,4 +1,8 @@
-use crate::{diagnostic::SourceDiagnostic, parser::Script};
+use crate::{
+    diagnostic::{SourceDiagnostic, SourceRange},
+    lexer::Token,
+    parser::Script,
+};
 
 mod chunk;
 mod closure;
@@ -21,6 +25,15 @@ use opcode::Register;
 pub fn emit(script: &Script<'_>) -> (Vec<SourceDiagnostic>, Box<[u8]>) {
     let mut emitter: Emitter<'_> = Emitter::new();
     let args = Some(vec![]);
-    emitter.emit_fn(Register::EMPTY, &args, &script.0, &script.1);
+    let token = Token {
+        kind: crate::lexer::TokenKind::Unknown {
+            recovered: None,
+            errors: vec![],
+        },
+        range: SourceRange::default(),
+        leading_trivia: vec![],
+        trailing_trivia: vec![],
+    };
+    emitter.emit_fn(Register::EMPTY, &token, &args, &script.0, &script.1);
     (emitter.diagnostics, emitter.chunk.to_bytes())
 }

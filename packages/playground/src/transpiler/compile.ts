@@ -1,27 +1,35 @@
-import type { CompileOptions } from './options.js';
+import { toCompileFlags, type CompileOptions } from './options.js';
 
 let loadModule: Promise<typeof import('mira-wasm')> | undefined;
+
+const textEncoder = new TextEncoder();
 
 /**
  * 生成 MiraScript 字节码
  */
-export async function compile(code: string, _options: CompileOptions): Promise<[Uint8Array | undefined, Uint32Array]> {
+export async function compile(
+    code: string,
+    options: CompileOptions,
+): Promise<[Uint8Array, Uint8Array | undefined, Uint32Array]> {
     loadModule ??= import('mira-wasm');
-    let compile_script;
+    let compile_script, CompileFlag;
     try {
-        compile_script = (await loadModule).compile_script;
+        ({ compile_script, CompileFlag } = await loadModule);
     } catch (error) {
         loadModule = undefined; // Reset on error to retry loading next time
         throw new Error(`Failed to load mira-wasm module`, { cause: error });
     }
-    const chunk = compile_script(code);
+    const compileOptions = { ...options, HideDiagnosticOther: options.HideDiagnosticOther ?? true };
+    const flags = toCompileFlags(compileOptions, CompileFlag);
+    const codeBuffer = textEncoder.encode(code);
+    const chunk = compile_script(codeBuffer, flags);
     try {
         const diagnostics = chunk.diagnostics();
         const bytecode = chunk.chunk();
         if (bytecode == null) {
-            return [undefined, diagnostics];
+            return [codeBuffer, undefined, diagnostics];
         }
-        return [bytecode, diagnostics];
+        return [codeBuffer, bytecode, diagnostics];
     } finally {
         chunk.free();
     }

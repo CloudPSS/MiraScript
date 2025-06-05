@@ -78,12 +78,14 @@ impl<'s> Emitter<'s> {
                             id_token.range(),
                             DiagnosticCode::UninitializedVariable,
                         ));
+                        variable.put_declaration(&mut self.diagnostics);
                     }
                     if !variable.mutable() && !bind {
                         self.diagnostics.push(SourceDiagnostic::new(
                             id_token.range(),
                             DiagnosticCode::ImmutableVariableAssignment,
                         ));
+                        variable.put_declaration(&mut self.diagnostics);
                     } else if level == self.closures.len() {
                         let register = variable.register();
                         self.op_unary(register, OpCode::Assign, value);

@@ -11,6 +11,8 @@ pub(crate) enum BindType {
     Init,
     /// The variable is bound as a function's normal parameter.
     Parameter,
+    /// The variable is bound as a function's auto `it` parameter.
+    ItParameter,
     /// The variable is bound as a function's rest parameter.
     RestParameter,
     /// The variable is bound as a function statement.
@@ -30,18 +32,21 @@ pub(crate) struct Variable<'s> {
 impl<'s> Variable<'s> {
     pub fn new(
         name: &'s str,
-        declaration: Option<SourceRange>,
+        declaration: SourceRange,
         mutable: bool,
         bind_type: BindType,
         register: Register,
     ) -> Self {
         Self {
             name,
-            declaration: declaration.unwrap_or_default(),
+            declaration,
             mutable,
             bind_type,
             register,
-            initialized: matches!(bind_type, BindType::Parameter | BindType::RestParameter),
+            initialized: matches!(
+                bind_type,
+                BindType::Parameter | BindType::RestParameter | BindType::ItParameter
+            ),
             used: false,
         }
     }
@@ -77,6 +82,7 @@ impl<'s> Variable<'s> {
                 BindType::Init => DiagnosticCode::LocalImmutable,
                 BindType::Func => DiagnosticCode::LocalFunction,
                 BindType::Parameter => DiagnosticCode::ParameterImmutable,
+                BindType::ItParameter => DiagnosticCode::ParameterImmutableIt,
                 BindType::RestParameter => DiagnosticCode::ParameterImmutableRest,
             }
         } else {
@@ -85,6 +91,7 @@ impl<'s> Variable<'s> {
                 BindType::Init => DiagnosticCode::LocalMutable,
                 BindType::Func => DiagnosticCode::LocalFunction,
                 BindType::Parameter => DiagnosticCode::ParameterMutable,
+                BindType::ItParameter => DiagnosticCode::ParameterMutableIt,
                 BindType::RestParameter => DiagnosticCode::ParameterMutableRest,
             }
         }
@@ -94,26 +101,29 @@ impl<'s> Variable<'s> {
         self.used = true;
     }
 
-    pub fn declaration(&self) -> Option<SourceRange> {
-        if self.declaration == SourceRange::default() {
-            None
-        } else {
-            Some(self.declaration.clone())
-        }
+    pub fn put_declaration(&self, diagnostics: &mut Vec<SourceDiagnostic>) {
+        diagnostics.push(SourceDiagnostic::new(
+            self.declaration.clone(),
+            match self.bind_type {
+                BindType::Parameter => DiagnosticCode::ParameterDeclaredHere,
+                BindType::RestParameter => DiagnosticCode::ParameterRestDeclaredHere,
+                BindType::ItParameter => DiagnosticCode::ParameterItDeclaredHere,
+                _ => DiagnosticCode::VariableDeclaredHere,
+            },
+        ));
     }
 
-    pub fn exit(self) -> Option<SourceDiagnostic> {
-        if self.used || self.declaration == SourceRange::default() {
-            None
-        } else {
-            Some(SourceDiagnostic::new(
-                self.declaration,
-                if self.bind_type == BindType::Func {
-                    DiagnosticCode::LocalUnusedFunction
-                } else {
-                    DiagnosticCode::LocalUnusedVariable
-                },
-            ))
+    pub fn exit(self, diagnostics: &mut Vec<SourceDiagnostic>) {
+        if self.used {
+            return;
         }
+        diagnostics.push(SourceDiagnostic::new(
+            self.declaration,
+            if self.bind_type == BindType::Func {
+                DiagnosticCode::LocalUnusedFunction
+            } else {
+                DiagnosticCode::LocalUnusedVariable
+            },
+        ));
     }
 }

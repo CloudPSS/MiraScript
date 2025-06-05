@@ -1,5 +1,6 @@
 import * as wasm from 'mira-wasm';
 import { initialize, type Uri, type worker } from '@private/monaco-editor/worker';
+import { toCompileFlags } from '../../transpiler/options.js';
 
 /** Host functions */
 export interface Host {
@@ -33,9 +34,17 @@ export async function compile_script(uri: Uri): Promise<void> {
     await compiling;
 }
 
+const textEncoder = new TextEncoder();
+const flags = toCompileFlags(
+    {
+        UseUtf16: true,
+    },
+    wasm.CompileFlag,
+);
 /** 编译 */
 async function compileImpl(uri: string, version: number, script: string): Promise<void> {
-    const result = wasm.compile_script(script);
+    const codeBuffer = textEncoder.encode(script);
+    const result = wasm.compile_script(codeBuffer, flags);
     const diagnostics = result.diagnostics().buffer;
     const chunk = result.chunk()?.buffer;
     result.free();

@@ -1,4 +1,4 @@
-import { editor, MarkerSeverity, MarkerTag, Uri, type IDisposable } from '@private/monaco-editor';
+import { editor, MarkerSeverity, Uri, type IDisposable } from '@private/monaco-editor';
 import { callWorker, Provider } from './worker-helper.js';
 import { DiagnosticCode } from 'mira-wasm';
 
@@ -55,23 +55,21 @@ async function validate(model: editor.ITextModel): Promise<void> {
                 target: Uri.parse(`https://mira.cloudpss.net/code/${code}`),
             },
         };
-        if (code === DiagnosticCode.LocalUnusedVariable || code === DiagnosticCode.LocalUnusedFunction) {
-            marker.tags = [MarkerTag.Unnecessary];
-        } else if (
-            code === DiagnosticCode.DuplicateParameterDeclaration ||
-            code === DiagnosticCode.DuplicateVariableDeclaration
-        ) {
-            const ref = diagnostics[i + 1];
-            if (ref?.code === DiagnosticCode.DeclaredHere) {
-                i++;
-                marker.relatedInformation = [
-                    {
-                        message: (await getErrorMessage(ref.code)) ?? 'Declared here',
-                        resource: model.uri,
-                        ...ref,
-                    },
-                ];
+        while (i + 1 < diagnostics.length) {
+            const next = diagnostics[i + 1]!;
+            if (next.code <= DiagnosticCode.ReferenceStart || next.code >= DiagnosticCode.ReferenceEnd) {
+                break;
             }
+            i++;
+            marker.relatedInformation ??= [];
+            marker.relatedInformation.push({
+                message: (await getErrorMessage(next.code)) ?? 'Reference',
+                resource: model.uri,
+                startLineNumber: next.startLineNumber,
+                startColumn: next.startColumn,
+                endLineNumber: next.endLineNumber,
+                endColumn: next.endColumn,
+            });
         }
         markers.push(marker);
     }

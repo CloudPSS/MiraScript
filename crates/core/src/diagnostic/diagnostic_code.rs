@@ -7,14 +7,22 @@ use wasm_bindgen::prelude::*;
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, EnumMessage, FromRepr)]
 #[repr(u16)]
 pub enum DiagnosticCode {
-    // Internal error 1 ~ 999
-    ErrorStart = 0,
-    #[strum(message = "Unknown internal error")]
-    InternalError = 1,
+    // Preserved 0~999
 
-    // Lexer error 1000 ~ 1999
+    // Error 1000~1999
+    ErrorStart = 1000,
+
+    #[strum(message = "Unknown internal error")]
+    InternalError,
     #[strum(message = "Unknown lexer error")]
-    LexerError = 1000,
+    LexerError,
+    #[strum(message = "Unknown parser error")]
+    ParserError,
+    #[strum(message = "Unknown emitter error")]
+    EmitterError,
+    #[strum(message = "Unknown optimizer error")]
+    OptimizerError,
+
     #[strum(message = "Unknown token")]
     UnknownToken,
     #[strum(message = "Number literal cannot start or end with underscore")]
@@ -25,10 +33,6 @@ pub enum DiagnosticCode {
     UnterminatedString,
     #[strum(message = "Invalid escape sequence")]
     InvalidEscapeSequence,
-
-    // Parser error 2000 ~ 2999
-    #[strum(message = "Unknown parser error")]
-    ParserError = 2000,
     #[strum(message = "Expression expected after `..`")]
     BadArraySpread,
     #[strum(message = "Unterminated interpolation expression")]
@@ -87,20 +91,14 @@ pub enum DiagnosticCode {
     BadOmitKeyRecordPattern,
     #[strum(message = "Range pattern in array pattern should be parenthesised")]
     AmbiguousRangePattern,
-
-    // Emitter error 3000 ~ 3999
-    #[strum(message = "Unknown emitter error")]
-    EmitterError = 3000,
     #[strum(message = "Cannot assign to an undeclared variable")]
     UndefinedVariableAssignment,
-    #[strum(message = "Cannot assign to an immutable variable")]
+    #[strum(message = "Cannot assign to an immutable variable …")]
     ImmutableVariableAssignment,
-    #[strum(message = "Cannot access a variable before it is declared")]
+    #[strum(message = "Cannot access a variable before it is …")]
     UninitializedVariable,
-    #[strum(message = "The variable is already declared")]
+    #[strum(message = "The variable is already …")]
     DuplicateVariableDeclaration,
-    #[strum(message = "The variable is already declared as a parameter")]
-    DuplicateParameterDeclaration,
     #[strum(message = "Unexpected `break` outside of loop")]
     UnexpectedBreakOutsideLoop,
     #[strum(message = "Unexpected `continue` outside of loop")]
@@ -110,96 +108,40 @@ pub enum DiagnosticCode {
     #[strum(message = "Can not infer key from expression")]
     BadOmitKeyRecordExpression,
 
-    // Optimizer error 4000 ~ 4999
-    #[strum(message = "Unknown optimizer error")]
-    OptimizerError = 4000,
+    ErrorEnd = 1999,
+    // Warning 2000~2999
+    WarningStart = 2000,
 
-    ErrorEnd = 9999,
-    WarningStart = 10000,
-
-    // Lexer warning 11000 ~ 11999
-    #[strum(message = "Unknown lexer warning")]
-    LexerWarning = 11000,
-
-    // Parser warning 12000 ~ 12999
-    #[strum(message = "Unknown parser warning")]
-    ParserWarning = 12000,
-
-    // Emitter warning 13000 ~ 13999
-    #[strum(message = "Unknown emitter warning")]
-    EmitterWarning = 13000,
     #[strum(message = "Local variable is unused, consider removing it, or use `_` to ignore it")]
     LocalUnusedVariable,
     #[strum(message = "Local function is unused, consider removing it")]
     LocalUnusedFunction,
 
-    // Optimizer warning 14000 ~ 14999
-    #[strum(message = "Unknown optimizer warning")]
-    OptimizerWarning = 14000,
+    WarningEnd = 2999,
+    // Info 3000~3999
+    InfoStart = 3000,
 
-    WarningEnd = 19999,
-    InfoStart = 20000,
+    InfoEnd = 3999,
+    // Hint 4000~4999
+    HintStart = 4000,
 
-    // Lexer info 21000 ~ 21999
-    #[strum(message = "Unknown lexer info")]
-    LexerInfo = 21000,
+    HintEnd = 4999,
+    // Reference 5000~5999
+    ReferenceStart = 5000,
 
-    // Parser info 22000 ~ 22999
-    #[strum(message = "Unknown parser info")]
-    ParserInfo = 22000,
+    #[strum(message = "… declared here")]
+    VariableDeclaredHere,
+    #[strum(message = "… declared as a parameter here")]
+    ParameterDeclaredHere,
+    #[strum(message = "… declared as the auto parameter `it` by this function here")]
+    ParameterItDeclaredHere,
+    #[strum(message = "… declared as a rest parameter here")]
+    ParameterRestDeclaredHere,
 
-    // Emitter info 23000 ~ 23999
-    #[strum(message = "Unknown emitter info")]
-    EmitterInfo = 23000,
+    ReferenceEnd = 5999,
 
-    // Optimizer info 24000 ~ 24999
-    #[strum(message = "Unknown optimizer info")]
-    OptimizerInfo = 24000,
-
-    InfoEnd = 29999,
-    HintStart = 30000,
-
-    // Lexer hint 31000 ~ 31999
-    #[strum(message = "Unknown lexer hint")]
-    LexerHint = 31000,
-
-    // Parser hint 32000 ~ 32999
-    #[strum(message = "Unknown parser hint")]
-    ParserHint = 32000,
-
-    // Emitter hint 33000 ~ 33999
-    #[strum(message = "Unknown emitter hint")]
-    EmitterHint = 33000,
-
-    // Optimizer hint 34000 ~ 34999
-    #[strum(message = "Unknown optimizer hint")]
-    OptimizerHint = 34000,
-
-    HintEnd = 39999,
-    ReferenceStart = 40000,
-
-    // Lexer reference 41000 ~ 41999
-    #[strum(message = "Unknown lexer reference")]
-    LexerReference = 41000,
-
-    // Parser reference 42000 ~ 42999
-    #[strum(message = "Unknown parser reference")]
-    ParserReference = 42000,
-
-    // Emitter reference 43000 ~ 43999
-    #[strum(message = "Unknown emitter reference")]
-    EmitterReference = 43000,
-    #[strum(message = "…here")]
-    DeclaredHere,
-
-    // Optimizer reference 44000 ~ 44999
-    #[strum(message = "Unknown optimizer reference")]
-    OptimizerReference = 44000,
-
-    ReferenceEnd = 49999,
-
-    // Tags 50000 ~ 50999
-    GlobalVariable = 50000,
+    // Tags 10000~
+    GlobalVariable = 10000,
     GlobalDynamicAccess,
 
     LocalImmutable,
@@ -208,6 +150,8 @@ pub enum DiagnosticCode {
 
     ParameterImmutable,
     ParameterMutable,
+    ParameterImmutableIt,
+    ParameterMutableIt,
     ParameterImmutableRest,
     ParameterMutableRest,
 
@@ -291,6 +235,10 @@ impl DiagnosticCode {
 
     pub fn is_reference(&self) -> bool {
         *self >= DiagnosticCode::ReferenceStart && *self < DiagnosticCode::ReferenceEnd
+    }
+
+    pub fn is_other(&self) -> bool {
+        *self > DiagnosticCode::ReferenceEnd
     }
 }
 

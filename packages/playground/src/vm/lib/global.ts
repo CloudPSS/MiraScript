@@ -140,6 +140,11 @@ export const len: VmFunctionLike = (arr) => {
     return arr.length;
 };
 
+export const chars: VmFunctionLike = (str) => {
+    required('str', str, null);
+    return [...$ToString(str)];
+};
+
 export const to_json: VmFunctionLike = (data) => {
     if (isVmExtern(data)) {
         return JSON.stringify(data.value);

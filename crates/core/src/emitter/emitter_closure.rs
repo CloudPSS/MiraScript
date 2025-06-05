@@ -60,6 +60,7 @@ impl<'s> Emitter<'s> {
     pub fn emit_fn(
         &mut self,
         ret: Register,
+        id_or_fn: &'s Token<'s>,
         args: &'s Option<Vec<Token<'s>>>,
         stmts: &'s Vec<Statement<'s>>,
         expr: &'s Option<Box<Expression<'s>>>,
@@ -76,7 +77,12 @@ impl<'s> Emitter<'s> {
                 if arg.is_identifier() {
                     self.declare_variable(arg, false, BindType::Parameter);
                 } else {
-                    self.declare_implicit_variable("<unnamed param>", false, BindType::Parameter);
+                    self.declare_implicit_variable(
+                        "<unnamed param>",
+                        id_or_fn.range(),
+                        false,
+                        BindType::Parameter,
+                    );
                 }
                 self.diagnostics.push(SourceDiagnostic::new(
                     arg.range(),
@@ -84,7 +90,7 @@ impl<'s> Emitter<'s> {
                 ));
             }
         } else {
-            self.declare_implicit_variable("it", false, BindType::Parameter);
+            self.declare_implicit_variable("it", id_or_fn.range(), false, BindType::ItParameter);
         }
 
         let ret_reg = self.add_reg();
