@@ -1,13 +1,14 @@
-import { editor, MarkerSeverity, Uri, type IDisposable } from '@private/monaco-editor';
+import { editor, MarkerSeverity, MarkerTag, Uri, type IDisposable } from '@private/monaco-editor';
 import { callWorker, Provider } from './worker-helper.js';
 import { DiagnosticCode } from 'mira-wasm';
+import type { SourceDiagnostic } from './compile-result.js';
 
-const errorMessages = new Map<DiagnosticCode, string | undefined>();
-/** 获取错误消息 */
-async function getErrorMessage(code: DiagnosticCode): Promise<string | undefined> {
-    if (errorMessages.has(code)) return errorMessages.get(code);
-    const message = await callWorker('get_error_message', code);
-    errorMessages.set(code, message);
+const diagnosticMessages = new Map<DiagnosticCode, Promise<string | undefined>>();
+/** 获取诊断消息 */
+async function getDiagnosticMessage(code: DiagnosticCode): Promise<string | undefined> {
+    if (diagnosticMessages.has(code)) return diagnosticMessages.get(code);
+    const message = callWorker('get_diagnostic_message', code);
+    diagnosticMessages.set(code, message);
     return message;
 }
 
@@ -15,6 +16,66 @@ const onlyVisible = false;
 const validateDelay = 500;
 const listeners = new Map<string, IDisposable>();
 
+const makeMarker = async (
+    modelUri: Uri,
+    modelVersionId: number,
+    diagnostic: SourceDiagnostic,
+    severity: MarkerSeverity,
+): Promise<editor.IMarkerData> => {
+    const { range, code } = diagnostic;
+    const { startLineNumber, startColumn, endLineNumber, endColumn } = range;
+    let unnecessary = false;
+    const deprecated = false;
+    if (code === DiagnosticCode.UnusedLocalVariable || code === DiagnosticCode.UnusedLocalFunction) {
+        unnecessary = true;
+        severity = MarkerSeverity.Hint;
+    }
+    const message = (await getDiagnosticMessage(code)) ?? 'Unknown error';
+    const marker: editor.IMarkerData = {
+        startLineNumber,
+        startColumn,
+        endLineNumber,
+        endColumn,
+        message,
+        modelVersionId,
+        severity,
+        source: 'MiraScript',
+    };
+    const codeName = DiagnosticCode[code];
+    if (codeName) {
+        marker.code = {
+            value: codeName,
+            target: Uri.parse(`https://mira.cloudpss.net/code/${codeName}`),
+        };
+    } else {
+        marker.code = `${code}`;
+    }
+    if (unnecessary) {
+        marker.tags ??= [];
+        marker.tags.push(MarkerTag.Unnecessary);
+    }
+    if (deprecated) {
+        marker.tags ??= [];
+        marker.tags.push(MarkerTag.Deprecated);
+    }
+    if (diagnostic.references.length) {
+        marker.relatedInformation = [];
+        for (const ref of diagnostic.references) {
+            const { range, code } = ref;
+            const { startLineNumber, startColumn, endLineNumber, endColumn } = range;
+            const message = (await getDiagnosticMessage(code)) ?? '… here';
+            marker.relatedInformation.push({
+                message,
+                resource: modelUri,
+                startLineNumber,
+                startColumn,
+                endLineNumber,
+                endColumn,
+            });
+        }
+    }
+    return marker;
+};
 /** 进行测试 */
 async function validate(model: editor.ITextModel): Promise<void> {
     if (onlyVisible && !model.isAttachedToEditor()) {
@@ -23,56 +84,13 @@ async function validate(model: editor.ITextModel): Promise<void> {
     }
     const result = await Provider.getCompileResult(model);
     if (!result) return;
-    const { diagnostics, version } = result;
-    const markers: editor.IMarkerData[] = [];
-    for (let i = 0; i < diagnostics.length; i++) {
-        const diagnostic = diagnostics[i]!;
-        const { startLineNumber, startColumn, endLineNumber, endColumn, code } = diagnostic;
-        const message = (await getErrorMessage(code)) ?? 'Unknown error';
-        let severity: MarkerSeverity;
-        if (code > DiagnosticCode.ErrorStart && code < DiagnosticCode.ErrorEnd) {
-            severity = MarkerSeverity.Error;
-        } else if (code > DiagnosticCode.WarningStart && code < DiagnosticCode.WarningEnd) {
-            severity = MarkerSeverity.Warning;
-        } else if (code > DiagnosticCode.InfoStart && code < DiagnosticCode.InfoEnd) {
-            severity = MarkerSeverity.Info;
-        } else if (code > DiagnosticCode.HintStart && code < DiagnosticCode.HintEnd) {
-            severity = MarkerSeverity.Hint;
-        } else {
-            continue;
-        }
-        const marker: editor.IMarkerData = {
-            startLineNumber,
-            startColumn,
-            endLineNumber,
-            endColumn,
-            message, //: `${message} (${startLineNumber}:${startColumn}-${endLineNumber}:${endColumn})`,
-            modelVersionId: version,
-            severity,
-            source: 'MiraScript',
-            code: {
-                value: `${code}`,
-                target: Uri.parse(`https://mira.cloudpss.net/code/${code}`),
-            },
-        };
-        while (i + 1 < diagnostics.length) {
-            const next = diagnostics[i + 1]!;
-            if (next.code <= DiagnosticCode.ReferenceStart || next.code >= DiagnosticCode.ReferenceEnd) {
-                break;
-            }
-            i++;
-            marker.relatedInformation ??= [];
-            marker.relatedInformation.push({
-                message: (await getErrorMessage(next.code)) ?? 'Reference',
-                resource: model.uri,
-                startLineNumber: next.startLineNumber,
-                startColumn: next.startColumn,
-                endLineNumber: next.endLineNumber,
-                endColumn: next.endColumn,
-            });
-        }
-        markers.push(marker);
-    }
+    const { version } = result;
+    const { uri } = model;
+    const errors = result.errors.map(async (d) => makeMarker(uri, version, d, MarkerSeverity.Error));
+    const warnings = result.warnings.map(async (d) => makeMarker(uri, version, d, MarkerSeverity.Warning));
+    const infos = result.infos.map(async (d) => makeMarker(uri, version, d, MarkerSeverity.Info));
+    const hints = result.hints.map(async (d) => makeMarker(uri, version, d, MarkerSeverity.Hint));
+    const markers = await Promise.all([...errors, ...warnings, ...infos, ...hints]);
     editor.setModelMarkers(model, 'mirascript', markers);
 }
 

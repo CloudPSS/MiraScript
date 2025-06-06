@@ -1,5 +1,6 @@
 use crate::{
     diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
+    emitter::variable::VariableUsage,
     lexer::TokenKind,
     parser::{
         AstWalker,
@@ -64,28 +65,29 @@ impl<'s> Emitter<'s> {
                 let var = self.scopes.find_variable(id);
                 if let Some((level, variable)) = var {
                     let bind = bind_type.is_some();
-                    let hint = variable.hint();
-                    self.diagnostics
-                        .push(SourceDiagnostic::new(id_token.range.clone(), hint));
-                    let initialized = if bind {
-                        variable.initialize();
-                        true
-                    } else {
-                        variable.initialized()
-                    };
+                    variable.usage(
+                        id_token,
+                        if bind {
+                            VariableUsage::Init
+                        } else {
+                            VariableUsage::Write
+                        },
+                        &mut self.diagnostics,
+                    );
+                    let initialized = variable.initialized();
                     if !initialized && self.closures[level..].iter().all(|c| !c.late_binding()) {
                         self.diagnostics.push(SourceDiagnostic::new(
                             id_token.range(),
                             DiagnosticCode::UninitializedVariable,
                         ));
-                        variable.put_declaration(&mut self.diagnostics);
+                        variable.put_decl_ref(&mut self.diagnostics);
                     }
                     if !variable.mutable() && !bind {
                         self.diagnostics.push(SourceDiagnostic::new(
                             id_token.range(),
                             DiagnosticCode::ImmutableVariableAssignment,
                         ));
-                        variable.put_declaration(&mut self.diagnostics);
+                        variable.put_decl_ref(&mut self.diagnostics);
                     } else if level == self.closures.len() {
                         let register = variable.register();
                         self.op_unary(register, OpCode::Assign, value);

@@ -79,7 +79,7 @@ impl<'s> Emitter<'s> {
             DiagnosticCode::DuplicateVariableDeclaration,
         ));
 
-        var.put_declaration(&mut self.diagnostics);
+        var.put_decl_ref(&mut self.diagnostics);
         Some(var)
     }
 

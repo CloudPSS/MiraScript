@@ -305,7 +305,7 @@ _with_.params = {
 };
 _with_.paramsType = {
     data: 'array | record',
-    '..entries': '[..(string | number, any)]',
+    '..entries': '[string | number | any]',
 };
 _with_.returnsType = 'type(data)';
 

@@ -19,8 +19,10 @@ class InlayHintsProvider extends Provider implements languages.InlayHintsProvide
             return undefined;
         }
         const hints: languages.InlayHint[] = [];
-        for (let i = 0; i < compiled.diagnostics.length; i++) {
-            const diagnostic = compiled.diagnostics[i]!;
+        for (const tag of compiled.tags) {
+            if (!range.containsRange(tag.range)) {
+                continue;
+            }
             let lineNumber = 0;
             let column = 0;
             let label = '';
@@ -29,10 +31,14 @@ class InlayHintsProvider extends Provider implements languages.InlayHintsProvide
             let paddingRight = false;
             const edits: languages.TextEdit[] = [];
             // eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check
-            switch (diagnostic.code) {
-                case DiagnosticCode.OmittedFunctionArgument: {
-                    lineNumber = diagnostic.endLineNumber;
-                    column = diagnostic.endColumn;
+            switch (tag.code) {
+                case DiagnosticCode.ParameterIt: {
+                    if (tag.references.length) {
+                        // 是引用而非声明
+                        continue;
+                    }
+                    lineNumber = tag.range.endLineNumber;
+                    column = tag.range.endColumn;
                     label = '(it)';
                     paddingLeft = /\bfn$/u.test(
                         model.getValueInRange(new Range(lineNumber, column - 3, lineNumber, column)),
@@ -55,10 +61,10 @@ class InlayHintsProvider extends Provider implements languages.InlayHintsProvide
                 case DiagnosticCode.UnnamedRecordField8:
                 case DiagnosticCode.UnnamedRecordField9:
                 case DiagnosticCode.UnnamedRecordFieldN: {
-                    const index = diagnostic.code - DiagnosticCode.UnnamedRecordField0;
+                    const index = tag.code - DiagnosticCode.UnnamedRecordField0;
                     if (index > 9) break;
-                    lineNumber = diagnostic.startLineNumber;
-                    column = diagnostic.startColumn;
+                    lineNumber = tag.range.startLineNumber;
+                    column = tag.range.startColumn;
                     label = `${index}:`;
                     paddingLeft = /[^\s(]/u.test(
                         model.getValueInRange(new Range(lineNumber, column - 1, lineNumber, column)),
@@ -67,12 +73,11 @@ class InlayHintsProvider extends Provider implements languages.InlayHintsProvide
                     break;
                 }
                 case DiagnosticCode.OmitNamedRecordField: {
-                    const next = compiled.diagnostics[i + 1];
-                    if (next?.code !== DiagnosticCode.OmitNamedRecordFieldName) continue;
-                    i++;
-                    lineNumber = diagnostic.startLineNumber;
-                    column = diagnostic.startColumn;
-                    label = model.getValueInRange(next);
+                    const ref = tag.references[0];
+                    if (ref?.code !== DiagnosticCode.OmitNamedRecordFieldName) continue;
+                    lineNumber = tag.range.startLineNumber;
+                    column = tag.range.startColumn;
+                    label = model.getValueInRange(ref.range);
                     paddingLeft = /[^\s(]/u.test(
                         model.getValueInRange(new Range(lineNumber, column - 1, lineNumber, column)),
                     );
@@ -81,16 +86,16 @@ class InlayHintsProvider extends Provider implements languages.InlayHintsProvide
                     const insertRight = !/\s/u.test(
                         model.getValueInRange(
                             new Range(
-                                diagnostic.endLineNumber,
-                                diagnostic.endColumn,
-                                diagnostic.endLineNumber,
-                                diagnostic.endColumn + 1,
+                                tag.range.endLineNumber,
+                                tag.range.endColumn,
+                                tag.range.endLineNumber,
+                                tag.range.endColumn + 1,
                             ),
                         ),
                     );
                     edits.push({
-                        range: diagnostic,
-                        text: `${paddingLeft ? ' ' : ''}${label}${model.getValueInRange(diagnostic)}${insertRight ? ' ' : ''}`,
+                        range: tag.range,
+                        text: `${paddingLeft ? ' ' : ''}${label}${model.getValueInRange(tag.range)}${insertRight ? ' ' : ''}`,
                     });
                     break;
                 }

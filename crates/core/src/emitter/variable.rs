@@ -1,4 +1,8 @@
-use crate::diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange};
+use crate::{
+    diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
+    lexer::Token,
+    parser::AstWalker,
+};
 
 use super::opcode::Register;
 
@@ -29,6 +33,12 @@ pub(crate) struct Variable<'s> {
     used: bool,
 }
 
+pub(super) enum VariableUsage {
+    Init,
+    Read,
+    Write,
+}
+
 impl<'s> Variable<'s> {
     pub fn new(
         name: &'s str,
@@ -51,10 +61,6 @@ impl<'s> Variable<'s> {
         }
     }
 
-    pub fn initialize(&mut self) {
-        self.initialized = true;
-    }
-
     pub fn initialized(&self) -> bool {
         self.initialized
     }
@@ -75,15 +81,22 @@ impl<'s> Variable<'s> {
         self.register
     }
 
-    pub fn hint(&self) -> DiagnosticCode {
+    fn hint(&self) -> DiagnosticCode {
+        if matches!(self.bind_type, BindType::ItParameter) {
+            return if self.used {
+                DiagnosticCode::ParameterIt
+            } else {
+                DiagnosticCode::UnusedParameterIt
+            };
+        }
         if !self.mutable {
             match self.bind_type {
                 BindType::Let => DiagnosticCode::LocalImmutable,
                 BindType::Init => DiagnosticCode::LocalImmutable,
                 BindType::Func => DiagnosticCode::LocalFunction,
                 BindType::Parameter => DiagnosticCode::ParameterImmutable,
-                BindType::ItParameter => DiagnosticCode::ParameterImmutableIt,
                 BindType::RestParameter => DiagnosticCode::ParameterImmutableRest,
+                BindType::ItParameter => unreachable!(),
             }
         } else {
             match self.bind_type {
@@ -91,38 +104,56 @@ impl<'s> Variable<'s> {
                 BindType::Init => DiagnosticCode::LocalMutable,
                 BindType::Func => DiagnosticCode::LocalFunction,
                 BindType::Parameter => DiagnosticCode::ParameterMutable,
-                BindType::ItParameter => DiagnosticCode::ParameterMutableIt,
                 BindType::RestParameter => DiagnosticCode::ParameterMutableRest,
+                BindType::ItParameter => unreachable!(),
             }
         }
     }
 
-    pub fn mark_used(&mut self) {
-        self.used = true;
+    pub fn put_decl_ref(&self, diagnostics: &mut Vec<SourceDiagnostic>) {
+        let code = match self.bind_type {
+            BindType::Parameter => DiagnosticCode::ParameterDeclaredHere,
+            BindType::RestParameter => DiagnosticCode::ParameterRestDeclaredHere,
+            BindType::ItParameter => DiagnosticCode::ParameterItDeclaredHere,
+            BindType::Func => DiagnosticCode::FunctionDeclaredHere,
+            _ => DiagnosticCode::VariableDeclaredHere,
+        };
+        diagnostics.push(SourceDiagnostic::new(self.declaration.clone(), code));
     }
 
-    pub fn put_declaration(&self, diagnostics: &mut Vec<SourceDiagnostic>) {
-        diagnostics.push(SourceDiagnostic::new(
-            self.declaration.clone(),
-            match self.bind_type {
-                BindType::Parameter => DiagnosticCode::ParameterDeclaredHere,
-                BindType::RestParameter => DiagnosticCode::ParameterRestDeclaredHere,
-                BindType::ItParameter => DiagnosticCode::ParameterItDeclaredHere,
-                _ => DiagnosticCode::VariableDeclaredHere,
-            },
-        ));
+    pub fn usage(
+        &mut self,
+        token: &Token<'_>,
+        usage: VariableUsage,
+        diagnostics: &mut Vec<SourceDiagnostic>,
+    ) {
+        match usage {
+            VariableUsage::Init => {
+                self.initialized = true;
+            }
+            VariableUsage::Read => {
+                self.used = true;
+                diagnostics.push(SourceDiagnostic::new(token.range(), self.hint()));
+                self.put_decl_ref(diagnostics);
+            }
+            VariableUsage::Write => {
+                diagnostics.push(SourceDiagnostic::new(token.range(), self.hint()));
+                self.put_decl_ref(diagnostics);
+            }
+        }
     }
 
     pub fn exit(self, diagnostics: &mut Vec<SourceDiagnostic>) {
-        if self.used {
+        diagnostics.push(SourceDiagnostic::new(self.declaration.clone(), self.hint()));
+        if self.used || matches!(self.bind_type, BindType::ItParameter) {
             return;
         }
         diagnostics.push(SourceDiagnostic::new(
             self.declaration,
             if self.bind_type == BindType::Func {
-                DiagnosticCode::LocalUnusedFunction
+                DiagnosticCode::UnusedLocalFunction
             } else {
-                DiagnosticCode::LocalUnusedVariable
+                DiagnosticCode::UnusedLocalVariable
             },
         ));
     }

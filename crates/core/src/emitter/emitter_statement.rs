@@ -1,5 +1,6 @@
 use crate::{
     diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
+    emitter::variable::VariableUsage,
     lexer::{Operator, TokenKind},
     parser::{
         self, AstWalker, Expression,
@@ -65,22 +66,20 @@ impl<'s> Emitter<'s> {
                         };
                         let var = self.scopes.find_variable(id);
                         if let Some((level, variable)) = var {
-                            let hint = variable.hint();
-                            self.diagnostics
-                                .push(SourceDiagnostic::new(id_token.range(), hint));
+                            variable.usage(id_token, VariableUsage::Write, &mut self.diagnostics);
                             if !variable.initialized() {
                                 self.diagnostics.push(SourceDiagnostic::new(
                                     id_token.range(),
                                     DiagnosticCode::UninitializedVariable,
                                 ));
-                                variable.put_declaration(&mut self.diagnostics);
+                                variable.put_decl_ref(&mut self.diagnostics);
                             }
                             if !variable.mutable() {
                                 self.diagnostics.push(SourceDiagnostic::new(
                                     id_token.range(),
                                     DiagnosticCode::ImmutableVariableAssignment,
                                 ));
-                                variable.put_declaration(&mut self.diagnostics);
+                                variable.put_decl_ref(&mut self.diagnostics);
                                 Register::EMPTY
                             } else if level == self.closures.len() {
                                 variable.register()
@@ -164,20 +163,11 @@ impl<'s> Emitter<'s> {
                     unreachable!("Expected identifier token");
                 };
                 let func_var = self.scopes.find_local_variable(name).unwrap();
-                func_var.initialize();
+                func_var.usage(name_token, VariableUsage::Init, &mut self.diagnostics);
                 let func_reg = func_var.register();
                 let parser::Expression::Block(_, stmts, expr, _) = &**expression else {
                     unreachable!("Expected block expression");
                 };
-                if args.is_none() {
-                    self.diagnostics.push(SourceDiagnostic::new(
-                        SourceRange {
-                            start: name_token.range.end,
-                            end: name_token.range.end,
-                        },
-                        DiagnosticCode::OmittedFunctionArgument,
-                    ));
-                }
                 self.emit_fn(func_reg, name_token, args, stmts, expr);
                 false
             }

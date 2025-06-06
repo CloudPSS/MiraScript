@@ -4,7 +4,7 @@ use strum::VariantNames;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
-pub fn get_error_message(code: DiagnosticCode) -> Option<String> {
+pub fn get_diagnostic_message(code: DiagnosticCode) -> Option<String> {
     code.message().to_string().into()
 }
 

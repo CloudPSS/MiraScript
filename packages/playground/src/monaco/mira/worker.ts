@@ -5,7 +5,7 @@ import { toCompileFlags } from '../../transpiler/options.js';
 /** Host functions */
 export interface Host {
     /** 更新编译结果 */
-    updateCompileResult(uri: string, version: number, errors: ArrayBuffer, chunk: ArrayBuffer | undefined): void;
+    updateCompileResult(uri: string, version: number, diagnostics: ArrayBuffer, chunk: ArrayBuffer | undefined): void;
 }
 
 initialize((ctx: worker.IWorkerContext<Host>) => {
@@ -14,7 +14,7 @@ initialize((ctx: worker.IWorkerContext<Host>) => {
 });
 let context: worker.IWorkerContext<Host>;
 
-export { keywords, control_keywords, constant_keywords, numeric_keywords, get_error_message } from 'mira-wasm';
+export { keywords, control_keywords, constant_keywords, numeric_keywords, get_diagnostic_message } from 'mira-wasm';
 
 let compileCache: [uri: string, version: number, promise: Promise<void>] = ['', Number.NaN, Promise.resolve()];
 /** 编译 */

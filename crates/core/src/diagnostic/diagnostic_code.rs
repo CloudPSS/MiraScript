@@ -122,11 +122,6 @@ pub enum DiagnosticCode {
     // Warning 2000~2999
     WarningStart = 2000,
 
-    #[strum(message = "Local variable is unused, consider removing it, or use `_` to ignore it")]
-    LocalUnusedVariable,
-    #[strum(message = "Local function is unused, consider removing it")]
-    LocalUnusedFunction,
-
     WarningEnd = 2999,
     // Info 3000~3999
     InfoStart = 3000,
@@ -135,40 +130,52 @@ pub enum DiagnosticCode {
     // Hint 4000~4999
     HintStart = 4000,
 
+    #[strum(message = "Local variable is unused, consider removing it, or use `_` to ignore it")]
+    UnusedLocalVariable,
+    #[strum(message = "Local function is unused, consider removing it")]
+    UnusedLocalFunction,
+
     HintEnd = 4999,
     // Reference 5000~5999
     ReferenceStart = 5000,
 
     #[strum(message = "… declared here")]
     VariableDeclaredHere,
+    #[strum(message = "… declared here")]
+    FunctionDeclaredHere,
     #[strum(message = "… declared as a parameter here")]
     ParameterDeclaredHere,
     #[strum(message = "… declared as the auto parameter `it` by this function here")]
     ParameterItDeclaredHere,
     #[strum(message = "… declared as a rest parameter here")]
     ParameterRestDeclaredHere,
+    #[strum(message = "… name inferred from here")]
+    OmitNamedRecordFieldName,
 
     ReferenceEnd = 5999,
 
     // Tags 10000~
-    GlobalVariable = 10000,
+    TagStart = 10000,
+
+    // mark variables
+    GlobalVariable,
     GlobalDynamicAccess,
 
     LocalImmutable,
     LocalMutable,
     LocalFunction,
 
+    ParameterIt,
+    UnusedParameterIt,
     ParameterImmutable,
     ParameterMutable,
-    ParameterImmutableIt,
-    ParameterMutableIt,
     ParameterImmutableRest,
     ParameterMutableRest,
 
+    // mark record initialization
     RecordFieldIdName,
     RecordFieldOrdinalName,
     RecordFieldStringName,
-    OmittedFunctionArgument,
     UnnamedRecordField0,
     UnnamedRecordField1,
     UnnamedRecordField2,
@@ -181,7 +188,8 @@ pub enum DiagnosticCode {
     UnnamedRecordField9,
     UnnamedRecordFieldN,
     OmitNamedRecordField,
-    OmitNamedRecordFieldName,
+
+    TagEnd = 20000,
 }
 
 impl From<DiagnosticCode> for u16 {

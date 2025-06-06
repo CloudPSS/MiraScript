@@ -1,5 +1,5 @@
 use crate::{
-    diagnostic::{DiagnosticCode, SourceDiagnostic},
+    diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
     lexer::Token,
     parser::{AstWalker, Expression, Statement},
 };
@@ -90,7 +90,15 @@ impl<'s> Emitter<'s> {
                 ));
             }
         } else {
-            self.declare_implicit_variable("it", id_or_fn.range(), false, BindType::ItParameter);
+            self.declare_implicit_variable(
+                "it",
+                SourceRange {
+                    start: id_or_fn.range().end,
+                    end: id_or_fn.range().end,
+                },
+                false,
+                BindType::ItParameter,
+            );
         }
 
         let ret_reg = self.add_reg();

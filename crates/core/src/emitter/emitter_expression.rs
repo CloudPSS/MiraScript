@@ -1,5 +1,6 @@
 use crate::{
     diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
+    emitter::variable::VariableUsage,
     lexer::{Keyword, Operator, TokenKind},
     parser::{
         self, ArrayElement, AstWalker, Callable,
@@ -159,11 +160,8 @@ impl<'s> Emitter<'s> {
                 };
                 let var = self.scopes.find_variable(id);
                 if let Some((level, variable)) = var {
-                    variable.mark_used();
                     let register = variable.register();
-                    let hint = variable.hint();
-                    self.diagnostics
-                        .push(SourceDiagnostic::new(token.range.clone(), hint));
+                    variable.usage(token, VariableUsage::Read, &mut self.diagnostics);
                     if !variable.initialized()
                         && self.closures[level..].iter().all(|c| !c.late_binding())
                     {
@@ -171,7 +169,7 @@ impl<'s> Emitter<'s> {
                             token.range(),
                             DiagnosticCode::UninitializedVariable,
                         ));
-                        variable.put_declaration(&mut self.diagnostics);
+                        variable.put_decl_ref(&mut self.diagnostics);
                     }
                     if level == self.closures.len() {
                         self.op_unary(ret, OpCode::Assign, register);
@@ -718,15 +716,6 @@ impl<'s> Emitter<'s> {
                     // unreachable!("Expected block expression");
                     return;
                 };
-                if args.is_none() {
-                    self.diagnostics.push(SourceDiagnostic::new(
-                        SourceRange {
-                            start: kw.range.end,
-                            end: kw.range.end,
-                        },
-                        DiagnosticCode::OmittedFunctionArgument,
-                    ));
-                }
                 self.emit_fn(ret, kw, args, stmts, expr);
             }
             Unknown { .. } => {

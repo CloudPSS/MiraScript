@@ -29,64 +29,63 @@ class HoverProvider extends Provider implements languages.HoverProvider {
         const hover: languages.Hover = {
             contents: [],
         };
-        for (const diagnostic of compiled.diagnostics) {
+        for (const tag of compiled.tags) {
+            if (!Range.containsPosition(tag.range, position)) {
+                continue;
+            }
             let content: IMarkdownString | undefined;
             // eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check
-            switch (diagnostic.code) {
+            switch (tag.code) {
                 case DiagnosticCode.ParameterImmutable:
                     content = {
-                        value: codeblock(`\0(parameter) ${model.getValueInRange(diagnostic)}`),
+                        value: codeblock(`\0(parameter) ${model.getValueInRange(tag.range)}`),
                     };
                     break;
                 case DiagnosticCode.ParameterMutable:
                     content = {
-                        value: codeblock(`\0(parameter) mut ${model.getValueInRange(diagnostic)}`),
+                        value: codeblock(`\0(parameter) mut ${model.getValueInRange(tag.range)}`),
                     };
                     break;
-                case DiagnosticCode.ParameterImmutableIt:
+                case DiagnosticCode.ParameterIt:
+                case DiagnosticCode.UnusedParameterIt:
                     content = {
                         value: codeblock(`\0(parameter) it`),
                     };
                     break;
-                case DiagnosticCode.ParameterMutableIt:
-                    content = {
-                        value: codeblock(`\0(parameter) mut it`),
-                    };
-                    break;
                 case DiagnosticCode.ParameterImmutableRest:
                     content = {
-                        value: codeblock(`\0(parameter) ..${model.getValueInRange(diagnostic)}`),
+                        value: codeblock(`\0(parameter) ..${model.getValueInRange(tag.range)}`),
                     };
                     break;
                 case DiagnosticCode.ParameterMutableRest:
                     content = {
-                        value: codeblock(`\0(parameter) ..mut ${model.getValueInRange(diagnostic)}`),
+                        value: codeblock(`\0(parameter) ..mut ${model.getValueInRange(tag.range)}`),
                     };
                     break;
                 case DiagnosticCode.LocalFunction:
                     content = {
-                        value: codeblock(`fn ${model.getValueInRange(diagnostic)}`),
+                        value: codeblock(`fn ${model.getValueInRange(tag.range)}`),
                     };
                     break;
                 case DiagnosticCode.LocalImmutable:
                     content = {
-                        value: codeblock(`let ${model.getValueInRange(diagnostic)}`),
+                        value: codeblock(`let ${model.getValueInRange(tag.range)}`),
                     };
                     break;
                 case DiagnosticCode.LocalMutable:
                     content = {
-                        value: codeblock(`let mut ${model.getValueInRange(diagnostic)}`),
+                        value: codeblock(`let mut ${model.getValueInRange(tag.range)}`),
                     };
                     break;
                 case DiagnosticCode.GlobalDynamicAccess: {
-                    const expr = model.getValueInRange(diagnostic);
+                    const expr = model.getValueInRange(tag.range);
                     content = {
                         value: codeblock(`\0(global) [${expr}]`),
                     };
                     break;
                 }
                 case DiagnosticCode.GlobalVariable: {
-                    const id = model.getValueInRange(diagnostic);
+                    const id = model.getValueInRange(tag.range);
                     const value = VmSharedGlobal[id];
                     let description = id;
                     let doc = '';
@@ -105,13 +104,10 @@ class HoverProvider extends Provider implements languages.HoverProvider {
                 default:
                     continue;
             }
-            if (!Range.containsPosition(diagnostic, position)) {
-                continue;
-            }
             if (hover.range) {
-                hover.range = Range.intersectRanges(hover.range, diagnostic) ?? undefined;
+                hover.range = Range.intersectRanges(hover.range, tag.range) ?? undefined;
             } else {
-                hover.range = Range.lift(diagnostic);
+                hover.range = Range.lift(tag.range);
             }
             hover.contents.push(content);
         }

@@ -1,5 +1,6 @@
 import './code-action-provider.js';
 import './completion-item-provider.js';
+import './definition-reference-provider.js';
 import './diagnostics.js';
 import './formatter.js';
 import './hover-provider.js';

@@ -28,19 +28,17 @@ class DocumentSemanticTokensProvider extends Provider implements languages.Docum
         // data 长度是 5 的倍数
         // [diffRow, diffCol, length, tokenType(index), tokenModifiers(bit field)]
         const data = [];
-        for (const diagnostic of compiled.diagnostics) {
+        for (const { code, range } of compiled.tags) {
             let tokenType = -1;
             let tokenModifiers = 0;
-            const { code } = diagnostic;
             // eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check
             switch (code) {
                 case DiagnosticCode.GlobalVariable: {
-                    const id = model.getValueInRange(diagnostic);
+                    const id = model.getValueInRange(range);
                     tokenType = id.startsWith('@') ? 3 : isVmFunction(VmSharedGlobal[id]) ? 2 : 1;
                     break;
                 }
                 case DiagnosticCode.ParameterMutable:
-                case DiagnosticCode.ParameterMutableIt:
                 case DiagnosticCode.ParameterMutableRest:
                 case DiagnosticCode.LocalMutable: {
                     tokenType = 1;
@@ -51,7 +49,8 @@ class DocumentSemanticTokensProvider extends Provider implements languages.Docum
                     break;
                 }
                 case DiagnosticCode.ParameterImmutable:
-                case DiagnosticCode.ParameterImmutableIt:
+                case DiagnosticCode.ParameterIt:
+                case DiagnosticCode.UnusedParameterIt:
                 case DiagnosticCode.ParameterImmutableRest:
                 case DiagnosticCode.LocalImmutable:
                 case DiagnosticCode.RecordFieldIdName: {
@@ -62,15 +61,15 @@ class DocumentSemanticTokensProvider extends Provider implements languages.Docum
             if (tokenType < 0) continue;
             if (
                 code === DiagnosticCode.ParameterImmutable ||
-                code === DiagnosticCode.ParameterImmutableIt ||
                 code === DiagnosticCode.ParameterImmutableRest ||
                 code === DiagnosticCode.ParameterMutable ||
-                code === DiagnosticCode.ParameterMutableIt ||
+                code === DiagnosticCode.ParameterIt ||
+                code === DiagnosticCode.UnusedParameterIt ||
                 code === DiagnosticCode.ParameterMutableRest
             ) {
                 tokenModifiers |= 1 << 1;
             }
-            const { startLineNumber, startColumn, endColumn } = diagnostic;
+            const { startLineNumber, startColumn, endColumn } = range;
             const length = endColumn - startColumn;
             data.push({
                 row: startLineNumber - 1, // 从 0 开始
