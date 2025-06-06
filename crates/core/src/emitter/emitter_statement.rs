@@ -103,10 +103,12 @@ impl<'s> Emitter<'s> {
                         }
                     }
                     Expression::Access(obj, _, prop) => {
-                        todo!()
+                        self.unimplemented(obj, prop);
+                        return false;
                     }
-                    Expression::Index(obj, _, prop_expr, _) => {
-                        todo!()
+                    Expression::Index(obj, ob, prop_expr, cb) => {
+                        self.unimplemented(obj, cb);
+                        return false;
                     }
                     _ => unreachable!(),
                 };

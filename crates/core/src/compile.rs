@@ -132,7 +132,7 @@ fn compile<'s>(
     }
 
     // Emitting
-    let (diagnostics, bytecode) = emit(&script);
+    let (diagnostics, bytecode) = emit(input, &script);
     diagnostics_collector.extend(diagnostics);
 
     if diagnostics_collector.iter().any(|e| e.is_error()) {

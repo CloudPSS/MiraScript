@@ -22,8 +22,8 @@ use emitter_struct::Emitter;
 pub use opcode::OpCode;
 use opcode::Register;
 
-pub fn emit(script: &Script<'_>) -> (Vec<SourceDiagnostic>, Box<[u8]>) {
-    let mut emitter: Emitter<'_> = Emitter::new();
+pub fn emit(source: &str, script: &Script<'_>) -> (Vec<SourceDiagnostic>, Box<[u8]>) {
+    let mut emitter: Emitter<'_> = Emitter::new(source);
     let args = Some(vec![]);
     let token = Token {
         kind: crate::lexer::TokenKind::Unknown {

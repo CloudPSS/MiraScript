@@ -53,10 +53,11 @@ const isSame = (a: VmValue, b: VmValue): boolean => {
     return false;
 };
 
-export const $Mul = (a: VmAny, b: VmAny): number => $ToNumber(a) * $ToNumber(b);
 export const $Add = (a: VmAny, b: VmAny): number => $ToNumber(a) + $ToNumber(b);
 export const $Sub = (a: VmAny, b: VmAny): number => $ToNumber(a) - $ToNumber(b);
+export const $Mul = (a: VmAny, b: VmAny): number => $ToNumber(a) * $ToNumber(b);
 export const $Div = (a: VmAny, b: VmAny): number => $ToNumber(a) / $ToNumber(b);
+export const $Mod = (a: VmAny, b: VmAny): number => $ToNumber(a) % $ToNumber(b);
 export const $Pow = (a: VmAny, b: VmAny): number => $ToNumber(a) ** $ToNumber(b);
 export const $Gt = (a: VmAny, b: VmAny): boolean => $ToNumber(a) > $ToNumber(b);
 export const $Gte = (a: VmAny, b: VmAny): boolean => $ToNumber(a) >= $ToNumber(b);

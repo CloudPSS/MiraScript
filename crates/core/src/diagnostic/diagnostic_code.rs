@@ -22,6 +22,8 @@ pub enum DiagnosticCode {
     EmitterError,
     #[strum(message = "Unknown optimizer error")]
     OptimizerError,
+    #[strum(message = "Unimplemented feature")]
+    Unimplemented,
 
     #[strum(message = "Unknown token")]
     UnknownToken,

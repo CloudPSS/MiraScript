@@ -69,7 +69,8 @@ pub fn compile_script(script: &[u8], flags: &[u8]) -> CompileResult {
             .position(|&line| line > pos)
             .unwrap_or(lines.len())
             - 1;
-        let str = &script[lines[line]..pos];
+        let line_start = lines[line];
+        let str = &script[line_start..pos];
         let col = if utf16 {
             str.encode_utf16().count()
         } else {

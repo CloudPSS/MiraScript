@@ -116,11 +116,12 @@ impl<'s> Emitter<'s> {
                 TokenKind::Keyword(Keyword::False) => self.op_bool(ret, false),
                 TokenKind::Keyword(Keyword::Nan) => self.op_number(ret, f64::NAN),
                 TokenKind::Keyword(Keyword::Inf) => self.op_number(ret, f64::INFINITY),
-                _ => unreachable!(),
+                _ => self.unreachable(token, token, file!(), line!()),
             },
             InterpolatedString(token, expressions) => {
                 let TokenKind::InterpolatedString(strs, _) = &token.kind else {
-                    unreachable!();
+                    self.unreachable(token, expressions, file!(), line!());
+                    return;
                 };
                 let mut args_reg = vec![];
                 let mut s_iter = strs.iter();
@@ -246,7 +247,8 @@ impl<'s> Emitter<'s> {
                                 );
                             } else {
                                 let Some((id_type, id)) = token.to_field_name() else {
-                                    unreachable!("Expected identifier token");
+                                    self.unreachable(token, token, file!(), line!());
+                                    return;
                                 };
                                 self.diagnostics
                                     .push(SourceDiagnostic::new(token.range(), id_type));
@@ -543,7 +545,7 @@ impl<'s> Emitter<'s> {
                     self.op_binary(ret, op, left_reg, right_reg);
                 }
             }
-            Is(expression, token, pattern) => todo!(),
+            Is(expression, token, pattern) => self.unimplemented(expression, pattern),
             Block(_, stmts, expr, _) => {
                 self.enter_scope();
                 self.emit_block(stmts, expr, ret, brk);
@@ -710,7 +712,7 @@ impl<'s> Emitter<'s> {
                 }
                 self.op_if_end();
             }
-            Match(token, expression, token1, items, token2) => todo!(),
+            Match(token, expression, op, items, cp) => self.unimplemented(token, cp),
             Function(kw, args, expression) => {
                 let parser::Expression::Block(_, stmts, expr, _) = &**expression else {
                     // unreachable!("Expected block expression");

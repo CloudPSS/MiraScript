@@ -15,9 +15,9 @@ impl<'s> Emitter<'s> {
     pub fn declare_pattern(&mut self, pattern: &'s Pattern<'s>, bind_type: Option<BindType>) {
         match pattern {
             Grouping(_, pattern, _) => self.declare_pattern(pattern, bind_type),
-            Constant(token, token1) => todo!(),
-            Relation(token, pattern) => todo!(),
-            Range(pattern, token, pattern1) => todo!(),
+            Constant(token, token1) => self.unimplemented(pattern, pattern),
+            Relation(token, pattern) => self.unimplemented(token, pattern),
+            Range(l, token, r) => self.unimplemented(l, r),
             Discard(_) => (),
             Bind(mut_token, id_token) => {
                 if let Some(bind_type) = bind_type {
@@ -37,11 +37,11 @@ impl<'s> Emitter<'s> {
                     }
                 }
             }
-            Array(token, array_element_bases, token1) => todo!(),
-            SpreadDiscard => todo!(),
-            And(pattern, token, pattern1) => todo!(),
-            Or(pattern, token, pattern1) => todo!(),
-            Not(token, pattern) => todo!(),
+            Array(ob, array_element_bases, cb) => self.unimplemented(ob, cb),
+            SpreadDiscard => self.unimplemented(pattern, pattern),
+            And(left, token, right) => self.unimplemented(left, right),
+            Or(left, token, right) => self.unimplemented(left, right),
+            Not(token, pattern) => self.unimplemented(token, pattern),
             Unknown { .. } => (),
         }
     }
@@ -53,10 +53,10 @@ impl<'s> Emitter<'s> {
         bind_type: Option<BindType>,
     ) {
         match pattern {
-            Grouping(token, pattern, token1) => todo!(),
-            Constant(token, token1) => todo!(),
-            Relation(token, pattern) => todo!(),
-            Range(pattern, token, pattern1) => todo!(),
+            Grouping(_, pattern, _) => self.emit_pattern(pattern, value, bind_type),
+            Constant(token, token1) => self.unimplemented(pattern, pattern),
+            Relation(token, pattern) => self.unimplemented(token, pattern),
+            Range(l, token, r) => self.unimplemented(l, r),
             Discard(_) => (),
             Bind(_, id_token) => {
                 let TokenKind::Identifier(id) = &id_token.kind else {
@@ -119,9 +119,11 @@ impl<'s> Emitter<'s> {
                         RecordPattern::InterpolateNamed(..) => {}
                         RecordPattern::OmitNamed(colon, pattern, _) => {
                             let Pattern::Bind(_, id_token) = pattern.as_ref() else {
+                                continue;
                                 unreachable!("Expected identifier token");
                             };
                             let TokenKind::Identifier(id) = &id_token.kind else {
+                                continue;
                                 unreachable!("Expected identifier token");
                             };
                             self.diagnostics.push(SourceDiagnostic::new(
@@ -160,16 +162,16 @@ impl<'s> Emitter<'s> {
                             self.emit_pattern(pattern, ret, bind_type);
                         }
                         RecordPattern::Spread(_, pattern, _) => {
-                            todo!()
+                            self.unimplemented(pattern, pattern)
                         }
                     }
                 }
             }
-            Array(token, array_element_bases, token1) => todo!(),
-            SpreadDiscard => todo!(),
-            And(pattern, token, pattern1) => todo!(),
-            Or(pattern, token, pattern1) => todo!(),
-            Not(token, pattern) => todo!(),
+            Array(ob, array_element_bases, cb) => self.unimplemented(ob, cb),
+            SpreadDiscard => self.unimplemented(pattern, pattern),
+            And(left, token, right) => self.unimplemented(left, right),
+            Or(left, token, right) => self.unimplemented(left, right),
+            Not(token, pattern) => self.unimplemented(token, pattern),
             Unknown { .. } => (),
         }
     }
