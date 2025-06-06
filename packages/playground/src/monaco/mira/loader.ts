@@ -9,3 +9,4 @@ import './language-configuration.js';
 import './semantic-tokens-provider.js';
 import './tokens-provider.js';
 import './document-highlight-provider.js';
+import './rename-provider.js';

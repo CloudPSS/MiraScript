@@ -8,7 +8,7 @@ import {
     type Position,
 } from '@private/monaco-editor';
 import { Provider } from './worker-helper';
-import { getGlobalScript, strictInRange } from './utils';
+import { getGlobalScript } from './utils';
 import { DOC_HEADER } from './constants';
 
 const globalModel = editor.createModel(``, 'mirascript', Uri.parse('mirascript:///lib/global.mira'));
@@ -53,31 +53,24 @@ class DefinitionReferenceProvider
     ): Promise<languages.LocationLink[] | undefined> {
         const compiled = await Provider.getCompileResult(model);
         if (!compiled) return undefined;
-        const links: languages.LocationLink[] = [];
-        for (const { references, range } of compiled.definitions(model)) {
-            if (range == null) continue;
-            if (typeof range != 'string' && strictInRange(range, position)) {
-                links.push({
-                    originSelectionRange: range,
-                    uri: model.uri,
-                    range: range,
-                });
-                continue;
-            }
-            const reference = references.find((u) => strictInRange(u.range, position));
-            if (!reference) continue;
-            let r;
-            if (typeof range == 'string') {
-                r = prepareGlobal(range);
-            } else {
-                r = { uri: model.uri, range: range };
-            }
-            links.push({
-                originSelectionRange: reference.range,
-                ...r,
-            });
+        const d = compiled.definition(model, position);
+        if (!d) return [];
+        const { range, references, definition } = d.def;
+        if (!range) return [];
+        let originSelectionRange;
+        if (d.ref == null) {
+            originSelectionRange = definition?.range;
+        } else {
+            originSelectionRange = references[d.ref]?.range;
         }
-        return links;
+        let link: languages.LocationLink;
+        if (typeof range == 'string') {
+            link = prepareGlobal(range);
+        } else {
+            link = { uri: model.uri, range: range };
+        }
+        link.originSelectionRange = originSelectionRange;
+        return [link];
     }
     /** @inheritdoc */
     async provideReferences(
@@ -88,26 +81,21 @@ class DefinitionReferenceProvider
     ): Promise<languages.Location[] | undefined> {
         const compiled = await Provider.getCompileResult(model);
         if (!compiled) return undefined;
-        const decl = compiled
-            .definitions(model)
-            .find(
-                ({ definition, references }) =>
-                    (definition && strictInRange(definition.range, position)) ||
-                    references.some((u) => strictInRange(u.range, position)),
-            );
-        if (!decl) return [];
-        const links: languages.Location[] = decl.references.map((u) => ({
+        const d = compiled.definition(model, position);
+        if (!d) return [];
+        const { def } = d;
+        const links: languages.Location[] = def.references.map((u) => ({
             uri: model.uri,
             range: u.range,
         }));
         if (context.includeDeclaration) {
-            if (decl.definition && !Range.isEmpty(decl.definition.range)) {
+            if (def.definition && !Range.isEmpty(def.definition.range)) {
                 links.push({
                     uri: model.uri,
-                    range: decl.definition.range,
+                    range: def.definition.range,
                 });
-            } else if (typeof decl.range == 'string' && decl.range) {
-                links.push(prepareGlobal(decl.range));
+            } else if (typeof def.range == 'string' && def.range) {
+                links.push(prepareGlobal(def.range));
             }
         }
         return links;

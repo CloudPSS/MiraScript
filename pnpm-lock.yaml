@@ -37,8 +37,8 @@ importers:
   packages/playground:
     dependencies:
       '@private/monaco-editor':
-        specifier: ^0.0.20
-        version: 0.0.20
+        specifier: ^0.0.22
+        version: 0.0.22
       mira-wasm:
         specifier: workspace:*
         version: link:../../crates/wasm/pkg
@@ -559,11 +559,11 @@ packages:
       { integrity: sha512-oGB+UxlgWcgQkgwo8GcEGwemoTFt3FIO9ababBmaGwXIoBKZ+GTy0pP185beGg7Llih/NSHSV2XAs1lnznocSg== }
     engines: { node: '>= 8' }
 
-  '@private/monaco-editor@0.0.20':
+  '@private/monaco-editor@0.0.22':
     resolution:
       {
-        integrity: sha512-4wjXXlxH7kwRMV6t6Pc2bBHdf8Nxe1Tj1EWaNmB8pWg1E1bcJtawObwy38+IRgoMwM3QknSrR7MoWdzmYarxGw==,
-        tarball: https://packages.aliyun.com/60c179fc44816b8ed233a8bb/npm/npm-registry/@private/monaco-editor/-/@private/monaco-editor-0.0.20.tgz,
+        integrity: sha512-babiSR6BhYcD5N+i5ZQw/3UGDuMnz9uzTjlFOxwGy2YnF04UTaEW1dFSypDvrXBG+hdrK8jh3zuUw/Hh6wdWDw==,
+        tarball: https://packages.aliyun.com/60c179fc44816b8ed233a8bb/npm/npm-registry/@private/monaco-editor/-/@private/monaco-editor-0.0.22.tgz,
       }
 
   '@rollup/rollup-android-arm-eabi@4.41.0':
@@ -2441,7 +2441,7 @@ snapshots:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.19.1
 
-  '@private/monaco-editor@0.0.20': {}
+  '@private/monaco-editor@0.0.22': {}
 
   '@rollup/rollup-android-arm-eabi@4.41.0':
     optional: true

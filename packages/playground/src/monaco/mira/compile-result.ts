@@ -1,5 +1,6 @@
-import { type editor, Range, type IRange } from '@private/monaco-editor';
+import { type editor, Range, type IRange, type IPosition } from '@private/monaco-editor';
 import { DiagnosticCode } from 'mira-wasm';
+import { strictInRange } from './utils';
 
 /** 源代码诊断信息 */
 export interface SourceDiagnostic {
@@ -188,5 +189,21 @@ export class CompileResult {
 
         this._definitions = definitions as SourceDefinition[];
         return this._definitions;
+    }
+
+    /** 获取定义 */
+    definition(model: editor.ITextModel, position: IPosition): { def: SourceDefinition; ref?: number } | undefined {
+        const definitions = this.definitions(model);
+        for (const d of definitions) {
+            const { definition, references } = d;
+            if (definition && strictInRange(definition.range, position)) {
+                return { def: d, ref: undefined };
+            }
+            const refIndex = references.findIndex((u) => strictInRange(u.range, position));
+            if (refIndex >= 0) {
+                return { def: d, ref: refIndex };
+            }
+        }
+        return undefined;
     }
 }
