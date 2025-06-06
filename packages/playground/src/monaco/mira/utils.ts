@@ -1,8 +1,8 @@
 import { Range, type IPosition, type IRange } from '@private/monaco-editor';
 import type { VmFunctionInfo } from '../../vm/types/function';
 import { VmSharedGlobal } from '../../vm/types/global.js';
-import { getVmFunctionInfo } from '../../vm/index.js';
-import { $ToString } from '../../vm/operations';
+import { getVmFunctionInfo, isVmModule } from '../../vm/index.js';
+import { serialize } from '../../helpers/serialize.js';
 
 /** 生成函数签名 */
 export function signature(id: string | undefined, info: VmFunctionInfo): string {
@@ -65,7 +65,13 @@ export function getGlobalScript(name: string): { script: string; doc: string } {
             doc: document(info),
         };
     }
-    const valueStr = value !== undefined ? $ToString(value) : '/**  */';
+    if (isVmModule(value)) {
+        return {
+            script: `module ${name};`,
+            doc: `模块 \`${name}\``,
+        };
+    }
+    const valueStr = value !== undefined ? serialize(value) : '/* … */';
     if (name.startsWith('@')) return { script: `const ${name} = ${valueStr};`, doc: '' };
     return { script: `let ${name} = ${valueStr};`, doc: '' };
 }

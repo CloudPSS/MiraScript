@@ -31,6 +31,10 @@ export class Provider {
         if (model.uri.scheme === 'mirascript') {
             return undefined; // 不处理标准库
         }
+        if (model.getEOL() !== '\n') {
+            // 确保使用 LF 作为行结束符
+            model.setEOL(editor.EndOfLineSequence.LF);
+        }
         return new Promise((resolve) => {
             const uri = model.uri.toString();
             const version = model.getVersionId();

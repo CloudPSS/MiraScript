@@ -209,6 +209,7 @@ fn escaped_char<'s>(
 
 fn escaped_char_impl<'s>(i: &mut Input<'s>) -> ModalResult<StringFragment<'s>> {
     alt((
+        '0'.value(StringFragment::EscapedChar('\0')),
         'r'.value(StringFragment::EscapedChar('\r')),
         'n'.value(StringFragment::EscapedChar('\n')),
         't'.value(StringFragment::EscapedChar('\t')),
@@ -220,7 +221,6 @@ fn escaped_char_impl<'s>(i: &mut Input<'s>) -> ModalResult<StringFragment<'s>> {
         '\''.value(StringFragment::EscapedChar('\'')),
         '`'.value(StringFragment::EscapedChar('`')),
         '$'.value(StringFragment::EscapedChar('$')),
-        '0'.value(StringFragment::EscapedChar('\0')),
         (
             'x',
             (one_of(AsChar::is_hex_digit), one_of(AsChar::is_hex_digit)).take(),

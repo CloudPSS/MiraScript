@@ -8,3 +8,4 @@ languages.register({
 });
 
 languages.onLanguage('mirascript', () => void import('./loader.js'));
+languages.onLanguageEncountered('mirascript', () => void import('./loader-small.js'));

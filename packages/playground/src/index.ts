@@ -1,8 +1,9 @@
 /* eslint-disable no-console */
 import * as monaco from './monaco';
-import { type VmAny, VmExtern, createVmGlobal } from './vm/index.js';
+import { type VmAny, VmExtern, createVmGlobal, isVmExtern, isVmModule } from './vm/index.js';
 import { $ToString } from './vm/operations.js';
 import { transpile } from './transpiler';
+import { serialize } from './helpers/serialize';
 
 const value =
     localStorage.getItem('source') ||
@@ -139,6 +140,7 @@ const editor = monaco.editor.create(elEditor, {
     formatOnPaste: true,
     fontLigatures: true,
     automaticLayout: true,
+
     theme: 'vs-dark',
     'semanticHighlighting.enabled': true,
     model: monaco.editor.createModel(value, 'mirascript', monaco.Uri.parse('file:///main.mira')),
@@ -155,8 +157,10 @@ function print(value: VmAny | Error): string {
     if (value === null) return 'nil';
     if (value === undefined) return '<uninitialized>';
     if (value instanceof Error) return value.toString();
-    if (typeof value == 'string') return JSON.stringify(value);
-    return $ToString(value);
+    if (isVmExtern(value) || isVmModule(value) || typeof value == 'function') {
+        return $ToString(value);
+    }
+    return serialize(value);
 }
 
 const elDisassembly = document.querySelector<HTMLDivElement>('#disassembly')!;
