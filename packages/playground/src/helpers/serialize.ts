@@ -82,12 +82,24 @@ function serializeImpl(value: VmAny | undefined, depth: number): string {
     if (isVmRecord(value)) {
         const entries = Object.entries(value);
         if (entries.length === 0) return '()';
-        if (entries.length === 1)
-            return `(${serializePropName(entries[0]![0])}: ${serializeImpl(entries[0]![1], depth)},)`;
+        if (entries.length === 1) {
+            const [k, v] = entries[0]!;
+            if (k === '0') {
+                return `(${serializeImpl(v, depth)},)`; // 单个元素数组
+            }
+            return `(${serializePropName(k)}: ${serializeImpl(v, depth)})`;
+        }
+
+        // 根据 ES 标准，数字 key 会按顺序枚举
+        const omitKey = entries.length < 10 && entries.every(([key], index) => key === String(index));
         const str = ['('];
-        for (const [key, val] of Object.entries(value)) {
+        for (const [key, val] of entries) {
             if (str.length > 1) str.push(', ');
-            str.push(`${serializePropName(key)}: ${serializeImpl(val, depth)}`);
+            if (omitKey) {
+                str.push(serializeImpl(val, depth));
+            } else {
+                str.push(serializePropName(key), ': ', serializeImpl(val, depth));
+            }
         }
         str.push(')');
         return str.join('');

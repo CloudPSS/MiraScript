@@ -164,7 +164,8 @@ function print(value: VmAny | Error): string {
 }
 
 const elDisassembly = document.querySelector<HTMLDivElement>('#disassembly')!;
-elDisassembly.addEventListener('click', () => {
+elDisassembly.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
     console.time('transpile');
     void transpile(editor.getValue(), { pretty: true }).then((result) => {
         console.timeEnd('transpile');
