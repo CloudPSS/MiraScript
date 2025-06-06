@@ -1,9 +1,7 @@
 import { type editor, languages, type Position, type CancellationToken } from '@private/monaco-editor';
 import { Provider } from './worker-helper';
 import { VmSharedGlobal } from '../../vm/types/global.js';
-import { getVmFunctionInfo } from '../../vm';
-import { $Type } from '../../vm/operations';
-import { codeblock, document } from './utils';
+import { codeblock, getGlobalDocument } from './utils';
 import { keywords } from 'mira-wasm';
 
 const DESC_GLOBAL = '(global)';
@@ -145,22 +143,10 @@ class CompletionItemProvider extends Provider implements languages.CompletionIte
         }
         const { label, description } = item.label;
         if (description === DESC_GLOBAL) {
-            const element = VmSharedGlobal[label];
-            if (element === undefined) return item;
-            const info = getVmFunctionInfo(element);
-            if (info) {
-                item.documentation = {
-                    value: document(label, info),
-                };
-            } else if (label.startsWith('@')) {
-                item.documentation = {
-                    value: codeblock(`const ${label} = ${JSON.stringify(element)};`),
-                };
-            } else {
-                item.documentation = {
-                    value: codeblock(`let ${label} = /** ${$Type(element)} */;`),
-                };
-            }
+            if (item.documentation) return item;
+            item.documentation = {
+                value: getGlobalDocument(label),
+            };
         }
         return item;
     }

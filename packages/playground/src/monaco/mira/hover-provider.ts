@@ -8,10 +8,7 @@ import {
 } from '@private/monaco-editor';
 import { Provider } from './worker-helper';
 import { DiagnosticCode } from 'mira-wasm';
-import { VmSharedGlobal } from '../../vm/types/global.js';
-import { getVmFunctionInfo } from '../../vm';
-import { $ToString } from '../../vm/operations';
-import { signature, codeblock } from './utils';
+import { codeblock, getGlobalScript } from './utils';
 
 /** @inheritdoc */
 class HoverProvider extends Provider implements languages.HoverProvider {
@@ -86,18 +83,9 @@ class HoverProvider extends Provider implements languages.HoverProvider {
                 }
                 case DiagnosticCode.GlobalVariable: {
                     const id = model.getValueInRange(tag.range);
-                    const value = VmSharedGlobal[id];
-                    let description = id;
-                    let doc = '';
-                    const info = getVmFunctionInfo(value);
-                    if (info) {
-                        description = signature(id, info);
-                        doc = info.summary ?? '';
-                    } else if (value !== undefined) {
-                        description = `${id} = ${$ToString(value)}`;
-                    }
+                    const { script, doc } = getGlobalScript(id);
                     content = {
-                        value: codeblock(`\0(global) ${description}`) + doc,
+                        value: codeblock(`\0(global) ${script}`) + doc,
                     };
                     break;
                 }

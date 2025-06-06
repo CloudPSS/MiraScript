@@ -1,4 +1,4 @@
-import { Range, type IRange } from '@private/monaco-editor';
+import { type editor, Range, type IRange } from '@private/monaco-editor';
 import { DiagnosticCode } from 'mira-wasm';
 
 /** 源代码诊断信息 */
@@ -21,10 +21,10 @@ export interface SourceReference {
 }
 /** 源代码定义信息 */
 export interface SourceDefinition {
-    /** 符号定义位置 */
-    readonly range: IRange;
+    /** 符号定义位置，字符串表示全局变量，空范围表示隐式定义的变量（如 `it`） */
+    readonly range: IRange | string;
     /** 符号定义 */
-    readonly definition: SourceDiagnostic;
+    readonly definition?: SourceDiagnostic;
     /** 符号引用 */
     readonly references: readonly SourceDiagnostic[];
 }
@@ -151,19 +151,29 @@ export class CompileResult {
 
     private _definitions?: SourceDefinition[];
     /** 获取源代码定义 */
-    get definitions(): readonly SourceDefinition[] {
+    definitions(model: editor.ITextModel): readonly SourceDefinition[] {
         if (this._definitions) {
             return this._definitions;
         }
+        const getText = (range: IRange): string | undefined => {
+            if (model.getVersionId() !== this.version) {
+                return undefined;
+            }
+            return model.getValueInRange(range);
+        };
         const definitions: Array<Writable<Partial<SourceDefinition>>> = [];
         for (const tag of this.tags) {
+            const isGlobal = tag.code === DiagnosticCode.GlobalVariable;
             const declRef = tag.references[0];
-            const isRef = declRef != null;
-            const defRange = isRef ? declRef.range : tag.range;
-            let def = definitions.find((def) => Range.equalsRange(def.range, defRange));
+            const isRef = isGlobal || declRef != null;
+            const defRange = isRef ? declRef?.range : tag.range;
+            const globalId = isGlobal ? (getText(tag.range) ?? '') : undefined;
+            let def = definitions.find((def) =>
+                typeof def.range == 'string' ? def.range === globalId : Range.equalsRange(def.range, defRange),
+            );
             if (!def) {
                 def = {
-                    range: defRange,
+                    range: isGlobal ? globalId : defRange,
                     definition: undefined,
                     references: [],
                 };

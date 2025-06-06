@@ -1,5 +1,14 @@
 import { languages } from '@private/monaco-editor';
-import { REG_WHITESPACE, REG_ORDINAL, REG_OCT, REG_BIN, REG_HEX, REG_NUMBER, REG_IDENTIFIER } from './constants';
+import {
+    REG_WHITESPACE,
+    REG_ORDINAL,
+    REG_OCT,
+    REG_BIN,
+    REG_HEX,
+    REG_NUMBER,
+    REG_IDENTIFIER,
+    DOC_HEADER,
+} from './constants';
 import { callWorker } from './worker-helper.js';
 
 const MAX_VERBATIM_LENGTH = 16;
@@ -35,6 +44,7 @@ async function getTokensProvider(): Promise<languages.IMonarchLanguage> {
 
         whitespace: REG_WHITESPACE,
         identifier: REG_IDENTIFIER,
+        docHeader: new RegExp(DOC_HEADER, 'u'),
 
         keywords: await callWorker('keywords'),
         controlKeywords: await callWorker('control_keywords'),
@@ -42,25 +52,19 @@ async function getTokensProvider(): Promise<languages.IMonarchLanguage> {
         numericKeywords: await callWorker('numeric_keywords'),
 
         tokenizer: {
-            root: [[/[[\](){}]/gu, '@brackets'], { include: '@common' }],
+            root: [
+                [/\0|\/\*\*@docHeader\*\*\/$/gu, 'comment.doc', '@doc_mode'],
+                [/[[\](){}]/gu, '@brackets'],
+                { include: '@common' },
+            ],
             common: [
-                [/\0fn/g, 'keyword.fn.doc', '@fn_doc'],
                 [
-                    /(\0\(parameter\))(@whitespace*)(..|)(@whitespace*)(mut)(@whitespace+)(@identifier)/g,
-                    ['entity.name.label', '', 'operator.spread-range', '', 'keyword.mut', '', 'variable.emphasis'],
-                ],
-                [
-                    /(\0\(parameter\))(@whitespace*)(..|)(@whitespace*)(@identifier)/g,
-                    ['entity.name.label', '', 'operator.spread-range', '', 'variable.other.constant.emphasis'],
-                ],
-                [/(\0\(@identifier\))/g, 'entity.name.label'],
-                [
-                    /(let)(\s+)(@identifier)/g,
-                    ['constant.language', '', { cases: identifierCases(3, undefined, 'variable.other.constant') }],
+                    /(let|const)(\s+)(@identifier)/g,
+                    ['keyword.$1', '', { cases: identifierCases(3, undefined, 'variable.other.constant') }],
                 ],
                 [
                     /(let)(\s+)(mut)(\s+)(@identifier)/g,
-                    ['constant.language', '', 'keyword.mut', '', { cases: identifierCases(3, undefined, 'variable') }],
+                    ['keyword.$1', '', 'keyword.mut', '', { cases: identifierCases(3, undefined, 'variable') }],
                 ],
                 [
                     /(@identifier)(@whitespace*)(\?:|:)(?!:)/gu,
@@ -287,6 +291,19 @@ async function getTokensProvider(): Promise<languages.IMonarchLanguage> {
                 { include: '@common' },
             ],
 
+            doc_mode: [
+                [/fn/g, 'keyword.fn.doc', '@fn_doc'],
+                [
+                    /(\(parameter\))(@whitespace+)(..|)(mut)(@whitespace+)(@identifier)/g,
+                    ['entity.name.label', '', 'operator.spread-range', 'keyword.mut', '', 'variable.emphasis'],
+                ],
+                [
+                    /(\(parameter\))(@whitespace+)(..|)(@identifier)/g,
+                    ['entity.name.label', '', 'operator.spread-range', 'variable.other.constant.emphasis'],
+                ],
+                [/(\(@identifier\))/g, 'entity.name.label'],
+                { include: '@common' },
+            ],
             fn_doc: [
                 [/(@identifier)(\()/gu, ['entity.name.function.doc', '@brackets']],
                 [/@whitespace+/, ''],

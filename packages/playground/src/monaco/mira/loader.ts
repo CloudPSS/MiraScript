@@ -8,3 +8,4 @@ import './inlay-hints-provider.js';
 import './language-configuration.js';
 import './semantic-tokens-provider.js';
 import './tokens-provider.js';
+import './document-highlight-provider.js';

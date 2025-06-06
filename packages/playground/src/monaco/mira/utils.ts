@@ -1,8 +1,12 @@
+import { Range, type IPosition, type IRange } from '@private/monaco-editor';
 import type { VmFunctionInfo } from '../../vm/types/function';
+import { VmSharedGlobal } from '../../vm/types/global.js';
+import { getVmFunctionInfo } from '../../vm/index.js';
+import { $ToString } from '../../vm/operations';
 
 /** 生成函数签名 */
 export function signature(id: string | undefined, info: VmFunctionInfo): string {
-    const prefix = id ? `\0fn ${id}` : 'fn';
+    const prefix = id ? `fn ${id}` : 'fn';
     let params;
     if (!info.params) {
         params = '(..)';
@@ -20,27 +24,54 @@ export function signature(id: string | undefined, info: VmFunctionInfo): string 
         }
     }
     const returns = info.returnsType ? ` -> ${info.returnsType}` : '';
-    return `${prefix}${params}${returns}`;
+    return `${prefix}${params}${returns};`;
 }
 
 /** 生成函数文档 */
-export function document(id: string | undefined, info: VmFunctionInfo): string {
-    const signatureStr = signature(id, info);
-    const doc = [
-        codeblock(signatureStr),
-        info.summary || '',
-        info.params
-            ? Object.entries(info.params)
-                  .map(([key, value]) => `- \`${key}\`: ${value}`)
-                  .join('\n')
-            : '',
-        info.returns ? `**返回值**: ${info.returns}` : '',
-    ];
-    return doc.join('\n\n');
+export function document(info: VmFunctionInfo): string {
+    const doc = [];
+    if (info.summary) {
+        doc.push(info.summary);
+    }
+    if (info.params) {
+        for (const [key, value] of Object.entries(info.params)) {
+            doc.push(`- \`${key}\`: ${value}`);
+        }
+    }
+    if (info.returns) {
+        doc.push(`- **返回值**: ${info.returns}`);
+    }
+    return doc.join('\n');
 }
 
 const CODEBLOCK_FENCE = '`'.repeat(16);
 /** 获取代码块格式化字符串 */
 export function codeblock(value: string): string {
     return `\n${CODEBLOCK_FENCE}mirascript\n${value}\n${CODEBLOCK_FENCE}\n`;
+}
+
+/** 检查位置是否在范围内，且范围非空 */
+export function strictInRange(range: IRange, position: IPosition): boolean {
+    return !Range.isEmpty(range) && Range.containsPosition(range, position);
+}
+
+/** 获取全局变量脚本 */
+export function getGlobalScript(name: string): { script: string; doc: string } {
+    const value = VmSharedGlobal[name];
+    const info = getVmFunctionInfo(value);
+    if (info) {
+        return {
+            script: signature(name, info),
+            doc: document(info),
+        };
+    }
+    const valueStr = value !== undefined ? $ToString(value) : '/**  */';
+    if (name.startsWith('@')) return { script: `const ${name} = ${valueStr};`, doc: '' };
+    return { script: `let ${name} = ${valueStr};`, doc: '' };
+}
+
+/** 生成全局变量文档 */
+export function getGlobalDocument(id: string): string {
+    const { script, doc } = getGlobalScript(id);
+    return `${codeblock('\0' + script)}\n${doc}`;
 }

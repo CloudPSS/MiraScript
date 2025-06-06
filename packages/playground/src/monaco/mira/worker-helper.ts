@@ -28,6 +28,9 @@ export class Provider {
     }
     /** 获取编译结果 */
     static async getCompileResult(model: editor.ITextModel): Promise<CompileResult | undefined> {
+        if (model.uri.scheme === 'mirascript') {
+            return undefined; // 不处理标准库
+        }
         return new Promise((resolve) => {
             const uri = model.uri.toString();
             const version = model.getVersionId();
