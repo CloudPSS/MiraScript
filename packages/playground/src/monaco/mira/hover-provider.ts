@@ -61,17 +61,17 @@ class HoverProvider extends Provider implements languages.HoverProvider {
                     break;
                 case DiagnosticCode.LocalFunction:
                     content = {
-                        value: codeblock(`fn ${model.getValueInRange(tag.range)}`),
+                        value: codeblock(`\0fn ${model.getValueInRange(tag.range)}`),
                     };
                     break;
                 case DiagnosticCode.LocalImmutable:
                     content = {
-                        value: codeblock(`let ${model.getValueInRange(tag.range)}`),
+                        value: codeblock(`\0let ${model.getValueInRange(tag.range)}`),
                     };
                     break;
                 case DiagnosticCode.LocalMutable:
                     content = {
-                        value: codeblock(`let mut ${model.getValueInRange(tag.range)}`),
+                        value: codeblock(`\0let mut ${model.getValueInRange(tag.range)}`),
                     };
                     break;
                 case DiagnosticCode.GlobalDynamicAccess: {

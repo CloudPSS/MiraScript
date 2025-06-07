@@ -60,14 +60,6 @@ async function getTokensProvider(): Promise<languages.IMonarchLanguage> {
             ],
             common: [
                 [
-                    /(let|const)(\s+)(@identifier)/g,
-                    ['keyword.$1', '', { cases: identifierCases(3, undefined, 'variable.other.constant') }],
-                ],
-                [
-                    /(let)(\s+)(mut)(\s+)(@identifier)/g,
-                    ['keyword.$1', '', 'keyword.mut', '', { cases: identifierCases(3, undefined, 'variable') }],
-                ],
-                [
                     /(@identifier)(@whitespace*)(\??:)(?!:)/gu,
                     [
                         { token: 'support.type.property-name.$1' },
@@ -261,8 +253,7 @@ async function getTokensProvider(): Promise<languages.IMonarchLanguage> {
                         [
                             [
                                 new RegExp(`(${dollarRegex})(?=${REG_IDENTIFIER.source})`, 'gu'),
-                                `punctuation.section.embedded.$1`,
-                                '@string_interpolation_identifier',
+                                { token: `punctuation.section.embedded.$1`, next: '@string_interpolation_identifier' },
                             ],
                             [
                                 new RegExp(`(${dollarRegex})(\\{)`, 'gu'),
@@ -293,6 +284,7 @@ async function getTokensProvider(): Promise<languages.IMonarchLanguage> {
             ],
 
             doc_mode: [
+                [/(fn)(@whitespace+)(@identifier)$/g, ['keyword.fn.doc', '', 'entity.name.function.doc']],
                 [/fn/g, 'keyword.fn.doc', '@fn_doc'],
                 [
                     /(\(parameter\))(@whitespace+)(..|)(mut)(@whitespace+)(@identifier)/g,
@@ -303,6 +295,20 @@ async function getTokensProvider(): Promise<languages.IMonarchLanguage> {
                     ['entity.name.label', '', 'operator.spread-range', 'variable.other.constant.emphasis'],
                 ],
                 [/(\(@identifier\))/g, 'entity.name.label'],
+                [
+                    /(let|const)(@whitespace+)(@identifier)/g,
+                    [{ token: 'keyword.$1' }, '', { cases: identifierCases(3, undefined, 'variable.other.constant') }],
+                ],
+                [
+                    /(let)(@whitespace+)(mut)(@whitespace+)(@identifier)/g,
+                    [
+                        { token: 'keyword.$1' },
+                        '',
+                        'keyword.mut',
+                        '',
+                        { cases: identifierCases(3, undefined, 'variable') },
+                    ],
+                ],
                 { include: '@common' },
             ],
             fn_doc: [
