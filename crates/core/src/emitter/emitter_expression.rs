@@ -622,13 +622,15 @@ impl<'s> Emitter<'s> {
                 self.exit_scope();
                 self.exit_closure();
 
-                self.op_if(OpCode::IfNotInit, ret);
-                if let Some((_, else_expr)) = else_part {
-                    self.emit_expression(else_expr, ret, None);
-                } else {
-                    self.op_nil(ret);
+                if !ret.is_empty() {
+                    self.op_if(OpCode::IfNotInit, ret);
+                    if let Some((_, else_expr)) = else_part {
+                        self.emit_expression(else_expr, ret, None);
+                    } else {
+                        self.op_nil(ret);
+                    }
+                    self.op_if_end();
                 }
-                self.op_if_end();
             }
             ForIn(kw, pattern, _, iterable, expression, else_part) => {
                 let Expression::Block(_, stmts, expr, _) = expression.as_ref() else {
@@ -636,23 +638,9 @@ impl<'s> Emitter<'s> {
                     return;
                 };
 
-                self.enter_closure(false);
-                self.enter_scope(kw.range.end..expression.range().end);
-
-                self.declare_pattern(pattern, Some(BindType::Init));
-
                 let iterable_reg = match iterable.as_ref() {
-                    Iterable::Value(value) => {
-                        self.declare_expression(value);
-                        self.declare_block(stmts, expr);
-
-                        self.emit_expression_reg(value, None)
-                    }
+                    Iterable::Value(value) => self.emit_expression_reg(value, None),
                     Iterable::Range(range) => {
-                        self.declare_expression(&range.0);
-                        self.declare_expression(&range.2);
-                        self.declare_block(stmts, expr);
-
                         let start = self.emit_expression_reg(&range.0, None);
                         let end = self.emit_expression_reg(&range.2, None);
                         let ret = self.add_reg();
@@ -671,6 +659,24 @@ impl<'s> Emitter<'s> {
                     }
                 };
 
+                self.enter_closure(false);
+                self.enter_scope(kw.range.end..expression.range().end);
+                // 根据虚拟机定义，iterator 寄存器为闭包内第一个寄存器
+                // 进入 closure 后立即分配
+                let iterator = self.add_reg();
+
+                self.declare_pattern(pattern, Some(BindType::Init));
+                match iterable.as_ref() {
+                    Iterable::Value(value) => {
+                        self.declare_expression(value);
+                    }
+                    Iterable::Range(range) => {
+                        self.declare_expression(&range.0);
+                        self.declare_expression(&range.2);
+                    }
+                };
+                self.declare_block(stmts, expr);
+
                 let ret = if !ret.is_empty() {
                     self.op_uninit(ret);
                     ret
@@ -680,7 +686,6 @@ impl<'s> Emitter<'s> {
                     Register::EMPTY
                 };
 
-                let iterator = self.add_reg();
                 let pos = self.chunk.code.len();
                 self.op(OpCode::LoopFor);
                 self.emit_pattern(pattern, iterator, Some(BindType::Init));
@@ -701,13 +706,15 @@ impl<'s> Emitter<'s> {
                 self.exit_scope();
                 self.exit_closure();
 
-                self.op_if(OpCode::IfNotInit, ret);
-                if let Some((_, else_expr)) = else_part {
-                    self.emit_expression(else_expr, ret, None);
-                } else {
-                    self.op_nil(ret);
+                if !ret.is_empty() {
+                    self.op_if(OpCode::IfNotInit, ret);
+                    if let Some((_, else_expr)) = else_part {
+                        self.emit_expression(else_expr, ret, None);
+                    } else {
+                        self.op_nil(ret);
+                    }
+                    self.op_if_end();
                 }
-                self.op_if_end();
             }
             If(kw, cond, then_expr, else_part) => {
                 self.enter_scope(kw.range.end..expr.range().end);
