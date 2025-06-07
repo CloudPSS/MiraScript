@@ -47,6 +47,18 @@ export interface GlobalDefinition extends SourceDefinitionBase {
 /** 源代码定义信息 */
 export type SourceDefinition = LocalDefinition | GlobalDefinition;
 
+/** 作用域信息 */
+export interface SourceScope {
+    /** 作用域范围 */
+    readonly range: IRange;
+    /** 包含的局部变量 */
+    readonly locals: readonly LocalDefinition[];
+    /** 包含的作用域 */
+    readonly children: readonly SourceScope[];
+    /** 父作用域 */
+    readonly parent?: SourceScope;
+}
+
 const compileResult = new Map<string, CompileResult>();
 /** 编译结果 */
 export class CompileResult {
@@ -240,17 +252,92 @@ export class CompileResult {
         }
 
         this._groupedTags = {
-            locals: locals as LocalDefinition[],
+            locals: locals.sort((a, b) => Range.compareRangesUsingStarts(a.range, b.range)) as LocalDefinition[],
             globals: globals as GlobalDefinition[],
-            ranges: ranges.sort((a, b) => {
-                const lineDiff = a.range.startLineNumber - b.range.startLineNumber;
-                if (lineDiff !== 0) {
-                    return lineDiff;
-                }
-                return a.range.startColumn - b.range.startColumn;
-            }) as SourceDiagnostic[],
+            ranges: ranges.sort((a, b) => Range.compareRangesUsingStarts(a.range, b.range)) as SourceDiagnostic[],
         };
         return this._groupedTags;
+    }
+
+    private _scopes?: readonly SourceScope[];
+    /** 获取作用域信息 */
+    scopes(model: editor.ITextModel): readonly SourceScope[] {
+        if (this._scopes) {
+            return this._scopes;
+        }
+        const { locals, ranges } = this.groupedTags(model);
+
+        // 1. 提取所有 Scope 范围
+        const scopes = ranges
+            .filter((r) => r.code === DiagnosticCode.Scope)
+            .map((r) => {
+                return {
+                    range: r.range,
+                    locals: [],
+                    parent: undefined,
+                    children: [],
+                } as Writable<SourceScope>;
+            });
+
+        // 2. 按范围嵌套关系构建父子树
+        for (let i = 0; i < scopes.length; i++) {
+            const scopeA = scopes[i]!;
+            let parent: Writable<SourceScope> | undefined;
+            for (let j = 0; j < scopes.length; j++) {
+                if (i === j) continue;
+                const scopeB = scopes[j]!;
+                // 判断 scopeA 是否被 scopeB 包含（严格包含）
+                const aRange = scopeA.range;
+                const bRange = scopeB.range;
+                const isContained = Range.containsRange(bRange, aRange);
+                if (isContained) {
+                    // 选择最近的父作用域
+                    if (!parent || Range.containsRange(parent.range, bRange)) {
+                        parent = scopeB;
+                    }
+                }
+            }
+            if (parent) {
+                scopeA.parent = parent;
+                (parent.children as Writable<SourceScope[]>).push(scopeA);
+            }
+        }
+
+        // 3. 按 BFS 顺序排序作用域
+        const root = scopes.find((s) => !s.parent);
+        // 由于脚本本身就是一个作用域，所以根作用域一定存在且唯一
+        if (!root) {
+            // Fail safe, return empty scopes
+            this._scopes = [];
+            return this._scopes;
+        }
+        const queue: SourceScope[] = [root];
+        const sortedScopes: SourceScope[] = [];
+        while (queue.length > 0) {
+            const scope = queue.shift()!;
+            sortedScopes.push(scope);
+            (scope.children as Writable<SourceScope[]>).sort((a, b) =>
+                Range.compareRangesUsingStarts(a.range, b.range),
+            );
+            (scope.locals as Writable<LocalDefinition[]>).sort((a, b) =>
+                Range.compareRangesUsingStarts(a.range, b.range),
+            );
+            for (const child of scope.children) {
+                queue.push(child);
+            }
+        }
+
+        // 4. 填充每个作用域的局部变量
+        for (const local of locals) {
+            const localRange = local.range;
+            const scope = sortedScopes.findLast((s) => Range.containsRange(s.range, localRange));
+            if (scope) {
+                (scope.locals as Writable<LocalDefinition[]>).push(local);
+            }
+        }
+
+        this._scopes = sortedScopes;
+        return this._scopes;
     }
 
     /** 获取定义 */

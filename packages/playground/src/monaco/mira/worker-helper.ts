@@ -27,7 +27,7 @@ export class Provider {
         }
     }
     /** 获取编译结果 */
-    static async getCompileResult(model: editor.ITextModel): Promise<CompileResult | undefined> {
+    static async getCompileResult(model: editor.ITextModel, currentVersion = true): Promise<CompileResult | undefined> {
         if (model.uri.scheme === 'mirascript') {
             return undefined; // 不处理标准库
         }
@@ -37,7 +37,7 @@ export class Provider {
         }
         return new Promise((resolve) => {
             const uri = model.uri.toString();
-            const version = model.getVersionId();
+            const version = currentVersion ? model.getVersionId() : undefined;
             const result = CompileResult.get(uri, version);
             if (result) {
                 return resolve(result);
@@ -51,7 +51,7 @@ export class Provider {
             }, 10000);
             Provider.pendingRequests.push({
                 uri,
-                version,
+                version: version ?? model.getVersionId(),
                 resolve,
             });
         });

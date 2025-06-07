@@ -8,12 +8,12 @@ import {
     type Position,
 } from '@private/monaco-editor';
 import { Provider } from './worker-helper';
-import { getGlobalScript } from './utils';
+import { getGlobal } from './utils';
 import { DOC_HEADER } from './constants';
 
 const globalModel = editor.createModel(``, 'mirascript', Uri.parse('mirascript:///lib/global.mira'));
 const prepareGlobal = (name: string): { uri: Uri; range: IRange } => {
-    const { script, doc } = getGlobalScript(name);
+    const { script, doc } = getGlobal(name);
     const code = [
         `/**${DOC_HEADER}**/`,
         '',

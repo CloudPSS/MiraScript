@@ -1,10 +1,19 @@
-import { type editor, languages, type Position, type CancellationToken } from '@private/monaco-editor';
+import {
+    type editor,
+    languages,
+    type Position,
+    type CancellationToken,
+    Range,
+    type IPosition,
+} from '@private/monaco-editor';
 import { Provider } from './worker-helper';
 import { VmSharedGlobal } from '../../vm/types/global.js';
-import { codeblock, getGlobalDocument } from './utils';
-import { keywords } from 'mira-wasm';
+import { codeblock, getGlobal } from './utils';
+import { DiagnosticCode, keywords } from 'mira-wasm';
+import { getVmFunctionInfo } from '../../vm';
 
 const DESC_GLOBAL = '(global)';
+const DESC_LOCAL = '(local)';
 
 const COMMON_GLOBAL_SUGGESTIONS: languages.CompletionItem[] = [
     {
@@ -86,13 +95,105 @@ for (const kw of keywords()) {
  */
 class CompletionItemProvider extends Provider implements languages.CompletionItemProvider {
     readonly triggerCharacters?: string[] | undefined;
+    /** 查找全局变量 */
+    private completeGlobal(model: editor.ITextModel, char: string): languages.CompletionItem[] {
+        const suggestions: languages.CompletionItem[] = [];
+        for (const key in VmSharedGlobal) {
+            if (char && !key.toLowerCase().includes(char)) {
+                continue;
+            }
+            const element = VmSharedGlobal[key];
+            if (element === undefined) continue;
+            const info = getVmFunctionInfo(element);
+            let detail = '';
+            if (info) {
+                if (info.params) {
+                    detail = `(${Object.keys(info.params).join(', ')})`;
+                } else {
+                    detail = '(..)';
+                }
+            }
+            suggestions.push({
+                label: { label: key, description: DESC_GLOBAL, detail },
+                kind: info ? languages.CompletionItemKind.Function : languages.CompletionItemKind.Variable,
+                insertText: key,
+                range: undefined as never,
+                commitCharacters: info ? ['('] : undefined,
+            });
+        }
+        return suggestions;
+    }
+    /** 查找局部变量 */
+    private async completeLocal(
+        model: editor.ITextModel,
+        position: IPosition,
+        char: string,
+    ): Promise<languages.CompletionItem[]> {
+        const compiled = await Provider.getCompileResult(model, false);
+        if (!compiled) return [];
+        const suggestions: languages.CompletionItem[] = [];
+        const scopes = compiled.scopes(model);
+        let scope = scopes.findLast((s) => Range.containsPosition(s.range, position)) ?? scopes[0]!; // 从根作用域开始查找
+        while (scope.children.length > 0) {
+            const inner = scope.children.find((s) => Range.containsPosition(s.range, position));
+            if (!inner) break;
+            scope = inner;
+        }
+        const locals = new Set<string>();
+        while (scope) {
+            for (const { definition, range } of scope.locals) {
+                const name = model.getValueInRange(range);
+                if (locals.has(name)) continue; // 子作用域可能会覆盖父作用域的变量
+                if (char && !name.toLowerCase().includes(char)) {
+                    continue;
+                }
+                locals.add(name);
+                const isFunction = definition.code === DiagnosticCode.LocalFunction;
+                let detail = '';
+                if (isFunction) {
+                    const funcScope = scope.children.find((s) => Range.compareRangesUsingStarts(s.range, range) > 0);
+                    if (funcScope) {
+                        const args = funcScope.locals.filter(
+                            (l) =>
+                                l.definition.code === DiagnosticCode.ParameterIt ||
+                                l.definition.code === DiagnosticCode.UnusedParameterIt ||
+                                l.definition.code === DiagnosticCode.ParameterMutable ||
+                                l.definition.code === DiagnosticCode.ParameterImmutable ||
+                                l.definition.code === DiagnosticCode.ParameterMutableRest ||
+                                l.definition.code === DiagnosticCode.ParameterImmutableRest,
+                        );
+                        if (args[0]?.definition.code === DiagnosticCode.UnusedParameterIt) {
+                            detail = '()';
+                        } else if (args[0]?.definition.code === DiagnosticCode.ParameterIt) {
+                            detail = '(it)';
+                        } else {
+                            detail = `(${args.map((a) => model.getValueInRange(a.range)).join(', ')})`;
+                        }
+                    } else {
+                        detail = '(..)';
+                    }
+                }
+                suggestions.push({
+                    label: { label: name, description: DESC_LOCAL, detail },
+                    kind: isFunction ? languages.CompletionItemKind.Function : languages.CompletionItemKind.Variable,
+                    insertText: name,
+                    range: undefined as never,
+                    commitCharacters: isFunction ? ['('] : undefined,
+                } satisfies languages.CompletionItem);
+            }
+            if (!scope.parent) break;
+            scope = scope.parent;
+        }
+        return suggestions;
+    }
+
     /** @inheritdoc */
-    provideCompletionItems(
+    async provideCompletionItems(
         model: editor.ITextModel,
         position: Position,
         context: languages.CompletionContext,
         token: CancellationToken,
-    ): languages.ProviderResult<languages.CompletionList> {
+    ): Promise<languages.CompletionList | undefined> {
         const word = model.getWordAtPosition(position);
         const prev = model.getValueInRange({
             startLineNumber: position.lineNumber,
@@ -112,26 +213,16 @@ class CompletionItemProvider extends Provider implements languages.CompletionIte
                 suggestions: [],
             };
         }
-        // suggest global & local variables
-        // TODO: suggests local variables
+
         const suggestions: languages.CompletionItem[] = structuredClone(COMMON_GLOBAL_SUGGESTIONS);
 
-        for (const key in VmSharedGlobal) {
-            const element = VmSharedGlobal[key];
-            if (element === undefined) continue;
-            const isFunction = typeof element === 'function';
-            suggestions.push({
-                label: { label: key, description: DESC_GLOBAL },
-                kind: isFunction ? languages.CompletionItemKind.Function : languages.CompletionItemKind.Variable,
-                insertText: key,
-                range: undefined as never,
-                commitCharacters: isFunction ? ['('] : undefined,
-            });
-        }
-        return {
-            suggestions,
-        };
+        // suggest variables
+        const char = (word?.word[0] ?? '').toLowerCase();
+        suggestions.push(...this.completeGlobal(model, char), ...(await this.completeLocal(model, position, char)));
+
+        return { suggestions };
     }
+
     /** @inheritdoc */
     resolveCompletionItem(
         item: languages.CompletionItem,
@@ -144,8 +235,9 @@ class CompletionItemProvider extends Provider implements languages.CompletionIte
         const { label, description } = item.label;
         if (description === DESC_GLOBAL) {
             if (item.documentation) return item;
+            const def = getGlobal(label);
             item.documentation = {
-                value: getGlobalDocument(label),
+                value: `${codeblock('\0' + def.script)}\n${def.doc}`,
             };
         }
         return item;

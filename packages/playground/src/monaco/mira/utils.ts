@@ -1,7 +1,7 @@
 import { Range, type IPosition, type IRange } from '@private/monaco-editor';
 import type { VmFunctionInfo } from '../../vm/types/function';
 import { VmSharedGlobal } from '../../vm/types/global.js';
-import { getVmFunctionInfo, isVmModule } from '../../vm/index.js';
+import { getVmFunctionInfo, isVmModule, type VmImmutable } from '../../vm/index.js';
 import { serialize } from '../../helpers/serialize.js';
 
 /** 生成函数签名 */
@@ -56,28 +56,24 @@ export function strictInRange(range: IRange, position: IPosition): boolean {
 }
 
 /** 获取全局变量脚本 */
-export function getGlobalScript(name: string): { script: string; doc: string } {
+export function getGlobal(name: string): { value: VmImmutable | undefined; script: string; doc: string } {
     const value = VmSharedGlobal[name];
     const info = getVmFunctionInfo(value);
     if (info) {
         return {
+            value,
             script: signature(name, info),
             doc: document(info),
         };
     }
     if (isVmModule(value)) {
         return {
+            value,
             script: `module ${name};`,
             doc: `模块 \`${name}\``,
         };
     }
     const valueStr = value !== undefined ? serialize(value) : '/* … */';
-    if (name.startsWith('@')) return { script: `const ${name} = ${valueStr};`, doc: '' };
-    return { script: `let ${name} = ${valueStr};`, doc: '' };
-}
-
-/** 生成全局变量文档 */
-export function getGlobalDocument(id: string): string {
-    const { script, doc } = getGlobalScript(id);
-    return `${codeblock('\0' + script)}\n${doc}`;
+    if (name.startsWith('@')) return { value, script: `const ${name} = ${valueStr};`, doc: '' };
+    return { value, script: `let ${name} = ${valueStr};`, doc: '' };
 }

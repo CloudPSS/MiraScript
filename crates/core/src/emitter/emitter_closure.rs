@@ -124,7 +124,12 @@ impl<'s> Emitter<'s> {
                 ));
             }
         } else {
-            self.declare_implicit_variable("it", args_range.clone(), false, BindType::ItParameter);
+            self.declare_implicit_variable(
+                "it",
+                args_range.start..args_range.start,
+                false,
+                BindType::ItParameter,
+            );
         }
         self.declare_block(stmts, expr);
 

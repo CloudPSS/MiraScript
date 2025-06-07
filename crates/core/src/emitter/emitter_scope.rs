@@ -97,6 +97,7 @@ impl<'s> Emitter<'s> {
     fn add_variable_reg(&mut self, bind_type: BindType) -> Register {
         match bind_type {
             BindType::Parameter => self.closures.current().add_arg(),
+            BindType::ItParameter => self.closures.current().add_arg(),
             BindType::RestParameter => self.closures.current().add_var_arg(),
             _ => Register::EMPTY,
         }

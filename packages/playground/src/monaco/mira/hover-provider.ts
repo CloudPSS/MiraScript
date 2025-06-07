@@ -8,7 +8,7 @@ import {
 } from '@private/monaco-editor';
 import { Provider } from './worker-helper';
 import { DiagnosticCode } from 'mira-wasm';
-import { codeblock, getGlobalScript } from './utils';
+import { codeblock, getGlobal } from './utils';
 
 /** @inheritdoc */
 class HoverProvider extends Provider implements languages.HoverProvider {
@@ -83,7 +83,7 @@ class HoverProvider extends Provider implements languages.HoverProvider {
                 }
                 case DiagnosticCode.GlobalVariable: {
                     const id = model.getValueInRange(tag.range);
-                    const { script, doc } = getGlobalScript(id);
+                    const { script, doc } = getGlobal(id);
                     content = {
                         value: codeblock(`\0(global) ${script}`) + doc,
                     };

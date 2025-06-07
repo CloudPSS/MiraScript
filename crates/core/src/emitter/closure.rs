@@ -43,7 +43,6 @@ impl Closure {
 
     pub fn add_reg(&mut self) -> Register {
         self.reg_len += 1;
-        let reg = Register::new(self.reg_len);
-        reg
+        Register::new(self.reg_len)
     }
 }
