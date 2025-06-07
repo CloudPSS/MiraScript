@@ -67,8 +67,9 @@ impl<'s> Emitter<'s> {
                     let bind = bind_type.is_some();
                     if bind {
                         self.closures.initialize_variable(variable);
+                    } else {
+                        variable.mark_write(id_token, &mut self.diagnostics);
                     }
-                    variable.mark_read(id_token, &mut self.diagnostics);
                     if !check_variable_initialized(
                         &mut self.diagnostics,
                         &self.closures,
