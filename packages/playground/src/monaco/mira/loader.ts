@@ -1,6 +1,7 @@
 import './loader-small.js';
 
 import './code-action-provider.js';
+import './color-provider.js';
 import './completion-item-provider.js';
 import './definition-reference-provider.js';
 import './diagnostics.js';

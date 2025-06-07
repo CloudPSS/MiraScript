@@ -119,4 +119,5 @@ class InlayHintsProvider extends Provider implements languages.InlayHintsProvide
         };
     }
 }
+
 languages.registerInlayHintsProvider('mirascript', new InlayHintsProvider());
