@@ -36,6 +36,9 @@ impl<'s> AstWalker<'s> for Range<'s> {
         op.walk(visitor);
         end.walk(visitor);
     }
+    fn range(&self) -> crate::diagnostic::SourceRange {
+        self.0.range().start..self.2.range().end
+    }
 }
 
 impl Display for Range<'_> {

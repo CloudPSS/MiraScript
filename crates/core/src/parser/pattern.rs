@@ -275,6 +275,15 @@ impl<'s> AstWalker<'s> for Pattern<'s> {
             }
         }
     }
+
+    fn range(&self) -> SourceRange {
+        use Pattern::*;
+        match self {
+            Grouping(o, _, e) | Record(o, _, e) | Array(o, _, e) => o.range().start..e.range().end,
+            Range(o, _, e) => o.range().start..e.range().end,
+            _ => self.range_slow(),
+        }
+    }
 }
 
 impl Display for Pattern<'_> {

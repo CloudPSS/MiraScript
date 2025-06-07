@@ -359,11 +359,11 @@ impl<'s> AstWalker<'s> for Expression<'s> {
                 op.walk_mut(visitor);
                 pattern.walk_mut(visitor);
             }
-            Block(op, statements, expression, ed) => {
+            Block(op, statements, expression, cp) => {
                 op.walk_mut(visitor);
                 statements.walk_mut(visitor);
                 expression.walk_mut(visitor);
-                ed.walk_mut(visitor);
+                cp.walk_mut(visitor);
             }
             Loop(kw, expression) => {
                 kw.walk_mut(visitor);
@@ -409,7 +409,7 @@ impl<'s> AstWalker<'s> for Expression<'s> {
                 cond.walk_mut(visitor);
                 then_block.walk_mut(visitor);
             }
-            Match(kw, expression, op, arms, ed) => {
+            Match(kw, expression, op, arms, cp) => {
                 kw.walk_mut(visitor);
                 expression.walk_mut(visitor);
                 op.walk_mut(visitor);
@@ -418,7 +418,7 @@ impl<'s> AstWalker<'s> for Expression<'s> {
                     pattern.walk_mut(visitor);
                     block.walk_mut(visitor);
                 }
-                ed.walk_mut(visitor);
+                cp.walk_mut(visitor);
             }
             Function(kw, None, block) => {
                 kw.walk_mut(visitor);
@@ -508,11 +508,11 @@ impl<'s> AstWalker<'s> for Expression<'s> {
                 op.walk(visitor);
                 pattern.walk(visitor);
             }
-            Block(op, statements, expression, ed) => {
+            Block(op, statements, expression, cp) => {
                 op.walk(visitor);
                 statements.walk(visitor);
                 expression.walk(visitor);
-                ed.walk(visitor);
+                cp.walk(visitor);
             }
             Loop(kw, expression) => {
                 kw.walk(visitor);
@@ -558,7 +558,7 @@ impl<'s> AstWalker<'s> for Expression<'s> {
                 cond.walk(visitor);
                 then_block.walk(visitor);
             }
-            Match(kw, expression, op, arms, ed) => {
+            Match(kw, expression, op, arms, cp) => {
                 kw.walk(visitor);
                 expression.walk(visitor);
                 op.walk(visitor);
@@ -567,7 +567,7 @@ impl<'s> AstWalker<'s> for Expression<'s> {
                     pattern.walk(visitor);
                     block.walk(visitor);
                 }
-                ed.walk(visitor);
+                cp.walk(visitor);
             }
             Function(kw, None, block) => {
                 kw.walk(visitor);
@@ -586,6 +586,16 @@ impl<'s> AstWalker<'s> for Expression<'s> {
                 expression.walk(visitor);
                 tokens.walk(visitor);
             }
+        }
+    }
+
+    fn range(&self) -> SourceRange {
+        use Expression::*;
+        match self {
+            Grouping(op, _, cp) | Record(op, _, cp) | Array(op, _, cp) | Block(op, _, _, cp) => {
+                op.range.start..cp.range.end
+            }
+            _ => self.range_slow(),
         }
     }
 }

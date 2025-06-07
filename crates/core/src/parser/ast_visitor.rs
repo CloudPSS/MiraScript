@@ -142,6 +142,9 @@ pub(crate) trait AstWalker<'s> {
     fn walk(&self, visitor: &mut dyn AstVisitor<'s>);
 
     fn range(&self) -> SourceRange {
+        self.range_slow()
+    }
+    fn range_slow(&self) -> SourceRange {
         let mut range = SourceRange {
             start: usize::MAX,
             end: usize::MIN,
@@ -166,7 +169,7 @@ impl<'s> AstWalker<'s> for Token<'s> {
     fn walk_mut(&mut self, visitor: &mut dyn AstVisitorMut<'s>) {
         visitor.visit_token(self);
     }
-    fn range(&self) -> SourceRange {
+    fn range_slow(&self) -> SourceRange {
         self.range.clone()
     }
 }
@@ -183,16 +186,16 @@ impl<'s, E: AstWalker<'s>> AstWalker<'s> for Vec<E> {
         }
     }
     fn range(&self) -> SourceRange {
-        let mut range = SourceRange {
-            start: usize::MAX,
-            end: usize::MIN,
-        };
-        for item in self.iter() {
-            let item_range = item.range();
-            range.start = min(range.start, item_range.start);
-            range.end = max(range.end, item_range.end);
+        if self.is_empty() {
+            SourceRange {
+                start: usize::MAX,
+                end: usize::MIN,
+            }
+        } else {
+            let first = self.first().unwrap().range();
+            let last = self.last().unwrap().range();
+            first.start..last.end
         }
-        range
     }
 }
 
@@ -228,5 +231,8 @@ impl<'s, E: AstWalker<'s>> AstWalker<'s> for Box<E> {
     }
     fn range(&self) -> SourceRange {
         self.deref().range()
+    }
+    fn range_slow(&self) -> SourceRange {
+        self.deref().range_slow()
     }
 }
