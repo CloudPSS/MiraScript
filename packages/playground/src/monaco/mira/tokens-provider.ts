@@ -25,6 +25,7 @@ function identifierCases(
         '@controlKeywords': { ...data, token: `keyword.control.$${capture}` },
         '@keywords': { ...data, token: `keyword.$${capture}` },
         '[@]+.*': { ...data, token: `variable.other.constant` },
+        '~it': { ...data, token: `variable.other.constant.emphasis` },
         '@default': { ...data, token: defaultToken },
     };
 }
@@ -67,9 +68,9 @@ async function getTokensProvider(): Promise<languages.IMonarchLanguage> {
                     ['keyword.$1', '', 'keyword.mut', '', { cases: identifierCases(3, undefined, 'variable') }],
                 ],
                 [
-                    /(@identifier)(@whitespace*)(\?:|:)(?!:)/gu,
+                    /(@identifier)(@whitespace*)(\??:)(?!:)/gu,
                     [
-                        { token: 'variable.$1' },
+                        { token: 'support.type.property-name.$1' },
                         '',
                         {
                             cases: {

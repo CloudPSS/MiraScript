@@ -9,7 +9,13 @@ class DocumentSemanticTokensProvider extends Provider implements languages.Docum
     /** @inheritdoc */
     getLegend(): languages.SemanticTokensLegend {
         return {
-            tokenTypes: ['', 'variable', 'entity.name.function', 'variable.other.constant'],
+            tokenTypes: [
+                '',
+                'variable',
+                'entity.name.function',
+                'variable.other.constant',
+                'support.type.property-name',
+            ],
             tokenModifiers: ['strong', 'emphasis', 'underline', 'strikethrough'],
         };
     }
@@ -52,9 +58,12 @@ class DocumentSemanticTokensProvider extends Provider implements languages.Docum
                 case DiagnosticCode.ParameterIt:
                 case DiagnosticCode.UnusedParameterIt:
                 case DiagnosticCode.ParameterImmutableRest:
-                case DiagnosticCode.LocalImmutable:
-                case DiagnosticCode.RecordFieldIdName: {
+                case DiagnosticCode.LocalImmutable: {
                     tokenType = 3;
+                    break;
+                }
+                case DiagnosticCode.RecordFieldIdName: {
+                    tokenType = 4;
                     break;
                 }
             }
