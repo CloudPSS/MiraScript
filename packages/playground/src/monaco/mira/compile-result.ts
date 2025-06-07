@@ -20,15 +20,32 @@ export interface SourceReference {
     /** 反向引用 */
     readonly diagnostic: SourceDiagnostic;
 }
+
 /** 源代码定义信息 */
-export interface SourceDefinition {
-    /** 符号定义位置，字符串表示全局变量，空范围表示隐式定义的变量（如 `it`） */
-    readonly range: IRange | string;
+export interface SourceDefinitionBase {
     /** 符号定义 */
     readonly definition?: SourceDiagnostic;
     /** 符号引用 */
     readonly references: readonly SourceDiagnostic[];
 }
+/** 源代码定义信息 */
+export interface LocalDefinition extends SourceDefinitionBase {
+    /** 符号名称 */
+    readonly name?: never;
+    /** 符号定义位置，空范围表示隐式定义的变量（如 `it`） */
+    readonly range: IRange;
+    /** 符号定义 */
+    readonly definition: SourceDiagnostic;
+}
+/** 源代码定义信息 */
+export interface GlobalDefinition extends SourceDefinitionBase {
+    /** 符号名称 */
+    readonly name: string;
+    /** 符号定义 */
+    readonly definition?: never;
+}
+/** 源代码定义信息 */
+export type SourceDefinition = LocalDefinition | GlobalDefinition;
 
 const compileResult = new Map<string, CompileResult>();
 /** 编译结果 */
@@ -150,11 +167,16 @@ export class CompileResult {
         this.diagnosticsReady = true;
     }
 
-    private _definitions?: SourceDefinition[];
+    private _groupedTags?: {
+        locals: readonly LocalDefinition[];
+        globals: readonly GlobalDefinition[];
+        ranges: readonly SourceDiagnostic[];
+    };
+
     /** 获取源代码定义 */
-    definitions(model: editor.ITextModel): readonly SourceDefinition[] {
-        if (this._definitions) {
-            return this._definitions;
+    groupedTags(model: editor.ITextModel): NonNullable<typeof this._groupedTags> {
+        if (this._groupedTags) {
+            return this._groupedTags;
         }
         const getText = (range: IRange): string | undefined => {
             if (model.getVersionId() !== this.version) {
@@ -162,39 +184,79 @@ export class CompileResult {
             }
             return model.getValueInRange(range);
         };
-        const definitions: Array<Writable<Partial<SourceDefinition>>> = [];
+        const locals: Array<Writable<Partial<LocalDefinition>>> = [];
+        const globals: Array<Writable<Partial<GlobalDefinition>>> = [];
+        const ranges: Array<Writable<SourceDiagnostic>> = [];
         for (const tag of this.tags) {
-            const isGlobal = tag.code === DiagnosticCode.GlobalVariable;
-            const declRef = tag.references[0];
-            const isRef = isGlobal || declRef != null;
-            const defRange = isRef ? declRef?.range : tag.range;
-            const globalId = isGlobal ? (getText(tag.range) ?? '') : undefined;
-            let def = definitions.find((def) =>
-                typeof def.range == 'string' ? def.range === globalId : Range.equalsRange(def.range, defRange),
-            );
-            if (!def) {
-                def = {
-                    range: isGlobal ? globalId : defRange,
-                    definition: undefined,
-                    references: [],
-                };
-                definitions.push(def);
-            }
-            if (isRef) {
-                (def.references as SourceDiagnostic[]).push(tag);
-            } else {
-                def.definition = tag;
+            // eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check
+            switch (tag.code) {
+                case DiagnosticCode.GlobalVariable: {
+                    const name = getText(tag.range);
+                    let def = globals.find((def) => name === def.name);
+                    if (!def) {
+                        def = {
+                            name: name ?? '',
+                            references: [],
+                        };
+                        globals.push(def);
+                    }
+                    (def.references as SourceDiagnostic[]).push(tag);
+                    break;
+                }
+                case DiagnosticCode.LocalImmutable:
+                case DiagnosticCode.LocalFunction:
+                case DiagnosticCode.LocalMutable:
+                case DiagnosticCode.ParameterIt:
+                case DiagnosticCode.UnusedParameterIt:
+                case DiagnosticCode.ParameterImmutable:
+                case DiagnosticCode.ParameterImmutableRest:
+                case DiagnosticCode.ParameterMutable:
+                case DiagnosticCode.ParameterMutableRest: {
+                    const declRef = tag.references[0];
+                    const isRef = declRef != null;
+                    const defRange = isRef ? declRef.range : tag.range;
+                    let def = locals.find((def) => Range.equalsRange(def.range, defRange));
+                    if (!def) {
+                        def = {
+                            range: defRange,
+                            definition: undefined,
+                            references: [],
+                        };
+                        locals.push(def);
+                    }
+                    if (isRef) {
+                        (def.references as SourceDiagnostic[]).push(tag);
+                    } else {
+                        def.definition = tag;
+                    }
+                    break;
+                }
+                case DiagnosticCode.Scope:
+                case DiagnosticCode.String:
+                case DiagnosticCode.Interpolation: {
+                    ranges.push(tag);
+                }
             }
         }
 
-        this._definitions = definitions as SourceDefinition[];
-        return this._definitions;
+        this._groupedTags = {
+            locals: locals as LocalDefinition[],
+            globals: globals as GlobalDefinition[],
+            ranges: ranges.sort((a, b) => {
+                const lineDiff = a.range.startLineNumber - b.range.startLineNumber;
+                if (lineDiff !== 0) {
+                    return lineDiff;
+                }
+                return a.range.startColumn - b.range.startColumn;
+            }) as SourceDiagnostic[],
+        };
+        return this._groupedTags;
     }
 
     /** 获取定义 */
     definition(model: editor.ITextModel, position: IPosition): { def: SourceDefinition; ref?: number } | undefined {
-        const definitions = this.definitions(model);
-        for (const d of definitions) {
+        const { locals, globals } = this.groupedTags(model);
+        for (const d of [...locals, ...globals]) {
             const { definition, references } = d;
             if (definition && strictInRange(definition.range, position)) {
                 return { def: d, ref: undefined };

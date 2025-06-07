@@ -57,14 +57,14 @@ export class Provider {
         });
     }
     readonly displayName = 'MiraScript LSP';
-    private readonly _onDidChange = new Emitter<void>();
+    private readonly _onDidChange = new Emitter<this>();
     /** @inheritdoc */
-    get onDidChange(): IEvent<void> | undefined {
-        return this._onDidChange.event;
+    get onDidChange(): IEvent<this> & IEvent<void> {
+        return this._onDidChange.event as IEvent<this> & IEvent<void>;
     }
     /** 触发 onDidChange */
     emitDidChange(): void {
-        this._onDidChange.fire();
+        this._onDidChange.fire(this);
     }
 }
 

@@ -9,4 +9,6 @@ import './hover-provider.js';
 import './inlay-hints-provider.js';
 import './semantic-tokens-provider.js';
 import './document-highlight-provider.js';
+import './document-symbol-provider.js';
 import './rename-provider.js';
+import './range-provider.js';

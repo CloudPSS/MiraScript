@@ -1,6 +1,5 @@
 import { type CancellationToken, type editor, languages, type Position, Range } from '@private/monaco-editor';
 import { Provider } from './worker-helper';
-import { strictInRange } from './utils';
 
 /** @inheritdoc */
 class DocumentHighlightProvider extends Provider implements languages.DocumentHighlightProvider {
@@ -12,22 +11,16 @@ class DocumentHighlightProvider extends Provider implements languages.DocumentHi
     ): Promise<languages.DocumentHighlight[] | undefined> {
         const compiled = await Provider.getCompileResult(model);
         if (!compiled) return undefined;
-        const decl = compiled
-            .definitions(model)
-            .find(
-                ({ definition, references }) =>
-                    (definition && strictInRange(definition.range, position)) ||
-                    references.some((u) => strictInRange(u.range, position)),
-            );
+        const decl = compiled.definition(model, position);
         if (!decl) return [];
-        const links: languages.DocumentHighlight[] = decl.references.map((u) => ({
+        const links: languages.DocumentHighlight[] = decl.def.references.map((u) => ({
             kind: languages.DocumentHighlightKind.Read,
             range: u.range,
         }));
-        if (decl.definition && !Range.isEmpty(decl.definition.range)) {
+        if (decl.def.definition && !Range.isEmpty(decl.def.definition.range)) {
             links.push({
                 kind: languages.DocumentHighlightKind.Write,
-                range: decl.definition.range,
+                range: decl.def.definition.range,
             });
         }
         return links;

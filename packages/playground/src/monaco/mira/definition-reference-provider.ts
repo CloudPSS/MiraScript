@@ -55,8 +55,8 @@ class DefinitionReferenceProvider
         if (!compiled) return undefined;
         const d = compiled.definition(model, position);
         if (!d) return [];
+        if (d.def.definition == null) return [];
         const { range, references, definition } = d.def;
-        if (!range) return [];
         let originSelectionRange;
         if (d.ref == null) {
             originSelectionRange = definition?.range;
@@ -89,13 +89,13 @@ class DefinitionReferenceProvider
             range: u.range,
         }));
         if (context.includeDeclaration) {
-            if (def.definition && !Range.isEmpty(def.definition.range)) {
+            if (def.name) {
+                links.push(prepareGlobal(def.name));
+            } else if (def.definition && !Range.isEmpty(def.definition.range)) {
                 links.push({
                     uri: model.uri,
                     range: def.definition.range,
                 });
-            } else if (typeof def.range == 'string' && def.range) {
-                links.push(prepareGlobal(def.range));
             }
         }
         return links;
