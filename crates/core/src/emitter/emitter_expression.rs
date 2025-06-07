@@ -479,7 +479,7 @@ impl<'s> Emitter<'s> {
                     self.op_global_dyn(ret, index_reg);
                 }
             }
-            NonNil(expression, token) => {
+            NonNil(expression, _) => {
                 self.emit_expression(expression, ret, brk);
                 self.op_non_nil(ret);
             }
@@ -496,16 +496,20 @@ impl<'s> Emitter<'s> {
             }
             Infix(left, token, right) => {
                 if **token == Operator::LogicalAnd {
+                    // ret is used in the immediate if, so we need to ensure it is not empty
+                    let ret = if !ret.is_empty() { ret } else { self.add_reg() };
                     self.emit_expression(left, ret, brk);
                     self.op_if(OpCode::If, ret);
                     self.emit_expression(right, ret, brk);
                     self.op_if_end();
                 } else if **token == Operator::LogicalOr {
+                    let ret = if !ret.is_empty() { ret } else { self.add_reg() };
                     self.emit_expression(left, ret, brk);
                     self.op_if(OpCode::IfNot, ret);
                     self.emit_expression(right, ret, brk);
                     self.op_if_end();
                 } else if **token == Operator::NullCoalescing {
+                    let ret = if !ret.is_empty() { ret } else { self.add_reg() };
                     self.emit_expression(left, ret, brk);
                     self.op_if(OpCode::IfNil, ret);
                     self.emit_expression(right, ret, brk);

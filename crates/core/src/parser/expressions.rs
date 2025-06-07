@@ -35,5 +35,5 @@ fn unknown_expression<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> 
 }
 
 pub fn expression<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
-    alt((block_like_expression, basic_expression, unknown_expression)).parse_next(i)
+    alt((basic_expression, block_like_expression, unknown_expression)).parse_next(i)
 }
