@@ -1,5 +1,6 @@
 use crate::{
     diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
+    emitter::{Emitter, closure::Closure, emitter_scope::Scopes},
     lexer::Token,
     parser::AstWalker,
 };
@@ -29,14 +30,7 @@ pub(crate) struct Variable<'s> {
     mutable: bool,
     bind_type: BindType,
     register: Register,
-    initialized: bool,
     used: bool,
-}
-
-pub(super) enum VariableUsage {
-    Init,
-    Read,
-    Write,
 }
 
 impl<'s> Variable<'s> {
@@ -53,16 +47,12 @@ impl<'s> Variable<'s> {
             mutable,
             bind_type,
             register,
-            initialized: matches!(
-                bind_type,
-                BindType::Parameter | BindType::RestParameter | BindType::ItParameter
-            ),
             used: false,
         }
     }
 
     pub fn initialized(&self) -> bool {
-        self.initialized
+        !self.register.is_empty()
     }
 
     pub fn name(&self) -> &'s str {
@@ -121,26 +111,20 @@ impl<'s> Variable<'s> {
         diagnostics.push(SourceDiagnostic::new(self.declaration.clone(), code));
     }
 
-    pub fn usage(
-        &mut self,
-        token: &Token<'_>,
-        usage: VariableUsage,
-        diagnostics: &mut Vec<SourceDiagnostic>,
-    ) {
-        match usage {
-            VariableUsage::Init => {
-                self.initialized = true;
-            }
-            VariableUsage::Read => {
-                self.used = true;
-                diagnostics.push(SourceDiagnostic::new(token.range(), self.hint()));
-                self.put_decl_ref(diagnostics);
-            }
-            VariableUsage::Write => {
-                diagnostics.push(SourceDiagnostic::new(token.range(), self.hint()));
-                self.put_decl_ref(diagnostics);
-            }
-        }
+    pub fn initialize(&mut self, register: Register) {
+        debug_assert!(!self.initialized(), "Variable already initialized");
+        self.register = register;
+    }
+
+    pub fn mark_read(&mut self, token: &Token<'_>, diagnostics: &mut Vec<SourceDiagnostic>) {
+        self.used = true;
+        diagnostics.push(SourceDiagnostic::new(token.range(), self.hint()));
+        self.put_decl_ref(diagnostics);
+    }
+
+    pub fn mark_write(&mut self, token: &Token<'_>, diagnostics: &mut Vec<SourceDiagnostic>) {
+        diagnostics.push(SourceDiagnostic::new(token.range(), self.hint()));
+        self.put_decl_ref(diagnostics);
     }
 
     pub fn exit(self, diagnostics: &mut Vec<SourceDiagnostic>) {

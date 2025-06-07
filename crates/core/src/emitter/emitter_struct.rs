@@ -1,14 +1,15 @@
 use crate::{
     diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
+    emitter::emitter_closure::Closures,
     parser::AstWalker,
 };
 
-use super::{chunk::Chunk, closure::Closure, emitter_scope::Scopes};
+use super::{chunk::Chunk, emitter_scope::Scopes};
 
 pub(super) struct Emitter<'s> {
     pub source: &'s str,
     pub chunk: Chunk<'s>,
-    pub closures: Vec<Closure>,
+    pub closures: Closures,
     pub scopes: Scopes<'s>,
     pub diagnostics: Vec<SourceDiagnostic>,
 }
@@ -18,7 +19,7 @@ impl<'s> Emitter<'s> {
         Self {
             source,
             chunk: Chunk::new(),
-            closures: vec![],
+            closures: Closures::new(),
             scopes: Scopes::new(),
             diagnostics: vec![],
         }

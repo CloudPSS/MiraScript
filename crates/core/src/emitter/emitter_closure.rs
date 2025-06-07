@@ -1,5 +1,8 @@
+use std::ops::{Deref, DerefMut};
+
 use crate::{
     diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
+    emitter::variable::Variable,
     lexer::Token,
     parser::{AstWalker, Expression, Statement},
 };
@@ -11,19 +14,48 @@ use super::{
     variable::BindType,
 };
 
-impl<'s> Emitter<'s> {
-    pub fn enter_closure(&mut self, late_binding: bool) {
-        self.closures.push(Closure::new(late_binding));
+pub(super) struct Closures(Vec<Closure>);
+
+impl Closures {
+    pub fn new() -> Self {
+        Self(Vec::new())
     }
-    pub fn exit_closure(&mut self) {
-        self.closures.pop();
-    }
-    pub fn current_closure(&mut self) -> &mut Closure {
-        self.closures.last_mut().unwrap()
+    pub fn current(&mut self) -> &mut Closure {
+        self.last_mut().unwrap()
     }
     pub fn add_reg(&mut self) -> Register {
-        self.current_closure().add_reg()
+        self.current().add_reg()
     }
+    pub fn enter(&mut self, late_binding: bool) {
+        self.push(Closure::new(late_binding));
+    }
+    pub fn exit(&mut self) {
+        self.pop();
+    }
+    pub fn initialize_variable(&mut self, variable: &mut Variable) -> Register {
+        if variable.initialized() {
+            return variable.register();
+        }
+        let reg = self.current().add_reg();
+        variable.initialize(reg);
+        reg
+    }
+}
+
+impl Deref for Closures {
+    type Target = Vec<Closure>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl DerefMut for Closures {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl<'s> Emitter<'s> {
     pub fn declare_block(
         &mut self,
         stmts: &'s Vec<Statement<'s>>,
@@ -72,7 +104,7 @@ impl<'s> Emitter<'s> {
         stmts: &'s Vec<Statement<'s>>,
         expr: &'s Option<Box<Expression<'s>>>,
     ) {
-        self.enter_closure(true);
+        self.closures.enter(true);
         self.enter_scope(args_range.start..body_range.end);
 
         let narg: OpParam = args.as_ref().map_or(1, |args| args.len()).into();
@@ -96,14 +128,14 @@ impl<'s> Emitter<'s> {
         }
         self.declare_block(stmts, expr);
 
-        let ret_reg = self.add_reg();
+        let ret_reg = self.closures.add_reg();
         let never = self.emit_block(stmts, expr, ret_reg, None);
         if !never {
             self.op_return(ret_reg);
         }
         self.op(OpCode::FuncEnd);
 
-        let nreg: OpParam = self.current_closure().reg_len().into();
+        let nreg: OpParam = self.closures.current().reg_len().into();
         if ret.is_wide() || nreg.is_wide() || narg.is_wide() {
             self.chunk.code[pos] = OpCode::Func.wide_code();
             self.chunk.code.splice(
@@ -116,6 +148,6 @@ impl<'s> Emitter<'s> {
                 .splice(pos + 1..pos + 1, [ret.code(), narg.code(), nreg.code()]);
         }
         self.exit_scope();
-        self.exit_closure();
+        self.closures.exit();
     }
 }

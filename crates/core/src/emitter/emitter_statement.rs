@@ -1,6 +1,5 @@
 use crate::{
     diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
-    emitter::variable::VariableUsage,
     lexer::{Operator, TokenKind},
     parser::{
         self, AstWalker, Expression,
@@ -47,14 +46,14 @@ impl<'s> Emitter<'s> {
                 false
             }
             Bind(_, pattern, _, expression, _) => {
-                let value_reg = self.add_reg();
+                let value_reg = self.closures.add_reg();
                 self.declare_expression(expression);
                 self.emit_expression(expression, value_reg, brk);
                 self.emit_pattern(pattern, value_reg, Some(BindType::Let));
                 false
             }
             Rebind(pattern, _, expression, _) => {
-                let value_reg = self.add_reg();
+                let value_reg = self.closures.add_reg();
                 self.declare_expression(expression);
                 self.emit_expression(expression, value_reg, brk);
                 self.emit_pattern(pattern, value_reg, None);
@@ -69,7 +68,7 @@ impl<'s> Emitter<'s> {
                         };
                         let var = self.scopes.find_variable(id);
                         if let Some((level, variable)) = var {
-                            variable.usage(id_token, VariableUsage::Write, &mut self.diagnostics);
+                            variable.mark_write(id_token, &mut self.diagnostics);
                             if !variable.initialized() {
                                 self.diagnostics.push(SourceDiagnostic::new(
                                     id_token.range(),
@@ -89,7 +88,7 @@ impl<'s> Emitter<'s> {
                             } else {
                                 let up_reg = variable.register();
                                 let level = self.closures.len() - level;
-                                let ret = self.add_reg();
+                                let ret = self.closures.add_reg();
                                 self.op_get_upvalue(ret, level, up_reg);
                                 final_op = Some(Box::new(move |s| {
                                     s.op_set_upvalue(ret, level, up_reg);
@@ -143,7 +142,7 @@ impl<'s> Emitter<'s> {
                         TokenKind::Operator(Operator::CaretEqual) => OpCode::Pow,
                         _ => unreachable!("Unexpected assign operator"),
                     };
-                    let right_reg = self.add_reg();
+                    let right_reg = self.closures.add_reg();
                     self.declare_expression(expression);
                     self.emit_expression(expression, right_reg, brk);
                     self.op_binary(assignee_reg, op, assignee_reg, right_reg);
@@ -158,8 +157,7 @@ impl<'s> Emitter<'s> {
                     unreachable!("Expected identifier token");
                 };
                 let func_var = self.scopes.find_local_variable(name).unwrap();
-                func_var.usage(name_token, VariableUsage::Init, &mut self.diagnostics);
-                let func_reg = func_var.register();
+                let func_reg = self.closures.initialize_variable(func_var);
                 let parser::Expression::Block(_, stmts, expr, _) = &**expression else {
                     unreachable!("Expected block expression");
                 };
@@ -176,7 +174,7 @@ impl<'s> Emitter<'s> {
             }
             Return(_, expression, _) => {
                 if let Some(expression) = expression {
-                    let ret_reg = self.add_reg();
+                    let ret_reg = self.closures.add_reg();
                     self.declare_expression(expression);
                     self.emit_expression(expression, ret_reg, brk);
                     self.op_return(ret_reg);
@@ -198,7 +196,7 @@ impl<'s> Emitter<'s> {
                 };
                 if let Some(expression) = expression {
                     self.declare_expression(expression);
-                    let brk_ret = self.add_reg();
+                    let brk_ret = self.closures.add_reg();
                     self.emit_expression(expression, brk_ret, Some(brk));
                     self.op_set_upvalue(brk_ret, 1, brk);
                 } else if !brk.is_empty() {

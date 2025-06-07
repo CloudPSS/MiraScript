@@ -1,6 +1,6 @@
 use crate::{
     diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
-    emitter::{emitter_scope::check_variable_initialized, variable::VariableUsage},
+    emitter::emitter_scope::check_variable_initialized,
     lexer::TokenKind,
     parser::{
         AstWalker,
@@ -65,15 +65,10 @@ impl<'s> Emitter<'s> {
                 let var = self.scopes.find_variable(id);
                 if let Some((level, variable)) = var {
                     let bind = bind_type.is_some();
-                    variable.usage(
-                        id_token,
-                        if bind {
-                            VariableUsage::Init
-                        } else {
-                            VariableUsage::Write
-                        },
-                        &mut self.diagnostics,
-                    );
+                    if bind {
+                        self.closures.initialize_variable(variable);
+                    }
+                    variable.mark_read(id_token, &mut self.diagnostics);
                     if !check_variable_initialized(
                         &mut self.diagnostics,
                         &self.closures,
@@ -113,7 +108,7 @@ impl<'s> Emitter<'s> {
                             };
                             self.diagnostics
                                 .push(SourceDiagnostic::new(token.range(), id_type));
-                            let ret = self.add_reg();
+                            let ret = self.closures.add_reg();
                             self.op_get(ret, value, id);
                             self.emit_pattern(pattern, ret, bind_type);
                         }
@@ -121,11 +116,9 @@ impl<'s> Emitter<'s> {
                         RecordPattern::OmitNamed(colon, pattern, _) => {
                             let Pattern::Bind(_, id_token) = pattern.as_ref() else {
                                 continue;
-                                unreachable!("Expected identifier token");
                             };
                             let TokenKind::Identifier(id) = &id_token.kind else {
                                 continue;
-                                unreachable!("Expected identifier token");
                             };
                             self.diagnostics.push(SourceDiagnostic::new(
                                 colon.range(),
@@ -135,12 +128,12 @@ impl<'s> Emitter<'s> {
                                 id_token.range(),
                                 DiagnosticCode::OmitNamedRecordFieldName,
                             ));
-                            let ret = self.add_reg();
+                            let ret = self.closures.add_reg();
                             self.op_get(ret, value, id.as_ref());
                             self.emit_pattern(pattern, ret, bind_type);
                         }
                         RecordPattern::Unnamed(pattern, _) => {
-                            let ret = self.add_reg();
+                            let ret = self.closures.add_reg();
                             let code = match i {
                                 0 => DiagnosticCode::UnnamedRecordField0,
                                 1 => DiagnosticCode::UnnamedRecordField1,
