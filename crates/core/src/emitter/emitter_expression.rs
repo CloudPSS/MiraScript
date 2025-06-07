@@ -1,6 +1,6 @@
 use crate::{
     diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
-    emitter::variable::VariableUsage,
+    emitter::{emitter_scope::check_variable_initialized, variable::VariableUsage},
     lexer::{Keyword, Operator, TokenKind},
     parser::{
         self, ArrayElement, AstWalker, Callable,
@@ -163,14 +163,14 @@ impl<'s> Emitter<'s> {
                 if let Some((level, variable)) = var {
                     let register = variable.register();
                     variable.usage(token, VariableUsage::Read, &mut self.diagnostics);
-                    if !variable.initialized()
-                        && self.closures[level..].iter().all(|c| !c.late_binding())
-                    {
-                        self.diagnostics.push(SourceDiagnostic::new(
-                            token.range(),
-                            DiagnosticCode::UninitializedVariable,
-                        ));
-                        variable.put_decl_ref(&mut self.diagnostics);
+                    if !check_variable_initialized(
+                        &mut self.diagnostics,
+                        &self.closures,
+                        token,
+                        variable,
+                        level,
+                    ) {
+                        return;
                     }
                     if level == self.closures.len() {
                         self.op_unary(ret, OpCode::Assign, register);
@@ -638,6 +638,23 @@ impl<'s> Emitter<'s> {
                     return;
                 };
 
+                // 先进入 scope 再进入 closure
+                self.enter_leveled_scope(
+                    kw.range.end..expression.range().end,
+                    self.closures.len() + 1,
+                );
+
+                self.declare_pattern(pattern, Some(BindType::Init));
+                match iterable.as_ref() {
+                    Iterable::Value(value) => {
+                        self.declare_expression(value);
+                    }
+                    Iterable::Range(range) => {
+                        self.declare_expression(&range.0);
+                        self.declare_expression(&range.2);
+                    }
+                };
+
                 let iterable_reg = match iterable.as_ref() {
                     Iterable::Value(value) => self.emit_expression_reg(value, None),
                     Iterable::Range(range) => {
@@ -660,21 +677,9 @@ impl<'s> Emitter<'s> {
                 };
 
                 self.enter_closure(false);
-                self.enter_scope(kw.range.end..expression.range().end);
                 // 根据虚拟机定义，iterator 寄存器为闭包内第一个寄存器
                 // 进入 closure 后立即分配
                 let iterator = self.add_reg();
-
-                self.declare_pattern(pattern, Some(BindType::Init));
-                match iterable.as_ref() {
-                    Iterable::Value(value) => {
-                        self.declare_expression(value);
-                    }
-                    Iterable::Range(range) => {
-                        self.declare_expression(&range.0);
-                        self.declare_expression(&range.2);
-                    }
-                };
                 self.declare_block(stmts, expr);
 
                 let ret = if !ret.is_empty() {

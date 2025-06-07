@@ -1,6 +1,6 @@
 use crate::{
     diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
-    emitter::variable::VariableUsage,
+    emitter::{emitter_scope::check_variable_initialized, variable::VariableUsage},
     lexer::TokenKind,
     parser::{
         AstWalker,
@@ -74,13 +74,14 @@ impl<'s> Emitter<'s> {
                         },
                         &mut self.diagnostics,
                     );
-                    let initialized = variable.initialized();
-                    if !initialized && self.closures[level..].iter().all(|c| !c.late_binding()) {
-                        self.diagnostics.push(SourceDiagnostic::new(
-                            id_token.range(),
-                            DiagnosticCode::UninitializedVariable,
-                        ));
-                        variable.put_decl_ref(&mut self.diagnostics);
+                    if !check_variable_initialized(
+                        &mut self.diagnostics,
+                        &self.closures,
+                        id_token,
+                        variable,
+                        level,
+                    ) {
+                        return;
                     }
                     if !variable.mutable() && !bind {
                         self.diagnostics.push(SourceDiagnostic::new(

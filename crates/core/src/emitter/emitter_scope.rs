@@ -2,7 +2,7 @@ use std::ops::{Deref, DerefMut};
 
 use crate::{
     diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
-    emitter::opcode::Register,
+    emitter::{closure::Closure, opcode::Register},
     lexer::{Token, TokenKind},
     parser::AstWalker,
 };
@@ -51,9 +51,37 @@ impl DerefMut for Scopes<'_> {
     }
 }
 
+pub fn check_variable_initialized<'s>(
+    diagnostics: &mut Vec<SourceDiagnostic>,
+    closures: &[Closure],
+    access: &Token<'s>,
+    variable: &Variable<'s>,
+    level: usize,
+) -> bool {
+    if variable.initialized() {
+        // 变量已初始化
+        return true;
+    }
+    if level < closures.len() && closures[level..].iter().any(|c| c.late_binding()) {
+        return true;
+    }
+    // 变量在前级闭包中定义，且中间没有延迟绑定的闭包
+    //  或
+    // 变量在当前或后级(见 for-in 的实现)闭包中定义
+    diagnostics.push(SourceDiagnostic::new(
+        access.range(),
+        DiagnosticCode::UninitializedVariable,
+    ));
+    variable.put_decl_ref(diagnostics);
+    false
+}
+
 impl<'s> Emitter<'s> {
     pub fn enter_scope(&mut self, range: SourceRange) {
-        self.scopes.push(Scope::new(self.closures.len()));
+        self.enter_leveled_scope(range, self.closures.len());
+    }
+    pub fn enter_leveled_scope(&mut self, range: SourceRange, level: usize) {
+        self.scopes.push(Scope::new(level));
         self.diagnostics
             .push(SourceDiagnostic::new(range, DiagnosticCode::Scope));
     }

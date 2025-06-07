@@ -81,7 +81,7 @@ export function VmFunction(fn: VmFunctionLike, option: VmFunctionOption = {}): V
             }
         }) as typeof fn;
         Object.defineProperty(fn, 'name', {
-            value: fn.name,
+            value: original.name,
             configurable: true,
         });
     }

@@ -511,7 +511,7 @@ export { PI as '@pi', E as '@e' };
 
 export const debug_print: VmLib = (...args) => {
     // eslint-disable-next-line no-console
-    console.trace(...args);
+    console.log('%c MiraScript ', 'color:white; background: green;', args);
 };
 debug_print.summary = '打印调试信息到控制台';
 debug_print.params = {

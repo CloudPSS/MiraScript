@@ -167,28 +167,31 @@ const elDisassembly = document.querySelector<HTMLDivElement>('#disassembly')!;
 elDisassembly.addEventListener('contextmenu', (e) => {
     e.preventDefault();
     console.time('transpile');
-    void transpile(editor.getValue(), { pretty: true }).then((result) => {
-        console.timeEnd('transpile');
-        let content = result.toString();
-        console.time('execute');
-        try {
-            const ret = result(
-                createVmGlobal(
-                    {
-                        e: new VmExtern([1, 2, [1, 2], { x: 0 }]),
-                        o: {},
-                        x: [1, 2, 3],
-                    },
-                    {
-                        globalThis,
-                    },
-                ),
-            );
-            content += `\nResult:\n  ${print(ret)}`;
-        } catch (ex) {
-            content += `\n${String(ex)}`;
-        }
-        console.timeEnd('execute');
-        elDisassembly.textContent = content;
-    });
+    void transpile(editor.getValue(), { pretty: true })
+        .finally(() => {
+            console.timeEnd('transpile');
+        })
+        .then((result) => {
+            let content = result.toString();
+            console.time('execute');
+            try {
+                const ret = result(
+                    createVmGlobal(
+                        {
+                            e: new VmExtern([1, 2, [1, 2], { x: 0 }]),
+                            o: {},
+                            x: [1, 2, 3],
+                        },
+                        {
+                            globalThis,
+                        },
+                    ),
+                );
+                content += `\nResult:\n  ${print(ret)}`;
+            } catch (ex) {
+                content += `\n${String(ex)}`;
+            }
+            console.timeEnd('execute');
+            elDisassembly.textContent = content;
+        });
 });
