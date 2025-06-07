@@ -82,35 +82,35 @@ export class CompileResult {
     private readonly _hints: Array<Writable<SourceDiagnostic>> = [];
     private readonly _tags: Array<Writable<SourceDiagnostic>> = [];
     /** 源代码诊断信息 */
-    get errors(): ReadonlyArray<Writable<SourceDiagnostic>> {
+    get errors(): readonly SourceDiagnostic[] {
         if (!this.diagnosticsReady) {
             this.readDiagnostics();
         }
         return this._errors;
     }
     /** 源代码诊断信息 */
-    get warnings(): ReadonlyArray<Writable<SourceDiagnostic>> {
+    get warnings(): readonly SourceDiagnostic[] {
         if (!this.diagnosticsReady) {
             this.readDiagnostics();
         }
         return this._warnings;
     }
     /** 源代码诊断信息 */
-    get infos(): ReadonlyArray<Writable<SourceDiagnostic>> {
+    get infos(): readonly SourceDiagnostic[] {
         if (!this.diagnosticsReady) {
             this.readDiagnostics();
         }
         return this._infos;
     }
     /** 源代码诊断信息 */
-    get hints(): ReadonlyArray<Writable<SourceDiagnostic>> {
+    get hints(): readonly SourceDiagnostic[] {
         if (!this.diagnosticsReady) {
             this.readDiagnostics();
         }
         return this._hints;
     }
     /** 源代码诊断信息 */
-    get tags(): ReadonlyArray<Writable<SourceDiagnostic>> {
+    get tags(): readonly SourceDiagnostic[] {
         if (!this.diagnosticsReady) {
             this.readDiagnostics();
         }

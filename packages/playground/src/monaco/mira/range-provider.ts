@@ -34,5 +34,5 @@ class RangeProvider extends Provider implements languages.FoldingRangeProvider, 
 }
 
 const instance = new RangeProvider();
-// languages.registerSelectionRangeProvider('mirascript', instance);
+languages.registerSelectionRangeProvider('mirascript', instance);
 languages.registerFoldingRangeProvider('mirascript', instance);

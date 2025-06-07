@@ -54,15 +54,21 @@ class RenameProvider extends Provider implements languages.RenameProvider {
     ): Promise<undefined | (languages.RenameLocation & languages.Rejection)> {
         const compiled = await Provider.getCompileResult(model);
         if (!compiled) return undefined;
-        const tag = compiled.tags.find((t) => strictInRange(t.range, position));
-        if (!tag) {
+        const tags = compiled.tags.filter(
+            (t) =>
+                t.code !== DiagnosticCode.Scope &&
+                t.code !== DiagnosticCode.String &&
+                t.code !== DiagnosticCode.Interpolation &&
+                strictInRange(t.range, position),
+        );
+        if (!tags.length) {
             return {
                 range: Range.fromPositions(position),
                 text: '',
                 rejectReason: 'Cannot rename this element',
             };
         }
-
+        const tag = tags[0]!;
         if (tag.code === DiagnosticCode.GlobalVariable || tag.code === DiagnosticCode.GlobalDynamicAccess) {
             return {
                 range: tag.range,
