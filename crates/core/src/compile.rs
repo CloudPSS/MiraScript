@@ -10,6 +10,60 @@ use crate::parser::{self, AstWalker, walker_mut};
 
 type CompileResult<'s> = (Option<Box<[u8]>>, Vec<SourceDiagnostic>);
 
+fn recover_token<'s>(
+    t: Token<'s>,
+    diagnostics_collector: &mut Vec<SourceDiagnostic>,
+) -> Option<Token<'s>> {
+    match t.kind {
+        lexer::TokenKind::Unknown {
+            recovered: Some(token),
+            errors,
+        } => {
+            diagnostics_collector.extend(errors);
+            let recovered = lexer::Token {
+                kind: *token,
+                range: t.range,
+                leading_trivia: t.leading_trivia,
+                trailing_trivia: t.trailing_trivia,
+            };
+            recover_token(recovered, diagnostics_collector)
+        }
+        lexer::TokenKind::Unknown { errors, .. } => {
+            diagnostics_collector.extend(errors);
+            None
+        }
+        lexer::TokenKind::InterpolatedString(strs, interpolations) => {
+            diagnostics_collector.push(SourceDiagnostic::new(
+                t.range.clone(),
+                DiagnosticCode::Interpolation,
+            ));
+            Some(Token {
+                kind: TokenKind::InterpolatedString(
+                    strs,
+                    interpolations
+                        .into_iter()
+                        .map(|ts| {
+                            ts.into_iter()
+                                .filter_map(|t| recover_token(t, diagnostics_collector))
+                                .collect()
+                        })
+                        .collect(),
+                ),
+                range: t.range,
+                leading_trivia: t.leading_trivia,
+                trailing_trivia: t.trailing_trivia,
+            })
+        }
+        lexer::TokenKind::String(_) => {
+            diagnostics_collector.push(SourceDiagnostic::new(
+                t.range.clone(),
+                DiagnosticCode::String,
+            ));
+            Some(t)
+        }
+        _ => Some(t),
+    }
+}
 fn compile<'s>(
     input: &'s str,
     lexer: impl FnOnce(&mut lexer::Input<'s>) -> ModalResult<Vec<lexer::Token<'s>>>,
@@ -42,25 +96,7 @@ fn compile<'s>(
     // Try to recover from lexing errors
     let recovered_tokens: Vec<_> = tokens
         .into_iter()
-        .filter_map(|t| match t.kind {
-            lexer::TokenKind::Unknown {
-                recovered: Some(token),
-                errors,
-            } => {
-                diagnostics_collector.extend(errors);
-                Some(lexer::Token {
-                    kind: *token,
-                    range: t.range,
-                    leading_trivia: t.leading_trivia,
-                    trailing_trivia: t.trailing_trivia,
-                })
-            }
-            lexer::TokenKind::Unknown { errors, .. } => {
-                diagnostics_collector.extend(errors);
-                None
-            }
-            _ => Some(t),
-        })
+        .filter_map(|t| recover_token(t, &mut diagnostics_collector))
         .collect();
 
     // Parsing

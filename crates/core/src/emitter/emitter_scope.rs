@@ -52,7 +52,10 @@ impl DerefMut for Scopes<'_> {
 }
 
 impl<'s> Emitter<'s> {
-    pub fn enter_scope(&mut self) {
+    pub fn enter_scope(
+        &mut self,
+        //range: SourceRange
+    ) {
         self.scopes.push(Scope::new(self.closures.len()));
     }
     pub fn exit_scope(&mut self) {

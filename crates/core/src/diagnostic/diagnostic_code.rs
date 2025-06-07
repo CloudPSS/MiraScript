@@ -191,6 +191,11 @@ pub enum DiagnosticCode {
     UnnamedRecordFieldN,
     OmitNamedRecordField,
 
+    // mark code ranges
+    Scope,
+    String,
+    Interpolation,
+
     TagEnd = 20000,
 }
 
