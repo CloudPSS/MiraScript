@@ -81,7 +81,7 @@ impl<'s> Variable<'s> {
         self.register
     }
 
-    fn hint(&self) -> DiagnosticCode {
+    pub fn hint(&self) -> DiagnosticCode {
         if matches!(self.bind_type, BindType::ItParameter) {
             return if self.used {
                 DiagnosticCode::ParameterIt

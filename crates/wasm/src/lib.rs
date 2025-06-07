@@ -64,6 +64,9 @@ pub fn compile_script(script: &[u8], flags: &[u8]) -> CompileResult {
         .collect::<Vec<_>>();
     let utf16 = flags.get(CompileFlag::UseUtf16);
     let pos_to_line_col = |pos: usize| {
+        if pos == 0 {
+            return (1, 1);
+        }
         let line = lines
             .iter()
             .position(|&line| line > pos)

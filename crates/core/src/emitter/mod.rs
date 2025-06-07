@@ -25,15 +25,13 @@ use opcode::Register;
 pub fn emit(source: &str, script: &Script<'_>) -> (Vec<SourceDiagnostic>, Box<[u8]>) {
     let mut emitter: Emitter<'_> = Emitter::new(source);
     let args = Some(vec![]);
-    let token = Token {
-        kind: crate::lexer::TokenKind::Unknown {
-            recovered: None,
-            errors: vec![],
-        },
-        range: SourceRange::default(),
-        leading_trivia: vec![],
-        trailing_trivia: vec![],
-    };
-    emitter.emit_fn(Register::EMPTY, &token, &args, &script.0, &script.1);
+    emitter.emit_fn(
+        Register::EMPTY,
+        0..0,
+        &args,
+        0..source.len(),
+        &script.0,
+        &script.1,
+    );
     (emitter.diagnostics, emitter.chunk.to_bytes())
 }

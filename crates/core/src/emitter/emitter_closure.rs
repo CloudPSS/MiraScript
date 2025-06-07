@@ -24,6 +24,18 @@ impl<'s> Emitter<'s> {
     pub fn add_reg(&mut self) -> Register {
         self.current_closure().add_reg()
     }
+    pub fn declare_block(
+        &mut self,
+        stmts: &'s Vec<Statement<'s>>,
+        expr: &'s Option<Box<Expression<'s>>>,
+    ) {
+        for stmt in stmts {
+            self.declare_statement(stmt);
+        }
+        if let Some(expr) = expr {
+            self.declare_expression(expr);
+        }
+    }
     pub fn emit_block(
         &mut self,
         stmts: &'s Vec<Statement<'s>>,
@@ -31,9 +43,6 @@ impl<'s> Emitter<'s> {
         ret: Register,
         brk: Option<Register>,
     ) -> bool {
-        for stmt in stmts {
-            self.declare_statement(stmt);
-        }
         // 提升函数实现
         for stmt in stmts {
             if matches!(stmt, Statement::Function(..)) {
@@ -48,10 +57,7 @@ impl<'s> Emitter<'s> {
             }
         }
         if let Some(expr) = expr {
-            self.enter_scope();
-            self.declare_expression(expr);
             self.emit_expression(expr, ret, brk);
-            self.exit_scope();
         } else if !has_never && !ret.is_empty() {
             self.op_nil(ret);
         };
@@ -60,13 +66,14 @@ impl<'s> Emitter<'s> {
     pub fn emit_fn(
         &mut self,
         ret: Register,
-        id_or_fn: &'s Token<'s>,
+        args_range: SourceRange,
         args: &'s Option<Vec<Token<'s>>>,
+        body_range: SourceRange,
         stmts: &'s Vec<Statement<'s>>,
         expr: &'s Option<Box<Expression<'s>>>,
     ) {
         self.enter_closure(true);
-        self.enter_scope();
+        self.enter_scope(args_range.start..body_range.end);
 
         let narg: OpParam = args.as_ref().map_or(1, |args| args.len()).into();
         let pos = self.chunk.code.len();
@@ -77,12 +84,7 @@ impl<'s> Emitter<'s> {
                 if arg.is_identifier() {
                     self.declare_variable(arg, false, BindType::Parameter);
                 } else {
-                    self.declare_implicit_variable(
-                        "<unnamed param>",
-                        id_or_fn.range(),
-                        false,
-                        BindType::Parameter,
-                    );
+                    continue; // Skip non-identifier tokens
                 }
                 self.diagnostics.push(SourceDiagnostic::new(
                     arg.range(),
@@ -90,16 +92,9 @@ impl<'s> Emitter<'s> {
                 ));
             }
         } else {
-            self.declare_implicit_variable(
-                "it",
-                SourceRange {
-                    start: id_or_fn.range().end,
-                    end: id_or_fn.range().end,
-                },
-                false,
-                BindType::ItParameter,
-            );
+            self.declare_implicit_variable("it", args_range.clone(), false, BindType::ItParameter);
         }
+        self.declare_block(stmts, expr);
 
         let ret_reg = self.add_reg();
         let never = self.emit_block(stmts, expr, ret_reg, None);

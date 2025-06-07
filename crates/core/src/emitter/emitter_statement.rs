@@ -13,19 +13,28 @@ use super::{Emitter, OpCode, opcode::Register, variable::BindType};
 impl<'s> Emitter<'s> {
     pub fn declare_statement(&mut self, stmt: &'s Statement<'s>) {
         match stmt {
-            Expression(_, _) | BlockExpression(_) => (),
-            Bind(_, pattern, _, _, _) => {
+            Expression(expr, _) => self.declare_expression(expr),
+            BlockExpression(_) => (),
+            Bind(_, pattern, _, expr, _) => {
                 self.declare_pattern(pattern, Some(BindType::Let));
+                self.declare_expression(expr);
             }
-            Rebind(pattern, _, _, _) => {
+            Rebind(pattern, _, expr, _) => {
                 self.declare_pattern(pattern, None);
+                self.declare_expression(expr);
             }
-            Assign(_, _, _, _) => (),
+            Assign(assignee, _, expr, _) => {
+                self.declare_expression(assignee);
+                self.declare_expression(expr);
+            }
             Function(_, name, _, _) => {
                 self.declare_variable(name, false, BindType::Func);
             }
-            Return(_, _, _) => (),
-            Break(_, _, _) => (),
+            Return(_, expr, _) | Break(_, expr, _) => {
+                if let Some(expr) = expr {
+                    self.declare_expression(expr);
+                }
+            }
             Continue(_, _) => (),
             Empty(_) | Unknown { .. } => (),
         }
@@ -33,27 +42,21 @@ impl<'s> Emitter<'s> {
     pub fn emit_statement(&mut self, stmt: &'s Statement<'s>, brk: Option<Register>) -> bool {
         match stmt {
             Expression(expression, _) | BlockExpression(expression) => {
-                self.enter_scope();
                 self.declare_expression(expression);
                 self.emit_expression(expression, Register::EMPTY, brk);
-                self.exit_scope();
                 false
             }
             Bind(_, pattern, _, expression, _) => {
                 let value_reg = self.add_reg();
-                self.enter_scope();
                 self.declare_expression(expression);
                 self.emit_expression(expression, value_reg, brk);
-                self.exit_scope();
                 self.emit_pattern(pattern, value_reg, Some(BindType::Let));
                 false
             }
             Rebind(pattern, _, expression, _) => {
                 let value_reg = self.add_reg();
-                self.enter_scope();
                 self.declare_expression(expression);
                 self.emit_expression(expression, value_reg, brk);
-                self.exit_scope();
                 self.emit_pattern(pattern, value_reg, None);
                 false
             }
@@ -113,30 +116,22 @@ impl<'s> Emitter<'s> {
                     _ => unreachable!(),
                 };
                 if **op == Operator::Equal {
-                    self.enter_scope();
                     self.declare_expression(expression);
                     self.emit_expression(expression, assignee_reg, brk);
-                    self.exit_scope();
                 } else if **op == Operator::LogicalAndEqual {
                     self.op_if(OpCode::If, assignee_reg);
-                    self.enter_scope();
                     self.declare_expression(expression);
                     self.emit_expression(expression, assignee_reg, brk);
-                    self.exit_scope();
                     self.op_if_end();
                 } else if **op == Operator::LogicalOrEqual {
                     self.op_if(OpCode::IfNot, assignee_reg);
-                    self.enter_scope();
                     self.declare_expression(expression);
                     self.emit_expression(expression, assignee_reg, brk);
-                    self.exit_scope();
                     self.op_if_end();
                 } else if **op == Operator::NullCoalescingEqual {
                     self.op_if(OpCode::IfNil, assignee_reg);
-                    self.enter_scope();
                     self.declare_expression(expression);
                     self.emit_expression(expression, assignee_reg, brk);
-                    self.exit_scope();
                     self.op_if_end();
                 } else {
                     let op = match op.kind {
@@ -149,10 +144,8 @@ impl<'s> Emitter<'s> {
                         _ => unreachable!("Unexpected assign operator"),
                     };
                     let right_reg = self.add_reg();
-                    self.enter_scope();
                     self.declare_expression(expression);
                     self.emit_expression(expression, right_reg, brk);
-                    self.exit_scope();
                     self.op_binary(assignee_reg, op, assignee_reg, right_reg);
                 }
                 if let Some(final_op) = final_op {
@@ -170,16 +163,22 @@ impl<'s> Emitter<'s> {
                 let parser::Expression::Block(_, stmts, expr, _) = &**expression else {
                     unreachable!("Expected block expression");
                 };
-                self.emit_fn(func_reg, name_token, args, stmts, expr);
+                let body_range = expression.range();
+                self.emit_fn(
+                    func_reg,
+                    name_token.range.end..body_range.start,
+                    args,
+                    body_range,
+                    stmts,
+                    expr,
+                );
                 false
             }
             Return(_, expression, _) => {
                 if let Some(expression) = expression {
                     let ret_reg = self.add_reg();
-                    self.enter_scope();
                     self.declare_expression(expression);
                     self.emit_expression(expression, ret_reg, brk);
-                    self.exit_scope();
                     self.op_return(ret_reg);
                 } else {
                     self.op_return(Register::EMPTY);
@@ -198,12 +197,10 @@ impl<'s> Emitter<'s> {
                     return false;
                 };
                 if let Some(expression) = expression {
-                    self.enter_scope();
                     self.declare_expression(expression);
                     let brk_ret = self.add_reg();
                     self.emit_expression(expression, brk_ret, Some(brk));
                     self.op_set_upvalue(brk_ret, 1, brk);
-                    self.exit_scope();
                 } else if !brk.is_empty() {
                     self.op_set_upvalue(Register::EMPTY, 1, brk);
                 }

@@ -52,11 +52,10 @@ impl DerefMut for Scopes<'_> {
 }
 
 impl<'s> Emitter<'s> {
-    pub fn enter_scope(
-        &mut self,
-        //range: SourceRange
-    ) {
+    pub fn enter_scope(&mut self, range: SourceRange) {
         self.scopes.push(Scope::new(self.closures.len()));
+        self.diagnostics
+            .push(SourceDiagnostic::new(range, DiagnosticCode::Scope));
     }
     pub fn exit_scope(&mut self) {
         let Some(scope) = self.scopes.pop() else {
@@ -81,7 +80,9 @@ impl<'s> Emitter<'s> {
             access.range(),
             DiagnosticCode::DuplicateVariableDeclaration,
         ));
-
+        var.put_decl_ref(&mut self.diagnostics);
+        self.diagnostics
+            .push(SourceDiagnostic::new(access.range(), var.hint()));
         var.put_decl_ref(&mut self.diagnostics);
         Some(var)
     }
