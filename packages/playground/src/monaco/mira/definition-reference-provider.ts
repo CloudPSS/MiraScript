@@ -14,27 +14,16 @@ import { DOC_HEADER } from './constants';
 const globalModel = editor.createModel(``, 'mirascript', Uri.parse('mirascript:///lib/global.mira'));
 const prepareGlobal = (name: string): { uri: Uri; range: IRange } => {
     const { script, doc } = getGlobal(name);
-    const code = [
-        `/**${DOC_HEADER}**/`,
-        '',
-        `/**`,
-        doc
-            .split('\n')
-            .map((line) => ` * ${line}`)
-            .join('\n'),
-        ` */`,
-        script,
-        '',
-    ];
+    const code = [`/**${DOC_HEADER}**/`, '', `/**`, ...doc.split('\n').map((line) => ` * ${line}`), ` */`, script, ''];
     globalModel.setValue(code.join('\n'));
-    const word = globalModel.getWordAtPosition({ lineNumber: code.length, column: 1 });
+    const word = globalModel.getWordAtPosition({ lineNumber: code.length - 1, column: 1 });
     return {
         uri: globalModel.uri,
         range: {
             startColumn: word ? word.startColumn : 1,
-            startLineNumber: code.length,
+            startLineNumber: code.length - 1,
             endColumn: word ? word.endColumn : 1,
-            endLineNumber: code.length,
+            endLineNumber: code.length - 1,
         },
     };
 };
@@ -55,8 +44,7 @@ class DefinitionReferenceProvider
         if (!compiled) return undefined;
         const d = compiled.definition(model, position);
         if (!d) return [];
-        if (d.def.definition == null) return [];
-        const { range, references, definition } = d.def;
+        const { references, definition } = d.def;
         let originSelectionRange;
         if (d.ref == null) {
             originSelectionRange = definition?.range;
@@ -64,10 +52,10 @@ class DefinitionReferenceProvider
             originSelectionRange = references[d.ref]?.range;
         }
         let link: languages.LocationLink;
-        if (typeof range == 'string') {
-            link = prepareGlobal(range);
+        if ('range' in d.def) {
+            link = { uri: model.uri, range: d.def.range };
         } else {
-            link = { uri: model.uri, range: range };
+            link = prepareGlobal(d.def.name);
         }
         link.originSelectionRange = originSelectionRange;
         return [link];
