@@ -8,7 +8,8 @@ const kVmFunction = Symbol.for('mirascript.vm.function');
  *
  * 虽然所有输入参数的类型均为 {@linkcode VmValue}，但当参数不足时，对应的参数会被填充为 `undefined`。
  */
-export type VmFunctionLike = (...args: ReadonlyArray<VmValue | undefined>) => VmAny;
+// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+export type VmFunctionLike = (...args: ReadonlyArray<VmValue | undefined>) => VmAny | void;
 
 /** Mirascript 函数 */
 export type VmFunction = VmFunctionLike & { readonly [kVmFunction]: VmFunctionInfo };
@@ -30,7 +31,7 @@ export interface VmFunctionInfo {
     /** 文档字符串 */
     readonly returnsType?: string;
     /** 如果添加了包装，返回原函数 */
-    readonly original?: (...args: VmAny[]) => VmAny;
+    readonly original?: VmFunctionLike;
 }
 
 /** Mirascript 函数创建选项 */

@@ -55,7 +55,7 @@ languages.setLanguageConfiguration('mirascript', {
             },
         },
     ],
-    autoCloseBefore: ')}];,:. \n\t',
+    autoCloseBefore: '*/%^ &| ><= )}] ;,?: \'"` \n\t ~#\\',
     folding: {
         markers: {
             start: /^\s*\/\/#?\s*?region\b/gu,
