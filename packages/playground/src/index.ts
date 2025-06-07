@@ -170,8 +170,8 @@ elDisassembly.addEventListener('contextmenu', (e) => {
     void transpile(editor.getValue(), { pretty: true }).then((result) => {
         console.timeEnd('transpile');
         let content = result.toString();
+        console.time('execute');
         try {
-            console.time('execute');
             const ret = result(
                 createVmGlobal(
                     {
@@ -184,11 +184,11 @@ elDisassembly.addEventListener('contextmenu', (e) => {
                     },
                 ),
             );
-            console.timeEnd('execute');
             content += `\nResult:\n  ${print(ret)}`;
         } catch (ex) {
             content += `\n${String(ex)}`;
         }
+        console.timeEnd('execute');
         elDisassembly.textContent = content;
     });
 });

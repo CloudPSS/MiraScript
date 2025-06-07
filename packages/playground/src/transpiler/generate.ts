@@ -312,9 +312,9 @@ class CodeGenerator {
                     i ? this.wv(i + argn, -1) : this.wv(0, -1),
                 ).join(', ');
                 if (script) {
-                    code = `return ((global = GlobalFallback(), ${args}) => { CpEnter(); try{ let ${regs};`;
+                    code = `return ((global = GlobalFallback(), ${args}) => { try{ CpEnter(); let ${regs};`;
                 } else {
-                    code = `${this.wv(reg)} = Function((${args}) => { CpEnter(); try{ let ${regs};`;
+                    code = `${this.wv(reg)} = Function((${args}) => { try{ CpEnter(); let ${regs};`;
                 }
                 break;
             }

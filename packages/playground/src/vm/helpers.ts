@@ -39,6 +39,8 @@ export const RecordFreeze = (record: Writable<VmRecord>, optional: readonly stri
     }
 };
 
+const MAX_DEPTH = 128;
+
 let cpDepth = 0;
 let cp = Number.NaN;
 let cpTimeout = 100; // Default timeout in milliseconds
@@ -52,19 +54,24 @@ export function Cp(): void {
 }
 /** 检查点 */
 export function CpEnter(): void {
-    if (cpDepth <= 0) {
-        cp = Date.now();
-        cpDepth = 0;
-    }
     cpDepth++;
+    if (cpDepth <= 1) {
+        cp = Date.now();
+        cpDepth = 1;
+    } else if (cpDepth > MAX_DEPTH) {
+        throw new RangeError('Maximum call depth exceeded');
+    } else {
+        Cp();
+    }
 }
 /** 检查点 */
 export function CpExit(): void {
-    Cp();
     cpDepth--;
-    if (cpDepth <= 0) {
+    if (cpDepth < 1) {
         cp = Number.NaN;
         cpDepth = 0;
+    } else {
+        Cp();
     }
 }
 /** 设置检查点超时时间 */

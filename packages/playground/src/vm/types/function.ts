@@ -71,8 +71,8 @@ export function VmFunction(fn: VmFunctionLike, option: VmFunctionOption = {}): V
         const original = fn;
         info.original = original;
         fn = ((...args) => {
-            CpEnter();
             try {
+                CpEnter();
                 const ret = original(...args);
                 return ret;
             } finally {
