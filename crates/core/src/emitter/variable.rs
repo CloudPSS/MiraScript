@@ -1,6 +1,5 @@
 use crate::{
     diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
-    emitter::{Emitter, closure::Closure, emitter_scope::Scopes},
     lexer::Token,
     parser::AstWalker,
 };
@@ -30,6 +29,7 @@ pub(crate) struct Variable<'s> {
     mutable: bool,
     bind_type: BindType,
     register: Register,
+    initialized: bool,
     used: bool,
 }
 
@@ -47,12 +47,13 @@ impl<'s> Variable<'s> {
             mutable,
             bind_type,
             register,
+            initialized: false,
             used: false,
         }
     }
 
     pub fn initialized(&self) -> bool {
-        !self.register.is_empty()
+        self.initialized
     }
 
     pub fn name(&self) -> &'s str {
@@ -68,7 +69,18 @@ impl<'s> Variable<'s> {
     }
 
     pub fn register(&self) -> Register {
+        if self.register.is_empty() {
+            panic!("Variable {} has no register assigned", self.name);
+        }
         self.register
+    }
+
+    pub fn has_register(&self) -> bool {
+        !self.register.is_empty()
+    }
+
+    pub fn set_register(&mut self, register: Register) {
+        self.register = register;
     }
 
     pub fn hint(&self) -> DiagnosticCode {
@@ -111,9 +123,8 @@ impl<'s> Variable<'s> {
         diagnostics.push(SourceDiagnostic::new(self.declaration.clone(), code));
     }
 
-    pub fn initialize(&mut self, register: Register) {
-        debug_assert!(!self.initialized(), "Variable already initialized");
-        self.register = register;
+    pub fn initialize(&mut self) {
+        self.initialized = true;
     }
 
     pub fn mark_read(&mut self, token: &Token<'_>, diagnostics: &mut Vec<SourceDiagnostic>) {

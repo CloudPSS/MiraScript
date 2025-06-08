@@ -33,11 +33,14 @@ impl Closures {
         self.pop();
     }
     pub fn initialize_variable(&mut self, variable: &mut Variable) -> Register {
-        if variable.initialized() {
-            return variable.register();
-        }
-        let reg = self.current().add_reg();
-        variable.initialize(reg);
+        let reg = if !variable.has_register() {
+            let reg = self.current().add_reg();
+            variable.set_register(reg);
+            reg
+        } else {
+            variable.register()
+        };
+        variable.initialize();
         reg
     }
 }

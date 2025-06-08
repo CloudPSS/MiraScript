@@ -164,7 +164,14 @@ export const $ToString = (value: VmAny): string => {
     if (isVmArray(value)) return value.map(innerToString).join(', ');
     return innerToString(value);
 };
-export const $ToNumber = Number;
+export const $ToNumber = (value: VmAny): number => {
+    $AssertInit(value);
+    if (value == null) return 0;
+    if (typeof value == 'number') return value;
+    if (typeof value == 'string') return Number(value);
+    if (typeof value == 'boolean') return value ? 1 : 0;
+    return Number.NaN;
+};
 export const $AssertNonNil = (value: VmAny): asserts value is NonNullable<VmValue> => {
     $AssertInit(value);
     if (value === null) throw new Error('Expected non-nil value');
