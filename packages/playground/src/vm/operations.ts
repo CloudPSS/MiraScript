@@ -23,10 +23,8 @@ const isSame = (a: VmValue, b: VmValue): boolean => {
     if (typeof a == 'number' && typeof b == 'number') return a === b || (isNaN(a) && isNaN(b));
     // Check all primitive types, and fast path for reference equality
     if (a === b) return true;
-    // Any primitives arrive here are not equal
-    if (typeof a != 'object' || typeof b != 'object') return false;
-    // Handle nil values
-    if (a == null || b == null) return false;
+    // Any primitives and functions arrive here are not equal
+    if (a == null || typeof a != 'object' || b == null || typeof b != 'object') return false;
     // Handle wrapper values
     if (a instanceof VmWrapper) return a.same(b);
     if (b instanceof VmWrapper) return b.same(a);
@@ -53,12 +51,17 @@ const isSame = (a: VmValue, b: VmValue): boolean => {
     return false;
 };
 
+// Math operations
 export const $Add = (a: VmAny, b: VmAny): number => $ToNumber(a) + $ToNumber(b);
 export const $Sub = (a: VmAny, b: VmAny): number => $ToNumber(a) - $ToNumber(b);
 export const $Mul = (a: VmAny, b: VmAny): number => $ToNumber(a) * $ToNumber(b);
 export const $Div = (a: VmAny, b: VmAny): number => $ToNumber(a) / $ToNumber(b);
 export const $Mod = (a: VmAny, b: VmAny): number => $ToNumber(a) % $ToNumber(b);
 export const $Pow = (a: VmAny, b: VmAny): number => $ToNumber(a) ** $ToNumber(b);
+// Logical operations without short-circuiting
+export const $And = (a: VmAny, b: VmAny): boolean => $ToBoolean(a) && $ToBoolean(b);
+export const $Or = (a: VmAny, b: VmAny): boolean => $ToBoolean(a) || $ToBoolean(b);
+// Comparison operations
 export const $Gt = (a: VmAny, b: VmAny): boolean => $ToNumber(a) > $ToNumber(b);
 export const $Gte = (a: VmAny, b: VmAny): boolean => $ToNumber(a) >= $ToNumber(b);
 export const $Lt = (a: VmAny, b: VmAny): boolean => $ToNumber(a) < $ToNumber(b);
@@ -66,6 +69,7 @@ export const $Lte = (a: VmAny, b: VmAny): boolean => $ToNumber(a) <= $ToNumber(b
 export const $Eq = (a: VmAny, b: VmAny): boolean => {
     $AssertInit(a);
     $AssertInit(b);
+    // Number comparison is a special case to handle NaN correctly
     if (typeof a == 'number' && typeof b == 'number') return a === b;
     return isSame(a, b);
 };
@@ -75,6 +79,8 @@ export const $Aeq = (a: VmAny, b: VmAny): boolean => {
     const bn = $ToNumber(b);
     const EPS = 1e-15;
     if (isNaN(an) || isNaN(bn)) return false;
+    // Since Inf - Inf is NaN, we must check for equality first
+    if (an === bn) return true;
     const absoluteDifference = abs(an - bn);
     if (absoluteDifference < EPS) return true;
     const base = min(abs(an), abs(bn));
@@ -126,7 +132,7 @@ export const $Type = (value: VmAny): TypeName => {
     if (value === null) return 'nil';
     if (value instanceof VmExtern) return 'extern';
     if (value instanceof VmModule) return 'module';
-    if (Array.isArray(value)) return 'array';
+    if (isVmArray(value)) return 'array';
     if (typeof value == 'object') return 'record';
     return typeof value as TypeName;
 };
