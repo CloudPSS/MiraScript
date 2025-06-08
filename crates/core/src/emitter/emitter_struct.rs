@@ -30,17 +30,26 @@ impl<'s> Emitter<'s> {
         start: &(impl AstWalker<'s> + std::fmt::Debug),
         end: &(impl AstWalker<'s> + std::fmt::Debug),
     ) {
-        let start_range = start.range().start;
-        let end_range = end.range().end;
-        if start_range == usize::MAX || end_range == usize::MIN {
-            // No token in range
+        let start_range = start.range();
+        let end_range = end.range();
+        let start;
+        let end;
+        if start_range.start != usize::MAX {
+            start = start_range.start;
+        } else if end_range.start != usize::MAX {
+            start = end_range.start;
+        } else {
+            return;
+        }
+        if end_range.end != usize::MIN {
+            end = end_range.end;
+        } else if start_range.end != usize::MIN {
+            end = start_range.end;
+        } else {
             return;
         }
         self.diagnostics.push(SourceDiagnostic::new(
-            SourceRange {
-                start: start_range,
-                end: end_range,
-            },
+            start..end,
             DiagnosticCode::Unimplemented,
         ));
     }

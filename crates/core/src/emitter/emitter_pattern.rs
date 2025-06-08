@@ -23,7 +23,6 @@ impl<'s> Emitter<'s> {
                         | Pattern::Bind(..)
                         | Pattern::Record(..)
                         | Pattern::Array(..)
-                        | Pattern::SpreadDiscard
                 ) {
                     self.diagnostics.push(SourceDiagnostic::new(
                         op.range(),
@@ -39,7 +38,7 @@ impl<'s> Emitter<'s> {
             Constant(token, token1) => self.unimplemented(pattern, pattern),
             Relation(token, pattern) => self.unimplemented(token, pattern),
             Range(l, token, r) => self.unimplemented(l, r),
-            Discard(_) => (),
+            Discard(_) | SpreadDiscard => (),
             Bind(mut_token, id_token) => {
                 if let Some(bind_type) = bind_type {
                     self.declare_variable(id_token, mut_token.is_some(), bind_type);
@@ -59,7 +58,6 @@ impl<'s> Emitter<'s> {
                 }
             }
             Array(ob, array_element_bases, cb) => self.unimplemented(ob, cb),
-            SpreadDiscard => (),
             And(left, token, right) => self.unimplemented(left, right),
             Or(left, token, right) => self.unimplemented(left, right),
             Not(token, pattern) => self.unimplemented(token, pattern),
@@ -78,7 +76,7 @@ impl<'s> Emitter<'s> {
             Constant(token, token1) => self.unimplemented(pattern, pattern),
             Relation(token, pattern) => self.unimplemented(token, pattern),
             Range(l, token, r) => self.unimplemented(l, r),
-            Discard(_) => (),
+            Discard(_) | SpreadDiscard => (),
             Bind(_, id_token) => {
                 let TokenKind::Identifier(id) = &id_token.kind else {
                     return;
@@ -177,14 +175,13 @@ impl<'s> Emitter<'s> {
                             self.op_get_index(ret, value, i);
                             self.emit_pattern(pattern, ret, bind_type);
                         }
-                        RecordPattern::Spread(_, pattern, _) => {
-                            self.unimplemented(pattern, pattern)
+                        RecordPattern::Spread(dots, pattern, _) => {
+                            self.unimplemented(dots, pattern)
                         }
                     }
                 }
             }
             Array(ob, array_element_bases, cb) => self.unimplemented(ob, cb),
-            SpreadDiscard => self.unimplemented(pattern, pattern),
             And(left, token, right) => self.unimplemented(left, right),
             Or(left, token, right) => self.unimplemented(left, right),
             Not(token, pattern) => self.unimplemented(token, pattern),
