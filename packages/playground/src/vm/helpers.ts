@@ -1,10 +1,10 @@
-import { $Init, $ToNumber } from './operations.js';
+import { $AssertInit, $ToNumber } from './operations.js';
 import type { VmFunctionLike } from './types/function.js';
 import { createVmGlobal, type VmGlobal } from './types/global.js';
 import { isVmConst, VmFunction, type VmConst, type VmAny, type VmArray, type VmRecord } from './types/index.js';
 
 export const Element = (value: VmAny): VmConst => {
-    $Init(value);
+    $AssertInit(value);
     if (!isVmConst(value)) return null;
     return value;
 };

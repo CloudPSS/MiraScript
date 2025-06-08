@@ -13,7 +13,7 @@ pub enum OpCode {
     // operators
     /// ADD %ret %1 %2\
     /// %ret = %1 + %2
-    Add = 0x10,
+    Add,
     /// SUB %ret %1 %2\
     /// %ret = %1 - %2
     Sub,
@@ -80,18 +80,18 @@ pub enum OpCode {
     /// CONCAT %ret `n` %1 %2 ... %n\
     /// %ret = %1 .. %2 .. ... .. %n
     Concat,
-    // /// AND %ret %1 %2\
-    // /// %ret = %1 && %2
-    // And,
-    // /// OR %ret %1 %2\
-    // /// %ret = %1 || %2
-    // Or,
-    /// INIT %v\
+    /// AND %ret %1 %2\
+    /// %ret = %1 && %2
+    And,
+    /// OR %ret %1 %2\
+    /// %ret = %1 || %2
+    Or,
+    /// ASSERT_INIT %v\
     /// assert(%v != uninitialized)
-    Init,
-    /// NON_NIL %v\
+    AssertInit,
+    /// ASSERT_NON_NIL %v\
     /// assert(%v != nil)
-    NonNil,
+    AssertNonNil,
     /// TYPE %ret %1\
     /// %ret = type(%1)
     Type,
@@ -108,7 +108,7 @@ pub enum OpCode {
     // variable management
     /// CONSTANT %reg `index`\
     /// %reg = CONSTANTS\[index]
-    Constant = 0x30,
+    Constant,
     /// UNINIT %reg
     /// %reg = uninitialized
     Uninit,
@@ -134,7 +134,7 @@ pub enum OpCode {
     // objects
     /// RECORD %ret\
     /// %ret = (
-    Record = 0x40,
+    Record,
     /// FIELD `name` %field\
     /// \[CONSTANTS\[name]]: %field,
     Field,
@@ -153,6 +153,12 @@ pub enum OpCode {
     /// FIELD_OPT_INDEX `index` %field\
     /// \[index]?: %field,
     FieldOptIndex,
+    /// PICK %ret %var `n` `key_1` `key_2` ... `key_n`\
+    /// %ret = %var pick keys CONSTANTS\[key_1], CONSTANTS\[key_2], ..., CONSTANTS\[key_n]
+    Pick,
+    /// OMIT %ret %var `n` `key_1` `key_2` ... `key_n`\
+    /// %ret = %var omit keys CONSTANTS\[key_1], CONSTANTS\[key_2], ..., CONSTANTS\[key_n]
+    Omit,
     /// ARRAY %ret\
     /// %ret = \[
     Array,
@@ -211,7 +217,7 @@ pub enum OpCode {
     // control flow
     /// LOOP `regn`\
     /// loop { let %1, .. ,%regn;
-    Loop = 0x60,
+    Loop,
     /// LOOP_FOR `regn` %iterable\
     /// for %1 in %iterable { let %2, .. ,%regn;
     LoopFor,

@@ -404,9 +404,10 @@ class CodeGenerator {
                 code = `${this.wv(reg)} = $${OpCode[opcode]}(${this.rv(value)});`;
                 break;
             }
-            case OpCode.NonNil: {
+            case OpCode.AssertInit:
+            case OpCode.AssertNonNil: {
                 reg = read();
-                code = `$NonNil(${this.rv(reg)})`;
+                code = `$${OpCode[opcode]}(${this.rv(reg)})`;
                 break;
             }
             case OpCode.Get: {

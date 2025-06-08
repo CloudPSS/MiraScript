@@ -173,7 +173,7 @@ impl<'s> Emitter<'s> {
         }
     }
     pub fn op_non_nil(&mut self, reg: Register) {
-        self.op_1(NonNil, reg);
+        self.op_1(AssertNonNil, reg);
     }
 
     pub fn op_if(&mut self, if_code: OpCode, cond: Register) {

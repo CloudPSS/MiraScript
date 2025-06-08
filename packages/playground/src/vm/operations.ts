@@ -64,8 +64,8 @@ export const $Gte = (a: VmAny, b: VmAny): boolean => $ToNumber(a) >= $ToNumber(b
 export const $Lt = (a: VmAny, b: VmAny): boolean => $ToNumber(a) < $ToNumber(b);
 export const $Lte = (a: VmAny, b: VmAny): boolean => $ToNumber(a) <= $ToNumber(b);
 export const $Eq = (a: VmAny, b: VmAny): boolean => {
-    $Init(a);
-    $Init(b);
+    $AssertInit(a);
+    $AssertInit(b);
     if (typeof a == 'number' && typeof b == 'number') return a === b;
     return isSame(a, b);
 };
@@ -82,14 +82,14 @@ export const $Aeq = (a: VmAny, b: VmAny): boolean => {
 };
 export const $Naeq = (a: VmAny, b: VmAny): boolean => !$Aeq(a, b);
 export const $Same = (a: VmAny, b: VmAny): boolean => {
-    $Init(a);
-    $Init(b);
+    $AssertInit(a);
+    $AssertInit(b);
     return isSame(a, b);
 };
 export const $Nsame = (a: VmAny, b: VmAny): boolean => !$Same(a, b);
 export const $In = (value: VmAny, iterable: VmAny): boolean => {
-    $Init(value);
-    $Init(iterable);
+    $AssertInit(value);
+    $AssertInit(iterable);
     if (iterable == null) return false;
     if (isVmArray(iterable)) {
         // JS %SameValueZero is same with `isSame` in this context
@@ -106,12 +106,12 @@ export const $Concat = (...args: string[]): string => {
 export const $Pos = (a: VmAny): number => $ToNumber(a);
 export const $Neg = (a: VmAny): number => -$ToNumber(a);
 export const $Not = (a: VmAny): boolean => !$ToBoolean(a);
-export const $Init: (value: VmAny) => asserts value is VmValue = (value) => {
+export const $AssertInit: (value: VmAny) => asserts value is VmValue = (value) => {
     if (value === undefined) throw new TypeError(`Uninitialized value`);
 };
 export const $CallDyn = (func: VmValue, args: readonly VmAny[]): VmValue => {
     for (const a of args) {
-        $Init(a);
+        $AssertInit(a);
     }
     if (func instanceof VmExtern && func.callable) {
         return func.call(args as readonly VmValue[]) ?? null;
@@ -131,7 +131,7 @@ export const $Type = (value: VmAny): TypeName => {
     return typeof value as TypeName;
 };
 export const $ToBoolean = (value: VmAny): boolean => {
-    $Init(value);
+    $AssertInit(value);
     return value != null && value !== false;
 };
 
@@ -159,17 +159,18 @@ function innerToString(value: VmAny): string {
     return String(value);
 }
 export const $ToString = (value: VmAny): string => {
-    $Init(value);
+    $AssertInit(value);
     if (value === null) return '';
     if (isVmArray(value)) return value.map(innerToString).join(', ');
     return innerToString(value);
 };
 export const $ToNumber = Number;
-export const $NonNil = (value: unknown): asserts value is NonNullable<unknown> => {
+export const $AssertNonNil = (value: VmAny): asserts value is NonNullable<VmValue> => {
+    $AssertInit(value);
     if (value === null) throw new Error('Expected non-nil value');
 };
 export const $Get = (obj: VmAny, key: VmAny): VmValue => {
-    $Init(obj);
+    $AssertInit(obj);
     const pk = $ToString(key);
     if (obj == null || typeof obj != 'object') return null;
     if (obj instanceof VmWrapper) return obj.get(pk) ?? null;
@@ -177,7 +178,7 @@ export const $Get = (obj: VmAny, key: VmAny): VmValue => {
     return (obj as Record<string, VmImmutable>)[pk] ?? null;
 };
 export const $Iterable = (value: VmAny): Iterable<VmValue> => {
-    $Init(value);
+    $AssertInit(value);
     if (value instanceof VmWrapper) return value.keys();
     if (isVmArray(value)) return value;
     if (value != null && typeof value == 'object') return keys(value);
@@ -186,13 +187,13 @@ export const $Iterable = (value: VmAny): Iterable<VmValue> => {
 };
 
 export const $RecordSpread = (record: VmAny): VmRecord | null => {
-    $Init(record);
+    $AssertInit(record);
     if (record == null || isVmRecord(record)) return record;
     throw new VmError(`Expected record or nil, got ${$Type(record)}`, null);
 };
 
 export const $ArraySpread = (array: VmAny): Iterable<VmValue> => {
-    $Init(array);
+    $AssertInit(array);
     if (!isVmArray(array)) throw new VmError(`Expected array, got ${$Type(array)}`, []);
     return array;
 };
