@@ -77,7 +77,7 @@ class DefinitionReferenceProvider
             range: u.range,
         }));
         if (context.includeDeclaration) {
-            if (def.name) {
+            if ('name' in def && def.name) {
                 links.push(prepareGlobal(def.name));
             } else if (def.definition && !Range.isEmpty(def.definition.range)) {
                 links.push({

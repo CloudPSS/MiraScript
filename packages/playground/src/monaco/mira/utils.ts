@@ -1,8 +1,10 @@
-import { Range, type IPosition, type IRange } from '@private/monaco-editor';
+import { DiagnosticCode } from 'mira-wasm';
+import { type editor, Range, type IPosition, type IRange } from '@private/monaco-editor';
 import type { VmFunctionInfo } from '../../vm/types/function';
 import { VmSharedGlobal } from '../../vm/types/global.js';
 import { getVmFunctionInfo, isVmModule, type VmImmutable } from '../../vm/index.js';
 import { serialize } from '../../helpers/serialize.js';
+import type { LocalDefinition } from './compile-result';
 
 /** 生成函数签名 */
 export function signature(id: string | undefined, info: VmFunctionInfo): string {
@@ -27,8 +29,27 @@ export function signature(id: string | undefined, info: VmFunctionInfo): string 
     return `${prefix}${params}${returns};`;
 }
 
+/** 生成函数参数列表 */
+export function paramsList(model: editor.ITextModel, info: VmFunctionInfo | LocalDefinition['fn']): string {
+    if (!info) return '(..)';
+    if ('args' in info) {
+        const { args } = info;
+        if (args[0]?.definition.code === DiagnosticCode.UnusedParameterIt) {
+            return '()';
+        } else if (args[0]?.definition.code === DiagnosticCode.ParameterIt) {
+            return '(it)';
+        } else {
+            return `(${args.map((a) => model.getValueInRange(a.range)).join(', ')})`;
+        }
+    } else {
+        if (!info.params) return '(..)';
+        const paramItems = Object.keys(info.params).join(', ');
+        return `(${paramItems})`;
+    }
+}
+
 /** 生成函数文档 */
-export function document(info: VmFunctionInfo): string {
+export function globalFnDocument(info: VmFunctionInfo): string {
     const doc = [];
     if (info.summary) {
         doc.push(info.summary);
@@ -63,7 +84,7 @@ export function getGlobal(name: string): { value: VmImmutable | undefined; scrip
         return {
             value,
             script: signature(name, info),
-            doc: document(info),
+            doc: globalFnDocument(info),
         };
     }
     if (isVmModule(value)) {

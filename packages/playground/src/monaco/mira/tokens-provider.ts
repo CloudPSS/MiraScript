@@ -294,7 +294,7 @@ async function getTokensProvider(): Promise<languages.IMonarchLanguage> {
                     /(\(parameter\))(@whitespace+)(..|)(@identifier)/g,
                     ['entity.name.label', '', 'operator.spread-range', 'variable.other.constant.emphasis'],
                 ],
-                [/(\(@identifier\))/g, 'entity.name.label'],
+                [/(\(@identifier\))(@whitespace+)/g, ['entity.name.label', '']],
                 [
                     /(let|const)(@whitespace+)(@identifier)/g,
                     [{ token: 'keyword.$1' }, '', { cases: identifierCases(3, undefined, 'variable.other.constant') }],
@@ -322,10 +322,19 @@ async function getTokensProvider(): Promise<languages.IMonarchLanguage> {
                     /(\.\.|)(@identifier)(\s*)(,)/gu,
                     ['operator.spread-range', 'variable.other.constant.emphasis.doc', '', 'operator.comma'],
                 ],
+                [
+                    /(\.\.|)(@identifier)(\s*)(\))/gu,
+                    ['operator.spread-range', 'variable.other.constant.emphasis.doc', '', '@brackets'],
+                ],
                 [/[()]/gu, '@brackets'],
                 [/(->)/gu, 'operator.arrow', '@type_doc'],
+                [/;/, 'operator.semicolon', '@pop'],
             ],
-            type_doc: [{ include: '@type_doc_inner' }, [/,/, 'operator.comma', '@pop']],
+            type_doc: [
+                { include: '@type_doc_inner' },
+                [/,/, 'operator.comma', '@pop'],
+                [/;/, { token: 'operator.semicolon', next: '@pop', goBack: 1 }],
+            ],
             type_doc_inner: [
                 [/fn\b/gu, 'type', '@fn_doc'],
                 [

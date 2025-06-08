@@ -8,7 +8,7 @@ import {
 } from '@private/monaco-editor';
 import { Provider } from './worker-helper';
 import { VmSharedGlobal } from '../../vm/types/global.js';
-import { codeblock, getGlobal } from './utils';
+import { codeblock, getGlobal, paramsList } from './utils';
 import { DiagnosticCode, keywords } from 'mira-wasm';
 import { getVmFunctionInfo } from '../../vm';
 
@@ -107,11 +107,7 @@ class CompletionItemProvider extends Provider implements languages.CompletionIte
             const info = getVmFunctionInfo(element);
             let detail = '';
             if (info) {
-                if (info.params) {
-                    detail = `(${Object.keys(info.params).join(', ')})`;
-                } else {
-                    detail = '(..)';
-                }
+                detail = paramsList(model, info);
             }
             suggestions.push({
                 label: { label: key, description: DESC_GLOBAL, detail },
@@ -141,7 +137,7 @@ class CompletionItemProvider extends Provider implements languages.CompletionIte
         }
         const locals = new Set<string>();
         while (scope) {
-            for (const { definition, range } of scope.locals) {
+            for (const { definition, range, fn } of scope.locals) {
                 const name = model.getValueInRange(range);
                 if (locals.has(name)) continue; // 子作用域可能会覆盖父作用域的变量
                 if (char && !name.toLowerCase().includes(char)) {
@@ -151,31 +147,14 @@ class CompletionItemProvider extends Provider implements languages.CompletionIte
                 const isFunction = definition.code === DiagnosticCode.LocalFunction;
                 let detail = '';
                 if (isFunction) {
-                    const funcScope = scope.children.find((s) => Range.compareRangesUsingStarts(s.range, range) > 0);
-                    if (funcScope) {
-                        const args = funcScope.locals.filter(
-                            (l) =>
-                                l.definition.code === DiagnosticCode.ParameterIt ||
-                                l.definition.code === DiagnosticCode.UnusedParameterIt ||
-                                l.definition.code === DiagnosticCode.ParameterMutable ||
-                                l.definition.code === DiagnosticCode.ParameterImmutable ||
-                                l.definition.code === DiagnosticCode.ParameterMutableRest ||
-                                l.definition.code === DiagnosticCode.ParameterImmutableRest,
-                        );
-                        if (args[0]?.definition.code === DiagnosticCode.UnusedParameterIt) {
-                            detail = '()';
-                        } else if (args[0]?.definition.code === DiagnosticCode.ParameterIt) {
-                            detail = '(it)';
-                        } else {
-                            detail = `(${args.map((a) => model.getValueInRange(a.range)).join(', ')})`;
-                        }
-                    } else {
-                        detail = '(..)';
-                    }
+                    detail = paramsList(model, fn);
                 }
                 suggestions.push({
                     label: { label: name, description: DESC_LOCAL, detail },
-                    kind: isFunction ? languages.CompletionItemKind.Function : languages.CompletionItemKind.Variable,
+                    kind:
+                        fn || isFunction
+                            ? languages.CompletionItemKind.Function
+                            : languages.CompletionItemKind.Variable,
                     insertText: name,
                     range: undefined as never,
                     commitCharacters: isFunction ? ['('] : undefined,
