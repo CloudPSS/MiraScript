@@ -189,7 +189,7 @@ impl<'s> Emitter<'s> {
                             start: kw.range.start,
                             end: comma.range.end,
                         },
-                        DiagnosticCode::UnexpectedBreakOutsideLoop,
+                        DiagnosticCode::UnexpectedBreak,
                     ));
                     return false;
                 };
@@ -211,7 +211,7 @@ impl<'s> Emitter<'s> {
                             start: kw.range.start,
                             end: comma.range.end,
                         },
-                        DiagnosticCode::UnexpectedContinueOutsideLoop,
+                        DiagnosticCode::UnexpectedContinue,
                     ));
                     return false;
                 }

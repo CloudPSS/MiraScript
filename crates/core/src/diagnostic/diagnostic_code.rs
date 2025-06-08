@@ -12,124 +12,124 @@ pub enum DiagnosticCode {
     // Error 1000~1999
     ErrorStart = 1000,
 
-    #[strum(message = "Unknown internal error")]
+    #[strum(message = "Unknown internal error occurred")]
     InternalError,
-    #[strum(message = "Unknown lexer error")]
+    #[strum(message = "Unknown lexer error occurred")]
     LexerError,
-    #[strum(message = "Unknown parser error")]
+    #[strum(message = "Unknown parser error occurred")]
     ParserError,
-    #[strum(message = "Unknown emitter error")]
+    #[strum(message = "Unknown emitter error occurred")]
     EmitterError,
-    #[strum(message = "Unknown optimizer error")]
+    #[strum(message = "Unknown optimizer error occurred")]
     OptimizerError,
-    #[strum(message = "Unimplemented feature")]
+    #[strum(message = "This feature is not implemented yet")]
     Unimplemented,
 
-    #[strum(message = "Unknown token")]
+    #[strum(message = "Unknown token encountered")]
     UnknownToken,
-    #[strum(message = "Unexpected token")]
+    #[strum(message = "Unexpected token found")]
     UnexpectedToken,
-    #[strum(message = "Number literal cannot start or end with underscore")]
+    #[strum(message = "A number literal cannot start or end with an underscore")]
     InvalidNumberLiteralUnderscore,
     #[strum(message = "Invalid number literal")]
     InvalidNumberLiteral,
-    #[strum(message = "Unterminated string literal")]
+    #[strum(message = "String literal is not terminated")]
     UnterminatedString,
-    #[strum(message = "Invalid escape sequence")]
+    #[strum(message = "Invalid escape sequence in string")]
     InvalidEscapeSequence,
-    #[strum(message = "Expression expected after `..`")]
+    #[strum(message = "An expression is expected after `..`")]
     BadArraySpread,
-    #[strum(message = "Unterminated interpolation expression")]
+    #[strum(message = "Interpolation expression is not terminated")]
     UnterminatedInterpolation,
-    #[strum(message = "Bad interpolation expression")]
+    #[strum(message = "Invalid interpolation expression")]
     BadInterpolation,
-    #[strum(message = "Unexpected `_`, it is a reserved keyword for discarding")]
+    #[strum(message = "Unexpected `_`; it is a reserved keyword for discarding values")]
     UnexpectedUnderscore,
-    #[strum(message = "Unexpected `global`, it is a reserved keyword for global variable")]
+    #[strum(message = "Unexpected `global`; it is a reserved keyword for global variables")]
     UnexpectedGlobal,
-    #[strum(message = "Missing `,`")]
+    #[strum(message = "Missing `,` in the list")]
     MissingComma,
-    #[strum(message = "Missing `]`")]
+    #[strum(message = "Missing `]` to close the bracket")]
     MissingCloseBracket,
-    #[strum(message = "Missing `{`")]
+    #[strum(message = "Missing `{` to open the brace")]
     MissingOpenBrace,
-    #[strum(message = "Missing `}`")]
+    #[strum(message = "Missing `}` to close the brace")]
     MissingCloseBrace,
-    #[strum(message = "Missing `)`")]
+    #[strum(message = "Missing `)` to close the parenthesis")]
     MissingCloseParen,
-    #[strum(message = "Missing `;`")]
+    #[strum(message = "Missing `;` at the end of the statement")]
     MissingSemicolon,
-    #[strum(message = "Operator `=` expected in a bind statement")]
+    #[strum(message = "Operator `=` is expected in a bind statement")]
     MissingBindOperator,
-    #[strum(message = "Missing name in function declaration")]
+    #[strum(message = "Missing function name in the declaration")]
     MissingFunctionName,
-    #[strum(message = "`type` is a function-like keyword, add `(` here")]
+    #[strum(message = "`type` is a function-like keyword; add `(` here")]
     MissingOpenParenAfterType,
     #[strum(message = "`type` call must have exactly one argument")]
     InvalidTypeCall,
-    #[strum(message = "Unexpected record literal, grouping expression is expected")]
+    #[strum(message = "Unexpected record literal; a grouping expression is expected")]
     RecordLiteralInExtensionCaller,
-    #[strum(message = "Missing `case`")]
+    #[strum(message = "Missing `case` in the statement")]
     MissingCase,
-    #[strum(message = "Unknown expression")]
+    #[strum(message = "Unknown expression encountered")]
     UnknownExpression,
-    #[strum(message = "Unmatched `}`")]
+    #[strum(message = "Unmatched `}` found")]
     UnmatchedCloseBrace,
-    #[strum(message = "Unmatched `]`")]
+    #[strum(message = "Unmatched `]` found")]
     UnmatchedCloseBracket,
-    #[strum(message = "Unmatched `)`")]
+    #[strum(message = "Unmatched `)` found")]
     UnmatchedCloseParen,
-    #[strum(message = "Unknown pattern")]
+    #[strum(message = "Unknown pattern encountered")]
     UnknownPattern,
-    #[strum(message = "Unknown statement")]
+    #[strum(message = "Unknown statement encountered")]
     UnknownStatement,
-    #[strum(message = "Pattern expected")]
+    #[strum(message = "A pattern is expected here")]
     PatternExpected,
-    #[strum(message = "Operator `!` is not allowed in pattern")]
+    #[strum(message = "Operator `!` is not allowed in a constant pattern")]
     ExclamationInConstantsPattern,
-    #[strum(message = "Unexpected operator in pattern, only number is allowed")]
+    #[strum(message = "Only number literals can be prefixed with `+` or `-` in a constant pattern")]
     UnexpectedOperatorInConstantsPattern,
-    #[strum(message = "`mut` is not allowed while rebinding")]
+    #[strum(message = "`mut` is not allowed during rebinding")]
     MutInBindPattern,
-    #[strum(message = "Cannot use `mut` in discard pattern")]
+    #[strum(message = "Cannot use `mut` in a discard pattern")]
     MutInDiscardPattern,
-    #[strum(message = "Discard pattern should be omitted in spread pattern")]
+    #[strum(message = "Discard pattern should be omitted in a spread pattern")]
     DiscardInSpreadPattern,
-    #[strum(message = "Interpolated name is not allowed in record pattern")]
+    #[strum(message = "Interpolated names are not allowed in record patterns")]
     InterpolatedNameRecordPattern,
-    #[strum(message = "Must be bind pattern while record field name omitted")]
+    #[strum(message = "A bind pattern is required when omitting a record field name")]
     BadOmitKeyRecordPattern,
-    #[strum(message = "Range pattern in array pattern should be parenthesised")]
+    #[strum(message = "Range pattern in array pattern should be parenthesized")]
     AmbiguousRangePattern,
     #[strum(message = "Cannot assign to an undeclared variable")]
     UndefinedVariableAssignment,
-    #[strum(message = "Cannot assign to an immutable variable …")]
+    #[strum(message = "Cannot assign to an immutable variable...")]
     ImmutableVariableAssignment,
-    #[strum(message = "Cannot access a variable before it is …")]
+    #[strum(message = "Cannot access a variable before it is...")]
     UninitializedVariable,
-    #[strum(message = "The variable is already …")]
+    #[strum(message = "The variable is already...")]
     DuplicateVariableDeclaration,
-    #[strum(message = "Unexpected `break` outside of loop")]
-    UnexpectedBreakOutsideLoop,
-    #[strum(message = "Unexpected `continue` outside of loop")]
-    UnexpectedContinueOutsideLoop,
+    #[strum(message = "Unexpected `break` outside of a loop")]
+    UnexpectedBreak,
+    #[strum(message = "Unexpected `continue` outside of a loop")]
+    UnexpectedContinue,
     #[strum(
-        message = "`global` keyword can only be used as `global.<name>`, `global[<name>]` or right-hand side of `in` operator"
+        message = "`global` keyword can only be used as `global.<name>`, `global[<name>]`, or on the right-hand side of the `in` operator"
     )]
     MisuseOfGlobalKeyword,
-    #[strum(message = "Can not infer key from expression")]
+    #[strum(message = "Cannot infer key from the expression")]
     BadOmitKeyRecordExpression,
 
     ErrorEnd = 1999,
     // Warning 2000~2999
     WarningStart = 2000,
 
-    #[strum(message = "Unnecessary parentheses, consider removing them")]
+    #[strum(message = "Unnecessary parentheses; consider removing them")]
     UnusedParentheses,
     // The null value in MiraScript is represented by `nil`,
     // Emit a warning when a global variable is read as `null` `undefined` or similar.
     #[strum(
-        message = "`$1` looks like a nil value, either use `global.$1` explicitly or `nil` if you want to use the null value"
+        message = "`$0` looks like a nil value; either use `global.$0` explicitly or `nil` if you want to use the nil value"
     )]
     MisleadNilVariable,
 
@@ -141,26 +141,26 @@ pub enum DiagnosticCode {
     // Hint 4000~4999
     HintStart = 4000,
 
-    #[strum(message = "Local variable is unused, consider removing it, or use `_` to ignore it")]
+    #[strum(message = "Local variable is unused; consider removing it or use `_` to ignore it")]
     UnusedLocalVariable,
-    #[strum(message = "Local function is unused, consider removing it")]
+    #[strum(message = "Local function is unused; consider removing it")]
     UnusedLocalFunction,
 
     HintEnd = 4999,
     // Reference 5000~5999
     ReferenceStart = 5000,
 
-    #[strum(message = "… declared here")]
+    #[strum(message = "...declared here")]
     VariableDeclaredHere,
-    #[strum(message = "… declared here")]
+    #[strum(message = "...declared here")]
     FunctionDeclaredHere,
-    #[strum(message = "… declared as a parameter here")]
+    #[strum(message = "...declared as a parameter here")]
     ParameterDeclaredHere,
-    #[strum(message = "… declared as the auto parameter `it` by this function here")]
+    #[strum(message = "...declared as the auto parameter `it` by this function here")]
     ParameterItDeclaredHere,
-    #[strum(message = "… declared as a rest parameter here")]
+    #[strum(message = "...declared as a rest parameter here")]
     ParameterRestDeclaredHere,
-    #[strum(message = "… name inferred from here")]
+    #[strum(message = "...name inferred from here")]
     OmitNamedRecordFieldName,
 
     ReferenceEnd = 5999,
