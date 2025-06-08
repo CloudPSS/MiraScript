@@ -20,14 +20,34 @@ fn is_global_expression(expr: &Expression) -> bool {
 }
 
 impl<'s> Emitter<'s> {
-    pub fn declare_expression(&mut self, expr: &'s Expression<'s>) {
-        match expr {
+    pub fn declare_expression(&mut self, outer: &'s Expression<'s>) {
+        match outer {
             Literal(_) => (),
-            InterpolatedString(_, expressions) => expressions
-                .iter()
-                .for_each(|expression| self.declare_expression(expression)),
+            // InterpolatedString 内的表达式只有 Variable 和 Block，均不需要声明
+            InterpolatedString(_, _) => (),
             Variable(_) => (),
-            Grouping(_, expression, _) => self.declare_expression(expression),
+            Grouping(op, expression, cp) => {
+                if matches!(
+                    expression.as_ref(),
+                    Expression::Variable(..)
+                        | Expression::Literal(..)
+                        | Expression::Grouping(..)
+                        | Expression::InterpolatedString(..)
+                        | Expression::Record(..)
+                        | Expression::Array(..)
+                        | Expression::NonNil(..)
+                ) {
+                    self.diagnostics.push(SourceDiagnostic::new(
+                        op.range(),
+                        DiagnosticCode::UnusedParentheses,
+                    ));
+                    self.diagnostics.push(SourceDiagnostic::new(
+                        cp.range(),
+                        DiagnosticCode::UnusedParentheses,
+                    ));
+                }
+                self.declare_expression(expression)
+            }
             Record(_, elements, _) => elements.iter().for_each(|element| match element {
                 RecordElement::Named(_, _, exp, _)
                 | RecordElement::OmitNamed(_, exp, _)
@@ -630,7 +650,6 @@ impl<'s> Emitter<'s> {
                 } else {
                     self.chunk.code.splice(pos + 1..pos + 1, [nreg.code()]);
                 }
-
                 self.exit_scope();
                 self.closures.exit();
 

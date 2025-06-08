@@ -13,8 +13,7 @@ use super::{Emitter, OpCode, opcode::Register, variable::BindType};
 impl<'s> Emitter<'s> {
     pub fn declare_statement(&mut self, stmt: &'s Statement<'s>) {
         match stmt {
-            Expression(expr, _) => self.declare_expression(expr),
-            BlockExpression(_) => (),
+            Expression(expr, _) | BlockExpression(expr) => self.declare_expression(expr),
             Bind(_, pattern, _, expr, _) => {
                 self.declare_pattern(pattern, Some(BindType::Let));
                 self.declare_expression(expr);
@@ -42,7 +41,6 @@ impl<'s> Emitter<'s> {
     pub fn emit_statement(&mut self, stmt: &'s Statement<'s>, brk: Option<Register>) -> bool {
         match stmt {
             Expression(expression, _) | BlockExpression(expression) => {
-                self.declare_expression(expression);
                 self.emit_expression(expression, Register::EMPTY, brk);
                 false
             }

@@ -124,6 +124,9 @@ pub enum DiagnosticCode {
     // Warning 2000~2999
     WarningStart = 2000,
 
+    #[strum(message = "Unnecessary parentheses, consider removing them")]
+    UnusedParentheses,
+
     WarningEnd = 2999,
     // Info 3000~3999
     InfoStart = 3000,
