@@ -3,6 +3,7 @@ import type { VmScript } from '../vm/index.js';
 import { transpileCore } from './transpile.js';
 import { createScript } from './create-script.js';
 
+// 目前编译速度约 200kB/s
 const WORKER_MIN_LEN = 1024;
 
 let worker: Promise<Worker> | undefined;

@@ -14,7 +14,28 @@ use super::{Emitter, OpCode, opcode::Register, variable::BindType};
 impl<'s> Emitter<'s> {
     pub fn declare_pattern(&mut self, pattern: &'s Pattern<'s>, bind_type: Option<BindType>) {
         match pattern {
-            Grouping(_, pattern, _) => self.declare_pattern(pattern, bind_type),
+            Grouping(op, pattern, cp) => {
+                if matches!(
+                    pattern.as_ref(),
+                    Pattern::Grouping(..)
+                        | Pattern::Constant(..)
+                        | Pattern::Discard(..)
+                        | Pattern::Bind(..)
+                        | Pattern::Record(..)
+                        | Pattern::Array(..)
+                        | Pattern::SpreadDiscard
+                ) {
+                    self.diagnostics.push(SourceDiagnostic::new(
+                        op.range(),
+                        DiagnosticCode::UnusedParentheses,
+                    ));
+                    self.diagnostics.push(SourceDiagnostic::new(
+                        cp.range(),
+                        DiagnosticCode::UnusedParentheses,
+                    ));
+                }
+                self.declare_pattern(pattern, bind_type)
+            }
             Constant(token, token1) => self.unimplemented(pattern, pattern),
             Relation(token, pattern) => self.unimplemented(token, pattern),
             Range(l, token, r) => self.unimplemented(l, r),
@@ -38,7 +59,7 @@ impl<'s> Emitter<'s> {
                 }
             }
             Array(ob, array_element_bases, cb) => self.unimplemented(ob, cb),
-            SpreadDiscard => self.unimplemented(pattern, pattern),
+            SpreadDiscard => (),
             And(left, token, right) => self.unimplemented(left, right),
             Or(left, token, right) => self.unimplemented(left, right),
             Not(token, pattern) => self.unimplemented(token, pattern),

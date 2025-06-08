@@ -46,20 +46,18 @@ impl<'s> Emitter<'s> {
             }
             Bind(_, pattern, _, expression, _) => {
                 let value_reg = self.closures.add_reg();
-                self.declare_expression(expression);
                 self.emit_expression(expression, value_reg, brk);
                 self.emit_pattern(pattern, value_reg, Some(BindType::Let));
                 false
             }
             Rebind(pattern, _, expression, _) => {
                 let value_reg = self.closures.add_reg();
-                self.declare_expression(expression);
                 self.emit_expression(expression, value_reg, brk);
                 self.emit_pattern(pattern, value_reg, None);
                 false
             }
             Assign(assignee, op, expression, _) => {
-                let mut final_op: Option<Box<dyn FnOnce(&mut Self)>> = None;
+                let mut final_op: Box<dyn FnOnce(&mut Self)> = Box::new(|s| ());
                 let assignee_reg = match &**assignee {
                     Expression::Variable(id_token) => {
                         let TokenKind::Identifier(id) = &id_token.kind else {
@@ -89,9 +87,9 @@ impl<'s> Emitter<'s> {
                                 let level = self.closures.len() - level;
                                 let ret = self.closures.add_reg();
                                 self.op_get_upvalue(ret, level, up_reg);
-                                final_op = Some(Box::new(move |s| {
+                                final_op = Box::new(move |s| {
                                     s.op_set_upvalue(ret, level, up_reg);
-                                }));
+                                });
 
                                 ret
                             }
@@ -114,21 +112,17 @@ impl<'s> Emitter<'s> {
                     _ => unreachable!(),
                 };
                 if **op == Operator::Equal {
-                    self.declare_expression(expression);
                     self.emit_expression(expression, assignee_reg, brk);
                 } else if **op == Operator::LogicalAndEqual {
                     self.op_if(OpCode::If, assignee_reg);
-                    self.declare_expression(expression);
                     self.emit_expression(expression, assignee_reg, brk);
                     self.op_if_end();
                 } else if **op == Operator::LogicalOrEqual {
                     self.op_if(OpCode::IfNot, assignee_reg);
-                    self.declare_expression(expression);
                     self.emit_expression(expression, assignee_reg, brk);
                     self.op_if_end();
                 } else if **op == Operator::NullCoalescingEqual {
                     self.op_if(OpCode::IfNil, assignee_reg);
-                    self.declare_expression(expression);
                     self.emit_expression(expression, assignee_reg, brk);
                     self.op_if_end();
                 } else {
@@ -142,13 +136,10 @@ impl<'s> Emitter<'s> {
                         _ => unreachable!("Unexpected assign operator"),
                     };
                     let right_reg = self.closures.add_reg();
-                    self.declare_expression(expression);
                     self.emit_expression(expression, right_reg, brk);
                     self.op_binary(assignee_reg, op, assignee_reg, right_reg);
                 }
-                if let Some(final_op) = final_op {
-                    final_op(self);
-                }
+                final_op(self);
                 false
             }
             Function(kw, name_token, args, expression) => {
@@ -174,7 +165,6 @@ impl<'s> Emitter<'s> {
             Return(_, expression, _) => {
                 if let Some(expression) = expression {
                     let ret_reg = self.closures.add_reg();
-                    self.declare_expression(expression);
                     self.emit_expression(expression, ret_reg, brk);
                     self.op_return(ret_reg);
                 } else {
@@ -194,7 +184,6 @@ impl<'s> Emitter<'s> {
                     return false;
                 };
                 if let Some(expression) = expression {
-                    self.declare_expression(expression);
                     let brk_ret = self.closures.add_reg();
                     self.emit_expression(expression, brk_ret, Some(brk));
                     self.op_set_upvalue(brk_ret, 1, brk);

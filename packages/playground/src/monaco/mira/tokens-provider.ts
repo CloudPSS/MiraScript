@@ -295,19 +295,10 @@ async function getTokensProvider(): Promise<languages.IMonarchLanguage> {
                     ['entity.name.label', '', 'operator.spread-range', 'variable.other.constant.emphasis'],
                 ],
                 [/(\(@identifier\))(@whitespace+)/g, ['entity.name.label', '']],
-                [
-                    /(let|const)(@whitespace+)(@identifier)/g,
-                    [{ token: 'keyword.$1' }, '', { cases: identifierCases(3, undefined, 'variable.other.constant') }],
-                ],
+                [/(let|const)(@whitespace+)(@identifier)/g, [{ token: 'keyword.$1' }, '', 'variable.other.constant']],
                 [
                     /(let)(@whitespace+)(mut)(@whitespace+)(@identifier)/g,
-                    [
-                        { token: 'keyword.$1' },
-                        '',
-                        'keyword.mut',
-                        '',
-                        { cases: identifierCases(3, undefined, 'variable') },
-                    ],
+                    [{ token: 'keyword.$1' }, '', 'keyword.mut', '', 'variable'],
                 ],
                 { include: '@common' },
             ],
