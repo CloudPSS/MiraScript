@@ -1,5 +1,6 @@
 use mira_core::diagnostic::DiagnosticCode;
-use strum::VariantNames;
+use mira_core::lexer::Keyword;
+use strum::VariantArray;
 
 use wasm_bindgen::prelude::*;
 
@@ -10,31 +11,61 @@ pub fn get_diagnostic_message(code: DiagnosticCode) -> Option<String> {
 
 #[wasm_bindgen]
 pub fn keywords() -> Vec<String> {
-    mira_core::lexer::Keyword::VARIANTS
-        .iter()
-        .map(|s| s.to_string())
-        .collect()
+    Keyword::VARIANTS.iter().map(|s| s.to_string()).collect()
 }
 
 #[wasm_bindgen]
 pub fn control_keywords() -> Vec<String> {
-    use mira_core::lexer::Keyword::*;
-    [
-        If, Else, Match, Case, For, While, Loop, Break, Continue, Return,
-    ]
-    .iter()
-    .map(|s| s.to_string())
-    .collect()
+    Keyword::VARIANTS
+        .iter()
+        .filter_map(|s| {
+            if s.is_control() {
+                Some(s.to_string())
+            } else {
+                None
+            }
+        })
+        .collect()
 }
 
 #[wasm_bindgen]
 pub fn numeric_keywords() -> Vec<String> {
-    use mira_core::lexer::Keyword::*;
-    [Nan, Inf].iter().map(|s| s.to_string()).collect()
+    Keyword::VARIANTS
+        .iter()
+        .filter_map(|s| {
+            if s.is_numeric() {
+                Some(s.to_string())
+            } else {
+                None
+            }
+        })
+        .collect()
 }
 
 #[wasm_bindgen]
 pub fn constant_keywords() -> Vec<String> {
-    use mira_core::lexer::Keyword::*;
-    [True, False, Nil].iter().map(|s| s.to_string()).collect()
+    Keyword::VARIANTS
+        .iter()
+        .filter_map(|s| {
+            if s.is_constant() {
+                Some(s.to_string())
+            } else {
+                None
+            }
+        })
+        .collect()
+}
+
+#[wasm_bindgen]
+pub fn reserved_keywords() -> Vec<String> {
+    Keyword::VARIANTS
+        .iter()
+        .filter_map(|s| {
+            if s.is_reserved() {
+                Some(s.to_string())
+            } else {
+                None
+            }
+        })
+        .collect()
 }

@@ -1,16 +1,21 @@
-use strum::{Display, EnumString, VariantNames};
+use strum::{Display, EnumProperty, EnumString, VariantArray};
 
 use super::{Token, TokenKind};
 use crate::ansi::{DisplayIdent, KEYWORD, NUMBER, RESET};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumString, Display, VariantNames)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumString, Display, VariantArray, EnumProperty)]
 #[strum(serialize_all = "snake_case")]
 pub enum Keyword {
     // constants
+    #[strum(props(constant = true))]
     True,
+    #[strum(props(constant = true))]
     False,
+    #[strum(props(constant = true))]
     Nil,
+    #[strum(props(constant = true, numeric = true))]
     Nan,
+    #[strum(props(constant = true, numeric = true))]
     Inf,
 
     // pseudo variable
@@ -29,25 +34,39 @@ pub enum Keyword {
     Type,
 
     // control flow
+    #[strum(props(control = true))]
     If,
+    #[strum(props(control = true))]
     Else,
+    #[strum(props(control = true))]
     Match,
+    #[strum(props(control = true))]
     Case,
+    #[strum(props(control = true))]
     For,
+    #[strum(props(control = true))]
     While,
+    #[strum(props(control = true))]
     Loop,
+    #[strum(props(control = true))]
     Break,
+    #[strum(props(control = true))]
     Continue,
+    #[strum(props(control = true))]
     Return,
 
     // declaration
     Fn,
-    Op, // Reserved for future use
+    #[strum(props(reserved = true))]
+    Op,
     Let,
     Mut,
-    Const, // Reserved for future use
-    // Type,  // Reserved for future use
-    Where, // Reserved for future use
+    #[strum(props(reserved = true))]
+    Const,
+    // #[strum(props(reserved = true))]
+    // Type,
+    #[strum(props(reserved = true))]
+    Where,
 
     // type Date(string) {
     //   if it |> matches(`(\d{4})-(\d{2})-(\d{2})`) { it }
@@ -62,16 +81,46 @@ pub enum Keyword {
     // Color(-1, 2, 3) -> nil
 
     // module
-    Import, // Reserved for future use
-    Export, // Reserved for future use
+    #[strum(props(control = true, reserved = true))]
+    Import,
+    #[strum(props(control = true, reserved = true))]
+    Export,
 
     // algebraic effects
-    Effect,  // Reserved for future use
-    Try,     // Reserved for future use
-    Handle,  // Reserved for future use
-    Finally, // Reserved for future use
-    Perform, // Reserved for future use
-    Resume,  // Reserved for future use
+    #[strum(props(reserved = true))]
+    Effect,
+    #[strum(props(reserved = true))]
+    Try,
+    #[strum(props(reserved = true))]
+    Handle,
+    #[strum(props(reserved = true))]
+    Finally,
+    #[strum(props(reserved = true))]
+    Perform,
+    #[strum(props(reserved = true))]
+    Resume,
+}
+
+impl Keyword {
+    /// Returns `true` if the keyword is a control flow keyword.
+    pub fn is_control(&self) -> bool {
+        self.get_bool("control").unwrap_or(false)
+    }
+
+    /// Returns `true` if the keyword is a constant.
+    pub fn is_constant(&self) -> bool {
+        self.get_bool("constant").unwrap_or(false)
+    }
+
+    /// Returns `true` if the keyword is reserved and cannot be used as an identifier.
+    pub fn is_reserved(&self) -> bool {
+        self.get_bool("reserved").unwrap_or(false)
+    }
+
+    /// Returns `true` if the keyword is numeric.
+    pub fn is_numeric(&self) -> bool {
+        self.get_bool("numeric").unwrap_or(false)
+    }
 }
 
 impl From<Keyword> for TokenKind<'_> {

@@ -55,8 +55,6 @@ class DocumentSemanticTokensProvider extends Provider implements languages.Docum
                     break;
                 }
                 case DiagnosticCode.ParameterImmutable:
-                case DiagnosticCode.ParameterIt:
-                case DiagnosticCode.UnusedParameterIt:
                 case DiagnosticCode.ParameterImmutableRest:
                 case DiagnosticCode.LocalImmutable: {
                     tokenType = 3;

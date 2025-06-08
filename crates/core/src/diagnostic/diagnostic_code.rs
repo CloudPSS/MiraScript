@@ -29,6 +29,8 @@ pub enum DiagnosticCode {
     UnknownToken,
     #[strum(message = "Unexpected token found")]
     UnexpectedToken,
+    #[strum(message = "`$0` is a reserved keyword and cannot be used as an identifier")]
+    ReservedKeyword,
     #[strum(message = "A number literal cannot start or end with an underscore")]
     InvalidNumberLiteralUnderscore,
     #[strum(message = "Invalid number literal")]

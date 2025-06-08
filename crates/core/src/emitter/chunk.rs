@@ -11,7 +11,7 @@ const CODE_OFFSET: usize = CODE_LEN_OFFSET + LEN_SIZE;
 /// A chunk of bytecode.
 ///
 /// Binary format:
-/// ```rust
+/// ```ignore
 /// chunk_len: u32 // size of chunk in bytes, excluding this header
 /// code_len: u32 // size of code in bytes
 /// code: [u8; code_len] // code_len bytes

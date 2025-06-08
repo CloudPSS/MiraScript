@@ -9,7 +9,7 @@ import {
 import { Provider } from './worker-helper';
 import { VmSharedGlobal } from '../../vm/types/global.js';
 import { codeblock, getGlobal, paramsList } from './utils';
-import { DiagnosticCode, keywords } from 'mira-wasm';
+import { DiagnosticCode, keywords, reserved_keywords } from 'mira-wasm';
 import { getVmFunctionInfo } from '../../vm';
 
 const DESC_GLOBAL = '(global)';
@@ -77,7 +77,9 @@ const COMMON_GLOBAL_SUGGESTIONS: languages.CompletionItem[] = [
     },
 ];
 
+const reserved = reserved_keywords();
 for (const kw of keywords()) {
+    if (reserved.includes(kw)) continue; // 跳过保留关键字
     const exist = COMMON_GLOBAL_SUGGESTIONS.find(
         (item) => item.label === kw && item.kind === languages.CompletionItemKind.Keyword,
     );

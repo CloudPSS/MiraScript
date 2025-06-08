@@ -54,7 +54,7 @@ pub enum Statement<'s> {
     /// If parameters and parentheses are omitted,
     /// the function is considered with an implicit parameter called `it`.
     ///
-    /// ```
+    /// ```mira
     /// fn filter { it % 2 == 0 }
     /// ```
     ///

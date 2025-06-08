@@ -1,10 +1,10 @@
 use std::ops::{Deref, DerefMut};
 
 use crate::{
-    diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
+    diagnostic::SourceRange,
     emitter::variable::Variable,
     lexer::Token,
-    parser::{AstWalker, Expression, Statement},
+    parser::{Expression, Statement},
 };
 
 use super::{
@@ -118,10 +118,6 @@ impl<'s> Emitter<'s> {
                 } else {
                     continue; // Skip non-identifier tokens
                 }
-                self.diagnostics.push(SourceDiagnostic::new(
-                    arg.range(),
-                    DiagnosticCode::ParameterImmutable,
-                ));
             }
         } else {
             self.declare_implicit_variable(
