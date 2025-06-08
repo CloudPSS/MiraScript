@@ -17,7 +17,7 @@ const validateDelay = 500;
 const listeners = new Map<string, IDisposable>();
 
 const makeMarker = async (
-    modelUri: Uri,
+    model: editor.ITextModel,
     modelVersionId: number,
     diagnostic: SourceDiagnostic,
     severity: MarkerSeverity,
@@ -30,7 +30,10 @@ const makeMarker = async (
         unnecessary = true;
         severity = MarkerSeverity.Hint;
     }
-    const message = (await getDiagnosticMessage(code)) ?? 'Unknown error';
+    let message = (await getDiagnosticMessage(code)) ?? 'Unknown error';
+    if (message.includes(`$0`)) {
+        message = message.replaceAll(`$0`, model.getValueInRange(range));
+    }
     const marker: editor.IMarkerData = {
         startLineNumber,
         startColumn,
@@ -66,7 +69,7 @@ const makeMarker = async (
             const message = (await getDiagnosticMessage(code)) ?? '… here';
             marker.relatedInformation.push({
                 message,
-                resource: modelUri,
+                resource: model.uri,
                 startLineNumber,
                 startColumn,
                 endLineNumber,
@@ -85,11 +88,10 @@ async function validate(model: editor.ITextModel): Promise<void> {
     const result = await Provider.getCompileResult(model);
     if (!result) return;
     const { version } = result;
-    const { uri } = model;
-    const errors = result.errors.map(async (d) => makeMarker(uri, version, d, MarkerSeverity.Error));
-    const warnings = result.warnings.map(async (d) => makeMarker(uri, version, d, MarkerSeverity.Warning));
-    const infos = result.infos.map(async (d) => makeMarker(uri, version, d, MarkerSeverity.Info));
-    const hints = result.hints.map(async (d) => makeMarker(uri, version, d, MarkerSeverity.Hint));
+    const errors = result.errors.map(async (d) => makeMarker(model, version, d, MarkerSeverity.Error));
+    const warnings = result.warnings.map(async (d) => makeMarker(model, version, d, MarkerSeverity.Warning));
+    const infos = result.infos.map(async (d) => makeMarker(model, version, d, MarkerSeverity.Info));
+    const hints = result.hints.map(async (d) => makeMarker(model, version, d, MarkerSeverity.Hint));
     const markers = await Promise.all([...errors, ...warnings, ...infos, ...hints]);
     editor.setModelMarkers(model, 'mirascript', markers);
 }

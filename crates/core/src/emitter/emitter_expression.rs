@@ -205,6 +205,18 @@ impl<'s> Emitter<'s> {
                         DiagnosticCode::GlobalVariable,
                     ));
                     self.op_global(ret, id.as_ref());
+                    if id == "null"
+                        || id == "Null"
+                        || id == "NULL"
+                        || id == "undefined"
+                        || id == "None"
+                        || id == "Nothing"
+                    {
+                        self.diagnostics.push(SourceDiagnostic::new(
+                            token.range(),
+                            DiagnosticCode::MisleadNilVariable,
+                        ));
+                    }
                 }
             }
             Grouping(_, expression, _) => self.emit_expression(expression, ret, brk),

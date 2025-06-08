@@ -129,7 +129,7 @@ pub enum DiagnosticCode {
     // The null value in MiraScript is represented by `nil`,
     // Emit a warning when a global variable is read as `null` `undefined` or similar.
     #[strum(
-        message = "`$0` looks like a nil value; either use `global.$0` explicitly or `nil` if you want to use the nil value"
+        message = "Either use `global.$0` explicitly or `nil` if you want to use the nil value"
     )]
     MisleadNilVariable,
 
