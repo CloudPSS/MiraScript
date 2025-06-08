@@ -126,6 +126,12 @@ pub enum DiagnosticCode {
 
     #[strum(message = "Unnecessary parentheses, consider removing them")]
     UnusedParentheses,
+    // The null value in MiraScript is represented by `nil`,
+    // Emit a warning when a global variable is read as `null` `undefined` or similar.
+    #[strum(
+        message = "`$1` looks like a nil value, either use `global.$1` explicitly or `nil` if you want to use the null value"
+    )]
+    MisleadNilVariable,
 
     WarningEnd = 2999,
     // Info 3000~3999
