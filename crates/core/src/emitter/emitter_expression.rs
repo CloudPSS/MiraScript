@@ -182,7 +182,7 @@ impl<'s> Emitter<'s> {
                 let var = self.scopes.find_variable(id);
                 if let Some((level, variable)) = var {
                     let register = variable.register();
-                    variable.mark_read(token, &mut self.diagnostics);
+                    variable.mark_read(token);
                     if !check_variable_initialized(
                         &mut self.diagnostics,
                         &self.closures,

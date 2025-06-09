@@ -1,6 +1,5 @@
 import { type CancellationToken, type editor, languages, type Position, Range } from '@private/monaco-editor';
 import { Provider } from './worker-helper';
-import { strictInRange } from './utils';
 import { DiagnosticCode } from 'mira-wasm';
 
 /** @inheritdoc */
@@ -17,18 +16,14 @@ class RenameProvider extends Provider implements languages.RenameProvider {
         const d = compiled.definition(model, position);
         if (!d) return undefined;
         const edits: languages.IWorkspaceTextEdit[] = [];
-        const { definition, references } = d.def;
-        if (definition) {
+        const { references } = d.def;
+        if ('definition' in d.def) {
             edits.push({
                 resource: model.uri,
                 versionId: compiled.version,
                 textEdit: {
-                    range: definition.range,
-                    text:
-                        definition.code === DiagnosticCode.ParameterIt ||
-                        definition.code === DiagnosticCode.UnusedParameterIt
-                            ? `(${newName})`
-                            : newName,
+                    range: d.def.definition.range,
+                    text: d.def.definition.code === DiagnosticCode.ParameterIt ? `(${newName})` : newName,
                 },
             });
         }
@@ -54,28 +49,23 @@ class RenameProvider extends Provider implements languages.RenameProvider {
     ): Promise<undefined | (languages.RenameLocation & languages.Rejection)> {
         const compiled = await Provider.getCompileResult(model);
         if (!compiled) return undefined;
-        const tags = compiled.tags.filter(
-            (t) =>
-                t.code !== DiagnosticCode.Scope &&
-                t.code !== DiagnosticCode.String &&
-                t.code !== DiagnosticCode.Interpolation &&
-                strictInRange(t.range, position),
-        );
-        if (!tags.length) {
+        const d = compiled.definition(model, position);
+        if (!d) {
             return {
                 range: Range.fromPositions(position),
                 text: '',
                 rejectReason: 'Cannot rename this element',
             };
         }
-        const tag = tags[0]!;
-        if (tag.code === DiagnosticCode.GlobalVariable || tag.code === DiagnosticCode.GlobalDynamicAccess) {
+        const { def, ref } = d;
+        if ('name' in def) {
             return {
-                range: tag.range,
-                text: model.getValueInRange(tag.range) ?? '',
+                range: def.references[ref!]?.range ?? Range.fromPositions(position),
+                text: def.name,
                 rejectReason: 'Cannot rename global variables',
             };
         }
+        const tag = ref == null ? def.definition : def.references[ref]!;
         return {
             range: tag.range,
             text: model.getValueInRange(tag.range) ?? '',

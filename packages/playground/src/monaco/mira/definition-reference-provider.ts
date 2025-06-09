@@ -44,18 +44,18 @@ class DefinitionReferenceProvider
         if (!compiled) return undefined;
         const d = compiled.definition(model, position);
         if (!d) return [];
-        const { references, definition } = d.def;
+        const { def, ref } = d;
         let originSelectionRange;
-        if (d.ref == null) {
-            originSelectionRange = definition?.range;
-        } else {
-            originSelectionRange = references[d.ref]?.range;
+        if (ref != null) {
+            originSelectionRange = def.references[ref]?.range;
+        } else if ('definition' in def) {
+            originSelectionRange = def.definition.range;
         }
         let link: languages.LocationLink;
-        if ('range' in d.def) {
-            link = { uri: model.uri, range: d.def.range };
+        if ('name' in def) {
+            link = prepareGlobal(def.name);
         } else {
-            link = prepareGlobal(d.def.name);
+            link = { uri: model.uri, range: def.definition.range };
         }
         link.originSelectionRange = originSelectionRange;
         return [link];
@@ -77,9 +77,9 @@ class DefinitionReferenceProvider
             range: u.range,
         }));
         if (context.includeDeclaration) {
-            if ('name' in def && def.name) {
+            if ('name' in def) {
                 links.push(prepareGlobal(def.name));
-            } else if (def.definition && !Range.isEmpty(def.definition.range)) {
+            } else if (!Range.isEmpty(def.definition.range)) {
                 links.push({
                     uri: model.uri,
                     range: def.definition.range,

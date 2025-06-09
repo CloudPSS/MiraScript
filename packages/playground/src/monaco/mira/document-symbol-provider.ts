@@ -9,16 +9,19 @@ class DocumentSymbolProvider extends Provider implements languages.DocumentSymbo
     private handleScope(model: editor.ITextModel, scope: SourceScope): languages.DocumentSymbol[] {
         const symbols: languages.DocumentSymbol[] = [];
         const unhandledChildren = new Set(scope.children);
-        for (const { definition, range } of scope.locals) {
+        for (const { definition } of scope.locals) {
+            const { range } = definition;
             let kind: languages.SymbolKind = languages.SymbolKind.Variable;
             let name: string | undefined;
             let children: languages.DocumentSymbol[] = [];
             let allRange = range;
             // eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check
             switch (definition.code) {
-                case DiagnosticCode.UnusedParameterIt:
-                    continue; // 忽略未使用的 it 参数
                 case DiagnosticCode.ParameterIt:
+                    if (definition.references.length === 0) {
+                        // 忽略未使用的 it 参数
+                        continue;
+                    }
                     name = `it`;
                     break;
                 case DiagnosticCode.LocalFunction: {

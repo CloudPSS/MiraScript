@@ -141,8 +141,8 @@ class CompletionItemProvider extends Provider implements languages.CompletionIte
         }
         const locals = new Set<string>();
         while (scope) {
-            for (const { definition, range, fn } of scope.locals) {
-                const name = model.getValueInRange(range);
+            for (const { definition, fn } of scope.locals) {
+                const name = model.getValueInRange(definition.range);
                 if (locals.has(name)) continue; // 子作用域可能会覆盖父作用域的变量
                 if (char && !name.toLowerCase().includes(char)) {
                     continue;

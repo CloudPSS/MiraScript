@@ -30,7 +30,9 @@ pub enum DiagnosticCode {
     #[strum(message = "Unexpected token found")]
     UnexpectedToken,
     #[strum(message = "`$0` is a reserved keyword and cannot be used as an identifier")]
-    ReservedKeyword,
+    InvalidReservedKeyword,
+    #[strum(message = "`$0` is a keyword and cannot be used as an identifier")]
+    InvalidKeyword,
     #[strum(message = "A number literal cannot start or end with an underscore")]
     InvalidNumberLiteralUnderscore,
     #[strum(message = "Invalid number literal")]
@@ -167,23 +169,23 @@ pub enum DiagnosticCode {
 
     ReferenceEnd = 5999,
 
-    // Tags 10000~
+    // Tags 10000~10999
     TagStart = 10000,
 
-    // mark variables
-    GlobalVariable,
-    GlobalDynamicAccess,
-
+    // mark local declarations
     LocalImmutable,
     LocalMutable,
     LocalFunction,
 
     ParameterIt,
-    UnusedParameterIt,
     ParameterImmutable,
     ParameterMutable,
     ParameterImmutableRest,
     ParameterMutableRest,
+
+    // mark global accesses
+    GlobalVariable,
+    GlobalDynamicAccess,
 
     // mark record initialization
     RecordFieldIdName,
@@ -207,7 +209,18 @@ pub enum DiagnosticCode {
     String,
     Interpolation,
 
-    TagEnd = 20000,
+    TagEnd = 10999,
+
+    // TagRef 11000~11999
+    TagRefStart = 11000,
+
+    // mark local accesses
+    ReadLocal,
+    ReadWriteLocal,
+    WriteLocal,
+    RedeclareLocal,
+
+    TagRefEnd = 11999,
 }
 
 impl From<DiagnosticCode> for u16 {

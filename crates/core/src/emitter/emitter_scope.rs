@@ -115,9 +115,7 @@ impl<'s> Emitter<'s> {
             DiagnosticCode::DuplicateVariableDeclaration,
         ));
         var.put_decl_ref(&mut self.diagnostics);
-        self.diagnostics
-            .push(SourceDiagnostic::new(access.range(), var.hint()));
-        var.put_decl_ref(&mut self.diagnostics);
+        var.mark_redeclare(access);
         Some(var)
     }
 

@@ -1,5 +1,6 @@
 import { type CancellationToken, type editor, languages, type Position, Range } from '@private/monaco-editor';
 import { Provider } from './worker-helper';
+import { DiagnosticCode } from 'mira-wasm';
 
 /** @inheritdoc */
 class DocumentHighlightProvider extends Provider implements languages.DocumentHighlightProvider {
@@ -11,16 +12,26 @@ class DocumentHighlightProvider extends Provider implements languages.DocumentHi
     ): Promise<languages.DocumentHighlight[] | undefined> {
         const compiled = await Provider.getCompileResult(model);
         if (!compiled) return undefined;
-        const decl = compiled.definition(model, position);
-        if (!decl) return [];
-        const links: languages.DocumentHighlight[] = decl.def.references.map((u) => ({
-            kind: languages.DocumentHighlightKind.Read,
-            range: u.range,
-        }));
-        if (decl.def.definition && !Range.isEmpty(decl.def.definition.range)) {
+        const def = compiled.definition(model, position)?.def;
+        if (!def) return undefined;
+        const links: languages.DocumentHighlight[] = def.references.map((u) => {
+            let kind = languages.DocumentHighlightKind.Read;
+            if (
+                u.code === DiagnosticCode.WriteLocal ||
+                u.code === DiagnosticCode.ReadWriteLocal ||
+                u.code === DiagnosticCode.RedeclareLocal
+            ) {
+                kind = languages.DocumentHighlightKind.Write;
+            }
+            return {
+                kind,
+                range: u.range,
+            };
+        });
+        if ('definition' in def && !Range.isEmpty(def.definition.range)) {
             links.push({
                 kind: languages.DocumentHighlightKind.Write,
-                range: decl.def.definition.range,
+                range: def.definition.range,
             });
         }
         return links;

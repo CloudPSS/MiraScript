@@ -277,16 +277,19 @@ async function getTokensProvider(): Promise<languages.IMonarchLanguage> {
                 [/(@identifier)(\()/gu, ['entity.name.function.doc', '@brackets']],
                 [/@whitespace+/, ''],
                 [
-                    /(@identifier)(\s*)(:)/gu,
-                    ['variable.other.constant.emphasis.doc', '', { token: 'operator.colon', next: '@type_doc' }],
-                ],
-                [
-                    /(\.\.|)(@identifier)(\s*)(,)/gu,
-                    ['operator.spread-range', 'variable.other.constant.emphasis.doc', '', 'operator.comma'],
-                ],
-                [
-                    /(\.\.|)(@identifier)(\s*)(\))/gu,
-                    ['operator.spread-range', 'variable.other.constant.emphasis.doc', '', '@brackets'],
+                    /(\.\.|)(@identifier)(\s*)(:|,|\))/gu,
+                    [
+                        'operator.spread-range',
+                        'variable.other.constant.emphasis.doc',
+                        '',
+                        {
+                            cases: {
+                                ':': { token: 'operator.colon', next: '@type_doc' },
+                                ',': 'operator.comma',
+                                '\\)': '@brackets',
+                            },
+                        },
+                    ],
                 ],
                 [/[()]/gu, '@brackets'],
                 [/(->)/gu, 'operator.arrow', '@type_doc'],

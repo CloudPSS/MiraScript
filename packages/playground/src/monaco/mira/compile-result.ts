@@ -3,30 +3,28 @@ import { DiagnosticCode } from 'mira-wasm';
 import { strictInRange } from './utils';
 
 /** 源代码诊断信息 */
-export interface SourceDiagnostic<T extends DiagnosticCode = DiagnosticCode> {
+interface SourceDiagnosticBase<T extends DiagnosticCode = DiagnosticCode> {
     /** 代码 */
     readonly code: T;
     /** 位置 */
     readonly range: IRange;
+}
+
+/** 源代码诊断信息 */
+export interface SourceDiagnostic<T extends DiagnosticCode = DiagnosticCode> extends SourceDiagnosticBase<T> {
     /** 引用 */
     readonly references: ReadonlyArray<SourceReference<T>>;
 }
 /** 源代码引用信息 */
-export interface SourceReference<T extends DiagnosticCode = DiagnosticCode> {
-    /** 代码 */
-    readonly code: DiagnosticCode;
-    /** 位置 */
-    readonly range: IRange;
+export interface SourceReference<T extends DiagnosticCode = DiagnosticCode> extends SourceDiagnosticBase<T> {
     /** 反向引用 */
     readonly diagnostic: SourceDiagnostic<T>;
 }
 
 /** 源代码定义信息 */
-interface SourceDefinitionBase<T extends DiagnosticCode = DiagnosticCode> {
-    /** 符号定义 */
-    readonly definition: SourceDiagnostic<T>;
+interface SourceDefinitionBase<R extends DiagnosticCode = DiagnosticCode> {
     /** 符号引用 */
-    readonly references: ReadonlyArray<SourceDiagnostic<T>>;
+    readonly references: ReadonlyArray<SourceDiagnostic<R> | SourceReference<R>>;
 }
 /** 局部函数类型 */
 export type LocalFunctionType = (typeof LocalFunctionType)[number];
@@ -45,7 +43,7 @@ export const ParameterExplicitType = [
 ] as const;
 /** 隐式参数类型 */
 export type ParameterItType = (typeof ParameterItType)[number];
-export const ParameterItType = [DiagnosticCode.ParameterIt, DiagnosticCode.UnusedParameterIt] as const;
+export const ParameterItType = [DiagnosticCode.ParameterIt] as const;
 /** 参数类型 */
 export type ParameterType = (typeof ParameterType)[number];
 export const ParameterType = [...ParameterExplicitType, ...ParameterItType] as const;
@@ -54,9 +52,15 @@ export type LocalDefinitionType = (typeof LocalDefinitionType)[number];
 export const LocalDefinitionType = [...LocalVariableType, ...LocalFunctionType, ...ParameterType] as const;
 
 /** 源代码定义信息 */
-export interface LocalDefinition<T extends LocalDefinitionType = LocalDefinitionType> extends SourceDefinitionBase<T> {
-    /** 符号定义位置，空范围表示隐式定义的变量（如 `it`） */
-    readonly range: IRange;
+export interface LocalDefinition<T extends LocalDefinitionType = LocalDefinitionType>
+    extends SourceDefinitionBase<
+        | DiagnosticCode.ReadLocal
+        | DiagnosticCode.WriteLocal
+        | DiagnosticCode.ReadWriteLocal
+        | DiagnosticCode.RedeclareLocal
+    > {
+    /** 符号定义 */
+    readonly definition: SourceDiagnostic<T>;
     /** 定义的函数，仅对 LocalFunction 有效 */
     readonly fn?: {
         /** 函数作用域 */
@@ -69,8 +73,6 @@ export interface LocalDefinition<T extends LocalDefinitionType = LocalDefinition
 export interface GlobalDefinition extends SourceDefinitionBase<DiagnosticCode.GlobalVariable> {
     /** 符号名称 */
     readonly name: string;
-    /** 符号定义 */
-    readonly definition: never;
 }
 /** 源代码定义信息 */
 export type SourceDefinition = LocalDefinition | GlobalDefinition;
@@ -196,12 +198,16 @@ export class CompileResult {
             diagnostic.references = [];
             while (i + 1 < diagnostics.length) {
                 const ref = diagnostics[i + 1]!;
-                if (ref.code < DiagnosticCode.ReferenceStart || ref.code > DiagnosticCode.ReferenceEnd) {
+                if (
+                    (ref.code > DiagnosticCode.ReferenceStart && ref.code < DiagnosticCode.ReferenceEnd) ||
+                    (ref.code > DiagnosticCode.TagRefStart && ref.code < DiagnosticCode.TagRefEnd)
+                ) {
+                    i++;
+                    ref.diagnostic = diagnostic;
+                    (diagnostic.references as SourceReference[]).push(ref);
+                } else {
                     break;
                 }
-                i++;
-                ref.diagnostic = diagnostic;
-                (diagnostic.references as SourceReference[]).push(ref);
             }
         }
         this.diagnosticsReady = true;
@@ -229,65 +235,57 @@ export class CompileResult {
         const ranges: Array<Writable<SourceDiagnostic>> = [];
         for (const tag of this.tags) {
             if (LocalDefinitionType.includes(tag.code as LocalDefinitionType)) {
-                const declRef = tag.references[0];
-                const isRef = declRef != null;
-                const defRange = isRef ? declRef.range : tag.range;
-                let def = locals.find((def) => Range.equalsRange(def.range, defRange));
+                locals.push({
+                    definition: tag as SourceDiagnostic<never>,
+                    references: tag.references as Array<SourceReference<never>>,
+                });
+            } else if (tag.code === DiagnosticCode.GlobalVariable) {
+                const name = getText(tag.range);
+                let def = globals.find((def) => name === def.name);
                 if (!def) {
                     def = {
-                        range: defRange,
-                        definition: undefined,
+                        name: name ?? '',
                         references: [],
                     };
-                    locals.push(def);
+                    globals.push(def);
                 }
-                if (isRef) {
-                    (def.references as SourceDiagnostic[]).push(tag);
-                } else {
-                    def.definition = tag as SourceDiagnostic<never>;
-                }
-            } else {
-                // eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check
-                switch (tag.code) {
-                    case DiagnosticCode.GlobalVariable: {
-                        const name = getText(tag.range);
-                        let def = globals.find((def) => name === def.name);
-                        if (!def) {
-                            def = {
-                                name: name ?? '',
-                                references: [],
-                            };
-                            globals.push(def);
-                        }
-                        (def.references as SourceDiagnostic[]).push(tag);
-                        break;
-                    }
-                    case DiagnosticCode.Scope:
-                    case DiagnosticCode.String:
-                    case DiagnosticCode.Interpolation: {
-                        ranges.push(tag);
-                    }
-                }
+                (def.references as SourceDiagnostic[]).push(tag);
+            } else if (
+                tag.code === DiagnosticCode.Scope ||
+                tag.code === DiagnosticCode.String ||
+                tag.code === DiagnosticCode.Interpolation
+            ) {
+                ranges.push(tag);
             }
         }
 
         this._groupedTags = {
-            locals: locals.sort((a, b) => Range.compareRangesUsingStarts(a.range, b.range)) as LocalDefinition[],
+            locals: (locals as LocalDefinition[]).sort((a, b) =>
+                Range.compareRangesUsingStarts(a.definition.range, b.definition.range),
+            ),
             globals: globals as GlobalDefinition[],
-            ranges: ranges.sort((a, b) => Range.compareRangesUsingStarts(a.range, b.range)) as SourceDiagnostic[],
+            ranges: (ranges as SourceDiagnostic[]).sort((a, b) => Range.compareRangesUsingStarts(a.range, b.range)),
         };
         return this._groupedTags;
     }
 
     /** 获取定义 */
-    definition(model: editor.ITextModel, position: IPosition): { def: SourceDefinition; ref?: number } | undefined {
+    definition(
+        model: editor.ITextModel,
+        position: IPosition,
+    ): { def: LocalDefinition; ref?: number } | { def: GlobalDefinition; ref: number } | undefined {
         const { locals, globals } = this.groupedTags(model);
-        for (const d of [...locals, ...globals]) {
-            const { definition, references } = d;
-            if (definition && strictInRange(definition.range, position)) {
+        for (const d of locals) {
+            if (strictInRange(d.definition.range, position)) {
                 return { def: d, ref: undefined };
             }
-            const refIndex = references.findIndex((u) => strictInRange(u.range, position));
+            const refIndex = d.references.findIndex((u) => strictInRange(u.range, position));
+            if (refIndex >= 0) {
+                return { def: d, ref: refIndex };
+            }
+        }
+        for (const d of globals) {
+            const refIndex = d.references.findIndex((u) => strictInRange(u.range, position));
             if (refIndex >= 0) {
                 return { def: d, ref: refIndex };
             }
@@ -357,7 +355,7 @@ export class CompileResult {
                 Range.compareRangesUsingStarts(a.range, b.range),
             );
             (scope.locals as Writable<LocalDefinition[]>).sort((a, b) =>
-                Range.compareRangesUsingStarts(a.range, b.range),
+                Range.compareRangesUsingStarts(a.definition.range, b.definition.range),
             );
             for (const child of scope.children) {
                 queue.push(child);
@@ -366,7 +364,7 @@ export class CompileResult {
 
         // 4. 填充每个作用域的局部变量
         for (const local of locals) {
-            const localRange = local.range;
+            const localRange = local.definition.range;
             const scope = sortedScopes.findLast((s) => Range.containsRange(s.range, localRange));
             if (scope) {
                 (scope.locals as Writable<LocalDefinition[]>).push(local);
@@ -380,7 +378,7 @@ export class CompileResult {
                 scopeMap.set(local, scope);
                 if (local.definition.code === DiagnosticCode.LocalFunction) {
                     const funcScope = scope.children.find(
-                        (s) => Range.compareRangesUsingStarts(s.range, local.range) > 0,
+                        (s) => Range.compareRangesUsingStarts(s.range, local.definition.range) > 0,
                     );
                     if (funcScope) {
                         const args = funcScope.locals.filter((l): l is LocalDefinition<ParameterType> =>

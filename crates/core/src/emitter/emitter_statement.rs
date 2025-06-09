@@ -57,6 +57,7 @@ impl<'s> Emitter<'s> {
                 false
             }
             Assign(assignee, op, expression, _) => {
+                let op = op.as_ref();
                 let mut final_op: Box<dyn FnOnce(&mut Self)> = Box::new(|s| ());
                 let assignee_reg = match &**assignee {
                     Expression::Variable(id_token) => {
@@ -65,7 +66,11 @@ impl<'s> Emitter<'s> {
                         };
                         let var = self.scopes.find_variable(id);
                         if let Some((level, variable)) = var {
-                            variable.mark_write(id_token, &mut self.diagnostics);
+                            if *op == Operator::Equal {
+                                variable.mark_write(id_token);
+                            } else {
+                                variable.mark_read_write(id_token);
+                            }
                             check_variable_initialized(
                                 &mut self.diagnostics,
                                 &self.closures,
@@ -111,17 +116,17 @@ impl<'s> Emitter<'s> {
                     }
                     _ => unreachable!(),
                 };
-                if **op == Operator::Equal {
+                if *op == Operator::Equal {
                     self.emit_expression(expression, assignee_reg, brk);
-                } else if **op == Operator::LogicalAndEqual {
+                } else if *op == Operator::LogicalAndEqual {
                     self.op_if(OpCode::If, assignee_reg);
                     self.emit_expression(expression, assignee_reg, brk);
                     self.op_if_end();
-                } else if **op == Operator::LogicalOrEqual {
+                } else if *op == Operator::LogicalOrEqual {
                     self.op_if(OpCode::IfNot, assignee_reg);
                     self.emit_expression(expression, assignee_reg, brk);
                     self.op_if_end();
-                } else if **op == Operator::NullCoalescingEqual {
+                } else if *op == Operator::NullCoalescingEqual {
                     self.op_if(OpCode::IfNil, assignee_reg);
                     self.emit_expression(expression, assignee_reg, brk);
                     self.op_if_end();

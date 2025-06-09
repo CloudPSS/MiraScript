@@ -87,7 +87,7 @@ impl<'s> Emitter<'s> {
                     if bind {
                         self.closures.initialize_variable(variable);
                     } else {
-                        variable.mark_write(id_token, &mut self.diagnostics);
+                        variable.mark_write(id_token);
                     }
                     if !check_variable_initialized(
                         &mut self.diagnostics,

@@ -33,8 +33,8 @@ class InlayHintsProvider extends Provider implements languages.InlayHintsProvide
             // eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check
             switch (tag.code) {
                 case DiagnosticCode.ParameterIt: {
-                    if (tag.references.length) {
-                        // 是引用而非声明
+                    if (!tag.references.length) {
+                        // 没有引用，隐藏该隐式参数
                         continue;
                     }
                     lineNumber = tag.range.endLineNumber;

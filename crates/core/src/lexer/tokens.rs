@@ -143,7 +143,7 @@ pub(super) fn token<'s>(
             prev_token.kind = TokenKind::unknown_range(
                 TokenKind::Identifier(kw.to_string().into()),
                 prev_token.range.clone(),
-                DiagnosticCode::ReservedKeyword,
+                DiagnosticCode::InvalidReservedKeyword,
             );
         }
     }

@@ -34,12 +34,10 @@ export function paramsList(model: editor.ITextModel, info: VmFunctionInfo | Loca
     if (!info) return '(..)';
     if ('args' in info) {
         const { args } = info;
-        if (args[0]?.definition.code === DiagnosticCode.UnusedParameterIt) {
-            return '()';
-        } else if (args[0]?.definition.code === DiagnosticCode.ParameterIt) {
-            return '(it)';
+        if (args[0]?.definition.code === DiagnosticCode.ParameterIt) {
+            return args[0].references.length ? '(it)' : '()';
         } else {
-            return `(${args.map((a) => model.getValueInRange(a.range)).join(', ')})`;
+            return `(${args.map((a) => model.getValueInRange(a.definition.range)).join(', ')})`;
         }
     } else {
         if (!info.params) return '(..)';

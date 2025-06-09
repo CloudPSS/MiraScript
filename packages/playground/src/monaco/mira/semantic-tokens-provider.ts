@@ -3,6 +3,7 @@ import { Provider } from './worker-helper';
 import { DiagnosticCode } from 'mira-wasm';
 import { VmSharedGlobal } from '../../vm/types/global.js';
 import { isVmFunction } from '../../vm';
+import { ParameterType } from './compile-result';
 
 /** @inheritdoc */
 class DocumentSemanticTokensProvider extends Provider implements languages.DocumentSemanticTokensProvider {
@@ -34,7 +35,7 @@ class DocumentSemanticTokensProvider extends Provider implements languages.Docum
         // data 长度是 5 的倍数
         // [diffRow, diffCol, length, tokenType(index), tokenModifiers(bit field)]
         const data = [];
-        for (const { code, range } of compiled.tags) {
+        for (const { code, range, references } of compiled.tags) {
             let tokenType = -1;
             let tokenModifiers = 0;
             // eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check
@@ -66,14 +67,7 @@ class DocumentSemanticTokensProvider extends Provider implements languages.Docum
                 }
             }
             if (tokenType < 0) continue;
-            if (
-                code === DiagnosticCode.ParameterImmutable ||
-                code === DiagnosticCode.ParameterImmutableRest ||
-                code === DiagnosticCode.ParameterMutable ||
-                code === DiagnosticCode.ParameterIt ||
-                code === DiagnosticCode.UnusedParameterIt ||
-                code === DiagnosticCode.ParameterMutableRest
-            ) {
+            if (ParameterType.includes(code as ParameterType)) {
                 tokenModifiers |= 1 << 1;
             }
             const { startLineNumber, startColumn, endColumn } = range;
@@ -85,6 +79,15 @@ class DocumentSemanticTokensProvider extends Provider implements languages.Docum
                 tokenType,
                 tokenModifiers,
             });
+            for (const ref of references) {
+                data.push({
+                    row: ref.range.startLineNumber - 1,
+                    col: ref.range.startColumn - 1,
+                    length: ref.range.endColumn - ref.range.startColumn,
+                    tokenType,
+                    tokenModifiers,
+                });
+            }
         }
         data.sort((a, b) => {
             if (a.row !== b.row) {

@@ -78,7 +78,10 @@ pub(super) fn string_content<'s>(
             let s = &i[range.clone()];
             i.reset(&cp);
             range.start -= 1;
-            errors.push(SourceDiagnostic::new(range, DiagnosticCode::InvalidEscapeSequence));
+            errors.push(SourceDiagnostic::new(
+                range,
+                DiagnosticCode::InvalidEscapeSequence,
+            ));
             Cow::Borrowed(s)
         };
         let token = if has_interpolation {
@@ -270,10 +273,22 @@ fn interpolation<'s>(
                 return Ok(StringFragment::Literal(result));
             }
             // '$' identifier
-            let id = identifier(true).with_span().parse_next(i)?;
+            let ((mut kind, range), str) =
+                identifier(true).with_span().with_taken().parse_next(i)?;
+            if let TokenKind::Keyword(kw) = kind {
+                kind = TokenKind::unknown_range(
+                    TokenKind::Identifier(str.into()),
+                    range.clone(),
+                    if kw.is_reserved() {
+                        DiagnosticCode::InvalidReservedKeyword
+                    } else {
+                        DiagnosticCode::InvalidKeyword
+                    },
+                );
+            }
             let id = Token {
-                kind: id.0,
-                range: id.1,
+                kind,
+                range,
                 leading_trivia: vec![],
                 trailing_trivia: vec![],
             };
