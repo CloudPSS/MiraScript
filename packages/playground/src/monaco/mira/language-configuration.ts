@@ -1,4 +1,5 @@
 import { languages } from '@private/monaco-editor';
+import { MAX_VERBATIM_LENGTH } from './constants.js';
 
 languages.setLanguageConfiguration('mirascript', {
     comments: {
@@ -9,6 +10,14 @@ languages.setLanguageConfiguration('mirascript', {
         ['(', ')'],
         ['[', ']'],
         ['{', '}'],
+    ],
+    colorizedBracketPairs: [
+        ['(', ')'],
+        ['[', ']'],
+        ['{', '}'],
+        ...Array.from({ length: MAX_VERBATIM_LENGTH }).map(
+            (_, i): languages.CharacterPair => ['$'.repeat(i) + '{', '}'],
+        ),
     ],
     wordPattern: /(-?\d+\.\w+([+-]\w*)?)|([^`~!#%^&*()\-=+[{\]}\\|;:'",.<>/?\s]+)/g,
     autoClosingPairs: [

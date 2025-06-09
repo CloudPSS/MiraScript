@@ -8,22 +8,20 @@ import {
     REG_NUMBER,
     REG_IDENTIFIER,
     DOC_HEADER,
+    MAX_VERBATIM_LENGTH,
 } from './constants';
 import { callWorker } from './worker-helper.js';
 
-const MAX_VERBATIM_LENGTH = 16;
-
 /** 匹配 identifier */
 function identifierCases(
-    capture = 0,
     data?: Partial<languages.IExpandedMonarchLanguageAction>,
     defaultToken = 'variable',
 ): Record<string, languages.IExpandedMonarchLanguageAction> {
     return {
-        '@numericKeywords': { ...data, token: `constant.numeric.$${capture}` },
-        '@constantKeywords': { ...data, token: `constant.language.$${capture}` },
-        '@controlKeywords': { ...data, token: `keyword.control.$${capture}` },
-        '@keywords': { ...data, token: `keyword.$${capture}` },
+        '@numericKeywords': { ...data, token: `constant.numeric` },
+        '@constantKeywords': { ...data, token: `constant.language` },
+        '@controlKeywords': { ...data, token: `keyword.control` },
+        '@keywords': { ...data, token: `keyword` },
         '[@]+.*': { ...data, token: `variable.other.constant` },
         '~it': { ...data, token: `variable.other.constant.emphasis` },
         '@default': { ...data, token: defaultToken },
@@ -41,11 +39,11 @@ async function getTokensProvider(): Promise<languages.IMonarchLanguage> {
             { open: '[', close: ']', token: 'delimiter.square' },
             { open: '(', close: ')', token: 'delimiter.parenthesis' },
         ],
-        //defaultToken: 'invalid',
+        defaultToken: 'invalid',
 
         whitespace: REG_WHITESPACE,
         identifier: REG_IDENTIFIER,
-        docHeader: new RegExp(DOC_HEADER, 'u'),
+        docHeader: DOC_HEADER,
 
         keywords: await callWorker('keywords'),
         controlKeywords: await callWorker('control_keywords'),
@@ -62,7 +60,7 @@ async function getTokensProvider(): Promise<languages.IMonarchLanguage> {
                 [
                     /(@identifier)(@whitespace*)(\??:)(?!:)/gu,
                     [
-                        { token: 'support.type.property-name.$1' },
+                        'support.type.property-name',
                         '',
                         {
                             cases: {
@@ -75,9 +73,9 @@ async function getTokensProvider(): Promise<languages.IMonarchLanguage> {
                 [
                     /(fn)(@whitespace+)(@identifier)(@whitespace*)($|[({])/gu,
                     [
-                        { token: 'keyword.$1' },
+                        'keyword',
                         '',
-                        { cases: identifierCases(3, undefined, 'entity.name.function') },
+                        { cases: identifierCases(undefined, 'entity.name.function') },
                         '',
                         {
                             cases: {
@@ -102,14 +100,14 @@ async function getTokensProvider(): Promise<languages.IMonarchLanguage> {
                 ],
                 [
                     /(\.)(@whitespace*)(@identifier)(@whitespace*)(\()/gu,
-                    ['operator.dot', '', { token: 'entity.name.function' }, '', '@brackets'],
+                    ['operator.dot', '', 'entity.name.function', '', '@brackets'],
                 ],
-                [/(\.)(@whitespace*)(@identifier)/gu, ['operator.dot', '', { token: 'variable.$3' }]],
+                [/(\.)(@whitespace*)(@identifier)/gu, ['operator.dot', '', 'variable']],
                 [
                     /(@identifier)(@whitespace*)(\()/gu,
                     [
                         {
-                            cases: identifierCases(1, undefined, `entity.name.function`),
+                            cases: identifierCases(undefined, `entity.name.function`),
                         },
                         '',
                         '@brackets',
@@ -186,84 +184,61 @@ async function getTokensProvider(): Promise<languages.IMonarchLanguage> {
                 [/\*/, { token: 'comment.block' }],
             ],
             string: [
-                [/(@*)"/gu, { token: 'string.quote.open.$1', next: '@string_double.$1', bracket: '@open' }],
-                [/(@*)'/gu, { token: 'string.quote.open.$1', next: '@string_single.$1', bracket: '@open' }],
-                [/(@*)`/gu, { token: 'string.quote.open.$1', next: '@string_backtick.$1', bracket: '@open' }],
+                [/["'`]/gu, { token: 'string.quote.open', next: '@string_normal.$#', bracket: '@open' }],
+                [/(@+)(["'`])/gu, { token: 'string.quote.open.raw', next: '@string_verbatim.$#.$1', bracket: '@open' }],
             ],
-            string_single: [
-                [/[^'\\$]+/gu, 'string'],
+            string_normal: [
+                [/[^'"`\\$]+/gu, 'string'],
                 { include: '@string_escape' },
-                [/(?=\$)/gu, '', '@string_interpolation.$S2'],
+                [/(?=\$)/gu, '', '@string_interpolation.'],
                 [
-                    /'(@*)/gu,
+                    /['"`]/gu,
                     {
                         cases: {
-                            '$S2==$1': { token: 'string.quote.close.$1', next: '@pop', bracket: '@close' },
+                            '$S2==$#': { token: 'string.quote.close', next: '@pop', bracket: '@close' },
                             '@default': 'string',
                         },
                     },
                 ],
             ],
-            string_double: [
-                [/[^"\\$]+/gu, 'string'],
-                { include: '@string_escape' },
-                [/(?=\$)/gu, '', '@string_interpolation.$S2'],
+            string_verbatim: [
+                [/[^'"`$]+/gu, 'string'],
+                [/(?=\$)/gu, '', '@string_interpolation.$S3'],
                 [
-                    /"(@*)/gu,
+                    /(['"`]@+)/gu,
                     {
                         cases: {
-                            '$S2==$1': { token: 'string.quote.close.$1', next: '@pop', bracket: '@close' },
+                            $S2: { token: 'string.quote.close.raw', next: '@pop', bracket: '@close' },
                             '@default': 'string',
                         },
                     },
                 ],
-            ],
-            string_backtick: [
-                [/[^`\\$]+/gu, 'string'],
-                { include: '@string_escape' },
-                [/(?=\$)/gu, '', '@string_interpolation.$S2'],
-                [
-                    /`(@*)/gu,
-                    {
-                        cases: {
-                            '$S2==$1': { token: 'string.quote.close.$1', next: '@pop', bracket: '@close' },
-                            '@default': 'string',
-                        },
-                    },
-                ],
+                [/['"`$]/gu, 'string'],
             ],
             string_escape: [
-                [/\\\\/gu, 'string.escape.backslash'],
-                [/\\'/gu, 'string.escape.apostrophe'],
-                [/\\"/gu, 'string.escape.quote'],
-                [/\\`/gu, 'string.escape.backtick'],
-                [/\\\$/gu, 'string.escape.dollar'],
-                [/\\([rntbfv0])/gu, { token: 'string.escape.$1' }],
-                [/\\u\{([0-9a-fA-F]+)\}/gu, { token: 'string.escape.unicode.$1' }],
-                [/\\x([0-9a-fA-F]{2})/gu, { token: 'string.escape.ascii.$1' }],
+                [/\\([\\'"`$rntbfv0])/gu, 'string.escape'],
+                [/\\u\{([0-9a-fA-F]+)\}/gu, 'string.escape.unicode'],
+                [/\\x([0-9a-fA-F]{2})/gu, 'string.escape.ascii'],
                 [/\\./gu, { token: 'string.escape.invalid' }],
             ],
             ...Object.fromEntries(
                 Array.from({ length: MAX_VERBATIM_LENGTH }).map((_, i) => {
                     const dollarCount = i === 0 ? 1 : i;
                     const dollarRegex = `\\\${${dollarCount}}`;
-                    const name = `string_interpolation.${'@'.repeat(i)}`;
                     return [
-                        name,
+                        `string_interpolation.${'@'.repeat(i)}`,
                         [
                             [
-                                new RegExp(`(${dollarRegex})(?=${REG_IDENTIFIER.source})`, 'gu'),
-                                { token: `punctuation.section.embedded.$1`, next: '@string_interpolation_identifier' },
+                                `(${dollarRegex})(${REG_IDENTIFIER.source})`,
+                                ['punctuation.section.embedded', { cases: identifierCases({ next: '@pop' }) }],
                             ],
                             [
-                                new RegExp(`(${dollarRegex})(\\{)`, 'gu'),
-                                [
-                                    { token: 'punctuation.section.embedded.$1' },
-                                    {
-                                        token: '@brackets',
-                                        next: '@string_interpolation_expression',
-                                    },
-                                ],
+                                `(${dollarRegex}\\{)`,
+                                {
+                                    token: 'punctuation.section.embedded',
+                                    bracket: '@open',
+                                    next: '@string_interpolation_expression',
+                                },
                             ],
                             [new RegExp(`\\\${0,${dollarCount}}`, 'gu'), 'string', '@pop'],
                             ['', '', '@pop'],
@@ -272,10 +247,6 @@ async function getTokensProvider(): Promise<languages.IMonarchLanguage> {
                 }),
             ),
             string_interpolation: [[/\$*/gu, 'string', '@pop']],
-            string_interpolation_identifier: [
-                [REG_IDENTIFIER, { cases: identifierCases(0, { next: '@pop' }) }],
-                ['', '', '@pop'],
-            ],
             string_interpolation_expression: [
                 [/\{/gu, { token: '@brackets', next: '@push' }],
                 [/\}/gu, { token: '@brackets', next: '@pop' }],
