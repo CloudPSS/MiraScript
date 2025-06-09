@@ -5,6 +5,7 @@ import {
     type CancellationToken,
     Range,
     type IPosition,
+    type IRange,
 } from '@private/monaco-editor';
 import { Provider } from './worker-helper';
 import { VmSharedGlobal } from '../../vm/types/global.js';
@@ -98,7 +99,7 @@ for (const kw of keywords()) {
 class CompletionItemProvider extends Provider implements languages.CompletionItemProvider {
     readonly triggerCharacters?: string[] | undefined;
     /** 查找全局变量 */
-    private completeGlobal(model: editor.ITextModel, char: string): languages.CompletionItem[] {
+    private completeGlobal(model: editor.ITextModel, char: string | undefined): languages.CompletionItem[] {
         const suggestions: languages.CompletionItem[] = [];
         for (const key in VmSharedGlobal) {
             if (char && !key.toLowerCase().includes(char)) {
@@ -125,11 +126,12 @@ class CompletionItemProvider extends Provider implements languages.CompletionIte
     private async completeLocal(
         model: editor.ITextModel,
         position: IPosition,
-        char: string,
+        char: string | undefined,
     ): Promise<languages.CompletionItem[]> {
         const compiled = await Provider.getCompileResult(model, false);
         if (!compiled) return [];
         const suggestions: languages.CompletionItem[] = [];
+
         const scopes = compiled.scopes(model);
         let scope = scopes.findLast((s) => Range.containsPosition(s.range, position)) ?? scopes[0]!; // 从根作用域开始查找
         while (scope.children.length > 0) {
@@ -175,6 +177,9 @@ class CompletionItemProvider extends Provider implements languages.CompletionIte
         context: languages.CompletionContext,
         token: CancellationToken,
     ): Promise<languages.CompletionList | undefined> {
+        const compiled = await Provider.getCompileResult(model);
+        if (!compiled) return undefined;
+
         const word = model.getWordAtPosition(position);
         const prev = model.getValueInRange({
             startLineNumber: position.lineNumber,
@@ -195,11 +200,47 @@ class CompletionItemProvider extends Provider implements languages.CompletionIte
             };
         }
 
-        const suggestions: languages.CompletionItem[] = structuredClone(COMMON_GLOBAL_SUGGESTIONS);
-
         // suggest variables
-        const char = (word?.word[0] ?? '').toLowerCase();
+        let char: string | undefined;
+        let range: IRange;
+        const def = compiled.definition(model, position);
+        if (def) {
+            if (def.ref == null) {
+                // 输入位置是变量定义
+                return { suggestions: [] };
+            }
+            const d = def.def;
+            range = d.references[def.ref]!.range;
+            char = model.getValueInRange({
+                startLineNumber: range.startLineNumber,
+                startColumn: range.startColumn,
+                endLineNumber: range.startLineNumber,
+                endColumn: range.startColumn + 1,
+            });
+        } else if (word) {
+            range = {
+                startLineNumber: position.lineNumber,
+                startColumn: word.startColumn,
+                endLineNumber: position.lineNumber,
+                endColumn: word.endColumn,
+            };
+            char = word.word[0];
+        } else {
+            range = {
+                startLineNumber: position.lineNumber,
+                startColumn: position.column - 1,
+                endLineNumber: position.lineNumber,
+                endColumn: position.column,
+            };
+        }
+        char = char?.toLowerCase();
+
+        const suggestions: languages.CompletionItem[] = structuredClone(COMMON_GLOBAL_SUGGESTIONS);
         suggestions.push(...this.completeGlobal(model, char), ...(await this.completeLocal(model, position, char)));
+
+        for (const s of suggestions) {
+            s.range ??= range;
+        }
 
         return { suggestions };
     }
