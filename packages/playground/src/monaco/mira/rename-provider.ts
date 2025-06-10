@@ -1,9 +1,56 @@
-import { type CancellationToken, type editor, languages, type Position, Range } from '@private/monaco-editor';
-import { Provider } from './worker-helper';
+import {
+    type CancellationToken,
+    type editor,
+    type IRange,
+    languages,
+    type Position,
+    Range,
+} from '@private/monaco-editor';
 import { DiagnosticCode } from 'mira-wasm';
+import { Provider } from './worker-helper';
+import type { CompileResult } from './compile-result';
 
 /** @inheritdoc */
 class RenameProvider extends Provider implements languages.RenameProvider {
+    /** 重命名推断字段 */
+    private provideRenameEditsOmitNameFields(
+        model: editor.ITextModel,
+        compiled: CompileResult,
+        edits: languages.IWorkspaceTextEdit[],
+        ref: { range: IRange },
+        oldName: string,
+    ): void {
+        const { omitNameFields } = compiled.groupedTags(model);
+        for (const tag of omitNameFields) {
+            if (Range.equalsRange(tag.references[0]?.range, ref.range)) {
+                const current = model.getValueInRange(tag.range);
+                const paddingLeft = /[^\s(]/u.test(
+                    model.getValueInRange({
+                        startLineNumber: tag.range.startLineNumber,
+                        startColumn: tag.range.startColumn - 1,
+                        endLineNumber: tag.range.startLineNumber,
+                        endColumn: tag.range.startColumn,
+                    }),
+                );
+                const paddingRight = !/\s/u.test(
+                    model.getValueInRange({
+                        startLineNumber: tag.range.endLineNumber,
+                        startColumn: tag.range.endColumn,
+                        endLineNumber: tag.range.endLineNumber,
+                        endColumn: tag.range.endColumn + 1,
+                    }),
+                );
+                edits.push({
+                    resource: model.uri,
+                    versionId: compiled.version,
+                    textEdit: {
+                        range: tag.range,
+                        text: `${paddingLeft ? ' ' : ''}${oldName}${current}${paddingRight ? ' ' : ''}`,
+                    },
+                });
+            }
+        }
+    }
     /** @inheritdoc */
     async provideRenameEdits(
         model: editor.ITextModel,
@@ -13,7 +60,6 @@ class RenameProvider extends Provider implements languages.RenameProvider {
     ): Promise<undefined | (languages.WorkspaceEdit & languages.Rejection)> {
         const compiled = await Provider.getCompileResult(model);
         if (!compiled) return undefined;
-        const { omitNameFields } = compiled.groupedTags(model);
         const d = compiled.definition(model, position);
         if (!d) return undefined;
         const edits: languages.IWorkspaceTextEdit[] = [];
@@ -29,6 +75,7 @@ class RenameProvider extends Provider implements languages.RenameProvider {
                 },
             });
             oldName = model.getValueInRange(d.def.definition.range);
+            this.provideRenameEditsOmitNameFields(model, compiled, edits, d.def.definition, oldName);
         } else {
             oldName = d.def.name;
         }
@@ -41,35 +88,7 @@ class RenameProvider extends Provider implements languages.RenameProvider {
                     text: newName,
                 },
             });
-            for (const tag of omitNameFields) {
-                if (Range.equalsRange(tag.references[0]?.range, ref.range)) {
-                    const current = model.getValueInRange(tag.range);
-                    const paddingLeft = /[^\s(]/u.test(
-                        model.getValueInRange({
-                            startLineNumber: tag.range.startLineNumber,
-                            startColumn: tag.range.startColumn - 1,
-                            endLineNumber: tag.range.startLineNumber,
-                            endColumn: tag.range.startColumn,
-                        }),
-                    );
-                    const paddingRight = !/\s/u.test(
-                        model.getValueInRange({
-                            startLineNumber: tag.range.endLineNumber,
-                            startColumn: tag.range.endColumn,
-                            endLineNumber: tag.range.endLineNumber,
-                            endColumn: tag.range.endColumn + 1,
-                        }),
-                    );
-                    edits.push({
-                        resource: model.uri,
-                        versionId: compiled.version,
-                        textEdit: {
-                            range: tag.range,
-                            text: `${paddingLeft ? ' ' : ''}${oldName}${current}${paddingRight ? ' ' : ''}`,
-                        },
-                    });
-                }
-            }
+            this.provideRenameEditsOmitNameFields(model, compiled, edits, ref, oldName);
         }
 
         return { edits };
