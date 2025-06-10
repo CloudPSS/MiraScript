@@ -9,6 +9,12 @@ export const Element = (value: VmAny): VmConst => {
     return value;
 };
 
+export const ElementOpt = (key: string, value: VmAny): VmConst => {
+    $AssertInit(value);
+    if (!isVmConst(value)) return {};
+    return { [key]: value };
+};
+
 export const Function = (fn: VmFunctionLike): VmFunction => {
     return VmFunction(fn, { isLib: false, injectCp: false });
 };

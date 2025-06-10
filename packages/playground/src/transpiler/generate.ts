@@ -172,7 +172,6 @@ class CodeGenerator {
     /** 读取 record */
     private readRecord(obj: number): void {
         this.identCounter++;
-        const optional: string[] = [];
         while (this.codeOffset < this.codeSize) {
             const opcode_raw = this.codeReader.getUint8(this.codeOffset++);
             const opcode = opcode_raw & 0x7f;
@@ -186,31 +185,31 @@ class CodeGenerator {
                     const field_name = this.constants[field];
                     if (!field_name) throw new Error(`Unknown field ${field}`);
                     const value = read();
+                    const opt = opcode === OpCode.FieldOpt;
                     // Use computed property names to avoid prototype pollution
-                    code = `[${field_name}]: Element(${this.rv(value)}),`;
-                    if (opcode === OpCode.FieldOpt) {
-                        optional.push(field_name);
-                    }
+                    code = opt
+                        ? `...ElementOpt(${field_name}, ${this.rv(value)}),`
+                        : `[${field_name}]: Element(${this.rv(value)}),`;
                     break;
                 }
                 case OpCode.FieldOptDyn:
                 case OpCode.FieldDyn: {
                     const field = read();
                     const value = read();
-                    code = `[${this.rv(field)}]: Element(${this.rv(value)}),`;
-                    if (opcode === OpCode.FieldOptDyn) {
-                        optional.push(this.rv(field));
-                    }
+                    const opt = opcode === OpCode.FieldOptDyn;
+                    code = opt
+                        ? `...ElementOpt(${this.rv(field)}, ${this.rv(value)}),`
+                        : `[${this.rv(field)}]: Element(${this.rv(value)}),`;
                     break;
                 }
                 case OpCode.FieldOptIndex:
                 case OpCode.FieldIndex: {
                     const field = read();
                     const value = read();
-                    code = `[${field}]: Element(${this.rv(value)}),`;
-                    if (opcode === OpCode.FieldOptIndex) {
-                        optional.push(this.rv(field));
-                    }
+                    const opt = opcode === OpCode.FieldOptIndex;
+                    code = opt
+                        ? `...ElementOpt(${field}, ${this.rv(value)}),`
+                        : `[${field}]: Element(${this.rv(value)}),`;
                     break;
                 }
                 case OpCode.Spread: {
@@ -220,11 +219,11 @@ class CodeGenerator {
                 }
                 case OpCode.Freeze: {
                     this.identCounter--;
-                    code = optional.length ? `}); RecordFreeze(${this.rv(obj)}, [${optional.join(', ')}]);` : `});`;
+                    code = `});`;
                     break;
                 }
                 default: {
-                    code = `;// ?${OpCode[opcode] ?? opcode}`;
+                    code = `// ?${OpCode[opcode] ?? opcode}`;
                     break;
                 }
             }
@@ -280,7 +279,7 @@ class CodeGenerator {
                     break;
                 }
                 default: {
-                    code = `;// ?${OpCode[opcode] ?? opcode}`;
+                    code = `// ?${OpCode[opcode] ?? opcode}`;
                     break;
                 }
             }
