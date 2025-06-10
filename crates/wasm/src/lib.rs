@@ -25,6 +25,7 @@ impl CompileResult {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CompileFlag {
     UseUtf16,
+    UseUtf32,
     HideDiagnosticError,
     HideDiagnosticWarning,
     HideDiagnosticInfo,
@@ -72,6 +73,7 @@ fn compile(
         .map(|line| line.as_ptr() as usize - script.as_ptr() as usize)
         .collect::<Vec<_>>();
     let utf16 = flags.get(CompileFlag::UseUtf16);
+    let utf32 = flags.get(CompileFlag::UseUtf32);
     let pos_to_line_col = |pos: usize| {
         if pos == 0 {
             return (1, 1);
@@ -83,7 +85,9 @@ fn compile(
             - 1;
         let line_start = lines[line];
         let str = &script[line_start..pos];
-        let col = if utf16 {
+        let col = if utf32 {
+            str.chars().count()
+        } else if utf16 {
             str.encode_utf16().count()
         } else {
             str.len()
