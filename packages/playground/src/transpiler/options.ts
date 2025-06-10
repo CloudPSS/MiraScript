@@ -15,7 +15,7 @@ export function toCompileFlags(options: CompileOptions, compileFlag: typeof Comp
         if (!value) continue;
         const index = compileFlag[key as keyof typeof CompileFlag];
         if (index == null) continue;
-        flags[index / 8]! |= 1 << index % 8;
+        flags[Math.trunc(index / 8)]! |= 1 << index % 8;
     }
     return flags;
 }

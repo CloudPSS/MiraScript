@@ -1,6 +1,4 @@
-use mira_core::diagnostic::DiagnosticCode;
-use mira_core::lexer::Keyword;
-use strum::VariantArray;
+use mira_core::{DiagnosticCode, Keyword, prelude::*};
 
 use wasm_bindgen::prelude::*;
 

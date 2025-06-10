@@ -3,6 +3,7 @@ use std::cell::RefCell;
 use winnow::ModalResult;
 use winnow::stream::{Location, Stream};
 
+use crate::config::{Config, set_config};
 use crate::diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange};
 use crate::emitter::emit;
 use crate::lexer::{self, Token, TokenKind};
@@ -64,10 +65,13 @@ fn recover_token<'s>(
         _ => Some(t),
     }
 }
+
 fn compile<'s>(
     input: &'s str,
     lexer: impl FnOnce(&mut lexer::Input<'s>) -> ModalResult<Vec<lexer::Token<'s>>>,
+    config: &Config,
 ) -> CompileResult<'s> {
+    set_config(config);
     let mut diagnostics_collector: Vec<_> = vec![];
 
     // Lexing
@@ -179,11 +183,11 @@ fn compile<'s>(
 }
 
 #[allow(dead_code)]
-pub fn compile_script(input: &str) -> CompileResult<'_> {
-    compile(input, lexer::lex)
+pub fn compile_script<'s>(input: &'s str, config: &Config) -> CompileResult<'s> {
+    compile(input, lexer::lex, config)
 }
 
 #[allow(dead_code)]
-pub fn compile_template(input: &str) -> CompileResult<'_> {
-    compile(input, lexer::lex_string)
+pub fn compile_template<'s>(input: &'s str, config: &Config) -> CompileResult<'s> {
+    compile(input, lexer::lex_string, config)
 }

@@ -1,3 +1,4 @@
+use mira_core::{Config, SourceDiagnostic};
 use wasm_bindgen::prelude::*;
 
 mod constants;
@@ -31,6 +32,8 @@ pub enum CompileFlag {
     HideDiagnosticReference,
     HideDiagnosticOther,
 
+    TrackReferences,
+
     MAX,
 }
 
@@ -43,20 +46,25 @@ impl<'a> CompileFlags<'a> {
         CompileFlags(flags)
     }
 
-    #[inline]
     pub fn get(&self, flag: CompileFlag) -> bool {
         (self.0[flag as usize / 8] & (1 << (flag as usize % 8))) != 0
     }
 }
 
-#[wasm_bindgen]
-pub fn compile_script(script: &[u8], flags: &[u8]) -> CompileResult {
-    use mira_core::compile::compile_script;
-
+fn compile(
+    script: &[u8],
+    flags: &[u8],
+    compile: impl FnOnce(&str, &Config) -> (Option<Box<[u8]>>, Vec<SourceDiagnostic>),
+) -> CompileResult {
     let flags = CompileFlags::new(flags.try_into().expect("Invalid flags length"));
     let script = unsafe { std::str::from_utf8_unchecked(script) };
 
-    let (chunk, diagnostics) = compile_script(script);
+    let (chunk, diagnostics) = compile(
+        script,
+        &Config {
+            track_references: flags.get(CompileFlag::TrackReferences),
+        },
+    );
     // offsets of line starts
     let lines = script
         .lines()
@@ -112,4 +120,14 @@ pub fn compile_script(script: &[u8], flags: &[u8]) -> CompileResult {
         .collect();
 
     CompileResult { chunk, diagnostics }
+}
+
+#[wasm_bindgen]
+pub fn compile_script(script: &[u8], flags: &[u8]) -> CompileResult {
+    compile(script, flags, mira_core::compile_script)
+}
+
+#[wasm_bindgen]
+pub fn compile_template(script: &[u8], flags: &[u8]) -> CompileResult {
+    compile(script, flags, mira_core::compile_template)
 }

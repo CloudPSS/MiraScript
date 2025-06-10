@@ -16,7 +16,7 @@ wasm-bindgen-test = "0.3.34"
 
 [dependencies]
 wasm-bindgen = "0.2"
-mira-core = { path = "../core", features = ["wasm"] }
+mira-core = { path = "../core", features = ["wasm", "track_references"] }
 strum = "0.27"
 
 # The `console_error_panic_hook` crate provides better debugging of panics by

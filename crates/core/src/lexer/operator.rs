@@ -1,8 +1,10 @@
 use std::fmt::Display;
 
+use strum::{EnumProperty, VariantArray};
+
 use super::{Token, TokenKind};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, VariantArray, EnumProperty)]
 pub enum Operator {
     /// `(`
     OpenParen,

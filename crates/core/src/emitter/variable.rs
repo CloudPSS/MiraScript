@@ -1,3 +1,5 @@
+#[cfg(feature = "track_references")]
+use crate::config::track_references;
 use crate::{
     diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
     lexer::Token,
@@ -29,6 +31,7 @@ pub(crate) struct Variable<'s> {
     mutable: bool,
     bind_type: BindType,
     register: Register,
+    #[cfg(feature = "track_references")]
     reference: Vec<SourceDiagnostic>,
     initialized: bool,
 }
@@ -47,6 +50,7 @@ impl<'s> Variable<'s> {
             mutable,
             bind_type,
             register,
+            #[cfg(feature = "track_references")]
             reference: Vec::new(),
             initialized: matches!(bind_type, |BindType::Parameter| BindType::RestParameter
                 | BindType::ItParameter),
@@ -100,70 +104,85 @@ impl<'s> Variable<'s> {
     }
 
     pub fn mark_read(&mut self, token: &Token<'_>) {
-        self.reference.push(SourceDiagnostic::new(
-            token.range(),
-            DiagnosticCode::ReadLocal,
-        ));
+        #[cfg(feature = "track_references")]
+        if track_references() {
+            self.reference.push(SourceDiagnostic::new(
+                token.range(),
+                DiagnosticCode::ReadLocal,
+            ));
+        }
     }
 
     pub fn mark_write(&mut self, token: &Token<'_>) {
-        self.reference.push(SourceDiagnostic::new(
-            token.range(),
-            DiagnosticCode::WriteLocal,
-        ));
+        #[cfg(feature = "track_references")]
+        if track_references() {
+            self.reference.push(SourceDiagnostic::new(
+                token.range(),
+                DiagnosticCode::WriteLocal,
+            ));
+        }
     }
 
     pub fn mark_read_write(&mut self, token: &Token<'_>) {
-        self.reference.push(SourceDiagnostic::new(
-            token.range(),
-            DiagnosticCode::ReadWriteLocal,
-        ));
+        #[cfg(feature = "track_references")]
+        if track_references() {
+            self.reference.push(SourceDiagnostic::new(
+                token.range(),
+                DiagnosticCode::ReadWriteLocal,
+            ));
+        }
     }
 
     pub fn mark_redeclare(&mut self, token: &Token<'_>) {
-        self.reference.push(SourceDiagnostic::new(
-            token.range(),
-            DiagnosticCode::RedeclareLocal,
-        ));
+        #[cfg(feature = "track_references")]
+        if track_references() {
+            self.reference.push(SourceDiagnostic::new(
+                token.range(),
+                DiagnosticCode::RedeclareLocal,
+            ));
+        }
     }
 
     pub fn exit(self, diagnostics: &mut Vec<SourceDiagnostic>) {
-        let hint = if !self.mutable {
-            match self.bind_type {
-                BindType::Let => DiagnosticCode::LocalImmutable,
-                BindType::Init => DiagnosticCode::LocalImmutable,
-                BindType::Func => DiagnosticCode::LocalFunction,
-                BindType::Parameter => DiagnosticCode::ParameterImmutable,
-                BindType::RestParameter => DiagnosticCode::ParameterImmutableRest,
-                BindType::ItParameter => DiagnosticCode::ParameterIt,
+        #[cfg(feature = "track_references")]
+        if track_references() {
+            let hint = if !self.mutable {
+                match self.bind_type {
+                    BindType::Let => DiagnosticCode::LocalImmutable,
+                    BindType::Init => DiagnosticCode::LocalImmutable,
+                    BindType::Func => DiagnosticCode::LocalFunction,
+                    BindType::Parameter => DiagnosticCode::ParameterImmutable,
+                    BindType::RestParameter => DiagnosticCode::ParameterImmutableRest,
+                    BindType::ItParameter => DiagnosticCode::ParameterIt,
+                }
+            } else {
+                match self.bind_type {
+                    BindType::Let => DiagnosticCode::LocalMutable,
+                    BindType::Init => DiagnosticCode::LocalMutable,
+                    BindType::Func => DiagnosticCode::LocalFunction,
+                    BindType::Parameter => DiagnosticCode::ParameterMutable,
+                    BindType::RestParameter => DiagnosticCode::ParameterMutableRest,
+                    BindType::ItParameter => DiagnosticCode::ParameterIt,
+                }
+            };
+            let mut used = false;
+            diagnostics.push(SourceDiagnostic::new(self.declaration.clone(), hint));
+            for reference in self.reference {
+                if *reference == DiagnosticCode::ReadLocal {
+                    used = true;
+                }
+                diagnostics.push(reference);
             }
-        } else {
-            match self.bind_type {
-                BindType::Let => DiagnosticCode::LocalMutable,
-                BindType::Init => DiagnosticCode::LocalMutable,
-                BindType::Func => DiagnosticCode::LocalFunction,
-                BindType::Parameter => DiagnosticCode::ParameterMutable,
-                BindType::RestParameter => DiagnosticCode::ParameterMutableRest,
-                BindType::ItParameter => DiagnosticCode::ParameterIt,
+            if !used && !matches!(self.bind_type, BindType::ItParameter) {
+                diagnostics.push(SourceDiagnostic::new(
+                    self.declaration,
+                    if self.bind_type == BindType::Func {
+                        DiagnosticCode::UnusedLocalFunction
+                    } else {
+                        DiagnosticCode::UnusedLocalVariable
+                    },
+                ));
             }
-        };
-        let mut used = false;
-        diagnostics.push(SourceDiagnostic::new(self.declaration.clone(), hint));
-        for reference in self.reference {
-            if *reference == DiagnosticCode::ReadLocal {
-                used = true;
-            }
-            diagnostics.push(reference);
-        }
-        if !used && !matches!(self.bind_type, BindType::ItParameter) {
-            diagnostics.push(SourceDiagnostic::new(
-                self.declaration,
-                if self.bind_type == BindType::Func {
-                    DiagnosticCode::UnusedLocalFunction
-                } else {
-                    DiagnosticCode::UnusedLocalVariable
-                },
-            ));
         }
     }
 }

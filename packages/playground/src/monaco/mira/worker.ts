@@ -38,6 +38,7 @@ const textEncoder = new TextEncoder();
 const flags = toCompileFlags(
     {
         UseUtf16: true,
+        TrackReferences: true,
     },
     wasm.CompileFlag,
 );
