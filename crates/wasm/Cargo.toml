@@ -8,15 +8,16 @@ publish = false
 crate-type = ["cdylib", "rlib"]
 
 [features]
-default = ["console_error"]
+default = ["console_error", "track_references"]
 console_error = ["dep:console_error_panic_hook"]
+track_references = ["mira-core/track_references"]
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.34"
 
 [dependencies]
 wasm-bindgen = "0.2"
-mira-core = { path = "../core", features = ["wasm", "track_references"] }
+mira-core = { path = "../core", features = ["wasm"] }
 strum = "0.27"
 
 # The `console_error_panic_hook` crate provides better debugging of panics by

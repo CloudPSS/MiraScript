@@ -62,6 +62,7 @@ fn compile(
     let (chunk, diagnostics) = compile(
         script,
         &Config {
+            #[cfg(feature = "track_references")]
             track_references: flags.get(CompileFlag::TrackReferences),
         },
     );
