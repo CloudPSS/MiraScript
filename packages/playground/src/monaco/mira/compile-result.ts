@@ -217,6 +217,7 @@ export class CompileResult {
         locals: readonly LocalDefinition[];
         globals: readonly GlobalDefinition[];
         ranges: readonly SourceDiagnostic[];
+        omitNameFields: ReadonlyArray<SourceDiagnostic<DiagnosticCode.OmitNamedRecordField>>;
     };
 
     /** 获取源代码定义 */
@@ -233,6 +234,7 @@ export class CompileResult {
         const locals: Array<Writable<Partial<LocalDefinition>>> = [];
         const globals: Array<Writable<Partial<GlobalDefinition>>> = [];
         const ranges: Array<Writable<SourceDiagnostic>> = [];
+        const omitNameFields: Array<SourceDiagnostic<DiagnosticCode.OmitNamedRecordField>> = [];
         for (const tag of this.tags) {
             if (LocalDefinitionType.includes(tag.code as LocalDefinitionType)) {
                 locals.push({
@@ -256,6 +258,8 @@ export class CompileResult {
                 tag.code === DiagnosticCode.Interpolation
             ) {
                 ranges.push(tag);
+            } else if (tag.code === DiagnosticCode.OmitNamedRecordField) {
+                omitNameFields.push(tag as SourceDiagnostic<DiagnosticCode.OmitNamedRecordField>);
             }
         }
 
@@ -265,6 +269,7 @@ export class CompileResult {
             ),
             globals: globals as GlobalDefinition[],
             ranges: (ranges as SourceDiagnostic[]).sort((a, b) => Range.compareRangesUsingStarts(a.range, b.range)),
+            omitNameFields: omitNameFields,
         };
         return this._groupedTags;
     }

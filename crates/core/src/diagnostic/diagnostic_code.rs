@@ -164,8 +164,6 @@ pub enum DiagnosticCode {
     ParameterItDeclaredHere,
     #[strum(message = "...declared as a rest parameter here")]
     ParameterRestDeclaredHere,
-    #[strum(message = "...name inferred from here")]
-    OmitNamedRecordFieldName,
 
     ReferenceEnd = 5999,
 
@@ -219,6 +217,9 @@ pub enum DiagnosticCode {
     ReadWriteLocal,
     WriteLocal,
     RedeclareLocal,
+
+    /// Work with [DiagnosticCode::OmitNamedRecordField]
+    OmitNamedRecordFieldName,
 
     TagRefEnd = 11999,
 }
