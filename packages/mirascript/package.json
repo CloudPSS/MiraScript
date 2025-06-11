@@ -16,13 +16,9 @@
     }
   },
   "scripts": {
-    "build": "tsc --emitDeclarationOnly && node ./esbuild.config.js"
+    "build": "tsc && node ./esbuild.config.js"
   },
   "dependencies": {
     "@mirascript/wasm": "workspace:*"
-  },
-  "devDependencies": {
-    "esbuild": "^0.25.5",
-    "type-fest": "^4.41.0"
   }
 }

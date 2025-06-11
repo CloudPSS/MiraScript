@@ -43,6 +43,13 @@ async function compileImpl(uri: Uri, compiler = wasm.compileScript): Promise<voi
     compileCache = [
         reqUri,
         version,
-        Promise.resolve(context.host.updateCompileResult(uri.toString(), version, result.diagnostics, result.chunk)),
+        Promise.resolve(
+            context.host.updateCompileResult(
+                uri.toString(),
+                version,
+                result.diagnostics.buffer as ArrayBuffer,
+                result.chunk?.buffer as ArrayBuffer,
+            ),
+        ),
     ];
 }

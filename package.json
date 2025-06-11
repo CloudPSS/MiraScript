@@ -22,6 +22,7 @@
     "better-typescript-lib": "^2.11.0",
     "husky": "^9.1.7",
     "rimraf": "^6.0.1",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "esbuild": "^0.25.5"
   }
 }

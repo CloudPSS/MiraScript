@@ -1,0 +1,28 @@
+{
+  "name": "@mirascript/monaco",
+  "private": true,
+  "type": "module",
+  "description": "Monaco Editor integration for Mirascript.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "@mira/development": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./worker": {
+      "@mira/development": "./src/worker.ts",
+      "default": "./dist/worker.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc && node ./esbuild.config.js"
+  },
+  "dependencies": {
+    "@mirascript/wasm": "workspace:*",
+    "mirascript": "workspace:*"
+  },
+  "peerDependencies": {
+    "@private/monaco-editor": "^0.0.27"
+  }
+}

@@ -1,5 +1,6 @@
 /* eslint-disable no-console */
-import * as monaco from './monaco';
+import * as monaco from '@private/monaco-editor';
+import '@mirascript/monaco';
 import { type VmAny, VmExtern, createVmGlobal, isVmExtern, isVmModule, transpile, serialize } from 'mirascript';
 
 const value =

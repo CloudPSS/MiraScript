@@ -7,5 +7,9 @@ languages.register({
     mimetypes: ['text/x-mirascript'],
 });
 
-languages.onLanguage('mirascript', () => void import('./loader.js'));
-languages.onLanguageEncountered('mirascript', () => void import('./loader-small.js'));
+languages.onLanguage('mirascript', () => {
+    void import('./loader.js');
+});
+languages.onLanguageEncountered('mirascript', () => {
+    void import('./loader-small.js');
+});
