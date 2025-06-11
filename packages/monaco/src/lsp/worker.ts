@@ -1,16 +1,23 @@
 import * as wasm from '@mirascript/wasm';
 import { initialize, type Uri, type worker } from '@private/monaco-editor/worker';
+import type { ParseMode } from 'mirascript';
 import { toCompileFlags } from 'mirascript/subtle';
 
 /** Host functions */
 export interface Host {
     /** 更新编译结果 */
-    updateCompileResult(uri: string, version: number, diagnostics: ArrayBuffer, chunk: ArrayBuffer | undefined): void;
+    updateCompileResult(
+        uri: string,
+        mode: ParseMode,
+        version: number,
+        diagnostics: ArrayBuffer,
+        chunk: ArrayBuffer | undefined,
+    ): void;
 }
 
 const exports = {
-    compileScript: async (uri: Uri): Promise<void> => compileImpl(uri, wasm.compileScript),
-    compileTemplate: async (uri: Uri): Promise<void> => compileImpl(uri, wasm.compileTemplate),
+    compileScript: async (uri: Uri): Promise<void> => compileImpl(uri, 'script', wasm.compileScript),
+    compileTemplate: async (uri: Uri): Promise<void> => compileImpl(uri, 'template', wasm.compileTemplate),
 };
 
 /** Exported functions */
@@ -31,7 +38,7 @@ const flags = toCompileFlags({
 });
 const encoder = new TextEncoder();
 /** 编译 */
-async function compileImpl(uri: Uri, compiler = wasm.compileScript): Promise<void> {
+async function compileImpl(uri: Uri, mode: ParseMode, compiler = wasm.compileScript): Promise<void> {
     const reqUri = uri.toString();
     const model = context.getMirrorModels().find((v) => v.uri.toString() === reqUri);
     if (!model) {
@@ -49,6 +56,7 @@ async function compileImpl(uri: Uri, compiler = wasm.compileScript): Promise<voi
         Promise.resolve(
             context.host.updateCompileResult(
                 uri.toString(),
+                mode,
                 version,
                 result.diagnostics.buffer as ArrayBuffer,
                 result.chunk?.buffer as ArrayBuffer,

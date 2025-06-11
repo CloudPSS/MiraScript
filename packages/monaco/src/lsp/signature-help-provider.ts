@@ -1,8 +1,8 @@
-import { type editor, languages, type CancellationToken, type Position } from '@private/monaco-editor';
+import type { editor, languages, CancellationToken, Position } from '@private/monaco-editor';
 import { Provider } from './worker-helper';
 
 /** @inheritdoc */
-class SignatureHelpProvider extends Provider implements languages.SignatureHelpProvider {
+export class SignatureHelpProvider extends Provider implements languages.SignatureHelpProvider {
     /** @inheritdoc */
     readonly signatureHelpTriggerCharacters = ['(', ','];
     /** @inheritdoc */
@@ -20,5 +20,3 @@ class SignatureHelpProvider extends Provider implements languages.SignatureHelpP
         return undefined; // TODO: Implement signature help logic
     }
 }
-
-languages.registerSignatureHelpProvider('mirascript', new SignatureHelpProvider());

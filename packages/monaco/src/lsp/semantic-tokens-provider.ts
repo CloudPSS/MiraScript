@@ -1,4 +1,4 @@
-import { type CancellationToken, type editor, languages } from '@private/monaco-editor';
+import type { CancellationToken, editor, languages } from '@private/monaco-editor';
 import { Provider } from './worker-helper';
 import { DiagnosticCode } from '@mirascript/wasm';
 import { VmSharedGlobal } from 'mirascript/subtle';
@@ -6,7 +6,7 @@ import { isVmFunction } from 'mirascript';
 import { ParameterType } from './compile-result';
 
 /** @inheritdoc */
-class DocumentSemanticTokensProvider extends Provider implements languages.DocumentSemanticTokensProvider {
+export class DocumentSemanticTokensProvider extends Provider implements languages.DocumentSemanticTokensProvider {
     /** @inheritdoc */
     getLegend(): languages.SemanticTokensLegend {
         return {
@@ -118,5 +118,3 @@ class DocumentSemanticTokensProvider extends Provider implements languages.Docum
         //
     }
 }
-
-languages.registerDocumentSemanticTokensProvider('mirascript', new DocumentSemanticTokensProvider());

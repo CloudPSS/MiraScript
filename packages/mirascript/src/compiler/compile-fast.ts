@@ -18,7 +18,7 @@ const FAST_SCRIPT_MAX_LEN = 32;
 /**
  * 对短代码进行编译
  */
-export function compileScriptFast(code: string, options: TranspileOptions): VmScript | undefined {
+function compileScriptFast(code: string, options: TranspileOptions): VmScript | undefined {
     if (code.length > FAST_SCRIPT_MAX_LEN) return undefined; // 超过长度限制，直接返回 undefined
 
     const trimmedCode = code.trim();
@@ -53,7 +53,7 @@ const FAST_TEMPLATE_MAX_LEN = 1024;
 /**
  * 对短代码进行编译
  */
-export function compileTemplateFast(code: string, options: TranspileOptions): VmScript | undefined {
+function compileTemplateFast(code: string, options: TranspileOptions): VmScript | undefined {
     if (code.length > FAST_TEMPLATE_MAX_LEN) return undefined; // 超过长度限制，直接返回 undefined
 
     if (!code.includes('$')) {
@@ -61,4 +61,11 @@ export function compileTemplateFast(code: string, options: TranspileOptions): Vm
         return wrapScript(code, () => code);
     }
     return undefined;
+}
+
+/**
+ * 对短代码进行编译
+ */
+export function compileFast(code: string, options: TranspileOptions = {}): VmScript | undefined {
+    return (options.mode === 'template' ? compileTemplateFast : compileScriptFast)(code, options);
 }

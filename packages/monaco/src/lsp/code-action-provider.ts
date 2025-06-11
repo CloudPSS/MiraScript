@@ -1,10 +1,10 @@
 import { type editor, languages, type Range, type CancellationToken } from '@private/monaco-editor';
-import { Provider } from './worker-helper';
+import { Provider } from './worker-helper.js';
 
 /**
  * 代码操作
  */
-class CodeActionProvider extends Provider implements languages.CodeActionProvider {
+export class CodeActionProvider extends Provider implements languages.CodeActionProvider {
     /** @inheritdoc */
     provideCodeActions(
         model: editor.ITextModel,
@@ -26,5 +26,3 @@ class CodeActionProvider extends Provider implements languages.CodeActionProvide
         throw new Error('Method not implemented.');
     }
 }
-
-languages.registerCodeActionProvider('mirascript', new CodeActionProvider());

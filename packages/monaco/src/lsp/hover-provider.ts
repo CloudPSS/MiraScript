@@ -12,7 +12,7 @@ import { codeblock, getGlobal, paramsList } from './utils';
 import type { LocalDefinition } from './compile-result';
 
 /** @inheritdoc */
-class HoverProvider extends Provider implements languages.HoverProvider {
+export class HoverProvider extends Provider implements languages.HoverProvider {
     /** @inheritdoc */
     async provideHover(
         model: editor.ITextModel,
@@ -94,4 +94,3 @@ class HoverProvider extends Provider implements languages.HoverProvider {
         };
     }
 }
-languages.registerHoverProvider('mirascript', new HoverProvider());

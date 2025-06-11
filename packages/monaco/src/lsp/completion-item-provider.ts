@@ -96,7 +96,7 @@ for (const kw of keywords()) {
 /**
  * 自动完成
  */
-class CompletionItemProvider extends Provider implements languages.CompletionItemProvider {
+export class CompletionItemProvider extends Provider implements languages.CompletionItemProvider {
     readonly triggerCharacters?: string[] | undefined;
     /** 查找全局变量 */
     private completeGlobal(model: editor.ITextModel, char: string | undefined): languages.CompletionItem[] {
@@ -265,5 +265,3 @@ class CompletionItemProvider extends Provider implements languages.CompletionIte
         return item;
     }
 }
-
-languages.registerCompletionItemProvider('mirascript', new CompletionItemProvider());

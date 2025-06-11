@@ -4,7 +4,7 @@ import { DiagnosticCode } from '@mirascript/wasm';
 import type { SourceScope } from './compile-result';
 
 /** @inheritdoc */
-class DocumentSymbolProvider extends Provider implements languages.DocumentSymbolProvider {
+export class DocumentSymbolProvider extends Provider implements languages.DocumentSymbolProvider {
     /** 构建树 */
     private handleScope(model: editor.ITextModel, scope: SourceScope): languages.DocumentSymbol[] {
         const symbols: languages.DocumentSymbol[] = [];
@@ -63,4 +63,3 @@ class DocumentSymbolProvider extends Provider implements languages.DocumentSymbo
         return this.handleScope(model, root);
     }
 }
-languages.registerDocumentSymbolProvider('mirascript', new DocumentSymbolProvider());

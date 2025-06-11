@@ -11,7 +11,7 @@ import { Provider } from './worker-helper';
 import type { CompileResult } from './compile-result';
 
 /** @inheritdoc */
-class RenameProvider extends Provider implements languages.RenameProvider {
+export class RenameProvider extends Provider implements languages.RenameProvider {
     /** 重命名推断字段 */
     private provideRenameEditsOmitNameFields(
         model: editor.ITextModel,
@@ -125,5 +125,3 @@ class RenameProvider extends Provider implements languages.RenameProvider {
         };
     }
 }
-
-languages.registerRenameProvider('mirascript', new RenameProvider());

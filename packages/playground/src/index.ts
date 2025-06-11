@@ -7,14 +7,14 @@ import {
     createVmGlobal,
     isVmExtern,
     isVmModule,
-    compileScript,
-    compileTemplate,
+    compile,
     serialize,
+    type ParseMode,
 } from 'mirascript';
 import { KeyCode, KeyMod } from '@private/monaco-editor';
 registerMiraScript(monaco);
 
-let mode = localStorage.getItem('mode') || 'script';
+let mode: ParseMode = (localStorage.getItem('mode') as ParseMode) || 'script';
 const createModel = (value: string) =>
     monaco.editor.createModel(
         value,
@@ -196,7 +196,7 @@ const elDisassembly = document.querySelector<HTMLDivElement>('#disassembly')!;
 elDisassembly.addEventListener('contextmenu', (e) => {
     e.preventDefault();
     console.time('transpile');
-    void (mode === 'template' ? compileTemplate : compileScript)(editor.getValue(), { pretty: true })
+    void compile(editor.getValue(), { pretty: true, mode })
         .finally(() => {
             console.timeEnd('transpile');
         })

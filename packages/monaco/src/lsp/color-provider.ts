@@ -1,5 +1,5 @@
 import { type editor, languages, type CancellationToken } from '@private/monaco-editor';
-import { Provider } from './worker-helper';
+import { Provider } from './worker-helper.js';
 import { DiagnosticCode } from '@mirascript/wasm';
 
 const REG_COLOR_STR = /^(@*)(['"`])(#(?:[0-9a-f]{6}|[0-9a-f]{3}|[0-9a-f]{8}|[0-9a-f]{4}))\2\1$/iu;
@@ -71,7 +71,7 @@ function parseColorString(text: string):
 }
 
 /** @inheritdoc */
-class ColorProvider extends Provider implements languages.DocumentColorProvider {
+export class ColorProvider extends Provider implements languages.DocumentColorProvider {
     /** @inheritdoc */
     async provideDocumentColors(
         model: editor.ITextModel,
@@ -127,5 +127,3 @@ class ColorProvider extends Provider implements languages.DocumentColorProvider 
         ];
     }
 }
-
-languages.registerColorProvider('mirascript', new ColorProvider());

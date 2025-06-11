@@ -3,7 +3,7 @@ import { Provider } from './worker-helper';
 import { DiagnosticCode } from '@mirascript/wasm';
 
 /** @inheritdoc */
-class InlayHintsProvider extends Provider implements languages.InlayHintsProvider {
+export class InlayHintsProvider extends Provider implements languages.InlayHintsProvider {
     /** @inheritdoc */
     get onDidChangeInlayHints(): IEvent<void> | undefined {
         return this.onDidChange;
@@ -119,5 +119,3 @@ class InlayHintsProvider extends Provider implements languages.InlayHintsProvide
         };
     }
 }
-
-languages.registerInlayHintsProvider('mirascript', new InlayHintsProvider());

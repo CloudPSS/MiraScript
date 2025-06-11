@@ -1,22 +1,29 @@
 import type { Exports, Host } from './worker.js';
 import { utils, editor, Uri, Emitter, type IEvent } from '@private/monaco-editor';
 import { CompileResult } from './compile-result.js';
+import type { Monaco } from '../index.js';
+import type { ParseMode } from 'mirascript';
+import { setMarkers } from './diagnostics.js';
 
 /** 提供编辑器 LSP 支持 */
-export class Provider {
+export abstract class Provider {
     private static readonly pendingRequests: Array<{
         uri: string;
+        mode: ParseMode;
         version: number;
         resolve: (result: CompileResult | undefined) => void;
     }> = [];
     /** 写入编译结果 */
     static updateCompileResult(
         uri: string,
+        mode: ParseMode,
         version: number,
         diagnosticsBuffer: ArrayBuffer,
         chunkBuffer?: ArrayBuffer,
     ): void {
-        const result = CompileResult.set(uri, version, diagnosticsBuffer, chunkBuffer);
+        const result = CompileResult.set(uri, mode, version, diagnosticsBuffer, chunkBuffer);
+        const model = editor.getModel(Uri.parse(uri));
+        if (model) setMarkers(model, result);
         // 处理挂起的请求
         for (let i = Provider.pendingRequests.length - 1; i >= 0; i--) {
             const request = Provider.pendingRequests[i]!;
@@ -37,12 +44,13 @@ export class Provider {
         }
         return new Promise((resolve) => {
             const uri = model.uri.toString();
+            const mode = model.getLanguageId() === 'mirascript-template' ? 'template' : 'script';
             const version = currentVersion ? model.getVersionId() : undefined;
-            const result = CompileResult.get(uri, version);
+            const result = CompileResult.get(uri, mode, version);
             if (result) {
                 return resolve(result);
             }
-            void callWorker('compileScript', model.uri).catch((ex) => {
+            void callWorker(mode === 'template' ? 'compileTemplate' : 'compileScript', model.uri).catch((ex) => {
                 // eslint-disable-next-line no-console
                 console.error(ex);
             });
@@ -51,11 +59,14 @@ export class Provider {
             }, 10000);
             Provider.pendingRequests.push({
                 uri,
+                mode,
                 version: version ?? model.getVersionId(),
                 resolve,
             });
         });
     }
+
+    constructor(protected readonly monaco: Monaco) {}
     readonly displayName = 'MiraScript LSP';
     private readonly _onDidChange = new Emitter<this>();
     /** @inheritdoc */
@@ -77,8 +88,8 @@ const monacoWorker = editor.createWebWorker({
     moduleId: '@mirascript/lsp-server',
     createData: {},
     host: {
-        updateCompileResult: (uri, version, diagnosticsBuffer, chunkBuffer) => {
-            Provider.updateCompileResult(uri, version, diagnosticsBuffer, chunkBuffer);
+        updateCompileResult: (uri, mode, version, diagnosticsBuffer, chunkBuffer) => {
+            Provider.updateCompileResult(uri, mode, version, diagnosticsBuffer, chunkBuffer);
         },
     } satisfies Host,
 });

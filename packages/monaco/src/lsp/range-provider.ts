@@ -2,7 +2,10 @@ import { type CancellationToken, type editor, languages, type Position, Range } 
 import { Provider } from './worker-helper';
 
 /** @inheritdoc */
-class RangeProvider extends Provider implements languages.FoldingRangeProvider, languages.SelectionRangeProvider {
+export class RangeProvider
+    extends Provider
+    implements languages.FoldingRangeProvider, languages.SelectionRangeProvider
+{
     /** @inheritdoc */
     async provideFoldingRanges(
         model: editor.ITextModel,
@@ -32,7 +35,3 @@ class RangeProvider extends Provider implements languages.FoldingRangeProvider, 
         });
     }
 }
-
-const instance = new RangeProvider();
-languages.registerSelectionRangeProvider('mirascript', instance);
-languages.registerFoldingRangeProvider('mirascript', instance);

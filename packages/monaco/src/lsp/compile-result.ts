@@ -1,6 +1,7 @@
 import { type editor, Range, type IRange, type IPosition } from '@private/monaco-editor';
 import { DiagnosticCode } from '@mirascript/wasm';
-import { strictInRange } from './utils';
+import { strictInRange } from './utils.js';
+import type { ParseMode } from 'mirascript';
 
 /** 源代码诊断信息 */
 interface SourceDiagnosticBase<T extends DiagnosticCode = DiagnosticCode> {
@@ -93,22 +94,38 @@ const compileResult = new Map<string, CompileResult>();
 /** 编译结果 */
 export class CompileResult {
     /** 获取编译结果 */
-    static get(uri: string, version?: number): CompileResult | undefined {
+    static get(uri: string, mode: ParseMode, version?: number): CompileResult | undefined {
         const data = compileResult.get(uri);
-        if (data && version != null) {
-            return data.version === version ? data : undefined;
+        if (data) {
+            if (version != null && data.version !== version) {
+                return undefined;
+            }
+            if (data.mode !== mode) {
+                return undefined;
+            }
+            return data;
         }
         return data;
     }
     /** 写入编译结果 */
-    static set(uri: string, version: number, diagnosticsBuffer: ArrayBuffer, chunkBuffer?: ArrayBuffer): CompileResult {
+    static set(
+        uri: string,
+        mode: ParseMode,
+        version: number,
+        diagnosticsBuffer: ArrayBuffer,
+        chunkBuffer?: ArrayBuffer,
+    ): CompileResult {
         const diagnostics = new Uint32Array(diagnosticsBuffer);
         const chunk = chunkBuffer ? new Uint8Array(chunkBuffer) : undefined;
-        const result = new CompileResult(version, diagnostics, chunk);
+        const result = new CompileResult(uri, mode, version, diagnostics, chunk);
         compileResult.set(uri, result);
         return result;
     }
     constructor(
+        /** URI */
+        readonly uri: string,
+        /** 解析模式 */
+        readonly mode: ParseMode,
         /** 代码版本 */
         readonly version: number,
         /** 源代码诊断信息 */

@@ -7,9 +7,14 @@ export interface GenerateOptions {
     /** 是否美化代码 */
     readonly pretty?: boolean;
 }
+/** 代码解析选项 */
+export interface ParseOptions {
+    /** 解析模式 */
+    readonly mode?: ParseMode;
+}
 
 /** 转换选项 */
-export type TranspileOptions = GenerateOptions & CompileOptions;
+export type TranspileOptions = GenerateOptions & CompileOptions & ParseOptions;
 
 /** 解析模式 */
 export type ParseMode = 'script' | 'template';

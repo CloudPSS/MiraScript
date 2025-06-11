@@ -1,4 +1,4 @@
-import type { ParseMode, ScriptInput, TranspileOptions } from './types';
+import type { ScriptInput, TranspileOptions } from './types';
 import { emit } from './emit';
 import { compileBytecode } from './compile-bytecode';
 
@@ -7,10 +7,9 @@ import { compileBytecode } from './compile-bytecode';
  */
 export async function compile(
     code: ScriptInput,
-    mode: ParseMode,
     options: TranspileOptions,
 ): Promise<[Uint8Array, string | undefined, Uint32Array]> {
-    const [codeBuf, bytecode, errors] = await compileBytecode(code, mode, options);
+    const [codeBuf, bytecode, errors] = await compileBytecode(code, options);
     if (bytecode == null) {
         return [codeBuf, undefined, errors];
     }

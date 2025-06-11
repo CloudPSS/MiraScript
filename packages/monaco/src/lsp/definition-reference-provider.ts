@@ -30,7 +30,7 @@ const prepareGlobal = (name: string): { uri: Uri; range: IRange } => {
 /**
  * 转到定义/引用
  */
-class DefinitionReferenceProvider
+export class DefinitionReferenceProvider
     extends Provider
     implements languages.DefinitionProvider, languages.ReferenceProvider
 {
@@ -89,7 +89,3 @@ class DefinitionReferenceProvider
         return links;
     }
 }
-
-const instance = new DefinitionReferenceProvider();
-languages.registerDefinitionProvider('mirascript', instance);
-languages.registerReferenceProvider('mirascript', instance);

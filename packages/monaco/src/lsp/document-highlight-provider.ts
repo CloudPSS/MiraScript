@@ -3,7 +3,7 @@ import { Provider } from './worker-helper.js';
 import { DiagnosticCode } from '@mirascript/wasm';
 
 /** @inheritdoc */
-class DocumentHighlightProvider extends Provider implements languages.DocumentHighlightProvider {
+export class DocumentHighlightProvider extends Provider implements languages.DocumentHighlightProvider {
     /** @inheritdoc */
     async provideDocumentHighlights(
         model: editor.ITextModel,
@@ -37,4 +37,3 @@ class DocumentHighlightProvider extends Provider implements languages.DocumentHi
         return links;
     }
 }
-languages.registerDocumentHighlightProvider('mirascript', new DocumentHighlightProvider());
