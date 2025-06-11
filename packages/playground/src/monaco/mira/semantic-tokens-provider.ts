@@ -1,8 +1,8 @@
 import { type CancellationToken, type editor, languages } from '@private/monaco-editor';
 import { Provider } from './worker-helper';
-import { DiagnosticCode } from 'mira-wasm';
-import { VmSharedGlobal } from '../../vm/types/global.js';
-import { isVmFunction } from '../../vm';
+import { DiagnosticCode } from '@mirascript/wasm';
+import { VmSharedGlobal } from 'mirascript/subtle';
+import { isVmFunction } from 'mirascript';
 import { ParameterType } from './compile-result';
 
 /** @inheritdoc */

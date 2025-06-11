@@ -1,8 +1,18 @@
 [package]
-name = "mira-wasm"
+name = "wasm"
+description = "MiraScript compiler for WebAssembly"
 version = "0.1.0"
 edition = "2024"
 publish = false
+
+[package.metadata.wasm-pack.profile.dev.wasm-bindgen]
+dwarf-debug-info = true
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = ["-O4"]
+
+[package.metadata.wasm-pack.profile.profiling]
+wasm-opt = ["-O4"]
 
 [lib]
 crate-type = ["cdylib", "rlib"]

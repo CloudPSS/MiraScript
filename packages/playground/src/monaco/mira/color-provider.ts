@@ -1,6 +1,6 @@
 import { type editor, languages, type CancellationToken } from '@private/monaco-editor';
 import { Provider } from './worker-helper';
-import { DiagnosticCode } from 'mira-wasm';
+import { DiagnosticCode } from '@mirascript/wasm';
 
 const REG_COLOR_STR = /^(@*)(['"`])(#(?:[0-9a-f]{6}|[0-9a-f]{3}|[0-9a-f]{8}|[0-9a-f]{4}))\2\1$/iu;
 

@@ -8,10 +8,10 @@ import {
     type IRange,
 } from '@private/monaco-editor';
 import { Provider } from './worker-helper';
-import { VmSharedGlobal } from '../../vm/types/global.js';
+import { VmSharedGlobal } from 'mirascript/subtle';
 import { codeblock, getGlobal, paramsList } from './utils';
-import { DiagnosticCode, keywords, reserved_keywords } from 'mira-wasm';
-import { getVmFunctionInfo } from '../../vm';
+import { DiagnosticCode, keywords, reserved_keywords } from '@mirascript/wasm';
+import { getVmFunctionInfo } from 'mirascript';
 
 const DESC_GLOBAL = '(global)';
 const DESC_LOCAL = '(local)';

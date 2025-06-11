@@ -1,0 +1,22 @@
+{
+  "name": "mirascript",
+  "private": true,
+  "type": "module",
+  "description": "An expression based scripting language.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./subtle": "./dist/subtle.js"
+  },
+  "scripts": {
+    "build": "tsc --emitDeclarationOnly && node ./esbuild.config.js"
+  },
+  "dependencies": {
+    "@mirascript/wasm": "workspace:*"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.5",
+    "type-fest": "^4.41.0"
+  }
+}

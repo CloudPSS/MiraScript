@@ -1,9 +1,6 @@
 /* eslint-disable no-console */
 import * as monaco from './monaco';
-import { type VmAny, VmExtern, createVmGlobal, isVmExtern, isVmModule } from './vm/index.js';
-import { $ToString } from './vm/operations.js';
-import { transpile } from './transpiler';
-import { serialize } from './helpers/serialize';
+import { type VmAny, VmExtern, createVmGlobal, isVmExtern, isVmModule, transpile, serialize } from 'mirascript';
 
 const value =
     localStorage.getItem('source') ||
@@ -158,7 +155,7 @@ function print(value: VmAny | Error): string {
     if (value === undefined) return '<uninitialized>';
     if (value instanceof Error) return value.toString();
     if (isVmExtern(value) || isVmModule(value) || typeof value == 'function') {
-        return $ToString(value);
+        return String(value);
     }
     return serialize(value);
 }

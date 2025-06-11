@@ -6,7 +6,7 @@ import {
     type Position,
     Range,
 } from '@private/monaco-editor';
-import { DiagnosticCode } from 'mira-wasm';
+import { DiagnosticCode } from '@mirascript/wasm';
 import { Provider } from './worker-helper';
 import type { CompileResult } from './compile-result';
 

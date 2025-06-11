@@ -1,6 +1,6 @@
-import * as wasm from 'mira-wasm';
+import * as wasm from '@mirascript/wasm';
 import { initialize, type Uri, type worker } from '@private/monaco-editor/worker';
-import { toCompileFlags } from '../../transpiler/options.js';
+import { toCompileFlags } from 'mirascript/subtle';
 
 /** Host functions */
 export interface Host {
@@ -14,7 +14,13 @@ initialize((ctx: worker.IWorkerContext<Host>) => {
 });
 let context: worker.IWorkerContext<Host>;
 
-export { keywords, control_keywords, constant_keywords, numeric_keywords, get_diagnostic_message } from 'mira-wasm';
+export {
+    keywords,
+    control_keywords,
+    constant_keywords,
+    numeric_keywords,
+    get_diagnostic_message,
+} from '@mirascript/wasm';
 
 let compileCache: [uri: string, version: number, promise: Promise<void>] = ['', Number.NaN, Promise.resolve()];
 /** 编译 */

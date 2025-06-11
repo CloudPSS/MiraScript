@@ -1,6 +1,6 @@
 import { type CancellationToken, type editor, languages, Range } from '@private/monaco-editor';
 import { Provider } from './worker-helper';
-import { DiagnosticCode } from 'mira-wasm';
+import { DiagnosticCode } from '@mirascript/wasm';
 import type { SourceScope } from './compile-result';
 
 /** @inheritdoc */

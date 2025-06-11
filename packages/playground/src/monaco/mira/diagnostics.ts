@@ -1,6 +1,6 @@
 import { editor, MarkerSeverity, MarkerTag, Uri, type IDisposable } from '@private/monaco-editor';
 import { callWorker, Provider } from './worker-helper.js';
-import { DiagnosticCode } from 'mira-wasm';
+import { DiagnosticCode } from '@mirascript/wasm';
 import type { SourceDiagnostic } from './compile-result.js';
 
 const diagnosticMessages = new Map<DiagnosticCode, Promise<string | undefined>>();

@@ -1,5 +1,5 @@
 import { type editor, Range, type IRange, type IPosition } from '@private/monaco-editor';
-import { DiagnosticCode } from 'mira-wasm';
+import { DiagnosticCode } from '@mirascript/wasm';
 import { strictInRange } from './utils';
 
 /** 源代码诊断信息 */

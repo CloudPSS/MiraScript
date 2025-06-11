@@ -1,9 +1,7 @@
-import { DiagnosticCode } from 'mira-wasm';
+import { DiagnosticCode } from '@mirascript/wasm';
 import { type editor, Range, type IPosition, type IRange } from '@private/monaco-editor';
-import type { VmFunctionInfo } from '../../vm/types/function';
-import { VmSharedGlobal } from '../../vm/types/global.js';
-import { getVmFunctionInfo, isVmModule, type VmImmutable } from '../../vm/index.js';
-import { serialize } from '../../helpers/serialize.js';
+import { VmSharedGlobal } from 'mirascript/subtle';
+import { getVmFunctionInfo, isVmModule, type VmImmutable, serialize, type VmFunctionInfo } from 'mirascript';
 import type { LocalDefinition } from './compile-result';
 
 /** 生成函数签名 */

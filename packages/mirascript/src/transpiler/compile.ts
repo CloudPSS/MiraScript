@@ -1,6 +1,6 @@
 import { toCompileFlags, type CompileOptions } from './options.js';
 
-let loadModule: Promise<typeof import('mira-wasm')> | undefined;
+let loadModule: Promise<typeof import('@mirascript/wasm')> | undefined;
 
 const textEncoder = new TextEncoder();
 
@@ -11,7 +11,7 @@ export async function compile(
     code: string,
     options: CompileOptions,
 ): Promise<[Uint8Array, Uint8Array | undefined, Uint32Array]> {
-    loadModule ??= import('mira-wasm');
+    loadModule ??= import('@mirascript/wasm');
     let compile_script, CompileFlag;
     try {
         ({ compile_script, CompileFlag } = await loadModule);

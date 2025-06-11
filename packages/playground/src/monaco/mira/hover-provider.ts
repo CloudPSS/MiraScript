@@ -7,7 +7,7 @@ import {
     type Position,
 } from '@private/monaco-editor';
 import { Provider } from './worker-helper';
-import { DiagnosticCode } from 'mira-wasm';
+import { DiagnosticCode } from '@mirascript/wasm';
 import { codeblock, getGlobal, paramsList } from './utils';
 import type { LocalDefinition } from './compile-result';
 

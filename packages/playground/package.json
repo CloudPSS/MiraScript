@@ -8,7 +8,8 @@
   },
   "dependencies": {
     "@private/monaco-editor": "^0.0.25",
-    "mira-wasm": "workspace:*"
+    "mirascript": "workspace:*",
+    "@mirascript/wasm": "workspace:*"
   },
   "devDependencies": {
     "type-fest": "^4.41.0",

@@ -1,6 +1,6 @@
 import { type CancellationToken, type editor, languages, type Position, Range } from '@private/monaco-editor';
 import { Provider } from './worker-helper';
-import { DiagnosticCode } from 'mira-wasm';
+import { DiagnosticCode } from '@mirascript/wasm';
 
 /** @inheritdoc */
 class DocumentHighlightProvider extends Provider implements languages.DocumentHighlightProvider {

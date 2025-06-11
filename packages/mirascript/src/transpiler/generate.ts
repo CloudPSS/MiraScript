@@ -1,4 +1,4 @@
-import { OpCode } from 'mira-wasm';
+import { OpCode } from '@mirascript/wasm';
 import type { VmConst, VmPrimitive } from '../vm';
 import type { GenerateOptions } from './options';
 

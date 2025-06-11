@@ -1,4 +1,4 @@
-import type { CompileFlag } from 'mira-wasm';
+import type { CompileFlag } from '@mirascript/wasm';
 
 /** 代码编译选项 */
 export type CompileOptions = Readonly<Partial<Record<Exclude<keyof typeof CompileFlag, 'MAX'>, boolean>>>;

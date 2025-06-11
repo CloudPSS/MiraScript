@@ -1,6 +1,6 @@
 import { type CancellationToken, type editor, type IEvent, languages, Range } from '@private/monaco-editor';
 import { Provider } from './worker-helper';
-import { DiagnosticCode } from 'mira-wasm';
+import { DiagnosticCode } from '@mirascript/wasm';
 
 /** @inheritdoc */
 class InlayHintsProvider extends Provider implements languages.InlayHintsProvider {

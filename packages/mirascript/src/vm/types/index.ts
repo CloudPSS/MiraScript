@@ -88,7 +88,14 @@ export function isVmExtern(value: unknown): value is VmExtern {
     return value instanceof VmExtern;
 }
 
-export { VmFunction, isVmFunction, getVmFunctionInfo } from './function.js';
+export {
+    VmFunction,
+    isVmFunction,
+    getVmFunctionInfo,
+    type VmFunctionInfo,
+    type VmFunctionLike,
+    type VmFunctionOption,
+} from './function.js';
 
 export { VmModule } from './module.js';
 
