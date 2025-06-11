@@ -41,6 +41,10 @@ pub enum DiagnosticCode {
     UnterminatedString,
     #[strum(message = "Invalid escape sequence in string")]
     InvalidEscapeSequence,
+    #[strum(message = "The value of hex escape sequence is not a valid ASCII character")]
+    InvalidHexEscapeSequence,
+    #[strum(message = "The value of Unicode escape sequence is not a valid Unicode code point")]
+    InvalidUnicodeEscapeSequence,
     #[strum(message = "An expression is expected after `..`")]
     BadArraySpread,
     #[strum(message = "Interpolation expression is not terminated")]

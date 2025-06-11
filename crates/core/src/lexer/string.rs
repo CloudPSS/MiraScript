@@ -22,7 +22,7 @@ use super::{
 enum StringFragment<'s> {
     Literal(&'s str),
     EscapedChar(char),
-    InvalidEscapedChar(SourceRange),
+    InvalidEscapedChar(SourceRange, DiagnosticCode),
     Interpolation(Vec<Token<'s>>),
     EndOfString,
     EndOfFile,
@@ -72,16 +72,13 @@ pub(super) fn string_content<'s>(
             .iter()
             .any(|frag| matches!(frag, StringFragment::Interpolation(_)));
 
-        let mut extract_invalid = |mut range: SourceRange| {
+        let mut extract_invalid = |mut range: SourceRange, code: DiagnosticCode| {
             let cp = i.checkpoint();
             i.reset_to_start();
             let s = &i[range.clone()];
             i.reset(&cp);
             range.start -= 1;
-            errors.push(SourceDiagnostic::new(
-                range,
-                DiagnosticCode::InvalidEscapeSequence,
-            ));
+            errors.push(SourceDiagnostic::new(range, code));
             Cow::Borrowed(s)
         };
         let token = if has_interpolation {
@@ -100,7 +97,7 @@ pub(super) fn string_content<'s>(
                 let s = match frag {
                     StringFragment::Literal(s) => Cow::Borrowed(s),
                     StringFragment::EscapedChar(ch) => Cow::Owned(ch.to_string()),
-                    StringFragment::InvalidEscapedChar(r) => extract_invalid(r),
+                    StringFragment::InvalidEscapedChar(r, c) => extract_invalid(r, c),
                     _ => unreachable!(),
                 };
                 if literal_pushed {
@@ -120,8 +117,8 @@ pub(super) fn string_content<'s>(
                 match frag {
                     StringFragment::Literal(s) => str.push_str(s),
                     StringFragment::EscapedChar(ch) => str.push(ch),
-                    StringFragment::InvalidEscapedChar(r) => {
-                        let s = extract_invalid(r);
+                    StringFragment::InvalidEscapedChar(r, c) => {
+                        let s = extract_invalid(r, c);
                         str.push_str(&s);
                     }
                     _ => unreachable!(),
@@ -231,7 +228,9 @@ fn escaped_char_impl<'s>(i: &mut Input<'s>) -> ModalResult<StringFragment<'s>> {
             .with_span()
             .map(|((_, v), r)| match u8::from_str_radix(v, 16) {
                 Ok(ch) if ch <= 0x7f => StringFragment::EscapedChar(ch as char),
-                _ => StringFragment::InvalidEscapedChar(r),
+                _ => {
+                    StringFragment::InvalidEscapedChar(r, DiagnosticCode::InvalidHexEscapeSequence)
+                }
             }),
         ("u{", take_while(1.., AsChar::is_hex_digit), '}')
             .with_span()
@@ -240,12 +239,19 @@ fn escaped_char_impl<'s>(i: &mut Input<'s>) -> ModalResult<StringFragment<'s>> {
                     if let Some(c) = char::from_u32(ch) {
                         StringFragment::EscapedChar(c)
                     } else {
-                        StringFragment::InvalidEscapedChar(r)
+                        StringFragment::InvalidEscapedChar(
+                            r,
+                            DiagnosticCode::InvalidUnicodeEscapeSequence,
+                        )
                     }
                 }
-                Err(_) => StringFragment::InvalidEscapedChar(r),
+                Err(_) => StringFragment::InvalidEscapedChar(
+                    r,
+                    DiagnosticCode::InvalidUnicodeEscapeSequence,
+                ),
             }),
-        any.span().map(StringFragment::InvalidEscapedChar),
+        any.span()
+            .map(|r| StringFragment::InvalidEscapedChar(r, DiagnosticCode::InvalidEscapeSequence)),
         eof.value(StringFragment::EndOfFile),
     ))
     .parse_next(i)

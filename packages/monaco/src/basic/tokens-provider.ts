@@ -64,19 +64,7 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
             ],
             root_template: [['', '', '@string_verbatim.TEMPLATE_HAS_NO_CLOSE_SIGN.@']],
             common: [
-                [
-                    /(@identifier)(@whitespace*)(\??:)(?!:)/,
-                    [
-                        'support.type.property-name',
-                        '',
-                        {
-                            cases: {
-                                '\\?:': 'operator.question-colon',
-                                ':': 'operator.colon',
-                            },
-                        },
-                    ],
-                ],
+                [/(@identifier)(@whitespace*)(\??:)(?!:)/, ['support.type.property-name', '', 'delimiter']],
                 [
                     /(fn)(@whitespace+)(@identifier)(@whitespace*)($|[({])/,
                     [
@@ -95,7 +83,7 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                 [
                     /(\.)(@whitespace*)(\d+)/,
                     [
-                        'operator.dot',
+                        'delimiter',
                         '',
                         {
                             cases: {
@@ -107,9 +95,9 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                 ],
                 [
                     /(\.)(@whitespace*)(@identifier)(@whitespace*)(\()/,
-                    ['operator.dot', '', 'entity.name.function', '', '@brackets'],
+                    ['delimiter', '', 'entity.name.function', '', '@brackets'],
                 ],
-                [/(\.)(@whitespace*)(@identifier)/, ['operator.dot', '', 'variable']],
+                [/(\.)(@whitespace*)(@identifier)/, ['delimiter', '', 'variable']],
                 [
                     /(@identifier)(@whitespace*)(\()/,
                     [
@@ -122,7 +110,7 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                 ],
                 { include: '@whitespace' },
                 { include: '@string' },
-                { include: '@identifier' },
+                [/(@identifier)/, { cases: identifierCases() }],
                 [REG_OCT, 'number.octal'],
                 [REG_BIN, 'number.binary'],
                 [REG_HEX, 'number.hex'],
@@ -135,51 +123,8 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                         },
                     },
                 ],
-                { include: '@operator' },
+                [/[-+=/~?:;,.!@$%^&*<>]/, 'delimiter'],
                 [REG_ORDINAL, 'number.ordinal'],
-            ],
-            identifier: [[/(@identifier)/, { cases: identifierCases() }]],
-            operator: [
-                [/(!)(==)/, ['operator.exclamation', 'operator.equal-equal']],
-                [/(!)(::)/, ['operator.exclamation', 'operator.colon-colon']],
-                [/(!~=)/, 'operator.not-tilde-equal'],
-                [/(!=)/, 'operator.not-equal'],
-                [/(~=)/, 'operator.tilde-equal'],
-                [/(==)/, 'operator.equal-equal'],
-                [/(>=)/, 'operator.greater-equal'],
-                [/(<=)/, 'operator.less-equal'],
-                [/>/, 'operator.greater'],
-                [/</, 'operator.less'],
-                [/&&=/, 'operator.logical-and-equal'],
-                [/&&/, 'operator.logical-and'],
-                [/\|\|=/, 'operator.logical-or-equal'],
-                [/\|\|/, 'operator.logical-or'],
-                [/\?\?=/, 'operator.null-coalescing-equal'],
-                [/\?\?/, 'operator.null-coalescing'],
-                [/(\.\.<)/, 'operator.half-open-range'],
-                [/(\.\.)/, 'operator.spread-range'],
-                [/(\+=)/, 'operator.plus-equal'],
-                [/(\+)/, 'operator.plus'],
-                [/(-=)/, 'operator.minus-equal'],
-                [/(->)/, 'operator.arrow'],
-                [/(-)/, 'operator.minus'],
-                [/(\*=)/, 'operator.asterisk-equal'],
-                [/(\*)/, 'operator.asterisk'],
-                [/(\/=)/, 'operator.slash-equal'],
-                [/(\/)/, 'operator.slash'],
-                [/(%=)/, 'operator.percent-equal'],
-                [/(%)/, 'operator.percent'],
-                [/(\^=)/, 'operator.caret-equal'],
-                [/(\^)/, 'operator.caret'],
-                [/\?:/, 'delimiter.question-colon'],
-                [/::/, 'operator.colon-colon'],
-                [/!/, 'operator.exclamation'],
-                [/=/, 'operator.equal'],
-                [/\./, 'operator.dot'],
-                [/:/, 'delimiter.colon'],
-                [/,/, 'delimiter.comma'],
-                [/;/, 'delimiter.semicolon'],
-                [/[-+=/~?:;,.!@$%^&*]/, 'delimiter.unknown'],
             ],
             whitespace: [
                 [/(@whitespace)+/, ''],
@@ -270,11 +215,11 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                 [/fn/, 'keyword.fn.doc', '@fn_doc'],
                 [
                     /(\(parameter\))(@whitespace+)(..|)(mut)(@whitespace+)(@identifier)/,
-                    ['entity.name.label', '', 'operator.spread-range', 'keyword.mut', '', 'variable.emphasis'],
+                    ['entity.name.label', '', 'delimiter', 'keyword.mut', '', 'variable.emphasis'],
                 ],
                 [
                     /(\(parameter\))(@whitespace+)(..|)(@identifier)/,
-                    ['entity.name.label', '', 'operator.spread-range', 'variable.other.constant.emphasis'],
+                    ['entity.name.label', '', 'delimiter', 'variable.other.constant.emphasis'],
                 ],
                 [/(\(@identifier\))(@whitespace+)/, ['entity.name.label', '']],
                 [/(let|const)(@whitespace+)(@identifier)/, [{ token: 'keyword.$1' }, '', 'variable.other.constant']],
@@ -290,26 +235,26 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                 [
                     /(\.\.|)(@identifier)(\s*)(:|,|\))/,
                     [
-                        'operator.spread-range',
+                        'delimiter',
                         'variable.other.constant.emphasis.doc',
                         '',
                         {
                             cases: {
-                                ':': { token: 'operator.colon', next: '@type_doc' },
-                                ',': 'operator.comma',
+                                ':': { token: 'delimiter', next: '@type_doc' },
                                 '\\)': '@brackets',
+                                '@default': 'delimiter',
                             },
                         },
                     ],
                 ],
                 [/[()]/, '@brackets'],
-                [/(->)/, 'operator.arrow', '@type_doc'],
-                [/;/, 'operator.semicolon', '@pop'],
+                [/(->)/, 'delimiter', '@type_doc'],
+                [/;/, 'delimiter', '@pop'],
             ],
             type_doc: [
                 { include: '@type_doc_inner' },
-                [/,/, 'operator.comma', '@pop'],
-                [/;/, { token: 'operator.semicolon', next: '@pop', goBack: 1 }],
+                [/,/, 'delimiter', '@pop'],
+                [/;/, { token: 'delimiter', next: '@pop', goBack: 1 }],
             ],
             type_doc_inner: [
                 [/fn\b/, 'type', '@fn_doc'],
