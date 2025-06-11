@@ -65,6 +65,7 @@ export function toCompileFlags(options: CompileOptions): Uint8Array {
     const flags = new Uint8Array(Math.ceil(CompileFlag.MAX / 8));
     for (const [key, value] of Object.entries(options)) {
         if (!value) continue;
+        if (!(key in CompileFlag)) continue;
         const index = CompileFlag[key as keyof typeof CompileFlag];
         if (typeof index != 'number') continue;
         flags[Math.trunc(index / 8)]! |= 1 << index % 8;
