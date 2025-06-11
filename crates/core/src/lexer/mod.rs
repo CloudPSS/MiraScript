@@ -61,7 +61,7 @@ pub(crate) fn lex_balanced<'s, OP: PartialEq<TokenKind<'s>>, CP: PartialEq<Token
 }
 
 pub fn lex_string<'s>(input: &mut Input<'s>) -> ModalResult<Vec<Token<'s>>> {
-    let mut str = string::string_content(None, 0)
+    let mut str = string::string_content(None, 1)
         .with_span()
         .map(|(s, range)| Token {
             kind: s,
