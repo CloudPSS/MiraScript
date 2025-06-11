@@ -26,6 +26,6 @@
     "mirascript": "workspace:*"
   },
   "peerDependencies": {
-    "@private/monaco-editor": "^0.0.27"
+    "@private/monaco-editor": "^0.0.28"
   }
 }

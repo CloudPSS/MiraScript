@@ -1,4 +1,5 @@
 /* eslint-disable no-console */
+import './index.css';
 import * as monaco from '@private/monaco-editor';
 import { registerMiraScript } from '@mirascript/monaco';
 import {

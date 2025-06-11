@@ -62,7 +62,11 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                 [/[[\](){}]/, '@brackets'],
                 { include: '@common' },
             ],
-            root_template: [['', '', '@string_verbatim.TEMPLATE_HAS_NO_CLOSE_SIGN.@']],
+            root_template: [
+                [/[^$]+/, 'string'],
+                [/(?=\$)/, '', '@string_interpolation.$S3'],
+                [/[$]/, 'string'],
+            ],
             common: [
                 [/(@identifier)(@whitespace*)(\??:)(?!:)/, ['support.type.property-name', '', 'delimiter']],
                 [
@@ -196,7 +200,7 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                                     next: '@string_interpolation_expression',
                                 },
                             ],
-                            [new RegExp(`\\\${0,${dollarCount}}`, 'gu'), 'string', '@pop'],
+                            [`\\\${0,${dollarCount}}`, 'string', '@pop'],
                             ['', '', '@pop'],
                         ],
                     ];
