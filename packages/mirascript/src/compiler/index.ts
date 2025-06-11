@@ -1,8 +1,8 @@
 import type { VmScript } from '../vm/index.js';
 import type { TranspileOptions, ScriptInput } from './types.js';
-import { transpileCore } from './transpile.js';
+import { compile } from './compile.js';
 import { createScript } from './create-script.js';
-import { transpileFast } from './transpile-fast.js';
+import { compileScriptFast, compileTemplateFast } from './compile-fast.js';
 
 export type { TranspileOptions, ScriptInput };
 
@@ -31,13 +31,12 @@ async function getWorker(): Promise<Worker> {
 /**
  * 生成 MiraScript 对应的 JavaScript 代码
  */
-async function transpileWorker(
-    code: ScriptInput,
-    options: TranspileOptions,
+async function compileWorker(
+    ...args: Parameters<typeof compile>
 ): Promise<[Uint8Array, string | undefined, Uint32Array]> {
     const worker = await getWorker();
     const seq = Math.random();
-    worker.postMessage([seq, code, options]);
+    worker.postMessage([seq, ...args]);
     return await new Promise<[Uint8Array, string | undefined, Uint32Array]>((resolve, reject) => {
         const callback = (ev: MessageEvent) => {
             const data = ev.data as [number, Uint8Array, string | undefined, Uint32Array] | [number, undefined, string];
@@ -55,22 +54,39 @@ async function transpileWorker(
     });
 }
 
-const FAST_MAX_LEN = 32;
-
 /**
  * 生成 MiraScript 对应的 JavaScript 代码
  */
-export async function transpile(source: ScriptInput, options: TranspileOptions = {}): Promise<VmScript> {
-    if (typeof source == 'string' && source.length < FAST_MAX_LEN) {
-        const result = transpileFast(source, options);
+async function compileImpl(...args: Parameters<typeof compile>): Promise<VmScript> {
+    const [_, code, errors] = args[0].length < WORKER_MIN_LEN ? await compile(...args) : await compileWorker(...args);
+    if (!code) {
+        throw new Error(`Failed to compile ${args[1]}: ${errors.join(', ')}`);
+    }
+    return createScript(args[0], code);
+}
+
+/**
+ * 生成 MiraScript 脚本对应的 JavaScript 代码
+ */
+export async function compileScript(source: ScriptInput, options: TranspileOptions = {}): Promise<VmScript> {
+    if (typeof source == 'string') {
+        const result = compileScriptFast(source, options);
         if (result) {
             return result;
         }
     }
-    const [_, code, errors] =
-        source.length < WORKER_MIN_LEN ? await transpileCore(source, options) : await transpileWorker(source, options);
-    if (!code) {
-        throw new Error(`Failed to transpile code: ${errors.join(', ')}`);
+    return compileImpl(source, 'script', options);
+}
+
+/**
+ * 生成 MiraScript 模板对应的 JavaScript 代码
+ */
+export async function compileTemplate(source: ScriptInput, options: TranspileOptions = {}): Promise<VmScript> {
+    if (typeof source == 'string') {
+        const result = compileTemplateFast(source, options);
+        if (result) {
+            return result;
+        }
     }
-    return createScript(source, code);
+    return compileImpl(source, 'template', options);
 }

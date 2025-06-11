@@ -1,5 +1,5 @@
 import { type CancellationToken, type editor, languages, type Position, Range } from '@private/monaco-editor';
-import { Provider } from './worker-helper';
+import { Provider } from './worker-helper.js';
 import { DiagnosticCode } from '@mirascript/wasm';
 
 /** @inheritdoc */

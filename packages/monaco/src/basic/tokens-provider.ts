@@ -1,4 +1,4 @@
-import { languages } from '@private/monaco-editor';
+import type { languages } from '@private/monaco-editor';
 import {
     REG_WHITESPACE,
     REG_ORDINAL,
@@ -13,7 +13,8 @@ import {
     controlKeywords,
     keywords,
     numericKeywords,
-} from './constants';
+} from '../constants';
+import type { Monaco, IDisposable } from '../index.js';
 
 /** 匹配 identifier */
 function identifierCases(
@@ -32,7 +33,7 @@ function identifierCases(
 }
 
 /** 生成 TokensProvider */
-function getTokensProvider(): languages.IMonarchLanguage {
+function getTokensProvider(mode: string): languages.IMonarchLanguage {
     return {
         ignoreCase: false,
         unicode: true,
@@ -53,12 +54,15 @@ function getTokensProvider(): languages.IMonarchLanguage {
         constantKeywords: constantKeywords(),
         numericKeywords: numericKeywords(),
 
+        start: mode === 'template' ? 'root_template' : 'root',
+        tokenPostfix: '.mirascript',
         tokenizer: {
             root: [
                 [/\0|\/\*\*@docHeader\*\*\/$/, 'comment.doc', '@doc_mode'],
                 [/[[\](){}]/, '@brackets'],
                 { include: '@common' },
             ],
+            root_template: [['', '', '@string_verbatim.TEMPLATE_HAS_NO_CLOSE_SIGN.@']],
             common: [
                 [
                     /(@identifier)(@whitespace*)(\??:)(?!:)/,
@@ -189,7 +193,10 @@ function getTokensProvider(): languages.IMonarchLanguage {
             ],
             string: [
                 [/["'`]/, { token: 'string.quote.open', next: '@string_normal.$#', bracket: '@open' }],
-                [/(@+)(["'`])/, { token: 'string.quote.open.raw', next: '@string_verbatim.$#.$1', bracket: '@open' }],
+                [
+                    /(@+)(["'`])/,
+                    { token: 'string.quote.open.$2$1.raw', next: '@string_verbatim.$2$1.$1', bracket: '@open' },
+                ],
             ],
             string_normal: [
                 [/[^'"`\\$]+/, 'string'],
@@ -212,7 +219,7 @@ function getTokensProvider(): languages.IMonarchLanguage {
                     /(['"`]@+)/,
                     {
                         cases: {
-                            $S2: { token: 'string.quote.close.raw', next: '@pop', bracket: '@close' },
+                            '$S2==$#': { token: 'string.quote.close.raw.$#', next: '@pop', bracket: '@close' },
                             '@default': 'string',
                         },
                     },
@@ -320,4 +327,10 @@ function getTokensProvider(): languages.IMonarchLanguage {
     };
 }
 
-languages.setMonarchTokensProvider('mirascript', getTokensProvider());
+/** 注册 Mirascript 的 TokensProvider */
+export function registerMiraScriptTokensProvider(monaco: Monaco): IDisposable[] {
+    return [
+        monaco.languages.setMonarchTokensProvider('mirascript', getTokensProvider('script')),
+        monaco.languages.setMonarchTokensProvider('mirascript-template', getTokensProvider('template')),
+    ];
+}

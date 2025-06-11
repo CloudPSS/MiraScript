@@ -1,7 +1,26 @@
 /* eslint-disable no-console */
 import * as monaco from '@private/monaco-editor';
-import '@mirascript/monaco';
-import { type VmAny, VmExtern, createVmGlobal, isVmExtern, isVmModule, transpile, serialize } from 'mirascript';
+import { registerMiraScript } from '@mirascript/monaco';
+import {
+    type VmAny,
+    VmExtern,
+    createVmGlobal,
+    isVmExtern,
+    isVmModule,
+    compileScript,
+    compileTemplate,
+    serialize,
+} from 'mirascript';
+import { KeyCode, KeyMod } from '@private/monaco-editor';
+registerMiraScript(monaco);
+
+let mode = localStorage.getItem('mode') || 'script';
+const createModel = (value: string) =>
+    monaco.editor.createModel(
+        value,
+        mode === 'template' ? 'mirascript-template' : 'mirascript',
+        monaco.Uri.parse(`file:///${mode}.mira`),
+    );
 
 const value =
     localStorage.getItem('source') ||
@@ -141,10 +160,22 @@ const editor = monaco.editor.create(elEditor, {
 
     theme: 'vs-dark',
     'semanticHighlighting.enabled': true,
-    model: monaco.editor.createModel(value, 'mirascript', monaco.Uri.parse('file:///main.mira')),
+    model: createModel(value),
 });
 editor.onDidDispose(() => overlay.dispose());
 setTimeout(() => {
+    editor.addAction({
+        id: 'SwitchMode',
+        label: 'Switch Mode',
+        keybindings: [KeyMod.CtrlCmd | KeyCode.KeyM],
+        run: () => {
+            mode = mode === 'script' ? 'template' : 'script';
+            localStorage.setItem('mode', mode);
+            const oldModel = editor.getModel();
+            editor.setModel(createModel(editor.getValue()));
+            oldModel?.dispose();
+        },
+    });
     editor.onDidChangeModelContent(() => {
         localStorage.setItem('source', editor.getValue());
     });
@@ -165,7 +196,7 @@ const elDisassembly = document.querySelector<HTMLDivElement>('#disassembly')!;
 elDisassembly.addEventListener('contextmenu', (e) => {
     e.preventDefault();
     console.time('transpile');
-    void transpile(editor.getValue(), { pretty: true })
+    void (mode === 'template' ? compileTemplate : compileScript)(editor.getValue(), { pretty: true })
         .finally(() => {
             console.timeEnd('transpile');
         })

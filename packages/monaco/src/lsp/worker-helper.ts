@@ -1,4 +1,4 @@
-import type { exports, Host } from './worker.js';
+import type { Exports, Host } from './worker.js';
 import { utils, editor, Uri, Emitter, type IEvent } from '@private/monaco-editor';
 import { CompileResult } from './compile-result.js';
 
@@ -84,14 +84,14 @@ const monacoWorker = editor.createWebWorker({
 });
 
 /** 调用 worker 方法 */
-export async function callWorker<const M extends keyof typeof exports>(
+export async function callWorker<const M extends keyof Exports>(
     method: M,
-    ...args: Parameters<(typeof exports)[M]>
-): Promise<ReturnType<(typeof exports)[M]>> {
+    ...args: Parameters<Exports[M]>
+): Promise<ReturnType<Exports[M]>> {
     const resources = args.filter((a: unknown) => a instanceof Uri);
     const passArgs = args.map((arg: unknown) => (arg instanceof Uri ? arg.toString() : arg));
     const proxy = resources.length ? await monacoWorker.withSyncedResources(resources) : await monacoWorker.getProxy();
-    return await ((proxy as typeof exports)[method as 'compileScript'](...(passArgs as [Uri])) as unknown as Promise<
-        ReturnType<(typeof exports)[M]>
+    return await ((proxy as Exports)[method as 'compileScript'](...(passArgs as [Uri])) as unknown as Promise<
+        ReturnType<Exports[M]>
     >);
 }

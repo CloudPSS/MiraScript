@@ -9,7 +9,7 @@ import {
 } from '@private/monaco-editor';
 import { Provider } from './worker-helper';
 import { getGlobal } from './utils';
-import { DOC_HEADER } from './constants';
+import { DOC_HEADER } from '../constants';
 
 const globalModel = editor.createModel(``, 'mirascript', Uri.parse('mirascript:///lib/global.mira'));
 const prepareGlobal = (name: string): { uri: Uri; range: IRange } => {

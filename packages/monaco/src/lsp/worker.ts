@@ -8,10 +8,13 @@ export interface Host {
     updateCompileResult(uri: string, version: number, diagnostics: ArrayBuffer, chunk: ArrayBuffer | undefined): void;
 }
 
-export const exports = {
+const exports = {
     compileScript: async (uri: Uri): Promise<void> => compileImpl(uri, wasm.compileScript),
     compileTemplate: async (uri: Uri): Promise<void> => compileImpl(uri, wasm.compileTemplate),
 };
+
+/** Exported functions */
+export type Exports = typeof exports;
 
 initialize((ctx: worker.IWorkerContext<Host>) => {
     context = ctx;

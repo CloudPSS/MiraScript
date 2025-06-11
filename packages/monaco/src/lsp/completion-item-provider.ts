@@ -10,7 +10,7 @@ import {
 import { Provider } from './worker-helper';
 import { VmSharedGlobal } from 'mirascript/subtle';
 import { codeblock, getGlobal, paramsList } from './utils';
-import { keywords, reservedKeywords } from './constants';
+import { keywords, reservedKeywords } from '../constants';
 import { getVmFunctionInfo, DiagnosticCode } from 'mirascript';
 
 const DESC_GLOBAL = '(global)';

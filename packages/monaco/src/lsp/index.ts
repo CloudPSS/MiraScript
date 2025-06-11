@@ -1,4 +1,5 @@
-import './loader-small.js';
+import type { Monaco, IDisposable } from '../index.js';
+import '../basic/index.js';
 
 import './code-action-provider.js';
 import './color-provider.js';
@@ -14,3 +15,8 @@ import './range-provider.js';
 import './rename-provider.js';
 import './semantic-tokens-provider.js';
 import './signature-help-provider.js';
+
+/** 注册 LSP 相关的 Monaco 编辑器功能 */
+export function registerLSP(monaco: Monaco): IDisposable[] {
+    return [];
+}

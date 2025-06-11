@@ -9,14 +9,17 @@
     ".": {
       "@mira/development": "./src/index.ts",
       "default": "./dist/index.js"
-    },
-    "./worker": {
-      "@mira/development": "./src/worker.ts",
-      "default": "./dist/worker.js"
+    }
+  },
+  "imports": {
+    "#lsp/worker": {
+      "@mira/development": "./src/lsp/worker.ts",
+      "default": "./dist/lsp/worker.js"
     }
   },
   "scripts": {
-    "build": "tsc && node ./esbuild.config.js"
+    "build": "tsc && node ./esbuild.config.js",
+    "clean": "rimraf dist"
   },
   "dependencies": {
     "@mirascript/wasm": "workspace:*",

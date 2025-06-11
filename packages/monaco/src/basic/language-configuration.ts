@@ -1,7 +1,8 @@
-import { languages } from '@private/monaco-editor';
-import { MAX_VERBATIM_LENGTH } from './constants.js';
+import type { Monaco, IDisposable } from '../index.js';
+import { MAX_VERBATIM_LENGTH } from '../constants.js';
+import type { languages } from '@private/monaco-editor';
 
-languages.setLanguageConfiguration('mirascript', {
+const configuration = ({ languages }: Monaco): languages.LanguageConfiguration => ({
     comments: {
         lineComment: '//',
         blockComment: ['/*', '*/'],
@@ -72,3 +73,11 @@ languages.setLanguageConfiguration('mirascript', {
         },
     },
 });
+
+/** 注册语言配置 */
+export function setLanguageConfiguration(monaco: Monaco): IDisposable[] {
+    return [
+        monaco.languages.setLanguageConfiguration('mirascript', configuration(monaco)),
+        monaco.languages.setLanguageConfiguration('mirascript-template', configuration(monaco)),
+    ];
+}

@@ -3,8 +3,8 @@ import type { VmConst, VmPrimitive } from '../vm';
 import type { GenerateOptions } from './types';
 
 /** 生成代码 */
-export function generate(chunk: Uint8Array, options: GenerateOptions): string {
-    const gen = new CodeGenerator(chunk, options);
+export function emit(chunk: Uint8Array, options: GenerateOptions): string {
+    const gen = new Emitter(chunk, options);
     gen.read();
     const code = options.pretty ? gen.codeLines.join('\n') : gen.codeLines.join('');
     return code;
@@ -46,7 +46,7 @@ function toJavascript(value: VmConst | undefined): string {
 }
 
 /** 代码生成 */
-class CodeGenerator {
+class Emitter {
     constructor(
         readonly chunk: Uint8Array,
         readonly options: GenerateOptions,

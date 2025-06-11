@@ -1,11 +1,11 @@
-import { transpileCore } from './transpile.js';
+import { compile } from './compile.js';
 
 addEventListener('message', (ev) => {
-    const data = ev.data as [number, ...Parameters<typeof transpileCore>];
+    const data = ev.data as [number, ...Parameters<typeof compile>];
     if (!Array.isArray(data)) return;
-    const [seq, code, options] = data;
+    const [seq, ...args] = data;
     if (typeof seq != 'number') return;
-    void transpileCore(code, options)
+    void compile(...args)
         .then(([buf, script, errors]) => {
             postMessage([seq, buf, script, errors], { transfer: [buf.buffer, errors.buffer] });
         })

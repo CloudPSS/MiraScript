@@ -11,6 +11,9 @@ export interface GenerateOptions {
 /** 转换选项 */
 export type TranspileOptions = GenerateOptions & CompileOptions;
 
+/** 解析模式 */
+export type ParseMode = 'script' | 'template';
+
 /**
  * 编译输入，支持字符串和 UTF-8 字节数组
  */
