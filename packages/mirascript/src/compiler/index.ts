@@ -14,7 +14,10 @@ let worker: Promise<Worker> | undefined;
 async function getWorker(): Promise<Worker> {
     if (worker) return worker;
     worker = new Promise((resolve, reject) => {
-        const w = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module', name: '@mirascript/compiler' });
+        const w = new Worker(new URL('#compiler/worker', import.meta.url), {
+            type: 'module',
+            name: '@mirascript/compiler',
+        });
         w.addEventListener('error', reject);
         w.addEventListener('message', (msg) => {
             if (msg.data === 'ready') {

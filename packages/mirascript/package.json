@@ -15,8 +15,15 @@
       "default": "./dist/subtle.js"
     }
   },
+  "imports": {
+    "#compiler/worker": {
+      "@mira/development": "./src/compiler/worker.ts",
+      "default": "./dist/compiler/worker.js"
+    }
+  },
   "scripts": {
-    "build": "tsc && node ./esbuild.config.js"
+    "build": "tsc && node ./esbuild.config.js",
+    "clean": "rimraf dist"
   },
   "dependencies": {
     "@mirascript/wasm": "workspace:*"

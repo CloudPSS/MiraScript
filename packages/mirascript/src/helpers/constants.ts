@@ -6,4 +6,4 @@ export const REG_BIN = /0[bB][01_]*[01]/u;
 export const REG_ORDINAL =
     /(?:0|[1-9]\d{0,8}|1\d{9}|20\d{8}|21[0-3]\d{7}|214[0-6]\d{6}|2147[0-3]\d{5}|21474[0-7]\d{4}|214748[0-2]\d{3}|2147483[0-5]\d{2}|21474836[0-3]\d|214748364[0-7])/u;
 
-export { keywords, constantKeywords, numericKeywords, controlKeywords, reservedKeywords } from '../transpiler/utils.js';
+export { keywords, constantKeywords, numericKeywords, controlKeywords, reservedKeywords } from '../compiler/utils.js';
