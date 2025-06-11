@@ -10,8 +10,8 @@ import {
 import { Provider } from './worker-helper';
 import { VmSharedGlobal } from 'mirascript/subtle';
 import { codeblock, getGlobal, paramsList } from './utils';
-import { DiagnosticCode, keywords, reserved_keywords } from '@mirascript/wasm';
-import { getVmFunctionInfo } from 'mirascript';
+import { keywords, reservedKeywords } from './constants';
+import { getVmFunctionInfo, DiagnosticCode } from 'mirascript';
 
 const DESC_GLOBAL = '(global)';
 const DESC_LOCAL = '(local)';
@@ -78,7 +78,7 @@ const COMMON_GLOBAL_SUGGESTIONS: languages.CompletionItem[] = [
     },
 ];
 
-const reserved = reserved_keywords();
+const reserved = reservedKeywords();
 for (const kw of keywords()) {
     if (reserved.includes(kw)) continue; // 跳过保留关键字
     const exist = COMMON_GLOBAL_SUGGESTIONS.find(

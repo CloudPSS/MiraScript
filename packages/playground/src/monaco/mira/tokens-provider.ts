@@ -9,8 +9,11 @@ import {
     REG_IDENTIFIER,
     DOC_HEADER,
     MAX_VERBATIM_LENGTH,
+    constantKeywords,
+    controlKeywords,
+    keywords,
+    numericKeywords,
 } from './constants';
-import { callWorker } from './worker-helper.js';
 
 /** 匹配 identifier */
 function identifierCases(
@@ -29,7 +32,7 @@ function identifierCases(
 }
 
 /** 生成 TokensProvider */
-async function getTokensProvider(): Promise<languages.IMonarchLanguage> {
+function getTokensProvider(): languages.IMonarchLanguage {
     return {
         ignoreCase: false,
         unicode: true,
@@ -45,10 +48,10 @@ async function getTokensProvider(): Promise<languages.IMonarchLanguage> {
         identifier: REG_IDENTIFIER,
         docHeader: DOC_HEADER,
 
-        keywords: await callWorker('keywords'),
-        controlKeywords: await callWorker('control_keywords'),
-        constantKeywords: await callWorker('constant_keywords'),
-        numericKeywords: await callWorker('numeric_keywords'),
+        keywords: keywords(),
+        controlKeywords: controlKeywords(),
+        constantKeywords: constantKeywords(),
+        numericKeywords: numericKeywords(),
 
         tokenizer: {
             root: [
@@ -309,12 +312,11 @@ async function getTokensProvider(): Promise<languages.IMonarchLanguage> {
                 [/@identifier/, 'type'],
                 [/[[(]/, '@brackets', '@type_doc_inner'],
                 [/[\])]/, '@brackets', '@pop'],
+                [/[&|]/, 'delimiter'],
                 [/@whitespace+/, ''],
             ],
         },
     };
 }
 
-void getTokensProvider().then((tokensProvider) => {
-    languages.setMonarchTokensProvider('mirascript', tokensProvider);
-});
+languages.setMonarchTokensProvider('mirascript', getTokensProvider());

@@ -169,7 +169,7 @@ map.params = {
 };
 map.paramsType = {
     data: 'array | record | extern',
-    f: 'fn(value: any, key: number | string | nil, data: type(data)) -> any',
+    f: 'fn(value: any, key: number | string | nil, input: type(data)) -> any',
 };
 map.returnsType = 'type(data)';
 
@@ -186,7 +186,7 @@ filter.params = {
 };
 filter.paramsType = {
     data: 'array | record | extern',
-    predicate: 'fn(value: any, key: number | string | nil, data: type(data)) -> boolean',
+    predicate: 'fn(value: any, key: number | string | nil, input: type(data)) -> boolean',
 };
 filter.returnsType = 'type(data)';
 
@@ -203,7 +203,7 @@ filter_map.params = {
 };
 filter_map.paramsType = {
     data: 'array | record | extern',
-    f: 'fn(value: any, key: number | string | nil, data: type(data)) -> any | nil',
+    f: 'fn(value: any, key: number | string | nil, data: input(data)) -> any | nil',
 };
 filter_map.returnsType = 'type(data)';
 

@@ -1,9 +1,9 @@
-import type { TranspileOptions } from './options.js';
+import type { TranspileOptions, ScriptInput } from './types.js';
 import type { VmScript } from '../vm/index.js';
 import { transpileCore } from './transpile.js';
 import { createScript } from './create-script.js';
 
-export type { TranspileOptions };
+export type { TranspileOptions, ScriptInput };
 
 // 目前编译速度约 200kB/s
 const WORKER_MIN_LEN = 1024;
@@ -28,7 +28,7 @@ async function getWorker(): Promise<Worker> {
  * 生成 MiraScript 对应的 JavaScript 代码
  */
 async function transpileWorker(
-    code: string,
+    code: ScriptInput,
     options: TranspileOptions,
 ): Promise<[Uint8Array, string | undefined, Uint32Array]> {
     const worker = await getWorker();
@@ -54,7 +54,7 @@ async function transpileWorker(
 /**
  * 生成 MiraScript 对应的 JavaScript 代码
  */
-export async function transpile(source: string, options: TranspileOptions = {}): Promise<VmScript> {
+export async function transpile(source: ScriptInput, options: TranspileOptions = {}): Promise<VmScript> {
     const [_, code, errors] =
         source.length < WORKER_MIN_LEN ? await transpileCore(source, options) : await transpileWorker(source, options);
     if (!code) {

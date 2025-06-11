@@ -1,6 +1,17 @@
 import { constants } from 'mirascript/subtle';
 
-export const { REG_IDENTIFIER, REG_HEX, REG_OCT, REG_BIN, REG_ORDINAL } = constants;
+export const {
+    REG_IDENTIFIER,
+    REG_HEX,
+    REG_OCT,
+    REG_BIN,
+    REG_ORDINAL,
+    constantKeywords,
+    controlKeywords,
+    keywords,
+    numericKeywords,
+    reservedKeywords,
+} = constants;
 
 export const REG_NUMBER = /(?<!\.\s*)\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/u;
 

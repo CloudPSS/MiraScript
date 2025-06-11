@@ -1,6 +1,6 @@
 import { OpCode } from '@mirascript/wasm';
 import type { VmConst, VmPrimitive } from '../vm';
-import type { GenerateOptions } from './options';
+import type { GenerateOptions } from './types';
 
 /** 生成代码 */
 export function generate(chunk: Uint8Array, options: GenerateOptions): string {

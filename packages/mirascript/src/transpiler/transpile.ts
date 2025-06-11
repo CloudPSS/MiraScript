@@ -1,4 +1,4 @@
-import type { TranspileOptions } from './options';
+import type { ScriptInput, TranspileOptions } from './types';
 import { generate } from './generate';
 import { compile } from './compile';
 
@@ -6,7 +6,7 @@ import { compile } from './compile';
  * 生成 MiraScript 对应的 JavaScript 代码
  */
 export async function transpileCore(
-    code: string,
+    code: ScriptInput,
     options: TranspileOptions,
 ): Promise<[Uint8Array, string | undefined, Uint32Array]> {
     const [codeBuf, bytecode, errors] = await compile(code, options);

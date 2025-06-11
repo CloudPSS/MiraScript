@@ -1,9 +1,10 @@
 import type { VmScript } from '../vm/index.js';
 import { keys, values } from '../vm/env.js';
+import type { ScriptInput } from './types.js';
 
 const kVmScript = Symbol.for('mirascript.vm.script');
 /** 生成 JS 函数 */
-export function createScript(source: string, code: string): VmScript {
+export function createScript(source: ScriptInput, code: string): VmScript {
     let script;
     try {
         // eslint-disable-next-line @typescript-eslint/no-implied-eval, @typescript-eslint/no-unsafe-call
@@ -12,6 +13,10 @@ export function createScript(source: string, code: string): VmScript {
         throw new Error(`Failed to create script`, { cause: error });
     }
     Object.defineProperty(script, kVmScript, { value: true });
-    Object.defineProperty(script, 'source', { value: source });
+    if (typeof source === 'string') {
+        Object.defineProperty(script, 'source', { value: source });
+    } else if (source instanceof Uint8Array) {
+        Object.defineProperty(script, 'source', { value: '<buffer>' });
+    }
     return script;
 }

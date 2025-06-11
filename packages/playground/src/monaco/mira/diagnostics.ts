@@ -1,27 +1,18 @@
 import { editor, MarkerSeverity, MarkerTag, Uri, type IDisposable } from '@private/monaco-editor';
-import { callWorker, Provider } from './worker-helper.js';
-import { DiagnosticCode } from '@mirascript/wasm';
+import { Provider } from './worker-helper.js';
+import { DiagnosticCode, getDiagnosticMessage } from 'mirascript';
 import type { SourceDiagnostic } from './compile-result.js';
-
-const diagnosticMessages = new Map<DiagnosticCode, Promise<string | undefined>>();
-/** 获取诊断消息 */
-async function getDiagnosticMessage(code: DiagnosticCode): Promise<string | undefined> {
-    if (diagnosticMessages.has(code)) return diagnosticMessages.get(code);
-    const message = callWorker('get_diagnostic_message', code);
-    diagnosticMessages.set(code, message);
-    return message;
-}
 
 const onlyVisible = false;
 const validateDelay = 500;
 const listeners = new Map<string, IDisposable>();
 
-const makeMarker = async (
+const makeMarker = (
     model: editor.ITextModel,
     modelVersionId: number,
     diagnostic: SourceDiagnostic,
     severity: MarkerSeverity,
-): Promise<editor.IMarkerData> => {
+): editor.IMarkerData => {
     const { range, code } = diagnostic;
     const { startLineNumber, startColumn, endLineNumber, endColumn } = range;
     let unnecessary = false;
@@ -30,7 +21,7 @@ const makeMarker = async (
         unnecessary = true;
         severity = MarkerSeverity.Hint;
     }
-    let message = (await getDiagnosticMessage(code)) ?? 'Unknown error';
+    let message = getDiagnosticMessage(code) ?? 'Unknown error';
     if (message.includes(`$0`)) {
         message = message.replaceAll(`$0`, model.getValueInRange(range));
     }
@@ -66,7 +57,7 @@ const makeMarker = async (
         for (const ref of diagnostic.references) {
             const { range, code } = ref;
             const { startLineNumber, startColumn, endLineNumber, endColumn } = range;
-            const message = (await getDiagnosticMessage(code)) ?? '… here';
+            const message = getDiagnosticMessage(code) ?? '… here';
             marker.relatedInformation.push({
                 message,
                 resource: model.uri,
@@ -88,11 +79,11 @@ async function validate(model: editor.ITextModel): Promise<void> {
     const result = await Provider.getCompileResult(model);
     if (!result) return;
     const { version } = result;
-    const errors = result.errors.map(async (d) => makeMarker(model, version, d, MarkerSeverity.Error));
-    const warnings = result.warnings.map(async (d) => makeMarker(model, version, d, MarkerSeverity.Warning));
-    const infos = result.infos.map(async (d) => makeMarker(model, version, d, MarkerSeverity.Info));
-    const hints = result.hints.map(async (d) => makeMarker(model, version, d, MarkerSeverity.Hint));
-    const markers = await Promise.all([...errors, ...warnings, ...infos, ...hints]);
+    const errors = result.errors.map((d) => makeMarker(model, version, d, MarkerSeverity.Error));
+    const warnings = result.warnings.map((d) => makeMarker(model, version, d, MarkerSeverity.Warning));
+    const infos = result.infos.map((d) => makeMarker(model, version, d, MarkerSeverity.Info));
+    const hints = result.hints.map((d) => makeMarker(model, version, d, MarkerSeverity.Hint));
+    const markers = [...errors, ...warnings, ...infos, ...hints];
     editor.setModelMarkers(model, 'mirascript', markers);
 }
 

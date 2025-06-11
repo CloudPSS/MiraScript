@@ -1,4 +1,4 @@
-import type * as worker from './worker.js';
+import type { exports, Host } from './worker.js';
 import { utils, editor, Uri, Emitter, type IEvent } from '@private/monaco-editor';
 import { CompileResult } from './compile-result.js';
 
@@ -42,7 +42,7 @@ export class Provider {
             if (result) {
                 return resolve(result);
             }
-            void callWorker('compile_script', model.uri).catch((ex) => {
+            void callWorker('compileScript', model.uri).catch((ex) => {
                 // eslint-disable-next-line no-console
                 console.error(ex);
             });
@@ -80,17 +80,18 @@ const monacoWorker = editor.createWebWorker({
         updateCompileResult: (uri, version, diagnosticsBuffer, chunkBuffer) => {
             Provider.updateCompileResult(uri, version, diagnosticsBuffer, chunkBuffer);
         },
-    } satisfies worker.Host,
+    } satisfies Host,
 });
+
 /** 调用 worker 方法 */
-export async function callWorker<const M extends keyof typeof worker>(
+export async function callWorker<const M extends keyof typeof exports>(
     method: M,
-    ...args: Parameters<(typeof worker)[M]>
-): Promise<ReturnType<(typeof worker)[M]>> {
+    ...args: Parameters<(typeof exports)[M]>
+): Promise<ReturnType<(typeof exports)[M]>> {
     const resources = args.filter((a: unknown) => a instanceof Uri);
     const passArgs = args.map((arg: unknown) => (arg instanceof Uri ? arg.toString() : arg));
     const proxy = resources.length ? await monacoWorker.withSyncedResources(resources) : await monacoWorker.getProxy();
-    return await ((proxy as typeof worker)[method as 'keywords'](...(passArgs as [])) as unknown as Promise<
-        ReturnType<(typeof worker)[M]>
+    return await ((proxy as typeof exports)[method as 'compileScript'](...(passArgs as [Uri])) as unknown as Promise<
+        ReturnType<(typeof exports)[M]>
     >);
 }
