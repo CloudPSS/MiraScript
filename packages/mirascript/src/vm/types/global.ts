@@ -23,8 +23,8 @@ export function defineVmGlobalValue(name: string, value: VmImmutable, override =
 }
 
 /** 创建用于执行脚本的全局环境 */
-export function createVmGlobal(
-    vmValues?: Record<string, VmValue | undefined>,
+export function createVmGlobal<const T extends Record<string, VmValue | undefined>>(
+    vmValues?: T,
     externValues?: Record<string, unknown>,
 ): VmGlobal {
     const env = create(VmSharedGlobal) as VmGlobal;

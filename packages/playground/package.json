@@ -7,9 +7,9 @@
     "serve": "vite preview"
   },
   "dependencies": {
+    "@mirascript/wasm": "workspace:*",
     "@private/monaco-editor": "^0.0.25",
-    "mirascript": "workspace:*",
-    "@mirascript/wasm": "workspace:*"
+    "mirascript": "workspace:*"
   },
   "devDependencies": {
     "type-fest": "^4.41.0",

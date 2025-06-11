@@ -2,6 +2,7 @@ import { constants } from 'mirascript/subtle';
 
 export const {
     REG_IDENTIFIER,
+    REG_NUMBER,
     REG_HEX,
     REG_OCT,
     REG_BIN,
@@ -12,8 +13,6 @@ export const {
     numericKeywords,
     reservedKeywords,
 } = constants;
-
-export const REG_NUMBER = /(?<!\.\s*)\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/u;
 
 export const REG_WHITESPACE = /[ \t\v\f\r\n]/u;
 

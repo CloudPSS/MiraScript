@@ -82,6 +82,9 @@ export function CpExit(): void {
 }
 /** 设置检查点超时时间 */
 export function configCheckpoint(timeout?: number): void {
+    if (typeof timeout !== 'number' || timeout <= 0 || Number.isNaN(timeout)) {
+        throw new RangeError('Invalid timeout value');
+    }
     cpTimeout = timeout ?? 100;
 }
 /** 默认全局环境 */

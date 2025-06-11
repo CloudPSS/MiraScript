@@ -11,6 +11,8 @@ import {
     type VmValue,
     isVmRecord,
     type VmRecord,
+    type VmModule,
+    isVmPrimitive,
 } from '../types/index.js';
 
 /** 抛出异常 */
@@ -84,6 +86,18 @@ export function expectArrayOrRecord(
     required(name, value, recovered);
     if (!isVmArray(value) && !isVmRecord(value)) {
         throwUnexpectedTypeError(name, 'array or record', value, recovered);
+    }
+}
+
+/** 标记参数为复合类型 */
+export function expectCompound(
+    name: string | number,
+    value: VmAny,
+    recovered: VmAny | (() => VmAny),
+): asserts value is VmArray | VmRecord | VmModule | VmExtern {
+    required(name, value, recovered);
+    if (isVmPrimitive(value) || isVmFunction(value)) {
+        throwUnexpectedTypeError(name, 'compound', value, recovered);
     }
 }
 

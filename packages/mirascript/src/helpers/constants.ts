@@ -1,4 +1,5 @@
 export const REG_IDENTIFIER = /(?:_+|@+|\$+|\p{XID_Start})\p{XID_Continue}*/u;
+export const REG_NUMBER = /(?<!\.[ \t\v\f\r\n]*)\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/u;
 export const REG_HEX = /0[xX][a-fA-F0-9_]*[a-fA-F0-9]/u;
 export const REG_OCT = /0[oO][0-7_]*[0-7]/u;
 export const REG_BIN = /0[bB][01_]*[01]/u;

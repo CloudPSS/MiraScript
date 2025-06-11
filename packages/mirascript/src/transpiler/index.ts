@@ -1,7 +1,8 @@
-import type { TranspileOptions, ScriptInput } from './types.js';
 import type { VmScript } from '../vm/index.js';
+import type { TranspileOptions, ScriptInput } from './types.js';
 import { transpileCore } from './transpile.js';
 import { createScript } from './create-script.js';
+import { transpileFast } from './transpile-fast.js';
 
 export type { TranspileOptions, ScriptInput };
 
@@ -51,10 +52,18 @@ async function transpileWorker(
     });
 }
 
+const FAST_MAX_LEN = 32;
+
 /**
  * 生成 MiraScript 对应的 JavaScript 代码
  */
 export async function transpile(source: ScriptInput, options: TranspileOptions = {}): Promise<VmScript> {
+    if (typeof source == 'string' && source.length < FAST_MAX_LEN) {
+        const result = transpileFast(source, options);
+        if (result) {
+            return result;
+        }
+    }
     const [_, code, errors] =
         source.length < WORKER_MIN_LEN ? await transpileCore(source, options) : await transpileWorker(source, options);
     if (!code) {

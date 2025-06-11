@@ -15,7 +15,7 @@ import {
     type VmValue,
 } from '../types/index.js';
 import { VmError } from '../error';
-import { expectArray, expectArrayOrRecord, expectCallable, required, rethrowError } from './helpers';
+import { expectArray, expectArrayOrRecord, expectCallable, expectCompound, required, rethrowError } from './helpers';
 import type { VmLib } from './loader';
 const {
     PI,
@@ -308,6 +308,57 @@ _with_.paramsType = {
     '..entries': '[string | number | any]',
 };
 _with_.returnsType = 'type(data)';
+
+export const keys: VmLib = (data) => {
+    expectCompound('data', data, []);
+    if (isVmArray(data)) {
+        return Array.from({ length: data.length }, (_, i) => $ToString(i));
+    }
+    if (isVmRecord(data)) {
+        return Object.keys(data);
+    }
+    return data.keys();
+};
+keys.summary = '返回数组、记录、外部对象或模块的键列表';
+keys.params = {
+    data: '要获取键的数组、记录、外部对象或模块',
+};
+keys.paramsType = {
+    data: 'array | record | extern | module',
+};
+keys.returnsType = '[string]';
+
+export const values: VmLib = (data): VmArray => {
+    expectArrayOrRecord('data', data, []);
+    if (isVmArray(data)) {
+        return Array.from({ length: data.length }, (_, i) => data[i] ?? null);
+    }
+    return Object.values(data);
+};
+values.summary = '返回数组或记录的值列表';
+values.params = {
+    data: '要获取值的数组或记录',
+};
+values.paramsType = {
+    data: 'array | record',
+};
+values.returnsType = 'array';
+
+export const entries: VmLib = (data): VmArray => {
+    expectArrayOrRecord('data', data, []);
+    if (isVmArray(data)) {
+        return Array.from({ length: data.length }, (_, i) => [$ToString(i), data[i] ?? null]);
+    }
+    return Object.entries(data);
+};
+entries.summary = '返回数组或记录的键值对列表';
+entries.params = {
+    data: '要获取键值对的数组或记录',
+};
+entries.paramsType = {
+    data: 'array | record',
+};
+entries.returnsType = '[(string, any)]';
 
 export const to_string: VmLib = (data) => $ToString(data);
 to_string.summary = '将数据转换为字符串';
