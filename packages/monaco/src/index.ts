@@ -73,16 +73,45 @@ export class MiraScriptMonacoLoader implements IDisposable {
 }
 /** Api 泛化 */
 // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-type AsApi<T> = T extends Function
+type AsApi<T, D extends number> = T extends Function
     ? // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
       Function
-    : T extends object
-      ? {
-            [K in keyof T]: AsApi<T[K]>;
-        }
-      : T;
+    : T extends Record<string, string | number>
+      ? unknown
+      : D extends 0
+        ? unknown
+        : T extends object
+          ? {
+                [K in keyof T]?: AsApi<
+                    T[K],
+                    D extends 0
+                        ? never
+                        : D extends 1
+                          ? 0
+                          : D extends 2
+                            ? 1
+                            : D extends 3
+                              ? 2
+                              : D extends 4
+                                ? 3
+                                : D extends 5
+                                  ? 4
+                                  : D extends 6
+                                    ? 5
+                                    : D extends 7
+                                      ? 6
+                                      : D extends 8
+                                        ? 7
+                                        : D extends 9
+                                          ? 8
+                                          : never
+                >;
+            }
+          : T;
 /** Monaco Api 属性 */
-type MonacoApi = AsApi<Monaco>;
+type MonacoApi = {
+    [K in keyof Monaco]: AsApi<Monaco[K], 2>;
+};
 /**
  * 注册 MiraScript Monaco 编辑器扩展。
  */

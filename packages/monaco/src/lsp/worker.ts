@@ -1,35 +1,17 @@
-import * as wasm from '@mirascript/wasm';
-import { initialize, type Uri, type worker } from '@private/monaco-editor/worker';
+import { compileScript, compileTemplate } from '@mirascript/wasm';
 import type { ParseMode } from 'mirascript';
 import { toCompileFlags } from 'mirascript/subtle';
 
-/** Host functions */
-export interface Host {
-    /** 更新编译结果 */
-    updateCompileResult(
-        uri: string,
-        mode: ParseMode,
-        version: number,
-        diagnostics: ArrayBuffer,
-        chunk: ArrayBuffer | undefined,
-    ): void;
-}
-
-const exports = {
-    compileScript: async (uri: Uri): Promise<void> => compileImpl(uri, 'script', wasm.compileScript),
-    compileTemplate: async (uri: Uri): Promise<void> => compileImpl(uri, 'template', wasm.compileTemplate),
-};
-
-/** Exported functions */
-export type Exports = typeof exports;
-
-initialize((ctx: worker.IWorkerContext<Host>) => {
-    context = ctx;
-    return exports;
-});
-
-let context: worker.IWorkerContext<Host>;
-let compileCache: [uri: string, version: number, promise: Promise<void>] = ['', Number.NaN, Promise.resolve()];
+/** 请求参数 */
+export type Req = [uri: string, version: number, script: string, mode: ParseMode];
+/** 编译结果 */
+export type ResOk = [uri: string, version: number, chunk: Uint8Array | undefined, diagnostics: Uint32Array];
+/** 编译结果 */
+export type ResErr = [uri: string, version: number, error: string];
+/** 编译结果 */
+export type Res = ResOk | ResErr;
+/** Ready */
+export type Ready = 'mirascript lsp ready';
 
 const flags = toCompileFlags({
     UseUtf16: true,
@@ -37,30 +19,17 @@ const flags = toCompileFlags({
     HideDiagnosticOther: false,
 });
 const encoder = new TextEncoder();
-/** 编译 */
-async function compileImpl(uri: Uri, mode: ParseMode, compiler = wasm.compileScript): Promise<void> {
-    const reqUri = uri.toString();
-    const model = context.getMirrorModels().find((v) => v.uri.toString() === reqUri);
-    if (!model) {
-        throw new Error(`Model not found for URI: ${uri.toString()}`);
+
+addEventListener('message', (event: MessageEvent) => {
+    const data = event.data as Req;
+    if (!Array.isArray(data)) return;
+    const [uri, version, script, mode] = data;
+    try {
+        const compiler = mode === 'template' ? compileTemplate : compileScript;
+        const result = compiler(encoder.encode(script), flags);
+        postMessage([uri, version, result.chunk, result.diagnostics] satisfies ResOk);
+    } catch (error) {
+        postMessage([uri, version, (error as Error).message || String(error)] satisfies ResErr);
     }
-    const { version } = model;
-    if (compileCache[0] === reqUri && compileCache[1] === version) {
-        return compileCache[2];
-    }
-    const script = model.getValue();
-    const result = compiler(encoder.encode(script), flags);
-    compileCache = [
-        reqUri,
-        version,
-        Promise.resolve(
-            context.host.updateCompileResult(
-                uri.toString(),
-                mode,
-                version,
-                result.diagnostics.buffer as ArrayBuffer,
-                result.chunk?.buffer as ArrayBuffer,
-            ),
-        ),
-    ];
-}
+});
+postMessage('mirascript lsp ready' satisfies Ready);

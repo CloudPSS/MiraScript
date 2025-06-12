@@ -1,18 +1,21 @@
-import { editor, MarkerSeverity, MarkerTag, Uri } from 'monaco-editor';
+import type { editor, MarkerSeverity } from '@private/monaco-editor';
 // import { Provider } from './base.js';
 import { DiagnosticCode, getDiagnosticMessage } from 'mirascript';
 import type { CompileResult, SourceDiagnostic } from './compile-result.js';
+import type { Monaco } from '../index.js';
 
 // const onlyVisible = false;
 // const validateDelay = 500;
 // const listeners = new Map<string, IDisposable>();
 
 const makeMarker = (
+    monaco: Monaco,
     model: editor.ITextModel,
     modelVersionId: number,
     diagnostic: SourceDiagnostic,
     severity: MarkerSeverity,
 ): editor.IMarkerData => {
+    const { Uri, MarkerSeverity, MarkerTag } = monaco;
     const { range, code } = diagnostic;
     const { startLineNumber, startColumn, endLineNumber, endColumn } = range;
     let unnecessary = false;
@@ -82,15 +85,16 @@ const makeMarker = (
 // }
 
 /** 设置标记 */
-export function setMarkers(model: editor.ITextModel, result: CompileResult): void {
+export function setMarkers(monaco: Monaco, model: editor.ITextModel, result: CompileResult): void {
     const { version } = result;
     if (version !== model.getVersionId()) {
         return;
     }
-    const errors = result.errors.map((d) => makeMarker(model, version, d, MarkerSeverity.Error));
-    const warnings = result.warnings.map((d) => makeMarker(model, version, d, MarkerSeverity.Warning));
-    const infos = result.infos.map((d) => makeMarker(model, version, d, MarkerSeverity.Info));
-    const hints = result.hints.map((d) => makeMarker(model, version, d, MarkerSeverity.Hint));
+    const { MarkerSeverity, editor } = monaco;
+    const errors = result.errors.map((d) => makeMarker(monaco, model, version, d, MarkerSeverity.Error));
+    const warnings = result.warnings.map((d) => makeMarker(monaco, model, version, d, MarkerSeverity.Warning));
+    const infos = result.infos.map((d) => makeMarker(monaco, model, version, d, MarkerSeverity.Info));
+    const hints = result.hints.map((d) => makeMarker(monaco, model, version, d, MarkerSeverity.Hint));
     const markers = [...errors, ...warnings, ...infos, ...hints];
     editor.setModelMarkers(model, 'mirascript', markers);
 }

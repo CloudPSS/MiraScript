@@ -32,10 +32,14 @@ export class DocumentSemanticTokensProvider extends Provider implements language
             return undefined;
         }
 
+        const { Range } = this.monaco;
+
         // data 长度是 5 的倍数
         // [diffRow, diffCol, length, tokenType(index), tokenModifiers(bit field)]
         const data = [];
         for (const { code, range, references } of compiled.tags) {
+            if (Range.isEmpty(range)) continue;
+
             let tokenType = -1;
             let tokenModifiers = 0;
             // eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check

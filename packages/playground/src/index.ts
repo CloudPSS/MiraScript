@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 import './index.css';
 import * as monaco from '@private/monaco-editor';
+import { KeyCode, KeyMod } from '@private/monaco-editor';
 import { registerMiraScript } from '@mirascript/monaco';
 import {
     type VmAny,
@@ -12,7 +13,7 @@ import {
     serialize,
     type ParseMode,
 } from 'mirascript';
-import { KeyCode, KeyMod } from '@private/monaco-editor';
+
 registerMiraScript(monaco);
 
 let mode: ParseMode = (localStorage.getItem('mode') as ParseMode) || 'script';

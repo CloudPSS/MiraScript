@@ -1,55 +1,77 @@
-import type { Exports, Host } from './worker.js';
-import type { editor, Uri } from 'monaco-editor';
-import { Provider } from './providers/base.js';
+import type { editor } from 'monaco-editor';
+import type { ParseMode } from 'mirascript';
 import type { Monaco } from '../index.js';
+import type { Ready, Req, Res, ResOk } from './worker.js';
+import { CompileResult } from './compile-result.js';
+import { setMarkers } from './diagnostics.js';
 
-const WORKERS = new Map<Monaco, editor.MonacoWebWorker<Exports>>();
-
+const cache = new Map<`${string}\0${number}\0${ParseMode}`, Promise<CompileResult>>();
+let worker: Promise<Worker> | undefined = undefined;
 /** 注册 worker */
-export function registerWorker(monaco: Monaco): editor.MonacoWebWorker<Exports> {
-    if (WORKERS.has(monaco)) {
-        return WORKERS.get(monaco)!;
+export async function compile(monaco: Monaco, model: editor.ITextModel): Promise<CompileResult> {
+    if (!worker) {
+        const w = new Worker(new URL('#/lsp/worker', import.meta.url), {
+            name: '@mirascript/lsp-server',
+            type: 'module',
+        });
+        worker = new Promise((resolve, reject) => {
+            const onError = (e: ErrorEvent) => {
+                w.removeEventListener('error', onError);
+                w.removeEventListener('message', onMessage);
+                reject(new Error(`Worker failed to start: ${e.message}`));
+            };
+            const onMessage = (e: MessageEvent<Ready>) => {
+                if (e.data !== 'mirascript lsp ready') {
+                    return;
+                }
+                w.removeEventListener('error', onError);
+                w.removeEventListener('message', onMessage);
+                resolve(w);
+            };
+            w.addEventListener('error', onError);
+            w.addEventListener('message', onMessage);
+            setTimeout(() => {
+                onError(new ErrorEvent('error', { message: 'Worker did not respond in time' }));
+            }, 30000);
+        });
     }
-    const registerWorker = (monaco as typeof import('@private/monaco-editor')).utils?.registerWorker;
-    if (typeof registerWorker == 'function') {
-        registerWorker(
-            'mirascript',
-            () =>
-                new Worker(new URL('./worker.js', import.meta.url), { name: '@mirascript/lsp-server', type: 'module' }),
-        );
+    const uri = model.uri.toString();
+    const version = model.getVersionId();
+    const mode = model.getLanguageId() === 'mirascript-template' ? 'template' : 'script';
+    const cacheKey = `${uri}\0${version}\0${mode}` as const;
+    const cached = cache.get(cacheKey);
+    if (cached) {
+        return cached;
     }
-    const { editor } = monaco;
-    const monacoWorker = editor.createWebWorker<Exports>({
-        label: 'mirascript',
-        moduleId: '@mirascript/lsp-server',
-        createData: {},
-        host: {
-            updateCompileResult: (uri, mode, version, diagnosticsBuffer, chunkBuffer) => {
-                Provider.updateCompileResult(monaco, uri, mode, version, diagnosticsBuffer, chunkBuffer);
-            },
-        } satisfies Host,
+
+    const value = model.getValue();
+    const req = worker.then(async (instance) => {
+        instance.postMessage([uri, version, value, mode] satisfies Req);
+        const [_uri, _version, chunk, diagnostics] = await new Promise<ResOk>((resolve, reject) => {
+            const onMessage = (e: MessageEvent<Res>) => {
+                if (e.data[0] === uri && e.data[1] === version) {
+                    instance.removeEventListener('message', onMessage);
+                    if (typeof e.data[2] === 'string') {
+                        reject(new Error(e.data[2]));
+                    } else {
+                        resolve(e.data as ResOk);
+                    }
+                }
+            };
+            instance.addEventListener('message', onMessage);
+        });
+        const result = new CompileResult(uri, version, diagnostics, chunk);
+        setMarkers(monaco, model, result);
+        return result;
     });
-    WORKERS.set(monaco, monacoWorker);
-    return monacoWorker;
-}
-
-/** 测试是否为 Uri */
-function isUri(arg: unknown): arg is Uri {
-    if (!arg || typeof arg != 'object') return false;
-    return 'scheme' in arg && 'path' in arg;
-}
-
-/** 调用 worker 方法 */
-export async function callWorker<const M extends keyof Exports>(
-    monaco: Monaco,
-    method: M,
-    ...args: Parameters<Exports[M]>
-): Promise<ReturnType<Exports[M]>> {
-    const worker = registerWorker(monaco);
-    const resources = args.filter((a: unknown) => isUri(a));
-    const passArgs = args.map((arg: unknown) => (isUri(arg) ? arg.toString() : arg));
-    const proxy = resources.length ? await worker.withSyncedResources(resources) : await worker.getProxy();
-    return await (proxy[method as 'compileScript'](...(passArgs as [Uri])) as unknown as Promise<
-        ReturnType<Exports[M]>
-    >);
+    cache.set(cacheKey, req);
+    req.catch(() => {
+        cache.delete(cacheKey);
+    }).finally(() => {
+        // 清理缓存，避免内存泄漏
+        setTimeout(() => {
+            cache.delete(cacheKey);
+        }, 10000);
+    });
+    return req;
 }

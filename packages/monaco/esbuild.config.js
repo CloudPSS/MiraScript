@@ -1,10 +1,19 @@
 import esbuild from 'esbuild';
-import packageJson from './package.json' assert { type: 'json' };
+import packageJson from './package.json' with { type: 'json' };
+
+const entryPoints = [...Object.values(packageJson.exports), ...Object.values(packageJson.imports)]
+    .map((value) => {
+        if ('@mira/development' in value) {
+            return value['@mira/development'];
+        }
+        return undefined;
+    })
+    .filter(Boolean);
 
 esbuild.build({
     sourcemap: true,
     format: 'esm',
-    entryPoints: ['./src/index.ts', './src/lsp/worker.ts'],
+    entryPoints,
     outdir: './dist',
     target: 'esnext',
     bundle: true,
