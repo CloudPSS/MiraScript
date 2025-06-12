@@ -603,7 +603,7 @@ impl<'s> Emitter<'s> {
                 self.exit_scope();
             }
             Loop(_, expression) => {
-                self.closures.enter(false);
+                self.closures.enter(false, 0);
                 self.enter_scope(expression.range());
                 let pos = self.chunk.code.len();
                 self.op(OpCode::Loop);
@@ -640,7 +640,7 @@ impl<'s> Emitter<'s> {
                     Register::EMPTY
                 };
 
-                self.closures.enter(false);
+                self.closures.enter(false, 0);
                 self.enter_scope(kw.range.end..body.range().end);
 
                 let cond_reg = self.closures.add_reg();
@@ -721,7 +721,7 @@ impl<'s> Emitter<'s> {
                     }
                 };
 
-                self.closures.enter(false);
+                self.closures.enter(false, 0);
                 // 根据虚拟机定义，iterator 寄存器为闭包内第一个寄存器
                 // 进入 closure 后立即分配
                 let iterator = self.closures.add_reg();

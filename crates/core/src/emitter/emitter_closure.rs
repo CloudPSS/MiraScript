@@ -25,8 +25,8 @@ impl Closures {
     pub fn add_reg(&mut self) -> Register {
         self.current().add_reg()
     }
-    pub fn enter(&mut self, late_binding: bool) {
-        self.push(Closure::new(late_binding));
+    pub fn enter(&mut self, late_binding: bool, arg_len: usize) {
+        self.push(Closure::new(late_binding, arg_len));
     }
     pub fn exit(&mut self) {
         self.pop();
@@ -106,7 +106,8 @@ impl<'s> Emitter<'s> {
         stmts: &'s Vec<Statement<'s>>,
         expr: &'s Option<Box<Expression<'s>>>,
     ) {
-        self.closures.enter(true);
+        let arg_len = args.as_ref().map_or(1, |args| args.len());
+        self.closures.enter(true, arg_len);
         self.enter_scope(args_range.start..body_range.end);
 
         let narg: OpParam = args.as_ref().map_or(1, |args| args.len()).into();
@@ -114,48 +115,45 @@ impl<'s> Emitter<'s> {
         self.chunk.code.push(OpCode::Func.code());
 
         if let Some(args) = args {
-            for arg in args.iter() {
+            for (i, arg) in args.iter().enumerate() {
                 match arg.deref() {
                     ArrayElementBase::Element(arg) => {
                         if let Pattern::Bind(kw_mut, id_token) = arg.deref() {
-                            self.declare_variable(id_token, kw_mut.is_some(), BindType::Parameter);
+                            self.declare_parameter(
+                                i,
+                                Some(id_token),
+                                id_token.range(),
+                                kw_mut.is_some(),
+                                BindType::Parameter,
+                            );
                         } else {
-                            self.declare_implicit_variable(
-                                "<arg_pattern>",
+                            self.declare_parameter(
+                                i,
+                                None,
                                 arg.range(),
                                 false,
                                 BindType::PatternParameter,
                             );
-                        }
-                    }
-                    ArrayElementBase::Spread(_, arg) => {
-                        if let Pattern::Bind(kw_mut, id_token) = arg.deref() {
-                            self.declare_variable(
-                                id_token,
-                                kw_mut.is_some(),
-                                BindType::RestParameter,
-                            );
-                        } else {
-                            self.declare_implicit_variable(
-                                "<..arg_pattern>",
-                                arg.range(),
-                                false,
-                                BindType::RestPatternParameter,
-                            );
-                        }
-                    }
-                    ArrayElementBase::Range(..) => unreachable!(),
-                }
-            }
-            for arg in args.iter() {
-                match arg.deref() {
-                    ArrayElementBase::Element(arg) => {
-                        if !arg.is_bind() {
                             self.declare_pattern(arg, Some(BindType::Parameter));
                         }
                     }
                     ArrayElementBase::Spread(_, arg) => {
-                        if !arg.is_bind() {
+                        if let Pattern::Bind(kw_mut, id_token) = arg.deref() {
+                            self.declare_parameter(
+                                i,
+                                Some(id_token),
+                                id_token.range(),
+                                kw_mut.is_some(),
+                                BindType::RestParameter,
+                            );
+                        } else {
+                            self.declare_parameter(
+                                i,
+                                None,
+                                arg.range(),
+                                false,
+                                BindType::RestPatternParameter,
+                            );
                             self.declare_pattern(arg, Some(BindType::Parameter));
                         }
                     }
@@ -163,8 +161,9 @@ impl<'s> Emitter<'s> {
                 }
             }
         } else {
-            self.declare_implicit_variable(
-                "it",
+            self.declare_parameter(
+                0,
+                None,
                 args_range.start..args_range.start,
                 false,
                 BindType::ItParameter,

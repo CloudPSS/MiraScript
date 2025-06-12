@@ -63,6 +63,13 @@ impl<'s> TokenKind<'s> {
             _ => None,
         }
     }
+
+    pub(crate) fn to_id_name(&'s self) -> Option<&'s str> {
+        match self {
+            Self::Identifier(name) => Some(name.as_ref()),
+            _ => None,
+        }
+    }
 }
 
 impl PartialEq for TokenKind<'_> {

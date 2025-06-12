@@ -8,19 +8,18 @@ pub struct Closure {
 }
 
 impl Closure {
-    pub fn new(late_binding: bool) -> Self {
+    pub fn new(late_binding: bool, arg_len: usize) -> Self {
         Self {
             late_binding,
-            arg_len: 0,
+            arg_len,
             has_var_args: false,
-            reg_len: 0,
+            reg_len: arg_len,
         }
     }
 
     pub fn late_binding(&self) -> bool {
         self.late_binding
     }
-
     pub fn arg_len(&self) -> usize {
         self.arg_len
     }
@@ -30,15 +29,8 @@ impl Closure {
     pub fn reg_len(&self) -> usize {
         self.reg_len
     }
-
-    pub fn add_arg(&mut self) -> Register {
-        self.arg_len += 1;
-        self.add_reg()
-    }
-
-    pub fn add_var_arg(&mut self) -> Register {
+    pub fn set_var_args(&mut self) {
         self.has_var_args = true;
-        self.add_reg()
     }
 
     pub fn add_reg(&mut self) -> Register {

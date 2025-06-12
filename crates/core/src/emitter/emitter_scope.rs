@@ -77,16 +77,11 @@ pub fn check_variable_initialized<'s>(
 }
 
 impl Closures {
-    fn add_variable_reg(&mut self, level: usize, bind_type: BindType) -> Register {
+    fn add_variable_reg(&mut self, level: usize) -> Register {
         let Some(current) = self.get_mut(level - 1) else {
             return Register::EMPTY;
         };
-        match bind_type {
-            BindType::Parameter => current.add_arg(),
-            BindType::ItParameter => current.add_arg(),
-            BindType::RestParameter => current.add_var_arg(),
-            _ => current.add_reg(),
-        }
+        current.add_reg()
     }
 }
 
@@ -119,32 +114,51 @@ impl<'s> Emitter<'s> {
         Some(var)
     }
 
-    pub fn declare_implicit_variable(
+    pub fn declare_parameter(
         &mut self,
-        name: &'s str,
+        index: usize,
+        id_token: Option<&'s Token<'s>>,
         range: SourceRange,
         mutable: bool,
         bind_type: BindType,
-    ) {
-        let scope = self.scopes.current();
-        let scope_level = scope.level;
-        let register = self.closures.add_variable_reg(scope_level, bind_type);
-        let var = Variable::new(name, range, mutable, bind_type, register);
-        scope.declare_variable(var);
+    ) -> bool {
+        // 0 是特殊寄存器
+        let register = Register::new(index + 1);
+        let id = if let Some(id_token) = id_token {
+            let id = id_token
+                .to_id_name()
+                .expect("Parameter must have an identifier");
+            if self.check_local_variable(id_token, id).is_some() {
+                return false;
+            }
+            id
+        } else if bind_type == BindType::ItParameter {
+            "it"
+        } else {
+            ""
+        };
+        let var = Variable::new(id, range, mutable, bind_type, register);
+        self.scopes.current().declare_variable(var);
+        true
     }
+
     pub fn declare_variable(
         &mut self,
         id_token: &'s Token<'s>,
         mutable: bool,
         bind_type: BindType,
     ) -> bool {
-        let TokenKind::Identifier(id) = &id_token.kind else {
-            return false;
-        };
+        let id = id_token
+            .to_id_name()
+            .expect("Variable must have an identifier");
         if self.check_local_variable(id_token, id).is_some() {
             return false;
         }
-        self.declare_implicit_variable(id, id_token.range(), mutable, bind_type);
+        let scope = self.scopes.current();
+        let scope_level = scope.level;
+        let register = self.closures.add_variable_reg(scope_level);
+        let var = Variable::new(id, id_token.range(), mutable, bind_type, register);
+        scope.declare_variable(var);
         true
     }
 }
