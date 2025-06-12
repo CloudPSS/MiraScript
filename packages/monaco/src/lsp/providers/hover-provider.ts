@@ -31,6 +31,16 @@ export class HoverProvider extends Provider implements languages.HoverProvider {
         } else {
             const tag = def.definition;
             switch (tag.code) {
+                case DiagnosticCode.ParameterSubPatternImmutable:
+                    content = {
+                        value: codeblock(`\0(parameter pattern) ${model.getValueInRange(tag.range)}`),
+                    };
+                    break;
+                case DiagnosticCode.ParameterSubPatternMutable:
+                    content = {
+                        value: codeblock(`\0(parameter pattern) mut ${model.getValueInRange(tag.range)}`),
+                    };
+                    break;
                 case DiagnosticCode.ParameterImmutable:
                     content = {
                         value: codeblock(`\0(parameter) ${model.getValueInRange(tag.range)}`),

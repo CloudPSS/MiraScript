@@ -1,6 +1,6 @@
 import { type editor, Range, type IRange, type IPosition } from 'monaco-editor';
 import { DiagnosticCode } from '@mirascript/wasm';
-import { strictInRange } from './utils.js';
+import { strictContainsPosition } from './utils.js';
 
 /** 源代码诊断信息 */
 interface SourceDiagnosticBase<T extends DiagnosticCode = DiagnosticCode> {
@@ -41,15 +41,35 @@ export const ParameterExplicitType = [
     DiagnosticCode.ParameterMutableRest,
     DiagnosticCode.ParameterImmutableRest,
 ] as const;
+/** 子模式参数类型 */
+export type ParameterSubPatternType = (typeof ParameterSubPatternType)[number];
+export const ParameterSubPatternType = [
+    DiagnosticCode.ParameterSubPatternImmutable,
+    DiagnosticCode.ParameterSubPatternMutable,
+] as const;
+/** 模式参数类型 */
+export type ParameterPatternType = (typeof ParameterPatternType)[number];
+export const ParameterPatternType = [DiagnosticCode.ParameterPattern, DiagnosticCode.ParameterRestPattern] as const;
 /** 隐式参数类型 */
 export type ParameterItType = (typeof ParameterItType)[number];
 export const ParameterItType = [DiagnosticCode.ParameterIt] as const;
-/** 参数类型 */
-export type ParameterType = (typeof ParameterType)[number];
-export const ParameterType = [...ParameterExplicitType, ...ParameterItType] as const;
+/** 参数定义类型 */
+export type ParameterDefinitionType = (typeof ParameterDefinitionType)[number];
+export const ParameterDefinitionType = [
+    ...ParameterExplicitType,
+    ...ParameterSubPatternType,
+    ...ParameterItType,
+] as const;
+/** 参数占位符类型 */
+export type ParameterPlaceholderType = (typeof ParameterPlaceholderType)[number];
+export const ParameterPlaceholderType = [
+    ...ParameterExplicitType,
+    ...ParameterPatternType,
+    ...ParameterItType,
+] as const;
 /** 局部定义类型 */
 export type LocalDefinitionType = (typeof LocalDefinitionType)[number];
-export const LocalDefinitionType = [...LocalVariableType, ...LocalFunctionType, ...ParameterType] as const;
+export const LocalDefinitionType = [...LocalVariableType, ...LocalFunctionType, ...ParameterDefinitionType] as const;
 
 /** 源代码定义信息 */
 export interface LocalDefinition<T extends LocalDefinitionType = LocalDefinitionType>
@@ -66,7 +86,7 @@ export interface LocalDefinition<T extends LocalDefinitionType = LocalDefinition
         /** 函数作用域 */
         scope: SourceScope;
         /** 函数的参数 */
-        args: ReadonlyArray<LocalDefinition<ParameterType>>;
+        args: ReadonlyArray<LocalDefinition<ParameterDefinitionType>>;
     };
 }
 /** 源代码定义信息 */
@@ -83,6 +103,8 @@ export interface SourceScope {
     readonly range: IRange;
     /** 包含的局部变量 */
     readonly locals: readonly LocalDefinition[];
+    /** 包含的参数占位符 */
+    readonly params: ReadonlyArray<SourceDiagnostic<ParameterPlaceholderType>>;
     /** 包含的作用域 */
     readonly children: readonly SourceScope[];
     /** 父作用域 */
@@ -200,6 +222,7 @@ export class CompileResult {
 
     private _groupedTags?: {
         locals: readonly LocalDefinition[];
+        params: ReadonlyArray<SourceDiagnostic<ParameterPlaceholderType>>;
         globals: readonly GlobalDefinition[];
         ranges: readonly SourceDiagnostic[];
         omitNameFields: ReadonlyArray<SourceDiagnostic<DiagnosticCode.OmitNamedRecordField>>;
@@ -217,10 +240,17 @@ export class CompileResult {
             return model.getValueInRange(range);
         };
         const locals: Array<Writable<Partial<LocalDefinition>>> = [];
+        const params: Array<SourceDiagnostic<ParameterPlaceholderType>> = [];
         const globals: Array<Writable<Partial<GlobalDefinition>>> = [];
         const ranges: Array<Writable<SourceDiagnostic>> = [];
         const omitNameFields: Array<SourceDiagnostic<DiagnosticCode.OmitNamedRecordField>> = [];
         for (const tag of this.tags) {
+            // 可能与其他条件重叠
+            if (ParameterPlaceholderType.includes(tag.code as ParameterPlaceholderType)) {
+                // 参数占位符
+                params.push(tag as SourceDiagnostic<ParameterPlaceholderType>);
+            }
+
             if (LocalDefinitionType.includes(tag.code as LocalDefinitionType)) {
                 locals.push({
                     definition: tag as SourceDiagnostic<never>,
@@ -252,6 +282,7 @@ export class CompileResult {
             locals: (locals as LocalDefinition[]).sort((a, b) =>
                 Range.compareRangesUsingStarts(a.definition.range, b.definition.range),
             ),
+            params: params.sort((a, b) => Range.compareRangesUsingStarts(a.range, b.range)),
             globals: globals as GlobalDefinition[],
             ranges: (ranges as SourceDiagnostic[]).sort((a, b) => Range.compareRangesUsingStarts(a.range, b.range)),
             omitNameFields: omitNameFields,
@@ -264,18 +295,20 @@ export class CompileResult {
         model: editor.ITextModel,
         position: IPosition,
     ): { def: LocalDefinition; ref?: number } | { def: GlobalDefinition; ref: number } | undefined {
-        const { locals, globals } = this.groupedTags(model);
-        for (const d of locals) {
-            if (strictInRange(d.definition.range, position)) {
-                return { def: d, ref: undefined };
-            }
-            const refIndex = d.references.findIndex((u) => strictInRange(u.range, position));
+        const { globals } = this.groupedTags(model);
+        for (const d of globals) {
+            const refIndex = d.references.findIndex((u) => strictContainsPosition(u.range, position));
             if (refIndex >= 0) {
                 return { def: d, ref: refIndex };
             }
         }
-        for (const d of globals) {
-            const refIndex = d.references.findIndex((u) => strictInRange(u.range, position));
+        this.scopes(model); // 确保作用域信息已加载
+        const { locals } = this.groupedTags(model);
+        for (const d of locals) {
+            if (strictContainsPosition(d.definition.range, position)) {
+                return { def: d, ref: undefined };
+            }
+            const refIndex = d.references.findIndex((u) => strictContainsPosition(u.range, position));
             if (refIndex >= 0) {
                 return { def: d, ref: refIndex };
             }
@@ -290,7 +323,7 @@ export class CompileResult {
         if (this._scopes) {
             return this._scopes;
         }
-        const { locals, ranges } = this.groupedTags(model);
+        const { locals, params, ranges } = this.groupedTags(model);
 
         // 1. 提取所有 Scope 范围
         const scopes = ranges
@@ -299,6 +332,7 @@ export class CompileResult {
                 return {
                     range: r.range,
                     locals: [],
+                    params: [],
                     parent: undefined,
                     children: [],
                 } as Writable<SourceScope>;
@@ -344,9 +378,6 @@ export class CompileResult {
             (scope.children as Writable<SourceScope[]>).sort((a, b) =>
                 Range.compareRangesUsingStarts(a.range, b.range),
             );
-            (scope.locals as Writable<LocalDefinition[]>).sort((a, b) =>
-                Range.compareRangesUsingStarts(a.definition.range, b.definition.range),
-            );
             for (const child of scope.children) {
                 queue.push(child);
             }
@@ -354,16 +385,29 @@ export class CompileResult {
 
         // 4. 填充每个作用域的局部变量
         for (const local of locals) {
-            const localRange = local.definition.range;
-            const scope = sortedScopes.findLast((s) => Range.containsRange(s.range, localRange));
+            const { range } = local.definition;
+            const scope = sortedScopes.findLast((s) => Range.containsRange(s.range, range));
             if (scope) {
                 (scope.locals as Writable<LocalDefinition[]>).push(local);
+            }
+        }
+        for (const param of params) {
+            const { range } = param;
+            const scope = sortedScopes.findLast((s) => Range.containsRange(s.range, range));
+            if (scope) {
+                (scope.params as Array<SourceDiagnostic<ParameterPlaceholderType>>).push(param);
             }
         }
 
         // 5. 构建作用域映射
         const scopeMap = new Map<LocalDefinition, SourceScope>();
         for (const scope of sortedScopes) {
+            (scope.locals as Writable<LocalDefinition[]>).sort((a, b) =>
+                Range.compareRangesUsingStarts(a.definition.range, b.definition.range),
+            );
+            (scope.params as Array<SourceDiagnostic<ParameterPlaceholderType>>).sort((a, b) =>
+                Range.compareRangesUsingStarts(a.range, b.range),
+            );
             for (const local of scope.locals) {
                 scopeMap.set(local, scope);
                 if (local.definition.code === DiagnosticCode.LocalFunction) {
@@ -371,8 +415,8 @@ export class CompileResult {
                         (s) => Range.compareRangesUsingStarts(s.range, local.definition.range) > 0,
                     );
                     if (funcScope) {
-                        const args = funcScope.locals.filter((l): l is LocalDefinition<ParameterType> =>
-                            ParameterType.includes(l.definition.code as ParameterType),
+                        const args = funcScope.locals.filter((l): l is LocalDefinition<ParameterDefinitionType> =>
+                            ParameterDefinitionType.includes(l.definition.code as ParameterDefinitionType),
                         );
                         (local as Writable<LocalDefinition>).fn = {
                             scope: funcScope,
@@ -389,10 +433,22 @@ export class CompileResult {
     }
 
     /** 获取定义所在作用域 */
-    scope(model: editor.ITextModel, def: LocalDefinition): SourceScope | undefined {
+    scopeOf(model: editor.ITextModel, def: LocalDefinition): SourceScope | undefined {
         if (!this._scopeMap) {
             this.scopes(model);
         }
         return this._scopeMap!.get(def);
+    }
+
+    /** 获取位置所在作用域 */
+    scopeAt(model: editor.ITextModel, position: IPosition): SourceScope {
+        const scopes = this.scopes(model);
+        let scope = scopes.findLast((s) => Range.containsPosition(s.range, position)) ?? scopes[0]!; // 失败时从根作用域开始查找
+        while (scope.children.length > 0) {
+            const inner = scope.children.find((s) => Range.containsPosition(s.range, position));
+            if (!inner) break;
+            scope = inner;
+        }
+        return scope;
     }
 }

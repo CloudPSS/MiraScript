@@ -25,6 +25,8 @@ pub(crate) enum BindType {
     PatternParameter,
     /// The variable is bound as a function's rest parameter that matches a pattern.
     RestPatternParameter,
+    /// The variable is bound as a variable in a pattern of a function's parameter.
+    ParameterSubPattern,
     /// The variable is bound as a function statement.
     Func,
 }
@@ -94,8 +96,13 @@ impl<'s> Variable<'s> {
 
     pub fn put_decl_ref(&self, diagnostics: &mut Vec<SourceDiagnostic>) {
         let code = match self.bind_type {
-            BindType::Parameter => DiagnosticCode::ParameterDeclaredHere,
-            BindType::RestParameter => DiagnosticCode::ParameterRestDeclaredHere,
+            BindType::Parameter | BindType::PatternParameter => {
+                DiagnosticCode::ParameterDeclaredHere
+            }
+            BindType::RestParameter | BindType::RestPatternParameter => {
+                DiagnosticCode::ParameterRestDeclaredHere
+            }
+            BindType::ParameterSubPattern => DiagnosticCode::ParameterSubPatternDeclaredHere,
             BindType::ItParameter => DiagnosticCode::ParameterItDeclaredHere,
             BindType::Func => DiagnosticCode::FunctionDeclaredHere,
             _ => DiagnosticCode::VariableDeclaredHere,
@@ -160,6 +167,7 @@ impl<'s> Variable<'s> {
                     BindType::ItParameter => DiagnosticCode::ParameterIt,
                     BindType::PatternParameter => DiagnosticCode::ParameterPattern,
                     BindType::RestPatternParameter => DiagnosticCode::ParameterRestPattern,
+                    BindType::ParameterSubPattern => DiagnosticCode::ParameterSubPatternImmutable,
                 }
             } else {
                 match self.bind_type {
@@ -171,6 +179,7 @@ impl<'s> Variable<'s> {
                     BindType::ItParameter => DiagnosticCode::ParameterIt,
                     BindType::PatternParameter => DiagnosticCode::ParameterPattern,
                     BindType::RestPatternParameter => DiagnosticCode::ParameterRestPattern,
+                    BindType::ParameterSubPattern => DiagnosticCode::ParameterSubPatternMutable,
                 }
             };
             let mut used = false;

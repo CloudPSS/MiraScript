@@ -3,7 +3,7 @@ import { Provider } from './base.js';
 import { DiagnosticCode } from '@mirascript/wasm';
 import { VmSharedGlobal } from 'mirascript/subtle';
 import { isVmFunction } from 'mirascript';
-import { ParameterType } from '../compile-result';
+import { ParameterDefinitionType } from '../compile-result';
 
 /** @inheritdoc */
 export class DocumentSemanticTokensProvider extends Provider implements languages.DocumentSemanticTokensProvider {
@@ -50,6 +50,7 @@ export class DocumentSemanticTokensProvider extends Provider implements language
                     break;
                 }
                 case DiagnosticCode.ParameterMutable:
+                case DiagnosticCode.ParameterSubPatternMutable:
                 case DiagnosticCode.ParameterMutableRest:
                 case DiagnosticCode.LocalMutable: {
                     tokenType = 1;
@@ -60,6 +61,7 @@ export class DocumentSemanticTokensProvider extends Provider implements language
                     break;
                 }
                 case DiagnosticCode.ParameterImmutable:
+                case DiagnosticCode.ParameterSubPatternImmutable:
                 case DiagnosticCode.ParameterImmutableRest:
                 case DiagnosticCode.LocalImmutable: {
                     tokenType = 3;
@@ -71,7 +73,7 @@ export class DocumentSemanticTokensProvider extends Provider implements language
                 }
             }
             if (tokenType < 0) continue;
-            if (ParameterType.includes(code as ParameterType)) {
+            if (ParameterDefinitionType.includes(code as ParameterDefinitionType)) {
                 tokenModifiers |= 1 << 1;
             }
             const { startLineNumber, startColumn, endColumn } = range;

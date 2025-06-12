@@ -54,11 +54,14 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
         constantKeywords: constantKeywords(),
         numericKeywords: numericKeywords(),
 
+        inlineDocParam: /\(parameter(?: pattern)?\)/,
+
         start: mode === 'template' ? 'root_template' : 'root',
         tokenPostfix: '.mirascript',
         tokenizer: {
             root: [
-                [/\0|\/\*\*@docHeader\*\*\/$/, 'comment.doc', '@doc_mode'],
+                [/^(?=\0)/, '', '@doc_mode'],
+                [/^\/\*\*@docHeader\*\*\/$/, 'comment.doc', '@doc_mode'],
                 [/[[\](){}]/, '@brackets'],
                 { include: '@common' },
             ],
@@ -215,17 +218,23 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
             ],
 
             doc_mode: [
-                [/(fn)(@whitespace+)(@identifier)$/, ['keyword.fn.doc', '', 'entity.name.function.doc']],
-                [/fn/, 'keyword.fn.doc', '@fn_doc'],
+                // inline doc, start with `\0`
                 [
-                    /(\(parameter\))(@whitespace+)(..|)(mut)(@whitespace+)(@identifier)/,
+                    /^(@inlineDocParam)(@whitespace+)(..|)(mut)(@whitespace+)(@identifier)/,
                     ['entity.name.label', '', 'delimiter', 'keyword.mut', '', 'variable.emphasis'],
                 ],
                 [
-                    /(\(parameter\))(@whitespace+)(..|)(@identifier)/,
+                    /^(\0@inlineDocParam)(@whitespace+)(..|)(@identifier)/,
                     ['entity.name.label', '', 'delimiter', 'variable.other.constant.emphasis'],
                 ],
-                [/(\(@identifier\))(@whitespace+)/, ['entity.name.label', '']],
+                [/^(\0\(@identifier\))(@whitespace+)/, ['entity.name.label', '']],
+
+                [/(fn)(@whitespace+)(@identifier)$/, ['keyword.fn.doc', '', 'entity.name.function.doc']],
+                [
+                    /(fn)(@whitespace+)(@identifier)(\()(\.\.)(\))$/,
+                    ['keyword.fn.doc', '', 'entity.name.function.doc', '@brackets', 'delimiter', '@brackets'],
+                ],
+                [/fn/, 'keyword.fn.doc', '@fn_doc'],
                 [/(let|const)(@whitespace+)(@identifier)/, [{ token: 'keyword.$1' }, '', 'variable.other.constant']],
                 [
                     /(let)(@whitespace+)(mut)(@whitespace+)(@identifier)/,

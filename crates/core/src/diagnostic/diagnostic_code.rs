@@ -167,6 +167,8 @@ pub enum DiagnosticCode {
     ParameterItDeclaredHere,
     #[strum(message = "...declared as a rest parameter here")]
     ParameterRestDeclaredHere,
+    #[strum(message = "...declared as a sub-pattern of parameter pattern here")]
+    ParameterSubPatternDeclaredHere,
 
     ReferenceEnd = 5999,
 
@@ -174,17 +176,24 @@ pub enum DiagnosticCode {
     TagStart = 10000,
 
     // mark local declarations
+
+    // non-parameter declarations
     LocalImmutable,
     LocalMutable,
     LocalFunction,
 
+    // parameter declarations
     ParameterIt,
-    ParameterPattern,
-    ParameterRestPattern,
     ParameterImmutable,
     ParameterMutable,
     ParameterImmutableRest,
     ParameterMutableRest,
+    // parameter patterns holds parameters, but make no declarations
+    ParameterPattern,
+    ParameterRestPattern,
+    // parameter sub-patterns are declarations inside patterns, they are not parameters
+    ParameterSubPatternImmutable,
+    ParameterSubPatternMutable,
 
     // mark global accesses
     GlobalVariable,

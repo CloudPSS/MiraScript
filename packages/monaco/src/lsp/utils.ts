@@ -30,13 +30,29 @@ export function signature(id: string | undefined, info: VmFunctionInfo): string 
 /** 生成函数参数列表 */
 export function paramsList(model: editor.ITextModel, info: VmFunctionInfo | LocalDefinition['fn']): string {
     if (!info) return '(..)';
-    if ('args' in info) {
-        const { args } = info;
-        if (args[0]?.definition.code === DiagnosticCode.ParameterIt) {
-            return args[0].references.length ? '(it)' : '()';
-        } else {
-            return `(${args.map((a) => model.getValueInRange(a.definition.range)).join(', ')})`;
+    if ('scope' in info) {
+        const {
+            args,
+            scope: { params },
+        } = info;
+        if (params[0]?.code === DiagnosticCode.ParameterIt) {
+            return params[0].references.length ? '(it)' : '()';
         }
+        return `(${params
+            .map((a, i) => {
+                const rest =
+                    a.code === DiagnosticCode.ParameterRestPattern ||
+                    a.code === DiagnosticCode.ParameterMutableRest ||
+                    a.code === DiagnosticCode.ParameterImmutableRest;
+                const argsInParam = args.filter((arg) => Range.containsRange(a.range, arg.definition.range));
+                const argName =
+                    argsInParam.length === 0
+                        ? `arg_${i}`
+                        : argsInParam.map((arg) => model.getValueInRange(arg.definition.range)).join('_');
+                if (rest) return `..${argName}`;
+                return argName;
+            })
+            .join(', ')})`;
     } else {
         if (!info.params) return '(..)';
         const paramItems = Object.keys(info.params).join(', ');
@@ -68,7 +84,7 @@ export function codeblock(value: string): string {
 }
 
 /** 检查位置是否在范围内，且范围非空 */
-export function strictInRange(range: IRange, position: IPosition): boolean {
+export function strictContainsPosition(range: IRange, position: IPosition): boolean {
     return !Range.isEmpty(range) && Range.containsPosition(range, position);
 }
 

@@ -142,17 +142,10 @@ export class CompletionItemProvider extends Provider implements languages.Comple
         if (!compiled) return [];
         const {
             languages: { CompletionItemKind },
-            Range,
         } = this.monaco;
         const suggestions: languages.CompletionItem[] = [];
 
-        const scopes = compiled.scopes(model);
-        let scope = scopes.findLast((s) => Range.containsPosition(s.range, position)) ?? scopes[0]!; // 从根作用域开始查找
-        while (scope.children.length > 0) {
-            const inner = scope.children.find((s) => Range.containsPosition(s.range, position));
-            if (!inner) break;
-            scope = inner;
-        }
+        let scope = compiled.scopeAt(model, position);
         const locals = new Set<string>();
         while (scope) {
             for (const { definition, fn } of scope.locals) {

@@ -301,12 +301,21 @@ class Emitter {
         let code = '';
         let reg = 0;
         switch (opcode) {
+            case OpCode.FuncVarg:
             case OpCode.Func: {
                 const script = this.codeOffset === 1;
                 reg = read();
+                const varg = opcode === OpCode.FuncVarg;
                 const argn = read();
                 const regn = read();
-                const args = Array.from({ length: argn }, (_, i) => `${this.wv(i + 1, -1)} = null`).join(', ');
+                const args = Array.from({ length: argn }, (_, i) => {
+                    const wv = this.wv(i + 1, -1);
+                    if (varg && i === argn - 1) {
+                        // 最后一个参数为可变参数
+                        return `...${wv}`;
+                    }
+                    return `${wv} = null`;
+                }).join(', ');
                 const regs = Array.from({ length: regn - argn + 1 }, (_, i) =>
                     i ? this.wv(i + argn, -1) : this.wv(0, -1),
                 ).join(', ');
@@ -525,6 +534,7 @@ class Emitter {
         }
         this.codeLines.push(ident + code);
         switch (opcode) {
+            case OpCode.FuncVarg:
             case OpCode.Func: {
                 this.readClosure();
                 break;

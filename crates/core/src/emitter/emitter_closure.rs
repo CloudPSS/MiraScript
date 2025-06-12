@@ -110,7 +110,6 @@ impl<'s> Emitter<'s> {
         self.closures.enter(true, arg_len);
         self.enter_scope(args_range.start..body_range.end);
 
-        let narg: OpParam = args.as_ref().map_or(1, |args| args.len()).into();
         let pos = self.chunk.code.len();
         self.chunk.code.push(OpCode::Func.code());
 
@@ -134,7 +133,7 @@ impl<'s> Emitter<'s> {
                                 false,
                                 BindType::PatternParameter,
                             );
-                            self.declare_pattern(arg, Some(BindType::Parameter));
+                            self.declare_pattern(arg, Some(BindType::ParameterSubPattern));
                         }
                     }
                     ArrayElementBase::Spread(_, arg) => {
@@ -154,8 +153,9 @@ impl<'s> Emitter<'s> {
                                 false,
                                 BindType::RestPatternParameter,
                             );
-                            self.declare_pattern(arg, Some(BindType::Parameter));
+                            self.declare_pattern(arg, Some(BindType::ParameterSubPattern));
                         }
+                        self.closures.current().set_var_args();
                     }
                     ArrayElementBase::Range(..) => unreachable!(),
                 }
@@ -197,14 +197,22 @@ impl<'s> Emitter<'s> {
         }
         self.op(OpCode::FuncEnd);
 
-        let nreg: OpParam = self.closures.current().reg_len().into();
+        let closure = self.closures.current();
+        let func_op = if closure.has_var_args() {
+            OpCode::FuncVarg
+        } else {
+            OpCode::Func
+        };
+        let nreg: OpParam = closure.reg_len().into();
+        let narg: OpParam = arg_len.into();
         if ret.is_wide() || nreg.is_wide() || narg.is_wide() {
-            self.chunk.code[pos] = OpCode::Func.wide_code();
+            self.chunk.code[pos] = func_op.wide_code();
             self.chunk.code.splice(
                 pos + 1..pos + 1,
                 [ret.wide_code(), narg.wide_code(), nreg.wide_code()].concat(),
             );
         } else if !nreg.is_wide() {
+            self.chunk.code[pos] = func_op.code();
             self.chunk
                 .code
                 .splice(pos + 1..pos + 1, [ret.code(), narg.code(), nreg.code()]);
