@@ -1,5 +1,5 @@
 import type { Monaco, IDisposable } from '../index.js';
-import type { languages } from '@private/monaco-editor';
+import type { languages } from 'monaco-editor';
 import '../basic/index.js';
 
 import { CodeActionProvider } from './providers/code-action-provider.js';

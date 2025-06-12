@@ -1,7 +1,7 @@
-import type { IDisposable } from '@private/monaco-editor';
+import type { IDisposable } from 'monaco-editor';
 export type { IDisposable };
 /** monaco editor */
-export type Monaco = Readonly<typeof import('@private/monaco-editor')>;
+export type Monaco = Readonly<typeof import('monaco-editor')>;
 
 /** 加载器 */
 export class MiraScriptMonacoLoader implements IDisposable {
@@ -71,20 +71,39 @@ export class MiraScriptMonacoLoader implements IDisposable {
         }
     }
 }
+/** Api 泛化 */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+type AsApi<T> = T extends Function
+    ? // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+      Function
+    : T extends object
+      ? {
+            [K in keyof T]: AsApi<T[K]>;
+        }
+      : T;
+/** Monaco Api 属性 */
+type MonacoApi = AsApi<Monaco>;
 /**
  * 注册 MiraScript Monaco 编辑器扩展。
  */
-export function registerMiraScript(monaco: Monaco): MiraScriptMonacoLoader {
+export function registerMiraScript(monaco: MonacoApi): MiraScriptMonacoLoader {
     if (
         !monaco ||
         typeof monaco !== 'object' ||
         !monaco.languages ||
+        'function' != typeof monaco.languages.register ||
+        'function' != typeof monaco.languages.onLanguage ||
         !monaco.editor ||
-        !monaco.Uri ||
-        !monaco.Range ||
-        !monaco.Position
+        'function' != typeof monaco.editor.create ||
+        'function' != typeof monaco.editor.createModel ||
+        'function' != typeof monaco.editor.createWebWorker ||
+        'function' != typeof monaco.Uri ||
+        'function' != typeof monaco.Range ||
+        'function' != typeof monaco.Position ||
+        'function' != typeof monaco.CancellationTokenSource ||
+        'function' != typeof monaco.Emitter
     ) {
         throw new TypeError('Invalid Monaco editor instance provided.');
     }
-    return new MiraScriptMonacoLoader(monaco);
+    return new MiraScriptMonacoLoader(monaco as Monaco);
 }

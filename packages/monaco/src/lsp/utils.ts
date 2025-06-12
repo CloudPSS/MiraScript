@@ -1,5 +1,5 @@
 import { DiagnosticCode } from '@mirascript/wasm';
-import { type editor, Range, type IPosition, type IRange } from '@private/monaco-editor';
+import { type editor, Range, type IPosition, type IRange } from 'monaco-editor';
 import { VmSharedGlobal } from 'mirascript/subtle';
 import { getVmFunctionInfo, isVmModule, type VmImmutable, serialize, type VmFunctionInfo } from 'mirascript';
 import type { LocalDefinition } from './compile-result';

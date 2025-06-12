@@ -1,6 +1,6 @@
 import type { Monaco, IDisposable } from '../index.js';
 import { MAX_VERBATIM_LENGTH } from '../constants.js';
-import type { languages } from '@private/monaco-editor';
+import type { languages } from 'monaco-editor';
 
 const configuration = ({ languages }: Monaco): languages.LanguageConfiguration => ({
     comments: {

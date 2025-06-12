@@ -1,4 +1,4 @@
-import { editor, MarkerSeverity, MarkerTag, Uri } from '@private/monaco-editor';
+import { editor, MarkerSeverity, MarkerTag, Uri } from 'monaco-editor';
 // import { Provider } from './base.js';
 import { DiagnosticCode, getDiagnosticMessage } from 'mirascript';
 import type { CompileResult, SourceDiagnostic } from './compile-result.js';

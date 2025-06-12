@@ -1,4 +1,4 @@
-import type { editor, languages, Uri, CancellationToken, IRange, Position } from '@private/monaco-editor';
+import type { editor, languages, Uri, CancellationToken, IRange, Position } from 'monaco-editor';
 import { Provider } from './base.js';
 import { getGlobal } from '../utils.js';
 import { DOC_HEADER } from '../../constants.js';

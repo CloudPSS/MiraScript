@@ -1,4 +1,4 @@
-import type { languages } from '@private/monaco-editor';
+import type { languages } from 'monaco-editor';
 import {
     REG_WHITESPACE,
     REG_ORDINAL,

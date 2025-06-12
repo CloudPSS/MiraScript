@@ -1,4 +1,4 @@
-import type { editor, languages, Range, CancellationToken } from '@private/monaco-editor';
+import type { editor, languages, Range, CancellationToken } from 'monaco-editor';
 import { Provider } from './base.js';
 
 /**

@@ -1,4 +1,4 @@
-import type { editor, languages, Position, CancellationToken, IPosition, IRange } from '@private/monaco-editor';
+import type { editor, languages, Position, CancellationToken, IPosition, IRange } from 'monaco-editor';
 import { Provider } from './base.js';
 import { VmSharedGlobal } from 'mirascript/subtle';
 import { codeblock, getGlobal, paramsList } from '../utils';

@@ -1,4 +1,5 @@
 import esbuild from 'esbuild';
+import packageJson from './package.json' assert { type: 'json' };
 
 esbuild.build({
     sourcemap: true,
@@ -7,6 +8,7 @@ esbuild.build({
     outdir: './dist',
     target: 'esnext',
     bundle: true,
-    packages: 'external',
+    packages: 'bundle',
+    external: [...Object.keys(packageJson.dependencies || {}), ...Object.keys(packageJson.peerDependencies || {})],
     splitting: true,
 });

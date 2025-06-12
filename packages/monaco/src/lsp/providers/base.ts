@@ -1,4 +1,4 @@
-import type { editor, Emitter, IEvent } from '@private/monaco-editor';
+import type { editor, Emitter, IEvent } from 'monaco-editor';
 import type { ParseMode } from 'mirascript';
 import type { Monaco } from '../..';
 import { CompileResult } from '../compile-result';

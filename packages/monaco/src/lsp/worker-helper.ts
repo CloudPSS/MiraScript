@@ -1,5 +1,5 @@
 import type { Exports, Host } from './worker.js';
-import type { editor, Uri } from '@private/monaco-editor';
+import type { editor, Uri } from 'monaco-editor';
 import { Provider } from './providers/base.js';
 import type { Monaco } from '../index.js';
 
@@ -10,7 +10,7 @@ export function registerWorker(monaco: Monaco): editor.MonacoWebWorker<Exports> 
     if (WORKERS.has(monaco)) {
         return WORKERS.get(monaco)!;
     }
-    const registerWorker = monaco.utils?.registerWorker;
+    const registerWorker = (monaco as typeof import('@private/monaco-editor')).utils?.registerWorker;
     if (typeof registerWorker == 'function') {
         registerWorker(
             'mirascript',

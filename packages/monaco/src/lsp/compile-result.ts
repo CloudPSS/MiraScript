@@ -1,4 +1,4 @@
-import { type editor, Range, type IRange, type IPosition } from '@private/monaco-editor';
+import { type editor, Range, type IRange, type IPosition } from 'monaco-editor';
 import { DiagnosticCode } from '@mirascript/wasm';
 import { strictInRange } from './utils.js';
 import type { ParseMode } from 'mirascript';
