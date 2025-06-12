@@ -19,7 +19,7 @@ use super::patterns::pattern;
 use super::ranges::range;
 use super::record_helper::record_base;
 use super::scripts::script;
-use super::{Expression, Input, RecordElement, to_input};
+use super::{Expression, Input, record_element::RecordElementBase, to_input};
 
 fn to_interpolate_expr(token: Token<'_>) -> Expression<'_> {
     let TokenKind::InterpolatedString(_, e) = &token.kind else {
@@ -78,13 +78,11 @@ fn record_like<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
         expression,
     )
     .parse_next(i)?;
-    let result = if parts.len() == 1 {
-        let part = parts.into_iter().next().unwrap();
-        if let RecordElement::Unnamed(exp, None) = part {
-            Expression::Grouping(open, exp, close)
-        } else {
-            Expression::Record(open, vec![part], close)
-        }
+    let result = if parts.len() == 1 && parts[0].has_tail_comma() && parts[0].is_unnamed() {
+        let RecordElementBase::Unnamed(part) = parts.into_iter().next().unwrap().unwrap() else {
+            unreachable!();
+        };
+        Expression::Grouping(open, part, close)
     } else {
         Expression::Record(open, parts, close)
     };
@@ -111,9 +109,14 @@ fn array<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
             })
             .parse_next(i)
     };
-    array_base(expression, range, spread)
-        .map(|(open, parts, close)| Expression::Array(open, parts, close))
-        .parse_next(i)
+    array_base(
+        [Operator::OpenBracket, Operator::CloseBracket],
+        expression,
+        range,
+        spread,
+    )
+    .map(|(open, parts, close)| Expression::Array(open, parts, close))
+    .parse_next(i)
 }
 
 pub(super) fn interpolation<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {

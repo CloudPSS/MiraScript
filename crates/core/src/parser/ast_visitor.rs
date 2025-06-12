@@ -220,6 +220,16 @@ impl<'s, E: AstWalker<'s>> AstWalker<'s> for Option<E> {
             }
         }
     }
+    fn range_slow(&self) -> SourceRange {
+        if let Some(item) = self {
+            item.range_slow()
+        } else {
+            SourceRange {
+                start: usize::MAX,
+                end: usize::MIN,
+            }
+        }
+    }
 }
 
 impl<'s, E: AstWalker<'s>> AstWalker<'s> for Box<E> {

@@ -1,11 +1,13 @@
+use std::ops::Deref;
+
 use crate::{
     diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
     emitter::emitter_scope::check_variable_initialized,
     lexer::{Keyword, Operator, TokenKind},
     parser::{
-        self, ArrayElement, AstWalker, Callable,
+        self, ArrayElementBase, AstWalker, Callable,
         Expression::{self, *},
-        Iterable, Range, RecordElement,
+        Iterable, Range, RecordElementBase,
     },
 };
 
@@ -48,23 +50,23 @@ impl<'s> Emitter<'s> {
                 }
                 self.declare_expression(expression)
             }
-            Record(_, elements, _) => elements.iter().for_each(|element| match element {
-                RecordElement::Named(_, _, exp, _)
-                | RecordElement::OmitNamed(_, exp, _)
-                | RecordElement::Unnamed(exp, _)
-                | RecordElement::Spread(_, exp, _) => {
+            Record(_, elements, _) => elements.iter().for_each(|element| match element.deref() {
+                RecordElementBase::Named(_, _, exp)
+                | RecordElementBase::OmitNamed(_, exp)
+                | RecordElementBase::Unnamed(exp)
+                | RecordElementBase::Spread(_, exp) => {
                     self.declare_expression(exp);
                 }
-                RecordElement::InterpolateNamed(name_exp, _, exp, _) => {
+                RecordElementBase::InterpolateNamed(name_exp, _, exp) => {
                     self.declare_expression(name_exp);
                     self.declare_expression(exp);
                 }
             }),
-            Array(_, elements, _) => elements.iter().for_each(|element| match element {
-                ArrayElement::Spread(_, exp, _) | ArrayElement::Element(exp, _) => {
+            Array(_, elements, _) => elements.iter().for_each(|element| match element.deref() {
+                ArrayElementBase::Spread(_, exp) | ArrayElementBase::Element(exp) => {
                     self.declare_expression(exp);
                 }
-                ArrayElement::Range(range, _) => {
+                ArrayElementBase::Range(range) => {
                     self.declare_expression(&range.0);
                     self.declare_expression(&range.2);
                 }
@@ -223,13 +225,13 @@ impl<'s> Emitter<'s> {
             Record(_, elements, _) => {
                 let mut elements_regs = vec![];
                 for element in elements {
-                    match element {
-                        RecordElement::Named(_, _, expression, _) => {
+                    match element.deref() {
+                        RecordElementBase::Named(_, _, expression) => {
                             let reg = self.closures.add_reg();
                             self.emit_expression(expression, reg, brk);
                             elements_regs.push(reg);
                         }
-                        RecordElement::InterpolateNamed(name_expression, _, expression, _) => {
+                        RecordElementBase::InterpolateNamed(name_expression, _, expression) => {
                             let name_reg = self.closures.add_reg();
                             self.emit_expression(name_expression, name_reg, brk);
                             let reg = self.closures.add_reg();
@@ -237,17 +239,17 @@ impl<'s> Emitter<'s> {
                             elements_regs.push(name_reg);
                             elements_regs.push(reg);
                         }
-                        RecordElement::OmitNamed(_, expression, _) => {
+                        RecordElementBase::OmitNamed(_, expression) => {
                             let reg = self.closures.add_reg();
                             self.emit_expression(expression, reg, brk);
                             elements_regs.push(reg);
                         }
-                        RecordElement::Unnamed(expression, _) => {
+                        RecordElementBase::Unnamed(expression) => {
                             let reg = self.closures.add_reg();
                             self.emit_expression(expression, reg, brk);
                             elements_regs.push(reg);
                         }
-                        RecordElement::Spread(_, expression, _) => {
+                        RecordElementBase::Spread(_, expression) => {
                             let reg = self.closures.add_reg();
                             self.emit_expression(expression, reg, brk);
                             elements_regs.push(reg);
@@ -260,8 +262,8 @@ impl<'s> Emitter<'s> {
                     let opt = element
                         .colon()
                         .is_some_and(|c| c.kind == Operator::QuestionColon);
-                    match element {
-                        RecordElement::Named(token, _, _, _) => {
+                    match element.deref() {
+                        RecordElementBase::Named(token, _, _) => {
                             let reg = elements_regs[reg_index];
                             if let TokenKind::Ordinal(id) = &token.kind {
                                 self.diagnostics.push(SourceDiagnostic::new(
@@ -293,7 +295,7 @@ impl<'s> Emitter<'s> {
                             }
                             reg_index += 1;
                         }
-                        RecordElement::InterpolateNamed(_, _, _, _) => {
+                        RecordElementBase::InterpolateNamed(_, _, _) => {
                             let name_reg = elements_regs[reg_index];
                             let reg = elements_regs[reg_index + 1];
                             self.op_2(
@@ -307,7 +309,7 @@ impl<'s> Emitter<'s> {
                             );
                             reg_index += 2;
                         }
-                        RecordElement::OmitNamed(colon, expression, _) => {
+                        RecordElementBase::OmitNamed(colon, expression) => {
                             let id_token = if let Expression::Variable(id)
                             | Expression::Access(_, _, id) = expression.as_ref()
                             {
@@ -345,7 +347,7 @@ impl<'s> Emitter<'s> {
                             );
                             reg_index += 1;
                         }
-                        RecordElement::Unnamed(exp, _) => {
+                        RecordElementBase::Unnamed(exp) => {
                             let reg = elements_regs[reg_index];
                             self.op_2(
                                 if opt {
@@ -376,7 +378,7 @@ impl<'s> Emitter<'s> {
                             ));
                             reg_index += 1;
                         }
-                        RecordElement::Spread(_, _, _) => {
+                        RecordElementBase::Spread(_, _) => {
                             let reg = elements_regs[reg_index];
                             self.op_1(OpCode::Spread, reg);
                             reg_index += 1;
@@ -388,16 +390,16 @@ impl<'s> Emitter<'s> {
             Array(_, items, _) => {
                 let mut items_regs = vec![];
                 for item in items {
-                    match item {
-                        ArrayElement::Element(expression, _) => {
+                    match item.deref() {
+                        ArrayElementBase::Element(expression) => {
                             let reg = self.emit_expression_reg(expression, brk);
                             items_regs.push(reg);
                         }
-                        ArrayElement::Spread(_, expression, _) => {
+                        ArrayElementBase::Spread(_, expression) => {
                             let reg = self.emit_expression_reg(expression, brk);
                             items_regs.push(reg);
                         }
-                        ArrayElement::Range(range, _) => {
+                        ArrayElementBase::Range(range) => {
                             let Range(start, _, end) = range.as_ref();
                             let start = self.emit_expression_reg(start, brk);
                             let end = self.emit_expression_reg(end, brk);
@@ -409,16 +411,16 @@ impl<'s> Emitter<'s> {
                 self.op_1(OpCode::Array, ret);
                 let mut reg_index = 0;
                 for item in items.iter() {
-                    match item {
-                        ArrayElement::Element(_, _) => {
+                    match item.deref() {
+                        ArrayElementBase::Element(_) => {
                             self.op_1(OpCode::Item, items_regs[reg_index]);
                             reg_index += 1;
                         }
-                        ArrayElement::Spread(_, _, _) => {
+                        ArrayElementBase::Spread(_, _) => {
                             self.op_1(OpCode::Spread, items_regs[reg_index]);
                             reg_index += 1;
                         }
-                        ArrayElement::Range(range, _) => {
+                        ArrayElementBase::Range(range) => {
                             let start = items_regs[reg_index];
                             let end = items_regs[reg_index + 1];
                             self.op_2(

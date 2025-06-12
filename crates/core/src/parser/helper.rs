@@ -37,40 +37,6 @@ pub(super) fn statements_and_expression<'s>(
     Ok(construct_statements_and_expression(statements, expression))
 }
 
-pub(super) fn parameter_list<'s>(i: &mut Input<'_, 's>) -> ModalResult<Option<Vec<Token<'s>>>> {
-    let t = peek(any).parse_next(i)?;
-    if *t != Operator::OpenParen {
-        return Ok(None);
-    }
-
-    delimited(
-        token(Operator::OpenParen),
-        (
-            repeat(
-                0..,
-                terminated(
-                    one_of(|t: &Token<'s>| matches!(&t.kind, &TokenKind::Identifier(_))),
-                    token(Operator::Comma),
-                ),
-            )
-            .fold(Vec::new, |mut v, t: &Token<'s>| {
-                v.push(t.to_owned());
-                v
-            }),
-            opt(one_of(|t: &Token<'s>| {
-                matches!(&t.kind, &TokenKind::Identifier(_))
-            })),
-        ),
-        token(Operator::CloseParen),
-    )
-    .map(|(mut v, t): (Vec<Token<'s>>, Option<&Token<'s>>)| {
-        if let Some(t) = t {
-            v.push(t.to_owned());
-        }
-        Some(v)
-    })
-    .parse_next(i)
-}
 
 pub(super) fn literal_token<'s>(i: &mut Input<'_, 's>) -> ModalResult<Token<'s>> {
     one_of(|t: &Token<'s>| {

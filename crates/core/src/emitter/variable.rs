@@ -21,6 +21,10 @@ pub(crate) enum BindType {
     ItParameter,
     /// The variable is bound as a function's rest parameter.
     RestParameter,
+    /// The variable is bound as a function's parameter that matches a pattern.
+    PatternParameter,
+    /// The variable is bound as a function's rest parameter that matches a pattern.
+    RestPatternParameter,
     /// The variable is bound as a function statement.
     Func,
 }
@@ -154,6 +158,8 @@ impl<'s> Variable<'s> {
                     BindType::Parameter => DiagnosticCode::ParameterImmutable,
                     BindType::RestParameter => DiagnosticCode::ParameterImmutableRest,
                     BindType::ItParameter => DiagnosticCode::ParameterIt,
+                    BindType::PatternParameter => DiagnosticCode::ParameterPattern,
+                    BindType::RestPatternParameter => DiagnosticCode::ParameterRestPattern,
                 }
             } else {
                 match self.bind_type {
@@ -163,6 +169,8 @@ impl<'s> Variable<'s> {
                     BindType::Parameter => DiagnosticCode::ParameterMutable,
                     BindType::RestParameter => DiagnosticCode::ParameterMutableRest,
                     BindType::ItParameter => DiagnosticCode::ParameterIt,
+                    BindType::PatternParameter => DiagnosticCode::ParameterPattern,
+                    BindType::RestPatternParameter => DiagnosticCode::ParameterRestPattern,
                 }
             };
             let mut used = false;
@@ -173,7 +181,14 @@ impl<'s> Variable<'s> {
                 }
                 diagnostics.push(reference);
             }
-            if !used && !matches!(self.bind_type, BindType::ItParameter) {
+            if !used
+                && !matches!(
+                    self.bind_type,
+                    BindType::ItParameter
+                        | BindType::PatternParameter
+                        | BindType::RestPatternParameter
+                )
+            {
                 diagnostics.push(SourceDiagnostic::new(
                     self.declaration,
                     if self.bind_type == BindType::Func {

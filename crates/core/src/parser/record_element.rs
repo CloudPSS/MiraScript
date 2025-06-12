@@ -2,131 +2,91 @@ use std::fmt::{Debug, Display};
 
 use crate::{ansi::DisplayIdent, lexer::Token};
 
-use super::{AstVisitor, AstVisitorMut, AstWalker, Expression, Pattern};
+use super::{AstVisitor, AstVisitorMut, AstWalker, Expression, Pattern, list_item::ListItem};
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
-pub enum RecordElementBase<'s, E: Clone + PartialEq, I: Clone + PartialEq> {
-    /// name colon Named `,`?
-    Named(
-        Box<Token<'s>>,
-        Box<Token<'s>>,
-        Box<E>,
-        Option<Box<Token<'s>>>,
-    ),
-    /// interpolated_string colon Named `,`?
-    InterpolateNamed(Box<I>, Box<Token<'s>>, Box<E>, Option<Box<Token<'s>>>),
-    /// colon OmitNamed `,`?
-    OmitNamed(Box<Token<'s>>, Box<E>, Option<Box<Token<'s>>>),
-    /// Unnamed `,`?
-    Unnamed(Box<E>, Option<Box<Token<'s>>>),
-    /// `..` Spread `,`?
-    Spread(Box<Token<'s>>, Box<E>, Option<Box<Token<'s>>>),
+pub enum RecordElementBase<'s, E, I> {
+    /// name colon Named
+    Named(Box<Token<'s>>, Box<Token<'s>>, Box<E>),
+    /// interpolated_string colon Named
+    InterpolateNamed(Box<I>, Box<Token<'s>>, Box<E>),
+    /// colon OmitNamed
+    OmitNamed(Box<Token<'s>>, Box<E>),
+    /// Unnamed
+    Unnamed(Box<E>),
+    /// `..` Spread
+    Spread(Box<Token<'s>>, Box<E>),
 }
 
 use RecordElementBase::*;
 
-pub type RecordElement<'s> = RecordElementBase<'s, Expression<'s>, Expression<'s>>;
+pub type RecordElement<'s> = ListItem<'s, RecordElementBase<'s, Expression<'s>, Expression<'s>>>;
 
-pub type RecordPattern<'s> = RecordElementBase<'s, Pattern<'s>, Pattern<'s>>;
+pub type RecordPattern<'s> = ListItem<'s, RecordElementBase<'s, Pattern<'s>, Pattern<'s>>>;
 
-impl<'s, E: Clone + PartialEq, I: Clone + PartialEq> RecordElementBase<'s, E, I> {
-    pub fn has_tail_comma(&self) -> bool {
-        self.tail_comma().is_some()
-    }
-    pub fn tail_comma(&self) -> Option<&Token<'s>> {
-        match self {
-            Named(.., tail_comma)
-            | InterpolateNamed(.., tail_comma)
-            | OmitNamed(.., tail_comma)
-            | Unnamed(.., tail_comma)
-            | Spread(.., tail_comma) => tail_comma.as_deref(),
-        }
-    }
-    pub(super) fn set_tail_comma(&mut self, token: Box<Token<'s>>) {
-        match self {
-            Named(.., tail_comma)
-            | InterpolateNamed(.., tail_comma)
-            | OmitNamed(.., tail_comma)
-            | Unnamed(.., tail_comma)
-            | Spread(.., tail_comma) => *tail_comma = Some(token),
-        }
-    }
+impl<'s, E, I> RecordElementBase<'s, E, I> {
     pub fn colon(&self) -> Option<&Token<'s>> {
         match self {
-            Named(_, colon, _, _) | InterpolateNamed(_, colon, _, _) | OmitNamed(colon, _, _) => {
-                Some(colon)
-            }
-            Unnamed(_, _) | Spread(_, _, _) => None,
+            Named(_, colon, _) | InterpolateNamed(_, colon, _) | OmitNamed(colon, _) => Some(colon),
+            Unnamed(_) | Spread(_, _) => None,
         }
     }
 }
 
-impl<'s, E: Clone + PartialEq + AstWalker<'s>, I: Clone + PartialEq + AstWalker<'s>> AstWalker<'s>
-    for RecordElementBase<'s, E, I>
-{
+impl<'s, E: AstWalker<'s>, I: AstWalker<'s>> AstWalker<'s> for RecordElementBase<'s, E, I> {
     fn walk_mut(&mut self, visitor: &mut dyn AstVisitorMut<'s>) {
         match self {
-            Named(name, colon, value, tail_comma) => {
+            Named(name, colon, value) => {
                 name.walk_mut(visitor);
                 colon.walk_mut(visitor);
                 value.walk_mut(visitor);
-                tail_comma.walk_mut(visitor);
             }
-            InterpolateNamed(name_expr, colon, value, tail_comma) => {
+            InterpolateNamed(name_expr, colon, value) => {
                 name_expr.walk_mut(visitor);
                 colon.walk_mut(visitor);
                 value.walk_mut(visitor);
-                tail_comma.walk_mut(visitor);
             }
-            OmitNamed(colon, value, tail_comma) => {
+            OmitNamed(colon, value) => {
                 colon.walk_mut(visitor);
                 value.walk_mut(visitor);
-                tail_comma.walk_mut(visitor);
             }
-            Unnamed(value, tail_comma) => {
+            Unnamed(value) => {
                 value.walk_mut(visitor);
-                tail_comma.walk_mut(visitor);
             }
-            Spread(spread, value, tail_comma) => {
+            Spread(spread, value) => {
                 spread.walk_mut(visitor);
                 value.walk_mut(visitor);
-                tail_comma.walk_mut(visitor);
             }
         }
     }
     fn walk(&self, visitor: &mut dyn AstVisitor<'s>) {
         match self {
-            Named(name, colon, value, tail_comma) => {
+            Named(name, colon, value) => {
                 name.walk(visitor);
                 colon.walk(visitor);
                 value.walk(visitor);
-                tail_comma.walk(visitor);
             }
-            InterpolateNamed(name_expr, colon, value, tail_comma) => {
+            InterpolateNamed(name_expr, colon, value) => {
                 name_expr.walk(visitor);
                 colon.walk(visitor);
                 value.walk(visitor);
-                tail_comma.walk(visitor);
             }
-            OmitNamed(colon, value, tail_comma) => {
+            OmitNamed(colon, value) => {
                 colon.walk(visitor);
                 value.walk(visitor);
-                tail_comma.walk(visitor);
             }
-            Unnamed(value, tail_comma) => {
+            Unnamed(value) => {
                 value.walk(visitor);
-                tail_comma.walk(visitor);
             }
-            Spread(spread, value, tail_comma) => {
+            Spread(spread, value) => {
                 spread.walk(visitor);
                 value.walk(visitor);
-                tail_comma.walk(visitor);
             }
         }
     }
 }
 
-impl<'s, E: Clone + PartialEq, I: Clone + PartialEq> Display for RecordElementBase<'s, E, I>
+impl<'s, E, I> Display for RecordElementBase<'s, E, I>
 where
     RecordElementBase<'s, E, I>: DisplayIdent,
 {
@@ -135,35 +95,30 @@ where
     }
 }
 
-impl<E: DisplayIdent + Clone + PartialEq, I: DisplayIdent + Clone + PartialEq> DisplayIdent
-    for RecordElementBase<'_, E, I>
-{
+impl<E: DisplayIdent, I: DisplayIdent> DisplayIdent for RecordElementBase<'_, E, I> {
     fn fmt_ident(&self, f: &mut std::fmt::Formatter<'_>, ident: usize) -> std::fmt::Result {
         match self {
-            Named(name, colon, value, _) => {
+            Named(name, colon, value) => {
                 name.fmt_ident(f, ident)?;
                 colon.fmt_ident(f, ident)?;
                 write!(f, " ")?;
                 value.fmt_ident(f, ident)?;
             }
-            InterpolateNamed(name_expr, colon, value, _) => {
+            InterpolateNamed(name_expr, colon, value) => {
                 name_expr.fmt_ident(f, ident)?;
                 colon.fmt_ident(f, ident)?;
                 write!(f, " ")?;
                 value.fmt_ident(f, ident)?;
             }
-            OmitNamed(colon, value, _) => {
+            OmitNamed(colon, value) => {
                 colon.fmt_ident(f, ident)?;
                 value.fmt_ident(f, ident)?;
             }
-            Unnamed(value, _) => value.fmt_ident(f, ident)?,
-            Spread(sp, value, _) => {
+            Unnamed(value) => value.fmt_ident(f, ident)?,
+            Spread(sp, value) => {
                 sp.fmt_ident(f, ident)?;
                 value.fmt_ident(f, ident)?;
             }
-        }
-        if let Some(tail_comma) = self.tail_comma() {
-            tail_comma.fmt_ident(f, ident)?;
         }
         Ok(())
     }

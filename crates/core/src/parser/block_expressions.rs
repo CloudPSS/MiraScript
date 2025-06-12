@@ -2,12 +2,15 @@ use winnow::combinator::{alt, dispatch, fail, opt, peek, repeat, seq};
 use winnow::prelude::*;
 use winnow::token::any;
 
-use crate::diagnostic::{DiagnosticCode, SourceRange};
 use crate::lexer::{Keyword, Operator, Token};
 use crate::parser::helper::statements_and_expression;
+use crate::{
+    diagnostic::{DiagnosticCode, SourceRange},
+    parser::parameter_list::parameter_list,
+};
 
 use super::expressions::expression;
-use super::helper::{parameter_list, token, token_boxed, token_or_insert};
+use super::helper::{token, token_boxed, token_or_insert};
 use super::iterables::iterable;
 use super::patterns::{pattern, pattern_or_insert};
 use super::{AstWalker, Expression, Input, Statement};

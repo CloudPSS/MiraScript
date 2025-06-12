@@ -67,7 +67,10 @@ pub enum Pattern<'s> {
     /// Used in [ArrayPattern]::Spread and [RecordPattern]::Spread
     /// as a placeholder since `_`
     /// must be omitted in these cases.
-    SpreadDiscard,
+    ///
+    /// The value is the position of the spread discard in the pattern.
+    /// Used in the [AstWalker::range] method
+    SpreadDiscard(usize),
 
     /// pattern `and` pattern
     ///
@@ -184,7 +187,7 @@ impl<'s> AstWalker<'s> for Pattern<'s> {
                 }
                 e.walk_mut(visitor);
             }
-            SpreadDiscard => {}
+            SpreadDiscard(_) => {}
             And(l, o, r) => {
                 l.walk_mut(visitor);
                 o.walk_mut(visitor);
@@ -250,7 +253,7 @@ impl<'s> AstWalker<'s> for Pattern<'s> {
                 }
                 e.walk(visitor);
             }
-            SpreadDiscard => {}
+            SpreadDiscard(_) => {}
             And(l, o, r) => {
                 l.walk(visitor);
                 o.walk(visitor);
@@ -281,6 +284,7 @@ impl<'s> AstWalker<'s> for Pattern<'s> {
         match self {
             Grouping(o, _, e) | Record(o, _, e) | Array(o, _, e) => o.range().start..e.range().end,
             Range(o, _, e) => o.range().start..e.range().end,
+            SpreadDiscard(pos) => *pos..*pos,
             _ => self.range_slow(),
         }
     }
@@ -330,7 +334,7 @@ impl DisplayIdent for Pattern<'_> {
                 }
                 write!(f, "{end}")?;
             }
-            SpreadDiscard => {}
+            SpreadDiscard(_) => {}
             And(left, op, right) | Or(left, op, right) => {
                 left.fmt_ident(f, ident)?;
                 write!(f, " {op} ")?;

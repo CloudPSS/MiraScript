@@ -13,6 +13,7 @@ use crate::{
 use super::{
     Input,
     helper::{token_boxed, token_or_insert, variable_token},
+    list_item::ListItem,
     record_element::RecordElementBase,
 };
 
@@ -35,18 +36,22 @@ fn record_element<'t, 's: 't, E: Clone + PartialEq + 's, I: Clone + PartialEq + 
     omit_named: impl Parser<Input<'t, 's>, E, ErrMode<ContextError>> + Copy,
     unnamed: impl Parser<Input<'t, 's>, E, ErrMode<ContextError>> + Copy,
     spread: impl Parser<Input<'t, 's>, E, ErrMode<ContextError>> + Copy,
-) -> impl Parser<Input<'t, 's>, RecordElementBase<'s, E, I>, ErrMode<ContextError>> + Copy {
+) -> impl Parser<Input<'t, 's>, ListItem<'s, RecordElementBase<'s, E, I>>, ErrMode<ContextError>> + Copy
+{
     let colon = |t: &Token<'s>| -> bool { *t == Operator::Colon || *t == Operator::QuestionColon };
     move |i: &mut Input<'t, 's>| {
         let first = peek(any).parse_next(i)?;
-        if *first == Operator::CloseParen {
+        if *first == Operator::CloseBracket
+            || *first == Operator::CloseBrace
+            || *first == Operator::CloseParen
+        {
             return fail.parse_next(i);
         }
-        let mut result = alt((
+        let result = alt((
             (token_boxed(Operator::SpreadRange), spread)
-                .map(|(s, e)| RecordElementBase::Spread(s, e.into(), None)),
+                .map(|(s, e)| RecordElementBase::Spread(s, e.into())),
             (one_of(colon), omit_named)
-                .map(|(c, o)| RecordElementBase::OmitNamed(c.to_owned().into(), o.into(), None)),
+                .map(|(c, o)| RecordElementBase::OmitNamed(c.to_owned().into(), o.into())),
             (
                 one_of(|t: &Token<'s>| t.is_interpolated_string()),
                 one_of(colon),
@@ -57,13 +62,12 @@ fn record_element<'t, 's: 't, E: Clone + PartialEq + 's, I: Clone + PartialEq + 
                         Box::new(interpolate_name(r)),
                         c.to_owned().into(),
                         n.into(),
-                        None,
                     )
                 }),
             (record_name, one_of(colon), named).map(|(r, c, n)| {
-                RecordElementBase::Named(Box::new(r), c.to_owned().into(), n.into(), None)
+                RecordElementBase::Named(Box::new(r), c.to_owned().into(), n.into())
             }),
-            unnamed.map(|u| RecordElementBase::Unnamed(u.into(), None)),
+            unnamed.map(|u| RecordElementBase::Unnamed(u.into())),
         ))
         .parse_next(i)?;
         let last = peek(any).parse_next(i)?;
@@ -80,11 +84,10 @@ fn record_element<'t, 's: 't, E: Clone + PartialEq + 's, I: Clone + PartialEq + 
             || *last == Keyword::In
             || *last == Keyword::Let
         {
-            return Ok(result);
+            return Ok(ListItem::new(result));
         }
         let comma = token_or_insert(Operator::Comma, DiagnosticCode::MissingComma).parse_next(i)?;
-        result.set_tail_comma(Box::new(comma));
-        Ok(result)
+        Ok(ListItem::new_with_comma(result, comma))
     }
 }
 
@@ -98,7 +101,7 @@ pub(super) fn record_base<'t, 's: 't, E: Clone + PartialEq + 's, I: Clone + Part
     Input<'t, 's>,
     (
         Box<Token<'s>>,
-        Vec<RecordElementBase<'s, E, I>>,
+        Vec<ListItem<'s, RecordElementBase<'s, E, I>>>,
         Box<Token<'s>>,
     ),
     ErrMode<ContextError>,

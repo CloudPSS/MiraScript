@@ -121,12 +121,7 @@ pub(super) fn token<'s>(
             }),
         ))
         .with_span()
-        .map(|(kind, range)| Token {
-            range,
-            kind,
-            leading_trivia: vec![],
-            trailing_trivia: vec![],
-        }),
+        .map(|(kind, range)| Token::new(kind, range)),
     )
     .parse_next(input)?;
 

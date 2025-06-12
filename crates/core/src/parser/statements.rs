@@ -5,11 +5,11 @@ use winnow::token::{any, one_of};
 use crate::diagnostic::{DiagnosticCode, SourceRange};
 use crate::lexer::{Keyword, Operator, Token, TokenKind};
 
-use super::block_expressions::*;
 use super::expressions::expression;
-use super::helper::{parameter_list, token_boxed, token_or_insert, variable_token};
+use super::helper::{token_boxed, token_or_insert, variable_token};
 use super::patterns::{pattern, pattern_or_insert};
 use super::{Input, Statement};
+use super::{block_expressions::*, parameter_list::parameter_list};
 
 pub(super) fn semicolon<'s>(i: &mut Input<'_, 's>) -> ModalResult<Box<Token<'s>>> {
     token_or_insert(Operator::Semicolon, DiagnosticCode::MissingSemicolon)
@@ -33,10 +33,7 @@ fn fn_statement<'s>(i: &mut Input<'_, 's>) -> ModalResult<Statement<'s>> {
         .map(|(kw, name, params, body)| {
             let name = Box::new(name.unwrap_or_else(|| {
                 Token::unknown(
-                    SourceRange {
-                        start: kw.range.end,
-                        end: kw.range.end,
-                    },
+                    kw.range.end..kw.range.end,
                     TokenKind::Identifier("<name>".into()),
                     DiagnosticCode::MissingFunctionName,
                 )

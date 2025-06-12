@@ -118,6 +118,12 @@ fn compile(
             true
         })
         .flat_map(|s| {
+            #[cfg(debug_assertions)]
+            {
+                if s.range.start > s.range.end || s.range.end > script.len() {
+                    panic!("Invalid diagnostic range {s}");
+                }
+            }
             let start = pos_to_line_col(s.range.start);
             let end = pos_to_line_col(s.range.end);
             [start.0, start.1, end.0, end.1, s.error.code() as usize]

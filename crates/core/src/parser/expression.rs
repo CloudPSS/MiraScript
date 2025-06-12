@@ -7,7 +7,8 @@ use crate::{
 };
 
 use super::{
-    ArrayElement, AstVisitor, AstVisitorMut, AstWalker, Iterable, Pattern, RecordElement, Statement,
+    ArrayElement, AstVisitor, AstVisitorMut, AstWalker, Iterable, ParameterList, Pattern,
+    RecordElement, Statement,
 };
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
@@ -217,7 +218,11 @@ pub enum Expression<'s> {
     ///
     /// Just like function declarations, but without the identifier.
     /// See [Statement::Function] for more details.
-    Function(Box<Token<'s>>, Option<Vec<Token<'s>>>, Box<Expression<'s>>),
+    Function(
+        Box<Token<'s>>,
+        Option<ParameterList<'s>>,
+        Box<Expression<'s>>,
+    ),
     /// Unknown expression
     Unknown {
         expression: Option<Box<Expression<'s>>>,
@@ -852,13 +857,7 @@ impl DisplayIdent for Expression<'_> {
             Function(kw, Some(params), block) => {
                 kw.fmt_ident(f, ident)?;
                 write!(f, " {GROUP}({RESET}")?;
-                let mut iter = params.iter();
-                if let Some(param) = iter.next() {
-                    write!(f, "{}", param)?;
-                    for param in iter {
-                        write!(f, ", {}", param)?;
-                    }
-                }
+                params.fmt_ident(f, ident)?;
                 write!(f, "{GROUP}){RESET} ")?;
                 block.fmt_ident(f, ident)?;
             }

@@ -3,8 +3,7 @@ use std::ops::{Deref, DerefMut};
 use crate::{
     diagnostic::SourceRange,
     emitter::variable::Variable,
-    lexer::Token,
-    parser::{Expression, Statement},
+    parser::{ArrayElementBase, AstWalker as _, Expression, ParameterList, Pattern, Statement},
 };
 
 use super::{
@@ -102,7 +101,7 @@ impl<'s> Emitter<'s> {
         &mut self,
         ret: Register,
         args_range: SourceRange,
-        args: &'s Option<Vec<Token<'s>>>,
+        args: &'s Option<ParameterList<'s>>,
         body_range: SourceRange,
         stmts: &'s Vec<Statement<'s>>,
         expr: &'s Option<Box<Expression<'s>>>,
@@ -115,11 +114,52 @@ impl<'s> Emitter<'s> {
         self.chunk.code.push(OpCode::Func.code());
 
         if let Some(args) = args {
-            for arg in args {
-                if arg.is_identifier() {
-                    self.declare_variable(arg, false, BindType::Parameter);
-                } else {
-                    continue; // Skip non-identifier tokens
+            for arg in args.iter() {
+                match arg.deref() {
+                    ArrayElementBase::Element(arg) => {
+                        if let Pattern::Bind(kw_mut, id_token) = arg.deref() {
+                            self.declare_variable(id_token, kw_mut.is_some(), BindType::Parameter);
+                        } else {
+                            self.declare_implicit_variable(
+                                "<arg_pattern>",
+                                arg.range(),
+                                false,
+                                BindType::PatternParameter,
+                            );
+                        }
+                    }
+                    ArrayElementBase::Spread(_, arg) => {
+                        if let Pattern::Bind(kw_mut, id_token) = arg.deref() {
+                            self.declare_variable(
+                                id_token,
+                                kw_mut.is_some(),
+                                BindType::RestParameter,
+                            );
+                        } else {
+                            self.declare_implicit_variable(
+                                "<..arg_pattern>",
+                                arg.range(),
+                                false,
+                                BindType::RestPatternParameter,
+                            );
+                        }
+                    }
+                    ArrayElementBase::Range(..) => unreachable!(),
+                }
+            }
+            for arg in args.iter() {
+                match arg.deref() {
+                    ArrayElementBase::Element(arg) => {
+                        if !arg.is_bind() {
+                            self.declare_pattern(arg, Some(BindType::Parameter));
+                        }
+                    }
+                    ArrayElementBase::Spread(_, arg) => {
+                        if !arg.is_bind() {
+                            self.declare_pattern(arg, Some(BindType::Parameter));
+                        }
+                    }
+                    ArrayElementBase::Range(..) => unreachable!(),
                 }
             }
         } else {
@@ -131,6 +171,25 @@ impl<'s> Emitter<'s> {
             );
         }
         self.declare_block(stmts, expr);
+
+        if let Some(args) = args {
+            for (i, arg) in args.iter().enumerate() {
+                let reg = Register::new(i + 1);
+                match arg.deref() {
+                    ArrayElementBase::Element(arg) => {
+                        if !arg.is_bind() {
+                            self.emit_pattern(arg, reg, Some(BindType::Parameter));
+                        }
+                    }
+                    ArrayElementBase::Spread(_, arg) => {
+                        if !arg.is_bind() {
+                            self.emit_pattern(arg, reg, Some(BindType::RestParameter));
+                        }
+                    }
+                    ArrayElementBase::Range(..) => unreachable!(),
+                }
+            }
+        }
 
         let ret_reg = self.closures.add_reg();
         let never = self.emit_block(stmts, expr, ret_reg, None);

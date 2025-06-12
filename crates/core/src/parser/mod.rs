@@ -13,6 +13,8 @@ mod expressions;
 mod helper;
 mod iterable;
 mod iterables;
+mod list_item;
+mod parameter_list;
 mod pattern;
 mod patterns;
 mod range;
@@ -24,13 +26,14 @@ mod scripts;
 mod statement;
 mod statements;
 
-pub use array_element::{ArrayElement, ArrayPattern};
-pub(crate) use ast_visitor::*;
+pub use array_element::{ArrayElement, ArrayElementBase, ArrayPattern};
+pub(super) use ast_visitor::*;
 pub use expression::{Callable, Expression};
 pub use iterable::Iterable;
+pub(super) use parameter_list::ParameterList;
 pub use pattern::Pattern;
 pub use range::Range;
-pub use record_element::{RecordElement, RecordPattern};
+pub use record_element::{RecordElement, RecordElementBase, RecordPattern};
 pub use script::Script;
 pub use statement::Statement;
 

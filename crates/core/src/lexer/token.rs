@@ -45,6 +45,15 @@ impl DerefMut for Token<'_> {
 }
 
 impl<'s> Token<'s> {
+    pub(crate) fn new(kind: TokenKind<'s>, range: SourceRange) -> Self {
+        Token {
+            kind,
+            range,
+            leading_trivia: vec![],
+            trailing_trivia: vec![],
+        }
+    }
+
     pub(crate) fn wrap_as_unknown(self, error: DiagnosticCode) -> Self {
         Token {
             kind: TokenKind::unknown_range(self.kind, self.range.clone(), error),

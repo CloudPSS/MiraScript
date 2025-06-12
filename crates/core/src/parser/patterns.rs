@@ -2,17 +2,18 @@ use winnow::{
     ModalResult, Parser,
     combinator::{alt, empty, fail, opt, peek, preceded, separated_foldl1, seq},
     error::{ContextError, ErrMode},
-    stream::Location,
+    stream::{Location, Stream},
     token::{one_of, take_till},
 };
 
 use crate::{
     diagnostic::{DiagnosticCode, SourceRange},
     lexer::{Keyword, Operator, Token, TokenKind},
+    parser::record_element::RecordElementBase,
 };
 
 use super::{
-    Input, Pattern, RecordPattern,
+    Input, Pattern,
     array_helper::array_base,
     helper::{literal_token, token_boxed, variable_token},
     record_helper::record_base,
@@ -133,8 +134,10 @@ fn constants_pattern<'s>(i: &mut Input<'_, 's>) -> ModalResult<Pattern<'s>> {
                 return Pattern::Constant(None, Box::new(l));
             };
             if *op == Operator::Exclamation {
-                return Pattern::Constant(None, Box::from(l.clone()))
-                    .wrap_as_unknown([op.to_owned(), l], DiagnosticCode::ExclamationInConstantsPattern);
+                return Pattern::Constant(None, Box::from(l.clone())).wrap_as_unknown(
+                    [op.to_owned(), l],
+                    DiagnosticCode::ExclamationInConstantsPattern,
+                );
             }
             if !(l.is_number() || l.is_ordinal() || l == Keyword::Inf) {
                 return Pattern::Constant(None, Box::from(l.clone())).wrap_as_unknown(
@@ -180,7 +183,9 @@ fn discard_bind_pattern<'t, 's: 't>(
         (opt(token_boxed(Keyword::Mut)), variable_token(true, false))
             .map(|(kw_mut, id)| {
                 if rebind && kw_mut.is_some() {
-                    let kw_mut = kw_mut.unwrap().wrap_as_unknown(DiagnosticCode::MutInBindPattern);
+                    let kw_mut = kw_mut
+                        .unwrap()
+                        .wrap_as_unknown(DiagnosticCode::MutInBindPattern);
                     return Pattern::Bind(Some(Box::new(kw_mut)), Box::new(id));
                 }
                 if id.kind == Keyword::Underscore {
@@ -203,11 +208,12 @@ fn pattern_spread<'t, 's: 't>(
     rebind: bool,
 ) -> impl Parser<Input<'t, 's>, Pattern<'s>, ErrMode<ContextError>> + Copy {
     move |i: &mut Input<'_, 's>| {
+        let pos = i.previous_token_end();
         opt(pattern(rebind))
             .with_taken()
             .map(|(p, t)| {
                 if p.is_none() {
-                    return Pattern::SpreadDiscard;
+                    return Pattern::SpreadDiscard(pos);
                 }
                 let p = p.unwrap();
                 if p.is_discard() {
@@ -252,19 +258,23 @@ fn record_like_pattern<'t, 's: 't>(
     move |i: &mut Input<'_, 's>| {
         let (open, parts, close) = record_base(
             pattern_or_insert(rebind),
-            |t| Pattern::unknown([t.to_owned()], DiagnosticCode::InterpolatedNameRecordPattern),
+            |t| {
+                Pattern::unknown(
+                    [t.to_owned()],
+                    DiagnosticCode::InterpolatedNameRecordPattern,
+                )
+            },
             omit_named,
             unnamed,
             pattern_spread(rebind),
         )
         .parse_next(i)?;
-        let result = if parts.len() == 1 {
-            let part = parts.into_iter().next().unwrap();
-            if let RecordPattern::Unnamed(exp, None) = part {
-                Pattern::Grouping(open, exp, close)
-            } else {
-                Pattern::Record(open, vec![part], close)
-            }
+        let result = if parts.len() == 1 && parts[0].has_tail_comma() && parts[0].is_unnamed() {
+            let RecordElementBase::Unnamed(part) = parts.into_iter().next().unwrap().unwrap()
+            else {
+                unreachable!();
+            };
+            Pattern::Grouping(open, part, close)
         } else {
             Pattern::Record(open, parts, close)
         };
@@ -272,7 +282,8 @@ fn record_like_pattern<'t, 's: 't>(
     }
 }
 
-fn array_pattern<'t, 's: 't>(
+pub(crate) fn array_pattern_like<'t, 's: 't>(
+    brace: [Operator; 2],
     rebind: bool,
 ) -> impl Parser<Input<'t, 's>, Pattern<'s>, ErrMode<ContextError>> + Copy {
     let element_pattern = move |i: &mut Input<'_, 's>| {
@@ -289,7 +300,13 @@ fn array_pattern<'t, 's: 't>(
     };
     move |i: &mut Input<'_, 's>| {
         let (open, parts, close) =
-            array_base(element_pattern, fail, pattern_spread(rebind)).parse_next(i)?;
+            array_base(brace, element_pattern, fail, pattern_spread(rebind)).parse_next(i)?;
         Ok(Pattern::Array(open, parts, close))
     }
+}
+
+fn array_pattern<'t, 's: 't>(
+    rebind: bool,
+) -> impl Parser<Input<'t, 's>, Pattern<'s>, ErrMode<ContextError>> + Copy {
+    array_pattern_like([Operator::OpenBracket, Operator::CloseBracket], rebind)
 }

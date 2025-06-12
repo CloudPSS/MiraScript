@@ -6,7 +6,7 @@ use crate::{
     lexer::Token,
 };
 
-use super::{AstVisitor, AstVisitorMut, AstWalker, Expression, Pattern};
+use super::{AstVisitor, AstVisitorMut, AstWalker, Expression, ParameterList, Pattern};
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
 pub enum Statement<'s> {
@@ -62,7 +62,7 @@ pub enum Statement<'s> {
     Function(
         Box<Token<'s>>,
         Box<Token<'s>>,
-        Option<Vec<Token<'s>>>,
+        Option<ParameterList<'s>>,
         Box<Expression<'s>>,
     ),
     /// `return expression;` or `return;`
@@ -282,13 +282,7 @@ impl DisplayIdent for Statement<'_> {
             Function(kw, id, Some(params), body) => {
                 Self::write_ident(f, ident, "declare")?;
                 write!(f, "{kw} {id}{GROUP}({RESET}")?;
-                let mut iter = params.iter();
-                if let Some(param) = iter.next() {
-                    write!(f, "{param}")?;
-                    for param in iter {
-                        write!(f, ", {param}")?;
-                    }
-                }
+                params.fmt_ident(f, ident)?;
                 write!(f, "{GROUP}){RESET} ")?;
                 body.fmt_ident(f, ident)?;
                 writeln!(f)

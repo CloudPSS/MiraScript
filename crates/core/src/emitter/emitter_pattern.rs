@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use crate::{
     diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
     emitter::emitter_scope::check_variable_initialized,
@@ -5,7 +7,7 @@ use crate::{
     parser::{
         AstWalker,
         Pattern::{self, *},
-        RecordPattern,
+        RecordElementBase, RecordPattern,
     },
 };
 
@@ -38,7 +40,7 @@ impl<'s> Emitter<'s> {
             Constant(token, token1) => self.unimplemented(pattern, pattern),
             Relation(token, pattern) => self.unimplemented(token, pattern),
             Range(l, token, r) => self.unimplemented(l, r),
-            Discard(_) | SpreadDiscard => (),
+            Discard(_) | SpreadDiscard(_) => (),
             Bind(mut_token, id_token) => {
                 if let Some(bind_type) = bind_type {
                     self.declare_variable(id_token, mut_token.is_some(), bind_type);
@@ -46,12 +48,12 @@ impl<'s> Emitter<'s> {
             }
             Record(_, elements, _) => {
                 for element in elements {
-                    match element {
-                        RecordPattern::Named(_, _, pattern, _)
-                        | RecordPattern::InterpolateNamed(_, _, pattern, _)
-                        | RecordPattern::OmitNamed(_, pattern, _)
-                        | RecordPattern::Unnamed(pattern, _)
-                        | RecordPattern::Spread(_, pattern, _) => {
+                    match element.deref() {
+                        RecordElementBase::Named(_, _, pattern)
+                        | RecordElementBase::InterpolateNamed(_, _, pattern)
+                        | RecordElementBase::OmitNamed(_, pattern)
+                        | RecordElementBase::Unnamed(pattern)
+                        | RecordElementBase::Spread(_, pattern) => {
                             self.declare_pattern(pattern, bind_type);
                         }
                     }
@@ -76,7 +78,7 @@ impl<'s> Emitter<'s> {
             Constant(token, token1) => self.unimplemented(pattern, pattern),
             Relation(token, pattern) => self.unimplemented(token, pattern),
             Range(l, token, r) => self.unimplemented(l, r),
-            Discard(_) | SpreadDiscard => (),
+            Discard(_) | SpreadDiscard(_) => (),
             Bind(_, id_token) => {
                 let TokenKind::Identifier(id) = &id_token.kind else {
                     return;
@@ -121,8 +123,8 @@ impl<'s> Emitter<'s> {
             }
             Record(_, elements, _) => {
                 for (i, element) in elements.iter().enumerate() {
-                    match element {
-                        RecordPattern::Named(token, _, pattern, _) => {
+                    match element.deref() {
+                        RecordElementBase::Named(token, _, pattern) => {
                             let Some((id_type, id)) = token.to_field_name() else {
                                 unreachable!("Expected identifier token");
                             };
@@ -132,8 +134,8 @@ impl<'s> Emitter<'s> {
                             self.op_get(ret, value, id);
                             self.emit_pattern(pattern, ret, bind_type);
                         }
-                        RecordPattern::InterpolateNamed(..) => {}
-                        RecordPattern::OmitNamed(colon, pattern, _) => {
+                        RecordElementBase::InterpolateNamed(..) => {}
+                        RecordElementBase::OmitNamed(colon, pattern) => {
                             let Pattern::Bind(_, id_token) = pattern.as_ref() else {
                                 continue;
                             };
@@ -152,7 +154,7 @@ impl<'s> Emitter<'s> {
                             self.op_get(ret, value, id.as_ref());
                             self.emit_pattern(pattern, ret, bind_type);
                         }
-                        RecordPattern::Unnamed(pattern, _) => {
+                        RecordElementBase::Unnamed(pattern) => {
                             let ret = self.closures.add_reg();
                             let code = match i {
                                 0 => DiagnosticCode::UnnamedRecordField0,
@@ -175,7 +177,7 @@ impl<'s> Emitter<'s> {
                             self.op_get_index(ret, value, i);
                             self.emit_pattern(pattern, ret, bind_type);
                         }
-                        RecordPattern::Spread(dots, pattern, _) => {
+                        RecordElementBase::Spread(dots, pattern) => {
                             self.unimplemented(dots, pattern)
                         }
                     }

@@ -1,10 +1,9 @@
-use std::fmt::Display;
-use strum::{EnumMessage, FromRepr};
+use strum::{Display, EnumMessage, FromRepr};
 #[cfg(feature = "wasm")]
 use wasm_bindgen::prelude::*;
 
 #[cfg_attr(feature = "wasm", wasm_bindgen)]
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, EnumMessage, FromRepr)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, EnumMessage, FromRepr, Display)]
 #[repr(u16)]
 pub enum DiagnosticCode {
     // Preserved 0~999
@@ -180,6 +179,8 @@ pub enum DiagnosticCode {
     LocalFunction,
 
     ParameterIt,
+    ParameterPattern,
+    ParameterRestPattern,
     ParameterImmutable,
     ParameterMutable,
     ParameterImmutableRest,
@@ -293,11 +294,5 @@ impl DiagnosticCode {
 
     pub fn is_other(&self) -> bool {
         *self > DiagnosticCode::ReferenceEnd
-    }
-}
-
-impl Display for DiagnosticCode {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.message())
     }
 }

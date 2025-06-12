@@ -8,7 +8,7 @@
   "exports": "./dist/index.js",
   "scripts": {
     "wasm": "wasm-pack build --target bundler --out-dir ../../packages/wasm/lib --no-pack ../../crates/wasm",
-    "watch": "nodemon --watch ../../crates/wasm --watch ../../crates/core --watch ./src --exec 'pnpm build:dev'",
+    "watch": "nodemon -e rs,js,ts --watch ../../crates/wasm --watch ../../crates/core --watch ./src --exec 'pnpm build:dev'",
     "build:dev": "pnpm wasm --dev && tsc",
     "build": "pnpm wasm --release && tsc",
     "clean": "rimraf dist lib"
