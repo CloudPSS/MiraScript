@@ -1,5 +1,5 @@
-import { type editor, languages, type CancellationToken } from '@private/monaco-editor';
-import { Provider } from './worker-helper.js';
+import type { editor, languages, CancellationToken } from '@private/monaco-editor';
+import { Provider } from './base.js';
 import { DiagnosticCode } from '@mirascript/wasm';
 
 const REG_COLOR_STR = /^(@*)(['"`])(#(?:[0-9a-f]{6}|[0-9a-f]{3}|[0-9a-f]{8}|[0-9a-f]{4}))\2\1$/iu;
@@ -77,7 +77,7 @@ export class ColorProvider extends Provider implements languages.DocumentColorPr
         model: editor.ITextModel,
         token: CancellationToken,
     ): Promise<languages.IColorInformation[] | undefined> {
-        const compiled = await Provider.getCompileResult(model);
+        const compiled = await this.getCompileResult(model);
         if (!compiled) return undefined;
         const info: languages.IColorInformation[] = [];
         for (const { range, code } of compiled.groupedTags(model).ranges) {

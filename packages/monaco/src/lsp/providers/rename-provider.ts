@@ -1,14 +1,7 @@
-import {
-    type CancellationToken,
-    type editor,
-    type IRange,
-    languages,
-    type Position,
-    Range,
-} from '@private/monaco-editor';
+import type { CancellationToken, editor, IRange, languages, Position } from '@private/monaco-editor';
 import { DiagnosticCode } from '@mirascript/wasm';
-import { Provider } from './worker-helper';
-import type { CompileResult } from './compile-result';
+import { Provider } from './base.js';
+import type { CompileResult } from '../compile-result.js';
 
 /** @inheritdoc */
 export class RenameProvider extends Provider implements languages.RenameProvider {
@@ -21,6 +14,7 @@ export class RenameProvider extends Provider implements languages.RenameProvider
         oldName: string,
     ): void {
         const { omitNameFields } = compiled.groupedTags(model);
+        const { Range } = this.monaco;
         for (const tag of omitNameFields) {
             if (Range.equalsRange(tag.references[0]?.range, ref.range)) {
                 const current = model.getValueInRange(tag.range);
@@ -58,7 +52,7 @@ export class RenameProvider extends Provider implements languages.RenameProvider
         newName: string,
         token: CancellationToken,
     ): Promise<undefined | (languages.WorkspaceEdit & languages.Rejection)> {
-        const compiled = await Provider.getCompileResult(model);
+        const compiled = await this.getCompileResult(model);
         if (!compiled) return undefined;
         const d = compiled.definition(model, position);
         if (!d) return undefined;
@@ -100,12 +94,12 @@ export class RenameProvider extends Provider implements languages.RenameProvider
         position: Position,
         token: CancellationToken,
     ): Promise<undefined | (languages.RenameLocation & languages.Rejection)> {
-        const compiled = await Provider.getCompileResult(model);
+        const compiled = await this.getCompileResult(model);
         if (!compiled) return undefined;
         const d = compiled.definition(model, position);
         if (!d) {
             return {
-                range: Range.fromPositions(position),
+                range: this.monaco.Range.fromPositions(position),
                 text: '',
                 rejectReason: 'Cannot rename this element',
             };
@@ -113,7 +107,7 @@ export class RenameProvider extends Provider implements languages.RenameProvider
         const { def, ref } = d;
         if ('name' in def) {
             return {
-                range: def.references[ref!]?.range ?? Range.fromPositions(position),
+                range: def.references[ref!]?.range ?? this.monaco.Range.fromPositions(position),
                 text: def.name,
                 rejectReason: 'Cannot rename global variables',
             };

@@ -1,9 +1,9 @@
 import type { CancellationToken, editor, languages } from '@private/monaco-editor';
-import { Provider } from './worker-helper';
+import { Provider } from './base.js';
 import { DiagnosticCode } from '@mirascript/wasm';
 import { VmSharedGlobal } from 'mirascript/subtle';
 import { isVmFunction } from 'mirascript';
-import { ParameterType } from './compile-result';
+import { ParameterType } from '../compile-result';
 
 /** @inheritdoc */
 export class DocumentSemanticTokensProvider extends Provider implements languages.DocumentSemanticTokensProvider {
@@ -27,7 +27,7 @@ export class DocumentSemanticTokensProvider extends Provider implements language
         token: CancellationToken,
     ): Promise<languages.SemanticTokens | languages.SemanticTokensEdits | null | undefined> {
         const resultId = `${model.uri.toString()}?${model.getVersionId()}`;
-        const compiled = await Provider.getCompileResult(model);
+        const compiled = await this.getCompileResult(model);
         if (!compiled) {
             return undefined;
         }

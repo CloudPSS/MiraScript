@@ -2,20 +2,20 @@ import type { Monaco, IDisposable } from '../index.js';
 import type { languages } from '@private/monaco-editor';
 import '../basic/index.js';
 
-import { CodeActionProvider } from './code-action-provider.js';
-import { ColorProvider } from './color-provider.js';
-import { CompletionItemProvider } from './completion-item-provider.js';
-import { DefinitionReferenceProvider } from './definition-reference-provider.js';
+import { CodeActionProvider } from './providers/code-action-provider.js';
+import { ColorProvider } from './providers/color-provider.js';
+import { CompletionItemProvider } from './providers/completion-item-provider.js';
+import { DefinitionReferenceProvider } from './providers/definition-reference-provider.js';
 import {} from './diagnostics.js';
-import { DocumentHighlightProvider } from './document-highlight-provider.js';
-import { DocumentSymbolProvider } from './document-symbol-provider.js';
-import { FormatterProvider } from './formatter-provider.js';
-import { HoverProvider } from './hover-provider.js';
-import { InlayHintsProvider } from './inlay-hints-provider.js';
-import { RangeProvider } from './range-provider.js';
-import { RenameProvider } from './rename-provider.js';
-import { DocumentSemanticTokensProvider } from './semantic-tokens-provider.js';
-import { SignatureHelpProvider } from './signature-help-provider.js';
+import { DocumentHighlightProvider } from './providers/document-highlight-provider.js';
+import { DocumentSymbolProvider } from './providers/document-symbol-provider.js';
+import { FormatterProvider } from './providers/formatter-provider.js';
+import { HoverProvider } from './providers/hover-provider.js';
+import { InlayHintsProvider } from './providers/inlay-hints-provider.js';
+import { RangeProvider } from './providers/range-provider.js';
+import { RenameProvider } from './providers/rename-provider.js';
+import { DocumentSemanticTokensProvider } from './providers/semantic-tokens-provider.js';
+import { SignatureHelpProvider } from './providers/signature-help-provider.js';
 
 export {
     CodeActionProvider,

@@ -9,10 +9,8 @@
     ".": {
       "@mira/development": "./src/index.ts",
       "default": "./dist/index.js"
-    }
-  },
-  "imports": {
-    "#lsp/worker": {
+    },
+    "./lsp/worker": {
       "@mira/development": "./src/lsp/worker.ts",
       "default": "./dist/lsp/worker.js"
     }
@@ -25,7 +23,10 @@
     "@mirascript/wasm": "workspace:*",
     "mirascript": "workspace:*"
   },
-  "peerDependencies": {
+  "devDependencies": {
     "@private/monaco-editor": "^0.0.28"
+  },
+  "peerDependencies": {
+    "monaco-editor": ">= 0.0.40"
   }
 }

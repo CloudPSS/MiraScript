@@ -1,7 +1,7 @@
-import { type CancellationToken, type editor, languages, Range } from '@private/monaco-editor';
-import { Provider } from './worker-helper.js';
+import type { CancellationToken, editor, languages } from '@private/monaco-editor';
 import { DiagnosticCode } from '@mirascript/wasm';
-import type { SourceScope } from './compile-result';
+import { Provider } from './base.js';
+import type { SourceScope } from '../compile-result.js';
 
 /** @inheritdoc */
 export class DocumentSymbolProvider extends Provider implements languages.DocumentSymbolProvider {
@@ -9,6 +9,7 @@ export class DocumentSymbolProvider extends Provider implements languages.Docume
     private handleScope(model: editor.ITextModel, scope: SourceScope): languages.DocumentSymbol[] {
         const symbols: languages.DocumentSymbol[] = [];
         const unhandledChildren = new Set(scope.children);
+        const { languages, Range } = this.monaco;
         for (const { definition } of scope.locals) {
             const { range } = definition;
             let kind: languages.SymbolKind = languages.SymbolKind.Variable;
@@ -56,7 +57,7 @@ export class DocumentSymbolProvider extends Provider implements languages.Docume
         model: editor.ITextModel,
         token: CancellationToken,
     ): Promise<languages.DocumentSymbol[] | undefined> {
-        const compiled = await Provider.getCompileResult(model);
+        const compiled = await this.getCompileResult(model);
         if (!compiled) return undefined;
         const root = compiled.scopes(model)[0];
         if (!root) return undefined;

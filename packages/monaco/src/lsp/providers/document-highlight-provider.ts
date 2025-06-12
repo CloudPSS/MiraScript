@@ -1,5 +1,5 @@
-import { type CancellationToken, type editor, languages, type Position, Range } from '@private/monaco-editor';
-import { Provider } from './worker-helper.js';
+import type { CancellationToken, editor, languages, Position } from '@private/monaco-editor';
+import { Provider } from './base.js';
 import { DiagnosticCode } from '@mirascript/wasm';
 
 /** @inheritdoc */
@@ -10,10 +10,11 @@ export class DocumentHighlightProvider extends Provider implements languages.Doc
         position: Position,
         token: CancellationToken,
     ): Promise<languages.DocumentHighlight[] | undefined> {
-        const compiled = await Provider.getCompileResult(model);
+        const compiled = await this.getCompileResult(model);
         if (!compiled) return undefined;
         const def = compiled.definition(model, position)?.def;
         if (!def) return undefined;
+        const { languages, Range } = this.monaco;
         const links: languages.DocumentHighlight[] = def.references.map((u) => {
             let kind = languages.DocumentHighlightKind.Read;
             if (

@@ -1,5 +1,5 @@
-import { type languages, type editor, type IRange, Range, type CancellationToken, type Position } from '@private/monaco-editor';
-import { Provider } from './worker-helper';
+import type { languages, editor, IRange, Range, CancellationToken, Position } from '@private/monaco-editor';
+import { Provider } from './base.js';
 
 /** @inheritdoc */
 function format(
@@ -57,6 +57,6 @@ export class FormatterProvider
         options: languages.FormattingOptions,
         token: CancellationToken,
     ): languages.ProviderResult<languages.TextEdit[]> {
-        return format(model, [Range.fromPositions(position, position)], options, 'expression', token);
+        return format(model, [this.monaco.Range.fromPositions(position, position)], options, 'expression', token);
     }
 }

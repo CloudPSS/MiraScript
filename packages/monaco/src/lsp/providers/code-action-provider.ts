@@ -1,5 +1,5 @@
-import { type editor, languages, type Range, type CancellationToken } from '@private/monaco-editor';
-import { Provider } from './worker-helper.js';
+import type { editor, languages, Range, CancellationToken } from '@private/monaco-editor';
+import { Provider } from './base.js';
 
 /**
  * 代码操作

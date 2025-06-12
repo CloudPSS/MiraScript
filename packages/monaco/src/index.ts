@@ -1,7 +1,7 @@
 import type { IDisposable } from '@private/monaco-editor';
 export type { IDisposable };
 /** monaco editor */
-export type Monaco = typeof import('@private/monaco-editor');
+export type Monaco = Readonly<typeof import('@private/monaco-editor')>;
 
 /** 加载器 */
 export class MiraScriptMonacoLoader implements IDisposable {

@@ -1,5 +1,5 @@
 import type { editor, languages, CancellationToken, Position } from '@private/monaco-editor';
-import { Provider } from './worker-helper';
+import { Provider } from './base.js';
 
 /** @inheritdoc */
 export class SignatureHelpProvider extends Provider implements languages.SignatureHelpProvider {
@@ -14,7 +14,7 @@ export class SignatureHelpProvider extends Provider implements languages.Signatu
         token: CancellationToken,
         context: languages.SignatureHelpContext,
     ): Promise<languages.SignatureHelpResult | undefined> {
-        const compiled = await Provider.getCompileResult(model);
+        const compiled = await this.getCompileResult(model);
         if (!compiled) return undefined;
 
         return undefined; // TODO: Implement signature help logic

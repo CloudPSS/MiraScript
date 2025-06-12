@@ -1,32 +1,8 @@
-import {
-    editor,
-    languages,
-    Range,
-    Uri,
-    type CancellationToken,
-    type IRange,
-    type Position,
-} from '@private/monaco-editor';
-import { Provider } from './worker-helper';
-import { getGlobal } from './utils';
-import { DOC_HEADER } from '../constants';
+import type { editor, languages, Uri, CancellationToken, IRange, Position } from '@private/monaco-editor';
+import { Provider } from './base.js';
+import { getGlobal } from '../utils.js';
+import { DOC_HEADER } from '../../constants.js';
 
-const globalModel = editor.createModel(``, 'mirascript', Uri.parse('mirascript:///lib/global.mira'));
-const prepareGlobal = (name: string): { uri: Uri; range: IRange } => {
-    const { script, doc } = getGlobal(name);
-    const code = [`/**${DOC_HEADER}**/`, '', `/**`, ...doc.split('\n').map((line) => ` * ${line}`), ` */`, script, ''];
-    globalModel.setValue(code.join('\n'));
-    const word = globalModel.getWordAtPosition({ lineNumber: code.length - 1, column: 1 });
-    return {
-        uri: globalModel.uri,
-        range: {
-            startColumn: word ? word.startColumn : 1,
-            startLineNumber: code.length - 1,
-            endColumn: word ? word.endColumn : 1,
-            endLineNumber: code.length - 1,
-        },
-    };
-};
 /**
  * 转到定义/引用
  */
@@ -34,13 +10,43 @@ export class DefinitionReferenceProvider
     extends Provider
     implements languages.DefinitionProvider, languages.ReferenceProvider
 {
+    private readonly globalModel = this.monaco.editor.createModel(
+        ``,
+        'mirascript',
+        this.monaco.Uri.parse('mirascript:///lib/global.mira'),
+    );
+    /** 准备要显示的定义 */
+    private prepareGlobal(name: string): { uri: Uri; range: IRange } {
+        const { globalModel } = this;
+        const { script, doc } = getGlobal(name);
+        const code = [
+            `/**${DOC_HEADER}**/`,
+            '',
+            `/**`,
+            ...doc.split('\n').map((line) => ` * ${line}`),
+            ` */`,
+            script,
+            '',
+        ];
+        globalModel.setValue(code.join('\n'));
+        const word = globalModel.getWordAtPosition({ lineNumber: code.length - 1, column: 1 });
+        return {
+            uri: globalModel.uri,
+            range: {
+                startColumn: word ? word.startColumn : 1,
+                startLineNumber: code.length - 1,
+                endColumn: word ? word.endColumn : 1,
+                endLineNumber: code.length - 1,
+            },
+        };
+    }
     /** @inheritdoc */
     async provideDefinition(
         model: editor.ITextModel,
         position: Position,
         token: CancellationToken,
     ): Promise<languages.LocationLink[] | undefined> {
-        const compiled = await Provider.getCompileResult(model);
+        const compiled = await this.getCompileResult(model);
         if (!compiled) return undefined;
         const d = compiled.definition(model, position);
         if (!d) return [];
@@ -53,7 +59,7 @@ export class DefinitionReferenceProvider
         }
         let link: languages.LocationLink;
         if ('name' in def) {
-            link = prepareGlobal(def.name);
+            link = this.prepareGlobal(def.name);
         } else {
             link = { uri: model.uri, range: def.definition.range };
         }
@@ -67,7 +73,7 @@ export class DefinitionReferenceProvider
         context: languages.ReferenceContext,
         token: CancellationToken,
     ): Promise<languages.Location[] | undefined> {
-        const compiled = await Provider.getCompileResult(model);
+        const compiled = await this.getCompileResult(model);
         if (!compiled) return undefined;
         const d = compiled.definition(model, position);
         if (!d) return [];
@@ -78,8 +84,8 @@ export class DefinitionReferenceProvider
         }));
         if (context.includeDeclaration) {
             if ('name' in def) {
-                links.push(prepareGlobal(def.name));
-            } else if (!Range.isEmpty(def.definition.range)) {
+                links.push(this.prepareGlobal(def.name));
+            } else if (!this.monaco.Range.isEmpty(def.definition.range)) {
                 links.push({
                     uri: model.uri,
                     range: def.definition.range,

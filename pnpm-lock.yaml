@@ -49,12 +49,16 @@ importers:
       '@mirascript/wasm':
         specifier: workspace:*
         version: link:../wasm
-      '@private/monaco-editor':
-        specifier: ^0.0.28
-        version: 0.0.28
       mirascript:
         specifier: workspace:*
         version: link:../mirascript
+      monaco-editor:
+        specifier: '>= 0.0.40'
+        version: 0.52.2
+    devDependencies:
+      '@private/monaco-editor':
+        specifier: ^0.0.28
+        version: 0.0.28
 
   packages/playground:
     dependencies:
@@ -1646,6 +1650,10 @@ packages:
     resolution:
       { integrity: sha512-qOOzS1cBTWYF4BH8fVePDBOO9iptMnGUEZwNc/cMWnTV2nVLZ7VoNWEPHkYczZA0pdoA7dl6e7FL659nX9S2aw== }
     engines: { node: '>=16 || 14 >=14.17' }
+
+  monaco-editor@0.52.2:
+    resolution:
+      { integrity: sha512-GEQWEZmfkOGLdd3XK8ryrfWz3AIP8YymVXiPHEdewrUq7mh0qrKrfHLNCXcbB6sTnMLnOZ3ztSiKcciFUkIJwQ== }
 
   ms@2.1.3:
     resolution:
@@ -3459,6 +3467,8 @@ snapshots:
   minimist@1.2.8: {}
 
   minipass@7.1.2: {}
+
+  monaco-editor@0.52.2: {}
 
   ms@2.1.3: {}
 

@@ -1,15 +1,8 @@
-import {
-    type CancellationToken,
-    type editor,
-    type IMarkdownString,
-    type IRange,
-    languages,
-    type Position,
-} from '@private/monaco-editor';
-import { Provider } from './worker-helper';
+import type { CancellationToken, editor, IMarkdownString, IRange, languages, Position } from '@private/monaco-editor';
+import { Provider } from './base.js';
 import { DiagnosticCode } from '@mirascript/wasm';
-import { codeblock, getGlobal, paramsList } from './utils';
-import type { LocalDefinition } from './compile-result';
+import { codeblock, getGlobal, paramsList } from '../utils';
+import type { LocalDefinition } from '../compile-result';
 
 /** @inheritdoc */
 export class HoverProvider extends Provider implements languages.HoverProvider {
@@ -20,7 +13,7 @@ export class HoverProvider extends Provider implements languages.HoverProvider {
         token: CancellationToken,
         context?: languages.HoverContext<languages.Hover>,
     ): Promise<languages.Hover | undefined> {
-        const compiled = await Provider.getCompileResult(model);
+        const compiled = await this.getCompileResult(model);
         if (!compiled) {
             return undefined;
         }

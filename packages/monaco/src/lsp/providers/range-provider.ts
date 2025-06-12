@@ -1,5 +1,5 @@
-import { type CancellationToken, type editor, languages, type Position, Range } from '@private/monaco-editor';
-import { Provider } from './worker-helper';
+import type { CancellationToken, editor, languages, Position } from '@private/monaco-editor';
+import { Provider } from './base.js';
 
 /** @inheritdoc */
 export class RangeProvider
@@ -12,7 +12,7 @@ export class RangeProvider
         context: languages.FoldingContext,
         token: CancellationToken,
     ): Promise<languages.FoldingRange[] | undefined> {
-        const compiled = await Provider.getCompileResult(model);
+        const compiled = await this.getCompileResult(model);
         if (!compiled) return undefined;
         // 暂时没必要
         return undefined;
@@ -23,8 +23,9 @@ export class RangeProvider
         positions: Position[],
         token: CancellationToken,
     ): Promise<languages.SelectionRange[][] | undefined> {
-        const compiled = await Provider.getCompileResult(model);
+        const compiled = await this.getCompileResult(model);
         if (!compiled) return undefined;
+        const { Range } = this.monaco;
         const { ranges } = compiled.groupedTags(model);
         return positions.map((pos) => {
             return ranges

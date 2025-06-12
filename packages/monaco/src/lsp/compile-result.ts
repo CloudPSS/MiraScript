@@ -2,6 +2,7 @@ import { type editor, Range, type IRange, type IPosition } from '@private/monaco
 import { DiagnosticCode } from '@mirascript/wasm';
 import { strictInRange } from './utils.js';
 import type { ParseMode } from 'mirascript';
+import type { Monaco } from '../index.js';
 
 /** 源代码诊断信息 */
 interface SourceDiagnosticBase<T extends DiagnosticCode = DiagnosticCode> {
@@ -94,7 +95,7 @@ const compileResult = new Map<string, CompileResult>();
 /** 编译结果 */
 export class CompileResult {
     /** 获取编译结果 */
-    static get(uri: string, mode: ParseMode, version?: number): CompileResult | undefined {
+    static get(monaoc: Monaco, uri: string, mode: ParseMode, version?: number): CompileResult | undefined {
         const data = compileResult.get(uri);
         if (data) {
             if (version != null && data.version !== version) {
@@ -109,6 +110,7 @@ export class CompileResult {
     }
     /** 写入编译结果 */
     static set(
+        monaco: Monaco,
         uri: string,
         mode: ParseMode,
         version: number,

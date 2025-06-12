@@ -1,5 +1,5 @@
-import { type CancellationToken, type editor, type IEvent, languages, Range } from '@private/monaco-editor';
-import { Provider } from './worker-helper';
+import type { CancellationToken, editor, IEvent, languages, Range } from '@private/monaco-editor';
+import { Provider } from './base.js';
 import { DiagnosticCode } from '@mirascript/wasm';
 
 /** @inheritdoc */
@@ -14,10 +14,11 @@ export class InlayHintsProvider extends Provider implements languages.InlayHints
         range: Range,
         token: CancellationToken,
     ): Promise<languages.InlayHintList | null | undefined> {
-        const compiled = await Provider.getCompileResult(model);
+        const compiled = await this.getCompileResult(model);
         if (!compiled) {
             return undefined;
         }
+        const { languages, Range } = this.monaco;
         const hints: languages.InlayHint[] = [];
         for (const tag of compiled.tags) {
             if (!range.containsRange(tag.range)) {
