@@ -269,7 +269,7 @@ fn record_like_pattern<'t, 's: 't>(
             pattern_spread(rebind),
         )
         .parse_next(i)?;
-        let result = if parts.len() == 1 && parts[0].has_tail_comma() && parts[0].is_unnamed() {
+        let result = if parts.len() == 1 && !parts[0].has_tail_comma() && parts[0].is_unnamed() {
             let RecordElementBase::Unnamed(part) = parts.into_iter().next().unwrap().unwrap()
             else {
                 unreachable!();

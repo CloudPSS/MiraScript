@@ -78,7 +78,7 @@ fn record_like<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
         expression,
     )
     .parse_next(i)?;
-    let result = if parts.len() == 1 && parts[0].has_tail_comma() && parts[0].is_unnamed() {
+    let result = if parts.len() == 1 && !parts[0].has_tail_comma() && parts[0].is_unnamed() {
         let RecordElementBase::Unnamed(part) = parts.into_iter().next().unwrap().unwrap() else {
             unreachable!();
         };
