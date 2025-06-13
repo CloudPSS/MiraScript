@@ -22,7 +22,7 @@ pub enum Pattern<'s> {
     ///
     /// Matches against a relation with constant values.
     Relation(Box<Token<'s>>, Box<Pattern<'s>>),
-    /// literal ( `..` | `..<` ) pattern_constant
+    /// pattern_constant ( `..` | `..<` ) pattern_constant
     ///
     /// Matches against a range of constant values.
     Range(Box<Pattern<'s>>, Box<Token<'s>>, Box<Pattern<'s>>),

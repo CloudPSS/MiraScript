@@ -177,12 +177,17 @@ impl<'s> Emitter<'s> {
                 match arg.deref() {
                     ArrayElementBase::Element(arg) => {
                         if !arg.is_bind() {
-                            self.emit_pattern(arg, reg, Some(BindType::Parameter));
+                            self.emit_pattern(Register::EMPTY, arg, reg, Some(BindType::Parameter));
                         }
                     }
                     ArrayElementBase::Spread(_, arg) => {
                         if !arg.is_bind() {
-                            self.emit_pattern(arg, reg, Some(BindType::RestParameter));
+                            self.emit_pattern(
+                                Register::EMPTY,
+                                arg,
+                                reg,
+                                Some(BindType::RestParameter),
+                            );
                         }
                     }
                     ArrayElementBase::Range(..) => unreachable!(),

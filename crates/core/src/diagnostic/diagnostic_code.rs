@@ -99,11 +99,15 @@ pub enum DiagnosticCode {
     #[strum(message = "Only number literals can be prefixed with `+` or `-` in a constant pattern")]
     UnexpectedOperatorInConstantsPattern,
     #[strum(message = "`mut` is not allowed during rebinding")]
-    MutInBindPattern,
+    MutInRebindPattern,
     #[strum(message = "Cannot use `mut` in a discard pattern")]
     MutInDiscardPattern,
     #[strum(message = "Discard pattern should be omitted in a spread pattern")]
     DiscardInSpreadPattern,
+    #[strum(message = "Spread discard in record pattern is not allowed")]
+    SpreadDiscardInRecordPattern,
+    #[strum(message = "Spread in record pattern should be the last field")]
+    MispositionedSpreadInRecordPattern,
     #[strum(message = "Interpolated names are not allowed in record patterns")]
     InterpolatedNameRecordPattern,
     #[strum(message = "A bind pattern is required when omitting a record field name")]
@@ -113,7 +117,7 @@ pub enum DiagnosticCode {
     #[strum(message = "Spread pattern can only be used once in an array pattern")]
     DuplicateSpreadPattern,
     #[strum(message = "Rest parameter should be the last parameter in a function declaration")]
-    InvalidRestParameter,
+    MispositionedRestParameter,
     #[strum(message = "Cannot assign to an undeclared variable")]
     UndefinedVariableAssignment,
     #[strum(message = "Cannot assign to an immutable variable...")]
@@ -145,6 +149,10 @@ pub enum DiagnosticCode {
         message = "Either use `global.$0` explicitly or `nil` if you want to use the nil value"
     )]
     MisleadNilVariable,
+    #[strum(
+        message = "This pattern in a irrefutable pattern is unnecessary; consider removing it or using in an `is` expression instead"
+    )]
+    UnnecessaryIrrefutablePattern,
 
     WarningEnd = 2999,
     // Info 3000~3999

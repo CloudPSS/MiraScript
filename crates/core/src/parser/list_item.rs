@@ -9,7 +9,7 @@ use super::{AstVisitor, AstVisitorMut, AstWalker};
 
 /// item ','?
 #[derive(Debug, Clone, PartialEq)]
-pub struct ListItem<'s, T>(Box<T>, Option<Box<Token<'s>>>);
+pub struct ListItem<'s, T>(pub Box<T>, pub Option<Box<Token<'s>>>);
 
 impl<'s, T: AstWalker<'s>> AstWalker<'s> for ListItem<'s, T> {
     fn walk_mut(&mut self, visitor: &mut dyn AstVisitorMut<'s>) {

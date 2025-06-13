@@ -15,9 +15,10 @@ use crate::{
 };
 
 use super::{
-    ArrayElementBase, Input, Pattern,
+    ArrayElementBase, AstWalker, Input, Pattern,
     array_helper::array_base,
     helper::{literal_token, token_boxed, variable_token},
+    list_item::ListItem,
     record_helper::record_base,
 };
 
@@ -187,7 +188,7 @@ fn discard_bind_pattern<'t, 's: 't>(
                 if rebind && kw_mut.is_some() {
                     let kw_mut = kw_mut
                         .unwrap()
-                        .wrap_as_unknown(DiagnosticCode::MutInBindPattern);
+                        .wrap_as_unknown(DiagnosticCode::MutInRebindPattern);
                     return Pattern::Bind(Some(Box::new(kw_mut)), Box::new(id));
                 }
                 if id.kind == Keyword::Underscore {
@@ -258,7 +259,7 @@ fn record_like_pattern<'t, 's: 't>(
     };
 
     move |i: &mut Input<'_, 's>| {
-        let (open, parts, close) = record_base(
+        let (open, mut parts, close) = record_base(
             pattern_or_insert(rebind),
             |t| {
                 Pattern::unknown(
@@ -271,13 +272,39 @@ fn record_like_pattern<'t, 's: 't>(
             pattern_spread(rebind),
         )
         .parse_next(i)?;
-        let result = if parts.len() == 1 && !parts[0].has_tail_comma() && parts[0].is_unnamed() {
+        let len = parts.len();
+        let result = if len == 1 && !parts[0].has_tail_comma() && parts[0].is_unnamed() {
             let RecordElementBase::Unnamed(part) = parts.into_iter().next().unwrap().unwrap()
             else {
                 unreachable!();
             };
             Pattern::Grouping(open, part, close)
         } else {
+            for (i, part) in parts.iter_mut().enumerate() {
+                if !part.is_spread() {
+                    continue;
+                }
+                let ListItem(el, _) = part;
+                let range = el.range();
+                let RecordElementBase::Spread(token, pattern) = el.as_mut() else {
+                    unreachable!();
+                };
+                if pattern.is_spread_discard() {
+                    *token.as_mut() = Token::unknown_range(
+                        token.range(),
+                        token.kind.to_owned(),
+                        range,
+                        DiagnosticCode::SpreadDiscardInRecordPattern,
+                    );
+                } else if i != len - 1 {
+                    *token.as_mut() = Token::unknown_range(
+                        token.range(),
+                        token.kind.to_owned(),
+                        range,
+                        DiagnosticCode::MispositionedSpreadInRecordPattern,
+                    );
+                }
+            }
             Pattern::Record(open, parts, close)
         };
         Ok(result)

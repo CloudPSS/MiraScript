@@ -595,7 +595,11 @@ impl<'s> Emitter<'s> {
                     self.op_binary(ret, op, left_reg, right_reg);
                 }
             }
-            Is(expression, token, pattern) => self.unimplemented(expression, pattern),
+            Is(expression, _, pattern) => {
+                let reg_exp = self.closures.add_reg();
+                self.emit_expression(expression, reg_exp, brk);
+                self.emit_pattern(ret, pattern, reg_exp, Some(BindType::Init));
+            }
             Block(_, stmts, ret_expr, _) => {
                 self.enter_scope(expr.range());
                 self.declare_block(stmts, ret_expr);
@@ -738,7 +742,7 @@ impl<'s> Emitter<'s> {
 
                 let pos = self.chunk.code.len();
                 self.op(OpCode::LoopFor);
-                self.emit_pattern(pattern, iterator, Some(BindType::Init));
+                self.emit_pattern(Register::EMPTY, pattern, iterator, Some(BindType::Init));
                 self.emit_block(stmts, expr, Register::EMPTY, Some(ret));
                 self.op(OpCode::LoopEnd);
                 let nreg: OpParam = self.closures.current().reg_len().into();

@@ -12,6 +12,7 @@ import {
     type VmRecord,
     type VmValue,
     isVmFunction,
+    type VmArray,
 } from './types/index.js';
 import { VmWrapper } from './types/wrapper.js';
 
@@ -177,6 +178,26 @@ export const $ToNumber = (value: VmAny): number => {
     if (typeof value == 'string') return Number(value);
     if (typeof value == 'boolean') return value ? 1 : 0;
     return Number.NaN;
+};
+export const $IsBoolean = (value: VmAny): value is boolean => {
+    $AssertInit(value);
+    return typeof value == 'boolean';
+};
+export const $IsNumber = (value: VmAny): value is number => {
+    $AssertInit(value);
+    return typeof value == 'number';
+};
+export const $IsString = (value: VmAny): value is string => {
+    $AssertInit(value);
+    return typeof value == 'string';
+};
+export const $IsRecord = (value: VmAny): value is VmRecord => {
+    $AssertInit(value);
+    return isVmRecord(value);
+};
+export const $IsArray = (value: VmAny): value is VmArray => {
+    $AssertInit(value);
+    return isVmArray(value);
 };
 export const $AssertNonNil = (value: VmAny): asserts value is NonNullable<VmValue> => {
     $AssertInit(value);

@@ -357,6 +357,8 @@ class Emitter {
             case OpCode.Neq:
             case OpCode.Aeq:
             case OpCode.Naeq:
+            case OpCode.Same:
+            case OpCode.Nsame:
             case OpCode.In: {
                 reg = read();
                 const left = read();
@@ -406,7 +408,12 @@ class Emitter {
             case OpCode.Type:
             case OpCode.ToBoolean:
             case OpCode.ToNumber:
-            case OpCode.ToString: {
+            case OpCode.ToString:
+            case OpCode.IsBoolean:
+            case OpCode.IsNumber:
+            case OpCode.IsString:
+            case OpCode.IsRecord:
+            case OpCode.IsArray: {
                 reg = read();
                 const value = read();
                 code = `${this.wv(reg)} = $${OpCode[opcode]}(${this.rv(value)});`;

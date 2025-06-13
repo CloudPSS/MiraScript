@@ -97,7 +97,7 @@ pub(super) fn parameter_list<'s>(i: &mut Input<'_, 's>) -> ModalResult<Option<Pa
         let kw = kw.to_owned().deref().clone();
         *item = ArrayElementBase::Element(Box::new(
             p.to_owned()
-                .wrap_as_unknown([kw], DiagnosticCode::InvalidRestParameter),
+                .wrap_as_unknown([kw], DiagnosticCode::MispositionedRestParameter),
         ));
     }
     Ok(Some(list))

@@ -47,13 +47,13 @@ impl<'s> Emitter<'s> {
             Bind(_, pattern, _, expression, _) => {
                 let value_reg = self.closures.add_reg();
                 self.emit_expression(expression, value_reg, brk);
-                self.emit_pattern(pattern, value_reg, Some(BindType::Let));
+                self.emit_pattern(Register::EMPTY, pattern, value_reg, Some(BindType::Let));
                 false
             }
             Rebind(pattern, _, expression, _) => {
                 let value_reg = self.closures.add_reg();
                 self.emit_expression(expression, value_reg, brk);
-                self.emit_pattern(pattern, value_reg, None);
+                self.emit_pattern(Register::EMPTY, pattern, value_reg, None);
                 false
             }
             Assign(assignee, op, expression, _) => {

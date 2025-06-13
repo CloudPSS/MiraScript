@@ -104,6 +104,22 @@ pub enum OpCode {
     /// TO_STRING %ret %1\
     /// %ret = string(%1)
     ToString,
+    // Hint: use Eq/Same %ret %1 %0 for is nil
+    /// IS_BOOLEAN %ret %1\
+    /// %ret = type(%1) == "boolean"
+    IsBoolean,
+    /// IS_NUMBER %ret %1\
+    /// %ret = type(%1) == "number"
+    IsNumber,
+    /// IS_STRING %ret %1\
+    /// %ret = type(%1) == "string"
+    IsString,
+    /// IS_RECORD %ret %1\
+    /// %ret = type(%1) == "record"
+    IsRecord,
+    /// IS_ARRAY %ret %1\
+    /// %ret = type(%1) == "array"
+    IsArray,
 
     // variable management
     /// CONSTANT %reg `index`\
