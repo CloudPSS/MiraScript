@@ -2,6 +2,8 @@ use std::fmt::Display;
 
 use strum::{EnumProperty, VariantArray};
 
+use crate::emitter::OpCode;
+
 use super::{Token, TokenKind};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, VariantArray, EnumProperty)]
@@ -33,63 +35,90 @@ pub enum Operator {
     HalfOpenRange,
 
     /// `+`
+    #[strum(props(arithmetic = true, infix = true, prefix = true))]
     Plus,
     /// `+=`
+    #[strum(props(arithmetic = true, compound = true))]
     PlusEqual,
     /// `-`
+    #[strum(props(arithmetic = true, infix = true, prefix = true))]
     Minus,
     /// `-=`
+    #[strum(props(arithmetic = true, compound = true))]
     MinusEqual,
     /// `*`
+    #[strum(props(arithmetic = true, infix = true))]
     Asterisk,
     /// `*=`
+    #[strum(props(arithmetic = true, compound = true))]
     AsteriskEqual,
     /// `/`
+    #[strum(props(arithmetic = true, infix = true))]
     Slash,
     /// `/=`
+    #[strum(props(arithmetic = true, compound = true))]
     SlashEqual,
     /// `%`
+    #[strum(props(arithmetic = true, infix = true))]
     Percent,
     /// `%=`
+    #[strum(props(arithmetic = true, compound = true))]
     PercentEqual,
-
     /// `^`
+    #[strum(props(arithmetic = true, infix = true))]
     Caret,
     /// `^=`
+    #[strum(props(arithmetic = true, compound = true))]
     CaretEqual,
 
     /// `!`
+    #[strum(props(logical = true, prefix = true, postfix = true))]
     Exclamation,
     /// `&&`
+    #[strum(props(logical = true, infix = true))]
     LogicalAnd,
     /// `&&=`
+    #[strum(props(logical = true, compound = true))]
     LogicalAndEqual,
     /// `||`
+    #[strum(props(logical = true, infix = true))]
     LogicalOr,
     /// `||=`
+    #[strum(props(logical = true, compound = true))]
     LogicalOrEqual,
     /// `??`
+    #[strum(props(logical = true, infix = true))]
     NullCoalescing,
     /// `??=`
+    #[strum(props(logical = true, compound = true))]
     NullCoalescingEqual,
 
     /// `=`
     Equal,
+
     /// `==`
+    #[strum(props(relation = true, infix = true))]
     EqualEqual,
     /// `!=`
+    #[strum(props(relation = true, infix = true))]
     NotEqual,
     /// `~=`
+    #[strum(props(relation = true, infix = true))]
     TildeEqual,
     /// `!~=`
+    #[strum(props(relation = true, infix = true))]
     NotTildeEqual,
     /// `>`
+    #[strum(props(relation = true, infix = true))]
     Greater,
     /// `>=`
+    #[strum(props(relation = true, infix = true))]
     GreaterEqual,
     /// `<`
+    #[strum(props(relation = true, infix = true))]
     Less,
     /// `<=`
+    #[strum(props(relation = true, infix = true))]
     LessEqual,
 
     /// `;`
@@ -98,6 +127,62 @@ pub enum Operator {
     OpenBrace,
     /// `}`
     CloseBrace,
+}
+
+impl Operator {
+    pub fn to_infix_op(&self) -> Option<OpCode> {
+        use Operator::*;
+        match self {
+            Caret => Some(OpCode::Pow),
+
+            Asterisk => Some(OpCode::Mul),
+            Slash => Some(OpCode::Div),
+            Percent => Some(OpCode::Mod),
+
+            Plus => Some(OpCode::Add),
+            Minus => Some(OpCode::Sub),
+
+            Greater => Some(OpCode::Gt),
+            GreaterEqual => Some(OpCode::Gte),
+            Less => Some(OpCode::Lt),
+            LessEqual => Some(OpCode::Lte),
+
+            EqualEqual => Some(OpCode::Eq),
+            NotEqual => Some(OpCode::Neq),
+            TildeEqual => Some(OpCode::Aeq),
+            NotTildeEqual => Some(OpCode::Naeq),
+
+            _ => None,
+        }
+    }
+
+    pub fn to_compound_op(&self) -> Option<OpCode> {
+        use Operator::*;
+        match self {
+            CaretEqual => Some(OpCode::Pow),
+
+            AsteriskEqual => Some(OpCode::Mul),
+            SlashEqual => Some(OpCode::Div),
+            PercentEqual => Some(OpCode::Mod),
+
+            PlusEqual => Some(OpCode::Add),
+            MinusEqual => Some(OpCode::Sub),
+
+            _ => None,
+        }
+    }
+
+    pub fn is_arithmetic(&self) -> bool {
+        self.get_bool("arithmetic").unwrap_or(false)
+    }
+
+    pub fn is_logical(&self) -> bool {
+        self.get_bool("logical").unwrap_or(false)
+    }
+
+    pub fn is_relation(&self) -> bool {
+        self.get_bool("relation").unwrap_or(false)
+    }
 }
 
 impl From<Operator> for TokenKind<'_> {

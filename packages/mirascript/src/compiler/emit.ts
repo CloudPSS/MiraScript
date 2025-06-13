@@ -157,14 +157,19 @@ class Emitter {
             if (opcode === OpCode.IfEnd) {
                 return this.readBlockEnd(OpCode.IfEnd);
             }
-            if (opcode !== OpCode.Else) {
-                this.readCode();
-                continue;
+            if (opcode === OpCode.Else) {
+                this.codeOffset++;
+                const body = this.ident(-1) + `} else {`;
+                this.codeLines.push(body);
+                break;
             }
-            this.codeOffset++;
-            const body = this.ident(-1) + `} else {`;
-            this.codeLines.push(body);
-            break;
+            if (opcode === OpCode.ElIf) {
+                this.codeOffset++;
+                const body = this.ident(-1) + `} else `;
+                this.codeLines.push(body);
+                return this.readCode();
+            }
+            this.readCode();
         }
         return this.readBlockEnd(OpCode.IfEnd);
     }
@@ -350,16 +355,18 @@ class Emitter {
             case OpCode.Mod:
             case OpCode.Pow:
             case OpCode.Gt:
-            case OpCode.Geq:
+            case OpCode.Gte:
             case OpCode.Lt:
-            case OpCode.Leq:
+            case OpCode.Lte:
             case OpCode.Eq:
             case OpCode.Neq:
             case OpCode.Aeq:
             case OpCode.Naeq:
             case OpCode.Same:
             case OpCode.Nsame:
-            case OpCode.In: {
+            case OpCode.In:
+            case OpCode.And:
+            case OpCode.Or: {
                 reg = read();
                 const left = read();
                 const right = read();

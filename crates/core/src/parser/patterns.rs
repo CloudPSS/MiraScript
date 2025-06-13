@@ -155,15 +155,8 @@ fn constants_pattern<'s>(i: &mut Input<'_, 's>) -> ModalResult<Pattern<'s>> {
 
 fn relation_pattern<'s>(i: &mut Input<'_, 's>) -> ModalResult<Pattern<'s>> {
     seq!(Pattern::Relation(
-        one_of(|t: &Token<'s>| *t == Operator::Less
-            || *t == Operator::LessEqual
-            || *t == Operator::Greater
-            || *t == Operator::GreaterEqual
-            || *t == Operator::EqualEqual
-            || *t == Operator::NotEqual
-            || *t == Operator::TildeEqual
-            || *t == Operator::NotTildeEqual)
-        .map(|t: &Token<'s>| Box::new(t.to_owned())),
+        one_of(|t: &Token<'s>| matches!(t.kind, TokenKind::Operator(op) if op.is_relation()))
+            .map(|t: &Token<'s>| Box::new(t.to_owned())),
         constants_pattern.map(Box::new),
     ))
     .parse_next(i)

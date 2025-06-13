@@ -50,15 +50,15 @@ pub enum OpCode {
     /// LT %ret %1 %2\
     /// %ret = %1 < %2
     Lt,
-    /// LEQ %ret %1 %2\
+    /// LTE %ret %1 %2\
     /// %ret = %1 <= %2
-    Leq,
+    Lte,
     /// GT %ret %1 %2\
     /// %ret = %1 > %2
     Gt,
-    /// GEQ %ret %1 %2\
+    /// GTE %ret %1 %2\
     /// %ret = %1 >= %2
-    Geq,
+    Gte,
     /// AEQ %ret %1 %2\
     /// %ret = %1 ~= %2
     Aeq,

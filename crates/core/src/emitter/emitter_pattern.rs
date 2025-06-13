@@ -1,10 +1,9 @@
 use std::ops::Deref;
 
 use crate::{
-    Keyword, Operator,
     diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
     emitter::emitter_scope::check_variable_initialized,
-    lexer::TokenKind,
+    lexer::{Keyword, Operator, TokenKind},
     parser::{
         ArrayElementBase, AstWalker,
         Pattern::{self, *},
@@ -160,23 +159,9 @@ impl<'s> Emitter<'s> {
         }
     }
 
-    pub fn emit_pattern(
-        &mut self,
-        success: Register,
-        pattern: &'s Pattern<'s>,
-        value: Register,
-        bind_type: Option<BindType>,
-    ) {
-        match pattern {
-            Grouping(_, pattern, _) => self.emit_pattern(success, pattern, value, bind_type),
+    fn emit_constant(&mut self, pattern_constant: &'s Pattern<'s>, value: Register) {
+        match pattern_constant {
             Constant(prefix, lit) => {
-                if success.is_empty() {
-                    self.diagnostics.push(SourceDiagnostic::new(
-                        pattern.range(),
-                        DiagnosticCode::UnnecessaryIrrefutablePattern,
-                    ));
-                    return;
-                }
                 if let Some(lit_num) = match &lit.kind {
                     TokenKind::Number(n) => Some(*n),
                     TokenKind::Ordinal(o) => Some(*o as f64),
@@ -188,27 +173,82 @@ impl<'s> Emitter<'s> {
                         .as_ref()
                         .is_some_and(|f| *f.as_ref() == Operator::Minus);
                     let lit_num = if inv { -lit_num } else { lit_num };
-                    self.op_number(success, lit_num);
-                    self.op_3(OpCode::Same, success, success, value);
+                    self.op_number(value, lit_num);
                 } else {
                     match &lit.kind {
                         TokenKind::Keyword(Keyword::Nil) => {
-                            self.op_3(OpCode::Same, success, Register::EMPTY, value);
+                            self.op_nil(value);
                         }
                         TokenKind::Keyword(Keyword::True) => {
-                            self.op_bool(success, true);
-                            self.op_3(OpCode::Same, success, success, value);
+                            self.op_bool(value, true);
                         }
                         TokenKind::Keyword(Keyword::False) => {
-                            self.op_bool(success, false);
-                            self.op_3(OpCode::Same, success, success, value);
+                            self.op_bool(value, false);
+                        }
+                        TokenKind::String(s) => {
+                            self.op_string(value, s.as_ref());
                         }
                         _ => self.unreachable(prefix, lit, file!(), line!()),
                     }
                 }
             }
-            Relation(token, pattern) => self.unimplemented(token, pattern),
-            Range(l, token, r) => self.unimplemented(l, r),
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn emit_pattern(
+        &mut self,
+        success: Register,
+        pattern: &'s Pattern<'s>,
+        value: Register,
+        bind_type: Option<BindType>,
+    ) {
+        match pattern {
+            Grouping(_, pattern, _) => self.emit_pattern(success, pattern, value, bind_type),
+            Constant(_, lit) => {
+                if success.is_empty() {
+                    self.diagnostics.push(SourceDiagnostic::new(
+                        pattern.range(),
+                        DiagnosticCode::UnnecessaryIrrefutablePattern,
+                    ));
+                    return;
+                }
+                if lit.kind == Keyword::Nil {
+                    self.op_3(OpCode::Same, success, Register::EMPTY, value);
+                } else {
+                    self.emit_constant(pattern, success);
+                    self.op_3(OpCode::Same, success, success, value);
+                }
+            }
+            Relation(token, pattern) => {
+                let Some(op) = (match token.kind {
+                    TokenKind::Operator(op) if op.is_relation() => op.to_infix_op(),
+                    _ => None,
+                }) else {
+                    self.unreachable(token, pattern, file!(), line!());
+                    return;
+                };
+                self.emit_constant(pattern, success);
+                self.op_3(op, success, value, success);
+            }
+            Range(l, token, r) => {
+                let start = self.closures.add_reg();
+                let end = self.closures.add_reg();
+                self.emit_constant(l, start);
+                self.emit_constant(r, end);
+                self.op_3(OpCode::Lte, start, start, value);
+                self.op_3(
+                    if token.kind == Operator::HalfOpenRange {
+                        OpCode::Gt
+                    } else {
+                        OpCode::Gte
+                    },
+                    end,
+                    end,
+                    value,
+                );
+                self.op_3(OpCode::And, success, start, end);
+            }
             Discard(_) => {
                 if success.is_empty() {
                     // TODO: useless irrefutable pattern except in array patterns
@@ -283,78 +323,90 @@ impl<'s> Emitter<'s> {
                     success
                 };
                 self.op_2(OpCode::IsRecord, flag, value);
-                self.op_if(OpCode::If, flag);
-
-                for (i, element) in elements.iter().enumerate() {
-                    match element.deref() {
-                        RecordElementBase::Named(token, _, pattern) => {
-                            let Some((id_type, id)) = token.to_field_name() else {
-                                unreachable!("Expected identifier token");
-                            };
-                            self.diagnostics
-                                .push(SourceDiagnostic::new(token.range(), id_type));
-                            let ret = self.closures.add_reg();
-                            self.op_get(ret, value, id);
-                            self.emit_pattern(success, pattern, ret, bind_type);
-                        }
-                        RecordElementBase::InterpolateNamed(..) => {}
-                        RecordElementBase::OmitNamed(colon, pattern) => {
-                            let Pattern::Bind(_, id_token) = pattern.as_ref() else {
-                                continue;
-                            };
-                            let TokenKind::Identifier(id) = &id_token.kind else {
-                                continue;
-                            };
-                            self.diagnostics.push(SourceDiagnostic::new(
-                                colon.range(),
-                                DiagnosticCode::OmitNamedRecordField,
-                            ));
-                            self.diagnostics.push(SourceDiagnostic::new(
-                                id_token.range(),
-                                DiagnosticCode::OmitNamedRecordFieldName,
-                            ));
-                            let ret = self.closures.add_reg();
-                            self.op_get(ret, value, id.as_ref());
-                            self.emit_pattern(success, pattern, ret, bind_type);
-                        }
-                        RecordElementBase::Unnamed(pattern) => {
-                            let ret = self.closures.add_reg();
-                            let code = match i {
-                                0 => DiagnosticCode::UnnamedRecordField0,
-                                1 => DiagnosticCode::UnnamedRecordField1,
-                                2 => DiagnosticCode::UnnamedRecordField2,
-                                3 => DiagnosticCode::UnnamedRecordField3,
-                                4 => DiagnosticCode::UnnamedRecordField4,
-                                5 => DiagnosticCode::UnnamedRecordField5,
-                                6 => DiagnosticCode::UnnamedRecordField6,
-                                7 => DiagnosticCode::UnnamedRecordField7,
-                                8 => DiagnosticCode::UnnamedRecordField8,
-                                9 => DiagnosticCode::UnnamedRecordField9,
-                                _ => DiagnosticCode::UnnamedRecordFieldN,
-                            };
-                            let start = pattern.range().start;
-                            self.diagnostics.push(SourceDiagnostic::new(
-                                SourceRange { start, end: start },
-                                code,
-                            ));
-                            self.op_get_index(ret, value, i);
-                            self.emit_pattern(success, pattern, ret, bind_type);
-                        }
-                        RecordElementBase::Spread(dots, pattern) => {
-                            // let ret = self.closures.add_reg();
-                            // self.op_get_spread(ret, value);
-                            // self.emit_pattern(success, pattern, ret, bind_type);
-                            self.unimplemented(dots, pattern)
-                        }
-                    }
-                }
 
                 if !is_empty {
+                    self.op_if(OpCode::If, flag);
+
+                    let sub_flag = if success.is_empty() {
+                        // 此时匹配成功与否并不重要，而且也要把这是非条件匹配的信息传到子级
+                        Register::EMPTY
+                    } else {
+                        self.closures.add_reg()
+                    };
+
+                    for (i, element) in elements.iter().enumerate() {
+                        match element.deref() {
+                            RecordElementBase::Named(token, _, pattern) => {
+                                let Some((id_type, id)) = token.to_field_name() else {
+                                    unreachable!("Expected identifier token");
+                                };
+                                self.diagnostics
+                                    .push(SourceDiagnostic::new(token.range(), id_type));
+                                let ret = self.closures.add_reg();
+                                self.op_get(ret, value, id);
+                                self.emit_pattern(sub_flag, pattern, ret, bind_type);
+                            }
+                            RecordElementBase::InterpolateNamed(..) => {}
+                            RecordElementBase::OmitNamed(colon, pattern) => {
+                                let Pattern::Bind(_, id_token) = pattern.as_ref() else {
+                                    continue;
+                                };
+                                let TokenKind::Identifier(id) = &id_token.kind else {
+                                    continue;
+                                };
+                                self.diagnostics.push(SourceDiagnostic::new(
+                                    colon.range(),
+                                    DiagnosticCode::OmitNamedRecordField,
+                                ));
+                                self.diagnostics.push(SourceDiagnostic::new(
+                                    id_token.range(),
+                                    DiagnosticCode::OmitNamedRecordFieldName,
+                                ));
+                                let ret = self.closures.add_reg();
+                                self.op_get(ret, value, id.as_ref());
+                                self.emit_pattern(sub_flag, pattern, ret, bind_type);
+                            }
+                            RecordElementBase::Unnamed(pattern) => {
+                                let ret = self.closures.add_reg();
+                                let code = match i {
+                                    0 => DiagnosticCode::UnnamedRecordField0,
+                                    1 => DiagnosticCode::UnnamedRecordField1,
+                                    2 => DiagnosticCode::UnnamedRecordField2,
+                                    3 => DiagnosticCode::UnnamedRecordField3,
+                                    4 => DiagnosticCode::UnnamedRecordField4,
+                                    5 => DiagnosticCode::UnnamedRecordField5,
+                                    6 => DiagnosticCode::UnnamedRecordField6,
+                                    7 => DiagnosticCode::UnnamedRecordField7,
+                                    8 => DiagnosticCode::UnnamedRecordField8,
+                                    9 => DiagnosticCode::UnnamedRecordField9,
+                                    _ => DiagnosticCode::UnnamedRecordFieldN,
+                                };
+                                let start = pattern.range().start;
+                                self.diagnostics.push(SourceDiagnostic::new(
+                                    SourceRange { start, end: start },
+                                    code,
+                                ));
+                                self.op_get_index(ret, value, i);
+                                self.emit_pattern(sub_flag, pattern, ret, bind_type);
+                            }
+                            RecordElementBase::Spread(dots, pattern) => {
+                                // let ret = self.closures.add_reg();
+                                // self.op_get_spread(ret, value);
+                                // self.emit_pattern(sub_flag, pattern, ret, bind_type);
+                                self.unimplemented(dots, pattern)
+                            }
+                        }
+
+                        if !sub_flag.is_empty() {
+                            self.op_3(OpCode::And, flag, flag, sub_flag);
+                        }
+                    }
+
                     self.op_else();
                     self.emit_failed_pattern(pattern, bind_type);
-                }
 
-                self.op_if_end();
+                    self.op_if_end();
+                }
             }
             Array(ob, array_element_bases, cb) => self.unimplemented(ob, cb),
             And(left, op, right) | Or(left, op, right) => {

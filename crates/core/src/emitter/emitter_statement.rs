@@ -131,14 +131,13 @@ impl<'s> Emitter<'s> {
                     self.emit_expression(expression, assignee_reg, brk);
                     self.op_if_end();
                 } else {
-                    let op = match op.kind {
-                        TokenKind::Operator(Operator::PlusEqual) => OpCode::Add,
-                        TokenKind::Operator(Operator::MinusEqual) => OpCode::Sub,
-                        TokenKind::Operator(Operator::AsteriskEqual) => OpCode::Mul,
-                        TokenKind::Operator(Operator::SlashEqual) => OpCode::Div,
-                        TokenKind::Operator(Operator::PercentEqual) => OpCode::Mod,
-                        TokenKind::Operator(Operator::CaretEqual) => OpCode::Pow,
-                        _ => unreachable!("Unexpected assign operator"),
+                    let Some(op) = (match op.kind {
+                        TokenKind::Operator(o) => o.to_compound_op(),
+                        _ => None,
+                    }) else {
+                        // Unexpected assign operator
+                        self.unreachable(op, op, file!(), line!());
+                        return false;
                     };
                     let right_reg = self.closures.add_reg();
                     self.emit_expression(expression, right_reg, brk);

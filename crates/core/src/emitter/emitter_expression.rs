@@ -565,28 +565,13 @@ impl<'s> Emitter<'s> {
                     self.emit_expression(left, left_reg, brk);
                     self.op_unary(ret, OpCode::InGlobal, left_reg);
                 } else {
-                    let op = match token.kind {
-                        TokenKind::Operator(Operator::Caret) => OpCode::Pow,
-
-                        TokenKind::Operator(Operator::Asterisk) => OpCode::Mul,
-                        TokenKind::Operator(Operator::Slash) => OpCode::Div,
-                        TokenKind::Operator(Operator::Percent) => OpCode::Mod,
-
-                        TokenKind::Operator(Operator::Plus) => OpCode::Add,
-                        TokenKind::Operator(Operator::Minus) => OpCode::Sub,
-
-                        TokenKind::Operator(Operator::Greater) => OpCode::Gt,
-                        TokenKind::Operator(Operator::GreaterEqual) => OpCode::Geq,
-                        TokenKind::Operator(Operator::Less) => OpCode::Lt,
-                        TokenKind::Operator(Operator::LessEqual) => OpCode::Leq,
-
-                        TokenKind::Operator(Operator::EqualEqual) => OpCode::Eq,
-                        TokenKind::Operator(Operator::NotEqual) => OpCode::Neq,
-                        TokenKind::Operator(Operator::TildeEqual) => OpCode::Aeq,
-                        TokenKind::Operator(Operator::NotTildeEqual) => OpCode::Naeq,
-                        TokenKind::Keyword(Keyword::In) => OpCode::In,
-
-                        _ => unreachable!("Unexpected infix operator"),
+                    let Some(op) = (match token.kind {
+                        TokenKind::Operator(o) => o.to_infix_op(),
+                        TokenKind::Keyword(Keyword::In) => Some(OpCode::In),
+                        _ => None,
+                    }) else {
+                        // Unexpected infix operator
+                        return self.unreachable(token, token, file!(), line!());
                     };
                     let left_reg = self.closures.add_reg();
                     let right_reg = self.closures.add_reg();
@@ -683,7 +668,6 @@ impl<'s> Emitter<'s> {
             }
             ForIn(kw, pattern, _, iterable, expression, else_part) => {
                 let Expression::Block(_, stmts, expr, _) = expression.as_ref() else {
-                    // unreachable!("Expected block expression");
                     return;
                 };
 
@@ -789,7 +773,40 @@ impl<'s> Emitter<'s> {
 
                 self.exit_scope();
             }
-            Match(token, expression, op, items, cp) => self.unimplemented(token, cp),
+            Match(_, expression, _, items, _) => {
+                let matcher = self.closures.add_reg();
+                self.emit_expression(expression, matcher, brk);
+
+                let matched = self.closures.add_reg();
+                self.op_bool(matched, false);
+
+                if !ret.is_empty() {
+                    self.op_nil(ret);
+                }
+
+                for (kw_case, pattern, body) in items {
+                    let Expression::Block(_, stmts, expr, end) = body else {
+                        return;
+                    };
+
+                    self.enter_scope(kw_case.range.end..end.range.end);
+
+                    self.declare_pattern(pattern, Some(BindType::Init));
+                    self.declare_block(stmts, expr);
+
+                    self.op_if(OpCode::IfNot, matched);
+                    {
+                        self.emit_pattern(matched, pattern, matcher, Some(BindType::Init));
+                        self.op_if(OpCode::If, matched);
+                        {
+                            self.emit_block(stmts, expr, ret, brk);
+                        }
+                        self.op_if_end();
+                    }
+                    self.op_if_end();
+                    self.exit_scope();
+                }
+            }
             Function(kw, args, expression) => {
                 let parser::Expression::Block(_, stmts, expr, _) = &**expression else {
                     // unreachable!("Expected block expression");
