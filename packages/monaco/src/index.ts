@@ -23,7 +23,7 @@ export class MiraScriptMonacoLoader implements IDisposable {
         });
 
         const _loadBasicFeatures = () => void this.loadBasicFeatures();
-        const _loadFullFeatures = () => void Promise.all([this.loadBasicFeatures(), this.loadLSPFeatures()]);
+        const _loadFullFeatures = () => void this.loadLSPFeatures();
 
         languages.onLanguageEncountered('mirascript', _loadBasicFeatures);
         languages.onLanguage('mirascript', _loadFullFeatures);
@@ -48,7 +48,9 @@ export class MiraScriptMonacoLoader implements IDisposable {
     /** 加载 LSP 功能 */
     async loadLSPFeatures(): Promise<void> {
         try {
+            const basic = this.loadBasicFeatures();
             const { registerLSP } = await import('./lsp/index.js');
+            await basic; // 确保基础功能已加载
             if (this._lspFeaturesLoaded || this.disposed) return;
             this._lspFeaturesLoaded = true;
             this.disposables.push(...registerLSP(this.monaco));
