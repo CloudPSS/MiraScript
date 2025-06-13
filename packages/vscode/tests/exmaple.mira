@@ -1,0 +1,11 @@
+let input = (1, 2);
+let e = nan;
+match input {
+    case (0, 0) { "Origin" }
+    case (x, 0) { "X axis $x" }
+    case (0, y) { "Y axis $y" }
+    case (x, y) { "Point ($x, $y)" }
+    case _ { "Unknown point" }
+}
+
+`2312\u3\`21${xx 213`${xx}wq e`}3$ad`

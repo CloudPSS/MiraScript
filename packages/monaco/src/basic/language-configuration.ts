@@ -11,11 +11,6 @@ const configuration = ({ languages }: Monaco): languages.LanguageConfiguration =
         ['(', ')'],
         ['[', ']'],
         ['{', '}'],
-    ],
-    colorizedBracketPairs: [
-        ['(', ')'],
-        ['[', ']'],
-        ['{', '}'],
         ...Array.from({ length: MAX_VERBATIM_LENGTH }).map(
             (_, i): languages.CharacterPair => ['$'.repeat(i) + '{', '}'],
         ),

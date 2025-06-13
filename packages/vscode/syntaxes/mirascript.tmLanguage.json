@@ -1,0 +1,88 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "MiraScript",
+  "patterns": [
+    {
+      "include": "#root"
+    }
+  ],
+  "repository": {
+    "root": {
+      "patterns": [
+        {
+          "include": "#keywords"
+        },
+        {
+          "include": "#strings"
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.mira",
+          "match": "\\b(if|else|match|case|for|while|loop|break|continue|return|import|export)\\b"
+        },
+        {
+          "name": "constant.numeric.mira",
+          "match": "\\b(nan|inf)\\b"
+        },
+        {
+          "name": "keyword.mira",
+          "match": "\\b(true|false|nil|nan|inf|_|global|in|is|and|or|not|type|if|else|match|case|for|while|loop|break|continue|return|fn|op|let|mut|const|where|import|export|effect|try|handle|finally|perform|resume)\\b"
+        }
+      ]
+    },
+    "identifiers": {
+      "name": "variable.other.mira",
+      "match": "\\b(?:_+|@+|\\$+|\\p{XID_Start})\\p{XID_Continue}*\\b"
+    },
+    "strings": {
+      "name": "string.quoted.mira",
+      "begin": "([\"'`])",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.begin.mira"
+        }
+      },
+      "end": "\\1",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.end.mira"
+        }
+      },
+      "patterns": [
+        {
+          "name": "constant.character.escape.mira",
+          "match": "\\\\x[0-9A-Fa-f]{2}|\\\\u{[0-9A-Fa-f]{1,6}}"
+        },
+        {
+          "name": "constant.character.escape.mira",
+          "match": "\\\\."
+        },
+        {
+          "name": "meta.template.expression.mira",
+          "begin": "\\$\\{",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.definition.template-expression.begin.mira"
+            }
+          },
+          "end": "\\}",
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.definition.template-expression.end.mira"
+            }
+          },
+          "patterns": [
+            {
+              "include": "#root"
+            }
+          ],
+          "contentName": "meta.embedded.line.mira"
+        }
+      ]
+    }
+  },
+  "scopeName": "source.mira"
+}
