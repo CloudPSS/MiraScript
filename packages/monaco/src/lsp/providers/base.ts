@@ -1,4 +1,4 @@
-import { editor, Emitter, type IEvent } from '../../monaco-api.js';
+import { type editor, Emitter, type IEvent } from '../../monaco-api.js';
 import type { CompileResult } from '../compile-result';
 import { compile } from '../worker-helper';
 
@@ -8,10 +8,6 @@ export abstract class Provider {
     async getCompileResult(model: editor.ITextModel): Promise<CompileResult | undefined> {
         if (model.uri.scheme === 'mirascript') {
             return undefined; // 不处理标准库
-        }
-        if (model.getEOL() !== '\n') {
-            // 确保使用 LF 作为行结束符
-            model.setEOL(editor.EndOfLineSequence.LF);
         }
         return await compile(model);
     }

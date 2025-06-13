@@ -1,4 +1,4 @@
-import { compileScript, compileTemplate } from '@mirascript/wasm';
+import { compileScript, compileTemplate, type CompileResult } from '@mirascript/wasm';
 import type { ParseMode } from 'mirascript';
 import { toCompileFlags } from 'mirascript/subtle';
 
@@ -20,16 +20,26 @@ const flags = toCompileFlags({
 });
 const encoder = new TextEncoder();
 
-addEventListener('message', (event: MessageEvent) => {
-    const data = event.data as Req;
-    if (!Array.isArray(data)) return;
-    const [uri, version, script, mode] = data;
-    try {
-        const compiler = mode === 'template' ? compileTemplate : compileScript;
-        const result = compiler(encoder.encode(script), flags);
-        postMessage([uri, version, result.chunk, result.diagnostics] satisfies ResOk);
-    } catch (error) {
-        postMessage([uri, version, (error as Error).message || String(error)] satisfies ResErr);
-    }
-});
-postMessage('mirascript lsp ready' satisfies Ready);
+/** 编译 */
+export function compile(script: string, mode: ParseMode): CompileResult {
+    const compiler = mode === 'template' ? compileTemplate : compileScript;
+    return compiler(encoder.encode(script), flags);
+}
+
+if (typeof Worker == 'function' && typeof addEventListener == 'function' && typeof postMessage == 'function') {
+    addEventListener('message', (event: MessageEvent) => {
+        const data = event.data as Req;
+        if (!Array.isArray(data)) return;
+        const [uri, version, script, mode] = data;
+        try {
+            const result = compile(script, mode);
+            const transfer = [];
+            if (result.chunk) transfer.push(result.chunk.buffer);
+            if (result.diagnostics) transfer.push(result.diagnostics.buffer);
+            postMessage([uri, version, result.chunk, result.diagnostics] satisfies ResOk, { transfer });
+        } catch (error) {
+            postMessage([uri, version, (error as Error).message || String(error)] satisfies ResErr);
+        }
+    });
+    postMessage('mirascript lsp ready' satisfies Ready);
+}

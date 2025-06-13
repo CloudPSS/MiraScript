@@ -31,12 +31,6 @@
       },
       "args": [],
       "cwd": "${workspaceFolder}"
-    },
-    {
-      "name": "Extension",
-      "type": "extensionHost",
-      "request": "launch",
-      "args": ["--disable-extensions", "--extensionDevelopmentPath=${workspaceFolder}/packages/vscode"]
     }
   ]
 }

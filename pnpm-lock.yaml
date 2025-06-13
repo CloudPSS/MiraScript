@@ -85,17 +85,22 @@ importers:
         version: 3.4.1(vite@6.3.5(@types/node@24.0.0)(jiti@2.4.2)(yaml@2.8.0))
 
   packages/vscode:
-    dependencies:
+    devDependencies:
       '@mirascript/monaco':
         specifier: workspace:*
         version: link:../monaco
-      mirascript:
-        specifier: workspace:*
-        version: link:../mirascript
-    devDependencies:
       '@types/vscode':
         specifier: ^1.101.0
         version: 1.101.0
+      esbuild-plugin-wasm:
+        specifier: ^1.1.0
+        version: 1.1.0
+      mirascript:
+        specifier: workspace:*
+        version: link:../mirascript
+      monaco-editor:
+        specifier: ^0.52.2
+        version: 0.52.2
 
   packages/wasm:
     devDependencies:
@@ -1140,6 +1145,11 @@ packages:
   error-ex@1.3.2:
     resolution:
       { integrity: sha512-7dFHNmqeFSEt2ZBsCriorKnn3Z2pj+fd9kmI6QoWw4//DL+icEBfc0U7qJCisqrTsKTjw4fNFy2pW9OqStD84g== }
+
+  esbuild-plugin-wasm@1.1.0:
+    resolution:
+      { integrity: sha512-0bQ6+1tUbySSnxzn5jnXHMDvYnT0cN/Wd4Syk8g/sqAIJUg7buTIi22svS3Qz6ssx895NT+TgLPb33xi1OkZig== }
+    engines: { node: '>=0.10.0' }
 
   esbuild@0.25.5:
     resolution:
@@ -3064,6 +3074,8 @@ snapshots:
   error-ex@1.3.2:
     dependencies:
       is-arrayish: 0.2.1
+
+  esbuild-plugin-wasm@1.1.0: {}
 
   esbuild@0.25.5:
     optionalDependencies:

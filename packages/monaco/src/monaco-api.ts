@@ -15,4 +15,4 @@ export type MonacoApi = {
 /**
  * 注册 MiraScript Monaco API，不实际启用任何功能。
  */
-export function registerMonacoApi(monacoApi: MonacoApi): void;
+export declare function registerMonacoApi(monacoApi: MonacoApi): void;
