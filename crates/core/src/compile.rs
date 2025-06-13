@@ -152,13 +152,25 @@ fn compile<'s>(
                 }
             },
             |expression| {
-                if let parser::Expression::Unknown { errors, .. } = expression {
+                if let parser::Expression::Unknown {
+                    errors, recovered, ..
+                } = expression
+                {
                     diagnostics_collector.borrow_mut().extend(errors.drain(..));
+                    if let Some(recovered) = std::mem::take(recovered) {
+                        *expression = *recovered;
+                    }
                 }
             },
             |pattern| {
-                if let parser::Pattern::Unknown { errors, .. } = pattern {
+                if let parser::Pattern::Unknown {
+                    errors, recovered, ..
+                } = pattern
+                {
                     diagnostics_collector.borrow_mut().extend(errors.drain(..));
+                    if let Some(recovered) = std::mem::take(recovered) {
+                        *pattern = *recovered;
+                    }
                 }
             },
             |statement| {

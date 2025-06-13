@@ -17,12 +17,12 @@ use super::{
     helper::{token_boxed, token_or_insert},
 };
 
+type _ArrayElement<'s, E> = ListItem<'s, ArrayElementBase<'s, E>>;
 fn array_element<'t, 's: 't, E: Clone + PartialEq + 's>(
     element: impl Parser<Input<'t, 's>, E, ErrMode<ContextError>> + Copy,
     range: impl Parser<Input<'t, 's>, Range<'s>, ErrMode<ContextError>> + Copy,
     spread: impl Parser<Input<'t, 's>, E, ErrMode<ContextError>> + Copy,
-) -> impl Parser<Input<'t, 's>, ListItem<'s, ArrayElementBase<'s, E>>, ErrMode<ContextError>> + Copy
-{
+) -> impl Parser<Input<'t, 's>, _ArrayElement<'s, E>, ErrMode<ContextError>> + Copy {
     move |i: &mut Input<'t, 's>| {
         let first = peek(any).parse_next(i)?;
         if *first == Operator::CloseBracket
@@ -63,20 +63,13 @@ fn array_element<'t, 's: 't, E: Clone + PartialEq + 's>(
     }
 }
 
+type _ArrayLike<'s, E> = (Box<Token<'s>>, Vec<_ArrayElement<'s, E>>, Box<Token<'s>>);
 pub(super) fn array_base<'t, 's: 't, E: Clone + PartialEq + 's>(
     brace: [Operator; 2],
     element: impl Parser<Input<'t, 's>, E, ErrMode<ContextError>> + Copy,
     range: impl Parser<Input<'t, 's>, Range<'s>, ErrMode<ContextError>> + Copy,
     spread: impl Parser<Input<'t, 's>, E, ErrMode<ContextError>> + Copy,
-) -> impl Parser<
-    Input<'t, 's>,
-    (
-        Box<Token<'s>>,
-        Vec<ListItem<'s, ArrayElementBase<'s, E>>>,
-        Box<Token<'s>>,
-    ),
-    ErrMode<ContextError>,
-> + Copy {
+) -> impl Parser<Input<'t, 's>, _ArrayLike<'s, E>, ErrMode<ContextError>> + Copy {
     move |i: &mut Input<'t, 's>| {
         let open = token_boxed(brace[0]).parse_next(i)?;
         let parts: Vec<_> = repeat(0.., array_element(element, range, spread)).parse_next(i)?;

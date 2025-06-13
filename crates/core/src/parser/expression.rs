@@ -225,7 +225,7 @@ pub enum Expression<'s> {
     ),
     /// Unknown expression
     Unknown {
-        expression: Option<Box<Expression<'s>>>,
+        recovered: Option<Box<Expression<'s>>>,
         tokens: Vec<Token<'s>>,
         errors: Vec<SourceDiagnostic>,
     },
@@ -242,7 +242,7 @@ impl<'s> Expression<'s> {
         let mut range = tokens[0].range.clone();
         range.end = tokens.last().unwrap().range.end;
         Expression::Unknown {
-            expression: Some(Box::new(self)),
+            recovered: Some(Box::new(self)),
             tokens,
             errors: vec![SourceDiagnostic::new(range, error)],
         }
@@ -266,7 +266,7 @@ impl<'s> Expression<'s> {
         let mut range = tokens[0].range.clone();
         range.end = tokens.last().unwrap().range.end;
         Expression::Unknown {
-            expression: None,
+            recovered: None,
             tokens,
             errors: vec![SourceDiagnostic::new(range, error)],
         }
@@ -277,7 +277,7 @@ impl<'s> Expression<'s> {
         error: DiagnosticCode,
     ) -> Self {
         Expression::Unknown {
-            expression: None,
+            recovered: None,
             tokens: tokens.into(),
             errors: vec![SourceDiagnostic::new(error_range, error)],
         }
@@ -288,7 +288,7 @@ impl<'s> Expression<'s> {
         errors: E,
     ) -> Self {
         Expression::Unknown {
-            expression: None,
+            recovered: None,
             tokens: tokens.into(),
             errors: errors.into(),
         }
@@ -435,11 +435,11 @@ impl<'s> AstWalker<'s> for Expression<'s> {
                 block.walk_mut(visitor);
             }
             Unknown {
-                expression,
+                recovered,
                 tokens,
                 errors: _,
             } => {
-                expression.walk_mut(visitor);
+                recovered.walk_mut(visitor);
                 tokens.walk_mut(visitor);
             }
         }
@@ -584,11 +584,11 @@ impl<'s> AstWalker<'s> for Expression<'s> {
                 block.walk(visitor);
             }
             Unknown {
-                expression,
+                recovered,
                 tokens,
                 errors: _,
             } => {
-                expression.walk(visitor);
+                recovered.walk(visitor);
                 tokens.walk(visitor);
             }
         }

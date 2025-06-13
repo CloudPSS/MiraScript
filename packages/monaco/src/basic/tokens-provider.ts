@@ -220,7 +220,7 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
             doc_mode: [
                 // inline doc, start with `\0`
                 [
-                    /^(@inlineDocParam)(@whitespace+)(..|)(mut)(@whitespace+)(@identifier)/,
+                    /^(\0@inlineDocParam)(@whitespace+)(..|)(mut)(@whitespace+)(@identifier)/,
                     ['entity.name.label', '', 'delimiter', 'keyword.mut', '', 'variable.emphasis'],
                 ],
                 [

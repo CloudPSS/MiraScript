@@ -6,18 +6,18 @@ use winnow::{ModalResult, Parser, combinator::opt};
 
 use crate::{
     ansi::DisplayIdent,
-    diagnostic::SourceRange,
+    diagnostic::{DiagnosticCode, SourceRange},
     lexer::{Operator, Token},
 };
 
 use super::{
-    ArrayPattern, AstVisitor, AstVisitorMut, AstWalker, Input, Pattern,
+    ArrayElementBase, ArrayPattern, AstVisitor, AstVisitorMut, AstWalker, Input, Pattern,
     patterns::array_pattern_like,
 };
 
 /// `(` ...items `)`
 #[derive(Debug, Clone, PartialEq)]
-pub(crate) struct ParameterList<'s>(
+pub struct ParameterList<'s>(
     pub Box<Token<'s>>,
     pub Vec<ArrayPattern<'s>>,
     pub Box<Token<'s>>,
@@ -73,7 +73,7 @@ impl DisplayIdent for ParameterList<'_> {
 }
 
 pub(super) fn parameter_list<'s>(i: &mut Input<'_, 's>) -> ModalResult<Option<ParameterList<'s>>> {
-    opt(
+    let list = opt(
         array_pattern_like([Operator::OpenParen, Operator::CloseParen], false).map(|pattern| {
             let Pattern::Array(left, items, right) = pattern else {
                 unreachable!();
@@ -81,40 +81,24 @@ pub(super) fn parameter_list<'s>(i: &mut Input<'_, 's>) -> ModalResult<Option<Pa
             ParameterList(left, items, right)
         }),
     )
-    .parse_next(i)
+    .parse_next(i)?;
+    let Some(mut list) = list else {
+        return Ok(None);
+    };
+    let len = list.len();
+    for (i, item) in list.iter_mut().enumerate() {
+        let item = item.deref_mut();
+        if i == len - 1 || !item.is_spread() {
+            continue;
+        }
+        let ArrayElementBase::Spread(kw, p) = item else {
+            unreachable!();
+        };
+        let kw = kw.to_owned().deref().clone();
+        *item = ArrayElementBase::Element(Box::new(
+            p.to_owned()
+                .wrap_as_unknown([kw], DiagnosticCode::InvalidRestParameter),
+        ));
+    }
+    Ok(Some(list))
 }
-
-// pub(super) fn parameter_list<'s>(i: &mut Input<'_, 's>) -> ModalResult<Option<Vec<Token<'s>>>> {
-//     let t = peek(any).parse_next(i)?;
-//     if *t != Operator::OpenParen {
-//         return Ok(None);
-//     }
-
-//     delimited(
-//         token(Operator::OpenParen),
-//         (
-//             repeat(
-//                 0..,
-//                 terminated(
-//                     one_of(|t: &Token<'s>| matches!(&t.kind, &TokenKind::Identifier(_))),
-//                     token(Operator::Comma),
-//                 ),
-//             )
-//             .fold(Vec::new, |mut v, t: &Token<'s>| {
-//                 v.push(t.to_owned());
-//                 v
-//             }),
-//             opt(one_of(|t: &Token<'s>| {
-//                 matches!(&t.kind, &TokenKind::Identifier(_))
-//             })),
-//         ),
-//         token(Operator::CloseParen),
-//     )
-//     .map(|(mut v, t): (Vec<Token<'s>>, Option<&Token<'s>>)| {
-//         if let Some(t) = t {
-//             v.push(t.to_owned());
-//         }
-//         Some(v)
-//     })
-//     .parse_next(i)
-// }

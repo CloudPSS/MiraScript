@@ -108,6 +108,10 @@ pub enum DiagnosticCode {
     BadOmitKeyRecordPattern,
     #[strum(message = "Range pattern in array pattern should be parenthesized")]
     AmbiguousRangePattern,
+    #[strum(message = "Spread pattern can only be used once in an array pattern")]
+    DuplicateSpreadPattern,
+    #[strum(message = "Rest parameter should be the last parameter in a function declaration")]
+    InvalidRestParameter,
     #[strum(message = "Cannot assign to an undeclared variable")]
     UndefinedVariableAssignment,
     #[strum(message = "Cannot assign to an immutable variable...")]
@@ -132,7 +136,7 @@ pub enum DiagnosticCode {
     WarningStart = 2000,
 
     #[strum(message = "Unnecessary parentheses; consider removing them")]
-    UnusedParentheses,
+    UnnecessaryParentheses,
     // The null value in MiraScript is represented by `nil`,
     // Emit a warning when a global variable is read as `null` `undefined` or similar.
     #[strum(

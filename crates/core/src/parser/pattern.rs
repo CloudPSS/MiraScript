@@ -87,7 +87,7 @@ pub enum Pattern<'s> {
 
     /// Unknown pattern.
     Unknown {
-        pattern: Option<Box<Pattern<'s>>>,
+        recovered: Option<Box<Pattern<'s>>>,
         tokens: Vec<Token<'s>>,
         errors: Vec<SourceDiagnostic>,
     },
@@ -104,7 +104,7 @@ impl<'s> Pattern<'s> {
         let mut range = tokens[0].range.clone();
         range.end = tokens.last().unwrap().range.end;
         Pattern::Unknown {
-            pattern: Some(Box::new(self)),
+            recovered: Some(Box::new(self)),
             tokens,
             errors: vec![SourceDiagnostic::new(range, error)],
         }
@@ -116,7 +116,7 @@ impl<'s> Pattern<'s> {
         let mut range = tokens[0].range.clone();
         range.end = tokens.last().unwrap().range.end;
         Pattern::Unknown {
-            pattern: None,
+            recovered: None,
             tokens,
             errors: vec![SourceDiagnostic::new(range, error)],
         }
@@ -127,7 +127,7 @@ impl<'s> Pattern<'s> {
         error: DiagnosticCode,
     ) -> Self {
         Pattern::Unknown {
-            pattern: None,
+            recovered: None,
             tokens: tokens.into(),
             errors: vec![SourceDiagnostic::new(error_range, error)],
         }
@@ -138,7 +138,7 @@ impl<'s> Pattern<'s> {
         errors: E,
     ) -> Self {
         Pattern::Unknown {
-            pattern: None,
+            recovered: None,
             tokens: tokens.into(),
             errors: errors.into(),
         }
@@ -203,11 +203,11 @@ impl<'s> AstWalker<'s> for Pattern<'s> {
                 p.walk_mut(visitor);
             }
             Unknown {
-                pattern,
+                recovered,
                 tokens,
                 errors: _,
             } => {
-                pattern.walk_mut(visitor);
+                recovered.walk_mut(visitor);
                 tokens.walk_mut(visitor);
             }
         }
@@ -269,11 +269,11 @@ impl<'s> AstWalker<'s> for Pattern<'s> {
                 p.walk(visitor);
             }
             Unknown {
-                pattern,
+                recovered,
                 tokens,
                 errors: _,
             } => {
-                pattern.walk(visitor);
+                recovered.walk(visitor);
                 tokens.walk(visitor);
             }
         }
@@ -345,7 +345,7 @@ impl DisplayIdent for Pattern<'_> {
                 pattern.fmt_ident(f, ident)?;
             }
             Unknown {
-                pattern: Some(p), ..
+                recovered: Some(p), ..
             } => {
                 write!(f, "{RECOVER}<pattern{RESET}")?;
                 p.fmt_ident(f, ident)?;

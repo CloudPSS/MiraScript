@@ -1,8 +1,10 @@
+use std::ops::DerefMut;
+
 use winnow::{
     ModalResult, Parser,
     combinator::{alt, empty, fail, opt, peek, preceded, separated_foldl1, seq},
     error::{ContextError, ErrMode},
-    stream::{Location, Stream},
+    stream::Location,
     token::{one_of, take_till},
 };
 
@@ -13,7 +15,7 @@ use crate::{
 };
 
 use super::{
-    Input, Pattern,
+    ArrayElementBase, Input, Pattern,
     array_helper::array_base,
     helper::{literal_token, token_boxed, variable_token},
     record_helper::record_base,
@@ -308,5 +310,31 @@ pub(crate) fn array_pattern_like<'t, 's: 't>(
 fn array_pattern<'t, 's: 't>(
     rebind: bool,
 ) -> impl Parser<Input<'t, 's>, Pattern<'s>, ErrMode<ContextError>> + Copy {
-    array_pattern_like([Operator::OpenBracket, Operator::CloseBracket], rebind)
+    move |i: &mut Input<'t, 's>| -> ModalResult<Pattern<'s>> {
+        let mut p = array_pattern_like([Operator::OpenBracket, Operator::CloseBracket], rebind)
+            .parse_next(i)?;
+        let Pattern::Array(_, parts, _) = &mut p else {
+            unreachable!();
+        };
+        let mut spread = vec![];
+        for part in parts.iter_mut() {
+            if part.is_spread() {
+                spread.push(part.deref_mut());
+            }
+        }
+        if spread.len() > 1 {
+            for part in spread.into_iter().skip(1) {
+                let ArrayElementBase::Spread(kw, p) = part else {
+                    unreachable!();
+                };
+                let kw = kw.to_owned().deref_mut().clone();
+                *part = ArrayElementBase::Element(Box::new(
+                    p.to_owned()
+                        .wrap_as_unknown([kw], DiagnosticCode::DuplicateSpreadPattern),
+                ));
+            }
+        }
+
+        Ok(p)
+    }
 }

@@ -41,11 +41,11 @@ impl<'s> Emitter<'s> {
                 ) {
                     self.diagnostics.push(SourceDiagnostic::new(
                         op.range(),
-                        DiagnosticCode::UnusedParentheses,
+                        DiagnosticCode::UnnecessaryParentheses,
                     ));
                     self.diagnostics.push(SourceDiagnostic::new(
                         cp.range(),
-                        DiagnosticCode::UnusedParentheses,
+                        DiagnosticCode::UnnecessaryParentheses,
                     ));
                 }
                 self.declare_expression(expression)
