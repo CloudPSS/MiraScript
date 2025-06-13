@@ -272,7 +272,7 @@ fn extension_call<'s>(i: &mut Input<'_, 's>) -> ModalResult<Call<'s>> {
     .parse_next(i)
 }
 
-pub(super) fn postfix<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
+fn postfix<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
     enum Function<'s> {
         Call(Box<Token<'s>>, Vec<Expression<'s>>, Box<Token<'s>>),
         Extension(
@@ -322,19 +322,19 @@ pub(super) fn postfix<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> 
     }))
 }
 
-pub(super) fn prefix<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
-    dispatch! {peek(any);
-        token if *token == Operator::Plus || *token == Operator::Minus|| *token == Operator::Exclamation =>
-            seq!(Expression::Prefix(any.map(|t: &Token<'s>| Box::new(t.to_owned())), prefix.map(Box::new))),
-        &Token{..} => postfix,
-    }
+fn exponentiation<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
+    separated_foldr1(postfix, token_boxed(Operator::Caret), |l, op, r| {
+        Expression::Infix(Box::new(l), op, Box::new(r))
+    })
     .parse_next(i)
 }
 
-pub(super) fn exponentiation<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
-    separated_foldr1(prefix, token_boxed(Operator::Caret), |l, op, r| {
-        Expression::Infix(Box::new(l), op, Box::new(r))
-    })
+fn prefix<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
+    dispatch! {peek(any);
+        token if *token == Operator::Plus || *token == Operator::Minus|| *token == Operator::Exclamation =>
+            seq!(Expression::Prefix(any.map(|t: &Token<'s>| Box::new(t.to_owned())), prefix.map(Box::new))),
+        &Token{..} => exponentiation,
+    }
     .parse_next(i)
 }
 
@@ -349,8 +349,8 @@ fn left_associative_infix<'t, 's: 't>(
     .parse_next(i)
 }
 
-pub(super) fn multiplicative<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
-    left_associative_infix(i, exponentiation, |t| {
+fn multiplicative<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
+    left_associative_infix(i, prefix, |t| {
         *t == Operator::Asterisk || *t == Operator::Slash || *t == Operator::Percent
     })
 }
@@ -361,7 +361,7 @@ pub(super) fn additive<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>>
     })
 }
 
-pub(super) fn matching<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
+fn matching<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
     let first = additive.parse_next(i)?;
     let items: Vec<(_, _)> = repeat(0.., (token_boxed(Keyword::Is), pattern(false)))
         .fold(Vec::new, |mut v, t| {
@@ -377,7 +377,7 @@ pub(super) fn matching<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>>
     }))
 }
 
-pub(super) fn relational<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
+fn relational<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
     left_associative_infix(i, matching, |t| {
         *t == Operator::Less
             || *t == Operator::LessEqual
@@ -387,7 +387,7 @@ pub(super) fn relational<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s
     })
 }
 
-pub(super) fn equality<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
+fn equality<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
     left_associative_infix(i, relational, |t| {
         *t == Operator::EqualEqual
             || *t == Operator::NotEqual
@@ -396,15 +396,15 @@ pub(super) fn equality<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>>
     })
 }
 
-pub(super) fn and<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
+fn and<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
     left_associative_infix(i, equality, |t| *t == Operator::LogicalAnd)
 }
 
-pub(super) fn or<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
+fn or<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
     left_associative_infix(i, and, |t| *t == Operator::LogicalOr)
 }
 
-pub(super) fn null_coalescing<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
+fn null_coalescing<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
     left_associative_infix(i, or, |t| *t == Operator::NullCoalescing)
 }
 
