@@ -52,7 +52,7 @@ fn parse_part(bytes: &[u8], radix: u32, is_valid_char: impl Fn(u8) -> bool) -> P
     let parsed_num = num.unwrap_or_default();
     let number = parsed_num.to_f64().unwrap_or_default();
     let ordinal = parsed_num.to_i32();
-    let is_valid_ordinal = ordinal.is_some() && !has_leading_zero;
+    let is_valid_ordinal = !has_underscore && ordinal.is_some() && !has_leading_zero;
     let ordinal = ordinal.unwrap_or(i32::MAX);
     ParsedPart {
         number,
@@ -152,7 +152,7 @@ pub(super) fn number<'s>(i: &mut Input<'s>) -> ModalResult<TokenKind<'s>> {
 
             if range == range_i {
                 // maybe ordinary number
-                let result = handle_ordinal(part_i_b, range_i);
+                let result = handle_ordinal(part_i_b, range_i, false);
                 if !result.is_unknown() {
                     return Ok(result);
                 }
@@ -196,19 +196,29 @@ pub(super) fn number<'s>(i: &mut Input<'s>) -> ModalResult<TokenKind<'s>> {
     .parse_next(i)
 }
 
-fn handle_ordinal(bytes: &[u8], range: SourceRange) -> TokenKind<'_> {
+fn handle_ordinal(bytes: &[u8], range: SourceRange, force_ordinal: bool) -> TokenKind<'_> {
     let p = parse_part(bytes, 10, |c| c.is_ascii_digit());
 
     let result = if p.is_valid_ordinal {
         TokenKind::Ordinal(p.ordinal)
-    } else {
+    } else if !force_ordinal {
         TokenKind::Number(p.number)
+    } else {
+        TokenKind::unknown_range(
+            TokenKind::Ordinal(p.ordinal),
+            range.clone(),
+            DiagnosticCode::InvalidOrdinalLiteral,
+        )
     };
     if p.has_invalid_char {
         return TokenKind::unknown_range(result, range, DiagnosticCode::InvalidNumberLiteral);
     }
     if p.has_leading_underscore || p.has_trailing_underscore {
-        return TokenKind::unknown_range(result, range, DiagnosticCode::InvalidNumberLiteralUnderscore);
+        return TokenKind::unknown_range(
+            result,
+            range,
+            DiagnosticCode::InvalidNumberLiteralUnderscore,
+        );
     }
     result
 }
@@ -218,7 +228,7 @@ pub(super) fn ordinal<'s>(i: &mut Input<'s>) -> ModalResult<TokenKind<'s>> {
         "ordinal",
         number_part
             .with_span()
-            .map(|(s, r)| handle_ordinal(s.as_bytes(), r)),
+            .map(|(s, r)| handle_ordinal(s.as_bytes(), r, true)),
     )
     .parse_next(i)
 }

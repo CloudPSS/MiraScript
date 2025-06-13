@@ -10,7 +10,7 @@
 /crates/*/pkg/
 
 target/
-/docs/out/
+/docs/*.html
 
 # generated files
 *.g.*

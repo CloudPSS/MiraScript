@@ -36,6 +36,8 @@ pub enum DiagnosticCode {
     InvalidNumberLiteralUnderscore,
     #[strum(message = "Invalid number literal")]
     InvalidNumberLiteral,
+    #[strum(message = "Invalid ordinal literal")]
+    InvalidOrdinalLiteral,
     #[strum(message = "String literal is not terminated")]
     UnterminatedString,
     #[strum(message = "Invalid escape sequence in string")]
