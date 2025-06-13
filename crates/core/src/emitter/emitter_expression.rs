@@ -372,10 +372,8 @@ impl<'s> Emitter<'s> {
                                 _ => DiagnosticCode::UnnamedRecordFieldN,
                             };
                             let start = exp.range().start;
-                            self.diagnostics.push(SourceDiagnostic::new(
-                                SourceRange { start, end: start },
-                                code,
-                            ));
+                            self.diagnostics
+                                .push(SourceDiagnostic::new(start..start, code));
                             reg_index += 1;
                         }
                         RecordElementBase::Spread(_, _) => {

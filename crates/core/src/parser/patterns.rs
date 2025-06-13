@@ -55,8 +55,8 @@ pub(super) fn pattern_or_insert<'t, 's: 't>(
             pattern(rebind),
             empty.map(|_| {
                 Pattern::unknown_range(
-                    vec![],
-                    SourceRange { start, end: start },
+                    vec![Token::empty(start)],
+                    start..start,
                     DiagnosticCode::PatternExpected,
                 )
             }),

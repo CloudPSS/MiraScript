@@ -382,10 +382,8 @@ impl<'s> Emitter<'s> {
                                     _ => DiagnosticCode::UnnamedRecordFieldN,
                                 };
                                 let start = pattern.range().start;
-                                self.diagnostics.push(SourceDiagnostic::new(
-                                    SourceRange { start, end: start },
-                                    code,
-                                ));
+                                self.diagnostics
+                                    .push(SourceDiagnostic::new(start..start, code));
                                 self.op_get_index(ret, value, i);
                                 self.emit_pattern(sub_flag, pattern, ret, bind_type);
                             }
