@@ -1,4 +1,4 @@
-import type { CancellationToken, editor, languages, Position } from 'monaco-editor';
+import { Range, type CancellationToken, type editor, type languages, type Position } from '../../monaco-api.js';
 import { Provider } from './base.js';
 
 /** @inheritdoc */
@@ -25,7 +25,6 @@ export class RangeProvider
     ): Promise<languages.SelectionRange[][] | undefined> {
         const compiled = await this.getCompileResult(model);
         if (!compiled) return undefined;
-        const { Range } = this.monaco;
         const { ranges } = compiled.groupedTags(model);
         return positions.map((pos) => {
             return ranges

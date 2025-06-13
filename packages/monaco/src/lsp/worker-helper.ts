@@ -1,6 +1,5 @@
-import type { editor } from 'monaco-editor';
+import type { editor } from '../monaco-api.js';
 import type { ParseMode } from 'mirascript';
-import type { Monaco } from '../index.js';
 import type { Ready, Req, Res, ResOk } from './worker.js';
 import { CompileResult } from './compile-result.js';
 import { setMarkers } from './diagnostics.js';
@@ -8,7 +7,7 @@ import { setMarkers } from './diagnostics.js';
 const cache = new Map<`${string}\0${number}\0${ParseMode}`, Promise<CompileResult>>();
 let worker: Promise<Worker> | undefined = undefined;
 /** 注册 worker */
-export async function compile(monaco: Monaco, model: editor.ITextModel): Promise<CompileResult> {
+export async function compile(model: editor.ITextModel): Promise<CompileResult> {
     if (!worker) {
         const w = new Worker(new URL('#/lsp/worker', import.meta.url), {
             name: '@mirascript/lsp-server',
@@ -61,7 +60,7 @@ export async function compile(monaco: Monaco, model: editor.ITextModel): Promise
             instance.addEventListener('message', onMessage);
         });
         const result = new CompileResult(uri, version, diagnostics, chunk);
-        setMarkers(monaco, model, result);
+        setMarkers(model, result);
         return result;
     });
     cache.set(cacheKey, req);

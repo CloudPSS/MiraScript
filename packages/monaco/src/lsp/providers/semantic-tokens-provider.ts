@@ -1,4 +1,4 @@
-import type { CancellationToken, editor, languages } from 'monaco-editor';
+import { Range, type CancellationToken, type editor, type languages } from '../../monaco-api.js';
 import { Provider } from './base.js';
 import { DiagnosticCode } from '@mirascript/wasm';
 import { VmSharedGlobal } from 'mirascript/subtle';
@@ -31,8 +31,6 @@ export class DocumentSemanticTokensProvider extends Provider implements language
         if (!compiled) {
             return undefined;
         }
-
-        const { Range } = this.monaco;
 
         // data 长度是 5 的倍数
         // [diffRow, diffCol, length, tokenType(index), tokenModifiers(bit field)]

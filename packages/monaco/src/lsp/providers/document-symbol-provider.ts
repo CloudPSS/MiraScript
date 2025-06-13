@@ -1,4 +1,4 @@
-import type { CancellationToken, editor, languages } from 'monaco-editor';
+import { languages, Range, type CancellationToken, type editor } from '../../monaco-api.js';
 import { DiagnosticCode } from '@mirascript/wasm';
 import { Provider } from './base.js';
 import type { SourceScope } from '../compile-result.js';
@@ -9,7 +9,6 @@ export class DocumentSymbolProvider extends Provider implements languages.Docume
     private handleScope(model: editor.ITextModel, scope: SourceScope): languages.DocumentSymbol[] {
         const symbols: languages.DocumentSymbol[] = [];
         const unhandledChildren = new Set(scope.children);
-        const { languages, Range } = this.monaco;
         for (const { definition } of scope.locals) {
             const { range } = definition;
             let kind: languages.SymbolKind = languages.SymbolKind.Variable;

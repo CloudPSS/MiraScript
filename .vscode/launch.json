@@ -36,7 +36,7 @@
       "name": "Extension",
       "type": "extensionHost",
       "request": "launch",
-      "args": ["--extensionDevelopmentPath=${workspaceFolder}/packages/vscode"]
+      "args": ["--disable-extensions", "--extensionDevelopmentPath=${workspaceFolder}/packages/vscode"]
     }
   ]
 }

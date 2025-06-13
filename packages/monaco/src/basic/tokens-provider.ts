@@ -1,4 +1,4 @@
-import type { languages } from 'monaco-editor';
+import { languages, type IDisposable } from '../monaco-api.js';
 import {
     REG_WHITESPACE,
     REG_ORDINAL,
@@ -14,7 +14,6 @@ import {
     keywords,
     numericKeywords,
 } from '../constants';
-import type { Monaco, IDisposable } from '../index.js';
 
 /** 匹配 identifier */
 function identifierCases(
@@ -286,9 +285,9 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
 }
 
 /** 注册 Mirascript 的 TokensProvider */
-export function registerMiraScriptTokensProvider(monaco: Monaco): IDisposable[] {
+export function registerMiraScriptTokensProvider(): IDisposable[] {
     return [
-        monaco.languages.setMonarchTokensProvider('mirascript', getTokensProvider('script')),
-        monaco.languages.setMonarchTokensProvider('mirascript-template', getTokensProvider('template')),
+        languages.setMonarchTokensProvider('mirascript', getTokensProvider('script')),
+        languages.setMonarchTokensProvider('mirascript-template', getTokensProvider('template')),
     ];
 }

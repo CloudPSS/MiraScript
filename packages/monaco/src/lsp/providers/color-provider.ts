@@ -1,4 +1,4 @@
-import type { editor, languages, CancellationToken } from 'monaco-editor';
+import type { editor, languages, CancellationToken } from '../../monaco-api.js';
 import { Provider } from './base.js';
 import { DiagnosticCode } from '@mirascript/wasm';
 

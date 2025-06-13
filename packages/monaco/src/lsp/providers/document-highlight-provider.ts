@@ -1,4 +1,4 @@
-import type { CancellationToken, editor, languages, Position } from 'monaco-editor';
+import { languages, Range, type CancellationToken, type editor, type Position } from '../../monaco-api.js';
 import { Provider } from './base.js';
 import { DiagnosticCode } from '@mirascript/wasm';
 
@@ -14,7 +14,6 @@ export class DocumentHighlightProvider extends Provider implements languages.Doc
         if (!compiled) return undefined;
         const def = compiled.definition(model, position)?.def;
         if (!def) return undefined;
-        const { languages, Range } = this.monaco;
         const links: languages.DocumentHighlight[] = def.references.map((u) => {
             let kind = languages.DocumentHighlightKind.Read;
             if (

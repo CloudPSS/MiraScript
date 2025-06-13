@@ -1,5 +1,4 @@
-import type { Monaco, IDisposable } from '../index.js';
-import type { languages } from 'monaco-editor';
+import { languages, type IDisposable } from '../monaco-api.js';
 import '../basic/index.js';
 
 import { CodeActionProvider } from './providers/code-action-provider.js';
@@ -33,24 +32,23 @@ export {
     SignatureHelpProvider,
 };
 
-/** 注册 LSP 相关的 Monaco 编辑器功能 */
-export function registerLSP(monaco: Monaco): IDisposable[] {
-    const codeActionProvider = new CodeActionProvider(monaco);
-    const colorProvider = new ColorProvider(monaco);
-    const completionItemProvider = new CompletionItemProvider(monaco);
-    const definitionReferenceProvider = new DefinitionReferenceProvider(monaco);
-    const documentHighlightProvider = new DocumentHighlightProvider(monaco);
-    const documentSymbolProvider = new DocumentSymbolProvider(monaco);
-    const formatterProvider = new FormatterProvider(monaco);
-    const hoverProvider = new HoverProvider(monaco);
-    const inlayHintsProvider = new InlayHintsProvider(monaco);
-    const rangeProvider = new RangeProvider(monaco);
-    const renameProvider = new RenameProvider(monaco);
-    const documentSemanticTokensProvider = new DocumentSemanticTokensProvider(monaco);
-    const signatureHelpProvider = new SignatureHelpProvider(monaco);
+/** 注册 LSP 相关的  编辑器功能 */
+export function registerLSP(): IDisposable[] {
+    const codeActionProvider = new CodeActionProvider();
+    const colorProvider = new ColorProvider();
+    const completionItemProvider = new CompletionItemProvider();
+    const definitionReferenceProvider = new DefinitionReferenceProvider();
+    const documentHighlightProvider = new DocumentHighlightProvider();
+    const documentSymbolProvider = new DocumentSymbolProvider();
+    const formatterProvider = new FormatterProvider();
+    const hoverProvider = new HoverProvider();
+    const inlayHintsProvider = new InlayHintsProvider();
+    const rangeProvider = new RangeProvider();
+    const renameProvider = new RenameProvider();
+    const documentSemanticTokensProvider = new DocumentSemanticTokensProvider();
+    const signatureHelpProvider = new SignatureHelpProvider();
 
     const language: languages.LanguageSelector = ['mirascript', 'mirascript-template'];
-    const { languages } = monaco;
     return [
         languages.registerCodeActionProvider(language, codeActionProvider),
         languages.registerColorProvider(language, colorProvider),

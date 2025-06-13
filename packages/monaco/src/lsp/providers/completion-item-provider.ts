@@ -1,10 +1,16 @@
-import type { editor, languages, Position, CancellationToken, IPosition, IRange } from 'monaco-editor';
+import {
+    type editor,
+    languages,
+    type Position,
+    type CancellationToken,
+    type IPosition,
+    type IRange,
+} from '../../monaco-api.js';
 import { Provider } from './base.js';
 import { VmSharedGlobal } from 'mirascript/subtle';
 import { codeblock, getGlobal, paramsList } from '../utils';
 import { keywords, reservedKeywords } from '../../constants';
 import { getVmFunctionInfo, DiagnosticCode } from 'mirascript';
-import type { Monaco } from '../../index.js';
 
 const DESC_GLOBAL = '(global)';
 const DESC_LOCAL = '(local)';
@@ -18,7 +24,7 @@ const SUGGEST_KEYWORDS: string[] = [];
     }
 }
 
-const COMMON_GLOBAL_SUGGESTIONS = ({ languages }: Monaco, range: IRange): languages.CompletionItem[] => {
+const COMMON_GLOBAL_SUGGESTIONS = (range: IRange): languages.CompletionItem[] => {
     const suggestions: languages.CompletionItem[] = [
         {
             label: 'type',
@@ -106,9 +112,6 @@ export class CompletionItemProvider extends Provider implements languages.Comple
         char: string | undefined,
         range: IRange,
     ): languages.CompletionItem[] {
-        const {
-            languages: { CompletionItemKind },
-        } = this.monaco;
         const suggestions: languages.CompletionItem[] = [];
         for (const key in VmSharedGlobal) {
             if (char && !key.toLowerCase().includes(char)) {
@@ -123,7 +126,7 @@ export class CompletionItemProvider extends Provider implements languages.Comple
             }
             suggestions.push({
                 label: { label: key, description: DESC_GLOBAL, detail },
-                kind: info ? CompletionItemKind.Function : CompletionItemKind.Variable,
+                kind: info ? languages.CompletionItemKind.Function : languages.CompletionItemKind.Variable,
                 insertText: key,
                 range,
                 commitCharacters: info ? ['('] : undefined,
@@ -140,9 +143,6 @@ export class CompletionItemProvider extends Provider implements languages.Comple
     ): Promise<languages.CompletionItem[]> {
         const compiled = await this.getCompileResult(model);
         if (!compiled) return [];
-        const {
-            languages: { CompletionItemKind },
-        } = this.monaco;
         const suggestions: languages.CompletionItem[] = [];
 
         let scope = compiled.scopeAt(model, position);
@@ -162,7 +162,10 @@ export class CompletionItemProvider extends Provider implements languages.Comple
                 }
                 suggestions.push({
                     label: { label: name, description: DESC_LOCAL, detail },
-                    kind: fn || isFunction ? CompletionItemKind.Function : CompletionItemKind.Variable,
+                    kind:
+                        fn || isFunction
+                            ? languages.CompletionItemKind.Function
+                            : languages.CompletionItemKind.Variable,
                     insertText: name,
                     range,
                     commitCharacters: isFunction ? ['('] : undefined,
@@ -239,7 +242,7 @@ export class CompletionItemProvider extends Provider implements languages.Comple
         }
         char = char?.toLowerCase();
 
-        const suggestions = COMMON_GLOBAL_SUGGESTIONS(this.monaco, range);
+        const suggestions = COMMON_GLOBAL_SUGGESTIONS(range);
         suggestions.push(
             ...this.completeGlobal(model, char, range),
             ...(await this.completeLocal(model, position, char, range)),

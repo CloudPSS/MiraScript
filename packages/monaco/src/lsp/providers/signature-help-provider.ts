@@ -1,4 +1,4 @@
-import type { editor, languages, CancellationToken, Position } from 'monaco-editor';
+import type { editor, languages, CancellationToken, Position } from '../../monaco-api.js';
 import { Provider } from './base.js';
 
 /** @inheritdoc */

@@ -1,4 +1,4 @@
-import type { CancellationToken, editor, IEvent, languages, Range } from 'monaco-editor';
+import { languages, Range, type CancellationToken, type editor, type IEvent } from '../../monaco-api.js';
 import { Provider } from './base.js';
 import { DiagnosticCode } from '@mirascript/wasm';
 
@@ -18,7 +18,6 @@ export class InlayHintsProvider extends Provider implements languages.InlayHints
         if (!compiled) {
             return undefined;
         }
-        const { languages, Range } = this.monaco;
         const hints: languages.InlayHint[] = [];
         for (const tag of compiled.tags) {
             if (!range.containsRange(tag.range)) {

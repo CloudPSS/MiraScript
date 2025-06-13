@@ -1,4 +1,4 @@
-import { type editor, Range, type IRange, type IPosition } from 'monaco-editor';
+import { type editor, Range, type IRange, type IPosition } from '../monaco-api.js';
 import { DiagnosticCode } from '@mirascript/wasm';
 import { strictContainsPosition } from './utils.js';
 

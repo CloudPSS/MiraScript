@@ -1,4 +1,11 @@
-import type { languages, editor, IRange, Range, CancellationToken, Position } from 'monaco-editor';
+import {
+    type languages,
+    type editor,
+    type IRange,
+    Range,
+    type CancellationToken,
+    type Position,
+} from '../../monaco-api.js';
 import { Provider } from './base.js';
 
 /** @inheritdoc */
@@ -57,6 +64,6 @@ export class FormatterProvider
         options: languages.FormattingOptions,
         token: CancellationToken,
     ): languages.ProviderResult<languages.TextEdit[]> {
-        return format(model, [this.monaco.Range.fromPositions(position, position)], options, 'expression', token);
+        return format(model, [Range.fromPositions(position, position)], options, 'expression', token);
     }
 }

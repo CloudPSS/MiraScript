@@ -55,10 +55,6 @@ importers:
       monaco-editor:
         specifier: '>= 0.0.40'
         version: 0.52.2
-    devDependencies:
-      '@private/monaco-editor':
-        specifier: ^0.0.33
-        version: 0.0.33
 
   packages/playground:
     dependencies:
@@ -87,6 +83,19 @@ importers:
       vite-plugin-wasm:
         specifier: ^3.4.1
         version: 3.4.1(vite@6.3.5(@types/node@24.0.0)(jiti@2.4.2)(yaml@2.8.0))
+
+  packages/vscode:
+    dependencies:
+      '@mirascript/monaco':
+        specifier: workspace:*
+        version: link:../monaco
+      mirascript:
+        specifier: workspace:*
+        version: link:../mirascript
+    devDependencies:
+      '@types/vscode':
+        specifier: ^1.101.0
+        version: 1.101.0
 
   packages/wasm:
     devDependencies:
@@ -759,6 +768,10 @@ packages:
   '@types/node@24.0.0':
     resolution:
       { integrity: sha512-yZQa2zm87aRVcqDyH5+4Hv9KYgSdgwX1rFnGvpbzMaC7YAljmhBET93TPiTd3ObwTL+gSpIzPKg5BqVxdCvxKg== }
+
+  '@types/vscode@1.101.0':
+    resolution:
+      { integrity: sha512-ZWf0IWa+NGegdW3iU42AcDTFHWW7fApLdkdnBqwYEtHVIBGbTu0ZNQKP/kX3Ds/uMJXIMQNAojHR4vexCEEz5Q== }
 
   '@typescript-eslint/eslint-plugin@8.34.0':
     resolution:
@@ -2718,6 +2731,8 @@ snapshots:
   '@types/node@24.0.0':
     dependencies:
       undici-types: 7.8.0
+
+  '@types/vscode@1.101.0': {}
 
   '@typescript-eslint/eslint-plugin@8.34.0(@typescript-eslint/parser@8.34.0(eslint@9.28.0(jiti@2.4.2))(typescript@5.8.3))(eslint@9.28.0(jiti@2.4.2))(typescript@5.8.3)':
     dependencies:

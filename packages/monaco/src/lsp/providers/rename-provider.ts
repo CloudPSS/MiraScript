@@ -1,4 +1,11 @@
-import type { CancellationToken, editor, IRange, languages, Position } from 'monaco-editor';
+import {
+    Range,
+    type CancellationToken,
+    type editor,
+    type IRange,
+    type languages,
+    type Position,
+} from '../../monaco-api.js';
 import { DiagnosticCode } from '@mirascript/wasm';
 import { Provider } from './base.js';
 import type { CompileResult } from '../compile-result.js';
@@ -14,7 +21,6 @@ export class RenameProvider extends Provider implements languages.RenameProvider
         oldName: string,
     ): void {
         const { omitNameFields } = compiled.groupedTags(model);
-        const { Range } = this.monaco;
         for (const tag of omitNameFields) {
             if (Range.equalsRange(tag.references[0]?.range, ref.range)) {
                 const current = model.getValueInRange(tag.range);
@@ -99,7 +105,7 @@ export class RenameProvider extends Provider implements languages.RenameProvider
         const d = compiled.definition(model, position);
         if (!d) {
             return {
-                range: this.monaco.Range.fromPositions(position),
+                range: Range.fromPositions(position),
                 text: '',
                 rejectReason: 'Cannot rename this element',
             };
@@ -107,7 +113,7 @@ export class RenameProvider extends Provider implements languages.RenameProvider
         const { def, ref } = d;
         if ('name' in def) {
             return {
-                range: def.references[ref!]?.range ?? this.monaco.Range.fromPositions(position),
+                range: def.references[ref!]?.range ?? Range.fromPositions(position),
                 text: def.name,
                 rejectReason: 'Cannot rename global variables',
             };

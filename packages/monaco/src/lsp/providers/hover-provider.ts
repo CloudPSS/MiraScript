@@ -1,4 +1,4 @@
-import type { CancellationToken, editor, IMarkdownString, IRange, languages, Position } from 'monaco-editor';
+import type { CancellationToken, editor, IMarkdownString, IRange, languages, Position } from '../../monaco-api.js';
 import { Provider } from './base.js';
 import { DiagnosticCode } from '@mirascript/wasm';
 import { codeblock, getGlobal, paramsList } from '../utils';

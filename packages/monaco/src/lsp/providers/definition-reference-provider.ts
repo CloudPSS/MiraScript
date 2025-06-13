@@ -1,4 +1,12 @@
-import type { editor, languages, Uri, CancellationToken, IRange, Position } from 'monaco-editor';
+import {
+    editor,
+    Uri,
+    type languages,
+    type CancellationToken,
+    type IRange,
+    type Position,
+    Range,
+} from '../../monaco-api.js';
 import { Provider } from './base.js';
 import { getGlobal } from '../utils.js';
 import { DOC_HEADER } from '../../constants.js';
@@ -10,11 +18,7 @@ export class DefinitionReferenceProvider
     extends Provider
     implements languages.DefinitionProvider, languages.ReferenceProvider
 {
-    private readonly globalModel = this.monaco.editor.createModel(
-        ``,
-        'mirascript',
-        this.monaco.Uri.parse('mirascript:///lib/global.mira'),
-    );
+    private readonly globalModel = editor.createModel(``, 'mirascript', Uri.parse('mirascript:///lib/global.mira'));
     /** 准备要显示的定义 */
     private prepareGlobal(name: string): { uri: Uri; range: IRange } {
         const { globalModel } = this;
@@ -85,7 +89,7 @@ export class DefinitionReferenceProvider
         if (context.includeDeclaration) {
             if ('name' in def) {
                 links.push(this.prepareGlobal(def.name));
-            } else if (!this.monaco.Range.isEmpty(def.definition.range)) {
+            } else if (!Range.isEmpty(def.definition.range)) {
                 links.push({
                     uri: model.uri,
                     range: def.definition.range,

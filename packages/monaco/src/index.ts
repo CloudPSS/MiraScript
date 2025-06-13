@@ -1,13 +1,8 @@
-import type { IDisposable } from 'monaco-editor';
-export type { IDisposable };
-/** monaco editor */
-export type Monaco = Readonly<typeof import('monaco-editor')>;
+import { languages, registerMonacoApi, type IDisposable, type MonacoApi } from './monaco-api.js';
 
 /** 加载器 */
 export class MiraScriptMonacoLoader implements IDisposable {
-    constructor(private readonly monaco: Monaco) {
-        const { languages } = monaco;
-
+    constructor() {
         languages.register({
             id: 'mirascript',
             extensions: ['.mira'],
@@ -39,7 +34,7 @@ export class MiraScriptMonacoLoader implements IDisposable {
             const { registerBasic } = await import('./basic/index.js');
             if (this._basicFeaturesLoaded || this.disposed) return;
             this._basicFeaturesLoaded = true;
-            this.disposables.push(...registerBasic(this.monaco));
+            this.disposables.push(...registerBasic());
         } catch (error) {
             // eslint-disable-next-line no-console
             console.error('Failed to load MiraScript basic features:', error);
@@ -53,7 +48,7 @@ export class MiraScriptMonacoLoader implements IDisposable {
             await basic; // 确保基础功能已加载
             if (this._lspFeaturesLoaded || this.disposed) return;
             this._lspFeaturesLoaded = true;
-            this.disposables.push(...registerLSP(this.monaco));
+            this.disposables.push(...registerLSP());
         } catch (error) {
             // eslint-disable-next-line no-console
             console.error('Failed to load MiraScript LSP features:', error);
@@ -73,68 +68,11 @@ export class MiraScriptMonacoLoader implements IDisposable {
         }
     }
 }
-/** Api 泛化 */
-// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-type AsApi<T, D extends number> = T extends Function
-    ? // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-      Function
-    : T extends Record<string, string | number>
-      ? unknown
-      : D extends 0
-        ? unknown
-        : T extends object
-          ? {
-                [K in keyof T]?: AsApi<
-                    T[K],
-                    D extends 0
-                        ? never
-                        : D extends 1
-                          ? 0
-                          : D extends 2
-                            ? 1
-                            : D extends 3
-                              ? 2
-                              : D extends 4
-                                ? 3
-                                : D extends 5
-                                  ? 4
-                                  : D extends 6
-                                    ? 5
-                                    : D extends 7
-                                      ? 6
-                                      : D extends 8
-                                        ? 7
-                                        : D extends 9
-                                          ? 8
-                                          : never
-                >;
-            }
-          : T;
-/** Monaco Api 属性 */
-type MonacoApi = {
-    [K in keyof Monaco]: AsApi<Monaco[K], 2>;
-};
+
 /**
  * 注册 MiraScript Monaco 编辑器扩展。
  */
-export function registerMiraScript(monaco: MonacoApi): MiraScriptMonacoLoader {
-    if (
-        !monaco ||
-        typeof monaco !== 'object' ||
-        !monaco.languages ||
-        'function' != typeof monaco.languages.register ||
-        'function' != typeof monaco.languages.onLanguage ||
-        !monaco.editor ||
-        'function' != typeof monaco.editor.create ||
-        'function' != typeof monaco.editor.createModel ||
-        'function' != typeof monaco.editor.createWebWorker ||
-        'function' != typeof monaco.Uri ||
-        'function' != typeof monaco.Range ||
-        'function' != typeof monaco.Position ||
-        'function' != typeof monaco.CancellationTokenSource ||
-        'function' != typeof monaco.Emitter
-    ) {
-        throw new TypeError('Invalid Monaco editor instance provided.');
-    }
-    return new MiraScriptMonacoLoader(monaco as Monaco);
+export function registerMiraScript(monacoApi: MonacoApi): MiraScriptMonacoLoader {
+    registerMonacoApi(monacoApi);
+    return new MiraScriptMonacoLoader();
 }
