@@ -9,7 +9,7 @@ name = "mira"
 path = "src/main.rs"
 
 [features]
-default = ["mimalloc"]
+default = []
 mimalloc = ["dep:mimalloc"]
 
 [dependencies]

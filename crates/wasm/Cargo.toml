@@ -9,10 +9,10 @@ publish = false
 dwarf-debug-info = true
 
 [package.metadata.wasm-pack.profile.release]
-wasm-opt = ["-O4"]
+wasm-opt = ["-O4", "--enable-bulk-memory", "--enable-mutable-globals"]
 
 [package.metadata.wasm-pack.profile.profiling]
-wasm-opt = ["-O4"]
+wasm-opt = ["-O4", "--enable-bulk-memory", "--enable-mutable-globals"]
 
 [lib]
 crate-type = ["cdylib", "rlib"]

@@ -3,7 +3,7 @@ use std::ops::{Deref, DerefMut};
 use crate::{
     diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
     emitter::{closure::Closure, emitter_closure::Closures, opcode::Register},
-    lexer::{Token, TokenKind},
+    lexer::Token,
     parser::AstWalker,
 };
 
