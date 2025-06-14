@@ -4,7 +4,7 @@ use strum::{EnumProperty, VariantArray};
 
 use crate::emitter::OpCode;
 
-use super::{Token, TokenKind};
+use super::prelude::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, VariantArray, EnumProperty)]
 pub enum Operator {

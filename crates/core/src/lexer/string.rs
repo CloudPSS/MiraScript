@@ -1,22 +1,15 @@
 use std::{borrow::Cow, vec};
 
 use winnow::{
-    Parser as _,
     combinator::{alt, dispatch, eof, fail, opt, peek},
-    error::{ContextError, ErrMode},
-    stream::{AsChar, Location, Stream},
+    stream::AsChar,
     token::{any, literal, one_of, take_till, take_while},
 };
 
-use crate::{
-    diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
-    lexer::{Input, Operator, Token, TokenKind},
-};
-
 use super::{
-    Parser, Result,
     identifier::{identifier, is_identifier_special, is_identifier_start},
     lex_balanced,
+    prelude::*,
 };
 
 #[derive(Debug, Clone, PartialEq)]

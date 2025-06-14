@@ -1,23 +1,16 @@
 use winnow::{
-    ModalResult, Parser,
     combinator::{alt, fail, peek, repeat},
-    error::{ContextError, ErrMode},
     token::{any, one_of},
 };
 
-use crate::{
-    diagnostic::DiagnosticCode,
-    lexer::{Keyword, Operator, Token, TokenKind},
-};
-
 use super::{
-    Input,
     helper::{token_boxed, token_or_insert, variable_token},
     list_item::ListItem,
+    prelude::*,
     record_element::RecordElementBase,
 };
 
-fn record_name<'s>(i: &mut Input<'_, 's>) -> ModalResult<Token<'s>> {
+fn record_name<'s>(i: &mut Input<'s>) -> Result<Token<'s>> {
     alt((
         // (x: ..)
         variable_token(true, true),
@@ -31,15 +24,14 @@ fn record_name<'s>(i: &mut Input<'_, 's>) -> ModalResult<Token<'s>> {
 }
 
 fn record_element<'t, 's: 't, E: Clone + PartialEq + 's, I: Clone + PartialEq + 's>(
-    named: impl Parser<Input<'t, 's>, E, ErrMode<ContextError>> + Copy,
-    mut interpolate_name: impl FnMut(&Token<'s>) -> I + Copy,
-    omit_named: impl Parser<Input<'t, 's>, E, ErrMode<ContextError>> + Copy,
-    unnamed: impl Parser<Input<'t, 's>, E, ErrMode<ContextError>> + Copy,
-    spread: impl Parser<Input<'t, 's>, E, ErrMode<ContextError>> + Copy,
-) -> impl Parser<Input<'t, 's>, ListItem<'s, RecordElementBase<'s, E, I>>, ErrMode<ContextError>> + Copy
-{
+    named: impl Parser<'s, E>,
+    mut interpolate_name: impl FnMut(&'s Token<'s>) -> I + Copy,
+    omit_named: impl Parser<'s, E>,
+    unnamed: impl Parser<'s, E>,
+    spread: impl Parser<'s, E>,
+) -> impl Parser<'s, ListItem<'s, RecordElementBase<'s, E, I>>> {
     let colon = |t: &Token<'s>| -> bool { *t == Operator::Colon || *t == Operator::QuestionColon };
-    move |i: &mut Input<'t, 's>| {
+    move |i: &mut Input<'s>| {
         let first = peek(any).parse_next(i)?;
         if *first == Operator::CloseBracket
             || *first == Operator::CloseBrace
@@ -92,21 +84,20 @@ fn record_element<'t, 's: 't, E: Clone + PartialEq + 's, I: Clone + PartialEq + 
 }
 
 pub(super) fn record_base<'t, 's: 't, E: Clone + PartialEq + 's, I: Clone + PartialEq + 's>(
-    named: impl Parser<Input<'t, 's>, E, ErrMode<ContextError>> + Copy,
-    interpolate_name: impl FnMut(&Token<'s>) -> I + Copy,
-    omit_named: impl Parser<Input<'t, 's>, E, ErrMode<ContextError>> + Copy,
-    unnamed: impl Parser<Input<'t, 's>, E, ErrMode<ContextError>> + Copy,
-    spread: impl Parser<Input<'t, 's>, E, ErrMode<ContextError>> + Copy,
+    named: impl Parser<'s, E>,
+    interpolate_name: impl FnMut(&'s Token<'s>) -> I + Copy,
+    omit_named: impl Parser<'s, E>,
+    unnamed: impl Parser<'s, E>,
+    spread: impl Parser<'s, E>,
 ) -> impl Parser<
-    Input<'t, 's>,
+    's,
     (
         Box<Token<'s>>,
         Vec<ListItem<'s, RecordElementBase<'s, E, I>>>,
         Box<Token<'s>>,
     ),
-    ErrMode<ContextError>,
-> + Copy {
-    move |i: &mut Input<'t, 's>| {
+> {
+    move |i: &mut Input<'s>| {
         let open = token_boxed(Operator::OpenParen).parse_next(i)?;
         let parts: Vec<_> = repeat(
             0..,

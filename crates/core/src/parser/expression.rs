@@ -1,14 +1,10 @@
 use std::fmt::{self, Display, Formatter};
 
-use crate::{
-    ansi::{DisplayIdent, GROUP, INTERPOLATED, RECOVER, RESET, STRING},
-    diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
-    lexer::{Token, TokenKind},
-};
+use crate::ansi::{DisplayIdent, GROUP, INTERPOLATED, RECOVER, RESET, STRING};
 
 use super::{
-    ArrayElement, AstVisitor, AstVisitorMut, AstWalker, Iterable, ParameterList, Pattern,
-    RecordElement, Statement,
+    ArrayElement, AstVisitor, AstVisitorMut, AstWalker, Iterable, ParameterList, RecordElement,
+    prelude::*,
 };
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
@@ -62,7 +58,7 @@ pub enum Expression<'s> {
     ///
     /// Holds a [crate::lexer::TokenKind::InterpolatedString], and a list of expressions
     /// that are interpolated into the string.
-    InterpolatedString(Box<Token<'s>>, Vec<Expression<'s>>),
+    InterpolatedString(&'s Token<'s>, Vec<Expression<'s>>),
     /// identifier
     Variable(Box<Token<'s>>),
     /// `(` expression `)`
@@ -301,8 +297,8 @@ impl<'s> AstWalker<'s> for Expression<'s> {
         visitor.visit_expression(self);
         match self {
             Literal(token) => token.walk_mut(visitor),
-            InterpolatedString(token, exps) => {
-                token.walk_mut(visitor);
+            InterpolatedString(_, exps) => {
+                // skip token ref
                 exps.walk_mut(visitor);
             }
             Variable(token) => token.walk_mut(visitor),
@@ -450,8 +446,8 @@ impl<'s> AstWalker<'s> for Expression<'s> {
         visitor.visit_expression(self);
         match self {
             Literal(token) => token.walk(visitor),
-            InterpolatedString(token, exps) => {
-                token.walk(visitor);
+            InterpolatedString(_, exps) => {
+                // skip token ref
                 exps.walk(visitor);
             }
             Variable(token) => token.walk(visitor),

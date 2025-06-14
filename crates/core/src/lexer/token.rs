@@ -3,14 +3,9 @@ use std::{
     ops::{Deref, DerefMut},
 };
 
-use winnow::stream::Location;
+use crate::ansi::DisplayIdent;
 
-use crate::{
-    ansi::DisplayIdent,
-    diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
-};
-
-use super::{TokenKind, Trivia};
+use super::prelude::*;
 
 #[derive(Debug, Clone)]
 pub struct Token<'s> {
@@ -22,7 +17,7 @@ pub struct Token<'s> {
     pub trailing_trivia: Vec<Trivia<'s>>,
 }
 
-impl Location for Token<'_> {
+impl winnow::stream::Location for Token<'_> {
     fn current_token_start(&self) -> usize {
         self.range.start
     }

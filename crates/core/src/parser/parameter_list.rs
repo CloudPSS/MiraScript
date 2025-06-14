@@ -2,17 +2,13 @@ use std::{
     fmt::{self, Display, Formatter},
     ops::{Deref, DerefMut},
 };
-use winnow::{ModalResult, Parser, combinator::opt};
+use winnow::combinator::opt;
 
-use crate::{
-    ansi::DisplayIdent,
-    diagnostic::{DiagnosticCode, SourceRange},
-    lexer::{Operator, Token},
-};
+use crate::ansi::DisplayIdent;
 
 use super::{
-    ArrayElementBase, ArrayPattern, AstVisitor, AstVisitorMut, AstWalker, Input, Pattern,
-    patterns::array_pattern_like,
+    ArrayElementBase, ArrayPattern, AstVisitor, AstVisitorMut, AstWalker,
+    patterns::array_pattern_like, prelude::*,
 };
 
 /// `(` ...items `)`
@@ -72,7 +68,7 @@ impl DisplayIdent for ParameterList<'_> {
     }
 }
 
-pub(super) fn parameter_list<'s>(i: &mut Input<'_, 's>) -> ModalResult<Option<ParameterList<'s>>> {
+pub(super) fn parameter_list<'s>(i: &mut Input<'s>) -> Result<Option<ParameterList<'s>>> {
     let list = opt(
         array_pattern_like([Operator::OpenParen, Operator::CloseParen], false).map(|pattern| {
             let Pattern::Array(left, items, right) = pattern else {

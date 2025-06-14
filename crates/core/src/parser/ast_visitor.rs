@@ -3,9 +3,7 @@ use std::{
     ops::{Deref, DerefMut},
 };
 
-use crate::{diagnostic::SourceRange, lexer::Token};
-
-use super::{Expression, Pattern, Statement};
+use super::prelude::*;
 
 struct AstVisitorMutImpl<
     's,

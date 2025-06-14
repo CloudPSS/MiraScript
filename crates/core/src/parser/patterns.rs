@@ -1,28 +1,21 @@
 use std::ops::DerefMut;
 
 use winnow::{
-    ModalResult, Parser,
     combinator::{alt, empty, fail, opt, peek, preceded, separated_foldl1, seq},
-    error::{ContextError, ErrMode},
-    stream::Location,
     token::{one_of, take_till},
 };
 
-use crate::{
-    diagnostic::{DiagnosticCode, SourceRange},
-    lexer::{Keyword, Operator, Token, TokenKind},
-    parser::record_element::RecordElementBase,
-};
-
 use super::{
-    ArrayElementBase, AstWalker, Input, Pattern,
+    ArrayElementBase, AstWalker,
     array_helper::array_base,
     helper::{literal_token, token_boxed, variable_token},
     list_item::ListItem,
+    prelude::*,
+    record_element::RecordElementBase,
     record_helper::record_base,
 };
 
-fn unknown_pattern<'s>(i: &mut Input<'_, 's>) -> ModalResult<Pattern<'s>> {
+fn unknown_pattern<'s>(i: &mut Input<'s>) -> Result<Pattern<'s>> {
     take_till(1.., |t: &Token<'s>| {
         *t == TokenKind::Eof
             || *t == Keyword::If
@@ -46,10 +39,8 @@ fn unknown_pattern<'s>(i: &mut Input<'_, 's>) -> ModalResult<Pattern<'s>> {
     .parse_next(i)
 }
 
-pub(super) fn pattern_or_insert<'t, 's: 't>(
-    rebind: bool,
-) -> impl Parser<Input<'t, 's>, Pattern<'s>, ErrMode<ContextError>> + Copy {
-    move |i: &mut Input<'_, 's>| {
+pub(super) fn pattern_or_insert<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
+    move |i: &mut Input<'s>| {
         let start = i.previous_token_end();
         alt((
             pattern(rebind),
@@ -65,16 +56,12 @@ pub(super) fn pattern_or_insert<'t, 's: 't>(
     }
 }
 
-pub(super) fn pattern<'t, 's: 't>(
-    rebind: bool,
-) -> impl Parser<Input<'t, 's>, Pattern<'s>, ErrMode<ContextError>> + Copy {
-    move |i: &mut Input<'_, 's>| or_pattern(rebind).parse_next(i)
+pub(super) fn pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
+    move |i: &mut Input<'s>| or_pattern(rebind).parse_next(i)
 }
 
-fn primary_pattern<'t, 's: 't>(
-    rebind: bool,
-) -> impl Parser<Input<'t, 's>, Pattern<'s>, ErrMode<ContextError>> {
-    move |i: &mut Input<'_, 's>| {
+fn primary_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
+    move |i: &mut Input<'s>| {
         alt((
             relation_pattern,
             record_like_pattern(rebind),
@@ -89,20 +76,16 @@ fn primary_pattern<'t, 's: 't>(
     }
 }
 
-fn not_pattern<'t, 's: 't>(
-    rebind: bool,
-) -> impl Parser<Input<'t, 's>, Pattern<'s>, ErrMode<ContextError>> {
-    move |i: &mut Input<'_, 's>| {
+fn not_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
+    move |i: &mut Input<'s>| {
         (token_boxed(Keyword::Not), primary_pattern(rebind))
             .map(|(kw_not, p)| Pattern::Not(kw_not, Box::new(p)))
             .parse_next(i)
     }
 }
 
-fn and_pattern<'t, 's: 't>(
-    rebind: bool,
-) -> impl Parser<Input<'t, 's>, Pattern<'s>, ErrMode<ContextError>> {
-    move |i: &mut Input<'_, 's>| {
+fn and_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
+    move |i: &mut Input<'s>| {
         separated_foldl1(
             primary_pattern(rebind),
             token_boxed(Keyword::And),
@@ -112,10 +95,8 @@ fn and_pattern<'t, 's: 't>(
     }
 }
 
-fn or_pattern<'t, 's: 't>(
-    rebind: bool,
-) -> impl Parser<Input<'t, 's>, Pattern<'s>, ErrMode<ContextError>> {
-    move |i: &mut Input<'_, 's>| {
+fn or_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
+    move |i: &mut Input<'s>| {
         separated_foldl1(
             and_pattern(rebind),
             token_boxed(Keyword::Or),
@@ -125,7 +106,7 @@ fn or_pattern<'t, 's: 't>(
     }
 }
 
-fn constants_pattern<'s>(i: &mut Input<'_, 's>) -> ModalResult<Pattern<'s>> {
+fn constants_pattern<'s>(i: &mut Input<'s>) -> Result<Pattern<'s>> {
     (
         opt(one_of(|t: &Token<'s>| {
             *t == Operator::Plus || *t == Operator::Minus || *t == Operator::Exclamation
@@ -153,7 +134,7 @@ fn constants_pattern<'s>(i: &mut Input<'_, 's>) -> ModalResult<Pattern<'s>> {
         .parse_next(i)
 }
 
-fn relation_pattern<'s>(i: &mut Input<'_, 's>) -> ModalResult<Pattern<'s>> {
+fn relation_pattern<'s>(i: &mut Input<'s>) -> Result<Pattern<'s>> {
     seq!(Pattern::Relation(
         one_of(|t: &Token<'s>| matches!(t.kind, TokenKind::Operator(op) if op.is_relation()))
             .map(|t: &Token<'s>| Box::new(t.to_owned())),
@@ -162,7 +143,7 @@ fn relation_pattern<'s>(i: &mut Input<'_, 's>) -> ModalResult<Pattern<'s>> {
     .parse_next(i)
 }
 
-fn range_pattern<'s>(i: &mut Input<'_, 's>) -> ModalResult<Pattern<'s>> {
+fn range_pattern<'s>(i: &mut Input<'s>) -> Result<Pattern<'s>> {
     seq!(Pattern::Range(
         constants_pattern.map(Box::new),
         one_of(|t: &Token<'s>| *t == Operator::SpreadRange || *t == Operator::HalfOpenRange)
@@ -172,10 +153,8 @@ fn range_pattern<'s>(i: &mut Input<'_, 's>) -> ModalResult<Pattern<'s>> {
     .parse_next(i)
 }
 
-fn discard_bind_pattern<'t, 's: 't>(
-    rebind: bool,
-) -> impl Parser<Input<'t, 's>, Pattern<'s>, ErrMode<ContextError>> {
-    move |i: &mut Input<'_, 's>| {
+fn discard_bind_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
+    move |i: &mut Input<'s>| {
         (opt(token_boxed(Keyword::Mut)), variable_token(true, false))
             .map(|(kw_mut, id)| {
                 if rebind && kw_mut.is_some() {
@@ -200,10 +179,8 @@ fn discard_bind_pattern<'t, 's: 't>(
     }
 }
 
-fn pattern_spread<'t, 's: 't>(
-    rebind: bool,
-) -> impl Parser<Input<'t, 's>, Pattern<'s>, ErrMode<ContextError>> + Copy {
-    move |i: &mut Input<'_, 's>| {
+fn pattern_spread<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
+    move |i: &mut Input<'s>| {
         let pos = i.previous_token_end();
         opt(pattern(rebind))
             .with_taken()
@@ -222,10 +199,8 @@ fn pattern_spread<'t, 's: 't>(
     }
 }
 
-fn record_like_pattern<'t, 's: 't>(
-    rebind: bool,
-) -> impl Parser<Input<'t, 's>, Pattern<'s>, ErrMode<ContextError>> + Copy {
-    let omit_named = move |i: &mut Input<'_, 's>| -> ModalResult<Pattern<'s>> {
+fn record_like_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
+    let omit_named = move |i: &mut Input<'s>| -> Result<Pattern<'s>> {
         pattern_or_insert(rebind)
             .with_taken()
             .map(|(p, t)| {
@@ -238,7 +213,7 @@ fn record_like_pattern<'t, 's: 't>(
             .parse_next(i)
     };
 
-    let unnamed = move |i: &mut Input<'_, 's>| {
+    let unnamed = move |i: &mut Input<'s>| {
         alt((
             preceded(
                 peek(one_of(|t: &Token<'s>| {
@@ -251,7 +226,7 @@ fn record_like_pattern<'t, 's: 't>(
         .parse_next(i)
     };
 
-    move |i: &mut Input<'_, 's>| {
+    move |i: &mut Input<'s>| {
         let (open, mut parts, close) = record_base(
             pattern_or_insert(rebind),
             |t| {
@@ -304,11 +279,11 @@ fn record_like_pattern<'t, 's: 't>(
     }
 }
 
-pub(crate) fn array_pattern_like<'t, 's: 't>(
+pub(crate) fn array_pattern_like<'s>(
     brace: [Operator; 2],
     rebind: bool,
-) -> impl Parser<Input<'t, 's>, Pattern<'s>, ErrMode<ContextError>> + Copy {
-    let element_pattern = move |i: &mut Input<'_, 's>| {
+) -> impl Parser<'s, Pattern<'s>> {
+    let element_pattern = move |i: &mut Input<'s>| {
         pattern_or_insert(rebind)
             .with_taken()
             .map(|(p, t)| {
@@ -320,17 +295,15 @@ pub(crate) fn array_pattern_like<'t, 's: 't>(
             })
             .parse_next(i)
     };
-    move |i: &mut Input<'_, 's>| {
+    move |i: &mut Input<'s>| {
         let (open, parts, close) =
             array_base(brace, element_pattern, fail, pattern_spread(rebind)).parse_next(i)?;
         Ok(Pattern::Array(open, parts, close))
     }
 }
 
-fn array_pattern<'t, 's: 't>(
-    rebind: bool,
-) -> impl Parser<Input<'t, 's>, Pattern<'s>, ErrMode<ContextError>> + Copy {
-    move |i: &mut Input<'t, 's>| -> ModalResult<Pattern<'s>> {
+fn array_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
+    move |i: &mut Input<'s>| -> Result<Pattern<'s>> {
         let mut p = array_pattern_like([Operator::OpenBracket, Operator::CloseBracket], rebind)
             .parse_next(i)?;
         let Pattern::Array(_, parts, _) = &mut p else {

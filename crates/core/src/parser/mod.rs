@@ -1,5 +1,8 @@
-use winnow::prelude::*;
-use winnow::stream::TokenSlice;
+use winnow::{
+    ModalResult, Parser as _,
+    error::{EmptyError, ErrMode},
+    stream::TokenSlice,
+};
 
 use crate::lexer::Token;
 
@@ -37,12 +40,31 @@ pub use record_element::{RecordElement, RecordElementBase, RecordPattern};
 pub use script::Script;
 pub use statement::Statement;
 
-pub type Input<'t, 's> = TokenSlice<'t, Token<'s>>;
+pub type Input<'s> = TokenSlice<'s, Token<'s>>;
+pub(crate) type Result<Output> = ModalResult<Output, EmptyError>;
+trait Parser<'s, Output>: winnow::Parser<Input<'s>, Output, ErrMode<EmptyError>> + Copy {}
 
-pub fn to_input<'t, 's>(tokens: &'t [Token<'s>]) -> Input<'t, 's> {
+impl<'s, Output, F> Parser<'s, Output> for F where
+    F: winnow::Parser<Input<'s>, Output, ErrMode<EmptyError>> + Copy
+{
+}
+
+mod prelude {
+    pub(super) use super::{
+        Expression, Input, Iterable, ParameterList, Parser, Pattern, Range, Result, Script,
+        Statement,
+    };
+    pub(super) use crate::{
+        diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
+        lexer::{Keyword, Operator, Token, TokenKind},
+    };
+    pub(super) use winnow::{Parser as _, stream::Location as _};
+}
+
+pub fn to_input<'s>(tokens: &'s [Token<'s>]) -> Input<'s> {
     TokenSlice::new(tokens)
 }
 
-pub fn parse<'s>(i: &mut Input<'_, 's>) -> ModalResult<Script<'s>> {
+pub fn parse<'s>(i: &mut Input<'s>) -> Result<Script<'s>> {
     scripts::script.parse_next(i)
 }

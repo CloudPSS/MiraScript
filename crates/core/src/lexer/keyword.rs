@@ -1,7 +1,8 @@
 use strum::{Display, EnumProperty, EnumString, VariantArray};
 
-use super::{Token, TokenKind};
 use crate::ansi::{DisplayIdent, KEYWORD, NUMBER, RESET};
+
+use super::prelude::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, EnumString, Display, VariantArray, EnumProperty)]
 #[strum(serialize_all = "snake_case")]

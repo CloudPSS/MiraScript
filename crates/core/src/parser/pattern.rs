@@ -1,12 +1,8 @@
 use std::fmt::{self, Display, Formatter};
 
-use crate::{
-    ansi::{DisplayIdent, GROUP, RANGE, RECOVER, RESET},
-    diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
-    lexer::Token,
-};
+use crate::ansi::{DisplayIdent, GROUP, RANGE, RECOVER, RESET};
 
-use super::{ArrayPattern, AstVisitor, AstVisitorMut, AstWalker, RecordPattern};
+use super::{ArrayPattern, AstVisitor, AstVisitorMut, AstWalker, RecordPattern, prelude::*};
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
 pub enum Pattern<'s> {

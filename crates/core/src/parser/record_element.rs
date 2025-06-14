@@ -1,8 +1,8 @@
 use std::fmt::{Debug, Display};
 
-use crate::{ansi::DisplayIdent, lexer::Token};
+use crate::ansi::DisplayIdent;
 
-use super::{AstVisitor, AstVisitorMut, AstWalker, Expression, Pattern, list_item::ListItem};
+use super::{AstVisitor, AstVisitorMut, AstWalker, list_item::ListItem, prelude::*};
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
 pub enum RecordElementBase<'s, E, I> {

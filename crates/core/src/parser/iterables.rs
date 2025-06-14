@@ -1,8 +1,8 @@
-use winnow::{ModalResult, Parser, combinator::alt};
+use winnow::combinator::alt;
 
-use super::{Input, Iterable, expressions::expression, ranges::range};
+use super::{expressions::expression, prelude::*, ranges::range};
 
-pub(super) fn iterable<'s>(i: &mut Input<'_, 's>) -> ModalResult<Iterable<'s>> {
+pub(super) fn iterable<'s>(i: &mut Input<'s>) -> Result<Iterable<'s>> {
     alt((
         range.map(|r| Iterable::Range(Box::new(r))),
         expression.map(|e| Iterable::Value(Box::new(e))),

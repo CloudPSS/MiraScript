@@ -1,9 +1,8 @@
 use std::{borrow::Cow, fmt::Display};
 
 use crate::ansi::{DisplayIdent, INTERPOLATED, NUMBER, ORDINAL, RECOVER, RESET, STRING, VARIABLE};
-use crate::diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange};
 
-use super::{Keyword, Operator, Token};
+use super::prelude::*;
 
 #[derive(Debug, Clone, strum::EnumIs)]
 pub enum TokenKind<'s> {

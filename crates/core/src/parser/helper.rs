@@ -1,13 +1,9 @@
-use winnow::combinator::{delimited, opt, peek, repeat, terminated};
-use winnow::error::{ContextError, ErrMode};
-use winnow::prelude::*;
-use winnow::stream::Location;
-use winnow::token::{any, one_of};
+use winnow::{
+    combinator::{opt, repeat},
+    token::one_of,
+};
 
-use crate::diagnostic::{DiagnosticCode, SourceRange};
-use crate::lexer::{Keyword, Operator, Token, TokenKind};
-
-use super::{Expression, Input, Statement, expressions::expression, statements::statement};
+use super::{expressions::expression, prelude::*, statements::statement};
 
 pub(super) fn construct_statements_and_expression<'s>(
     mut statements: Vec<Statement<'s>>,
@@ -30,15 +26,14 @@ pub(super) fn construct_statements_and_expression<'s>(
 }
 
 pub(super) fn statements_and_expression<'s>(
-    i: &mut Input<'_, 's>,
-) -> ModalResult<(Vec<Statement<'s>>, Option<Box<Expression<'s>>>)> {
+    i: &mut Input<'s>,
+) -> Result<(Vec<Statement<'s>>, Option<Box<Expression<'s>>>)> {
     let (statements, expression): (Vec<_>, _) =
         (repeat(0.., statement), opt(expression)).parse_next(i)?;
     Ok(construct_statements_and_expression(statements, expression))
 }
 
-
-pub(super) fn literal_token<'s>(i: &mut Input<'_, 's>) -> ModalResult<Token<'s>> {
+pub(super) fn literal_token<'s>(i: &mut Input<'s>) -> Result<Token<'s>> {
     one_of(|t: &Token<'s>| {
         matches!(&t.kind, &TokenKind::Number(_))
             || matches!(&t.kind, &TokenKind::Ordinal(_))
@@ -53,11 +48,11 @@ pub(super) fn literal_token<'s>(i: &mut Input<'_, 's>) -> ModalResult<Token<'s>>
     .parse_next(i)
 }
 
-pub(super) fn variable_token<'t, 's: 't>(
+pub(super) fn variable_token<'s>(
     include_underscore: bool,
     include_global: bool,
-) -> impl Parser<Input<'t, 's>, Token<'s>, ErrMode<ContextError>> + Copy {
-    move |i: &mut Input<'t, 's>| {
+) -> impl Parser<'s, Token<'s>> {
+    move |i: &mut Input<'s>| {
         let t = one_of(|t: &Token<'s>| {
             matches!(&t.kind, &TokenKind::Identifier(_))
                 || (*t == Keyword::Underscore)
@@ -76,19 +71,19 @@ pub(super) fn variable_token<'t, 's: 't>(
     }
 }
 
-pub(super) fn token<'t, 's: 't>(
-    token: impl Into<TokenKind<'s>> + Clone + PartialEq<Token<'s>>,
-) -> impl Parser<Input<'t, 's>, Token<'s>, ErrMode<ContextError>> {
-    move |i: &mut Input<'t, 's>| {
+pub(super) fn token<'s>(
+    token: impl Into<TokenKind<'s>> + Copy + PartialEq<Token<'s>>,
+) -> impl Parser<'s, Token<'s>> {
+    move |i: &mut Input<'s>| {
         one_of(|t: &Token<'s>| token == *t)
             .map(|t: &Token<'s>| t.to_owned())
             .parse_next(i)
     }
 }
-pub(super) fn token_boxed<'t, 's: 't>(
-    token: impl Into<TokenKind<'s>> + Clone + PartialEq<Token<'s>>,
-) -> impl Parser<Input<'t, 's>, Box<Token<'s>>, ErrMode<ContextError>> {
-    move |i: &mut Input<'t, 's>| {
+pub(super) fn token_boxed<'s>(
+    token: impl Into<TokenKind<'s>> + Copy + PartialEq<Token<'s>>,
+) -> impl Parser<'s, Box<Token<'s>>> {
+    move |i: &mut Input<'s>| {
         one_of(|t: &Token<'s>| token == *t)
             .map(|t: &Token<'s>| Box::new(t.to_owned()))
             .parse_next(i)
@@ -98,13 +93,13 @@ pub(super) fn token_boxed<'t, 's: 't>(
 pub(super) fn token_or_insert<'t, 's: 't, T>(
     token: T,
     error: DiagnosticCode,
-) -> impl Parser<Input<'t, 's>, Token<'s>, ErrMode<ContextError>>
+) -> impl Parser<'s, Token<'s>>
 where
-    T: Into<TokenKind<'s>> + Clone,
+    T: Into<TokenKind<'s>> + Copy,
     Token<'s>: PartialEq<T>,
 {
-    move |i: &mut Input<'_, 's>| -> ModalResult<Token<'s>> {
-        let pos = Location::previous_token_end(i);
+    move |i: &mut Input<'s>| -> Result<Token<'s>> {
+        let pos = i.previous_token_end();
         opt(one_of(|t: &Token<'s>| *t == token))
             .map(|t: Option<&Token<'s>>| match t {
                 Some(t) => t.to_owned(),

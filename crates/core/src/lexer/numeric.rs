@@ -2,14 +2,10 @@ use num_bigint::BigUint;
 use num_traits::cast::ToPrimitive;
 use winnow::{
     combinator::{opt, trace},
-    prelude::*,
     token::{one_of, take_while},
 };
 
-use crate::diagnostic::{DiagnosticCode, SourceRange};
-
-use super::{Input, TokenKind};
-use super::{Result, identifier::is_identifier_continue};
+use super::{identifier::is_identifier_continue, prelude::*};
 
 struct ParsedPart {
     number: f64,

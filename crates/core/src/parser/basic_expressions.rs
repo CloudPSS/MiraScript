@@ -1,14 +1,10 @@
-use winnow::combinator::{
-    alt, dispatch, eof, opt, peek, repeat, separated_foldl1, separated_foldr1, separated_pair, seq,
-    terminated,
+use winnow::{
+    combinator::{
+        alt, dispatch, eof, opt, peek, repeat, separated_foldl1, separated_foldr1, separated_pair,
+        seq, terminated,
+    },
+    token::{any, one_of},
 };
-use winnow::error::{ContextError, ErrMode};
-use winnow::prelude::*;
-use winnow::stream::Location;
-use winnow::token::{any, one_of};
-
-use crate::diagnostic::{DiagnosticCode, SourceRange};
-use crate::lexer::{Keyword, Operator, Token, TokenKind};
 
 use super::array_helper::array_base;
 use super::block_expressions::block_like_expression;
@@ -19,16 +15,16 @@ use super::patterns::pattern;
 use super::ranges::range;
 use super::record_helper::record_base;
 use super::scripts::script;
-use super::{Expression, Input, record_element::RecordElementBase, to_input};
+use super::{prelude::*, record_element::RecordElementBase, to_input};
 
-fn to_interpolate_expr(token: Token<'_>) -> Expression<'_> {
+fn to_interpolate_expr<'s>(token: &'s Token<'s>) -> Expression<'s> {
     let TokenKind::InterpolatedString(_, e) = &token.kind else {
         unreachable!("Expected InterpolatedString");
     };
-    let expressions: Vec<_> = e
+    let expressions: Vec<Expression<'s>> = e
         .iter()
         .map(|tokens| {
-            let expr: ModalResult<Expression<'_>> = {
+            let expr: Result<Expression<'s>> = {
                 let len = tokens.len();
                 if tokens.len() >= 2
                     && tokens[0].kind == Operator::OpenBrace
@@ -66,13 +62,13 @@ fn to_interpolate_expr(token: Token<'_>) -> Expression<'_> {
             expr
         })
         .collect();
-    Expression::InterpolatedString(Box::new(token), expressions)
+    Expression::InterpolatedString(token, expressions)
 }
 
-fn record_like<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
+fn record_like<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     let (open, parts, close) = record_base(
         expression,
-        |t| to_interpolate_expr(t.to_owned()),
+        |t: &Token<'s>| to_interpolate_expr(t),
         expression,
         expression,
         expression,
@@ -89,8 +85,8 @@ fn record_like<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
     Ok(result)
 }
 
-fn array<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
-    let spread = |i: &mut Input<'_, 's>| {
+fn array<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
+    let spread = |i: &mut Input<'s>| {
         let pos = i.previous_token_end();
         opt(expression)
             .map(|e| {
@@ -119,9 +115,8 @@ fn array<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
     .parse_next(i)
 }
 
-fn interpolation<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
+fn interpolation<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     let token = one_of(|t: &Token<'s>| matches!(&t.kind, &TokenKind::InterpolatedString(_, _)))
-        .map(|t: &Token<'s>| t.to_owned())
         .parse_next(i)?;
     Ok(to_interpolate_expr(token))
 }
@@ -135,8 +130,8 @@ type Call<'s> = (
 );
 
 fn pseudo_function<'t, 's: 't, const extension_call: bool>(
-    i: &mut Input<'t, 's>,
-) -> ModalResult<Call<'s>> {
+    i: &mut Input<'s>,
+) -> Result<Call<'s>> {
     let provided = if extension_call { 1 } else { 0 };
     let (kw_type, open, (args, close)) = (
         token(Keyword::Type),
@@ -162,7 +157,7 @@ fn pseudo_function<'t, 's: 't, const extension_call: bool>(
     Ok((Callable::Type(kw_type).into(), open.into(), exp, close))
 }
 
-fn primary<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
+fn primary<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     (alt((
         pseudo_function::<false>.map(|(e, o, a, c)| Expression::Call(e, o, a, c)),
         block_like_expression,
@@ -177,7 +172,7 @@ fn primary<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
     .parse_next(i)
 }
 
-fn arg_list<'s>(i: &mut Input<'_, 's>) -> ModalResult<(Vec<Expression<'s>>, Box<Token<'s>>)> {
+fn arg_list<'s>(i: &mut Input<'s>) -> Result<(Vec<Expression<'s>>, Box<Token<'s>>)> {
     separated_pair(
         (
             repeat(0.., terminated(expression, token(Operator::Comma))),
@@ -209,8 +204,8 @@ enum AccessIndex<'s> {
     /// '[' expression ']'
     Index(Box<Token<'s>>, Box<Expression<'s>>, Box<Token<'s>>),
 }
-fn access_index<'s>(i: &mut Input<'_, 's>) -> ModalResult<AccessIndex<'s>> {
-    let access_token = |i: &mut Input<'_, 's>| {
+fn access_index<'s>(i: &mut Input<'s>) -> Result<AccessIndex<'s>> {
+    let access_token = |i: &mut Input<'s>| {
         one_of(|t: &Token<'s>| matches!(t.kind, TokenKind::Identifier(_) | TokenKind::Ordinal(_)))
             .map(|t: &Token<'s>| Box::new(t.to_owned()))
             .parse_next(i)
@@ -227,8 +222,8 @@ fn access_index<'s>(i: &mut Input<'_, 's>) -> ModalResult<AccessIndex<'s>> {
     .parse_next(i)
 }
 
-fn extension_call<'s>(i: &mut Input<'_, 's>) -> ModalResult<Call<'s>> {
-    let parenthesised = |i: &mut Input<'_, 's>| {
+fn extension_call<'s>(i: &mut Input<'s>) -> Result<Call<'s>> {
+    let parenthesised = |i: &mut Input<'s>| {
         record_like
             .with_taken()
             .map(|(r, t)| {
@@ -240,7 +235,7 @@ fn extension_call<'s>(i: &mut Input<'_, 's>) -> ModalResult<Call<'s>> {
             })
             .parse_next(i)
     };
-    let access_chain = |i: &mut Input<'_, 's>| {
+    let access_chain = |i: &mut Input<'s>| {
         (variable_token(false, true), repeat(0.., access_index))
             .map(|(first, rest): (_, Vec<_>)| {
                 let mut acc = Expression::Variable(first.into());
@@ -270,7 +265,7 @@ fn extension_call<'s>(i: &mut Input<'_, 's>) -> ModalResult<Call<'s>> {
     .parse_next(i)
 }
 
-fn postfix<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
+fn postfix<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     enum Function<'s> {
         Call(Box<Token<'s>>, Vec<Expression<'s>>, Box<Token<'s>>),
         Extension(
@@ -320,14 +315,14 @@ fn postfix<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
     }))
 }
 
-fn exponentiation<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
+fn exponentiation<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     separated_foldr1(postfix, token_boxed(Operator::Caret), |l, op, r| {
         Expression::Infix(Box::new(l), op, Box::new(r))
     })
     .parse_next(i)
 }
 
-fn prefix<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
+fn prefix<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     dispatch! {peek(any);
         token if *token == Operator::Plus || *token == Operator::Minus|| *token == Operator::Exclamation =>
             seq!(Expression::Prefix(any.map(|t: &Token<'s>| Box::new(t.to_owned())), prefix.map(Box::new))),
@@ -336,30 +331,30 @@ fn prefix<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
     .parse_next(i)
 }
 
-fn left_associative_infix<'t, 's: 't>(
-    i: &mut Input<'t, 's>,
-    item: impl Parser<Input<'t, 's>, Expression<'s>, ErrMode<ContextError>>,
+fn left_associative_infix<'s>(
+    i: &mut Input<'s>,
+    item: impl Parser<'s, Expression<'s>>,
     filter: impl Fn(&Token<'s>) -> bool,
-) -> ModalResult<Expression<'s>> {
+) -> Result<Expression<'s>> {
     separated_foldl1(item, one_of(filter), |left, op, right| {
         Expression::Infix(Box::new(left), Box::new(op.to_owned()), Box::new(right))
     })
     .parse_next(i)
 }
 
-fn multiplicative<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
+fn multiplicative<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     left_associative_infix(i, prefix, |t| {
         *t == Operator::Asterisk || *t == Operator::Slash || *t == Operator::Percent
     })
 }
 
-pub(super) fn additive<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
+pub(super) fn additive<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     left_associative_infix(i, multiplicative, |t| {
         *t == Operator::Plus || *t == Operator::Minus
     })
 }
 
-fn matching<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
+fn matching<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     let first = additive.parse_next(i)?;
     let items: Vec<(_, _)> = repeat(0.., (token_boxed(Keyword::Is), pattern(false)))
         .fold(Vec::new, |mut v, t| {
@@ -375,7 +370,7 @@ fn matching<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
     }))
 }
 
-fn relational<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
+fn relational<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     left_associative_infix(i, matching, |t| {
         *t == Operator::Less
             || *t == Operator::LessEqual
@@ -385,7 +380,7 @@ fn relational<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
     })
 }
 
-fn equality<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
+fn equality<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     left_associative_infix(i, relational, |t| {
         *t == Operator::EqualEqual
             || *t == Operator::NotEqual
@@ -394,18 +389,18 @@ fn equality<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
     })
 }
 
-fn and<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
+fn and<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     left_associative_infix(i, equality, |t| *t == Operator::LogicalAnd)
 }
 
-fn or<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
+fn or<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     left_associative_infix(i, and, |t| *t == Operator::LogicalOr)
 }
 
-fn null_coalescing<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
+fn null_coalescing<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     left_associative_infix(i, or, |t| *t == Operator::NullCoalescing)
 }
 
-pub(super) fn basic_expression<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
+pub(super) fn basic_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     null_coalescing.parse_next(i)
 }

@@ -1,22 +1,16 @@
 use winnow::{
-    ModalResult, Parser,
     combinator::{opt, peek, repeat},
     token::any,
 };
 
-use crate::{
-    diagnostic::{DiagnosticCode, SourceRange},
-    lexer::{Operator, Token, TokenKind},
-};
-
 use super::{
-    Expression, Input, Script, Statement,
     expressions::expression,
     helper::construct_statements_and_expression,
+    prelude::*,
     statements::{semicolon, statement},
 };
 
-pub fn script<'s>(i: &mut Input<'_, 's>) -> ModalResult<Script<'s>> {
+pub fn script<'s>(i: &mut Input<'s>) -> Result<Script<'s>> {
     let mut statements = vec![];
     let exp: Option<Expression>;
     let eof: Option<&Token>;

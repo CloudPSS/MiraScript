@@ -1,7 +1,7 @@
 use std::ops::Deref;
 
 use crate::{
-    diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
+    diagnostic::{DiagnosticCode, SourceDiagnostic},
     emitter::emitter_scope::check_variable_initialized,
     lexer::{Keyword, Operator, TokenKind},
     parser::{
@@ -142,7 +142,7 @@ impl<'s> Emitter<'s> {
             },
             InterpolatedString(token, expressions) => {
                 let TokenKind::InterpolatedString(strs, _) = &token.kind else {
-                    self.unreachable(token, expressions, file!(), line!());
+                    self.unreachable(*token, expressions, file!(), line!());
                     return;
                 };
                 let mut args_reg = vec![];

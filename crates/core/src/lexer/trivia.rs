@@ -1,14 +1,18 @@
+#[cfg(feature = "trivia")]
 use std::fmt::Display;
 
-use winnow::ascii::{line_ending, space0, till_line_ending};
-use winnow::combinator::{alt, delimited, opt, preceded, repeat, terminated};
-use winnow::prelude::*;
-use winnow::token::{any, take_until};
+use winnow::{
+    ascii::{line_ending, space0, till_line_ending},
+    combinator::{alt, delimited, opt, preceded, repeat, terminated},
+    token::{any, take_until},
+};
 
+#[cfg(feature = "trivia")]
 use crate::ansi::{COMMENT, DisplayIdent, RECOVER, RESET};
 
-use super::{Input, Result};
+use super::prelude::*;
 
+#[cfg(feature = "trivia")]
 #[derive(Debug, Clone, PartialEq)]
 pub enum Trivia<'s> {
     LineComment(&'s str),
@@ -17,12 +21,14 @@ pub enum Trivia<'s> {
     EmptyLine,
 }
 
+#[cfg(feature = "trivia")]
 impl Display for Trivia<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.fmt_ident(f, 0)
     }
 }
 
+#[cfg(feature = "trivia")]
 impl DisplayIdent for Trivia<'_> {
     fn fmt_ident(&self, f: &mut std::fmt::Formatter<'_>, ident: usize) -> std::fmt::Result {
         use Trivia::*;
@@ -93,7 +99,7 @@ fn block_comment<'s>(i: &mut Input<'s>) -> Result<TriviaResult<'s>> {
     }
     #[cfg(not(feature = "trivia"))]
     {
-        (mapper1, mapper2) = (|s: &'s str| (), |s: &'s str| ())
+        (mapper1, mapper2) = (|_: &'s str| (), |_: &'s str| ())
     }
     preceded(
         (space0, "/*"),

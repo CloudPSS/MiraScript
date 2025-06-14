@@ -1,18 +1,10 @@
-use winnow::combinator::alt;
-use winnow::prelude::*;
-use winnow::token::take_till;
-
-use crate::{
-    diagnostic::DiagnosticCode,
-    lexer::{Keyword, Operator, Token, TokenKind},
-};
+use winnow::{combinator::alt, token::take_till};
 
 use super::{
-    Expression, Input, basic_expressions::basic_expression,
-    block_expressions::block_like_expression,
+    basic_expressions::basic_expression, block_expressions::block_like_expression, prelude::*,
 };
 
-fn unknown_expression<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
+fn unknown_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     take_till(1.., |t: &Token<'s>| {
         *t == TokenKind::Eof
             || *t == Keyword::If
@@ -34,6 +26,6 @@ fn unknown_expression<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> 
     .parse_next(i)
 }
 
-pub fn expression<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
+pub fn expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     alt((basic_expression, block_like_expression, unknown_expression)).parse_next(i)
 }

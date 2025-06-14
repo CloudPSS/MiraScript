@@ -1,29 +1,30 @@
-use winnow::combinator::{alt, dispatch, fail, opt, peek, seq};
-use winnow::prelude::*;
-use winnow::token::{any, one_of};
+use winnow::{
+    combinator::{alt, dispatch, fail, opt, peek, seq},
+    token::{any, one_of},
+};
 
-use crate::diagnostic::{DiagnosticCode, SourceRange};
-use crate::lexer::{Keyword, Operator, Token, TokenKind};
+use super::{
+    block_expressions::*,
+    expressions::expression,
+    helper::{token_boxed, token_or_insert, variable_token},
+    parameter_list::parameter_list,
+    patterns::{pattern, pattern_or_insert},
+    prelude::*,
+};
 
-use super::expressions::expression;
-use super::helper::{token_boxed, token_or_insert, variable_token};
-use super::patterns::{pattern, pattern_or_insert};
-use super::{Input, Statement};
-use super::{block_expressions::*, parameter_list::parameter_list};
-
-pub(super) fn semicolon<'s>(i: &mut Input<'_, 's>) -> ModalResult<Box<Token<'s>>> {
+pub(super) fn semicolon<'s>(i: &mut Input<'s>) -> Result<Box<Token<'s>>> {
     token_or_insert(Operator::Semicolon, DiagnosticCode::MissingSemicolon)
         .map(Box::new)
         .parse_next(i)
 }
 
-fn empty_statement<'s>(i: &mut Input<'_, 's>) -> ModalResult<Statement<'s>> {
+fn empty_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
     token_boxed(Operator::Semicolon)
         .map(Statement::Empty)
         .parse_next(i)
 }
 
-fn fn_statement<'s>(i: &mut Input<'_, 's>) -> ModalResult<Statement<'s>> {
+fn fn_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
     (
         token_boxed(Keyword::Fn),
         opt(variable_token(false, false)),
@@ -43,7 +44,7 @@ fn fn_statement<'s>(i: &mut Input<'_, 's>) -> ModalResult<Statement<'s>> {
         .parse_next(i)
 }
 
-fn return_statement<'s>(i: &mut Input<'_, 's>) -> ModalResult<Statement<'s>> {
+fn return_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
     seq!(Statement::Return(
         token_boxed(Keyword::Return),
         opt(expression.map(Box::new)),
@@ -52,7 +53,7 @@ fn return_statement<'s>(i: &mut Input<'_, 's>) -> ModalResult<Statement<'s>> {
     .parse_next(i)
 }
 
-fn break_statement<'s>(i: &mut Input<'_, 's>) -> ModalResult<Statement<'s>> {
+fn break_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
     seq!(Statement::Break(
         token_boxed(Keyword::Break),
         opt(expression.map(Box::new)),
@@ -61,7 +62,7 @@ fn break_statement<'s>(i: &mut Input<'_, 's>) -> ModalResult<Statement<'s>> {
     .parse_next(i)
 }
 
-fn continue_statement<'s>(i: &mut Input<'_, 's>) -> ModalResult<Statement<'s>> {
+fn continue_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
     seq!(Statement::Continue(
         token_boxed(Keyword::Continue),
         semicolon,
@@ -69,7 +70,7 @@ fn continue_statement<'s>(i: &mut Input<'_, 's>) -> ModalResult<Statement<'s>> {
     .parse_next(i)
 }
 
-fn bind_statement<'s>(i: &mut Input<'_, 's>) -> ModalResult<Statement<'s>> {
+fn bind_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
     seq!(Statement::Bind(
         token_boxed(Keyword::Let),
         pattern_or_insert(false).map(Box::new),
@@ -80,7 +81,7 @@ fn bind_statement<'s>(i: &mut Input<'_, 's>) -> ModalResult<Statement<'s>> {
     .parse_next(i)
 }
 
-fn rebind_statement<'s>(i: &mut Input<'_, 's>) -> ModalResult<Statement<'s>> {
+fn rebind_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
     seq!(Statement::Rebind(
         pattern(true).map(Box::new),
         token_boxed(Operator::Equal),
@@ -90,7 +91,7 @@ fn rebind_statement<'s>(i: &mut Input<'_, 's>) -> ModalResult<Statement<'s>> {
     .parse_next(i)
 }
 
-fn assign_statement<'s>(i: &mut Input<'_, 's>) -> ModalResult<Statement<'s>> {
+fn assign_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
     seq!(Statement::Assign(
         expression.map(Box::new),
         one_of(|t: &Token<'s>| {
@@ -112,7 +113,7 @@ fn assign_statement<'s>(i: &mut Input<'_, 's>) -> ModalResult<Statement<'s>> {
     .parse_next(i)
 }
 
-fn expression_statement<'s>(i: &mut Input<'_, 's>) -> ModalResult<Statement<'s>> {
+fn expression_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
     let mut insert_semicolon = peek(one_of(|t: &Token<'s>| {
         *t != Operator::CloseBrace
             && *t != TokenKind::Eof
@@ -127,12 +128,12 @@ fn expression_statement<'s>(i: &mut Input<'_, 's>) -> ModalResult<Statement<'s>>
     .parse_next(i)
 }
 
-fn unknown_statement<'s>(i: &mut Input<'_, 's>) -> ModalResult<Statement<'s>> {
+fn unknown_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
     fail.map(|t: &[Token<'s>]| Statement::unknown(t, DiagnosticCode::UnknownStatement))
         .parse_next(i)
 }
 
-pub(super) fn statement<'s>(i: &mut Input<'_, 's>) -> ModalResult<Statement<'s>> {
+pub(super) fn statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
     dispatch! {peek(any);
         t if *t == Operator::OpenBrace => block_expression.map(Box::new).map(Statement::BlockExpression),
         t if *t == Keyword::If => if_expression.map(Box::new).map(Statement::BlockExpression),

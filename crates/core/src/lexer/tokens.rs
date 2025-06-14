@@ -1,13 +1,15 @@
-use winnow::ascii::space0;
-use winnow::combinator::{alt, dispatch, eof, fail, opt, peek, preceded};
-use winnow::prelude::*;
-use winnow::token::{any, take};
+use winnow::{
+    ascii::space0,
+    combinator::{alt, dispatch, eof, fail, opt, peek, preceded},
+    token::{any, take},
+};
 
-use crate::diagnostic::{DiagnosticCode, SourceDiagnostic};
-
-use super::identifier::{identifier, is_identifier_special, is_identifier_start};
-use super::numeric::{number, ordinal};
-use super::{Input, Operator, Result, Token, TokenKind, string};
+use super::{
+    identifier::{identifier, is_identifier_special, is_identifier_start},
+    numeric::{number, ordinal},
+    prelude::*,
+    string,
+};
 
 pub(super) fn token<'s>(
     input: &mut Input<'s>,

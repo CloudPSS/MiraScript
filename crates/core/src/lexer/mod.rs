@@ -17,6 +17,7 @@ pub use keyword::Keyword;
 pub use operator::Operator;
 pub use token::Token;
 pub use token_kind::TokenKind;
+#[cfg(feature = "trivia")]
 pub use trivia::Trivia;
 
 pub type Input<'s> = LocatingSlice<&'s str>;
@@ -26,6 +27,14 @@ trait Parser<'s, Output>: winnow::Parser<Input<'s>, Output, ErrMode<EmptyError>>
 impl<'s, Output, F> Parser<'s, Output> for F where
     F: winnow::Parser<Input<'s>, Output, ErrMode<EmptyError>>
 {
+}
+
+mod prelude {
+    #[cfg(feature = "trivia")]
+    pub(super) use super::Trivia;
+    pub(super) use super::{Input, Keyword, Operator, Parser, Result, Token, TokenKind};
+    pub(super) use crate::diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange};
+    pub(super) use winnow::{Parser as _, stream::Location as _, stream::Stream as _};
 }
 
 pub fn to_input(text: &str) -> Input<'_> {
@@ -40,12 +49,13 @@ fn lex_balanced_impl<'s, OP: PartialEq<TokenKind<'s>>, CP: PartialEq<TokenKind<'
 ) -> Result<Vec<Token<'s>>> {
     let mut tokens = vec![];
     while tokens.is_empty() || depth > 0 {
-        let t = trivia::trivia_list(input)?;
+        let _trivia = trivia::trivia_list(input)?;
         let prev_token = tokens.last_mut();
+        #[allow(unused_mut)]
         let mut token = tokens::token(input, prev_token)?;
         #[cfg(feature = "trivia")]
         {
-            token.leading_trivia = t;
+            token.leading_trivia = _trivia;
         }
         let eof = token.kind == TokenKind::Eof;
         if open == token.kind {

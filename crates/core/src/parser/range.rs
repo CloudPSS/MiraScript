@@ -1,11 +1,8 @@
 use std::fmt::Display;
 
-use crate::{
-    ansi::{DisplayIdent, RANGE, RESET},
-    lexer::{Operator, Token},
-};
+use crate::ansi::{DisplayIdent, RANGE, RESET};
 
-use super::{AstVisitor, AstVisitorMut, AstWalker, Expression};
+use super::{AstVisitor, AstVisitorMut, AstWalker, prelude::*};
 
 /// A range expression.
 ///

@@ -2,12 +2,11 @@ use std::borrow::Cow;
 use std::str::FromStr;
 
 use winnow::{
-    Parser as _,
     combinator::{alt, repeat},
     token::{literal, one_of, take_while},
 };
 
-use super::{Input, Keyword, Parser, TokenKind};
+use super::prelude::*;
 
 pub(super) const IDENTIFIER_SPECIAL: &[char] = &['_', '$', '@'];
 

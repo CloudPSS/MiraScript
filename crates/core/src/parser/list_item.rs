@@ -3,9 +3,9 @@ use std::{
     ops::{Deref, DerefMut},
 };
 
-use crate::{ansi::DisplayIdent, lexer::Token};
+use crate::ansi::DisplayIdent;
 
-use super::{AstVisitor, AstVisitorMut, AstWalker};
+use super::{AstVisitor, AstVisitorMut, AstWalker, prelude::*};
 
 /// item ','?
 #[derive(Debug, Clone, PartialEq)]
