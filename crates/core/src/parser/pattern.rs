@@ -9,27 +9,27 @@ pub enum Pattern<'s> {
     /// `(` pattern `)`
     ///
     /// Grouping pattern.
-    Grouping(Box<Token<'s>>, Box<Pattern<'s>>, Box<Token<'s>>),
+    Grouping(TokenRef<'s>, Box<Pattern<'s>>, TokenRef<'s>),
     /// ( `+` | `-` )? literal
     ///
     /// Matches against a constant value.
-    Constant(Option<Box<Token<'s>>>, Box<Token<'s>>),
+    Constant(Option<TokenRef<'s>>, TokenRef<'s>),
     /// ( `>` | `>=` | `<=` | `<` | `==` | `!=` | `~=` | `!~=` ) pattern_constant
     ///
     /// Matches against a relation with constant values.
-    Relation(Box<Token<'s>>, Box<Pattern<'s>>),
+    Relation(TokenRef<'s>, Box<Pattern<'s>>),
     /// pattern_constant ( `..` | `..<` ) pattern_constant
     ///
     /// Matches against a range of constant values.
-    Range(Box<Pattern<'s>>, Box<Token<'s>>, Box<Pattern<'s>>),
+    Range(Box<Pattern<'s>>, TokenRef<'s>, Box<Pattern<'s>>),
     /// `_`
     ///
     /// Matches and discards a value.
-    Discard(Box<Token<'s>>),
+    Discard(TokenRef<'s>),
     /// `mut`? identifier
     ///
     /// Matches and binds a value to a variable.
-    Bind(Option<Box<Token<'s>>>, Box<Token<'s>>),
+    Bind(Option<TokenRef<'s>>, TokenRef<'s>),
     /// ``````antlr
     /// pattern_record
     ///     : '(' sub_pattern* ')'
@@ -46,7 +46,7 @@ pub enum Pattern<'s> {
     ///     ;
     /// ``````
     /// Matches a record pattern.
-    Record(Box<Token<'s>>, Vec<RecordPattern<'s>>, Box<Token<'s>>),
+    Record(TokenRef<'s>, Vec<RecordPattern<'s>>, TokenRef<'s>),
     /// ```antlr
     /// pattern_array
     ///     : '[' sub_pattern* ']'
@@ -56,7 +56,7 @@ pub enum Pattern<'s> {
     ///     | '..' pattern? ','?
     ///     ;
     /// ```
-    Array(Box<Token<'s>>, Vec<ArrayPattern<'s>>, Box<Token<'s>>),
+    Array(TokenRef<'s>, Vec<ArrayPattern<'s>>, TokenRef<'s>),
     /// prefix<`..`>
     ///
     /// Contains no token.
@@ -71,26 +71,26 @@ pub enum Pattern<'s> {
     /// pattern `and` pattern
     ///
     /// Matches all of the patterns.
-    And(Box<Pattern<'s>>, Box<Token<'s>>, Box<Pattern<'s>>),
+    And(Box<Pattern<'s>>, TokenRef<'s>, Box<Pattern<'s>>),
     /// pattern `or` pattern
     ///
     /// Matches any of the patterns.
-    Or(Box<Pattern<'s>>, Box<Token<'s>>, Box<Pattern<'s>>),
+    Or(Box<Pattern<'s>>, TokenRef<'s>, Box<Pattern<'s>>),
     /// `not` pattern
     ///
     /// Matches if the pattern does not match.
-    Not(Box<Token<'s>>, Box<Pattern<'s>>),
+    Not(TokenRef<'s>, Box<Pattern<'s>>),
 
     /// Unknown pattern.
     Unknown {
         recovered: Option<Box<Pattern<'s>>>,
-        tokens: Vec<Token<'s>>,
+        tokens: Vec<TokenRef<'s>>,
         errors: Vec<SourceDiagnostic>,
     },
 }
 
 impl<'s> Pattern<'s> {
-    pub(crate) fn wrap_as_unknown<T: Into<Vec<Token<'s>>>>(
+    pub(crate) fn wrap_as_unknown<T: Into<Vec<TokenRef<'s>>>>(
         self,
         tokens: T,
         error: DiagnosticCode,
@@ -106,7 +106,7 @@ impl<'s> Pattern<'s> {
         }
     }
 
-    pub(crate) fn unknown<T: Into<Vec<Token<'s>>>>(tokens: T, error: DiagnosticCode) -> Self {
+    pub(crate) fn unknown<T: Into<Vec<TokenRef<'s>>>>(tokens: T, error: DiagnosticCode) -> Self {
         let tokens = tokens.into();
         assert!(!tokens.is_empty());
         let mut range = tokens[0].range.clone();
@@ -117,7 +117,7 @@ impl<'s> Pattern<'s> {
             errors: vec![SourceDiagnostic::new(range, error)],
         }
     }
-    pub(crate) fn unknown_range<T: Into<Vec<Token<'s>>>>(
+    pub(crate) fn unknown_range<T: Into<Vec<TokenRef<'s>>>>(
         tokens: T,
         error_range: SourceRange,
         error: DiagnosticCode,
@@ -129,7 +129,7 @@ impl<'s> Pattern<'s> {
         }
     }
 
-    pub(crate) fn unknown_errors<T: Into<Vec<Token<'s>>>, E: Into<Vec<SourceDiagnostic>>>(
+    pub(crate) fn unknown_errors<T: Into<Vec<TokenRef<'s>>>, E: Into<Vec<SourceDiagnostic>>>(
         tokens: T,
         errors: E,
     ) -> Self {

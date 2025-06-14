@@ -40,34 +40,35 @@ pub fn script<'s>(i: &mut Input<'s>) -> Result<Script<'s>> {
             let next = any.parse_next(i)?;
             if *next == Operator::CloseParen {
                 statements.push(Statement::unknown(
-                    [next.to_owned()],
+                    [next.into()],
                     DiagnosticCode::UnmatchedCloseParen,
                 ));
             } else if *next == Operator::CloseBracket {
                 statements.push(Statement::unknown(
-                    [next.to_owned()],
+                    [next.into()],
                     DiagnosticCode::UnmatchedCloseBracket,
                 ));
             } else if *next == Operator::CloseBrace {
                 statements.push(Statement::unknown(
-                    [next.to_owned()],
+                    [next.into()],
                     DiagnosticCode::UnmatchedCloseBrace,
                 ));
             } else {
                 statements.push(Statement::unknown(
-                    [next.to_owned()],
+                    [next.into()],
                     DiagnosticCode::UnexpectedToken,
                 ));
             }
         }
     }
     let (statements, exp) = construct_statements_and_expression(statements, exp);
-    let eof = eof.map(|e| e.to_owned()).unwrap_or_else(|| {
+    let eof = eof.map(TokenRef::borrow).unwrap_or_else(|| {
         Token::unknown(
             SourceRange::default(),
             TokenKind::Eof,
             DiagnosticCode::UnexpectedToken,
         )
+        .into()
     });
-    Ok(Script(statements, exp, Box::new(eof)))
+    Ok(Script(statements, exp, eof))
 }

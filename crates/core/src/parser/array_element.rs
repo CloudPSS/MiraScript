@@ -11,7 +11,7 @@ pub enum ArrayElementBase<'s, E> {
     /// Range
     Range(Box<super::Range<'s>>),
     /// `..` Spread
-    Spread(Box<Token<'s>>, Box<E>),
+    Spread(TokenRef<'s>, Box<E>),
 }
 
 use ArrayElementBase::*;

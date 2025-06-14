@@ -33,70 +33,57 @@ pub(super) fn statements_and_expression<'s>(
     Ok(construct_statements_and_expression(statements, expression))
 }
 
-pub(super) fn literal_token<'s>(i: &mut Input<'s>) -> Result<Token<'s>> {
+pub(super) fn literal_token<'s>(i: &mut Input<'s>) -> Result<TokenRef<'s>> {
     one_of(|t: &Token<'s>| {
-        matches!(&t.kind, &TokenKind::Number(_))
-            || matches!(&t.kind, &TokenKind::Ordinal(_))
-            || matches!(&t.kind, &TokenKind::String(_))
+        matches!(t.kind, TokenKind::Number(_))
+            || matches!(t.kind, TokenKind::Ordinal(_))
+            || matches!(t.kind, TokenKind::String(_))
             || *t == Keyword::True
             || *t == Keyword::False
             || *t == Keyword::Nil
             || *t == Keyword::Nan
             || *t == Keyword::Inf
     })
-    .map(|t: &Token<'s>| t.to_owned())
+    .map(TokenRef::borrow)
     .parse_next(i)
 }
 
 pub(super) fn variable_token<'s>(
     include_underscore: bool,
     include_global: bool,
-) -> impl Parser<'s, Token<'s>> {
+) -> impl Parser<'s, TokenRef<'s>> {
     move |i: &mut Input<'s>| {
         let t = one_of(|t: &Token<'s>| {
             matches!(&t.kind, &TokenKind::Identifier(_))
                 || (*t == Keyword::Underscore)
                 || (*t == Keyword::Global)
         })
-        .map(|t: &Token<'s>| t.to_owned())
         .parse_next(i)?;
-        let e = if !include_underscore && t == Keyword::Underscore {
-            Token::unknown(t.range, t.kind, DiagnosticCode::UnexpectedUnderscore)
-        } else if !include_global && t == Keyword::Global {
-            Token::unknown(t.range, t.kind, DiagnosticCode::UnexpectedGlobal)
+        let e = if !include_underscore && *t == Keyword::Underscore {
+            Token::unknown(
+                t.range.clone(),
+                t.kind.clone(),
+                DiagnosticCode::UnexpectedUnderscore,
+            )
+            .into()
+        } else if !include_global && *t == Keyword::Global {
+            Token::unknown(
+                t.range.clone(),
+                t.kind.clone(),
+                DiagnosticCode::UnexpectedGlobal,
+            )
+            .into()
         } else {
-            t
+            t.into()
         };
-        // let e = match &t.kind {
-        //     TokenKind::Keyword(Keyword::Underscore, str) if !include_underscore => Token::unknown(
-        //         t.range,
-        //         TokenKind::Identifier(str.unwrap_or("_")),
-        //         DiagnosticCode::UnexpectedUnderscore,
-        //     ),
-        //     TokenKind::Keyword(Keyword::Global, str) if !include_global => Token::unknown(
-        //         t.range,
-        //         TokenKind::Identifier(str.unwrap_or("global")),
-        //         DiagnosticCode::UnexpectedGlobal,
-        //     ),
-        //     _ => t,
-        // };
         Ok(e)
     }
 }
 
-pub(super) fn token<'s>(token: impl PartialEq<Token<'s>> + Copy) -> impl Parser<'s, Token<'s>> {
+pub(super) fn token<'s>(token: impl PartialEq<Token<'s>> + Copy) -> impl Parser<'s, TokenRef<'s>> {
     move |i: &mut Input<'s>| {
         one_of(|t: &Token<'s>| token == *t)
-            .map(|t: &Token<'s>| t.to_owned())
-            .parse_next(i)
-    }
-}
-pub(super) fn token_boxed<'s>(
-    token: impl PartialEq<Token<'s>> + Copy,
-) -> impl Parser<'s, Box<Token<'s>>> {
-    move |i: &mut Input<'s>| {
-        one_of(|t: &Token<'s>| token == *t)
-            .map(|t: &Token<'s>| Box::new(t.to_owned()))
+            .map(TokenRef::borrow)
             .parse_next(i)
     }
 }
@@ -104,12 +91,12 @@ pub(super) fn token_boxed<'s>(
 pub(super) fn token_or_insert<'s>(
     token: impl Into<TokenKind<'s>> + PartialEq<Token<'s>> + Copy,
     error: DiagnosticCode,
-) -> impl Parser<'s, Token<'s>> {
-    move |i: &mut Input<'s>| -> Result<Token<'s>> {
+) -> impl Parser<'s, TokenRef<'s>> {
+    move |i: &mut Input<'s>| -> Result<TokenRef<'s>> {
         let pos = i.previous_token_end();
         opt(one_of(|t: &Token<'s>| token == *t))
             .map(|t: Option<&Token<'s>>| match t {
-                Some(t) => t.to_owned(),
+                Some(t) => t.into(),
                 None => Token::unknown(
                     SourceRange {
                         start: pos,
@@ -117,7 +104,8 @@ pub(super) fn token_or_insert<'s>(
                     },
                     token.into(),
                     error,
-                ),
+                )
+                .into(),
             })
             .parse_next(i)
     }

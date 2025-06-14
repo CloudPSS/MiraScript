@@ -28,6 +28,7 @@ mod script;
 mod scripts;
 mod statement;
 mod statements;
+mod token_ref;
 
 pub use array_element::{ArrayElement, ArrayElementBase, ArrayPattern};
 pub(super) use ast_visitor::*;
@@ -39,6 +40,7 @@ pub use range::Range;
 pub use record_element::{RecordElement, RecordElementBase, RecordPattern};
 pub use script::Script;
 pub use statement::Statement;
+pub use token_ref::TokenRef;
 
 pub type Input<'s> = TokenSlice<'s, Token<'s>>;
 pub(crate) type Result<Output> = ModalResult<Output, EmptyError>;
@@ -52,7 +54,7 @@ impl<'s, Output, F> Parser<'s, Output> for F where
 mod prelude {
     pub(super) use super::{
         Expression, Input, Iterable, ParameterList, Parser, Pattern, Range, Result, Script,
-        Statement,
+        Statement, TokenRef,
     };
     pub(super) use crate::{
         diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},

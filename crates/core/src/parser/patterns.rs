@@ -1,4 +1,4 @@
-use std::ops::DerefMut;
+use std::ops::{Deref, DerefMut};
 
 use winnow::{
     combinator::{alt, empty, fail, opt, peek, preceded, separated_foldl1, seq},
@@ -8,7 +8,7 @@ use winnow::{
 use super::{
     ArrayElementBase, AstWalker,
     array_helper::array_base,
-    helper::{literal_token, token_boxed, variable_token},
+    helper::{literal_token, token, variable_token},
     list_item::ListItem,
     prelude::*,
     record_element::RecordElementBase,
@@ -35,7 +35,12 @@ fn unknown_pattern<'s>(i: &mut Input<'s>) -> Result<Pattern<'s>> {
             || *t == Operator::OpenParen
             || *t == Operator::CloseParen
     })
-    .map(|t: &[Token<'s>]| Pattern::unknown(t, DiagnosticCode::UnknownPattern))
+    .map(|t: &[Token<'s>]| {
+        Pattern::unknown(
+            t.iter().map(TokenRef::borrow).collect::<Vec<_>>(),
+            DiagnosticCode::UnknownPattern,
+        )
+    })
     .parse_next(i)
 }
 
@@ -46,7 +51,7 @@ pub(super) fn pattern_or_insert<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>
             pattern(rebind),
             empty.map(|_| {
                 Pattern::unknown_range(
-                    vec![Token::empty(start)],
+                    vec![Token::empty(start).into()],
                     start..start,
                     DiagnosticCode::PatternExpected,
                 )
@@ -78,7 +83,7 @@ fn primary_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
 
 fn not_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
     move |i: &mut Input<'s>| {
-        (token_boxed(Keyword::Not), primary_pattern(rebind))
+        (token(Keyword::Not), primary_pattern(rebind))
             .map(|(kw_not, p)| Pattern::Not(kw_not, Box::new(p)))
             .parse_next(i)
     }
@@ -88,7 +93,7 @@ fn and_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
     move |i: &mut Input<'s>| {
         separated_foldl1(
             primary_pattern(rebind),
-            token_boxed(Keyword::And),
+            token(Keyword::And),
             |left, op, right| Pattern::And(Box::new(left), op, Box::new(right)),
         )
         .parse_next(i)
@@ -99,7 +104,7 @@ fn or_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
     move |i: &mut Input<'s>| {
         separated_foldl1(
             and_pattern(rebind),
-            token_boxed(Keyword::Or),
+            token(Keyword::Or),
             |left, op, right| Pattern::Or(Box::new(left), op, Box::new(right)),
         )
         .parse_next(i)
@@ -115,21 +120,21 @@ fn constants_pattern<'s>(i: &mut Input<'s>) -> Result<Pattern<'s>> {
     )
         .map(|(t, l)| {
             let Some(op) = t else {
-                return Pattern::Constant(None, Box::new(l));
+                return Pattern::Constant(None, l);
             };
             if *op == Operator::Exclamation {
-                return Pattern::Constant(None, Box::from(l.clone())).wrap_as_unknown(
-                    [op.to_owned(), l],
+                return Pattern::Constant(None, l.clone()).wrap_as_unknown(
+                    [op.into(), l],
                     DiagnosticCode::ExclamationInConstantsPattern,
                 );
             }
-            if !(l.is_number() || l.is_ordinal() || l == Keyword::Inf) {
-                return Pattern::Constant(None, Box::from(l.clone())).wrap_as_unknown(
-                    [op.to_owned(), l.clone()],
+            if !(l.is_number() || l.is_ordinal() || *l == Keyword::Inf) {
+                return Pattern::Constant(None, l.clone()).wrap_as_unknown(
+                    [op.into(), l],
                     DiagnosticCode::UnexpectedOperatorInConstantsPattern,
                 );
             }
-            Pattern::Constant(Some(op.to_owned().into()), Box::new(l.clone()))
+            Pattern::Constant(Some(op.into()), l)
         })
         .parse_next(i)
 }
@@ -137,7 +142,7 @@ fn constants_pattern<'s>(i: &mut Input<'s>) -> Result<Pattern<'s>> {
 fn relation_pattern<'s>(i: &mut Input<'s>) -> Result<Pattern<'s>> {
     seq!(Pattern::Relation(
         one_of(|t: &Token<'s>| matches!(t.kind, TokenKind::Operator(op) if op.is_relation()))
-            .map(|t: &Token<'s>| Box::new(t.to_owned())),
+            .map(TokenRef::borrow),
         constants_pattern.map(Box::new),
     ))
     .parse_next(i)
@@ -147,7 +152,7 @@ fn range_pattern<'s>(i: &mut Input<'s>) -> Result<Pattern<'s>> {
     seq!(Pattern::Range(
         constants_pattern.map(Box::new),
         one_of(|t: &Token<'s>| *t == Operator::SpreadRange || *t == Operator::HalfOpenRange)
-            .map(|t: &Token<'s>| Box::new(t.to_owned())),
+            .map(TokenRef::borrow),
         constants_pattern.map(Box::new),
     ))
     .parse_next(i)
@@ -155,11 +160,11 @@ fn range_pattern<'s>(i: &mut Input<'s>) -> Result<Pattern<'s>> {
 
 fn discard_bind_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
     move |i: &mut Input<'s>| {
-        (opt(token_boxed(Keyword::Mut)), variable_token(true, false))
+        (opt(token(Keyword::Mut)), variable_token(true, false))
             .map(|(kw_mut, id)| {
                 if id.is_unknown() {
                     let tokens = if let Some(kw_mut) = kw_mut {
-                        vec![*kw_mut, id]
+                        vec![kw_mut, id]
                     } else {
                         vec![id]
                     };
@@ -168,19 +173,20 @@ fn discard_bind_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
                 if id.kind == Keyword::Underscore {
                     if let Some(kw_mut) = kw_mut {
                         return Pattern::unknown(
-                            vec![*kw_mut, id],
+                            vec![kw_mut, id],
                             DiagnosticCode::MutInDiscardPattern,
                         );
                     }
-                    return Pattern::Discard(Box::new(id));
+                    return Pattern::Discard(id);
                 }
                 if rebind && kw_mut.is_some() {
                     let kw_mut = kw_mut
                         .unwrap()
-                        .wrap_as_unknown(DiagnosticCode::MutInRebindPattern);
-                    return Pattern::Bind(Some(Box::new(kw_mut)), Box::new(id));
+                        .wrap_as_unknown(DiagnosticCode::MutInRebindPattern)
+                        .into();
+                    return Pattern::Bind(Some(kw_mut), id);
                 }
-                Pattern::Bind(kw_mut, Box::new(id))
+                Pattern::Bind(kw_mut, id)
             })
             .parse_next(i)
     }
@@ -190,14 +196,13 @@ fn pattern_spread<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
     move |i: &mut Input<'s>| {
         let pos = i.previous_token_end();
         opt(pattern(rebind))
-            .with_taken()
-            .map(|(p, t)| {
-                if p.is_none() {
+            .map(|p| {
+                let Some(p) = p else {
                     return Pattern::SpreadDiscard(pos);
-                }
-                let p = p.unwrap();
-                if p.is_discard() {
-                    p.wrap_as_unknown(t, DiagnosticCode::DiscardInSpreadPattern)
+                };
+                if let Pattern::Discard(t) = &p {
+                    let tokens = [t.clone()];
+                    p.wrap_as_unknown(tokens, DiagnosticCode::DiscardInSpreadPattern)
                 } else {
                     p
                 }
@@ -214,7 +219,10 @@ fn record_like_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
                 if p.is_bind() || p.is_unknown() {
                     p
                 } else {
-                    p.wrap_as_unknown(t, DiagnosticCode::BadOmitKeyRecordPattern)
+                    p.wrap_as_unknown(
+                        t.iter().map(TokenRef::borrow).collect::<Vec<_>>(),
+                        DiagnosticCode::BadOmitKeyRecordPattern,
+                    )
                 }
             })
             .parse_next(i)
@@ -236,12 +244,7 @@ fn record_like_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
     move |i: &mut Input<'s>| {
         let (open, mut parts, close) = record_base(
             pattern_or_insert(rebind),
-            |t| {
-                Pattern::unknown(
-                    [t.to_owned()],
-                    DiagnosticCode::InterpolatedNameRecordPattern,
-                )
-            },
+            |t| Pattern::unknown([t.into()], DiagnosticCode::InterpolatedNameRecordPattern),
             omit_named,
             unnamed,
             pattern_spread(rebind),
@@ -265,19 +268,21 @@ fn record_like_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
                     unreachable!();
                 };
                 if pattern.is_spread_discard() {
-                    *token.as_mut() = Token::unknown_range(
+                    *token = Token::unknown_range(
                         token.range(),
                         token.kind.to_owned(),
                         range,
                         DiagnosticCode::SpreadDiscardInRecordPattern,
-                    );
+                    )
+                    .into();
                 } else if i != len - 1 {
-                    *token.as_mut() = Token::unknown_range(
+                    *token = Token::unknown_range(
                         token.range(),
                         token.kind.to_owned(),
                         range,
                         DiagnosticCode::MispositionedSpreadInRecordPattern,
-                    );
+                    )
+                    .into();
                 }
             }
             Pattern::Record(open, parts, close)
@@ -295,7 +300,10 @@ pub(crate) fn array_pattern_like<'s>(
             .with_taken()
             .map(|(p, t)| {
                 if matches!(p, Pattern::Range(..)) {
-                    p.wrap_as_unknown(t, DiagnosticCode::AmbiguousRangePattern)
+                    p.wrap_as_unknown(
+                        t.iter().map(TokenRef::borrow).collect::<Vec<_>>(),
+                        DiagnosticCode::AmbiguousRangePattern,
+                    )
                 } else {
                     p
                 }
@@ -327,10 +335,9 @@ fn array_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
                 let ArrayElementBase::Spread(kw, p) = part else {
                     unreachable!();
                 };
-                let kw = kw.to_owned().deref_mut().clone();
                 *part = ArrayElementBase::Element(Box::new(
                     p.to_owned()
-                        .wrap_as_unknown([kw], DiagnosticCode::DuplicateSpreadPattern),
+                        .wrap_as_unknown([kw.clone()], DiagnosticCode::DuplicateSpreadPattern),
                 ));
             }
         }

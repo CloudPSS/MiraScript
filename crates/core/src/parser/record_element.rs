@@ -7,15 +7,15 @@ use super::{AstVisitor,  AstWalker, list_item::ListItem, prelude::*};
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
 pub enum RecordElementBase<'s, E, I> {
     /// name colon Named
-    Named(Box<Token<'s>>, Box<Token<'s>>, Box<E>),
+    Named(TokenRef<'s>, TokenRef<'s>, Box<E>),
     /// interpolated_string colon Named
-    InterpolateNamed(Box<I>, Box<Token<'s>>, Box<E>),
+    InterpolateNamed(Box<I>, TokenRef<'s>, Box<E>),
     /// colon OmitNamed
-    OmitNamed(Box<Token<'s>>, Box<E>),
+    OmitNamed(TokenRef<'s>, Box<E>),
     /// Unnamed
     Unnamed(Box<E>),
     /// `..` Spread
-    Spread(Box<Token<'s>>, Box<E>),
+    Spread(TokenRef<'s>, Box<E>),
 }
 
 use RecordElementBase::*;

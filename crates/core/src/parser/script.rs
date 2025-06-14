@@ -5,7 +5,7 @@ use std::{
 
 use crate::ansi::DisplayIdent;
 
-use super::{AstVisitor,  AstWalker, prelude::*};
+use super::{AstVisitor, AstWalker, prelude::*};
 
 /// statement* expression? EOF
 ///
@@ -14,7 +14,7 @@ use super::{AstVisitor,  AstWalker, prelude::*};
 pub struct Script<'s>(
     pub Vec<Statement<'s>>,
     pub Option<Box<Expression<'s>>>,
-    pub Box<Token<'s>>,
+    pub TokenRef<'s>,
 );
 
 impl<'s> AstWalker<'s> for Script<'s> {

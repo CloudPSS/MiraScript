@@ -7,16 +7,15 @@ use winnow::combinator::opt;
 use crate::ansi::DisplayIdent;
 
 use super::{
-    ArrayElementBase, ArrayPattern, AstVisitor,  AstWalker,
-    patterns::array_pattern_like, prelude::*,
+    ArrayElementBase, ArrayPattern, AstVisitor, AstWalker, patterns::array_pattern_like, prelude::*,
 };
 
 /// `(` ...items `)`
 #[derive(Debug, Clone, PartialEq)]
 pub struct ParameterList<'s>(
-    pub Box<Token<'s>>,
+    pub TokenRef<'s>,
     pub Vec<ArrayPattern<'s>>,
-    pub Box<Token<'s>>,
+    pub TokenRef<'s>,
 );
 
 impl<'s> Deref for ParameterList<'s> {
@@ -90,10 +89,9 @@ pub(super) fn parameter_list<'s>(i: &mut Input<'s>) -> Result<Option<ParameterLi
         let ArrayElementBase::Spread(kw, p) = item else {
             unreachable!();
         };
-        let kw = kw.to_owned().deref().clone();
         *item = ArrayElementBase::Element(Box::new(
             p.to_owned()
-                .wrap_as_unknown([kw], DiagnosticCode::MispositionedRestParameter),
+                .wrap_as_unknown([kw.clone()], DiagnosticCode::MispositionedRestParameter),
         ));
     }
     Ok(Some(list))

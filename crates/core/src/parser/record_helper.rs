@@ -4,13 +4,13 @@ use winnow::{
 };
 
 use super::{
-    helper::{token_boxed, token_or_insert, variable_token},
+    helper::{token, token_or_insert, variable_token},
     list_item::ListItem,
     prelude::*,
     record_element::RecordElementBase,
 };
 
-fn record_name<'s>(i: &mut Input<'s>) -> Result<Token<'s>> {
+fn record_name<'s>(i: &mut Input<'s>) -> Result<TokenRef<'s>> {
     alt((
         // (x: ..)
         variable_token(true, true),
@@ -18,7 +18,7 @@ fn record_name<'s>(i: &mut Input<'s>) -> Result<Token<'s>> {
             // (1: ..)     || (`x`: ..)
             t.is_ordinal() || t.is_string()
         })
-        .map(ToOwned::to_owned),
+        .map(TokenRef::borrow),
     ))
     .parse_next(i)
 }
@@ -40,10 +40,10 @@ fn record_element<'t, 's: 't, E: Clone + PartialEq + 's, I: Clone + PartialEq + 
             return fail.parse_next(i);
         }
         let result = alt((
-            (token_boxed(Operator::SpreadRange), spread)
+            (token(Operator::SpreadRange), spread)
                 .map(|(s, e)| RecordElementBase::Spread(s, e.into())),
             (one_of(colon), omit_named)
-                .map(|(c, o)| RecordElementBase::OmitNamed(c.to_owned().into(), o.into())),
+                .map(|(c, o)| RecordElementBase::OmitNamed(c.into(), o.into())),
             (
                 one_of(|t: &Token<'s>| t.is_interpolated_string()),
                 one_of(colon),
@@ -52,13 +52,12 @@ fn record_element<'t, 's: 't, E: Clone + PartialEq + 's, I: Clone + PartialEq + 
                 .map(|(r, c, n)| {
                     RecordElementBase::InterpolateNamed(
                         Box::new(interpolate_name(r)),
-                        c.to_owned().into(),
+                        c.into(),
                         n.into(),
                     )
                 }),
-            (record_name, one_of(colon), named).map(|(r, c, n)| {
-                RecordElementBase::Named(Box::new(r), c.to_owned().into(), n.into())
-            }),
+            (record_name, one_of(colon), named)
+                .map(|(r, c, n)| RecordElementBase::Named(r, c.into(), n.into())),
             unnamed.map(|u| RecordElementBase::Unnamed(u.into())),
         ))
         .parse_next(i)?;
@@ -92,20 +91,19 @@ pub(super) fn record_base<'t, 's: 't, E: Clone + PartialEq + 's, I: Clone + Part
 ) -> impl Parser<
     's,
     (
-        Box<Token<'s>>,
+        TokenRef<'s>,
         Vec<ListItem<'s, RecordElementBase<'s, E, I>>>,
-        Box<Token<'s>>,
+        TokenRef<'s>,
     ),
 > {
     move |i: &mut Input<'s>| {
-        let open = token_boxed(Operator::OpenParen).parse_next(i)?;
+        let open = token(Operator::OpenParen).parse_next(i)?;
         let parts: Vec<_> = repeat(
             0..,
             record_element(named, interpolate_name, omit_named, unnamed, spread),
         )
         .parse_next(i)?;
         let close = token_or_insert(Operator::CloseParen, DiagnosticCode::MissingCloseParen)
-            .map(Box::new)
             .parse_next(i)?;
         Ok((open, parts, close))
     }

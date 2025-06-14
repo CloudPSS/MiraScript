@@ -10,7 +10,7 @@ use super::array_helper::array_base;
 use super::block_expressions::block_like_expression;
 use super::expression::Callable;
 use super::expressions::expression;
-use super::helper::{literal_token, token, token_boxed, token_or_insert, variable_token};
+use super::helper::{literal_token, token, token_or_insert, variable_token};
 use super::patterns::pattern;
 use super::ranges::range;
 use super::record_helper::record_base;
@@ -34,14 +34,9 @@ fn to_interpolate_expr<'s>(token: &'s Token<'s>) -> Expression<'s> {
                         unreachable!();
                     };
                     let mut token_input = to_input(tokens);
-                    script.parse_next(&mut token_input).map(|script| {
-                        Expression::Block(
-                            op.to_owned().into(),
-                            script.0,
-                            script.1,
-                            cp.to_owned().into(),
-                        )
-                    })
+                    script
+                        .parse_next(&mut token_input)
+                        .map(|script| Expression::Block(op.into(), script.0, script.1, cp.into()))
                 } else {
                     let mut token_input = to_input(tokens);
                     terminated(expression, eof).parse_next(&mut token_input)
@@ -56,7 +51,10 @@ fn to_interpolate_expr<'s>(token: &'s Token<'s>) -> Expression<'s> {
                     } else {
                         DiagnosticCode::BadInterpolation
                     };
-                    Expression::unknown(tokens.clone(), error)
+                    Expression::unknown(
+                        tokens.iter().map(TokenRef::borrow).collect::<Vec<_>>(),
+                        error,
+                    )
                 }
             };
             expr
@@ -124,9 +122,9 @@ fn interpolation<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
 /// callable '(' ...args ')'
 type Call<'s> = (
     Box<Callable<'s>>,
-    Box<Token<'s>>,
+    TokenRef<'s>,
     Vec<Expression<'s>>,
-    Box<Token<'s>>,
+    TokenRef<'s>,
 );
 
 fn pseudo_function<'t, 's: 't, const EXTENSION_CALL: bool>(i: &mut Input<'s>) -> Result<Call<'s>> {
@@ -159,18 +157,16 @@ fn primary<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     (alt((
         pseudo_function::<false>.map(|(e, o, a, c)| Expression::Call(e, o, a, c)),
         block_like_expression,
-        literal_token.map(Box::new).map(Expression::Literal),
+        literal_token.map(Expression::Literal),
         interpolation,
-        variable_token(false, true)
-            .map(Box::new)
-            .map(Expression::Variable),
+        variable_token(false, true).map(Expression::Variable),
         record_like,
         array,
     )))
     .parse_next(i)
 }
 
-fn arg_list<'s>(i: &mut Input<'s>) -> Result<(Vec<Expression<'s>>, Box<Token<'s>>)> {
+fn arg_list<'s>(i: &mut Input<'s>) -> Result<(Vec<Expression<'s>>, TokenRef<'s>)> {
     separated_pair(
         (
             repeat(0.., terminated(expression, token(Operator::Comma))),
@@ -191,31 +187,31 @@ fn arg_list<'s>(i: &mut Input<'s>) -> Result<(Vec<Expression<'s>>, Box<Token<'s>
                 || *t == Operator::CloseBrace
                 || *t == Operator::CloseBracket
         })),
-        token_or_insert(Operator::CloseParen, DiagnosticCode::MissingCloseParen).map(Box::new),
+        token_or_insert(Operator::CloseParen, DiagnosticCode::MissingCloseParen),
     )
     .parse_next(i)
 }
 
 enum AccessIndex<'s> {
     /// '.' identifier
-    Access(Box<Token<'s>>, Box<Token<'s>>),
+    Access(TokenRef<'s>, TokenRef<'s>),
     /// '[' expression ']'
-    Index(Box<Token<'s>>, Box<Expression<'s>>, Box<Token<'s>>),
+    Index(TokenRef<'s>, Box<Expression<'s>>, TokenRef<'s>),
 }
 fn access_index<'s>(i: &mut Input<'s>) -> Result<AccessIndex<'s>> {
     let access_token = |i: &mut Input<'s>| {
         one_of(|t: &Token<'s>| matches!(t.kind, TokenKind::Identifier(_) | TokenKind::Ordinal(_)))
-            .map(|t: &Token<'s>| Box::new(t.to_owned()))
+            .map(TokenRef::borrow)
             .parse_next(i)
     };
     alt((
-        (token_boxed(Operator::Dot), access_token).map(|(d, i)| AccessIndex::Access(d, i)),
+        (token(Operator::Dot), access_token).map(|(d, i)| AccessIndex::Access(d, i)),
         (
-            token_boxed(Operator::OpenBracket),
-            expression,
-            token_boxed(Operator::CloseBracket),
+            token(Operator::OpenBracket),
+            expression.map(Box::new),
+            token(Operator::CloseBracket),
         )
-            .map(|(o, e, c)| AccessIndex::Index(o, Box::new(e), c)),
+            .map(|(o, e, c)| AccessIndex::Index(o, e, c)),
     ))
     .parse_next(i)
 }
@@ -226,7 +222,10 @@ fn extension_call<'s>(i: &mut Input<'s>) -> Result<Call<'s>> {
             .with_taken()
             .map(|(r, t)| {
                 if r.is_record() {
-                    r.wrap_as_unknown(t, DiagnosticCode::RecordLiteralInExtensionCaller)
+                    r.wrap_as_unknown(
+                        t.iter().map(TokenRef::borrow).collect::<Vec<_>>(),
+                        DiagnosticCode::RecordLiteralInExtensionCaller,
+                    )
                 } else {
                     r
                 }
@@ -254,7 +253,7 @@ fn extension_call<'s>(i: &mut Input<'s>) -> Result<Call<'s>> {
     alt((
         (
             alt((parenthesised, access_chain)).map(Callable::Expression),
-            token_boxed(Operator::OpenParen),
+            token(Operator::OpenParen),
             arg_list,
         )
             .map(|(e, o, (a, c))| (Box::new(e), o, a, c)),
@@ -265,25 +264,25 @@ fn extension_call<'s>(i: &mut Input<'s>) -> Result<Call<'s>> {
 
 fn postfix<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     enum Function<'s> {
-        Call(Box<Token<'s>>, Vec<Expression<'s>>, Box<Token<'s>>),
+        Call(TokenRef<'s>, Vec<Expression<'s>>, TokenRef<'s>),
         Extension(
-            Box<Token<'s>>,
+            TokenRef<'s>,
             Box<Callable<'s>>,
-            Box<Token<'s>>,
+            TokenRef<'s>,
             Vec<Expression<'s>>,
-            Box<Token<'s>>,
+            TokenRef<'s>,
         ),
-        Access(Box<Token<'s>>, Box<Token<'s>>),
-        Index(Box<Token<'s>>, Box<Expression<'s>>, Box<Token<'s>>),
-        NonNil(Box<Token<'s>>),
+        Access(TokenRef<'s>, TokenRef<'s>),
+        Index(TokenRef<'s>, Box<Expression<'s>>, TokenRef<'s>),
+        NonNil(TokenRef<'s>),
     }
     let first = primary.parse_next(i)?;
     let functions: Vec<Function<'s>> = repeat(
         0..,
         alt((
-            token_boxed(Operator::Exclamation).map(Function::NonNil),
-            (token_boxed(Operator::OpenParen), arg_list).map(|(o, (a, c))| Function::Call(o, a, c)),
-            (token_boxed(Operator::ColonColon), extension_call)
+            token(Operator::Exclamation).map(Function::NonNil),
+            (token(Operator::OpenParen), arg_list).map(|(o, (a, c))| Function::Call(o, a, c)),
+            (token(Operator::ColonColon), extension_call)
                 .map(|(kw, (ex, o, a, c))| Function::Extension(kw, ex, o, a, c)),
             access_index.map(|t| match t {
                 AccessIndex::Access(dot, token) => Function::Access(dot, token),
@@ -314,7 +313,7 @@ fn postfix<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
 }
 
 fn exponentiation<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
-    separated_foldr1(postfix, token_boxed(Operator::Caret), |l, op, r| {
+    separated_foldr1(postfix, token(Operator::Caret), |l, op, r| {
         Expression::Infix(Box::new(l), op, Box::new(r))
     })
     .parse_next(i)
@@ -323,7 +322,7 @@ fn exponentiation<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
 fn prefix<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     dispatch! {peek(any);
         token if *token == Operator::Plus || *token == Operator::Minus|| *token == Operator::Exclamation =>
-            seq!(Expression::Prefix(any.map(|t: &Token<'s>| Box::new(t.to_owned())), prefix.map(Box::new))),
+            seq!(Expression::Prefix(any.map(TokenRef::borrow), prefix.map(Box::new))),
         &Token{..} => exponentiation,
     }
     .parse_next(i)
@@ -334,9 +333,11 @@ fn left_associative_infix<'s>(
     item: impl Parser<'s, Expression<'s>>,
     filter: impl Fn(&Token<'s>) -> bool,
 ) -> Result<Expression<'s>> {
-    separated_foldl1(item, one_of(filter), |left, op, right| {
-        Expression::Infix(Box::new(left), Box::new(op.to_owned()), Box::new(right))
-    })
+    separated_foldl1(
+        item,
+        one_of(filter).map(TokenRef::borrow),
+        |left, op, right| Expression::Infix(Box::new(left), op, Box::new(right)),
+    )
     .parse_next(i)
 }
 
@@ -354,7 +355,7 @@ pub(super) fn additive<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
 
 fn matching<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     let first = additive.parse_next(i)?;
-    let items: Vec<(_, _)> = repeat(0.., (token_boxed(Keyword::Is), pattern(false)))
+    let items: Vec<(_, _)> = repeat(0.., (token(Keyword::Is), pattern(false)))
         .fold(Vec::new, |mut v, t| {
             v.push(t);
             v

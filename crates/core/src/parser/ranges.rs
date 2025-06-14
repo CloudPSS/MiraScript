@@ -6,7 +6,7 @@ pub(super) fn range<'s>(i: &mut Input<'s>) -> Result<Range<'s>> {
     seq!(Range(
         additive.map(Box::new),
         one_of(|t: &Token<'s>| *t == Operator::SpreadRange || *t == Operator::HalfOpenRange)
-            .map(|t: &Token<'s>| Box::new(t.to_owned())),
+            .map(TokenRef::borrow),
         additive.map(Box::new),
     ))
     .parse_next(i)

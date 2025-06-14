@@ -6,39 +6,38 @@ use winnow::{
 use super::{
     block_expressions::*,
     expressions::expression,
-    helper::{token_boxed, token_or_insert, variable_token},
+    helper::{token, token_or_insert, variable_token},
     parameter_list::parameter_list,
     patterns::{pattern, pattern_or_insert},
     prelude::*,
 };
 
-pub(super) fn semicolon<'s>(i: &mut Input<'s>) -> Result<Box<Token<'s>>> {
-    token_or_insert(Operator::Semicolon, DiagnosticCode::MissingSemicolon)
-        .map(Box::new)
-        .parse_next(i)
+pub(super) fn semicolon<'s>(i: &mut Input<'s>) -> Result<TokenRef<'s>> {
+    token_or_insert(Operator::Semicolon, DiagnosticCode::MissingSemicolon).parse_next(i)
 }
 
 fn empty_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
-    token_boxed(Operator::Semicolon)
+    token(Operator::Semicolon)
         .map(Statement::Empty)
         .parse_next(i)
 }
 
 fn fn_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
     (
-        token_boxed(Keyword::Fn),
+        token(Keyword::Fn),
         opt(variable_token(false, false)),
         parameter_list,
         block_expression.map(Box::new),
     )
         .map(|(kw, name, params, body)| {
-            let name = Box::new(name.unwrap_or_else(|| {
+            let name = name.unwrap_or_else(|| {
                 Token::unknown(
                     kw.range.end..kw.range.end,
                     TokenKind::Identifier("<name>".into()),
                     DiagnosticCode::MissingFunctionName,
                 )
-            }));
+                .into()
+            });
             Statement::Function(kw, name, params, body)
         })
         .parse_next(i)
@@ -46,7 +45,7 @@ fn fn_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
 
 fn return_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
     seq!(Statement::Return(
-        token_boxed(Keyword::Return),
+        token(Keyword::Return),
         opt(expression.map(Box::new)),
         semicolon,
     ))
@@ -55,7 +54,7 @@ fn return_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
 
 fn break_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
     seq!(Statement::Break(
-        token_boxed(Keyword::Break),
+        token(Keyword::Break),
         opt(expression.map(Box::new)),
         semicolon,
     ))
@@ -63,18 +62,14 @@ fn break_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
 }
 
 fn continue_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
-    seq!(Statement::Continue(
-        token_boxed(Keyword::Continue),
-        semicolon,
-    ))
-    .parse_next(i)
+    seq!(Statement::Continue(token(Keyword::Continue), semicolon,)).parse_next(i)
 }
 
 fn bind_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
     seq!(Statement::Bind(
-        token_boxed(Keyword::Let),
+        token(Keyword::Let),
         pattern_or_insert(false).map(Box::new),
-        token_or_insert(Operator::Equal, DiagnosticCode::MissingBindOperator).map(Box::new),
+        token_or_insert(Operator::Equal, DiagnosticCode::MissingBindOperator),
         expression.map(Box::new),
         semicolon,
     ))
@@ -84,7 +79,7 @@ fn bind_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
 fn rebind_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
     seq!(Statement::Rebind(
         pattern(true).map(Box::new),
-        token_boxed(Operator::Equal),
+        token(Operator::Equal),
         expression.map(Box::new),
         semicolon,
     ))
@@ -106,7 +101,7 @@ fn assign_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
                 || *t == Operator::NullCoalescingEqual
                 || *t == Operator::Equal
         })
-        .map(|t: &Token<'s>| Box::new(t.to_owned())),
+        .map(TokenRef::borrow),
         expression.map(Box::new),
         semicolon,
     ))
@@ -129,8 +124,13 @@ fn expression_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
 }
 
 fn unknown_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
-    fail.map(|t: &[Token<'s>]| Statement::unknown(t, DiagnosticCode::UnknownStatement))
-        .parse_next(i)
+    fail.map(|t: &[Token<'s>]| {
+        Statement::unknown(
+            t.iter().map(TokenRef::borrow).collect::<Vec<_>>(),
+            DiagnosticCode::UnknownStatement,
+        )
+    })
+    .parse_next(i)
 }
 
 pub(super) fn statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {

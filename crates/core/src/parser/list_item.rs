@@ -5,11 +5,11 @@ use std::{
 
 use crate::ansi::DisplayIdent;
 
-use super::{AstVisitor,  AstWalker, prelude::*};
+use super::{AstVisitor, AstWalker, prelude::*};
 
 /// item ','?
 #[derive(Debug, Clone, PartialEq)]
-pub struct ListItem<'s, T>(pub Box<T>, pub Option<Box<Token<'s>>>);
+pub struct ListItem<'s, T>(pub Box<T>, pub Option<TokenRef<'s>>);
 
 impl<'s, T: AstWalker<'s>> AstWalker<'s> for ListItem<'s, T> {
     fn collect_diagnostics(&mut self, collector: &mut Vec<SourceDiagnostic>) {
@@ -23,8 +23,8 @@ impl<'s, T: AstWalker<'s>> AstWalker<'s> for ListItem<'s, T> {
 }
 
 impl<'s, T> ListItem<'s, T> {
-    pub fn new_with_comma(item: T, tail_comma: Token<'s>) -> Self {
-        Self(Box::new(item), Some(Box::new(tail_comma)))
+    pub fn new_with_comma(item: T, tail_comma: TokenRef<'s>) -> Self {
+        Self(Box::new(item), Some(tail_comma))
     }
 
     pub fn new(item: T) -> Self {

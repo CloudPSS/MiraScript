@@ -22,7 +22,12 @@ fn unknown_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
             || *t == Operator::OpenParen
             || *t == Operator::CloseParen
     })
-    .map(|t: &[Token<'s>]| Expression::unknown(t, DiagnosticCode::UnknownExpression))
+    .map(|t: &[Token<'s>]| {
+        Expression::unknown(
+            t.iter().map(TokenRef::borrow).collect::<Vec<_>>(),
+            DiagnosticCode::UnknownExpression,
+        )
+    })
     .parse_next(i)
 }
 

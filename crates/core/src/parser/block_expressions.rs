@@ -4,16 +4,14 @@ use winnow::{
 };
 
 use super::expressions::expression;
-use super::helper::{statements_and_expression, token, token_boxed, token_or_insert};
+use super::helper::{statements_and_expression, token, token_or_insert};
 use super::iterables::iterable;
 use super::parameter_list::parameter_list;
 use super::patterns::{pattern, pattern_or_insert};
 use super::{AstWalker, prelude::*};
 
-fn optional_else<'s>(
-    i: &mut Input<'s>,
-) -> Result<Option<(Box<Token<'s>>, Box<Expression<'s>>)>> {
-    let Some(kw_else) = opt(token_boxed(Keyword::Else)).parse_next(i)? else {
+fn optional_else<'s>(i: &mut Input<'s>) -> Result<Option<(TokenRef<'s>, Box<Expression<'s>>)>> {
+    let Some(kw_else) = opt(token(Keyword::Else)).parse_next(i)? else {
         return Ok(None);
     };
 
@@ -26,7 +24,7 @@ fn optional_else<'s>(
 
 pub(super) fn if_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     seq!(Expression::If(
-        token_boxed(Keyword::If),
+        token(Keyword::If),
         expression.map(Box::new),
         block_expression.map(Box::new),
         optional_else,
@@ -36,9 +34,9 @@ pub(super) fn if_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
 
 pub(super) fn block_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     (
-        token_or_insert(Operator::OpenBrace, DiagnosticCode::MissingOpenBrace).map(Box::new),
+        token_or_insert(Operator::OpenBrace, DiagnosticCode::MissingOpenBrace),
         statements_and_expression,
-        token_or_insert(Operator::CloseBrace, DiagnosticCode::MissingCloseBrace).map(Box::new),
+        token_or_insert(Operator::CloseBrace, DiagnosticCode::MissingCloseBrace),
     )
         .map(|(open, (statements, expression), close)| {
             Expression::Block(open, statements, expression, close)
@@ -48,9 +46,9 @@ pub(super) fn block_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> 
 
 pub(super) fn block_expression_no_expr<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     (
-        token_or_insert(Operator::OpenBrace, DiagnosticCode::MissingOpenBrace).map(Box::new),
+        token_or_insert(Operator::OpenBrace, DiagnosticCode::MissingOpenBrace),
         statements_and_expression,
-        token_or_insert(Operator::CloseBrace, DiagnosticCode::MissingCloseBrace).map(Box::new),
+        token_or_insert(Operator::CloseBrace, DiagnosticCode::MissingCloseBrace),
     )
         .map(|(open, (mut statements, expr), close)| {
             if let Some(expr) = expr {
@@ -58,14 +56,10 @@ pub(super) fn block_expression_no_expr<'s>(i: &mut Input<'s>) -> Result<Expressi
                     statements.push(Statement::BlockExpression(expr));
                 } else {
                     let pos = expr.range();
-                    let pos = SourceRange {
-                        start: pos.end,
-                        end: pos.end,
-                    };
                     statements.push(Statement::Expression(
                         expr,
-                        Box::new(Token::unknown(
-                            pos.clone(),
+                        TokenRef::new(Token::unknown(
+                            pos.end..pos.end,
                             Operator::Semicolon,
                             DiagnosticCode::MissingSemicolon,
                         )),
@@ -79,7 +73,7 @@ pub(super) fn block_expression_no_expr<'s>(i: &mut Input<'s>) -> Result<Expressi
 
 pub(super) fn fn_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     seq!(Expression::Function(
-        token_boxed(Keyword::Fn),
+        token(Keyword::Fn),
         parameter_list,
         block_expression.map(Box::new),
     ))
@@ -88,7 +82,7 @@ pub(super) fn fn_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
 
 pub(super) fn loop_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     seq!(Expression::Loop(
-        token_boxed(Keyword::Loop),
+        token(Keyword::Loop),
         block_expression_no_expr.map(Box::new),
     ))
     .parse_next(i)
@@ -96,7 +90,7 @@ pub(super) fn loop_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
 
 pub(super) fn while_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     seq!(Expression::While(
-        token_boxed(Keyword::While),
+        token(Keyword::While),
         expression.map(Box::new),
         block_expression_no_expr.map(Box::new),
         optional_else,
@@ -106,9 +100,9 @@ pub(super) fn while_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> 
 
 pub(super) fn match_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     seq!(Expression::Match(
-        token_boxed(Keyword::Match),
+        token(Keyword::Match),
         expression.map(Box::new),
-        token_or_insert(Operator::OpenBrace, DiagnosticCode::MissingOpenBrace).map(Box::new),
+        token_or_insert(Operator::OpenBrace, DiagnosticCode::MissingOpenBrace),
         repeat(
             0..,
             alt((
@@ -126,16 +120,16 @@ pub(super) fn match_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> 
                 ),
             ))
         ),
-        token_or_insert(Operator::CloseBrace, DiagnosticCode::MissingOpenBrace).map(Box::new),
+        token_or_insert(Operator::CloseBrace, DiagnosticCode::MissingOpenBrace),
     ))
     .parse_next(i)
 }
 
 pub(super) fn for_in_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     seq!(Expression::ForIn(
-        token_boxed(Keyword::For),
+        token(Keyword::For),
         pattern_or_insert(false).map(Box::new),
-        token_boxed(Keyword::In),
+        token(Keyword::In),
         iterable.map(Box::new),
         block_expression_no_expr.map(Box::new),
         optional_else,

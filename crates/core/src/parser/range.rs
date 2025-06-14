@@ -10,7 +10,7 @@ use super::{AstVisitor,  AstWalker, prelude::*};
 #[derive(Debug, Clone, PartialEq)]
 pub struct Range<'s>(
     pub Box<Expression<'s>>,
-    pub Box<Token<'s>>,
+    pub TokenRef<'s>,
     pub Box<Expression<'s>>,
 );
 

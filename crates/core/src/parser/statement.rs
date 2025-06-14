@@ -9,27 +9,27 @@ pub enum Statement<'s> {
     /// `';'`
     ///
     /// An empty statement.
-    Empty(Box<Token<'s>>),
+    Empty(TokenRef<'s>),
     /// `expression ';'`
-    Expression(Box<Expression<'s>>, Box<Token<'s>>),
+    Expression(Box<Expression<'s>>, TokenRef<'s>),
     /// `expression_ends_with_block`
     ///
     /// No trailing semicolon in this case. For expressions that end with a semicolon, use [Statement::Expression].
     BlockExpression(Box<Expression<'s>>),
     /// `'let' pattern '=' expression ';'`
     Bind(
-        Box<Token<'s>>,
+        TokenRef<'s>,
         Box<Pattern<'s>>,
-        Box<Token<'s>>,
+        TokenRef<'s>,
         Box<Expression<'s>>,
-        Box<Token<'s>>,
+        TokenRef<'s>,
     ),
     /// `pattern_rebind '=' expression ';'`
     Rebind(
         Box<Pattern<'s>>,
-        Box<Token<'s>>,
+        TokenRef<'s>,
         Box<Expression<'s>>,
-        Box<Token<'s>>,
+        TokenRef<'s>,
     ),
     /// `expression ('=' | '+=' | '-=' | '*=' | '/=' | '%=' | '^=' | '&&=' | '||=') expression ';'`
     ///
@@ -39,9 +39,9 @@ pub enum Statement<'s> {
     /// - `expression_index` where the indexed is an extern
     Assign(
         Box<Expression<'s>>,
-        Box<Token<'s>>,
+        TokenRef<'s>,
         Box<Expression<'s>>,
-        Box<Token<'s>>,
+        TokenRef<'s>,
     ),
     /// `'fn' identifier (parameters) block_expression`
     ///
@@ -56,30 +56,30 @@ pub enum Statement<'s> {
     ///
     /// The function body is a block expression.
     Function(
-        Box<Token<'s>>,
-        Box<Token<'s>>,
+        TokenRef<'s>,
+        TokenRef<'s>,
         Option<ParameterList<'s>>,
         Box<Expression<'s>>,
     ),
     /// `return expression;` or `return;`
     ///
     /// If the expression is omitted, the return value is `nil`.
-    Return(Box<Token<'s>>, Option<Box<Expression<'s>>>, Box<Token<'s>>),
+    Return(TokenRef<'s>, Option<Box<Expression<'s>>>, TokenRef<'s>),
     /// `break expression;` or `break;`
     ///
     /// The expression is only allowed in a `loop` expression.
-    Break(Box<Token<'s>>, Option<Box<Expression<'s>>>, Box<Token<'s>>),
+    Break(TokenRef<'s>, Option<Box<Expression<'s>>>, TokenRef<'s>),
     /// `continue;`
-    Continue(Box<Token<'s>>, Box<Token<'s>>),
+    Continue(TokenRef<'s>, TokenRef<'s>),
     /// Unknown statement.
     Unknown {
-        tokens: Vec<Token<'s>>,
+        tokens: Vec<TokenRef<'s>>,
         errors: Vec<SourceDiagnostic>,
     },
 }
 
 impl<'s> Statement<'s> {
-    pub(crate) fn unknown<T: Into<Vec<Token<'s>>>>(tokens: T, error: DiagnosticCode) -> Self {
+    pub(crate) fn unknown<T: Into<Vec<TokenRef<'s>>>>(tokens: T, error: DiagnosticCode) -> Self {
         let tokens = tokens.into();
         assert!(!tokens.is_empty());
         let mut range = tokens[0].range.clone();
@@ -90,7 +90,7 @@ impl<'s> Statement<'s> {
         }
     }
 
-    pub(crate) fn unknown_range<T: Into<Vec<Token<'s>>>>(
+    pub(crate) fn unknown_range<T: Into<Vec<TokenRef<'s>>>>(
         tokens: T,
         error_range: SourceRange,
         error: DiagnosticCode,
@@ -101,7 +101,7 @@ impl<'s> Statement<'s> {
         }
     }
 
-    pub(crate) fn unknown_errors<T: Into<Vec<Token<'s>>>, E: Into<Vec<SourceDiagnostic>>>(
+    pub(crate) fn unknown_errors<T: Into<Vec<TokenRef<'s>>>, E: Into<Vec<SourceDiagnostic>>>(
         tokens: T,
         errors: E,
     ) -> Self {
