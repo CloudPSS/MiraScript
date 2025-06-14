@@ -16,19 +16,16 @@ default = []
 wasm = ["dep:wasm-bindgen"]
 track_references = []
 trivia = []
-mimalloc = ["dep:mimalloc"]
 
 [dev-dependencies]
 divan = "0.1.21"
 mira-core = { path = "." }
 
 [dependencies]
-mimalloc = { version = "0.1", optional = true }
-# ariadne = "0.5"
 wasm-bindgen = { version = "0.2", optional = true }
 unicode-ident = "1.0"
 num-bigint = "0.4"
 num-traits = "0.2"
 anstyle = "1.0"
-winnow = { version = "0.7", features = [] }
+winnow = "0.7"
 strum = { version = "0.27", features = ["derive"] }

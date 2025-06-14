@@ -1,33 +1,16 @@
-use std::fs;
-
-use compile::compile_script;
-
-use crate::config::Config;
-
-mod ansi;
-mod compile;
-mod config;
-mod diagnostic;
-mod emitter;
-mod lexer;
-mod parser;
-
-#[cfg(not(feature = "wasm"))]
 #[cfg(feature = "mimalloc")]
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
+use std::fs;
+
+use mira_core::{Config, compile_script};
 
 fn main() {
     let text = fs::read_to_string("../../examples/fib.mira").unwrap();
 
     for _ in 0..1_000_000 {
-        let (code, errors) = compile_script(
-            &text,
-            &Config {
-                #[cfg(feature = "track_references")]
-                track_references: false,
-            },
-        );
+        let (code, errors) = compile_script(&text, &Config {});
     }
 
     // for error in errors {

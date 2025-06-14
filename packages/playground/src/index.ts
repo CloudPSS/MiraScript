@@ -209,12 +209,12 @@ async function run() {
     });
     let content = result.toString();
 
-    // const COUNT = 1000;
-    // const start = performance.now();
-    // for (let i = 0; i < COUNT; i++) {
-    //     await compile(value, { pretty: true, mode });
-    // }
-    // console.log(`Compile benchmark: ${(performance.now() - start) / COUNT}ms`);
+    const COUNT = 1000;
+    const start = performance.now();
+    for (let i = 0; i < COUNT; i++) {
+        await compile(value, { pretty: true, mode });
+    }
+    console.log(`Compile benchmark: ${(performance.now() - start) / COUNT}ms`);
 
     console.time('execute');
     try {
