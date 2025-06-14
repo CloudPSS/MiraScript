@@ -71,9 +71,7 @@ pub(super) fn variable_token<'s>(
     }
 }
 
-pub(super) fn token<'s>(
-    token: impl Into<TokenKind<'s>> + Copy + PartialEq<Token<'s>>,
-) -> impl Parser<'s, Token<'s>> {
+pub(super) fn token<'s>(token: impl PartialEq<Token<'s>> + Copy) -> impl Parser<'s, Token<'s>> {
     move |i: &mut Input<'s>| {
         one_of(|t: &Token<'s>| token == *t)
             .map(|t: &Token<'s>| t.to_owned())
@@ -81,7 +79,7 @@ pub(super) fn token<'s>(
     }
 }
 pub(super) fn token_boxed<'s>(
-    token: impl Into<TokenKind<'s>> + Copy + PartialEq<Token<'s>>,
+    token: impl PartialEq<Token<'s>> + Copy,
 ) -> impl Parser<'s, Box<Token<'s>>> {
     move |i: &mut Input<'s>| {
         one_of(|t: &Token<'s>| token == *t)
@@ -90,17 +88,13 @@ pub(super) fn token_boxed<'s>(
     }
 }
 
-pub(super) fn token_or_insert<'t, 's: 't, T>(
-    token: T,
+pub(super) fn token_or_insert<'s>(
+    token: impl Into<TokenKind<'s>> + PartialEq<Token<'s>> + Copy,
     error: DiagnosticCode,
-) -> impl Parser<'s, Token<'s>>
-where
-    T: Into<TokenKind<'s>> + Copy,
-    Token<'s>: PartialEq<T>,
-{
+) -> impl Parser<'s, Token<'s>> {
     move |i: &mut Input<'s>| -> Result<Token<'s>> {
         let pos = i.previous_token_end();
-        opt(one_of(|t: &Token<'s>| *t == token))
+        opt(one_of(|t: &Token<'s>| token == *t))
             .map(|t: Option<&Token<'s>>| match t {
                 Some(t) => t.to_owned(),
                 None => Token::unknown(
@@ -108,7 +102,7 @@ where
                         start: pos,
                         end: pos,
                     },
-                    token.clone(),
+                    token.into(),
                     error,
                 ),
             })

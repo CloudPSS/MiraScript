@@ -7,13 +7,13 @@ use super::prelude::*;
 #[derive(Debug, Clone, strum::EnumIs)]
 pub enum TokenKind<'s> {
     Eof,
-    Identifier(Cow<'s, str>),
+    Identifier(&'s str),
     Ordinal(i32),
     Number(f64),
     String(Cow<'s, str>),
     InterpolatedString(Vec<Cow<'s, str>>, Vec<Vec<Token<'s>>>),
     Operator(Operator),
-    Keyword(Keyword),
+    Keyword(Keyword, Option<&'s str>),
     Unknown {
         recovered: Option<Box<TokenKind<'s>>>,
         errors: Vec<SourceDiagnostic>,
@@ -51,10 +51,14 @@ impl<'s> TokenKind<'s> {
 
     pub(crate) fn to_field_name(&'s self) -> Option<(DiagnosticCode, Cow<'s, str>)> {
         match self {
-            Self::Keyword(kw) => Some((DiagnosticCode::RecordFieldIdName, kw.to_string().into())),
-            Self::Identifier(name) => {
-                Some((DiagnosticCode::RecordFieldIdName, Cow::Borrowed(name)))
-            }
+            Self::Keyword(_, Some(name)) | Self::Identifier(name) => Some((
+                DiagnosticCode::RecordFieldIdName,
+                std::borrow::Cow::Borrowed(name),
+            )),
+            Self::Keyword(kw, None) => Some((
+                DiagnosticCode::RecordFieldIdName,
+                std::borrow::Cow::Owned(kw.to_string()),
+            )),
             Self::Ordinal(n) => {
                 Some((DiagnosticCode::RecordFieldOrdinalName, n.to_string().into()))
             }
@@ -82,7 +86,7 @@ impl PartialEq for TokenKind<'_> {
                 l0 == r0 && l1 == r1
             }
             (Self::Operator(l0), Self::Operator(r0)) => l0 == r0,
-            (Self::Keyword(l0), Self::Keyword(r0)) => l0 == r0,
+            (Self::Keyword(l0, _), Self::Keyword(r0, _)) => l0 == r0,
             (
                 Self::Unknown {
                     recovered: l_recovered,
@@ -136,7 +140,7 @@ impl Display for TokenKind<'_> {
                 write!(f, "\"")
             }
             Self::Operator(op) => write!(f, "{}", op),
-            Self::Keyword(kw) => write!(f, "{}", kw),
+            Self::Keyword(kw, _) => write!(f, "{}", kw),
             Self::Unknown { recovered, .. } => {
                 if let Some(recovered) = recovered {
                     write!(f, "{recovered}")
@@ -175,7 +179,7 @@ impl DisplayIdent for TokenKind<'_> {
                 write!(f, "\"{RESET}")
             }
             Self::Operator(op) => write!(f, "{}", op),
-            Self::Keyword(kw) => kw.fmt_ident(f, ident),
+            Self::Keyword(kw, _) => kw.fmt_ident(f, ident),
             Self::Unknown { recovered, .. } => {
                 if let Some(recovered) = recovered {
                     write!(f, "{RECOVER}{}{RESET}", recovered)

@@ -129,10 +129,8 @@ type Call<'s> = (
     Box<Token<'s>>,
 );
 
-fn pseudo_function<'t, 's: 't, const extension_call: bool>(
-    i: &mut Input<'s>,
-) -> Result<Call<'s>> {
-    let provided = if extension_call { 1 } else { 0 };
+fn pseudo_function<'t, 's: 't, const EXTENSION_CALL: bool>(i: &mut Input<'s>) -> Result<Call<'s>> {
+    let provided: usize = if EXTENSION_CALL { 1 } else { 0 };
     let (kw_type, open, (args, close)) = (
         token(Keyword::Type),
         token_or_insert(

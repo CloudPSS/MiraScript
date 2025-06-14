@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use std::str::FromStr;
 
 use winnow::{
@@ -35,10 +34,10 @@ pub(super) fn identifier<'s>(keyword: bool) -> impl Parser<'s, TokenKind<'s>> {
             .map(|s| {
                 if keyword {
                     if let Ok(kw) = Keyword::from_str(s) {
-                        return TokenKind::Keyword(kw);
+                        return TokenKind::Keyword(kw, Some(s));
                     }
                 }
-                TokenKind::Identifier(Cow::Borrowed(s))
+                TokenKind::Identifier(s)
             })
             .parse_next(i)
     }

@@ -131,14 +131,14 @@ pub(super) fn token<'s>(
         let Some(prev_token) = prev_token else {
             unreachable!();
         };
-        let TokenKind::Keyword(kw) = prev_token.kind else {
+        let TokenKind::Keyword(kw, Some(kw_str)) = prev_token.kind else {
             unreachable!();
         };
         if cur_token == Operator::Colon || cur_token == Operator::QuestionColon {
-            prev_token.kind = TokenKind::Identifier(kw.to_string().into());
+            prev_token.kind = TokenKind::Identifier(kw_str);
         } else if kw.is_reserved() {
             prev_token.kind = TokenKind::unknown_range(
-                TokenKind::Identifier(kw.to_string().into()),
+                TokenKind::Identifier(kw_str),
                 prev_token.range.clone(),
                 DiagnosticCode::InvalidReservedKeyword,
             );

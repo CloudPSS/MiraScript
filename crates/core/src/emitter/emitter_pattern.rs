@@ -1,7 +1,7 @@
 use std::ops::Deref;
 
 use crate::{
-    diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
+    diagnostic::{DiagnosticCode, SourceDiagnostic},
     emitter::emitter_scope::check_variable_initialized,
     lexer::{Keyword, Operator, TokenKind},
     parser::{
@@ -165,8 +165,8 @@ impl<'s> Emitter<'s> {
                 if let Some(lit_num) = match &lit.kind {
                     TokenKind::Number(n) => Some(*n),
                     TokenKind::Ordinal(o) => Some(*o as f64),
-                    TokenKind::Keyword(Keyword::Nan) => Some(f64::NAN),
-                    TokenKind::Keyword(Keyword::Inf) => Some(f64::INFINITY),
+                    TokenKind::Keyword(Keyword::Nan, _) => Some(f64::NAN),
+                    TokenKind::Keyword(Keyword::Inf, _) => Some(f64::INFINITY),
                     _ => None,
                 } {
                     let inv = prefix
@@ -176,13 +176,13 @@ impl<'s> Emitter<'s> {
                     self.op_number(value, lit_num);
                 } else {
                     match &lit.kind {
-                        TokenKind::Keyword(Keyword::Nil) => {
+                        TokenKind::Keyword(Keyword::Nil, _) => {
                             self.op_nil(value);
                         }
-                        TokenKind::Keyword(Keyword::True) => {
+                        TokenKind::Keyword(Keyword::True, _) => {
                             self.op_bool(value, true);
                         }
-                        TokenKind::Keyword(Keyword::False) => {
+                        TokenKind::Keyword(Keyword::False, _) => {
                             self.op_bool(value, false);
                         }
                         TokenKind::String(s) => {
@@ -351,7 +351,7 @@ impl<'s> Emitter<'s> {
                                 let Pattern::Bind(_, id_token) = pattern.as_ref() else {
                                     continue;
                                 };
-                                let TokenKind::Identifier(id) = &id_token.kind else {
+                                let Some(id) = id_token.to_id_name() else {
                                     continue;
                                 };
                                 self.diagnostics.push(SourceDiagnostic::new(
@@ -363,7 +363,7 @@ impl<'s> Emitter<'s> {
                                     DiagnosticCode::OmitNamedRecordFieldName,
                                 ));
                                 let ret = self.closures.add_reg();
-                                self.op_get(ret, value, id.as_ref());
+                                self.op_get(ret, value, id);
                                 self.emit_pattern(sub_flag, pattern, ret, bind_type);
                             }
                             RecordElementBase::Unnamed(pattern) => {

@@ -133,11 +133,11 @@ impl<'s> Emitter<'s> {
                 TokenKind::String(s) => self.op_string(ret, s.as_ref()),
                 TokenKind::Number(n) => self.op_number(ret, *n),
                 TokenKind::Ordinal(o) => self.op_number(ret, *o as f64),
-                TokenKind::Keyword(Keyword::Nil) => self.op_nil(ret),
-                TokenKind::Keyword(Keyword::True) => self.op_bool(ret, true),
-                TokenKind::Keyword(Keyword::False) => self.op_bool(ret, false),
-                TokenKind::Keyword(Keyword::Nan) => self.op_number(ret, f64::NAN),
-                TokenKind::Keyword(Keyword::Inf) => self.op_number(ret, f64::INFINITY),
+                TokenKind::Keyword(Keyword::Nil, _) => self.op_nil(ret),
+                TokenKind::Keyword(Keyword::True, _) => self.op_bool(ret, true),
+                TokenKind::Keyword(Keyword::False, _) => self.op_bool(ret, false),
+                TokenKind::Keyword(Keyword::Nan, _) => self.op_number(ret, f64::NAN),
+                TokenKind::Keyword(Keyword::Inf, _) => self.op_number(ret, f64::INFINITY),
                 _ => self.unreachable(token, token, file!(), line!()),
             },
             InterpolatedString(token, expressions) => {
@@ -172,7 +172,7 @@ impl<'s> Emitter<'s> {
                 }
             }
             Variable(token) => {
-                let TokenKind::Identifier(id) = &token.kind else {
+                let TokenKind::Identifier(id) = token.kind else {
                     if token.kind == Keyword::Global {
                         self.diagnostics.push(SourceDiagnostic::new(
                             token.range.clone(),
@@ -206,7 +206,7 @@ impl<'s> Emitter<'s> {
                         token.range(),
                         DiagnosticCode::GlobalVariable,
                     ));
-                    self.op_global(ret, id.as_ref());
+                    self.op_global(ret, id);
                     if id == "null"
                         || id == "Null"
                         || id == "NULL"
@@ -478,9 +478,9 @@ impl<'s> Emitter<'s> {
             Access(expression, _, id) => {
                 if !is_global_expression(expression) {
                     self.emit_expression(expression, ret, brk);
-                    match &id.kind {
-                        TokenKind::Identifier(id) => self.op_get(ret, ret, id.as_ref()),
-                        TokenKind::Ordinal(ord) => self.op_get_num(ret, ret, *ord as f64),
+                    match id.kind {
+                        TokenKind::Identifier(id) => self.op_get(ret, ret, id),
+                        TokenKind::Ordinal(ord) => self.op_get_num(ret, ret, ord as f64),
                         _ => unreachable!("Expected identifier token"),
                     };
                 } else {
@@ -488,9 +488,9 @@ impl<'s> Emitter<'s> {
                         id.range(),
                         DiagnosticCode::GlobalVariable,
                     ));
-                    match &id.kind {
-                        TokenKind::Identifier(id) => self.op_global(ret, id.as_ref()),
-                        TokenKind::Ordinal(ord) => self.op_global_num(ret, *ord as f64),
+                    match id.kind {
+                        TokenKind::Identifier(id) => self.op_global(ret, id),
+                        TokenKind::Ordinal(ord) => self.op_global_num(ret, ord as f64),
                         _ => unreachable!("Expected identifier token"),
                     };
                 }
@@ -565,7 +565,7 @@ impl<'s> Emitter<'s> {
                 } else {
                     let Some(op) = (match token.kind {
                         TokenKind::Operator(o) => o.to_infix_op(),
-                        TokenKind::Keyword(Keyword::In) => Some(OpCode::In),
+                        TokenKind::Keyword(Keyword::In, _) => Some(OpCode::In),
                         _ => None,
                     }) else {
                         // Unexpected infix operator
