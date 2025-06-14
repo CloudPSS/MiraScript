@@ -41,14 +41,14 @@ pub fn to_input(text: &str) -> Input<'_> {
     LocatingSlice::new(text)
 }
 
-fn lex_balanced_impl<'s, OP: PartialEq<TokenKind<'s>>, CP: PartialEq<TokenKind<'s>>>(
+fn lex_impl<'s, const BALANCED: bool>(
     input: &mut Input<'s>,
     mut depth: i32,
-    open: OP,
-    close: CP,
+    open: Operator,
+    close: Operator,
 ) -> Result<Vec<Token<'s>>> {
     let mut tokens = vec![];
-    while tokens.is_empty() || depth > 0 {
+    while !BALANCED || tokens.is_empty() || depth > 0 {
         let _trivia = trivia::trivia_list(input)?;
         let prev_token = tokens.last_mut();
         #[allow(unused_mut)]
@@ -57,11 +57,13 @@ fn lex_balanced_impl<'s, OP: PartialEq<TokenKind<'s>>, CP: PartialEq<TokenKind<'
         {
             token.leading_trivia = _trivia;
         }
-        let eof = token.kind == TokenKind::Eof;
-        if open == token.kind {
-            depth += 1;
-        } else if close == token.kind {
-            depth -= 1;
+        let eof = matches!(token.kind, TokenKind::Eof);
+        if BALANCED {
+            if open == token.kind {
+                depth += 1;
+            } else if close == token.kind {
+                depth -= 1;
+            }
         }
         tokens.push(token);
         if eof {
@@ -72,15 +74,15 @@ fn lex_balanced_impl<'s, OP: PartialEq<TokenKind<'s>>, CP: PartialEq<TokenKind<'
 }
 
 pub fn lex<'s>(input: &mut Input<'s>) -> Result<Vec<Token<'s>>> {
-    lex_balanced_impl(input, 1, TokenKind::Eof, TokenKind::Eof)
+    lex_impl::<false>(input, 1, Operator::Unknown, Operator::Unknown)
 }
 
-pub(crate) fn lex_balanced<'s, OP: PartialEq<TokenKind<'s>>, CP: PartialEq<TokenKind<'s>>>(
+pub(crate) fn lex_balanced<'s>(
     input: &mut Input<'s>,
-    open: OP,
-    close: CP,
+    open: Operator,
+    close: Operator,
 ) -> Result<Vec<Token<'s>>> {
-    lex_balanced_impl(input, 0, open, close)
+    lex_impl::<true>(input, 0, open, close)
 }
 
 pub fn lex_string<'s>(input: &mut Input<'s>) -> Result<Vec<Token<'s>>> {
@@ -97,7 +99,7 @@ pub fn lex_string<'s>(input: &mut Input<'s>) -> Result<Vec<Token<'s>>> {
         .parse_next(input)?;
     let eof = tokens::token(input, Some(&mut str))?;
 
-    if eof != TokenKind::Eof {
+    if matches!(eof.kind, TokenKind::Eof) {
         return Err(winnow::error::ErrMode::Backtrack(EmptyError));
     }
 

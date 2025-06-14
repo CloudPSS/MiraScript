@@ -8,6 +8,8 @@ use super::prelude::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, VariantArray, EnumProperty)]
 pub enum Operator {
+    /// Unknown operator
+    Unknown,
     /// `(`
     OpenParen,
     /// `)`
@@ -219,6 +221,7 @@ impl Display for Operator {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         use Operator::*;
         match self {
+            Unknown => Ok(()),
             OpenParen => f.write_str("("),
             CloseParen => f.write_str(")"),
             OpenBracket => f.write_str("["),
