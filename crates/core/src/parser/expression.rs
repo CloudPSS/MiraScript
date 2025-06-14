@@ -2,10 +2,7 @@ use std::fmt::{self, Display, Formatter};
 
 use crate::ansi::{DisplayIdent, GROUP, INTERPOLATED, RECOVER, RESET, STRING};
 
-use super::{
-    ArrayElement, AstVisitor, AstVisitorMut, AstWalker, Iterable, ParameterList, RecordElement,
-    prelude::*,
-};
+use super::{ArrayElement, AstVisitor, AstVisitorMut, AstWalker, RecordElement, prelude::*};
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
 pub enum Callable<'s> {

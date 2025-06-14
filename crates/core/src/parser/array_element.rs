@@ -1,15 +1,15 @@
 use std::fmt::Display;
 
-use crate::{ansi::DisplayIdent, lexer::Token, parser::list_item::ListItem};
+use crate::ansi::DisplayIdent;
 
-use super::{AstVisitor, AstVisitorMut, AstWalker, Expression, Pattern, Range};
+use super::{AstVisitor, AstVisitorMut, AstWalker, list_item::ListItem, prelude::*};
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
 pub enum ArrayElementBase<'s, E> {
     /// Element
     Element(Box<E>),
     /// Range
-    Range(Box<Range<'s>>),
+    Range(Box<super::Range<'s>>),
     /// `..` Spread
     Spread(Box<Token<'s>>, Box<E>),
 }
