@@ -1,4 +1,4 @@
-use std::ops::{Deref, DerefMut};
+use std::ops::DerefMut;
 
 use winnow::{
     combinator::{alt, empty, fail, opt, peek, preceded, separated_foldl1, seq},
@@ -182,8 +182,7 @@ fn discard_bind_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
                 if rebind && kw_mut.is_some() {
                     let kw_mut = kw_mut
                         .unwrap()
-                        .wrap_as_unknown(DiagnosticCode::MutInRebindPattern)
-                        .into();
+                        .wrap_as_unknown(DiagnosticCode::MutInRebindPattern);
                     return Pattern::Bind(Some(kw_mut), id);
                 }
                 Pattern::Bind(kw_mut, id)

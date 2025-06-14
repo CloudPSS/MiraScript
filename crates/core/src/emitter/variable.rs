@@ -1,9 +1,8 @@
 #[cfg(feature = "track_references")]
-use crate::config::track_references;
+use crate::{config::track_references, parser::AstWalker as _};
 use crate::{
     diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
     lexer::Token,
-    parser::AstWalker,
 };
 
 use super::opcode::Register;

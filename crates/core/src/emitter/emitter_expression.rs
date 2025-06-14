@@ -72,7 +72,7 @@ impl<'s> Emitter<'s> {
                 }
             }),
             Call(callable, _, expressions, _) => {
-                if let Callable::Expression(callable) = callable.as_ref() {
+                if let Callable::Expression(callable) = callable {
                     self.declare_expression(callable);
                 }
                 expressions
@@ -81,7 +81,7 @@ impl<'s> Emitter<'s> {
             }
             Extension(expression, _, callable, _, expressions, _) => {
                 self.declare_expression(expression);
-                if let Callable::Expression(callable) = callable.as_ref() {
+                if let Callable::Expression(callable) = callable {
                     self.declare_expression(callable);
                 }
                 expressions
@@ -443,7 +443,7 @@ impl<'s> Emitter<'s> {
                     self.emit_expression(expression, reg, brk);
                     args_reg.push(reg);
                 }
-                match callable.as_ref() {
+                match callable {
                     Callable::Expression(expression) => {
                         let reg = self.closures.add_reg();
                         self.emit_expression(expression, reg, brk);
@@ -463,7 +463,7 @@ impl<'s> Emitter<'s> {
                     self.emit_expression(expression, reg, brk);
                     args_reg.push(reg);
                 }
-                match callable.as_ref() {
+                match callable {
                     Callable::Expression(expression) => {
                         let reg = self.closures.add_reg();
                         args_reg.insert(0, self_reg);

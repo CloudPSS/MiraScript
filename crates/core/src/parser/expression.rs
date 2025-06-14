@@ -9,7 +9,7 @@ pub enum Callable<'s> {
     /// `type`
     Type(TokenRef<'s>),
     /// expression
-    Expression(Expression<'s>),
+    Expression(Box<Expression<'s>>),
 }
 
 impl<'s> AstWalker<'s> for Callable<'s> {
@@ -76,7 +76,7 @@ pub enum Expression<'s> {
     ///
     /// Arguments are a list of expressions, trailing comma is optional.
     Call(
-        Box<Callable<'s>>,
+        Callable<'s>,
         TokenRef<'s>,
         Vec<Expression<'s>>,
         TokenRef<'s>,
@@ -92,7 +92,7 @@ pub enum Expression<'s> {
     Extension(
         Box<Expression<'s>>,
         TokenRef<'s>,
-        Box<Callable<'s>>,
+        Callable<'s>,
         TokenRef<'s>,
         Vec<Expression<'s>>,
         TokenRef<'s>,

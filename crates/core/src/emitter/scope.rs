@@ -1,5 +1,3 @@
-use crate::parser::Expression;
-
 use super::variable::Variable;
 
 pub(crate) struct Scope<'s> {

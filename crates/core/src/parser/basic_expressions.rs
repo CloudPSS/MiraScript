@@ -42,7 +42,7 @@ fn to_interpolate_expr<'s>(token: &'s Token<'s>) -> Expression<'s> {
                     terminated(expression, eof).parse_next(&mut token_input)
                 }
             };
-            let expr = match expr {
+            match expr {
                 Ok(expr) => expr,
                 Err(_) => {
                     let last_token = tokens.last().unwrap();
@@ -56,8 +56,7 @@ fn to_interpolate_expr<'s>(token: &'s Token<'s>) -> Expression<'s> {
                         error,
                     )
                 }
-            };
-            expr
+            }
         })
         .collect();
     Expression::InterpolatedString(token, expressions)
@@ -121,7 +120,7 @@ fn interpolation<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
 
 /// callable '(' ...args ')'
 type Call<'s> = (
-    Box<Callable<'s>>,
+    Callable<'s>,
     TokenRef<'s>,
     Vec<Expression<'s>>,
     TokenRef<'s>,
@@ -150,7 +149,7 @@ fn pseudo_function<'t, 's: 't, const EXTENSION_CALL: bool>(i: &mut Input<'s>) ->
     } else {
         args
     };
-    Ok((Callable::Type(kw_type).into(), open.into(), exp, close))
+    Ok((Callable::Type(kw_type), open, exp, close))
 }
 
 fn primary<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
@@ -235,7 +234,7 @@ fn extension_call<'s>(i: &mut Input<'s>) -> Result<Call<'s>> {
     let access_chain = |i: &mut Input<'s>| {
         (variable_token(false, true), repeat(0.., access_index))
             .map(|(first, rest): (_, Vec<_>)| {
-                let mut acc = Expression::Variable(first.into());
+                let mut acc = Expression::Variable(first);
                 for access_index in rest {
                     match access_index {
                         AccessIndex::Access(dot, token) => {
@@ -252,11 +251,11 @@ fn extension_call<'s>(i: &mut Input<'s>) -> Result<Call<'s>> {
     };
     alt((
         (
-            alt((parenthesised, access_chain)).map(Callable::Expression),
+            alt((parenthesised, access_chain)).map(|e| Callable::Expression(Box::new(e))),
             token(Operator::OpenParen),
             arg_list,
         )
-            .map(|(e, o, (a, c))| (Box::new(e), o, a, c)),
+            .map(|(e, o, (a, c))| (e, o, a, c)),
         pseudo_function::<true>,
     ))
     .parse_next(i)
@@ -267,7 +266,7 @@ fn postfix<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
         Call(TokenRef<'s>, Vec<Expression<'s>>, TokenRef<'s>),
         Extension(
             TokenRef<'s>,
-            Box<Callable<'s>>,
+            Callable<'s>,
             TokenRef<'s>,
             Vec<Expression<'s>>,
             TokenRef<'s>,
@@ -301,7 +300,7 @@ fn postfix<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     // left-associative
     Ok(functions.into_iter().fold(first, |acc, exp| match exp {
         Function::Call(o, args, c) => {
-            Expression::Call(Box::new(Callable::Expression(acc)), o, args, c)
+            Expression::Call(Callable::Expression(Box::new(acc)), o, args, c)
         }
         Function::Extension(e, ex, o, arg, c) => {
             Expression::Extension(Box::new(acc), e, ex, o, arg, c)

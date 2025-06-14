@@ -28,7 +28,7 @@ fn parse_part(bytes: &[u8], radix: u32, is_valid_char: impl Fn(u8) -> bool) -> P
         };
     }
     let has_invalid_char = bytes.iter().any(|&b| b != b'_' && !is_valid_char(b));
-    let has_underscore = bytes.iter().any(|&b| b == b'_');
+    let has_underscore = bytes.contains(&b'_');
     let has_leading_underscore = bytes.first() == Some(&b'_');
     let has_leading_zero = bytes.first() == Some(&b'0');
     let has_trailing_underscore = bytes.last() == Some(&b'_');
@@ -157,7 +157,7 @@ pub(super) fn number<'s>(i: &mut Input<'s>) -> Result<TokenKind<'s>> {
             let bytes = part.as_bytes();
 
             let has_invalid_char = bytes.iter().any(|&b| b != b'_' && !is_valid_float_char(b));
-            let has_underscore = bytes.iter().any(|&b| b == b'_');
+            let has_underscore = bytes.contains(&b'_');
             let has_leading_underscore = bytes.first() == Some(&b'_');
             let has_trailing_underscore = bytes.last() == Some(&b'_');
             let num = if has_invalid_char || has_underscore {

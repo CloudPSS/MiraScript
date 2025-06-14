@@ -9,10 +9,10 @@ name = "mira"
 path = "src/main.rs"
 
 [features]
-default = []
+default = ["mimalloc"]
 mimalloc = ["dep:mimalloc"]
 
 [dependencies]
 mira-core = { path = "../core", features = [] }
 mimalloc = { version = "0.1", optional = true }
-ariadne = { version = "0.5", features = ["auto-color"] }
+# ariadne = { version = "0.5", features = ["auto-color"] }
