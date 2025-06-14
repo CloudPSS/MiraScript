@@ -12,6 +12,8 @@ mod emitter;
 mod lexer;
 mod parser;
 
+#[cfg(not(feature = "wasm"))]
+#[cfg(feature = "mimalloc")]
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
