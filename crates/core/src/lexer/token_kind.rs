@@ -11,7 +11,9 @@ pub enum TokenKind<'s> {
     Ordinal(i32),
     Number(f64),
     String(Cow<'s, str>),
-    InterpolatedString(Vec<Cow<'s, str>>, Vec<Vec<Token<'s>>>),
+    /// Interpolated string, stored as a tuple of the string parts and the tokens that are interpolated.
+    /// The last tuple element is the string part after the last interpolation, with the tokens being empty.
+    InterpolatedString(Vec<(Cow<'s, str>, Vec<Token<'s>>)>),
     Operator(Operator),
     Keyword(Keyword, Option<&'s str>),
     Unknown {
@@ -19,6 +21,9 @@ pub enum TokenKind<'s> {
         errors: Vec<SourceDiagnostic>,
     },
 }
+
+/// Static assertion to ensure that the size of `TokenKind` is correct.
+const _: [u8; 4 * std::mem::size_of::<usize>() - std::mem::size_of::<TokenKind<'static>>()] = [];
 
 impl<'s> TokenKind<'s> {
     pub(crate) fn unknown(error_range: SourceRange, error: DiagnosticCode) -> Self {
@@ -69,7 +74,7 @@ impl<'s> TokenKind<'s> {
 
     pub(crate) fn to_id_name(&'s self) -> Option<&'s str> {
         match self {
-            Self::Identifier(name) => Some(name.as_ref()),
+            Self::Identifier(name) => Some(name),
             _ => None,
         }
     }
@@ -82,9 +87,7 @@ impl PartialEq for TokenKind<'_> {
             (Self::Ordinal(l0), Self::Ordinal(r0)) => l0 == r0,
             (Self::Number(l0), Self::Number(r0)) => (*l0).to_bits() == (*r0).to_bits(),
             (Self::String(l0), Self::String(r0)) => l0 == r0,
-            (Self::InterpolatedString(l0, l1), Self::InterpolatedString(r0, r1)) => {
-                l0 == r0 && l1 == r1
-            }
+            (Self::InterpolatedString(l0), Self::InterpolatedString(r0)) => l0 == r0,
             (Self::Operator(l0), Self::Operator(r0)) => l0 == r0,
             (Self::Keyword(l0, _), Self::Keyword(r0, _)) => l0 == r0,
             (
@@ -124,18 +127,16 @@ impl Display for TokenKind<'_> {
             Self::String(s) => {
                 write!(f, "\"{}\"", s.escape_debug())
             }
-            Self::InterpolatedString(s, e) => {
+            Self::InterpolatedString(v) => {
                 write!(f, "\"")?;
-                assert_eq!(s.len(), e.len() + 1, "Invalid string interpolation");
-                let mut s_iter = s.iter();
-                let first = s_iter.next().ok_or(std::fmt::Error)?;
-                write!(f, "{}", first.escape_debug())?;
-                for (s, e) in s_iter.zip(e.iter()) {
-                    write!(f, "$")?;
-                    for token in e {
-                        write!(f, "{token}")?;
-                    }
+                for (s, e) in v {
                     write!(f, "{}", s.escape_debug())?;
+                    if !e.is_empty() {
+                        write!(f, "$")?;
+                        for token in e {
+                            write!(f, "{token}")?;
+                        }
+                    }
                 }
                 write!(f, "\"")
             }
@@ -162,19 +163,17 @@ impl DisplayIdent for TokenKind<'_> {
             Self::String(s) => {
                 write!(f, "{STRING}\"{}\"{RESET}", s.escape_debug())
             }
-            Self::InterpolatedString(s, e) => {
+            Self::InterpolatedString(v) => {
                 write!(f, "{STRING}\"")?;
-                assert_eq!(s.len(), e.len() + 1, "Invalid string interpolation");
-                let mut s_iter = s.iter();
-                let first = s_iter.next().ok_or(std::fmt::Error)?;
-                write!(f, "{}", first.escape_debug())?;
-                for (s, e) in s_iter.zip(e.iter()) {
-                    write!(f, "{RESET}{INTERPOLATED}${RESET}")?;
-                    for token in e {
-                        write!(f, "{token}")?;
-                    }
-                    write!(f, "{STRING}")?;
+                for (s, e) in v {
                     write!(f, "{}", s.escape_debug())?;
+                    if !e.is_empty() {
+                        write!(f, "{RESET}{INTERPOLATED}${RESET}")?;
+                        for token in e {
+                            write!(f, "{token}")?;
+                        }
+                        write!(f, "{STRING}")?;
+                    }
                 }
                 write!(f, "\"{RESET}")
             }

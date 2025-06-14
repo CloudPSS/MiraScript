@@ -11,7 +11,7 @@ use crate::parser::{self, AstWalker, walker_mut};
 type CompileResult<'s> = (Option<Box<[u8]>>, Vec<SourceDiagnostic>);
 
 fn recover_token<'s>(
-    t: Token<'s>,
+    mut t: Token<'s>,
     diagnostics_collector: &mut Vec<SourceDiagnostic>,
 ) -> Option<Token<'s>> {
     match t.kind {
@@ -20,43 +20,25 @@ fn recover_token<'s>(
             errors,
         } => {
             diagnostics_collector.extend(errors);
-            let recovered = lexer::Token {
-                kind: *token,
-                range: t.range,
-                #[cfg(feature = "trivia")]
-                leading_trivia: t.leading_trivia,
-                #[cfg(feature = "trivia")]
-                trailing_trivia: t.trailing_trivia,
-            };
-            recover_token(recovered, diagnostics_collector)
+            t.kind = *token;
+            recover_token(t, diagnostics_collector)
         }
         lexer::TokenKind::Unknown { errors, .. } => {
             diagnostics_collector.extend(errors);
             None
         }
-        lexer::TokenKind::InterpolatedString(strs, interpolations) => {
+        lexer::TokenKind::InterpolatedString(ref mut v) => {
             diagnostics_collector.push(SourceDiagnostic::new(
                 t.range.clone(),
                 DiagnosticCode::Interpolation,
             ));
-            Some(Token {
-                kind: TokenKind::InterpolatedString(
-                    strs,
-                    interpolations
-                        .into_iter()
-                        .map(|ts| {
-                            ts.into_iter()
-                                .filter_map(|t| recover_token(t, diagnostics_collector))
-                                .collect()
-                        })
-                        .collect(),
-                ),
-                range: t.range,
-                #[cfg(feature = "trivia")]
-                leading_trivia: t.leading_trivia,
-                #[cfg(feature = "trivia")]
-                trailing_trivia: t.trailing_trivia,
-            })
+            for (_, tokens) in v.iter_mut() {
+                *tokens = tokens
+                    .iter_mut()
+                    .filter_map(|t| recover_token(t.clone(), diagnostics_collector))
+                    .collect::<Vec<_>>();
+            }
+            Some(t)
         }
         lexer::TokenKind::String(_) => {
             diagnostics_collector.push(SourceDiagnostic::new(

@@ -621,7 +621,7 @@ impl DisplayIdent for Expression<'_> {
             Literal(token) => token.fmt_ident(f, ident)?,
             InterpolatedString(token, e) => {
                 let Token {
-                    kind: TokenKind::InterpolatedString(s, _),
+                    kind: TokenKind::InterpolatedString(s),
                     ..
                 } = &**token
                 else {
@@ -631,12 +631,12 @@ impl DisplayIdent for Expression<'_> {
                 assert_eq!(s.len(), e.len() + 1, "Invalid string interpolation");
                 let mut s_iter = s.iter();
                 let first = s_iter.next().ok_or(std::fmt::Error)?;
-                write!(f, "{}", first.escape_debug())?;
+                write!(f, "{}", first.0.escape_debug())?;
                 for (s, e) in s_iter.zip(e.iter()) {
                     write!(f, "{RESET}{INTERPOLATED}${RESET}")?;
                     e.fmt_ident(f, ident)?;
                     write!(f, "{STRING}")?;
-                    write!(f, "{}", s.escape_debug())?;
+                    write!(f, "{}", s.0.escape_debug())?;
                 }
                 write!(f, "\"{RESET}")?;
             }

@@ -141,7 +141,7 @@ impl<'s> Emitter<'s> {
                 _ => self.unreachable(token, token, file!(), line!()),
             },
             InterpolatedString(token, expressions) => {
-                let TokenKind::InterpolatedString(strs, _) = &token.kind else {
+                let TokenKind::InterpolatedString(strs) = &token.kind else {
                     self.unreachable(*token, expressions, file!(), line!());
                     return;
                 };
@@ -149,7 +149,7 @@ impl<'s> Emitter<'s> {
                 let mut s_iter = strs.iter();
                 let mut e_iter = expressions.iter();
                 loop {
-                    let Some(str) = s_iter.next() else {
+                    let Some((str, _)) = s_iter.next() else {
                         break;
                     };
                     if !str.is_empty() {

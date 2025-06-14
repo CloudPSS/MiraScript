@@ -1,4 +1,4 @@
-use std::{borrow::Cow, vec};
+use std::{borrow::Cow, iter::zip, vec};
 
 use winnow::{
     combinator::{alt, dispatch, eof, fail, opt, peek},
@@ -105,7 +105,8 @@ pub(super) fn string_content<'s>(
             if !literal_pushed {
                 literals.push(Cow::Borrowed(""));
             }
-            TokenKind::InterpolatedString(literals, interpolations)
+            interpolations.push(vec![]);
+            TokenKind::InterpolatedString(zip(literals, interpolations).collect())
         } else {
             let result = content.into_iter().fold(String::new(), |mut str, frag| {
                 match frag {

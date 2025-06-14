@@ -18,12 +18,12 @@ use super::scripts::script;
 use super::{prelude::*, record_element::RecordElementBase, to_input};
 
 fn to_interpolate_expr<'s>(token: &'s Token<'s>) -> Expression<'s> {
-    let TokenKind::InterpolatedString(_, e) = &token.kind else {
+    let TokenKind::InterpolatedString(v) = &token.kind else {
         unreachable!("Expected InterpolatedString");
     };
-    let expressions: Vec<Expression<'s>> = e
+    let expressions: Vec<Expression<'s>> = v[0..v.len() - 1]
         .iter()
-        .map(|tokens| {
+        .map(|(_, tokens)| {
             let expr: Result<Expression<'s>> = {
                 let len = tokens.len();
                 if tokens.len() >= 2
@@ -116,7 +116,7 @@ fn array<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
 }
 
 fn interpolation<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
-    let token = one_of(|t: &Token<'s>| matches!(&t.kind, &TokenKind::InterpolatedString(_, _)))
+    let token = one_of(|t: &Token<'s>| matches!(&t.kind, &TokenKind::InterpolatedString(_)))
         .parse_next(i)?;
     Ok(to_interpolate_expr(token))
 }
