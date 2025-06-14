@@ -22,6 +22,7 @@ divan = "0.1.21"
 mira-core = { path = "." }
 
 [dependencies]
+mimalloc = "0.1"
 # ariadne = "0.5"
 wasm-bindgen = { version = "0.2", optional = true }
 unicode-ident = "1.0"

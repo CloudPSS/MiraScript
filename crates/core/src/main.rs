@@ -12,6 +12,9 @@ mod emitter;
 mod lexer;
 mod parser;
 
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 fn main() {
     let text = fs::read_to_string("../../examples/fib.mira").unwrap();
 
