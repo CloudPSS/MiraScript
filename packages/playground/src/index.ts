@@ -196,32 +196,44 @@ function print(value: VmAny | Error): string {
 const elDisassembly = document.querySelector<HTMLDivElement>('#disassembly')!;
 elDisassembly.addEventListener('contextmenu', (e) => {
     e.preventDefault();
-    console.time('transpile');
-    void compile(editor.getValue(), { pretty: true, mode })
-        .finally(() => {
-            console.timeEnd('transpile');
-        })
-        .then((result) => {
-            let content = result.toString();
-            console.time('execute');
-            try {
-                const ret = result(
-                    createVmGlobal(
-                        {
-                            e: new VmExtern([1, 2, [1, 2], { x: 0 }]),
-                            o: {},
-                            x: [1, 2, 3],
-                        },
-                        {
-                            globalThis,
-                        },
-                    ),
-                );
-                content += `\nResult:\n  ${print(ret)}`;
-            } catch (ex) {
-                content += `\n${String(ex)}`;
-            }
-            console.timeEnd('execute');
-            elDisassembly.textContent = content;
-        });
+    void run();
 });
+
+/** 编译运行 */
+async function run() {
+    const value = editor.getValue();
+
+    console.time('transpile');
+    const result = await compile(value, { pretty: true, mode }).finally(() => {
+        console.timeEnd('transpile');
+    });
+    let content = result.toString();
+
+    // const COUNT = 1000;
+    // const start = performance.now();
+    // for (let i = 0; i < COUNT; i++) {
+    //     await compile(value, { pretty: true, mode });
+    // }
+    // console.log(`Compile benchmark: ${(performance.now() - start) / COUNT}ms`);
+
+    console.time('execute');
+    try {
+        const ret = result(
+            createVmGlobal(
+                {
+                    e: new VmExtern([1, 2, [1, 2], { x: 0 }]),
+                    o: {},
+                    x: [1, 2, 3],
+                },
+                {
+                    globalThis,
+                },
+            ),
+        );
+        content += `\nResult:\n  ${print(ret)}`;
+    } catch (ex) {
+        content += `\n${String(ex)}`;
+    }
+    console.timeEnd('execute');
+    elDisassembly.textContent = content;
+}
