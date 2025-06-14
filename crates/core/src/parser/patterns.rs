@@ -157,23 +157,30 @@ fn discard_bind_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
     move |i: &mut Input<'s>| {
         (opt(token_boxed(Keyword::Mut)), variable_token(true, false))
             .map(|(kw_mut, id)| {
+                if id.is_unknown() {
+                    let tokens = if let Some(kw_mut) = kw_mut {
+                        vec![*kw_mut, id]
+                    } else {
+                        vec![id]
+                    };
+                    return Pattern::unknown_errors(tokens, vec![]);
+                }
+                if id.kind == Keyword::Underscore {
+                    if let Some(kw_mut) = kw_mut {
+                        return Pattern::unknown(
+                            vec![*kw_mut, id],
+                            DiagnosticCode::MutInDiscardPattern,
+                        );
+                    }
+                    return Pattern::Discard(Box::new(id));
+                }
                 if rebind && kw_mut.is_some() {
                     let kw_mut = kw_mut
                         .unwrap()
                         .wrap_as_unknown(DiagnosticCode::MutInRebindPattern);
                     return Pattern::Bind(Some(Box::new(kw_mut)), Box::new(id));
                 }
-                if id.kind == Keyword::Underscore {
-                    if kw_mut.is_some() {
-                        return Pattern::unknown(
-                            vec![*kw_mut.unwrap(), id],
-                            DiagnosticCode::MutInDiscardPattern,
-                        );
-                    }
-                    Pattern::Discard(Box::new(id))
-                } else {
-                    Pattern::Bind(kw_mut, Box::new(id))
-                }
+                Pattern::Bind(kw_mut, Box::new(id))
             })
             .parse_next(i)
     }

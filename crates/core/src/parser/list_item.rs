@@ -5,16 +5,16 @@ use std::{
 
 use crate::ansi::DisplayIdent;
 
-use super::{AstVisitor, AstVisitorMut, AstWalker, prelude::*};
+use super::{AstVisitor,  AstWalker, prelude::*};
 
 /// item ','?
 #[derive(Debug, Clone, PartialEq)]
 pub struct ListItem<'s, T>(pub Box<T>, pub Option<Box<Token<'s>>>);
 
 impl<'s, T: AstWalker<'s>> AstWalker<'s> for ListItem<'s, T> {
-    fn walk_mut(&mut self, visitor: &mut dyn AstVisitorMut<'s>) {
-        self.0.walk_mut(visitor);
-        self.1.walk_mut(visitor);
+    fn collect_diagnostics(&mut self, collector: &mut Vec<SourceDiagnostic>) {
+        self.0.collect_diagnostics(collector);
+        self.1.collect_diagnostics(collector);
     }
     fn walk(&self, visitor: &mut dyn AstVisitor<'s>) {
         self.0.walk(visitor);

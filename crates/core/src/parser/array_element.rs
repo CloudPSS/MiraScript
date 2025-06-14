@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use crate::ansi::DisplayIdent;
 
-use super::{AstVisitor, AstVisitorMut, AstWalker, list_item::ListItem, prelude::*};
+use super::{AstVisitor, AstWalker, list_item::ListItem, prelude::*};
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
 pub enum ArrayElementBase<'s, E> {
@@ -21,17 +21,17 @@ pub type ArrayElement<'s> = ListItem<'s, ArrayElementBase<'s, Expression<'s>>>;
 pub type ArrayPattern<'s> = ListItem<'s, ArrayElementBase<'s, Pattern<'s>>>;
 
 impl<'s, E: AstWalker<'s>> AstWalker<'s> for ArrayElementBase<'s, E> {
-    fn walk_mut(&mut self, visitor: &mut dyn AstVisitorMut<'s>) {
+    fn collect_diagnostics(&mut self, collector: &mut Vec<SourceDiagnostic>) {
         match self {
             Element(value) => {
-                value.walk_mut(visitor);
+                value.collect_diagnostics(collector);
             }
             ArrayElementBase::Range(range) => {
-                range.walk_mut(visitor);
+                range.collect_diagnostics(collector);
             }
             Spread(sp, value) => {
-                sp.walk_mut(visitor);
-                value.walk_mut(visitor);
+                sp.collect_diagnostics(collector);
+                value.collect_diagnostics(collector);
             }
         }
     }

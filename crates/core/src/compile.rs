@@ -1,12 +1,10 @@
-use std::cell::RefCell;
-
 use winnow::stream::{Location, Stream};
 
 use crate::config::{Config, set_config};
 use crate::diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange};
 use crate::emitter::emit;
-use crate::lexer::{self, Token, TokenKind};
-use crate::parser::{self, AstWalker, walker_mut};
+use crate::lexer::{self, Token};
+use crate::parser::{self, AstWalker};
 
 type CompileResult<'s> = (Option<Box<[u8]>>, Vec<SourceDiagnostic>);
 
@@ -63,8 +61,7 @@ fn compile<'s>(
     let tokens = {
         let mut input = lexer::to_input(input);
         let result = lexer(&mut input);
-        if let Err(err) = result {
-            eprintln!("Lexer error: {:?} {:?}", err, input);
+        if result.is_err() {
             let remaining = input.peek_finish();
             let range = if remaining.is_empty() {
                 SourceRange {
@@ -92,8 +89,7 @@ fn compile<'s>(
     let mut script = {
         let mut tokens = parser::to_input(&recovered_tokens);
         let result = parser::parse(&mut tokens);
-        if let Err(err) = result {
-            eprintln!("Parser error: {:?} {:?}", err, tokens);
+        if result.is_err() {
             let remaining = tokens.peek_finish();
             let range = if remaining.is_empty() {
                 SourceRange {
@@ -113,64 +109,7 @@ fn compile<'s>(
     };
 
     // collect and recover from parsing errors
-    {
-        let diagnostics_collector = RefCell::new(&mut diagnostics_collector);
-        let mut w = walker_mut(
-            |token| {
-                let Token {
-                    kind: TokenKind::Unknown { recovered, errors },
-                    range,
-                    #[cfg(feature = "trivia")]
-                    leading_trivia,
-                    #[cfg(feature = "trivia")]
-                    trailing_trivia,
-                } = token
-                else {
-                    return;
-                };
-                diagnostics_collector.borrow_mut().extend(errors.drain(..));
-                if let Some(recovered) = std::mem::take(recovered) {
-                    *token = Token {
-                        kind: *recovered,
-                        range: range.clone(),
-                        #[cfg(feature = "trivia")]
-                        leading_trivia: std::mem::take(leading_trivia),
-                        #[cfg(feature = "trivia")]
-                        trailing_trivia: std::mem::take(trailing_trivia),
-                    };
-                }
-            },
-            |expression| {
-                if let parser::Expression::Unknown {
-                    errors, recovered, ..
-                } = expression
-                {
-                    diagnostics_collector.borrow_mut().extend(errors.drain(..));
-                    if let Some(recovered) = std::mem::take(recovered) {
-                        *expression = *recovered;
-                    }
-                }
-            },
-            |pattern| {
-                if let parser::Pattern::Unknown {
-                    errors, recovered, ..
-                } = pattern
-                {
-                    diagnostics_collector.borrow_mut().extend(errors.drain(..));
-                    if let Some(recovered) = std::mem::take(recovered) {
-                        *pattern = *recovered;
-                    }
-                }
-            },
-            |statement| {
-                if let parser::Statement::Unknown { errors, .. } = statement {
-                    diagnostics_collector.borrow_mut().extend(errors.drain(..));
-                }
-            },
-        );
-        // Try to recover from parsing errors
-        script.walk_mut(&mut w);
-    }
+    script.collect_diagnostics(&mut diagnostics_collector);
 
     // Emitting
     let (diagnostics, bytecode) = emit(input, &script);

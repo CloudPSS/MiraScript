@@ -2,7 +2,7 @@ use std::fmt::{self, Display, Formatter};
 
 use crate::ansi::{DisplayIdent, GROUP, INTERPOLATED, RECOVER, RESET, STRING};
 
-use super::{ArrayElement, AstVisitor, AstVisitorMut, AstWalker, RecordElement, prelude::*};
+use super::{ArrayElement, AstVisitor, AstWalker, RecordElement, prelude::*};
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
 pub enum Callable<'s> {
@@ -13,11 +13,11 @@ pub enum Callable<'s> {
 }
 
 impl<'s> AstWalker<'s> for Callable<'s> {
-    fn walk_mut(&mut self, visitor: &mut dyn AstVisitorMut<'s>) {
+    fn collect_diagnostics(&mut self, collector: &mut Vec<SourceDiagnostic>) {
         use Callable::*;
         match self {
-            Type(token) => token.walk_mut(visitor),
-            Expression(exp) => exp.walk_mut(visitor),
+            Type(token) => token.collect_diagnostics(collector),
+            Expression(exp) => exp.collect_diagnostics(collector),
         }
     }
     fn walk(&self, visitor: &mut dyn AstVisitor<'s>) {
@@ -289,151 +289,154 @@ impl<'s> Expression<'s> {
 }
 
 impl<'s> AstWalker<'s> for Expression<'s> {
-    fn walk_mut(&mut self, visitor: &mut dyn AstVisitorMut<'s>) {
+    fn collect_diagnostics(&mut self, collector: &mut Vec<SourceDiagnostic>) {
         use Expression::*;
-        visitor.visit_expression(self);
         match self {
-            Literal(token) => token.walk_mut(visitor),
+            Literal(token) => token.collect_diagnostics(collector),
             InterpolatedString(_, exps) => {
                 // skip token ref
-                exps.walk_mut(visitor);
+                exps.collect_diagnostics(collector);
             }
-            Variable(token) => token.walk_mut(visitor),
+            Variable(token) => token.collect_diagnostics(collector),
             Grouping(op, exp, cp) => {
-                op.walk_mut(visitor);
-                exp.walk_mut(visitor);
-                cp.walk_mut(visitor);
+                op.collect_diagnostics(collector);
+                exp.collect_diagnostics(collector);
+                cp.collect_diagnostics(collector);
             }
             Record(op, exps, cp) => {
-                op.walk_mut(visitor);
-                exps.walk_mut(visitor);
-                cp.walk_mut(visitor);
+                op.collect_diagnostics(collector);
+                exps.collect_diagnostics(collector);
+                cp.collect_diagnostics(collector);
             }
             Array(op, exps, cp) => {
-                op.walk_mut(visitor);
-                exps.walk_mut(visitor);
-                cp.walk_mut(visitor);
+                op.collect_diagnostics(collector);
+                exps.collect_diagnostics(collector);
+                cp.collect_diagnostics(collector);
             }
             Call(exp, op, args, cp) => {
-                exp.walk_mut(visitor);
-                op.walk_mut(visitor);
-                args.walk_mut(visitor);
-                cp.walk_mut(visitor);
+                exp.collect_diagnostics(collector);
+                op.collect_diagnostics(collector);
+                args.collect_diagnostics(collector);
+                cp.collect_diagnostics(collector);
             }
             Extension(exp, e, ext, op, args, cp) => {
-                exp.walk_mut(visitor);
-                e.walk_mut(visitor);
-                ext.walk_mut(visitor);
-                op.walk_mut(visitor);
-                args.walk_mut(visitor);
-                cp.walk_mut(visitor);
+                exp.collect_diagnostics(collector);
+                e.collect_diagnostics(collector);
+                ext.collect_diagnostics(collector);
+                op.collect_diagnostics(collector);
+                args.collect_diagnostics(collector);
+                cp.collect_diagnostics(collector);
             }
             Access(exp, dot, token) => {
-                exp.walk_mut(visitor);
-                dot.walk_mut(visitor);
-                token.walk_mut(visitor);
+                exp.collect_diagnostics(collector);
+                dot.collect_diagnostics(collector);
+                token.collect_diagnostics(collector);
             }
             Index(exp, l, index, r) => {
-                exp.walk_mut(visitor);
-                l.walk_mut(visitor);
-                index.walk_mut(visitor);
-                r.walk_mut(visitor);
+                exp.collect_diagnostics(collector);
+                l.collect_diagnostics(collector);
+                index.collect_diagnostics(collector);
+                r.collect_diagnostics(collector);
             }
             NonNil(exp, op) => {
-                exp.walk_mut(visitor);
-                op.walk_mut(visitor);
+                exp.collect_diagnostics(collector);
+                op.collect_diagnostics(collector);
             }
             Prefix(op, exp) => {
-                op.walk_mut(visitor);
-                exp.walk_mut(visitor);
+                op.collect_diagnostics(collector);
+                exp.collect_diagnostics(collector);
             }
             Infix(exp1, op, exp2) => {
-                exp1.walk_mut(visitor);
-                op.walk_mut(visitor);
-                exp2.walk_mut(visitor);
+                exp1.collect_diagnostics(collector);
+                op.collect_diagnostics(collector);
+                exp2.collect_diagnostics(collector);
             }
             Is(exp1, op, pattern) => {
-                exp1.walk_mut(visitor);
-                op.walk_mut(visitor);
-                pattern.walk_mut(visitor);
+                exp1.collect_diagnostics(collector);
+                op.collect_diagnostics(collector);
+                pattern.collect_diagnostics(collector);
             }
             Block(op, statements, expression, cp) => {
-                op.walk_mut(visitor);
-                statements.walk_mut(visitor);
-                expression.walk_mut(visitor);
-                cp.walk_mut(visitor);
+                op.collect_diagnostics(collector);
+                statements.collect_diagnostics(collector);
+                expression.collect_diagnostics(collector);
+                cp.collect_diagnostics(collector);
             }
             Loop(kw, expression) => {
-                kw.walk_mut(visitor);
-                expression.walk_mut(visitor);
+                kw.collect_diagnostics(collector);
+                expression.collect_diagnostics(collector);
             }
             While(kw, expression, block, None) => {
-                kw.walk_mut(visitor);
-                expression.walk_mut(visitor);
-                block.walk_mut(visitor);
+                kw.collect_diagnostics(collector);
+                expression.collect_diagnostics(collector);
+                block.collect_diagnostics(collector);
             }
             While(kw, expression, block, Some((kw_else, else_block))) => {
-                kw.walk_mut(visitor);
-                expression.walk_mut(visitor);
-                block.walk_mut(visitor);
-                kw_else.walk_mut(visitor);
-                else_block.walk_mut(visitor);
+                kw.collect_diagnostics(collector);
+                expression.collect_diagnostics(collector);
+                block.collect_diagnostics(collector);
+                kw_else.collect_diagnostics(collector);
+                else_block.collect_diagnostics(collector);
             }
             ForIn(kw_for, pattern, kw_in, iter, block, None) => {
-                kw_for.walk_mut(visitor);
-                pattern.walk_mut(visitor);
-                kw_in.walk_mut(visitor);
-                iter.walk_mut(visitor);
-                block.walk_mut(visitor);
+                kw_for.collect_diagnostics(collector);
+                pattern.collect_diagnostics(collector);
+                kw_in.collect_diagnostics(collector);
+                iter.collect_diagnostics(collector);
+                block.collect_diagnostics(collector);
             }
             ForIn(kw_for, pattern, kw_in, iter, block, Some((kw_else, else_block))) => {
-                kw_for.walk_mut(visitor);
-                pattern.walk_mut(visitor);
-                kw_in.walk_mut(visitor);
-                iter.walk_mut(visitor);
-                block.walk_mut(visitor);
-                kw_else.walk_mut(visitor);
-                else_block.walk_mut(visitor);
+                kw_for.collect_diagnostics(collector);
+                pattern.collect_diagnostics(collector);
+                kw_in.collect_diagnostics(collector);
+                iter.collect_diagnostics(collector);
+                block.collect_diagnostics(collector);
+                kw_else.collect_diagnostics(collector);
+                else_block.collect_diagnostics(collector);
             }
             If(kw_if, cond, then_block, Some((kw_else, else_block))) => {
-                kw_if.walk_mut(visitor);
-                cond.walk_mut(visitor);
-                then_block.walk_mut(visitor);
-                kw_else.walk_mut(visitor);
-                else_block.walk_mut(visitor);
+                kw_if.collect_diagnostics(collector);
+                cond.collect_diagnostics(collector);
+                then_block.collect_diagnostics(collector);
+                kw_else.collect_diagnostics(collector);
+                else_block.collect_diagnostics(collector);
             }
             If(kw_if, cond, then_block, None) => {
-                kw_if.walk_mut(visitor);
-                cond.walk_mut(visitor);
-                then_block.walk_mut(visitor);
+                kw_if.collect_diagnostics(collector);
+                cond.collect_diagnostics(collector);
+                then_block.collect_diagnostics(collector);
             }
             Match(kw, expression, op, arms, cp) => {
-                kw.walk_mut(visitor);
-                expression.walk_mut(visitor);
-                op.walk_mut(visitor);
+                kw.collect_diagnostics(collector);
+                expression.collect_diagnostics(collector);
+                op.collect_diagnostics(collector);
                 for (kw_case, pattern, block) in arms {
-                    kw_case.walk_mut(visitor);
-                    pattern.walk_mut(visitor);
-                    block.walk_mut(visitor);
+                    kw_case.collect_diagnostics(collector);
+                    pattern.collect_diagnostics(collector);
+                    block.collect_diagnostics(collector);
                 }
-                cp.walk_mut(visitor);
+                cp.collect_diagnostics(collector);
             }
             Function(kw, None, block) => {
-                kw.walk_mut(visitor);
-                block.walk_mut(visitor);
+                kw.collect_diagnostics(collector);
+                block.collect_diagnostics(collector);
             }
             Function(kw, Some(params), block) => {
-                kw.walk_mut(visitor);
-                params.walk_mut(visitor);
-                block.walk_mut(visitor);
+                kw.collect_diagnostics(collector);
+                params.collect_diagnostics(collector);
+                block.collect_diagnostics(collector);
             }
             Unknown {
                 recovered,
                 tokens,
-                errors: _,
+                errors,
             } => {
-                recovered.walk_mut(visitor);
-                tokens.walk_mut(visitor);
+                collector.append(errors);
+                tokens.collect_diagnostics(collector);
+                if let Some(mut recovered) = std::mem::take(recovered) {
+                    recovered.collect_diagnostics(collector);
+                    *self = *recovered;
+                }
             }
         }
     }

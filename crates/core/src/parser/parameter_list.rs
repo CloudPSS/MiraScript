@@ -7,7 +7,7 @@ use winnow::combinator::opt;
 use crate::ansi::DisplayIdent;
 
 use super::{
-    ArrayElementBase, ArrayPattern, AstVisitor, AstVisitorMut, AstWalker,
+    ArrayElementBase, ArrayPattern, AstVisitor,  AstWalker,
     patterns::array_pattern_like, prelude::*,
 };
 
@@ -34,10 +34,10 @@ impl DerefMut for ParameterList<'_> {
 }
 
 impl<'s> AstWalker<'s> for ParameterList<'s> {
-    fn walk_mut(&mut self, visitor: &mut dyn AstVisitorMut<'s>) {
-        self.0.walk_mut(visitor);
-        self.1.walk_mut(visitor);
-        self.2.walk_mut(visitor);
+    fn collect_diagnostics(&mut self, collector: &mut Vec<SourceDiagnostic>) {
+        self.0.collect_diagnostics(collector);
+        self.1.collect_diagnostics(collector);
+        self.2.collect_diagnostics(collector);
     }
 
     fn walk(&self, visitor: &mut dyn AstVisitor<'s>) {

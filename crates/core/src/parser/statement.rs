@@ -2,7 +2,7 @@ use std::fmt::{self, Display, Formatter};
 
 use crate::ansi::{DisplayIdent, GROUP, RECOVER, RESET};
 
-use super::{AstVisitor, AstVisitorMut, AstWalker, prelude::*};
+use super::{AstVisitor, AstWalker, prelude::*};
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
 pub enum Statement<'s> {
@@ -113,57 +113,57 @@ impl<'s> Statement<'s> {
 }
 
 impl<'s> AstWalker<'s> for Statement<'s> {
-    fn walk_mut(&mut self, visitor: &mut dyn AstVisitorMut<'s>) {
+    fn collect_diagnostics(&mut self, collector: &mut Vec<SourceDiagnostic>) {
         use Statement::*;
-        visitor.visit_statement(self);
         match self {
-            Empty(c) => c.walk_mut(visitor),
+            Empty(c) => c.collect_diagnostics(collector),
             Expression(expr, c) => {
-                expr.walk_mut(visitor);
-                c.walk_mut(visitor);
+                expr.collect_diagnostics(collector);
+                c.collect_diagnostics(collector);
             }
-            BlockExpression(expr) => expr.walk_mut(visitor),
+            BlockExpression(expr) => expr.collect_diagnostics(collector),
             Bind(kw_let, pattern, eq, expr, c) => {
-                kw_let.walk_mut(visitor);
-                pattern.walk_mut(visitor);
-                eq.walk_mut(visitor);
-                expr.walk_mut(visitor);
-                c.walk_mut(visitor);
+                kw_let.collect_diagnostics(collector);
+                pattern.collect_diagnostics(collector);
+                eq.collect_diagnostics(collector);
+                expr.collect_diagnostics(collector);
+                c.collect_diagnostics(collector);
             }
             Rebind(pattern, eq, expr, c) => {
-                pattern.walk_mut(visitor);
-                eq.walk_mut(visitor);
-                expr.walk_mut(visitor);
-                c.walk_mut(visitor);
+                pattern.collect_diagnostics(collector);
+                eq.collect_diagnostics(collector);
+                expr.collect_diagnostics(collector);
+                c.collect_diagnostics(collector);
             }
             Assign(exp, eq, expr, c) => {
-                exp.walk_mut(visitor);
-                eq.walk_mut(visitor);
-                expr.walk_mut(visitor);
-                c.walk_mut(visitor);
+                exp.collect_diagnostics(collector);
+                eq.collect_diagnostics(collector);
+                expr.collect_diagnostics(collector);
+                c.collect_diagnostics(collector);
             }
             Function(kw, id, params, body) => {
-                kw.walk_mut(visitor);
-                id.walk_mut(visitor);
-                params.walk_mut(visitor);
-                body.walk_mut(visitor);
+                kw.collect_diagnostics(collector);
+                id.collect_diagnostics(collector);
+                params.collect_diagnostics(collector);
+                body.collect_diagnostics(collector);
             }
             Return(kw, expr, c) => {
-                kw.walk_mut(visitor);
-                expr.walk_mut(visitor);
-                c.walk_mut(visitor);
+                kw.collect_diagnostics(collector);
+                expr.collect_diagnostics(collector);
+                c.collect_diagnostics(collector);
             }
             Break(kw, expr, c) => {
-                kw.walk_mut(visitor);
-                expr.walk_mut(visitor);
-                c.walk_mut(visitor);
+                kw.collect_diagnostics(collector);
+                expr.collect_diagnostics(collector);
+                c.collect_diagnostics(collector);
             }
             Continue(kw, c) => {
-                kw.walk_mut(visitor);
-                c.walk_mut(visitor);
+                kw.collect_diagnostics(collector);
+                c.collect_diagnostics(collector);
             }
-            Unknown { tokens, errors: _ } => {
-                tokens.walk_mut(visitor);
+            Unknown { tokens, errors } => {
+                collector.append(errors);
+                tokens.collect_diagnostics(collector);
             }
         }
     }

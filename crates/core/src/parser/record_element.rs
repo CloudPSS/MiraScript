@@ -2,7 +2,7 @@ use std::fmt::{Debug, Display};
 
 use crate::ansi::DisplayIdent;
 
-use super::{AstVisitor, AstVisitorMut, AstWalker, list_item::ListItem, prelude::*};
+use super::{AstVisitor,  AstWalker, list_item::ListItem, prelude::*};
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
 pub enum RecordElementBase<'s, E, I> {
@@ -34,28 +34,28 @@ impl<'s, E, I> RecordElementBase<'s, E, I> {
 }
 
 impl<'s, E: AstWalker<'s>, I: AstWalker<'s>> AstWalker<'s> for RecordElementBase<'s, E, I> {
-    fn walk_mut(&mut self, visitor: &mut dyn AstVisitorMut<'s>) {
+    fn collect_diagnostics(&mut self, collector: &mut Vec<SourceDiagnostic>) {
         match self {
             Named(name, colon, value) => {
-                name.walk_mut(visitor);
-                colon.walk_mut(visitor);
-                value.walk_mut(visitor);
+                name.collect_diagnostics(collector);
+                colon.collect_diagnostics(collector);
+                value.collect_diagnostics(collector);
             }
             InterpolateNamed(name_expr, colon, value) => {
-                name_expr.walk_mut(visitor);
-                colon.walk_mut(visitor);
-                value.walk_mut(visitor);
+                name_expr.collect_diagnostics(collector);
+                colon.collect_diagnostics(collector);
+                value.collect_diagnostics(collector);
             }
             OmitNamed(colon, value) => {
-                colon.walk_mut(visitor);
-                value.walk_mut(visitor);
+                colon.collect_diagnostics(collector);
+                value.collect_diagnostics(collector);
             }
             Unnamed(value) => {
-                value.walk_mut(visitor);
+                value.collect_diagnostics(collector);
             }
             Spread(spread, value) => {
-                spread.walk_mut(visitor);
-                value.walk_mut(visitor);
+                spread.collect_diagnostics(collector);
+                value.collect_diagnostics(collector);
             }
         }
     }

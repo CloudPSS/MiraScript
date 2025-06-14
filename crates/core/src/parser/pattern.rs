@@ -2,7 +2,7 @@ use std::fmt::{self, Display, Formatter};
 
 use crate::ansi::{DisplayIdent, GROUP, RANGE, RECOVER, RESET};
 
-use super::{ArrayPattern, AstVisitor, AstVisitorMut, AstWalker, RecordPattern, prelude::*};
+use super::{ArrayPattern, AstVisitor, AstWalker, RecordPattern, prelude::*};
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
 pub enum Pattern<'s> {
@@ -142,69 +142,72 @@ impl<'s> Pattern<'s> {
 }
 
 impl<'s> AstWalker<'s> for Pattern<'s> {
-    fn walk_mut(&mut self, visitor: &mut dyn AstVisitorMut<'s>) {
+    fn collect_diagnostics(&mut self, collector: &mut Vec<SourceDiagnostic>) {
         use Pattern::*;
-        visitor.visit_pattern(self);
         match self {
             Grouping(o, p, e) => {
-                o.walk_mut(visitor);
-                p.walk_mut(visitor);
-                e.walk_mut(visitor);
+                o.collect_diagnostics(collector);
+                p.collect_diagnostics(collector);
+                e.collect_diagnostics(collector);
             }
             Constant(p, t) => {
-                p.walk_mut(visitor);
-                t.walk_mut(visitor);
+                p.collect_diagnostics(collector);
+                t.collect_diagnostics(collector);
             }
             Relation(o, p) => {
-                o.walk_mut(visitor);
-                p.walk_mut(visitor);
+                o.collect_diagnostics(collector);
+                p.collect_diagnostics(collector);
             }
             Range(s, o, e) => {
-                s.walk_mut(visitor);
-                o.walk_mut(visitor);
-                e.walk_mut(visitor);
+                s.collect_diagnostics(collector);
+                o.collect_diagnostics(collector);
+                e.collect_diagnostics(collector);
             }
-            Discard(t) => t.walk_mut(visitor),
+            Discard(t) => t.collect_diagnostics(collector),
             Bind(p, t) => {
-                p.walk_mut(visitor);
-                t.walk_mut(visitor);
+                p.collect_diagnostics(collector);
+                t.collect_diagnostics(collector);
             }
             Record(s, p, e) => {
-                s.walk_mut(visitor);
+                s.collect_diagnostics(collector);
                 for sub_pattern in p.iter_mut() {
-                    sub_pattern.walk_mut(visitor);
+                    sub_pattern.collect_diagnostics(collector);
                 }
-                e.walk_mut(visitor);
+                e.collect_diagnostics(collector);
             }
             Array(s, p, e) => {
-                s.walk_mut(visitor);
+                s.collect_diagnostics(collector);
                 for sub_pattern in p.iter_mut() {
-                    sub_pattern.walk_mut(visitor);
+                    sub_pattern.collect_diagnostics(collector);
                 }
-                e.walk_mut(visitor);
+                e.collect_diagnostics(collector);
             }
             SpreadDiscard(_) => {}
             And(l, o, r) => {
-                l.walk_mut(visitor);
-                o.walk_mut(visitor);
-                r.walk_mut(visitor);
+                l.collect_diagnostics(collector);
+                o.collect_diagnostics(collector);
+                r.collect_diagnostics(collector);
             }
             Or(l, o, r) => {
-                l.walk_mut(visitor);
-                o.walk_mut(visitor);
-                r.walk_mut(visitor);
+                l.collect_diagnostics(collector);
+                o.collect_diagnostics(collector);
+                r.collect_diagnostics(collector);
             }
             Not(o, p) => {
-                o.walk_mut(visitor);
-                p.walk_mut(visitor);
+                o.collect_diagnostics(collector);
+                p.collect_diagnostics(collector);
             }
             Unknown {
                 recovered,
                 tokens,
-                errors: _,
+                errors,
             } => {
-                recovered.walk_mut(visitor);
-                tokens.walk_mut(visitor);
+                collector.append(errors);
+                tokens.collect_diagnostics(collector);
+                if let Some(mut recovered) = std::mem::take(recovered) {
+                    recovered.collect_diagnostics(collector);
+                    *self = *recovered;
+                }
             }
         }
     }

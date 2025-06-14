@@ -5,7 +5,7 @@ use std::{
 
 use crate::ansi::DisplayIdent;
 
-use super::{AstVisitor, AstVisitorMut, AstWalker, prelude::*};
+use super::{AstVisitor,  AstWalker, prelude::*};
 
 /// statement* expression? EOF
 ///
@@ -18,14 +18,14 @@ pub struct Script<'s>(
 );
 
 impl<'s> AstWalker<'s> for Script<'s> {
-    fn walk_mut(&mut self, visitor: &mut dyn AstVisitorMut<'s>) {
+    fn collect_diagnostics(&mut self, collector: &mut Vec<SourceDiagnostic>) {
         for statement in &mut self.0 {
-            statement.walk_mut(visitor);
+            statement.collect_diagnostics(collector);
         }
         if let Some(expression) = &mut self.1 {
-            expression.walk_mut(visitor);
+            expression.collect_diagnostics(collector);
         }
-        self.2.walk_mut(visitor);
+        self.2.collect_diagnostics(collector);
     }
     fn walk(&self, visitor: &mut dyn AstVisitor<'s>) {
         for statement in &self.0 {

@@ -65,8 +65,21 @@ pub(super) fn variable_token<'s>(
         } else if !include_global && t == Keyword::Global {
             Token::unknown(t.range, t.kind, DiagnosticCode::UnexpectedGlobal)
         } else {
-            t.to_owned()
+            t
         };
+        // let e = match &t.kind {
+        //     TokenKind::Keyword(Keyword::Underscore, str) if !include_underscore => Token::unknown(
+        //         t.range,
+        //         TokenKind::Identifier(str.unwrap_or("_")),
+        //         DiagnosticCode::UnexpectedUnderscore,
+        //     ),
+        //     TokenKind::Keyword(Keyword::Global, str) if !include_global => Token::unknown(
+        //         t.range,
+        //         TokenKind::Identifier(str.unwrap_or("global")),
+        //         DiagnosticCode::UnexpectedGlobal,
+        //     ),
+        //     _ => t,
+        // };
         Ok(e)
     }
 }

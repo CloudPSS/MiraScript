@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use crate::ansi::{DisplayIdent, RANGE, RESET};
 
-use super::{AstVisitor, AstVisitorMut, AstWalker, prelude::*};
+use super::{AstVisitor,  AstWalker, prelude::*};
 
 /// A range expression.
 ///
@@ -21,11 +21,11 @@ impl<'s> Range<'s> {
 }
 
 impl<'s> AstWalker<'s> for Range<'s> {
-    fn walk_mut(&mut self, visitor: &mut dyn AstVisitorMut<'s>) {
+    fn collect_diagnostics(&mut self, collector: &mut Vec<SourceDiagnostic>) {
         let Range(start, op, end) = self;
-        start.walk_mut(visitor);
-        op.walk_mut(visitor);
-        end.walk_mut(visitor);
+        start.collect_diagnostics(collector);
+        op.collect_diagnostics(collector);
+        end.collect_diagnostics(collector);
     }
     fn walk(&self, visitor: &mut dyn AstVisitor<'s>) {
         let Range(start, op, end) = self;
