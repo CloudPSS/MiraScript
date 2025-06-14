@@ -21,6 +21,7 @@ crate-type = ["cdylib", "rlib"]
 default = ["console_error", "track_references"]
 console_error = ["dep:console_error_panic_hook"]
 track_references = ["mira-core/track_references"]
+trivia = ["mira-core/trivia"]
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.34"

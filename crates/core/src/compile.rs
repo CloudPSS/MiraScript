@@ -1,6 +1,5 @@
 use std::cell::RefCell;
 
-use winnow::ModalResult;
 use winnow::stream::{Location, Stream};
 
 use crate::config::{Config, set_config};
@@ -24,7 +23,9 @@ fn recover_token<'s>(
             let recovered = lexer::Token {
                 kind: *token,
                 range: t.range,
+                #[cfg(feature = "trivia")]
                 leading_trivia: t.leading_trivia,
+                #[cfg(feature = "trivia")]
                 trailing_trivia: t.trailing_trivia,
             };
             recover_token(recovered, diagnostics_collector)
@@ -51,7 +52,9 @@ fn recover_token<'s>(
                         .collect(),
                 ),
                 range: t.range,
+                #[cfg(feature = "trivia")]
                 leading_trivia: t.leading_trivia,
+                #[cfg(feature = "trivia")]
                 trailing_trivia: t.trailing_trivia,
             })
         }
@@ -68,7 +71,7 @@ fn recover_token<'s>(
 
 fn compile<'s>(
     input: &'s str,
-    lexer: impl FnOnce(&mut lexer::Input<'s>) -> ModalResult<Vec<lexer::Token<'s>>>,
+    lexer: impl FnOnce(&mut lexer::Input<'s>) -> lexer::Result<Vec<lexer::Token<'s>>>,
     config: &Config,
 ) -> CompileResult<'s> {
     set_config(config);
@@ -135,7 +138,9 @@ fn compile<'s>(
                 let Token {
                     kind: TokenKind::Unknown { recovered, errors },
                     range,
+                    #[cfg(feature = "trivia")]
                     leading_trivia,
+                    #[cfg(feature = "trivia")]
                     trailing_trivia,
                 } = token
                 else {
@@ -146,7 +151,9 @@ fn compile<'s>(
                     *token = Token {
                         kind: *recovered,
                         range: range.clone(),
+                        #[cfg(feature = "trivia")]
                         leading_trivia: std::mem::take(leading_trivia),
+                        #[cfg(feature = "trivia")]
                         trailing_trivia: std::mem::take(trailing_trivia),
                     };
                 }

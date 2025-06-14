@@ -7,12 +7,12 @@ use crate::diagnostic::{DiagnosticCode, SourceDiagnostic};
 
 use super::identifier::{identifier, is_identifier_special, is_identifier_start};
 use super::numeric::{number, ordinal};
-use super::{Input, Operator, Token, TokenKind, string};
+use super::{Input, Operator, Result, Token, TokenKind, string};
 
 pub(super) fn token<'s>(
     input: &mut Input<'s>,
     prev_token: Option<&mut Token<'s>>,
-) -> ModalResult<Token<'s>> {
+) -> Result<Token<'s>> {
     let dot = prev_token.as_deref().is_some_and(|t| *t == Operator::Dot);
     let token_parser = |i: &mut Input<'s>| {
         dispatch! {peek(any);

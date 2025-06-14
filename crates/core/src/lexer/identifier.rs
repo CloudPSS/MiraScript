@@ -1,12 +1,13 @@
 use std::borrow::Cow;
 use std::str::FromStr;
 
-use winnow::combinator::{alt, repeat, trace};
-use winnow::error::{ContextError, ErrMode};
-use winnow::prelude::*;
-use winnow::token::{literal, one_of, take_while};
+use winnow::{
+    Parser as _,
+    combinator::{alt, repeat},
+    token::{literal, one_of, take_while},
+};
 
-use super::{Input, Keyword, TokenKind};
+use super::{Input, Keyword, Parser, TokenKind};
 
 pub(super) const IDENTIFIER_SPECIAL: &[char] = &['_', '$', '@'];
 
@@ -20,31 +21,26 @@ pub(super) fn is_identifier_continue(ch: char) -> bool {
     unicode_ident::is_xid_continue(ch)
 }
 
-pub(super) fn identifier<'s>(
-    keyword: bool,
-) -> impl Parser<Input<'s>, TokenKind<'s>, ErrMode<ContextError>> {
+pub(super) fn identifier<'s>(keyword: bool) -> impl Parser<'s, TokenKind<'s>> {
     move |i: &mut Input<'s>| {
-        trace(
-            "identifier",
-            (
-                alt((
-                    one_of(is_identifier_start).void(),
-                    repeat::<_, _, String, _, _>(1.., literal("_")).void(),
-                    repeat::<_, _, String, _, _>(1.., literal("$")).void(),
-                    repeat::<_, _, String, _, _>(1.., literal("@")).void(),
-                )),
-                take_while(0.., is_identifier_continue),
-            )
-                .take()
-                .map(|s| {
-                    if keyword {
-                        if let Ok(kw) = Keyword::from_str(s) {
-                            return TokenKind::Keyword(kw);
-                        }
-                    }
-                    TokenKind::Identifier(Cow::Borrowed(s))
-                }),
+        (
+            alt((
+                one_of(is_identifier_start).void(),
+                repeat::<_, _, String, _, _>(1.., literal("_")).void(),
+                repeat::<_, _, String, _, _>(1.., literal("$")).void(),
+                repeat::<_, _, String, _, _>(1.., literal("@")).void(),
+            )),
+            take_while(0.., is_identifier_continue),
         )
-        .parse_next(i)
+            .take()
+            .map(|s| {
+                if keyword {
+                    if let Ok(kw) = Keyword::from_str(s) {
+                        return TokenKind::Keyword(kw);
+                    }
+                }
+                TokenKind::Identifier(Cow::Borrowed(s))
+            })
+            .parse_next(i)
     }
 }

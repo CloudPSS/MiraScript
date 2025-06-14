@@ -7,7 +7,7 @@ use winnow::token::{any, take_until};
 
 use crate::ansi::{COMMENT, DisplayIdent, RECOVER, RESET};
 
-use super::Input;
+use super::{Input, Result};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Trivia<'s> {
@@ -64,38 +64,69 @@ impl DisplayIdent for Trivia<'_> {
     }
 }
 
-fn line_comment<'s>(i: &mut Input<'s>) -> ModalResult<Trivia<'s>> {
-    delimited((space0, "//"), till_line_ending, opt(line_ending))
-        .map(|s: &str| Trivia::LineComment(s))
-        .parse_next(i)
+#[cfg(feature = "trivia")]
+type TriviaResult<'s> = Trivia<'s>;
+#[cfg(not(feature = "trivia"))]
+type TriviaResult<'s> = ();
+
+fn line_comment<'s>(i: &mut Input<'s>) -> Result<TriviaResult<'s>> {
+    let parser = delimited((space0, "//"), till_line_ending, opt(line_ending));
+
+    #[cfg(feature = "trivia")]
+    {
+        parser.map(|s: &str| Trivia::LineComment(s)).parse_next(i)
+    }
+    #[cfg(not(feature = "trivia"))]
+    {
+        parser.value(()).parse_next(i)
+    }
 }
 
-fn block_comment<'s>(i: &mut Input<'s>) -> ModalResult<Trivia<'s>> {
+fn block_comment<'s>(i: &mut Input<'s>) -> Result<TriviaResult<'s>> {
+    let (mapper1, mapper2);
+    #[cfg(feature = "trivia")]
+    {
+        (mapper1, mapper2) = (
+            |s: &'s str| Trivia::BlockComment(s),
+            |s: &'s str| Trivia::UnterminatedBlockComment(s),
+        );
+    }
+    #[cfg(not(feature = "trivia"))]
+    {
+        (mapper1, mapper2) = (|s: &'s str| (), |s: &'s str| ())
+    }
     preceded(
         (space0, "/*"),
         alt((
-            terminated(
-                take_until(0.., "*/")
-                    .take()
-                    .map(|s: &str| Trivia::BlockComment(s)),
-                "*/",
-            ),
-            repeat::<_, _, String, _, _>(0.., any)
-                .take()
-                .map(|s: &str| Trivia::UnterminatedBlockComment(s)),
+            terminated(take_until(0.., "*/").map(mapper1), "*/"),
+            repeat::<_, _, String, _, _>(0.., any).take().map(mapper2),
         )),
     )
     .parse_next(i)
 }
 
-fn empty_line<'s>(i: &mut Input<'s>) -> ModalResult<Trivia<'s>> {
-    (space0, line_ending).value(Trivia::EmptyLine).parse_next(i)
+fn empty_line<'s>(i: &mut Input<'s>) -> Result<TriviaResult<'s>> {
+    let result;
+    #[cfg(feature = "trivia")]
+    {
+        result = Trivia::EmptyLine;
+    }
+    #[cfg(not(feature = "trivia"))]
+    {
+        result = ();
+    }
+    (space0, line_ending).value(result).parse_next(i)
 }
 
-pub(super) fn trivia<'s>(i: &mut Input<'s>) -> ModalResult<Trivia<'s>> {
+pub(super) fn trivia<'s>(i: &mut Input<'s>) -> Result<TriviaResult<'s>> {
     alt((line_comment, block_comment, empty_line)).parse_next(i)
 }
 
-pub(super) fn trivia_list<'s>(i: &mut Input<'s>) -> ModalResult<Vec<Trivia<'s>>> {
+#[cfg(feature = "trivia")]
+type TriviaListResult<'s> = Vec<Trivia<'s>>;
+#[cfg(not(feature = "trivia"))]
+type TriviaListResult<'s> = ();
+
+pub(super) fn trivia_list<'s>(i: &mut Input<'s>) -> Result<TriviaListResult<'s>> {
     repeat(0.., trivia).parse_next(i)
 }

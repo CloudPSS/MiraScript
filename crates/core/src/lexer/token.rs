@@ -16,7 +16,9 @@ use super::{TokenKind, Trivia};
 pub struct Token<'s> {
     pub kind: TokenKind<'s>,
     pub range: SourceRange,
+    #[cfg(feature = "trivia")]
     pub leading_trivia: Vec<Trivia<'s>>,
+    #[cfg(feature = "trivia")]
     pub trailing_trivia: Vec<Trivia<'s>>,
 }
 
@@ -49,7 +51,9 @@ impl<'s> Token<'s> {
         Token {
             kind,
             range,
+            #[cfg(feature = "trivia")]
             leading_trivia: vec![],
+            #[cfg(feature = "trivia")]
             trailing_trivia: vec![],
         }
     }
@@ -58,7 +62,9 @@ impl<'s> Token<'s> {
         Token {
             kind: TokenKind::unknown_range(self.kind, self.range.clone(), error),
             range: self.range,
+            #[cfg(feature = "trivia")]
             leading_trivia: self.leading_trivia,
+            #[cfg(feature = "trivia")]
             trailing_trivia: self.trailing_trivia,
         }
     }
@@ -70,7 +76,9 @@ impl<'s> Token<'s> {
                 recovered: None,
                 errors: vec![],
             },
+            #[cfg(feature = "trivia")]
             leading_trivia: vec![],
+            #[cfg(feature = "trivia")]
             trailing_trivia: vec![],
         }
     }
@@ -83,7 +91,9 @@ impl<'s> Token<'s> {
         Token {
             range: range.clone(),
             kind: TokenKind::unknown_range(recovered, range, error),
+            #[cfg(feature = "trivia")]
             leading_trivia: vec![],
+            #[cfg(feature = "trivia")]
             trailing_trivia: vec![],
         }
     }
@@ -96,7 +106,9 @@ impl<'s> Token<'s> {
         Token {
             range: token_range,
             kind: TokenKind::unknown_range(recovered, error_range, error),
+            #[cfg(feature = "trivia")]
             leading_trivia: vec![],
+            #[cfg(feature = "trivia")]
             trailing_trivia: vec![],
         }
     }
@@ -109,7 +121,9 @@ impl<'s> Token<'s> {
         Token {
             range,
             kind: TokenKind::unknown_errors(recovered, errors),
+            #[cfg(feature = "trivia")]
             leading_trivia: vec![],
+            #[cfg(feature = "trivia")]
             trailing_trivia: vec![],
         }
     }
@@ -129,10 +143,12 @@ impl Display for Token<'_> {
 
 impl DisplayIdent for Token<'_> {
     fn fmt_ident(&self, f: &mut std::fmt::Formatter<'_>, ident: usize) -> std::fmt::Result {
+        #[cfg(feature = "trivia")]
         for trivia in &self.leading_trivia {
             trivia.fmt_ident(f, ident)?;
         }
         self.kind.fmt_ident(f, ident)?;
+        #[cfg(feature = "trivia")]
         for trivia in &self.trailing_trivia {
             trivia.fmt_ident(f, ident)?;
         }

@@ -8,8 +8,8 @@ use winnow::{
 
 use crate::diagnostic::{DiagnosticCode, SourceRange};
 
-use super::identifier::is_identifier_continue;
 use super::{Input, TokenKind};
+use super::{Result, identifier::is_identifier_continue};
 
 struct ParsedPart {
     number: f64,
@@ -64,11 +64,11 @@ fn parse_part(bytes: &[u8], radix: u32, is_valid_char: impl Fn(u8) -> bool) -> P
     }
 }
 
-fn number_part<'s>(i: &mut Input<'s>) -> ModalResult<&'s str> {
+fn number_part<'s>(i: &mut Input<'s>) -> Result<&'s str> {
     trace("number_part", take_while(1.., is_identifier_continue)).parse_next(i)
 }
 
-fn float_part<'s>(i: &mut Input<'s>) -> ModalResult<&'s str> {
+fn float_part<'s>(i: &mut Input<'s>) -> Result<&'s str> {
     trace(
         "number_part",
         take_while(1.., |c| is_identifier_continue(c) && c != 'e' && c != 'E'),
@@ -80,10 +80,10 @@ fn is_valid_float_char(c: u8) -> bool {
     c.is_ascii_digit() || c == b'.' || c == b'e' || c == b'E' || c == b'+' || c == b'-'
 }
 
-pub(super) fn number<'s>(i: &mut Input<'s>) -> ModalResult<TokenKind<'s>> {
+pub(super) fn number<'s>(i: &mut Input<'s>) -> Result<TokenKind<'s>> {
     trace(
         "number",
-        move |i: &mut Input<'s>| -> ModalResult<TokenKind<'s>> {
+        move |i: &mut Input<'s>| -> Result<TokenKind<'s>> {
             let cp = i.checkpoint();
             let (part_i, range_i) = number_part.with_span().parse_next(i)?;
 
@@ -223,7 +223,7 @@ fn handle_ordinal(bytes: &[u8], range: SourceRange, force_ordinal: bool) -> Toke
     result
 }
 
-pub(super) fn ordinal<'s>(i: &mut Input<'s>) -> ModalResult<TokenKind<'s>> {
+pub(super) fn ordinal<'s>(i: &mut Input<'s>) -> Result<TokenKind<'s>> {
     trace(
         "ordinal",
         number_part

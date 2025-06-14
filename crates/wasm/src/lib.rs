@@ -34,6 +34,7 @@ pub enum CompileFlag {
     HideDiagnosticOther,
 
     TrackReferences,
+    Trivia,
 
     MAX,
 }
@@ -65,6 +66,8 @@ fn compile(
         &Config {
             #[cfg(feature = "track_references")]
             track_references: flags.get(CompileFlag::TrackReferences),
+            #[cfg(feature = "trivia")]
+            trivia: flags.get(CompileFlag::Trivia),
         },
     );
     // offsets of line starts
