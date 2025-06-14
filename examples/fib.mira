@@ -1,7 +1,7 @@
 let mut cache = ();
 
 fn fib(n) {
-    if n < 2 {
+    if n <= 2 {
         return n;
     }
     if n in cache {
@@ -18,7 +18,9 @@ fn fib(n) {
 fn main() {
     let n = 10; // Example input
     let result = fib(n);
-    print("Fibonacci of $n is $result");
+    debug_print("Fibonacci of $n is $result");
 }
 
-main()
+main();
+
+cache // Return the cache from script for inspection
