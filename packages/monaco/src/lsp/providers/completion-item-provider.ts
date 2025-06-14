@@ -37,6 +37,16 @@ const COMMON_GLOBAL_SUGGESTIONS = (range: IRange): languages.CompletionItem[] =>
             range,
         },
         {
+            label: 'global',
+            kind: languages.CompletionItemKind.Keyword,
+            insertText: 'global',
+            commitCharacters: ['.', '['],
+            documentation: {
+                value: `使用 \`global\` 获取全局变量。${codeblock('global.variableName;\nglobal["variableName"];\n"variableName" in global;')}`,
+            },
+            range,
+        },
+        {
             label: { label: 'if', description: 'If 表达式' },
             kind: languages.CompletionItemKind.Snippet,
             insertText: 'if ${1:condition} {\n\t$0\n}',
@@ -129,7 +139,7 @@ export class CompletionItemProvider extends Provider implements languages.Comple
                 kind: info ? languages.CompletionItemKind.Function : languages.CompletionItemKind.Variable,
                 insertText: key,
                 range,
-                commitCharacters: info ? ['('] : undefined,
+                commitCharacters: info ? ['('] : ['.', '[', '('],
             });
         }
         return suggestions;

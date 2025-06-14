@@ -159,7 +159,6 @@ const editor = monaco.editor.create(elEditor, {
     formatOnPaste: true,
     fontLigatures: true,
     automaticLayout: true,
-
     theme: 'vs-dark',
     'semanticHighlighting.enabled': true,
     model: createModel(value),

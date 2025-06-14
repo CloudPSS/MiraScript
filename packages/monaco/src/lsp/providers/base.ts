@@ -13,6 +13,7 @@ export abstract class Provider {
     }
 
     readonly displayName = 'MiraScript LSP';
+    readonly _debugDisplayName = 'MiraScript LSP';
     private _onDidChange: Emitter<this> | null = null;
     /** @inheritdoc */
     get onDidChange(): IEvent<this> & IEvent<void> {

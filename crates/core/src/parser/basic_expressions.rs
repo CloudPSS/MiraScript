@@ -119,7 +119,7 @@ fn array<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
     .parse_next(i)
 }
 
-pub(super) fn interpolation<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
+fn interpolation<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
     let token = one_of(|t: &Token<'s>| matches!(&t.kind, &TokenKind::InterpolatedString(_, _)))
         .map(|t: &Token<'s>| t.to_owned())
         .parse_next(i)?;
@@ -134,39 +134,37 @@ type Call<'s> = (
     Box<Token<'s>>,
 );
 
-fn pseudo_function<'t, 's: 't>(
-    extension_call: bool,
-) -> impl Parser<Input<'t, 's>, Call<'s>, ErrMode<ContextError>> {
-    move |i: &mut Input<'_, 's>| {
-        let provided = if extension_call { 1 } else { 0 };
-        let (kw_type, open, (args, close)) = (
-            token(Keyword::Type),
-            token_or_insert(
-                Operator::OpenParen,
-                DiagnosticCode::MissingOpenParenAfterType,
-            ),
-            arg_list,
-        )
-            .parse_next(i)?;
-        let exp = if args.len() != (1 - provided) {
-            vec![Expression::unknown_range(
-                [],
-                SourceRange {
-                    start: kw_type.range.start,
-                    end: close.range.end,
-                },
-                DiagnosticCode::InvalidTypeCall,
-            )]
-        } else {
-            args
-        };
-        Ok((Callable::Type(kw_type).into(), open.into(), exp, close))
-    }
+fn pseudo_function<'t, 's: 't, const extension_call: bool>(
+    i: &mut Input<'t, 's>,
+) -> ModalResult<Call<'s>> {
+    let provided = if extension_call { 1 } else { 0 };
+    let (kw_type, open, (args, close)) = (
+        token(Keyword::Type),
+        token_or_insert(
+            Operator::OpenParen,
+            DiagnosticCode::MissingOpenParenAfterType,
+        ),
+        arg_list,
+    )
+        .parse_next(i)?;
+    let exp = if args.len() != (1 - provided) {
+        vec![Expression::unknown_range(
+            [],
+            SourceRange {
+                start: kw_type.range.start,
+                end: close.range.end,
+            },
+            DiagnosticCode::InvalidTypeCall,
+        )]
+    } else {
+        args
+    };
+    Ok((Callable::Type(kw_type).into(), open.into(), exp, close))
 }
 
-pub(super) fn primary<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
+fn primary<'s>(i: &mut Input<'_, 's>) -> ModalResult<Expression<'s>> {
     (alt((
-        pseudo_function(false).map(|(e, o, a, c)| Expression::Call(e, o, a, c)),
+        pseudo_function::<false>.map(|(e, o, a, c)| Expression::Call(e, o, a, c)),
         block_like_expression,
         literal_token.map(Box::new).map(Expression::Literal),
         interpolation,
@@ -267,7 +265,7 @@ fn extension_call<'s>(i: &mut Input<'_, 's>) -> ModalResult<Call<'s>> {
             arg_list,
         )
             .map(|(e, o, (a, c))| (Box::new(e), o, a, c)),
-        pseudo_function(true),
+        pseudo_function::<true>,
     ))
     .parse_next(i)
 }

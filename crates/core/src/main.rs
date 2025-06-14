@@ -13,22 +13,24 @@ mod lexer;
 mod parser;
 
 fn main() {
-    let text = fs::read_to_string("../../test/main.ms").unwrap();
+    let text = fs::read_to_string("../../examples/fib.mira").unwrap();
 
-    let (code, errors) = compile_script(
-        &text,
-        &Config {
-            #[cfg(feature = "track_references")]
-            track_references: false,
-        },
-    );
-
-    for error in errors {
-        eprintln!("{error}");
+    for _ in 0..1_000_000 {
+        let (code, errors) = compile_script(
+            &text,
+            &Config {
+                #[cfg(feature = "track_references")]
+                track_references: false,
+            },
+        );
     }
-    let Some(code) = code else {
-        eprintln!("Failed to compile script");
-        return;
-    };
-    println!("{:?}", code);
+
+    // for error in errors {
+    //     eprintln!("{error}");
+    // }
+    // let Some(code) = code else {
+    //     eprintln!("Failed to compile script");
+    //     return;
+    // };
+    // println!("{:?}", code);
 }
