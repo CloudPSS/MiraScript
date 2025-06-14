@@ -79,6 +79,8 @@ impl<'s> Emitter<'s> {
     }
 
     fn emit_failed_pattern(&mut self, pattern: &'s Pattern<'s>, bind_type: Option<BindType>) {
+        // This function is called from `emit_pattern`,
+        // Do not emit diagnostics, initialization, or set markers
         match pattern {
             Grouping(_, pattern, _) => self.emit_failed_pattern(pattern, bind_type),
             Constant(_, _) => (),
@@ -89,41 +91,17 @@ impl<'s> Emitter<'s> {
                     return;
                 };
                 let var = self.scopes.find_variable(id);
-                if let Some((level, variable)) = var {
-                    let bind = bind_type.is_some();
-                    if bind {
-                        self.closures.initialize_variable(variable);
-                    } else {
-                        variable.mark_write(id_token);
-                    }
-                    if !check_variable_initialized(
-                        &mut self.diagnostics,
-                        &self.closures,
-                        id_token,
-                        variable,
-                        level,
-                    ) {
-                        return;
-                    }
-                    if !variable.mutable() && !bind {
-                        self.diagnostics.push(SourceDiagnostic::new(
-                            id_token.range(),
-                            DiagnosticCode::ImmutableVariableAssignment,
-                        ));
-                        variable.put_decl_ref(&mut self.diagnostics);
-                    } else if level == self.closures.len() {
-                        let register = variable.register();
-                        self.op_unary(register, OpCode::Assign, Register::EMPTY);
-                    } else {
-                        let register = variable.register();
-                        let level = self.closures.len() - level;
-                        self.op_set_upvalue(Register::EMPTY, level, register);
-                    }
+                let Some((level, variable)) = var else {
+                    return;
+                };
+                if !variable.mutable() && bind_type.is_none() {
+                } else if level == self.closures.len() {
+                    let register = variable.register();
+                    self.op_unary(register, OpCode::Assign, Register::EMPTY);
                 } else {
-                    self.diagnostics.push(SourceDiagnostic::new(
-                        id_token.range.clone(),
-                        DiagnosticCode::UndefinedVariableAssignment,
-                    ));
+                    let register = variable.register();
+                    let level = self.closures.len() - level;
+                    self.op_set_upvalue(Register::EMPTY, level, register);
                 }
             }
             Record(_, elements, _) => {

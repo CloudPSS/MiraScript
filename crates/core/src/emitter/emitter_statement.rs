@@ -1,7 +1,7 @@
 use crate::{
     diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
     emitter::emitter_scope::check_variable_initialized,
-    lexer::{Operator, TokenKind},
+    lexer::{Keyword, Operator, TokenKind},
     parser::{
         self, AstWalker, Expression,
         Statement::{self, *},
@@ -61,8 +61,15 @@ impl<'s> Emitter<'s> {
                 let mut final_op: Box<dyn FnOnce(&mut Self)> = Box::new(|s| ());
                 let assignee_reg = match &**assignee {
                     Expression::Variable(id_token) => {
-                        let TokenKind::Identifier(id) = &id_token.kind else {
-                            unreachable!();
+                        if **id_token == Keyword::Global {
+                            self.diagnostics.push(SourceDiagnostic::new(
+                                id_token.range(),
+                                DiagnosticCode::MisuseOfGlobalKeyword,
+                            ));
+                            return false;
+                        }
+                        let Some(id) = id_token.to_id_name() else {
+                            return false;
                         };
                         let var = self.scopes.find_variable(id);
                         if let Some((level, variable)) = var {
