@@ -6,6 +6,10 @@ export type CompileOptions = Readonly<Partial<Record<Exclude<keyof typeof Compil
 export interface GenerateOptions {
     /** 是否美化代码 */
     readonly pretty?: boolean;
+    /** 是否生成源映射 */
+    readonly sourceMap?: boolean;
+    /** 代码文件名 */
+    readonly fileName?: string;
 }
 /** 代码解析选项 */
 export interface ParseOptions {

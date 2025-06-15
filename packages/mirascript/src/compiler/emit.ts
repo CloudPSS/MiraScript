@@ -1,12 +1,13 @@
 import { OpCode } from '@mirascript/wasm';
 import type { VmConst, VmPrimitive } from '../vm';
-import type { GenerateOptions } from './types';
+import type { ScriptInput, TranspileOptions } from './types';
+import { encodeURL } from 'js-base64';
 
 /** 生成代码 */
-export function emit(chunk: Uint8Array, options: GenerateOptions): string {
-    const gen = new Emitter(chunk, options);
+export function emit(source: ScriptInput, chunk: Uint8Array, options: TranspileOptions): string {
+    const gen = new Emitter(source, chunk, options);
     gen.read();
-    const code = options.pretty ? gen.codeLines.join('\n') : gen.codeLines.join('');
+    const code = gen.codeLines.join('\n');
     return code;
 }
 
@@ -45,11 +46,15 @@ function toJavascript(value: VmConst | undefined): string {
     return String(value);
 }
 
+const ORIGIN = `mira://MiraScript`;
+let sourceId = 1;
+
 /** 代码生成 */
 class Emitter {
     constructor(
+        readonly source: ScriptInput,
         readonly chunk: Uint8Array,
-        readonly options: GenerateOptions,
+        readonly options: TranspileOptions,
     ) {
         this.pretty = options.pretty ?? false;
 
@@ -325,7 +330,7 @@ class Emitter {
                     i ? this.wv(i + argn, -1) : this.wv(0, -1),
                 ).join(', ');
                 if (script) {
-                    code = `return ((global = GlobalFallback(), ${args}) => { try{ CpEnter(); let ${regs};`;
+                    code = `return (function script(global = GlobalFallback(), ${args}) { try{ CpEnter(); let ${regs};`;
                 } else {
                     code = `${this.wv(reg)} = Function((${args}) => { try{ CpEnter(); let ${regs};`;
                 }
@@ -584,5 +589,30 @@ class Emitter {
     read(): void {
         this.readConsts();
         this.readCode();
+        this.addSourceMap();
+    }
+    /** 添加源映射 */
+    addSourceMap(): void {
+        if (!this.options.sourceMap) return;
+        let fileName = (this.options.fileName ?? '').trim();
+        if (fileName.startsWith('/')) {
+            fileName = fileName.replace(/^\\+\s*/, '');
+        }
+        if (!fileName) {
+            fileName = `${sourceId++}.${this.options.mode === 'template' ? 'miratpl' : 'mira'}`;
+        }
+        const data = {
+            version: 3,
+            file: fileName,
+            sourceRoot: ORIGIN,
+            sources: [fileName],
+            sourcesContent: [ArrayBuffer.isView(this.source) ? null : this.source],
+            names: [],
+            mappings: '',
+        };
+        this.codeLines.unshift(
+            `//# sourceURL=${ORIGIN}/${fileName}.js`,
+            `//# sourceMappingURL=data:application/json;base64,${encodeURL(JSON.stringify(data))}`,
+        );
     }
 }

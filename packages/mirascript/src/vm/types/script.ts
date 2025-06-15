@@ -3,7 +3,7 @@ import type { VmGlobal, VmValue } from './index.js';
 const kVmScript = Symbol.for('mirascript.vm.script');
 
 /** Mirascript 脚本 */
-export type VmScriptLike = (global?: VmGlobal | null) => VmValue;
+export type VmScriptLike = (global?: VmGlobal) => VmValue;
 
 /** Mirascript 脚本 */
 export type VmScript = VmScriptLike & {

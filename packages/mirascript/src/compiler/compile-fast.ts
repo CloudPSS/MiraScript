@@ -2,8 +2,11 @@ import { wrapScript } from './create-script.js';
 import { REG_NUMBER } from '../helpers/constants.js';
 import type { TranspileOptions } from './types.js';
 import type { VmScript } from '../vm/types/index.js';
+import { GlobalFallback } from '../vm/helpers.js';
 
-const REG_NUMBER_FULL = new RegExp(`^${REG_NUMBER.source}$`, 'ug');
+const REG_NUMBER_FULL = new RegExp(`^${REG_NUMBER.source}$`, REG_NUMBER.flags);
+// 只识别特殊变量名和以非 'N' 开头的大写变量名，其他标识符可能有与关键字冲突等情况，需要编译器处理
+const REG_IDENTIFIER_FAST = /^(?:\$+|@+|[_A-MO-Z])[a-zA-Z0-9_]*$/;
 
 // 为避免结果不一致，只对常量进行处理
 
@@ -22,8 +25,8 @@ function compileScriptFast(code: string, options: TranspileOptions): VmScript | 
     if (code.length > FAST_SCRIPT_MAX_LEN) return undefined; // 超过长度限制，直接返回 undefined
 
     const trimmedCode = code.trim();
-    if (!code) return wrapScript(code, () => null);
-    switch (code) {
+    if (!trimmedCode) return wrapScript(code, () => null);
+    switch (trimmedCode) {
         case '':
         case 'nil':
             return wrapScript(code, () => null);
@@ -38,6 +41,11 @@ function compileScriptFast(code: string, options: TranspileOptions): VmScript | 
             return wrapScript(code, () => 1 / 0);
         case '-inf':
             return wrapScript(code, () => -1 / 0);
+    }
+    if (REG_IDENTIFIER_FAST.test(trimmedCode)) {
+        // 直接返回标识符
+        const id = trimmedCode;
+        return wrapScript(code, (global = GlobalFallback()) => global[id] ?? null);
     }
     if (REG_NUMBER_FULL.test(trimmedCode)) {
         const num = Number(trimmedCode);
@@ -66,6 +74,7 @@ function compileTemplateFast(code: string, options: TranspileOptions): VmScript 
 /**
  * 对短代码进行编译
  */
-export function compileFast(code: string, options: TranspileOptions = {}): VmScript | undefined {
+export function compileFast(code: string, options: TranspileOptions): VmScript | undefined {
+    if (options.sourceMap) return undefined; // 不支持源映射
     return (options.mode === 'template' ? compileTemplateFast : compileScriptFast)(code, options);
 }

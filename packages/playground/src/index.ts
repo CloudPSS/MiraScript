@@ -204,17 +204,17 @@ async function run() {
     const value = editor.getValue();
 
     console.time('transpile');
-    const result = await compile(value, { pretty: true, mode }).finally(() => {
+    const result = await compile(value, { pretty: true, mode, sourceMap: true, fileName: 'xx/yy.mira' }).finally(() => {
         console.timeEnd('transpile');
     });
     let content = result.toString();
 
-    const COUNT = 1000;
-    const start = performance.now();
-    for (let i = 0; i < COUNT; i++) {
-        await compile(value, { pretty: true, mode });
-    }
-    console.log(`Compile benchmark: ${(performance.now() - start) / COUNT}ms`);
+    // const COUNT = 1000;
+    // const start = performance.now();
+    // for (let i = 0; i < COUNT; i++) {
+    //     await compile(value, { pretty: true, mode });
+    // }
+    // console.log(`Compile benchmark: ${(performance.now() - start) / COUNT}ms`);
 
     console.time('execute');
     try {
