@@ -51,6 +51,9 @@ const COMMON_GLOBAL_SUGGESTIONS = (range: IRange): languages.CompletionItem[] =>
             kind: languages.CompletionItemKind.Snippet,
             insertText: 'if ${1:condition} {\n\t$0\n}',
             insertTextRules: languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            documentation: {
+                value: `使用 \`if\` 表达式进行条件判断。${codeblock('if condition {\n\t// code\n}')}`,
+            },
             range,
         },
         {
@@ -58,6 +61,20 @@ const COMMON_GLOBAL_SUGGESTIONS = (range: IRange): languages.CompletionItem[] =>
             kind: languages.CompletionItemKind.Snippet,
             insertText: 'if ${1:condition} {\n\t$0\n} else {\n\t\n}',
             insertTextRules: languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            documentation: {
+                value: `使用 \`ifelse\` 表达式进行条件判断。${codeblock('if condition {\n\t// code\n} else {\n\t// code\n}')}`,
+            },
+            range,
+        },
+        {
+            label: { label: 'match', description: 'Match 表达式' },
+            kind: languages.CompletionItemKind.Snippet,
+            insertText:
+                'match ${1:value} {\n\tcase ${2:case1} {\n\t\t$0\n\t}\n\tcase ${3:case2} {\n\t\t\n\t}\n\tcase _ {\n\t\t\n\t}\n}',
+            insertTextRules: languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            documentation: {
+                value: `使用 \`match\` 表达式进行模式匹配。${codeblock('match value {\n\tcase case1 {\n\t\t// code\n\t}\n\tcase case2 {\n\t\t// code\n\t}\n\tcase _ {\n\t\t// code\n\t}\n}')}`,
+            },
             range,
         },
         {
@@ -65,6 +82,9 @@ const COMMON_GLOBAL_SUGGESTIONS = (range: IRange): languages.CompletionItem[] =>
             kind: languages.CompletionItemKind.Snippet,
             insertText: 'loop {\n\t$0\n}',
             insertTextRules: languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            documentation: {
+                value: `使用 \`loop\` 表达式进行无限循环。${codeblock('loop {\n\t// code\n}')}`,
+            },
             range,
         },
         {
@@ -72,6 +92,9 @@ const COMMON_GLOBAL_SUGGESTIONS = (range: IRange): languages.CompletionItem[] =>
             kind: languages.CompletionItemKind.Snippet,
             insertText: 'while ${1:condition} {\n\t$0\n}',
             insertTextRules: languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            documentation: {
+                value: `使用 \`while\` 表达式进行条件循环。${codeblock('while condition {\n\t// code\n}')}`,
+            },
             range,
         },
         {
@@ -79,6 +102,9 @@ const COMMON_GLOBAL_SUGGESTIONS = (range: IRange): languages.CompletionItem[] =>
             kind: languages.CompletionItemKind.Snippet,
             insertText: 'while ${1:condition} {\n\t$0\n} else {\n\t\n}',
             insertTextRules: languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            documentation: {
+                value: `使用 \`whileelse\` 表达式进行条件循环。${codeblock('while condition {\n\t// code\n} else {\n\t// code\n}')}`,
+            },
             range,
         },
         {
@@ -86,6 +112,9 @@ const COMMON_GLOBAL_SUGGESTIONS = (range: IRange): languages.CompletionItem[] =>
             kind: languages.CompletionItemKind.Snippet,
             insertText: 'for ${1:item} in ${2:collection} {\n\t$0\n}',
             insertTextRules: languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            documentation: {
+                value: `使用 \`for\` 表达式进行迭代循环。${codeblock('for item in collection {\n\t// code\n}')}`,
+            },
             range,
         },
         {
@@ -93,6 +122,19 @@ const COMMON_GLOBAL_SUGGESTIONS = (range: IRange): languages.CompletionItem[] =>
             kind: languages.CompletionItemKind.Snippet,
             insertText: 'for ${1:item} in ${2:collection} {\n\t$0\n} else {\n\t\n}',
             insertTextRules: languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            documentation: {
+                value: `使用 \`forelse\` 表达式进行迭代循环。${codeblock('for item in collection {\n\t// code\n} else {\n\t// code\n}')}`,
+            },
+            range,
+        },
+        {
+            label: { label: 'fn', description: 'Fn 语句' },
+            kind: languages.CompletionItemKind.Snippet,
+            insertText: 'fn ${1:name}(${2:params}) {\n\t$0\n}',
+            insertTextRules: languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            documentation: {
+                value: `使用 \`fn\` 语句进行函数声明。${codeblock('fn name(params) {\n\t// code\n}')}`,
+            },
             range,
         },
     ];

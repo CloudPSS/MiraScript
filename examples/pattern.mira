@@ -1,0 +1,23 @@
+let point = (1, 2);
+
+fn point_info {
+  match it {
+    case (0, 0) {
+      "Point is at the origin (0, 0)"
+    }
+    case (x, 0) {
+      "Point is on the x-axis at x = $x"
+    }
+    case (0, y) {
+      "Point is on the y-axis at y = $y"
+    }
+    case (x, y) {
+      "Point is at coordinates ($x, $y)"
+    }
+    case _ {
+      "Not a valid point"
+    }
+  }
+}
+
+debug_print(point_info(point));
