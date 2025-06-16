@@ -265,9 +265,9 @@ fn interpolation<'s>(dollar_count: usize) -> impl Parser<'s, StringFragment<'s>>
             }
             // '$' identifier
             let (mut kind, range) = identifier(true).with_span().parse_next(i)?;
-            if let TokenKind::Keyword(kw, Some(kw_str)) = kind {
+            if let TokenKind::Keyword(kw) = kind {
                 kind = TokenKind::unknown_range(
-                    TokenKind::Identifier(kw_str),
+                    TokenKind::Identifier(kw.into()),
                     range.clone(),
                     if kw.is_reserved() {
                         DiagnosticCode::InvalidReservedKeyword

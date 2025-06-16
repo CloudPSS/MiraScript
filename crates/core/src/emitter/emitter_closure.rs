@@ -107,6 +107,7 @@ impl<'s> Emitter<'s> {
         expr: &'s Option<Box<Expression<'s>>>,
     ) {
         let arg_len = args.as_ref().map_or(1, |args| args.len());
+        let mut has_var_args = false;
         self.closures.enter(true, arg_len);
         self.enter_scope(args_range.start..body_range.end);
 
@@ -155,7 +156,7 @@ impl<'s> Emitter<'s> {
                             );
                             self.declare_pattern(arg, Some(BindType::ParameterSubPattern));
                         }
-                        self.closures.current().set_var_args();
+                        has_var_args = true;
                     }
                     ArrayElementBase::Range(..) => unreachable!(),
                 }
@@ -203,7 +204,7 @@ impl<'s> Emitter<'s> {
         self.op(OpCode::FuncEnd);
 
         let closure = self.closures.current();
-        let func_op = if closure.has_var_args() {
+        let func_op = if has_var_args {
             OpCode::FuncVarg
         } else {
             OpCode::Func

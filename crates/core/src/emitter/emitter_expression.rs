@@ -133,11 +133,11 @@ impl<'s> Emitter<'s> {
                 TokenKind::String(s) => self.op_string(ret, s.as_ref()),
                 TokenKind::Number(n) => self.op_number(ret, *n),
                 TokenKind::Ordinal(o) => self.op_number(ret, *o as f64),
-                TokenKind::Keyword(Keyword::Nil, _) => self.op_nil(ret),
-                TokenKind::Keyword(Keyword::True, _) => self.op_bool(ret, true),
-                TokenKind::Keyword(Keyword::False, _) => self.op_bool(ret, false),
-                TokenKind::Keyword(Keyword::Nan, _) => self.op_number(ret, f64::NAN),
-                TokenKind::Keyword(Keyword::Inf, _) => self.op_number(ret, f64::INFINITY),
+                TokenKind::Keyword(Keyword::Nil) => self.op_nil(ret),
+                TokenKind::Keyword(Keyword::True) => self.op_bool(ret, true),
+                TokenKind::Keyword(Keyword::False) => self.op_bool(ret, false),
+                TokenKind::Keyword(Keyword::Nan) => self.op_number(ret, f64::NAN),
+                TokenKind::Keyword(Keyword::Inf) => self.op_number(ret, f64::INFINITY),
                 _ => self.unreachable(token, token, file!(), line!()),
             },
             InterpolatedString(token, expressions) => {
@@ -565,7 +565,7 @@ impl<'s> Emitter<'s> {
                 } else {
                     let Some(op) = (match token.kind {
                         TokenKind::Operator(o) => o.to_infix_op(),
-                        TokenKind::Keyword(Keyword::In, _) => Some(OpCode::In),
+                        TokenKind::Keyword(Keyword::In) => Some(OpCode::In),
                         _ => None,
                     }) else {
                         // Unexpected infix operator

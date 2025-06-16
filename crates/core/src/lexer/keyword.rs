@@ -1,10 +1,21 @@
-use strum::{Display, EnumProperty, EnumString, VariantArray};
+use strum::{Display, EnumProperty, EnumString, IntoStaticStr, VariantArray};
 
 use crate::ansi::{DisplayIdent, KEYWORD, NUMBER, RESET};
 
 use super::prelude::*;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumString, Display, VariantArray, EnumProperty)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    EnumString,
+    Display,
+    VariantArray,
+    EnumProperty,
+    IntoStaticStr,
+)]
 #[strum(serialize_all = "snake_case")]
 pub enum Keyword {
     // constants
@@ -126,31 +137,31 @@ impl Keyword {
 
 impl From<Keyword> for TokenKind<'_> {
     fn from(kw: Keyword) -> Self {
-        TokenKind::Keyword(kw, None)
+        TokenKind::Keyword(kw)
     }
 }
 
 impl PartialEq<Token<'_>> for Keyword {
     fn eq(&self, other: &Token<'_>) -> bool {
-        matches!(&other.kind, TokenKind::Keyword(kw, _) if kw == self)
+        matches!(&other.kind, TokenKind::Keyword(kw) if kw == self)
     }
 }
 
 impl PartialEq<Keyword> for Token<'_> {
     fn eq(&self, other: &Keyword) -> bool {
-        matches!(&self.kind, TokenKind::Keyword(kw, _) if kw == other)
+        matches!(&self.kind, TokenKind::Keyword(kw) if kw == other)
     }
 }
 
 impl PartialEq<TokenKind<'_>> for Keyword {
     fn eq(&self, other: &TokenKind<'_>) -> bool {
-        matches!(other, TokenKind::Keyword(kw, _) if kw == self)
+        matches!(other, TokenKind::Keyword(kw) if kw == self)
     }
 }
 
 impl PartialEq<Keyword> for TokenKind<'_> {
     fn eq(&self, other: &Keyword) -> bool {
-        matches!(self, TokenKind::Keyword(kw, _) if kw == other)
+        matches!(self, TokenKind::Keyword(kw) if kw == other)
     }
 }
 

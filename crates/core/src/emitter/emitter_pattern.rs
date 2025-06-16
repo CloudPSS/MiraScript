@@ -143,8 +143,8 @@ impl<'s> Emitter<'s> {
                 if let Some(lit_num) = match &lit.kind {
                     TokenKind::Number(n) => Some(*n),
                     TokenKind::Ordinal(o) => Some(*o as f64),
-                    TokenKind::Keyword(Keyword::Nan, _) => Some(f64::NAN),
-                    TokenKind::Keyword(Keyword::Inf, _) => Some(f64::INFINITY),
+                    TokenKind::Keyword(Keyword::Nan) => Some(f64::NAN),
+                    TokenKind::Keyword(Keyword::Inf) => Some(f64::INFINITY),
                     _ => None,
                 } {
                     let inv = prefix
@@ -154,13 +154,13 @@ impl<'s> Emitter<'s> {
                     self.op_number(value, lit_num);
                 } else {
                     match &lit.kind {
-                        TokenKind::Keyword(Keyword::Nil, _) => {
+                        TokenKind::Keyword(Keyword::Nil) => {
                             self.op_nil(value);
                         }
-                        TokenKind::Keyword(Keyword::True, _) => {
+                        TokenKind::Keyword(Keyword::True) => {
                             self.op_bool(value, true);
                         }
-                        TokenKind::Keyword(Keyword::False, _) => {
+                        TokenKind::Keyword(Keyword::False) => {
                             self.op_bool(value, false);
                         }
                         TokenKind::String(s) => {
