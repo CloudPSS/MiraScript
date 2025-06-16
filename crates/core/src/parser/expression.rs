@@ -619,7 +619,7 @@ impl DisplayIdent for Expression<'_> {
                 let Token {
                     kind: TokenKind::InterpolatedString(s),
                     ..
-                } = &**token
+                } = *token
                 else {
                     return write!(f, "{RECOVER}(\"<???>\"){RESET}");
                 };

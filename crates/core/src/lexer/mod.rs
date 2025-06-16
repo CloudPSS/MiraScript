@@ -49,13 +49,15 @@ fn lex_impl<'s, const BALANCED: bool>(
 ) -> Result<Vec<Token<'s>>> {
     let mut tokens = vec![];
     while !BALANCED || tokens.is_empty() || depth > 0 {
-        let _trivia = trivia::trivia_list(input)?;
+        let _leading_trivia = trivia::leading_trivia(input)?;
         let prev_token = tokens.last_mut();
         #[allow(unused_mut)]
         let mut token = tokens::token(input, prev_token)?;
+        let _trailing_trivia = trivia::tailing_trivia(input)?;
         #[cfg(feature = "trivia")]
         {
-            token.leading_trivia = _trivia;
+            token.leading_trivia = _leading_trivia.into_boxed_slice();
+            token.trailing_trivia = _trailing_trivia.into_boxed_slice();
         }
         let eof = matches!(token.kind, TokenKind::Eof);
         if BALANCED {
@@ -88,14 +90,7 @@ pub(crate) fn lex_balanced<'s>(
 pub fn lex_string<'s>(input: &mut Input<'s>) -> Result<Vec<Token<'s>>> {
     let mut str = string::string_content(None, 1)
         .with_span()
-        .map(|(s, range)| Token {
-            kind: s,
-            range,
-            #[cfg(feature = "trivia")]
-            leading_trivia: vec![],
-            #[cfg(feature = "trivia")]
-            trailing_trivia: vec![],
-        })
+        .map(|(s, range)| Token::new(s, range))
         .parse_next(input)?;
     let eof = tokens::token(input, Some(&mut str))?;
 

@@ -12,9 +12,9 @@ pub struct Token<'s> {
     pub kind: TokenKind<'s>,
     pub range: SourceRange,
     #[cfg(feature = "trivia")]
-    pub leading_trivia: Vec<Trivia<'s>>,
+    pub leading_trivia: Box<[Trivia<'s>]>,
     #[cfg(feature = "trivia")]
-    pub trailing_trivia: Vec<Trivia<'s>>,
+    pub trailing_trivia: Box<[Trivia<'s>]>,
 }
 
 impl winnow::stream::Location for Token<'_> {
@@ -47,9 +47,9 @@ impl<'s> Token<'s> {
             kind,
             range,
             #[cfg(feature = "trivia")]
-            leading_trivia: vec![],
+            leading_trivia: Box::new([]),
             #[cfg(feature = "trivia")]
-            trailing_trivia: vec![],
+            trailing_trivia: Box::new([]),
         }
     }
 
@@ -65,17 +65,13 @@ impl<'s> Token<'s> {
     }
 
     pub(crate) fn empty(pos: usize) -> Self {
-        Token {
-            range: pos..pos,
-            kind: TokenKind::Unknown {
+        Self::new(
+            TokenKind::Unknown {
                 recovered: None,
                 errors: vec![],
             },
-            #[cfg(feature = "trivia")]
-            leading_trivia: vec![],
-            #[cfg(feature = "trivia")]
-            trailing_trivia: vec![],
-        }
+            pos..pos,
+        )
     }
 
     pub(crate) fn unknown<R: Into<TokenKind<'s>>>(
@@ -83,14 +79,10 @@ impl<'s> Token<'s> {
         recovered: R,
         error: DiagnosticCode,
     ) -> Self {
-        Token {
-            range: range.clone(),
-            kind: TokenKind::unknown_range(recovered, range, error),
-            #[cfg(feature = "trivia")]
-            leading_trivia: vec![],
-            #[cfg(feature = "trivia")]
-            trailing_trivia: vec![],
-        }
+        Self::new(
+            TokenKind::unknown_range(recovered, range.clone(), error),
+            range,
+        )
     }
     pub(crate) fn unknown_range<R: Into<TokenKind<'s>>>(
         token_range: SourceRange,
@@ -98,14 +90,10 @@ impl<'s> Token<'s> {
         error_range: SourceRange,
         error: DiagnosticCode,
     ) -> Self {
-        Token {
-            range: token_range,
-            kind: TokenKind::unknown_range(recovered, error_range, error),
-            #[cfg(feature = "trivia")]
-            leading_trivia: vec![],
-            #[cfg(feature = "trivia")]
-            trailing_trivia: vec![],
-        }
+        Self::new(
+            TokenKind::unknown_range(recovered, error_range, error),
+            token_range,
+        )
     }
 
     pub(crate) fn unknown_errors<E: Into<Vec<SourceDiagnostic>>, R: Into<TokenKind<'s>>>(
@@ -113,14 +101,7 @@ impl<'s> Token<'s> {
         recovered: R,
         errors: E,
     ) -> Self {
-        Token {
-            range,
-            kind: TokenKind::unknown_errors(recovered, errors),
-            #[cfg(feature = "trivia")]
-            leading_trivia: vec![],
-            #[cfg(feature = "trivia")]
-            trailing_trivia: vec![],
-        }
+        Self::new(TokenKind::unknown_errors(recovered, errors), range)
     }
 }
 

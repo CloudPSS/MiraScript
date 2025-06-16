@@ -18,7 +18,7 @@ pub enum Trivia<'s> {
     LineComment(&'s str),
     BlockComment(&'s str),
     UnterminatedBlockComment(&'s str),
-    EmptyLine,
+    NewLine,
 }
 
 #[cfg(feature = "trivia")]
@@ -62,7 +62,7 @@ impl DisplayIdent for Trivia<'_> {
                 }
                 write!(f, "{RECOVER}{COMMENT}*/{RESET}")?;
             }
-            EmptyLine => {
+            NewLine => {
                 //  f.write_str("\n")?;
             }
         }
@@ -75,6 +75,7 @@ type TriviaResult<'s> = Trivia<'s>;
 #[cfg(not(feature = "trivia"))]
 type TriviaResult<'s> = ();
 
+/// 行注释，及末尾的换行
 fn line_comment<'s>(i: &mut Input<'s>) -> Result<TriviaResult<'s>> {
     let parser = delimited((space0, "//"), till_line_ending, opt(line_ending));
 
@@ -88,6 +89,7 @@ fn line_comment<'s>(i: &mut Input<'s>) -> Result<TriviaResult<'s>> {
     }
 }
 
+/// 块注释
 fn block_comment<'s>(i: &mut Input<'s>) -> Result<TriviaResult<'s>> {
     let (mapper1, mapper2);
     #[cfg(feature = "trivia")]
@@ -111,11 +113,12 @@ fn block_comment<'s>(i: &mut Input<'s>) -> Result<TriviaResult<'s>> {
     .parse_next(i)
 }
 
-fn empty_line<'s>(i: &mut Input<'s>) -> Result<TriviaResult<'s>> {
+/// 折行
+fn new_line<'s>(i: &mut Input<'s>) -> Result<TriviaResult<'s>> {
     let result;
     #[cfg(feature = "trivia")]
     {
-        result = Trivia::EmptyLine;
+        result = Trivia::NewLine;
     }
     #[cfg(not(feature = "trivia"))]
     {
@@ -124,15 +127,16 @@ fn empty_line<'s>(i: &mut Input<'s>) -> Result<TriviaResult<'s>> {
     (space0, line_ending).value(result).parse_next(i)
 }
 
-pub(super) fn trivia<'s>(i: &mut Input<'s>) -> Result<TriviaResult<'s>> {
-    alt((line_comment, block_comment, empty_line)).parse_next(i)
-}
-
 #[cfg(feature = "trivia")]
 type TriviaListResult<'s> = Vec<Trivia<'s>>;
 #[cfg(not(feature = "trivia"))]
 type TriviaListResult<'s> = ();
 
-pub(super) fn trivia_list<'s>(i: &mut Input<'s>) -> Result<TriviaListResult<'s>> {
-    repeat(0.., trivia).parse_next(i)
+pub(super) fn leading_trivia<'s>(i: &mut Input<'s>) -> Result<TriviaListResult<'s>> {
+    repeat(0.., alt((line_comment, block_comment, new_line))).parse_next(i)
+}
+
+pub(super) fn tailing_trivia<'s>(i: &mut Input<'s>) -> Result<TriviaListResult<'s>> {
+    // 目前仅解析行末的注释，后续可以增加更复杂的规则
+    repeat(0..1, line_comment).parse_next(i)
 }

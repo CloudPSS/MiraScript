@@ -276,14 +276,7 @@ fn interpolation<'s>(dollar_count: usize) -> impl Parser<'s, StringFragment<'s>>
                     },
                 );
             }
-            let id = Token {
-                kind,
-                range,
-                #[cfg(feature = "trivia")]
-                leading_trivia: vec![],
-                #[cfg(feature = "trivia")]
-                trailing_trivia: vec![],
-            };
+            let id = Token::new(kind, range);
             return Ok(StringFragment::Interpolation(vec![id]));
         }
 
