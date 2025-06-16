@@ -8,7 +8,7 @@ publish = false
 name = "mira_core"
 
 [[bench]]
-name = "lexer"
+name = "main"
 harness = false
 
 [features]
@@ -19,6 +19,7 @@ trivia = []
 
 [dev-dependencies]
 divan = "0.1.21"
+mimalloc = "0.1"
 mira-core = { path = "." }
 
 [dependencies]
