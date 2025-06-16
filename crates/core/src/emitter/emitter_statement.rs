@@ -153,24 +153,13 @@ impl<'s> Emitter<'s> {
                 final_op(self);
                 false
             }
-            Function(kw, name_token, args, expression) => {
+            Function(_, name_token, args, body) => {
                 let TokenKind::Identifier(name) = &name_token.kind else {
                     unreachable!("Expected identifier token");
                 };
                 let func_var = self.scopes.find_local_variable(name).unwrap();
                 let func_reg = self.closures.initialize_variable(func_var);
-                let parser::Expression::Block(_, stmts, expr, _) = &**expression else {
-                    unreachable!("Expected block expression");
-                };
-                let body_range = expression.range();
-                self.emit_fn(
-                    func_reg,
-                    name_token.range.end..body_range.start,
-                    args,
-                    body_range,
-                    stmts,
-                    expr,
-                );
+                self.emit_fn(func_reg, name_token.range.end, args, body);
                 false
             }
             Return(_, expression, _) => {

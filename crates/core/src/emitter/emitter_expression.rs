@@ -816,20 +816,8 @@ impl<'s> Emitter<'s> {
                     self.exit_scope();
                 }
             }
-            Function(kw, args, expression) => {
-                let parser::Expression::Block(_, stmts, expr, _) = &**expression else {
-                    // unreachable!("Expected block expression");
-                    return;
-                };
-                let body_range = expr.range();
-                self.emit_fn(
-                    ret,
-                    kw.range.end..body_range.start,
-                    args,
-                    body_range,
-                    stmts,
-                    expr,
-                );
+            Function(kw, args, body) => {
+                self.emit_fn(ret, kw.range.end, args, body);
             }
             Unknown { .. } => {
                 // Load nil as result of unknown expression

@@ -100,16 +100,28 @@ impl<'s> Emitter<'s> {
     pub fn emit_fn(
         &mut self,
         ret: Register,
-        args_range: SourceRange,
+        scope_start: usize,
         args: &'s Option<ParameterList<'s>>,
-        body_range: SourceRange,
+        body: &'s Expression<'s>,
+    ) {
+        let Expression::Block(_, stmts, expr, cp) = body else {
+            // unreachable!("Expected block expression");
+            return;
+        };
+        self.emit_fn_like(ret, scope_start..cp.range.start, args, stmts, expr);
+    }
+    pub fn emit_fn_like(
+        &mut self,
+        ret: Register,
+        scope_range: SourceRange,
+        args: &'s Option<ParameterList<'s>>,
         stmts: &'s Vec<Statement<'s>>,
         expr: &'s Option<Box<Expression<'s>>>,
     ) {
         let arg_len = args.as_ref().map_or(1, |args| args.len());
         let mut has_var_args = false;
         self.closures.enter(true, arg_len);
-        self.enter_scope(args_range.start..body_range.end);
+        self.enter_scope(scope_range.clone());
 
         let pos = self.chunk.code.len();
         self.chunk.code.push(OpCode::Func.code());
@@ -165,7 +177,7 @@ impl<'s> Emitter<'s> {
             self.declare_parameter(
                 0,
                 None,
-                args_range.start..args_range.start,
+                scope_range.start..scope_range.start,
                 false,
                 BindType::ItParameter,
             );

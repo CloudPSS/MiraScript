@@ -540,7 +540,8 @@ class Emitter {
                 const end = read();
                 const exclusive = opcode === OpCode.LoopRangeExclusive;
                 const regs = Array.from({ length: nreg - 1 }, (_, i) => this.wv(i + 2, -1)).join(', ');
-                code = `for (let ${this.wv(1, -1)} = $ToNumber(${this.rv(start)}); ${this.wv(1, -1)} ${exclusive ? '<' : '<='} $ToNumber(${this.rv(end)}); ${this.wv(1, -1)} += 1) { Cp(); let _, ${regs};`;
+                const i = this.wv(1, -1);
+                code = `for (let start = $ToNumber(${this.rv(start)}), end = $ToNumber(${this.rv(end)}), ${i} = start; ${i} ${exclusive ? '<' : '<='} end; ${i} += 1) { Cp(); let _, ${regs};`;
                 break;
             }
             case OpCode.Loop: {

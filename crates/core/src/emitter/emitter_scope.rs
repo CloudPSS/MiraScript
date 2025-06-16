@@ -87,6 +87,7 @@ impl Closures {
 
 impl<'s> Emitter<'s> {
     pub fn enter_scope(&mut self, range: SourceRange) {
+        debug_assert!(range.start <= range.end, "Invalid scope range {range:?}");
         self.enter_leveled_scope(range, self.closures.len());
     }
     pub fn enter_leveled_scope(&mut self, range: SourceRange, level: usize) {

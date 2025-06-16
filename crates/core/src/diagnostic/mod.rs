@@ -21,7 +21,7 @@ impl Display for SourceDiagnostic {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "{}({}) at {}:{}: {}",
+            "{}({}) at {}~{}: {}",
             self.error,
             self.code(),
             self.range.start,
