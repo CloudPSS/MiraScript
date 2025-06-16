@@ -25,22 +25,18 @@ fn to_interpolate_expr<'s>(token: &'s Token<'s>) -> Expression<'s> {
         .iter()
         .map(|(_, tokens)| {
             let expr: Result<Expression<'s>> = {
-                let len = tokens.len();
-                if tokens.len() >= 2
-                    && tokens[0].kind == Operator::OpenBrace
-                    && tokens[len - 1].kind == Operator::CloseBrace
-                {
-                    let [op, tokens @ .., cp] = &tokens[..] else {
-                        unreachable!();
-                    };
-                    let mut token_input = to_input(tokens);
-                    script
-                        .parse_next(&mut token_input)
-                        .map(|script| Expression::Block(op.into(), script.0, script.1, cp.into()))
-                } else {
-                    let mut token_input = to_input(tokens);
-                    terminated(expression, eof).parse_next(&mut token_input)
-                }
+                let tokens = match &tokens[..] {
+                    // If the first token is an open brace and the last token is a close brace,
+                    // we treat it as a block interpolation.
+                    [op, inner @ .., ed]
+                        if *op == Operator::OpenBrace && *ed == Operator::CloseBrace =>
+                    {
+                        inner
+                    }
+                    tokens => tokens,
+                };
+                let mut token_input = to_input(tokens);
+                terminated(expression, eof).parse_next(&mut token_input)
             };
             match expr {
                 Ok(expr) => expr,

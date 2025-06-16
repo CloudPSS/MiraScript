@@ -9,7 +9,7 @@
   "dependencies": {
     "@mirascript/monaco": "workspace:*",
     "@mirascript/wasm": "workspace:*",
-    "@private/monaco-editor": "^0.0.33",
+    "@private/monaco-editor": "^0.0.34",
     "mirascript": "workspace:*"
   },
   "devDependencies": {
