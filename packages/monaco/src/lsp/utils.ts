@@ -3,7 +3,7 @@ import { type editor, Range, type IPosition, type IRange } from '../monaco-api.j
 import {
     getVmFunctionInfo,
     isVmArray,
-    isVmExtern,
+    isVmFunction,
     isVmModule,
     isVmPrimitive,
     isVmRecord,
@@ -12,7 +12,7 @@ import {
     type VmFunctionInfo,
     type VmValue,
 } from 'mirascript';
-import { operations, serializePropName } from 'mirascript/subtle';
+import { operations, serializePropName, serializeString } from 'mirascript/subtle';
 import type { LocalDefinition } from './compile-result';
 
 /** 生成函数签名 */
@@ -99,28 +99,37 @@ export function strictContainsPosition(range: IRange, position: IPosition): bool
     return !Range.isEmpty(range) && Range.containsPosition(range, position);
 }
 
+const MAX_WIDTH = 40;
+const MAX_ENTRIES = 100;
+
 /** 将值序列化为便于展示的字符串 */
 function serializeForDisplayInner(value: VmValue): string {
+    if (typeof value === 'string') {
+        if (value.length < MAX_WIDTH) {
+            return serializeString(value);
+        }
+        return `${serializeString(value.slice(0, MAX_WIDTH))}..`;
+    }
     if (isVmPrimitive(value)) {
         return serialize(value);
     }
     if (isVmArray(value)) {
         const len = value.length;
         if (!len) return '[]';
-        return `[/* ..x${len} */]`;
+        return `[../* x${len} */]`;
     }
     if (isVmRecord(value)) {
         const len = Object.keys(value).length;
         if (!len) return '()';
-        return `(/* ..x${len} */)`;
+        return `(../* x${len} */)`;
     }
     return `/* ${operations.$ToString(value)} */`;
 }
 
 /** 将值序列化为便于展示的字符串 */
 export function serializeForDisplay(value: VmValue): string {
-    if (isVmPrimitive(value)) {
-        return serialize(value);
+    if (isVmPrimitive(value) || isVmFunction(value)) {
+        return serializeForDisplayInner(value);
     }
     let begin, end;
     const entries = [];
@@ -129,8 +138,8 @@ export function serializeForDisplay(value: VmValue): string {
         begin = '[';
         end = ']';
         for (const v of value) {
-            if (entries.length > 20) {
-                entries.push('..');
+            if (entries.length > MAX_ENTRIES) {
+                entries.push(`../* x${value.length - entries.length} */`);
                 break;
             }
             const entry = serializeForDisplayInner(v ?? null);
@@ -141,36 +150,31 @@ export function serializeForDisplay(value: VmValue): string {
         begin = '(';
         end = ')';
         const e = Object.entries(value);
-        const result = [];
         for (const [key, value] of e) {
-            if (result.length > 20) {
-                result.push('..');
+            if (entries.length > MAX_ENTRIES) {
+                entries.push(`../* x${e.length - entries.length} */`);
                 break;
             }
             const entry = `${serializePropName(key)}: ${serializeForDisplayInner(value ?? null)}`;
-            result.push(entry);
+            entries.push(entry);
             resultLength += entry.length;
         }
     } else {
         const hint = serializeForDisplayInner(value);
-        if (isVmModule(value) || isVmExtern(value)) {
-            begin = `${hint} (`;
-            end = ')';
-            const keys = value.keys();
-            for (const key of keys) {
-                if (entries.length > 20) {
-                    entries.push('..');
-                    break;
-                }
-                const entry = `${serializePropName(key)}: ${serializeForDisplayInner(value.get(key) ?? null)}`;
-                entries.push(entry);
-                resultLength += entry.length;
+        begin = `${hint} (`;
+        end = ')';
+        const keys = value.keys();
+        for (const key of keys) {
+            if (entries.length > MAX_ENTRIES) {
+                entries.push(`../* x${keys.length - entries.length} */`);
+                break;
             }
-        } else {
-            return hint;
+            const entry = `${serializePropName(key)}: ${serializeForDisplayInner(value.get(key) ?? null)}`;
+            entries.push(entry);
+            resultLength += entry.length;
         }
     }
-    if (resultLength >= 40) {
+    if (resultLength >= MAX_WIDTH) {
         return `${begin}\n  ${entries.join(',\n  ')}\n${end}`;
     }
     return `${begin}${entries.join(', ')}${end}`;

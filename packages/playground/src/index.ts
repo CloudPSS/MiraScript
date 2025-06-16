@@ -17,8 +17,9 @@ import {
 const globals = createVmGlobal(
     {
         e: new VmExtern([1, 2, [1, 2], { x: 0 }]),
-        o: {},
+        o: { a: [], b: 1, c: '2', d: { e: 3 } },
         x: [1, 2, 3],
+        s: 'sdaf\ndsaf\\n'.repeat(10000),
     },
     {
         globalThis,

@@ -11,10 +11,10 @@ export function serializeString(value: string): string {
         // 不包含特殊字符
         return `'${value}'`;
     }
-    let ret = '`';
+    let ret = "'";
     for (const char of value) {
-        if (char === '`') {
-            ret += '\\`';
+        if (char === "'") {
+            ret += String.raw`\'`;
         } else if (char === '\0') {
             ret += String.raw`\0`;
         } else if (char === '\n') {
@@ -44,7 +44,7 @@ export function serializeString(value: string): string {
             ret += char; // 普通字符直接添加
         }
     }
-    ret += '`';
+    ret += "'";
     return ret;
 }
 
