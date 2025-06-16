@@ -3,8 +3,10 @@ import { REG_IDENTIFIER, REG_ORDINAL } from './constants';
 
 const MAX_DEPTH = 100;
 
-/** 序列化字符串 */
-function serializeString(value: string): string {
+/**
+ * 将 MiraScript 字符串序列化为 MiraScript 字面量。
+ */
+export function serializeString(value: string): string {
     if (!/[\p{C}'"`$\\]/u.test(value)) {
         // 不包含特殊字符
         return `'${value}'`;
@@ -47,7 +49,7 @@ function serializeString(value: string): string {
 }
 
 /** 序列化属性名 */
-function serializePropName(value: string): string {
+export function serializePropName(value: string): string {
     if (REG_ORDINAL.test(value)) {
         return value; // 如果是合法的数字属性名，直接返回
     }

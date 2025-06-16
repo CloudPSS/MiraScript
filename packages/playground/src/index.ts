@@ -14,7 +14,17 @@ import {
     type ParseMode,
 } from 'mirascript';
 
-registerMiraScript(monaco);
+const globals = createVmGlobal(
+    {
+        e: new VmExtern([1, 2, [1, 2], { x: 0 }]),
+        o: {},
+        x: [1, 2, 3],
+    },
+    {
+        globalThis,
+    },
+);
+registerMiraScript(monaco, () => globals);
 
 let mode: ParseMode = (localStorage.getItem('mode') as ParseMode) || 'script';
 const createModel = (value: string) =>
@@ -218,18 +228,7 @@ async function run() {
 
     console.time('execute');
     try {
-        const ret = result(
-            createVmGlobal(
-                {
-                    e: new VmExtern([1, 2, [1, 2], { x: 0 }]),
-                    o: {},
-                    x: [1, 2, 3],
-                },
-                {
-                    globalThis,
-                },
-            ),
-        );
+        const ret = result(globals);
         content += `\nResult:\n  ${print(ret)}`;
     } catch (ex) {
         content += `\n${String(ex)}`;

@@ -1,7 +1,7 @@
 import type { CancellationToken, editor, IMarkdownString, IRange, languages, Position } from '../../monaco-api.js';
 import { Provider } from './base.js';
 import { DiagnosticCode } from '@mirascript/wasm';
-import { codeblock, getGlobal, paramsList } from '../utils';
+import { codeblock, globalDoc, paramsList } from '../utils';
 import type { LocalDefinition } from '../compile-result';
 
 /** @inheritdoc */
@@ -17,13 +17,14 @@ export class HoverProvider extends Provider implements languages.HoverProvider {
         if (!compiled) {
             return undefined;
         }
+        const globals = await this.getGlobals(model);
         const d = compiled.definition(model, position);
         if (!d) return undefined;
         const { def, ref } = d;
         let content: IMarkdownString | undefined;
         let range: IRange | undefined;
         if ('name' in def) {
-            const { script, doc } = getGlobal(def.name);
+            const { script, doc } = globalDoc(def.name, globals[def.name]);
             content = {
                 value: codeblock(`\0(global) ${script}`) + doc,
             };

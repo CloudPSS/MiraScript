@@ -1,7 +1,18 @@
 import { DiagnosticCode } from '@mirascript/wasm';
 import { type editor, Range, type IPosition, type IRange } from '../monaco-api.js';
-import { VmSharedGlobal } from 'mirascript/subtle';
-import { getVmFunctionInfo, isVmModule, type VmImmutable, serialize, type VmFunctionInfo } from 'mirascript';
+import {
+    getVmFunctionInfo,
+    isVmArray,
+    isVmExtern,
+    isVmModule,
+    isVmPrimitive,
+    isVmRecord,
+    serialize,
+    type VmAny,
+    type VmFunctionInfo,
+    type VmValue,
+} from 'mirascript';
+import { operations, serializePropName } from 'mirascript/subtle';
 import type { LocalDefinition } from './compile-result';
 
 /** 生成函数签名 */
@@ -61,7 +72,7 @@ export function paramsList(model: editor.ITextModel, info: VmFunctionInfo | Loca
 }
 
 /** 生成函数文档 */
-export function globalFnDocument(info: VmFunctionInfo): string {
+export function globalFnDoc(info: VmFunctionInfo): string {
     const doc = [];
     if (info.summary) {
         doc.push(info.summary);
@@ -88,25 +99,104 @@ export function strictContainsPosition(range: IRange, position: IPosition): bool
     return !Range.isEmpty(range) && Range.containsPosition(range, position);
 }
 
+/** 将值序列化为便于展示的字符串 */
+function serializeForDisplayInner(value: VmValue): string {
+    if (isVmPrimitive(value)) {
+        return serialize(value);
+    }
+    if (isVmArray(value)) {
+        const len = value.length;
+        if (!len) return '[]';
+        return `[/* ..x${len} */]`;
+    }
+    if (isVmRecord(value)) {
+        const len = Object.keys(value).length;
+        if (!len) return '()';
+        return `(/* ..x${len} */)`;
+    }
+    return `/* ${operations.$ToString(value)} */`;
+}
+
+/** 将值序列化为便于展示的字符串 */
+export function serializeForDisplay(value: VmValue): string {
+    if (isVmPrimitive(value)) {
+        return serialize(value);
+    }
+    let begin, end;
+    const entries = [];
+    let resultLength = 0;
+    if (isVmArray(value)) {
+        begin = '[';
+        end = ']';
+        for (const v of value) {
+            if (entries.length > 20) {
+                entries.push('..');
+                break;
+            }
+            const entry = serializeForDisplayInner(v ?? null);
+            entries.push(entry);
+            resultLength += entry.length;
+        }
+    } else if (isVmRecord(value)) {
+        begin = '(';
+        end = ')';
+        const e = Object.entries(value);
+        const result = [];
+        for (const [key, value] of e) {
+            if (result.length > 20) {
+                result.push('..');
+                break;
+            }
+            const entry = `${serializePropName(key)}: ${serializeForDisplayInner(value ?? null)}`;
+            result.push(entry);
+            resultLength += entry.length;
+        }
+    } else {
+        const hint = serializeForDisplayInner(value);
+        if (isVmModule(value) || isVmExtern(value)) {
+            begin = `${hint} (`;
+            end = ')';
+            const keys = value.keys();
+            for (const key of keys) {
+                if (entries.length > 20) {
+                    entries.push('..');
+                    break;
+                }
+                const entry = `${serializePropName(key)}: ${serializeForDisplayInner(value.get(key) ?? null)}`;
+                entries.push(entry);
+                resultLength += entry.length;
+            }
+        } else {
+            return hint;
+        }
+    }
+    if (resultLength >= 40) {
+        return `${begin}\n  ${entries.join(',\n  ')}\n${end}`;
+    }
+    return `${begin}${entries.join(', ')}${end}`;
+}
+
 /** 获取全局变量脚本 */
-export function getGlobal(name: string): { value: VmImmutable | undefined; script: string; doc: string } {
-    const value = VmSharedGlobal[name];
+export function globalDoc(name: string, value: VmAny): { script: string; doc: string } {
     const info = getVmFunctionInfo(value);
     if (info) {
         return {
-            value,
             script: signature(name, info),
-            doc: globalFnDocument(info),
+            doc: globalFnDoc(info),
         };
     }
     if (isVmModule(value)) {
         return {
-            value,
             script: `module ${name};`,
             doc: `模块 \`${name}\``,
         };
     }
-    const valueStr = value !== undefined ? serialize(value) : '/* … */';
-    if (name.startsWith('@')) return { value, script: `const ${name} = ${valueStr};`, doc: '' };
-    return { value, script: `let ${name} = ${valueStr};`, doc: '' };
+    let valueStr;
+    if (value === undefined) {
+        valueStr = '/* ... */';
+    } else {
+        valueStr = serializeForDisplay(value);
+    }
+    if (name.startsWith('@')) return { script: `const ${name} = ${valueStr};`, doc: '' };
+    return { script: `let ${name} = ${valueStr};`, doc: '' };
 }

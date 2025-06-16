@@ -1,7 +1,6 @@
 import { Range, type CancellationToken, type editor, type languages } from '../../monaco-api.js';
 import { Provider } from './base.js';
 import { DiagnosticCode } from '@mirascript/wasm';
-import { VmSharedGlobal } from 'mirascript/subtle';
 import { isVmFunction } from 'mirascript';
 import { ParameterDefinitionType } from '../compile-result';
 
@@ -31,6 +30,7 @@ export class DocumentSemanticTokensProvider extends Provider implements language
         if (!compiled) {
             return undefined;
         }
+        const globals = await this.getGlobals(model);
 
         // data 长度是 5 的倍数
         // [diffRow, diffCol, length, tokenType(index), tokenModifiers(bit field)]
@@ -44,7 +44,7 @@ export class DocumentSemanticTokensProvider extends Provider implements language
             switch (code) {
                 case DiagnosticCode.GlobalVariable: {
                     const id = model.getValueInRange(range);
-                    tokenType = id.startsWith('@') ? 3 : isVmFunction(VmSharedGlobal[id]) ? 2 : 1;
+                    tokenType = id.startsWith('@') ? 3 : isVmFunction(globals[id]) ? 2 : 1;
                     break;
                 }
                 case DiagnosticCode.ParameterMutable:

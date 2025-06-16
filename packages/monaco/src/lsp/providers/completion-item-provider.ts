@@ -7,10 +7,9 @@ import {
     type IRange,
 } from '../../monaco-api.js';
 import { Provider } from './base.js';
-import { VmSharedGlobal } from 'mirascript/subtle';
-import { codeblock, getGlobal, paramsList } from '../utils';
+import { codeblock, globalDoc, paramsList } from '../utils';
 import { keywords, reservedKeywords } from '../../constants';
-import { getVmFunctionInfo, DiagnosticCode } from 'mirascript';
+import { getVmFunctionInfo, DiagnosticCode, type VmValue } from 'mirascript';
 
 const DESC_GLOBAL = '(global)';
 const DESC_LOCAL = '(local)';
@@ -153,23 +152,30 @@ const COMMON_GLOBAL_SUGGESTIONS = (range: IRange): languages.CompletionItem[] =>
     return suggestions;
 };
 
+/** 扩展完成项 */
+interface CustomCompletionItem extends languages.CompletionItem {
+    /** 对应的全局变量 */
+    global?: VmValue;
+}
+
 /**
  * 自动完成
  */
 export class CompletionItemProvider extends Provider implements languages.CompletionItemProvider {
     readonly triggerCharacters?: string[] | undefined;
     /** 查找全局变量 */
-    private completeGlobal(
+    private async completeGlobal(
         model: editor.ITextModel,
         char: string | undefined,
         range: IRange,
-    ): languages.CompletionItem[] {
-        const suggestions: languages.CompletionItem[] = [];
-        for (const key in VmSharedGlobal) {
+    ): Promise<CustomCompletionItem[]> {
+        const global = await this.getGlobals(model);
+        const suggestions: CustomCompletionItem[] = [];
+        for (const key in global) {
             if (char && !key.toLowerCase().includes(char)) {
                 continue;
             }
-            const element = VmSharedGlobal[key];
+            const element = global[key];
             if (element === undefined) continue;
             const info = getVmFunctionInfo(element);
             let detail = '';
@@ -182,6 +188,7 @@ export class CompletionItemProvider extends Provider implements languages.Comple
                 insertText: key,
                 range,
                 commitCharacters: info ? ['('] : ['.', '[', '('],
+                global: element,
             });
         }
         return suggestions;
@@ -296,7 +303,7 @@ export class CompletionItemProvider extends Provider implements languages.Comple
 
         const suggestions = COMMON_GLOBAL_SUGGESTIONS(range);
         suggestions.push(
-            ...this.completeGlobal(model, char, range),
+            ...(await this.completeGlobal(model, char, range)),
             ...(await this.completeLocal(model, position, char, range)),
         );
 
@@ -307,15 +314,16 @@ export class CompletionItemProvider extends Provider implements languages.Comple
     resolveCompletionItem(
         item: languages.CompletionItem,
         token: CancellationToken,
-    ): languages.ProviderResult<languages.CompletionItem> {
+    ): languages.CompletionItem | undefined {
         if (typeof item.label == 'string') {
             // not a dynamic completion item
             return item;
         }
-        const { label, description } = item.label;
-        if (description === DESC_GLOBAL) {
+        const custom = item as CustomCompletionItem;
+        const { label } = item.label;
+        if (custom.global != null) {
             if (item.documentation) return item;
-            const def = getGlobal(label);
+            const def = globalDoc(label, custom.global);
             item.documentation = {
                 value: `${codeblock('\0' + def.script)}\n${def.doc}`,
             };

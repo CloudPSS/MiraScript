@@ -8,8 +8,9 @@ import {
     Range,
 } from '../../monaco-api.js';
 import { Provider } from './base.js';
-import { getGlobal } from '../utils.js';
+import { globalDoc } from '../utils.js';
 import { DOC_HEADER } from '../../constants.js';
+import type { VmAny } from 'mirascript';
 
 /**
  * 转到定义/引用
@@ -20,9 +21,9 @@ export class DefinitionReferenceProvider
 {
     private readonly globalModel = editor.createModel(``, 'mirascript', Uri.parse('mirascript:///lib/global.mira'));
     /** 准备要显示的定义 */
-    private prepareGlobal(name: string): { uri: Uri; range: IRange } {
+    private prepareGlobal(name: string, value: VmAny): { uri: Uri; range: IRange } {
         const { globalModel } = this;
-        const { script, doc } = getGlobal(name);
+        const { script, doc } = globalDoc(name, value);
         const code = [
             `/**${DOC_HEADER}**/`,
             '',
@@ -52,6 +53,7 @@ export class DefinitionReferenceProvider
     ): Promise<languages.LocationLink[] | undefined> {
         const compiled = await this.getCompileResult(model);
         if (!compiled) return undefined;
+        const globals = await this.getGlobals(model);
         const d = compiled.definition(model, position);
         if (!d) return [];
         const { def, ref } = d;
@@ -63,7 +65,7 @@ export class DefinitionReferenceProvider
         }
         let link: languages.LocationLink;
         if ('name' in def) {
-            link = this.prepareGlobal(def.name);
+            link = this.prepareGlobal(def.name, globals[def.name]);
         } else {
             link = { uri: model.uri, range: def.definition.range };
         }
@@ -79,6 +81,7 @@ export class DefinitionReferenceProvider
     ): Promise<languages.Location[] | undefined> {
         const compiled = await this.getCompileResult(model);
         if (!compiled) return undefined;
+        const globals = await this.getGlobals(model);
         const d = compiled.definition(model, position);
         if (!d) return [];
         const { def } = d;
@@ -88,7 +91,7 @@ export class DefinitionReferenceProvider
         }));
         if (context.includeDeclaration) {
             if ('name' in def) {
-                links.push(this.prepareGlobal(def.name));
+                links.push(this.prepareGlobal(def.name, globals[def.name]));
             } else if (!Range.isEmpty(def.definition.range)) {
                 links.push({
                     uri: model.uri,
