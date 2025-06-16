@@ -237,6 +237,12 @@ pub enum OpCode {
     /// LOOP_FOR `regn` %iterable\
     /// for %1 in %iterable { let %2, .. ,%regn;
     LoopFor,
+    /// LOOP_RANGE `regn` %start %end\
+    /// for %1 in %start..%end { let %2, .. ,%regn;
+    LoopRange,
+    /// LOOP_RANGE_EXCLUSIVE `regn` %start %end\
+    /// for %1 in %start..<%end { let %2, .. ,%regn;
+    LoopRangeExclusive,
     /// LOOP_END\
     /// }
     LoopEnd,

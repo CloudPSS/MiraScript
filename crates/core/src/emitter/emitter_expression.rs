@@ -686,24 +686,25 @@ impl<'s> Emitter<'s> {
                     }
                 };
 
-                let iterable_reg = match iterable.as_ref() {
-                    Iterable::Value(value) => self.emit_expression_reg(value, None),
+                let (loop_op, loop_iterable_reg1, loop_iterable_reg2) = match iterable.as_ref() {
+                    Iterable::Value(value) => (
+                        OpCode::LoopFor,
+                        self.emit_expression_reg(value, None),
+                        // 按命令解释为 NOOP
+                        Register::EMPTY,
+                    ),
                     Iterable::Range(range) => {
                         let start = self.emit_expression_reg(&range.0, None);
                         let end = self.emit_expression_reg(&range.2, None);
-                        let ret = self.closures.add_reg();
-                        self.op_1(OpCode::Array, ret);
-                        self.op_2(
+                        (
                             if range.exclusive() {
-                                OpCode::ItemRangeExclusiveDyn
+                                OpCode::LoopRangeExclusive
                             } else {
-                                OpCode::ItemRangeDyn
+                                OpCode::LoopRange
                             },
                             start,
                             end,
-                        );
-                        self.op(OpCode::Freeze);
-                        ret
+                        )
                     }
                 };
 
@@ -723,21 +724,31 @@ impl<'s> Emitter<'s> {
                 };
 
                 let pos = self.chunk.code.len();
-                self.op(OpCode::LoopFor);
+                self.op(loop_op);
                 self.emit_pattern(Register::EMPTY, pattern, iterator, Some(BindType::Init));
                 self.emit_block(stmts, expr, Register::EMPTY, Some(ret));
                 self.op(OpCode::LoopEnd);
                 let nreg: OpParam = self.closures.current().reg_len().into();
-                if nreg.is_wide() || iterable_reg.is_wide() {
-                    self.chunk.code[pos] = OpCode::Loop.wide_code();
+                if nreg.is_wide() || loop_iterable_reg1.is_wide() || loop_iterable_reg2.is_wide() {
+                    self.chunk.code[pos] = loop_op.wide_code();
                     self.chunk.code.splice(
                         pos + 1..pos + 1,
-                        [nreg.wide_code(), iterable_reg.wide_code()].concat(),
+                        [
+                            nreg.wide_code(),
+                            loop_iterable_reg1.wide_code(),
+                            loop_iterable_reg2.wide_code(),
+                        ]
+                        .concat(),
                     );
                 } else {
-                    self.chunk
-                        .code
-                        .splice(pos + 1..pos + 1, [nreg.code(), iterable_reg.code()]);
+                    self.chunk.code.splice(
+                        pos + 1..pos + 1,
+                        [
+                            nreg.code(),
+                            loop_iterable_reg1.code(),
+                            loop_iterable_reg2.code(),
+                        ],
+                    );
                 }
                 self.exit_scope();
                 self.closures.exit();

@@ -325,14 +325,15 @@ class Emitter {
                         return `...${wv}`;
                     }
                     return `${wv} = null`;
-                }).join(', ');
+                });
                 const regs = Array.from({ length: regn - argn + 1 }, (_, i) =>
                     i ? this.wv(i + argn, -1) : this.wv(0, -1),
                 ).join(', ');
                 if (script) {
-                    code = `return (function script(global = GlobalFallback(), ${args}) { try{ CpEnter(); let ${regs};`;
+                    args.unshift(`global = GlobalFallback()`);
+                    code = `return (function script(${args.join(', ')}) { try{ CpEnter(); let ${regs};`;
                 } else {
-                    code = `${this.wv(reg)} = Function((${args}) => { try{ CpEnter(); let ${regs};`;
+                    code = `${this.wv(reg)} = Function(function (${args.join(', ')}) { try{ CpEnter(); let ${regs};`;
                 }
                 break;
             }
@@ -529,7 +530,17 @@ class Emitter {
                 const nreg = read();
                 const iterable = read();
                 const regs = Array.from({ length: nreg - 1 }, (_, i) => this.wv(i + 2, -1)).join(', ');
-                code = `for (let ${this.rv(1, -1)} of $Iterable(${this.rv(iterable)})) { Cp(); let _, ${regs};`;
+                code = `for (let ${this.wv(1, -1)} of $Iterable(${this.rv(iterable)})) { Cp(); let _, ${regs};`;
+                break;
+            }
+            case OpCode.LoopRange:
+            case OpCode.LoopRangeExclusive: {
+                const nreg = read();
+                const start = read();
+                const end = read();
+                const exclusive = opcode === OpCode.LoopRangeExclusive;
+                const regs = Array.from({ length: nreg - 1 }, (_, i) => this.wv(i + 2, -1)).join(', ');
+                code = `for (let ${this.wv(1, -1)} = $ToNumber(${this.rv(start)}); ${this.wv(1, -1)} ${exclusive ? '<' : '<='} $ToNumber(${this.rv(end)}); ${this.wv(1, -1)} += 1) { Cp(); let _, ${regs};`;
                 break;
             }
             case OpCode.Loop: {
@@ -547,7 +558,7 @@ class Emitter {
                 break;
             }
             default: {
-                code = `;// ?${OpCode[opcode] ?? opcode}`;
+                code = `; // ${OpCode[opcode] ?? opcode}`;
                 break;
             }
         }
@@ -568,7 +579,9 @@ class Emitter {
                 break;
             }
             case OpCode.Loop:
-            case OpCode.LoopFor: {
+            case OpCode.LoopFor:
+            case OpCode.LoopRange:
+            case OpCode.LoopRangeExclusive: {
                 this.identCounter++;
                 this.closureCounter++;
                 this.readBlockEnd(OpCode.LoopEnd);

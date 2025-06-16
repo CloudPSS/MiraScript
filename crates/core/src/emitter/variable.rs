@@ -79,9 +79,6 @@ impl<'s> Variable<'s> {
     }
 
     pub fn register(&self) -> Register {
-        if self.register.is_empty() {
-            panic!("Variable {} has no register assigned", self.name);
-        }
         self.register
     }
 
@@ -110,6 +107,11 @@ impl<'s> Variable<'s> {
     }
 
     pub fn initialize(&mut self) {
+        debug_assert!(
+            !self.register.is_empty(),
+            "Variable {} has no register assigned",
+            self.name
+        );
         self.initialized = true;
     }
 
