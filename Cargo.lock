@@ -269,6 +269,7 @@ dependencies = [
 name = "napi"
 version = "0.0.0"
 dependencies = [
+ "mimalloc",
  "mira-core",
  "neon",
  "serde",

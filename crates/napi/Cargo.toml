@@ -6,8 +6,12 @@ publish = false
 
 [lib]
 crate-type = ["cdylib"]
+[features]
+default = ["mimalloc"]
+mimalloc = ["dep:mimalloc"]
 
 [dependencies]
 serde = "1"
+mimalloc = { version = "0.1", optional = true }
 neon = { version = "1", features = ["serde"] }
 mira-core = { path = "../core", features = ["serde"] }

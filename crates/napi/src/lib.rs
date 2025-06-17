@@ -7,6 +7,10 @@ use neon::{
     },
 };
 
+#[cfg(feature = "mimalloc")]
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 struct JsCompileResult(Option<Vec<u8>>, Vec<u32>);
 
 impl JsCompileResult {

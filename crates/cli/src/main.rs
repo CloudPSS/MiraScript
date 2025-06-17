@@ -4,13 +4,13 @@ static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 use std::fs;
 
-use mira_core::{Config, compile_script};
+use mira_core::{Config, compile};
 
 fn main() {
     let text = fs::read_to_string("../../examples/fib.mira").unwrap();
 
     for _ in 0..1_000_000 {
-        let (code, errors) = compile_script(&text, &Config {});
+        let (code, errors) = compile(&text, &Config::new());
     }
 
     // for error in errors {
