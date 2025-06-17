@@ -4,9 +4,9 @@ import { compile as compileCore } from './compile.js';
 import { createScript } from './create-script.js';
 import { compileFast } from './compile-fast.js';
 
-export type { TranspileOptions, ScriptInput, ParseMode } from './types.js';
+export type { TranspileOptions, ScriptInput, InputMode } from './types.js';
 
-// 目前编译速度约 200kB/s
+// 目前编译速度约 2000kB/s
 const WORKER_MIN_LEN = 1024;
 
 let worker: Promise<Worker> | undefined;
@@ -31,23 +31,21 @@ async function getWorker(): Promise<Worker> {
 /**
  * 生成 MiraScript 对应的 JavaScript 代码
  */
-async function compileWorker(
-    ...args: Parameters<typeof compileCore>
-): Promise<[Uint8Array, string | undefined, Uint32Array]> {
+async function compileWorker(...args: Parameters<typeof compileCore>): Promise<[string | undefined, Uint32Array]> {
     const worker = await getWorker();
     const seq = Math.random();
     worker.postMessage([seq, ...args]);
-    return await new Promise<[Uint8Array, string | undefined, Uint32Array]>((resolve, reject) => {
+    return await new Promise<[string | undefined, Uint32Array]>((resolve, reject) => {
         const callback = (ev: MessageEvent) => {
-            const data = ev.data as [number, Uint8Array, string | undefined, Uint32Array] | [number, undefined, string];
+            const data = ev.data as [number, string | undefined, Uint32Array] | [number, string];
             if (!Array.isArray(data)) return;
             const [retSeq, ...rest] = data;
             if (seq !== retSeq) return; // Ignore messages not matching the request
             worker.removeEventListener('message', callback);
-            if (rest[0] == null) {
-                reject(new Error(rest[1]));
-            } else {
+            if (rest.length === 2) {
                 resolve(rest);
+            } else {
+                reject(new Error(rest[0]));
             }
         };
         worker.addEventListener('message', callback);
@@ -58,8 +56,7 @@ async function compileWorker(
  * 生成 MiraScript 对应的 JavaScript 代码
  */
 async function compileImpl(...args: Parameters<typeof compileCore>): Promise<VmScript> {
-    const [_, code, errors] =
-        args[0].length < WORKER_MIN_LEN ? await compileCore(...args) : await compileWorker(...args);
+    const [code, errors] = args[0].length < WORKER_MIN_LEN ? await compileCore(...args) : await compileWorker(...args);
     if (!code) {
         throw new Error(`Failed to compile: ${errors.join(', ')}`);
     }

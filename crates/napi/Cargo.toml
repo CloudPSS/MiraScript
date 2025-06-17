@@ -1,0 +1,13 @@
+[package]
+name = "napi"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+serde = "1"
+neon = { version = "1", features = ["serde"] }
+mira-core = { path = "../core", features = ["serde"] }

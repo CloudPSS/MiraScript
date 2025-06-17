@@ -11,17 +11,17 @@ pub(super) struct Emitter<'s> {
     pub chunk: Chunk<'s>,
     pub closures: Closures,
     pub scopes: Scopes<'s>,
-    pub diagnostics: Vec<SourceDiagnostic>,
+    pub diagnostics: &'s mut Vec<SourceDiagnostic>,
 }
 
 impl<'s> Emitter<'s> {
-    pub fn new(source: &'s str) -> Self {
+    pub fn new(source: &'s str, diagnostics_collector: &'s mut Vec<SourceDiagnostic>) -> Self {
         Self {
             source,
             chunk: Chunk::new(),
             closures: Closures::new(),
             scopes: Scopes::new(),
-            diagnostics: vec![],
+            diagnostics: diagnostics_collector,
         }
     }
 

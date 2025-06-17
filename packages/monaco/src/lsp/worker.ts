@@ -1,9 +1,8 @@
-import { compileScript, compileTemplate, type CompileResult } from '@mirascript/wasm';
-import type { ParseMode } from 'mirascript';
-import { toCompileFlags } from 'mirascript/subtle';
+import { compile as c, createConfig, type CompileResult, DiagnosticPositionEncoding } from '@mirascript/wasm';
+import type { InputMode } from 'mirascript';
 
 /** 请求参数 */
-export type Req = [uri: string, version: number, script: string, mode: ParseMode];
+export type Req = [uri: string, version: number, script: string, mode: InputMode];
 /** 编译结果 */
 export type ResOk = [uri: string, version: number, chunk: Uint8Array | undefined, diagnostics: Uint32Array];
 /** 编译结果 */
@@ -13,17 +12,25 @@ export type Res = ResOk | ResErr;
 /** Ready */
 export type Ready = 'mirascript lsp ready';
 
-const flags = toCompileFlags({
-    UseUtf16: true,
-    TrackReferences: true,
-    HideDiagnosticOther: false,
+const configTemplate = createConfig({
+    diagnostic_position_encoding: DiagnosticPositionEncoding.Utf16,
+    track_references: true,
+    diagnostic_other: true,
+    trivia: true,
+    input_mode: 'Template',
 });
-const encoder = new TextEncoder();
+const configScript = createConfig({
+    diagnostic_position_encoding: DiagnosticPositionEncoding.Utf16,
+    track_references: true,
+    diagnostic_other: true,
+    trivia: true,
+    input_mode: 'Script',
+});
 
 /** 编译 */
-export function compile(script: string, mode: ParseMode): CompileResult {
-    const compiler = mode === 'template' ? compileTemplate : compileScript;
-    return compiler(encoder.encode(script), flags);
+export function compile(script: string, mode: InputMode): CompileResult {
+    const config = mode === 'Script' ? configScript : configTemplate;
+    return c(script, config);
 }
 
 if (typeof Worker == 'function' && typeof addEventListener == 'function' && typeof postMessage == 'function') {

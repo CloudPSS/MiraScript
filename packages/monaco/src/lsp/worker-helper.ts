@@ -1,10 +1,10 @@
 import type { editor } from '../monaco-api.js';
-import type { ParseMode } from 'mirascript';
+import type { InputMode } from 'mirascript';
 import type { Ready, Req, Res, ResOk } from './worker.js';
 import { CompileResult } from './compile-result.js';
 import { setMarkers } from './diagnostics.js';
 
-const cache = new Map<`${string}\0${number}\0${ParseMode}`, Promise<CompileResult>>();
+const cache = new Map<`${string}\0${number}\0${InputMode}`, Promise<CompileResult>>();
 let worker: Promise<Worker> | undefined = undefined;
 
 /** 使用 worker 进行编译 */
@@ -68,7 +68,7 @@ const USE_WORKER = typeof Worker === 'function';
 export async function compile(model: editor.ITextModel): Promise<CompileResult> {
     const uri = model.uri.toString();
     const version = model.getVersionId();
-    const mode = model.getLanguageId() === 'mirascript-template' ? 'template' : 'script';
+    const mode = model.getLanguageId() === 'mirascript-template' ? 'Template' : 'Script';
     const cacheKey = `${uri}\0${version}\0${mode}` as const;
     const cached = cache.get(cacheKey);
     if (cached) {

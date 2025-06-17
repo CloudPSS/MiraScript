@@ -55,7 +55,7 @@ fn lex_impl<'s, const BALANCED: bool>(
         let mut token = tokens::token(input, prev_token)?;
         let _trailing_trivia = trivia::tailing_trivia(input)?;
         #[cfg(feature = "trivia")]
-        {
+        if crate::config::trivia() {
             token.leading_trivia = _leading_trivia.into_boxed_slice();
             token.trailing_trivia = _trailing_trivia.into_boxed_slice();
         }

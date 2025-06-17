@@ -6,7 +6,7 @@ pub mod emitter;
 pub mod lexer;
 pub mod parser;
 
-pub use compile::{compile_script, compile_template};
+pub use compile::{CompileResult, SerializedDiagnostics, compile};
 pub use config::Config;
 pub use diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange};
 pub use emitter::OpCode;

@@ -1,4 +1,5 @@
 use crate::{
+    DiagnosticCode,
     diagnostic::SourceDiagnostic,
     lexer::{Operator, Token, TokenKind},
     parser::{Expression, ParameterList, Script},
@@ -22,8 +23,12 @@ use emitter_struct::Emitter;
 pub use opcode::OpCode;
 use opcode::Register;
 
-pub fn emit(source: &str, script: &Script<'_>) -> (Vec<SourceDiagnostic>, Box<[u8]>) {
-    let mut emitter: Emitter<'_> = Emitter::new(source);
+pub fn emit(
+    source: &str,
+    script: &Script<'_>,
+    diagnostics_collector: &mut Vec<SourceDiagnostic>,
+) -> Vec<u8> {
+    let mut emitter: Emitter<'_> = Emitter::new(source, diagnostics_collector);
     let args = Some(ParameterList(
         Token::new(TokenKind::Operator(Operator::OpenParen), 0..0).into(),
         vec![],
@@ -36,5 +41,5 @@ pub fn emit(source: &str, script: &Script<'_>) -> (Vec<SourceDiagnostic>, Box<[u
         &script.0,
         &script.1,
     );
-    (emitter.diagnostics, emitter.chunk.to_bytes())
+    emitter.chunk.to_bytes()
 }

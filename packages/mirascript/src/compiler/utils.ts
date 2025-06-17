@@ -1,5 +1,4 @@
-import { CompileFlag, DiagnosticCode, wasm } from '@mirascript/wasm';
-import type { CompileOptions } from './types';
+import { DiagnosticCode, wasm } from '@mirascript/wasm';
 
 /** 所有 MiraScript 关键字 */
 export let keywords = (): readonly string[] => {
@@ -54,21 +53,4 @@ export function getDiagnosticMessage(code: DiagnosticCode): string | undefined {
     const msg = wasm.get_diagnostic_message(code);
     diagnosticMessages.set(code, msg);
     return msg;
-}
-
-const DEFAULT_COMPILE_OPTIONS: CompileOptions = {
-    HideDiagnosticOther: true,
-};
-/** 转换编译选项为标志位 */
-export function toCompileFlags(options: CompileOptions): Uint8Array {
-    options = { ...DEFAULT_COMPILE_OPTIONS, ...options };
-    const flags = new Uint8Array(Math.ceil(CompileFlag.MAX / 8));
-    for (const [key, value] of Object.entries(options)) {
-        if (!value) continue;
-        if (!(key in CompileFlag)) continue;
-        const index = CompileFlag[key as keyof typeof CompileFlag];
-        if (typeof index != 'number') continue;
-        flags[Math.trunc(index / 8)]! |= 1 << index % 8;
-    }
-    return flags;
 }

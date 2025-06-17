@@ -31,7 +31,9 @@ impl<'s> Chunk<'s> {
         }
     }
 
-    pub fn to_bytes(self) -> Box<[u8]> {
+    /// Create a new chunk with the given code and constants.
+    /// Returns Vec<u8> to avoid unnecessary cloning when called by bindings.
+    pub fn to_bytes(self) -> Vec<u8> {
         let mut result = self.code;
 
         let code_len = result.len() - CODE_OFFSET;
@@ -51,7 +53,7 @@ impl<'s> Chunk<'s> {
         result[CHUNK_LEN_OFFSET..CHUNK_LEN_OFFSET + LEN_SIZE]
             .copy_from_slice(&(chunk_len as u32).to_le_bytes());
 
-        result.into_boxed_slice()
+        result
     }
 
     pub fn add_constant(&mut self, constant: Constant<'s>) -> OpParam {

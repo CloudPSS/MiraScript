@@ -1,7 +1,8 @@
-import type { CompileFlag } from '@mirascript/wasm';
+import type { Config } from '@mirascript/wasm';
+export type { InputMode, ScriptInput } from '@mirascript/wasm';
 
 /** 代码编译选项 */
-export type CompileOptions = Readonly<Partial<Record<Exclude<keyof typeof CompileFlag, 'MAX'>, boolean>>>;
+export type CompileOptions = Config;
 /** 代码生成选项 */
 export interface GenerateOptions {
     /** 是否美化代码 */
@@ -11,19 +12,5 @@ export interface GenerateOptions {
     /** 代码文件名 */
     readonly fileName?: string;
 }
-/** 代码解析选项 */
-export interface ParseOptions {
-    /** 解析模式 */
-    readonly mode?: ParseMode;
-}
-
 /** 转换选项 */
-export type TranspileOptions = GenerateOptions & CompileOptions & ParseOptions;
-
-/** 解析模式 */
-export type ParseMode = 'script' | 'template';
-
-/**
- * 编译输入，支持字符串和 UTF-8 字节数组
- */
-export type ScriptInput = string | Uint8Array;
+export type TranspileOptions = GenerateOptions & CompileOptions;

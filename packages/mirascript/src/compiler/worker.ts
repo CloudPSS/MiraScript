@@ -6,11 +6,11 @@ addEventListener('message', (ev) => {
     const [seq, ...args] = data;
     if (typeof seq != 'number') return;
     void compile(...args)
-        .then(([buf, script, errors]) => {
-            postMessage([seq, buf, script, errors], { transfer: [buf.buffer, errors.buffer] });
+        .then(([script, errors]) => {
+            postMessage([seq, script, errors], { transfer: [errors.buffer] });
         })
         .catch((error) => {
-            postMessage([seq, undefined, error instanceof Error ? error.message : String(error)]);
+            postMessage([seq, error instanceof Error ? error.message : String(error)]);
         });
 });
 

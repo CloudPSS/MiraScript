@@ -1,8 +1,6 @@
 use strum::{Display, EnumMessage, FromRepr};
-#[cfg(feature = "wasm")]
-use wasm_bindgen::prelude::*;
 
-#[cfg_attr(feature = "wasm", wasm_bindgen)]
+#[cfg_attr(feature = "wasm", wasm_bindgen::prelude::wasm_bindgen)]
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, EnumMessage, FromRepr, Display)]
 #[repr(u16)]
 pub enum DiagnosticCode {

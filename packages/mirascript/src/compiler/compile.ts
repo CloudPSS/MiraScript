@@ -8,11 +8,11 @@ import { compileBytecode } from './compile-bytecode';
 export async function compile(
     script: ScriptInput,
     options: TranspileOptions,
-): Promise<[Uint8Array, string | undefined, Uint32Array]> {
-    const [codeBuf, bytecode, errors] = await compileBytecode(script, options);
+): Promise<[string | undefined, Uint32Array]> {
+    const [bytecode, errors] = await compileBytecode(script, options);
     if (bytecode == null) {
-        return [codeBuf, undefined, errors];
+        return [undefined, errors];
     }
     const generatedCode = emit(script, bytecode, options);
-    return [codeBuf, generatedCode, errors];
+    return [generatedCode, errors];
 }

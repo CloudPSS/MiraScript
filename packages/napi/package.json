@@ -1,0 +1,24 @@
+{
+  "name": "@mirascript/napi",
+  "type": "module",
+  "description": "MiraScript compiler for Node.JS",
+  "version": "0.1.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": "./dist/index.js",
+  "imports": {
+    "#lib": "./dist/index.node"
+  },
+  "scripts": {
+    "napi": "cargo-cp-artifact -ac napi dist/index.node -- cargo build -p napi --message-format=json-render-diagnostics",
+    "watch": "nodemon -e rs,js,ts --watch ../../crates/napi --watch ../../crates/core --watch ./src --exec 'pnpm build:dev'",
+    "build:dev": "pnpm napi --dev && tsc",
+    "build": "pnpm napi --release && tsc",
+    "clean": "rimraf dist lib"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.3",
+    "cargo-cp-artifact": "^0.1.9",
+    "nodemon": "^3.1.10"
+  }
+}

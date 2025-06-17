@@ -613,7 +613,7 @@ class Emitter {
             fileName = fileName.replace(/^\\+\s*/, '');
         }
         if (!fileName) {
-            fileName = `${sourceId++}.${this.options.mode === 'template' ? 'miratpl' : 'mira'}`;
+            fileName = `${sourceId++}.${this.options.input_mode === 'Template' ? 'miratpl' : 'mira'}`;
         }
         const data = {
             version: 3,

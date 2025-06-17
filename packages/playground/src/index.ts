@@ -11,7 +11,7 @@ import {
     isVmModule,
     compile,
     serialize,
-    type ParseMode,
+    type InputMode,
 } from 'mirascript';
 
 const globals = createVmGlobal(
@@ -27,11 +27,11 @@ const globals = createVmGlobal(
 );
 registerMiraScript(monaco, () => globals);
 
-let mode: ParseMode = (localStorage.getItem('mode') as ParseMode) || 'script';
+let mode: InputMode = (localStorage.getItem('mode') as InputMode) || 'Script';
 const createModel = (value: string) =>
     monaco.editor.createModel(
         value,
-        mode === 'template' ? 'mirascript-template' : 'mirascript',
+        mode === 'Template' ? 'mirascript-template' : 'mirascript',
         monaco.Uri.parse(`file:///${mode}.mira`),
     );
 
@@ -181,7 +181,7 @@ setTimeout(() => {
         label: 'Switch Mode',
         keybindings: [KeyMod.CtrlCmd | KeyCode.KeyM],
         run: () => {
-            mode = mode === 'script' ? 'template' : 'script';
+            mode = mode === 'Script' ? 'Template' : 'Script';
             localStorage.setItem('mode', mode);
             const oldModel = editor.getModel();
             editor.setModel(createModel(editor.getValue()));
@@ -215,17 +215,23 @@ async function run() {
     const value = editor.getValue();
 
     console.time('transpile');
-    const result = await compile(value, { pretty: true, mode, sourceMap: true, fileName: 'xx/yy.mira' }).finally(() => {
+    const result = await compile(value, {
+        pretty: true,
+        input_mode: mode,
+        sourceMap: true,
+        fileName: 'xx/yy.mira',
+    }).finally(() => {
         console.timeEnd('transpile');
     });
     let content = result.toString();
 
-    // const COUNT = 1000;
-    // const start = performance.now();
-    // for (let i = 0; i < COUNT; i++) {
-    //     await compile(value, { pretty: true, mode });
-    // }
-    // console.log(`Compile benchmark: ${(performance.now() - start) / COUNT}ms`);
+    const COUNT = 1000;
+    const start = performance.now();
+    // await Promise.all(Array.from({ length: COUNT }, () => compile(value, { pretty: true, mode })));
+    for (let i = 0; i < COUNT; i++) {
+        await compile(value, { pretty: true, input_mode: mode });
+    }
+    console.log(`Compile benchmark: ${((performance.now() - start) / COUNT) * 1000}us`);
 
     console.time('execute');
     try {

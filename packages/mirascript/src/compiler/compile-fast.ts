@@ -76,5 +76,5 @@ function compileTemplateFast(code: string, options: TranspileOptions): VmScript 
  */
 export function compileFast(code: string, options: TranspileOptions): VmScript | undefined {
     if (options.sourceMap) return undefined; // 不支持源映射
-    return (options.mode === 'template' ? compileTemplateFast : compileScriptFast)(code, options);
+    return (options.input_mode === 'Template' ? compileTemplateFast : compileScriptFast)(code, options);
 }
