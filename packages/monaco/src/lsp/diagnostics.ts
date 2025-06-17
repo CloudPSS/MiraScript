@@ -31,8 +31,8 @@ const makeMarker = (
         endLineNumber,
         endColumn,
         message,
-        modelVersionId,
         severity,
+        modelVersionId,
         source: 'MiraScript',
     };
     const codeName = DiagnosticCode[code];
@@ -57,7 +57,7 @@ const makeMarker = (
         for (const ref of diagnostic.references) {
             const { range, code } = ref;
             const { startLineNumber, startColumn, endLineNumber, endColumn } = range;
-            const message = getDiagnosticMessage(code) ?? '… here';
+            const message = getDiagnosticMessage(code) ?? '...here';
             marker.relatedInformation.push({
                 message,
                 resource: model.uri,

@@ -235,12 +235,12 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                 ],
                 [/fn/, 'keyword.fn.doc', '@fn_doc'],
                 [
-                    /(let|const)(@whitespace+)(@identifier)/,
-                    [{ token: 'keyword.$1' }, '', { token: 'variable.other.constant', next: '@root' }],
-                ],
-                [
                     /(let)(@whitespace+)(mut)(@whitespace+)(@identifier)/,
                     [{ token: 'keyword.$1' }, '', 'keyword.mut', '', { token: 'variable', next: '@root' }],
+                ],
+                [
+                    /(let|const)(@whitespace+)(@identifier)/,
+                    [{ token: 'keyword.$1' }, '', { token: 'variable.other.constant', next: '@root' }],
                 ],
                 { include: '@common' },
             ],
