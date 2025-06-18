@@ -136,12 +136,6 @@ pub(super) fn token<'s>(
         };
         if cur_token == Operator::Colon || cur_token == Operator::QuestionColon {
             prev_token.kind = TokenKind::Identifier(kw.into());
-        } else if kw.is_reserved() {
-            prev_token.kind = TokenKind::unknown_range(
-                TokenKind::Identifier(kw.into()),
-                prev_token.range.clone(),
-                DiagnosticCode::InvalidReservedKeyword,
-            );
         }
     }
     Ok(cur_token)

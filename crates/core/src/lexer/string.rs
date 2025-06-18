@@ -266,15 +266,18 @@ fn interpolation<'s>(dollar_count: usize) -> impl Parser<'s, StringFragment<'s>>
             // '$' identifier
             let (mut kind, range) = identifier(true).with_span().parse_next(i)?;
             if let TokenKind::Keyword(kw) = kind {
-                kind = TokenKind::unknown_range(
-                    TokenKind::Identifier(kw.into()),
-                    range.clone(),
-                    if kw.is_reserved() {
-                        DiagnosticCode::InvalidReservedKeyword
-                    } else {
-                        DiagnosticCode::InvalidKeyword
-                    },
-                );
+                if !kw.is_constant() {
+                    kind = TokenKind::unknown_range(
+                        // Recover to nil for further analysis
+                        TokenKind::Keyword(Keyword::Nil),
+                        range.clone(),
+                        if kw.is_reserved() {
+                            DiagnosticCode::InvalidReservedKeyword
+                        } else {
+                            DiagnosticCode::InvalidKeyword
+                        },
+                    );
+                }
             }
             let id = Token::new(kind, range);
             return Ok(StringFragment::Interpolation(vec![id]));

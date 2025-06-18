@@ -33,7 +33,7 @@ fn fn_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
             let name = name.unwrap_or_else(|| {
                 Token::unknown(
                     kw.range.end..kw.range.end,
-                    TokenKind::Identifier("<name>".into()),
+                    TokenKind::Identifier("<name>"),
                     DiagnosticCode::MissingFunctionName,
                 )
                 .into()
