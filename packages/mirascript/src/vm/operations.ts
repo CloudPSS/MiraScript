@@ -13,6 +13,7 @@ import {
     type VmValue,
     isVmFunction,
     type VmArray,
+    type VmConst,
 } from './types/index.js';
 import { VmWrapper } from './types/wrapper.js';
 
@@ -113,6 +114,31 @@ export const $Concat = (...args: string[]): string => {
 export const $Pos = (a: VmAny): number => $ToNumber(a);
 export const $Neg = (a: VmAny): number => -$ToNumber(a);
 export const $Not = (a: VmAny): boolean => !$ToBoolean(a);
+export const $Omit = (value: VmAny, omitted: ReadonlyArray<string | number>): VmRecord => {
+    $AssertInit(value);
+    if (value == null || !isVmRecord(value)) return {};
+    const result: Record<string, VmConst> = {};
+    const valueKeys = keys(value);
+    const omittedSet = new Set(omitted.map($ToString));
+    for (const key of valueKeys) {
+        if (!omittedSet.has(key)) {
+            result[key] = value[key] ?? null;
+        }
+    }
+    return result;
+};
+export const $Pick = (value: VmAny, picked: ReadonlyArray<string | number>): VmRecord => {
+    $AssertInit(value);
+    if (value == null || !isVmRecord(value)) return {};
+    const result: Record<string, VmConst> = {};
+    for (const key of picked) {
+        const k = $ToString(key);
+        if (hasOwn(value, k)) {
+            result[k] = value[k] ?? null;
+        }
+    }
+    return result;
+};
 export const $AssertInit: (value: VmAny) => asserts value is VmValue = (value) => {
     if (value === undefined) throw new TypeError(`Uninitialized value`);
 };
@@ -202,6 +228,13 @@ export const $IsArray = (value: VmAny): value is VmArray => {
 export const $AssertNonNil = (value: VmAny): asserts value is NonNullable<VmValue> => {
     $AssertInit(value);
     if (value === null) throw new Error('Expected non-nil value');
+};
+export const $Has = (obj: VmAny, key: VmAny): boolean => {
+    $AssertInit(obj);
+    const pk = $ToString(key);
+    if (obj == null || typeof obj != 'object') return false;
+    if (obj instanceof VmWrapper) return obj.has(pk);
+    return hasOwn(obj, pk);
 };
 export const $Get = (obj: VmAny, key: VmAny): VmValue => {
     $AssertInit(obj);

@@ -16,6 +16,9 @@ impl<'s> Emitter<'s> {
     pub fn add_const_number(&mut self, value: f64) -> OpParam {
         self.chunk.add_constant(C::Number(value))
     }
+    pub fn add_const_ordinal(&mut self, value: i32) -> OpParam {
+        self.chunk.add_constant(C::Ordinal(value))
+    }
     pub fn add_const_bool(&mut self, value: bool) -> OpParam {
         self.chunk
             .add_constant(if value { C::True } else { C::False })
@@ -154,20 +157,50 @@ impl<'s> Emitter<'s> {
     pub fn op_binary(&mut self, ret: Register, op: OpCode, left: Register, right: Register) {
         self.op_3(op, ret, left, right);
     }
-    pub fn op_variadic(&mut self, ret: Register, op: OpCode, reg: Vec<Register>) {
-        let n: OpParam = reg.len().into();
-        if !n.is_wide() && !ret.is_wide() && !reg.iter().any(|r| r.is_wide()) {
+    pub fn op_variadic(&mut self, ret: Register, op: OpCode, var_args: Vec<impl OpParamTrait>) {
+        let n: OpParam = var_args.len().into();
+        if !n.is_wide() && !ret.is_wide() && !var_args.iter().any(|r| r.is_wide()) {
             self.chunk.add_code(op);
             self.chunk.add_param(ret);
             self.chunk.add_param(n);
-            for r in reg {
+            for r in var_args {
                 self.chunk.add_param(r);
             }
         } else {
             self.chunk.add_code_wide(op);
             self.chunk.add_param_wide(ret);
             self.chunk.add_param_wide(n);
-            for r in reg {
+            for r in var_args {
+                self.chunk.add_param_wide(r);
+            }
+        }
+    }
+    pub fn op_variadic_1(
+        &mut self,
+        ret: Register,
+        op: OpCode,
+        arg1: impl OpParamTrait,
+        var_args: Vec<impl OpParamTrait>,
+    ) {
+        let n: OpParam = var_args.len().into();
+        if !n.is_wide()
+            && !ret.is_wide()
+            && !arg1.is_wide()
+            && !var_args.iter().any(|r| r.is_wide())
+        {
+            self.chunk.add_code(op);
+            self.chunk.add_param(ret);
+            self.chunk.add_param(arg1);
+            self.chunk.add_param(n);
+            for r in var_args {
+                self.chunk.add_param(r);
+            }
+        } else {
+            self.chunk.add_code_wide(op);
+            self.chunk.add_param_wide(ret);
+            self.chunk.add_param_wide(arg1);
+            self.chunk.add_param_wide(n);
+            for r in var_args {
                 self.chunk.add_param_wide(r);
             }
         }
@@ -191,47 +224,12 @@ impl<'s> Emitter<'s> {
     }
 
     pub fn op_call(&mut self, ret: Register, func: impl Into<Cow<'s, str>>, args: Vec<Register>) {
-        let narg: OpParam = args.len().into();
         let f = self.add_const_string(func);
-        if !narg.is_wide() && !ret.is_wide() && !f.is_wide() && !args.iter().any(|r| r.is_wide()) {
-            self.chunk.add_code(Call);
-            self.chunk.add_param(ret);
-            self.chunk.add_param(f);
-            self.chunk.add_param(narg);
-            for r in args {
-                self.chunk.add_param(r);
-            }
-        } else {
-            self.chunk.add_code_wide(Call);
-            self.chunk.add_param_wide(ret);
-            self.chunk.add_param_wide(f);
-            self.chunk.add_param_wide(narg);
-            for r in args {
-                self.chunk.add_param_wide(r);
-            }
-        }
+        self.op_variadic_1(ret, Call, f, args)
     }
 
     pub fn op_call_dyn(&mut self, ret: Register, func: Register, args: Vec<Register>) {
-        let narg: OpParam = args.len().into();
-        if !narg.is_wide() && !ret.is_wide() && !func.is_wide() && !args.iter().any(|r| r.is_wide())
-        {
-            self.chunk.add_code(CallDyn);
-            self.chunk.add_param(ret);
-            self.chunk.add_param(func);
-            self.chunk.add_param(narg);
-            for r in args {
-                self.chunk.add_param(r);
-            }
-        } else {
-            self.chunk.add_code_wide(CallDyn);
-            self.chunk.add_param_wide(ret);
-            self.chunk.add_param_wide(func);
-            self.chunk.add_param_wide(narg);
-            for r in args {
-                self.chunk.add_param_wide(r);
-            }
-        }
+        self.op_variadic_1(ret, CallDyn, func, args)
     }
 
     pub fn op_get_upvalue(&mut self, reg: Register, level: usize, up_reg: Register) {
@@ -249,13 +247,8 @@ impl<'s> Emitter<'s> {
         self.op_3(Get, ret, obj, const_id);
     }
 
-    pub fn op_get_num(&mut self, ret: Register, obj: Register, index: f64) {
-        let const_id = self.add_const_number(index);
-        self.op_3(Get, ret, obj, const_id);
-    }
-
-    pub fn op_get_index(&mut self, ret: Register, obj: Register, index: usize) {
-        let index: OpParam = index.into();
+    pub fn op_get_index(&mut self, ret: Register, obj: Register, index: i32) {
+        let index: OpParam = <i32 as TryInto<usize>>::try_into(index).unwrap().into();
         self.op_3(GetIndex, ret, obj, index);
     }
 

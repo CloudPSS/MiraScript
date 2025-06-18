@@ -480,7 +480,7 @@ impl<'s> Emitter<'s> {
                     self.emit_expression(expression, ret, brk);
                     match id.kind {
                         TokenKind::Identifier(id) => self.op_get(ret, ret, id),
-                        TokenKind::Ordinal(ord) => self.op_get_num(ret, ret, ord as f64),
+                        TokenKind::Ordinal(ord) => self.op_get_index(ret, ret, ord),
                         _ => unreachable!("Expected identifier token"),
                     };
                 } else {

@@ -12,7 +12,7 @@ export function emit(source: ScriptInput, chunk: Uint8Array, options: TranspileO
 }
 
 /** 解析常量 */
-function readConst(reader: DataView, offset: number): [VmPrimitive, number] {
+function readConst(reader: DataView, offset: number): [value: VmPrimitive, consumed: number] {
     const type = reader.getUint8(offset);
     switch (type) {
         case 0:
@@ -22,10 +22,14 @@ function readConst(reader: DataView, offset: number): [VmPrimitive, number] {
         case 2:
             return [false, 1];
         case 3: {
+            const ordinal = reader.getInt32(offset + 1, true);
+            return [ordinal, 5];
+        }
+        case 4: {
             const num = reader.getFloat64(offset + 1, true);
             return [num, 9];
         }
-        case 4: {
+        case 5: {
             const len = reader.getUint32(offset + 1, true);
             const str = new TextDecoder().decode(new Uint8Array(reader.buffer, reader.byteOffset + offset + 5, len));
             return [str, 5 + len];
@@ -392,6 +396,16 @@ class Emitter {
                 code = `${this.wv(reg)} = $${OpCode[opcode]}(${args.map((a) => this.rv(a)).join(', ')});`;
                 break;
             }
+            case OpCode.Omit:
+            case OpCode.Pick: {
+                reg = read();
+                const value = read();
+                const n = read();
+                const args = Array.from({ length: n }, (_, i) => this.constants[read()]!);
+
+                code = `${this.wv(reg)} = $${OpCode[opcode]}(${this.rv(value)}, [${args.join(', ')}]);`;
+                break;
+            }
             case OpCode.Call: {
                 reg = read();
                 const func = read();
@@ -457,6 +471,27 @@ class Emitter {
                 const obj = read();
                 const index = read();
                 code = `${this.wv(reg)} = $Get(${this.rv(obj)}, ${this.rv(index)});`;
+                break;
+            }
+            case OpCode.Has: {
+                reg = read();
+                const obj = read();
+                const prop = this.constants[read()];
+                code = `${this.wv(reg)} = $Has(${this.rv(obj)}, ${prop});`;
+                break;
+            }
+            case OpCode.HasIndex: {
+                reg = read();
+                const obj = read();
+                const index = read();
+                code = `${this.wv(reg)} = $Has(${this.rv(obj)}, ${index});`;
+                break;
+            }
+            case OpCode.HasDyn: {
+                reg = read();
+                const obj = read();
+                const index = read();
+                code = `${this.wv(reg)} = $Has(${this.rv(obj)}, ${this.rv(index)});`;
                 break;
             }
             case OpCode.GetGlobal: {

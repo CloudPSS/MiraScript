@@ -196,14 +196,23 @@ pub enum OpCode {
     /// FREEZE\
     /// ) for record or ] for array
     Freeze,
+    /// HAS %ret %var `key`\
+    /// %ret = initialized(%var\[CONSTANTS\[key]])
+    Has,
+    /// HAS_DYN %ret %var %key\
+    /// %ret = initialized(%var\[%key])
+    HasDyn,
+    /// HAS_INDEX %ret %var `index`\
+    /// %ret = initialized(%var\[index])
+    HasIndex,
     /// GET %ret %var `key`\
-    /// %ret = %var\[CONSTANTS\[key]]
+    /// %ret = %var\[CONSTANTS\[key]] ?? nil
     Get,
     /// GET_DYN %ret %var %key\
-    /// %ret = %var\[%key]
+    /// %ret = %var\[%key] ?? nil
     GetDyn,
     /// GET_INDEX %ret %var `index`\
-    /// %ret = %var\[index]
+    /// %ret = %var\[index] ?? nil
     GetIndex,
     /// SET %value %var `key`\
     /// %var\[CONSTANTS\[key]] = %value

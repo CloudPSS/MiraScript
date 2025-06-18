@@ -2,7 +2,6 @@ use std::ops::Deref;
 
 use crate::{
     diagnostic::{DiagnosticCode, SourceDiagnostic},
-    emitter::emitter_scope::check_variable_initialized,
     lexer::{Keyword, Operator, TokenKind},
     parser::{
         ArrayElementBase, AstWalker,
@@ -11,7 +10,10 @@ use crate::{
     },
 };
 
-use super::{Emitter, OpCode, opcode::Register, variable::BindType};
+use super::{
+    Emitter, OpCode, emitter_scope::check_variable_initialized, opcode::OpParam, opcode::Register,
+    variable::BindType,
+};
 
 impl<'s> Emitter<'s> {
     pub fn declare_pattern(&mut self, pattern: &'s Pattern<'s>, bind_type: Option<BindType>) {
@@ -312,6 +314,10 @@ impl<'s> Emitter<'s> {
                         self.closures.add_reg()
                     };
 
+                    let has_omitted = elements
+                        .last()
+                        .is_some_and(|e| matches!(e.deref(), RecordElementBase::Spread(_, _)));
+                    let mut omitted = if has_omitted { Some(vec![]) } else { None };
                     for (i, element) in elements.iter().enumerate() {
                         match element.deref() {
                             RecordElementBase::Named(token, _, pattern) => {
@@ -320,9 +326,22 @@ impl<'s> Emitter<'s> {
                                 };
                                 self.diagnostics
                                     .push(SourceDiagnostic::new(token.range(), id_type));
+                                let const_id = self.add_const_string(id);
+                                if !sub_flag.is_empty() {
+                                    self.op_3(OpCode::Has, sub_flag, value, const_id);
+                                    self.op_if(OpCode::If, sub_flag);
+                                }
                                 let ret = self.closures.add_reg();
-                                self.op_get(ret, value, id);
+                                self.op_3(OpCode::Get, ret, value, const_id);
                                 self.emit_pattern(sub_flag, pattern, ret, bind_type);
+                                if let Some(omitted) = omitted.as_mut() {
+                                    omitted.push(const_id);
+                                }
+                                if !sub_flag.is_empty() {
+                                    self.op_else();
+                                    self.emit_failed_pattern(pattern, bind_type);
+                                    self.op_if_end();
+                                }
                             }
                             RecordElementBase::InterpolateNamed(..) => {}
                             RecordElementBase::OmitNamed(colon, pattern) => {
@@ -340,9 +359,22 @@ impl<'s> Emitter<'s> {
                                     id_token.range(),
                                     DiagnosticCode::OmitNamedRecordFieldName,
                                 ));
+                                let const_id = self.add_const_string(id);
+                                if !sub_flag.is_empty() {
+                                    self.op_3(OpCode::Has, sub_flag, value, const_id);
+                                    self.op_if(OpCode::If, sub_flag);
+                                }
                                 let ret = self.closures.add_reg();
-                                self.op_get(ret, value, id);
+                                self.op_3(OpCode::Get, ret, value, const_id);
                                 self.emit_pattern(sub_flag, pattern, ret, bind_type);
+                                if let Some(omitted) = omitted.as_mut() {
+                                    omitted.push(const_id);
+                                }
+                                if !sub_flag.is_empty() {
+                                    self.op_else();
+                                    self.emit_failed_pattern(pattern, bind_type);
+                                    self.op_if_end();
+                                }
                             }
                             RecordElementBase::Unnamed(pattern) => {
                                 let ret = self.closures.add_reg();
@@ -362,14 +394,29 @@ impl<'s> Emitter<'s> {
                                 let start = pattern.range().start;
                                 self.diagnostics
                                     .push(SourceDiagnostic::new(start..start, code));
-                                self.op_get_index(ret, value, i);
+                                if !sub_flag.is_empty() {
+                                    self.op_3(OpCode::HasIndex, sub_flag, value, OpParam::new(i));
+                                    self.op_if(OpCode::If, sub_flag);
+                                }
+                                self.op_get_index(ret, value, i as i32);
                                 self.emit_pattern(sub_flag, pattern, ret, bind_type);
+                                if let Some(omitted) = omitted.as_mut() {
+                                    let const_id = self.add_const_ordinal(i as i32);
+                                    omitted.push(const_id);
+                                }
+                                if !sub_flag.is_empty() {
+                                    self.op_else();
+                                    self.emit_failed_pattern(pattern, bind_type);
+                                    self.op_if_end();
+                                }
                             }
-                            RecordElementBase::Spread(dots, pattern) => {
-                                // let ret = self.closures.add_reg();
-                                // self.op_get_spread(ret, value);
-                                // self.emit_pattern(sub_flag, pattern, ret, bind_type);
-                                self.unimplemented(dots, pattern)
+                            RecordElementBase::Spread(_, pattern) => {
+                                let ret = self.closures.add_reg();
+                                let Some(omitted) = std::mem::take(&mut omitted) else {
+                                    continue;
+                                };
+                                self.op_variadic_1(ret, OpCode::Omit, value, omitted);
+                                self.emit_pattern(sub_flag, pattern, ret, bind_type);
                             }
                         }
 

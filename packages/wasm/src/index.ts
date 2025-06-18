@@ -22,10 +22,10 @@ export function createConfig(config?: Config | wasm.Config): wasm.Config {
         if (key === 'free') continue; // 忽略 free 方法
         if (!Object.hasOwn(config, key)) continue;
         let value = config[key as keyof Config] as never;
-        if (value === undefined) continue;
         if (key === 'input_mode') {
             value = wasm.InputMode[value as InputMode] satisfies wasm.InputMode as never;
         }
+        if (value === undefined) continue;
         if (!(key in cfg)) continue;
         cfg[key as keyof Config] = value;
     }
