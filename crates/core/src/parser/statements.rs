@@ -68,7 +68,7 @@ fn continue_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
 fn bind_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
     seq!(Statement::Bind(
         token(Keyword::Let),
-        pattern_or_insert(false).map(Box::new),
+        pattern_or_insert(false, |t| *t == Operator::Equal).map(Box::new),
         token_or_insert(Operator::Equal, DiagnosticCode::MissingBindOperator),
         expression.map(Box::new),
         semicolon,

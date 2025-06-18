@@ -225,13 +225,13 @@ async function run() {
     });
     let content = result.toString();
 
-    const COUNT = 1000;
-    const start = performance.now();
-    // await Promise.all(Array.from({ length: COUNT }, () => compile(value, { pretty: true, mode })));
-    for (let i = 0; i < COUNT; i++) {
-        await compile(value, { pretty: true, input_mode: mode });
-    }
-    console.log(`Compile benchmark: ${((performance.now() - start) / COUNT) * 1000}us`);
+    // const COUNT = 1000;
+    // const start = performance.now();
+    // // await Promise.all(Array.from({ length: COUNT }, () => compile(value, { pretty: true, mode })));
+    // for (let i = 0; i < COUNT; i++) {
+    //     await compile(value, { pretty: true, input_mode: mode });
+    // }
+    // console.log(`Compile benchmark: ${((performance.now() - start) / COUNT) * 1000}us`);
 
     console.time('execute');
     try {

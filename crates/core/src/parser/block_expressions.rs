@@ -105,20 +105,11 @@ pub(super) fn match_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> 
         token_or_insert(Operator::OpenBrace, DiagnosticCode::MissingOpenBrace),
         repeat(
             0..,
-            alt((
-                // Avoid combine `token_or_insert` and `pattern_or_insert`
-                // to prevent no consumption in `repeat`
-                (
-                    token(Keyword::Case),
-                    pattern_or_insert(false),
-                    block_expression,
-                ),
-                (
-                    token_or_insert(Keyword::Case, DiagnosticCode::MissingCase),
-                    pattern(false),
-                    block_expression,
-                ),
-            ))
+            (
+                token_or_insert(Keyword::Case, DiagnosticCode::MissingCase),
+                pattern_or_insert(false, |t| *t == Operator::OpenBrace),
+                block_expression,
+            )
         ),
         token_or_insert(Operator::CloseBrace, DiagnosticCode::MissingOpenBrace),
     ))
@@ -128,7 +119,8 @@ pub(super) fn match_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> 
 pub(super) fn for_in_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     seq!(Expression::ForIn(
         token(Keyword::For),
-        pattern_or_insert(false).map(Box::new),
+        // 由后边的 `in` 定位，无条件插入
+        pattern_or_insert(false, |_| true).map(Box::new),
         token(Keyword::In),
         iterable.map(Box::new),
         block_expression_no_expr.map(Box::new),

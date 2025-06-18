@@ -1,8 +1,9 @@
 use std::ops::DerefMut;
 
 use winnow::{
-    combinator::{alt, empty, fail, opt, peek, preceded, separated_foldl1, seq},
-    token::{one_of, take_till},
+    combinator::{alt, fail, opt, peek, separated_foldl1, seq},
+    error::EmptyError,
+    token::{any, one_of, take_till},
 };
 
 use super::{
@@ -44,20 +45,25 @@ fn unknown_pattern<'s>(i: &mut Input<'s>) -> Result<Pattern<'s>> {
     .parse_next(i)
 }
 
-pub(super) fn pattern_or_insert<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
+pub(super) fn pattern_or_insert<'s>(
+    rebind: bool,
+    mut insert_cond: impl FnMut(&'s Token<'s>) -> bool + Copy,
+) -> impl Parser<'s, Pattern<'s>> {
     move |i: &mut Input<'s>| {
+        let p = opt(pattern(rebind)).parse_next(i)?;
+        if let Some(p) = p {
+            return Ok(p);
+        }
         let start = i.previous_token_end();
-        alt((
-            pattern(rebind),
-            empty.map(|_| {
-                Pattern::unknown_range(
-                    vec![Token::empty(start).into()],
-                    start..start,
-                    DiagnosticCode::PatternExpected,
-                )
-            }),
+        let next = peek(any).parse_next(i)?;
+        if !insert_cond(next) {
+            return Err(winnow::error::ErrMode::Backtrack(EmptyError));
+        }
+        Ok(Pattern::unknown_range(
+            vec![Token::empty(start).into()],
+            start..start,
+            DiagnosticCode::PatternExpected,
         ))
-        .parse_next(i)
     }
 }
 
@@ -228,7 +234,8 @@ fn pattern_spread<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
 
 fn record_like_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
     let omit_named = move |i: &mut Input<'s>| -> Result<Pattern<'s>> {
-        pattern_or_insert(rebind)
+        // omit named 会消费 `:`，可以无条件插入
+        pattern_or_insert(rebind, |_| true)
             .with_taken()
             .map(|(p, t)| {
                 if p.is_bind() || p.is_unknown() {
@@ -243,22 +250,18 @@ fn record_like_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
             .parse_next(i)
     };
 
+    // unnamed 不额外消费字符，仅在分隔符前插入
     let unnamed = move |i: &mut Input<'s>| {
-        alt((
-            preceded(
-                peek(one_of(|t: &Token<'s>| {
-                    *t == Operator::Comma || *t == Operator::CloseParen
-                })),
-                pattern_or_insert(rebind),
-            ),
-            pattern(rebind),
-        ))
+        pattern_or_insert(rebind, |t| {
+            *t == Operator::Comma || *t == Operator::CloseParen
+        })
         .parse_next(i)
     };
 
     move |i: &mut Input<'s>| {
         let (open, mut parts, close) = record_base(
-            pattern_or_insert(rebind),
+            // named 会消费 name `:`，可以无条件插入
+            pattern_or_insert(rebind, |_| true),
             |t| Pattern::unknown([t.into()], DiagnosticCode::InterpolatedNameRecordPattern),
             omit_named,
             unnamed,
@@ -311,19 +314,21 @@ pub(crate) fn array_pattern_like<'s>(
     rebind: bool,
 ) -> impl Parser<'s, Pattern<'s>> {
     let element_pattern = move |i: &mut Input<'s>| {
-        pattern_or_insert(rebind)
-            .with_taken()
-            .map(|(p, t)| {
-                if matches!(p, Pattern::Range(..)) {
-                    p.wrap_as_unknown(
-                        t.iter().map(TokenRef::borrow).collect::<Vec<_>>(),
-                        DiagnosticCode::AmbiguousRangePattern,
-                    )
-                } else {
-                    p
-                }
-            })
-            .parse_next(i)
+        pattern_or_insert(rebind, |t| {
+            *t == Operator::Comma || *t == Operator::CloseBracket
+        })
+        .with_taken()
+        .map(|(p, t)| {
+            if matches!(p, Pattern::Range(..)) {
+                p.wrap_as_unknown(
+                    t.iter().map(TokenRef::borrow).collect::<Vec<_>>(),
+                    DiagnosticCode::AmbiguousRangePattern,
+                )
+            } else {
+                p
+            }
+        })
+        .parse_next(i)
     };
     move |i: &mut Input<'s>| {
         let (open, parts, close) =
