@@ -100,7 +100,7 @@ impl<'s> Emitter<'s> {
             return;
         };
         for var in scope.variables {
-            var.exit(&mut self.diagnostics);
+            var.exit(self.diagnostics);
         }
     }
 
@@ -110,7 +110,7 @@ impl<'s> Emitter<'s> {
             access.range(),
             DiagnosticCode::DuplicateVariableDeclaration,
         ));
-        var.put_decl_ref(&mut self.diagnostics);
+        var.put_decl_ref(self.diagnostics);
         var.mark_redeclare(access);
         Some(var)
     }

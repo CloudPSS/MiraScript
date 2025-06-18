@@ -259,7 +259,7 @@ impl<'s> Emitter<'s> {
                         variable.mark_write(id_token);
                     }
                     if !check_variable_initialized(
-                        &mut self.diagnostics,
+                        self.diagnostics,
                         &self.closures,
                         id_token,
                         variable,
@@ -272,7 +272,7 @@ impl<'s> Emitter<'s> {
                             id_token.range(),
                             DiagnosticCode::ImmutableVariableAssignment,
                         ));
-                        variable.put_decl_ref(&mut self.diagnostics);
+                        variable.put_decl_ref(self.diagnostics);
                     } else if level == self.closures.len() {
                         let register = variable.register();
                         self.op_unary(register, OpCode::Assign, value);

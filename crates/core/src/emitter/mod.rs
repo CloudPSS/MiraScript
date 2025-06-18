@@ -1,8 +1,7 @@
 use crate::{
-    DiagnosticCode,
     diagnostic::SourceDiagnostic,
     lexer::{Operator, Token, TokenKind},
-    parser::{Expression, ParameterList, Script},
+    parser::{ParameterList, Script},
 };
 
 mod chunk;

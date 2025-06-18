@@ -3,7 +3,7 @@ use crate::{
     emitter::emitter_scope::check_variable_initialized,
     lexer::{Keyword, Operator, TokenKind},
     parser::{
-        self, AstWalker, Expression,
+        AstWalker, Expression,
         Statement::{self, *},
     },
 };
@@ -58,7 +58,7 @@ impl<'s> Emitter<'s> {
             }
             Assign(assignee, op, expression, _) => {
                 let op = op.as_ref();
-                let mut final_op: Box<dyn FnOnce(&mut Self)> = Box::new(|s| ());
+                let mut final_op: Box<dyn FnOnce(&mut Self)> = Box::new(|_| ());
                 let assignee_reg = match &**assignee {
                     Expression::Variable(id_token) => {
                         if **id_token == Keyword::Global {
@@ -79,7 +79,7 @@ impl<'s> Emitter<'s> {
                                 variable.mark_read_write(id_token);
                             }
                             check_variable_initialized(
-                                &mut self.diagnostics,
+                                self.diagnostics,
                                 &self.closures,
                                 id_token,
                                 variable,
@@ -90,7 +90,7 @@ impl<'s> Emitter<'s> {
                                     id_token.range(),
                                     DiagnosticCode::ImmutableVariableAssignment,
                                 ));
-                                variable.put_decl_ref(&mut self.diagnostics);
+                                variable.put_decl_ref(self.diagnostics);
                                 Register::EMPTY
                             } else if level == self.closures.len() {
                                 variable.register()

@@ -186,7 +186,7 @@ impl<'s> Emitter<'s> {
                     let register = variable.register();
                     variable.mark_read(token);
                     if !check_variable_initialized(
-                        &mut self.diagnostics,
+                        self.diagnostics,
                         &self.closures,
                         token,
                         variable,

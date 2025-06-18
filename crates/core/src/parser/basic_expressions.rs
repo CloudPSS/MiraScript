@@ -14,7 +14,6 @@ use super::helper::{literal_token, token, token_or_insert, variable_token};
 use super::patterns::pattern;
 use super::ranges::range;
 use super::record_helper::record_base;
-use super::scripts::script;
 use super::{prelude::*, record_element::RecordElementBase, to_input};
 
 fn to_interpolate_expr<'s>(token: &'s Token<'s>) -> Expression<'s> {
