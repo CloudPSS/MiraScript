@@ -47,7 +47,7 @@ export class DocumentSemanticTokensProvider extends Provider implements language
                     const isConst = id.startsWith('@');
                     const isFn = isVmFunction(globals[id]);
                     tokenType = isConst ? 3 : isFn ? 2 : 1;
-                    tokenModifiers = isConst || isFn ? 0 : 1 << 2; // 全局变量添加下划线
+                    tokenModifiers = 1 << 2; // 全局变量添加下划线
                     break;
                 }
                 case DiagnosticCode.ParameterMutable:

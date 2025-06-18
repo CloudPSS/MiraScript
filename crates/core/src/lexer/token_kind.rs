@@ -72,7 +72,7 @@ impl<'s> TokenKind<'s> {
         }
     }
 
-    pub(crate) fn to_id_name(&'s self) -> Option<&'s str> {
+    pub(crate) fn to_id_name(&self) -> Option<&'s str> {
         match self {
             Self::Identifier(name) => Some(name),
             _ => None,

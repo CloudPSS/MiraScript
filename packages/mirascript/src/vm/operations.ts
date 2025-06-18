@@ -152,7 +152,7 @@ export const $CallDyn = (func: VmValue, args: readonly VmAny[]): VmValue => {
     if (isVmFunction(func)) {
         return func(...(args as readonly VmValue[])) ?? null;
     }
-    throw new TypeError(`Expected callable, got ${$Type(func)}`);
+    throw new VmError(`Expected callable, got ${$Type(func)}`, null);
 };
 export const $Type = (value: VmAny): TypeName => {
     if (value === undefined) return 'nil';

@@ -5,6 +5,7 @@ import {
     type CancellationToken,
     type IPosition,
     type IRange,
+    Range,
 } from '../../monaco-api.js';
 import { Provider } from './base.js';
 import { codeblock, globalDoc, paramsList } from '../utils';
@@ -23,7 +24,7 @@ const SUGGEST_KEYWORDS: string[] = [];
     }
 }
 
-const COMMON_GLOBAL_SUGGESTIONS = (range: IRange): languages.CompletionItem[] => {
+const COMMON_GLOBAL_SUGGESTIONS = (range: languages.CompletionItemRanges): languages.CompletionItem[] => {
     const suggestions: languages.CompletionItem[] = [
         {
             label: 'type',
@@ -167,7 +168,7 @@ export class CompletionItemProvider extends Provider implements languages.Comple
     private async completeGlobal(
         model: editor.ITextModel,
         char: string | undefined,
-        range: IRange,
+        range: languages.CompletionItemRanges,
     ): Promise<CustomCompletionItem[]> {
         const global = await this.getGlobals(model);
         const suggestions: CustomCompletionItem[] = [];
@@ -198,7 +199,7 @@ export class CompletionItemProvider extends Provider implements languages.Comple
         model: editor.ITextModel,
         position: IPosition,
         char: string | undefined,
-        range: IRange,
+        range: languages.CompletionItemRanges,
     ): Promise<languages.CompletionItem[]> {
         const compiled = await this.getCompileResult(model);
         if (!compiled) return [];
@@ -301,10 +302,14 @@ export class CompletionItemProvider extends Provider implements languages.Comple
         }
         char = char?.toLowerCase();
 
-        const suggestions = COMMON_GLOBAL_SUGGESTIONS(range);
+        const completionRange: languages.CompletionItemRanges = {
+            replace: range,
+            insert: Range.fromPositions(Range.getStartPosition(range), position),
+        };
+        const suggestions = COMMON_GLOBAL_SUGGESTIONS(completionRange);
         suggestions.push(
-            ...(await this.completeGlobal(model, char, range)),
-            ...(await this.completeLocal(model, position, char, range)),
+            ...(await this.completeGlobal(model, char, completionRange)),
+            ...(await this.completeLocal(model, position, char, completionRange)),
         );
 
         return { suggestions };

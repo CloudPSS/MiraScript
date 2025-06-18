@@ -1,11 +1,12 @@
-use std::ops::Deref;
+use std::{borrow::Cow, ops::Deref};
 
 use crate::{
+    SourceRange,
     diagnostic::{DiagnosticCode, SourceDiagnostic},
     emitter::emitter_scope::check_variable_initialized,
     lexer::{Keyword, Operator, TokenKind},
     parser::{
-        self, ArrayElementBase, AstWalker, Callable,
+        ArrayElementBase, AstWalker, Callable,
         Expression::{self, *},
         Iterable, Range, RecordElementBase,
     },
@@ -122,6 +123,96 @@ impl<'s> Emitter<'s> {
         self.emit_expression(expr, reg, brk);
         reg
     }
+    fn hint_mislead_nil(&mut self, id: &str, range: SourceRange) {
+        if id == "null"
+            || id == "Null"
+            || id == "NULL"
+            || id == "undefined"
+            || id == "None"
+            || id == "Nothing"
+        {
+            self.diagnostics.push(SourceDiagnostic::new(
+                range,
+                DiagnosticCode::MisleadNilVariable,
+            ));
+        }
+    }
+    fn emit_global_access(&mut self, expr: &'s Expression<'s>) -> Option<Cow<'s, str>> {
+        let id = if let Variable(id_token) = expr {
+            let id = id_token.to_id_name()?;
+            self.diagnostics.push(SourceDiagnostic::new(
+                id_token.range(),
+                DiagnosticCode::GlobalVariable,
+            ));
+            self.hint_mislead_nil(id, id_token.range());
+            Cow::Borrowed(id)
+        } else if let Access(parent, _, id_token) = expr {
+            let Variable(parent) = parent.as_ref() else {
+                return None;
+            };
+            if parent.kind != Keyword::Global {
+                return None;
+            }
+            let (_, id) = id_token.to_field_name()?;
+            self.diagnostics.push(SourceDiagnostic::new(
+                id_token.range(),
+                DiagnosticCode::GlobalVariable,
+            ));
+            id
+        } else {
+            // 不处理 global[expr]
+            return None;
+        };
+        Some(id)
+    }
+    fn emit_call(
+        &mut self,
+        callable: &'s Callable<'s>,
+        arg0: Option<&'s Expression<'s>>,
+        args: &'s [Expression<'s>],
+        ret: Register,
+        brk: Option<Register>,
+    ) {
+        match callable {
+            Callable::Expression(callable) => {
+                let args_reg = |s: &mut Self| {
+                    let mut args_reg =
+                        vec![arg0.map_or(Register::EMPTY, |f| s.emit_expression_reg(f, brk))];
+                    for expression in args {
+                        let reg = s.closures.add_reg();
+                        s.emit_expression(expression, reg, brk);
+                        args_reg.push(reg);
+                    }
+                    args_reg
+                };
+
+                if let Some(id) = self.emit_global_access(callable) {
+                    // Global function call
+                    let args = args_reg(self);
+                    self.op_call(ret, id, args);
+                    return;
+                }
+
+                // Local function call
+                let callable_reg = self.emit_expression_reg(callable, brk);
+                let complex = !callable.is_variable();
+                if complex {
+                    self.op_if(OpCode::IfNotNil, callable_reg);
+                }
+                let args = args_reg(self);
+                self.op_call_dyn(ret, callable_reg, args);
+                if complex {
+                    self.op_else();
+                    self.op_nil(ret);
+                    self.op_if_end();
+                }
+            }
+            Callable::Type(_) => {
+                let arg0 = arg0.map_or(Register::EMPTY, |f| self.emit_expression_reg(f, brk));
+                self.op_unary(ret, OpCode::Type, arg0);
+            }
+        }
+    }
     pub fn emit_expression(
         &mut self,
         expr: &'s Expression<'s>,
@@ -172,7 +263,7 @@ impl<'s> Emitter<'s> {
                 }
             }
             Variable(token) => {
-                let TokenKind::Identifier(id) = token.kind else {
+                let Some(id) = token.to_id_name() else {
                     if token.kind == Keyword::Global {
                         self.diagnostics.push(SourceDiagnostic::new(
                             token.range.clone(),
@@ -207,18 +298,7 @@ impl<'s> Emitter<'s> {
                         DiagnosticCode::GlobalVariable,
                     ));
                     self.op_global(ret, id);
-                    if id == "null"
-                        || id == "Null"
-                        || id == "NULL"
-                        || id == "undefined"
-                        || id == "None"
-                        || id == "Nothing"
-                    {
-                        self.diagnostics.push(SourceDiagnostic::new(
-                            token.range(),
-                            DiagnosticCode::MisleadNilVariable,
-                        ));
-                    }
+                    self.hint_mislead_nil(id, token.range());
                 }
             }
             Grouping(_, expression, _) => self.emit_expression(expression, ret, brk),
@@ -437,43 +517,14 @@ impl<'s> Emitter<'s> {
                 self.op(OpCode::Freeze);
             }
             Call(callable, _, args, _) => {
-                let mut args_reg = vec![];
-                for expression in args {
-                    let reg = self.closures.add_reg();
-                    self.emit_expression(expression, reg, brk);
-                    args_reg.push(reg);
-                }
-                match callable {
-                    Callable::Expression(expression) => {
-                        let reg = self.closures.add_reg();
-                        self.emit_expression(expression, reg, brk);
-                        self.op_call_dyn(ret, reg, args_reg);
-                    }
-                    Callable::Type(_) => {
-                        self.op_unary(ret, OpCode::Type, args_reg.into_iter().next().unwrap());
-                    }
+                if let Some((first, rest)) = args.split_first() {
+                    self.emit_call(callable, Some(first), rest, ret, brk);
+                } else {
+                    self.emit_call(callable, None, &[], ret, brk);
                 }
             }
             Extension(expression, _, callable, _, args, _) => {
-                let self_reg = self.closures.add_reg();
-                self.emit_expression(expression, self_reg, brk);
-                let mut args_reg = vec![];
-                for expression in args {
-                    let reg = self.closures.add_reg();
-                    self.emit_expression(expression, reg, brk);
-                    args_reg.push(reg);
-                }
-                match callable {
-                    Callable::Expression(expression) => {
-                        let reg = self.closures.add_reg();
-                        args_reg.insert(0, self_reg);
-                        self.emit_expression(expression, reg, brk);
-                        self.op_call_dyn(ret, reg, args_reg);
-                    }
-                    Callable::Type(_) => {
-                        self.op_unary(ret, OpCode::Type, self_reg);
-                    }
-                }
+                self.emit_call(callable, Some(expression), args, ret, brk);
             }
             Access(expression, _, id) => {
                 if !is_global_expression(expression) {
