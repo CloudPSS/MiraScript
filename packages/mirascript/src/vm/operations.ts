@@ -14,6 +14,7 @@ import {
     isVmFunction,
     type VmArray,
     type VmConst,
+    isVmExtern,
 } from './types/index.js';
 import { VmWrapper } from './types/wrapper.js';
 
@@ -243,6 +244,14 @@ export const $Get = (obj: VmAny, key: VmAny): VmValue => {
     if (obj instanceof VmWrapper) return obj.get(pk) ?? null;
     if (!hasOwn(obj, pk)) return null;
     return (obj as Record<string, VmImmutable>)[pk] ?? null;
+};
+export const $Set = (obj: VmAny, key: VmAny, value: VmAny): void => {
+    $AssertInit(obj);
+    $AssertInit(value);
+    const pk = $ToString(key);
+    if (obj == null) return;
+    if (!isVmExtern(obj)) throw new VmError(`Expected extern, got ${$Type(obj)}`, undefined);
+    obj.set(pk, value);
 };
 export const $Iterable = (value: VmAny): Iterable<VmValue> => {
     $AssertInit(value);

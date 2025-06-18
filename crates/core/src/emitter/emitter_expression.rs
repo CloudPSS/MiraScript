@@ -3,7 +3,7 @@ use std::{borrow::Cow, ops::Deref};
 use crate::{
     SourceRange,
     diagnostic::{DiagnosticCode, SourceDiagnostic},
-    emitter::emitter_scope::check_variable_initialized,
+    emitter::{emitter_scope::check_variable_initialized, utils::is_global_expression},
     lexer::{Keyword, Operator, TokenKind},
     parser::{
         ArrayElementBase, AstWalker, Callable,
@@ -17,10 +17,6 @@ use super::{
     opcode::{OpParam, OpParamTrait, Register},
     variable::BindType,
 };
-
-fn is_global_expression(expr: &Expression) -> bool {
-    matches!(expr, Variable(token) if token.kind == Keyword::Global)
-}
 
 impl<'s> Emitter<'s> {
     pub fn declare_expression(&mut self, outer: &'s Expression<'s>) {

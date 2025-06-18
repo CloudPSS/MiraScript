@@ -134,6 +134,8 @@ pub enum DiagnosticCode {
     MisuseOfGlobalKeyword,
     #[strum(message = "Cannot infer key from the expression")]
     BadOmitKeyRecordExpression,
+    #[strum(message = "Cannot assign to the expression")]
+    UnassignableExpression,
 
     ErrorEnd = 1999,
     // Warning 2000~2999

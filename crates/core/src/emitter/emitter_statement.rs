@@ -8,7 +8,7 @@ use crate::{
     },
 };
 
-use super::{Emitter, OpCode, opcode::Register, variable::BindType};
+use super::{Emitter, OpCode, opcode::Register, utils::is_global_expression, variable::BindType};
 
 impl<'s> Emitter<'s> {
     pub fn declare_statement(&mut self, stmt: &'s Statement<'s>) {
@@ -58,6 +58,7 @@ impl<'s> Emitter<'s> {
             }
             Assign(assignee, op, expression, _) => {
                 let op = op.as_ref();
+                let is_compound = *op != Operator::Equal;
                 let mut final_op: Box<dyn FnOnce(&mut Self)> = Box::new(|_| ());
                 let assignee_reg = match &**assignee {
                     Expression::Variable(id_token) => {
@@ -113,17 +114,43 @@ impl<'s> Emitter<'s> {
                             Register::EMPTY
                         }
                     }
-                    Expression::Access(obj, _, prop) => {
-                        self.unimplemented(obj, prop);
+
+                    Expression::Access(obj, _, field_token) if !is_global_expression(obj) => {
+                        let Some((_, field)) = field_token.to_field_name() else {
+                            return false;
+                        };
+                        let obj_reg = self.emit_expression_reg(obj, brk);
+                        let field_reg = self.closures.add_reg();
+                        let field_const = self.add_const_string(field);
+                        if is_compound {
+                            self.op_3(OpCode::Get, field_reg, obj_reg, field_const);
+                        }
+                        final_op = Box::new(move |s| {
+                            s.op_3(OpCode::Set, field_reg, obj_reg, field_const);
+                        });
+                        field_reg
+                    }
+                    Expression::Index(obj, _, prop_expr, _) if !is_global_expression(obj) => {
+                        let obj_reg = self.emit_expression_reg(obj, brk);
+                        let field_name = self.emit_expression_reg(prop_expr, brk);
+                        let field_reg = self.closures.add_reg();
+                        if is_compound {
+                            self.op_3(OpCode::GetDyn, field_reg, obj_reg, field_name);
+                        }
+                        final_op = Box::new(move |s| {
+                            s.op_3(OpCode::SetDyn, field_reg, obj_reg, field_name);
+                        });
+                        field_reg
+                    }
+                    _ => {
+                        self.diagnostics.push(SourceDiagnostic::new(
+                            assignee.range(),
+                            DiagnosticCode::UnassignableExpression,
+                        ));
                         return false;
                     }
-                    Expression::Index(obj, ob, prop_expr, cb) => {
-                        self.unimplemented(obj, cb);
-                        return false;
-                    }
-                    _ => unreachable!(),
                 };
-                if *op == Operator::Equal {
+                if !is_compound {
                     self.emit_expression(expression, assignee_reg, brk);
                 } else if *op == Operator::LogicalAndEqual {
                     self.op_if(OpCode::If, assignee_reg);

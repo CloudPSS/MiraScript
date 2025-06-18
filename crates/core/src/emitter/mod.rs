@@ -16,6 +16,7 @@ mod emitter_statement;
 mod emitter_struct;
 mod opcode;
 mod scope;
+mod utils;
 mod variable;
 
 use emitter_struct::Emitter;

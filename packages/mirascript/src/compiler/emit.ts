@@ -494,6 +494,27 @@ class Emitter {
                 code = `${this.wv(reg)} = $Has(${this.rv(obj)}, ${this.rv(index)});`;
                 break;
             }
+            case OpCode.Set: {
+                reg = read();
+                const obj = read();
+                const prop = this.constants[read()];
+                code = `$Set(${this.rv(obj)}, ${prop}, ${this.rv(reg)});`;
+                break;
+            }
+            case OpCode.SetIndex: {
+                reg = read();
+                const obj = read();
+                const index = read();
+                code = `$Set(${this.rv(obj)}, ${index}, ${this.rv(reg)});`;
+                break;
+            }
+            case OpCode.SetDyn: {
+                reg = read();
+                const obj = read();
+                const index = read();
+                code = `$Set(${this.rv(obj)}, ${this.rv(index)}, ${this.rv(reg)});`;
+                break;
+            }
             case OpCode.GetGlobal: {
                 reg = read();
                 const i = read();
