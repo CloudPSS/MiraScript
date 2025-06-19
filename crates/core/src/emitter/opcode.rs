@@ -63,7 +63,7 @@ pub enum OpCode {
     /// %ret = %1 ~= %2
     Aeq,
     /// NAEQ %ret %1 %2\
-    /// %ret = %1 !~= %2
+    /// %ret = %1 !~ %2
     Naeq,
     /// SAME %ret %1 %2\
     /// %ret = %1 === %2 // Same value zero

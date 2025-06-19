@@ -58,7 +58,7 @@ impl<'s> Emitter<'s> {
             }
             Assign(assignee, op, expression, _) => {
                 let op = op.as_ref();
-                let is_compound = *op != Operator::Equal;
+                let is_compound = *op != Operator::Assign;
                 let mut final_op: Box<dyn FnOnce(&mut Self)> = Box::new(|_| ());
                 let assignee_reg = match &**assignee {
                     Expression::Variable(id_token) => {
@@ -74,7 +74,7 @@ impl<'s> Emitter<'s> {
                         };
                         let var = self.scopes.find_variable(id);
                         if let Some((level, variable)) = var {
-                            if *op == Operator::Equal {
+                            if *op == Operator::Assign {
                                 variable.mark_write(id_token);
                             } else {
                                 variable.mark_read_write(id_token);

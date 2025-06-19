@@ -68,8 +68,8 @@ fn continue_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
 fn bind_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
     seq!(Statement::Bind(
         token(Keyword::Let),
-        pattern_or_insert(false, |t| *t == Operator::Equal).map(Box::new),
-        token_or_insert(Operator::Equal, DiagnosticCode::MissingBindOperator),
+        pattern_or_insert(false, |t| *t == Operator::Assign).map(Box::new),
+        token_or_insert(Operator::Assign, DiagnosticCode::MissingBindOperator),
         expression.map(Box::new),
         semicolon,
     ))
@@ -79,7 +79,7 @@ fn bind_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
 fn rebind_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
     seq!(Statement::Rebind(
         pattern(true).map(Box::new),
-        token(Operator::Equal),
+        token(Operator::Assign),
         expression.map(Box::new),
         semicolon,
     ))
@@ -99,7 +99,7 @@ fn assign_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
                 || *t == Operator::LogicalAndEqual
                 || *t == Operator::LogicalOrEqual
                 || *t == Operator::NullCoalescingEqual
-                || *t == Operator::Equal
+                || *t == Operator::Assign
         })
         .map(TokenRef::borrow),
         expression.map(Box::new),

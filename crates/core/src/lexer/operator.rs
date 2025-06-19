@@ -96,20 +96,20 @@ pub enum Operator {
     NullCoalescingEqual,
 
     /// `=`
-    Equal,
+    Assign,
 
     /// `==`
     #[strum(props(relation = true, infix = true))]
-    EqualEqual,
+    Equal,
     /// `!=`
     #[strum(props(relation = true, infix = true))]
     NotEqual,
     /// `~=`
     #[strum(props(relation = true, infix = true))]
     TildeEqual,
-    /// `!~=`
+    /// `!~`
     #[strum(props(relation = true, infix = true))]
-    NotTildeEqual,
+    TildeNotEqual,
     /// `>`
     #[strum(props(relation = true, infix = true))]
     Greater,
@@ -149,10 +149,10 @@ impl Operator {
             Less => Some(OpCode::Lt),
             LessEqual => Some(OpCode::Lte),
 
-            EqualEqual => Some(OpCode::Eq),
+            Equal => Some(OpCode::Eq),
             NotEqual => Some(OpCode::Neq),
             TildeEqual => Some(OpCode::Aeq),
-            NotTildeEqual => Some(OpCode::Naeq),
+            TildeNotEqual => Some(OpCode::Naeq),
 
             _ => None,
         }
@@ -253,11 +253,11 @@ impl Display for Operator {
             LogicalOrEqual => f.write_str("||="),
             NullCoalescing => f.write_str("??"),
             NullCoalescingEqual => f.write_str("??="),
-            Equal => f.write_str("="),
-            EqualEqual => f.write_str("=="),
+            Assign => f.write_str("="),
+            Equal => f.write_str("=="),
             NotEqual => f.write_str("!="),
             TildeEqual => f.write_str("~="),
-            NotTildeEqual => f.write_str("!~="),
+            TildeNotEqual => f.write_str("~!"),
             Greater => f.write_str(">"),
             GreaterEqual => f.write_str(">="),
             Less => f.write_str("<"),

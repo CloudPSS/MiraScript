@@ -27,7 +27,7 @@ fn unknown_pattern<'s>(i: &mut Input<'s>) -> Result<Pattern<'s>> {
             || *t == Keyword::For
             || *t == Keyword::Let
             || *t == Operator::Comma
-            || *t == Operator::Equal
+            || *t == Operator::Assign
             || *t == Operator::Semicolon
             || *t == Operator::OpenBrace
             || *t == Operator::CloseBrace

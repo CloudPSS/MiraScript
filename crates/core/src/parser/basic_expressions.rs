@@ -375,10 +375,10 @@ fn relational<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
 
 fn equality<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     left_associative_infix(i, relational, |t| {
-        *t == Operator::EqualEqual
+        *t == Operator::Equal
             || *t == Operator::NotEqual
             || *t == Operator::TildeEqual
-            || *t == Operator::NotTildeEqual
+            || *t == Operator::TildeNotEqual
     })
 }
 
