@@ -255,7 +255,7 @@ export const from_json: VmLib = (json, fallback) => {
     required('json', json, null);
     if (typeof json != 'string') return json;
     try {
-        return JSON.parse($ToString(json));
+        return JSON.parse(json);
     } catch (ex) {
         rethrowError('Invalid JSON', ex, fallback ?? null);
     }

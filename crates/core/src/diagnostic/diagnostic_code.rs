@@ -235,6 +235,15 @@ pub enum DiagnosticCode {
     String,
     Interpolation,
 
+    // mark control flows
+    ForExpression,
+    WhileExpression,
+    LoopExpression,
+    FnDeclaration,
+    FnExpression,
+    IfExpression,
+    MatchExpression,
+
     TagEnd = 10999,
 
     // TagRef 11000~11999
@@ -245,6 +254,23 @@ pub enum DiagnosticCode {
     ReadWriteLocal,
     WriteLocal,
     RedeclareLocal,
+
+    // mark control flows
+    KeywordFor,
+    KeywordIn,
+    KeywordWhile,
+    KeywordLoop,
+    KeywordBreak,
+    KeywordContinue,
+
+    KeywordIf,
+    KeywordElse,
+
+    KeywordMatch,
+    KeywordCase,
+
+    KeywordFn,
+    KeywordReturn,
 
     /// Work with [DiagnosticCode::OmitNamedRecordField]
     OmitNamedRecordFieldName,

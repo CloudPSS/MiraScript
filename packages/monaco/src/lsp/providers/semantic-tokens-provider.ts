@@ -15,6 +15,7 @@ export class DocumentSemanticTokensProvider extends Provider implements language
                 'entity.name.function',
                 'variable.other.constant',
                 'support.type.property-name',
+                'keyword.control',
             ],
             tokenModifiers: ['strong', 'emphasis', 'underline', 'strikethrough'],
         };
@@ -40,6 +41,7 @@ export class DocumentSemanticTokensProvider extends Provider implements language
 
             let tokenType = -1;
             let tokenModifiers = 0;
+            let onlyReferences = false;
             // eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check
             switch (code) {
                 case DiagnosticCode.GlobalVariable: {
@@ -72,6 +74,11 @@ export class DocumentSemanticTokensProvider extends Provider implements language
                     tokenType = 4;
                     break;
                 }
+                case DiagnosticCode.ForExpression: {
+                    tokenType = 5; // 标记为控制流关键字
+                    onlyReferences = true; // for 表达式本身不需要标记
+                    break;
+                }
             }
             if (tokenType < 0) continue;
             if (ParameterDefinitionType.includes(code as ParameterDefinitionType)) {
@@ -79,13 +86,15 @@ export class DocumentSemanticTokensProvider extends Provider implements language
             }
             const { startLineNumber, startColumn, endColumn } = range;
             const length = endColumn - startColumn;
-            data.push({
-                row: startLineNumber - 1, // 从 0 开始
-                col: startColumn - 1,
-                length,
-                tokenType,
-                tokenModifiers,
-            });
+            if (!onlyReferences) {
+                data.push({
+                    row: startLineNumber - 1, // 从 0 开始
+                    col: startColumn - 1,
+                    length,
+                    tokenType,
+                    tokenModifiers,
+                });
+            }
             for (const ref of references) {
                 data.push({
                     row: ref.range.startLineNumber - 1,

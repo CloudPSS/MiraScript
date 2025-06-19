@@ -129,7 +129,9 @@ export class CompileResult {
     private readonly _warnings: Array<Writable<SourceDiagnostic>> = [];
     private readonly _infos: Array<Writable<SourceDiagnostic>> = [];
     private readonly _hints: Array<Writable<SourceDiagnostic>> = [];
+    private readonly _references: Array<Writable<SourceReference>> = [];
     private readonly _tags: Array<Writable<SourceDiagnostic>> = [];
+    private readonly _tagsReferences: Array<Writable<SourceReference>> = [];
     /** 源代码诊断信息 */
     get errors(): readonly SourceDiagnostic[] {
         if (!this.diagnosticsReady) {
@@ -159,11 +161,25 @@ export class CompileResult {
         return this._hints;
     }
     /** 源代码诊断信息 */
+    get references(): readonly SourceReference[] {
+        if (!this.diagnosticsReady) {
+            this.readDiagnostics();
+        }
+        return this._references;
+    }
+    /** 源代码诊断信息 */
     get tags(): readonly SourceDiagnostic[] {
         if (!this.diagnosticsReady) {
             this.readDiagnostics();
         }
         return this._tags;
+    }
+    /** 源代码诊断信息 */
+    get tagsReferences(): readonly SourceReference[] {
+        if (!this.diagnosticsReady) {
+            this.readDiagnostics();
+        }
+        return this._tagsReferences;
     }
     /** 分析诊断信息 */
     private readDiagnostics(): void {
@@ -205,16 +221,21 @@ export class CompileResult {
             diagnostic.references = [];
             while (i + 1 < diagnostics.length) {
                 const ref = diagnostics[i + 1]!;
-                if (
-                    (ref.code > DiagnosticCode.ReferenceStart && ref.code < DiagnosticCode.ReferenceEnd) ||
-                    (ref.code > DiagnosticCode.TagRefStart && ref.code < DiagnosticCode.TagRefEnd)
-                ) {
-                    i++;
-                    ref.diagnostic = diagnostic;
-                    (diagnostic.references as SourceReference[]).push(ref);
-                } else {
+                let isRef = false;
+                if (ref.code > DiagnosticCode.TagRefStart && ref.code < DiagnosticCode.TagRefEnd) {
+                    isRef = true;
+                    this._tagsReferences.push(ref);
+                }
+                if (ref.code > DiagnosticCode.ReferenceStart && ref.code < DiagnosticCode.ReferenceEnd) {
+                    isRef = true;
+                    this._references.push(ref);
+                }
+                if (!isRef) {
                     break;
                 }
+                i++;
+                ref.diagnostic = diagnostic;
+                (diagnostic.references as SourceReference[]).push(ref);
             }
         }
         this.diagnosticsReady = true;

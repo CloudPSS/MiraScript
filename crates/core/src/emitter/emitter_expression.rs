@@ -101,11 +101,107 @@ impl<'s> Emitter<'s> {
                 self.declare_pattern(pattern, Some(BindType::Init));
             }
             Block(_, _, _, _) => (),
-            Loop(_, _) => (),
-            While(_, _, _, _) => (),
-            ForIn(_, _, _, _, _, _) => (),
-            If(_, _, _, _) => (),
-            Match(_, _, _, _, _) => (),
+            Loop(kw_loop, body) => {
+                self.diagnostics.push(SourceDiagnostic::new(
+                    kw_loop.range.start..body.range().end,
+                    DiagnosticCode::LoopExpression,
+                ));
+                self.diagnostics.push(SourceDiagnostic::new(
+                    kw_loop.range(),
+                    DiagnosticCode::KeywordLoop,
+                ));
+            }
+            While(kw_while, _, body, else_part) => {
+                let else_part = else_part.as_ref();
+                self.diagnostics.push(SourceDiagnostic::new(
+                    kw_while.range.start
+                        ..else_part
+                            .map(|e| e.1.range())
+                            .unwrap_or_else(|| body.range())
+                            .end,
+                    DiagnosticCode::WhileExpression,
+                ));
+                self.diagnostics.push(SourceDiagnostic::new(
+                    kw_while.range(),
+                    DiagnosticCode::KeywordWhile,
+                ));
+                else_part.iter().for_each(|(kw_else, _)| {
+                    self.diagnostics.push(SourceDiagnostic::new(
+                        kw_else.range(),
+                        DiagnosticCode::KeywordElse,
+                    ));
+                });
+            }
+            ForIn(kw_for, _, kw_in, _, body, else_part) => {
+                let (kw_else, else_body) = if let Some((kw_else, else_body)) = else_part {
+                    (Some(kw_else), Some(else_body))
+                } else {
+                    (None, None)
+                };
+                self.diagnostics.push(SourceDiagnostic::new(
+                    kw_for.range.start..else_body.unwrap_or(body).range().end,
+                    DiagnosticCode::ForExpression,
+                ));
+                self.diagnostics.push(SourceDiagnostic::new(
+                    kw_for.range(),
+                    DiagnosticCode::KeywordFor,
+                ));
+                self.diagnostics.push(SourceDiagnostic::new(
+                    kw_in.range(),
+                    DiagnosticCode::KeywordIn,
+                ));
+                kw_else.iter().for_each(|kw_else| {
+                    self.diagnostics.push(SourceDiagnostic::new(
+                        kw_else.range(),
+                        DiagnosticCode::KeywordElse,
+                    ));
+                });
+            }
+            If(kw_if, _, then_block, else_part) => {
+                let mut else_part = else_part.as_ref();
+                self.diagnostics.push(SourceDiagnostic::new(
+                    kw_if.range.start
+                        ..else_part
+                            .map(|e| e.1.range())
+                            .unwrap_or_else(|| then_block.range())
+                            .end,
+                    DiagnosticCode::IfExpression,
+                ));
+                self.diagnostics.push(SourceDiagnostic::new(
+                    kw_if.range(),
+                    DiagnosticCode::KeywordIf,
+                ));
+
+                while let Some((kw_else, else_block)) = else_part {
+                    self.diagnostics.push(SourceDiagnostic::new(
+                        kw_else.range(),
+                        DiagnosticCode::KeywordElse,
+                    ));
+                    if let If(kw_if, _, _, next_else_part) = else_block.as_ref() {
+                        self.diagnostics.push(SourceDiagnostic::new(
+                            kw_if.range(),
+                            DiagnosticCode::KeywordIf,
+                        ));
+                        else_part = next_else_part.as_ref();
+                    } else {
+                        else_part = None;
+                    }
+                }
+            }
+            Match(kw_match, _, _, branches, cp) => {
+                self.diagnostics.push(SourceDiagnostic::new(
+                    kw_match.range.start..cp.range.end,
+                    DiagnosticCode::MatchExpression,
+                ));
+                self.diagnostics.push(SourceDiagnostic::new(
+                    kw_match.range(),
+                    DiagnosticCode::KeywordMatch,
+                ));
+                self.diagnostics
+                    .extend(branches.iter().map(|(kw_case, _, _)| {
+                        SourceDiagnostic::new(kw_case.range(), DiagnosticCode::KeywordCase)
+                    }));
+            }
             Function(_, _, _) => (),
             Unknown { .. } => (),
         }
@@ -136,6 +232,10 @@ impl<'s> Emitter<'s> {
     fn emit_global_access(&mut self, expr: &'s Expression<'s>) -> Option<Cow<'s, str>> {
         let id = if let Variable(id_token) = expr {
             let id = id_token.to_id_name()?;
+            if self.scopes.find_variable(id).is_some() {
+                // 变量已在当前作用域中声明
+                return None;
+            }
             self.diagnostics.push(SourceDiagnostic::new(
                 id_token.range(),
                 DiagnosticCode::GlobalVariable,
