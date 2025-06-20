@@ -1,5 +1,5 @@
 import { Cp, Element } from '../helpers';
-import { $CallDyn, $ToBoolean, $ToNumber, $ToString } from '../operations';
+import { $Call, $ToBoolean, $ToNumber, $ToString } from '../operations';
 import {
     isVmArray,
     isVmConst,
@@ -159,7 +159,7 @@ function mapImpl(
 
 export const map: VmLib = (data, f) => {
     return mapImpl(data, 'f', f, (fn, value, key, data) => {
-        return $CallDyn(fn, [value, key, data]);
+        return $Call(fn, [value, key, data]);
     });
 };
 map.summary = '对数组、记录或外部对象中的每个元素应用函数，并返回结果';
@@ -175,7 +175,7 @@ map.returnsType = 'type(data)';
 
 export const filter: VmLib = (data, predicate) => {
     return mapImpl(data, 'predicate', predicate, (fn, value, key, data) => {
-        const ret = $CallDyn(fn, [value, key, data]);
+        const ret = $Call(fn, [value, key, data]);
         return $ToBoolean(ret) ? value : undefined;
     });
 };
@@ -192,7 +192,7 @@ filter.returnsType = 'type(data)';
 
 export const filter_map: VmLib = (data, f) => {
     return mapImpl(data, 'f', f, (fn, value, key, data) => {
-        const ret = $CallDyn(fn, [value, key, data]);
+        const ret = $Call(fn, [value, key, data]);
         return ret ?? undefined;
     });
 };

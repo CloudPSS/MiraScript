@@ -14,9 +14,11 @@ import {
     type InputMode,
 } from 'mirascript';
 
+const arr = [1, 2, [1, 2], { x: 0 }];
+arr[100] = 100;
 const globals = createVmGlobal(
     {
-        e: new VmExtern([1, 2, [1, 2], { x: 0 }]),
+        e: new VmExtern(arr),
         o: { a: [], b: 1, c: '2', d: { e: 3 } },
         x: [1, 2, 3],
         s: 'sdaf\ndsaf\\n'.repeat(10000),

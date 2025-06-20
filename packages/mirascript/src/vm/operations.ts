@@ -115,6 +115,15 @@ export const $Concat = (...args: string[]): string => {
 export const $Pos = (a: VmAny): number => $ToNumber(a);
 export const $Neg = (a: VmAny): number => -$ToNumber(a);
 export const $Not = (a: VmAny): boolean => !$ToBoolean(a);
+export const $Length = (value: VmAny): number => {
+    $AssertInit(value);
+    if (isVmArray(value)) return value.length;
+    if (isVmRecord(value)) return keys(value).length;
+    if (value instanceof VmWrapper) {
+        return value.keys().length;
+    }
+    return Number.NaN;
+};
 export const $Omit = (value: VmAny, omitted: ReadonlyArray<string | number>): VmRecord => {
     $AssertInit(value);
     if (value == null || !isVmRecord(value)) return {};
@@ -140,10 +149,37 @@ export const $Pick = (value: VmAny, picked: ReadonlyArray<string | number>): VmR
     }
     return result;
 };
+
+const arraySlice: (arr: VmArray, start: number, end: number) => VmArray = Function.prototype.call.bind(
+    Array.prototype.slice,
+);
+const slice = (value: VmArray, start: number, end: number): VmArray => {
+    if (isNaN(start) || start < 0) start = 0;
+    else if (start > value.length) start = value.length;
+    if (isNaN(end) || end > value.length) end = value.length;
+    else if (end < 0) end = 0;
+
+    if (start >= end) return [];
+    return arraySlice(value, start, end);
+};
+export const $Slice = (value: VmAny, start: VmAny, end: VmAny): VmArray => {
+    $AssertInit(value);
+    if (!isVmArray(value)) throw new VmError(`Expected array, got ${$Type(value)}`, []);
+    const s = Math.ceil(start != null ? $ToNumber(start) : 0);
+    const e = Math.floor(end != null ? $ToNumber(end) - 1 : value.length);
+    return slice(value, s, e);
+};
+export const $SliceExclusive = (value: VmAny, start: VmAny, end: VmAny): VmArray => {
+    $AssertInit(value);
+    if (!isVmArray(value)) throw new VmError(`Expected array, got ${$Type(value)}`, []);
+    const s = Math.ceil(start != null ? $ToNumber(start) : 0);
+    const e = Math.ceil(end != null ? $ToNumber(end) : value.length);
+    return slice(value, s, e);
+};
 export const $AssertInit: (value: VmAny) => asserts value is VmValue = (value) => {
     if (value === undefined) throw new TypeError(`Uninitialized value`);
 };
-export const $CallDyn = (func: VmValue, args: readonly VmAny[]): VmValue => {
+export const $Call = (func: VmValue, args: readonly VmAny[]): VmValue => {
     for (const a of args) {
         $AssertInit(a);
     }

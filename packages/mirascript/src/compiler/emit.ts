@@ -412,7 +412,7 @@ class Emitter {
                 const n = read();
                 const args = Array.from({ length: n }, (_, i) => read());
                 const funcName = this.constants[func];
-                code = `${this.wv(reg)} = $CallDyn(global[${funcName}], [${args.map((a) => this.rv(a)).join(', ')}]);`;
+                code = `${this.wv(reg)} = $Call(global[${funcName}], [${args.map((a) => this.rv(a)).join(', ')}]);`;
                 break;
             }
             case OpCode.CallDyn: {
@@ -420,7 +420,7 @@ class Emitter {
                 const func = read();
                 const n = read();
                 const args = Array.from({ length: n }, (_, i) => read());
-                code = `${this.wv(reg)} = $CallDyn(${this.rv(func)}, [${args.map((a) => this.rv(a)).join(', ')}]);`;
+                code = `${this.wv(reg)} = $Call(${this.rv(func)}, [${args.map((a) => this.rv(a)).join(', ')}]);`;
                 break;
             }
             case OpCode.Assign: {
@@ -440,7 +440,8 @@ class Emitter {
             case OpCode.IsNumber:
             case OpCode.IsString:
             case OpCode.IsRecord:
-            case OpCode.IsArray: {
+            case OpCode.IsArray:
+            case OpCode.Length: {
                 reg = read();
                 const value = read();
                 code = `${this.wv(reg)} = $${OpCode[opcode]}(${this.rv(value)});`;
@@ -540,6 +541,44 @@ class Emitter {
                 const level = read();
                 const up = read();
                 code = `${this.wv(up, level)} = ${this.rv(reg)};`;
+                break;
+            }
+            case OpCode.Slice: {
+                reg = read();
+                const obj = read();
+                const start = read();
+                const end = read();
+                code = `${this.wv(reg)} = $Slice(${this.rv(obj)}, ${start}, ${end});`;
+                break;
+            }
+            case OpCode.SliceStart: {
+                reg = read();
+                const obj = read();
+                const end = read();
+                code = `${this.wv(reg)} = $Slice(${this.rv(obj)}, null, ${end});`;
+                break;
+            }
+            case OpCode.SliceEnd: {
+                reg = read();
+                const obj = read();
+                const start = read();
+                code = `${this.wv(reg)} = $Slice(${this.rv(obj)}, ${start}, null);`;
+                break;
+            }
+            case OpCode.SliceDyn: {
+                reg = read();
+                const obj = read();
+                const start = read();
+                const end = read();
+                code = `${this.wv(reg)} = $Slice(${this.rv(obj)}, ${this.rv(start)}, ${this.rv(end)});`;
+                break;
+            }
+            case OpCode.SliceExclusiveDyn: {
+                reg = read();
+                const obj = read();
+                const start = read();
+                const end = read();
+                code = `${this.wv(reg)} = $SliceExclusive(${this.rv(obj)}, ${this.rv(start)}, ${this.rv(end)});`;
                 break;
             }
             case OpCode.Record: {

@@ -238,6 +238,9 @@ pub enum OpCode {
     /// SLICE_EXCLUSIVE_DYN %ret %var %start %end\
     /// %ret = %var\[%start..<%end]
     SliceExclusiveDyn,
+    /// LENGTH %ret %var\
+    /// %ret = $Length(%var)
+    Length,
 
     // control flow
     /// LOOP `regn`\

@@ -3,6 +3,7 @@ import { type editor, Range, type IPosition, type IRange } from '../monaco-api.j
 import {
     getVmFunctionInfo,
     isVmArray,
+    isVmExtern,
     isVmFunction,
     isVmModule,
     isVmPrimitive,
@@ -161,15 +162,22 @@ export function serializeForDisplay(value: VmValue): string {
         }
     } else {
         const hint = serializeForDisplayInner(value);
-        begin = `${hint} (`;
-        end = ')';
+        const isArray = isVmExtern(value) && Array.isArray(value.value);
+        begin = `${hint} ${isArray ? '[' : '('}`;
+        end = isArray ? ']' : ')';
         const keys = value.keys();
-        for (const key of keys) {
+        for (const [index, key] of keys.entries()) {
             if (entries.length > MAX_ENTRIES) {
                 entries.push(`../* x${keys.length - entries.length} */`);
                 break;
             }
-            const entry = `${serializePropName(key)}: ${serializeForDisplayInner(value.get(key) ?? null)}`;
+            let entry;
+            if (isArray && String(index) === key) {
+                // 数组索引
+                entry = serializeForDisplayInner(value.get(key) ?? null);
+            } else {
+                entry = `${serializePropName(key)}: ${serializeForDisplayInner(value.get(key) ?? null)}`;
+            }
             entries.push(entry);
             resultLength += entry.length;
         }

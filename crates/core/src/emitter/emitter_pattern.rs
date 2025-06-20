@@ -6,7 +6,7 @@ use crate::{
     parser::{
         ArrayElementBase, AstWalker,
         Pattern::{self, *},
-        RecordElementBase,
+        RecordElementBase, TokenRef,
     },
 };
 
@@ -318,16 +318,21 @@ impl<'s> Emitter<'s> {
                         .last()
                         .is_some_and(|e| matches!(e.deref(), RecordElementBase::Spread(_, _)));
                     let mut omitted = if has_omitted { Some(vec![]) } else { None };
+
+                    fn is_optional(token: &TokenRef<'_>) -> bool {
+                        *token.as_ref() == Operator::QuestionColon
+                    }
                     for (i, element) in elements.iter().enumerate() {
                         match element.deref() {
-                            RecordElementBase::Named(token, _, pattern) => {
+                            RecordElementBase::Named(token, colon, pattern) => {
                                 let Some((id_type, id)) = token.to_field_name() else {
                                     unreachable!("Expected identifier token");
                                 };
                                 self.diagnostics
                                     .push(SourceDiagnostic::new(token.range(), id_type));
                                 let const_id = self.add_const_string(id);
-                                if !sub_flag.is_empty() {
+                                let required = !sub_flag.is_empty() && !is_optional(colon);
+                                if required {
                                     self.op_3(OpCode::Has, sub_flag, value, const_id);
                                     self.op_if(OpCode::If, sub_flag);
                                 }
@@ -337,7 +342,7 @@ impl<'s> Emitter<'s> {
                                 if let Some(omitted) = omitted.as_mut() {
                                     omitted.push(const_id);
                                 }
-                                if !sub_flag.is_empty() {
+                                if required {
                                     self.op_else();
                                     self.emit_failed_pattern(pattern, bind_type);
                                     self.op_if_end();
@@ -360,7 +365,8 @@ impl<'s> Emitter<'s> {
                                     DiagnosticCode::OmitNamedRecordFieldName,
                                 ));
                                 let const_id = self.add_const_string(id);
-                                if !sub_flag.is_empty() {
+                                let required = !sub_flag.is_empty() && !is_optional(colon);
+                                if required {
                                     self.op_3(OpCode::Has, sub_flag, value, const_id);
                                     self.op_if(OpCode::If, sub_flag);
                                 }
@@ -370,7 +376,7 @@ impl<'s> Emitter<'s> {
                                 if let Some(omitted) = omitted.as_mut() {
                                     omitted.push(const_id);
                                 }
-                                if !sub_flag.is_empty() {
+                                if required {
                                     self.op_else();
                                     self.emit_failed_pattern(pattern, bind_type);
                                     self.op_if_end();
@@ -431,7 +437,106 @@ impl<'s> Emitter<'s> {
                     self.op_if_end();
                 }
             }
-            Array(ob, array_element_bases, cb) => self.unimplemented(ob, cb),
+            Array(_, items, _) => {
+                let spread = items
+                    .iter()
+                    .enumerate()
+                    .find(|&(_, p)| matches!(p.deref(), ArrayElementBase::Spread(_, _)));
+                let (len, before, spread, after) = if let Some((i, spread)) = spread {
+                    let len = items.len() - 1;
+                    let before = &items[..i];
+                    let spread = spread.deref();
+                    let after = &items[i + 1..];
+                    (len, before, Some(spread), after)
+                } else {
+                    (items.len(), &items[..], None, &[] as &[_])
+                };
+                let flag = if success.is_empty() {
+                    self.closures.add_reg()
+                } else {
+                    success
+                };
+                self.op_2(OpCode::IsArray, flag, value);
+
+                self.op_if(OpCode::If, flag);
+
+                let len_reg = self.closures.add_reg();
+                self.op_2(OpCode::Length, len_reg, value);
+
+                let sub_flag = if success.is_empty() {
+                    // 此时匹配成功与否并不重要，而且也要把这是非条件匹配的信息传到子级
+                    Register::EMPTY
+                } else {
+                    self.closures.add_reg()
+                };
+                for (i, item) in before.iter().enumerate() {
+                    let ArrayElementBase::Element(pattern) = item.deref() else {
+                        unreachable!();
+                    };
+
+                    let ret = self.closures.add_reg();
+                    self.op_get_index(ret, value, i as i32);
+                    self.emit_pattern(sub_flag, pattern, ret, bind_type);
+
+                    if !sub_flag.is_empty() {
+                        self.op_3(OpCode::And, flag, flag, sub_flag);
+                    }
+                }
+                if let Some(ArrayElementBase::Spread(_, spread)) = spread {
+                    let index = self.closures.add_reg();
+                    self.op_2(OpCode::Assign, index, len_reg);
+                    let one = self.closures.add_reg();
+                    self.op_number(one, 1.0);
+
+                    for item in after.iter().rev() {
+                        let ArrayElementBase::Element(pattern) = item.deref() else {
+                            unreachable!();
+                        };
+
+                        let ret = self.closures.add_reg();
+                        self.op_3(OpCode::Sub, index, index, one);
+                        self.op_get_dyn(ret, value, index);
+                        self.emit_pattern(sub_flag, pattern, ret, bind_type);
+
+                        if !sub_flag.is_empty() {
+                            self.op_3(OpCode::And, flag, flag, sub_flag);
+                        }
+                    }
+
+                    if !matches!(spread.as_ref(), SpreadDiscard(_)) {
+                        let ret = self.closures.add_reg();
+                        let start = self.closures.add_reg();
+                        self.op_number(start, before.len() as f64);
+                        self.op_4(OpCode::SliceExclusiveDyn, ret, value, start, index);
+                        self.emit_pattern(sub_flag, spread, ret, bind_type);
+
+                        if !sub_flag.is_empty() {
+                            self.op_3(OpCode::And, flag, flag, sub_flag);
+                        }
+                    }
+                }
+
+                self.op_else();
+                self.emit_failed_pattern(pattern, bind_type);
+
+                self.op_if_end();
+
+                // 最后进行长度测试，避免 [1] 匹配 [x, y] 时 x 也为 nil
+                self.op_if(OpCode::If, flag);
+                let expected_len_reg = self.closures.add_reg();
+                self.op_number(expected_len_reg, len as f64);
+                self.op_3(
+                    if spread.is_some() {
+                        OpCode::Gte
+                    } else {
+                        OpCode::Eq
+                    },
+                    flag,
+                    len_reg,
+                    expected_len_reg,
+                );
+                self.op_if_end();
+            }
             And(left, op, right) | Or(left, op, right) => {
                 // No short-circuiting in pattern matching
                 if success.is_empty() {
