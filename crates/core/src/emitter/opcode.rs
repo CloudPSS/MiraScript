@@ -320,8 +320,8 @@ impl From<OpCode> for u8 {
 
 impl OpCode {
     pub const WIDE_MASK: u8 = 0x80;
-    pub const PARAM_MAX: usize = u8::MAX as usize;
-    pub const PARAM_WIDE_MAX: usize = u32::MAX as usize;
+    pub const PARAM_MAX: u32 = u8::MAX as u32;
+    pub const PARAM_WIDE_MAX: u32 = u32::MAX;
 
     pub fn code(&self) -> u8 {
         *self as u8
@@ -332,7 +332,7 @@ impl OpCode {
 }
 
 pub trait OpParamTrait {
-    fn value(&self) -> usize;
+    fn value(&self) -> u32;
     fn is_wide(&self) -> bool {
         self.value() > OpCode::PARAM_MAX
     }
@@ -341,17 +341,17 @@ pub trait OpParamTrait {
         self.value() as u8
     }
     fn wide_code(&self) -> [u8; 4] {
-        (self.value() as u32).to_le_bytes()
+        (self.value()).to_le_bytes()
     }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Register(usize);
+pub struct Register(u32);
 
 impl Register {
     pub fn new(index: usize) -> Self {
         debug_assert!(index != 0);
-        Self(index)
+        Self(index as u32)
     }
 
     /// Write to this register will be ignored
@@ -364,28 +364,34 @@ impl Register {
 }
 
 impl OpParamTrait for Register {
-    fn value(&self) -> usize {
+    fn value(&self) -> u32 {
         self.0
     }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct OpParam(usize);
+pub struct OpParam(i32);
 
 impl OpParam {
-    pub fn new(value: usize) -> Self {
-        Self(value)
+    pub fn new(value: i32) -> Self {
+        value.into()
     }
 }
 
 impl OpParamTrait for OpParam {
-    fn value(&self) -> usize {
-        self.0
+    fn value(&self) -> u32 {
+        self.0 as u32
     }
 }
 
 impl From<usize> for OpParam {
     fn from(param: usize) -> Self {
+        Self(param as i32)
+    }
+}
+
+impl From<i32> for OpParam {
+    fn from(param: i32) -> Self {
         Self(param)
     }
 }

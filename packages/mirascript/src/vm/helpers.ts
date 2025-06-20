@@ -1,7 +1,9 @@
 import { $AssertInit, $ToNumber } from './operations.js';
 import type { VmFunctionLike } from './types/function.js';
 import { createVmGlobal, type VmGlobal } from './types/global.js';
-import { isVmConst, VmFunction, type VmConst, type VmAny, type VmArray, type VmRecord } from './types/index.js';
+import { isVmConst, VmFunction, type VmConst, type VmAny, type VmArray } from './types/index.js';
+const { isFinite } = Number;
+const { ceil } = Math;
 
 export const Element = (value: VmAny): VmConst => {
     $AssertInit(value);
@@ -20,29 +22,28 @@ export const Function = (fn: VmFunctionLike): VmFunction => {
 };
 
 export const ArrayRange = (start: VmAny, end: VmAny): VmArray => {
-    const arr = [];
     const s = $ToNumber(start);
     const e = $ToNumber(end);
-    for (let i = s; i <= e; i++) {
+    if (!isFinite(s) || !isFinite(e) || s > e) {
+        return [];
+    }
+    const arr = [];
+    for (let i = ceil(s); i <= e; i++) {
         arr.push(i);
     }
     return arr;
 };
 export const ArrayRangeExclusive = (start: VmAny, end: VmAny): VmArray => {
-    const arr = [];
     const s = $ToNumber(start);
     const e = $ToNumber(end);
-    for (let i = s; i < e; i++) {
+    if (!isFinite(s) || !isFinite(e) || s > e) {
+        return [];
+    }
+    const arr = [];
+    for (let i = ceil(s); i < e; i++) {
         arr.push(i);
     }
     return arr;
-};
-export const RecordFreeze = (record: Writable<VmRecord>, optional: readonly string[]): void => {
-    for (const field of optional) {
-        if (record[field] == null) {
-            delete record[field];
-        }
-    }
 };
 
 const MAX_DEPTH = 128;

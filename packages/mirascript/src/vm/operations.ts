@@ -19,8 +19,10 @@ import {
 import { VmWrapper } from './types/wrapper.js';
 
 const { hasOwn, keys } = Object;
-const { isNaN } = Number;
-const { abs, min } = Math;
+const { isNaN, isSafeInteger } = Number;
+const { abs, min, trunc, floor, ceil } = Math;
+const { slice, at } = Array.prototype;
+
 const isSame = (a: VmValue, b: VmValue): boolean => {
     // Check for NaN
     if (typeof a == 'number' && typeof b == 'number') return a === b || (isNaN(a) && isNaN(b));
@@ -150,31 +152,37 @@ export const $Pick = (value: VmAny, picked: ReadonlyArray<string | number>): VmR
     return result;
 };
 
-const arraySlice: (arr: VmArray, start: number, end: number) => VmArray = Function.prototype.call.bind(
-    Array.prototype.slice,
-);
-const slice = (value: VmArray, start: number, end: number): VmArray => {
-    if (isNaN(start) || start < 0) start = 0;
-    else if (start > value.length) start = value.length;
-    if (isNaN(end) || end > value.length) end = value.length;
-    else if (end < 0) end = 0;
+const sliceCore = (value: VmArray, start: number, end: number, exclusive: boolean): VmArray => {
+    const { length } = value;
 
-    if (start >= end) return [];
-    return arraySlice(value, start, end);
+    if (isNaN(start)) start = 0;
+    else if (start < 0) start = length + start;
+    if (isNaN(end)) end = exclusive ? length : length - 1;
+    else if (end < 0) end = length + end;
+
+    start = ceil(start);
+    if (exclusive) {
+        end = ceil(end);
+    } else if (isSafeInteger(end)) {
+        end = end + 1;
+    } else {
+        end = floor(end);
+    }
+    return slice.call(value, start, end) as VmArray;
 };
 export const $Slice = (value: VmAny, start: VmAny, end: VmAny): VmArray => {
     $AssertInit(value);
     if (!isVmArray(value)) throw new VmError(`Expected array, got ${$Type(value)}`, []);
-    const s = Math.ceil(start != null ? $ToNumber(start) : 0);
-    const e = Math.floor(end != null ? $ToNumber(end) - 1 : value.length);
-    return slice(value, s, e);
+    const s = start != null ? $ToNumber(start) : 0;
+    const e = end != null ? $ToNumber(end) : value.length - 1;
+    return sliceCore(value, s, e, false);
 };
 export const $SliceExclusive = (value: VmAny, start: VmAny, end: VmAny): VmArray => {
     $AssertInit(value);
     if (!isVmArray(value)) throw new VmError(`Expected array, got ${$Type(value)}`, []);
-    const s = Math.ceil(start != null ? $ToNumber(start) : 0);
-    const e = Math.ceil(end != null ? $ToNumber(end) : value.length);
-    return slice(value, s, e);
+    const s = start != null ? $ToNumber(start) : 0;
+    const e = end != null ? $ToNumber(end) : value.length;
+    return sliceCore(value, s, e, true);
 };
 export const $AssertInit: (value: VmAny) => asserts value is VmValue = (value) => {
     if (value === undefined) throw new TypeError(`Uninitialized value`);
@@ -275,6 +283,11 @@ export const $Has = (obj: VmAny, key: VmAny): boolean => {
 };
 export const $Get = (obj: VmAny, key: VmAny): VmValue => {
     $AssertInit(obj);
+    if (isVmArray(obj)) {
+        const index = $ToNumber(key);
+        if (isNaN(index)) return null;
+        return (at.call(obj, trunc(index)) as VmConst | undefined) ?? null;
+    }
     const pk = $ToString(key);
     if (obj == null || typeof obj != 'object') return null;
     if (obj instanceof VmWrapper) return obj.get(pk) ?? null;

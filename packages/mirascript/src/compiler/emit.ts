@@ -117,6 +117,12 @@ class Emitter {
         this.codeOffset += wide ? 4 : 1;
         return value;
     }
+    /** 读取 code param */
+    private readIndex(wide: boolean): number {
+        const value = wide ? this.codeReader.getInt32(this.codeOffset, true) : this.codeReader.getInt8(this.codeOffset);
+        this.codeOffset += wide ? 4 : 1;
+        return value;
+    }
     /** 读取闭包 */
     private readClosure(): void {
         this.closureCounter++;
@@ -219,7 +225,7 @@ class Emitter {
                 case OpCode.FieldOptIndex:
                 case OpCode.FieldIndex: {
                     const field = read();
-                    const value = read();
+                    const value = this.readIndex(wide);
                     const opt = opcode === OpCode.FieldOptIndex;
                     code = opt
                         ? `...ElementOpt(${field}, ${this.rv(value)}),`
@@ -311,6 +317,7 @@ class Emitter {
         const opcode = opcode_raw & 0x7f;
         const wide = opcode_raw >= 0x80;
         const read = () => this.readParam(wide);
+        const readIndex = () => this.readIndex(wide);
         const ident = this.ident();
         let code = '';
         let reg = 0;
@@ -463,7 +470,7 @@ class Emitter {
             case OpCode.GetIndex: {
                 reg = read();
                 const obj = read();
-                const index = read();
+                const index = readIndex();
                 code = `${this.wv(reg)} = $Get(${this.rv(obj)}, ${index});`;
                 break;
             }
@@ -484,7 +491,7 @@ class Emitter {
             case OpCode.HasIndex: {
                 reg = read();
                 const obj = read();
-                const index = read();
+                const index = readIndex();
                 code = `${this.wv(reg)} = $Has(${this.rv(obj)}, ${index});`;
                 break;
             }
@@ -505,7 +512,7 @@ class Emitter {
             case OpCode.SetIndex: {
                 reg = read();
                 const obj = read();
-                const index = read();
+                const index = readIndex();
                 code = `$Set(${this.rv(obj)}, ${index}, ${this.rv(reg)});`;
                 break;
             }
@@ -546,22 +553,22 @@ class Emitter {
             case OpCode.Slice: {
                 reg = read();
                 const obj = read();
-                const start = read();
-                const end = read();
+                const start = readIndex();
+                const end = readIndex();
                 code = `${this.wv(reg)} = $Slice(${this.rv(obj)}, ${start}, ${end});`;
                 break;
             }
             case OpCode.SliceStart: {
                 reg = read();
                 const obj = read();
-                const end = read();
+                const end = readIndex();
                 code = `${this.wv(reg)} = $Slice(${this.rv(obj)}, null, ${end});`;
                 break;
             }
             case OpCode.SliceEnd: {
                 reg = read();
                 const obj = read();
-                const start = read();
+                const start = readIndex();
                 code = `${this.wv(reg)} = $Slice(${this.rv(obj)}, ${start}, null);`;
                 break;
             }

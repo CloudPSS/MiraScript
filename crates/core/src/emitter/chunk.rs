@@ -58,10 +58,10 @@ impl<'s> Chunk<'s> {
 
     pub fn add_constant(&mut self, constant: Constant<'s>) -> OpParam {
         if let Some(index) = self.constants.iter().position(|c| c == &constant) {
-            OpParam::new(index)
+            OpParam::from(index)
         } else {
             self.constants.push(constant);
-            OpParam::new(self.constants.len() - 1)
+            OpParam::from(self.constants.len() - 1)
         }
     }
 

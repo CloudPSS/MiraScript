@@ -217,7 +217,7 @@ let end2 = ();
 [start..end2]; // TypeError，end2 不能转换为数字
 ```
 
-使用 `.`、`[]` 操作符访问数组的元素，使用负数索引访问数组的倒数第几个元素。
+使用 `.`、`[]` 操作符访问数组的元素，使用负数索引访问数组的倒数第几个元素。当索引非整数时，会先将其转换为整数。
 
 ```rust
 let array = [1, 2, 3];
@@ -666,13 +666,13 @@ fn season {
 
 #### 变量模式
 
-变量模式可以匹配任意值，并将匹配成功的值绑定到变量上。变量模式的语法为 `[mut] <variable> [is <pattern>]`，其中 `<variable>` 是一个变量名。声明新变量时，可以使用 `mut` 关键字表示该变量是可变的。通过可选的 `is <pattern>` 语法，可以将变量模式与其他模式结合使用。
+变量模式可以匹配任意值，并将匹配成功的值绑定到变量上。变量模式的语法为 `[mut] <variable>`，其中 `<variable>` 是一个变量名。声明新变量时，可以使用 `mut` 关键字表示该变量是可变的。
 
 ```rust
 let x = 1; // 变量 x 的值为 1
 let mut y = 2; // 变量 y 的值为 2
 
-if x is (mut z is not nan) {
+if x is (mut z and not nan) {
   z += 1; // z 的值为 2
   println(z);
 } else {
@@ -721,13 +721,13 @@ _ = x + y; // 匹配 x + y 的值，但不绑定该值
 
   ```rust
   let record = (key1: "value1", key2: 2, key3: true);
-  record is (key1: "value1", :mut key2 is 0..10, ?:no_exist); // 匹配成功，key2 的值为 2，no_exist 的值为 nil
+  record is (key1: "value1", :mut key2, ?:no_exist); // 匹配成功，key2 的值为 2，no_exist 的值为 nil
   record is (:no_exist); // 匹配失败
   ```
 
 - 展开模式
 
-  展开模式用于匹配记录剩余键值对。展开模式的语法为 `..<pattern>`，表示匹配记录的所有键值对。
+  展开模式用于匹配记录剩余键值对。展开模式的语法为 `..<pattern>`，表示匹配记录的剩余所有键值对。
 
   展开模式必须是记录模式的最后一个子模式，且只能出现一次。展开模式的值是一个记录，包含匹配成功的键值对。
 
@@ -738,7 +738,7 @@ _ = x + y; // 匹配 x + y 的值，但不绑定该值
   record is (key1: "value1", ..rest); // 匹配成功，rest 的值为 (key2: 2, key3: true)
 
   let unnamed_record = (1, 2, 3);
-  unnamed_record is (0: 1, ..rest); // 不能使用未命名模式，匹配成功，注意 rest 的值为 (1: 2, 2: 3)
+  unnamed_record is (1, ..rest); // 匹配成功，注意 rest 的值为 (1: 2, 2: 3)
 
   record is (..)        // 语法错误
   record is (key1, ..) // 语法错误
@@ -748,7 +748,7 @@ _ = x + y; // 匹配 x + y 的值，但不绑定该值
 
   未命名模式用于匹配记录的序数键值对。未命名模式的语法为 `<pattern>`，其中 `<pattern>` 是一个模式，匹配记录的值。
 
-  与记录字面量语法类似，为了避免歧义，一个记录模式中未命名模式不能与其他模式混用。
+  与记录字面量语法类似，为了避免歧义，记录模式中未命名模式必须出现在最前。
 
   ```rust
   let record = (1, 2, 3);
@@ -840,7 +840,7 @@ let (a, mut b) = (1, 2); // 记录模式，变量的可变性可以分别设置
 let [first, _, ..mut rest] = [1, 2, 3, 4]; // 数组模式，first 初始化为 1，rest 初始化为 [3, 4]
 ```
 
-模式匹配失败时，let 语句抛出 `MatchError` 异常。
+模式匹配失败时，let 语句不会产生异常。
 
 #### 赋值语句
 
@@ -874,8 +874,6 @@ x += 2; // 重新绑定变量 x 的值为 3
 ex.foo = 1; // 对 extern 对象 ex 的属性 "foo" 赋值
 ex[1 + 2] += 1; // 对 extern 对象 ex 的属性 "3" 复合赋值
 ```
-
-当模式匹配失败时，赋值语句会抛出 `MatchError` 异常。
 
 当 `<extern>` 表达式的求值结果不是 `extern` 对象时，赋值语句会抛出 `TypeError` 异常。
 

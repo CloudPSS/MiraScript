@@ -456,7 +456,7 @@ impl<'s> Emitter<'s> {
                                     } else {
                                         OpCode::FieldIndex
                                     },
-                                    OpParam::new(*id as usize),
+                                    OpParam::new(*id),
                                     reg,
                                 );
                             } else {
@@ -535,7 +535,7 @@ impl<'s> Emitter<'s> {
                                 } else {
                                     OpCode::FieldIndex
                                 },
-                                OpParam::new(reg_index),
+                                OpParam::from(reg_index),
                                 reg,
                             );
                             let code = match reg_index {

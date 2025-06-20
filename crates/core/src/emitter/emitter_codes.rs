@@ -248,8 +248,7 @@ impl<'s> Emitter<'s> {
     }
 
     pub fn op_get_index(&mut self, ret: Register, obj: Register, index: i32) {
-        let index: OpParam = <i32 as TryInto<usize>>::try_into(index).unwrap().into();
-        self.op_3(GetIndex, ret, obj, index);
+        self.op_3(GetIndex, ret, obj, OpParam::new(index));
     }
 
     pub fn op_get_dyn(&mut self, ret: Register, obj: Register, index: Register) {

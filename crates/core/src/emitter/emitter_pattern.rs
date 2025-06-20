@@ -401,7 +401,7 @@ impl<'s> Emitter<'s> {
                                 self.diagnostics
                                     .push(SourceDiagnostic::new(start..start, code));
                                 if !sub_flag.is_empty() {
-                                    self.op_3(OpCode::HasIndex, sub_flag, value, OpParam::new(i));
+                                    self.op_3(OpCode::HasIndex, sub_flag, value, OpParam::from(i));
                                     self.op_if(OpCode::If, sub_flag);
                                 }
                                 self.op_get_index(ret, value, i as i32);
@@ -460,9 +460,6 @@ impl<'s> Emitter<'s> {
 
                 self.op_if(OpCode::If, flag);
 
-                let len_reg = self.closures.add_reg();
-                self.op_2(OpCode::Length, len_reg, value);
-
                 let sub_flag = if success.is_empty() {
                     // 此时匹配成功与否并不重要，而且也要把这是非条件匹配的信息传到子级
                     Register::EMPTY
@@ -483,19 +480,13 @@ impl<'s> Emitter<'s> {
                     }
                 }
                 if let Some(ArrayElementBase::Spread(_, spread)) = spread {
-                    let index = self.closures.add_reg();
-                    self.op_2(OpCode::Assign, index, len_reg);
-                    let one = self.closures.add_reg();
-                    self.op_number(one, 1.0);
-
-                    for item in after.iter().rev() {
+                    for (i, item) in after.iter().rev().enumerate() {
                         let ArrayElementBase::Element(pattern) = item.deref() else {
                             unreachable!();
                         };
 
                         let ret = self.closures.add_reg();
-                        self.op_3(OpCode::Sub, index, index, one);
-                        self.op_get_dyn(ret, value, index);
+                        self.op_get_index(ret, value, -1 - (i as i32));
                         self.emit_pattern(sub_flag, pattern, ret, bind_type);
 
                         if !sub_flag.is_empty() {
@@ -505,9 +496,30 @@ impl<'s> Emitter<'s> {
 
                     if !matches!(spread.as_ref(), SpreadDiscard(_)) {
                         let ret = self.closures.add_reg();
-                        let start = self.closures.add_reg();
-                        self.op_number(start, before.len() as f64);
-                        self.op_4(OpCode::SliceExclusiveDyn, ret, value, start, index);
+                        if before.is_empty() && after.is_empty() {
+                            // 如果没有前后元素，直接返回整个数组
+                            self.op_2(OpCode::Assign, ret, value);
+                        } else if after.is_empty() {
+                            // 切片前面的元素
+                            self.op_3(OpCode::SliceEnd, ret, value, OpParam::from(before.len()));
+                        } else if before.is_empty() {
+                            // 切片后面的元素
+                            self.op_3(
+                                OpCode::SliceStart,
+                                ret,
+                                value,
+                                OpParam::from(-(after.len() as i32) - 1),
+                            );
+                        } else {
+                            // 切片前后都有元素
+                            self.op_4(
+                                OpCode::Slice,
+                                ret,
+                                value,
+                                OpParam::from(before.len()),
+                                OpParam::from(-(after.len() as i32) - 1),
+                            );
+                        }
                         self.emit_pattern(sub_flag, spread, ret, bind_type);
 
                         if !sub_flag.is_empty() {
@@ -522,20 +534,24 @@ impl<'s> Emitter<'s> {
                 self.op_if_end();
 
                 // 最后进行长度测试，避免 [1] 匹配 [x, y] 时 x 也为 nil
-                self.op_if(OpCode::If, flag);
-                let expected_len_reg = self.closures.add_reg();
-                self.op_number(expected_len_reg, len as f64);
-                self.op_3(
-                    if spread.is_some() {
-                        OpCode::Gte
-                    } else {
-                        OpCode::Eq
-                    },
-                    flag,
-                    len_reg,
-                    expected_len_reg,
-                );
-                self.op_if_end();
+                if !success.is_empty() && (len > 0 || spread.is_none()) {
+                    self.op_if(OpCode::If, flag);
+                    let len_reg = self.closures.add_reg();
+                    self.op_2(OpCode::Length, len_reg, value);
+                    let expected_len_reg = self.closures.add_reg();
+                    self.op_number(expected_len_reg, len as f64);
+                    self.op_3(
+                        if spread.is_some() {
+                            OpCode::Gte
+                        } else {
+                            OpCode::Eq
+                        },
+                        flag,
+                        len_reg,
+                        expected_len_reg,
+                    );
+                    self.op_if_end();
+                }
             }
             And(left, op, right) | Or(left, op, right) => {
                 // No short-circuiting in pattern matching
