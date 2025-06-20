@@ -29,30 +29,30 @@ pub(super) fn token<'s>(
             )),
             '"' | '\'' | '`' => string::string,
             '+' => alt((
-                "+=".value(TokenKind::Operator(Operator::PlusEqual)),
+                "+=".value(TokenKind::Operator(Operator::PlusAssign)),
                 any.value(TokenKind::Operator(Operator::Plus)),
             )),
             '-' => alt((
-                "-=".value(TokenKind::Operator(Operator::MinusEqual)),
+                "-=".value(TokenKind::Operator(Operator::MinusAssign)),
                 "->".value(TokenKind::Operator(Operator::Arrow)),
                 any.value(TokenKind::Operator(Operator::Minus)),
             )),
             '*' => alt((
-                "*=".value(TokenKind::Operator(Operator::AsteriskEqual)),
+                "*=".value(TokenKind::Operator(Operator::AsteriskAssign)),
                 any.value(TokenKind::Operator(Operator::Asterisk)),
             )),
             '/' => dispatch! {peek(opt(take(2usize)));
                 // Some("/*") => block_comment,
                 // Some("//") => line_comment,
-                Some("/=") => take(2usize).value(TokenKind::Operator(Operator::SlashEqual)),
+                Some("/=") => take(2usize).value(TokenKind::Operator(Operator::SlashAssign)),
                 _ => any.value(TokenKind::Operator(Operator::Slash)),
             },
             '%' => alt((
-                "%=".value(TokenKind::Operator(Operator::PercentEqual)),
+                "%=".value(TokenKind::Operator(Operator::PercentAssign)),
                 any.value(TokenKind::Operator(Operator::Percent)),
             )),
             '^' => alt((
-                "^=".value(TokenKind::Operator(Operator::CaretEqual)),
+                "^=".value(TokenKind::Operator(Operator::CaretAssign)),
                 any.value(TokenKind::Operator(Operator::Caret)),
             )),
             '=' => alt((
@@ -77,16 +77,16 @@ pub(super) fn token<'s>(
                 "<".value(TokenKind::Operator(Operator::Less)),
             )),
             '&' => alt((
-                "&&=".value(TokenKind::Operator(Operator::LogicalAndEqual)),
+                "&&=".value(TokenKind::Operator(Operator::LogicalAndAssign)),
                 "&&".value(TokenKind::Operator(Operator::LogicalAnd)),
             )),
             '|' => alt((
-                "||=".value(TokenKind::Operator(Operator::LogicalOrEqual)),
+                "||=".value(TokenKind::Operator(Operator::LogicalOrAssign)),
                 "||".value(TokenKind::Operator(Operator::LogicalOr)),
             )),
             '?' => alt((
                 "?:".value(TokenKind::Operator(Operator::QuestionColon)),
-                "??=".value(TokenKind::Operator(Operator::NullCoalescingEqual)),
+                "??=".value(TokenKind::Operator(Operator::NullCoalescingAssign)),
                 "??".value(TokenKind::Operator(Operator::NullCoalescing)),
             )),
             '(' => any.value(TokenKind::Operator(Operator::OpenParen)),

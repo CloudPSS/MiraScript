@@ -35,6 +35,10 @@ impl<'s> Emitter<'s> {
                         | Expression::Record(..)
                         | Expression::Array(..)
                         | Expression::NonNil(..)
+                        | Expression::Call(..)
+                        | Expression::Extension(..)
+                        | Expression::Access(..)
+                        | Expression::Index(..)
                 ) {
                     self.diagnostics.push(SourceDiagnostic::new(
                         op.range(),

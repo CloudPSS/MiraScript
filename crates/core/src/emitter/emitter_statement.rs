@@ -152,15 +152,15 @@ impl<'s> Emitter<'s> {
                 };
                 if !is_compound {
                     self.emit_expression(expression, assignee_reg, brk);
-                } else if *op == Operator::LogicalAndEqual {
+                } else if *op == Operator::LogicalAndAssign {
                     self.op_if(OpCode::If, assignee_reg);
                     self.emit_expression(expression, assignee_reg, brk);
                     self.op_if_end();
-                } else if *op == Operator::LogicalOrEqual {
+                } else if *op == Operator::LogicalOrAssign {
                     self.op_if(OpCode::IfNot, assignee_reg);
                     self.emit_expression(expression, assignee_reg, brk);
                     self.op_if_end();
-                } else if *op == Operator::NullCoalescingEqual {
+                } else if *op == Operator::NullCoalescingAssign {
                     self.op_if(OpCode::IfNil, assignee_reg);
                     self.emit_expression(expression, assignee_reg, brk);
                     self.op_if_end();

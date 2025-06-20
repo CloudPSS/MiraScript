@@ -3,7 +3,7 @@ use winnow::{
     token::any,
 };
 
-use super::expressions::expression;
+use super::expressions::expression_or_insert;
 use super::helper::{statements_and_expression, token, token_or_insert};
 use super::iterables::iterable;
 use super::parameter_list::parameter_list;
@@ -25,7 +25,7 @@ fn optional_else<'s>(i: &mut Input<'s>) -> Result<Option<(TokenRef<'s>, Box<Expr
 pub(super) fn if_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     seq!(Expression::If(
         token(Keyword::If),
-        expression.map(Box::new),
+        expression_or_insert(|t| *t == Operator::OpenBrace).map(Box::new),
         block_expression.map(Box::new),
         optional_else,
     ))
@@ -91,7 +91,7 @@ pub(super) fn loop_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
 pub(super) fn while_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     seq!(Expression::While(
         token(Keyword::While),
-        expression.map(Box::new),
+        expression_or_insert(|t| *t == Operator::OpenBrace).map(Box::new),
         block_expression_no_expr.map(Box::new),
         optional_else,
     ))
@@ -101,17 +101,26 @@ pub(super) fn while_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> 
 pub(super) fn match_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     seq!(Expression::Match(
         token(Keyword::Match),
-        expression.map(Box::new),
+        expression_or_insert(|t| *t == Operator::OpenBrace).map(Box::new),
         token_or_insert(Operator::OpenBrace, DiagnosticCode::MissingOpenBrace),
         repeat(
             0..,
             (
-                token_or_insert(Keyword::Case, DiagnosticCode::MissingCase),
-                pattern_or_insert(false, |t| *t == Operator::OpenBrace),
+                alt((
+                    (
+                        token(Keyword::Case),
+                        pattern_or_insert(false, |t| *t == Operator::OpenBrace),
+                    ),
+                    (
+                        token_or_insert(Keyword::Case, DiagnosticCode::MissingCase),
+                        pattern(false),
+                    )
+                )),
                 block_expression,
             )
+                .map(|((kw_case, pattern), block)| (kw_case, pattern, block)),
         ),
-        token_or_insert(Operator::CloseBrace, DiagnosticCode::MissingOpenBrace),
+        token_or_insert(Operator::CloseBrace, DiagnosticCode::MissingCloseBrace),
     ))
     .parse_next(i)
 }

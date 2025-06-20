@@ -5,10 +5,10 @@ use winnow::{
 
 use super::{
     block_expressions::*,
-    expressions::expression,
+    expressions::{expression, expression_or_insert},
     helper::{token, token_or_insert, variable_token},
     parameter_list::parameter_list,
-    patterns::{pattern, pattern_or_insert},
+    patterns::pattern_or_insert,
     prelude::*,
 };
 
@@ -70,7 +70,7 @@ fn bind_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
         token(Keyword::Let),
         pattern_or_insert(false, |t| *t == Operator::Assign).map(Box::new),
         token_or_insert(Operator::Assign, DiagnosticCode::MissingBindOperator),
-        expression.map(Box::new),
+        expression_or_insert(|t| *t == Operator::Semicolon).map(Box::new),
         semicolon,
     ))
     .parse_next(i)
@@ -78,31 +78,31 @@ fn bind_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
 
 fn rebind_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
     seq!(Statement::Rebind(
-        pattern(true).map(Box::new),
+        pattern_or_insert(true, |t| *t == Operator::Assign).map(Box::new),
         token(Operator::Assign),
-        expression.map(Box::new),
+        expression_or_insert(|t| *t == Operator::Semicolon).map(Box::new),
         semicolon,
     ))
     .parse_next(i)
 }
 
 fn assign_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
+    fn is_assign_op(t: &Token<'_>) -> bool {
+        *t == Operator::PlusAssign
+            || *t == Operator::MinusAssign
+            || *t == Operator::AsteriskAssign
+            || *t == Operator::SlashAssign
+            || *t == Operator::PercentAssign
+            || *t == Operator::CaretAssign
+            || *t == Operator::LogicalAndAssign
+            || *t == Operator::LogicalOrAssign
+            || *t == Operator::NullCoalescingAssign
+            || *t == Operator::Assign
+    }
     seq!(Statement::Assign(
-        expression.map(Box::new),
-        one_of(|t: &Token<'s>| {
-            *t == Operator::PlusEqual
-                || *t == Operator::MinusEqual
-                || *t == Operator::AsteriskEqual
-                || *t == Operator::SlashEqual
-                || *t == Operator::PercentEqual
-                || *t == Operator::CaretEqual
-                || *t == Operator::LogicalAndEqual
-                || *t == Operator::LogicalOrEqual
-                || *t == Operator::NullCoalescingEqual
-                || *t == Operator::Assign
-        })
-        .map(TokenRef::borrow),
-        expression.map(Box::new),
+        expression_or_insert(is_assign_op).map(Box::new),
+        one_of(is_assign_op).map(TokenRef::borrow),
+        expression_or_insert(|t| *t == Operator::Semicolon).map(Box::new),
         semicolon,
     ))
     .parse_next(i)

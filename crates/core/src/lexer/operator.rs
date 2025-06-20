@@ -41,37 +41,37 @@ pub enum Operator {
     Plus,
     /// `+=`
     #[strum(props(arithmetic = true, compound = true))]
-    PlusEqual,
+    PlusAssign,
     /// `-`
     #[strum(props(arithmetic = true, infix = true, prefix = true))]
     Minus,
     /// `-=`
     #[strum(props(arithmetic = true, compound = true))]
-    MinusEqual,
+    MinusAssign,
     /// `*`
     #[strum(props(arithmetic = true, infix = true))]
     Asterisk,
     /// `*=`
     #[strum(props(arithmetic = true, compound = true))]
-    AsteriskEqual,
+    AsteriskAssign,
     /// `/`
     #[strum(props(arithmetic = true, infix = true))]
     Slash,
     /// `/=`
     #[strum(props(arithmetic = true, compound = true))]
-    SlashEqual,
+    SlashAssign,
     /// `%`
     #[strum(props(arithmetic = true, infix = true))]
     Percent,
     /// `%=`
     #[strum(props(arithmetic = true, compound = true))]
-    PercentEqual,
+    PercentAssign,
     /// `^`
     #[strum(props(arithmetic = true, infix = true))]
     Caret,
     /// `^=`
     #[strum(props(arithmetic = true, compound = true))]
-    CaretEqual,
+    CaretAssign,
 
     /// `!`
     #[strum(props(logical = true, prefix = true, postfix = true))]
@@ -81,19 +81,19 @@ pub enum Operator {
     LogicalAnd,
     /// `&&=`
     #[strum(props(logical = true, compound = true))]
-    LogicalAndEqual,
+    LogicalAndAssign,
     /// `||`
     #[strum(props(logical = true, infix = true))]
     LogicalOr,
     /// `||=`
     #[strum(props(logical = true, compound = true))]
-    LogicalOrEqual,
+    LogicalOrAssign,
     /// `??`
     #[strum(props(logical = true, infix = true))]
     NullCoalescing,
     /// `??=`
     #[strum(props(logical = true, compound = true))]
-    NullCoalescingEqual,
+    NullCoalescingAssign,
 
     /// `=`
     Assign,
@@ -161,14 +161,14 @@ impl Operator {
     pub fn to_compound_op(&self) -> Option<OpCode> {
         use Operator::*;
         match self {
-            CaretEqual => Some(OpCode::Pow),
+            CaretAssign => Some(OpCode::Pow),
 
-            AsteriskEqual => Some(OpCode::Mul),
-            SlashEqual => Some(OpCode::Div),
-            PercentEqual => Some(OpCode::Mod),
+            AsteriskAssign => Some(OpCode::Mul),
+            SlashAssign => Some(OpCode::Div),
+            PercentAssign => Some(OpCode::Mod),
 
-            PlusEqual => Some(OpCode::Add),
-            MinusEqual => Some(OpCode::Sub),
+            PlusAssign => Some(OpCode::Add),
+            MinusAssign => Some(OpCode::Sub),
 
             _ => None,
         }
@@ -177,13 +177,24 @@ impl Operator {
     pub fn is_arithmetic(&self) -> bool {
         self.get_bool("arithmetic").unwrap_or(false)
     }
-
     pub fn is_logical(&self) -> bool {
         self.get_bool("logical").unwrap_or(false)
     }
-
     pub fn is_relation(&self) -> bool {
         self.get_bool("relation").unwrap_or(false)
+    }
+
+    pub fn is_infix(&self) -> bool {
+        self.get_bool("infix").unwrap_or(false)
+    }
+    pub fn is_prefix(&self) -> bool {
+        self.get_bool("prefix").unwrap_or(false)
+    }
+    pub fn is_postfix(&self) -> bool {
+        self.get_bool("postfix").unwrap_or(false)
+    }
+    pub fn is_compound(&self) -> bool {
+        self.get_bool("compound").unwrap_or(false)
     }
 }
 
@@ -235,24 +246,24 @@ impl Display for Operator {
             SpreadRange => f.write_str(".."),
             HalfOpenRange => f.write_str("..<"),
             Plus => f.write_str("+"),
-            PlusEqual => f.write_str("+="),
+            PlusAssign => f.write_str("+="),
             Minus => f.write_str("-"),
-            MinusEqual => f.write_str("-="),
+            MinusAssign => f.write_str("-="),
             Asterisk => f.write_str("*"),
-            AsteriskEqual => f.write_str("*="),
+            AsteriskAssign => f.write_str("*="),
             Slash => f.write_str("/"),
-            SlashEqual => f.write_str("/="),
+            SlashAssign => f.write_str("/="),
             Percent => f.write_str("%"),
-            PercentEqual => f.write_str("%="),
+            PercentAssign => f.write_str("%="),
             Caret => f.write_str("^"),
-            CaretEqual => f.write_str("^="),
+            CaretAssign => f.write_str("^="),
             Exclamation => f.write_str("!"),
             LogicalAnd => f.write_str("&&"),
-            LogicalAndEqual => f.write_str("&&="),
+            LogicalAndAssign => f.write_str("&&="),
             LogicalOr => f.write_str("||"),
-            LogicalOrEqual => f.write_str("||="),
+            LogicalOrAssign => f.write_str("||="),
             NullCoalescing => f.write_str("??"),
-            NullCoalescingEqual => f.write_str("??="),
+            NullCoalescingAssign => f.write_str("??="),
             Assign => f.write_str("="),
             Equal => f.write_str("=="),
             NotEqual => f.write_str("!="),

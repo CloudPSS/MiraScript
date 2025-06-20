@@ -90,6 +90,8 @@ pub enum DiagnosticCode {
     UnknownPattern,
     #[strum(message = "Unknown statement encountered")]
     UnknownStatement,
+    #[strum(message = "An expression is expected here")]
+    ExpressionExpected,
     #[strum(message = "A pattern is expected here")]
     PatternExpected,
     #[strum(message = "Operator `!` is not allowed in a constant pattern")]
@@ -150,7 +152,7 @@ pub enum DiagnosticCode {
     )]
     MisleadNilVariable,
     #[strum(
-        message = "This pattern in a irrefutable pattern is unnecessary; consider removing it or using in an `is` expression instead"
+        message = "This pattern in a irrefutable matching is unnecessary; consider removing it or using in an `is` expression instead"
     )]
     UnnecessaryIrrefutablePattern,
 

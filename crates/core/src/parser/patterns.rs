@@ -56,7 +56,7 @@ pub(super) fn pattern_or_insert<'s>(
         }
         let start = i.previous_token_end();
         let next = peek(any).parse_next(i)?;
-        if !insert_cond(next) {
+        if *next != TokenKind::Eof && !insert_cond(next) {
             return Err(winnow::error::ErrMode::Backtrack(EmptyError));
         }
         Ok(Pattern::unknown_range(
