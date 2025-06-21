@@ -20,7 +20,7 @@ import { VmWrapper } from './types/wrapper.js';
 
 const { hasOwn, keys } = Object;
 const { isNaN, isSafeInteger } = Number;
-const { abs, min, trunc, floor, ceil } = Math;
+const { abs, min, trunc, ceil } = Math;
 const { slice, at } = Array.prototype;
 
 const isSame = (a: VmValue, b: VmValue): boolean => {
@@ -161,12 +161,10 @@ const sliceCore = (value: VmArray, start: number, end: number, exclusive: boolea
     else if (end < 0) end = length + end;
 
     start = ceil(start);
-    if (exclusive) {
+    if (exclusive || !isSafeInteger(end)) {
         end = ceil(end);
-    } else if (isSafeInteger(end)) {
-        end = end + 1;
     } else {
-        end = floor(end);
+        end = end + 1;
     }
     return slice.call(value, start, end) as VmArray;
 };

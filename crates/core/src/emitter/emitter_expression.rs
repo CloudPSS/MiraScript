@@ -94,6 +94,15 @@ impl<'s> Emitter<'s> {
                 self.declare_expression(expression);
                 self.declare_expression(prop);
             }
+            Slice(expression, _, start, _, end, _) => {
+                self.declare_expression(expression);
+                if let Some(start) = start {
+                    self.declare_expression(start);
+                }
+                if let Some(end) = end {
+                    self.declare_expression(end);
+                }
+            }
             NonNil(expression, _) => self.declare_expression(expression),
             Prefix(_, expression) => self.declare_expression(expression),
             Infix(left, _, right) => {
@@ -661,6 +670,31 @@ impl<'s> Emitter<'s> {
                     self.emit_expression(index, index_reg, brk);
                     self.op_global_dyn(ret, index_reg);
                 }
+            }
+            Slice(expression, _, start, op, end, _) => {
+                // slice 不能用于 global 关键字，Variable 表达式将处理此错误
+                let arr_reg = if ret.is_empty() {
+                    self.closures.add_reg()
+                } else {
+                    ret
+                };
+                self.emit_expression(expression, arr_reg, brk);
+                let start_reg = if let Some(start) = start {
+                    self.emit_expression_reg(start, brk)
+                } else {
+                    Register::EMPTY
+                };
+                let end_reg = if let Some(end) = end {
+                    self.emit_expression_reg(end, brk)
+                } else {
+                    Register::EMPTY
+                };
+                let op = if *op.as_ref() == Operator::HalfOpenRange {
+                    OpCode::SliceExclusiveDyn
+                } else {
+                    OpCode::SliceDyn
+                };
+                self.op_4(op, ret, arr_reg, start_reg, end_reg);
             }
             NonNil(expression, _) => {
                 self.emit_expression(expression, ret, brk);

@@ -191,6 +191,14 @@ enum AccessIndex<'s> {
     Access(TokenRef<'s>, TokenRef<'s>),
     /// '[' expression ']'
     Index(TokenRef<'s>, Box<Expression<'s>>, TokenRef<'s>),
+    ///  `[` additive_expression? (`..` | `..<`) additive_expression? `]`
+    Slice(
+        TokenRef<'s>,
+        Option<Box<Expression<'s>>>,
+        TokenRef<'s>,
+        Option<Box<Expression<'s>>>,
+        TokenRef<'s>,
+    ),
 }
 fn access_index<'s>(i: &mut Input<'s>) -> Result<AccessIndex<'s>> {
     let access_token = |i: &mut Input<'s>| {
@@ -200,6 +208,15 @@ fn access_index<'s>(i: &mut Input<'s>) -> Result<AccessIndex<'s>> {
     };
     alt((
         (token(Operator::Dot), access_token).map(|(d, i)| AccessIndex::Access(d, i)),
+        (
+            token(Operator::OpenBracket),
+            opt(additive.map(Box::new)),
+            one_of(|t: &Token<'s>| *t == Operator::SpreadRange || *t == Operator::HalfOpenRange)
+                .map(TokenRef::borrow),
+            opt(additive.map(Box::new)),
+            token(Operator::CloseBracket),
+        )
+            .map(|(l, start, op, end, r)| AccessIndex::Slice(l, start, op, end, r)),
         (
             token(Operator::OpenBracket),
             expression.map(Box::new),
@@ -238,6 +255,9 @@ fn extension_call<'s>(i: &mut Input<'s>) -> Result<Call<'s>> {
                         AccessIndex::Index(open, exp, close) => {
                             acc = Expression::Index(Box::new(acc), open, exp, close);
                         }
+                        AccessIndex::Slice(left, start, op, end, right) => {
+                            acc = Expression::Slice(Box::new(acc), left, start, op, end, right);
+                        }
                     }
                 }
                 acc
@@ -268,6 +288,13 @@ fn postfix<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
         ),
         Access(TokenRef<'s>, TokenRef<'s>),
         Index(TokenRef<'s>, Box<Expression<'s>>, TokenRef<'s>),
+        Slice(
+            TokenRef<'s>,
+            Option<Box<Expression<'s>>>,
+            TokenRef<'s>,
+            Option<Box<Expression<'s>>>,
+            TokenRef<'s>,
+        ),
         NonNil(TokenRef<'s>),
     }
     let first = primary.parse_next(i)?;
@@ -281,6 +308,9 @@ fn postfix<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
             access_index.map(|t| match t {
                 AccessIndex::Access(dot, token) => Function::Access(dot, token),
                 AccessIndex::Index(open, exp, close) => Function::Index(open, exp, close),
+                AccessIndex::Slice(left, start, op, end, right) => {
+                    Function::Slice(left, start, op, end, right)
+                }
             }),
         )),
     )
@@ -302,6 +332,9 @@ fn postfix<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
         }
         Function::Access(dot, token) => Expression::Access(Box::new(acc), dot, token),
         Function::Index(l, index, r) => Expression::Index(Box::new(acc), l, index, r),
+        Function::Slice(left, start, op, end, right) => {
+            Expression::Slice(Box::new(acc), left, start, op, end, right)
+        }
         Function::NonNil(token) => Expression::NonNil(Box::new(acc), token),
     }))
 }

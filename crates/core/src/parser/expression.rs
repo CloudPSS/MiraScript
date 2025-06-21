@@ -108,6 +108,15 @@ pub enum Expression<'s> {
         Box<Expression<'s>>,
         TokenRef<'s>,
     ),
+    /// expression `[` additive_expression? (`..` | `..<`) additive_expression? `]`
+    Slice(
+        Box<Expression<'s>>,
+        TokenRef<'s>,
+        Option<Box<Expression<'s>>>,
+        TokenRef<'s>,
+        Option<Box<Expression<'s>>>,
+        TokenRef<'s>,
+    ),
     /// expression `!`
     NonNil(Box<Expression<'s>>, TokenRef<'s>),
 
@@ -334,6 +343,14 @@ impl<'s> AstWalker<'s> for Expression<'s> {
                 index.collect_diagnostics(collector);
                 r.collect_diagnostics(collector);
             }
+            Slice(exp, l, start, op, end, r) => {
+                exp.collect_diagnostics(collector);
+                l.collect_diagnostics(collector);
+                start.collect_diagnostics(collector);
+                op.collect_diagnostics(collector);
+                end.collect_diagnostics(collector);
+                r.collect_diagnostics(collector);
+            }
             NonNil(exp, op) => {
                 exp.collect_diagnostics(collector);
                 op.collect_diagnostics(collector);
@@ -487,6 +504,14 @@ impl<'s> AstWalker<'s> for Expression<'s> {
                 index.walk(visitor);
                 r.walk(visitor);
             }
+            Slice(exp, l, start, op, end, r) => {
+                exp.walk(visitor);
+                l.walk(visitor);
+                start.walk(visitor);
+                op.walk(visitor);
+                end.walk(visitor);
+                r.walk(visitor);
+            }
             NonNil(exp, op) => {
                 exp.walk(visitor);
                 op.walk(visitor);
@@ -592,6 +617,7 @@ impl<'s> AstWalker<'s> for Expression<'s> {
             Grouping(op, _, cp) | Record(op, _, cp) | Array(op, _, cp) | Block(op, _, _, cp) => {
                 op.range.start..cp.range.end
             }
+            Index(exp, _, _, r) | Slice(exp, _, _, _, _, r) => exp.range().start..r.range.end,
             _ => self.range_slow(),
         }
     }
@@ -693,6 +719,14 @@ impl DisplayIdent for Expression<'_> {
                 exp.fmt_ident(f, ident)?;
                 l.fmt_ident(f, ident)?;
                 index.fmt_ident(f, ident)?;
+                r.fmt_ident(f, ident)?;
+            }
+            Slice(exp, l, start, op, end, r) => {
+                exp.fmt_ident(f, ident)?;
+                l.fmt_ident(f, ident)?;
+                start.fmt_ident(f, ident)?;
+                op.fmt_ident(f, ident)?;
+                end.fmt_ident(f, ident)?;
                 r.fmt_ident(f, ident)?;
             }
             NonNil(exp, op) => {
