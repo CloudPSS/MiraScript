@@ -19,6 +19,21 @@ use super::{
 };
 
 impl<'s> Emitter<'s> {
+    fn declare_callable(&mut self, callable: &'s Callable<'s>) {
+        match callable {
+            Callable::Expression(callable) => {
+                // 此时的 Grouping 用于标记 callable 为复杂表达式以启用空安全，跳过 declare_expression 的 Grouping 处理
+                if let Expression::Grouping(_, inner, _) = callable.as_ref() {
+                    if inner.is_variable() || inner.is_grouping() {
+                        self.declare_expression(inner);
+                        return;
+                    }
+                }
+                self.declare_expression(callable);
+            }
+            Callable::Type(_) => (),
+        }
+    }
     pub fn declare_expression(&mut self, outer: &'s Expression<'s>) {
         match outer {
             Literal(_) => (),
@@ -73,18 +88,14 @@ impl<'s> Emitter<'s> {
                 }
             }),
             Call(callable, _, expressions, _) => {
-                if let Callable::Expression(callable) = callable {
-                    self.declare_expression(callable);
-                }
+                self.declare_callable(callable);
                 expressions
                     .iter()
                     .for_each(|expression| self.declare_expression(expression));
             }
             Extension(expression, _, callable, _, expressions, _) => {
                 self.declare_expression(expression);
-                if let Callable::Expression(callable) = callable {
-                    self.declare_expression(callable);
-                }
+                self.declare_callable(callable);
                 expressions
                     .iter()
                     .for_each(|expression| self.declare_expression(expression));
