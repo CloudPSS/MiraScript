@@ -1,10 +1,9 @@
 import { wrapScript } from './create-script.js';
-import { REG_NUMBER } from '../helpers/constants.js';
 import type { TranspileOptions } from './types.js';
 import type { VmScript } from '../vm/types/index.js';
 import { GlobalFallback } from '../vm/helpers.js';
 
-const REG_NUMBER_FULL = new RegExp(`^${REG_NUMBER.source}$`, REG_NUMBER.flags);
+const REG_NUMBER_FULL = /^\d+(?:\.\d+)?(?:[eE][+-]?\d+)?$/;
 // 只识别特殊变量名和以非 'N' 开头的大写变量名，其他标识符可能有与关键字冲突等情况，需要编译器处理
 const REG_IDENTIFIER_FAST = /^(?:\$+|@+|[_A-MO-Z])[a-zA-Z0-9_]*$/;
 
