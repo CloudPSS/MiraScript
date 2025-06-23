@@ -17,7 +17,6 @@
     "clean": "rimraf dist lib"
   },
   "devDependencies": {
-    "@types/node": "^24.0.3",
     "cargo-cp-artifact": "^0.1.9",
     "nodemon": "^3.1.10"
   }

@@ -6,9 +6,6 @@ import { compileFast } from './compile-fast.js';
 
 export type { TranspileOptions, ScriptInput, InputMode } from './types.js';
 
-declare global {
-    var process: { versions?: { node?: string } };
-}
 // 目前编译速度约 2000kB/s
 const WORKER_MIN_LEN = typeof process == 'object' && process.versions?.node != null ? Number.MAX_VALUE : 1024;
 

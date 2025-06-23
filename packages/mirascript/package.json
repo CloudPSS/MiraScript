@@ -27,11 +27,15 @@
   },
   "scripts": {
     "build": "tsc && node ./esbuild.config.js",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist",
+    "test": "ava"
   },
   "dependencies": {
     "@mirascript/napi": "workspace:~",
     "@mirascript/wasm": "workspace:~",
     "js-base64": "^3.7.7"
+  },
+  "devDependencies": {
+    "ava": "^6.4.0"
   }
 }
