@@ -94,7 +94,7 @@ pub fn lex_string<'s>(input: &mut Input<'s>) -> Result<Vec<Token<'s>>> {
         .parse_next(input)?;
     let eof = tokens::token(input, Some(&mut str))?;
 
-    if matches!(eof.kind, TokenKind::Eof) {
+    if !matches!(eof.kind, TokenKind::Eof) {
         return Err(winnow::error::ErrMode::Backtrack(EmptyError));
     }
 

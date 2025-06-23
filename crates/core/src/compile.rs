@@ -136,11 +136,6 @@ fn recover_token<'s>(
 }
 
 pub fn compile(input: &str, config: &Config) -> CompileResult {
-    let lexer = if config.input_mode == InputMode::Script {
-        lexer::lex
-    } else {
-        lexer::lex_string
-    };
     set_config(config);
     let mut diagnostics_collector: Vec<_> = vec![];
     let encode_diags = move |diagnostics_collector: Vec<SourceDiagnostic>| {
@@ -149,8 +144,13 @@ pub fn compile(input: &str, config: &Config) -> CompileResult {
 
     // Lexing
     let tokens = {
+        let current_lexer = if config.input_mode == InputMode::Script {
+            lexer::lex
+        } else {
+            lexer::lex_string
+        };
         let mut input = lexer::to_input(input);
-        let result = lexer(&mut input);
+        let result = current_lexer(&mut input);
         if result.is_err() {
             let remaining = input.peek_finish();
             let range = if remaining.is_empty() {
