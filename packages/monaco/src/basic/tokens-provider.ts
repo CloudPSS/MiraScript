@@ -13,7 +13,7 @@ import {
     controlKeywords,
     keywords,
     numericKeywords,
-} from '../constants';
+} from '../constants.js';
 
 /** 匹配 identifier */
 function identifierCases(

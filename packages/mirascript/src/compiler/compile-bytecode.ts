@@ -1,6 +1,17 @@
 import type { CompileOptions, ScriptInput } from './types.js';
 
-let loadModule: Promise<typeof import('@mirascript/wasm')> | undefined;
+let module: Promise<typeof import('@mirascript/wasm') | typeof import('@mirascript/napi')> | undefined;
+
+/** 加载模块 */
+async function loadModule(): Promise<typeof import('@mirascript/wasm') | typeof import('@mirascript/napi')> {
+    try {
+        return await import('#compiler-bundle');
+    } catch (ex) {
+        // eslint-disable-next-line no-console
+        console.warn('Failed to load compiler bundle, falling back to @mirascript/wasm');
+        return await import('@mirascript/wasm');
+    }
+}
 
 /**
  * 生成 MiraScript 字节码
@@ -9,14 +20,14 @@ export async function compileBytecode(
     script: ScriptInput,
     options: CompileOptions,
 ): Promise<[Uint8Array | undefined, Uint32Array]> {
-    loadModule ??= import('@mirascript/wasm');
+    module ??= loadModule();
     let compile;
     try {
-        ({ compile } = await loadModule);
+        ({ compile } = await module);
     } catch (error) {
-        loadModule = undefined; // Reset on error to retry loading next time
+        module = undefined; // Reset on error to retry loading next time
         throw new Error(`Failed to load mira-wasm module`, { cause: error });
     }
-    const result = compile(script, options);
+    const result = await compile(script, options);
     return [result.chunk, result.diagnostics];
 }

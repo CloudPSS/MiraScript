@@ -1,5 +1,5 @@
-import type { Config } from '@mirascript/wasm';
-export type { InputMode, ScriptInput } from '@mirascript/wasm';
+import type { Config } from '@mirascript/wasm/types';
+export type { InputMode, ScriptInput } from '@mirascript/wasm/types';
 
 /** 代码编译选项 */
 export type CompileOptions = Config;

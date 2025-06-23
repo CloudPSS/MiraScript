@@ -1,6 +1,6 @@
-import type { ScriptInput, TranspileOptions } from './types';
-import { emit } from './emit';
-import { compileBytecode } from './compile-bytecode';
+import type { ScriptInput, TranspileOptions } from './types.js';
+import { emit } from './emit.js';
+import { compileBytecode } from './compile-bytecode.js';
 
 /**
  * 生成 MiraScript 对应的 JavaScript 代码

@@ -1,7 +1,7 @@
-import { OpCode } from '@mirascript/wasm';
-import type { VmConst, VmPrimitive } from '../vm';
-import type { ScriptInput, TranspileOptions } from './types';
+import { OpCode } from '@mirascript/wasm/types';
 import { encodeURL } from 'js-base64';
+import type { VmConst, VmPrimitive } from '../vm/index.js';
+import type { ScriptInput, TranspileOptions } from './types.js';
 
 /** 生成代码 */
 export function emit(source: ScriptInput, chunk: Uint8Array, options: TranspileOptions): string {

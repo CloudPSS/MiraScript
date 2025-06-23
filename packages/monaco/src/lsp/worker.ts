@@ -1,4 +1,4 @@
-import { compile as c, createConfig, type CompileResult, DiagnosticPositionEncoding } from '@mirascript/wasm';
+import { compile as c, createConfig, type CompileResult } from '@mirascript/wasm';
 import type { InputMode } from 'mirascript';
 
 /** 请求参数 */
@@ -13,14 +13,14 @@ export type Res = ResOk | ResErr;
 export type Ready = 'mirascript lsp ready';
 
 const configTemplate = createConfig({
-    diagnostic_position_encoding: DiagnosticPositionEncoding.Utf16,
+    diagnostic_position_encoding: 'Utf16',
     track_references: true,
     diagnostic_other: true,
     trivia: true,
     input_mode: 'Template',
 });
 const configScript = createConfig({
-    diagnostic_position_encoding: DiagnosticPositionEncoding.Utf16,
+    diagnostic_position_encoding: 'Utf16',
     track_references: true,
     diagnostic_other: true,
     trivia: true,

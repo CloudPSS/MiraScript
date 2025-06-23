@@ -1,8 +1,8 @@
 import type { CancellationToken, editor, IMarkdownString, IRange, languages, Position } from '../../monaco-api.js';
 import { Provider } from './base.js';
 import { DiagnosticCode } from '@mirascript/wasm';
-import { codeblock, globalDoc, paramsList } from '../utils';
-import type { LocalDefinition } from '../compile-result';
+import { codeblock, globalDoc, paramsList } from '../utils.js';
+import type { LocalDefinition } from '../compile-result.js';
 
 /** @inheritdoc */
 export class HoverProvider extends Provider implements languages.HoverProvider {

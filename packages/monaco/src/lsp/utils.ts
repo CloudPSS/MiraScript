@@ -14,7 +14,7 @@ import {
     type VmValue,
 } from 'mirascript';
 import { operations, serializePropName, serializeString } from 'mirascript/subtle';
-import type { LocalDefinition } from './compile-result';
+import type { LocalDefinition } from './compile-result.js';
 
 /** 生成函数签名 */
 export function signature(id: string | undefined, info: VmFunctionInfo): string {

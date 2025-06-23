@@ -1,8 +1,8 @@
+import { isVmFunction } from 'mirascript';
+import { DiagnosticCode } from '@mirascript/wasm';
 import { Range, type CancellationToken, type editor, type languages } from '../../monaco-api.js';
 import { Provider } from './base.js';
-import { DiagnosticCode } from '@mirascript/wasm';
-import { isVmFunction } from 'mirascript';
-import { ParameterDefinitionType } from '../compile-result';
+import { ParameterDefinitionType } from '../compile-result.js';
 
 /** @inheritdoc */
 export class DocumentSemanticTokensProvider extends Provider implements languages.DocumentSemanticTokensProvider {

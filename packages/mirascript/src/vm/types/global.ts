@@ -1,4 +1,4 @@
-import { VmFunction, type VmAny, type VmImmutable, type VmValue, wrapToVmValue, isVmAny } from '.';
+import { VmFunction, type VmAny, type VmImmutable, type VmValue, wrapToVmValue, isVmAny } from './index.js';
 const { getPrototypeOf, create, entries } = Object;
 
 /** MiraScript 全局环境的基础，仅包含标准库 */

@@ -19,6 +19,10 @@
     "#compiler/worker": {
       "@mira/development": "./src/compiler/worker.ts",
       "default": "./dist/compiler/worker.js"
+    },
+    "#compiler-bundle": {
+      "node": "@mirascript/napi",
+      "default": "@mirascript/wasm"
     }
   },
   "scripts": {
@@ -26,7 +30,8 @@
     "clean": "rimraf dist"
   },
   "dependencies": {
-    "@mirascript/wasm": "workspace:*",
+    "@mirascript/napi": "workspace:~",
+    "@mirascript/wasm": "workspace:~",
     "js-base64": "^3.7.7"
   }
 }

@@ -1,5 +1,5 @@
 import { VmFunction, type VmImmutable } from '../types/index.js';
-import { VmSharedGlobal } from '../types/global';
+import { VmSharedGlobal } from '../types/global.js';
 
 import * as global from './global.js';
 import type { VmFunctionInfo, VmFunctionLike } from '../types/function.js';

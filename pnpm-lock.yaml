@@ -40,8 +40,11 @@ importers:
 
   packages/mirascript:
     dependencies:
+      '@mirascript/napi':
+        specifier: workspace:~
+        version: link:../napi
       '@mirascript/wasm':
-        specifier: workspace:*
+        specifier: workspace:~
         version: link:../wasm
       js-base64:
         specifier: ^3.7.7
@@ -101,6 +104,9 @@ importers:
 
   packages/wasm:
     devDependencies:
+      '@types/node':
+        specifier: ^24.0.3
+        version: 24.0.3
       nodemon:
         specifier: ^3.1.10
         version: 3.1.10
@@ -1837,9 +1843,9 @@ packages:
       { integrity: sha512-vkcDPrRZo1QZLbn5RLGPpg/WmIQ65qoWWhcGKf/b5eplkkarX0m9z8ppCat4mlOqUsWpyNuYgO3VRyrYHSzX5g== }
     engines: { node: '>= 0.8.0' }
 
-  prettier@3.5.3:
+  prettier@3.6.0:
     resolution:
-      { integrity: sha512-QQtaxnoDJeAkDvDKWCLiwIXkTgRhwYDEQCghU9Z6q03iyek/rxRh/2lC3HB7P8sWT2xC/y5JDctPLBIGzHKbhw== }
+      { integrity: sha512-ujSB9uXHJKzM/2GBuE0hBOUgC77CN3Bnpqa+g80bkv3T3A93wL/xlzDATHhnhkzifz/UE2SNOvmbTz5hSkDlHw== }
     engines: { node: '>=14' }
     hasBin: true
 
@@ -2372,14 +2378,14 @@ snapshots:
     dependencies:
       eslint: 9.29.0(jiti@2.4.2)
       lint-staged: 16.1.2
-      prettier: 3.5.3
+      prettier: 3.6.0
     transitivePeerDependencies:
       - jiti
       - supports-color
 
   '@cloudpss/prettier-config@3.0.22':
     dependencies:
-      prettier: 3.5.3
+      prettier: 3.6.0
 
   '@cloudpss/tsconfig@3.0.22(typescript@5.8.3)':
     dependencies:
@@ -3622,7 +3628,7 @@ snapshots:
 
   prelude-ls@1.2.1: {}
 
-  prettier@3.5.3: {}
+  prettier@3.6.0: {}
 
   pstree.remy@1.1.8: {}
 

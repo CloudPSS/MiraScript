@@ -1,5 +1,5 @@
-import { isVmArray, isVmRecord, type VmAny } from '../vm';
-import { REG_IDENTIFIER, REG_ORDINAL } from './constants';
+import { isVmArray, isVmRecord, type VmAny } from '../vm/index.js';
+import { REG_IDENTIFIER, REG_ORDINAL } from './constants.js';
 
 const MAX_DEPTH = 100;
 

@@ -1,17 +1,11 @@
 import * as wasm from '../lib/wasm.js';
+import type { Config, InputMode, DiagnosticPositionEncoding, ScriptInput } from './types.js';
+import { module } from '#loader';
 
-export { DiagnosticCode, OpCode, DiagnosticPositionEncoding } from '../lib/wasm.js';
+export * from './types.js';
 export { wasm };
-/**
- * 配置选项
- */
-export type Config = Partial<Omit<wasm.Config, 'free' | 'input_mode'>> & {
-    input_mode?: InputMode;
-};
-/** 输入模式 */
-export type InputMode = keyof typeof wasm.InputMode;
-/** 编译输入，支持字符串和 UTF-8 字节数组 */
-export type ScriptInput = string | Uint8Array;
+
+await wasm.default({ module_or_path: module });
 
 /** 创建可重用的配置 */
 export function createConfig(config?: Config | wasm.Config): wasm.Config {
@@ -24,6 +18,11 @@ export function createConfig(config?: Config | wasm.Config): wasm.Config {
         let value = config[key as keyof Config] as never;
         if (key === 'input_mode') {
             value = wasm.InputMode[value as InputMode] satisfies wasm.InputMode as never;
+        }
+        if (key === 'diagnostic_position_encoding') {
+            value = wasm.DiagnosticPositionEncoding[
+                value as DiagnosticPositionEncoding
+            ] satisfies wasm.DiagnosticPositionEncoding as never;
         }
         if (value === undefined) continue;
         if (!(key in cfg)) continue;
@@ -62,7 +61,7 @@ function compileImpl<T>(
 }
 
 /** 编译 MiraScript 代码 */
-export function compile(script: string | Uint8Array, config: Config | wasm.Config): CompileResult {
+export function compile(script: ScriptInput, config: Config | wasm.Config): CompileResult {
     return typeof script == 'string'
         ? compileImpl(wasm.compile, script, config)
         : compileImpl(wasm.compile_buffer, script, config);

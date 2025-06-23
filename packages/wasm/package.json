@@ -5,15 +5,25 @@
   "version": "0.1.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "exports": "./dist/index.js",
+  "exports": {
+    ".": "./dist/index.js",
+    "./types": "./dist/types.js"
+  },
+  "imports": {
+    "#loader": {
+      "node": "./dist/loader/node.js",
+      "default": "./dist/loader/web.js"
+    }
+  },
   "scripts": {
-    "wasm": "wasm-pack build --target bundler --out-dir ../../packages/wasm/lib --no-pack ../../crates/wasm",
+    "wasm": "wasm-pack build --target web --out-dir ../../packages/wasm/lib --no-pack ../../crates/wasm",
     "watch": "nodemon -e rs,js,ts --watch ../../crates/wasm --watch ../../crates/core --watch ./src --exec 'pnpm build:dev'",
     "build:dev": "pnpm wasm --dev && tsc",
     "build": "pnpm wasm --release && tsc",
     "clean": "rimraf dist lib"
   },
   "devDependencies": {
+    "@types/node": "^24.0.3",
     "nodemon": "^3.1.10"
   }
 }

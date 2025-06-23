@@ -1,5 +1,5 @@
-import { Cp, Element } from '../helpers';
-import { $Call, $ToBoolean, $ToNumber, $ToString } from '../operations';
+import { Cp, Element } from '../helpers.js';
+import { $Call, $ToBoolean, $ToNumber, $ToString } from '../operations.js';
 import {
     isVmArray,
     isVmConst,
@@ -14,9 +14,9 @@ import {
     type VmRecord,
     type VmValue,
 } from '../types/index.js';
-import { VmError } from '../error';
-import { expectArray, expectArrayOrRecord, expectCallable, expectCompound, required, rethrowError } from './helpers';
-import type { VmLib } from './loader';
+import { VmError } from '../error.js';
+import { expectArray, expectArrayOrRecord, expectCallable, expectCompound, required, rethrowError } from './helpers.js';
+import type { VmLib } from './loader.js';
 const {
     PI,
     E,

@@ -2,8 +2,8 @@ import type { VmGlobal } from 'mirascript';
 import { VmSharedGlobal } from 'mirascript/subtle';
 import type { VmGlobalProvider } from '../../index.js';
 import { type editor, Emitter, type IEvent } from '../../monaco-api.js';
-import type { CompileResult } from '../compile-result';
-import { compile } from '../worker-helper';
+import type { CompileResult } from '../compile-result.js';
+import { compile } from '../worker-helper.js';
 
 let globalProvider: VmGlobalProvider | undefined;
 /** 设置全局变量提供者 */

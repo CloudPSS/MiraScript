@@ -1,3 +1,4 @@
+import type { VmAny } from 'mirascript';
 import {
     editor,
     Uri,
@@ -10,7 +11,6 @@ import {
 import { Provider } from './base.js';
 import { globalDoc } from '../utils.js';
 import { DOC_HEADER } from '../../constants.js';
-import type { VmAny } from 'mirascript';
 
 /**
  * 转到定义/引用

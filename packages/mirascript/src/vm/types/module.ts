@@ -1,5 +1,5 @@
-import type { TypeName, VmAny, VmValue } from '.';
-import { VmWrapper } from './wrapper';
+import type { TypeName, VmAny, VmValue } from './index.js';
+import { VmWrapper } from './wrapper.js';
 
 const { hasOwn, keys } = Object;
 

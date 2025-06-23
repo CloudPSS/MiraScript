@@ -1,7 +1,7 @@
 import { DiagnosticCode } from 'mirascript';
 import { languages, type editor, type Position, type CancellationToken, Range } from 'monaco-editor';
-import { keywords } from '../../constants';
-import { Provider } from './base';
+import { keywords } from '../../constants.js';
+import { Provider } from './base.js';
 
 /** @inheritdoc */
 export class DocumentHighlightProvider extends Provider implements languages.DocumentHighlightProvider {

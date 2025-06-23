@@ -1,3 +1,4 @@
+import { getVmFunctionInfo, DiagnosticCode, type VmValue } from 'mirascript';
 import {
     type editor,
     languages,
@@ -8,9 +9,8 @@ import {
     Range,
 } from '../../monaco-api.js';
 import { Provider } from './base.js';
-import { codeblock, globalDoc, paramsList } from '../utils';
-import { keywords, reservedKeywords } from '../../constants';
-import { getVmFunctionInfo, DiagnosticCode, type VmValue } from 'mirascript';
+import { codeblock, globalDoc, paramsList } from '../utils.js';
+import { keywords, reservedKeywords } from '../../constants.js';
 
 const DESC_GLOBAL = '(global)';
 const DESC_LOCAL = '(local)';
