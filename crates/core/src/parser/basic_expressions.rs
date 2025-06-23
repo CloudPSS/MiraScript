@@ -23,34 +23,29 @@ fn to_interpolate_expr<'s>(token: &'s Token<'s>) -> Expression<'s> {
     let expressions: Vec<Expression<'s>> = v[0..v.len() - 1]
         .iter()
         .map(|(_, tokens)| {
-            let expr: Result<Expression<'s>> = {
-                let tokens = match &tokens[..] {
-                    // If the first token is an open brace and the last token is a close brace,
-                    // we treat it as a block interpolation.
-                    [op, inner @ .., ed]
-                        if *op == Operator::OpenBrace && *ed == Operator::CloseBrace =>
-                    {
-                        inner
-                    }
-                    tokens => tokens,
-                };
-                let mut token_input = to_input(tokens);
-                terminated(expression, eof).parse_next(&mut token_input)
-            };
-            match expr {
-                Ok(expr) => expr,
-                Err(_) => {
-                    let last_token = tokens.last().unwrap();
-                    let error = if *last_token == TokenKind::Eof {
-                        DiagnosticCode::UnterminatedInterpolation
-                    } else {
-                        DiagnosticCode::BadInterpolation
-                    };
-                    Expression::unknown(
-                        tokens.iter().map(TokenRef::borrow).collect::<Vec<_>>(),
-                        error,
-                    )
-                }
+            let last_token = tokens.last().map_or(&TokenKind::Eof, |t| &t.kind);
+            if *last_token == TokenKind::Eof {
+                return Expression::unknown(
+                    tokens.iter().map(TokenRef::borrow).collect::<Vec<_>>(),
+                    DiagnosticCode::UnterminatedInterpolation,
+                );
+            }
+            let mut token_input = to_input(tokens);
+            let result = (expression, opt(eof.value(()))).parse_next(&mut token_input);
+            match result {
+                Ok((expr, Some(_))) => expr,
+                Ok((expr, None)) => expr.wrap_as_unknown(
+                    token_input
+                        .peek_finish()
+                        .iter()
+                        .map(TokenRef::borrow)
+                        .collect::<Vec<_>>(),
+                    DiagnosticCode::BadInterpolation,
+                ),
+                Err(_) => Expression::unknown(
+                    tokens.iter().map(TokenRef::borrow).collect::<Vec<_>>(),
+                    DiagnosticCode::BadInterpolation,
+                ),
             }
         })
         .collect();

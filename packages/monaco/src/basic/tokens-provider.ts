@@ -207,6 +207,14 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                                 {
                                     token: 'punctuation.section.embedded',
                                     bracket: '@open',
+                                    next: '@string_interpolation_block_expression',
+                                },
+                            ],
+                            [
+                                `(${dollarRegex}\\()`,
+                                {
+                                    token: 'punctuation.section.embedded',
+                                    bracket: '@open',
                                     next: '@string_interpolation_expression',
                                 },
                             ],
@@ -217,10 +225,16 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                 }),
             ),
             string_interpolation: [[/\$*/, 'string', '@pop']],
-            string_interpolation_expression: [
+            string_interpolation_block_expression: [
                 [/\{/, { token: '@brackets', next: '@push' }],
                 [/\}/, { token: '@brackets', next: '@pop' }],
                 [/[[\]()]/, '@brackets'],
+                { include: '@common' },
+            ],
+            string_interpolation_expression: [
+                [/\(/, { token: '@brackets', next: '@push' }],
+                [/\)/, { token: '@brackets', next: '@pop' }],
+                [/[[\]{}]/, '@brackets'],
                 { include: '@common' },
             ],
 

@@ -251,48 +251,68 @@ fn interpolation<'s>(dollar_count: usize) -> impl Parser<'s, StringFragment<'s>>
 
         let first = peek(opt(any)).parse_next(i)?;
 
-        if first != Some('{') {
-            if first.is_none()
-                || !is_identifier_start(first.unwrap()) && !is_identifier_special(first.unwrap())
-            {
-                // invalid identifier
+        let part = match first {
+            Some('{') => {
+                // '$' block_expression
+                let tokens = match lex_balanced(i, Operator::OpenBrace, Operator::CloseBrace) {
+                    Ok(tokens) => tokens,
+                    Err(e) => {
+                        i.reset(&cp);
+                        return Err(e);
+                    }
+                };
+                StringFragment::Interpolation(tokens)
+            }
+            Some('(') => {
+                // '$' '(' expression ')'
+                let tokens = match lex_balanced(i, Operator::OpenParen, Operator::CloseParen) {
+                    Ok(tokens) => {
+                        let end = tokens.last().map_or(&TokenKind::Eof, |t| &t.kind);
+                        tokens[1..if *end == Operator::CloseParen {
+                            tokens.len() - 1
+                        } else {
+                            tokens.len()
+                        }]
+                            .to_vec()
+                    }
+                    Err(e) => {
+                        i.reset(&cp);
+                        return Err(e);
+                    }
+                };
+                StringFragment::Interpolation(tokens)
+            }
+            Some(ch) if is_identifier_start(ch) || is_identifier_special(ch) => {
+                // '$' identifier
+                let (mut kind, range) = identifier(true).with_span().parse_next(i)?;
+                if let TokenKind::Keyword(kw) = kind {
+                    if !kw.is_constant() {
+                        kind = TokenKind::unknown_range(
+                            // Recover to nil for further analysis
+                            TokenKind::Keyword(Keyword::Nil),
+                            range.clone(),
+                            if kw.is_reserved() {
+                                DiagnosticCode::InvalidReservedKeyword
+                            } else {
+                                DiagnosticCode::InvalidKeyword
+                            },
+                        );
+                    }
+                }
+                let id = Token::new(kind, range);
+                StringFragment::Interpolation(vec![id])
+            }
+            _ => {
+                // invalid interpolation, return as literal
                 let end = i.previous_token_end();
                 let start = end - dollar_count;
                 i.reset_to_start();
                 let result = &i[start..end];
                 i.reset(&cp);
-                return Ok(StringFragment::Literal(result));
-            }
-            // '$' identifier
-            let (mut kind, range) = identifier(true).with_span().parse_next(i)?;
-            if let TokenKind::Keyword(kw) = kind {
-                if !kw.is_constant() {
-                    kind = TokenKind::unknown_range(
-                        // Recover to nil for further analysis
-                        TokenKind::Keyword(Keyword::Nil),
-                        range.clone(),
-                        if kw.is_reserved() {
-                            DiagnosticCode::InvalidReservedKeyword
-                        } else {
-                            DiagnosticCode::InvalidKeyword
-                        },
-                    );
-                }
-            }
-            let id = Token::new(kind, range);
-            return Ok(StringFragment::Interpolation(vec![id]));
-        }
-
-        // '$' '{' expression '}'
-
-        // lex until '}'
-        let tokens = match lex_balanced(i, Operator::OpenBrace, Operator::CloseBrace) {
-            Ok(tokens) => tokens,
-            Err(e) => {
-                i.reset(&cp);
-                return Err(e);
+                StringFragment::Literal(result)
             }
         };
-        Ok(StringFragment::Interpolation(tokens))
+
+        Ok(part)
     }
 }

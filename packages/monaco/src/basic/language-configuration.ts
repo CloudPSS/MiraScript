@@ -10,9 +10,13 @@ const configuration = (): languages.LanguageConfiguration => ({
         ['(', ')'],
         ['[', ']'],
         ['{', '}'],
-        ...Array.from({ length: MAX_VERBATIM_LENGTH }).map(
-            (_, i): languages.CharacterPair => ['$'.repeat(i) + '{', '}'],
-        ),
+        ...Array.from({ length: MAX_VERBATIM_LENGTH }).flatMap((_, i): languages.CharacterPair[] => {
+            const prefix = '$'.repeat(i);
+            return [
+                [prefix + '{', '}'],
+                [prefix + '(', ')'],
+            ];
+        }),
     ],
     wordPattern: /(-?\d+\.\w+([+-]\w*)?)|([^`~!#%^&*()\-=+[{\]}\\|;:'",.<>/?\s]+)/g,
     autoClosingPairs: [

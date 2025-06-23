@@ -34,7 +34,10 @@ mod prelude {
     pub(super) use super::Trivia;
     pub(super) use super::{Input, Keyword, Operator, Parser, Result, Token, TokenKind};
     pub(super) use crate::diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange};
-    pub(super) use winnow::{Parser as _, stream::Location as _, stream::Stream as _};
+    pub(super) use winnow::{
+        Parser as _,
+        stream::{Location as _, Stream as _},
+    };
 }
 
 pub fn to_input(text: &str) -> Input<'_> {

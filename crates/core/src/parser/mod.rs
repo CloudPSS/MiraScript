@@ -60,7 +60,10 @@ mod prelude {
         diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
         lexer::{Keyword, Operator, Token, TokenKind},
     };
-    pub(super) use winnow::{Parser as _, stream::Location as _};
+    pub(super) use winnow::{
+        Parser as _,
+        stream::{Location as _, Stream as _},
+    };
 }
 
 pub fn to_input<'s>(tokens: &'s [Token<'s>]) -> Input<'s> {
