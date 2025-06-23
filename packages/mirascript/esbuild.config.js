@@ -10,6 +10,15 @@ const entryPoints = [...Object.values(packageJson.exports), ...Object.values(pac
     })
     .filter(Boolean);
 
+const external = Object.entries(packageJson.imports)
+    .map(([key, value]) => {
+        if ('node' in value) {
+            return key;
+        }
+        return undefined;
+    })
+    .filter(Boolean);
+
 esbuild.build({
     sourcemap: true,
     format: 'esm',
@@ -18,5 +27,6 @@ esbuild.build({
     target: 'esnext',
     bundle: true,
     packages: 'external',
+    external,
     splitting: true,
 });
