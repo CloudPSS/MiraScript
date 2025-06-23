@@ -129,32 +129,13 @@ world`; // 无需使用 `\n` 转义换行符
 | `\xXX`     | ASCII 字符，`XX` 是小于 128 的十六进制数             |
 | `\u{XXXX}` | Unicode 字符，`XXXX` 是合法 Unicode 码点的十六进制数 |
 
-使用 `$` 可以在字符串中插入变量或块表达式的值：
-
-```kt
-let name = "world";
-println("hello, $name"); // 输出 "hello, world"
-
-let a = 1;
-let b = 2;
-println("the sum of $a and $b is ${a + b}"); // 输出 "the sum of 1 and 2 is 3"
-```
-
 ##### 逐字字符串
 
 使用任意个 `@` 开始的字符串表示一个逐字字符串，逐字字符串中 `$` 以外的字符都被视为普通字符，不会被转义。使用相同数量的 `@` 结束逐字字符串。
 
 ```
 @"verbatim string \n"@; // str 的值为 "verbatim string \\n"
-@@"use "@ in string"@@; // str 的值为 "use \"@ in string"
-```
-
-在逐字字符串中，使用与开始字符串 `@` 相同数量的 `$` 表示插值：
-
-```kt
-let name = "world";
-println(@"hello, $name"@); // 输出 "hello, world"
-println(@@"hello, $name: $$name"@@); // 输出 "hello, $name: world"
+@@"use `"@` in string"@@; // str 的值为 "use `\"@` in string"
 ```
 
 #### 记录字面量
@@ -258,7 +239,7 @@ MiraScript 的表达式是一个值的计算，表达式可以是一个值、一
 
 #### 基础表达式
 
-基础表达式表示对值的计算，基础表达式包括字面量、变量、函数调用、操作符等。
+基础表达式表示对值的计算，基础表达式包括字面量、插值字符串、变量、函数调用、操作符等。
 
 ```rust
 let x = 1;       // 变量 x 的值为 1
@@ -267,6 +248,25 @@ x + 2;           // 表达式的值为 3
 r.0^2 + r.1^2;   // 表达式的值为 5
 x * (r.0 + r.1); // 使用括号改变运算顺序，表达式的值为 6
 ```
+
+##### 插值字符串
+
+使用 `$` 可以在字符串中插入变量或块表达式的值，对于**逐字字符串**，使用与开始字符串 `@` 相同数量的 `$` 表示插值：
+
+```kt
+let name = "world";
+println("hello, $name"); // 输出 "hello, world"
+println(@"hello, $name"@); // 输出 "hello, world"
+println(@@"hello, $name: $$name"@@); // 输出 "hello, $name: world"
+
+let a = 1;
+let b = 2;
+println("the sum of ${a} and ${b} is $(a + b)"); // 输出 "the sum of 1 and 2 is 3"
+```
+
+插值字符串的语法是 `<prefix> ( <expression> )`，其中 `<prefix>` 是指定数量的 `$`，`<expression>` 是一个表达式。插值字符串的值为 `<expression>` 的值。
+
+当 `<expression>` 为一个**标识符**或**块表达式**时，括号 `()` 可以省略。
 
 ##### 优先级与结合性
 
@@ -309,7 +309,7 @@ x * (r.0 + r.1); // 使用括号改变运算顺序，表达式的值为 6
 MiraScript 默认的访问语义是空安全的，成员访问操作符 `.` 和 `[]` 的左操作数如果为 `nil`，或要索引的属性不存在，则返回 `nil`，而不是抛出异常。
 
 ```rust
-let x = (1);
+let x = (1,);
 let y = x.2; // y 的值为 nil
 let z = x.0.non_existent; // z 的值为 nil
 let w = x.1.2; // w 的值为 nil
