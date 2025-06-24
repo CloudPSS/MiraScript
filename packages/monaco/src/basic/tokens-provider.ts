@@ -108,8 +108,8 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                     ],
                 ],
                 [
-                    /(\.)(@whitespace*)(@identifier)(@whitespace*)(\()/,
-                    ['delimiter', '', 'entity.name.function', '', '@brackets'],
+                    /(\.)(@whitespace*)(@identifier)(@whitespace*)(!?)(@whitespace*)(\()/,
+                    ['delimiter', '', 'entity.name.function', '', 'delimiter', '', '@brackets'],
                 ],
                 [/(\.)(@whitespace*)(@identifier)/, ['delimiter', '', 'variable']],
                 [

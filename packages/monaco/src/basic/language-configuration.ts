@@ -1,22 +1,31 @@
 import { type IDisposable, languages } from '../monaco-api.js';
 import { MAX_VERBATIM_LENGTH } from '../constants.js';
 
-const configuration = (): languages.LanguageConfiguration => ({
+/** 缩进配置 */
+function indentAction(action: keyof typeof languages.IndentAction): { indentAction: languages.IndentAction } {
+    if (languages == null) {
+        // vscode
+        return {
+            indent: action[0]?.toLowerCase() + action.slice(1),
+        } as unknown as { indentAction: languages.IndentAction };
+    }
+    return { indentAction: languages.IndentAction[action] };
+}
+
+export const configuration = (): languages.LanguageConfiguration => ({
     comments: {
         lineComment: '//',
         blockComment: ['/*', '*/'],
     },
     brackets: [
-        ['(', ')'],
-        ['[', ']'],
-        ['{', '}'],
         ...Array.from({ length: MAX_VERBATIM_LENGTH }).flatMap((_, i): languages.CharacterPair[] => {
-            const prefix = '$'.repeat(i);
+            const prefix = '$'.repeat(MAX_VERBATIM_LENGTH - i - 1);
             return [
-                [prefix + '{', '}'],
-                [prefix + '(', ')'],
+                [`${prefix}{`, '}'],
+                [`${prefix}(`, ')'],
             ];
         }),
+        ['[', ']'],
     ],
     wordPattern: /(-?\d+\.\w+([+-]\w*)?)|([^`~!#%^&*()\-=+[{\]}\\|;:'",.<>/?\s]+)/g,
     autoClosingPairs: [
@@ -34,7 +43,7 @@ const configuration = (): languages.LanguageConfiguration => ({
             beforeText: /^\s*\/\*\*(?!\/)([^*]|\*(?!\/))*$/,
             afterText: /^\s*\*\/$/,
             action: {
-                indentAction: languages.IndentAction.IndentOutdent,
+                ...indentAction('IndentOutdent'),
                 appendText: ' * ',
             },
         },
@@ -42,7 +51,7 @@ const configuration = (): languages.LanguageConfiguration => ({
             // e.g. /** ...|
             beforeText: /^\s*\/\*\*(?!\/)([^*]|\*(?!\/))*$/,
             action: {
-                indentAction: languages.IndentAction.None,
+                ...indentAction('None'),
                 appendText: ' * ',
             },
         },
@@ -50,7 +59,7 @@ const configuration = (): languages.LanguageConfiguration => ({
             // e.g.  * ...|
             beforeText: /^(\t|( {2}))* \*( ([^*]|\*(?!\/))*)?$/,
             action: {
-                indentAction: languages.IndentAction.None,
+                ...indentAction('None'),
                 appendText: '* ',
             },
         },
@@ -58,7 +67,7 @@ const configuration = (): languages.LanguageConfiguration => ({
             // e.g.  */|
             beforeText: /^(\t|( {2}))* \*\/\s*$/,
             action: {
-                indentAction: languages.IndentAction.None,
+                ...indentAction('None'),
                 removeText: 1,
             },
         },

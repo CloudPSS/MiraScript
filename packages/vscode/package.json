@@ -1,0 +1,106 @@
+{
+  "name": "@mirascript/vscode",
+  "displayName": "MiraScript",
+  "description": "MiraScript language support for Visual Studio Code.",
+  "version": "0.0.1",
+  "type": "module",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "scripts": {
+    "build:language-configuration": "node scripts/language-configuration.js",
+    "build:language": "node scripts/language.js",
+    "build": "pnpm build:language-configuration && pnpm build:language",
+    "watch": "nodemon --watch scripts --exec 'pnpm build:language' --ext yaml"
+  },
+  "devDependencies": {
+    "@mirascript/monaco": "workspace:*",
+    "js-yaml": "^4.1.0",
+    "nodemon": "^3.1.10"
+  },
+  "contributes": {
+    "languages": [
+      {
+        "id": "mirascript",
+        "extensions": [
+          ".mira"
+        ],
+        "aliases": [
+          "MiraScript",
+          "mirascript",
+          "mira"
+        ],
+        "mimetypes": [
+          "text/x-mirascript"
+        ],
+        "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "mirascript-template",
+        "extensions": [
+          ".miratpl"
+        ],
+        "aliases": [
+          "MiraScriptTemplate",
+          "mirascript-template",
+          "miratpl"
+        ],
+        "mimetypes": [
+          "text/x-mirascript-template"
+        ],
+        "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "mira-markdown-injection"
+      },
+      {
+        "id": "miratpl-markdown-injection"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "mirascript",
+        "scopeName": "source.mira",
+        "path": "./syntaxes/mira.tmLanguage.json",
+        "tokenTypes": {
+          "meta.template.expression": "other",
+          "punctuation.definition.template-expression": "other"
+        }
+      },
+      {
+        "language": "mira-markdown-injection",
+        "scopeName": "markdown.mira.codeblock",
+        "path": "./syntaxes/mira-markdown.tmLanguage.json",
+        "injectTo": [
+          "text.html.markdown"
+        ],
+        "embeddedLanguages": {
+          "meta.embedded.block.mira": "mirascript"
+        }
+      },
+      {
+        "language": "mirascript-template",
+        "scopeName": "string.miratpl",
+        "path": "./syntaxes/miratpl.tmLanguage.json",
+        "tokenTypes": {
+          "meta.template.expression": "other",
+          "punctuation.definition.template-expression": "other"
+        }
+      },
+      {
+        "language": "miratpl-markdown-injection",
+        "scopeName": "markdown.miratpl.codeblock",
+        "path": "./syntaxes/miratpl-markdown.tmLanguage.json",
+        "injectTo": [
+          "text.html.markdown"
+        ],
+        "embeddedLanguages": {
+          "meta.embedded.block.miratpl": "mirascript-template"
+        }
+      }
+    ]
+  }
+}

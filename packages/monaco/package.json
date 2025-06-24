@@ -10,6 +10,10 @@
       "@mira/development": "./src/index.ts",
       "default": "./dist/index.js"
     },
+    "./basic": {
+      "@mira/development": "./src/basic/index.ts",
+      "default": "./dist/basic/index.js"
+    },
     "./lsp": {
       "@mira/development": "./src/lsp/index.ts",
       "default": "./dist/lsp/index.js"

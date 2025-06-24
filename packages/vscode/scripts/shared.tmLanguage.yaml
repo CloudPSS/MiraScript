@@ -1,0 +1,221 @@
+$schema: https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json
+name: MiraScript
+scopeName: source.mira
+patterns:
+  - include: '#source'
+repository:
+  source:
+    name: source.mira
+    patterns:
+      - match: ((?:\$+|\@+|[[:alpha:]_])[[:alnum:]_]*)(?![[:alnum:]_])(?:\s*)(\??:)(?!:)
+        captures:
+          1: { name: support.type.property-name.mira }
+          2: { name: punctuation.separator.key-value.mira }
+      - begin: (fn)\s+
+        beginCaptures:
+          1: { name: keyword.declaration.fn.mira }
+        end: '(?=[^[:alnum:]_$])'
+        patterns:
+          - include: '#functions'
+      - begin: (?=((\$+|\@+|[[:alpha:]_])[[:alnum:]_]*)(?![[:alnum:]_])\()
+        end: '\('
+        patterns:
+          - include: '#functions'
+      - match: (\.)\s*(\d+)
+        captures:
+          1: { name: punctuation.separator.period.mira }
+          2: { name: constant.numeric.mira }
+      - match: (\.)\s*((?:\$+|\@+|[[:alpha:]_])[[:alnum:]_]*)(?=\s*(!\s*)?\()
+        captures:
+          1: { name: punctuation.separator.period.mira }
+          2: { name: entity.name.function.mira }
+      - match: (\.)\s*((?:\$+|\@+|[[:alpha:]_])[[:alnum:]_]*)(?![[:alnum:]_])
+        captures:
+          1: { name: punctuation.separator.period.mira }
+          2: { name: support.type.property-name.mira }
+      - include: '#verbatim_strings2'
+      - include: '#verbatim_strings'
+      - include: '#strings'
+      - include: '#comments'
+      - include: '#operators'
+      - include: '#variables'
+      - include: '#numbers'
+  operators:
+    patterns:
+      - name: keyword.operator.spread.mira
+        match: '\.\.<?'
+      - name: keyword.operator.arithmetic.mira
+        match: '\+|\-|\*|/|%|\^'
+      - name: keyword.operator.comparison.mira
+        match: '>=|>|<=|<|==|!=|~=|~!'
+      - name: keyword.operator.logical.mira
+        match: '&&|\|\||\?\?|!'
+      - name: keyword.operator.assignment.mira
+        match: =|\+=|\-=|\*=|\/=|%=|\^=|&&=|\|\|=|\?\?=
+  keywords:
+    patterns:
+      - name: constant.language.$1.mira
+        match: \b(true|false|nil)\b
+      - name: constant.numeric.$1.mira
+        match: \b(nan|inf)\b
+      - name: variable.language.$1.mira
+        match: \b(_|global)\b
+      - name: keyword.operator.wordlike.$1.mira
+        match: \b(in|is|and|or|not)\b
+      - name: keyword.operator.expression.$1.mira
+        match: \b(type)\b
+      - name: keyword.control.$1.mira
+        match: \b(if|else|match|case|for|while|loop|break|continue|return)\b
+      - name: keyword.declaration.$1.mira
+        match: \b(fn|op|let|mut|const|type|where)\b
+      - name: keyword.operator.expression.$1.mira
+        match: \b(import|export)\b
+      - name: keyword.reserved.$1.mira
+        match: \b(effect|try|handle|finally|perform|resume)\b
+  variables:
+    patterns:
+      - include: '#keywords'
+      - name: variable.other.mira
+        match: ((?:\$+|\@+|[[:alpha:]_])[[:alnum:]_]*)(?![[:alnum:]_])
+  functions:
+    patterns:
+      - include: '#keywords'
+      - name: entity.name.function.mira
+        match: ((?:\$+|\@+|[[:alpha:]_])[[:alnum:]_]*)(?![[:alnum:]_])
+  comments:
+    patterns:
+      - name: comment.line.mira
+        match: //.*$
+      - name: comment.block.mira
+        begin: /\*
+        end: \*/
+  strings:
+    patterns:
+      - name: string.quoted.double.mira
+        begin: '"'
+        end: '"'
+        patterns:
+          - include: '#string_inner'
+      - name: string.quoted.single.mira
+        begin: "'"
+        end: "'"
+        patterns:
+          - include: '#string_inner'
+      - name: string.quoted.backtick.mira
+        begin: '`'
+        end: '`'
+        patterns:
+          - include: '#string_inner'
+  string_inner:
+    patterns:
+      - name: constant.character.escape.unicode.mira
+        match: \\u\{[0-9a-fA-F]{1,6}\}
+      - name: constant.character.escape.hex.mira
+        match: \\x[0-9a-fA-F]{2}
+      - name: constant.character.escape.mira
+        match: \\.
+      - include: '#interpolation'
+  verbatim_strings:
+    name: string.quoted.verbatim.mira
+    begin: '(@)(["''`])'
+    end: \2\1
+    patterns:
+      - include: '#verbatim_string_inner'
+  verbatim_string_inner:
+    patterns:
+      - include: '#interpolation'
+  verbatim_strings2:
+    name: string.quoted.verbatim.mira
+    begin: '(@{2,})(["''`])'
+    end: \2\1
+    patterns:
+      - include: '#verbatim_string_inner2'
+  verbatim_string_inner2:
+    patterns:
+      - include: '#interpolation2'
+  interpolation:
+    patterns:
+      - name: meta.template.expression.mira
+        match: (\$)(?:(?:(if|else|match|case|for|while|loop|break|continue|return)|(true|false|nil)|(_|global|in|is|and|or|not|type|fn|op|let|mut|const|type|where|import|export|effect|try|handle|finally|perform|resume)|(nan|inf))(?![[:alnum:]_])|((?:\$+|\@+|[[:alpha:]_])[[:alnum:]_]*))
+        captures:
+          1: { name: punctuation.definition.template-expression.begin.mira }
+          2: { name: keyword.control.$2.mira }
+          3: { name: constant.language.$3.mira }
+          4: { name: keyword.$4.mira }
+          5: { name: constant.numeric.$5.mira }
+          6: { name: variable.other.$6.mira }
+      - name: meta.template.expression.mira
+        begin: '(\${)'
+        beginCaptures:
+          0: { name: punctuation.definition.template-expression.begin.mira }
+        end: '}'
+        endCaptures:
+          0: { name: punctuation.definition.template-expression.end.mira }
+        patterns:
+          - include: '#block'
+          - include: '#source'
+      - name: meta.template.expression.mira
+        begin: '\$\('
+        beginCaptures:
+          0: { name: punctuation.definition.template-expression.begin.mira }
+        end: '\)'
+        endCaptures:
+          0: { name: punctuation.definition.template-expression.end.mira }
+        patterns:
+          - include: '#parenthesized'
+          - include: '#source'
+  interpolation2:
+    patterns:
+      - name: meta.template.expression.mira
+        match: (\${2})(?:(?:(if|else|match|case|for|while|loop|break|continue|return)|(true|false|nil)|(_|global|in|is|and|or|not|type|fn|op|let|mut|const|type|where|import|export|effect|try|handle|finally|perform|resume)|(nan|inf))(?![[:alnum:]_])|((?:\$+|\@+|[[:alpha:]_])[[:alnum:]_]*))
+        captures:
+          1: { name: punctuation.definition.template-expression.begin.mira }
+          2: { name: keyword.control.$2.mira }
+          3: { name: constant.language.$3.mira }
+          4: { name: keyword.$4.mira }
+          5: { name: constant.numeric.$5.mira }
+          6: { name: variable.other.$6.mira }
+      - name: meta.template.expression.mira
+        begin: '(\${2}{)'
+        beginCaptures:
+          0: { name: punctuation.definition.template-expression.begin.mira }
+        end: '}'
+        endCaptures:
+          0: { name: punctuation.definition.template-expression.end.mira }
+        patterns:
+          - include: '#block'
+          - include: '#source'
+      - name: meta.template.expression.mira
+        begin: '\${2}\('
+        beginCaptures:
+          0: { name: punctuation.definition.template-expression.begin.mira }
+        end: '\)'
+        endCaptures:
+          0: { name: punctuation.definition.template-expression.end.mira }
+        patterns:
+          - include: '#parenthesized'
+          - include: '#source'
+  block:
+    name: meta.embedded.block.mira
+    begin: \{
+    end: \}
+    patterns:
+      - include: 'self'
+      - include: '#source'
+  parenthesized:
+    name: meta.embedded.parenthesized.mira
+    begin: \(
+    end: \)
+    patterns:
+      - include: 'self'
+      - include: '#source'
+  numbers:
+    patterns:
+      - name: constant.numeric.hex.mira
+        match: 0[xX][\dA-Fa-f_]*[\dA-Fa-f]
+      - name: constant.numeric.octal.mira
+        match: 0[oO][0-7_]*[0-7]
+      - name: constant.numeric.binary.mira
+        match: 0[bB][01_]*[01]
+      - name: constant.numeric.mira
+        match: \d[\d_]*(?:\.[\d_]+)?(?:[eE][+-]?[\d_]*\d)?

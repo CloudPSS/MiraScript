@@ -14,7 +14,7 @@ export const {
 } = constants;
 
 export const REG_WHITESPACE = /[ \t\v\f\r\n]/u;
-export const REG_NUMBER = /(?<!\.[ \t\v\f\r\n]*)\d[\d_]*(?:\.[\d_]+)?(?:[eE][+-]?[\d_]*\d)?/u;
+export const REG_NUMBER = /\d[\d_]*(?:\.[\d_]+)?(?:[eE][+-]?[\d_]*\d)?/u;
 
 // Special characters
 export const DOC_HEADER = ' 𝙼𝚒𝚛𝚊𝚂𝚌𝚛𝚒𝚙𝚝 𝙶𝚕𝚘𝚋𝚊𝚕 𝙳𝚎𝚏𝚒𝚗𝚒𝚝𝚒𝚘𝚗𝚜 ';
