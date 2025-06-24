@@ -1,11 +1,14 @@
 import * as wasm from '../lib/wasm.js';
 import type { Config, InputMode, DiagnosticPositionEncoding, ScriptInput } from './types.js';
-import { module } from '#loader';
 
 export * from './types.js';
 export { wasm };
 
-export const ready = Promise.resolve().then(async () => wasm.default({ module_or_path: module }));
+export const ready = import('#loader').then(async ({ module }) =>
+    wasm.default({
+        module_or_path: await module,
+    }),
+);
 
 /** 创建可重用的配置 */
 export async function createConfig(config?: Config | wasm.Config): Promise<wasm.Config> {
