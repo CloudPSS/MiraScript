@@ -35,7 +35,7 @@ export {
 };
 
 /** 注册 LSP 相关的  编辑器功能 */
-export function registerLSP(globalProvider: VmGlobalProvider): IDisposable[] {
+export function registerLSP(globalProvider: VmGlobalProvider | undefined): IDisposable[] {
     setGlobalProvider(globalProvider);
 
     const codeActionProvider = new CodeActionProvider();

@@ -7,7 +7,7 @@ import { compile } from '../worker-helper.js';
 
 let globalProvider: VmGlobalProvider | undefined;
 /** 设置全局变量提供者 */
-export function setGlobalProvider(provider: VmGlobalProvider): void {
+export function setGlobalProvider(provider: VmGlobalProvider | undefined): void {
     globalProvider = provider;
 }
 

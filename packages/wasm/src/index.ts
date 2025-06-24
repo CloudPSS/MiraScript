@@ -5,7 +5,7 @@ import { module } from '#loader';
 export * from './types.js';
 export { wasm };
 
-await wasm.default({ module_or_path: module });
+await Promise.resolve().then(async () => wasm.default({ module_or_path: await module }));
 
 /** 创建可重用的配置 */
 export function createConfig(config?: Config | wasm.Config): wasm.Config {
