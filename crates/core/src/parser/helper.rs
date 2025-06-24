@@ -55,8 +55,8 @@ pub(super) fn variable_token<'s>(
     move |i: &mut Input<'s>| {
         let t = one_of(|t: &Token<'s>| {
             matches!(&t.kind, &TokenKind::Identifier(_))
-                || (*t == Keyword::Underscore)
-                || (*t == Keyword::Global)
+                || matches!(&t.kind, &TokenKind::Keyword(kw) 
+                    if kw.is_reserved() || kw == Keyword::Underscore || kw == Keyword::Global)
         })
         .parse_next(i)?;
         let e = if !include_underscore && *t == Keyword::Underscore {
@@ -71,6 +71,13 @@ pub(super) fn variable_token<'s>(
                 t.range.clone(),
                 t.kind.clone(),
                 DiagnosticCode::UnexpectedGlobal,
+            )
+            .into()
+        } else if matches!(&t.kind, &TokenKind::Keyword(kw) if kw.is_reserved()) {
+            Token::unknown(
+                t.range.clone(),
+                TokenKind::Keyword(Keyword::Underscore),
+                DiagnosticCode::InvalidReservedKeyword,
             )
             .into()
         } else {

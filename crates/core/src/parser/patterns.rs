@@ -168,23 +168,7 @@ fn range_pattern<'s>(i: &mut Input<'s>) -> Result<Pattern<'s>> {
 
 fn discard_bind_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
     move |i: &mut Input<'s>| {
-        (
-            opt(token(Keyword::Mut)),
-            alt((
-                variable_token(true, false),
-                one_of(
-                    |t: &Token<'s>| matches!(t.kind, TokenKind::Keyword(kw) if kw.is_reserved()),
-                )
-                .map(|t: &Token<'s>| {
-                    Token::unknown(
-                        t.range.clone(),
-                        TokenKind::Keyword(Keyword::Underscore),
-                        DiagnosticCode::InvalidReservedKeyword,
-                    )
-                    .into()
-                }),
-            )),
-        )
+        (opt(token(Keyword::Mut)), variable_token(true, false))
             .map(|(kw_mut, id)| {
                 if id.is_unknown() {
                     let tokens = if let Some(kw_mut) = kw_mut {
