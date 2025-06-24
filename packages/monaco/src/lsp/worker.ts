@@ -28,18 +28,19 @@ const configScript = createConfig({
 });
 
 /** 编译 */
-export function compile(script: string, mode: InputMode): CompileResult {
+export async function compile(script: string, mode: InputMode): Promise<CompileResult> {
     const config = mode === 'Script' ? configScript : configTemplate;
-    return c(script, config);
+    return await c(script, await config);
 }
 
 if (typeof Worker == 'function' && typeof addEventListener == 'function' && typeof postMessage == 'function') {
-    addEventListener('message', (event: MessageEvent) => {
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
+    addEventListener('message', async (event: MessageEvent) => {
         const data = event.data as Req;
         if (!Array.isArray(data)) return;
         const [uri, version, script, mode] = data;
         try {
-            const result = compile(script, mode);
+            const result = await compile(script, mode);
             const transfer = [];
             if (result.chunk) transfer.push(result.chunk.buffer);
             if (result.diagnostics) transfer.push(result.diagnostics.buffer);

@@ -6,4 +6,13 @@ import.meta.url ||=
         : (document.currentScript?.href.baseVal ?? '');
 import.meta.url ||= document.location.href;
 
-export const module: Promise<InitInput> = fetch(new URL('../../lib/wasm_bg.wasm', import.meta.url));
+export const module: Promise<InitInput> = (async () => {
+    try {
+        return await fetch(new URL('../../lib/wasm_bg.wasm', import.meta.url));
+    } catch {
+        // @ts-expect-error load as module
+        const mod = (await import('../../lib/wasm_bg.wasm')) as { default: unknown };
+        if (typeof mod.default == 'string' || mod.default instanceof WebAssembly.Module) return mod.default;
+        return mod;
+    }
+})();

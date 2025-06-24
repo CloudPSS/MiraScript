@@ -27,7 +27,7 @@ export class MiraScriptMonacoLoader implements IDisposable {
             const { registerBasic } = await import('./basic/index.js');
             if (this._basicFeaturesLoaded || this.disposed) return;
             this._basicFeaturesLoaded = true;
-            this.disposables.push(...registerBasic());
+            this.disposables.push(...(await registerBasic()));
         } catch (error) {
             // eslint-disable-next-line no-console
             console.error('Failed to load MiraScript basic features:', error);
@@ -41,7 +41,7 @@ export class MiraScriptMonacoLoader implements IDisposable {
             await basic; // 确保基础功能已加载
             if (this._lspFeaturesLoaded || this.disposed) return;
             this._lspFeaturesLoaded = true;
-            this.disposables.push(...registerLSP(this.globalProvider));
+            this.disposables.push(...(await registerLSP(this.globalProvider)));
         } catch (error) {
             // eslint-disable-next-line no-console
             console.error('Failed to load MiraScript LSP features:', error);

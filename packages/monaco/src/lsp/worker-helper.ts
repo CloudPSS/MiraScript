@@ -59,7 +59,7 @@ async function compileWorker(req: Req): Promise<CompileResult> {
 async function compileSync(req: Req): Promise<CompileResult> {
     const [uri, version, script, mode] = req;
     const { compile } = await import('./worker.js');
-    const result = compile(script, mode);
+    const result = await compile(script, mode);
     return new CompileResult(uri, version, result.diagnostics, result.chunk);
 }
 
