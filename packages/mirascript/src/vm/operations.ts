@@ -56,6 +56,11 @@ const isSame = (a: VmValue, b: VmValue): boolean => {
     return false;
 };
 
+const overloadNumberString = (a: VmAny, b: VmAny): boolean => {
+    const useNumber = typeof a == 'number' || typeof b == 'number' || !(typeof a == 'string' || typeof b == 'string');
+    return useNumber;
+};
+
 // Math operations
 export const $Add = (a: VmAny, b: VmAny): number => $ToNumber(a) + $ToNumber(b);
 export const $Sub = (a: VmAny, b: VmAny): number => $ToNumber(a) - $ToNumber(b);
@@ -67,10 +72,34 @@ export const $Pow = (a: VmAny, b: VmAny): number => $ToNumber(a) ** $ToNumber(b)
 export const $And = (a: VmAny, b: VmAny): boolean => $ToBoolean(a) && $ToBoolean(b);
 export const $Or = (a: VmAny, b: VmAny): boolean => $ToBoolean(a) || $ToBoolean(b);
 // Comparison operations
-export const $Gt = (a: VmAny, b: VmAny): boolean => $ToNumber(a) > $ToNumber(b);
-export const $Gte = (a: VmAny, b: VmAny): boolean => $ToNumber(a) >= $ToNumber(b);
-export const $Lt = (a: VmAny, b: VmAny): boolean => $ToNumber(a) < $ToNumber(b);
-export const $Lte = (a: VmAny, b: VmAny): boolean => $ToNumber(a) <= $ToNumber(b);
+export const $Gt = (a: VmAny, b: VmAny): boolean => {
+    if (overloadNumberString(a, b)) {
+        return $ToNumber(a) > $ToNumber(b);
+    } else {
+        return $ToString(a) > $ToString(b);
+    }
+};
+export const $Gte = (a: VmAny, b: VmAny): boolean => {
+    if (overloadNumberString(a, b)) {
+        return $ToNumber(a) >= $ToNumber(b);
+    } else {
+        return $ToString(a) >= $ToString(b);
+    }
+};
+export const $Lt = (a: VmAny, b: VmAny): boolean => {
+    if (overloadNumberString(a, b)) {
+        return $ToNumber(a) < $ToNumber(b);
+    } else {
+        return $ToString(a) < $ToString(b);
+    }
+};
+export const $Lte = (a: VmAny, b: VmAny): boolean => {
+    if (overloadNumberString(a, b)) {
+        return $ToNumber(a) <= $ToNumber(b);
+    } else {
+        return $ToString(a) <= $ToString(b);
+    }
+};
 export const $Eq = (a: VmAny, b: VmAny): boolean => {
     $AssertInit(a);
     $AssertInit(b);
@@ -79,17 +108,30 @@ export const $Eq = (a: VmAny, b: VmAny): boolean => {
     return isSame(a, b);
 };
 export const $Neq = (a: VmAny, b: VmAny): boolean => !$Eq(a, b);
+const stringComparer = new Intl.Collator('en', {
+    usage: 'sort',
+    numeric: false,
+    sensitivity: 'base',
+});
 export const $Aeq = (a: VmAny, b: VmAny): boolean => {
-    const an = $ToNumber(a);
-    const bn = $ToNumber(b);
-    const EPS = 1e-15;
-    if (isNaN(an) || isNaN(bn)) return false;
-    // Since Inf - Inf is NaN, we must check for equality first
-    if (an === bn) return true;
-    const absoluteDifference = abs(an - bn);
-    if (absoluteDifference < EPS) return true;
-    const base = min(abs(an), abs(bn));
-    return absoluteDifference < base * EPS;
+    if (overloadNumberString(a, b)) {
+        const an = $ToNumber(a);
+        const bn = $ToNumber(b);
+        const EPS = 1e-15;
+        if (isNaN(an) || isNaN(bn)) return false;
+        // Since Inf - Inf is NaN, we must check for equality first
+        if (an === bn) return true;
+        const absoluteDifference = abs(an - bn);
+        if (absoluteDifference < EPS) return true;
+        const base = min(abs(an), abs(bn));
+        return absoluteDifference < base * EPS;
+    } else {
+        // For strings, we use localeCompare for case-insensitive accent-insensitive comparison
+        const as = $ToString(a);
+        const bs = $ToString(b);
+        if (as === bs) return true;
+        return stringComparer.compare(as, bs) === 0;
+    }
 };
 export const $Naeq = (a: VmAny, b: VmAny): boolean => !$Aeq(a, b);
 export const $Same = (a: VmAny, b: VmAny): boolean => {
