@@ -6,7 +6,7 @@ use crate::{
     emitter::{emitter_scope::check_variable_initialized, utils::is_global_expression},
     lexer::{Keyword, Operator, TokenKind},
     parser::{
-        ArrayElementBase, AstWalker, Callable,
+        ArrayElement, ArrayElementBase, AstWalker, Callable,
         Expression::{self, *},
         Iterable, Range, RecordElementBase,
     },
@@ -32,6 +32,13 @@ impl<'s> Emitter<'s> {
                 self.declare_expression(callable);
             }
             Callable::Type(_) => (),
+        }
+    }
+    fn declare_argument(&mut self, arg: &'s ArrayElement<'s>) {
+        match arg.deref() {
+            ArrayElementBase::Element(expression) => self.declare_expression(expression),
+            ArrayElementBase::Spread(_, expression) => self.declare_expression(expression),
+            ArrayElementBase::Range(_) => unreachable!(),
         }
     }
     pub fn declare_expression(&mut self, outer: &'s Expression<'s>) {
@@ -91,14 +98,14 @@ impl<'s> Emitter<'s> {
                 self.declare_callable(callable);
                 expressions
                     .iter()
-                    .for_each(|expression| self.declare_expression(expression));
+                    .for_each(|arg| self.declare_argument(arg));
             }
             Extension(expression, _, callable, _, expressions, _) => {
                 self.declare_expression(expression);
                 self.declare_callable(callable);
                 expressions
                     .iter()
-                    .for_each(|expression| self.declare_expression(expression));
+                    .for_each(|arg| self.declare_argument(arg));
             }
             Access(expression, _, _) => self.declare_expression(expression),
             Index(expression, _, prop, _) => {
@@ -289,27 +296,37 @@ impl<'s> Emitter<'s> {
         &mut self,
         callable: &'s Callable<'s>,
         arg0: Option<&'s Expression<'s>>,
-        args: &'s [Expression<'s>],
+        args: &'s [ArrayElement<'s>],
         ret: Register,
         brk: Option<Register>,
     ) {
         match callable {
             Callable::Expression(callable) => {
                 let args_reg = |s: &mut Self| {
-                    let mut args_reg =
-                        vec![arg0.map_or(Register::EMPTY, |f| s.emit_expression_reg(f, brk))];
-                    for expression in args {
+                    let mut args_reg = vec![];
+                    let mut spread: Vec<OpParam> = vec![];
+                    if let Some(arg0) = arg0 {
+                        args_reg.push(s.emit_expression_reg(arg0, brk));
+                    }
+                    for arg in args {
                         let reg = s.closures.add_reg();
-                        s.emit_expression(expression, reg, brk);
+                        match arg.deref() {
+                            ArrayElementBase::Element(exp) => s.emit_expression(exp, reg, brk),
+                            ArrayElementBase::Spread(_, exp) => {
+                                spread.push(args_reg.len().into());
+                                s.emit_expression(exp, reg, brk);
+                            }
+                            ArrayElementBase::Range(_) => unreachable!(),
+                        }
                         args_reg.push(reg);
                     }
-                    args_reg
+                    (args_reg, spread)
                 };
 
                 if let Some(id) = self.emit_global_access(callable) {
                     // Global function call
-                    let args = args_reg(self);
-                    self.op_call(ret, id, args);
+                    let (args, spreads) = args_reg(self);
+                    self.op_call(ret, id, args, spreads);
                     return;
                 }
 
@@ -319,8 +336,8 @@ impl<'s> Emitter<'s> {
                 if complex {
                     self.op_if(OpCode::IfNotNil, callable_reg);
                 }
-                let args = args_reg(self);
-                self.op_call_dyn(ret, callable_reg, args);
+                let (args, spreads) = args_reg(self);
+                self.op_call_dyn(ret, callable_reg, args, spreads);
                 if complex {
                     self.op_else();
                     self.op_nil(ret);
@@ -638,10 +655,12 @@ impl<'s> Emitter<'s> {
             }
             Call(callable, _, args, _) => {
                 if let Some((first, rest)) = args.split_first() {
-                    self.emit_call(callable, Some(first), rest, ret, brk);
-                } else {
-                    self.emit_call(callable, None, &[], ret, brk);
+                    if let ArrayElementBase::Element(first) = first.deref() {
+                        self.emit_call(callable, Some(first), rest, ret, brk);
+                        return;
+                    }
                 }
+                self.emit_call(callable, None, args, ret, brk);
             }
             Extension(expression, _, callable, _, args, _) => {
                 self.emit_call(callable, Some(expression), args, ret, brk);

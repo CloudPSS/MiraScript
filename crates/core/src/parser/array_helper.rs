@@ -58,15 +58,16 @@ fn array_element<'s, E: Clone + PartialEq + 's>(
 
 type _ArrayLike<'s, E> = (TokenRef<'s>, Vec<_ArrayElement<'s, E>>, TokenRef<'s>);
 pub(super) fn array_base<'t, 's: 't, E: Clone + PartialEq + 's>(
-    brace: [Operator; 2],
+    mut open: impl Parser<'s, TokenRef<'s>>,
+    mut close: impl Parser<'s, TokenRef<'s>>,
     element: impl Parser<'s, E>,
     range: impl Parser<'s, Range<'s>>,
     spread: impl Parser<'s, E>,
 ) -> impl Parser<'s, _ArrayLike<'s, E>> {
     move |i: &mut Input<'s>| {
-        let open = token(brace[0]).parse_next(i)?;
+        let open = open.parse_next(i)?;
         let parts: Vec<_> = repeat(0.., array_element(element, range, spread)).parse_next(i)?;
-        let close = token_or_insert(brace[1], DiagnosticCode::MissingCloseBracket).parse_next(i)?;
+        let close = close.parse_next(i)?;
         Ok((open, parts, close))
     }
 }

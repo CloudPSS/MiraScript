@@ -6,6 +6,8 @@ use winnow::{
     token::{any, one_of, take_till},
 };
 
+use crate::parser::helper::token_or_insert;
+
 use super::{
     ArrayElementBase, AstWalker,
     array_helper::array_base,
@@ -310,7 +312,8 @@ fn record_like_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
 }
 
 pub(crate) fn array_pattern_like<'s>(
-    brace: [Operator; 2],
+    open: impl Parser<'s, TokenRef<'s>>,
+    close: impl Parser<'s, TokenRef<'s>>,
     rebind: bool,
 ) -> impl Parser<'s, Pattern<'s>> {
     let element_pattern = move |i: &mut Input<'s>| {
@@ -332,15 +335,19 @@ pub(crate) fn array_pattern_like<'s>(
     };
     move |i: &mut Input<'s>| {
         let (open, parts, close) =
-            array_base(brace, element_pattern, fail, pattern_spread(rebind)).parse_next(i)?;
+            array_base(open, close, element_pattern, fail, pattern_spread(rebind)).parse_next(i)?;
         Ok(Pattern::Array(open, parts, close))
     }
 }
 
 fn array_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
     move |i: &mut Input<'s>| -> Result<Pattern<'s>> {
-        let mut p = array_pattern_like([Operator::OpenBracket, Operator::CloseBracket], rebind)
-            .parse_next(i)?;
+        let mut p = array_pattern_like(
+            token(Operator::OpenBracket),
+            token_or_insert(Operator::CloseBracket, DiagnosticCode::MissingCloseBracket),
+            rebind,
+        )
+        .parse_next(i)?;
         let Pattern::Array(_, parts, _) = &mut p else {
             unreachable!();
         };

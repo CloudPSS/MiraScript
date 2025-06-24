@@ -1,20 +1,25 @@
 use winnow::{
     combinator::{
-        alt, dispatch, eof, opt, peek, repeat, separated_foldl1, separated_foldr1, separated_pair,
-        seq, terminated,
+        alt, dispatch, eof, fail, opt, peek, repeat, separated_foldl1, separated_foldr1, seq,
     },
     token::{any, one_of},
 };
 
-use super::array_helper::array_base;
-use super::block_expressions::block_like_expression;
-use super::expression::Callable;
-use super::expressions::expression;
-use super::helper::{literal_token, token, token_or_insert, variable_token};
-use super::patterns::pattern;
-use super::ranges::range;
-use super::record_helper::record_base;
-use super::{prelude::*, record_element::RecordElementBase, to_input};
+use super::{
+    ArrayElement, ArrayElementBase,
+    array_helper::array_base,
+    block_expressions::block_like_expression,
+    expression::Callable,
+    expressions::expression,
+    helper::{literal_token, token, token_or_insert, variable_token},
+    list_item::ListItem,
+    patterns::pattern,
+    prelude::*,
+    ranges::range,
+    record_element::RecordElementBase,
+    record_helper::record_base,
+    to_input,
+};
 
 fn to_interpolate_expr<'s>(token: &'s Token<'s>) -> Expression<'s> {
     let TokenKind::InterpolatedString(v) = &token.kind else {
@@ -93,7 +98,8 @@ fn array<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
             .parse_next(i)
     };
     array_base(
-        [Operator::OpenBracket, Operator::CloseBracket],
+        token(Operator::OpenBracket),
+        token_or_insert(Operator::CloseBracket, DiagnosticCode::MissingCloseBracket),
         expression,
         range,
         spread,
@@ -108,34 +114,40 @@ fn interpolation<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     Ok(to_interpolate_expr(token))
 }
 
-/// callable '(' ...args ')'
+/// callable '(' ('..'? arg),* ')'
 type Call<'s> = (
     Callable<'s>,
     TokenRef<'s>,
-    Vec<Expression<'s>>,
+    Vec<ArrayElement<'s>>,
     TokenRef<'s>,
 );
 
 fn pseudo_function<'t, 's: 't, const EXTENSION_CALL: bool>(i: &mut Input<'s>) -> Result<Call<'s>> {
     let provided: usize = if EXTENSION_CALL { 1 } else { 0 };
-    let (kw_type, open, (args, close)) = (
+    let (kw_type, (open, args, close)) = (
         token(Keyword::Type),
-        token_or_insert(
+        arg_list(token_or_insert(
             Operator::OpenParen,
             DiagnosticCode::MissingOpenParenAfterType,
-        ),
-        arg_list,
+        )),
     )
         .parse_next(i)?;
-    let exp = if args.len() != (1 - provided) {
-        vec![Expression::unknown_range(
-            [],
-            SourceRange {
-                start: kw_type.range.start,
-                end: close.range.end,
-            },
-            DiagnosticCode::InvalidTypeCall,
-        )]
+    let exp = if args.len() != (1 - provided)
+        || args
+            .first()
+            .is_some_and(|a| a.is_spread() || a.has_tail_comma())
+    {
+        vec![ListItem::new(ArrayElementBase::Element(
+            Expression::unknown_range(
+                [],
+                SourceRange {
+                    start: kw_type.range.start,
+                    end: close.range.end,
+                },
+                DiagnosticCode::InvalidTypeCall,
+            )
+            .into(),
+        ))]
     } else {
         args
     };
@@ -155,30 +167,19 @@ fn primary<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     .parse_next(i)
 }
 
-fn arg_list<'s>(i: &mut Input<'s>) -> Result<(Vec<Expression<'s>>, TokenRef<'s>)> {
-    separated_pair(
-        (
-            repeat(0.., terminated(expression, token(Operator::Comma))),
-            opt(expression),
+fn arg_list<'s>(
+    open: impl Parser<'s, TokenRef<'s>>,
+) -> impl Parser<'s, (TokenRef<'s>, Vec<ArrayElement<'s>>, TokenRef<'s>)> {
+    move |i: &mut Input<'s>| {
+        array_base(
+            open,
+            token_or_insert(Operator::CloseParen, DiagnosticCode::MissingCloseParen),
+            expression,
+            fail,
+            expression,
         )
-            .map(
-                |(mut v, e): (Vec<Expression<'s>>, Option<Expression<'s>>)| {
-                    if let Some(e) = e {
-                        v.push(e);
-                    }
-                    v
-                },
-            ),
-        peek(one_of(|t: &Token<'s>| {
-            *t == TokenKind::Eof
-                || *t == Operator::CloseParen
-                || *t == Operator::Semicolon
-                || *t == Operator::CloseBrace
-                || *t == Operator::CloseBracket
-        })),
-        token_or_insert(Operator::CloseParen, DiagnosticCode::MissingCloseParen),
-    )
-    .parse_next(i)
+        .parse_next(i)
+    }
 }
 
 enum AccessIndex<'s> {
@@ -262,10 +263,12 @@ fn extension_call<'s>(i: &mut Input<'s>) -> Result<Call<'s>> {
     alt((
         (
             alt((parenthesised, access_chain)).map(|e| Callable::Expression(Box::new(e))),
-            token(Operator::OpenParen),
-            arg_list,
+            arg_list(token_or_insert(
+                Operator::OpenParen,
+                DiagnosticCode::MissingOpenParenAfterType,
+            )),
         )
-            .map(|(e, o, (a, c))| (e, o, a, c)),
+            .map(|(e, (o, a, c))| (e, o, a, c)),
         pseudo_function::<true>,
     ))
     .parse_next(i)
@@ -273,12 +276,12 @@ fn extension_call<'s>(i: &mut Input<'s>) -> Result<Call<'s>> {
 
 fn postfix<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     enum Function<'s> {
-        Call(TokenRef<'s>, Vec<Expression<'s>>, TokenRef<'s>),
+        Call(TokenRef<'s>, Vec<ArrayElement<'s>>, TokenRef<'s>),
         Extension(
             TokenRef<'s>,
             Callable<'s>,
             TokenRef<'s>,
-            Vec<Expression<'s>>,
+            Vec<ArrayElement<'s>>,
             TokenRef<'s>,
         ),
         Access(TokenRef<'s>, TokenRef<'s>),
@@ -297,7 +300,6 @@ fn postfix<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
         0..,
         alt((
             token(Operator::Exclamation).map(Function::NonNil),
-            (token(Operator::OpenParen), arg_list).map(|(o, (a, c))| Function::Call(o, a, c)),
             (token(Operator::ColonColon), extension_call)
                 .map(|(kw, (ex, o, a, c))| Function::Extension(kw, ex, o, a, c)),
             access_index.map(|t| match t {
@@ -307,6 +309,7 @@ fn postfix<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
                     Function::Slice(left, start, op, end, right)
                 }
             }),
+            arg_list(token(Operator::OpenParen)).map(|(o, a, c)| Function::Call(o, a, c)),
         )),
     )
     .fold(Vec::new, |mut v, t| {

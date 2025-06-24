@@ -304,11 +304,15 @@ pub enum OpCode {
     /// RETURN %value\
     /// return %value;
     Return,
-    /// CALL %ret `f` `argn` %1 %2 ... %argn\
+    /// CALL %ret `f` `argn` %1 %2 ... %argn `spread_n` `spread_arg_a` ...\
     /// %ret = GLOBAL[CONSTANTS[f]](%1, %2, ... , %argn);
+    ///
+    /// If spread_arg_a is present, arg at that index will be spread
     Call,
-    /// CALL_DYN %ret %f `argn` %1 %2 ... %argn\
+    /// CALL_DYN %ret %f `argn` %1 %2 ... %argn `spread_n` `spread_arg_a` ...\
     /// %ret = %f(%1, %2, ... , %argn);
+    ///
+    /// If spread_arg_a is present, arg at that index will be spread
     CallDyn,
 }
 

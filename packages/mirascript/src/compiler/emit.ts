@@ -413,21 +413,21 @@ class Emitter {
                 code = `${this.wv(reg)} = $${OpCode[opcode]}(${this.rv(value)}, [${args.join(', ')}]);`;
                 break;
             }
-            case OpCode.Call: {
-                reg = read();
-                const func = read();
-                const n = read();
-                const args = Array.from({ length: n }, (_, i) => read());
-                const funcName = this.constants[func];
-                code = `${this.wv(reg)} = $Call(global[${funcName}], [${args.map((a) => this.rv(a)).join(', ')}]);`;
-                break;
-            }
+            case OpCode.Call:
             case OpCode.CallDyn: {
                 reg = read();
                 const func = read();
                 const n = read();
                 const args = Array.from({ length: n }, (_, i) => read());
-                code = `${this.wv(reg)} = $Call(${this.rv(func)}, [${args.map((a) => this.rv(a)).join(', ')}]);`;
+                const ns = read();
+                const spreads = Array.from({ length: ns }, (_, i) => read());
+                const callTarget = opcode === OpCode.Call ? `global[${this.constants[func]}]` : this.rv(func);
+                code = `${this.wv(reg)} = $Call(${callTarget}, [${args
+                    .map((a, i) => {
+                        if (spreads.includes(i)) return `...$ArraySpread(${this.rv(a)})`;
+                        else return this.rv(a);
+                    })
+                    .join(', ')}]);`;
                 break;
             }
             case OpCode.Assign: {

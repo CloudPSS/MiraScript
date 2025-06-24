@@ -7,7 +7,10 @@ use winnow::combinator::opt;
 use crate::ansi::DisplayIdent;
 
 use super::{
-    ArrayElementBase, ArrayPattern, AstVisitor, AstWalker, patterns::array_pattern_like, prelude::*,
+    ArrayElementBase, ArrayPattern, AstVisitor, AstWalker,
+    helper::{token, token_or_insert},
+    patterns::array_pattern_like,
+    prelude::*,
 };
 
 /// `(` ...items `)`
@@ -68,14 +71,17 @@ impl DisplayIdent for ParameterList<'_> {
 }
 
 pub(super) fn parameter_list<'s>(i: &mut Input<'s>) -> Result<Option<ParameterList<'s>>> {
-    let list = opt(
-        array_pattern_like([Operator::OpenParen, Operator::CloseParen], false).map(|pattern| {
-            let Pattern::Array(left, items, right) = pattern else {
-                unreachable!();
-            };
-            ParameterList(left, items, right)
-        }),
+    let list = opt(array_pattern_like(
+        token(Operator::OpenParen),
+        token_or_insert(Operator::CloseParen, DiagnosticCode::MissingCloseParen),
+        false,
     )
+    .map(|pattern| {
+        let Pattern::Array(left, items, right) = pattern else {
+            unreachable!();
+        };
+        ParameterList(left, items, right)
+    }))
     .parse_next(i)?;
     let Some(mut list) = list else {
         return Ok(None);

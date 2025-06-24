@@ -205,6 +205,48 @@ impl<'s> Emitter<'s> {
             }
         }
     }
+    pub fn op_variadic_variadic_1(
+        &mut self,
+        ret: Register,
+        op: OpCode,
+        arg1: impl OpParamTrait,
+        var_args1: Vec<impl OpParamTrait>,
+        var_args2: Vec<impl OpParamTrait>,
+    ) {
+        let n1: OpParam = var_args1.len().into();
+        let n2: OpParam = var_args2.len().into();
+        if !n1.is_wide()
+            && !n2.is_wide()
+            && !ret.is_wide()
+            && !arg1.is_wide()
+            && !var_args1.iter().any(|r| r.is_wide())
+            && !var_args2.iter().any(|r| r.is_wide())
+        {
+            self.chunk.add_code(op);
+            self.chunk.add_param(ret);
+            self.chunk.add_param(arg1);
+            self.chunk.add_param(n1);
+            for r in var_args1 {
+                self.chunk.add_param(r);
+            }
+            self.chunk.add_param(n2);
+            for r in var_args2 {
+                self.chunk.add_param(r);
+            }
+        } else {
+            self.chunk.add_code_wide(op);
+            self.chunk.add_param_wide(ret);
+            self.chunk.add_param_wide(arg1);
+            self.chunk.add_param_wide(n1);
+            for r in var_args1 {
+                self.chunk.add_param_wide(r);
+            }
+            self.chunk.add_param_wide(n2);
+            for r in var_args2 {
+                self.chunk.add_param_wide(r);
+            }
+        }
+    }
     pub fn op_non_nil(&mut self, reg: Register) {
         self.op_1(AssertNonNil, reg);
     }
@@ -223,13 +265,25 @@ impl<'s> Emitter<'s> {
         self.op_1(Return, ret);
     }
 
-    pub fn op_call(&mut self, ret: Register, func: impl Into<Cow<'s, str>>, args: Vec<Register>) {
+    pub fn op_call(
+        &mut self,
+        ret: Register,
+        func: impl Into<Cow<'s, str>>,
+        args: Vec<Register>,
+        spreads: Vec<OpParam>,
+    ) {
         let f = self.add_const_string(func);
-        self.op_variadic_1(ret, Call, f, args)
+        self.op_variadic_variadic_1(ret, Call, f, args, spreads)
     }
 
-    pub fn op_call_dyn(&mut self, ret: Register, func: Register, args: Vec<Register>) {
-        self.op_variadic_1(ret, CallDyn, func, args)
+    pub fn op_call_dyn(
+        &mut self,
+        ret: Register,
+        func: Register,
+        args: Vec<Register>,
+        spreads: Vec<OpParam>,
+    ) {
+        self.op_variadic_variadic_1(ret, CallDyn, func, args, spreads)
     }
 
     pub fn op_get_upvalue(&mut self, reg: Register, level: usize, up_reg: Register) {

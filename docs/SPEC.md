@@ -434,14 +434,28 @@ x == y; // false
 (1) ~= (1.0000000000000002); // 两侧转为 number 类型均为 nan，返回 false
 ```
 
+##### 函数调用
+
+参数列表中可使用 `..` 操作符将数组展开为多个参数。
+
+```rust
+fn add(x, y) {
+  x + y
+};
+
+let result = add(1, 2);
+let array = [3, 4];
+let result2 = add(..array);
+```
+
 ##### 扩展调用运算符
 
 扩展调用运算符 `::` 将左操作数作为右侧函数调用的第一个参数，用以简化函数调用的语法。
 
 ```rust
-[1, 2, 3]::filter(fn { it > 1 })::(fn { `The array is: $it` })()::println();
+[1, 2, 3]::filter(fn { it > 1 })::(fn { `The array is: $it` })()::debug_print();
 // 相当于
-// println(
+// debug_print(
 //   (fn { `The array is: $it` })(
 //     filter(
 //       [1, 2, 3],
