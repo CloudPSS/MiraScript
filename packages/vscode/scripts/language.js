@@ -1,6 +1,8 @@
 import { load } from 'js-yaml';
 import fs from 'node:fs/promises';
 
+await fs.mkdir(new URL('../syntaxes', import.meta.url), { recursive: true });
+
 const shared = load(await fs.readFile(new URL('./shared.tmLanguage.yaml', import.meta.url), 'utf8'));
 
 for (const file of await fs.readdir(new URL('./', import.meta.url), { withFileTypes: true })) {
