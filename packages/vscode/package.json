@@ -2,6 +2,7 @@
   "name": "@mirascript/vscode",
   "displayName": "MiraScript",
   "description": "MiraScript language support for Visual Studio Code.",
+  "publisher": "CloudPSS",
   "version": "0.0.1",
   "type": "module",
   "engines": {
@@ -13,15 +14,20 @@
   "scripts": {
     "build:language-configuration": "node scripts/language-configuration.js",
     "build:language": "node scripts/language.js",
-    "build": "pnpm build:language-configuration && pnpm build:language",
+    "build:markdown-preview": "node ./esbuild.config.js",
+    "build": "pnpm build:language-configuration && pnpm build:language && pnpm build:markdown-preview",
     "watch": "nodemon --watch scripts --exec 'pnpm build:language' --ext yaml"
   },
   "devDependencies": {
     "@mirascript/monaco": "workspace:*",
+    "@private/monaco-editor": "^0.0.38",
     "js-yaml": "^4.1.0",
     "nodemon": "^3.1.10"
   },
   "contributes": {
+    "markdown.previewScripts": [
+      "./dist/markdown-preview.js"
+    ],
     "languages": [
       {
         "id": "mirascript",
@@ -52,12 +58,6 @@
           "text/x-mirascript-template"
         ],
         "configuration": "./language-configuration.json"
-      },
-      {
-        "id": "mira-markdown-injection"
-      },
-      {
-        "id": "miratpl-markdown-injection"
       }
     ],
     "grammars": [
@@ -71,7 +71,6 @@
         }
       },
       {
-        "language": "mira-markdown-injection",
         "scopeName": "markdown.mira.codeblock",
         "path": "./syntaxes/mira-markdown.tmLanguage.json",
         "injectTo": [
@@ -91,7 +90,6 @@
         }
       },
       {
-        "language": "miratpl-markdown-injection",
         "scopeName": "markdown.miratpl.codeblock",
         "path": "./syntaxes/miratpl-markdown.tmLanguage.json",
         "injectTo": [
