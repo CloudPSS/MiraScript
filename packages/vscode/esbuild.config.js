@@ -6,6 +6,7 @@ esbuild.build({
     sourcemap: true,
     format: 'iife',
     entryPoints,
+    minify: true,
     outdir: './dist',
     target: 'esnext',
     bundle: true,

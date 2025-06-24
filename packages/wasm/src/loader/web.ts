@@ -8,10 +8,10 @@ import.meta.url ||= document.location.href;
 
 export const module: Promise<InitInput> = (async () => {
     try {
-        return await fetch(new URL('../../lib/wasm_bg.wasm', import.meta.url));
+        return await fetch(new URL('../../lib/wasm_bg.wasm?url', import.meta.url));
     } catch {
         // @ts-expect-error load as module
-        const mod = (await import('../../lib/wasm_bg.wasm')) as { default: unknown };
+        const mod = (await import('../../lib/wasm_bg.wasm?url')) as { default: unknown };
         if (typeof mod.default == 'string' || mod.default instanceof WebAssembly.Module) return mod.default;
         return mod;
     }
