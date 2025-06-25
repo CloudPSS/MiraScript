@@ -58,6 +58,7 @@ export class RenameProvider extends Provider implements languages.RenameProvider
         newName: string,
         token: CancellationToken,
     ): Promise<undefined | (languages.WorkspaceEdit & languages.Rejection)> {
+        newName = newName.trim();
         const compiled = await this.getCompileResult(model);
         if (!compiled) return undefined;
         const d = compiled.definition(model, position);
