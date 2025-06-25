@@ -5,12 +5,12 @@ import {
     type CancellationToken,
     type IPosition,
     type IRange,
-    Position,
+    type Position,
     Range,
 } from '../../monaco-api.js';
 import { Provider } from './base.js';
-import { codeblock, globalDoc, paramsList } from '../utils.js';
-import { keywords, REG_IDENTIFIER, REG_ORDINAL, reservedKeywords } from '../../constants.js';
+import { codeblock, getDeep, globalDoc, paramsList } from '../utils.js';
+import { keywords, reservedKeywords } from '../../constants.js';
 import { lib, operations } from 'mirascript/subtle';
 
 const DESC_GLOBAL = '(global)';
@@ -241,8 +241,8 @@ export class CompletionItemProvider extends Provider implements languages.Comple
         return suggestions;
     }
 
-    /** 查找全局变量字段 */
-    private async completeGlobalFields(
+    /** 查找变量字段 */
+    private async completeFields(
         model: editor.ITextModel,
         position: Position,
         char: string | undefined,
@@ -250,62 +250,36 @@ export class CompletionItemProvider extends Provider implements languages.Comple
     ): Promise<CustomCompletionItem[]> {
         const compiled = await this.getCompileResult(model);
         if (!compiled) return [];
-        const { globals } = compiled.groupedTags(model);
-
-        // 查找最靠近当前输入位置的上一个全局变量
-        let prevGlobal: { range: IRange } | undefined;
-        for (const global of globals) {
-            for (const ref of global.references) {
-                if (!Position.isBefore(Range.getEndPosition(ref.range), position)) continue;
-                if (
-                    prevGlobal &&
-                    Position.isBefore(Range.getEndPosition(ref.range), Range.getEndPosition(prevGlobal.range))
-                )
-                    continue;
-                prevGlobal = ref;
-            }
-        }
-        if (!prevGlobal) return [];
-
-        const chain = model.getValueInRange(Range.fromPositions(Range.getStartPosition(prevGlobal.range), position));
-        const chainParts = chain.split(/\s*(?:!\.|\.)\s*/);
-        if (
-            // 至少包含全局变量名和当前输入位置的字段名
-            chainParts.length < 2 ||
-            !chainParts.every(
-                (part, index) =>
-                    // 如果是最后一个部分，则可以为空（表示输入位置的字段名），否则必须是合法的标识符
-                    (index === chainParts.length - 1 ? !part : false) ||
-                    REG_IDENTIFIER.test(part) ||
-                    REG_ORDINAL.test(part),
-            )
-        ) {
+        const access = compiled.accessAt(model, position);
+        if (!access) return [];
+        const { def, fields } = access;
+        if ('definition' in def.def) {
+            // TODO: suggests local item fields
             return [];
         }
         const vmGlobal = await this.getGlobals(model);
-        chainParts.pop(); // 移除最后一个部分，因为它是当前输入位置的字段名
-        let value: VmValue | undefined = vmGlobal[chainParts.shift()!];
-        for (const part of chainParts) {
-            value = operations.$Get(value, part);
-            if (value == null || typeof value != 'object') {
-                return [];
-            }
-        }
+        fields.pop(); // 移除最后一个部分，因为它是当前输入位置的字段名
+        const value = getDeep(vmGlobal[def.def.name], fields);
         if (value == null || typeof value != 'object') {
             return [];
         }
         const keys = lib.global.keys(value);
-        return keys.map((key) => {
+        const result: CustomCompletionItem[] = [];
+        for (const key of keys) {
+            if (char && !key.toLowerCase().includes(char)) {
+                continue;
+            }
             const field = operations.$Get(value, key);
             const callable = typeof field == 'function' || (isVmExtern(field) && field.callable);
-            return {
+            result.push({
                 label: { label: key, description: DESC_FIELD },
                 kind: callable ? languages.CompletionItemKind.Method : languages.CompletionItemKind.Field,
                 insertText: key,
                 range,
                 commitCharacters: callable ? ['!', '('] : ['!', '.'],
-            } satisfies CustomCompletionItem;
-        });
+            });
+        }
+        return result;
     }
 
     /** @inheritdoc */
@@ -329,7 +303,7 @@ export class CompletionItemProvider extends Provider implements languages.Comple
         // suggest variables
         let char: string | undefined;
         let range: IRange;
-        const def = compiled.definition(model, position);
+        const def = compiled.definitionAt(model, position);
         if (def) {
             if (def.ref == null) {
                 // 输入位置是变量定义
@@ -366,8 +340,7 @@ export class CompletionItemProvider extends Provider implements languages.Comple
             insert: Range.fromPositions(Range.getStartPosition(range), position),
         };
         if (/[^.]\.$/u.test(prev)) {
-            // TODO: suggests local item fields
-            const suggestions = await this.completeGlobalFields(model, position, char, completionRange);
+            const suggestions = await this.completeFields(model, position, char, completionRange);
             return { suggestions };
         }
 

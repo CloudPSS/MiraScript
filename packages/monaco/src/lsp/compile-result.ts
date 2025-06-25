@@ -1,6 +1,7 @@
-import { type editor, Range, type IRange, type IPosition } from '../monaco-api.js';
+import { type editor, Range, type IRange, type IPosition, Position } from '../monaco-api.js';
 import { DiagnosticCode } from '@mirascript/wasm';
 import { strictContainsPosition } from './utils.js';
+import { REG_IDENTIFIER, REG_ORDINAL } from '../constants.js';
 
 /** 源代码诊断信息 */
 interface SourceDiagnosticBase<T extends DiagnosticCode = DiagnosticCode> {
@@ -110,6 +111,15 @@ export interface SourceScope {
     /** 父作用域 */
     readonly parent?: SourceScope;
 }
+
+/** 变量访问 */
+export type DefinitionAt = { range: IRange } & (
+    | { def: LocalDefinition; ref?: number }
+    | { def: GlobalDefinition; ref: number }
+);
+
+/** 字段访问 */
+export type AccessAt = { def: DefinitionAt; fields: string[] };
 
 /** 编译结果 */
 export class CompileResult {
@@ -312,26 +322,23 @@ export class CompileResult {
     }
 
     /** 获取定义 */
-    definition(
-        model: editor.ITextModel,
-        position: IPosition,
-    ): { def: LocalDefinition; ref?: number } | { def: GlobalDefinition; ref: number } | undefined {
+    definitionAt(model: editor.ITextModel, position: IPosition): DefinitionAt | undefined {
         const { globals } = this.groupedTags(model);
         for (const d of globals) {
             const refIndex = d.references.findIndex((u) => strictContainsPosition(u.range, position));
             if (refIndex >= 0) {
-                return { def: d, ref: refIndex };
+                return { def: d, ref: refIndex, range: d.references[refIndex]!.range };
             }
         }
         this.scopes(model); // 确保作用域信息已加载
         const { locals } = this.groupedTags(model);
         for (const d of locals) {
             if (strictContainsPosition(d.definition.range, position)) {
-                return { def: d, ref: undefined };
+                return { def: d, ref: undefined, range: d.definition.range };
             }
             const refIndex = d.references.findIndex((u) => strictContainsPosition(u.range, position));
             if (refIndex >= 0) {
-                return { def: d, ref: refIndex };
+                return { def: d, ref: refIndex, range: d.references[refIndex]!.range };
             }
         }
         return undefined;
@@ -482,5 +489,46 @@ export class CompileResult {
             scope = inner;
         }
         return scope;
+    }
+
+    /** 获取位置的字段访问 */
+    accessAt(model: editor.ITextModel, position: IPosition): AccessAt | undefined {
+        let prevDef: DefinitionAt | undefined;
+        const { globals } = this.groupedTags(model);
+        for (const d of globals) {
+            for (const [refIndex, ref] of d.references.entries()) {
+                if (!Position.isBefore(Range.getEndPosition(ref.range), position)) continue;
+                if (prevDef && Position.isBefore(Range.getEndPosition(ref.range), Range.getEndPosition(prevDef.range)))
+                    continue;
+                prevDef = { def: d, ref: refIndex, range: ref.range };
+            }
+        }
+        this.scopes(model); // 确保作用域信息已加载
+        const { locals } = this.groupedTags(model);
+        for (const d of locals) {
+            for (const [refIndex, ref] of d.references.entries()) {
+                if (!Position.isBefore(Range.getEndPosition(ref.range), position)) continue;
+                if (prevDef && Position.isBefore(Range.getEndPosition(ref.range), Range.getEndPosition(prevDef.range)))
+                    continue;
+                prevDef = { def: d, ref: refIndex, range: ref.range };
+            }
+        }
+        if (!prevDef) return undefined;
+        const chain = model.getValueInRange(Range.fromPositions(Range.getStartPosition(prevDef.range), position));
+        const chainParts = chain.split(/\s*(?:!\.|\.)\s*/);
+        if (
+            // 至少包含变量名和当前位置的字段名
+            chainParts.length < 2 ||
+            !chainParts.every(
+                (part, index) =>
+                    // 如果是最后一个部分，则可以为空（表示当前位置的字段名），否则必须是合法的标识符
+                    (index === chainParts.length - 1 ? !part : false) ||
+                    REG_IDENTIFIER.test(part) ||
+                    REG_ORDINAL.test(part),
+            )
+        ) {
+            return undefined;
+        }
+        return { def: prevDef, fields: chainParts.slice(1) };
     }
 }

@@ -1,29 +1,20 @@
 import type { CancellationToken, editor, IMarkdownString, IRange, languages, Position } from '../../monaco-api.js';
 import { Provider } from './base.js';
 import { DiagnosticCode } from '@mirascript/wasm';
-import { codeblock, globalDoc, paramsList } from '../utils.js';
-import type { LocalDefinition } from '../compile-result.js';
+import { codeblock, getDeep, globalDoc, paramsList } from '../utils.js';
+import type { AccessAt, DefinitionAt } from '../compile-result.js';
 
 /** @inheritdoc */
 export class HoverProvider extends Provider implements languages.HoverProvider {
-    /** @inheritdoc */
-    async provideHover(
+    /** 变量提示 */
+    private async provideVariableHover(
         model: editor.ITextModel,
-        position: Position,
-        token: CancellationToken,
-        context?: languages.HoverContext<languages.Hover>,
+        { def, ref }: DefinitionAt,
     ): Promise<languages.Hover | undefined> {
-        const compiled = await this.getCompileResult(model);
-        if (!compiled) {
-            return undefined;
-        }
-        const globals = await this.getGlobals(model);
-        const d = compiled.definition(model, position);
-        if (!d) return undefined;
-        const { def, ref } = d;
         let content: IMarkdownString | undefined;
         let range: IRange | undefined;
         if ('name' in def) {
+            const globals = await this.getGlobals(model);
             const { script, doc } = globalDoc(def.name, globals[def.name]);
             content = {
                 value: codeblock(`\0(global) ${script}`) + doc,
@@ -68,7 +59,7 @@ export class HoverProvider extends Provider implements languages.HoverProvider {
                     };
                     break;
                 case DiagnosticCode.LocalFunction: {
-                    const params = paramsList(model, (d.def as LocalDefinition).fn);
+                    const params = paramsList(model, def.fn);
                     content = {
                         value: codeblock(`\0fn ${model.getValueInRange(tag.range)}${params}`),
                     };
@@ -96,5 +87,66 @@ export class HoverProvider extends Provider implements languages.HoverProvider {
             contents: [content],
             range: range,
         };
+    }
+
+    /** 字段提示 */
+    private async provideFieldHover(
+        model: editor.ITextModel,
+        range: IRange,
+        { def: { def, ref }, fields }: AccessAt,
+    ): Promise<languages.Hover | undefined> {
+        if ('definition' in def) {
+            // TODO: provide local item fields
+            return undefined;
+        }
+        const vmGlobal = await this.getGlobals(model);
+        const value = getDeep(vmGlobal[def.name], fields);
+        if (value == null) return undefined;
+        const lastField = fields.pop()!;
+        const { script, doc } = globalDoc(lastField, value);
+        return {
+            contents: [
+                {
+                    value: codeblock(`\0(field) ${script}`) + doc,
+                },
+            ],
+            range,
+        };
+    }
+    /** @inheritdoc */
+    async provideHover(
+        model: editor.ITextModel,
+        position: Position,
+        token: CancellationToken,
+        context?: languages.HoverContext<languages.Hover>,
+    ): Promise<languages.Hover | undefined> {
+        const compiled = await this.getCompileResult(model);
+        if (!compiled) {
+            return undefined;
+        }
+        const d = compiled.definitionAt(model, position);
+        if (d) {
+            return this.provideVariableHover(model, d);
+        }
+        const word = model.getWordAtPosition(position);
+        if (word) {
+            const a = compiled.accessAt(model, {
+                lineNumber: position.lineNumber,
+                column: word.endColumn,
+            });
+            if (a) {
+                return this.provideFieldHover(
+                    model,
+                    {
+                        startColumn: word.startColumn,
+                        endColumn: word.endColumn,
+                        startLineNumber: position.lineNumber,
+                        endLineNumber: position.lineNumber,
+                    },
+                    a,
+                );
+            }
+        }
+        return undefined;
     }
 }

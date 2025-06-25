@@ -54,7 +54,7 @@ export class DefinitionReferenceProvider
         const compiled = await this.getCompileResult(model);
         if (!compiled) return undefined;
         const globals = await this.getGlobals(model);
-        const d = compiled.definition(model, position);
+        const d = compiled.definitionAt(model, position);
         if (!d) return [];
         const { def, ref } = d;
         let originSelectionRange;
@@ -82,7 +82,7 @@ export class DefinitionReferenceProvider
         const compiled = await this.getCompileResult(model);
         if (!compiled) return undefined;
         const globals = await this.getGlobals(model);
-        const d = compiled.definition(model, position);
+        const d = compiled.definitionAt(model, position);
         if (!d) return [];
         const { def } = d;
         const links: languages.Location[] = def.references.map((u) => ({

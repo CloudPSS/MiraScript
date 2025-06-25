@@ -250,6 +250,38 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                 ],
                 [/^(\0\(@identifier\))(@whitespace+)/, ['entity.name.label', '']],
 
+                [
+                    /(@identifier)(@whitespace*)(:)(@whitespace*)(\/\*@whitespace*<)(extern )([.\w]*Function)(>@whitespace*\*\/)/,
+                    [
+                        'entity.name.function.doc',
+                        '',
+                        'delimiter',
+                        '',
+                        'comment.doc',
+                        'type',
+                        'entity.name.label',
+                        'comment.doc',
+                    ],
+                ],
+                [
+                    /(@identifier)(@whitespace*)(:)(@whitespace*)(\/\*@whitespace*<)(function )([.\w]*)(>@whitespace*\*\/)/,
+                    [
+                        'entity.name.function.doc',
+                        '',
+                        'delimiter',
+                        '',
+                        'comment.doc',
+                        'type',
+                        'entity.name.label',
+                        'comment.doc',
+                    ],
+                ],
+                [/(@identifier)(@whitespace*)(:)(@whitespace+)/, ['support.type.property-name', '', 'delimiter', '']],
+                [
+                    /(\/\*@whitespace*<)(\w+@whitespace*)([.\w]*)(>@whitespace*\*\/)/,
+                    ['comment.doc', 'type', 'entity.name.label', 'comment.doc'],
+                ],
+
                 [/(fn)(@whitespace+)(@identifier)$/, ['keyword.fn.doc', '', 'entity.name.function.doc']],
                 [
                     /(fn)(@whitespace+)(@identifier)(\()(\.\.)(\))$/,
@@ -265,6 +297,7 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                     [{ token: 'keyword.$1' }, '', { token: 'variable.other.constant', next: '@root' }],
                 ],
                 { include: '@common' },
+                [/[[\](){}]/, '@brackets'],
             ],
             fn_doc: [
                 [/(@identifier)(\()/, ['entity.name.function.doc', '@brackets']],

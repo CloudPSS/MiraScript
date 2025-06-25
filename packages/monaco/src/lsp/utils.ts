@@ -199,7 +199,7 @@ export function globalDoc(name: string, value: VmAny): { script: string; doc: st
     }
     if (isVmModule(value)) {
         return {
-            script: `module ${name};`,
+            script: `(module) ${name}`,
             doc: `模块 \`${name}\``,
         };
     }
@@ -209,6 +209,15 @@ export function globalDoc(name: string, value: VmAny): { script: string; doc: st
     } else {
         valueStr = serializeForDisplay(value);
     }
-    if (name.startsWith('@')) return { script: `const ${name} = ${valueStr};`, doc: '' };
-    return { script: `let ${name} = ${valueStr};`, doc: '' };
+    return { script: `${name} = ${valueStr};`, doc: '' };
+}
+
+/** 获取深层属性 */
+export function getDeep(value: VmAny, path: readonly string[]): VmValue {
+    let current: VmAny = value;
+    for (const key of path) {
+        if (current == null) return null;
+        current = operations.$Get(current, key);
+    }
+    return current ?? null;
 }

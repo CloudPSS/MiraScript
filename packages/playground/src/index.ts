@@ -11,9 +11,9 @@ import {
     isVmModule,
     compile,
     serialize,
+    VmModule,
     type InputMode,
 } from 'mirascript';
-
 const arr = [1, 2, [1, 2], { x: 0 }];
 arr[100] = 100;
 const globals = createVmGlobal(
@@ -22,9 +22,13 @@ const globals = createVmGlobal(
         o: { a: [], b: 1, c: '2', d: { e: 3 } },
         x: [1, 2, 3],
         s: 'sdaf\ndsaf\\n'.repeat(10000),
+        mod: new VmModule('test', {
+            sin: createVmGlobal().sin,
+            inner: new VmModule('inner', {}),
+        }),
     },
     {
-        eo: { a: [], b: 1, c: '2', d: { e: 3 } },
+        eo: { a: [], b: 1, c: '2', d: { e: 3 }, sin: createVmGlobal().sin },
         globalThis,
     },
 );

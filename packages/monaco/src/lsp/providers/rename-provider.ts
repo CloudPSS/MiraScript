@@ -61,7 +61,7 @@ export class RenameProvider extends Provider implements languages.RenameProvider
         newName = newName.trim();
         const compiled = await this.getCompileResult(model);
         if (!compiled) return undefined;
-        const d = compiled.definition(model, position);
+        const d = compiled.definitionAt(model, position);
         if (!d) return undefined;
         const edits: languages.IWorkspaceTextEdit[] = [];
         const { references } = d.def;
@@ -119,7 +119,7 @@ export class RenameProvider extends Provider implements languages.RenameProvider
     ): Promise<undefined | (languages.RenameLocation & languages.Rejection)> {
         const compiled = await this.getCompileResult(model);
         if (!compiled) return undefined;
-        const d = compiled.definition(model, position);
+        const d = compiled.definitionAt(model, position);
         if (!d) {
             return {
                 range: Range.fromPositions(position),
