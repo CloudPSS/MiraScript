@@ -1,7 +1,7 @@
 use std::{borrow::Cow, iter::zip, vec};
 
 use winnow::{
-    combinator::{alt, dispatch, eof, fail, opt, peek},
+    combinator::{alt, eof, fail, opt, peek, preceded},
     stream::AsChar,
     token::{any, literal, one_of, take_till, take_while},
 };
@@ -13,43 +13,56 @@ use super::{
 };
 
 #[derive(Debug, Clone, PartialEq)]
-enum StringFragment<'s> {
+pub enum StringFragment<'s> {
     Literal(&'s str),
     EscapedChar(char),
     InvalidEscapedChar(SourceRange, DiagnosticCode),
-    Interpolation(Vec<Token<'s>>),
+    Interpolation(&'s str, Vec<Token<'s>>),
     EndOfString,
     EndOfFile,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct StringInfo<'s> {
+    pub leading_range: SourceRange,
+    pub trailing_range: SourceRange,
+    pub ats: usize,
+    pub quote: Option<char>,
+    pub content: Vec<StringFragment<'s>>,
 }
 
 const QUOTES: [char; 3] = ['\'', '"', '`'];
 
 pub(super) fn string<'s>(i: &mut Input<'s>) -> Result<TokenKind<'s>> {
-    let leading_ats = take_while(0.., ['@']).map(str::len).parse_next(i)?;
-    let quote_begin = one_of(QUOTES).parse_next(i)?;
-    string_content(Some(quote_begin), leading_ats).parse_next(i)
+    let ((ats, quote), leading_range) = (take_while(0.., ['@']).map(str::len), one_of(QUOTES))
+        .with_span()
+        .parse_next(i)?;
+    let info = StringInfo {
+        leading_range,
+        trailing_range: SourceRange::default(),
+        ats,
+        quote: Some(quote),
+        content: vec![],
+    };
+    string_content(info).parse_next(i)
 }
 
-pub(super) fn string_content<'s>(
-    quote_begin: Option<char>,
-    leading_ats: usize,
-) -> impl Parser<'s, TokenKind<'s>> {
+pub(super) fn string_content<'s>(mut info: StringInfo<'s>) -> impl Parser<'s, TokenKind<'s>> {
     move |i: &mut Input<'s>| {
-        let mut content: Vec<_> = vec![];
         let unterminated = loop {
-            let frag = fragment(quote_begin, leading_ats).parse_next(i)?;
-            let string_mode = quote_begin.is_none();
+            let string_mode = info.quote.is_none();
+            let frag = fragment(&mut info).parse_next(i)?;
             if matches!(frag, StringFragment::EndOfString) {
                 break string_mode;
             } else if matches!(frag, StringFragment::EndOfFile) {
                 break !string_mode;
             } else {
-                content.push(frag);
+                info.content.push(frag);
             }
         };
-        if !unterminated && content.len() == 1 {
-            if let StringFragment::Literal(s) = content[0] {
-                return Ok(TokenKind::String(Cow::Borrowed(s)));
+        if !unterminated && info.content.len() == 1 {
+            if let StringFragment::Literal(s) = info.content[0] {
+                return Ok(TokenKind::String(Cow::Borrowed(s), info.clone().into()));
             }
         }
         let mut errors = vec![];
@@ -62,38 +75,38 @@ pub(super) fn string_content<'s>(
                 DiagnosticCode::UnterminatedString,
             ));
         }
-        let has_interpolation = content
+        let has_interpolation = info
+            .content
             .iter()
-            .any(|frag| matches!(frag, StringFragment::Interpolation(_)));
+            .any(|frag| matches!(frag, StringFragment::Interpolation(..)));
 
         let mut extract_invalid = |mut range: SourceRange, code: DiagnosticCode| {
-            let cp = i.checkpoint();
-            i.reset_to_start();
-            let s = &i[range.clone()];
-            i.reset(&cp);
             range.start -= 1;
             errors.push(SourceDiagnostic::new(range, code));
-            Cow::Borrowed(s)
+            Cow::Borrowed("")
         };
         let token = if has_interpolation {
             let mut literals = vec![];
             let mut interpolations = vec![];
             let mut literal_pushed = false;
-            for frag in content.into_iter() {
-                if let StringFragment::Interpolation(expr) = frag {
+            for frag in info.content.iter_mut() {
+                if let StringFragment::Interpolation(_, expr) = frag {
                     if !literal_pushed {
                         literals.push(Cow::Borrowed(""));
                     }
-                    interpolations.push(expr);
+                    interpolations.push(std::mem::take(expr));
                     literal_pushed = false;
                     continue;
                 }
-                let s = match frag {
+                let s: Cow<'s, str> = match frag {
                     StringFragment::Literal(s) => Cow::Borrowed(s),
                     StringFragment::EscapedChar(ch) => Cow::Owned(ch.to_string()),
-                    StringFragment::InvalidEscapedChar(r, c) => extract_invalid(r, c),
+                    StringFragment::InvalidEscapedChar(r, c) => extract_invalid(r.clone(), *c),
                     _ => unreachable!(),
                 };
+                if s.is_empty() {
+                    continue;
+                }
                 if literal_pushed {
                     let last = literals.last_mut().unwrap();
                     last.to_mut().push_str(&s);
@@ -106,21 +119,24 @@ pub(super) fn string_content<'s>(
                 literals.push(Cow::Borrowed(""));
             }
             interpolations.push(vec![]);
-            TokenKind::InterpolatedString(zip(literals, interpolations).collect())
+            TokenKind::InterpolatedString(
+                zip(literals, interpolations).collect(),
+                info.clone().into(),
+            )
         } else {
-            let result = content.into_iter().fold(String::new(), |mut str, frag| {
+            let result = info.content.iter().fold(String::new(), |mut str, frag| {
                 match frag {
                     StringFragment::Literal(s) => str.push_str(s),
-                    StringFragment::EscapedChar(ch) => str.push(ch),
+                    StringFragment::EscapedChar(ch) => str.push(*ch),
                     StringFragment::InvalidEscapedChar(r, c) => {
-                        let s = extract_invalid(r, c);
+                        let s = extract_invalid(r.clone(), *c);
                         str.push_str(&s);
                     }
                     _ => unreachable!(),
                 }
                 str
             });
-            TokenKind::String(Cow::Owned(result))
+            TokenKind::String(Cow::Owned(result), info.clone().into())
         };
         if !errors.is_empty() {
             return Ok(TokenKind::unknown_errors(token, errors));
@@ -129,36 +145,34 @@ pub(super) fn string_content<'s>(
     }
 }
 
-fn fragment<'s>(
-    quote_begin: Option<char>,
-    leading_ats: usize,
-) -> impl Parser<'s, StringFragment<'s>> {
+fn fragment<'s>(info: &mut StringInfo<'s>) -> impl Parser<'s, StringFragment<'s>> {
     move |i: &mut Input<'s>| {
         alt((
-            literal_str(quote_begin, leading_ats > 0).map(StringFragment::Literal),
-            escaped_char(leading_ats),
+            literal_str(info.quote, info.ats > 0).map(StringFragment::Literal),
+            escaped_char(info.ats),
             eof.value(StringFragment::EndOfFile),
-            maybe_end_of_string(quote_begin, leading_ats),
+            maybe_end_of_string(info),
         ))
         .parse_next(i)
     }
 }
 
-fn maybe_end_of_string<'s>(quote: Option<char>, ats: usize) -> impl Parser<'s, StringFragment<'s>> {
+fn maybe_end_of_string<'s>(info: &mut StringInfo<'s>) -> impl Parser<'s, StringFragment<'s>> {
     move |i: &mut Input<'s>| {
-        let Some(quote) = quote else {
+        let Some(quote) = info.quote else {
             return fail.parse_next(i);
         };
-        (literal(quote), take_while(0..=ats, ['@']))
+        let (s, r) = (literal(quote), take_while(0..=info.ats, ['@']))
             .take()
-            .map(|s: &str| {
-                if s.len() == ats + 1 {
-                    StringFragment::EndOfString
-                } else {
-                    StringFragment::Literal(s)
-                }
-            })
-            .parse_next(i)
+            .with_span()
+            .parse_next(i)?;
+
+        if s.len() == info.ats + 1 {
+            info.trailing_range = r;
+            Ok(StringFragment::EndOfString)
+        } else {
+            Ok(StringFragment::Literal(s))
+        }
     }
 }
 
@@ -174,18 +188,20 @@ fn literal_str<'s>(quote: Option<char>, verbatim: bool) -> impl Parser<'s, &'s s
 fn escaped_char<'s>(ats: usize) -> impl Parser<'s, StringFragment<'s>> {
     move |i: &mut Input<'s>| {
         if ats == 0 {
-            dispatch! {one_of(['\\','$']);
-                '\\' => escaped_char_impl,
-                '$' => interpolation(1),
-                _ => fail,
-            }
+            alt((
+                preceded(literal("\\"), escaped_char_impl),
+                move |i: &mut Input<'s>| {
+                    let dollar = literal("$").parse_next(i)?;
+                    interpolation(dollar).parse_next(i)
+                },
+            ))
             .parse_next(i)
         } else {
             // in verbatim string, '\\' escape is not allowed, only '$' is allowed
             let dollars = take_while(1..=ats, ['$']).parse_next(i)?;
             if dollars.len() == ats {
                 // interpolation
-                interpolation(ats).parse_next(i)
+                interpolation(dollars).parse_next(i)
             } else {
                 // '$' is not escaped
                 Ok(StringFragment::Literal(dollars))
@@ -244,7 +260,7 @@ fn escaped_char_impl<'s>(i: &mut Input<'s>) -> Result<StringFragment<'s>> {
     .parse_next(i)
 }
 
-fn interpolation<'s>(dollar_count: usize) -> impl Parser<'s, StringFragment<'s>> {
+fn interpolation<'s>(dollars: &'s str) -> impl Parser<'s, StringFragment<'s>> {
     move |i: &mut Input<'s>| -> Result<StringFragment<'s>> {
         // save cp
         let cp = i.checkpoint();
@@ -261,7 +277,7 @@ fn interpolation<'s>(dollar_count: usize) -> impl Parser<'s, StringFragment<'s>>
                         return Err(e);
                     }
                 };
-                StringFragment::Interpolation(tokens)
+                StringFragment::Interpolation(dollars, tokens)
             }
             Some('(') => {
                 // '$' '(' expression ')'
@@ -286,7 +302,7 @@ fn interpolation<'s>(dollar_count: usize) -> impl Parser<'s, StringFragment<'s>>
                         return Err(e);
                     }
                 };
-                StringFragment::Interpolation(tokens)
+                StringFragment::Interpolation(dollars, tokens)
             }
             Some(ch) if is_identifier_start(ch) || is_identifier_special(ch) => {
                 // '$' identifier
@@ -306,16 +322,11 @@ fn interpolation<'s>(dollar_count: usize) -> impl Parser<'s, StringFragment<'s>>
                     }
                 }
                 let id = Token::new(kind, range);
-                StringFragment::Interpolation(vec![id])
+                StringFragment::Interpolation(dollars, vec![id])
             }
             _ => {
                 // invalid interpolation, return as literal
-                let end = i.previous_token_end();
-                let start = end - dollar_count;
-                i.reset_to_start();
-                let result = &i[start..end];
-                i.reset(&cp);
-                StringFragment::Literal(result)
+                StringFragment::Literal(dollars)
             }
         };
 

@@ -111,7 +111,7 @@ fn recover_token<'s>(
             diagnostics_collector.extend(errors);
             None
         }
-        lexer::TokenKind::InterpolatedString(ref mut v) => {
+        lexer::TokenKind::InterpolatedString(ref mut v, _) => {
             diagnostics_collector.push(SourceDiagnostic::new(
                 t.range.clone(),
                 DiagnosticCode::Interpolation,
@@ -124,7 +124,7 @@ fn recover_token<'s>(
             }
             Some(t)
         }
-        lexer::TokenKind::String(_) => {
+        lexer::TokenKind::String(_, _) => {
             diagnostics_collector.push(SourceDiagnostic::new(
                 t.range.clone(),
                 DiagnosticCode::String,

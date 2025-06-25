@@ -358,7 +358,7 @@ impl<'s> Emitter<'s> {
     ) {
         match expr {
             Literal(token) => match &token.kind {
-                TokenKind::String(s) => self.op_string(ret, s.as_ref()),
+                TokenKind::String(s, _) => self.op_string(ret, s.as_ref()),
                 TokenKind::Number(n) => self.op_number(ret, *n),
                 TokenKind::Ordinal(o) => self.op_number(ret, *o as f64),
                 TokenKind::Keyword(Keyword::Nil) => self.op_nil(ret),
@@ -369,7 +369,7 @@ impl<'s> Emitter<'s> {
                 _ => self.unreachable(token, token, file!(), line!()),
             },
             InterpolatedString(token, expressions) => {
-                let TokenKind::InterpolatedString(strs) = &token.kind else {
+                let TokenKind::InterpolatedString(strs, _) = &token.kind else {
                     self.unreachable(*token, expressions, file!(), line!());
                     return;
                 };

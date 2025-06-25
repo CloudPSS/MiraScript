@@ -37,7 +37,7 @@ pub(super) fn literal_token<'s>(i: &mut Input<'s>) -> Result<TokenRef<'s>> {
     one_of(|t: &Token<'s>| {
         matches!(t.kind, TokenKind::Number(_))
             || matches!(t.kind, TokenKind::Ordinal(_))
-            || matches!(t.kind, TokenKind::String(_))
+            || matches!(t.kind, TokenKind::String(_, _))
             || *t == Keyword::True
             || *t == Keyword::False
             || *t == Keyword::Nil

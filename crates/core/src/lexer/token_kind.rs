@@ -2,7 +2,7 @@ use std::{borrow::Cow, fmt::Display};
 
 use crate::ansi::{DisplayIdent, INTERPOLATED, NUMBER, ORDINAL, RECOVER, RESET, STRING, VARIABLE};
 
-use super::prelude::*;
+use super::{prelude::*, string::StringInfo};
 
 #[derive(Debug, Clone, strum::EnumIs)]
 pub enum TokenKind<'s> {
@@ -10,10 +10,10 @@ pub enum TokenKind<'s> {
     Identifier(&'s str),
     Ordinal(i32),
     Number(f64),
-    String(Cow<'s, str>),
+    String(Cow<'s, str>, Box<StringInfo<'s>>),
     /// Interpolated string, stored as a tuple of the string parts and the tokens that are interpolated.
     /// The last tuple element is the string part after the last interpolation, with the tokens being empty.
-    InterpolatedString(Vec<(Cow<'s, str>, Vec<Token<'s>>)>),
+    InterpolatedString(Vec<(Cow<'s, str>, Vec<Token<'s>>)>, Box<StringInfo<'s>>),
     Operator(Operator),
     Keyword(Keyword),
     Unknown {
@@ -23,9 +23,6 @@ pub enum TokenKind<'s> {
     /// Contains no token, only position information.
     Empty,
 }
-
-/// Static assertion to ensure that the size of `TokenKind` is correct.
-const _: [u8; 4 * std::mem::size_of::<usize>() - std::mem::size_of::<TokenKind<'static>>()] = [];
 
 impl<'s> TokenKind<'s> {
     pub(crate) fn unknown(error_range: SourceRange, error: DiagnosticCode) -> Self {
@@ -69,7 +66,7 @@ impl<'s> TokenKind<'s> {
             Self::Ordinal(n) => {
                 Some((DiagnosticCode::RecordFieldOrdinalName, n.to_string().into()))
             }
-            Self::String(s) => Some((DiagnosticCode::RecordFieldStringName, Cow::Borrowed(s))),
+            Self::String(s, _) => Some((DiagnosticCode::RecordFieldStringName, Cow::Borrowed(s))),
             _ => None,
         }
     }
@@ -88,8 +85,8 @@ impl PartialEq for TokenKind<'_> {
             (Self::Identifier(l0), Self::Identifier(r0)) => l0 == r0,
             (Self::Ordinal(l0), Self::Ordinal(r0)) => l0 == r0,
             (Self::Number(l0), Self::Number(r0)) => (*l0).to_bits() == (*r0).to_bits(),
-            (Self::String(l0), Self::String(r0)) => l0 == r0,
-            (Self::InterpolatedString(l0), Self::InterpolatedString(r0)) => l0 == r0,
+            (Self::String(l0, _), Self::String(r0, _)) => l0 == r0,
+            (Self::InterpolatedString(l0, _), Self::InterpolatedString(r0, _)) => l0 == r0,
             (Self::Operator(l0), Self::Operator(r0)) => l0 == r0,
             (Self::Keyword(l0), Self::Keyword(r0)) => l0 == r0,
             (
@@ -126,10 +123,10 @@ impl Display for TokenKind<'_> {
             Self::Identifier(s) => write!(f, "{s}"),
             Self::Ordinal(n) => write!(f, "{n}"),
             Self::Number(n) => write!(f, "{n}"),
-            Self::String(s) => {
+            Self::String(s, _) => {
                 write!(f, "\"{}\"", s.escape_debug())
             }
-            Self::InterpolatedString(v) => {
+            Self::InterpolatedString(v, _) => {
                 write!(f, "\"")?;
                 for (s, e) in v {
                     write!(f, "{}", s.escape_debug())?;
@@ -163,10 +160,10 @@ impl DisplayIdent for TokenKind<'_> {
             Self::Identifier(s) => write!(f, "{VARIABLE}{s}{RESET}"),
             Self::Ordinal(n) => write!(f, "{ORDINAL}{n}{RESET}"),
             Self::Number(n) => write!(f, "{NUMBER}{n}{RESET}"),
-            Self::String(s) => {
+            Self::String(s, _) => {
                 write!(f, "{STRING}\"{}\"{RESET}", s.escape_debug())
             }
-            Self::InterpolatedString(v) => {
+            Self::InterpolatedString(v, _) => {
                 write!(f, "{STRING}\"")?;
                 for (s, e) in v {
                     write!(f, "{}", s.escape_debug())?;

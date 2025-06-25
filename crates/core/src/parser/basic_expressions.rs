@@ -22,7 +22,7 @@ use super::{
 };
 
 fn to_interpolate_expr<'s>(token: &'s Token<'s>) -> Expression<'s> {
-    let TokenKind::InterpolatedString(v) = &token.kind else {
+    let TokenKind::InterpolatedString(v, _) = &token.kind else {
         unreachable!("Expected InterpolatedString");
     };
     let expressions: Vec<Expression<'s>> = v[0..v.len() - 1]
@@ -109,7 +109,7 @@ fn array<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
 }
 
 fn interpolation<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
-    let token = one_of(|t: &Token<'s>| matches!(&t.kind, &TokenKind::InterpolatedString(_)))
+    let token = one_of(|t: &Token<'s>| matches!(&t.kind, &TokenKind::InterpolatedString(_, _)))
         .parse_next(i)?;
     Ok(to_interpolate_expr(token))
 }

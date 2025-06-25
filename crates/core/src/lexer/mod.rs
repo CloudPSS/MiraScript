@@ -20,6 +20,8 @@ pub use token_kind::TokenKind;
 #[cfg(feature = "trivia")]
 pub use trivia::Trivia;
 
+use self::string::StringInfo;
+
 pub type Input<'s> = LocatingSlice<&'s str>;
 pub(crate) type Result<Output> = ModalResult<Output, EmptyError>;
 trait Parser<'s, Output>: winnow::Parser<Input<'s>, Output, ErrMode<EmptyError>> {}
@@ -91,7 +93,14 @@ pub(crate) fn lex_balanced<'s>(
 }
 
 pub fn lex_string<'s>(input: &mut Input<'s>) -> Result<Vec<Token<'s>>> {
-    let mut str = string::string_content(None, 1)
+    let info = StringInfo {
+        leading_range: 0..0,
+        trailing_range: input.len()..input.len(),
+        ats: 1,
+        quote: None,
+        content: vec![],
+    };
+    let mut str = string::string_content(info)
         .with_span()
         .map(|(s, range)| Token::new(s, range))
         .parse_next(input)?;

@@ -165,7 +165,7 @@ impl<'s> Emitter<'s> {
                         TokenKind::Keyword(Keyword::False) => {
                             self.op_bool(value, false);
                         }
-                        TokenKind::String(s) => {
+                        TokenKind::String(s, _) => {
                             self.op_string(value, s.as_ref());
                         }
                         _ => self.unreachable(prefix, lit, file!(), line!()),

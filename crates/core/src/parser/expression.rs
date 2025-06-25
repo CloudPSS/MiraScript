@@ -643,7 +643,7 @@ impl DisplayIdent for Expression<'_> {
             Literal(token) => token.fmt_ident(f, ident)?,
             InterpolatedString(token, e) => {
                 let Token {
-                    kind: TokenKind::InterpolatedString(s),
+                    kind: TokenKind::InterpolatedString(s, _),
                     ..
                 } = *token
                 else {
