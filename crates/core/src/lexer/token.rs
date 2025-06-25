@@ -65,13 +65,7 @@ impl<'s> Token<'s> {
     }
 
     pub(crate) fn empty(pos: usize) -> Self {
-        Self::new(
-            TokenKind::Unknown {
-                recovered: None,
-                errors: vec![],
-            },
-            pos..pos,
-        )
+        Self::new(TokenKind::Empty, pos..pos)
     }
 
     pub(crate) fn unknown<R: Into<TokenKind<'s>>>(

@@ -20,6 +20,8 @@ pub enum TokenKind<'s> {
         recovered: Option<Box<TokenKind<'s>>>,
         errors: Vec<SourceDiagnostic>,
     },
+    /// Contains no token, only position information.
+    Empty,
 }
 
 /// Static assertion to ensure that the size of `TokenKind` is correct.
@@ -149,6 +151,7 @@ impl Display for TokenKind<'_> {
                     write!(f, "<?>")
                 }
             }
+            Self::Empty => write!(f, ""),
         }
     }
 }
@@ -186,6 +189,7 @@ impl DisplayIdent for TokenKind<'_> {
                     write!(f, "{RECOVER}<?>{RESET}")
                 }
             }
+            Self::Empty => write!(f, ""),
         }
     }
 }

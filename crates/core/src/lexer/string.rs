@@ -268,12 +268,18 @@ fn interpolation<'s>(dollar_count: usize) -> impl Parser<'s, StringFragment<'s>>
                 let tokens = match lex_balanced(i, Operator::OpenParen, Operator::CloseParen) {
                     Ok(tokens) => {
                         let end = tokens.last().map_or(&TokenKind::Eof, |t| &t.kind);
-                        tokens[1..if *end == Operator::CloseParen {
+                        let filtered_tokens = tokens[1..if *end == Operator::CloseParen {
                             tokens.len() - 1
                         } else {
                             tokens.len()
                         }]
-                            .to_vec()
+                            .to_vec();
+                        if filtered_tokens.is_empty() {
+                            debug_assert!(!tokens.is_empty());
+                            vec![Token::empty(tokens[0].range.end)]
+                        } else {
+                            filtered_tokens
+                        }
                     }
                     Err(e) => {
                         i.reset(&cp);
