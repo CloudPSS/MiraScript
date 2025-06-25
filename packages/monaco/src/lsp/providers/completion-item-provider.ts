@@ -170,10 +170,12 @@ export class CompletionItemProvider extends Provider implements languages.Comple
     private async completeGlobal(
         model: editor.ITextModel,
         char: string | undefined,
+        locals: readonly CustomCompletionItem[],
         range: languages.CompletionItemRanges,
     ): Promise<CustomCompletionItem[]> {
         const global = await this.getGlobals(model);
         const suggestions: CustomCompletionItem[] = [];
+        const localKeys = new Set(locals.map((item) => item.insertText));
         for (const key in global) {
             if (char && !key.toLowerCase().includes(char)) {
                 continue;
@@ -188,7 +190,7 @@ export class CompletionItemProvider extends Provider implements languages.Comple
             suggestions.push({
                 label: { label: key, description: DESC_GLOBAL, detail },
                 kind: info ? languages.CompletionItemKind.Function : languages.CompletionItemKind.Variable,
-                insertText: key,
+                insertText: localKeys.has(key) ? `global.${key}` : key, // 如果有同名局部变量，使用 global. 前缀
                 range,
                 commitCharacters: info ? ['('] : ['.', '[', '('],
                 global: element,
@@ -289,6 +291,9 @@ export class CompletionItemProvider extends Provider implements languages.Comple
                 return [];
             }
         }
+        if (value == null || typeof value != 'object') {
+            return [];
+        }
         const keys = lib.global.keys(value);
         return keys.map((key) => {
             const field = operations.$Get(value, key);
@@ -367,10 +372,9 @@ export class CompletionItemProvider extends Provider implements languages.Comple
         }
 
         const suggestions = COMMON_GLOBAL_SUGGESTIONS(completionRange);
-        suggestions.push(
-            ...(await this.completeGlobal(model, char, completionRange)),
-            ...(await this.completeLocal(model, position, char, completionRange)),
-        );
+        const locals = await this.completeLocal(model, position, char, completionRange);
+        const globals = await this.completeGlobal(model, char, locals, completionRange);
+        suggestions.push(...locals, ...globals);
 
         return { suggestions };
     }

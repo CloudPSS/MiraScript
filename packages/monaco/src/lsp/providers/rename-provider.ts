@@ -92,6 +92,22 @@ export class RenameProvider extends Provider implements languages.RenameProvider
             this.provideRenameEditsOmitNameFields(model, compiled, edits, ref, oldName);
         }
 
+        const { globals } = compiled.groupedTags(model);
+        const globalWithSameName = globals.find((g) => g.name === newName);
+        if (globalWithSameName) {
+            for (const ref of globalWithSameName.references) {
+                edits.push({
+                    resource: model.uri,
+                    versionId: compiled.version,
+                    textEdit: {
+                        range: ref.range,
+                        text: `global.${newName}`,
+                    },
+                });
+                this.provideRenameEditsOmitNameFields(model, compiled, edits, ref, oldName);
+            }
+        }
+
         return { edits };
     }
 
