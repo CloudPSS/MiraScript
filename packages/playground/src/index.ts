@@ -24,6 +24,7 @@ const globals = createVmGlobal(
         s: 'sdaf\ndsaf\\n'.repeat(10000),
     },
     {
+        eo: { a: [], b: 1, c: '2', d: { e: 3 } },
         globalThis,
     },
 );

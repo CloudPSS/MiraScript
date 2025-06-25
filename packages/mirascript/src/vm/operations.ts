@@ -18,7 +18,7 @@ import {
 } from './types/index.js';
 import { VmWrapper } from './types/wrapper.js';
 
-const { hasOwn, keys } = Object;
+const { hasOwn, keys, create } = Object;
 const { isNaN, isSafeInteger } = Number;
 const { abs, min, trunc, ceil } = Math;
 const { slice, at } = Array.prototype;
@@ -354,11 +354,31 @@ export const $Iterable = (value: VmAny): Iterable<VmValue> => {
 export const $RecordSpread = (record: VmAny): VmRecord | null => {
     $AssertInit(record);
     if (record == null || isVmRecord(record)) return record;
-    throw new VmError(`Expected record or nil, got ${$Type(record)}`, null);
+    if (isVmExtern(record)) {
+        const result: Record<string, VmConst> = create(null);
+        for (const key of record.keys()) {
+            const value = record.get(key) ?? null;
+            // 当前只有 Primitive 不会进行二次包装
+            if (isVmPrimitive(value)) {
+                result[key] = value;
+            }
+        }
+        return result;
+    }
+    throw new VmError(`Expected record, extern or nil, got ${$Type(record)}`, null);
 };
 
-export const $ArraySpread = (array: VmAny): Iterable<VmValue> => {
+export const $ArraySpread = (array: VmAny): Iterable<VmConst> => {
     $AssertInit(array);
-    if (!isVmArray(array)) throw new VmError(`Expected array, got ${$Type(array)}`, []);
-    return array;
+    if (array == null) return [];
+    if (isVmArray(array)) return array;
+    if (isVmExtern(array) && 'length' in array.value && typeof array.value.length == 'number') {
+        const result = Array.from(array.value as ArrayLike<VmAny>, (item) => {
+            // 当前只有 Primitive 不会进行二次包装
+            if (isVmPrimitive(item)) return item;
+            return null;
+        });
+        return result;
+    }
+    throw new VmError(`Expected array, iterable extern or nil, got ${$Type(array)}`, []);
 };
