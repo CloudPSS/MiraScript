@@ -378,6 +378,9 @@ export class CompileResult {
                 }
             }
             if (parent) {
+                if (parent.parent === scopeA) {
+                    continue; // 防止作用域大小相等导致的循环引用
+                }
                 scopeA.parent = parent;
                 (parent.children as Writable<SourceScope[]>).push(scopeA);
             }
@@ -387,8 +390,16 @@ export class CompileResult {
         const root = scopes.find((s) => !s.parent);
         // 由于脚本本身就是一个作用域，所以根作用域一定存在且唯一
         if (!root) {
-            // Fail safe, return empty scopes
-            this._scopes = [];
+            // 编译失败时，创建根作用域
+            this._scopes = [
+                {
+                    range: model.getFullModelRange(),
+                    locals: [],
+                    params: [],
+                    parent: undefined,
+                    children: [],
+                },
+            ];
             return this._scopes;
         }
         const queue: SourceScope[] = [root];

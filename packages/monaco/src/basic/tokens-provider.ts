@@ -273,7 +273,7 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                     /(\.\.|)(@identifier)(\s*)(:|,|\))/,
                     [
                         'delimiter',
-                        'variable.other.constant.emphasis.doc',
+                        'variable.emphasis.doc',
                         '',
                         {
                             cases: {
@@ -295,10 +295,7 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
             ],
             type_doc_inner: [
                 [/fn\b/, 'type', '@fn_doc'],
-                [
-                    /(type)(\()(@identifier)(\))/,
-                    ['type', '@brackets', 'variable.other.constant.emphasis.doc', '@brackets'],
-                ],
+                [/(type)(\()(@identifier)(\))/, ['type', '@brackets', 'variable.emphasis.doc', '@brackets']],
                 [/@identifier/, 'type'],
                 [/[[(]/, '@brackets', '@type_doc_inner'],
                 [/[\])]/, '@brackets', '@pop'],
