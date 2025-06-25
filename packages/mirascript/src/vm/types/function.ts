@@ -12,7 +12,7 @@ const kVmFunction = Symbol.for('mirascript.vm.function');
 export type VmFunctionLike = (...args: ReadonlyArray<VmValue | undefined>) => VmAny | void;
 
 /** Mirascript 函数 */
-export type VmFunction = VmFunctionLike & { readonly [kVmFunction]: VmFunctionInfo };
+export type VmFunction<T extends VmFunctionLike = VmFunctionLike> = T & { readonly [kVmFunction]: VmFunctionInfo };
 
 /** Mirascript 函数信息 */
 export interface VmFunctionInfo {
@@ -42,7 +42,7 @@ export type VmFunctionOption = Partial<
 >;
 
 /** 检查是否为 Mirascript 函数 */
-export function isVmFunction(value: unknown): value is VmFunction {
+export function isVmFunction<T extends VmFunctionLike>(value: unknown): value is VmFunction<T> {
     return getVmFunctionInfo(value) != null;
 }
 
@@ -53,7 +53,7 @@ export function getVmFunctionInfo(value: unknown): VmFunctionInfo | undefined {
 }
 
 /** 创建 Mirascript 函数 */
-export function VmFunction(fn: VmFunctionLike, option: VmFunctionOption = {}): VmFunction {
+export function VmFunction<T extends VmFunctionLike>(fn: T, option: VmFunctionOption = {}): VmFunction<T> {
     if (typeof fn != 'function') throw new TypeError('Invalid function');
     if (isVmFunction(fn)) {
         // 如果已经是 VmFunction，则直接返回
@@ -88,5 +88,5 @@ export function VmFunction(fn: VmFunctionLike, option: VmFunctionOption = {}): V
     Object.defineProperty(fn, kVmFunction, {
         value: Object.freeze(info),
     });
-    return fn as VmFunction;
+    return fn as VmFunction<T>;
 }

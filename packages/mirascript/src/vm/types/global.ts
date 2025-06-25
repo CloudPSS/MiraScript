@@ -1,10 +1,30 @@
-import { VmFunction, type VmAny, type VmImmutable, type VmValue, wrapToVmValue, isVmAny } from './index.js';
+import {
+    VmFunction,
+    type VmAny,
+    type VmImmutable,
+    type VmValue,
+    wrapToVmValue,
+    isVmAny,
+    type VmFunctionLike,
+} from './index.js';
+import type * as global from '../lib/global.js';
 const { getPrototypeOf, create, entries } = Object;
-
+/** 全局导入的标准库 */
+type GlobalKeys = keyof typeof global;
+/** 全局导入的标准库名字 */
+type StripUnderscore<T extends string> = T extends `_${infer R}_` ? R : T;
+/** 全局导入的标准库值 */
+type ToGlobalValue<T extends GlobalKeys> = (typeof global)[T] extends VmFunctionLike
+    ? VmFunction<(typeof global)[T]>
+    : (typeof global)[T];
+/** 全局导入的标准库 */
+type VmGlobalBase = {
+    [key in GlobalKeys as StripUnderscore<key>]: ToGlobalValue<key>;
+};
 /** MiraScript 全局环境的基础，仅包含标准库 */
-export type VmSharedGlobal = Record<string, VmImmutable>;
+export type VmSharedGlobal = VmGlobalBase & Record<string, VmImmutable>;
 /** MiraScript 全局环境 */
-export type VmGlobal = Record<string, VmValue | undefined>;
+export type VmGlobal = VmGlobalBase & Record<string, VmValue | undefined>;
 
 export const VmSharedGlobal = create(null) as VmSharedGlobal;
 

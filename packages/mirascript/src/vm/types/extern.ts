@@ -10,7 +10,7 @@ export function wrapToVmValue(value: unknown, caller: VmExtern | null): VmValue 
     switch (typeof value) {
         case 'function':
             if (isVmFunction(value)) return value;
-            return new VmExtern(value);
+            return new VmExtern(value, caller);
         case 'object':
             if (value instanceof VmWrapper) return value as VmModule | VmExtern;
             return new VmExtern(value, caller);
@@ -30,8 +30,17 @@ export function wrapToVmValue(value: unknown, caller: VmExtern | null): VmValue 
 /** 取消 Mirascript 类型包装  */
 export function unwrapFromVmValue(value: VmAny): unknown {
     if (value == null || typeof value != 'object') return value;
-    if (value instanceof VmExtern) return value.value;
-    return value;
+    if (!(value instanceof VmExtern)) return value;
+    if (value.caller == null || typeof value.value != 'function') {
+        return value.value;
+    }
+    const caller = value.caller.value;
+    const proxy = new Proxy(value.value as (...args: unknown[]) => unknown, {
+        apply(target, thisArg, args): unknown {
+            return apply(target, caller, args);
+        },
+    });
+    return proxy;
 }
 
 /** 包装 Mirascript `extern` 类型的对象 */
@@ -52,6 +61,7 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
             return false;
         if (Object.hasOwn(this.value, key)) return true;
         if (!read) return true;
+        if (key === 'constructor') return false; // constructor is not accessible
         const prop = (this.value as Record<string, unknown>)[key];
         if (key in Function.prototype && prop === Function.prototype[key as keyof (() => void)]) return false;
         if (key in Array.prototype && prop === Array.prototype[key as keyof unknown[]]) return false;

@@ -14,6 +14,7 @@ import {
     type VmModule,
     isVmPrimitive,
 } from '../types/index.js';
+import type { VmFunctionLike, VmFunctionOption } from '../types/function.js';
 
 /** 抛出异常 */
 export function throwError(message: string, recovered: VmAny | (() => VmAny)): never {
@@ -112,4 +113,25 @@ export function expectCallable(
     if (!callable) {
         throwUnexpectedTypeError(name, 'callable', value, recovered);
     }
+}
+
+/** 库函数选项 */
+export type VmLibOption = Pick<VmFunctionOption, 'summary' | 'params' | 'paramsType' | 'returns' | 'returnsType'>;
+/** 库函数 */
+export type VmLib<T extends VmFunctionLike = VmFunctionLike> = T & VmLibOption;
+
+/** 创建库函数 */
+export function VmLib<T extends VmFunctionLike>(fn: T, option: VmLibOption): VmLib<T> {
+    if (typeof fn != 'function') throw new TypeError('Invalid function');
+    if (isVmFunction(fn)) {
+        // 如果已经是 VmFunction，则直接返回
+        return fn as VmLib<T>;
+    }
+    const ret = fn as T & VmLibOption as Writable<VmLibOption>;
+    ret.params = option.params;
+    ret.paramsType = option.paramsType;
+    ret.returns = option.returns;
+    ret.returnsType = option.returnsType;
+    ret.summary = option.summary;
+    return ret as T & VmLibOption;
 }

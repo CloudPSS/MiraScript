@@ -1,19 +1,21 @@
-import { getVmFunctionInfo, DiagnosticCode, type VmValue } from 'mirascript';
+import { getVmFunctionInfo, DiagnosticCode, type VmValue, isVmExtern } from 'mirascript';
 import {
     type editor,
     languages,
-    type Position,
     type CancellationToken,
     type IPosition,
     type IRange,
+    Position,
     Range,
 } from '../../monaco-api.js';
 import { Provider } from './base.js';
 import { codeblock, globalDoc, paramsList } from '../utils.js';
-import { keywords, reservedKeywords } from '../../constants.js';
+import { keywords, REG_IDENTIFIER, REG_ORDINAL, reservedKeywords } from '../../constants.js';
+import { lib, operations } from 'mirascript/subtle';
 
 const DESC_GLOBAL = '(global)';
 const DESC_LOCAL = '(local)';
+const DESC_FIELD = '(field)';
 
 const SUGGEST_KEYWORDS: string[] = [];
 {
@@ -163,7 +165,7 @@ interface CustomCompletionItem extends languages.CompletionItem {
  * 自动完成
  */
 export class CompletionItemProvider extends Provider implements languages.CompletionItemProvider {
-    readonly triggerCharacters?: string[] | undefined;
+    readonly triggerCharacters: string[] = ['.'];
     /** 查找全局变量 */
     private async completeGlobal(
         model: editor.ITextModel,
@@ -237,6 +239,70 @@ export class CompletionItemProvider extends Provider implements languages.Comple
         return suggestions;
     }
 
+    /** 查找全局变量字段 */
+    private async completeGlobalFields(
+        model: editor.ITextModel,
+        position: Position,
+        char: string | undefined,
+        range: languages.CompletionItemRanges,
+    ): Promise<CustomCompletionItem[]> {
+        const compiled = await this.getCompileResult(model);
+        if (!compiled) return [];
+        const { globals } = compiled.groupedTags(model);
+
+        // 查找最靠近当前输入位置的上一个全局变量
+        let prevGlobal: { range: IRange } | undefined;
+        for (const global of globals) {
+            for (const ref of global.references) {
+                if (!Position.isBefore(Range.getEndPosition(ref.range), position)) continue;
+                if (
+                    prevGlobal &&
+                    Position.isBefore(Range.getEndPosition(ref.range), Range.getEndPosition(prevGlobal.range))
+                )
+                    continue;
+                prevGlobal = ref;
+            }
+        }
+        if (!prevGlobal) return [];
+
+        const chain = model.getValueInRange(Range.fromPositions(Range.getStartPosition(prevGlobal.range), position));
+        const chainParts = chain.split(/\s*(?:!\.|\.)\s*/);
+        if (
+            // 至少包含全局变量名和当前输入位置的字段名
+            chainParts.length < 2 ||
+            !chainParts.every(
+                (part, index) =>
+                    // 如果是最后一个部分，则可以为空（表示输入位置的字段名），否则必须是合法的标识符
+                    (index === chainParts.length - 1 ? !part : false) ||
+                    REG_IDENTIFIER.test(part) ||
+                    REG_ORDINAL.test(part),
+            )
+        ) {
+            return [];
+        }
+        const vmGlobal = await this.getGlobals(model);
+        chainParts.pop(); // 移除最后一个部分，因为它是当前输入位置的字段名
+        let value: VmValue | undefined = vmGlobal[chainParts.shift()!];
+        for (const part of chainParts) {
+            value = operations.$Get(value, part);
+            if (value == null || typeof value != 'object') {
+                return [];
+            }
+        }
+        const keys = lib.global.keys(value);
+        return keys.map((key) => {
+            const field = operations.$Get(value, key);
+            const callable = typeof field == 'function' || (isVmExtern(field) && field.callable);
+            return {
+                label: { label: key, description: DESC_FIELD },
+                kind: callable ? languages.CompletionItemKind.Method : languages.CompletionItemKind.Field,
+                insertText: key,
+                range,
+                commitCharacters: callable ? ['!', '('] : ['!', '.'],
+            } satisfies CustomCompletionItem;
+        });
+    }
+
     /** @inheritdoc */
     async provideCompletionItems(
         model: editor.ITextModel,
@@ -254,18 +320,6 @@ export class CompletionItemProvider extends Provider implements languages.Comple
             endLineNumber: position.lineNumber,
             endColumn: word?.startColumn ?? position.column,
         });
-        if (/\d$|\d\.$/gu.test(prev)) {
-            // inputting number, do not suggest
-            return {
-                suggestions: [],
-            };
-        }
-        if (/[^.]\.$/u.test(prev)) {
-            // TODO: suggests item fields
-            return {
-                suggestions: [],
-            };
-        }
 
         // suggest variables
         let char: string | undefined;
@@ -295,7 +349,7 @@ export class CompletionItemProvider extends Provider implements languages.Comple
         } else {
             range = {
                 startLineNumber: position.lineNumber,
-                startColumn: position.column - 1,
+                startColumn: position.column,
                 endLineNumber: position.lineNumber,
                 endColumn: position.column,
             };
@@ -306,6 +360,12 @@ export class CompletionItemProvider extends Provider implements languages.Comple
             replace: range,
             insert: Range.fromPositions(Range.getStartPosition(range), position),
         };
+        if (/[^.]\.$/u.test(prev)) {
+            // TODO: suggests local item fields
+            const suggestions = await this.completeGlobalFields(model, position, char, completionRange);
+            return { suggestions };
+        }
+
         const suggestions = COMMON_GLOBAL_SUGGESTIONS(completionRange);
         suggestions.push(
             ...(await this.completeGlobal(model, char, completionRange)),
