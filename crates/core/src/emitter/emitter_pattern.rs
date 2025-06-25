@@ -200,18 +200,32 @@ impl<'s> Emitter<'s> {
                     self.op_3(OpCode::Same, success, success, value);
                 }
             }
-            Relation(token, pattern) => {
-                let Some(op) = (match token.kind {
+            Relation(op, constant) => {
+                if success.is_empty() {
+                    self.diagnostics.push(SourceDiagnostic::new(
+                        pattern.range(),
+                        DiagnosticCode::UnnecessaryIrrefutablePattern,
+                    ));
+                    return;
+                }
+                let Some(op) = (match op.kind {
                     TokenKind::Operator(op) if op.is_relation() => op.to_infix_op(),
                     _ => None,
                 }) else {
-                    self.unreachable(token, pattern, file!(), line!());
+                    self.unreachable(op, constant, file!(), line!());
                     return;
                 };
-                self.emit_constant(pattern, success);
+                self.emit_constant(constant, success);
                 self.op_3(op, success, value, success);
             }
             Range(l, token, r) => {
+                if success.is_empty() {
+                    self.diagnostics.push(SourceDiagnostic::new(
+                        pattern.range(),
+                        DiagnosticCode::UnnecessaryIrrefutablePattern,
+                    ));
+                    return;
+                }
                 let start = self.closures.add_reg();
                 let end = self.closures.add_reg();
                 self.emit_constant(l, start);
@@ -232,6 +246,7 @@ impl<'s> Emitter<'s> {
             Discard(_) => {
                 if success.is_empty() {
                     // TODO: useless irrefutable pattern except in array patterns
+                    // or use directly in `let _ = <value>`
                     return;
                 }
                 self.op_bool(success, true);
@@ -556,6 +571,12 @@ impl<'s> Emitter<'s> {
             And(left, op, right) | Or(left, op, right) => {
                 // No short-circuiting in pattern matching
                 if success.is_empty() {
+                    if pattern.is_or() {
+                        self.diagnostics.push(SourceDiagnostic::new(
+                            op.range(),
+                            DiagnosticCode::MisleadingOrInIrrefutablePattern,
+                        ));
+                    }
                     self.emit_pattern(Register::EMPTY, left, value, bind_type);
                     self.emit_pattern(Register::EMPTY, right, value, bind_type);
                 } else {
@@ -570,8 +591,12 @@ impl<'s> Emitter<'s> {
                     self.op_3(op, success, right_success, success);
                 }
             }
-            Not(_, p) => {
+            Not(kw, p) => {
                 if success.is_empty() {
+                    self.diagnostics.push(SourceDiagnostic::new(
+                        kw.range(),
+                        DiagnosticCode::UnnecessaryIrrefutablePattern,
+                    ));
                     self.emit_pattern(Register::EMPTY, p, value, bind_type);
                 } else {
                     self.emit_pattern(success, p, value, bind_type);

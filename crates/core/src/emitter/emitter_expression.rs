@@ -256,7 +256,7 @@ impl<'s> Emitter<'s> {
         {
             self.diagnostics.push(SourceDiagnostic::new(
                 range,
-                DiagnosticCode::MisleadNilVariable,
+                DiagnosticCode::MisleadingNilVariable,
             ));
         }
     }

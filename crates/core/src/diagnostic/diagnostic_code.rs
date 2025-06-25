@@ -150,11 +150,13 @@ pub enum DiagnosticCode {
     #[strum(
         message = "Either use `global.$0` explicitly or `nil` if you want to use the nil value"
     )]
-    MisleadNilVariable,
+    MisleadingNilVariable,
     #[strum(
         message = "This pattern in a irrefutable matching is unnecessary; consider removing it or using in an `is` expression instead"
     )]
     UnnecessaryIrrefutablePattern,
+    #[strum(message = "Use `and` instead in irrefutable patterns for better readability")]
+    MisleadingOrInIrrefutablePattern,
 
     WarningEnd = 2999,
     // Info 3000~3999
