@@ -61,6 +61,9 @@ impl<'o> Formatter<'o> {
     pub fn write(&mut self, s: &str) {
         self.result.push_str(s);
     }
+    pub fn write_char(&mut self, c: char) {
+        self.result.push(c);
+    }
     pub fn width(&self, indent: usize) -> usize {
         let indent_width = indent * self.tab_size;
         std::cmp::max(MIN_WIDTH, self.line_width.saturating_sub(indent_width))
