@@ -1,12 +1,15 @@
-use std::{fmt::Display, ops::Deref};
+use std::ops::Deref;
 
-use crate::lexer::Token;
+use crate::{
+    Expression,
+    lexer::{StringFragment, StringInfo, Token, TokenKind},
+};
 
 use super::prelude::*;
 
-pub(super) struct Formatter<'s> {
+pub(super) struct Formatter<'o> {
     result: String,
-    options: &'s FormatOptions,
+    options: &'o FormatOptions,
     indent: usize,
 }
 
@@ -27,23 +30,10 @@ pub(super) trait Formattable {
     fn format(&self, formatter: &mut Formatter, measurement: Measurement);
 }
 
-impl<T> Formattable for Box<T>
-where
-    T: Formattable,
-{
-    fn measure(&self, formatter: &Formatter, columns: usize) -> Measurement {
-        (**self).measure(formatter, columns)
-    }
-
-    fn format(&self, formatter: &mut Formatter, measurement: Measurement) {
-        (**self).format(formatter, measurement)
-    }
-}
-
 const MIN_WIDTH: usize = 40;
 
-impl<'s> Formatter<'s> {
-    pub fn new(options: &'s FormatOptions, indent: usize) -> Self {
+impl<'o> Formatter<'o> {
+    pub fn new(options: &'o FormatOptions, indent: usize) -> Self {
         Self {
             result: String::new(),
             options,
@@ -64,19 +54,67 @@ impl<'s> Formatter<'s> {
     }
     pub fn new_line(&mut self) {
         self.result.push('\n');
-        if self.use_spaces {
-            self.result
-                .extend(std::iter::repeat(' ').take(self.indent * self.tab_size));
+        let indent = if self.use_spaces {
+            std::iter::repeat_n(' ', self.indent * self.tab_size)
         } else {
-            self.result
-                .extend(std::iter::repeat('\t').take(self.indent));
-        }
+            std::iter::repeat_n('\t', self.indent)
+        };
+        self.result.extend(indent);
     }
     pub fn write(&mut self, s: &str) {
         self.result.push_str(s);
     }
+    pub fn write_str_token<'s>(
+        &mut self,
+        info: &StringInfo<'s>,
+        expressions: &[Expression<'s>],
+        measurement: Measurement,
+    ) {
+        let quote = info.quote;
+        let dollars = String::from_iter(std::iter::repeat_n('$', std::cmp::max(info.ats, 1)));
+        if let Some(quote) = quote {
+            self.write(&String::from_iter(std::iter::repeat_n('@', info.ats)));
+            self.write(&quote.to_string());
+        }
+        let mut exprs = expressions.iter();
+        for str in info.content.iter() {
+            match str {
+                StringFragment::Literal(text) => self.write(text),
+                StringFragment::EscapedChar(_, text) => {
+                    self.write("\\");
+                    self.write(&text[0..1]);
+                    self.write(&text[1..].to_ascii_uppercase());
+                }
+                StringFragment::Interpolation(_, _, surround) => {
+                    let surround = surround.as_deref();
+                    self.write(&dollars);
+                    if let Some((start, _)) = surround {
+                        self.write(&start.to_string());
+                    }
+                    if let Some(e) = exprs.next() {
+                        e.format(self, measurement);
+                    }
+                    if let Some((_, end)) = surround {
+                        self.write(&end.to_string());
+                    }
+                }
+                StringFragment::InvalidEscapedChar(_, _)
+                | StringFragment::EndOfString
+                | StringFragment::EndOfFile => (),
+            }
+        }
+
+        if let Some(quote) = quote {
+            self.write(&quote.to_string());
+            self.write(&String::from_iter(std::iter::repeat_n('@', info.ats)));
+        }
+    }
     pub fn write_token(&mut self, s: &Token<'_>) {
-        self.result.push_str(&s.to_string());
+        if let TokenKind::String(_, info) = &s.kind {
+            self.write_str_token(info, &[], (0, 0).into());
+        } else {
+            self.result.push_str(&s.to_string());
+        }
     }
     pub fn current_columns(&self) -> usize {
         let indent_width = self.indent * self.tab_size;
@@ -84,10 +122,10 @@ impl<'s> Formatter<'s> {
     }
 }
 
-impl<'s> Deref for Formatter<'s> {
+impl<'o> Deref for Formatter<'o> {
     type Target = FormatOptions;
 
     fn deref(&self) -> &Self::Target {
-        &self.options
+        self.options
     }
 }

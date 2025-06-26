@@ -1,14 +1,8 @@
-#[cfg(feature = "trivia")]
-use std::fmt::Display;
-
 use winnow::{
     ascii::{line_ending, space0, till_line_ending},
     combinator::{alt, delimited, opt, preceded, repeat, terminated},
     token::{any, take_until},
 };
-
-#[cfg(feature = "trivia")]
-use crate::ansi::{COMMENT, DisplayIdent, RECOVER, RESET};
 
 use super::prelude::*;
 
@@ -22,15 +16,8 @@ pub enum Trivia<'s> {
 }
 
 #[cfg(feature = "trivia")]
-impl Display for Trivia<'_> {
+impl std::fmt::Display for Trivia<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.fmt_ident(f, 0)
-    }
-}
-
-#[cfg(feature = "trivia")]
-impl DisplayIdent for Trivia<'_> {
-    fn fmt_ident(&self, f: &mut std::fmt::Formatter<'_>, ident: usize) -> std::fmt::Result {
         use Trivia::*;
         match self {
             LineComment(s) => {
@@ -41,26 +28,24 @@ impl DisplayIdent for Trivia<'_> {
             BlockComment(s) => {
                 for (i, line) in s.split('\n').enumerate() {
                     if i == 0 {
-                        write!(f, "{COMMENT}/*{line}{RESET}")?;
+                        write!(f, "/*{line}")?;
                     } else {
                         writeln!(f)?;
-                        Self::write_ident(f, ident, "</*>")?;
-                        write!(f, "{COMMENT}{line}{RESET}")?;
+                        write!(f, "{line}")?;
                     }
                 }
-                write!(f, "{COMMENT}*/{RESET}")?;
+                write!(f, "*/")?;
             }
             UnterminatedBlockComment(s) => {
                 for (i, line) in s.split('\n').enumerate() {
                     if i == 0 {
-                        write!(f, "{COMMENT}/*{line}{RESET}")?;
+                        write!(f, "/*{line}")?;
                     } else {
                         writeln!(f)?;
-                        Self::write_ident(f, ident, "</*?")?;
-                        write!(f, "{COMMENT}{line}{RESET}")?;
+                        write!(f, "{line}")?;
                     }
                 }
-                write!(f, "{RECOVER}{COMMENT}*/{RESET}")?;
+                write!(f, "*/")?;
             }
             NewLine => {
                 //  f.write_str("\n")?;

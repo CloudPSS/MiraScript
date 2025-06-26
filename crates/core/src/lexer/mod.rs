@@ -20,7 +20,7 @@ pub use token_kind::TokenKind;
 #[cfg(feature = "trivia")]
 pub use trivia::Trivia;
 
-use self::string::StringInfo;
+pub(crate) use self::string::{StringFragment, StringInfo};
 
 pub type Input<'s> = LocatingSlice<&'s str>;
 pub(crate) type Result<Output> = ModalResult<Output, EmptyError>;

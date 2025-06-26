@@ -36,6 +36,7 @@ fn record_element<'t, 's: 't, E: Clone + PartialEq + 's, I: Clone + PartialEq + 
         if *first == Operator::CloseBracket
             || *first == Operator::CloseBrace
             || *first == Operator::CloseParen
+            || *first == TokenKind::Eof
         {
             return fail.parse_next(i);
         }

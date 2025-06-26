@@ -1,5 +1,6 @@
 use crate::{Script, Statement};
 
+mod array_element;
 mod block;
 mod callable;
 mod expression;
@@ -7,6 +8,8 @@ mod iterable;
 mod list_items;
 mod parameter_list;
 mod pattern;
+mod range;
+mod record_element;
 mod statement;
 mod types;
 

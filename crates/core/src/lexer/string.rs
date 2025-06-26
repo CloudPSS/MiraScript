@@ -15,9 +15,9 @@ use super::{
 #[derive(Debug, Clone, PartialEq)]
 pub enum StringFragment<'s> {
     Literal(&'s str),
-    EscapedChar(char),
+    EscapedChar(char, &'s str),
     InvalidEscapedChar(SourceRange, DiagnosticCode),
-    Interpolation(&'s str, Vec<Token<'s>>),
+    Interpolation(&'s str, Vec<Token<'s>>, Option<Box<(Token<'s>, Token<'s>)>>),
     EndOfString,
     EndOfFile,
 }
@@ -90,7 +90,7 @@ pub(super) fn string_content<'s>(mut info: StringInfo<'s>) -> impl Parser<'s, To
             let mut interpolations = vec![];
             let mut literal_pushed = false;
             for frag in info.content.iter_mut() {
-                if let StringFragment::Interpolation(_, expr) = frag {
+                if let StringFragment::Interpolation(_, expr, _) = frag {
                     if !literal_pushed {
                         literals.push(Cow::Borrowed(""));
                     }
@@ -100,7 +100,7 @@ pub(super) fn string_content<'s>(mut info: StringInfo<'s>) -> impl Parser<'s, To
                 }
                 let s: Cow<'s, str> = match frag {
                     StringFragment::Literal(s) => Cow::Borrowed(s),
-                    StringFragment::EscapedChar(ch) => Cow::Owned(ch.to_string()),
+                    StringFragment::EscapedChar(ch, _) => Cow::Owned(ch.to_string()),
                     StringFragment::InvalidEscapedChar(r, c) => extract_invalid(r.clone(), *c),
                     _ => unreachable!(),
                 };
@@ -127,7 +127,7 @@ pub(super) fn string_content<'s>(mut info: StringInfo<'s>) -> impl Parser<'s, To
             let result = info.content.iter().fold(String::new(), |mut str, frag| {
                 match frag {
                     StringFragment::Literal(s) => str.push_str(s),
-                    StringFragment::EscapedChar(ch) => str.push(*ch),
+                    StringFragment::EscapedChar(ch, _) => str.push(*ch),
                     StringFragment::InvalidEscapedChar(r, c) => {
                         let s = extract_invalid(r.clone(), *c);
                         str.push_str(&s);
@@ -212,47 +212,51 @@ fn escaped_char<'s>(ats: usize) -> impl Parser<'s, StringFragment<'s>> {
 
 fn escaped_char_impl<'s>(i: &mut Input<'s>) -> Result<StringFragment<'s>> {
     alt((
-        '0'.value(StringFragment::EscapedChar('\0')),
-        'r'.value(StringFragment::EscapedChar('\r')),
-        'n'.value(StringFragment::EscapedChar('\n')),
-        't'.value(StringFragment::EscapedChar('\t')),
-        'b'.value(StringFragment::EscapedChar('\x08')),
-        'f'.value(StringFragment::EscapedChar('\x0C')),
-        'v'.value(StringFragment::EscapedChar('\x0B')),
-        '\\'.value(StringFragment::EscapedChar('\\')),
-        '"'.value(StringFragment::EscapedChar('"')),
-        '\''.value(StringFragment::EscapedChar('\'')),
-        '`'.value(StringFragment::EscapedChar('`')),
-        '$'.value(StringFragment::EscapedChar('$')),
+        '0'.value(StringFragment::EscapedChar('\0', "0")),
+        'r'.value(StringFragment::EscapedChar('\r', "r")),
+        'n'.value(StringFragment::EscapedChar('\n', "n")),
+        't'.value(StringFragment::EscapedChar('\t', "t")),
+        'b'.value(StringFragment::EscapedChar('\x08', "b")),
+        'f'.value(StringFragment::EscapedChar('\x0C', "f")),
+        'v'.value(StringFragment::EscapedChar('\x0B', "v")),
+        '\\'.value(StringFragment::EscapedChar('\\', "\\")),
+        '"'.value(StringFragment::EscapedChar('"', "\"")),
+        '\''.value(StringFragment::EscapedChar('\'', "'")),
+        '`'.value(StringFragment::EscapedChar('`', "`")),
+        '$'.value(StringFragment::EscapedChar('$', "$")),
         (
             'x',
-            (one_of(AsChar::is_hex_digit), one_of(AsChar::is_hex_digit)).take(),
+            (one_of(AsChar::is_hex_digit), one_of(AsChar::is_hex_digit)),
         )
+            .take()
             .with_span()
-            .map(|((_, v), r)| match u8::from_str_radix(v, 16) {
-                Ok(ch) if ch <= 0x7f => StringFragment::EscapedChar(ch as char),
+            .map(|(s, r): (&str, _)| match u8::from_str_radix(&s[1..], 16) {
+                Ok(ch) if ch <= 0x7f => StringFragment::EscapedChar(ch as char, s),
                 _ => {
                     StringFragment::InvalidEscapedChar(r, DiagnosticCode::InvalidHexEscapeSequence)
                 }
             }),
         ("u{", take_while(1.., AsChar::is_hex_digit), '}')
+            .take()
             .with_span()
-            .map(|((_, v, _), r)| match u32::from_str_radix(v, 16) {
-                Ok(ch) => {
-                    if let Some(c) = char::from_u32(ch) {
-                        StringFragment::EscapedChar(c)
-                    } else {
-                        StringFragment::InvalidEscapedChar(
-                            r,
-                            DiagnosticCode::InvalidUnicodeEscapeSequence,
-                        )
+            .map(
+                |(s, r): (&str, _)| match u32::from_str_radix(&s[2..s.len() - 1], 16) {
+                    Ok(ch) => {
+                        if let Some(c) = char::from_u32(ch) {
+                            StringFragment::EscapedChar(c, s)
+                        } else {
+                            StringFragment::InvalidEscapedChar(
+                                r,
+                                DiagnosticCode::InvalidUnicodeEscapeSequence,
+                            )
+                        }
                     }
-                }
-                Err(_) => StringFragment::InvalidEscapedChar(
-                    r,
-                    DiagnosticCode::InvalidUnicodeEscapeSequence,
-                ),
-            }),
+                    Err(_) => StringFragment::InvalidEscapedChar(
+                        r,
+                        DiagnosticCode::InvalidUnicodeEscapeSequence,
+                    ),
+                },
+            ),
         any.span()
             .map(|r| StringFragment::InvalidEscapedChar(r, DiagnosticCode::InvalidEscapeSequence)),
         eof.value(StringFragment::EndOfFile),
@@ -277,32 +281,47 @@ fn interpolation<'s>(dollars: &'s str) -> impl Parser<'s, StringFragment<'s>> {
                         return Err(e);
                     }
                 };
-                StringFragment::Interpolation(dollars, tokens)
+                StringFragment::Interpolation(dollars, tokens, None)
             }
             Some('(') => {
                 // '$' '(' expression ')'
-                let tokens = match lex_balanced(i, Operator::OpenParen, Operator::CloseParen) {
-                    Ok(tokens) => {
-                        let end = tokens.last().map_or(&TokenKind::Eof, |t| &t.kind);
-                        let filtered_tokens = tokens[1..if *end == Operator::CloseParen {
-                            tokens.len() - 1
-                        } else {
-                            tokens.len()
-                        }]
-                            .to_vec();
-                        if filtered_tokens.is_empty() {
-                            debug_assert!(!tokens.is_empty());
-                            vec![Token::empty(tokens[0].range.end)]
-                        } else {
-                            filtered_tokens
-                        }
-                    }
-                    Err(e) => {
+                let tokens =
+                    lex_balanced(i, Operator::OpenParen, Operator::CloseParen).map_err(|e| {
                         i.reset(&cp);
-                        return Err(e);
-                    }
+                        e
+                    })?;
+
+                let begin = tokens.first().unwrap();
+                let end = if tokens.len() >= 2 {
+                    tokens.last()
+                } else {
+                    None
                 };
-                StringFragment::Interpolation(dollars, tokens)
+
+                let is_end_paren = end.is_some_and(|t| *t == Operator::CloseParen);
+
+                let filtered_tokens = tokens[1..if is_end_paren {
+                    tokens.len() - 1
+                } else {
+                    tokens.len()
+                }]
+                    .to_vec();
+
+                let filtered_tokens = if filtered_tokens.is_empty() {
+                    debug_assert!(!tokens.is_empty());
+                    vec![Token::empty(begin.range.end)]
+                } else {
+                    filtered_tokens
+                };
+                StringFragment::Interpolation(
+                    dollars,
+                    filtered_tokens,
+                    Some(Box::new((
+                        begin.clone(),
+                        end.cloned()
+                            .unwrap_or_else(|| Token::empty(begin.range.end)),
+                    ))),
+                )
             }
             Some(ch) if is_identifier_start(ch) || is_identifier_special(ch) => {
                 // '$' identifier
@@ -322,7 +341,7 @@ fn interpolation<'s>(dollars: &'s str) -> impl Parser<'s, StringFragment<'s>> {
                     }
                 }
                 let id = Token::new(kind, range);
-                StringFragment::Interpolation(dollars, vec![id])
+                StringFragment::Interpolation(dollars, vec![id], None)
             }
             _ => {
                 // invalid interpolation, return as literal

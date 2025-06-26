@@ -1,7 +1,3 @@
-use std::fmt::Display;
-
-use crate::ansi::DisplayIdent;
-
 use super::{AstVisitor, AstWalker, list_item::ListItem, prelude::*};
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
@@ -48,32 +44,5 @@ impl<'s, E: AstWalker<'s>> AstWalker<'s> for ArrayElementBase<'s, E> {
                 value.walk(visitor);
             }
         }
-    }
-}
-
-impl<'s, E> Display for ArrayElementBase<'s, E>
-where
-    ArrayElementBase<'s, E>: DisplayIdent,
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.fmt_ident(f, 0)
-    }
-}
-
-impl<E: DisplayIdent> DisplayIdent for ArrayElementBase<'_, E> {
-    fn fmt_ident(&self, f: &mut std::fmt::Formatter<'_>, ident: usize) -> std::fmt::Result {
-        match self {
-            Element(value) => {
-                value.fmt_ident(f, ident)?;
-            }
-            ArrayElementBase::Range(range) => {
-                range.fmt_ident(f, ident)?;
-            }
-            Spread(sp, value) => {
-                write!(f, "{sp}")?;
-                value.fmt_ident(f, ident)?;
-            }
-        }
-        Ok(())
     }
 }

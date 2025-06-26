@@ -21,6 +21,7 @@ fn array_element<'s, E: Clone + PartialEq + 's>(
         if *first == Operator::CloseBracket
             || *first == Operator::CloseBrace
             || *first == Operator::CloseParen
+            || *first == TokenKind::Eof
         {
             return fail.parse_next(i);
         }

@@ -39,7 +39,7 @@ async function compileWorker(req: Req): Promise<CompileResult> {
     const instance = await worker;
     instance.postMessage(req);
     const [uri, version] = req;
-    const [_uri, _version, chunk, diagnostics] = await new Promise<ResOk>((resolve, reject) => {
+    const [_uri, _version, result] = await new Promise<ResOk>((resolve, reject) => {
         const onMessage = (e: MessageEvent<Res>) => {
             if (e.data[0] === uri && e.data[1] === version) {
                 instance.removeEventListener('message', onMessage);
@@ -52,7 +52,7 @@ async function compileWorker(req: Req): Promise<CompileResult> {
         };
         instance.addEventListener('message', onMessage);
     });
-    return new CompileResult(uri, version, diagnostics, chunk);
+    return new CompileResult(uri, version, result);
 }
 
 /** 使用当前线程编译 */
@@ -60,7 +60,7 @@ async function compileSync(req: Req): Promise<CompileResult> {
     const [uri, version, script, mode] = req;
     const { compile } = await import('./worker.js');
     const result = await compile(script, mode);
-    return new CompileResult(uri, version, result.diagnostics, result.chunk);
+    return new CompileResult(uri, version, result);
 }
 
 const USE_WORKER = typeof Worker === 'function';

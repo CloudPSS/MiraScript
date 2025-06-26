@@ -2,6 +2,7 @@ import { type editor, Range, type IRange, type IPosition, Position } from '../mo
 import { DiagnosticCode } from '@mirascript/wasm';
 import { strictContainsPosition } from './utils.js';
 import { REG_IDENTIFIER, REG_ORDINAL } from '../constants.js';
+import type { MonacoResult } from './worker.js';
 
 /** 源代码诊断信息 */
 interface SourceDiagnosticBase<T extends DiagnosticCode = DiagnosticCode> {
@@ -128,11 +129,15 @@ export class CompileResult {
         readonly uri: string,
         /** 代码版本 */
         readonly version: number,
-        /** 源代码诊断信息 */
-        private readonly diagnostics: Uint32Array,
-        /** 代码信息 */
-        readonly chunk?: Uint8Array,
-    ) {}
+        readonly result: MonacoResult,
+    ) {
+        this.diagnostics = result.diagnostics;
+        this.chunk = result.chunk;
+    }
+    /** 源代码诊断信息 */
+    private readonly diagnostics: Uint32Array;
+    /** 代码信息 */
+    readonly chunk?: Uint8Array;
 
     private diagnosticsReady = false;
     private readonly _errors: Array<Writable<SourceDiagnostic>> = [];

@@ -1,9 +1,4 @@
-use std::{
-    fmt::Display,
-    ops::{Deref, DerefMut},
-};
-
-use crate::ansi::DisplayIdent;
+use std::ops::{Deref, DerefMut};
 
 use super::{AstVisitor, AstWalker, prelude::*};
 
@@ -54,24 +49,5 @@ impl<T> Deref for ListItem<'_, T> {
 impl<T> DerefMut for ListItem<'_, T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
-    }
-}
-
-impl<'s, T> Display for ListItem<'s, T>
-where
-    ListItem<'s, T>: DisplayIdent,
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.fmt_ident(f, 0)
-    }
-}
-
-impl<T: DisplayIdent> DisplayIdent for ListItem<'_, T> {
-    fn fmt_ident(&self, f: &mut std::fmt::Formatter<'_>, ident: usize) -> std::fmt::Result {
-        self.0.fmt_ident(f, ident)?;
-        if let Some(tail_comma) = self.tail_comma() {
-            write!(f, "{} ", tail_comma)?;
-        }
-        Ok(())
     }
 }

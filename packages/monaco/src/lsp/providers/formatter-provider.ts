@@ -8,18 +8,6 @@ import {
 } from '../../monaco-api.js';
 import { Provider } from './base.js';
 
-/** @inheritdoc */
-function format(
-    model: editor.ITextModel,
-    ranges: readonly IRange[],
-    options: languages.FormattingOptions,
-    hint: 'range' | 'expression' | 'statement' | 'block',
-    token: CancellationToken,
-): languages.TextEdit[] {
-    // TODO:
-    return [];
-}
-
 /** 格式化 */
 export class FormatterProvider
     extends Provider
@@ -29,12 +17,29 @@ export class FormatterProvider
         languages.OnTypeFormattingEditProvider
 {
     /** @inheritdoc */
+    private async format(
+        model: editor.ITextModel,
+        ranges: readonly IRange[],
+        options: languages.FormattingOptions,
+        hint: 'range' | 'expression' | 'statement' | 'block',
+        token: CancellationToken,
+    ): Promise<languages.TextEdit[]> {
+        const compiled = await this.getCompileResult(model);
+        if (!compiled?.result.formatted) return [];
+        return [
+            {
+                range: model.getFullModelRange(),
+                text: compiled.result.formatted,
+            },
+        ];
+    }
+    /** @inheritdoc */
     provideDocumentFormattingEdits(
         model: editor.ITextModel,
         options: languages.FormattingOptions,
         token: CancellationToken,
     ): languages.ProviderResult<languages.TextEdit[]> {
-        return format(model, [model.getFullModelRange()], options, 'range', token);
+        return this.format(model, [model.getFullModelRange()], options, 'range', token);
     }
     /** @inheritdoc */
     provideDocumentRangeFormattingEdits(
@@ -43,7 +48,7 @@ export class FormatterProvider
         options: languages.FormattingOptions,
         token: CancellationToken,
     ): languages.ProviderResult<languages.TextEdit[]> {
-        return format(model, [range], options, 'range', token);
+        return this.format(model, [range], options, 'range', token);
     }
     /** @inheritdoc */
     provideDocumentRangesFormattingEdits(
@@ -52,7 +57,7 @@ export class FormatterProvider
         options: languages.FormattingOptions,
         token: CancellationToken,
     ): languages.ProviderResult<languages.TextEdit[]> {
-        return format(model, ranges, options, 'range', token);
+        return this.format(model, ranges, options, 'range', token);
     }
     /** @inheritdoc */
     readonly autoFormatTriggerCharacters = [';', '}', ']', ')', '\n'];
@@ -64,6 +69,6 @@ export class FormatterProvider
         options: languages.FormattingOptions,
         token: CancellationToken,
     ): languages.ProviderResult<languages.TextEdit[]> {
-        return format(model, [Range.fromPositions(position, position)], options, 'expression', token);
+        return this.format(model, [Range.fromPositions(position, position)], options, 'expression', token);
     }
 }

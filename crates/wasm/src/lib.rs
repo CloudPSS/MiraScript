@@ -2,6 +2,7 @@ use wasm_bindgen::prelude::*;
 
 mod compile;
 mod constants;
+mod monaco;
 
 #[wasm_bindgen(start)]
 fn main() {

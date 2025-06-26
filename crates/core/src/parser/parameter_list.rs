@@ -1,10 +1,6 @@
-use std::{
-    fmt::{self, Display, Formatter},
-    ops::{Deref, DerefMut},
-};
-use winnow::combinator::opt;
+use std::ops::{Deref, DerefMut};
 
-use crate::ansi::DisplayIdent;
+use winnow::combinator::opt;
 
 use super::{
     ArrayElementBase, ArrayPattern, AstVisitor, AstWalker,
@@ -50,23 +46,6 @@ impl<'s> AstWalker<'s> for ParameterList<'s> {
 
     fn range(&self) -> SourceRange {
         self.0.range.start..self.2.range.end
-    }
-}
-
-impl Display for ParameterList<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        self.fmt_ident(f, 0)
-    }
-}
-
-impl DisplayIdent for ParameterList<'_> {
-    fn fmt_ident(&self, f: &mut Formatter<'_>, indent: usize) -> fmt::Result {
-        self.0.fmt_ident(f, indent)?;
-        for item in self.1.iter() {
-            item.fmt_ident(f, indent)?;
-        }
-        self.2.fmt_ident(f, indent)?;
-        Ok(())
     }
 }
 

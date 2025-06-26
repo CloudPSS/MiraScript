@@ -8,6 +8,10 @@ impl Formattable for Callable<'_> {
     }
 
     fn format(&self, formatter: &mut Formatter, measurement: Measurement) {
-        todo!()
+        use Callable::*;
+        match self {
+            Type(_) => formatter.write("type"),
+            Expression(expression) => expression.format(formatter, measurement),
+        }
     }
 }

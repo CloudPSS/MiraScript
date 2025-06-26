@@ -178,6 +178,7 @@ const editor = monaco.editor.create(elEditor, {
     fontLigatures: true,
     automaticLayout: true,
     theme: 'vs-dark',
+    tabSize: 2,
     'semanticHighlighting.enabled': true,
     model: createModel(value),
 });

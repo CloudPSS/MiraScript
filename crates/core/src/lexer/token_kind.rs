@@ -1,7 +1,5 @@
 use std::{borrow::Cow, fmt::Display};
 
-use crate::ansi::{DisplayIdent, INTERPOLATED, NUMBER, ORDINAL, RECOVER, RESET, STRING, VARIABLE};
-
 use super::{prelude::*, string::StringInfo};
 
 #[derive(Debug, Clone, strum::EnumIs)]
@@ -146,44 +144,6 @@ impl Display for TokenKind<'_> {
                     write!(f, "{recovered}")
                 } else {
                     write!(f, "<?>")
-                }
-            }
-            Self::Empty => write!(f, ""),
-        }
-    }
-}
-
-impl DisplayIdent for TokenKind<'_> {
-    fn fmt_ident(&self, f: &mut std::fmt::Formatter<'_>, ident: usize) -> std::fmt::Result {
-        match self {
-            Self::Eof => write!(f, "␃"),
-            Self::Identifier(s) => write!(f, "{VARIABLE}{s}{RESET}"),
-            Self::Ordinal(n) => write!(f, "{ORDINAL}{n}{RESET}"),
-            Self::Number(n) => write!(f, "{NUMBER}{n}{RESET}"),
-            Self::String(s, _) => {
-                write!(f, "{STRING}\"{}\"{RESET}", s.escape_debug())
-            }
-            Self::InterpolatedString(v, _) => {
-                write!(f, "{STRING}\"")?;
-                for (s, e) in v {
-                    write!(f, "{}", s.escape_debug())?;
-                    if !e.is_empty() {
-                        write!(f, "{RESET}{INTERPOLATED}${RESET}")?;
-                        for token in e {
-                            write!(f, "{token}")?;
-                        }
-                        write!(f, "{STRING}")?;
-                    }
-                }
-                write!(f, "\"{RESET}")
-            }
-            Self::Operator(op) => write!(f, "{}", op),
-            Self::Keyword(kw) => kw.fmt_ident(f, ident),
-            Self::Unknown { recovered, .. } => {
-                if let Some(recovered) = recovered {
-                    write!(f, "{RECOVER}{}{RESET}", recovered)
-                } else {
-                    write!(f, "{RECOVER}<?>{RESET}")
                 }
             }
             Self::Empty => write!(f, ""),

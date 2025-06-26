@@ -40,7 +40,7 @@ export interface CompileResult {
     /** 编译诊断 */
     readonly diagnostics: Uint32Array;
     /** 编译生成的字节码 */
-    readonly chunk: Uint8Array | undefined;
+    readonly chunk?: Uint8Array;
 }
 
 /** 编译 */

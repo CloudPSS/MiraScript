@@ -3,8 +3,6 @@ use std::{
     ops::{Deref, DerefMut},
 };
 
-use crate::ansi::DisplayIdent;
-
 use super::prelude::*;
 
 #[derive(Debug, Clone)]
@@ -107,20 +105,14 @@ impl PartialEq for Token<'_> {
 
 impl Display for Token<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.fmt_ident(f, 0)
-    }
-}
-
-impl DisplayIdent for Token<'_> {
-    fn fmt_ident(&self, f: &mut std::fmt::Formatter<'_>, ident: usize) -> std::fmt::Result {
         #[cfg(feature = "trivia")]
         for trivia in &self.leading_trivia {
-            trivia.fmt_ident(f, ident)?;
+            trivia.fmt(f)?;
         }
-        self.kind.fmt_ident(f, ident)?;
+        self.kind.fmt(f)?;
         #[cfg(feature = "trivia")]
         for trivia in &self.trailing_trivia {
-            trivia.fmt_ident(f, ident)?;
+            trivia.fmt(f)?;
         }
         Ok(())
     }

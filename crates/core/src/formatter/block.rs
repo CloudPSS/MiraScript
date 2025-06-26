@@ -20,10 +20,16 @@ impl Formattable for (&[Statement<'_>], Option<&Expression<'_>>) {
     }
 
     fn format(&self, formatter: &mut Formatter, measurement: Measurement) {
-        for stmt in self.0 {
+        for (i, stmt) in self.0.iter().enumerate() {
+            if i > 0 {
+                formatter.new_line();
+            }
             stmt.format(formatter, measurement);
         }
         if let Some(expr) = self.1 {
+            if !self.0.is_empty() {
+                formatter.new_line();
+            }
             expr.format(formatter, measurement);
         }
     }

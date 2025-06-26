@@ -1,8 +1,4 @@
-use std::fmt::{Debug, Display};
-
-use crate::ansi::DisplayIdent;
-
-use super::{AstVisitor,  AstWalker, list_item::ListItem, prelude::*};
+use super::{AstVisitor, AstWalker, list_item::ListItem, prelude::*};
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
 pub enum RecordElementBase<'s, E, I> {
@@ -83,43 +79,5 @@ impl<'s, E: AstWalker<'s>, I: AstWalker<'s>> AstWalker<'s> for RecordElementBase
                 value.walk(visitor);
             }
         }
-    }
-}
-
-impl<'s, E, I> Display for RecordElementBase<'s, E, I>
-where
-    RecordElementBase<'s, E, I>: DisplayIdent,
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.fmt_ident(f, 0)
-    }
-}
-
-impl<E: DisplayIdent, I: DisplayIdent> DisplayIdent for RecordElementBase<'_, E, I> {
-    fn fmt_ident(&self, f: &mut std::fmt::Formatter<'_>, ident: usize) -> std::fmt::Result {
-        match self {
-            Named(name, colon, value) => {
-                name.fmt_ident(f, ident)?;
-                colon.fmt_ident(f, ident)?;
-                write!(f, " ")?;
-                value.fmt_ident(f, ident)?;
-            }
-            InterpolateNamed(name_expr, colon, value) => {
-                name_expr.fmt_ident(f, ident)?;
-                colon.fmt_ident(f, ident)?;
-                write!(f, " ")?;
-                value.fmt_ident(f, ident)?;
-            }
-            OmitNamed(colon, value) => {
-                colon.fmt_ident(f, ident)?;
-                value.fmt_ident(f, ident)?;
-            }
-            Unnamed(value) => value.fmt_ident(f, ident)?,
-            Spread(sp, value) => {
-                sp.fmt_ident(f, ident)?;
-                value.fmt_ident(f, ident)?;
-            }
-        }
-        Ok(())
     }
 }

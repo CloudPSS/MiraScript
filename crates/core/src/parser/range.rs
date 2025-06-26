@@ -1,8 +1,4 @@
-use std::fmt::Display;
-
-use crate::ansi::{DisplayIdent, RANGE, RESET};
-
-use super::{AstVisitor,  AstWalker, prelude::*};
+use super::{AstVisitor, AstWalker, prelude::*};
 
 /// A range expression.
 ///
@@ -35,20 +31,5 @@ impl<'s> AstWalker<'s> for Range<'s> {
     }
     fn range(&self) -> crate::diagnostic::SourceRange {
         self.0.range().start..self.2.range().end
-    }
-}
-
-impl Display for Range<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.fmt_ident(f, 0)
-    }
-}
-
-impl DisplayIdent for Range<'_> {
-    fn fmt_ident(&self, f: &mut std::fmt::Formatter<'_>, ident: usize) -> std::fmt::Result {
-        let Range(start, op, end) = self;
-        start.fmt_ident(f, ident)?;
-        write!(f, "{RANGE}{op}{RESET}")?;
-        end.fmt_ident(f, ident)
     }
 }

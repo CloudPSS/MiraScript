@@ -1,7 +1,3 @@
-use std::fmt::{self, Display, Formatter};
-
-use crate::ansi::{DisplayIdent, GROUP, RANGE, RECOVER, RESET};
-
 use super::{ArrayPattern, AstVisitor, AstWalker, RecordPattern, prelude::*};
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
@@ -286,78 +282,5 @@ impl<'s> AstWalker<'s> for Pattern<'s> {
             SpreadDiscard(pos) => *pos..*pos,
             _ => self.range_slow(),
         }
-    }
-}
-
-impl Display for Pattern<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        self.fmt_ident(f, 0)
-    }
-}
-
-impl DisplayIdent for Pattern<'_> {
-    fn fmt_ident(&self, f: &mut Formatter<'_>, ident: usize) -> fmt::Result {
-        use Pattern::*;
-        match self {
-            Grouping(op, p, cp) => {
-                write!(f, "{GROUP}{op}{RESET}")?;
-                p.fmt_ident(f, ident)?;
-                write!(f, "{GROUP}{cp}{RESET}")?;
-            }
-            Constant(Some(prefix), token) => write!(f, "{prefix}{token}")?,
-            Constant(None, token) => write!(f, "{token}")?,
-            Relation(op, constant) => {
-                op.fmt_ident(f, ident)?;
-                write!(f, " ")?;
-                constant.fmt_ident(f, ident)?;
-            }
-            Range(start, op, end) => {
-                start.fmt_ident(f, ident)?;
-                write!(f, "{RANGE}{op}{RESET}")?;
-                end.fmt_ident(f, ident)?;
-            }
-            Discard(token) => write!(f, "{token}")?,
-            Bind(None, token) => write!(f, "{token}")?,
-            Bind(Some(kw_mut), token) => write!(f, "{kw_mut} {token}")?,
-            Record(start, sub_patterns, end) => {
-                write!(f, "{start}")?;
-                for sub_pattern in sub_patterns.iter() {
-                    sub_pattern.fmt_ident(f, ident)?;
-                }
-                write!(f, "{end}")?;
-            }
-            Array(start, sub_patterns, end) => {
-                write!(f, "{start}")?;
-                for sub_pattern in sub_patterns.iter() {
-                    sub_pattern.fmt_ident(f, ident)?;
-                }
-                write!(f, "{end}")?;
-            }
-            SpreadDiscard(_) => {}
-            And(left, op, right) | Or(left, op, right) => {
-                left.fmt_ident(f, ident)?;
-                write!(f, " {op} ")?;
-                right.fmt_ident(f, ident)?;
-            }
-            Not(op, pattern) => {
-                write!(f, "{op} ")?;
-                pattern.fmt_ident(f, ident)?;
-            }
-            Unknown {
-                recovered: Some(p), ..
-            } => {
-                write!(f, "{RECOVER}<pattern{RESET}")?;
-                p.fmt_ident(f, ident)?;
-                write!(f, "{RECOVER}>{RESET}")?;
-            }
-            Unknown { tokens, .. } => {
-                write!(f, "{RECOVER}<pattern{RESET}")?;
-                for token in tokens {
-                    write!(f, " {token}")?;
-                }
-                write!(f, "{RECOVER}>{RESET}")?;
-            }
-        }
-        Ok(())
     }
 }

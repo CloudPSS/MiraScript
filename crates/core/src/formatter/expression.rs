@@ -1,4 +1,7 @@
-use crate::{Expression, lexer::TokenKind};
+use crate::{
+    Expression,
+    lexer::{StringFragment, TokenKind},
+};
 
 use super::prelude::*;
 
@@ -12,32 +15,10 @@ impl Formattable for Expression<'_> {
         match self {
             Literal(token_ref) => formatter.write_token(token_ref),
             InterpolatedString(token, expressions) => {
-                let TokenKind::InterpolatedString(strs, info) = &token.kind else {
+                let TokenKind::InterpolatedString(_, info) = &token.kind else {
                     unreachable!();
                 };
-                let quote = info.quote;
-                let dollars =
-                    String::from_iter(std::iter::repeat_n('$', std::cmp::min(info.ats, 1)));
-                if let Some(quote) = quote {
-                    formatter.write(&String::from_iter(std::iter::repeat_n('@', info.ats)));
-                    formatter.write(&quote.to_string());
-                }
-                let mut strs = strs.iter();
-                for expr in expressions {
-                    if let Some((str, _)) = strs.next() {
-                        formatter.write(str);
-                    }
-                    formatter.write(&dollars);
-                    expr.format(formatter, measurement);
-                }
-                if let Some((str, _)) = strs.next() {
-                    formatter.write(str);
-                }
-
-                if let Some(quote) = quote {
-                    formatter.write(&quote.to_string());
-                    formatter.write(&String::from_iter(std::iter::repeat_n('@', info.ats)));
-                }
+                formatter.write_str_token(info, expressions, measurement);
             }
             Variable(token_ref) => formatter.write_token(token_ref),
             Grouping(_, expression, _) => {

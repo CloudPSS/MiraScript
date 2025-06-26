@@ -67,6 +67,5 @@ impl Formattable for Statement<'_> {
             }
             Unknown { .. } => (),
         }
-        formatter.new_line();
     }
 }

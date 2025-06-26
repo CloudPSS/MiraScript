@@ -1,7 +1,5 @@
 use strum::{Display, EnumProperty, EnumString, IntoStaticStr, VariantArray};
 
-use crate::ansi::{DisplayIdent, KEYWORD, NUMBER, RESET};
-
 use super::prelude::*;
 
 #[derive(
@@ -162,16 +160,6 @@ impl PartialEq<TokenKind<'_>> for Keyword {
 impl PartialEq<Keyword> for TokenKind<'_> {
     fn eq(&self, other: &Keyword) -> bool {
         matches!(self, TokenKind::Keyword(kw) if kw == other)
-    }
-}
-
-impl DisplayIdent for Keyword {
-    fn fmt_ident(&self, f: &mut std::fmt::Formatter<'_>, _ident: usize) -> std::fmt::Result {
-        use Keyword::*;
-        match self {
-            Inf | Nan => write!(f, "{NUMBER}{self}{RESET}"),
-            _ => write!(f, "{KEYWORD}{self}{RESET}"),
-        }
     }
 }
 

@@ -1,7 +1,3 @@
-use std::fmt::{self, Display, Formatter};
-
-use crate::ansi::{DisplayIdent, GROUP, RECOVER, RESET};
-
 use super::{AstVisitor, AstWalker, prelude::*};
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
@@ -218,92 +214,6 @@ impl<'s> AstWalker<'s> for Statement<'s> {
             }
             Unknown { tokens, errors: _ } => {
                 tokens.walk(visitor);
-            }
-        }
-    }
-}
-
-impl Display for Statement<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        self.fmt_ident(f, 0)
-    }
-}
-
-impl DisplayIdent for Statement<'_> {
-    fn fmt_ident(&self, f: &mut Formatter<'_>, ident: usize) -> fmt::Result {
-        use Statement::*;
-        match self {
-            Empty(c) => {
-                Self::write_ident(f, ident, "")?;
-                writeln!(f, "{c}")
-            }
-            Expression(expr, c) => {
-                Self::write_ident(f, ident, "")?;
-                expr.fmt_ident(f, ident)?;
-                writeln!(f, "{c}")
-            }
-            BlockExpression(expr) => {
-                Self::write_ident(f, ident, "")?;
-                expr.fmt_ident(f, ident)?;
-                writeln!(f)
-            }
-            Bind(kw_let, pattern, eq, expr, c) => {
-                Self::write_ident(f, ident, "")?;
-                write!(f, "{kw_let} ")?;
-                pattern.fmt_ident(f, ident)?;
-                write!(f, " {eq} ")?;
-                expr.fmt_ident(f, ident)?;
-                writeln!(f, "{c}")
-            }
-            Rebind(pattern, eq, expr, c) => {
-                Self::write_ident(f, ident, "rebind")?;
-                pattern.fmt_ident(f, ident)?;
-                write!(f, " {eq} ")?;
-                expr.fmt_ident(f, ident)?;
-                writeln!(f, "{c}")
-            }
-            Assign(exp, eq, expr, c) => {
-                Self::write_ident(f, ident, "assign")?;
-                exp.fmt_ident(f, ident)?;
-                write!(f, " {eq} ")?;
-                expr.fmt_ident(f, ident)?;
-                writeln!(f, "{c}")
-            }
-            Function(kw, id, None, body) => {
-                Self::write_ident(f, ident, "declare")?;
-                write!(f, "{kw} {id} ")?;
-                body.fmt_ident(f, ident)?;
-                writeln!(f)
-            }
-            Function(kw, id, Some(params), body) => {
-                Self::write_ident(f, ident, "declare")?;
-                write!(f, "{kw} {id}{GROUP}({RESET}")?;
-                params.fmt_ident(f, ident)?;
-                write!(f, "{GROUP}){RESET} ")?;
-                body.fmt_ident(f, ident)?;
-                writeln!(f)
-            }
-            Return(kw, Some(expr), c) | Break(kw, Some(expr), c) => {
-                Self::write_ident(f, ident, "")?;
-                write!(f, "{kw} ")?;
-                expr.fmt_ident(f, ident)?;
-                writeln!(f, "{c}")
-            }
-            Return(kw, None, c) | Break(kw, None, c) => {
-                Self::write_ident(f, ident, "")?;
-                writeln!(f, "{kw}{c}")
-            }
-            Continue(kw, c) => {
-                Self::write_ident(f, ident, "")?;
-                writeln!(f, "{kw}{c}")
-            }
-            Unknown { tokens, .. } => {
-                Self::write_ident(f, ident, "???")?;
-                write!(f, "{RECOVER}<statement{RESET}")?;
-                for token in tokens {
-                    write!(f, " {token}")?;
-                }
-                writeln!(f, "{RECOVER}>{RESET}")
             }
         }
     }
