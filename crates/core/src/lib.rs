@@ -7,7 +7,7 @@ pub mod formatter;
 pub mod lexer;
 pub mod parser;
 
-pub use compile::{CompileResult, SerializedDiagnostics, compile};
+pub use compile::{Compiler, SerializedDiagnostics};
 pub use config::Config;
 pub use diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange};
 pub use emitter::OpCode;

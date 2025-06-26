@@ -46,7 +46,7 @@ fn extract_args<'cx>(cx: &mut FunctionContext<'cx>) -> NeonResult<(String, Confi
 }
 
 fn compile_impl(script: String, config: Config) -> JsCompileResult {
-    let (chunk, diagnostics) = mira_core::compile(&script, &config);
+    let (chunk, diagnostics) = mira_core::Compiler::compile(&script, &config);
     JsCompileResult(chunk, diagnostics)
 }
 

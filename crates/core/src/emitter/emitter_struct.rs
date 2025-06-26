@@ -7,7 +7,6 @@ use crate::{
 use super::{chunk::Chunk, emitter_scope::Scopes};
 
 pub(super) struct Emitter<'s> {
-    pub source: &'s str,
     pub chunk: Chunk<'s>,
     pub closures: Closures,
     pub scopes: Scopes<'s>,
@@ -15,9 +14,8 @@ pub(super) struct Emitter<'s> {
 }
 
 impl<'s> Emitter<'s> {
-    pub fn new(source: &'s str, diagnostics_collector: &'s mut Vec<SourceDiagnostic>) -> Self {
+    pub fn new(diagnostics_collector: &'s mut Vec<SourceDiagnostic>) -> Self {
         Self {
-            source,
             chunk: Chunk::new(),
             closures: Closures::new(),
             scopes: Scopes::new(),

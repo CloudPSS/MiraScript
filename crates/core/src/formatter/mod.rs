@@ -17,6 +17,16 @@ pub struct FormatOptions {
     pub line_width: usize,
 }
 
+impl Default for FormatOptions {
+    fn default() -> Self {
+        Self {
+            tab_size: 2,
+            use_spaces: true,
+            line_width: 120,
+        }
+    }
+}
+
 pub fn format(input: &Script<'_>, options: &FormatOptions) -> String {
     let mut formatter = Formatter::new(options, 0);
     let block = (&input.0[..], input.1.as_deref());
