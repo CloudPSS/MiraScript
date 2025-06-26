@@ -8,6 +8,14 @@ impl Formattable for Iterable<'_> {
     }
 
     fn format(&self, formatter: &mut Formatter, measurement: usize) {
-        todo!()
+        use Iterable::*;
+        match self {
+            Range(range) => {
+                range.format(formatter, measurement);
+            }
+            Value(expression) => {
+                expression.format(formatter, measurement);
+            }
+        }
     }
 }

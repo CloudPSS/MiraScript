@@ -21,9 +21,10 @@ export class FormatterProvider
         model: editor.ITextModel,
         ranges: readonly IRange[],
         options: languages.FormattingOptions,
-        hint: 'range' | 'expression' | 'statement' | 'block',
+        hint: 'full' | 'range' | 'expression' | 'statement',
         token: CancellationToken,
     ): Promise<languages.TextEdit[]> {
+        if (hint !== 'full') return [];
         const compiled = await this.getCompileResult(model);
         if (!compiled?.result.formatted) return [];
         return [
@@ -39,7 +40,7 @@ export class FormatterProvider
         options: languages.FormattingOptions,
         token: CancellationToken,
     ): languages.ProviderResult<languages.TextEdit[]> {
-        return this.format(model, [model.getFullModelRange()], options, 'range', token);
+        return this.format(model, [], options, 'full', token);
     }
     /** @inheritdoc */
     provideDocumentRangeFormattingEdits(
@@ -60,7 +61,7 @@ export class FormatterProvider
         return this.format(model, ranges, options, 'range', token);
     }
     /** @inheritdoc */
-    readonly autoFormatTriggerCharacters = [';', '}', ']', ')', '\n'];
+    readonly autoFormatTriggerCharacters = [';', '}', ']', ')'];
     /** @inheritdoc */
     provideOnTypeFormattingEdits(
         model: editor.ITextModel,
@@ -69,6 +70,12 @@ export class FormatterProvider
         options: languages.FormattingOptions,
         token: CancellationToken,
     ): languages.ProviderResult<languages.TextEdit[]> {
-        return this.format(model, [Range.fromPositions(position, position)], options, 'expression', token);
+        return this.format(
+            model,
+            [Range.fromPositions(position, position)],
+            options,
+            ch === ';' ? 'statement' : 'expression',
+            token,
+        );
     }
 }

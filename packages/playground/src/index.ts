@@ -35,12 +35,15 @@ const globals = createVmGlobal(
 registerMiraScript(monaco, () => globals);
 
 let mode: InputMode = (localStorage.getItem('mode') as InputMode) || 'Script';
-const createModel = (value: string) =>
-    monaco.editor.createModel(
+const createModel = (value: string) => {
+    const model = monaco.editor.createModel(
         value,
         mode === 'Template' ? 'mirascript-template' : 'mirascript',
         monaco.Uri.parse(`file:///${mode}.mira`),
     );
+    model.setEOL(monaco.editor.EndOfLineSequence.LF);
+    return model;
+};
 
 const value =
     localStorage.getItem('source') ||
@@ -177,6 +180,8 @@ const editor = monaco.editor.create(elEditor, {
     formatOnPaste: true,
     fontLigatures: true,
     automaticLayout: true,
+    wordWrap: 'on',
+    wrappingIndent: 'indent',
     theme: 'vs-dark',
     tabSize: 2,
     'semanticHighlighting.enabled': true,

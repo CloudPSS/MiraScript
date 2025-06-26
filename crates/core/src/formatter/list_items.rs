@@ -14,7 +14,7 @@ where
         let mut first = true;
         for item in self {
             if !first {
-                formatter.write(",");
+                formatter.write(", ");
             }
             first = false;
             item.format(formatter, measurement);

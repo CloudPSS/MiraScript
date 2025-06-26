@@ -44,6 +44,9 @@ impl Formattable for Pattern<'_> {
             Record(_, list_items, _) => {
                 formatter.write("(");
                 list_items[..].format(formatter, measurement);
+                if list_items.len() == 1 && list_items[0].is_unnamed() {
+                    formatter.write(",");
+                }
                 formatter.write(")");
             }
             Array(_, list_items, _) => {

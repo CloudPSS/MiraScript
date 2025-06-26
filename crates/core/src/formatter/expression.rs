@@ -26,6 +26,9 @@ impl Formattable for Expression<'_> {
             Record(_, list_items, _) => {
                 formatter.write("(");
                 list_items[..].format(formatter, measurement);
+                if list_items.len() == 1 && list_items[0].is_unnamed() {
+                    formatter.write(",");
+                }
                 formatter.write(")");
             }
             Array(_, list_items, _) => {
@@ -166,12 +169,15 @@ impl Formattable for Expression<'_> {
                 formatter.write(" {");
                 formatter.indent();
                 formatter.new_line();
-                for (_, pattern, expression) in items {
-                    formatter.write("case ");
+                for (i, (kw, pattern, expression)) in items.iter().enumerate() {
+                    formatter.write_token(kw);
+                    formatter.write(" ");
                     pattern.format(formatter, measurement);
                     formatter.write(" ");
                     expression.format(formatter, measurement);
-                    formatter.new_line();
+                    if i != items.len() - 1 {
+                        formatter.new_line();
+                    }
                 }
                 formatter.unindent();
                 formatter.new_line();

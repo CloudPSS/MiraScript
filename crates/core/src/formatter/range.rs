@@ -8,6 +8,8 @@ impl Formattable for Range<'_> {
     }
 
     fn format(&self, formatter: &mut Formatter, measurement: usize) {
-        todo!()
+        self.0.format(formatter, measurement);
+        formatter.write_token(&self.1);
+        self.2.format(formatter, measurement);
     }
 }
