@@ -55,13 +55,11 @@ impl std::fmt::Display for Trivia<'_> {
     }
 }
 
-#[cfg(feature = "trivia")]
-type TriviaResult<'s> = Trivia<'s>;
 #[cfg(not(feature = "trivia"))]
-type TriviaResult<'s> = ();
+pub type Trivia<'s> = ();
 
 /// 行注释，及末尾的换行
-fn line_comment<'s>(i: &mut Input<'s>) -> Result<TriviaResult<'s>> {
+fn line_comment<'s>(i: &mut Input<'s>) -> Result<Trivia<'s>> {
     let parser = delimited((space0, "//"), till_line_ending, opt(line_ending));
 
     #[cfg(feature = "trivia")]
@@ -75,7 +73,7 @@ fn line_comment<'s>(i: &mut Input<'s>) -> Result<TriviaResult<'s>> {
 }
 
 /// 块注释
-fn block_comment<'s>(i: &mut Input<'s>) -> Result<TriviaResult<'s>> {
+fn block_comment<'s>(i: &mut Input<'s>) -> Result<Trivia<'s>> {
     let (mapper1, mapper2);
     #[cfg(feature = "trivia")]
     {
@@ -99,7 +97,7 @@ fn block_comment<'s>(i: &mut Input<'s>) -> Result<TriviaResult<'s>> {
 }
 
 /// 折行
-fn new_line<'s>(i: &mut Input<'s>) -> Result<TriviaResult<'s>> {
+fn new_line<'s>(i: &mut Input<'s>) -> Result<Trivia<'s>> {
     let result;
     #[cfg(feature = "trivia")]
     {

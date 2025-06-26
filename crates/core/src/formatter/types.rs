@@ -9,25 +9,17 @@ use super::prelude::*;
 
 pub(super) struct Formatter<'o> {
     result: String,
+    line_count: usize,
     options: &'o FormatOptions,
     indent: usize,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(super) struct Measurement {
-    pub columns: usize,
-    pub lines: usize,
-}
-
-impl From<(usize, usize)> for Measurement {
-    fn from((columns, lines): (usize, usize)) -> Self {
-        Self { columns, lines }
-    }
-}
-
 pub(super) trait Formattable {
-    fn measure(&self, formatter: &Formatter, columns: usize) -> Measurement;
-    fn format(&self, formatter: &mut Formatter, measurement: Measurement);
+    /// Measure the number of lines of the formatted output.
+    fn measure(&self, formatter: &Formatter, indent: usize) -> usize;
+    /// Format the output into the provided formatter.
+    /// The `measurement` parameter is the number of lines that currently fit within the available space.
+    fn format(&self, formatter: &mut Formatter, measurement: usize);
 }
 
 const MIN_WIDTH: usize = 40;
@@ -36,6 +28,7 @@ impl<'o> Formatter<'o> {
     pub fn new(options: &'o FormatOptions, indent: usize) -> Self {
         Self {
             result: String::new(),
+            line_count: 0,
             options,
             indent,
         }
@@ -60,64 +53,16 @@ impl<'o> Formatter<'o> {
             std::iter::repeat_n('\t', self.indent)
         };
         self.result.extend(indent);
+        self.line_count += 1;
+    }
+    pub fn line_count(&self) -> usize {
+        self.line_count
     }
     pub fn write(&mut self, s: &str) {
         self.result.push_str(s);
     }
-    pub fn write_str_token<'s>(
-        &mut self,
-        info: &StringInfo<'s>,
-        expressions: &[Expression<'s>],
-        measurement: Measurement,
-    ) {
-        let quote = info.quote;
-        let dollars = String::from_iter(std::iter::repeat_n('$', std::cmp::max(info.ats, 1)));
-        if let Some(quote) = quote {
-            self.write(&String::from_iter(std::iter::repeat_n('@', info.ats)));
-            self.write(&quote.to_string());
-        }
-        let mut exprs = expressions.iter();
-        for str in info.content.iter() {
-            match str {
-                StringFragment::Literal(text) => self.write(text),
-                StringFragment::EscapedChar(_, text) => {
-                    self.write("\\");
-                    self.write(&text[0..1]);
-                    self.write(&text[1..].to_ascii_uppercase());
-                }
-                StringFragment::Interpolation(_, _, surround) => {
-                    let surround = surround.as_deref();
-                    self.write(&dollars);
-                    if let Some((start, _)) = surround {
-                        self.write(&start.to_string());
-                    }
-                    if let Some(e) = exprs.next() {
-                        e.format(self, measurement);
-                    }
-                    if let Some((_, end)) = surround {
-                        self.write(&end.to_string());
-                    }
-                }
-                StringFragment::InvalidEscapedChar(_, _)
-                | StringFragment::EndOfString
-                | StringFragment::EndOfFile => (),
-            }
-        }
-
-        if let Some(quote) = quote {
-            self.write(&quote.to_string());
-            self.write(&String::from_iter(std::iter::repeat_n('@', info.ats)));
-        }
-    }
-    pub fn write_token(&mut self, s: &Token<'_>) {
-        if let TokenKind::String(_, info) = &s.kind {
-            self.write_str_token(info, &[], (0, 0).into());
-        } else {
-            self.result.push_str(&s.to_string());
-        }
-    }
-    pub fn current_columns(&self) -> usize {
-        let indent_width = self.indent * self.tab_size;
+    pub fn width(&self, indent: usize) -> usize {
+        let indent_width = indent * self.tab_size;
         std::cmp::max(MIN_WIDTH, self.line_width.saturating_sub(indent_width))
     }
 }

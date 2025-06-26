@@ -34,6 +34,8 @@ pub enum DiagnosticCode {
     InvalidNumberLiteralUnderscore,
     #[strum(message = "Invalid number literal")]
     InvalidNumberLiteral,
+    #[strum(message = "Number literal is too large")]
+    OverflowNumberLiteral,
     #[strum(message = "Invalid ordinal literal")]
     InvalidOrdinalLiteral,
     #[strum(message = "String literal is not terminated")]

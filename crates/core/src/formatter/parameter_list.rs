@@ -3,11 +3,11 @@ use crate::parser::ParameterList;
 use super::prelude::*;
 
 impl Formattable for ParameterList<'_> {
-    fn measure(&self, formatter: &Formatter, columns: usize) -> Measurement {
-        (0, 0).into()
+    fn measure(&self, formatter: &Formatter, indent: usize) -> usize {
+        0
     }
 
-    fn format(&self, formatter: &mut Formatter, measurement: Measurement) {
+    fn format(&self, formatter: &mut Formatter, measurement: usize) {
         formatter.write("(");
         if !self.1.is_empty() {
             formatter.indent();

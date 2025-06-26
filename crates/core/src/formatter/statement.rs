@@ -1,13 +1,13 @@
 use crate::Statement;
 
-use super::{Formattable, Formatter, Measurement};
+use super::prelude::*;
 
 impl Formattable for Statement<'_> {
-    fn measure(&self, formatter: &Formatter, columns: usize) -> Measurement {
-        (1, 1).into()
+    fn measure(&self, formatter: &Formatter, indent: usize) -> usize {
+        1
     }
 
-    fn format(&self, formatter: &mut Formatter, measurement: Measurement) {
+    fn format(&self, formatter: &mut Formatter, measurement: usize) {
         use Statement::*;
         match self {
             Empty(_) => formatter.write(";"),

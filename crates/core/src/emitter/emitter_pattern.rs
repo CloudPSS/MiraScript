@@ -143,7 +143,7 @@ impl<'s> Emitter<'s> {
         match pattern_constant {
             Constant(prefix, lit) => {
                 if let Some(lit_num) = match &lit.kind {
-                    TokenKind::Number(n) => Some(*n),
+                    TokenKind::Number(n, _) => Some(*n),
                     TokenKind::Ordinal(o) => Some(*o as f64),
                     TokenKind::Keyword(Keyword::Nan) => Some(f64::NAN),
                     TokenKind::Keyword(Keyword::Inf) => Some(f64::INFINITY),

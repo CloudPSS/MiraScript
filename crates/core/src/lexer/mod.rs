@@ -17,10 +17,14 @@ pub use keyword::Keyword;
 pub use operator::Operator;
 pub use token::Token;
 pub use token_kind::TokenKind;
-#[cfg(feature = "trivia")]
-pub use trivia::Trivia;
 
-pub(crate) use self::string::{StringFragment, StringInfo};
+#[cfg(feature = "trivia")]
+pub(crate) use self::trivia::Trivia;
+
+pub(crate) use self::{
+    numeric::NumberInfo,
+    string::{StringFragment, StringInfo},
+};
 
 pub type Input<'s> = LocatingSlice<&'s str>;
 pub(crate) type Result<Output> = ModalResult<Output, EmptyError>;

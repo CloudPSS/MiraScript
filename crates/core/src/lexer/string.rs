@@ -12,7 +12,7 @@ use super::{
     prelude::*,
 };
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub enum StringFragment<'s> {
     Literal(&'s str),
     EscapedChar(char, &'s str),
@@ -22,7 +22,7 @@ pub enum StringFragment<'s> {
     EndOfFile,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct StringInfo<'s> {
     pub leading_range: SourceRange,
     pub trailing_range: SourceRange,

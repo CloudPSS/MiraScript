@@ -1,16 +1,13 @@
-use crate::{
-    Expression,
-    lexer::{StringFragment, TokenKind},
-};
+use crate::{Expression, lexer::TokenKind};
 
 use super::prelude::*;
 
 impl Formattable for Expression<'_> {
-    fn measure(&self, formatter: &Formatter, columns: usize) -> Measurement {
-        (0, 0).into()
+    fn measure(&self, formatter: &Formatter, indent: usize) -> usize {
+        0
     }
 
-    fn format(&self, formatter: &mut Formatter, measurement: Measurement) {
+    fn format(&self, formatter: &mut Formatter, measurement: usize) {
         use Expression::*;
         match self {
             Literal(token_ref) => formatter.write_token(token_ref),
@@ -94,10 +91,31 @@ impl Formattable for Expression<'_> {
                 pattern.format(formatter, measurement);
             }
             Block(_, statements, expression, _) => {
+                if statements.is_empty() && expression.is_none() {
+                    formatter.write("{ }");
+                    return;
+                }
+                if statements.is_empty() {
+                    formatter.write("{ ");
+                    if let Some(expression) = expression {
+                        expression.format(formatter, measurement);
+                    }
+                    formatter.write(" }");
+                    return;
+                }
                 formatter.write("{");
                 formatter.indent();
                 formatter.new_line();
-                (&statements[..], expression.as_deref()).format(formatter, measurement);
+                for (i, statement) in statements.iter().enumerate() {
+                    statement.format(formatter, measurement);
+                    if i != statements.len() - 1 {
+                        formatter.new_line();
+                    }
+                }
+                if let Some(expression) = expression {
+                    formatter.new_line();
+                    expression.format(formatter, measurement);
+                }
                 formatter.unindent();
                 formatter.new_line();
                 formatter.write("}");

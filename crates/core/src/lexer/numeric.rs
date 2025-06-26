@@ -1,5 +1,3 @@
-use num_bigint::BigUint;
-use num_traits::cast::ToPrimitive;
 use winnow::{
     combinator::{opt, trace},
     token::{one_of, take_while},
@@ -7,20 +5,38 @@ use winnow::{
 
 use super::{identifier::is_identifier_continue, prelude::*};
 
+#[derive(Debug, Clone)]
+pub enum NumberInfo<'s> {
+    Invalid,
+
+    Decimal(&'s str),
+
+    // 存储原始值，避免超 f64 精度导致回写问题
+    Hexadecimal(u128),
+    Octal(u128),
+    Binary(u128),
+}
+
+#[derive(Debug, Clone)]
 struct ParsedPart {
-    number: f64,
+    number: u128,
     ordinal: i32,
+    radix: u32,
+    integer_overflow: bool,
     is_valid_ordinal: bool,
     has_invalid_char: bool,
     has_leading_underscore: bool,
     has_trailing_underscore: bool,
 }
 
-fn parse_part(bytes: &[u8], radix: u32, is_valid_char: impl Fn(u8) -> bool) -> ParsedPart {
+fn parse_part(str: &str, radix: u32, is_valid_char: impl Fn(u8) -> bool) -> ParsedPart {
+    let bytes = str.as_bytes();
     if bytes == b"0" {
         return ParsedPart {
-            number: 0f64,
+            radix,
+            number: 0,
             ordinal: 0,
+            integer_overflow: false,
             is_valid_ordinal: true,
             has_invalid_char: false,
             has_leading_underscore: false,
@@ -39,19 +55,23 @@ fn parse_part(bytes: &[u8], radix: u32, is_valid_char: impl Fn(u8) -> bool) -> P
             .filter(|&&b| is_valid_char(b))
             .cloned()
             .collect();
-        BigUint::parse_bytes(&s, radix)
+        // SAFETY: `from_utf8_unchecked` is safe here because we filter out invalid characters.
+        u128::from_str_radix(unsafe { std::str::from_utf8_unchecked(&s) }, radix)
     } else {
-        BigUint::parse_bytes(bytes, radix)
-    };
-    let parse_failed = num.is_none();
-    let has_invalid_char = has_invalid_char || parse_failed;
-    let parsed_num = num.unwrap_or_default();
-    let number = parsed_num.to_f64().unwrap_or_default();
-    let ordinal = parsed_num.to_i32();
+        u128::from_str_radix(str, radix)
+    }
+    .ok();
+    // See ParseIntError, only `PosOverflow` is relevant here.
+
+    let integer_overflow = num.is_none();
+    let number = num.unwrap_or(u128::MAX);
+    let ordinal = number.try_into().ok();
     let is_valid_ordinal = !has_underscore && ordinal.is_some() && !has_leading_zero;
     let ordinal = ordinal.unwrap_or(i32::MAX);
     ParsedPart {
+        radix,
         number,
+        integer_overflow,
         ordinal,
         is_valid_ordinal,
         has_invalid_char,
@@ -86,26 +106,39 @@ pub(super) fn number<'s>(i: &mut Input<'s>) -> Result<TokenKind<'s>> {
             let part_i_b = part_i.as_bytes();
             // parse integer literals with prefixes
             // 0x, 0o, 0b
-            if part_i_b[0] == b'0' && part_i_b.len() > 1 {
+            if part_i_b[0] == b'0' && part_i.len() > 1 {
                 let integer = match &part_i_b[0..2] {
-                    b"0x" | b"0X" => Some(parse_part(&part_i_b[2..], 16, |c: u8| {
-                        c.is_ascii_hexdigit()
-                    })),
-                    b"0o" | b"0O" => Some(parse_part(&part_i_b[2..], 8, |c| {
-                        (b'0'..=b'7').contains(&c)
-                    })),
-                    b"0b" | b"0B" => {
-                        Some(parse_part(&part_i_b[2..], 2, |c| c == b'0' || c == b'1'))
+                    b"0x" | b"0X" => {
+                        Some(parse_part(&part_i[2..], 16, |c: u8| c.is_ascii_hexdigit()))
                     }
+                    b"0o" | b"0O" => {
+                        Some(parse_part(&part_i[2..], 8, |c| (b'0'..=b'7').contains(&c)))
+                    }
+                    b"0b" | b"0B" => Some(parse_part(&part_i[2..], 2, |c| c == b'0' || c == b'1')),
                     _ => None,
                 };
                 if let Some(p) = integer {
-                    let result = TokenKind::Number(p.number);
+                    let result = TokenKind::Number(
+                        p.number as f64,
+                        Box::new(match p.radix {
+                            16 => NumberInfo::Hexadecimal(p.number),
+                            8 => NumberInfo::Octal(p.number),
+                            2 => NumberInfo::Binary(p.number),
+                            _ => unreachable!(),
+                        }),
+                    );
                     if p.has_invalid_char {
                         return Ok(TokenKind::unknown_range(
                             result,
                             range_i,
                             DiagnosticCode::InvalidNumberLiteral,
+                        ));
+                    }
+                    if p.integer_overflow {
+                        return Ok(TokenKind::unknown_range(
+                            result,
+                            range_i,
+                            DiagnosticCode::OverflowNumberLiteral,
                         ));
                     }
                     if p.has_trailing_underscore {
@@ -148,7 +181,7 @@ pub(super) fn number<'s>(i: &mut Input<'s>) -> Result<TokenKind<'s>> {
 
             if range == range_i {
                 // maybe ordinary number
-                let result = handle_ordinal(part_i_b, range_i, false);
+                let result = handle_ordinal(part_i, range_i);
                 if !result.is_unknown() {
                     return Ok(result);
                 }
@@ -174,31 +207,39 @@ pub(super) fn number<'s>(i: &mut Input<'s>) -> Result<TokenKind<'s>> {
             let parsed_num = num.unwrap_or_default();
             if has_invalid_char || parse_failed {
                 return Ok(TokenKind::unknown_range(
-                    TokenKind::Number(parsed_num),
+                    TokenKind::Number(parsed_num, NumberInfo::Invalid.into()),
                     range,
                     DiagnosticCode::InvalidNumberLiteral,
                 ));
             }
             if has_leading_underscore || has_trailing_underscore {
                 return Ok(TokenKind::unknown_range(
-                    TokenKind::Number(parsed_num),
+                    TokenKind::Number(parsed_num, NumberInfo::Invalid.into()),
                     range,
                     DiagnosticCode::InvalidNumberLiteralUnderscore,
                 ));
             }
-            Ok(TokenKind::Number(parsed_num))
+            if parsed_num.is_infinite() || parsed_num.is_nan() {
+                return Ok(TokenKind::unknown_range(
+                    TokenKind::Number(parsed_num, NumberInfo::Invalid.into()),
+                    range,
+                    DiagnosticCode::OverflowNumberLiteral,
+                ));
+            }
+            Ok(TokenKind::Number(
+                parsed_num,
+                Box::new(NumberInfo::Decimal(part)),
+            ))
         },
     )
     .parse_next(i)
 }
 
-fn handle_ordinal(bytes: &[u8], range: SourceRange, force_ordinal: bool) -> TokenKind<'_> {
-    let p = parse_part(bytes, 10, |c| c.is_ascii_digit());
+fn handle_ordinal(str: &str, range: SourceRange) -> TokenKind<'_> {
+    let p = parse_part(str, 10, |c| c.is_ascii_digit());
 
     let result = if p.is_valid_ordinal {
         TokenKind::Ordinal(p.ordinal)
-    } else if !force_ordinal {
-        TokenKind::Number(p.number)
     } else {
         TokenKind::unknown_range(
             TokenKind::Ordinal(p.ordinal),
@@ -222,9 +263,7 @@ fn handle_ordinal(bytes: &[u8], range: SourceRange, force_ordinal: bool) -> Toke
 pub(super) fn ordinal<'s>(i: &mut Input<'s>) -> Result<TokenKind<'s>> {
     trace(
         "ordinal",
-        number_part
-            .with_span()
-            .map(|(s, r)| handle_ordinal(s.as_bytes(), r, true)),
+        number_part.with_span().map(|(s, r)| handle_ordinal(s, r)),
     )
     .parse_next(i)
 }

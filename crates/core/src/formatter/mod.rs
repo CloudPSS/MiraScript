@@ -1,7 +1,6 @@
 use crate::{Script, Statement};
 
 mod array_element;
-mod block;
 mod callable;
 mod expression;
 mod iterable;
@@ -11,11 +10,12 @@ mod pattern;
 mod range;
 mod record_element;
 mod statement;
+mod token;
 mod types;
 
 mod prelude {
     pub(super) use super::FormatOptions;
-    pub(super) use super::types::{Formattable, Formatter, Measurement};
+    pub(super) use super::types::{Formattable, Formatter};
 }
 use prelude::*;
 
@@ -37,15 +37,19 @@ impl Default for FormatOptions {
 
 pub fn format(input: &Script<'_>, options: &FormatOptions) -> String {
     let mut formatter = Formatter::new(options, 0);
-    let block = (&input.0[..], input.1.as_deref());
-    let measurement = block.measure(&formatter, formatter.current_columns());
-    block.format(&mut formatter, measurement);
+    for statement in &input.0 {
+        statement.format(&mut formatter, usize::MAX);
+        formatter.new_line();
+    }
+    if let Some(expression) = &input.1 {
+        expression.format(&mut formatter, usize::MAX);
+    }
     formatter.done()
 }
 
 pub fn format_statement(input: &Statement<'_>, options: &FormatOptions, indent: usize) -> String {
     let mut formatter = Formatter::new(options, indent);
-    let measurement = input.measure(&formatter, formatter.current_columns());
+    let measurement = input.measure(&formatter, indent);
     input.format(&mut formatter, measurement);
     formatter.done()
 }

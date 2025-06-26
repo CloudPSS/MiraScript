@@ -359,7 +359,7 @@ impl<'s> Emitter<'s> {
         match expr {
             Literal(token) => match &token.kind {
                 TokenKind::String(s, _) => self.op_string(ret, s.as_ref()),
-                TokenKind::Number(n) => self.op_number(ret, *n),
+                TokenKind::Number(n, _) => self.op_number(ret, *n),
                 TokenKind::Ordinal(o) => self.op_number(ret, *o as f64),
                 TokenKind::Keyword(Keyword::Nil) => self.op_nil(ret),
                 TokenKind::Keyword(Keyword::True) => self.op_bool(ret, true),

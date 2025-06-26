@@ -1,13 +1,13 @@
 use std::{borrow::Cow, fmt::Display};
 
-use super::{prelude::*, string::StringInfo};
+use super::{numeric::NumberInfo, prelude::*, string::StringInfo};
 
 #[derive(Debug, Clone, strum::EnumIs)]
 pub enum TokenKind<'s> {
     Eof,
     Identifier(&'s str),
     Ordinal(i32),
-    Number(f64),
+    Number(f64, Box<NumberInfo<'s>>),
     String(Cow<'s, str>, Box<StringInfo<'s>>),
     /// Interpolated string, stored as a tuple of the string parts and the tokens that are interpolated.
     /// The last tuple element is the string part after the last interpolation, with the tokens being empty.
@@ -82,7 +82,7 @@ impl PartialEq for TokenKind<'_> {
         match (self, other) {
             (Self::Identifier(l0), Self::Identifier(r0)) => l0 == r0,
             (Self::Ordinal(l0), Self::Ordinal(r0)) => l0 == r0,
-            (Self::Number(l0), Self::Number(r0)) => (*l0).to_bits() == (*r0).to_bits(),
+            (Self::Number(l0, _), Self::Number(r0, _)) => (*l0).to_bits() == (*r0).to_bits(),
             (Self::String(l0, _), Self::String(r0, _)) => l0 == r0,
             (Self::InterpolatedString(l0, _), Self::InterpolatedString(r0, _)) => l0 == r0,
             (Self::Operator(l0), Self::Operator(r0)) => l0 == r0,
@@ -120,7 +120,7 @@ impl Display for TokenKind<'_> {
             Self::Eof => write!(f, "␃"),
             Self::Identifier(s) => write!(f, "{s}"),
             Self::Ordinal(n) => write!(f, "{n}"),
-            Self::Number(n) => write!(f, "{n}"),
+            Self::Number(n, _) => write!(f, "{n}"),
             Self::String(s, _) => {
                 write!(f, "\"{}\"", s.escape_debug())
             }
