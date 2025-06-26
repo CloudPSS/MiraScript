@@ -305,7 +305,7 @@ impl<'s> Emitter<'s> {
             }
             Record(_, elements, _) => {
                 let is_empty = elements.is_empty();
-                let flag = if success.is_empty() {
+                if success.is_empty() {
                     if is_empty {
                         self.diagnostics.push(SourceDiagnostic::new(
                             pattern.range(),
@@ -313,14 +313,13 @@ impl<'s> Emitter<'s> {
                         ));
                         return;
                     }
-                    self.closures.add_reg()
                 } else {
-                    success
-                };
-                self.op_2(OpCode::IsRecord, flag, value);
+                    self.op_2(OpCode::IsRecord, success, value);
+                }
 
                 if !is_empty {
-                    self.op_if(OpCode::If, flag);
+                    // 不论是否成功匹配，都进行子模式匹配
+                    // 以便使用 let (:e) = mod; 语法对非记录进行解构
 
                     let sub_flag = if success.is_empty() {
                         // 此时匹配成功与否并不重要，而且也要把这是非条件匹配的信息传到子级
@@ -442,14 +441,9 @@ impl<'s> Emitter<'s> {
                         }
 
                         if !sub_flag.is_empty() {
-                            self.op_3(OpCode::And, flag, flag, sub_flag);
+                            self.op_3(OpCode::And, success, success, sub_flag);
                         }
                     }
-
-                    self.op_else();
-                    self.emit_failed_pattern(pattern, bind_type);
-
-                    self.op_if_end();
                 }
             }
             Array(_, items, _) => {
@@ -466,6 +460,8 @@ impl<'s> Emitter<'s> {
                 } else {
                     (items.len(), &items[..], None, &[] as &[_])
                 };
+
+                // 因为数组模式匹配失败后不匹配子模式，需要一个 flag 记录匹配情况
                 let flag = if success.is_empty() {
                     self.closures.add_reg()
                 } else {
