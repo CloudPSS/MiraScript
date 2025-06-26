@@ -34,6 +34,7 @@ pub use array_element::{ArrayElement, ArrayElementBase, ArrayPattern};
 pub(super) use ast_visitor::*;
 pub use expression::{Callable, Expression};
 pub use iterable::Iterable;
+pub(super) use list_item::ListItem;
 pub(super) use parameter_list::ParameterList;
 pub use pattern::Pattern;
 pub use range::Range;

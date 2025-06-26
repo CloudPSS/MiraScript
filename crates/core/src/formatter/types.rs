@@ -1,4 +1,6 @@
-use std::ops::Deref;
+use std::{fmt::Display, ops::Deref};
+
+use crate::lexer::Token;
 
 use super::prelude::*;
 
@@ -23,6 +25,19 @@ impl From<(usize, usize)> for Measurement {
 pub(super) trait Formattable {
     fn measure(&self, formatter: &Formatter, columns: usize) -> Measurement;
     fn format(&self, formatter: &mut Formatter, measurement: Measurement);
+}
+
+impl<T> Formattable for Box<T>
+where
+    T: Formattable,
+{
+    fn measure(&self, formatter: &Formatter, columns: usize) -> Measurement {
+        (**self).measure(formatter, columns)
+    }
+
+    fn format(&self, formatter: &mut Formatter, measurement: Measurement) {
+        (**self).format(formatter, measurement)
+    }
 }
 
 const MIN_WIDTH: usize = 40;
@@ -56,6 +71,12 @@ impl<'s> Formatter<'s> {
             self.result
                 .extend(std::iter::repeat('\t').take(self.indent));
         }
+    }
+    pub fn write(&mut self, s: &str) {
+        self.result.push_str(s);
+    }
+    pub fn write_token(&mut self, s: &Token<'_>) {
+        self.result.push_str(&s.to_string());
     }
     pub fn current_columns(&self) -> usize {
         let indent_width = self.indent * self.tab_size;
