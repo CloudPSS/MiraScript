@@ -1,6 +1,6 @@
 use mira_core::{
     config::{Config as ConfigData, InputMode},
-    Compiler,
+    Compiler, DiagnosticCode,
 };
 use pyo3::{exceptions::PyValueError, prelude::*, types::PyDict};
 
@@ -8,10 +8,6 @@ use pyo3::{exceptions::PyValueError, prelude::*, types::PyDict};
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
-/// MiraScript 编译配置
-///
-/// Args:
-///     **input_mode (str): 输入模式，支持 'script' 和 'template'
 #[pyclass]
 #[derive(Debug, Default)]
 struct Config {
@@ -45,14 +41,6 @@ impl Config {
     }
 }
 
-/// 编译 MiraScript 代码，生成字节码
-///
-/// Args:
-///     script (str): 要编译的 MiraScript 代码
-///     config (Config): 编译配置
-///
-/// Returns:
-///    (Optional[bytes], List[int]): 编译后的字节码和诊断信息
 #[pyfunction]
 fn compile(script: String, config: PyRef<'_, Config>) -> PyResult<(Option<Vec<u8>>, Vec<u32>)> {
     let config: &ConfigData = &config.data;
@@ -60,10 +48,20 @@ fn compile(script: String, config: PyRef<'_, Config>) -> PyResult<(Option<Vec<u8
     Ok((chunk, diagnostics))
 }
 
-/// MiraScript Python 模块
+#[pyfunction]
+fn get_diagnostic_message(code: u16) -> PyResult<(&'static str, &'static str, &'static str)> {
+    match DiagnosticCode::try_from(code) {
+        Ok(error) => Ok((error.level_str(), error.into(), error.message())),
+        Err(_) => Err(PyValueError::new_err(format!(
+            "No diagnostic message found for code {code}"
+        ))),
+    }
+}
+
 #[pymodule]
 fn mirascript(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(compile, m)?)?;
     m.add_class::<Config>()?;
+    m.add_function(wrap_pyfunction!(get_diagnostic_message, m)?)?;
     Ok(())
 }

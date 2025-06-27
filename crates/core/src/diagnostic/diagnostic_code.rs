@@ -1,7 +1,9 @@
-use strum::{Display, EnumMessage, FromRepr};
+use strum::{Display, EnumMessage, FromRepr, IntoStaticStr};
 
 #[cfg_attr(feature = "wasm", wasm_bindgen::prelude::wasm_bindgen)]
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, EnumMessage, FromRepr, Display)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, PartialOrd, EnumMessage, FromRepr, Display, IntoStaticStr,
+)]
 #[repr(u16)]
 pub enum DiagnosticCode {
     // Preserved 0~999
@@ -290,11 +292,11 @@ impl From<DiagnosticCode> for u16 {
     }
 }
 
-impl TryInto<DiagnosticCode> for u16 {
+impl TryFrom<u16> for DiagnosticCode {
     type Error = ();
 
-    fn try_into(self) -> Result<DiagnosticCode, Self::Error> {
-        DiagnosticCode::from_repr(self).ok_or(())
+    fn try_from(value: u16) -> Result<Self, Self::Error> {
+        DiagnosticCode::from_repr(value).ok_or(())
     }
 }
 

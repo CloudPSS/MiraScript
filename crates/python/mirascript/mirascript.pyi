@@ -1,3 +1,17 @@
+from typing import Literal, TypedDict, Unpack
+
+from .diagnostics import DiagnosticLevel
+
+class ConfigData(TypedDict):
+    """
+    MiraScript 编译配置数据
+
+    Attributes:
+        input_mode (str): 输入模式，支持 'script' 和 'template'
+    """
+
+    input_mode: Literal["script", "template"]
+
 class Config:
     """
     MiraScript 编译配置
@@ -6,7 +20,7 @@ class Config:
         input_mode (str): 输入模式，支持 'script' 和 'template'
     """
 
-    def __init__(self, **data):
+    def __init__(self, **data: Unpack[ConfigData]) -> None:
         """
         初始化编译配置
 
@@ -25,5 +39,19 @@ def compile(script: str, config: Config) -> tuple[bytes | None, list[int]]:
 
     Returns:
         tuple[bytes | None, list[int]]: 编译后的字节码和诊断信息
+    """
+    ...
+
+def get_diagnostic_message(
+    code: int,
+) -> tuple[DiagnosticLevel, str, str]:
+    """
+    获取诊断信息的消息
+
+    Args:
+        code (int): 诊断代码
+
+    Returns:
+        tuple[Literal["Error", "Warning", "Info", "Hint", "Reference", "Unknown"], str, str]: 级别字符串、诊断消息名称和诊断消息描述
     """
     ...

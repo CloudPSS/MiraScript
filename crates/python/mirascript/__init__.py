@@ -1,24 +1,26 @@
 from typing import Any
 from collections.abc import Callable
-from . import mirascript
+from .mirascript import Config
 from .emit import emit
+from .diagnostics import decode_diagnostics, CompilationError
 
-Config = mirascript.Config
 
-
-def compile(script: str, **config: Config) -> Callable[[dict[str, Any]], Any]:
+def compile(script: str, config: Config) -> Callable[[dict[str, Any]], Any]:
     """
     编译 MiraScript 代码，生成 Python 函数
 
     Args:
         script (str): 要编译的 MiraScript 代码
-        **config (Config): 编译配置，见 `help(mirascript.Config)`
+        config (Config): 编译配置
 
     Returns:
         (Callable[[dict[str, Any]], Any]): 编译后的 Python 函数
     """
-    cfg = Config(**config)
-    bytecode, diagnostics = mirascript.compile(script, cfg)
+    bytecode, diagnostics = mirascript.compile(script, config)
+
+    if bytecode is None:
+        diagnostics = decode_diagnostics(diagnostics)
+        raise CompilationError(diagnostics)
     return emit(bytecode)
 
 
