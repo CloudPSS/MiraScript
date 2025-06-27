@@ -1,4 +1,4 @@
-use crate::parser::{Callable, Iterable, ListItem, RecordElementBase};
+use crate::parser::RecordElementBase;
 
 use super::prelude::*;
 
@@ -8,7 +8,14 @@ where
     I: Formattable,
 {
     fn measure(&self, formatter: &Formatter, indent: usize) -> usize {
-        0
+        use RecordElementBase::*;
+        match self {
+            InterpolateNamed(_, _, e)
+            | Named(_, _, e)
+            | OmitNamed(_, e)
+            | Unnamed(e)
+            | Spread(_, e) => e.measure(formatter, indent),
+        }
     }
 
     fn format(&self, formatter: &mut Formatter, measurement: usize) {

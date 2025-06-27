@@ -9,10 +9,24 @@ publish = false
 dwarf-debug-info = true
 
 [package.metadata.wasm-pack.profile.release]
-wasm-opt = ["-O4", "--enable-bulk-memory", "--enable-mutable-globals"]
+wasm-opt = [
+  "-O4",
+  "--enable-sign-ext",
+  "--enable-bulk-memory",
+  "--enable-mutable-globals",
+  "--enable-nontrapping-float-to-int",
+  "--enable-simd",
+]
 
 [package.metadata.wasm-pack.profile.profiling]
-wasm-opt = ["-O4", "--enable-bulk-memory", "--enable-mutable-globals"]
+wasm-opt = [
+  "-O4",
+  "--enable-sign-ext",
+  "--enable-bulk-memory",
+  "--enable-mutable-globals",
+  "--enable-nontrapping-float-to-int",
+  "--enable-simd",
+]
 
 [lib]
 crate-type = ["cdylib", "rlib"]

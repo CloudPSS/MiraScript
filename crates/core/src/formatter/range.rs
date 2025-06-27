@@ -1,10 +1,10 @@
-use crate::parser::{ParameterList, Range};
+use crate::parser::Range;
 
 use super::prelude::*;
 
 impl Formattable for Range<'_> {
     fn measure(&self, formatter: &Formatter, indent: usize) -> usize {
-        0
+        self.0.measure(formatter, indent) + self.2.measure(formatter, indent)
     }
 
     fn format(&self, formatter: &mut Formatter, measurement: usize) {

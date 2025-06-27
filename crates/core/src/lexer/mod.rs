@@ -36,7 +36,7 @@ impl<'s, Output, F> Parser<'s, Output> for F where
 
 mod prelude {
     pub(super) use super::{
-        Input, Keyword, Operator, Parser, Result, Token, TokenKind, Trivia, TriviaList,
+        Input, Keyword, Operator, Parser, Result, Token, TokenKind, TriviaList,
     };
     pub(super) use crate::diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange};
     pub(super) use winnow::{

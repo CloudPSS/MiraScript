@@ -4,7 +4,11 @@ use super::prelude::*;
 
 impl Formattable for Statement<'_> {
     fn measure(&self, formatter: &Formatter, indent: usize) -> usize {
-        1
+        use Statement::*;
+        match self {
+            BlockExpression(expression) => usize::max(1, expression.measure(formatter, indent)),
+            _ => 1,
+        }
     }
 
     fn format(&self, formatter: &mut Formatter, measurement: usize) {

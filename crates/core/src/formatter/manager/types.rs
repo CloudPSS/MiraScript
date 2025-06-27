@@ -1,9 +1,6 @@
 use std::ops::Deref;
 
-use crate::{
-    formatter::FormatOptions,
-    lexer::{Token, TokenKind},
-};
+use crate::formatter::FormatOptions;
 
 pub(crate) struct FormatManager<'o> {
     pub(super) result: String,

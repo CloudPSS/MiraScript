@@ -6,7 +6,7 @@ impl Formattable for Callable<'_> {
     fn measure(&self, formatter: &Formatter, indent: usize) -> usize {
         use Callable::*;
         match self {
-            Type(kw) => 0,
+            Type(_) => 0,
             Expression(expression) => expression.measure(formatter, indent),
         }
     }
