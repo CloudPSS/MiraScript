@@ -44,8 +44,11 @@ impl<'s> Emitter<'s> {
     pub fn declare_expression(&mut self, outer: &'s Expression<'s>) {
         match outer {
             Literal(_) => (),
-            // InterpolatedString 内的表达式只有 Variable 和 Block，均不需要声明
-            InterpolatedString(_, _) => (),
+            InterpolatedString(_, exprs) => {
+                exprs.iter().for_each(|exp| {
+                    self.declare_expression(exp);
+                });
+            }
             Variable(_) => (),
             Grouping(op, expression, cp) => {
                 if matches!(
