@@ -67,8 +67,8 @@ export async function registerLSP(globalProvider: VmGlobalProvider | undefined):
         languages.registerDocumentSymbolProvider(language, documentSymbolProvider),
 
         languages.registerDocumentFormattingEditProvider(language, formatterProvider),
-        languages.registerDocumentRangeFormattingEditProvider(language, formatterProvider),
-        languages.registerOnTypeFormattingEditProvider(language, formatterProvider),
+        // languages.registerDocumentRangeFormattingEditProvider(language, formatterProvider),
+        // languages.registerOnTypeFormattingEditProvider(language, formatterProvider),
 
         languages.registerHoverProvider(language, hoverProvider),
         languages.registerInlayHintsProvider(language, inlayHintsProvider),
