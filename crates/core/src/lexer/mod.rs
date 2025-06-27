@@ -51,12 +51,31 @@ fn lex_impl<'s, const BALANCED: bool>(
     close: Operator,
 ) -> Result<Vec<Token<'s>>> {
     let mut tokens = vec![];
-    while !BALANCED || tokens.is_empty() || depth > 0 {
+    loop {
         #[cfg_attr(not(feature = "formatter"), allow(unused))]
         let leading_trivia = trivia::leading_trivia(input)?;
         let prev_token = tokens.last_mut();
         #[cfg_attr(not(feature = "formatter"), allow(unused_mut))]
         let mut token = tokens::token(input, prev_token)?;
+
+        if BALANCED {
+            if open == token.kind {
+                depth += 1;
+            } else if close == token.kind {
+                depth -= 1;
+            }
+        }
+
+        let eof = matches!(token.kind, TokenKind::Eof);
+        if BALANCED && depth <= 0 || eof {
+            #[cfg(feature = "formatter")]
+            if crate::config::trivia() {
+                token.leading_trivia = leading_trivia;
+            }
+            tokens.push(token);
+            break;
+        }
+
         #[cfg_attr(not(feature = "formatter"), allow(unused))]
         let tailing_trivia = trivia::tailing_trivia(input)?;
 
@@ -65,19 +84,7 @@ fn lex_impl<'s, const BALANCED: bool>(
             token.leading_trivia = leading_trivia;
             token.tailing_trivia = tailing_trivia;
         }
-
-        let eof = matches!(token.kind, TokenKind::Eof);
-        if BALANCED {
-            if open == token.kind {
-                depth += 1;
-            } else if close == token.kind {
-                depth -= 1;
-            }
-        }
         tokens.push(token);
-        if eof {
-            break;
-        }
     }
     Ok(tokens)
 }
