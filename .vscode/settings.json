@@ -42,5 +42,6 @@
   "editor.tabSize": 2,
   "files.eol": "\n",
   "npm.packageManager": "pnpm",
+  "python.analysis.typeCheckingMode": "standard",
   "typescript.tsdk": "./node_modules/typescript/lib"
 }
