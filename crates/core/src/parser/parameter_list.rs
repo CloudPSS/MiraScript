@@ -36,13 +36,6 @@ impl<'s> AstWalker<'s> for ParameterList<'s> {
         self.1.collect_diagnostics(collector);
         self.2.collect_diagnostics(collector);
     }
-
-    fn walk(&self, visitor: &mut dyn AstVisitor<'s>) {
-        self.0.walk(visitor);
-        self.1.walk(visitor);
-        self.2.walk(visitor);
-    }
-
     fn range(&self) -> SourceRange {
         self.0.range.start..self.2.range.end
     }

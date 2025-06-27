@@ -11,9 +11,11 @@ impl<'s, T: AstWalker<'s>> AstWalker<'s> for ListItem<'s, T> {
         self.0.collect_diagnostics(collector);
         self.1.collect_diagnostics(collector);
     }
-    fn walk(&self, visitor: &mut dyn AstVisitor<'s>) {
-        self.0.walk(visitor);
-        self.1.walk(visitor);
+    fn range(&self) -> SourceRange {
+        match self.1 {
+            Some(ref tail_comma) => self.0.range().start..tail_comma.range.end,
+            None => self.0.range(),
+        }
     }
 }
 

@@ -23,12 +23,6 @@ impl<'s> AstWalker<'s> for Range<'s> {
         op.collect_diagnostics(collector);
         end.collect_diagnostics(collector);
     }
-    fn walk(&self, visitor: &mut dyn AstVisitor<'s>) {
-        let Range(start, op, end) = self;
-        start.walk(visitor);
-        op.walk(visitor);
-        end.walk(visitor);
-    }
     fn range(&self) -> crate::diagnostic::SourceRange {
         self.0.range().start..self.2.range().end
     }

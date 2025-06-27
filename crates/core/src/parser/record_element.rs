@@ -55,29 +55,13 @@ impl<'s, E: AstWalker<'s>, I: AstWalker<'s>> AstWalker<'s> for RecordElementBase
             }
         }
     }
-    fn walk(&self, visitor: &mut dyn AstVisitor<'s>) {
+    fn range(&self) -> SourceRange {
         match self {
-            Named(name, colon, value) => {
-                name.walk(visitor);
-                colon.walk(visitor);
-                value.walk(visitor);
-            }
-            InterpolateNamed(name_expr, colon, value) => {
-                name_expr.walk(visitor);
-                colon.walk(visitor);
-                value.walk(visitor);
-            }
-            OmitNamed(colon, value) => {
-                colon.walk(visitor);
-                value.walk(visitor);
-            }
-            Unnamed(value) => {
-                value.walk(visitor);
-            }
-            Spread(spread, value) => {
-                spread.walk(visitor);
-                value.walk(visitor);
-            }
+            Named(name, _, value) => name.range.start..value.range().end,
+            InterpolateNamed(name_expr, _, value) => name_expr.range().start..value.range().end,
+            OmitNamed(colon, value) => colon.range.start..value.range().end,
+            Unnamed(value) => value.range(),
+            Spread(spread, value) => spread.range.start..value.range().end,
         }
     }
 }

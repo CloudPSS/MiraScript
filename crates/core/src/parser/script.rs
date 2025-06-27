@@ -22,14 +22,12 @@ impl<'s> AstWalker<'s> for Script<'s> {
         }
         self.2.collect_diagnostics(collector);
     }
-    fn walk(&self, visitor: &mut dyn AstVisitor<'s>) {
-        for statement in &self.0 {
-            statement.walk(visitor);
+    fn range(&self) -> SourceRange {
+        match (self.0.as_slice(), self.1.as_deref(), self.2.as_ref()) {
+            ([], None, eof) => eof.range(),
+            ([], Some(expr), eof) => expr.range().start..eof.range.end,
+            ([s, ..], _, eof) => s.range().start..eof.range.end,
         }
-        if let Some(expression) = &self.1 {
-            expression.walk(visitor);
-        }
-        self.2.walk(visitor);
     }
 }
 

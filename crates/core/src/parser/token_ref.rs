@@ -84,11 +84,6 @@ impl<'s> AstWalker<'s> for TokenRef<'s> {
             token.collect_diagnostics(collector);
         }
     }
-
-    fn walk(&self, visitor: &mut dyn AstVisitor<'s>) {
-        self.as_ref().walk(visitor);
-    }
-
     fn range(&self) -> SourceRange {
         self.as_ref().range()
     }

@@ -117,3 +117,26 @@ pub(super) fn token_or_insert<'s>(
             .parse_next(i)
     }
 }
+
+pub(super) fn unknown_range<'s>(
+    recovered: &Option<impl AstWalker<'s>>,
+    tokens: &[TokenRef<'s>],
+) -> SourceRange {
+    let mut range = SourceRange {
+        start: usize::MAX,
+        end: usize::MIN,
+    };
+    for token in tokens {
+        if token.range.start < range.start {
+            range.start = token.range.start;
+        }
+        if token.range.end > range.end {
+            range.end = token.range.end;
+        }
+    }
+    if let Some(recovered) = recovered {
+        range.start = range.start.min(recovered.range().start);
+        range.end = range.end.max(recovered.range().end);
+    }
+    range
+}

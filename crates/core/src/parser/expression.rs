@@ -1,3 +1,5 @@
+use crate::parser::helper::unknown_range;
+
 use super::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
@@ -16,11 +18,11 @@ impl<'s> AstWalker<'s> for Callable<'s> {
             Expression(exp) => exp.collect_diagnostics(collector),
         }
     }
-    fn walk(&self, visitor: &mut dyn AstVisitor<'s>) {
+    fn range(&self) -> SourceRange {
         use Callable::*;
         match self {
-            Type(token) => token.walk(visitor),
-            Expression(exp) => exp.walk(visitor),
+            Type(token) => token.range(),
+            Expression(exp) => exp.range(),
         }
     }
 }
@@ -34,12 +36,6 @@ impl<'s> AstWalker<'s> for ElseBlock<'s> {
         self.0.collect_diagnostics(collector);
         self.1.collect_diagnostics(collector);
     }
-
-    fn walk(&self, visitor: &mut dyn AstVisitor<'s>) {
-        self.0.walk(visitor);
-        self.1.walk(visitor);
-    }
-
     fn range(&self) -> SourceRange {
         self.0.range.start..self.1.range().end
     }
@@ -449,169 +445,36 @@ impl<'s> AstWalker<'s> for Expression<'s> {
             }
         }
     }
-
-    fn walk(&self, visitor: &mut dyn AstVisitor<'s>) {
-        use Expression::*;
-        visitor.visit_expression(self);
-        match self {
-            Literal(token) => token.walk(visitor),
-            InterpolatedString(_, exps) => {
-                // skip token ref
-                exps.walk(visitor);
-            }
-            Variable(token) => token.walk(visitor),
-            Grouping(op, exp, cp) => {
-                op.walk(visitor);
-                exp.walk(visitor);
-                cp.walk(visitor);
-            }
-            Record(op, exps, cp) => {
-                op.walk(visitor);
-                exps.walk(visitor);
-                cp.walk(visitor);
-            }
-            Array(op, exps, cp) => {
-                op.walk(visitor);
-                exps.walk(visitor);
-                cp.walk(visitor);
-            }
-            Call(exp, op, args, cp) => {
-                exp.walk(visitor);
-                op.walk(visitor);
-                args.walk(visitor);
-                cp.walk(visitor);
-            }
-            Extension(exp, e, ext, op, args, cp) => {
-                exp.walk(visitor);
-                e.walk(visitor);
-                ext.walk(visitor);
-                op.walk(visitor);
-                args.walk(visitor);
-                cp.walk(visitor);
-            }
-            Access(exp, dot, token) => {
-                exp.walk(visitor);
-                dot.walk(visitor);
-                token.walk(visitor);
-            }
-            Index(exp, l, index, r) => {
-                exp.walk(visitor);
-                l.walk(visitor);
-                index.walk(visitor);
-                r.walk(visitor);
-            }
-            Slice(exp, l, start, op, end, r) => {
-                exp.walk(visitor);
-                l.walk(visitor);
-                start.walk(visitor);
-                op.walk(visitor);
-                end.walk(visitor);
-                r.walk(visitor);
-            }
-            NonNil(exp, op) => {
-                exp.walk(visitor);
-                op.walk(visitor);
-            }
-            Prefix(op, exp) => {
-                op.walk(visitor);
-                exp.walk(visitor);
-            }
-            Infix(exp1, op, exp2) => {
-                exp1.walk(visitor);
-                op.walk(visitor);
-                exp2.walk(visitor);
-            }
-            Is(exp1, op, pattern) => {
-                exp1.walk(visitor);
-                op.walk(visitor);
-                pattern.walk(visitor);
-            }
-            Block(op, statements, expression, cp) => {
-                op.walk(visitor);
-                statements.walk(visitor);
-                expression.walk(visitor);
-                cp.walk(visitor);
-            }
-            Loop(kw, expression) => {
-                kw.walk(visitor);
-                expression.walk(visitor);
-            }
-            While(kw, expression, block, None) => {
-                kw.walk(visitor);
-                expression.walk(visitor);
-                block.walk(visitor);
-            }
-            While(kw, expression, block, Some(else_block)) => {
-                kw.walk(visitor);
-                expression.walk(visitor);
-                block.walk(visitor);
-                else_block.walk(visitor);
-            }
-            ForIn(kw_for, pattern, kw_in, iter, block, None) => {
-                kw_for.walk(visitor);
-                pattern.walk(visitor);
-                kw_in.walk(visitor);
-                iter.walk(visitor);
-                block.walk(visitor);
-            }
-            ForIn(kw_for, pattern, kw_in, iter, block, Some(else_block)) => {
-                kw_for.walk(visitor);
-                pattern.walk(visitor);
-                kw_in.walk(visitor);
-                iter.walk(visitor);
-                block.walk(visitor);
-                else_block.walk(visitor);
-            }
-            If(kw_if, cond, then_block, Some(else_block)) => {
-                kw_if.walk(visitor);
-                cond.walk(visitor);
-                then_block.walk(visitor);
-                else_block.walk(visitor);
-            }
-            If(kw_if, cond, then_block, None) => {
-                kw_if.walk(visitor);
-                cond.walk(visitor);
-                then_block.walk(visitor);
-            }
-            Match(kw, expression, op, arms, cp) => {
-                kw.walk(visitor);
-                expression.walk(visitor);
-                op.walk(visitor);
-                for (kw_case, pattern, block) in arms {
-                    kw_case.walk(visitor);
-                    pattern.walk(visitor);
-                    block.walk(visitor);
-                }
-                cp.walk(visitor);
-            }
-            Function(kw, None, block) => {
-                kw.walk(visitor);
-                block.walk(visitor);
-            }
-            Function(kw, Some(params), block) => {
-                kw.walk(visitor);
-                params.walk(visitor);
-                block.walk(visitor);
-            }
-            Unknown {
-                recovered,
-                tokens,
-                errors: _,
-            } => {
-                recovered.walk(visitor);
-                tokens.walk(visitor);
-            }
-        }
-    }
-
     fn range(&self) -> SourceRange {
         use Expression::*;
         match self {
             Grouping(op, _, cp) | Record(op, _, cp) | Array(op, _, cp) | Block(op, _, _, cp) => {
                 op.range.start..cp.range.end
             }
+            InterpolatedString(token, _) => token.range.clone(),
+            Literal(token) | Variable(token) => token.range.clone(),
             Index(exp, _, _, r) | Slice(exp, _, _, _, _, r) => exp.range().start..r.range.end,
-            _ => self.range_slow(),
+            Call(callable, _, _, cp) => callable.range().start..cp.range.end,
+            Extension(expression, _, _, _, _, cp) => expression.range().start..cp.range.end,
+            Access(expression, _, cp) => expression.range().start..cp.range.end,
+            NonNil(expression, bang) => expression.range().start..bang.range.end,
+            Prefix(op, expression) => op.range.start..expression.range().end,
+            Infix(left, _, right) => left.range().start..right.range().end,
+            Is(expression, _, pattern) => expression.range().start..pattern.range().end,
+            Loop(kw, expression) => kw.range.start..expression.range().end,
+            While(kw, _, body, None) | ForIn(kw, _, _, _, body, None) | If(kw, _, body, None) => {
+                kw.range.start..body.range().end
+            }
+            While(kw, _, _, Some(else_block))
+            | ForIn(kw, _, _, _, _, Some(else_block))
+            | If(kw, _, _, Some(else_block)) => kw.range.start..else_block.range().end,
+            Match(kw, _, _, _, cp) => kw.range.start..cp.range.end,
+            Function(kw, _, expression) => kw.range.start..expression.range().end,
+            Unknown {
+                recovered,
+                tokens,
+                errors: _,
+            } => unknown_range(recovered, tokens),
         }
     }
 }

@@ -163,58 +163,18 @@ impl<'s> AstWalker<'s> for Statement<'s> {
             }
         }
     }
-    fn walk(&self, visitor: &mut dyn AstVisitor<'s>) {
+    fn range(&self) -> SourceRange {
         use Statement::*;
-        visitor.visit_statement(self);
         match self {
-            Empty(c) => c.walk(visitor),
-            Expression(expr, c) => {
-                expr.walk(visitor);
-                c.walk(visitor);
-            }
-            BlockExpression(expr) => expr.walk(visitor),
-            Bind(kw_let, pattern, eq, expr, c) => {
-                kw_let.walk(visitor);
-                pattern.walk(visitor);
-                eq.walk(visitor);
-                expr.walk(visitor);
-                c.walk(visitor);
-            }
-            Rebind(pattern, eq, expr, c) => {
-                pattern.walk(visitor);
-                eq.walk(visitor);
-                expr.walk(visitor);
-                c.walk(visitor);
-            }
-            Assign(exp, eq, expr, c) => {
-                exp.walk(visitor);
-                eq.walk(visitor);
-                expr.walk(visitor);
-                c.walk(visitor);
-            }
-            Function(kw, id, params, body) => {
-                kw.walk(visitor);
-                id.walk(visitor);
-                params.walk(visitor);
-                body.walk(visitor);
-            }
-            Return(kw, expr, c) => {
-                kw.walk(visitor);
-                expr.walk(visitor);
-                c.walk(visitor);
-            }
-            Break(kw, expr, c) => {
-                kw.walk(visitor);
-                expr.walk(visitor);
-                c.walk(visitor);
-            }
-            Continue(kw, c) => {
-                kw.walk(visitor);
-                c.walk(visitor);
-            }
-            Unknown { tokens, errors: _ } => {
-                tokens.walk(visitor);
-            }
+            Empty(c) => c.range(),
+            Expression(expr, c) => expr.range().start..c.range.end,
+            BlockExpression(expr) => expr.range(),
+            Bind(kw_let, _, _, _, c) => kw_let.range.start..c.range.end,
+            Rebind(pattern, _, _, c) => pattern.range().start..c.range.end,
+            Assign(exp, _, _, c) => exp.range().start..c.range.end,
+            Function(kw, _, _, body) => kw.range.start..body.range().end,
+            Return(kw, _, c) | Break(kw, _, c) | Continue(kw, c) => kw.range.start..c.range.end,
+            Unknown { tokens, errors: _ } => tokens.range(),
         }
     }
 }

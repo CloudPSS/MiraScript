@@ -31,18 +31,11 @@ impl<'s, E: AstWalker<'s>> AstWalker<'s> for ArrayElementBase<'s, E> {
             }
         }
     }
-    fn walk(&self, visitor: &mut dyn AstVisitor<'s>) {
+    fn range(&self) -> SourceRange {
         match self {
-            Element(value) => {
-                value.walk(visitor);
-            }
-            ArrayElementBase::Range(range) => {
-                range.walk(visitor);
-            }
-            Spread(sp, value) => {
-                sp.walk(visitor);
-                value.walk(visitor);
-            }
+            Element(value) => value.range(),
+            ArrayElementBase::Range(range) => range.range(),
+            Spread(sp, value) => sp.range.start..value.range().end,
         }
     }
 }

@@ -13,10 +13,10 @@ impl<'s> AstWalker<'s> for Iterable<'s> {
             Iterable::Value(value) => value.collect_diagnostics(collector),
         }
     }
-    fn walk(&self, visitor: &mut dyn AstVisitor<'s>) {
+    fn range(&self) -> SourceRange {
         match self {
-            Iterable::Range(range) => range.walk(visitor),
-            Iterable::Value(value) => value.walk(visitor),
+            Iterable::Range(range) => range.range(),
+            Iterable::Value(value) => value.range(),
         }
     }
 }

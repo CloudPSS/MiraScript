@@ -1,3 +1,5 @@
+use crate::parser::helper::unknown_range;
+
 use super::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
@@ -207,80 +209,23 @@ impl<'s> AstWalker<'s> for Pattern<'s> {
             }
         }
     }
-    fn walk(&self, visitor: &mut dyn AstVisitor<'s>) {
+    fn range(&self) -> SourceRange {
         use Pattern::*;
-        visitor.visit_pattern(self);
         match self {
-            Grouping(o, p, e) => {
-                o.walk(visitor);
-                p.walk(visitor);
-                e.walk(visitor);
-            }
-            Constant(p, t) => {
-                p.walk(visitor);
-                t.walk(visitor);
-            }
-            Relation(o, p) => {
-                o.walk(visitor);
-                p.walk(visitor);
-            }
-            Range(s, o, e) => {
-                s.walk(visitor);
-                o.walk(visitor);
-                e.walk(visitor);
-            }
-            Discard(t) => t.walk(visitor),
-            Bind(p, t) => {
-                p.walk(visitor);
-                t.walk(visitor);
-            }
-            Record(s, p, e) => {
-                s.walk(visitor);
-                for sub_pattern in p.iter() {
-                    sub_pattern.walk(visitor);
-                }
-                e.walk(visitor);
-            }
-            Array(s, p, e) => {
-                s.walk(visitor);
-                for sub_pattern in p.iter() {
-                    sub_pattern.walk(visitor);
-                }
-                e.walk(visitor);
-            }
-            SpreadDiscard(_) => {}
-            And(l, o, r) => {
-                l.walk(visitor);
-                o.walk(visitor);
-                r.walk(visitor);
-            }
-            Or(l, o, r) => {
-                l.walk(visitor);
-                o.walk(visitor);
-                r.walk(visitor);
-            }
-            Not(o, p) => {
-                o.walk(visitor);
-                p.walk(visitor);
-            }
+            Grouping(o, _, e) | Record(o, _, e) | Array(o, _, e) => o.range.start..e.range.end,
+            Range(o, _, e) => o.range().start..e.range().end,
+            SpreadDiscard(pos) => *pos..*pos,
+            Relation(op, pattern) => op.range.start..pattern.range().end,
+            Discard(underscore) => underscore.range(),
+            Constant(None, token) | Bind(None, token) => token.range(),
+            Constant(Some(op), token) | Bind(Some(op), token) => op.range.start..token.range.end,
+            And(left, _, right) | Or(left, _, right) => left.range().start..right.range().end,
+            Not(op, pattern) => op.range.start..pattern.range().end,
             Unknown {
                 recovered,
                 tokens,
                 errors: _,
-            } => {
-                recovered.walk(visitor);
-                tokens.walk(visitor);
-            }
-        }
-    }
-
-    fn range(&self) -> SourceRange {
-        use Pattern::*;
-        match self {
-            Grouping(o, _, e) | Record(o, _, e) | Array(o, _, e) => o.range().start..e.range().end,
-            Range(o, _, e) => o.range().start..e.range().end,
-            SpreadDiscard(pos) => *pos..*pos,
-            _ => self.range_slow(),
+            } => unknown_range(recovered, tokens),
         }
     }
 }
