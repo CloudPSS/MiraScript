@@ -17,13 +17,13 @@ where
             Named(name, colon, e) => {
                 formatter.write_token(name);
                 formatter.write_token(colon);
-                formatter.write(" ");
+                formatter.write_space();
                 e.format(formatter, measurement);
             }
             InterpolateNamed(i, colon, e) => {
                 i.format(formatter, measurement);
                 formatter.write_token(colon);
-                formatter.write(" ");
+                formatter.write_space();
                 e.format(formatter, measurement);
             }
             OmitNamed(colon, e) => {
@@ -33,8 +33,8 @@ where
             Unnamed(e) => {
                 e.format(formatter, measurement);
             }
-            Spread(_, e) => {
-                formatter.write("..");
+            Spread(op, e) => {
+                formatter.write_token(op);
                 e.format(formatter, measurement);
             }
         }

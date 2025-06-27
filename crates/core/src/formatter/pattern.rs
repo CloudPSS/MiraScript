@@ -1,4 +1,4 @@
-use crate::Pattern;
+use crate::{Operator, Pattern};
 
 use super::prelude::*;
 
@@ -10,10 +10,10 @@ impl Formattable for Pattern<'_> {
     fn format(&self, formatter: &mut Formatter, measurement: usize) {
         use Pattern::*;
         match self {
-            Grouping(_, pattern, _) => {
-                formatter.write("(");
+            Grouping(op, pattern, cp) => {
+                formatter.write_token(op);
                 pattern.format(formatter, measurement);
-                formatter.write(")");
+                formatter.write_token(cp);
             }
             Constant(op, literal) => {
                 if let Some(op) = op {
@@ -23,7 +23,7 @@ impl Formattable for Pattern<'_> {
             }
             Relation(op, constant) => {
                 formatter.write_token(op);
-                formatter.write(" ");
+                formatter.write_space();
                 constant.format(formatter, measurement);
             }
             Range(left, op, right) => {
@@ -31,42 +31,40 @@ impl Formattable for Pattern<'_> {
                 formatter.write_token(op);
                 right.format(formatter, measurement);
             }
-            Discard(_) => {
-                formatter.write("_");
+            Discard(kw) => {
+                formatter.write_token(kw);
             }
             Bind(kw_mut, id) => {
                 if let Some(kw_mut) = kw_mut {
                     formatter.write_token(kw_mut);
-                    formatter.write(" ");
+                    formatter.write_space();
                 }
                 formatter.write_token(id);
             }
-            Record(_, list_items, _) => {
-                formatter.write("(");
+            Record(op, list_items, cp) => {
+                formatter.write_token(op);
                 list_items[..].format(formatter, measurement);
                 if list_items.len() == 1 && list_items[0].is_unnamed() {
-                    formatter.write(",");
+                    formatter.write_token_or(list_items[0].tail_comma(), Operator::Comma);
                 }
-                formatter.write(")");
+                formatter.write_token(cp);
             }
-            Array(_, list_items, _) => {
-                formatter.write("[");
+            Array(op, list_items, cp) => {
+                formatter.write_token(op);
                 list_items[..].format(formatter, measurement);
-                formatter.write("]");
+                formatter.write_token(cp);
             }
             SpreadDiscard(_) => (),
-            And(left, _, right) => {
+            And(left, kw, right) | Or(left, kw, right) => {
                 left.format(formatter, measurement);
-                formatter.write(" and ");
+                formatter.write_space();
+                formatter.write_token(kw);
+                formatter.write_space();
                 right.format(formatter, measurement);
             }
-            Or(left, _, right) => {
-                left.format(formatter, measurement);
-                formatter.write(" or ");
-                right.format(formatter, measurement);
-            }
-            Not(_, pattern) => {
-                formatter.write("not ");
+            Not(kw, pattern) => {
+                formatter.write_token(kw);
+                formatter.write_space();
                 pattern.format(formatter, measurement);
             }
             Unknown { .. } => (),

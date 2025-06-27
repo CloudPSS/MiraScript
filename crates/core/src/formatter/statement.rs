@@ -10,60 +10,67 @@ impl Formattable for Statement<'_> {
     fn format(&self, formatter: &mut Formatter, measurement: usize) {
         use Statement::*;
         match self {
-            Empty(_) => formatter.write(";"),
-            Expression(expression, _) => {
+            Empty(semicolon) => formatter.write_token(semicolon),
+            Expression(expression, semicolon) => {
                 expression.format(formatter, measurement);
-                formatter.write(";");
+                formatter.write_token(semicolon);
             }
             BlockExpression(expression) => expression.format(formatter, measurement),
-            Bind(_, pattern, _, expression, _) => {
-                formatter.write("let ");
+            Bind(kw, pattern, op, expression, semicolon) => {
+                formatter.write_token(kw);
+                formatter.write_space();
                 pattern.format(formatter, measurement);
-                formatter.write(" = ");
-                expression.format(formatter, measurement);
-                formatter.write(";");
-            }
-            Rebind(pattern, _, expression, _) => {
-                pattern.format(formatter, measurement);
-                formatter.write(" = ");
-                expression.format(formatter, measurement);
-                formatter.write(";");
-            }
-            Assign(assignee, op, expression, _) => {
-                assignee.format(formatter, measurement);
-                formatter.write(" ");
+                formatter.write_space();
                 formatter.write_token(op);
-                formatter.write(" ");
+                formatter.write_space();
                 expression.format(formatter, measurement);
-                formatter.write(";");
+                formatter.write_token(semicolon);
             }
-            Function(_, id, parameter_list, expression) => {
-                formatter.write("fn ");
+            Rebind(pattern, op, expression, semicolon) => {
+                pattern.format(formatter, measurement);
+                formatter.write_space();
+                formatter.write_token(op);
+                formatter.write_space();
+                expression.format(formatter, measurement);
+                formatter.write_token(semicolon);
+            }
+            Assign(assignee, op, expression, semicolon) => {
+                assignee.format(formatter, measurement);
+                formatter.write_space();
+                formatter.write_token(op);
+                formatter.write_space();
+                expression.format(formatter, measurement);
+                formatter.write_token(semicolon);
+            }
+            Function(kw, id, parameter_list, expression) => {
+                formatter.write_token(kw);
+                formatter.write_space();
                 formatter.write_token(id);
                 if let Some(param) = parameter_list {
                     param.format(formatter, measurement);
                 }
-                formatter.write(" ");
+                formatter.write_space();
                 expression.format(formatter, measurement);
             }
-            Return(_, expression, _) => {
-                formatter.write("return");
+            Return(kw, expression, semicolon) => {
+                formatter.write_token(kw);
                 if let Some(expr) = expression {
-                    formatter.write(" ");
+                    formatter.write_space();
                     expr.format(formatter, measurement);
                 }
-                formatter.write(";");
+                formatter.write_token(semicolon);
             }
-            Break(_, expression, _) => {
-                formatter.write("break");
+            Break(kw, expression, semicolon) => {
+                formatter.write_token(kw);
                 if let Some(expr) = expression {
-                    formatter.write(" ");
+                    formatter.write_space();
                     expr.format(formatter, measurement);
                 }
-                formatter.write(";");
+                formatter.write_token(semicolon);
             }
-            Continue(_, _) => {
-                formatter.write("continue;");
+            Continue(kw, semicolon) => {
+                formatter.write_token(kw);
+                formatter.write_token(semicolon);
             }
             Unknown { .. } => (),
         }

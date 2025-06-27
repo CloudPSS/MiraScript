@@ -1,4 +1,4 @@
-use crate::{Expression, lexer::TokenKind};
+use crate::{Expression, Operator, formatter::range, lexer::TokenKind};
 
 use super::prelude::*;
 
@@ -18,64 +18,64 @@ impl Formattable for Expression<'_> {
                 formatter.write_str_token(info, expressions, measurement);
             }
             Variable(token_ref) => formatter.write_token(token_ref),
-            Grouping(_, expression, _) => {
-                formatter.write("(");
+            Grouping(op, expression, cp) => {
+                formatter.write_token(op);
                 expression.format(formatter, measurement);
-                formatter.write(")");
+                formatter.write_token(cp);
             }
-            Record(_, list_items, _) => {
-                formatter.write("(");
+            Record(op, list_items, cp) => {
+                formatter.write_token(op);
                 list_items[..].format(formatter, measurement);
                 if list_items.len() == 1 && list_items[0].is_unnamed() {
-                    formatter.write(",");
+                    formatter.write_token_or(list_items[0].tail_comma(), Operator::Comma);
                 }
-                formatter.write(")");
+                formatter.write_token(cp);
             }
-            Array(_, list_items, _) => {
-                formatter.write("[");
+            Array(op, list_items, cp) => {
+                formatter.write_token(op);
                 list_items[..].format(formatter, measurement);
-                formatter.write("]");
+                formatter.write_token(cp);
             }
-            Call(callable, _, list_items, _) => {
+            Call(callable, op, list_items, cp) => {
                 callable.format(formatter, measurement);
-                formatter.write("(");
+                formatter.write_token(op);
                 list_items[..].format(formatter, measurement);
-                formatter.write(")");
+                formatter.write_token(cp);
             }
-            Extension(expression, _, callable, _, list_items, _) => {
+            Extension(expression, cc, callable, op, list_items, cp) => {
                 expression.format(formatter, measurement);
-                formatter.write("::");
+                formatter.write_token(cc);
                 callable.format(formatter, measurement);
-                formatter.write("(");
+                formatter.write_token(op);
                 list_items[..].format(formatter, measurement);
-                formatter.write(")");
+                formatter.write_token(cp);
             }
-            Access(expression, _, field) => {
+            Access(expression, dot, field) => {
                 expression.format(formatter, measurement);
-                formatter.write(".");
+                formatter.write_token(dot);
                 formatter.write_token(field);
             }
-            Index(expression, _, field_expr, _) => {
+            Index(expression, op, field_expr, cp) => {
                 expression.format(formatter, measurement);
-                formatter.write("[");
+                formatter.write_token(op);
                 field_expr.format(formatter, measurement);
-                formatter.write("]");
+                formatter.write_token(cp);
             }
-            Slice(expression, _, left, op, right, _) => {
+            Slice(expression, op, left, range, right, cp) => {
                 expression.format(formatter, measurement);
-                formatter.write("[");
+                formatter.write_token(op);
                 if let Some(left) = left {
                     left.format(formatter, measurement);
                 }
-                formatter.write_token(op);
+                formatter.write_token(range);
                 if let Some(right) = right {
                     right.format(formatter, measurement);
                 }
-                formatter.write("]");
+                formatter.write_token(cp);
             }
-            NonNil(expression, _) => {
+            NonNil(expression, bang) => {
                 expression.format(formatter, measurement);
-                formatter.write("!");
+                formatter.write_token(bang);
             }
             Prefix(op, expression) => {
                 formatter.write_token(op);
@@ -83,30 +83,40 @@ impl Formattable for Expression<'_> {
             }
             Infix(l, op, r) => {
                 l.format(formatter, measurement);
-                formatter.write(" ");
-                formatter.write_token(op);
-                formatter.write(" ");
+                if **op == Operator::Caret {
+                    formatter.write_token(op);
+                } else {
+                    formatter.write_space();
+                    formatter.write_token(op);
+                    formatter.write_space();
+                }
                 r.format(formatter, measurement);
             }
-            Is(expression, _, pattern) => {
+            Is(expression, kw, pattern) => {
                 expression.format(formatter, measurement);
-                formatter.write(" is ");
+                formatter.write_space();
+                formatter.write_token(kw);
+                formatter.write_space();
                 pattern.format(formatter, measurement);
             }
-            Block(_, statements, expression, _) => {
+            Block(op, statements, expression, cp) => {
                 if statements.is_empty() && expression.is_none() {
-                    formatter.write("{ }");
+                    formatter.write_token(op);
+                    formatter.write_space();
+                    formatter.write_token(cp);
                     return;
                 }
                 if statements.is_empty() {
-                    formatter.write("{ ");
+                    formatter.write_token(op);
+                    formatter.write_space();
                     if let Some(expression) = expression {
                         expression.format(formatter, measurement);
                     }
-                    formatter.write(" }");
+                    formatter.write_space();
+                    formatter.write_token(cp);
                     return;
                 }
-                formatter.write("{");
+                formatter.write_token(op);
                 formatter.indent();
                 formatter.new_line();
                 for (i, statement) in statements.iter().enumerate() {
@@ -121,59 +131,74 @@ impl Formattable for Expression<'_> {
                 }
                 formatter.unindent();
                 formatter.new_line();
-                formatter.write("}");
+                formatter.write_token(cp);
             }
-            Loop(_, body) => {
-                formatter.write("loop ");
+            Loop(kw, body) => {
+                formatter.write_token(kw);
+                formatter.write_space();
                 body.format(formatter, measurement);
             }
-            While(_, cond, body, else_block) => {
-                formatter.write("while ");
+            While(kw, cond, body, else_block) => {
+                formatter.write_token(kw);
+                formatter.write_space();
                 cond.format(formatter, measurement);
-                formatter.write(" ");
+                formatter.write_space();
                 body.format(formatter, measurement);
-                if let Some((_, else_block)) = else_block {
-                    formatter.write(" else ");
+                if let Some((kw, else_block)) = else_block {
+                    formatter.write_space();
+                    formatter.write_token(kw);
+                    formatter.write_space();
                     else_block.format(formatter, measurement);
                 }
             }
-            ForIn(_, pattern, _, iterable, body, else_block) => {
-                formatter.write("for ");
+            ForIn(kw_for, pattern, kw_in, iterable, body, else_block) => {
+                formatter.write_token(kw_for);
+                formatter.write_space();
                 pattern.format(formatter, measurement);
-                formatter.write(" in ");
+                formatter.write_space();
+                formatter.write_token(kw_in);
+                formatter.write_space();
                 iterable.format(formatter, measurement);
-                formatter.write(" ");
+                formatter.write_space();
                 body.format(formatter, measurement);
-                if let Some((_, else_block)) = else_block {
-                    formatter.write(" else ");
+                if let Some((kw, else_block)) = else_block {
+                    formatter.write_space();
+                    formatter.write_token(kw);
+                    formatter.write_space();
                     else_block.format(formatter, measurement);
                 }
             }
-            If(_, cond, body, else_block) => {
-                formatter.write("if ");
+            If(kw, cond, body, else_block) => {
+                formatter.write_token(kw);
+                formatter.write_space();
                 cond.format(formatter, measurement);
-                formatter.write(" ");
+                formatter.write_space();
                 body.format(formatter, measurement);
-                if let Some((_, else_block)) = else_block {
-                    formatter.write(" else ");
+                if let Some((kw, else_block)) = else_block {
+                    formatter.write_space();
+                    formatter.write_token(kw);
+                    formatter.write_space();
                     else_block.format(formatter, measurement);
                 }
             }
-            Match(_, matcher, _, items, _) => {
-                formatter.write("match ");
+            Match(kw, matcher, op, items, cp) => {
+                formatter.write_token(kw);
+                formatter.write_space();
                 matcher.format(formatter, measurement);
+                formatter.write_space();
+                formatter.write_token(op);
                 if items.is_empty() {
-                    formatter.write(" {}");
+                    formatter.write_space();
+                    formatter.write_token(cp);
                     return;
                 }
-                formatter.write(" {");
                 formatter.indent();
                 formatter.new_line();
                 for (i, (kw, pattern, expression)) in items.iter().enumerate() {
                     formatter.write_token(kw);
-                    formatter.write(" ");
+                    formatter.write_space();
                     pattern.format(formatter, measurement);
-                    formatter.write(" ");
+                    formatter.write_space();
                     expression.format(formatter, measurement);
                     if i != items.len() - 1 {
                         formatter.new_line();
@@ -181,13 +206,14 @@ impl Formattable for Expression<'_> {
                 }
                 formatter.unindent();
                 formatter.new_line();
-                formatter.write("}");
+                formatter.write_token(cp);
             }
-            Function(_, parameter_list, expression) => {
-                formatter.write("fn ");
+            Function(kw, parameter_list, expression) => {
+                formatter.write_token(kw);
+                formatter.write_space();
                 if let Some(parameter_list) = parameter_list {
                     parameter_list.format(formatter, measurement);
-                    formatter.write(" ");
+                    formatter.write_space();
                 }
                 expression.format(formatter, measurement);
             }

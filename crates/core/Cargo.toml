@@ -15,7 +15,7 @@ harness = false
 default = []
 wasm = ["dep:wasm-bindgen"]
 track_references = []
-trivia = []
+formatter = []
 serde = ["dep:serde"]
 
 [dev-dependencies]

@@ -10,7 +10,7 @@ impl Formattable for Callable<'_> {
     fn format(&self, formatter: &mut Formatter, measurement: usize) {
         use Callable::*;
         match self {
-            Type(_) => formatter.write("type"),
+            Type(kw) => formatter.write_token(kw),
             Expression(expression) => expression.format(formatter, measurement),
         }
     }

@@ -18,8 +18,7 @@ pub use operator::Operator;
 pub use token::Token;
 pub use token_kind::TokenKind;
 
-#[cfg(feature = "trivia")]
-pub(crate) use self::trivia::Trivia;
+pub(crate) use self::trivia::{Trivia, TriviaList};
 
 pub(crate) use self::{
     numeric::NumberInfo,
@@ -36,9 +35,9 @@ impl<'s, Output, F> Parser<'s, Output> for F where
 }
 
 mod prelude {
-    #[cfg(feature = "trivia")]
-    pub(super) use super::Trivia;
-    pub(super) use super::{Input, Keyword, Operator, Parser, Result, Token, TokenKind};
+    pub(super) use super::{
+        Input, Keyword, Operator, Parser, Result, Token, TokenKind, Trivia, TriviaList,
+    };
     pub(super) use crate::diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange};
     pub(super) use winnow::{
         Parser as _,
@@ -58,16 +57,23 @@ fn lex_impl<'s, const BALANCED: bool>(
 ) -> Result<Vec<Token<'s>>> {
     let mut tokens = vec![];
     while !BALANCED || tokens.is_empty() || depth > 0 {
-        let _leading_trivia = trivia::leading_trivia(input)?;
+        let leading_trivia = trivia::leading_trivia(input)?;
         let prev_token = tokens.last_mut();
-        #[allow(unused_mut)]
+        #[cfg_attr(not(feature = "formatter"), allow(unused_mut))]
         let mut token = tokens::token(input, prev_token)?;
-        let _trailing_trivia = trivia::tailing_trivia(input)?;
-        #[cfg(feature = "trivia")]
+        let tailing_trivia = trivia::tailing_trivia(input)?;
+
+        #[cfg(feature = "formatter")]
         if crate::config::trivia() {
-            token.leading_trivia = _leading_trivia.into_boxed_slice();
-            token.trailing_trivia = _trailing_trivia.into_boxed_slice();
+            token.leading_trivia = leading_trivia;
+            token.tailing_trivia = tailing_trivia;
         }
+        #[cfg(not(feature = "formatter"))]
+        {
+            let _ = leading_trivia;
+            let _ = tailing_trivia;
+        }
+
         let eof = matches!(token.kind, TokenKind::Eof);
         if BALANCED {
             if open == token.kind {

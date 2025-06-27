@@ -1,4 +1,6 @@
-use crate::parser::ListItem;
+use std::ops::Deref;
+
+use crate::{Operator, parser::ListItem};
 
 use super::prelude::*;
 
@@ -11,13 +13,12 @@ where
     }
 
     fn format(&self, formatter: &mut Formatter, measurement: usize) {
-        let mut first = true;
-        for item in self {
-            if !first {
-                formatter.write(", ");
+        for (i, item) in self.iter().enumerate() {
+            item.deref().format(formatter, measurement);
+            if i < self.len() - 1 {
+                formatter.write_token_or(item.tail_comma(), Operator::Comma);
+                formatter.write_space();
             }
-            first = false;
-            item.format(formatter, measurement);
         }
     }
 }

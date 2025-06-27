@@ -2,7 +2,6 @@ pub mod compile;
 pub mod config;
 pub mod diagnostic;
 pub mod emitter;
-pub mod formatter;
 pub mod lexer;
 pub mod parser;
 
@@ -10,9 +9,13 @@ pub use compile::{Compiler, SerializedDiagnostics};
 pub use config::Config;
 pub use diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange};
 pub use emitter::OpCode;
-pub use formatter::{format, format_statement};
 pub use lexer::{Keyword, Operator};
 pub use parser::{Expression, Pattern, Script, Statement};
+
+#[cfg(feature = "formatter")]
+pub mod formatter;
+#[cfg(feature = "formatter")]
+pub use formatter::{format, format_statement};
 
 pub mod prelude {
     pub use std::str::FromStr as _;

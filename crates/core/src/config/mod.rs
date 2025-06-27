@@ -11,12 +11,12 @@ pub(crate) fn track_references() -> bool {
     TRACK_REFERENCES.get()
 }
 
-#[cfg(feature = "trivia")]
+#[cfg(feature = "formatter")]
 thread_local! {
   static TRIVIA: Cell<bool> = const { Cell::new(false) };
 }
 
-#[cfg(feature = "trivia")]
+#[cfg(feature = "formatter")]
 pub(crate) fn trivia() -> bool {
     TRIVIA.get()
 }
@@ -24,7 +24,7 @@ pub(crate) fn trivia() -> bool {
 pub(crate) fn set_config(value: &Config) {
     #[cfg(feature = "track_references")]
     TRACK_REFERENCES.set(value.track_references);
-    #[cfg(feature = "trivia")]
+    #[cfg(feature = "formatter")]
     TRIVIA.set(value.trivia);
 }
 
@@ -64,7 +64,7 @@ pub enum DiagnosticPositionEncoding {
 pub struct Config {
     #[cfg(feature = "track_references")]
     pub track_references: bool,
-    #[cfg(feature = "trivia")]
+    #[cfg(feature = "formatter")]
     pub trivia: bool,
 
     pub input_mode: InputMode,
@@ -85,7 +85,7 @@ impl Config {
         Self {
             #[cfg(feature = "track_references")]
             track_references: false,
-            #[cfg(feature = "trivia")]
+            #[cfg(feature = "formatter")]
             trivia: false,
             input_mode: InputMode::Script,
             diagnostic_position_encoding: DiagnosticPositionEncoding::Utf8,

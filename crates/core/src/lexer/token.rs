@@ -9,10 +9,8 @@ use super::prelude::*;
 pub struct Token<'s> {
     pub kind: TokenKind<'s>,
     pub range: SourceRange,
-    #[cfg(feature = "trivia")]
-    pub leading_trivia: Box<[Trivia<'s>]>,
-    #[cfg(feature = "trivia")]
-    pub trailing_trivia: Box<[Trivia<'s>]>,
+    pub leading_trivia: TriviaList<'s>,
+    pub tailing_trivia: TriviaList<'s>,
 }
 
 impl winnow::stream::Location for Token<'_> {
@@ -44,10 +42,8 @@ impl<'s> Token<'s> {
         Token {
             kind,
             range,
-            #[cfg(feature = "trivia")]
-            leading_trivia: Box::new([]),
-            #[cfg(feature = "trivia")]
-            trailing_trivia: Box::new([]),
+            leading_trivia: Default::default(),
+            tailing_trivia: Default::default(),
         }
     }
 
@@ -55,10 +51,8 @@ impl<'s> Token<'s> {
         Token {
             kind: TokenKind::unknown_range(self.kind, self.range.clone(), error),
             range: self.range,
-            #[cfg(feature = "trivia")]
             leading_trivia: self.leading_trivia,
-            #[cfg(feature = "trivia")]
-            trailing_trivia: self.trailing_trivia,
+            tailing_trivia: self.tailing_trivia,
         }
     }
 
@@ -105,15 +99,6 @@ impl PartialEq for Token<'_> {
 
 impl Display for Token<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        #[cfg(feature = "trivia")]
-        for trivia in &self.leading_trivia {
-            trivia.fmt(f)?;
-        }
-        self.kind.fmt(f)?;
-        #[cfg(feature = "trivia")]
-        for trivia in &self.trailing_trivia {
-            trivia.fmt(f)?;
-        }
-        Ok(())
+        self.kind.fmt(f)
     }
 }

@@ -15,8 +15,8 @@ where
         match self {
             Element(e) => e.format(formatter, measurement),
             Range(range) => range.format(formatter, measurement),
-            Spread(_, e) => {
-                formatter.write("..");
+            Spread(op, e) => {
+                formatter.write_token(op);
                 e.format(formatter, measurement);
             }
         }
