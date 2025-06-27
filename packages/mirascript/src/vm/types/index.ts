@@ -105,13 +105,13 @@ export function isVmModule(value: unknown): value is VmModule {
 }
 
 export {
-    type VmGlobal,
-    type VmSharedGlobal,
-    isVmGlobal,
+    type VmContext as VmGlobal,
+    type VmSharedContext as VmSharedGlobal,
+    isVmContext as isVmGlobal,
     defineVmGlobalFunction,
     defineVmGlobalValue,
-    createVmGlobal,
-} from './global.js';
+    createVmContext as createVmGlobal,
+} from './context.js';
 
 export { type VmScript, isVmScript } from './script.js';
 

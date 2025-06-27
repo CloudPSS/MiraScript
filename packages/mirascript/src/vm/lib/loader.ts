@@ -1,5 +1,5 @@
 import { VmFunction, type VmImmutable } from '../types/index.js';
-import { VmSharedGlobal } from '../types/global.js';
+import { VmSharedContext } from '../types/context.js';
 
 import type { VmLib } from './helpers.js';
 import * as global from './global.js';
@@ -18,7 +18,7 @@ for (const [name, value] of Object.entries(global)) {
                 configurable: true,
             });
         }
-        VmSharedGlobal[e] = VmFunction(f, {
+        VmSharedContext[e] = VmFunction(f, {
             isLib: true,
             injectCp: true,
             fullName: `global.${e}`,
@@ -29,7 +29,7 @@ for (const [name, value] of Object.entries(global)) {
             returnsType: f.returnsType,
         });
     } else {
-        VmSharedGlobal[e] = value as VmImmutable;
+        VmSharedContext[e] = value as VmImmutable;
     }
 }
 

@@ -20,7 +20,7 @@ class Context(dict[str, Any]):
             return super().__getitem__(key)
         if key in CommonContext:
             return CommonContext[key]
-        raise KeyError(f"Key '{key}' not found in context or common context.")
+        return None
 
 
 Env: dict[str, Any] = dict()
@@ -30,6 +30,9 @@ Env["Add"] = lambda x, y: x + y
 Env["Context"] = Context
 Env["Any"] = Any
 Env["dict"] = dict
+Uninitialized = type("Uninitialized", (), {})()
+"""用于标记 MiraScript 中未初始化的变量"""
+Env["Uninitialized"] = Uninitialized
 
 
 def emit(bytecode: bytes) -> Callable[[Context], Any]:
