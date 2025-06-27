@@ -2,6 +2,7 @@ use std::ops::Deref;
 
 use crate::formatter::FormatOptions;
 
+#[derive(Debug)]
 pub(crate) struct FormatManager<'o> {
     pub(super) result: String,
     pub(super) current_indent: usize,

@@ -26,7 +26,7 @@ export class FormatterProvider
     ): Promise<languages.TextEdit[]> {
         if (hint !== 'full') return [];
         const compiled = await this.getCompileResult(model);
-        if (!compiled?.result.formatted) return [];
+        if (compiled?.result.formatted == null) return [];
         return [
             {
                 range: model.getFullModelRange(),

@@ -1,5 +1,3 @@
-use crate::{Script, Statement};
-
 mod array_element;
 mod callable;
 mod else_block;
@@ -16,8 +14,12 @@ mod statement;
 mod prelude {
     pub(super) use super::manager::{FormatManager as Formatter, Formattable};
 }
+
+use crate::{Script, Statement};
+
 use prelude::*;
 
+#[derive(Debug, Clone)]
 pub struct FormatOptions {
     pub tab_size: usize,
     pub use_spaces: bool,
