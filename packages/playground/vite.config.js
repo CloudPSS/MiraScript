@@ -1,5 +1,4 @@
 import { defineConfig } from 'vite';
-import wasm from 'vite-plugin-wasm';
 import checker from 'vite-plugin-checker';
 
 const PROD = process.env.NODE_ENV === 'production';
@@ -14,10 +13,9 @@ export default defineConfig({
     resolve: {
         conditions: PROD ? undefined : ['module', 'browser', 'development|production', '@mira/development'],
     },
-    plugins: [checker({ typescript: true }), wasm()],
+    plugins: [checker({ typescript: true })],
     worker: {
         format: 'es',
-        plugins: () => [wasm()],
     },
     build: {
         target: 'esnext',

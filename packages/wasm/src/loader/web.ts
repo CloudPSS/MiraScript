@@ -6,7 +6,7 @@ import.meta.url ||=
         : (document.currentScript?.href.baseVal ?? '');
 import.meta.url ||= document.location.href;
 
-export const module: Promise<InitInput> = (async () => {
+export const module: Promise<InitInput> = /* @__PURE__ */ (async () => {
     try {
         return await fetch(new URL('../../lib/wasm_bg.wasm?url', import.meta.url));
     } catch {

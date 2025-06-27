@@ -2,7 +2,7 @@
   "name": "mira",
   "version": "0.0.1",
   "private": true,
-  "packageManager": "pnpm@10.12.1",
+  "packageManager": "pnpm@10.12.4",
   "type": "module",
   "scripts": {
     "prepare": "husky || echo Failed to initialize husky",
@@ -14,12 +14,12 @@
     "extends": "@cloudpss"
   },
   "devDependencies": {
-    "@cloudpss/commitlint-config": "^3.0.22",
-    "@cloudpss/eslint-config": "^3.0.22",
-    "@cloudpss/lint-staged-config": "^3.0.22",
-    "@cloudpss/prettier-config": "^3.0.22",
-    "@cloudpss/tsconfig": "^3.0.22",
-    "@types/node": "^24.0.3",
+    "@cloudpss/commitlint-config": "^3.0.23",
+    "@cloudpss/eslint-config": "^3.0.23",
+    "@cloudpss/lint-staged-config": "^3.0.23",
+    "@cloudpss/prettier-config": "^3.0.23",
+    "@cloudpss/tsconfig": "^3.0.23",
+    "@types/node": "^24.0.4",
     "better-typescript-lib": "^2.11.0",
     "esbuild": "^0.25.5",
     "husky": "^9.1.7",
