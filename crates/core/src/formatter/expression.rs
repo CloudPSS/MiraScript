@@ -1,4 +1,4 @@
-use crate::{Expression, Operator, lexer::TokenKind};
+use crate::{Expression, Operator};
 
 use super::prelude::*;
 
@@ -84,10 +84,7 @@ impl Formattable for Expression<'_> {
         match self {
             Literal(token_ref) => formatter.write_token(token_ref),
             InterpolatedString(token, expressions) => {
-                let TokenKind::InterpolatedString(_, info) = &token.kind else {
-                    unreachable!();
-                };
-                formatter.write_str_token(info, expressions, measurement);
+                formatter.write_str_token(token, expressions, measurement);
             }
             Variable(token_ref) => formatter.write_token(token_ref),
             Grouping(op, expression, cp) => {

@@ -2,7 +2,7 @@ use std::ops::Deref;
 
 use crate::{
     Expression,
-    lexer::{NumberInfo, StringFragment, StringInfo, Token, TokenKind},
+    lexer::{NumberInfo, StringFragment, Token, TokenKind},
 };
 
 use super::types::{FormatManager, Formattable};
@@ -26,10 +26,16 @@ impl Formattable for Token<'_> {
 impl<'o> FormatManager<'o> {
     pub fn write_str_token<'s>(
         &mut self,
-        info: &StringInfo<'s>,
+        s: &Token<'_>,
         expressions: &[Expression<'s>],
         measurement: usize,
     ) {
+        for trivia in &s.leading_trivia {
+            self.write_leading_trivia(trivia);
+        }
+        let (TokenKind::String(_, info) | TokenKind::InterpolatedString(_, info)) = &s.kind else {
+            unreachable!();
+        };
         let quote = info.quote;
         let dollars = String::from_iter(std::iter::repeat_n('$', std::cmp::max(info.ats, 1)));
         if let Some(quote) = quote {
@@ -67,6 +73,10 @@ impl<'o> FormatManager<'o> {
         if let Some(quote) = quote {
             self.write_str(&quote.to_string());
             self.write_str(&String::from_iter(std::iter::repeat_n('@', info.ats)));
+        }
+
+        for trivia in &s.tailing_trivia {
+            self.write_tailing_trivia(trivia);
         }
     }
 
@@ -106,8 +116,8 @@ impl<'o> FormatManager<'o> {
 
     fn write_token_body(&mut self, s: &TokenKind<'_>) {
         match s {
-            TokenKind::String(_, info) | TokenKind::InterpolatedString(_, info) => {
-                self.write_str_token(info, &[], 0);
+            TokenKind::String(_, _) | TokenKind::InterpolatedString(_, _) => {
+                unreachable!();
             }
             TokenKind::Identifier(s) => self.write_str(s),
             TokenKind::Ordinal(s) => self.write_str(&s.to_string()),
@@ -158,6 +168,12 @@ impl<'o> FormatManager<'o> {
     }
 
     pub fn write_token(&mut self, s: &Token<'_>) {
+        if matches!(
+            s.kind,
+            TokenKind::String(_, _) | TokenKind::InterpolatedString(_, _)
+        ) {
+            return self.write_str_token(s, &[], 0);
+        }
         for trivia in &s.leading_trivia {
             self.write_leading_trivia(trivia);
         }
