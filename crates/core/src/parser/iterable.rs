@@ -1,4 +1,4 @@
-use super::{AstVisitor, AstWalker, prelude::*};
+use super::prelude::*;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Iterable<'s> {

@@ -3,7 +3,6 @@ use std::ops::{Deref, DerefMut};
 use winnow::combinator::opt;
 
 use super::{
-    ArrayElementBase, ArrayPattern, AstVisitor, AstWalker,
     helper::{token, token_or_insert},
     patterns::array_pattern_like,
     prelude::*,

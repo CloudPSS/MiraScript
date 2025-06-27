@@ -1,4 +1,4 @@
-use super::{ArrayElement, AstVisitor, AstWalker, RecordElement, prelude::*};
+use super::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
 pub enum Callable<'s> {
@@ -22,6 +22,26 @@ impl<'s> AstWalker<'s> for Callable<'s> {
             Type(token) => token.walk(visitor),
             Expression(exp) => exp.walk(visitor),
         }
+    }
+}
+
+/// `else` (block_expr | if_expr)
+#[derive(Debug, Clone, PartialEq)]
+pub struct ElseBlock<'s>(pub TokenRef<'s>, pub Box<Expression<'s>>);
+
+impl<'s> AstWalker<'s> for ElseBlock<'s> {
+    fn collect_diagnostics(&mut self, collector: &mut Vec<SourceDiagnostic>) {
+        self.0.collect_diagnostics(collector);
+        self.1.collect_diagnostics(collector);
+    }
+
+    fn walk(&self, visitor: &mut dyn AstVisitor<'s>) {
+        self.0.walk(visitor);
+        self.1.walk(visitor);
+    }
+
+    fn range(&self) -> SourceRange {
+        self.0.range.start..self.1.range().end
     }
 }
 
@@ -153,7 +173,7 @@ pub enum Expression<'s> {
         TokenRef<'s>,
         Box<Expression<'s>>,
         Box<Expression<'s>>,
-        Option<(TokenRef<'s>, Box<Expression<'s>>)>,
+        Option<ElseBlock<'s>>,
     ),
     /// `for` pattern `in` expression block_expression (`else` expression)?
     ///
@@ -170,7 +190,7 @@ pub enum Expression<'s> {
         TokenRef<'s>,
         Box<Iterable<'s>>,
         Box<Expression<'s>>,
-        Option<(TokenRef<'s>, Box<Expression<'s>>)>,
+        Option<ElseBlock<'s>>,
     ),
     /// `if` expression block_expression (`else` expression)?
     ///
@@ -181,7 +201,7 @@ pub enum Expression<'s> {
         TokenRef<'s>,
         Box<Expression<'s>>,
         Box<Expression<'s>>,
-        Option<(TokenRef<'s>, Box<Expression<'s>>)>,
+        Option<ElseBlock<'s>>,
     ),
     /// `match` expression `{` `case` ((literal | '_') block_expression)* `}`
     ///
@@ -363,11 +383,10 @@ impl<'s> AstWalker<'s> for Expression<'s> {
                 expression.collect_diagnostics(collector);
                 block.collect_diagnostics(collector);
             }
-            While(kw, expression, block, Some((kw_else, else_block))) => {
+            While(kw, expression, block, Some(else_block)) => {
                 kw.collect_diagnostics(collector);
                 expression.collect_diagnostics(collector);
                 block.collect_diagnostics(collector);
-                kw_else.collect_diagnostics(collector);
                 else_block.collect_diagnostics(collector);
             }
             ForIn(kw_for, pattern, kw_in, iter, block, None) => {
@@ -377,20 +396,18 @@ impl<'s> AstWalker<'s> for Expression<'s> {
                 iter.collect_diagnostics(collector);
                 block.collect_diagnostics(collector);
             }
-            ForIn(kw_for, pattern, kw_in, iter, block, Some((kw_else, else_block))) => {
+            ForIn(kw_for, pattern, kw_in, iter, block, Some(else_block)) => {
                 kw_for.collect_diagnostics(collector);
                 pattern.collect_diagnostics(collector);
                 kw_in.collect_diagnostics(collector);
                 iter.collect_diagnostics(collector);
                 block.collect_diagnostics(collector);
-                kw_else.collect_diagnostics(collector);
                 else_block.collect_diagnostics(collector);
             }
-            If(kw_if, cond, then_block, Some((kw_else, else_block))) => {
+            If(kw_if, cond, then_block, Some(else_block)) => {
                 kw_if.collect_diagnostics(collector);
                 cond.collect_diagnostics(collector);
                 then_block.collect_diagnostics(collector);
-                kw_else.collect_diagnostics(collector);
                 else_block.collect_diagnostics(collector);
             }
             If(kw_if, cond, then_block, None) => {
@@ -524,11 +541,10 @@ impl<'s> AstWalker<'s> for Expression<'s> {
                 expression.walk(visitor);
                 block.walk(visitor);
             }
-            While(kw, expression, block, Some((kw_else, else_block))) => {
+            While(kw, expression, block, Some(else_block)) => {
                 kw.walk(visitor);
                 expression.walk(visitor);
                 block.walk(visitor);
-                kw_else.walk(visitor);
                 else_block.walk(visitor);
             }
             ForIn(kw_for, pattern, kw_in, iter, block, None) => {
@@ -538,20 +554,18 @@ impl<'s> AstWalker<'s> for Expression<'s> {
                 iter.walk(visitor);
                 block.walk(visitor);
             }
-            ForIn(kw_for, pattern, kw_in, iter, block, Some((kw_else, else_block))) => {
+            ForIn(kw_for, pattern, kw_in, iter, block, Some(else_block)) => {
                 kw_for.walk(visitor);
                 pattern.walk(visitor);
                 kw_in.walk(visitor);
                 iter.walk(visitor);
                 block.walk(visitor);
-                kw_else.walk(visitor);
                 else_block.walk(visitor);
             }
-            If(kw_if, cond, then_block, Some((kw_else, else_block))) => {
+            If(kw_if, cond, then_block, Some(else_block)) => {
                 kw_if.walk(visitor);
                 cond.walk(visitor);
                 then_block.walk(visitor);
-                kw_else.walk(visitor);
                 else_block.walk(visitor);
             }
             If(kw_if, cond, then_block, None) => {

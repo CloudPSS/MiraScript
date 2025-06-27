@@ -1,6 +1,9 @@
 use std::ops::Deref;
 
-use crate::formatter::FormatOptions;
+use crate::{
+    formatter::FormatOptions,
+    lexer::{Token, TokenKind},
+};
 
 pub(crate) struct FormatManager<'o> {
     pub(super) result: String,
@@ -54,6 +57,10 @@ impl<'o> FormatManager<'o> {
             self.indent -= 1;
         }
     }
+    pub fn measure(&self, item: &impl Formattable) -> usize {
+        item.measure(self, self.indent)
+    }
+
     pub(super) fn make_indent(&self, indent: usize) -> std::iter::RepeatN<char> {
         if self.use_spaces {
             std::iter::repeat_n(' ', indent * self.tab_size)

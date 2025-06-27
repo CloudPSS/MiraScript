@@ -1,10 +1,82 @@
-use crate::{Expression, Operator, formatter::range, lexer::TokenKind};
+use crate::{Expression, Operator, lexer::TokenKind};
 
 use super::prelude::*;
 
 impl Formattable for Expression<'_> {
     fn measure(&self, formatter: &Formatter, indent: usize) -> usize {
-        0
+        use Expression::*;
+        match self {
+            Grouping(_, expression, _) => expression.measure(formatter, indent),
+            NonNil(expression, _) | Prefix(_, expression) | Access(expression, _, _) => {
+                expression.measure(formatter, indent)
+            }
+            Index(expression, _, field, _) => {
+                expression.measure(formatter, indent) + field.measure(formatter, indent)
+            }
+            Slice(expression, _, begin, _, end, _) => {
+                expression.measure(formatter, indent)
+                    + begin.as_ref().map_or(0, |b| b.measure(formatter, indent))
+                    + end.as_ref().map_or(0, |e| e.measure(formatter, indent))
+            }
+            Infix(left, _, right) => {
+                left.measure(formatter, indent) + right.measure(formatter, indent)
+            }
+            Is(expression, _, pattern) => {
+                expression.measure(formatter, indent) + pattern.measure(formatter, indent)
+            }
+            Loop(_, expression) => expression.measure(formatter, indent),
+            While(_, cond, body, else_block) => {
+                cond.measure(formatter, indent)
+                    + body.measure(formatter, indent)
+                    + else_block.measure(formatter, indent)
+            }
+            ForIn(_, pattern, _, iterable, expression, else_block) => {
+                expression.measure(formatter, indent)
+                    + pattern.measure(formatter, indent)
+                    + iterable.measure(formatter, indent)
+                    + else_block.measure(formatter, indent)
+            }
+            If(_, cond, body, else_block) => {
+                cond.measure(formatter, indent)
+                    + body.measure(formatter, indent)
+                    + else_block.measure(formatter, indent)
+            }
+            Match(_, expr, _, items, _) => expr.measure(formatter, indent) + items.len(),
+            Function(_, _, expression) => expression.measure(formatter, indent),
+            Block(_, statements, expression, _) => {
+                if statements.is_empty() {
+                    return expression
+                        .as_deref()
+                        .map_or(0, |expr| expr.measure(formatter, indent));
+                }
+                statements.len()
+                    + 2
+                    + expression
+                        .as_deref()
+                        .map_or(0, |expr| expr.measure(formatter, indent))
+            }
+            Literal(literal) => literal.measure(formatter, indent),
+            InterpolatedString(token, expressions) => {
+                let l = token.measure(formatter, indent);
+                let e = expressions
+                    .iter()
+                    .map(|expr| expr.measure(formatter, indent))
+                    .sum::<usize>();
+                l + e
+            }
+            Variable(v) => v.measure(formatter, indent),
+            Record(_, list_items, _) => list_items.measure(formatter, indent),
+            Array(_, list_items, _) => list_items.measure(formatter, indent),
+            Call(callable, _, list_items, _) => {
+                callable.measure(formatter, indent) + list_items.measure(formatter, indent)
+            }
+            Extension(expression, _, callable, _, list_items, _) => {
+                expression.measure(formatter, indent)
+                    + callable.measure(formatter, indent)
+                    + list_items.measure(formatter, indent)
+            }
+            Unknown { .. } => 0,
+        }
     }
 
     fn format(&self, formatter: &mut Formatter, measurement: usize) {
@@ -100,30 +172,27 @@ impl Formattable for Expression<'_> {
                 pattern.format(formatter, measurement);
             }
             Block(op, statements, expression, cp) => {
+                let expression = expression.as_deref();
                 if statements.is_empty() && expression.is_none() {
                     formatter.write_token(op);
                     formatter.write_space();
                     formatter.write_token(cp);
                     return;
                 }
-                if statements.is_empty() {
+                if statements.is_empty() && formatter.measure(expression.unwrap()) == 0 {
+                    let expression = expression.unwrap();
                     formatter.write_token(op);
                     formatter.write_space();
-                    if let Some(expression) = expression {
-                        expression.format(formatter, measurement);
-                    }
+                    expression.format(formatter, measurement);
                     formatter.write_space();
                     formatter.write_token(cp);
                     return;
                 }
                 formatter.write_token(op);
                 formatter.indent();
-                formatter.new_line();
-                for (i, statement) in statements.iter().enumerate() {
+                for statement in statements {
+                    formatter.new_line();
                     statement.format(formatter, measurement);
-                    if i != statements.len() - 1 {
-                        formatter.new_line();
-                    }
                 }
                 if let Some(expression) = expression {
                     formatter.new_line();
@@ -144,12 +213,7 @@ impl Formattable for Expression<'_> {
                 cond.format(formatter, measurement);
                 formatter.write_space();
                 body.format(formatter, measurement);
-                if let Some((kw, else_block)) = else_block {
-                    formatter.write_space();
-                    formatter.write_token(kw);
-                    formatter.write_space();
-                    else_block.format(formatter, measurement);
-                }
+                else_block.format(formatter, measurement);
             }
             ForIn(kw_for, pattern, kw_in, iterable, body, else_block) => {
                 formatter.write_token(kw_for);
@@ -161,12 +225,7 @@ impl Formattable for Expression<'_> {
                 iterable.format(formatter, measurement);
                 formatter.write_space();
                 body.format(formatter, measurement);
-                if let Some((kw, else_block)) = else_block {
-                    formatter.write_space();
-                    formatter.write_token(kw);
-                    formatter.write_space();
-                    else_block.format(formatter, measurement);
-                }
+                else_block.format(formatter, measurement);
             }
             If(kw, cond, body, else_block) => {
                 formatter.write_token(kw);
@@ -174,12 +233,7 @@ impl Formattable for Expression<'_> {
                 cond.format(formatter, measurement);
                 formatter.write_space();
                 body.format(formatter, measurement);
-                if let Some((kw, else_block)) = else_block {
-                    formatter.write_space();
-                    formatter.write_token(kw);
-                    formatter.write_space();
-                    else_block.format(formatter, measurement);
-                }
+                else_block.format(formatter, measurement);
             }
             Match(kw, matcher, op, items, cp) => {
                 formatter.write_token(kw);

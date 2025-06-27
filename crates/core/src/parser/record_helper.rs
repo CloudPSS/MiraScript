@@ -5,9 +5,7 @@ use winnow::{
 
 use super::{
     helper::{token, token_or_insert, variable_token},
-    list_item::ListItem,
     prelude::*,
-    record_element::RecordElementBase,
 };
 
 fn record_name<'s>(i: &mut Input<'s>) -> Result<TokenRef<'s>> {

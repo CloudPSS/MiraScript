@@ -7,6 +7,22 @@ use crate::{
 
 use super::types::{FormatManager, Formattable};
 
+impl Formattable for Token<'_> {
+    fn measure(&self, formatter: &FormatManager, indent: usize) -> usize {
+        let len = match &self.kind {
+            TokenKind::InterpolatedString(parts, _) => {
+                parts.iter().map(|part| part.0.len()).sum::<usize>()
+            }
+            _ => self.range.len(),
+        };
+        if len > formatter.width(indent) { 1 } else { 0 }
+    }
+
+    fn format(&self, formatter: &mut FormatManager, _: usize) {
+        formatter.write_token(self);
+    }
+}
+
 impl<'o> FormatManager<'o> {
     pub fn write_str_token<'s>(
         &mut self,

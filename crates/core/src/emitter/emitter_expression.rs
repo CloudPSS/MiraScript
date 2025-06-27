@@ -6,7 +6,7 @@ use crate::{
     emitter::{emitter_scope::check_variable_initialized, utils::is_global_expression},
     lexer::{Keyword, Operator, TokenKind},
     parser::{
-        ArrayElement, ArrayElementBase, AstWalker, Callable,
+        ArrayElement, ArrayElementBase, AstWalker, Callable, ElseBlock,
         Expression::{self, *},
         Iterable, Range, RecordElementBase,
     },
@@ -156,7 +156,7 @@ impl<'s> Emitter<'s> {
                     kw_while.range(),
                     DiagnosticCode::KeywordWhile,
                 ));
-                else_part.iter().for_each(|(kw_else, _)| {
+                else_part.iter().for_each(|ElseBlock(kw_else, _)| {
                     self.diagnostics.push(SourceDiagnostic::new(
                         kw_else.range(),
                         DiagnosticCode::KeywordElse,
@@ -164,7 +164,7 @@ impl<'s> Emitter<'s> {
                 });
             }
             ForIn(kw_for, _, kw_in, _, body, else_part) => {
-                let (kw_else, else_body) = if let Some((kw_else, else_body)) = else_part {
+                let (kw_else, else_body) = if let Some(ElseBlock(kw_else, else_body)) = else_part {
                     (Some(kw_else), Some(else_body))
                 } else {
                     (None, None)
@@ -203,7 +203,7 @@ impl<'s> Emitter<'s> {
                     DiagnosticCode::KeywordIf,
                 ));
 
-                while let Some((kw_else, else_block)) = else_part {
+                while let Some(ElseBlock(kw_else, else_block)) = else_part {
                     self.diagnostics.push(SourceDiagnostic::new(
                         kw_else.range(),
                         DiagnosticCode::KeywordElse,
@@ -871,7 +871,7 @@ impl<'s> Emitter<'s> {
 
                 if !ret.is_empty() {
                     self.op_if(OpCode::IfNotInit, ret);
-                    if let Some((_, else_expr)) = else_part {
+                    if let Some(ElseBlock(_, else_expr)) = else_part {
                         self.emit_expression(else_expr, ret, None);
                     } else {
                         self.op_nil(ret);
@@ -970,7 +970,7 @@ impl<'s> Emitter<'s> {
 
                 if !ret.is_empty() {
                     self.op_if(OpCode::IfNotInit, ret);
-                    if let Some((_, else_expr)) = else_part {
+                    if let Some(ElseBlock(_, else_expr)) = else_part {
                         self.emit_expression(else_expr, ret, None);
                     } else {
                         self.op_nil(ret);
@@ -986,7 +986,7 @@ impl<'s> Emitter<'s> {
                 self.emit_expression(cond, cond_reg, brk);
                 self.op_if(OpCode::If, cond_reg);
                 self.emit_expression(then_expr, ret, brk);
-                if let Some((_, else_expr)) = else_part {
+                if let Some(ElseBlock(_, else_expr)) = else_part {
                     self.op_else();
                     self.emit_expression(else_expr, ret, brk);
                 } else if !ret.is_empty() {

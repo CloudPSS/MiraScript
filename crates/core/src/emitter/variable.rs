@@ -74,9 +74,9 @@ impl<'s> Variable<'s> {
         self.mutable
     }
 
-    pub fn bind_type(&self) -> BindType {
-        self.bind_type
-    }
+    // pub fn bind_type(&self) -> BindType {
+    //     self.bind_type
+    // }
 
     pub fn register(&self) -> Register {
         self.register

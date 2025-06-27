@@ -88,37 +88,6 @@ impl<'s> Emitter<'s> {
             self.chunk.add_param_wide(arg4);
         }
     }
-    pub fn op_5(
-        &mut self,
-        op: OpCode,
-        arg1: impl OpParamTrait,
-        arg2: impl OpParamTrait,
-        arg3: impl OpParamTrait,
-        arg4: impl OpParamTrait,
-        arg5: impl OpParamTrait,
-    ) {
-        if !arg1.is_wide()
-            && !arg2.is_wide()
-            && !arg3.is_wide()
-            && !arg4.is_wide()
-            && !arg5.is_wide()
-        {
-            self.chunk.add_code(op);
-            self.chunk.add_param(arg1);
-            self.chunk.add_param(arg2);
-            self.chunk.add_param(arg3);
-            self.chunk.add_param(arg4);
-            self.chunk.add_param(arg5);
-        } else {
-            self.chunk.add_code_wide(op);
-            self.chunk.add_param_wide(arg1);
-            self.chunk.add_param_wide(arg2);
-            self.chunk.add_param_wide(arg3);
-            self.chunk.add_param_wide(arg4);
-            self.chunk.add_param_wide(arg5);
-        }
-    }
-
     fn op_const(&mut self, reg: Register, const_id: OpParam) {
         self.op_2(Constant, reg, const_id);
     }

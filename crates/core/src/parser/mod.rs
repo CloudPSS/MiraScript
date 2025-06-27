@@ -32,10 +32,10 @@ mod token_ref;
 
 pub use array_element::{ArrayElement, ArrayElementBase, ArrayPattern};
 pub(super) use ast_visitor::*;
-pub use expression::{Callable, Expression};
+pub use expression::{Callable, ElseBlock, Expression};
 pub use iterable::Iterable;
-pub(super) use list_item::ListItem;
-pub(super) use parameter_list::ParameterList;
+pub use list_item::ListItem;
+pub use parameter_list::ParameterList;
 pub use pattern::Pattern;
 pub use range::Range;
 pub use record_element::{RecordElement, RecordElementBase, RecordPattern};
@@ -54,8 +54,9 @@ impl<'s, Output, F> Parser<'s, Output> for F where
 
 mod prelude {
     pub(super) use super::{
-        Expression, Input, Iterable, ParameterList, Parser, Pattern, Range, Result, Script,
-        Statement, TokenRef,
+        ArrayElement, ArrayElementBase, ArrayPattern, AstVisitor, AstWalker, Callable, ElseBlock,
+        Expression, Input, Iterable, ListItem, ParameterList, Parser, Pattern, Range,
+        RecordElement, RecordElementBase, RecordPattern, Result, Script, Statement, TokenRef,
     };
     pub(super) use crate::{
         diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},

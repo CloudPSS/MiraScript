@@ -1,4 +1,4 @@
-use super::{AstVisitor, AstWalker, prelude::*};
+use super::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
 pub enum Statement<'s> {

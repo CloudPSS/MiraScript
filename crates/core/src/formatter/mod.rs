@@ -2,6 +2,7 @@ use crate::{Script, Statement};
 
 mod array_element;
 mod callable;
+mod else_block;
 mod expression;
 mod iterable;
 mod list_items;
@@ -28,7 +29,7 @@ impl Default for FormatOptions {
         Self {
             tab_size: 2,
             use_spaces: true,
-            line_width: 120,
+            line_width: 80,
         }
     }
 }

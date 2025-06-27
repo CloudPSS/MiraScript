@@ -8,9 +8,9 @@ use super::helper::{statements_and_expression, token, token_or_insert};
 use super::iterables::iterable;
 use super::parameter_list::parameter_list;
 use super::patterns::{pattern, pattern_or_insert};
-use super::{AstWalker, prelude::*};
+use super::prelude::*;
 
-fn optional_else<'s>(i: &mut Input<'s>) -> Result<Option<(TokenRef<'s>, Box<Expression<'s>>)>> {
+fn optional_else<'s>(i: &mut Input<'s>) -> Result<Option<ElseBlock<'s>>> {
     let Some(kw_else) = opt(token(Keyword::Else)).parse_next(i)? else {
         return Ok(None);
     };
@@ -19,7 +19,7 @@ fn optional_else<'s>(i: &mut Input<'s>) -> Result<Option<(TokenRef<'s>, Box<Expr
         .map(Box::new)
         .parse_next(i)?;
 
-    Ok(Some((kw_else, block)))
+    Ok(Some(ElseBlock(kw_else, block)))
 }
 
 pub(super) fn if_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {

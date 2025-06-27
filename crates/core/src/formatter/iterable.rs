@@ -1,10 +1,14 @@
-use crate::parser::{Callable, Iterable, ListItem};
+use crate::parser::Iterable;
 
 use super::prelude::*;
 
 impl Formattable for Iterable<'_> {
     fn measure(&self, formatter: &Formatter, indent: usize) -> usize {
-        0
+        use Iterable::*;
+        match self {
+            Range(range) => range.measure(formatter, indent),
+            Value(expression) => expression.measure(formatter, indent),
+        }
     }
 
     fn format(&self, formatter: &mut Formatter, measurement: usize) {

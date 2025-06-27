@@ -1,7 +1,7 @@
 use crate::{
     diagnostic::SourceDiagnostic,
     lexer::{Operator, Token, TokenKind},
-    parser::{AstWalker, ParameterList, Script},
+    parser::{ParameterList, Script},
 };
 
 mod chunk;
@@ -37,5 +37,5 @@ pub fn emit(script: &Script<'_>, diagnostics_collector: &mut Vec<SourceDiagnosti
         &script.0,
         &script.1,
     );
-    emitter.chunk.to_bytes()
+    emitter.chunk.into_bytes()
 }

@@ -1,6 +1,6 @@
 use std::ops::{Deref, DerefMut};
 
-use super::{AstVisitor, AstWalker, prelude::*};
+use super::prelude::*;
 
 /// item ','?
 #[derive(Debug, Clone, PartialEq)]

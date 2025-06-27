@@ -1,4 +1,4 @@
-use super::{AstVisitor, AstWalker, list_item::ListItem, prelude::*};
+use super::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
 pub enum ArrayElementBase<'s, E> {

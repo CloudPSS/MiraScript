@@ -4,7 +4,13 @@ use super::prelude::*;
 
 impl Formattable for Pattern<'_> {
     fn measure(&self, formatter: &Formatter, indent: usize) -> usize {
-        0
+        use Pattern::*;
+        match self {
+            Grouping(_, pattern, _) => pattern.measure(formatter, indent),
+            Constant(_, literal) => literal.measure(formatter, indent),
+
+            _ => 0,
+        }
     }
 
     fn format(&self, formatter: &mut Formatter, measurement: usize) {

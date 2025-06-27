@@ -1,4 +1,4 @@
-use super::{AstVisitor, AstWalker, prelude::*};
+use super::prelude::*;
 
 /// A range expression.
 ///

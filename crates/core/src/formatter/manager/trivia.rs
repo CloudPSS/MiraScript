@@ -1,6 +1,4 @@
-use std::ops::Deref;
-
-use crate::{formatter::FormatOptions, lexer::Trivia};
+use crate::lexer::Trivia;
 
 use super::FormatManager;
 

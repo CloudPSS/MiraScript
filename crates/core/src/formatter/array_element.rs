@@ -1,4 +1,4 @@
-use crate::parser::{ArrayElementBase, RecordElementBase};
+use crate::parser::ArrayElementBase;
 
 use super::prelude::*;
 
@@ -7,7 +7,12 @@ where
     E: Formattable,
 {
     fn measure(&self, formatter: &Formatter, indent: usize) -> usize {
-        0
+        use ArrayElementBase::*;
+        match self {
+            Element(e) => e.measure(formatter, indent),
+            Range(range) => range.measure(formatter, indent),
+            Spread(_, e) => e.measure(formatter, indent),
+        }
     }
 
     fn format(&self, formatter: &mut Formatter, measurement: usize) {

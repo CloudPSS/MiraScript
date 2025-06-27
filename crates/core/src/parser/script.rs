@@ -1,6 +1,6 @@
 use std::ops::Deref;
 
-use super::{AstVisitor, AstWalker, prelude::*};
+use super::prelude::*;
 
 /// statement* expression? EOF
 ///

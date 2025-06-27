@@ -1,6 +1,6 @@
 use std::{fmt::Display, ops::Deref};
 
-use super::{AstVisitor, AstWalker, prelude::*};
+use super::prelude::*;
 
 #[derive(Debug)]
 pub enum TokenRef<'s> {

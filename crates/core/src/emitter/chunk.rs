@@ -33,7 +33,7 @@ impl<'s> Chunk<'s> {
 
     /// Create a new chunk with the given code and constants.
     /// Returns Vec<u8> to avoid unnecessary cloning when called by bindings.
-    pub fn to_bytes(self) -> Vec<u8> {
+    pub fn into_bytes(self) -> Vec<u8> {
         let mut result = self.code;
 
         let code_len = result.len() - CODE_OFFSET;

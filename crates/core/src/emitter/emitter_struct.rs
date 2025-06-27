@@ -23,35 +23,6 @@ impl<'s> Emitter<'s> {
         }
     }
 
-    pub fn unimplemented(
-        &mut self,
-        start: &(impl AstWalker<'s> + std::fmt::Debug),
-        end: &(impl AstWalker<'s> + std::fmt::Debug),
-    ) {
-        let start_range = start.range();
-        let end_range = end.range();
-        let start;
-        let end;
-        if start_range.start != usize::MAX {
-            start = start_range.start;
-        } else if end_range.start != usize::MAX {
-            start = end_range.start;
-        } else {
-            return;
-        }
-        if end_range.end != usize::MIN {
-            end = end_range.end;
-        } else if start_range.end != usize::MIN {
-            end = start_range.end;
-        } else {
-            return;
-        }
-        self.diagnostics.push(SourceDiagnostic::new(
-            start..end,
-            DiagnosticCode::Unimplemented,
-        ));
-    }
-
     pub fn unreachable(
         &mut self,
         start: &(impl AstWalker<'s> + std::fmt::Debug),

@@ -1,4 +1,4 @@
-use super::{ArrayPattern, AstVisitor, AstWalker, RecordPattern, prelude::*};
+use super::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
 pub enum Pattern<'s> {
