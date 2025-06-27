@@ -1,10 +1,9 @@
 import type { InitInput } from '../../lib/wasm.js';
 
 import.meta.url ||=
-    document.currentScript instanceof HTMLScriptElement
+    (document?.currentScript instanceof HTMLScriptElement
         ? document.currentScript.src
-        : (document.currentScript?.href.baseVal ?? '');
-import.meta.url ||= document.location.href;
+        : (document.currentScript?.href?.baseVal ?? '')) || document.location.href;
 
 export const module: Promise<InitInput> = /* @__PURE__ */ (async () => {
     try {
