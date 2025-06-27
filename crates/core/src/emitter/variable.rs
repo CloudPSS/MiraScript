@@ -106,6 +106,7 @@ impl<'s> Variable<'s> {
         diagnostics.push(SourceDiagnostic::new(self.declaration.clone(), code));
     }
 
+    #[inline]
     pub fn initialize(&mut self) {
         debug_assert!(
             !self.register.is_empty(),
@@ -115,7 +116,8 @@ impl<'s> Variable<'s> {
         self.initialized = true;
     }
 
-    pub fn mark_read(&mut self, token: &Token<'_>) {
+    #[inline]
+    pub fn mark_read(&mut self, #[allow(unused)] token: &Token<'_>) {
         #[cfg(feature = "track_references")]
         if track_references() {
             self.reference.push(SourceDiagnostic::new(
@@ -125,7 +127,8 @@ impl<'s> Variable<'s> {
         }
     }
 
-    pub fn mark_write(&mut self, token: &Token<'_>) {
+    #[inline]
+    pub fn mark_write(&mut self, #[allow(unused)] token: &Token<'_>) {
         #[cfg(feature = "track_references")]
         if track_references() {
             self.reference.push(SourceDiagnostic::new(
@@ -135,7 +138,8 @@ impl<'s> Variable<'s> {
         }
     }
 
-    pub fn mark_read_write(&mut self, token: &Token<'_>) {
+    #[inline]
+    pub fn mark_read_write(&mut self, #[allow(unused)] token: &Token<'_>) {
         #[cfg(feature = "track_references")]
         if track_references() {
             self.reference.push(SourceDiagnostic::new(
@@ -145,7 +149,8 @@ impl<'s> Variable<'s> {
         }
     }
 
-    pub fn mark_redeclare(&mut self, token: &Token<'_>) {
+    #[inline]
+    pub fn mark_redeclare(&mut self, #[allow(unused)] token: &Token<'_>) {
         #[cfg(feature = "track_references")]
         if track_references() {
             self.reference.push(SourceDiagnostic::new(
@@ -155,7 +160,8 @@ impl<'s> Variable<'s> {
         }
     }
 
-    pub fn exit(self, diagnostics: &mut Vec<SourceDiagnostic>) {
+    #[inline]
+    pub fn exit(self, #[allow(unused)] diagnostics: &mut Vec<SourceDiagnostic>) {
         #[cfg(feature = "track_references")]
         if track_references() {
             let hint = if !self.mutable {

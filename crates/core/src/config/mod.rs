@@ -21,7 +21,7 @@ pub(crate) fn trivia() -> bool {
     TRIVIA.get()
 }
 
-pub(crate) fn set_config(value: &Config) {
+pub(crate) fn set_config(#[allow(unused)] value: &Config) {
     #[cfg(feature = "track_references")]
     TRACK_REFERENCES.set(value.track_references);
     #[cfg(feature = "formatter")]

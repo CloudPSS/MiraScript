@@ -2,15 +2,17 @@
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
-use std::fs;
+use std::{fs, hint::black_box};
 
-use mira_core::{Config, compile};
+use mira_core::{Compiler, Config};
 
 fn main() {
     let text = fs::read_to_string("../../examples/fib.mira").unwrap();
 
     for _ in 0..1_000_000 {
-        let (code, errors) = compile(&text, &Config::new());
+        let (code, errors) = Compiler::compile(&text, &Config::new());
+        black_box(code);
+        black_box(errors);
     }
 
     // for error in errors {

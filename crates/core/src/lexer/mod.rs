@@ -1,6 +1,7 @@
 use winnow::{
     LocatingSlice, ModalResult, Parser as _,
     error::{EmptyError, ErrMode},
+    stream::{Location as _, Stream as _},
 };
 
 mod identifier;
@@ -18,11 +19,11 @@ pub use operator::Operator;
 pub use token::Token;
 pub use token_kind::TokenKind;
 
-pub(crate) use self::trivia::{Trivia, TriviaList};
-
+#[allow(unused)]
 pub(crate) use self::{
     numeric::NumberInfo,
     string::{StringFragment, StringInfo},
+    trivia::{Trivia, TriviaList},
 };
 
 pub type Input<'s> = LocatingSlice<&'s str>;
@@ -35,14 +36,8 @@ impl<'s, Output, F> Parser<'s, Output> for F where
 }
 
 mod prelude {
-    pub(super) use super::{
-        Input, Keyword, Operator, Parser, Result, Token, TokenKind, TriviaList,
-    };
+    pub(super) use super::*;
     pub(super) use crate::diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange};
-    pub(super) use winnow::{
-        Parser as _,
-        stream::{Location as _, Stream as _},
-    };
 }
 
 pub fn to_input(text: &str) -> Input<'_> {
@@ -57,21 +52,18 @@ fn lex_impl<'s, const BALANCED: bool>(
 ) -> Result<Vec<Token<'s>>> {
     let mut tokens = vec![];
     while !BALANCED || tokens.is_empty() || depth > 0 {
+        #[cfg_attr(not(feature = "formatter"), allow(unused))]
         let leading_trivia = trivia::leading_trivia(input)?;
         let prev_token = tokens.last_mut();
         #[cfg_attr(not(feature = "formatter"), allow(unused_mut))]
         let mut token = tokens::token(input, prev_token)?;
+        #[cfg_attr(not(feature = "formatter"), allow(unused))]
         let tailing_trivia = trivia::tailing_trivia(input)?;
 
         #[cfg(feature = "formatter")]
         if crate::config::trivia() {
             token.leading_trivia = leading_trivia;
             token.tailing_trivia = tailing_trivia;
-        }
-        #[cfg(not(feature = "formatter"))]
-        {
-            let _ = leading_trivia;
-            let _ = tailing_trivia;
         }
 
         let eof = matches!(token.kind, TokenKind::Eof);
