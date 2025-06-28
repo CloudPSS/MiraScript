@@ -1,5 +1,7 @@
-from typing import Any
-from collections.abc import Callable
+from typing import Any, Protocol
+from .mirascript import op_codes
+
+OpCode = op_codes()
 
 CommonContext: dict[str, Any] = dict()
 """MiraScript 通用执行上下文"""
@@ -35,7 +37,15 @@ Uninitialized = type("Uninitialized", (), {})()
 Env["Uninitialized"] = Uninitialized
 
 
-def emit(bytecode: bytes) -> Callable[[Context], Any]:
+class Script(Protocol):
+    """
+    MiraScript 生成的 Python 函数
+    """
+
+    def __call__(self, context: Context | None = None) -> Any: ...
+
+
+def emit(bytecode: bytes) -> Script:
     """
     生成 Python 函数
 
@@ -43,7 +53,7 @@ def emit(bytecode: bytes) -> Callable[[Context], Any]:
         bytecode (str): 要生成的 Python 字节码
 
     Returns:
-        (Callable[[Context], Any]): 生成的 Python 函数
+        (Callable[[Context | None], Any]): 生成的 Python 函数
     """
 
     # TODO: 解析 bytecode 并生成 Python 函数

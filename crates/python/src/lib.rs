@@ -1,6 +1,9 @@
+use std::collections::HashMap;
+
 use mira_core::{
     config::{Config as ConfigData, InputMode},
-    Compiler, DiagnosticCode,
+    prelude::*,
+    Compiler, DiagnosticCode, OpCode,
 };
 use pyo3::{exceptions::PyValueError, prelude::*, types::PyDict};
 
@@ -42,6 +45,15 @@ impl Config {
 }
 
 #[pyfunction]
+fn op_codes() -> PyResult<HashMap<String, u8>> {
+    let mut codes = HashMap::new();
+    for code in OpCode::VARIANTS.iter() {
+        codes.insert(code.to_string(), code.code());
+    }
+    Ok(codes)
+}
+
+#[pyfunction]
 fn compile(script: String, config: PyRef<'_, Config>) -> PyResult<(Option<Vec<u8>>, Vec<u32>)> {
     let config: &ConfigData = &config.data;
     let (chunk, diagnostics) = Compiler::compile(&script, config);
@@ -61,7 +73,8 @@ fn get_diagnostic_message(code: u16) -> PyResult<(&'static str, &'static str, &'
 #[pymodule]
 fn mirascript(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(compile, m)?)?;
-    m.add_class::<Config>()?;
     m.add_function(wrap_pyfunction!(get_diagnostic_message, m)?)?;
+    m.add_function(wrap_pyfunction!(op_codes, m)?)?;
+    m.add_class::<Config>()?;
     Ok(())
 }

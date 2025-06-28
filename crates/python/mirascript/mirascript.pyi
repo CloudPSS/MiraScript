@@ -55,3 +55,12 @@ def get_diagnostic_message(
         tuple[Literal["Error", "Warning", "Info", "Hint", "Reference", "Unknown"], str, str]: 级别字符串、诊断消息名称和诊断消息描述
     """
     ...
+
+def op_codes() -> dict[str, int]:
+    """
+    获取 MiraScript 的所有操作码
+
+    Returns:
+        dict[str, int]: 操作码名称和对应的整数值
+    """
+    ...

@@ -69,25 +69,6 @@ class Diagnostic:
         )
 
 
-class CompilationError(Exception):
-    """
-    编译错误异常
-
-    Attributes:
-        diagnostics (list[Diagnostic]): 诊断信息列表
-    """
-
-    def __init__(self, diagnostics: list[Diagnostic]):
-        super().__init__("Compilation failed")
-        self.diagnostics = diagnostics
-
-    def __repr__(self) -> str:
-        return f"CompilationError({self.diagnostics})"
-
-    def __str__(self) -> str:
-        return "\n" + "\n".join(f"  {diag}" for diag in self.diagnostics)
-
-
 def decode_diagnostics(diagnostics: list[int]) -> list[Diagnostic]:
     """
     解析诊断信息
