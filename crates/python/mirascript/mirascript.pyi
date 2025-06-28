@@ -2,7 +2,7 @@ from typing import Literal, TypedDict, Unpack
 
 from .diagnostics import DiagnosticLevel
 
-class ConfigData(TypedDict):
+class ConfigData(TypedDict, total=False):
     """
     MiraScript 编译配置数据
 

@@ -2,8 +2,12 @@ from .mirascript import Config, compile as _compile
 from .emit import emit, Script
 from .diagnostics import decode_diagnostics, Diagnostic
 
+DefaultConfig = Config(input_mode="script")
 
-def compile(script: str, config: Config) -> tuple[Script | None, list[Diagnostic]]:
+
+def compile(
+    script: str, config: Config = DefaultConfig
+) -> tuple[Script | None, list[Diagnostic]]:
     """
     编译 MiraScript 代码，生成 Python 函数
 
