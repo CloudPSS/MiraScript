@@ -1,12 +1,33 @@
-from typing import Any, Protocol
-from .mirascript import op_codes
+from typing import Any, NoReturn, Protocol
 
-OpCode = op_codes()
+
+class OpCodes:
+    """MiraScript 操作码"""
+
+    def __init__(self) -> None:
+        from .mirascript import op_codes
+
+        self.__dict__.update(op_codes())
+
+    def __getattr__(self, name: str) -> int:
+        if name in self.__dict__:
+            return self.__dict__[name]
+        raise AttributeError(f"No such OpCode: {name}")
+
+    def __setattr__(self, name: str, value: NoReturn) -> None:
+        raise AttributeError("OpCodes is immutable, cannot set attributes.")
+
+    def __delattr__(self, name: str) -> None:
+        raise AttributeError("OpCodes is immutable, cannot delete attributes.")
+
+
+OpCode = OpCodes()
+"""MiraScript 操作码"""
 
 CommonContext: dict[str, Any] = dict()
 """MiraScript 通用执行上下文"""
 
-CommonContext["debug_print"] = lambda message: print(f"Debug: {message}")
+CommonContext["debug_print"] = lambda *message: print(f"[MiraScript] {message}")
 
 
 class Context(dict[str, Any]):
@@ -61,7 +82,7 @@ def emit(bytecode: bytes) -> Script:
 def script(context: Context | None = None) -> Any:
     if context is None:
         context = Context()
-    context["debug_print"](Add(1, 2))
+    context["debug_print"](Add(1, 2), 2, 3)
     """
 
     scope = {}

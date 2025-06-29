@@ -6,6 +6,5 @@ if __name__ == "__main__":
     result, diagnostics = mirascript.compile(
         "('Hello, world!')", mirascript.Config(input_mode="script")
     )
-    print(mirascript.main.decode_diagnostics)
     assert callable(result), "Compilation failed, result is not callable"
     print(diagnostics, result())  # Should print: Hello, world!
