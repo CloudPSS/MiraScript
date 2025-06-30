@@ -36,7 +36,7 @@ export function signature(id: string | undefined, info: VmFunctionInfo): string 
         }
     }
     const returns = info.returnsType ? ` -> ${info.returnsType}` : '';
-    return `${prefix}${params}${returns};`;
+    return `${prefix}${params}${returns}`;
 }
 
 /** 生成函数参数列表 */
