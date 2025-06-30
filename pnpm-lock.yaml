@@ -108,9 +108,6 @@ importers:
       '@mirascript/wasm':
         specifier: workspace:*
         version: link:../wasm
-      mirascript:
-        specifier: workspace:*
-        version: link:../mirascript
     devDependencies:
       '@mirascript/monaco':
         specifier: workspace:*
@@ -124,6 +121,9 @@ importers:
       js-yaml:
         specifier: ^4.1.0
         version: 4.1.0
+      mirascript:
+        specifier: workspace:*
+        version: link:../mirascript
       nodemon:
         specifier: ^3.1.10
         version: 3.1.10

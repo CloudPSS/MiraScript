@@ -74,7 +74,6 @@
         "scopeName": "source.mira",
         "path": "./syntaxes/mira.tmLanguage.json",
         "tokenTypes": {
-          "meta.template.expression": "other",
           "punctuation.definition.template-expression": "other"
         }
       },
@@ -93,7 +92,6 @@
         "scopeName": "string.miratpl",
         "path": "./syntaxes/miratpl.tmLanguage.json",
         "tokenTypes": {
-          "meta.template.expression": "other",
           "punctuation.definition.template-expression": "other"
         }
       },

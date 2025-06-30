@@ -135,7 +135,7 @@ repository:
       - include: '#interpolation2'
   interpolation:
     patterns:
-      - name: meta.template.expression.mira
+      - name: meta.embedded.template.mira
         match: (\$)(?:(?:(if|else|match|case|for|while|loop|break|continue|return)|(true|false|nil)|(_|global|in|is|and|or|not|type|fn|op|let|mut|const|type|where|import|export|effect|try|handle|finally|perform|resume)|(nan|inf))(?![[:alnum:]_])|((?:\$+|\@+|[[:alpha:]_])[[:alnum:]_]*))
         captures:
           1: { name: punctuation.definition.template-expression.begin.mira }
@@ -144,7 +144,7 @@ repository:
           4: { name: keyword.$4.mira }
           5: { name: constant.numeric.$5.mira }
           6: { name: variable.other.$6.mira }
-      - name: meta.template.expression.mira
+      - name: meta.embedded.template.mira
         begin: '(\${)'
         beginCaptures:
           0: { name: punctuation.definition.template-expression.begin.mira }
@@ -154,7 +154,7 @@ repository:
         patterns:
           - include: '#block'
           - include: '#source'
-      - name: meta.template.expression.mira
+      - name: meta.embedded.template.mira
         begin: '\$\('
         beginCaptures:
           0: { name: punctuation.definition.template-expression.begin.mira }
@@ -166,7 +166,7 @@ repository:
           - include: '#source'
   interpolation2:
     patterns:
-      - name: meta.template.expression.mira
+      - name: meta.embedded.template.mira
         match: (\${2})(?:(?:(if|else|match|case|for|while|loop|break|continue|return)|(true|false|nil)|(_|global|in|is|and|or|not|type|fn|op|let|mut|const|type|where|import|export|effect|try|handle|finally|perform|resume)|(nan|inf))(?![[:alnum:]_])|((?:\$+|\@+|[[:alpha:]_])[[:alnum:]_]*))
         captures:
           1: { name: punctuation.definition.template-expression.begin.mira }
@@ -175,7 +175,7 @@ repository:
           4: { name: keyword.$4.mira }
           5: { name: constant.numeric.$5.mira }
           6: { name: variable.other.$6.mira }
-      - name: meta.template.expression.mira
+      - name: meta.embedded.template.mira
         begin: '(\${2}{)'
         beginCaptures:
           0: { name: punctuation.definition.template-expression.begin.mira }
@@ -185,7 +185,7 @@ repository:
         patterns:
           - include: '#block'
           - include: '#source'
-      - name: meta.template.expression.mira
+      - name: meta.embedded.template.mira
         begin: '\${2}\('
         beginCaptures:
           0: { name: punctuation.definition.template-expression.begin.mira }
@@ -200,14 +200,18 @@ repository:
     begin: \{
     end: \}
     patterns:
-      - include: 'self'
+      - include: '#block'
       - include: '#source'
   parenthesized:
     name: meta.embedded.parenthesized.mira
     begin: \(
+    beginCaptures:
+      0: { name: braces.parentheses.begin.mira }
     end: \)
+    endCaptures:
+      0: { name: braces.parentheses.end.mira }
     patterns:
-      - include: 'self'
+      - include: '#parenthesized'
       - include: '#source'
   numbers:
     patterns:
