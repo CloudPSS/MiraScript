@@ -68,7 +68,11 @@ if (Object.keys(examples).length === 0) {
 
 /** 管理控制台输出的类 */
 class ConsoleManager {
-    private entries: Array<{ type: 'log' | 'error' | 'warn' | 'info'; message: string; timestamp: number }> = [];
+    private entries: Array<{
+        type: 'log' | 'error' | 'warn' | 'info';
+        message: Promise<string> | string;
+        timestamp: Date;
+    }> = [];
     private readonly outputElement: HTMLElement;
 
     constructor(outputElement: HTMLElement) {
@@ -76,50 +80,55 @@ class ConsoleManager {
     }
 
     /** 添加日志消息 */
-    log(message: string) {
+    log(message: Promise<string> | string) {
         this.addEntry('log', message);
     }
 
     /** 添加错误消息 */
-    error(message: string) {
+    error(message: Promise<string> | string) {
         this.addEntry('error', message);
     }
 
     /** 添加警告消息 */
-    warn(message: string) {
+    warn(message: Promise<string> | string) {
         this.addEntry('warn', message);
     }
 
     /** 添加信息消息 */
-    info(message: string) {
+    info(message: Promise<string> | string) {
         this.addEntry('info', message);
     }
 
     /** 添加条目到控制台 */
-    private addEntry(type: 'log' | 'error' | 'warn' | 'info', message: string) {
+    private addEntry(type: 'log' | 'error' | 'warn' | 'info', message: Promise<string> | string) {
         const entry = {
             type,
             message,
-            timestamp: Date.now(),
+            timestamp: new Date(),
         };
         this.entries.push(entry);
-        this.render();
+        void this.render();
     }
 
     /** 清空控制台 */
     clear() {
         this.entries = [];
-        this.render();
+        void this.render();
     }
 
     /** 渲染控制台内容 */
-    private render() {
-        const htmlArray = this.entries.map((entry) => {
-            const time = new Date(entry.timestamp).toLocaleTimeString();
-            return `<div class="console-entry ${entry.type}">[${time}] ${entry.message}</div>`;
+    private async render() {
+        const htmlArray = this.entries.map(async (entry) => {
+            const time = entry.timestamp.toLocaleTimeString(undefined, {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                fractionalSecondDigits: 3,
+            });
+            return `<div class="console-entry ${entry.type}"><time class="console-time" datetime=${entry.timestamp.toISOString()}>[${time}]</time> ${await entry.message}</div>`;
         });
 
-        const html = htmlArray.join('');
+        const html = await Promise.all(htmlArray).then((lines) => lines.join(''));
         this.outputElement.innerHTML = html;
         this.outputElement.scrollTop = this.outputElement.scrollHeight;
     }
@@ -138,9 +147,7 @@ function debugPrint(...args: VmAny[]) {
         if (typeof arg === 'string') return arg;
         return print(arg);
     });
-    void Promise.all(messages).then((message) => {
-        consoleManager.log(message.join(' '));
-    });
+    consoleManager.log(Promise.all(messages).then((message) => message.join(' ')));
 }
 
 const globals = createVmGlobal(
@@ -169,11 +176,10 @@ registerMiraScript(monaco, () => globals);
 
 let mode: InputMode = (localStorage.getItem('mode') as InputMode) || 'Script';
 
+let modelIndex = 1;
 const createModel = (value: string) => {
     // 使用唯一的URI避免冲突
-    const uri = monaco.Uri.parse(
-        `file:///playground-${Date.now()}-${Math.random().toString(36).slice(2, 9)}.${mode === 'Template' ? 'miratpl' : 'mira'}`,
-    );
+    const uri = monaco.Uri.parse(`file:///playground-${modelIndex++}.${mode === 'Template' ? 'miratpl' : 'mira'}`);
     const model = monaco.editor.createModel(value, mode === 'Template' ? 'mirascript-template' : 'mirascript', uri);
     model.setEOL(monaco.editor.EndOfLineSequence.LF);
     return model;

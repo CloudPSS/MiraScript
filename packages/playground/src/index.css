@@ -217,6 +217,10 @@ select:focus {
   color: var(--success-color);
 }
 
+.console-time {
+  color: var(--text-secondary);
+}
+
 .result-success {
   color: var(--success-color);
 }

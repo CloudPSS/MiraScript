@@ -3,6 +3,7 @@ import type { TranspileOptions, ScriptInput } from './types.js';
 import { compile as compileCore } from './compile.js';
 import { createScript } from './create-script.js';
 import { compileFast } from './compile-fast.js';
+import { DiagnosticCode, getDiagnosticMessage, parseDiagnostics } from './utils.js';
 
 export type { TranspileOptions, ScriptInput, InputMode } from './types.js';
 
@@ -56,9 +57,32 @@ async function compileWorker(...args: Parameters<typeof compileCore>): Promise<[
  * 生成 MiraScript 对应的 JavaScript 代码
  */
 async function compileImpl(...args: Parameters<typeof compileCore>): Promise<VmScript> {
-    const [code, errors] = args[0].length < WORKER_MIN_LEN ? await compileCore(...args) : await compileWorker(...args);
+    const source = args[0];
+    const [code, diagnostics] =
+        source.length < WORKER_MIN_LEN ? await compileCore(...args) : await compileWorker(...args);
     if (!code) {
-        throw new Error(`Failed to compile: ${errors.join(', ')}`);
+        const parsed = parseDiagnostics(
+            ArrayBuffer.isView(source) ? new TextDecoder().decode(source) : source,
+            diagnostics,
+        );
+        const messages = parsed.errors.map((e) => {
+            const range =
+                e.range.startLineNumber === e.range.endLineNumber
+                    ? `${e.range.startLineNumber}:${e.range.startColumn}-${e.range.endColumn}`
+                    : `${e.range.startLineNumber}:${e.range.startColumn}-${e.range.endLineNumber}:${e.range.endColumn}`;
+            const codeName = DiagnosticCode[e.code] || `Unknown(${e.code})`;
+            let message = getDiagnosticMessage(e.code);
+            for (const ref of e.references) {
+                const refRange =
+                    ref.range.startLineNumber === ref.range.endLineNumber
+                        ? `${ref.range.startLineNumber}:${ref.range.startColumn}-${ref.range.endColumn}`
+                        : `${ref.range.startLineNumber}:${ref.range.startColumn}-${ref.range.endLineNumber}:${ref.range.endColumn}`;
+                message += `\n    (${refRange}): ${getDiagnosticMessage(ref.code)}`;
+            }
+            return `  ${codeName}(${range}): ${message}`;
+        });
+
+        throw new Error(`Failed to compile:\n${messages.join('\n')}`);
     }
     return createScript(args[0], code);
 }

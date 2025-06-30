@@ -137,7 +137,7 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                         },
                     },
                 ],
-                [/(\.\.|\?:|[-+=/~?:;,.!@$%^&*<>])/, 'delimiter'],
+                [/(\.\.|\?:|[-+=/~?:;,.!@$%^&|*<>])/, 'delimiter'],
                 [REG_ORDINAL, 'number.ordinal'],
             ],
             whitespace: [

@@ -224,8 +224,8 @@ class Emitter {
                 }
                 case OpCode.FieldOptIndex:
                 case OpCode.FieldIndex: {
-                    const field = read();
-                    const value = this.readIndex(wide);
+                    const field = this.readIndex(wide);
+                    const value = read();
                     const opt = opcode === OpCode.FieldOptIndex;
                     code = opt
                         ? `...ElementOpt(${field}, ${this.rv(value)}),`
@@ -271,8 +271,8 @@ class Emitter {
                     break;
                 }
                 case OpCode.ItemRange: {
-                    const start = read();
-                    const end = read();
+                    const start = this.readIndex(wide);
+                    const end = this.readIndex(wide);
                     code = `...ArrayRange(${start}, ${end}),`;
                     break;
                 }

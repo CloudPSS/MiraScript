@@ -1,27 +1,10 @@
 import { type editor, Range, type IRange, type IPosition, Position } from '../monaco-api.js';
-import { DiagnosticCode } from '@mirascript/wasm';
 import { strictContainsPosition } from './utils.js';
 import { REG_IDENTIFIER, REG_ORDINAL } from '../constants.js';
 import type { MonacoResult } from './worker.js';
+import { parseDiagnostics, DiagnosticCode, type SourceDiagnostic, type SourceReference } from 'mirascript';
 
-/** 源代码诊断信息 */
-interface SourceDiagnosticBase<T extends DiagnosticCode = DiagnosticCode> {
-    /** 代码 */
-    readonly code: T;
-    /** 位置 */
-    readonly range: IRange;
-}
-
-/** 源代码诊断信息 */
-export interface SourceDiagnostic<T extends DiagnosticCode = DiagnosticCode> extends SourceDiagnosticBase<T> {
-    /** 引用 */
-    readonly references: ReadonlyArray<SourceReference<T>>;
-}
-/** 源代码引用信息 */
-export interface SourceReference<T extends DiagnosticCode = DiagnosticCode> extends SourceDiagnosticBase<T> {
-    /** 反向引用 */
-    readonly diagnostic: SourceDiagnostic<T>;
-}
+export type { SourceDiagnostic, SourceReference };
 
 /** 源代码定义信息 */
 interface SourceDefinitionBase<R extends DiagnosticCode = DiagnosticCode> {
@@ -129,6 +112,7 @@ export class CompileResult {
         readonly uri: string,
         /** 代码版本 */
         readonly version: number,
+        readonly source: string,
         readonly result: MonacoResult,
     ) {
         this.diagnostics = result.diagnostics;
@@ -140,13 +124,13 @@ export class CompileResult {
     readonly chunk?: Uint8Array;
 
     private diagnosticsReady = false;
-    private readonly _errors: Array<Writable<SourceDiagnostic>> = [];
-    private readonly _warnings: Array<Writable<SourceDiagnostic>> = [];
-    private readonly _infos: Array<Writable<SourceDiagnostic>> = [];
-    private readonly _hints: Array<Writable<SourceDiagnostic>> = [];
-    private readonly _references: Array<Writable<SourceReference>> = [];
-    private readonly _tags: Array<Writable<SourceDiagnostic>> = [];
-    private readonly _tagsReferences: Array<Writable<SourceReference>> = [];
+    private _errors: Array<Writable<SourceDiagnostic>> = [];
+    private _warnings: Array<Writable<SourceDiagnostic>> = [];
+    private _infos: Array<Writable<SourceDiagnostic>> = [];
+    private _hints: Array<Writable<SourceDiagnostic>> = [];
+    private _references: Array<Writable<SourceReference>> = [];
+    private _tags: Array<Writable<SourceDiagnostic>> = [];
+    private _tagsReferences: Array<Writable<SourceReference>> = [];
     /** 源代码诊断信息 */
     get errors(): readonly SourceDiagnostic[] {
         if (!this.diagnosticsReady) {
@@ -198,61 +182,14 @@ export class CompileResult {
     }
     /** 分析诊断信息 */
     private readDiagnostics(): void {
-        const diagnostics = [];
-        const buf = this.diagnostics;
-        const bufLen = buf.length;
-        for (let i = 0; i < bufLen; i += 5) {
-            const startLineNumber = buf[i]!;
-            const startColumn = buf[i + 1]!;
-            const endLineNumber = buf[i + 2]!;
-            const endColumn = buf[i + 3]!;
-            const error = buf[i + 4]! as DiagnosticCode;
-            diagnostics.push({
-                code: error,
-                range: {
-                    startLineNumber,
-                    startColumn,
-                    endLineNumber,
-                    endColumn,
-                },
-            } as Writable<SourceDiagnostic & SourceReference>);
-        }
-        for (let i = 0; i < diagnostics.length; i++) {
-            const diagnostic = diagnostics[i]!;
-            const { code } = diagnostic;
-            if (code > DiagnosticCode.ErrorStart && code < DiagnosticCode.ErrorEnd) {
-                this._errors.push(diagnostic);
-            } else if (code > DiagnosticCode.WarningStart && code < DiagnosticCode.WarningEnd) {
-                this._warnings.push(diagnostic);
-            } else if (code > DiagnosticCode.InfoStart && code < DiagnosticCode.InfoEnd) {
-                this._infos.push(diagnostic);
-            } else if (code > DiagnosticCode.HintStart && code < DiagnosticCode.HintEnd) {
-                this._hints.push(diagnostic);
-            } else if (code > DiagnosticCode.TagStart && code < DiagnosticCode.TagEnd) {
-                this._tags.push(diagnostic);
-            } else {
-                continue;
-            }
-            diagnostic.references = [];
-            while (i + 1 < diagnostics.length) {
-                const ref = diagnostics[i + 1]!;
-                let isRef = false;
-                if (ref.code > DiagnosticCode.TagRefStart && ref.code < DiagnosticCode.TagRefEnd) {
-                    isRef = true;
-                    this._tagsReferences.push(ref);
-                }
-                if (ref.code > DiagnosticCode.ReferenceStart && ref.code < DiagnosticCode.ReferenceEnd) {
-                    isRef = true;
-                    this._references.push(ref);
-                }
-                if (!isRef) {
-                    break;
-                }
-                i++;
-                ref.diagnostic = diagnostic;
-                (diagnostic.references as SourceReference[]).push(ref);
-            }
-        }
+        const parsed = parseDiagnostics(this.source, this.diagnostics);
+        this._errors = parsed.errors;
+        this._warnings = parsed.warnings;
+        this._infos = parsed.infos;
+        this._hints = parsed.hints;
+        this._tags = parsed.tags;
+        this._references = parsed.references;
+        this._tagsReferences = parsed.tagsReferences;
         this.diagnosticsReady = true;
     }
 
