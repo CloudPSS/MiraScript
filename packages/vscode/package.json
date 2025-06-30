@@ -5,6 +5,7 @@
   "publisher": "CloudPSS",
   "version": "0.0.1",
   "type": "module",
+  "main": "./dist/main.js",
   "engines": {
     "vscode": "^1.90.0"
   },
@@ -14,19 +15,26 @@
   "scripts": {
     "build:language-configuration": "node scripts/language-configuration.js",
     "build:language": "node scripts/language.js",
-    "build:markdown-preview": "node ./esbuild.config.js",
-    "build": "pnpm build:language-configuration && pnpm build:language && pnpm build:markdown-preview",
-    "watch": "nodemon --watch scripts --exec 'pnpm build:language' --ext yaml"
+    "build:esbuild": "node ./esbuild.config.js",
+    "build": "pnpm build:language-configuration && pnpm build:language && pnpm build:esbuild",
+    "watch:language": "nodemon --watch scripts --exec 'pnpm build:language' --ext yaml",
+    "watch:esbuild": "nodemon --watch esbuild.config.js --exec 'pnpm build:esbuild'",
+    "watch:ts": "rimraf ./dist && tsc --watch"
+  },
+  "dependencies": {
+    "@mirascript/wasm": "workspace:*"
   },
   "devDependencies": {
+    "mirascript": "workspace:*",
     "@mirascript/monaco": "workspace:*",
     "@private/monaco-editor": "^0.0.40",
+    "@types/vscode": "^1.101.0",
     "js-yaml": "^4.1.0",
     "nodemon": "^3.1.10"
   },
   "contributes": {
     "markdown.previewScripts": [
-      "./dist/markdown-preview.js"
+      "./media/markdown-preview.js"
     ],
     "languages": [
       {

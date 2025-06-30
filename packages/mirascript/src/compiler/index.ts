@@ -3,7 +3,7 @@ import type { TranspileOptions, ScriptInput } from './types.js';
 import { compile as compileCore } from './compile.js';
 import { createScript } from './create-script.js';
 import { compileFast } from './compile-fast.js';
-import { DiagnosticCode, getDiagnosticMessage, parseDiagnostics } from './utils.js';
+import { DiagnosticCode, getDiagnosticMessage, parseDiagnostics, type SourceDiagnostic } from './utils.js';
 
 export type { TranspileOptions, ScriptInput, InputMode } from './types.js';
 
@@ -52,6 +52,33 @@ async function compileWorker(...args: Parameters<typeof compileCore>): Promise<[
         worker.addEventListener('message', callback);
     });
 }
+/** 生成诊断 range 的字符串 */
+function formatRange(range: {
+    startLineNumber: number;
+    startColumn: number;
+    endLineNumber: number;
+    endColumn: number;
+}): string {
+    if (range.startLineNumber === range.endLineNumber) {
+        if (range.startColumn === range.endColumn) {
+            return `${range.startLineNumber}:${range.startColumn}`;
+        }
+        return `${range.startLineNumber}:${range.startColumn}-${range.endColumn}`;
+    }
+    return `${range.startLineNumber}:${range.startColumn}-${range.endLineNumber}:${range.endColumn}`;
+}
+
+/** 生成诊断消息的字符串 */
+function formatDiagnostic(diagnostic: SourceDiagnostic): string {
+    const range = formatRange(diagnostic.range);
+    const codeName = DiagnosticCode[diagnostic.code] || `Unknown(${diagnostic.code})`;
+    let message = getDiagnosticMessage(diagnostic.code);
+    for (const ref of diagnostic.references) {
+        const refRange = formatRange(ref.range);
+        message += `\n    (${refRange}): ${getDiagnosticMessage(ref.code)}`;
+    }
+    return `  ${codeName}(${range}): ${message}`;
+}
 
 /**
  * 生成 MiraScript 对应的 JavaScript 代码
@@ -65,23 +92,7 @@ async function compileImpl(...args: Parameters<typeof compileCore>): Promise<VmS
             ArrayBuffer.isView(source) ? new TextDecoder().decode(source) : source,
             diagnostics,
         );
-        const messages = parsed.errors.map((e) => {
-            const range =
-                e.range.startLineNumber === e.range.endLineNumber
-                    ? `${e.range.startLineNumber}:${e.range.startColumn}-${e.range.endColumn}`
-                    : `${e.range.startLineNumber}:${e.range.startColumn}-${e.range.endLineNumber}:${e.range.endColumn}`;
-            const codeName = DiagnosticCode[e.code] || `Unknown(${e.code})`;
-            let message = getDiagnosticMessage(e.code);
-            for (const ref of e.references) {
-                const refRange =
-                    ref.range.startLineNumber === ref.range.endLineNumber
-                        ? `${ref.range.startLineNumber}:${ref.range.startColumn}-${ref.range.endColumn}`
-                        : `${ref.range.startLineNumber}:${ref.range.startColumn}-${ref.range.endLineNumber}:${ref.range.endColumn}`;
-                message += `\n    (${refRange}): ${getDiagnosticMessage(ref.code)}`;
-            }
-            return `  ${codeName}(${range}): ${message}`;
-        });
-
+        const messages = parsed.errors.map(formatDiagnostic);
         throw new Error(`Failed to compile:\n${messages.join('\n')}`);
     }
     return createScript(args[0], code);
