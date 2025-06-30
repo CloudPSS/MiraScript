@@ -188,7 +188,7 @@ select:focus {
   height: 100%;
   overflow: auto;
   padding: 16px;
-  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-family: monospace;
   font-size: 13px;
   line-height: 1.4;
   background-color: var(--bg-primary);
@@ -201,7 +201,6 @@ select:focus {
 
 .console-entry {
   margin-bottom: 8px;
-  padding: 4px 0;
   white-space: pre-wrap;
   word-break: break-word;
 }

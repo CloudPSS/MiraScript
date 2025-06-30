@@ -16,7 +16,8 @@ import {
     type InputMode,
 } from 'mirascript';
 
-monaco.editor.createModel('', 'javascript')?.dispose();
+// 加载 javascript 模型以便语法高亮
+monaco.editor.createModel('', 'javascript').dispose();
 
 // 使用 Vite 的 import.meta.glob 动态加载示例文件
 const exampleModules = import.meta.glob('./*.{mira,miratpl}', {
@@ -93,36 +94,22 @@ class ConsoleManager {
             timestamp: Date.now(),
         };
         this.entries.push(entry);
-        void this.render();
+        this.render();
     }
 
     /** 清空控制台 */
     clear() {
         this.entries = [];
-        void this.render();
+        this.render();
     }
 
     /** 渲染控制台内容 */
-    private async render() {
-        const htmlPromises = this.entries.map(async (entry) => {
+    private render() {
+        const htmlArray = this.entries.map((entry) => {
             const time = new Date(entry.timestamp).toLocaleTimeString();
-
-            // 尝试为日志消息添加语法高亮
-            let messageHtml = entry.message;
-            try {
-                // 检查消息是否看起来像MiraScript字面量
-                if (entry.message.includes('[') || entry.message.includes('(') || entry.message.includes('{')) {
-                    messageHtml = await monaco.editor.colorize(entry.message, 'mirascript', {});
-                }
-            } catch {
-                // 如果语法高亮失败，使用原始消息
-                messageHtml = entry.message;
-            }
-
-            return `<div class="console-entry ${entry.type}">[${time}] ${messageHtml}</div>`;
+            return `<div class="console-entry ${entry.type}">[${time}] ${entry.message}</div>`;
         });
 
-        const htmlArray = await Promise.all(htmlPromises);
         const html = htmlArray.join('');
         this.outputElement.innerHTML = html;
         this.outputElement.scrollTop = this.outputElement.scrollHeight;
@@ -138,16 +125,13 @@ const consoleManager = new ConsoleManager(consoleOutput);
 
 /** 创建简单的debug_print函数 */
 function debugPrint(...args: VmAny[]) {
-    const message = args
-        .map((arg) => {
-            if (typeof arg === 'string') return arg;
-            if (typeof arg === 'number' || typeof arg === 'boolean') return String(arg);
-            if (arg === null) return 'nil';
-            if (arg === undefined) return '<uninitialized>';
-            return print(arg);
-        })
-        .join(' ');
-    consoleManager.log(message);
+    const messages = args.map(async (arg) => {
+        if (typeof arg === 'string') return arg;
+        return print(arg);
+    });
+    void Promise.all(messages).then((message) => {
+        consoleManager.log(message.join(' '));
+    });
 }
 
 const globals = createVmGlobal(
@@ -335,14 +319,17 @@ setTimeout(() => {
 }, 1);
 
 /** 将值转为显示 */
-function print(value: VmAny | Error): string {
-    if (value === null) return 'nil';
+async function print(value: VmAny | Error): Promise<string> {
+    if (value === null) return monaco.editor.colorize('nil', 'mirascript', {});
     if (value === undefined) return '<uninitialized>';
     if (value instanceof Error) return value.toString();
+    if (typeof value == 'function') {
+        return monaco.editor.colorize(String(value), 'javascript', {});
+    }
     if (isVmExtern(value) || isVmModule(value) || typeof value == 'function') {
         return String(value);
     }
-    return serialize(value);
+    return monaco.editor.colorize(serialize(value), 'mirascript', {});
 }
 
 /** 编译运行 */
@@ -367,46 +354,27 @@ async function run() {
             console.timeEnd('transpile');
         });
 
-        // 显示编译结果 - 添加JavaScript语法高亮
+        // 显示编译结果
         const compiledCode = result.toString();
-        try {
-            const highlightedJS = await monaco.editor.colorize(compiledCode, 'javascript', {});
-            elCompiledOutput.innerHTML = `
-                <div class="section-title">Compiled JavaScript:</div>
-                <div class="compiled-code">${highlightedJS}</div>
-            `;
-        } catch {
-            // 如果语法高亮失败，回退到普通显示
-            elCompiledOutput.innerHTML = `
-                <div class="section-title">Compiled JavaScript:</div>
-                <div class="compiled-code"><pre>${compiledCode}</pre></div>
-            `;
-        }
+        const highlightedJS = await monaco.editor.colorize(compiledCode, 'javascript', {});
+        elCompiledOutput.innerHTML = /*html*/ `
+            <div class="section-title">Compiled JavaScript:</div>
+            <div class="compiled-code">${highlightedJS}</div>
+        `;
 
         console.time('execute');
         try {
             const execResult = result(globals);
-            const resultText = print(execResult);
-
-            // 为结果添加MiraScript语法高亮
-            try {
-                const highlightedResult = await monaco.editor.colorize(resultText, 'mirascript', {});
-                elResultOutput.innerHTML = `
-                    <div class="section-title">Execution Result:</div>
-                    <div class="result-success">${highlightedResult}</div>
-                `;
-            } catch {
-                // 如果语法高亮失败，回退到普通显示
-                elResultOutput.innerHTML = `
-                    <div class="section-title">Execution Result:</div>
-                    <div class="result-success"><pre>${resultText}</pre></div>
-                `;
-            }
+            const resultText = await print(execResult);
+            elResultOutput.innerHTML = /*html*/ `
+                <div class="section-title">Execution Result:</div>
+                <div class="result-success"><pre>${resultText}</pre></div>
+            `;
 
             consoleManager.info(`Execution completed successfully`);
         } catch (ex) {
             const errorText = String(ex);
-            elResultOutput.innerHTML = `
+            elResultOutput.innerHTML = /*html*/ `
                 <div class="section-title">Execution Error:</div>
                 <div class="result-error"><pre>${errorText}</pre></div>
             `;
@@ -415,11 +383,11 @@ async function run() {
         console.timeEnd('execute');
     } catch (ex) {
         const errorText = String(ex);
-        elCompiledOutput.innerHTML = `
+        elCompiledOutput.innerHTML = /*html*/ `
             <div class="section-title">Compilation Error:</div>
             <div class="result-error"><pre>${errorText}</pre></div>
         `;
-        elResultOutput.innerHTML = `
+        elResultOutput.innerHTML = /*html*/ `
             <div class="section-title">Execution Result:</div>
             <div class="result-error">Compilation failed</div>
         `;
