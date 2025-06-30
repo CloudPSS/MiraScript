@@ -11,6 +11,7 @@ let number_with_separator = 1_000_000;
 let positive_infinity = inf;
 let not_a_number = nan;
 
+// 三种引号的功能一致
 let string_single = 'Hello';
 let string_double = "World";
 let string_backtick = `Multi

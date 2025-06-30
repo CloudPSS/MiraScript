@@ -6,9 +6,9 @@ let immutable_age = 30;
 let immutable_active = true;
 
 debug_print("不可变变量:");
-debug_print("Name: $immutable_name");
-debug_print("Age: $immutable_age");
-debug_print("Active: $immutable_active");
+debug_print("Name:", immutable_name);
+debug_print("Age:", immutable_age);
+debug_print("Active:", immutable_active);
 
 // let mut 语句 - 可变绑定
 let mut mutable_counter = 0;
@@ -16,9 +16,9 @@ let mut mutable_message = "Hello";
 let mut mutable_list = [1, 2, 3];
 
 debug_print("可变变量初始值:");
-debug_print("Counter: $mutable_counter");
-debug_print("Message: $mutable_message");
-debug_print("List: $mutable_list");
+debug_print("Counter:", mutable_counter);
+debug_print("Message:", mutable_message);
+debug_print("List:", mutable_list);
 
 // 基本赋值
 mutable_counter = 10;
@@ -26,34 +26,34 @@ mutable_message = "World";
 mutable_list = [4, 5, 6, 7];
 
 debug_print("赋值后:");
-debug_print("Counter: $mutable_counter");
-debug_print("Message: $mutable_message");
-debug_print("List: $mutable_list");
+debug_print("Counter:", mutable_counter);
+debug_print("Message:", mutable_message);
+debug_print("List:", mutable_list);
 
 // 复合赋值运算符
 mutable_counter += 5;
-debug_print("counter += 5: $mutable_counter");
+debug_print("counter += 5:", mutable_counter);
 
 mutable_counter -= 3;
-debug_print("counter -= 3: $mutable_counter");
+debug_print("counter -= 3:", mutable_counter);
 
 mutable_counter *= 2;
-debug_print("counter *= 2: $mutable_counter");
+debug_print("counter *= 2:", mutable_counter);
 
 mutable_counter /= 4;
-debug_print("counter /= 4: $mutable_counter");
+debug_print("counter /= 4:", mutable_counter);
 
 mutable_counter %= 3;
-debug_print("counter %= 3: $mutable_counter");
+debug_print("counter %= 3:", mutable_counter);
 
 // 解构赋值 - 记录
 let person = (name: "Bob", age: 25, city: "Boston");
 let (name: person_name, age: person_age, city: person_city) = person;
 
 debug_print("记录解构:");
-debug_print("Name: $person_name");
-debug_print("Age: $person_age");
-debug_print("City: $person_city");
+debug_print("Name:", person_name);
+debug_print("Age:", person_age);
+debug_print("City:", person_city);
 
 // 解构赋值 - 数组
 let coordinates = [10, 20, 30];
@@ -65,8 +65,8 @@ debug_print("X: $x, Y: $y, Z: $z");
 // 部分解构
 let [first, ..rest] = [1, 2, 3, 4, 5];
 debug_print("部分解构:");
-debug_print("First: $first");
-debug_print("Rest: $rest");
+debug_print("First:", first);
+debug_print("Rest:", rest);
 
 // 嵌套解构
 let nested_data = (
@@ -86,29 +86,29 @@ let (
 ) = nested_data;
 
 debug_print("嵌套解构:");
-debug_print("ID: $id");
-debug_print("User name: $user_name");
-debug_print("Age: $age");
-debug_print("Theme: $theme");
-debug_print("Language: $lang");
+debug_print("ID:", id);
+debug_print("User name:", user_name);
+debug_print("Age:", age);
+debug_print("Theme:", theme);
+debug_print("Language:", lang);
 
 // 可变性在解构中的应用
 let original_data = (a: 1, b: 2, c: 3);
-let (a: immutable_a, mut b, c: mut mutable_c) = original_data;
+let (a: immutable_a, mut mutable_b, c: mut mutable_c) = original_data;
 
 debug_print("解构时的可变性:");
-debug_print("Immutable a: $immutable_a");
-debug_print("Mutable b: $b");
-debug_print("Mutable c: $mutable_c");
+debug_print("Immutable a:", immutable_a);
+debug_print("Mutable b:", mutable_b);
+debug_print("Mutable c:", mutable_c);
 
 // 修改可变变量
-b += 10;
+mutable_b += 10;
 mutable_c *= 3;
 
 debug_print("修改后:");
-debug_print("Immutable a: $immutable_a"); // 不变
-debug_print("Mutable b: $b");            // 改变
-debug_print("Mutable c: $mutable_c");    // 改变
+debug_print("Immutable a:", immutable_a); // 不变
+debug_print("Mutable b:", mutable_b);    // 改变
+debug_print("Mutable c:", mutable_c);    // 改变
 
 // 忽略不需要的值
 let data_array = [100, 200, 300, 400, 500];
@@ -163,9 +163,11 @@ debug_print("重新赋值解构变量:");
 debug_print("New coordinates: ($x_coord, $y_coord, $z_coord)");
 
 // 交换变量值
-let mut a = "first";
-let mut b = "second";
+{
+  let mut a = "first";
+  let mut b = "second";
 
-debug_print("交换前: a=$a, b=$b");
-(a, b) = (b, a);
-debug_print("交换后: a=$a, b=$b");
+  debug_print("交换前: a=$a, b=$b");
+  (a, b) = (b, a);
+  debug_print("交换后: a=$a, b=$b");
+}

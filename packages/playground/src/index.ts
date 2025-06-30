@@ -125,7 +125,10 @@ class ConsoleManager {
                 second: '2-digit',
                 fractionalSecondDigits: 3,
             });
-            return `<div class="console-entry ${entry.type}"><time class="console-time" datetime=${entry.timestamp.toISOString()}>[${time}]</time> ${await entry.message}</div>`;
+            return /* html */ `<div class="console-entry ${entry.type}">
+                <time class="console-time" datetime=${entry.timestamp.toISOString()}>[${time}]</time>
+                <span class="console-message">${await entry.message}</span>
+            </div>`;
         });
 
         const html = await Promise.all(htmlArray).then((lines) => lines.join(''));
@@ -285,7 +288,7 @@ const value =
     localStorage.getItem('source') || examples['01_hello_world.mira']?.code || `debug_print("Hello, World!");`;
 const overlay = monaco.utils.createOverflowWidgetsDomNode(elEditor);
 const editor = monaco.editor.create(elEditor, {
-    fontFamily: 'Sarasa Mono SC',
+    fontFamily: 'Sarasa Mono SC, monospace',
     useShadowDOM: true,
     overflowWidgetsDomNode: overlay,
     formatOnType: true,
@@ -345,18 +348,29 @@ setTimeout(() => {
     });
 }, 1);
 
+/** 语法高亮 */
+async function syntaxHighlight(value: string, languageId: string): Promise<string> {
+    let highlighted = await monaco.editor.colorize(value, languageId, {});
+    if (highlighted.endsWith('<br/>') && !value.endsWith('\n')) {
+        // 如果高亮结果以 <br/> 结尾且原始值没有换行符，则去掉 <br/>
+        highlighted = highlighted.slice(0, -'<br/>'.length);
+    }
+    highlighted = highlighted.replaceAll(/(\u00A0)+/g, '$&<wbr>');
+    return highlighted;
+}
+
 /** 将值转为显示 */
 async function print(value: VmAny | Error): Promise<string> {
-    if (value === null) return monaco.editor.colorize('nil', 'mirascript', {});
+    if (value === null) return syntaxHighlight('nil', 'mirascript');
     if (value === undefined) return '<uninitialized>';
     if (value instanceof Error) return value.toString();
     if (typeof value == 'function') {
-        return monaco.editor.colorize(String(value), 'javascript', {});
+        return syntaxHighlight(String(value), 'javascript');
     }
     if (isVmExtern(value) || isVmModule(value) || typeof value == 'function') {
         return String(value);
     }
-    return monaco.editor.colorize(serialize(value), 'mirascript', {});
+    return syntaxHighlight(serialize(value), 'mirascript');
 }
 
 /** 编译运行 */
@@ -383,7 +397,7 @@ async function run() {
 
         // 显示编译结果
         const compiledCode = result.toString();
-        const highlightedJS = await monaco.editor.colorize(compiledCode, 'javascript', {});
+        const highlightedJS = await syntaxHighlight(compiledCode, 'javascript');
         elCompiledOutput.innerHTML = /*html*/ `
             <div class="section-title">Compiled JavaScript:</div>
             <div class="compiled-code">${highlightedJS}</div>

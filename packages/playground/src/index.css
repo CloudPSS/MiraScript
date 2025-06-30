@@ -11,6 +11,7 @@
   --success-color: #4ec9b0;
   --error-color: #f44747;
   --warning-color: #ffcc02;
+  user-select: none;
 }
 
 * {
@@ -182,6 +183,7 @@ select:focus {
 .tab-content {
   grid-area: output-content;
   overflow: hidden;
+  user-select: text;
 }
 
 .tab-pane {
@@ -201,8 +203,9 @@ select:focus {
 
 .console-entry {
   margin-bottom: 8px;
-  white-space: pre-wrap;
-  word-break: break-word;
+  line-height: 1.5em;
+  display: flex;
+  gap: 8px;
 }
 
 .console-entry.error {
@@ -219,6 +222,11 @@ select:focus {
 
 .console-time {
   color: var(--text-secondary);
+}
+
+.console-message {
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .result-success {
