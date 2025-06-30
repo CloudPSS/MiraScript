@@ -6,8 +6,52 @@
     <title>MiraScript Playground</title>
   </head>
   <body>
-    <div id="editor"></div>
-    <div id="disassembly"></div>
+    <div class="playground">
+      <div class="header">
+        <div class="header-left">
+          <h1>MiraScript Playground</h1>
+        </div>
+        <div class="header-controls">
+          <div class="control-group">
+            <label for="example-select">Example:</label>
+            <select id="example-select">
+              <option value="">Select an example...</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label for="mode-select">Mode:</label>
+            <select id="mode-select">
+              <option value="Script">Script</option>
+              <option value="Template">Template</option>
+            </select>
+          </div>
+          <button id="run-btn" class="run-button">Run (Ctrl+Enter)</button>
+        </div>
+      </div>
+      <div class="main-content">
+        <div class="editor-panel">
+          <div class="panel-header">
+            <h3>Code Editor</h3>
+          </div>
+          <div id="editor"></div>
+        </div>
+        <div class="output-panel">
+          <div class="panel-header">
+            <h3>Output</h3>
+            <div class="output-tabs">
+              <button class="tab-btn active" data-tab="compiled">Compiled</button>
+              <button class="tab-btn" data-tab="console">Console</button>
+              <button class="tab-btn" data-tab="result">Result</button>
+            </div>
+          </div>
+          <div class="tab-content">
+            <div id="compiled-output" class="tab-pane active"></div>
+            <div id="console-output" class="tab-pane"></div>
+            <div id="result-output" class="tab-pane"></div>
+          </div>
+        </div>
+      </div>
+    </div>
     <script src="./src/index.ts" type="module"></script>
   </body>
 </html>
