@@ -1,0 +1,290 @@
+// MiraScript 算法示例
+
+// 排序算法
+
+// 冒泡排序
+fn bubble_sort(arr) {
+  let mut result = arr;
+  let n = len(result);
+  
+  for i in 0..<n {
+    for j in 0..<(n - i - 1) {
+      if result[j] > result[j + 1] {
+        // 交换元素
+        let temp = result[j];
+        result = [..result[..j], result[j + 1], temp, ..result[j + 2..]];
+      }
+    }
+  }
+  result
+}
+
+// 快速排序
+fn quick_sort(arr) {
+  if len(arr) <= 1 {
+    arr
+  } else {
+    let pivot = arr[0];
+    let mut less = [];
+    let mut equal = [];
+    let mut greater = [];
+    
+    for item in arr {
+      if item < pivot {
+        less = [..less, item];
+      } else if item == pivot {
+        equal = [..equal, item];
+      } else {
+        greater = [..greater, item];
+      }
+    }
+    
+    [..quick_sort(less), ..equal, ..quick_sort(greater)]
+  }
+}
+
+// 归并排序
+fn merge(left, right) {
+  let mut result = [];
+  let mut i = 0;
+  let mut j = 0;
+  
+  while i < len(left) && j < len(right) {
+    if left[i] <= right[j] {
+      result = [..result, left[i]];
+      i += 1;
+    } else {
+      result = [..result, right[j]];
+      j += 1;
+    }
+  }
+  
+  // 添加剩余元素
+  while i < len(left) {
+    result = [..result, left[i]];
+    i += 1;
+  }
+  
+  while j < len(right) {
+    result = [..result, right[j]];
+    j += 1;
+  }
+  
+  result
+}
+
+fn merge_sort(arr) {
+  if len(arr) <= 1 {
+    arr
+  } else {
+    let mid = len(arr) / 2;
+    let left = arr[..mid];
+    let right = arr[mid..];
+    merge(merge_sort(left), merge_sort(right))
+  }
+}
+
+// 搜索算法
+
+// 线性搜索
+fn linear_search(arr, target) {
+  for i in 0..<len(arr) {
+    if arr[i] == target {
+      return i;
+    }
+  }
+  nil
+}
+
+// 二分搜索（需要已排序数组）
+fn binary_search(arr, target) {
+  let mut left = 0;
+  let mut right = len(arr) - 1;
+  
+  while left <= right {
+    let mid = (left + right) / 2;
+    if arr[mid] == target {
+      return mid;
+    } else if arr[mid] < target {
+      left = mid + 1;
+    } else {
+      right = mid - 1;
+    }
+  }
+  nil
+}
+
+// 数据结构相关算法
+
+// 栈操作模拟
+fn stack_push(stack, item) {
+  [..stack, item]
+}
+
+fn stack_pop(stack) {
+  if len(stack) == 0 {
+    (stack: stack, item: nil)
+  } else {
+    (stack: stack[..-1], item: stack[-1])
+  }
+}
+
+// 队列操作模拟
+fn queue_enqueue(queue, item) {
+  [..queue, item]
+}
+
+fn queue_dequeue(queue) {
+  if len(queue) == 0 {
+    (queue: queue, item: nil)
+  } else {
+    (queue: queue[1..], item: queue[0])
+  }
+}
+
+// 图算法 - 深度优先搜索（DFS）
+fn dfs(graph, start, visited) {
+  let mut new_visited = [..visited, start];
+  debug_print("访问节点: $start");
+  
+  if start in graph {
+    for neighbor in graph[start] {
+      if !(neighbor in visited) {
+        new_visited = dfs(graph, neighbor, new_visited);
+      }
+    }
+  }
+  
+  new_visited
+}
+
+// 图算法 - 广度优先搜索（BFS）
+fn bfs(graph, start) {
+  let mut queue = [start];
+  let mut visited = [start];
+  
+  while len(queue) > 0 {
+    let current = queue[0];
+    queue = queue[1..];
+    
+    debug_print("访问节点: $current");
+    
+    if current in graph {
+      for neighbor in graph[current] {
+        if !(neighbor in visited) {
+          visited = [..visited, neighbor];
+          queue = [..queue, neighbor];
+        }
+      }
+    }
+  }
+  
+  visited
+}
+
+// 动态规划 - 最长公共子序列
+fn lcs(str1, str2) {
+  let len1 = len(str1);
+  let len2 = len(str2);
+  
+  // 创建 DP 表
+  let mut dp = [];
+  for i in 0..=len1 {
+    let mut row = [];
+    for j in 0..=len2 {
+      row = [..row, 0];
+    }
+    dp = [..dp, row];
+  }
+  
+  // 填充 DP 表
+  for i in 1..=len1 {
+    for j in 1..=len2 {
+      if str1[i-1] == str2[j-1] {
+        dp = [..dp[..i-1], 
+              [..dp[i-1][..j-1], 
+               dp[i-1][j-1] + 1, 
+               ..dp[i-1][j..]], 
+              ..dp[i+1..]];
+      } else {
+        let max_val = if dp[i-1][j] > dp[i][j-1] { dp[i-1][j] } else { dp[i][j-1] };
+        dp = [..dp[..i-1], 
+              [..dp[i-1][..j-1], 
+               max_val, 
+               ..dp[i-1][j..]], 
+              ..dp[i+1..]];
+      }
+    }
+  }
+  
+  dp[len1][len2]
+}
+
+// 测试排序算法
+debug_print("排序算法测试:");
+let unsorted = [64, 34, 25, 12, 22, 11, 90];
+debug_print("原数组: $unsorted");
+
+debug_print("冒泡排序: ${bubble_sort(unsorted)}");
+debug_print("快速排序: ${quick_sort(unsorted)}");
+debug_print("归并排序: ${merge_sort(unsorted)}");
+
+// 测试搜索算法
+debug_print("搜索算法测试:");
+let sorted_array = [1, 3, 5, 7, 9, 11, 13, 15, 17, 19];
+let target = 7;
+
+debug_print("数组: $sorted_array");
+debug_print("查找目标: $target");
+debug_print("线性搜索结果: ${linear_search(sorted_array, target)}");
+debug_print("二分搜索结果: ${binary_search(sorted_array, target)}");
+
+// 测试栈操作
+debug_print("栈操作测试:");
+let mut stack = [];
+stack = stack_push(stack, 1);
+stack = stack_push(stack, 2);
+stack = stack_push(stack, 3);
+debug_print("入栈后: $stack");
+
+let pop_result = stack_pop(stack);
+debug_print("出栈元素: ${pop_result.item}");
+debug_print("出栈后: ${pop_result.stack}");
+
+// 测试队列操作
+debug_print("队列操作测试:");
+let mut queue = [];
+queue = queue_enqueue(queue, "A");
+queue = queue_enqueue(queue, "B");
+queue = queue_enqueue(queue, "C");
+debug_print("入队后: $queue");
+
+let dequeue_result = queue_dequeue(queue);
+debug_print("出队元素: ${dequeue_result.item}");
+debug_print("出队后: ${dequeue_result.queue}");
+
+// 测试图算法
+debug_print("图算法测试:");
+let graph = (
+  A: ["B", "C"],
+  B: ["A", "D", "E"],
+  C: ["A", "F"],
+  D: ["B"],
+  E: ["B", "F"],
+  F: ["C", "E"]
+);
+
+debug_print("图结构: $graph");
+debug_print("DFS 遍历（从 A 开始）:");
+dfs(graph, "A", []);
+
+debug_print("BFS 遍历（从 A 开始）:");
+bfs(graph, "A");
+
+// 测试动态规划
+debug_print("动态规划测试:");
+let str1 = "ABCDGH";
+let str2 = "AEDFHR";
+debug_print("字符串1: $str1");
+debug_print("字符串2: $str2");
+debug_print("最长公共子序列长度: ${lcs(str1, str2)}");

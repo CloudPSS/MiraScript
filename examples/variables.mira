@@ -1,0 +1,171 @@
+// MiraScript 变量和赋值示例
+
+// let 语句 - 不可变绑定
+let immutable_name = "Alice";
+let immutable_age = 30;
+let immutable_active = true;
+
+debug_print("不可变变量:");
+debug_print("Name: $immutable_name");
+debug_print("Age: $immutable_age");
+debug_print("Active: $immutable_active");
+
+// let mut 语句 - 可变绑定
+let mut mutable_counter = 0;
+let mut mutable_message = "Hello";
+let mut mutable_list = [1, 2, 3];
+
+debug_print("可变变量初始值:");
+debug_print("Counter: $mutable_counter");
+debug_print("Message: $mutable_message");
+debug_print("List: $mutable_list");
+
+// 基本赋值
+mutable_counter = 10;
+mutable_message = "World";
+mutable_list = [4, 5, 6, 7];
+
+debug_print("赋值后:");
+debug_print("Counter: $mutable_counter");
+debug_print("Message: $mutable_message");
+debug_print("List: $mutable_list");
+
+// 复合赋值运算符
+mutable_counter += 5;
+debug_print("counter += 5: $mutable_counter");
+
+mutable_counter -= 3;
+debug_print("counter -= 3: $mutable_counter");
+
+mutable_counter *= 2;
+debug_print("counter *= 2: $mutable_counter");
+
+mutable_counter /= 4;
+debug_print("counter /= 4: $mutable_counter");
+
+mutable_counter %= 3;
+debug_print("counter %= 3: $mutable_counter");
+
+// 解构赋值 - 记录
+let person = (name: "Bob", age: 25, city: "Boston");
+let (name: person_name, age: person_age, city: person_city) = person;
+
+debug_print("记录解构:");
+debug_print("Name: $person_name");
+debug_print("Age: $person_age");
+debug_print("City: $person_city");
+
+// 解构赋值 - 数组
+let coordinates = [10, 20, 30];
+let [x, y, z] = coordinates;
+
+debug_print("数组解构:");
+debug_print("X: $x, Y: $y, Z: $z");
+
+// 部分解构
+let [first, ..rest] = [1, 2, 3, 4, 5];
+debug_print("部分解构:");
+debug_print("First: $first");
+debug_print("Rest: $rest");
+
+// 嵌套解构
+let nested_data = (
+  id: 123,
+  user: (
+    profile: (name: "Charlie", age: 35),
+    settings: (theme: "dark", lang: "en")
+  )
+);
+
+let (
+  :id,
+  user: (
+    profile: (name: user_name, :age),
+    settings: (:theme, :lang)
+  )
+) = nested_data;
+
+debug_print("嵌套解构:");
+debug_print("ID: $id");
+debug_print("User name: $user_name");
+debug_print("Age: $age");
+debug_print("Theme: $theme");
+debug_print("Language: $lang");
+
+// 可变性在解构中的应用
+let original_data = (a: 1, b: 2, c: 3);
+let (a: immutable_a, mut b, c: mut mutable_c) = original_data;
+
+debug_print("解构时的可变性:");
+debug_print("Immutable a: $immutable_a");
+debug_print("Mutable b: $b");
+debug_print("Mutable c: $mutable_c");
+
+// 修改可变变量
+b += 10;
+mutable_c *= 3;
+
+debug_print("修改后:");
+debug_print("Immutable a: $immutable_a"); // 不变
+debug_print("Mutable b: $b");            // 改变
+debug_print("Mutable c: $mutable_c");    // 改变
+
+// 忽略不需要的值
+let data_array = [100, 200, 300, 400, 500];
+let [wanted1, _, wanted3, ..] = data_array;
+
+debug_print("忽略值:");
+debug_print("Wanted 1: $wanted1");
+debug_print("Wanted 3: $wanted3");
+
+// 模式匹配失败的处理
+let maybe_pair = (1, 2, 3); // 三元组，不是二元组
+let (first_item, second_item) = maybe_pair; // 模式匹配会失败，但不会抛出异常
+
+debug_print("模式匹配失败:");
+debug_print("First item: $first_item");  // 应该是 1
+debug_print("Second item: $second_item"); // 应该是 2，第三个元素被忽略
+
+// 在函数中使用解构参数
+fn process_point((x, y)) {
+  "Point at ($x, $y), distance from origin: ${sqrt(x*x + y*y)}"
+}
+
+fn process_person((name: n, age: a)) {
+  "Person $n is $a years old"
+}
+
+debug_print("函数参数解构:");
+debug_print(process_point((3, 4)));
+debug_print(process_person((name: "David", age: 40)));
+
+// 在循环中使用解构
+let people = [
+  (name: "Alice", age: 30),
+  (name: "Bob", age: 25),
+  (name: "Charlie", age: 35)
+];
+
+debug_print("循环中的解构:");
+for (name: n, age: a) in people {
+  debug_print("  $n is $a years old");
+}
+
+// 重新赋值给解构的变量
+let mut x_coord = 0;
+let mut y_coord = 0;
+let mut z_coord = 0;
+
+let new_coordinates = [100, 200, 300];
+(x_coord, y_coord, z_coord) = new_coordinates;
+
+debug_print("重新赋值解构变量:");
+debug_print("New coordinates: ($x_coord, $y_coord, $z_coord)");
+
+// 交换变量值
+let mut a = "first";
+let mut b = "second";
+
+debug_print("交换前: a=$a, b=$b");
+(a, b) = (b, a);
+debug_print("交换后: a=$a, b=$b");

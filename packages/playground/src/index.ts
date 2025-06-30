@@ -34,15 +34,24 @@ for (const [path, content] of Object.entries(exampleModules)) {
     const filename = path.split('/').pop()!;
     const isTemplate = filename.endsWith('.miratpl');
 
+    // 提取序号和名称
+    const regex = /^(\d{2})_(.+)\.(mira|miratpl)$/;
+    const match = regex.exec(filename);
+    if (!match || match.length < 4) {
+        console.warn(`文件名格式不正确: ${filename}`);
+        continue;
+    }
+
+    const baseName = match[2]!;
+
     // 生成友好的显示名称
-    const name = filename
-        .replace(/\.(mira|miratpl)$/, '')
+    const displayName = baseName
         .split('_')
         .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
         .join(' ');
 
-    examples[filename] = {
-        name: name === 'Interpolaton' ? 'String Interpolation' : name, // 修正拼写错误
+    examples[baseName] = {
+        name: displayName, // 不包含序号，只显示友好名称
         mode: isTemplate ? 'Template' : 'Script',
         code: content as string,
     };
@@ -50,7 +59,7 @@ for (const [path, content] of Object.entries(exampleModules)) {
 
 // 添加默认示例以防没有文件被加载
 if (Object.keys(examples).length === 0) {
-    examples['hello_world.mira'] = {
+    examples['01_hello_world.mira'] = {
         name: 'Hello World',
         mode: 'Script',
         code: `debug_print("Hello, World!");`,
@@ -180,7 +189,18 @@ const elResultOutput = document.querySelector<HTMLDivElement>('#result-output')!
 
 /** 初始化示例选择器 */
 function initExampleSelector() {
-    for (const [key, example] of Object.entries(examples)) {
+    // 将示例按序号排序
+    const sortedExamples = Object.entries(examples).sort(([a], [b]) => {
+        // 提取序号进行排序
+        const regexOrder = /^(\d{2})/;
+        const matchA = regexOrder.exec(a);
+        const matchB = regexOrder.exec(b);
+        const orderA = Number.parseInt(matchA?.[1] || '99', 10);
+        const orderB = Number.parseInt(matchB?.[1] || '99', 10);
+        return orderA - orderB;
+    });
+
+    for (const [key, example] of sortedExamples) {
         const option = document.createElement('option');
         option.value = key;
         option.textContent = example.name;
@@ -255,7 +275,8 @@ function initTabs() {
     }
 }
 
-const value = localStorage.getItem('source') || examples['hello_world.mira']?.code || `debug_print("Hello, World!");`;
+const value =
+    localStorage.getItem('source') || examples['01_hello_world.mira']?.code || `debug_print("Hello, World!");`;
 const overlay = monaco.utils.createOverflowWidgetsDomNode(elEditor);
 const editor = monaco.editor.create(elEditor, {
     fontFamily: 'Sarasa Mono SC',

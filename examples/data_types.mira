@@ -1,0 +1,79 @@
+// MiraScript 数据类型展示
+
+// 基本数据类型
+let number_int = 42;
+let number_float = 3.14;
+let number_scientific = 1.5e-10;
+let number_hex = 0xFF;
+let number_octal = 0o77;
+let number_binary = 0b1010;
+let number_with_separator = 1_000_000;
+let positive_infinity = inf;
+let not_a_number = nan;
+
+let string_single = 'Hello';
+let string_double = "World";
+let string_backtick = `Multi
+line
+string`;
+
+let boolean_true = true;
+let boolean_false = false;
+
+let nil_value = nil;
+
+// 记录类型
+let simple_record = (name: "Alice", age: 30, active: true);
+let ordinal_record = (0: "first", 1: "second", 2: "third");
+let unnamed_record = ("value1", "value2", "value3");
+let mixed_record = (id: 1, "John", "Doe", status: "active");
+let spread_record = (id: 999, ..simple_record, status: "updated");
+
+// 记录访问
+debug_print("Name: ${simple_record.name}");
+debug_print("Age: ${simple_record["age"]}");
+debug_print("First ordinal: ${ordinal_record.0}");
+debug_print("Updated status: ${spread_record.status}");
+
+// 数组类型
+let simple_array = [1, 2, 3, 4, 5];
+let mixed_array = [1, "two", true, nil, (key: "value")];
+let range_array = [1..5, 10..<13];
+let spread_array = [0, ..simple_array, 6, 7];
+
+// 数组访问
+debug_print("First: ${simple_array[0]}");
+debug_print("Last: ${simple_array[-1]}");
+debug_print("Slice: ${simple_array[1..3]}");
+
+// 函数类型
+let add_function = fn (x, y) { x + y };
+let single_param_function = fn { it * 2 };
+
+debug_print("Add result: ${add_function(5, 3)}");
+debug_print("Double result: ${single_param_function(21)}");
+
+// 类型检查
+debug_print("Type of number: ${type(number_int)}");
+debug_print("Type of string: ${type(string_single)}");
+debug_print("Type of boolean: ${type(boolean_true)}");
+debug_print("Type of nil: ${type(nil_value)}");
+debug_print("Type of record: ${type(simple_record)}");
+debug_print("Type of array: ${type(simple_array)}");
+debug_print("Type of function: ${type(add_function)}");
+
+// 真值和假值测试
+fn test_truthiness(value) {
+  if value {
+    "truthy"
+  } else {
+    "falsy"
+  }
+}
+
+debug_print("nil is ${test_truthiness(nil)}");
+debug_print("false is ${test_truthiness(false)}");
+debug_print("0 is ${test_truthiness(0)}");
+debug_print("'' is ${test_truthiness('')}");
+debug_print("[] is ${test_truthiness([])}");
+debug_print("() is ${test_truthiness(())}");

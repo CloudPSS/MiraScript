@@ -1,0 +1,8 @@
+let all_three = `12'"\``;
+let types_of = '12\'"`';
+let quotes_are_same = "12'\"`";
+debug_print(all_three, types_of, quotes_are_same);
+
+let escapes = "\x12\u{aa}\xff\n\r\b\t";
+let verbatim = @"\x12\u{aa}\xff\n\r\b\t"@;
+debug_print(escapes, verbatim);

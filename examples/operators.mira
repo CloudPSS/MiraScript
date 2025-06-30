@@ -1,0 +1,89 @@
+// MiraScript 运算符和表达式示例
+
+// 算术运算符
+let a = 10;
+let b = 3;
+
+debug_print("算术运算:");
+debug_print("$a + $b = ${a + b}");
+debug_print("$a - $b = ${a - b}");
+debug_print("$a * $b = ${a * b}");
+debug_print("$a / $b = ${a / b}");
+debug_print("$a % $b = ${a % b}");
+debug_print("$a ^ $b = ${a ^ b}");
+
+// 一元运算符
+debug_print("一元运算:");
+debug_print("+$a = ${+a}");
+debug_print("-$a = ${-a}");
+debug_print("!true = ${!true}");
+debug_print("!false = ${!false}");
+
+// 比较运算符
+debug_print("比较运算:");
+debug_print("$a > $b = ${a > b}");
+debug_print("$a < $b = ${a < b}");
+debug_print("$a >= $b = ${a >= b}");
+debug_print("$a <= $b = ${a <= b}");
+debug_print("$a == $b = ${a == b}");
+debug_print("$a != $b = ${a != b}");
+
+// 近似相等
+debug_print("近似相等:");
+let x = 1.0;
+let y = 1.0000000000000002;
+debug_print("$x ~= $y = ${x ~= y}");
+debug_print("'A' ~= 'a' = ${'A' ~= 'a'}");
+
+// 逻辑运算符
+debug_print("逻辑运算:");
+debug_print("true && false = ${true && false}");
+debug_print("true || false = ${true || false}");
+debug_print("nil ?? 'default' = ${nil ?? 'default'}");
+
+// 短路求值演示
+fn side_effect(value) {
+  debug_print("Side effect called with: $value");
+  value
+}
+
+debug_print("短路求值:");
+debug_print("false && side_effect(1) = ${false && side_effect(1)}");
+debug_print("true || side_effect(2) = ${true || side_effect(2)}");
+debug_print("'value' ?? side_effect(3) = ${'value' ?? side_effect(3)}");
+
+// 包含运算符
+let record = (a: 1, b: 2, c: 3);
+let array = [1, 2, 3, 4, 5];
+
+debug_print("包含运算:");
+debug_print("'a' in record = ${'a' in record}");
+debug_print("'d' in record = ${'d' in record}");
+debug_print("3 in array = ${3 in array}");
+debug_print("6 in array = ${6 in array}");
+
+// 模式匹配运算符
+debug_print("模式匹配:");
+debug_print("42 is number = ${42 is number}");
+debug_print("'hello' is string = ${'hello' is string}");
+debug_print("(1, 2) is (x, y) = ${(1, 2) is (x, y)}");
+
+// 运算符优先级演示
+debug_print("运算符优先级:");
+debug_print("2 + 3 * 4 = ${2 + 3 * 4}");
+debug_print("(2 + 3) * 4 = ${(2 + 3) * 4}");
+debug_print("2 ^ 3 * 4 = ${2 ^ 3 * 4}");
+debug_print("2 * 3 ^ 4 = ${2 * 3 ^ 4}");
+
+// 链式调用和扩展调用
+let numbers = [1, 2, 3, 4, 5];
+let result = numbers::filter(fn { it % 2 == 1 })::map(fn { it * 2 })::sum();
+debug_print("链式调用结果: $result");
+
+// 空安全访问
+let maybe_record = nil;
+let safe_access = maybe_record.nonexistent?.field ?? "default";
+debug_print("空安全访问: $safe_access");
+
+// 非空断言（会在运行时检查）
+// let unsafe_access = maybe_record.nonexistent!; // 这会抛出 NilError
