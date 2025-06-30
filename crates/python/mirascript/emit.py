@@ -1,5 +1,3 @@
-from typing import Any, NoReturn, Protocol
-
 
 class OpCodes:
     """MiraScript 操作码"""
@@ -14,7 +12,7 @@ class OpCodes:
             return self.__dict__[name]
         raise AttributeError(f"No such OpCode: {name}")
 
-    def __setattr__(self, name: str, value: NoReturn) -> None:
+    def __setattr__(self, name: str, value) -> None:
         raise AttributeError("OpCodes is immutable, cannot set attributes.")
 
     def __delattr__(self, name: str) -> None:
@@ -24,21 +22,21 @@ class OpCodes:
 OpCode = OpCodes()
 """MiraScript 操作码"""
 
-CommonContext: dict[str, Any] = dict()
+CommonContext= dict()
 """MiraScript 通用执行上下文"""
 
 CommonContext["debug_print"] = lambda *message: print(f"[MiraScript] {message}")
 
 
-class Context(dict[str, Any]):
+class Context(dict):
     """
     MiraScript 执行上下文
     """
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
 
-    def __getitem__(self, key: str) -> Any:
+    def __getitem__(self, key: str):
         if key in self:
             return super().__getitem__(key)
         if key in CommonContext:
@@ -46,24 +44,23 @@ class Context(dict[str, Any]):
         return None
 
 
-Env: dict[str, Any] = dict()
+Env= dict()
 """MiraScript 执行环境"""
 
 Env["Add"] = lambda x, y: x + y
 Env["Context"] = Context
-Env["Any"] = Any
 Env["dict"] = dict
 Uninitialized = type("Uninitialized", (), {})()
 """用于标记 MiraScript 中未初始化的变量"""
 Env["Uninitialized"] = Uninitialized
 
 
-class Script(Protocol):
+class Script(object):
     """
     MiraScript 生成的 Python 函数
     """
 
-    def __call__(self, context: Context | None = None) -> Any: ...
+    def __call__(self, context=None) : ...
 
 
 def emit(bytecode: bytes) -> Script:
@@ -79,7 +76,7 @@ def emit(bytecode: bytes) -> Script:
 
     # TODO: 解析 bytecode 并生成 Python 函数
     code = """
-def script(context: Context | None = None) -> Any:
+def script(context=None):
     if context is None:
         context = Context()
     context["debug_print"](Add(1, 2), 2, 3)

@@ -7,7 +7,7 @@ DefaultConfig = Config(input_mode="script")
 
 def compile(
     script: str, config: Config = DefaultConfig
-) -> tuple[Script | None, list[Diagnostic]]:
+) :
     """
     编译 MiraScript 代码，生成 Python 函数
 
