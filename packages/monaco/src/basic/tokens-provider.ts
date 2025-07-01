@@ -131,12 +131,8 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
             whitespace: [
                 [/(@whitespace)+/, ''],
                 [/\/\/.*$/, 'comment.line'],
+                [/\/\*{2}/, 'comment.doc', '@doc_comment'],
                 [/\/\*/, 'comment.block', '@block_comment'],
-            ],
-            block_comment: [
-                [/\*\//, { token: 'comment.block', next: '@pop' }],
-                [/[^*]+/, { token: 'comment.block' }],
-                [/\*/, { token: 'comment.block' }],
             ],
             string: [
                 [/["'`]/, { token: 'string.quote.open', next: '@string_normal.$#', bracket: '@open' }],
@@ -195,7 +191,7 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                                 {
                                     token: 'punctuation.section.embedded',
                                     bracket: '@open',
-                                    next: '@string_interpolation_block_expression',
+                                    next: '@braced',
                                 },
                             ],
                             [
@@ -203,7 +199,7 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                                 {
                                     token: 'punctuation.section.embedded',
                                     bracket: '@open',
-                                    next: '@string_interpolation_expression',
+                                    next: '@parenthesized',
                                 },
                             ],
                             [`\\\${0,${dollarCount}}`, 'string', '@pop'],
@@ -213,17 +209,41 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                 }),
             ),
             string_interpolation: [[/\$*/, 'string', '@pop']],
-            string_interpolation_block_expression: [
+
+            braced: [
                 [/\{/, { token: '@brackets', next: '@push' }],
                 [/\}/, { token: '@brackets', next: '@pop' }],
                 [/[[\]()]/, '@brackets'],
                 { include: '@common' },
             ],
-            string_interpolation_expression: [
+            parenthesized: [
                 [/\(/, { token: '@brackets', next: '@push' }],
                 [/\)/, { token: '@brackets', next: '@pop' }],
                 [/[[\]{}]/, '@brackets'],
                 { include: '@common' },
+            ],
+            bracketed: [
+                [/\[/, { token: '@brackets', next: '@push' }],
+                [/\]/, { token: '@brackets', next: '@pop' }],
+                [/[(){}]/, '@brackets'],
+                { include: '@common' },
+            ],
+
+            block_comment: [
+                [/\*\//, { token: 'comment.block', next: '@pop' }],
+                [/[^*]+/, { token: 'comment.block' }],
+                [/\*/, { token: 'comment.block' }],
+            ],
+
+            doc_comment: [
+                [/\*\//, { token: 'comment.doc', next: '@pop' }],
+                [/^(\s*)\*(?!\/)/, { token: 'comment.doc' }],
+                [/\\\*(?!\/)/, { token: 'comment.doc.escape' }],
+                [/@(param|returns)/, { token: 'entity.name.tag.doc' }],
+                [/\*{2}(\S|\S.*?\S)\*{2}(?!\/)/, { token: 'comment.strong' }],
+                [/\*(\S|\S.*?\S)\*(?!\/)/, { token: 'comment.emphasis' }],
+                [/[^*@\\]+/, { token: 'comment.doc' }],
+                [/[*@\\]/, { token: 'comment.doc' }],
             ],
 
             doc_mode: [
@@ -310,11 +330,12 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                 [/;/, 'delimiter', '@pop'],
             ],
             type_doc: [
-                { include: '@type_doc_inner' },
+                { include: '@type_doc_common' },
                 [/,/, 'delimiter', '@pop'],
                 [/;/, { token: 'delimiter', next: '@pop', goBack: 1 }],
             ],
-            type_doc_inner: [
+            type_doc_inner: [{ include: '@type_doc_common' }, [/[,;]/, 'delimiter']],
+            type_doc_common: [
                 [/fn\b/, 'type', '@fn_doc'],
                 [/(type)(\()(@identifier)(\))/, ['type', '@brackets', 'variable.emphasis.doc', '@brackets']],
                 [/@identifier/, 'type'],

@@ -1,21 +1,23 @@
-const timeFormatter = new Intl.DateTimeFormat(undefined, {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    fractionalSecondDigits: 3,
-});
-
 /** 管理控制台输出的类 */
 export class ConsoleManager {
     private entries: Array<{
         type: 'log' | 'error' | 'warn' | 'info';
         message: Promise<string> | string;
-        timestamp: Date;
+        timestamp: number;
     }> = [];
     private readonly outputElement: HTMLElement;
 
     constructor(outputElement: HTMLElement) {
         this.outputElement = outputElement;
+    }
+
+    private t0 = 0;
+    private d0 = 0;
+
+    /** 开始计时 */
+    resetTimer(): void {
+        this.t0 = performance.now();
+        this.d0 = Date.now();
     }
 
     /** 添加日志消息 */
@@ -43,7 +45,7 @@ export class ConsoleManager {
         const entry = {
             type,
             message,
-            timestamp: new Date(),
+            timestamp: performance.now() - this.t0,
         };
         this.entries.push(entry);
     }
@@ -54,11 +56,14 @@ export class ConsoleManager {
     }
     /** 渲染控制台内容 */
     async render(): Promise<void> {
+        const maxWidth = (this.entries.at(-1)?.timestamp ?? 0).toFixed(3).length + 1;
         const htmlArray = this.entries.map(async (entry) => {
-            const time = timeFormatter.format(entry.timestamp);
-            return /* html */ `<div class="console-entry ${entry.type}">
-                <time class="console-time" datetime=${entry.timestamp.toISOString()}>[${time}]</time>
-                <span class="console-message">${await entry.message}</span>
+            const { timestamp, message, type } = entry;
+            const time = `${('+' + timestamp.toFixed(3)).padStart(maxWidth)}ms`;
+            const date = new Date(this.d0 + timestamp);
+            return /* html */ `<div class="console-entry ${type}">
+                <time class="console-time" datetime="${date.toISOString()}">${time}</time>
+                <span class="console-message">${await message}</span>
             </div>`;
         });
 

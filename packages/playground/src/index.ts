@@ -220,16 +220,29 @@ async function compileScript(): Promise<VmScript | undefined> {
 
         // 显示编译结果
         const compiledCode = script.toString();
-        const highlightedJS = await syntaxHighlight(compiledCode, 'javascript');
-        elCompiledOutput.innerHTML = /*html*/ `
-            <div class="section-title">Compiled JavaScript:</div>
-            <div class="compiled-code">${highlightedJS}</div>
-        `;
+        if (elCompiledOutput.dataset['code'] !== compiledCode) {
+            elCompiledOutput.dataset['code'] = compiledCode;
+
+            requestIdleCallback(
+                // eslint-disable-next-line @typescript-eslint/no-misused-promises
+                async () => {
+                    if (elCompiledOutput.dataset['code'] !== compiledCode) return;
+                    const highlightedJS = await syntaxHighlight(compiledCode, 'javascript');
+                    if (elCompiledOutput.dataset['code'] !== compiledCode) return;
+                    elCompiledOutput.innerHTML = /*html*/ `
+                        <div class="section-title">Compiled JavaScript:</div>
+                        <div class="compiled-code">${highlightedJS}</div>
+                    `;
+                },
+                { timeout: 100 },
+            );
+        }
 
         return script;
     } catch (ex) {
         const compEnd = performance.now();
         const errorText = String(ex);
+        elCompiledOutput.dataset['code'] = '';
         elCompiledOutput.innerHTML = /*html*/ `
             <div class="section-title">Compilation Error:</div>
             <div class="result-error">${errorText}</div>
@@ -273,6 +286,7 @@ async function run() {
 
     consoleManager.clear();
     await consoleManager.render();
+    consoleManager.resetTimer();
 
     try {
         const script = await compileScript();

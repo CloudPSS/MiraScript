@@ -261,7 +261,7 @@ fn extension_call<'s>(i: &mut Input<'s>) -> Result<Call<'s>> {
             alt((parenthesised, access_chain)).map(|e| Callable::Expression(Box::new(e))),
             arg_list(token_or_insert(
                 Operator::OpenParen,
-                DiagnosticCode::MissingOpenParenAfterType,
+                DiagnosticCode::MissingOpenParenAfterExtension,
             )),
         )
             .map(|(e, (o, a, c))| (e, o, a, c)),

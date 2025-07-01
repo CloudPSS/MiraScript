@@ -74,6 +74,8 @@ pub enum DiagnosticCode {
     MissingBindOperator,
     #[strum(message = "Missing function name in the declaration")]
     MissingFunctionName,
+    #[strum(message = "Extension call must be ended with parameter list; add `(` here")]
+    MissingOpenParenAfterExtension,
     #[strum(message = "`type` is a function-like keyword; add `(` here")]
     MissingOpenParenAfterType,
     #[strum(message = "`type` call must have exactly one argument")]

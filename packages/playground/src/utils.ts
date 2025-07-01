@@ -1,16 +1,27 @@
 import { type VmAny, isVmExtern, isVmModule, serialize } from 'mirascript';
 import { editor } from '@private/monaco-editor';
 
+/** HTML escape */
+export function escapeHtml(value: string): string {
+    return value
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 /** 将值转为语法高亮的显示 */
 export async function print(value: VmAny | Error): Promise<string> {
-    if (value === undefined) return '<uninitialized>';
+    if (value === undefined) return escapeHtml('<uninitialized>');
     if (value === null) return syntaxHighlight('nil', 'mirascript');
-    if (value instanceof Error) return value.toString();
+    if (value instanceof Error) return escapeHtml(value.toString());
     if (typeof value == 'function') {
         return syntaxHighlight(String(value), 'javascript');
     }
-    if (isVmExtern(value) || isVmModule(value) || typeof value == 'function') {
-        return String(value);
+    if (isVmExtern(value) || isVmModule(value)) {
+        const colorized = await syntaxHighlight('\0/* ' + value.toString() + ' */', 'mirascript');
+        return colorized.replace('>&#00;<', '><');
     }
     return syntaxHighlight(serialize(value), 'mirascript');
 }

@@ -247,6 +247,13 @@ select:focus {
 
 .console-time {
   color: var(--text-secondary);
+
+  &::before {
+    content: '[';
+  }
+  &::after {
+    content: ']';
+  }
 }
 
 .console-message {
