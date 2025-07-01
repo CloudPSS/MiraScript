@@ -5,8 +5,8 @@ const PROD = process.env.NODE_ENV === 'production';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-    base: '/mira',
-    appType: 'mpa',
+    base: './',
+    appType: 'spa',
     optimizeDeps: {
         exclude: ['@private/monaco-editor'],
     },
