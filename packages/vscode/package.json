@@ -50,7 +50,11 @@
         "mimetypes": [
           "text/x-mirascript"
         ],
-        "configuration": "./language-configuration.json"
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./icons/mira-light.svg",
+          "dark": "./icons/mira-dark.svg"
+        }
       },
       {
         "id": "mirascript-template",
@@ -65,7 +69,11 @@
         "mimetypes": [
           "text/x-mirascript-template"
         ],
-        "configuration": "./language-configuration.json"
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./icons/miratpl-light.svg",
+          "dark": "./icons/miratpl-dark.svg"
+        }
       }
     ],
     "grammars": [
