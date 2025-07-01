@@ -15,6 +15,7 @@ import {
 import { ConsoleManager } from './console-manager.js';
 import { EXAMPLES } from './examples.js';
 import { syntaxHighlight, print } from './utils.js';
+import { getState, setState } from './state-manager.js';
 
 const arr = [1, 2, [1, 2], { x: 0 }];
 arr[100] = 100; // make a sparse array
@@ -55,15 +56,27 @@ const globals = createVmGlobal(
 
 registerMiraScript(monaco, () => globals);
 
-let mode: InputMode = (localStorage.getItem('mode') as InputMode) || 'Script';
-
 let modelIndex = 1;
-const createModel = (value: string) => {
+const createModel = () => {
+    const { source, mode } = getState();
     // 使用唯一的URI避免冲突
     const uri = monaco.Uri.parse(`file:///playground-${modelIndex++}.${mode === 'Template' ? 'miratpl' : 'mira'}`);
-    const model = monaco.editor.createModel(value, mode === 'Template' ? 'mirascript-template' : 'mirascript', uri);
+    const model = monaco.editor.createModel(source, mode === 'Template' ? 'mirascript-template' : 'mirascript', uri);
     model.setEOL(monaco.editor.EndOfLineSequence.LF);
     return model;
+};
+
+const updateModel = () => {
+    const oldModel = editor.getModel();
+    const { source, mode } = getState();
+    if (oldModel?.getLanguageId() === (mode === 'Template' ? 'mirascript-template' : 'mirascript')) {
+        // 如果语言模式没有变化，直接更新内容
+        oldModel.setValue(source);
+        return;
+    }
+    const newModel = createModel();
+    editor.setModel(newModel);
+    oldModel?.dispose();
 };
 
 // UI 元素
@@ -88,19 +101,10 @@ function initExampleSelector() {
         const example = EXAMPLES[selectedKey];
         if (!example) return;
 
-        // 更新模式
-        mode = example.mode;
-        elModeSelect.value = mode;
-        localStorage.setItem('mode', mode);
-
-        // 创建新模型前先销毁旧模型
-        const oldModel = editor.getModel();
-        const newModel = createModel(example.code);
-        editor.setModel(newModel);
-        oldModel?.dispose();
-
-        // 保存到本地存储
-        localStorage.setItem('source', example.code);
+        // 更新编辑器状态
+        setState({ mode: example.mode, source: example.code });
+        elModeSelect.value = example.mode;
+        updateModel();
     });
 }
 
@@ -108,16 +112,10 @@ function initExampleSelector() {
  * 初始化模式选择器
  */
 function initModeSelector() {
-    elModeSelect.value = mode;
+    elModeSelect.value = getState().mode;
     elModeSelect.addEventListener('change', () => {
-        mode = elModeSelect.value as InputMode;
-        localStorage.setItem('mode', mode);
-
-        // 创建新模型前先销毁旧模型
-        const oldModel = editor.getModel();
-        const newModel = createModel(editor.getValue());
-        editor.setModel(newModel);
-        oldModel?.dispose();
+        setState({ mode: elModeSelect.value as InputMode });
+        updateModel();
     });
 }
 
@@ -149,7 +147,6 @@ function initTabs() {
     }
 }
 
-const value = localStorage.getItem('source') || EXAMPLES[0]?.code || `debug_print("Hello, World!");`;
 const overlay = monaco.utils.createOverflowWidgetsDomNode(elEditor);
 const editor = monaco.editor.create(elEditor, {
     fontFamily: 'Sarasa Mono SC, monospace',
@@ -164,7 +161,7 @@ const editor = monaco.editor.create(elEditor, {
     theme: 'vs-dark',
     tabSize: 2,
     'semanticHighlighting.enabled': true,
-    model: createModel(value),
+    model: createModel(),
 });
 
 editor.onDidDispose(() => overlay.dispose());
@@ -181,15 +178,10 @@ setTimeout(() => {
         label: 'Switch Mode',
         keybindings: [KeyMod.CtrlCmd | KeyCode.KeyM],
         run: () => {
-            mode = mode === 'Script' ? 'Template' : 'Script';
-            elModeSelect.value = mode;
-            localStorage.setItem('mode', mode);
-
-            // 创建新模型前先销毁旧模型
-            const oldModel = editor.getModel();
-            const newModel = createModel(editor.getValue());
-            editor.setModel(newModel);
-            oldModel?.dispose();
+            const { mode } = getState();
+            setState({ mode: mode === 'Script' ? 'Template' : 'Script' });
+            elModeSelect.value = getState().mode;
+            updateModel();
         },
     });
 
@@ -203,7 +195,7 @@ setTimeout(() => {
     });
 
     editor.onDidChangeModelContent(() => {
-        localStorage.setItem('source', editor.getValue());
+        setState({ source: editor.getValue() });
     });
 
     // 运行按钮事件
@@ -213,10 +205,11 @@ setTimeout(() => {
 }, 1);
 
 /** 编译 */
-async function compileScript(value: string): Promise<VmScript | undefined> {
+async function compileScript(): Promise<VmScript | undefined> {
     const compStart = performance.now();
+    const { mode, source } = getState();
     try {
-        const script = await compile(value, {
+        const script = await compile(source, {
             pretty: true,
             input_mode: mode,
             sourceMap: true,
@@ -281,9 +274,8 @@ async function run() {
     consoleManager.clear();
     await consoleManager.render();
 
-    const value = editor.getValue();
     try {
-        const script = await compileScript(value);
+        const script = await compileScript();
         if (!script) return;
         await runScript(script);
     } finally {
