@@ -401,7 +401,7 @@ async function compileScript(value: string): Promise<VmScript | undefined> {
         const errorText = String(ex);
         elCompiledOutput.innerHTML = /*html*/ `
             <div class="section-title">Compilation Error:</div>
-            <div class="result-error"><pre>${errorText}</pre></div>
+            <div class="result-error">${errorText}</div>
         `;
         elResultOutput.innerHTML = /*html*/ `
             <div class="section-title">Execution Result:</div>
@@ -421,7 +421,7 @@ async function runScript(script: VmScript): Promise<void> {
         const resultText = await print(execResult);
         elResultOutput.innerHTML = /*html*/ `
             <div class="section-title">Execution Result:</div>
-            <div class="result-success"><pre>${resultText}</pre></div>
+            <div class="result-success">${resultText}</div>
         `;
         consoleManager.info(`Execution completed successfully in ${(execEnd - execStart).toFixed(3)}ms`);
     } catch (ex) {
@@ -429,7 +429,7 @@ async function runScript(script: VmScript): Promise<void> {
         const errorText = String(ex);
         elResultOutput.innerHTML = /*html*/ `
             <div class="section-title">Execution Error:</div>
-            <div class="result-error"><pre>${errorText}</pre></div>
+            <div class="result-error">${errorText}</div>
         `;
         consoleManager.error(`Execution failed in ${(execEnd - execStart).toFixed(3)}ms: ${errorText}`);
     }
