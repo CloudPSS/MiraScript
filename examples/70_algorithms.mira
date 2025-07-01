@@ -182,42 +182,25 @@ fn bfs(graph, start) {
   visited
 }
 
-// 动态规划 - 最长公共子序列
-fn lcs(str1, str2) {
+// 动态规划 - 最长公共子序列（简化版本）
+fn lcs_length(str1, str2) {
   let len1 = len(str1);
   let len2 = len(str2);
   
-  // 创建 DP 表
-  let mut dp = [];
-  for i in 0..=len1 {
-    let mut row = [];
-    for j in 0..=len2 {
-      row = [..row, 0];
-    }
-    dp = [..dp, row];
-  }
-  
-  // 填充 DP 表
-  for i in 1..=len1 {
-    for j in 1..=len2 {
-      if str1[i-1] == str2[j-1] {
-        dp = [..dp[..i-1], 
-              [..dp[i-1][..j-1], 
-               dp[i-1][j-1] + 1, 
-               ..dp[i-1][j..]], 
-              ..dp[i+1..]];
-      } else {
-        let max_val = if dp[i-1][j] > dp[i][j-1] { dp[i-1][j] } else { dp[i][j-1] };
-        dp = [..dp[..i-1], 
-              [..dp[i-1][..j-1], 
-               max_val, 
-               ..dp[i-1][j..]], 
-              ..dp[i+1..]];
-      }
+  // 使用简化的递归方法
+  fn lcs_helper(i, j) {
+    if i == 0 || j == 0 {
+      0
+    } else if str1[i-1] == str2[j-1] {
+      1 + lcs_helper(i-1, j-1)
+    } else {
+      let left = lcs_helper(i-1, j);
+      let right = lcs_helper(i, j-1);
+      if left > right { left } else { right }
     }
   }
   
-  dp[len1][len2]
+  lcs_helper(len1, len2)
 }
 
 // 测试排序算法
@@ -287,4 +270,4 @@ let str1 = "ABCDGH";
 let str2 = "AEDFHR";
 debug_print("字符串1: $str1");
 debug_print("字符串2: $str2");
-debug_print("最长公共子序列长度: ${lcs(str1, str2)}");
+debug_print("最长公共子序列长度: ${lcs_length(str1, str2)}");

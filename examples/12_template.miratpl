@@ -1,3 +1,41 @@
-Hello $name!
-1 + 1 = $(/* expression style */1 + 1)
-2 + 2 = ${/* block style */ 2 + 2}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>$title</title>
+</head>
+<body>
+    <h1>欢迎, $name!</h1>
+    
+    <div class="info">
+        <p>你的年龄: $age 岁</p>
+        <p>状态: ${if active { "活跃" } else { "非活跃" }}</p>
+        <p>注册时间: $(format_date(register_date))</p>
+    </div>
+    
+    <h2>你的分数</h2>
+    <ul>
+        ${
+            let mut html = "";
+            for score in scores {
+                html = `$html<li>${score.subject}: ${score.points}分</li>\n        `;
+            }
+            html
+        }
+    </ul>
+    
+    <div class="summary">
+        <p>总分: $(sum(scores::map(fn { it.points })))</p>
+        <p>平均分: ${
+            let total = sum(scores::map(fn { it.points }));
+            let count = len(scores);
+            if count > 0 { total / count } else { 0 }
+        }</p>
+    </div>
+    
+    <div class="footer">
+        <p>生成时间: $(current_time())</p>
+        <p>MiraScript 模板引擎</p>
+    </div>
+</body>
+</html>

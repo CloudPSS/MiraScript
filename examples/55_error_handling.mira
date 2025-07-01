@@ -1,0 +1,220 @@
+// MiraScript 错误处理和异常示例
+
+// 使用 match 表达式处理可能的错误情况
+fn safe_divide(a, b) {
+  if b == 0 {
+    nil  // 返回 nil 表示错误
+  } else {
+    a / b
+  }
+}
+
+fn handle_division(a, b) {
+  let result = safe_divide(a, b);
+  match result {
+    case nil { "错误：除数不能为零" }
+    case x { "结果：$x" }
+  }
+}
+
+debug_print("安全除法示例:");
+debug_print(handle_division(10, 2));
+debug_print(handle_division(10, 0));
+
+// 使用空合并操作符提供默认值
+fn get_config_value(config, key, default_value) {
+  config[key] ?? default_value
+}
+
+let config = (timeout: 5000, debug: true);
+debug_print("配置值:");
+debug_print("timeout: ${get_config_value(config, 'timeout', 1000)}");
+debug_print("retries: ${get_config_value(config, 'retries', 3)}");
+
+// 空安全链式调用
+let user_data = (
+  profile: (
+    personal: (
+      name: "Alice",
+      email: "alice@example.com"
+    ),
+    preferences: (
+      theme: "dark",
+      language: "zh"
+    )
+  )
+);
+
+let empty_data = nil;
+
+debug_print("空安全访问:");
+debug_print("用户名: ${user_data.profile.personal.name ?? '未知'}");
+debug_print("主题: ${user_data.profile.preferences.theme ?? '默认'}");
+debug_print("空数据访问: ${empty_data.profile.personal.name ?? '无数据'}");
+
+// 数组边界检查
+fn safe_array_access(arr, index) {
+  if index >= 0 && index < len(arr) {
+    arr[index]
+  } else {
+    nil
+  }
+}
+
+let numbers = [10, 20, 30, 40, 50];
+
+debug_print("安全数组访问:");
+debug_print("索引 2: ${safe_array_access(numbers, 2) ?? '越界'}");
+debug_print("索引 10: ${safe_array_access(numbers, 10) ?? '越界'}");
+debug_print("索引 -1: ${safe_array_access(numbers, -1) ?? '越界'}");
+
+// 类型检查和转换
+fn safe_string_to_number(str) {
+  if str is string {
+    // 简单的数字字符串检查
+    if str == "0" {
+      0
+    } else if str == "" {
+      nil
+    } else {
+      // 这里应该有更复杂的解析逻辑，简化为示例
+      match str {
+        case "1" { 1 }
+        case "2" { 2 }
+        case "10" { 10 }
+        case "100" { 100 }
+        case _ { nil }
+      }
+    }
+  } else {
+    nil
+  }
+}
+
+debug_print("字符串转数字:");
+let test_strings = ["10", "100", "abc", "", 42];
+for test in test_strings {
+  let converted = safe_string_to_number(test);
+  debug_print("'$test' -> ${converted ?? '转换失败'}");
+}
+
+// 函数参数验证
+fn calculate_area(shape) {
+  match shape {
+    case (type: "rectangle", width: w, height: h) {
+      if w > 0 && h > 0 {
+        w * h
+      } else {
+        nil
+      }
+    }
+    case (type: "circle", radius: r) {
+      if r > 0 {
+        3.14159 * r * r
+      } else {
+        nil
+      }
+    }
+    case _ { nil }
+  }
+}
+
+debug_print("图形面积计算:");
+let shapes = [
+  (type: "rectangle", width: 5, height: 3),
+  (type: "circle", radius: 2),
+  (type: "rectangle", width: -1, height: 5),
+  (type: "triangle", base: 4, height: 3),
+  nil
+];
+
+for shape in shapes {
+  let area = calculate_area(shape);
+  match area {
+    case nil { debug_print("无法计算面积: 形状无效或参数错误"); }
+    case a { debug_print("面积: $a"); }
+  }
+}
+
+// 资源管理模式
+fn with_file(filename, operation) {
+  // 模拟文件操作
+  debug_print("打开文件: $filename");
+  
+  let file_content = match filename {
+    case "data.txt" { "file content here" }
+    case "empty.txt" { "" }
+    case _ { nil }
+  };
+  
+  let result = if file_content is string {
+    operation(file_content)
+  } else {
+    nil
+  };
+  
+  debug_print("关闭文件: $filename");
+  result
+}
+
+debug_print("文件操作示例:");
+let file_result = with_file("data.txt", fn (content) {
+  `文件长度: ${len(content)}`
+});
+
+debug_print(file_result ?? "文件操作失败");
+
+// 错误累积处理
+fn validate_user(user) {
+  let mut errors = [];
+  
+  // 检查姓名
+  if user.name ?? "" == "" {
+    errors = [..errors, "姓名不能为空"];
+  }
+  
+  // 检查年龄
+  let age = user.age;
+  if age is nil {
+    errors = [..errors, "年龄不能为空"];
+  } else if age < 0 {
+    errors = [..errors, "年龄不能为负数"];
+  } else if age > 150 {
+    errors = [..errors, "年龄不能超过150"];
+  }
+  
+  // 检查邮箱
+  let email = user.email ?? "";
+  if email == "" {
+    errors = [..errors, "邮箱不能为空"];
+  } else if !("@" in email) {
+    errors = [..errors, "邮箱格式无效"];
+  }
+  
+  if len(errors) == 0 {
+    (valid: true, user: user)
+  } else {
+    (valid: false, errors: errors)
+  }
+}
+
+debug_print("用户验证示例:");
+let test_users = [
+  (name: "Alice", age: 30, email: "alice@example.com"),
+  (name: "", age: 25, email: "bob@example.com"),
+  (name: "Charlie", age: -5, email: "charlie@example.com"),
+  (name: "David", age: 35, email: "invalid-email"),
+  (age: 40, email: "eve@example.com")  // 缺少姓名
+];
+
+for user in test_users {
+  let validation = validate_user(user);
+  if validation.valid {
+    debug_print("用户验证通过: ${user.name}");
+  } else {
+    debug_print("用户验证失败:");
+    for error in validation.errors {
+      debug_print("  - $error");
+    }
+  }
+}

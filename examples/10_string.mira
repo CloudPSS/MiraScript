@@ -1,8 +1,44 @@
+// MiraScript 字符串字面量示例
+
+// 三种引号形式都支持相同的字符串功能
+let single_quote = 'Hello, World!';
+let double_quote = "Hello, World!";
+let backtick = `Hello, World!`;
+
+debug_print("三种引号形式:");
+debug_print("单引号: $single_quote");
+debug_print("双引号: $double_quote");
+debug_print("反引号: $backtick");
+
+// 包含各种引号的字符串
 let all_three = `12'"\``;
 let types_of = '12\'"`';
 let quotes_are_same = "12'\"`";
-debug_print(all_three, types_of, quotes_are_same);
+debug_print("包含引号的字符串:");
+debug_print(all_three);
+debug_print(types_of);
+debug_print(quotes_are_same);
 
-let escapes = "\x12\u{aa}\xff\n\r\b\t";
-let verbatim = @"\x12\u{aa}\xff\n\r\b\t"@;
-debug_print(escapes, verbatim);
+// 多行字符串（只有反引号支持）
+let multiline = `This is a
+multiline string
+with several lines`;
+debug_print("多行字符串:");
+debug_print(multiline);
+
+// 转义字符示例
+let escapes = "Escapes: \n换行 \t制表符 \\反斜杠 \"双引号 \'单引号";
+debug_print("转义字符:");
+debug_print(escapes);
+
+// Unicode 转义
+let unicode = "Unicode: \u{1F600} \u{1F44D} \x41";
+debug_print("Unicode 字符:");
+debug_print(unicode);
+
+// 逐字字符串（不处理转义）
+let verbatim = @"This is verbatim: \n \t \\ \""@;
+let verbatim_with_at = @@"Use @"single at"@ in string like this"@@;
+debug_print("逐字字符串:");
+debug_print(verbatim);
+debug_print(verbatim_with_at);

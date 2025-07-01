@@ -66,7 +66,10 @@ debug_print("6 in array = ${6 in array}");
 debug_print("模式匹配:");
 debug_print("42 is number = ${42 is number}");
 debug_print("'hello' is string = ${'hello' is string}");
-debug_print("(1, 2) is (x, y) = ${(1, 2) is (x, y)}");
+// 演示模式匹配
+if (1, 2) is (match_x, match_y) {
+  debug_print("匹配成功: x=$match_x, y=$match_y");
+}
 
 // 运算符优先级演示
 debug_print("运算符优先级:");
@@ -82,7 +85,7 @@ debug_print("链式调用结果: $result");
 
 // 空安全访问
 let maybe_record = nil;
-let safe_access = maybe_record.nonexistent?.field ?? "default";
+let safe_access = maybe_record.nonexistent ?? "default";
 debug_print("空安全访问: $safe_access");
 
 // 非空断言（会在运行时检查）

@@ -57,12 +57,12 @@ let age = 25;
 let inferred_record = (:name, :age, city: "Boston");
 debug_print("推断键名: $inferred_record");
 
-// 省略 nil 值
+// 省略 nil 值的示例
 let optional_record = (
   required: "value",
-  nil?: nil,           // 这个键会被省略
-  optional?: "present", // 这个键会保留
-  another_nil?: nil    // 这个键也会被省略
+  nil_value?: nil,        // 这个键会被省略
+  optional?: "present",   // 这个键会保留
+  another_nil?: nil       // 这个键也会被省略
 );
 debug_print("省略 nil 值: $optional_record");
 
