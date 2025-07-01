@@ -18,13 +18,16 @@ const DESC_LOCAL = '(local)';
 const DESC_FIELD = '(field)';
 
 const SUGGEST_KEYWORDS: string[] = [];
-{
+
+const loadSuggestKeywords = () => {
+    if (SUGGEST_KEYWORDS.length > 0) return SUGGEST_KEYWORDS; // 已加载过
     const reserved = reservedKeywords();
     for (const kw of keywords()) {
         if (reserved.includes(kw)) continue; // 跳过保留关键字
         SUGGEST_KEYWORDS.push(kw);
     }
-}
+    return SUGGEST_KEYWORDS;
+};
 
 const COMMON_GLOBAL_SUGGESTIONS = (
     range: languages.CompletionItemRanges,
@@ -147,7 +150,7 @@ const COMMON_GLOBAL_SUGGESTIONS = (
             },
         );
 
-        for (const kw of SUGGEST_KEYWORDS) {
+        for (const kw of loadSuggestKeywords()) {
             const exist = suggestions.find(
                 (item) => item.label === kw && item.kind === languages.CompletionItemKind.Keyword,
             );
