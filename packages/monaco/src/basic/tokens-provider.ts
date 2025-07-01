@@ -72,19 +72,8 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
             common: [
                 [/(@identifier)(@whitespace*)(\??:)(?!:)/, ['support.type.property-name', '', 'delimiter']],
                 [
-                    /(fn)(@whitespace+)(@identifier)(@whitespace*)($|[({])/,
-                    [
-                        'keyword',
-                        '',
-                        { cases: identifierCases(undefined, 'entity.name.function') },
-                        '',
-                        {
-                            cases: {
-                                '~[({]': '@brackets',
-                                '@default': '',
-                            },
-                        },
-                    ],
+                    /(fn)(@whitespace+)(@identifier)(?=$|@whitespace|[[({,;])/,
+                    ['keyword', '', { cases: identifierCases(undefined, 'entity.name.function') }],
                 ],
                 [
                     /(for)(@whitespace+)(mut)(@whitespace+)(@identifier)(@whitespace+)(in)/,
@@ -108,18 +97,17 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                     ],
                 ],
                 [
-                    /(\.)(@whitespace*)(@identifier)(@whitespace*)(!?)(@whitespace*)(\()/,
-                    ['delimiter', '', 'entity.name.function', '', 'delimiter', '', '@brackets'],
+                    /(\.)(@whitespace*)(@identifier)(@whitespace*)(!?)(@whitespace*(?=\())/,
+                    ['delimiter', '', 'entity.name.function', '', 'delimiter', ''],
                 ],
                 [/(\.)(@whitespace*)(@identifier)/, ['delimiter', '', 'variable']],
                 [
-                    /(@identifier)(@whitespace*)(\()/,
+                    /(@identifier)(@whitespace*(?=\())/,
                     [
                         {
                             cases: identifierCases(undefined, `entity.name.function`),
                         },
                         '',
-                        '@brackets',
                     ],
                 ],
                 { include: '@whitespace' },
