@@ -3,7 +3,6 @@ import {
     Disposable,
     languages,
     workspace,
-    Range,
     Location,
     DiagnosticSeverity,
     type DiagnosticCollection,
@@ -15,6 +14,7 @@ import {
 } from 'vscode';
 import { createConfig, compile, DiagnosticCode } from '@mirascript/wasm';
 import { getDiagnosticMessage, parseDiagnostics, type SourceDiagnostic } from 'mirascript';
+import { toRange } from '../adapter/utils.js';
 
 const configTemplate = createConfig({
     diagnostic_position_encoding: 'Utf16',
@@ -90,12 +90,7 @@ export class DiagnosticsManager extends Disposable {
         severity: DiagnosticSeverity,
     ): Diagnostic {
         const { range, code } = diagnostic;
-        const vsRange = new Range(
-            range.startLineNumber - 1,
-            range.startColumn - 1,
-            range.endLineNumber - 1,
-            range.endColumn - 1,
-        );
+        const vsRange = toRange(range);
         let unnecessary = false;
         const deprecated = false;
         if (code === DiagnosticCode.UnusedLocalVariable || code === DiagnosticCode.UnusedLocalFunction) {
@@ -129,12 +124,7 @@ export class DiagnosticsManager extends Disposable {
             diag.relatedInformation = [];
             for (const ref of diagnostic.references) {
                 const { range, code } = ref;
-                const vsRange = new Range(
-                    range.startLineNumber - 1,
-                    range.startColumn - 1,
-                    range.endLineNumber - 1,
-                    range.endColumn - 1,
-                );
+                const vsRange = toRange(range);
                 const message = getDiagnosticMessage(code) ?? '...here';
                 const refDiag = new DiagnosticRelatedInformation(new Location(model.uri, vsRange), message);
                 diag.relatedInformation.push(refDiag);

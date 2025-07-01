@@ -1,5 +1,5 @@
 import { DiagnosticCode } from 'mirascript';
-import { languages, type editor, type Position, type CancellationToken, Range } from 'monaco-editor';
+import { type Position, type languages, type editor, type CancellationToken, Range } from '../../monaco-api.js';
 import { keywords } from '../../constants.js';
 import { Provider } from './base.js';
 
@@ -30,13 +30,13 @@ export class DocumentHighlightProvider extends Provider implements languages.Doc
         if (!def) return undefined;
         const links: languages.DocumentHighlight[] = def.references.map((u) => {
             const { code, range } = u;
-            let kind = languages.DocumentHighlightKind.Read;
+            let kind = 1 satisfies languages.DocumentHighlightKind.Read;
             if (
                 code === DiagnosticCode.WriteLocal ||
                 code === DiagnosticCode.ReadWriteLocal ||
                 code === DiagnosticCode.RedeclareLocal
             ) {
-                kind = languages.DocumentHighlightKind.Write;
+                kind = 2 satisfies languages.DocumentHighlightKind.Write;
             }
             return {
                 kind,
@@ -45,7 +45,7 @@ export class DocumentHighlightProvider extends Provider implements languages.Doc
         });
         if ('definition' in def && !Range.isEmpty(def.definition.range)) {
             links.push({
-                kind: languages.DocumentHighlightKind.Write,
+                kind: 2 satisfies languages.DocumentHighlightKind.Write,
                 range: def.definition.range,
             });
         }
@@ -64,7 +64,7 @@ export class DocumentHighlightProvider extends Provider implements languages.Doc
         if (!kw) return undefined;
 
         return kw.diagnostic.references.map((r) => ({
-            kind: languages.DocumentHighlightKind.Text,
+            kind: 0 satisfies languages.DocumentHighlightKind.Text,
             range: r.range,
         }));
     }
