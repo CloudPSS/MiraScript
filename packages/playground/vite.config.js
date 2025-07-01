@@ -17,6 +17,15 @@ export default defineConfig({
     worker: {
         format: 'es',
     },
+    server: {
+        headers: {
+            'X-Frame-Options': 'DENY',
+            'X-Content-Type-Options': 'nosniff',
+            'X-XSS-Protection': '1; mode=block',
+            'Cross-Origin-Opener-Policy': 'same-origin',
+            'Cross-Origin-Embedder-Policy': 'require-corp',
+        },
+    },
     build: {
         target: 'esnext',
         sourcemap: true,

@@ -39,11 +39,18 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
+  gap: 12px 20px;
+  flex-wrap: wrap;
   background-color: var(--bg-secondary);
   border-bottom: 1px solid var(--border-color);
 }
 
+.header-left {
+  margin-right: auto;
+}
+
 .header-left h1 {
+  white-space: nowrap;
   margin: 0;
   font-size: 18px;
   font-weight: 600;
@@ -51,8 +58,10 @@ body {
 }
 
 .header-controls {
+  margin-left: auto;
   display: flex;
   align-items: center;
+  justify-content: right;
   gap: 20px;
 }
 
@@ -84,9 +93,11 @@ select:focus {
 
 .run-button {
   background-color: var(--accent-color);
+  position: relative;
   color: white;
   border: none;
   border-radius: 4px;
+  white-space: nowrap;
   padding: 8px 16px;
   font-size: 13px;
   font-weight: 500;
@@ -101,6 +112,18 @@ select:focus {
 .run-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  color: transparent;
+
+  &::after {
+    position: absolute;
+    display: flex;
+    place-content: center;
+    place-items: center;
+    inset: 0;
+    margin: auto;
+    content: 'Running...';
+    color: white;
+  }
 }
 
 .main-content {
@@ -275,6 +298,7 @@ select:focus {
 }
 
 .section-title {
+  font-family: Arial, Helvetica, sans-serif;
   font-weight: 600;
   margin-bottom: 8px;
   color: var(--text-primary);
@@ -283,23 +307,19 @@ select:focus {
 }
 
 @media (max-width: 768px) {
-  .header {
-    flex-direction: column;
-    gap: 12px;
-    align-items: stretch;
-  }
-
   .header-controls {
-    justify-content: space-between;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
   }
 
   .main-content {
     grid-template-columns: 1fr;
-    grid-template-rows: auto auto 1fr 1fr;
+    grid-template-rows: auto 1fr auto 1fr;
     grid-template-areas:
       'editor-header'
-      'output-header'
       'editor-content'
+      'output-header'
       'output-content';
   }
 

@@ -5,6 +5,7 @@ import { KeyCode, KeyMod } from '@private/monaco-editor';
 import { registerMiraScript } from '@mirascript/monaco';
 import {
     type VmAny,
+    type VmScript,
     VmExtern,
     createVmGlobal,
     isVmExtern,
@@ -373,56 +374,30 @@ async function print(value: VmAny | Error): Promise<string> {
     return syntaxHighlight(serialize(value), 'mirascript');
 }
 
-/** 编译运行 */
-async function run() {
-    const value = editor.getValue();
-
-    // 清空控制台
-    consoleManager.clear();
-
-    // 禁用运行按钮
-    elRunBtn.disabled = true;
-    elRunBtn.textContent = 'Running...';
-
+/** 编译 */
+async function compileScript(value: string): Promise<VmScript | undefined> {
+    const compStart = performance.now();
     try {
-        console.time('transpile');
-        const result = await compile(value, {
+        const script = await compile(value, {
             pretty: true,
             input_mode: mode,
             sourceMap: true,
             fileName: 'playground.mira',
-        }).finally(() => {
-            console.timeEnd('transpile');
         });
+        const compEnd = performance.now();
+        consoleManager.info(`Compilation completed successfully in ${(compEnd - compStart).toFixed(3)}ms`);
 
         // 显示编译结果
-        const compiledCode = result.toString();
+        const compiledCode = script.toString();
         const highlightedJS = await syntaxHighlight(compiledCode, 'javascript');
         elCompiledOutput.innerHTML = /*html*/ `
             <div class="section-title">Compiled JavaScript:</div>
             <div class="compiled-code">${highlightedJS}</div>
         `;
 
-        console.time('execute');
-        try {
-            const execResult = result(globals);
-            const resultText = await print(execResult);
-            elResultOutput.innerHTML = /*html*/ `
-                <div class="section-title">Execution Result:</div>
-                <div class="result-success"><pre>${resultText}</pre></div>
-            `;
-
-            consoleManager.info(`Execution completed successfully`);
-        } catch (ex) {
-            const errorText = String(ex);
-            elResultOutput.innerHTML = /*html*/ `
-                <div class="section-title">Execution Error:</div>
-                <div class="result-error"><pre>${errorText}</pre></div>
-            `;
-            consoleManager.error(`Execution failed: ${errorText}`);
-        }
-        console.timeEnd('execute');
+        return script;
     } catch (ex) {
+        const compEnd = performance.now();
         const errorText = String(ex);
         elCompiledOutput.innerHTML = /*html*/ `
             <div class="section-title">Compilation Error:</div>
@@ -432,10 +407,50 @@ async function run() {
             <div class="section-title">Execution Result:</div>
             <div class="result-error">Compilation failed</div>
         `;
-        consoleManager.error(`Compilation failed: ${errorText}`);
+        consoleManager.error(`Compilation failed in ${(compEnd - compStart).toFixed(3)}ms: ${errorText}`);
+        return undefined;
+    }
+}
+
+/** 运行 */
+async function runScript(script: VmScript): Promise<void> {
+    const execStart = performance.now();
+    try {
+        const execResult = script(globals);
+        const execEnd = performance.now();
+        const resultText = await print(execResult);
+        elResultOutput.innerHTML = /*html*/ `
+            <div class="section-title">Execution Result:</div>
+            <div class="result-success"><pre>${resultText}</pre></div>
+        `;
+        consoleManager.info(`Execution completed successfully in ${(execEnd - execStart).toFixed(3)}ms`);
+    } catch (ex) {
+        const execEnd = performance.now();
+        const errorText = String(ex);
+        elResultOutput.innerHTML = /*html*/ `
+            <div class="section-title">Execution Error:</div>
+            <div class="result-error"><pre>${errorText}</pre></div>
+        `;
+        consoleManager.error(`Execution failed in ${(execEnd - execStart).toFixed(3)}ms: ${errorText}`);
+    }
+}
+
+/** 编译运行 */
+async function run() {
+    const value = editor.getValue();
+
+    // 清空控制台
+    consoleManager.clear();
+
+    // 禁用运行按钮
+    elRunBtn.disabled = true;
+
+    try {
+        const script = await compileScript(value);
+        if (!script) return;
+        await runScript(script);
     } finally {
         // 重新启用运行按钮
         elRunBtn.disabled = false;
-        elRunBtn.textContent = 'Run (Ctrl+Enter)';
     }
 }
