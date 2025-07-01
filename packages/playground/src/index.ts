@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import './index.css';
 import * as monaco from '@private/monaco-editor';
 import { KeyCode, KeyMod } from '@private/monaco-editor';
@@ -8,144 +7,22 @@ import {
     type VmScript,
     VmExtern,
     createVmGlobal,
-    isVmExtern,
-    isVmModule,
     compile,
-    serialize,
     VmModule,
     VmFunction,
     type InputMode,
 } from 'mirascript';
-
-// 加载 javascript 模型以便语法高亮
-monaco.editor.createModel('', 'javascript').dispose();
-
-// 使用 Vite 的 import.meta.glob 动态加载示例文件
-const exampleModules = import.meta.glob('./*.{mira,miratpl}', {
-    base: '../../../examples',
-    query: '?raw',
-    import: 'default',
-    eager: true,
-});
-
-// 将文件路径转换为示例数据
-const examples: Record<string, { name: string; mode: InputMode; code: string }> = {};
-
-for (const [path, content] of Object.entries(exampleModules)) {
-    const filename = path.split('/').pop()!;
-    const isTemplate = filename.endsWith('.miratpl');
-
-    // 提取序号和名称
-    const regex = /^(\d{2})_(.+)\.(mira|miratpl)$/;
-    const match = regex.exec(filename);
-    if (!match || match.length < 4) {
-        console.warn(`文件名格式不正确: ${filename}`);
-        continue;
-    }
-
-    const baseName = match[2]!;
-
-    // 生成友好的显示名称
-    const displayName = baseName
-        .split('_')
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
-
-    examples[baseName] = {
-        name: displayName, // 不包含序号，只显示友好名称
-        mode: isTemplate ? 'Template' : 'Script',
-        code: content as string,
-    };
-}
-
-// 添加默认示例以防没有文件被加载
-if (Object.keys(examples).length === 0) {
-    examples['01_hello_world.mira'] = {
-        name: 'Hello World',
-        mode: 'Script',
-        code: `debug_print("Hello, World!");`,
-    };
-}
-
-/** 管理控制台输出的类 */
-class ConsoleManager {
-    private entries: Array<{
-        type: 'log' | 'error' | 'warn' | 'info';
-        message: Promise<string> | string;
-        timestamp: Date;
-    }> = [];
-    private readonly outputElement: HTMLElement;
-
-    constructor(outputElement: HTMLElement) {
-        this.outputElement = outputElement;
-    }
-
-    /** 添加日志消息 */
-    log(message: Promise<string> | string) {
-        this.addEntry('log', message);
-    }
-
-    /** 添加错误消息 */
-    error(message: Promise<string> | string) {
-        this.addEntry('error', message);
-    }
-
-    /** 添加警告消息 */
-    warn(message: Promise<string> | string) {
-        this.addEntry('warn', message);
-    }
-
-    /** 添加信息消息 */
-    info(message: Promise<string> | string) {
-        this.addEntry('info', message);
-    }
-
-    /** 添加条目到控制台 */
-    private addEntry(type: 'log' | 'error' | 'warn' | 'info', message: Promise<string> | string) {
-        const entry = {
-            type,
-            message,
-            timestamp: new Date(),
-        };
-        this.entries.push(entry);
-        void this.render();
-    }
-
-    /** 清空控制台 */
-    clear() {
-        this.entries = [];
-        void this.render();
-    }
-
-    /** 渲染控制台内容 */
-    private async render() {
-        const htmlArray = this.entries.map(async (entry) => {
-            const time = entry.timestamp.toLocaleTimeString(undefined, {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                fractionalSecondDigits: 3,
-            });
-            return /* html */ `<div class="console-entry ${entry.type}">
-                <time class="console-time" datetime=${entry.timestamp.toISOString()}>[${time}]</time>
-                <span class="console-message">${await entry.message}</span>
-            </div>`;
-        });
-
-        const html = await Promise.all(htmlArray).then((lines) => lines.join(''));
-        this.outputElement.innerHTML = html;
-        this.outputElement.scrollTop = this.outputElement.scrollHeight;
-    }
-}
+import { ConsoleManager } from './console-manager.js';
+import { EXAMPLES } from './examples.js';
+import { syntaxHighlight, print } from './utils.js';
 
 const arr = [1, 2, [1, 2], { x: 0 }];
 arr[100] = 100; // make a sparse array
 
 // 初始化控制台管理器
-const consoleOutput = document.querySelector<HTMLDivElement>('#console-output')!;
-const consoleManager = new ConsoleManager(consoleOutput);
+const consoleManager = new ConsoleManager(document.querySelector<HTMLDivElement>('#console-output')!);
 
-/** 创建简单的debug_print函数 */
+/** 创建简单的 debug_print 函数 */
 function debugPrint(...args: VmAny[]) {
     const messages = args.map(async (arg) => {
         if (typeof arg === 'string') return arg;
@@ -199,49 +76,36 @@ const elResultOutput = document.querySelector<HTMLDivElement>('#result-output')!
 
 /** 初始化示例选择器 */
 function initExampleSelector() {
-    // 将示例按序号排序
-    const sortedExamples = Object.entries(examples).sort(([a], [b]) => {
-        // 提取序号进行排序
-        const regexOrder = /^(\d{2})/;
-        const matchA = regexOrder.exec(a);
-        const matchB = regexOrder.exec(b);
-        const orderA = Number.parseInt(matchA?.[1] || '99', 10);
-        const orderB = Number.parseInt(matchB?.[1] || '99', 10);
-        return orderA - orderB;
-    });
-
-    for (const [key, example] of sortedExamples) {
+    for (const [index, example] of EXAMPLES.entries()) {
         const option = document.createElement('option');
-        option.value = key;
+        option.value = index.toString();
         option.textContent = example.name;
         elExampleSelect.append(option);
     }
 
     elExampleSelect.addEventListener('change', () => {
-        const selectedKey = elExampleSelect.value;
-        if (selectedKey && examples[selectedKey]) {
-            const example = examples[selectedKey];
+        const selectedKey = Number.parseInt(elExampleSelect.value, 10);
+        const example = EXAMPLES[selectedKey];
+        if (!example) return;
 
-            // 更新模式
-            mode = example.mode;
-            elModeSelect.value = mode;
-            localStorage.setItem('mode', mode);
+        // 更新模式
+        mode = example.mode;
+        elModeSelect.value = mode;
+        localStorage.setItem('mode', mode);
 
-            // 创建新模型前先销毁旧模型
-            const oldModel = editor.getModel();
-            const newModel = createModel(example.code);
-            editor.setModel(newModel);
-            oldModel?.dispose();
+        // 创建新模型前先销毁旧模型
+        const oldModel = editor.getModel();
+        const newModel = createModel(example.code);
+        editor.setModel(newModel);
+        oldModel?.dispose();
 
-            // 保存到本地存储
-            localStorage.setItem('source', example.code);
-        }
+        // 保存到本地存储
+        localStorage.setItem('source', example.code);
     });
 }
 
-// 初始化模式选择器
 /**
- * Initialize the mode selector dropdown with current mode
+ * 初始化模式选择器
  */
 function initModeSelector() {
     elModeSelect.value = mode;
@@ -258,7 +122,7 @@ function initModeSelector() {
 }
 
 /**
- * Initialize tab functionality for output panels
+ * 初始化 tab 功能
  */
 function initTabs() {
     const tabBtns = document.querySelectorAll<HTMLElement>('.tab-btn');
@@ -285,8 +149,7 @@ function initTabs() {
     }
 }
 
-const value =
-    localStorage.getItem('source') || examples['01_hello_world.mira']?.code || `debug_print("Hello, World!");`;
+const value = localStorage.getItem('source') || EXAMPLES[0]?.code || `debug_print("Hello, World!");`;
 const overlay = monaco.utils.createOverflowWidgetsDomNode(elEditor);
 const editor = monaco.editor.create(elEditor, {
     fontFamily: 'Sarasa Mono SC, monospace',
@@ -348,31 +211,6 @@ setTimeout(() => {
         void run();
     });
 }, 1);
-
-/** 语法高亮 */
-async function syntaxHighlight(value: string, languageId: string): Promise<string> {
-    let highlighted = await monaco.editor.colorize(value, languageId, {});
-    if (highlighted.endsWith('<br/>') && !value.endsWith('\n')) {
-        // 如果高亮结果以 <br/> 结尾且原始值没有换行符，则去掉 <br/>
-        highlighted = highlighted.slice(0, -'<br/>'.length);
-    }
-    highlighted = highlighted.replaceAll(/(\u00A0)+/g, '$&<wbr>');
-    return highlighted;
-}
-
-/** 将值转为显示 */
-async function print(value: VmAny | Error): Promise<string> {
-    if (value === null) return syntaxHighlight('nil', 'mirascript');
-    if (value === undefined) return '<uninitialized>';
-    if (value instanceof Error) return value.toString();
-    if (typeof value == 'function') {
-        return syntaxHighlight(String(value), 'javascript');
-    }
-    if (isVmExtern(value) || isVmModule(value) || typeof value == 'function') {
-        return String(value);
-    }
-    return syntaxHighlight(serialize(value), 'mirascript');
-}
 
 /** 编译 */
 async function compileScript(value: string): Promise<VmScript | undefined> {
@@ -437,20 +275,20 @@ async function runScript(script: VmScript): Promise<void> {
 
 /** 编译运行 */
 async function run() {
-    const value = editor.getValue();
-
-    // 清空控制台
-    consoleManager.clear();
-
-    // 禁用运行按钮
+    if (elRunBtn.disabled) return;
     elRunBtn.disabled = true;
 
+    consoleManager.clear();
+    await consoleManager.render();
+
+    const value = editor.getValue();
     try {
         const script = await compileScript(value);
         if (!script) return;
         await runScript(script);
     } finally {
-        // 重新启用运行按钮
+        await consoleManager.render();
+
         elRunBtn.disabled = false;
     }
 }
