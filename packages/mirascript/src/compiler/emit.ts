@@ -726,9 +726,11 @@ class Emitter {
             names: [],
             mappings: '',
         };
+        const prefix = '//# ';
         this.codeLines.unshift(
-            `//# sourceURL=${ORIGIN}/${fileName}.js`,
-            `//# sourceMappingURL=data:application/json;base64,${encodeURL(JSON.stringify(data))}`,
+            // Prevent source map from being recognized as of this file
+            `${prefix}sourceURL=${ORIGIN}/${fileName}.js`,
+            `${prefix}sourceMappingURL=data:application/json;base64,${encodeURL(JSON.stringify(data))}`,
         );
     }
 }

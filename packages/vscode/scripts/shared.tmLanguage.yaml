@@ -17,8 +17,8 @@ repository:
         end: '(?=[^[:alnum:]_$])'
         patterns:
           - include: '#functions'
-      - begin: (?=((\$+|\@+|[[:alpha:]_])[[:alnum:]_]*)(?![[:alnum:]_])\()
-        end: '\('
+      - begin: (?=((\$+|\@+|[[:alpha:]_])[[:alnum:]_]*)(?![[:alnum:]_])(?=\s*(!\s*)?\())
+        end: '(?=\s*(!\s*)?\()'
         patterns:
           - include: '#functions'
       - match: (\.)\s*(\d+)
