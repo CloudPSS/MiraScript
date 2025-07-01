@@ -311,6 +311,22 @@ export class CompletionItemProvider extends Provider implements languages.Comple
         const compiled = await this.getCompileResult(model);
         if (!compiled) return undefined;
 
+        if (context.triggerCharacter === '.') {
+            const prevWord = model.getWordAtPosition({
+                lineNumber: position.lineNumber,
+                column: position.column - 1,
+            });
+            if (prevWord?.word === 'global') {
+                const globals = await this.completeGlobal(
+                    model,
+                    undefined,
+                    [],
+                    undefined as unknown as languages.CompletionItemRanges,
+                );
+                return { suggestions: globals };
+            }
+        }
+
         const word = model.getWordAtPosition(position);
         const prev = model.getValueInRange({
             startLineNumber: position.lineNumber,
