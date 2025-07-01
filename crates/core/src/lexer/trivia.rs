@@ -91,19 +91,22 @@ pub(super) fn leading_trivia<'s>(i: &mut Input<'s>) -> Result<TriviaList<'s>> {
 }
 
 pub(super) fn tailing_trivia<'s>(i: &mut Input<'s>) -> Result<TriviaList<'s>> {
+    #[cfg(feature = "formatter")]
+    fn block_comment_verifier(s: &Trivia<'_>) -> bool {
+        let &Trivia::BlockComment(s) = s else {
+            return false;
+        };
+        // 不包含换行，不是文档注释
+        !s.contains('\n') && !s.starts_with("*")
+    }
+    #[cfg(not(feature = "formatter"))]
+    fn block_comment_verifier(_: &Trivia<'_>) -> bool {
+        true
+    }
     // 末尾的注释和换行
     alt((
         (
-            repeat(
-                1..,
-                block_comment.verify(|s| {
-                    let Trivia::BlockComment(s) = s else {
-                        return false;
-                    };
-                    // 不包含换行，不是文档注释
-                    !s.contains('\n') && !s.starts_with("*")
-                }),
-            ),
+            repeat(1.., block_comment.verify(block_comment_verifier)),
             alt((line_comment, new_line)),
         )
             .map(|(b, e): (Vec<_>, _)| to_trivia_list(b.into_iter().chain([e]).collect())),
