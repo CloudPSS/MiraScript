@@ -38,7 +38,7 @@ impl<'o> FormatManager<'o> {
             }
 
             Trivia::UnterminatedBlockComment(s) | Trivia::BlockComment(s) => {
-                if !s.contains('\n') {
+                if self.current_leading_trivia.is_empty() && !s.contains('\n') {
                     // 短注释，内联进当前行
                     let s = s.trim();
                     if s.is_empty() {
@@ -55,13 +55,29 @@ impl<'o> FormatManager<'o> {
                         if self.current_leading_trivia.ends_with("*/") {
                             self.current_leading_trivia.push('\n');
                         }
-                        self.current_leading_trivia.push_str("/* ");
+                        if line.starts_with("*") {
+                            self.current_leading_trivia.push_str("/*");
+                        } else {
+                            self.current_leading_trivia.push_str("/* ");
+                        }
                     } else {
                         self.current_leading_trivia.push('\n');
                     }
-                    let (leading_spaces, line_data) = self.align_to_tabs(line);
-                    self.current_leading_trivia.extend(leading_spaces);
-                    self.current_leading_trivia.push_str(line_data);
+                    let mut line = line.trim();
+                    if !line.is_empty() {
+                        if i != 0 {
+                            if line.starts_with("* ") {
+                                line = &line[2..];
+                            } else if line.starts_with("*") {
+                                line = &line[1..];
+                            }
+                            self.current_leading_trivia.push_str(" * ");
+                        }
+                        self.current_leading_trivia.push_str(line);
+                    }
+                }
+                if s.ends_with('\n') {
+                    self.current_leading_trivia.push('\n');
                 }
                 self.current_leading_trivia.push_str(" */");
             }
@@ -90,8 +106,19 @@ impl<'o> FormatManager<'o> {
                 }
                 self.current_tailing_trivia.push_str(s.trim_ascii());
             }
-            Trivia::BlockComment(_) => (),
-            Trivia::UnterminatedBlockComment(_) => (),
+            Trivia::BlockComment(s) | Trivia::UnterminatedBlockComment(s) => {
+                let s = s.trim();
+                if s.is_empty() {
+                    return;
+                }
+                if self.current_tailing_trivia.is_empty() {
+                    self.current_tailing_trivia.push_str("//");
+                }
+                for line in s.lines() {
+                    self.current_tailing_trivia.push(' ');
+                    self.current_tailing_trivia.push_str(line);
+                }
+            }
             Trivia::NewLine => (),
         }
     }

@@ -91,7 +91,11 @@ pub(super) fn leading_trivia<'s>(i: &mut Input<'s>) -> Result<TriviaList<'s>> {
 }
 
 pub(super) fn tailing_trivia<'s>(i: &mut Input<'s>) -> Result<TriviaList<'s>> {
-    repeat(0..=1, alt((line_comment, new_line)))
-        .map(to_trivia_list)
-        .parse_next(i)
+    // 末尾的注释和换行
+    alt((
+        (repeat(1.., block_comment), alt((line_comment, new_line)))
+            .map(|(b, e): (Vec<_>, _)| to_trivia_list(b.into_iter().chain([e]).collect())),
+        repeat(0..=1, alt((line_comment, new_line))).map(to_trivia_list),
+    ))
+    .parse_next(i)
 }
