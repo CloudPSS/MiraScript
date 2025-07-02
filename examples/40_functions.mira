@@ -46,35 +46,35 @@ debug_print("map_array([1, 2, 3], square) = ${map_array([1, 2, 3], square)}");
 // 闭包示例
 fn create_counter(initial) {
   let mut count = initial;
-  fn {
+  (fn {
     count += 1;
     count
-  }
+  })
 }
 
 let counter = create_counter(10);
 debug_print("闭包计数器:");
-debug_print("counter() = ${counter()}");
-debug_print("counter() = ${counter()}");
-debug_print("counter() = ${counter()}");
+debug_print("counter() =", counter());
+debug_print("counter() =", counter());
+debug_print("counter() =", counter());
 
 // 创建另一个独立的计数器
 let another_counter = create_counter(100);
 debug_print("另一个计数器:");
-debug_print("another_counter() = ${another_counter()}");
-debug_print("counter() = ${counter()}"); // 原计数器不受影响
+debug_print("another_counter() =", another_counter());
+debug_print("counter() =", counter()); // 原计数器不受影响
 
 // 函数工厂
 fn create_multiplier(factor) {
-  fn { it * factor }
+  (fn { it * factor })
 }
 
 let times_three = create_multiplier(3);
 let times_five = create_multiplier(5);
 
 debug_print("函数工厂:");
-debug_print("times_three(4) = ${times_three(4)}");
-debug_print("times_five(4) = ${times_five(4)}");
+debug_print("times_three(4) =", times_three(4));
+debug_print("times_five(4) =", times_five(4));
 
 // 递归函数
 fn factorial(n) {
@@ -94,28 +94,12 @@ fn fibonacci(n) {
 }
 
 debug_print("递归函数:");
-debug_print("factorial(5) = ${factorial(5)}");
-debug_print("fibonacci(8) = ${fibonacci(8)}");
-
-// 尾递归优化示例
-fn sum_range_tail(start, end, acc) {
-  if start > end {
-    acc
-  } else {
-    sum_range_tail(start + 1, end, acc + start)
-  }
-}
-
-fn sum_range(start, end) {
-  sum_range_tail(start, end, 0)
-}
-
-debug_print("尾递归:");
-debug_print("sum_range(1, 100) = ${sum_range(1, 100)}");
+debug_print("factorial(5) =", factorial(5));
+debug_print("fibonacci(8) =", fibonacci(8));
 
 // 立即调用函数表达式 (IIFE)
 let result = (fn (x, y) { x + y })(10, 20);
-debug_print("IIFE 结果: $result");
+debug_print("IIFE 结果:", result);
 
 // 函数作为参数的实际应用
 fn filter_array(array, predicate) {
@@ -138,29 +122,29 @@ fn reduce_array(array, func, initial) {
 
 let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
-let evens = filter_array(numbers, fn { it % 2 == 0 });
-let sum = reduce_array(numbers, fn (acc, x) { acc + x }, 0);
-let product = reduce_array(numbers, fn (acc, x) { acc * x }, 1);
+let evens = numbers::filter_array(fn { it % 2 == 0 });
+let sum = numbers::reduce_array(fn (acc, x) { acc + x }, 0);
+let product = numbers::reduce_array(fn (acc, x) { acc * x }, 1);
 
 debug_print("函数式编程:");
-debug_print("偶数: $evens");
-debug_print("总和: $sum");
-debug_print("乘积: $product");
+debug_print("偶数:", evens);
+debug_print("总和:", sum);
+debug_print("乘积:", product);
 
 // 柯里化示例
 fn curry_add(x) {
-  fn (y) { x + y }
+  (fn (y) { x + y })
 }
 
 let add_five = curry_add(5);
 debug_print("柯里化:");
-debug_print("add_five(3) = ${add_five(3)}");
+debug_print("add_five(3) =", add_five(3));
 
 // 部分应用
 fn partial_apply(func, first_arg) {
-  fn (second_arg) { func(first_arg, second_arg) }
+  (fn (second_arg) { func(first_arg, second_arg) })
 }
 
 let multiply_by_three = partial_apply(multiply, 3);
 debug_print("部分应用:");
-debug_print("multiply_by_three(7) = ${multiply_by_three(7)}");
+debug_print("multiply_by_three(7) =", multiply_by_three(7));

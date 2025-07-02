@@ -1,20 +1,12 @@
 // MiraScript 控制流示例
 
 // if 表达式
-fn classify_number(n) {
-  if n > 0 {
-    "positive"
-  } else if n < 0 {
-    "negative"
-  } else {
-    "zero"
-  }
-}
+fn classify_number(n) { if n > 0 { "positive" } else if n < 0 { "negative" } else { "zero" } }
 
 debug_print("分类数字:");
-debug_print("classify_number(5) = ${classify_number(5)}");
-debug_print("classify_number(-3) = ${classify_number(-3)}");
-debug_print("classify_number(0) = ${classify_number(0)}");
+debug_print("classify_number(5) = ${ classify_number(5) }");
+debug_print("classify_number(-3) = ${ classify_number(-3) }");
+debug_print("classify_number(0) = ${ classify_number(0) }");
 
 // match 表达式
 fn describe_value(value) {
@@ -27,13 +19,12 @@ fn describe_value(value) {
     case > 10 { "这是大于10的数字" }
     case < 0 { "这是负数" }
     case "" { "这是空字符串" }
-    case s is string { "这是字符串: $s" }
     case [] { "这是空数组" }
     case [single] { "这是只有一个元素的数组: $single" }
-    case [first, ..rest] { "这是数组，第一个元素是 $first，还有 ${len(rest)} 个元素" }
-    case () { "这是空记录" }
+    case [first, ..rest] { "这是数组，第一个元素是 $first，还有 ${ len(rest) } 个元素" }
     case (name: n) { "这是有名字的记录: $n" }
-    case _ { "未知类型: ${type(value)}" }
+    case () { "这是没有名字的记录" }
+    case _ { "未知类型: ${ type(value) }" }
   }
 }
 
@@ -63,7 +54,7 @@ for fruit in fruits {
 let person = (name: "Bob", age: 25, city: "New York");
 debug_print("遍历记录键:");
 for key in person {
-  debug_print("  $key: ${person[key]}");
+  debug_print("  $key: ${ person[key] }");
 }
 
 // 带 else 的 for 循环
@@ -71,9 +62,7 @@ let found_even = for i in [1, 3, 5, 7, 8, 9] {
   if i % 2 == 0 {
     break i;
   }
-} else {
-  "没有找到偶数"
-};
+} else { "没有找到偶数" };
 debug_print("找到的偶数: $found_even");
 
 // while 循环
@@ -127,11 +116,7 @@ fn find_in_matrix(matrix, target) {
   nil
 }
 
-let matrix = [
-  [1, 2, 3],
-  [4, 5, 6],
-  [7, 8, 9]
-];
+let matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]];
 
 let position = find_in_matrix(matrix, 5) ?? "未找到";
 debug_print("在矩阵中找到5的位置: $position");

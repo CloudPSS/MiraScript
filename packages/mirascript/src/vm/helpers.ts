@@ -1,7 +1,7 @@
 import { $AssertInit, $ToNumber } from './operations.js';
 import type { VmFunctionLike } from './types/function.js';
 import { createVmContext, type VmContext } from './types/context.js';
-import { isVmConst, VmFunction, type VmConst, type VmAny, type VmArray } from './types/index.js';
+import { isVmConst, VmFunction, type VmConst, type VmAny, type VmArray, type VmValue } from './types/index.js';
 const { isFinite } = Number;
 const { ceil } = Math;
 
@@ -19,6 +19,11 @@ export const ElementOpt = (key: string, value: VmAny): VmConst => {
 
 export const Function = (fn: VmFunctionLike): VmFunction => {
     return VmFunction(fn, { isLib: false, injectCp: false });
+};
+
+export const Upvalue = (value: VmAny): VmValue => {
+    $AssertInit(value);
+    return value;
 };
 
 export const ArrayRange = (start: VmAny, end: VmAny): VmArray => {

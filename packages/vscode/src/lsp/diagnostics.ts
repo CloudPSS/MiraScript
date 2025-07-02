@@ -31,6 +31,8 @@ const configScript = createConfig({
     input_mode: 'Script',
 });
 
+const disabledSchemes = new Set(['git', 'vsls', 'github', 'azurerepos']);
+
 /** 诊断信息 */
 export class DiagnosticsManager extends Disposable {
     private readonly collection: DiagnosticCollection;
@@ -135,6 +137,9 @@ export class DiagnosticsManager extends Disposable {
     /** 生成诊断 */
     private async analyzeTextDocument(document: TextDocument): Promise<void> {
         if (document.languageId !== 'mirascript' && document.languageId !== 'mirascript-template') {
+            return;
+        }
+        if (disabledSchemes.has(document.uri.scheme)) {
             return;
         }
         const { version } = document;

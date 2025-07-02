@@ -540,7 +540,7 @@ class Emitter {
                 reg = read();
                 const level = read();
                 const up = read();
-                code = `${this.wv(reg)} = ${this.rv(up, level)};`;
+                code = `${this.wv(reg)} = Upvalue(${this.rv(up, level)});`;
                 break;
             }
             case OpCode.SetUpvalue: {

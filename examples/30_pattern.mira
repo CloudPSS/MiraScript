@@ -15,16 +15,16 @@ debug_print(point_info(point));
 
 // 更复杂的模式匹配示例
 fn analyze_data(data) {
-  match data {
-    case nil { "No data provided" }
-    case [] { "Empty array" }
-    case [single] { "Array with one element: $single" }
-    case [first, ..rest] { "Array starting with $first, has ${len(rest)} more elements" }
-    case (name: "John", age: >18 and <65) { "Working-age John" }
-    case (name: n, age: a) { "Person named $n, age $a" }
-    case x is number and >0 { "Positive number: $x" }
-    case x is string and not "" { "Non-empty string: $x" }
-    case _ { "Unknown data type: ${type(data)}" }
+  match (data::type(), data) {
+    case ("nil",) { "No data provided" }
+    case ("array", []) { "Empty array" }
+    case ("array", [single]) { "Array with one element: $single" }
+    case ("array", [first, ..rest]) { "Array starting with $first, has ${ len(rest) } more elements" }
+    case ("object", (name: "John", age: > 18 and < 65)) { "Working-age John" }
+    case ("object", (name: n, age: a)) { "Person named $n, age $a" }
+    case ("number", x and > 0) { "Positive number: $x" }
+    case ("string", x and not "") { "Non-empty string: $x" }
+    case _ { "Unknown data type: ${ type(data) }" }
   }
 }
 
@@ -38,3 +38,18 @@ debug_print(analyze_data((name: "Alice", age: 30)));
 debug_print(analyze_data(42));
 debug_print(analyze_data("Hello"));
 debug_print(analyze_data(true));
+
+fn is_palindrome {
+  let ch = it::chars();
+  return is_palindrome_helper(ch);
+  fn is_palindrome_helper {
+    match it {
+      case [] or [_] { true }
+      case [left, ..rest, right] { if left == right { is_palindrome_helper(rest) } else { false } }
+      case _ { false }
+    }
+  }
+}
+
+debug_print("Is 'racecar' a palindrome? ", is_palindrome("racecar"));
+debug_print("Is 'hello' a palindrome? ", is_palindrome("hello"));

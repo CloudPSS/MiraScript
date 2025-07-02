@@ -175,17 +175,17 @@ for user in user_data {
 
 // 类型模式匹配
 fn type_based_processing(value) {
-  match value {
-    case x is number and > 0 { "正数: $x" }
-    case x is number and < 0 { "负数: $x" }
-    case x is number { "零或 NaN: $x" }
-    case x is string and not "" { "非空字符串: '$x'" }
-    case x is string { "空字符串" }
-    case x is boolean { "布尔值: $x" }
-    case x is array { "数组，长度: ${len(x)}" }
-    case x is record { "记录，键数: ${len(x)}" }
-    case x is function { "函数" }
-    case nil { "空值" }
+  match (value::type(), value) {
+    case ("number", x and > 0) { "正数: $x" }
+    case ("number", x and < 0) { "负数: $x" }
+    case ("number", x) { "零或 NaN: $x" }
+    case ("string", x and not "") { "非空字符串: '$x'" }
+    case ("string",) { "空字符串" }
+    case ("boolean", x) { "布尔值: $x" }
+    case ("array", x) { "数组，长度: ${len(x)}" }
+    case ("record", x) { "记录，键数: ${x::keys()::len()}" }
+    case ("function",) { "函数" }
+    case ("nil",) { "空值" }
     case _ { "未知类型" }
   }
 }
@@ -195,3 +195,5 @@ let type_tests = [42, -17, 0, nan, "hello", "", true, [1, 2, 3], (a: 1, b: 2), f
 for test in type_tests {
   debug_print("  ${type_based_processing(test)}");
 }
+// 函数不能存储在数组和记录中
+debug_print("  ${type_based_processing(fn{})}");
