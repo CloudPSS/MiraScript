@@ -7,13 +7,13 @@ fn fib_cached(n) {
   if n <= 2 {
     return n;
   }
-  
+
   // 检查缓存中是否存在
   let cache_key = `$n`;
   if cache_key in cache {
     return cache[cache_key];
   }
-  
+
   // 计算并缓存结果
   let result = fib_cached(n - 1) + fib_cached(n - 2);
   cache = (..cache, `$cache_key`: result);
@@ -21,62 +21,44 @@ fn fib_cached(n) {
 }
 
 // 简单递归实现
-fn fib_simple(n) {
-  if n <= 2 {
-    n
-  } else {
-    fib_simple(n - 1) + fib_simple(n - 2)
-  }
-}
+fn fib_simple(n) { if n <= 2 { n } else { fib_simple(n - 1) + fib_simple(n - 2) } }
 
 // 迭代实现
 fn fib_iterative(n) {
   if n <= 2 {
     return n;
   }
-  
+
   let mut a = 1;
   let mut b = 2;
   let mut i = 3;
-  
+
   while i <= n {
     let temp = a + b;
     a = b;
     b = temp;
     i += 1;
   }
-  
+
   b
 }
 
 // 尾递归实现
-fn fib_tail_recursive(n, a, b) {
-  if n <= 2 {
-    b
-  } else {
-    fib_tail_recursive(n - 1, b, a + b)
-  }
-}
+fn fib_tail_recursive(n, a, b) { if n <= 2 { b } else { fib_tail_recursive(n - 1, b, a + b) } }
 
-fn fib_tail(n) {
-  if n <= 2 {
-    n
-  } else {
-    fib_tail_recursive(n, 1, 2)
-  }
-}
+fn fib_tail(n) { if n <= 2 { n } else { fib_tail_recursive(n, 1, 2) } }
 
 // 测试不同实现
 fn test_fibonacci() {
   let test_numbers = [1, 5, 10, 15];
-  
+
   debug_print("斐波那契数列计算:");
   for n in test_numbers {
     debug_print("fib($n):");
-    debug_print("  缓存递归: ${fib_cached(n)}");
-    debug_print("  简单递归: ${fib_simple(n)}");
-    debug_print("  迭代实现: ${fib_iterative(n)}");
-    debug_print("  尾递归: ${fib_tail(n)}");
+    debug_print("  缓存递归:", fib_cached(n));
+    debug_print("  简单递归:", fib_simple(n));
+    debug_print("  迭代实现:", fib_iterative(n));
+    debug_print("  尾递归:", fib_tail(n));
     debug_print("");
   }
 }

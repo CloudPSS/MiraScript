@@ -163,15 +163,15 @@ debug_print("=== 函数字面量示例 ===");
 
 // 多参数函数
 let add_function = fn (x, y) { x + y };
-debug_print("加法函数: ${add_function(5, 3)}");
+debug_print("加法函数:", add_function(5, 3));
 
 // 单参数函数（省略参数列表）
 let square_function = fn { it * it };
-debug_print("平方函数: ${square_function(4)}");
+debug_print("平方函数:", square_function(4));
 
 // 无参数函数
 let get_random = fn () { 42 }; // 模拟随机数
-debug_print("无参数函数: ${get_random()}");
+debug_print("无参数函数:", get_random());
 
 // 复杂函数体
 let complex_function = fn (x) {
@@ -182,7 +182,7 @@ let complex_function = fn (x) {
     doubled - 1
   }
 };
-debug_print("复杂函数: ${complex_function(3)} 和 ${complex_function(6)}");
+debug_print("复杂函数:", complex_function(3), "和", complex_function(6));
 
 // 嵌套的字面量
 debug_print("=== 嵌套字面量示例 ===");
@@ -208,10 +208,10 @@ let complex_data = (
 );
 
 debug_print("复杂嵌套数据:");
-debug_print("项目名: ${complex_data.info.name}");
-debug_print("版本: ${complex_data.info.version}");
-debug_print("特性: ${complex_data.info.features}");
-debug_print("最大迭代次数: ${complex_data.config.limits.max_iterations}");
+debug_print("项目名:", complex_data.info.name);
+debug_print("版本:", complex_data.info.version);
+debug_print("特性:", complex_data.info.features);
+debug_print("最大迭代次数:", complex_data.config.limits.max_iterations);
 
 // 调用嵌套的函数
 complex_data.handlers[0]("测试消息");

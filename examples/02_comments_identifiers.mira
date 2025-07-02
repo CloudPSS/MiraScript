@@ -8,9 +8,9 @@
 // 单行注释以 // 开头，直到行末结束
 
 /*
-这是多行注释
-可以跨越多行
-不支持嵌套
+ 这是多行注释
+ 可以跨越多行
+ 不支持嵌套
 */
 
 /* 这也是多行注释，可以在一行内 */
@@ -22,7 +22,7 @@
 fn add(a, b) {
   // 函数内部也可以有注释
   let result = a + b; // 行尾注释
-  result /* 块注释也可以插在表达式中 */
+  result // 块注释也可以插在表达式中
 }
 
 // ============================================================================
@@ -72,7 +72,7 @@ debug_print("VARIABLE: $VARIABLE");
 // Unicode 标识符（如果支持）
 let 变量名 = "中文变量名";
 let 数量 = 42;
-let π = 3.14159;
+let π = 3.141_59;
 
 debug_print("Unicode 标识符:");
 debug_print("变量名: $变量名");
@@ -102,34 +102,24 @@ fn calculate_average(numbers) {
   if count > 0 { sum / count } else { 0 }
 }
 
-fn $system_function() {
-  "这是系统函数"
-}
+fn $system_function() { "这是系统函数" }
 
 debug_print("函数标识符:");
 let avg = calculate_average([1, 2, 3, 4, 5]);
 debug_print("平均值: $avg");
-debug_print("系统函数: ${$system_function()}");
+debug_print("系统函数:", $system_function());
 
 // 记录键名可以是任何有效标识符
-let record_with_various_keys = (
-  normal_key: "普通键",
-  _private_key: "私有键",
-  CamelCaseKey: "驼峰键",
-  $system_key: "系统键",
-  @global_key: "全局键",
-  键名: "中文键名",
-  123: "数字键（序数）"
-);
+let record_with_various_keys = (normal_key: "普通键", _private_key: "私有键", CamelCaseKey: "驼峰键", $system_key: "系统键", @global_key: "全局键", 键名: "中文键名", 123: "数字键（序数）");
 
 debug_print("记录键名示例:");
-debug_print("normal_key: ${record_with_various_keys.normal_key}");
-debug_print("_private_key: ${record_with_various_keys._private_key}");
-debug_print("CamelCaseKey: ${record_with_various_keys.CamelCaseKey}");
-debug_print("$system_key: ${record_with_various_keys.$system_key}");
-debug_print("@global_key: ${record_with_various_keys.@global_key}");
-debug_print("键名: ${record_with_various_keys.键名}");
-debug_print("数字键: ${record_with_various_keys[123]}");
+debug_print("normal_key:", record_with_various_keys.normal_key);
+debug_print("_private_key:", record_with_various_keys._private_key);
+debug_print("CamelCaseKey:", record_with_various_keys.CamelCaseKey);
+debug_print("$system_key:", record_with_various_keys.$system_key);
+debug_print("@global_key:", record_with_various_keys.@global_key);
+debug_print("键名:", record_with_various_keys.键名);
+debug_print("数字键:", record_with_various_keys[123]);
 
 // ============================================================================
 // 命名约定建议
@@ -139,20 +129,15 @@ debug_print("数字键: ${record_with_various_keys[123]}");
 let user_name = "Alice";
 let max_retry_count = 3;
 
-fn process_user_data(data) {
-  // 处理用户数据
-  data
-}
+// 处理用户数据
+fn process_user_data(data) { data }
 
 // 常量使用 UPPER_SNAKE_CASE
 let MAX_FILE_SIZE = 1024 * 1024;
 let DEFAULT_TIMEOUT = 30;
 
 // 类型或模块相关使用 PascalCase
-let UserConfig = (
-  theme: "dark",
-  language: "zh-CN"
-);
+let UserConfig = (theme: "dark", language: "zh-CN");
 
 // 临时或循环变量可以使用简短名称
 fn sum_array(arr) {
@@ -168,17 +153,17 @@ debug_print("用户名: $user_name");
 debug_print("最大重试次数: $max_retry_count");
 debug_print("最大文件大小: $MAX_FILE_SIZE");
 debug_print("用户配置: $UserConfig");
-debug_print("数组求和: ${sum_array([1, 2, 3, 4, 5])}");
+debug_print("数组求和:", sum_array([1, 2, 3, 4, 5]));
 
 // ============================================================================
 // 注释的最佳实践
 // ============================================================================
 
 /*
-多行注释适合用于：
-1. 文件头部的版权和说明信息
-2. 大段的文档说明
-3. 临时注释掉大块代码
+ 多行注释适合用于：
+ 1. 文件头部的版权和说明信息
+ 2. 大段的文档说明
+ 3. 临时注释掉大块代码
 */
 
 // 单行注释适合用于：
@@ -189,7 +174,7 @@ debug_print("数组求和: ${sum_array([1, 2, 3, 4, 5])}");
 fn complex_algorithm(data) {
   // TODO: 实现更高效的算法
   // FIXME: 处理边界情况
-  
+
   /* 算法说明：
      这个函数实现了一个复杂的数据处理算法
      输入：data - 要处理的数据数组
@@ -197,16 +182,16 @@ fn complex_algorithm(data) {
      时间复杂度：O(n)
      空间复杂度：O(1)
   */
-  
+
   let mut result = []; // 存储结果
-  
-  for item in data {   // 遍历每个数据项
-    if item > 0 {      // 只处理正数
+
+  for item in data { // 遍历每个数据项
+    if item > 0 { // 只处理正数
       result = [..result, item * 2]; // 乘以2并添加到结果
     }
-    // 负数和零被忽略
+  // 负数和零被忽略
   }
-  
+
   result // 返回处理结果
 }
 

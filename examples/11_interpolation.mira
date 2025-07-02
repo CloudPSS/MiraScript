@@ -56,7 +56,7 @@ debug_print("成绩报告: ${
 
 // 函数调用插值
 fn format_currency(amount) {
-  `$${amount}.00`
+  `\$$(amount).00`
 }
 
 let price = 29.99;

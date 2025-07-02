@@ -1,19 +1,13 @@
 // MiraScript 函数和闭包示例
 
 // 基本函数声明
-fn greet(name) {
-  "Hello, $name!"
-}
+fn greet(name) { "Hello, $name!" }
 
 // 多参数函数
-fn add(x, y) {
-  x + y
-}
+fn add(x, y) { x + y }
 
 // 单参数函数（省略参数列表）
-fn double {
-  it * 2
-}
+fn double { it * 2 }
 
 // 函数作为值
 let multiply = fn (x, y) { x * y };
@@ -21,15 +15,13 @@ let square = fn { it * it };
 
 debug_print("基本函数调用:");
 debug_print(greet("Alice"));
-debug_print("add(3, 4) = ${add(3, 4)}");
-debug_print("double(5) = ${double(5)}");
-debug_print("multiply(6, 7) = ${multiply(6, 7)}");
-debug_print("square(8) = ${square(8)}");
+debug_print("add(3, 4) =", add(3, 4));
+debug_print("double(5) =", double(5));
+debug_print("multiply(6, 7) =", multiply(6, 7));
+debug_print("square(8) =", square(8));
 
 // 高阶函数
-fn apply_twice(func, value) {
-  func(func(value))
-}
+fn apply_twice(func, value) { func(func(value)) }
 
 fn map_array(array, func) {
   let mut result = [];
@@ -40,8 +32,8 @@ fn map_array(array, func) {
 }
 
 debug_print("高阶函数:");
-debug_print("apply_twice(double, 3) = ${apply_twice(double, 3)}");
-debug_print("map_array([1, 2, 3], square) = ${map_array([1, 2, 3], square)}");
+debug_print("apply_twice(double, 3) =", apply_twice(double, 3));
+debug_print("map_array([1, 2, 3], square) =", map_array([1, 2, 3], square));
 
 // 闭包示例
 fn create_counter(initial) {
@@ -65,9 +57,7 @@ debug_print("another_counter() =", another_counter());
 debug_print("counter() =", counter()); // 原计数器不受影响
 
 // 函数工厂
-fn create_multiplier(factor) {
-  (fn { it * factor })
-}
+fn create_multiplier(factor) { (fn { it * factor }) }
 
 let times_three = create_multiplier(3);
 let times_five = create_multiplier(5);
@@ -77,21 +67,9 @@ debug_print("times_three(4) =", times_three(4));
 debug_print("times_five(4) =", times_five(4));
 
 // 递归函数
-fn factorial(n) {
-  if n <= 1 {
-    1
-  } else {
-    n * factorial(n - 1)
-  }
-}
+fn factorial(n) { if n <= 1 { 1 } else { n * factorial(n - 1) } }
 
-fn fibonacci(n) {
-  if n <= 2 {
-    n
-  } else {
-    fibonacci(n - 1) + fibonacci(n - 2)
-  }
-}
+fn fibonacci(n) { if n <= 2 { n } else { fibonacci(n - 1) + fibonacci(n - 2) } }
 
 debug_print("递归函数:");
 debug_print("factorial(5) =", factorial(5));
@@ -132,18 +110,14 @@ debug_print("总和:", sum);
 debug_print("乘积:", product);
 
 // 柯里化示例
-fn curry_add(x) {
-  (fn (y) { x + y })
-}
+fn curry_add(x) { (fn (y) { x + y }) }
 
 let add_five = curry_add(5);
 debug_print("柯里化:");
 debug_print("add_five(3) =", add_five(3));
 
 // 部分应用
-fn partial_apply(func, first_arg) {
-  (fn (second_arg) { func(first_arg, second_arg) })
-}
+fn partial_apply(func, first_arg) { (fn (second_arg) { func(first_arg, second_arg) }) }
 
 let multiply_by_three = partial_apply(multiply, 3);
 debug_print("部分应用:");

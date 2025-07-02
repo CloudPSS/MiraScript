@@ -148,8 +148,8 @@ let company = (
 );
 
 debug_print("嵌套访问:");
-debug_print("Engineering head: ${company.departments.engineering.head}");
-debug_print("Marketing members: ${company.departments.marketing.members}");
+debug_print("Engineering head:", company.departments.engineering.head);
+debug_print("Marketing members:", company.departments.marketing.members);
 
 // 记录的函数式操作
 fn map_record_values(record, mapper) {

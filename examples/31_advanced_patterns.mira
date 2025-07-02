@@ -16,7 +16,7 @@ fn basic_patterns(value) {
 debug_print("基础模式匹配:");
 let basic_tests = [nil, true, false, 0, 1, "hello", 42, "world"];
 for test in basic_tests {
-  debug_print("  ${basic_patterns(test)}");
+  debug_print(" ", basic_patterns(test));
 }
 
 // 关系模式
@@ -34,7 +34,7 @@ fn grade_classifier(score) {
 debug_print("关系模式:");
 let scores = [95, 85, 75, 65, 55, -5];
 for score in scores {
-  debug_print("  Score $score: ${grade_classifier(score)}");
+  debug_print("  Score $score:", grade_classifier(score));
 }
 
 // 范围模式
@@ -50,7 +50,7 @@ fn season_by_month(month) {
 
 debug_print("范围模式:");
 for month in [1, 4, 7, 10, 13] {
-  debug_print("  Month $month: ${season_by_month(month)}");
+  debug_print("  Month $month:", season_by_month(month));
 }
 
 // 数组模式匹配
@@ -66,7 +66,7 @@ fn analyze_array(arr) {
 debug_print("数组模式:");
 let array_tests = [[], [1], [1, 2], [1, 2, 3, 4, 5]];
 for test in array_tests {
-  debug_print("  ${analyze_array(test)}");
+  debug_print(" ", analyze_array(test));
 }
 
 // 记录模式匹配
@@ -95,7 +95,7 @@ let person_tests = [
   "not a record"
 ];
 for test in person_tests {
-  debug_print("  ${analyze_person(test)}");
+  debug_print(" ", analyze_person(test));
 }
 
 // 逻辑模式组合
@@ -113,7 +113,7 @@ fn classify_number(n) {
 debug_print("逻辑模式:");
 let number_tests = [5, 15, 150, -150, -5, 0, nan];
 for test in number_tests {
-  debug_print("  ${classify_number(test)}");
+  debug_print(" ", classify_number(test));
 }
 
 // 嵌套模式匹配
@@ -140,7 +140,7 @@ let nested_tests = [
   "invalid"
 ];
 for test in nested_tests {
-  debug_print("  ${analyze_nested_structure(test)}");
+  debug_print(" ", analyze_nested_structure(test));
 }
 
 // 使用模式匹配进行数据转换
@@ -170,7 +170,7 @@ let user_data = [
 ];
 for user in user_data {
   debug_print("  转换前: $user");
-  debug_print("  转换后: ${transform_user(user)}");
+  debug_print("  转换后:", transform_user(user));
 }
 
 // 类型模式匹配
@@ -193,7 +193,7 @@ fn type_based_processing(value) {
 debug_print("类型模式:");
 let type_tests = [42, -17, 0, nan, "hello", "", true, [1, 2, 3], (a: 1, b: 2), fn{}, nil];
 for test in type_tests {
-  debug_print("  ${type_based_processing(test)}");
+  debug_print(" ", type_based_processing(test));
 }
 // 函数不能存储在数组和记录中
-debug_print("  ${type_based_processing(fn{})}");
+debug_print(" ", type_based_processing(fn{}));
