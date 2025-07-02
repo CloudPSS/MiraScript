@@ -537,7 +537,7 @@ let y = if x > 0 {
 
 #### `match` 表达式
 
-`match` 表达式用于模式匹配，语法为 `match <test> { [case <pattern> <expression>]... }`。其中 `<test>` 是一个表达式；`<pattern>` 是一个模式；`<expression>` 是一个块表达式。
+`match` 表达式用于模式匹配，语法为 `match <test> { [case <pattern> [if <guard>] <expression>]... }`。其中 `<test>` 是一个表达式；`<pattern>` 是一个模式；`<guard>` 是一个表达式；`<expression>` 是一个块表达式。
 
 `match` 表达式的值为第一个匹配成功的 `<expression>` 的值。当没有匹配成功的模式时，表达式的值为 `nil`。
 
@@ -547,6 +547,7 @@ let y = match x {
   case 1 { "one" }
   case 2 { "two" }
   case 3 { "three" }
+  case x if x > 0 { "positive" }
   case _ { "other" }
 }; // y 的值为 "one"
 let z = match x {}; // z 的值为 nil
