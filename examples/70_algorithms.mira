@@ -12,7 +12,7 @@ fn bubble_sort(arr) {
       if result[j] > result[j + 1] {
         // 交换元素
         let temp = result[j];
-        result = [..result[..j], result[j + 1], temp, ..result[j + 2..]];
+        result = [..result[..<j], result[j + 1], temp, ..result[j + 2..]];
       }
     }
   }
@@ -73,8 +73,8 @@ fn merge(left, right) {
 
 fn merge_sort(arr) {
   if len(arr) <= 1 { arr } else {
-    let mid = len(arr) / 2;
-    let left = arr[..mid];
+    let mid = round(len(arr) / 2);
+    let left = arr[..<mid];
     let right = arr[mid..];
     merge(merge_sort(left), merge_sort(right))
   }
@@ -98,7 +98,7 @@ fn binary_search(arr, target) {
   let mut right = len(arr) - 1;
 
   while left <= right {
-    let mid = (left + right) / 2;
+    let mid = round((left + right) / 2);
     if arr[mid] == target {
       return mid;
     } else if arr[mid] < target {
@@ -113,29 +113,46 @@ fn binary_search(arr, target) {
 // 数据结构相关算法
 
 // 栈操作模拟
-fn stack_push(stack, item) { [..stack, item] }
+fn stack_push(stack, item) { 
+  [..stack, item]
+}
 
-fn stack_pop(stack) { if len(stack) == 0 { (stack: stack, item: nil) } else { (stack: stack[..-1], item: stack[-1]) } }
+fn stack_pop(stack) { 
+  if len(stack) == 0 { 
+    (stack: stack, item: nil)
+  } else {
+    (stack: stack[..<-1], item: stack[-1])
+  }
+}
 
 // 队列操作模拟
-fn queue_enqueue(queue, item) { [..queue, item] }
+fn queue_enqueue(queue, item) {
+  [..queue, item]
+}
 
-fn queue_dequeue(queue) { if len(queue) == 0 { (queue: queue, item: nil) } else { (queue: queue[1..], item: queue[0]) } }
+fn queue_dequeue(queue) {
+  if len(queue) == 0 {
+    (queue: queue, item: nil)
+  } else {
+    (queue: queue[1..], item: queue[0])
+  }
+}
 
 // 图算法 - 深度优先搜索（DFS）
-fn dfs(graph, start, visited) {
-  let mut new_visited = [..visited, start];
-  debug_print("访问节点: $start");
+fn dfs(graph, start) {
+  let mut visited = [];
+  visit(start);
 
-  if start in graph {
-    for neighbor in graph[start] {
-      if !(neighbor in visited) {
-        new_visited = dfs(graph, neighbor, new_visited);
-      }
+  fn visit {
+    if it in visited {
+      return;
+    }
+    visited = [..visited, it];
+    debug_print("访问节点:", it);
+    for neighbor in graph[it] {
+      visit(neighbor);
     }
   }
-
-  new_visited
 }
 
 // 图算法 - 广度优先搜索（BFS）
@@ -147,7 +164,7 @@ fn bfs(graph, start) {
     let current = queue[0];
     queue = queue[1..];
 
-    debug_print("访问节点: $current");
+    debug_print("访问节点:", current);
 
     if current in graph {
       for neighbor in graph[current] {
@@ -182,7 +199,7 @@ fn lcs_length(str1, str2) {
 // 测试排序算法
 debug_print("排序算法测试:");
 let unsorted = [64, 34, 25, 12, 22, 11, 90];
-debug_print("原数组: $unsorted");
+debug_print("原数组:", unsorted);
 
 debug_print("冒泡排序:", bubble_sort(unsorted));
 debug_print("快速排序:", quick_sort(unsorted));
@@ -193,8 +210,8 @@ debug_print("搜索算法测试:");
 let sorted_array = [1, 3, 5, 7, 9, 11, 13, 15, 17, 19];
 let target = 7;
 
-debug_print("数组: $sorted_array");
-debug_print("查找目标: $target");
+debug_print("数组:", sorted_array);
+debug_print("查找目标:", target);
 debug_print("线性搜索结果:", linear_search(sorted_array, target));
 debug_print("二分搜索结果:", binary_search(sorted_array, target));
 
@@ -204,7 +221,7 @@ let mut stack = [];
 stack = stack_push(stack, 1);
 stack = stack_push(stack, 2);
 stack = stack_push(stack, 3);
-debug_print("入栈后: $stack");
+debug_print("入栈后:", stack);
 
 let pop_result = stack_pop(stack);
 debug_print("出栈元素:", pop_result.item);
@@ -216,7 +233,7 @@ let mut queue = [];
 queue = queue_enqueue(queue, "A");
 queue = queue_enqueue(queue, "B");
 queue = queue_enqueue(queue, "C");
-debug_print("入队后: $queue");
+debug_print("入队后:", queue);
 
 let dequeue_result = queue_dequeue(queue);
 debug_print("出队元素:", dequeue_result.item);
@@ -226,7 +243,7 @@ debug_print("出队后:", dequeue_result.queue);
 debug_print("图算法测试:");
 let graph = (A: ["B", "C"], B: ["A", "D", "E"], C: ["A", "F"], D: ["B"], E: ["B", "F"], F: ["C", "E"]);
 
-debug_print("图结构: $graph");
+debug_print("图结构:", graph);
 debug_print("DFS 遍历（从 A 开始）:");
 dfs(graph, "A", []);
 
@@ -237,6 +254,6 @@ bfs(graph, "A");
 debug_print("动态规划测试:");
 let str1 = "ABCDGH";
 let str2 = "AEDFHR";
-debug_print("字符串1: $str1");
-debug_print("字符串2: $str2");
-debug_print("最长公共子序列长度:", lcs_length(str1, str2));
+debug_print("字符串1:", str1);
+debug_print("字符串2:", str2);
+debug_print("最长公共子序列长度:", lcs_length(str1::chars(), str2::chars()));

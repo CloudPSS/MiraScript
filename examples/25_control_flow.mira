@@ -63,7 +63,7 @@ let found_even = for i in [1, 3, 5, 7, 8, 9] {
     break i;
   }
 } else { "没有找到偶数" };
-debug_print("找到的偶数: $found_even");
+debug_print("找到的偶数:", found_even);
 
 // while 循环
 debug_print("while 循环示例:");
@@ -75,7 +75,7 @@ while count < 5 {
 } else {
   debug_print("循环正常结束");
 }
-debug_print("总和: $sum");
+debug_print("总和:", sum);
 
 // 使用 break 和 continue
 debug_print("break 和 continue 示例:");
@@ -86,9 +86,9 @@ let result = for i in 1..10 {
   if i > 7 {
     break i; // 找到第一个大于7的奇数就退出
   }
-  debug_print("  处理奇数: $i");
+  debug_print("  处理奇数:", i);
 };
-debug_print("退出时的值: $result");
+debug_print("退出时的值:", result);
 
 // loop 无限循环
 debug_print("loop 循环示例:");
@@ -98,9 +98,9 @@ let final_value = loop {
   if counter >= 3 {
     break counter * 10;
   }
-  debug_print("  Counter: $counter");
+  debug_print("  Counter:", counter);
 };
-debug_print("最终值: $final_value");
+debug_print("最终值:", final_value);
 
 // 嵌套控制流
 debug_print("嵌套控制流示例:");
@@ -119,4 +119,4 @@ fn find_in_matrix(matrix, target) {
 let matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]];
 
 let position = find_in_matrix(matrix, 5) ?? "未找到";
-debug_print("在矩阵中找到5的位置: $position");
+debug_print("在矩阵中找到5的位置:", position);

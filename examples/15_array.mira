@@ -7,7 +7,7 @@ debug_print("Last element:", array[-1]);
 debug_print("Element at index 5:", array.5);
 
 // 数组切片示例
-debug_print("First 3 elements:", array[..3]);
+debug_print("First 3 elements:", array[..<3]);
 debug_print("Elements from index 2:", array[2..]);
 debug_print("Elements 5 to 10:", array[5..10]);
 debug_print("Elements 5 to 10 (exclusive):", array[5..<10]);
@@ -15,7 +15,7 @@ debug_print("Elements 5 to 10 (exclusive):", array[5..<10]);
 // 使用扩展调用语法过滤数组
 let filtered = array::filter(fn { it >= 10 && it <= 20 });
 
-debug_print("过滤后的数组: $filtered");
+debug_print("过滤后的数组:", filtered);
 
 // 数组模式匹配示例
 let [first, second, ..rest] = array;

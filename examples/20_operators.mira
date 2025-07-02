@@ -43,7 +43,7 @@ debug_print("nil ?? 'default' =", nil ?? 'default');
 
 // 短路求值演示
 fn side_effect(value) {
-  debug_print("Side effect called with: $value");
+  debug_print("Side effect called with:", value);
   value
 }
 
@@ -79,12 +79,12 @@ debug_print("2 * 3 ^ 4 =", 2 * 3^4);
 // 链式调用和扩展调用
 let numbers = [1, 2, 3, 4, 5];
 let result = numbers::filter(fn { it % 2 == 1 })::map(fn { it * 2 })::sum();
-debug_print("链式调用结果: $result");
+debug_print("链式调用结果:", result);
 
 // 空安全访问
 let maybe_record = nil;
 let safe_access = maybe_record.nonexistent ?? "default";
-debug_print("空安全访问: $safe_access");
+debug_print("空安全访问:", safe_access);
 
 // 非空断言（会在运行时检查）
 // let unsafe_access = maybe_record.nonexistent!; // 这会抛出 NilError

@@ -76,7 +76,7 @@ for shape in shapes {
       debug_print("无法计算面积: 形状无效或参数错误");
     }
     case a {
-      debug_print("面积: $a");
+      debug_print("面积:", a);
     }
   }
 }
@@ -112,13 +112,7 @@ fn validate_user(user) {
 }
 
 debug_print("用户验证示例:");
-let test_users = [
-  (name: "Alice", age: 30, email: "alice@example.com"),
-  (name: "", age: 25, email: "bob@example.com"),
-  (name: "Charlie", age: -5, email: "charlie@example.com"),
-  (name: "David", age: 35, email: "invalid-email"),
-  (age: 40, email: "eve@example.com")
-]; // 缺少姓名
+let test_users = [(name: "Alice", age: 30, email: "alice@example.com"), (name: "", age: 25, email: "bob@example.com"), (name: "Charlie", age: -5, email: "charlie@example.com"), (name: "David", age: 35, email: "invalid-email"), (age: 40, email: "eve@example.com")]; // 缺少姓名
 
 for user in test_users {
   let validation = validate_user(user);

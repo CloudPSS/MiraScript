@@ -60,7 +60,7 @@ let coordinates = [10, 20, 30];
 let [x, y, z] = coordinates;
 
 debug_print("数组解构:");
-debug_print("X: $x, Y: $y, Z: $z");
+debug_print("X: $x, Y: $y, Z:", z);
 
 // 部分解构
 let [first, ..rest] = [1, 2, 3, 4, 5];
@@ -69,21 +69,9 @@ debug_print("First:", first);
 debug_print("Rest:", rest);
 
 // 嵌套解构
-let nested_data = (
-  id: 123,
-  user: (
-    profile: (name: "Charlie", age: 35),
-    settings: (theme: "dark", lang: "en")
-  )
-);
+let nested_data = (id: 123, user: (profile: (name: "Charlie", age: 35), settings: (theme: "dark", lang: "en")));
 
-let (
-  :id,
-  user: (
-    profile: (name: user_name, :age),
-    settings: (:theme, :lang)
-  )
-) = nested_data;
+let (:id, user: (profile: (name: user_name, :age), settings: (:theme, :lang))) = nested_data;
 
 debug_print("嵌套解构:");
 debug_print("ID:", id);
@@ -107,44 +95,36 @@ mutable_c *= 3;
 
 debug_print("修改后:");
 debug_print("Immutable a:", immutable_a); // 不变
-debug_print("Mutable b:", mutable_b);    // 改变
-debug_print("Mutable c:", mutable_c);    // 改变
+debug_print("Mutable b:", mutable_b); // 改变
+debug_print("Mutable c:", mutable_c); // 改变
 
 // 忽略不需要的值
 let data_array = [100, 200, 300, 400, 500];
 let [wanted1, _, wanted3, ..] = data_array;
 
 debug_print("忽略值:");
-debug_print("Wanted 1: $wanted1");
-debug_print("Wanted 3: $wanted3");
+debug_print("Wanted 1:", wanted1);
+debug_print("Wanted 3:", wanted3);
 
 // 模式匹配失败的处理
 let maybe_pair = (1, 2, 3); // 三元组，不是二元组
 let (first_item, second_item) = maybe_pair; // 模式匹配会失败，但不会抛出异常
 
 debug_print("模式匹配失败:");
-debug_print("First item: $first_item");  // 应该是 1
-debug_print("Second item: $second_item"); // 应该是 2，第三个元素被忽略
+debug_print("First item:", first_item); // 应该是 1
+debug_print("Second item:", second_item); // 应该是 2，第三个元素被忽略
 
 // 在函数中使用解构参数
-fn process_point((x, y)) {
-  "Point at ($x, $y), distance from origin: ${sqrt(x*x + y*y)}"
-}
+fn process_point((x, y)) { "Point at ($x, $y), distance from origin: ${ sqrt(x * x + y * y) }" }
 
-fn process_person((name: n, age: a)) {
-  "Person $n is $a years old"
-}
+fn process_person((name: n, age: a)) { "Person $n is $a years old" }
 
 debug_print("函数参数解构:");
 debug_print(process_point((3, 4)));
 debug_print(process_person((name: "David", age: 40)));
 
 // 在循环中使用解构
-let people = [
-  (name: "Alice", age: 30),
-  (name: "Bob", age: 25),
-  (name: "Charlie", age: 35)
-];
+let people = [(name: "Alice", age: 30), (name: "Bob", age: 25), (name: "Charlie", age: 35)];
 
 debug_print("循环中的解构:");
 for (name: n, age: a) in people {

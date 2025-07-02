@@ -54,14 +54,6 @@ debug_print("成绩报告: ${
   report
 }");
 
-// 函数调用插值
-fn format_currency(amount) {
-  `\$$(amount).00`
-}
-
-let price = 29.99;
-debug_print("商品价格: ${format_currency(price)}");
-
 // 条件插值
 let weather = "sunny";
 debug_print(`今天天气${

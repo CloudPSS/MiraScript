@@ -9,7 +9,7 @@ fn basic_patterns(value) {
     case 0 { "零" }
     case 1 { "一" }
     case "hello" { "问候" }
-    case _ { "其他: ${type(value)}" }
+    case _ { "其他: ${ type(value) }" }
   }
 }
 
@@ -59,7 +59,7 @@ fn analyze_array(arr) {
     case [] { "空数组" }
     case [single] { "单元素数组: $single" }
     case [first, second] { "双元素数组: $first, $second" }
-    case [first, ..rest] { "数组首元素: $first, 剩余 ${len(rest)} 个" }
+    case [first, ..rest] { "数组首元素: $first, 剩余 ${ len(rest) } 个" }
   }
 }
 
@@ -73,7 +73,7 @@ for test in array_tests {
 fn analyze_person(person) {
   match person {
     case (name: "Alice") { "这是 Alice" }
-    case (name: n, age: >65) { "$n 是老年人" }
+    case (name: n, age: > 65) { "$n 是老年人" }
     case (name: n, age: 18..65) { "$n 是成年人" }
     case (name: n, age: a) { "$n 今年 $a 岁" }
     case (:name) { "只知道姓名: $name" }
@@ -84,16 +84,7 @@ fn analyze_person(person) {
 }
 
 debug_print("记录模式:");
-let person_tests = [
-  (name: "Alice", age: 30),
-  (name: "Bob", age: 70),
-  (name: "Charlie", age: 25),
-  (name: "David", age: 10),
-  (name: "Eve"),
-  (age: 45),
-  (),
-  "not a record"
-];
+let person_tests = [(name: "Alice", age: 30), (name: "Bob", age: 70), (name: "Charlie", age: 25), (name: "David", age: 10), (name: "Eve"), (age: 45), (), "not a record"];
 for test in person_tests {
   debug_print(" ", analyze_person(test));
 }
@@ -121,24 +112,14 @@ fn analyze_nested_structure(data) {
   match data {
     case (users: []) { "用户列表为空" }
     case (users: [(name: "admin", ..admin_info)]) { "只有管理员: $admin_info" }
-    case (users: [first, ..others], config: (debug: true)) { 
-      "调试模式，用户: $first，还有 ${len(others)} 个用户" 
-    }
-    case (users: users, config: config) { 
-      "有 ${len(users)} 个用户，配置: $config" 
-    }
+    case (users: [first, ..others], config: (debug: true)) { "调试模式，用户: $first，还有 ${ len(others) } 个用户" }
+    case (users: users, config: config) { "有 ${ len(users) } 个用户，配置: $config" }
     case _ { "未知结构" }
   }
 }
 
 debug_print("嵌套模式:");
-let nested_tests = [
-  (users: [], config: (debug: false)),
-  (users: [(name: "admin", role: "administrator")], config: (debug: false)),
-  (users: [(name: "alice"), (name: "bob")], config: (debug: true)),
-  (users: [(name: "charlie")], config: (timeout: 5000)),
-  "invalid"
-];
+let nested_tests = [(users: [], config: (debug: false)), (users: [(name: "admin", role: "administrator")], config: (debug: false)), (users: [(name: "alice"), (name: "bob")], config: (debug: true)), (users: [(name: "charlie")], config: (timeout: 5000)), "invalid"];
 for test in nested_tests {
   debug_print(" ", analyze_nested_structure(test));
 }
@@ -146,30 +127,17 @@ for test in nested_tests {
 // 使用模式匹配进行数据转换
 fn transform_user(user) {
   match user {
-    case (name: n, email: e, active: true) { 
-      (display_name: n, contact: e, status: "active")
-    }
-    case (name: n, email: e, active: false) { 
-      (display_name: n, contact: e, status: "inactive")
-    }
-    case (name: n, active: status) { 
-      (display_name: n, contact: "no-email", status: if status { "active" } else { "inactive" })
-    }
-    case _ { 
-      (display_name: "unknown", contact: "no-email", status: "unknown")
-    }
+    case (name: n, email: e, active: true) { (display_name: n, contact: e, status: "active") }
+    case (name: n, email: e, active: false) { (display_name: n, contact: e, status: "inactive") }
+    case (name: n, active: status) { (display_name: n, contact: "no-email", status: if status { "active" } else { "inactive" }) }
+    case _ { (display_name: "unknown", contact: "no-email", status: "unknown") }
   }
 }
 
 debug_print("数据转换:");
-let user_data = [
-  (name: "Alice", email: "alice@example.com", active: true),
-  (name: "Bob", email: "bob@example.com", active: false),
-  (name: "Charlie", active: true),
-  (id: 123)
-];
+let user_data = [(name: "Alice", email: "alice@example.com", active: true), (name: "Bob", email: "bob@example.com", active: false), (name: "Charlie", active: true), (id: 123)];
 for user in user_data {
-  debug_print("  转换前: $user");
+  debug_print("  转换前:", user);
   debug_print("  转换后:", transform_user(user));
 }
 
@@ -182,8 +150,8 @@ fn type_based_processing(value) {
     case ("string", x and not "") { "非空字符串: '$x'" }
     case ("string",) { "空字符串" }
     case ("boolean", x) { "布尔值: $x" }
-    case ("array", x) { "数组，长度: ${len(x)}" }
-    case ("record", x) { "记录，键数: ${x::keys()::len()}" }
+    case ("array", x) { "数组，长度: ${ len(x) }" }
+    case ("record", x) { "记录，键数: ${ x::keys()::len() }" }
     case ("function",) { "函数" }
     case ("nil",) { "空值" }
     case _ { "未知类型" }
@@ -191,9 +159,9 @@ fn type_based_processing(value) {
 }
 
 debug_print("类型模式:");
-let type_tests = [42, -17, 0, nan, "hello", "", true, [1, 2, 3], (a: 1, b: 2), fn{}, nil];
+let type_tests = [42, -17, 0, nan, "hello", "", true, [1, 2, 3], (a: 1, b: 2), fn { }, nil];
 for test in type_tests {
   debug_print(" ", type_based_processing(test));
 }
 // 函数不能存储在数组和记录中
-debug_print(" ", type_based_processing(fn{}));
+debug_print(" ", type_based_processing(fn { }));

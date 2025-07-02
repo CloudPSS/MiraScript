@@ -37,11 +37,11 @@ let snake_case = "下划线命名";
 let Variable123 = "包含数字";
 
 debug_print("标准标识符:");
-debug_print("normal_variable: $normal_variable");
-debug_print("_private_variable: $_private_variable");
-debug_print("CamelCase: $CamelCase");
-debug_print("snake_case: $snake_case");
-debug_print("Variable123: $Variable123");
+debug_print("normal_variable:", normal_variable);
+debug_print("_private_variable:", _private_variable);
+debug_print("CamelCase:", CamelCase);
+debug_print("snake_case:", snake_case);
+debug_print("Variable123:", Variable123);
 
 // 以 $ 开头的标识符（保留供系统使用，但仍可用）
 let $system_var = "系统变量";
@@ -65,9 +65,9 @@ let Variable = "首字母大写";
 let VARIABLE = "全大写";
 
 debug_print("区分大小写:");
-debug_print("variable: $variable");
-debug_print("Variable: $Variable");
-debug_print("VARIABLE: $VARIABLE");
+debug_print("variable:", variable);
+debug_print("Variable:", Variable);
+debug_print("VARIABLE:", VARIABLE);
 
 // Unicode 标识符（如果支持）
 let 变量名 = "中文变量名";
@@ -75,17 +75,17 @@ let 数量 = 42;
 let π = 3.141_59;
 
 debug_print("Unicode 标识符:");
-debug_print("变量名: $变量名");
-debug_print("数量: $数量");
-debug_print("π: $π");
+debug_print("变量名:", $1);
+debug_print("数量:", $1);
+debug_print("π:", $1);
 
 // 长标识符
 let very_long_variable_name_that_describes_something_important = "长变量名";
 let aVeryLongCamelCaseVariableNameThatIsStillValid = "长驼峰变量名";
 
 debug_print("长标识符:");
-debug_print("长变量名: $very_long_variable_name_that_describes_something_important");
-debug_print("长驼峰名: $aVeryLongCamelCaseVariableNameThatIsStillValid");
+debug_print("长变量名:", very_long_variable_name_that_describes_something_important);
+debug_print("长驼峰名:", aVeryLongCamelCaseVariableNameThatIsStillValid);
 
 // ============================================================================
 // 函数和记录中的标识符
@@ -106,7 +106,7 @@ fn $system_function() { "这是系统函数" }
 
 debug_print("函数标识符:");
 let avg = calculate_average([1, 2, 3, 4, 5]);
-debug_print("平均值: $avg");
+debug_print("平均值:", avg);
 debug_print("系统函数:", $system_function());
 
 // 记录键名可以是任何有效标识符
@@ -149,10 +149,10 @@ fn sum_array(arr) {
 }
 
 debug_print("命名约定示例:");
-debug_print("用户名: $user_name");
-debug_print("最大重试次数: $max_retry_count");
-debug_print("最大文件大小: $MAX_FILE_SIZE");
-debug_print("用户配置: $UserConfig");
+debug_print("用户名:", user_name);
+debug_print("最大重试次数:", max_retry_count);
+debug_print("最大文件大小:", MAX_FILE_SIZE);
+debug_print("用户配置:", UserConfig);
 debug_print("数组求和:", sum_array([1, 2, 3, 4, 5]));
 
 // ============================================================================
@@ -198,8 +198,8 @@ fn complex_algorithm(data) {
 debug_print("复杂算法示例:");
 let test_data = [-1, 0, 1, 2, 3, -4, 5];
 let processed = complex_algorithm(test_data);
-debug_print("输入: $test_data");
-debug_print("输出: $processed");
+debug_print("输入:", test_data);
+debug_print("输出:", processed);
 
 // 文件结束注释
 debug_print("注释和标识符示例完成！");

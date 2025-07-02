@@ -13,7 +13,7 @@ export const Element = (value: VmAny): VmConst => {
 
 export const ElementOpt = (key: string, value: VmAny): VmConst => {
     $AssertInit(value);
-    if (!isVmConst(value)) return {};
+    if (value == null || !isVmConst(value)) return {};
     return { [key]: value };
 };
 
