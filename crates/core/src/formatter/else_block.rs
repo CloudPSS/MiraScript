@@ -18,6 +18,9 @@ impl Formattable for ElseBlock<'_> {
 impl Formattable for Option<ElseBlock<'_>> {
     fn measure(&self, formatter: &Formatter, indent: usize) -> usize {
         if let Some(else_block) = self {
+            if else_block.1.is_if() {
+                return usize::max(1, else_block.measure(formatter, indent));
+            }
             else_block.measure(formatter, indent)
         } else {
             0

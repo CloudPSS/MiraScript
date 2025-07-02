@@ -176,7 +176,10 @@ impl Formattable for Expression<'_> {
                     formatter.write_token(cp);
                     return;
                 }
-                if statements.is_empty() && formatter.measure(expression.unwrap()) == 0 {
+                if statements.is_empty()
+                    && !expression.unwrap().is_block_like()
+                    && formatter.measure(expression.unwrap()) == 0
+                {
                     let expression = expression.unwrap();
                     formatter.write_token(op);
                     formatter.write_space();
