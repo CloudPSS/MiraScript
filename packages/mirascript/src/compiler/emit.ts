@@ -547,8 +547,7 @@ class Emitter {
                 reg = read();
                 const level = read();
                 const up = read();
-                // 先读取，以报告 uninitialized 错误
-                code = `Upvalue(${this.rv(up, level)}); ${this.wv(up, level)} = ${this.rv(reg)};`;
+                code = `${this.wv(up, level)} = ${this.rv(reg)};`;
                 break;
             }
             case OpCode.Slice: {
