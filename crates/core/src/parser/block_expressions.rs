@@ -3,6 +3,8 @@ use winnow::{
     token::any,
 };
 
+use crate::parser::expressions::expression;
+
 use super::expressions::expression_or_insert;
 use super::helper::{statements_and_expression, token, token_or_insert};
 use super::iterables::iterable;
@@ -99,30 +101,46 @@ pub(super) fn while_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> 
 }
 
 pub(super) fn match_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
-    seq!(Expression::Match(
+    fn branch_parser<'s>(
+        i: &mut Input<'s>,
+    ) -> Result<(
+        TokenRef<'s>,
+        Pattern<'s>,
+        Option<(TokenRef<'s>, Expression<'s>)>,
+        Expression<'s>,
+    )> {
+        (
+            alt((
+                (
+                    token(Keyword::Case),
+                    pattern_or_insert(false, |t| *t == Operator::OpenBrace || *t == Keyword::If),
+                    opt((
+                        token(Keyword::If),
+                        expression_or_insert(|t| *t == Operator::OpenBrace),
+                    )),
+                ),
+                (
+                    token_or_insert(Keyword::Case, DiagnosticCode::MissingCase),
+                    pattern(false),
+                    opt((token(Keyword::If), expression)),
+                ),
+            )),
+            block_expression,
+        )
+            .map(|((kw_case, pattern, guard), body)| (kw_case, pattern, guard, body))
+            .parse_next(i)
+    }
+    (
         token(Keyword::Match),
         expression_or_insert(|t| *t == Operator::OpenBrace).map(Box::new),
         token_or_insert(Operator::OpenBrace, DiagnosticCode::MissingOpenBrace),
-        repeat(
-            0..,
-            (
-                alt((
-                    (
-                        token(Keyword::Case),
-                        pattern_or_insert(false, |t| *t == Operator::OpenBrace),
-                    ),
-                    (
-                        token_or_insert(Keyword::Case, DiagnosticCode::MissingCase),
-                        pattern(false),
-                    )
-                )),
-                block_expression,
-            )
-                .map(|((kw_case, pattern), block)| (kw_case, pattern, block)),
-        ),
+        repeat(0.., branch_parser),
         token_or_insert(Operator::CloseBrace, DiagnosticCode::MissingCloseBrace),
-    ))
-    .parse_next(i)
+    )
+        .map(|(kw_match, expr, open, branches, close)| {
+            Expression::Match(kw_match, expr, open, branches, close)
+        })
+        .parse_next(i)
 }
 
 pub(super) fn for_in_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {

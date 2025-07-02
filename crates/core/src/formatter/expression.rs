@@ -248,11 +248,17 @@ impl Formattable for Expression<'_> {
                 }
                 formatter.indent();
                 formatter.new_line();
-                for (i, (kw, pattern, expression)) in items.iter().enumerate() {
+                for (i, (kw, pattern, guard, expression)) in items.iter().enumerate() {
                     formatter.write_token(kw);
                     formatter.write_space();
                     pattern.format(formatter, measurement);
                     formatter.write_space();
+                    if let Some((kw, expr)) = guard {
+                        formatter.write_token(kw);
+                        formatter.write_space();
+                        expr.format(formatter, measurement);
+                        formatter.write_space();
+                    }
                     expression.format(formatter, measurement);
                     if i != items.len() - 1 {
                         formatter.new_line();

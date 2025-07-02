@@ -199,7 +199,7 @@ pub enum Expression<'s> {
         Box<Expression<'s>>,
         Option<ElseBlock<'s>>,
     ),
-    /// `match` expression `{` `case` ((literal | '_') block_expression)* `}`
+    /// `match` expression `{` ( `case` pattern (`if` expression)? block_expression)* `}`
     ///
     /// The value of the block is the value of the matched expression.
     ///
@@ -208,7 +208,12 @@ pub enum Expression<'s> {
         TokenRef<'s>,
         Box<Expression<'s>>,
         TokenRef<'s>,
-        Vec<(TokenRef<'s>, Pattern<'s>, Expression<'s>)>,
+        Vec<(
+            TokenRef<'s>,
+            Pattern<'s>,
+            Option<(TokenRef<'s>, Expression<'s>)>,
+            Expression<'s>,
+        )>,
         TokenRef<'s>,
     ),
     /// `fn` parameters? block_expression
@@ -415,9 +420,13 @@ impl<'s> AstWalker<'s> for Expression<'s> {
                 kw.collect_diagnostics(collector);
                 expression.collect_diagnostics(collector);
                 op.collect_diagnostics(collector);
-                for (kw_case, pattern, block) in arms {
+                for (kw_case, pattern, guard, block) in arms {
                     kw_case.collect_diagnostics(collector);
                     pattern.collect_diagnostics(collector);
+                    if let Some((kw, expr)) = guard {
+                        kw.collect_diagnostics(collector);
+                        expr.collect_diagnostics(collector);
+                    }
                     block.collect_diagnostics(collector);
                 }
                 cp.collect_diagnostics(collector);

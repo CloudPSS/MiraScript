@@ -231,10 +231,22 @@ impl<'s> Emitter<'s> {
                     kw_match.range(),
                     DiagnosticCode::KeywordMatch,
                 ));
-                self.diagnostics
-                    .extend(branches.iter().map(|(kw_case, _, _)| {
-                        SourceDiagnostic::new(kw_case.range(), DiagnosticCode::KeywordCase)
-                    }));
+                self.diagnostics.extend(
+                    branches
+                        .iter()
+                        .flat_map(|(kw_case, _, guard, _)| {
+                            [
+                                Some(SourceDiagnostic::new(
+                                    kw_case.range(),
+                                    DiagnosticCode::KeywordCase,
+                                )),
+                                guard.as_ref().map(|(kw_if, _)| {
+                                    SourceDiagnostic::new(kw_if.range(), DiagnosticCode::KeywordIf)
+                                }),
+                            ]
+                        })
+                        .filter_map(|d| d),
+                );
             }
             Function(_, _, _) => (),
             Unknown { .. } => (),
@@ -1011,7 +1023,7 @@ impl<'s> Emitter<'s> {
                     self.op_nil(ret);
                 }
 
-                for (kw_case, pattern, body) in items {
+                for (kw_case, pattern, guard, body) in items {
                     let Expression::Block(_, stmts, expr, end) = body else {
                         return;
                     };
@@ -1019,11 +1031,19 @@ impl<'s> Emitter<'s> {
                     self.enter_scope(kw_case.range.end..end.range.end);
 
                     self.declare_pattern(pattern, Some(BindType::Init));
+                    if let Some((_, expr)) = guard.as_ref() {
+                        self.declare_expression(expr);
+                    }
                     self.declare_block(stmts, expr);
 
                     self.op_if(OpCode::IfNot, matched);
                     {
                         self.emit_pattern(matched, pattern, matcher, Some(BindType::Init));
+                        if let Some((_, expr)) = guard.as_ref() {
+                            self.op_if(OpCode::If, matched);
+                            self.emit_expression(expr, matched, brk);
+                            self.op_if_end();
+                        }
                         self.op_if(OpCode::If, matched);
                         {
                             self.emit_block(stmts, expr, ret, brk);
