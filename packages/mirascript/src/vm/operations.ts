@@ -254,19 +254,24 @@ export const $ToBoolean = (value: VmAny): boolean => {
 };
 
 /** 将值转为字符串 */
-function innerToString(value: VmAny): string {
+function innerToString(value: VmAny, useBraces: boolean): string {
     if (value == null) return 'nil';
     if (value instanceof VmWrapper) return value.toString();
     if (typeof value == 'function') {
         const name = getVmFunctionInfo(value)?.fullName;
         return name ? `<function ${name}>` : `<function>`;
     }
-    if (isVmArray(value)) return `[${value.map(innerToString).join(', ')}]`;
+    if (isVmArray(value)) {
+        const results = Array.from({ length: value.length }, (_, i) => innerToString(value[i], true)).join(', ');
+        if (!useBraces) return results;
+        return `[${results}]`;
+    }
     if (typeof value == 'object') {
-        const entries = keys(value).map(
-            (key) => `${key}: ${innerToString((value as Record<string, VmImmutable>)[key])}`,
-        );
-        return `(${entries.join(', ')})`;
+        const entries = keys(value)
+            .map((key) => `${key}: ${innerToString(value[key], true)}`)
+            .join(', ');
+        if (!useBraces) return entries;
+        return `(${entries})`;
     }
     if (typeof value == 'number') {
         if (isNaN(value)) return 'nan';
@@ -279,8 +284,7 @@ function innerToString(value: VmAny): string {
 export const $ToString = (value: VmAny): string => {
     $AssertInit(value);
     if (value === null) return '';
-    if (isVmArray(value)) return value.map(innerToString).join(', ');
-    return innerToString(value);
+    return innerToString(value, false);
 };
 export const $ToNumber = (value: VmAny): number => {
     $AssertInit(value);
