@@ -1,0 +1,13 @@
+// Yin-Yang puzzle in MiraScript
+
+fn with_cc(cc) {
+  cc(cc);
+}
+
+with_cc(fn (yin) {
+  debug_print("@");
+  with_cc(fn (yang) {
+    debug_print("*");
+    yin(yang);
+  });
+});
