@@ -38,7 +38,11 @@ pub enum DiagnosticCode {
     InvalidNumberLiteral,
     #[strum(message = "Number literal is too large")]
     OverflowNumberLiteral,
-    #[strum(message = "Invalid ordinal literal")]
+    #[strum(message = "Integer literal is too large")]
+    OverflowIntegerLiteral,
+    #[strum(
+        message = "Invalid ordinal literal; consider remove leading zeros and underscores, or use `[$0]` instead"
+    )]
     InvalidOrdinalLiteral,
     #[strum(message = "String literal is not terminated")]
     UnterminatedString,
