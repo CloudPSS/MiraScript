@@ -333,7 +333,7 @@ class Emitter {
                     const wv = this.wv(i + 1, -1);
                     if (varg && i === argn - 1) {
                         // 最后一个参数为可变参数
-                        return `...${wv}`;
+                        return `...vargs`;
                     }
                     return `${wv} = null`;
                 });
@@ -345,6 +345,9 @@ class Emitter {
                     code = `return (function script(${args.join(', ')}) { try{ CpEnter(); let ${regs};`;
                 } else {
                     code = `${this.wv(reg)} = Function(function (${args.join(', ')}) { try{ CpEnter(); let ${regs};`;
+                }
+                if (varg) {
+                    code += ` let ${this.wv(argn, -1)} = Vargs(vargs);`;
                 }
                 break;
             }

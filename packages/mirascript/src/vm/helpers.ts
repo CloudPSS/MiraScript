@@ -5,6 +5,15 @@ import { isVmConst, VmFunction, type VmConst, type VmAny, type VmArray, type VmV
 const { isFinite } = Number;
 const { ceil } = Math;
 
+export const Vargs = (varags: VmAny[]): VmArray => {
+    for (let i = 0, l = varags.length; i < l; i++) {
+        const el = varags[i];
+        if (!isVmConst(el)) {
+            varags[i] = null;
+        }
+    }
+    return varags as VmArray;
+};
 export const Element = (value: VmAny): VmConst => {
     $AssertInit(value);
     if (!isVmConst(value)) return null;
