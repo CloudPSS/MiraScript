@@ -249,11 +249,11 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
             doc_mode: [
                 // inline doc, start with `\0`
                 [
-                    /^(\0@inlineDocParam)(@whitespace+)(..|)(mut)(@whitespace+)(@identifier)/,
+                    /^(\0@inlineDocParam)(@whitespace+)(\.\.|)(mut)(@whitespace+)(@identifier)/,
                     ['entity.name.label', '', 'delimiter', 'keyword.mut', '', 'variable.emphasis'],
                 ],
                 [
-                    /^(\0@inlineDocParam)(@whitespace+)(..|)(@identifier)/,
+                    /^(\0@inlineDocParam)(@whitespace+)(\.\.|)(@identifier)/,
                     ['entity.name.label', '', 'delimiter', 'variable.other.constant.emphasis'],
                 ],
                 [/^(\0\(@identifier\))(@whitespace+)/, ['entity.name.label', '']],
