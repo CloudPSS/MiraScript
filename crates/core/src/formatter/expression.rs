@@ -1,4 +1,4 @@
-use crate::{Expression, Operator};
+use crate::{Expression, Operator, parser::MatchCase};
 
 use super::prelude::*;
 
@@ -248,7 +248,7 @@ impl Formattable for Expression<'_> {
                 }
                 formatter.indent();
                 formatter.new_line();
-                for (i, (kw, pattern, guard, expression)) in items.iter().enumerate() {
+                for (i, MatchCase(kw, pattern, guard, expression)) in items.iter().enumerate() {
                     formatter.write_token(kw);
                     formatter.write_space();
                     pattern.format(formatter, measurement);

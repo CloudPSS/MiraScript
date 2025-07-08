@@ -41,6 +41,32 @@ impl<'s> AstWalker<'s> for ElseBlock<'s> {
     }
 }
 
+/// `case` pattern (`if` expression)? block_expression
+#[derive(Debug, Clone, PartialEq)]
+pub struct MatchCase<'s>(
+    pub TokenRef<'s>,
+    pub Pattern<'s>,
+    pub Option<(TokenRef<'s>, Expression<'s>)>,
+    pub Expression<'s>,
+);
+
+impl<'s> AstWalker<'s> for MatchCase<'s> {
+    fn collect_diagnostics(&mut self, collector: &mut Vec<SourceDiagnostic>) {
+        self.0.collect_diagnostics(collector);
+        self.1.collect_diagnostics(collector);
+        if let Some((kw_if, expr)) = &mut self.2 {
+            kw_if.collect_diagnostics(collector);
+            expr.collect_diagnostics(collector);
+        }
+        self.3.collect_diagnostics(collector);
+    }
+    fn range(&self) -> SourceRange {
+        let start = self.0.range.start;
+        let end = self.3.range().end;
+        start..end
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
 pub enum Expression<'s> {
     // primary
@@ -199,7 +225,7 @@ pub enum Expression<'s> {
         Box<Expression<'s>>,
         Option<ElseBlock<'s>>,
     ),
-    /// `match` expression `{` ( `case` pattern (`if` expression)? block_expression)* `}`
+    /// `match` expression `{` ( `case` pattern (`if` expression)? block_expression )* `}`
     ///
     /// The value of the block is the value of the matched expression.
     ///
@@ -208,12 +234,7 @@ pub enum Expression<'s> {
         TokenRef<'s>,
         Box<Expression<'s>>,
         TokenRef<'s>,
-        Vec<(
-            TokenRef<'s>,
-            Pattern<'s>,
-            Option<(TokenRef<'s>, Expression<'s>)>,
-            Expression<'s>,
-        )>,
+        Vec<MatchCase<'s>>,
         TokenRef<'s>,
     ),
     /// `fn` parameters? block_expression
@@ -420,14 +441,8 @@ impl<'s> AstWalker<'s> for Expression<'s> {
                 kw.collect_diagnostics(collector);
                 expression.collect_diagnostics(collector);
                 op.collect_diagnostics(collector);
-                for (kw_case, pattern, guard, block) in arms {
-                    kw_case.collect_diagnostics(collector);
-                    pattern.collect_diagnostics(collector);
-                    if let Some((kw, expr)) = guard {
-                        kw.collect_diagnostics(collector);
-                        expr.collect_diagnostics(collector);
-                    }
-                    block.collect_diagnostics(collector);
+                for arm in arms {
+                    arm.collect_diagnostics(collector);
                 }
                 cp.collect_diagnostics(collector);
             }

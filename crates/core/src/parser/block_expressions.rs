@@ -101,14 +101,7 @@ pub(super) fn while_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> 
 }
 
 pub(super) fn match_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
-    fn branch_parser<'s>(
-        i: &mut Input<'s>,
-    ) -> Result<(
-        TokenRef<'s>,
-        Pattern<'s>,
-        Option<(TokenRef<'s>, Expression<'s>)>,
-        Expression<'s>,
-    )> {
+    fn branch_parser<'s>(i: &mut Input<'s>) -> Result<MatchCase<'s>> {
         (
             alt((
                 (
@@ -127,7 +120,7 @@ pub(super) fn match_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> 
             )),
             block_expression,
         )
-            .map(|((kw_case, pattern, guard), body)| (kw_case, pattern, guard, body))
+            .map(|((kw_case, pattern, guard), body)| MatchCase(kw_case, pattern, guard, body))
             .parse_next(i)
     }
     (

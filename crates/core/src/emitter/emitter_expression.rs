@@ -8,7 +8,7 @@ use crate::{
     parser::{
         ArrayElement, ArrayElementBase, AstWalker, Callable, ElseBlock,
         Expression::{self, *},
-        Iterable, Range, RecordElementBase,
+        Iterable, MatchCase, Range, RecordElementBase,
     },
 };
 
@@ -234,7 +234,7 @@ impl<'s> Emitter<'s> {
                 self.diagnostics.extend(
                     branches
                         .iter()
-                        .flat_map(|(kw_case, _, guard, _)| {
+                        .flat_map(|MatchCase(kw_case, _, guard, _)| {
                             [
                                 Some(SourceDiagnostic::new(
                                     kw_case.range(),
@@ -245,7 +245,7 @@ impl<'s> Emitter<'s> {
                                 }),
                             ]
                         })
-                        .filter_map(|d| d),
+                        .flatten(),
                 );
             }
             Function(_, _, _) => (),
@@ -1023,7 +1023,7 @@ impl<'s> Emitter<'s> {
                     self.op_nil(ret);
                 }
 
-                for (kw_case, pattern, guard, body) in items {
+                for MatchCase(kw_case, pattern, guard, body) in items {
                     let Expression::Block(_, stmts, expr, end) = body else {
                         return;
                     };

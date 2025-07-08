@@ -285,10 +285,9 @@ fn interpolation<'s>(dollars: &'s str) -> impl Parser<'s, StringFragment<'s>> {
             }
             Some('(') => {
                 // '$' '(' expression ')'
-                let tokens =
-                    lex_balanced(i, Operator::OpenParen, Operator::CloseParen).map_err(|e| {
+                let tokens = lex_balanced(i, Operator::OpenParen, Operator::CloseParen)
+                    .inspect_err(|_| {
                         i.reset(&cp);
-                        e
                     })?;
 
                 let begin = tokens.first().unwrap();
