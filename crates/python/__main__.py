@@ -4,7 +4,13 @@ if __name__ == "__main__":
     # Example usage of the mirascript module
     # This will compile a simple Python script and print the result
     result, diagnostics = mirascript.compile(
-        "('Hello, world!')", mirascript.Config(input_mode="script")
+        # "('Hello, world!')", mirascript.Config(input_mode="script")
+        """fn compose_functions() {
+ 
+  debug_print("4 -> square -> add_ten -> halve = $result");
+}
+
+compose_functions();""", mirascript.Config(input_mode="script")
     )
     assert callable(result), "Compilation failed, result is not callable"
     print(diagnostics, result())  # Should print: Hello, world!

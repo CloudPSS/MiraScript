@@ -2,7 +2,7 @@ import struct
 import json
 import base64
 from typing import Any, Union, List, Tuple, Optional, Dict
-
+import ast
 class OpCodes:
     """MiraScript 操作码"""
 
@@ -103,10 +103,13 @@ class Emitter:
         # 初始化状态
         self.constants: List[str] = []
         self.code_lines: List[str] = []
+        
+        self.func_script=None
         self.code_offset = 0
         self.closure_counter = 0
         self.ident_counter = 0
-    
+        self.current_blocks=None
+        self.pre_blocks=None
     def read_consts(self) -> None:
         """读取常量表"""
         i = 0
@@ -166,8 +169,8 @@ class Emitter:
                 continue
                 
             self.code_offset += 1
-            body = self.ident(-1) + "} finally { CpExit(); } });"
-            self.code_lines.append(body)
+            # body = self.ident(-1) + "} finally { CpExit(); } });"
+            # self.code_lines.append(body)
             self.closure_counter -= 1
             self.ident_counter -= 1
             break
@@ -336,7 +339,7 @@ class Emitter:
             return self.read_index(wide)
         
         ident = self.ident()
-        code = ''
+        code = None
         reg = 0
         
         # 处理各种操作码
@@ -347,41 +350,94 @@ class Emitter:
             argn = read()
             regn = read()
             
-            args = []
+            args = ast.arguments(
+                posonlyargs=[],
+                args=[],
+                vararg=None,
+                kwonlyargs=[],
+                kw_defaults=[],
+                kwarg=None,
+                defaults=[]
+            )
             for i in range(argn):
                 wv = self.wv(i + 1, -1)
                 if varg and i == argn - 1:
                     # 最后一个参数为可变参数
-                    args.append(f"...{wv}")
+                    args.kwarg=ast.arg(arg=f'{wv}')
                 else:
-                    args.append(f"{wv} = null")
+                    args.args.append(ast.arg(f"wv"))
             
-            regs = []
+            target= ast.Tuple(
+                            elts=[
+                            ],
+                            ctx=ast.Store())
+            regs = ast.Assign(
+                    targets=[target],
+                    value=ast.Name(id='Uninitialized',ctx=ast.Load()),lineno=0)
             for i in range(regn - argn + 1):
                 if i:
-                    regs.append(self.wv(i + argn, -1))
+                    # regs.append(self.wv(i + argn, -1))
+                    target.elts.append(ast.Name(id=self.wv(i + argn, -1), ctx=ast.Store()))
                 else:
-                    regs.append(self.wv(0, -1))
+                    # regs.append(self.wv(0, -1))
+                    target.elts.append(ast.Name(id=self.wv(0 ,-1), ctx=ast.Store()))
             
             if script:
-                # args.insert(0, "global = GlobalFallback()")
-                code = f"def script({'=Uninitialized'.join(args)}):\n{self.ident(1)}try:\n{self.ident(2)}CpEnter()\n{self.ident(2)}{'='.join(regs)}=Uninitialized"
+                tree = ast.FunctionDef("script",args=args,body=[regs],decorator_list=[],lineno=0)
+                
+                self.func_script=tree
+                
+                blocks=ast.Try(body=[ast.Assign(
+                            targets=[
+                               ast.Name(id='globalArgs', ctx=ast.Store())],
+                            value=ast.Call(
+                                func=ast.Name(id='GlobalFallback', ctx=ast.Load()),
+                                args=[],
+                                keywords=[]),lineno=0)
+                            ],handlers=[],finalbody=[ast.Expr(
+                            value=ast.Call(
+                                func=ast.Name(id='CpExit', ctx=ast.Load()),
+                                args=[],
+                                keywords=[]))],orelse=[])
+                self.func_script.body.append(blocks)
+                self.current_blocks=blocks
             else:
-                code = f"{self.wv(reg)} = Function(function ({', '.join(args)}) {{ try{{ CpEnter(); let {', '.join(regs)};"
+                tree = ast.FunctionDef("script",args=args,body=[],decorator_list=[],lineno=0)
+                blocks=ast.Try(body=[regs],handlers=[],finalbody=[ast.Expr(
+                            value=ast.Call(
+                                func=ast.Name(id='CpExit', ctx=ast.Load()),
+                                args=[],
+                                keywords=[]))],orelse=[])
+                tree.body.append(blocks)
+                
+                self.pre_blocks=self.current_blocks
+                self.current_blocks.body.append(tree)
+                self.current_blocks=blocks
+                
+                
+                pass
         
         elif opcode == OpCode.Constant:
             reg = read()
             i = read()
             c = self.constants[i]
-            code = f"{self.wv(reg)} = {c};"
+            # code = f"{self.wv(reg)} = {c};"
+            code = ast.Assign(
+                            targets=[
+                                ast.Name(id=self.wv(reg), ctx=ast.Store())],
+                            value=ast.Constant(value=c),lineno=0)
         
         elif opcode == OpCode.Uninit:
             reg = read()
-            code = f"{self.wv(reg)} = undefined;"
+            # code = f"{self.wv(reg)} = undefined;"
+            code = ast.Assign(
+                    targets=[ast.Name(id=self.wv(reg), ctx=ast.Store())],
+                    value=ast.Name(id='Uninitialized',ctx=ast.Load()),lineno=0)
         
         elif opcode == OpCode.Return:
             reg = read()
-            code = f"return {self.rv(reg)};"
+            # code = f"return {self.rv(reg)};"
+            code =ast.Return(value=ast.Name(id=self.rv(reg), ctx=ast.Load()))
         
         elif opcode in (OpCode.Add, OpCode.Sub, OpCode.Mul, OpCode.Div, OpCode.Mod, OpCode.Pow,
                        OpCode.Gt, OpCode.Gte, OpCode.Lt, OpCode.Lte, OpCode.Eq, OpCode.Neq,
@@ -390,255 +446,292 @@ class Emitter:
             left = read()
             right = read()
             opcode_name = get_opcode_name(opcode)
-            code = f"{self.wv(reg)} = ${opcode_name}({self.rv(left)}, {self.rv(right)});"
+            # getattr(ast,"ADD")
+            OpCode.Add
+            code =ast.Assign(
+                            targets=[
+                                ast.Name(id=self.wv(reg), ctx=ast.Store())],
+                            value=ast.BinOp(
+                                left=ast.Name(id=self.rv(left), ctx=ast.Load()),
+                                op=ast.Add(),
+                                right=ast.Name(id=self.rv(right), ctx=ast.Load())))
+        #     code = f"{self.wv(reg)} = ${opcode_name}({self.rv(left)}, {self.rv(right)});"
         
-        elif opcode == OpCode.InGlobal:
-            reg = read()
-            left = read()
-            code = f"{self.wv(reg)} = global[{self.rv(left)}] !== undefined;"
+        # elif opcode == OpCode.InGlobal:
+        #     reg = read()
+        #     left = read()
+        #     # code = f"{self.wv(reg)} = global[{self.rv(left)}] !== undefined;"
+        #     code =ast.Assign(
+        #                     targets=[
+        #                        ast. Name(id='i', ctx=ast.Store())],
+        #                     value=ast.Call(
+        #                         func=ast.Name(id='Concat', ctx=ast.Load()),
+        #                         args=[],
+        #                         keywords=[]))
         
-        elif opcode == OpCode.Concat:
-            reg = read()
-            n = read()
-            args = [self.rv(read()) for _ in range(n)]
-            opcode_name = get_opcode_name(opcode)
-            code = f"{self.wv(reg)} = ${opcode_name}({', '.join(args)});"
+        # elif opcode == OpCode.Concat:
+        #     reg = read()
+        #     n = read()
+        #     args = [self.rv(read()) for _ in range(n)]
+        #     opcode_name = get_opcode_name(opcode)
+        #     # code = f"{self.wv(reg)} = ${opcode_name}({', '.join(args)});"
+        #     code =ast.Assign(
+        #                     targets=[
+        #                        ast. Name(id='i', ctx=ast.Store())],
+        #                     value=ast.Call(
+        #                         func=ast.Name(id='Concat', ctx=ast.Load()),
+        #                         args=[ ast.Name(id=a, ctx=ast.Load()) for a in args],
+        #                         keywords=[]))
         
-        elif opcode in (OpCode.Omit, OpCode.Pick):
-            reg = read()
-            value = read()
-            n = read()
-            args = [self.constants[read()] for _ in range(n)]
-            opcode_name = get_opcode_name(opcode)
-            code = f"{self.wv(reg)} = ${opcode_name}({self.rv(value)}, [{', '.join(args)}]);"
+        # elif opcode in (OpCode.Omit, OpCode.Pick):
+        #     reg = read()
+        #     value = read()
+        #     n = read()
+        #     args = [self.constants[read()] for _ in range(n)]
+        #     opcode_name = get_opcode_name(opcode)
+        #     code = f"{self.wv(reg)} = ${opcode_name}({self.rv(value)}, [{', '.join(args)}]);"
         
-        elif opcode in (OpCode.Call, OpCode.CallDyn):
-            reg = read()
-            func = read()
-            n = read()
-            args = [read() for _ in range(n)]
-            ns = read()
-            spreads = [read() for _ in range(ns)]
+        # elif opcode in (OpCode.Call, OpCode.CallDyn):
+        #     reg = read()
+        #     func = read()
+        #     n = read()
+        #     args = [read() for _ in range(n)]
+        #     ns = read()
+        #     spreads = [read() for _ in range(ns)]
             
-            if opcode == OpCode.Call:
-                call_target = f"global[{self.constants[func]}]"
-            else:
-                call_target = self.rv(func)
+        #     if opcode == OpCode.Call:
+        #         call_target = f"global[{self.constants[func]}]"
+        #     else:
+        #         call_target = self.rv(func)
             
-            call_args = []
-            for i, a in enumerate(args):
-                if i in spreads:
-                    call_args.append(f"...$ArraySpread({self.rv(a)})")
-                else:
-                    call_args.append(self.rv(a))
+        #     call_args = []
+        #     for i, a in enumerate(args):
+        #         if i in spreads:
+        #             call_args.append(f"...$ArraySpread({self.rv(a)})")
+        #         else:
+        #             call_args.append(self.rv(a))
                     
-            code = f"{self.wv(reg)} = $Call({call_target}, [{', '.join(call_args)}]);"
+        #     code = f"{self.wv(reg)} = $Call({call_target}, [{', '.join(call_args)}]);"
         
-        elif opcode == OpCode.Assign:
-            reg = read()
-            value = read()
-            code = f"{self.wv(reg)} = {self.rv(value)};"
+        # elif opcode == OpCode.Assign:
+        #     reg = read()
+        #     value = read()
+        #     code = f"{self.wv(reg)} = {self.rv(value)};"
         
-        elif opcode in (OpCode.Pos, OpCode.Neg, OpCode.Not, OpCode.Type, OpCode.ToBoolean,
-                       OpCode.ToNumber, OpCode.ToString, OpCode.IsBoolean, OpCode.IsNumber,
-                       OpCode.IsString, OpCode.IsRecord, OpCode.IsArray, OpCode.Length):
-            reg = read()
-            value = read()
-            opcode_name = get_opcode_name(opcode)
-            code = f"{self.wv(reg)} = ${opcode_name}({self.rv(value)});"
+        # elif opcode in (OpCode.Pos, OpCode.Neg, OpCode.Not, OpCode.Type, OpCode.ToBoolean,
+        #                OpCode.ToNumber, OpCode.ToString, OpCode.IsBoolean, OpCode.IsNumber,
+        #                OpCode.IsString, OpCode.IsRecord, OpCode.IsArray, OpCode.Length):
+        #     reg = read()
+        #     value = read()
+        #     opcode_name = get_opcode_name(opcode)
+        #     code = f"{self.wv(reg)} = ${opcode_name}({self.rv(value)});"
         
-        elif opcode in (OpCode.AssertInit, OpCode.AssertNonNil):
-            reg = read()
-            opcode_name = get_opcode_name(opcode)
-            code = f"${opcode_name}({self.rv(reg)})"
+        # elif opcode in (OpCode.AssertInit, OpCode.AssertNonNil):
+        #     reg = read()
+        #     opcode_name = get_opcode_name(opcode)
+        #     code = f"${opcode_name}({self.rv(reg)})"
         
-        # 处理属性访问相关操作
-        elif opcode == OpCode.Get:
-            reg = read()
-            obj = read()
-            prop = self.constants[read()]
-            code = f"{self.wv(reg)} = $Get({self.rv(obj)}, {prop});"
+        # # 处理属性访问相关操作
+        # elif opcode == OpCode.Get:
+        #     reg = read()
+        #     obj = read()
+        #     prop = self.constants[read()]
+        #     code = f"{self.wv(reg)} = $Get({self.rv(obj)}, {prop});"
         
-        elif opcode == OpCode.GetIndex:
-            reg = read()
-            obj = read()
-            index = read_index()
-            code = f"{self.wv(reg)} = $Get({self.rv(obj)}, {index});"
+        # elif opcode == OpCode.GetIndex:
+        #     reg = read()
+        #     obj = read()
+        #     index = read_index()
+        #     code = f"{self.wv(reg)} = $Get({self.rv(obj)}, {index});"
         
-        elif opcode == OpCode.GetDyn:
-            reg = read()
-            obj = read()
-            index = read()
-            code = f"{self.wv(reg)} = $Get({self.rv(obj)}, {self.rv(index)});"
+        # elif opcode == OpCode.GetDyn:
+        #     reg = read()
+        #     obj = read()
+        #     index = read()
+        #     code = f"{self.wv(reg)} = $Get({self.rv(obj)}, {self.rv(index)});"
         
-        elif opcode == OpCode.Has:
-            reg = read()
-            obj = read()
-            prop = self.constants[read()]
-            code = f"{self.wv(reg)} = $Has({self.rv(obj)}, {prop});"
+        # elif opcode == OpCode.Has:
+        #     reg = read()
+        #     obj = read()
+        #     prop = self.constants[read()]
+        #     code = f"{self.wv(reg)} = $Has({self.rv(obj)}, {prop});"
         
-        elif opcode == OpCode.HasIndex:
-            reg = read()
-            obj = read()
-            index = read_index()
-            code = f"{self.wv(reg)} = $Has({self.rv(obj)}, {index});"
+        # elif opcode == OpCode.HasIndex:
+        #     reg = read()
+        #     obj = read()
+        #     index = read_index()
+        #     code = f"{self.wv(reg)} = $Has({self.rv(obj)}, {index});"
         
-        elif opcode == OpCode.HasDyn:
-            reg = read()
-            obj = read()
-            index = read()
-            code = f"{self.wv(reg)} = $Has({self.rv(obj)}, {self.rv(index)});"
+        # elif opcode == OpCode.HasDyn:
+        #     reg = read()
+        #     obj = read()
+        #     index = read()
+        #     code = f"{self.wv(reg)} = $Has({self.rv(obj)}, {self.rv(index)});"
         
-        elif opcode == OpCode.Set:
-            reg = read()
-            obj = read()
-            prop = self.constants[read()]
-            code = f"$Set({self.rv(obj)}, {prop}, {self.rv(reg)});"
+        # elif opcode == OpCode.Set:
+        #     reg = read()
+        #     obj = read()
+        #     prop = self.constants[read()]
+        #     code = f"$Set({self.rv(obj)}, {prop}, {self.rv(reg)});"
         
-        elif opcode == OpCode.SetIndex:
-            reg = read()
-            obj = read()
-            index = read_index()
-            code = f"$Set({self.rv(obj)}, {index}, {self.rv(reg)});"
+        # elif opcode == OpCode.SetIndex:
+        #     reg = read()
+        #     obj = read()
+        #     index = read_index()
+        #     code = f"$Set({self.rv(obj)}, {index}, {self.rv(reg)});"
         
-        elif opcode == OpCode.SetDyn:
-            reg = read()
-            obj = read()
-            index = read()
-            code = f"$Set({self.rv(obj)}, {self.rv(index)}, {self.rv(reg)});"
+        # elif opcode == OpCode.SetDyn:
+        #     reg = read()
+        #     obj = read()
+        #     index = read()
+        #     code = f"$Set({self.rv(obj)}, {self.rv(index)}, {self.rv(reg)});"
         
         # 处理全局变量访问
         elif opcode == OpCode.GetGlobal:
             reg = read()
             i = read()
             c = self.constants[i]
-            code = f"{self.wv(reg)} = global[{c}] ?? null;"
+            # code = f"{self.wv(reg)} = global[{c}] ?? null;"
+            code = ast.Assign(
+                            targets=[
+                                ast.Name(id='h', ctx=ast.Store())],
+                            value=ast.Subscript(
+                                value=ast.Name(id='globalArgs', ctx=ast.Load()),
+                                slice=ast.Constant(value=c),
+                                ctx=ast.Load()),lineno=0)
         
-        elif opcode == OpCode.GetGlobalDyn:
-            reg = read()
-            name = read()
-            code = f"{self.wv(reg)} = global[{self.rv(name)}] ?? null;"
+        # elif opcode == OpCode.GetGlobalDyn:
+        #     reg = read()
+        #     name = read()
+        #     code = f"{self.wv(reg)} = global[{self.rv(name)}] ?? null;"
         
-        # 处理闭包变量
-        elif opcode == OpCode.GetUpvalue:
-            reg = read()
-            level = read()
-            up = read()
-            code = f"{self.wv(reg)} = {self.rv(up, level)};"
+        # # 处理闭包变量
+        # elif opcode == OpCode.GetUpvalue:
+        #     reg = read()
+        #     level = read()
+        #     up = read()
+        #     code = f"{self.wv(reg)} = {self.rv(up, level)};"
         
-        elif opcode == OpCode.SetUpvalue:
-            reg = read()
-            level = read()
-            up = read()
-            code = f"{self.wv(up, level)} = {self.rv(reg)};"
+        # elif opcode == OpCode.SetUpvalue:
+        #     reg = read()
+        #     level = read()
+        #     up = read()
+        #     code = f"{self.wv(up, level)} = {self.rv(reg)};"
         
-        # 处理数组切片
-        elif opcode == OpCode.Slice:
-            reg = read()
-            obj = read()
-            start = read_index()
-            end = read_index()
-            code = f"{self.wv(reg)} = $Slice({self.rv(obj)}, {start}, {end});"
+        # # 处理数组切片
+        # elif opcode == OpCode.Slice:
+        #     reg = read()
+        #     obj = read()
+        #     start = read_index()
+        #     end = read_index()
+        #     code = f"{self.wv(reg)} = $Slice({self.rv(obj)}, {start}, {end});"
         
-        elif opcode == OpCode.SliceStart:
-            reg = read()
-            obj = read()
-            end = read_index()
-            code = f"{self.wv(reg)} = $Slice({self.rv(obj)}, null, {end});"
+        # elif opcode == OpCode.SliceStart:
+        #     reg = read()
+        #     obj = read()
+        #     end = read_index()
+        #     code = f"{self.wv(reg)} = $Slice({self.rv(obj)}, null, {end});"
         
-        elif opcode == OpCode.SliceEnd:
-            reg = read()
-            obj = read()
-            start = read_index()
-            code = f"{self.wv(reg)} = $Slice({self.rv(obj)}, {start}, null);"
+        # elif opcode == OpCode.SliceEnd:
+        #     reg = read()
+        #     obj = read()
+        #     start = read_index()
+        #     code = f"{self.wv(reg)} = $Slice({self.rv(obj)}, {start}, null);"
         
-        elif opcode == OpCode.SliceDyn:
-            reg = read()
-            obj = read()
-            start = read()
-            end = read()
-            code = f"{self.wv(reg)} = $Slice({self.rv(obj)}, {self.rv(start)}, {self.rv(end)});"
+        # elif opcode == OpCode.SliceDyn:
+        #     reg = read()
+        #     obj = read()
+        #     start = read()
+        #     end = read()
+        #     code = f"{self.wv(reg)} = $Slice({self.rv(obj)}, {self.rv(start)}, {self.rv(end)});"
         
-        elif opcode == OpCode.SliceExclusiveDyn:
-            reg = read()
-            obj = read()
-            start = read()
-            end = read()
-            code = f"{self.wv(reg)} = $SliceExclusive({self.rv(obj)}, {self.rv(start)}, {self.rv(end)});"
+        # elif opcode == OpCode.SliceExclusiveDyn:
+        #     reg = read()
+        #     obj = read()
+        #     start = read()
+        #     end = read()
+        #     code = f"{self.wv(reg)} = $SliceExclusive({self.rv(obj)}, {self.rv(start)}, {self.rv(end)});"
         
-        # 处理数据结构初始化
-        elif opcode == OpCode.Record:
-            reg = read()
-            code = f"{self.wv(reg)} = ({{"
+        # # 处理数据结构初始化
+        # elif opcode == OpCode.Record:
+        #     reg = read()
+        #     code = f"{self.wv(reg)} = ({{"
         
-        elif opcode == OpCode.Array:
-            reg = read()
-            code = f"{self.wv(reg)} = (["
+        # elif opcode == OpCode.Array:
+        #     reg = read()
+        #     code = f"{self.wv(reg)} = (["
         
-        # 处理条件语句
-        elif opcode == OpCode.If:
-            cond = read()
-            code = f"if ($ToBoolean({self.rv(cond)})) {{"
+        # # 处理条件语句
+        # elif opcode == OpCode.If:
+        #     cond = read()
+        #     code = f"if ($ToBoolean({self.rv(cond)})) {{"
         
-        elif opcode == OpCode.IfNot:
-            cond = read()
-            code = f"if (!$ToBoolean({self.rv(cond)})) {{"
+        # elif opcode == OpCode.IfNot:
+        #     cond = read()
+        #     code = f"if (!$ToBoolean({self.rv(cond)})) {{"
         
-        elif opcode == OpCode.IfInit:
-            cond = read()
-            code = f"if ({self.rv(cond)} !== undefined) {{"
+        # elif opcode == OpCode.IfInit:
+        #     cond = read()
+        #     code = f"if ({self.rv(cond)} !== undefined) {{"
         
-        elif opcode == OpCode.IfNotInit:
-            cond = read()
-            code = f"if ({self.rv(cond)} === undefined) {{"
+        # elif opcode == OpCode.IfNotInit:
+        #     cond = read()
+        #     code = f"if ({self.rv(cond)} === undefined) {{"
         
-        elif opcode == OpCode.IfNil:
-            cond = read()
-            code = f"if ({self.rv(cond)} === null) {{"
+        # elif opcode == OpCode.IfNil:
+        #     cond = read()
+        #     code = f"if ({self.rv(cond)} === null) {{"
         
-        elif opcode == OpCode.IfNotNil:
-            cond = read()
-            code = f"if ({self.rv(cond)} !== null) {{"
+        # elif opcode == OpCode.IfNotNil:
+        #     cond = read()
+        #     code = f"if ({self.rv(cond)} !== null) {{"
         
-        # 处理循环语句
-        elif opcode == OpCode.LoopFor:
-            nreg = read()
-            iterable = read()
-            regs = [self.wv(i + 2, -1) for i in range(nreg - 1)]
-            code = f"for (let {self.wv(1, -1)} of $Iterable({self.rv(iterable)})) {{ Cp(); let _, {', '.join(regs)};"
+        # # 处理循环语句
+        # elif opcode == OpCode.LoopFor:
+        #     nreg = read()
+        #     iterable = read()
+        #     regs = [self.wv(i + 2, -1) for i in range(nreg - 1)]
+        #     code = f"for (let {self.wv(1, -1)} of $Iterable({self.rv(iterable)})) {{ Cp(); let _, {', '.join(regs)};"
         
-        elif opcode in (OpCode.LoopRange, OpCode.LoopRangeExclusive):
-            nreg = read()
-            start = read()
-            end = read()
-            exclusive = opcode == OpCode.LoopRangeExclusive
-            regs = [self.wv(i + 2, -1) for i in range(nreg - 1)]
-            i = self.wv(1, -1)
-            op = '<' if exclusive else '<='
-            code = f"for (let start = $ToNumber({self.rv(start)}), end = $ToNumber({self.rv(end)}), {i} = start; {i} {op} end; {i} += 1) {{ Cp(); let _, {', '.join(regs)};"
+        # elif opcode in (OpCode.LoopRange, OpCode.LoopRangeExclusive):
+        #     nreg = read()
+        #     start = read()
+        #     end = read()
+        #     exclusive = opcode == OpCode.LoopRangeExclusive
+        #     regs = [self.wv(i + 2, -1) for i in range(nreg - 1)]
+        #     i = self.wv(1, -1)
+        #     op = '<' if exclusive else '<='
+        #     code = f"for (let start = $ToNumber({self.rv(start)}), end = $ToNumber({self.rv(end)}), {i} = start; {i} {op} end; {i} += 1) {{ Cp(); let _, {', '.join(regs)};"
         
-        elif opcode == OpCode.Loop:
-            nreg = read()
-            regs = [self.wv(i + 1, -1) for i in range(nreg)]
-            code = f"while (true) {{ Cp(); let _, {', '.join(regs)};"
+        # elif opcode == OpCode.Loop:
+        #     nreg = read()
+        #     regs = [self.wv(i + 1, -1) for i in range(nreg)]
+        #     code = f"while (true) {{ Cp(); let _, {', '.join(regs)};"
         
-        elif opcode == OpCode.Break:
-            code = "break;"
+        # elif opcode == OpCode.Break:
+        #     code = "break;"
         
-        elif opcode == OpCode.Continue:
-            code = "continue;"
+        # elif opcode == OpCode.Continue:
+        #     code = "continue;"
         
+        # else:
+        #     # 默认处理未知 opcode
+        #     opcode_name = get_opcode_name(opcode)
+        #     code = f"; // {opcode_name}"
+        
+        # self.code_lines.append(ident + code)
+        
+        if code is not None:
+            self.current_blocks.body.append(code)
         else:
-            # 默认处理未知 opcode
-            opcode_name = get_opcode_name(opcode)
-            code = f"; // {opcode_name}"
+            print('opcode:',opcode)
         
-        self.code_lines.append(ident + code)
         
         # 处理特殊的 opcode 后续逻辑
         if opcode in (OpCode.FuncVarg, OpCode.Func):
             self.read_closure()
             self.ident_counter += 2
+            pass
         elif opcode in (OpCode.If, OpCode.IfNot, OpCode.IfNil, OpCode.IfNotNil, OpCode.IfInit, OpCode.IfNotInit):
             self.read_if_else()
         elif opcode in (OpCode.Loop, OpCode.LoopFor, OpCode.LoopRange, OpCode.LoopRangeExclusive):
@@ -659,7 +752,11 @@ def emit( chunk: bytes) -> str:
     """生成代码"""
     gen = Emitter( chunk)
     gen.read()
-    code = '\n'.join(gen.code_lines)
+    # code = '\n'.join(gen.code_lines)
+    # print(ast.unparse(tree))
+    code=""
+    if gen.func_script is not None:
+        code =ast.unparse(gen.func_script)
     print(code)
     return code
 
@@ -703,25 +800,4 @@ class Script:
 
     def __call__(self, context=None): ...
 
-# 备用的简化 emit 函数，保持兼容性
-def emit_legacy(bytecode: bytes) -> Script:
-    """
-    生成 Python 函数 (兼容性接口)
 
-    Args:
-        bytecode (bytes): 要生成的 Python 字节码
-
-    Returns:
-        Script: 生成的 Python 函数
-    """
-    # TODO: 解析 bytecode 并生成 Python 函数
-    code = """
-def script(context=None):
-    if context is None:
-        context = Context()
-    context["debug_print"]("Add(1, 2)", 2, 3)
-    return None
-    """
-    scope = {}
-    exec(code, Env, scope)
-    return scope["script"]
