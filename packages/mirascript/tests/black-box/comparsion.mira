@@ -1,0 +1,21 @@
+t.true("apple" < "banana");
+t.true("banana" > "apple");
+t.true("apple" < "apples");
+t.true("apple" <= "apples");
+t.true("apple" <= "apple");
+t.true("apple" >= "apple");
+t.true("\u{12345}" < "\u{12346}");
+t.true("\u{1}" < "\u{2}");
+
+t.true(1 > 0);
+t.false(1 >= nan);
+t.false(1 < nan);
+t.false(1 <= nan);
+t.true(1 < 2);
+t.true(1 <= 2);
+t.true(2 > 1);
+t.true(2 >= 1);
+t.true(1 >= 1);
+t.false(1 > 1);
+t.true(1 <= 1);
+t.false(1 < 1);

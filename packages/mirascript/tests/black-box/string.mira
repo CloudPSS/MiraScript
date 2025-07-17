@@ -1,0 +1,8 @@
+t.snapshot("", '', ``);
+t.snapshot("Hello world");
+t.snapshot("\0\r\n\t\b\f\v\\\"\'\`\$\x12\x34\x56\x78\u{1234}\u{12345}");
+t.snapshot(@"\0\r\n\t\b\f\v\\\"\'\`\$\x12\x34\x56\x78\u{1234}\u{12345}"@);
+let Hello = "Hello";
+t.snapshot("$(Hello)
+  world${ `!
+  ` }");

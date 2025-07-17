@@ -1,7 +1,6 @@
 import test from 'ava';
 import fs from 'node:fs';
 import { compile, createVmGlobal, VmError, type VmFunction } from 'mirascript';
-import { fail } from 'node:assert';
 
 const compileAndRun = test.macro<[string]>({
     exec: async (t, file) => {
@@ -38,13 +37,16 @@ const compileAndRun = test.macro<[string]>({
                         false: (value: unknown) => {
                             t.false(value);
                         },
+                        never: () => {
+                            t.fail('This should never be called');
+                        },
                     },
                 },
             ),
         );
         if (expected != null) {
             t.is(result, expected, `Test ${file} output matches expected output`);
-        } else {
+        } else if (result) {
             await fs.promises.writeFile(expectedUrl, result, 'utf8');
             t.pass(`Test ${file} output written to ${expectedUrl}`);
         }

@@ -43,5 +43,7 @@
   "files.eol": "\n",
   "npm.packageManager": "pnpm",
   "python.analysis.typeCheckingMode": "standard",
-  "typescript.tsdk": "./node_modules/typescript/lib"
+  "typescript.tsdk": "./node_modules/typescript/lib",
+  "coverage-gutters.coverageBaseDir": "**/coverage",
+  "coverage-gutters.coverageFileNames": ["lcov.info"]
 }

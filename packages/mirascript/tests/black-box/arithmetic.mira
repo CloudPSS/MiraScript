@@ -1,0 +1,23 @@
+t.eq(2 + 2, 4);
+t.eq('   1' + '2  ', 3);
+t.eq('1' + '', 1);
+t.eq('Hello, ' + 'World!', nan);
+t.eq([1] + 2, nan);
+
+t.eq(2 - 1, 1);
+t.eq(true - false, 1);
+t.eq(nil - '\n', 0);
+
+t.eq(2 * 3, 6);
+t.eq(6 / 2, 3);
+t.eq(7 % 3, 1);
+t.eq((-7) % 3, -1);
+
+t.eq(2^3, 8);
+t.eq(2^(-3), 0.125);
+t.eq(2^0, 1);
+t.eq(0^0, 1);
+t.eq((-1)^0.5, nan);
+t.eq(0^inf, 0);
+t.eq(2^inf, inf);
+t.eq(2^(-inf), 0);

@@ -36,9 +36,14 @@ const isSame = (a: VmValue, b: VmValue): boolean => {
     // Handle array values
     if (isVmArray(a) && isVmArray(b)) {
         // Compare array items
-        if (a.length !== b.length) return false;
-        for (let i = 0; i < a.length; i++) {
-            if (!isSame(a[i] ?? null, b[i] ?? null)) return false;
+        if (a.length !== b.length) {
+            return false;
+        }
+        const len = a.length;
+        for (let i = 0; i < len; i++) {
+            if (!isSame(a[i] ?? null, b[i] ?? null)) {
+                return false;
+            }
         }
         return true;
     }
@@ -47,9 +52,16 @@ const isSame = (a: VmValue, b: VmValue): boolean => {
         // Compare record fields
         const aKeys = keys(a);
         const bKeys = keys(b);
-        if (aKeys.length !== bKeys.length) return false;
+        if (aKeys.length !== bKeys.length) {
+            return false;
+        }
         for (const key of aKeys) {
-            if (!hasOwn(b, key) || !isSame(a[key] ?? null, b[key] ?? null)) return false;
+            if (!hasOwn(b, key)) {
+                return false;
+            }
+            if (!isSame(a[key] ?? null, b[key] ?? null)) {
+                return false;
+            }
         }
         return true;
     }
@@ -57,20 +69,37 @@ const isSame = (a: VmValue, b: VmValue): boolean => {
 };
 
 const overloadNumberString = (a: VmAny, b: VmAny): boolean => {
-    const useNumber = typeof a == 'number' || typeof b == 'number' || !(typeof a == 'string' || typeof b == 'string');
-    return useNumber;
+    if (typeof a == 'number' || typeof b == 'number') return true;
+    if (typeof a == 'string' || typeof b == 'string') return false;
+    return true;
 };
 
 // Math operations
-export const $Add = (a: VmAny, b: VmAny): number => $ToNumber(a) + $ToNumber(b);
-export const $Sub = (a: VmAny, b: VmAny): number => $ToNumber(a) - $ToNumber(b);
-export const $Mul = (a: VmAny, b: VmAny): number => $ToNumber(a) * $ToNumber(b);
-export const $Div = (a: VmAny, b: VmAny): number => $ToNumber(a) / $ToNumber(b);
-export const $Mod = (a: VmAny, b: VmAny): number => $ToNumber(a) % $ToNumber(b);
-export const $Pow = (a: VmAny, b: VmAny): number => $ToNumber(a) ** $ToNumber(b);
+export const $Add = (a: VmAny, b: VmAny): number => {
+    return $ToNumber(a) + $ToNumber(b);
+};
+export const $Sub = (a: VmAny, b: VmAny): number => {
+    return $ToNumber(a) - $ToNumber(b);
+};
+export const $Mul = (a: VmAny, b: VmAny): number => {
+    return $ToNumber(a) * $ToNumber(b);
+};
+export const $Div = (a: VmAny, b: VmAny): number => {
+    return $ToNumber(a) / $ToNumber(b);
+};
+export const $Mod = (a: VmAny, b: VmAny): number => {
+    return $ToNumber(a) % $ToNumber(b);
+};
+export const $Pow = (a: VmAny, b: VmAny): number => {
+    return $ToNumber(a) ** $ToNumber(b);
+};
 // Logical operations without short-circuiting
-export const $And = (a: VmAny, b: VmAny): boolean => $ToBoolean(a) && $ToBoolean(b);
-export const $Or = (a: VmAny, b: VmAny): boolean => $ToBoolean(a) || $ToBoolean(b);
+export const $And = (a: VmAny, b: VmAny): boolean => {
+    return $ToBoolean(a) && $ToBoolean(b);
+};
+export const $Or = (a: VmAny, b: VmAny): boolean => {
+    return $ToBoolean(a) || $ToBoolean(b);
+};
 // Comparison operations
 export const $Gt = (a: VmAny, b: VmAny): boolean => {
     if (overloadNumberString(a, b)) {
