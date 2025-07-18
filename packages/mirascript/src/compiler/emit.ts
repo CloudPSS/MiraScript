@@ -203,7 +203,10 @@ class Emitter {
                 case OpCode.Field: {
                     const field = read();
                     const field_name = this.constants[field];
-                    if (!field_name) throw new Error(`Unknown field ${field}`);
+                    /* c8 ignore next 3 */
+                    if (!field_name) {
+                        throw new Error(`Unknown field ${field}`);
+                    }
                     const value = read();
                     const opt = opcode === OpCode.FieldOpt;
                     // Use computed property names to avoid prototype pollution

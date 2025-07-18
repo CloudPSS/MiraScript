@@ -37,3 +37,19 @@ be_of_type(fn { }, 'nil');
 be_of_type2(v_extern, 'extern');
 be_of_type2(v_module, 'module');
 be_of_type2(fn { }, 'function');
+
+fn args(..v) { v }
+
+t_eq(args(1, 2, 3), [1, 2, 3]);
+t_eq(args(1, 2, 3, ..[4, 5]), [1, 2, 3, 4, 5]);
+
+let obj = (a: 1, b: 2, c: nil);
+t_eq(obj.a, 1);
+t_eq(obj.b, 2);
+t_eq(obj['a'], 1);
+t_eq(obj['b'], 2);
+t_eq(obj['c'], nil);
+t_eq(obj.c, nil);
+t_true('c' in obj);
+t_false('d' in obj);
+t_true(`${ nil }${ 'c' }` in obj)

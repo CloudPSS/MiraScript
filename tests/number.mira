@@ -14,3 +14,7 @@ t_eq(-1 / 0, -inf);
 t_true(nan != nan);
 t_false(nan ~= nan);
 t_true(nan is nan);
+
+t_false(0 in 0);
+t_false(nan in 0);
+t_false(nan in nan);

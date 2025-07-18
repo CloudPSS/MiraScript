@@ -10,13 +10,13 @@ test('compile error', async (t) => {
 });
 
 test('buffer', async (t) => {
-    const s = await compile(Buffer.from('1'));
+    const s = await compile(Buffer.from('1'), { sourceMap: true, fileName: '/xx.mira' });
     t.is(s.source, '<buffer>');
     t.is(s(), 1);
 });
 
 test('source map', async (t) => {
-    const s = await compile('1', { sourceMap: true });
+    const s = await compile('1', { sourceMap: true, fileName: 'xx.mira' });
     t.is(s.source, '1');
     t.regex(s.toString(), /try/);
     t.notRegex(s.toString(), /^\s{2}/m);

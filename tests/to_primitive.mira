@@ -47,4 +47,6 @@ t_eq(to_string((1, 2, 3)), "0: 1, 1: 2, 2: 3");
 t_eq(to_string([nil, (), [], (x: 1)]), "nil, (), [], (x: 1)");
 t_eq(to_string(v_module), "<module v_module>");
 t_eq(to_string(to_string), "<function global.to_string>");
+t_true(to_string(v_extern)::starts_with("<extern "));
+t_true(to_string(v_extern)::ends_with(">"));
 t_eq(to_string(fn { }), "<function>");

@@ -36,3 +36,12 @@ t_eq(v_module::type(), 'module');
 
 t_true('v_nil' in global);
 t_false('v_whatever' in global);
+t_eq(global['v_ext$('ern')'], v_extern);
+
+t_false('__proto__' in v_extern);
+t_false('constructor' in v_extern);
+t_false('toString' in v_extern);
+t_false('push' in v_extern);
+t_false('whatever' in v_extern);
+
+t_false('whatever' in v_module);

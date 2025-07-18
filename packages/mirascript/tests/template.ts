@@ -3,7 +3,7 @@ import { compile } from 'mirascript';
 
 const compileAndRun = test.macro<[string, unknown]>({
     exec: async (t, code, expected) => {
-        const script = await compile(code, { input_mode: 'Template' });
+        const script = await compile(code, { input_mode: 'Template', sourceMap: true });
         const result = script();
         t.deepEqual(result, expected);
     },

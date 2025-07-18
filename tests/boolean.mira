@@ -10,3 +10,6 @@ t_eq(!!0, true);
 t_eq(!!-0, true);
 t_eq(!!1, true);
 t_eq(!!"", true);
+
+t_false(false in true);
+t_false(false in false);

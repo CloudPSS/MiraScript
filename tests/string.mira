@@ -18,3 +18,13 @@ for str in strs {
 
   t_eq(chars(str), chs);
 }
+
+t_false('a' in 'a');
+t_false('' in 'a');
+
+t_eq(chars(123), ['1', '2', '3']);
+
+let whitespaces = "\t\v\f \u{A0} \n\r\u{FEFF}\u{2028}\u{2029}";
+t_eq("$(whitespaces)1$(whitespaces)"::trim(), "1");
+t_eq("$(whitespaces)1$(whitespaces)"::trim_start(), "1$(whitespaces)");
+t_eq("$(whitespaces)1$(whitespaces)"::trim_end(), "$(whitespaces)1");
