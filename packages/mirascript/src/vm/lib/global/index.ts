@@ -2,13 +2,14 @@ import { Element } from '../../helpers.js';
 import { $ToNumber, $ToString } from '../../operations.js';
 import { isVmArray, isVmRecord, type VmConst } from '../../types/index.js';
 import { VmError } from '../../error.js';
-import { VmLib, expectArray, expectArrayOrRecord, expectCompound, required } from '../helpers.js';
+import { VmLib, expectArray, expectArrayOrRecord, expectCompound } from '../helpers.js';
 
 export * from './math.js';
 export * from './map-filter.js';
 export * from './debug.js';
 export * from './json.js';
 export * from './to-primitive.js';
+export * from './string.js';
 
 export const len = VmLib(
     (arr) => {
@@ -20,19 +21,6 @@ export const len = VmLib(
         params: { arr: '要求长度的数组' },
         paramsType: { arr: 'array' },
         returnsType: 'number',
-    },
-);
-
-export const chars = VmLib(
-    (str) => {
-        required('str', str, null);
-        return [...$ToString(str)];
-    },
-    {
-        summary: '将字符串转换为字符数组',
-        params: { str: '要转换的字符串' },
-        paramsType: { str: 'string' },
-        returnsType: '[string]',
     },
 );
 
