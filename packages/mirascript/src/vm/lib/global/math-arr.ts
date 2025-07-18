@@ -8,7 +8,7 @@ function getMinMaxNumbers(args: readonly VmAny[]): number[] {
     if (args.length === 1 && isVmArray(args[0])) args = args[0];
     const numbers: number[] = [];
     for (const arg of args) {
-        if (arg === undefined) continue;
+        if (arg == null) continue;
         numbers.push($ToNumber(arg));
     }
     return numbers;

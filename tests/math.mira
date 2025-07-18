@@ -26,18 +26,25 @@ t_eq(max(1, 2, 3), 3);
 t_eq(max([1, 2, 3]), 3);
 t_eq(max(-1, -2, -3), -1);
 t_eq(max(), -inf);
+t_eq(max(nil), -inf);
+t_eq(max([nil]), -inf);
 
 // min
 t_eq(min(1, 2, 3), 1);
 t_eq(min([1, 2, 3]), 1);
 t_eq(min(-1, -2, -3), -3);
 t_eq(min(), inf);
+t_eq(min(nil), inf);
+t_eq(min([nil]), inf);
 
 // hypot
 t_eq(hypot(3, 4), 5);
 t_eq(hypot(5, 12), 13);
 t_snapshot(hypot(1, 1));
 t_eq(hypot([3, 4]), 5);
+t_eq(hypot(), 0);
+t_eq(hypot(nil), 0);
+t_eq(hypot([nil]), 0);
 
 // math-unary.ts 中的函数
 // trunc

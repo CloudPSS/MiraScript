@@ -29,3 +29,6 @@ t_true(1.5 is 1.5..1.5);
 t_false(1.5 is "1"..<1.5);
 
 t_true("1" is "1".."2");
+
+t_true((1, [2]) is (1, [2, ..rr]) && rr is []);
+t_true((1, [2]) is not (1, [f, l]) && f is 2 && l is nil);

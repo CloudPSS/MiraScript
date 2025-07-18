@@ -12,15 +12,13 @@ const { getPrototypeOf, create, entries } = Object;
 
 /** 全局导入的标准库 */
 type GlobalKeys = keyof typeof global;
-/** 全局导入的标准库名字 */
-type StripUnderscore<T extends string> = T extends `_${infer R}_` ? R : T;
 /** 全局导入的标准库值 */
 type ToGlobalValue<T extends GlobalKeys> = (typeof global)[T] extends VmFunctionLike
     ? VmFunction<(typeof global)[T]>
     : (typeof global)[T];
 /** 全局导入的标准库 */
 type VmContextBase = {
-    [key in GlobalKeys as StripUnderscore<key>]: ToGlobalValue<key>;
+    [key in GlobalKeys]: ToGlobalValue<key>;
 };
 /** MiraScript 执行上下文的基础，仅包含标准库 */
 export type VmSharedContext = VmContextBase & Record<string, VmImmutable>;
