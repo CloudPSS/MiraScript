@@ -8,7 +8,7 @@ import {
     type VmFunctionLike,
 } from './index.js';
 import type * as global from '../lib/global/index.js';
-const { getPrototypeOf, create, entries } = Object;
+const { getPrototypeOf, entries } = Object;
 
 /** 全局导入的标准库 */
 type GlobalKeys = keyof typeof global;
@@ -25,7 +25,7 @@ export type VmSharedContext = VmContextBase & Record<string, VmImmutable>;
 /** MiraScript 执行上下文 */
 export type VmContext = VmContextBase & Record<string, VmValue | undefined>;
 
-export const VmSharedContext = create(null) as VmSharedContext;
+export const VmSharedContext = { __proto__: null } as object as VmSharedContext;
 
 /** 定义在所有 MiraScript 执行上下文中共享的全局函数 */
 export function defineVmContextFunction(name: string, fn: (...args: VmAny[]) => VmAny, override = false): void {
@@ -46,7 +46,7 @@ export function createVmContext<const T extends Record<string, VmValue | undefin
     vmValues?: T,
     externValues?: Record<string, unknown>,
 ): VmContext {
-    const env = create(VmSharedContext) as VmContext;
+    const env = { __proto__: VmSharedContext } as object as VmContext;
     if (vmValues) {
         for (const [key, value] of entries(vmValues)) {
             if (!isVmAny(value, false)) continue;
