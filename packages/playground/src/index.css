@@ -1,31 +1,49 @@
 :root {
-  color-scheme: dark light;
-  --bg-primary: #1e1e1e;
-  --bg-secondary: #2d2d30;
-  --bg-tertiary: #383838;
-  --text-primary: #cccccc;
-  --text-secondary: #969696;
-  --border-color: #3e3e42;
-  --accent-color: #007acc;
-  --accent-hover: #1177bb;
-  --success-color: #4ec9b0;
-  --error-color: #f44747;
-  --warning-color: #ffcc02;
   --code-font:
     'Sarasa Mono SC', 'JetBrains Mono', 'Fira Code', 'Consolas', 'Liberation Mono', 'Menlo', 'Courier', monospace;
   user-select: none;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  color-scheme: light dark;
+  --bg-primary: #fff;
+  --bg-secondary: #eee;
+  --bg-tertiary: #fff;
+  --text-primary: #333;
+  --text-secondary: #666;
+  --border-color: #ddd;
+  --accent-color: #007acc;
+  --accent-hover: #1177bb;
+  --success-color: #369481;
+  --error-color: #d23d3d;
+  --warning-color: #c39c00;
+
+  @media (prefers-color-scheme: dark) {
+    color-scheme: dark light;
+    --bg-primary: #1e1e1e;
+    --bg-secondary: #2d2d30;
+    --bg-tertiary: #383838;
+    --text-primary: #cccccc;
+    --text-secondary: #969696;
+    --border-color: #3e3e42;
+    --accent-color: #007acc;
+    --accent-hover: #1177bb;
+    --success-color: #4ec9b0;
+    --error-color: #f44747;
+    --warning-color: #ffcc02;
+  }
 }
 
 body {
   margin: 0;
   width: 100vw;
   height: 100vh;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  contain: strict;
   background-color: var(--bg-primary);
   color: var(--text-primary);
 }
 
-.playground {
+body > .playground {
+  contain: strict;
   height: 100vh;
   display: grid;
   grid-template-rows: auto 1fr;
@@ -36,6 +54,7 @@ body {
   }
 
   .header {
+    contain: content;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -128,6 +147,7 @@ body {
   }
 
   .main-content {
+    contain: strict;
     display: grid;
     grid-template-columns: 1fr 1fr;
     grid-template-rows: auto 1fr;
@@ -146,6 +166,7 @@ body {
   }
 
   .panel-header {
+    contain: content;
     display: flex;
     align-items: center;
     padding: 0 16px;
@@ -174,6 +195,7 @@ body {
   }
 
   .output-tabs {
+    contain: content;
     display: grid;
     grid-auto-columns: 1fr;
     grid-auto-flow: column;
@@ -321,28 +343,28 @@ body {
       border-right: none;
     }
   }
+}
 
-  .toast {
-    display: block;
-    pointer-events: none;
-    visibility: visible;
-    position: fixed;
-    bottom: 48px;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: var(--bg-secondary);
-    color: var(--text-primary);
-    padding: 12px 16px;
-    border-radius: 4px;
-    box-shadow: rgba(0, 0, 0, 0.2) 0px 2px 10px;
-    z-index: 1000;
-    transition:
-      opacity 0.3s ease-in-out,
-      visibility 0.3s ease-in-out;
+body > .toast {
+  display: block;
+  pointer-events: none;
+  visibility: visible;
+  position: fixed;
+  bottom: 48px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  padding: 12px 16px;
+  border-radius: 4px;
+  box-shadow: rgba(0, 0, 0, 0.2) 0px 2px 10px;
+  z-index: 1000;
+  transition:
+    opacity 0.3s ease-in-out,
+    visibility 0.3s ease-in-out;
 
-    &[hidden] {
-      visibility: hidden;
-      opacity: 0;
-    }
+  &[hidden] {
+    visibility: hidden;
+    opacity: 0;
   }
 }

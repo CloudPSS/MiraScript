@@ -147,6 +147,7 @@ function initTabs() {
     }
 }
 
+const theme = matchMedia('(prefers-color-scheme: dark)');
 const overlay = monaco.utils.createOverflowWidgetsDomNode(elEditor);
 const editor = monaco.editor.create(elEditor, {
     fontFamily: 'var(--code-font)',
@@ -158,13 +159,18 @@ const editor = monaco.editor.create(elEditor, {
     automaticLayout: true,
     wordWrap: 'on',
     wrappingIndent: 'indent',
-    theme: 'vs-dark',
+    theme: theme.matches ? 'vs-dark' : 'vs',
     tabSize: 2,
     'semanticHighlighting.enabled': true,
     model: createModel(),
 });
+const updateTheme = () => {
+    editor.updateOptions({ theme: theme.matches ? 'vs-dark' : 'vs' });
+};
+theme.addEventListener('change', updateTheme);
 
 editor.onDidDispose(() => overlay.dispose());
+editor.onDidDispose(() => theme.removeEventListener('change', updateTheme));
 
 // 初始化所有组件
 setTimeout(() => {
