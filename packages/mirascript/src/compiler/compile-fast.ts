@@ -4,8 +4,8 @@ import type { VmScript } from '../vm/types/index.js';
 import { GlobalFallback } from '../vm/helpers.js';
 
 const REG_NUMBER_FULL = /^\d+(?:\.\d+)?(?:[eE][+-]?\d+)?$/;
-// 只识别特殊变量名和以非 'N' 开头的大写变量名，其他标识符可能有与关键字冲突等情况，需要编译器处理
-const REG_IDENTIFIER_FAST = /^(?:\$+|@+|[_A-MO-Z])[a-zA-Z0-9_]*$/;
+// 只识别特殊变量名，其他标识符可能有与关键字冲突等情况，需要编译器处理
+const REG_IDENTIFIER_FAST = /^(?:\$+|@+)[a-zA-Z0-9_]*$/;
 
 // 为避免结果不一致，只对常量进行处理
 
@@ -24,9 +24,10 @@ function compileScriptFast(code: string, options: TranspileOptions): VmScript | 
     if (code.length > FAST_SCRIPT_MAX_LEN) return undefined; // 超过长度限制，直接返回 undefined
 
     const trimmedCode = code.trim();
-    if (!trimmedCode) return wrapScript(code, () => null);
+    if (!trimmedCode) {
+        return wrapScript(code, () => null);
+    }
     switch (trimmedCode) {
-        case '':
         case 'nil':
             return wrapScript(code, () => null);
         case 'true':

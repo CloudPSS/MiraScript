@@ -1,0 +1,17 @@
+fn T { true }
+fn F { false }
+
+t.true(T());
+t.false(F());
+
+t.true(T() && T());
+t.false(T() && F());
+t.false(F() && T());
+t.false(F() && F());
+t.false(F() && t.never()); // short-circuiting
+
+t.true(T() || T());
+t.true(T() || F());
+t.true(F() || T());
+t.false(F() || F());
+t.true(T() || t.never()); // short-circuiting

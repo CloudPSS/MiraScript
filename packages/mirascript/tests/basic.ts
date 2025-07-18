@@ -36,3 +36,6 @@ test('number literal', compileAndRun, '-1', -1);
 test('number literal', compileAndRun, '0', 0);
 test('number literal', compileAndRun, '-0', -0);
 test('number literal', compileAndRun, '-1e+2', -100);
+
+test('empty', compileAndRun, '', null);
+test('whitespaces', compileAndRun, ' \n', null);

@@ -1,3 +1,4 @@
+import { ready } from '@mirascript/wasm';
 import type { VmScript } from '../vm/index.js';
 import type { TranspileOptions, ScriptInput } from './types.js';
 import { compile as compileCore } from './compile.js';
@@ -8,7 +9,7 @@ import { DiagnosticCode, getDiagnosticMessage, parseDiagnostics, type SourceDiag
 export type { TranspileOptions, ScriptInput, InputMode } from './types.js';
 
 // 目前编译速度约 2000kB/s
-const WORKER_MIN_LEN = typeof process == 'object' && process.versions?.node != null ? Number.MAX_VALUE : 1024;
+const WORKER_MIN_LEN = typeof Worker != 'function' ? Number.MAX_VALUE : 1024;
 
 let worker: Promise<Worker> | undefined;
 /** 获取 worker */
@@ -92,6 +93,7 @@ async function compileImpl(...args: Parameters<typeof compileCore>): Promise<VmS
             ArrayBuffer.isView(source) ? new TextDecoder().decode(source) : source,
             diagnostics,
         );
+        await ready; // 确保 wasm 已经加载完成
         const messages = parsed.errors.map(formatDiagnostic);
         throw new Error(`Failed to compile:\n${messages.join('\n')}`);
     }

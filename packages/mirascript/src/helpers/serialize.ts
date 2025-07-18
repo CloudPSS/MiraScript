@@ -1,7 +1,9 @@
-import { isVmArray, isVmRecord, type VmAny } from '../vm/index.js';
+import { isVmArray, isVmRecord, type VmAny, type VmRecord } from '../vm/index.js';
 import { REG_IDENTIFIER, REG_ORDINAL } from './constants.js';
 
 const MAX_DEPTH = 100;
+const REG_IDENTIFIER_FULL = new RegExp(`^${REG_IDENTIFIER.source}$`, REG_IDENTIFIER.flags);
+const REG_ORDINAL_FULL = new RegExp(`^${REG_ORDINAL.source}$`, REG_ORDINAL.flags);
 
 /**
  * 将 MiraScript 字符串序列化为 MiraScript 字面量。
@@ -37,6 +39,9 @@ export function serializeString(value: string): string {
             const code = char.codePointAt(0)!;
             if (code <= 0x7f) {
                 ret += String.raw`\x${code.toString(16).padStart(2, '0')}`;
+            } else if (code >= 0xd800 && code <= 0xdfff) {
+                // 无效的代理对
+                ret += '�';
             } else {
                 ret += String.raw`\u{${code.toString(16)}}`;
             }
@@ -50,13 +55,29 @@ export function serializeString(value: string): string {
 
 /** 序列化属性名 */
 export function serializePropName(value: string): string {
-    if (REG_ORDINAL.test(value)) {
+    if (REG_ORDINAL_FULL.test(value)) {
         return value; // 如果是合法的数字属性名，直接返回
     }
-    if (REG_IDENTIFIER.test(value)) {
+    if (REG_IDENTIFIER_FULL.test(value)) {
         return value; // 如果是合法的标识符，直接返回
     }
     return serializeString(value); // 否则，序列化为字符串
+}
+
+// eslint-disable-next-line @typescript-eslint/unbound-method
+const { valueOf } = Object.prototype;
+/**
+ * 如果值有自定义的 valueOf 方法，调用它并返回结果，否则返回 undefined。
+ */
+function customValueOf(value: VmRecord): VmAny | undefined {
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    const thisValueOf = value.valueOf;
+    if (typeof thisValueOf != 'function' || thisValueOf === valueOf) {
+        return undefined;
+    }
+    const customValue = thisValueOf.call(value) as VmAny | undefined;
+    if (customValue === value) return undefined;
+    return customValue;
 }
 
 /** 序列化 */
@@ -82,6 +103,10 @@ function serializeImpl(value: VmAny | undefined, depth: number): string {
         return str.join('');
     }
     if (isVmRecord(value)) {
+        const customValue = customValueOf(value);
+        if (customValue !== undefined) {
+            return serializeImpl(customValue, depth - 1);
+        }
         const entries = Object.entries(value);
         if (entries.length === 0) return '()';
         if (entries.length === 1) {
