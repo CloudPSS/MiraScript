@@ -31,8 +31,8 @@ let v_false = false;
 let v_number = 42;
 let v_string = "Hello, Mira!";
 let v_fn = fn() { return "I am a function"; };
-let v_extern = /* 只需满足 type(v_extern) == "extern" */;
-let v_module = /* 只需满足 type(v_module) == "module" */;
+let v_extern = /* 空外部对象 */;
+let v_module = /* 空模块 */;
 ```
 
 参考 [packages/mirascript/tests/black-box.ts](../packages/mirascript/tests/black-box.ts) 中的实现。

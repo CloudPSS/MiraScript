@@ -2,6 +2,7 @@ import { wrapScript } from './create-script.js';
 import type { TranspileOptions } from './types.js';
 import type { VmScript } from '../vm/types/index.js';
 import { GlobalFallback } from '../vm/helpers.js';
+const { isFinite } = Number;
 
 const REG_NUMBER_FULL = /^\d+(?:\.\d+)?(?:[eE][+-]?\d+)?$/;
 // 只识别特殊变量名，其他标识符可能有与关键字冲突等情况，需要编译器处理
@@ -49,7 +50,7 @@ function compileScriptFast(code: string, options: TranspileOptions): VmScript | 
     }
     if (REG_NUMBER_FULL.test(trimmedCode)) {
         const num = Number(trimmedCode);
-        if (Number.isNaN(num)) return undefined;
+        if (!isFinite(num)) return undefined;
         // 直接返回数字
         return wrapScript(code, () => num);
     }

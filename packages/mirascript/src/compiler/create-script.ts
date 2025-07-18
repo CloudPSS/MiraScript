@@ -1,19 +1,21 @@
 import { keys, values } from '../vm/env.js';
 import type { VmScript, VmScriptLike } from '../vm/types/script.js';
 import type { ScriptInput } from './types.js';
+const { defineProperty } = Object;
 
 const kVmScript = Symbol.for('mirascript.vm.script');
 
 /** 生成 JS 函数 */
 export function wrapScript(source: ScriptInput, script: VmScriptLike): VmScript {
+    /* c8 ignore next 3 */
     if (kVmScript in script) {
         return script as VmScriptLike as VmScript;
     }
-    Object.defineProperty(script, kVmScript, { value: true });
+    defineProperty(script, kVmScript, { value: true });
     if (typeof source === 'string') {
-        Object.defineProperty(script, 'source', { value: source });
+        defineProperty(script, 'source', { value: source, configurable: true });
     } else if (source instanceof Uint8Array) {
-        Object.defineProperty(script, 'source', { value: '<buffer>' });
+        defineProperty(script, 'source', { value: '<buffer>', configurable: true });
     }
     return script as VmScript;
 }

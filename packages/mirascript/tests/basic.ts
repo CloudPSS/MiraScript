@@ -22,7 +22,10 @@ const compileAndRun = test.macro<[string, unknown]>({
 test('keyword literal', compileAndRun, 'nil', null);
 test('keyword literal', compileAndRun, 'nan', Number.NaN);
 test('keyword literal', compileAndRun, 'inf', Number.POSITIVE_INFINITY);
+test('keyword literal', compileAndRun, '+inf', Number.POSITIVE_INFINITY);
 test('keyword literal', compileAndRun, '-inf', Number.NEGATIVE_INFINITY);
+test('keyword literal', compileAndRun, '+ inf', Number.POSITIVE_INFINITY);
+test('keyword literal', compileAndRun, '- inf', Number.NEGATIVE_INFINITY);
 test('keyword literal', compileAndRun, 'true', true);
 test('keyword literal', compileAndRun, 'false', false);
 
@@ -41,3 +44,7 @@ test('number literal', compileAndRun, '-1e+2', -100);
 test('empty', compileAndRun, '', null);
 test('whitespace', compileAndRun, ' ', null);
 test('whitespaces', compileAndRun, ' \n', null);
+
+test('identifier', compileAndRun, '@pi', Math.PI);
+test('identifier with whitespace', compileAndRun, ' @pi\n\r\n ', Math.PI);
+test('non-existent identifier', compileAndRun, '@nonExistent', null);

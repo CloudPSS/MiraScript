@@ -1,6 +1,7 @@
 import { ready } from '@mirascript/wasm';
 import type { VmScript } from '../vm/index.js';
 import type { TranspileOptions, ScriptInput } from './types.js';
+import './types.js';
 import { compile as compileCore } from './compile.js';
 import { createScript } from './create-script.js';
 import { compileFast } from './compile-fast.js';
