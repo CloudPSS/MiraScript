@@ -348,12 +348,12 @@ class Emitter {
                 ).join(', ');
                 if (script) {
                     args.unshift(`global = GlobalFallback()`);
-                    code = `return (function script(${args.join(', ')}) { try{ CpEnter(); let ${regs};`;
+                    code = `return (function script(${args.join(', ')}) { try{ CpEnter(); var ${regs};`;
                 } else {
-                    code = `${this.wv(reg)} = Function(function (${args.join(', ')}) { try{ CpEnter(); let ${regs};`;
+                    code = `${this.wv(reg)} = Function(function (${args.join(', ')}) { try{ CpEnter(); var ${regs};`;
                 }
                 if (varg) {
-                    code += ` let ${this.wv(argn, -1)} = Vargs(vargs);`;
+                    code += ` var ${this.wv(argn, -1)} = Vargs(vargs);`;
                 }
                 break;
             }

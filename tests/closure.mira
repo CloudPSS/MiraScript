@@ -3,6 +3,17 @@ let mut getter2 = nil;
 let mut setter1 = nil;
 let mut setter2 = nil;
 
+fn test_closure {
+  t_eq(getter1(), 1);
+  t_eq(getter2(), 2);
+  setter1(42);
+  t_eq(getter1(), 42);
+  t_eq(getter2(), 2);
+  setter2(99);
+  t_eq(getter1(), 42);
+  t_eq(getter2(), 99);
+}
+
 for mut i in 1..2 {
   match i {
     case 1 {
@@ -19,15 +30,52 @@ for mut i in 1..2 {
     }
   }
 }
+test_closure();
 
-t_eq(getter1(), 1);
-t_eq(getter2(), 2);
-setter1(42);
-t_eq(getter1(), 42);
-t_eq(getter2(), 2);
-setter2(99);
-t_eq(getter1(), 42);
-t_eq(getter2(), 99);
+let mut c = 1;
+loop {
+  let mut i = c;
+  match i {
+    case 1 {
+      getter1 = fn { i };
+      setter1 = fn {
+        i = it;
+      };
+    }
+    case 2 {
+      getter2 = fn { i };
+      setter2 = fn {
+        i = it;
+      };
+    }
+  }
+  c += 1;
+  if c > 2 {
+    break;
+  }
+}
+test_closure();
+
+c = 1;
+while c <= 2 {
+  let mut i = c;
+  match i {
+    case 1 {
+      getter1 = fn { i };
+      setter1 = fn {
+        i = it;
+      };
+    }
+    case 2 {
+      getter2 = fn { i };
+      setter2 = fn {
+        i = it;
+      };
+    }
+  }
+  c += 1;
+}
+test_closure();
 
 fn make_counter(mut init) {
   (fn {
