@@ -47,6 +47,8 @@ fn is_palindrome {
   fn is_palindrome_helper {
     match it {
       case [] or [_] { true }
+      case [' ', ..rest] { is_palindrome_helper(rest) }
+      case [..rest, ' '] { is_palindrome_helper(rest) }
       case [left, ..rest, right] if left == right { is_palindrome_helper(rest) }
       case _ { false }
     }
@@ -55,3 +57,4 @@ fn is_palindrome {
 
 debug_print("Is 'racecar' a palindrome? ", is_palindrome("racecar"));
 debug_print("Is 'hello' a palindrome? ", is_palindrome("hello"));
+debug_print("Is 'a man a plan a canal panama' a palindrome? ", is_palindrome("a man a plan a canal panama"));
