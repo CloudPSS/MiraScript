@@ -3,6 +3,7 @@ import { isVmFunction, type TypeName, type VmAny, type VmModule, type VmValue } 
 import { VmWrapper } from './wrapper.js';
 
 const { apply } = Reflect;
+const { hasOwn } = Object;
 
 /** 包装为 Mirascript 类型 */
 export function wrapToVmValue(value: unknown, caller: VmExtern | null): VmValue {
@@ -59,8 +60,9 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
         // Function-specific properties are not accessible
         if (typeof this.value == 'function' && (key === 'prototype' || key === 'arguments' || key === 'caller'))
             return false;
-        if (Object.hasOwn(this.value, key)) return true;
+        if (hasOwn(this.value, key)) return true;
         if (!read) return true;
+        if (!(key in this.value)) return false;
         if (key === 'constructor') return false; // constructor is not accessible
         const prop = (this.value as Record<string, unknown>)[key];
         if (key in Function.prototype && prop === Function.prototype[key as keyof (() => void)]) return false;
