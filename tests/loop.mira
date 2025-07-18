@@ -36,3 +36,12 @@ let b = while {
   t_never();
 };
 t_eq(b, 18); // while 循环的返回值
+
+// compile empty loops
+t_timeout(fn {
+  loop { }
+});
+while { } { }
+t_timeout(fn {
+  while true { }
+});

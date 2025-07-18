@@ -1,6 +1,6 @@
 
 let mut s = [];
-for c in '你好，世界！🌍' {
+for c in '你好，世界！🌍'::chars() {
   s = [..s, c];
 }
 t_eq(s, ['你', '好', '，', '世', '界', '！', '🌍']);
@@ -48,6 +48,19 @@ for k in 0.2..<2.2 {
 }
 t_eq(seq, [0.2, 1.2]);
 
+for _ in nan..nan {
+  t_never();
+}
+for i in -inf..inf {
+  t_eq(i, -inf);
+  break;
+}
+t_timeout(fn () {
+  for i in inf..inf {
+    t_eq(i, inf);
+  }
+});
+
 t_throws(fn () {
   for k in fn { } { }
 });
@@ -55,6 +68,20 @@ t_throws(fn () {
 t_throws(fn () {
   for k in 1 { }
 });
+
+t_throws(fn () {
+  for k in nil { }
+});
+
+t_throws(fn () {
+  for k in "" { }
+});
+
+// Allow empty body
+for _ in v_module { }
+for _ in v_extern { }
+for _ in 0..<0 { }
+for _ in 0..0 { }
 
 t_eq(keys([1, 2, 3]), ['0', '1', '2']);
 t_eq(keys((1, 2, 3)), ['0', '1', '2']);

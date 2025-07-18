@@ -11,7 +11,8 @@ const compileAndRun = test.macro<[string]>({
 
         const expectedUrl = new URL(`./tests/${file}.jsonl`, TEST_DIR);
         const expected = fs.existsSync(expectedUrl) ? await fs.promises.readFile(expectedUrl, 'utf8') : null;
-        const script = await compile(code);
+        const script = await compile(code, { pretty: true, sourceMap: true });
+        const timeout_fn: Array<() => unknown> = [];
         let result = '';
         script(
             createVmGlobal({
@@ -29,6 +30,9 @@ const compileAndRun = test.macro<[string]>({
                 }),
                 t_throws: VmFunction((fn: unknown) => {
                     t.throws(fn as () => unknown, { instanceOf: VmError });
+                }),
+                t_timeout: VmFunction((fn: unknown) => {
+                    timeout_fn.push(fn as () => unknown);
                 }),
                 t_snapshot: VmFunction((...values: unknown[]) => {
                     result += JSON.stringify(values) + '\n';
@@ -49,6 +53,10 @@ const compileAndRun = test.macro<[string]>({
                 v_module: new VmModule('v_module', {}),
             }),
         );
+        // 在脚本之后执行，否则脚本本身超时
+        for (const fn of timeout_fn) {
+            t.throws(fn, { instanceOf: RangeError, message: 'Execution timeout' });
+        }
         if (expected != null) {
             t.is(result, expected, `Test ${file} output matches expected output`);
         } else if (result) {

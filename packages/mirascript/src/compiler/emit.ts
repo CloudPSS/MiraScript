@@ -637,8 +637,9 @@ class Emitter {
             case OpCode.LoopFor: {
                 const nreg = read();
                 const iterable = read();
-                const regs = Array.from({ length: nreg - 1 }, (_, i) => this.wv(i + 2, -1)).join(', ');
-                code = `for (let ${this.wv(1, -1)} of $Iterable(${this.rv(iterable)})) { Cp(); let _, ${regs};`;
+                const regs = Array.from({ length: nreg - 1 }, (_, i) => this.wv(i + 2, -1));
+                regs.unshift('_');
+                code = `for (let ${this.wv(1, -1)} of $Iterable(${this.rv(iterable)})) { Cp(); let ${regs.join(', ')};`;
                 break;
             }
             case OpCode.LoopRange:
@@ -647,15 +648,17 @@ class Emitter {
                 const start = read();
                 const end = read();
                 const exclusive = opcode === OpCode.LoopRangeExclusive;
-                const regs = Array.from({ length: nreg - 1 }, (_, i) => this.wv(i + 2, -1)).join(', ');
+                const regs = Array.from({ length: nreg - 1 }, (_, i) => this.wv(i + 2, -1));
+                regs.unshift('_');
                 const i = this.wv(1, -1);
-                code = `for (let start = $ToNumber(${this.rv(start)}), end = $ToNumber(${this.rv(end)}), ${i} = start; ${i} ${exclusive ? '<' : '<='} end; ${i} += 1) { Cp(); let _, ${regs};`;
+                code = `for (let start = $ToNumber(${this.rv(start)}), end = $ToNumber(${this.rv(end)}), ${i} = start; ${i} ${exclusive ? '<' : '<='} end; ${i} += 1) { Cp(); let ${regs.join(', ')};`;
                 break;
             }
             case OpCode.Loop: {
                 const nreg = read();
-                const regs = Array.from({ length: nreg }, (_, i) => this.wv(i + 1, -1)).join(', ');
-                code = `while (true) { Cp(); let _, ${regs};`;
+                const regs = Array.from({ length: nreg }, (_, i) => this.wv(i + 1, -1));
+                regs.unshift('_');
+                code = `while (true) { Cp(); let ${regs.join(', ')};`;
                 break;
             }
             case OpCode.Break: {

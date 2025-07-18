@@ -380,7 +380,6 @@ export const $Iterable = (value: VmAny): Iterable<VmValue> => {
     if (value instanceof VmWrapper) return value.keys();
     if (isVmArray(value)) return value;
     if (value != null && typeof value == 'object') return keys(value);
-    if (typeof value == 'string') return value;
     throw new VmError(`Value is not iterable`, isVmFunction(value) ? [] : [value]);
 };
 

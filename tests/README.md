@@ -17,6 +17,8 @@ fn t_true(value);
 fn t_false(value);
 /** 断言函数抛出错误 */
 fn t_throws(func);
+/** 断言函数在指定时间内未执行完毕 */
+fn t_timeout(func);
 /** 记录与比对 snapshot */
 fn t_snapshot(..values);
 /** 断言测试失败 */
