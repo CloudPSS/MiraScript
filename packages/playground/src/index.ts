@@ -15,7 +15,7 @@ import {
 import { ConsoleManager } from './console-manager.js';
 import { EXAMPLES } from './examples.js';
 import { syntaxHighlight, print } from './utils.js';
-import { getState, setState } from './state-manager.js';
+import { getState, setState, type ThemeMode } from './state-manager.js';
 
 const arr = [1, 2, [1, 2], { x: 0 }];
 arr[100] = 100; // make a sparse array
@@ -81,11 +81,36 @@ const updateModel = () => {
 
 // UI 元素
 const elEditor = document.querySelector<HTMLDivElement>('#editor')!;
+const elThemeSelect = document.querySelector<HTMLSelectElement>('#theme-select')!;
 const elExampleSelect = document.querySelector<HTMLSelectElement>('#example-select')!;
 const elModeSelect = document.querySelector<HTMLSelectElement>('#mode-select')!;
 const elRunBtn = document.querySelector<HTMLButtonElement>('#run-btn')!;
 const elCompiledOutput = document.querySelector<HTMLDivElement>('#compiled-output')!;
 const elResultOutput = document.querySelector<HTMLDivElement>('#result-output')!;
+
+/** 初始化主题选择器 */
+function initThemeSelector() {
+    const { theme } = getState();
+    elThemeSelect.value = theme;
+
+    // 应用初始主题
+    applyTheme(theme);
+
+    elThemeSelect.addEventListener('change', () => {
+        const newTheme = elThemeSelect.value as ThemeMode;
+        setState({ theme: newTheme });
+        applyTheme(newTheme);
+    });
+}
+
+/** 应用主题 */
+function applyTheme(theme: ThemeMode) {
+    document.documentElement.dataset['theme'] = theme;
+
+    // 更新Monaco编辑器主题
+    const isDark = theme === 'dark' || (theme === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
+    editor.updateOptions({ theme: isDark ? 'vs-dark' : 'vs' });
+}
 
 /** 初始化示例选择器 */
 function initExampleSelector() {
@@ -147,7 +172,7 @@ function initTabs() {
     }
 }
 
-const theme = matchMedia('(prefers-color-scheme: dark)');
+const systemTheme = matchMedia('(prefers-color-scheme: dark)');
 const overlay = monaco.utils.createOverflowWidgetsDomNode(elEditor);
 const editor = monaco.editor.create(elEditor, {
     fontFamily: 'var(--code-font)',
@@ -159,21 +184,27 @@ const editor = monaco.editor.create(elEditor, {
     automaticLayout: true,
     wordWrap: 'on',
     wrappingIndent: 'indent',
-    theme: theme.matches ? 'vs-dark' : 'vs',
+    theme: systemTheme.matches ? 'vs-dark' : 'vs', // 初始主题，会在后面更新
     tabSize: 2,
     'semanticHighlighting.enabled': true,
     model: createModel(),
 });
-const updateTheme = () => {
-    editor.updateOptions({ theme: theme.matches ? 'vs-dark' : 'vs' });
+
+// 监听系统主题变化，仅在自动模式下生效
+const updateAutoTheme = () => {
+    const { theme } = getState();
+    if (theme === 'auto') {
+        applyTheme('auto');
+    }
 };
-theme.addEventListener('change', updateTheme);
+systemTheme.addEventListener('change', updateAutoTheme);
 
 editor.onDidDispose(() => overlay.dispose());
-editor.onDidDispose(() => theme.removeEventListener('change', updateTheme));
+editor.onDidDispose(() => systemTheme.removeEventListener('change', updateAutoTheme));
 
 // 初始化所有组件
 setTimeout(() => {
+    initThemeSelector();
     initExampleSelector();
     initModeSelector();
     initTabs();
@@ -208,7 +239,7 @@ setTimeout(() => {
     elRunBtn.addEventListener('click', () => {
         void run();
     });
-}, 1);
+}, 0);
 
 /** 编译 */
 async function compileScript(): Promise<VmScript | undefined> {

@@ -16,7 +16,10 @@
   --success-color: #369481;
   --error-color: #d23d3d;
   --warning-color: #c39c00;
+}
 
+/* 自动模式 - 跟随系统偏好 */
+:root[data-theme='auto'] {
   @media (prefers-color-scheme: dark) {
     color-scheme: dark light;
     --bg-primary: #1e1e1e;
@@ -31,6 +34,38 @@
     --error-color: #f44747;
     --warning-color: #ffcc02;
   }
+}
+
+/* 强制亮色模式 */
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg-primary: #fff;
+  --bg-secondary: #eee;
+  --bg-tertiary: #fff;
+  --text-primary: #333;
+  --text-secondary: #666;
+  --border-color: #ddd;
+  --accent-color: #007acc;
+  --accent-hover: #1177bb;
+  --success-color: #369481;
+  --error-color: #d23d3d;
+  --warning-color: #c39c00;
+}
+
+/* 强制暗色模式 */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg-primary: #1e1e1e;
+  --bg-secondary: #2d2d30;
+  --bg-tertiary: #383838;
+  --text-primary: #cccccc;
+  --text-secondary: #969696;
+  --border-color: #3e3e42;
+  --accent-color: #007acc;
+  --accent-hover: #1177bb;
+  --success-color: #4ec9b0;
+  --error-color: #f44747;
+  --warning-color: #ffcc02;
 }
 
 body {

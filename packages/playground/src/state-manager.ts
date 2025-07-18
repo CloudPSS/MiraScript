@@ -3,12 +3,17 @@ import { EXAMPLES } from './examples.js';
 import { fromUint8Array, toUint8Array } from 'js-base64';
 import { deflateSync, inflateSync } from 'fflate';
 
+/** 主题模式 */
+export type ThemeMode = 'auto' | 'light' | 'dark';
+
 /** 状态 */
 export interface State {
     /** 当前编辑器模式 */
     mode: InputMode;
     /** 当前编辑器内容 */
     source: string;
+    /** 当前主题模式 */
+    theme: ThemeMode;
 }
 
 const STORAGE_PREFIX = 'mirascript-playground-state-';
@@ -43,6 +48,7 @@ let source =
     localStorage.getItem(`${STORAGE_PREFIX}source`) ||
     EXAMPLES[0]?.code ||
     `debug_print("Hello, World!");`;
+let theme: ThemeMode = (localStorage.getItem(`${STORAGE_PREFIX}theme`) as ThemeMode) || 'auto';
 
 hash.set('mode', mode);
 hash.set('source', toHash(source));
@@ -53,6 +59,7 @@ export function getState(): State {
     return {
         mode,
         source,
+        theme,
     };
 }
 
@@ -67,6 +74,10 @@ export function setState(state: Partial<State>): void {
         source = state.source;
         localStorage.setItem(`${STORAGE_PREFIX}source`, source);
         hash.set('source', toHash(source));
+    }
+    if (state.theme != null && theme !== state.theme) {
+        theme = state.theme;
+        localStorage.setItem(`${STORAGE_PREFIX}theme`, theme);
     }
     history.replaceState({}, '', `#${hash.toString()}`);
 }
