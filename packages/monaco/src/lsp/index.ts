@@ -1,8 +1,8 @@
 import { languages, type IDisposable } from '../monaco-api.js';
 import '../basic/index.js';
-import type { VmGlobalProvider } from '../index.js';
+import type { VmContextProvider } from '../index.js';
 
-import { setGlobalProvider } from './providers/base.js';
+import { setContextProvider } from './providers/base.js';
 import { CodeActionProvider } from './providers/code-action-provider.js';
 import { ColorProvider } from './providers/color-provider.js';
 import { CompletionItemProvider } from './providers/completion-item-provider.js';
@@ -36,9 +36,9 @@ export {
 };
 
 /** 注册 LSP 相关的  编辑器功能 */
-export async function registerLSP(globalProvider: VmGlobalProvider | undefined): Promise<IDisposable[]> {
+export async function registerLSP(contextProvider: VmContextProvider | undefined): Promise<IDisposable[]> {
     await ready;
-    setGlobalProvider(globalProvider);
+    setContextProvider(contextProvider);
 
     const codeActionProvider = new CodeActionProvider();
     const colorProvider = new ColorProvider();

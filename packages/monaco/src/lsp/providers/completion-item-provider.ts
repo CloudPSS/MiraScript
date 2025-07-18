@@ -184,7 +184,7 @@ export class CompletionItemProvider extends Provider implements languages.Comple
         locals: readonly CustomCompletionItem[],
         range: languages.CompletionItemRanges,
     ): Promise<CustomCompletionItem[]> {
-        const global = await this.getGlobals(model);
+        const global = await this.getContext(model);
         const suggestions: CustomCompletionItem[] = [];
         const localKeys = new Set(locals.map((item) => item.insertText));
         for (const key in global) {
@@ -268,7 +268,7 @@ export class CompletionItemProvider extends Provider implements languages.Comple
             // TODO: suggests local item fields
             return [];
         }
-        const vmGlobal = await this.getGlobals(model);
+        const vmGlobal = await this.getContext(model);
         fields.pop(); // 移除最后一个部分，因为它是当前输入位置的字段名
         const value = getDeep(vmGlobal[def.def.name], fields);
         if (value == null || typeof value != 'object') {

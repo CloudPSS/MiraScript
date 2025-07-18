@@ -122,11 +122,10 @@ export type VmLib<T extends VmFunctionLike = VmFunctionLike> = T & VmLibOption;
 
 /** 创建库函数 */
 export function VmLib<T extends VmFunctionLike>(fn: T, option: VmLibOption): VmLib<T> {
+    /* c8 ignore next 2 */
     if (typeof fn != 'function') throw new TypeError('Invalid function');
-    if (isVmFunction(fn)) {
-        // 如果已经是 VmFunction，则直接返回
-        return fn as VmLib<T>;
-    }
+    if (isVmFunction(fn)) throw new TypeError('Cannot create VmLib from a VmFunction');
+
     const ret = fn as T & VmLibOption as Writable<VmLibOption>;
     ret.params = option.params;
     ret.paramsType = option.paramsType;

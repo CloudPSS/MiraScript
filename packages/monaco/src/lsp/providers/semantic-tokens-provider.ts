@@ -31,7 +31,7 @@ export class DocumentSemanticTokensProvider extends Provider implements language
         if (!compiled) {
             return undefined;
         }
-        const globals = await this.getGlobals(model);
+        const globals = await this.getContext(model);
 
         // data 长度是 5 的倍数
         // [diffRow, diffCol, length, tokenType(index), tokenModifiers(bit field)]

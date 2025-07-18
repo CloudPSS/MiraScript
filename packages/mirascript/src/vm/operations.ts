@@ -178,7 +178,7 @@ export const $In = (value: VmAny, iterable: VmAny): boolean => {
         if (isVmPrimitive(value)) return iterable.includes(value);
         return iterable.some((item) => isSame(item, value));
     }
-    if (iterable instanceof VmExtern) return iterable.has($ToString(value));
+    if (iterable instanceof VmWrapper) return iterable.has($ToString(value));
     if (typeof iterable == 'object') return hasOwn(iterable, $ToString(value));
     return false;
 };

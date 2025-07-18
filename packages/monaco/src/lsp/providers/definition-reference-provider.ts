@@ -53,7 +53,7 @@ export class DefinitionReferenceProvider
     ): Promise<languages.LocationLink[] | undefined> {
         const compiled = await this.getCompileResult(model);
         if (!compiled) return undefined;
-        const globals = await this.getGlobals(model);
+        const globals = await this.getContext(model);
         const d = compiled.definitionAt(model, position);
         if (!d) return [];
         const { def, ref } = d;
@@ -81,7 +81,7 @@ export class DefinitionReferenceProvider
     ): Promise<languages.Location[] | undefined> {
         const compiled = await this.getCompileResult(model);
         if (!compiled) return undefined;
-        const globals = await this.getGlobals(model);
+        const globals = await this.getContext(model);
         const d = compiled.definitionAt(model, position);
         if (!d) return [];
         const { def } = d;

@@ -1,6 +1,6 @@
 import test from 'ava';
 import fs from 'node:fs';
-import { compile, createVmGlobal, VmError, VmExtern, VmFunction, VmModule } from 'mirascript';
+import { compile, createVmContext, VmError, VmExtern, VmFunction, VmModule } from 'mirascript';
 
 const TEST_DIR = new URL('../../../tests', import.meta.url);
 
@@ -15,7 +15,7 @@ const compileAndRun = test.macro<[string]>({
         const timeout_fn: Array<() => unknown> = [];
         let result = '';
         script(
-            createVmGlobal({
+            createVmContext({
                 t_eq: VmFunction((a: unknown, b: unknown) => {
                     t.deepEqual(a, b);
                 }),
@@ -49,8 +49,11 @@ const compileAndRun = test.macro<[string]>({
                 v_number: 42,
                 v_string: 'Hello, Mira!',
                 v_fn: VmFunction(() => 'I am a function'),
+                v_fn_another: VmFunction(() => 'I am another function'),
                 v_extern: new VmExtern({}),
+                v_extern_another: new VmExtern({}),
                 v_module: new VmModule('v_module', {}),
+                v_module_another: new VmModule('v_module_another', {}),
             }),
         );
         // 在脚本之后执行，否则脚本本身超时

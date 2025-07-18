@@ -30,9 +30,13 @@ t_eq(v_false, false);
 t_eq(v_number, 42);
 t_eq(v_string, 'Hello, Mira!');
 t_eq(v_fn::type(), 'function');
+t_eq(v_fn_another::type(), 'function');
 t_eq(v_fn(), 'I am a function');
+t_eq(v_fn_another(), 'I am another function');
 t_eq(v_extern::type(), 'extern');
+t_eq(v_extern_another::type(), 'extern');
 t_eq(v_module::type(), 'module');
+t_eq(v_module_another::type(), 'module');
 
 t_true('v_nil' in global);
 t_false('v_whatever' in global);
@@ -43,5 +47,13 @@ t_false('constructor' in v_extern);
 t_false('toString' in v_extern);
 t_false('push' in v_extern);
 t_false('whatever' in v_extern);
+t_eq(v_extern['whatever'], nil);
 
 t_false('whatever' in v_module);
+t_eq(v_module['whatever'], nil);
+
+t_false(v_extern == v_module);
+t_true(v_extern == v_extern);
+t_false(v_fn == v_fn_another);
+t_false(v_extern == v_extern_another);
+t_false(v_module == v_module_another);

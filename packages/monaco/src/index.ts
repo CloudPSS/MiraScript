@@ -1,13 +1,13 @@
-import type { VmGlobal } from 'mirascript';
+import type { VmContext } from 'mirascript';
 import { type editor, languages, registerMonacoApi, type IDisposable, type MonacoApi } from './monaco-api.js';
 import { register } from './contribute.js';
 
 /** 提供全局变量信息 */
-export type VmGlobalProvider = (model: editor.ITextModel) => languages.ProviderResult<Readonly<VmGlobal>>;
+export type VmContextProvider = (model: editor.ITextModel) => languages.ProviderResult<Readonly<VmContext>>;
 
 /** 加载器 */
 export class MiraScriptMonacoLoader implements IDisposable {
-    constructor(readonly globalProvider?: VmGlobalProvider) {
+    constructor(readonly contextProvider?: VmContextProvider) {
         register();
 
         const _loadBasicFeatures = () => void this.loadBasicFeatures();
@@ -41,7 +41,7 @@ export class MiraScriptMonacoLoader implements IDisposable {
             await basic; // 确保基础功能已加载
             if (this._lspFeaturesLoaded || this.disposed) return;
             this._lspFeaturesLoaded = true;
-            this.disposables.push(...(await registerLSP(this.globalProvider)));
+            this.disposables.push(...(await registerLSP(this.contextProvider)));
         } catch (error) {
             // eslint-disable-next-line no-console
             console.error('Failed to load MiraScript LSP features:', error);
@@ -65,7 +65,7 @@ export { registerMonacoApi, register };
 /**
  * 注册 MiraScript Monaco 编辑器扩展。
  */
-export function registerMiraScript(monacoApi: MonacoApi, globalProvider?: VmGlobalProvider): MiraScriptMonacoLoader {
+export function registerMiraScript(monacoApi: MonacoApi, globalProvider?: VmContextProvider): MiraScriptMonacoLoader {
     registerMonacoApi(monacoApi);
     return new MiraScriptMonacoLoader(globalProvider);
 }

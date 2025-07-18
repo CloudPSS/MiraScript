@@ -6,7 +6,7 @@ import {
     type VmAny,
     type VmScript,
     VmExtern,
-    createVmGlobal,
+    createVmContext,
     compile,
     VmModule,
     VmFunction,
@@ -32,14 +32,14 @@ function debugPrint(...args: VmAny[]) {
     consoleManager.log(Promise.all(messages).then((message) => message.join(' ')));
 }
 
-const globals = createVmGlobal(
+const globals = createVmContext(
     {
         extern_arr: new VmExtern(arr),
         obj: { a: [], b: 1, c: '2', d: { e: 3 } },
         arr: [1, 2, 3],
         long_str: 'Long string content'.repeat(10000),
         mod: new VmModule('test', {
-            sin: createVmGlobal().sin,
+            sin: createVmContext().sin,
             inner: new VmModule('inner', {}),
         }),
         debug_print: VmFunction(debugPrint, {
@@ -49,7 +49,7 @@ const globals = createVmGlobal(
         name: 'MiraScript', // for template examples
     },
     {
-        extern_obj: { a: [], b: 1, c: '2', d: { e: 3 }, sin: createVmGlobal().sin },
+        extern_obj: { a: [], b: 1, c: '2', d: { e: 3 }, sin: createVmContext().sin },
         globalThis,
     },
 );

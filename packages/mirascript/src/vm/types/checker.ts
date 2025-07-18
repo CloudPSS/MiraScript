@@ -119,16 +119,28 @@ export function isVmConst(value: unknown, checkDeep = false): value is VmConst {
 }
 /**
  * 检查是否为 Mirascript 不可变值
- * @param value - 要检查的值
- * @param checkDeep - 是否深度检查数组和对象
+ */
+export function isVmImmutable(value: VmAny): value is VmImmutable;
+/**
+ * 检查是否为 Mirascript 不可变值
+ */
+export function isVmImmutable(value: unknown, checkDeep: boolean): value is VmImmutable;
+/**
+ * 检查是否为 Mirascript 不可变值
  */
 export function isVmImmutable(value: unknown, checkDeep = false): value is VmImmutable {
     return value instanceof VmModule || isVmFunction(value) || isVmConst(value, checkDeep);
 }
 /**
  * 检查是否为 Mirascript 合法值
- * @param value - 要检查的值
- * @param checkDeep - 是否深度检查数组和对象
+ */
+export function isVmValue(value: VmAny): value is VmValue;
+/**
+ * 检查是否为 Mirascript 合法值
+ */
+export function isVmValue(value: unknown, checkDeep: boolean): value is VmValue;
+/**
+ * 检查是否为 Mirascript 合法值
  */
 export function isVmValue(value: unknown, checkDeep = false): value is VmValue {
     if (value === undefined) return false;
@@ -137,10 +149,8 @@ export function isVmValue(value: unknown, checkDeep = false): value is VmValue {
 
 /**
  * 检查是否为 Mirascript 值
- * @param value - 要检查的值
- * @param checkDeep - 是否深度检查数组和对象
  */
-export function isVmAny(value: unknown, checkDeep = false): value is VmAny {
+export function isVmAny(value: unknown, checkDeep: boolean): value is VmAny {
     switch (typeof value) {
         case 'string':
         case 'number':

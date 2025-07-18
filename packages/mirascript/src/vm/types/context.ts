@@ -28,7 +28,7 @@ export type VmContext = VmContextBase & Record<string, VmValue | undefined>;
 export const VmSharedContext = create(null) as VmSharedContext;
 
 /** 定义在所有 MiraScript 执行上下文中共享的全局函数 */
-export function defineVmGlobalFunction(name: string, fn: (...args: VmAny[]) => VmAny, override = false): void {
+export function defineVmContextFunction(name: string, fn: (...args: VmAny[]) => VmAny, override = false): void {
     if (!override && name in VmSharedContext) throw new Error(`Global variable '${name}' is already defined.`);
     VmSharedContext[name] = VmFunction(fn, {
         isLib: true,
@@ -36,7 +36,7 @@ export function defineVmGlobalFunction(name: string, fn: (...args: VmAny[]) => V
     });
 }
 /** 定义在所有 MiraScript 执行上下文中共享的全局变量 */
-export function defineVmGlobalValue(name: string, value: VmImmutable, override = false): void {
+export function defineVmContextValue(name: string, value: VmImmutable, override = false): void {
     if (!override && name in VmSharedContext) throw new Error(`Global variable '${name}' is already defined.`);
     VmSharedContext[name] = value ?? null;
 }
@@ -64,5 +64,5 @@ export function createVmContext<const T extends Record<string, VmValue | undefin
 /** 检查是否为执行上下文 */
 export function isVmContext(context: unknown): context is VmContext {
     if (context == null || typeof context != 'object') return false;
-    return getPrototypeOf(context) === VmSharedContext;
+    return getPrototypeOf(context) === VmSharedContext || context === VmSharedContext;
 }
