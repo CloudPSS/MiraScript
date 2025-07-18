@@ -1,5 +1,5 @@
 import { Element } from '../../helpers.js';
-import { $ToBoolean, $ToNumber, $ToString } from '../../operations.js';
+import { $ToNumber, $ToString } from '../../operations.js';
 import { isVmArray, isVmRecord, type VmConst } from '../../types/index.js';
 import { VmError } from '../../error.js';
 import { VmLib, expectArray, expectArrayOrRecord, expectCompound, required } from '../helpers.js';
@@ -8,6 +8,7 @@ export * from './math.js';
 export * from './map-filter.js';
 export * from './debug.js';
 export * from './json.js';
+export * from './to-primitive.js';
 
 export const len = VmLib(
     (arr) => {
@@ -72,6 +73,7 @@ const _with = VmLib(
 );
 export { _with as 'with' };
 
+const { keys: _keys, values: _values, entries: _entries } = Object;
 export const keys = VmLib(
     (data) => {
         expectCompound('data', data, []);
@@ -79,7 +81,7 @@ export const keys = VmLib(
             return Array.from({ length: data.length }, (_, i) => $ToString(i));
         }
         if (isVmRecord(data)) {
-            return Object.keys(data);
+            return _keys(data);
         }
         return data.keys();
     },
@@ -95,9 +97,9 @@ export const values = VmLib(
     (data) => {
         expectArrayOrRecord('data', data, []);
         if (isVmArray(data)) {
-            return Array.from({ length: data.length }, (_, i) => data[i] ?? null);
+            return data;
         }
-        return Object.values(data);
+        return _values(data);
     },
     {
         summary: '返回数组或记录的值列表',
@@ -111,9 +113,9 @@ export const entries = VmLib(
     (data) => {
         expectArrayOrRecord('data', data, []);
         if (isVmArray(data)) {
-            return Array.from({ length: data.length }, (_, i) => [$ToString(i), data[i] ?? null]);
+            return Array.from({ length: data.length }, (_, i) => ({ 0: $ToString(i), 1: data[i] ?? null }));
         }
-        return Object.entries(data);
+        return _entries(data).map(([key, value]) => ({ 0: key, 1: value }));
     },
     {
         summary: '返回数组或记录的键值对列表',
@@ -122,24 +124,3 @@ export const entries = VmLib(
         returnsType: '[(string, any)]',
     },
 );
-
-export const to_string = VmLib((data) => $ToString(data), {
-    summary: '将数据转换为字符串',
-    params: { data: '要转换的数据' },
-    paramsType: { data: 'any' },
-    returnsType: 'string',
-});
-
-export const to_number = VmLib((data) => $ToNumber(data), {
-    summary: '将数据转换为数字',
-    params: { data: '要转换的数据' },
-    paramsType: { data: 'any' },
-    returnsType: 'number',
-});
-
-export const to_boolean = VmLib((data) => $ToBoolean(data), {
-    summary: '将数据转换为布尔值',
-    params: { data: '要转换的数据' },
-    paramsType: { data: 'any' },
-    returnsType: 'boolean',
-});

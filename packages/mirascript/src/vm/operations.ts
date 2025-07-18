@@ -254,7 +254,7 @@ export const $SliceExclusive = (value: VmAny, start: VmAny, end: VmAny): VmArray
     return sliceCore(value, s, e, true);
 };
 export const $AssertInit: (value: VmAny) => asserts value is VmValue = (value) => {
-    if (value === undefined) throw new TypeError(`Uninitialized value`);
+    if (value === undefined) throw new VmError(`Uninitialized value`, null);
 };
 export const $Call = (func: VmValue, args: readonly VmAny[]): VmValue => {
     for (const a of args) {

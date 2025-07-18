@@ -19,10 +19,17 @@ test('source map', async (t) => {
     const s = await compile('1', { sourceMap: true });
     t.is(s.source, '1');
     t.regex(s.toString(), /try/);
+    t.notRegex(s.toString(), /^\s{2}/m);
 
     const s2 = await compile('1', { sourceMap: false });
     t.is(s2.source, '1');
     t.notRegex(s2.toString(), /try/);
+});
+
+test('pretty', async (t) => {
+    const s = await compile('1', { pretty: true, sourceMap: true });
+    t.is(s.source, '1');
+    t.regex(s.toString(), /^\s{2}/m);
 });
 
 test('invalid number', async (t) => {

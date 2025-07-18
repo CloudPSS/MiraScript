@@ -3,14 +3,10 @@ import { $Call, $ToBoolean } from '../../operations.js';
 import {
     isVmArray,
     isVmConst,
-    isVmExtern,
     isVmPrimitive,
     isVmRecord,
-    VmExtern,
     type VmAny,
-    type VmArray,
     type VmConst,
-    type VmRecord,
     type VmValue,
 } from '../../types/index.js';
 import { VmError } from '../../error.js';
@@ -57,39 +53,7 @@ function mapImpl(
         }
         return Object.fromEntries(entries);
     }
-    if (isVmExtern(data)) {
-        if (Array.isArray(data.value)) {
-            let isConst = true;
-            const result: VmValue[] = [];
-            const { length } = data.value;
-            for (let i = 0; i < length; i++) {
-                Cp();
-                const ret = mapper(fn, data.get(String(i)) ?? null, i, data);
-                if (ret === undefined) continue;
-                if (!isVmConst(ret)) {
-                    isConst = false;
-                }
-                result.push(ret);
-            }
-            if (isConst) return result as VmArray;
-            return new VmExtern(result);
-        }
-        let isConst = true;
-        const result: Array<[string, VmValue]> = [];
-        for (const key of data.keys()) {
-            Cp();
-            const ret = mapper(fn, data.get(key) ?? null, key, data);
-            if (ret === undefined) continue;
-            if (!isVmConst(ret)) {
-                isConst = false;
-            }
-            result.push([key, ret]);
-        }
-        const obj = Object.fromEntries(result);
-        if (isConst) return obj as VmRecord;
-        return new VmExtern(obj);
-    }
-    throw new VmError('First argument must be primitive, array, record, or extern', null);
+    throw new VmError('First argument must be primitive, array, or record', null);
 }
 
 export const map = VmLib((data, f) => mapImpl(data, 'f', f, (fn, value, key, data) => $Call(fn, [value, key, data])), {
