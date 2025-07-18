@@ -149,7 +149,7 @@ function initTabs() {
 
 const overlay = monaco.utils.createOverflowWidgetsDomNode(elEditor);
 const editor = monaco.editor.create(elEditor, {
-    fontFamily: 'Sarasa Mono SC, monospace',
+    fontFamily: 'var(--code-font)',
     useShadowDOM: true,
     overflowWidgetsDomNode: overlay,
     formatOnType: true,

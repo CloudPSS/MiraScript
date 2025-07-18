@@ -1,0 +1,8 @@
+t_eq(()::with('a', 1, 'b', fn { }, 'c', 'c', 'c', 'C'), (a: 1, b: nil, c: 'C'));
+t_throws(fn { ()::with('x') });
+t_throws(fn { v_fn::with() });
+t_throws(fn { 1::with() });
+t_throws(fn { v_extern::with() });
+t_eq([]::with(), []);
+t_eq([1, 2, 3]::with('a', 1, 'b', 2), [1, 2, 3]);
+t_eq([]::with(2, 1), [nil, nil, 1]);
