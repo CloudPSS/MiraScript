@@ -1,21 +1,21 @@
-t.eq(nil::type(), "nil");
+t_eq(nil::type(), "nil");
 
-t.eq(true::type(), "boolean");
-t.eq(false::type(), "boolean");
+t_eq(true::type(), "boolean");
+t_eq(false::type(), "boolean");
 
-t.eq(1::type(), "number");
-t.eq(1.0::type(), "number");
-t.eq(nan::type(), "number");
-t.eq(inf::type(), "number");
-t.eq((-inf)::type(), "number");
+t_eq(1::type(), "number");
+t_eq(1.0::type(), "number");
+t_eq(nan::type(), "number");
+t_eq(inf::type(), "number");
+t_eq((-inf)::type(), "number");
 
-t.eq("Hello, World!"::type(), "string");
-t.eq("é"::type(), "string");
+t_eq("Hello, World!"::type(), "string");
+t_eq("é"::type(), "string");
 
-t.eq(()::type(), "record");
-t.eq((1,)::type(), "record");
-t.eq((1, 2, 3)::type(), "record");
-t.eq((a: 1, b: 2)::type(), "record");
+t_eq(()::type(), "record");
+t_eq((1,)::type(), "record");
+t_eq((1, 2, 3)::type(), "record");
+t_eq((a: 1, b: 2)::type(), "record");
 
-t.eq([]::type(), "array");
-t.eq([1, 2, 3]::type(), "array");
+t_eq([]::type(), "array");
+t_eq([1, 2, 3]::type(), "array");

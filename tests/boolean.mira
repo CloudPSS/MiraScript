@@ -1,19 +1,19 @@
-t.snapshot(true);
-t.snapshot(false);
+t_snapshot(true);
+t_snapshot(false);
 
-t.eq(!false, true);
-t.eq(!true, false);
+t_eq(!false, true);
+t_eq(!true, false);
 
-t.eq(!!nil, false);
-t.eq(!!nan, true);
-t.eq(!!0, true);
-t.eq(!!-0, true);
-t.eq(!!1, true);
-t.eq(!!"", true);
+t_eq(!!nil, false);
+t_eq(!!nan, true);
+t_eq(!!0, true);
+t_eq(!!-0, true);
+t_eq(!!1, true);
+t_eq(!!"", true);
 
-t.eq(to_boolean(nil), false);
-t.eq(to_boolean(nan), true);
-t.eq(to_boolean(0), true);
-t.eq(to_boolean(-0), true);
-t.eq(to_boolean(1), true);
-t.eq(to_boolean(""), true);
+t_eq(to_boolean(nil), false);
+t_eq(to_boolean(nan), true);
+t_eq(to_boolean(0), true);
+t_eq(to_boolean(-0), true);
+t_eq(to_boolean(1), true);
+t_eq(to_boolean(""), true);

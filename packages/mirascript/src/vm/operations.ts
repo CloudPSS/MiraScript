@@ -344,7 +344,8 @@ export const $IsArray = (value: VmAny): value is VmArray => {
 };
 export const $AssertNonNil = (value: VmAny): asserts value is NonNullable<VmValue> => {
     $AssertInit(value);
-    if (value === null) throw new Error('Expected non-nil value');
+    if (value !== null) return;
+    throw new VmError('Expected non-nil value', null);
 };
 export const $Has = (obj: VmAny, key: VmAny): boolean => {
     $AssertInit(obj);

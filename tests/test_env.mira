@@ -1,0 +1,35 @@
+// 检查测试环境
+fn assert_fn(value) {
+  let vt = type(value);
+  if vt != "function" {
+    // 在完成检查前，使用该方式抛出异常
+    nil!;
+  }
+}
+
+assert_fn(t_eq);
+assert_fn(t_ne);
+assert_fn(t_true);
+assert_fn(t_false);
+assert_fn(t_throws);
+assert_fn(t_snapshot);
+assert_fn(t_never);
+
+t_throws(fn {
+  // 测试抛出异常
+  nil!;
+});
+
+t_eq(type(v_array), 'array');
+t_eq(v_array, []);
+t_eq(type(v_record), 'record');
+t_eq(v_record, ());
+t_eq(v_nil, nil);
+t_eq(v_true, true);
+t_eq(v_false, false);
+t_eq(v_number, 42);
+t_eq(v_string, 'Hello, Mira!');
+t_eq(v_fn::type(), 'function');
+t_eq(v_fn(), 'I am a function');
+t_eq(v_extern::type(), 'extern');
+t_eq(v_module::type(), 'module');

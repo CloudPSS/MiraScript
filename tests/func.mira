@@ -1,37 +1,39 @@
 // call un-callable
-t.throws(fn () {
+t_throws(fn () {
   let f = nil;
   f();
 });
-t.throws(fn () {
+t_throws(fn () {
   let f = true;
   f();
 });
-t.throws(fn () {
+t_throws(fn () {
   let f = ();
   f();
 });
-t.throws(fn () {
+t_throws(fn () {
   let f = [];
   f();
 });
-t.throws(fn () {
+t_throws(fn () {
   let f = t;
   f();
 });
 
 fn be_of_type(..[v, tp]) {
-  t.eq(type(v), tp);
+  t_eq(type(v), tp);
 }
 fn be_of_type2(v, tp) {
-  t.eq(type(v), tp);
+  t_eq(type(v), tp);
 }
 
 be_of_type(1, 'number');
 be_of_type([], 'array');
 be_of_type((), 'record');
 
-be_of_type(t, 'nil');
+be_of_type(v_extern, 'nil');
+be_of_type(v_module, 'nil');
 be_of_type(fn { }, 'nil');
-be_of_type2(t, 'extern');
+be_of_type2(v_extern, 'extern');
+be_of_type2(v_module, 'module');
 be_of_type2(fn { }, 'function');

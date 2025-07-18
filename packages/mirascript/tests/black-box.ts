@@ -1,6 +1,6 @@
 import test from 'ava';
 import fs from 'node:fs';
-import { compile, createVmGlobal, VmError, type VmFunction } from 'mirascript';
+import { compile, createVmGlobal, VmError, VmExtern, VmFunction, VmModule } from 'mirascript';
 
 const TEST_DIR = new URL('../../../tests', import.meta.url);
 
@@ -14,34 +14,40 @@ const compileAndRun = test.macro<[string]>({
         const script = await compile(code);
         let result = '';
         script(
-            createVmGlobal(
-                {},
-                {
-                    t: {
-                        eq: (a: unknown, b: unknown) => {
-                            t.deepEqual(a, b);
-                        },
-                        ne: (a: unknown, b: unknown) => {
-                            t.notDeepEqual(a, b);
-                        },
-                        true: (value: unknown) => {
-                            t.true(value);
-                        },
-                        false: (value: unknown) => {
-                            t.false(value);
-                        },
-                        throws: (fn: VmFunction) => {
-                            t.throws(fn, { instanceOf: VmError });
-                        },
-                        snapshot: (...values: unknown[]) => {
-                            result += JSON.stringify(values) + '\n';
-                        },
-                        never: (message?: string) => {
-                            t.fail(message || 'This should never be called');
-                        },
-                    },
-                },
-            ),
+            createVmGlobal({
+                t_eq: VmFunction((a: unknown, b: unknown) => {
+                    t.deepEqual(a, b);
+                }),
+                t_ne: VmFunction((a: unknown, b: unknown) => {
+                    t.notDeepEqual(a, b);
+                }),
+                t_true: VmFunction((value: unknown) => {
+                    t.true(value);
+                }),
+                t_false: VmFunction((value: unknown) => {
+                    t.false(value);
+                }),
+                t_throws: VmFunction((fn: unknown) => {
+                    t.throws(fn as () => unknown, { instanceOf: VmError });
+                }),
+                t_snapshot: VmFunction((...values: unknown[]) => {
+                    result += JSON.stringify(values) + '\n';
+                }),
+                t_never: VmFunction((message: unknown) => {
+                    t.fail((message as string) || 'This should never be called');
+                }),
+
+                v_array: [],
+                v_record: {},
+                v_nil: null,
+                v_true: true,
+                v_false: false,
+                v_number: 42,
+                v_string: 'Hello, Mira!',
+                v_fn: VmFunction(() => 'I am a function'),
+                v_extern: new VmExtern({}),
+                v_module: new VmModule('v_module', {}),
+            }),
         );
         if (expected != null) {
             t.is(result, expected, `Test ${file} output matches expected output`);

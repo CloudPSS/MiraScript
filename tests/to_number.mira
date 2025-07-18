@@ -1,12 +1,12 @@
-t.eq(to_number(1), 1);
-t.ne(+0, -0);
-t.eq(to_number(+0), +0);
-t.eq(to_number(-0), -0);
-t.eq(to_number(nan), nan);
-t.eq(to_number(inf), inf);
+t_eq(to_number(1), 1);
+t_ne(+0, -0);
+t_eq(to_number(+0), +0);
+t_eq(to_number(-0), -0);
+t_eq(to_number(nan), nan);
+t_eq(to_number(inf), inf);
 
-t.eq(to_number(''), 0);
-t.eq(to_number('1'), 1);
-t.eq(to_number(' 1.0 '), 1);
-t.eq(to_number('0x1'), 1);
-t.eq(to_number('0x 1'), nan);
+t_eq(to_number(''), 0);
+t_eq(to_number('1'), 1);
+t_eq(to_number(' 1.0 '), 1);
+t_eq(to_number('0x1'), 1);
+t_eq(to_number('0x 1'), nan);

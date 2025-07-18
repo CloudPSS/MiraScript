@@ -1,11 +1,11 @@
-t.eq(sin(0), 0);
-t.snapshot(sin(@pi / 2));
-t.snapshot(sin(@pi));
+t_eq(sin(0), 0);
+t_snapshot(sin(@pi / 2));
+t_snapshot(sin(@pi));
 
-t.eq(cos(0), 1);
-t.snapshot(cos(@pi / 2));
-t.snapshot(cos(@pi));
+t_eq(cos(0), 1);
+t_snapshot(cos(@pi / 2));
+t_snapshot(cos(@pi));
 
-t.eq(tan(0), 0);
-t.snapshot(tan(@pi / 4));
-t.snapshot(tan(@pi / 2));
+t_eq(tan(0), 0);
+t_snapshot(tan(@pi / 4));
+t_snapshot(tan(@pi / 2));
