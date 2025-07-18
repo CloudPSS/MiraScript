@@ -824,11 +824,12 @@ impl<'s> Emitter<'s> {
                 self.enter_scope(expression.range());
                 let pos = self.chunk.code.len();
                 self.op(OpCode::Loop);
-                let Expression::Block(_, stmts, expr, _) = expression.as_ref() else {
+                let Expression::Block(_, stmts, ret_expr, _) = expression.as_ref() else {
                     // unreachable!("Expected block expression");
                     return;
                 };
-                self.emit_block(stmts, expr, Register::EMPTY, Some(ret));
+                self.declare_block(stmts, ret_expr);
+                self.emit_block(stmts, ret_expr, Register::EMPTY, Some(ret));
                 self.op(OpCode::LoopEnd);
 
                 let nreg: OpParam = self.closures.current().reg_len().into();
