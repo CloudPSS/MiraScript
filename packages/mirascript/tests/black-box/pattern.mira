@@ -1,0 +1,35 @@
+
+t.true(nil is nil);
+
+t.true(true is true);
+t.true(false is false);
+
+t.true(nan is nan);
+t.true(inf is inf);
+t.true(0 is -0);
+
+t.true([1, 2, 3] is [1, ..rest] && rest is [2, 3]);
+t.true([10] is [x and > 0] && x is 10);
+t.false([10] is [y and > 10]);
+t.eq(y, 10);
+
+t.true((1, 2, 3) is (1, ..r_rest) && r_rest is (1: 2, 2: 3));
+t.false([1, 2, 3] is (..bad_rest));
+t.eq(bad_rest, ());
+
+// 即使匹配失败，仍然可以获取到匹配的值
+t.false([1, 2, 3] is (ra, rb, rc));
+t.eq(ra, 1);
+t.eq(rb, 2);
+t.eq(rc, 3);
+
+t.false(t is (:eq));
+t.eq(eq::type(), 'extern');
+t.ne(eq, t.eq); // eq is bond of t.eq
+
+t.true(1 is 1 or '1');
+t.true(1 is 1..2);
+t.true(1.5 is 1.5..1.5);
+t.false(1.5 is "1"..<1.5);
+
+t.true("1" is "1".."2");

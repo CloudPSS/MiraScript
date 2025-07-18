@@ -5,6 +5,7 @@ const compileAndRun = test.macro<[string, unknown]>({
     exec: async (t, code, expected) => {
         {
             const script = await compile(code);
+            t.deepEqual(script.source, code);
             const result = script();
             t.deepEqual(result, expected);
         }
@@ -38,4 +39,5 @@ test('number literal', compileAndRun, '-0', -0);
 test('number literal', compileAndRun, '-1e+2', -100);
 
 test('empty', compileAndRun, '', null);
+test('whitespace', compileAndRun, ' ', null);
 test('whitespaces', compileAndRun, ' \n', null);

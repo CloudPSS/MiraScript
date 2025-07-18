@@ -269,8 +269,7 @@ export const $Call = (func: VmValue, args: readonly VmAny[]): VmValue => {
     throw new VmError(`Expected callable, got ${$Type(func)}`, null);
 };
 export const $Type = (value: VmAny): TypeName => {
-    if (value === undefined) return 'nil';
-    if (value === null) return 'nil';
+    if (value === undefined || value === null) return 'nil';
     if (value instanceof VmExtern) return 'extern';
     if (value instanceof VmModule) return 'module';
     if (isVmArray(value)) return 'array';
