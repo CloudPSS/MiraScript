@@ -2,7 +2,7 @@ import { VmFunction, type VmImmutable } from '../types/index.js';
 import { VmSharedContext } from '../types/context.js';
 
 import type { VmLib } from './helpers.js';
-import * as global from './global.js';
+import * as global from './global/index.js';
 
 for (const [name, value] of Object.entries(global)) {
     let e = name;

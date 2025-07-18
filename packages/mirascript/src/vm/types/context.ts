@@ -7,7 +7,7 @@ import {
     isVmAny,
     type VmFunctionLike,
 } from './index.js';
-import type * as global from '../lib/global.js';
+import type * as global from '../lib/global/index.js';
 const { getPrototypeOf, create, entries } = Object;
 /** 全局导入的标准库 */
 type GlobalKeys = keyof typeof global;

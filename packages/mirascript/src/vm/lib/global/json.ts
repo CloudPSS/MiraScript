@@ -1,0 +1,40 @@
+import { isVmExtern, isVmModule } from '../../types/index.js';
+import { required, rethrowError, VmLib } from '../helpers.js';
+const { parse, stringify } = JSON;
+
+export const to_json = VmLib(
+    (data) => {
+        if (isVmExtern(data)) {
+            return stringify(data.value);
+        }
+        if (isVmModule(data)) {
+            return '{}';
+        }
+        return stringify(data);
+    },
+    {
+        summary: '将数据转换为 JSON 字符串',
+        params: { data: '要转换为 JSON 的数据' },
+        paramsType: { data: 'any' },
+        returnsType: 'string',
+    },
+);
+
+export const from_json = VmLib(
+    (json, fallback) => {
+        required('json', json, null);
+        if (typeof json != 'string') return json;
+        try {
+            return parse(json);
+        } catch (ex) {
+            if (fallback != null) return fallback;
+            rethrowError('Invalid JSON', ex, null);
+        }
+    },
+    {
+        summary: '将 JSON 字符串转换为数据',
+        params: { json: '要转换的 JSON 字符串', fallback: '如果转换失败，返回的默认值' },
+        paramsType: { json: 'string', fallback: 'any' },
+        returnsType: 'any',
+    },
+);
