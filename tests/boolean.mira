@@ -10,10 +10,3 @@ t_eq(!!0, true);
 t_eq(!!-0, true);
 t_eq(!!1, true);
 t_eq(!!"", true);
-
-t_eq(to_boolean(nil), false);
-t_eq(to_boolean(nan), true);
-t_eq(to_boolean(0), true);
-t_eq(to_boolean(-0), true);
-t_eq(to_boolean(1), true);
-t_eq(to_boolean(""), true);

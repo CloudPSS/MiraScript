@@ -33,3 +33,6 @@ t_eq(v_fn::type(), 'function');
 t_eq(v_fn(), 'I am a function');
 t_eq(v_extern::type(), 'extern');
 t_eq(v_module::type(), 'module');
+
+t_true('v_nil' in global);
+t_false('v_whatever' in global);

@@ -1,0 +1,50 @@
+// to_number
+t_eq(to_number(1), 1);
+t_ne(+0, -0);
+t_eq(to_number(+0), +0);
+t_eq(to_number(-0), -0);
+t_eq(to_number(nan), nan);
+t_eq(to_number(inf), inf);
+
+t_eq(to_number(''), 0);
+t_eq(to_number('1'), 1);
+t_eq(to_number(' 1.0 '), 1);
+t_eq(to_number('0x1'), 1);
+t_eq(to_number('0x 1'), nan);
+t_eq(to_number([1]), nan);
+t_eq(to_number((1,)), nan);
+
+// to_boolean
+t_true(to_boolean(true));
+t_false(to_boolean(false));
+
+t_false(to_boolean(nil));
+t_true(to_boolean(nan));
+t_true(to_boolean(0));
+t_true(to_boolean(-0));
+t_true(to_boolean(1));
+t_true(to_boolean(""));
+t_true(to_boolean([]));
+t_true(to_boolean(()));
+t_true(to_boolean(v_extern));
+t_true(to_boolean(v_module));
+t_true(to_boolean(v_fn));
+
+// to_string
+t_eq(to_string(nil), "");
+t_eq(to_string(true), "true");
+t_eq(to_string(false), "false");
+t_eq(to_string(1), "1");
+t_eq(to_string(nan), "nan");
+t_eq(to_string(inf), "inf");
+t_eq(to_string(-inf), "-inf");
+t_eq(to_string("Hello, World!"), "Hello, World!");
+t_eq(to_string("é"), "é");
+t_eq(to_string(()), "");
+t_eq(to_string([]), "");
+t_eq(to_string([1, 2, 3]), "1, 2, 3");
+t_eq(to_string((1, 2, 3)), "0: 1, 1: 2, 2: 3");
+t_eq(to_string([nil, (), [], (x: 1)]), "nil, (), [], (x: 1)");
+t_eq(to_string(v_module), "<module v_module>");
+t_eq(to_string(to_string), "<function global.to_string>");
+t_eq(to_string(fn { }), "<function>");

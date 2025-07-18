@@ -6,3 +6,15 @@ let Hello = "Hello";
 t_snapshot("$(Hello)
   world${ `!
   ` }");
+
+let strs = ['Hello, World!', '你好，世界！', 'こんにちは、世界！', '안녕하세요, 세계!', '🫱🏾‍🫲🏼🌍'];
+for str in strs {
+  t_snapshot(str);
+
+  let mut chs = [];
+  for ch in str {
+    chs = [..chs, ch];
+  }
+
+  t_eq(chars(str), chs);
+}

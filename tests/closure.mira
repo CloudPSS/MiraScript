@@ -1,0 +1,66 @@
+let mut getter1 = nil;
+let mut getter2 = nil;
+let mut setter1 = nil;
+let mut setter2 = nil;
+
+for mut i in 1..2 {
+  match i {
+    case 1 {
+      getter1 = fn { i };
+      setter1 = fn {
+        i = it;
+      };
+    }
+    case 2 {
+      getter2 = fn { i };
+      setter2 = fn {
+        i = it;
+      };
+    }
+  }
+}
+
+t_eq(getter1(), 1);
+t_eq(getter2(), 2);
+setter1(42);
+t_eq(getter1(), 42);
+t_eq(getter2(), 2);
+setter2(99);
+t_eq(getter1(), 42);
+t_eq(getter2(), 99);
+
+fn make_counter(mut init) {
+  (fn {
+    init += 1;
+    return init;
+  })
+}
+
+let counter1 = make_counter(0);
+let counter2 = make_counter(10);
+
+t_eq(counter1(), 1);
+t_eq(counter1(), 2);
+t_eq(counter2(), 11);
+t_eq(counter2(), 12);
+t_eq(counter1(), 3);
+t_eq(counter2(), 13);
+
+fn ret_outer {
+  fn x {
+    return z;
+  }
+  let z = 123;
+  return x();
+}
+t_eq(ret_outer(), 123);
+
+fn tdz {
+  fn x {
+    return z;
+  }
+  x();
+  let z = 456;
+}
+
+t_throws(tdz);

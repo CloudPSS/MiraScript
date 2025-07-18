@@ -1,0 +1,76 @@
+
+let mut s = [];
+for c in '你好，世界！🌍' {
+  s = [..s, c];
+}
+t_eq(s, ['你', '好', '，', '世', '界', '！', '🌍']);
+
+let mut a = [];
+for i in ['你好', '，', '世界', '！'] {
+  a = [..a, i];
+}
+t_eq(a, ['你好', '，', '世界', '！']);
+
+let mut r = [];
+for i in ('你好', '，', '世界', '！', x: nil) {
+  r = [..r, i];
+}
+t_eq(r, ['0', '1', '2', '3', 'x']);
+
+let mut kv = [];
+for (k, v) in entries(('你好', '，', '世界', '！', x: nil)) {
+  kv = [..kv, (k, v)];
+}
+t_eq(kv, [('0', '你好'), ('1', '，'), ('2', '世界'), ('3', '！'), ('x', nil)]);
+
+for k in v_extern {
+  t_eq(k::type(), "string");
+}
+for k in v_module {
+  t_eq(k::type(), "string");
+}
+
+let mut seq = [];
+for k in 0.2..2 {
+  seq = [..seq, k];
+}
+t_eq(seq, [0.2, 1.2]);
+
+seq = [];
+for k in 0.2..2.2 {
+  seq = [..seq, k];
+}
+t_eq(seq, [0.2, 1.2, 2.2]);
+
+seq = [];
+for k in 0.2..<2.2 {
+  seq = [..seq, k];
+}
+t_eq(seq, [0.2, 1.2]);
+
+t_throws(fn () {
+  for k in fn { } { }
+});
+
+t_throws(fn () {
+  for k in 1 { }
+});
+
+t_eq(keys([1, 2, 3]), ['0', '1', '2']);
+t_eq(keys((1, 2, 3)), ['0', '1', '2']);
+t_eq(keys(v_extern), []);
+t_eq(keys(v_module), []);
+t_throws(fn { keys(fn { }) });
+
+t_eq(values([1, 2, 3]), [1, 2, 3]);
+t_eq(values((1, 2, 3)), [1, 2, 3]);
+t_throws(fn () { values(v_extern) });
+t_throws(fn () { values(v_module) });
+t_throws(fn () { values(fn { }) });
+
+t_eq(entries([nil, 1]), [('0', nil), ('1', 1)]);
+t_eq(entries([1, 2, 3]), [('0', 1), ('1', 2), ('2', 3)]);
+t_eq(entries((1, 2, 3)), [('0', 1), ('1', 2), ('2', 3)]);
+t_throws(fn () { entries(v_extern) });
+t_throws(fn () { entries(v_module) });
+t_throws(fn () { entries(fn { }) });
