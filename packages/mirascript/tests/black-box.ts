@@ -2,12 +2,14 @@ import test from 'ava';
 import fs from 'node:fs';
 import { compile, createVmGlobal, VmError, type VmFunction } from 'mirascript';
 
+const TEST_DIR = new URL('../../../tests', import.meta.url);
+
 const compileAndRun = test.macro<[string]>({
     exec: async (t, file) => {
-        const codeUrl = new URL(`./black-box/${file}`, import.meta.url);
+        const codeUrl = new URL(`./tests/${file}`, TEST_DIR);
         const code = await fs.promises.readFile(codeUrl, 'utf8');
 
-        const expectedUrl = new URL(`./black-box/${file}.jsonl`, import.meta.url);
+        const expectedUrl = new URL(`./tests/${file}.jsonl`, TEST_DIR);
         const expected = fs.existsSync(expectedUrl) ? await fs.promises.readFile(expectedUrl, 'utf8') : null;
         const script = await compile(code);
         let result = '';
@@ -22,8 +24,11 @@ const compileAndRun = test.macro<[string]>({
                         ne: (a: unknown, b: unknown) => {
                             t.notDeepEqual(a, b);
                         },
-                        fail: (message?: string) => {
-                            t.fail(message || 'Test failed');
+                        true: (value: unknown) => {
+                            t.true(value);
+                        },
+                        false: (value: unknown) => {
+                            t.false(value);
                         },
                         throws: (fn: VmFunction) => {
                             t.throws(fn, { instanceOf: VmError });
@@ -31,14 +36,8 @@ const compileAndRun = test.macro<[string]>({
                         snapshot: (...values: unknown[]) => {
                             result += JSON.stringify(values) + '\n';
                         },
-                        true: (value: unknown) => {
-                            t.true(value);
-                        },
-                        false: (value: unknown) => {
-                            t.false(value);
-                        },
-                        never: () => {
-                            t.fail('This should never be called');
+                        never: (message?: string) => {
+                            t.fail(message || 'This should never be called');
                         },
                     },
                 },
@@ -54,7 +53,7 @@ const compileAndRun = test.macro<[string]>({
     title: (providedTitle = 'test', code) => code || providedTitle,
 });
 
-for (const file of fs.readdirSync(new URL('./black-box', import.meta.url))) {
+for (const file of fs.readdirSync(TEST_DIR)) {
     if (file.endsWith('.mira')) {
         test(compileAndRun, file);
     }
