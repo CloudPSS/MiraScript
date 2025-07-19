@@ -300,6 +300,7 @@ body > .playground {
   }
 
   .console-time {
+    user-select: none;
     color: var(--text-secondary);
 
     &::before {
