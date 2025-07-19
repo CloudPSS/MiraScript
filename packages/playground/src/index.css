@@ -3,8 +3,19 @@
     'Sarasa Mono SC', 'JetBrains Mono', 'Fira Code', 'Consolas', 'Liberation Mono', 'Menlo', 'Courier', monospace;
   user-select: none;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color-scheme: dark light;
+}
 
-  color-scheme: light dark;
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+:root,
+:root[data-theme='light'] {
   --bg-primary: #fff;
   --bg-secondary: #eee;
   --bg-tertiary: #fff;
@@ -18,10 +29,8 @@
   --warning-color: #c39c00;
 }
 
-/* 自动模式 - 跟随系统偏好 */
-:root[data-theme='auto'] {
-  @media (prefers-color-scheme: dark) {
-    color-scheme: dark light;
+@media (prefers-color-scheme: dark) {
+  :root {
     --bg-primary: #1e1e1e;
     --bg-secondary: #2d2d30;
     --bg-tertiary: #383838;
@@ -36,25 +45,7 @@
   }
 }
 
-/* 强制亮色模式 */
-:root[data-theme='light'] {
-  color-scheme: light;
-  --bg-primary: #fff;
-  --bg-secondary: #eee;
-  --bg-tertiary: #fff;
-  --text-primary: #333;
-  --text-secondary: #666;
-  --border-color: #ddd;
-  --accent-color: #007acc;
-  --accent-hover: #1177bb;
-  --success-color: #369481;
-  --error-color: #d23d3d;
-  --warning-color: #c39c00;
-}
-
-/* 强制暗色模式 */
 :root[data-theme='dark'] {
-  color-scheme: dark;
   --bg-primary: #1e1e1e;
   --bg-secondary: #2d2d30;
   --bg-tertiary: #383838;
