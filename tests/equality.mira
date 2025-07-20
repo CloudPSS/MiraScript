@@ -76,3 +76,27 @@ t_false((a: nil) == ());
 t_true((a?: nil) == ());
 t_true((1, 2) == (1: 2, 0: 1));
 t_true((1, 2) == ("1": 2, "0": 1));
+
+// function
+t_false(v_fn == v_fn_another);
+t_true(v_fn == v_fn);
+t_false(v_fn == nil);
+t_false(nil == v_fn);
+t_false(v_fn == ());
+t_false(() == v_fn);
+
+// extern
+t_false(v_extern == v_extern_another);
+t_true(v_extern == v_extern);
+t_false(v_extern == nil);
+t_false(nil == v_extern);
+t_false(v_extern == ());
+t_false(() == v_extern);
+
+// module
+t_false(v_module == v_module_another);
+t_true(v_module == v_module);
+t_false(v_module == nil);
+t_false(nil == v_module);
+t_false(v_module == ());
+t_false(() == v_module);

@@ -15,6 +15,8 @@ import {
     type VmArray,
     type VmConst,
     isVmExtern,
+    type VmPrimitive,
+    type VmFunction,
 } from './types/index.js';
 import { VmWrapper } from './types/wrapper.js';
 
@@ -178,8 +180,10 @@ export const $In = (value: VmAny, iterable: VmAny): boolean => {
         if (isVmPrimitive(value)) return iterable.includes(value);
         return iterable.some((item) => isSame(item, value));
     }
+    // iterable is a record or an extern here, value should be a string
     if (iterable instanceof VmWrapper) return iterable.has($ToString(value));
     if (typeof iterable == 'object') return hasOwn(iterable, $ToString(value));
+    iterable satisfies VmPrimitive | VmFunction;
     return false;
 };
 export const $Concat = (...args: string[]): string => {
