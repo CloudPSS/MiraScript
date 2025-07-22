@@ -19,9 +19,9 @@
     "@cloudpss/lint-staged-config": "^3.0.24",
     "@cloudpss/prettier-config": "^3.0.24",
     "@cloudpss/tsconfig": "^3.0.24",
-    "@types/node": "^24.0.14",
+    "@types/node": "^24.1.0",
     "better-typescript-lib": "^2.11.0",
-    "esbuild": "^0.25.6",
+    "esbuild": "^0.25.8",
     "husky": "^9.1.7",
     "rimraf": "^6.0.1",
     "typescript": "^5.8.3"
