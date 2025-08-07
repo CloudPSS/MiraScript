@@ -1,4 +1,13 @@
-import { isVmArray, isVmRecord, type VmAny, type VmRecord } from '../vm/index.js';
+import {
+    isVmArray,
+    isVmRecord,
+    type VmArray,
+    type VmExtern,
+    type VmFunction,
+    type VmModule,
+    type VmAny,
+    type VmRecord,
+} from '../vm/index.js';
 import { REG_IDENTIFIER, REG_ORDINAL } from './constants.js';
 
 const MAX_DEPTH = 100;
@@ -64,6 +73,31 @@ export function serializePropName(value: string): string {
     return serializeString(value); // 否则，序列化为字符串
 }
 
+/** 序列化布尔值 */
+function serializeBoolean(value: boolean): string {
+    return value ? 'true' : 'false';
+}
+
+const { isNaN, isFinite } = Number;
+/** 序列化数字 */
+function serializeNumber(value: number): string {
+    if (isNaN(value)) return 'nan';
+    if (!isFinite(value)) return value < 0 ? '-inf' : 'inf';
+    return String(value);
+}
+
+/** 序列化数组 */
+function serializeArray(value: VmArray, depth: number): string {
+    if (value.length === 0) return '[]';
+    let str = '[';
+    for (let i = 0; i < value.length; i++) {
+        if (i > 0) str += ', ';
+        str += serializeImpl(value[i], depth);
+    }
+    str += ']';
+    return str;
+}
+
 // eslint-disable-next-line @typescript-eslint/unbound-method
 const { valueOf } = Object.prototype;
 /**
@@ -80,57 +114,48 @@ function customValueOf(value: VmRecord): VmAny | undefined {
     return customValue;
 }
 
+/** 序列化记录 */
+function serializeRecord(value: VmRecord, depth: number): string {
+    const customValue = customValueOf(value);
+    if (customValue !== undefined) {
+        return serializeImpl(customValue, depth - 1);
+    }
+    const entries = Object.entries(value);
+    if (entries.length === 0) return '()';
+    if (entries.length === 1) {
+        const [k, v] = entries[0]!;
+        if (k === '0') {
+            return `(${serializeImpl(v, depth)},)`; // 单个元素数组
+        }
+        return `(${serializePropName(k)}: ${serializeImpl(v, depth)})`;
+    }
+
+    // 根据 ES 标准，数字 key 会按顺序枚举
+    const omitKey = entries.length < 10 && entries.every(([key], index) => key === String(index));
+    let str = '(';
+    for (const [key, val] of entries) {
+        if (str.length > 1) str += ', ';
+        if (omitKey) {
+            str += serializeImpl(val, depth);
+        } else {
+            str += `${serializePropName(key)}: ${serializeImpl(val, depth)}`;
+        }
+    }
+    str += ')';
+    return str;
+}
+
 /** 序列化 */
 function serializeImpl(value: VmAny | undefined, depth: number): string {
     if (value == null || depth > MAX_DEPTH) return `nil`;
-    if (typeof value == 'boolean') return value ? 'true' : 'false';
-    if (typeof value == 'number') {
-        if (Number.isNaN(value)) return 'nan';
-        if (!Number.isFinite(value)) return value < 0 ? '-inf' : 'inf';
-        return String(value);
-    }
+    if (typeof value == 'boolean') return serializeBoolean(value);
+    if (typeof value == 'number') return serializeNumber(value);
     if (typeof value == 'string') return serializeString(value);
 
-    depth += 1;
-    if (isVmArray(value)) {
-        if (value.length === 0) return '[]';
-        const str = ['['];
-        for (let i = 0; i < value.length; i++) {
-            if (i > 0) str.push(', ');
-            str.push(serializeImpl(value[i], depth));
-        }
-        str.push(']');
-        return str.join('');
-    }
-    if (isVmRecord(value)) {
-        const customValue = customValueOf(value);
-        if (customValue !== undefined) {
-            return serializeImpl(customValue, depth - 1);
-        }
-        const entries = Object.entries(value);
-        if (entries.length === 0) return '()';
-        if (entries.length === 1) {
-            const [k, v] = entries[0]!;
-            if (k === '0') {
-                return `(${serializeImpl(v, depth)},)`; // 单个元素数组
-            }
-            return `(${serializePropName(k)}: ${serializeImpl(v, depth)})`;
-        }
-
-        // 根据 ES 标准，数字 key 会按顺序枚举
-        const omitKey = entries.length < 10 && entries.every(([key], index) => key === String(index));
-        const str = ['('];
-        for (const [key, val] of entries) {
-            if (str.length > 1) str.push(', ');
-            if (omitKey) {
-                str.push(serializeImpl(val, depth));
-            } else {
-                str.push(serializePropName(key), ': ', serializeImpl(val, depth));
-            }
-        }
-        str.push(')');
-        return str.join('');
-    }
+    if (isVmArray(value)) return serializeArray(value, depth + 1);
+    if (isVmRecord(value)) return serializeRecord(value, depth + 1);
+    // 不支持序列化的值
+    value satisfies VmFunction | VmModule | VmExtern;
     return `nil`;
 }
 
