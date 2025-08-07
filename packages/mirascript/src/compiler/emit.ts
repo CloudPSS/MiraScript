@@ -348,9 +348,9 @@ class Emitter {
                 ).join(', ');
                 if (script) {
                     args.unshift(`global = GlobalFallback()`);
-                    code = `return (function script(${args.join(', ')}) { try{ CpEnter(); var ${regs};`;
+                    code = `'use strict'; return (function script(${args.join(', ')}) { try { CpEnter(); var ${regs};`;
                 } else {
-                    code = `${this.wv(reg)} = Function(function (${args.join(', ')}) { try{ CpEnter(); var ${regs};`;
+                    code = `${this.wv(reg)} = Function(function (${args.join(', ')}) { try { CpEnter(); var ${regs};`;
                 }
                 if (varg) {
                     code += ` var ${this.wv(argn, -1)} = Vargs(vargs);`;
@@ -739,7 +739,7 @@ class Emitter {
             mappings: '',
         };
         const prefix = '//# ';
-        this.codeLines.unshift(
+        this.codeLines.push(
             // Prevent source map from being recognized as of this file
             `${prefix}sourceURL=${ORIGIN}/${fileName}.js`,
             `${prefix}sourceMappingURL=data:application/json;base64,${encodeURL(JSON.stringify(data))}`,
