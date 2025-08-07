@@ -41,11 +41,15 @@ export const Upvalue = (value: VmAny): VmValue => {
     return value;
 };
 
+const MAX_ARRAY_LENGTH = 1_000_000; // 最大数组长度
 export const ArrayRange = (start: VmAny, end: VmAny): VmArray => {
     const s = $ToNumber(start);
     const e = $ToNumber(end);
     if (!isFinite(s) || !isFinite(e) || s > e) {
         return [];
+    }
+    if (e - s > MAX_ARRAY_LENGTH) {
+        throw new RangeError(`Array length exceeds maximum limit of ${MAX_ARRAY_LENGTH}`);
     }
     const arr = [];
     for (let i = ceil(s); i <= e; i++) {
@@ -58,6 +62,9 @@ export const ArrayRangeExclusive = (start: VmAny, end: VmAny): VmArray => {
     const e = $ToNumber(end);
     if (!isFinite(s) || !isFinite(e) || s > e) {
         return [];
+    }
+    if (e - s > MAX_ARRAY_LENGTH) {
+        throw new RangeError(`Array length exceeds maximum limit of ${MAX_ARRAY_LENGTH}`);
     }
     const arr = [];
     for (let i = ceil(s); i < e; i++) {
