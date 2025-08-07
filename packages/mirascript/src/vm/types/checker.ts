@@ -21,12 +21,6 @@ function isVmArray(value: readonly unknown[], depth: number): value is VmArray {
     // Array.prototype
     const proto1: unknown = getPrototypeOf(value);
     if (!isArray(proto1)) return false;
-    // Object.prototype
-    const proto2: unknown = getPrototypeOf(proto1);
-    if (proto2 == null || isArray(proto2)) return false;
-    // null
-    const proto3: unknown = getPrototypeOf(proto2);
-    if (proto3 != null) return false;
     if (!depth) return true;
     return value.every((item) => isVmConstInner(item, depth));
 }

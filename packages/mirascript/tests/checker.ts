@@ -135,6 +135,10 @@ test('isVmConst with deep check', async (t) => {
 
     class SubArr extends Array<number> {}
     t.false(isVmConst([new SubArr(1, 2, 3)], true));
+    Object.setPrototypeOf(SubArr.prototype, Object.prototype);
+    t.false(isVmConst([new SubArr(1, 2, 3)], true));
+    Object.setPrototypeOf(SubArr.prototype, null);
+    t.false(isVmConst([new SubArr(1, 2, 3)], true));
 
     const x: unknown[] = [];
     Object.setPrototypeOf(x, null);
