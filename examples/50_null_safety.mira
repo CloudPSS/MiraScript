@@ -27,7 +27,7 @@ let maybe_func = nil;
 let real_func = fn { it * 2 };
 
 debug_print("安全的函数调用:");
-// 通过添加括号转为间接调用，以开启空安全
+// 通过添加括号转为间接调用，以启用空安全
 debug_print("(maybe_func)(5) =", (maybe_func)(5)); // 返回 nil
 debug_print("(real_func)(5) =", (real_func)(5));
 
@@ -109,7 +109,7 @@ let partial_user = (name: "John");
 let full_user = create_user_with_defaults(partial_user);
 
 debug_print("创建带默认值的用户:");
-debug_print("full_user = $full_user");
+debug_print("full_user =", full_user);
 
 // 空值传播示例
 fn process_user_email(user) { user.profile.email::trim() }

@@ -43,7 +43,7 @@ let infinity = inf;
 let not_a_number = nan;
 debug_print("特殊数字: $infinity, $not_a_number");
 
-// 序数（0到2^31-1范围内的整数）
+// 序数（0 到 2^31-1 范围内的整数）
 let ordinal_0 = 0;
 let ordinal_max = 2147483647;
 debug_print("序数范围: $ordinal_0 到 $ordinal_max");
@@ -51,7 +51,7 @@ debug_print("序数范围: $ordinal_0 到 $ordinal_max");
 // 字符串字面量
 debug_print("=== 字符串字面量示例 ===");
 
-// 三种引号形式
+// 三种引号形式意义相同
 let single_quote = 'Hello';
 let double_quote = "World";
 let backtick = `MiraScript`;
@@ -120,12 +120,7 @@ let inferred_record = (:username, :score, status: "active");
 debug_print("键名推断:", inferred_record);
 
 // 省略 nil 值
-let optional_record = (
-  required: "value",
-  optional?: "present",
-  nil_value?: nil, // 这个键会被省略
-  another?: nil, // 这个键也会被省略
-);
+let optional_record = (required: "value", optional?: "present", nil_value?: nil, another?: nil); // 这个键会被省略
 debug_print("省略nil值:", optional_record);
 
 // 数组字面量
@@ -183,21 +178,8 @@ debug_print("复杂函数:", complex_function(3), "和", complex_function(6));
 // 嵌套的字面量
 debug_print("=== 嵌套字面量示例 ===");
 
-let complex_data = (
-  id: 1,
-  info: (
-    name: "MiraScript",
-    version: "1.0",
-    features: ["pattern_matching", "null_safety", "immutability"]
-  ),
-  config: (
-    debug: true,
-    limits: (max_iterations: 1000, timeout: 30.0)
-  ),
-  // 数组和记录中不能存储函数
-  fn: fn { },
-  fn_omit?: fn { },
-);
+// 数组和记录中不能存储函数
+let complex_data = (id: 1, info: (name: "MiraScript", version: "1.0", features: ["pattern_matching", "null_safety", "immutability"]), config: (debug: true, limits: (max_iterations: 1000, timeout: 30.0)), fn: fn { }, fn_omit?: fn { });
 
 debug_print("复杂嵌套数据:");
 debug_print("项目名:", complex_data.info.name);

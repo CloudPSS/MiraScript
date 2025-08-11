@@ -16,9 +16,12 @@
 /* 这也是多行注释，可以在一行内 */
 
 // 注释可以用于文档说明
-// 函数：计算两个数的和
-// 参数：a - 第一个数，b - 第二个数
-// 返回：两数之和
+/** 
+ * 计算两个数的和
+ * @param a 第一个数
+ * @param b 第二个数
+ * @returns 两数之和
+ */
 fn add(a, b) {
   // 函数内部也可以有注释
   let result = a + b; // 行尾注释
@@ -43,15 +46,15 @@ debug_print("CamelCase:", CamelCase);
 debug_print("snake_case:", snake_case);
 debug_print("Variable123:", Variable123);
 
-// 以 $ 开头的标识符（保留供系统使用，但仍可用）
+// 以 $ 开头的标识符（保留供系统使用）
 let $system_var = "系统变量";
 let $$special = "特殊变量";
 
 debug_print("$ 开头的标识符:");
-debug_print("$system_var: $$system_var");
-debug_print("$$special: $$$special");
+debug_print("\$system_var: $$system_var");
+debug_print("\$\$special: $$$special");
 
-// 以 @ 开头的标识符（保留供全局环境使用）
+// 以 @ 开头的标识符（保留供常量使用）
 let @global_config = "全局配置";
 let @@meta_info = "元信息";
 
@@ -75,9 +78,9 @@ let 数量 = 42;
 let π = 3.141_59;
 
 debug_print("Unicode 标识符:");
-debug_print("变量名:", $1);
-debug_print("数量:", $1);
-debug_print("π:", $1);
+debug_print("变量名:", 变量名);
+debug_print("数量:", 数量);
+debug_print("π:", π);
 
 // 长标识符
 let very_long_variable_name_that_describes_something_important = "长变量名";
@@ -102,24 +105,23 @@ fn calculate_average(numbers) {
   if count > 0 { sum / count } else { 0 }
 }
 
-fn $system_function() { "这是系统函数" }
-
 debug_print("函数标识符:");
 let avg = calculate_average([1, 2, 3, 4, 5]);
 debug_print("平均值:", avg);
-debug_print("系统函数:", $system_function());
 
-// 记录键名可以是任何有效标识符
-let record_with_various_keys = (normal_key: "普通键", _private_key: "私有键", CamelCaseKey: "驼峰键", $system_key: "系统键", @global_key: "全局键", 键名: "中文键名", 123: "数字键（序数）");
+// 记录键名可以是任字符串，
+// 当键名是有效标识符或序数时，可以直接使用
+let record_with_various_keys = (normal_key: "普通键", _private_key: "私有键", CamelCaseKey: "驼峰键", $dollar: "dollar 键", @at: "at 键", 键名: "中文键名", 123: "数字键（序数）", 'space in key': "带空格的键名");
 
 debug_print("记录键名示例:");
 debug_print("normal_key:", record_with_various_keys.normal_key);
 debug_print("_private_key:", record_with_various_keys._private_key);
 debug_print("CamelCaseKey:", record_with_various_keys.CamelCaseKey);
-debug_print("$system_key:", record_with_various_keys.$system_key);
-debug_print("@global_key:", record_with_various_keys.@global_key);
+debug_print("\$dollar:", record_with_various_keys.$dollar);
+debug_print("@at:", record_with_various_keys.@at);
 debug_print("键名:", record_with_various_keys.键名);
-debug_print("数字键:", record_with_various_keys[123]);
+debug_print("数字键:", record_with_various_keys.123);
+debug_print("带空格的键名:", record_with_various_keys['space in key']);
 
 // ============================================================================
 // 命名约定建议
@@ -136,9 +138,6 @@ fn process_user_data(data) { data }
 let MAX_FILE_SIZE = 1024 * 1024;
 let DEFAULT_TIMEOUT = 30;
 
-// 类型或模块相关使用 PascalCase
-let UserConfig = (theme: "dark", language: "zh-CN");
-
 // 临时或循环变量可以使用简短名称
 fn sum_array(arr) {
   let mut sum = 0;
@@ -152,7 +151,6 @@ debug_print("命名约定示例:");
 debug_print("用户名:", user_name);
 debug_print("最大重试次数:", max_retry_count);
 debug_print("最大文件大小:", MAX_FILE_SIZE);
-debug_print("用户配置:", UserConfig);
 debug_print("数组求和:", sum_array([1, 2, 3, 4, 5]));
 
 // ============================================================================
