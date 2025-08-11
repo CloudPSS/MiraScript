@@ -16,7 +16,7 @@ t_throws(fn () {
   f();
 });
 t_throws(fn () {
-  let f = t;
+  let f = v_extern;
   f();
 });
 
@@ -51,3 +51,35 @@ let add_ten = curry_add(10);
 t_eq(add_ten(3), 13);
 t_eq(add_ten(10), 20);
 t_false(add_five == add_ten);
+
+let empty = nil;
+let callable = fn { nil };
+let uncallable = 42;
+
+t_throws(fn () {
+  empty();
+});
+t_eq(callable(), nil);
+t_throws(fn () {
+  uncallable();
+});
+
+t_throws(fn () {
+  (uncallable)();
+});
+t_eq((callable)(), nil);
+t_eq((empty)(), nil);
+
+t_throws(fn () {
+  0::empty();
+});
+t_eq(0::callable(), nil);
+t_throws(fn () {
+  0::uncallable();
+});
+
+t_throws(fn () {
+  0::(uncallable)();
+});
+t_eq(0::(callable)(), nil);
+t_eq(0::(empty)(), nil);
