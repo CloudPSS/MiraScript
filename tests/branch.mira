@@ -1,0 +1,36 @@
+fn T { true }
+fn F { false }
+fn N { nil }
+fn O { 0 }
+
+t_true(T());
+t_true(O()::to_boolean());
+t_false(F());
+t_false(N()::to_boolean());
+
+if T() { } else {
+  t_never();
+}
+if F() {
+  t_never();
+} else { }
+if N() {
+  t_never();
+} else { }
+if O() { } else {
+  t_never();
+}
+
+if !T() {
+  t_never();
+} else { }
+if !F() { } else {
+  t_never();
+}
+if !N() { } else {
+  t_never();
+}
+if !O() {
+  t_never();
+} else { }
+;
