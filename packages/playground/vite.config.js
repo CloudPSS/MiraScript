@@ -17,6 +17,10 @@ export default defineConfig({
     worker: {
         format: 'es',
     },
+    css: {
+        transformer: 'lightningcss',
+        devSourcemap: true,
+    },
     server: {
         headers: {
             'Cross-Origin-Opener-Policy': 'same-origin',
@@ -25,6 +29,7 @@ export default defineConfig({
     },
     build: {
         target: 'esnext',
+        cssMinify: 'lightningcss',
         sourcemap: true,
         emptyOutDir: true,
     },

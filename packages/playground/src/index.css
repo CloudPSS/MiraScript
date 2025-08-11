@@ -132,6 +132,7 @@ body > .playground {
         padding: 6px 10px;
         font-size: 13px;
         min-width: 120px;
+        user-select: none;
 
         &:focus {
           outline: none;
@@ -351,6 +352,7 @@ body > .playground {
     color: var(--text-primary);
     border-bottom: 1px solid var(--border-color);
     padding-bottom: 4px;
+    user-select: none;
   }
 
   @media (max-width: 768px) {
