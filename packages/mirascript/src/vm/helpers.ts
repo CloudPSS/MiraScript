@@ -42,15 +42,19 @@ export const Upvalue = (value: VmAny): VmValue => {
 };
 
 const MAX_ARRAY_LENGTH = 1_000_000; // 最大数组长度
+const assertArrayLength = (start: number, end: number) => {
+    if (end - start > MAX_ARRAY_LENGTH) {
+        throw new RangeError(`Array length exceeds maximum limit of ${MAX_ARRAY_LENGTH}`);
+    }
+};
+const isEmptyRange = (start: number, end: number) => {
+    return !isFinite(start) || !isFinite(end) || start > end;
+};
 export const ArrayRange = (start: VmAny, end: VmAny): VmArray => {
     const s = $ToNumber(start);
     const e = $ToNumber(end);
-    if (!isFinite(s) || !isFinite(e) || s > e) {
-        return [];
-    }
-    if (e - s > MAX_ARRAY_LENGTH) {
-        throw new RangeError(`Array length exceeds maximum limit of ${MAX_ARRAY_LENGTH}`);
-    }
+    if (isEmptyRange(s, e)) return [];
+    assertArrayLength(s, e);
     const arr = [];
     for (let i = ceil(s); i <= e; i++) {
         arr.push(i);
@@ -60,12 +64,8 @@ export const ArrayRange = (start: VmAny, end: VmAny): VmArray => {
 export const ArrayRangeExclusive = (start: VmAny, end: VmAny): VmArray => {
     const s = $ToNumber(start);
     const e = $ToNumber(end);
-    if (!isFinite(s) || !isFinite(e) || s > e) {
-        return [];
-    }
-    if (e - s > MAX_ARRAY_LENGTH) {
-        throw new RangeError(`Array length exceeds maximum limit of ${MAX_ARRAY_LENGTH}`);
-    }
+    if (isEmptyRange(s, e)) return [];
+    assertArrayLength(s, e);
     const arr = [];
     for (let i = ceil(s); i < e; i++) {
         arr.push(i);
