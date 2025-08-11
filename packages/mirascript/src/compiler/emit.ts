@@ -609,12 +609,12 @@ class Emitter {
             }
             case OpCode.If: {
                 const cond = read();
-                code = `if (Truthy(${this.rv(cond)})) {`;
+                code = `if (${this.rv(cond)} !== false && $ToBoolean(${this.rv(cond)}) !== false) {`;
                 break;
             }
             case OpCode.IfNot: {
                 const cond = read();
-                code = `if (!Truthy(${this.rv(cond)})) {`;
+                code = `if (${this.rv(cond)} !== true && $ToBoolean(${this.rv(cond)}) !== true) {`;
                 break;
             }
             case OpCode.IfInit: {

@@ -1,15 +1,9 @@
-import { $AssertInit, $ToBoolean, $ToNumber } from './operations.js';
+import { $AssertInit, $ToNumber } from './operations.js';
 import type { VmFunctionLike } from './types/function.js';
 import { createVmContext, type VmContext } from './types/context.js';
 import { isVmConst, VmFunction, type VmConst, type VmAny, type VmArray, type VmValue } from './types/index.js';
 const { isFinite } = Number;
 const { ceil } = Math;
-
-export const Truthy = (value: VmAny): boolean => {
-    // Optimize for boolean values
-    if (typeof value == 'boolean') return value;
-    return $ToBoolean(value);
-};
 
 export const Vargs = (varags: VmAny[]): VmArray => {
     for (let i = 0, l = varags.length; i < l; i++) {
