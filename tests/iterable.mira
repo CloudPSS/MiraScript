@@ -23,11 +23,15 @@ for (k, v) in entries(('你好', '，', '世界', '！', x: nil)) {
 }
 t_eq(kv, [('0', '你好'), ('1', '，'), ('2', '世界'), ('3', '！'), ('x', nil)]);
 
-for k in v_extern {
-  t_eq(k::type(), "string");
+if has_extern {
+  for k in v_extern {
+    t_eq(k::type(), "string");
+  }
 }
-for k in v_module {
-  t_eq(k::type(), "string");
+if has_module {
+  for k in v_module {
+    t_eq(k::type(), "string");
+  }
 }
 
 let mut seq = [];
@@ -78,26 +82,36 @@ t_throws(fn () {
 });
 
 // Allow empty body
-for _ in v_module { }
-for _ in v_extern { }
 for _ in 0..<0 { }
 for _ in 0..0 { }
 
 t_eq(keys([1, 2, 3]), ['0', '1', '2']);
 t_eq(keys((1, 2, 3)), ['0', '1', '2']);
-t_eq(keys(v_extern), []);
-t_eq(keys(v_module), []);
+if has_extern {
+  t_eq(keys(v_extern), []);
+}
+if has_module {
+  t_eq(keys(v_module), []);
+}
 t_throws(fn { keys(fn { }) });
 
 t_eq(values([1, 2, 3]), [1, 2, 3]);
 t_eq(values((1, 2, 3)), [1, 2, 3]);
-t_throws(fn () { values(v_extern) });
-t_throws(fn () { values(v_module) });
+if has_extern {
+  t_throws(fn () { values(v_extern) });
+}
+if has_module {
+  t_throws(fn () { values(v_module) });
+}
 t_throws(fn () { values(fn { }) });
 
 t_eq(entries([nil, 1]), [('0', nil), ('1', 1)]);
 t_eq(entries([1, 2, 3]), [('0', 1), ('1', 2), ('2', 3)]);
 t_eq(entries((1, 2, 3)), [('0', 1), ('1', 2), ('2', 3)]);
-t_throws(fn () { entries(v_extern) });
-t_throws(fn () { entries(v_module) });
+if has_extern {
+  t_throws(fn () { entries(v_extern) });
+}
+if has_module {
+  t_throws(fn () { entries(v_module) });
+}
 t_throws(fn () { entries(fn { }) });

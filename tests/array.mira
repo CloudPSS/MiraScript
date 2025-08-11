@@ -18,7 +18,9 @@ t_throws(fn { [..1] });
 t_throws(fn { [.."x"] });
 t_throws(fn { [..true] });
 t_throws(fn { [..()] });
-t_throws(fn { [..v_module] });
+if has_module {
+  t_throws(fn { [..v_module] });
+}
 
 let arr = [0, 1, nan, (1, 2, 3)];
 t_true(0 in arr);

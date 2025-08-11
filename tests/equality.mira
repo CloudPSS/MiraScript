@@ -86,17 +86,21 @@ t_false(v_fn == ());
 t_false(() == v_fn);
 
 // extern
-t_false(v_extern == v_extern_another);
-t_true(v_extern == v_extern);
-t_false(v_extern == nil);
-t_false(nil == v_extern);
-t_false(v_extern == ());
-t_false(() == v_extern);
+if has_extern {
+  t_false(v_extern == v_extern_another);
+  t_true(v_extern == v_extern);
+  t_false(v_extern == nil);
+  t_false(nil == v_extern);
+  t_false(v_extern == ());
+  t_false(() == v_extern);
+}
 
 // module
-t_false(v_module == v_module_another);
-t_true(v_module == v_module);
-t_false(v_module == nil);
-t_false(nil == v_module);
-t_false(v_module == ());
-t_false(() == v_module);
+if has_module {
+  t_false(v_module == v_module_another);
+  t_true(v_module == v_module);
+  t_false(v_module == nil);
+  t_false(nil == v_module);
+  t_false(v_module == ());
+  t_false(() == v_module);
+}

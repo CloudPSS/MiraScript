@@ -12,8 +12,12 @@ t_eq(to_json("Hello, World!"), '"Hello, World!"');
 t_eq(to_json("é"), '"é"');
 t_eq(to_json([]), '[]');
 t_eq(to_json(()), '{}');
-t_eq(to_json(v_module), '{}');
-t_eq(to_json(v_extern), '{}');
+if has_module {
+  t_eq(to_json(v_module), '{}');
+}
+if has_extern {
+  t_eq(to_json(v_extern), '{}');
+}
 
 t_eq(from_json(nil), nil);
 t_eq(from_json('null'), nil);

@@ -15,10 +15,12 @@ t_throws(fn () {
   let f = [];
   f();
 });
-t_throws(fn () {
-  let f = v_extern;
-  f();
-});
+if has_extern {
+  t_throws(fn () {
+    let f = v_extern;
+    f();
+  });
+}
 
 fn be_of_type(..[v, tp]) {
   t_eq(type(v), tp);
@@ -31,12 +33,16 @@ be_of_type(1, 'number');
 be_of_type([], 'array');
 be_of_type((), 'record');
 
-be_of_type(v_extern, 'nil');
-be_of_type(v_module, 'nil');
 be_of_type(fn { }, 'nil');
-be_of_type2(v_extern, 'extern');
-be_of_type2(v_module, 'module');
 be_of_type2(fn { }, 'function');
+if has_extern {
+  be_of_type(v_extern, 'nil');
+  be_of_type2(v_extern, 'extern');
+}
+if has_module {
+  be_of_type(v_module, 'nil');
+  be_of_type2(v_module, 'module');
+}
 
 fn args(..v) { v }
 
