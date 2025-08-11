@@ -3,5 +3,5 @@ export default {
     extensions: {
         ts: 'module',
     },
-    nodeArguments: ['--experimental-transform-types'],
+    nodeArguments: ['--experimental-strip-types'],
 };
