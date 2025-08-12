@@ -38,3 +38,25 @@ t_true(y_key::to_string() in ks);
 t_false(z_key in ks);
 t_true(z_key::to_string() in ks);
 t_true(w_key in ks);
+
+v_extern.f = sin;
+t_eq(v_extern.f, sin);
+t_true('f' in v_extern);
+t_eq(sin(12), v_extern.f(12));
+t_eq(sin(0), 0);
+
+v_extern.e = v_extern;
+t_true(v_extern.e == v_extern);
+t_true(v_extern.e.e.e.e.e.e == v_extern);
+t_true(v_extern.e.f == sin);
+
+v_extern.r = ();
+t_eq(v_extern.r::type(), 'extern');
+t_false(v_extern.r == ());
+
+v_extern.a = [];
+t_eq(v_extern.a::type(), 'extern');
+t_false(v_extern.a == []);
+
+v_extern.aa = [];
+t_false(v_extern.a == v_extern.aa);

@@ -14,7 +14,7 @@ export function wrapToVmValue(value: unknown, caller: VmExtern | null): VmValue 
             return new VmExtern(value, caller);
         case 'object':
             if (value instanceof VmWrapper) return value as VmModule | VmExtern;
-            return new VmExtern(value, caller);
+            return new VmExtern(value, null);
         case 'string':
         case 'number':
         case 'boolean':
@@ -36,12 +36,12 @@ export function unwrapFromVmValue(value: VmAny): unknown {
         return value.value;
     }
     const caller = value.caller.value;
-    const proxy = new Proxy(value.value as (...args: unknown[]) => unknown, {
+    const func = value.value as (...args: unknown[]) => unknown;
+    return new Proxy(func, {
         apply(target, thisArg, args): unknown {
             return apply(target, caller, args);
         },
     });
-    return proxy;
 }
 
 /** 包装 Mirascript `extern` 类型的对象 */
