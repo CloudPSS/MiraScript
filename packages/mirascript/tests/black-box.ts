@@ -76,7 +76,7 @@ const compileAndRun = test.macro<[string]>({
     title: (providedTitle = 'test', code) => code || providedTitle,
 });
 
-for (const file of fs.readdirSync(TEST_DIR)) {
+for (const file of fs.readdirSync(TEST_DIR, { encoding: 'utf8', recursive: true })) {
     if (file.endsWith('.mira')) {
         test(compileAndRun, file);
     }
