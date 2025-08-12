@@ -1,6 +1,6 @@
 use crate::{
     diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
-    emitter::emitter_scope::check_variable_initialized,
+    emitter::{emitter_scope::check_variable_initialized, opcode::OpParam},
     lexer::{Keyword, Operator, TokenKind},
     parser::{
         AstWalker, Expression,
@@ -115,19 +115,30 @@ impl<'s> Emitter<'s> {
                         }
                     }
 
-                    Expression::Access(obj, _, field_token) if !is_global_expression(obj) => {
-                        let Some((_, field)) = field_token.to_field_name() else {
-                            return false;
-                        };
+                    Expression::Access(obj, _, id) if !is_global_expression(obj) => {
                         let obj_reg = self.emit_expression_reg(obj, brk);
                         let field_reg = self.closures.add_reg();
-                        let field_const = self.add_const_string(field);
-                        if is_compound {
-                            self.op_3(OpCode::Get, field_reg, obj_reg, field_const);
+                        match id.kind {
+                            TokenKind::Identifier(id) => {
+                                let field_name = self.add_const_string(id);
+                                if is_compound {
+                                    self.op_3(OpCode::Get, field_reg, obj_reg, field_name);
+                                }
+                                final_op = Box::new(move |s| {
+                                    s.op_3(OpCode::Set, field_reg, obj_reg, field_name);
+                                });
+                            }
+                            TokenKind::Ordinal(ord) => {
+                                let field_ord = OpParam::new(ord);
+                                if is_compound {
+                                    self.op_3(OpCode::GetIndex, field_reg, obj_reg, field_ord);
+                                }
+                                final_op = Box::new(move |s| {
+                                    s.op_3(OpCode::SetIndex, field_reg, obj_reg, field_ord);
+                                });
+                            }
+                            _ => unreachable!("Expected identifier token"),
                         }
-                        final_op = Box::new(move |s| {
-                            s.op_3(OpCode::Set, field_reg, obj_reg, field_const);
-                        });
                         field_reg
                     }
                     Expression::Index(obj, _, prop_expr, _) if !is_global_expression(obj) => {
