@@ -93,3 +93,8 @@ t_eq((0?: nil, 1?: 1), (1: 1));
   t_false(7 in obj);
   t_false(8 in obj);
 }
+
+t_throws(fn {
+  let r = (x: 1);
+  r.x = 2;
+});

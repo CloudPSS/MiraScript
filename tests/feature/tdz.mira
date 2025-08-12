@@ -1,0 +1,9 @@
+fn tdz {
+  fn x {
+    return z;
+  }
+  x();
+  let z = 456;
+}
+
+t_throws(tdz);

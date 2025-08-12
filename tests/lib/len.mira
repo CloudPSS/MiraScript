@@ -1,0 +1,14 @@
+t_throws(fn { 1::len() });
+t_throws(fn { nil::len() });
+t_throws(fn { ()::len() });
+if has_extern {
+  t_throws(fn { v_extern::len() });
+}
+if has_module {
+  t_throws(fn { v_module::len() });
+}
+t_throws(fn { "str"::len() });
+
+t_eq([]::len(), 0);
+t_eq([1, 2, 3]::len(), 3);
+t_eq([nil]::len(), 1);

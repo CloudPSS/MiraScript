@@ -1,0 +1,40 @@
+if !has_extern {
+  return;
+}
+
+t_eq(v_extern::keys()::len(), 0);
+
+let x_key = 'x';
+v_extern.x = 1;
+t_eq(v_extern::keys()::len(), 1);
+t_eq(v_extern[x_key], 1);
+t_eq(v_extern.x, 1);
+t_true(x_key in v_extern);
+
+let y_key = 2;
+v_extern[y_key] = 2;
+t_eq(v_extern[y_key], 2);
+t_eq(v_extern.2, 2);
+t_true(y_key in v_extern);
+
+let z_key = 12;
+v_extern.12 = 3;
+t_eq(v_extern[z_key], 3);
+t_eq(v_extern.12, 3);
+t_true(12 in v_extern);
+t_true(z_key in v_extern);
+
+let w_key = 'w';
+v_extern[w_key] = nil;
+t_eq(v_extern.w, nil);
+t_true(w_key in v_extern);
+t_eq(v_extern[w_key], nil);
+
+let ks = v_extern::keys();
+t_eq(ks::len(), 4);
+t_true(x_key in ks);
+t_false(y_key in ks);
+t_true(y_key::to_string() in ks);
+t_false(z_key in ks);
+t_true(z_key::to_string() in ks);
+t_true(w_key in ks);

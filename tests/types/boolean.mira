@@ -13,3 +13,8 @@ t_eq(!!"", true);
 
 t_false(false in true);
 t_false(false in false);
+
+t_throws(fn {
+  let b = true;
+  b.f = 1;
+});

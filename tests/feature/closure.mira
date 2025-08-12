@@ -103,12 +103,3 @@ fn ret_outer {
 }
 t_eq(ret_outer(), 123);
 
-fn tdz {
-  fn x {
-    return z;
-  }
-  x();
-  let z = 456;
-}
-
-t_throws(tdz);
