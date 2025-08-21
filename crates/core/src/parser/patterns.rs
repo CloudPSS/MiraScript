@@ -167,14 +167,6 @@ fn discard_bind_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
     move |i: &mut Input<'s>| {
         (opt(token(Keyword::Mut)), variable_token(true, false))
             .map(|(kw_mut, id)| {
-                if id.is_unknown() {
-                    let tokens = if let Some(kw_mut) = kw_mut {
-                        vec![kw_mut, id]
-                    } else {
-                        vec![id]
-                    };
-                    return Pattern::unknown_errors(tokens, vec![]);
-                }
                 if id.kind == Keyword::Underscore {
                     if let Some(kw_mut) = kw_mut {
                         return Pattern::unknown(
@@ -184,11 +176,32 @@ fn discard_bind_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
                     }
                     return Pattern::Discard(id);
                 }
+                if id.is_unknown() {
+                    let tokens = if let Some(kw_mut) = kw_mut {
+                        vec![kw_mut, id]
+                    } else {
+                        vec![id]
+                    };
+                    return Pattern::unknown_errors(tokens, vec![]);
+                }
+                let Some(name) = id.to_id_name() else {
+                    let tokens = if let Some(kw_mut) = kw_mut {
+                        vec![kw_mut, id]
+                    } else {
+                        vec![id]
+                    };
+                    return Pattern::unknown(tokens, DiagnosticCode::UnknownPattern);
+                };
                 if rebind && kw_mut.is_some() {
                     let kw_mut = kw_mut
                         .unwrap()
                         .wrap_as_unknown(DiagnosticCode::MutInRebindPattern);
                     return Pattern::Bind(Some(kw_mut), id);
+                }
+                if name.starts_with('@') && kw_mut.is_some() {
+                    let tokens = vec![kw_mut.clone().unwrap(), id.clone()];
+                    return Pattern::Bind(kw_mut, id)
+                        .wrap_as_unknown(tokens, DiagnosticCode::MutInConstBindPattern);
                 }
                 Pattern::Bind(kw_mut, id)
             })

@@ -110,6 +110,8 @@ pub enum DiagnosticCode {
     UnexpectedOperatorInConstantsPattern,
     #[strum(message = "`mut` is not allowed during rebinding")]
     MutInRebindPattern,
+    #[strum(message = "`mut` is not allowed for variable whose name starts with `@`")]
+    MutInConstBindPattern,
     #[strum(message = "Cannot use `mut` in a discard pattern")]
     MutInDiscardPattern,
     #[strum(message = "Discard pattern should be omitted in a spread pattern")]

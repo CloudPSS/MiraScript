@@ -200,7 +200,11 @@ export class CompletionItemProvider extends Provider implements languages.Comple
             }
             suggestions.push({
                 label: { label: key, description: DESC_GLOBAL, detail },
-                kind: info ? languages.CompletionItemKind.Function : languages.CompletionItemKind.Variable,
+                kind: info
+                    ? languages.CompletionItemKind.Function
+                    : key.startsWith('@')
+                      ? languages.CompletionItemKind.Constant
+                      : languages.CompletionItemKind.Variable,
                 insertText: localKeys.has(key) ? `global.${key}` : key, // 如果有同名局部变量，使用 global. 前缀
                 range,
                 commitCharacters: info ? ['('] : ['.', '[', '('],
@@ -240,7 +244,9 @@ export class CompletionItemProvider extends Provider implements languages.Comple
                     kind:
                         fn || isFunction
                             ? languages.CompletionItemKind.Function
-                            : languages.CompletionItemKind.Variable,
+                            : name.startsWith('@')
+                              ? languages.CompletionItemKind.Constant
+                              : languages.CompletionItemKind.Variable,
                     insertText: name,
                     range,
                     commitCharacters: isFunction ? ['('] : undefined,
