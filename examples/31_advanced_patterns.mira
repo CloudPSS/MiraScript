@@ -21,11 +21,15 @@ for test in basic_tests {
 
 // 关系模式
 fn grade_classifier(score) {
+  const @excellent = 90;
+  const @good = 80;
+  const @average = 70;
+  const @pass = 60;
   match score {
-    case >= 90 { "A" }
-    case >= 80 { "B" }
-    case >= 70 { "C" }
-    case >= 60 { "D" }
+    case >= @excellent { "A" }
+    case >= @good { "B" }
+    case >= @average { "C" }
+    case >= @pass { "D" }
     case >= 0 { "F" }
     case _ { "Invalid score" }
   }

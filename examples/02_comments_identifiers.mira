@@ -54,9 +54,9 @@ debug_print("$ 开头的标识符:");
 debug_print("\$system_var: $$system_var");
 debug_print("\$\$special: $$$special");
 
-// 以 @ 开头的标识符（保留供常量使用）
-let @global_config = "全局配置";
-let @@meta_info = "元信息";
+// 以 @ 开头的标识符（供常量使用）
+const @global_config = "全局配置";
+const @@meta_info = "元信息";
 
 debug_print("@ 开头的标识符:");
 debug_print("@global_config: $@global_config");
