@@ -71,16 +71,14 @@ pub enum Keyword {
     Op,
     Let,
     Mut,
-    #[strum(props(reserved = true))]
-    Const,
     // #[strum(props(reserved = true))]
     // Type,
     #[strum(props(reserved = true))]
     Where,
 
     // type Date(string) {
-    //   if it |> matches(`(\d{4})-(\d{2})-(\d{2})`) { it }
-    //   else if it |> matches(`(\d{4})/(\d{2})/(\d{2})`) { it |> replace("/", "-") }
+    //   if it::matches(`(\d{4})-(\d{2})-(\d{2})`) { it }
+    //   else if it::matches(`(\d{4})/(\d{2})/(\d{2})`) { it::replace("/", "-") }
     //   else { nil }
     // }
     // type Complex(number, number);
