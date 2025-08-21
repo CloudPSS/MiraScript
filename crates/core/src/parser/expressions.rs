@@ -18,6 +18,7 @@ fn unknown_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
             || *t == Keyword::Match
             || *t == Keyword::For
             || *t == Keyword::Let
+            || *t == Keyword::Const
             || *t == Operator::Semicolon
             || *t == Operator::OpenBrace
             || *t == Operator::CloseBrace

@@ -73,6 +73,7 @@ fn record_element<'t, 's: 't, E: Clone + PartialEq + 's, I: Clone + PartialEq + 
             || *last == Keyword::Else
             || *last == Keyword::In
             || *last == Keyword::Let
+            || *last == Keyword::Const
         {
             return Ok(ListItem::new(result));
         }

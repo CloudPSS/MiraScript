@@ -22,6 +22,10 @@ impl<'s> Emitter<'s> {
                 self.declare_pattern(pattern, None);
                 self.declare_expression(expr);
             }
+            Const(_, id_token, _, expr, _) => {
+                self.declare_variable(id_token, false, BindType::Const);
+                self.declare_expression(expr);
+            }
             Assign(assignee, _, expr, _) => {
                 self.declare_expression(assignee);
                 self.declare_expression(expr);
@@ -54,6 +58,18 @@ impl<'s> Emitter<'s> {
                 let value_reg = self.closures.add_reg();
                 self.emit_expression(expression, value_reg, brk);
                 self.emit_pattern(Register::EMPTY, pattern, value_reg, None);
+                false
+            }
+            Const(_, id_token, _, expression, _) => {
+                let Some(id) = id_token.to_id_name() else {
+                    return false;
+                };
+                let Some((_, variable)) = self.scopes.find_variable(id) else {
+                    return false;
+                };
+                self.closures.initialize_variable(variable);
+                let reg = variable.register();
+                self.emit_expression(expression, reg, brk);
                 false
             }
             Assign(assignee, op, expression, _) => {

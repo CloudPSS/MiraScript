@@ -25,6 +25,7 @@ fn unknown_pattern<'s>(i: &mut Input<'s>) -> Result<Pattern<'s>> {
             || *t == Keyword::Match
             || *t == Keyword::For
             || *t == Keyword::Let
+            || *t == Keyword::Const
             || *t == Operator::Comma
             || *t == Operator::Assign
             || *t == Operator::Semicolon

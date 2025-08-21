@@ -47,6 +47,7 @@ fn array_element<'s, E: Clone + PartialEq + 's>(
             || *last == Keyword::Else
             || *last == Keyword::In
             || *last == Keyword::Let
+            || *last == Keyword::Const
         {
             return Ok(ListItem::new(result));
         }

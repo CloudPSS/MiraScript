@@ -12,6 +12,8 @@ use super::opcode::Register;
 pub(crate) enum BindType {
     /// The variable is bound by `let` statement.
     Let,
+    /// The variable is bound by `const` statement.
+    Const,
     /// The variable is bound as a pattern in `for`, `while`, `match` or `is` expressions.
     Init,
     /// The variable is bound as a function's normal parameter.
@@ -166,6 +168,7 @@ impl<'s> Variable<'s> {
         if track_references() {
             let hint = if !self.mutable {
                 match self.bind_type {
+                    BindType::Const => DiagnosticCode::LocalImmutable,
                     BindType::Let => DiagnosticCode::LocalImmutable,
                     BindType::Init => DiagnosticCode::LocalImmutable,
                     BindType::Func => DiagnosticCode::LocalFunction,
@@ -178,6 +181,7 @@ impl<'s> Variable<'s> {
                 }
             } else {
                 match self.bind_type {
+                    BindType::Const => unreachable!(),
                     BindType::Let => DiagnosticCode::LocalMutable,
                     BindType::Init => DiagnosticCode::LocalMutable,
                     BindType::Func => DiagnosticCode::LocalFunction,

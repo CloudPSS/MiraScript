@@ -74,8 +74,10 @@ pub enum DiagnosticCode {
     MissingCloseParen,
     #[strum(message = "Missing `;` at the end of the statement")]
     MissingSemicolon,
-    #[strum(message = "Operator `=` is expected in a bind statement")]
+    #[strum(message = "Operator `=` is expected in a bind statement or const statement")]
     MissingBindOperator,
+    #[strum(message = "Constant name must start with '@'")]
+    InvalidConstName,
     #[strum(message = "Missing function name in the declaration")]
     MissingFunctionName,
     #[strum(message = "Extension call must be ended with parameter list; add `(` here")]

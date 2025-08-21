@@ -292,15 +292,15 @@ impl<'s> Emitter<'s> {
                         self.closures.initialize_variable(variable);
                     } else {
                         variable.mark_write(id_token);
-                    }
-                    if !check_variable_initialized(
-                        self.diagnostics,
-                        &self.closures,
-                        id_token,
-                        variable,
-                        level,
-                    ) {
-                        return;
+                        if !check_variable_initialized(
+                            self.diagnostics,
+                            &self.closures,
+                            id_token,
+                            variable,
+                            level,
+                        ) {
+                            return;
+                        }
                     }
                     if !variable.mutable() && !bind {
                         self.diagnostics.push(SourceDiagnostic::new(
