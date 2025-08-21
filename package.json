@@ -2,7 +2,7 @@
   "name": "mira",
   "version": "0.0.1",
   "private": true,
-  "packageManager": "pnpm@10.14.0",
+  "packageManager": "pnpm@10.15.0",
   "type": "module",
   "scripts": {
     "prepare": "husky || echo Failed to initialize husky",
@@ -19,9 +19,9 @@
     "@cloudpss/lint-staged-config": "^3.0.25",
     "@cloudpss/prettier-config": "^3.0.25",
     "@cloudpss/tsconfig": "^3.0.25",
-    "@types/node": "^24.2.0",
+    "@types/node": "^24.3.0",
     "better-typescript-lib": "^2.11.0",
-    "esbuild": "^0.25.8",
+    "esbuild": "^0.25.9",
     "husky": "^9.1.7",
     "rimraf": "^6.0.1",
     "typescript": "^5.9.2"
