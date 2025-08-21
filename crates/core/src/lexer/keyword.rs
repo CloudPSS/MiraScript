@@ -70,6 +70,7 @@ pub enum Keyword {
     #[strum(props(reserved = true))]
     Op,
     Let,
+    Const,
     Mut,
     // #[strum(props(reserved = true))]
     // Type,

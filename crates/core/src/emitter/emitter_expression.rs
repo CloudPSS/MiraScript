@@ -8,7 +8,7 @@ use crate::{
     parser::{
         ArrayElement, ArrayElementBase, AstWalker, Callable, ElseBlock,
         Expression::{self, *},
-        Iterable, MatchCase, Range, RecordElementBase,
+        Iterable, MatchCase, Range, RecordElementBase, TokenRef,
     },
 };
 
@@ -365,6 +365,42 @@ impl<'s> Emitter<'s> {
             }
         }
     }
+
+    pub fn emit_var_read(&mut self, token: &'s TokenRef<'s>, ret: Register) {
+        let Some(id) = token.to_id_name() else {
+            if token.kind == Keyword::Global {
+                self.diagnostics.push(SourceDiagnostic::new(
+                    token.range.clone(),
+                    DiagnosticCode::MisuseOfGlobalKeyword,
+                ));
+            }
+            return;
+        };
+        let var = self.scopes.find_variable(id);
+        if let Some((level, variable)) = var {
+            let register = variable.register();
+            variable.mark_read(token);
+            if !check_variable_initialized(self.diagnostics, &self.closures, token, variable, level)
+            {
+                return;
+            }
+            if level == self.closures.len() {
+                self.op_unary(ret, OpCode::Assign, register);
+            } else {
+                let up_reg = variable.register();
+                let level = self.closures.len() - level;
+                self.op_get_upvalue(ret, level, up_reg);
+            }
+        } else {
+            self.diagnostics.push(SourceDiagnostic::new(
+                token.range(),
+                DiagnosticCode::GlobalVariable,
+            ));
+            self.op_global(ret, id);
+            self.hint_mislead_nil(id, token.range());
+        }
+    }
+
     pub fn emit_expression(
         &mut self,
         expr: &'s Expression<'s>,
@@ -414,45 +450,7 @@ impl<'s> Emitter<'s> {
                     self.op_variadic(ret, OpCode::Concat, args_reg);
                 }
             }
-            Variable(token) => {
-                let Some(id) = token.to_id_name() else {
-                    if token.kind == Keyword::Global {
-                        self.diagnostics.push(SourceDiagnostic::new(
-                            token.range.clone(),
-                            DiagnosticCode::MisuseOfGlobalKeyword,
-                        ));
-                    }
-                    return;
-                };
-                let var = self.scopes.find_variable(id);
-                if let Some((level, variable)) = var {
-                    let register = variable.register();
-                    variable.mark_read(token);
-                    if !check_variable_initialized(
-                        self.diagnostics,
-                        &self.closures,
-                        token,
-                        variable,
-                        level,
-                    ) {
-                        return;
-                    }
-                    if level == self.closures.len() {
-                        self.op_unary(ret, OpCode::Assign, register);
-                    } else {
-                        let up_reg = variable.register();
-                        let level = self.closures.len() - level;
-                        self.op_get_upvalue(ret, level, up_reg);
-                    }
-                } else {
-                    self.diagnostics.push(SourceDiagnostic::new(
-                        token.range(),
-                        DiagnosticCode::GlobalVariable,
-                    ));
-                    self.op_global(ret, id);
-                    self.hint_mislead_nil(id, token.range());
-                }
-            }
+            Variable(token) => self.emit_var_read(token, ret),
             Grouping(_, expression, _) => self.emit_expression(expression, ret, brk),
             Record(_, elements, _) => {
                 let mut elements_regs = vec![];

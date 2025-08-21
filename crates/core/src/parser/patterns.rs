@@ -77,7 +77,7 @@ fn primary_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
             record_like_pattern(rebind),
             array_pattern(rebind),
             range_pattern,
-            constants_pattern,
+            literal_constant_pattern,
             discard_bind_pattern(rebind),
             not_pattern(rebind),
             unknown_pattern,
@@ -116,7 +116,7 @@ fn or_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
     }
 }
 
-fn constants_pattern<'s>(i: &mut Input<'s>) -> Result<Pattern<'s>> {
+fn literal_pattern<'s>(i: &mut Input<'s>) -> Result<Pattern<'s>> {
     (
         opt(one_of(|t: &Token<'s>| {
             *t == Operator::Plus || *t == Operator::Minus || *t == Operator::Exclamation
@@ -125,40 +125,54 @@ fn constants_pattern<'s>(i: &mut Input<'s>) -> Result<Pattern<'s>> {
     )
         .map(|(t, l)| {
             let Some(op) = t else {
-                return Pattern::Constant(None, l);
+                return Pattern::Literal(None, l);
             };
             if *op == Operator::Exclamation {
-                return Pattern::Constant(None, l.clone()).wrap_as_unknown(
-                    [op.into(), l],
-                    DiagnosticCode::ExclamationInConstantsPattern,
-                );
+                return Pattern::Literal(None, l.clone())
+                    .wrap_as_unknown([op.into(), l], DiagnosticCode::ExclamationInLiteralPattern);
             }
             if !(l.is_number() || l.is_ordinal() || *l == Keyword::Inf) {
-                return Pattern::Constant(None, l.clone()).wrap_as_unknown(
+                return Pattern::Literal(None, l.clone()).wrap_as_unknown(
                     [op.into(), l],
-                    DiagnosticCode::UnexpectedOperatorInConstantsPattern,
+                    DiagnosticCode::UnexpectedOperatorInLiteralPattern,
                 );
             }
-            Pattern::Constant(Some(op.into()), l)
+            Pattern::Literal(Some(op.into()), l)
         })
         .parse_next(i)
+}
+
+fn constant_pattern<'s>(i: &mut Input<'s>) -> Result<Pattern<'s>> {
+    variable_token(false, false)
+        .verify(|t: &TokenRef<'s>| {
+            let Some(name) = t.to_id_name() else {
+                return false;
+            };
+            name.starts_with('@')
+        })
+        .map(Pattern::Constant)
+        .parse_next(i)
+}
+
+fn literal_constant_pattern<'s>(i: &mut Input<'s>) -> Result<Pattern<'s>> {
+    alt((literal_pattern, constant_pattern)).parse_next(i)
 }
 
 fn relation_pattern<'s>(i: &mut Input<'s>) -> Result<Pattern<'s>> {
     seq!(Pattern::Relation(
         one_of(|t: &Token<'s>| matches!(t.kind, TokenKind::Operator(op) if op.is_relation()))
             .map(TokenRef::borrow),
-        constants_pattern.map(Box::new),
+        literal_constant_pattern.map(Box::new),
     ))
     .parse_next(i)
 }
 
 fn range_pattern<'s>(i: &mut Input<'s>) -> Result<Pattern<'s>> {
     seq!(Pattern::Range(
-        constants_pattern.map(Box::new),
+        literal_constant_pattern.map(Box::new),
         one_of(|t: &Token<'s>| *t == Operator::SpreadRange || *t == Operator::HalfOpenRange)
             .map(TokenRef::borrow),
-        constants_pattern.map(Box::new),
+        literal_constant_pattern.map(Box::new),
     ))
     .parse_next(i)
 }
@@ -198,10 +212,10 @@ fn discard_bind_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
                         .wrap_as_unknown(DiagnosticCode::MutInRebindPattern);
                     return Pattern::Bind(Some(kw_mut), id);
                 }
-                if name.starts_with('@') && kw_mut.is_some() {
+                if name.starts_with('@') {
                     let tokens = vec![kw_mut.clone().unwrap(), id.clone()];
                     return Pattern::Bind(kw_mut, id)
-                        .wrap_as_unknown(tokens, DiagnosticCode::MutInConstBindPattern);
+                        .wrap_as_unknown(tokens, DiagnosticCode::ConstantInBindPattern);
                 }
                 Pattern::Bind(kw_mut, id)
             })

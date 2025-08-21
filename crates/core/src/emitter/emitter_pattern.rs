@@ -22,6 +22,7 @@ impl<'s> Emitter<'s> {
                 if matches!(
                     pattern.as_ref(),
                     Pattern::Grouping(..)
+                        | Pattern::Literal(..)
                         | Pattern::Constant(..)
                         | Pattern::Discard(..)
                         | Pattern::Bind(..)
@@ -39,7 +40,8 @@ impl<'s> Emitter<'s> {
                 }
                 self.declare_pattern(pattern, bind_type)
             }
-            Constant(_, _) => (),
+            Literal(_, _) => (),
+            Constant(_) => (),
             Range(_, _, _) | Relation(_, _) => (), // It can only include a constant pattern
             Discard(_) | SpreadDiscard(_) => (),
             Bind(mut_token, id_token) => {
@@ -85,7 +87,8 @@ impl<'s> Emitter<'s> {
         // Do not emit diagnostics, initialization, or set markers
         match pattern {
             Grouping(_, pattern, _) => self.emit_failed_pattern(pattern, bind_type),
-            Constant(_, _) => (),
+            Literal(_, _) => (),
+            Constant(_) => (),
             Range(_, _, _) | Relation(_, _) => (), // It can only include a constant pattern
             Discard(_) | SpreadDiscard(_) => (),
             Bind(_, id_token) => {
@@ -139,9 +142,9 @@ impl<'s> Emitter<'s> {
         }
     }
 
-    fn emit_constant(&mut self, pattern_constant: &'s Pattern<'s>, value: Register) {
+    fn emit_literal_constant(&mut self, pattern_constant: &'s Pattern<'s>, value: Register) {
         match pattern_constant {
-            Constant(prefix, lit) => {
+            Literal(prefix, lit) => {
                 if let Some(lit_num) = match &lit.kind {
                     TokenKind::Number(n, _) => Some(*n),
                     TokenKind::Ordinal(o) => Some(*o as f64),
@@ -172,6 +175,9 @@ impl<'s> Emitter<'s> {
                     }
                 }
             }
+            Constant(var) => {
+                self.emit_var_read(var, value);
+            }
             _ => unreachable!(),
         }
     }
@@ -185,7 +191,7 @@ impl<'s> Emitter<'s> {
     ) {
         match pattern {
             Grouping(_, pattern, _) => self.emit_pattern(success, pattern, value, bind_type),
-            Constant(_, lit) => {
+            Literal(_, lit) => {
                 if success.is_empty() {
                     self.diagnostics.push(SourceDiagnostic::new(
                         pattern.range(),
@@ -196,9 +202,22 @@ impl<'s> Emitter<'s> {
                 if lit.kind == Keyword::Nil {
                     self.op_3(OpCode::Same, success, Register::EMPTY, value);
                 } else {
-                    self.emit_constant(pattern, success);
-                    self.op_3(OpCode::Same, success, success, value);
+                    let reg = self.closures.add_reg();
+                    self.emit_literal_constant(pattern, reg);
+                    self.op_3(OpCode::Same, success, reg, value);
                 }
+            }
+            Constant(_) => {
+                if success.is_empty() {
+                    self.diagnostics.push(SourceDiagnostic::new(
+                        pattern.range(),
+                        DiagnosticCode::UnnecessaryIrrefutablePattern,
+                    ));
+                    return;
+                }
+                let reg = self.closures.add_reg();
+                self.emit_literal_constant(pattern, reg);
+                self.op_3(OpCode::Same, success, reg, value);
             }
             Relation(op, constant) => {
                 if success.is_empty() {
@@ -215,8 +234,9 @@ impl<'s> Emitter<'s> {
                     self.unreachable(op, constant, file!(), line!());
                     return;
                 };
-                self.emit_constant(constant, success);
-                self.op_3(op, success, value, success);
+                let reg = self.closures.add_reg();
+                self.emit_literal_constant(constant, reg);
+                self.op_3(op, success, value, reg);
             }
             Range(l, token, r) => {
                 if success.is_empty() {
@@ -228,8 +248,8 @@ impl<'s> Emitter<'s> {
                 }
                 let start = self.closures.add_reg();
                 let end = self.closures.add_reg();
-                self.emit_constant(l, start);
-                self.emit_constant(r, end);
+                self.emit_literal_constant(l, start);
+                self.emit_literal_constant(r, end);
                 self.op_3(OpCode::Lte, start, start, value);
                 self.op_3(
                     if token.kind == Operator::HalfOpenRange {

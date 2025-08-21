@@ -104,14 +104,14 @@ pub enum DiagnosticCode {
     ExpressionExpected,
     #[strum(message = "A pattern is expected here")]
     PatternExpected,
-    #[strum(message = "Operator `!` is not allowed in a constant pattern")]
-    ExclamationInConstantsPattern,
-    #[strum(message = "Only number literals can be prefixed with `+` or `-` in a constant pattern")]
-    UnexpectedOperatorInConstantsPattern,
+    #[strum(message = "Operator `!` is not allowed in a literal pattern")]
+    ExclamationInLiteralPattern,
+    #[strum(message = "Only number literals can be prefixed with `+` or `-` in a literal pattern")]
+    UnexpectedOperatorInLiteralPattern,
     #[strum(message = "`mut` is not allowed during rebinding")]
     MutInRebindPattern,
-    #[strum(message = "`mut` is not allowed for variable whose name starts with `@`")]
-    MutInConstBindPattern,
+    #[strum(message = "variable whose name starts with `@` is not allowed to be rebound")]
+    ConstantInBindPattern,
     #[strum(message = "Cannot use `mut` in a discard pattern")]
     MutInDiscardPattern,
     #[strum(message = "Discard pattern should be omitted in a spread pattern")]
