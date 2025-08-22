@@ -210,6 +210,7 @@ pub enum DiagnosticCode {
     // mark local declarations
 
     // non-parameter declarations
+    LocalConst,
     LocalImmutable,
     LocalMutable,
     LocalFunction,

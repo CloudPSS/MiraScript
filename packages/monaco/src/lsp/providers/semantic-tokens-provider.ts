@@ -66,7 +66,8 @@ export class DocumentSemanticTokensProvider extends Provider implements language
                 case DiagnosticCode.ParameterImmutable:
                 case DiagnosticCode.ParameterSubPatternImmutable:
                 case DiagnosticCode.ParameterImmutableRest:
-                case DiagnosticCode.LocalImmutable: {
+                case DiagnosticCode.LocalImmutable:
+                case DiagnosticCode.LocalConst: {
                     tokenType = 3;
                     break;
                 }

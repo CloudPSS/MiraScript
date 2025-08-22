@@ -17,7 +17,11 @@ export const LocalFunctionType = [DiagnosticCode.LocalFunction] as const;
 
 /** 局部变量类型 */
 export type LocalVariableType = (typeof LocalVariableType)[number];
-export const LocalVariableType = [DiagnosticCode.LocalMutable, DiagnosticCode.LocalImmutable] as const;
+export const LocalVariableType = [
+    DiagnosticCode.LocalMutable,
+    DiagnosticCode.LocalImmutable,
+    DiagnosticCode.LocalConst,
+] as const;
 /** 显式参数类型 */
 export type ParameterExplicitType = (typeof ParameterExplicitType)[number];
 export const ParameterExplicitType = [
