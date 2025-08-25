@@ -11,7 +11,7 @@ import {
     VmModule,
     VmFunction,
     type InputMode,
-} from 'mirascript';
+} from '@mirascript/mirascript';
 import { ConsoleManager } from './console-manager.js';
 import { EXAMPLES } from './examples.js';
 import { syntaxHighlight, print } from './utils.js';

@@ -12,8 +12,8 @@ import {
     type VmAny,
     type VmFunctionInfo,
     type VmValue,
-} from 'mirascript';
-import { operations, serializePropName, serializeString } from 'mirascript/subtle';
+} from '@mirascript/mirascript';
+import { operations, serializePropName, serializeString } from '@mirascript/mirascript/subtle';
 import type { LocalDefinition } from './compile-result.js';
 
 /** 生成函数签名 */

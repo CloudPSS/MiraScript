@@ -1,5 +1,5 @@
 import test from 'ava';
-import { compile } from 'mirascript';
+import { compile } from '@mirascript/mirascript';
 
 test('syntax error', async (t) => {
     await t.throwsAsync(compile('1+'), { message: /Failed to compile/ });

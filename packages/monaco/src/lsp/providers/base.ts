@@ -1,5 +1,5 @@
-import type { VmContext } from 'mirascript';
-import { VmSharedContext } from 'mirascript/subtle';
+import type { VmContext } from '@mirascript/mirascript';
+import { VmSharedContext } from '@mirascript/mirascript/subtle';
 import type { VmContextProvider } from '../../index.js';
 import { type editor, Emitter, type IEvent } from '../../monaco-api.js';
 import type { CompileResult } from '../compile-result.js';

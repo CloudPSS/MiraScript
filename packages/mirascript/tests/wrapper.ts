@@ -8,7 +8,7 @@ import {
     VmFunction,
     VmModule,
     type VmAny,
-} from 'mirascript';
+} from '@mirascript/mirascript';
 
 test('toJSON', (t) => {
     t.deepEqual(JSON.stringify(new VmExtern({})), undefined);

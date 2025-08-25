@@ -1,5 +1,5 @@
 import { createConfig, type CompileResult, wasm } from '@mirascript/wasm';
-import type { InputMode } from 'mirascript';
+import type { InputMode } from '@mirascript/mirascript';
 
 /** Monaco 编译结果 */
 export interface MonacoResult extends CompileResult {

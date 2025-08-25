@@ -1,6 +1,6 @@
 import test from 'ava';
 import fs from 'node:fs';
-import { compile, createVmContext, VmError, VmFunction, VmModule } from 'mirascript';
+import { compile, createVmContext, VmError, VmFunction, VmModule } from '@mirascript/mirascript';
 
 const TEST_DIR = new URL('../../../tests', import.meta.url);
 

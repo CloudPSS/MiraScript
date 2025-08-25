@@ -1,5 +1,5 @@
 import type { editor } from '../monaco-api.js';
-import type { InputMode } from 'mirascript';
+import type { InputMode } from '@mirascript/mirascript';
 import type { Ready, Req, Res, ResOk } from './worker.js';
 import { CompileResult } from './compile-result.js';
 import { setMarkers } from './diagnostics.js';

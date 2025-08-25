@@ -1,4 +1,4 @@
-import type { InputMode } from 'mirascript';
+import type { InputMode } from '@mirascript/mirascript';
 import { EXAMPLES } from './examples.js';
 import { fromUint8Array, toUint8Array } from 'js-base64';
 import { deflateSync, inflateSync } from 'fflate';

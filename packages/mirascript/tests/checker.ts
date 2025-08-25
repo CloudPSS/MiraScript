@@ -11,8 +11,8 @@ import {
     createVmContext,
     VmModule,
     VmExtern,
-} from 'mirascript';
-import { lib, VmSharedContext } from 'mirascript/subtle';
+} from '@mirascript/mirascript';
+import { lib, VmSharedContext } from '@mirascript/mirascript/subtle';
 
 test('isVmScript', async (t) => {
     t.true(isVmScript(await compile('nil')));

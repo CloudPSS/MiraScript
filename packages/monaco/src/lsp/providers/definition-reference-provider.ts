@@ -1,4 +1,4 @@
-import type { VmAny } from 'mirascript';
+import type { VmAny } from '@mirascript/mirascript';
 import {
     editor,
     Uri,

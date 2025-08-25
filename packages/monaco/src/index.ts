@@ -1,4 +1,4 @@
-import type { VmContext } from 'mirascript';
+import type { VmContext } from '@mirascript/mirascript';
 import { type editor, languages, registerMonacoApi, type IDisposable, type MonacoApi } from './monaco-api.js';
 import { register } from './contribute.js';
 

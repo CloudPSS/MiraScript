@@ -1,4 +1,4 @@
-import { getVmFunctionInfo, DiagnosticCode, type VmValue, isVmExtern } from 'mirascript';
+import { getVmFunctionInfo, DiagnosticCode, type VmValue, isVmExtern } from '@mirascript/mirascript';
 import {
     type editor,
     languages,
@@ -11,7 +11,7 @@ import {
 import { Provider } from './base.js';
 import { codeblock, getDeep, globalDoc, paramsList } from '../utils.js';
 import { keywords, reservedKeywords } from '../../constants.js';
-import { lib, operations } from 'mirascript/subtle';
+import { lib, operations } from '@mirascript/mirascript/subtle';
 
 const DESC_GLOBAL = '(global)';
 const DESC_LOCAL = '(local)';

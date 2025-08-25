@@ -1,5 +1,5 @@
 import test from 'ava';
-import { compile } from 'mirascript';
+import { compile } from '@mirascript/mirascript';
 
 const compileAndRun = test.macro<[string, unknown]>({
     exec: async (t, code, expected) => {

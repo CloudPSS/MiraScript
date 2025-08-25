@@ -13,7 +13,7 @@ import {
     DiagnosticRelatedInformation,
 } from 'vscode';
 import { createConfig, compile, DiagnosticCode } from '@mirascript/wasm';
-import { getDiagnosticMessage, parseDiagnostics, type SourceDiagnostic } from 'mirascript';
+import { getDiagnosticMessage, parseDiagnostics, type SourceDiagnostic } from '@mirascript/mirascript';
 import { toRange } from '../adapter/utils.js';
 
 const configTemplate = createConfig({

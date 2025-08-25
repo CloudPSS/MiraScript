@@ -1,4 +1,4 @@
-import type { InputMode } from 'mirascript';
+import type { InputMode } from '@mirascript/mirascript';
 
 export const EXAMPLES: Array<{ order: number; name: string; mode: InputMode; code: string }> = [];
 

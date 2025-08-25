@@ -1,6 +1,6 @@
 import test from 'ava';
-import { compile, type VmAny, type VmValue } from 'mirascript';
-import { serialize } from 'mirascript/subtle';
+import { compile, type VmAny, type VmValue } from '@mirascript/mirascript';
+import { serialize } from '@mirascript/mirascript/subtle';
 
 const serializeRoundTrip = test.macro<[value: VmAny, expected?: VmValue]>({
     exec: async (t, value, expected) => {

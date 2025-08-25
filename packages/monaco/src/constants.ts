@@ -1,4 +1,4 @@
-import { constants } from 'mirascript/subtle';
+import { constants } from '@mirascript/mirascript/subtle';
 import { wasm } from '@mirascript/wasm';
 
 /** 所有 MiraScript 关键字 */

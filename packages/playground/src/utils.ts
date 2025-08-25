@@ -1,4 +1,4 @@
-import { type VmAny, isVmExtern, isVmModule, serialize } from 'mirascript';
+import { type VmAny, isVmExtern, isVmModule, serialize } from '@mirascript/mirascript';
 import { editor } from '@private/monaco-editor';
 
 /** HTML escape */
