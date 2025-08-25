@@ -7,21 +7,21 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "@mira/development": "./src/index.ts",
+      "@mirascript/dev": "./src/index.ts",
       "default": "./dist/index.js"
     },
     "./basic": {
-      "@mira/development": "./src/basic/index.ts",
+      "@mirascript/dev": "./src/basic/index.ts",
       "default": "./dist/basic/index.js"
     },
     "./lsp": {
-      "@mira/development": "./src/lsp/index.ts",
+      "@mirascript/dev": "./src/lsp/index.ts",
       "default": "./dist/lsp/index.js"
     }
   },
   "imports": {
     "#/lsp/worker": {
-      "@mira/development": "./src/lsp/worker.ts",
+      "@mirascript/dev": "./src/lsp/worker.ts",
       "default": "./dist/lsp/worker.js"
     }
   },

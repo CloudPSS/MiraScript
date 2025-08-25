@@ -1,4 +1,3 @@
-
 # compiled output
 /dist/
 /deb-dist/
@@ -30,6 +29,11 @@ yarn-error.log*
 lerna-debug.log*
 nohup.out
 
+# Cache
+v8-compile-cache-*/
+node-compile-cache/
+.eslintcache
+
 # OS
 .DS_Store
 
@@ -39,6 +43,7 @@ coverage/
 .eslint-report/
 *.cpuprofile
 *.heapprofile
+*.heapsnapshot
 
 # IDEs and editors
 /.idea

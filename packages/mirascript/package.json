@@ -7,17 +7,17 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "@mira/development": "./src/index.ts",
+      "@mirascript/dev": "./src/index.ts",
       "default": "./dist/index.js"
     },
     "./subtle": {
-      "@mira/development": "./src/subtle.ts",
+      "@mirascript/dev": "./src/subtle.ts",
       "default": "./dist/subtle.js"
     }
   },
   "imports": {
     "#compiler/worker": {
-      "@mira/development": "./src/compiler/worker.ts",
+      "@mirascript/dev": "./src/compiler/worker.ts",
       "default": "./dist/compiler/worker.js"
     },
     "#compiler-bundle": {

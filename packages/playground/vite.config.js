@@ -11,7 +11,7 @@ export default defineConfig({
         exclude: ['@private/monaco-editor'],
     },
     resolve: {
-        conditions: PROD ? undefined : ['module', 'browser', 'development|production', '@mira/development'],
+        conditions: PROD ? undefined : ['module', 'browser', 'development|production', '@mirascript/dev'],
     },
     plugins: [checker({ typescript: true })],
     worker: {

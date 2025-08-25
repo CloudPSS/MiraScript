@@ -3,8 +3,8 @@ import packageJson from './package.json' with { type: 'json' };
 
 const entryPoints = [...Object.values(packageJson.exports), ...Object.values(packageJson.imports)]
     .map((value) => {
-        if ('@mira/development' in value) {
-            return value['@mira/development'];
+        if ('@mirascript/dev' in value) {
+            return value['@mirascript/dev'];
         }
         return undefined;
     })
