@@ -68,12 +68,12 @@ importers:
 
   packages/monaco:
     dependencies:
+      '@mirascript/mirascript':
+        specifier: workspace:*
+        version: link:../mirascript
       '@mirascript/wasm':
         specifier: workspace:*
         version: link:../wasm
-      mirascript:
-        specifier: workspace:*
-        version: link:../mirascript
       monaco-editor:
         specifier: '>= 0.0.40'
         version: 0.52.2
@@ -89,6 +89,9 @@ importers:
 
   packages/playground:
     dependencies:
+      '@mirascript/mirascript':
+        specifier: workspace:*
+        version: link:../mirascript
       '@mirascript/monaco':
         specifier: workspace:*
         version: link:../monaco
@@ -98,9 +101,6 @@ importers:
       '@private/monaco-editor':
         specifier: ^0.0.41
         version: 0.0.41
-      mirascript:
-        specifier: workspace:*
-        version: link:../mirascript
     devDependencies:
       fflate:
         specifier: ^0.8.2
@@ -127,6 +127,9 @@ importers:
         specifier: workspace:*
         version: link:../wasm
     devDependencies:
+      '@mirascript/mirascript':
+        specifier: workspace:*
+        version: link:../mirascript
       '@mirascript/monaco':
         specifier: workspace:*
         version: link:../monaco
@@ -139,9 +142,6 @@ importers:
       js-yaml:
         specifier: ^4.1.0
         version: 4.1.0
-      mirascript:
-        specifier: workspace:*
-        version: link:../mirascript
       nodemon:
         specifier: ^3.1.10
         version: 3.1.10

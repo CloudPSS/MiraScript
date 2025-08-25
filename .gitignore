@@ -19,6 +19,7 @@ target/
 node_modules/
 .pnp.js
 .pnp/
+.venv/
 
 # Logs
 logs
