@@ -3,6 +3,7 @@ import packageJson from './package.json' with { type: 'json' };
 
 esbuild.build({
     sourcemap: true,
+    sourcesContent: false,
     format: 'iife',
     entryPoints: ['./media-src/*.ts'],
     minify: true,
