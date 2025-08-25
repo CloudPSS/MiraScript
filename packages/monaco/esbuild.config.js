@@ -12,6 +12,7 @@ const entryPoints = [...Object.values(packageJson.exports), ...Object.values(pac
 
 esbuild.build({
     sourcemap: true,
+    sourcesContent: false,
     format: 'esm',
     entryPoints,
     outdir: './dist',

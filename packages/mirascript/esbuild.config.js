@@ -21,6 +21,7 @@ const external = Object.entries(packageJson.imports)
 
 esbuild.build({
     sourcemap: true,
+    sourcesContent: false,
     format: 'esm',
     entryPoints,
     outdir: './dist',

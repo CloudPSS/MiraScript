@@ -29,7 +29,8 @@
     "watch": "pnpm clean && tsc --watch",
     "build": "pnpm clean && tsc --emitDeclarationOnly && node ./esbuild.config.js",
     "clean": "rimraf dist",
-    "test": "c8 ava"
+    "test": "c8 ava",
+    "prepublishOnly": "pnpm clean && pnpm build"
   },
   "dependencies": {
     "@mirascript/napi": "workspace:~",

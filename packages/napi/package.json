@@ -14,7 +14,8 @@
     "watch": "nodemon -e rs,js,ts --watch ../../crates/napi --watch ../../crates/core --watch ./src --exec 'pnpm build:dev'",
     "build:dev": "pnpm napi --dev && tsc",
     "build": "pnpm napi --release && tsc",
-    "clean": "rimraf dist lib"
+    "clean": "rimraf dist lib",
+    "prepublishOnly": "pnpm clean && pnpm build"
   },
   "devDependencies": {
     "cargo-cp-artifact": "^0.1.9",

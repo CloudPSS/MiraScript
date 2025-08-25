@@ -20,7 +20,8 @@
     "watch": "nodemon -e rs,js,ts --watch ../../crates/wasm --watch ../../crates/core --watch ./src --exec 'pnpm build:dev'",
     "build:dev": "pnpm wasm --dev && tsc",
     "build": "pnpm wasm --release && tsc",
-    "clean": "rimraf dist lib"
+    "clean": "rimraf dist lib",
+    "prepublishOnly": "pnpm clean && pnpm build && rimraf lib/.gitignore"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"
