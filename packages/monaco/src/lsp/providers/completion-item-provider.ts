@@ -172,6 +172,12 @@ interface CustomCompletionItem extends languages.CompletionItem {
     global?: VmValue;
 }
 
+/** 构造 filterText */
+function filterText(key: string, char: string | undefined): string {
+    if (char == null || key.startsWith(char)) return key;
+    return key.startsWith('@') || key.startsWith('$') ? key.slice(1) : key;
+}
+
 /**
  * 自动完成
  */
@@ -206,6 +212,7 @@ export class CompletionItemProvider extends Provider implements languages.Comple
                       ? languages.CompletionItemKind.Constant
                       : languages.CompletionItemKind.Variable,
                 insertText: localKeys.has(key) ? `global.${key}` : key, // 如果有同名局部变量，使用 global. 前缀
+                filterText: filterText(key, char),
                 range,
                 commitCharacters: info ? ['('] : ['.', '[', '('],
                 global: element,
@@ -248,6 +255,7 @@ export class CompletionItemProvider extends Provider implements languages.Comple
                               ? languages.CompletionItemKind.Constant
                               : languages.CompletionItemKind.Variable,
                     insertText: name,
+                    filterText: filterText(name, char),
                     range,
                     commitCharacters: isFunction ? ['('] : undefined,
                 } satisfies languages.CompletionItem);
