@@ -26,11 +26,12 @@
     }
   },
   "scripts": {
-    "watch": "pnpm clean && tsc --watch",
-    "build": "pnpm clean && tsc --emitDeclarationOnly && node ./esbuild.config.js",
+    "watch": "pnpm build:ts --watch",
+    "build:ts": "pnpm clean && tsc",
+    "build": "pnpm build:ts --emitDeclarationOnly && node ./esbuild.config.js",
     "clean": "rimraf dist",
     "test": "c8 ava",
-    "prepublishOnly": "pnpm clean && pnpm build"
+    "prepublishOnly": "pnpm build"
   },
   "dependencies": {
     "@mirascript/napi": "workspace:~",

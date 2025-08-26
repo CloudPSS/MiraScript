@@ -4,13 +4,17 @@ const { parse, stringify } = JSON;
 
 export const to_json = VmLib(
     (data) => {
-        if (isVmExtern(data)) {
-            return stringify(data.value);
+        let value;
+        if (isVmExtern(data) || isVmModule(data)) {
+            value = data.value;
+        } else {
+            value = data;
         }
-        if (isVmModule(data)) {
-            return '{}';
+        try {
+            return stringify(value);
+        } catch (ex) {
+            rethrowError('Failed to convert Extern to JSON', ex, '{}');
         }
-        return stringify(data);
     },
     {
         summary: '将数据转换为 JSON 字符串',
