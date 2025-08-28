@@ -1,28 +1,16 @@
 import { Element } from '../../helpers.js';
 import { $ToNumber, $ToString } from '../../operations.js';
-import { isVmArray, isVmRecord, type VmConst } from '../../types/index.js';
+import { isVmArray, type VmConst } from '../../types/index.js';
 import { VmError } from '../../error.js';
-import { VmLib, expectArray, expectArrayOrRecord, expectCompound } from '../helpers.js';
+import { VmLib, expectArrayOrRecord } from '../helpers.js';
 
 export * from './math.js';
-export * from './map-filter.js';
+export * from './sequence.js';
 export * from './debug.js';
 export * from './json.js';
 export * from './to-primitive.js';
 export * from './string.js';
-
-export const len = VmLib(
-    (arr) => {
-        expectArray('arr', arr, Number.NaN);
-        return arr.length;
-    },
-    {
-        summary: '返回数组的长度',
-        params: { arr: '要求长度的数组' },
-        paramsType: { arr: 'array' },
-        returnsType: 'number',
-    },
-);
+export * from './bitwise.js';
 
 const _with = VmLib(
     (data, ...entries) => {
@@ -60,55 +48,3 @@ const _with = VmLib(
     },
 );
 export { _with as 'with' };
-
-const { keys: _keys, values: _values, entries: _entries } = Object;
-export const keys = VmLib(
-    (data) => {
-        expectCompound('data', data, []);
-        if (isVmArray(data)) {
-            return Array.from({ length: data.length }, (_, i) => $ToString(i));
-        }
-        if (isVmRecord(data)) {
-            return _keys(data);
-        }
-        return data.keys();
-    },
-    {
-        summary: '返回数组、记录、外部对象或模块的键列表',
-        params: { data: '要获取键的数组、记录、外部对象或模块' },
-        paramsType: { data: 'array | record | extern | module' },
-        returnsType: '[string]',
-    },
-);
-
-export const values = VmLib(
-    (data) => {
-        expectArrayOrRecord('data', data, []);
-        if (isVmArray(data)) {
-            return data;
-        }
-        return _values(data);
-    },
-    {
-        summary: '返回数组或记录的值列表',
-        params: { data: '要获取值的数组或记录' },
-        paramsType: { data: 'array | record' },
-        returnsType: 'array',
-    },
-);
-
-export const entries = VmLib(
-    (data) => {
-        expectArrayOrRecord('data', data, []);
-        if (isVmArray(data)) {
-            return Array.from({ length: data.length }, (_, i) => ({ 0: $ToString(i), 1: data[i] ?? null }));
-        }
-        return _entries(data).map(([key, value]) => ({ 0: key, 1: value }));
-    },
-    {
-        summary: '返回数组或记录的键值对列表',
-        params: { data: '要获取键值对的数组或记录' },
-        paramsType: { data: 'array | record' },
-        returnsType: '[(string, any)]',
-    },
-);

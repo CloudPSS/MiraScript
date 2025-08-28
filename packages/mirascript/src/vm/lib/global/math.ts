@@ -24,3 +24,4 @@ export const random = VmLib(Math.random, {
 export * from './math-arr.js';
 export * from './math-const.js';
 export * from './math-unary.js';
+export * from './math-additional.js';

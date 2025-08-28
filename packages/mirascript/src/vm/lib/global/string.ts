@@ -79,3 +79,18 @@ export const trim = VmLib(
         returnsType: 'string',
     },
 );
+
+export const replace = VmLib(
+    (str, search, replacement) => {
+        required('str', str, null);
+        required('search', search, str);
+        required('replacement', replacement, str);
+        return $ToString(str).replaceAll($ToString(search), $ToString(replacement));
+    },
+    {
+        summary: '替换字符串中的指定子串',
+        params: { str: '要处理的字符串', search: '要替换的子串', replacement: '替换后的字符串' },
+        paramsType: { str: 'string', search: 'string', replacement: 'string' },
+        returnsType: 'string',
+    },
+);
