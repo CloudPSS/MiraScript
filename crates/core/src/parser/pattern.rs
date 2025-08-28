@@ -16,7 +16,7 @@ pub enum Pattern<'s> {
     ///
     /// Matches against a constant value.
     Constant(TokenRef<'s>),
-    /// ( `>` | `>=` | `<=` | `<` | `==` | `!=` | `~=` | `~!` ) (pattern_constant | pattern_literal)
+    /// ( `>` | `>=` | `<=` | `<` | `==` | `!=` | `=~` | `!~` ) (pattern_constant | pattern_literal)
     ///
     /// Matches against a relation with constant values.
     Relation(TokenRef<'s>, Box<Pattern<'s>>),

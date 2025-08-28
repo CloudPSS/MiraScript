@@ -1,70 +1,70 @@
 // 测试 nil 及运算符本身
 t_true(nil == nil);
 t_false(nil != nil);
-t_true(nil ~= nil);
-t_false(nil ~! nil);
+t_true(nil =~ nil);
+t_false(nil !~ nil);
 
 // boolean
 t_true(true == true);
 t_true(false == false);
 t_false(true == false);
-t_true(true ~= true);
-t_false(false ~= true);
+t_true(true =~ true);
+t_false(false =~ true);
 
 // number
 t_true(1 == 1);
-t_true(1 ~= 1);
+t_true(1 =~ 1);
 t_true(1.0 == 1);
-t_true(1.0 ~= 1);
+t_true(1.0 =~ 1);
 t_false(0.1 + 0.2 == 0.3);
-t_true(0.1 + 0.2 ~= 0.3);
+t_true(0.1 + 0.2 =~ 0.3);
 t_false(1 == 2);
-t_false(1 ~= 2);
+t_false(1 =~ 2);
 t_false(nan == nan);
-t_false(nan ~= nan);
+t_false(nan =~ nan);
 t_true(inf == inf);
-t_true(inf ~= inf);
+t_true(inf =~ inf);
 t_true(-inf == -inf);
-t_true(-inf ~= -inf);
+t_true(-inf =~ -inf);
 t_true(+0 == -0);
-t_true(+0 ~= -0);
-t_true(1 ~! nan);
+t_true(+0 =~ -0);
+t_true(1 !~ nan);
 t_true(1 != nan);
 
 // string
 t_true('abc' == 'abc');
-t_true('abc' ~= 'abc');
+t_true('abc' =~ 'abc');
 t_false('abc' == 'ABC');
-t_true('abc' ~= 'ABC');
+t_true('abc' =~ 'ABC');
 t_false('e' == 'é');
-t_true('e' ~= 'é');
+t_true('e' =~ 'é');
 t_false('abc' == 'ab');
-t_false('abc' ~= 'ab');
+t_false('abc' =~ 'ab');
 
 // aeq should convert to number or string
 t_false(1 == '1');
-t_true(1 ~= '1');
-t_true(1 ~= '1.0');
-t_true('1' ~= 1);
-t_true('1.0' ~= 1);
-t_true(true ~= 'true');
-t_true('true' ~= true);
-t_false('1' ~= true);
-t_true(1 ~= true);
-t_true(true ~= 1);
-t_true(0 ~= false);
-t_true(false ~= 0);
-t_true('' ~= nil);
-t_true(nil ~= '');
-t_false('' ~= '0');
+t_true(1 =~ '1');
+t_true(1 =~ '1.0');
+t_true('1' =~ 1);
+t_true('1.0' =~ 1);
+t_true(true =~ 'true');
+t_true('true' =~ true);
+t_false('1' =~ true);
+t_true(1 =~ true);
+t_true(true =~ 1);
+t_true(0 =~ false);
+t_true(false =~ 0);
+t_true('' =~ nil);
+t_true(nil =~ '');
+t_false('' =~ '0');
 
 // complex
 t_true((1, 2, 3) == (1, 2, 3));
 t_true([1, 2, 3, nil, "xx", ("a", [true])] == [1, 2, 3, nil, "xx", ("a", [true])]);
-t_false((1, 2, 3) ~= (1, 2, 3));
+t_false((1, 2, 3) =~ (1, 2, 3));
 
 t_true([1, 2, 3] == [1, 2, 3]);
-t_false([1, 2, 3] ~= [1, 2, 3]);
+t_false([1, 2, 3] =~ [1, 2, 3]);
 
 t_false([1, 2] == (1, 2));
 t_false((1, 2, 3) == (1, 2, 4));

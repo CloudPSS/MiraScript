@@ -47,7 +47,7 @@ repository:
       - name: keyword.operator.arithmetic.mira
         match: '\+|\-|\*|/|%|\^'
       - name: keyword.operator.comparison.mira
-        match: '>=|>|<=|<|==|!=|~=|~!'
+        match: '>=|>|<=|<|==|!=|=~|!~'
       - name: keyword.operator.logical.mira
         match: '&&|\|\||\?\?|!'
       - name: keyword.operator.assignment.mira

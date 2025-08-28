@@ -32,8 +32,8 @@ debug_print("$a != $b =", a != b);
 debug_print("近似相等:");
 let x = 1.0;
 let y = 1.000_000_000_000_000_2;
-debug_print("$x ~= $y =", x ~= y);
-debug_print("'A' ~= 'a' =", 'A' ~= 'a');
+debug_print("$x =~ $y =", x =~ y);
+debug_print("'A' =~ 'a' =", 'A' =~ 'a');
 
 // 逻辑运算符
 debug_print("逻辑运算:");

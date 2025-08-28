@@ -104,7 +104,7 @@ pub enum Operator {
     /// `!=`
     #[strum(props(relation = true, infix = true))]
     NotEqual,
-    /// `~=`
+    /// `=~`
     #[strum(props(relation = true, infix = true))]
     TildeEqual,
     /// `!~`
@@ -267,8 +267,8 @@ impl Display for Operator {
             Assign => f.write_str("="),
             Equal => f.write_str("=="),
             NotEqual => f.write_str("!="),
-            TildeEqual => f.write_str("~="),
-            TildeNotEqual => f.write_str("~!"),
+            TildeEqual => f.write_str("=~"),
+            TildeNotEqual => f.write_str("!~"),
             Greater => f.write_str(">"),
             GreaterEqual => f.write_str(">="),
             Less => f.write_str("<"),

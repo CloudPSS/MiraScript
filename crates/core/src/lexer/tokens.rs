@@ -57,15 +57,13 @@ pub(super) fn token<'s>(
             )),
             '=' => alt((
                 "==".value(TokenKind::Operator(Operator::Equal)),
+                "=~".value(TokenKind::Operator(Operator::TildeEqual)),
                 any.value(TokenKind::Operator(Operator::Assign)),
             )),
-            '~' => alt((
-                "~=".value(TokenKind::Operator(Operator::TildeEqual)),
-                "~!".value(TokenKind::Operator(Operator::TildeNotEqual))
-            )),
             '!' => alt((
-                ("!", peek("==")).value(TokenKind::Operator(Operator::Exclamation)),
+                ("!", peek(alt(("==", "=~")))).value(TokenKind::Operator(Operator::Exclamation)),
                 "!=".value(TokenKind::Operator(Operator::NotEqual)),
+                "!~".value(TokenKind::Operator(Operator::TildeNotEqual)),
                 any.value(TokenKind::Operator(Operator::Exclamation)),
             )),
             '>' => alt((

@@ -60,7 +60,7 @@ pub enum OpCode {
     /// %ret = %1 >= %2
     Gte,
     /// AEQ %ret %1 %2\
-    /// %ret = %1 ~= %2
+    /// %ret = %1 =~ %2
     Aeq,
     /// NAEQ %ret %1 %2\
     /// %ret = %1 !~ %2

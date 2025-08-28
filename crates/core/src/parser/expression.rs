@@ -158,7 +158,7 @@ pub enum Expression<'s> {
     /// 1. `+` `-` additive
     /// 1. `is` matching *Use [Expression::Is] for this
     /// 1. `>` `<` `>=` `<=` `in` relational
-    /// 1. `==` `!=` `~=` `~!` equality
+    /// 1. `==` `!=` `=~` `!~` equality
     /// 1. `&&` logical and
     /// 1. `||` logical or
     Infix(Box<Expression<'s>>, TokenRef<'s>, Box<Expression<'s>>),
