@@ -42,3 +42,29 @@ export const hypot = VmLib(build(Math.hypot), {
     paramsType: { '..values': '[number]' },
     returnsType: 'number',
 });
+
+export const sum = VmLib(
+    (...values: readonly VmAny[]) => {
+        const numbers = getMinMaxNumbers(values);
+        return numbers.reduce((a, b) => a + b, 0);
+    },
+    {
+        summary: '返回一组数的总和',
+        params: { '..values': '要计算的数值' },
+        paramsType: { '..values': '[number]' },
+        returnsType: 'number',
+    },
+);
+
+export const product = VmLib(
+    (...values: readonly VmAny[]) => {
+        const numbers = getMinMaxNumbers(values);
+        return numbers.reduce((a, b) => a * b, 1);
+    },
+    {
+        summary: '返回一组数的乘积',
+        params: { '..values': '要计算的数值' },
+        paramsType: { '..values': '[number]' },
+        returnsType: 'number',
+    },
+);
