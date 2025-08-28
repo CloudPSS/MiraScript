@@ -5,6 +5,7 @@ esbuild.build({
     sourcemap: true,
     sourcesContent: false,
     format: 'iife',
+    charset: 'utf8',
     entryPoints: ['./media-src/*.ts'],
     minify: true,
     outdir: './media',
@@ -20,6 +21,7 @@ esbuild.build({
 esbuild.build({
     sourcemap: true,
     format: 'esm',
+    charset: 'utf8',
     entryPoints: ['./src/main.ts'],
     minify: false,
     outdir: './dist',

@@ -23,6 +23,7 @@ esbuild.build({
     sourcemap: true,
     sourcesContent: false,
     format: 'esm',
+    charset: 'utf8',
     entryPoints,
     outdir: './dist',
     target: 'esnext',
