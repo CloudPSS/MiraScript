@@ -66,6 +66,10 @@ body {
   contain: strict;
   background-color: var(--bg-primary);
   color: var(--text-primary);
+
+  .monaco-editor {
+    --monaco-monospace-font: var(--code-font, monospace);
+  }
 }
 
 body > .playground {

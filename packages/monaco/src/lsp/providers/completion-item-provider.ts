@@ -1,4 +1,4 @@
-import { getVmFunctionInfo, DiagnosticCode, type VmValue, isVmExtern } from '@mirascript/mirascript';
+import { getVmFunctionInfo, DiagnosticCode, type VmValue, isVmExtern, isVmModule } from '@mirascript/mirascript';
 import {
     type editor,
     languages,
@@ -210,7 +210,9 @@ export class CompletionItemProvider extends Provider implements languages.Comple
                     ? languages.CompletionItemKind.Function
                     : key.startsWith('@')
                       ? languages.CompletionItemKind.Constant
-                      : languages.CompletionItemKind.Variable,
+                      : isVmModule(element)
+                        ? languages.CompletionItemKind.Module
+                        : languages.CompletionItemKind.Variable,
                 insertText: localKeys.has(key) ? `global.${key}` : key, // 如果有同名局部变量，使用 global. 前缀
                 filterText: filterText(key, char),
                 range,

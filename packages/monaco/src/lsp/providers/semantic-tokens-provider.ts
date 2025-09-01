@@ -1,4 +1,4 @@
-import { isVmFunction } from '@mirascript/mirascript';
+import { isVmFunction, isVmModule } from '@mirascript/mirascript';
 import { DiagnosticCode } from '@mirascript/wasm';
 import { Range, type CancellationToken, type editor, type languages } from '../../monaco-api.js';
 import { Provider } from './base.js';
@@ -46,10 +46,17 @@ export class DocumentSemanticTokensProvider extends Provider implements language
             switch (code) {
                 case DiagnosticCode.GlobalVariable: {
                     const id = model.getValueInRange(range);
-                    const isConst = id.startsWith('@');
-                    const isFn = isVmFunction(globals[id]);
-                    tokenType = isConst ? 3 : isFn ? 2 : 1;
-                    // tokenModifiers = 1 << 2; // 全局变量添加下划线
+                    if (id.startsWith('@')) {
+                        tokenType = 3;
+                    } else if (isVmFunction(globals[id])) {
+                        tokenType = 2;
+                    } else if (isVmModule(globals[id])) {
+                        tokenModifiers += 1 << 1;
+                        tokenType = 3;
+                    } else {
+                        tokenType = 1;
+                    }
+                    // tokenModifiers += 1 << 2; // 全局变量添加下划线
                     break;
                 }
                 case DiagnosticCode.ParameterMutable:
