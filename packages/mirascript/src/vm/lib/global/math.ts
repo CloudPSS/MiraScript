@@ -1,5 +1,5 @@
 import { $ToNumber } from '../../operations.js';
-import { VmLib } from '../helpers.js';
+import { VmLib } from '../_helpers.js';
 const { atan2: _atan2, pow: _pow } = Math;
 
 export const atan2 = VmLib((x, y) => _atan2($ToNumber(x), $ToNumber(y)), {

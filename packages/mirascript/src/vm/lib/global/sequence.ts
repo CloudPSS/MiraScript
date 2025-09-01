@@ -1,16 +1,18 @@
 import { Cp } from '../../helpers.js';
-import { $Call, $ToBoolean, $ToString } from '../../operations.js';
+import { $Call, $ToBoolean, $ToNumber, $ToString } from '../../operations.js';
 import {
     isVmArray,
     isVmConst,
     isVmPrimitive,
     isVmRecord,
     type VmAny,
+    type VmArray,
     type VmConst,
+    type VmRecord,
     type VmValue,
 } from '../../types/index.js';
 import { VmError } from '../../error.js';
-import { VmLib, expectArray, expectArrayOrRecord, expectCallable, expectCompound, required } from '../helpers.js';
+import { VmLib, expectArray, expectArrayOrRecord, expectCallable, expectCompound, required } from '../_helpers.js';
 
 /** map 和 filter 的实现 */
 function mapImpl(
@@ -106,6 +108,46 @@ export const filter_map = VmLib(
             f: 'fn(value: any, key: number | string | nil, input: type(data)) -> any | nil',
         },
         returnsType: 'type(data)',
+    },
+);
+
+export const flatten = VmLib(
+    (data, depth = 1) => {
+        expectArray('data', data, data);
+        return data.flat($ToNumber(depth) as 1);
+    },
+    {
+        summary: '将数组扁平化',
+        params: { data: '要扁平化的数组', depth: '扁平化的深度，默认为 1' },
+        paramsType: { data: 'array', depth: 'number' },
+        returnsType: 'array',
+    },
+);
+
+export const zip = VmLib(
+    (...arrays) => {
+        let len = 0;
+        for (const [i, arr] of arrays.entries()) {
+            expectArray(i, arr, []);
+            len = Math.max(len, arr.length);
+        }
+        if (len === 0) return [];
+        const result: VmRecord[] = [];
+        for (let i = 0; i < len; i++) {
+            const obj: Record<number, VmConst> = {};
+            for (const [j, arr] of (arrays as VmArray[]).entries()) {
+                const index = i % arr.length;
+                obj[j] = arr[index] ?? null;
+            }
+            result.push(obj);
+        }
+        return result;
+    },
+    {
+        summary: '将多个数组合并为一个数组，每个元素是对应位置的元素组成的记录',
+        params: { '..arrays': '要合并的数组列表' },
+        paramsType: { '..arrays': '[array]' },
+        returnsType: '[record]',
     },
 );
 

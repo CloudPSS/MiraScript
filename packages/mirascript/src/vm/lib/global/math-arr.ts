@@ -1,6 +1,6 @@
 import { $ToNumber } from '../../operations.js';
 import { type VmAny, isVmArray } from '../../types/index.js';
-import { VmLib } from '../helpers.js';
+import { VmLib } from '../_helpers.js';
 
 /** Get the minimum and maximum numbers from the arguments. */
 function getMinMaxNumbers(args: readonly VmAny[]): number[] {

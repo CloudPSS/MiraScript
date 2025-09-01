@@ -1,6 +1,6 @@
 /* eslint-disable no-loss-of-precision */
 import { $ToNumber } from '../../operations.js';
-import { required, VmLib } from '../helpers.js';
+import { required, VmLib } from '../_helpers.js';
 const { isInteger, isNaN } = Number;
 const { sqrt, pow, exp } = Math;
 

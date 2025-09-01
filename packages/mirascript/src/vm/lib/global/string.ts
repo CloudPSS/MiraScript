@@ -1,5 +1,5 @@
 import { $ToString } from '../../operations.js';
-import { required, VmLib } from '../helpers.js';
+import { required, VmLib } from '../_helpers.js';
 
 export const chars = VmLib(
     (str) => {
@@ -35,6 +35,20 @@ export const ends_with = VmLib(
     },
     {
         summary: '检查字符串是否以指定子串结尾',
+        params: { str: '要检查的字符串', search: '要匹配的子串' },
+        paramsType: { str: 'string', search: 'string' },
+        returnsType: 'boolean',
+    },
+);
+
+export const contains = VmLib(
+    (str, search) => {
+        required('str', str, null);
+        required('search', search, null);
+        return $ToString(str).includes($ToString(search));
+    },
+    {
+        summary: '检查字符串是否包含指定子串',
         params: { str: '要检查的字符串', search: '要匹配的子串' },
         paramsType: { str: 'string', search: 'string' },
         returnsType: 'boolean',
@@ -92,5 +106,19 @@ export const replace = VmLib(
         params: { str: '要处理的字符串', search: '要替换的子串', replacement: '替换后的字符串' },
         paramsType: { str: 'string', search: 'string', replacement: 'string' },
         returnsType: 'string',
+    },
+);
+
+export const split = VmLib(
+    (str, separator) => {
+        required('str', str, null);
+        required('separator', separator, null);
+        return $ToString(str).split($ToString(separator));
+    },
+    {
+        summary: '将字符串拆分为子串数组',
+        params: { str: '要拆分的字符串', separator: '分隔符' },
+        paramsType: { str: 'string', separator: 'string' },
+        returnsType: '[string]',
     },
 );

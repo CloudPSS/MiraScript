@@ -2,7 +2,7 @@ import { Element } from '../../helpers.js';
 import { $ToNumber, $ToString } from '../../operations.js';
 import { isVmArray, type VmConst } from '../../types/index.js';
 import { VmError } from '../../error.js';
-import { VmLib, expectArrayOrRecord } from '../helpers.js';
+import { VmLib, expectArrayOrRecord } from '../_helpers.js';
 
 export * from './math.js';
 export * from './sequence.js';
@@ -10,7 +10,7 @@ export * from './debug.js';
 export * from './json.js';
 export * from './to-primitive.js';
 export * from './string.js';
-export * from './bitwise.js';
+export * from './mod/index.js';
 
 const _with = VmLib(
     (data, ...entries) => {

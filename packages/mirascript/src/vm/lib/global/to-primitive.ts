@@ -1,5 +1,5 @@
 import { $ToString, $ToNumber, $ToBoolean } from '../../operations.js';
-import { VmLib } from '../helpers.js';
+import { VmLib } from '../_helpers.js';
 
 export const to_string = VmLib((data) => $ToString(data), {
     summary: '将数据转换为字符串',
