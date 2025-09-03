@@ -48,3 +48,42 @@ export const b_xor = VmLib(
         returnsType: 'number',
     },
 );
+
+export const shl = VmLib(
+    (x, y) => {
+        return $ToNumber(x) << $ToNumber(y);
+    },
+    {
+        summary: '返回第一个操作数左移指定的位数',
+        params: { x: '第一个操作数', y: '位数' },
+        paramsType: { x: 'number', y: 'number' },
+        returnsType: 'number',
+    },
+);
+
+// SAL (shift arithmetic left) is functionally identical to SHL (shift left) in JavaScript, so we alias it here.
+export const sal = shl;
+
+export const sar = VmLib(
+    (x, y) => {
+        return $ToNumber(x) >> $ToNumber(y);
+    },
+    {
+        summary: '返回第一个操作数右移指定的位数',
+        params: { x: '第一个操作数', y: '位数' },
+        paramsType: { x: 'number', y: 'number' },
+        returnsType: 'number',
+    },
+);
+
+export const shr = VmLib(
+    (x, y) => {
+        return $ToNumber(x) >>> $ToNumber(y);
+    },
+    {
+        summary: '返回第一个操作数无符号右移指定的位数',
+        params: { x: '第一个操作数', y: '位数' },
+        paramsType: { x: 'number', y: 'number' },
+        returnsType: 'number',
+    },
+);
