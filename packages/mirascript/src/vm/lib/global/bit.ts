@@ -61,9 +61,6 @@ export const shl = VmLib(
     },
 );
 
-// SAL (shift arithmetic left) is functionally identical to SHL (shift left) in JavaScript, so we alias it here.
-export const sal = shl;
-
 export const sar = VmLib(
     (x, y) => {
         return $ToNumber(x) >> $ToNumber(y);

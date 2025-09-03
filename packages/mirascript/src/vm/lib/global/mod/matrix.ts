@@ -1,7 +1,7 @@
 import { Cp } from '../../../helpers.js';
 import { $Add, $Call, $Div, $Mul, $Sub, $ToNumber } from '../../../operations.js';
 import { isVmArray, isVmConst, type VmConst, type VmValue } from '../../../types/index.js';
-import { VmLib, expectArray, expectCallable, expectConst, throwError } from '../../_helpers.js';
+import { VmLib, expectCallable, expectConst, required, throwError } from '../../_helpers.js';
 import { mapImpl } from '../sequence.js';
 
 /** 计算尺寸 */
@@ -30,7 +30,7 @@ function num(v: VmConst | undefined): number {
 
 export const size = VmLib(
     (matrix) => {
-        expectArray('matrix', matrix, matrix);
+        required('matrix', matrix, []);
         return sizeImpl(matrix);
     },
     {
@@ -43,7 +43,7 @@ export const size = VmLib(
 
 export const transpose = VmLib(
     (matrix) => {
-        expectArray('matrix', matrix, matrix);
+        required('matrix', matrix, []);
         const [numRows, numCols] = sizeImpl(matrix);
         if (numRows == null || numCols == null) return matrix; // 一维数组或空数组无需转置
 
@@ -51,7 +51,7 @@ export const transpose = VmLib(
         for (let i = 0; i < numRows; i++) {
             Cp();
             for (let j = 0; j < numCols; j++) {
-                const row = matrix[i] ?? null;
+                const row = (matrix as VmConst[][])[i] ?? null;
                 const item = isVmArray(row) ? (row[j] ?? null) : j === 0 ? row : null;
                 transposed[j]![i] = item;
             }
@@ -274,7 +274,7 @@ export const multiply = VmLib(
                 const l = Math.max(al, bl);
                 let s = 0;
                 for (let i = 0; i < l; i++) {
-                    s += num(a[i]) * num(b[i]);
+                    s += num(a[i % al]) * num(b[i % bl]);
                 }
                 return s;
             },
@@ -339,7 +339,11 @@ export const invert = VmLib(
         // https://github.com/josdejong/mathjs
         if (rows === 1) {
             // 1x1 矩阵
-            return [[1 / num(m[0]?.[0])]];
+            const e = num(m[0]?.[0]);
+            // if (e === 0) {
+            //     throwError(`Matrix is singular`, null);
+            // }
+            return [[1 / e]];
         }
         if (rows === 2) {
             // 2x2 矩阵
@@ -349,7 +353,7 @@ export const invert = VmLib(
             const d = num(m[1]?.[1]);
 
             const det = a * d - b * c;
-            if (det === 0) throwError(`Matrix is singular`, null);
+            // if (det === 0) throwError(`Matrix is singular`, null);
             return [
                 [d / det, -b / det],
                 [-c / det, a / det],
@@ -381,9 +385,9 @@ export const invert = VmLib(
                 }
                 r++;
             }
-            if (ABig === 0) {
-                throwError(`Matrix is singular`, null);
-            }
+            // if (ABig === 0) {
+            //     throwError(`Matrix is singular`, null);
+            // }
             r = rBig;
             if (r !== c) {
                 const temp1 = A[c]!;
@@ -427,7 +431,7 @@ export const invert = VmLib(
                 }
             }
         }
-        return [A, B];
+        return B;
     },
     {
         summary: '矩阵求逆',
