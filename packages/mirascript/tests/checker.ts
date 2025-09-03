@@ -20,7 +20,7 @@ test('isVmScript', async (t) => {
     t.false(isVmScript(() => 0));
     t.false(isVmScript({}));
     t.false(isVmScript((await compile('abs'))()));
-    t.false(isVmScript(lib.global.abs));
+    t.false(isVmScript(lib.abs));
     t.false(isVmScript((await compile('fn x {}; return x;'))()));
 });
 
@@ -29,7 +29,7 @@ test('isVmFunction', async (t) => {
     t.false(isVmFunction(() => 0));
     t.false(isVmFunction({}));
     t.true(isVmFunction((await compile('abs'))()));
-    t.false(isVmFunction(lib.global.abs));
+    t.false(isVmFunction(lib.abs));
 });
 
 test('isVmContext', (t) => {

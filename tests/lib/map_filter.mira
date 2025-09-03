@@ -140,7 +140,7 @@ t_eq(filter([0, 1, 2, nan, "", "hello", nil, false, true], fn (x) { x }), [0, 1,
 // mapper 返回函数
 t_eq(map(0, fn (x) {
   return fn { x };
-})::type(), "function");
+}), nil);
 t_eq(map([0], fn (x) {
   return fn { x };
 }), [nil]);

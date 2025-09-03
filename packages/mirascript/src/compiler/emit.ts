@@ -723,25 +723,29 @@ class Emitter {
     addSourceMap(): void {
         if (!this.options.sourceMap) return;
         let fileName = (this.options.fileName ?? '').trim();
-        if (fileName.startsWith('/')) {
-            fileName = fileName.replace(/^\\+\s*/, '');
-        }
-        if (!fileName) {
-            fileName = `${sourceId++}.${this.options.input_mode === 'Template' ? 'miratpl' : 'mira'}`;
+        const hasSchema = /^\w+:/.test(fileName);
+        if (!hasSchema) {
+            if (fileName.startsWith('/')) {
+                fileName = fileName.replace(/^\\+\s*/, '');
+            }
+            if (!fileName) {
+                fileName = `${sourceId++}.${this.options.input_mode === 'Template' ? 'miratpl' : 'mira'}`;
+            }
         }
         const data = {
             version: 3,
             file: fileName,
-            sourceRoot: ORIGIN,
+            sourceRoot: hasSchema ? '' : ORIGIN,
             sources: [fileName],
             sourcesContent: [ArrayBuffer.isView(this.source) ? null : this.source],
             names: [],
             mappings: '',
         };
         const prefix = '//# ';
+        const sourceURL = hasSchema ? fileName : `${ORIGIN}/${fileName}.js`;
         this.codeLines.push(
             // Prevent source map from being recognized as of this file
-            `${prefix}sourceURL=${ORIGIN}/${fileName}.js`,
+            `${prefix}sourceURL=${sourceURL}`,
             `${prefix}sourceMappingURL=data:application/json;base64,${encodeURL(JSON.stringify(data))}`,
         );
     }

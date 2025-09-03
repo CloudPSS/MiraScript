@@ -11,7 +11,7 @@ const compileAndRun = test.macro<[string]>({
 
         const expectedUrl = new URL(`./tests/${file}.jsonl`, TEST_DIR);
         const expected = fs.existsSync(expectedUrl) ? await fs.promises.readFile(expectedUrl, 'utf8') : null;
-        const script = await compile(code, { pretty: true, sourceMap: true });
+        const script = await compile(code, { pretty: true, sourceMap: true, fileName: codeUrl.href });
         const timeout_fn: Array<() => unknown> = [];
         let result = '';
         script(
