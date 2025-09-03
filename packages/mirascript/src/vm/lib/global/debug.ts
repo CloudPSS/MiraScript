@@ -19,7 +19,9 @@ export const debug_print = VmLib(
 export const panic = VmLib(
     (message: VmAny) => {
         // eslint-disable-next-line no-console
-        console.error('\u001B[41;37m MiraScript Panic \u001B[0m', message);
+        if (message === undefined) console.error('\u001B[41;37m MiraScript \u001B[0m');
+        // eslint-disable-next-line no-console
+        else console.error('\u001B[41;37m MiraScript \u001B[0m', message);
         throw new VmError($ToString(message), undefined);
     },
     {

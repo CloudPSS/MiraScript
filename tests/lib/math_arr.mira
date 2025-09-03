@@ -1,0 +1,39 @@
+// math-arr.ts 中的函数
+// max
+t_eq(max(1, 2, 3), 3);
+t_eq(max([1, 2, 3]), 3);
+t_eq(max(-1, -2, -3), -1);
+t_eq(max(), -inf);
+t_eq(max(nil), -inf);
+t_eq(max([nil]), -inf);
+
+// min
+t_eq(min(1, 2, 3), 1);
+t_eq(min([1, 2, 3]), 1);
+t_eq(min(-1, -2, -3), -3);
+t_eq(min(), inf);
+t_eq(min(nil), inf);
+t_eq(min([nil]), inf);
+
+// hypot
+t_eq(hypot(3, 4), 5);
+t_eq(hypot(5, 12), 13);
+t_snapshot(hypot(1, 1));
+t_eq(hypot([3, 4]), 5);
+t_eq(hypot(), 0);
+t_eq(hypot(nil), 0);
+t_eq(hypot([nil]), 0);
+
+// sum
+t_eq(sum(1, 2, 3, 4), 10);
+t_eq(sum([1, 2, 3, 4]), 10);
+t_eq(sum(), 0);
+t_eq(sum(nil), 0);
+t_eq(sum([nil]), 0);
+
+// product
+t_eq(product(1, 2, 3, 4), 24);
+t_eq(product([1, 2, 3, 4]), 24);
+t_eq(product(), 1);
+t_eq(product(nil), 1);
+t_eq(product([nil]), 1);

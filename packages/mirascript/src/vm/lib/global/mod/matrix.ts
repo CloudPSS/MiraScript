@@ -1,17 +1,59 @@
-import { isVmArray, type VmConst } from '../../../types/index.js';
-import { VmLib, expectArray } from '../../_helpers.js';
+import { Cp } from '../../../helpers.js';
+import { $Add, $Call, $Div, $Mul, $Sub, $ToNumber } from '../../../operations.js';
+import { isVmArray, isVmConst, type VmConst, type VmValue } from '../../../types/index.js';
+import { VmLib, expectArray, expectCallable, expectConst, throwError } from '../../_helpers.js';
+import { mapImpl } from '../sequence.js';
+
+/** 计算尺寸 */
+function sizeImpl(matrix: VmValue): [] | [number] | [number, number] {
+    if (!isVmArray(matrix)) return [];
+    if (matrix.length === 0) return [0];
+
+    const numRows = matrix.length;
+    let numCols = 0;
+
+    for (const row of matrix) {
+        if (isVmArray(row)) {
+            numCols = Math.max(numCols, row.length);
+        } else {
+            return [numRows];
+        }
+    }
+
+    return [numRows, numCols];
+}
+
+/** 数组元素转为 number */
+function num(v: VmConst | undefined): number {
+    return $ToNumber(v ?? null);
+}
+
+export const size = VmLib(
+    (matrix) => {
+        expectArray('matrix', matrix, matrix);
+        return sizeImpl(matrix);
+    },
+    {
+        summary: '获取矩阵尺寸',
+        params: { matrix: '要获取尺寸的矩阵' },
+        paramsType: { matrix: '[[any]]' },
+        returnsType: '[number, number]',
+    },
+);
 
 export const transpose = VmLib(
     (matrix) => {
         expectArray('matrix', matrix, matrix);
-        if (matrix.length === 0) return [];
-        const items = matrix.map((i) => (isVmArray(i) ? i : [i]));
-        const numRows = matrix.length;
-        const numCols = Math.max(...items.map((row) => row.length));
+        const [numRows, numCols] = sizeImpl(matrix);
+        if (numRows == null || numCols == null) return matrix; // 一维数组或空数组无需转置
+
         const transposed: VmConst[][] = Array.from({ length: numCols }, () => Array.from({ length: numRows }));
         for (let i = 0; i < numRows; i++) {
+            Cp();
             for (let j = 0; j < numCols; j++) {
-                transposed[j]![i] = items[i]![j] ?? null;
+                const row = matrix[i] ?? null;
+                const item = isVmArray(row) ? (row[j] ?? null) : j === 0 ? row : null;
+                transposed[j]![i] = item;
             }
         }
         return transposed;
@@ -21,5 +63,376 @@ export const transpose = VmLib(
         params: { matrix: '要转置的矩阵' },
         paramsType: { matrix: '[[any]]' },
         returnsType: '[[any]]',
+    },
+);
+
+/** 逐项操作 */
+function entrywiseImpl(
+    a: VmConst,
+    b: VmConst,
+    f: (a: VmConst, b: VmConst) => VmConst,
+    vvf?: (va: readonly VmConst[], vb: readonly VmConst[], ar: number, br: number) => VmConst,
+    mmf?: (
+        ma: readonly VmConst[][],
+        mb: readonly VmConst[][],
+        ar: number,
+        ac: number,
+        br: number,
+        bc: number,
+    ) => VmConst,
+    vmf?: (va: readonly VmConst[], mb: readonly VmConst[][], al: number, br: number, bc: number) => VmConst,
+    mvf?: (ma: readonly VmConst[][], vb: readonly VmConst[], ar: number, ac: number, bl: number) => VmConst,
+): VmConst {
+    let [ar, ac] = sizeImpl(a);
+    let [br, bc] = sizeImpl(b);
+
+    if (ar == null) {
+        if (br == null) {
+            // s/s
+            return f(a, b);
+        } else if (bc == null) {
+            // s/v
+            const result: VmConst[] = Array.from({ length: br });
+            for (let r = 0; r < br; r++) {
+                const bItem = (b as VmConst[])[r] ?? null;
+                result[r] = f(a, bItem);
+            }
+            return result;
+        } else {
+            // s/m
+            const result: VmConst[][] = Array.from({ length: br }, () => Array.from({ length: bc! }));
+            for (let r = 0; r < br; r++) {
+                const bRow = (b as VmConst[][])[r] ?? [];
+                const rRow = result[r]!;
+                for (let c = 0; c < bc; c++) {
+                    const bItem = bRow[c] ?? null;
+                    rRow[c] = f(a, bItem);
+                }
+            }
+            return result;
+        }
+    }
+    if (br == null) {
+        if (ac == null) {
+            // v/s
+            const result: VmConst[] = Array.from({ length: ar });
+            for (let r = 0; r < ar; r++) {
+                const aItem = (a as VmConst[])[r] ?? null;
+                result[r] = f(aItem, b);
+            }
+            return result;
+        } else {
+            // m/s
+            const result: VmConst[][] = Array.from({ length: ar }, () => Array.from({ length: ac! }));
+            for (let r = 0; r < ar; r++) {
+                const aRow = (a as VmConst[][])[r] ?? [];
+                const rRow = result[r]!;
+                for (let c = 0; c < ac; c++) {
+                    const aItem = aRow[c] ?? null;
+                    rRow[c] = f(aItem, b);
+                }
+            }
+            return result;
+        }
+    }
+    if (ac == null && bc == null) {
+        // v/v
+        if (vvf != null) {
+            return vvf(a as VmConst[], b as VmConst[], ar, br);
+        }
+        const rr = Math.max(ar, br);
+        const result: VmConst[] = Array.from({ length: rr });
+        for (let r = 0; r < rr; r++) {
+            const aItem = (a as VmConst[])[r % ar] ?? null;
+            const bItem = (b as VmConst[])[r % br] ?? null;
+            result[r] = f(aItem, bItem);
+        }
+        return result;
+    }
+
+    // m/m (m/v v/m)
+    if (ac == null) {
+        // v/m
+        if (vmf != null) {
+            return vmf(a as VmConst[], b as VmConst[][], ar, br, bc!);
+        }
+        ac = ar!;
+        ar = 1;
+        a = [a];
+    }
+    if (bc == null) {
+        // m/v
+        if (mvf != null) {
+            return mvf(a as VmConst[][], b as VmConst[], ar, ac, br);
+        }
+        bc = br!;
+        br = 1;
+        b = [b];
+    }
+
+    if (mmf != null) {
+        return mmf(a as VmConst[][], b as VmConst[][], ar, ac, br, bc);
+    }
+    const rr = Math.max(ar, br);
+    const rc = Math.max(ac, bc);
+    const result: VmConst[][] = Array.from({ length: rr }, () => Array.from({ length: rc }));
+    for (let r = 0; r < rr; r++) {
+        for (let c = 0; c < rc; c++) {
+            const aItem = (a as VmConst[][])[r % ar]?.[c % ac] ?? null;
+            const bItem = (b as VmConst[][])[r % br]?.[c % bc] ?? null;
+            result[r]![c] = f(aItem, bItem);
+        }
+    }
+    return result;
+}
+
+export const entrywise = VmLib(
+    (a, b, f) => {
+        expectConst('a', a, null);
+        expectConst('b', b, null);
+        expectCallable('f', f, null);
+        return entrywiseImpl(a, b, (a, b) => {
+            Cp();
+            const ret = $Call(f, [a, b]);
+            if (!isVmConst(ret)) return null;
+            return ret;
+        });
+    },
+    {
+        summary: '逐项操作',
+        params: { a: '第一个操作数', b: '第二个操作数', f: '操作函数' },
+        paramsType: { a: 'any | [any] | [[any]]', b: 'any | [any] | [[any]]', f: 'fn(a: any, b: any) -> any' },
+        returnsType: 'any | [any] | [[any]]',
+    },
+);
+
+export const add = VmLib(
+    (a, b) => {
+        expectConst('a', a, null);
+        expectConst('b', b, null);
+        return entrywiseImpl(a, b, $Add);
+    },
+    {
+        summary: '逐项相加',
+        params: { a: '第一个操作数', b: '第二个操作数' },
+        paramsType: { a: 'number | [number] | [[number]]', b: 'number | [number] | [[number]]' },
+        returnsType: 'number | [number] | [[number]]',
+    },
+);
+
+export const subtract = VmLib(
+    (a, b) => {
+        expectConst('a', a, null);
+        expectConst('b', b, null);
+        return entrywiseImpl(a, b, $Sub);
+    },
+    {
+        summary: '逐项相减',
+        params: { a: '第一个操作数', b: '第二个操作数' },
+        paramsType: { a: 'number | [number] | [[number]]', b: 'number | [number] | [[number]]' },
+        returnsType: 'number | [number] | [[number]]',
+    },
+);
+
+export const entrywise_multiply = VmLib(
+    (a, b) => {
+        expectConst('a', a, null);
+        expectConst('b', b, null);
+        return entrywiseImpl(a, b, $Mul);
+    },
+    {
+        summary: '逐项相乘',
+        params: { a: '第一个操作数', b: '第二个操作数' },
+        paramsType: { a: 'number | [number] | [[number]]', b: 'number | [number] | [[number]]' },
+        returnsType: 'number | [number] | [[number]]',
+    },
+);
+
+export const entrywise_divide = VmLib(
+    (a, b) => {
+        expectConst('a', a, null);
+        expectConst('b', b, null);
+        return entrywiseImpl(a, b, $Div);
+    },
+    {
+        summary: '逐项相除',
+        params: { a: '第一个操作数', b: '第二个操作数' },
+        paramsType: { a: 'number | [number] | [[number]]', b: 'number | [number] | [[number]]' },
+        returnsType: 'number | [number] | [[number]]',
+    },
+);
+
+export const multiply = VmLib(
+    (a, b) => {
+        expectConst('a', a, null);
+        expectConst('b', b, null);
+        return entrywiseImpl(
+            a,
+            b,
+            $Mul,
+            (a, b, al, bl) => {
+                const l = Math.max(al, bl);
+                let s = 0;
+                for (let i = 0; i < l; i++) {
+                    s += num(a[i]) * num(b[i]);
+                }
+                return s;
+            },
+            (a, b, ar, ac, br, bc) => {
+                if (ac !== br) throwError(`Incompatible matrix dimensions`, null);
+                const result: VmConst[][] = Array.from({ length: ar }, () => Array.from({ length: bc }));
+                for (let r = 0; r < ar; r++) {
+                    for (let c = 0; c < bc; c++) {
+                        let item = 0;
+                        for (let k = 0; k < ac; k++) {
+                            item +=
+                                num((a as VmConst[][])[r % ar]?.[k % ac]) * num((b as VmConst[][])[k % br]?.[c % bc]);
+                        }
+                        result[r]![c] = item;
+                    }
+                }
+                return result;
+            },
+            (a, b, al, br, bc) => {
+                if (al !== br) throwError(`Incompatible matrix dimensions`, null);
+                const result: VmConst[] = Array.from({ length: bc });
+                for (let c = 0; c < bc; c++) {
+                    let item = 0;
+                    for (let k = 0; k < al; k++) {
+                        item += num(a[k]) * num((b as VmConst[][])[k % br]?.[c]);
+                    }
+                    result[c] = item;
+                }
+                return result;
+            },
+            (a, b, ar, ac, bl) => {
+                if (ac !== bl) throwError(`Incompatible matrix dimensions`, null);
+                const result: VmConst[] = Array.from({ length: ar });
+                for (let r = 0; r < ar; r++) {
+                    let item = 0;
+                    for (let k = 0; k < ac; k++) {
+                        item += num((a as VmConst[][])[r % ar]?.[k % ac]) * num(b[k % bl]);
+                    }
+                    result[r] = item;
+                }
+                return result;
+            },
+        );
+    },
+    {
+        summary: '矩阵相乘',
+        params: { a: '第一个操作数', b: '第二个操作数' },
+        paramsType: { a: 'number | [number] | [[number]]', b: 'number | [number] | [[number]]' },
+        returnsType: 'number | [number] | [[number]]',
+    },
+);
+
+export const invert = VmLib(
+    (a) => {
+        expectConst('a', a, null);
+        const [rows, cols] = sizeImpl(a);
+        if (rows == null) return 1 / num(a); // 标量取倒数
+        if (cols == null) return mapImpl(a, (v) => 1 / num(v)); // 向量按元素取倒数
+
+        if (rows !== cols) throwError(`Matrix must be square`, a);
+        const m = a as VmConst[][];
+        // https://github.com/josdejong/mathjs
+        if (rows === 1) {
+            // 1x1 矩阵
+            return [[1 / num(m[0]?.[0])]];
+        }
+        if (rows === 2) {
+            // 2x2 矩阵
+            const a = num(m[0]?.[0]);
+            const b = num(m[0]?.[1]);
+            const c = num(m[1]?.[0]);
+            const d = num(m[1]?.[1]);
+
+            const det = a * d - b * c;
+            if (det === 0) throwError(`Matrix is singular`, null);
+            return [
+                [d / det, -b / det],
+                [-c / det, a / det],
+            ];
+        }
+
+        // 更高阶矩阵 使用高斯消元法
+
+        // 初始化输入
+        const A: number[][] = Array.from({ length: rows }, (_, i) =>
+            Array.from({ length: cols }, (_, j) => num(m[i]?.[j])),
+        );
+
+        // 初始化结果为单位矩阵
+        const B: number[][] = Array.from({ length: rows }, (_, i) =>
+            Array.from({ length: cols }, (_, j) => (i === j ? 1 : 0)),
+        );
+
+        // loop over all columns, and perform row reductions
+        for (let c = 0; c < cols; c++) {
+            // Pivoting: Swap row c with row r, where row r contains the largest element A[r][c]
+            let ABig = Math.abs(A[c]![c]!);
+            let rBig = c;
+            let r = c + 1;
+            while (r < rows) {
+                if (Math.abs(A[r]![c]!) > ABig) {
+                    ABig = Math.abs(A[r]![c]!);
+                    rBig = r;
+                }
+                r++;
+            }
+            if (ABig === 0) {
+                throwError(`Matrix is singular`, null);
+            }
+            r = rBig;
+            if (r !== c) {
+                const temp1 = A[c]!;
+                A[c] = A[r]!;
+                A[r] = temp1;
+                const temp2 = B[c]!;
+                B[c] = B[r]!;
+                B[r] = temp2;
+            }
+
+            // eliminate non-zero values on the other rows at column c
+            const Ac = A[c]!;
+            const Bc = B[c]!;
+            for (r = 0; r < rows; r++) {
+                const Ar = A[r]!;
+                const Br = B[r]!;
+                if (r !== c) {
+                    // eliminate value at column c and row r
+                    if (Ar[c] !== 0) {
+                        const f = -Ar[c]! / Ac[c]!;
+
+                        // add (f * row c) to row r to eliminate the value
+                        // at column c
+                        for (let s = c; s < cols; s++) {
+                            Ar[s] = Ar[s]! + f * Ac[s]!;
+                        }
+                        for (let s = 0; s < cols; s++) {
+                            Br[s] = Br[s]! + f * Bc[s]!;
+                        }
+                    }
+                } else {
+                    // normalize value at Acc to 1,
+                    // divide each value on row r with the value at Acc
+                    const f = Ac[c]!;
+                    for (let s = c; s < cols; s++) {
+                        Ar[s] = Ar[s]! / f;
+                    }
+                    for (let s = 0; s < cols; s++) {
+                        Br[s] = Br[s]! / f;
+                    }
+                }
+            }
+        }
+        return [A, B];
+    },
+    {
+        summary: '矩阵求逆',
+        params: { a: '待求逆的矩阵' },
+        paramsType: { a: 'number | [[number]]' },
+        returnsType: 'number | [[number]]',
     },
 );

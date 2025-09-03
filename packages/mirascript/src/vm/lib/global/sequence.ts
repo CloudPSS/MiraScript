@@ -12,26 +12,22 @@ import {
     type VmValue,
 } from '../../types/index.js';
 import { VmError } from '../../error.js';
-import { VmLib, expectArray, expectArrayOrRecord, expectCallable, expectCompound, required } from '../_helpers.js';
+import { VmLib, expectArray, expectArrayOrRecord, expectCallable, expectCompound, expectConst } from '../_helpers.js';
 
-/** map 和 filter 的实现 */
-function mapImpl(
-    data: VmAny,
-    fnName: string,
-    fn: VmAny,
-    mapper: (fn: VmValue, value: VmValue, index: number | string | null, data: VmValue) => VmValue | undefined,
-): VmValue {
-    required('data', data, null);
-    expectCallable(fnName, fn, data);
+/** map */
+export function mapImpl(
+    data: VmConst,
+    mapper: (value: VmConst, index: number | string | null, data: VmConst) => VmConst | undefined,
+): VmConst {
     if (isVmPrimitive(data)) {
-        return mapper(fn, data, null, data) ?? null;
+        return mapper(data, null, data) ?? null;
     }
     if (isVmArray(data)) {
         const result: VmConst[] = [];
         const { length } = data;
         for (let i = 0; i < length; i++) {
             Cp();
-            const ret = mapper(fn, data[i] ?? null, i, data);
+            const ret = mapper(data[i] ?? null, i, data);
             if (ret === undefined) continue;
             if (isVmConst(ret)) {
                 result.push(ret);
@@ -40,12 +36,11 @@ function mapImpl(
             }
         }
         return result;
-    }
-    if (isVmRecord(data)) {
+    } else {
         const entries: Array<[string, VmConst]> = [];
         for (const [key, value] of Object.entries(data)) {
             Cp();
-            const ret = mapper(fn, value ?? null, key, data);
+            const ret = mapper(value ?? null, key, data);
             if (ret === undefined) continue;
             if (isVmConst(ret)) {
                 entries.push([key, ret]);
@@ -55,25 +50,43 @@ function mapImpl(
         }
         return Object.fromEntries(entries);
     }
-    throw new VmError('First argument must be primitive, array, or record', null);
 }
 
-export const map = VmLib((data, f) => mapImpl(data, 'f', f, (fn, value, key, data) => $Call(fn, [value, key, data])), {
-    summary: '对数组或记录中的每个元素应用函数，并返回结果',
-    params: {
-        data: '要映射的数组或记录',
-        f: '应用于每个元素的函数',
+/** map 和 filter 的实现 */
+function mapImplWrapped(
+    data: VmAny,
+    fnName: string,
+    fn: VmAny,
+    mapper: (fn: VmValue, value: VmValue, index: number | string | null, data: VmValue) => VmValue | undefined,
+): VmValue {
+    expectConst('data', data, null);
+    expectCallable(fnName, fn, data);
+    return mapImpl(data, (value, index, data) => {
+        const ret = mapper(fn, value, index, data);
+        if (ret === undefined || isVmConst(ret)) return ret;
+        return null;
+    });
+}
+
+export const map = VmLib(
+    (data, f) => mapImplWrapped(data, 'f', f, (fn, value, key, data) => $Call(fn, [value, key, data])),
+    {
+        summary: '对数组或记录中的每个元素应用函数，并返回结果',
+        params: {
+            data: '要映射的数组或记录',
+            f: '应用于每个元素的函数',
+        },
+        paramsType: {
+            data: 'array | record',
+            f: 'fn(value: any, key: number | string | nil, input: type(data)) -> any',
+        },
+        returnsType: 'type(data)',
     },
-    paramsType: {
-        data: 'array | record',
-        f: 'fn(value: any, key: number | string | nil, input: type(data)) -> any',
-    },
-    returnsType: 'type(data)',
-});
+);
 
 export const filter = VmLib(
     (data, predicate) =>
-        mapImpl(data, 'predicate', predicate, (fn, value, key, data) => {
+        mapImplWrapped(data, 'predicate', predicate, (fn, value, key, data) => {
             const ret = $Call(fn, [value, key, data]);
             return $ToBoolean(ret) ? value : undefined;
         }),
@@ -93,7 +106,7 @@ export const filter = VmLib(
 
 export const filter_map = VmLib(
     (data, f) =>
-        mapImpl(data, 'f', f, (fn, value, key, data) => {
+        mapImplWrapped(data, 'f', f, (fn, value, key, data) => {
             const ret = $Call(fn, [value, key, data]);
             return ret ?? undefined;
         }),

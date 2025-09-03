@@ -1,2 +1,5 @@
 t_eq(debug_print::type(), 'function');
 debug_print('Hello, World!');
+
+t_throws(fn { panic('p') });
+t_throws(fn { panic() });

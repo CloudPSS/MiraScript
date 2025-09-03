@@ -3,7 +3,7 @@ import { type VmAny, isVmArray } from '../../types/index.js';
 import { VmLib } from '../_helpers.js';
 
 /** Get the minimum and maximum numbers from the arguments. */
-function getMinMaxNumbers(args: readonly VmAny[]): number[] {
+function getNumbers(args: readonly VmAny[]): number[] {
     if (args.length === 0) return [];
     if (args.length === 1 && isVmArray(args[0])) args = args[0];
     const numbers: number[] = [];
@@ -17,7 +17,7 @@ function getMinMaxNumbers(args: readonly VmAny[]): number[] {
 /** 生成函数 */
 function build(f: (...values: readonly number[]) => number): (...values: readonly VmAny[]) => number {
     return (...values) => {
-        const numbers = getMinMaxNumbers(values);
+        const numbers = getNumbers(values);
         return f(...numbers);
     };
 }
@@ -45,7 +45,7 @@ export const hypot = VmLib(build(Math.hypot), {
 
 export const sum = VmLib(
     (...values: readonly VmAny[]) => {
-        const numbers = getMinMaxNumbers(values);
+        const numbers = getNumbers(values);
         return numbers.reduce((a, b) => a + b, 0);
     },
     {
@@ -58,7 +58,7 @@ export const sum = VmLib(
 
 export const product = VmLib(
     (...values: readonly VmAny[]) => {
-        const numbers = getMinMaxNumbers(values);
+        const numbers = getNumbers(values);
         return numbers.reduce((a, b) => a * b, 1);
     },
     {

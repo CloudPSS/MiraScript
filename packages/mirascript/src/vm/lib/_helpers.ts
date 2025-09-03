@@ -13,6 +13,8 @@ import {
     type VmRecord,
     type VmModule,
     isVmPrimitive,
+    type VmConst,
+    isVmConst,
 } from '../types/index.js';
 import type { VmFunctionLike, VmFunctionOption } from '../types/function.js';
 
@@ -86,7 +88,7 @@ export function expectArrayOrRecord(
 ): asserts value is VmArray | VmRecord {
     required(name, value, recovered);
     if (!isVmArray(value) && !isVmRecord(value)) {
-        throwUnexpectedTypeError(name, 'array or record', value, recovered);
+        throwUnexpectedTypeError(name, 'array | record', value, recovered);
     }
 }
 
@@ -98,7 +100,19 @@ export function expectCompound(
 ): asserts value is VmArray | VmRecord | VmModule | VmExtern {
     required(name, value, recovered);
     if (isVmPrimitive(value) || isVmFunction(value)) {
-        throwUnexpectedTypeError(name, 'compound', value, recovered);
+        throwUnexpectedTypeError(name, 'array | record | module | extern', value, recovered);
+    }
+}
+
+/** 标记参数为常量 */
+export function expectConst(
+    name: string | number,
+    value: VmAny,
+    recovered: VmAny | (() => VmAny),
+): asserts value is VmConst {
+    required(name, value, recovered);
+    if (!isVmConst(value)) {
+        throwUnexpectedTypeError(name, 'nil | number | boolean | string | array | record', value, recovered);
     }
 }
 
