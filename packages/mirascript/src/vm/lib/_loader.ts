@@ -51,7 +51,4 @@ export function createModule<const T extends Record<string, RawValue>>(name: str
     return new VmModule(name, mod) as ToWrappedModule<T>;
 }
 
-export const lib = {
-    global,
-    bit: global.bit,
-};
+export const lib = global;

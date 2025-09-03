@@ -322,7 +322,7 @@ export class CompletionItemProvider extends Provider implements languages.Comple
         if (value == null || typeof value != 'object') {
             return [];
         }
-        const keys = lib.global.keys(value);
+        const keys = lib.keys(value);
         const result: CustomCompletionItem[] = [];
         for (const key of keys) {
             if (char && !key.toLowerCase().includes(char)) {

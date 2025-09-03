@@ -1,7 +1,7 @@
-import { $ToNumber } from '../../../operations.js';
-import { VmLib } from '../../_helpers.js';
+import { $ToNumber } from '../../operations.js';
+import { VmLib } from '../_helpers.js';
 
-export const and = VmLib(
+export const b_and = VmLib(
     (x, y) => {
         return $ToNumber(x) & $ToNumber(y);
     },
@@ -13,7 +13,7 @@ export const and = VmLib(
     },
 );
 
-export const or = VmLib(
+export const b_or = VmLib(
     (x, y) => {
         return $ToNumber(x) | $ToNumber(y);
     },
@@ -25,7 +25,7 @@ export const or = VmLib(
     },
 );
 
-export const not = VmLib(
+export const b_not = VmLib(
     (x) => {
         return ~$ToNumber(x);
     },
@@ -37,7 +37,7 @@ export const not = VmLib(
     },
 );
 
-export const xor = VmLib(
+export const b_xor = VmLib(
     (x, y) => {
         return $ToNumber(x) ^ $ToNumber(y);
     },

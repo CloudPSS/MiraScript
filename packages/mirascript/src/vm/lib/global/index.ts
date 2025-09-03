@@ -5,6 +5,7 @@ import { VmError } from '../../error.js';
 import { VmLib, expectArrayOrRecord } from '../_helpers.js';
 
 export * from './math.js';
+export * from './bit.js';
 export * from './sequence.js';
 export * from './debug.js';
 export * from './json.js';
