@@ -1,4 +1,5 @@
-import { getVmFunctionInfo, DiagnosticCode, type VmValue, isVmExtern, isVmModule } from '@mirascript/mirascript';
+import { getVmFunctionInfo, type VmValue, isVmExtern, isVmModule, type VmFunctionInfo } from '@mirascript/mirascript';
+import { lib, operations } from '@mirascript/mirascript/subtle';
 import {
     type editor,
     languages,
@@ -9,9 +10,9 @@ import {
     Range,
 } from '../../monaco-api.js';
 import { Provider } from './base.js';
-import { codeblock, getDeep, globalDoc, paramsList } from '../utils.js';
+import { codeblock, getDeep, valueDoc, paramsList } from '../utils.js';
 import { keywords, reservedKeywords } from '../../constants.js';
-import { lib, operations } from '@mirascript/mirascript/subtle';
+import type { LocalDefinition } from '../compile-result.js';
 
 const DESC_GLOBAL = '(global)';
 const DESC_LOCAL = '(local)';
@@ -168,14 +169,52 @@ const COMMON_GLOBAL_SUGGESTIONS = (
 
 /** 扩展完成项 */
 interface CustomCompletionItem extends languages.CompletionItem {
-    /** 对应的全局变量 */
-    global?: VmValue;
+    /** 是否为字段 */
+    isField: boolean;
+    /** 对应的变量值 */
+    vmValue?: VmValue;
 }
 
 /** 构造 filterText */
 function filterText(key: string, char: string | undefined): string {
     if (char == null || key.startsWith(char)) return key;
     return key.startsWith('@') || key.startsWith('$') ? key.slice(1) : key;
+}
+
+/** 构造选项 */
+function completion(
+    model: editor.ITextModel,
+    description: string,
+    key: string,
+    value: VmValue | undefined,
+    fn: VmFunctionInfo | LocalDefinition['fn'] | undefined,
+    field: boolean,
+): Pick<CustomCompletionItem, 'label' | 'kind' | 'commitCharacters' | 'vmValue' | 'isField'> {
+    let detail = '';
+    let kind: languages.CompletionItemKind;
+    if (fn == null && typeof value == 'function') {
+        fn = getVmFunctionInfo(value);
+    }
+    const callable = fn != null || (isVmExtern(value) && value.callable);
+    if (callable) {
+        detail = paramsList(model, fn);
+        kind = field ? languages.CompletionItemKind.Function : languages.CompletionItemKind.Method;
+    } else {
+        if (isVmModule(value)) {
+            kind = languages.CompletionItemKind.Module;
+        } else if (!field && key.startsWith('@')) {
+            kind = languages.CompletionItemKind.Constant;
+        } else {
+            kind = field ? languages.CompletionItemKind.Field : languages.CompletionItemKind.Variable;
+        }
+    }
+    return {
+        label: { label: key, description, detail },
+        kind,
+        commitCharacters: fn ? ['!', '('] : ['!', '.', '[', '('],
+        vmValue: value,
+        isField: field,
+    };
 }
 
 /**
@@ -194,30 +233,35 @@ export class CompletionItemProvider extends Provider implements languages.Comple
         const suggestions: CustomCompletionItem[] = [];
         const localKeys = new Set(locals.map((item) => item.insertText));
         for (const key in global) {
+            const element = global[key];
+            if (element === undefined) continue;
+
+            if (isVmModule(element)) {
+                for (const f of element.keys()) {
+                    if (char && !f.toLowerCase().includes(char)) {
+                        continue;
+                    }
+                    const field = element.get(f);
+                    if (field === undefined) continue;
+
+                    suggestions.push({
+                        insertText: localKeys.has(key) ? `global.${key}.${f}` : `${key}.${f}`,
+                        filterText: filterText(f, char),
+                        range,
+                        ...completion(model, DESC_GLOBAL, `${key}.${f}`, field, undefined, true),
+                    });
+                }
+            }
+
             if (char && !key.toLowerCase().includes(char)) {
                 continue;
             }
-            const element = global[key];
-            if (element === undefined) continue;
-            const info = getVmFunctionInfo(element);
-            let detail = '';
-            if (info) {
-                detail = paramsList(model, info);
-            }
+
             suggestions.push({
-                label: { label: key, description: DESC_GLOBAL, detail },
-                kind: info
-                    ? languages.CompletionItemKind.Function
-                    : key.startsWith('@')
-                      ? languages.CompletionItemKind.Constant
-                      : isVmModule(element)
-                        ? languages.CompletionItemKind.Module
-                        : languages.CompletionItemKind.Variable,
                 insertText: localKeys.has(key) ? `global.${key}` : key, // 如果有同名局部变量，使用 global. 前缀
                 filterText: filterText(key, char),
                 range,
-                commitCharacters: info ? ['('] : ['.', '[', '('],
-                global: element,
+                ...completion(model, DESC_GLOBAL, key, element, undefined, false),
             });
         }
         return suggestions;
@@ -228,10 +272,10 @@ export class CompletionItemProvider extends Provider implements languages.Comple
         position: IPosition,
         char: string | undefined,
         range: languages.CompletionItemRanges,
-    ): Promise<languages.CompletionItem[]> {
+    ): Promise<CustomCompletionItem[]> {
         const compiled = await this.getCompileResult(model);
         if (!compiled) return [];
-        const suggestions: languages.CompletionItem[] = [];
+        const suggestions: CustomCompletionItem[] = [];
 
         let scope = compiled.scopeAt(model, position);
         const locals = new Set<string>();
@@ -243,24 +287,12 @@ export class CompletionItemProvider extends Provider implements languages.Comple
                     continue;
                 }
                 locals.add(name);
-                const isFunction = definition.code === DiagnosticCode.LocalFunction;
-                let detail = '';
-                if (isFunction) {
-                    detail = paramsList(model, fn);
-                }
                 suggestions.push({
-                    label: { label: name, description: DESC_LOCAL, detail },
-                    kind:
-                        fn || isFunction
-                            ? languages.CompletionItemKind.Function
-                            : name.startsWith('@')
-                              ? languages.CompletionItemKind.Constant
-                              : languages.CompletionItemKind.Variable,
                     insertText: name,
                     filterText: filterText(name, char),
                     range,
-                    commitCharacters: isFunction ? ['('] : undefined,
-                } satisfies languages.CompletionItem);
+                    ...completion(model, DESC_LOCAL, name, undefined, fn, false),
+                });
             }
             if (!scope.parent) break;
             scope = scope.parent;
@@ -297,13 +329,10 @@ export class CompletionItemProvider extends Provider implements languages.Comple
                 continue;
             }
             const field = operations.$Get(value, key);
-            const callable = typeof field == 'function' || (isVmExtern(field) && field.callable);
             result.push({
-                label: { label: key, description: DESC_FIELD },
-                kind: callable ? languages.CompletionItemKind.Method : languages.CompletionItemKind.Field,
                 insertText: key,
                 range,
-                commitCharacters: callable ? ['!', '('] : ['!', '.'],
+                ...completion(model, DESC_FIELD, key, field, undefined, true),
             });
         }
         return result;
@@ -414,11 +443,12 @@ export class CompletionItemProvider extends Provider implements languages.Comple
             // not a dynamic completion item
             return item;
         }
-        const custom = item as CustomCompletionItem;
+        const { vmValue, isField } = item as CustomCompletionItem;
         const { label } = item.label;
-        if (custom.global != null) {
+        if (vmValue != null) {
             if (item.documentation) return item;
-            const def = globalDoc(label, custom.global);
+            const last = label.split('.').pop()!;
+            const def = valueDoc(last, vmValue, isField);
             item.documentation = {
                 value: `${codeblock('\0' + def.script)}\n${def.doc}`,
             };

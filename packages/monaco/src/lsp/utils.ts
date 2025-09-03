@@ -40,7 +40,7 @@ export function signature(id: string | undefined, info: VmFunctionInfo): string 
 }
 
 /** 生成函数参数列表 */
-export function paramsList(model: editor.ITextModel, info: VmFunctionInfo | LocalDefinition['fn']): string {
+export function paramsList(model: editor.ITextModel, info: VmFunctionInfo | LocalDefinition['fn'] | undefined): string {
     if (!info) return '(..)';
     if ('scope' in info) {
         const {
@@ -188,8 +188,8 @@ export function serializeForDisplay(value: VmValue): string {
     return `${begin}${entries.join(', ')}${end}`;
 }
 
-/** 获取全局变量脚本 */
-export function globalDoc(name: string, value: VmAny): { script: string; doc: string } {
+/** 获取变量文档 */
+export function valueDoc(name: string, value: VmAny, field: boolean): { script: string; doc: string } {
     const info = getVmFunctionInfo(value);
     if (info) {
         return {
@@ -197,10 +197,22 @@ export function globalDoc(name: string, value: VmAny): { script: string; doc: st
             doc: globalFnDoc(info),
         };
     }
+    let prefix;
+    if (!field) {
+        prefix = `${name} = `;
+    } else if (/^\d/.test(name)) {
+        prefix = `[${name}]: `;
+    } else {
+        prefix = `${name}: `;
+    }
     if (isVmModule(value)) {
+        let script = `(module) ${value.name}`;
+        if (value.name !== name) {
+            script = `${prefix}${script}`;
+        }
         return {
-            script: `(module) ${name}`,
-            doc: `模块 \`${name}\``,
+            script,
+            doc: `模块 \`${value.name}\``,
         };
     }
     let valueStr;
@@ -209,7 +221,7 @@ export function globalDoc(name: string, value: VmAny): { script: string; doc: st
     } else {
         valueStr = serializeForDisplay(value);
     }
-    return { script: `${name} = ${valueStr};`, doc: '' };
+    return { script: `${prefix}${valueStr}`, doc: '' };
 }
 
 /** 获取深层属性 */

@@ -9,7 +9,7 @@ import {
     Range,
 } from '../../monaco-api.js';
 import { Provider } from './base.js';
-import { globalDoc } from '../utils.js';
+import { valueDoc } from '../utils.js';
 import { DOC_HEADER } from '../../constants.js';
 
 /**
@@ -23,7 +23,7 @@ export class DefinitionReferenceProvider
     /** 准备要显示的定义 */
     private prepareGlobal(name: string, value: VmAny): { uri: Uri; range: IRange } {
         const { globalModel } = this;
-        const { script, doc } = globalDoc(name, value);
+        const { script, doc } = valueDoc(name, value, false);
         const code = [
             `/**${DOC_HEADER}**/`,
             '',

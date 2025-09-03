@@ -1,7 +1,7 @@
 import type { CancellationToken, editor, IMarkdownString, IRange, languages, Position } from '../../monaco-api.js';
 import { Provider } from './base.js';
 import { DiagnosticCode } from '@mirascript/wasm';
-import { codeblock, getDeep, globalDoc, paramsList } from '../utils.js';
+import { codeblock, getDeep, valueDoc, paramsList } from '../utils.js';
 import type { AccessAt, DefinitionAt } from '../compile-result.js';
 
 /** @inheritdoc */
@@ -15,7 +15,7 @@ export class HoverProvider extends Provider implements languages.HoverProvider {
         let range: IRange | undefined;
         if ('name' in def) {
             const globals = await this.getContext(model);
-            const { script, doc } = globalDoc(def.name, globals[def.name]);
+            const { script, doc } = valueDoc(def.name, globals[def.name], false);
             content = {
                 value: codeblock(`\0(global) ${script}`) + doc,
             };
@@ -108,7 +108,7 @@ export class HoverProvider extends Provider implements languages.HoverProvider {
         const value = getDeep(vmGlobal[def.name], fields);
         if (value == null) return undefined;
         const lastField = fields.pop()!;
-        const { script, doc } = globalDoc(lastField, value);
+        const { script, doc } = valueDoc(lastField, value, true);
         return {
             contents: [
                 {

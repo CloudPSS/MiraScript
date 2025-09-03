@@ -51,7 +51,7 @@ export class DocumentSemanticTokensProvider extends Provider implements language
                     } else if (isVmFunction(globals[id])) {
                         tokenType = 2;
                     } else if (isVmModule(globals[id])) {
-                        tokenModifiers += 1 << 1;
+                        tokenModifiers += 1;
                         tokenType = 3;
                     } else {
                         tokenType = 1;

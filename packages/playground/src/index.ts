@@ -49,7 +49,14 @@ const globals = createVmContext(
         name: 'MiraScript', // for template examples
     },
     {
-        extern_obj: { a: [], b: 1, c: '2', d: { e: 3 }, sin: createVmContext().sin },
+        extern_obj: {
+            a: [],
+            b: 1,
+            c: '2',
+            d: { e: 3 },
+            s: createVmContext().sin,
+            m: createVmContext().matrix,
+        },
         globalThis,
     },
 );
