@@ -3,7 +3,7 @@ import { type VmAny, isVmArray } from '../../types/index.js';
 import { VmLib } from '../_helpers.js';
 
 /** Get the minimum and maximum numbers from the arguments. */
-function getNumbers(args: readonly VmAny[]): number[] {
+export function getNumbers(args: readonly VmAny[]): number[] {
     if (args.length === 0) return [];
     if (args.length === 1 && isVmArray(args[0])) args = args[0];
     const numbers: number[] = [];

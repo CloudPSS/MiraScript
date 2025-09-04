@@ -1,7 +1,8 @@
 import { Cp } from '../../../helpers.js';
 import { $Add, $Call, $Div, $Mul, $Sub, $ToNumber } from '../../../operations.js';
-import { isVmArray, isVmConst, type VmConst, type VmValue } from '../../../types/index.js';
-import { VmLib, expectCallable, expectConst, required, throwError } from '../../_helpers.js';
+import { isVmArray, isVmConst, type VmAny, type VmArray, type VmConst, type VmValue } from '../../../types/index.js';
+import { VmLib, expectArray, expectCallable, expectConst, required, throwError } from '../../_helpers.js';
+import { getNumbers } from '../math-arr.js';
 import { mapImpl } from '../sequence.js';
 
 /** 计算尺寸 */
@@ -438,5 +439,100 @@ export const invert = VmLib(
         params: { a: '待求逆的矩阵' },
         paramsType: { a: 'number | [[number]]' },
         returnsType: 'number | [[number]]',
+    },
+);
+
+/** 填充 */
+function filled(size: readonly VmAny[], value: VmConst): VmArray {
+    const s = getNumbers(size);
+    if (s.length === 0) return [];
+    while (s.length > 0) {
+        const repeat = s.pop()! || 0;
+        Cp();
+        const data =
+            repeat > 1_000_000
+                ? Array.from({ length: repeat }, () => {
+                      Cp();
+                      return value;
+                  })
+                : Array.from({ length: repeat }, () => value);
+        value = data;
+    }
+    return value as VmArray;
+}
+
+export const zeros = VmLib((...size) => filled(size, 0), {
+    summary: '创建一个全零的矩阵',
+    params: { size: '矩阵的维度' },
+    paramsType: { size: '[number]' },
+    returnsType: '[[number]]',
+});
+
+export const ones = VmLib((...size) => filled(size, 1), {
+    summary: '创建一个全一的矩阵',
+    params: { size: '矩阵的维度' },
+    paramsType: { size: '[number]' },
+    returnsType: '[[number]]',
+});
+
+export const identity = VmLib(
+    (...size) => {
+        let s = getNumbers(size);
+        if (s.length === 0) return [];
+        if (s.length > 2) throwError('Invalid matrix size', []);
+        if (s.length === 1) s = [s[0]!, s[0]!];
+        const m = s[0]! || 0;
+        const n = s[1]! || 0;
+        if (m * n > 1_000_000) {
+            return Array.from({ length: m }, (_, i) => {
+                Cp();
+                return Array.from({ length: n }, (_, j) => (i === j ? 1 : 0));
+            });
+        }
+        return Array.from({ length: m }, (_, i) => Array.from({ length: n }, (_, j) => (i === j ? 1 : 0)));
+    },
+    {
+        summary: '创建一个单位矩阵',
+        params: { size: '矩阵的维度' },
+        paramsType: { size: 'number | [number]' },
+        returnsType: '[[number]]',
+    },
+);
+
+export const diagonal = VmLib(
+    (x, k = 0) => {
+        expectArray('x', x, []);
+        const fk = Math.round($ToNumber(k) || 0);
+        if (Array.isArray(x[0])) {
+            // 获取对角线元素
+            const diag: VmConst[] = [];
+            for (let i = 0; i < x.length; i++) {
+                const row = x[i] as VmArray | undefined;
+                const r = i + fk;
+                if (r < 0) continue;
+                if (r >= (row?.length ?? 0)) break;
+                diag.push(row?.[i + fk] ?? null);
+            }
+            return diag;
+        }
+        // 创建对角矩阵
+        const l = x.length;
+        const m = fk < 0 ? l - fk : l;
+        const n = fk > 0 ? l + fk : l;
+        const result: VmConst[][] = Array.from({ length: m }, () => Array.from({ length: n }, () => 0));
+        for (let i = 0; i < m; i++) {
+            for (let j = 0; j < n; j++) {
+                if (i + fk === j) {
+                    result[i]![j] = x[fk >= 0 ? i : j]!;
+                }
+            }
+        }
+        return result;
+    },
+    {
+        summary: '创建一个对角矩阵或获取矩阵的对角线',
+        params: { x: '对角线元素或要获取对角线的矩阵', k: '对角线偏移量，默认为 0' },
+        paramsType: { x: '[number] | [[number]]', k: 'number' },
+        returnsType: '[[number]] | [number]',
     },
 );
