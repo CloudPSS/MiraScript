@@ -1,5 +1,5 @@
 import { Cp } from '../../helpers.js';
-import { $Call, $ToBoolean, $ToNumber, $ToString } from '../../operations.js';
+import { $Call, $ToBoolean, $ToNumber } from '../../operations.js';
 import {
     isVmArray,
     isVmConst,
@@ -8,11 +8,19 @@ import {
     type VmAny,
     type VmArray,
     type VmConst,
-    type VmRecord,
     type VmValue,
 } from '../../types/index.js';
 import { VmError } from '../../error.js';
-import { VmLib, expectArray, expectArrayOrRecord, expectCallable, expectCompound, expectConst } from '../_helpers.js';
+import {
+    VmLib,
+    expectArray,
+    expectArrayOrRecord,
+    expectCallable,
+    expectCompound,
+    expectConst,
+    throwError,
+} from '../_helpers.js';
+import { serialize } from '../../../subtle.js';
 
 /** map */
 export function mapImpl(
@@ -138,29 +146,34 @@ export const flatten = VmLib(
 );
 
 export const zip = VmLib(
-    (...arrays) => {
+    (data) => {
+        const ets = entries(data);
         let len = 0;
-        for (const [i, arr] of arrays.entries()) {
-            expectArray(i, arr, []);
+        for (const { 0: key, 1: arr } of ets) {
+            if (!isVmArray(arr)) {
+                throwError(`data[${serialize(key)}] is not an array`, null);
+            }
             len = Math.max(len, arr.length);
         }
         if (len === 0) return [];
-        const result: VmRecord[] = [];
+        const result: Array<Record<string | number, VmConst>> = [];
+        const isArr = isVmArray(data);
         for (let i = 0; i < len; i++) {
-            const obj: Record<number, VmConst> = {};
-            for (const [j, arr] of (arrays as VmArray[]).entries()) {
-                const index = i % arr.length;
-                obj[j] = arr[index] ?? null;
+            Cp();
+            const obj: Record<number | string, VmConst> = isArr ? ([] as Record<number, VmConst>) : {};
+            for (const { 0: key, 1: arr } of ets) {
+                const index = i % (arr as VmArray).length;
+                obj[key] = (arr as VmArray)[index] ?? null;
             }
             result.push(obj);
         }
         return result;
     },
     {
-        summary: '将多个数组合并为一个数组，每个元素是对应位置的元素组成的记录',
-        params: { '..arrays': '要合并的数组列表' },
-        paramsType: { '..arrays': '[array]' },
-        returnsType: '[record]',
+        summary: '将数组的数组/记录转换为数组/记录的数组',
+        params: { data: '要转换的数组/记录' },
+        paramsType: { data: 'array | record' },
+        returnsType: '[array | record]',
     },
 );
 
@@ -179,33 +192,34 @@ export const find = VmLib(
                 const value = data[i] ?? null;
                 const ret = p(value, i, data);
                 if (!ret) continue;
-                return value;
+                return { 0: i, 1: value };
             }
             return null;
         }
         if (isVmRecord(data)) {
-            for (const [key, value] of Object.entries(data)) {
+            for (const [key, v] of Object.entries(data)) {
                 Cp();
-                const ret = p(value ?? null, key, data);
+                const value = v ?? null;
+                const ret = p(value, key, data);
                 if (ret === undefined) continue;
                 if (!ret) continue;
-                return value ?? null;
+                return { 0: key, 1: value };
             }
             return null;
         }
         throw new VmError('First argument must be primitive, array, or record', null);
     },
     {
-        summary: '查找数组或记录中的元素，返回第一个满足条件的元素',
+        summary: '查找数组或记录中的键值对，返回第一个满足条件的键值对',
         params: {
             data: '查找滤的数组或记录',
-            predicate: '用于测试每个元素的函数，返回 true 或 false',
+            predicate: '用于测试每个键值对的函数，返回 true 或 false',
         },
         paramsType: {
             data: 'array | record',
             predicate: 'fn(value: any, key: number | string | nil, input: type(data)) -> boolean',
         },
-        returnsType: 'any | nil',
+        returnsType: '(string | number, any) | nil',
     },
 );
 
@@ -242,7 +256,7 @@ export const keys = VmLib(
     (data) => {
         expectCompound('data', data, []);
         if (isVmArray(data)) {
-            return Array.from({ length: data.length }, (_, i) => $ToString(i));
+            return Array.from({ length: data.length }, (_, i) => i);
         }
         if (isVmRecord(data)) {
             return _keys(data);
@@ -253,7 +267,7 @@ export const keys = VmLib(
         summary: '返回数组、记录、外部对象或模块的键列表',
         params: { data: '要获取键的数组、记录、外部对象或模块' },
         paramsType: { data: 'array | record | extern | module' },
-        returnsType: '[string]',
+        returnsType: '[string | number]',
     },
 );
 
@@ -277,7 +291,7 @@ export const entries = VmLib(
     (data) => {
         expectArrayOrRecord('data', data, []);
         if (isVmArray(data)) {
-            return Array.from({ length: data.length }, (_, i) => ({ 0: $ToString(i), 1: data[i] ?? null }));
+            return Array.from({ length: data.length }, (_, i) => ({ 0: i, 1: data[i] ?? null }));
         }
         return _entries(data).map(([key, value]) => ({ 0: key, 1: value }));
     },
@@ -285,6 +299,6 @@ export const entries = VmLib(
         summary: '返回数组或记录的键值对列表',
         params: { data: '要获取键值对的数组或记录' },
         paramsType: { data: 'array | record' },
-        returnsType: '[(string, any)]',
+        returnsType: '[(string | number, any)]',
     },
 );
