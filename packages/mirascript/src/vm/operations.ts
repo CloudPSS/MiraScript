@@ -418,3 +418,20 @@ export const $ArraySpread = (array: VmAny): Iterable<VmConst> => {
     }
     throw new VmError(`Expected array, iterable extern or nil, got ${$Type(array)}`, []);
 };
+
+export const $Format = (value: VmAny, format: VmAny): string => {
+    $AssertInit(value);
+    if (format == null) return $ToString(value);
+    const f = $ToString(format).trim();
+    if (!f) return $ToString(value);
+
+    if (typeof value == 'number' && /^\.\d+$/.test(f)) {
+        let digits = Math.trunc(Number(f.slice(1)));
+        if (!Number.isFinite(digits)) return $ToString(value);
+        if (digits < 0) digits = 0;
+        else if (digits > 100) digits = 100;
+        return value.toFixed(digits);
+    }
+
+    return $ToString(value);
+};

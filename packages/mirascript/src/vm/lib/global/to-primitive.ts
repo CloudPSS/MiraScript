@@ -1,4 +1,4 @@
-import { $ToString, $ToNumber, $ToBoolean } from '../../operations.js';
+import { $ToString, $ToNumber, $ToBoolean, $Format } from '../../operations.js';
 import { VmLib } from '../_helpers.js';
 
 export const to_string = VmLib((data) => $ToString(data), {
@@ -20,4 +20,11 @@ export const to_boolean = VmLib((data) => $ToBoolean(data), {
     params: { data: '要转换的数据' },
     paramsType: { data: 'any' },
     returnsType: 'boolean',
+});
+
+export const format = VmLib((data, format) => $Format(data, format), {
+    summary: '将数据格式化为指定格式的字符串',
+    params: { data: '要格式化的数据', format: '格式字符串' },
+    paramsType: { data: 'any', format: 'string' },
+    returnsType: 'string',
 });

@@ -1,5 +1,5 @@
 import { VmError } from '../error.js';
-import { $Type } from '../operations.js';
+import { $ToNumber, $Type } from '../operations.js';
 import {
     isVmArray,
     isVmExtern,
@@ -127,6 +127,18 @@ export function expectCallable(
     if (!callable) {
         throwUnexpectedTypeError(name, 'callable', value, recovered);
     }
+}
+
+/** Get numbers from the arguments. */
+export function getNumbers(args: readonly VmAny[]): number[] {
+    if (args.length === 0) return [];
+    if (args.length === 1 && isVmArray(args[0])) args = args[0];
+    const numbers: number[] = [];
+    for (const arg of args) {
+        if (arg == null) continue;
+        numbers.push($ToNumber(arg));
+    }
+    return numbers;
 }
 
 /** 库函数选项 */

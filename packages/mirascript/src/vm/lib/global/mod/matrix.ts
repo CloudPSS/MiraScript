@@ -1,8 +1,7 @@
 import { Cp } from '../../../helpers.js';
 import { $Add, $Call, $Div, $Mul, $Sub, $ToNumber } from '../../../operations.js';
 import { isVmArray, isVmConst, type VmAny, type VmArray, type VmConst, type VmValue } from '../../../types/index.js';
-import { VmLib, expectArray, expectCallable, expectConst, required, throwError } from '../../_helpers.js';
-import { getNumbers } from '../math-arr.js';
+import { VmLib, expectArray, expectCallable, expectConst, required, throwError, getNumbers } from '../../_helpers.js';
 import { mapImpl } from '../sequence.js';
 
 /** 计算尺寸 */

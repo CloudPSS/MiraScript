@@ -1,18 +1,5 @@
-import { $ToNumber } from '../../operations.js';
-import { type VmAny, isVmArray } from '../../types/index.js';
-import { VmLib } from '../_helpers.js';
-
-/** Get the minimum and maximum numbers from the arguments. */
-export function getNumbers(args: readonly VmAny[]): number[] {
-    if (args.length === 0) return [];
-    if (args.length === 1 && isVmArray(args[0])) args = args[0];
-    const numbers: number[] = [];
-    for (const arg of args) {
-        if (arg == null) continue;
-        numbers.push($ToNumber(arg));
-    }
-    return numbers;
-}
+import type { VmAny } from '../../types/index.js';
+import { getNumbers, VmLib } from '../_helpers.js';
 
 /** 生成函数 */
 function build(f: (...values: readonly number[]) => number): (...values: readonly VmAny[]) => number {

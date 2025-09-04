@@ -11,6 +11,7 @@ import {
     VmModule,
     VmFunction,
     type InputMode,
+    getVmFunctionInfo,
 } from '@mirascript/mirascript';
 import { ConsoleManager } from './console-manager.js';
 import { EXAMPLES } from './examples.js';
@@ -39,13 +40,12 @@ const globals = createVmContext(
         arr: [1, 2, 3],
         long_str: 'Long string content'.repeat(10000),
         mod: new VmModule('test', {
-            sin: createVmContext().sin,
-            inner: new VmModule('inner', {}),
+            s: createVmContext().sin,
+            inner: new VmModule('inner', {
+                s: createVmContext().sin,
+            }),
         }),
-        debug_print: VmFunction(debugPrint, {
-            fullName: 'debug_print',
-            summary: 'Print debug messages to console',
-        }),
+        debug_print: VmFunction(debugPrint, getVmFunctionInfo(createVmContext().debug_print)),
         name: 'MiraScript', // for template examples
     },
     {
