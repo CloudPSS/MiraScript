@@ -324,8 +324,9 @@ export class CompletionItemProvider extends Provider implements languages.Comple
         }
         const keys = lib.keys(value);
         const result: CustomCompletionItem[] = [];
-        for (const key of keys) {
-            if (char && !key.toLowerCase().includes(char)) {
+        for (const k of keys) {
+            const key = String(k);
+            if (char && !String(key).toLowerCase().includes(char)) {
                 continue;
             }
             const field = operations.$Get(value, key);

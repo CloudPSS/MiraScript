@@ -77,11 +77,11 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                 ],
                 [
                     /(for)(@whitespace+)(mut)(@whitespace+)(@identifier)(@whitespace+)(in)/,
-                    ['keyword.control', '', 'keyword', '', 'variable', '', 'keyword.control'],
+                    ['keyword.control', '', 'keyword', '', { cases: identifierCases() }, '', 'keyword.control'],
                 ],
                 [
                     /(for)(@whitespace+)(@identifier)(@whitespace+)(in)/,
-                    ['keyword.control', '', 'variable', '', 'keyword.control'],
+                    ['keyword.control', '', { cases: identifierCases() }, '', 'keyword.control'],
                 ],
                 [
                     /(\.)(@whitespace*)(\d+)/,
