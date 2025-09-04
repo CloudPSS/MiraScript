@@ -28,7 +28,7 @@
   "devDependencies": {
     "@mirascript/mirascript": "workspace:*",
     "@mirascript/monaco": "workspace:*",
-    "@private/monaco-editor": "^0.0.44",
+    "@private/monaco-editor": "^0.0.46",
     "@types/vscode": "^1.103.0",
     "js-yaml": "^4.1.0",
     "nodemon": "^3.1.10"
