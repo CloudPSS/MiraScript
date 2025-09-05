@@ -48,9 +48,9 @@ export class DocumentSemanticTokensProvider extends Provider implements language
                     const id = model.getValueInRange(range);
                     if (id.startsWith('@')) {
                         tokenType = 3;
-                    } else if (isVmFunction(globals[id])) {
+                    } else if (isVmFunction(globals.get(id))) {
                         tokenType = 2;
-                    } else if (isVmModule(globals[id])) {
+                    } else if (isVmModule(globals.get(id))) {
                         tokenModifiers += 1;
                         tokenType = 3;
                     } else {

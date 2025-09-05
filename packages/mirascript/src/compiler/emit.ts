@@ -402,7 +402,7 @@ class Emitter {
             case OpCode.InGlobal: {
                 reg = read();
                 const left = read();
-                code = `${this.wv(reg)} = global[${this.rv(left)}] !== undefined;`;
+                code = `${this.wv(reg)} = global.has(${this.rv(left)});`;
                 break;
             }
             case OpCode.Concat: {
@@ -430,7 +430,7 @@ class Emitter {
                 const args = Array.from({ length: n }, (_, i) => read());
                 const ns = read();
                 const spreads = Array.from({ length: ns }, (_, i) => read());
-                const callTarget = opcode === OpCode.Call ? `global[${this.constants[func]}]` : this.rv(func);
+                const callTarget = opcode === OpCode.Call ? `global.get(${this.constants[func]})` : this.rv(func);
                 code = `${this.wv(reg)} = $Call(${callTarget}, [${args
                     .map((a, i) => {
                         if (spreads.includes(i)) return `...$ArraySpread(${this.rv(a)})`;
@@ -536,13 +536,13 @@ class Emitter {
                 reg = read();
                 const i = read();
                 const c = this.constants[i];
-                code = `${this.wv(reg)} = global[${c}] ?? null;`;
+                code = `${this.wv(reg)} = global.get(${c}) ?? null;`;
                 break;
             }
             case OpCode.GetGlobalDyn: {
                 reg = read();
                 const name = read();
-                code = `${this.wv(reg)} = global[${this.rv(name)}] ?? null;`;
+                code = `${this.wv(reg)} = global.get(${this.rv(name)}) ?? null;`;
                 break;
             }
             case OpCode.GetUpvalue: {

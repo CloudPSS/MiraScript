@@ -232,8 +232,8 @@ export class CompletionItemProvider extends Provider implements languages.Comple
         const global = await this.getContext(model);
         const suggestions: CustomCompletionItem[] = [];
         const localKeys = new Set(locals.map((item) => item.insertText));
-        for (const key in global) {
-            const element = global[key];
+        for (const key of new Set(global.keys())) {
+            const element = global.get(key);
             if (element === undefined) continue;
 
             if (isVmModule(element)) {
@@ -318,7 +318,7 @@ export class CompletionItemProvider extends Provider implements languages.Comple
         }
         const vmGlobal = await this.getContext(model);
         fields.pop(); // 移除最后一个部分，因为它是当前输入位置的字段名
-        const value = getDeep(vmGlobal[def.def.name], fields);
+        const value = getDeep(vmGlobal.get(def.def.name), fields);
         if (value == null || typeof value != 'object') {
             return [];
         }

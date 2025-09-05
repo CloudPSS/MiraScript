@@ -65,7 +65,7 @@ export class DefinitionReferenceProvider
         }
         let link: languages.LocationLink;
         if ('name' in def) {
-            link = this.prepareGlobal(def.name, globals[def.name]);
+            link = this.prepareGlobal(def.name, globals.get(def.name));
         } else {
             link = { uri: model.uri, range: def.definition.range };
         }
@@ -91,7 +91,7 @@ export class DefinitionReferenceProvider
         }));
         if (context.includeDeclaration) {
             if ('name' in def) {
-                links.push(this.prepareGlobal(def.name, globals[def.name]));
+                links.push(this.prepareGlobal(def.name, globals.get(def.name)));
             } else if (!Range.isEmpty(def.definition.range)) {
                 links.push({
                     uri: model.uri,

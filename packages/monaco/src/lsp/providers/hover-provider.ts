@@ -15,7 +15,7 @@ export class HoverProvider extends Provider implements languages.HoverProvider {
         let range: IRange | undefined;
         if ('name' in def) {
             const globals = await this.getContext(model);
-            const { script, doc } = valueDoc(def.name, globals[def.name], false);
+            const { script, doc } = valueDoc(def.name, globals.get(def.name), false);
             content = {
                 value: codeblock(`\0(global) ${script}`) + doc,
             };
@@ -105,7 +105,7 @@ export class HoverProvider extends Provider implements languages.HoverProvider {
             return undefined;
         }
         const vmGlobal = await this.getContext(model);
-        const value = getDeep(vmGlobal[def.name], fields);
+        const value = getDeep(vmGlobal.get(def.name), fields);
         if (value == null) return undefined;
         const lastField = fields.pop()!;
         const { script, doc } = valueDoc(lastField, value, true);

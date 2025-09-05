@@ -1,6 +1,6 @@
 import { $AssertInit, $ToNumber } from './operations.js';
 import type { VmFunctionLike } from './types/function.js';
-import { createVmContext, type VmContext } from './types/context.js';
+import { DefaultVmContext, type VmContext } from './types/context.js';
 import { isVmConst, VmFunction, type VmConst, type VmAny, type VmArray, type VmValue } from './types/index.js';
 const { isFinite } = Number;
 const { ceil } = Math;
@@ -111,5 +111,5 @@ export function configCheckpoint(timeout?: number): void {
 }
 /** 默认执行上下文 */
 export function GlobalFallback(): VmContext {
-    return createVmContext();
+    return DefaultVmContext;
 }

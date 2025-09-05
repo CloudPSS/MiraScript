@@ -1,5 +1,5 @@
 import type { VmContext } from '@mirascript/mirascript';
-import { VmSharedContext } from '@mirascript/mirascript/subtle';
+import { DefaultVmContext } from '@mirascript/mirascript/subtle';
 import type { VmContextProvider } from '../../index.js';
 import { type editor, Emitter, type IEvent } from '../../monaco-api.js';
 import type { CompileResult } from '../compile-result.js';
@@ -22,7 +22,7 @@ export abstract class Provider {
     }
     /** 获取执行上下文（全局变量） */
     async getContext(model: editor.ITextModel): Promise<Readonly<VmContext>> {
-        return (await contextProvider?.(model)) ?? VmSharedContext;
+        return (await contextProvider?.(model)) ?? DefaultVmContext;
     }
 
     readonly displayName = 'MiraScript LSP';
