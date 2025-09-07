@@ -138,12 +138,12 @@ export function createVmContext(
     if (vmValues) {
         for (const [key, value] of entries(vmValues)) {
             if (!isVmAny(value, false)) continue;
-            env[key] = value;
+            env[key] = value ?? null;
         }
     }
     if (externValues) {
         for (const [key, value] of entries(externValues as Record<string, unknown>)) {
-            env[key] = value === undefined ? undefined : wrapToVmValue(value, null);
+            env[key] = value == null ? null : wrapToVmValue(value, null);
         }
     }
     return new ValueVmContext(env);
