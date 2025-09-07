@@ -12,7 +12,7 @@ import {
     VmModule,
     VmExtern,
 } from '@mirascript/mirascript';
-import { lib, VmSharedContext } from '@mirascript/mirascript/subtle';
+import { DefaultVmContext, lib, VmSharedContext } from '@mirascript/mirascript/subtle';
 
 test('isVmScript', async (t) => {
     t.true(isVmScript(await compile('nil')));
@@ -33,11 +33,17 @@ test('isVmFunction', async (t) => {
 });
 
 test('isVmContext', (t) => {
-    t.true(isVmContext(VmSharedContext));
-    t.true(isVmContext(createVmContext()));
-    t.true(isVmContext({ __proto__: VmSharedContext }));
+    t.false(isVmContext(null));
+    t.false(isVmContext(() => null));
+    t.false(isVmContext(VmSharedContext));
+    t.false(isVmContext({ __proto__: VmSharedContext }));
     t.false(isVmContext({}));
     t.false(isVmContext({ __proto__: null }));
+
+    t.true(isVmContext(DefaultVmContext));
+    t.true(isVmContext(createVmContext()));
+    t.true(isVmContext(createVmContext(() => 0)));
+    t.true(isVmContext(createVmContext({ a: 1 })));
 });
 
 test('isVmAny', (t) => {

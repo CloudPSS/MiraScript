@@ -34,7 +34,7 @@ test('VmModule', async (t) => {
     const module = new VmModule('test', { a: 1, b: 2, c: undefined as never });
     t.is(module.name, 'test');
     const context = createVmContext({ test: module });
-    t.is(context['test'], module);
+    t.is(context.get('test'), module);
     t.is((await compile('test.a'))(context), 1);
     t.is((await compile('test.c'))(context), null);
     t.is((await compile('test.ne'))(context), null);
