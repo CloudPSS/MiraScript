@@ -6,9 +6,10 @@ import {
     wrapToVmValue,
     isVmAny,
     type VmFunctionLike,
+    isVmFunction,
 } from './index.js';
 import type * as global from '../lib/global/index.js';
-const { getPrototypeOf, entries } = Object;
+const { entries } = Object;
 
 /** 全局导入的标准库 */
 type GlobalKeys = keyof typeof global;
@@ -20,10 +21,13 @@ type ToGlobalValue<T extends GlobalKeys> = (typeof global)[T] extends VmFunction
 type VmContextBase = {
     [key in GlobalKeys]: ToGlobalValue<key>;
 };
+const kVmContext = Symbol.for('mira:vm-context');
 /** MiraScript 执行上下文的基础，仅包含标准库 */
 export type VmSharedContext = VmContextBase & Record<string, VmImmutable>;
 /** MiraScript 执行上下文 */
 export interface VmContext {
+    /** 内部标识符 */
+    readonly [kVmContext]: true;
     /** 枚举所有 key，仅在 LSP 中使用 */
     keys(): Iterable<string>;
     /** 获取指定 key 的值 `global[key]` */
@@ -35,22 +39,28 @@ export interface VmContext {
 export type VmContextRecord = Record<string, VmValue | undefined>;
 export const VmSharedContext = { __proto__: null } as object as VmSharedContext;
 
-/** 定义在所有 MiraScript 执行上下文中共享的全局函数 */
-export function defineVmContextFunction(name: string, fn: (...args: VmAny[]) => VmAny, override = false): void {
-    if (!override && name in VmSharedContext) throw new Error(`Global variable '${name}' is already defined.`);
-    VmSharedContext[name] = VmFunction(fn, {
-        isLib: true,
-        fullName: `global.${name}`,
-    });
-}
 /** 定义在所有 MiraScript 执行上下文中共享的全局变量 */
-export function defineVmContextValue(name: string, value: VmImmutable, override = false): void {
+export function defineVmContextValue(
+    name: string,
+    value: VmImmutable | ((...args: VmAny[]) => VmAny),
+    override = false,
+): void {
     if (!override && name in VmSharedContext) throw new Error(`Global variable '${name}' is already defined.`);
-    VmSharedContext[name] = value ?? null;
+    let v: VmImmutable;
+    if (typeof value == 'function' && !isVmFunction(value)) {
+        v = VmFunction(value, {
+            isLib: true,
+            fullName: `global.${name}`,
+        });
+    } else {
+        v = value;
+    }
+    VmSharedContext[name] = v ?? null;
 }
 
 /** 无后备的实现 */
 export const DefaultVmContext: VmContext = Object.freeze({
+    [kVmContext]: true as const,
     /** @inheritdoc */
     keys(): Iterable<string> {
         return Object.keys(VmSharedContext);
@@ -67,8 +77,7 @@ export const DefaultVmContext: VmContext = Object.freeze({
 
 /** 以值为后备的实现 */
 class ValueVmContext implements VmContext {
-    constructor(private readonly env: VmContextRecord) {}
-    private cachedKeys: readonly string[] | undefined;
+    readonly [kVmContext] = true;
     /** @inheritdoc */
     keys(): Iterable<string> {
         this.cachedKeys ??= Object.keys(this.env);
@@ -76,24 +85,23 @@ class ValueVmContext implements VmContext {
     }
     /** @inheritdoc */
     get(key: string): VmValue {
-        if (key in this.env) return this.env[key] ?? null;
-        return DefaultVmContext.get(key);
+        return this.env[key] ?? null;
     }
     /** @inheritdoc */
     has(key: string): boolean {
-        return key in this.env || DefaultVmContext.has(key);
+        return key in this.env;
     }
+    constructor(private readonly env: VmContextRecord & { __proto__: VmSharedContext }) {}
+    private cachedKeys: readonly string[] | undefined;
 }
 
 /** 以工厂函数为后备的实现 */
 class FactoryVmContext implements VmContext {
-    constructor(
-        private readonly getter: (key: string) => VmValue | undefined,
-        private readonly enumerator?: () => Iterable<string>,
-    ) {}
+    readonly [kVmContext] = true;
     /** @inheritdoc */
     keys(): Iterable<string> {
-        return [...(this.enumerator ? this.enumerator() : []), ...DefaultVmContext.keys()];
+        if (!this.enumerator) return DefaultVmContext.keys();
+        return [...this.enumerator(), ...DefaultVmContext.keys()];
     }
     /** @inheritdoc */
     get(key: string): VmValue {
@@ -105,39 +113,44 @@ class FactoryVmContext implements VmContext {
     has(key: string): boolean {
         return this.getter(key) !== undefined || DefaultVmContext.has(key);
     }
+    constructor(
+        private readonly getter: (key: string) => VmValue | undefined,
+        private readonly enumerator?: () => Iterable<string>,
+    ) {}
 }
 
 /** 创建用于执行脚本的执行上下文 */
 export function createVmContext(
     ...args:
-        | [vmValues?: VmContextRecord, externValues?: Record<string, unknown>]
-        | [getter: (key: string) => VmValue | undefined, enumerator?: () => Iterable<string>]
+        | readonly [vmValues?: VmContextRecord, externValues?: Record<string, unknown>]
+        | readonly [getter: (key: string) => VmValue | undefined, enumerator?: () => Iterable<string>]
 ): VmContext {
+    if (args[0] == null && args[1] == null) {
+        return { ...DefaultVmContext };
+    }
+
     if (typeof args[0] == 'function') {
         return new FactoryVmContext(args[0], args[1] as (() => Iterable<string>) | undefined);
-    } else {
-        const [vmValues, externValues] = args;
-        if (vmValues == null && externValues == null) {
-            return { ...DefaultVmContext };
-        }
-        const env = { __proto__: VmSharedContext } as object as VmContextRecord;
-        if (vmValues) {
-            for (const [key, value] of entries(vmValues)) {
-                if (!isVmAny(value, false)) continue;
-                env[key] = value;
-            }
-        }
-        if (externValues) {
-            for (const [key, value] of entries(externValues as Record<string, unknown>)) {
-                env[key] = value === undefined ? undefined : wrapToVmValue(value, null);
-            }
-        }
-        return new ValueVmContext(env);
     }
+
+    const [vmValues, externValues] = args;
+    const env = { __proto__: VmSharedContext } as { __proto__: VmSharedContext } & VmContextRecord;
+    if (vmValues) {
+        for (const [key, value] of entries(vmValues)) {
+            if (!isVmAny(value, false)) continue;
+            env[key] = value;
+        }
+    }
+    if (externValues) {
+        for (const [key, value] of entries(externValues as Record<string, unknown>)) {
+            env[key] = value === undefined ? undefined : wrapToVmValue(value, null);
+        }
+    }
+    return new ValueVmContext(env);
 }
 
 /** 检查是否为执行上下文 */
 export function isVmContext(context: unknown): context is VmContext {
     if (context == null || typeof context != 'object') return false;
-    return getPrototypeOf(context) === VmSharedContext || context === VmSharedContext;
+    return (context as VmContext)[kVmContext] === true;
 }

@@ -74,11 +74,13 @@ export function isVmRecord(value: VmAny): value is VmRecord {
 /**
  * 检查值是否为 Mirascript 原始值
  */
-export function isVmPrimitive(value: VmAny): value is VmPrimitive {
-    if (value === null) return true;
-    if (value === undefined || typeof value === 'object' || typeof value === 'function') return false;
-    value satisfies VmPrimitive;
-    return true;
+export function isVmPrimitive(value: unknown): value is VmPrimitive {
+    if (value === null || typeof value == 'number' || typeof value == 'string' || typeof value == 'boolean') {
+        value as VmPrimitive satisfies typeof value;
+        value satisfies VmPrimitive;
+        return true;
+    }
+    return false;
 }
 
 export { VmExtern, wrapToVmValue, unwrapFromVmValue } from './extern.js';
@@ -104,14 +106,7 @@ export function isVmModule(value: unknown): value is VmModule {
     return value instanceof VmModule;
 }
 
-export {
-    type VmContext,
-    type VmSharedContext,
-    isVmContext,
-    defineVmContextFunction,
-    defineVmContextValue,
-    createVmContext,
-} from './context.js';
+export { type VmContext, type VmSharedContext, isVmContext, defineVmContextValue, createVmContext } from './context.js';
 
 export { type VmScript, isVmScript } from './script.js';
 
