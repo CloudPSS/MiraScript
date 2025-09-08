@@ -1,5 +1,6 @@
-import { createConfig, type CompileResult, wasm } from '@mirascript/wasm';
+import { createConfig, type CompileResult, wasm, ready } from '@mirascript/wasm';
 import type { InputMode } from '@mirascript/mirascript';
+await ready;
 
 /** Monaco 编译结果 */
 export interface MonacoResult extends CompileResult {
@@ -34,9 +35,9 @@ const configScript = createConfig({
 });
 
 /** 编译 */
-export async function compile(script: string, mode: InputMode): Promise<MonacoResult> {
+export function compile(script: string, mode: InputMode): MonacoResult {
     const config = mode === 'Script' ? configScript : configTemplate;
-    const compiler = new wasm.MonacoCompiler(script, await config);
+    const compiler = new wasm.MonacoCompiler(script, config);
     try {
         const parseOk = compiler.parse();
         if (!parseOk) {
@@ -55,13 +56,12 @@ export async function compile(script: string, mode: InputMode): Promise<MonacoRe
 }
 
 if (typeof Worker == 'function' && typeof addEventListener == 'function' && typeof postMessage == 'function') {
-    // eslint-disable-next-line @typescript-eslint/no-misused-promises
-    addEventListener('message', async (event: MessageEvent) => {
+    addEventListener('message', (event: MessageEvent) => {
         const data = event.data as Req;
         if (!Array.isArray(data)) return;
         const [uri, version, script, mode] = data;
         try {
-            const result = await compile(script, mode);
+            const result = compile(script, mode);
             const transfer = [];
             if (result.chunk) transfer.push(result.chunk.buffer);
             if (result.diagnostics) transfer.push(result.diagnostics.buffer);

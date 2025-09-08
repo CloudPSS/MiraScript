@@ -1,6 +1,8 @@
 import { DiagnosticCode, wasm } from '@mirascript/wasm';
+import type { ScriptInput } from './types.js';
 
 export { DiagnosticCode };
+
 const diagnosticMessages = new Map<DiagnosticCode, string | undefined>();
 /** 获取 {@link DiagnosticCode} 对应的消息 */
 export function getDiagnosticMessage(code: DiagnosticCode): string | undefined {
@@ -58,7 +60,7 @@ export interface SourceReference<T extends DiagnosticCode = DiagnosticCode> exte
 
 /** 分析诊断信息 */
 export function parseDiagnostics(
-    source: string,
+    source: ScriptInput,
     diagnostics: Uint32Array,
 ): {
     errors: SourceDiagnostic[];
@@ -141,4 +143,32 @@ export function parseDiagnostics(
         references: _references,
         tagsReferences: _tagsReferences,
     };
+}
+
+/** 生成诊断 range 的字符串 */
+function formatRange(range: {
+    startLineNumber: number;
+    startColumn: number;
+    endLineNumber: number;
+    endColumn: number;
+}): string {
+    if (range.startLineNumber === range.endLineNumber) {
+        if (range.startColumn === range.endColumn) {
+            return `${range.startLineNumber}:${range.startColumn}`;
+        }
+        return `${range.startLineNumber}:${range.startColumn}-${range.endColumn}`;
+    }
+    return `${range.startLineNumber}:${range.startColumn}-${range.endLineNumber}:${range.endColumn}`;
+}
+
+/** 生成诊断消息的字符串 */
+export function formatDiagnostic(diagnostic: SourceDiagnostic): string {
+    const range = formatRange(diagnostic.range);
+    const codeName = DiagnosticCode[diagnostic.code] || `Unknown(${diagnostic.code})`;
+    let message = getDiagnosticMessage(diagnostic.code);
+    for (const ref of diagnostic.references) {
+        const refRange = formatRange(ref.range);
+        message += `\n    (${refRange}): ${getDiagnosticMessage(ref.code)}`;
+    }
+    return `  ${codeName}(${range}): ${message}`;
 }

@@ -14,6 +14,7 @@ addEventListener('message', (ev) => {
         });
 });
 
-setTimeout(() => {
-    postMessage('ready');
-});
+compile('{}', {}).then(
+    () => postMessage('ready'),
+    (ex) => postMessage(ex),
+);
