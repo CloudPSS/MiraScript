@@ -178,8 +178,8 @@ function entrywiseImpl(
     const result: VmConst[][] = Array.from({ length: rr }, () => Array.from({ length: rc }));
     for (let r = 0; r < rr; r++) {
         for (let c = 0; c < rc; c++) {
-            const aItem = (a as VmConst[][])[r]?.[c] ?? null;
-            const bItem = (b as VmConst[][])[r]?.[c] ?? null;
+            const aItem = (a as VmConst[][])[ar === 1 ? 0 : r]?.[ac === 1 ? 0 : c] ?? null;
+            const bItem = (b as VmConst[][])[br === 1 ? 0 : r]?.[bc === 1 ? 0 : c] ?? null;
             result[r]![c] = f(aItem, bItem);
         }
     }
