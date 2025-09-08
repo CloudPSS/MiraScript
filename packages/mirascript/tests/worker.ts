@@ -19,7 +19,7 @@ let callback: ((ev: MessageEvent) => void) | undefined;
 
 test.before('load', async (t) => {
     await import('#compiler/worker');
-    await new Promise((resolve) => setTimeout(resolve, 10)); // Wait for async initialization
+    await new Promise((resolve) => setTimeout(resolve, 100)); // Wait for async initialization
     t.true(addEventListener.calledOnceWith('message', sinon.match.func));
     t.true(postMessage.calledOnceWith('ready'));
 });

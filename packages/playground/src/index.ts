@@ -7,7 +7,7 @@ import {
     type VmScript,
     VmExtern,
     createVmContext,
-    Compiler,
+    compile,
     VmModule,
     VmFunction,
     type InputMode,
@@ -245,13 +245,12 @@ setTimeout(() => {
     });
 }, 0);
 
-const compiler = await Compiler.create();
 /** 编译 */
 async function compileScript(): Promise<VmScript | undefined> {
     const compStart = performance.now();
     const { mode, source } = getState();
     try {
-        const script = await compiler.compile(source, {
+        const script = await compile(source, {
             pretty: true,
             input_mode: mode,
             sourceMap: true,

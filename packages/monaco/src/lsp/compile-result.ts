@@ -2,7 +2,12 @@ import { type editor, Range, type IRange, type IPosition, Position } from '../mo
 import { strictContainsPosition } from './utils.js';
 import { REG_IDENTIFIER, REG_ORDINAL } from '../constants.js';
 import type { MonacoResult } from './worker.js';
-import { parseDiagnostics, DiagnosticCode, type SourceDiagnostic, type SourceReference } from '@mirascript/mirascript';
+import {
+    parseDiagnostics,
+    DiagnosticCode,
+    type SourceDiagnostic,
+    type SourceReference,
+} from '@mirascript/mirascript/subtle';
 
 export type { SourceDiagnostic, SourceReference };
 

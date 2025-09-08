@@ -1,5 +1,5 @@
+import { DiagnosticCode, getDiagnosticMessage } from '@mirascript/mirascript/subtle';
 import { editor, MarkerSeverity, MarkerTag, Uri } from '../monaco-api.js';
-import { DiagnosticCode, getDiagnosticMessage } from '@mirascript/mirascript';
 import type { CompileResult, SourceDiagnostic } from './compile-result.js';
 
 const makeMarker = (

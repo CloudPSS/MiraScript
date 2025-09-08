@@ -1,4 +1,4 @@
-import { DiagnosticCode } from '@mirascript/mirascript';
+import { DiagnosticCode } from '@mirascript/mirascript/subtle';
 import { type Position, type languages, type editor, type CancellationToken, Range } from '../../monaco-api.js';
 import { keywords } from '../../constants.js';
 import { Provider } from './base.js';

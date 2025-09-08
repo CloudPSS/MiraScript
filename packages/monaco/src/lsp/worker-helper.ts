@@ -16,20 +16,24 @@ async function compileWorker(req: Req): Promise<CompileResult> {
         });
         worker = new Promise((resolve, reject) => {
             const onError = (e: ErrorEvent) => {
-                w.removeEventListener('error', onError);
-                w.removeEventListener('message', onMessage);
+                cleanUp();
                 reject(new Error(`Worker failed to start: ${e.message}`));
             };
-            const onMessage = (e: MessageEvent<Ready>) => {
-                if (e.data !== 'mirascript lsp ready') {
-                    return;
+            const onMessage = (e: MessageEvent<Ready | Error>) => {
+                if (e.data === 'mirascript lsp ready') {
+                    cleanUp();
+                    resolve(w);
+                } else if (e.data instanceof Error) {
+                    cleanUp();
+                    reject(e.data);
                 }
-                w.removeEventListener('error', onError);
-                w.removeEventListener('message', onMessage);
-                resolve(w);
             };
             w.addEventListener('error', onError);
             w.addEventListener('message', onMessage);
+            const cleanUp = () => {
+                w.removeEventListener('error', onError);
+                w.removeEventListener('message', onMessage);
+            };
             setTimeout(() => {
                 onError(new ErrorEvent('error', { message: 'Worker did not respond in time' }));
             }, 30000);
@@ -59,7 +63,7 @@ async function compileWorker(req: Req): Promise<CompileResult> {
 async function compileSync(req: Req): Promise<CompileResult> {
     const [uri, version, script, mode] = req;
     const { compile } = await import('./worker.js');
-    const result = await compile(script, mode);
+    const result = compile(script, mode);
     return new CompileResult(uri, version, script, result);
 }
 

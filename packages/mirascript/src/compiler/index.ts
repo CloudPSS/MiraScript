@@ -7,6 +7,7 @@ import { compileFast } from './compile-fast.js';
 import { formatDiagnostic, parseDiagnostics } from './diagnostic.js';
 import { compileBytecode, compileBytecodeSync, loadModule } from './compile-bytecode.js';
 import { compileWorker } from './worker-manager.js';
+await loadModule();
 
 export type { TranspileOptions, ScriptInput, InputMode } from './types.js';
 
@@ -35,44 +36,32 @@ function emitImpl(
     return createScript(source, target);
 }
 
-/** 编译器 */
-export class Compiler {
-    /** 创建编译器 */
-    static async create(): Promise<Compiler> {
-        await loadModule();
-        return new Compiler();
+/**
+ * 生成 MiraScript 对应的 JavaScript 代码
+ */
+export async function compile(this: void, source: ScriptInput, options: TranspileOptions = {}): Promise<VmScript> {
+    if (typeof source == 'string') {
+        const result = compileFast(source, options);
+        if (result) return result;
     }
-
-    private constructor() {
-        //
-    }
-    /**
-     * 生成 MiraScript 对应的 JavaScript 代码
-     */
-    async compile(source: ScriptInput, options: TranspileOptions = {}): Promise<VmScript> {
-        if (typeof source == 'string') {
-            const result = compileFast(source, options);
-            if (result) return result;
-        }
-        if (source.length < WORKER_MIN_LEN) {
-            const bc = await compileBytecode(source, options);
-            return emitImpl(source, bc, options);
-        }
-        const [target, diagnostics] = await compileWorker(source, options);
-        if (target == null) {
-            reportDiagnostic(source, diagnostics);
-        }
-        return createScript(source, target);
-    }
-    /**
-     * 生成 MiraScript 对应的 JavaScript 代码
-     */
-    compileSync(source: ScriptInput, options: TranspileOptions = {}): VmScript {
-        if (typeof source == 'string') {
-            const result = compileFast(source, options);
-            if (result) return result;
-        }
-        const bc = compileBytecodeSync(source, {});
+    if (source.length < WORKER_MIN_LEN) {
+        const bc = await compileBytecode(source, options);
         return emitImpl(source, bc, options);
     }
+    const [target, diagnostics] = await compileWorker(source, options);
+    if (target == null) {
+        reportDiagnostic(source, diagnostics);
+    }
+    return createScript(source, target);
+}
+/**
+ * 生成 MiraScript 对应的 JavaScript 代码
+ */
+export function compileSync(this: void, source: ScriptInput, options: TranspileOptions = {}): VmScript {
+    if (typeof source == 'string') {
+        const result = compileFast(source, options);
+        if (result) return result;
+    }
+    const bc = compileBytecodeSync(source, {});
+    return emitImpl(source, bc, options);
 }

@@ -12,10 +12,11 @@ import {
     DiagnosticTag,
     DiagnosticRelatedInformation,
 } from 'vscode';
-import { createConfig, compile, DiagnosticCode } from '@mirascript/wasm';
-import { getDiagnosticMessage, parseDiagnostics, type SourceDiagnostic } from '@mirascript/mirascript';
+import { createConfig, compileSync, DiagnosticCode, ready } from '@mirascript/wasm';
+import { getDiagnosticMessage, parseDiagnostics, type SourceDiagnostic } from '@mirascript/mirascript/subtle';
 import { toRange } from '../adapter/utils.js';
 
+await ready;
 const configTemplate = createConfig({
     diagnostic_position_encoding: 'Utf16',
     track_references: true,
@@ -50,14 +51,14 @@ export class DiagnosticsManager extends Disposable {
             this.collection,
             window.onDidChangeActiveTextEditor((editor) => {
                 if (editor?.document) {
-                    void this.analyzeTextDocument(editor.document);
+                    this.analyzeTextDocument(editor.document);
                 }
             }),
             workspace.onDidChangeTextDocument((event) => {
-                void this.analyzeTextDocument(event.document);
+                this.analyzeTextDocument(event.document);
             }),
             workspace.onDidOpenTextDocument((doc) => {
-                void this.analyzeTextDocument(doc);
+                this.analyzeTextDocument(doc);
             }),
             workspace.onDidChangeWorkspaceFolders((event) => {
                 void this.scanWorkspace();
@@ -69,10 +70,10 @@ export class DiagnosticsManager extends Disposable {
     /** 初始化 */
     private async init(): Promise<void> {
         for (const editor of window.visibleTextEditors) {
-            await this.analyzeTextDocument(editor.document);
+            this.analyzeTextDocument(editor.document);
         }
         for (const doc of workspace.textDocuments) {
-            await this.analyzeTextDocument(doc);
+            this.analyzeTextDocument(doc);
         }
         await this.scanWorkspace();
     }
@@ -135,7 +136,7 @@ export class DiagnosticsManager extends Disposable {
         return diag;
     }
     /** 生成诊断 */
-    private async analyzeTextDocument(document: TextDocument): Promise<void> {
+    private analyzeTextDocument(document: TextDocument): void {
         if (document.languageId !== 'mirascript' && document.languageId !== 'mirascript-template') {
             return;
         }
@@ -148,7 +149,7 @@ export class DiagnosticsManager extends Disposable {
         }
         const source = document.getText();
         const config = document.languageId !== 'mirascript' ? configTemplate : configScript;
-        const compiled = await compile(source, await config);
+        const compiled = compileSync(source, config);
         if (version !== document.version) {
             return;
         }
