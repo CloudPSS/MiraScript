@@ -1,5 +1,5 @@
 import test from 'ava';
-import { compile } from '@mirascript/mirascript';
+import { compile, compileSync } from '@mirascript/mirascript';
 
 test('syntax error', async (t) => {
     await t.throwsAsync(compile('1+'), { message: /Failed to compile/ });
@@ -35,4 +35,16 @@ test('pretty', async (t) => {
 test('invalid number', async (t) => {
     await t.throwsAsync(compile('1.2e999'), { message: /Failed to compile/ });
     await t.throwsAsync(compile('1.2e999', { sourceMap: true }), { message: /Failed to compile/ });
+});
+
+test('long source', async (t) => {
+    const longSource = '+ 1'.repeat(1024);
+    const s = await compile(longSource, { sourceMap: true });
+    t.is(s(), 1024);
+});
+
+test('sync', (t) => {
+    const s = compileSync('1+2', { sourceMap: true });
+    t.is(s.source, '1+2');
+    t.is(s(), 3);
 });

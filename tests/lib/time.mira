@@ -1,0 +1,38 @@
+let epoch = 0;
+
+t_eq(to_timestamp(epoch), 0);
+t_eq(to_datetime(epoch), (year: 1970, month: 1, day: 1, hour: 0, minute: 0, second: 0, millisecond: 0, dayOfWeek: 4, offset: 0));
+t_eq(to_iso8601(epoch), '1970-01-01T00:00:00.000Z');
+
+let invalid = inf;
+
+t_eq(to_timestamp(invalid), nan);
+t_eq(to_datetime(invalid), nil);
+t_eq(to_iso8601(invalid), nil);
+
+let str = '2022-03-23T12:34:56.789+08:00';
+
+t_eq(to_timestamp(str), 1_648_010_096_789);
+t_eq(to_datetime(str, +8), (year: 2022, month: 3, day: 23, hour: 12, minute: 34, second: 56, millisecond: 789, dayOfWeek: 3, offset: 8));
+t_eq(to_datetime(str), (year: 2022, month: 3, day: 23, hour: 4, minute: 34, second: 56, millisecond: 789, dayOfWeek: 3, offset: 0));
+t_eq(to_iso8601(str), '2022-03-23T04:34:56.789Z');
+
+t_eq(to_timestamp(''), nan);
+t_eq(to_datetime(''), nil);
+t_eq(to_iso8601(''), nil);
+
+let not_a_date = 'Hello, World!';
+
+t_eq(to_timestamp(not_a_date), nan);
+t_eq(to_datetime(not_a_date), nil);
+t_eq(to_iso8601(not_a_date), nil);
+
+let num_str = '1648010096789';
+
+t_eq(to_timestamp(num_str), 1_648_010_096_789);
+t_eq(to_datetime(num_str), (year: 2022, month: 3, day: 23, hour: 4, minute: 34, second: 56, millisecond: 789, dayOfWeek: 3, offset: 0));
+t_eq(to_iso8601(num_str), '2022-03-23T04:34:56.789Z');
+
+t_ne(to_timestamp(nil), nan);
+t_ne(to_datetime(nil), nil);
+t_ne(to_iso8601(nil), nil);
