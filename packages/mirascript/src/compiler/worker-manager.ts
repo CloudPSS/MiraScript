@@ -9,14 +9,28 @@ async function getWorker(): Promise<Worker> {
             type: 'module',
             name: '@mirascript/compiler',
         });
-        w.addEventListener('error', reject);
-        w.addEventListener('message', (msg) => {
-            if (msg.data === 'ready') {
+        const onError = (e: ErrorEvent) => {
+            cleanUp();
+            reject(new Error(`Worker failed to start: ${e.message}`));
+        };
+        const onMessage = (e: MessageEvent<'ready' | Error>) => {
+            if (e.data === 'ready') {
+                cleanUp();
                 resolve(w);
-            } else if (msg.data instanceof Error) {
-                reject(msg.data);
+            } else if (e.data instanceof Error) {
+                cleanUp();
+                reject(e.data);
             }
-        });
+        };
+        w.addEventListener('error', onError);
+        w.addEventListener('message', onMessage);
+        const cleanUp = () => {
+            w.removeEventListener('error', onError);
+            w.removeEventListener('message', onMessage);
+        };
+        setTimeout(() => {
+            onError(new ErrorEvent('error', { message: 'Worker did not respond in time' }));
+        }, 30000);
     });
     return worker;
 }

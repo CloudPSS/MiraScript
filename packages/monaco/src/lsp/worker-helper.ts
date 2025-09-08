@@ -11,8 +11,8 @@ let worker: Promise<Worker> | undefined = undefined;
 async function compileWorker(req: Req): Promise<CompileResult> {
     if (!worker) {
         const w = new Worker(new URL('#/lsp/worker', import.meta.url), {
-            name: '@mirascript/lsp-server',
             type: 'module',
+            name: '@mirascript/lsp-server',
         });
         worker = new Promise((resolve, reject) => {
             const onError = (e: ErrorEvent) => {
