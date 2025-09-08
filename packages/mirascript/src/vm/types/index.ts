@@ -111,3 +111,5 @@ export { type VmContext, type VmSharedContext, isVmContext, defineVmContextValue
 export { type VmScript, isVmScript } from './script.js';
 
 export { isVmAny, isVmConst, isVmImmutable, isVmValue } from './checker.js';
+
+export const VM_ARRAY_MAX_LENGTH = 2 ** 31 - 1;

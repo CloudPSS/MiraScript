@@ -1,0 +1,6 @@
+t_eq(matrix.transpose(1), 1);
+t_eq(matrix.transpose([1, 2, nil]), [1, 2, nil]);
+t_eq(matrix.transpose([[1, 3, 4], [2, 3, 7], [2, 5, 9]]), [[1, 2, 2], [3, 3, 5], [4, 7, 9]]);
+t_eq(matrix.transpose([[7, 1, 5], [8, 2, 6]]), [[7, 8], [1, 2], [5, 6]]);
+t_eq(matrix.transpose([[1, 2, 3], [4]]), [[1, 4], [2, nil], [3, nil]]);
+t_eq(matrix.transpose([[1, 2, 3], [4], nil]), [[1, 2, 3], [4], nil]);

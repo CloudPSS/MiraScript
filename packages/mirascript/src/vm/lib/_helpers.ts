@@ -15,6 +15,7 @@ import {
     isVmPrimitive,
     type VmConst,
     isVmConst,
+    VM_ARRAY_MAX_LENGTH,
 } from '../types/index.js';
 import type { VmFunctionLike, VmFunctionOption } from '../types/function.js';
 
@@ -139,6 +140,14 @@ export function getNumbers(args: readonly VmAny[]): number[] {
         numbers.push($ToNumber(arg));
     }
     return numbers;
+}
+
+/** 将值转为数组长度 */
+export function arrayLen(len: number | null | undefined): number {
+    if (len == null || Number.isNaN(len) || len <= 0) return 0;
+    len = Math.trunc(len);
+    if (len > VM_ARRAY_MAX_LENGTH) throwError(`Array length exceeds maximum`, null);
+    return len;
 }
 
 /** 库函数选项 */

@@ -1,7 +1,16 @@
 import { Cp } from '../../../helpers.js';
 import { $Add, $Call, $Div, $Mul, $Sub, $ToNumber } from '../../../operations.js';
 import { isVmArray, isVmConst, type VmAny, type VmArray, type VmConst, type VmValue } from '../../../types/index.js';
-import { VmLib, expectArray, expectCallable, expectConst, required, throwError, getNumbers } from '../../_helpers.js';
+import {
+    VmLib,
+    expectArray,
+    expectCallable,
+    expectConst,
+    required,
+    throwError,
+    getNumbers,
+    arrayLen,
+} from '../../_helpers.js';
 import { mapImpl } from '../sequence.js';
 
 /** 计算尺寸 */
@@ -52,7 +61,7 @@ export const transpose = VmLib(
             Cp();
             for (let j = 0; j < numCols; j++) {
                 const row = (matrix as VmConst[][])[i] ?? null;
-                const item = isVmArray(row) ? (row[j] ?? null) : j === 0 ? row : null;
+                const item = row?.[j] ?? null;
                 transposed[j]![i] = item;
             }
         }
@@ -445,7 +454,7 @@ function filled(size: readonly VmAny[], value: VmConst): VmArray {
     const s = getNumbers(size);
     if (s.length === 0) return [];
     while (s.length > 0) {
-        const repeat = s.pop()! || 0;
+        const repeat = arrayLen(s.pop());
         Cp();
         const data =
             repeat > 1_000_000
@@ -479,8 +488,8 @@ export const identity = VmLib(
         if (s.length === 0) return [];
         if (s.length > 2) throwError('Invalid matrix size', []);
         if (s.length === 1) s = [s[0]!, s[0]!];
-        const m = s[0]! || 0;
-        const n = s[1]! || 0;
+        const m = arrayLen(s[0]);
+        const n = arrayLen(s[1]);
         if (m * n > 1_000_000) {
             return Array.from({ length: m }, (_, i) => {
                 Cp();
@@ -501,22 +510,22 @@ export const diagonal = VmLib(
     (x, k = 0) => {
         expectArray('x', x, []);
         const fk = Math.round($ToNumber(k) || 0);
-        if (Array.isArray(x[0])) {
+        if (x.every((e) => Array.isArray(e))) {
             // 获取对角线元素
             const diag: VmConst[] = [];
             for (let i = 0; i < x.length; i++) {
                 const row = x[i] as VmArray | undefined;
                 const r = i + fk;
                 if (r < 0) continue;
-                if (r >= (row?.length ?? 0)) break;
-                diag.push(row?.[i + fk] ?? null);
+                if (!row || r >= row.length) break;
+                diag.push(row[r] ?? null);
             }
             return diag;
         }
         // 创建对角矩阵
         const l = x.length;
-        const m = fk < 0 ? l - fk : l;
-        const n = fk > 0 ? l + fk : l;
+        const m = arrayLen(fk < 0 ? l - fk : l);
+        const n = arrayLen(fk > 0 ? l + fk : l);
         const result: VmConst[][] = Array.from({ length: m }, () => Array.from({ length: n }, () => 0));
         for (let i = 0; i < m; i++) {
             for (let j = 0; j < n; j++) {
