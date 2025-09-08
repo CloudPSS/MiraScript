@@ -1,6 +1,7 @@
 {
   "name": "mira-playground",
   "private": true,
+  "version": "0.0.4",
   "type": "module",
   "scripts": {
     "start": "vite",

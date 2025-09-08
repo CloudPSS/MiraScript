@@ -1,6 +1,6 @@
 {
   "name": "@mirascript/mirascript",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "type": "module",
   "description": "An expression based scripting language.",
   "main": "./dist/index.js",
