@@ -162,8 +162,7 @@ export const zip = VmLib(
             Cp();
             const obj: Record<number | string, VmConst> = isArr ? ([] as Record<number, VmConst>) : {};
             for (const { 0: key, 1: arr } of ets) {
-                const index = i % (arr as VmArray).length;
-                obj[key] = (arr as VmArray)[index] ?? null;
+                obj[key] = (arr as VmArray)[i] ?? null;
             }
             result.push(obj);
         }

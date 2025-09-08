@@ -143,8 +143,8 @@ function entrywiseImpl(
         const rr = Math.max(ar, br);
         const result: VmConst[] = Array.from({ length: rr });
         for (let r = 0; r < rr; r++) {
-            const aItem = (a as VmConst[])[r % ar] ?? null;
-            const bItem = (b as VmConst[])[r % br] ?? null;
+            const aItem = (a as VmConst[])[r] ?? null;
+            const bItem = (b as VmConst[])[r] ?? null;
             result[r] = f(aItem, bItem);
         }
         return result;
@@ -178,8 +178,8 @@ function entrywiseImpl(
     const result: VmConst[][] = Array.from({ length: rr }, () => Array.from({ length: rc }));
     for (let r = 0; r < rr; r++) {
         for (let c = 0; c < rc; c++) {
-            const aItem = (a as VmConst[][])[r % ar]?.[c % ac] ?? null;
-            const bItem = (b as VmConst[][])[r % br]?.[c % bc] ?? null;
+            const aItem = (a as VmConst[][])[r]?.[c] ?? null;
+            const bItem = (b as VmConst[][])[r]?.[c] ?? null;
             result[r]![c] = f(aItem, bItem);
         }
     }
@@ -274,7 +274,7 @@ export const multiply = VmLib(
                 const l = Math.max(al, bl);
                 let s = 0;
                 for (let i = 0; i < l; i++) {
-                    s += num(a[i % al]) * num(b[i % bl]);
+                    s += num(a[i]) * num(b[i]);
                 }
                 return s;
             },
@@ -285,8 +285,7 @@ export const multiply = VmLib(
                     for (let c = 0; c < bc; c++) {
                         let item = 0;
                         for (let k = 0; k < ac; k++) {
-                            item +=
-                                num((a as VmConst[][])[r % ar]?.[k % ac]) * num((b as VmConst[][])[k % br]?.[c % bc]);
+                            item += num((a as VmConst[][])[r]?.[k]) * num((b as VmConst[][])[k]?.[c]);
                         }
                         result[r]![c] = item;
                     }
@@ -299,7 +298,7 @@ export const multiply = VmLib(
                 for (let c = 0; c < bc; c++) {
                     let item = 0;
                     for (let k = 0; k < al; k++) {
-                        item += num(a[k]) * num((b as VmConst[][])[k % br]?.[c]);
+                        item += num(a[k]) * num((b as VmConst[][])[k]?.[c]);
                     }
                     result[c] = item;
                 }
@@ -311,7 +310,7 @@ export const multiply = VmLib(
                 for (let r = 0; r < ar; r++) {
                     let item = 0;
                     for (let k = 0; k < ac; k++) {
-                        item += num((a as VmConst[][])[r % ar]?.[k % ac]) * num(b[k % bl]);
+                        item += num((a as VmConst[][])[r]?.[k]) * num(b[k]);
                     }
                     result[r] = item;
                 }
