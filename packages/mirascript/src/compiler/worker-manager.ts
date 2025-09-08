@@ -1,4 +1,4 @@
-import type { compile } from './compile.js';
+import type { compile } from './worker.js';
 
 let worker: Promise<Worker> | undefined;
 /** 获取 worker */

@@ -427,9 +427,7 @@ export const $Format = (value: VmAny, format: VmAny): string => {
 
     if (typeof value == 'number' && /^\.\d+$/.test(f)) {
         let digits = Math.trunc(Number(f.slice(1)));
-        if (!Number.isFinite(digits)) return $ToString(value);
-        if (digits < 0) digits = 0;
-        else if (digits > 100) digits = 100;
+        if (!(digits <= 100)) digits = 100;
         return value.toFixed(digits);
     }
 

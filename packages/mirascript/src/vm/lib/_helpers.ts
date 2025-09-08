@@ -18,6 +18,7 @@ import {
     VM_ARRAY_MAX_LENGTH,
 } from '../types/index.js';
 import type { VmFunctionLike, VmFunctionOption } from '../types/function.js';
+import { Cp } from '../helpers.js';
 
 /** 抛出异常 */
 export function throwError(message: string, recovered: VmAny | (() => VmAny)): never {
@@ -148,6 +149,44 @@ export function arrayLen(len: number | null | undefined): number {
     len = Math.trunc(len);
     if (len > VM_ARRAY_MAX_LENGTH) throwError(`Array length exceeds maximum`, null);
     return len;
+}
+
+/** 应用映射函数 */
+export function map(
+    data: VmConst,
+    mapper: (value: VmConst, index: number | string | null, data: VmConst) => VmConst | undefined,
+): VmConst {
+    if (isVmPrimitive(data)) {
+        return mapper(data, null, data) ?? null;
+    }
+    if (isVmArray(data)) {
+        const result: VmConst[] = [];
+        const { length } = data;
+        for (let i = 0; i < length; i++) {
+            Cp();
+            const ret = mapper(data[i] ?? null, i, data);
+            if (ret === undefined) continue;
+            if (isVmConst(ret)) {
+                result.push(ret);
+            } else {
+                result.push(null);
+            }
+        }
+        return result;
+    } else {
+        const entries: Array<[string, VmConst]> = [];
+        for (const [key, value] of Object.entries(data)) {
+            Cp();
+            const ret = mapper(value ?? null, key, data);
+            if (ret === undefined) continue;
+            if (isVmConst(ret)) {
+                entries.push([key, ret]);
+            } else {
+                entries.push([key, null]);
+            }
+        }
+        return Object.fromEntries(entries);
+    }
 }
 
 /** 库函数选项 */

@@ -10,8 +10,8 @@ import {
     throwError,
     getNumbers,
     arrayLen,
+    map,
 } from '../../_helpers.js';
-import { mapImpl } from '../sequence.js';
 
 /** 计算尺寸 */
 function sizeImpl(matrix: VmValue): [] | [number] | [number, number] {
@@ -340,7 +340,7 @@ export const invert = VmLib(
         expectConst('a', a, null);
         const [rows, cols] = sizeImpl(a);
         if (rows == null) return 1 / num(a); // 标量取倒数
-        if (cols == null) return mapImpl(a, (v) => 1 / num(v)); // 向量按元素取倒数
+        if (cols == null) return map(a, (v) => 1 / num(v)); // 向量按元素取倒数
 
         if (rows !== cols) throwError(`Matrix must be square`, a);
         const m = a as VmConst[][];

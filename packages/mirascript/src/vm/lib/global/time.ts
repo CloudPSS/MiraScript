@@ -1,14 +1,19 @@
 import { $ToString, $ToNumber } from '../../operations.js';
 import { VmLib } from '../_helpers.js';
+const { isFinite } = Number;
 
 export const to_timestamp = VmLib(
     (datetime) => {
-        datetime ??= Date.now();
-        if (typeof datetime == 'number') return datetime;
+        if (datetime == null) {
+            return Date.now();
+        }
+        if (typeof datetime == 'number') {
+            return new Date(datetime).getTime();
+        }
         const str = $ToString(datetime);
         if (!str) return Number.NaN;
         const num = $ToNumber(str);
-        if (Number.isFinite(num)) return num;
+        if (isFinite(num)) return num;
         return Date.parse(str);
     },
     {
@@ -22,7 +27,7 @@ export const to_timestamp = VmLib(
 export const to_datetime = VmLib(
     (datetime, offset) => {
         const timestamp = to_timestamp(datetime);
-        if (!Number.isFinite(timestamp)) return null;
+        if (!isFinite(timestamp)) return null;
         const o = $ToNumber(offset ?? 0) || 0;
         const dateOffset = new Date(timestamp + o * 1000 * 60 * 60);
         return {
@@ -51,7 +56,7 @@ export const to_datetime = VmLib(
 export const to_iso8601 = VmLib(
     (datetime) => {
         const timestamp = to_timestamp(datetime);
-        if (!Number.isFinite(timestamp)) return null;
+        if (!isFinite(timestamp)) return null;
         return new Date(timestamp).toISOString();
     },
     {

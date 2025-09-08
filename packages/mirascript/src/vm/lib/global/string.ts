@@ -113,7 +113,10 @@ export const split = VmLib(
     (str, separator) => {
         required('str', str, null);
         required('separator', separator, null);
-        return $ToString(str).split($ToString(separator));
+        const s = $ToString(str);
+        const p = $ToString(separator);
+        if (!p) return [...s];
+        return s.split(p);
     },
     {
         summary: '将字符串拆分为子串数组',
