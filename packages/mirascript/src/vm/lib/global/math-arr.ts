@@ -12,21 +12,21 @@ function build(f: (...values: readonly number[]) => number): (...values: readonl
 export const max = VmLib(build(Math.max), {
     summary: '返回一组数中的最大值',
     params: { '..values': '要比较的数值' },
-    paramsType: { '..values': '[number]' },
+    paramsType: { '..values': 'number[]' },
     returnsType: 'number',
 });
 
 export const min = VmLib(build(Math.min), {
     summary: '返回一组数中的最小值',
     params: { '..values': '要比较的数值' },
-    paramsType: { '..values': '[number]' },
+    paramsType: { '..values': 'number[]' },
     returnsType: 'number',
 });
 
 export const hypot = VmLib(build(Math.hypot), {
     summary: '返回所有参数平方和的平方根',
     params: { '..values': '要计算的数值' },
-    paramsType: { '..values': '[number]' },
+    paramsType: { '..values': 'number[]' },
     returnsType: 'number',
 });
 
@@ -38,7 +38,7 @@ export const sum = VmLib(
     {
         summary: '返回一组数的总和',
         params: { '..values': '要计算的数值' },
-        paramsType: { '..values': '[number]' },
+        paramsType: { '..values': 'number[]' },
         returnsType: 'number',
     },
 );
@@ -51,7 +51,7 @@ export const product = VmLib(
     {
         summary: '返回一组数的乘积',
         params: { '..values': '要计算的数值' },
-        paramsType: { '..values': '[number]' },
+        paramsType: { '..values': 'number[]' },
         returnsType: 'number',
     },
 );

@@ -1,14 +1,13 @@
 import { Element } from '../../../helpers.js';
 import { $ToNumber, $ToString } from '../../../operations.js';
 import { isVmArray, type VmConst } from '../../../types/index.js';
-import { VmError } from '../../../error.js';
-import { VmLib, expectArrayOrRecord } from '../../_helpers.js';
+import { VmLib, expectArrayOrRecord, throwError } from '../../_helpers.js';
 
 const _with = VmLib(
     (data, ...entries) => {
         expectArrayOrRecord('data', data, data);
         if (entries.length % 2 !== 0) {
-            throw new VmError('Invalid number of arguments, expected even number of arguments', data);
+            throwError('Expected even number of entries', data);
         }
         if (isVmArray(data)) {
             const result: VmConst[] = [...data];
@@ -35,7 +34,7 @@ const _with = VmLib(
     {
         summary: '在数组或记录中设置多个键值对',
         params: { data: '要设置的数组或记录', '..entries': '要设置的键值对，成对出现' },
-        paramsType: { data: 'array | record', '..entries': '[string | number | any]' },
+        paramsType: { data: 'array | record', '..entries': '[..[string | number, any][]]' },
         returnsType: 'type(data)',
     },
 );

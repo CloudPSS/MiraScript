@@ -45,7 +45,7 @@ export const size = VmLib(
     {
         summary: '获取矩阵尺寸',
         params: { matrix: '要获取尺寸的矩阵' },
-        paramsType: { matrix: '[[any]]' },
+        paramsType: { matrix: 'any[][]' },
         returnsType: '[number, number]',
     },
 );
@@ -70,8 +70,8 @@ export const transpose = VmLib(
     {
         summary: '转置矩阵',
         params: { matrix: '要转置的矩阵' },
-        paramsType: { matrix: '[[any]]' },
-        returnsType: '[[any]]',
+        paramsType: { matrix: 'any[][]' },
+        returnsType: 'any[][]',
     },
 );
 
@@ -210,8 +210,8 @@ export const entrywise = VmLib(
     {
         summary: '逐项操作',
         params: { a: '第一个操作数', b: '第二个操作数', f: '操作函数' },
-        paramsType: { a: 'any | [any] | [[any]]', b: 'any | [any] | [[any]]', f: 'fn(a: any, b: any) -> any' },
-        returnsType: 'any | [any] | [[any]]',
+        paramsType: { a: 'any | any[] | any[][]', b: 'any | any[] | any[][]', f: 'fn(a: any, b: any) -> any' },
+        returnsType: 'any | any[] | any[][]',
     },
 );
 
@@ -224,8 +224,8 @@ export const add = VmLib(
     {
         summary: '逐项相加',
         params: { a: '第一个操作数', b: '第二个操作数' },
-        paramsType: { a: 'number | [number] | [[number]]', b: 'number | [number] | [[number]]' },
-        returnsType: 'number | [number] | [[number]]',
+        paramsType: { a: 'number | number[] | number[][]', b: 'number | number[] | number[][]' },
+        returnsType: 'number | number[] | number[][]',
     },
 );
 
@@ -238,8 +238,8 @@ export const subtract = VmLib(
     {
         summary: '逐项相减',
         params: { a: '第一个操作数', b: '第二个操作数' },
-        paramsType: { a: 'number | [number] | [[number]]', b: 'number | [number] | [[number]]' },
-        returnsType: 'number | [number] | [[number]]',
+        paramsType: { a: 'number | number[] | number[][]', b: 'number | number[] | number[][]' },
+        returnsType: 'number | number[] | number[][]',
     },
 );
 
@@ -252,8 +252,8 @@ export const entrywise_multiply = VmLib(
     {
         summary: '逐项相乘',
         params: { a: '第一个操作数', b: '第二个操作数' },
-        paramsType: { a: 'number | [number] | [[number]]', b: 'number | [number] | [[number]]' },
-        returnsType: 'number | [number] | [[number]]',
+        paramsType: { a: 'number | number[] | number[][]', b: 'number | number[] | number[][]' },
+        returnsType: 'number | number[] | number[][]',
     },
 );
 
@@ -266,8 +266,8 @@ export const entrywise_divide = VmLib(
     {
         summary: '逐项相除',
         params: { a: '第一个操作数', b: '第二个操作数' },
-        paramsType: { a: 'number | [number] | [[number]]', b: 'number | [number] | [[number]]' },
-        returnsType: 'number | [number] | [[number]]',
+        paramsType: { a: 'number | number[] | number[][]', b: 'number | number[] | number[][]' },
+        returnsType: 'number | number[] | number[][]',
     },
 );
 
@@ -330,8 +330,8 @@ export const multiply = VmLib(
     {
         summary: '矩阵相乘',
         params: { a: '第一个操作数', b: '第二个操作数' },
-        paramsType: { a: 'number | [number] | [[number]]', b: 'number | [number] | [[number]]' },
-        returnsType: 'number | [number] | [[number]]',
+        paramsType: { a: 'number | number[] | number[][]', b: 'number | number[] | number[][]' },
+        returnsType: 'number | number[] | number[][]',
     },
 );
 
@@ -444,8 +444,8 @@ export const invert = VmLib(
     {
         summary: '矩阵求逆',
         params: { a: '待求逆的矩阵' },
-        paramsType: { a: 'number | [[number]]' },
-        returnsType: 'number | [[number]]',
+        paramsType: { a: 'number | number[][]' },
+        returnsType: 'number | number[][]',
     },
 );
 
@@ -470,16 +470,16 @@ function filled(size: readonly VmAny[], value: VmConst): VmArray {
 
 export const zeros = VmLib((...size) => filled(size, 0), {
     summary: '创建一个全零的矩阵',
-    params: { size: '矩阵的维度' },
-    paramsType: { size: '[number]' },
-    returnsType: '[[number]]',
+    params: { '..size': '矩阵的维度' },
+    paramsType: { '..size': 'number[]' },
+    returnsType: 'number[][]',
 });
 
 export const ones = VmLib((...size) => filled(size, 1), {
     summary: '创建一个全一的矩阵',
-    params: { size: '矩阵的维度' },
-    paramsType: { size: '[number]' },
-    returnsType: '[[number]]',
+    params: { '..size': '矩阵的维度' },
+    paramsType: { '..size': 'number[]' },
+    returnsType: 'number[][]',
 });
 
 export const identity = VmLib(
@@ -500,9 +500,9 @@ export const identity = VmLib(
     },
     {
         summary: '创建一个单位矩阵',
-        params: { size: '矩阵的维度' },
-        paramsType: { size: 'number | [number]' },
-        returnsType: '[[number]]',
+        params: { '..size': '矩阵的维度' },
+        paramsType: { '..size': '[number] | [number, number]' },
+        returnsType: 'number[][]',
     },
 );
 
@@ -539,7 +539,7 @@ export const diagonal = VmLib(
     {
         summary: '创建一个对角矩阵或获取矩阵的对角线',
         params: { x: '对角线元素或要获取对角线的矩阵', k: '对角线偏移量，默认为 0' },
-        paramsType: { x: '[number] | [[number]]', k: 'number' },
-        returnsType: '[[number]] | [number]',
+        paramsType: { x: 'number[] | number[][]', k: 'number' },
+        returnsType: 'number[][] | number[]',
     },
 );

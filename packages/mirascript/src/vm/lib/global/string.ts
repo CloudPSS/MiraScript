@@ -10,7 +10,7 @@ export const chars = VmLib(
         summary: '将字符串转换为字符数组',
         params: { str: '要转换的字符串' },
         paramsType: { str: 'string' },
-        returnsType: '[string]',
+        returnsType: 'string[]',
     },
 );
 
@@ -122,6 +122,6 @@ export const split = VmLib(
         summary: '将字符串拆分为子串数组',
         params: { str: '要拆分的字符串', separator: '分隔符' },
         paramsType: { str: 'string', separator: 'string' },
-        returnsType: '[string]',
+        returnsType: 'string[]',
     },
 );

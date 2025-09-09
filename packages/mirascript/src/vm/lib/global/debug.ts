@@ -11,7 +11,7 @@ export const debug_print = VmLib(
     {
         summary: '打印调试信息到控制台',
         params: { '..args': '要打印的调试信息，可以是任意类型' },
-        paramsType: { '..args': '[any]' },
+        paramsType: { '..args': 'any[]' },
         returnsType: 'nil',
     },
 );

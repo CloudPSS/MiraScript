@@ -65,7 +65,7 @@ export const zip = VmLib(
         summary: '将数组的数组/记录转换为数组/记录的数组',
         params: { data: '要转换的数组/记录' },
         paramsType: { data: 'array | record' },
-        returnsType: '[array | record]',
+        returnsType: '(array | record)[]',
     },
 );
 

@@ -17,7 +17,7 @@ export const keys = VmLib(
         summary: '返回数组、记录、外部对象或模块的键列表',
         params: { data: '要获取键的数组、记录、外部对象或模块' },
         paramsType: { data: 'array | record | extern | module' },
-        returnsType: '[string | number]',
+        returnsType: '(string | number)[]',
     },
 );
 
@@ -49,6 +49,6 @@ export const entries = VmLib(
         summary: '返回数组或记录的键值对列表',
         params: { data: '要获取键值对的数组或记录' },
         paramsType: { data: 'array | record' },
-        returnsType: '[(string | number, any)]',
+        returnsType: '(string | number, any)[]',
     },
 );

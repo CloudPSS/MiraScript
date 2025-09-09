@@ -345,7 +345,7 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                 [/@identifier/, 'type'],
                 [/[[(]/, '@brackets', '@type_doc_inner'],
                 [/[\])]/, '@brackets', '@pop'],
-                [/[&|]/, 'delimiter'],
+                [/[&|.]/, 'delimiter'],
                 [/@whitespace+/, ''],
             ],
         },
