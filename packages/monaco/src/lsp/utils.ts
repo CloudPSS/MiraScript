@@ -16,6 +16,11 @@ import {
 import { operations, serializePropName, serializeString } from '@mirascript/mirascript/subtle';
 import type { LocalDefinition } from './compile-result.js';
 
+/** 生成参数签名 */
+export function paramSignature(param: string, info: VmFunctionInfo | undefined): string {
+    const type = info?.paramsType?.[param];
+    return type ? `${param}: ${type}` : param;
+}
 /** 生成函数签名 */
 export function signature(id: string | undefined, info: VmFunctionInfo): string {
     const prefix = id ? `fn ${id}` : 'fn';
@@ -23,11 +28,7 @@ export function signature(id: string | undefined, info: VmFunctionInfo): string 
     if (!info.params) {
         params = '(..)';
     } else {
-        const paramItems = Object.keys(info.params).map((key) => {
-            const type = info.paramsType?.[key];
-            const typeStr = type ? `: ${type}` : '';
-            return `${key}${typeStr}`;
-        });
+        const paramItems = Object.keys(info.params).map((key) => paramSignature(key, info));
         const len = paramItems.reduce((acc, item) => acc + item.length, 0);
         if (len <= 60) {
             params = `(${paramItems.join(', ')})`;
@@ -38,33 +39,35 @@ export function signature(id: string | undefined, info: VmFunctionInfo): string 
     const returns = info.returnsType ? ` -> ${info.returnsType}` : '';
     return `${prefix}${params}${returns}`;
 }
+/** 生成函数参数 */
+export function localParamList(model: editor.ITextModel, info: NonNullable<LocalDefinition['fn']>): string[] {
+    const {
+        args,
+        scope: { params },
+    } = info;
+    if (params[0]?.code === DiagnosticCode.ParameterIt) {
+        return params[0].references.length ? ['it'] : [];
+    }
+    return params.map((a, i) => {
+        const rest =
+            a.code === DiagnosticCode.ParameterRestPattern ||
+            a.code === DiagnosticCode.ParameterMutableRest ||
+            a.code === DiagnosticCode.ParameterImmutableRest;
+        const argsInParam = args.filter((arg) => Range.containsRange(a.range, arg.definition.range));
+        const argName =
+            argsInParam.length === 0
+                ? `arg_${i}`
+                : argsInParam.map((arg) => model.getValueInRange(arg.definition.range)).join('_');
+        if (rest) return `..${argName}`;
+        return argName;
+    });
+}
 
 /** 生成函数参数列表 */
 export function paramsList(model: editor.ITextModel, info: VmFunctionInfo | LocalDefinition['fn'] | undefined): string {
     if (!info) return '(..)';
     if ('scope' in info) {
-        const {
-            args,
-            scope: { params },
-        } = info;
-        if (params[0]?.code === DiagnosticCode.ParameterIt) {
-            return params[0].references.length ? '(it)' : '()';
-        }
-        return `(${params
-            .map((a, i) => {
-                const rest =
-                    a.code === DiagnosticCode.ParameterRestPattern ||
-                    a.code === DiagnosticCode.ParameterMutableRest ||
-                    a.code === DiagnosticCode.ParameterImmutableRest;
-                const argsInParam = args.filter((arg) => Range.containsRange(a.range, arg.definition.range));
-                const argName =
-                    argsInParam.length === 0
-                        ? `arg_${i}`
-                        : argsInParam.map((arg) => model.getValueInRange(arg.definition.range)).join('_');
-                if (rest) return `..${argName}`;
-                return argName;
-            })
-            .join(', ')})`;
+        return `(${localParamList(model, info).join(', ')})`;
     } else {
         if (!info.params) return '(..)';
         const paramItems = Object.keys(info.params).join(', ');

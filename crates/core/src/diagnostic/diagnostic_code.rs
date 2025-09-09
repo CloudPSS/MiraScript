@@ -249,6 +249,10 @@ pub enum DiagnosticCode {
     UnnamedRecordFieldN,
     OmitNamedRecordField,
 
+    // mark function calls
+    FunctionCall,
+    ExtensionCall,
+
     // mark code ranges
     Scope,
     String,
@@ -273,6 +277,14 @@ pub enum DiagnosticCode {
     ReadWriteLocal,
     WriteLocal,
     RedeclareLocal,
+
+    // mark function calls
+    Callable,
+    ArgumentExtension,
+    ArgumentStart,
+    ArgumentEnd,
+    ArgumentComma,
+    ArgumentSpread,
 
     // mark control flows
     KeywordFor,

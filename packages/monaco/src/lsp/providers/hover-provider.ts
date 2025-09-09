@@ -2,14 +2,14 @@ import type { CancellationToken, editor, IMarkdownString, IRange, languages, Pos
 import { Provider } from './base.js';
 import { DiagnosticCode } from '@mirascript/wasm';
 import { codeblock, getDeep, valueDoc, paramsList } from '../utils.js';
-import type { AccessAt, DefinitionAt } from '../compile-result.js';
+import type { FieldsAccessAt, VariableAccessAt } from '../compile-result.js';
 
 /** @inheritdoc */
 export class HoverProvider extends Provider implements languages.HoverProvider {
     /** 变量提示 */
     private async provideVariableHover(
         model: editor.ITextModel,
-        { def, ref }: DefinitionAt,
+        { def, ref }: VariableAccessAt,
     ): Promise<languages.Hover | undefined> {
         let content: IMarkdownString | undefined;
         let range: IRange | undefined;
@@ -98,7 +98,7 @@ export class HoverProvider extends Provider implements languages.HoverProvider {
     private async provideFieldHover(
         model: editor.ITextModel,
         range: IRange,
-        { def: { def, ref }, fields }: AccessAt,
+        { def: { def, ref }, fields }: FieldsAccessAt,
     ): Promise<languages.Hover | undefined> {
         if ('definition' in def) {
             // TODO: provide local item fields
@@ -129,13 +129,13 @@ export class HoverProvider extends Provider implements languages.HoverProvider {
         if (!compiled) {
             return undefined;
         }
-        const d = compiled.definitionAt(model, position);
+        const d = compiled.variableAccessAt(model, position);
         if (d) {
             return this.provideVariableHover(model, d);
         }
         const word = model.getWordAtPosition(position);
         if (word) {
-            const a = compiled.accessAt(model, {
+            const a = compiled.fieldAccessAt(model, {
                 lineNumber: position.lineNumber,
                 column: word.endColumn,
             });

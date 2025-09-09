@@ -106,13 +106,31 @@ export interface SourceScope {
 }
 
 /** 变量访问 */
-export type DefinitionAt = { range: IRange } & (
-    | { def: LocalDefinition; ref?: number }
-    | { def: GlobalDefinition; ref: number }
+export type VariableAccessAt = {
+    /** 访问发生的位置 */
+    range: IRange;
+} & (
+    | {
+          /** 访问的变量定义 */
+          def: LocalDefinition;
+          /** 访问的是哪一个引用，`undefined` 表示访问了定义 */
+          ref?: number;
+      }
+    | {
+          /** 访问的变量定义 */
+          def: GlobalDefinition;
+          /** 访问的是哪一个引用 */
+          ref: number;
+      }
 );
 
 /** 字段访问 */
-export type AccessAt = { def: DefinitionAt; fields: string[] };
+export type FieldsAccessAt = {
+    /** 访问的变量 */
+    def: VariableAccessAt;
+    /** 访问的字段 */
+    fields: string[];
+};
 
 /** 编译结果 */
 export class CompileResult {
@@ -252,7 +270,9 @@ export class CompileResult {
             } else if (
                 tag.code === DiagnosticCode.Scope ||
                 tag.code === DiagnosticCode.String ||
-                tag.code === DiagnosticCode.Interpolation
+                tag.code === DiagnosticCode.Interpolation ||
+                tag.code === DiagnosticCode.FunctionCall ||
+                tag.code === DiagnosticCode.ExtensionCall
             ) {
                 ranges.push(tag);
             } else if (tag.code === DiagnosticCode.OmitNamedRecordField) {
@@ -272,8 +292,8 @@ export class CompileResult {
         return this._groupedTags;
     }
 
-    /** 获取定义 */
-    definitionAt(model: editor.ITextModel, position: IPosition): DefinitionAt | undefined {
+    /** 获取指定位置的变量访问信息 */
+    variableAccessAt(model: editor.ITextModel, position: IPosition): VariableAccessAt | undefined {
         const { globals } = this.groupedTags(model);
         for (const d of globals) {
             const refIndex = d.references.findIndex((u) => strictContainsPosition(u.range, position));
@@ -442,9 +462,9 @@ export class CompileResult {
         return scope;
     }
 
-    /** 获取位置的字段访问 */
-    accessAt(model: editor.ITextModel, position: IPosition): AccessAt | undefined {
-        let prevDef: DefinitionAt | undefined;
+    /** 获取指定位置的字段访问信息 */
+    fieldAccessAt(model: editor.ITextModel, position: IPosition): FieldsAccessAt | undefined {
+        let prevDef: VariableAccessAt | undefined;
         const { globals } = this.groupedTags(model);
         for (const d of globals) {
             for (const [refIndex, ref] of d.references.entries()) {
@@ -465,7 +485,9 @@ export class CompileResult {
             }
         }
         if (!prevDef) return undefined;
+        // 获取从变量开始到查找位置的源码
         const chain = model.getValueInRange(Range.fromPositions(Range.getStartPosition(prevDef.range), position));
+        // 用 `!.` 和 `.` 切分
         const chainParts = chain.split(/\s*(?:!\.|\.)\s*/);
         if (
             // 至少包含变量名和当前位置的字段名
@@ -481,5 +503,11 @@ export class CompileResult {
             return undefined;
         }
         return { def: prevDef, fields: chainParts.slice(1) };
+    }
+    /** 获取指定位置的字段访问信息 */
+    accessAt(model: editor.ITextModel, position: IPosition): FieldsAccessAt | undefined {
+        const v = this.variableAccessAt(model, position);
+        if (v) return { def: v, fields: [] };
+        return this.fieldAccessAt(model, position);
     }
 }

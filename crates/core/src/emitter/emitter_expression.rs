@@ -19,27 +19,83 @@ use super::{
 };
 
 impl<'s> Emitter<'s> {
-    fn declare_callable(&mut self, callable: &'s Callable<'s>) {
+    fn declare_call(
+        &mut self,
+        this: Option<&'s Expression<'s>>,
+        l: &'s TokenRef<'s>,
+        r: &'s TokenRef<'s>,
+        callable: &'s Callable<'s>,
+        args: &'s [ArrayElement<'s>],
+    ) {
+        let start = this.map_or_else(|| callable.range().start, |c| c.range().start);
+        let end = r.range().end;
+        self.diagnostics.push(SourceDiagnostic::new(
+            start..end,
+            if this.is_some() {
+                DiagnosticCode::ExtensionCall
+            } else {
+                DiagnosticCode::FunctionCall
+            },
+        ));
+        if let Some(this) = this {
+            self.diagnostics.push(SourceDiagnostic::new(
+                this.range(),
+                DiagnosticCode::ArgumentExtension,
+            ));
+        }
+        self.diagnostics.push(SourceDiagnostic::new(
+            callable.range(),
+            DiagnosticCode::Callable,
+        ));
+        self.diagnostics.push(SourceDiagnostic::new(
+            l.range(),
+            DiagnosticCode::ArgumentStart,
+        ));
+        args.iter().for_each(|arg| {
+            match arg.deref() {
+                ArrayElementBase::Element(_) => (),
+                ArrayElementBase::Spread(sp, _) => {
+                    self.diagnostics.push(SourceDiagnostic::new(
+                        sp.range(),
+                        DiagnosticCode::ArgumentSpread,
+                    ));
+                }
+                ArrayElementBase::Range(_) => unreachable!(),
+            };
+            if let Some(comma) = arg.tail_comma() {
+                self.diagnostics.push(SourceDiagnostic::new(
+                    comma.range(),
+                    DiagnosticCode::ArgumentComma,
+                ));
+            }
+        });
+        self.diagnostics.push(SourceDiagnostic::new(
+            r.range(),
+            DiagnosticCode::ArgumentEnd,
+        ));
         match callable {
             Callable::Expression(callable) => {
                 // 此时的 Grouping 用于标记 callable 为复杂表达式以启用空安全，跳过 declare_expression 的 Grouping 处理
+                let mut declared = false;
                 if let Expression::Grouping(_, inner, _) = callable.as_ref() {
                     if inner.is_variable() || inner.is_grouping() {
                         self.declare_expression(inner);
-                        return;
+                        declared = true;
                     }
                 }
-                self.declare_expression(callable);
+                if !declared {
+                    self.declare_expression(callable);
+                }
             }
             Callable::Type(_) => (),
         }
-    }
-    fn declare_argument(&mut self, arg: &'s ArrayElement<'s>) {
-        match arg.deref() {
-            ArrayElementBase::Element(expression) => self.declare_expression(expression),
-            ArrayElementBase::Spread(_, expression) => self.declare_expression(expression),
-            ArrayElementBase::Range(_) => unreachable!(),
-        }
+        args.iter().for_each(|arg| {
+            match arg.deref() {
+                ArrayElementBase::Element(expression) => self.declare_expression(expression),
+                ArrayElementBase::Spread(_, expression) => self.declare_expression(expression),
+                ArrayElementBase::Range(_) => unreachable!(),
+            };
+        });
     }
     pub fn declare_expression(&mut self, outer: &'s Expression<'s>) {
         match outer {
@@ -97,18 +153,12 @@ impl<'s> Emitter<'s> {
                     self.declare_expression(&range.2);
                 }
             }),
-            Call(callable, _, expressions, _) => {
-                self.declare_callable(callable);
-                expressions
-                    .iter()
-                    .for_each(|arg| self.declare_argument(arg));
+            Call(callable, l, expressions, r) => {
+                self.declare_call(None, l, r, callable, expressions);
             }
-            Extension(expression, _, callable, _, expressions, _) => {
+            Extension(expression, _, callable, l, expressions, r) => {
                 self.declare_expression(expression);
-                self.declare_callable(callable);
-                expressions
-                    .iter()
-                    .for_each(|arg| self.declare_argument(arg));
+                self.declare_call(Some(expression), l, r, callable, expressions);
             }
             Access(expression, _, _) => self.declare_expression(expression),
             Index(expression, _, prop, _) => {

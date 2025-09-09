@@ -309,8 +309,8 @@ export class CompletionItemProvider extends Provider implements languages.Comple
     ): Promise<CustomCompletionItem[]> {
         const compiled = await this.getCompileResult(model);
         if (!compiled) return [];
-        const access = compiled.accessAt(model, position);
-        if (!access) return [];
+        const access = compiled.fieldAccessAt(model, position);
+        if (!access || access.fields.length === 0) return [];
         const { def, fields } = access;
         if ('definition' in def.def) {
             // TODO: suggests local item fields
@@ -388,7 +388,7 @@ export class CompletionItemProvider extends Provider implements languages.Comple
         // suggest variables
         let char: string | undefined;
         let range: IRange;
-        const def = compiled.definitionAt(model, position);
+        const def = compiled.variableAccessAt(model, position);
         if (def) {
             if (def.ref == null) {
                 // 输入位置是变量定义

@@ -26,7 +26,7 @@ export class DocumentHighlightProvider extends Provider implements languages.Doc
     ): Promise<languages.DocumentHighlight[] | undefined> {
         const compiled = await this.getCompileResult(model);
         if (!compiled) return undefined;
-        const def = compiled.definitionAt(model, position)?.def;
+        const def = compiled.variableAccessAt(model, position)?.def;
         if (!def) return undefined;
         const links: languages.DocumentHighlight[] = def.references.map((u) => {
             const { code, range } = u;
