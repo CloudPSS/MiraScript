@@ -330,6 +330,15 @@ body > .playground {
     border: 1px solid transparent;
     white-space: pre-wrap;
     word-break: break-word;
+
+    &.html {
+      display: block;
+      place-self: stretch;
+      min-height: 320px;
+      height: calc(100% - 32px);
+      padding: 0;
+      background: var(--bg-primary);
+    }
   }
 
   .compiled-code {

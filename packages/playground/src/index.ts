@@ -2,67 +2,18 @@ import './index.css';
 import * as monaco from '@private/monaco-editor';
 import { KeyCode, KeyMod } from '@private/monaco-editor';
 import { registerMiraScript } from '@mirascript/monaco';
-import {
-    type VmAny,
-    type VmScript,
-    VmExtern,
-    createVmContext,
-    compile,
-    VmModule,
-    VmFunction,
-    type InputMode,
-    getVmFunctionInfo,
-} from '@mirascript/mirascript';
-import { VmSharedContext } from '@mirascript/mirascript/subtle';
+import { type VmScript, compile, type InputMode } from '@mirascript/mirascript';
 import { ConsoleManager } from './console-manager.js';
 import { EXAMPLES } from './examples.js';
 import { syntaxHighlight, print } from './utils.js';
 import { getState, setState, type ThemeMode } from './state-manager.js';
-
-const arr = [1, 2, [1, 2], { x: 0 }];
-arr[100] = 100; // make a sparse array
+import { globals } from './globals.js';
 
 // 初始化控制台管理器
 const consoleManager = new ConsoleManager(document.querySelector<HTMLDivElement>('#console-output')!);
 
-/** 创建简单的 debug_print 函数 */
-function debugPrint(...args: VmAny[]) {
-    const messages = args.map(async (arg) => {
-        if (typeof arg === 'string') return arg;
-        return print(arg);
-    });
-    consoleManager.log(Promise.all(messages).then((message) => message.join(' ')));
-}
-
-const globals = createVmContext(
-    {
-        extern_arr: new VmExtern(arr),
-        obj: { a: [], b: 1, c: '2', d: { e: 3 } },
-        arr: [1, 2, 3],
-        long_str: 'Long string content'.repeat(10000),
-        mod: new VmModule('test', {
-            s: VmSharedContext.sin,
-            inner: new VmModule('inner', {
-                s: VmSharedContext.sin,
-            }),
-        }),
-        debug_print: VmFunction(debugPrint, getVmFunctionInfo(VmSharedContext.debug_print)),
-        name: 'MiraScript', // for template examples
-    },
-    {
-        extern_obj: {
-            a: [],
-            b: 1,
-            c: '2',
-            d: { e: 3 },
-            s: VmSharedContext.sin,
-            m: VmSharedContext.matrix,
-        },
-        globalThis,
-    },
-);
-
-registerMiraScript(monaco, () => globals);
+const g = globals(consoleManager);
+registerMiraScript(monaco, () => g);
 
 let modelIndex = 1;
 const createModel = () => {
@@ -302,18 +253,25 @@ async function compileScript(): Promise<VmScript | undefined> {
 async function runScript(script: VmScript): Promise<void> {
     const execStart = performance.now();
     try {
-        const execResult = script(globals);
+        const execResult = script(g);
         const execEnd = performance.now();
-        const resultText = await print(execResult);
-        elResultOutput.innerHTML = /*html*/ `
-            <div class="section-title">Execution Result:</div>
-            <div class="result-success">${resultText}</div>
-        `;
+        if (typeof execResult == 'string' && /^\s*<!\s*doctype\s+html\s*>/iu.test(execResult)) {
+            elResultOutput.innerHTML = /* html */ `
+                <div class="section-title">Execution Result:</div>
+                <iframe class="result-success html" srcdoc="${execResult.replaceAll('"', '&quot;')}"></iframe>
+            `;
+        } else {
+            const resultText = await print(execResult);
+            elResultOutput.innerHTML = /* html */ `
+                <div class="section-title">Execution Result:</div>
+                <div class="result-success">${resultText}</div>
+            `;
+        }
         consoleManager.info(`Execution completed successfully in ${(execEnd - execStart).toFixed(3)}ms`);
     } catch (ex) {
         const execEnd = performance.now();
         const errorText = String(ex);
-        elResultOutput.innerHTML = /*html*/ `
+        elResultOutput.innerHTML = /* html */ `
             <div class="section-title">Execution Error:</div>
             <div class="result-error">${errorText}</div>
         `;

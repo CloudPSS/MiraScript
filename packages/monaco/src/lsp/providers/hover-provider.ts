@@ -15,7 +15,8 @@ export class HoverProvider extends Provider implements languages.HoverProvider {
         let range: IRange | undefined;
         if ('name' in def) {
             const globals = await this.getContext(model);
-            const { script, doc } = valueDoc(def.name, globals.get(def.name), false);
+            const value = globals.has(def.name) ? globals.get(def.name) : undefined;
+            const { script, doc } = valueDoc(def.name, value, false);
             content = {
                 value: codeblock(`\0(global) ${script}`) + doc,
             };
