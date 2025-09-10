@@ -13,9 +13,19 @@ fn array_element<'s, E: Clone + PartialEq + 's>(
     element: impl Parser<'s, E>,
     range: impl Parser<'s, Range<'s>>,
     spread: impl Parser<'s, E>,
+    mut missing: impl FnMut(usize) -> E + Copy,
 ) -> impl Parser<'s, _ArrayElement<'s, E>> {
     move |i: &mut Input<'s>| {
         let first = peek(any).parse_next(i)?;
+        if *first == Operator::Comma {
+            let comma = token(Operator::Comma).parse_next(i)?;
+            let pos = comma.range.start;
+            let missing = missing(pos);
+            return Ok(ListItem::new_with_comma(
+                ArrayElementBase::Element(Box::new(missing)),
+                comma,
+            ));
+        }
         if *first == Operator::CloseBracket
             || *first == Operator::CloseBrace
             || *first == Operator::CloseParen
@@ -63,10 +73,12 @@ pub(super) fn array_base<'t, 's: 't, E: Clone + PartialEq + 's>(
     element: impl Parser<'s, E>,
     range: impl Parser<'s, Range<'s>>,
     spread: impl Parser<'s, E>,
+    missing: impl FnMut(usize) -> E + Copy,
 ) -> impl Parser<'s, _ArrayLike<'s, E>> {
     move |i: &mut Input<'s>| {
         let open = open.parse_next(i)?;
-        let parts: Vec<_> = repeat(0.., array_element(element, range, spread)).parse_next(i)?;
+        let parts: Vec<_> =
+            repeat(0.., array_element(element, range, spread, missing)).parse_next(i)?;
         let close = close.parse_next(i)?;
         Ok((open, parts, close))
     }

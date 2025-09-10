@@ -46,11 +46,11 @@ fn unknown_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     .parse_next(i)
 }
 
-pub fn expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
+pub(super) fn expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     alt((basic_expression, block_like_expression, unknown_expression)).parse_next(i)
 }
 
-pub fn expression_or_insert<'s>(
+pub(super) fn expression_or_insert<'s>(
     mut insert_cond: impl FnMut(&'s Token<'s>) -> bool + Copy,
 ) -> impl Parser<'s, Expression<'s>> {
     move |i: &mut Input<'s>| {
@@ -63,10 +63,14 @@ pub fn expression_or_insert<'s>(
         if *next != TokenKind::Eof && !insert_cond(next) {
             return Err(winnow::error::ErrMode::Backtrack(EmptyError));
         }
-        Ok(Expression::unknown_range(
-            vec![Token::empty(start).into()],
-            start..start,
-            DiagnosticCode::ExpressionExpected,
-        ))
+        Ok(expression_expected(start))
     }
+}
+
+pub(super) fn expression_expected<'s>(pos: usize) -> Expression<'s> {
+    Expression::unknown_range(
+        vec![Token::empty(pos).into()],
+        pos..pos,
+        DiagnosticCode::ExpressionExpected,
+    )
 }

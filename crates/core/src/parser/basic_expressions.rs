@@ -8,7 +8,7 @@ use winnow::{
 use super::{
     array_helper::array_base,
     block_expressions::block_like_expression,
-    expressions::expression,
+    expressions::{expression, expression_expected},
     helper::{literal_token, token, token_or_insert, variable_token},
     patterns::pattern,
     prelude::*,
@@ -60,6 +60,7 @@ fn record_like<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
         expression,
         expression,
         expression,
+        expression_expected,
     )
     .parse_next(i)?;
     let result = if parts.len() == 1 && !parts[0].has_tail_comma() && parts[0].is_unnamed() {
@@ -99,6 +100,7 @@ fn array<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
         expression,
         range,
         spread,
+        expression_expected,
     )
     .map(|(open, parts, close)| Expression::Array(open, parts, close))
     .parse_next(i)
@@ -173,6 +175,7 @@ fn arg_list<'s>(
             expression,
             fail,
             expression,
+            expression_expected,
         )
         .parse_next(i)
     }

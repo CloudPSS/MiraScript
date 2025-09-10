@@ -59,12 +59,16 @@ pub(super) fn pattern_or_insert<'s>(
         if *next != TokenKind::Eof && !insert_cond(next) {
             return Err(winnow::error::ErrMode::Backtrack(EmptyError));
         }
-        Ok(Pattern::unknown_range(
-            vec![Token::empty(start).into()],
-            start..start,
-            DiagnosticCode::PatternExpected,
-        ))
+        Ok(pattern_expected(start))
     }
+}
+
+pub(super) fn pattern_expected<'s>(pos: usize) -> Pattern<'s> {
+    Pattern::unknown_range(
+        vec![Token::empty(pos).into()],
+        pos..pos,
+        DiagnosticCode::PatternExpected,
+    )
 }
 
 pub(super) fn pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
@@ -277,6 +281,7 @@ fn record_like_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
             omit_named,
             unnamed,
             pattern_spread(rebind),
+            pattern_expected,
         )
         .parse_next(i)?;
         let len = parts.len();
@@ -343,8 +348,15 @@ pub(crate) fn array_pattern_like<'s>(
         .parse_next(i)
     };
     move |i: &mut Input<'s>| {
-        let (open, parts, close) =
-            array_base(open, close, element_pattern, fail, pattern_spread(rebind)).parse_next(i)?;
+        let (open, parts, close) = array_base(
+            open,
+            close,
+            element_pattern,
+            fail,
+            pattern_spread(rebind),
+            pattern_expected,
+        )
+        .parse_next(i)?;
         Ok(Pattern::Array(open, parts, close))
     }
 }
