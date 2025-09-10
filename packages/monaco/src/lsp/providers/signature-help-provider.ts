@@ -1,7 +1,7 @@
 import { DiagnosticCode } from '@mirascript/wasm';
 import { type editor, type languages, type CancellationToken, Position, Range } from '../../monaco-api.js';
 import { Provider } from './base.js';
-import { getDeep, localParamList, paramSignature, strictContainsPosition, valueDoc } from '../utils.js';
+import { fnSignature, getDeep, localParamSignature, strictContainsPosition } from '../utils.js';
 import { getVmFunctionInfo } from '@mirascript/mirascript';
 
 /** @inheritdoc */
@@ -47,40 +47,62 @@ export class SignatureHelpProvider extends Provider implements languages.Signatu
         const callableInfo = compiled.accessAt(model, Range.getEndPosition(callableRef.range));
         if (!callableInfo) return undefined;
 
+        let sig;
+        if ('name' in callableInfo.def.def) {
+            const { name } = callableInfo.def.def;
+            const globals = await this.getContext(model);
+            const callable = getDeep(globals.get(name), callableInfo.fields);
+            const info = getVmFunctionInfo(callable);
+            if (!info) return undefined;
+            sig = { ...fnSignature(name, info), name, summary: info.summary, paramDocs: info.params ?? {} };
+        } else if (callableInfo.def.def.fn) {
+            const { fn, definition } = callableInfo.def.def;
+            const params = localParamSignature(model, fn);
+            const name = model.getValueInRange(definition.range);
+            sig = { params, returns: '', name, summary: '', paramDocs: {} };
+        }
+
+        if (!sig) return undefined;
         const signature: languages.SignatureInformation = {
             label: '',
             parameters: [],
         };
-        if ('name' in callableInfo.def.def) {
-            const globals = await this.getContext(model);
-            const callable = getDeep(globals.get(callableInfo.def.def.name), callableInfo.fields);
-            const info = getVmFunctionInfo(callable);
-            if (!info) return undefined;
-            const doc = valueDoc(callableInfo.def.def.name, callable, false);
-            signature.label = doc.script;
-            signature.documentation = {
-                value: doc.doc,
-            };
-            for (const p of Object.keys(info.paramsType ?? {})) {
-                signature.parameters.push({
-                    label: paramSignature(p, info),
-                });
+        if (invoke.code === DiagnosticCode.ExtensionCall) {
+            const thisArg = sig.params[0];
+            if (thisArg && !thisArg.startsWith('..')) {
+                sig.params.shift();
+                const s = thisArg.includes(' ') ? `(${thisArg})` : thisArg;
+                signature.label = `fn ${s}::${sig.name}(`;
+            } else {
+                signature.label = `fn ()::${sig.name}(`;
             }
-        } else if (callableInfo.def.def.fn) {
-            const { fn, definition } = callableInfo.def.def;
-            const params = localParamList(model, fn);
-            signature.label = `fn ${model.getValueInRange(definition.range)}(${params.join(', ')})`;
-            for (const p of params) {
-                signature.parameters.push({ label: p });
+        } else {
+            signature.label = `fn ${sig.name}(`;
+        }
+        signature.documentation = { value: sig.summary ?? '' };
+        for (let i = 0; i < sig.params.length; i++) {
+            const p = sig.params[i]!;
+            const start = signature.label.length;
+            signature.parameters.push({
+                label: [start, start + p.length],
+                documentation: { value: sig.paramDocs[p] ?? '' },
+            });
+            if (i === sig.params.length - 1) {
+                signature.label += p;
+            } else {
+                signature.label += p + ', ';
             }
         }
+        signature.label += ')' + sig.returns;
 
-        if (!signature.label) return undefined;
-        let pos = invoke.code === DiagnosticCode.FunctionCall ? 0 : 1;
+        let pos = 0;
         for (const ref of invoke.references) {
             if (ref.code === DiagnosticCode.ArgumentSpread) pos = Number.NaN;
             if (ref.code !== DiagnosticCode.ArgumentComma || Range.isEmpty(ref.range)) continue;
-            if (Position.isBeforeOrEqual(Range.getEndPosition(ref.range), position)) {
+            if (
+                Position.isBeforeOrEqual(Range.getEndPosition(ref.range), position) &&
+                !sig.params[pos]?.startsWith('..')
+            ) {
                 pos++;
             }
         }

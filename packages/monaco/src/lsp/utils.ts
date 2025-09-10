@@ -16,31 +16,44 @@ import {
 import { operations, serializePropName, serializeString } from '@mirascript/mirascript/subtle';
 import type { LocalDefinition } from './compile-result.js';
 
-/** 生成参数签名 */
-export function paramSignature(param: string, info: VmFunctionInfo | undefined): string {
-    const type = info?.paramsType?.[param];
-    return type ? `${param}: ${type}` : param;
+/** 生成函数签名 */
+function globalParamsSignature(info: VmFunctionInfo | undefined): string[] {
+    if (!info?.params) return ['..'];
+    const paramItems = Object.keys(info.params).map((key) => {
+        const type = info.paramsType?.[key];
+        return type ? `${key}: ${type}` : key;
+    });
+    return paramItems;
 }
 /** 生成函数签名 */
-export function signature(id: string | undefined, info: VmFunctionInfo): string {
+export function fnSignature(
+    id: string | undefined,
+    info: VmFunctionInfo,
+): {
+    params: string[];
+    returns: string;
+    /** @inheritdoc */
+    toString(): string;
+} {
     const prefix = id ? `fn ${id}` : 'fn';
-    let params;
-    if (!info.params) {
-        params = '(..)';
-    } else {
-        const paramItems = Object.keys(info.params).map((key) => paramSignature(key, info));
-        const len = paramItems.reduce((acc, item) => acc + item.length, 0);
-        if (len <= 60) {
-            params = `(${paramItems.join(', ')})`;
-        } else {
-            params = `(\n${paramItems.map((item) => `  ${item},`).join('\n')}\n)`;
-        }
-    }
+    const params = globalParamsSignature(info);
     const returns = info.returnsType ? ` -> ${info.returnsType}` : '';
-    return `${prefix}${params}${returns}`;
+    return {
+        params,
+        returns,
+        toString() {
+            let p;
+            if (this.params.length > 1 && this.params.reduce((a, b) => a + b.length, 0) > 60) {
+                p = `(\n${this.params.map((item) => `  ${item},`).join('\n')}\n)`;
+            } else {
+                p = `(${this.params.join(', ')})`;
+            }
+            return `${prefix}${p}${this.returns}`;
+        },
+    };
 }
 /** 生成函数参数 */
-export function localParamList(model: editor.ITextModel, info: NonNullable<LocalDefinition['fn']>): string[] {
+export function localParamSignature(model: editor.ITextModel, info: NonNullable<LocalDefinition['fn']>): string[] {
     const {
         args,
         scope: { params },
@@ -67,7 +80,7 @@ export function localParamList(model: editor.ITextModel, info: NonNullable<Local
 export function paramsList(model: editor.ITextModel, info: VmFunctionInfo | LocalDefinition['fn'] | undefined): string {
     if (!info) return '(..)';
     if ('scope' in info) {
-        return `(${localParamList(model, info).join(', ')})`;
+        return `(${localParamSignature(model, info).join(', ')})`;
     } else {
         if (!info.params) return '(..)';
         const paramItems = Object.keys(info.params).join(', ');
@@ -196,7 +209,7 @@ export function valueDoc(name: string, value: VmAny, field: boolean): { script: 
     const info = getVmFunctionInfo(value);
     if (info) {
         return {
-            script: signature(name, info),
+            script: fnSignature(name, info).toString(),
             doc: globalFnDoc(info),
         };
     }

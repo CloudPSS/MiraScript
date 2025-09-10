@@ -188,6 +188,7 @@ function initTabs() {
 }
 
 const overlay = monaco.utils.createOverflowWidgetsDomNode(elEditor);
+overlay.style.width = '50vw';
 const editor = monaco.editor.create(elEditor, {
     fontFamily: 'var(--code-font)',
     useShadowDOM: true,
