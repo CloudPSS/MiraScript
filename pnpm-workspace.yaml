@@ -3,6 +3,7 @@ publicHoistPattern:
   - '*prettier*'
   - '*commitlint*'
   - lint-staged
+  - '@typescript/*'
 
 shellEmulator: true
 
