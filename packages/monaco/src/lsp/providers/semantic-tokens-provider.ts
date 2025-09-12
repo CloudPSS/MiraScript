@@ -2,22 +2,41 @@ import { isVmFunction, isVmModule } from '@mirascript/mirascript';
 import { DiagnosticCode } from '@mirascript/wasm';
 import { Range, type CancellationToken, type editor, type languages } from '../../monaco-api.js';
 import { Provider } from './base.js';
-import { ParameterDefinitionType } from '../compile-result.js';
+
+enum TokenType {
+    VARIABLE,
+    VARIABLE_MUTABLE,
+    CONSTANT,
+    GLOBAL,
+    FUNCTION,
+    MODULE,
+    PROPERTY,
+    KEYWORD_CONTROL,
+    PARAM,
+    PARAM_MUTABLE,
+}
+
+const TOKEN_TYPES: Record<TokenType, string> = {
+    [TokenType.VARIABLE]: 'variable.other.constant',
+    [TokenType.VARIABLE_MUTABLE]: 'variable',
+    [TokenType.CONSTANT]: 'variable.other.constant',
+    [TokenType.GLOBAL]: 'variable',
+    [TokenType.FUNCTION]: 'entity.name.function',
+    [TokenType.MODULE]: 'variable.other.constant',
+    [TokenType.PROPERTY]: 'support.type.property-name',
+    [TokenType.KEYWORD_CONTROL]: 'keyword.control',
+    [TokenType.PARAM]: 'variable.other.constant.emphasis',
+    [TokenType.PARAM_MUTABLE]: 'variable.emphasis',
+};
 
 /** @inheritdoc */
 export class DocumentSemanticTokensProvider extends Provider implements languages.DocumentSemanticTokensProvider {
     /** @inheritdoc */
     getLegend(): languages.SemanticTokensLegend {
+        const tokenTypes = Object.values(TOKEN_TYPES);
         return {
-            tokenTypes: [
-                '',
-                'variable',
-                'entity.name.function',
-                'variable.other.constant',
-                'support.type.property-name',
-                'keyword.control',
-            ],
-            tokenModifiers: ['strong', 'emphasis', 'underline', 'strikethrough'],
+            tokenTypes,
+            tokenModifiers: tokenTypes.map((_) => ''),
         };
     }
     /** @inheritdoc */
@@ -25,7 +44,7 @@ export class DocumentSemanticTokensProvider extends Provider implements language
         model: editor.ITextModel,
         lastResultId: string | null,
         token: CancellationToken,
-    ): Promise<languages.SemanticTokens | languages.SemanticTokensEdits | null | undefined> {
+    ): Promise<languages.SemanticTokens | null | undefined> {
         const resultId = `${model.uri.toString()}?${model.getVersionId()}`;
         const compiled = await this.getCompileResult(model);
         if (!compiled) {
@@ -39,59 +58,62 @@ export class DocumentSemanticTokensProvider extends Provider implements language
         for (const { code, range, references } of compiled.tags) {
             if (Range.isEmpty(range)) continue;
 
-            let tokenType = -1;
-            let tokenModifiers = 0;
+            let tokenType: TokenType | -1 = -1;
             let onlyReferences = false;
             // eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check
             switch (code) {
                 case DiagnosticCode.GlobalVariable: {
                     const id = model.getValueInRange(range);
                     if (id.startsWith('@')) {
-                        tokenType = 3;
+                        tokenType = TokenType.CONSTANT;
                     } else if (isVmFunction(globals.get(id))) {
-                        tokenType = 2;
+                        tokenType = TokenType.FUNCTION;
                     } else if (isVmModule(globals.get(id))) {
-                        tokenModifiers += 1;
-                        tokenType = 3;
+                        tokenType = TokenType.MODULE;
                     } else {
-                        tokenType = 1;
+                        tokenType = TokenType.GLOBAL;
                     }
-                    // tokenModifiers += 1 << 2; // 全局变量添加下划线
+                    break;
+                }
+                case DiagnosticCode.LocalFunction: {
+                    tokenType = TokenType.FUNCTION;
                     break;
                 }
                 case DiagnosticCode.ParameterMutable:
                 case DiagnosticCode.ParameterSubPatternMutable:
-                case DiagnosticCode.ParameterMutableRest:
-                case DiagnosticCode.LocalMutable: {
-                    tokenType = 1;
+                case DiagnosticCode.ParameterMutableRest: {
+                    tokenType = TokenType.PARAM_MUTABLE;
                     break;
                 }
-                case DiagnosticCode.LocalFunction: {
-                    tokenType = 2;
+                case DiagnosticCode.LocalMutable: {
+                    tokenType = TokenType.VARIABLE_MUTABLE;
                     break;
                 }
                 case DiagnosticCode.ParameterImmutable:
                 case DiagnosticCode.ParameterSubPatternImmutable:
-                case DiagnosticCode.ParameterImmutableRest:
-                case DiagnosticCode.LocalImmutable:
+                case DiagnosticCode.ParameterImmutableRest: {
+                    tokenType = TokenType.PARAM;
+                    break;
+                }
+                case DiagnosticCode.LocalImmutable: {
+                    tokenType = TokenType.VARIABLE;
+                    break;
+                }
                 case DiagnosticCode.LocalConst: {
-                    tokenType = 3;
+                    tokenType = TokenType.CONSTANT;
                     break;
                 }
                 case DiagnosticCode.RecordFieldIdName: {
-                    tokenType = 4;
+                    tokenType = TokenType.PROPERTY;
                     break;
                 }
                 case DiagnosticCode.ForExpression: {
-                    tokenType = 5; // 标记为控制流关键字
+                    tokenType = TokenType.KEYWORD_CONTROL; // 标记为控制流关键字
                     onlyReferences = true; // for 表达式本身不需要标记
                     break;
                 }
             }
             if (tokenType < 0) continue;
-            if (ParameterDefinitionType.includes(code as ParameterDefinitionType)) {
-                tokenModifiers |= 1 << 1;
-            }
             const { startLineNumber, startColumn, endColumn } = range;
             const length = endColumn - startColumn;
             if (!onlyReferences) {
@@ -100,7 +122,7 @@ export class DocumentSemanticTokensProvider extends Provider implements language
                     col: startColumn - 1,
                     length,
                     tokenType,
-                    tokenModifiers,
+                    tokenModifiers: 1 << tokenType,
                 });
             }
             for (const ref of references) {
@@ -109,7 +131,7 @@ export class DocumentSemanticTokensProvider extends Provider implements language
                     col: ref.range.startColumn - 1,
                     length: ref.range.endColumn - ref.range.startColumn,
                     tokenType,
-                    tokenModifiers,
+                    tokenModifiers: 1 << tokenType,
                 });
             }
         }

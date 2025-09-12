@@ -43,7 +43,7 @@ export const entries = VmLib(
         if (isVmArray(data)) {
             return Array.from({ length: data.length }, (_, i) => ({ 0: i, 1: data[i] ?? null }));
         }
-        return _entries(data).map(([key, value]) => ({ 0: key, 1: value }));
+        return _entries(data).map(([key, value]) => ({ 0: key, 1: value ?? null }));
     },
     {
         summary: '返回数组或记录的键值对列表',

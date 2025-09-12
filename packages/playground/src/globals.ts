@@ -58,6 +58,7 @@ export function globals(console: ConsoleManager): VmContext {
                 d: { e: 3 },
                 s: VmSharedContext.sin,
                 m: VmSharedContext.matrix,
+                undefined: undefined,
             },
             globalThis,
         },

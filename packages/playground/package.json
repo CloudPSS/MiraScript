@@ -12,7 +12,7 @@
     "@mirascript/mirascript": "workspace:*",
     "@mirascript/monaco": "workspace:*",
     "@mirascript/wasm": "workspace:*",
-    "@private/monaco-editor": "^0.0.48"
+    "@private/monaco-editor": "^0.0.49"
   },
   "devDependencies": {
     "fflate": "^0.8.2",
