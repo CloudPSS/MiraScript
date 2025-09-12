@@ -289,10 +289,7 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                     /(\/\*@whitespace*<)(\w+@whitespace*)([.\w]*)(>@whitespace*\*\/)/,
                     ['comment.doc', 'type', 'entity.name.label', 'comment.doc'],
                 ],
-                [
-                    /(\s*)(\(module\))(\s*)(@identifier)/,
-                    ['', 'entity.name.label', '', 'variable.other.constant.strong'],
-                ],
+                [/(\s*)(\(module\))(\s*)(@identifier)/, ['', 'entity.name.label', '', 'entity.name.namespace']],
 
                 [/(fn)(@whitespace+)(@identifier)$/, ['keyword.fn.doc', '', 'entity.name.function.doc']],
                 [

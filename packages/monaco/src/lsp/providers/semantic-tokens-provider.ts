@@ -22,7 +22,7 @@ const TOKEN_TYPES: Record<TokenType, string> = {
     [TokenType.CONSTANT]: 'variable.other.constant',
     [TokenType.GLOBAL]: 'variable',
     [TokenType.FUNCTION]: 'entity.name.function',
-    [TokenType.MODULE]: 'variable.other.constant',
+    [TokenType.MODULE]: 'entity.name.namespace',
     [TokenType.PROPERTY]: 'support.type.property-name',
     [TokenType.KEYWORD_CONTROL]: 'keyword.control',
     [TokenType.PARAM]: 'variable.other.constant.emphasis',
