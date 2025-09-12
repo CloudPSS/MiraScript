@@ -147,7 +147,7 @@ export function getNumbers(args: readonly VmAny[]): number[] {
 export function arrayLen(len: number | null | undefined): number {
     if (len == null || Number.isNaN(len) || len <= 0) return 0;
     len = Math.trunc(len);
-    if (len > VM_ARRAY_MAX_LENGTH) throwError(`Array length exceeds maximum`, null);
+    if (len > VM_ARRAY_MAX_LENGTH) throwError(`Array length exceeds maximum limit of ${VM_ARRAY_MAX_LENGTH}`, null);
     return len;
 }
 

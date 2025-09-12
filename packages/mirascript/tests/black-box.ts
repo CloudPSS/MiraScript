@@ -1,6 +1,6 @@
 import test from 'ava';
 import fs from 'node:fs';
-import { compile, createVmContext, VmError, VmFunction, VmModule } from '@mirascript/mirascript';
+import { compile, createVmContext, VmError, VmFunction, VmModule, configCheckpoint } from '@mirascript/mirascript';
 
 const TEST_DIR = new URL('../../../tests', import.meta.url);
 
@@ -13,6 +13,7 @@ const compileAndRun = test.macro<[string]>({
         const expected = fs.existsSync(expectedUrl) ? await fs.promises.readFile(expectedUrl, 'utf8') : null;
         const script = await compile(code, { pretty: true, sourceMap: true, fileName: codeUrl.href });
         const timeout_fn: Array<() => unknown> = [];
+        configCheckpoint(file.endsWith('_huge.mira') ? 1000 : undefined);
         let result = '';
         script(
             createVmContext(

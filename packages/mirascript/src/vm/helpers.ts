@@ -1,7 +1,15 @@
 import { $AssertInit, $ToNumber } from './operations.js';
 import type { VmFunctionLike } from './types/function.js';
 import { DefaultVmContext, type VmContext } from './types/context.js';
-import { isVmConst, VmFunction, type VmConst, type VmAny, type VmArray, type VmValue } from './types/index.js';
+import {
+    isVmConst,
+    VmFunction,
+    type VmConst,
+    type VmAny,
+    type VmArray,
+    type VmValue,
+    VM_ARRAY_MAX_LENGTH,
+} from './types/index.js';
 const { isFinite } = Number;
 
 export const Vargs = (varags: VmAny[]): VmArray => {
@@ -34,10 +42,9 @@ export const Upvalue = (value: VmAny): VmValue => {
     return value;
 };
 
-const MAX_ARRAY_LENGTH = 1_000_000; // 最大数组长度
 const assertArrayLength = (start: number, end: number) => {
-    if (end - start > MAX_ARRAY_LENGTH) {
-        throw new RangeError(`Array length exceeds maximum limit of ${MAX_ARRAY_LENGTH}`);
+    if (end - start > VM_ARRAY_MAX_LENGTH) {
+        throw new RangeError(`Array length exceeds maximum limit of ${VM_ARRAY_MAX_LENGTH}`);
     }
 };
 const isEmptyRange = (start: number, end: number) => {
@@ -102,11 +109,11 @@ export function CpExit(): void {
     }
 }
 /** 设置检查点超时时间 */
-export function configCheckpoint(timeout?: number): void {
+export function configCheckpoint(timeout = 100): void {
     if (typeof timeout !== 'number' || timeout <= 0 || Number.isNaN(timeout)) {
         throw new RangeError('Invalid timeout value');
     }
-    cpTimeout = timeout ?? 100;
+    cpTimeout = timeout;
 }
 /** 默认执行上下文 */
 export function GlobalFallback(): VmContext {
