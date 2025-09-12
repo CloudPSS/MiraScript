@@ -43,7 +43,11 @@ export function fnSignature(
         returns,
         toString() {
             let p;
-            if (this.params.length > 1 && this.params.reduce((a, b) => a + b.length, 0) > 60) {
+            if (
+                this.params.length >= 1 &&
+                (prefix.length + this.returns.length > 60 ||
+                    prefix.length + this.returns.length + this.params.reduce((a, b) => a + b.length, 0) > 60)
+            ) {
                 p = `(\n${this.params.map((item) => `  ${item},`).join('\n')}\n)`;
             } else {
                 p = `(${this.params.join(', ')})`;

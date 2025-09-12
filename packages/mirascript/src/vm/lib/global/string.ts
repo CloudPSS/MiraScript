@@ -1,5 +1,5 @@
 import { $ToString } from '../../operations.js';
-import { required, VmLib } from '../_helpers.js';
+import { expectArray, required, VmLib } from '../_helpers.js';
 
 export const chars = VmLib(
     (str) => {
@@ -123,5 +123,19 @@ export const split = VmLib(
         params: { str: '要拆分的字符串', separator: '分隔符' },
         paramsType: { str: 'string', separator: 'string' },
         returnsType: 'string[]',
+    },
+);
+
+export const join = VmLib(
+    (arr, separator = '') => {
+        expectArray('arr', arr, null);
+        const s = $ToString(separator);
+        return arr.map((v) => $ToString(v)).join(s);
+    },
+    {
+        summary: '将字符串数组连接为单个字符串',
+        params: { arr: '要连接的字符串数组', separator: '分隔符' },
+        paramsType: { arr: 'string[]', separator: 'string' },
+        returnsType: 'string',
     },
 );
