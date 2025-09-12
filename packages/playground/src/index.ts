@@ -151,6 +151,7 @@ const editor = monaco.editor.create(elEditor, {
     wrappingIndent: 'indent',
     theme: systemTheme.matches ? 'vs-dark' : 'vs', // 初始主题，会在后面更新
     tabSize: 2,
+    minimap: { renderCharacters: false },
     'semanticHighlighting.enabled': true,
     model: createModel(),
 });
@@ -232,6 +233,8 @@ async function compileScript(): Promise<VmScript | undefined> {
 
         return script;
     } catch (ex) {
+        // eslint-disable-next-line no-console
+        console.error('\u001B[41;37m MiraScript Playground \u001B[0m', ex);
         const compEnd = performance.now();
         const errorText = String(ex);
         elCompiledOutput.dataset['code'] = '';
@@ -268,6 +271,8 @@ async function runScript(script: VmScript): Promise<void> {
         }
         consoleManager.info(`Execution completed successfully in ${(execEnd - execStart).toFixed(3)}ms`);
     } catch (ex) {
+        // eslint-disable-next-line no-console
+        console.error('\u001B[41;37m MiraScript Playground \u001B[0m', ex);
         const execEnd = performance.now();
         const errorText = String(ex);
         elResultOutput.innerHTML = /* html */ `

@@ -1,4 +1,4 @@
-import { VmSharedContext } from '@mirascript/mirascript/subtle';
+import { lib, VmSharedContext } from '@mirascript/mirascript/subtle';
 import {
     createVmContext,
     getVmFunctionInfo,
@@ -12,17 +12,18 @@ import type { ConsoleManager } from './console-manager.js';
 import { print } from './utils.js';
 
 /** 创建全局环境 */
-export function globals(console: ConsoleManager): VmContext {
+export function globals(consoleManager: ConsoleManager): VmContext {
     const arr = [1, 2, [1, 2], { x: 0 }];
     arr[100] = 100; // make a sparse array
 
     /** 创建简单的 debug_print 函数 */
     function debugPrint(...args: VmAny[]) {
+        lib.debug_print(...args);
         const messages = args.map(async (arg) => {
             if (typeof arg === 'string') return arg;
             return print(arg);
         });
-        console.log(Promise.all(messages).then((message) => message.join(' ')));
+        consoleManager.log(Promise.all(messages).then((message) => message.join(' ')));
     }
     return createVmContext(
         {
