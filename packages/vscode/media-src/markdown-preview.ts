@@ -2,9 +2,9 @@ let init = async () => {
     const loader = Promise.resolve().then(async () => {
         const monaco = await import('@private/monaco-editor/api');
         await import('@private/monaco-editor/theme');
-        const { registerMonacoApi, register } = await import('@mirascript/monaco');
+        const { registerMonacoApi, registerContribution } = await import('@mirascript/monaco');
         registerMonacoApi(monaco);
-        register();
+        registerContribution();
         const { registerBasic } = await import('@mirascript/monaco/basic');
         await registerBasic();
         return monaco;

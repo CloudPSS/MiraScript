@@ -1,14 +1,14 @@
 import type { VmContext } from '@mirascript/mirascript';
 import { type editor, languages, registerMonacoApi, type IDisposable, type MonacoApi } from './monaco-api.js';
-import { register } from './contribute.js';
+import { registerContribution } from './contribute.js';
 
 /** 提供全局变量信息 */
-export type VmContextProvider = (model: editor.ITextModel) => languages.ProviderResult<Readonly<VmContext>>;
+export type VmContextProvider = (model: editor.ITextModel) => languages.ProviderResult<VmContext>;
 
 /** 加载器 */
 export class MiraScriptMonacoLoader implements IDisposable {
     constructor(readonly contextProvider?: VmContextProvider) {
-        register();
+        registerContribution();
 
         const _loadBasicFeatures = () => void this.loadBasicFeatures();
         const _loadFullFeatures = () => void this.loadLSPFeatures();
@@ -61,7 +61,7 @@ export class MiraScriptMonacoLoader implements IDisposable {
         }
     }
 }
-export { registerMonacoApi, register };
+export { registerMonacoApi, registerContribution };
 /**
  * 注册 MiraScript Monaco 编辑器扩展。
  */

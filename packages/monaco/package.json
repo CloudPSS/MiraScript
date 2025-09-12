@@ -20,7 +20,7 @@
     }
   },
   "imports": {
-    "#/lsp/worker": {
+    "#lsp/worker": {
       "@mirascript/dev": "./src/lsp/worker.ts",
       "default": "./dist/lsp/worker.js"
     }

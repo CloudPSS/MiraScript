@@ -10,7 +10,7 @@ let worker: Promise<Worker> | undefined = undefined;
 /** 使用 worker 进行编译 */
 async function compileWorker(req: Req): Promise<CompileResult> {
     if (!worker) {
-        const w = new Worker(new URL('#/lsp/worker', import.meta.url), {
+        const w = new Worker(new URL('#lsp/worker', import.meta.url), {
             type: 'module',
             name: '@mirascript/lsp-server',
         });
