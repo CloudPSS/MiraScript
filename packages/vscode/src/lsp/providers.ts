@@ -13,7 +13,11 @@ import {
     InlayHintKind,
     InlayHintLabelPart,
     languages,
+    ParameterInformation,
     SemanticTokens,
+    SignatureHelp,
+    SignatureHelpTriggerKind,
+    SignatureInformation,
     SymbolKind,
     WorkspaceEdit,
 } from 'vscode';
@@ -26,6 +30,7 @@ import {
     RenameProvider,
     InlayHintsProvider,
     CompletionItemProvider,
+    SignatureHelpProvider,
 } from '@mirascript/monaco/lsp';
 import { ModelAdapter } from '../adapter/model.js';
 import {
@@ -63,6 +68,7 @@ export class ProvidersManager extends Disposable {
             CompletionTriggerKind,
             CompletionItemTag,
             CompletionItemInsertTextRule,
+            SignatureHelpTriggerKind,
         };
         registerMonacoApi(api);
         this.registerProviders();
@@ -71,14 +77,27 @@ export class ProvidersManager extends Disposable {
     /** 注册 Providers */
     private registerProviders(): void {
         const selector = ['mirascript', 'mirascript-template'];
-        const formatterProvider = new FormatterProvider();
-        const documentSemanticTokensProvider = new DocumentSemanticTokensProvider();
-        const hoverProvider = new HoverProvider();
-        const renameProvider = new RenameProvider();
+
+        // const codeActionProvider = new CodeActionProvider();
+        // const colorProvider = new ColorProvider();
+
+        // const definitionReferenceProvider = new DefinitionReferenceProvider();
+
         const documentHighlightProvider = new DocumentHighlightProvider();
         const documentSymbolProvider = new DocumentSymbolProvider();
+
+        const formatterProvider = new FormatterProvider();
+
         const inlayHintsProvider = new InlayHintsProvider();
+        const hoverProvider = new HoverProvider();
+
+        // const rangeProvider = new RangeProvider();
+
+        const documentSemanticTokensProvider = new DocumentSemanticTokensProvider();
+        const renameProvider = new RenameProvider();
         const completionItemProvider = new CompletionItemProvider();
+        const signatureHelpProvider = new SignatureHelpProvider();
+
         this.disposables.push(
             languages.registerDocumentFormattingEditProvider(selector, {
                 provideDocumentFormattingEdits: async (document, options, token) => {
@@ -253,6 +272,34 @@ export class ProvidersManager extends Disposable {
                     },
                 },
                 ...completionItemProvider.triggerCharacters,
+            ),
+            languages.registerSignatureHelpProvider(
+                selector,
+                {
+                    provideSignatureHelp: async (document, position, token, context) => {
+                        const result = await signatureHelpProvider.provideSignatureHelp(
+                            new ModelAdapter(document),
+                            fromPosition(position),
+                            token,
+                            context,
+                        );
+                        if (!result) return null;
+                        const s = new SignatureHelp();
+                        s.signatures = result.value.signatures.map((sig) => {
+                            const i = new SignatureInformation(sig.label, toMarkdownString(sig.documentation));
+                            i.parameters = sig.parameters?.map(
+                                (param) => new ParameterInformation(param.label, toMarkdownString(param.documentation)),
+                            );
+                            i.activeParameter = sig.activeParameter;
+                            return i;
+                        });
+                        s.activeParameter = result.value.activeParameter;
+                        s.activeSignature = result.value.activeSignature;
+                        return s;
+                    },
+                },
+                ...signatureHelpProvider.signatureHelpTriggerCharacters,
+                ...signatureHelpProvider.signatureHelpRetriggerCharacters,
             ),
         );
     }

@@ -25,13 +25,13 @@ export {
     CompletionItemProvider,
     DefinitionReferenceProvider,
     DocumentHighlightProvider,
+    DocumentSemanticTokensProvider,
     DocumentSymbolProvider,
     FormatterProvider,
     HoverProvider,
     InlayHintsProvider,
     RangeProvider,
     RenameProvider,
-    DocumentSemanticTokensProvider,
     SignatureHelpProvider,
 };
 
@@ -58,7 +58,6 @@ export async function registerLSP(contextProvider: VmContextProvider | undefined
     return [
         languages.registerCodeActionProvider(language, codeActionProvider),
         languages.registerColorProvider(language, colorProvider),
-        languages.registerCompletionItemProvider(language, completionItemProvider),
 
         languages.registerDefinitionProvider(language, definitionReferenceProvider),
         languages.registerReferenceProvider(language, definitionReferenceProvider),
@@ -76,8 +75,9 @@ export async function registerLSP(contextProvider: VmContextProvider | undefined
         languages.registerFoldingRangeProvider(language, rangeProvider),
         languages.registerSelectionRangeProvider(language, rangeProvider),
 
-        languages.registerRenameProvider(language, renameProvider),
         languages.registerDocumentSemanticTokensProvider(language, documentSemanticTokensProvider),
+        languages.registerRenameProvider(language, renameProvider),
+        languages.registerCompletionItemProvider(language, completionItemProvider),
         languages.registerSignatureHelpProvider(language, signatureHelpProvider),
     ];
 }
