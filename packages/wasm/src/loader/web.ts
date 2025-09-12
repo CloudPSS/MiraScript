@@ -1,13 +1,15 @@
 import type { InitInput } from '../../lib/wasm.js';
 
-import.meta.url ||=
-    (document?.currentScript instanceof HTMLScriptElement
-        ? document.currentScript.src
-        : (document.currentScript?.href?.baseVal ?? '')) || document.location.href;
-
 export const module: Promise<InitInput> = /* @__PURE__ */ (async () => {
     try {
-        return await fetch(new URL('../../lib/wasm_bg.wasm?url', import.meta.url));
+        if (import.meta.url) {
+            return await fetch(new URL('../../lib/wasm_bg.wasm?url', import.meta.url));
+        }
+        const fallbackUrl =
+            (document?.currentScript instanceof HTMLScriptElement
+                ? document.currentScript.src
+                : (document.currentScript?.href?.baseVal ?? '')) || document.location.href;
+        return await fetch(new URL('../../lib/wasm_bg.wasm?url', fallbackUrl));
     } catch {
         // @ts-expect-error load as module
         const mod = (await import('../../lib/wasm_bg.wasm?url')) as { default: unknown };
