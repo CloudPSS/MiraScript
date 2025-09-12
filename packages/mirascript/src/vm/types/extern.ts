@@ -1,7 +1,7 @@
 import { VmError } from '../error.js';
-import { isVmFunction, type TypeName, type VmAny, type VmModule, type VmValue } from './index.js';
+import { fromVmFunctionProxy, toVmFunctionProxy, type VmFunctionLike } from './function.js';
 import { VmWrapper } from './wrapper.js';
-
+import type { TypeName, VmAny, VmModule, VmValue } from './index.js';
 const { apply } = Reflect;
 const { hasOwn } = Object;
 
@@ -9,9 +9,11 @@ const { hasOwn } = Object;
 export function wrapToVmValue(value: unknown, caller: VmExtern | null): VmValue {
     if (value == null) return null;
     switch (typeof value) {
-        case 'function':
-            if (isVmFunction(value)) return value;
+        case 'function': {
+            const unwrapped = fromVmFunctionProxy(value as VmFunctionLike);
+            if (unwrapped) return unwrapped;
             return new VmExtern(value, caller);
+        }
         case 'object':
             if (value instanceof VmWrapper) return value as VmModule | VmExtern;
             return new VmExtern(value, null);
@@ -30,6 +32,9 @@ export function wrapToVmValue(value: unknown, caller: VmExtern | null): VmValue 
 
 /** 取消 Mirascript 类型包装  */
 export function unwrapFromVmValue(value: VmAny): unknown {
+    if (typeof value == 'function') {
+        return toVmFunctionProxy(value);
+    }
     if (value == null || typeof value != 'object') return value;
     if (!(value instanceof VmExtern)) return value;
     if (value.caller == null || typeof value.value != 'function') {

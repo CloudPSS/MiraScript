@@ -6,7 +6,6 @@ import {
     wrapToVmValue,
     isVmAny,
     type VmFunctionLike,
-    isVmFunction,
 } from './index.js';
 import type * as global from '../lib/global/index.js';
 const { entries } = Object;
@@ -47,7 +46,7 @@ export function defineVmContextValue(
 ): void {
     if (!override && name in VmSharedContext) throw new Error(`Global variable '${name}' is already defined.`);
     let v: VmImmutable;
-    if (typeof value == 'function' && !isVmFunction(value)) {
+    if (typeof value == 'function') {
         v = VmFunction(value, {
             isLib: true,
             fullName: `global.${name}`,
