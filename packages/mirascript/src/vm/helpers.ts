@@ -3,7 +3,6 @@ import type { VmFunctionLike } from './types/function.js';
 import { DefaultVmContext, type VmContext } from './types/context.js';
 import { isVmConst, VmFunction, type VmConst, type VmAny, type VmArray, type VmValue } from './types/index.js';
 const { isFinite } = Number;
-const { ceil } = Math;
 
 export const Vargs = (varags: VmAny[]): VmArray => {
     for (let i = 0, l = varags.length; i < l; i++) {
@@ -50,7 +49,7 @@ export const ArrayRange = (start: VmAny, end: VmAny): VmArray => {
     if (isEmptyRange(s, e)) return [];
     assertArrayLength(s, e);
     const arr = [];
-    for (let i = ceil(s); i <= e; i++) {
+    for (let i = s; i <= e; i++) {
         arr.push(i);
     }
     return arr;
@@ -61,7 +60,7 @@ export const ArrayRangeExclusive = (start: VmAny, end: VmAny): VmArray => {
     if (isEmptyRange(s, e)) return [];
     assertArrayLength(s, e);
     const arr = [];
-    for (let i = ceil(s); i < e; i++) {
+    for (let i = s; i < e; i++) {
         arr.push(i);
     }
     return arr;

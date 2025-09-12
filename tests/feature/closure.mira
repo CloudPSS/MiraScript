@@ -103,3 +103,30 @@ fn ret_outer {
 }
 t_eq(ret_outer(), 123);
 
+fn adder {
+  return bind(adder_impl, 0);
+  fn bind(f, ..bind_args) {
+    return fn (..args) {
+      return f(..bind_args, ..args);
+    };
+  }
+  fn adder_impl(mut sum, ..args) {
+    if args::len() == 0 {
+      return sum;
+    }
+    for a in args {
+      sum += a;
+    }
+    bind(adder_impl, sum)
+  }
+}
+
+let a = adder();
+t_eq(a(1)(2)(3)(), 6);
+t_eq(a(10, 20)(30)(), 60);
+t_eq(a(), 0);
+
+let a10 = a(1, 2, 3, 4);
+t_eq(a10(10)(), 20);
+t_eq(a10(20)(), 30);
+t_eq(a10(), 10);
