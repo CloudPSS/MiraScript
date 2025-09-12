@@ -1,7 +1,7 @@
 {
   "name": "@mirascript/napi",
   "type": "module",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "description": "MiraScript compiler for Node.JS",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
