@@ -228,7 +228,12 @@ export class ModelAdapter implements editor.ITextModel {
     }
     /** @inheritdoc */
     getValueInRange(range: IRange, eol?: editor.EndOfLinePreference): string {
-        return this.document.getText(toRange(range));
+        const r = { ...range };
+        if (r.startColumn < 1) r.startColumn = 1;
+        if (r.endColumn < 1) r.endColumn = 1;
+        if (r.startLineNumber < 1) r.startLineNumber = 1;
+        if (r.endLineNumber < 1) r.endLineNumber = 1;
+        return this.document.getText(toRange(r));
     }
     /** @inheritdoc */
     getValueLengthInRange(range: IRange, eol?: editor.EndOfLinePreference): number {
