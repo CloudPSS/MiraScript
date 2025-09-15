@@ -54,12 +54,12 @@ export class SignatureHelpProvider extends Provider implements languages.Signatu
             const callable = getDeep(globals.get(name), callableInfo.fields);
             const info = getVmFunctionInfo(callable);
             if (!info) return undefined;
-            sig = { ...fnSignature(name, info), name, summary: info.summary, paramDocs: info.params ?? {} };
+            sig = { ...fnSignature(name, info), name, summary: info.summary };
         } else if (callableInfo.def.def.fn) {
             const { fn, definition } = callableInfo.def.def;
             const params = localParamSignature(model, fn);
             const name = model.getValueInRange(definition.range);
-            sig = { params, returns: '', name, summary: '', paramDocs: {} };
+            sig = { params, returns: '', name, summary: '' };
         }
 
         if (!sig) return undefined;
@@ -69,9 +69,9 @@ export class SignatureHelpProvider extends Provider implements languages.Signatu
         };
         if (invoke.code === DiagnosticCode.ExtensionCall) {
             const thisArg = sig.params[0];
-            if (thisArg && !thisArg.startsWith('..')) {
+            if (thisArg && !thisArg[0].startsWith('..')) {
                 sig.params.shift();
-                const s = thisArg.includes(' ') ? `(${thisArg})` : thisArg;
+                const s = thisArg.includes(' ') ? `(${thisArg[1]})` : thisArg[1];
                 signature.label = `fn ${s}::${sig.name}(`;
             } else {
                 signature.label = `fn ()::${sig.name}(`;
@@ -81,11 +81,11 @@ export class SignatureHelpProvider extends Provider implements languages.Signatu
         }
         signature.documentation = { value: sig.summary ?? '' };
         for (let i = 0; i < sig.params.length; i++) {
-            const p = sig.params[i]!;
+            const [_, p, doc] = sig.params[i]!;
             const start = signature.label.length;
             signature.parameters.push({
                 label: [start, start + p.length],
-                documentation: { value: sig.paramDocs[p] ?? '' },
+                documentation: { value: doc },
             });
             if (i === sig.params.length - 1) {
                 signature.label += p;
@@ -101,7 +101,7 @@ export class SignatureHelpProvider extends Provider implements languages.Signatu
             if (ref.code !== DiagnosticCode.ArgumentComma || Range.isEmpty(ref.range)) continue;
             if (
                 Position.isBeforeOrEqual(Range.getEndPosition(ref.range), position) &&
-                !sig.params[pos]?.startsWith('..')
+                !sig.params[pos]?.[0].startsWith('..')
             ) {
                 pos++;
             }

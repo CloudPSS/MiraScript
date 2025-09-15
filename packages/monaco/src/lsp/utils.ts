@@ -16,13 +16,18 @@ import {
 import { operations, serializePropName, serializeString } from '@mirascript/mirascript/subtle';
 import type { LocalDefinition } from './compile-result.js';
 
-/** 生成函数签名 */
-function globalParamsSignature(info: VmFunctionInfo | undefined): string[] {
-    if (!info?.params) return ['..'];
-    const paramItems = Object.keys(info.params).map((key) => {
+/** 参数签名 */
+export type ParamSignature = [name: string, sig: string, doc: string];
+
+/** 生成参数签名 */
+function globalParamsSignature(info: VmFunctionInfo | undefined): ParamSignature[] {
+    if (!info?.params) return [['..', '..', '']];
+    const paramItems: ParamSignature[] = [];
+    for (const key of Object.keys(info.params)) {
         const type = info.paramsType?.[key];
-        return type ? `${key}: ${type}` : key;
-    });
+        const doc = info.params[key] ?? '';
+        paramItems.push([key, type ? `${key}: ${type}` : key, doc ? `\`${key}\`: ${doc}` : '']);
+    }
     return paramItems;
 }
 /** 生成函数签名 */
@@ -30,7 +35,7 @@ export function fnSignature(
     id: string | undefined,
     info: VmFunctionInfo,
 ): {
-    params: string[];
+    params: ParamSignature[];
     returns: string;
     /** @inheritdoc */
     toString(): string;
@@ -46,24 +51,27 @@ export function fnSignature(
             if (
                 this.params.length >= 1 &&
                 (prefix.length + this.returns.length > 60 ||
-                    prefix.length + this.returns.length + this.params.reduce((a, b) => a + b.length, 0) > 60)
+                    prefix.length + this.returns.length + params.reduce((a, b) => a + b.length, 0) > 60)
             ) {
-                p = `(\n${this.params.map((item) => `  ${item},`).join('\n')}\n)`;
+                p = `(\n${params.map((item) => `  ${item[1]},`).join('\n')}\n)`;
             } else {
-                p = `(${this.params.join(', ')})`;
+                p = `(${params.map((item) => item[1]).join(', ')})`;
             }
             return `${prefix}${p}${this.returns}`;
         },
     };
 }
 /** 生成函数参数 */
-export function localParamSignature(model: editor.ITextModel, info: NonNullable<LocalDefinition['fn']>): string[] {
+export function localParamSignature(
+    model: editor.ITextModel,
+    info: NonNullable<LocalDefinition['fn']>,
+): ParamSignature[] {
     const {
         args,
         scope: { params },
     } = info;
     if (params[0]?.code === DiagnosticCode.ParameterIt) {
-        return params[0].references.length ? ['it'] : [];
+        return params[0].references.length ? [['it', 'it', '']] : [];
     }
     return params.map((a, i) => {
         const rest =
@@ -75,8 +83,8 @@ export function localParamSignature(model: editor.ITextModel, info: NonNullable<
             argsInParam.length === 0
                 ? `arg_${i}`
                 : argsInParam.map((arg) => model.getValueInRange(arg.definition.range)).join('_');
-        if (rest) return `..${argName}`;
-        return argName;
+        if (rest) return ['...${argName}', '...${argName}', ''];
+        return [argName, argName, ''];
     });
 }
 
