@@ -6,3 +6,8 @@ t_throws(fn { v_extern::with() });
 t_eq([]::with(), []);
 t_eq([1, 2, 3]::with('a', 1, 'b', 2), [1, 2, 3]);
 t_eq([]::with(2, 1), [nil, nil, 1]);
+
+let obj = (x: 1);
+t_eq(obj::with('x', 2), (x: 2));
+t_eq(obj::with('y', 2), (x: 1, y: 2));
+t_eq(obj, (x: 1)); // no modify

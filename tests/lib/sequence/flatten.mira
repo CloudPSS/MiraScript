@@ -16,3 +16,7 @@ t_eq(flatten([[nil], nil]), [nil, nil]);
 t_throws(fn { flatten(nil) });
 t_throws(fn { flatten(()) });
 t_throws(fn { flatten(1) });
+
+let arr = [[1, [2]], 3];
+t_eq(flatten(arr, 2), [1, 2, 3]);
+t_eq(arr, [[1, [2]], 3]); // no modify
