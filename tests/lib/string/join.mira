@@ -1,0 +1,11 @@
+t_eq(['1', '2', '3']::join(''), "123");
+t_eq(['a', 'b', 'c']::join(','), "a,b,c");
+t_eq(['a', 'b', 'c']::join(',,'), "a,,b,,c");
+t_eq(['', '', '', '']::join(','), ",,,");
+t_eq(["😄", "😄"]::join("🫱🏾‍🫲🏼🌍"), "😄🫱🏾‍🫲🏼🌍😄");
+
+t_eq("😄🫱🏾‍🫲🏼🌍😄"::chars()::join(), "😄🫱🏾‍🫲🏼🌍😄");
+
+t_throws(fn { join() });
+t_throws(fn { join(1) });
+t_throws(fn { join(nil) });

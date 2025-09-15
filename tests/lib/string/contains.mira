@@ -1,0 +1,17 @@
+let whitespaces = "\t\v\f \u{A0} \n\r\u{FEFF}\u{2028}\u{2029}";
+
+t_true(whitespaces::starts_with("\t"));
+t_true(whitespaces::ends_with("\u{2029}"));
+t_true(whitespaces::contains("\n\r"));
+t_false(whitespaces::contains("a"));
+t_true("123"::starts_with(12));
+t_true("123"::ends_with(23));
+t_true("123"::contains(2));
+t_true(123::contains(2));
+
+t_throws(fn { contains() });
+t_throws(fn { contains(1) });
+t_throws(fn { starts_with() });
+t_throws(fn { starts_with(1) });
+t_throws(fn { ends_with() });
+t_throws(fn { ends_with(1) });

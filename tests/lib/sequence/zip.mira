@@ -1,0 +1,9 @@
+t_eq(zip([[1, 2, 3], ['a', 'b', 'c']]), [[1, 'a'], [2, 'b'], [3, 'c']]);
+t_eq(zip([[1, 2], ['a', 'b', 'c'], [true, false, nil, "extra"]]), [[1, 'a', true], [2, 'b', false], [nil, 'c', nil], [nil, nil, "extra"]]);
+t_eq(zip((a: [1, 2, 3], b: ['a', 'b', 'c'])), [(a: 1, b: 'a'), (a: 2, b: 'b'), (a: 3, b: 'c')]);
+t_eq(zip((a: [])), []);
+t_eq(zip((a: [], b: [nil, nan, 0, '', false])), [(a: nil, b: nil), (a: nil, b: nan), (a: nil, b: 0), (a: nil, b: ''), (a: nil, b: false)]);
+t_eq(zip([]), []);
+t_eq(zip(()), []);
+t_throws(fn { zip(nil) });
+t_throws(fn { zip((a: [], b: 1)) });

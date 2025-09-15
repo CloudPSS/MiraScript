@@ -95,10 +95,9 @@ export const trim = VmLib(
 );
 
 export const replace = VmLib(
-    (str, search, replacement) => {
+    (str, search, replacement = '') => {
         required('str', str, null);
         required('search', search, str);
-        required('replacement', replacement, str);
         return $ToString(str).replaceAll($ToString(search), $ToString(replacement));
     },
     {
@@ -110,9 +109,8 @@ export const replace = VmLib(
 );
 
 export const split = VmLib(
-    (str, separator) => {
+    (str, separator = '') => {
         required('str', str, null);
-        required('separator', separator, null);
         const s = $ToString(str);
         const p = $ToString(separator);
         if (!p) return [...s];

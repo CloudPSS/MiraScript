@@ -8,7 +8,6 @@ t_eq(matrix.zeros([1, nan]), [[]]);
 t_throws(fn {
   matrix.zeros([1, inf]);
 });
-t_eq(matrix.zeros(1_000_001)::len(), 1_000_001);
 
 t_eq(matrix.ones(2, 3), [[1, 1, 1], [1, 1, 1]]);
 

@@ -12,8 +12,8 @@ function defaultCompare(a: VmValue, b: VmValue): number {
         return 0;
     }
     if (Object.is(a, b)) return 0;
-    const an = $ToNumber(a);
-    const bn = $ToNumber(b);
+    const an = $ToNumber(a) || 0;
+    const bn = $ToNumber(b) || 0;
     return an - bn;
 }
 
