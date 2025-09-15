@@ -50,13 +50,13 @@ export const sort = VmLib(
 );
 
 export const sort_by = VmLib(
-    (data, keyFn, comparator) => {
+    (data, key_fn, comparator) => {
         expectArray('data', data, null);
-        expectCallable('keyFn', keyFn, data);
+        expectCallable('key_fn', key_fn, data);
         const compare = cmp(comparator, data);
         const arr: Array<{ original: VmConst; key: VmValue }> = Array.from(data, (v, i) => ({
             original: v ?? null,
-            key: $Call(keyFn, [v ?? null, i, data]),
+            key: $Call(key_fn, [v ?? null, i, data]),
         }));
         arr.sort((a, b) => compare(a.key, b.key));
         return arr.map((e) => e.original);
@@ -65,12 +65,12 @@ export const sort_by = VmLib(
         summary: '根据键函数对数组中的元素进行排序，并返回排序后的结果',
         params: {
             data: '要排序的数组',
-            keyFn: '用于提取排序键的函数，接受一个元素并返回其排序键',
+            key_fn: '用于提取排序键的函数，接受一个元素并返回其排序键',
             comparator: '用于比较两个排序键的函数，返回一个数字，表示它们的相对顺序，默认按升序排列',
         },
         paramsType: {
             data: 'array',
-            keyFn: 'fn(value: any, index: number, arr: type(data)) -> any',
+            key_fn: 'fn(value: any, index: number, arr: type(data)) -> any',
             comparator: 'fn(a: any, b: any) -> number',
         },
         returnsType: 'array',
