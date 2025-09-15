@@ -31,8 +31,8 @@
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
-    "@mirascript/wasm": "workspace:*",
-    "@mirascript/mirascript": "workspace:*"
+    "@mirascript/wasm": "workspace:~",
+    "@mirascript/mirascript": "workspace:~"
   },
   "peerDependencies": {
     "monaco-editor": ">= 0.0.40 < 0.53.0"

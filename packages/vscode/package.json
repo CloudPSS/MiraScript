@@ -23,11 +23,11 @@
     "watch:ts": "rimraf ./dist && tsc --watch"
   },
   "dependencies": {
-    "@mirascript/wasm": "workspace:*"
+    "@mirascript/wasm": "workspace:~"
   },
   "devDependencies": {
-    "@mirascript/mirascript": "workspace:*",
-    "@mirascript/monaco": "workspace:*",
+    "@mirascript/mirascript": "workspace:~",
+    "@mirascript/monaco": "workspace:~",
     "@private/monaco-editor": "^0.0.49",
     "@types/vscode": "^1.104.0",
     "js-yaml": "^4.1.0",

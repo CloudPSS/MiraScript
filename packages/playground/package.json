@@ -9,9 +9,9 @@
     "serve": "vite preview"
   },
   "dependencies": {
-    "@mirascript/mirascript": "workspace:*",
-    "@mirascript/monaco": "workspace:*",
-    "@mirascript/wasm": "workspace:*",
+    "@mirascript/mirascript": "workspace:~",
+    "@mirascript/monaco": "workspace:~",
+    "@mirascript/wasm": "workspace:~",
     "@private/monaco-editor": "^0.0.49"
   },
   "devDependencies": {
