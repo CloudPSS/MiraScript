@@ -102,7 +102,7 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
         const caller = this.caller?.value ?? null;
         const unwrappedArgs = args.map(unwrapFromVmValue);
         const ret: unknown = apply(value, caller, unwrappedArgs);
-        return wrapToVmValue(ret, this);
+        return wrapToVmValue(ret, null);
     }
     /** Can extern value be called */
     get callable(): boolean {

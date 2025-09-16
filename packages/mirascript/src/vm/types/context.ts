@@ -121,8 +121,14 @@ class FactoryVmContext implements VmContext {
 /** 创建用于执行脚本的执行上下文 */
 export function createVmContext(
     ...args:
-        | readonly [vmValues?: VmContextRecord, externValues?: Record<string, unknown>]
-        | readonly [getter: (key: string) => VmValue | undefined, enumerator?: () => Iterable<string>]
+        | readonly [
+              vmValues?: VmContextRecord | null | undefined,
+              externValues?: Record<string, unknown> | null | undefined,
+          ]
+        | readonly [
+              getter: (key: string) => VmValue | undefined,
+              enumerator?: (() => Iterable<string>) | null | undefined,
+          ]
 ): VmContext {
     if (args[0] == null && args[1] == null) {
         return { ...DefaultVmContext };
