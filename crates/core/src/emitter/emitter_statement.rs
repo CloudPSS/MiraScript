@@ -49,14 +49,12 @@ impl<'s> Emitter<'s> {
                 false
             }
             Bind(_, pattern, _, expression, _) => {
-                let value_reg = self.closures.add_reg();
-                self.emit_expression(expression, value_reg, brk);
+                let value_reg = self.emit_expression_reg(expression, brk);
                 self.emit_pattern(Register::EMPTY, pattern, value_reg, Some(BindType::Let));
                 false
             }
             Rebind(pattern, _, expression, _) => {
-                let value_reg = self.closures.add_reg();
-                self.emit_expression(expression, value_reg, brk);
+                let value_reg = self.emit_expression_reg(expression, brk);
                 self.emit_pattern(Register::EMPTY, pattern, value_reg, None);
                 false
             }
@@ -200,8 +198,7 @@ impl<'s> Emitter<'s> {
                         self.unreachable(op, op, file!(), line!());
                         return false;
                     };
-                    let right_reg = self.closures.add_reg();
-                    self.emit_expression(expression, right_reg, brk);
+                    let right_reg = self.emit_expression_reg(expression, brk);
                     self.op_binary(assignee_reg, op, assignee_reg, right_reg);
                 }
                 final_op(self);
@@ -218,8 +215,7 @@ impl<'s> Emitter<'s> {
             }
             Return(_, expression, _) => {
                 if let Some(expression) = expression {
-                    let ret_reg = self.closures.add_reg();
-                    self.emit_expression(expression, ret_reg, brk);
+                    let ret_reg = self.emit_expression_reg(expression, brk);
                     self.op_return(ret_reg);
                 } else {
                     self.op_return(Register::EMPTY);
@@ -238,8 +234,7 @@ impl<'s> Emitter<'s> {
                     return false;
                 };
                 if let Some(expression) = expression {
-                    let brk_ret = self.closures.add_reg();
-                    self.emit_expression(expression, brk_ret, Some(brk));
+                    let brk_ret = self.emit_expression_reg(expression, Some(brk));
                     self.op_set_upvalue(brk_ret, 1, brk);
                 } else if !brk.is_empty() {
                     self.op_set_upvalue(Register::EMPTY, 1, brk);

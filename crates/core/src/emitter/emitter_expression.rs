@@ -313,10 +313,31 @@ impl<'s> Emitter<'s> {
         expr: &'s Expression<'s>,
         brk: Option<Register>,
     ) -> Register {
+        if let Variable(id_token) = expr {
+            if let Some(id) = self.get_var_name(id_token) {
+                if let Some(variable) = self.scopes.find_local_variable(id) {
+                    let register = variable.register();
+                    variable.mark_read(id_token);
+                    if !check_variable_initialized(
+                        self.diagnostics,
+                        &self.closures,
+                        id_token,
+                        variable,
+                        self.closures.len(),
+                    ) {
+                        return Register::EMPTY;
+                    }
+                    return register;
+                }
+            }
+        } else if let Grouping(_, inner, _) = expr {
+            return self.emit_expression_reg(inner, brk);
+        }
         let reg = self.closures.add_reg();
         self.emit_expression(expr, reg, brk);
         reg
     }
+
     fn hint_mislead_nil(&mut self, id: &str, range: SourceRange) {
         if id == "null"
             || id == "Null"
@@ -331,6 +352,20 @@ impl<'s> Emitter<'s> {
             ));
         }
     }
+
+    fn get_var_name(&mut self, token: &'s TokenRef<'s>) -> Option<&'s str> {
+        let Some(id) = token.to_id_name() else {
+            if token.kind == Keyword::Global {
+                self.diagnostics.push(SourceDiagnostic::new(
+                    token.range.clone(),
+                    DiagnosticCode::MisuseOfGlobalKeyword,
+                ));
+            }
+            return None;
+        };
+        Some(id)
+    }
+
     fn emit_global_access(&mut self, expr: &'s Expression<'s>) -> Option<Cow<'s, str>> {
         let id = if let Variable(id_token) = expr {
             let id = id_token.to_id_name()?;
@@ -363,6 +398,7 @@ impl<'s> Emitter<'s> {
         };
         Some(id)
     }
+
     fn emit_call(
         &mut self,
         callable: &'s Callable<'s>,
@@ -380,15 +416,14 @@ impl<'s> Emitter<'s> {
                         args_reg.push(s.emit_expression_reg(arg0, brk));
                     }
                     for arg in args {
-                        let reg = s.closures.add_reg();
-                        match arg.deref() {
-                            ArrayElementBase::Element(exp) => s.emit_expression(exp, reg, brk),
+                        let reg = match arg.deref() {
+                            ArrayElementBase::Element(exp) => s.emit_expression_reg(exp, brk),
                             ArrayElementBase::Spread(_, exp) => {
                                 spread.push(args_reg.len().into());
-                                s.emit_expression(exp, reg, brk);
+                                s.emit_expression_reg(exp, brk)
                             }
                             ArrayElementBase::Range(_) => unreachable!(),
-                        }
+                        };
                         args_reg.push(reg);
                     }
                     (args_reg, spread)
@@ -423,13 +458,7 @@ impl<'s> Emitter<'s> {
     }
 
     pub fn emit_var_read(&mut self, token: &'s TokenRef<'s>, ret: Register) {
-        let Some(id) = token.to_id_name() else {
-            if token.kind == Keyword::Global {
-                self.diagnostics.push(SourceDiagnostic::new(
-                    token.range.clone(),
-                    DiagnosticCode::MisuseOfGlobalKeyword,
-                ));
-            }
+        let Some(id) = self.get_var_name(token) else {
             return;
         };
         let var = self.scopes.find_variable(id);
@@ -493,8 +522,7 @@ impl<'s> Emitter<'s> {
                         args_reg.push(reg);
                     }
                     if let Some(expression) = e_iter.next() {
-                        let reg = self.closures.add_reg();
-                        self.emit_expression(expression, reg, brk);
+                        let reg = self.emit_expression_reg(expression, brk);
                         args_reg.push(reg);
                     }
                 }
@@ -513,31 +541,25 @@ impl<'s> Emitter<'s> {
                 for element in elements {
                     match element.deref() {
                         RecordElementBase::Named(_, _, expression) => {
-                            let reg = self.closures.add_reg();
-                            self.emit_expression(expression, reg, brk);
+                            let reg = self.emit_expression_reg(expression, brk);
                             elements_regs.push(reg);
                         }
                         RecordElementBase::InterpolateNamed(name_expression, _, expression) => {
-                            let name_reg = self.closures.add_reg();
-                            self.emit_expression(name_expression, name_reg, brk);
-                            let reg = self.closures.add_reg();
-                            self.emit_expression(expression, reg, brk);
+                            let name_reg = self.emit_expression_reg(name_expression, brk);
+                            let reg = self.emit_expression_reg(expression, brk);
                             elements_regs.push(name_reg);
                             elements_regs.push(reg);
                         }
                         RecordElementBase::OmitNamed(_, expression) => {
-                            let reg = self.closures.add_reg();
-                            self.emit_expression(expression, reg, brk);
+                            let reg = self.emit_expression_reg(expression, brk);
                             elements_regs.push(reg);
                         }
                         RecordElementBase::Unnamed(expression) => {
-                            let reg = self.closures.add_reg();
-                            self.emit_expression(expression, reg, brk);
+                            let reg = self.emit_expression_reg(expression, brk);
                             elements_regs.push(reg);
                         }
                         RecordElementBase::Spread(_, expression) => {
-                            let reg = self.closures.add_reg();
-                            self.emit_expression(expression, reg, brk);
+                            let reg = self.emit_expression_reg(expression, brk);
                             elements_regs.push(reg);
                         }
                     }
@@ -757,27 +779,20 @@ impl<'s> Emitter<'s> {
             Index(expression, _, index, _) => {
                 if !is_global_expression(expression) {
                     self.emit_expression(expression, ret, brk);
-                    let index_reg = self.closures.add_reg();
-                    self.emit_expression(index, index_reg, brk);
+                    let index_reg = self.emit_expression_reg(index, brk);
                     self.op_get_dyn(ret, ret, index_reg);
                 } else {
                     self.diagnostics.push(SourceDiagnostic::new(
                         index.range(),
                         DiagnosticCode::GlobalDynamicAccess,
                     ));
-                    let index_reg = self.closures.add_reg();
-                    self.emit_expression(index, index_reg, brk);
+                    let index_reg = self.emit_expression_reg(index, brk);
                     self.op_global_dyn(ret, index_reg);
                 }
             }
             Slice(expression, _, start, op, end, _) => {
                 // slice 不能用于 global 关键字，Variable 表达式将处理此错误
-                let arr_reg = if ret.is_empty() {
-                    self.closures.add_reg()
-                } else {
-                    ret
-                };
-                self.emit_expression(expression, arr_reg, brk);
+                let arr_reg = self.emit_expression_reg(expression, brk);
                 let start_reg = if let Some(start) = start {
                     self.emit_expression_reg(start, brk)
                 } else {
@@ -800,8 +815,7 @@ impl<'s> Emitter<'s> {
                 self.op_non_nil(ret);
             }
             Prefix(token, expression) => {
-                let reg = self.closures.add_reg();
-                self.emit_expression(expression, reg, brk);
+                let reg = self.emit_expression_reg(expression, brk);
                 let op = match token.kind {
                     TokenKind::Operator(Operator::Plus) => OpCode::Pos,
                     TokenKind::Operator(Operator::Minus) => OpCode::Neg,
@@ -843,8 +857,7 @@ impl<'s> Emitter<'s> {
                     self.emit_expression(right, ret, brk);
                     self.op_if_end();
                 } else if **token == Keyword::In && is_global_expression(right) {
-                    let left_reg = self.closures.add_reg();
-                    self.emit_expression(left, left_reg, brk);
+                    let left_reg = self.emit_expression_reg(left, brk);
                     self.op_unary(ret, OpCode::InGlobal, left_reg);
                 } else {
                     let Some(op) = (match token.kind {
@@ -855,16 +868,13 @@ impl<'s> Emitter<'s> {
                         // Unexpected infix operator
                         return self.unreachable(token, token, file!(), line!());
                     };
-                    let left_reg = self.closures.add_reg();
-                    let right_reg = self.closures.add_reg();
-                    self.emit_expression(left, left_reg, brk);
-                    self.emit_expression(right, right_reg, brk);
+                    let left_reg = self.emit_expression_reg(left, brk);
+                    let right_reg = self.emit_expression_reg(right, brk);
                     self.op_binary(ret, op, left_reg, right_reg);
                 }
             }
             Is(expression, _, pattern) => {
-                let reg_exp = self.closures.add_reg();
-                self.emit_expression(expression, reg_exp, brk);
+                let reg_exp = self.emit_expression_reg(expression, brk);
                 self.emit_pattern(ret, pattern, reg_exp, Some(BindType::Init));
             }
             Block(_, stmts, ret_expr, _) => {
@@ -1052,8 +1062,7 @@ impl<'s> Emitter<'s> {
                 self.enter_scope(kw.range.end..expr.range().end);
                 self.declare_expression(cond);
 
-                let cond_reg = self.closures.add_reg();
-                self.emit_expression(cond, cond_reg, brk);
+                let cond_reg = self.emit_expression_reg(cond, brk);
                 self.op_if(OpCode::If, cond_reg);
                 self.emit_expression(then_expr, ret, brk);
                 if let Some(ElseBlock(_, else_expr)) = else_part {
@@ -1068,8 +1077,7 @@ impl<'s> Emitter<'s> {
                 self.exit_scope();
             }
             Match(_, expression, _, items, _) => {
-                let matcher = self.closures.add_reg();
-                self.emit_expression(expression, matcher, brk);
+                let matcher = self.emit_expression_reg(expression, brk);
 
                 let matched = self.closures.add_reg();
                 self.op_bool(matched, false);
