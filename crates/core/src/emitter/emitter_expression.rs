@@ -1,5 +1,7 @@
 use std::{borrow::Cow, ops::Deref};
 
+#[cfg(feature = "track_references")]
+use crate::config::track_references;
 use crate::{
     SourceRange,
     diagnostic::{DiagnosticCode, SourceDiagnostic},
@@ -27,52 +29,56 @@ impl<'s> Emitter<'s> {
         callable: &'s Callable<'s>,
         args: &'s [ArrayElement<'s>],
     ) {
-        let start = this.map_or_else(|| callable.range().start, |c| c.range().start);
-        let end = r.range().end;
-        self.diagnostics.push(SourceDiagnostic::new(
-            start..end,
-            if this.is_some() {
-                DiagnosticCode::ExtensionCall
-            } else {
-                DiagnosticCode::FunctionCall
-            },
-        ));
-        if let Some(this) = this {
+        #[cfg(feature = "track_references")]
+        if track_references() {
+            let start = this.map_or_else(|| callable.range().start, |c| c.range().start);
+            let end = r.range().end;
             self.diagnostics.push(SourceDiagnostic::new(
-                this.range(),
-                DiagnosticCode::ArgumentExtension,
+                start..end,
+                if this.is_some() {
+                    DiagnosticCode::ExtensionCall
+                } else {
+                    DiagnosticCode::FunctionCall
+                },
             ));
-        }
-        self.diagnostics.push(SourceDiagnostic::new(
-            callable.range(),
-            DiagnosticCode::Callable,
-        ));
-        self.diagnostics.push(SourceDiagnostic::new(
-            l.range(),
-            DiagnosticCode::ArgumentStart,
-        ));
-        args.iter().for_each(|arg| {
-            match arg.deref() {
-                ArrayElementBase::Element(_) => (),
-                ArrayElementBase::Spread(sp, _) => {
-                    self.diagnostics.push(SourceDiagnostic::new(
-                        sp.range(),
-                        DiagnosticCode::ArgumentSpread,
-                    ));
-                }
-                ArrayElementBase::Range(_) => unreachable!(),
-            };
-            if let Some(comma) = arg.tail_comma() {
+            if let Some(this) = this {
                 self.diagnostics.push(SourceDiagnostic::new(
-                    comma.range(),
-                    DiagnosticCode::ArgumentComma,
+                    this.range(),
+                    DiagnosticCode::ArgumentExtension,
                 ));
             }
-        });
-        self.diagnostics.push(SourceDiagnostic::new(
-            r.range(),
-            DiagnosticCode::ArgumentEnd,
-        ));
+            self.diagnostics.push(SourceDiagnostic::new(
+                callable.range(),
+                DiagnosticCode::Callable,
+            ));
+            self.diagnostics.push(SourceDiagnostic::new(
+                l.range(),
+                DiagnosticCode::ArgumentStart,
+            ));
+            args.iter().for_each(|arg| {
+                match arg.deref() {
+                    ArrayElementBase::Element(_) => (),
+                    ArrayElementBase::Spread(sp, _) => {
+                        self.diagnostics.push(SourceDiagnostic::new(
+                            sp.range(),
+                            DiagnosticCode::ArgumentSpread,
+                        ));
+                    }
+                    ArrayElementBase::Range(_) => unreachable!(),
+                };
+                if let Some(comma) = arg.tail_comma() {
+                    self.diagnostics.push(SourceDiagnostic::new(
+                        comma.range(),
+                        DiagnosticCode::ArgumentComma,
+                    ));
+                }
+            });
+            self.diagnostics.push(SourceDiagnostic::new(
+                r.range(),
+                DiagnosticCode::ArgumentEnd,
+            ));
+        }
+
         match callable {
             Callable::Expression(callable) => {
                 // 此时的 Grouping 用于标记 callable 为复杂表达式以启用空安全，跳过 declare_expression 的 Grouping 处理
