@@ -35,7 +35,7 @@ export {
     SignatureHelpProvider,
 };
 
-/** 注册 LSP 相关的  编辑器功能 */
+/** 注册 LSP 相关的编辑器功能 */
 export async function registerLSP(contextProvider: VmContextProvider | undefined): Promise<IDisposable[]> {
     await ready;
     setContextProvider(contextProvider);
