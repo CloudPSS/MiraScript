@@ -11,6 +11,7 @@ await esbuild.build({
     minify: true,
     outdir: './media',
     target: 'esnext',
+    platform: 'browser',
     bundle: true,
     packages: 'bundle',
     loader: {
@@ -34,8 +35,6 @@ await esbuild.build({
     target: 'esnext',
     bundle: true,
     packages: 'bundle',
+    platform: 'node',
     external: ['vscode', ...Object.keys(packageJson.dependencies || {})],
-    loader: {
-        '.wasm': 'dataurl',
-    },
 });

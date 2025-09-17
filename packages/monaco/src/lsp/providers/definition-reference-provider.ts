@@ -19,7 +19,11 @@ export class DefinitionReferenceProvider
     extends Provider
     implements languages.DefinitionProvider, languages.ReferenceProvider
 {
-    private readonly globalModel = editor.createModel(``, 'mirascript', Uri.parse('mirascript:///lib/global.mira'));
+    constructor(
+        private readonly globalModel = editor.createModel(``, 'mirascript', Uri.parse('mirascript:///lib/global.mira')),
+    ) {
+        super();
+    }
     /** 准备要显示的定义 */
     private prepareGlobal(name: string, value: VmAny): { uri: Uri; range: IRange } {
         const { globalModel } = this;

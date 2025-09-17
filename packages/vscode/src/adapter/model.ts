@@ -1,6 +1,7 @@
 import type { editor, IDisposable, IPosition, IRange, Position, Range, Selection, Uri } from '@private/monaco-editor';
 import { EndOfLine, type TextDocument } from 'vscode';
-import { toPosition, toRange } from './utils.js';
+import { fromPosition, fromRange, toPosition, toRange } from './utils.js';
+import { MIRA_CONTENT_PROVIDER, MIRA_TEXT_SCHEME } from './text-provider.js';
 
 /** empty IDisposable */
 const EMPTY_DISPOSABLE: IDisposable = Object.freeze({
@@ -14,6 +15,26 @@ const EMPTY_DISPOSABLE: IDisposable = Object.freeze({
  */
 export class ModelAdapter implements editor.ITextModel {
     constructor(readonly document: TextDocument) {}
+    /** @inheritdoc */
+    getCustomLineHeightsDecorations(ownerId?: number): editor.IModelDecoration[] {
+        return [];
+    }
+    /** @inheritdoc */
+    undo(): void | Promise<void> {
+        throw new Error('Method not implemented.');
+    }
+    /** @inheritdoc */
+    canUndo(): boolean {
+        throw new Error('Method not implemented.');
+    }
+    /** @inheritdoc */
+    redo(): void | Promise<void> {
+        throw new Error('Method not implemented.');
+    }
+    /** @inheritdoc */
+    canRedo(): boolean {
+        throw new Error('Method not implemented.');
+    }
     /** @inheritdoc */
     get uri(): Uri {
         return this.document.uri;
@@ -204,7 +225,13 @@ export class ModelAdapter implements editor.ITextModel {
     /** @inheritdoc */
     setValue(newValue: string | editor.ITextSnapshot): void {
         // Not supported, TextDocument is readonly
-        throw new Error('setValue is not supported on ModelAdapter.');
+        if (this.document.uri.scheme !== MIRA_TEXT_SCHEME) {
+            throw new Error('setValue is not supported on ModelAdapter.');
+        }
+        MIRA_CONTENT_PROVIDER.setContent(
+            this.document.uri,
+            typeof newValue === 'string' ? newValue : (newValue.read() ?? ''),
+        );
     }
     /** @inheritdoc */
     getValue(eol?: editor.EndOfLinePreference, preserveBOM?: boolean): string {
@@ -295,8 +322,7 @@ export class ModelAdapter implements editor.ITextModel {
     }
     /** @inheritdoc */
     validatePosition(position: IPosition): Position {
-        const p = toPosition(position);
-        return this.document.validatePosition(p) as unknown as Position;
+        return fromPosition(this.document.validatePosition(toPosition(position)));
     }
     /** @inheritdoc */
     modifyPosition(position: IPosition, offset: number): Position {
@@ -304,9 +330,12 @@ export class ModelAdapter implements editor.ITextModel {
         return this.getPositionAt(absOffset);
     }
     /** @inheritdoc */
+    isValidRange(range: IRange): boolean {
+        return this.validateRange(range).isEmpty() === false;
+    }
+    /** @inheritdoc */
     validateRange(range: IRange): Range {
-        const r = toRange(range);
-        return this.document.validateRange(r) as unknown as Range;
+        return fromRange(this.document.validateRange(toRange(range)));
     }
     /** @inheritdoc */
     getOffsetAt(position: IPosition): number {
@@ -316,7 +345,7 @@ export class ModelAdapter implements editor.ITextModel {
     /** @inheritdoc */
     getPositionAt(offset: number): Position {
         const pos = this.document.positionAt(offset);
-        return pos as unknown as Position;
+        return fromPosition(pos);
     }
 
     /** @inheritdoc */

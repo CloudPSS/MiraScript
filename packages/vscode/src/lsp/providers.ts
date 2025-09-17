@@ -13,12 +13,16 @@ import {
     InlayHintKind,
     InlayHintLabelPart,
     languages,
+    Location,
     ParameterInformation,
+    SelectionRange,
     SemanticTokens,
     SignatureHelp,
     SignatureHelpTriggerKind,
     SignatureInformation,
     SymbolKind,
+    Uri,
+    workspace,
     WorkspaceEdit,
 } from 'vscode';
 import {
@@ -31,6 +35,8 @@ import {
     InlayHintsProvider,
     CompletionItemProvider,
     SignatureHelpProvider,
+    RangeProvider,
+    DefinitionReferenceProvider,
 } from '@mirascript/monaco/lsp';
 import { ModelAdapter } from '../adapter/model.js';
 import {
@@ -71,17 +77,19 @@ export class ProvidersManager extends Disposable {
             SignatureHelpTriggerKind,
         };
         registerMonacoApi(api);
-        this.registerProviders();
+        void this.registerProviders();
     }
 
     /** 注册 Providers */
-    private registerProviders(): void {
+    private async registerProviders(): Promise<void> {
         const selector = ['mirascript', 'mirascript-template'];
 
         // const codeActionProvider = new CodeActionProvider();
         // const colorProvider = new ColorProvider();
 
-        // const definitionReferenceProvider = new DefinitionReferenceProvider();
+        const definitionReferenceProvider = new DefinitionReferenceProvider(
+            new ModelAdapter(await workspace.openTextDocument(Uri.parse('mirascript:///lib/global.mira'))),
+        );
 
         const documentHighlightProvider = new DocumentHighlightProvider();
         const documentSymbolProvider = new DocumentSymbolProvider();
@@ -91,7 +99,7 @@ export class ProvidersManager extends Disposable {
         const inlayHintsProvider = new InlayHintsProvider();
         const hoverProvider = new HoverProvider();
 
-        // const rangeProvider = new RangeProvider();
+        const rangeProvider = new RangeProvider();
 
         const documentSemanticTokensProvider = new DocumentSemanticTokensProvider();
         const renameProvider = new RenameProvider();
@@ -301,6 +309,64 @@ export class ProvidersManager extends Disposable {
                 ...signatureHelpProvider.signatureHelpTriggerCharacters,
                 ...signatureHelpProvider.signatureHelpRetriggerCharacters,
             ),
+            // languages.registerFoldingRangeProvider(selector, {
+            //     provideFoldingRanges: async (document, context, token) => {
+            //         const result = await rangeProvider.provideFoldingRanges(new ModelAdapter(document), context, token);
+            //         return result;
+            //     },
+            // }),
+            languages.registerSelectionRangeProvider(selector, {
+                provideSelectionRanges: async (document, positions, token) => {
+                    const result = await rangeProvider.provideSelectionRanges(
+                        new ModelAdapter(document),
+                        positions.map(fromPosition),
+                        token,
+                    );
+                    if (!result) return null;
+                    const ranges: SelectionRange[] = [];
+                    for (let i = 0; i < positions.length; i++) {
+                        const range = result[i];
+                        if (!range?.length) continue;
+                        let current: SelectionRange | undefined;
+                        for (const r of range) {
+                            const sr = new SelectionRange(toRange(r.range), current);
+                            current = sr;
+                        }
+                        if (current) {
+                            ranges.push(current);
+                        }
+                    }
+                    return ranges;
+                },
+            }),
+            languages.registerDefinitionProvider(selector, {
+                provideDefinition: async (document, position, token) => {
+                    const result = await definitionReferenceProvider.provideDefinition(
+                        new ModelAdapter(document),
+                        fromPosition(position),
+                        token,
+                    );
+                    if (!result) return null;
+                    return result.map((item) => ({
+                        originSelectionRange: toRange(item.originSelectionRange),
+                        targetUri: item.uri,
+                        targetRange: toRange(item.range),
+                        targetSelectionRange: toRange(item.targetSelectionRange),
+                    }));
+                },
+            }),
+            languages.registerReferenceProvider(selector, {
+                provideReferences: async (document, position, context, token) => {
+                    const result = await definitionReferenceProvider.provideReferences(
+                        new ModelAdapter(document),
+                        fromPosition(position),
+                        context,
+                        token,
+                    );
+                    if (!result) return null;
+                    return result.map((item) => new Location(item.uri, toRange(item.range)));
+                },
+            }),
         );
     }
 }

@@ -1,5 +1,3 @@
-import { createRequire } from 'node:module';
-import type { NapiModule } from './type.js';
+import mod from './loader.cjs';
 
-const require = createRequire(import.meta.url);
-export const { compile, compileSync } = require('#lib') as NapiModule;
+export const { compile, compileSync } = mod;

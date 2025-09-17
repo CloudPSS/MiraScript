@@ -35,9 +35,15 @@ export enum CompletionItemInsertTextRule {
 /**
  * Converts a Monaco Editor range to a VS Code Range.
  */
-export function toRange(range: IRange): VsRange {
-    if (range instanceof VsRange) return range;
-    return new VsRange(range.startLineNumber - 1, range.startColumn - 1, range.endLineNumber - 1, range.endColumn - 1);
+export function toRange<T extends IRange | null | undefined>(range: T): T extends IRange ? VsRange : T {
+    if (range == null) return range as never;
+    if (range instanceof VsRange) return range as never;
+    return new VsRange(
+        range.startLineNumber - 1,
+        range.startColumn - 1,
+        range.endLineNumber - 1,
+        range.endColumn - 1,
+    ) as never;
 }
 
 /**

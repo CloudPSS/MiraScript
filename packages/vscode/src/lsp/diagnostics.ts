@@ -32,7 +32,7 @@ const configScript = createConfig({
     input_mode: 'Script',
 });
 
-const disabledSchemes = new Set(['git', 'vsls', 'github', 'azurerepos']);
+const disabledSchemes = new Set(['git', 'vsls', 'github', 'azurerepos', 'mirascript']);
 
 /** 诊断信息 */
 export class DiagnosticsManager extends Disposable {

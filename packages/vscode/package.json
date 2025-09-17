@@ -19,15 +19,15 @@
     "build:esbuild": "node ./esbuild.config.js",
     "build": "pnpm build:language-configuration && pnpm build:language && pnpm build:esbuild",
     "watch:language": "nodemon --watch scripts --exec 'pnpm build:language' --ext yaml",
-    "watch:esbuild": "nodemon --watch esbuild.config.js --exec 'pnpm build:esbuild'",
+    "watch:esbuild": "nodemon --watch esbuild.config.js --watch src --ext js,ts --exec 'pnpm build:esbuild'",
     "watch:ts": "rimraf ./dist && tsc --watch"
   },
   "dependencies": {
-    "@mirascript/wasm": "workspace:~"
+    "@mirascript/wasm": "workspace:~",
+    "@mirascript/mirascript": "workspace:~",
+    "@mirascript/monaco": "workspace:~"
   },
   "devDependencies": {
-    "@mirascript/mirascript": "workspace:~",
-    "@mirascript/monaco": "workspace:~",
     "@private/monaco-editor": "^0.0.49",
     "@types/vscode": "^1.104.0",
     "js-yaml": "^4.1.0",
