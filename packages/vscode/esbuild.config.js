@@ -35,6 +35,7 @@ await esbuild.build({
     target: 'esnext',
     bundle: true,
     packages: 'bundle',
-    platform: 'node',
+    // 不加载 node addon
+    platform: 'neutral',
     external: ['vscode', ...Object.keys(packageJson.dependencies || {})],
 });
