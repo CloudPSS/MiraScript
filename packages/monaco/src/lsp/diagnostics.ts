@@ -68,17 +68,16 @@ const makeMarker = (
 
 /** 设置标记 */
 export function setMarkers(model: editor.ITextModel, result: CompileResult): void {
-    if (typeof editor?.setModelMarkers != 'function') {
-        return;
-    }
+    const setModelMarkers = editor?.setModelMarkers;
+    if (typeof setModelMarkers != 'function') return;
+
     const { version } = result;
-    if (version !== model.getVersionId()) {
-        return;
-    }
+    if (version !== model.getVersionId()) return;
+
     const errors = result.errors.map((d) => makeMarker(model, version, d, MarkerSeverity.Error));
     const warnings = result.warnings.map((d) => makeMarker(model, version, d, MarkerSeverity.Warning));
     const infos = result.infos.map((d) => makeMarker(model, version, d, MarkerSeverity.Info));
     const hints = result.hints.map((d) => makeMarker(model, version, d, MarkerSeverity.Hint));
     const markers = [...errors, ...warnings, ...infos, ...hints];
-    editor.setModelMarkers(model, 'mirascript', markers);
+    setModelMarkers(model, 'mirascript', markers);
 }

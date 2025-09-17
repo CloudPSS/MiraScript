@@ -4,8 +4,28 @@ import type { Ready, Req, Res, ResOk } from './worker.js';
 import { CompileResult } from './compile-result.js';
 import { setMarkers } from './diagnostics.js';
 
-const cache = new Map<`${string}\0${number}\0${InputMode}`, Promise<CompileResult>>();
+/** 缓存 */
+type CacheKey = `${string}\0${InputMode}`;
+/** 缓存 */
+type CacheValue = {
+    version: number;
+    lastAccess: number;
+    result: Promise<CompileResult>;
+};
+/** 编译结果缓存，避免重复编译 */
+const cache = new Map<CacheKey, CacheValue>();
 let worker: Promise<Worker> | undefined = undefined;
+
+// 清理缓存
+const CACHE_MAX_AGE = 30000;
+setInterval(() => {
+    const now = Date.now();
+    for (const [key, { lastAccess }] of cache) {
+        if (now - lastAccess > CACHE_MAX_AGE) {
+            cache.delete(key);
+        }
+    }
+}, CACHE_MAX_AGE);
 
 /** 使用 worker 进行编译 */
 async function compileWorker(req: Req): Promise<CompileResult> {
@@ -73,10 +93,11 @@ export async function compile(model: editor.ITextModel): Promise<CompileResult> 
     const uri = model.uri.toString();
     const version = model.getVersionId();
     const mode = model.getLanguageId() === 'mirascript-template' ? 'Template' : 'Script';
-    const cacheKey = `${uri}\0${version}\0${mode}` as const;
+    const cacheKey = `${uri}\0${mode}` as const;
     const cached = cache.get(cacheKey);
-    if (cached) {
-        return cached;
+    if (cached && cached.version === version) {
+        cached.lastAccess = Date.now();
+        return cached.result;
     }
 
     const value = model.getValue();
@@ -85,14 +106,17 @@ export async function compile(model: editor.ITextModel): Promise<CompileResult> 
     void res.then((result) => {
         setMarkers(model, result);
     });
-    cache.set(cacheKey, res);
+    const item: CacheValue = {
+        version,
+        lastAccess: Date.now(),
+        result: res,
+    };
+    cache.set(cacheKey, item);
     res.catch(() => {
-        cache.delete(cacheKey);
-    }).finally(() => {
-        // 清理缓存，避免内存泄漏
-        setTimeout(() => {
+        const current = cache.get(cacheKey);
+        if (current === item) {
             cache.delete(cacheKey);
-        }, 10000);
+        }
     });
     return res;
 }

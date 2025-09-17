@@ -71,7 +71,7 @@ export class SignatureHelpProvider extends Provider implements languages.Signatu
             const thisArg = sig.params[0];
             if (thisArg && !thisArg[0].startsWith('..')) {
                 sig.params.shift();
-                const s = thisArg.includes(' ') ? `(${thisArg[1]})` : thisArg[1];
+                const s = thisArg[1].includes(' ') ? `(${thisArg[1]})` : thisArg[1];
                 signature.label = `fn ${s}::${sig.name}(`;
             } else {
                 signature.label = `fn ()::${sig.name}(`;

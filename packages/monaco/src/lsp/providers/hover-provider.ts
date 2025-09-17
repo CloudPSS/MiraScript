@@ -1,7 +1,7 @@
 import type { CancellationToken, editor, IMarkdownString, IRange, languages, Position } from '../../monaco-api.js';
 import { Provider } from './base.js';
 import { DiagnosticCode } from '@mirascript/wasm';
-import { codeblock, getDeep, valueDoc, paramsList } from '../utils.js';
+import { codeblock, getDeep, valueDoc, paramsList, wordAt } from '../utils.js';
 import type { FieldsAccessAt, VariableAccessAt } from '../compile-result.js';
 
 /** @inheritdoc */
@@ -134,23 +134,14 @@ export class HoverProvider extends Provider implements languages.HoverProvider {
         if (d) {
             return this.provideVariableHover(model, d);
         }
-        const word = model.getWordAtPosition(position);
+        const word = wordAt(model, position);
         if (word) {
             const a = compiled.fieldAccessAt(model, {
                 lineNumber: position.lineNumber,
-                column: word.endColumn,
+                column: word.range.endColumn,
             });
             if (a) {
-                return this.provideFieldHover(
-                    model,
-                    {
-                        startColumn: word.startColumn,
-                        endColumn: word.endColumn,
-                        startLineNumber: position.lineNumber,
-                        endLineNumber: position.lineNumber,
-                    },
-                    a,
-                );
+                return this.provideFieldHover(model, word.range, a);
             }
         }
         return undefined;

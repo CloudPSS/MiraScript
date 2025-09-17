@@ -1,5 +1,5 @@
 import { getVmFunctionInfo, type VmValue, isVmExtern, isVmModule, type VmFunctionInfo } from '@mirascript/mirascript';
-import { lib, operations } from '@mirascript/mirascript/subtle';
+import { DiagnosticCode, lib, operations } from '@mirascript/mirascript/subtle';
 import {
     type editor,
     languages,
@@ -10,7 +10,7 @@ import {
     Range,
 } from '../../monaco-api.js';
 import { Provider } from './base.js';
-import { codeblock, getDeep, valueDoc, paramsList } from '../utils.js';
+import { codeblock, getDeep, valueDoc, paramsList, strictContainsPosition, wordAt } from '../utils.js';
 import { keywords, reservedKeywords } from '../../constants.js';
 import type { LocalDefinition } from '../compile-result.js';
 
@@ -156,16 +156,21 @@ const COMMON_GLOBAL_SUGGESTIONS = (
                 (item) => item.label === kw && item.kind === languages.CompletionItemKind.Keyword,
             );
             if (exist) continue;
-            suggestions.push({
-                label: kw,
-                kind: languages.CompletionItemKind.Keyword,
-                insertText: kw,
-                range,
-            });
+            suggestions.push(kwSuggestion(kw, range));
         }
     }
     return suggestions;
 };
+
+/** 构造关键字选项 */
+function kwSuggestion(kw: string, range: languages.CompletionItemRanges): languages.CompletionItem {
+    return {
+        label: kw,
+        kind: languages.CompletionItemKind.Keyword,
+        insertText: kw,
+        range,
+    };
+}
 
 /** 扩展完成项 */
 interface CustomCompletionItem extends languages.CompletionItem {
@@ -373,12 +378,12 @@ export class CompletionItemProvider extends Provider implements languages.Comple
             }
         }
 
-        const word = model.getWordAtPosition(position);
+        const word = wordAt(model, position);
         const prev = model.getValueInRange({
             startLineNumber: position.lineNumber,
-            startColumn: (word?.startColumn ?? position.column) - 2,
+            startColumn: (word?.range.startColumn ?? position.column) - 2,
             endLineNumber: position.lineNumber,
-            endColumn: word?.startColumn ?? position.column,
+            endColumn: word?.range.startColumn ?? position.column,
         });
 
         if (context.triggerCharacter === ':' && prev !== '::') {
@@ -392,7 +397,19 @@ export class CompletionItemProvider extends Provider implements languages.Comple
         if (def) {
             if (def.ref == null) {
                 // 输入位置是变量定义
-                return { suggestions: [] };
+                const suggestions: languages.CompletionItem[] = [];
+                if (
+                    word &&
+                    compiled.tags.some(
+                        (t) => strictContainsPosition(t.range, position) && t.code === DiagnosticCode.MatchExpression,
+                    )
+                ) {
+                    suggestions.push(
+                        kwSuggestion('case', this.toCompletionItemRanges(position, word.range)),
+                        kwSuggestion('if', this.toCompletionItemRanges(position, word.range)),
+                    );
+                }
+                return { suggestions };
             }
             const d = def.def;
             range = d.references[def.ref]!.range;
@@ -403,12 +420,7 @@ export class CompletionItemProvider extends Provider implements languages.Comple
                 endColumn: range.startColumn + 1,
             });
         } else if (word) {
-            range = {
-                startLineNumber: position.lineNumber,
-                startColumn: word.startColumn,
-                endLineNumber: position.lineNumber,
-                endColumn: word.endColumn,
-            };
+            range = word.range;
             char = word.word[0];
         } else {
             range = {
