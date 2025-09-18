@@ -227,31 +227,60 @@ export function serializeForDisplay(value: VmValue): string {
 }
 
 /** 获取变量文档 */
-export function valueDoc(name: string, value: VmAny, field: boolean): { script: string; doc: string } {
+export function valueDoc(
+    name: string,
+    value: VmAny,
+    type: 'field' | 'declare' | 'hint',
+): { script: string; doc: string } {
     const info = getVmFunctionInfo(value);
     if (info) {
         return {
-            script: fnSignature(name, info).toString(),
+            script: fnSignature(name, info).toString() + (type === 'declare' ? ';' : ''),
             doc: globalFnDoc(info),
         };
     }
     let prefix;
-    if (!field) {
+    let suffix = '';
+    if (type === 'hint') {
         prefix = `${name} = `;
+    } else if (type === 'declare') {
+        if (name.startsWith('@')) {
+            prefix = `const ${name} = `;
+        } else {
+            prefix = `let ${name} = `;
+        }
+        suffix = ';';
     } else if (/^\d/.test(name)) {
         prefix = `[${name}]: `;
     } else {
         prefix = `${name}: `;
     }
     if (isVmModule(value)) {
-        let script = `(module) ${value.name}`;
-        if (value.name !== name) {
-            script = `${prefix}${script}`;
+        const doc = `模块 \`${value.name}\``;
+        let script;
+        if (type === 'declare') {
+            const exports = value.keys();
+            script = '\n';
+            for (const k of exports) {
+                const v = value.get(k);
+                const vDoc = valueDoc(k, v, 'declare');
+                const code = [
+                    `/**`,
+                    ...vDoc.doc.split('\n').map((line) => ` * ${line}`),
+                    ` */`,
+                    'export ' + vDoc.script,
+                    '',
+                    '',
+                ];
+                script += code.join('\n');
+            }
+        } else {
+            script = `(module) ${value.name}`;
+            if (value.name !== name) {
+                script = `${prefix}${script}`;
+            }
         }
-        return {
-            script,
-            doc: `模块 \`${value.name}\``,
-        };
+        return { script, doc };
     }
     let valueStr;
     if (value === undefined) {
@@ -259,7 +288,7 @@ export function valueDoc(name: string, value: VmAny, field: boolean): { script: 
     } else {
         valueStr = serializeForDisplay(value);
     }
-    return { script: `${prefix}${valueStr}`, doc: '' };
+    return { script: `${prefix}${valueStr}${suffix}`, doc: '' };
 }
 
 /** 获取深层属性 */

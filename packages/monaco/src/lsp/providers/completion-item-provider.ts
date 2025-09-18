@@ -461,7 +461,7 @@ export class CompletionItemProvider extends Provider implements languages.Comple
         if (vmValue != null) {
             if (item.documentation) return item;
             const last = label.split('.').pop()!;
-            const def = valueDoc(last, vmValue, isField);
+            const def = valueDoc(last, vmValue, isField ? 'field' : 'hint');
             item.documentation = {
                 value: `${codeblock('\0' + def.script)}\n${def.doc}`,
             };

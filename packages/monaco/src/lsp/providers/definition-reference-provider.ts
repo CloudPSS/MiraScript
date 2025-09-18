@@ -27,7 +27,7 @@ export class DefinitionReferenceProvider
     /** 准备要显示的定义 */
     private prepareGlobal(name: string, value: VmAny): { uri: Uri; range: IRange } {
         const { globalModel } = this;
-        const { script, doc } = valueDoc(name, value, false);
+        const { script, doc } = valueDoc(name, value, 'declare');
         const code = [
             `/**${DOC_HEADER}**/`,
             '',
@@ -38,13 +38,12 @@ export class DefinitionReferenceProvider
             '',
         ];
         globalModel.setValue(code.join('\n'));
-        const word = globalModel.getWordAtPosition({ lineNumber: code.length - 1, column: 1 });
         return {
             uri: globalModel.uri,
             range: {
-                startColumn: word ? word.startColumn : 1,
+                startColumn: 1,
                 startLineNumber: code.length - 1,
-                endColumn: word ? word.endColumn : 1,
+                endColumn: 1,
                 endLineNumber: code.length - 1,
             },
         };
