@@ -138,16 +138,14 @@ export function wordAt(model: editor.ITextModel, position: IPosition): { word: s
     return { word: word.word, range };
 }
 
-const MAX_WIDTH = 40;
-const MAX_ENTRIES = 100;
-
 /** 将值序列化为便于展示的字符串 */
-function serializeForDisplayInner(value: VmValue): string {
+function serializeForDisplayInner(value: VmValue, maxWidth: number): string {
+    if (maxWidth < 10) maxWidth = 10;
     if (typeof value === 'string') {
-        if (value.length < MAX_WIDTH) {
+        if (value.length < maxWidth) {
             return serializeString(value);
         }
-        return `${serializeString(value.slice(0, MAX_WIDTH))}..`;
+        return `${serializeString(value.slice(0, maxWidth))}..`;
     }
     if (isVmPrimitive(value)) {
         return serialize(value);
@@ -166,9 +164,9 @@ function serializeForDisplayInner(value: VmValue): string {
 }
 
 /** 将值序列化为便于展示的字符串 */
-export function serializeForDisplay(value: VmValue): string {
+export function serializeForDisplay(value: VmValue, maxEntries = 100, maxWidth = 40): string {
     if (isVmPrimitive(value) || isVmFunction(value)) {
-        return serializeForDisplayInner(value);
+        return serializeForDisplayInner(value, maxWidth);
     }
     let begin, end;
     const entries = [];
@@ -177,11 +175,11 @@ export function serializeForDisplay(value: VmValue): string {
         begin = '[';
         end = ']';
         for (const v of value) {
-            if (entries.length > MAX_ENTRIES) {
+            if (entries.length > maxEntries) {
                 entries.push(`../* x${value.length - entries.length} */`);
                 break;
             }
-            const entry = serializeForDisplayInner(v ?? null);
+            const entry = serializeForDisplayInner(v ?? null, maxWidth - 2);
             entries.push(entry);
             resultLength += entry.length;
         }
@@ -190,37 +188,39 @@ export function serializeForDisplay(value: VmValue): string {
         end = ')';
         const e = Object.entries(value);
         for (const [key, value] of e) {
-            if (entries.length > MAX_ENTRIES) {
+            if (entries.length > maxEntries) {
                 entries.push(`../* x${e.length - entries.length} */`);
                 break;
             }
-            const entry = `${serializePropName(key)}: ${serializeForDisplayInner(value ?? null)}`;
+            const sk = serializePropName(key);
+            const entry = `${sk}: ${serializeForDisplayInner(value ?? null, maxWidth - sk.length - 4)}`;
             entries.push(entry);
             resultLength += entry.length;
         }
     } else {
-        const hint = serializeForDisplayInner(value);
+        const hint = serializeForDisplayInner(value, 100);
         const isArray = isVmExtern(value) && Array.isArray(value.value);
         begin = `${hint} ${isArray ? '[' : '('}`;
         end = isArray ? ']' : ')';
         const keys = value.keys();
         for (const [index, key] of keys.entries()) {
-            if (entries.length > MAX_ENTRIES) {
+            if (entries.length > maxEntries) {
                 entries.push(`../* x${keys.length - entries.length} */`);
                 break;
             }
             let entry;
             if (isArray && String(index) === key) {
                 // 数组索引
-                entry = serializeForDisplayInner(value.get(key) ?? null);
+                entry = serializeForDisplayInner(value.get(key) ?? null, maxWidth - 2);
             } else {
-                entry = `${serializePropName(key)}: ${serializeForDisplayInner(value.get(key) ?? null)}`;
+                const sk = serializePropName(key);
+                entry = `${sk}: ${serializeForDisplayInner(value.get(key) ?? null, maxWidth - sk.length - 4)}`;
             }
             entries.push(entry);
             resultLength += entry.length;
         }
     }
-    if (resultLength >= MAX_WIDTH) {
+    if (resultLength >= maxWidth) {
         return `${begin}\n  ${entries.join(',\n  ')}\n${end}`;
     }
     return `${begin}${entries.join(', ')}${end}`;
@@ -287,7 +287,7 @@ export function valueDoc(
     if (value === undefined) {
         valueStr = '/* ... */';
     } else {
-        valueStr = serializeForDisplay(value);
+        valueStr = serializeForDisplay(value, type === 'declare' ? 1000 : 100, type === 'declare' ? 80 : 40);
     }
     return { script: `${prefix}${valueStr}${suffix}`, doc: '' };
 }

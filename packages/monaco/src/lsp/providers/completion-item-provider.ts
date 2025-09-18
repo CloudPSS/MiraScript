@@ -1,4 +1,11 @@
-import { getVmFunctionInfo, type VmValue, isVmExtern, isVmModule, type VmFunctionInfo } from '@mirascript/mirascript';
+import {
+    getVmFunctionInfo,
+    type VmValue,
+    isVmExtern,
+    isVmModule,
+    type VmFunctionInfo,
+    type VmExtern,
+} from '@mirascript/mirascript';
 import { DiagnosticCode, lib, operations } from '@mirascript/mirascript/subtle';
 import {
     type editor,
@@ -200,18 +207,22 @@ function completion(
     if (fn == null && typeof value == 'function') {
         fn = getVmFunctionInfo(value);
     }
-    const callable = fn != null || (isVmExtern(value) && value.callable);
-    if (callable) {
+    if (fn != null) {
         detail = paramsList(model, fn);
         kind = field ? languages.CompletionItemKind.Function : languages.CompletionItemKind.Method;
-    } else {
-        if (isVmModule(value)) {
-            kind = languages.CompletionItemKind.Module;
-        } else if (!field && key.startsWith('@')) {
-            kind = languages.CompletionItemKind.Constant;
+    } else if (isVmModule(value)) {
+        kind = languages.CompletionItemKind.Module;
+    } else if (isVmExtern(value) && typeof value.value == 'function') {
+        if (value.value.prototype != null && (key[0] ?? '').toUpperCase() === key[0]) {
+            kind = languages.CompletionItemKind.Class;
         } else {
-            kind = field ? languages.CompletionItemKind.Field : languages.CompletionItemKind.Variable;
+            detail = '(..)';
+            kind = value.caller ? languages.CompletionItemKind.Method : languages.CompletionItemKind.Function;
         }
+    } else if (!field && key.startsWith('@')) {
+        kind = languages.CompletionItemKind.Constant;
+    } else {
+        kind = field ? languages.CompletionItemKind.Field : languages.CompletionItemKind.Variable;
     }
     return {
         label: { label: key, description, detail },
@@ -220,6 +231,21 @@ function completion(
         vmValue: value,
         isField: field,
     };
+}
+
+/** 获取所有键 */
+function externKeys(value: VmExtern): string[] {
+    const keys = new Set<string>();
+    let e: unknown = value.value;
+    while (e && (typeof e == 'object' || typeof e == 'function')) {
+        for (const key of Object.getOwnPropertyNames(e)) {
+            if (value.has(key)) {
+                keys.add(key);
+            }
+        }
+        e = Object.getPrototypeOf(e);
+    }
+    return Array.from(keys);
 }
 
 /**
@@ -327,7 +353,7 @@ export class CompletionItemProvider extends Provider implements languages.Comple
         if (value == null || typeof value != 'object') {
             return [];
         }
-        const keys = lib.keys(value);
+        const keys = isVmExtern(value) ? externKeys(value) : lib.keys(value);
         const result: CustomCompletionItem[] = [];
         for (const k of keys) {
             const key = String(k);
