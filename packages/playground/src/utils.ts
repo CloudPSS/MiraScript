@@ -28,7 +28,9 @@ export async function print(value: VmAny | Error): Promise<string> {
         return syntaxHighlight(String(value), 'javascript');
     }
     if (isVmExtern(value) || isVmModule(value)) {
+        // 添加 `\0` 启用特殊格式化逻辑
         const colorized = await syntaxHighlight('\0/* ' + value.toString() + ' */', 'mirascript');
+        // 格式化后移除 `\0`
         return colorized.replace('>&#00;<', '><');
     }
     const valueStr = serialize(value);
@@ -48,7 +50,7 @@ export async function print(value: VmAny | Error): Promise<string> {
 editor.createModel('', 'javascript').dispose();
 /** 语法高亮 */
 export async function syntaxHighlight(value: string, languageId: string): Promise<string> {
-    let highlighted = await editor.colorize(value, languageId, {});
+    let highlighted = await editor.colorize(value, languageId, { tabSize: 2 });
     if (highlighted.endsWith('<br/>') && !value.endsWith('\n')) {
         // 如果高亮结果以 <br/> 结尾且原始值没有换行符，则去掉 <br/>
         highlighted = highlighted.slice(0, -'<br/>'.length);

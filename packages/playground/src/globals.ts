@@ -9,7 +9,7 @@ import {
     type VmContext,
 } from '@mirascript/mirascript';
 import type { ConsoleManager } from './console-manager.js';
-import { print } from './utils.js';
+import { escapeHtml, print } from './utils.js';
 
 /** 创建全局环境 */
 export function globals(consoleManager: ConsoleManager): VmContext {
@@ -20,7 +20,7 @@ export function globals(consoleManager: ConsoleManager): VmContext {
     function debugPrint(...args: VmAny[]) {
         lib.debug_print(...args);
         const messages = args.map(async (arg) => {
-            if (typeof arg === 'string') return arg;
+            if (typeof arg === 'string') return escapeHtml(arg);
             return print(arg);
         });
         consoleManager.log(Promise.all(messages).then((message) => message.join(' ')));
