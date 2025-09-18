@@ -1,4 +1,5 @@
 import { type VmAny, isVmExtern, isVmModule, serialize } from '@mirascript/mirascript';
+import { createConfig, wasm } from '@mirascript/wasm';
 import { editor } from '@private/monaco-editor';
 
 /** HTML escape */
@@ -11,6 +12,13 @@ export function escapeHtml(value: string): string {
         .replaceAll("'", '&#39;');
 }
 
+const formatConfig = createConfig({
+    input_mode: 'Script',
+    trivia: true,
+    track_references: false,
+    diagnostic_reference: false,
+    diagnostic_position_encoding: 'None',
+});
 /** 将值转为语法高亮的显示 */
 export async function print(value: VmAny | Error): Promise<string> {
     if (value === undefined) return escapeHtml('<uninitialized>');
@@ -23,7 +31,17 @@ export async function print(value: VmAny | Error): Promise<string> {
         const colorized = await syntaxHighlight('\0/* ' + value.toString() + ' */', 'mirascript');
         return colorized.replace('>&#00;<', '><');
     }
-    return syntaxHighlight(serialize(value), 'mirascript');
+    const valueStr = serialize(value);
+    const formatter = new wasm.MonacoCompiler(valueStr, formatConfig);
+    try {
+        const formatted = formatter.parse() && formatter.format();
+        if (formatted) {
+            return syntaxHighlight(formatted, 'mirascript');
+        }
+    } finally {
+        formatter.free();
+    }
+    return syntaxHighlight(serialize(valueStr), 'mirascript');
 }
 
 // 加载 javascript 模型以便语法高亮
