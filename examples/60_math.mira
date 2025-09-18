@@ -137,7 +137,6 @@ debug_print("abs(-5) =", abs(-5));
 debug_print("max(3, 7) =", max(3, 7));
 debug_print("min(3, 7) =", min(3, 7));
 debug_print("factorial(5) =", factorial(5));
-debug_print("power(2, 8) =", power(2, 8));
 debug_print("gcd(48, 18) =", gcd(48, 18));
 debug_print("lcm(12, 8) =", lcm(12, 8));
 

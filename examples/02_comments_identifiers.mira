@@ -72,7 +72,7 @@ debug_print("variable:", variable);
 debug_print("Variable:", Variable);
 debug_print("VARIABLE:", VARIABLE);
 
-// Unicode 标识符（如果支持）
+// Unicode 标识符
 let 变量名 = "中文变量名";
 let 数量 = 42;
 let π = 3.141_59;
