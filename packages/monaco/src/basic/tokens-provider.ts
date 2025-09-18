@@ -328,11 +328,11 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                 ],
                 [/[()]/, '@brackets'],
                 [/(->)/, 'delimiter', '@type_doc'],
-                [/;/, 'delimiter', '@pop'],
+                [/;/, { token: 'delimiter', next: '@pop', goBack: 1 }],
             ],
             type_doc: [
                 { include: '@type_doc_common' },
-                [/,/, 'delimiter', '@pop'],
+                [/[,)]/, 'delimiter', '@pop'],
                 [/;/, { token: 'delimiter', next: '@pop', goBack: 1 }],
             ],
             type_doc_inner: [{ include: '@type_doc_common' }, [/[,;]/, 'delimiter']],

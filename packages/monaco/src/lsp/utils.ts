@@ -263,7 +263,7 @@ export function valueDoc(
             script = '\n';
             for (const k of exports) {
                 const v = value.get(k);
-                const vDoc = valueDoc(k, v, 'declare');
+                const vDoc = valueDoc(k, v, isVmModule(v) ? 'field' : 'declare');
                 const code = [
                     `/**`,
                     ...vDoc.doc.split('\n').map((line) => ` * ${line}`),
@@ -274,6 +274,7 @@ export function valueDoc(
                 ];
                 script += code.join('\n');
             }
+            script = script.trimEnd();
         } else {
             script = `(module) ${value.name}`;
             if (value.name !== name) {
