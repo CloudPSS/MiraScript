@@ -111,9 +111,9 @@ importers:
       lightningcss:
         specifier: ^1.30.1
         version: 1.30.1
-      rollup-plugin-sourcemaps:
-        specifier: ^0.6.3
-        version: 0.6.3(@types/node@24.5.2)(rollup@4.50.2)
+      rollup-plugin-sourcemaps2:
+        specifier: ^0.5.4
+        version: 0.5.4(@types/node@24.5.2)(rollup@4.50.2)
       type-fest:
         specifier: ^5.0.1
         version: 5.0.1
@@ -711,12 +711,15 @@ packages:
         tarball: https://packages.aliyun.com/60c179fc44816b8ed233a8bb/npm/npm-registry/@private/monaco-editor/-/@private/monaco-editor-0.0.51.tgz,
       }
 
-  '@rollup/pluginutils@3.1.0':
+  '@rollup/pluginutils@5.2.0':
     resolution:
-      { integrity: sha512-GksZ6pr6TpIjHm8h9lSQ8pi8BE9VeubNT0OMJ3B5uZJ8pz73NPiqOtCog/x2/QzM1ENChPKxMDhiQuRHsqc+lg== }
-    engines: { node: '>= 8.0.0' }
+      { integrity: sha512-qWJ2ZTbmumwiLFomfzTyt5Kng4hwPi9rwCYN4SHb6eaRU1KNO4ccxINHr/VhH4GgPlt1XfSTLX2LBTme8ne4Zw== }
+    engines: { node: '>=14.0.0' }
     peerDependencies:
-      rollup: ^1.20.0||^2.0.0
+      rollup: ^1.20.0||^2.0.0||^3.0.0||^4.0.0
+    peerDependenciesMeta:
+      rollup:
+        optional: true
 
   '@rollup/pluginutils@5.3.0':
     resolution:
@@ -885,10 +888,6 @@ packages:
   '@types/conventional-commits-parser@5.0.1':
     resolution:
       { integrity: sha512-7uz5EHdzz2TqoMfV7ee61Egf5y6NkcO4FB/1iCCQnbeiI1F3xzv3vK5dBCXUCLQgGYS+mUeigK1iKQzvED+QnQ== }
-
-  '@types/estree@0.0.39':
-    resolution:
-      { integrity: sha512-EYNwp3bU+98cpU4lAWYYL7Zz+2gryWH1qbdDTidVd6hkiR6weksdbMadyXKXNPEkQFhXM+hVO9ZygomHXp+AIw== }
 
   '@types/estree@1.0.8':
     resolution:
@@ -1104,12 +1103,6 @@ packages:
   async-sema@3.1.1:
     resolution:
       { integrity: sha512-tLRNUXati5MFePdAk8dw7Qt7DpxPB60ofAgn8WRhW6a2rcimZnYBP9oxHiv0OHy+Wz7kPMG+t4LGdt31+4EmGg== }
-
-  atob@2.1.2:
-    resolution:
-      { integrity: sha512-Wm6ukoaOGJi/73p/cl2GvLjTI5JM1k/O14isD73YML8StrH/7/lRFgmg8nICZgD3bZZvjwCGxtMOD3wWNAu8cg== }
-    engines: { node: '>= 4.5.0' }
-    hasBin: true
 
   ava@6.4.1:
     resolution:
@@ -1399,11 +1392,6 @@ packages:
       supports-color:
         optional: true
 
-  decode-uri-component@0.2.2:
-    resolution:
-      { integrity: sha512-FqUYQ+8o158GyGTrMFJms9qh3CqTKvAqgqsTnkLI8sKu0028orqBhxNMFkFen0zGyg6epACD32pjVk58ngIErQ== }
-    engines: { node: '>=0.10' }
-
   deep-is@0.1.4:
     resolution:
       { integrity: sha512-oIPzksmTg4/MriiaYGO+okXDT7ztn/w3Eptv/+gSIdMdKsJo0u4CfYNFJPy+4SKMuCqGw2wxnA+URMg3t8a/bQ== }
@@ -1565,10 +1553,6 @@ packages:
     resolution:
       { integrity: sha512-MMdARuVEQziNTeJD8DgMqmhwR11BRQ/cBP+pLtYdSTnf3MIO8fFeiINEbX36ZdNlfU/7A9f3gUw49B3oQsvwBA== }
     engines: { node: '>=4.0' }
-
-  estree-walker@1.0.1:
-    resolution:
-      { integrity: sha512-1fMXF3YP4pZZVozF8j/ZLfvnR8NSIljt56UhbZ5PeeDmmGHpgpdwQt7ITlGvYaQukCvuBRMLEiKiYC+oeIg4cg== }
 
   estree-walker@2.0.2:
     resolution:
@@ -2535,13 +2519,13 @@ packages:
     engines: { node: 20 || >=22 }
     hasBin: true
 
-  rollup-plugin-sourcemaps@0.6.3:
+  rollup-plugin-sourcemaps2@0.5.4:
     resolution:
-      { integrity: sha512-paFu+nT1xvuO1tPFYXGe+XnQvg4Hjqv/eIhG8i5EspfYYPBKL57X7iVbfv55aNVASg3dzWvES9dmWsL2KhfByw== }
-    engines: { node: '>=10.0.0' }
+      { integrity: sha512-XK6ITvEsKtUFN1GQbYKoqilwh1yKxTS9BLaFlVsm0IaYUYe3eVnhBWzKP4AHbkBO2BNOheGNlf407K7wCj6Rrw== }
+    engines: { node: '>=18.0.0' }
     peerDependencies:
-      '@types/node': '>=10.0.0'
-      rollup: '>=0.31.2'
+      '@types/node': '>=18.0.0'
+      rollup: '>=4'
     peerDependenciesMeta:
       '@types/node':
         optional: true
@@ -2610,11 +2594,6 @@ packages:
     resolution:
       { integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA== }
     engines: { node: '>=0.10.0' }
-
-  source-map-resolve@0.6.0:
-    resolution:
-      { integrity: sha512-KXBr9d/fO/bWo97NXsPIAW1bFSBOuCnjbNTBMO7N59hsv5i9yzRDfcYwwt0l04+VqnKC+EwzvJZIP/qkuMgR/w== }
-    deprecated: See https://github.com/lydell/source-map-resolve#deprecated
 
   spdx-exceptions@2.5.0:
     resolution:
@@ -3431,11 +3410,12 @@ snapshots:
 
   '@private/monaco-editor@0.0.51': {}
 
-  '@rollup/pluginutils@3.1.0(rollup@4.50.2)':
+  '@rollup/pluginutils@5.2.0(rollup@4.50.2)':
     dependencies:
-      '@types/estree': 0.0.39
-      estree-walker: 1.0.1
-      picomatch: 2.3.1
+      '@types/estree': 1.0.8
+      estree-walker: 2.0.2
+      picomatch: 4.0.3
+    optionalDependencies:
       rollup: 4.50.2
 
   '@rollup/pluginutils@5.3.0(rollup@4.50.2)':
@@ -3527,8 +3507,6 @@ snapshots:
   '@types/conventional-commits-parser@5.0.1':
     dependencies:
       '@types/node': 24.5.2
-
-  '@types/estree@0.0.39': {}
 
   '@types/estree@1.0.8': {}
 
@@ -3733,8 +3711,6 @@ snapshots:
   arrify@3.0.0: {}
 
   async-sema@3.1.1: {}
-
-  atob@2.1.2: {}
 
   ava@6.4.1(rollup@4.50.2):
     dependencies:
@@ -4017,8 +3993,6 @@ snapshots:
     optionalDependencies:
       supports-color: 5.5.0
 
-  decode-uri-component@0.2.2: {}
-
   deep-is@0.1.4: {}
 
   detect-libc@2.1.0: {}
@@ -4198,8 +4172,6 @@ snapshots:
       estraverse: 5.3.0
 
   estraverse@5.3.0: {}
-
-  estree-walker@1.0.1: {}
 
   estree-walker@2.0.2: {}
 
@@ -4836,11 +4808,10 @@ snapshots:
       glob: 11.0.3
       package-json-from-dist: 1.0.1
 
-  rollup-plugin-sourcemaps@0.6.3(@types/node@24.5.2)(rollup@4.50.2):
+  rollup-plugin-sourcemaps2@0.5.4(@types/node@24.5.2)(rollup@4.50.2):
     dependencies:
-      '@rollup/pluginutils': 3.1.0(rollup@4.50.2)
+      '@rollup/pluginutils': 5.2.0(rollup@4.50.2)
       rollup: 4.50.2
-      source-map-resolve: 0.6.0
     optionalDependencies:
       '@types/node': 24.5.2
 
@@ -4914,11 +4885,6 @@ snapshots:
       is-fullwidth-code-point: 5.1.0
 
   source-map-js@1.2.1: {}
-
-  source-map-resolve@0.6.0:
-    dependencies:
-      atob: 2.1.2
-      decode-uri-component: 0.2.2
 
   spdx-exceptions@2.5.0: {}
 

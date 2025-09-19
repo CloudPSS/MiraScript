@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite';
 import checker from 'vite-plugin-checker';
-import sourcemaps from 'rollup-plugin-sourcemaps';
+import sourcemaps from 'rollup-plugin-sourcemaps2';
 
 const PROD = process.env.NODE_ENV === 'production';
 
