@@ -1,6 +1,6 @@
 import { CpEnter, CpExit } from '../helpers.js';
 import { $Call } from '../operations.js';
-import type { VmAny, VmExtern, VmValue } from './index.js';
+import type { VmAny, VmValue } from './index.js';
 import { wrapToVmValue, unwrapFromVmValue } from './extern.js';
 const { defineProperty } = Object;
 
@@ -105,24 +105,20 @@ export function toVmFunctionProxy<T extends VmFunctionLike>(fn: VmFunction<T>): 
     const cached = (fn as unknown as { [kProxy]?: T })[kProxy];
     if (cached) return cached;
 
-    const proxy = function (this: unknown, ...args: unknown[]) {
-        let wrappedThis: VmExtern | null | undefined;
+    const proxy = (...args: unknown[]) => {
         const ret = $Call(
             fn,
-            args.map((v) => {
-                if (typeof v != 'function') {
-                    return wrapToVmValue(v, null);
-                }
-                if (wrappedThis === undefined) {
-                    wrappedThis = wrapToVmValue(this, null) as VmExtern | null;
-                }
-                return wrapToVmValue(v, wrappedThis);
-            }),
+            // 作为函数参数传入的值一定丢失了它的 this
+            args.map((v) => wrapToVmValue(v, null)),
         );
         return unwrapFromVmValue(ret);
     };
     defineProperty(fn, kProxy, { value: proxy });
     defineProperty(proxy, kProxy, { value: fn });
+    defineProperty(proxy, 'name', {
+        value: fn.name,
+        configurable: true,
+    });
     return proxy as T;
 }
 
