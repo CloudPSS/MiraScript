@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import checker from 'vite-plugin-checker';
+import sourcemaps from 'rollup-plugin-sourcemaps';
 
 const PROD = process.env.NODE_ENV === 'production';
 
@@ -13,7 +14,7 @@ export default defineConfig({
     resolve: {
         conditions: PROD ? undefined : ['module', 'browser', 'development|production', '@mirascript/dev'],
     },
-    plugins: [checker({ typescript: true })],
+    plugins: [sourcemaps(), checker({ typescript: true })],
     worker: {
         format: 'es',
     },
@@ -28,7 +29,6 @@ export default defineConfig({
         },
     },
     build: {
-        target: 'esnext',
         cssMinify: 'lightningcss',
         sourcemap: true,
         emptyOutDir: true,
