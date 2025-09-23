@@ -175,8 +175,17 @@ export const $In = (value: VmAny, iterable: VmAny): boolean => {
     $AssertInit(iterable);
     if (iterable == null) return false;
     if (isVmArray(iterable)) {
+        if (value == null) {
+            // array may have empty slots
+            for (const item of iterable) {
+                if (item == null) return true;
+            }
+            return false;
+        }
         // JS %SameValueZero is same with `isSame` in this context
         if (isVmPrimitive(value)) return iterable.includes(value);
+        // value is not null here, so it's ok to skip empty slots, since `isSame(null, something)` is always false
+        value satisfies NonNullable<VmValue>;
         return iterable.some((item) => isSame(item, value));
     }
     // iterable is a record or an extern here, value should be a string
