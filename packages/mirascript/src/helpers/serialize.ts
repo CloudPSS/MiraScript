@@ -9,6 +9,7 @@ import {
     type VmRecord,
 } from '../vm/index.js';
 import { REG_IDENTIFIER, REG_ORDINAL } from './constants.js';
+import { entries, isFinite, isNaN } from '../helpers/utils.js';
 
 const MAX_DEPTH = 100;
 const REG_IDENTIFIER_FULL = new RegExp(`^${REG_IDENTIFIER.source}$`, REG_IDENTIFIER.flags);
@@ -78,7 +79,6 @@ function serializeBoolean(value: boolean): string {
     return value ? 'true' : 'false';
 }
 
-const { isNaN, isFinite } = Number;
 /** 序列化数字 */
 function serializeNumber(value: number): string {
     if (isNaN(value)) return 'nan';
@@ -120,10 +120,10 @@ function serializeRecord(value: VmRecord, depth: number): string {
     if (customValue !== undefined) {
         return serializeImpl(customValue, depth - 1);
     }
-    const entries = Object.entries(value);
-    if (entries.length === 0) return '()';
-    if (entries.length === 1) {
-        const [k, v] = entries[0]!;
+    const e = entries(value);
+    if (e.length === 0) return '()';
+    if (e.length === 1) {
+        const [k, v] = e[0]!;
         if (k === '0') {
             return `(${serializeImpl(v, depth)},)`; // 单个元素数组
         }
@@ -131,9 +131,9 @@ function serializeRecord(value: VmRecord, depth: number): string {
     }
 
     // 根据 ES 标准，数字 key 会按顺序枚举
-    const omitKey = entries.length < 10 && entries.every(([key], index) => key === String(index));
+    const omitKey = e.length < 10 && e.every(([key], index) => key === String(index));
     let str = '(';
-    for (const [key, val] of entries) {
+    for (const [key, val] of e) {
         if (str.length > 1) str += ', ';
         if (omitKey) {
             str += serializeImpl(val, depth);

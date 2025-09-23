@@ -1,3 +1,4 @@
+import { entries } from '../../../../helpers/utils.js';
 import { Cp } from '../../../helpers.js';
 import { $Call, $ToBoolean } from '../../../operations.js';
 import { type VmValue, isVmArray } from '../../../types/index.js';
@@ -22,7 +23,7 @@ export const find = VmLib(
             }
             return null;
         } else {
-            for (const [key, v] of Object.entries(data)) {
+            for (const [key, v] of entries(data)) {
                 Cp();
                 const value = v ?? null;
                 const ret = p(value, key, data);

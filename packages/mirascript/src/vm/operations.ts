@@ -19,9 +19,8 @@ import {
     type VmFunction,
 } from './types/index.js';
 import { VmWrapper } from './types/wrapper.js';
+import { hasOwnEnumerable, isNaN, isSafeInteger, keys, create } from '../helpers/utils.js';
 
-const { hasOwn, keys, create } = Object;
-const { isNaN, isSafeInteger } = Number;
 const { abs, min, trunc, ceil } = Math;
 const { slice, at } = Array.prototype;
 
@@ -58,7 +57,7 @@ const isSame = (a: VmValue, b: VmValue): boolean => {
             return false;
         }
         for (const key of aKeys) {
-            if (!hasOwn(b, key)) {
+            if (!hasOwnEnumerable(b, key)) {
                 return false;
             }
             if (!isSame(a[key] ?? null, b[key] ?? null)) {
@@ -182,7 +181,7 @@ export const $In = (value: VmAny, iterable: VmAny): boolean => {
     }
     // iterable is a record or an extern here, value should be a string
     if (iterable instanceof VmWrapper) return iterable.has($ToString(value));
-    if (typeof iterable == 'object') return hasOwn(iterable, $ToString(value));
+    if (typeof iterable == 'object') return hasOwnEnumerable(iterable, $ToString(value));
     iterable satisfies VmPrimitive | VmFunction;
     return false;
 };
@@ -220,7 +219,7 @@ export const $Pick = (value: VmAny, picked: ReadonlyArray<string | number>): VmR
     const result: Record<string, VmConst> = {};
     for (const key of picked) {
         const k = $ToString(key);
-        if (hasOwn(value, k)) {
+        if (hasOwnEnumerable(value, k)) {
             result[k] = value[k] ?? null;
         }
     }
@@ -356,7 +355,7 @@ export const $Has = (obj: VmAny, key: VmAny): boolean => {
     const pk = $ToString(key);
     if (obj == null || typeof obj != 'object') return false;
     if (obj instanceof VmWrapper) return obj.has(pk);
-    return hasOwn(obj, pk);
+    return hasOwnEnumerable(obj, pk);
 };
 export const $Get = (obj: VmAny, key: VmAny): VmValue => {
     $AssertInit(obj);
@@ -368,7 +367,7 @@ export const $Get = (obj: VmAny, key: VmAny): VmValue => {
     const pk = $ToString(key);
     if (obj == null || typeof obj != 'object') return null;
     if (obj instanceof VmWrapper) return obj.get(pk) ?? null;
-    if (!hasOwn(obj, pk)) return null;
+    if (!hasOwnEnumerable(obj, pk)) return null;
     return (obj as Record<string, VmImmutable>)[pk] ?? null;
 };
 export const $Set = (obj: VmAny, key: VmAny, value: VmAny): void => {

@@ -1,7 +1,7 @@
 /* eslint-disable no-loss-of-precision */
+import { isInteger, isNaN } from '../../../helpers/utils.js';
 import { $ToNumber } from '../../operations.js';
 import { required, VmLib } from '../_helpers.js';
-const { isInteger, isNaN } = Number;
 const { sqrt, pow, exp } = Math;
 
 const GAMMA_G = 4.742_187_5;

@@ -1,6 +1,6 @@
 import { $ToString, $ToNumber } from '../../operations.js';
 import { VmLib } from '../_helpers.js';
-const { isFinite } = Number;
+import { isFinite } from '../../../helpers/utils.js';
 
 export const to_timestamp = VmLib(
     (datetime) => {

@@ -1,8 +1,8 @@
+import { defineProperty } from '../../helpers/utils.js';
 import { CpEnter, CpExit } from '../helpers.js';
 import { $Call } from '../operations.js';
 import type { VmAny, VmValue } from './index.js';
 import { wrapToVmValue, unwrapFromVmValue } from './extern.js';
-const { defineProperty } = Object;
 
 const kVmFunction = Symbol.for('mirascript.vm.function');
 const kProxy = Symbol.for('mirascript.vm.function.proxy');

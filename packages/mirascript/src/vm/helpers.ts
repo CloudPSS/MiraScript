@@ -10,7 +10,7 @@ import {
     type VmValue,
     VM_ARRAY_MAX_LENGTH,
 } from './types/index.js';
-const { isFinite } = Number;
+import { isFinite } from '../helpers/utils.js';
 
 export const Vargs = (varags: VmAny[]): VmArray => {
     for (let i = 0, l = varags.length; i < l; i++) {

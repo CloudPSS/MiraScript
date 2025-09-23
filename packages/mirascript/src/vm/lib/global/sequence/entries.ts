@@ -1,7 +1,7 @@
 import { isVmArray, isVmRecord } from '../../../types/index.js';
 import { VmLib, expectArrayOrRecord, expectCompound } from '../../_helpers.js';
+import { keys as _keys, values as _values, entries as _entries } from '../../../../helpers/utils.js';
 
-const { keys: _keys, values: _values, entries: _entries } = Object;
 export const keys = VmLib(
     (data) => {
         expectCompound('data', data, []);

@@ -1,3 +1,4 @@
+import { getPrototypeOf, isArray, values } from '../../helpers/utils.js';
 import {
     isVmFunction,
     VmModule,
@@ -9,8 +10,6 @@ import {
     type VmValue,
 } from './index.js';
 import { VmWrapper } from './wrapper.js';
-const { isArray } = Array;
-const { getPrototypeOf, values } = Object;
 
 const MAX_DEPTH = 100;
 /**

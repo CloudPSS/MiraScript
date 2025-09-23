@@ -1,3 +1,4 @@
+import { entries } from '../../../../helpers/utils.js';
 import { Cp } from '../../../helpers.js';
 import { $Call, $ToBoolean } from '../../../operations.js';
 import { isVmArray } from '../../../types/index.js';
@@ -16,7 +17,7 @@ export const all = VmLib(
             }
             return true;
         } else {
-            for (const [key, v] of Object.entries(data)) {
+            for (const [key, v] of entries(data)) {
                 Cp();
                 const value = v ?? null;
                 const ret = $Call(predicate, [value, key, data]);
@@ -49,7 +50,7 @@ export const any = VmLib(
             }
             return false;
         } else {
-            for (const [key, v] of Object.entries(data)) {
+            for (const [key, v] of entries(data)) {
                 Cp();
                 const value = v ?? null;
                 const ret = $Call(predicate, [value, key, data]);

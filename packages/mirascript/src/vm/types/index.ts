@@ -1,8 +1,8 @@
+import { isArray } from '../../helpers/utils.js';
 import { VmExtern } from './extern.js';
 import type { VmFunction } from './function.js';
 import { VmModule } from './module.js';
 import { VmWrapper } from './wrapper.js';
-const { isArray } = Array;
 
 /** Mirascript 原始值 */
 export type VmPrimitive = null | string | number | boolean;

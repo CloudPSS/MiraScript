@@ -7,8 +7,8 @@ import {
     isVmAny,
     type VmFunctionLike,
 } from './index.js';
+import { entries, keys } from '../../helpers/utils.js';
 import type * as global from '../lib/global/index.js';
-const { entries } = Object;
 
 /** 全局导入的标准库 */
 type GlobalKeys = keyof typeof global;
@@ -62,7 +62,7 @@ export const DefaultVmContext: VmContext = Object.freeze({
     [kVmContext]: true as const,
     /** @inheritdoc */
     keys(): Iterable<string> {
-        return Object.keys(VmSharedContext);
+        return keys(VmSharedContext);
     },
     /** @inheritdoc */
     get(key: string): VmValue {
@@ -77,9 +77,10 @@ export const DefaultVmContext: VmContext = Object.freeze({
 /** 以值为后备的实现 */
 class ValueVmContext implements VmContext {
     readonly [kVmContext] = true;
+    private cachedKeys: readonly string[] | null = null;
     /** @inheritdoc */
     keys(): Iterable<string> {
-        this.cachedKeys ??= Object.keys(this.env);
+        this.cachedKeys ??= keys(this.env);
         return [...this.cachedKeys, ...DefaultVmContext.keys()];
     }
     /** @inheritdoc */
@@ -91,7 +92,6 @@ class ValueVmContext implements VmContext {
         return key in this.env;
     }
     constructor(private readonly env: VmContextRecord & { __proto__: VmSharedContext }) {}
-    private cachedKeys: readonly string[] | undefined;
 }
 
 /** 以工厂函数为后备的实现 */

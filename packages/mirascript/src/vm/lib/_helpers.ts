@@ -19,6 +19,7 @@ import {
 } from '../types/index.js';
 import type { VmFunctionLike, VmFunctionOption } from '../types/function.js';
 import { Cp } from '../helpers.js';
+import { isNaN, entries, fromEntries } from '../../helpers/utils.js';
 
 /** 抛出异常 */
 export function throwError(message: string, recovered: VmAny | (() => VmAny)): never {
@@ -145,7 +146,7 @@ export function getNumbers(args: readonly VmAny[]): number[] {
 
 /** 将值转为数组长度 */
 export function arrayLen(len: number | null | undefined): number {
-    if (len == null || Number.isNaN(len) || len <= 0) return 0;
+    if (len == null || isNaN(len) || len <= 0) return 0;
     len = Math.trunc(len);
     if (len > VM_ARRAY_MAX_LENGTH) throwError(`Array length exceeds maximum limit of ${VM_ARRAY_MAX_LENGTH}`, null);
     return len;
@@ -174,18 +175,18 @@ export function map(
         }
         return result;
     } else {
-        const entries: Array<[string, VmConst]> = [];
-        for (const [key, value] of Object.entries(data)) {
+        const e: Array<[string, VmConst]> = [];
+        for (const [key, value] of entries(data)) {
             Cp();
             const ret = mapper(value ?? null, key, data);
             if (ret === undefined) continue;
             if (isVmConst(ret)) {
-                entries.push([key, ret]);
+                e.push([key, ret]);
             } else {
-                entries.push([key, null]);
+                e.push([key, null]);
             }
         }
-        return Object.fromEntries(entries);
+        return fromEntries(e);
     }
 }
 

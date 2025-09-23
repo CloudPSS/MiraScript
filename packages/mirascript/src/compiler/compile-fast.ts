@@ -2,7 +2,7 @@ import { wrapScript } from './create-script.js';
 import type { TranspileOptions } from './types.js';
 import type { VmScript } from '../vm/types/index.js';
 import { GlobalFallback } from '../vm/helpers.js';
-const { isFinite } = Number;
+import { isFinite } from '../helpers/utils.js';
 
 const REG_NUMBER_FULL = /^\d+(?:\.\d+)?(?:[eE][+-]?\d+)?$/;
 // 只识别特殊变量名，其他标识符可能有与关键字冲突等情况，需要编译器处理

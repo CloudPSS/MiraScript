@@ -1,3 +1,4 @@
+import { isArray } from '../../../../helpers/utils.js';
 import { Cp } from '../../../helpers.js';
 import { $Add, $Call, $Div, $Mul, $Sub, $ToNumber } from '../../../operations.js';
 import { isVmArray, isVmConst, type VmAny, type VmArray, type VmConst, type VmValue } from '../../../types/index.js';
@@ -510,7 +511,7 @@ export const diagonal = VmLib(
     (x, k = 0) => {
         expectArray('x', x, []);
         const fk = Math.round($ToNumber(k) || 0);
-        if (x.every((e) => Array.isArray(e))) {
+        if (x.every((e) => isArray(e))) {
             // 获取对角线元素
             const diag: VmConst[] = [];
             for (let i = 0; i < x.length; i++) {

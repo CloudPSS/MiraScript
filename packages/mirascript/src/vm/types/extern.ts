@@ -2,8 +2,8 @@ import { VmError } from '../error.js';
 import { fromVmFunctionProxy, toVmFunctionProxy, type VmFunctionLike } from './function.js';
 import { VmWrapper } from './wrapper.js';
 import type { TypeName, VmAny, VmModule, VmValue } from './index.js';
+import { hasOwn } from '../../helpers/utils.js';
 const { apply } = Reflect;
-const { hasOwn } = Object;
 
 /** 包装为 Mirascript 类型 */
 export function wrapToVmValue(value: unknown, caller: VmExtern | null): VmValue {

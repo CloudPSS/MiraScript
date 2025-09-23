@@ -2,6 +2,7 @@ import { Element } from '../../../helpers.js';
 import { $ToNumber, $ToString } from '../../../operations.js';
 import { isVmArray, type VmConst } from '../../../types/index.js';
 import { VmLib, expectArrayOrRecord, throwError } from '../../_helpers.js';
+import { isSafeInteger } from '../../../../helpers/utils.js';
 
 const _with = VmLib(
     (data, ...entries) => {
@@ -13,7 +14,7 @@ const _with = VmLib(
             const result: VmConst[] = [...data];
             for (let i = 0; i < entries.length; i += 2) {
                 const index = Math.trunc($ToNumber(entries[i]));
-                if (!Number.isFinite(index) || index < 0 || index >= Number.MAX_SAFE_INTEGER) continue;
+                if (!isSafeInteger(index) || index < 0) continue;
                 const value = entries[i + 1];
                 while (index > result.length) {
                     result.push(null);

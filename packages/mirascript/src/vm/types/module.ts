@@ -1,7 +1,6 @@
+import { hasOwnEnumerable, keys } from '../../helpers/utils.js';
 import type { TypeName, VmAny, VmValue } from './index.js';
 import { VmWrapper } from './wrapper.js';
-
-const { hasOwn, keys } = Object;
 
 /** Mirascript 模块 */
 export class VmModule<const T extends Record<string, VmValue> = Record<string, VmValue>> extends VmWrapper<T> {
@@ -15,7 +14,7 @@ export class VmModule<const T extends Record<string, VmValue> = Record<string, V
     }
     /** @inheritdoc */
     override has(key: string): boolean {
-        return hasOwn(this.value, key);
+        return hasOwnEnumerable(this.value, key);
     }
     /** @inheritdoc */
     override get(key: string): VmAny {
