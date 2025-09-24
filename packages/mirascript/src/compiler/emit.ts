@@ -56,6 +56,16 @@ function toJavascript(value: VmConst | undefined): string {
 const ORIGIN = `mira://MiraScript`;
 let sourceId = 1;
 
+/** 创建数组 */
+function createArray<T>(length: number, fn: (index: number) => T): T[] {
+    // micro bench shows that this is faster than Array.from
+    const result: T[] = [];
+    for (let i = 0; i < length; i++) {
+        result.push(fn(i));
+    }
+    return result;
+}
+
 /** 代码生成 */
 class Emitter {
     constructor(
@@ -335,7 +345,7 @@ class Emitter {
                 const varg = opcode === OpCode.FuncVarg;
                 const argn = read();
                 const regn = read();
-                const args = Array.from({ length: argn }, (_, i) => {
+                const args = createArray(argn, (i) => {
                     const wv = this.wv(i + 1, -1);
                     if (varg && i === argn - 1) {
                         // 最后一个参数为可变参数
@@ -343,9 +353,9 @@ class Emitter {
                     }
                     return `${wv} = null`;
                 });
-                const regs = Array.from({ length: regn - argn + 1 }, (_, i) =>
-                    i ? this.wv(i + argn, -1) : this.wv(0, -1),
-                ).join(', ');
+                const regs = createArray(regn - argn + 1, (i) => (i ? this.wv(i + argn, -1) : this.wv(0, -1))).join(
+                    ', ',
+                );
                 if (script) {
                     args.unshift(`global = GlobalFallback()`);
                     code = `'use strict'; return (function script(${args.join(', ')}) { try { CpEnter(); var ${regs};`;
@@ -408,7 +418,7 @@ class Emitter {
             case OpCode.Concat: {
                 reg = read();
                 const n = read();
-                const args = Array.from({ length: n }, (_, i) => read());
+                const args = createArray(n, () => read());
                 code = `${this.wv(reg)} = $${OpCode[opcode]}(${args.map((a) => this.rv(a)).join(', ')});`;
                 break;
             }
@@ -417,7 +427,7 @@ class Emitter {
                 reg = read();
                 const value = read();
                 const n = read();
-                const args = Array.from({ length: n }, (_, i) => this.constants[read()]!);
+                const args = createArray(n, () => this.constants[read()]!);
 
                 code = `${this.wv(reg)} = $${OpCode[opcode]}(${this.rv(value)}, [${args.join(', ')}]);`;
                 break;
@@ -427,9 +437,9 @@ class Emitter {
                 reg = read();
                 const func = read();
                 const n = read();
-                const args = Array.from({ length: n }, (_, i) => read());
+                const args = createArray(n, () => read());
                 const ns = read();
-                const spreads = Array.from({ length: ns }, (_, i) => read());
+                const spreads = createArray(ns, () => read());
                 const callTarget = opcode === OpCode.Call ? `global.get(${this.constants[func]})` : this.rv(func);
                 code = `${this.wv(reg)} = $Call(${callTarget}, [${args
                     .map((a, i) => {
@@ -640,7 +650,7 @@ class Emitter {
             case OpCode.LoopFor: {
                 const nreg = read();
                 const iterable = read();
-                const regs = Array.from({ length: nreg - 1 }, (_, i) => this.wv(i + 2, -1));
+                const regs = createArray(nreg - 1, (i) => this.wv(i + 2, -1));
                 regs.unshift('_');
                 code = `for (let ${this.wv(1, -1)} of $Iterable(${this.rv(iterable)})) { Cp(); let ${regs.join(', ')};`;
                 break;
@@ -651,7 +661,7 @@ class Emitter {
                 const start = read();
                 const end = read();
                 const exclusive = opcode === OpCode.LoopRangeExclusive;
-                const regs = Array.from({ length: nreg - 1 }, (_, i) => this.wv(i + 2, -1));
+                const regs = createArray(nreg - 1, (i) => this.wv(i + 2, -1));
                 regs.unshift('_');
                 const i = this.wv(1, -1);
                 code = `for (let start = $ToNumber(${this.rv(start)}), end = $ToNumber(${this.rv(end)}), ${i} = start; ${i} ${exclusive ? '<' : '<='} end; ${i} += 1) { Cp(); let ${regs.join(', ')};`;
@@ -659,7 +669,7 @@ class Emitter {
             }
             case OpCode.Loop: {
                 const nreg = read();
-                const regs = Array.from({ length: nreg }, (_, i) => this.wv(i + 1, -1));
+                const regs = createArray(nreg, (i) => this.wv(i + 1, -1));
                 regs.unshift('_');
                 code = `while (true) { Cp(); let ${regs.join(', ')};`;
                 break;

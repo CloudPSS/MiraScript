@@ -284,7 +284,12 @@ export class ModelAdapter implements editor.ITextModel {
     }
     /** @inheritdoc */
     getLinesContent(): string[] {
-        return Array.from({ length: this.getLineCount() }, (_, i) => this.getLineContent(i + 1));
+        const lines = [];
+        const lineCount = this.getLineCount();
+        for (let i = 1; i <= lineCount; i++) {
+            lines.push(this.getLineContent(i));
+        }
+        return lines;
     }
     /** @inheritdoc */
     getEOL(): string {

@@ -57,14 +57,16 @@ export const transpose = VmLib(
         const [numRows, numCols] = sizeImpl(matrix);
         if (numRows == null || numCols == null) return matrix; // 一维数组或空数组无需转置
 
-        const transposed: VmConst[][] = Array.from({ length: numCols }, () => Array.from({ length: numRows }));
-        for (let i = 0; i < numRows; i++) {
+        const transposed: VmConst[][] = [];
+        for (let j = 0; j < numCols; j++) {
             Cp();
-            for (let j = 0; j < numCols; j++) {
+            const tj = [];
+            for (let i = 0; i < numRows; i++) {
                 const row = (matrix as VmConst[][])[i] ?? null;
                 const item = row?.[j] ?? null;
-                transposed[j]![i] = item;
+                tj[i] = item;
             }
+            transposed[j] = tj;
         }
         return transposed;
     },
@@ -102,7 +104,7 @@ function entrywiseImpl(
             return f(a, b);
         } else if (bc == null) {
             // s/v
-            const result: VmConst[] = Array.from({ length: br });
+            const result: VmConst[] = [];
             for (let r = 0; r < br; r++) {
                 const bItem = (b as VmConst[])[r] ?? null;
                 result[r] = f(a, bItem);
@@ -110,10 +112,11 @@ function entrywiseImpl(
             return result;
         } else {
             // s/m
-            const result: VmConst[][] = Array.from({ length: br }, () => Array.from({ length: bc! }));
+            const result: VmConst[][] = [];
             for (let r = 0; r < br; r++) {
                 const bRow = (b as VmConst[][])[r] ?? [];
-                const rRow = result[r]!;
+                const rRow: VmConst[] = [];
+                result[r] = rRow;
                 for (let c = 0; c < bc; c++) {
                     const bItem = bRow[c] ?? null;
                     rRow[c] = f(a, bItem);
@@ -125,7 +128,7 @@ function entrywiseImpl(
     if (br == null) {
         if (ac == null) {
             // v/s
-            const result: VmConst[] = Array.from({ length: ar });
+            const result: VmConst[] = [];
             for (let r = 0; r < ar; r++) {
                 const aItem = (a as VmConst[])[r] ?? null;
                 result[r] = f(aItem, b);
@@ -133,10 +136,11 @@ function entrywiseImpl(
             return result;
         } else {
             // m/s
-            const result: VmConst[][] = Array.from({ length: ar }, () => Array.from({ length: ac! }));
+            const result: VmConst[][] = [];
             for (let r = 0; r < ar; r++) {
                 const aRow = (a as VmConst[][])[r] ?? [];
-                const rRow = result[r]!;
+                const rRow: VmConst[] = [];
+                result[r] = rRow;
                 for (let c = 0; c < ac; c++) {
                     const aItem = aRow[c] ?? null;
                     rRow[c] = f(aItem, b);
@@ -151,7 +155,7 @@ function entrywiseImpl(
             return vvf(a as VmConst[], b as VmConst[], ar, br);
         }
         const rr = Math.max(ar, br);
-        const result: VmConst[] = Array.from({ length: rr });
+        const result: VmConst[] = [];
         for (let r = 0; r < rr; r++) {
             const aItem = (a as VmConst[])[r] ?? null;
             const bItem = (b as VmConst[])[r] ?? null;
@@ -185,12 +189,14 @@ function entrywiseImpl(
     }
     const rr = Math.max(ar, br);
     const rc = Math.max(ac, bc);
-    const result: VmConst[][] = Array.from({ length: rr }, () => Array.from({ length: rc }));
+    const result: VmConst[][] = [];
     for (let r = 0; r < rr; r++) {
+        const rRow: VmConst[] = [];
+        result[r] = rRow;
         for (let c = 0; c < rc; c++) {
             const aItem = (a as VmConst[][])[ar === 1 ? 0 : r]?.[ac === 1 ? 0 : c] ?? null;
             const bItem = (b as VmConst[][])[br === 1 ? 0 : r]?.[bc === 1 ? 0 : c] ?? null;
-            result[r]![c] = f(aItem, bItem);
+            rRow[c] = f(aItem, bItem);
         }
     }
     return result;
@@ -290,21 +296,23 @@ export const multiply = VmLib(
             },
             (a, b, ar, ac, br, bc) => {
                 if (ac !== br) throwError(`Incompatible matrix dimensions`, null);
-                const result: VmConst[][] = Array.from({ length: ar }, () => Array.from({ length: bc }));
+                const result: VmConst[][] = [];
                 for (let r = 0; r < ar; r++) {
+                    const rRow: VmConst[] = [];
+                    result[r] = rRow;
                     for (let c = 0; c < bc; c++) {
                         let item = 0;
                         for (let k = 0; k < ac; k++) {
                             item += num((a as VmConst[][])[r]?.[k]) * num((b as VmConst[][])[k]?.[c]);
                         }
-                        result[r]![c] = item;
+                        rRow[c] = item;
                     }
                 }
                 return result;
             },
             (a, b, al, br, bc) => {
                 if (al !== br) throwError(`Incompatible matrix dimensions`, null);
-                const result: VmConst[] = Array.from({ length: bc });
+                const result: VmConst[] = [];
                 for (let c = 0; c < bc; c++) {
                     let item = 0;
                     for (let k = 0; k < al; k++) {
@@ -316,7 +324,7 @@ export const multiply = VmLib(
             },
             (a, b, ar, ac, bl) => {
                 if (ac !== bl) throwError(`Incompatible matrix dimensions`, null);
-                const result: VmConst[] = Array.from({ length: ar });
+                const result: VmConst[] = [];
                 for (let r = 0; r < ar; r++) {
                     let item = 0;
                     for (let k = 0; k < ac; k++) {
@@ -372,14 +380,19 @@ export const invert = VmLib(
         // 更高阶矩阵 使用高斯消元法
 
         // 初始化输入
-        const A: number[][] = Array.from({ length: rows }, (_, i) =>
-            Array.from({ length: cols }, (_, j) => num(m[i]?.[j])),
-        );
-
+        const A: number[][] = [];
         // 初始化结果为单位矩阵
-        const B: number[][] = Array.from({ length: rows }, (_, i) =>
-            Array.from({ length: cols }, (_, j) => (i === j ? 1 : 0)),
-        );
+        const B: number[][] = [];
+        for (let r = 0; r < rows; r++) {
+            const Ar: number[] = [];
+            const Br: number[] = [];
+            A[r] = Ar;
+            B[r] = Br;
+            for (let c = 0; c < cols; c++) {
+                Ar[c] = num(m[r]?.[c]);
+                Br[c] = r === c ? 1 : 0;
+            }
+        }
 
         // loop over all columns, and perform row reductions
         for (let c = 0; c < cols; c++) {
@@ -457,13 +470,10 @@ function filled(size: readonly VmAny[], value: VmConst): VmArray {
     while (s.length > 0) {
         const repeat = arrayLen(s.pop());
         Cp();
-        const data =
-            repeat > 1_000_000
-                ? Array.from({ length: repeat }, () => {
-                      Cp();
-                      return value;
-                  })
-                : Array.from({ length: repeat }, () => value);
+        const data: VmConst[] = [];
+        data.length = repeat;
+        // 从 MiraScript 语义而言，可以使用同一个引用
+        data.fill(value);
         value = data;
     }
     return value as VmArray;
@@ -491,13 +501,16 @@ export const identity = VmLib(
         if (s.length === 1) s = [s[0]!, s[0]!];
         const m = arrayLen(s[0]);
         const n = arrayLen(s[1]);
-        if (m * n > 1_000_000) {
-            return Array.from({ length: m }, (_, i) => {
-                Cp();
-                return Array.from({ length: n }, (_, j) => (i === j ? 1 : 0));
-            });
+        // 由于 `filled` 函数返回只读数组，其每行为相同引用，这里需要手动创建每行
+        const ret: number[][] = [];
+        for (let i = 0; i < m; i++) {
+            const row: number[] = [];
+            ret[i] = row;
+            row.length = n;
+            row.fill(0);
+            if (i < n) row[i] = 1;
         }
-        return Array.from({ length: m }, (_, i) => Array.from({ length: n }, (_, j) => (i === j ? 1 : 0)));
+        return ret;
     },
     {
         summary: '创建一个单位矩阵',
@@ -527,11 +540,15 @@ export const diagonal = VmLib(
         const l = x.length;
         const m = arrayLen(fk < 0 ? l - fk : l);
         const n = arrayLen(fk > 0 ? l + fk : l);
-        const result: VmConst[][] = Array.from({ length: m }, () => Array.from({ length: n }, () => 0));
+        const result: VmConst[][] = [];
         for (let i = 0; i < m; i++) {
+            const row: VmConst[] = [];
+            result[i] = row;
+            row.length = n;
+            row.fill(0);
             for (let j = 0; j < n; j++) {
                 if (i + fk === j) {
-                    result[i]![j] = x[fk >= 0 ? i : j]!;
+                    row[j] = x[fk >= 0 ? i : j] ?? null;
                 }
             }
         }

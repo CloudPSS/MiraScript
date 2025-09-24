@@ -31,7 +31,10 @@ export const sort = VmLib(
     (data, comparator) => {
         expectArray('data', data, null);
         const compare = cmp(comparator, data);
-        const arr: VmConst[] = Array.from(data, (v) => v ?? null);
+        const arr: VmConst[] = [];
+        for (const v of data) {
+            arr.push(v ?? null);
+        }
         arr.sort(compare);
         return arr;
     },
@@ -54,12 +57,17 @@ export const sort_by = VmLib(
         expectArray('data', data, null);
         expectCallable('key_fn', key_fn, data);
         const compare = cmp(comparator, data);
-        const arr: Array<{ original: VmConst; key: VmValue }> = Array.from(data, (v, i) => ({
-            original: v ?? null,
-            key: $Call(key_fn, [v ?? null, i, data]),
-        }));
-        arr.sort((a, b) => compare(a.key, b.key));
-        return arr.map((e) => e.original);
+        const arr: Array<{ o: VmConst; k: VmValue }> = [];
+        const len = data.length;
+        for (let i = 0; i < len; i++) {
+            const v = data[i] ?? null;
+            arr.push({
+                o: v,
+                k: $Call(key_fn, [v, i, data]),
+            });
+        }
+        arr.sort((a, b) => compare(a.k, b.k));
+        return arr.map((e) => e.o);
     },
     {
         summary: '根据键函数对数组中的元素进行排序，并返回排序后的结果',

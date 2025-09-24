@@ -1,4 +1,4 @@
-import { isVmArray, isVmRecord } from '../../../types/index.js';
+import { isVmArray, isVmRecord, type VmConst } from '../../../types/index.js';
 import { VmLib, expectArrayOrRecord, expectCompound } from '../../_helpers.js';
 import { keys as _keys, values as _values, entries as _entries } from '../../../../helpers/utils.js';
 
@@ -6,7 +6,12 @@ export const keys = VmLib(
     (data) => {
         expectCompound('data', data, []);
         if (isVmArray(data)) {
-            return Array.from({ length: data.length }, (_, i) => i);
+            const arr: number[] = [];
+            const len = data.length;
+            for (let i = 0; i < len; i++) {
+                arr.push(i);
+            }
+            return arr;
         }
         if (isVmRecord(data)) {
             return _keys(data);
@@ -41,7 +46,12 @@ export const entries = VmLib(
     (data) => {
         expectArrayOrRecord('data', data, []);
         if (isVmArray(data)) {
-            return Array.from({ length: data.length }, (_, i) => ({ 0: i, 1: data[i] ?? null }));
+            const arr: Array<{ 0: number; 1: VmConst }> = [];
+            const len = data.length;
+            for (let i = 0; i < len; i++) {
+                arr.push({ 0: i, 1: data[i] ?? null });
+            }
+            return arr;
         }
         return _entries(data).map(([key, value]) => ({ 0: key, 1: value ?? null }));
     },

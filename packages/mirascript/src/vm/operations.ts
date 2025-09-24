@@ -302,7 +302,13 @@ function innerToString(value: VmAny, useBraces: boolean): string {
         return name ? `<function ${name}>` : `<function>`;
     }
     if (isVmArray(value)) {
-        const results = Array.from({ length: value.length }, (_, i) => innerToString(value[i], true)).join(', ');
+        const strings: string[] = [];
+        for (const item of value) {
+            strings.push(innerToString(item, true));
+        }
+        // 在 join 过程中会自动把 null/undefined 和 empty slot 转为 ''
+        // 与 innerToString 行为不一致
+        const results = strings.join(', ');
         if (!useBraces) return results;
         return `[${results}]`;
     }
@@ -417,11 +423,17 @@ export const $ArraySpread = (array: VmAny): Iterable<VmConst> => {
     if (array == null) return [];
     if (isVmArray(array)) return array;
     if (isVmExtern(array) && 'length' in array.value && typeof array.value.length == 'number') {
-        const result = Array.from(array.value as ArrayLike<VmAny>, (item) => {
+        const len = array.value.length;
+        const result: VmConst[] = [];
+        for (let i = 0; i < len; i++) {
+            const item = (array.value as ArrayLike<unknown>)[i] ?? null;
             // 当前只有 Primitive 不会进行二次包装
-            if (isVmPrimitive(item)) return item;
-            return null;
-        });
+            if (isVmPrimitive(item)) {
+                result.push(item);
+            } else {
+                result.push(null);
+            }
+        }
         return result;
     }
     throw new VmError(`Expected array, iterable extern or nil, got ${$Type(array)}`, []);

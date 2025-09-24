@@ -176,7 +176,7 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                 [/\\./, { token: 'string.escape.invalid' }],
             ],
             ...Object.fromEntries(
-                Array.from({ length: MAX_VERBATIM_LENGTH }).map((_, i) => {
+                Array.from({ length: MAX_VERBATIM_LENGTH }, (_, i) => {
                     const dollarCount = i === 0 ? 1 : i;
                     const dollarRegex = `\\\${${dollarCount}}`;
                     return [
