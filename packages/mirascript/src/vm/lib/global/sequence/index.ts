@@ -8,3 +8,4 @@ export * from './reverse.js';
 export * from './zip.js';
 export * from './all-any.js';
 export * from './sort.js';
+export * from './repeat.js';
