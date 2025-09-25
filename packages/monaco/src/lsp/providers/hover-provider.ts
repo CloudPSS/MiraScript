@@ -11,17 +11,19 @@ export class HoverProvider extends Provider implements languages.HoverProvider {
         model: editor.ITextModel,
         { def, ref }: VariableAccessAt,
     ): Promise<languages.Hover | undefined> {
-        let content: IMarkdownString | undefined;
+        const contents: IMarkdownString[] = [];
         let range: IRange | undefined;
         if ('name' in def) {
             const globals = await this.getContext(model);
             const value = globals.has(def.name) ? globals.get(def.name) : undefined;
             const { script, doc } = valueDoc(def.name, value, 'hint');
-            content = {
-                value: codeblock(`\0(global) ${script}`) + doc,
-            };
+            contents.push({ value: codeblock(`\0(global) ${script}`) });
+            for (const d of doc) {
+                contents.push({ value: d });
+            }
             range = def.references[ref!]?.range;
         } else {
+            let content: IMarkdownString | undefined;
             const tag = def.definition;
             switch (tag.code) {
                 case DiagnosticCode.ParameterSubPatternImmutable:
@@ -87,10 +89,13 @@ export class HoverProvider extends Provider implements languages.HoverProvider {
             } else {
                 range = def.references[ref]?.range;
             }
+            if (content) {
+                contents.push(content);
+            }
         }
-        if (!content) return undefined;
+        if (!contents.length) return undefined;
         return {
-            contents: [content],
+            contents,
             range: range,
         };
     }
@@ -111,11 +116,7 @@ export class HoverProvider extends Provider implements languages.HoverProvider {
         const lastField = fields.pop()!;
         const { script, doc } = valueDoc(lastField, value, 'field');
         return {
-            contents: [
-                {
-                    value: codeblock(`\0(field) ${script}`) + doc,
-                },
-            ],
+            contents: [{ value: codeblock(`\0(field) ${script}`) }, ...doc.map((d) => ({ value: d }))],
             range,
         };
     }

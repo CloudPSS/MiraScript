@@ -32,7 +32,7 @@ export class DefinitionReferenceProvider
             `/**${DOC_HEADER}**/`,
             '',
             `/**`,
-            ...doc.split('\n').map((line) => ` * ${line}`),
+            ...doc.flatMap((sec) => sec.split('\n')).map((line) => ` * ${line}`),
             ` */`,
             script,
             '',

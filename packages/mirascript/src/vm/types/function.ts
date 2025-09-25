@@ -34,6 +34,8 @@ export interface VmFunctionInfo {
     readonly returns?: string;
     /** 文档字符串 */
     readonly returnsType?: string;
+    /** 文档字符串 */
+    readonly examples?: string[];
     /** 如果添加了包装，返回原函数 */
     readonly original?: VmFunctionLike;
 }
@@ -74,6 +76,7 @@ export function VmFunction<T extends VmFunctionLike>(fn: T, option: VmFunctionOp
         paramsType: option.paramsType,
         returns: option.returns || undefined,
         returnsType: option.returnsType || undefined,
+        examples: option.examples?.length ? option.examples : undefined,
     };
     if (option.injectCp) {
         const original = fn;

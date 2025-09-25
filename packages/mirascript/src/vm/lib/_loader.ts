@@ -2,7 +2,7 @@ import { VmFunction, VmModule, type VmConst, type VmFunctionLike, type VmImmutab
 import { create, defineProperty, entries } from '../../helpers/utils.js';
 import { VmSharedContext } from '../types/context.js';
 
-import type { VmLib } from './_helpers.js';
+import type { VmLib, VmLibOption } from './_helpers.js';
 import * as global from './global/index.js';
 
 for (const [name, value] of entries(global)) {
@@ -27,11 +27,7 @@ function wrapEntry<const T extends RawValue>(name: string, value: T): ToWrappedV
             isLib: true,
             injectCp: true,
             fullName: `global.${name}`,
-            summary: value.summary,
-            params: value.params,
-            paramsType: value.paramsType,
-            returns: value.returns,
-            returnsType: value.returnsType,
+            ...(value as VmLibOption),
         }) as ToWrappedValue<T>;
     } else {
         return value as ToWrappedValue<T>;

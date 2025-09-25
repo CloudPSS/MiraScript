@@ -103,20 +103,31 @@ export function paramsList(model: editor.ITextModel, info: VmFunctionInfo | Loca
 }
 
 /** 生成函数文档 */
-export function globalFnDoc(info: VmFunctionInfo): string {
+export function globalFnDoc(info: VmFunctionInfo): string[] {
     const doc = [];
     if (info.summary) {
         doc.push(info.summary);
     }
+    const paramDoc = [];
     if (info.params) {
         for (const [key, value] of Object.entries(info.params)) {
-            doc.push(`- \`${key}\`: ${value}`);
+            paramDoc.push(`- \`${key}\`: ${value}`);
         }
     }
     if (info.returns) {
-        doc.push(`- **返回值**: ${info.returns}`);
+        paramDoc.push(`- **返回值**: ${info.returns}`);
     }
-    return doc.join('\n');
+    if (paramDoc.length) {
+        doc.push(paramDoc.join('\n'));
+    }
+    if (info.examples?.length) {
+        let exp = `### 示例`;
+        for (const example of info.examples) {
+            exp += codeblock(example);
+        }
+        doc.push(exp);
+    }
+    return doc;
 }
 
 const CODEBLOCK_FENCE = '`'.repeat(16);
@@ -231,7 +242,7 @@ export function valueDoc(
     name: string,
     value: VmAny,
     type: 'field' | 'declare' | 'hint',
-): { script: string; doc: string } {
+): { script: string; doc: string[] } {
     const info = getVmFunctionInfo(value);
     if (info) {
         return {
@@ -266,7 +277,7 @@ export function valueDoc(
                 const vDoc = valueDoc(k, v, isVmModule(v) ? 'field' : 'declare');
                 const code = [
                     `/**`,
-                    ...vDoc.doc.split('\n').map((line) => ` * ${line}`),
+                    ...vDoc.doc.flatMap((sec) => sec.split('\n')).map((line) => ` * ${line}`),
                     ` */`,
                     'export ' + vDoc.script,
                     '',
@@ -281,7 +292,7 @@ export function valueDoc(
                 script = `${prefix}${script}`;
             }
         }
-        return { script, doc };
+        return { script, doc: doc ? [doc] : [] };
     }
     let valueStr;
     if (value === undefined) {
@@ -289,7 +300,7 @@ export function valueDoc(
     } else {
         valueStr = serializeForDisplay(value, type === 'declare' ? 1000 : 100, type === 'declare' ? 80 : 40);
     }
-    return { script: `${prefix}${valueStr}${suffix}`, doc: '' };
+    return { script: `${prefix}${valueStr}${suffix}`, doc: [] };
 }
 
 /** 获取深层属性 */

@@ -489,7 +489,7 @@ export class CompletionItemProvider extends Provider implements languages.Comple
             const last = label.split('.').pop()!;
             const def = valueDoc(last, vmValue, isField ? 'field' : 'hint');
             item.documentation = {
-                value: `${codeblock('\0' + def.script)}\n${def.doc}`,
+                value: `${codeblock('\0' + def.script)}\n${def.doc.join('\n')}`,
             };
         }
         return item;

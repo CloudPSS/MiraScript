@@ -191,7 +191,10 @@ export function map(
 }
 
 /** 库函数选项 */
-export type VmLibOption = Pick<VmFunctionOption, 'summary' | 'params' | 'paramsType' | 'returns' | 'returnsType'>;
+export type VmLibOption = Pick<
+    VmFunctionOption,
+    'summary' | 'params' | 'paramsType' | 'returns' | 'returnsType' | 'examples'
+>;
 /** 库函数 */
 export type VmLib<T extends VmFunctionLike = VmFunctionLike> = T & VmLibOption;
 
@@ -207,5 +210,6 @@ export function VmLib<T extends VmFunctionLike>(fn: T, option: VmLibOption): VmL
     ret.returns = option.returns;
     ret.returnsType = option.returnsType;
     ret.summary = option.summary;
+    ret.examples = option.examples;
     return ret as T & VmLibOption;
 }
