@@ -2,7 +2,7 @@ import { VmError } from '../error.js';
 import { fromVmFunctionProxy, toVmFunctionProxy, type VmFunctionLike } from './function.js';
 import { VmWrapper } from './wrapper.js';
 import type { TypeName, VmAny, VmModule, VmValue } from './index.js';
-import { hasOwn } from '../../helpers/utils.js';
+import { getPrototypeOf, hasOwn } from '../../helpers/utils.js';
 const { apply } = Reflect;
 
 /** 包装为 Mirascript 类型 */
@@ -49,6 +49,9 @@ export function unwrapFromVmValue(value: VmAny): unknown {
     });
 }
 
+const ObjectPrototype = Object.prototype;
+// eslint-disable-next-line @typescript-eslint/unbound-method
+const ObjectToString = ObjectPrototype.toString;
 /** 包装 Mirascript `extern` 类型的对象 */
 export class VmExtern<const T extends object = object> extends VmWrapper<T> {
     constructor(
@@ -127,6 +130,21 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
     }
     /** @inheritdoc */
     override get describe(): string {
-        return Object.prototype.toString.call(this.value).slice(8, -1);
+        const tag = ObjectToString.call(this.value).slice(8, -1);
+        if (tag === 'Object') {
+            const proto = getPrototypeOf(this.value);
+            if (proto === ObjectPrototype) {
+                return 'Object';
+            }
+            if (proto == null) {
+                return 'Object: null prototype';
+            }
+            if (typeof proto.constructor === 'function' && proto.constructor.name) {
+                return proto.constructor.name;
+            }
+        } else if (tag === 'Function' && 'prototype' in this.value) {
+            return `Class ${this.value.constructor?.name || ''}`.trim();
+        }
+        return tag;
     }
 }

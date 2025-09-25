@@ -6,10 +6,19 @@ import { VmWrapper } from './wrapper.js';
 
 /** Mirascript 原始值 */
 export type VmPrimitive = null | string | number | boolean;
-/** Mirascript 记录 */
-export type VmRecord = { readonly [key: string]: VmConst };
-/** Mirascript 数组 */
-export type VmArray = readonly VmConst[];
+/**
+ * Mirascript 记录
+ * 仅拥有且可枚举的字符串键视作存在
+ * 字段值 `undefined` 和 `null` 均视作 `nil`
+ */
+export type VmRecord = {
+    readonly [key: string]: VmConst | undefined;
+};
+/**
+ * Mirascript 数组
+ * 数组中的 `undefined`、`null` 及 <empty slot> 均视作 `nil`
+ */
+export type VmArray = ReadonlyArray<VmConst | undefined>;
 
 /** Mirascript 虚拟机内的值语义值 */
 export type VmConst = VmPrimitive | VmRecord | VmArray;

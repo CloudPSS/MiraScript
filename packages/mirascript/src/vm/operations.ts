@@ -186,7 +186,7 @@ export const $In = (value: VmAny, iterable: VmAny): boolean => {
         if (isVmPrimitive(value)) return iterable.includes(value);
         // value is not null here, so it's ok to skip empty slots, since `isSame(null, something)` is always false
         value satisfies NonNullable<VmValue>;
-        return iterable.some((item) => isSame(item, value));
+        return iterable.some((item = null) => isSame(item, value));
     }
     // iterable is a record or an extern here, value should be a string
     if (iterable instanceof VmWrapper) return iterable.has($ToString(value));
@@ -393,7 +393,7 @@ export const $Set = (obj: VmAny, key: VmAny, value: VmAny): void => {
     if (!isVmExtern(obj)) throw new VmError(`Expected extern, got ${$Type(obj)}`, undefined);
     obj.set(pk, value);
 };
-export const $Iterable = (value: VmAny): Iterable<VmValue> => {
+export const $Iterable = (value: VmAny): Iterable<VmValue | undefined> => {
     $AssertInit(value);
     if (value instanceof VmWrapper) return value.keys();
     if (isVmArray(value)) return value;
@@ -418,7 +418,7 @@ export const $RecordSpread = (record: VmAny): VmRecord | null => {
     throw new VmError(`Expected record, extern or nil, got ${$Type(record)}`, null);
 };
 
-export const $ArraySpread = (array: VmAny): Iterable<VmConst> => {
+export const $ArraySpread = (array: VmAny): Iterable<VmConst | undefined> => {
     $AssertInit(array);
     if (array == null) return [];
     if (isVmArray(array)) return array;

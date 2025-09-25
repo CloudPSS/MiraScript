@@ -11,7 +11,7 @@ const _with = VmLib(
             throwError('Expected even number of entries', data);
         }
         if (isVmArray(data)) {
-            const result: VmConst[] = [...data];
+            const result: Array<VmConst | undefined> = [...data];
             for (let i = 0; i < entries.length; i += 2) {
                 const index = Math.trunc($ToNumber(entries[i]));
                 if (!isSafeInteger(index) || index < 0) continue;
@@ -23,7 +23,7 @@ const _with = VmLib(
             }
             return result;
         } else {
-            const result: Record<string, VmConst> = { ...data };
+            const result: Record<string, VmConst | undefined> = { ...data };
             for (let i = 0; i < entries.length; i += 2) {
                 const key = $ToString(entries[i]);
                 const value = entries[i + 1];

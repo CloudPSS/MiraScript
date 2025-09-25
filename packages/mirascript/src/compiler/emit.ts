@@ -652,7 +652,8 @@ class Emitter {
                 const iterable = read();
                 const regs = createArray(nreg - 1, (i) => this.wv(i + 2, -1));
                 regs.unshift('_');
-                code = `for (let ${this.wv(1, -1)} of $Iterable(${this.rv(iterable)})) { Cp(); let ${regs.join(', ')};`;
+                const ir = this.wv(1, -1);
+                code = `for (let ${ir} of $Iterable(${this.rv(iterable)})) { ${ir} ??= null; Cp(); let ${regs.join(', ')};`;
                 break;
             }
             case OpCode.LoopRange:
