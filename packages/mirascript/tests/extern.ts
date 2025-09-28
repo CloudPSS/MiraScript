@@ -3,13 +3,15 @@ import {
     compileSync,
     createVmContext,
     isVmExtern,
-    type VmExtern,
+    VmExtern,
     type VmContext,
     type VmValue,
     isVmFunction,
     VmFunction,
     getVmFunctionInfo,
+    unwrapFromVmValue,
 } from '@mirascript/mirascript';
+import { isProxy } from 'node:util/types';
 
 const exec = (context: VmContext): ((source: string) => VmValue) => {
     return (source: string) => {
@@ -35,12 +37,19 @@ test('callable extern', (t) => {
     t.is(eSin.value, Math.sin);
     t.true(eSin.callable);
     t.is(eSin.caller, null);
+    t.is(eSin.describe, 'Function');
+    t.is(unwrapFromVmValue(eSin), Math.sin);
+    t.false(isProxy(unwrapFromVmValue(eSin)));
+    t.is((unwrapFromVmValue(eSin) as typeof Math.sin)(1), Math.sin(1));
 
     const eMath = e('Math') as VmExtern;
     t.true(isVmExtern(eMath));
     t.is(eMath.value, Math);
     t.false(eMath.callable);
     t.is(eMath.caller, null);
+    t.is(eMath.describe, 'Math');
+    t.is(unwrapFromVmValue(eMath), Math);
+    t.false(isProxy(unwrapFromVmValue(eMath)));
 
     const eMSin = e('Math.sin') as VmExtern;
     t.true(isVmExtern(eMSin));
@@ -48,6 +57,9 @@ test('callable extern', (t) => {
     t.true(eMSin.callable);
     t.is(eMSin.caller, eMath);
     t.true(eMSin.caller!.same(eMath));
+    t.not(unwrapFromVmValue(eMSin), Math.sin);
+    t.true(isProxy(unwrapFromVmValue(eMSin)));
+    t.is((unwrapFromVmValue(eMSin) as typeof Math.sin)(1), Math.sin(1));
 
     t.false(e('`__proto__` in sin'));
     t.false(e('`constructor` in sin'));
@@ -65,6 +77,45 @@ test('callable extern', (t) => {
     t.false(e('`constructor` in Math'));
     t.false(e('`hasOwnProperty` in Math'));
     t.false(e('`toString` in Math'));
+});
+
+test('describe extern', (t) => {
+    t.is(new VmExtern({}, null).describe, 'Object');
+    t.is(new VmExtern(Object.create(null), null).describe, 'Object: null prototype');
+    t.is(new VmExtern([], null).describe, 'Array');
+    t.is(new VmExtern(() => 0, null).describe, 'Function');
+    // eslint-disable-next-line @typescript-eslint/require-await
+    t.is(new VmExtern(async () => 0, null).describe, 'AsyncFunction');
+    t.is(
+        new VmExtern(function* () {
+            yield 0;
+        }, null).describe,
+        'GeneratorFunction',
+    );
+    t.is(
+        // eslint-disable-next-line @typescript-eslint/require-await
+        new VmExtern(async function* () {
+            yield 0;
+        }, null).describe,
+        'AsyncGeneratorFunction',
+    );
+    const a = class A {
+        x = 1;
+    };
+    t.is(new VmExtern(new a(), null).describe, 'A');
+    t.is(new VmExtern(a, null).describe, 'Class A');
+    Object.defineProperty(a, 'name', { value: '' });
+    t.is(new VmExtern(new a(), null).describe, 'Object');
+    t.is(new VmExtern(a, null).describe, 'Class');
+    // eslint-disable-next-line unicorn/consistent-function-scoping
+    const f = function () {
+        return 1;
+    };
+    t.is(new VmExtern(f, null).describe, 'Class f');
+    f.prototype = undefined;
+    t.is(new VmExtern(f, null).describe, 'Function');
+    f.prototype = null;
+    t.is(new VmExtern(f, null).describe, 'Class f');
 });
 
 test('Date extern', (t) => {

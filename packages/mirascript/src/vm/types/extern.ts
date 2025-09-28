@@ -142,8 +142,14 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
             if (typeof proto.constructor === 'function' && proto.constructor.name) {
                 return proto.constructor.name;
             }
-        } else if (tag === 'Function' && 'prototype' in this.value) {
-            return `Class ${this.value.constructor?.name || ''}`.trim();
+        } else if (tag === 'Function' && 'prototype' in this.value && typeof this.value.prototype == 'object') {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+            const { name } = this.value as unknown as Function;
+            if (name) {
+                return `Class ${name}`;
+            } else {
+                return 'Class';
+            }
         }
         return tag;
     }
