@@ -4,6 +4,7 @@
   "type": "module",
   "description": "An expression based scripting language.",
   "main": "./dist/index.js",
+  "bin": "./dist/cli.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
@@ -13,6 +14,10 @@
     "./subtle": {
       "@mirascript/dev": "./src/subtle.ts",
       "default": "./dist/subtle.js"
+    },
+    "./cli": {
+      "@mirascript/dev": "./src/cli.ts",
+      "default": "./dist/cli.js"
     }
   },
   "imports": {
@@ -29,6 +34,7 @@
     "watch": "pnpm build:ts --watch",
     "build:ts": "pnpm clean && tsc",
     "build": "pnpm build:ts --emitDeclarationOnly && node ./esbuild.config.js",
+    "mirascript": "node ./dist/cli.js",
     "clean": "rimraf dist",
     "test": "c8 ava",
     "prepublishOnly": "pnpm build"
