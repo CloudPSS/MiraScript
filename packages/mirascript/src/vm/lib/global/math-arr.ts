@@ -14,6 +14,7 @@ export const max = VmLib(build(Math.max), {
     params: { '..values': '要比较的数值' },
     paramsType: { '..values': 'number[]' },
     returnsType: 'number',
+    examples: ['max(3, 7, 2) // 7'],
 });
 
 export const min = VmLib(build(Math.min), {
@@ -21,6 +22,7 @@ export const min = VmLib(build(Math.min), {
     params: { '..values': '要比较的数值' },
     paramsType: { '..values': 'number[]' },
     returnsType: 'number',
+    examples: ['min(3, 7, 2) // 2'],
 });
 
 export const hypot = VmLib(build(Math.hypot), {
@@ -28,6 +30,7 @@ export const hypot = VmLib(build(Math.hypot), {
     params: { '..values': '要计算的数值' },
     paramsType: { '..values': 'number[]' },
     returnsType: 'number',
+    examples: ['hypot(3, 4) // 5'],
 });
 
 export const sum = VmLib(
@@ -40,6 +43,7 @@ export const sum = VmLib(
         params: { '..values': '要计算的数值' },
         paramsType: { '..values': 'number[]' },
         returnsType: 'number',
+        examples: ['sum(1, 2, 3, 4) // 10'],
     },
 );
 
@@ -53,5 +57,6 @@ export const product = VmLib(
         params: { '..values': '要计算的数值' },
         paramsType: { '..values': 'number[]' },
         returnsType: 'number',
+        examples: ['product(2, 3, 4) // 24'],
     },
 );

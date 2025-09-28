@@ -10,6 +10,7 @@ export const b_and = VmLib(
         params: { x: '第一个操作数', y: '第二个操作数' },
         paramsType: { x: 'number', y: 'number' },
         returnsType: 'number',
+        examples: ['b_and(6, 3) // 2'],
     },
 );
 
@@ -22,6 +23,7 @@ export const b_or = VmLib(
         params: { x: '第一个操作数', y: '第二个操作数' },
         paramsType: { x: 'number', y: 'number' },
         returnsType: 'number',
+        examples: ['b_or(5, 2) // 7'],
     },
 );
 
@@ -34,6 +36,7 @@ export const b_not = VmLib(
         params: { x: '操作数' },
         paramsType: { x: 'number' },
         returnsType: 'number',
+        examples: ['b_not(0) // -1'],
     },
 );
 
@@ -46,6 +49,7 @@ export const b_xor = VmLib(
         params: { x: '第一个操作数', y: '第二个操作数' },
         paramsType: { x: 'number', y: 'number' },
         returnsType: 'number',
+        examples: ['b_xor(5, 3) // 6'],
     },
 );
 
@@ -58,6 +62,7 @@ export const shl = VmLib(
         params: { x: '第一个操作数', y: '位数' },
         paramsType: { x: 'number', y: 'number' },
         returnsType: 'number',
+        examples: ['shl(3, 2) // 12'],
     },
 );
 
@@ -70,6 +75,7 @@ export const sar = VmLib(
         params: { x: '第一个操作数', y: '位数' },
         paramsType: { x: 'number', y: 'number' },
         returnsType: 'number',
+        examples: ['sar(-8, 1) // -4'],
     },
 );
 
@@ -82,5 +88,6 @@ export const shr = VmLib(
         params: { x: '第一个操作数', y: '位数' },
         paramsType: { x: 'number', y: 'number' },
         returnsType: 'number',
+        examples: ['shr(8, 1) // 4'],
     },
 );

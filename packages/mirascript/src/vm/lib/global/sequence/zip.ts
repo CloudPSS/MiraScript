@@ -32,5 +32,9 @@ export const zip = VmLib(
         params: { data: '要转换的数组/记录' },
         paramsType: { data: 'array | record' },
         returnsType: '(array | record)[]',
+        examples: [
+            'zip((x: [1, 2], y: ["a", "b"])) // [(x: 1, y: "a"), (x: 2, y: "b")]',
+            `zip([[1, 2], ["a", "b"]]) // [[1, "a"], [2, "b"]]`,
+        ],
     },
 );

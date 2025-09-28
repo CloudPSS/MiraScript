@@ -13,6 +13,7 @@ export const debug_print = VmLib(
         params: { '..args': '要打印的调试信息，可以是任意类型' },
         paramsType: { '..args': 'any[]' },
         returnsType: 'nil',
+        examples: ['debug_print("value:", 42);'],
     },
 );
 
@@ -29,5 +30,6 @@ export const panic = VmLib(
         params: { message: '要打印的错误信息' },
         paramsType: { message: 'string' },
         returnsType: 'never',
+        examples: ['panic("boom");'],
     },
 );

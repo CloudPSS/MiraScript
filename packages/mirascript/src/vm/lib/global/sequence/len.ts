@@ -10,5 +10,6 @@ export const len = VmLib(
         params: { arr: '要求长度的数组' },
         paramsType: { arr: 'array' },
         returnsType: 'number',
+        examples: ['len([1, 2, 3]) // 3'],
     },
 );

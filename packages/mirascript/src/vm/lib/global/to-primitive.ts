@@ -6,6 +6,7 @@ export const to_string = VmLib((data) => $ToString(data), {
     params: { data: '要转换的数据' },
     paramsType: { data: 'any' },
     returnsType: 'string',
+    examples: ['to_string([1, 2]) // "1, 2"'],
 });
 
 export const to_number = VmLib((data) => $ToNumber(data), {
@@ -13,6 +14,7 @@ export const to_number = VmLib((data) => $ToNumber(data), {
     params: { data: '要转换的数据' },
     paramsType: { data: 'any' },
     returnsType: 'number',
+    examples: ['to_number("1.5") // 1.5'],
 });
 
 export const to_boolean = VmLib((data) => $ToBoolean(data), {
@@ -20,6 +22,7 @@ export const to_boolean = VmLib((data) => $ToBoolean(data), {
     params: { data: '要转换的数据' },
     paramsType: { data: 'any' },
     returnsType: 'boolean',
+    examples: ['to_boolean(nil) // false'],
 });
 
 export const format = VmLib((data, format) => $Format(data, format), {
@@ -27,4 +30,5 @@ export const format = VmLib((data, format) => $Format(data, format), {
     params: { data: '要格式化的数据', format: '格式字符串' },
     paramsType: { data: 'any', format: 'string' },
     returnsType: 'string',
+    examples: ['format(12, ".3") // "12.000"'],
 });

@@ -48,6 +48,7 @@ export const size = VmLib(
         params: { matrix: '要获取尺寸的矩阵' },
         paramsType: { matrix: 'any[][]' },
         returnsType: '[number, number]',
+        examples: ['matrix.size([[1, 2], [3, 4]]) // [2, 2]'],
     },
 );
 
@@ -75,6 +76,7 @@ export const transpose = VmLib(
         params: { matrix: '要转置的矩阵' },
         paramsType: { matrix: 'any[][]' },
         returnsType: 'any[][]',
+        examples: ['matrix.transpose([[1, 2], [3, 4]]) // [[1, 3], [2, 4]]'],
     },
 );
 
@@ -219,6 +221,7 @@ export const entrywise = VmLib(
         params: { a: '第一个操作数', b: '第二个操作数', f: '操作函数' },
         paramsType: { a: 'any | any[] | any[][]', b: 'any | any[] | any[][]', f: 'fn(a: any, b: any) -> any' },
         returnsType: 'any | any[] | any[][]',
+        examples: ['matrix.entrywise([1, 2], [3, 4], fn (x, y) { x + y }) // [4, 6]'],
     },
 );
 
@@ -233,6 +236,7 @@ export const add = VmLib(
         params: { a: '第一个操作数', b: '第二个操作数' },
         paramsType: { a: 'number | number[] | number[][]', b: 'number | number[] | number[][]' },
         returnsType: 'number | number[] | number[][]',
+        examples: ['matrix.add([1, 2], [3, 4]) // [4, 6]'],
     },
 );
 
@@ -247,6 +251,7 @@ export const subtract = VmLib(
         params: { a: '第一个操作数', b: '第二个操作数' },
         paramsType: { a: 'number | number[] | number[][]', b: 'number | number[] | number[][]' },
         returnsType: 'number | number[] | number[][]',
+        examples: ['matrix.subtract([3, 4], [1, 2]) // [2, 2]'],
     },
 );
 
@@ -261,6 +266,7 @@ export const entrywise_multiply = VmLib(
         params: { a: '第一个操作数', b: '第二个操作数' },
         paramsType: { a: 'number | number[] | number[][]', b: 'number | number[] | number[][]' },
         returnsType: 'number | number[] | number[][]',
+        examples: ['matrix.entrywise_multiply([1, 2], [3, 4]) // [3, 8]'],
     },
 );
 
@@ -275,6 +281,7 @@ export const entrywise_divide = VmLib(
         params: { a: '第一个操作数', b: '第二个操作数' },
         paramsType: { a: 'number | number[] | number[][]', b: 'number | number[] | number[][]' },
         returnsType: 'number | number[] | number[][]',
+        examples: ['matrix.entrywise_divide([4, 6], [2, 3]) // [2, 2]'],
     },
 );
 
@@ -341,6 +348,7 @@ export const multiply = VmLib(
         params: { a: '第一个操作数', b: '第二个操作数' },
         paramsType: { a: 'number | number[] | number[][]', b: 'number | number[] | number[][]' },
         returnsType: 'number | number[] | number[][]',
+        examples: ['matrix.multiply([[1, 2], [3, 4]], [5, 6]) // [17, 39]'],
     },
 );
 
@@ -460,6 +468,7 @@ export const invert = VmLib(
         params: { a: '待求逆的矩阵' },
         paramsType: { a: 'number | number[][]' },
         returnsType: 'number | number[][]',
+        examples: ['matrix.invert([[1, 2], [3, 4]]) // [[-2, 1], [1.5, -0.5]]'],
     },
 );
 
@@ -484,6 +493,7 @@ export const zeros = VmLib((...size) => filled(size, 0), {
     params: { '..size': '矩阵的维度' },
     paramsType: { '..size': 'number[]' },
     returnsType: 'number[][]',
+    examples: ['matrix.zeros(2, 3) // [[0, 0, 0], [0, 0, 0]]'],
 });
 
 export const ones = VmLib((...size) => filled(size, 1), {
@@ -491,6 +501,7 @@ export const ones = VmLib((...size) => filled(size, 1), {
     params: { '..size': '矩阵的维度' },
     paramsType: { '..size': 'number[]' },
     returnsType: 'number[][]',
+    examples: ['matrix.ones(2, 2) // [[1, 1], [1, 1]]'],
 });
 
 export const identity = VmLib(
@@ -517,6 +528,7 @@ export const identity = VmLib(
         params: { '..size': '矩阵的维度' },
         paramsType: { '..size': '[number] | [number, number]' },
         returnsType: 'number[][]',
+        examples: ['matrix.identity(3) // [[1, 0, 0], [0, 1, 0], [0, 0, 1]]'],
     },
 );
 
@@ -559,5 +571,9 @@ export const diagonal = VmLib(
         params: { x: '对角线元素或要获取对角线的矩阵', k: '对角线偏移量，默认为 0' },
         paramsType: { x: 'number[] | number[][]', k: 'number' },
         returnsType: 'number[][] | number[]',
+        examples: [
+            'matrix.diagonal([1, 2, 3]) // [[1, 0, 0], [0, 2, 0], [0, 0, 3]]',
+            'matrix.diagonal([[1, 2], [3, 4]]) // [1, 4]',
+        ],
     },
 );

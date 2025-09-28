@@ -35,6 +35,7 @@ export const map = VmLib(
             f: 'fn(value: any, key: number | string | nil, input: type(data)) -> any',
         },
         returnsType: 'type(data)',
+        examples: ['map([1, 2, 3], fn (v) { v * v }) // [1, 4, 9]'],
     },
 );
 
@@ -55,6 +56,7 @@ export const filter = VmLib(
             predicate: 'fn(value: any, key: number | string | nil, input: type(data)) -> boolean',
         },
         returnsType: 'type(data)',
+        examples: ['filter([1, 2, 3, 4], fn (v) { v % 2 == 0 }) // [2, 4]'],
     },
 );
 
@@ -75,5 +77,6 @@ export const filter_map = VmLib(
             f: 'fn(value: any, key: number | string | nil, input: type(data)) -> any | nil',
         },
         returnsType: 'type(data)',
+        examples: ['filter_map([1, 2, 3], fn (v) { if v % 2 == 0 { v * v } else { nil } }) // [4]'],
     },
 );

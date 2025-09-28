@@ -12,5 +12,6 @@ export const reverse = VmLib(
         params: { arr: '要反转的数组' },
         paramsType: { arr: 'array' },
         returnsType: 'array',
+        examples: ['reverse([1, 2, 3]) // [3, 2, 1]'],
     },
 );

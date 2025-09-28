@@ -37,6 +37,7 @@ const _with = VmLib(
         params: { data: '要设置的数组或记录', '..entries': '要设置的键值对，成对出现' },
         paramsType: { data: 'array | record', '..entries': '[..[string | number, any][]]' },
         returnsType: 'type(data)',
+        examples: ['with([10, 20], 2, 99) // [10, 20, 99]', 'with((a: 1), "b", 2) // (a: 1, b: 2)'],
     },
 );
 export { _with as 'with' };

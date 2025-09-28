@@ -49,6 +49,7 @@ export const sort = VmLib(
             comparator: 'fn(a: any, b: any) -> number',
         },
         returnsType: 'array',
+        examples: ['sort(["c", "a", "b"]) // ["a", "b", "c"]'],
     },
 );
 
@@ -82,5 +83,6 @@ export const sort_by = VmLib(
             comparator: 'fn(a: any, b: any) -> number',
         },
         returnsType: 'array',
+        examples: ['sort_by([(0, "x"), (2, "y"), (1, "z")], fn (item) { item[0] }) // [(0, "x"), (1, "z"), (2, "y")]'],
     },
 );

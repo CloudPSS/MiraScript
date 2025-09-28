@@ -34,6 +34,7 @@ export const all = VmLib(
             predicate: 'fn(value: any, key: number | string, input: type(data)) -> boolean',
         },
         returnsType: 'boolean',
+        examples: ['all([1, 2, 3], fn { it > 0 }) // true'],
     },
 );
 
@@ -67,5 +68,6 @@ export const any = VmLib(
             predicate: 'fn(value: any, key: number | string, input: type(data)) -> boolean',
         },
         returnsType: 'boolean',
+        examples: ['any([0, 1, 2], fn { it > 1 }) // true'],
     },
 );

@@ -44,5 +44,6 @@ export const find = VmLib(
             predicate: 'fn(value: any, key: number | string | nil, input: type(data)) -> boolean',
         },
         returnsType: '(string | number, any) | nil',
+        examples: ['find([3, 5, 8], fn (v) { v % 2 == 0 }) // (2, 8)'],
     },
 );

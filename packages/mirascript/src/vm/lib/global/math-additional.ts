@@ -66,5 +66,6 @@ export const factorial = VmLib(
         params: { x: '要计算阶乘的数值' },
         paramsType: { x: 'number' },
         returnsType: 'number',
+        examples: ['factorial(5) // 120'],
     },
 );

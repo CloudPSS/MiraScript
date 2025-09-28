@@ -21,6 +21,7 @@ export const to_json = VmLib(
         params: { data: '要转换为 JSON 的数据' },
         paramsType: { data: 'any' },
         returnsType: 'string',
+        examples: ['to_json([1, 2, 3]) // "[1,2,3]"'],
     },
 );
 
@@ -40,5 +41,6 @@ export const from_json = VmLib(
         params: { json: '要转换的 JSON 字符串', fallback: '如果转换失败，返回的默认值' },
         paramsType: { json: 'string', fallback: 'any' },
         returnsType: 'any',
+        examples: [`from_json('{"a":1}') // (a: 1)`],
     },
 );
