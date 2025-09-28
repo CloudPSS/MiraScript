@@ -22,7 +22,6 @@ export const repeat = VmLib(
             data: 'any',
             times: 'number',
         },
-        returns: '包含重复元素的数组',
         returnsType: 'type(data)[]',
         examples: ['repeat(0, 5) // [0, 0, 0, 0, 0]', 'repeat("a", 3) // ["a", "a", "a"]'],
     },
