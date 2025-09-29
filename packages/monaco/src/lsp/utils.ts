@@ -30,6 +30,7 @@ function globalParamsSignature(info: VmFunctionInfo | undefined): ParamSignature
     }
     return paramItems;
 }
+const SIG_WIDTH = 60;
 /** 生成函数签名 */
 export function fnSignature(
     id: string | undefined,
@@ -50,8 +51,8 @@ export function fnSignature(
             let p;
             if (
                 this.params.length >= 1 &&
-                (prefix.length + this.returns.length > 60 ||
-                    prefix.length + this.returns.length + params.reduce((a, b) => a + b.length, 0) > 60)
+                (prefix.length + this.returns.length > SIG_WIDTH ||
+                    prefix.length + this.returns.length + params.reduce((a, b) => a + b[1].length, 0) > SIG_WIDTH)
             ) {
                 p = `(\n${params.map((item) => `  ${item[1]},`).join('\n')}\n)`;
             } else {

@@ -221,7 +221,7 @@ export const entrywise = VmLib(
         params: { a: '第一个操作数', b: '第二个操作数', f: '操作函数' },
         paramsType: { a: 'any | any[] | any[][]', b: 'any | any[] | any[][]', f: 'fn(a: any, b: any) -> any' },
         returnsType: 'any | any[] | any[][]',
-        examples: ['matrix.entrywise([1, 2], [3, 4], fn (x, y) { x + y }) // [4, 6]'],
+        examples: [`matrix.entrywise([1, 2], [3, 4], fn (x, y) { x + y }) // [4, 6]`],
     },
 );
 
