@@ -170,6 +170,10 @@ function serializeBoolean(value: boolean): string {
 function serializeNumber(value: number): string {
     if (isNaN(value)) return 'nan';
     if (!isFinite(value)) return value < 0 ? '-inf' : 'inf';
+    if (value === 0) {
+        if (1 / value < 0) return '-0';
+        return '0';
+    }
     return String(value);
 }
 

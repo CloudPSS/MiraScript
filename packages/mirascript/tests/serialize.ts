@@ -21,10 +21,7 @@ for (const value of [null, true, false, Number.NaN, Infinity, -Infinity, +0, 0.1
     test(`simple primitive ${String(value)}`, serializeRoundTrip, value);
 }
 
-for (const [value, expected] of [
-    [undefined, null],
-    [-0, +0],
-]) {
+for (const [value, expected] of [[undefined, null]]) {
     test(`no roundtrip ${String(value)}`, serializeRoundTrip, value, expected);
 }
 
@@ -50,6 +47,8 @@ for (const value of [
 test(`broken surrogate string`, serializeRoundTrip, '\uDC00\uD800', '\uFFFD\uFFFD');
 
 for (const value of [
+    0,
+    [+0, -0],
     [],
     {},
     { 0: 1 },

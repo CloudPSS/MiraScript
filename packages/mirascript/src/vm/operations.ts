@@ -333,13 +333,14 @@ function innerToString(value: VmAny, useBraces: boolean): string {
 }
 export const $ToString = (value: VmAny): string => {
     $AssertInit(value);
+    if (typeof value == 'string') return value;
     if (value === null) return '';
     return innerToString(value, false);
 };
 export const $ToNumber = (value: VmAny): number => {
     $AssertInit(value);
-    if (value == null) return 0;
     if (typeof value == 'number') return value;
+    if (value == null) return 0;
     if (typeof value == 'string') return Number(value);
     if (typeof value == 'boolean') return value ? 1 : 0;
     return Number.NaN;
