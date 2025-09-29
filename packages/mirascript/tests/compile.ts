@@ -3,10 +3,12 @@ import { compile, compileSync } from '@mirascript/mirascript';
 
 test('syntax error', async (t) => {
     await t.throwsAsync(compile('1+'), { message: /Failed to compile/ });
+    t.throws(() => compileSync('1+'), { message: /Failed to compile/ });
 });
 
 test('compile error', async (t) => {
     await t.throwsAsync(compile('a = 12; let a = 1;'), { message: /Failed to compile/ });
+    t.throws(() => compileSync('a = 12; let a = 1;'), { message: /Failed to compile/ });
 });
 
 test('buffer', async (t) => {

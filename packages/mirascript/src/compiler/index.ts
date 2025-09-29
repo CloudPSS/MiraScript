@@ -62,6 +62,6 @@ export function compileSync(this: void, source: ScriptInput, options: TranspileO
         const result = compileFast(source, options);
         if (result) return result;
     }
-    const bc = compileBytecodeSync(source, {});
+    const bc = compileBytecodeSync(source, options);
     return emitImpl(source, bc, options);
 }
