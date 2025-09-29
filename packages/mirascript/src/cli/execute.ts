@@ -27,6 +27,6 @@ export async function execute(script: string, template: boolean, variables: Reco
         }
     } catch (ex) {
         console.error(styles.red.open + (ex as Error).message + styles.red.close);
-        process.exit(2);
+        process.exitCode = 2;
     }
 }
