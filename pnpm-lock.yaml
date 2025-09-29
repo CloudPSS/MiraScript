@@ -43,12 +43,18 @@ importers:
 
   packages/mirascript:
     dependencies:
+      '@commander-js/extra-typings':
+        specifier: ^14.0.0
+        version: 14.0.0(commander@14.0.1)
       '@mirascript/napi':
         specifier: workspace:~
         version: link:../napi
       '@mirascript/wasm':
         specifier: workspace:~
         version: link:../wasm
+      ansi-styles:
+        specifier: ^6.2.3
+        version: 6.2.3
       js-base64:
         specifier: ^3.7.8
         version: 3.7.8
@@ -294,6 +300,12 @@ packages:
       { integrity: sha512-6M7v8ibBC3e+r9QU5eQyfsbhwgyQXdnec5E/Mx4Wz28F4J7NFZlT7dMRoReFB2DEbzph4GloUkS0yiOO0/Fo7A== }
     peerDependencies:
       typescript: '>=5'
+
+  '@commander-js/extra-typings@14.0.0':
+    resolution:
+      { integrity: sha512-hIn0ncNaJRLkZrxBIp5AsW/eXEHNKYQBh0aPdoUqNgD+Io3NIykQqpKFyKcuasZhicGaEZJX/JBSIkZ4e5x8Dg== }
+    peerDependencies:
+      commander: ~14.0.0
 
   '@commitlint/cli@19.8.1':
     resolution:
@@ -3099,6 +3111,10 @@ snapshots:
   '@cloudpss/tsconfig@3.0.26(typescript@5.9.2)':
     dependencies:
       typescript: 5.9.2
+
+  '@commander-js/extra-typings@14.0.0(commander@14.0.1)':
+    dependencies:
+      commander: 14.0.1
 
   '@commitlint/cli@19.8.1(@types/node@24.5.2)(typescript@5.9.2)':
     dependencies:

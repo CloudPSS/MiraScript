@@ -23,7 +23,8 @@ export const panic = VmLib(
         if (message === undefined) console.error('\u001B[41;37m MiraScript \u001B[0m');
         // eslint-disable-next-line no-console
         else console.error('\u001B[41;37m MiraScript \u001B[0m', message);
-        throw new VmError($ToString(message), undefined);
+        const error = message == null ? 'panic' : 'panic: ' + $ToString(message);
+        throw new VmError(error, undefined);
     },
     {
         summary: '产生错误，并打印错误信息到控制台',
