@@ -402,7 +402,8 @@ class Emitter {
             case OpCode.Nsame:
             case OpCode.In:
             case OpCode.And:
-            case OpCode.Or: {
+            case OpCode.Or:
+            case OpCode.Format: {
                 reg = read();
                 const left = read();
                 const right = read();

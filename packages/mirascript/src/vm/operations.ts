@@ -195,7 +195,7 @@ export const $In = (value: VmAny, iterable: VmAny): boolean => {
     return false;
 };
 export const $Concat = (...args: string[]): string => {
-    return args.map($ToString).join('');
+    return args.map($Format).join('');
 };
 export const $Pos = (a: VmAny): number => $ToNumber(a);
 export const $Neg = (a: VmAny): number => -$ToNumber(a);
@@ -292,6 +292,13 @@ export const $ToBoolean = (value: VmAny): boolean => {
     $AssertInit(value);
     return value != null && value !== false;
 };
+/** 将值转为字符串 */
+function numberToString(value: number): string {
+    if (isNaN(value)) return 'nan';
+    if (value === Infinity) return 'inf';
+    if (value === -Infinity) return '-inf';
+    return String(value);
+}
 
 /** 将值转为字符串 */
 function innerToString(value: VmAny, useBraces: boolean): string {
@@ -320,10 +327,7 @@ function innerToString(value: VmAny, useBraces: boolean): string {
         return `(${entries})`;
     }
     if (typeof value == 'number') {
-        if (isNaN(value)) return 'nan';
-        if (value === Infinity) return 'inf';
-        if (value === -Infinity) return '-inf';
-        return String(value);
+        return numberToString(value);
     }
     return String(value);
 }
@@ -439,16 +443,35 @@ export const $ArraySpread = (array: VmAny): Iterable<VmConst | undefined> => {
     throw new VmError(`Expected array, iterable extern or nil, got ${$Type(array)}`, []);
 };
 
+/** 渲染数字 */
+function formatNumber(value: number): string {
+    if (!Number.isFinite(value)) return numberToString(value);
+    if (value === 0) return '0';
+    const s = value.toString();
+    let ps;
+    const abs = Math.abs(value);
+    if (abs >= 1000 || abs < 0.001) {
+        const ps1 = value.toExponential();
+        const ps2 = value.toExponential(5);
+        ps = ps1.length < ps2.length ? ps1 : ps2;
+    } else {
+        ps = value.toPrecision(6);
+    }
+    return ps.length < s.length ? ps : s;
+}
+
 export const $Format = (value: VmAny, format: VmAny): string => {
     $AssertInit(value);
-    if (format == null) return $ToString(value);
-    const f = $ToString(format).trim();
-    if (!f) return $ToString(value);
+    const f = format == null ? '' : typeof format == 'string' ? format.trim() : $ToString(format);
 
-    if (typeof value == 'number' && /^\.\d+$/.test(f)) {
-        let digits = Math.trunc(Number(f.slice(1)));
-        if (!(digits <= 100)) digits = 100;
-        return value.toFixed(digits);
+    if (typeof value == 'number') {
+        if (/^\.\d+$/.test(f)) {
+            let digits = Math.trunc(Number(f.slice(1)));
+            if (!(digits <= 100)) digits = 100;
+            return value.toFixed(digits);
+        } else {
+            return formatNumber(value);
+        }
     }
 
     return $ToString(value);

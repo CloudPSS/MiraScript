@@ -529,7 +529,7 @@ impl<'s> Emitter<'s> {
                 if args_reg.is_empty() {
                     self.op_string(ret, "");
                 } else if args_reg.len() == 1 {
-                    self.op_unary(ret, OpCode::ToString, args_reg[0]);
+                    self.op_binary(ret, OpCode::Format, args_reg[0], Register::EMPTY);
                 } else {
                     self.op_variadic(ret, OpCode::Concat, args_reg);
                 }

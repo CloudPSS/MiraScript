@@ -80,6 +80,9 @@ pub enum OpCode {
     /// CONCAT %ret `n` %1 %2 ... %n\
     /// %ret = %1 .. %2 .. ... .. %n
     Concat,
+    /// FORMAT %ret %1 %2\
+    /// %ret = format(%1, %2)
+    Format,
     /// AND %ret %1 %2\
     /// %ret = %1 && %2
     And,
