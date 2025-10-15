@@ -30,6 +30,9 @@ t_eq(to_number(()), nan);
 t_eq(to_number([]), nan);
 t_eq(to_number([1]), nan);
 t_eq(to_number((1,)), nan);
+t_eq(to_number(fn { }), nan);
+
+t_throws(fn { to_number() });
 
 // to_boolean
 t_true(to_boolean(true));
@@ -52,6 +55,7 @@ if has_module {
   t_true(to_boolean(v_module));
 }
 t_true(to_boolean(v_fn));
+t_throws(fn { to_boolean() });
 
 // to_string
 t_eq(to_string(nil), "");
@@ -79,7 +83,9 @@ if has_extern {
   t_true(to_string(v_extern)::ends_with(">"));
 }
 t_eq(to_string(fn { }), "<function>");
+t_throws(fn { to_string() });
 
+// format
 t_eq(format(""), "");
 t_eq(format("Hello, World!"), "Hello, World!");
 t_eq(format(true, nil), "true");
@@ -91,3 +97,5 @@ t_eq(format(@pi, ""), "3.14159");
 t_eq(`$(@pi)`, "3.14159");
 t_eq(` $(@pi) `, " 3.14159 ");
 t_eq(format("Hello, World!", ".2"), "Hello, World!");
+
+t_throws(fn { format() });
