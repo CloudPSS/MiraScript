@@ -1,10 +1,13 @@
 import type { VmAny } from '../../index.js';
 import { $ToNumber } from '../../operations.js';
-import { VmLib } from '../_helpers.js';
+import { required, VmLib } from '../_helpers.js';
 
 /** 生成函数 */
 function build(f: (x: number) => number): (x: VmAny) => number {
-    return (x) => f($ToNumber(x));
+    return (x) => {
+        required('x', x, Number.NaN);
+        return f($ToNumber(x));
+    };
 }
 
 export const trunc = VmLib(build(Math.trunc), {

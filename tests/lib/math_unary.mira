@@ -4,6 +4,15 @@ t_eq(trunc(13.37), 13);
 t_eq(trunc(42.84), 42);
 t_eq(trunc(-0.123), -0);
 t_eq(trunc(-13.37), -13);
+t_eq(trunc(nan), nan);
+t_eq(trunc(inf), inf);
+t_eq(trunc(''), 0);
+t_eq(trunc(nil), 0);
+t_eq(trunc('inf'), inf);
+t_eq(trunc('11.4'), 11);
+t_eq(trunc(false), 0);
+t_eq(trunc(true), 1);
+t_throws(fn { trunc() });
 
 // floor
 t_eq(floor(13.37), 13);
