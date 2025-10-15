@@ -23,6 +23,7 @@ import { hasOwnEnumerable, isNaN, isSafeInteger, keys, create } from '../helpers
 
 const { abs, min, trunc, ceil } = Math;
 const { slice, at } = Array.prototype;
+const { POSITIVE_INFINITY, NEGATIVE_INFINITY } = Number;
 
 const isSame = (a: VmValue, b: VmValue): boolean => {
     // Check for NaN
@@ -341,7 +342,17 @@ export const $ToNumber = (value: VmAny): number => {
     $AssertInit(value);
     if (typeof value == 'number') return value;
     if (value == null) return 0;
-    if (typeof value == 'string') return Number(value);
+    if (typeof value == 'string') {
+        value = value.trim();
+        if (value === '') return 0;
+        if (value === 'inf' || value === '+inf' || value === 'Infinity' || value === '+Infinity') {
+            return POSITIVE_INFINITY;
+        }
+        if (value === '-inf' || value === '-Infinity') {
+            return NEGATIVE_INFINITY;
+        }
+        return Number(value);
+    }
     if (typeof value == 'boolean') return value ? 1 : 0;
     return Number.NaN;
 };
