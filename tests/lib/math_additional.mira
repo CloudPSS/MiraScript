@@ -1,6 +1,8 @@
 t_eq(factorial(-0), 1);
 t_eq(factorial(0), 1);
+t_eq(factorial(nil), 1);
 t_eq(factorial(1), 1);
+t_eq(factorial(true), 1);
 t_eq(factorial(2), 2);
 
 t_eq(factorial(22), 1_124_000_727_777_607_680_000);

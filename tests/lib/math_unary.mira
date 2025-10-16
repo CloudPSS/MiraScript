@@ -1,156 +1,54 @@
 // math-unary.ts 中的函数
-// trunc
-t_eq(trunc(13.37), 13);
-t_eq(trunc(42.84), 42);
-t_eq(trunc(-0.123), -0);
-t_eq(trunc(-13.37), -13);
-t_eq(trunc(nan), nan);
-t_eq(trunc(inf), inf);
-t_eq(trunc(''), 0);
-t_eq(trunc(nil), 0);
-t_eq(trunc('inf'), inf);
-t_eq(trunc('11.4'), 11);
-t_eq(trunc(false), 0);
-t_eq(trunc(true), 1);
-t_throws(fn { trunc() });
 
-// floor
-t_eq(floor(13.37), 13);
-t_eq(floor(42.84), 42);
-t_eq(floor(-0.123), -1);
-t_eq(floor(-13.37), -14);
+// fnName: (fn(0), fn(-0), fn(1), fn(-1), fn(nan), fn(inf), fn(-inf))
+let trunc = (0, -0, 1, -1, nan, inf, -inf);
+let floor = (0, -0, 1, -1, nan, inf, -inf);
+let ceil = (0, -0, 1, -1, nan, inf, -inf);
+let round = (0, -0, 1, -1, nan, inf, -inf);
+let sign = (0, -0, 1, -1, nan, 1, -1);
+let abs = (0, 0, 1, 1, nan, inf, inf);
+let acos = (1.570_796_326_794_896_6, 1.570_796_326_794_896_6, 0, 3.141_592_653_589_793, nan, nan, nan);
+let acosh = (nan, nan, 0, nan, nan, inf, nan);
+let asin = (0, -0, 1.570_796_326_794_896_6, -1.570_796_326_794_896_6, nan, nan, nan);
+let asinh = (0, -0, 0.881_373_587_019_543, -0.881_373_587_019_543, nan, inf, -inf);
+let atan = (0, -0, 0.785_398_163_397_448_3, -0.785_398_163_397_448_3, nan, 1.570_796_326_794_896_6, -1.570_796_326_794_896_6);
+let atanh = (0, -0, inf, -inf, nan, nan, nan);
+let cos = (1, 1, 0.540_302_305_868_139_8, 0.540_302_305_868_139_8, nan, nan, nan);
+let cosh = (1, 1, 1.543_080_634_815_243_7, 1.543_080_634_815_243_7, nan, inf, inf);
+let sin = (0, -0, 0.841_470_984_807_896_5, -0.841_470_984_807_896_5, nan, nan, nan);
+let sinh = (0, -0, 1.175_201_193_643_801_4, -1.175_201_193_643_801_4, nan, inf, -inf);
+let tan = (0, -0, 1.557_407_724_654_902_3, -1.557_407_724_654_902_3, nan, nan, nan);
+let tanh = (0, -0, 0.761_594_155_955_764_9, -0.761_594_155_955_764_9, nan, 1, -1);
+let exp = (1, 1, 2.718_281_828_459_045, 0.367_879_441_171_442_33, nan, inf, 0);
+let expm1 = (0, -0, 1.718_281_828_459_045, -0.632_120_558_828_557_7, nan, inf, -1);
+let log = (-inf, -inf, 0, nan, nan, inf, nan);
+let log10 = (-inf, -inf, 0, nan, nan, inf, nan);
+let log1p = (0, -0, 0.693_147_180_559_945_3, -inf, nan, inf, nan);
+let log2 = (-inf, -inf, 0, nan, nan, inf, nan);
+let sqrt = (0, -0, 1, nan, nan, inf, nan);
+let cbrt = (0, -0, 1, -1, nan, inf, -inf);
 
-// ceil
-t_eq(ceil(1.5), 2);
-t_eq(ceil(-1.5), -1);
-t_eq(ceil(13.37), 14);
-t_eq(ceil(-13.37), -13);
+let func = (:trunc, :floor, :ceil, :round, :sign, :abs, :acos, :acosh, :asin, :asinh, :atan, :atanh, :cos, :cosh, :sin, :sinh, :tan, :tanh, :exp, :expm1, :log, :log10, :log1p, :log2, :sqrt, :cbrt);
 
-// round
-t_eq(round(13.37), 13);
-t_eq(round(13.5), 14);
-t_eq(round(-13.5), -13);
-t_eq(round(-13.37), -13);
+for (f, expected) in func::entries() {
+  let fun = global[f];
+  t_eq(type(fun), 'function');
+  t_eq([f, fun(0)], [f, expected.0]);
+  t_eq([f, fun(false)], [f, expected.0]);
+  t_eq([f, fun(nil)], [f, expected.0]);
+  t_eq([f, fun('')], [f, expected.0]);
+  t_eq([f, fun(-0)], [f, expected.1]);
+  t_eq([f, fun(1)], [f, expected.2]);
+  t_eq([f, fun("+1")], [f, expected.2]);
+  t_eq([f, fun(true)], [f, expected.2]);
+  t_eq([f, fun(-1)], [f, expected.3]);
+  t_eq([f, fun(nan)], [f, expected.4]);
+  t_eq([f, fun([])], [f, expected.4]);
+  t_eq([f, fun(inf)], [f, expected.5]);
+  t_eq([f, fun('inf')], [f, expected.5]);
+  t_eq([f, fun(-inf)], [f, expected.6]);
+  t_eq([f, fun(" -inf ")], [f, expected.6]);
+  t_throws(fn { fun() });
 
-// sign
-t_eq(sign(3), 1);
-t_eq(sign(-3), -1);
-t_eq(sign(0), 0);
-t_eq(sign(-0), -0);
-
-// abs
-t_eq(abs(0), 0);
-t_eq(abs(-0), 0);
-t_eq(abs(1), 1);
-t_eq(abs(-1), 1);
-t_eq(abs(inf), inf);
-t_eq(abs(-inf), inf);
-
-// acos
-t_snapshot(acos(0.5));
-t_snapshot(acos(1));
-t_snapshot(acos(-1));
-t_snapshot(acos(0));
-
-// acosh
-t_snapshot(acosh(1.5));
-t_snapshot(acosh(1));
-t_snapshot(acosh(2));
-
-// asin
-t_snapshot(asin(0.5));
-t_snapshot(asin(1));
-t_snapshot(asin(-1));
-t_snapshot(asin(0));
-
-// asinh
-t_snapshot(asinh(0.5));
-t_snapshot(asinh(1));
-t_snapshot(asinh(-1));
-t_snapshot(asinh(0));
-
-// atan
-t_snapshot(atan(0.5));
-t_snapshot(atan(1));
-t_snapshot(atan(-1));
-t_snapshot(atan(0));
-
-// atanh
-t_snapshot(atanh(0.5));
-t_snapshot(atanh(0));
-t_snapshot(atanh(-0.5));
-
-// cos
-t_eq(cos(0), 1);
-t_snapshot(cos(@pi / 2));
-t_snapshot(cos(@pi));
-t_snapshot(cos(@pi * 2));
-
-// cosh
-t_snapshot(cosh(0));
-t_snapshot(cosh(1));
-t_snapshot(cosh(-1));
-
-// sin
-t_eq(sin(0), 0);
-t_snapshot(sin(@pi / 2));
-t_snapshot(sin(@pi));
-t_snapshot(sin(@pi * 2));
-
-// sinh
-t_snapshot(sinh(0));
-t_snapshot(sinh(1));
-t_snapshot(sinh(-1));
-
-// tan
-t_eq(tan(0), 0);
-t_snapshot(tan(@pi / 4));
-t_snapshot(tan(@pi / 2));
-
-// tanh
-t_snapshot(tanh(0));
-t_snapshot(tanh(1));
-t_snapshot(tanh(-1));
-
-// exp
-t_snapshot(exp(0));
-t_snapshot(exp(1));
-t_snapshot(exp(-1));
-t_snapshot(exp(2));
-
-// expm1
-t_snapshot(expm1(0));
-t_snapshot(expm1(1));
-t_snapshot(expm1(-1));
-
-// log
-t_snapshot(log(@e));
-t_snapshot(log(1));
-t_snapshot(log(10));
-
-// log10
-t_snapshot(log10(1));
-t_snapshot(log10(10));
-t_snapshot(log10(100));
-
-// log1p
-t_snapshot(log1p(0));
-t_snapshot(log1p(@e - 1));
-t_snapshot(log1p(9));
-
-// log2
-t_snapshot(log2(1));
-t_snapshot(log2(2));
-t_snapshot(log2(8));
-
-// sqrt
-t_eq(sqrt(4), 2);
-t_eq(sqrt(9), 3);
-t_eq(sqrt(0), 0);
-t_snapshot(sqrt(2));
-
-// cbrt
-t_eq(cbrt(8), 2);
-t_eq(cbrt(-8), -2);
-t_eq(cbrt(0), 0);
-t_snapshot(cbrt(2));
+  t_snapshot(f, fun(@e), fun(-@e), fun(1 / @e), fun(@e - 1), fun(@e + 1), fun(@pi), fun(-@pi), fun(@pi - 1), fun(@pi + 1), fun(@pi / 2), fun(@pi / 4), fun(0.5), fun(1.5), fun(-0.5));
+}
