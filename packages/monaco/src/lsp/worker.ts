@@ -8,12 +8,14 @@ export interface MonacoResult extends CompileResult {
     formatted?: string;
 }
 
+/** 缓存 Key (id, uri, inputMode) */
+export type CacheKey = `${string}\0${string}\0${InputMode}`;
 /** 请求参数 */
-export type Req = [uri: string, version: number, script: string, mode: InputMode];
+export type Req = [key: CacheKey, version: number, script: string, mode: InputMode];
 /** 编译结果 */
-export type ResOk = [uri: string, version: number, result: MonacoResult];
+export type ResOk = [key: CacheKey, version: number, result: MonacoResult];
 /** 编译结果 */
-export type ResErr = [uri: string, version: number, error: Error];
+export type ResErr = [key: CacheKey, version: number, error: Error];
 /** 编译结果 */
 export type Res = ResOk | ResErr;
 /** Ready */
@@ -65,16 +67,16 @@ if (typeof Worker == 'function' && typeof addEventListener == 'function' && type
     addEventListener('message', (event: MessageEvent) => {
         const data = event.data as Req;
         if (!Array.isArray(data)) return;
-        const [uri, version, script, mode] = data;
+        const [key, version, script, mode] = data;
         try {
             const result = compile(script, mode);
             const transfer = [];
             if (result.chunk) transfer.push(result.chunk.buffer);
             if (result.diagnostics) transfer.push(result.diagnostics.buffer);
-            postMessage([uri, version, result] satisfies ResOk, { transfer });
+            postMessage([key, version, result] satisfies ResOk, { transfer });
         } catch (error) {
             const e = error instanceof Error ? error : new Error(String(error));
-            postMessage([uri, version, e] satisfies ResErr);
+            postMessage([key, version, e] satisfies ResErr);
         }
     });
     postMessage('mirascript lsp ready' satisfies Ready);

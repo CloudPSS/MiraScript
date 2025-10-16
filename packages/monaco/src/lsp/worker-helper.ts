@@ -1,16 +1,13 @@
 import type { editor } from '../monaco-api.js';
-import type { InputMode } from '@mirascript/mirascript';
-import type { Ready, Req, Res, ResOk } from './worker.js';
+import type { Ready, CacheKey, Req, Res, ResOk } from './worker.js';
 import { CompileResult } from './compile-result.js';
 import { setMarkers } from './diagnostics.js';
 
 /** 缓存 */
-type CacheKey = `${string}\0${InputMode}`;
-/** 缓存 */
 type CacheValue = {
-    version: number;
+    readonly version: number;
+    readonly result: Promise<CompileResult>;
     lastAccess: number;
-    result: Promise<CompileResult>;
 };
 /** 编译结果缓存，避免重复编译 */
 const cache = new Map<CacheKey, CacheValue>();
@@ -62,10 +59,10 @@ async function compileWorker(req: Req): Promise<CompileResult> {
 
     const instance = await worker;
     instance.postMessage(req);
-    const [uri, version, source] = req;
-    const [_uri, _version, result] = await new Promise<ResOk>((resolve, reject) => {
+    const [key, version, source] = req;
+    const [_key, _version, result] = await new Promise<ResOk>((resolve, reject) => {
         const onMessage = (e: MessageEvent<Res>) => {
-            if (e.data[0] === uri && e.data[1] === version) {
+            if (e.data[0] === key && e.data[1] === version) {
                 instance.removeEventListener('message', onMessage);
                 if (e.data[2] instanceof Error) {
                     reject(e.data[2]);
@@ -76,15 +73,15 @@ async function compileWorker(req: Req): Promise<CompileResult> {
         };
         instance.addEventListener('message', onMessage);
     });
-    return new CompileResult(uri, version, source, result);
+    return new CompileResult(key, version, source, result);
 }
 
 /** 使用当前线程编译 */
 async function compileSync(req: Req): Promise<CompileResult> {
-    const [uri, version, script, mode] = req;
+    const [key, version, script, mode] = req;
     const { compile } = await import('./worker.js');
     const result = compile(script, mode);
-    return new CompileResult(uri, version, script, result);
+    return new CompileResult(key, version, script, result);
 }
 
 const USE_WORKER = typeof Worker === 'function';
@@ -93,7 +90,7 @@ export async function compile(model: editor.ITextModel): Promise<CompileResult> 
     const uri = model.uri.toString();
     const version = model.getVersionId();
     const mode = model.getLanguageId() === 'mirascript-template' ? 'Template' : 'Script';
-    const cacheKey = `${uri}\0${mode}` as const;
+    const cacheKey = `${model.id}\0${uri}\0${mode}` as const;
     const cached = cache.get(cacheKey);
     if (cached?.version === version) {
         cached.lastAccess = Date.now();
@@ -101,7 +98,7 @@ export async function compile(model: editor.ITextModel): Promise<CompileResult> 
     }
 
     const value = model.getValue();
-    const req: Req = [uri, version, value, mode];
+    const req: Req = [cacheKey, version, value, mode];
     const res = USE_WORKER ? compileWorker(req) : compileSync(req);
     void res.then((result) => {
         setMarkers(model, result);

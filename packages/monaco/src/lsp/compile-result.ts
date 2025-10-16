@@ -1,7 +1,7 @@
 import { type editor, Range, type IRange, type IPosition, Position } from '../monaco-api.js';
 import { strictContainsPosition } from './utils.js';
 import { REG_IDENTIFIER, REG_ORDINAL } from '../constants.js';
-import type { MonacoResult } from './worker.js';
+import type { CacheKey, MonacoResult } from './worker.js';
 import {
     parseDiagnostics,
     DiagnosticCode,
@@ -135,8 +135,8 @@ export type FieldsAccessAt = {
 /** 编译结果 */
 export class CompileResult {
     constructor(
-        /** URI */
-        readonly uri: string,
+        /** CacheKey */
+        readonly cacheKey: CacheKey,
         /** 代码版本 */
         readonly version: number,
         readonly source: string,
