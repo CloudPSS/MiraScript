@@ -179,8 +179,8 @@ function serializeNumber(value: number): string {
 
 /** 序列化数组 */
 function serializeArray(value: VmArray, depth: number, options: SerializeOptions): string {
+    if (depth > options.maxDepth) return `[]`;
     if (value.length === 0) return '[]';
-    if (depth > options.maxDepth) return `[..]`;
     let str = '[';
     for (let i = 0; i < value.length; i++) {
         if (i > 0) str += ', ';
@@ -212,9 +212,9 @@ function serializeRecord(value: VmRecord, depth: number, options: SerializeOptio
     if (customValue !== undefined) {
         return serializeImpl(customValue, depth - 1, options);
     }
+    if (depth > options.maxDepth) return `()`;
     const e = entries(value);
     if (e.length === 0) return '()';
-    if (depth > options.maxDepth) return `(..)`;
     if (e.length === 1) {
         const [k, v] = e[0]!;
         if (k === '0') {

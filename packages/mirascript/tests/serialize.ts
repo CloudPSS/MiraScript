@@ -1,6 +1,43 @@
 import test from 'ava';
-import { compile, type VmAny, type VmValue } from '@mirascript/mirascript';
-import { serialize } from '@mirascript/mirascript/subtle';
+import { compile, VmModule, type VmAny, type VmArray, type VmRecord, type VmValue } from '@mirascript/mirascript';
+import { serialize, serializeString, serializePropName } from '@mirascript/mirascript/subtle';
+import { VmExtern } from '../dist/index.js';
+
+test('serializeString', (t) => {
+    t.is(serializeString('Hello, World!'), `'Hello, World!'`);
+    t.is(serializeString("He said, 'Hello!'\n"), `'He said, \\'Hello!\\'\\n'`);
+    t.is(serializeString('你好，世界！'), `'你好，世界！'`);
+    t.is(serializeString('こんにちは、世界！'), `'こんにちは、世界！'`);
+    t.is(serializeString('👋🌍'), `'👋🌍'`);
+    t.is(serializeString('\0\u0001\n\r\t\b\f\v\\'), `'\\0\\x01\\n\\r\\t\\b\\f\\v\\\\'`);
+    t.is(serializeString('\u202A\u{E0001}'), `'\\u{202a}\\u{e0001}'`);
+    t.is(serializeString("'"), `'\\''`);
+    t.is(serializeString('"'), `'"'`);
+    t.is(serializeString('`'), "'`'");
+    t.is(serializeString('`\'"'), `'\`\\'"'`);
+    t.is(serializeString('$a'), `'\\$a'`);
+    t.is(
+        serializeString('\u000A\u000D\u001C\u001D\u0085\u2028\u2029\uFEFF'),
+        `'\\n\\r\\x1c\\x1d\\u{85}\u2028\u2029\\u{feff}'`,
+    );
+    t.is(serializeString('\uDC00\uD800'), `'��'`); // broken surrogate
+});
+
+test('serializePropName', (t) => {
+    t.is(serializePropName('simple'), 'simple');
+    t.is(serializePropName('_simple'), '_simple');
+    t.is(serializePropName('$simple'), '$simple');
+    t.is(serializePropName('simple123'), 'simple123');
+    t.is(serializePropName('$_simple123'), '$_simple123');
+    t.is(serializePropName('123'), '123');
+    t.is(serializePropName('0'), '0');
+    t.is(serializePropName('00'), `'00'`);
+    t.is(serializePropName('with space'), `'with space'`);
+    t.is(serializePropName('with-hyphen'), `'with-hyphen'`);
+    t.is(serializePropName('with.dot'), `'with.dot'`);
+    t.is(serializePropName('你好'), `你好`);
+    t.is(serializePropName('你好，世界！'), `'你好，世界！'`);
+});
 
 const serializeRoundTrip = test.macro<[value: VmAny, expected?: VmValue]>({
     exec: async (t, value, expected) => {
@@ -14,15 +51,15 @@ const serializeRoundTrip = test.macro<[value: VmAny, expected?: VmValue]>({
         t.deepEqual(deserialized, expected);
         t.deepEqual(deserialized2, expected);
     },
-    title: (providedTitle, value) => providedTitle || JSON.stringify(value) || String(value),
+    title: (providedTitle, value) => {
+        const v = value == null || typeof value == 'number' ? String(value) : JSON.stringify(value) || String(value);
+        if (!providedTitle) return v;
+        return `${providedTitle}: ${v}`;
+    },
 });
 
 for (const value of [null, true, false, Number.NaN, Infinity, -Infinity, +0, 0.1, 0.2, 0.3]) {
-    test(`simple primitive ${String(value)}`, serializeRoundTrip, value);
-}
-
-for (const [value, expected] of [[undefined, null]]) {
-    test(`no roundtrip ${String(value)}`, serializeRoundTrip, value, expected);
+    test(`simple primitive`, serializeRoundTrip, value);
 }
 
 for (const value of [
@@ -41,7 +78,7 @@ for (const value of [
     '$a',
     '\u000A\u000D\u001C\u001D\u0085\u2028\u2029\uFEFF',
 ]) {
-    test(`string ${serialize(value)}`, serializeRoundTrip, value);
+    test(`string`, serializeRoundTrip, value);
 }
 
 test(`broken surrogate string`, serializeRoundTrip, '\uDC00\uD800', '\uFFFD\uFFFD');
@@ -63,10 +100,11 @@ for (const value of [
     { ...[, 'x', 'y', ['z']] },
     { 0: 'x', a: 'y', '\n': 'z', '': 'w' },
 ]) {
-    test(serializeRoundTrip, value as VmAny);
+    test('roundtrip', serializeRoundTrip, value as VmAny);
 }
 
 for (const [value, expected] of [
+    [undefined, null],
     [
         { a: null, b: undefined },
         { a: null, b: null },
@@ -98,8 +136,30 @@ for (const [value, expected] of [
             valueOf: null,
         },
     ],
+    [new VmExtern({}), null],
+    [new VmModule('test', {}), null],
+    [
+        { e: new VmExtern({}), m: new VmModule('test', {}) },
+        { e: null, m: null },
+    ],
+    [Object.assign([1, 2, 3], { x: 1 }), [1, 2, 3]],
 ]) {
-    test(serializeRoundTrip, value as VmAny, expected as VmAny);
+    test('no roundtrip', serializeRoundTrip, value as VmAny, expected as VmAny);
 }
 
-test('array with props', serializeRoundTrip, Object.assign([1, 2, 3], { x: 1 }), [1, 2, 3]);
+const makeDeepArray = (depth: number): VmArray => {
+    if (depth <= 0) return [];
+    return [makeDeepArray(depth - 1)];
+};
+const makeDeepRecord = (depth: number): VmRecord => {
+    if (depth <= 0) return {};
+    return { d: makeDeepRecord(depth - 1) };
+};
+
+for (const depth of [0, 1, 5, 10, 20, 100, 128]) {
+    test(`deep array ${depth}`, serializeRoundTrip, makeDeepArray(depth));
+    test(`deep record ${depth}`, serializeRoundTrip, makeDeepRecord(depth));
+}
+
+test('deep array maxDepth', serializeRoundTrip, makeDeepArray(256), makeDeepArray(128));
+test('deep record maxDepth', serializeRoundTrip, makeDeepRecord(256), makeDeepRecord(128));
