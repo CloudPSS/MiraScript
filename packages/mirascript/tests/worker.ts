@@ -50,7 +50,7 @@ test.serial('compile', async (t) => {
 test.serial('compile error', async (t) => {
     callback!(new MessageEvent('message', { data: [1, ''] }));
     await new Promise((resolve) => setTimeout(resolve, 10));
-    t.true(postMessage.calledOnceWith([1, sinon.match.string]));
+    t.true(postMessage.calledOnceWith([1, sinon.match.instanceOf(Error)]));
 });
 
 test.serial('arg error', async (t) => {
@@ -69,5 +69,5 @@ test.serial('arg error', async (t) => {
         }),
     );
     await new Promise((resolve) => setTimeout(resolve, 10));
-    t.true(postMessage.calledOnceWith([1, '0']));
+    t.true(postMessage.calledOnceWith([1, sinon.match.instanceOf(Error).and(sinon.match.has('message', '0'))]));
 });

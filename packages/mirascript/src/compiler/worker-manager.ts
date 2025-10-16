@@ -44,7 +44,7 @@ export async function compileWorker(...args: Parameters<typeof compile>): Promis
     worker.postMessage([seq, ...args]);
     return await new Promise<[string | undefined, Uint32Array]>((resolve, reject) => {
         const callback = (ev: MessageEvent) => {
-            const data = ev.data as [number, string | undefined, Uint32Array] | [number, string];
+            const data = ev.data as [number, string | undefined, Uint32Array] | [number, Error];
             if (!Array.isArray(data)) return;
             const [retSeq, ...rest] = data;
             if (seq !== retSeq) return; // Ignore messages not matching the request
@@ -52,7 +52,7 @@ export async function compileWorker(...args: Parameters<typeof compile>): Promis
             if (rest.length === 2) {
                 resolve(rest);
             } else {
-                reject(new Error(rest[0]));
+                reject(rest[0]);
             }
         };
         worker.addEventListener('message', callback);

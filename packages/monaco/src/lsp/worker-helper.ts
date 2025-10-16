@@ -67,8 +67,8 @@ async function compileWorker(req: Req): Promise<CompileResult> {
         const onMessage = (e: MessageEvent<Res>) => {
             if (e.data[0] === uri && e.data[1] === version) {
                 instance.removeEventListener('message', onMessage);
-                if (typeof e.data[2] === 'string') {
-                    reject(new Error(e.data[2]));
+                if (e.data[2] instanceof Error) {
+                    reject(e.data[2]);
                 } else {
                     resolve(e.data as ResOk);
                 }
@@ -95,7 +95,7 @@ export async function compile(model: editor.ITextModel): Promise<CompileResult> 
     const mode = model.getLanguageId() === 'mirascript-template' ? 'Template' : 'Script';
     const cacheKey = `${uri}\0${mode}` as const;
     const cached = cache.get(cacheKey);
-    if (cached && cached.version === version) {
+    if (cached?.version === version) {
         cached.lastAccess = Date.now();
         return cached.result;
     }

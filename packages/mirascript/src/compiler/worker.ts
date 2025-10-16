@@ -27,7 +27,7 @@ addEventListener('message', (ev) => {
             postMessage([seq, script, errors], { transfer: [errors.buffer] });
         })
         .catch((error) => {
-            postMessage([seq, error instanceof Error ? error.message : String(error)]);
+            postMessage([seq, error instanceof Error ? error : new Error(String(error))]);
         });
 });
 

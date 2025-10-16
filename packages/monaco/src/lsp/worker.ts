@@ -13,7 +13,7 @@ export type Req = [uri: string, version: number, script: string, mode: InputMode
 /** 编译结果 */
 export type ResOk = [uri: string, version: number, result: MonacoResult];
 /** 编译结果 */
-export type ResErr = [uri: string, version: number, error: string];
+export type ResErr = [uri: string, version: number, error: Error];
 /** 编译结果 */
 export type Res = ResOk | ResErr;
 /** Ready */
@@ -51,7 +51,13 @@ export function compile(script: string, mode: InputMode): MonacoResult {
             formatted,
         };
     } finally {
-        compiler.free();
+        try {
+            compiler.free();
+        } catch (ex) {
+            /* 忽略错误 */
+            // eslint-disable-next-line no-console
+            console.error(ex);
+        }
     }
 }
 
@@ -67,7 +73,8 @@ if (typeof Worker == 'function' && typeof addEventListener == 'function' && type
             if (result.diagnostics) transfer.push(result.diagnostics.buffer);
             postMessage([uri, version, result] satisfies ResOk, { transfer });
         } catch (error) {
-            postMessage([uri, version, (error as Error).message || String(error)] satisfies ResErr);
+            const e = error instanceof Error ? error : new Error(String(error));
+            postMessage([uri, version, e] satisfies ResErr);
         }
     });
     postMessage('mirascript lsp ready' satisfies Ready);
