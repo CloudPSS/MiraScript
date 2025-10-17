@@ -11,14 +11,14 @@ t_eq((..arr2), ('x', 'y', 'z'));
 t_eq((0, ..arr1, 4), (1, 2, 4));
 t_eq((..arr1, ..arr2), (..arr2));
 t_eq((..arr2, ..arr1), (..arr1));
-t_eq((..nil), ());
-t_eq((..nil, 1), (1: 1));
 
 let obj1 = (1, 2, 3);
 let obj2 = (x: 'a', y: 'b', z: 'c');
 t_eq((..obj1, ..obj2), (x: 'a', y: 'b', z: 'c', 0: 1, 1: 2, 2: 3));
 t_eq((..obj1, 'y'), (1, 'y', 3));
 t_eq((..obj2, 'y'), (1: 'y', x: 'a', y: 'b', z: 'c'));
+t_eq((..nil), ());
+t_eq((..nil, 1), (1: 1));
 
 t_throws(fn () {
   (..1);
@@ -28,6 +28,15 @@ t_throws(fn () {
 });
 t_throws(fn () {
   (..true);
+});
+t_throws(fn () {
+  [..1];
+});
+t_throws(fn () {
+  [..'x'];
+});
+t_throws(fn () {
+  [..true];
 });
 
 if has_extern {

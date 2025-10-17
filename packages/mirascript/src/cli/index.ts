@@ -1,3 +1,4 @@
+/* c8 ignore start */
 /* eslint-disable no-console */
 import { readFile, stat } from 'node:fs/promises';
 import { program } from '@commander-js/extra-typings';
