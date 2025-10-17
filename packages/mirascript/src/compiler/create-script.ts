@@ -1,7 +1,7 @@
-import { defineProperty } from '../helpers/utils.js';
-import { keys, values } from '../vm/env.js';
-import type { VmScript, VmScriptLike } from '../vm/types/script.js';
-import type { ScriptInput } from './types.js';
+import { defineProperty } from '../helpers/utils.ts';
+import { keys, values } from '../vm/env.ts';
+import type { VmScript, VmScriptLike } from '../vm/types/script.ts';
+import type { ScriptInput } from './types.ts';
 
 const kVmScript = Symbol.for('mirascript.vm.script');
 

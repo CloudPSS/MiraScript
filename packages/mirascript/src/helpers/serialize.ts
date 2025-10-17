@@ -10,9 +10,9 @@ import {
     isVmFunction,
     isVmModule,
     isVmExtern,
-} from '../vm/index.js';
-import { REG_IDENTIFIER, REG_ORDINAL } from './constants.js';
-import { entries, isFinite, isNaN } from '../helpers/utils.js';
+} from '../vm/index.ts';
+import { REG_IDENTIFIER, REG_ORDINAL } from './constants.ts';
+import { entries, isFinite, isNaN } from '../helpers/utils.ts';
 
 const REG_IDENTIFIER_FULL = new RegExp(`^${REG_IDENTIFIER.source}$`, REG_IDENTIFIER.flags);
 const REG_ORDINAL_FULL = new RegExp(`^${REG_ORDINAL.source}$`, REG_ORDINAL.flags);

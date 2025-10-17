@@ -6,9 +6,9 @@ import {
     wrapToVmValue,
     isVmAny,
     type VmFunctionLike,
-} from './index.js';
-import { entries, keys } from '../../helpers/utils.js';
-import type * as global from '../lib/global/index.js';
+} from './index.ts';
+import { entries, keys } from '../../helpers/utils.ts';
+import type * as global from '../lib/global/index.ts';
 
 /** 全局导入的标准库 */
 type GlobalKeys = keyof typeof global;

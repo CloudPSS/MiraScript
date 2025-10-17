@@ -1,8 +1,8 @@
-import { Element } from '../../../helpers.js';
-import { $ToNumber, $ToString } from '../../../operations.js';
-import { isVmArray, type VmConst } from '../../../types/index.js';
-import { VmLib, expectArrayOrRecord, throwError } from '../../_helpers.js';
-import { isSafeInteger } from '../../../../helpers/utils.js';
+import { Element } from '../../../helpers.ts';
+import { $ToNumber, $ToString } from '../../../operations.ts';
+import { isVmArray, type VmConst } from '../../../types/index.ts';
+import { VmLib, expectArrayOrRecord, throwError } from '../../_helpers.ts';
+import { isSafeInteger } from '../../../../helpers/utils.ts';
 
 const _with = VmLib(
     (data, ...entries) => {

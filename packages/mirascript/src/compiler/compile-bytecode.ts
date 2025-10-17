@@ -1,4 +1,4 @@
-import type { CompileOptions, ScriptInput } from './types.js';
+import type { CompileOptions, ScriptInput } from './types.ts';
 import * as wasm from '@mirascript/wasm';
 
 /** 字节码模块 */

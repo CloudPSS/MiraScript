@@ -1,6 +1,6 @@
 import styles from 'ansi-styles';
-import { serialize, type SerializeOptions } from '../subtle.js';
-import type { VmAny, VmRecord } from '../vm/index.js';
+import { serialize, type SerializeOptions } from '../subtle.ts';
+import type { VmAny, VmRecord } from '../vm/index.ts';
 
 const options: Partial<SerializeOptions> = {
     maxDepth: 3,

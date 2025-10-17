@@ -18,6 +18,7 @@
     "prepublishOnly": "pnpm clean && pnpm build"
   },
   "devDependencies": {
+    "@types/node": "^24.8.1",
     "cargo-cp-artifact": "^0.1.9",
     "nodemon": "^3.1.10"
   }

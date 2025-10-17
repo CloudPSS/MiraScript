@@ -1,7 +1,7 @@
-import { isArray } from '../../../../helpers/utils.js';
-import { Cp } from '../../../helpers.js';
-import { $Add, $Call, $Div, $Mul, $Sub, $ToNumber } from '../../../operations.js';
-import { isVmArray, isVmConst, type VmAny, type VmArray, type VmConst, type VmValue } from '../../../types/index.js';
+import { isArray } from '../../../../helpers/utils.ts';
+import { Cp } from '../../../helpers.ts';
+import { $Add, $Call, $Div, $Mul, $Sub, $ToNumber } from '../../../operations.ts';
+import { isVmArray, isVmConst, type VmAny, type VmArray, type VmConst, type VmValue } from '../../../types/index.ts';
 import {
     VmLib,
     expectArray,
@@ -12,7 +12,7 @@ import {
     getNumbers,
     arrayLen,
     map,
-} from '../../_helpers.js';
+} from '../../_helpers.ts';
 
 /** 计算尺寸 */
 function sizeImpl(matrix: VmValue): [] | [number] | [number, number] {

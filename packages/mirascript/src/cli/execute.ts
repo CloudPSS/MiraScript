@@ -1,9 +1,9 @@
 /* eslint-disable no-console */
 import styles from 'ansi-styles';
-import { compile } from '../index.js';
-import { createVmContext, VmFunction, type VmValue } from '../vm/index.js';
-import { debug_print } from '../vm/lib/global/debug.js';
-import { print } from './print.js';
+import { compile } from '../index.ts';
+import { createVmContext, VmFunction, type VmValue } from '../vm/index.ts';
+import { debug_print } from '../vm/lib/global/debug.ts';
+import { print } from './print.ts';
 
 /** 执行脚本 */
 export async function execute(script: string, template: boolean, variables: Record<string, VmValue>): Promise<void> {

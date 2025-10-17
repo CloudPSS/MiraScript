@@ -1,6 +1,6 @@
-import * as operations from './operations.js';
-import * as helpers from './helpers.js';
-import { entries } from '../helpers/utils.js';
+import * as operations from './operations.ts';
+import * as helpers from './helpers.ts';
+import { entries } from '../helpers/utils.ts';
 
 export const keys: string[] = [];
 export const values: unknown[] = [];

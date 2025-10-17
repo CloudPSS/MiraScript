@@ -1,6 +1,6 @@
-import { $AssertInit, $ToNumber } from './operations.js';
-import type { VmFunctionLike } from './types/function.js';
-import { DefaultVmContext, type VmContext } from './types/context.js';
+import { $AssertInit, $ToNumber } from './operations.ts';
+import type { VmFunctionLike } from './types/function.ts';
+import { DefaultVmContext, type VmContext } from './types/context.ts';
 import {
     isVmConst,
     VmFunction,
@@ -9,8 +9,8 @@ import {
     type VmArray,
     type VmValue,
     VM_ARRAY_MAX_LENGTH,
-} from './types/index.js';
-import { isFinite } from '../helpers/utils.js';
+} from './types/index.ts';
+import { isFinite } from '../helpers/utils.ts';
 
 export const Vargs = (varags: VmAny[]): VmArray => {
     for (let i = 0, l = varags.length; i < l; i++) {

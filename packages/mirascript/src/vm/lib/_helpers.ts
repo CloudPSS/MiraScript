@@ -1,5 +1,6 @@
-import { VmError } from '../error.js';
-import { $ToNumber, $Type } from '../operations.js';
+import type { Writable } from 'type-fest';
+import { VmError } from '../error.ts';
+import { $ToNumber, $Type } from '../operations.ts';
 import {
     isVmArray,
     isVmExtern,
@@ -16,10 +17,10 @@ import {
     type VmConst,
     isVmConst,
     VM_ARRAY_MAX_LENGTH,
-} from '../types/index.js';
-import type { VmFunctionLike, VmFunctionOption } from '../types/function.js';
-import { Cp } from '../helpers.js';
-import { isNaN, entries, fromEntries } from '../../helpers/utils.js';
+} from '../types/index.ts';
+import type { VmFunctionLike, VmFunctionOption } from '../types/function.ts';
+import { Cp } from '../helpers.ts';
+import { isNaN, entries, fromEntries } from '../../helpers/utils.ts';
 
 /** 抛出异常 */
 export function throwError(message: string, recovered: VmAny | (() => VmAny)): never {

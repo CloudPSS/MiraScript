@@ -1,5 +1,5 @@
-import './lib/_loader.js';
+import './lib/_loader.ts';
 
-export * from './error.js';
-export * from './types/index.js';
-export { configCheckpoint } from './helpers.js';
+export * from './error.ts';
+export * from './types/index.ts';
+export { configCheckpoint } from './helpers.ts';

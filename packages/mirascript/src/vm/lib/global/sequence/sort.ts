@@ -1,6 +1,6 @@
-import { $Call, $ToNumber } from '../../../operations.js';
-import type { VmAny, VmConst, VmValue } from '../../../types/index.js';
-import { VmLib, expectArray, expectCallable } from '../../_helpers.js';
+import { $Call, $ToNumber } from '../../../operations.ts';
+import type { VmAny, VmConst, VmValue } from '../../../types/index.ts';
+import { VmLib, expectArray, expectCallable } from '../../_helpers.ts';
 
 /** 默认比较 */
 function defaultCompare(a: VmValue, b: VmValue): number {

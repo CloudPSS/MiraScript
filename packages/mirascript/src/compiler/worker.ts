@@ -1,6 +1,6 @@
-import type { ScriptInput, TranspileOptions } from './types.js';
-import { emit } from './emit.js';
-import { compileBytecode } from './compile-bytecode.js';
+import type { ScriptInput, TranspileOptions } from './types.ts';
+import { emit } from './emit.ts';
+import { compileBytecode } from './compile-bytecode.ts';
 
 /**
  * 生成 MiraScript 对应的 JavaScript 代码
@@ -17,8 +17,8 @@ export async function compile(
     return [generatedCode, errors];
 }
 
-addEventListener('message', (ev) => {
-    const data = ev.data as [number, ...Parameters<typeof compile>];
+addEventListener('message', (ev: MessageEvent<[number, ...Parameters<typeof compile>]>) => {
+    const { data } = ev;
     if (!Array.isArray(data)) return;
     const [seq, ...args] = data;
     if (typeof seq != 'number' || !args.length) return;

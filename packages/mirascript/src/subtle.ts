@@ -1,6 +1,6 @@
-export * as constants from './helpers/constants.js';
-export { VmSharedContext, DefaultVmContext } from './vm/types/context.js';
-export * as operations from './vm/operations.js';
-export { serialize, serializeString, serializePropName, type SerializeOptions } from './helpers/serialize.js';
-export { lib } from './vm/lib/_loader.js';
-export * from './compiler/diagnostic.js';
+export * as constants from './helpers/constants.ts';
+export { VmSharedContext, DefaultVmContext } from './vm/types/context.ts';
+export * as operations from './vm/operations.ts';
+export { serialize, serializeString, serializePropName, type SerializeOptions } from './helpers/serialize.ts';
+export { lib } from './vm/lib/_loader.ts';
+export * from './compiler/diagnostic.ts';

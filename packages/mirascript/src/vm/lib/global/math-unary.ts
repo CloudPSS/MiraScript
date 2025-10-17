@@ -1,6 +1,6 @@
-import type { VmAny } from '../../index.js';
-import { $ToNumber } from '../../operations.js';
-import { required, VmLib } from '../_helpers.js';
+import type { VmAny } from '../../index.ts';
+import { $ToNumber } from '../../operations.ts';
+import { required, VmLib } from '../_helpers.ts';
 
 /** 生成函数 */
 function build(f: (x: number) => number): (x: VmAny) => number {

@@ -1,4 +1,4 @@
-import { getPrototypeOf, isArray, values } from '../../helpers/utils.js';
+import { getPrototypeOf, isArray, values } from '../../helpers/utils.ts';
 import {
     isVmFunction,
     VmModule,
@@ -8,8 +8,8 @@ import {
     type VmImmutable,
     type VmRecord,
     type VmValue,
-} from './index.js';
-import { VmWrapper } from './wrapper.js';
+} from './index.ts';
+import { VmWrapper } from './wrapper.ts';
 
 const MAX_DEPTH = 32;
 /**

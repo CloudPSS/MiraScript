@@ -1,3 +1,3 @@
-export { serialize } from './helpers/serialize.js';
-export * from './compiler/index.js';
-export * from './vm/index.js';
+export { serialize } from './helpers/serialize.ts';
+export * from './compiler/index.ts';
+export * from './vm/index.ts';
