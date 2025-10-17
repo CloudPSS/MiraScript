@@ -1,3 +1,4 @@
+import type { Writable } from 'type-fest';
 import { defineProperty } from '../../helpers/utils.js';
 import { CpEnter, CpExit } from '../helpers.js';
 import { $Call } from '../operations.js';

@@ -1,3 +1,4 @@
+import type { Writable } from 'type-fest';
 import { VmError } from '../error.js';
 import { $ToNumber, $Type } from '../operations.js';
 import {

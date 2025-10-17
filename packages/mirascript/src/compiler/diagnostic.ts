@@ -1,3 +1,4 @@
+import type { Writable } from 'type-fest';
 import { DiagnosticCode, wasm } from '@mirascript/wasm';
 import type { ScriptInput } from './types.js';
 import { isSafeInteger } from '../helpers/utils.js';

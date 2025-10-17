@@ -31,10 +31,13 @@
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
-    "@mirascript/wasm": "workspace:~",
-    "@mirascript/mirascript": "workspace:~"
+    "@mirascript/mirascript": "workspace:~",
+    "@mirascript/wasm": "workspace:~"
   },
   "peerDependencies": {
-    "monaco-editor": ">= 0.0.40 < 0.53.0"
+    "monaco-editor": ">= 0.0.40 < 0.55.0"
+  },
+  "devDependencies": {
+    "type-fest": "^5.1.0"
   }
 }
