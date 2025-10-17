@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises';
+import { builtinModules } from 'node:module';
 import esbuild from 'esbuild';
 import packageJson from './package.json' with { type: 'json' };
 
@@ -37,5 +38,10 @@ await esbuild.build({
     packages: 'bundle',
     // 不加载 node addon
     platform: 'neutral',
-    external: ['vscode', ...Object.keys(packageJson.dependencies || {})],
+    mainFields: ['exports', 'module', 'main'],
+    external: [
+        'vscode',
+        ...builtinModules.flatMap((m) => [m, `node:${m}`]),
+        ...Object.keys(packageJson.dependencies || {}),
+    ],
 });

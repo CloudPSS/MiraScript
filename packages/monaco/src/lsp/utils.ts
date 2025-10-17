@@ -89,7 +89,7 @@ export function localParamSignature(
             argsInParam.length === 0
                 ? `arg_${i}`
                 : argsInParam.map((arg) => model.getValueInRange(arg.definition.range)).join('_');
-        if (rest) return ['...${argName}', '...${argName}', ''];
+        if (rest) return [`..${argName}`, `..${argName}`, ''];
         return [argName, argName, ''];
     });
 }

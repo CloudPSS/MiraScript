@@ -21,6 +21,12 @@ if has_extern {
     f();
   });
 }
+if has_module {
+  t_throws(fn () {
+    let f = v_module;
+    f();
+  });
+}
 
 fn be_of_type(..[v, tp]) {
   t_eq(type(v), tp);
@@ -32,7 +38,6 @@ fn be_of_type2(v, tp) {
 be_of_type(1, 'number');
 be_of_type([], 'array');
 be_of_type((), 'record');
-
 be_of_type(fn { }, 'nil');
 be_of_type2(fn { }, 'function');
 if has_extern {
@@ -92,6 +97,7 @@ t_eq(add_five(10), 15);
 let add_ten = curry_add(10);
 t_eq(add_ten(3), 13);
 t_eq(add_ten(10), 20);
+t_ne(add_five, add_ten);
 t_false(add_five == add_ten);
 
 let empty = nil;
