@@ -46,8 +46,44 @@ if has_module {
 
 fn args(..v) { v }
 
+t_eq(args(), []);
+t_eq(args(sin), [nil]);
 t_eq(args(1, 2, 3), [1, 2, 3]);
 t_eq(args(1, 2, 3, ..[4, 5]), [1, 2, 3, 4, 5]);
+
+fn v_args(a, ..as) { (a, as) }
+
+t_eq(v_args(), (nil, []));
+t_eq(v_args(1), (1, []));
+t_eq(v_args(1, 2, 3), (1, [2, 3]));
+t_eq(v_args(1, ..[2, 3]), (1, [2, 3]));
+t_eq(v_args(..[1, 2, 3]), (1, [2, 3]));
+
+fn v_args_v(a, ..as) { a }
+
+t_eq(v_args_v(), nil);
+t_eq(v_args_v(1), 1);
+t_eq(v_args_v(sin), sin);
+t_eq(v_args_v(1, 2, 3), 1);
+t_eq(v_args_v(1, ..[2, 3]), 1);
+t_eq(v_args_v(..[1, 2, 3]), 1);
+
+fn first_arg(x) { x }
+t_eq(first_arg(), nil);
+t_eq(first_arg(42), 42);
+t_eq(first_arg(1, 2, 3), 1);
+t_eq(first_arg(sin, cos), sin);
+
+fn second_arg(_, y) { y }
+t_eq(second_arg(), nil);
+t_eq(second_arg(42), nil);
+t_eq(second_arg(1, 2, 3), 2);
+t_eq(second_arg(sin, cos), cos);
+
+(fn (..[f]) { t_eq(f, nil) })(sin);
+(fn (..a) { t_eq(a, [nil]) })(sin);
+(fn (..[f]) { t_eq(f, 1) })(1);
+(fn (..a) { t_eq(a, [1]) })(1);
 
 fn curry_add(x) { (fn (y) { x + y }) }
 let add_five = curry_add(5);
