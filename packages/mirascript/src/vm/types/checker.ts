@@ -11,11 +11,11 @@ import {
 } from './index.js';
 import { VmWrapper } from './wrapper.js';
 
-const MAX_DEPTH = 100;
+const MAX_DEPTH = 32;
 /**
  * 检查是否为 Mirascript 数组
  */
-function isVmArray(value: readonly unknown[], depth: number): value is VmArray {
+function isVmArrayDeep(value: readonly unknown[], depth: number): value is VmArray {
     // VmArray 应为普通数组
     // Array.prototype
     const proto1: unknown = getPrototypeOf(value);
@@ -26,7 +26,7 @@ function isVmArray(value: readonly unknown[], depth: number): value is VmArray {
 /**
  * 检查是否为 Mirascript 记录
  */
-function isVmRecord(value: object, depth: number): value is VmRecord {
+function isVmRecordDeep(value: object, depth: number): value is VmRecord {
     // VmRecord 应为普通对象或空原型对象
     let isRecord;
     // Object.prototype
@@ -61,9 +61,9 @@ function isVmConstInner(value: unknown, depth: number): value is VmConst {
             if (value == null) return true;
             if (value instanceof VmWrapper) return false;
             if (isArray(value)) {
-                return isVmArray(value, depth);
+                return isVmArrayDeep(value, depth);
             } else {
-                return isVmRecord(value, depth);
+                return isVmRecordDeep(value, depth);
             }
         case 'function':
         case 'bigint':
@@ -95,9 +95,9 @@ export function isVmConst(value: unknown, checkDeep = false): value is VmConst {
             if (value instanceof VmWrapper) return false;
             if (!checkDeep) {
                 if (isArray(value)) {
-                    return isVmArray(value, 0);
+                    return isVmArrayDeep(value, 0);
                 } else {
-                    return isVmRecord(value, 0);
+                    return isVmRecordDeep(value, 0);
                 }
             } else {
                 return isVmConstInner(value, 1);

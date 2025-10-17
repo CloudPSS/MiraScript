@@ -151,6 +151,9 @@ importers:
       '@types/vscode':
         specifier: ^1.105.0
         version: 1.105.0
+      cosmiconfig:
+        specifier: ^9.0.0
+        version: 9.0.0(typescript@5.9.3)
       js-yaml:
         specifier: ^4.1.0
         version: 4.1.0

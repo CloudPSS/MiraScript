@@ -33,12 +33,13 @@ export {
     RangeProvider,
     RenameProvider,
     SignatureHelpProvider,
+    setContextProvider,
 };
 
 /** 注册 LSP 相关的编辑器功能 */
 export async function registerLSP(contextProvider: VmContextProvider | undefined): Promise<IDisposable[]> {
-    await ready;
     setContextProvider(contextProvider);
+    await ready;
 
     const codeActionProvider = new CodeActionProvider();
     const colorProvider = new ColorProvider();

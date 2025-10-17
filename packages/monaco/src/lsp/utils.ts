@@ -21,11 +21,16 @@ export type ParamSignature = [name: string, sig: string, doc: string];
 
 /** 生成参数签名 */
 function globalParamsSignature(info: VmFunctionInfo | undefined): ParamSignature[] {
-    if (!info?.params) return [['..', '..', '']];
+    if (info == null || (!info.params && !info.paramsType)) return [['..', '..', '']];
     const paramItems: ParamSignature[] = [];
-    for (const key of Object.keys(info.params)) {
-        const type = info.paramsType?.[key];
-        const doc = info.params[key] ?? '';
+    const params = Object.keys(info.paramsType ?? {});
+    for (const key of Object.keys(info.params ?? {})) {
+        if (params.includes(key)) continue;
+        params.push(key);
+    }
+    for (const key of params) {
+        const type = info.paramsType?.[key] ?? '';
+        const doc = info.params?.[key] ?? '';
         paramItems.push([key, type ? `${key}: ${type}` : key, doc ? `\`${key}\`: ${doc}` : '']);
     }
     return paramItems;
@@ -112,6 +117,7 @@ export function globalFnDoc(info: VmFunctionInfo): string[] {
     const paramDoc = [];
     if (info.params) {
         for (const [key, value] of Object.entries(info.params)) {
+            if (!value) continue;
             paramDoc.push(`- \`${key}\`: ${value}`);
         }
     }
@@ -131,9 +137,10 @@ export function globalFnDoc(info: VmFunctionInfo): string[] {
     return doc;
 }
 
-const CODEBLOCK_FENCE = '`'.repeat(16);
 /** 获取代码块格式化字符串 */
 export function codeblock(value: string): string {
+    const includeFences = /`{3,}/.exec(value);
+    const CODEBLOCK_FENCE = includeFences ? '`'.repeat(includeFences[0].length + 1) : '```';
     return `\n${CODEBLOCK_FENCE}mirascript\n${value}\n${CODEBLOCK_FENCE}\n`;
 }
 
