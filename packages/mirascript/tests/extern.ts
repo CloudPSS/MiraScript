@@ -35,7 +35,6 @@ test('callable extern', (t) => {
     const eSin = e('sin') as VmExtern;
     t.true(isVmExtern(eSin));
     t.is(eSin.value, Math.sin);
-    t.true(eSin.callable);
     t.is(eSin.caller, null);
     t.is(eSin.describe, 'Function');
     t.is(unwrapFromVmValue(eSin), Math.sin);
@@ -45,7 +44,6 @@ test('callable extern', (t) => {
     const eMath = e('Math') as VmExtern;
     t.true(isVmExtern(eMath));
     t.is(eMath.value, Math);
-    t.false(eMath.callable);
     t.is(eMath.caller, null);
     t.is(eMath.describe, 'Math');
     t.is(unwrapFromVmValue(eMath), Math);
@@ -54,7 +52,6 @@ test('callable extern', (t) => {
     const eMSin = e('Math.sin') as VmExtern;
     t.true(isVmExtern(eMSin));
     t.is(eMSin.value, Math.sin);
-    t.true(eMSin.callable);
     t.is(eMSin.caller, eMath);
     t.true(eMSin.caller!.same(eMath));
     t.not(unwrapFromVmValue(eMSin), Math.sin);
@@ -135,7 +132,10 @@ test('Date extern', (t) => {
 
     t.true(e('`toString` in d'));
     t.is(e('d.toString()'), new Date(0).toString());
-    t.throws(() => e(`d()`), { message: /Expected callable/ });
+    t.is(e('d::to_string()'), new Date(0).toString());
+    t.is(e('d.toJSON()'), new Date(0).toJSON());
+    t.is(e('d::to_json()'), JSON.stringify(new Date(0)));
+    t.throws(() => e(`d()`), { message: /^Not a callable extern: / });
 
     t.is(e('construct(Date)::type()'), 'extern');
     t.is(e('construct(Date, 123).toString()'), new Date(123).toString());
@@ -146,16 +146,35 @@ test('callback extern', (t) => {
     const cb = (a: unknown) => {
         t.is(a, cb);
     };
+    const obj = {
+        f(c: unknown) {
+            t.is(this, obj);
+            t.is(c, cb);
+            return c;
+        },
+    };
     const context = createVmContext(null, {
-        c: (c: unknown) => {
+        c: function (this: null, c: unknown) {
+            t.is(this, null);
             t.is(c, cb);
             return c;
         },
         cb,
+        proxy: new Proxy(() => 0, {
+            apply(target, thisArg, args) {
+                t.is(thisArg, null);
+                const c = args[0];
+                t.is(c, cb);
+                return c;
+            },
+        }),
+        obj,
     });
     const e = exec(context);
     t.is(e('cb(cb)'), null);
     t.deepEqual(e('c(cb)'), e('cb'));
+    t.deepEqual(e('proxy(cb)'), e('cb'));
+    t.deepEqual(e('obj.f(cb)'), e('cb'));
 });
 
 test('callback native', (t) => {
@@ -195,4 +214,165 @@ test('callback native', (t) => {
     t.is(i(123), 123);
     t.is(i(i), i);
     t.is(i(o), o);
+});
+
+test('extern to_string', (t) => {
+    const context = createVmContext(null, {
+        ok: {
+            toString() {
+                return 'ok';
+            },
+        },
+        fail: {
+            toString() {
+                throw new Error('fail');
+            },
+        },
+        void: {
+            toString: null,
+        },
+        bad: {
+            toString: 123,
+        },
+        normal: {},
+        arr: [1, 2, 3],
+    });
+    const e = exec(context);
+    t.is(e('ok::to_string()'), 'ok');
+    t.is(e('fail::to_string()'), '<extern Object>');
+    t.is(e('void::to_string()'), '<extern Object>');
+    t.is(e('bad::to_string()'), '<extern Object>');
+    t.is(e('normal::to_string()'), '<extern Object>');
+    t.is(e('arr::to_string()'), '1,2,3');
+});
+
+test('extern json', (t) => {
+    const context = createVmContext(null, {
+        obj: { a: 1, b: 2 },
+        arr: [1, 2, 3],
+        func: () => 0,
+        ok: {
+            toJSON() {
+                return { ok: true };
+            },
+        },
+        fail: {
+            toJSON() {
+                throw new Error('fail');
+            },
+        },
+        void: {
+            toJSON: null,
+        },
+    });
+    const e = exec(context);
+    t.is(e('obj::to_json()'), JSON.stringify({ a: 1, b: 2 }));
+    t.is(e('arr::to_json()'), JSON.stringify([1, 2, 3]));
+    t.is(e('func::to_json()'), null);
+    t.is(e('ok::to_json()'), JSON.stringify({ ok: true }));
+    t.throws(() => e('fail::to_json()'), { message: /^Failed to convert extern to JSON: / });
+    t.is(e('void::to_json()'), JSON.stringify({ toJSON: null }));
+});
+
+test('extern wrap value', (t) => {
+    const context = createVmContext(null, {
+        e: {
+            bigint: 12_345_678_901_234_567_890n,
+            symbol: Symbol('test'),
+            undef: undefined,
+        },
+    });
+    const e = exec(context);
+
+    t.is(e('e.bigint::type()'), 'number');
+    t.is(e('e.symbol::type()'), 'nil');
+    t.is(e('e.undef::type()'), 'nil');
+
+    t.is(e('e.bigint::to_json()'), JSON.stringify(Number(12_345_678_901_234_567_890n)));
+    t.is(e('e.symbol::to_json()'), 'null');
+    t.is(e('e.undef::to_json()'), 'null');
+});
+
+test('extern access', (t) => {
+    const context = createVmContext(null, {
+        obj: {
+            _private: 123,
+            visible: 456,
+            method() {
+                return 789;
+            },
+            __proto__: {
+                // eslint-disable-next-line @typescript-eslint/unbound-method
+                toString: Object.prototype.toString,
+            },
+        },
+        func: function () {
+            return 0;
+        },
+        arr: Object.setPrototypeOf([1, 2, 3], {
+            map: 12,
+            sort: Array.prototype.sort,
+        }),
+    });
+    const e = exec(context);
+
+    t.false(e('`_private` in obj'));
+    t.is(e('obj._private'), null);
+    t.is(e('obj.visible'), 456);
+    t.is(e('obj.method::type()'), 'extern');
+    t.is(e('obj.method()'), 789);
+
+    t.false(e('`__proto__` in obj'));
+    t.false(e('`toString` in obj'));
+
+    t.false(e('`prototype` in func'));
+    t.false(e('`arguments` in func'));
+    t.false(e('`caller` in func'));
+
+    t.true(e('`map` in arr'));
+    t.false(e('`sort` in arr'));
+    t.false(e('`filter` in arr'));
+    t.true(e('`length` in arr'));
+    t.is(e('arr.length'), 3);
+    t.is(e('arr[0]'), 1);
+    t.is(e('arr[1]'), 2);
+    t.is(e('arr[2]'), 3);
+
+    t.is(e('arr.map::type()'), 'number');
+    t.is(e('arr.sort::type()'), 'nil');
+});
+
+test('extern iterable', (t) => {
+    const context = createVmContext(null, {
+        arr: [10, 20, 30],
+        map: new Map([
+            ['a', 1],
+            ['b', 2],
+            ['c', 3],
+        ]),
+        set: new Set([100, 200, 300]),
+        noniter: {
+            a: 1,
+            b: 2,
+        },
+    });
+    const e = exec(context);
+
+    t.deepEqual(e('[..arr]'), [10, 20, 30]);
+    t.deepEqual(e('[..map]'), [null, null, null]);
+    t.deepEqual(e('[..map.keys()]'), ['a', 'b', 'c']);
+    t.deepEqual(e('[..map.values()]'), [1, 2, 3]);
+    t.deepEqual(e('[..set]'), [100, 200, 300]);
+    t.throws(() => e('[..noniter]'), { message: 'Expected array, iterable extern or nil, got extern' });
+});
+
+test('extern spread', (t) => {
+    const context = createVmContext(null, {
+        obj: { a: 1, b: 2, n: undefined },
+        arr: [3, 4, 5],
+    });
+    const e = exec(context);
+
+    t.deepEqual(e('(..obj, c: 3)'), { a: 1, b: 2, c: 3, n: null });
+    t.deepEqual(e('(..arr)'), { 0: 3, 1: 4, 2: 5 });
 });

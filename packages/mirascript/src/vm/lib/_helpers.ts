@@ -126,7 +126,7 @@ export function expectCallable(
     recovered: VmAny | (() => VmAny),
 ): asserts value is VmFunction | VmExtern {
     required(name, value, recovered);
-    const callable = isVmFunction(value) || (isVmExtern(value) && value.callable);
+    const callable = isVmFunction(value) || isVmExtern(value);
     if (!callable) {
         throwUnexpectedTypeError(name, 'callable', value, recovered);
     }

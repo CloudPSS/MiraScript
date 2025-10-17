@@ -99,17 +99,14 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
     /** Call extern value */
     call(args: readonly VmValue[]): VmAny {
         const { value } = this;
-        if (typeof value != 'function') {
-            throw new VmError(`Not a callable extern`, null);
-        }
         const caller = this.caller?.value ?? null;
         const unwrappedArgs = args.map(unwrapFromVmValue);
-        const ret: unknown = apply(value, caller, unwrappedArgs);
-        return wrapToVmValue(ret, null);
-    }
-    /** Can extern value be called */
-    get callable(): boolean {
-        return typeof this.value === 'function';
+        try {
+            const ret: unknown = apply(value as (...args: unknown[]) => unknown, caller, unwrappedArgs);
+            return wrapToVmValue(ret, null);
+        } catch (ex) {
+            throw VmError.from(`Not a callable extern`, ex, null);
+        }
     }
     /** @inheritdoc */
     override keys(): string[] {
@@ -123,6 +120,19 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
     override same(other: VmAny): boolean {
         if (!(other instanceof VmExtern)) return false;
         return this.value === other.value && this.caller === other.caller;
+    }
+    /** @inheritdoc */
+    override toString(): string {
+        // eslint-disable-next-line @typescript-eslint/unbound-method
+        const { toString } = this.value;
+        if (typeof toString != 'function' || toString === ObjectToString) {
+            return super.toString();
+        }
+        try {
+            return String(this.value);
+        } catch {
+            return super.toString();
+        }
     }
     /** @inheritdoc */
     override get type(): TypeName {

@@ -1,4 +1,4 @@
-t_eq(to_json(), nil);
+t_throws(fn { to_json() });
 t_eq(to_json(sin), nil);
 t_eq(to_json(nil), 'null');
 t_eq(to_json(true), 'true');

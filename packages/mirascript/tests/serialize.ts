@@ -44,7 +44,7 @@ const serializeRoundTrip = test.macro<[value: VmAny, expected?: VmValue]>({
         const serialized = serialize(value);
         const deserialized = (await compile(serialized))();
         // bypass fast route
-        const deserialized2 = (await compile(`{${serialized}}`))();
+        const deserialized2 = (await compile(`return {${serialized}};`))();
         if (expected === undefined) {
             expected = value;
         }
@@ -162,5 +162,5 @@ for (const depth of [0, 1, 5, 10, 20, 100, 128]) {
     test.skip(`deep record ${depth}`, serializeRoundTrip, makeDeepRecord(depth));
 }
 
-test.skip('deep array maxDepth', serializeRoundTrip, makeDeepArray(256), makeDeepArray(128));
-test.skip('deep record maxDepth', serializeRoundTrip, makeDeepRecord(256), makeDeepRecord(128));
+test('deep array maxDepth', (t) => t.deepEqual(serialize(makeDeepArray(256)), serialize(makeDeepArray(128))));
+test('deep record maxDepth', (t) => t.deepEqual(serialize(makeDeepRecord(256)), serialize(makeDeepRecord(128))));

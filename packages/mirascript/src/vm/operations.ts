@@ -273,7 +273,7 @@ export const $Call = (func: VmValue, args: readonly VmAny[]): VmValue => {
     for (const a of args) {
         $AssertInit(a);
     }
-    if (func instanceof VmExtern && func.callable) {
+    if (func instanceof VmExtern) {
         return func.call(args as readonly VmValue[]) ?? null;
     }
     if (isVmFunction(func)) {
@@ -420,6 +420,15 @@ export const $Iterable = (value: VmAny): Iterable<VmValue | undefined> => {
 export const $RecordSpread = (record: VmAny): VmRecord | null => {
     $AssertInit(record);
     if (record == null || isVmRecord(record)) return record;
+    if (isVmArray(record)) {
+        const result: Record<string, VmConst> = {};
+        const len = record.length;
+        for (let i = 0; i < len; i++) {
+            const item = record[i];
+            result[i] = item ?? null;
+        }
+        return result;
+    }
     if (isVmExtern(record)) {
         const result: Record<string, VmConst> = create(null);
         for (const key of record.keys()) {
@@ -431,18 +440,16 @@ export const $RecordSpread = (record: VmAny): VmRecord | null => {
         }
         return result;
     }
-    throw new VmError(`Expected record, extern or nil, got ${$Type(record)}`, null);
+    throw new VmError(`Expected record, array, extern or nil, got ${$Type(record)}`, null);
 };
 
 export const $ArraySpread = (array: VmAny): Iterable<VmConst | undefined> => {
     $AssertInit(array);
     if (array == null) return [];
     if (isVmArray(array)) return array;
-    if (isVmExtern(array) && 'length' in array.value && typeof array.value.length == 'number') {
-        const len = array.value.length;
+    if (isVmExtern(array) && typeof (array.value as Iterable<unknown>)[Symbol.iterator] == 'function') {
         const result: VmConst[] = [];
-        for (let i = 0; i < len; i++) {
-            const item = (array.value as ArrayLike<unknown>)[i] ?? null;
+        for (const item of array.value as Iterable<unknown>) {
             // 当前只有 Primitive 不会进行二次包装
             if (isVmPrimitive(item)) {
                 result.push(item);
