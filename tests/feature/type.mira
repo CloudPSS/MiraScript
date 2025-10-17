@@ -19,3 +19,14 @@ t_eq((a: 1, b: 2)::type(), "record");
 
 t_eq([]::type(), "array");
 t_eq([1, 2, 3]::type(), "array");
+
+t_eq(fn { }::type(), "function");
+t_eq(fn (x) { x }::type(), "function");
+t_eq(v_fn::type(), "function");
+
+if has_module {
+  t_eq(v_module::type(), "module");
+}
+if has_extern {
+  t_eq(v_extern::type(), "extern");
+}

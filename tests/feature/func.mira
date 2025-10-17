@@ -60,7 +60,7 @@ t_false(add_five == add_ten);
 
 let empty = nil;
 let callable = fn { nil };
-let uncallable = 42;
+let uncallable = false;
 
 t_throws(fn () {
   empty();
