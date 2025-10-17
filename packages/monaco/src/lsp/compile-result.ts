@@ -280,13 +280,18 @@ export class CompileResult {
             }
         }
 
+        (locals as LocalDefinition[]).sort((a, b) =>
+            Range.compareRangesUsingStarts(a.definition.range, b.definition.range),
+        );
+        params.sort((a, b) => Range.compareRangesUsingStarts(a.range, b.range));
+        (globals as GlobalDefinition[]).sort((a, b) => a.name.localeCompare(b.name));
+        ranges.sort((a, b) => Range.compareRangesUsingStarts(a.range, b.range));
+
         this._groupedTags = {
-            locals: (locals as LocalDefinition[]).sort((a, b) =>
-                Range.compareRangesUsingStarts(a.definition.range, b.definition.range),
-            ),
-            params: params.sort((a, b) => Range.compareRangesUsingStarts(a.range, b.range)),
+            locals: locals as LocalDefinition[],
+            params: params,
             globals: globals as GlobalDefinition[],
-            ranges: (ranges as SourceDiagnostic[]).sort((a, b) => Range.compareRangesUsingStarts(a.range, b.range)),
+            ranges: ranges,
             omitNameFields: omitNameFields,
         };
         return this._groupedTags;

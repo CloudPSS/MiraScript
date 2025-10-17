@@ -1,5 +1,6 @@
 import { Disposable, workspace, type TextDocument } from 'vscode';
-import { cosmiconfig } from 'cosmiconfig';
+import { pathToFileURL } from 'node:url';
+import { cosmiconfig, type Loader } from 'cosmiconfig';
 import { setContextProvider } from '@mirascript/monaco/lsp';
 import type { ModelAdapter } from '../adapter/model.js';
 import {
@@ -15,9 +16,23 @@ import {
     type VmValue,
 } from '@mirascript/mirascript';
 
+const jsLoader: Loader = async (filepath, content) => {
+    const url = pathToFileURL(filepath);
+    url.search = content;
+    const mod = (await import(url.href)) as { default: unknown };
+    return mod.default ?? mod;
+};
 const explorer = cosmiconfig('mira', {
-    searchStrategy: 'project',
     cache: false,
+    searchStrategy: 'project',
+    loaders: {
+        '.js': jsLoader,
+        '.cjs': jsLoader,
+        '.mjs': jsLoader,
+        '.ts': jsLoader,
+        '.mts': jsLoader,
+        '.cts': jsLoader,
+    },
 });
 
 /** 配置信息 */
@@ -71,7 +86,11 @@ class MiraConfigData extends Disposable {
     /** 加载配置 */
     async reload(config?: MiraConfig): Promise<void> {
         if (config == null && this.document != null) {
-            config = (await explorer.load(this.document.uri.fsPath))?.config as MiraConfig;
+            try {
+                config = (await explorer.load(this.document.uri.fsPath))?.config as MiraConfig;
+            } catch {
+                // ignore
+            }
         }
 
         if (config == null) return;
