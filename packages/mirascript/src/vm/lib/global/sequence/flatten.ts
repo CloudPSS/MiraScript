@@ -1,5 +1,5 @@
-import { $ToNumber } from '../../../operations.ts';
-import { VmLib, expectArray } from '../../_helpers.ts';
+import { $ToNumber } from '../../../operations.js';
+import { VmLib, expectArray } from '../../_helpers.js';
 
 export const flatten = VmLib(
     (data, depth = 1) => {

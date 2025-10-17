@@ -1,7 +1,7 @@
-import { VmError } from '../../error.ts';
-import { $ToString } from '../../operations.ts';
-import type { VmAny } from '../../types/index.ts';
-import { VmLib } from '../_helpers.ts';
+import { VmError } from '../../error.js';
+import { $ToString } from '../../operations.js';
+import type { VmAny } from '../../types/index.js';
+import { VmLib } from '../_helpers.js';
 
 export const debug_print = VmLib(
     (...args) => {

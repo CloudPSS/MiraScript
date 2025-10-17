@@ -2,10 +2,10 @@
 /* eslint-disable no-console */
 import { readFile, stat } from 'node:fs/promises';
 import { program } from '@commander-js/extra-typings';
-import { execute } from './execute.ts';
+import { execute } from './execute.js';
 import pkg from '../../package.json' with { type: 'json' };
-import { compileSync } from '../compiler/index.ts';
-import type { VmValue } from '../vm/index.ts';
+import { compileSync } from '../compiler/index.js';
+import type { VmValue } from '../vm/index.js';
 
 program.name(pkg.name.split('/').pop()!).version(pkg.version).description(pkg.description);
 

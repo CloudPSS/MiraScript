@@ -1,15 +1,15 @@
-import type { VmScript } from '../vm/index.ts';
-import type { ScriptInput, TranspileOptions } from './types.ts';
-import './types.ts';
-import { emit } from './emit.ts';
-import { createScript } from './create-script.ts';
-import { compileFast } from './compile-fast.ts';
-import { formatDiagnostic, parseDiagnostics } from './diagnostic.ts';
-import { compileBytecode, compileBytecodeSync, loadModule } from './compile-bytecode.ts';
-import { compileWorker } from './worker-manager.ts';
+import type { VmScript } from '../vm/index.js';
+import type { ScriptInput, TranspileOptions } from './types.js';
+import './types.js';
+import { emit } from './emit.js';
+import { createScript } from './create-script.js';
+import { compileFast } from './compile-fast.js';
+import { formatDiagnostic, parseDiagnostics } from './diagnostic.js';
+import { compileBytecode, compileBytecodeSync, loadModule } from './compile-bytecode.js';
+import { compileWorker } from './worker-manager.js';
 await loadModule();
 
-export type { TranspileOptions, ScriptInput, InputMode } from './types.ts';
+export type { TranspileOptions, ScriptInput, InputMode } from './types.js';
 
 // 目前编译速度约 2000kB/s
 const WORKER_MIN_LEN = typeof Worker != 'function' ? Number.MAX_VALUE : 1024;

@@ -1,7 +1,7 @@
 import * as wasm from '../lib/wasm.js';
-import type { Config, InputMode, DiagnosticPositionEncoding, ScriptInput } from './types.ts';
+import type { Config, InputMode, DiagnosticPositionEncoding, ScriptInput } from './types.js';
 
-export * from './types.ts';
+export * from './types.js';
 export { wasm };
 
 export const ready = import('#loader').then(async ({ module }) =>

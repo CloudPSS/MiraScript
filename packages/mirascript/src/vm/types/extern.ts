@@ -1,8 +1,8 @@
-import { VmError } from '../error.ts';
-import { fromVmFunctionProxy, toVmFunctionProxy, type VmFunctionLike } from './function.ts';
-import { VmWrapper } from './wrapper.ts';
-import type { TypeName, VmAny, VmModule, VmValue } from './index.ts';
-import { getPrototypeOf, hasOwn } from '../../helpers/utils.ts';
+import { VmError } from '../error.js';
+import { fromVmFunctionProxy, toVmFunctionProxy, type VmFunctionLike } from './function.js';
+import { VmWrapper } from './wrapper.js';
+import type { TypeName, VmAny, VmModule, VmValue } from './index.js';
+import { getPrototypeOf, hasOwn } from '../../helpers/utils.js';
 const { apply } = Reflect;
 
 /** 包装为 Mirascript 类型 */

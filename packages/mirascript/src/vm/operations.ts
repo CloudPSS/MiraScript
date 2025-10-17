@@ -1,4 +1,4 @@
-import { VmError } from './error.ts';
+import { VmError } from './error.js';
 import {
     isVmArray,
     VmModule,
@@ -17,9 +17,9 @@ import {
     isVmExtern,
     type VmPrimitive,
     type VmFunction,
-} from './types/index.ts';
-import { VmWrapper } from './types/wrapper.ts';
-import { hasOwnEnumerable, isNaN, isSafeInteger, keys, create } from '../helpers/utils.ts';
+} from './types/index.js';
+import { VmWrapper } from './types/wrapper.js';
+import { hasOwnEnumerable, isNaN, isSafeInteger, keys, create } from '../helpers/utils.js';
 
 const { abs, min, trunc, ceil } = Math;
 const { slice, at } = Array.prototype;

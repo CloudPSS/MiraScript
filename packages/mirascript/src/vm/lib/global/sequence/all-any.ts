@@ -1,8 +1,8 @@
-import { entries } from '../../../../helpers/utils.ts';
-import { Cp } from '../../../helpers.ts';
-import { $Call, $ToBoolean } from '../../../operations.ts';
-import { isVmArray } from '../../../types/index.ts';
-import { expectArrayOrRecord, expectCallable, VmLib } from '../../_helpers.ts';
+import { entries } from '../../../../helpers/utils.js';
+import { Cp } from '../../../helpers.js';
+import { $Call, $ToBoolean } from '../../../operations.js';
+import { isVmArray } from '../../../types/index.js';
+import { expectArrayOrRecord, expectCallable, VmLib } from '../../_helpers.js';
 
 export const all = VmLib(
     (data, predicate) => {

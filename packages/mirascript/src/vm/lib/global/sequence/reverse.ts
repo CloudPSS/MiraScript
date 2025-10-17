@@ -1,4 +1,4 @@
-import { VmLib, expectArray } from '../../_helpers.ts';
+import { VmLib, expectArray } from '../../_helpers.js';
 
 export const reverse = VmLib(
     (arr) => {

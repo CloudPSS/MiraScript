@@ -1,5 +1,5 @@
-import { $ToNumber } from '../../operations.ts';
-import { VmLib } from '../_helpers.ts';
+import { $ToNumber } from '../../operations.js';
+import { VmLib } from '../_helpers.js';
 
 export const b_and = VmLib(
     (x, y) => {

@@ -1,3 +1,3 @@
-import mod from './loader.cts';
+import mod from './loader.cjs';
 
 export const { compile, compileSync } = mod;

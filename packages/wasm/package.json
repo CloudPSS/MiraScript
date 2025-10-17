@@ -24,7 +24,6 @@
     "prepublishOnly": "pnpm clean && pnpm build && rimraf lib/.gitignore"
   },
   "devDependencies": {
-    "@types/node": "^24.8.1",
     "nodemon": "^3.1.10"
   }
 }

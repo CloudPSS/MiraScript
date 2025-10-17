@@ -1,5 +1,5 @@
-import { $ToString } from '../../operations.ts';
-import { expectArray, required, VmLib } from '../_helpers.ts';
+import { $ToString } from '../../operations.js';
+import { expectArray, required, VmLib } from '../_helpers.js';
 
 export const chars = VmLib(
     (str) => {

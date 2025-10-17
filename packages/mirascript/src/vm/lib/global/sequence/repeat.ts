@@ -1,6 +1,6 @@
-import { $ToNumber } from '../../../operations.ts';
-import type { VmConst } from '../../../types/index.ts';
-import { arrayLen, expectConst, required, VmLib } from '../../_helpers.ts';
+import { $ToNumber } from '../../../operations.js';
+import type { VmConst } from '../../../types/index.js';
+import { arrayLen, expectConst, required, VmLib } from '../../_helpers.js';
 
 export const repeat = VmLib(
     (data, times) => {

@@ -1,4 +1,4 @@
-import type { VmContext, VmValue } from './index.ts';
+import type { VmContext, VmValue } from './index.js';
 
 const kVmScript = Symbol.for('mirascript.vm.script');
 

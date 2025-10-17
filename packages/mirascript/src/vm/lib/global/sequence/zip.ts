@@ -1,8 +1,8 @@
-import { serialize } from '../../../../subtle.ts';
-import { Cp } from '../../../helpers.ts';
-import { isVmArray, type VmConst, type VmArray } from '../../../types/index.ts';
-import { VmLib, throwError } from '../../_helpers.ts';
-import { entries } from './entries.ts';
+import { serialize } from '../../../../subtle.js';
+import { Cp } from '../../../helpers.js';
+import { isVmArray, type VmConst, type VmArray } from '../../../types/index.js';
+import { VmLib, throwError } from '../../_helpers.js';
+import { entries } from './entries.js';
 
 export const zip = VmLib(
     (data) => {

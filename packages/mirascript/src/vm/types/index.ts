@@ -1,8 +1,8 @@
-import { isArray } from '../../helpers/utils.ts';
-import { VmExtern } from './extern.ts';
-import type { VmFunction } from './function.ts';
-import { VmModule } from './module.ts';
-import { VmWrapper } from './wrapper.ts';
+import { isArray } from '../../helpers/utils.js';
+import { VmExtern } from './extern.js';
+import type { VmFunction } from './function.js';
+import { VmModule } from './module.js';
+import { VmWrapper } from './wrapper.js';
 
 /** Mirascript 原始值 */
 export type VmPrimitive = null | string | number | boolean;
@@ -92,7 +92,7 @@ export function isVmPrimitive(value: unknown): value is VmPrimitive {
     return false;
 }
 
-export { VmExtern, wrapToVmValue, unwrapFromVmValue } from './extern.ts';
+export { VmExtern, wrapToVmValue, unwrapFromVmValue } from './extern.js';
 
 /** 检查值是否为 Mirascript 外部值 */
 export function isVmExtern(value: unknown): value is VmExtern {
@@ -106,19 +106,19 @@ export {
     type VmFunctionInfo,
     type VmFunctionLike,
     type VmFunctionOption,
-} from './function.ts';
+} from './function.js';
 
-export { VmModule } from './module.ts';
+export { VmModule } from './module.js';
 
 /** 检查值是否为 Mirascript 模块 */
 export function isVmModule(value: unknown): value is VmModule {
     return value instanceof VmModule;
 }
 
-export { type VmContext, type VmSharedContext, isVmContext, defineVmContextValue, createVmContext } from './context.ts';
+export { type VmContext, type VmSharedContext, isVmContext, defineVmContextValue, createVmContext } from './context.js';
 
-export { type VmScript, isVmScript } from './script.ts';
+export { type VmScript, isVmScript } from './script.js';
 
-export { isVmAny, isVmConst, isVmImmutable, isVmValue } from './checker.ts';
+export { isVmAny, isVmConst, isVmImmutable, isVmValue } from './checker.js';
 
 export const VM_ARRAY_MAX_LENGTH = 2 ** 31 - 1;

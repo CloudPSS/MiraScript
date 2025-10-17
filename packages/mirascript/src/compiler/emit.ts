@@ -1,7 +1,7 @@
 import { OpCode } from '@mirascript/wasm/types';
 import { encodeURL } from 'js-base64';
-import type { VmConst, VmPrimitive } from '../vm/index.ts';
-import type { ScriptInput, TranspileOptions } from './types.ts';
+import type { VmConst, VmPrimitive } from '../vm/index.js';
+import type { ScriptInput, TranspileOptions } from './types.js';
 
 /** 生成代码 */
 export function emit(source: ScriptInput, chunk: Uint8Array, options: TranspileOptions): string {
@@ -259,7 +259,7 @@ class Emitter {
                     break;
                 }
                 default: {
-                    code = `// ?${OpCode[opcode as OpCode] ?? opcode}`;
+                    code = `// ?${OpCode[opcode] ?? opcode}`;
                     break;
                 }
             }
@@ -315,7 +315,7 @@ class Emitter {
                     break;
                 }
                 default: {
-                    code = `// ?${OpCode[opcode as OpCode] ?? opcode}`;
+                    code = `// ?${OpCode[opcode] ?? opcode}`;
                     break;
                 }
             }
@@ -685,7 +685,7 @@ class Emitter {
                 break;
             }
             default: {
-                code = `; // ${OpCode[opcode as OpCode] ?? opcode}`;
+                code = `; // ${OpCode[opcode] ?? opcode}`;
                 break;
             }
         }

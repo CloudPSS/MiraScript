@@ -1,4 +1,3 @@
-import type { Writable } from 'type-fest';
 import { type editor, Range, type IRange, type IPosition, Position } from '../monaco-api.js';
 import { strictContainsPosition } from './utils.js';
 import { REG_IDENTIFIER, REG_ORDINAL } from '../constants.js';

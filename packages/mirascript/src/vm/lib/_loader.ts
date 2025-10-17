@@ -1,9 +1,9 @@
-import { VmFunction, VmModule, type VmConst, type VmFunctionLike, type VmImmutable } from '../types/index.ts';
-import { create, defineProperty, entries } from '../../helpers/utils.ts';
-import { VmSharedContext } from '../types/context.ts';
+import { VmFunction, VmModule, type VmConst, type VmFunctionLike, type VmImmutable } from '../types/index.js';
+import { create, defineProperty, entries } from '../../helpers/utils.js';
+import { VmSharedContext } from '../types/context.js';
 
-import type { VmLib, VmLibOption } from './_helpers.ts';
-import * as global from './global/index.ts';
+import type { VmLib, VmLibOption } from './_helpers.js';
+import * as global from './global/index.js';
 
 for (const [name, value] of entries(global)) {
     VmSharedContext[name] = wrapEntry(name, value as RawValue);

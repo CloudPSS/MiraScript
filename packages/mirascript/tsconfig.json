@@ -5,6 +5,7 @@
   "compilerOptions": {
     "declaration": true,
     "sourceMap": true,
-    "declarationMap": true
+    "declarationMap": true,
+    "emitDeclarationOnly": false
   }
 }

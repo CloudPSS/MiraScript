@@ -1,5 +1,5 @@
-import { $ToString, $ToNumber, $ToBoolean, $Format } from '../../operations.ts';
-import { required, VmLib } from '../_helpers.ts';
+import { $ToString, $ToNumber, $ToBoolean, $Format } from '../../operations.js';
+import { required, VmLib } from '../_helpers.js';
 
 export const to_string = VmLib(
     (data) => {

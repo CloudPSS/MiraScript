@@ -1,5 +1,5 @@
-import { $ToNumber } from '../../operations.ts';
-import { VmLib } from '../_helpers.ts';
+import { $ToNumber } from '../../operations.js';
+import { VmLib } from '../_helpers.js';
 const { atan2: _atan2, pow: _pow } = Math;
 
 export const atan2 = VmLib((x, y) => _atan2($ToNumber(x), $ToNumber(y)), {
@@ -21,7 +21,7 @@ export const random = VmLib(Math.random, {
     returnsType: 'number',
 });
 
-export * from './math-arr.ts';
-export * from './math-const.ts';
-export * from './math-unary.ts';
-export * from './math-additional.ts';
+export * from './math-arr.js';
+export * from './math-const.js';
+export * from './math-unary.js';
+export * from './math-additional.js';

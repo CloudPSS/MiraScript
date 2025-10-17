@@ -1,4 +1,4 @@
-import type { VmAny } from './types/index.ts';
+import type { VmAny } from './types/index.js';
 
 /**
  * VM 预期的错误

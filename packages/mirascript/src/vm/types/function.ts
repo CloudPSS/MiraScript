@@ -1,9 +1,8 @@
-import type { Writable } from 'type-fest';
-import { defineProperty } from '../../helpers/utils.ts';
-import { CpEnter, CpExit } from '../helpers.ts';
-import { $Call } from '../operations.ts';
-import type { VmAny, VmValue } from './index.ts';
-import { wrapToVmValue, unwrapFromVmValue } from './extern.ts';
+import { defineProperty } from '../../helpers/utils.js';
+import { CpEnter, CpExit } from '../helpers.js';
+import { $Call } from '../operations.js';
+import type { VmAny, VmValue } from './index.js';
+import { wrapToVmValue, unwrapFromVmValue } from './extern.js';
 
 const kVmFunction = Symbol.for('mirascript.vm.function');
 const kProxy = Symbol.for('mirascript.vm.function.proxy');

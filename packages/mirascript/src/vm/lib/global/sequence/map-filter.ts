@@ -1,10 +1,10 @@
-import { $Call, $ToBoolean } from '../../../operations.ts';
-import { isVmConst, type VmAny, type VmValue } from '../../../types/index.ts';
-import { VmLib, expectCallable, expectConst, map as mapImpl } from '../../_helpers.ts';
+import { $Call, $ToBoolean } from '../../../operations.js';
+import { isVmConst, type VmAny, type VmValue } from '../../../types/index.js';
+import { VmLib, expectCallable, expectConst, map as mapImpl } from '../../_helpers.js';
 
-export * from './with.ts';
-export * from './entries.ts';
-export * from './len.ts';
+export * from './with.js';
+export * from './entries.js';
+export * from './len.js';
 
 /** map 和 filter 的实现 */
 function mapImplWrapped(
