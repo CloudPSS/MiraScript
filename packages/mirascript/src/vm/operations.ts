@@ -37,11 +37,11 @@ const isSame = (a: VmValue, b: VmValue): boolean => {
     if (b instanceof VmWrapper) return b.same(a);
     // Handle array values
     if (isVmArray(a) && isVmArray(b)) {
-        // Compare array items
-        if (a.length !== b.length) {
+        const len = a.length;
+        if (len !== b.length) {
             return false;
         }
-        const len = a.length;
+        // Compare array items
         for (let i = 0; i < len; i++) {
             if (!isSame(a[i] ?? null, b[i] ?? null)) {
                 return false;
@@ -138,7 +138,9 @@ export const $Eq = (a: VmAny, b: VmAny): boolean => {
     if (typeof a == 'number' && typeof b == 'number') return a === b;
     return isSame(a, b);
 };
-export const $Neq = (a: VmAny, b: VmAny): boolean => !$Eq(a, b);
+export const $Neq = (a: VmAny, b: VmAny): boolean => {
+    return !$Eq(a, b);
+};
 const stringComparer = new Intl.Collator('en', {
     usage: 'sort',
     numeric: false,
@@ -164,13 +166,17 @@ export const $Aeq = (a: VmAny, b: VmAny): boolean => {
         return stringComparer.compare(as, bs) === 0;
     }
 };
-export const $Naeq = (a: VmAny, b: VmAny): boolean => !$Aeq(a, b);
+export const $Naeq = (a: VmAny, b: VmAny): boolean => {
+    return !$Aeq(a, b);
+};
 export const $Same = (a: VmAny, b: VmAny): boolean => {
     $AssertInit(a);
     $AssertInit(b);
     return isSame(a, b);
 };
-export const $Nsame = (a: VmAny, b: VmAny): boolean => !$Same(a, b);
+export const $Nsame = (a: VmAny, b: VmAny): boolean => {
+    return !$Same(a, b);
+};
 export const $In = (value: VmAny, iterable: VmAny): boolean => {
     $AssertInit(value);
     $AssertInit(iterable);
@@ -198,9 +204,15 @@ export const $In = (value: VmAny, iterable: VmAny): boolean => {
 export const $Concat = (...args: string[]): string => {
     return args.map($Format).join('');
 };
-export const $Pos = (a: VmAny): number => $ToNumber(a);
-export const $Neg = (a: VmAny): number => -$ToNumber(a);
-export const $Not = (a: VmAny): boolean => !$ToBoolean(a);
+export const $Pos = (a: VmAny): number => {
+    return $ToNumber(a);
+};
+export const $Neg = (a: VmAny): number => {
+    return -$ToNumber(a);
+};
+export const $Not = (a: VmAny): boolean => {
+    return !$ToBoolean(a);
+};
 export const $Length = (value: VmAny): number => {
     $AssertInit(value);
     if (isVmArray(value)) return value.length;

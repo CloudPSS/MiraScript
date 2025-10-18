@@ -10,3 +10,7 @@ t_eq(n[0], nil);
 
 n[`${ 'x' }`] = 1;
 t_eq(n[`${ 'x' }`], nil);
+
+t_false('x' in n);
+t_false(nil in n);
+t_false(() in n);
