@@ -39,6 +39,9 @@ await esbuild.build({
     // 不加载 node addon
     platform: 'neutral',
     mainFields: ['exports', 'module', 'main'],
+    banner: {
+        js: /* js */ `import { createRequire as Ĩ } from 'node:module';const require = Ĩ(import.meta.url);const { dirname: __dirname, filename: __filename } = import.meta;`,
+    },
     external: [
         'vscode',
         ...builtinModules.flatMap((m) => [m, `node:${m}`]),
