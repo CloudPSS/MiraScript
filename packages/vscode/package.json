@@ -28,7 +28,7 @@
   "devDependencies": {
     "@mirascript/mirascript": "workspace:~",
     "@mirascript/monaco": "workspace:~",
-    "@private/monaco-editor": "^0.0.51",
+    "@private/monaco-editor": "^0.0.53",
     "@types/node": "^24.8.1",
     "@types/vscode": "^1.105.0",
     "cosmiconfig": "^9.0.0",
