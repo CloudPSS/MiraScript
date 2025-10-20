@@ -60,6 +60,7 @@ export async function compileBytecode(
     options: CompileOptions,
 ): Promise<[Uint8Array | undefined, Uint32Array]> {
     await loadModule();
+    options ??= {};
     const result = 'compile' in module ? await module.compile(script, options) : module.compileSync(script, options);
     return [result.chunk, result.diagnostics];
 }
