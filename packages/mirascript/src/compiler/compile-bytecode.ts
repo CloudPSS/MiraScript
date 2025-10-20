@@ -59,8 +59,10 @@ export async function compileBytecode(
     script: ScriptInput,
     options: CompileOptions,
 ): Promise<[Uint8Array | undefined, Uint32Array]> {
+    if (options == null) {
+        throw new TypeError('options must be provided');
+    }
     await loadModule();
-    options ??= {};
     const result = 'compile' in module ? await module.compile(script, options) : module.compileSync(script, options);
     return [result.chunk, result.diagnostics];
 }
