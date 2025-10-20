@@ -10,7 +10,6 @@ for i in ('你好', '，', '世界', '！', x: nil) {
 }
 t_eq(r, ['0', '1', '2', '3', 'x']);
 
-
 if has_extern {
   for k in v_extern {
     t_eq(k::type(), "string");
@@ -72,3 +71,10 @@ t_throws(fn () {
 // Allow empty body
 for _ in 0..<0 { }
 for _ in 0..0 { }
+
+// Allow complex range
+seq = [];
+for k in 1 + 0.25 * 2..<{ 4 * 1 } {
+  seq = [..seq, k];
+}
+t_eq(seq, [1.5, 2.5, 3.5]);
