@@ -2,8 +2,8 @@ use super::prelude::*;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Iterable<'s> {
-    Range(Box<Range<'s>>),
-    Value(Box<Expression<'s>>),
+    Range(Range<'s>),
+    Value(Expression<'s>),
 }
 
 impl<'s> AstWalker<'s> for Iterable<'s> {

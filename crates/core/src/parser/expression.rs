@@ -99,7 +99,7 @@ pub enum Expression<'s> {
     Call(
         Callable<'s>,
         TokenRef<'s>,
-        Vec<ArrayElement<'s>>,
+        Vec<ArgElement<'s>>,
         TokenRef<'s>,
     ),
     /// expression `::` extension `(` arguments `)`
@@ -115,7 +115,7 @@ pub enum Expression<'s> {
         TokenRef<'s>,
         Callable<'s>,
         TokenRef<'s>,
-        Vec<ArrayElement<'s>>,
+        Vec<ArgElement<'s>>,
         TokenRef<'s>,
     ),
     /// expression `.` field

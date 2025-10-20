@@ -170,7 +170,6 @@ impl<'s> Emitter<'s> {
                         }
                         has_var_args = true;
                     }
-                    ArrayElementBase::Range(..) => unreachable!(),
                 }
             }
         } else {
@@ -203,7 +202,6 @@ impl<'s> Emitter<'s> {
                             );
                         }
                     }
-                    ArrayElementBase::Range(..) => unreachable!(),
                 }
             }
         }

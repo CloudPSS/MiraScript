@@ -1,29 +1,26 @@
 use super::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
-pub enum ArrayElementBase<'s, E> {
+pub enum ArrayElementBase<'s, E, S> {
     /// Element
     Element(Box<E>),
-    /// Range
-    Range(Box<super::Range<'s>>),
     /// `..` Spread
-    Spread(TokenRef<'s>, Box<E>),
+    Spread(TokenRef<'s>, Box<S>),
 }
 
 use ArrayElementBase::*;
 
-pub type ArrayElement<'s> = ListItem<'s, ArrayElementBase<'s, Expression<'s>>>;
+pub type ArrayElement<'s> = ListItem<'s, ArrayElementBase<'s, Iterable<'s>, Expression<'s>>>;
 
-pub type ArrayPattern<'s> = ListItem<'s, ArrayElementBase<'s, Pattern<'s>>>;
+pub type ArgElement<'s> = ListItem<'s, ArrayElementBase<'s, Expression<'s>, Expression<'s>>>;
 
-impl<'s, E: AstWalker<'s>> AstWalker<'s> for ArrayElementBase<'s, E> {
+pub type ArrayPattern<'s> = ListItem<'s, ArrayElementBase<'s, Pattern<'s>, Pattern<'s>>>;
+
+impl<'s, E: AstWalker<'s>, S: AstWalker<'s>> AstWalker<'s> for ArrayElementBase<'s, E, S> {
     fn collect_diagnostics(&mut self, collector: &mut Vec<SourceDiagnostic>) {
         match self {
             Element(value) => {
                 value.collect_diagnostics(collector);
-            }
-            ArrayElementBase::Range(range) => {
-                range.collect_diagnostics(collector);
             }
             Spread(sp, value) => {
                 sp.collect_diagnostics(collector);
@@ -34,7 +31,6 @@ impl<'s, E: AstWalker<'s>> AstWalker<'s> for ArrayElementBase<'s, E> {
     fn range(&self) -> SourceRange {
         match self {
             Element(value) => value.range(),
-            ArrayElementBase::Range(range) => range.range(),
             Spread(sp, value) => sp.range.start..value.range().end,
         }
     }

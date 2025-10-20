@@ -8,7 +8,7 @@ use crate::{
     emitter::{emitter_scope::check_variable_initialized, utils::is_global_expression},
     lexer::{Keyword, Operator, TokenKind},
     parser::{
-        ArrayElement, ArrayElementBase, AstWalker, Callable, ElseBlock,
+        ArgElement, ArrayElementBase, AstWalker, Callable, ElseBlock,
         Expression::{self, *},
         Iterable, MatchCase, Range, RecordElementBase, TokenRef,
     },
@@ -27,7 +27,7 @@ impl<'s> Emitter<'s> {
         l: &'s TokenRef<'s>,
         r: &'s TokenRef<'s>,
         callable: &'s Callable<'s>,
-        args: &'s [ArrayElement<'s>],
+        args: &'s [ArgElement<'s>],
     ) {
         #[cfg(feature = "track_references")]
         if track_references() {
@@ -64,7 +64,6 @@ impl<'s> Emitter<'s> {
                             DiagnosticCode::ArgumentSpread,
                         ));
                     }
-                    ArrayElementBase::Range(_) => unreachable!(),
                 };
                 if let Some(comma) = arg.tail_comma() {
                     self.diagnostics.push(SourceDiagnostic::new(
@@ -99,7 +98,6 @@ impl<'s> Emitter<'s> {
             match arg.deref() {
                 ArrayElementBase::Element(expression) => self.declare_expression(expression),
                 ArrayElementBase::Spread(_, expression) => self.declare_expression(expression),
-                ArrayElementBase::Range(_) => unreachable!(),
             };
         });
     }
@@ -151,13 +149,18 @@ impl<'s> Emitter<'s> {
                 }
             }),
             Array(_, elements, _) => elements.iter().for_each(|element| match element.deref() {
-                ArrayElementBase::Spread(_, exp) | ArrayElementBase::Element(exp) => {
+                ArrayElementBase::Spread(_, exp) => {
                     self.declare_expression(exp);
                 }
-                ArrayElementBase::Range(range) => {
-                    self.declare_expression(&range.0);
-                    self.declare_expression(&range.2);
-                }
+                ArrayElementBase::Element(el) => match el.deref() {
+                    Iterable::Value(exp) => {
+                        self.declare_expression(exp);
+                    }
+                    Iterable::Range(range) => {
+                        self.declare_expression(&range.0);
+                        self.declare_expression(&range.2);
+                    }
+                },
             }),
             Call(callable, l, expressions, r) => {
                 self.declare_call(None, l, r, callable, expressions);
@@ -403,7 +406,7 @@ impl<'s> Emitter<'s> {
         &mut self,
         callable: &'s Callable<'s>,
         arg0: Option<&'s Expression<'s>>,
-        args: &'s [ArrayElement<'s>],
+        args: &'s [ArgElement<'s>],
         ret: Register,
         brk: Option<Register>,
     ) {
@@ -422,7 +425,6 @@ impl<'s> Emitter<'s> {
                                 spread.push(args_reg.len().into());
                                 s.emit_expression_reg(exp, brk)
                             }
-                            ArrayElementBase::Range(_) => unreachable!(),
                         };
                         args_reg.push(reg);
                     }
@@ -697,20 +699,22 @@ impl<'s> Emitter<'s> {
                 let mut items_regs = vec![];
                 for item in items {
                     match item.deref() {
-                        ArrayElementBase::Element(expression) => {
-                            let reg = self.emit_expression_reg(expression, brk);
-                            items_regs.push(reg);
-                        }
+                        ArrayElementBase::Element(el) => match el.deref() {
+                            Iterable::Value(exp) => {
+                                let reg = self.emit_expression_reg(exp, brk);
+                                items_regs.push(reg);
+                            }
+                            Iterable::Range(range) => {
+                                let Range(start, _, end) = range;
+                                let start = self.emit_expression_reg(start, brk);
+                                let end = self.emit_expression_reg(end, brk);
+                                items_regs.push(start);
+                                items_regs.push(end);
+                            }
+                        },
                         ArrayElementBase::Spread(_, expression) => {
                             let reg = self.emit_expression_reg(expression, brk);
                             items_regs.push(reg);
-                        }
-                        ArrayElementBase::Range(range) => {
-                            let Range(start, _, end) = range.as_ref();
-                            let start = self.emit_expression_reg(start, brk);
-                            let end = self.emit_expression_reg(end, brk);
-                            items_regs.push(start);
-                            items_regs.push(end);
                         }
                     }
                 }
@@ -718,27 +722,29 @@ impl<'s> Emitter<'s> {
                 let mut reg_index = 0;
                 for item in items.iter() {
                     match item.deref() {
-                        ArrayElementBase::Element(_) => {
-                            self.op_1(OpCode::Item, items_regs[reg_index]);
-                            reg_index += 1;
-                        }
+                        ArrayElementBase::Element(el) => match el.deref() {
+                            Iterable::Value(_) => {
+                                self.op_1(OpCode::Item, items_regs[reg_index]);
+                                reg_index += 1;
+                            }
+                            Iterable::Range(range) => {
+                                let start = items_regs[reg_index];
+                                let end = items_regs[reg_index + 1];
+                                self.op_2(
+                                    if range.exclusive() {
+                                        OpCode::ItemRangeExclusiveDyn
+                                    } else {
+                                        OpCode::ItemRangeDyn
+                                    },
+                                    start,
+                                    end,
+                                );
+                                reg_index += 2;
+                            }
+                        },
                         ArrayElementBase::Spread(_, _) => {
                             self.op_1(OpCode::Spread, items_regs[reg_index]);
                             reg_index += 1;
-                        }
-                        ArrayElementBase::Range(range) => {
-                            let start = items_regs[reg_index];
-                            let end = items_regs[reg_index + 1];
-                            self.op_2(
-                                if range.exclusive() {
-                                    OpCode::ItemRangeExclusiveDyn
-                                } else {
-                                    OpCode::ItemRangeDyn
-                                },
-                                start,
-                                end,
-                            );
-                            reg_index += 2;
                         }
                     }
                 }

@@ -69,7 +69,6 @@ impl<'s> Emitter<'s> {
                         | ArrayElementBase::Spread(_, pattern) => {
                             self.declare_pattern(pattern, bind_type)
                         }
-                        ArrayElementBase::Range(_) => unreachable!(),
                     }
                 }
             }
@@ -129,7 +128,6 @@ impl<'s> Emitter<'s> {
                         | ArrayElementBase::Spread(_, pattern) => {
                             self.emit_failed_pattern(pattern, bind_type)
                         }
-                        ArrayElementBase::Range(_) => unreachable!(),
                     }
                 }
             }

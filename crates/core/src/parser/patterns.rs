@@ -1,7 +1,7 @@
 use std::ops::DerefMut;
 
 use winnow::{
-    combinator::{alt, fail, opt, peek, separated_foldl1, seq},
+    combinator::{alt, opt, peek, separated_foldl1, seq},
     error::EmptyError,
     token::{any, one_of, take_till},
 };
@@ -352,7 +352,6 @@ pub(crate) fn array_pattern_like<'s>(
             open,
             close,
             element_pattern,
-            fail,
             pattern_spread(rebind),
             pattern_expected,
         )
