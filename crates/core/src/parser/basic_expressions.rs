@@ -364,11 +364,11 @@ fn precedence_of(t: &TokenKind<'_>) -> u8 {
     }
 }
 
-fn pratt_prefix<'s>(i: &mut Input<'s>, allow_range: bool) -> Result<Expression<'s>> {
+fn pratt_prefix<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     let token = peek(any).parse_next(i)?;
     if *token == Operator::Plus || *token == Operator::Minus || *token == Operator::Exclamation {
         let op = any.parse_next(i)?;
-        let expr = pratt(precedence_of(op), allow_range)
+        let expr = pratt(precedence_of(op), false)
             .verify_map(verify_expr)
             .parse_next(i)?;
         Ok(Expression::Prefix(op.into(), expr.into()))
@@ -393,7 +393,7 @@ fn pratt_infix<'s>(
     } else {
         precedence
     };
-    let right = pratt(precedence, allow_range)
+    let right = pratt(precedence, false)
         .verify_map(verify_expr)
         .parse_next(i)?
         .into();
@@ -403,9 +403,12 @@ fn pratt_infix<'s>(
         } else {
             Ok(Iterable::Value(Expression::Infix(
                 left,
-                op.clone()
-                    .wrap_as_unknown(DiagnosticCode::UnexpectedToken)
-                    .into(),
+                Token::unknown(
+                    op.range.clone(),
+                    TokenKind::Operator(Operator::Plus),
+                    DiagnosticCode::UnexpectedToken,
+                )
+                .into(),
                 right,
             )))
         };
@@ -415,7 +418,7 @@ fn pratt_infix<'s>(
 
 fn pratt<'s>(precedence: u8, allow_range: bool) -> impl Parser<'s, Iterable<'s>> {
     move |i: &mut Input<'s>| {
-        let mut left = pratt_prefix(i, allow_range)?;
+        let mut left = pratt_prefix.parse_next(i)?;
 
         loop {
             if i.is_empty() {
