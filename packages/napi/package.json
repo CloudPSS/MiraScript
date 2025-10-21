@@ -1,23 +1,38 @@
 {
   "name": "@mirascript/napi",
-  "type": "module",
+  "type": "commonjs",
   "version": "0.1.0",
   "description": "MiraScript compiler for Node.JS",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": "./dist/index.js",
-  "imports": {
-    "#lib": "./dist/index.node"
+  "napi": {
+    "binaryName": "napi",
+    "targets": [
+      "x86_64-pc-windows-msvc",
+      "aarch64-pc-windows-msvc",
+      "x86_64-unknown-linux-gnu",
+      "aarch64-unknown-linux-gnu",
+      "x86_64-unknown-linux-musl",
+      "aarch64-unknown-linux-musl",
+      "x86_64-apple-darwin",
+      "aarch64-apple-darwin"
+    ]
+  },
+  "engines": {
+    "node": ">= 16"
   },
   "scripts": {
-    "napi": "cargo-cp-artifact -ac napi dist/index.node -- cargo build -p napi --message-format=json-render-diagnostics",
-    "watch": "nodemon -e rs,js,ts --watch ../../crates/napi --watch ../../crates/core --watch ./src --exec 'pnpm build:dev'",
-    "build:dev": "pnpm napi && tsc",
-    "build": "pnpm napi --release && tsc",
-    "clean": "rimraf dist lib",
-    "prepublishOnly": "pnpm clean && pnpm build"
+    "artifacts": "napi artifacts",
+    "bench": "node --import @oxc-node/core/register benchmark/bench.ts",
+    "build": "pnpm run build:debug --release",
+    "build:debug": "napi build --manifest-path ../../crates/napi/Cargo.toml --output-dir dist --platform",
+    "prepublishOnly": "napi prepublish -t npm",
+    "preversion": "napi build --platform && git add .",
+    "version": "napi version"
   },
   "devDependencies": {
+    "@napi-rs/cli": "^3.3.1",
     "@types/node": "^24.8.1",
     "cargo-cp-artifact": "^0.1.9",
     "nodemon": "^3.1.10"
