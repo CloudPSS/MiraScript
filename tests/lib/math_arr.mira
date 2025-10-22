@@ -6,6 +6,7 @@ t_eq(max(-1, -2, -3), -1);
 t_eq(max(), -inf);
 t_eq(max(nil), -inf);
 t_eq(max([nil]), -inf);
+t_eq(max(-0, 0), 0);
 
 // min
 t_eq(min(1, 2, 3), 1);
@@ -14,6 +15,7 @@ t_eq(min(-1, -2, -3), -3);
 t_eq(min(), inf);
 t_eq(min(nil), inf);
 t_eq(min([nil]), inf);
+t_eq(min(-0, 0), -0);
 
 // hypot
 t_eq(hypot(3, 4), 5);
