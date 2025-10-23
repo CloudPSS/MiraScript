@@ -98,3 +98,14 @@ t_throws(fn {
   let r = (x: 1);
   r.x = 2;
 });
+
+{
+  let special = ['"', "'"];
+  let obj = ('", \'': 1, '"': 2, "'": 3, '", \'': 4, '\r\n': 'crlf', '\n': 'lf');
+  t_eq(obj[special], 4);
+  t_eq(obj[special.0], 2);
+  t_eq(obj[special.1], 3);
+  t_eq(obj['
+'], 'lf');
+  t_eq(obj['\r\n'], 'crlf');
+}
