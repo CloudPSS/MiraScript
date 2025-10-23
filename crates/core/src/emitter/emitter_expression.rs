@@ -20,6 +20,19 @@ use super::{
     variable::BindType,
 };
 
+fn number_constant(exp: &Expression<'_>) -> Option<f64> {
+    match exp {
+        Expression::Literal(token) => match token.kind {
+            TokenKind::Number(n, _) => Some(n),
+            TokenKind::Ordinal(o) => Some(o as f64),
+            TokenKind::Keyword(Keyword::Nan) => Some(f64::NAN),
+            TokenKind::Keyword(Keyword::Inf) => Some(f64::INFINITY),
+            _ => None,
+        },
+        _ => None,
+    }
+}
+
 impl<'s> Emitter<'s> {
     fn declare_call(
         &mut self,
@@ -821,6 +834,16 @@ impl<'s> Emitter<'s> {
                 self.op_non_nil(ret);
             }
             Prefix(token, expression) => {
+                if let Some(f) = number_constant(expression) {
+                    match token.kind {
+                        TokenKind::Operator(Operator::Plus) => self.op_number(ret, f),
+                        TokenKind::Operator(Operator::Minus) => self.op_number(ret, -f),
+                        TokenKind::Operator(Operator::Exclamation) => self.op_bool(ret, false),
+                        _ => unreachable!(),
+                    };
+                    return;
+                }
+
                 let reg = self.emit_expression_reg(expression, brk);
                 let op = match token.kind {
                     TokenKind::Operator(Operator::Plus) => OpCode::Pos,

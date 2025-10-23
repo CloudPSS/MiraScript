@@ -50,6 +50,10 @@ function toJavascript(value: VmConst | undefined): string {
         return JSON.stringify(value);
     }
     // JSON 无法处理 NaN 等特殊数字
+    if (value === 0) {
+        if (1 / value === -Infinity) return '-0';
+        return '0';
+    }
     return String(value);
 }
 
