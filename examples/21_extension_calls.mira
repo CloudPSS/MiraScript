@@ -23,13 +23,13 @@ debug_print("结果:", result2);
 // 更复杂的链式调用
 let data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
-let processed = data::filter(fn { it % 2 == 0 })::map(fn { it * 2 })::filter(fn { it > 10 })::reduce(0, fn (acc, x) { acc + x }); // 过滤偶数 每个元素乘以2 过滤大于10的 求和
+let processed = data::filter(fn { it % 2 == 0 })::map(fn { it * 2 })::filter(fn { it > 10 })::sum(); // 过滤偶数 每个元素乘以2 过滤大于10的 求和
 
 debug_print("链式处理结果:", processed);
 
 // 字符串处理链式调用
 let text = "  Hello, World!  ";
-let cleaned = text::trim()::to_lowercase()::replace("world", "MiraScript");
+let cleaned = text::trim()::replace("World", "MiraScript");
 
 debug_print("字符串处理: '$cleaned'");
 
@@ -70,7 +70,9 @@ fn compose_functions() {
 compose_functions();
 
 // 条件链式调用
-fn process_if_positive(value) { if value > 0 { value::multiply(2)::add(1) } else { value } }
+fn process_if_positive(value) {
+  if value > 0 { value::multiply(2)::add(1) } else { value }
+}
 
 debug_print("条件链式:", process_if_positive(5));
 debug_print("条件链式:", process_if_positive(-5));

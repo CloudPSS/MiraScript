@@ -1,7 +1,9 @@
 // MiraScript 错误处理和异常示例
 
 // 使用 match 表达式处理可能的错误情况
-fn safe_divide(a, b) { if b == 0 { nil } else { a / b } } // 返回 nil 表示错误
+fn safe_divide(a, b) {
+  if b == 0 { nil } else { a / b }
+} // 返回 nil 表示错误
 
 fn handle_division(a, b) {
   let result = safe_divide(a, b);
@@ -60,8 +62,8 @@ for test in test_strings {
 // 函数参数验证
 fn calculate_area(shape) {
   match shape {
-    case (type: "rectangle", width: w, height: h) { if w > 0 && h > 0 { w * h } else { nil } }
-    case (type: "circle", radius: r) { if r > 0 { 3.141_59 * r * r } else { nil } }
+    case (type: "rectangle", width: w and > 0, height: h and > 0) { w * h }
+    case (type: "circle", radius: r) if r > 0 { 3.141_59 * r * r }
     case _ { nil }
   }
 }
@@ -86,7 +88,7 @@ fn validate_user(user) {
   let mut errors = [];
 
   // 检查姓名
-  if user.name ?? "" == "" {
+  if (user.name ?? "") == "" {
     errors = [..errors, "姓名不能为空"];
   }
 
@@ -104,7 +106,7 @@ fn validate_user(user) {
   let email = user.email ?? "";
   if email == "" {
     errors = [..errors, "邮箱不能为空"];
-  } else if !("@" in email) {
+  } else if !email::contains("@") {
     errors = [..errors, "邮箱格式无效"];
   }
 
@@ -117,9 +119,9 @@ let test_users = [(name: "Alice", age: 30, email: "alice@example.com"), (name: "
 for user in test_users {
   let validation = validate_user(user);
   if validation.valid {
-    debug_print("用户验证通过:", user.name);
+    debug_print("用户验证通过:", user);
   } else {
-    debug_print("用户验证失败:");
+    debug_print("用户验证失败:", user);
     for error in validation.errors {
       debug_print("  - $error");
     }

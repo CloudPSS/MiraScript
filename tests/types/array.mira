@@ -22,9 +22,11 @@ if has_module {
   t_throws(fn { [..v_module] });
 }
 
-let arr = [0, 1, nan, (1, 2, 3)];
+let arr = [0, 1, nan, (0, -0), (1, 2, 3)];
 t_true(0 in arr);
 t_true((-0) in arr);
+t_true((-0, 0) in arr);
+t_true((0, 0) in arr);
 t_true(1 in arr);
 t_true(nan in arr);
 t_true((1, 2, 3) in arr);
