@@ -191,28 +191,55 @@ enum AccessIndex<'s> {
     ),
 }
 fn access_index<'s>(i: &mut Input<'s>) -> Result<AccessIndex<'s>> {
-    let access_token = |i: &mut Input<'s>| {
+    fn access_token<'s>(i: &mut Input<'s>) -> Result<TokenRef<'s>> {
         one_of(|t: &Token<'s>| matches!(t.kind, TokenKind::Identifier(_) | TokenKind::Ordinal(_)))
             .map(TokenRef::borrow)
             .parse_next(i)
-    };
+    }
+    fn additive<'s>(i: &mut Input<'s>) -> Result<Box<Expression<'s>>> {
+        pratt(
+            precedence_of(&TokenKind::Operator(Operator::SpreadRange)) + 2,
+            false,
+        )
+        .verify_map(verify_expr)
+        .map(Box::new)
+        .parse_next(i)
+    }
+    fn range_op<'s>(i: &mut Input<'s>) -> Result<TokenRef<'s>> {
+        one_of(|t: &Token<'s>| *t == Operator::SpreadRange || *t == Operator::HalfOpenRange)
+            .map(TokenRef::borrow)
+            .parse_next(i)
+    }
+
     alt((
+        // '.' identifier
         (token(Operator::Dot), access_token).map(|(d, i)| AccessIndex::Access(d, i)),
+        // `[` (`..` | `..<`) `]` | `[` (`..` | `..<`) additive `]`
         (
             token(Operator::OpenBracket),
-            opt(additive.map(Box::new)),
-            one_of(|t: &Token<'s>| *t == Operator::SpreadRange || *t == Operator::HalfOpenRange)
-                .map(TokenRef::borrow),
-            opt(additive.map(Box::new)),
+            range_op,
+            opt(additive),
             token(Operator::CloseBracket),
         )
-            .map(|(l, start, op, end, r)| AccessIndex::Slice(l, start, op, end, r)),
+            .map(|(l, op, end, r)| AccessIndex::Slice(l, None, op, end, r)),
+        // `[` expression `]` | `[` additive (`..` | `..<`) additive `]`
         (
             token(Operator::OpenBracket),
-            expression.map(Box::new),
+            iterable,
             token(Operator::CloseBracket),
         )
-            .map(|(o, e, c)| AccessIndex::Index(o, e, c)),
+            .map(|(o, e, c)| match e {
+                Iterable::Range(r) => AccessIndex::Slice(o, Some(r.0), r.1, Some(r.2), c),
+                Iterable::Value(expr) => AccessIndex::Index(o, Box::new(expr), c),
+            }),
+        // `[` additive (`..` | `..<`) `]`
+        (
+            token(Operator::OpenBracket),
+            additive,
+            range_op,
+            token(Operator::CloseBracket),
+        )
+            .map(|(l, start, op, r)| AccessIndex::Slice(l, Some(start), op, None, r)),
     ))
     .parse_next(i)
 }
@@ -329,12 +356,6 @@ fn postfix<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
         }
         Function::NonNil(token) => Expression::NonNil(Box::new(acc), token),
     }))
-}
-
-fn additive<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
-    pratt(precedence_of(&TokenKind::Operator(Operator::Plus)), false)
-        .verify_map(verify_expr)
-        .parse_next(i)
 }
 
 fn precedence_of(t: &TokenKind<'_>) -> u8 {

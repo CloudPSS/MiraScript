@@ -34,7 +34,7 @@ for k in 0.2..2.2 {
 t_eq(seq, [0.2, 1.2, 2.2]);
 
 seq = [];
-for k in 0.2..<2.2 {
+for k in 0.2..<2 + 0.2 {
   seq = [..seq, k];
 }
 t_eq(seq, [0.2, 1.2]);
