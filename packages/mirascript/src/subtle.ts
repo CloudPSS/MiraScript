@@ -4,3 +4,4 @@ export * as operations from './vm/operations.js';
 export { serialize, serializeString, serializePropName, type SerializeOptions } from './helpers/serialize.js';
 export { lib } from './vm/lib/_loader.js';
 export * from './compiler/diagnostic.js';
+export { generateBytecode, generateBytecodeSync, emitScript } from './compiler/index.js';

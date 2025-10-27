@@ -43,7 +43,7 @@ function checkModule(): void {
 /**
  * 生成 MiraScript 字节码
  */
-export function compileBytecodeSync(
+export function generateBytecodeSync(
     script: ScriptInput,
     options: CompileOptions,
 ): [Uint8Array | undefined, Uint32Array] {
@@ -55,7 +55,7 @@ export function compileBytecodeSync(
 /**
  * 生成 MiraScript 字节码
  */
-export async function compileBytecode(
+export async function generateBytecode(
     script: ScriptInput,
     options: CompileOptions,
 ): Promise<[Uint8Array | undefined, Uint32Array]> {
