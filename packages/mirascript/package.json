@@ -44,7 +44,7 @@
     "@mirascript/napi": "workspace:~",
     "@mirascript/wasm": "workspace:~",
     "ansi-styles": "^6.2.3",
-    "commander": "^14.0.1",
+    "commander": "^14.0.2",
     "js-base64": "^3.7.8"
   },
   "devDependencies": {
