@@ -60,7 +60,7 @@ export interface SourceReference<T extends DiagnosticCode = DiagnosticCode> exte
     readonly diagnostic: SourceDiagnostic<T>;
 }
 
-/** 分析诊断信息 */
+/** 分析诊断信息，{@link diagnostic_position_encoding} 不能设为 `None` */
 export function parseDiagnostics(
     source: ScriptInput,
     diagnostics: Uint32Array,

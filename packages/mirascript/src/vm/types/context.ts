@@ -7,7 +7,7 @@ import {
     isVmAny,
     type VmFunctionLike,
 } from './index.js';
-import { entries, keys } from '../../helpers/utils.js';
+import { create, entries, keys } from '../../helpers/utils.js';
 import type * as global from '../lib/global/index.js';
 
 /** 全局导入的标准库 */
@@ -36,7 +36,7 @@ export interface VmContext {
 }
 /** MiraScript 执行上下文 */
 export type VmContextRecord = Record<string, VmValue | undefined>;
-export const VmSharedContext = { __proto__: null } as object as VmSharedContext;
+export const VmSharedContext = create(null) as VmSharedContext;
 
 /** 定义在所有 MiraScript 执行上下文中共享的全局变量 */
 export function defineVmContextValue(
@@ -91,7 +91,7 @@ class ValueVmContext implements VmContext {
     has(key: string): boolean {
         return key in this.env;
     }
-    constructor(private readonly env: VmContextRecord & { __proto__: VmSharedContext }) {}
+    constructor(private readonly env: VmContextRecord) {}
 }
 
 /** 以工厂函数为后备的实现 */
@@ -139,7 +139,7 @@ export function createVmContext(
     }
 
     const [vmValues, externValues] = args;
-    const env = { __proto__: VmSharedContext } as { __proto__: VmSharedContext } & VmContextRecord;
+    const env = create(VmSharedContext) as VmContextRecord;
     if (vmValues) {
         for (const [key, value] of entries(vmValues)) {
             if (!isVmAny(value, false)) continue;

@@ -6,7 +6,7 @@ import type { VmLib, VmLibOption } from './_helpers.js';
 import * as global from './global/index.js';
 
 for (const [name, value] of entries(global)) {
-    VmSharedContext[name] = wrapEntry(name, value as RawValue);
+    VmSharedContext[name] = wrapEntry(name, value as RawValue, 'global');
 }
 
 /** 原始值 */
@@ -14,7 +14,7 @@ type RawValue = VmLib | VmConst | VmModule;
 /** 包装值 */
 type ToWrappedValue<V extends RawValue> = V extends VmFunctionLike ? VmFunction<V> : V;
 /** 包装值 */
-function wrapEntry<const T extends RawValue>(name: string, value: T): ToWrappedValue<T> {
+function wrapEntry<const T extends RawValue>(name: string, value: T, module: string): ToWrappedValue<T> {
     if (typeof value == 'function') {
         if (value.name !== name) {
             // 如果函数名和导出名不一致，则重命名
@@ -26,7 +26,7 @@ function wrapEntry<const T extends RawValue>(name: string, value: T): ToWrappedV
         return VmFunction(value, {
             isLib: true,
             injectCp: true,
-            fullName: `global.${name}`,
+            fullName: `${module}.${name}`,
             ...(value as VmLibOption),
         }) as ToWrappedValue<T>;
     } else {
@@ -43,7 +43,7 @@ export type ToWrappedModule<T extends Record<string, RawValue>> = VmModule<{
 export function createModule<const T extends Record<string, RawValue>>(name: string, lib: T): ToWrappedModule<T> {
     const mod = create(null) as Record<string, VmImmutable>;
     for (const [key, value] of entries(lib)) {
-        mod[key] = wrapEntry(key, value);
+        mod[key] = wrapEntry(key, value, name);
     }
     return new VmModule(name, mod) as ToWrappedModule<T>;
 }
