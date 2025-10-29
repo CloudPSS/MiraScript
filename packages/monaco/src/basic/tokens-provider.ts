@@ -296,7 +296,7 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                     /(fn)(@whitespace+)(@identifier)(\()(\.\.)(\))$/,
                     ['keyword.fn.doc', '', 'entity.name.function.doc', '@brackets', 'delimiter', '@brackets'],
                 ],
-                [/fn/, 'keyword.fn.doc', '@fn_doc'],
+                [/fn/, 'keyword.fn.doc', '@type_doc_fn'],
                 [
                     /(let)(@whitespace+)(mut)(@whitespace+)(@identifier)/,
                     [{ token: 'keyword.$1' }, '', 'keyword.mut', '', { token: 'variable', next: '@root' }],
@@ -308,9 +308,26 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                 { include: '@common' },
                 [/[[\](){}]/, '@brackets'],
             ],
-            fn_doc: [
+            type_doc: [
+                { include: '@type_doc_common' },
+                [/[,)]/, 'delimiter', '@pop'],
+                [/;/, { token: 'delimiter', next: '@pop', goBack: 1 }],
+            ],
+            type_doc_inner: [{ include: '@type_doc_common' }, [/[,;]/, 'delimiter']],
+            type_doc_common: [
+                [/fn\b/, 'type', '@type_doc_fn'],
+                [/(type)(\()(@identifier)(\))/, ['type', '@brackets', 'variable.emphasis.doc', '@brackets']],
+                [/@identifier/, 'type'],
+                [/[[(]/, '@brackets', '@type_doc_inner'],
+                [/[\])]/, '@brackets', '@pop'],
+                [/[&|.]/, 'delimiter'],
+                [/->/, 'delimiter'],
+                [/@whitespace+/, ''],
+            ],
+            type_doc_fn: [
                 [/(@identifier)(\()/, ['entity.name.function.doc', '@brackets']],
                 [/@whitespace+/, ''],
+                [/(->)/, { token: 'delimiter', switchTo: '@type_doc' }],
                 [
                     /(\.\.|)(@identifier)(\s*)(:|,|\))/,
                     [
@@ -327,23 +344,7 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                     ],
                 ],
                 [/[()]/, '@brackets'],
-                [/(->)/, 'delimiter', '@type_doc'],
                 [/;/, { token: 'delimiter', next: '@pop', goBack: 1 }],
-            ],
-            type_doc: [
-                { include: '@type_doc_common' },
-                [/[,)]/, 'delimiter', '@pop'],
-                [/;/, { token: 'delimiter', next: '@pop', goBack: 1 }],
-            ],
-            type_doc_inner: [{ include: '@type_doc_common' }, [/[,;]/, 'delimiter']],
-            type_doc_common: [
-                [/fn\b/, 'type', '@fn_doc'],
-                [/(type)(\()(@identifier)(\))/, ['type', '@brackets', 'variable.emphasis.doc', '@brackets']],
-                [/@identifier/, 'type'],
-                [/[[(]/, '@brackets', '@type_doc_inner'],
-                [/[\])]/, '@brackets', '@pop'],
-                [/[&|.]/, 'delimiter'],
-                [/@whitespace+/, ''],
             ],
         },
     };

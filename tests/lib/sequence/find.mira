@@ -12,10 +12,12 @@ t_eq(find([], fn (x) { x % 2 == 0 }), nil);
 t_eq(find((), fn (x) { x % 2 == 0 }), nil);
 t_eq(find([1, 2, 3, 4], fn { }), nil);
 
+t_eq(find([1, 2, 3], nil), nil);
+t_eq(find([1, 2, 3], 3), (2, 3));
+t_eq(find([1, 2, 3, (), 5], ()), (3, ()));
+t_eq(find((a: 1, b: 2, c: 3), 2), ("b", 2));
+t_eq(find([0, 1, 2], -0), (0, 0));
+t_eq(find([0, 1, 2, nan], nan), (3, nan));
+
 t_throws(fn { find(nil, fn (x) { x }) });
 t_throws(fn { find(v_extern, fn (x) { x }) });
-t_throws(fn { find([1, 2, 3], nil) });
-t_throws(fn { find([1, 2, 3], 42) });
-t_throws(fn { find([1, 2, 3], "not a function") });
-t_throws(fn { find([1, 2, 3], []) });
-t_throws(fn { find([1, 2, 3], ()) });

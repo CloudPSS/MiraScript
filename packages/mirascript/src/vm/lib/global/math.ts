@@ -15,7 +15,7 @@ export const pow = VmLib((x, y) => _pow($ToNumber(x), $ToNumber(y)), {
     returnsType: 'number',
 });
 export const random = VmLib(Math.random, {
-    summary: '返回 0 到 1 之间的伪随机数',
+    summary: '返回 [0, 1) 之间的伪随机数',
     params: {},
     paramsType: {},
     returnsType: 'number',

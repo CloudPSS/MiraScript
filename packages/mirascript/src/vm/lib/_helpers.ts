@@ -3,7 +3,6 @@ import { VmError } from '../error.js';
 import { $ToNumber, $Type } from '../operations.js';
 import {
     isVmArray,
-    isVmExtern,
     isVmFunction,
     type VmExtern,
     type VmFunction,
@@ -17,6 +16,7 @@ import {
     type VmConst,
     isVmConst,
     VM_ARRAY_MAX_LENGTH,
+    isVmCallable,
 } from '../types/index.js';
 import type { VmFunctionLike, VmFunctionOption } from '../types/function.js';
 import { Cp } from '../helpers.js';
@@ -127,8 +127,7 @@ export function expectCallable(
     recovered: VmAny | (() => VmAny),
 ): asserts value is VmFunction | VmExtern {
     required(name, value, recovered);
-    const callable = isVmFunction(value) || isVmExtern(value);
-    if (!callable) {
+    if (!isVmCallable(value)) {
         throwUnexpectedTypeError(name, 'callable', value, recovered);
     }
 }

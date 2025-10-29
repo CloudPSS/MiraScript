@@ -1,6 +1,6 @@
 import { isArray } from '../../helpers/utils.js';
 import { VmExtern } from './extern.js';
-import type { VmFunction } from './function.js';
+import { isVmFunction, type VmFunction } from './function.js';
 import { VmModule } from './module.js';
 import { VmWrapper } from './wrapper.js';
 
@@ -97,6 +97,12 @@ export { VmExtern, wrapToVmValue, unwrapFromVmValue } from './extern.js';
 /** 检查值是否为 Mirascript 外部值 */
 export function isVmExtern(value: unknown): value is VmExtern {
     return value instanceof VmExtern;
+}
+
+/** 检查值是否为 Mirascript 可调用值 */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+export function isVmCallable(value: unknown): value is VmFunction | VmExtern<Function> {
+    return isVmFunction(value) || (isVmExtern(value) && typeof value.value == 'function');
 }
 
 export {
