@@ -1,9 +1,9 @@
 import test from 'ava';
 import { print } from '../dist/cli/print.js';
 import { execute } from '../dist/cli/execute.js';
-import { createVmContext } from '../dist/index.js';
+import { compile, createVmContext, VmModule } from '../dist/index.js';
 
-test('cli print', (t) => {
+test('cli print', async (t) => {
     t.snapshot(print(null));
     t.snapshot(print(undefined));
     t.snapshot(print(true));
@@ -13,9 +13,12 @@ test('cli print', (t) => {
     t.snapshot(print(Number.POSITIVE_INFINITY));
     t.snapshot(print(Number.NaN));
     t.snapshot(print('Hello, world!'));
+    t.snapshot(print('Hello, world!\nNew line.\tTabbed.\\Backslash. "Double quotes". \'Single quotes\'.'));
     const context = createVmContext();
     t.snapshot(print(context.get('matrix')));
     t.snapshot(print(context.get('sin')));
+    t.snapshot(print((await compile('fn a{}a'))(context)));
+    t.snapshot(print(new VmModule('', {})));
 });
 
 test('cli execute', async (t) => {

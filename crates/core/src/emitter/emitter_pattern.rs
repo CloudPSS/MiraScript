@@ -180,30 +180,30 @@ impl<'s> Emitter<'s> {
         }
     }
 
-    pub fn emit_pattern(
+    fn emit_constant_pattern(
         &mut self,
+        op: OpCode,
         success: Register,
         pattern: &'s Pattern<'s>,
         value: Register,
-        bind_type: Option<BindType>,
-    ) {
+    ) -> bool {
         match pattern {
-            Grouping(_, pattern, _) => self.emit_pattern(success, pattern, value, bind_type),
             Literal(_, lit) => {
                 if success.is_empty() {
                     self.diagnostics.push(SourceDiagnostic::new(
                         pattern.range(),
                         DiagnosticCode::UnnecessaryIrrefutablePattern,
                     ));
-                    return;
+                    return true;
                 }
                 if lit.kind == Keyword::Nil {
-                    self.op_3(OpCode::Same, success, Register::EMPTY, value);
+                    self.op_3(op, success, Register::EMPTY, value);
                 } else {
                     let reg = self.closures.add_reg();
                     self.emit_literal_constant(pattern, reg);
-                    self.op_3(OpCode::Same, success, reg, value);
+                    self.op_3(op, success, reg, value);
                 }
+                true
             }
             Constant(_) => {
                 if success.is_empty() {
@@ -211,12 +211,30 @@ impl<'s> Emitter<'s> {
                         pattern.range(),
                         DiagnosticCode::UnnecessaryIrrefutablePattern,
                     ));
-                    return;
+                    return true;
                 }
                 let reg = self.closures.add_reg();
                 self.emit_literal_constant(pattern, reg);
-                self.op_3(OpCode::Same, success, reg, value);
+                self.op_3(op, success, reg, value);
+                true
             }
+            Grouping(_, pattern, _) => self.emit_constant_pattern(op, success, pattern, value),
+            _ => false,
+        }
+    }
+
+    pub fn emit_pattern(
+        &mut self,
+        success: Register,
+        pattern: &'s Pattern<'s>,
+        value: Register,
+        bind_type: Option<BindType>,
+    ) {
+        if self.emit_constant_pattern(OpCode::Same, success, pattern, value) {
+            return;
+        }
+        match pattern {
+            Grouping(_, pattern, _) => self.emit_pattern(success, pattern, value, bind_type),
             Relation(op, constant) => {
                 if success.is_empty() {
                     self.diagnostics.push(SourceDiagnostic::new(
@@ -612,12 +630,16 @@ impl<'s> Emitter<'s> {
                         DiagnosticCode::UnnecessaryIrrefutablePattern,
                     ));
                     self.emit_pattern(Register::EMPTY, p, value, bind_type);
+                } else if self.emit_constant_pattern(OpCode::Nsame, success, p, value) {
+                    return;
                 } else {
                     self.emit_pattern(success, p, value, bind_type);
                     self.op_2(OpCode::Not, success, success);
                 }
             }
             Unknown { .. } => (),
+            Literal(..) => unreachable!(),
+            Constant(_) => unreachable!(),
         }
     }
 }

@@ -12,7 +12,7 @@ t_ne(zero, n_zero);
 t_ne([zero], [n_zero]);
 t_eq(-1 * zero, n_zero);
 t_eq(zero / zero, nan);
-t_eq((zero / zero,), (nan,));
+t_eq((zero / zero, '' / false), (nan, nan));
 t_eq(zero - zero, zero);
 t_eq(zero + zero, zero);
 t_eq(n_zero - n_zero, zero);

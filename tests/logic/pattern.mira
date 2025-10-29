@@ -5,8 +5,10 @@ t_true(true is true);
 t_true(false is false);
 
 t_true(nan is nan);
+t_false(nan is not nan);
 t_true(inf is inf);
 t_true(0 is -0);
+t_false(-0 is not 0);
 
 {
   t_true([1, 2, 3] is [1, ..rest] && rest is [2, 3]);
