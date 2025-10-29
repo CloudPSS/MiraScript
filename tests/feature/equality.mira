@@ -57,6 +57,8 @@ t_true(false =~ 0);
 t_true('' =~ nil);
 t_true(nil =~ '');
 t_false('' =~ '0');
+t_true(fn { } =~ '<function>');
+t_true(fn { } !~ fn { });
 
 // complex
 t_true((1, 2, 3) == (1, 2, 3));
