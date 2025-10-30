@@ -11,6 +11,7 @@ import {
     createVmContext,
     VmModule,
     VmExtern,
+    isVmCallable,
 } from '@mirascript/mirascript';
 import { DefaultVmContext, lib, VmSharedContext } from '@mirascript/mirascript/subtle';
 
@@ -30,6 +31,15 @@ test('isVmFunction', async (t) => {
     t.false(isVmFunction({}));
     t.true(isVmFunction((await compile('abs'))()));
     t.false(isVmFunction(lib.abs));
+});
+
+test('isVmCallable', async (t) => {
+    t.false(isVmCallable(await compile('1 + 1')));
+    t.false(isVmCallable({}));
+    t.true(isVmCallable((await compile('abs'))()));
+    t.true(isVmCallable(new VmExtern(() => 0)));
+    t.false(isVmCallable(new VmExtern({})));
+    t.false(isVmCallable(lib.abs));
 });
 
 test('isVmContext', (t) => {

@@ -11,6 +11,11 @@ test('compile error', async (t) => {
     t.throws(() => compileSync('a = 12; let a = 1;'), { message: /Failed to compile/ });
 });
 
+test('huge error', async (t) => {
+    await t.throwsAsync(compile('a = 12; let a = 1;' + 'x'.repeat(10000)), { message: /Failed to compile/ });
+    t.throws(() => compileSync('a = 12; let a = 1;' + 'x'.repeat(10000)), { message: /Failed to compile/ });
+});
+
 test('buffer', async (t) => {
     const s = await compile(Buffer.from('1'), { sourceMap: true, fileName: '/xx.mira' });
     t.is(s.source, '<buffer>');

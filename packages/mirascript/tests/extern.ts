@@ -10,6 +10,7 @@ import {
     VmFunction,
     getVmFunctionInfo,
     unwrapFromVmValue,
+    isVmCallable,
 } from '@mirascript/mirascript';
 import { isProxy } from 'node:util/types';
 
@@ -34,6 +35,7 @@ test('callable extern', (t) => {
 
     const eSin = e('sin') as VmExtern;
     t.true(isVmExtern(eSin));
+    t.true(isVmCallable(eSin));
     t.is(eSin.value, Math.sin);
     t.is(eSin.caller, null);
     t.is(eSin.describe, 'Function');
@@ -43,6 +45,7 @@ test('callable extern', (t) => {
 
     const eMath = e('Math') as VmExtern;
     t.true(isVmExtern(eMath));
+    t.false(isVmCallable(eMath));
     t.is(eMath.value, Math);
     t.is(eMath.caller, null);
     t.is(eMath.describe, 'Math');
@@ -51,6 +54,7 @@ test('callable extern', (t) => {
 
     const eMSin = e('Math.sin') as VmExtern;
     t.true(isVmExtern(eMSin));
+    t.true(isVmCallable(eMSin));
     t.is(eMSin.value, Math.sin);
     t.is(eMSin.caller, eMath);
     t.true(eMSin.caller!.same(eMath));
@@ -340,6 +344,18 @@ test('extern access', (t) => {
 
     t.is(e('arr.map::type()'), 'number');
     t.is(e('arr.sort::type()'), 'nil');
+
+    // Write access
+    t.is(e('obj._p = (); obj._p'), null);
+    t.is(e('obj.p = 12; obj.p'), 12);
+    t.is(e('obj.toString = "xx"; obj.toString'), 'xx');
+    t.is(e('obj.prototype = "xx"; obj.prototype'), 'xx');
+    t.is(e('func.prototype = "xx"; func.prototype'), null);
+    t.is(e('func.xx = 123; func.xx'), 123);
+    t.is(e('arr.map = "xx"; arr.map'), 'xx');
+    t.is(e('arr.12 = 12; arr.12'), 12);
+    t.is(e('arr.length'), 13);
+    t.is(e('arr.11'), null);
 });
 
 test('extern iterable', (t) => {

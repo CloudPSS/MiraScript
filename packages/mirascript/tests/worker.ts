@@ -46,11 +46,20 @@ test.serial('compile', async (t) => {
         }),
     );
 });
-
 test.serial('compile error', async (t) => {
     callback!(new MessageEvent('message', { data: [1, ''] }));
     await new Promise((resolve) => setTimeout(resolve, 10));
     t.true(postMessage.calledOnceWith([1, sinon.match.instanceOf(Error)]));
+});
+
+test.serial('compile syntax error', async (t) => {
+    callback!(new MessageEvent('message', { data: [2, '1 + ', {}] }));
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    t.true(
+        postMessage.calledOnceWith([2, undefined, sinon.match.instanceOf(Uint32Array)], {
+            transfer: [sinon.match.instanceOf(ArrayBuffer)],
+        }),
+    );
 });
 
 test.serial('arg error', async (t) => {
