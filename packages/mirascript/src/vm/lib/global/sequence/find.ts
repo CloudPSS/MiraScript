@@ -39,13 +39,13 @@ export const find = VmLib(
         summary: '查找数组或记录中的键值对，返回第一个满足条件的键值对',
         params: {
             data: '查的数组或记录',
-            predicate: '用于测试每个键值对的函数，返回 true 或 false；或要查找的值',
+            predicate: '用于测试每个键值对的函数，或要查找的值',
         },
         paramsType: {
             data: 'array | record',
             predicate: '(fn(value: any, key: number | string | nil, input: type(data)) -> boolean) | any',
         },
         returnsType: '(string | number, any) | nil',
-        examples: ['find([3, 5, 8], fn (v) { v % 2 == 0 }) // (2, 8)'],
+        examples: ['find([3, 5, 8], fn (v) { v % 2 == 0 }) // (2, 8)', `find((x: 1, y: 2, z: 3), 2) // ('y', 2)`],
     },
 );

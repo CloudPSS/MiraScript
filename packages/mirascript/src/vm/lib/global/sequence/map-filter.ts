@@ -49,7 +49,7 @@ export const filter = VmLib(
         summary: '过滤数组或记录中的元素，返回满足条件的元素',
         params: {
             data: '要过滤的数组或记录',
-            predicate: '用于测试每个元素的函数，返回 true 或 false',
+            predicate: '用于测试每个元素的函数',
         },
         paramsType: {
             data: 'array | record',
@@ -70,7 +70,7 @@ export const filter_map = VmLib(
         summary: '对数组或记录中的每个元素应用函数，并返回非 nil 的结果',
         params: {
             data: '要映射的数组或记录',
-            f: '应用于每个元素的函数，返回 nil 或非 nil 的值',
+            f: '应用于每个元素的函数',
         },
         paramsType: {
             data: 'array | record',
