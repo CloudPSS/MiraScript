@@ -217,7 +217,7 @@ function completion(
             kind = languages.CompletionItemKind.Class;
         } else {
             detail = '(..)';
-            kind = value.caller ? languages.CompletionItemKind.Method : languages.CompletionItemKind.Function;
+            kind = value.thisArg ? languages.CompletionItemKind.Method : languages.CompletionItemKind.Function;
         }
     } else if (!field && key.startsWith('@')) {
         kind = languages.CompletionItemKind.Constant;

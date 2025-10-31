@@ -92,7 +92,8 @@ export function isVmPrimitive(value: unknown): value is VmPrimitive {
     return false;
 }
 
-export { VmExtern, wrapToVmValue, unwrapFromVmValue } from './extern.js';
+export { VmExtern } from './extern.js';
+export { wrapToVmValue, unwrapFromVmValue, toVmFunctionProxy, fromVmFunctionProxy } from './boundary.js';
 
 /** 检查值是否为 Mirascript 外部值 */
 export function isVmExtern(value: unknown): value is VmExtern {

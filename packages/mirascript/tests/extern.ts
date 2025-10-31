@@ -11,6 +11,8 @@ import {
     getVmFunctionInfo,
     unwrapFromVmValue,
     isVmCallable,
+    type VmArray,
+    type VmRecord,
 } from '@mirascript/mirascript';
 import { isProxy } from 'node:util/types';
 
@@ -33,31 +35,31 @@ test('callable extern', (t) => {
     t.is(e('Math.sin(x)'), Math.sin(1.2));
     t.is(e('Math.sin(0)'), 0);
 
-    const eSin = e('sin') as VmExtern;
+    const eSin = e('sin') as VmExtern<Math['sin']>;
     t.true(isVmExtern(eSin));
     t.true(isVmCallable(eSin));
     t.is(eSin.value, Math.sin);
-    t.is(eSin.caller, null);
+    t.is(eSin.thisArg, null);
     t.is(eSin.describe, 'Function');
     t.is(unwrapFromVmValue(eSin), Math.sin);
     t.false(isProxy(unwrapFromVmValue(eSin)));
     t.is((unwrapFromVmValue(eSin) as typeof Math.sin)(1), Math.sin(1));
 
-    const eMath = e('Math') as VmExtern;
+    const eMath = e('Math') as VmExtern<Math>;
     t.true(isVmExtern(eMath));
     t.false(isVmCallable(eMath));
     t.is(eMath.value, Math);
-    t.is(eMath.caller, null);
+    t.is(eMath.thisArg, null);
     t.is(eMath.describe, 'Math');
     t.is(unwrapFromVmValue(eMath), Math);
     t.false(isProxy(unwrapFromVmValue(eMath)));
 
-    const eMSin = e('Math.sin') as VmExtern;
+    const eMSin = e('Math.sin') as VmExtern<Math['sin']>;
     t.true(isVmExtern(eMSin));
     t.true(isVmCallable(eMSin));
     t.is(eMSin.value, Math.sin);
-    t.is(eMSin.caller, eMath);
-    t.true(eMSin.caller!.same(eMath));
+    t.is(eMSin.thisArg, eMath);
+    t.true(eMSin.thisArg!.same(eMath));
     t.not(unwrapFromVmValue(eMSin), Math.sin);
     t.true(isProxy(unwrapFromVmValue(eMSin)));
     t.is((unwrapFromVmValue(eMSin) as typeof Math.sin)(1), Math.sin(1));
@@ -129,21 +131,13 @@ test('Date extern', (t) => {
     });
     const e = exec(context);
     t.is(e('Date::type()'), 'extern');
-    t.is(e('d::type()'), 'extern');
+    t.is(e('d::type()'), 'number');
 
     t.false(e('`prototype` in Date'));
-    t.false(e('`constructor` in d'));
 
-    t.true(e('`toString` in d'));
-    t.is(e('d.toString()'), new Date(0).toString());
-    t.is(e('d::to_string()'), new Date(0).toString());
-    t.is(e('d.toJSON()'), new Date(0).toJSON());
-    t.is(e('d::to_json()'), JSON.stringify(new Date(0)));
-    t.throws(() => e(`d()`), { message: /^Not a callable extern: / });
-
-    t.is(e('construct(Date)::type()'), 'extern');
-    t.is(e('construct(Date, 123).toString()'), new Date(123).toString());
-    t.is(e('construct(Date, d).toString()'), new Date(0).toString());
+    t.is(e('construct(Date)::type()'), 'number');
+    t.is(e('construct(Date, 123)'), 123);
+    t.is(e('construct(Date, d)'), 0);
 });
 
 test('callback extern', (t) => {
@@ -172,6 +166,9 @@ test('callback extern', (t) => {
                 return c;
             },
         }),
+        throws: () => {
+            throw new Error('Error from extern');
+        },
         obj,
     });
     const e = exec(context);
@@ -179,6 +176,7 @@ test('callback extern', (t) => {
     t.deepEqual(e('c(cb)'), e('cb'));
     t.deepEqual(e('proxy(cb)'), e('cb'));
     t.deepEqual(e('obj.f(cb)'), e('cb'));
+    t.throws(() => e('throws()'), { message: /^Callable extern: Error from extern$/ });
 });
 
 test('callback native', (t) => {
@@ -391,4 +389,32 @@ test('extern spread', (t) => {
 
     t.deepEqual(e('(..obj, c: 3)'), { a: 1, b: 2, c: 3, n: null });
     t.deepEqual(e('(..arr)'), { 0: 3, 1: 4, 2: 5 });
+});
+
+test('custom extern', (t) => {
+    class MyExtern extends VmExtern {
+        protected override assumeVmValue(value: object, key: undefined): value is VmRecord | VmArray {
+            return true;
+        }
+    }
+    const context = createVmContext(
+        {
+            my: new MyExtern({ a: [], b: {}, f: VmFunction(() => 0) }),
+        },
+        {
+            vm: { a: [], b: {}, f: VmFunction(() => 0) },
+        },
+    );
+    const e = exec(context);
+
+    t.is(e('my::type()'), 'extern');
+    t.is(e('vm::type()'), 'extern');
+
+    t.is(e('my.a::type()'), 'array');
+    t.is(e('my.b::type()'), 'record');
+    t.is(e('my.f::type()'), 'function');
+
+    t.is(e('vm.a::type()'), 'extern');
+    t.is(e('vm.b::type()'), 'extern');
+    t.is(e('vm.f::type()'), 'function');
 });

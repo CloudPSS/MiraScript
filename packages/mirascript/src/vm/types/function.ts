@@ -1,12 +1,10 @@
 import type { Writable } from 'type-fest';
 import { defineProperty } from '../../helpers/utils.js';
 import { CpEnter, CpExit } from '../helpers.js';
-import { $Call } from '../operations.js';
 import type { VmAny, VmValue } from './index.js';
-import { wrapToVmValue, unwrapFromVmValue } from './extern.js';
+import { fromVmFunctionProxy } from './boundary.js';
 
 const kVmFunction = Symbol.for('mirascript.vm.function');
-const kProxy = Symbol.for('mirascript.vm.function.proxy');
 
 /**
  * Mirascript 函数签名
@@ -100,38 +98,4 @@ export function VmFunction<T extends VmFunctionLike>(fn: T, option: VmFunctionOp
         value: Object.freeze(info),
     });
     return fn as VmFunction<T>;
-}
-
-/** 创建 Mirascript 函数在宿主语言运行的代理 */
-export function toVmFunctionProxy<T extends VmFunctionLike>(fn: VmFunction<T>): T {
-    if (!isVmFunction(fn)) return fn;
-
-    const cached = (fn as unknown as { [kProxy]?: T })[kProxy];
-    if (cached) return cached;
-
-    const proxy = (...args: unknown[]) => {
-        const ret = $Call(
-            fn,
-            // 作为函数参数传入的值一定丢失了它的 this
-            args.map((v) => wrapToVmValue(v, null)),
-        );
-        return unwrapFromVmValue(ret);
-    };
-    defineProperty(fn, kProxy, { value: proxy });
-    defineProperty(proxy, kProxy, { value: fn });
-    defineProperty(proxy, 'name', {
-        value: fn.name,
-        configurable: true,
-    });
-    return proxy as T;
-}
-
-/** 解开 Mirascript 函数在宿主语言运行的代理 */
-export function fromVmFunctionProxy<T extends VmFunctionLike>(fn: T): VmFunction<T> | undefined {
-    if (isVmFunction(fn)) return fn;
-
-    const original = (fn as unknown as { [kProxy]?: VmFunction<T> })[kProxy];
-    if (original && isVmFunction(original)) return original;
-
-    return undefined;
 }

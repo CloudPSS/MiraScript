@@ -1,53 +1,8 @@
 import { VmError } from '../error.js';
-import { fromVmFunctionProxy, toVmFunctionProxy, type VmFunctionLike } from './function.js';
 import { VmWrapper } from './wrapper.js';
-import type { TypeName, VmAny, VmModule, VmValue } from './index.js';
-import { getPrototypeOf, hasOwn } from '../../helpers/utils.js';
-const { apply } = Reflect;
-
-/** 包装为 Mirascript 类型 */
-export function wrapToVmValue(value: unknown, caller: VmExtern | null): VmValue {
-    if (value == null) return null;
-    switch (typeof value) {
-        case 'function': {
-            const unwrapped = fromVmFunctionProxy(value as VmFunctionLike);
-            if (unwrapped) return unwrapped;
-            return new VmExtern(value, caller);
-        }
-        case 'object':
-            if (value instanceof VmWrapper) return value as VmModule | VmExtern;
-            return new VmExtern(value, null);
-        case 'string':
-        case 'number':
-        case 'boolean':
-            return value;
-        case 'bigint':
-            return Number(value);
-        case 'symbol':
-        case 'undefined':
-        default:
-            return null;
-    }
-}
-
-/** 取消 Mirascript 类型包装  */
-export function unwrapFromVmValue(value: VmAny): unknown {
-    if (typeof value == 'function') {
-        return toVmFunctionProxy(value);
-    }
-    if (value == null || typeof value != 'object') return value;
-    if (!(value instanceof VmExtern)) return value;
-    if (value.caller == null || typeof value.value != 'function') {
-        return value.value;
-    }
-    const caller = value.caller.value;
-    const func = value.value as (...args: unknown[]) => unknown;
-    return new Proxy(func, {
-        apply(target, thisArg, args): unknown {
-            return apply(target, caller, args);
-        },
-    });
-}
+import type { TypeName, VmAny, VmConst, VmPrimitive, VmValue } from './index.js';
+import { getPrototypeOf, hasOwn, apply } from '../../helpers/utils.js';
+import { unwrapFromVmValue, wrapToVmValue } from './boundary.js';
 
 const ObjectPrototype = Object.prototype;
 // eslint-disable-next-line @typescript-eslint/unbound-method
@@ -56,7 +11,7 @@ const ObjectToString = ObjectPrototype.toString;
 export class VmExtern<const T extends object = object> extends VmWrapper<T> {
     constructor(
         value: T,
-        readonly caller: VmExtern | null = null,
+        readonly thisArg: T extends (...args: readonly never[]) => unknown ? VmExtern | null : null = null,
     ) {
         super(value);
     }
@@ -79,6 +34,11 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
         return true;
     }
 
+    /** 决定是否对属性进行包装 */
+    protected assumeVmValue(value: object, key: keyof T | undefined): value is Exclude<VmConst, VmPrimitive> {
+        return false;
+    }
+
     /** @inheritdoc */
     override has(key: string): boolean {
         return this.access(key, true);
@@ -87,7 +47,7 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
     override get(key: string): VmAny {
         if (!this.has(key)) return undefined;
         const prop = (this.value as Record<string, unknown>)[key];
-        return wrapToVmValue(prop, this);
+        return wrapToVmValue(prop, this, (v) => this.assumeVmValue(v, key as keyof T));
     }
     /** Set a property on the object */
     set(key: string, value: VmValue): boolean {
@@ -99,14 +59,18 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
     /** Call extern value */
     call(args: readonly VmValue[]): VmAny {
         const { value } = this;
-        const caller = this.caller?.value ?? null;
-        const unwrappedArgs = args.map(unwrapFromVmValue);
-        try {
-            const ret: unknown = apply(value as (...args: unknown[]) => unknown, caller, unwrappedArgs);
-            return wrapToVmValue(ret, null);
-        } catch (ex) {
-            throw VmError.from(`Not a callable extern`, ex, null);
+        if (typeof value != 'function') {
+            throw VmError.from(`Not a callable extern`, null, null);
         }
+        const caller = this.thisArg?.value ?? null;
+        const unwrappedArgs = args.map(unwrapFromVmValue);
+        let ret: unknown;
+        try {
+            ret = apply(value, caller, unwrappedArgs);
+        } catch (ex) {
+            throw VmError.from(`Callable extern`, ex, null);
+        }
+        return wrapToVmValue(ret, null, (obj) => this.assumeVmValue(obj, undefined));
     }
     /** @inheritdoc */
     override keys(): string[] {
@@ -119,7 +83,7 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
     /** @inheritdoc */
     override same(other: VmAny): boolean {
         if (!(other instanceof VmExtern)) return false;
-        return this.value === other.value && this.caller === other.caller;
+        return this.value === other.value && this.thisArg === other.thisArg;
     }
     /** @inheritdoc */
     override toString(): string {
