@@ -15,11 +15,7 @@ pub struct JsCompileResult {
     pub diagnostics: Uint32Array,
 }
 
-fn extract_args<'e>(
-    env: &'e Env,
-    script: Either<String, Uint8Array>,
-    config: Object<'e>,
-) -> Result<Compile> {
+fn extract_args(env: &Env, script: Either<String, Uint8Array>, config: Object) -> Result<Compile> {
     let script = match script {
         Either::A(s) => s,
         Either::B(arr) => {
@@ -44,12 +40,12 @@ fn to_result(data: CompileResult) -> JsCompileResult {
 }
 
 #[napi]
-pub fn compile_sync<'e>(
-    env: &'e Env,
+pub fn compile_sync(
+    env: Env,
     script: Either<String, Uint8Array>,
-    config: Object<'e>,
+    config: Object,
 ) -> Result<JsCompileResult> {
-    let args = extract_args(env, script, config)?;
+    let args = extract_args(&env, script, config)?;
     let data = compile_impl(&args);
     Ok(to_result(data))
 }
@@ -74,10 +70,10 @@ impl Task for Compile {
 }
 
 #[napi]
-pub fn compile<'e>(
+pub fn compile(
     env: Env,
     script: Either<String, Uint8Array>,
-    config: Object<'e>,
+    config: Object,
 ) -> Result<AsyncTask<Compile>> {
     let args = extract_args(&env, script, config)?;
     Ok(AsyncTask::new(args))
