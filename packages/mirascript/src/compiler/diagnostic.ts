@@ -60,20 +60,27 @@ export interface SourceReference<T extends DiagnosticCode = DiagnosticCode> exte
     readonly diagnostic: SourceDiagnostic<T>;
 }
 
-/** 分析诊断信息，{@link diagnostic_position_encoding} 不能设为 `None` */
-export function parseDiagnostics(
-    source: ScriptInput,
-    diagnostics: Uint32Array,
-): {
+/** 解析后的诊断信息 */
+interface ParsedDiagnostics {
+    /** 错误诊断信息 */
     errors: SourceDiagnostic[];
+    /** 警告诊断信息 */
     warnings: SourceDiagnostic[];
+    /** 信息诊断信息 */
     infos: SourceDiagnostic[];
+    /** 提示诊断信息 */
     hints: SourceDiagnostic[];
+    /** 标签诊断信息 */
     tags: SourceDiagnostic[];
 
+    /** 引用诊断信息 */
     references: SourceReference[];
+    /** 标签引用诊断信息 */
     tagsReferences: SourceReference[];
-} {
+}
+
+/** 分析诊断信息，{@link diagnostic_position_encoding} 不能设为 `None` */
+export function parseDiagnostics(source: ScriptInput, diagnostics: Uint32Array): ParsedDiagnostics {
     const parsed = [];
     const bufLen = diagnostics.length;
     for (let i = 0; i < bufLen; i += 5) {
@@ -148,12 +155,7 @@ export function parseDiagnostics(
 }
 
 /** 生成诊断 range 的字符串 */
-function formatRange(range: {
-    startLineNumber: number;
-    startColumn: number;
-    endLineNumber: number;
-    endColumn: number;
-}): string {
+function formatRange(range: IRange): string {
     if (range.startLineNumber === range.endLineNumber) {
         if (range.startColumn === range.endColumn) {
             return `${range.startLineNumber}:${range.startColumn}`;

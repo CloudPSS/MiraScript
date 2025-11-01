@@ -16,4 +16,4 @@ mimalloc = ["dep:mimalloc"]
 serde = "1"
 mimalloc = { version = "0.1", optional = true }
 mira-core = { path = "../core", features = ["serde"] }
-pyo3 = { version = "0.25", features = ["abi3-py37"] }
+pyo3 = { version = "0.27", features = ["abi3-py37"] }

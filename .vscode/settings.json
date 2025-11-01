@@ -40,7 +40,7 @@
   },
   "coverage-gutters.coverageBaseDir": "**/coverage",
   "coverage-gutters.coverageFileNames": ["lcov.info"],
-  "cSpell.words": ["cloudpss", "mirascript"],
+  "cSpell.words": ["cloudpss", "mirascript", "napi"],
   "editor.tabSize": 2,
   "files.eol": "\n",
   "npm.packageManager": "pnpm",
