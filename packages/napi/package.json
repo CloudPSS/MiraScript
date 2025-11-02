@@ -1,6 +1,6 @@
 {
   "name": "@mirascript/napi",
-  "type": "commonjs",
+  "type": "module",
   "version": "0.1.2",
   "description": "MiraScript compiler for Node.JS",
   "main": "dist/index.js",
@@ -23,18 +23,13 @@
     "node": ">= 16"
   },
   "scripts": {
-    "artifacts": "napi artifacts",
-    "bench": "node --import @oxc-node/core/register benchmark/bench.ts",
     "build": "pnpm run build:debug --release",
-    "build:debug": "napi build --manifest-path ../../crates/napi/Cargo.toml --output-dir dist --platform",
-    "prepublishOnly": "napi prepublish -t npm",
-    "preversion": "napi build --platform && git add .",
-    "version": "napi version"
+    "build:debug": "napi build --manifest-path ../../crates/napi/Cargo.toml --output-dir dist --platform --esm",
+    "watch": "nodemon --watch ../../crates/ --ext rs --exec \"pnpm run build:debug\""
   },
   "devDependencies": {
-    "@types/node": "^24.9.2",
     "@napi-rs/cli": "^3.4.1",
-    "cargo-cp-artifact": "^0.1.9",
+    "@types/node": "^24.9.2",
     "nodemon": "^3.1.10"
   }
 }

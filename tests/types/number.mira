@@ -19,6 +19,18 @@ t_eq(n_zero - n_zero, zero);
 t_eq(n_zero + n_zero, n_zero);
 t_eq(1 / zero, inf);
 t_eq(-1 / zero, -inf);
+t_eq(1e200 / 1e-200, inf);
+t_eq(-1e200 / 1e-200, -inf);
+t_eq(inf + inf, inf);
+t_eq(-inf + -inf, -inf);
+t_eq(inf - inf, nan);
+t_eq(-inf - -inf, nan);
+t_eq(inf * 0, nan);
+t_eq(-inf * 0, nan);
+t_eq(inf / inf, nan);
+t_eq(-inf / -inf, nan);
+t_eq(inf / -inf, nan);
+t_eq(-inf / inf, nan);
 
 t_true(nan != nan);
 t_false(nan =~ nan);
