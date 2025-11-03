@@ -141,11 +141,6 @@ export const $Eq = (a: VmAny, b: VmAny): boolean => {
 export const $Neq = (a: VmAny, b: VmAny): boolean => {
     return !$Eq(a, b);
 };
-const stringComparer = new Intl.Collator('en', {
-    usage: 'sort',
-    numeric: false,
-    sensitivity: 'base',
-});
 export const $Aeq = (a: VmAny, b: VmAny): boolean => {
     if (overloadNumberString(a, b)) {
         const an = $ToNumber(a);
@@ -163,7 +158,9 @@ export const $Aeq = (a: VmAny, b: VmAny): boolean => {
         const as = $ToString(a);
         const bs = $ToString(b);
         if (as === bs) return true;
-        return stringComparer.compare(as, bs) === 0;
+        const ai = as.toLowerCase().normalize('NFC');
+        const bi = bs.toLowerCase().normalize('NFC');
+        return ai === bi;
     }
 };
 export const $Naeq = (a: VmAny, b: VmAny): boolean => {

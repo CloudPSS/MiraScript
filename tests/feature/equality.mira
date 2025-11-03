@@ -37,9 +37,12 @@ t_true('abc' =~ 'abc');
 t_false('abc' == 'ABC');
 t_true('abc' =~ 'ABC');
 t_false('e' == 'é');
-t_true('e' =~ 'é');
+t_false('e' =~ 'é');
 t_false('abc' == 'ab');
 t_false('abc' =~ 'ab');
+// Unicode normalization
+t_false('é' == 'é');
+t_true('é' =~ 'é');
 
 // aeq should convert to number or string
 t_false(1 == '1');
