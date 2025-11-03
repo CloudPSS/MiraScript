@@ -154,7 +154,7 @@ export const $Aeq = (a: VmAny, b: VmAny): boolean => {
         const base = min(abs(an), abs(bn));
         return absoluteDifference < base * EPS;
     } else {
-        // For strings, we use localeCompare for case-insensitive accent-insensitive comparison
+        // For strings, we use normalized case-insensitive comparison
         const as = $ToString(a);
         const bs = $ToString(b);
         if (as === bs) return true;
