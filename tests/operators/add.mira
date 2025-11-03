@@ -1,0 +1,17 @@
+t_eq(1 + 2, 3);
+t_eq(0 + 0, 0);
+t_eq(0 + -0, 0);
+t_eq((-0) + -0, -0);
+t_eq((-0) + 0, 0);
+t_eq(inf + inf, inf);
+t_eq((-inf) + (-inf), -inf);
+t_eq(inf + (-inf), nan);
+t_eq((-inf) + inf, nan);
+t_eq(nan + 1, nan);
+t_eq(nan + nan, nan);
+t_eq(nan + inf, nan);
+t_eq(inf + nan, nan);
+
+t_eq(nil + true, 1);
+t_eq(nil + false, 0);
+t_eq('12' + '3.5', 15.5);
