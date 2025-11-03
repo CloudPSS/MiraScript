@@ -158,9 +158,12 @@ export const $Aeq = (a: VmAny, b: VmAny): boolean => {
         const as = $ToString(a);
         const bs = $ToString(b);
         if (as === bs) return true;
-        const ai = as.toLowerCase().normalize('NFC');
-        const bi = bs.toLowerCase().normalize('NFC');
-        return ai === bi;
+        const ai = as.toLowerCase();
+        const bi = bs.toLowerCase();
+        if (ai === bi) return true;
+        const an = ai.normalize('NFC');
+        const bn = bi.normalize('NFC');
+        return an === bn;
     }
 };
 export const $Naeq = (a: VmAny, b: VmAny): boolean => {
