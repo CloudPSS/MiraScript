@@ -1,6 +1,6 @@
 import { isVmFunction, type VmFunctionLike, type VmFunction } from './function.js';
-import { VmExtern } from './extern.js';
-import { VmWrapper } from './wrapper.js';
+import { isVmExtern, VmExtern } from './extern.js';
+import { isVmWrapper } from './wrapper.js';
 import type { VmAny, VmConst, VmModule, VmPrimitive, VmValue } from './index.js';
 import { $Call } from '../operations.js';
 import { defineProperty, apply } from '../../helpers/utils.js';
@@ -55,7 +55,7 @@ export function wrapToVmValue(
             return new VmExtern(value as () => never, thisArg);
         }
         case 'object': {
-            if (value instanceof VmWrapper) return value as VmModule | VmExtern;
+            if (isVmWrapper(value)) return value as VmModule | VmExtern;
             if (value instanceof Date) return value.valueOf();
             if (assumeVmValue?.(value)) return value;
             // Only functions preserve thisArg
@@ -80,7 +80,7 @@ export function unwrapFromVmValue(value: VmAny): unknown {
         return toVmFunctionProxy(value);
     }
     if (value == null || typeof value != 'object') return value;
-    if (!(value instanceof VmExtern)) return value;
+    if (!isVmExtern(value)) return value;
 
     if (value.thisArg == null || typeof value.value != 'function') {
         return value.value;

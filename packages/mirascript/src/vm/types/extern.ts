@@ -82,7 +82,7 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
     }
     /** @inheritdoc */
     override same(other: VmAny): boolean {
-        if (!(other instanceof VmExtern)) return false;
+        if (!isVmExtern(other)) return false;
         return this.value === other.value && this.thisArg === other.thisArg;
     }
     /** @inheritdoc */
@@ -127,4 +127,11 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
         }
         return tag;
     }
+}
+
+const kVmExtern = Symbol.for('mirascript.vm.extern');
+Object.defineProperty(VmExtern.prototype, kVmExtern, { value: true });
+/** 检查值是否为 Mirascript 外部值 */
+export function isVmExtern<T extends object>(value: unknown): value is VmExtern<T> {
+    return value != null && typeof value == 'object' && kVmExtern in value;
 }

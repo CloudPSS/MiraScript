@@ -26,3 +26,10 @@ export abstract class VmWrapper<T extends object> {
         return `<${this.type} ${this.describe}>`;
     }
 }
+
+const kVmWrapper = Symbol.for('mirascript.vm.wrapper');
+Object.defineProperty(VmWrapper.prototype, kVmWrapper, { value: true });
+/** 检查值是否为 MiraScript 包装器 */
+export function isVmWrapper<T extends object>(value: unknown): value is VmWrapper<T> {
+    return value != null && typeof value == 'object' && kVmWrapper in value;
+}

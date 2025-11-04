@@ -1,24 +1,23 @@
 import { VmError } from './error.js';
 import {
-    isVmArray,
-    VmModule,
-    VmExtern,
-    isVmRecord,
-    getVmFunctionInfo,
     isVmPrimitive,
+    isVmArray,
+    isVmRecord,
+    isVmFunction,
+    isVmExtern,
+    isVmModule,
+    isVmWrapper,
+    getVmFunctionInfo,
     type TypeName,
     type VmAny,
     type VmImmutable,
     type VmRecord,
     type VmValue,
-    isVmFunction,
     type VmArray,
     type VmConst,
-    isVmExtern,
     type VmPrimitive,
     type VmFunction,
 } from './types/index.js';
-import { VmWrapper } from './types/wrapper.js';
 import { hasOwnEnumerable, isNaN, isSafeInteger, keys, create } from '../helpers/utils.js';
 
 const { abs, min, trunc, ceil } = Math;
@@ -33,8 +32,8 @@ const isSame = (a: VmValue, b: VmValue): boolean => {
     // Any primitives and functions arrive here are not equal
     if (a == null || typeof a != 'object' || b == null || typeof b != 'object') return false;
     // Handle wrapper values
-    if (a instanceof VmWrapper) return a.same(b);
-    if (b instanceof VmWrapper) return b.same(a);
+    if (isVmWrapper(a)) return a.same(b);
+    if (isVmWrapper(b)) return b.same(a);
     // Handle array values
     if (isVmArray(a) && isVmArray(b)) {
         const len = a.length;
@@ -196,7 +195,7 @@ export const $In = (value: VmAny, iterable: VmAny): boolean => {
         return iterable.some((item = null) => isSame(item, value));
     }
     // iterable is a record or an extern here, value should be a string
-    if (iterable instanceof VmWrapper) return iterable.has($ToString(value));
+    if (isVmWrapper(iterable)) return iterable.has($ToString(value));
     if (typeof iterable == 'object') return hasOwnEnumerable(iterable, $ToString(value));
     iterable satisfies VmPrimitive | VmFunction;
     return false;
@@ -217,7 +216,7 @@ export const $Length = (value: VmAny): number => {
     $AssertInit(value);
     if (isVmArray(value)) return value.length;
     if (isVmRecord(value)) return keys(value).length;
-    if (value instanceof VmWrapper) {
+    if (isVmWrapper(value)) {
         return value.keys().length;
     }
     return Number.NaN;
@@ -285,7 +284,7 @@ export const $Call = (func: VmValue, args: readonly VmAny[]): VmValue => {
     for (const a of args) {
         $AssertInit(a);
     }
-    if (func instanceof VmExtern) {
+    if (isVmExtern(func)) {
         return func.call(args as readonly VmValue[]) ?? null;
     }
     if (isVmFunction(func)) {
@@ -295,8 +294,8 @@ export const $Call = (func: VmValue, args: readonly VmAny[]): VmValue => {
 };
 export const $Type = (value: VmAny): TypeName => {
     if (value === undefined || value === null) return 'nil';
-    if (value instanceof VmExtern) return 'extern';
-    if (value instanceof VmModule) return 'module';
+    if (isVmExtern(value)) return 'extern';
+    if (isVmModule(value)) return 'module';
     if (isVmArray(value)) return 'array';
     if (typeof value == 'object') return 'record';
     return typeof value as TypeName;
@@ -316,7 +315,7 @@ function numberToString(value: number): string {
 /** 将值转为字符串 */
 function innerToString(value: VmAny, useBraces: boolean): string {
     if (value == null) return 'nil';
-    if (value instanceof VmWrapper) return value.toString();
+    if (isVmWrapper(value)) return value.toString();
     if (typeof value == 'function') {
         const name = getVmFunctionInfo(value)?.fullName;
         return name ? `<function ${name}>` : `<function>`;
@@ -397,7 +396,7 @@ export const $Has = (obj: VmAny, key: VmAny): boolean => {
     $AssertInit(obj);
     const pk = $ToString(key);
     if (obj == null || typeof obj != 'object') return false;
-    if (obj instanceof VmWrapper) return obj.has(pk);
+    if (isVmWrapper(obj)) return obj.has(pk);
     return hasOwnEnumerable(obj, pk);
 };
 export const $Get = (obj: VmAny, key: VmAny): VmValue => {
@@ -409,7 +408,7 @@ export const $Get = (obj: VmAny, key: VmAny): VmValue => {
     }
     const pk = $ToString(key);
     if (obj == null || typeof obj != 'object') return null;
-    if (obj instanceof VmWrapper) return obj.get(pk) ?? null;
+    if (isVmWrapper(obj)) return obj.get(pk) ?? null;
     if (!hasOwnEnumerable(obj, pk)) return null;
     return (obj as Record<string, VmImmutable>)[pk] ?? null;
 };
@@ -423,7 +422,7 @@ export const $Set = (obj: VmAny, key: VmAny, value: VmAny): void => {
 };
 export const $Iterable = (value: VmAny): Iterable<VmValue | undefined> => {
     $AssertInit(value);
-    if (value instanceof VmWrapper) return value.keys();
+    if (isVmWrapper(value)) return value.keys();
     if (isVmArray(value)) return value;
     if (value != null && typeof value == 'object') return keys(value);
     throw new VmError(`Value is not iterable`, isVmFunction(value) ? [] : [value]);

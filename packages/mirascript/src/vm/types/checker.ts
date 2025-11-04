@@ -1,15 +1,8 @@
 import { getPrototypeOf, isArray, values } from '../../helpers/utils.js';
-import {
-    isVmFunction,
-    VmModule,
-    type VmAny,
-    type VmArray,
-    type VmConst,
-    type VmImmutable,
-    type VmRecord,
-    type VmValue,
-} from './index.js';
-import { VmWrapper } from './wrapper.js';
+import type { VmAny, VmArray, VmConst, VmImmutable, VmRecord, VmValue } from './index.js';
+import { isVmWrapper } from './wrapper.js';
+import { isVmModule } from './module.js';
+import { isVmFunction } from './function.js';
 
 const MAX_DEPTH = 32;
 /**
@@ -59,7 +52,7 @@ function isVmConstInner(value: unknown, depth: number): value is VmConst {
             return true;
         case 'object':
             if (value == null) return true;
-            if (value instanceof VmWrapper) return false;
+            if (isVmWrapper(value)) return false;
             if (isArray(value)) {
                 return isVmArrayDeep(value, depth);
             } else {
@@ -92,7 +85,7 @@ export function isVmConst(value: unknown, checkDeep = false): value is VmConst {
             return true;
         case 'object':
             if (value == null) return true;
-            if (value instanceof VmWrapper) return false;
+            if (isVmWrapper(value)) return false;
             if (!checkDeep) {
                 if (isArray(value)) {
                     return isVmArrayDeep(value, 0);
@@ -122,7 +115,7 @@ export function isVmImmutable(value: unknown, checkDeep: boolean): value is VmIm
  * 检查是否为 Mirascript 不可变值
  */
 export function isVmImmutable(value: unknown, checkDeep = false): value is VmImmutable {
-    return value instanceof VmModule || isVmFunction(value) || isVmConst(value, checkDeep);
+    return isVmModule(value) || isVmFunction(value) || isVmConst(value, checkDeep);
 }
 /**
  * 检查是否为 Mirascript 合法值
@@ -152,7 +145,7 @@ export function isVmAny(value: unknown, checkDeep: boolean): value is VmAny {
             return true;
         case 'object':
             if (value == null) return true;
-            if (value instanceof VmWrapper) return true;
+            if (isVmWrapper(value)) return true;
             return isVmConst(value, checkDeep);
         case 'function':
             return isVmFunction(value);
