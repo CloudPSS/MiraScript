@@ -1,4 +1,4 @@
-t_throws(fn { eo::with('x') });
+t_throws(fn { ()::with('x') });
 t_throws(fn { nil::with('x', 1) });
 t_throws(fn { nil::with(1, 2) });
 t_throws(fn { nil::with([1], 2) });
