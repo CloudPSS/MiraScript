@@ -1,4 +1,4 @@
-// 测试 nil 及运算符本身
+// nil
 t_true(nil == nil);
 t_false(nil != nil);
 t_true(nil =~ nil);
@@ -30,6 +30,8 @@ t_true(+0 == -0);
 t_true(+0 =~ -0);
 t_true(1 !~ nan);
 t_true(1 != nan);
+t_true(nan !~ nan);
+t_true(nan != nan);
 
 // string
 t_true('abc' == 'abc');
