@@ -7,6 +7,8 @@ import { unwrapFromVmValue, wrapToVmValue } from './boundary.js';
 const ObjectPrototype = Object.prototype;
 // eslint-disable-next-line @typescript-eslint/unbound-method
 const ObjectToString = ObjectPrototype.toString;
+// eslint-disable-next-line @typescript-eslint/unbound-method
+const FunctionToString = Function.prototype.toString;
 /** 包装 Mirascript `extern` 类型的对象 */
 export class VmExtern<const T extends object = object> extends VmWrapper<T> {
     constructor(
@@ -89,7 +91,7 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
     override toString(): string {
         // eslint-disable-next-line @typescript-eslint/unbound-method
         const { toString } = this.value;
-        if (typeof toString != 'function' || toString === ObjectToString) {
+        if (typeof toString != 'function' || toString === ObjectToString || toString === FunctionToString) {
             return super.toString();
         }
         try {
