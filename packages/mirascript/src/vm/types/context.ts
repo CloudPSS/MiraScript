@@ -29,6 +29,8 @@ export interface VmContext {
     readonly [kVmContext]: true;
     /** 枚举所有 key，仅在 LSP 中使用 */
     keys(): Iterable<string>;
+    /** 描述值，返回 MarkDown 文本，仅在 LSP 中使用 */
+    describe?(key: string): string | undefined;
     /** 获取指定 key 的值 `global[key]` */
     get(key: string): VmValue;
     /** 查找指定 key 是否存在 `key in global` */
@@ -91,7 +93,11 @@ class ValueVmContext implements VmContext {
     has(key: string): boolean {
         return key in this.env;
     }
-    constructor(private readonly env: VmContextRecord) {}
+    constructor(
+        private readonly env: VmContextRecord,
+        /** @inheritdoc */
+        readonly describe?: (key: string) => string | undefined,
+    ) {}
 }
 
 /** 以工厂函数为后备的实现 */
@@ -115,30 +121,36 @@ class FactoryVmContext implements VmContext {
     constructor(
         private readonly getter: (key: string) => VmValue | undefined,
         private readonly enumerator?: () => Iterable<string>,
+        /** @inheritdoc */
+        readonly describe?: (key: string) => string | undefined,
     ) {}
 }
 
+/** 以值为后备的实现 */
+type CreateVmContextWithValues = readonly [
+    vmValues?: VmContextRecord | null | undefined,
+    externValues?: Record<string, unknown> | null | undefined,
+    describer?: ((key: string) => string | undefined) | null | undefined,
+];
+/** 以工厂函数为后备的实现 */
+type CreateVmContextWithFactory = readonly [
+    getter: (key: string) => VmValue | undefined,
+    enumerator?: (() => Iterable<string>) | null | undefined,
+    describer?: ((key: string) => string | undefined) | null | undefined,
+];
+
 /** 创建用于执行脚本的执行上下文 */
-export function createVmContext(
-    ...args:
-        | readonly [
-              vmValues?: VmContextRecord | null | undefined,
-              externValues?: Record<string, unknown> | null | undefined,
-          ]
-        | readonly [
-              getter: (key: string) => VmValue | undefined,
-              enumerator?: (() => Iterable<string>) | null | undefined,
-          ]
-): VmContext {
+export function createVmContext(...args: CreateVmContextWithValues | CreateVmContextWithFactory): VmContext {
     if (args[0] == null && args[1] == null) {
         return { ...DefaultVmContext };
     }
 
     if (typeof args[0] == 'function') {
-        return new FactoryVmContext(args[0], args[1] as (() => Iterable<string>) | undefined);
+        const [getter, enumerator, describer] = args as CreateVmContextWithFactory;
+        return new FactoryVmContext(getter, enumerator ?? undefined, describer ?? undefined);
     }
 
-    const [vmValues, externValues] = args;
+    const [vmValues, externValues, describer] = args as CreateVmContextWithValues;
     const env = create(VmSharedContext) as VmContextRecord;
     if (vmValues) {
         for (const [key, value] of entries(vmValues)) {
@@ -147,11 +159,11 @@ export function createVmContext(
         }
     }
     if (externValues) {
-        for (const [key, value] of entries(externValues as Record<string, unknown>)) {
+        for (const [key, value] of entries(externValues)) {
             env[key] = value == null ? null : wrapToVmValue(value, null);
         }
     }
-    return new ValueVmContext(env);
+    return new ValueVmContext(env, describer ?? undefined);
 }
 
 /** 检查是否为执行上下文 */

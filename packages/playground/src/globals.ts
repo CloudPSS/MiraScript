@@ -63,5 +63,11 @@ export function globals(consoleManager: ConsoleManager): VmContext {
             },
             globalThis,
         },
+        (key) => {
+            if (['title', 'name', 'age', 'active', 'register_date', 'scores'].includes(key)) {
+                return `用于 “Template” 示例的全局变量`;
+            }
+            return undefined;
+        },
     );
 }

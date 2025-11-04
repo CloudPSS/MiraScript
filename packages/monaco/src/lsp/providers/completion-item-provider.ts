@@ -185,6 +185,8 @@ interface CustomCompletionItem extends languages.CompletionItem {
     isField: boolean;
     /** 对应的变量值 */
     vmValue?: VmValue;
+    /** 描述 */
+    vmDescribe?: string;
 }
 
 /** 构造 filterText */
@@ -288,10 +290,12 @@ export class CompletionItemProvider extends Provider implements languages.Comple
                 continue;
             }
 
+            const doc = global.describe?.(key) ?? undefined;
             suggestions.push({
                 insertText: localKeys.has(key) ? `global.${key}` : key, // 如果有同名局部变量，使用 global. 前缀
                 filterText: filterText(key, char),
                 range,
+                vmDescribe: doc,
                 ...completion(model, DESC_GLOBAL, key, element, undefined, false),
             });
         }
@@ -482,14 +486,14 @@ export class CompletionItemProvider extends Provider implements languages.Comple
             // not a dynamic completion item
             return item;
         }
-        const { vmValue, isField } = item as CustomCompletionItem;
+        const { vmValue, isField, vmDescribe } = item as CustomCompletionItem;
         const { label } = item.label;
-        if (vmValue != null) {
+        if (vmValue != null || vmDescribe) {
             if (item.documentation) return item;
             const last = label.split('.').pop()!;
             const def = valueDoc(last, vmValue, isField ? 'field' : 'hint');
             item.documentation = {
-                value: `${codeblock('\0' + def.script)}\n${def.doc.join('\n')}`,
+                value: `${codeblock('\0' + def.script)}\n${def.doc.join('\n')}\n${vmDescribe ?? ''}`,
             };
         }
         return item;
