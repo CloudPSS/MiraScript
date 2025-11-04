@@ -4,7 +4,12 @@ t_throws(fn { nil::with(1, 2) });
 t_throws(fn { nil::with([1], 2) });
 t_throws(fn { v_fn::with() });
 t_throws(fn { 1::with() });
-t_throws(fn { v_extern::with() });
+if has_extern {
+  t_throws(fn { v_extern::with() });
+}
+if has_module {
+  t_throws(fn { v_module::with() });
+}
 
 let eo = ();
 let ea = [];
