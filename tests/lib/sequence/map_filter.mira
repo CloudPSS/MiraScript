@@ -26,6 +26,14 @@ t_eq(map((a: 1, b: 2, c: 3), fn (x) {
   if x > 2 { x } else { nil }
 }), (a: nil, b: nil, c: 3));
 
+// 测试 map 返回 function 的情况
+t_eq(map([1, 2], fn (x) {
+  return fn { };
+}), [nil, nil]);
+t_eq(map((a: 1, b: 2, c: nil), fn (x) {
+  return fn { };
+}), (a: nil, b: nil, c: nil));
+
 // 测试 filter 函数
 
 // 测试 filter 对基本类型的操作
@@ -42,7 +50,7 @@ t_eq(filter([], fn (x) { true }), []);
 
 // 测试 filter 对记录的操作
 t_eq(filter((a: 1, b: 2, c: 3, d: 4), fn (x) { x % 2 == 0 }), (b: 2, d: 4));
-t_eq(filter((a: 1, b: 2, c: 3), fn (x, k) { k != "b" }), (a: 1, c: 3));
+t_eq(filter((a: 1, b: 2, c: 3, d: nil), fn (x, k) { k != "b" }), (a: 1, c: 3, d: nil));
 t_eq(filter((), fn (x) { true }), ());
 
 // 测试 filter_map 函数

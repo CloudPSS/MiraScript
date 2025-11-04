@@ -167,11 +167,7 @@ export function map(
             Cp();
             const ret = mapper(data[i] ?? null, i, data);
             if (ret === undefined) continue;
-            if (isVmConst(ret)) {
-                result.push(ret);
-            } else {
-                result.push(null);
-            }
+            result.push(ret);
         }
         return result;
     } else {
@@ -180,11 +176,7 @@ export function map(
             Cp();
             const ret = mapper(value ?? null, key, data);
             if (ret === undefined) continue;
-            if (isVmConst(ret)) {
-                e.push([key, ret]);
-            } else {
-                e.push([key, null]);
-            }
+            e.push([key, ret]);
         }
         return fromEntries(e);
     }
