@@ -1,6 +1,6 @@
 {
   "name": "@mirascript/wasm",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "type": "module",
   "description": "MiraScript compiler for WebAssembly",
   "main": "dist/index.js",
