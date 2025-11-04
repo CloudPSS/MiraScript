@@ -30,6 +30,13 @@ t_eq([]::with([1, 2, 3, 4], 1), [nil, [nil, nil, [nil, nil, nil, [nil, nil, nil,
 
 let obj = (x: 1);
 t_eq(obj::with('x', 2), (x: 2));
+t_eq(obj::with(['x', 'y'], 2), (x: (y: 2)));
+t_eq(obj::with(['x', '1'], 2), (x: (1: 2)));
+t_eq(obj::with(['x', 1], 2), (x: [nil, 2]));
+t_eq(obj::with(['x', 1.2], 2), (x: ('1.2': 2)));
+t_eq(obj::with('x.y.z', 2), (x: 1, 'x.y.z': 2));
+t_eq(obj::with('x/y/z', 2), (x: 1, 'x/y/z': 2));
+t_eq(obj::with('x\0y\0z', 2), (x: 1, 'x\0y\0z': 2));
 t_eq(obj::with('y', 2), (x: 1, y: 2));
 t_eq(obj, (x: 1)); // no modify
 t_eq(obj::with(['z'], 3), (x: 1, z: 3));
