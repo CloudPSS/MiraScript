@@ -9,9 +9,11 @@ test('cli print', async (t) => {
     t.snapshot(print(true));
     t.snapshot(print(false));
     t.snapshot(print(0));
+    t.snapshot(print(-0));
     t.snapshot(print(Number.NEGATIVE_INFINITY));
     t.snapshot(print(Number.POSITIVE_INFINITY));
     t.snapshot(print(Number.NaN));
+    t.snapshot(print([+0, -0, Number.NaN]));
     t.snapshot(print('Hello, world!'));
     t.snapshot(print('Hello, world!\nNew line.\tTabbed.\\Backslash. "Double quotes". \'Single quotes\'.'));
     const context = createVmContext();

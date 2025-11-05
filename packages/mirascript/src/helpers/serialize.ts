@@ -67,7 +67,7 @@ const DEFAULT_OPTIONS = Object.freeze({
 } satisfies SerializeOptions);
 
 /** 获取选项 */
-export function getSerializeOptions(options: Partial<SerializeOptions> | undefined): SerializeOptions {
+function getSerializeOptions(options: Partial<SerializeOptions> | undefined): SerializeOptions {
     if (options == null) return DEFAULT_OPTIONS;
     const opt = { ...DEFAULT_OPTIONS };
     for (const key in options) {
@@ -157,17 +157,17 @@ export function serializePropName(value: string, options?: Partial<SerializeOpti
 }
 
 /** 序列化 nil 值 */
-function serializeNil(): string {
+export function serializeNil(): string {
     return 'nil';
 }
 
 /** 序列化布尔值 */
-function serializeBoolean(value: boolean): string {
+export function serializeBoolean(value: boolean): string {
     return value ? 'true' : 'false';
 }
 
 /** 序列化数字 */
-function serializeNumber(value: number): string {
+export function serializeNumber(value: number): string {
     if (isNaN(value)) return 'nan';
     if (!isFinite(value)) return value < 0 ? '-inf' : 'inf';
     if (value === 0) {
@@ -178,7 +178,7 @@ function serializeNumber(value: number): string {
 }
 
 /** 序列化数组 */
-function serializeArray(value: VmArray, depth: number, options: SerializeOptions): string {
+export function serializeArray(value: VmArray, depth: number, options: SerializeOptions): string {
     if (depth > options.maxDepth) return `[]`;
     if (value.length === 0) return '[]';
     let str = '[';
@@ -207,7 +207,7 @@ function customValueOf(value: VmRecord): VmAny | undefined {
 }
 
 /** 序列化记录 */
-function serializeRecord(value: VmRecord, depth: number, options: SerializeOptions): string {
+export function serializeRecord(value: VmRecord, depth: number, options: SerializeOptions): string {
     const customValue = customValueOf(value);
     if (customValue !== undefined) {
         return serializeImpl(customValue, depth - 1, options);
