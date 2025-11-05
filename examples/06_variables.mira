@@ -82,7 +82,7 @@ debug_print("Language:", lang);
 
 // 可变性在解构中的应用
 let original_data = (a: 1, b: 2, c: 3);
-let (a: immutable_a, mut mutable_b, c: mut mutable_c) = original_data;
+let (a: immutable_a, b: mut mutable_b, c: mut mutable_c) = original_data;
 
 debug_print("解构时的可变性:");
 debug_print("Immutable a:", immutable_a);

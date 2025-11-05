@@ -1,4 +1,4 @@
-import { lib, VmSharedContext } from '@mirascript/mirascript/subtle';
+import { VmSharedContext } from '@mirascript/mirascript/subtle';
 import {
     createVmContext,
     getVmFunctionInfo,
@@ -9,7 +9,6 @@ import {
     type VmContext,
 } from '@mirascript/mirascript';
 import type { ConsoleManager } from './console-manager.js';
-import { escapeHtml, print } from './utils.js';
 
 /** 创建全局环境 */
 export function globals(consoleManager: ConsoleManager): VmContext {
@@ -18,12 +17,7 @@ export function globals(consoleManager: ConsoleManager): VmContext {
 
     /** 创建简单的 debug_print 函数 */
     function debugPrint(...args: VmAny[]) {
-        lib.debug_print(...args);
-        const messages = args.map(async (arg) => {
-            if (typeof arg === 'string') return escapeHtml(arg);
-            return print(arg);
-        });
-        consoleManager.log(Promise.all(messages).then((message) => message.join(' ')));
+        consoleManager.log(args);
     }
     return createVmContext(
         {

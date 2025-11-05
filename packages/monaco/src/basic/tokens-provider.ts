@@ -187,7 +187,7 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                                 ['punctuation.section.embedded', { cases: identifierCases({ next: '@pop' }) }],
                             ],
                             [
-                                `(${dollarRegex}\\{)`,
+                                String.raw`(${dollarRegex}\{)`,
                                 {
                                     token: 'punctuation.section.embedded',
                                     bracket: '@open',
@@ -195,7 +195,7 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                                 },
                             ],
                             [
-                                `(${dollarRegex}\\()`,
+                                String.raw`(${dollarRegex}\()`,
                                 {
                                     token: 'punctuation.section.embedded',
                                     bracket: '@open',

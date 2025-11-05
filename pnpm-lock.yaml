@@ -90,7 +90,7 @@ importers:
         specifier: workspace:~
         version: link:../wasm
       monaco-editor:
-        specifier: npm:@private/monaco-editor@^0.0.53
+        specifier: npm:@private/monaco-editor
         version: '@private/monaco-editor@0.0.53'
     devDependencies:
       type-fest:

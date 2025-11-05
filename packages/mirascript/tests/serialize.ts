@@ -5,17 +5,17 @@ import { VmExtern } from '../dist/index.js';
 
 test('serializeString', (t) => {
     t.is(serializeString('Hello, World!'), `'Hello, World!'`);
-    t.is(serializeString("He said, 'Hello!'\n"), `'He said, \\'Hello!\\'\\n'`);
+    t.is(serializeString("He said, 'Hello!'\n"), String.raw`'He said, \'Hello!\'\n'`);
     t.is(serializeString('你好，世界！'), `'你好，世界！'`);
     t.is(serializeString('こんにちは、世界！'), `'こんにちは、世界！'`);
     t.is(serializeString('👋🌍'), `'👋🌍'`);
-    t.is(serializeString('\0\u0001\n\r\t\b\f\v\\'), `'\\0\\x01\\n\\r\\t\\b\\f\\v\\\\'`);
-    t.is(serializeString('\u202A\u{E0001}'), `'\\u{202a}\\u{e0001}'`);
-    t.is(serializeString("'"), `'\\''`);
+    t.is(serializeString('\0\u0001\n\r\t\b\f\v\\'), String.raw`'\0\x01\n\r\t\b\f\v\\'`);
+    t.is(serializeString('\u202A\u{E0001}'), String.raw`'\u{202a}\u{e0001}'`);
+    t.is(serializeString("'"), String.raw`'\''`);
     t.is(serializeString('"'), `'"'`);
     t.is(serializeString('`'), "'`'");
     t.is(serializeString('`\'"'), `'\`\\'"'`);
-    t.is(serializeString('$a'), `'\\$a'`);
+    t.is(serializeString('$a'), String.raw`'\$a'`);
     t.is(
         serializeString('\u000A\u000D\u001C\u001D\u0085\u2028\u2029\uFEFF'),
         `'\\n\\r\\x1c\\x1d\\u{85}\u2028\u2029\\u{feff}'`,

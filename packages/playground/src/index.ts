@@ -233,9 +233,9 @@ async function compileScript(): Promise<VmScript | undefined> {
 
         return script;
     } catch (ex) {
+        const compEnd = performance.now();
         // eslint-disable-next-line no-console
         console.error('\u001B[41;37m MiraScript Playground \u001B[0m', ex);
-        const compEnd = performance.now();
         const errorText = String(ex);
         elCompiledOutput.dataset['code'] = '';
         elCompiledOutput.innerHTML = /*html*/ `
@@ -271,9 +271,9 @@ async function runScript(script: VmScript): Promise<void> {
         }
         consoleManager.info(`Execution completed successfully in ${(execEnd - execStart).toFixed(3)}ms`);
     } catch (ex) {
+        const execEnd = performance.now();
         // eslint-disable-next-line no-console
         console.error('\u001B[41;37m MiraScript Playground \u001B[0m', ex);
-        const execEnd = performance.now();
         const errorText = String(ex);
         elResultOutput.innerHTML = /* html */ `
             <div class="section-title">Execution Error:</div>

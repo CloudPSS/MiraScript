@@ -7,10 +7,10 @@ const TEST_DIR = new URL('../../../tests', import.meta.url);
 const compileAndRun = test.macro<[string]>({
     exec: async (t, file) => {
         const codeUrl = new URL(`./tests/${file}`, TEST_DIR);
-        const code = await fs.promises.readFile(codeUrl, 'utf8');
+        const code = await fs.promises.readFile(codeUrl, 'utf-8');
 
         const expectedUrl = new URL(`./tests/${file}.jsonl`, TEST_DIR);
-        const expected = fs.existsSync(expectedUrl) ? await fs.promises.readFile(expectedUrl, 'utf8') : null;
+        const expected = fs.existsSync(expectedUrl) ? await fs.promises.readFile(expectedUrl, 'utf-8') : null;
         const script = await compile(code, { pretty: true, sourceMap: true, fileName: codeUrl.href });
         const timeout_fn: Array<() => unknown> = [];
         configCheckpoint(file.endsWith('_huge.mira') ? 1000 : undefined);
@@ -70,14 +70,14 @@ const compileAndRun = test.macro<[string]>({
         if (expected != null) {
             t.is(result, expected, `Test ${file} output matches expected output`);
         } else if (result) {
-            await fs.promises.writeFile(expectedUrl, result, 'utf8');
+            await fs.promises.writeFile(expectedUrl, result, 'utf-8');
             t.pass(`Test ${file} output written to ${expectedUrl}`);
         }
     },
     title: (providedTitle = 'test', code) => code || providedTitle,
 });
 
-for (const file of fs.readdirSync(TEST_DIR, { encoding: 'utf8', recursive: true })) {
+for (const file of fs.readdirSync(TEST_DIR, { encoding: 'utf-8', recursive: true })) {
     if (file.endsWith('.mira')) {
         test(compileAndRun, file);
     }
