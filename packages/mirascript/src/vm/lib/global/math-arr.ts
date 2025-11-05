@@ -36,7 +36,7 @@ export const hypot = VmLib(build(Math.hypot), {
 export const sum = VmLib(
     (...values: readonly VmAny[]) => {
         const numbers = getNumbers(values);
-        return numbers.reduce((a, b) => a + b, 0);
+        return numbers.reduce((a, b) => a + b, -0);
     },
     {
         summary: '返回一组数的总和',
