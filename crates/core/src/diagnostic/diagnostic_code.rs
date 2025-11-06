@@ -307,6 +307,8 @@ pub enum DiagnosticCode {
     OmitNamedRecordFieldName,
 
     TagRefEnd = 11999,
+
+    SourceMap = 12000,
 }
 
 impl From<DiagnosticCode> for u16 {
@@ -372,7 +374,11 @@ impl DiagnosticCode {
         *self >= DiagnosticCode::ReferenceStart && *self < DiagnosticCode::ReferenceEnd
     }
 
-    pub fn is_other(&self) -> bool {
-        *self > DiagnosticCode::ReferenceEnd
+    pub fn is_tag(&self) -> bool {
+        *self >= DiagnosticCode::TagStart && *self < DiagnosticCode::TagRefEnd
+    }
+
+    pub fn is_sourcemap(&self) -> bool {
+        *self == DiagnosticCode::SourceMap
     }
 }

@@ -1,7 +1,5 @@
 use std::{borrow::Cow, ops::Deref};
 
-#[cfg(feature = "track_references")]
-use crate::config::track_references;
 use crate::{
     SourceRange,
     diagnostic::{DiagnosticCode, SourceDiagnostic},
@@ -33,7 +31,7 @@ fn number_constant(exp: &Expression<'_>) -> Option<f64> {
     }
 }
 
-impl<'s> Emitter<'s> {
+impl<'s, 'c> Emitter<'s, 'c> {
     fn declare_call(
         &mut self,
         this: Option<&'s Expression<'s>>,
@@ -42,64 +40,51 @@ impl<'s> Emitter<'s> {
         callable: &'s Callable<'s>,
         args: &'s [ArgElement<'s>],
     ) {
-        #[cfg(feature = "track_references")]
-        if track_references() {
+        if self.config.diagnostic_tag {
             let start = this.map_or_else(|| callable.range().start, |c| c.range().start);
             let end = r.range().end;
-            self.diagnostics.push(SourceDiagnostic::new(
-                start..end,
+            self.diagnostics.push(
                 if this.is_some() {
                     DiagnosticCode::ExtensionCall
                 } else {
                     DiagnosticCode::FunctionCall
                 },
-            ));
+                start..end,
+            );
             if let Some(this) = this {
-                self.diagnostics.push(SourceDiagnostic::new(
-                    this.range(),
-                    DiagnosticCode::ArgumentExtension,
-                ));
+                self.diagnostics
+                    .push(DiagnosticCode::ArgumentExtension, this.range());
             }
-            self.diagnostics.push(SourceDiagnostic::new(
-                callable.range(),
-                DiagnosticCode::Callable,
-            ));
-            self.diagnostics.push(SourceDiagnostic::new(
-                l.range(),
-                DiagnosticCode::ArgumentStart,
-            ));
+            self.diagnostics
+                .push(DiagnosticCode::Callable, callable.range());
+            self.diagnostics
+                .push(DiagnosticCode::ArgumentStart, l.range());
             args.iter().for_each(|arg| {
                 match arg.deref() {
                     ArrayElementBase::Element(_) => (),
                     ArrayElementBase::Spread(sp, _) => {
-                        self.diagnostics.push(SourceDiagnostic::new(
-                            sp.range(),
-                            DiagnosticCode::ArgumentSpread,
-                        ));
+                        self.diagnostics
+                            .push(DiagnosticCode::ArgumentSpread, sp.range());
                     }
                 };
                 if let Some(comma) = arg.tail_comma() {
-                    self.diagnostics.push(SourceDiagnostic::new(
-                        comma.range(),
-                        DiagnosticCode::ArgumentComma,
-                    ));
+                    self.diagnostics
+                        .push(DiagnosticCode::ArgumentComma, comma.range());
                 }
             });
-            self.diagnostics.push(SourceDiagnostic::new(
-                r.range(),
-                DiagnosticCode::ArgumentEnd,
-            ));
+            self.diagnostics
+                .push(DiagnosticCode::ArgumentEnd, r.range());
         }
 
         match callable {
             Callable::Expression(callable) => {
                 // 此时的 Grouping 用于标记 callable 为复杂表达式以启用空安全，跳过 declare_expression 的 Grouping 处理
                 let mut declared = false;
-                if let Expression::Grouping(_, inner, _) = callable.as_ref() {
-                    if inner.is_variable() || inner.is_grouping() {
-                        self.declare_expression(inner);
-                        declared = true;
-                    }
+                if let Expression::Grouping(_, inner, _) = callable.as_ref()
+                    && (inner.is_variable() || inner.is_grouping())
+                {
+                    self.declare_expression(inner);
+                    declared = true;
                 }
                 if !declared {
                     self.declare_expression(callable);
@@ -138,14 +123,10 @@ impl<'s> Emitter<'s> {
                         | Expression::Access(..)
                         | Expression::Index(..)
                 ) {
-                    self.diagnostics.push(SourceDiagnostic::new(
-                        op.range(),
-                        DiagnosticCode::UnnecessaryParentheses,
-                    ));
-                    self.diagnostics.push(SourceDiagnostic::new(
-                        cp.range(),
-                        DiagnosticCode::UnnecessaryParentheses,
-                    ));
+                    self.diagnostics
+                        .push(DiagnosticCode::UnnecessaryParentheses, op.range());
+                    self.diagnostics
+                        .push(DiagnosticCode::UnnecessaryParentheses, cp.range());
                 }
                 self.declare_expression(expression)
             }
@@ -208,34 +189,28 @@ impl<'s> Emitter<'s> {
             }
             Block(_, _, _, _) => (),
             Loop(kw_loop, body) => {
-                self.diagnostics.push(SourceDiagnostic::new(
-                    kw_loop.range.start..body.range().end,
+                self.diagnostics.push(
                     DiagnosticCode::LoopExpression,
-                ));
-                self.diagnostics.push(SourceDiagnostic::new(
-                    kw_loop.range(),
-                    DiagnosticCode::KeywordLoop,
-                ));
+                    kw_loop.range.start..body.range().end,
+                );
+                self.diagnostics
+                    .push(DiagnosticCode::KeywordLoop, kw_loop.range());
             }
             While(kw_while, _, body, else_part) => {
                 let else_part = else_part.as_ref();
-                self.diagnostics.push(SourceDiagnostic::new(
+                self.diagnostics.push(
+                    DiagnosticCode::WhileExpression,
                     kw_while.range.start
                         ..else_part
                             .map(|e| e.1.range())
                             .unwrap_or_else(|| body.range())
                             .end,
-                    DiagnosticCode::WhileExpression,
-                ));
-                self.diagnostics.push(SourceDiagnostic::new(
-                    kw_while.range(),
-                    DiagnosticCode::KeywordWhile,
-                ));
+                );
+                self.diagnostics
+                    .push(DiagnosticCode::KeywordWhile, kw_while.range());
                 else_part.iter().for_each(|ElseBlock(kw_else, _)| {
-                    self.diagnostics.push(SourceDiagnostic::new(
-                        kw_else.range(),
-                        DiagnosticCode::KeywordElse,
-                    ));
+                    self.diagnostics
+                        .push(DiagnosticCode::KeywordElse, kw_else.range());
                 });
             }
             ForIn(kw_for, _, kw_in, _, body, else_part) => {
@@ -244,50 +219,38 @@ impl<'s> Emitter<'s> {
                 } else {
                     (None, None)
                 };
-                self.diagnostics.push(SourceDiagnostic::new(
-                    kw_for.range.start..else_body.unwrap_or(body).range().end,
+                self.diagnostics.push(
                     DiagnosticCode::ForExpression,
-                ));
-                self.diagnostics.push(SourceDiagnostic::new(
-                    kw_for.range(),
-                    DiagnosticCode::KeywordFor,
-                ));
-                self.diagnostics.push(SourceDiagnostic::new(
-                    kw_in.range(),
-                    DiagnosticCode::KeywordIn,
-                ));
+                    kw_for.range.start..else_body.unwrap_or(body).range().end,
+                );
+                self.diagnostics
+                    .push(DiagnosticCode::KeywordFor, kw_for.range());
+                self.diagnostics
+                    .push(DiagnosticCode::KeywordIn, kw_in.range());
                 kw_else.iter().for_each(|kw_else| {
-                    self.diagnostics.push(SourceDiagnostic::new(
-                        kw_else.range(),
-                        DiagnosticCode::KeywordElse,
-                    ));
+                    self.diagnostics
+                        .push(DiagnosticCode::KeywordElse, kw_else.range());
                 });
             }
             If(kw_if, _, then_block, else_part) => {
                 let mut else_part = else_part.as_ref();
-                self.diagnostics.push(SourceDiagnostic::new(
+                self.diagnostics.push(
+                    DiagnosticCode::IfExpression,
                     kw_if.range.start
                         ..else_part
                             .map(|e| e.1.range())
                             .unwrap_or_else(|| then_block.range())
                             .end,
-                    DiagnosticCode::IfExpression,
-                ));
-                self.diagnostics.push(SourceDiagnostic::new(
-                    kw_if.range(),
-                    DiagnosticCode::KeywordIf,
-                ));
+                );
+                self.diagnostics
+                    .push(DiagnosticCode::KeywordIf, kw_if.range());
 
                 while let Some(ElseBlock(kw_else, else_block)) = else_part {
-                    self.diagnostics.push(SourceDiagnostic::new(
-                        kw_else.range(),
-                        DiagnosticCode::KeywordElse,
-                    ));
+                    self.diagnostics
+                        .push(DiagnosticCode::KeywordElse, kw_else.range());
                     if let If(kw_if, _, _, next_else_part) = else_block.as_ref() {
-                        self.diagnostics.push(SourceDiagnostic::new(
-                            kw_if.range(),
-                            DiagnosticCode::KeywordIf,
-                        ));
+                        self.diagnostics
+                            .push(DiagnosticCode::KeywordIf, kw_if.range());
                         else_part = next_else_part.as_ref();
                     } else {
                         else_part = None;
@@ -295,14 +258,12 @@ impl<'s> Emitter<'s> {
                 }
             }
             Match(kw_match, _, _, branches, cp) => {
-                self.diagnostics.push(SourceDiagnostic::new(
-                    kw_match.range.start..cp.range.end,
+                self.diagnostics.push(
                     DiagnosticCode::MatchExpression,
-                ));
-                self.diagnostics.push(SourceDiagnostic::new(
-                    kw_match.range(),
-                    DiagnosticCode::KeywordMatch,
-                ));
+                    kw_match.range.start..cp.range.end,
+                );
+                self.diagnostics
+                    .push(DiagnosticCode::KeywordMatch, kw_match.range());
                 self.diagnostics.extend(
                     branches
                         .iter()
@@ -335,7 +296,7 @@ impl<'s> Emitter<'s> {
                     let register = variable.register();
                     variable.mark_read(id_token);
                     if !check_variable_initialized(
-                        self.diagnostics,
+                        &mut self.diagnostics,
                         &self.closures,
                         id_token,
                         variable,
@@ -362,20 +323,16 @@ impl<'s> Emitter<'s> {
             || id == "None"
             || id == "Nothing"
         {
-            self.diagnostics.push(SourceDiagnostic::new(
-                range,
-                DiagnosticCode::MisleadingNilVariable,
-            ));
+            self.diagnostics
+                .push(DiagnosticCode::MisleadingNilVariable, range);
         }
     }
 
     fn get_var_name(&mut self, token: &'s TokenRef<'s>) -> Option<&'s str> {
         let Some(id) = token.to_id_name() else {
             if token.kind == Keyword::Global {
-                self.diagnostics.push(SourceDiagnostic::new(
-                    token.range.clone(),
-                    DiagnosticCode::MisuseOfGlobalKeyword,
-                ));
+                self.diagnostics
+                    .push(DiagnosticCode::MisuseOfGlobalKeyword, token.range.clone());
             }
             return None;
         };
@@ -389,10 +346,8 @@ impl<'s> Emitter<'s> {
                 // 变量已在当前作用域中声明
                 return None;
             }
-            self.diagnostics.push(SourceDiagnostic::new(
-                id_token.range(),
-                DiagnosticCode::GlobalVariable,
-            ));
+            self.diagnostics
+                .push(DiagnosticCode::GlobalVariable, id_token.range());
             self.hint_mislead_nil(id, id_token.range());
             Cow::Borrowed(id)
         } else if let Access(parent, _, id_token) = expr {
@@ -403,10 +358,8 @@ impl<'s> Emitter<'s> {
                 return None;
             }
             let (_, id) = id_token.to_field_name()?;
-            self.diagnostics.push(SourceDiagnostic::new(
-                id_token.range(),
-                DiagnosticCode::GlobalVariable,
-            ));
+            self.diagnostics
+                .push(DiagnosticCode::GlobalVariable, id_token.range());
             id
         } else {
             // 不处理 global[expr]
@@ -480,8 +433,13 @@ impl<'s> Emitter<'s> {
         if let Some((level, variable)) = var {
             let register = variable.register();
             variable.mark_read(token);
-            if !check_variable_initialized(self.diagnostics, &self.closures, token, variable, level)
-            {
+            if !check_variable_initialized(
+                &mut self.diagnostics,
+                &self.closures,
+                token,
+                variable,
+                level,
+            ) {
                 return;
             }
             if level == self.closures.len() {
@@ -492,10 +450,8 @@ impl<'s> Emitter<'s> {
                 self.op_get_upvalue(ret, level, up_reg);
             }
         } else {
-            self.diagnostics.push(SourceDiagnostic::new(
-                token.range(),
-                DiagnosticCode::GlobalVariable,
-            ));
+            self.diagnostics
+                .push(DiagnosticCode::GlobalVariable, token.range());
             self.op_global(ret, id);
             self.hint_mislead_nil(id, token.range());
         }
@@ -589,10 +545,8 @@ impl<'s> Emitter<'s> {
                         RecordElementBase::Named(token, _, _) => {
                             let reg = elements_regs[reg_index];
                             if let TokenKind::Ordinal(id) = &token.kind {
-                                self.diagnostics.push(SourceDiagnostic::new(
-                                    token.range(),
-                                    DiagnosticCode::RecordFieldOrdinalName,
-                                ));
+                                self.diagnostics
+                                    .push(DiagnosticCode::RecordFieldOrdinalName, token.range());
                                 self.op_2(
                                     if opt {
                                         OpCode::FieldOptIndex
@@ -607,8 +561,7 @@ impl<'s> Emitter<'s> {
                                     self.unreachable(token, token, file!(), line!());
                                     return;
                                 };
-                                self.diagnostics
-                                    .push(SourceDiagnostic::new(token.range(), id_type));
+                                self.diagnostics.push(id_type, token.range());
                                 let const_id = self.add_const_string(id);
                                 self.op_2(
                                     if opt { OpCode::FieldOpt } else { OpCode::Field },
@@ -647,20 +600,18 @@ impl<'s> Emitter<'s> {
                                 None
                             };
                             let Some((_, id)) = id_token.and_then(|id| id.to_field_name()) else {
-                                self.diagnostics.push(SourceDiagnostic::new(
-                                    expression.range(),
+                                self.diagnostics.push(
                                     DiagnosticCode::BadOmitKeyRecordExpression,
-                                ));
+                                    expression.range(),
+                                );
                                 return;
                             };
-                            self.diagnostics.push(SourceDiagnostic::new(
-                                colon.range(),
-                                DiagnosticCode::OmitNamedRecordField,
-                            ));
-                            self.diagnostics.push(SourceDiagnostic::new(
-                                id_token.unwrap().range(),
+                            self.diagnostics
+                                .push(DiagnosticCode::OmitNamedRecordField, colon.range());
+                            self.diagnostics.push(
                                 DiagnosticCode::OmitNamedRecordFieldName,
-                            ));
+                                id_token.unwrap().range(),
+                            );
                             let const_id = self.add_const_string(id);
                             let reg = elements_regs[reg_index];
                             self.op_2(
@@ -695,8 +646,7 @@ impl<'s> Emitter<'s> {
                                 _ => DiagnosticCode::UnnamedRecordFieldN,
                             };
                             let start = exp.range().start;
-                            self.diagnostics
-                                .push(SourceDiagnostic::new(start..start, code));
+                            self.diagnostics.push(code, start..start);
                             reg_index += 1;
                         }
                         RecordElementBase::Spread(_, _) => {
@@ -784,10 +734,8 @@ impl<'s> Emitter<'s> {
                         _ => unreachable!("Expected identifier token"),
                     };
                 } else {
-                    self.diagnostics.push(SourceDiagnostic::new(
-                        id.range(),
-                        DiagnosticCode::GlobalVariable,
-                    ));
+                    self.diagnostics
+                        .push(DiagnosticCode::GlobalVariable, id.range());
                     match id.kind {
                         TokenKind::Identifier(id) => self.op_global(ret, id),
                         TokenKind::Ordinal(ord) => self.op_global_num(ret, ord as f64),
@@ -801,10 +749,8 @@ impl<'s> Emitter<'s> {
                     let index_reg = self.emit_expression_reg(index, brk);
                     self.op_get_dyn(ret, ret, index_reg);
                 } else {
-                    self.diagnostics.push(SourceDiagnostic::new(
-                        index.range(),
-                        DiagnosticCode::GlobalDynamicAccess,
-                    ));
+                    self.diagnostics
+                        .push(DiagnosticCode::GlobalDynamicAccess, index.range());
                     let index_reg = self.emit_expression_reg(index, brk);
                     self.op_global_dyn(ret, index_reg);
                 }

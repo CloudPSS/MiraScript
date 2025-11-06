@@ -2,13 +2,13 @@ use std::ops::{Deref, DerefMut};
 
 use super::prelude::*;
 pub(crate) trait AstWalker<'s> {
-    fn collect_diagnostics(&mut self, collector: &mut Vec<SourceDiagnostic>);
+    fn collect_diagnostics(&mut self, collector: &mut DiagnosticsCollector<'_, '_>);
 
     fn range(&self) -> SourceRange;
 }
 
 impl<'s> AstWalker<'s> for Token<'s> {
-    fn collect_diagnostics(&mut self, collector: &mut Vec<SourceDiagnostic>) {
+    fn collect_diagnostics(&mut self, collector: &mut DiagnosticsCollector<'_, '_>) {
         // Parsing 阶段不会创建新的 TokenKind::InterpolatedString，无需处理
 
         if !self.is_unknown() {
@@ -37,7 +37,7 @@ impl<'s> AstWalker<'s> for Token<'s> {
 }
 
 impl<'s, E: AstWalker<'s>> AstWalker<'s> for Vec<E> {
-    fn collect_diagnostics(&mut self, collector: &mut Vec<SourceDiagnostic>) {
+    fn collect_diagnostics(&mut self, collector: &mut DiagnosticsCollector<'_, '_>) {
         for item in self.iter_mut() {
             item.collect_diagnostics(collector);
         }
@@ -55,7 +55,7 @@ impl<'s, E: AstWalker<'s>> AstWalker<'s> for Vec<E> {
 }
 
 impl<'s, E: AstWalker<'s>> AstWalker<'s> for Option<E> {
-    fn collect_diagnostics(&mut self, collector: &mut Vec<SourceDiagnostic>) {
+    fn collect_diagnostics(&mut self, collector: &mut DiagnosticsCollector<'_, '_>) {
         if let Some(item) = self {
             item.collect_diagnostics(collector);
         }
@@ -73,7 +73,7 @@ impl<'s, E: AstWalker<'s>> AstWalker<'s> for Option<E> {
 }
 
 impl<'s, E: AstWalker<'s>> AstWalker<'s> for Box<E> {
-    fn collect_diagnostics(&mut self, collector: &mut Vec<SourceDiagnostic>) {
+    fn collect_diagnostics(&mut self, collector: &mut DiagnosticsCollector<'_, '_>) {
         self.deref_mut().collect_diagnostics(collector);
     }
     fn range(&self) -> SourceRange {

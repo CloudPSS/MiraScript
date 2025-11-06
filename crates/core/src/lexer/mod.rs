@@ -1,7 +1,6 @@
 use winnow::{
-    LocatingSlice, ModalResult, Parser as _,
+    LocatingSlice, ModalResult, Parser as _, Stateful,
     error::{EmptyError, ErrMode},
-    stream::{Location as _, Stream as _},
 };
 
 mod identifier;
@@ -19,6 +18,8 @@ pub use operator::Operator;
 pub use token::Token;
 pub use token_kind::TokenKind;
 
+use crate::Config;
+
 #[allow(unused)]
 pub(crate) use self::{
     numeric::NumberInfo,
@@ -26,7 +27,7 @@ pub(crate) use self::{
     trivia::{Trivia, TriviaList},
 };
 
-pub type Input<'s> = LocatingSlice<&'s str>;
+pub type Input<'s> = Stateful<LocatingSlice<&'s str>, &'s Config>;
 pub(crate) type Result<Output> = ModalResult<Output, EmptyError>;
 trait Parser<'s, Output>: winnow::Parser<Input<'s>, Output, ErrMode<EmptyError>> {}
 
@@ -38,10 +39,14 @@ impl<'s, Output, F> Parser<'s, Output> for F where
 mod prelude {
     pub(super) use super::*;
     pub(super) use crate::diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange};
+    pub(super) use winnow::stream::{Location as _, Stream as _};
 }
 
-pub fn to_input(text: &str) -> Input<'_> {
-    LocatingSlice::new(text)
+pub fn to_input<'s>(text: &'s str, config: &'s Config) -> Input<'s> {
+    Input {
+        input: LocatingSlice::new(text),
+        state: config,
+    }
 }
 
 fn lex_impl<'s, const BALANCED: bool>(
@@ -69,7 +74,7 @@ fn lex_impl<'s, const BALANCED: bool>(
         let eof = matches!(token.kind, TokenKind::Eof);
         if BALANCED && depth <= 0 || eof {
             #[cfg(feature = "formatter")]
-            if crate::config::trivia() {
+            if input.state.trivia {
                 token.leading_trivia = leading_trivia;
             }
             tokens.push(token);
@@ -80,7 +85,7 @@ fn lex_impl<'s, const BALANCED: bool>(
         let tailing_trivia = trivia::tailing_trivia(input)?;
 
         #[cfg(feature = "formatter")]
-        if crate::config::trivia() {
+        if input.state.trivia {
             token.leading_trivia = leading_trivia;
             token.tailing_trivia = tailing_trivia;
         }

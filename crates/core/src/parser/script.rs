@@ -1,5 +1,7 @@
 use std::ops::Deref;
 
+use crate::diagnostic::DiagnosticsCollector;
+
 use super::prelude::*;
 
 /// statement* expression? EOF
@@ -13,7 +15,7 @@ pub struct Script<'s>(
 );
 
 impl<'s> AstWalker<'s> for Script<'s> {
-    fn collect_diagnostics(&mut self, collector: &mut Vec<SourceDiagnostic>) {
+    fn collect_diagnostics(&mut self, collector: &mut DiagnosticsCollector<'_, '_>) {
         for statement in &mut self.0 {
             statement.collect_diagnostics(collector);
         }

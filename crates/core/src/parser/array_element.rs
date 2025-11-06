@@ -17,7 +17,7 @@ pub type ArgElement<'s> = ListItem<'s, ArrayElementBase<'s, Expression<'s>, Expr
 pub type ArrayPattern<'s> = ListItem<'s, ArrayElementBase<'s, Pattern<'s>, Pattern<'s>>>;
 
 impl<'s, E: AstWalker<'s>, S: AstWalker<'s>> AstWalker<'s> for ArrayElementBase<'s, E, S> {
-    fn collect_diagnostics(&mut self, collector: &mut Vec<SourceDiagnostic>) {
+    fn collect_diagnostics(&mut self, collector: &mut DiagnosticsCollector<'_, '_>) {
         match self {
             Element(value) => {
                 value.collect_diagnostics(collector);

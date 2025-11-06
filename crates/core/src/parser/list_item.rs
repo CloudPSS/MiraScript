@@ -7,7 +7,7 @@ use super::prelude::*;
 pub struct ListItem<'s, T>(pub Box<T>, pub Option<TokenRef<'s>>);
 
 impl<'s, T: AstWalker<'s>> AstWalker<'s> for ListItem<'s, T> {
-    fn collect_diagnostics(&mut self, collector: &mut Vec<SourceDiagnostic>) {
+    fn collect_diagnostics(&mut self, collector: &mut DiagnosticsCollector<'_, '_>) {
         self.0.collect_diagnostics(collector);
         self.1.collect_diagnostics(collector);
     }

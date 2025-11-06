@@ -1,7 +1,7 @@
 use std::pin::Pin;
 
 use mira_core::{
-    Compiler, Config, Script, SourceDiagnostic, compile::encode_diagnostics, lexer::Token,
+    Compiler, Config, Script, SourceDiagnostic, diagnostic::encode_diagnostics, lexer::Token,
 };
 use wasm_bindgen::prelude::*;
 
@@ -31,24 +31,25 @@ impl MonacoCompiler {
 
     #[wasm_bindgen]
     pub fn parse(&mut self) -> bool {
-        let mut compiler = Compiler::new(&self.config);
         let input: &'static str = unsafe {
             let ptr = self.input.as_ptr();
             let len = self.input.len();
             str::from_utf8_unchecked(std::slice::from_raw_parts(ptr, len))
         };
-        if let Some(tokens) = compiler.lex(input) {
+        let config: &'static Config = unsafe { &*(&self.config as *const Config) };
+        let mut compiler = Compiler::new(input, config);
+        if let Some(tokens) = compiler.lex() {
             self.tokens = tokens.into();
-            let tokens: &'static [Token<'static>] =
+            let tokens =
                 unsafe { std::slice::from_raw_parts(self.tokens.as_ptr(), self.tokens.len()) };
             if let Some(script) = compiler.parse(tokens) {
                 self.script = Some(script);
-                self.diagnostics = compiler.diagnostics_collector;
+                self.diagnostics = compiler.diagnostics_collector.drain(..).collect();
                 self.has_parse_error = self.diagnostics.iter().any(|d| d.is_error());
                 return true;
             }
         }
-        self.diagnostics = compiler.diagnostics_collector;
+        self.diagnostics = compiler.diagnostics_collector.drain(..).collect();
         self.has_parse_error = self.diagnostics.iter().any(|d| d.is_error());
         false
     }
@@ -58,7 +59,7 @@ impl MonacoCompiler {
         let Some(script) = &self.script else {
             return None;
         };
-        let mut compiler = Compiler::new(&self.config);
+        let mut compiler = Compiler::new(&self.input, &self.config);
         let result = compiler.emit(script);
         self.diagnostics.append(&mut compiler.diagnostics_collector);
         result

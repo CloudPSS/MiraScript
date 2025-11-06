@@ -1,47 +1,49 @@
-use winnow::stream::{Location, Stream};
+use winnow::{
+    stream::{Location, Stream},
+    token,
+};
 
-use crate::emitter;
-use crate::lexer::{self};
 use crate::parser::{self, AstWalker};
 use crate::{
     Script,
-    config::{Config, InputMode, set_config},
+    config::{Config, InputMode},
+};
+use crate::{diagnostic::DiagnosticsCollector, emitter};
+use crate::{
+    diagnostic::SerializedDiagnostics,
+    lexer::{self},
 };
 use crate::{
-    diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
+    diagnostic::{DiagnosticCode, SourceRange},
     lexer::Token,
 };
 
-mod encode_diagnostics;
 mod recover_token;
 
-pub type SerializedDiagnostics = Vec<u32>;
 pub type CompileResult = (Option<Vec<u8>>, SerializedDiagnostics);
-pub use encode_diagnostics::encode_diagnostics;
 
-pub struct Compiler<'c> {
+pub struct Compiler<'s, 'c> {
+    pub script: &'s str,
     pub config: &'c Config,
-    pub diagnostics_collector: Vec<SourceDiagnostic>,
+    pub diagnostics_collector: DiagnosticsCollector<'s, 'c>,
 }
 
-impl<'c> Compiler<'c> {
-    pub fn new(config: &'c Config) -> Self {
+impl<'s, 'c: 's> Compiler<'s, 'c> {
+    pub fn new(script: &'s str, config: &'c Config) -> Self {
         Self {
+            script,
             config,
-            diagnostics_collector: Vec::new(),
+            diagnostics_collector: DiagnosticsCollector::new(config, script),
         }
     }
 
-    pub fn lex<'s>(&mut self, input: &'s str) -> Option<Box<[Token<'s>]>> {
-        let config = self.config;
-        set_config(config);
-
-        let current_lexer = if config.input_mode == InputMode::Script {
+    pub fn lex(&mut self) -> Option<Box<[Token<'s>]>> {
+        let current_lexer = if self.config.input_mode == InputMode::Script {
             lexer::lex
         } else {
             lexer::lex_string
         };
-        let mut input = lexer::to_input(input);
+        let mut input = lexer::to_input(self.script, self.config);
         let Ok(tokens) = current_lexer(&mut input) else {
             let remaining = input.peek_finish();
             let range = if remaining.is_empty() {
@@ -56,7 +58,7 @@ impl<'c> Compiler<'c> {
                 }
             };
             self.diagnostics_collector
-                .push(SourceDiagnostic::new(range, DiagnosticCode::LexerError));
+                .push(DiagnosticCode::LexerError, range);
             return None;
         };
 
@@ -69,10 +71,8 @@ impl<'c> Compiler<'c> {
         )
     }
 
-    pub fn parse<'s>(&mut self, tokens: &'s [Token<'s>]) -> Option<Script<'s>> {
+    pub fn parse<'t>(&mut self, tokens: &'t [Token<'t>]) -> Option<Script<'t>> {
         assert!(!tokens.is_empty(), "Cannot parse an empty token list");
-
-        set_config(self.config);
 
         // Parsing
         let mut stream = parser::to_input(tokens);
@@ -87,7 +87,7 @@ impl<'c> Compiler<'c> {
                 }
             };
             self.diagnostics_collector
-                .push(SourceDiagnostic::new(range, DiagnosticCode::ParserError));
+                .push(DiagnosticCode::ParserError, range);
             return None;
         };
 
@@ -96,9 +96,7 @@ impl<'c> Compiler<'c> {
         Some(script)
     }
 
-    pub fn emit(&mut self, script: &Script<'_>) -> Option<Vec<u8>> {
-        set_config(self.config);
-
+    pub fn emit(&mut self, script: &Script<'s>) -> Option<Vec<u8>> {
         // Emitting
         let bytecode = emitter::emit(script, &mut self.diagnostics_collector);
 
@@ -114,19 +112,21 @@ impl<'c> Compiler<'c> {
         Some(bytecode)
     }
 
-    pub fn encode_diagnostics(&self, input: &str) -> SerializedDiagnostics {
-        encode_diagnostics(input, &self.diagnostics_collector, self.config)
+    pub fn encode_diagnostics(&self) -> SerializedDiagnostics {
+        self.diagnostics_collector.encode()
     }
 
     pub fn compile(input: &str, config: &Config) -> CompileResult {
-        let mut compiler = Compiler::new(config);
-        if let Some(tokens) = compiler.lex(input) {
-            if let Some(script) = compiler.parse(&tokens) {
-                if let Some(chunk) = compiler.emit(&script) {
-                    return (Some(chunk), compiler.encode_diagnostics(input));
-                }
-            }
-        }
-        (None, compiler.encode_diagnostics(input))
+        let mut compiler = Compiler::new(input, config);
+        let Some(tokens) = compiler.lex() else {
+            return (None, compiler.encode_diagnostics());
+        };
+        let Some(script) = compiler.parse(&tokens) else {
+            return (None, compiler.encode_diagnostics());
+        };
+        let Some(chunk) = compiler.emit(&script) else {
+            return (None, compiler.encode_diagnostics());
+        };
+        (Some(chunk), compiler.encode_diagnostics())
     }
 }

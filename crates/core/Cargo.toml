@@ -13,7 +13,6 @@ harness = false
 
 [features]
 default = []
-track_references = []
 formatter = []
 wasm = ["dep:wasm-bindgen"]
 serde = ["dep:serde"]

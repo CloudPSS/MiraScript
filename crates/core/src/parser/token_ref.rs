@@ -79,7 +79,7 @@ impl<'s> AsRef<Token<'s>> for TokenRef<'s> {
 }
 
 impl<'s> AstWalker<'s> for TokenRef<'s> {
-    fn collect_diagnostics(&mut self, collector: &mut Vec<SourceDiagnostic>) {
+    fn collect_diagnostics(&mut self, collector: &mut DiagnosticsCollector<'_, '_>) {
         if let Self::Owned(token) = self {
             token.collect_diagnostics(collector);
         }

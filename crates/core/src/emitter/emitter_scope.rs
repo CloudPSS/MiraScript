@@ -1,7 +1,7 @@
 use std::ops::{Deref, DerefMut};
 
 use crate::{
-    diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
+    diagnostic::{DiagnosticCode, DiagnosticsCollector, SourceRange},
     emitter::{closure::Closure, emitter_closure::Closures, opcode::Register},
     lexer::Token,
     parser::AstWalker,
@@ -52,7 +52,7 @@ impl DerefMut for Scopes<'_> {
 }
 
 pub fn check_variable_initialized<'s>(
-    diagnostics: &mut Vec<SourceDiagnostic>,
+    diagnostics: &mut DiagnosticsCollector<'_, '_>,
     closures: &[Closure],
     access: &Token<'s>,
     variable: &Variable<'s>,
@@ -68,10 +68,7 @@ pub fn check_variable_initialized<'s>(
     // 变量在前级闭包中定义，且中间没有延迟绑定的闭包
     //  或
     // 变量在当前或后级(见 for-in 的实现)闭包中定义
-    diagnostics.push(SourceDiagnostic::new(
-        access.range(),
-        DiagnosticCode::UninitializedVariable,
-    ));
+    diagnostics.push(DiagnosticCode::UninitializedVariable, access.range());
     variable.put_decl_ref(diagnostics);
     false
 }
@@ -85,32 +82,29 @@ impl Closures {
     }
 }
 
-impl<'s> Emitter<'s> {
+impl<'s, 'c> Emitter<'s, 'c> {
     pub fn enter_scope(&mut self, range: SourceRange) {
         debug_assert!(range.start <= range.end, "Invalid scope range {range:?}");
         self.enter_leveled_scope(range, self.closures.len());
     }
     pub fn enter_leveled_scope(&mut self, range: SourceRange, level: usize) {
         self.scopes.push(Scope::new(level));
-        self.diagnostics
-            .push(SourceDiagnostic::new(range, DiagnosticCode::Scope));
+        self.diagnostics.push(DiagnosticCode::Scope, range);
     }
     pub fn exit_scope(&mut self) {
         let Some(scope) = self.scopes.pop() else {
             return;
         };
         for var in scope.variables {
-            var.exit(self.diagnostics);
+            var.exit(&mut self.diagnostics);
         }
     }
 
     fn check_local_variable(&mut self, access: &Token<'s>, name: &str) -> Option<&Variable<'s>> {
         let var = self.scopes.find_local_variable(name)?;
-        self.diagnostics.push(SourceDiagnostic::new(
-            access.range(),
-            DiagnosticCode::DuplicateVariableDeclaration,
-        ));
-        var.put_decl_ref(self.diagnostics);
+        self.diagnostics
+            .push(DiagnosticCode::DuplicateVariableDeclaration, access.range());
+        var.put_decl_ref(&mut self.diagnostics);
         var.mark_redeclare(access);
         Some(var)
     }
@@ -118,7 +112,7 @@ impl<'s> Emitter<'s> {
     pub fn declare_parameter(
         &mut self,
         index: usize,
-        id_token: Option<&'s Token<'s>>,
+        id_token: Option<&Token<'s>>,
         range: SourceRange,
         mutable: bool,
         bind_type: BindType,
@@ -145,7 +139,7 @@ impl<'s> Emitter<'s> {
 
     pub fn declare_variable(
         &mut self,
-        id_token: &'s Token<'s>,
+        id_token: &Token<'s>,
         mutable: bool,
         bind_type: BindType,
     ) -> bool {

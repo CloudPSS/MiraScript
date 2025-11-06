@@ -1,5 +1,5 @@
 use crate::{
-    diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
+    diagnostic::DiagnosticCode,
     emitter::{emitter_scope::check_variable_initialized, opcode::OpParam},
     lexer::{Keyword, Operator, TokenKind},
     parser::{
@@ -10,7 +10,7 @@ use crate::{
 
 use super::{Emitter, OpCode, opcode::Register, utils::is_global_expression, variable::BindType};
 
-impl<'s> Emitter<'s> {
+impl<'s, 'c> Emitter<'s, 'c> {
     pub fn declare_statement(&mut self, stmt: &'s Statement<'s>) {
         match stmt {
             Expression(expr, _) | BlockExpression(expr) => self.declare_expression(expr),
@@ -77,10 +77,8 @@ impl<'s> Emitter<'s> {
                 let assignee_reg = match &**assignee {
                     Expression::Variable(id_token) => {
                         if **id_token == Keyword::Global {
-                            self.diagnostics.push(SourceDiagnostic::new(
-                                id_token.range(),
-                                DiagnosticCode::MisuseOfGlobalKeyword,
-                            ));
+                            self.diagnostics
+                                .push(DiagnosticCode::MisuseOfGlobalKeyword, id_token.range());
                             return false;
                         }
                         let Some(id) = id_token.to_id_name() else {
@@ -94,18 +92,18 @@ impl<'s> Emitter<'s> {
                                 variable.mark_read_write(id_token);
                             }
                             check_variable_initialized(
-                                self.diagnostics,
+                                &mut self.diagnostics,
                                 &self.closures,
                                 id_token,
                                 variable,
                                 level,
                             );
                             if !variable.mutable() {
-                                self.diagnostics.push(SourceDiagnostic::new(
-                                    id_token.range(),
+                                self.diagnostics.push(
                                     DiagnosticCode::ImmutableVariableAssignment,
-                                ));
-                                variable.put_decl_ref(self.diagnostics);
+                                    id_token.range(),
+                                );
+                                variable.put_decl_ref(&mut self.diagnostics);
                                 Register::EMPTY
                             } else if level == self.closures.len() {
                                 variable.register()
@@ -121,10 +119,10 @@ impl<'s> Emitter<'s> {
                                 ret
                             }
                         } else {
-                            self.diagnostics.push(SourceDiagnostic::new(
-                                id_token.range.clone(),
+                            self.diagnostics.push(
                                 DiagnosticCode::UndefinedVariableAssignment,
-                            ));
+                                id_token.range.clone(),
+                            );
                             Register::EMPTY
                         }
                     }
@@ -168,10 +166,8 @@ impl<'s> Emitter<'s> {
                         field_reg
                     }
                     _ => {
-                        self.diagnostics.push(SourceDiagnostic::new(
-                            assignee.range(),
-                            DiagnosticCode::UnassignableExpression,
-                        ));
+                        self.diagnostics
+                            .push(DiagnosticCode::UnassignableExpression, assignee.range());
                         return false;
                     }
                 };
@@ -224,13 +220,10 @@ impl<'s> Emitter<'s> {
             }
             Break(kw, expression, comma) => {
                 let Some(brk) = brk else {
-                    self.diagnostics.push(SourceDiagnostic::new(
-                        SourceRange {
-                            start: kw.range.start,
-                            end: comma.range.end,
-                        },
+                    self.diagnostics.push(
                         DiagnosticCode::UnexpectedBreak,
-                    ));
+                        kw.range.start..comma.range.end,
+                    );
                     return false;
                 };
                 if let Some(expression) = expression {
@@ -244,13 +237,10 @@ impl<'s> Emitter<'s> {
             }
             Continue(kw, comma) => {
                 if brk.is_none() {
-                    self.diagnostics.push(SourceDiagnostic::new(
-                        SourceRange {
-                            start: kw.range.start,
-                            end: comma.range.end,
-                        },
+                    self.diagnostics.push(
                         DiagnosticCode::UnexpectedContinue,
-                    ));
+                        kw.range.start..comma.range.end,
+                    );
                     return false;
                 }
                 self.op(OpCode::Continue);

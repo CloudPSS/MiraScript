@@ -23,15 +23,15 @@ export type Ready = 'mirascript lsp ready';
 
 const configTemplate = createConfig({
     diagnostic_position_encoding: 'Utf16',
-    track_references: true,
-    diagnostic_other: true,
+    diagnostic_tag: true,
+    diagnostic_sourcemap: true,
     trivia: true,
     input_mode: 'Template',
 });
 const configScript = createConfig({
     diagnostic_position_encoding: 'Utf16',
-    track_references: true,
-    diagnostic_other: true,
+    diagnostic_tag: true,
+    diagnostic_sourcemap: true,
     trivia: true,
     input_mode: 'Script',
 });

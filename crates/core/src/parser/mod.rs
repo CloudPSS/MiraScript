@@ -57,7 +57,7 @@ mod prelude {
         RecordElement, RecordElementBase, RecordPattern, Result, Script, Statement, TokenRef,
     };
     pub(super) use crate::{
-        diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
+        diagnostic::{DiagnosticCode, DiagnosticsCollector, SourceDiagnostic, SourceRange},
         lexer::{Keyword, Operator, Token, TokenKind},
     };
     pub(super) use winnow::{

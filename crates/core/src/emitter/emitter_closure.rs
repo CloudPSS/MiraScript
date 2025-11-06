@@ -57,7 +57,7 @@ impl DerefMut for Closures {
     }
 }
 
-impl<'s> Emitter<'s> {
+impl<'s, 'c> Emitter<'s, 'c> {
     pub fn declare_block(
         &mut self,
         stmts: &'s Vec<Statement<'s>>,

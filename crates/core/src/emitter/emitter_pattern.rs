@@ -1,7 +1,7 @@
 use std::ops::Deref;
 
 use crate::{
-    diagnostic::{DiagnosticCode, SourceDiagnostic},
+    diagnostic::DiagnosticCode,
     lexer::{Keyword, Operator, TokenKind},
     parser::{
         ArrayElementBase, AstWalker,
@@ -15,7 +15,7 @@ use super::{
     variable::BindType,
 };
 
-impl<'s> Emitter<'s> {
+impl<'s, 'c> Emitter<'s, 'c> {
     pub fn declare_pattern(&mut self, pattern: &'s Pattern<'s>, bind_type: Option<BindType>) {
         match pattern {
             Grouping(op, pattern, cp) => {
@@ -29,14 +29,10 @@ impl<'s> Emitter<'s> {
                         | Pattern::Record(..)
                         | Pattern::Array(..)
                 ) {
-                    self.diagnostics.push(SourceDiagnostic::new(
-                        op.range(),
-                        DiagnosticCode::UnnecessaryParentheses,
-                    ));
-                    self.diagnostics.push(SourceDiagnostic::new(
-                        cp.range(),
-                        DiagnosticCode::UnnecessaryParentheses,
-                    ));
+                    self.diagnostics
+                        .push(DiagnosticCode::UnnecessaryParentheses, op.range());
+                    self.diagnostics
+                        .push(DiagnosticCode::UnnecessaryParentheses, cp.range());
                 }
                 self.declare_pattern(pattern, bind_type)
             }
@@ -190,10 +186,10 @@ impl<'s> Emitter<'s> {
         match pattern {
             Literal(_, lit) => {
                 if success.is_empty() {
-                    self.diagnostics.push(SourceDiagnostic::new(
-                        pattern.range(),
+                    self.diagnostics.push(
                         DiagnosticCode::UnnecessaryIrrefutablePattern,
-                    ));
+                        pattern.range(),
+                    );
                     return true;
                 }
                 if lit.kind == Keyword::Nil {
@@ -207,10 +203,10 @@ impl<'s> Emitter<'s> {
             }
             Constant(_) => {
                 if success.is_empty() {
-                    self.diagnostics.push(SourceDiagnostic::new(
-                        pattern.range(),
+                    self.diagnostics.push(
                         DiagnosticCode::UnnecessaryIrrefutablePattern,
-                    ));
+                        pattern.range(),
+                    );
                     return true;
                 }
                 let reg = self.closures.add_reg();
@@ -237,10 +233,10 @@ impl<'s> Emitter<'s> {
             Grouping(_, pattern, _) => self.emit_pattern(success, pattern, value, bind_type),
             Relation(op, constant) => {
                 if success.is_empty() {
-                    self.diagnostics.push(SourceDiagnostic::new(
-                        pattern.range(),
+                    self.diagnostics.push(
                         DiagnosticCode::UnnecessaryIrrefutablePattern,
-                    ));
+                        pattern.range(),
+                    );
                     return;
                 }
                 let Some(op) = (match op.kind {
@@ -256,10 +252,10 @@ impl<'s> Emitter<'s> {
             }
             Range(l, token, r) => {
                 if success.is_empty() {
-                    self.diagnostics.push(SourceDiagnostic::new(
-                        pattern.range(),
+                    self.diagnostics.push(
                         DiagnosticCode::UnnecessaryIrrefutablePattern,
-                    ));
+                        pattern.range(),
+                    );
                     return;
                 }
                 let start = self.closures.add_reg();
@@ -309,7 +305,7 @@ impl<'s> Emitter<'s> {
                     } else {
                         variable.mark_write(id_token);
                         if !check_variable_initialized(
-                            self.diagnostics,
+                            &mut self.diagnostics,
                             &self.closures,
                             id_token,
                             variable,
@@ -319,11 +315,11 @@ impl<'s> Emitter<'s> {
                         }
                     }
                     if !variable.mutable() && !bind {
-                        self.diagnostics.push(SourceDiagnostic::new(
-                            id_token.range(),
+                        self.diagnostics.push(
                             DiagnosticCode::ImmutableVariableAssignment,
-                        ));
-                        variable.put_decl_ref(self.diagnostics);
+                            id_token.range(),
+                        );
+                        variable.put_decl_ref(&mut self.diagnostics);
                     } else if level == self.closures.len() {
                         let register = variable.register();
                         self.op_unary(register, OpCode::Assign, value);
@@ -333,20 +329,20 @@ impl<'s> Emitter<'s> {
                         self.op_set_upvalue(value, level, register);
                     }
                 } else {
-                    self.diagnostics.push(SourceDiagnostic::new(
-                        id_token.range.clone(),
+                    self.diagnostics.push(
                         DiagnosticCode::UndefinedVariableAssignment,
-                    ));
+                        id_token.range.clone(),
+                    );
                 }
             }
             Record(_, elements, _) => {
                 let is_empty = elements.is_empty();
                 if success.is_empty() {
                     if is_empty {
-                        self.diagnostics.push(SourceDiagnostic::new(
-                            pattern.range(),
+                        self.diagnostics.push(
                             DiagnosticCode::UnnecessaryIrrefutablePattern,
-                        ));
+                            pattern.range(),
+                        );
                         return;
                     }
                 } else {
@@ -378,8 +374,7 @@ impl<'s> Emitter<'s> {
                                 let Some((id_type, id)) = token.to_field_name() else {
                                     unreachable!("Expected identifier token");
                                 };
-                                self.diagnostics
-                                    .push(SourceDiagnostic::new(token.range(), id_type));
+                                self.diagnostics.push(id_type, token.range());
                                 let const_id = self.add_const_string(id);
                                 let required = !sub_flag.is_empty() && !is_optional(colon);
                                 if required {
@@ -406,14 +401,12 @@ impl<'s> Emitter<'s> {
                                 let Some(id) = id_token.to_id_name() else {
                                     continue;
                                 };
-                                self.diagnostics.push(SourceDiagnostic::new(
-                                    colon.range(),
-                                    DiagnosticCode::OmitNamedRecordField,
-                                ));
-                                self.diagnostics.push(SourceDiagnostic::new(
-                                    id_token.range(),
+                                self.diagnostics
+                                    .push(DiagnosticCode::OmitNamedRecordField, colon.range());
+                                self.diagnostics.push(
                                     DiagnosticCode::OmitNamedRecordFieldName,
-                                ));
+                                    id_token.range(),
+                                );
                                 let const_id = self.add_const_string(id);
                                 let required = !sub_flag.is_empty() && !is_optional(colon);
                                 if required {
@@ -448,8 +441,7 @@ impl<'s> Emitter<'s> {
                                     _ => DiagnosticCode::UnnamedRecordFieldN,
                                 };
                                 let start = pattern.range().start;
-                                self.diagnostics
-                                    .push(SourceDiagnostic::new(start..start, code));
+                                self.diagnostics.push(code, start..start);
                                 if !sub_flag.is_empty() {
                                     self.op_3(OpCode::HasIndex, sub_flag, value, OpParam::from(i));
                                     self.op_if(OpCode::If, sub_flag);
@@ -604,10 +596,8 @@ impl<'s> Emitter<'s> {
                 // No short-circuiting in pattern matching
                 if success.is_empty() {
                     if pattern.is_or() {
-                        self.diagnostics.push(SourceDiagnostic::new(
-                            op.range(),
-                            DiagnosticCode::MisleadingOrInIrrefutablePattern,
-                        ));
+                        self.diagnostics
+                            .push(DiagnosticCode::MisleadingOrInIrrefutablePattern, op.range());
                     }
                     self.emit_pattern(Register::EMPTY, left, value, bind_type);
                     self.emit_pattern(Register::EMPTY, right, value, bind_type);
@@ -625,10 +615,8 @@ impl<'s> Emitter<'s> {
             }
             Not(kw, p) => {
                 if success.is_empty() {
-                    self.diagnostics.push(SourceDiagnostic::new(
-                        kw.range(),
-                        DiagnosticCode::UnnecessaryIrrefutablePattern,
-                    ));
+                    self.diagnostics
+                        .push(DiagnosticCode::UnnecessaryIrrefutablePattern, kw.range());
                     self.emit_pattern(Register::EMPTY, p, value, bind_type);
                 } else if self.emit_constant_pattern(OpCode::Nsame, success, p, value) {
                     return;

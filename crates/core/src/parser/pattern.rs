@@ -144,7 +144,7 @@ impl<'s> Pattern<'s> {
 }
 
 impl<'s> AstWalker<'s> for Pattern<'s> {
-    fn collect_diagnostics(&mut self, collector: &mut Vec<SourceDiagnostic>) {
+    fn collect_diagnostics(&mut self, collector: &mut DiagnosticsCollector<'_, '_>) {
         use Pattern::*;
         match self {
             Grouping(o, p, e) => {

@@ -1,46 +1,10 @@
-use std::{error::Error, fmt::Display, ops::Deref};
-
+mod diagnostic;
 mod diagnostic_code;
+mod diagnostics_collector;
+mod encode_diagnostics;
 
+pub use diagnostic::SourceDiagnostic;
 pub use diagnostic_code::DiagnosticCode;
+pub use diagnostics_collector::DiagnosticsCollector;
+pub use encode_diagnostics::{SerializedDiagnostics, encode_diagnostics};
 pub type SourceRange = std::ops::Range<usize>;
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct SourceDiagnostic {
-    pub range: SourceRange,
-    pub error: DiagnosticCode,
-}
-
-impl SourceDiagnostic {
-    pub fn new(range: SourceRange, error: DiagnosticCode) -> Self {
-        SourceDiagnostic { range, error }
-    }
-}
-
-impl Display for SourceDiagnostic {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}({}) at {}~{}: {}",
-            self.error,
-            self.code(),
-            self.range.start,
-            self.range.end,
-            self.error.message()
-        )
-    }
-}
-
-impl Error for SourceDiagnostic {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        None
-    }
-}
-
-impl Deref for SourceDiagnostic {
-    fn deref(&self) -> &DiagnosticCode {
-        &self.error
-    }
-
-    type Target = DiagnosticCode;
-}

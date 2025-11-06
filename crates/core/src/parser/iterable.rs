@@ -7,7 +7,7 @@ pub enum Iterable<'s> {
 }
 
 impl<'s> AstWalker<'s> for Iterable<'s> {
-    fn collect_diagnostics(&mut self, collector: &mut Vec<SourceDiagnostic>) {
+    fn collect_diagnostics(&mut self, collector: &mut DiagnosticsCollector<'_, '_>) {
         match self {
             Iterable::Range(range) => range.collect_diagnostics(collector),
             Iterable::Value(value) => value.collect_diagnostics(collector),

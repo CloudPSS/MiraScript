@@ -9,7 +9,7 @@ use super::{
     },
 };
 
-impl<'s> Emitter<'s> {
+impl<'s, 'c> Emitter<'s, 'c> {
     pub fn add_const_string(&mut self, value: impl Into<Cow<'s, str>>) -> OpParam {
         self.chunk.add_constant(C::String(value.into()))
     }

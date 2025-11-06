@@ -1,33 +1,3 @@
-#[allow(unused_imports)]
-use std::cell::Cell;
-
-#[cfg(feature = "track_references")]
-thread_local! {
-    static TRACK_REFERENCES: Cell<bool> = const { Cell::new(false) };
-}
-
-#[cfg(feature = "track_references")]
-pub(crate) fn track_references() -> bool {
-    TRACK_REFERENCES.get()
-}
-
-#[cfg(feature = "formatter")]
-thread_local! {
-  static TRIVIA: Cell<bool> = const { Cell::new(false) };
-}
-
-#[cfg(feature = "formatter")]
-pub(crate) fn trivia() -> bool {
-    TRIVIA.get()
-}
-
-pub(crate) fn set_config(#[allow(unused)] value: &Config) {
-    #[cfg(feature = "track_references")]
-    TRACK_REFERENCES.set(value.track_references);
-    #[cfg(feature = "formatter")]
-    TRIVIA.set(value.trivia);
-}
-
 /// Mode for reading input.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "wasm", wasm_bindgen::prelude::wasm_bindgen)]
@@ -62,8 +32,6 @@ pub enum DiagnosticPositionEncoding {
 #[cfg_attr(feature = "wasm", wasm_bindgen::prelude::wasm_bindgen)]
 #[derive(Debug, Clone, PartialEq)]
 pub struct Config {
-    #[cfg(feature = "track_references")]
-    pub track_references: bool,
     #[cfg(feature = "formatter")]
     pub trivia: bool,
 
@@ -75,7 +43,8 @@ pub struct Config {
     pub diagnostic_info: bool,
     pub diagnostic_hint: bool,
     pub diagnostic_reference: bool,
-    pub diagnostic_other: bool,
+    pub diagnostic_tag: bool,
+    pub diagnostic_sourcemap: bool,
 }
 
 #[cfg_attr(feature = "wasm", wasm_bindgen::prelude::wasm_bindgen)]
@@ -83,8 +52,6 @@ impl Config {
     #[cfg_attr(feature = "wasm", wasm_bindgen::prelude::wasm_bindgen(constructor))]
     pub fn new() -> Self {
         Self {
-            #[cfg(feature = "track_references")]
-            track_references: false,
             #[cfg(feature = "formatter")]
             trivia: false,
             input_mode: InputMode::Script,
@@ -94,7 +61,8 @@ impl Config {
             diagnostic_info: true,
             diagnostic_hint: true,
             diagnostic_reference: true,
-            diagnostic_other: false,
+            diagnostic_tag: false,
+            diagnostic_sourcemap: false,
         }
     }
 }

@@ -5,9 +5,9 @@ pub mod emitter;
 pub mod lexer;
 pub mod parser;
 
-pub use compile::{Compiler, SerializedDiagnostics};
+pub use compile::Compiler;
 pub use config::Config;
-pub use diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange};
+pub use diagnostic::{DiagnosticCode, SerializedDiagnostics, SourceDiagnostic, SourceRange};
 pub use emitter::OpCode;
 pub use lexer::{Keyword, Operator};
 pub use parser::{Expression, Pattern, Script, Statement};

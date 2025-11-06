@@ -30,7 +30,7 @@ impl<'s, E, I> RecordElementBase<'s, E, I> {
 }
 
 impl<'s, E: AstWalker<'s>, I: AstWalker<'s>> AstWalker<'s> for RecordElementBase<'s, E, I> {
-    fn collect_diagnostics(&mut self, collector: &mut Vec<SourceDiagnostic>) {
+    fn collect_diagnostics(&mut self, collector: &mut DiagnosticsCollector<'_, '_>) {
         match self {
             Named(name, colon, value) => {
                 name.collect_diagnostics(collector);

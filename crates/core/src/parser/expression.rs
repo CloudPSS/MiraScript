@@ -11,7 +11,7 @@ pub enum Callable<'s> {
 }
 
 impl<'s> AstWalker<'s> for Callable<'s> {
-    fn collect_diagnostics(&mut self, collector: &mut Vec<SourceDiagnostic>) {
+    fn collect_diagnostics(&mut self, collector: &mut DiagnosticsCollector<'_, '_>) {
         use Callable::*;
         match self {
             Type(token) => token.collect_diagnostics(collector),
@@ -32,7 +32,7 @@ impl<'s> AstWalker<'s> for Callable<'s> {
 pub struct ElseBlock<'s>(pub TokenRef<'s>, pub Box<Expression<'s>>);
 
 impl<'s> AstWalker<'s> for ElseBlock<'s> {
-    fn collect_diagnostics(&mut self, collector: &mut Vec<SourceDiagnostic>) {
+    fn collect_diagnostics(&mut self, collector: &mut DiagnosticsCollector<'_, '_>) {
         self.0.collect_diagnostics(collector);
         self.1.collect_diagnostics(collector);
     }
@@ -51,7 +51,7 @@ pub struct MatchCase<'s>(
 );
 
 impl<'s> AstWalker<'s> for MatchCase<'s> {
-    fn collect_diagnostics(&mut self, collector: &mut Vec<SourceDiagnostic>) {
+    fn collect_diagnostics(&mut self, collector: &mut DiagnosticsCollector<'_, '_>) {
         self.0.collect_diagnostics(collector);
         self.1.collect_diagnostics(collector);
         if let Some((kw_if, expr)) = &mut self.2 {
@@ -315,7 +315,7 @@ impl<'s> Expression<'s> {
 }
 
 impl<'s> AstWalker<'s> for Expression<'s> {
-    fn collect_diagnostics(&mut self, collector: &mut Vec<SourceDiagnostic>) {
+    fn collect_diagnostics(&mut self, collector: &mut DiagnosticsCollector<'_, '_>) {
         use Expression::*;
         match self {
             Literal(token) => token.collect_diagnostics(collector),

@@ -1,25 +1,31 @@
 use crate::{
-    diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
+    Config,
+    diagnostic::{DiagnosticCode, DiagnosticsCollector},
     emitter::emitter_closure::Closures,
     parser::AstWalker,
 };
 
 use super::{chunk::Chunk, emitter_scope::Scopes};
 
-pub(super) struct Emitter<'s> {
+pub(super) struct Emitter<'s, 'c> {
+    pub config: &'c Config,
     pub chunk: Chunk<'s>,
     pub closures: Closures,
     pub scopes: Scopes<'s>,
-    pub diagnostics: &'s mut Vec<SourceDiagnostic>,
+    pub diagnostics: DiagnosticsCollector<'s, 'c>,
 }
 
-impl<'s> Emitter<'s> {
-    pub fn new(diagnostics_collector: &'s mut Vec<SourceDiagnostic>) -> Self {
+impl<'s, 'c> Emitter<'s, 'c> {
+    pub fn new(diagnostics_collector: &DiagnosticsCollector<'s, 'c>) -> Self {
         Self {
+            config: diagnostics_collector.config,
             chunk: Chunk::new(),
             closures: Closures::new(),
             scopes: Scopes::new(),
-            diagnostics: diagnostics_collector,
+            diagnostics: DiagnosticsCollector::new(
+                diagnostics_collector.config,
+                diagnostics_collector.script,
+            ),
         }
     }
 
@@ -43,12 +49,7 @@ impl<'s> Emitter<'s> {
             start_range = 0;
             end_range = 0;
         }
-        self.diagnostics.push(SourceDiagnostic::new(
-            SourceRange {
-                start: start_range,
-                end: end_range,
-            },
-            DiagnosticCode::EmitterError,
-        ));
+        self.diagnostics
+            .push(DiagnosticCode::EmitterError, start_range..end_range);
     }
 }

@@ -362,9 +362,9 @@ class Emitter {
                 );
                 if (script) {
                     args.unshift(`global = GlobalFallback()`);
-                    code = `'use strict'; return (function script(${args.join(', ')}) { try { CpEnter(); var ${regs};`;
+                    code = `'use strict'; return ((${args.join(', ')}) => { try { CpEnter(); var ${regs};`;
                 } else {
-                    code = `${this.wv(reg)} = Function(function (${args.join(', ')}) { try { CpEnter(); var ${regs};`;
+                    code = `${this.wv(reg)} = Function((${args.join(', ')}) => { try { CpEnter(); var ${regs};`;
                 }
                 if (varg) {
                     code += ` var ${this.wv(argn, -1)} = Vargs(vargs);`;

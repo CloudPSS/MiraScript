@@ -15,8 +15,9 @@ export function escapeHtml(value: string): string {
 const formatConfig = createConfig({
     input_mode: 'Script',
     trivia: true,
-    track_references: false,
     diagnostic_reference: false,
+    diagnostic_tag: false,
+    diagnostic_sourcemap: false,
     diagnostic_position_encoding: 'None',
 });
 /** 将值转为语法高亮的显示 */

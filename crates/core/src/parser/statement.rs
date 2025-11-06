@@ -117,7 +117,7 @@ impl<'s> Statement<'s> {
 }
 
 impl<'s> AstWalker<'s> for Statement<'s> {
-    fn collect_diagnostics(&mut self, collector: &mut Vec<SourceDiagnostic>) {
+    fn collect_diagnostics(&mut self, collector: &mut DiagnosticsCollector<'_, '_>) {
         use Statement::*;
         match self {
             Empty(c) => c.collect_diagnostics(collector),

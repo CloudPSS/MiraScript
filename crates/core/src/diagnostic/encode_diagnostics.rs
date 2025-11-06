@@ -1,37 +1,15 @@
 use crate::{Config, SourceDiagnostic, config::DiagnosticPositionEncoding};
 
-use super::SerializedDiagnostics;
+pub type SerializedDiagnostics = Vec<u32>;
 
 pub fn encode_diagnostics(
     script: &str,
     diagnostics: &[SourceDiagnostic],
     config: &Config,
 ) -> SerializedDiagnostics {
-    let filtered = diagnostics.iter().filter(|s| {
-        debug_assert!(s.range.start <= s.range.end, "Invalid diagnostic range {s}");
-        debug_assert!(s.range.end <= script.len(), "Invalid diagnostic range {s}");
-        if config.diagnostic_error && s.error.is_error() {
-            return true;
-        }
-        if config.diagnostic_warning && s.error.is_warning() {
-            return true;
-        }
-        if config.diagnostic_info && s.error.is_info() {
-            return true;
-        }
-        if config.diagnostic_hint && s.error.is_hint() {
-            return true;
-        }
-        if config.diagnostic_reference && s.error.is_reference() {
-            return true;
-        }
-        if config.diagnostic_other && s.error.is_other() {
-            return true;
-        }
-        false
-    });
     if config.diagnostic_position_encoding == DiagnosticPositionEncoding::None {
-        filtered
+        diagnostics
+            .iter()
             .flat_map(|s| {
                 [
                     s.range.start.try_into().unwrap(),
@@ -77,7 +55,8 @@ pub fn encode_diagnostics(
                 )
             }
         };
-        filtered
+        diagnostics
+            .iter()
             .flat_map(|s| {
                 let start = pos_to_line_col(s.range.start);
                 let end = pos_to_line_col(s.range.end);
