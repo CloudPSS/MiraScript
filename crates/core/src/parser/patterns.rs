@@ -211,10 +211,8 @@ fn discard_bind_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
                     };
                     return Pattern::unknown(tokens, DiagnosticCode::UnknownPattern);
                 };
-                if rebind && kw_mut.is_some() {
-                    let kw_mut = kw_mut
-                        .unwrap()
-                        .wrap_as_unknown(DiagnosticCode::MutInRebindPattern);
+                if rebind && let Some(kw_mut) = kw_mut {
+                    let kw_mut = kw_mut.wrap_as_unknown(DiagnosticCode::MutInRebindPattern);
                     return Pattern::Bind(Some(kw_mut), id);
                 }
                 if name.starts_with('@') {

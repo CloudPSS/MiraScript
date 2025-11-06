@@ -1,7 +1,4 @@
-use winnow::{
-    stream::{Location, Stream},
-    token,
-};
+use winnow::stream::{Location, Stream};
 
 use crate::parser::{self, AstWalker};
 use crate::{

@@ -619,7 +619,6 @@ impl<'s, 'c> Emitter<'s, 'c> {
                         .push(DiagnosticCode::UnnecessaryIrrefutablePattern, kw.range());
                     self.emit_pattern(Register::EMPTY, p, value, bind_type);
                 } else if self.emit_constant_pattern(OpCode::Nsame, success, p, value) {
-                    return;
                 } else {
                     self.emit_pattern(success, p, value, bind_type);
                     self.op_2(OpCode::Not, success, success);

@@ -32,10 +32,8 @@ pub(super) fn identifier<'s>(keyword: bool) -> impl Parser<'s, TokenKind<'s>> {
         )
             .take()
             .map(|s| {
-                if keyword {
-                    if let Ok(kw) = Keyword::from_str(s) {
-                        return TokenKind::Keyword(kw);
-                    }
+                if keyword && let Ok(kw) = Keyword::from_str(s) {
+                    return TokenKind::Keyword(kw);
                 }
                 TokenKind::Identifier(s)
             })

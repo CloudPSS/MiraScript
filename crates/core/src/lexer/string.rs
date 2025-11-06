@@ -60,10 +60,11 @@ pub(super) fn string_content<'s>(mut info: StringInfo<'s>) -> impl Parser<'s, To
                 info.content.push(frag);
             }
         };
-        if !unterminated && info.content.len() == 1 {
-            if let StringFragment::Literal(s) = info.content[0] {
-                return Ok(TokenKind::String(Cow::Borrowed(s), info.clone().into()));
-            }
+        if !unterminated
+            && info.content.len() == 1
+            && let StringFragment::Literal(s) = info.content[0]
+        {
+            return Ok(TokenKind::String(Cow::Borrowed(s), info.clone().into()));
         }
         let mut errors = vec![];
         if unterminated {
@@ -325,19 +326,19 @@ fn interpolation<'s>(dollars: &'s str) -> impl Parser<'s, StringFragment<'s>> {
             Some(ch) if is_identifier_start(ch) || is_identifier_special(ch) => {
                 // '$' identifier
                 let (mut kind, range) = identifier(true).with_span().parse_next(i)?;
-                if let TokenKind::Keyword(kw) = kind {
-                    if !kw.is_constant() {
-                        kind = TokenKind::unknown_range(
-                            // Recover to nil for further analysis
-                            TokenKind::Keyword(Keyword::Nil),
-                            range.clone(),
-                            if kw.is_reserved() {
-                                DiagnosticCode::InvalidReservedKeyword
-                            } else {
-                                DiagnosticCode::InvalidKeyword
-                            },
-                        );
-                    }
+                if let TokenKind::Keyword(kw) = kind
+                    && !kw.is_constant()
+                {
+                    kind = TokenKind::unknown_range(
+                        // Recover to nil for further analysis
+                        TokenKind::Keyword(Keyword::Nil),
+                        range.clone(),
+                        if kw.is_reserved() {
+                            DiagnosticCode::InvalidReservedKeyword
+                        } else {
+                            DiagnosticCode::InvalidKeyword
+                        },
+                    );
                 }
                 let id = Token::new(kind, range);
                 StringFragment::Interpolation(dollars, vec![id], None)

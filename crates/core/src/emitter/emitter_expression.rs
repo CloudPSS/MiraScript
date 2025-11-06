@@ -291,21 +291,21 @@ impl<'s, 'c> Emitter<'s, 'c> {
         brk: Option<Register>,
     ) -> Register {
         if let Variable(id_token) = expr {
-            if let Some(id) = self.get_var_name(id_token) {
-                if let Some(variable) = self.scopes.find_local_variable(id) {
-                    let register = variable.register();
-                    variable.mark_read(id_token);
-                    if !check_variable_initialized(
-                        &mut self.diagnostics,
-                        &self.closures,
-                        id_token,
-                        variable,
-                        self.closures.len(),
-                    ) {
-                        return Register::EMPTY;
-                    }
-                    return register;
+            if let Some(id) = self.get_var_name(id_token)
+                && let Some(variable) = self.scopes.find_local_variable(id)
+            {
+                let register = variable.register();
+                variable.mark_read(id_token);
+                if !check_variable_initialized(
+                    &mut self.diagnostics,
+                    &self.closures,
+                    id_token,
+                    variable,
+                    self.closures.len(),
+                ) {
+                    return Register::EMPTY;
                 }
+                return register;
             }
         } else if let Grouping(_, inner, _) = expr {
             return self.emit_expression_reg(inner, brk);
@@ -714,11 +714,11 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 self.op(OpCode::Freeze);
             }
             Call(callable, _, args, _) => {
-                if let Some((first, rest)) = args.split_first() {
-                    if let ArrayElementBase::Element(first) = first.deref() {
-                        self.emit_call(callable, Some(first), rest, ret, brk);
-                        return;
-                    }
+                if let Some((first, rest)) = args.split_first()
+                    && let ArrayElementBase::Element(first) = first.deref()
+                {
+                    self.emit_call(callable, Some(first), rest, ret, brk);
+                    return;
                 }
                 self.emit_call(callable, None, args, ret, brk);
             }

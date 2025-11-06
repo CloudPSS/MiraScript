@@ -99,7 +99,7 @@ impl<'o> FormatManager<'o> {
         if right_to_left {
             let len = bytes.len();
             for (i, &b) in bytes.iter().enumerate() {
-                if i > 0 && (len - i) % group_size == 0 {
+                if i > 0 && (len - i).is_multiple_of(group_size) {
                     self.write_char('_');
                 }
                 self.write_char(b as char);
