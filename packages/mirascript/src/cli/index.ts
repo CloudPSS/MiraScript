@@ -1,6 +1,7 @@
 /* c8 ignore start */
 /* eslint-disable no-console */
 import { readFile, stat } from 'node:fs/promises';
+import { pathToFileURL } from 'node:url';
 import { program } from '@commander-js/extra-typings';
 import { execute } from './execute.js';
 import pkg from '../../package.json' with { type: 'json' };
@@ -38,7 +39,8 @@ program
     .argument('[script]', '要执行的脚本文件路径（如果提供了 -e 则忽略此参数）')
     .action(async (script, opt) => {
         if (opt.eval != null) {
-            await execute(opt.eval, !!opt.template, opt.variable);
+            const template = !!opt.template;
+            await execute(opt.eval, template, opt.variable, template ? 'eval.miratpl' : 'eval.mira');
             return;
         }
         if (script) {
@@ -62,9 +64,9 @@ program
                 }
                 return;
             }
-            const context = await readFile(script, 'utf8');
+            const context = await readFile(script, 'utf-8');
             const template = opt.template ?? script.endsWith('.miratpl');
-            await execute(context, template, opt.variable);
+            await execute(context, template, opt.variable, pathToFileURL(script).href);
             return;
         }
         program.help({ error: true });

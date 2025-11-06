@@ -6,9 +6,14 @@ import { debug_print } from '../vm/lib/global/debug.js';
 import { print } from './print.js';
 
 /** 执行脚本 */
-export async function execute(script: string, template: boolean, variables: Record<string, VmValue>): Promise<void> {
+export async function execute(
+    script: string,
+    template: boolean,
+    variables: Record<string, VmValue>,
+    fileName: string,
+): Promise<void> {
     try {
-        const f = await compile(script, { input_mode: template ? 'Template' : 'Script' });
+        const f = await compile(script, { input_mode: template ? 'Template' : 'Script', sourceMap: true, fileName });
         const r = f(
             createVmContext({
                 debug_print: VmFunction((...values) => {
@@ -26,7 +31,7 @@ export async function execute(script: string, template: boolean, variables: Reco
             console.log(print(r));
         }
     } catch (ex) {
-        console.error(styles.red.open + (ex as Error).message + styles.red.close);
+        console.error(styles.red.open + (ex as Error).stack + styles.red.close);
         process.exitCode = 2;
     }
 }

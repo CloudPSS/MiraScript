@@ -61,6 +61,9 @@ importers:
       js-base64:
         specifier: ^3.7.8
         version: 3.7.8
+      source-map-js:
+        specifier: ^1.2.1
+        version: 1.2.1
     devDependencies:
       '@types/node':
         specifier: ^24.10.0
@@ -90,7 +93,7 @@ importers:
         specifier: workspace:~
         version: link:../wasm
       monaco-editor:
-        specifier: npm:@private/monaco-editor@^0.0.53
+        specifier: npm:@private/monaco-editor
         version: '@private/monaco-editor@0.0.53'
     devDependencies:
       type-fest:

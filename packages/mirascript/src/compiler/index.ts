@@ -4,7 +4,7 @@ import './types.js';
 import { emit } from './emit.js';
 import { createScript } from './create-script.js';
 import { compileFast } from './compile-fast.js';
-import { formatDiagnostic, parseDiagnostics } from './diagnostic.js';
+import { DiagnosticCode, formatDiagnostic, parseDiagnostics } from './diagnostic.js';
 import { generateBytecode, generateBytecodeSync, loadModule } from './generate-bytecode.js';
 import { compileWorker } from './worker-manager.js';
 await loadModule();
@@ -33,7 +33,10 @@ export function emitScript(
     if (!code) {
         reportDiagnostic(source, diagnostics);
     }
-    const target = emit(source, code, options);
+    const sourcemaps = options.sourceMap
+        ? parseDiagnostics(source, diagnostics, (c) => c === DiagnosticCode.SourceMap).sourcemaps
+        : [];
+    const target = emit(source, code, sourcemaps, options);
     return createScript(source, target);
 }
 
@@ -41,6 +44,11 @@ export function emitScript(
  * 生成 MiraScript 对应的 JavaScript 代码
  */
 export async function compile(this: void, source: ScriptInput, options: TranspileOptions = {}): Promise<VmScript> {
+    if (options.sourceMap) {
+        options.diagnostic_sourcemap = true;
+        // https://tc39.es/ecma426/#sec-terms-and-definitions-colun
+        options.diagnostic_position_encoding ??= 'Utf16';
+    }
     if (typeof source == 'string') {
         const result = compileFast(source, options);
         if (result) return result;

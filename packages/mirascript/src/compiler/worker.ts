@@ -1,6 +1,7 @@
 import type { ScriptInput, TranspileOptions } from './types.js';
 import { emit } from './emit.js';
 import { generateBytecode } from './generate-bytecode.js';
+import { DiagnosticCode, parseDiagnostics } from './diagnostic.js';
 
 /**
  * 生成 MiraScript 对应的 JavaScript 代码
@@ -13,7 +14,10 @@ export async function compile(
     if (bytecode == null) {
         return [undefined, errors];
     }
-    const generatedCode = emit(script, bytecode, options);
+    const sourcemaps = options.sourceMap
+        ? parseDiagnostics(script, errors, (c) => c === DiagnosticCode.SourceMap).sourcemaps
+        : [];
+    const generatedCode = emit(script, bytecode, sourcemaps, options);
     return [generatedCode, errors];
 }
 

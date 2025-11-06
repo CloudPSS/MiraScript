@@ -13,5 +13,5 @@ await fs.writeFile(
         },
         2,
     ),
-    'utf8',
+    'utf-8',
 );

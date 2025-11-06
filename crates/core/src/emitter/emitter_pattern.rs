@@ -97,11 +97,11 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 if !variable.mutable() && bind_type.is_none() {
                 } else if level == self.closures.len() {
                     let register = variable.register();
-                    self.op_unary(register, OpCode::Assign, Register::EMPTY);
+                    self.op_unary(pattern.range(), register, OpCode::Assign, Register::EMPTY);
                 } else {
                     let register = variable.register();
                     let level = self.closures.len() - level;
-                    self.op_set_upvalue(Register::EMPTY, level, register);
+                    self.op_set_upvalue(pattern.range(), Register::EMPTY, level, register);
                 }
             }
             Record(_, elements, _) => {
@@ -150,20 +150,20 @@ impl<'s, 'c> Emitter<'s, 'c> {
                         .as_ref()
                         .is_some_and(|f| *f.as_ref() == Operator::Minus);
                     let lit_num = if inv { -lit_num } else { lit_num };
-                    self.op_number(value, lit_num);
+                    self.op_number(pattern_constant.range(), value, lit_num);
                 } else {
                     match &lit.kind {
                         TokenKind::Keyword(Keyword::Nil) => {
-                            self.op_nil(value);
+                            self.op_nil(pattern_constant.range(), value);
                         }
                         TokenKind::Keyword(Keyword::True) => {
-                            self.op_bool(value, true);
+                            self.op_bool(pattern_constant.range(), value, true);
                         }
                         TokenKind::Keyword(Keyword::False) => {
-                            self.op_bool(value, false);
+                            self.op_bool(pattern_constant.range(), value, false);
                         }
                         TokenKind::String(s, _) => {
-                            self.op_string(value, s.as_ref());
+                            self.op_string(pattern_constant.range(), value, s.as_ref());
                         }
                         _ => self.unreachable(prefix, lit, file!(), line!()),
                     }
@@ -193,11 +193,11 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     return true;
                 }
                 if lit.kind == Keyword::Nil {
-                    self.op_3(op, success, Register::EMPTY, value);
+                    self.op_3(pattern.range(), op, success, Register::EMPTY, value);
                 } else {
                     let reg = self.closures.add_reg();
                     self.emit_literal_constant(pattern, reg);
-                    self.op_3(op, success, reg, value);
+                    self.op_3(pattern.range(), op, success, reg, value);
                 }
                 true
             }
@@ -211,7 +211,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 }
                 let reg = self.closures.add_reg();
                 self.emit_literal_constant(pattern, reg);
-                self.op_3(op, success, reg, value);
+                self.op_3(pattern.range(), op, success, reg, value);
                 true
             }
             Grouping(_, pattern, _) => self.emit_constant_pattern(op, success, pattern, value),
@@ -248,7 +248,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 };
                 let reg = self.closures.add_reg();
                 self.emit_literal_constant(constant, reg);
-                self.op_3(op, success, value, reg);
+                self.op_3(pattern.range(), op, success, value, reg);
             }
             Range(l, token, r) => {
                 if success.is_empty() {
@@ -262,8 +262,9 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 let end = self.closures.add_reg();
                 self.emit_literal_constant(l, start);
                 self.emit_literal_constant(r, end);
-                self.op_3(OpCode::Lte, start, start, value);
+                self.op_3(pattern.range(), OpCode::Lte, start, start, value);
                 self.op_3(
+                    pattern.range(),
                     if token.kind == Operator::HalfOpenRange {
                         OpCode::Gt
                     } else {
@@ -273,7 +274,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     end,
                     value,
                 );
-                self.op_3(OpCode::And, success, start, end);
+                self.op_3(pattern.range(), OpCode::And, success, start, end);
             }
             Discard(_) => {
                 if success.is_empty() {
@@ -281,13 +282,13 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     // or use directly in `let _ = <value>`
                     return;
                 }
-                self.op_bool(success, true);
+                self.op_bool(pattern.range(), success, true);
             }
             SpreadDiscard(_) => {
                 if success.is_empty() {
                     return;
                 }
-                self.op_bool(success, true);
+                self.op_bool(pattern.range(), success, true);
             }
             Bind(_, id_token) => {
                 let Some(id) = id_token.to_id_name() else {
@@ -295,7 +296,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 };
                 if !success.is_empty() {
                     // binding always succeeds
-                    self.op_bool(success, true);
+                    self.op_bool(pattern.range(), success, true);
                 }
                 let var = self.scopes.find_variable(id);
                 if let Some((level, variable)) = var {
@@ -322,11 +323,11 @@ impl<'s, 'c> Emitter<'s, 'c> {
                         variable.put_decl_ref(&mut self.diagnostics);
                     } else if level == self.closures.len() {
                         let register = variable.register();
-                        self.op_unary(register, OpCode::Assign, value);
+                        self.op_unary(pattern.range(), register, OpCode::Assign, value);
                     } else {
                         let register = variable.register();
                         let level = self.closures.len() - level;
-                        self.op_set_upvalue(value, level, register);
+                        self.op_set_upvalue(pattern.range(), value, level, register);
                     }
                 } else {
                     self.diagnostics.push(
@@ -346,7 +347,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                         return;
                     }
                 } else {
-                    self.op_2(OpCode::IsRecord, success, value);
+                    self.op_2(pattern.range(), OpCode::IsRecord, success, value);
                 }
 
                 if !is_empty {
@@ -378,19 +379,25 @@ impl<'s, 'c> Emitter<'s, 'c> {
                                 let const_id = self.add_const_string(id);
                                 let required = !sub_flag.is_empty() && !is_optional(colon);
                                 if required {
-                                    self.op_3(OpCode::Has, sub_flag, value, const_id);
-                                    self.op_if(OpCode::If, sub_flag);
+                                    self.op_3(
+                                        element.range(),
+                                        OpCode::Has,
+                                        sub_flag,
+                                        value,
+                                        const_id,
+                                    );
+                                    self.op_if(element.range(), OpCode::If, sub_flag);
                                 }
                                 let ret = self.closures.add_reg();
-                                self.op_3(OpCode::Get, ret, value, const_id);
+                                self.op_3(element.range(), OpCode::Get, ret, value, const_id);
                                 self.emit_pattern(sub_flag, pattern, ret, bind_type);
                                 if let Some(omitted) = omitted.as_mut() {
                                     omitted.push(const_id);
                                 }
                                 if required {
-                                    self.op_else();
+                                    self.op_else(element.range());
                                     self.emit_failed_pattern(pattern, bind_type);
-                                    self.op_if_end();
+                                    self.op_if_end(element.range());
                                 }
                             }
                             RecordElementBase::InterpolateNamed(..) => {}
@@ -410,19 +417,25 @@ impl<'s, 'c> Emitter<'s, 'c> {
                                 let const_id = self.add_const_string(id);
                                 let required = !sub_flag.is_empty() && !is_optional(colon);
                                 if required {
-                                    self.op_3(OpCode::Has, sub_flag, value, const_id);
-                                    self.op_if(OpCode::If, sub_flag);
+                                    self.op_3(
+                                        element.range(),
+                                        OpCode::Has,
+                                        sub_flag,
+                                        value,
+                                        const_id,
+                                    );
+                                    self.op_if(element.range(), OpCode::If, sub_flag);
                                 }
                                 let ret = self.closures.add_reg();
-                                self.op_3(OpCode::Get, ret, value, const_id);
+                                self.op_3(element.range(), OpCode::Get, ret, value, const_id);
                                 self.emit_pattern(sub_flag, pattern, ret, bind_type);
                                 if let Some(omitted) = omitted.as_mut() {
                                     omitted.push(const_id);
                                 }
                                 if required {
-                                    self.op_else();
+                                    self.op_else(element.range());
                                     self.emit_failed_pattern(pattern, bind_type);
-                                    self.op_if_end();
+                                    self.op_if_end(element.range());
                                 }
                             }
                             RecordElementBase::Unnamed(pattern) => {
@@ -443,19 +456,25 @@ impl<'s, 'c> Emitter<'s, 'c> {
                                 let start = pattern.range().start;
                                 self.diagnostics.push(code, start..start);
                                 if !sub_flag.is_empty() {
-                                    self.op_3(OpCode::HasIndex, sub_flag, value, OpParam::from(i));
-                                    self.op_if(OpCode::If, sub_flag);
+                                    self.op_3(
+                                        element.range(),
+                                        OpCode::HasIndex,
+                                        sub_flag,
+                                        value,
+                                        OpParam::from(i),
+                                    );
+                                    self.op_if(element.range(), OpCode::If, sub_flag);
                                 }
-                                self.op_get_index(ret, value, i as i32);
+                                self.op_get_index(element.range(), ret, value, i as i32);
                                 self.emit_pattern(sub_flag, pattern, ret, bind_type);
                                 if let Some(omitted) = omitted.as_mut() {
                                     let const_id = self.add_const_ordinal(i as i32);
                                     omitted.push(const_id);
                                 }
                                 if !sub_flag.is_empty() {
-                                    self.op_else();
+                                    self.op_else(element.range());
                                     self.emit_failed_pattern(pattern, bind_type);
-                                    self.op_if_end();
+                                    self.op_if_end(element.range());
                                 }
                             }
                             RecordElementBase::Spread(_, pattern) => {
@@ -463,13 +482,19 @@ impl<'s, 'c> Emitter<'s, 'c> {
                                 let Some(omitted) = std::mem::take(&mut omitted) else {
                                     continue;
                                 };
-                                self.op_variadic_1(ret, OpCode::Omit, value, omitted);
+                                self.op_variadic_1(
+                                    element.range(),
+                                    ret,
+                                    OpCode::Omit,
+                                    value,
+                                    omitted,
+                                );
                                 self.emit_pattern(sub_flag, pattern, ret, bind_type);
                             }
                         }
 
                         if !sub_flag.is_empty() {
-                            self.op_3(OpCode::And, success, success, sub_flag);
+                            self.op_3(element.range(), OpCode::And, success, success, sub_flag);
                         }
                     }
                 }
@@ -495,9 +520,9 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 } else {
                     success
                 };
-                self.op_2(OpCode::IsArray, flag, value);
+                self.op_2(pattern.range(), OpCode::IsArray, flag, value);
 
-                self.op_if(OpCode::If, flag);
+                self.op_if(pattern.range(), OpCode::If, flag);
 
                 let sub_flag = if success.is_empty() {
                     // 此时匹配成功与否并不重要，而且也要把这是非条件匹配的信息传到子级
@@ -511,39 +536,48 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     };
 
                     let ret = self.closures.add_reg();
-                    self.op_get_index(ret, value, i as i32);
+                    self.op_get_index(item.range(), ret, value, i as i32);
                     self.emit_pattern(sub_flag, pattern, ret, bind_type);
 
                     if !sub_flag.is_empty() {
-                        self.op_3(OpCode::And, flag, flag, sub_flag);
+                        self.op_3(item.range(), OpCode::And, flag, flag, sub_flag);
                     }
                 }
-                if let Some(ArrayElementBase::Spread(_, spread)) = spread {
+                if let Some(spread) = spread
+                    && let ArrayElementBase::Spread(_, spread_inner) = spread
+                {
                     for (i, item) in after.iter().rev().enumerate() {
                         let ArrayElementBase::Element(pattern) = item.deref() else {
                             unreachable!();
                         };
 
                         let ret = self.closures.add_reg();
-                        self.op_get_index(ret, value, -1 - (i as i32));
+                        self.op_get_index(item.range(), ret, value, -1 - (i as i32));
                         self.emit_pattern(sub_flag, pattern, ret, bind_type);
 
                         if !sub_flag.is_empty() {
-                            self.op_3(OpCode::And, flag, flag, sub_flag);
+                            self.op_3(item.range(), OpCode::And, flag, flag, sub_flag);
                         }
                     }
 
-                    if !matches!(spread.as_ref(), SpreadDiscard(_)) {
+                    if !matches!(spread_inner.as_ref(), SpreadDiscard(_)) {
                         let ret = self.closures.add_reg();
                         if before.is_empty() && after.is_empty() {
                             // 如果没有前后元素，直接返回整个数组
-                            self.op_2(OpCode::Assign, ret, value);
+                            self.op_2(spread.range(), OpCode::Assign, ret, value);
                         } else if after.is_empty() {
                             // 切片前面的元素
-                            self.op_3(OpCode::SliceEnd, ret, value, OpParam::from(before.len()));
+                            self.op_3(
+                                spread.range(),
+                                OpCode::SliceEnd,
+                                ret,
+                                value,
+                                OpParam::from(before.len()),
+                            );
                         } else if before.is_empty() {
                             // 切片后面的元素
                             self.op_3(
+                                spread.range(),
                                 OpCode::SliceStart,
                                 ret,
                                 value,
@@ -552,6 +586,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                         } else {
                             // 切片前后都有元素
                             self.op_4(
+                                spread.range(),
                                 OpCode::Slice,
                                 ret,
                                 value,
@@ -559,27 +594,28 @@ impl<'s, 'c> Emitter<'s, 'c> {
                                 OpParam::from(-(after.len() as i32) - 1),
                             );
                         }
-                        self.emit_pattern(sub_flag, spread, ret, bind_type);
+                        self.emit_pattern(sub_flag, spread_inner, ret, bind_type);
 
                         if !sub_flag.is_empty() {
-                            self.op_3(OpCode::And, flag, flag, sub_flag);
+                            self.op_3(spread.range(), OpCode::And, flag, flag, sub_flag);
                         }
                     }
                 }
 
-                self.op_else();
+                self.op_else(pattern.range());
                 self.emit_failed_pattern(pattern, bind_type);
 
-                self.op_if_end();
+                self.op_if_end(pattern.range());
 
                 // 最后进行长度测试，避免 [1] 匹配 [x, y] 时 x 也为 nil
                 if !success.is_empty() && (len > 0 || spread.is_none()) {
-                    self.op_if(OpCode::If, flag);
+                    self.op_if(pattern.range(), OpCode::If, flag);
                     let len_reg = self.closures.add_reg();
-                    self.op_2(OpCode::Length, len_reg, value);
+                    self.op_2(pattern.range(), OpCode::Length, len_reg, value);
                     let expected_len_reg = self.closures.add_reg();
-                    self.op_number(expected_len_reg, len as f64);
+                    self.op_number(pattern.range(), expected_len_reg, len as f64);
                     self.op_3(
+                        pattern.range(),
                         if spread.is_some() {
                             OpCode::Gte
                         } else {
@@ -589,7 +625,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                         len_reg,
                         expected_len_reg,
                     );
-                    self.op_if_end();
+                    self.op_if_end(pattern.range());
                 }
             }
             And(left, op, right) | Or(left, op, right) => {
@@ -602,7 +638,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     self.emit_pattern(Register::EMPTY, left, value, bind_type);
                     self.emit_pattern(Register::EMPTY, right, value, bind_type);
                 } else {
-                    let op = if *op.as_ref() == Keyword::And {
+                    let opcode = if *op.as_ref() == Keyword::And {
                         OpCode::And
                     } else {
                         OpCode::Or
@@ -610,7 +646,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     let right_success = self.closures.add_reg();
                     self.emit_pattern(success, left, value, bind_type);
                     self.emit_pattern(right_success, right, value, bind_type);
-                    self.op_3(op, success, right_success, success);
+                    self.op_3(op.range(), opcode, success, right_success, success);
                 }
             }
             Not(kw, p) => {
@@ -621,7 +657,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 } else if self.emit_constant_pattern(OpCode::Nsame, success, p, value) {
                 } else {
                     self.emit_pattern(success, p, value, bind_type);
-                    self.op_2(OpCode::Not, success, success);
+                    self.op_2(kw.range(), OpCode::Not, success, success);
                 }
             }
             Unknown { .. } => (),

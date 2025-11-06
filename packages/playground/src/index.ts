@@ -197,6 +197,7 @@ setTimeout(() => {
     });
 }, 0);
 
+let fileCounter = 1;
 /** 编译 */
 async function compileScript(): Promise<VmScript | undefined> {
     const compStart = performance.now();
@@ -204,9 +205,9 @@ async function compileScript(): Promise<VmScript | undefined> {
     try {
         const script = await compile(source, {
             pretty: true,
-            input_mode: mode,
             sourceMap: true,
-            fileName: 'playground.mira',
+            input_mode: mode,
+            fileName: mode === 'Script' ? `playground_${fileCounter++}.mira` : `playground_${fileCounter++}.miratpl`,
         });
         const compEnd = performance.now();
         consoleManager.info(`Compilation completed successfully in ${(compEnd - compStart).toFixed(3)}ms`);
@@ -234,8 +235,6 @@ async function compileScript(): Promise<VmScript | undefined> {
         return script;
     } catch (ex) {
         const compEnd = performance.now();
-        // eslint-disable-next-line no-console
-        console.error('\u001B[41;37m MiraScript Playground \u001B[0m', ex);
         const errorText = String(ex);
         elCompiledOutput.dataset['code'] = '';
         elCompiledOutput.innerHTML = /*html*/ `
@@ -246,7 +245,8 @@ async function compileScript(): Promise<VmScript | undefined> {
             <div class="section-title">Execution Result:</div>
             <div class="result-error">Compilation failed</div>
         `;
-        consoleManager.error(`Compilation failed in ${(compEnd - compStart).toFixed(3)}ms: ${errorText}`);
+        consoleManager.error(`Compilation failed in ${(compEnd - compStart).toFixed(3)}ms:`);
+        consoleManager.error(ex as Error);
         return undefined;
     }
 }
@@ -272,14 +272,13 @@ async function runScript(script: VmScript): Promise<void> {
         consoleManager.info(`Execution completed successfully in ${(execEnd - execStart).toFixed(3)}ms`);
     } catch (ex) {
         const execEnd = performance.now();
-        // eslint-disable-next-line no-console
-        console.error('\u001B[41;37m MiraScript Playground \u001B[0m', ex);
         const errorText = String(ex);
         elResultOutput.innerHTML = /* html */ `
             <div class="section-title">Execution Error:</div>
             <div class="result-error">${errorText}</div>
         `;
-        consoleManager.error(`Execution failed in ${(execEnd - execStart).toFixed(3)}ms: ${errorText}`);
+        consoleManager.error(`Execution failed in ${(execEnd - execStart).toFixed(3)}ms:`);
+        consoleManager.error(ex as Error);
     }
 }
 

@@ -400,7 +400,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 if let Some(id) = self.emit_global_access(callable) {
                     // Global function call
                     let (args, spreads) = args_reg(self);
-                    self.op_call(ret, id, args, spreads);
+                    self.op_call(callable.range(), ret, id, args, spreads);
                     return;
                 }
 
@@ -408,19 +408,19 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 let callable_reg = self.emit_expression_reg(callable, brk);
                 let complex = !callable.is_variable();
                 if complex {
-                    self.op_if(OpCode::IfNotNil, callable_reg);
+                    self.op_if(callable.range(), OpCode::IfNotNil, callable_reg);
                 }
                 let (args, spreads) = args_reg(self);
-                self.op_call_dyn(ret, callable_reg, args, spreads);
+                self.op_call_dyn(callable.range(), ret, callable_reg, args, spreads);
                 if complex {
-                    self.op_else();
-                    self.op_nil(ret);
-                    self.op_if_end();
+                    self.op_else(callable.range());
+                    self.op_nil(callable.range(), ret);
+                    self.op_if_end(callable.range());
                 }
             }
             Callable::Type(_) => {
                 let arg0 = arg0.map_or(Register::EMPTY, |f| self.emit_expression_reg(f, brk));
-                self.op_unary(ret, OpCode::Type, arg0);
+                self.op_unary(callable.range(), ret, OpCode::Type, arg0);
             }
         }
     }
@@ -443,16 +443,16 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 return;
             }
             if level == self.closures.len() {
-                self.op_unary(ret, OpCode::Assign, register);
+                self.op_unary(token.range(), ret, OpCode::Assign, register);
             } else {
                 let up_reg = variable.register();
                 let level = self.closures.len() - level;
-                self.op_get_upvalue(ret, level, up_reg);
+                self.op_get_upvalue(token.range(), ret, level, up_reg);
             }
         } else {
             self.diagnostics
                 .push(DiagnosticCode::GlobalVariable, token.range());
-            self.op_global(ret, id);
+            self.op_global(token.range(), ret, id);
             self.hint_mislead_nil(id, token.range());
         }
     }
@@ -465,14 +465,16 @@ impl<'s, 'c> Emitter<'s, 'c> {
     ) {
         match expr {
             Literal(token) => match &token.kind {
-                TokenKind::String(s, _) => self.op_string(ret, s.as_ref()),
-                TokenKind::Number(n, _) => self.op_number(ret, *n),
-                TokenKind::Ordinal(o) => self.op_number(ret, *o as f64),
-                TokenKind::Keyword(Keyword::Nil) => self.op_nil(ret),
-                TokenKind::Keyword(Keyword::True) => self.op_bool(ret, true),
-                TokenKind::Keyword(Keyword::False) => self.op_bool(ret, false),
-                TokenKind::Keyword(Keyword::Nan) => self.op_number(ret, f64::NAN),
-                TokenKind::Keyword(Keyword::Inf) => self.op_number(ret, f64::INFINITY),
+                TokenKind::String(s, _) => self.op_string(token.range(), ret, s.as_ref()),
+                TokenKind::Number(n, _) => self.op_number(token.range(), ret, *n),
+                TokenKind::Ordinal(o) => self.op_number(token.range(), ret, *o as f64),
+                TokenKind::Keyword(Keyword::Nil) => self.op_nil(token.range(), ret),
+                TokenKind::Keyword(Keyword::True) => self.op_bool(token.range(), ret, true),
+                TokenKind::Keyword(Keyword::False) => self.op_bool(token.range(), ret, false),
+                TokenKind::Keyword(Keyword::Nan) => self.op_number(token.range(), ret, f64::NAN),
+                TokenKind::Keyword(Keyword::Inf) => {
+                    self.op_number(token.range(), ret, f64::INFINITY)
+                }
                 _ => self.unreachable(token, token, file!(), line!()),
             },
             InterpolatedString(token, expressions) => {
@@ -489,7 +491,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     };
                     if !str.is_empty() {
                         let reg = self.closures.add_reg();
-                        self.op_string(reg, str.as_ref());
+                        self.op_string(token.range(), reg, str.as_ref());
                         args_reg.push(reg);
                     }
                     if let Some(expression) = e_iter.next() {
@@ -498,16 +500,22 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     }
                 }
                 if args_reg.is_empty() {
-                    self.op_string(ret, "");
+                    self.op_string(token.range(), ret, "");
                 } else if args_reg.len() == 1 {
-                    self.op_binary(ret, OpCode::Format, args_reg[0], Register::EMPTY);
+                    self.op_binary(
+                        token.range(),
+                        ret,
+                        OpCode::Format,
+                        args_reg[0],
+                        Register::EMPTY,
+                    );
                 } else {
-                    self.op_variadic(ret, OpCode::Concat, args_reg);
+                    self.op_variadic(token.range(), ret, OpCode::Concat, args_reg);
                 }
             }
             Variable(token) => self.emit_var_read(token, ret),
             Grouping(_, expression, _) => self.emit_expression(expression, ret, brk),
-            Record(_, elements, _) => {
+            Record(open, elements, close) => {
                 let mut elements_regs = vec![];
                 for element in elements {
                     match element.deref() {
@@ -535,7 +543,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                         }
                     }
                 }
-                self.op_1(OpCode::Record, ret);
+                self.op_1(open.range(), OpCode::Record, ret);
                 let mut reg_index = 0;
                 for element in elements.iter() {
                     let opt = element
@@ -548,6 +556,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                                 self.diagnostics
                                     .push(DiagnosticCode::RecordFieldOrdinalName, token.range());
                                 self.op_2(
+                                    element.range(),
                                     if opt {
                                         OpCode::FieldOptIndex
                                     } else {
@@ -564,6 +573,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                                 self.diagnostics.push(id_type, token.range());
                                 let const_id = self.add_const_string(id);
                                 self.op_2(
+                                    element.range(),
                                     if opt { OpCode::FieldOpt } else { OpCode::Field },
                                     const_id,
                                     reg,
@@ -575,6 +585,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                             let name_reg = elements_regs[reg_index];
                             let reg = elements_regs[reg_index + 1];
                             self.op_2(
+                                element.range(),
                                 if opt {
                                     OpCode::FieldOptDyn
                                 } else {
@@ -615,6 +626,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                             let const_id = self.add_const_string(id);
                             let reg = elements_regs[reg_index];
                             self.op_2(
+                                element.range(),
                                 if opt { OpCode::FieldOpt } else { OpCode::Field },
                                 const_id,
                                 reg,
@@ -624,6 +636,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                         RecordElementBase::Unnamed(exp) => {
                             let reg = elements_regs[reg_index];
                             self.op_2(
+                                element.range(),
                                 if opt {
                                     OpCode::FieldOptIndex
                                 } else {
@@ -651,14 +664,14 @@ impl<'s, 'c> Emitter<'s, 'c> {
                         }
                         RecordElementBase::Spread(_, _) => {
                             let reg = elements_regs[reg_index];
-                            self.op_1(OpCode::Spread, reg);
+                            self.op_1(element.range(), OpCode::Spread, reg);
                             reg_index += 1;
                         }
                     }
                 }
-                self.op(OpCode::Freeze);
+                self.op(close.range(), OpCode::Freeze);
             }
-            Array(_, items, _) => {
+            Array(open, items, close) => {
                 let mut items_regs = vec![];
                 for item in items {
                     match item.deref() {
@@ -681,19 +694,20 @@ impl<'s, 'c> Emitter<'s, 'c> {
                         }
                     }
                 }
-                self.op_1(OpCode::Array, ret);
+                self.op_1(open.range(), OpCode::Array, ret);
                 let mut reg_index = 0;
                 for item in items.iter() {
                     match item.deref() {
                         ArrayElementBase::Element(el) => match el.deref() {
                             Iterable::Value(_) => {
-                                self.op_1(OpCode::Item, items_regs[reg_index]);
+                                self.op_1(item.range(), OpCode::Item, items_regs[reg_index]);
                                 reg_index += 1;
                             }
                             Iterable::Range(range) => {
                                 let start = items_regs[reg_index];
                                 let end = items_regs[reg_index + 1];
                                 self.op_2(
+                                    item.range(),
                                     if range.exclusive() {
                                         OpCode::ItemRangeExclusiveDyn
                                     } else {
@@ -706,12 +720,12 @@ impl<'s, 'c> Emitter<'s, 'c> {
                             }
                         },
                         ArrayElementBase::Spread(_, _) => {
-                            self.op_1(OpCode::Spread, items_regs[reg_index]);
+                            self.op_1(item.range(), OpCode::Spread, items_regs[reg_index]);
                             reg_index += 1;
                         }
                     }
                 }
-                self.op(OpCode::Freeze);
+                self.op(close.range(), OpCode::Freeze);
             }
             Call(callable, _, args, _) => {
                 if let Some((first, rest)) = args.split_first()
@@ -726,36 +740,38 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 self.emit_call(callable, Some(expression), args, ret, brk);
             }
             Access(expression, _, id) => {
+                let r = id.range();
                 if !is_global_expression(expression) {
                     self.emit_expression(expression, ret, brk);
                     match id.kind {
-                        TokenKind::Identifier(id) => self.op_get(ret, ret, id),
-                        TokenKind::Ordinal(ord) => self.op_get_index(ret, ret, ord),
+                        TokenKind::Identifier(id) => self.op_get(r, ret, ret, id),
+                        TokenKind::Ordinal(ord) => self.op_get_index(r, ret, ret, ord),
                         _ => unreachable!("Expected identifier token"),
                     };
                 } else {
                     self.diagnostics
                         .push(DiagnosticCode::GlobalVariable, id.range());
                     match id.kind {
-                        TokenKind::Identifier(id) => self.op_global(ret, id),
-                        TokenKind::Ordinal(ord) => self.op_global_num(ret, ord as f64),
+                        TokenKind::Identifier(id) => self.op_global(r, ret, id),
+                        TokenKind::Ordinal(ord) => self.op_global_num(r, ret, ord as f64),
                         _ => unreachable!("Expected identifier token"),
                     };
                 }
             }
-            Index(expression, _, index, _) => {
+            Index(expression, open, index, close) => {
+                let r = open.range.start..close.range.end;
                 if !is_global_expression(expression) {
                     self.emit_expression(expression, ret, brk);
                     let index_reg = self.emit_expression_reg(index, brk);
-                    self.op_get_dyn(ret, ret, index_reg);
+                    self.op_get_dyn(r, ret, ret, index_reg);
                 } else {
                     self.diagnostics
                         .push(DiagnosticCode::GlobalDynamicAccess, index.range());
                     let index_reg = self.emit_expression_reg(index, brk);
-                    self.op_global_dyn(ret, index_reg);
+                    self.op_global_dyn(r, ret, index_reg);
                 }
             }
-            Slice(expression, _, start, op, end, _) => {
+            Slice(expression, open, start, op, end, close) => {
                 // slice 不能用于 global 关键字，Variable 表达式将处理此错误
                 let arr_reg = self.emit_expression_reg(expression, brk);
                 let start_reg = if let Some(start) = start {
@@ -773,18 +789,26 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 } else {
                     OpCode::SliceDyn
                 };
-                self.op_4(op, ret, arr_reg, start_reg, end_reg);
+                self.op_4(
+                    open.range.start..close.range.end,
+                    op,
+                    ret,
+                    arr_reg,
+                    start_reg,
+                    end_reg,
+                );
             }
-            NonNil(expression, _) => {
+            NonNil(expression, kw) => {
                 self.emit_expression(expression, ret, brk);
-                self.op_non_nil(ret);
+                self.op_non_nil(kw.range(), ret);
             }
             Prefix(token, expression) => {
                 if let Some(f) = number_constant(expression) {
+                    let r = expr.range();
                     match token.kind {
-                        TokenKind::Operator(Operator::Plus) => self.op_number(ret, f),
-                        TokenKind::Operator(Operator::Minus) => self.op_number(ret, -f),
-                        TokenKind::Operator(Operator::Exclamation) => self.op_bool(ret, false),
+                        TokenKind::Operator(Operator::Plus) => self.op_number(r, ret, f),
+                        TokenKind::Operator(Operator::Minus) => self.op_number(r, ret, -f),
+                        TokenKind::Operator(Operator::Exclamation) => self.op_bool(r, ret, false),
                         _ => unreachable!(),
                     };
                     return;
@@ -797,7 +821,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     TokenKind::Operator(Operator::Exclamation) => OpCode::Not,
                     _ => unreachable!(),
                 };
-                self.op_unary(ret, op, reg);
+                self.op_unary(token.range(), ret, op, reg);
             }
             Infix(left, token, right) => {
                 if **token == Operator::LogicalAnd {
@@ -808,9 +832,9 @@ impl<'s, 'c> Emitter<'s, 'c> {
                         self.closures.add_reg()
                     };
                     self.emit_expression(left, ret, brk);
-                    self.op_if(OpCode::If, ret);
+                    self.op_if(token.range(), OpCode::If, ret);
                     self.emit_expression(right, ret, brk);
-                    self.op_if_end();
+                    self.op_if_end(token.range());
                 } else if **token == Operator::LogicalOr {
                     let ret = if !ret.is_empty() {
                         ret
@@ -818,9 +842,9 @@ impl<'s, 'c> Emitter<'s, 'c> {
                         self.closures.add_reg()
                     };
                     self.emit_expression(left, ret, brk);
-                    self.op_if(OpCode::IfNot, ret);
+                    self.op_if(token.range(), OpCode::IfNot, ret);
                     self.emit_expression(right, ret, brk);
-                    self.op_if_end();
+                    self.op_if_end(token.range());
                 } else if **token == Operator::NullCoalescing {
                     let ret = if !ret.is_empty() {
                         ret
@@ -828,12 +852,17 @@ impl<'s, 'c> Emitter<'s, 'c> {
                         self.closures.add_reg()
                     };
                     self.emit_expression(left, ret, brk);
-                    self.op_if(OpCode::IfNil, ret);
+                    self.op_if(token.range(), OpCode::IfNil, ret);
                     self.emit_expression(right, ret, brk);
-                    self.op_if_end();
+                    self.op_if_end(token.range());
                 } else if **token == Keyword::In && is_global_expression(right) {
                     let left_reg = self.emit_expression_reg(left, brk);
-                    self.op_unary(ret, OpCode::InGlobal, left_reg);
+                    self.op_unary(
+                        token.range.start..right.range().end,
+                        ret,
+                        OpCode::InGlobal,
+                        left_reg,
+                    );
                 } else {
                     let Some(op) = (match token.kind {
                         TokenKind::Operator(o) => o.to_infix_op(),
@@ -845,7 +874,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     };
                     let left_reg = self.emit_expression_reg(left, brk);
                     let right_reg = self.emit_expression_reg(right, brk);
-                    self.op_binary(ret, op, left_reg, right_reg);
+                    self.op_binary(token.range(), ret, op, left_reg, right_reg);
                 }
             }
             Is(expression, _, pattern) => {
@@ -855,21 +884,30 @@ impl<'s, 'c> Emitter<'s, 'c> {
             Block(_, stmts, ret_expr, _) => {
                 self.enter_scope(expr.range());
                 self.declare_block(stmts, ret_expr);
-                self.emit_block(stmts, ret_expr, ret, brk);
+                self.emit_block(stmts, ret_expr, expr.range(), ret, brk);
                 self.exit_scope();
             }
-            Loop(_, expression) => {
+            Loop(kw, expression) => {
                 self.closures.enter(false, 0);
                 self.enter_scope(expression.range());
                 let pos = self.chunk.code.len();
-                self.op(OpCode::Loop);
+                self.op(kw.range(), OpCode::Loop);
                 let Expression::Block(_, stmts, ret_expr, _) = expression.as_ref() else {
                     // unreachable!("Expected block expression");
                     return;
                 };
                 self.declare_block(stmts, ret_expr);
-                self.emit_block(stmts, ret_expr, Register::EMPTY, Some(ret));
-                self.op(OpCode::LoopEnd);
+                self.emit_block(
+                    stmts,
+                    ret_expr,
+                    expression.range(),
+                    Register::EMPTY,
+                    Some(ret),
+                );
+                self.op(
+                    expression.range().end..expression.range().end,
+                    OpCode::LoopEnd,
+                );
 
                 let nreg: OpParam = self.closures.current().reg_len().into();
                 if nreg.is_wide() {
@@ -889,7 +927,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 };
 
                 let ret = if !ret.is_empty() {
-                    self.op_uninit(ret);
+                    self.op_uninit(kw.range(), ret);
                     ret
                 } else if else_part.is_some() {
                     self.closures.add_reg()
@@ -905,14 +943,14 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 self.declare_block(stmts, expr);
 
                 let pos = self.chunk.code.len();
-                self.op(OpCode::Loop);
+                self.op(kw.range(), OpCode::Loop);
                 self.emit_expression(cond, cond_reg, Some(ret));
-                self.op_if(OpCode::IfNot, cond_reg);
-                self.op(OpCode::Break);
-                self.op_if_end();
+                self.op_if(cond.range(), OpCode::IfNot, cond_reg);
+                self.op(cond.range(), OpCode::Break);
+                self.op_if_end(cond.range());
 
-                self.emit_block(stmts, expr, Register::EMPTY, Some(ret));
-                self.op(OpCode::LoopEnd);
+                self.emit_block(stmts, expr, body.range(), Register::EMPTY, Some(ret));
+                self.op(body.range().end..body.range().end, OpCode::LoopEnd);
 
                 let nreg: OpParam = self.closures.current().reg_len().into();
                 if nreg.is_wide() {
@@ -925,25 +963,22 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 self.closures.exit();
 
                 if !ret.is_empty() {
-                    self.op_if(OpCode::IfNotInit, ret);
+                    self.op_if(kw.range(), OpCode::IfNotInit, ret);
                     if let Some(ElseBlock(_, else_expr)) = else_part {
                         self.emit_expression(else_expr, ret, None);
                     } else {
-                        self.op_nil(ret);
+                        self.op_nil(kw.range(), ret);
                     }
-                    self.op_if_end();
+                    self.op_if_end(kw.range());
                 }
             }
-            ForIn(kw, pattern, _, iterable, expression, else_part) => {
-                let Expression::Block(_, stmts, expr, _) = expression.as_ref() else {
+            ForIn(kw, pattern, _, iterable, body, else_part) => {
+                let Expression::Block(_, stmts, expr, _) = body.as_ref() else {
                     return;
                 };
 
                 // 先进入 scope 再进入 closure
-                self.enter_leveled_scope(
-                    kw.range.end..expression.range().end,
-                    self.closures.len() + 1,
-                );
+                self.enter_leveled_scope(kw.range.end..body.range().end, self.closures.len() + 1);
 
                 self.declare_pattern(pattern, Some(BindType::Init));
                 match iterable.as_ref() {
@@ -985,7 +1020,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 self.declare_block(stmts, expr);
 
                 let ret = if !ret.is_empty() {
-                    self.op_uninit(ret);
+                    self.op_uninit(kw.range(), ret);
                     ret
                 } else if else_part.is_some() {
                     self.closures.add_reg()
@@ -994,10 +1029,10 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 };
 
                 let pos = self.chunk.code.len();
-                self.op(loop_op);
+                self.op(kw.range(), loop_op);
                 self.emit_pattern(Register::EMPTY, pattern, iterator, Some(BindType::Init));
-                self.emit_block(stmts, expr, Register::EMPTY, Some(ret));
-                self.op(OpCode::LoopEnd);
+                self.emit_block(stmts, expr, body.range(), Register::EMPTY, Some(ret));
+                self.op(body.range().end..body.range().end, OpCode::LoopEnd);
                 let nreg: OpParam = self.closures.current().reg_len().into();
                 if nreg.is_wide() || loop_iterable_reg1.is_wide() || loop_iterable_reg2.is_wide() {
                     self.chunk.code[pos] = loop_op.wide_code();
@@ -1024,13 +1059,13 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 self.closures.exit();
 
                 if !ret.is_empty() {
-                    self.op_if(OpCode::IfNotInit, ret);
+                    self.op_if(kw.range(), OpCode::IfNotInit, ret);
                     if let Some(ElseBlock(_, else_expr)) = else_part {
                         self.emit_expression(else_expr, ret, None);
                     } else {
-                        self.op_nil(ret);
+                        self.op_nil(kw.range(), ret);
                     }
-                    self.op_if_end();
+                    self.op_if_end(kw.range());
                 }
             }
             If(kw, cond, then_expr, else_part) => {
@@ -1038,27 +1073,27 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 self.declare_expression(cond);
 
                 let cond_reg = self.emit_expression_reg(cond, brk);
-                self.op_if(OpCode::If, cond_reg);
+                self.op_if(kw.range(), OpCode::If, cond_reg);
                 self.emit_expression(then_expr, ret, brk);
-                if let Some(ElseBlock(_, else_expr)) = else_part {
-                    self.op_else();
+                if let Some(ElseBlock(kw_else, else_expr)) = else_part {
+                    self.op_else(kw_else.range());
                     self.emit_expression(else_expr, ret, brk);
                 } else if !ret.is_empty() {
-                    self.op_else();
-                    self.op_nil(ret);
+                    self.op_else(kw.range());
+                    self.op_nil(kw.range(), ret);
                 }
-                self.op_if_end();
+                self.op_if_end(expr.range().end..expr.range().end);
 
                 self.exit_scope();
             }
-            Match(_, expression, _, items, _) => {
+            Match(kw, expression, _, items, _) => {
                 let matcher = self.emit_expression_reg(expression, brk);
 
                 let matched = self.closures.add_reg();
-                self.op_bool(matched, false);
+                self.op_bool(kw.range(), matched, false);
 
                 if !ret.is_empty() {
-                    self.op_nil(ret);
+                    self.op_nil(kw.range(), ret);
                 }
 
                 for MatchCase(kw_case, pattern, guard, body) in items {
@@ -1074,21 +1109,21 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     }
                     self.declare_block(stmts, expr);
 
-                    self.op_if(OpCode::IfNot, matched);
+                    self.op_if(kw_case.range(), OpCode::IfNot, matched);
                     {
                         self.emit_pattern(matched, pattern, matcher, Some(BindType::Init));
-                        if let Some((_, expr)) = guard.as_ref() {
-                            self.op_if(OpCode::If, matched);
+                        if let Some((kw_if, expr)) = guard.as_ref() {
+                            self.op_if(kw_if.range(), OpCode::If, matched);
                             self.emit_expression(expr, matched, brk);
-                            self.op_if_end();
+                            self.op_if_end(body.range().start..body.range().start);
                         }
-                        self.op_if(OpCode::If, matched);
+                        self.op_if(kw_case.range(), OpCode::If, matched);
                         {
-                            self.emit_block(stmts, expr, ret, brk);
+                            self.emit_block(stmts, expr, body.range(), ret, brk);
                         }
-                        self.op_if_end();
+                        self.op_if_end(body.range().end..body.range().end);
                     }
-                    self.op_if_end();
+                    self.op_if_end(body.range().end..body.range().end);
                     self.exit_scope();
                 }
             }
@@ -1097,7 +1132,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
             }
             Unknown { .. } => {
                 // Load nil as result of unknown expression
-                self.op_nil(ret);
+                self.op_nil(expr.range(), ret);
             }
         }
     }

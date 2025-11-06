@@ -34,7 +34,7 @@
     "watch": "pnpm build:ts --watch",
     "build:ts": "pnpm clean && tsc",
     "build": "pnpm build:ts --emitDeclarationOnly && node ./esbuild.config.js",
-    "mirascript": "node ./dist/cli/index.js",
+    "mirascript": "node --enable-source-maps ./dist/cli/index.js",
     "clean": "rimraf dist",
     "test": "c8 ava",
     "prepublishOnly": "pnpm build"
@@ -45,7 +45,8 @@
     "@mirascript/wasm": "workspace:~",
     "ansi-styles": "^6.2.3",
     "commander": "^14.0.2",
-    "js-base64": "^3.7.8"
+    "js-base64": "^3.7.8",
+    "source-map-js": "^1.2.1"
   },
   "devDependencies": {
     "@types/node": "^24.10.0",

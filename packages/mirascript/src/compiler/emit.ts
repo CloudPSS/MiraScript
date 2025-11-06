@@ -1,11 +1,18 @@
 import { OpCode } from '@mirascript/wasm/types';
-import { encodeURL } from 'js-base64';
+import { toBase64 } from 'js-base64';
 import type { VmConst, VmPrimitive } from '../vm/index.js';
 import type { ScriptInput, TranspileOptions } from './types.js';
+import type { IRange } from './diagnostic.js';
+import { SourceMapGenerator } from 'source-map-js';
 
 /** 生成代码 */
-export function emit(source: ScriptInput, chunk: Uint8Array, options: TranspileOptions): string {
-    const gen = new Emitter(source, chunk, options);
+export function emit(
+    source: ScriptInput,
+    chunk: Uint8Array,
+    sourcemaps: readonly IRange[],
+    options: TranspileOptions,
+): string {
+    const gen = new Emitter(source, chunk, sourcemaps, options);
     gen.read();
     const code = gen.codeLines.join('\n');
     return code;
@@ -57,7 +64,7 @@ function toJavascript(value: VmConst | undefined): string {
     return String(value);
 }
 
-const ORIGIN = `mira://MiraScript`;
+const ORIGIN = `mira://MiraScript/`;
 let sourceId = 1;
 
 /** 创建数组 */
@@ -75,6 +82,7 @@ class Emitter {
     constructor(
         readonly source: ScriptInput,
         readonly chunk: Uint8Array,
+        readonly sourcemaps: readonly IRange[],
         readonly options: TranspileOptions,
     ) {
         this.pretty = options.pretty ?? false;
@@ -688,6 +696,9 @@ class Emitter {
                 code = `continue;`;
                 break;
             }
+            case OpCode.Noop: {
+                return;
+            }
             default: {
                 code = `; // ${OpCode[opcode] ?? opcode}`;
                 break;
@@ -742,27 +753,42 @@ class Emitter {
         const hasSchema = /^\w+:/.test(fileName);
         if (!hasSchema) {
             if (fileName.startsWith('/')) {
-                fileName = fileName.replace(/^\\+\s*/, '');
+                fileName = fileName.replace(/^\/+\s*/, '');
             }
             if (!fileName) {
                 fileName = `${sourceId++}.${this.options.input_mode === 'Template' ? 'miratpl' : 'mira'}`;
             }
         }
-        const data = {
-            version: 3,
-            file: fileName,
-            sourceRoot: hasSchema ? '' : ORIGIN,
-            sources: [fileName],
-            sourcesContent: [ArrayBuffer.isView(this.source) ? null : this.source],
-            names: [],
-            mappings: '',
-        };
+        const map = new SourceMapGenerator({
+            file: fileName + '.js',
+        });
+        if (typeof this.source === 'string') {
+            map.setSourceContent(fileName, this.source);
+        }
+        for (let i = 0; i < this.sourcemaps.length; i++) {
+            const range = this.sourcemaps[i];
+            if (!range) break;
+            map.addMapping({
+                generated: {
+                    // 前两行固定为：
+                    // (function anonymous($Add,$Aeq, ...
+                    // ) {
+                    line: i + 3,
+                    column: 0,
+                },
+                original: {
+                    line: range.startLineNumber,
+                    column: range.startColumn - 1,
+                },
+                source: fileName,
+            });
+        }
         const prefix = '//# ';
-        const sourceURL = hasSchema ? fileName : `${ORIGIN}/${fileName}.js`;
+        const sourceURL = hasSchema ? fileName : `${ORIGIN}${fileName}`;
         this.codeLines.push(
             // Prevent source map from being recognized as of this file
-            `${prefix}sourceURL=${sourceURL}`,
-            `${prefix}sourceMappingURL=data:application/json;base64,${encodeURL(JSON.stringify(data))}`,
+            `${prefix}sourceURL=${sourceURL}.js`,
+            `${prefix}sourceMappingURL=data:application/json;base64,${toBase64(map.toString())}`,
         );
     }
 }

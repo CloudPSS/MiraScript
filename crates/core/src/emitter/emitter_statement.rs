@@ -111,9 +111,9 @@ impl<'s, 'c> Emitter<'s, 'c> {
                                 let up_reg = variable.register();
                                 let level = self.closures.len() - level;
                                 let ret = self.closures.add_reg();
-                                self.op_get_upvalue(ret, level, up_reg);
+                                self.op_get_upvalue(stmt.range(), ret, level, up_reg);
                                 final_op = Box::new(move |s| {
-                                    s.op_set_upvalue(ret, level, up_reg);
+                                    s.op_set_upvalue(stmt.range(), ret, level, up_reg);
                                 });
 
                                 ret
@@ -134,19 +134,43 @@ impl<'s, 'c> Emitter<'s, 'c> {
                             TokenKind::Identifier(id) => {
                                 let field_name = self.add_const_string(id);
                                 if is_compound {
-                                    self.op_3(OpCode::Get, field_reg, obj_reg, field_name);
+                                    self.op_3(
+                                        stmt.range(),
+                                        OpCode::Get,
+                                        field_reg,
+                                        obj_reg,
+                                        field_name,
+                                    );
                                 }
                                 final_op = Box::new(move |s| {
-                                    s.op_3(OpCode::Set, field_reg, obj_reg, field_name);
+                                    s.op_3(
+                                        stmt.range(),
+                                        OpCode::Set,
+                                        field_reg,
+                                        obj_reg,
+                                        field_name,
+                                    );
                                 });
                             }
                             TokenKind::Ordinal(ord) => {
                                 let field_ord = OpParam::new(ord);
                                 if is_compound {
-                                    self.op_3(OpCode::GetIndex, field_reg, obj_reg, field_ord);
+                                    self.op_3(
+                                        stmt.range(),
+                                        OpCode::GetIndex,
+                                        field_reg,
+                                        obj_reg,
+                                        field_ord,
+                                    );
                                 }
                                 final_op = Box::new(move |s| {
-                                    s.op_3(OpCode::SetIndex, field_reg, obj_reg, field_ord);
+                                    s.op_3(
+                                        stmt.range(),
+                                        OpCode::SetIndex,
+                                        field_reg,
+                                        obj_reg,
+                                        field_ord,
+                                    );
                                 });
                             }
                             _ => unreachable!("Expected identifier token"),
@@ -158,10 +182,10 @@ impl<'s, 'c> Emitter<'s, 'c> {
                         let field_name = self.emit_expression_reg(prop_expr, brk);
                         let field_reg = self.closures.add_reg();
                         if is_compound {
-                            self.op_3(OpCode::GetDyn, field_reg, obj_reg, field_name);
+                            self.op_3(stmt.range(), OpCode::GetDyn, field_reg, obj_reg, field_name);
                         }
                         final_op = Box::new(move |s| {
-                            s.op_3(OpCode::SetDyn, field_reg, obj_reg, field_name);
+                            s.op_3(stmt.range(), OpCode::SetDyn, field_reg, obj_reg, field_name);
                         });
                         field_reg
                     }
@@ -174,17 +198,17 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 if !is_compound {
                     self.emit_expression(expression, assignee_reg, brk);
                 } else if *op == Operator::LogicalAndAssign {
-                    self.op_if(OpCode::If, assignee_reg);
+                    self.op_if(stmt.range(), OpCode::If, assignee_reg);
                     self.emit_expression(expression, assignee_reg, brk);
-                    self.op_if_end();
+                    self.op_if_end(stmt.range());
                 } else if *op == Operator::LogicalOrAssign {
-                    self.op_if(OpCode::IfNot, assignee_reg);
+                    self.op_if(stmt.range(), OpCode::IfNot, assignee_reg);
                     self.emit_expression(expression, assignee_reg, brk);
-                    self.op_if_end();
+                    self.op_if_end(stmt.range());
                 } else if *op == Operator::NullCoalescingAssign {
-                    self.op_if(OpCode::IfNil, assignee_reg);
+                    self.op_if(stmt.range(), OpCode::IfNil, assignee_reg);
                     self.emit_expression(expression, assignee_reg, brk);
-                    self.op_if_end();
+                    self.op_if_end(stmt.range());
                 } else {
                     let Some(op) = (match op.kind {
                         TokenKind::Operator(o) => o.to_compound_op(),
@@ -195,7 +219,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                         return false;
                     };
                     let right_reg = self.emit_expression_reg(expression, brk);
-                    self.op_binary(assignee_reg, op, assignee_reg, right_reg);
+                    self.op_binary(stmt.range(), assignee_reg, op, assignee_reg, right_reg);
                 }
                 final_op(self);
                 false
@@ -212,9 +236,9 @@ impl<'s, 'c> Emitter<'s, 'c> {
             Return(_, expression, _) => {
                 if let Some(expression) = expression {
                     let ret_reg = self.emit_expression_reg(expression, brk);
-                    self.op_return(ret_reg);
+                    self.op_return(stmt.range(), ret_reg);
                 } else {
-                    self.op_return(Register::EMPTY);
+                    self.op_return(stmt.range(), Register::EMPTY);
                 }
                 true
             }
@@ -228,11 +252,11 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 };
                 if let Some(expression) = expression {
                     let brk_ret = self.emit_expression_reg(expression, Some(brk));
-                    self.op_set_upvalue(brk_ret, 1, brk);
+                    self.op_set_upvalue(stmt.range(), brk_ret, 1, brk);
                 } else if !brk.is_empty() {
-                    self.op_set_upvalue(Register::EMPTY, 1, brk);
+                    self.op_set_upvalue(stmt.range(), Register::EMPTY, 1, brk);
                 }
-                self.op(OpCode::Break);
+                self.op(kw.range(), OpCode::Break);
                 true
             }
             Continue(kw, comma) => {
@@ -243,7 +267,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     );
                     return false;
                 }
-                self.op(OpCode::Continue);
+                self.op(kw.range(), OpCode::Continue);
                 true
             }
             Empty(_) | Unknown { .. } => false,

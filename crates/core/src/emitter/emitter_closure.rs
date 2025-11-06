@@ -74,6 +74,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
         &mut self,
         stmts: &'s Vec<Statement<'s>>,
         expr: &'s Option<Box<Expression<'s>>>,
+        scope_range: SourceRange,
         ret: Register,
         brk: Option<Register>,
     ) -> bool {
@@ -93,7 +94,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
         if let Some(expr) = expr {
             self.emit_expression(expr, ret, brk);
         } else if !has_never && !ret.is_empty() {
-            self.op_nil(ret);
+            self.op_nil(scope_range.end..scope_range.end, ret);
         };
         has_never
     }
@@ -125,6 +126,10 @@ impl<'s, 'c> Emitter<'s, 'c> {
 
         let pos = self.chunk.code.len();
         self.chunk.code.push(OpCode::Func.code());
+        self.diagnostics.push(
+            crate::DiagnosticCode::SourceMap,
+            scope_range.start..scope_range.start,
+        );
 
         if let Some(args) = args {
             for (i, arg) in args.iter().enumerate() {
@@ -207,11 +212,12 @@ impl<'s, 'c> Emitter<'s, 'c> {
         }
 
         let ret_reg = self.closures.add_reg();
-        let never = self.emit_block(stmts, expr, ret_reg, None);
+        let never = self.emit_block(stmts, expr, scope_range.clone(), ret_reg, None);
         if !never {
-            self.op_return(ret_reg);
+            // 从 block 隐式返回
+            self.op_return(scope_range.end..scope_range.end, ret_reg);
         }
-        self.op(OpCode::FuncEnd);
+        self.op(scope_range.end..scope_range.end, OpCode::FuncEnd);
 
         let closure = self.closures.current();
         let func_op = if has_var_args {

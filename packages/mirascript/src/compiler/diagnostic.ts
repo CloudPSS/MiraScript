@@ -77,20 +77,30 @@ interface ParsedDiagnostics {
     references: SourceReference[];
     /** 标签引用诊断信息 */
     tagsReferences: SourceReference[];
+
+    /** 代码映射信息 */
+    sourcemaps: IRange[];
 }
 
 /** 分析诊断信息，{@link diagnostic_position_encoding} 不能设为 `None` */
-export function parseDiagnostics(source: ScriptInput, diagnostics: Uint32Array): ParsedDiagnostics {
+export function parseDiagnostics(
+    source: ScriptInput,
+    diagnostics: Uint32Array,
+    filter?: (code: DiagnosticCode) => boolean,
+): ParsedDiagnostics {
     const parsed = [];
     const bufLen = diagnostics.length;
     for (let i = 0; i < bufLen; i += 5) {
+        const code = diagnostics[i + 4]! as DiagnosticCode;
+        if (filter && !filter(code)) {
+            continue;
+        }
         const startLineNumber = diagnostics[i]!;
         const startColumn = diagnostics[i + 1]!;
         const endLineNumber = diagnostics[i + 2]!;
         const endColumn = diagnostics[i + 3]!;
-        const error = diagnostics[i + 4]! as DiagnosticCode;
         parsed.push({
-            code: error,
+            code,
             range: {
                 startLineNumber,
                 startColumn,
@@ -107,6 +117,7 @@ export function parseDiagnostics(source: ScriptInput, diagnostics: Uint32Array):
     const _tags: SourceDiagnostic[] = [];
     const _references: SourceReference[] = [];
     const _tagsReferences: SourceReference[] = [];
+    const _sourcemaps: IRange[] = [];
     for (let i = 0; i < parsed.length; i++) {
         const diagnostic = parsed[i]!;
         const { code } = diagnostic;
@@ -120,7 +131,11 @@ export function parseDiagnostics(source: ScriptInput, diagnostics: Uint32Array):
             _hints.push(diagnostic);
         } else if (code > DiagnosticCode.TagStart && code < DiagnosticCode.TagEnd) {
             _tags.push(diagnostic);
+        } else if (code === DiagnosticCode.SourceMap) {
+            _sourcemaps.push(diagnostic.range);
+            continue;
         } else {
+            // 非法诊断代码，跳过
             continue;
         }
         diagnostic.references = [];
@@ -151,6 +166,7 @@ export function parseDiagnostics(source: ScriptInput, diagnostics: Uint32Array):
         tags: _tags,
         references: _references,
         tagsReferences: _tagsReferences,
+        sourcemaps: _sourcemaps,
     };
 }
 

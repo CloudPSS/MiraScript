@@ -210,7 +210,7 @@ export class CompileResult {
     }
     /** 分析诊断信息 */
     private readDiagnostics(): void {
-        const parsed = parseDiagnostics(this.source, this.diagnostics);
+        const parsed = parseDiagnostics(this.source, this.diagnostics, (c) => c !== DiagnosticCode.SourceMap);
         this._errors = parsed.errors;
         this._warnings = parsed.warnings;
         this._infos = parsed.infos;
