@@ -295,7 +295,7 @@ body > .playground {
       color: var(--error-color);
     }
 
-    &.warning {
+    &.warn {
       color: var(--warning-color);
     }
 

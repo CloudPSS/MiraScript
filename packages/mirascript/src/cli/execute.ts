@@ -1,5 +1,6 @@
 /* eslint-disable no-console */
 import styles from 'ansi-styles';
+import supportsColor from 'supports-color';
 import { compile } from '../index.js';
 import { createVmContext, VmFunction, type VmValue } from '../vm/index.js';
 import { debug_print } from '../vm/lib/global/debug.js';
@@ -17,10 +18,7 @@ export async function execute(
         const r = f(
             createVmContext({
                 debug_print: VmFunction((...values) => {
-                    console.log(
-                        '\u001B[46;30m MiraScript \u001B[0m',
-                        ...values.map((v) => (typeof v == 'string' ? v : print(v))),
-                    );
+                    console.log(...debug_print.prefix, ...values.map((v) => (typeof v == 'string' ? v : print(v))));
                 }, debug_print),
                 ...variables,
             }),
@@ -31,7 +29,12 @@ export async function execute(
             console.log(print(r));
         }
     } catch (ex) {
-        console.error(styles.red.open + (ex as Error).stack + styles.red.close);
+        const { stack } = ex as Error;
+        if (supportsColor.stderr) {
+            console.error(styles.red.open + stack + styles.red.close);
+        } else {
+            console.error(stack);
+        }
         process.exitCode = 2;
     }
 }

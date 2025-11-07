@@ -4,10 +4,18 @@ import { lib } from '@mirascript/mirascript/subtle';
 
 /** 消息 */
 type Message = VmAny[] | string | Error;
+/** 级别 */
+type Level = 'log' | 'error' | 'warn' | 'info';
+const background: Record<Level, string> = {
+    log: 'background: #1177bb; color: #fff;',
+    error: 'background: #d23d3d; color: #fff;',
+    warn: 'background: #c39c00; color: #fff;',
+    info: 'background: #369481; color: #fff;',
+};
 /** 管理控制台输出的类 */
 export class ConsoleManager {
     private entries: Array<{
-        type: 'log' | 'error' | 'warn' | 'info';
+        type: Level;
         message: Message;
         timestamp: number;
     }> = [];
@@ -47,7 +55,7 @@ export class ConsoleManager {
     }
 
     /** 添加条目到控制台 */
-    private addEntry(type: 'log' | 'error' | 'warn' | 'info', message: Message): void {
+    private addEntry(type: Level, message: Message): void {
         const entry = {
             type,
             message,
@@ -58,7 +66,11 @@ export class ConsoleManager {
             lib.debug_print(...message);
         } else {
             // eslint-disable-next-line no-console
-            console[type]('\u001B[41;37m MiraScript Playground \u001B[0m', message);
+            console[type](
+                `%cMiraScript Playground`,
+                `display: inline-block; border-radius: 3px; padding: 1px 4px; ${background[type]}`,
+                message,
+            );
         }
     }
 
