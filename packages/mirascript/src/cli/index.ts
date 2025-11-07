@@ -2,11 +2,13 @@
 /* eslint-disable no-console */
 import { readFile, stat } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
-import { program } from '@commander-js/extra-typings';
+import { InvalidArgumentError, program } from '@commander-js/extra-typings';
 import { execute } from './execute.js';
 import pkg from '../../package.json' with { type: 'json' };
 import { compileSync } from '../compiler/index.js';
-import type { VmValue } from '../vm/index.js';
+import { configCheckpoint, type VmValue } from '../vm/index.js';
+
+const DEFAULT_TIMEOUT = 3000;
 
 program.name(pkg.name.split('/').pop()!).version(pkg.version).description(pkg.description);
 
@@ -34,10 +36,23 @@ program
         {} as Record<string, VmValue>,
     )
     .option('-t, --template', '使用模板模式')
+    .option(
+        '--timeout <ms>',
+        '脚本执行超时时间（毫秒，0 表示不超时）',
+        (v) => {
+            const ms = Number.parseFloat(v);
+            if (Number.isNaN(ms) || ms < 0) {
+                throw new InvalidArgumentError('超时时间必须是非负整数');
+            }
+            return ms;
+        },
+        DEFAULT_TIMEOUT,
+    )
     .option('--no-template', '使用脚本模式')
     .option('-e, --eval <script>', '要执行的脚本')
     .argument('[script]', '要执行的脚本文件路径（如果提供了 -e 则忽略此参数）')
     .action(async (script, opt) => {
+        configCheckpoint(opt.timeout || Number.POSITIVE_INFINITY);
         if (opt.eval != null) {
             const template = !!opt.template;
             await execute(opt.eval, template, opt.variable, template ? 'eval.miratpl' : 'eval.mira');

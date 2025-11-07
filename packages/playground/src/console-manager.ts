@@ -3,7 +3,7 @@ import { escapeHtml, print } from './utils.js';
 import { lib } from '@mirascript/mirascript/subtle';
 
 /** 消息 */
-type Message = readonly VmAny[] | string | Error;
+type Message = VmAny[] | string | Error;
 /** 管理控制台输出的类 */
 export class ConsoleManager {
     private entries: Array<{
@@ -54,6 +54,12 @@ export class ConsoleManager {
             timestamp: performance.now() - this.t0,
         };
         this.entries.push(entry);
+        if (Array.isArray(message)) {
+            lib.debug_print(...message);
+        } else {
+            // eslint-disable-next-line no-console
+            console[type]('\u001B[41;37m MiraScript Playground \u001B[0m', message);
+        }
     }
 
     /** 清空控制台 */
@@ -70,12 +76,7 @@ export class ConsoleManager {
             let rendered;
             if (typeof message == 'string') {
                 rendered = message;
-            } else if (Error.isError(message)) {
-                // eslint-disable-next-line no-console
-                console[type]('\u001B[41;37m MiraScript Playground \u001B[0m', message);
-                rendered = message.message;
-            } else {
-                lib.debug_print(...message);
+            } else if (Array.isArray(message)) {
                 rendered = (
                     await Promise.all(
                         message.map(async (arg) => {
@@ -84,6 +85,8 @@ export class ConsoleManager {
                         }),
                     )
                 ).join(' ');
+            } else {
+                rendered = message.message;
             }
             return /* html */ `<div class="console-entry ${type}">
                 <time class="console-time" datetime="${date.toISOString()}">${time}</time>

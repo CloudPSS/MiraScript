@@ -2,12 +2,26 @@ import './index.css';
 import * as monaco from '@private/monaco-editor';
 import { KeyCode, KeyMod } from '@private/monaco-editor';
 import { registerMiraScript } from '@mirascript/monaco';
-import { type VmScript, compile, type InputMode } from '@mirascript/mirascript';
+import { configCheckpoint, type InputMode } from '@mirascript/mirascript';
+import * as mirascript from '@mirascript/mirascript';
+import * as mirascriptSubtle from '@mirascript/mirascript/subtle';
 import { ConsoleManager } from './console-manager.js';
 import { EXAMPLES } from './examples.js';
-import { syntaxHighlight, print } from './utils.js';
 import { getState, setState, type ThemeMode } from './state-manager.js';
 import { globals } from './globals.js';
+import { resultManager } from './result-manager.js';
+
+// 暴露到全局以便调试
+Object.defineProperty(globalThis, 'mirascript', {
+    value: Object.freeze({
+        __proto__: null,
+        ...mirascript,
+        subtle: Object.freeze({
+            __proto__: null,
+            ...mirascriptSubtle,
+        }),
+    }),
+});
 
 // 初始化控制台管理器
 const consoleManager = new ConsoleManager(document.querySelector<HTMLDivElement>('#console-output')!);
@@ -197,91 +211,9 @@ setTimeout(() => {
     });
 }, 0);
 
-let fileCounter = 1;
-/** 编译 */
-async function compileScript(): Promise<VmScript | undefined> {
-    const compStart = performance.now();
-    const { mode, source } = getState();
-    try {
-        const script = await compile(source, {
-            pretty: true,
-            sourceMap: true,
-            input_mode: mode,
-            fileName: mode === 'Script' ? `playground_${fileCounter++}.mira` : `playground_${fileCounter++}.miratpl`,
-        });
-        const compEnd = performance.now();
-        consoleManager.info(`Compilation completed successfully in ${(compEnd - compStart).toFixed(3)}ms`);
+const compile = resultManager(consoleManager, elCompiledOutput, elResultOutput, g);
 
-        // 显示编译结果
-        const compiledCode = script.toString();
-        if (elCompiledOutput.dataset['code'] !== compiledCode) {
-            elCompiledOutput.dataset['code'] = compiledCode;
-
-            requestIdleCallback(
-                // eslint-disable-next-line @typescript-eslint/no-misused-promises
-                async () => {
-                    if (elCompiledOutput.dataset['code'] !== compiledCode) return;
-                    const highlightedJS = await syntaxHighlight(compiledCode, 'javascript');
-                    if (elCompiledOutput.dataset['code'] !== compiledCode) return;
-                    elCompiledOutput.innerHTML = /*html*/ `
-                        <div class="section-title">Compiled JavaScript:</div>
-                        <div class="compiled-code">${highlightedJS}</div>
-                    `;
-                },
-                { timeout: 100 },
-            );
-        }
-
-        return script;
-    } catch (ex) {
-        const compEnd = performance.now();
-        const errorText = String(ex);
-        elCompiledOutput.dataset['code'] = '';
-        elCompiledOutput.innerHTML = /*html*/ `
-            <div class="section-title">Compilation Error:</div>
-            <div class="result-error">${errorText}</div>
-        `;
-        elResultOutput.innerHTML = /*html*/ `
-            <div class="section-title">Execution Result:</div>
-            <div class="result-error">Compilation failed</div>
-        `;
-        consoleManager.error(`Compilation failed in ${(compEnd - compStart).toFixed(3)}ms:`);
-        consoleManager.error(ex as Error);
-        return undefined;
-    }
-}
-
-/** 运行 */
-async function runScript(script: VmScript): Promise<void> {
-    const execStart = performance.now();
-    try {
-        const execResult = script(g);
-        const execEnd = performance.now();
-        if (typeof execResult == 'string' && /^\s*<!\s*doctype\s+html\s*>/iu.test(execResult)) {
-            elResultOutput.innerHTML = /* html */ `
-                <div class="section-title">Execution Result:</div>
-                <iframe class="result-success html" srcdoc="${execResult.replaceAll('"', '&quot;')}"></iframe>
-            `;
-        } else {
-            const resultText = await print(execResult);
-            elResultOutput.innerHTML = /* html */ `
-                <div class="section-title">Execution Result:</div>
-                <div class="result-success">${resultText}</div>
-            `;
-        }
-        consoleManager.info(`Execution completed successfully in ${(execEnd - execStart).toFixed(3)}ms`);
-    } catch (ex) {
-        const execEnd = performance.now();
-        const errorText = String(ex);
-        elResultOutput.innerHTML = /* html */ `
-            <div class="section-title">Execution Error:</div>
-            <div class="result-error">${errorText}</div>
-        `;
-        consoleManager.error(`Execution failed in ${(execEnd - execStart).toFixed(3)}ms:`);
-        consoleManager.error(ex as Error);
-    }
-}
-
+configCheckpoint(500);
 /** 编译运行 */
 async function run() {
     if (elRunBtn.disabled) return;
@@ -292,12 +224,18 @@ async function run() {
     consoleManager.resetTimer();
 
     try {
-        const script = await compileScript();
-        if (!script) return;
-        await runScript(script);
+        await compile();
     } finally {
         await consoleManager.render();
 
         elRunBtn.disabled = false;
     }
 }
+
+Object.defineProperty(globalThis, 'playgroundRun', {
+    value: async () => {
+        configCheckpoint(Number.POSITIVE_INFINITY);
+        await run();
+        configCheckpoint(500);
+    },
+});
