@@ -4,7 +4,7 @@ import type { Config, InputMode, DiagnosticPositionEncoding, ScriptInput } from 
 export * from './types.js';
 export { wasm };
 
-export const ready = import('#loader').then(async ({ module }) =>
+export const ready = import('@mirascript/wasm/loader').then(async ({ module }) =>
     wasm.default({
         module_or_path: await module,
     }),

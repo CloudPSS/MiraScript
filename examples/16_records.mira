@@ -79,7 +79,9 @@ debug_print("Rest:", rest_info);
 // 记录作为函数参数
 fn create_greeting(person_info) {
   match person_info {
-    case (name: n, title?: t) { if t { "Hello, $t $n!" } else { "Hello, $n!" } }
+    case (name: n, title?: t) {
+      if t !~ '' { "Hello, $t $n!" } else { "Hello, $n!" }
+    }
     case _ { "Hello, stranger!" }
   }
 }

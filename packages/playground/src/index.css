@@ -305,6 +305,7 @@ body > .playground {
   }
 
   .console-time {
+    display: inline-block;
     user-select: none;
     white-space: nowrap;
     color: var(--text-secondary);
