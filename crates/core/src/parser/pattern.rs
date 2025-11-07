@@ -10,13 +10,17 @@ pub enum Pattern<'s> {
     Grouping(TokenRef<'s>, Box<Pattern<'s>>, TokenRef<'s>),
     /// ( `+` | `-` )? literal
     ///
+    /// Matches against a literal value.
+    Literal(Option<TokenRef<'s>>, TokenRef<'s>),
+    /// constant
+    ///
     /// Matches against a constant value.
-    Constant(Option<TokenRef<'s>>, TokenRef<'s>),
-    /// ( `>` | `>=` | `<=` | `<` | `==` | `!=` | `~=` | `~!` ) pattern_constant
+    Constant(TokenRef<'s>),
+    /// ( `>` | `>=` | `<=` | `<` | `==` | `!=` | `=~` | `!~` ) (pattern_constant | pattern_literal)
     ///
     /// Matches against a relation with constant values.
     Relation(TokenRef<'s>, Box<Pattern<'s>>),
-    /// pattern_constant ( `..` | `..<` ) pattern_constant
+    /// (pattern_constant | pattern_literal) ( `..` | `..<` ) (pattern_constant | pattern_literal)
     ///
     /// Matches against a range of constant values.
     Range(Box<Pattern<'s>>, TokenRef<'s>, Box<Pattern<'s>>),
@@ -140,7 +144,7 @@ impl<'s> Pattern<'s> {
 }
 
 impl<'s> AstWalker<'s> for Pattern<'s> {
-    fn collect_diagnostics(&mut self, collector: &mut Vec<SourceDiagnostic>) {
+    fn collect_diagnostics(&mut self, collector: &mut DiagnosticsCollector<'_, '_>) {
         use Pattern::*;
         match self {
             Grouping(o, p, e) => {
@@ -148,8 +152,11 @@ impl<'s> AstWalker<'s> for Pattern<'s> {
                 p.collect_diagnostics(collector);
                 e.collect_diagnostics(collector);
             }
-            Constant(p, t) => {
+            Literal(p, t) => {
                 p.collect_diagnostics(collector);
+                t.collect_diagnostics(collector);
+            }
+            Constant(t) => {
                 t.collect_diagnostics(collector);
             }
             Relation(o, p) => {
@@ -217,8 +224,9 @@ impl<'s> AstWalker<'s> for Pattern<'s> {
             SpreadDiscard(pos) => *pos..*pos,
             Relation(op, pattern) => op.range.start..pattern.range().end,
             Discard(underscore) => underscore.range(),
-            Constant(None, token) | Bind(None, token) => token.range(),
-            Constant(Some(op), token) | Bind(Some(op), token) => op.range.start..token.range.end,
+            Literal(None, token) | Bind(None, token) => token.range(),
+            Literal(Some(op), token) | Bind(Some(op), token) => op.range.start..token.range.end,
+            Constant(token) => token.range(),
             And(left, _, right) | Or(left, _, right) => left.range().start..right.range().end,
             Not(op, pattern) => op.range.start..pattern.range().end,
             Unknown {

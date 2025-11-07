@@ -27,10 +27,17 @@ fn record_element<'t, 's: 't, E: Clone + PartialEq + 's, I: Clone + PartialEq + 
     omit_named: impl Parser<'s, E>,
     unnamed: impl Parser<'s, E>,
     spread: impl Parser<'s, E>,
+    mut missing: impl FnMut(usize) -> E + Copy,
 ) -> impl Parser<'s, ListItem<'s, RecordElementBase<'s, E, I>>> {
     let colon = |t: &Token<'s>| -> bool { *t == Operator::Colon || *t == Operator::QuestionColon };
     move |i: &mut Input<'s>| {
         let first = peek(any).parse_next(i)?;
+        if *first == Operator::Comma {
+            return Ok(ListItem::new_with_comma(
+                RecordElementBase::Unnamed(missing(first.range.start).into()),
+                token(Operator::Comma).parse_next(i)?,
+            ));
+        }
         if *first == Operator::CloseBracket
             || *first == Operator::CloseBrace
             || *first == Operator::CloseParen
@@ -73,6 +80,7 @@ fn record_element<'t, 's: 't, E: Clone + PartialEq + 's, I: Clone + PartialEq + 
             || *last == Keyword::Else
             || *last == Keyword::In
             || *last == Keyword::Let
+            || *last == Keyword::Const
         {
             return Ok(ListItem::new(result));
         }
@@ -87,6 +95,7 @@ pub(super) fn record_base<'t, 's: 't, E: Clone + PartialEq + 's, I: Clone + Part
     omit_named: impl Parser<'s, E>,
     unnamed: impl Parser<'s, E>,
     spread: impl Parser<'s, E>,
+    missing: impl FnMut(usize) -> E + Copy,
 ) -> impl Parser<
     's,
     (
@@ -99,7 +108,14 @@ pub(super) fn record_base<'t, 's: 't, E: Clone + PartialEq + 's, I: Clone + Part
         let open = token(Operator::OpenParen).parse_next(i)?;
         let parts: Vec<_> = repeat(
             0..,
-            record_element(named, interpolate_name, omit_named, unnamed, spread),
+            record_element(
+                named,
+                interpolate_name,
+                omit_named,
+                unnamed,
+                spread,
+                missing,
+            ),
         )
         .parse_next(i)?;
         let close = token_or_insert(Operator::CloseParen, DiagnosticCode::MissingCloseParen)

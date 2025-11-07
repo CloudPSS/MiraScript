@@ -1,0 +1,203 @@
+// MiraScript 注释和标识符示例
+
+// ============================================================================
+// 注释示例
+// ============================================================================
+
+// 这是单行注释
+// 单行注释以 // 开头，直到行末结束
+
+/*
+ 这是多行注释
+ 可以跨越多行
+ 不支持嵌套
+*/
+
+/* 这也是多行注释，可以在一行内 */
+
+// 注释可以用于文档说明
+/** 
+ * 计算两个数的和
+ * @param a 第一个数
+ * @param b 第二个数
+ * @returns 两数之和
+ */
+fn add(a, b) {
+  // 函数内部也可以有注释
+  let result = a + b; // 行尾注释
+  result // 块注释也可以插在表达式中
+}
+
+// ============================================================================
+// 标识符示例
+// ============================================================================
+
+// 标准标识符（以字母或下划线开头）
+let normal_variable = "正常变量";
+let _private_variable = "私有变量";
+let CamelCase = "驼峰命名";
+let snake_case = "下划线命名";
+let Variable123 = "包含数字";
+
+debug_print("标准标识符:");
+debug_print("normal_variable:", normal_variable);
+debug_print("_private_variable:", _private_variable);
+debug_print("CamelCase:", CamelCase);
+debug_print("snake_case:", snake_case);
+debug_print("Variable123:", Variable123);
+
+// 以 $ 开头的标识符（保留供系统使用）
+let $system_var = "系统变量";
+let $$special = "特殊变量";
+
+debug_print("$ 开头的标识符:");
+debug_print("\$system_var: $$system_var");
+debug_print("\$\$special: $$$special");
+
+// 以 @ 开头的标识符（供常量使用）
+const @global_config = "全局配置";
+const @@meta_info = "元信息";
+
+debug_print("@ 开头的标识符:");
+debug_print("@global_config: $@global_config");
+debug_print("@@meta_info: $@@meta_info");
+
+// 标识符区分大小写
+let variable = "小写";
+let Variable = "首字母大写";
+let VARIABLE = "全大写";
+
+debug_print("区分大小写:");
+debug_print("variable:", variable);
+debug_print("Variable:", Variable);
+debug_print("VARIABLE:", VARIABLE);
+
+// Unicode 标识符
+let 变量名 = "中文变量名";
+let 数量 = 42;
+let π = 3.141_59;
+
+debug_print("Unicode 标识符:");
+debug_print("变量名:", 变量名);
+debug_print("数量:", 数量);
+debug_print("π:", π);
+
+// 长标识符
+let very_long_variable_name_that_describes_something_important = "长变量名";
+let aVeryLongCamelCaseVariableNameThatIsStillValid = "长驼峰变量名";
+
+debug_print("长标识符:");
+debug_print("长变量名:", very_long_variable_name_that_describes_something_important);
+debug_print("长驼峰名:", aVeryLongCamelCaseVariableNameThatIsStillValid);
+
+// ============================================================================
+// 函数和记录中的标识符
+// ============================================================================
+
+// 函数名也遵循标识符规则
+fn calculate_average(numbers) {
+  let mut sum = 0;
+  let mut count = 0;
+  for num in numbers {
+    sum += num;
+    count += 1;
+  }
+  if count > 0 { sum / count } else { 0 }
+}
+
+debug_print("函数标识符:");
+let avg = calculate_average([1, 2, 3, 4, 5]);
+debug_print("平均值:", avg);
+
+// 记录键名可以是任字符串，
+// 当键名是有效标识符或序数时，可以直接使用
+let record_with_various_keys = (normal_key: "普通键", _private_key: "私有键", CamelCaseKey: "驼峰键", $dollar: "dollar 键", @at: "at 键", 键名: "中文键名", 123: "数字键（序数）", 'space in key': "带空格的键名");
+
+debug_print("记录键名示例:");
+debug_print("normal_key:", record_with_various_keys.normal_key);
+debug_print("_private_key:", record_with_various_keys._private_key);
+debug_print("CamelCaseKey:", record_with_various_keys.CamelCaseKey);
+debug_print("\$dollar:", record_with_various_keys.$dollar);
+debug_print("@at:", record_with_various_keys.@at);
+debug_print("键名:", record_with_various_keys.键名);
+debug_print("数字键:", record_with_various_keys.123);
+debug_print("带空格的键名:", record_with_various_keys['space in key']);
+
+// ============================================================================
+// 命名约定建议
+// ============================================================================
+
+// 变量和函数使用 snake_case
+let user_name = "Alice";
+let max_retry_count = 3;
+
+// 处理用户数据
+fn process_user_data(data) { data }
+
+// 常量使用 UPPER_SNAKE_CASE
+let MAX_FILE_SIZE = 1024 * 1024;
+let DEFAULT_TIMEOUT = 30;
+
+// 临时或循环变量可以使用简短名称
+fn sum_array(arr) {
+  let mut sum = 0;
+  for i in arr {
+    sum += i;
+  }
+  sum
+}
+
+debug_print("命名约定示例:");
+debug_print("用户名:", user_name);
+debug_print("最大重试次数:", max_retry_count);
+debug_print("最大文件大小:", MAX_FILE_SIZE);
+debug_print("数组求和:", sum_array([1, 2, 3, 4, 5]));
+
+// ============================================================================
+// 注释的最佳实践
+// ============================================================================
+
+/*
+ 多行注释适合用于：
+ 1. 文件头部的版权和说明信息
+ 2. 大段的文档说明
+ 3. 临时注释掉大块代码
+*/
+
+// 单行注释适合用于：
+// 1. 简短的解释说明
+// 2. 行尾的简要说明
+// 3. TODO 和 FIXME 标记
+
+fn complex_algorithm(data) {
+  // TODO: 实现更高效的算法
+  // FIXME: 处理边界情况
+
+  /* 算法说明：
+     这个函数实现了一个复杂的数据处理算法
+     输入：data - 要处理的数据数组
+     输出：处理后的结果
+     时间复杂度：O(n)
+     空间复杂度：O(1)
+  */
+
+  let mut result = []; // 存储结果
+
+  for item in data { // 遍历每个数据项
+    if item > 0 { // 只处理正数
+      result = [..result, item * 2]; // 乘以2并添加到结果
+    }
+  // 负数和零被忽略
+  }
+
+  result // 返回处理结果
+}
+
+debug_print("复杂算法示例:");
+let test_data = [-1, 0, 1, 2, 3, -4, 5];
+let processed = complex_algorithm(test_data);
+debug_print("输入:", test_data);
+debug_print("输出:", processed);
+
+// 文件结束注释
+debug_print("注释和标识符示例完成！");

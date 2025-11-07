@@ -1,15 +1,24 @@
-import { VmExtern } from './extern.js';
-import type { VmFunction } from './function.js';
-import { VmModule } from './module.js';
-import { VmWrapper } from './wrapper.js';
-const { isArray } = Array;
+import { isArray } from '../../helpers/utils.js';
+import { isVmExtern, VmExtern } from './extern.js';
+import { isVmFunction, VmFunction } from './function.js';
+import { VmModule, isVmModule } from './module.js';
+import { isVmWrapper } from './wrapper.js';
 
 /** Mirascript 原始值 */
 export type VmPrimitive = null | string | number | boolean;
-/** Mirascript 记录 */
-export type VmRecord = { readonly [key: string]: VmConst };
-/** Mirascript 数组 */
-export type VmArray = readonly VmConst[];
+/**
+ * Mirascript 记录
+ * 仅拥有且可枚举的字符串键视作存在
+ * 字段值 `undefined` 和 `null` 均视作 `nil`
+ */
+export type VmRecord = {
+    readonly [key: string]: VmConst | undefined;
+};
+/**
+ * Mirascript 数组
+ * 数组中的 `undefined`、`null` 及 <empty slot> 均视作 `nil`
+ */
+export type VmArray = ReadonlyArray<VmConst | undefined>;
 
 /** Mirascript 虚拟机内的值语义值 */
 export type VmConst = VmPrimitive | VmRecord | VmArray;
@@ -65,7 +74,7 @@ export function isVmArray(value: VmAny): value is VmArray {
  */
 export function isVmRecord(value: VmAny): value is VmRecord {
     if (value == null || typeof value !== 'object') return false;
-    if (value instanceof VmWrapper) return false;
+    if (isVmWrapper(value)) return false;
     if (isVmArray(value)) return false;
     value satisfies VmRecord;
     return true;
@@ -74,45 +83,30 @@ export function isVmRecord(value: VmAny): value is VmRecord {
 /**
  * 检查值是否为 Mirascript 原始值
  */
-export function isVmPrimitive(value: VmAny): value is VmPrimitive {
-    if (value === null) return true;
-    if (value === undefined || typeof value === 'object' || typeof value === 'function') return false;
-    value satisfies VmPrimitive;
-    return true;
+export function isVmPrimitive(value: unknown): value is VmPrimitive {
+    if (value === null || typeof value == 'number' || typeof value == 'string' || typeof value == 'boolean') {
+        value as VmPrimitive satisfies typeof value;
+        value satisfies VmPrimitive;
+        return true;
+    }
+    return false;
 }
 
-export { VmExtern, wrapToVmValue, unwrapFromVmValue } from './extern.js';
+export { VmFunction, isVmFunction, VmExtern, isVmExtern, VmModule, isVmModule, isVmWrapper };
+export { wrapToVmValue, unwrapFromVmValue, toVmFunctionProxy, fromVmFunctionProxy } from './boundary.js';
 
-/** 检查值是否为 Mirascript 外部值 */
-export function isVmExtern(value: unknown): value is VmExtern {
-    return value instanceof VmExtern;
+/** 检查值是否为 Mirascript 可调用值 */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+export function isVmCallable(value: unknown): value is VmFunction | VmExtern<Function> {
+    return isVmFunction(value) || (isVmExtern(value) && typeof value.value == 'function');
 }
 
-export {
-    VmFunction,
-    isVmFunction,
-    getVmFunctionInfo,
-    type VmFunctionInfo,
-    type VmFunctionLike,
-    type VmFunctionOption,
-} from './function.js';
+export { getVmFunctionInfo, type VmFunctionInfo, type VmFunctionLike, type VmFunctionOption } from './function.js';
 
-export { VmModule } from './module.js';
-
-/** 检查值是否为 Mirascript 模块 */
-export function isVmModule(value: unknown): value is VmModule {
-    return value instanceof VmModule;
-}
-
-export {
-    type VmContext as VmGlobal,
-    type VmSharedContext as VmSharedGlobal,
-    isVmContext as isVmGlobal,
-    defineVmGlobalFunction,
-    defineVmGlobalValue,
-    createVmContext as createVmGlobal,
-} from './context.js';
+export { type VmContext, type VmSharedContext, isVmContext, defineVmContextValue, createVmContext } from './context.js';
 
 export { type VmScript, isVmScript } from './script.js';
 
 export { isVmAny, isVmConst, isVmImmutable, isVmValue } from './checker.js';
+
+export const VM_ARRAY_MAX_LENGTH = 2 ** 31 - 1;

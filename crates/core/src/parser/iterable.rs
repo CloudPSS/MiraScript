@@ -2,12 +2,12 @@ use super::prelude::*;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Iterable<'s> {
-    Range(Box<Range<'s>>),
-    Value(Box<Expression<'s>>),
+    Range(Range<'s>),
+    Value(Expression<'s>),
 }
 
 impl<'s> AstWalker<'s> for Iterable<'s> {
-    fn collect_diagnostics(&mut self, collector: &mut Vec<SourceDiagnostic>) {
+    fn collect_diagnostics(&mut self, collector: &mut DiagnosticsCollector<'_, '_>) {
         match self {
             Iterable::Range(range) => range.collect_diagnostics(collector),
             Iterable::Value(value) => value.collect_diagnostics(collector),

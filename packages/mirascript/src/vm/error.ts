@@ -14,9 +14,21 @@ export class VmError extends Error {
 
     /** 从其他错误构造 */
     static from(prefix: string, error: unknown, recovered: VmAny): VmError {
-        if (prefix && !prefix.endsWith(': ')) prefix += ': ';
-        const vmError = new VmError(`${prefix}${error instanceof Error ? error.message : String(error)}`, recovered);
-        vmError.stack = error instanceof Error ? error.stack : undefined;
+        if (prefix) {
+            if (prefix.endsWith(':')) {
+                prefix += ' ';
+            } else if (!prefix.endsWith(': ')) {
+                prefix += ': ';
+            }
+        }
+        let vmError: VmError;
+        if (error instanceof Error) {
+            vmError = new VmError(`${prefix}${error.message}`, recovered);
+            vmError.stack = error.stack;
+        } else {
+            vmError = new VmError(`${prefix}${String(error)}`, recovered);
+        }
+        vmError.cause = error;
         return vmError;
     }
 }

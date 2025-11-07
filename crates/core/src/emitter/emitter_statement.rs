@@ -1,6 +1,6 @@
 use crate::{
-    diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
-    emitter::emitter_scope::check_variable_initialized,
+    diagnostic::DiagnosticCode,
+    emitter::{emitter_scope::check_variable_initialized, opcode::OpParam},
     lexer::{Keyword, Operator, TokenKind},
     parser::{
         AstWalker, Expression,
@@ -10,7 +10,7 @@ use crate::{
 
 use super::{Emitter, OpCode, opcode::Register, utils::is_global_expression, variable::BindType};
 
-impl<'s> Emitter<'s> {
+impl<'s, 'c> Emitter<'s, 'c> {
     pub fn declare_statement(&mut self, stmt: &'s Statement<'s>) {
         match stmt {
             Expression(expr, _) | BlockExpression(expr) => self.declare_expression(expr),
@@ -20,6 +20,10 @@ impl<'s> Emitter<'s> {
             }
             Rebind(pattern, _, expr, _) => {
                 self.declare_pattern(pattern, None);
+                self.declare_expression(expr);
+            }
+            Const(_, id_token, _, expr, _) => {
+                self.declare_variable(id_token, false, BindType::Const);
                 self.declare_expression(expr);
             }
             Assign(assignee, _, expr, _) => {
@@ -45,15 +49,25 @@ impl<'s> Emitter<'s> {
                 false
             }
             Bind(_, pattern, _, expression, _) => {
-                let value_reg = self.closures.add_reg();
-                self.emit_expression(expression, value_reg, brk);
+                let value_reg = self.emit_expression_reg(expression, brk);
                 self.emit_pattern(Register::EMPTY, pattern, value_reg, Some(BindType::Let));
                 false
             }
             Rebind(pattern, _, expression, _) => {
-                let value_reg = self.closures.add_reg();
-                self.emit_expression(expression, value_reg, brk);
+                let value_reg = self.emit_expression_reg(expression, brk);
                 self.emit_pattern(Register::EMPTY, pattern, value_reg, None);
+                false
+            }
+            Const(_, id_token, _, expression, _) => {
+                let Some(id) = id_token.to_id_name() else {
+                    return false;
+                };
+                let Some((_, variable)) = self.scopes.find_variable(id) else {
+                    return false;
+                };
+                self.closures.initialize_variable(variable);
+                let reg = variable.register();
+                self.emit_expression(expression, reg, brk);
                 false
             }
             Assign(assignee, op, expression, _) => {
@@ -63,10 +77,8 @@ impl<'s> Emitter<'s> {
                 let assignee_reg = match &**assignee {
                     Expression::Variable(id_token) => {
                         if **id_token == Keyword::Global {
-                            self.diagnostics.push(SourceDiagnostic::new(
-                                id_token.range(),
-                                DiagnosticCode::MisuseOfGlobalKeyword,
-                            ));
+                            self.diagnostics
+                                .push(DiagnosticCode::MisuseOfGlobalKeyword, id_token.range());
                             return false;
                         }
                         let Some(id) = id_token.to_id_name() else {
@@ -80,18 +92,18 @@ impl<'s> Emitter<'s> {
                                 variable.mark_read_write(id_token);
                             }
                             check_variable_initialized(
-                                self.diagnostics,
+                                &mut self.diagnostics,
                                 &self.closures,
                                 id_token,
                                 variable,
                                 level,
                             );
                             if !variable.mutable() {
-                                self.diagnostics.push(SourceDiagnostic::new(
-                                    id_token.range(),
+                                self.diagnostics.push(
                                     DiagnosticCode::ImmutableVariableAssignment,
-                                ));
-                                variable.put_decl_ref(self.diagnostics);
+                                    id_token.range(),
+                                );
+                                variable.put_decl_ref(&mut self.diagnostics);
                                 Register::EMPTY
                             } else if level == self.closures.len() {
                                 variable.register()
@@ -99,35 +111,70 @@ impl<'s> Emitter<'s> {
                                 let up_reg = variable.register();
                                 let level = self.closures.len() - level;
                                 let ret = self.closures.add_reg();
-                                self.op_get_upvalue(ret, level, up_reg);
+                                self.op_get_upvalue(stmt.range(), ret, level, up_reg);
                                 final_op = Box::new(move |s| {
-                                    s.op_set_upvalue(ret, level, up_reg);
+                                    s.op_set_upvalue(stmt.range(), ret, level, up_reg);
                                 });
 
                                 ret
                             }
                         } else {
-                            self.diagnostics.push(SourceDiagnostic::new(
-                                id_token.range.clone(),
+                            self.diagnostics.push(
                                 DiagnosticCode::UndefinedVariableAssignment,
-                            ));
+                                id_token.range.clone(),
+                            );
                             Register::EMPTY
                         }
                     }
 
-                    Expression::Access(obj, _, field_token) if !is_global_expression(obj) => {
-                        let Some((_, field)) = field_token.to_field_name() else {
-                            return false;
-                        };
+                    Expression::Access(obj, _, id) if !is_global_expression(obj) => {
                         let obj_reg = self.emit_expression_reg(obj, brk);
                         let field_reg = self.closures.add_reg();
-                        let field_const = self.add_const_string(field);
-                        if is_compound {
-                            self.op_3(OpCode::Get, field_reg, obj_reg, field_const);
+                        match id.kind {
+                            TokenKind::Identifier(id) => {
+                                let field_name = self.add_const_string(id);
+                                if is_compound {
+                                    self.op_3(
+                                        stmt.range(),
+                                        OpCode::Get,
+                                        field_reg,
+                                        obj_reg,
+                                        field_name,
+                                    );
+                                }
+                                final_op = Box::new(move |s| {
+                                    s.op_3(
+                                        stmt.range(),
+                                        OpCode::Set,
+                                        field_reg,
+                                        obj_reg,
+                                        field_name,
+                                    );
+                                });
+                            }
+                            TokenKind::Ordinal(ord) => {
+                                let field_ord = OpParam::new(ord);
+                                if is_compound {
+                                    self.op_3(
+                                        stmt.range(),
+                                        OpCode::GetIndex,
+                                        field_reg,
+                                        obj_reg,
+                                        field_ord,
+                                    );
+                                }
+                                final_op = Box::new(move |s| {
+                                    s.op_3(
+                                        stmt.range(),
+                                        OpCode::SetIndex,
+                                        field_reg,
+                                        obj_reg,
+                                        field_ord,
+                                    );
+                                });
+                            }
+                            _ => unreachable!("Expected identifier token"),
                         }
-                        final_op = Box::new(move |s| {
-                            s.op_3(OpCode::Set, field_reg, obj_reg, field_const);
-                        });
                         field_reg
                     }
                     Expression::Index(obj, _, prop_expr, _) if !is_global_expression(obj) => {
@@ -135,35 +182,33 @@ impl<'s> Emitter<'s> {
                         let field_name = self.emit_expression_reg(prop_expr, brk);
                         let field_reg = self.closures.add_reg();
                         if is_compound {
-                            self.op_3(OpCode::GetDyn, field_reg, obj_reg, field_name);
+                            self.op_3(stmt.range(), OpCode::GetDyn, field_reg, obj_reg, field_name);
                         }
                         final_op = Box::new(move |s| {
-                            s.op_3(OpCode::SetDyn, field_reg, obj_reg, field_name);
+                            s.op_3(stmt.range(), OpCode::SetDyn, field_reg, obj_reg, field_name);
                         });
                         field_reg
                     }
                     _ => {
-                        self.diagnostics.push(SourceDiagnostic::new(
-                            assignee.range(),
-                            DiagnosticCode::UnassignableExpression,
-                        ));
+                        self.diagnostics
+                            .push(DiagnosticCode::UnassignableExpression, assignee.range());
                         return false;
                     }
                 };
                 if !is_compound {
                     self.emit_expression(expression, assignee_reg, brk);
                 } else if *op == Operator::LogicalAndAssign {
-                    self.op_if(OpCode::If, assignee_reg);
+                    self.op_if(stmt.range(), OpCode::If, assignee_reg);
                     self.emit_expression(expression, assignee_reg, brk);
-                    self.op_if_end();
+                    self.op_if_end(stmt.range());
                 } else if *op == Operator::LogicalOrAssign {
-                    self.op_if(OpCode::IfNot, assignee_reg);
+                    self.op_if(stmt.range(), OpCode::IfNot, assignee_reg);
                     self.emit_expression(expression, assignee_reg, brk);
-                    self.op_if_end();
+                    self.op_if_end(stmt.range());
                 } else if *op == Operator::NullCoalescingAssign {
-                    self.op_if(OpCode::IfNil, assignee_reg);
+                    self.op_if(stmt.range(), OpCode::IfNil, assignee_reg);
                     self.emit_expression(expression, assignee_reg, brk);
-                    self.op_if_end();
+                    self.op_if_end(stmt.range());
                 } else {
                     let Some(op) = (match op.kind {
                         TokenKind::Operator(o) => o.to_compound_op(),
@@ -173,9 +218,8 @@ impl<'s> Emitter<'s> {
                         self.unreachable(op, op, file!(), line!());
                         return false;
                     };
-                    let right_reg = self.closures.add_reg();
-                    self.emit_expression(expression, right_reg, brk);
-                    self.op_binary(assignee_reg, op, assignee_reg, right_reg);
+                    let right_reg = self.emit_expression_reg(expression, brk);
+                    self.op_binary(stmt.range(), assignee_reg, op, assignee_reg, right_reg);
                 }
                 final_op(self);
                 false
@@ -191,47 +235,39 @@ impl<'s> Emitter<'s> {
             }
             Return(_, expression, _) => {
                 if let Some(expression) = expression {
-                    let ret_reg = self.closures.add_reg();
-                    self.emit_expression(expression, ret_reg, brk);
-                    self.op_return(ret_reg);
+                    let ret_reg = self.emit_expression_reg(expression, brk);
+                    self.op_return(stmt.range(), ret_reg);
                 } else {
-                    self.op_return(Register::EMPTY);
+                    self.op_return(stmt.range(), Register::EMPTY);
                 }
                 true
             }
             Break(kw, expression, comma) => {
                 let Some(brk) = brk else {
-                    self.diagnostics.push(SourceDiagnostic::new(
-                        SourceRange {
-                            start: kw.range.start,
-                            end: comma.range.end,
-                        },
+                    self.diagnostics.push(
                         DiagnosticCode::UnexpectedBreak,
-                    ));
+                        kw.range.start..comma.range.end,
+                    );
                     return false;
                 };
                 if let Some(expression) = expression {
-                    let brk_ret = self.closures.add_reg();
-                    self.emit_expression(expression, brk_ret, Some(brk));
-                    self.op_set_upvalue(brk_ret, 1, brk);
+                    let brk_ret = self.emit_expression_reg(expression, Some(brk));
+                    self.op_set_upvalue(stmt.range(), brk_ret, 1, brk);
                 } else if !brk.is_empty() {
-                    self.op_set_upvalue(Register::EMPTY, 1, brk);
+                    self.op_set_upvalue(stmt.range(), Register::EMPTY, 1, brk);
                 }
-                self.op(OpCode::Break);
+                self.op(kw.range(), OpCode::Break);
                 true
             }
             Continue(kw, comma) => {
                 if brk.is_none() {
-                    self.diagnostics.push(SourceDiagnostic::new(
-                        SourceRange {
-                            start: kw.range.start,
-                            end: comma.range.end,
-                        },
+                    self.diagnostics.push(
                         DiagnosticCode::UnexpectedContinue,
-                    ));
+                        kw.range.start..comma.range.end,
+                    );
                     return false;
                 }
-                self.op(OpCode::Continue);
+                self.op(kw.range(), OpCode::Continue);
                 true
             }
             Empty(_) | Unknown { .. } => false,

@@ -1,16 +1,14 @@
 {
   "name": "@mirascript/wasm",
+  "version": "0.1.5",
   "type": "module",
   "description": "MiraScript compiler for WebAssembly",
-  "version": "0.1.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
     ".": "./dist/index.js",
-    "./types": "./dist/types.js"
-  },
-  "imports": {
-    "#loader": {
+    "./types": "./dist/types.js",
+    "./loader": {
       "node": "./dist/loader/node.js",
       "default": "./dist/loader/web.js"
     }
@@ -20,9 +18,11 @@
     "watch": "nodemon -e rs,js,ts --watch ../../crates/wasm --watch ../../crates/core --watch ./src --exec 'pnpm build:dev'",
     "build:dev": "pnpm wasm --dev && tsc",
     "build": "pnpm wasm --release && tsc",
-    "clean": "rimraf dist lib"
+    "clean": "rimraf dist lib",
+    "prepublishOnly": "pnpm clean && pnpm build && rimraf lib/.gitignore"
   },
   "devDependencies": {
+    "@types/node": "^24.10.0",
     "nodemon": "^3.1.10"
   }
 }

@@ -17,7 +17,7 @@ impl<'s> Range<'s> {
 }
 
 impl<'s> AstWalker<'s> for Range<'s> {
-    fn collect_diagnostics(&mut self, collector: &mut Vec<SourceDiagnostic>) {
+    fn collect_diagnostics(&mut self, collector: &mut DiagnosticsCollector<'_, '_>) {
         let Range(start, op, end) = self;
         start.collect_diagnostics(collector);
         op.collect_diagnostics(collector);

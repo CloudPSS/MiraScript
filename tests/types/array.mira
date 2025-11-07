@@ -1,0 +1,40 @@
+t_eq([1..5], [1, 2, 3, 4, 5]);
+t_eq([1..<5], [1, 2, 3, 4]);
+t_eq([1..5.5], [1, 2, 3, 4, 5]);
+t_eq([1..<5.5], [1, 2, 3, 4, 5]);
+t_eq([0.2..2.2], [0.2, 1.2, 2.2]);
+t_eq([0.2..<2.2], [0.2, 1.2]);
+t_eq([1..1], [1]);
+t_eq([1..<1], []);
+t_eq([1..0], []);
+
+t_eq([0..inf], []);
+t_eq([nan..nan], []);
+t_eq([0..<inf], []);
+t_eq([nan..<nan], []);
+
+t_eq([1, 2, 3..5, ..[6, 7], ..nil], [1, 2, 3, 4, 5, 6, 7]);
+t_throws(fn { [..1] });
+t_throws(fn { [.."x"] });
+t_throws(fn { [..true] });
+t_throws(fn { [..()] });
+if has_module {
+  t_throws(fn { [..v_module] });
+}
+
+let arr = [0, 1, nan, (0, -0), (1, 2, 3)];
+t_true(0 in arr);
+t_true((-0) in arr);
+t_true((-0, 0) in arr);
+t_true((0, 0) in arr);
+t_true(1 in arr);
+t_true(nan in arr);
+t_true((1, 2, 3) in arr);
+t_false(2 in arr);
+t_false(nil in arr);
+t_true(nil in [nil]);
+
+t_throws(fn {
+  let a = [];
+  a[0] = 1;
+});

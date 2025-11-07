@@ -1,0 +1,55 @@
+fn m {
+  match it {
+    case nil { 'nil' }
+    case true { 'true' }
+    case false { 'false' }
+    case nan { 'nan' }
+    case inf or -inf { 'infinity' }
+    case 0 { '0' }
+    case 1..<10 and m if m % 2 == 0 { 'even digit' }
+    case 1..9 and m if m % 2 == 1 { 'odd digit' }
+    case (x, y) if x == y { 'tuple with equal elements' }
+    case (x, y) if x != y { 'tuple with unequal elements' }
+  }
+}
+
+t_eq(m(nil), 'nil');
+t_eq(m(true), 'true');
+t_eq(m(false), 'false');
+t_eq(m(nan), 'nan');
+t_eq(m(inf), 'infinity');
+t_eq(m(-inf), 'infinity');
+t_eq(m(+0), '0');
+t_eq(m(-0), '0');
+t_eq(m(2), 'even digit');
+t_eq(m(3), 'odd digit');
+t_eq(m(4), 'even digit');
+t_eq(m(5), 'odd digit');
+t_eq(m(6), 'even digit');
+t_eq(m(7), 'odd digit');
+t_eq(m(8), 'even digit');
+t_eq(m(9), 'odd digit');
+t_eq(m((1, 1)), 'tuple with equal elements');
+t_eq(m((1, 1, 2)), 'tuple with equal elements');
+t_eq(m((1, 2)), 'tuple with unequal elements');
+t_eq(m((nan, nan)), 'tuple with unequal elements');
+t_eq(m(()), nil);
+
+fn is_palindrome {
+  let ch = it::chars();
+  return is_palindrome_helper(ch);
+
+  fn is_palindrome_helper {
+    match it {
+      case [] or [_] { true }
+      case [' ', ..rest] { is_palindrome_helper(rest) }
+      case [..rest, ' '] { is_palindrome_helper(rest) }
+      case [left, ..rest, right] if left == right { is_palindrome_helper(rest) }
+      case _ { false }
+    }
+  }
+}
+
+t_true(is_palindrome("racecar"));
+t_false(is_palindrome("hello"));
+t_true(is_palindrome("a man a plan a canal panama"));

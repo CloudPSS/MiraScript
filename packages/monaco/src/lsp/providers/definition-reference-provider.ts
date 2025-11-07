@@ -1,4 +1,4 @@
-import type { VmAny } from 'mirascript';
+import type { VmAny } from '@mirascript/mirascript';
 import {
     editor,
     Uri,
@@ -9,7 +9,7 @@ import {
     Range,
 } from '../../monaco-api.js';
 import { Provider } from './base.js';
-import { globalDoc } from '../utils.js';
+import { valueDoc } from '../utils.js';
 import { DOC_HEADER } from '../../constants.js';
 
 /**
@@ -19,28 +19,31 @@ export class DefinitionReferenceProvider
     extends Provider
     implements languages.DefinitionProvider, languages.ReferenceProvider
 {
-    private readonly globalModel = editor.createModel(``, 'mirascript', Uri.parse('mirascript:///lib/global.mira'));
+    constructor(
+        private readonly globalModel = editor.createModel(``, 'mirascript', Uri.parse('mirascript:///lib/global.mira')),
+    ) {
+        super();
+    }
     /** 准备要显示的定义 */
     private prepareGlobal(name: string, value: VmAny): { uri: Uri; range: IRange } {
         const { globalModel } = this;
-        const { script, doc } = globalDoc(name, value);
+        const { script, doc } = valueDoc(name, value, 'declare');
         const code = [
             `/**${DOC_HEADER}**/`,
             '',
             `/**`,
-            ...doc.split('\n').map((line) => ` * ${line}`),
+            ...doc.flatMap((sec) => sec.split('\n')).map((line) => ` * ${line}`),
             ` */`,
             script,
             '',
         ];
         globalModel.setValue(code.join('\n'));
-        const word = globalModel.getWordAtPosition({ lineNumber: code.length - 1, column: 1 });
         return {
             uri: globalModel.uri,
             range: {
-                startColumn: word ? word.startColumn : 1,
+                startColumn: 1,
                 startLineNumber: code.length - 1,
-                endColumn: word ? word.endColumn : 1,
+                endColumn: 1,
                 endLineNumber: code.length - 1,
             },
         };
@@ -53,8 +56,8 @@ export class DefinitionReferenceProvider
     ): Promise<languages.LocationLink[] | undefined> {
         const compiled = await this.getCompileResult(model);
         if (!compiled) return undefined;
-        const globals = await this.getGlobals(model);
-        const d = compiled.definitionAt(model, position);
+        const globals = await this.getContext(model);
+        const d = compiled.variableAccessAt(model, position);
         if (!d) return [];
         const { def, ref } = d;
         let originSelectionRange;
@@ -65,7 +68,7 @@ export class DefinitionReferenceProvider
         }
         let link: languages.LocationLink;
         if ('name' in def) {
-            link = this.prepareGlobal(def.name, globals[def.name]);
+            link = this.prepareGlobal(def.name, globals.get(def.name));
         } else {
             link = { uri: model.uri, range: def.definition.range };
         }
@@ -81,8 +84,8 @@ export class DefinitionReferenceProvider
     ): Promise<languages.Location[] | undefined> {
         const compiled = await this.getCompileResult(model);
         if (!compiled) return undefined;
-        const globals = await this.getGlobals(model);
-        const d = compiled.definitionAt(model, position);
+        const globals = await this.getContext(model);
+        const d = compiled.variableAccessAt(model, position);
         if (!d) return [];
         const { def } = d;
         const links: languages.Location[] = def.references.map((u) => ({
@@ -91,7 +94,7 @@ export class DefinitionReferenceProvider
         }));
         if (context.includeDeclaration) {
             if ('name' in def) {
-                links.push(this.prepareGlobal(def.name, globals[def.name]));
+                links.push(this.prepareGlobal(def.name, globals.get(def.name)));
             } else if (!Range.isEmpty(def.definition.range)) {
                 links.push({
                     uri: model.uri,

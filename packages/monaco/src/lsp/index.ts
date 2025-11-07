@@ -1,8 +1,8 @@
 import { languages, type IDisposable } from '../monaco-api.js';
 import '../basic/index.js';
-import type { VmGlobalProvider } from '../index.js';
+import type { VmContextProvider } from '../index.js';
 
-import { setGlobalProvider } from './providers/base.js';
+import { setContextProvider } from './providers/base.js';
 import { CodeActionProvider } from './providers/code-action-provider.js';
 import { ColorProvider } from './providers/color-provider.js';
 import { CompletionItemProvider } from './providers/completion-item-provider.js';
@@ -25,20 +25,21 @@ export {
     CompletionItemProvider,
     DefinitionReferenceProvider,
     DocumentHighlightProvider,
+    DocumentSemanticTokensProvider,
     DocumentSymbolProvider,
     FormatterProvider,
     HoverProvider,
     InlayHintsProvider,
     RangeProvider,
     RenameProvider,
-    DocumentSemanticTokensProvider,
     SignatureHelpProvider,
+    setContextProvider,
 };
 
-/** 注册 LSP 相关的  编辑器功能 */
-export async function registerLSP(globalProvider: VmGlobalProvider | undefined): Promise<IDisposable[]> {
+/** 注册 LSP 相关的编辑器功能 */
+export async function registerLSP(contextProvider: VmContextProvider | undefined): Promise<IDisposable[]> {
+    setContextProvider(contextProvider);
     await ready;
-    setGlobalProvider(globalProvider);
 
     const codeActionProvider = new CodeActionProvider();
     const colorProvider = new ColorProvider();
@@ -58,7 +59,6 @@ export async function registerLSP(globalProvider: VmGlobalProvider | undefined):
     return [
         languages.registerCodeActionProvider(language, codeActionProvider),
         languages.registerColorProvider(language, colorProvider),
-        languages.registerCompletionItemProvider(language, completionItemProvider),
 
         languages.registerDefinitionProvider(language, definitionReferenceProvider),
         languages.registerReferenceProvider(language, definitionReferenceProvider),
@@ -76,8 +76,9 @@ export async function registerLSP(globalProvider: VmGlobalProvider | undefined):
         languages.registerFoldingRangeProvider(language, rangeProvider),
         languages.registerSelectionRangeProvider(language, rangeProvider),
 
-        languages.registerRenameProvider(language, renameProvider),
         languages.registerDocumentSemanticTokensProvider(language, documentSemanticTokensProvider),
+        languages.registerRenameProvider(language, renameProvider),
+        languages.registerCompletionItemProvider(language, completionItemProvider),
         languages.registerSignatureHelpProvider(language, signatureHelpProvider),
     ];
 }

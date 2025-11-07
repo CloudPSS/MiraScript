@@ -1,8 +1,7 @@
-#[cfg(feature = "track_references")]
-use crate::{config::track_references, parser::AstWalker as _};
 use crate::{
-    diagnostic::{DiagnosticCode, SourceDiagnostic, SourceRange},
+    diagnostic::{DiagnosticCode, DiagnosticsCollector, SourceDiagnostic, SourceRange},
     lexer::Token,
+    parser::AstWalker as _,
 };
 
 use super::opcode::Register;
@@ -12,6 +11,8 @@ use super::opcode::Register;
 pub(crate) enum BindType {
     /// The variable is bound by `let` statement.
     Let,
+    /// The variable is bound by `const` statement.
+    Const,
     /// The variable is bound as a pattern in `for`, `while`, `match` or `is` expressions.
     Init,
     /// The variable is bound as a function's normal parameter.
@@ -36,7 +37,6 @@ pub(crate) struct Variable<'s> {
     mutable: bool,
     bind_type: BindType,
     register: Register,
-    #[cfg(feature = "track_references")]
     reference: Vec<SourceDiagnostic>,
     initialized: bool,
 }
@@ -55,7 +55,6 @@ impl<'s> Variable<'s> {
             mutable,
             bind_type,
             register,
-            #[cfg(feature = "track_references")]
             reference: Vec::new(),
             initialized: matches!(bind_type, |BindType::Parameter| BindType::RestParameter
                 | BindType::ItParameter),
@@ -90,7 +89,7 @@ impl<'s> Variable<'s> {
         self.register = register;
     }
 
-    pub fn put_decl_ref(&self, diagnostics: &mut Vec<SourceDiagnostic>) {
+    pub fn put_decl_ref(&self, diagnostics: &mut DiagnosticsCollector<'_, '_>) {
         let code = match self.bind_type {
             BindType::Parameter | BindType::PatternParameter => {
                 DiagnosticCode::ParameterDeclaredHere
@@ -103,7 +102,7 @@ impl<'s> Variable<'s> {
             BindType::Func => DiagnosticCode::FunctionDeclaredHere,
             _ => DiagnosticCode::VariableDeclaredHere,
         };
-        diagnostics.push(SourceDiagnostic::new(self.declaration.clone(), code));
+        diagnostics.push(code, self.declaration.clone());
     }
 
     #[inline]
@@ -118,102 +117,87 @@ impl<'s> Variable<'s> {
 
     #[inline]
     pub fn mark_read(&mut self, #[allow(unused)] token: &Token<'_>) {
-        #[cfg(feature = "track_references")]
-        if track_references() {
-            self.reference.push(SourceDiagnostic::new(
-                token.range(),
-                DiagnosticCode::ReadLocal,
-            ));
-        }
+        self.reference.push(SourceDiagnostic::new(
+            token.range(),
+            DiagnosticCode::ReadLocal,
+        ));
     }
 
     #[inline]
     pub fn mark_write(&mut self, #[allow(unused)] token: &Token<'_>) {
-        #[cfg(feature = "track_references")]
-        if track_references() {
-            self.reference.push(SourceDiagnostic::new(
-                token.range(),
-                DiagnosticCode::WriteLocal,
-            ));
-        }
+        self.reference.push(SourceDiagnostic::new(
+            token.range(),
+            DiagnosticCode::WriteLocal,
+        ));
     }
 
     #[inline]
     pub fn mark_read_write(&mut self, #[allow(unused)] token: &Token<'_>) {
-        #[cfg(feature = "track_references")]
-        if track_references() {
-            self.reference.push(SourceDiagnostic::new(
-                token.range(),
-                DiagnosticCode::ReadWriteLocal,
-            ));
-        }
+        self.reference.push(SourceDiagnostic::new(
+            token.range(),
+            DiagnosticCode::ReadWriteLocal,
+        ));
     }
 
     #[inline]
     pub fn mark_redeclare(&mut self, #[allow(unused)] token: &Token<'_>) {
-        #[cfg(feature = "track_references")]
-        if track_references() {
-            self.reference.push(SourceDiagnostic::new(
-                token.range(),
-                DiagnosticCode::RedeclareLocal,
-            ));
-        }
+        self.reference.push(SourceDiagnostic::new(
+            token.range(),
+            DiagnosticCode::RedeclareLocal,
+        ));
     }
 
     #[inline]
-    pub fn exit(self, #[allow(unused)] diagnostics: &mut Vec<SourceDiagnostic>) {
-        #[cfg(feature = "track_references")]
-        if track_references() {
-            let hint = if !self.mutable {
-                match self.bind_type {
-                    BindType::Let => DiagnosticCode::LocalImmutable,
-                    BindType::Init => DiagnosticCode::LocalImmutable,
-                    BindType::Func => DiagnosticCode::LocalFunction,
-                    BindType::Parameter => DiagnosticCode::ParameterImmutable,
-                    BindType::RestParameter => DiagnosticCode::ParameterImmutableRest,
-                    BindType::ItParameter => DiagnosticCode::ParameterIt,
-                    BindType::PatternParameter => DiagnosticCode::ParameterPattern,
-                    BindType::RestPatternParameter => DiagnosticCode::ParameterRestPattern,
-                    BindType::ParameterSubPattern => DiagnosticCode::ParameterSubPatternImmutable,
-                }
-            } else {
-                match self.bind_type {
-                    BindType::Let => DiagnosticCode::LocalMutable,
-                    BindType::Init => DiagnosticCode::LocalMutable,
-                    BindType::Func => DiagnosticCode::LocalFunction,
-                    BindType::Parameter => DiagnosticCode::ParameterMutable,
-                    BindType::RestParameter => DiagnosticCode::ParameterMutableRest,
-                    BindType::ItParameter => DiagnosticCode::ParameterIt,
-                    BindType::PatternParameter => DiagnosticCode::ParameterPattern,
-                    BindType::RestPatternParameter => DiagnosticCode::ParameterRestPattern,
-                    BindType::ParameterSubPattern => DiagnosticCode::ParameterSubPatternMutable,
-                }
-            };
-            let mut used = false;
-            diagnostics.push(SourceDiagnostic::new(self.declaration.clone(), hint));
-            for reference in self.reference {
-                if *reference == DiagnosticCode::ReadLocal {
-                    used = true;
-                }
-                diagnostics.push(reference);
+    pub fn exit(self, #[allow(unused)] diagnostics: &mut DiagnosticsCollector<'_, '_>) {
+        let hint = if !self.mutable {
+            match self.bind_type {
+                BindType::Const => DiagnosticCode::LocalConst,
+                BindType::Let => DiagnosticCode::LocalImmutable,
+                BindType::Init => DiagnosticCode::LocalImmutable,
+                BindType::Func => DiagnosticCode::LocalFunction,
+                BindType::Parameter => DiagnosticCode::ParameterImmutable,
+                BindType::RestParameter => DiagnosticCode::ParameterImmutableRest,
+                BindType::ItParameter => DiagnosticCode::ParameterIt,
+                BindType::PatternParameter => DiagnosticCode::ParameterPattern,
+                BindType::RestPatternParameter => DiagnosticCode::ParameterRestPattern,
+                BindType::ParameterSubPattern => DiagnosticCode::ParameterSubPatternImmutable,
             }
-            if !used
-                && !matches!(
-                    self.bind_type,
-                    BindType::ItParameter
-                        | BindType::PatternParameter
-                        | BindType::RestPatternParameter
-                )
-            {
-                diagnostics.push(SourceDiagnostic::new(
-                    self.declaration,
-                    if self.bind_type == BindType::Func {
-                        DiagnosticCode::UnusedLocalFunction
-                    } else {
-                        DiagnosticCode::UnusedLocalVariable
-                    },
-                ));
+        } else {
+            match self.bind_type {
+                BindType::Const => DiagnosticCode::LocalConst,
+                BindType::Let => DiagnosticCode::LocalMutable,
+                BindType::Init => DiagnosticCode::LocalMutable,
+                BindType::Func => DiagnosticCode::LocalFunction,
+                BindType::Parameter => DiagnosticCode::ParameterMutable,
+                BindType::RestParameter => DiagnosticCode::ParameterMutableRest,
+                BindType::ItParameter => DiagnosticCode::ParameterIt,
+                BindType::PatternParameter => DiagnosticCode::ParameterPattern,
+                BindType::RestPatternParameter => DiagnosticCode::ParameterRestPattern,
+                BindType::ParameterSubPattern => DiagnosticCode::ParameterSubPatternMutable,
             }
+        };
+        let mut used = false;
+        diagnostics.push(hint, self.declaration.clone());
+        for reference in self.reference.iter() {
+            if **reference == DiagnosticCode::ReadLocal {
+                used = true;
+            }
+        }
+        diagnostics.extend(self.reference);
+        if !used
+            && !matches!(
+                self.bind_type,
+                BindType::ItParameter | BindType::PatternParameter | BindType::RestPatternParameter
+            )
+        {
+            diagnostics.push(
+                if self.bind_type == BindType::Func {
+                    DiagnosticCode::UnusedLocalFunction
+                } else {
+                    DiagnosticCode::UnusedLocalVariable
+                },
+                self.declaration,
+            );
         }
     }
 }

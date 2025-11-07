@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>$title</title>
+    <style>
+        :root { color-scheme: light dark; }
+        body { margin: 20px; }
+        h1 { color: #469649; }
+        .info, .summary { margin-top: 20px; padding: 10px; background-color: #42aa4940; border-radius: 5px; }
+        ul { list-style-type: square; padding-left: 20px; }
+        .footer { margin-top: 40px; font-size: 0.9em; color: #777; text-align: center; }
+    </style>
+</head>
+<body>
+    <h1>欢迎, $name!</h1>
+    
+    <div class="info">
+        <p>你的年龄: $age 岁</p>
+        <p>状态: ${ if active { "活跃" } else { "非活跃" } }</p>
+        <p>注册时间: ${
+            let data = to_datetime(register_date);
+            `$(data.year) 年 $(data.month) 月 $(data.day) 日 $(data.hour):$(data.minute):$(data.second)`
+        }</p>
+    </div>
+    
+    <h2>你的分数</h2>
+    <ul>
+        ${
+            let mut html = "";
+            for score in scores {
+                html = `$html<li>${ score.subject }: ${ score.points }分</li>\n        `;
+            }
+            html
+        }
+    </ul>
+    
+    <div class="summary">
+        <p>总分: $(sum(scores::map(fn { it.points })))</p>
+        <p>平均分: ${
+            let total = sum(scores::map(fn { it.points }));
+            let count = len(scores);
+            if count > 0 { total / count } else { 0 }
+        }</p>
+    </div>
+    
+    <div class="footer">
+        <p>生成时间: $(to_iso8601())</p>
+        <p>MiraScript 模板引擎</p>
+    </div>
+</body>
+</html>

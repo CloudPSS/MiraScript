@@ -1,23 +1,35 @@
 {
   "name": "@mirascript/napi",
   "type": "module",
+  "version": "0.1.5",
   "description": "MiraScript compiler for Node.JS",
-  "version": "0.1.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": "./dist/index.js",
-  "imports": {
-    "#lib": "./dist/index.node"
+  "napi": {
+    "binaryName": "napi",
+    "targets": [
+      "x86_64-pc-windows-msvc",
+      "aarch64-pc-windows-msvc",
+      "x86_64-unknown-linux-gnu",
+      "aarch64-unknown-linux-gnu",
+      "x86_64-unknown-linux-musl",
+      "aarch64-unknown-linux-musl",
+      "x86_64-apple-darwin",
+      "aarch64-apple-darwin"
+    ]
+  },
+  "engines": {
+    "node": ">= 16"
   },
   "scripts": {
-    "napi": "cargo-cp-artifact -ac napi dist/index.node -- cargo build -p napi --message-format=json-render-diagnostics",
-    "watch": "nodemon -e rs,js,ts --watch ../../crates/napi --watch ../../crates/core --watch ./src --exec 'pnpm build:dev'",
-    "build:dev": "pnpm napi --dev && tsc",
-    "build": "pnpm napi --release && tsc",
-    "clean": "rimraf dist lib"
+    "build": "pnpm run build:debug --release",
+    "build:debug": "napi build --manifest-path ../../crates/napi/Cargo.toml --output-dir dist --platform --esm",
+    "watch": "nodemon --watch ../../crates/ --ext rs --exec \"pnpm run build:debug\""
   },
   "devDependencies": {
-    "cargo-cp-artifact": "^0.1.9",
+    "@napi-rs/cli": "^3.4.1",
+    "@types/node": "^24.10.0",
     "nodemon": "^3.1.10"
   }
 }

@@ -1,0 +1,4 @@
+t_eq(matrix.size(1), []);
+t_eq(matrix.size([]), [0]);
+t_eq(matrix.size([[]]), [1, 0]);
+t_eq(matrix.size([1, 2, nil]), [3]);

@@ -1,11 +1,18 @@
 import { OpCode } from '@mirascript/wasm/types';
-import { encodeURL } from 'js-base64';
+import { toBase64 } from 'js-base64';
 import type { VmConst, VmPrimitive } from '../vm/index.js';
 import type { ScriptInput, TranspileOptions } from './types.js';
+import type { IRange } from './diagnostic.js';
+import { SourceMapGenerator } from 'source-map-js';
 
 /** 生成代码 */
-export function emit(source: ScriptInput, chunk: Uint8Array, options: TranspileOptions): string {
-    const gen = new Emitter(source, chunk, options);
+export function emit(
+    source: ScriptInput,
+    chunk: Uint8Array,
+    sourcemaps: readonly IRange[],
+    options: TranspileOptions,
+): string {
+    const gen = new Emitter(source, chunk, sourcemaps, options);
     gen.read();
     const code = gen.codeLines.join('\n');
     return code;
@@ -15,6 +22,7 @@ export function emit(source: ScriptInput, chunk: Uint8Array, options: TranspileO
 function readConst(reader: DataView, offset: number): [value: VmPrimitive, consumed: number] {
     const type = reader.getUint8(offset);
     switch (type) {
+        /* c8 ignore next 2 */
         case 0:
             return [null, 1];
         case 1:
@@ -34,6 +42,7 @@ function readConst(reader: DataView, offset: number): [value: VmPrimitive, consu
             const str = new TextDecoder().decode(new Uint8Array(reader.buffer, reader.byteOffset + offset + 5, len));
             return [str, 5 + len];
         }
+        /* c8 ignore next 2 */
         default:
             throw new Error(`Unknown constant type: ${type}`);
     }
@@ -41,23 +50,39 @@ function readConst(reader: DataView, offset: number): [value: VmPrimitive, consu
 
 /** 将值转为 JS */
 function toJavascript(value: VmConst | undefined): string {
+    /* c8 ignore next 2 */
     if (value === null) return 'null';
     if (value === undefined) return 'undefined';
     if (typeof value == 'object' || typeof value == 'string') {
         return JSON.stringify(value);
     }
     // JSON 无法处理 NaN 等特殊数字
+    if (value === 0) {
+        if (1 / value === -Infinity) return '-0';
+        return '0';
+    }
     return String(value);
 }
 
-const ORIGIN = `mira://MiraScript`;
+const ORIGIN = `mira://MiraScript/`;
 let sourceId = 1;
+
+/** 创建数组 */
+function createArray<T>(length: number, fn: (index: number) => T): T[] {
+    // micro bench shows that this is faster than Array.from
+    const result: T[] = [];
+    for (let i = 0; i < length; i++) {
+        result.push(fn(i));
+    }
+    return result;
+}
 
 /** 代码生成 */
 class Emitter {
     constructor(
         readonly source: ScriptInput,
         readonly chunk: Uint8Array,
+        readonly sourcemaps: readonly IRange[],
         readonly options: TranspileOptions,
     ) {
         this.pretty = options.pretty ?? false;
@@ -203,7 +228,10 @@ class Emitter {
                 case OpCode.Field: {
                     const field = read();
                     const field_name = this.constants[field];
-                    if (!field_name) throw new Error(`Unknown field ${field}`);
+                    /* c8 ignore next 3 */
+                    if (!field_name) {
+                        throw new Error(`Unknown field ${field}`);
+                    }
                     const value = read();
                     const opt = opcode === OpCode.FieldOpt;
                     // Use computed property names to avoid prototype pollution
@@ -224,8 +252,8 @@ class Emitter {
                 }
                 case OpCode.FieldOptIndex:
                 case OpCode.FieldIndex: {
-                    const field = read();
-                    const value = this.readIndex(wide);
+                    const field = this.readIndex(wide);
+                    const value = read();
                     const opt = opcode === OpCode.FieldOptIndex;
                     code = opt
                         ? `...ElementOpt(${field}, ${this.rv(value)}),`
@@ -271,8 +299,8 @@ class Emitter {
                     break;
                 }
                 case OpCode.ItemRange: {
-                    const start = read();
-                    const end = read();
+                    const start = this.readIndex(wide);
+                    const end = this.readIndex(wide);
                     code = `...ArrayRange(${start}, ${end}),`;
                     break;
                 }
@@ -329,22 +357,25 @@ class Emitter {
                 const varg = opcode === OpCode.FuncVarg;
                 const argn = read();
                 const regn = read();
-                const args = Array.from({ length: argn }, (_, i) => {
+                const args = createArray(argn, (i) => {
                     const wv = this.wv(i + 1, -1);
                     if (varg && i === argn - 1) {
                         // 最后一个参数为可变参数
-                        return `...${wv}`;
+                        return `...vargs`;
                     }
                     return `${wv} = null`;
                 });
-                const regs = Array.from({ length: regn - argn + 1 }, (_, i) =>
-                    i ? this.wv(i + argn, -1) : this.wv(0, -1),
-                ).join(', ');
+                const regs = createArray(regn - argn + 1, (i) => (i ? this.wv(i + argn, -1) : this.wv(0, -1))).join(
+                    ', ',
+                );
                 if (script) {
                     args.unshift(`global = GlobalFallback()`);
-                    code = `return (function script(${args.join(', ')}) { try{ CpEnter(); let ${regs};`;
+                    code = `'use strict'; return ((${args.join(', ')}) => { try { CpEnter(); var ${regs};`;
                 } else {
-                    code = `${this.wv(reg)} = Function(function (${args.join(', ')}) { try{ CpEnter(); let ${regs};`;
+                    code = `${this.wv(reg)} = Function((${args.join(', ')}) => { try { CpEnter(); var ${regs};`;
+                }
+                if (varg) {
+                    code += ` var ${this.wv(argn, -1)} = Vargs(vargs);`;
                 }
                 break;
             }
@@ -383,7 +414,8 @@ class Emitter {
             case OpCode.Nsame:
             case OpCode.In:
             case OpCode.And:
-            case OpCode.Or: {
+            case OpCode.Or:
+            case OpCode.Format: {
                 reg = read();
                 const left = read();
                 const right = read();
@@ -393,13 +425,13 @@ class Emitter {
             case OpCode.InGlobal: {
                 reg = read();
                 const left = read();
-                code = `${this.wv(reg)} = global[${this.rv(left)}] !== undefined;`;
+                code = `${this.wv(reg)} = global.has(${this.rv(left)});`;
                 break;
             }
             case OpCode.Concat: {
                 reg = read();
                 const n = read();
-                const args = Array.from({ length: n }, (_, i) => read());
+                const args = createArray(n, () => read());
                 code = `${this.wv(reg)} = $${OpCode[opcode]}(${args.map((a) => this.rv(a)).join(', ')});`;
                 break;
             }
@@ -408,7 +440,7 @@ class Emitter {
                 reg = read();
                 const value = read();
                 const n = read();
-                const args = Array.from({ length: n }, (_, i) => this.constants[read()]!);
+                const args = createArray(n, () => this.constants[read()]!);
 
                 code = `${this.wv(reg)} = $${OpCode[opcode]}(${this.rv(value)}, [${args.join(', ')}]);`;
                 break;
@@ -418,10 +450,10 @@ class Emitter {
                 reg = read();
                 const func = read();
                 const n = read();
-                const args = Array.from({ length: n }, (_, i) => read());
+                const args = createArray(n, () => read());
                 const ns = read();
-                const spreads = Array.from({ length: ns }, (_, i) => read());
-                const callTarget = opcode === OpCode.Call ? `global[${this.constants[func]}]` : this.rv(func);
+                const spreads = createArray(ns, () => read());
+                const callTarget = opcode === OpCode.Call ? `global.get(${this.constants[func]})` : this.rv(func);
                 code = `${this.wv(reg)} = $Call(${callTarget}, [${args
                     .map((a, i) => {
                         if (spreads.includes(i)) return `...$ArraySpread(${this.rv(a)})`;
@@ -527,20 +559,20 @@ class Emitter {
                 reg = read();
                 const i = read();
                 const c = this.constants[i];
-                code = `${this.wv(reg)} = global[${c}] ?? null;`;
+                code = `${this.wv(reg)} = global.get(${c}) ?? null;`;
                 break;
             }
             case OpCode.GetGlobalDyn: {
                 reg = read();
                 const name = read();
-                code = `${this.wv(reg)} = global[${this.rv(name)}] ?? null;`;
+                code = `${this.wv(reg)} = global.get(${this.rv(name)}) ?? null;`;
                 break;
             }
             case OpCode.GetUpvalue: {
                 reg = read();
                 const level = read();
                 const up = read();
-                code = `${this.wv(reg)} = ${this.rv(up, level)};`;
+                code = `${this.wv(reg)} = Upvalue(${this.rv(up, level)});`;
                 break;
             }
             case OpCode.SetUpvalue: {
@@ -600,12 +632,12 @@ class Emitter {
             }
             case OpCode.If: {
                 const cond = read();
-                code = `if ($ToBoolean(${this.rv(cond)})) {`;
+                code = `if (${this.rv(cond)} !== false && $ToBoolean(${this.rv(cond)}) !== false) {`;
                 break;
             }
             case OpCode.IfNot: {
                 const cond = read();
-                code = `if (!$ToBoolean(${this.rv(cond)})) {`;
+                code = `if (${this.rv(cond)} !== true && $ToBoolean(${this.rv(cond)}) !== true) {`;
                 break;
             }
             case OpCode.IfInit: {
@@ -631,8 +663,10 @@ class Emitter {
             case OpCode.LoopFor: {
                 const nreg = read();
                 const iterable = read();
-                const regs = Array.from({ length: nreg - 1 }, (_, i) => this.wv(i + 2, -1)).join(', ');
-                code = `for (let ${this.wv(1, -1)} of $Iterable(${this.rv(iterable)})) { Cp(); let _, ${regs};`;
+                const regs = createArray(nreg - 1, (i) => this.wv(i + 2, -1));
+                regs.unshift('_');
+                const ir = this.wv(1, -1);
+                code = `for (let ${ir} of $Iterable(${this.rv(iterable)})) { ${ir} ??= null; Cp(); let ${regs.join(', ')};`;
                 break;
             }
             case OpCode.LoopRange:
@@ -641,15 +675,17 @@ class Emitter {
                 const start = read();
                 const end = read();
                 const exclusive = opcode === OpCode.LoopRangeExclusive;
-                const regs = Array.from({ length: nreg - 1 }, (_, i) => this.wv(i + 2, -1)).join(', ');
+                const regs = createArray(nreg - 1, (i) => this.wv(i + 2, -1));
+                regs.unshift('_');
                 const i = this.wv(1, -1);
-                code = `for (let start = $ToNumber(${this.rv(start)}), end = $ToNumber(${this.rv(end)}), ${i} = start; ${i} ${exclusive ? '<' : '<='} end; ${i} += 1) { Cp(); let _, ${regs};`;
+                code = `for (let start = $ToNumber(${this.rv(start)}), end = $ToNumber(${this.rv(end)}), ${i} = start; ${i} ${exclusive ? '<' : '<='} end; ${i} += 1) { Cp(); let ${regs.join(', ')};`;
                 break;
             }
             case OpCode.Loop: {
                 const nreg = read();
-                const regs = Array.from({ length: nreg }, (_, i) => this.wv(i + 1, -1)).join(', ');
-                code = `while (true) { Cp(); let _, ${regs};`;
+                const regs = createArray(nreg, (i) => this.wv(i + 1, -1));
+                regs.unshift('_');
+                code = `while (true) { Cp(); let ${regs.join(', ')};`;
                 break;
             }
             case OpCode.Break: {
@@ -659,6 +695,9 @@ class Emitter {
             case OpCode.Continue: {
                 code = `continue;`;
                 break;
+            }
+            case OpCode.Noop: {
+                return;
             }
             default: {
                 code = `; // ${OpCode[opcode] ?? opcode}`;
@@ -711,24 +750,45 @@ class Emitter {
     addSourceMap(): void {
         if (!this.options.sourceMap) return;
         let fileName = (this.options.fileName ?? '').trim();
-        if (fileName.startsWith('/')) {
-            fileName = fileName.replace(/^\\+\s*/, '');
+        const hasSchema = /^\w+:/.test(fileName);
+        if (!hasSchema) {
+            if (fileName.startsWith('/')) {
+                fileName = fileName.replace(/^\/+\s*/, '');
+            }
+            if (!fileName) {
+                fileName = `${sourceId++}.${this.options.input_mode === 'Template' ? 'miratpl' : 'mira'}`;
+            }
         }
-        if (!fileName) {
-            fileName = `${sourceId++}.${this.options.input_mode === 'Template' ? 'miratpl' : 'mira'}`;
+        const map = new SourceMapGenerator({
+            file: fileName + '.js',
+        });
+        if (typeof this.source === 'string') {
+            map.setSourceContent(fileName, this.source);
         }
-        const data = {
-            version: 3,
-            file: fileName,
-            sourceRoot: ORIGIN,
-            sources: [fileName],
-            sourcesContent: [ArrayBuffer.isView(this.source) ? null : this.source],
-            names: [],
-            mappings: '',
-        };
-        this.codeLines.unshift(
-            `//# sourceURL=${ORIGIN}/${fileName}.js`,
-            `//# sourceMappingURL=data:application/json;base64,${encodeURL(JSON.stringify(data))}`,
+        for (let i = 0; i < this.sourcemaps.length; i++) {
+            const range = this.sourcemaps[i];
+            if (!range) break;
+            map.addMapping({
+                generated: {
+                    // 前两行固定为：
+                    // (function anonymous($Add,$Aeq, ...
+                    // ) {
+                    line: i + 3,
+                    column: 0,
+                },
+                original: {
+                    line: range.startLineNumber,
+                    column: range.startColumn - 1,
+                },
+                source: fileName,
+            });
+        }
+        const prefix = '//# ';
+        const sourceURL = hasSchema ? fileName : `${ORIGIN}${fileName}`;
+        this.codeLines.push(
+            // Prevent source map from being recognized as of this file
+            `${prefix}sourceURL=${sourceURL}.js`,
+            `${prefix}sourceMappingURL=data:application/json;base64,${toBase64(map.toString())}`,
         );
     }
 }

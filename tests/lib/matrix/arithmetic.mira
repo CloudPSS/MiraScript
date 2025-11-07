@@ -1,0 +1,77 @@
+let sa = 1;
+let sb = 2;
+
+let va = [1, 2, 3];
+let vb = [4, 5];
+
+let ma = [[1, 3, 4], [2, 3, 7], [2, 5, 9]];
+let mb = [[7, 1, 5], [8, 2, 6]];
+
+t_eq(matrix.entrywise(sa, 1, fn { (fn { }) }), nil);
+t_eq(matrix.entrywise(sa, 1, fn { 'x' }), 'x');
+t_eq(matrix.entrywise(va, 1, fn { 'x' }), ['x', 'x', 'x']);
+t_eq(matrix.entrywise([[], [1], [1, 2]], 1, fn { 'x' }), [['x', 'x'], ['x', 'x'], ['x', 'x']]);
+t_eq(matrix.entrywise([nil, nil], [nil, nan, nil], fn (x, y) { (x, y) }), [(nil, nil), (nil, nan), (nil, nil)]);
+t_eq(matrix.entrywise([nil, nan], nil, fn (x, y) { (x, y) }), [(nil, nil), (nan, nil)]);
+t_eq(matrix.entrywise([[nil]], [[nan]], fn (x, y) { (x, y) }), [[(nil, nan)]]);
+
+t_eq(matrix.add(1, nil), 1);
+t_eq(matrix.add(1, [nil]), [1]);
+t_eq(matrix.add(1, [[nil]]), [[1]]);
+t_eq(matrix.add(sa, sb), 3);
+t_eq(matrix.add(sa, vb), [5, 6]);
+t_eq(matrix.add(va, sb), [3, 4, 5]);
+t_eq(matrix.add(va, vb), [5, 7, 3]);
+t_eq(matrix.add(va, ma), [[2, 5, 7], [3, 5, 10], [3, 7, 12]]);
+t_eq(matrix.add(va, mb), [[8, 3, 8], [9, 4, 9]]);
+t_eq(matrix.add(ma, mb), [[8, 4, 9], [10, 5, 13], [2, 5, 9]]);
+t_eq(matrix.add(ma, va), [[2, 5, 7], [3, 5, 10], [3, 7, 12]]);
+t_eq(matrix.add(ma, sb), [[3, 5, 6], [4, 5, 9], [4, 7, 11]]);
+t_eq(matrix.add(sa, mb), [[8, 2, 6], [9, 3, 7]]);
+
+t_eq(matrix.subtract(va, sb), [-1, 0, 1]);
+t_eq(matrix.subtract(va, vb), [-3, -3, 3]);
+t_eq(matrix.subtract(sa, mb), [[-6, 0, -4], [-7, -1, -5]]);
+t_eq(matrix.subtract(ma, sb), [[-1, 1, 2], [0, 1, 5], [0, 3, 7]]);
+
+t_eq(matrix.entrywise_multiply(va, sb), [2, 4, 6]);
+t_eq(matrix.entrywise_multiply(va, vb), [4, 10, 0]);
+t_eq(matrix.entrywise_multiply(sa, mb), [[7, 1, 5], [8, 2, 6]]);
+t_eq(matrix.entrywise_multiply(ma, sb), [[2, 6, 8], [4, 6, 14], [4, 10, 18]]);
+
+t_eq(matrix.entrywise_divide(va, sb), [0.5, 1, 1.5]);
+t_eq(matrix.entrywise_divide(va, vb), [0.25, 0.4, inf]);
+t_eq(matrix.entrywise_divide(sa, mb), [[0.142_857_142_857_142_85, 1, 0.2], [0.125, 0.5, 0.166_666_666_666_666_667]]);
+t_eq(matrix.entrywise_divide(ma, sb), [[0.5, 1.5, 2], [1, 1.5, 3.5], [1, 2.5, 4.5]]);
+
+t_eq(matrix.multiply(sa, sb), 2);
+t_eq(matrix.multiply(sa, vb), [4, 5]);
+t_eq(matrix.multiply(va, sb), [2, 4, 6]);
+t_eq(matrix.multiply(va, vb), 14);
+t_eq(matrix.multiply(va, ma), [11, 24, 45]);
+t_eq(matrix.multiply(ma, va), [19, 29, 39]);
+t_throws(fn { matrix.multiply(va, mb) });
+t_eq(matrix.multiply(mb, va), [24, 30]);
+t_throws(fn { matrix.multiply(ma, vb) });
+t_throws(fn { matrix.multiply(vb, ma) });
+t_throws(fn { matrix.multiply(mb, vb) });
+t_eq(matrix.multiply(vb, mb), [68, 14, 50]);
+t_throws(fn { matrix.multiply(ma, mb) });
+t_eq(matrix.multiply(mb, ma), [[19, 49, 80], [24, 60, 100]]);
+
+t_eq(matrix.invert(2), 0.5);
+t_eq(matrix.invert(0), inf);
+t_eq(matrix.invert(-0), -inf);
+t_eq(matrix.invert(nil), inf);
+t_eq(matrix.invert(va), [1, 0.5, 0.333_333_333_333_333_333]);
+t_eq(matrix.invert(ma), [[2, 1.75, -2.25], [1, -0.25, -0.25], [-1, -0.25, 0.75]]);
+t_throws(fn { matrix.invert(mb) });
+t_eq(matrix.invert([[1, 2], [3, 4]]), [[-2, 1], [1.5, -0.5]]);
+t_eq(matrix.invert([[1]]), [[1]]);
+t_eq(matrix.invert([[2]]), [[0.5]]);
+t_eq(matrix.invert([[0]]), [[inf]]);
+
+t_eq(matrix.multiply(ma, matrix.invert(ma)), [[1, 0, 0], [0, 1, 0], [0, 0, 1]]);
+t_eq(matrix.multiply(matrix.invert(ma), ma), [[1, 0, 0], [0, 1, 0], [0, 0, 1]]);
+
+t_eq(matrix.transpose([[1, 2, 3]])::matrix.add([[1, 2], [3, 4], [5, 6]]), [[2, 3], [5, 6], [8, 9]]);

@@ -1,0 +1,23 @@
+// math.ts 中的函数
+// atan2
+t_snapshot(atan2(1, 1));
+t_snapshot(atan2(0, 1));
+t_snapshot(atan2(1, 0));
+t_snapshot(atan2(-1, -1));
+
+// pow
+t_eq(pow(nan, 0), 1);
+t_eq(pow(inf, 0), 1);
+t_eq(pow((-inf), 0), 1);
+t_eq(pow(0, inf), 0);
+t_eq(pow(2, inf), inf);
+t_eq(pow(2, -inf), 0);
+t_eq(pow(2, 3), 8);
+t_eq(pow(4, 0.5), 2);
+t_eq(pow(-2, 3), -8);
+
+// random
+t_eq(type(random()), 'number');
+for i in 1..1000 {
+  t_true(random() is 0..<1);
+}

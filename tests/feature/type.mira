@@ -1,0 +1,32 @@
+t_eq(nil::type(), "nil");
+
+t_eq(true::type(), "boolean");
+t_eq(false::type(), "boolean");
+
+t_eq(1::type(), "number");
+t_eq(1.0::type(), "number");
+t_eq(nan::type(), "number");
+t_eq(inf::type(), "number");
+t_eq((-inf)::type(), "number");
+
+t_eq("Hello, World!"::type(), "string");
+t_eq("é"::type(), "string");
+
+t_eq(()::type(), "record");
+t_eq((1,)::type(), "record");
+t_eq((1, 2, 3)::type(), "record");
+t_eq((a: 1, b: 2)::type(), "record");
+
+t_eq([]::type(), "array");
+t_eq([1, 2, 3]::type(), "array");
+
+t_eq(fn { }::type(), "function");
+t_eq(fn (x) { x }::type(), "function");
+t_eq(v_fn::type(), "function");
+
+if has_module {
+  t_eq(v_module::type(), "module");
+}
+if has_extern {
+  t_eq(v_extern::type(), "extern");
+}

@@ -1,0 +1,51 @@
+
+t_true(nil is nil);
+
+t_true(true is true);
+t_true(false is false);
+
+t_true(nan is nan);
+t_false(nan is not nan);
+t_true(inf is inf);
+t_true(0 is -0);
+t_false(-0 is not 0);
+
+{
+  t_true([1, 2, 3] is [1, ..rest] && rest is [2, 3]);
+  t_true([10] is [x and > 0] && x is 10);
+  t_false([10] is [y and > 10]);
+  t_eq(y, 10);
+}
+
+{
+  t_true((1, 2, 3) is (1, ..r_rest) && r_rest is (1: 2, 2: 3));
+  t_false([1, 2, 3] is (..bad_rest));
+  t_eq(bad_rest, ());
+}
+
+// 即使匹配失败，仍然可以获取到匹配的值
+{
+  t_false([1, 2, 3] is (ra, rb, rc));
+  t_eq(ra, 1);
+  t_eq(rb, 2);
+  t_eq(rc, 3);
+}
+
+t_true(1 is 1 or '1');
+t_true(1 is 1..2);
+t_true(1.5 is 1.5..1.5);
+t_false(1.5 is "1"..<1.5);
+
+t_true("1" is "1".."2");
+
+{
+  t_true((1, [2]) is (1, [2, ..rr]) && rr is []);
+  t_true((1, [2]) is not (1, [f, l]) && f is 2 && l is nil);
+}
+
+{
+  let v = 12;
+  t_true(v is x and > 10 and < 20 is y);
+  t_eq(x, 12);
+  t_true(y);
+}

@@ -13,9 +13,8 @@ harness = false
 
 [features]
 default = []
-wasm = ["dep:wasm-bindgen"]
-track_references = []
 formatter = []
+wasm = ["dep:wasm-bindgen"]
 serde = ["dep:serde"]
 
 [dev-dependencies]
@@ -24,8 +23,8 @@ mimalloc = "0.1"
 mira-core = { path = "." }
 
 [dependencies]
-wasm-bindgen = { version = "0.2", optional = true }
-serde = { version = "1", optional = true, features = ["derive"] }
 unicode-ident = "1.0"
 winnow = "0.7"
 strum = { version = "0.27", features = ["derive"] }
+wasm-bindgen = { version = "0.2", optional = true }
+serde = { version = "1", optional = true, features = ["derive"] }

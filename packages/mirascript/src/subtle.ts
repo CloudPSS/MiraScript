@@ -1,5 +1,17 @@
 export * as constants from './helpers/constants.js';
-export { VmSharedContext as VmSharedGlobal } from './vm/types/context.js';
+export { VmSharedContext, DefaultVmContext } from './vm/types/context.js';
 export * as operations from './vm/operations.js';
-export { serialize, serializeString, serializePropName } from './helpers/serialize.js';
-export { lib } from './vm/lib/loader.js';
+export {
+    serialize,
+    serializeNil,
+    serializeBoolean,
+    serializeNumber,
+    serializeString,
+    serializePropName,
+    serializeArray,
+    serializeRecord,
+    type SerializeOptions,
+} from './helpers/serialize.js';
+export { lib } from './vm/lib/_loader.js';
+export * from './compiler/diagnostic.js';
+export { generateBytecode, generateBytecodeSync, emitScript } from './compiler/index.js';

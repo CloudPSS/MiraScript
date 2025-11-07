@@ -7,7 +7,7 @@ impl Formattable for Pattern<'_> {
         use Pattern::*;
         match self {
             Grouping(_, pattern, _) => pattern.measure(formatter, indent),
-            Constant(_, literal) => literal.measure(formatter, indent),
+            Literal(_, literal) => literal.measure(formatter, indent),
 
             _ => 0,
         }
@@ -21,11 +21,14 @@ impl Formattable for Pattern<'_> {
                 pattern.format(formatter, measurement);
                 formatter.write_token(cp);
             }
-            Constant(op, literal) => {
+            Literal(op, literal) => {
                 if let Some(op) = op {
                     formatter.write_token(op);
                 }
                 formatter.write_token(literal);
+            }
+            Constant(constant) => {
+                formatter.write_token(constant);
             }
             Relation(op, constant) => {
                 formatter.write_token(op);

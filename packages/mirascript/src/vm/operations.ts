@@ -1,27 +1,28 @@
 import { VmError } from './error.js';
 import {
-    isVmArray,
-    VmModule,
-    VmExtern,
-    isVmRecord,
-    getVmFunctionInfo,
     isVmPrimitive,
+    isVmArray,
+    isVmRecord,
+    isVmFunction,
+    isVmExtern,
+    isVmModule,
+    isVmWrapper,
+    getVmFunctionInfo,
     type TypeName,
     type VmAny,
     type VmImmutable,
     type VmRecord,
     type VmValue,
-    isVmFunction,
     type VmArray,
     type VmConst,
-    isVmExtern,
+    type VmPrimitive,
+    type VmFunction,
 } from './types/index.js';
-import { VmWrapper } from './types/wrapper.js';
+import { hasOwnEnumerable, isNaN, isSafeInteger, keys, create } from '../helpers/utils.js';
 
-const { hasOwn, keys, create } = Object;
-const { isNaN, isSafeInteger } = Number;
 const { abs, min, trunc, ceil } = Math;
 const { slice, at } = Array.prototype;
+const { POSITIVE_INFINITY, NEGATIVE_INFINITY } = Number;
 
 const isSame = (a: VmValue, b: VmValue): boolean => {
     // Check for NaN
@@ -31,14 +32,19 @@ const isSame = (a: VmValue, b: VmValue): boolean => {
     // Any primitives and functions arrive here are not equal
     if (a == null || typeof a != 'object' || b == null || typeof b != 'object') return false;
     // Handle wrapper values
-    if (a instanceof VmWrapper) return a.same(b);
-    if (b instanceof VmWrapper) return b.same(a);
+    if (isVmWrapper(a)) return a.same(b);
+    if (isVmWrapper(b)) return b.same(a);
     // Handle array values
     if (isVmArray(a) && isVmArray(b)) {
+        const len = a.length;
+        if (len !== b.length) {
+            return false;
+        }
         // Compare array items
-        if (a.length !== b.length) return false;
-        for (let i = 0; i < a.length; i++) {
-            if (!isSame(a[i] ?? null, b[i] ?? null)) return false;
+        for (let i = 0; i < len; i++) {
+            if (!isSame(a[i] ?? null, b[i] ?? null)) {
+                return false;
+            }
         }
         return true;
     }
@@ -47,9 +53,16 @@ const isSame = (a: VmValue, b: VmValue): boolean => {
         // Compare record fields
         const aKeys = keys(a);
         const bKeys = keys(b);
-        if (aKeys.length !== bKeys.length) return false;
+        if (aKeys.length !== bKeys.length) {
+            return false;
+        }
         for (const key of aKeys) {
-            if (!hasOwn(b, key) || !isSame(a[key] ?? null, b[key] ?? null)) return false;
+            if (!hasOwnEnumerable(b, key)) {
+                return false;
+            }
+            if (!isSame(a[key] ?? null, b[key] ?? null)) {
+                return false;
+            }
         }
         return true;
     }
@@ -57,20 +70,37 @@ const isSame = (a: VmValue, b: VmValue): boolean => {
 };
 
 const overloadNumberString = (a: VmAny, b: VmAny): boolean => {
-    const useNumber = typeof a == 'number' || typeof b == 'number' || !(typeof a == 'string' || typeof b == 'string');
-    return useNumber;
+    if (typeof a == 'number' || typeof b == 'number') return true;
+    if (typeof a == 'string' || typeof b == 'string') return false;
+    return true;
 };
 
 // Math operations
-export const $Add = (a: VmAny, b: VmAny): number => $ToNumber(a) + $ToNumber(b);
-export const $Sub = (a: VmAny, b: VmAny): number => $ToNumber(a) - $ToNumber(b);
-export const $Mul = (a: VmAny, b: VmAny): number => $ToNumber(a) * $ToNumber(b);
-export const $Div = (a: VmAny, b: VmAny): number => $ToNumber(a) / $ToNumber(b);
-export const $Mod = (a: VmAny, b: VmAny): number => $ToNumber(a) % $ToNumber(b);
-export const $Pow = (a: VmAny, b: VmAny): number => $ToNumber(a) ** $ToNumber(b);
+export const $Add = (a: VmAny, b: VmAny): number => {
+    return $ToNumber(a) + $ToNumber(b);
+};
+export const $Sub = (a: VmAny, b: VmAny): number => {
+    return $ToNumber(a) - $ToNumber(b);
+};
+export const $Mul = (a: VmAny, b: VmAny): number => {
+    return $ToNumber(a) * $ToNumber(b);
+};
+export const $Div = (a: VmAny, b: VmAny): number => {
+    return $ToNumber(a) / $ToNumber(b);
+};
+export const $Mod = (a: VmAny, b: VmAny): number => {
+    return $ToNumber(a) % $ToNumber(b);
+};
+export const $Pow = (a: VmAny, b: VmAny): number => {
+    return $ToNumber(a) ** $ToNumber(b);
+};
 // Logical operations without short-circuiting
-export const $And = (a: VmAny, b: VmAny): boolean => $ToBoolean(a) && $ToBoolean(b);
-export const $Or = (a: VmAny, b: VmAny): boolean => $ToBoolean(a) || $ToBoolean(b);
+export const $And = (a: VmAny, b: VmAny): boolean => {
+    return $ToBoolean(a) && $ToBoolean(b);
+};
+export const $Or = (a: VmAny, b: VmAny): boolean => {
+    return $ToBoolean(a) || $ToBoolean(b);
+};
 // Comparison operations
 export const $Gt = (a: VmAny, b: VmAny): boolean => {
     if (overloadNumberString(a, b)) {
@@ -107,12 +137,9 @@ export const $Eq = (a: VmAny, b: VmAny): boolean => {
     if (typeof a == 'number' && typeof b == 'number') return a === b;
     return isSame(a, b);
 };
-export const $Neq = (a: VmAny, b: VmAny): boolean => !$Eq(a, b);
-const stringComparer = new Intl.Collator('en', {
-    usage: 'sort',
-    numeric: false,
-    sensitivity: 'base',
-});
+export const $Neq = (a: VmAny, b: VmAny): boolean => {
+    return !$Eq(a, b);
+};
 export const $Aeq = (a: VmAny, b: VmAny): boolean => {
     if (overloadNumberString(a, b)) {
         const an = $ToNumber(a);
@@ -126,44 +153,70 @@ export const $Aeq = (a: VmAny, b: VmAny): boolean => {
         const base = min(abs(an), abs(bn));
         return absoluteDifference < base * EPS;
     } else {
-        // For strings, we use localeCompare for case-insensitive accent-insensitive comparison
+        // For strings, we use normalized case-insensitive comparison
         const as = $ToString(a);
         const bs = $ToString(b);
         if (as === bs) return true;
-        return stringComparer.compare(as, bs) === 0;
+        const ai = as.toLowerCase();
+        const bi = bs.toLowerCase();
+        if (ai === bi) return true;
+        const an = ai.normalize('NFC');
+        const bn = bi.normalize('NFC');
+        return an === bn;
     }
 };
-export const $Naeq = (a: VmAny, b: VmAny): boolean => !$Aeq(a, b);
+export const $Naeq = (a: VmAny, b: VmAny): boolean => {
+    return !$Aeq(a, b);
+};
 export const $Same = (a: VmAny, b: VmAny): boolean => {
     $AssertInit(a);
     $AssertInit(b);
     return isSame(a, b);
 };
-export const $Nsame = (a: VmAny, b: VmAny): boolean => !$Same(a, b);
+export const $Nsame = (a: VmAny, b: VmAny): boolean => {
+    return !$Same(a, b);
+};
 export const $In = (value: VmAny, iterable: VmAny): boolean => {
     $AssertInit(value);
     $AssertInit(iterable);
     if (iterable == null) return false;
     if (isVmArray(iterable)) {
+        if (value == null) {
+            // array may have empty slots
+            for (const item of iterable) {
+                if (item == null) return true;
+            }
+            return false;
+        }
         // JS %SameValueZero is same with `isSame` in this context
         if (isVmPrimitive(value)) return iterable.includes(value);
-        return iterable.some((item) => isSame(item, value));
+        // value is not null here, so it's ok to skip empty slots, since `isSame(null, something)` is always false
+        value satisfies NonNullable<VmValue>;
+        return iterable.some((item = null) => isSame(item, value));
     }
-    if (iterable instanceof VmExtern) return iterable.has($ToString(value));
-    if (typeof iterable == 'object') return hasOwn(iterable, $ToString(value));
+    // iterable is a record or an extern here, value should be a string
+    if (isVmWrapper(iterable)) return iterable.has($ToString(value));
+    if (typeof iterable == 'object') return hasOwnEnumerable(iterable, $ToString(value));
+    iterable satisfies VmPrimitive | VmFunction;
     return false;
 };
 export const $Concat = (...args: string[]): string => {
-    return args.map($ToString).join('');
+    return args.map($Format).join('');
 };
-export const $Pos = (a: VmAny): number => $ToNumber(a);
-export const $Neg = (a: VmAny): number => -$ToNumber(a);
-export const $Not = (a: VmAny): boolean => !$ToBoolean(a);
+export const $Pos = (a: VmAny): number => {
+    return $ToNumber(a);
+};
+export const $Neg = (a: VmAny): number => {
+    return -$ToNumber(a);
+};
+export const $Not = (a: VmAny): boolean => {
+    return !$ToBoolean(a);
+};
 export const $Length = (value: VmAny): number => {
     $AssertInit(value);
     if (isVmArray(value)) return value.length;
     if (isVmRecord(value)) return keys(value).length;
-    if (value instanceof VmWrapper) {
+    if (isVmWrapper(value)) {
         return value.keys().length;
     }
     return Number.NaN;
@@ -187,7 +240,7 @@ export const $Pick = (value: VmAny, picked: ReadonlyArray<string | number>): VmR
     const result: Record<string, VmConst> = {};
     for (const key of picked) {
         const k = $ToString(key);
-        if (hasOwn(value, k)) {
+        if (hasOwnEnumerable(value, k)) {
             result[k] = value[k] ?? null;
         }
     }
@@ -225,13 +278,13 @@ export const $SliceExclusive = (value: VmAny, start: VmAny, end: VmAny): VmArray
     return sliceCore(value, s, e, true);
 };
 export const $AssertInit: (value: VmAny) => asserts value is VmValue = (value) => {
-    if (value === undefined) throw new TypeError(`Uninitialized value`);
+    if (value === undefined) throw new VmError(`Uninitialized value`, null);
 };
 export const $Call = (func: VmValue, args: readonly VmAny[]): VmValue => {
     for (const a of args) {
         $AssertInit(a);
     }
-    if (func instanceof VmExtern && func.callable) {
+    if (isVmExtern(func)) {
         return func.call(args as readonly VmValue[]) ?? null;
     }
     if (isVmFunction(func)) {
@@ -240,10 +293,9 @@ export const $Call = (func: VmValue, args: readonly VmAny[]): VmValue => {
     throw new VmError(`Expected callable, got ${$Type(func)}`, null);
 };
 export const $Type = (value: VmAny): TypeName => {
-    if (value === undefined) return 'nil';
-    if (value === null) return 'nil';
-    if (value instanceof VmExtern) return 'extern';
-    if (value instanceof VmModule) return 'module';
+    if (value === undefined || value === null) return 'nil';
+    if (isVmExtern(value)) return 'extern';
+    if (isVmModule(value)) return 'module';
     if (isVmArray(value)) return 'array';
     if (typeof value == 'object') return 'record';
     return typeof value as TypeName;
@@ -252,41 +304,66 @@ export const $ToBoolean = (value: VmAny): boolean => {
     $AssertInit(value);
     return value != null && value !== false;
 };
+/** 将值转为字符串 */
+function numberToString(value: number): string {
+    if (isNaN(value)) return 'nan';
+    if (value === Infinity) return 'inf';
+    if (value === -Infinity) return '-inf';
+    return String(value);
+}
 
 /** 将值转为字符串 */
-function innerToString(value: VmAny): string {
+function innerToString(value: VmAny, useBraces: boolean): string {
     if (value == null) return 'nil';
-    if (value instanceof VmWrapper) return value.toString();
+    if (isVmWrapper(value)) return value.toString();
     if (typeof value == 'function') {
         const name = getVmFunctionInfo(value)?.fullName;
         return name ? `<function ${name}>` : `<function>`;
     }
-    if (isVmArray(value)) return `[${value.map(innerToString).join(', ')}]`;
+    if (isVmArray(value)) {
+        const strings: string[] = [];
+        for (const item of value) {
+            strings.push(innerToString(item, true));
+        }
+        // 在 join 过程中会自动把 null/undefined 和 empty slot 转为 ''
+        // 与 innerToString 行为不一致
+        const results = strings.join(', ');
+        if (!useBraces) return results;
+        return `[${results}]`;
+    }
     if (typeof value == 'object') {
-        const entries = keys(value).map(
-            (key) => `${key}: ${innerToString((value as Record<string, VmImmutable>)[key])}`,
-        );
-        return `(${entries.join(', ')})`;
+        const entries = keys(value)
+            .map((key) => `${key}: ${innerToString(value[key], true)}`)
+            .join(', ');
+        if (!useBraces) return entries;
+        return `(${entries})`;
     }
     if (typeof value == 'number') {
-        if (isNaN(value)) return 'nan';
-        if (value === Infinity) return 'inf';
-        if (value === -Infinity) return '-inf';
-        return String(value);
+        return numberToString(value);
     }
     return String(value);
 }
 export const $ToString = (value: VmAny): string => {
     $AssertInit(value);
+    if (typeof value == 'string') return value;
     if (value === null) return '';
-    if (isVmArray(value)) return value.map(innerToString).join(', ');
-    return innerToString(value);
+    return innerToString(value, false);
 };
 export const $ToNumber = (value: VmAny): number => {
     $AssertInit(value);
-    if (value == null) return 0;
     if (typeof value == 'number') return value;
-    if (typeof value == 'string') return Number(value);
+    if (value == null) return 0;
+    if (typeof value == 'string') {
+        value = value.trim();
+        if (value === '') return 0;
+        if (value === 'inf' || value === '+inf' || value === 'Infinity' || value === '+Infinity') {
+            return POSITIVE_INFINITY;
+        }
+        if (value === '-inf' || value === '-Infinity') {
+            return NEGATIVE_INFINITY;
+        }
+        return Number(value);
+    }
     if (typeof value == 'boolean') return value ? 1 : 0;
     return Number.NaN;
 };
@@ -312,14 +389,15 @@ export const $IsArray = (value: VmAny): value is VmArray => {
 };
 export const $AssertNonNil = (value: VmAny): asserts value is NonNullable<VmValue> => {
     $AssertInit(value);
-    if (value === null) throw new Error('Expected non-nil value');
+    if (value !== null) return;
+    throw new VmError('Expected non-nil value', null);
 };
 export const $Has = (obj: VmAny, key: VmAny): boolean => {
     $AssertInit(obj);
     const pk = $ToString(key);
     if (obj == null || typeof obj != 'object') return false;
-    if (obj instanceof VmWrapper) return obj.has(pk);
-    return hasOwn(obj, pk);
+    if (isVmWrapper(obj)) return obj.has(pk);
+    return hasOwnEnumerable(obj, pk);
 };
 export const $Get = (obj: VmAny, key: VmAny): VmValue => {
     $AssertInit(obj);
@@ -330,8 +408,8 @@ export const $Get = (obj: VmAny, key: VmAny): VmValue => {
     }
     const pk = $ToString(key);
     if (obj == null || typeof obj != 'object') return null;
-    if (obj instanceof VmWrapper) return obj.get(pk) ?? null;
-    if (!hasOwn(obj, pk)) return null;
+    if (isVmWrapper(obj)) return obj.get(pk) ?? null;
+    if (!hasOwnEnumerable(obj, pk)) return null;
     return (obj as Record<string, VmImmutable>)[pk] ?? null;
 };
 export const $Set = (obj: VmAny, key: VmAny, value: VmAny): void => {
@@ -342,18 +420,26 @@ export const $Set = (obj: VmAny, key: VmAny, value: VmAny): void => {
     if (!isVmExtern(obj)) throw new VmError(`Expected extern, got ${$Type(obj)}`, undefined);
     obj.set(pk, value);
 };
-export const $Iterable = (value: VmAny): Iterable<VmValue> => {
+export const $Iterable = (value: VmAny): Iterable<VmValue | undefined> => {
     $AssertInit(value);
-    if (value instanceof VmWrapper) return value.keys();
+    if (isVmWrapper(value)) return value.keys();
     if (isVmArray(value)) return value;
     if (value != null && typeof value == 'object') return keys(value);
-    if (typeof value == 'string') return value;
     throw new VmError(`Value is not iterable`, isVmFunction(value) ? [] : [value]);
 };
 
 export const $RecordSpread = (record: VmAny): VmRecord | null => {
     $AssertInit(record);
     if (record == null || isVmRecord(record)) return record;
+    if (isVmArray(record)) {
+        const result: Record<string, VmConst> = {};
+        const len = record.length;
+        for (let i = 0; i < len; i++) {
+            const item = record[i];
+            result[i] = item ?? null;
+        }
+        return result;
+    }
     if (isVmExtern(record)) {
         const result: Record<string, VmConst> = create(null);
         for (const key of record.keys()) {
@@ -365,20 +451,58 @@ export const $RecordSpread = (record: VmAny): VmRecord | null => {
         }
         return result;
     }
-    throw new VmError(`Expected record, extern or nil, got ${$Type(record)}`, null);
+    throw new VmError(`Expected record, array, extern or nil, got ${$Type(record)}`, null);
 };
 
-export const $ArraySpread = (array: VmAny): Iterable<VmConst> => {
+export const $ArraySpread = (array: VmAny): Iterable<VmConst | undefined> => {
     $AssertInit(array);
     if (array == null) return [];
     if (isVmArray(array)) return array;
-    if (isVmExtern(array) && 'length' in array.value && typeof array.value.length == 'number') {
-        const result = Array.from(array.value as ArrayLike<VmAny>, (item) => {
+    if (isVmExtern(array) && typeof (array.value as Iterable<unknown>)[Symbol.iterator] == 'function') {
+        const result: VmConst[] = [];
+        for (const item of array.value as Iterable<unknown>) {
             // 当前只有 Primitive 不会进行二次包装
-            if (isVmPrimitive(item)) return item;
-            return null;
-        });
+            if (isVmPrimitive(item)) {
+                result.push(item);
+            } else {
+                result.push(null);
+            }
+        }
         return result;
     }
     throw new VmError(`Expected array, iterable extern or nil, got ${$Type(array)}`, []);
+};
+
+/** 渲染数字 */
+function formatNumber(value: number): string {
+    if (!Number.isFinite(value)) return numberToString(value);
+    if (value === 0) return '0';
+    const s = value.toString();
+    let ps;
+    const abs = Math.abs(value);
+    if (abs >= 1000 || abs < 0.001) {
+        const ps1 = value.toExponential();
+        const ps2 = value.toExponential(5);
+        ps = ps1.length < ps2.length ? ps1 : ps2;
+    } else {
+        ps = value.toPrecision(6);
+    }
+    return ps.length < s.length ? ps : s;
+}
+
+export const $Format = (value: VmAny, format: VmAny): string => {
+    $AssertInit(value);
+    const f = format == null ? '' : typeof format == 'string' ? format.trim() : $ToString(format);
+
+    if (typeof value == 'number') {
+        if (/^\.\d+$/.test(f)) {
+            let digits = Math.trunc(Number(f.slice(1)));
+            if (!(digits <= 100)) digits = 100;
+            return value.toFixed(digits);
+        } else {
+            return formatNumber(value);
+        }
+    }
+
+    return $ToString(value);
 };

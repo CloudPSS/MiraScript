@@ -1,5 +1,8 @@
+import type { Writable } from 'type-fest';
+import { defineProperty } from '../../helpers/utils.js';
 import { CpEnter, CpExit } from '../helpers.js';
 import type { VmAny, VmValue } from './index.js';
+import { fromVmFunctionProxy } from './boundary.js';
 
 const kVmFunction = Symbol.for('mirascript.vm.function');
 
@@ -30,6 +33,8 @@ export interface VmFunctionInfo {
     readonly returns?: string;
     /** 文档字符串 */
     readonly returnsType?: string;
+    /** 文档字符串 */
+    readonly examples?: string[];
     /** 如果添加了包装，返回原函数 */
     readonly original?: VmFunctionLike;
 }
@@ -54,11 +59,14 @@ export function getVmFunctionInfo(value: unknown): VmFunctionInfo | undefined {
 
 /** 创建 Mirascript 函数 */
 export function VmFunction<T extends VmFunctionLike>(fn: T, option: VmFunctionOption = {}): VmFunction<T> {
-    if (typeof fn != 'function') throw new TypeError('Invalid function');
-    if (isVmFunction(fn)) {
-        // 如果已经是 VmFunction，则直接返回
-        return fn;
+    if (typeof fn != 'function') {
+        throw new TypeError('Invalid function');
     }
+
+    const exists = fromVmFunctionProxy(fn);
+    // 如果已经是 VmFunction，则直接返回
+    if (exists) return exists;
+
     const info: Writable<VmFunctionInfo> = {
         fullName: option.fullName ?? fn.name,
         isLib: option.isLib ?? false,
@@ -67,6 +75,7 @@ export function VmFunction<T extends VmFunctionLike>(fn: T, option: VmFunctionOp
         paramsType: option.paramsType,
         returns: option.returns || undefined,
         returnsType: option.returnsType || undefined,
+        examples: option.examples?.length ? option.examples : undefined,
     };
     if (option.injectCp) {
         const original = fn;
@@ -80,12 +89,12 @@ export function VmFunction<T extends VmFunctionLike>(fn: T, option: VmFunctionOp
                 CpExit();
             }
         }) as typeof fn;
-        Object.defineProperty(fn, 'name', {
+        defineProperty(fn, 'name', {
             value: original.name,
             configurable: true,
         });
     }
-    Object.defineProperty(fn, kVmFunction, {
+    defineProperty(fn, kVmFunction, {
         value: Object.freeze(info),
     });
     return fn as VmFunction<T>;

@@ -1,0 +1,48 @@
+// 基本功能
+t_eq(b_and(1, 2), 0);
+t_eq(b_and(3, 2), 2);
+t_eq(b_and(2, 2), 2);
+
+t_eq(b_or(1, 2), 3);
+t_eq(b_or(3, 2), 3);
+t_eq(b_or(2, 2), 2);
+
+t_eq(b_xor(1, 2), 3);
+t_eq(b_xor(3, 2), 1);
+t_eq(b_xor(2, 2), 0);
+
+t_eq(b_not(0), -1);
+t_eq(b_not(1), -2);
+
+t_eq(shl(1, 1), 2);
+t_eq(shl(1, 33), 2);
+
+t_eq(shr(2, 1), 1);
+t_eq(shr(1, 1), 0);
+t_eq(shr(1, 33), 0);
+t_eq(shr(-1, 1), 2147483647);
+t_eq(shr(-2, 1), 2147483647);
+
+t_eq(sar(2, 1), 1);
+t_eq(sar(1, 1), 0);
+t_eq(sar(1, 33), 0);
+t_eq(sar(-1, 1), -1);
+t_eq(sar(-2, 1), -1);
+
+// 转换为 32 位整数
+t_eq(b_and(2^32 + 2^31, 2^32 - 1), -2_147_483_648);
+t_eq(b_or(2^32 + 2^31, 2^32 - 1), -1);
+t_eq(b_xor(2^32 + 2^31, 2^32 - 1), 2147483647);
+t_eq(b_not(2^32 + 2^31), 2147483647);
+
+// NAN 转为 0
+t_eq(b_and(nan, 2^32 - 1), 0);
+t_eq(b_or(nan, 2^32 - 1), -1);
+t_eq(b_xor(nan, 2^32 - 1), -1);
+t_eq(b_not(nan), -1);
+t_eq(shl(1, nan), 1);
+t_eq(shl(nan, 0), 0);
+t_eq(shr(1, nan), 1);
+t_eq(shr(nan, 0), 0);
+t_eq(sar(1, nan), 1);
+t_eq(sar(nan, 0), 0);

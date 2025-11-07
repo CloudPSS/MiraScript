@@ -1,7 +1,7 @@
 use std::ops::DerefMut;
 
 use winnow::{
-    combinator::{alt, fail, opt, peek, separated_foldl1, seq},
+    combinator::{alt, opt, peek, separated_foldl1, seq},
     error::EmptyError,
     token::{any, one_of, take_till},
 };
@@ -25,6 +25,7 @@ fn unknown_pattern<'s>(i: &mut Input<'s>) -> Result<Pattern<'s>> {
             || *t == Keyword::Match
             || *t == Keyword::For
             || *t == Keyword::Let
+            || *t == Keyword::Const
             || *t == Operator::Comma
             || *t == Operator::Assign
             || *t == Operator::Semicolon
@@ -58,12 +59,16 @@ pub(super) fn pattern_or_insert<'s>(
         if *next != TokenKind::Eof && !insert_cond(next) {
             return Err(winnow::error::ErrMode::Backtrack(EmptyError));
         }
-        Ok(Pattern::unknown_range(
-            vec![Token::empty(start).into()],
-            start..start,
-            DiagnosticCode::PatternExpected,
-        ))
+        Ok(pattern_expected(start))
     }
+}
+
+pub(super) fn pattern_expected<'s>(pos: usize) -> Pattern<'s> {
+    Pattern::unknown_range(
+        vec![Token::empty(pos).into()],
+        pos..pos,
+        DiagnosticCode::PatternExpected,
+    )
 }
 
 pub(super) fn pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
@@ -77,7 +82,7 @@ fn primary_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
             record_like_pattern(rebind),
             array_pattern(rebind),
             range_pattern,
-            constants_pattern,
+            literal_constant_pattern,
             discard_bind_pattern(rebind),
             not_pattern(rebind),
             unknown_pattern,
@@ -116,7 +121,7 @@ fn or_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
     }
 }
 
-fn constants_pattern<'s>(i: &mut Input<'s>) -> Result<Pattern<'s>> {
+fn literal_pattern<'s>(i: &mut Input<'s>) -> Result<Pattern<'s>> {
     (
         opt(one_of(|t: &Token<'s>| {
             *t == Operator::Plus || *t == Operator::Minus || *t == Operator::Exclamation
@@ -125,40 +130,54 @@ fn constants_pattern<'s>(i: &mut Input<'s>) -> Result<Pattern<'s>> {
     )
         .map(|(t, l)| {
             let Some(op) = t else {
-                return Pattern::Constant(None, l);
+                return Pattern::Literal(None, l);
             };
             if *op == Operator::Exclamation {
-                return Pattern::Constant(None, l.clone()).wrap_as_unknown(
-                    [op.into(), l],
-                    DiagnosticCode::ExclamationInConstantsPattern,
-                );
+                return Pattern::Literal(None, l.clone())
+                    .wrap_as_unknown([op.into(), l], DiagnosticCode::ExclamationInLiteralPattern);
             }
             if !(l.is_number() || l.is_ordinal() || *l == Keyword::Inf) {
-                return Pattern::Constant(None, l.clone()).wrap_as_unknown(
+                return Pattern::Literal(None, l.clone()).wrap_as_unknown(
                     [op.into(), l],
-                    DiagnosticCode::UnexpectedOperatorInConstantsPattern,
+                    DiagnosticCode::UnexpectedOperatorInLiteralPattern,
                 );
             }
-            Pattern::Constant(Some(op.into()), l)
+            Pattern::Literal(Some(op.into()), l)
         })
         .parse_next(i)
+}
+
+fn constant_pattern<'s>(i: &mut Input<'s>) -> Result<Pattern<'s>> {
+    variable_token(false, false)
+        .verify(|t: &TokenRef<'s>| {
+            let Some(name) = t.to_id_name() else {
+                return false;
+            };
+            name.starts_with('@')
+        })
+        .map(Pattern::Constant)
+        .parse_next(i)
+}
+
+fn literal_constant_pattern<'s>(i: &mut Input<'s>) -> Result<Pattern<'s>> {
+    alt((literal_pattern, constant_pattern)).parse_next(i)
 }
 
 fn relation_pattern<'s>(i: &mut Input<'s>) -> Result<Pattern<'s>> {
     seq!(Pattern::Relation(
         one_of(|t: &Token<'s>| matches!(t.kind, TokenKind::Operator(op) if op.is_relation()))
             .map(TokenRef::borrow),
-        constants_pattern.map(Box::new),
+        literal_constant_pattern.map(Box::new),
     ))
     .parse_next(i)
 }
 
 fn range_pattern<'s>(i: &mut Input<'s>) -> Result<Pattern<'s>> {
     seq!(Pattern::Range(
-        constants_pattern.map(Box::new),
+        literal_constant_pattern.map(Box::new),
         one_of(|t: &Token<'s>| *t == Operator::SpreadRange || *t == Operator::HalfOpenRange)
             .map(TokenRef::borrow),
-        constants_pattern.map(Box::new),
+        literal_constant_pattern.map(Box::new),
     ))
     .parse_next(i)
 }
@@ -167,14 +186,6 @@ fn discard_bind_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
     move |i: &mut Input<'s>| {
         (opt(token(Keyword::Mut)), variable_token(true, false))
             .map(|(kw_mut, id)| {
-                if id.is_unknown() {
-                    let tokens = if let Some(kw_mut) = kw_mut {
-                        vec![kw_mut, id]
-                    } else {
-                        vec![id]
-                    };
-                    return Pattern::unknown_errors(tokens, vec![]);
-                }
                 if id.kind == Keyword::Underscore {
                     if let Some(kw_mut) = kw_mut {
                         return Pattern::unknown(
@@ -184,11 +195,30 @@ fn discard_bind_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
                     }
                     return Pattern::Discard(id);
                 }
-                if rebind && kw_mut.is_some() {
-                    let kw_mut = kw_mut
-                        .unwrap()
-                        .wrap_as_unknown(DiagnosticCode::MutInRebindPattern);
+                if id.is_unknown() {
+                    let tokens = if let Some(kw_mut) = kw_mut {
+                        vec![kw_mut, id]
+                    } else {
+                        vec![id]
+                    };
+                    return Pattern::unknown_errors(tokens, vec![]);
+                }
+                let Some(name) = id.to_id_name() else {
+                    let tokens = if let Some(kw_mut) = kw_mut {
+                        vec![kw_mut, id]
+                    } else {
+                        vec![id]
+                    };
+                    return Pattern::unknown(tokens, DiagnosticCode::UnknownPattern);
+                };
+                if rebind && let Some(kw_mut) = kw_mut {
+                    let kw_mut = kw_mut.wrap_as_unknown(DiagnosticCode::MutInRebindPattern);
                     return Pattern::Bind(Some(kw_mut), id);
+                }
+                if name.starts_with('@') {
+                    let tokens = vec![kw_mut.clone().unwrap(), id.clone()];
+                    return Pattern::Bind(kw_mut, id)
+                        .wrap_as_unknown(tokens, DiagnosticCode::ConstantInBindPattern);
                 }
                 Pattern::Bind(kw_mut, id)
             })
@@ -249,6 +279,7 @@ fn record_like_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
             omit_named,
             unnamed,
             pattern_spread(rebind),
+            pattern_expected,
         )
         .parse_next(i)?;
         let len = parts.len();
@@ -315,8 +346,14 @@ pub(crate) fn array_pattern_like<'s>(
         .parse_next(i)
     };
     move |i: &mut Input<'s>| {
-        let (open, parts, close) =
-            array_base(open, close, element_pattern, fail, pattern_spread(rebind)).parse_next(i)?;
+        let (open, parts, close) = array_base(
+            open,
+            close,
+            element_pattern,
+            pattern_spread(rebind),
+            pattern_expected,
+        )
+        .parse_next(i)?;
         Ok(Pattern::Array(open, parts, close))
     }
 }

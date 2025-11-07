@@ -1,0 +1,133 @@
+// call un-callable
+t_throws(fn () {
+  let f = nil;
+  f();
+});
+t_throws(fn () {
+  let f = true;
+  f();
+});
+t_throws(fn () {
+  let f = ();
+  f();
+});
+t_throws(fn () {
+  let f = [];
+  f();
+});
+if has_extern {
+  t_throws(fn () {
+    let f = v_extern;
+    f();
+  });
+}
+if has_module {
+  t_throws(fn () {
+    let f = v_module;
+    f();
+  });
+}
+
+fn be_of_type(..[v, tp]) {
+  t_eq(type(v), tp);
+}
+fn be_of_type2(v, tp) {
+  t_eq(type(v), tp);
+}
+
+be_of_type(1, 'number');
+be_of_type([], 'array');
+be_of_type((), 'record');
+be_of_type(fn { }, 'nil');
+be_of_type2(fn { }, 'function');
+if has_extern {
+  be_of_type(v_extern, 'nil');
+  be_of_type2(v_extern, 'extern');
+}
+if has_module {
+  be_of_type(v_module, 'nil');
+  be_of_type2(v_module, 'module');
+}
+
+fn args(..v) { v }
+
+t_eq(args(), []);
+t_eq(args(sin), [nil]);
+t_eq(args(1, 2, 3), [1, 2, 3]);
+t_eq(args(1, 2, 3, ..[4, 5]), [1, 2, 3, 4, 5]);
+
+fn v_args(a, ..as) { (a, as) }
+
+t_eq(v_args(), (nil, []));
+t_eq(v_args(1), (1, []));
+t_eq(v_args(1, 2, 3), (1, [2, 3]));
+t_eq(v_args(1, ..[2, 3]), (1, [2, 3]));
+t_eq(v_args(..[1, 2, 3]), (1, [2, 3]));
+
+fn v_args_v(a, ..as) { a }
+
+t_eq(v_args_v(), nil);
+t_eq(v_args_v(1), 1);
+t_eq(v_args_v(sin), sin);
+t_eq(v_args_v(1, 2, 3), 1);
+t_eq(v_args_v(1, ..[2, 3]), 1);
+t_eq(v_args_v(..[1, 2, 3]), 1);
+
+fn first_arg(x) { x }
+t_eq(first_arg(), nil);
+t_eq(first_arg(42), 42);
+t_eq(first_arg(1, 2, 3), 1);
+t_eq(first_arg(sin, cos), sin);
+
+fn second_arg(_, y) { y }
+t_eq(second_arg(), nil);
+t_eq(second_arg(42), nil);
+t_eq(second_arg(1, 2, 3), 2);
+t_eq(second_arg(sin, cos), cos);
+
+(fn (..[f]) { t_eq(f, nil) })(sin);
+(fn (..a) { t_eq(a, [nil]) })(sin);
+(fn (..[f]) { t_eq(f, 1) })(1);
+(fn (..a) { t_eq(a, [1]) })(1);
+
+fn curry_add(x) { (fn (y) { x + y }) }
+let add_five = curry_add(5);
+t_eq(add_five(3), 8);
+t_eq(add_five(10), 15);
+let add_ten = curry_add(10);
+t_eq(add_ten(3), 13);
+t_eq(add_ten(10), 20);
+t_ne(add_five, add_ten);
+t_false(add_five == add_ten);
+
+let empty = nil;
+let callable = fn { nil };
+let uncallable = false;
+
+t_throws(fn () {
+  empty();
+});
+t_eq(callable(), nil);
+t_throws(fn () {
+  uncallable();
+});
+
+t_throws(fn () {
+  (uncallable)();
+});
+t_eq((callable)(), nil);
+t_eq((empty)(), nil);
+
+t_throws(fn () {
+  0::empty();
+});
+t_eq(0::callable(), nil);
+t_throws(fn () {
+  0::uncallable();
+});
+
+t_throws(fn () {
+  0::(uncallable)();
+});
+t_eq(0::(callable)(), nil);
+t_eq(0::(empty)(), nil);

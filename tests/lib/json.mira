@@ -1,0 +1,39 @@
+t_throws(fn { to_json() });
+t_eq(to_json(sin), nil);
+t_eq(to_json(nil), 'null');
+t_eq(to_json(true), 'true');
+t_eq(to_json(false), 'false');
+t_eq(to_json(nan), 'null');
+t_eq(to_json(inf), 'null');
+t_eq(to_json(-inf), 'null');
+t_eq(to_json(0), '0');
+t_eq(to_json(-0), '0');
+t_eq(to_json(1), '1');
+t_eq(to_json(1.5), '1.5');
+t_eq(to_json("Hello, World!"), '"Hello, World!"');
+t_eq(to_json("é"), '"é"');
+t_eq(to_json([]), '[]');
+t_eq(to_json(()), '{}');
+if has_module {
+  t_eq(to_json(v_module), '{}');
+}
+if has_extern {
+  t_eq(to_json(v_extern), '{}');
+}
+
+t_eq(from_json(nil), nil);
+t_eq(from_json('null'), nil);
+t_eq(from_json('[1, 2, "3"]'), [1, 2, "3"]);
+t_eq(from_json('{"a": 1, "b": 2}'), (a: 1, b: 2));
+t_eq(from_json('{"0": "X"}'), ("X",));
+t_eq(from_json(sin), sin);
+t_eq(from_json('x', sin), sin);
+t_throws(fn {
+  from_json('n');
+});
+t_throws(fn {
+  from_json();
+});
+t_throws(fn {
+  from_json('');
+});

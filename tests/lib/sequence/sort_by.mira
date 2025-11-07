@@ -1,0 +1,23 @@
+t_throws(fn { sort_by() });
+t_throws(fn { sort_by(nil, fn { }) });
+t_throws(fn { sort_by((), fn { }) });
+t_throws(fn { sort_by(1, fn { }) });
+t_throws(fn { sort_by("1", fn { }) });
+t_throws(fn { sort_by([]) });
+t_throws(fn { sort_by([], ()) });
+t_throws(fn { sort_by([], fn { }, ()) });
+t_eq(sort_by([], fn { }), []);
+
+t_eq(sort_by([3, 1, 2], fn (a) { a }), [1, 2, 3]);
+t_eq(sort_by([nil, 0, nan], fn (_, k, a) {
+  t_eq(type(k), 'number');
+  t_eq(a, [nil, 0, nan]);
+  k
+}), [nil, 0, nan]);
+t_eq(sort_by([nil, 0, nan], fn (_, k) { -k }), [nan, 0, nil]);
+t_eq(sort_by([(0, 'x'), (2, 'y'), (1, 'z')], fn (a) { a[0] }), [(0, 'x'), (1, 'z'), (2, 'y')]);
+t_eq(sort_by([(0, 'x'), (0, 'y'), (0, 'z')], fn (a) { a[0] }), [(0, 'x'), (0, 'y'), (0, 'z')]);
+
+let arr = [1, 3, 2];
+t_eq(sort_by(arr, fn (a) { a }, fn (a, b) { b - a }), [3, 2, 1]);
+t_eq(arr, [1, 3, 2]); // no modify

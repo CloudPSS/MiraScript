@@ -1,10 +1,26 @@
 import { $AssertInit, $ToNumber } from './operations.js';
 import type { VmFunctionLike } from './types/function.js';
-import { createVmContext, type VmContext } from './types/context.js';
-import { isVmConst, VmFunction, type VmConst, type VmAny, type VmArray } from './types/index.js';
-const { isFinite } = Number;
-const { ceil } = Math;
+import { DefaultVmContext, type VmContext } from './types/context.js';
+import {
+    isVmConst,
+    VmFunction,
+    type VmConst,
+    type VmAny,
+    type VmArray,
+    type VmValue,
+    VM_ARRAY_MAX_LENGTH,
+} from './types/index.js';
+import { isFinite } from '../helpers/utils.js';
 
+export const Vargs = (varags: VmAny[]): VmArray => {
+    for (let i = 0, l = varags.length; i < l; i++) {
+        const el = varags[i];
+        if (!isVmConst(el)) {
+            varags[i] = null;
+        }
+    }
+    return varags as VmArray;
+};
 export const Element = (value: VmAny): VmConst => {
     $AssertInit(value);
     if (!isVmConst(value)) return null;
@@ -13,7 +29,7 @@ export const Element = (value: VmAny): VmConst => {
 
 export const ElementOpt = (key: string, value: VmAny): VmConst => {
     $AssertInit(value);
-    if (!isVmConst(value)) return {};
+    if (value == null || !isVmConst(value)) return {};
     return { [key]: value };
 };
 
@@ -21,14 +37,26 @@ export const Function = (fn: VmFunctionLike): VmFunction => {
     return VmFunction(fn, { isLib: false, injectCp: false });
 };
 
+export const Upvalue = (value: VmAny): VmValue => {
+    $AssertInit(value);
+    return value;
+};
+
+const assertArrayLength = (start: number, end: number) => {
+    if (end - start > VM_ARRAY_MAX_LENGTH) {
+        throw new RangeError(`Array length exceeds maximum limit of ${VM_ARRAY_MAX_LENGTH}`);
+    }
+};
+const isEmptyRange = (start: number, end: number) => {
+    return !isFinite(start) || !isFinite(end) || start > end;
+};
 export const ArrayRange = (start: VmAny, end: VmAny): VmArray => {
     const s = $ToNumber(start);
     const e = $ToNumber(end);
-    if (!isFinite(s) || !isFinite(e) || s > e) {
-        return [];
-    }
+    if (isEmptyRange(s, e)) return [];
+    assertArrayLength(s, e);
     const arr = [];
-    for (let i = ceil(s); i <= e; i++) {
+    for (let i = s; i <= e; i++) {
         arr.push(i);
     }
     return arr;
@@ -36,11 +64,10 @@ export const ArrayRange = (start: VmAny, end: VmAny): VmArray => {
 export const ArrayRangeExclusive = (start: VmAny, end: VmAny): VmArray => {
     const s = $ToNumber(start);
     const e = $ToNumber(end);
-    if (!isFinite(s) || !isFinite(e) || s > e) {
-        return [];
-    }
+    if (isEmptyRange(s, e)) return [];
+    assertArrayLength(s, e);
     const arr = [];
-    for (let i = ceil(s); i < e; i++) {
+    for (let i = s; i < e; i++) {
         arr.push(i);
     }
     return arr;
@@ -82,13 +109,13 @@ export function CpExit(): void {
     }
 }
 /** 设置检查点超时时间 */
-export function configCheckpoint(timeout?: number): void {
+export function configCheckpoint(timeout = 100): void {
     if (typeof timeout !== 'number' || timeout <= 0 || Number.isNaN(timeout)) {
         throw new RangeError('Invalid timeout value');
     }
-    cpTimeout = timeout ?? 100;
+    cpTimeout = timeout;
 }
 /** 默认执行上下文 */
 export function GlobalFallback(): VmContext {
-    return createVmContext();
+    return DefaultVmContext;
 }

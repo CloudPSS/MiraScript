@@ -1,14 +1,14 @@
-import type { VmGlobal } from 'mirascript';
-import { VmSharedGlobal } from 'mirascript/subtle';
-import type { VmGlobalProvider } from '../../index.js';
+import type { VmContext } from '@mirascript/mirascript';
+import { DefaultVmContext } from '@mirascript/mirascript/subtle';
+import type { VmContextProvider } from '../../index.js';
 import { type editor, Emitter, type IEvent } from '../../monaco-api.js';
 import type { CompileResult } from '../compile-result.js';
 import { compile } from '../worker-helper.js';
 
-let globalProvider: VmGlobalProvider | undefined;
+let contextProvider: VmContextProvider | undefined;
 /** 设置全局变量提供者 */
-export function setGlobalProvider(provider: VmGlobalProvider | undefined): void {
-    globalProvider = provider;
+export function setContextProvider(provider: VmContextProvider | undefined): void {
+    contextProvider = provider;
 }
 
 /** 提供编辑器 LSP 支持 */
@@ -20,9 +20,9 @@ export abstract class Provider {
         }
         return await compile(model);
     }
-    /** 获取全局变量 */
-    async getGlobals(model: editor.ITextModel): Promise<Readonly<VmGlobal>> {
-        return (await globalProvider?.(model)) ?? VmSharedGlobal;
+    /** 获取执行上下文（全局变量） */
+    async getContext(model: editor.ITextModel): Promise<Readonly<VmContext>> {
+        return (await contextProvider?.(model)) ?? DefaultVmContext;
     }
 
     readonly displayName = 'MiraScript LSP';

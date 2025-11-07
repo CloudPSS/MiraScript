@@ -38,7 +38,11 @@ pub enum DiagnosticCode {
     InvalidNumberLiteral,
     #[strum(message = "Number literal is too large")]
     OverflowNumberLiteral,
-    #[strum(message = "Invalid ordinal literal")]
+    #[strum(message = "Integer literal is too large")]
+    OverflowIntegerLiteral,
+    #[strum(
+        message = "Invalid ordinal literal; consider remove leading zeros and underscores, or use `[$0]` instead"
+    )]
     InvalidOrdinalLiteral,
     #[strum(message = "String literal is not terminated")]
     UnterminatedString,
@@ -70,10 +74,14 @@ pub enum DiagnosticCode {
     MissingCloseParen,
     #[strum(message = "Missing `;` at the end of the statement")]
     MissingSemicolon,
-    #[strum(message = "Operator `=` is expected in a bind statement")]
+    #[strum(message = "Operator `=` is expected in a bind statement or const statement")]
     MissingBindOperator,
+    #[strum(message = "Constant name must start with '@'")]
+    InvalidConstName,
     #[strum(message = "Missing function name in the declaration")]
     MissingFunctionName,
+    #[strum(message = "Extension call must be ended with parameter list; add `(` here")]
+    MissingOpenParenAfterExtension,
     #[strum(message = "`type` is a function-like keyword; add `(` here")]
     MissingOpenParenAfterType,
     #[strum(message = "`type` call must have exactly one argument")]
@@ -98,12 +106,14 @@ pub enum DiagnosticCode {
     ExpressionExpected,
     #[strum(message = "A pattern is expected here")]
     PatternExpected,
-    #[strum(message = "Operator `!` is not allowed in a constant pattern")]
-    ExclamationInConstantsPattern,
-    #[strum(message = "Only number literals can be prefixed with `+` or `-` in a constant pattern")]
-    UnexpectedOperatorInConstantsPattern,
+    #[strum(message = "Operator `!` is not allowed in a literal pattern")]
+    ExclamationInLiteralPattern,
+    #[strum(message = "Only number literals can be prefixed with `+` or `-` in a literal pattern")]
+    UnexpectedOperatorInLiteralPattern,
     #[strum(message = "`mut` is not allowed during rebinding")]
     MutInRebindPattern,
+    #[strum(message = "variable whose name starts with `@` is not allowed to be rebound")]
+    ConstantInBindPattern,
     #[strum(message = "Cannot use `mut` in a discard pattern")]
     MutInDiscardPattern,
     #[strum(message = "Discard pattern should be omitted in a spread pattern")]
@@ -200,6 +210,7 @@ pub enum DiagnosticCode {
     // mark local declarations
 
     // non-parameter declarations
+    LocalConst,
     LocalImmutable,
     LocalMutable,
     LocalFunction,
@@ -238,6 +249,10 @@ pub enum DiagnosticCode {
     UnnamedRecordFieldN,
     OmitNamedRecordField,
 
+    // mark function calls
+    FunctionCall,
+    ExtensionCall,
+
     // mark code ranges
     Scope,
     String,
@@ -263,6 +278,14 @@ pub enum DiagnosticCode {
     WriteLocal,
     RedeclareLocal,
 
+    // mark function calls
+    Callable,
+    ArgumentExtension,
+    ArgumentStart,
+    ArgumentEnd,
+    ArgumentComma,
+    ArgumentSpread,
+
     // mark control flows
     KeywordFor,
     KeywordIn,
@@ -284,6 +307,8 @@ pub enum DiagnosticCode {
     OmitNamedRecordFieldName,
 
     TagRefEnd = 11999,
+
+    SourceMap = 12000,
 }
 
 impl From<DiagnosticCode> for u16 {
@@ -349,7 +374,11 @@ impl DiagnosticCode {
         *self >= DiagnosticCode::ReferenceStart && *self < DiagnosticCode::ReferenceEnd
     }
 
-    pub fn is_other(&self) -> bool {
-        *self > DiagnosticCode::ReferenceEnd
+    pub fn is_tag(&self) -> bool {
+        *self >= DiagnosticCode::TagStart && *self < DiagnosticCode::TagRefEnd
+    }
+
+    pub fn is_sourcemap(&self) -> bool {
+        *self == DiagnosticCode::SourceMap
     }
 }

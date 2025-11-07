@@ -34,7 +34,7 @@ crate-type = ["cdylib", "rlib"]
 [features]
 default = ["console_error", "lsp"]
 console_error = ["dep:console_error_panic_hook"]
-lsp = ["mira-core/track_references", "mira-core/formatter"]
+lsp = ["mira-core/formatter"]
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.34"

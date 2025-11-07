@@ -1,39 +1,44 @@
 {
   "name": "@mirascript/monaco",
-  "private": true,
+  "version": "0.1.5",
   "type": "module",
   "description": "Monaco Editor integration for Mirascript.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "@mira/development": "./src/index.ts",
+      "@mirascript/dev": "./src/index.ts",
       "default": "./dist/index.js"
     },
     "./basic": {
-      "@mira/development": "./src/basic/index.ts",
+      "@mirascript/dev": "./src/basic/index.ts",
       "default": "./dist/basic/index.js"
     },
     "./lsp": {
-      "@mira/development": "./src/lsp/index.ts",
+      "@mirascript/dev": "./src/lsp/index.ts",
       "default": "./dist/lsp/index.js"
     }
   },
   "imports": {
-    "#/lsp/worker": {
-      "@mira/development": "./src/lsp/worker.ts",
+    "#lsp/worker": {
+      "@mirascript/dev": "./src/lsp/worker.ts",
       "default": "./dist/lsp/worker.js"
     }
   },
   "scripts": {
-    "build": "tsc && node ./esbuild.config.js",
-    "clean": "rimraf dist"
+    "build": "pnpm clean && tsc && node ./esbuild.config.js",
+    "clean": "rimraf dist",
+    "prepublishOnly": "pnpm build"
   },
   "dependencies": {
-    "@mirascript/wasm": "workspace:*",
-    "mirascript": "workspace:*"
+    "@mirascript/mirascript": "workspace:~",
+    "@mirascript/wasm": "workspace:~",
+    "monaco-editor": "npm:@private/monaco-editor@^0.0.53"
   },
   "peerDependencies": {
-    "monaco-editor": ">= 0.0.40"
+    "monaco-editor": ">= 0.0.40 < 0.55.0"
+  },
+  "devDependencies": {
+    "type-fest": "^5.2.0"
   }
 }

@@ -27,6 +27,14 @@ pub enum Statement<'s> {
         Box<Expression<'s>>,
         TokenRef<'s>,
     ),
+    /// `'const' @id '=' expression ';'`
+    Const(
+        TokenRef<'s>,
+        TokenRef<'s>,
+        TokenRef<'s>,
+        Box<Expression<'s>>,
+        TokenRef<'s>,
+    ),
     /// `expression ('=' | '+=' | '-=' | '*=' | '/=' | '%=' | '^=' | '&&=' | '||=') expression ';'`
     ///
     /// The assigner must be one of the following:
@@ -109,7 +117,7 @@ impl<'s> Statement<'s> {
 }
 
 impl<'s> AstWalker<'s> for Statement<'s> {
-    fn collect_diagnostics(&mut self, collector: &mut Vec<SourceDiagnostic>) {
+    fn collect_diagnostics(&mut self, collector: &mut DiagnosticsCollector<'_, '_>) {
         use Statement::*;
         match self {
             Empty(c) => c.collect_diagnostics(collector),
@@ -127,6 +135,13 @@ impl<'s> AstWalker<'s> for Statement<'s> {
             }
             Rebind(pattern, eq, expr, c) => {
                 pattern.collect_diagnostics(collector);
+                eq.collect_diagnostics(collector);
+                expr.collect_diagnostics(collector);
+                c.collect_diagnostics(collector);
+            }
+            Const(kw_const, id, eq, expr, c) => {
+                kw_const.collect_diagnostics(collector);
+                id.collect_diagnostics(collector);
                 eq.collect_diagnostics(collector);
                 expr.collect_diagnostics(collector);
                 c.collect_diagnostics(collector);
@@ -171,6 +186,7 @@ impl<'s> AstWalker<'s> for Statement<'s> {
             BlockExpression(expr) => expr.range(),
             Bind(kw_let, _, _, _, c) => kw_let.range.start..c.range.end,
             Rebind(pattern, _, _, c) => pattern.range().start..c.range.end,
+            Const(kw_const, _, _, _, c) => kw_const.range.start..c.range.end,
             Assign(exp, _, _, c) => exp.range().start..c.range.end,
             Function(kw, _, _, body) => kw.range.start..body.range().end,
             Return(kw, _, c) | Break(kw, _, c) | Continue(kw, c) => kw.range.start..c.range.end,

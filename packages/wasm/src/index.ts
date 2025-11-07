@@ -4,15 +4,14 @@ import type { Config, InputMode, DiagnosticPositionEncoding, ScriptInput } from 
 export * from './types.js';
 export { wasm };
 
-export const ready = import('#loader').then(async ({ module }) =>
+export const ready = import('@mirascript/wasm/loader').then(async ({ module }) =>
     wasm.default({
         module_or_path: await module,
     }),
 );
 
 /** 创建可重用的配置 */
-export async function createConfig(config?: Config | wasm.Config): Promise<wasm.Config> {
-    await ready;
+export function createConfig(config?: Config | wasm.Config): wasm.Config {
     if (!config) return new wasm.Config();
     if (config instanceof wasm.Config) return config;
     const cfg = new wasm.Config();
@@ -44,12 +43,12 @@ export interface CompileResult {
 }
 
 /** 编译 */
-async function compileImpl<T>(
+function compileImpl<T>(
     compiler: (script: T, config: wasm.Config) => wasm.CompileResult,
     script: T,
     config: Config | wasm.Config,
-): Promise<CompileResult> {
-    const cfg = await createConfig(config);
+): CompileResult {
+    const cfg = createConfig(config);
     const result = compiler(script, cfg);
     try {
         const diagnostics = result.diagnostics();
@@ -65,7 +64,7 @@ async function compileImpl<T>(
 }
 
 /** 编译 MiraScript 代码 */
-export async function compile(script: ScriptInput, config: Config | wasm.Config): Promise<CompileResult> {
+export function compileSync(script: ScriptInput, config: Config | wasm.Config): CompileResult {
     return typeof script == 'string'
         ? compileImpl(wasm.compile, script, config)
         : compileImpl(wasm.compile_buffer, script, config);

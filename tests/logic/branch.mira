@@ -1,0 +1,46 @@
+fn T { true }
+fn F { false }
+fn N { nil }
+fn O { 0 }
+
+if T() {
+  t_true(true);
+} else {
+  t_never();
+}
+if F() {
+  t_never();
+} else {
+  t_true(true);
+}
+if N() {
+  t_never();
+} else {
+  t_true(true);
+}
+if O() {
+  t_true(true);
+} else {
+  t_never();
+}
+
+if !T() {
+  t_never();
+} else {
+  t_true(true);
+}
+if !F() {
+  t_true(true);
+} else {
+  t_never();
+}
+if !N() {
+  t_true(true);
+} else {
+  t_never();
+}
+if !O() {
+  t_never();
+} else {
+  t_true(true);
+}

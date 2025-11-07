@@ -1,0 +1,47 @@
+let mut count = 0;
+let r = while count < 5 {
+  count += 1;
+  if count == 3 {
+    break count * 2; // 返回 6
+  }
+};
+
+t_eq(r, 6);
+t_eq(count, 3); // 循环结束时 count 的值
+
+let mut cj = 0;
+let cjr = loop {
+  let mut ci = 0;
+  let cir = loop {
+    ci += 1;
+    if ci == 2 {
+      break ci; // 跳出内层循环
+    }
+  };
+  t_eq(cir, 2); // 内层循环返回的值
+  cj += 1;
+  if cj == 3 {
+    break cj; // 跳出外层循环
+  }
+  continue;
+  t_never();
+};
+
+t_eq(cjr, 3); // 外层循环返回的值
+
+let b = while {
+  let i = 12;
+  break i + r;
+} {
+  t_never();
+};
+t_eq(b, 18); // while 循环的返回值
+
+// compile empty loops
+t_timeout(fn {
+  loop { }
+});
+while { } { }
+t_timeout(fn {
+  while true { }
+});

@@ -1,26 +1,33 @@
 import type { CancellationToken, editor, IMarkdownString, IRange, languages, Position } from '../../monaco-api.js';
 import { Provider } from './base.js';
 import { DiagnosticCode } from '@mirascript/wasm';
-import { codeblock, getDeep, globalDoc, paramsList } from '../utils.js';
-import type { AccessAt, DefinitionAt } from '../compile-result.js';
+import { codeblock, getDeep, valueDoc, paramsList, wordAt } from '../utils.js';
+import type { FieldsAccessAt, VariableAccessAt } from '../compile-result.js';
 
 /** @inheritdoc */
 export class HoverProvider extends Provider implements languages.HoverProvider {
     /** 变量提示 */
     private async provideVariableHover(
         model: editor.ITextModel,
-        { def, ref }: DefinitionAt,
+        { def, ref }: VariableAccessAt,
     ): Promise<languages.Hover | undefined> {
-        let content: IMarkdownString | undefined;
+        const contents: IMarkdownString[] = [];
         let range: IRange | undefined;
         if ('name' in def) {
-            const globals = await this.getGlobals(model);
-            const { script, doc } = globalDoc(def.name, globals[def.name]);
-            content = {
-                value: codeblock(`\0(global) ${script}`) + doc,
-            };
+            const globals = await this.getContext(model);
+            const value = globals.has(def.name) ? globals.get(def.name) : undefined;
+            const { script, doc } = valueDoc(def.name, value, 'hint');
+            contents.push({ value: codeblock(`\0(global) ${script}`) });
+            for (const d of doc) {
+                contents.push({ value: d });
+            }
+            const describe = globals.describe?.(def.name);
+            if (describe) {
+                contents.push({ value: describe });
+            }
             range = def.references[ref!]?.range;
         } else {
+            let content: IMarkdownString | undefined;
             const tag = def.definition;
             switch (tag.code) {
                 case DiagnosticCode.ParameterSubPatternImmutable:
@@ -70,6 +77,11 @@ export class HoverProvider extends Provider implements languages.HoverProvider {
                         value: codeblock(`\0let ${model.getValueInRange(tag.range)}`),
                     };
                     break;
+                case DiagnosticCode.LocalConst:
+                    content = {
+                        value: codeblock(`\0const ${model.getValueInRange(tag.range)}`),
+                    };
+                    break;
                 case DiagnosticCode.LocalMutable:
                     content = {
                         value: codeblock(`\0let mut ${model.getValueInRange(tag.range)}`),
@@ -81,10 +93,13 @@ export class HoverProvider extends Provider implements languages.HoverProvider {
             } else {
                 range = def.references[ref]?.range;
             }
+            if (content) {
+                contents.push(content);
+            }
         }
-        if (!content) return undefined;
+        if (!contents.length) return undefined;
         return {
-            contents: [content],
+            contents,
             range: range,
         };
     }
@@ -93,23 +108,19 @@ export class HoverProvider extends Provider implements languages.HoverProvider {
     private async provideFieldHover(
         model: editor.ITextModel,
         range: IRange,
-        { def: { def, ref }, fields }: AccessAt,
+        { def: { def, ref }, fields }: FieldsAccessAt,
     ): Promise<languages.Hover | undefined> {
         if ('definition' in def) {
             // TODO: provide local item fields
             return undefined;
         }
-        const vmGlobal = await this.getGlobals(model);
-        const value = getDeep(vmGlobal[def.name], fields);
+        const vmGlobal = await this.getContext(model);
+        const value = getDeep(vmGlobal.get(def.name), fields);
         if (value == null) return undefined;
         const lastField = fields.pop()!;
-        const { script, doc } = globalDoc(lastField, value);
+        const { script, doc } = valueDoc(lastField, value, 'field');
         return {
-            contents: [
-                {
-                    value: codeblock(`\0(field) ${script}`) + doc,
-                },
-            ],
+            contents: [{ value: codeblock(`\0(field) ${script}`) }, ...doc.map((d) => ({ value: d }))],
             range,
         };
     }
@@ -124,27 +135,18 @@ export class HoverProvider extends Provider implements languages.HoverProvider {
         if (!compiled) {
             return undefined;
         }
-        const d = compiled.definitionAt(model, position);
+        const d = compiled.variableAccessAt(model, position);
         if (d) {
             return this.provideVariableHover(model, d);
         }
-        const word = model.getWordAtPosition(position);
+        const word = wordAt(model, position);
         if (word) {
-            const a = compiled.accessAt(model, {
+            const a = compiled.fieldAccessAt(model, {
                 lineNumber: position.lineNumber,
-                column: word.endColumn,
+                column: word.range.endColumn,
             });
             if (a) {
-                return this.provideFieldHover(
-                    model,
-                    {
-                        startColumn: word.startColumn,
-                        endColumn: word.endColumn,
-                        startLineNumber: position.lineNumber,
-                        endLineNumber: position.lineNumber,
-                    },
-                    a,
-                );
+                return this.provideFieldHover(model, word.range, a);
             }
         }
         return undefined;

@@ -38,6 +38,16 @@ impl Formattable for Statement<'_> {
                 expression.format(formatter, measurement);
                 formatter.write_token(semicolon);
             }
+            Const(kw, id, op, expression, semicolon) => {
+                formatter.write_token(kw);
+                formatter.write_space();
+                formatter.write_token(id);
+                formatter.write_space();
+                formatter.write_token(op);
+                formatter.write_space();
+                expression.format(formatter, measurement);
+                formatter.write_token(semicolon);
+            }
             Assign(assignee, op, expression, semicolon) => {
                 assignee.format(formatter, measurement);
                 formatter.write_space();

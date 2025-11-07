@@ -1,27 +1,16 @@
+import type { Writable } from 'type-fest';
 import { type editor, Range, type IRange, type IPosition, Position } from '../monaco-api.js';
-import { DiagnosticCode } from '@mirascript/wasm';
 import { strictContainsPosition } from './utils.js';
 import { REG_IDENTIFIER, REG_ORDINAL } from '../constants.js';
-import type { MonacoResult } from './worker.js';
+import type { CacheKey, MonacoResult } from './worker.js';
+import {
+    parseDiagnostics,
+    DiagnosticCode,
+    type SourceDiagnostic,
+    type SourceReference,
+} from '@mirascript/mirascript/subtle';
 
-/** 源代码诊断信息 */
-interface SourceDiagnosticBase<T extends DiagnosticCode = DiagnosticCode> {
-    /** 代码 */
-    readonly code: T;
-    /** 位置 */
-    readonly range: IRange;
-}
-
-/** 源代码诊断信息 */
-export interface SourceDiagnostic<T extends DiagnosticCode = DiagnosticCode> extends SourceDiagnosticBase<T> {
-    /** 引用 */
-    readonly references: ReadonlyArray<SourceReference<T>>;
-}
-/** 源代码引用信息 */
-export interface SourceReference<T extends DiagnosticCode = DiagnosticCode> extends SourceDiagnosticBase<T> {
-    /** 反向引用 */
-    readonly diagnostic: SourceDiagnostic<T>;
-}
+export type { SourceDiagnostic, SourceReference };
 
 /** 源代码定义信息 */
 interface SourceDefinitionBase<R extends DiagnosticCode = DiagnosticCode> {
@@ -34,7 +23,11 @@ export const LocalFunctionType = [DiagnosticCode.LocalFunction] as const;
 
 /** 局部变量类型 */
 export type LocalVariableType = (typeof LocalVariableType)[number];
-export const LocalVariableType = [DiagnosticCode.LocalMutable, DiagnosticCode.LocalImmutable] as const;
+export const LocalVariableType = [
+    DiagnosticCode.LocalMutable,
+    DiagnosticCode.LocalImmutable,
+    DiagnosticCode.LocalConst,
+] as const;
 /** 显式参数类型 */
 export type ParameterExplicitType = (typeof ParameterExplicitType)[number];
 export const ParameterExplicitType = [
@@ -114,21 +107,40 @@ export interface SourceScope {
 }
 
 /** 变量访问 */
-export type DefinitionAt = { range: IRange } & (
-    | { def: LocalDefinition; ref?: number }
-    | { def: GlobalDefinition; ref: number }
+export type VariableAccessAt = {
+    /** 访问发生的位置 */
+    range: IRange;
+} & (
+    | {
+          /** 访问的变量定义 */
+          def: LocalDefinition;
+          /** 访问的是哪一个引用，`undefined` 表示访问了定义 */
+          ref?: number;
+      }
+    | {
+          /** 访问的变量定义 */
+          def: GlobalDefinition;
+          /** 访问的是哪一个引用 */
+          ref: number;
+      }
 );
 
 /** 字段访问 */
-export type AccessAt = { def: DefinitionAt; fields: string[] };
+export type FieldsAccessAt = {
+    /** 访问的变量 */
+    def: VariableAccessAt;
+    /** 访问的字段 */
+    fields: string[];
+};
 
 /** 编译结果 */
 export class CompileResult {
     constructor(
-        /** URI */
-        readonly uri: string,
+        /** CacheKey */
+        readonly cacheKey: CacheKey,
         /** 代码版本 */
         readonly version: number,
+        readonly source: string,
         readonly result: MonacoResult,
     ) {
         this.diagnostics = result.diagnostics;
@@ -140,13 +152,13 @@ export class CompileResult {
     readonly chunk?: Uint8Array;
 
     private diagnosticsReady = false;
-    private readonly _errors: Array<Writable<SourceDiagnostic>> = [];
-    private readonly _warnings: Array<Writable<SourceDiagnostic>> = [];
-    private readonly _infos: Array<Writable<SourceDiagnostic>> = [];
-    private readonly _hints: Array<Writable<SourceDiagnostic>> = [];
-    private readonly _references: Array<Writable<SourceReference>> = [];
-    private readonly _tags: Array<Writable<SourceDiagnostic>> = [];
-    private readonly _tagsReferences: Array<Writable<SourceReference>> = [];
+    private _errors: Array<Writable<SourceDiagnostic>> = [];
+    private _warnings: Array<Writable<SourceDiagnostic>> = [];
+    private _infos: Array<Writable<SourceDiagnostic>> = [];
+    private _hints: Array<Writable<SourceDiagnostic>> = [];
+    private _references: Array<Writable<SourceReference>> = [];
+    private _tags: Array<Writable<SourceDiagnostic>> = [];
+    private _tagsReferences: Array<Writable<SourceReference>> = [];
     /** 源代码诊断信息 */
     get errors(): readonly SourceDiagnostic[] {
         if (!this.diagnosticsReady) {
@@ -198,61 +210,14 @@ export class CompileResult {
     }
     /** 分析诊断信息 */
     private readDiagnostics(): void {
-        const diagnostics = [];
-        const buf = this.diagnostics;
-        const bufLen = buf.length;
-        for (let i = 0; i < bufLen; i += 5) {
-            const startLineNumber = buf[i]!;
-            const startColumn = buf[i + 1]!;
-            const endLineNumber = buf[i + 2]!;
-            const endColumn = buf[i + 3]!;
-            const error = buf[i + 4]! as DiagnosticCode;
-            diagnostics.push({
-                code: error,
-                range: {
-                    startLineNumber,
-                    startColumn,
-                    endLineNumber,
-                    endColumn,
-                },
-            } as Writable<SourceDiagnostic & SourceReference>);
-        }
-        for (let i = 0; i < diagnostics.length; i++) {
-            const diagnostic = diagnostics[i]!;
-            const { code } = diagnostic;
-            if (code > DiagnosticCode.ErrorStart && code < DiagnosticCode.ErrorEnd) {
-                this._errors.push(diagnostic);
-            } else if (code > DiagnosticCode.WarningStart && code < DiagnosticCode.WarningEnd) {
-                this._warnings.push(diagnostic);
-            } else if (code > DiagnosticCode.InfoStart && code < DiagnosticCode.InfoEnd) {
-                this._infos.push(diagnostic);
-            } else if (code > DiagnosticCode.HintStart && code < DiagnosticCode.HintEnd) {
-                this._hints.push(diagnostic);
-            } else if (code > DiagnosticCode.TagStart && code < DiagnosticCode.TagEnd) {
-                this._tags.push(diagnostic);
-            } else {
-                continue;
-            }
-            diagnostic.references = [];
-            while (i + 1 < diagnostics.length) {
-                const ref = diagnostics[i + 1]!;
-                let isRef = false;
-                if (ref.code > DiagnosticCode.TagRefStart && ref.code < DiagnosticCode.TagRefEnd) {
-                    isRef = true;
-                    this._tagsReferences.push(ref);
-                }
-                if (ref.code > DiagnosticCode.ReferenceStart && ref.code < DiagnosticCode.ReferenceEnd) {
-                    isRef = true;
-                    this._references.push(ref);
-                }
-                if (!isRef) {
-                    break;
-                }
-                i++;
-                ref.diagnostic = diagnostic;
-                (diagnostic.references as SourceReference[]).push(ref);
-            }
-        }
+        const parsed = parseDiagnostics(this.source, this.diagnostics, (c) => c !== DiagnosticCode.SourceMap);
+        this._errors = parsed.errors;
+        this._warnings = parsed.warnings;
+        this._infos = parsed.infos;
+        this._hints = parsed.hints;
+        this._tags = parsed.tags;
+        this._references = parsed.references;
+        this._tagsReferences = parsed.tagsReferences;
         this.diagnosticsReady = true;
     }
 
@@ -306,7 +271,9 @@ export class CompileResult {
             } else if (
                 tag.code === DiagnosticCode.Scope ||
                 tag.code === DiagnosticCode.String ||
-                tag.code === DiagnosticCode.Interpolation
+                tag.code === DiagnosticCode.Interpolation ||
+                tag.code === DiagnosticCode.FunctionCall ||
+                tag.code === DiagnosticCode.ExtensionCall
             ) {
                 ranges.push(tag);
             } else if (tag.code === DiagnosticCode.OmitNamedRecordField) {
@@ -314,20 +281,25 @@ export class CompileResult {
             }
         }
 
+        (locals as LocalDefinition[]).sort((a, b) =>
+            Range.compareRangesUsingStarts(a.definition.range, b.definition.range),
+        );
+        params.sort((a, b) => Range.compareRangesUsingStarts(a.range, b.range));
+        (globals as GlobalDefinition[]).sort((a, b) => a.name.localeCompare(b.name));
+        ranges.sort((a, b) => Range.compareRangesUsingStarts(a.range, b.range));
+
         this._groupedTags = {
-            locals: (locals as LocalDefinition[]).sort((a, b) =>
-                Range.compareRangesUsingStarts(a.definition.range, b.definition.range),
-            ),
-            params: params.sort((a, b) => Range.compareRangesUsingStarts(a.range, b.range)),
+            locals: locals as LocalDefinition[],
+            params: params,
             globals: globals as GlobalDefinition[],
-            ranges: (ranges as SourceDiagnostic[]).sort((a, b) => Range.compareRangesUsingStarts(a.range, b.range)),
+            ranges: ranges,
             omitNameFields: omitNameFields,
         };
         return this._groupedTags;
     }
 
-    /** 获取定义 */
-    definitionAt(model: editor.ITextModel, position: IPosition): DefinitionAt | undefined {
+    /** 获取指定位置的变量访问信息 */
+    variableAccessAt(model: editor.ITextModel, position: IPosition): VariableAccessAt | undefined {
         const { globals } = this.groupedTags(model);
         for (const d of globals) {
             const refIndex = d.references.findIndex((u) => strictContainsPosition(u.range, position));
@@ -496,9 +468,9 @@ export class CompileResult {
         return scope;
     }
 
-    /** 获取位置的字段访问 */
-    accessAt(model: editor.ITextModel, position: IPosition): AccessAt | undefined {
-        let prevDef: DefinitionAt | undefined;
+    /** 获取指定位置的字段访问信息 */
+    fieldAccessAt(model: editor.ITextModel, position: IPosition): FieldsAccessAt | undefined {
+        let prevDef: VariableAccessAt | undefined;
         const { globals } = this.groupedTags(model);
         for (const d of globals) {
             for (const [refIndex, ref] of d.references.entries()) {
@@ -519,7 +491,9 @@ export class CompileResult {
             }
         }
         if (!prevDef) return undefined;
+        // 获取从变量开始到查找位置的源码
         const chain = model.getValueInRange(Range.fromPositions(Range.getStartPosition(prevDef.range), position));
+        // 用 `!.` 和 `.` 切分
         const chainParts = chain.split(/\s*(?:!\.|\.)\s*/);
         if (
             // 至少包含变量名和当前位置的字段名
@@ -535,5 +509,11 @@ export class CompileResult {
             return undefined;
         }
         return { def: prevDef, fields: chainParts.slice(1) };
+    }
+    /** 获取指定位置的字段访问信息 */
+    accessAt(model: editor.ITextModel, position: IPosition): FieldsAccessAt | undefined {
+        const v = this.variableAccessAt(model, position);
+        if (v) return { def: v, fields: [] };
+        return this.fieldAccessAt(model, position);
     }
 }

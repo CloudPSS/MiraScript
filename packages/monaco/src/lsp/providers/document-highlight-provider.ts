@@ -1,5 +1,5 @@
-import { DiagnosticCode } from 'mirascript';
-import { languages, type editor, type Position, type CancellationToken, Range } from 'monaco-editor';
+import { DiagnosticCode } from '@mirascript/mirascript/subtle';
+import { type Position, languages, type editor, type CancellationToken, Range } from '../../monaco-api.js';
 import { keywords } from '../../constants.js';
 import { Provider } from './base.js';
 
@@ -26,7 +26,7 @@ export class DocumentHighlightProvider extends Provider implements languages.Doc
     ): Promise<languages.DocumentHighlight[] | undefined> {
         const compiled = await this.getCompileResult(model);
         if (!compiled) return undefined;
-        const def = compiled.definitionAt(model, position)?.def;
+        const def = compiled.variableAccessAt(model, position)?.def;
         if (!def) return undefined;
         const links: languages.DocumentHighlight[] = def.references.map((u) => {
             const { code, range } = u;

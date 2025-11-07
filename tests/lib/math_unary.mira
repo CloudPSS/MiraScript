@@ -1,0 +1,54 @@
+// math-unary.ts 中的函数
+
+// fnName: (fn(0), fn(-0), fn(1), fn(-1), fn(nan), fn(inf), fn(-inf))
+let trunc = (0, -0, 1, -1, nan, inf, -inf);
+let floor = (0, -0, 1, -1, nan, inf, -inf);
+let ceil = (0, -0, 1, -1, nan, inf, -inf);
+let round = (0, -0, 1, -1, nan, inf, -inf);
+let sign = (0, -0, 1, -1, nan, 1, -1);
+let abs = (0, 0, 1, 1, nan, inf, inf);
+let acos = (1.570_796_326_794_896_6, 1.570_796_326_794_896_6, 0, 3.141_592_653_589_793, nan, nan, nan);
+let acosh = (nan, nan, 0, nan, nan, inf, nan);
+let asin = (0, -0, 1.570_796_326_794_896_6, -1.570_796_326_794_896_6, nan, nan, nan);
+let asinh = (0, -0, 0.881_373_587_019_543, -0.881_373_587_019_543, nan, inf, -inf);
+let atan = (0, -0, 0.785_398_163_397_448_3, -0.785_398_163_397_448_3, nan, 1.570_796_326_794_896_6, -1.570_796_326_794_896_6);
+let atanh = (0, -0, inf, -inf, nan, nan, nan);
+let cos = (1, 1, 0.540_302_305_868_139_8, 0.540_302_305_868_139_8, nan, nan, nan);
+let cosh = (1, 1, 1.543_080_634_815_243_7, 1.543_080_634_815_243_7, nan, inf, inf);
+let sin = (0, -0, 0.841_470_984_807_896_5, -0.841_470_984_807_896_5, nan, nan, nan);
+let sinh = (0, -0, 1.175_201_193_643_801_4, -1.175_201_193_643_801_4, nan, inf, -inf);
+let tan = (0, -0, 1.557_407_724_654_902_3, -1.557_407_724_654_902_3, nan, nan, nan);
+let tanh = (0, -0, 0.761_594_155_955_764_9, -0.761_594_155_955_764_9, nan, 1, -1);
+let exp = (1, 1, 2.718_281_828_459_045, 0.367_879_441_171_442_33, nan, inf, 0);
+let expm1 = (0, -0, 1.718_281_828_459_045, -0.632_120_558_828_557_7, nan, inf, -1);
+let log = (-inf, -inf, 0, nan, nan, inf, nan);
+let log10 = (-inf, -inf, 0, nan, nan, inf, nan);
+let log1p = (0, -0, 0.693_147_180_559_945_3, -inf, nan, inf, nan);
+let log2 = (-inf, -inf, 0, nan, nan, inf, nan);
+let sqrt = (0, -0, 1, nan, nan, inf, nan);
+let cbrt = (0, -0, 1, -1, nan, inf, -inf);
+
+let func = (:trunc, :floor, :ceil, :round, :sign, :abs, :acos, :acosh, :asin, :asinh, :atan, :atanh, :cos, :cosh, :sin, :sinh, :tan, :tanh, :exp, :expm1, :log, :log10, :log1p, :log2, :sqrt, :cbrt);
+
+for (f, expected) in func::entries() {
+  let fun = global[f];
+  t_eq(type(fun), 'function');
+  t_eq([f, fun(0)], [f, expected.0]);
+  t_eq([f, fun(false)], [f, expected.0]);
+  t_eq([f, fun(nil)], [f, expected.0]);
+  t_eq([f, fun('')], [f, expected.0]);
+  t_eq([f, fun(-0)], [f, expected.1]);
+  t_eq([f, fun(1)], [f, expected.2]);
+  t_eq([f, fun("+1")], [f, expected.2]);
+  t_eq([f, fun(true)], [f, expected.2]);
+  t_eq([f, fun(-1)], [f, expected.3]);
+  t_eq([f, fun(nan)], [f, expected.4]);
+  t_eq([f, fun([])], [f, expected.4]);
+  t_eq([f, fun(inf)], [f, expected.5]);
+  t_eq([f, fun('inf')], [f, expected.5]);
+  t_eq([f, fun(-inf)], [f, expected.6]);
+  t_eq([f, fun(" -inf ")], [f, expected.6]);
+  t_throws(fn { fun() });
+
+  t_snapshot(f, fun(@e), fun(-@e), fun(1 / @e), fun(@e - 1), fun(@e + 1), fun(@pi), fun(-@pi), fun(@pi - 1), fun(@pi + 1), fun(@pi / 2), fun(@pi / 4), fun(0.5), fun(1.5), fun(-0.5));
+}

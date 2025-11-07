@@ -1,0 +1,78 @@
+// MiraScript 扩展调用运算符示例
+
+// 扩展调用运算符 :: 用于链式调用
+// 语法: left::right(args) 等价于 right(left, args)
+
+// 基础扩展调用
+let numbers = [1, 2, 3, 4, 5];
+
+// 传统函数调用风格
+fn add_to_all(arr, value) { arr::map(fn { it + value }) }
+
+fn filter_greater_than(arr, threshold) { arr::filter(fn { it > threshold }) }
+
+debug_print("传统调用风格:");
+let result1 = filter_greater_than(add_to_all(numbers, 10), 12);
+debug_print("结果:", result1);
+
+// 使用扩展调用的链式风格
+debug_print("扩展调用链式风格:");
+let result2 = numbers::add_to_all(10)::filter_greater_than(12);
+debug_print("结果:", result2);
+
+// 更复杂的链式调用
+let data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+let processed = data::filter(fn { it % 2 == 0 })::map(fn { it * 2 })::filter(fn { it > 10 })::sum(); // 过滤偶数 每个元素乘以2 过滤大于10的 求和
+
+debug_print("链式处理结果:", processed);
+
+// 字符串处理链式调用
+let text = "  Hello, World!  ";
+let cleaned = text::trim()::replace("World", "MiraScript");
+
+debug_print("字符串处理: '$cleaned'");
+
+// 记录处理的扩展调用
+let person = (name: "Alice", age: 30, city: "Boston");
+
+fn add_field(record, key, value) { (..record, `$key`: value) }
+
+fn update_field(record, key, value) { (..record, `$key`: value) }
+
+let updated_person = person::add_field("country", "USA")::update_field("age", 31);
+
+debug_print("更新后的记录:", updated_person);
+
+// 数学运算链式调用
+fn power(base, exp) { base^exp }
+
+fn add(x, y) { x + y }
+
+fn multiply(x, y) { x * y }
+
+let math_result = 2::power(3)::add(2)::multiply(3); // 2^3 = 8 8 + 2 = 10 10 * 3 = 30
+
+debug_print("数学链式计算:", math_result);
+
+// 函数组合
+fn compose_functions() {
+  let square = fn { it * it };
+  let add_ten = fn { it + 10 };
+  let halve = fn { it / 2 };
+
+  let number = 4;
+  let result = number::square()::add_ten()::halve();
+
+  debug_print("函数组合: 4 -> square -> add_ten -> halve = $result");
+}
+
+compose_functions();
+
+// 条件链式调用
+fn process_if_positive(value) {
+  if value > 0 { value::multiply(2)::add(1) } else { value }
+}
+
+debug_print("条件链式:", process_if_positive(5));
+debug_print("条件链式:", process_if_positive(-5));

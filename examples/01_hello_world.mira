@@ -1,0 +1,6 @@
+// 基本的 Hello World 示例
+debug_print("Hello, World!");
+
+// 使用字符串插值
+let name = "MiraScript";
+debug_print("Hello from $name!");

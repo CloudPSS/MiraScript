@@ -1,0 +1,113 @@
+// nil
+t_true(nil == nil);
+t_false(nil != nil);
+t_true(nil =~ nil);
+t_false(nil !~ nil);
+
+// boolean
+t_true(true == true);
+t_true(false == false);
+t_false(true == false);
+t_true(true =~ true);
+t_false(false =~ true);
+
+// number
+t_true(1 == 1);
+t_true(1 =~ 1);
+t_true(1.0 == 1);
+t_true(1.0 =~ 1);
+t_false(0.1 + 0.2 == 0.3);
+t_true(0.1 + 0.2 =~ 0.3);
+t_false(1 == 2);
+t_false(1 =~ 2);
+t_false(nan == nan);
+t_false(nan =~ nan);
+t_true(inf == inf);
+t_true(inf =~ inf);
+t_true(-inf == -inf);
+t_true(-inf =~ -inf);
+t_true(+0 == -0);
+t_true(+0 =~ -0);
+t_true(1 !~ nan);
+t_true(1 != nan);
+t_true(nan !~ nan);
+t_true(nan != nan);
+
+// string
+t_true('abc' == 'abc');
+t_true('abc' =~ 'abc');
+t_false('abc' == 'ABC');
+t_true('abc' =~ 'ABC');
+t_false('e' == 'é');
+t_false('e' =~ 'é');
+t_false('abc' == 'ab');
+t_false('abc' =~ 'ab');
+// Unicode normalization
+t_false('é' == 'é');
+t_true('é' =~ 'é');
+
+// aeq should convert to number or string
+t_false(1 == '1');
+t_true(1 =~ '1');
+t_true(1 =~ '1.0');
+t_true('1' =~ 1);
+t_true('1.0' =~ 1);
+t_true(true =~ 'true');
+t_true('true' =~ true);
+t_false('1' =~ true);
+t_true(1 =~ true);
+t_true(true =~ 1);
+t_true(0 =~ false);
+t_true(false =~ 0);
+t_true('' =~ nil);
+t_true(nil =~ '');
+t_false('' =~ '0');
+t_true(fn { } =~ '<function>');
+t_true(fn { } !~ fn { });
+
+// complex
+t_true((1, 2, 3) == (1, 2, 3));
+t_true([1, 2, 3, nil, "xx", ("a", [true])] == [1, 2, 3, nil, "xx", ("a", [true])]);
+t_false((1, 2, 3) =~ (1, 2, 3));
+
+t_true([1, 2, 3] == [1, 2, 3]);
+t_false([1, 2, 3] =~ [1, 2, 3]);
+
+t_false([1, 2] == (1, 2));
+t_false((1, 2, 3) == (1, 2, 4));
+t_false([1, 2, 3] == [1, 2, 4]);
+t_true((nan,) == (nan,));
+t_false([nil] == []);
+t_false((nil, nil) == (a: nil, b: nil));
+t_false((a: nil) == ());
+t_true((a?: nil) == ());
+t_true((1, 2) == (1: 2, 0: 1));
+t_true((1, 2) == ("1": 2, "0": 1));
+
+// function
+t_false(v_fn == v_fn_another);
+t_true(v_fn == v_fn);
+t_false(v_fn == nil);
+t_false(nil == v_fn);
+t_false(v_fn == ());
+t_false(() == v_fn);
+
+// extern
+if has_extern {
+  t_false(v_extern == v_extern_another);
+  t_true(v_extern == v_extern);
+  t_false(v_extern == nil);
+  t_false(nil == v_extern);
+  t_false(v_extern == ());
+  t_false(() == v_extern);
+}
+
+// module
+if has_module {
+  t_false(v_module == v_module_another);
+  t_true(v_module == v_module);
+  t_false(v_module == nil);
+  t_false(nil == v_module);
+  t_false(v_module == ());
+  t_false(() == v_module);
+}

@@ -1,0 +1,80 @@
+let mut a = [];
+for i in ['你好', '，', '世界', '！'] {
+  a = [..a, i];
+}
+t_eq(a, ['你好', '，', '世界', '！']);
+
+let mut r = [];
+for i in ('你好', '，', '世界', '！', x: nil) {
+  r = [..r, i];
+}
+t_eq(r, ['0', '1', '2', '3', 'x']);
+
+if has_extern {
+  for k in v_extern {
+    t_eq(k::type(), "string");
+  }
+}
+if has_module {
+  for k in v_module {
+    t_eq(k::type(), "string");
+  }
+}
+
+let mut seq = [];
+for k in 0.2..2 {
+  seq = [..seq, k];
+}
+t_eq(seq, [0.2, 1.2]);
+
+seq = [];
+for k in 0.2..2.2 {
+  seq = [..seq, k];
+}
+t_eq(seq, [0.2, 1.2, 2.2]);
+
+seq = [];
+for k in 0.2..<2 + 0.2 {
+  seq = [..seq, k];
+}
+t_eq(seq, [0.2, 1.2]);
+
+for _ in nan..nan {
+  t_never();
+}
+for i in -inf..inf {
+  t_eq(i, -inf);
+  break;
+}
+t_timeout(fn () {
+  for i in inf..inf {
+    t_eq(i, inf);
+  }
+});
+
+t_throws(fn () {
+  for k in fn { } { }
+});
+
+t_throws(fn () {
+  for k in 1 { }
+});
+
+t_throws(fn () {
+  for k in nil { }
+});
+
+t_throws(fn () {
+  for k in "" { }
+});
+
+// Allow empty body
+for _ in 0..<0 { }
+for _ in 0..0 { }
+
+// Allow complex range
+seq = [];
+for k in 1 + 0.25 * 2..<{ 4 * 1 } {
+  seq = [..seq, k];
+}
+t_eq(seq, [1.5, 2.5, 3.5]);

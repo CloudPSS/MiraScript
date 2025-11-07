@@ -1,0 +1,62 @@
+if !has_extern {
+  return;
+}
+
+t_eq(v_extern::keys()::len(), 0);
+
+let x_key = 'x';
+v_extern.x = 1;
+t_eq(v_extern::keys()::len(), 1);
+t_eq(v_extern[x_key], 1);
+t_eq(v_extern.x, 1);
+t_true(x_key in v_extern);
+
+let y_key = 2;
+v_extern[y_key] = 2;
+t_eq(v_extern[y_key], 2);
+t_eq(v_extern.2, 2);
+t_true(y_key in v_extern);
+
+let z_key = 12;
+v_extern.12 = 3;
+t_eq(v_extern[z_key], 3);
+t_eq(v_extern.12, 3);
+t_true(12 in v_extern);
+t_true(z_key in v_extern);
+
+let w_key = 'w';
+v_extern[w_key] = nil;
+t_eq(v_extern.w, nil);
+t_true(w_key in v_extern);
+t_eq(v_extern[w_key], nil);
+
+let ks = v_extern::keys();
+t_eq(ks::len(), 4);
+t_true(x_key in ks);
+t_false(y_key in ks);
+t_true(y_key::to_string() in ks);
+t_false(z_key in ks);
+t_true(z_key::to_string() in ks);
+t_true(w_key in ks);
+
+v_extern.f = sin;
+t_eq(v_extern.f, sin);
+t_true('f' in v_extern);
+t_eq(sin(12), v_extern.f(12));
+t_eq(sin(0), 0);
+
+v_extern.e = v_extern;
+t_true(v_extern.e == v_extern);
+t_true(v_extern.e.e.e.e.e.e == v_extern);
+t_true(v_extern.e.f == sin);
+
+v_extern.r = ();
+t_eq(v_extern.r::type(), 'extern');
+t_false(v_extern.r == ());
+
+v_extern.a = [];
+t_eq(v_extern.a::type(), 'extern');
+t_false(v_extern.a == []);
+
+v_extern.aa = [];
+t_false(v_extern.a == v_extern.aa);

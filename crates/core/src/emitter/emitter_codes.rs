@@ -1,5 +1,7 @@
 use std::borrow::Cow;
 
+use crate::SourceRange;
+
 use super::{
     Emitter,
     constant::Constant as C,
@@ -9,7 +11,7 @@ use super::{
     },
 };
 
-impl<'s> Emitter<'s> {
+impl<'s, 'c> Emitter<'s, 'c> {
     pub fn add_const_string(&mut self, value: impl Into<Cow<'s, str>>) -> OpParam {
         self.chunk.add_constant(C::String(value.into()))
     }
@@ -24,10 +26,12 @@ impl<'s> Emitter<'s> {
             .add_constant(if value { C::True } else { C::False })
     }
 
-    pub fn op(&mut self, op: OpCode) {
+    pub fn op(&mut self, mapping: SourceRange, op: OpCode) {
         self.chunk.add_code(op);
+        self.diagnostics
+            .push(crate::DiagnosticCode::SourceMap, mapping);
     }
-    pub fn op_1(&mut self, op: OpCode, arg1: impl OpParamTrait) {
+    pub fn op_1(&mut self, mapping: SourceRange, op: OpCode, arg1: impl OpParamTrait) {
         if !arg1.is_wide() {
             self.chunk.add_code(op);
             self.chunk.add_param(arg1);
@@ -35,8 +39,16 @@ impl<'s> Emitter<'s> {
             self.chunk.add_code_wide(op);
             self.chunk.add_param_wide(arg1);
         }
+        self.diagnostics
+            .push(crate::DiagnosticCode::SourceMap, mapping);
     }
-    pub fn op_2(&mut self, op: OpCode, arg1: impl OpParamTrait, arg2: impl OpParamTrait) {
+    pub fn op_2(
+        &mut self,
+        mapping: SourceRange,
+        op: OpCode,
+        arg1: impl OpParamTrait,
+        arg2: impl OpParamTrait,
+    ) {
         if !arg1.is_wide() && !arg2.is_wide() {
             self.chunk.add_code(op);
             self.chunk.add_param(arg1);
@@ -46,9 +58,12 @@ impl<'s> Emitter<'s> {
             self.chunk.add_param_wide(arg1);
             self.chunk.add_param_wide(arg2);
         }
+        self.diagnostics
+            .push(crate::DiagnosticCode::SourceMap, mapping);
     }
     pub fn op_3(
         &mut self,
+        mapping: SourceRange,
         op: OpCode,
         arg1: impl OpParamTrait,
         arg2: impl OpParamTrait,
@@ -65,9 +80,12 @@ impl<'s> Emitter<'s> {
             self.chunk.add_param_wide(arg2);
             self.chunk.add_param_wide(arg3);
         }
+        self.diagnostics
+            .push(crate::DiagnosticCode::SourceMap, mapping);
     }
     pub fn op_4(
         &mut self,
+        mapping: SourceRange,
         op: OpCode,
         arg1: impl OpParamTrait,
         arg2: impl OpParamTrait,
@@ -87,46 +105,71 @@ impl<'s> Emitter<'s> {
             self.chunk.add_param_wide(arg3);
             self.chunk.add_param_wide(arg4);
         }
+        self.diagnostics
+            .push(crate::DiagnosticCode::SourceMap, mapping);
     }
-    fn op_const(&mut self, reg: Register, const_id: OpParam) {
-        self.op_2(Constant, reg, const_id);
+    fn op_const(&mut self, mapping: SourceRange, reg: Register, const_id: OpParam) {
+        self.op_2(mapping, Constant, reg, const_id);
     }
-    pub fn op_global(&mut self, reg: Register, name: impl Into<Cow<'s, str>>) {
+    pub fn op_global(
+        &mut self,
+        mapping: SourceRange,
+        reg: Register,
+        name: impl Into<Cow<'s, str>>,
+    ) {
         let const_id = self.add_const_string(name);
-        self.op_2(GetGlobal, reg, const_id);
+        self.op_2(mapping, GetGlobal, reg, const_id);
     }
-    pub fn op_global_num(&mut self, reg: Register, name: f64) {
+    pub fn op_global_num(&mut self, mapping: SourceRange, reg: Register, name: f64) {
         let const_id = self.add_const_number(name);
-        self.op_2(GetGlobal, reg, const_id);
+        self.op_2(mapping, GetGlobal, reg, const_id);
     }
-    pub fn op_global_dyn(&mut self, reg: Register, name: Register) {
-        self.op_2(GetGlobalDyn, reg, name);
+    pub fn op_global_dyn(&mut self, mapping: SourceRange, reg: Register, name: Register) {
+        self.op_2(mapping, GetGlobalDyn, reg, name);
     }
-    pub fn op_nil(&mut self, reg: Register) {
-        self.op_unary(reg, Assign, Register::EMPTY);
+    pub fn op_nil(&mut self, mapping: SourceRange, reg: Register) {
+        self.op_unary(mapping, reg, Assign, Register::EMPTY);
     }
-    pub fn op_number(&mut self, reg: Register, value: f64) {
+    pub fn op_number(&mut self, mapping: SourceRange, reg: Register, value: f64) {
         let const_id = self.add_const_number(value);
-        self.op_const(reg, const_id);
+        self.op_const(mapping, reg, const_id);
     }
-    pub fn op_bool(&mut self, reg: Register, value: bool) {
+    pub fn op_bool(&mut self, mapping: SourceRange, reg: Register, value: bool) {
         let const_id = self.add_const_bool(value);
-        self.op_const(reg, const_id);
+        self.op_const(mapping, reg, const_id);
     }
-    pub fn op_string(&mut self, reg: Register, value: impl Into<Cow<'s, str>>) {
+    pub fn op_string(
+        &mut self,
+        mapping: SourceRange,
+        reg: Register,
+        value: impl Into<Cow<'s, str>>,
+    ) {
         let const_id = self.add_const_string(value);
-        self.op_const(reg, const_id);
+        self.op_const(mapping, reg, const_id);
     }
-    pub fn op_uninit(&mut self, reg: Register) {
-        self.op_1(OpCode::Uninit, reg);
+    pub fn op_uninit(&mut self, mapping: SourceRange, reg: Register) {
+        self.op_1(mapping, OpCode::Uninit, reg);
     }
-    pub fn op_unary(&mut self, ret: Register, op: OpCode, reg: Register) {
-        self.op_2(op, ret, reg);
+    pub fn op_unary(&mut self, mapping: SourceRange, ret: Register, op: OpCode, reg: Register) {
+        self.op_2(mapping, op, ret, reg);
     }
-    pub fn op_binary(&mut self, ret: Register, op: OpCode, left: Register, right: Register) {
-        self.op_3(op, ret, left, right);
+    pub fn op_binary(
+        &mut self,
+        mapping: SourceRange,
+        ret: Register,
+        op: OpCode,
+        left: Register,
+        right: Register,
+    ) {
+        self.op_3(mapping, op, ret, left, right);
     }
-    pub fn op_variadic(&mut self, ret: Register, op: OpCode, var_args: Vec<impl OpParamTrait>) {
+    pub fn op_variadic(
+        &mut self,
+        mapping: SourceRange,
+        ret: Register,
+        op: OpCode,
+        var_args: Vec<impl OpParamTrait>,
+    ) {
         let n: OpParam = var_args.len().into();
         if !n.is_wide() && !ret.is_wide() && !var_args.iter().any(|r| r.is_wide()) {
             self.chunk.add_code(op);
@@ -143,9 +186,12 @@ impl<'s> Emitter<'s> {
                 self.chunk.add_param_wide(r);
             }
         }
+        self.diagnostics
+            .push(crate::DiagnosticCode::SourceMap, mapping);
     }
     pub fn op_variadic_1(
         &mut self,
+        mapping: SourceRange,
         ret: Register,
         op: OpCode,
         arg1: impl OpParamTrait,
@@ -173,9 +219,12 @@ impl<'s> Emitter<'s> {
                 self.chunk.add_param_wide(r);
             }
         }
+        self.diagnostics
+            .push(crate::DiagnosticCode::SourceMap, mapping);
     }
     pub fn op_variadic_variadic_1(
         &mut self,
+        mapping: SourceRange,
         ret: Register,
         op: OpCode,
         arg1: impl OpParamTrait,
@@ -215,66 +264,94 @@ impl<'s> Emitter<'s> {
                 self.chunk.add_param_wide(r);
             }
         }
+        self.diagnostics
+            .push(crate::DiagnosticCode::SourceMap, mapping);
     }
-    pub fn op_non_nil(&mut self, reg: Register) {
-        self.op_1(AssertNonNil, reg);
-    }
-
-    pub fn op_if(&mut self, if_code: OpCode, cond: Register) {
-        self.op_1(if_code, cond);
-    }
-    pub fn op_else(&mut self) {
-        self.op(Else);
-    }
-    pub fn op_if_end(&mut self) {
-        self.op(IfEnd);
+    pub fn op_non_nil(&mut self, mapping: SourceRange, reg: Register) {
+        self.op_1(mapping, AssertNonNil, reg);
     }
 
-    pub fn op_return(&mut self, ret: Register) {
-        self.op_1(Return, ret);
+    pub fn op_if(&mut self, mapping: SourceRange, if_code: OpCode, cond: Register) {
+        self.op_1(mapping, if_code, cond);
+    }
+    pub fn op_else(&mut self, mapping: SourceRange) {
+        self.op(mapping, Else);
+    }
+    pub fn op_if_end(&mut self, mapping: SourceRange) {
+        self.op(mapping, IfEnd);
+    }
+
+    pub fn op_return(&mut self, mapping: SourceRange, ret: Register) {
+        self.op_1(mapping, Return, ret);
     }
 
     pub fn op_call(
         &mut self,
+        mapping: SourceRange,
         ret: Register,
         func: impl Into<Cow<'s, str>>,
         args: Vec<Register>,
         spreads: Vec<OpParam>,
     ) {
         let f = self.add_const_string(func);
-        self.op_variadic_variadic_1(ret, Call, f, args, spreads)
+        self.op_variadic_variadic_1(mapping, ret, Call, f, args, spreads)
     }
 
     pub fn op_call_dyn(
         &mut self,
+        mapping: SourceRange,
         ret: Register,
         func: Register,
         args: Vec<Register>,
         spreads: Vec<OpParam>,
     ) {
-        self.op_variadic_variadic_1(ret, CallDyn, func, args, spreads)
+        self.op_variadic_variadic_1(mapping, ret, CallDyn, func, args, spreads)
     }
 
-    pub fn op_get_upvalue(&mut self, reg: Register, level: usize, up_reg: Register) {
+    pub fn op_get_upvalue(
+        &mut self,
+        mapping: SourceRange,
+        reg: Register,
+        level: usize,
+        up_reg: Register,
+    ) {
         let level: OpParam = level.into();
-        self.op_3(GetUpvalue, reg, level, up_reg);
+        self.op_3(mapping, GetUpvalue, reg, level, up_reg);
     }
 
-    pub fn op_set_upvalue(&mut self, reg: Register, level: usize, up_reg: Register) {
+    pub fn op_set_upvalue(
+        &mut self,
+        mapping: SourceRange,
+        reg: Register,
+        level: usize,
+        up_reg: Register,
+    ) {
         let level: OpParam = level.into();
-        self.op_3(SetUpvalue, reg, level, up_reg);
+        self.op_3(mapping, SetUpvalue, reg, level, up_reg);
     }
 
-    pub fn op_get(&mut self, ret: Register, obj: Register, name: impl Into<Cow<'s, str>>) {
+    pub fn op_get(
+        &mut self,
+        mapping: SourceRange,
+        ret: Register,
+        obj: Register,
+        name: impl Into<Cow<'s, str>>,
+    ) {
         let const_id = self.add_const_string(name);
-        self.op_3(Get, ret, obj, const_id);
+        self.op_3(mapping, Get, ret, obj, const_id);
     }
 
-    pub fn op_get_index(&mut self, ret: Register, obj: Register, index: i32) {
-        self.op_3(GetIndex, ret, obj, OpParam::new(index));
+    pub fn op_get_index(&mut self, mapping: SourceRange, ret: Register, obj: Register, index: i32) {
+        self.op_3(mapping, GetIndex, ret, obj, OpParam::new(index));
     }
 
-    pub fn op_get_dyn(&mut self, ret: Register, obj: Register, index: Register) {
-        self.op_3(GetDyn, ret, obj, index);
+    pub fn op_get_dyn(
+        &mut self,
+        mapping: SourceRange,
+        ret: Register,
+        obj: Register,
+        index: Register,
+    ) {
+        self.op_3(mapping, GetDyn, ret, obj, index);
     }
 }

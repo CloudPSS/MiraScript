@@ -1,11 +1,12 @@
 use crate::{
-    DiagnosticCode, SourceDiagnostic,
+    DiagnosticCode,
+    diagnostic::DiagnosticsCollector,
     lexer::{Token, TokenKind},
 };
 
 pub(super) fn recover_token<'s>(
     mut t: Token<'s>,
-    diagnostics_collector: &mut Vec<SourceDiagnostic>,
+    diagnostics_collector: &mut DiagnosticsCollector<'_, '_>,
 ) -> Option<Token<'s>> {
     match t.kind {
         TokenKind::Unknown {
@@ -21,10 +22,7 @@ pub(super) fn recover_token<'s>(
             None
         }
         TokenKind::InterpolatedString(ref mut v, _) => {
-            diagnostics_collector.push(SourceDiagnostic::new(
-                t.range.clone(),
-                DiagnosticCode::Interpolation,
-            ));
+            diagnostics_collector.push(DiagnosticCode::Interpolation, t.range.clone());
             for (_, tokens) in v.iter_mut() {
                 *tokens = tokens
                     .iter_mut()
@@ -34,10 +32,7 @@ pub(super) fn recover_token<'s>(
             Some(t)
         }
         TokenKind::String(_, _) => {
-            diagnostics_collector.push(SourceDiagnostic::new(
-                t.range.clone(),
-                DiagnosticCode::String,
-            ));
+            diagnostics_collector.push(DiagnosticCode::String, t.range.clone());
             Some(t)
         }
         _ => Some(t),

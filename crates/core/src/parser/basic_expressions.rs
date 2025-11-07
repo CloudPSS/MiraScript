@@ -1,18 +1,15 @@
 use winnow::{
-    combinator::{
-        alt, dispatch, eof, fail, opt, peek, repeat, separated_foldl1, separated_foldr1, seq,
-    },
+    combinator::{alt, eof, opt, peek, repeat},
     token::{any, one_of},
 };
 
 use super::{
     array_helper::array_base,
     block_expressions::block_like_expression,
-    expressions::expression,
+    expressions::{expression, expression_expected},
     helper::{literal_token, token, token_or_insert, variable_token},
     patterns::pattern,
     prelude::*,
-    ranges::range,
     record_helper::record_base,
     to_input,
 };
@@ -60,6 +57,7 @@ fn record_like<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
         expression,
         expression,
         expression,
+        expression_expected,
     )
     .parse_next(i)?;
     let result = if parts.len() == 1 && !parts[0].has_tail_comma() && parts[0].is_unnamed() {
@@ -96,9 +94,9 @@ fn array<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     array_base(
         token(Operator::OpenBracket),
         token_or_insert(Operator::CloseBracket, DiagnosticCode::MissingCloseBracket),
-        expression,
-        range,
+        iterable,
         spread,
+        |pos| Iterable::Value(expression_expected(pos)),
     )
     .map(|(open, parts, close)| Expression::Array(open, parts, close))
     .parse_next(i)
@@ -114,7 +112,7 @@ fn interpolation<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
 type Call<'s> = (
     Callable<'s>,
     TokenRef<'s>,
-    Vec<ArrayElement<'s>>,
+    Vec<ArgElement<'s>>,
     TokenRef<'s>,
 );
 
@@ -165,14 +163,14 @@ fn primary<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
 
 fn arg_list<'s>(
     open: impl Parser<'s, TokenRef<'s>>,
-) -> impl Parser<'s, (TokenRef<'s>, Vec<ArrayElement<'s>>, TokenRef<'s>)> {
+) -> impl Parser<'s, (TokenRef<'s>, Vec<ArgElement<'s>>, TokenRef<'s>)> {
     move |i: &mut Input<'s>| {
         array_base(
             open,
             token_or_insert(Operator::CloseParen, DiagnosticCode::MissingCloseParen),
             expression,
-            fail,
             expression,
+            expression_expected,
         )
         .parse_next(i)
     }
@@ -193,28 +191,55 @@ enum AccessIndex<'s> {
     ),
 }
 fn access_index<'s>(i: &mut Input<'s>) -> Result<AccessIndex<'s>> {
-    let access_token = |i: &mut Input<'s>| {
+    fn access_token<'s>(i: &mut Input<'s>) -> Result<TokenRef<'s>> {
         one_of(|t: &Token<'s>| matches!(t.kind, TokenKind::Identifier(_) | TokenKind::Ordinal(_)))
             .map(TokenRef::borrow)
             .parse_next(i)
-    };
+    }
+    fn additive<'s>(i: &mut Input<'s>) -> Result<Box<Expression<'s>>> {
+        pratt(
+            precedence_of(&TokenKind::Operator(Operator::SpreadRange)) + 2,
+            false,
+        )
+        .verify_map(verify_expr)
+        .map(Box::new)
+        .parse_next(i)
+    }
+    fn range_op<'s>(i: &mut Input<'s>) -> Result<TokenRef<'s>> {
+        one_of(|t: &Token<'s>| *t == Operator::SpreadRange || *t == Operator::HalfOpenRange)
+            .map(TokenRef::borrow)
+            .parse_next(i)
+    }
+
     alt((
+        // '.' identifier
         (token(Operator::Dot), access_token).map(|(d, i)| AccessIndex::Access(d, i)),
+        // `[` (`..` | `..<`) `]` | `[` (`..` | `..<`) additive `]`
         (
             token(Operator::OpenBracket),
-            opt(additive.map(Box::new)),
-            one_of(|t: &Token<'s>| *t == Operator::SpreadRange || *t == Operator::HalfOpenRange)
-                .map(TokenRef::borrow),
-            opt(additive.map(Box::new)),
+            range_op,
+            opt(additive),
             token(Operator::CloseBracket),
         )
-            .map(|(l, start, op, end, r)| AccessIndex::Slice(l, start, op, end, r)),
+            .map(|(l, op, end, r)| AccessIndex::Slice(l, None, op, end, r)),
+        // `[` expression `]` | `[` additive (`..` | `..<`) additive `]`
         (
             token(Operator::OpenBracket),
-            expression.map(Box::new),
+            iterable,
             token(Operator::CloseBracket),
         )
-            .map(|(o, e, c)| AccessIndex::Index(o, e, c)),
+            .map(|(o, e, c)| match e {
+                Iterable::Range(r) => AccessIndex::Slice(o, Some(r.0), r.1, Some(r.2), c),
+                Iterable::Value(expr) => AccessIndex::Index(o, Box::new(expr), c),
+            }),
+        // `[` additive (`..` | `..<`) `]`
+        (
+            token(Operator::OpenBracket),
+            additive,
+            range_op,
+            token(Operator::CloseBracket),
+        )
+            .map(|(l, start, op, r)| AccessIndex::Slice(l, Some(start), op, None, r)),
     ))
     .parse_next(i)
 }
@@ -261,7 +286,7 @@ fn extension_call<'s>(i: &mut Input<'s>) -> Result<Call<'s>> {
             alt((parenthesised, access_chain)).map(|e| Callable::Expression(Box::new(e))),
             arg_list(token_or_insert(
                 Operator::OpenParen,
-                DiagnosticCode::MissingOpenParenAfterType,
+                DiagnosticCode::MissingOpenParenAfterExtension,
             )),
         )
             .map(|(e, (o, a, c))| (e, o, a, c)),
@@ -272,12 +297,12 @@ fn extension_call<'s>(i: &mut Input<'s>) -> Result<Call<'s>> {
 
 fn postfix<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     enum Function<'s> {
-        Call(TokenRef<'s>, Vec<ArrayElement<'s>>, TokenRef<'s>),
+        Call(TokenRef<'s>, Vec<ArgElement<'s>>, TokenRef<'s>),
         Extension(
             TokenRef<'s>,
             Callable<'s>,
             TokenRef<'s>,
-            Vec<ArrayElement<'s>>,
+            Vec<ArgElement<'s>>,
             TokenRef<'s>,
         ),
         Access(TokenRef<'s>, TokenRef<'s>),
@@ -333,94 +358,122 @@ fn postfix<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     }))
 }
 
-fn exponentiation<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
-    separated_foldr1(postfix, token(Operator::Caret), |l, op, r| {
-        Expression::Infix(Box::new(l), op, Box::new(r))
-    })
-    .parse_next(i)
-}
-
-fn prefix<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
-    dispatch! {peek(any);
-        token if *token == Operator::Plus || *token == Operator::Minus|| *token == Operator::Exclamation =>
-            seq!(Expression::Prefix(any.map(TokenRef::borrow), prefix.map(Box::new))),
-        &Token{..} => exponentiation,
+fn precedence_of(t: &TokenKind<'_>) -> u8 {
+    match t {
+        TokenKind::Operator(Operator::Caret) => 110,
+        TokenKind::Operator(Operator::Exclamation) => 100,
+        TokenKind::Operator(Operator::Asterisk)
+        | TokenKind::Operator(Operator::Slash)
+        | TokenKind::Operator(Operator::Percent) => 90,
+        TokenKind::Operator(Operator::Plus) | TokenKind::Operator(Operator::Minus) => 80,
+        TokenKind::Operator(Operator::SpreadRange)
+        | TokenKind::Operator(Operator::HalfOpenRange) => 70,
+        TokenKind::Keyword(Keyword::Is) => 60,
+        TokenKind::Keyword(Keyword::In)
+        | TokenKind::Operator(Operator::Less)
+        | TokenKind::Operator(Operator::LessEqual)
+        | TokenKind::Operator(Operator::Greater)
+        | TokenKind::Operator(Operator::GreaterEqual) => 50,
+        TokenKind::Operator(Operator::Equal)
+        | TokenKind::Operator(Operator::NotEqual)
+        | TokenKind::Operator(Operator::TildeEqual)
+        | TokenKind::Operator(Operator::TildeNotEqual) => 40,
+        TokenKind::Operator(Operator::LogicalAnd) => 30,
+        TokenKind::Operator(Operator::LogicalOr) => 20,
+        TokenKind::Operator(Operator::NullCoalescing) => 10,
+        _ => 0,
     }
-    .parse_next(i)
 }
 
-fn left_associative_infix<'s>(
+fn pratt_prefix<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
+    let token = peek(any).parse_next(i)?;
+    if *token == Operator::Plus || *token == Operator::Minus || *token == Operator::Exclamation {
+        let op = any.parse_next(i)?;
+        let expr = pratt(precedence_of(op), false)
+            .verify_map(verify_expr)
+            .parse_next(i)?;
+        Ok(Expression::Prefix(op.into(), expr.into()))
+    } else {
+        postfix.parse_next(i)
+    }
+}
+
+fn pratt_infix<'s>(
+    left: Box<Expression<'s>>,
+    op: &'s Token<'s>,
+    precedence: u8,
+    allow_range: bool,
     i: &mut Input<'s>,
-    item: impl Parser<'s, Expression<'s>>,
-    filter: impl Fn(&Token<'s>) -> bool,
-) -> Result<Expression<'s>> {
-    separated_foldl1(
-        item,
-        one_of(filter).map(TokenRef::borrow),
-        |left, op, right| Expression::Infix(Box::new(left), op, Box::new(right)),
-    )
-    .parse_next(i)
-}
-
-fn multiplicative<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
-    left_associative_infix(i, prefix, |t| {
-        *t == Operator::Asterisk || *t == Operator::Slash || *t == Operator::Percent
-    })
-}
-
-pub(super) fn additive<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
-    left_associative_infix(i, multiplicative, |t| {
-        *t == Operator::Plus || *t == Operator::Minus
-    })
-}
-
-fn matching<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
-    let first = additive.parse_next(i)?;
-    let items: Vec<(_, _)> = repeat(0.., (token(Keyword::Is), pattern(false)))
-        .fold(Vec::new, |mut v, t| {
-            v.push(t);
-            v
-        })
-        .parse_next(i)?;
-    if items.is_empty() {
-        return Ok(first);
+) -> Result<Iterable<'s>> {
+    if *op == Keyword::Is {
+        let right = pattern(false).map(Box::new).parse_next(i)?;
+        return Ok(Iterable::Value(Expression::Is(left, op.into(), right)));
     }
-    Ok(items.into_iter().fold(first, |e, (op, p)| {
-        Expression::Is(Box::new(e), op, Box::new(p))
-    }))
+    let precedence = if *op == Operator::Caret {
+        precedence - 1
+    } else {
+        precedence
+    };
+    let right = pratt(precedence, false)
+        .verify_map(verify_expr)
+        .parse_next(i)?
+        .into();
+    if *op == Operator::SpreadRange || *op == Operator::HalfOpenRange {
+        return if allow_range {
+            Ok(Iterable::Range(Range(left, op.into(), right)))
+        } else {
+            Ok(Iterable::Value(Expression::Infix(
+                left,
+                Token::unknown(
+                    op.range.clone(),
+                    TokenKind::Operator(Operator::Plus),
+                    DiagnosticCode::UnexpectedToken,
+                )
+                .into(),
+                right,
+            )))
+        };
+    }
+    Ok(Iterable::Value(Expression::Infix(left, op.into(), right)))
 }
 
-fn relational<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
-    left_associative_infix(i, matching, |t| {
-        *t == Operator::Less
-            || *t == Operator::LessEqual
-            || *t == Operator::Greater
-            || *t == Operator::GreaterEqual
-            || *t == Keyword::In
-    })
+fn pratt<'s>(precedence: u8, allow_range: bool) -> impl Parser<'s, Iterable<'s>> {
+    move |i: &mut Input<'s>| {
+        let mut left = pratt_prefix.parse_next(i)?;
+
+        loop {
+            if i.is_empty() {
+                break;
+            }
+
+            let op = peek(any).parse_next(i)?;
+            let op_precedence = precedence_of(op);
+            if op_precedence <= precedence {
+                break;
+            }
+
+            let op = any.parse_next(i)?;
+            match pratt_infix(left.into(), op, op_precedence, allow_range, i)? {
+                Iterable::Value(e) => left = e,
+                Iterable::Range(r) => return Ok(Iterable::Range(r)),
+            }
+        }
+
+        Ok(Iterable::Value(left))
+    }
 }
 
-fn equality<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
-    left_associative_infix(i, relational, |t| {
-        *t == Operator::Equal
-            || *t == Operator::NotEqual
-            || *t == Operator::TildeEqual
-            || *t == Operator::TildeNotEqual
-    })
-}
-
-fn and<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
-    left_associative_infix(i, equality, |t| *t == Operator::LogicalAnd)
-}
-
-fn or<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
-    left_associative_infix(i, and, |t| *t == Operator::LogicalOr)
-}
-
-fn null_coalescing<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
-    left_associative_infix(i, or, |t| *t == Operator::NullCoalescing)
+fn verify_expr<'s>(e: Iterable<'s>) -> Option<Expression<'s>> {
+    match e {
+        Iterable::Value(e) => Some(e),
+        _ => None,
+    }
 }
 
 pub(super) fn basic_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
-    null_coalescing.parse_next(i)
+    pratt(0, false).verify_map(verify_expr).parse_next(i)
+}
+
+pub(super) fn iterable<'s>(i: &mut Input<'s>) -> Result<Iterable<'s>> {
+    pratt(0, true).parse_next(i)
 }

@@ -1,39 +1,25 @@
-import {
-    isVmFunction,
-    VmModule,
-    type VmAny,
-    type VmArray,
-    type VmConst,
-    type VmImmutable,
-    type VmRecord,
-    type VmValue,
-} from './index.js';
-import { VmWrapper } from './wrapper.js';
-const { isArray } = Array;
-const { getPrototypeOf, values } = Object;
+import { getPrototypeOf, isArray, values } from '../../helpers/utils.js';
+import type { VmAny, VmArray, VmConst, VmImmutable, VmRecord, VmValue } from './index.js';
+import { isVmWrapper } from './wrapper.js';
+import { isVmModule } from './module.js';
+import { isVmFunction } from './function.js';
 
-const MAX_DEPTH = 100;
+const MAX_DEPTH = 32;
 /**
  * 检查是否为 Mirascript 数组
  */
-function isVmArray(value: readonly unknown[], depth: number): value is VmArray {
+function isVmArrayDeep(value: readonly unknown[], depth: number): value is VmArray {
     // VmArray 应为普通数组
     // Array.prototype
     const proto1: unknown = getPrototypeOf(value);
     if (!isArray(proto1)) return false;
-    // Object.prototype
-    const proto2: unknown = getPrototypeOf(proto1);
-    if (proto2 == null || isArray(proto2)) return false;
-    // null
-    const proto3: unknown = getPrototypeOf(proto2);
-    if (proto3 != null) return false;
     if (!depth) return true;
     return value.every((item) => isVmConstInner(item, depth));
 }
 /**
  * 检查是否为 Mirascript 记录
  */
-function isVmRecord(value: object, depth: number): value is VmRecord {
+function isVmRecordDeep(value: object, depth: number): value is VmRecord {
     // VmRecord 应为普通对象或空原型对象
     let isRecord;
     // Object.prototype
@@ -66,11 +52,11 @@ function isVmConstInner(value: unknown, depth: number): value is VmConst {
             return true;
         case 'object':
             if (value == null) return true;
-            if (value instanceof VmWrapper) return false;
+            if (isVmWrapper(value)) return false;
             if (isArray(value)) {
-                return isVmArray(value, depth);
+                return isVmArrayDeep(value, depth);
             } else {
-                return isVmRecord(value, depth);
+                return isVmRecordDeep(value, depth);
             }
         case 'function':
         case 'bigint':
@@ -99,12 +85,12 @@ export function isVmConst(value: unknown, checkDeep = false): value is VmConst {
             return true;
         case 'object':
             if (value == null) return true;
-            if (value instanceof VmWrapper) return false;
+            if (isVmWrapper(value)) return false;
             if (!checkDeep) {
                 if (isArray(value)) {
-                    return isVmArray(value, 0);
+                    return isVmArrayDeep(value, 0);
                 } else {
-                    return isVmRecord(value, 0);
+                    return isVmRecordDeep(value, 0);
                 }
             } else {
                 return isVmConstInner(value, 1);
@@ -119,16 +105,28 @@ export function isVmConst(value: unknown, checkDeep = false): value is VmConst {
 }
 /**
  * 检查是否为 Mirascript 不可变值
- * @param value - 要检查的值
- * @param checkDeep - 是否深度检查数组和对象
+ */
+export function isVmImmutable(value: VmAny): value is VmImmutable;
+/**
+ * 检查是否为 Mirascript 不可变值
+ */
+export function isVmImmutable(value: unknown, checkDeep: boolean): value is VmImmutable;
+/**
+ * 检查是否为 Mirascript 不可变值
  */
 export function isVmImmutable(value: unknown, checkDeep = false): value is VmImmutable {
-    return value instanceof VmModule || isVmFunction(value) || isVmConst(value, checkDeep);
+    return isVmModule(value) || isVmFunction(value) || isVmConst(value, checkDeep);
 }
 /**
  * 检查是否为 Mirascript 合法值
- * @param value - 要检查的值
- * @param checkDeep - 是否深度检查数组和对象
+ */
+export function isVmValue(value: VmAny): value is VmValue;
+/**
+ * 检查是否为 Mirascript 合法值
+ */
+export function isVmValue(value: unknown, checkDeep: boolean): value is VmValue;
+/**
+ * 检查是否为 Mirascript 合法值
  */
 export function isVmValue(value: unknown, checkDeep = false): value is VmValue {
     if (value === undefined) return false;
@@ -137,10 +135,8 @@ export function isVmValue(value: unknown, checkDeep = false): value is VmValue {
 
 /**
  * 检查是否为 Mirascript 值
- * @param value - 要检查的值
- * @param checkDeep - 是否深度检查数组和对象
  */
-export function isVmAny(value: unknown, checkDeep = false): value is VmAny {
+export function isVmAny(value: unknown, checkDeep: boolean): value is VmAny {
     switch (typeof value) {
         case 'string':
         case 'number':
@@ -149,7 +145,7 @@ export function isVmAny(value: unknown, checkDeep = false): value is VmAny {
             return true;
         case 'object':
             if (value == null) return true;
-            if (value instanceof VmWrapper) return true;
+            if (isVmWrapper(value)) return true;
             return isVmConst(value, checkDeep);
         case 'function':
             return isVmFunction(value);

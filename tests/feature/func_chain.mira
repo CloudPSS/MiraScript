@@ -1,0 +1,32 @@
+fn f() { }
+fn g() { 0 }
+let n = nil;
+
+let mut called = 0;
+fn be_called() {
+  called += 1;
+}
+
+// f() 为 nil，t_never 不会被调用，表达式的值为 nil
+t_eq(f()(t_never()), nil);
+
+// be_called 被调用，尝试将 g() 转换为 function 时抛出异常
+t_throws(fn {
+  g()(be_called());
+});
+t_eq(called, 1);
+
+// be_called 被调用，尝试将 n 转换为 function 时抛出异常
+t_throws(fn {
+  n(be_called());
+});
+t_eq(called, 2);
+
+// 对 n 进行非空断言时抛出异常，be_called 不会被调用
+t_throws(fn {
+  n!(be_called());
+});
+t_eq(called, 2);
+
+// (n) 为 nil，t_never 不会被调用，表达式的值为 nil
+t_eq((n)(t_never()), nil);

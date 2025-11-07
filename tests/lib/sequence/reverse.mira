@@ -1,0 +1,11 @@
+t_eq(reverse([1, 2, 3]), [3, 2, 1]);
+t_eq(reverse([]), []);
+t_eq(reverse([1]), [1]);
+t_eq(reverse([nil, 2, nil, 3]), [3, nil, 2, nil]);
+t_throws(fn { reverse(nil) });
+t_throws(fn { reverse(()) });
+t_throws(fn { reverse(1) });
+
+let arr = [1, 2, 3];
+t_eq(reverse(arr), [3, 2, 1]);
+t_eq(arr, [1, 2, 3]); // no modify

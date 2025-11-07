@@ -1,0 +1,132 @@
+let mut getter1 = nil;
+let mut getter2 = nil;
+let mut setter1 = nil;
+let mut setter2 = nil;
+
+fn test_closure {
+  t_eq(getter1(), 1);
+  t_eq(getter2(), 2);
+  setter1(42);
+  t_eq(getter1(), 42);
+  t_eq(getter2(), 2);
+  setter2(99);
+  t_eq(getter1(), 42);
+  t_eq(getter2(), 99);
+}
+
+for mut i in 1..2 {
+  match i {
+    case 1 {
+      getter1 = fn { i };
+      setter1 = fn {
+        i = it;
+      };
+    }
+    case 2 {
+      getter2 = fn { i };
+      setter2 = fn {
+        i = it;
+      };
+    }
+  }
+}
+test_closure();
+
+let mut c = 1;
+loop {
+  let mut i = c;
+  match i {
+    case 1 {
+      getter1 = fn { i };
+      setter1 = fn {
+        i = it;
+      };
+    }
+    case 2 {
+      getter2 = fn { i };
+      setter2 = fn {
+        i = it;
+      };
+    }
+  }
+  c += 1;
+  if c > 2 {
+    break;
+  }
+}
+test_closure();
+
+c = 1;
+while c <= 2 {
+  let mut i = c;
+  match i {
+    case 1 {
+      getter1 = fn { i };
+      setter1 = fn {
+        i = it;
+      };
+    }
+    case 2 {
+      getter2 = fn { i };
+      setter2 = fn {
+        i = it;
+      };
+    }
+  }
+  c += 1;
+}
+test_closure();
+
+fn make_counter(mut init) {
+  (fn {
+    init += 1;
+    return init;
+  })
+}
+
+let counter1 = make_counter(0);
+let counter2 = make_counter(10);
+
+t_eq(counter1(), 1);
+t_eq(counter1(), 2);
+t_eq(counter2(), 11);
+t_eq(counter2(), 12);
+t_eq(counter1(), 3);
+t_eq(counter2(), 13);
+
+fn ret_outer {
+  fn x {
+    return z;
+  }
+  let z = 123;
+  return x();
+}
+t_eq(ret_outer(), 123);
+
+fn adder {
+  return bind(adder_impl, 0);
+  fn bind(f, ..bind_args) {
+    return fn (..args) {
+      return f(..bind_args, ..args);
+    };
+  }
+  fn adder_impl(mut sum, ..args) {
+    if args::len() == 0 {
+      return sum;
+    }
+    for a in args {
+      sum += a;
+    }
+    bind(adder_impl, sum)
+  }
+}
+
+let a = adder();
+t_eq(a(1)(2)(3)(), 6);
+t_eq(a(10, 20)(30)(), 60);
+t_eq(a(), 0);
+
+let a10 = a(1, 2, 3, 4);
+t_eq(a10(10)(), 20);
+t_eq(a10(20)(), 30);
+t_eq(a10(), 10);

@@ -1,7 +1,7 @@
 import { languages } from './monaco-api.js';
 
 /** 注册语言 */
-export function register(): void {
+export function registerContribution(): void {
     languages.register({
         id: 'mirascript',
         extensions: ['.mira'],

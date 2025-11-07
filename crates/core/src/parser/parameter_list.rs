@@ -31,7 +31,7 @@ impl DerefMut for ParameterList<'_> {
 }
 
 impl<'s> AstWalker<'s> for ParameterList<'s> {
-    fn collect_diagnostics(&mut self, collector: &mut Vec<SourceDiagnostic>) {
+    fn collect_diagnostics(&mut self, collector: &mut DiagnosticsCollector<'_, '_>) {
         self.0.collect_diagnostics(collector);
         self.1.collect_diagnostics(collector);
         self.2.collect_diagnostics(collector);

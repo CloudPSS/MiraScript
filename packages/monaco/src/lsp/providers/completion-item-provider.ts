@@ -1,4 +1,12 @@
-import { getVmFunctionInfo, DiagnosticCode, type VmValue, isVmExtern } from 'mirascript';
+import {
+    getVmFunctionInfo,
+    type VmValue,
+    isVmExtern,
+    isVmModule,
+    type VmFunctionInfo,
+    type VmExtern,
+} from '@mirascript/mirascript';
+import { DiagnosticCode, lib, operations } from '@mirascript/mirascript/subtle';
 import {
     type editor,
     languages,
@@ -9,22 +17,25 @@ import {
     Range,
 } from '../../monaco-api.js';
 import { Provider } from './base.js';
-import { codeblock, getDeep, globalDoc, paramsList } from '../utils.js';
+import { codeblock, getDeep, valueDoc, paramsList, strictContainsPosition, wordAt } from '../utils.js';
 import { keywords, reservedKeywords } from '../../constants.js';
-import { lib, operations } from 'mirascript/subtle';
+import type { LocalDefinition } from '../compile-result.js';
 
 const DESC_GLOBAL = '(global)';
 const DESC_LOCAL = '(local)';
 const DESC_FIELD = '(field)';
 
 const SUGGEST_KEYWORDS: string[] = [];
-{
+
+const loadSuggestKeywords = () => {
+    if (SUGGEST_KEYWORDS.length > 0) return SUGGEST_KEYWORDS; // 已加载过
     const reserved = reservedKeywords();
     for (const kw of keywords()) {
         if (reserved.includes(kw)) continue; // 跳过保留关键字
         SUGGEST_KEYWORDS.push(kw);
     }
-}
+    return SUGGEST_KEYWORDS;
+};
 
 const COMMON_GLOBAL_SUGGESTIONS = (
     range: languages.CompletionItemRanges,
@@ -147,26 +158,96 @@ const COMMON_GLOBAL_SUGGESTIONS = (
             },
         );
 
-        for (const kw of SUGGEST_KEYWORDS) {
+        for (const kw of loadSuggestKeywords()) {
             const exist = suggestions.find(
                 (item) => item.label === kw && item.kind === languages.CompletionItemKind.Keyword,
             );
             if (exist) continue;
-            suggestions.push({
-                label: kw,
-                kind: languages.CompletionItemKind.Keyword,
-                insertText: kw,
-                range,
-            });
+            suggestions.push(kwSuggestion(kw, range));
         }
     }
     return suggestions;
 };
 
+/** 构造关键字选项 */
+function kwSuggestion(kw: string, range: languages.CompletionItemRanges): languages.CompletionItem {
+    return {
+        label: kw,
+        kind: languages.CompletionItemKind.Keyword,
+        insertText: kw,
+        range,
+    };
+}
+
 /** 扩展完成项 */
 interface CustomCompletionItem extends languages.CompletionItem {
-    /** 对应的全局变量 */
-    global?: VmValue;
+    /** 是否为字段 */
+    isField: boolean;
+    /** 对应的变量值 */
+    vmValue?: VmValue;
+    /** 描述 */
+    vmDescribe?: string;
+}
+
+/** 构造 filterText */
+function filterText(key: string, char: string | undefined): string {
+    if (char == null || key.startsWith(char)) return key;
+    return key.startsWith('@') || key.startsWith('$') ? key.slice(1) : key;
+}
+
+/** 构造选项 */
+function completion(
+    model: editor.ITextModel,
+    description: string,
+    key: string,
+    value: VmValue | undefined,
+    fn: VmFunctionInfo | LocalDefinition['fn'] | undefined,
+    field: boolean,
+): Pick<CustomCompletionItem, 'label' | 'kind' | 'commitCharacters' | 'vmValue' | 'isField'> {
+    let detail = '';
+    let kind: languages.CompletionItemKind;
+    if (fn == null && typeof value == 'function') {
+        fn = getVmFunctionInfo(value);
+    }
+    if (fn != null) {
+        detail = paramsList(model, fn);
+        kind = field ? languages.CompletionItemKind.Function : languages.CompletionItemKind.Method;
+    } else if (isVmModule(value)) {
+        kind = languages.CompletionItemKind.Module;
+    } else if (isVmExtern(value) && typeof value.value == 'function') {
+        if (value.value.prototype != null && (key[0] ?? '').toUpperCase() === key[0]) {
+            kind = languages.CompletionItemKind.Class;
+        } else {
+            detail = '(..)';
+            kind = value.thisArg ? languages.CompletionItemKind.Method : languages.CompletionItemKind.Function;
+        }
+    } else if (!field && key.startsWith('@')) {
+        kind = languages.CompletionItemKind.Constant;
+    } else {
+        kind = field ? languages.CompletionItemKind.Field : languages.CompletionItemKind.Variable;
+    }
+    return {
+        label: { label: key, description, detail },
+        kind,
+        commitCharacters: fn ? ['!', '('] : ['!', '.', '[', '('],
+        vmValue: value,
+        isField: field,
+    };
+}
+
+/** 获取所有键 */
+function externKeys(value: VmExtern): string[] {
+    const keys = new Set<string>();
+    let e: unknown = value.value;
+    while (e && (typeof e == 'object' || typeof e == 'function')) {
+        for (const key of Object.getOwnPropertyNames(e)) {
+            if (value.has(key)) {
+                keys.add(key);
+            }
+        }
+        e = Object.getPrototypeOf(e);
+    }
+    return Array.from(keys);
 }
 
 /**
@@ -181,27 +262,41 @@ export class CompletionItemProvider extends Provider implements languages.Comple
         locals: readonly CustomCompletionItem[],
         range: languages.CompletionItemRanges,
     ): Promise<CustomCompletionItem[]> {
-        const global = await this.getGlobals(model);
+        const global = await this.getContext(model);
         const suggestions: CustomCompletionItem[] = [];
         const localKeys = new Set(locals.map((item) => item.insertText));
-        for (const key in global) {
+        for (const key of new Set(global.keys())) {
+            const element = global.get(key);
+            if (element === undefined) continue;
+
+            if (isVmModule(element)) {
+                for (const f of element.keys()) {
+                    if (char && !f.toLowerCase().includes(char)) {
+                        continue;
+                    }
+                    const field = element.get(f);
+                    if (field === undefined) continue;
+
+                    suggestions.push({
+                        insertText: localKeys.has(key) ? `global.${key}.${f}` : `${key}.${f}`,
+                        filterText: filterText(f, char),
+                        range,
+                        ...completion(model, DESC_GLOBAL, `${key}.${f}`, field, undefined, true),
+                    });
+                }
+            }
+
             if (char && !key.toLowerCase().includes(char)) {
                 continue;
             }
-            const element = global[key];
-            if (element === undefined) continue;
-            const info = getVmFunctionInfo(element);
-            let detail = '';
-            if (info) {
-                detail = paramsList(model, info);
-            }
+
+            const doc = global.describe?.(key) ?? undefined;
             suggestions.push({
-                label: { label: key, description: DESC_GLOBAL, detail },
-                kind: info ? languages.CompletionItemKind.Function : languages.CompletionItemKind.Variable,
                 insertText: localKeys.has(key) ? `global.${key}` : key, // 如果有同名局部变量，使用 global. 前缀
+                filterText: filterText(key, char),
                 range,
-                commitCharacters: info ? ['('] : ['.', '[', '('],
-                global: element,
+                vmDescribe: doc,
+                ...completion(model, DESC_GLOBAL, key, element, undefined, false),
             });
         }
         return suggestions;
@@ -212,10 +307,10 @@ export class CompletionItemProvider extends Provider implements languages.Comple
         position: IPosition,
         char: string | undefined,
         range: languages.CompletionItemRanges,
-    ): Promise<languages.CompletionItem[]> {
+    ): Promise<CustomCompletionItem[]> {
         const compiled = await this.getCompileResult(model);
         if (!compiled) return [];
-        const suggestions: languages.CompletionItem[] = [];
+        const suggestions: CustomCompletionItem[] = [];
 
         let scope = compiled.scopeAt(model, position);
         const locals = new Set<string>();
@@ -227,21 +322,12 @@ export class CompletionItemProvider extends Provider implements languages.Comple
                     continue;
                 }
                 locals.add(name);
-                const isFunction = definition.code === DiagnosticCode.LocalFunction;
-                let detail = '';
-                if (isFunction) {
-                    detail = paramsList(model, fn);
-                }
                 suggestions.push({
-                    label: { label: name, description: DESC_LOCAL, detail },
-                    kind:
-                        fn || isFunction
-                            ? languages.CompletionItemKind.Function
-                            : languages.CompletionItemKind.Variable,
                     insertText: name,
+                    filterText: filterText(name, char),
                     range,
-                    commitCharacters: isFunction ? ['('] : undefined,
-                } satisfies languages.CompletionItem);
+                    ...completion(model, DESC_LOCAL, name, undefined, fn, false),
+                });
             }
             if (!scope.parent) break;
             scope = scope.parent;
@@ -258,33 +344,31 @@ export class CompletionItemProvider extends Provider implements languages.Comple
     ): Promise<CustomCompletionItem[]> {
         const compiled = await this.getCompileResult(model);
         if (!compiled) return [];
-        const access = compiled.accessAt(model, position);
-        if (!access) return [];
+        const access = compiled.fieldAccessAt(model, position);
+        if (!access || access.fields.length === 0) return [];
         const { def, fields } = access;
         if ('definition' in def.def) {
             // TODO: suggests local item fields
             return [];
         }
-        const vmGlobal = await this.getGlobals(model);
+        const vmGlobal = await this.getContext(model);
         fields.pop(); // 移除最后一个部分，因为它是当前输入位置的字段名
-        const value = getDeep(vmGlobal[def.def.name], fields);
+        const value = getDeep(vmGlobal.get(def.def.name), fields);
         if (value == null || typeof value != 'object') {
             return [];
         }
-        const keys = lib.global.keys(value);
+        const keys = isVmExtern(value) ? externKeys(value) : lib.keys(value);
         const result: CustomCompletionItem[] = [];
-        for (const key of keys) {
-            if (char && !key.toLowerCase().includes(char)) {
+        for (const k of keys) {
+            const key = String(k);
+            if (char && !String(key).toLowerCase().includes(char)) {
                 continue;
             }
             const field = operations.$Get(value, key);
-            const callable = typeof field == 'function' || (isVmExtern(field) && field.callable);
             result.push({
-                label: { label: key, description: DESC_FIELD },
-                kind: callable ? languages.CompletionItemKind.Method : languages.CompletionItemKind.Field,
                 insertText: key,
                 range,
-                commitCharacters: callable ? ['!', '('] : ['!', '.'],
+                ...completion(model, DESC_FIELD, key, field, undefined, true),
             });
         }
         return result;
@@ -308,12 +392,28 @@ export class CompletionItemProvider extends Provider implements languages.Comple
         const compiled = await this.getCompileResult(model);
         if (!compiled) return undefined;
 
-        const word = model.getWordAtPosition(position);
+        if (context.triggerCharacter === '.') {
+            const prevWord = model.getWordAtPosition({
+                lineNumber: position.lineNumber,
+                column: position.column - 1,
+            });
+            if (prevWord?.word === 'global') {
+                const globals = await this.completeGlobal(
+                    model,
+                    undefined,
+                    [],
+                    undefined as unknown as languages.CompletionItemRanges,
+                );
+                return { suggestions: globals };
+            }
+        }
+
+        const word = wordAt(model, position);
         const prev = model.getValueInRange({
             startLineNumber: position.lineNumber,
-            startColumn: (word?.startColumn ?? position.column) - 2,
+            startColumn: (word?.range.startColumn ?? position.column) - 2,
             endLineNumber: position.lineNumber,
-            endColumn: word?.startColumn ?? position.column,
+            endColumn: word?.range.startColumn ?? position.column,
         });
 
         if (context.triggerCharacter === ':' && prev !== '::') {
@@ -323,11 +423,23 @@ export class CompletionItemProvider extends Provider implements languages.Comple
         // suggest variables
         let char: string | undefined;
         let range: IRange;
-        const def = compiled.definitionAt(model, position);
+        const def = compiled.variableAccessAt(model, position);
         if (def) {
             if (def.ref == null) {
                 // 输入位置是变量定义
-                return { suggestions: [] };
+                const suggestions: languages.CompletionItem[] = [];
+                if (
+                    word &&
+                    compiled.tags.some(
+                        (t) => strictContainsPosition(t.range, position) && t.code === DiagnosticCode.MatchExpression,
+                    )
+                ) {
+                    suggestions.push(
+                        kwSuggestion('case', this.toCompletionItemRanges(position, word.range)),
+                        kwSuggestion('if', this.toCompletionItemRanges(position, word.range)),
+                    );
+                }
+                return { suggestions };
             }
             const d = def.def;
             range = d.references[def.ref]!.range;
@@ -338,12 +450,7 @@ export class CompletionItemProvider extends Provider implements languages.Comple
                 endColumn: range.startColumn + 1,
             });
         } else if (word) {
-            range = {
-                startLineNumber: position.lineNumber,
-                startColumn: word.startColumn,
-                endLineNumber: position.lineNumber,
-                endColumn: word.endColumn,
-            };
+            range = word.range;
             char = word.word[0];
         } else {
             range = {
@@ -379,13 +486,14 @@ export class CompletionItemProvider extends Provider implements languages.Comple
             // not a dynamic completion item
             return item;
         }
-        const custom = item as CustomCompletionItem;
+        const { vmValue, isField, vmDescribe } = item as CustomCompletionItem;
         const { label } = item.label;
-        if (custom.global != null) {
+        if (vmValue != null || vmDescribe) {
             if (item.documentation) return item;
-            const def = globalDoc(label, custom.global);
+            const last = label.split('.').pop()!;
+            const def = valueDoc(last, vmValue, isField ? 'field' : 'hint');
             item.documentation = {
-                value: `${codeblock('\0' + def.script)}\n${def.doc}`,
+                value: `${codeblock('\0' + def.script)}\n${def.doc.join('\n')}\n${vmDescribe ?? ''}`,
             };
         }
         return item;

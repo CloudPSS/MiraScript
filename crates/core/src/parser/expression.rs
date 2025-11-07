@@ -11,7 +11,7 @@ pub enum Callable<'s> {
 }
 
 impl<'s> AstWalker<'s> for Callable<'s> {
-    fn collect_diagnostics(&mut self, collector: &mut Vec<SourceDiagnostic>) {
+    fn collect_diagnostics(&mut self, collector: &mut DiagnosticsCollector<'_, '_>) {
         use Callable::*;
         match self {
             Type(token) => token.collect_diagnostics(collector),
@@ -32,12 +32,38 @@ impl<'s> AstWalker<'s> for Callable<'s> {
 pub struct ElseBlock<'s>(pub TokenRef<'s>, pub Box<Expression<'s>>);
 
 impl<'s> AstWalker<'s> for ElseBlock<'s> {
-    fn collect_diagnostics(&mut self, collector: &mut Vec<SourceDiagnostic>) {
+    fn collect_diagnostics(&mut self, collector: &mut DiagnosticsCollector<'_, '_>) {
         self.0.collect_diagnostics(collector);
         self.1.collect_diagnostics(collector);
     }
     fn range(&self) -> SourceRange {
         self.0.range.start..self.1.range().end
+    }
+}
+
+/// `case` pattern (`if` expression)? block_expression
+#[derive(Debug, Clone, PartialEq)]
+pub struct MatchCase<'s>(
+    pub TokenRef<'s>,
+    pub Pattern<'s>,
+    pub Option<(TokenRef<'s>, Expression<'s>)>,
+    pub Expression<'s>,
+);
+
+impl<'s> AstWalker<'s> for MatchCase<'s> {
+    fn collect_diagnostics(&mut self, collector: &mut DiagnosticsCollector<'_, '_>) {
+        self.0.collect_diagnostics(collector);
+        self.1.collect_diagnostics(collector);
+        if let Some((kw_if, expr)) = &mut self.2 {
+            kw_if.collect_diagnostics(collector);
+            expr.collect_diagnostics(collector);
+        }
+        self.3.collect_diagnostics(collector);
+    }
+    fn range(&self) -> SourceRange {
+        let start = self.0.range.start;
+        let end = self.3.range().end;
+        start..end
     }
 }
 
@@ -73,7 +99,7 @@ pub enum Expression<'s> {
     Call(
         Callable<'s>,
         TokenRef<'s>,
-        Vec<ArrayElement<'s>>,
+        Vec<ArgElement<'s>>,
         TokenRef<'s>,
     ),
     /// expression `::` extension `(` arguments `)`
@@ -89,7 +115,7 @@ pub enum Expression<'s> {
         TokenRef<'s>,
         Callable<'s>,
         TokenRef<'s>,
-        Vec<ArrayElement<'s>>,
+        Vec<ArgElement<'s>>,
         TokenRef<'s>,
     ),
     /// expression `.` field
@@ -132,7 +158,7 @@ pub enum Expression<'s> {
     /// 1. `+` `-` additive
     /// 1. `is` matching *Use [Expression::Is] for this
     /// 1. `>` `<` `>=` `<=` `in` relational
-    /// 1. `==` `!=` `~=` `~!` equality
+    /// 1. `==` `!=` `=~` `!~` equality
     /// 1. `&&` logical and
     /// 1. `||` logical or
     Infix(Box<Expression<'s>>, TokenRef<'s>, Box<Expression<'s>>),
@@ -199,7 +225,7 @@ pub enum Expression<'s> {
         Box<Expression<'s>>,
         Option<ElseBlock<'s>>,
     ),
-    /// `match` expression `{` `case` ((literal | '_') block_expression)* `}`
+    /// `match` expression `{` ( `case` pattern (`if` expression)? block_expression )* `}`
     ///
     /// The value of the block is the value of the matched expression.
     ///
@@ -208,7 +234,7 @@ pub enum Expression<'s> {
         TokenRef<'s>,
         Box<Expression<'s>>,
         TokenRef<'s>,
-        Vec<(TokenRef<'s>, Pattern<'s>, Expression<'s>)>,
+        Vec<MatchCase<'s>>,
         TokenRef<'s>,
     ),
     /// `fn` parameters? block_expression
@@ -289,7 +315,7 @@ impl<'s> Expression<'s> {
 }
 
 impl<'s> AstWalker<'s> for Expression<'s> {
-    fn collect_diagnostics(&mut self, collector: &mut Vec<SourceDiagnostic>) {
+    fn collect_diagnostics(&mut self, collector: &mut DiagnosticsCollector<'_, '_>) {
         use Expression::*;
         match self {
             Literal(token) => token.collect_diagnostics(collector),
@@ -415,10 +441,8 @@ impl<'s> AstWalker<'s> for Expression<'s> {
                 kw.collect_diagnostics(collector);
                 expression.collect_diagnostics(collector);
                 op.collect_diagnostics(collector);
-                for (kw_case, pattern, block) in arms {
-                    kw_case.collect_diagnostics(collector);
-                    pattern.collect_diagnostics(collector);
-                    block.collect_diagnostics(collector);
+                for arm in arms {
+                    arm.collect_diagnostics(collector);
                 }
                 cp.collect_diagnostics(collector);
             }

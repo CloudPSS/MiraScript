@@ -12,14 +12,14 @@ pub enum NumberInfo<'s> {
     Decimal(&'s str),
 
     // 存储原始值，避免超 f64 精度导致回写问题
-    Hexadecimal(u128),
-    Octal(u128),
-    Binary(u128),
+    Hexadecimal(u64),
+    Octal(u64),
+    Binary(u64),
 }
 
 #[derive(Debug, Clone)]
 struct ParsedPart {
-    number: u128,
+    number: u64,
     ordinal: i32,
     radix: u32,
     integer_overflow: bool,
@@ -56,15 +56,15 @@ fn parse_part(str: &str, radix: u32, is_valid_char: impl Fn(u8) -> bool) -> Pars
             .cloned()
             .collect();
         // SAFETY: `from_utf8_unchecked` is safe here because we filter out invalid characters.
-        u128::from_str_radix(unsafe { std::str::from_utf8_unchecked(&s) }, radix)
+        u64::from_str_radix(unsafe { std::str::from_utf8_unchecked(&s) }, radix)
     } else {
-        u128::from_str_radix(str, radix)
+        u64::from_str_radix(str, radix)
     }
     .ok();
     // See ParseIntError, only `PosOverflow` is relevant here.
 
     let integer_overflow = num.is_none();
-    let number = num.unwrap_or(u128::MAX);
+    let number = num.unwrap_or(u64::MAX);
     let ordinal = number.try_into().ok();
     let is_valid_ordinal = !has_underscore && ordinal.is_some() && !has_leading_zero;
     let ordinal = ordinal.unwrap_or(i32::MAX);
@@ -138,7 +138,7 @@ pub(super) fn number<'s>(i: &mut Input<'s>) -> Result<TokenKind<'s>> {
                         return Ok(TokenKind::unknown_range(
                             result,
                             range_i,
-                            DiagnosticCode::OverflowNumberLiteral,
+                            DiagnosticCode::OverflowIntegerLiteral,
                         ));
                     }
                     if p.has_trailing_underscore {

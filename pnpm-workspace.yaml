@@ -1,4 +1,18 @@
+publicHoistPattern:
+  - '*eslint*'
+  - '*prettier*'
+  - '*commitlint*'
+  - lint-staged
+  - '@typescript/*'
+
+shellEmulator: true
+
 packages:
   - packages/*
-onlyBuiltDependencies:
+
+overrides:
+  monaco-editor: 'npm:@private/monaco-editor'
+
+ignoredBuiltDependencies:
+  - eslint-config-prettier
   - esbuild

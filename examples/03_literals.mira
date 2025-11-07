@@ -1,0 +1,198 @@
+// MiraScript 字面量综合示例
+
+// nil 字面量
+let empty_value = nil;
+debug_print("nil 值:", empty_value);
+
+// 布尔字面量
+let is_true = true;
+let is_false = false;
+debug_print("布尔值: $is_true, $is_false");
+
+// 数字字面量
+debug_print("=== 数字字面量示例 ===");
+
+// 整数
+let integer = 42;
+let negative = -123;
+debug_print("整数: $integer, $negative");
+
+// 浮点数
+let float_num = 3.14;
+let scientific = 1.5e-10;
+let large_scientific = 2.5e+8;
+debug_print("浮点数:", float_num);
+debug_print("科学计数法: $scientific, $large_scientific");
+
+// 不同进制的数字
+let hex_num = 0xFF; // 255
+let octal_num = 0o77; // 63
+let binary_num = 0b1010; // 10
+debug_print("十六进制:", hex_num);
+debug_print("八进制:", octal_num);
+debug_print("二进制:", binary_num);
+
+// 使用下划线分隔符
+let million = 1_000_000;
+let big_hex = 0xFF_FFFF;
+let long_binary = 0b11110000_10101010;
+debug_print("带分隔符的数字: $million, $big_hex, $long_binary");
+
+// 特殊数字值
+let infinity = inf;
+let not_a_number = nan;
+debug_print("特殊数字: $infinity, $not_a_number");
+
+// 序数（0 到 2^31-1 范围内的整数）
+let ordinal_0 = 0;
+let ordinal_max = 2147483647;
+debug_print("序数范围: $ordinal_0 到 $ordinal_max");
+
+// 字符串字面量
+debug_print("=== 字符串字面量示例 ===");
+
+// 三种引号形式意义相同
+let single_quote = 'Hello';
+let double_quote = "World";
+let backtick = `MiraScript`;
+debug_print("三种引号: $single_quote $double_quote $backtick");
+
+// 多行字符串
+let multiline = `这是一个
+多行字符串
+支持换行`;
+debug_print("多行字符串:
+$multiline");
+
+// 转义字符
+let escaped = "转义字符:\n\t制表符\n\r回车\n\\反斜杠\n\"双引号\n\'单引号";
+debug_print("转义字符示例:");
+debug_print(escaped);
+
+// Unicode 转义
+let unicode = "Unicode: \u{1F600} \u{1F44D} \u{4E2D} \u{6587}";
+debug_print("Unicode 字符:", unicode);
+
+// ASCII 转义
+let ascii = "ASCII: \x41\x42\x43"; // ABC
+debug_print("ASCII 转义:", ascii);
+
+// 逐字字符串
+let verbatim = @"逐字字符串: \n \t \\ \""@;
+let verbatim_complex = @@"使用 @"单个at"@ 在字符串中，使用$${ "与 @ 数量相等的 `$` 插值" }"@@;
+debug_print("逐字字符串:");
+debug_print(verbatim);
+debug_print(verbatim_complex);
+
+// 记录字面量
+debug_print("=== 记录字面量示例 ===");
+
+// 基本记录
+let simple_record = (name: "Alice", age: 30, active: true);
+debug_print("基本记录:", simple_record);
+
+// 序数记录
+let ordinal_record = (0: "first", 1: "second", 2: "third");
+debug_print("序数记录:", ordinal_record);
+
+// 未命名记录
+let unnamed_record = ("value1", "value2", "value3");
+debug_print("未命名记录:", unnamed_record);
+
+// 单元素未命名记录需要逗号
+let single_record = ("single_value",);
+debug_print("单元素记录:", single_record);
+
+// 记录展开
+let base = (x: 1, y: 2);
+let extended = (z: 3, ..base, x: 10); // x 被覆盖为 10
+debug_print("记录展开:", extended);
+
+// 动态键名
+let key_name = "computed";
+let dynamic_key_record = (`$key_name`: "value", `$(1 + 2)`: "three");
+debug_print("动态键名:", dynamic_key_record);
+
+// 键名推断
+let username = "Bob";
+let score = 95;
+let inferred_record = (:username, :score, status: "active");
+debug_print("键名推断:", inferred_record);
+
+// 省略 nil 值
+let optional_record = (required: "value", optional?: "present", nil_value?: nil, another?: nil); // 这个键会被省略
+debug_print("省略nil值:", optional_record);
+
+// 数组字面量
+debug_print("=== 数组字面量示例 ===");
+
+// 基本数组
+let simple_array = [1, 2, 3, 4, 5];
+let mixed_array = [1, "two", true, nil, (key: "value")];
+debug_print("基本数组:", simple_array);
+debug_print("混合数组:", mixed_array);
+
+// 空数组
+let empty_array = [];
+debug_print("空数组:", empty_array);
+
+// 范围数组
+let range_array = [1..5]; // [1, 2, 3, 4, 5]
+let exclusive_range = [1..<5]; // [1, 2, 3, 4]
+let mixed_ranges = [0, 1..3, 10..<12, 20];
+debug_print("范围数组:", range_array);
+debug_print("右开区间:", exclusive_range);
+debug_print("混合范围:", mixed_ranges);
+
+// 数组展开
+let base_array = [1, 2, 3];
+let extended_array = [0, ..base_array, 4, 5];
+debug_print("数组展开:", extended_array);
+
+// 嵌套数组
+let nested_array = [[1, 2], [3, 4], [5, 6]];
+debug_print("嵌套数组:", nested_array);
+
+// 函数字面量
+debug_print("=== 函数字面量示例 ===");
+
+// 多参数函数
+let add_function = fn (x, y) { x + y };
+debug_print("加法函数:", add_function(5, 3));
+
+// 单参数函数（省略参数列表）
+let square_function = fn { it * it };
+debug_print("平方函数:", square_function(4));
+
+// 无参数函数
+let get_random = fn () { 42 }; // 模拟随机数
+debug_print("无参数函数:", get_random());
+
+// 复杂函数体
+let complex_function = fn (x) {
+  let doubled = x * 2;
+  if doubled > 10 { doubled + 1 } else { doubled - 1 }
+};
+debug_print("复杂函数:", complex_function(3), "和", complex_function(6));
+
+// 嵌套的字面量
+debug_print("=== 嵌套字面量示例 ===");
+
+// 数组和记录中不能存储函数
+let complex_data = (id: 1, info: (name: "MiraScript", version: "1.0", features: ["pattern_matching", "null_safety", "immutability"]), config: (debug: true, limits: (max_iterations: 1000, timeout: 30.0)), fn: fn { }, fn_omit?: fn { });
+
+debug_print("复杂嵌套数据:");
+debug_print("项目名:", complex_data.info.name);
+debug_print("版本:", complex_data.info.version);
+debug_print("特性:", complex_data.info.features);
+debug_print("最大迭代次数:", complex_data.config.limits.max_iterations);
+debug_print("记录中的函数: fn:", complex_data.fn, ",'fn_omit' in complex_data:", 'fn_omit' in complex_data);
+
+debug_print("=== 字面量使用总结 ===");
+debug_print("MiraScript 支持丰富的字面量语法:");
+debug_print("- 数字: 整数、浮点数、科学计数法、不同进制");
+debug_print("- 字符串: 三种引号、转义字符、Unicode、逐字字符串");
+debug_print("- 记录: 基本记录、序数记录、展开、动态键名");
+debug_print("- 数组: 基本数组、范围、展开、嵌套");
+debug_print("- 函数: 多种参数形式、复杂函数体");
+debug_print("- 特殊值: nil、true、false、inf、nan");

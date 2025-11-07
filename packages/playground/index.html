@@ -3,7 +3,21 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      if (!location.pathname.endsWith('/')) {
+        location.pathname += '/';
+      }
+    </script>
+    <style>
+      :root {
+        color-scheme: light dark;
+      }
+    </style>
     <title>MiraScript Playground</title>
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; font-src 'self' data:; style-src 'self' 'unsafe-inline' data:; script-src 'self' 'unsafe-eval'; object-src 'none'; img-src 'self' data:; connect-src 'self';"
+    />
   </head>
   <body>
     <div class="playground">
@@ -12,6 +26,14 @@
           <h1>MiraScript Playground</h1>
         </div>
         <div class="header-controls">
+          <div class="control-group" hidden>
+            <label for="theme-select">Theme:</label>
+            <select id="theme-select" title="Switch theme">
+              <option value="auto">Auto</option>
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+            </select>
+          </div>
           <div class="control-group">
             <label for="example-select">Example:</label>
             <select id="example-select">
@@ -20,7 +42,7 @@
           </div>
           <div class="control-group">
             <label for="mode-select">Mode:</label>
-            <select id="mode-select">
+            <select id="mode-select" title="Switch mode (Ctrl+M)">
               <option value="Script">Script</option>
               <option value="Template">Template</option>
             </select>
@@ -39,14 +61,14 @@
           <div class="panel-header">
             <h3>Output</h3>
             <div class="output-tabs">
-              <button class="tab-btn active" data-tab="compiled">Compiled</button>
-              <button class="tab-btn" data-tab="console">Console</button>
+              <button class="tab-btn" data-tab="compiled">Compiled</button>
+              <button class="tab-btn active" data-tab="console">Console</button>
               <button class="tab-btn" data-tab="result">Result</button>
             </div>
           </div>
           <div class="tab-content">
-            <div id="compiled-output" class="tab-pane active"></div>
-            <div id="console-output" class="tab-pane"></div>
+            <div id="compiled-output" class="tab-pane"></div>
+            <div id="console-output" class="tab-pane active"></div>
             <div id="result-output" class="tab-pane"></div>
           </div>
         </div>

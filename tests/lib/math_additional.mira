@@ -1,0 +1,21 @@
+t_eq(factorial(-0), 1);
+t_eq(factorial(0), 1);
+t_eq(factorial(nil), 1);
+t_eq(factorial(1), 1);
+t_eq(factorial(true), 1);
+t_eq(factorial(2), 2);
+
+t_eq(factorial(22), 1_124_000_727_777_607_680_000);
+
+t_eq(factorial(-1), nan);
+t_eq(factorial(nan), nan);
+t_eq(factorial(-inf), nan);
+
+t_snapshot(169.999_999_999_999::factorial());
+t_snapshot(factorial(170));
+t_snapshot(170.000_000_000_001::factorial());
+
+t_eq(factorial(171), inf);
+t_eq(factorial(inf), inf);
+
+t_snapshot(factorial(0.1));

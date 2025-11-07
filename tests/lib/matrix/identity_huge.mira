@@ -1,0 +1,2 @@
+// 单独文件，避免超时
+t_eq(matrix.identity(1001)::map(fn { sum(it) })::sum(), 1001);

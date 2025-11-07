@@ -1,0 +1,41 @@
+t_snapshot(1, 0, -0, 0e0);
+t_snapshot(1.1, -1.1);
+t_snapshot(1.1e1, 1.1e-1, 1.1e+1);
+t_snapshot(12.34e+56);
+t_snapshot(0xAB_CDEF, 0xAB_CDEF, 0xABC_DEF0, 0xABCD_EF12);
+t_snapshot(0o123, 0o1234, 0o12345);
+t_snapshot(0b101010, 0b1010101, 0b10101010);
+
+let zero = 1 - 1;
+let n_zero = -zero;
+t_ne(zero, n_zero);
+t_ne([zero], [n_zero]);
+t_eq(-1 * zero, n_zero);
+t_eq(zero / zero, nan);
+t_eq((zero / zero, '' / false), (nan, nan));
+t_eq(zero - zero, zero);
+t_eq(zero + zero, zero);
+t_eq(n_zero - n_zero, zero);
+t_eq(n_zero + n_zero, n_zero);
+t_eq(1 / zero, inf);
+t_eq(-1 / zero, -inf);
+t_eq(1e200 / 1e-200, inf);
+t_eq(-1e200 / 1e-200, -inf);
+t_eq(inf + inf, inf);
+t_eq(-inf + -inf, -inf);
+t_eq(inf - inf, nan);
+t_eq(-inf - -inf, nan);
+t_eq(inf * 0, nan);
+t_eq(-inf * 0, nan);
+t_eq(inf / inf, nan);
+t_eq(-inf / -inf, nan);
+t_eq(inf / -inf, nan);
+t_eq(-inf / inf, nan);
+
+t_true(nan != nan);
+t_false(nan =~ nan);
+t_true(nan is nan);
+
+t_false(0 in 0);
+t_false(nan in 0);
+t_false(nan in nan);

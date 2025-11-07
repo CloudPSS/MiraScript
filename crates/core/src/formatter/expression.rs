@@ -1,4 +1,4 @@
-use crate::{Expression, Operator};
+use crate::{Expression, Operator, parser::MatchCase};
 
 use super::prelude::*;
 
@@ -176,7 +176,10 @@ impl Formattable for Expression<'_> {
                     formatter.write_token(cp);
                     return;
                 }
-                if statements.is_empty() && formatter.measure(expression.unwrap()) == 0 {
+                if statements.is_empty()
+                    && !expression.unwrap().is_block_like()
+                    && formatter.measure(expression.unwrap()) == 0
+                {
                     let expression = expression.unwrap();
                     formatter.write_token(op);
                     formatter.write_space();
@@ -245,11 +248,17 @@ impl Formattable for Expression<'_> {
                 }
                 formatter.indent();
                 formatter.new_line();
-                for (i, (kw, pattern, expression)) in items.iter().enumerate() {
+                for (i, MatchCase(kw, pattern, guard, expression)) in items.iter().enumerate() {
                     formatter.write_token(kw);
                     formatter.write_space();
                     pattern.format(formatter, measurement);
                     formatter.write_space();
+                    if let Some((kw, expr)) = guard {
+                        formatter.write_token(kw);
+                        formatter.write_space();
+                        expr.format(formatter, measurement);
+                        formatter.write_space();
+                    }
                     expression.format(formatter, measurement);
                     if i != items.len() - 1 {
                         formatter.new_line();

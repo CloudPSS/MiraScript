@@ -1,0 +1,43 @@
+fn T { true }
+fn F { false }
+fn N { nil }
+fn O { 0 }
+
+t_true(T());
+t_true(O()::to_boolean());
+t_true(!!O());
+t_false(F());
+t_false(N()::to_boolean());
+t_false(!!N());
+
+t_eq(T() && T(), true);
+t_eq(T() && O(), 0);
+t_eq(T() && F(), false);
+t_eq(T() && N(), nil);
+t_eq(O() && N(), nil);
+t_eq(F() && T(), false);
+t_eq(F() && N(), false);
+t_eq(F() && F(), false);
+t_eq(N() && T(), nil);
+t_eq(N() && F(), nil);
+t_eq(N() && N(), nil);
+
+// short-circuiting
+t_eq(F() && t_never(), false);
+t_eq(N() && t_never(), nil);
+
+t_eq(T() || T(), true);
+t_eq(T() || O(), true);
+t_eq(T() || F(), true);
+t_eq(O() || F(), 0);
+t_eq(O() || N(), 0);
+t_eq(F() || T(), true);
+t_eq(F() || O(), 0);
+t_eq(N() || O(), 0);
+t_eq(F() || F(), false);
+t_eq(F() || F(), false);
+t_eq(N() || N(), nil);
+
+// short-circuiting
+t_eq(T() || t_never(), true);
+t_eq(O() || t_never(), 0);
