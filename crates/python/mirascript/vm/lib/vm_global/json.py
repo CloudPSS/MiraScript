@@ -1,0 +1,60 @@
+import json
+# from ...error import VMError
+from mirascript.vm.lib._helpers import required,rethrow_error
+from mirascript.vm.types.checker import is_vm_module
+from mirascript.vm.types.const import Uninitialized
+import math
+from mirascript.vm.operations import numberToString_,innerToString_,ToString_
+class NanToNullEncoder(json.JSONEncoder):
+    def encode(self, o):
+        # def replace_nan(obj):
+        #     if isinstance(obj, ( float)):
+        #         if math.isnan(obj) or math.isinf(obj):
+        #             return None
+                
+        #     elif isinstance(obj, list):
+        #         return [replace_nan(item) for item in obj]
+        #     elif isinstance(obj, dict):
+        #         return {key: replace_nan(value) for key, value in obj.items()}
+        #     return obj
+        
+        # val = replace_nan(o)
+        
+        # if isinstance(o, ( float)):
+        #     return numberToString_(o)
+        if o is None:
+            return 'null'
+        if isinstance(o, ( float)):
+            if math.isnan(o) or math.isinf(o):
+                return 'null'
+        if isinstance(o, str):
+            return json.dumps(o, ensure_ascii=False)
+        r = innerToString_(o,True)
+        return r
+
+def to_json(value=Uninitialized):
+    required("value",value, None)
+    
+    if is_vm_module(value):
+        
+        try:
+            return json.dumps(value.value, cls=NanToNullEncoder,ensure_ascii=False)
+        except Exception as e:
+            rethrow_error('Failed to convert extern to JSON', e, '{}')
+    
+    if callable(value):
+        return None
+    return json.dumps(value, cls=NanToNullEncoder,ensure_ascii=False)
+
+def from_json(value=Uninitialized,fallback=None):
+    required("value",value, None)
+    print("from_json:",value,type(value))
+    if not isinstance(value, str):
+      return value
+    
+    try:
+        return json.loads(value)
+    except Exception as e:
+        if fallback is not None:
+            return fallback
+        rethrow_error("Invalid JSON", e, None)

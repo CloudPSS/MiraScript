@@ -8,7 +8,11 @@ class VmWrapper(ABC):
     
     
     
-    def __init__(self):
+    def __init__(self,value):
+        
+        self.value=value
+        # 设置标识符号
+        setattr(self, self._VM_WRAPPER_SYMBOL, True)
         pass
     
     @abstractmethod
@@ -46,6 +50,6 @@ class VmWrapper(ABC):
 def isVmWrapper(v):
     if v is None or not isinstance(v,object):
         return False
-    print('isVmWrapper',v,type(v))
+    print('isVmWrapper',v,type(v),hasattr(v,VmWrapper._VM_WRAPPER_SYMBOL))
    
     return hasattr(v,VmWrapper._VM_WRAPPER_SYMBOL)
