@@ -47,7 +47,7 @@ if (typeof location != 'undefined') {
     const common = 'display: inline-block; padding: 1px 4px; border-radius: 3px;';
     debug_print.prefix = [badge, `${common} background: #007acc; color: #fff;`];
     panic.prefix = [badge, `${common} background: #d23d3d; color: #fff;`];
-} else if (typeof process != 'undefined') {
+} else {
     if (supportsColor.stdout) {
         debug_print.prefix = ['\u001B[44;37m MiraScript \u001B[0m'];
     }
