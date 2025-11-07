@@ -35,8 +35,7 @@ await esbuild.build({
     target: 'esnext',
     bundle: true,
     packages: 'bundle',
-    // 不加载 node addon
-    platform: 'neutral',
+    platform: 'node',
     mainFields: ['exports', 'module', 'main'],
     banner: {
         js: /* js */ `import { createRequire as Ĩ } from 'node:module';const require = Ĩ(import.meta.url);const { dirname: __dirname, filename: __filename } = import.meta;`,
