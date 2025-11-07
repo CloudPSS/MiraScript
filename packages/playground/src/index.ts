@@ -234,9 +234,11 @@ async function run() {
 
 Object.defineProperty(globalThis, 'playgroundRun', {
     value: async () => {
-        configCheckpoint(Number.POSITIVE_INFINITY);
-        const ret = await run();
-        configCheckpoint(500);
-        return ret;
+        try {
+            configCheckpoint(Number.POSITIVE_INFINITY);
+            return await run();
+        } finally {
+            configCheckpoint(500);
+        }
     },
 });
