@@ -1,6 +1,6 @@
 {
   "name": "@mirascript/monaco",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "type": "module",
   "description": "Monaco Editor integration for Mirascript.",
   "main": "./dist/index.js",
