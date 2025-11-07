@@ -28,8 +28,8 @@ class NanToNullEncoder(json.JSONEncoder):
             if math.isnan(o) or math.isinf(o):
                 return 'null'
         if isinstance(o, str):
-            return json.dumps(o, ensure_ascii=False)
-        r = innerToString_(o,True)
+            return super().encode(o)
+        r = innerToString_(o,True,space=False)
         return r
 
 def to_json(value=Uninitialized):

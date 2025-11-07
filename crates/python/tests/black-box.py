@@ -51,6 +51,7 @@ class BlackBoxTests(unittest.TestCase):
                 fn()
 
         def t_timeout(fn):
+            print(f"t_timeout: registering timeout function {fn}")  # --- DEBUG ---
             timeout_fns.append(fn)
 
         def t_snapshot(*values):

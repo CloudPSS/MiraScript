@@ -137,7 +137,7 @@ def numberToString_(x) -> str:
     return result
    
 
-def innerToString_(val,useBraces) -> str:
+def innerToString_(val,useBraces,space=True) -> str:
     if val is None:
         return ""
     
@@ -151,7 +151,7 @@ def innerToString_(val,useBraces) -> str:
         for v in val:
             strings.append(innerToString_(v,True))
         print('Array to string:', strings)  # --- DEBUG ---
-        joined = ", ".join(strings)
+        joined = (", " if space else ",").join(strings)
         if not useBraces:
             return joined
         return f"[{joined}]"
@@ -161,7 +161,7 @@ def innerToString_(val,useBraces) -> str:
         
         for k,v in val.items():
             strings.append(f"{k}:{innerToString_(v,True)}")
-        joined = ",".join(strings)
+        joined = (", " if space else ",").join(strings)
         if not useBraces:
             return joined
         return f"{{{joined}}}"
@@ -342,6 +342,9 @@ def Same_(a,b):
     AssertInit_(b)
     return isSame(a,b)
 
+def Nsame_(a,b):
+    return not Same_(a,b)
+
 def In_(a,b):
     AssertInit_(a)
     AssertInit_(b)
@@ -447,7 +450,7 @@ def sliceCore(a,start,end,exclusive):
 def Slice_(a,start,end):
     AssertInit_(a)
     if not isVmArray(a):
-        raise TypeError(f"`Expected array, got {Type_(a)}")
+        raise VmError(f"`Expected array, got {Type_(a)}",[])
     s = ToNumber_(start) if start is not None else 0
     e = ToNumber_(end) if end is not None else len(a)-1
     return sliceCore(a,s,e,False)
@@ -590,6 +593,7 @@ def Set_(obj,key,val):
 
 def Iterable_(val):
     AssertInit_(val)
+    print("Iterable_ called with val:", val,type(val))  # --- DEBUG ---
     if isVmWrapper(val):
         if hasattr(val,'keys'):
             return val.keys()
@@ -597,6 +601,7 @@ def Iterable_(val):
         return val
     if isinstance(val, dict):
         return val.keys()
+    raise VmError(f"`Value is not iterable {Type_(val)}",None)
     
 
 def RecordSpread_(val):
@@ -660,7 +665,7 @@ def Range_(start,end):
     s = ToNumber_(start)
     e = ToNumber_(end)
     if math.isnan(s) or math.isnan(e):
-        raise TypeError("Range start or end is not a number")
+        return []
     result=[]
     while s<=e:
         result.append(s)
@@ -672,7 +677,7 @@ def RangeExclusive_(start,end):
     s = ToNumber_(start)
     e = ToNumber_(end)
     if math.isnan(s) or math.isnan(e):
-        raise TypeError("RangeExclusive start or end is not a number")
+        return []
     # return list(range(int(s),int(e)))
     result=[]
     while s<e:

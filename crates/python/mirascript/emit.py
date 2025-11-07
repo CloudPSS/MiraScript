@@ -138,6 +138,53 @@ def create_if(name: str, negate) -> ast.If:
                                     ast.Constant(value=negate)]),
                         body=[],
                         orelse=[])
+    
+    
+def create_range_loop(index,start,end,exclusive=False):
+    
+    s=ast.Assign(
+            targets=[
+                ast.Name(id='start', ctx=ast.Store())],
+            value=ast.Call(
+                func=ast.Name(id='ToNumber_', ctx=ast.Load()),
+                args=[
+                    ast.Name(id=start, ctx=ast.Load())],
+                keywords=[]))
+    e= ast.Assign(
+            targets=[
+                ast.Name(id='end', ctx=ast.Store())],
+            value=ast.Call(
+                func=ast.Name(id='ToNumber_', ctx=ast.Load()),
+                args=[
+                    ast.Name(id=end, ctx=ast.Load())],
+                keywords=[]))
+    i =ast.Assign(
+                    targets=[
+                        ast.Name(id=index, ctx=ast.Store())],
+                    value=ast.Name(id='start', ctx=ast.Load()))
+    w=ast.While(
+                    test=ast.Compare(
+                        left=ast.Name(id=index, ctx=ast.Load()),
+                        ops=[
+                            ast.LtE() if not exclusive else ast.Lt()],
+                        comparators=[
+                            ast.Name(id='end', ctx=ast.Load())]),
+                    body=[],
+                    orelse=[])
+    return s,e,i,w
+    
+# def RangeExclusive_(start,end):
+#     pass
+#     s = ToNumber_(start)
+#     e = ToNumber_(end)
+#     if math.isnan(s) or math.isnan(e):
+#         return []
+#     # return list(range(int(s),int(e)))
+#     result=[]
+#     while s<e:
+#         result.append(s)
+#         s+=1
+#     return result
 class Emitter:
     """代码生成"""
     
@@ -236,7 +283,7 @@ class Emitter:
                 
         return [code,try_code] 
 
-    def create_loop(self,nreg,code):
+    def create_loop(self,nreg,code,increment:Optional[ast.AugAssign]=None):
         
         
         func_name = self.fun_name()
@@ -250,6 +297,7 @@ class Emitter:
                             targets=[
                                 ast.Name(id=f'inner{func_name}Result', ctx=ast.Store())],
                             value=ast_call('Call_', [ast.Name(id=func_name, ctx=ast.Load())]), lineno=0))
+        code.body.append(increment) if increment else None
         code.body.append(
                         ast.If(
                             test=ast.Compare(
@@ -966,12 +1014,22 @@ class Emitter:
             start = read()
             end = read()
             exclusive = opcode == OpCode.LoopRangeExclusive
-            code = ast.For(
+            
+            s,e,i,code= create_range_loop(self.wv(1, -1), self.rv(start), self.rv(end), exclusive)
+            # code = ast.For(
+            #                 target=ast.Name(id=self.wv(1, -1), ctx=ast.Store()),
+            #                 iter=ast_call('Range_' if not exclusive else 'RangeExclusive_', [ast.Name(id=self.rv(start), ctx=ast.Load()), ast.Name(id=self.rv(end), ctx=ast.Load())]),
+            #                 body=[],
+            #                 orelse=[],lineno=0)
+            
+            print('range loop:',s,e,i)
+            current_blocks_body.append(s)
+            current_blocks_body.append(e)
+            current_blocks_body.append(i)
+            loop_node=self.create_loop(nreg,code,ast.AugAssign(
                             target=ast.Name(id=self.wv(1, -1), ctx=ast.Store()),
-                            iter=ast_call('Range_' if not exclusive else 'RangeExclusive_', [ast.Name(id=self.rv(start), ctx=ast.Load()), ast.Name(id=self.rv(end), ctx=ast.Load())]),
-                            body=[],
-                            orelse=[],lineno=0)
-            loop_node=self.create_loop(nreg,code)
+                            op=ast.Add(),
+                            value=ast.Constant(value=1)))
         elif opcode == OpCode.Loop:
             nreg = read()
             
