@@ -187,20 +187,12 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                                 ['punctuation.section.embedded', { cases: identifierCases({ next: '@pop' }) }],
                             ],
                             [
-                                String.raw`(${dollarRegex}\{)`,
-                                {
-                                    token: 'punctuation.section.embedded',
-                                    bracket: '@open',
-                                    next: '@braced',
-                                },
+                                String.raw`(${dollarRegex})(\{)`,
+                                ['punctuation.section.embedded', { token: '@brackets', next: '@braced' }],
                             ],
                             [
-                                String.raw`(${dollarRegex}\()`,
-                                {
-                                    token: 'punctuation.section.embedded',
-                                    bracket: '@open',
-                                    next: '@parenthesized',
-                                },
+                                String.raw`(${dollarRegex})(\()`,
+                                ['punctuation.section.embedded', { token: '@brackets', next: '@parenthesized' }],
                             ],
                             [`\\\${0,${dollarCount}}`, 'string', '@pop'],
                             ['', '', '@pop'],

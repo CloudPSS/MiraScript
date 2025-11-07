@@ -17,7 +17,6 @@ await esbuild.build({
     packages: 'bundle',
     loader: {
         '.ttf': 'dataurl',
-        '.wasm': 'dataurl',
     },
 });
 
