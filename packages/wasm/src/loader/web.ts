@@ -30,7 +30,9 @@ async function loadMod(mod: unknown): Promise<InitInput> {
 
 export const module: Promise<InitInput> = /* @__PURE__ */ (async () => {
     try {
-        return await loadMod(await import('../../lib/wasm_bg.wasm', { with: { type: 'bytes' } }));
+        // use ?url to force vite to load as bytes
+        // https://github.com/vitejs/vite/issues/12366
+        return await loadMod(await import('../../lib/wasm_bg.wasm?url', { with: { type: 'bytes' } }));
     } catch {
         if (!import.meta.url) {
             return await loadFallback();
