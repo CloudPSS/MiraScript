@@ -2,7 +2,7 @@ import { type VmScript, compile, type InputMode } from '@mirascript/mirascript';
 import { syntaxHighlight, print } from './utils.js';
 import { getState } from './state-manager.js';
 import type { ConsoleManager } from './console-manager.js';
-import type { VmContext } from '@mirascript/mirascript';
+import type { VmAny, VmContext } from '@mirascript/mirascript';
 
 /** 管理编译和运行结果 */
 export function resultManager(
@@ -10,7 +10,7 @@ export function resultManager(
     elCompiledOutput: HTMLElement,
     elResultOutput: HTMLElement,
     globals: VmContext,
-): () => Promise<void> {
+): () => Promise<VmAny> {
     let fileCounter = 1;
     let cache: { fileName: string; mode: InputMode; source: string; script: VmScript } | null = null;
     /** 编译 */
@@ -77,7 +77,7 @@ export function resultManager(
     }
 
     /** 运行 */
-    async function runScript(script: VmScript): Promise<void> {
+    async function runScript(script: VmScript): Promise<VmAny> {
         const execStart = performance.now();
         try {
             const execResult = script(globals);
@@ -95,6 +95,7 @@ export function resultManager(
             `;
             }
             consoleManager.info(`Execution completed successfully in ${(execEnd - execStart).toFixed(3)}ms`);
+            return execResult;
         } catch (ex) {
             const execEnd = performance.now();
             const errorText = String(ex);
@@ -104,12 +105,13 @@ export function resultManager(
         `;
             consoleManager.error(`Execution failed in ${(execEnd - execStart).toFixed(3)}ms:`);
             consoleManager.error(ex as Error);
+            return undefined;
         }
     }
 
     return async () => {
         const script = await compileScript();
         if (!script) return;
-        await runScript(script);
+        return await runScript(script);
     };
 }

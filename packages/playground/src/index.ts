@@ -211,7 +211,7 @@ setTimeout(() => {
     });
 }, 0);
 
-const compile = resultManager(consoleManager, elCompiledOutput, elResultOutput, g);
+const compileAndRun = resultManager(consoleManager, elCompiledOutput, elResultOutput, g);
 
 configCheckpoint(500);
 /** 编译运行 */
@@ -224,7 +224,7 @@ async function run() {
     consoleManager.resetTimer();
 
     try {
-        await compile();
+        return await compileAndRun();
     } finally {
         await consoleManager.render();
 
@@ -235,7 +235,8 @@ async function run() {
 Object.defineProperty(globalThis, 'playgroundRun', {
     value: async () => {
         configCheckpoint(Number.POSITIVE_INFINITY);
-        await run();
+        const ret = await run();
         configCheckpoint(500);
+        return ret;
     },
 });
