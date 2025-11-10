@@ -131,18 +131,18 @@ function initTabs() {
     const tabBtns = document.querySelectorAll<HTMLElement>('.tab-btn');
     const tabPanes = document.querySelectorAll<HTMLElement>('.tab-pane');
 
-    for (const btn of Array.from(tabBtns)) {
+    for (const btn of tabBtns) {
         btn.addEventListener('click', () => {
             const targetTab = btn.dataset['tab'];
 
             // 更新按钮状态
-            for (const b of Array.from(tabBtns)) {
+            for (const b of tabBtns) {
                 b.classList.remove('active');
             }
             btn.classList.add('active');
 
             // 更新面板状态
-            for (const pane of Array.from(tabPanes)) {
+            for (const pane of tabPanes) {
                 pane.classList.remove('active');
                 if (pane.id === `${targetTab}-output`) {
                     pane.classList.add('active');

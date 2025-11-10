@@ -20,7 +20,7 @@ type ToGlobalValue<T extends GlobalKeys> = (typeof global)[T] extends VmFunction
 type VmContextBase = {
     [key in GlobalKeys]: ToGlobalValue<key>;
 };
-const kVmContext = Symbol.for('mira:vm-context');
+const kVmContext = Symbol.for('mirascript.vm.context');
 /** MiraScript 执行上下文的基础，仅包含标准库 */
 export type VmSharedContext = VmContextBase & Record<string, VmImmutable>;
 /** MiraScript 执行上下文 */
