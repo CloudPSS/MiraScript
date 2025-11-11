@@ -8,19 +8,17 @@
 
 ```mira
 /** 断言两个值严格相等 */
-fn t_eq(a, b);
+fn t_eq(a, b, message);
 /** 断言两个值不相等 */
-fn t_ne(a, b);
+fn t_ne(a, b, message);
 /** 断言一个值为 `true` */
-fn t_true(value);
+fn t_true(value, message);
 /** 断言一个值为 `false` */
-fn t_false(value);
+fn t_false(value, message);
 /** 断言函数抛出错误 */
-fn t_throws(func);
+fn t_throws(func, message);
 /** 断言函数在指定时间内未执行完毕 */
-fn t_timeout(func);
-/** 记录与比对 snapshot */
-fn t_snapshot(..values);
+fn t_timeout(func, message);
 /** 断言测试失败 */
 fn t_never(message);
 
@@ -46,7 +44,3 @@ let v_module_another = /* 名为 v_module_another 的模块 */;
 ```
 
 参考 [packages/mirascript/tests/black-box.ts](../packages/mirascript/tests/black-box.ts) 中的实现。
-
-## 测试快照
-
-测试快照存储在测试文件对应的 `.jsonl` 文件，包含测试中调用 `t_snapshot` 的结果。

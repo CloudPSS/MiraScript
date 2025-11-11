@@ -1,10 +1,13 @@
-t_snapshot(1, 0, -0, 0e0);
-t_snapshot(1.1, -1.1);
-t_snapshot(1.1e1, 1.1e-1, 1.1e+1);
-t_snapshot(12.34e+56);
-t_snapshot(0xAB_CDEF, 0xAB_CDEF, 0xABC_DEF0, 0xABCD_EF12);
-t_snapshot(0o123, 0o1234, 0o12345);
-t_snapshot(0b101010, 0b1010101, 0b10101010);
+t_eq(0e0, 0);
+t_eq(1.1e1, 11);
+t_eq(-1.1e1, -11);
+t_eq(1.1e-1, 0.11);
+t_eq(-1.1e-1, -0.11);
+t_eq(12.34e+56, 1_234_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000_000);
+t_eq(0xAB_CDEF, 11259375);
+t_eq(0xFFAB_CDEF, 4_289_449_455);
+t_eq(0o123456, 42798);
+t_eq(0b10101010, 170);
 
 let zero = 1 - 1;
 let n_zero = -zero;

@@ -12,7 +12,6 @@ assert_fn(t_ne);
 assert_fn(t_true);
 assert_fn(t_false);
 assert_fn(t_throws);
-assert_fn(t_snapshot);
 assert_fn(t_never);
 
 t_throws(fn {
