@@ -102,11 +102,13 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                 ],
                 [/(\.)(@whitespace*)(@identifier)/, ['delimiter', '', 'variable']],
                 [
-                    /(@identifier)(@whitespace*(?=\())/,
+                    /(@identifier)(@whitespace*)(!?)(@whitespace*(?=\())/,
                     [
                         {
                             cases: identifierCases(undefined, `entity.name.function`),
                         },
+                        '',
+                        'delimiter',
                         '',
                     ],
                 ],
@@ -211,21 +213,27 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
             string_interpolation: [[/\$*/, 'string', '@pop']],
 
             braced: [
+                [/\{/, { token: '@brackets', next: '@braced_inner' }],
+                [/\}/, { token: 'punctuation.section.embedded', bracket: '@close', next: '@pop' }],
+                [/[[\]()]/, '@brackets'],
+                { include: '@common' },
+            ],
+            braced_inner: [
                 [/\{/, { token: '@brackets', next: '@push' }],
                 [/\}/, { token: '@brackets', next: '@pop' }],
                 [/[[\]()]/, '@brackets'],
                 { include: '@common' },
             ],
             parenthesized: [
-                [/\(/, { token: '@brackets', next: '@push' }],
-                [/\)/, { token: '@brackets', next: '@pop' }],
+                [/\(/, { token: '@brackets', next: '@parenthesized_inner' }],
+                [/\)/, { token: 'punctuation.section.embedded', bracket: '@close', next: '@pop' }],
                 [/[[\]{}]/, '@brackets'],
                 { include: '@common' },
             ],
-            bracketed: [
-                [/\[/, { token: '@brackets', next: '@push' }],
-                [/\]/, { token: '@brackets', next: '@pop' }],
-                [/[(){}]/, '@brackets'],
+            parenthesized_inner: [
+                [/\(/, { token: '@brackets', next: '@push' }],
+                [/\)/, { token: '@brackets', next: '@pop' }],
+                [/[[\]{}]/, '@brackets'],
                 { include: '@common' },
             ],
 

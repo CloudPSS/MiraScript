@@ -9,38 +9,32 @@ const compileAndRun = test.macro<[string]>({
         const codeUrl = new URL(`./tests/${file}`, TEST_DIR);
         const code = await fs.promises.readFile(codeUrl, 'utf-8');
 
-        const expectedUrl = new URL(`./tests/${file}.jsonl`, TEST_DIR);
-        const expected = fs.existsSync(expectedUrl) ? await fs.promises.readFile(expectedUrl, 'utf-8') : null;
         const script = await compile(code, { pretty: true, sourceMap: true, fileName: codeUrl.href });
-        const timeout_fn: Array<() => unknown> = [];
+        const timeout_fn: Array<[() => unknown, string | undefined]> = [];
         configCheckpoint(file.endsWith('_huge.mira') ? 1000 : undefined);
-        let result = '';
         script(
             createVmContext(
                 {
-                    t_eq: VmFunction((a: unknown, b: unknown) => {
-                        t.deepEqual(a, b);
+                    t_eq: VmFunction((a: unknown, b: unknown, message?: unknown) => {
+                        t.deepEqual(a, b, String(message || '') || undefined);
                     }),
-                    t_ne: VmFunction((a: unknown, b: unknown) => {
-                        t.notDeepEqual(a, b);
+                    t_ne: VmFunction((a: unknown, b: unknown, message?: unknown) => {
+                        t.notDeepEqual(a, b, String(message || '') || undefined);
                     }),
-                    t_true: VmFunction((value: unknown) => {
-                        t.true(value);
+                    t_true: VmFunction((value: unknown, message?: unknown) => {
+                        t.true(value, String(message || '') || undefined);
                     }),
-                    t_false: VmFunction((value: unknown) => {
-                        t.false(value);
+                    t_false: VmFunction((value: unknown, message?: unknown) => {
+                        t.false(value, String(message || '') || undefined);
                     }),
-                    t_throws: VmFunction((fn: unknown) => {
-                        t.throws(fn as () => unknown, { instanceOf: VmError });
+                    t_throws: VmFunction((fn: unknown, message?: unknown) => {
+                        t.throws(fn as () => unknown, { instanceOf: VmError }, String(message || '') || undefined);
                     }),
-                    t_timeout: VmFunction((fn: unknown) => {
-                        timeout_fn.push(fn as () => unknown);
+                    t_timeout: VmFunction((fn: unknown, message?: unknown) => {
+                        timeout_fn.push([fn as () => unknown, String(message || '') || 'Execution timeout']);
                     }),
-                    t_snapshot: VmFunction((...values: unknown[]) => {
-                        result += JSON.stringify(values) + '\n';
-                    }),
-                    t_never: VmFunction((message: unknown) => {
-                        t.fail((message as string) || 'This should never be called');
+                    t_never: VmFunction((message?: unknown) => {
+                        t.fail(String(message || '') || undefined);
                     }),
 
                     v_array: [],
@@ -64,14 +58,8 @@ const compileAndRun = test.macro<[string]>({
             ),
         );
         // 在脚本之后执行，否则脚本本身超时
-        for (const fn of timeout_fn) {
-            t.throws(fn, { instanceOf: RangeError, message: 'Execution timeout' });
-        }
-        if (expected != null) {
-            t.is(result, expected, `Test ${file} output matches expected output`);
-        } else if (result) {
-            await fs.promises.writeFile(expectedUrl, result, 'utf-8');
-            t.pass(`Test ${file} output written to ${expectedUrl}`);
+        for (const [fn, message] of timeout_fn) {
+            t.throws(fn, { instanceOf: RangeError, message: 'Execution timeout' }, message);
         }
     },
     title: (providedTitle = 'test', code) => code || providedTitle,

@@ -11,11 +11,11 @@ t_eq(factorial(-1), nan);
 t_eq(factorial(nan), nan);
 t_eq(factorial(-inf), nan);
 
-t_snapshot(169.999_999_999_999::factorial());
-t_snapshot(factorial(170));
-t_snapshot(170.000_000_000_001::factorial());
+t_true(169.999_999_999_999::factorial() =~ 7.257_415_615_270_898e+306);
+t_true(factorial(170) == 7.257_415_615_307_994e+306);
+t_true(170.000_000_000_001::factorial() =~ 7.257_415_615_345_094e+306);
 
 t_eq(factorial(171), inf);
 t_eq(factorial(inf), inf);
 
-t_snapshot(factorial(0.1));
+t_true(factorial(0.1) =~ 0.951_350_769_866_873_3);

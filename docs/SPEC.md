@@ -156,7 +156,7 @@ let empty_record = ();                                    // 空记录
 let single_record = (key1: "value1");                     // 单个键值对的记录
 let special_name_record = ("name\n": "value1");           // 键名不是有效标识符
 let single_unnamed_record = ("value1", );                 // 为了避免歧义，必须使用逗号
-let interpolated_name_record = (`${1 + 2}`: "value1");    // 键名为插值字符串的值，即 `3`
+let interpolated_name_record = (`${ 1 + 2 }`: "value1");    // 键名为插值字符串的值，即 `3`
 let omit_name_record = (:simple_record);                  // 键名推断为 `simple_record`
 let invalid_mix = (..simple_record, "new");               // 错误，为避免歧义，未命名的键值对不能与其他构造混用
 let skip_nil = (nil?: nil, no_nil?: "no_nil");            // 使用 `?:` 省略值为 `nil` 的键，值为 `(no_nil: "no_nil")`
@@ -185,19 +185,19 @@ let range_array = [1, 2, 5..8, 4..<6];     // [1, 2, 5, 6, 7, 8, 4, 5]
 let spread_array = [1, 2, ..simple_array]; // [1, 2, 1, "2", true]
 ```
 
-在数组构造中，范围 `..` 和 `..<` 可以用于快速构造数字数组。此处必须指定范围的起始值和结束值。范围的含义是在此范围内的所有整数。当使用字面量时，范围的起始值和结束值必须是整数数字字面量。
+在数组构造中，范围 `..` 和 `..<` 可以用于快速构造数字数组。此处必须指定范围的起始值和结束值。范围的含义是从起始值开始，以 1 为公差的序列。当起始值或结束值包含 `inf` 或 `nan` 时，生成的序列为空。
 
 ```mira
-["4".."6"]; // 错误，范围的起始值和结束值必须是整数数字字面量
+["4".."6"]; // [4, 5, 6]
 [1..3]; // [1, 2, 3]
 [1..<3]; // [1, 2]
+[1.2..5.5]; // [1.2, 2.2, 3.2, 4.2, 5.2]
 [1..]; // 错误，必须同时指定范围的起始值和结束值
-[1.2..5.5]; // 错误，范围的起始值和结束值必须是整数数字字面量
 
 let (start, end) = (1.2, "5.5");
-[start..end]; // OK, [2, 3, 4, 5]
+[start..end]; // [1.2, 2.2, 3.2, 4.2, 5.2]
 let end2 = ();
-[start..end2]; // TypeError，end2 不能转换为数字
+[start..end2]; // []
 ```
 
 使用 `.`、`[]` 操作符访问数组的元素，使用负数索引访问数组的倒数第几个元素。当索引非整数时，会先将其转换为整数。
@@ -209,7 +209,7 @@ debug_print(array.1);   // 输出 "2"
 debug_print(array[-1]); // 输出 "3"
 ```
 
-使用范围 `..`、`..<` 操作符访问数组的切片，此时范围的起始值和终止值均可省略，表示从数组的开头或结尾开始。当使用字面量时，范围的起始值和终止值必须是整数数字字面量。
+使用范围 `..`、`..<` 操作符访问数组的切片，此时范围的起始值和终止值均可省略，表示从数组的开头或结尾开始。
 
 ```mira
 let array = [1, 2, 3, 4, 5];
@@ -421,7 +421,7 @@ x == y; // false
 
 使用 `=~`、`!~` 运算符比较两个值是否近似相等。MiraScript 会尝试将操作数转换为 `number` 或 `string` 进行比较。
 
-对于 `number` 类型，当两个操作数的相对误差或绝对误差小于 `1e-15` 时，返回 `true`，否则返回 `false`。
+对于 `number` 类型，当两个操作数的相对误差**或**绝对误差小于 `1e-15` 时，返回 `true`，否则返回 `false`。
 
 当其中一个操作数为 `nan` 时，`=~` 运算符始终返回 `false`。
 
@@ -508,7 +508,7 @@ let result2 = add(..array);
 当可选的 `<expression>` 存在时，块表达式的值为 `<expression>` 的值；当 `<expression>` 不存在时，块表达式的值为 `nil`。
 
 ```mira
-let x = {}; // x 的值为 nil
+let x = { }; // x 的值为 nil
 let y = {
   let a = 1;
   let b = 2;
@@ -552,7 +552,7 @@ let y = match x {
   case x if x > 0 { "positive" }
   case _ { "other" }
 }; // y 的值为 "one"
-let z = match x {}; // z 的值为 nil
+let z = match x { }; // z 的值为 nil
 ```
 
 #### `for`/`while`/`loop` 表达式
@@ -646,7 +646,7 @@ fn is_pi { it is @pi }
 
 关系模式用于匹配关系运算的结果。关系模式的语法为 `<relation> <value>`，其中 `<relation>` 是 `>`、`<`、`<=`、`==`、`!=`、`=~`、`!~` 运算符，`<value>` 是一个字面量模式或常量模式。
 
-关系模式相当于对匹配到的值进行 `<captured> <relation> <value>` 的判断，当该判断返回 `false` 或抛出异常时，匹配失败。
+关系模式相当于对匹配到的值进行 `<captured> <relation> <value>` 的判断，当该判断返回 `false` 时，匹配失败。
 
 ```mira
 fn gpa {
@@ -664,7 +664,7 @@ fn gpa {
 
 范围模式用于匹配数字或字符串范围。范围模式的语法为 `<start>..<end>` 或 `<start>..<<end>`，其中 `<start>` 和 `<end>` 是数字或字符串的字面量模式或常量模式。
 
-范围模式相当于对匹配到的值进行 `<captured> >= <start>` 和 `<captured> <= <end>` / `<captured> < <end>` 的判断，当该判断返回 `false` 或抛出异常时，匹配失败。
+范围模式相当于对匹配到的值进行 `<captured> >= <start>` 和 `<captured> <= <end>` / `<captured> < <end>` 的判断，当该判断返回 `false` 时，匹配失败。
 
 ```mira
 fn season {
@@ -749,10 +749,10 @@ _ = x + y; // 匹配 x + y 的值，但不绑定该值
 
   ```mira
   let record = (key1: "value1", key2: 2, key3: true);
-  record is (key1: "value1", ..rest); // 匹配成功，rest 的值为 (key2: 2, key3: true)
+  record is (key1: "value1", ..rest1); // 匹配成功，rest1 的值为 (key2: 2, key3: true)
 
   let unnamed_record = (1, 2, 3);
-  unnamed_record is (1, ..rest); // 匹配成功，注意 rest 的值为 (1: 2, 2: 3)
+  unnamed_record is (1, ..rest2); // 匹配成功，注意 rest2 的值为 (1: 2, 2: 3)
 
   record is (..)        // 语法错误
   record is (key1, ..) // 语法错误
@@ -819,23 +819,33 @@ fn is_on_axis { it is (_, 0) or (0, _) }
 
 fn discount {
   match it {
-    case (items: >100) or (cost: >500) { 0.2 }
-    case (items: >50) or (cost: >200) { 0.15 }
-    case (items: >10) or (cost: >100) { 0.1 }
+    case (items: > 100) or (cost: > 500) { 0.2 }
+    case (items: > 50) or (cost: > 200) { 0.15 }
+    case (items: > 10) or (cost: > 100) { 0.1 }
     case _ { 0 }
   }
 }
+```
+
+逻辑模式不会进行短路求值，不论匹配成功与否，后续的匹配都会继续进行。
+
+```mira
+let value = [1, 2, 3];
+let matched1 = value is [x, y, 5] and [0, 0, z];
+// 即使 `and` 模式第一个子模式匹配失败，第二个子模式依旧会继续匹配，x 的值为 1，y 的值为 2，z 的值为 3，matched1 为 false
+let matched2 = value is [a, b, 3] or [1, 2, c];
+// 即使 `or` 模式第一个子模式匹配成功，第二个子模式依旧会继续匹配，a 的值为 1，b 的值为 2，c 的值为 3，matched2 为 true
 ```
 
 ### 语句
 
 MiraScript 的语句一般分号 `;` 结尾。MiraScript 的语句包括：
 
-#### const 语句
+#### `const` 语句
 
 定义一个常量。
 
-const 语句的语法为：
+`const` 语句的语法为：
 
 ```mira
 const <constant> = <expression>;
@@ -843,11 +853,11 @@ const <constant> = <expression>;
 
 其中 `<constant>` 是一个以 `@` 开头的标识符名称，表示常量的名称；`<expression>` 是一个表达式，表示常量的值。
 
-#### let 语句
+#### `let` 语句
 
 通过指定的模式定义一系列新变量。
 
-let 语句的语法为：
+`let` 语句的语法为：
 
 ```mira
 let <pattern> = <expression>;
@@ -862,7 +872,7 @@ let (a, mut b) = (1, 2); // 记录模式，变量的可变性可以分别设置
 let [first, _, ..mut rest] = [1, 2, 3, 4]; // 数组模式，first 初始化为 1，rest 初始化为 [3, 4]
 ```
 
-模式匹配失败时，let 语句不会产生异常。
+模式匹配失败时，`let` 语句不会产生异常。
 
 #### 赋值语句
 
@@ -897,7 +907,7 @@ ex.foo = 1; // 对 extern 对象 ex 的属性 "foo" 赋值
 ex[1 + 2] += 1; // 对 extern 对象 ex 的属性 "3" 复合赋值
 ```
 
-当 `<extern>` 表达式的求值结果不是 `extern` 对象时，赋值语句会抛出 `TypeError` 异常。
+当 `<extern>` 表达式的求值结果不是 `extern` 对象或 `nil` 时，赋值语句会抛出 `TypeError` 异常。
 
 #### 表达式语句
 
@@ -905,9 +915,9 @@ ex[1 + 2] += 1; // 对 extern 对象 ex 的属性 "3" 复合赋值
 
 当表达式以 `}` 结尾时，表达式语句的 `;` 须省略。
 
-#### 函数声明
+#### 函数声明语句
 
-函数声明用于定义一个函数。与函数表达式类似，函数声明的语法为
+函数声明语句用于定义一个函数。与函数表达式类似，函数声明的语法为
 
 ```mira
 fn <name>(<parameters>) <body>
@@ -929,13 +939,13 @@ fn add_one {
 
 控制流语句用于控制程序的执行流程。MiraScript 支持以下控制流语句：
 
-- return 语句
+- `return` 语句
 
   ```mira
   return <expression>;
   ```
 
-  用于从函数中返回一个值。其中 `<expression>` 是一个可选的表达式，如果省略，则返回 `nil`。
+  用于从函数或脚本中返回一个值。其中 `<expression>` 是一个可选的表达式，如果省略，则返回 `nil`。
 
   ```mira
   fn add(x, y) {
@@ -943,7 +953,7 @@ fn add_one {
   }
   ```
 
-- break 语句
+- `break` 语句
 
   ```mira
   break <expression>;
@@ -962,7 +972,7 @@ fn add_one {
   debug_print(result); // 输出 5
   ```
 
-- continue 语句
+- `continue` 语句
 
   ```mira
   continue;

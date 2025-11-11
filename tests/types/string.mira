@@ -1,15 +1,14 @@
-t_snapshot("", '', ``);
-t_snapshot("Hello world");
-t_snapshot("\0\r\n\t\b\f\v\\\"\'\`\$\x12\x34\x56\x78\u{1234}\u{12345}");
-t_snapshot(@"\0\r\n\t\b\f\v\\\"\'\`\$\x12\x34\x56\x78\u{1234}\u{12345}"@);
+t_eq("", '');
+t_eq("\0\r\n\t\b\f\v\\\"\'\`\$\x12\x34\x56\x78\u{1234}\u{12345}", "\0\r\n\t\b\f\u{000B}\\\"'`$\u{12}4Vxሴ𒍅");
+t_eq(@"\0\r\n\t\b\f\v\\\"\'\`\$\x12\x34\x56\x78\u{1234}\u{12345}"@, "\\0\\r\\n\\t\\b\\f\\v\\\\\\\"\\'\\`\\$\\x12\\x34\\x56\\x78\\u{1234}\\u{12345}");
 let Hello = "Hello";
-t_snapshot("$(Hello)
+t_eq("$(Hello)
   world${ `!
-  ` }");
+  ` }", "Hello\n  world!\n  ");
 
 let strs = ['Hello, World!', '你好，世界！', 'こんにちは、世界！', '안녕하세요, 세계!', '🫱🏾‍🫲🏼🌍'];
 for str in strs {
-  t_snapshot(str, chars(str));
+  t_eq(str::chars()::join(''), str);
 }
 
 t_false('a' in 'a');

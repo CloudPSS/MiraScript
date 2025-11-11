@@ -1,5 +1,5 @@
-t_snapshot(true);
-t_snapshot(false);
+t_true(true);
+t_false(false);
 
 t_eq(!false, true);
 t_eq(!true, false);

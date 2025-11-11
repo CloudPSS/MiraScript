@@ -31,37 +31,41 @@ functions:
     params:
       actual: 需要断言的实际值
       expected: 期望值
+      message: 失败时的提示信息（可选）
   t_ne:
     summary: 断言 `actual` 与 `expected` 不相等
     params:
       actual: 需要断言的实际值
       expected: 期望值
+      message: 失败时的提示信息（可选）
   t_true:
     summary: 断言一个值为 `true`
     params:
       value: 要断言为 `true` 的值
+      message: 失败时的提示信息（可选）
   t_false:
     summary: 断言一个值为 `false`
     params:
       value: 要断言为 `false` 的值
+      message: 失败时的提示信息（可选）
   t_throws:
     summary: 断言函数抛出错误
     params:
       func: 应当抛出错误的函数
+      message: 失败时的提示信息（可选）
     paramsType:
       func: fn() -> any
+      message: string
   t_timeout:
     summary: 断言函数在指定时间内未执行完毕（超时）
     params:
       func: 要执行并检测是否超时的函数
       ms: 超时时间（毫秒，可选）
+      message: 失败时的提示信息（可选）
     paramsType:
       func: fn() -> any
       ms: number
-  t_snapshot:
-    summary: 记录与比对 snapshot
-    params:
-      ..values: 要记录的值
+      message: string
   t_never:
     summary: 断言测试失败（永远不应被调用）
     params:
