@@ -1,8 +1,10 @@
 {
   "name": "@mirascript/napi",
-  "type": "module",
   "version": "0.1.7",
+  "author": "CloudPSS",
+  "license": "MIT",
   "description": "MiraScript compiler for Node.JS",
+  "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": "./dist/index.js",

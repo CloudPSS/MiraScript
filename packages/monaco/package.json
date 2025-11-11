@@ -1,8 +1,10 @@
 {
   "name": "@mirascript/monaco",
   "version": "0.1.7",
-  "type": "module",
+  "author": "CloudPSS",
+  "license": "MIT",
   "description": "Monaco Editor integration for Mirascript.",
+  "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {

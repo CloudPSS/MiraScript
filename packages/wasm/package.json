@@ -1,8 +1,10 @@
 {
   "name": "@mirascript/wasm",
   "version": "0.1.7",
-  "type": "module",
+  "author": "CloudPSS",
+  "license": "MIT",
   "description": "MiraScript compiler for WebAssembly",
+  "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {

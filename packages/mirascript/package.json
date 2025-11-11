@@ -1,8 +1,10 @@
 {
   "name": "@mirascript/mirascript",
   "version": "0.1.7",
-  "type": "module",
+  "author": "CloudPSS",
+  "license": "MIT",
   "description": "An expression based scripting language.",
+  "type": "module",
   "main": "./dist/index.js",
   "bin": "./dist/cli/index.js",
   "types": "./dist/index.d.ts",

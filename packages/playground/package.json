@@ -1,7 +1,10 @@
 {
   "name": "@mirascript/playground",
-  "private": true,
   "version": "0.1.7",
+  "author": "CloudPSS",
+  "license": "MIT",
+  "description": "MiraScript Playground - An online code editor for MiraScript",
+  "private": true,
   "type": "module",
   "scripts": {
     "start": "vite",
