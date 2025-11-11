@@ -1,6 +1,6 @@
 {
   "name": "@mirascript/vscode",
-  "version": "0.1.5",
+  "version": "0.1.7",
   "private": true,
   "displayName": "MiraScript",
   "description": "MiraScript language support for Visual Studio Code.",
