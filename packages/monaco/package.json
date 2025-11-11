@@ -34,7 +34,8 @@
   },
   "dependencies": {
     "@mirascript/mirascript": "workspace:~",
-    "@mirascript/wasm": "workspace:~"
+    "@mirascript/wasm": "workspace:~",
+    "monaco-editor": "npm:@private/monaco-editor@^0.0.55"
   },
   "peerDependencies": {
     "monaco-editor": ">= 0.0.40 < 0.55.0"

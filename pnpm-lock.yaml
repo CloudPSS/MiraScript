@@ -96,8 +96,8 @@ importers:
         specifier: workspace:~
         version: link:../wasm
       monaco-editor:
-        specifier: npm:@private/monaco-editor@^0.0.54
-        version: '@private/monaco-editor@0.0.54'
+        specifier: npm:@private/monaco-editor@^0.0.55
+        version: '@private/monaco-editor@0.0.55'
     devDependencies:
       type-fest:
         specifier: ^5.2.0
@@ -127,8 +127,8 @@ importers:
         specifier: workspace:~
         version: link:../wasm
       '@private/monaco-editor':
-        specifier: ^0.0.54
-        version: 0.0.54
+        specifier: ^0.0.55
+        version: 0.0.55
     devDependencies:
       fflate:
         specifier: ^0.8.2
@@ -165,8 +165,8 @@ importers:
         specifier: workspace:~
         version: link:../monaco
       '@private/monaco-editor':
-        specifier: ^0.0.54
-        version: 0.0.54
+        specifier: ^0.0.55
+        version: 0.0.55
       '@types/node':
         specifier: ^24.10.0
         version: 24.10.0
@@ -1562,11 +1562,11 @@ packages:
       { integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg== }
     engines: { node: '>=14' }
 
-  '@private/monaco-editor@0.0.54':
+  '@private/monaco-editor@0.0.55':
     resolution:
       {
-        integrity: sha512-gNCVXPFMhV7ItFAOUvOaRftBZnyqiGirh8mHAcXJIQtj9PJqeGbiEDjg9gsRp2SLAzHk91Exdrb5UJqyPNOwOA==,
-        tarball: https://packages.aliyun.com/60c179fc44816b8ed233a8bb/npm/npm-registry/@private/monaco-editor/-/@private/monaco-editor-0.0.54.tgz,
+        integrity: sha512-vmNRuJnJ4vQAc+uBcrAwfFjxuvgt3cf6xAVlWfBjLhhM6X8ByLHOZURsdcn+36RJe4GF+0NUMt2OFttLccZIQQ==,
+        tarball: https://packages.aliyun.com/60c179fc44816b8ed233a8bb/npm/npm-registry/@private/monaco-editor/-/@private/monaco-editor-0.0.55.tgz,
       }
 
   '@rollup/pluginutils@5.2.0':
@@ -4903,7 +4903,7 @@ snapshots:
   '@pkgjs/parseargs@0.11.0':
     optional: true
 
-  '@private/monaco-editor@0.0.54': {}
+  '@private/monaco-editor@0.0.55': {}
 
   '@rollup/pluginutils@5.2.0(rollup@4.53.2)':
     dependencies:
