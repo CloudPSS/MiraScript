@@ -433,22 +433,38 @@ def sliceCore(a,start,end,exclusive):
     if math.isnan(start):
         start = 0
     elif start<0:
-        start = max(0,length+start)
+        start = length+start
     if math.isnan(end):
         end = length
     elif end<0:
-        end = max(0,length+end)
-    start =math.ceil(start)
+        end = length+end
+    if not math.isinf(start):
+        start =math.ceil(start)
+    else:
+        if start>0:
+            start = length
+        else:
+            start = 0
       # --- DEBUG ---
-    if exclusive or not is_safe_integer(end):
+    
+    if math.isinf(end) :
+        if end>0:
+            end = length
+        else:
+            end = 0
+    
+    
+    elif exclusive or not is_safe_integer(end):
         end = math.ceil(end)
     else:
         end = int(end + 1)
+    print("sliceCore called with a:", a, "start:", start, "end:", end, "exclusive:", exclusive)  # --- DEBUG ---
     return a[start:end]
     
     
 def Slice_(a,start,end):
     AssertInit_(a)
+    print("Slice_ called with a:", a, "start:", start, "end:", end)  # --- DEBUG ---
     if not isVmArray(a):
         raise VmError(f"`Expected array, got {Type_(a)}",[])
     s = ToNumber_(start) if start is not None else 0
@@ -458,8 +474,9 @@ def Slice_(a,start,end):
 
 def SliceExclusive_(a,start,end):
     AssertInit_(a)
+    print("SliceExclusive_ called with a:", a, "start:", start, "end:", end)  # --- DEBUG ---
     if not isVmArray(a):
-        raise TypeError(f"`Expected array, got {Type_(a)}")
+        raise VmError(f"`Expected array, got {Type_(a)}",[])
     s = ToNumber_(start) if start is not None else 0
     e = ToNumber_(end) if end is not None else len(a)
     return sliceCore(a,s,e,True)

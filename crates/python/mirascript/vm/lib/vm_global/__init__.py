@@ -9,7 +9,7 @@ from .math_arr import max_ as max,min_ as min ,hypot,sum_ as sum,product
 from .sequence import *
 from .string import *
 from .bit import *
-from .json import *
+from .json_ import *
 from .math_additional import *
 from .to_primitive import *
 __all__ = ['debug_print','panic','round','random','max','min','hypot','sum','product'] + [name for name in dir() if not name.startswith('_')]

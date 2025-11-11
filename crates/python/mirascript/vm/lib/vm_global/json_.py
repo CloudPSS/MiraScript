@@ -29,6 +29,23 @@ class NanToNullEncoder(json.JSONEncoder):
                 return 'null'
         if isinstance(o, str):
             return super().encode(o)
+        # 
+        if isinstance(o, (list)):
+            r = '[' +",".join([self.encode(item) for item in o])+']'
+            return r
+        if isinstance(o, (dict)):
+            r = '{'
+            first = True
+            for key in o:
+                if not first:
+                    r += ','
+                first = False
+                r += self.encode(str(key))
+                r += ':'
+                r += self.encode(o[key])
+            r += '}'
+            return r
+        
         r = innerToString_(o,True,space=False)
         return r
 
@@ -58,3 +75,8 @@ def from_json(value=Uninitialized,fallback=None):
         if fallback is not None:
             return fallback
         rethrow_error("Invalid JSON", e, None)
+        
+        
+if __name__ == "__main__":
+    var_1_7 = ['Hello world']
+    print(to_json(var_1_7))
