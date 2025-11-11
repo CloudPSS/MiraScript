@@ -14,6 +14,10 @@ import {
     keywords,
     numericKeywords,
 } from '../constants.js';
+import { lib } from '@mirascript/mirascript/subtle';
+import { isVmModule } from '@mirascript/mirascript';
+
+const moduleNames = Object.keys(lib).filter((name) => isVmModule(lib[name as never]));
 
 /** 匹配 identifier */
 function identifierCases(
@@ -96,6 +100,7 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                         },
                     ],
                 ],
+                [String.raw`\b(${moduleNames.join('|')})(@whitespace*(?=!?\.))`, ['entity.name.namespace', '']],
                 [
                     /(\.)(@whitespace*)(@identifier)(@whitespace*)(!?)(@whitespace*(?=\())/,
                     ['delimiter', '', 'entity.name.function', '', 'delimiter', ''],
