@@ -7,7 +7,7 @@
   "types": "dist/index.d.ts",
   "exports": "./dist/index.js",
   "napi": {
-    "binaryName": "napi",
+    "binaryName": "mirascript",
     "targets": [
       "x86_64-pc-windows-msvc",
       "aarch64-pc-windows-msvc",
@@ -24,7 +24,7 @@
   },
   "scripts": {
     "build": "pnpm run build:debug --release",
-    "build:debug": "napi build --manifest-path ../../crates/napi/Cargo.toml --output-dir dist --platform --esm",
+    "build:debug": "napi build --manifest-path ../../crates/node-api/Cargo.toml --output-dir dist --platform --esm",
     "watch": "nodemon --watch ../../crates/ --ext rs --exec \"pnpm run build:debug\""
   },
   "devDependencies": {
