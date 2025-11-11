@@ -1,3 +1,4 @@
+import { isFinite } from '../../../helpers/utils.js';
 import type { VmAny } from '../../index.js';
 import { $ToNumber } from '../../operations.js';
 import { required, VmLib } from '../_helpers.js';
@@ -28,12 +29,31 @@ export const ceil = VmLib(build(Math.ceil), {
     paramsType: { x: 'number' },
     returnsType: 'number',
 });
-export const round = VmLib(build(Math.round), {
-    summary: '返回四舍五入后的整数',
-    params: { x: '要四舍五入的数' },
-    paramsType: { x: 'number' },
-    returnsType: 'number',
-});
+
+const _floor = Math.floor;
+export const round = VmLib(
+    build((x) => {
+        // 使用银行家舍入法
+        if (!isFinite(x)) return x;
+        const i = _floor(x);
+        const f = x - i;
+        let r;
+        if (f < 0.5) r = i;
+        else if (f > 0.5) r = i + 1;
+        else r = i % 2 === 0 ? i : i + 1;
+        if (r === 0) {
+            // 保持正负零
+            return 1 / x > 0 ? 0 : -0;
+        }
+        return r;
+    }),
+    {
+        summary: '返回四舍五入后的整数',
+        params: { x: '要四舍五入的数' },
+        paramsType: { x: 'number' },
+        returnsType: 'number',
+    },
+);
 export const sign = VmLib(build(Math.sign), {
     summary: '返回数值的符号（正数为 1，负数为 -1，零为 0）',
     params: { x: '要判断符号的数' },
