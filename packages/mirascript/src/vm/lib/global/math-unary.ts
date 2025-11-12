@@ -33,15 +33,11 @@ const _round = Math.round;
 const _abs = Math.abs;
 export const round = VmLib(
     build((x) => {
-        // Ref: https://github.com/python/cpython/blob/9ce99c6c1901705238e4cb3ce81eb6f499e7b4f4/Objects/floatobject.c#L1045
+        // Ref: https://github.com/python/cpython/blob/9ce99c6c1901705238e4cb3ce81eb6f499e7b4f4/Objects/floatobject.c#L1052-L1060
         let rounded = _round(x);
         if (_abs(x - rounded) === 0.5) {
             // 使用银行家舍入法
             rounded = 2 * _round(x / 2);
-        }
-        if (rounded === 0) {
-            // 保持正负零
-            return 1 / x > 0 ? 0 : -0;
         }
         return rounded;
     }),
