@@ -1,4 +1,3 @@
-import { isFinite } from '../../../helpers/utils.js';
 import type { VmAny } from '../../index.js';
 import { $ToNumber } from '../../operations.js';
 import { required, VmLib } from '../_helpers.js';
@@ -30,22 +29,21 @@ export const ceil = VmLib(build(Math.ceil), {
     returnsType: 'number',
 });
 
-const _floor = Math.floor;
+const _round = Math.round;
+const _abs = Math.abs;
 export const round = VmLib(
     build((x) => {
-        // 使用银行家舍入法
-        if (!isFinite(x)) return x;
-        const i = _floor(x);
-        const f = x - i;
-        let r;
-        if (f < 0.5) r = i;
-        else if (f > 0.5) r = i + 1;
-        else r = i % 2 === 0 ? i : i + 1;
-        if (r === 0) {
+        // Ref: https://github.com/python/cpython/blob/9ce99c6c1901705238e4cb3ce81eb6f499e7b4f4/Objects/floatobject.c#L1045
+        let rounded = _round(x);
+        if (_abs(x - rounded) === 0.5) {
+            // 使用银行家舍入法
+            rounded = 2 * _round(x / 2);
+        }
+        if (rounded === 0) {
             // 保持正负零
             return 1 / x > 0 ? 0 : -0;
         }
-        return r;
+        return rounded;
     }),
     {
         summary: '返回四舍五入后的整数',
