@@ -77,7 +77,7 @@ pub enum DiagnosticCode {
     #[strum(message = "Operator `=` is expected in a bind statement or const statement")]
     MissingBindOperator,
     #[strum(message = "Constant name must start with '@'")]
-    InvalidConstName,
+    InvalidConstantName,
     #[strum(message = "Missing function name in the declaration")]
     MissingFunctionName,
     #[strum(message = "Extension call must be ended with parameter list; add `(` here")]
@@ -100,6 +100,8 @@ pub enum DiagnosticCode {
     UnmatchedCloseParen,
     #[strum(message = "Unknown pattern encountered")]
     UnknownPattern,
+    #[strum(message = "Only constants or literal values are allowed here")]
+    InvalidConstantLiteral,
     #[strum(message = "Unknown statement encountered")]
     UnknownStatement,
     #[strum(message = "An expression is expected here")]
