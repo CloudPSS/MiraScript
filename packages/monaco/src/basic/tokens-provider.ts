@@ -27,7 +27,7 @@ function identifierCases(
     return {
         '@numericKeywords': { ...data, token: `constant.numeric` },
         '@constantKeywords': { ...data, token: `constant.language` },
-        '@controlKeywords': { ...data, token: `keyword.control` },
+        '@controlKeywords': { ...data, token: `keyword.flow` },
         '@keywords': { ...data, token: `keyword` },
         '[@]+.*': { ...data, token: `variable.other.constant` },
         '~it': { ...data, token: `variable.other.constant.emphasis` },
@@ -74,18 +74,18 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                 [/[$]/, 'string'],
             ],
             common: [
-                [/(@identifier)(@whitespace*)(\??:)(?!:)/, ['support.type.property-name', '', 'delimiter']],
+                [/(@identifier)(@whitespace*)(\??:)(?!:)/, ['variable.other.property', '', 'delimiter']],
                 [
                     /(fn)(@whitespace+)(@identifier)(?=$|@whitespace|[[({,;])/,
                     ['keyword', '', { cases: identifierCases(undefined, 'entity.name.function') }],
                 ],
                 [
                     /(for)(@whitespace+)(mut)(@whitespace+)(@identifier)(@whitespace+)(in)/,
-                    ['keyword.control', '', 'keyword', '', { cases: identifierCases() }, '', 'keyword.control'],
+                    ['keyword.flow', '', 'keyword', '', { cases: identifierCases() }, '', 'keyword.flow'],
                 ],
                 [
                     /(for)(@whitespace+)(@identifier)(@whitespace+)(in)/,
-                    ['keyword.control', '', { cases: identifierCases() }, '', 'keyword.control'],
+                    ['keyword.flow', '', { cases: identifierCases() }, '', 'keyword.flow'],
                 ],
                 [
                     /(\.)(@whitespace*)(\d+)/,
@@ -100,7 +100,7 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                         },
                     ],
                 ],
-                [String.raw`\b(${moduleNames.join('|')})(@whitespace*(?=!?\.))`, ['entity.name.namespace', '']],
+                [String.raw`\b(${moduleNames.join('|')})(@whitespace*(?=!?\.))`, ['type', '']],
                 [
                     /(\.)(@whitespace*)(@identifier)(@whitespace*)(!?)(@whitespace*(?=\())/,
                     ['delimiter', '', 'entity.name.function', '', 'delimiter', ''],
@@ -297,12 +297,12 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                         'comment.doc',
                     ],
                 ],
-                [/(@identifier)(@whitespace*)(:)(@whitespace+)/, ['support.type.property-name', '', 'delimiter', '']],
+                [/(@identifier)(@whitespace*)(:)(@whitespace+)/, ['variable.other.property', '', 'delimiter', '']],
                 [
                     /(\/\*@whitespace*<)(\w+@whitespace*)([.\w]*)(>@whitespace*\*\/)/,
                     ['comment.doc', 'type', 'entity.name.label', 'comment.doc'],
                 ],
-                [/(\s*)(\(module\))(\s*)(@identifier)/, ['', 'entity.name.label', '', 'entity.name.namespace']],
+                [/(\s*)(\(module\))(\s*)(@identifier)/, ['', 'entity.name.label', '', 'type']],
 
                 [/(fn)(@whitespace+)(@identifier)$/, ['keyword.fn.doc', '', 'entity.name.function.doc']],
                 [
