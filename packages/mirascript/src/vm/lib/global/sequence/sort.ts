@@ -3,9 +3,7 @@ import type { VmAny, VmConst, VmValue } from '../../../types/index.js';
 import { VmLib, expectArray, expectCallable } from '../../_helpers.js';
 
 /** 默认比较 */
-function defaultCompare(a: VmValue, b: VmValue): number {
-    a ??= null;
-    b ??= null;
+function defaultCompare(a: VmValue = null, b: VmValue = null): number {
     if (Object.is(a, b)) return 0;
     if ((typeof a == 'string' || a == null) && (typeof b == 'string' || b == null)) {
         a ??= '';
@@ -26,8 +24,8 @@ function defaultCompare(a: VmValue, b: VmValue): number {
 function cmp(comparator: VmAny, recovered: VmValue): typeof defaultCompare {
     if (comparator == null) return defaultCompare;
     expectCallable('comparator', comparator, recovered);
-    return (a: VmValue, b: VmValue) => {
-        const ret = $Call(comparator, [a ?? null, b ?? null]);
+    return (a: VmValue = null, b: VmValue = null) => {
+        const ret = $Call(comparator, [a, b]);
         return $ToNumber(ret);
     };
 }
