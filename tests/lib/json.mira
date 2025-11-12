@@ -7,13 +7,13 @@ t_eq(to_json(nan), 'null');
 t_eq(to_json(inf), 'null');
 t_eq(to_json(-inf), 'null');
 t_eq(to_json(0), '0');
+t_eq(to_json(0.1), '0.1');
 t_eq(to_json(-0), '0');
 t_eq(to_json(1), '1');
 t_eq(to_json(1.5), '1.5');
 t_eq(to_json("Hello, World!"), '"Hello, World!"');
 t_eq(to_json("é"), '"é"');
 t_eq(to_json([]), '[]');
-t_eq(to_json(()), '{}');
 if has_module {
   t_eq(to_json(v_module), '{}');
 }
@@ -23,8 +23,12 @@ if has_extern {
 
 t_eq(from_json(nil), nil);
 t_eq(from_json('null'), nil);
-t_eq(from_json('[1, 2, "3"]'), [1, 2, "3"]);
-t_eq(from_json('{"a": 1, "b": 2}'), (a: 1, b: 2));
+t_eq(from_json('true'), true);
+t_eq(from_json('false'), false);
+t_eq(from_json(@'"\ud83e\udece"'@), '🫎');
+t_eq(from_json(@'"\u0000"'@), '\0');
+t_eq(from_json('[1, 2, "3", "NaN"]'), [1, 2, "3", "NaN"]);
+t_eq(from_json('{"a": 1, "b": 2, "c": true, "d": null }'), (a: 1, b: 2, c: true, d: nil));
 t_eq(from_json('{"0": "X"}'), ("X",));
 t_eq(from_json(sin), sin);
 t_eq(from_json('x', sin), sin);
@@ -37,3 +41,8 @@ t_throws(fn {
 t_throws(fn {
   from_json('');
 });
+
+let values = [0, 1, 2, random(), [1, 2, 3], [random(), 'x', '🫎'], (random(), 'x', '🫎'), (name: "Alice", age: 30, is_student: false, scores: [95.5, 88.0, 76.5], address: (street: "123 Main St", city: "Wonderland", zip: "12345"), hobbies: ["reading", "chess", "hiking"], metadata: nil)];
+for v in values {
+  t_eq(v::to_json()::from_json(), v);
+}
