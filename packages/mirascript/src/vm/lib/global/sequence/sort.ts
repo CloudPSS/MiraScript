@@ -4,17 +4,22 @@ import { VmLib, expectArray, expectCallable } from '../../_helpers.js';
 
 /** 默认比较 */
 function defaultCompare(a: VmValue, b: VmValue): number {
-    a ??= '';
-    b ??= '';
-    if (typeof a == 'string' && typeof b == 'string') {
+    a ??= null;
+    b ??= null;
+    if (Object.is(a, b)) return 0;
+    if ((typeof a == 'string' || a == null) && (typeof b == 'string' || b == null)) {
+        a ??= '';
+        b ??= '';
         if (a < b) return -1;
         if (a > b) return 1;
         return 0;
     }
-    if (Object.is(a, b)) return 0;
+    // nan is treated as 0
     const an = $ToNumber(a) || 0;
     const bn = $ToNumber(b) || 0;
-    return an - bn;
+    if (an < bn) return -1;
+    if (an > bn) return 1;
+    return 0;
 }
 
 /** 获取比较函数 */
@@ -22,7 +27,7 @@ function cmp(comparator: VmAny, recovered: VmValue): typeof defaultCompare {
     if (comparator == null) return defaultCompare;
     expectCallable('comparator', comparator, recovered);
     return (a: VmValue, b: VmValue) => {
-        const ret = $Call(comparator, [a, b]);
+        const ret = $Call(comparator, [a ?? null, b ?? null]);
         return $ToNumber(ret);
     };
 }
