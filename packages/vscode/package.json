@@ -32,9 +32,9 @@
     "@mirascript/monaco": "workspace:~",
     "@private/monaco-editor": "^0.0.55",
     "@types/node": "^24.10.1",
-    "@types/vscode": "^1.105.0",
+    "@types/vscode": "^1.106.0",
     "cosmiconfig": "^9.0.0",
-    "js-yaml": "^4.1.0",
+    "js-yaml": "^4.1.1",
     "nodemon": "^3.1.11"
   },
   "contributes": {
