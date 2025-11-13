@@ -7,7 +7,6 @@ import {
     REG_HEX,
     REG_NUMBER,
     REG_IDENTIFIER,
-    DOC_HEADER,
     MAX_VERBATIM_LENGTH,
     constantKeywords,
     controlKeywords,
@@ -50,7 +49,6 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
 
         whitespace: REG_WHITESPACE,
         identifier: REG_IDENTIFIER,
-        docHeader: DOC_HEADER,
 
         keywords: keywords(),
         controlKeywords: controlKeywords(),
@@ -58,16 +56,12 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
         numericKeywords: numericKeywords(),
 
         inlineDocParam: /\(parameter(?: pattern)?\)/,
+        inlineDocMod: ['local', 'global', 'field', 'module'].join('|'),
 
-        start: mode === 'template' ? 'root_template' : 'root',
+        start: mode === 'template' ? 'root_template' : mode === 'doc' ? 'root_doc' : 'root',
         tokenPostfix: '.mirascript',
         tokenizer: {
-            root: [
-                [/^(?=\0)/, '', '@doc_mode'],
-                [/^\/\*\*@docHeader\*\*\/$/, 'comment.doc', '@doc_mode'],
-                [/[[\](){}]/, '@brackets'],
-                { include: '@common' },
-            ],
+            root: [[/[[\](){}]/, '@brackets'], { include: '@common' }],
             root_template: [
                 [/[^$]+/, 'string'],
                 [/(?=\$)/, '', '@string_interpolation.$S3'],
@@ -259,18 +253,27 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                 [/[*@\\]/, { token: 'comment.doc' }],
             ],
 
-            doc_mode: [
+            root_doc: [
                 // inline doc, start with `\0`
+                [/^\0/, { token: '', switchTo: '@inline_doc' }],
+                [/(?=.)/, { token: '', switchTo: '@doc_mode' }],
+            ],
+
+            inline_doc: [
                 [
-                    /^(\0@inlineDocParam)(@whitespace+)(\.\.|)(mut)(@whitespace+)(@identifier)/,
+                    /(@inlineDocParam)(@whitespace+)(\.\.|)(mut)(@whitespace+)(@identifier)/,
                     ['entity.name.label', '', 'delimiter', 'keyword.mut', '', 'variable.emphasis'],
                 ],
                 [
-                    /^(\0@inlineDocParam)(@whitespace+)(\.\.|)(@identifier)/,
+                    /(@inlineDocParam)(@whitespace+)(\.\.|)(@identifier)/,
                     ['entity.name.label', '', 'delimiter', 'variable.other.constant.emphasis'],
                 ],
-                [/^(\0\(@identifier\))(@whitespace+)/, ['entity.name.label', '']],
+                [/(@whitespace*)(\(module\))(\s*)(@identifier)/, ['', 'entity.name.label', '', 'type']],
+                [/(\(@inlineDocMod\))(@whitespace+)/, ['entity.name.label', '']],
+                { include: '@doc_mode' },
+            ],
 
+            doc_mode: [
                 [
                     /(@identifier)(@whitespace*)(:)(@whitespace*)(\/\*@whitespace*<)(extern )([.\w]*Function)(>@whitespace*\*\/)/,
                     [
@@ -302,62 +305,41 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                     /(\/\*@whitespace*<)(\w+@whitespace*)([.\w]*)(>@whitespace*\*\/)/,
                     ['comment.doc', 'type', 'entity.name.label', 'comment.doc'],
                 ],
-                [/(\s*)(\(module\))(\s*)(@identifier)/, ['', 'entity.name.label', '', 'type']],
 
-                [/(fn)(@whitespace+)(@identifier)$/, ['keyword.fn.doc', '', 'entity.name.function.doc']],
-                [
-                    /(fn)(@whitespace+)(@identifier)(\()(\.\.)(\))$/,
-                    ['keyword.fn.doc', '', 'entity.name.function.doc', '@brackets', 'delimiter', '@brackets'],
-                ],
-                [/fn/, 'keyword.fn.doc', '@type_doc_fn'],
-                [
-                    /(let)(@whitespace+)(mut)(@whitespace+)(@identifier)/,
-                    [{ token: 'keyword.$1' }, '', 'keyword.mut', '', { token: 'variable', next: '@root' }],
-                ],
                 [
                     /(let|const)(@whitespace+)(@identifier)/,
                     [{ token: 'keyword.$1' }, '', { token: 'variable.other.constant', next: '@root' }],
+                ],
+                [/(fn)(@whitespace+)(@identifier)$/, ['keyword.fn.doc', '', 'entity.name.function.doc']],
+                [
+                    /(fn)(@whitespace+)(@identifier)(\()(\.\.)(\))/,
+                    ['keyword.fn.doc', '', 'entity.name.function.doc', '@brackets', 'delimiter', '@brackets'],
+                ],
+                [
+                    /(fn)(@whitespace+)(@identifier)/,
+                    ['keyword.fn.doc', '', { token: 'entity.name.function.doc', next: '@type_doc' }],
+                ],
+                [
+                    /(let)(@whitespace+)(mut)(@whitespace+)(@identifier)/,
+                    [{ token: 'keyword.$1' }, '', 'keyword.mut', '', { token: 'variable', next: '@root' }],
                 ],
                 { include: '@common' },
                 [/[[\](){}]/, '@brackets'],
             ],
             type_doc: [
-                { include: '@type_doc_common' },
-                [/[,)]/, 'delimiter', '@pop'],
                 [/;/, { token: 'delimiter', next: '@pop', goBack: 1 }],
-            ],
-            type_doc_inner: [{ include: '@type_doc_common' }, [/[,;]/, 'delimiter']],
-            type_doc_common: [
-                [/fn\b/, 'type', '@type_doc_fn'],
+                [/(fn)(\()/, ['type', '@brackets']],
                 [/(type)(\()(@identifier)(\))/, ['type', '@brackets', 'variable.emphasis.doc', '@brackets']],
-                [/@identifier/, 'type'],
-                [/[[(]/, '@brackets', '@type_doc_inner'],
-                [/[\])]/, '@brackets', '@pop'],
-                [/[&|.]/, 'delimiter'],
-                [/->/, 'delimiter'],
-                [/@whitespace+/, ''],
-            ],
-            type_doc_fn: [
-                [/(@identifier)(\()/, ['entity.name.function.doc', '@brackets']],
-                [/@whitespace+/, ''],
-                [/(->)/, { token: 'delimiter', switchTo: '@type_doc' }],
                 [
-                    /(\.\.|)(@identifier)(\s*)(:|,|\))/,
-                    [
-                        'delimiter',
-                        'variable.emphasis.doc',
-                        '',
-                        {
-                            cases: {
-                                ':': { token: 'delimiter', next: '@type_doc' },
-                                '\\)': '@brackets',
-                                '@default': 'delimiter',
-                            },
-                        },
-                    ],
+                    /(@identifier)(:)(@whitespace*)(fn)(\()/,
+                    ['entity.name.function.emphasis.doc', 'delimiter', '', 'type', '@brackets'],
                 ],
-                [/[()]/, '@brackets'],
-                [/;/, { token: 'delimiter', next: '@pop', goBack: 1 }],
+                [/(@identifier)(:)/, ['variable.emphasis', 'delimiter']],
+                [/@identifier/, 'type'],
+                [/[&|.,]/, 'delimiter'],
+                [/->/, 'delimiter'],
+                [/[[\]()]/, '@brackets'],
+                { include: '@whitespace' },
             ],
         },
     };
@@ -368,5 +350,6 @@ export function registerMiraScriptTokensProvider(): IDisposable[] {
     return [
         languages.setMonarchTokensProvider('mirascript', getTokensProvider('script')),
         languages.setMonarchTokensProvider('mirascript-template', getTokensProvider('template')),
+        languages.setMonarchTokensProvider('mirascript-doc', getTokensProvider('doc')),
     ];
 }

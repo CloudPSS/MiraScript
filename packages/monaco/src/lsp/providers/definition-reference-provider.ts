@@ -9,8 +9,7 @@ import {
     Range,
 } from '../../monaco-api.js';
 import { Provider } from './base.js';
-import { valueDoc } from '../utils.js';
-import { DOC_HEADER } from '../../constants.js';
+import { docComment, valueDoc } from '../utils.js';
 
 /**
  * 转到定义/引用
@@ -20,7 +19,11 @@ export class DefinitionReferenceProvider
     implements languages.DefinitionProvider, languages.ReferenceProvider
 {
     constructor(
-        private readonly globalModel = editor.createModel(``, 'mirascript', Uri.parse('mirascript:///lib/global.mira')),
+        private readonly globalModel = editor.createModel(
+            ``,
+            'mirascript-doc',
+            Uri.parse('mirascript:///lib/global.mira'),
+        ),
     ) {
         super();
     }
@@ -28,15 +31,7 @@ export class DefinitionReferenceProvider
     private prepareGlobal(name: string, value: VmAny): { uri: Uri; range: IRange } {
         const { globalModel } = this;
         const { script, doc } = valueDoc(name, value, 'declare');
-        const code = [
-            `/**${DOC_HEADER}**/`,
-            '',
-            `/**`,
-            ...doc.flatMap((sec) => sec.split('\n')).map((line) => ` * ${line}`),
-            ` */`,
-            script,
-            '',
-        ];
+        const code = ['', ...docComment(doc), script, ''];
         globalModel.setValue(code.join('\n'));
         return {
             uri: globalModel.uri,

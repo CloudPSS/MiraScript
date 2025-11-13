@@ -86,5 +86,6 @@ export function setLanguageConfiguration(): IDisposable[] {
     return [
         languages.setLanguageConfiguration('mirascript', configuration()),
         languages.setLanguageConfiguration('mirascript-template', configuration()),
+        languages.setLanguageConfiguration('mirascript-doc', configuration()),
     ];
 }

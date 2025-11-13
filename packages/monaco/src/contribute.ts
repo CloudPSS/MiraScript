@@ -15,4 +15,11 @@ export function registerContribution(): void {
         aliases: ['MiraScriptTemplate', 'mirascript-template', 'miratpl'],
         mimetypes: ['text/x-mirascript-template'],
     });
+
+    languages.register({
+        id: 'mirascript-doc',
+        extensions: [],
+        aliases: [],
+        mimetypes: ['text/x-mirascript-doc'],
+    });
 }

@@ -125,23 +125,24 @@ export function globalFnDoc(info: VmFunctionInfo): string[] {
         paramDoc.push(`- **返回值**: ${info.returns}`);
     }
     if (paramDoc.length) {
-        doc.push(paramDoc.join('\n'));
+        doc.push('', paramDoc.join('\n'));
     }
     if (info.examples?.length) {
         let exp = `### 示例`;
         for (const example of info.examples) {
             exp += codeblock(example);
         }
-        doc.push(exp);
+        doc.push('', exp);
     }
     return doc;
 }
 
 /** 获取代码块格式化字符串 */
 export function codeblock(value: string): string {
+    const lang = value.startsWith('\0') ? 'mirascript-doc' : 'mirascript';
     const includeFences = /`{3,}/.exec(value);
     const CODEBLOCK_FENCE = includeFences ? '`'.repeat(includeFences[0].length + 1) : '```';
-    return `\n${CODEBLOCK_FENCE}mirascript\n${value}\n${CODEBLOCK_FENCE}\n`;
+    return `\n${CODEBLOCK_FENCE}${lang}\n${value}\n${CODEBLOCK_FENCE}\n`;
 }
 
 /** 检查位置是否在范围内，且范围非空 */
@@ -178,6 +179,9 @@ function serializeForDisplayInner(value: VmValue, maxWidth: number): string {
         const len = Object.keys(value).length;
         if (!len) return '()';
         return `(../* x${len} */)`;
+    }
+    if (isVmExtern(value)) {
+        return `/* <extern ${value.describe}> */`;
     }
     return `/* ${operations.$ToString(value)} */`;
 }
@@ -245,6 +249,15 @@ export function serializeForDisplay(value: VmValue, maxEntries = 100, maxWidth =
     return `${begin}${entries.join(', ')}${end}`;
 }
 
+/** 生成 doc comment */
+export function docComment(doc: string[]): string[] {
+    const lines = doc.flatMap((sec) => sec.split('\n').map((s) => s.trimEnd()));
+    const firstLine = lines.findIndex((line) => line.length > 0);
+    const lastLine = lines.findLastIndex((line) => line.length > 0);
+    if (firstLine < 0 || lastLine < 0) return [];
+    return [`/**`, ...lines.slice(firstLine, lastLine + 1).map((line) => ` * ${line}`), ` */`];
+}
+
 /** 获取变量文档 */
 export function valueDoc(
     name: string,
@@ -283,14 +296,7 @@ export function valueDoc(
             for (const k of exports) {
                 const v = value.get(k);
                 const vDoc = valueDoc(k, v, isVmModule(v) ? 'field' : 'declare');
-                const code = [
-                    `/**`,
-                    ...vDoc.doc.flatMap((sec) => sec.split('\n')).map((line) => ` * ${line}`),
-                    ` */`,
-                    'export ' + vDoc.script,
-                    '',
-                    '',
-                ];
+                const code = [...docComment(vDoc.doc), 'export ' + vDoc.script, '', ''];
                 script += code.join('\n');
             }
             script = script.trimEnd();
