@@ -44,3 +44,11 @@ if !O() {
 } else {
   t_true(true);
 }
+
+if !T() {
+  t_never();
+} else if !F() {
+  t_true(true);
+} else {
+  t_never();
+}
