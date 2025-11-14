@@ -2,10 +2,9 @@ from typing import Union
 
 from mirascript.vm.types.const import Uninitialized
 from ....types.checker import is_vm_array, is_vm_record 
-from ..._helpers import VmLib, expect_array_or_record,expect_compound
+from ..._helpers import  expect_array_or_record,expect_compound
 
 def keys(data=Uninitialized):
-    print('keys called with data:',data)
     expect_compound('data', data,[])
     
     
@@ -28,7 +27,6 @@ def values(data=Uninitialized):
 
 def entries(data=Uninitialized):
     expect_array_or_record('data', data, [])
-    print('entries called with data:',data)
     if is_vm_array(data):
         # return list(enumerate(data)) # type: ignore
         

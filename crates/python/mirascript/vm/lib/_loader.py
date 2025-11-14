@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from ..lib._helpers import VmLibWrapper
 
 from ..types.context import VmSharedContext
 # from ._helpers import VmLib
@@ -15,7 +14,7 @@ for name in dir(vm_global):
     if name.startswith('_'):
         continue
     value = getattr(vm_global, name)
-    VmSharedContext[name] = wrap_entry(name, value)
+    VmSharedContext[name] = wrap_entry(name, value,'global')
 
 
 

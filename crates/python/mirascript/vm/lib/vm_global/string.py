@@ -68,7 +68,6 @@ def split(string=Uninitialized, separator=''):
 
 def join(string_array=Uninitialized, separator=''):
   expect_array('str_array', string_array, None)
-  print('join input',string_array,separator)
   str_list = []
   for item in string_array:
     str_list.append(ToString_(item))

@@ -52,13 +52,7 @@ def ceil(x=Uninitialized):
         
     # return ( build(math.ceil,math.nan,math.inf,-math.inf,+0.0,-0.0)(abs_(x))*math.copysign(1,ToNumber_(x)) )
 round_ = build(lambda x: round(x,0))
-# def round_(x=Uninitialized):
-    
-#     print(f"math_unary: calling round_ with argument {x}" ,type(x))
-#     ret = build(decimal.Decimal    ,math.nan,math.inf,-math.inf)(x)
-#     if math.isnan(ret):
-#        return ret
-#     return float(ret)
+
 
 
 sign = build(lambda v: 1 if v>0 else -1 if v<0 else 0,math.nan,1,-1,+0.0,-0.0)

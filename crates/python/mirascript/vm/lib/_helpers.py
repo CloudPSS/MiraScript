@@ -9,7 +9,6 @@ from ..error import VmError
 from ..types.checker import is_vm_array, is_vm_record
 from ..types.const import VM_ARRAY_MAX_LENGTH, VmAny, VmValue
 from ..helpers import Cp
-from ..types.function import VmFunctionInfo, VmFunctionLike, VmFunctionWrapper
 from ..types.const import Uninitialized
 from ..types.checker import is_vm_primitive
 
@@ -141,17 +140,3 @@ class VmLibOption(TypedDict, total=False):
     returnsType: str
 
 
-class VmLibWrapper(TypedDict, total=False):
-    func: VmFunctionLike
-    info: VmLibOption
-
-    def __call__(self, *args: Optional[VmValue]) -> Union[VmAny, None]:
-        self.func(*args)  # type: ignore
-
-
-def VmLib(fn, option: VmLibOption) -> VmLibWrapper:
-
-    if not callable(fn):
-        raise TypeError("Invalid function")
-
-    return VmLibWrapper(func=cast(VmFunctionLike, fn), info=option)

@@ -2,6 +2,7 @@ import math
 import re
 
 from mirascript.vm.error import VmError
+
 from mirascript.vm.types.checker import is_vm_primitive
 from mirascript.vm.types.module import VmModule
 from mirascript.vm.types.wrapper import VmWrapper,isVmWrapper
@@ -9,7 +10,7 @@ from mirascript.vm.types.wrapper import VmWrapper,isVmWrapper
 from ..vm.types.checker import is_vm_const, is_vm_record
 
 from .types.extern import VmExtern, is_vm_extern
-
+from mirascript.vm.types.const import getVmFunctionInfo
 import locale
 import numpy as np
 import unicodedata
@@ -71,7 +72,11 @@ def ToBoolean_(value):
 def isVmArray(value):
     if type(value) is list:
         return True
-    
+
+def is_number_regex(s):
+    # 匹配整数、小数、科学计数法
+    pattern = r'^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$'
+    return bool(re.match(pattern, s))
 
 def ToNumber_(value):
     """
@@ -96,10 +101,18 @@ def ToNumber_(value):
     if isinstance(value, str): 
         if value.strip() == "":
             return 0
-        
         try:
+            value = value.strip()
             if value.startswith(("0x","0X")):
-                return float(int(value,16))
+                    return float(int(value,16))
+            if not is_number_regex(value):
+                if value=='inf' or value=='+inf' or value=='Infinity' or value=='+Infinity':
+                    return math.inf
+                if value=='-inf' or value=='-Infinity':
+                    return -math.inf
+                return math.nan
+       
+            
             return float(value)
         except ValueError:
             
@@ -140,12 +153,14 @@ def numberToString_(x) -> str:
     return result
    
 
-def innerToString_(val,useBraces,space=True) -> str:
+def innerToString_(val,useBraces) -> str:
     if val is None:
-        return ""
+        return "nil"
     
     if callable(val):
-        # name = getattr(val, '__name__', None)
+        name = getVmFunctionInfo(val)
+        if name:
+            return f"<function {name}>"
         return "<function>"
     
     if isVmWrapper(val):
@@ -156,7 +171,7 @@ def innerToString_(val,useBraces,space=True) -> str:
         for v in val:
             strings.append(innerToString_(v,True))
         # print('Array to string:', strings)  # --- DEBUG ---
-        joined = (", " if space else ",").join(strings)
+        joined = (", ").join(strings)
         if not useBraces:
             return joined
         return f"[{joined}]"
@@ -165,11 +180,11 @@ def innerToString_(val,useBraces,space=True) -> str:
         strings =[]
         
         for k,v in val.items():
-            strings.append(f"{k}:{innerToString_(v,True)}")
-        joined = (", " if space else ",").join(strings)
+            strings.append(f"{k}: {innerToString_(v,True)}")
+        joined = (", ").join(strings)
         if not useBraces:
             return joined
-        return f"{{{joined}}}"
+        return f"({joined})"
     if isinstance(val,bool):
         return "true" if val else "false"
         # return "true" if val else "0"
@@ -380,7 +395,7 @@ def Concat_(*args):
     result = ""
     for a in args:
         AssertInit_(a)
-        result += ToString_(a)
+        result += Format_(a)
     return result
 
 
@@ -661,6 +676,32 @@ def ArraySpread_(val):
     
     raise VmError(f"`Expected array, iterable extern or nil, got {Type_(val)}",None)
 
+
+def formatNumber_(num):
+    AssertInit_(num)
+    if not math.isfinite(num):
+        return numberToString_(num)
+    
+    if num ==0:
+        return "0"
+    
+    s= numberToString_(num)
+    
+    ps=''
+    absVal = abs(num)
+    if absVal >=1000 or absVal <0.001:
+        ps1=format(num, f'.0e')
+        ps2=format(num, f'.5e')
+        ps = ps1 if len(ps1)<len(ps2) else ps2
+        
+    else:
+        ps=format(float(num), f'.6')
+    
+    return  ps if len(ps)<len(s) else s
+        
+    
+    
+
 def Format_(val, fmt=None):
     AssertInit_(val)
     
@@ -669,16 +710,24 @@ def Format_(val, fmt=None):
         if not isinstance(fmt, str):
             f = ToString_(fmt)
         else:
-            f = f.strip()
+            f = fmt.strip()
+    if isinstance(val, bool):
+        return ToString_(val)
+    
     if isinstance(val, (int, float)):
-        r = re.match(r'/^\.\d+$/', f)
+        r = re.match(r'^\.\d+$', f)
         if r:
-            digits = math.trunc(float(f[1:]))
-            if digits < 100:
+            
+            ff = float(f[1:])
+            if math.isinf(ff):
                 digits = 100
-            return round(val, digits)
+            else:
+                digits =math.trunc(ff)
+                if not( digits <= 100):
+                    digits = 100
+            return f"{val:.{digits}f}"
         else:
-            return numberToString_(val)
+            return formatNumber_(val)
     return ToString_(val)
 
 

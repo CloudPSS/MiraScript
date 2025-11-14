@@ -62,3 +62,9 @@ VmImmutable = Union[ VmConst , VmFunctionWrapper , VmModule]
 VmValue =Union[ VmImmutable , VmExtern]
 VmUninitialized = type(Uninitialized)
 VmAny = Union[VmValue , VmUninitialized]
+
+kVmFunction = 'mirascript_vm_function'
+def getVmFunctionInfo(value) :
+    if (not callable(value)):
+        return None
+    return getattr(value, kVmFunction, None)

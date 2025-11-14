@@ -1,21 +1,21 @@
 from ...operations import ToBoolean_,ToString_,ToNumber_,Format_
 from .._helpers import required
 import math
-def to_string(value):
+from mirascript.vm.types.const import Uninitialized
+def to_string(value=Uninitialized):
     required('value', value,'')
     return ToString_(value)
 
-def to_number(value):
+def to_number(value=Uninitialized):
     required('value', value,math.nan)
-    print(f"to_number: converting value {value} of type {type(value)}")
     return ToNumber_(value)
 
 
-def to_boolean(value):
+def to_boolean(value=Uninitialized):
     required('value', value,False)
     return ToBoolean_(value)
 
 
-def format(value,fmt):
+def format(value=Uninitialized,fmt=Uninitialized):
     required('value', value,'')
     return Format_(value,fmt)

@@ -1,12 +1,11 @@
 from mirascript.vm.types.const import Uninitialized
-from ..._helpers import VmLib, throw_error,expect_array_or_record,expect_callable
+from ..._helpers import  throw_error,expect_array_or_record,expect_callable
 from mirascript.vm.types.checker import is_vm_array
 from ....operations import  Call_,ToBoolean_
 
 __all__ = ['all','any']   
 
 def all(data=Uninitialized, fn=Uninitialized):
-    print('all called with data:',data,fn)
     expect_array_or_record('data', data, None)
     expect_callable('fn', fn, data)
     

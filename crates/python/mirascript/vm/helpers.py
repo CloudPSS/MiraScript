@@ -2,9 +2,11 @@ import time
 import math
 
 from mirascript.vm.types.const import VM_ARRAY_MAX_LENGTH
-from .operations import ToNumber_, ToBoolean_, isNumber_,AssertInit_
+from .operations import ToNumber_,AssertInit_
 from .types.checker import  is_vm_const
-from .types.context import DefaultVmContext, VmSharedContext
+from .types.context import DefaultVmContext
+
+
 def Vargs(varags):
     """将非常量元素置为 None，返回新列表"""
     # 这里假设 is_vm_const 已在其他地方实现
@@ -24,7 +26,6 @@ def Element(value):
 
 def ElementOpt(key, value):
     AssertInit_(value)
-    print('ElementOpt called with key:', key, 'value:', value)  # --- DEBUG ---
     if value is None or not is_vm_const(value):
         return {}
     return {key: value}

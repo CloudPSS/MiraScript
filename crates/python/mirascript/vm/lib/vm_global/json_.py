@@ -47,7 +47,7 @@ class NanToNullEncoder(json.JSONEncoder):
             r += '}'
             return r
         
-        r = innerToString_(o,True,space=False)
+        r = innerToString_(o,True)
         return r
 
 def to_json(value=Uninitialized):
@@ -66,7 +66,6 @@ def to_json(value=Uninitialized):
 
 def from_json(value=Uninitialized,fallback=None):
     required("value",value, None)
-    print("from_json:",value,type(value))
     if not isinstance(value, str):
       return value
     

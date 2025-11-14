@@ -28,9 +28,9 @@ class BlackBoxTests(unittest.TestCase):
 
         # helper wrappers that call unittest assertions immediately
         def t_eq(a, b,message=None):
-            print(f"t_eq start: {a} == {b},type a {type(a)}, type b {type(b)}")  # --- DEBUG ---
+            # print(f"t_eq start: {a} == {b},type a {type(a)}, type b {type(b)}")  # --- DEBUG ---
             assert_deep_equal(a, b,message=message)
-            print(f"t_eq end: {a} == {b},type a {type(a)}, type b {type(b)}")  # --- DEBUG ---
+            # print(f"t_eq end: {a} == {b},type a {type(a)}, type b {type(b)}")  # --- DEBUG ---
 
         def t_ne(a, b,message=None):
             # self.assertNotEqual(a, b)
@@ -38,24 +38,24 @@ class BlackBoxTests(unittest.TestCase):
             
 
         def t_true(v,message=None):
-            print(f"t_true: {v}, type {type(v)}")  # --- DEBUG ---
+            # print(f"t_true: {v}, type {type(v)}")  # --- DEBUG ---
             self.assertTrue(v,msg=message)
         def t_false(v,message=None):
-            print(f"t_false: {v}, type {type(v)}")  # --- DEBUG ---
+            # print(f"t_false: {v}, type {type(v)}")  # --- DEBUG ---
             self.assertFalse(v,msg=message)
 
         def t_throws(fn,message=None):
-            print('t_throws',fn,type(fn))  # --- DEBUG ---
+            # print('t_throws',fn,type(fn))  # --- DEBUG ---
             with self.assertRaises(VmError, msg=message):
                 fn()
-            print('t_throws end',fn,type(fn))  # --- DEBUG ---
+            # print('t_throws end',fn,type(fn))  # --- DEBUG ---
         def t_timeout(fn,message=None):
-            print(f"t_timeout: registering timeout function {fn}")  # --- DEBUG ---
+            # print(f"t_timeout: registering timeout function {fn}")  # --- DEBUG ---
             timeout_fns.append([fn, message if  message is not None else "Execution timeout"])
 
         def t_snapshot(*values):
             import json
-            print("t_snapshot:",values)  # --- DEBUG ---
+            # print("t_snapshot:",values)  # --- DEBUG ---
             result_lines.append(json.dumps(list(values), cls=NanToNullEncoder,ensure_ascii=False) + "\n")
 
         def t_never(message=None):
@@ -104,7 +104,7 @@ class BlackBoxTests(unittest.TestCase):
         script(ctx)
 
         # run timeout callbacks after script execution (mimic TS)
-        print(f"timeout_fns count: {len(timeout_fns)}")  # --- DEBUG ---
+        # print(f"timeout_fns count: {len(timeout_fns)}")  # --- DEBUG ---
         for [fn, message] in timeout_fns:
             with self.assertRaisesRegex(RangeError if 'RangeError' in globals() else Exception,message):
                 fn()
@@ -115,13 +115,12 @@ class BlackBoxTests(unittest.TestCase):
         files =sorted(TEST_DIR.rglob("*.mira"))
         
         for mira_path in files:
-                print(files.index(mira_path),len(files))  # --- DEBUG ---
                 # if  'lib' in mira_path.parts:
                 #     # 这个测试文件目前有问题，跳过
                 #     continue
-                print(f"Running test: {mira_path}")  # --- DEBUG ---
+            print(f"Running test: {mira_path}, index {files.index(mira_path)} len {len(files)}")  # --- DEBUG ---
             # with self.subTest(mira_file=str(mira_path.relative_to(TEST_DIR))):
-                self.run_mira_file(mira_path)
+            self.run_mira_file(mira_path)
                 # break
 
 if __name__ == "__main__":

@@ -1,16 +1,12 @@
 
 # VmFunction 相关实现，Python 版
-from dataclasses import dataclass
 from functools import wraps
-from typing import Callable, Any, Optional, Dict, Protocol, Tuple, TypeVar, TypedDict, Union, cast
-
-
 from ..helpers import CpEnter, CpExit
-from .const import VmAny, VmValue,VmFunctionLike,VmFunctionWrapper,VmFunctionInfo,VmFunctionOption
-from .extern import VmExtern, wrap_to_vm_value, unwrap_from_vm_value 
+
+from .const import kVmFunction
 
 
-def VmFunction(fn, option: Union[VmFunctionOption, None] = None) -> VmFunctionLike:
+def VmFunction(fn, option = None):
     if not callable(fn):
         raise TypeError("Invalid function")
     option = option or {}
@@ -25,6 +21,8 @@ def VmFunction(fn, option: Union[VmFunctionOption, None] = None) -> VmFunctionLi
             finally:
                 CpExit()
         fn = wrapped
+        
+        setattr(fn, kVmFunction, option.get('fullName', getattr(original, '__name__', 'unknown')))
 
     return fn
 

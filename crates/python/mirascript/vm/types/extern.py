@@ -61,17 +61,13 @@ class VmExtern(VmWrapper):
         
         if key == "constructor":
             return False
-        print('VmExtern access',key,'on',self.value)
         # 跳过内建属性
         return True
 
     def has(self, key: str) -> bool:
-        
-        print('VmExtern has',key,'on',self.value)
         return self.access(key, True)
 
     def get(self, key: str) -> Any:
-        print('VmExtern get',key,'from',self.value)
         if not self.has(key):
             return None
         
@@ -82,7 +78,6 @@ class VmExtern(VmWrapper):
         if not self.access(key, False):
             return False
         prop = unwrap_from_vm_value(value)
-        print('VmExtern set',key,'to',prop,'on',self.value)
         self.value[key] = prop
         return True
 

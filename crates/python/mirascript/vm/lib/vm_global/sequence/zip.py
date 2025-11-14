@@ -5,7 +5,6 @@ from .entries import entries
 from ..._helpers import throw_error
 from ....helpers import Cp
 def zip(data) :
-    print('zip args:',data)
     ets = entries(data)
     l= 0
     for el in ets:

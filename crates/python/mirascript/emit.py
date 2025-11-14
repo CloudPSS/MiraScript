@@ -450,7 +450,6 @@ class Emitter:
                 value = read()
                 opt = opcode == OpCode.FieldOptDyn
                 if opt:
-                    print('FieldOptDyn',field,value)
                     add_Element([self.rv(field), self.rv(value)])
                 else:
                     add_Element([self.rv(value)],fun_id='Element',key=ast.Name(id=self.rv(field), ctx=ast.Load()))
@@ -1022,7 +1021,6 @@ class Emitter:
             #                 body=[],
             #                 orelse=[],lineno=0)
             
-            print('range loop:',s,e,i)
             current_blocks_body.append(s)
             current_blocks_body.append(e)
             current_blocks_body.append(i)

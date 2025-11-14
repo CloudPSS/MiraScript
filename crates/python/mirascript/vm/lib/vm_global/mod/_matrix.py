@@ -1,7 +1,7 @@
 import math
 from mirascript.vm.types.checker import is_vm_array
 from ..._helpers import (
-    VmLib, expect_array, expect_callable, expect_const, required, throw_error,
+     expect_array, expect_callable, expect_const, required, throw_error,
     get_numbers, map_vm
 )
 from ..._helpers_utils import array_len
@@ -56,7 +56,6 @@ def transpose(matrix):
             item = row[j] if row and j < len(row) else None
             newRow.append(item)
         transpose.append(newRow)
-    print('transpose',matrix,'=>',transpose)
     return transpose
 
 
@@ -113,7 +112,6 @@ def entrywiseImpl(a,b,f,vvf=None,mmf=None,vmf=None,mvf=None):
         aLen = aDims[0]
         bLen = bDims[0]
         result = []
-        print(aLen,bLen)
         rr = max(aLen,bLen)
         for i in range(rr):
             aItem = a[i] if i < len(a) else None
@@ -183,7 +181,6 @@ def entrywiseImpl(a,b,f,vvf=None,mmf=None,vmf=None,mvf=None):
             # bItem = bRow[j] if bRow and  j < len(bRow) else None
             # newRow.append(f(aItem,bItem))
         result.append(newRow)
-    print('entrywiseImpl a ,b',a,b,'=>',result)
     return result
     
     
@@ -204,14 +201,12 @@ def entrywise(matrix, scalar, fn):
 def add(a,b):
     expect_const('a', a, [])
     expect_const('b', b, [])
-    print('add',a,b)
     return entrywiseImpl(a,b,Add_)
 
 def subtract(a,b):
     expect_const('a', a, [])
     expect_const('b', b, [])
     return entrywiseImpl(a,b,Sub_)
-# multiply、invert、filled、zeros、ones、identity、diagonal 的实现同理，建议分块逐步转换。
 
 def entrywise_multiply(a,b):
     expect_const('a', a, [])
@@ -227,7 +222,6 @@ def multiply(a,b):
     expect_const('a', a, [])
     expect_const('b', b, [])
     def vvf(a,b,aLen,bLen):
-        print('vvf',aLen,bLen)
         rr =max(aLen,bLen)
         s =0
         for i in range(rr):
@@ -256,7 +250,6 @@ def multiply(a,b):
             result.append(newRow)
         return result
     def vmf(a,b,aLen,bRows,bCols):
-        print('vmf',a,b,aLen,bRows,bCols)
         if aLen != bRows:
             throw_error('Vector and matrix size mismatch for multiplication', [])
             
@@ -330,7 +323,6 @@ def invert(matrix):
             bRow.append(1 if i == j else 0)
         A.append(aRow)
         B.append(bRow)
-    print('inverting','numRows',numRows,'numCols',numCols,'matrix',matrix,'A',A,'B',B)
     for c in range(numCols):
         ABig = abs(A[c][c])
         rBig = c
@@ -342,11 +334,9 @@ def invert(matrix):
             r += 1
         
         r =rBig
-        print('pivot row for c',c,'r',r,'A',A,'B',B)
         if r != c:
             A[c], A[r] = A[r], A[c]
             B[c], B[r] = B[r], B[c]
-        print('pivot row for c',c,'r',r,'A',A,'B',B)
         AC = A[c]
         BC = B[c]
         
@@ -367,13 +357,11 @@ def invert(matrix):
                     AR[col] = Div_(AR[col], factor)
                 for col in range( numCols):
                     BR[col] = Div_(BR[col], factor)
-                print('normalized row',r,'A',A,'B',B)
     return B
 
 def diagonal(vector,k=0):
     expect_array('vector', vector, [])
     fk  = round_(k)
-    print('diagonal input k',k,'fk',fk)
     if math.isnan(fk):
         fk = 0
     

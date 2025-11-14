@@ -3,7 +3,7 @@ from mirascript.vm.lib.vm_global.math_unary import trunc
 from mirascript.vm.types.checker import is_vm_array,is_vm_record
 from ....operations import Call_, ToNumber_, ToString_,Type_,is_safe_integer
 from ....types import  VmValue
-from ..._helpers import VmLib, expect_array_or_record,expect_compound,expect_array,expect_callable,throw_error,expect_const
+from ..._helpers import  expect_array_or_record,expect_compound,expect_array,expect_callable,throw_error,expect_const
 from mirascript.vm.types.const import Uninitialized,VM_ARRAY_MAX_LENGTH
 from functools import cmp_to_key
 import math
@@ -34,10 +34,8 @@ def with_inner(obj, key,key_index, value):
    
     if is_vm_array(result):
         idx = int(arr_index(k))
-        print('with_inner:',obj,'key:',key,'key_index:',key_index,'k:',k,'value',value,'result before:',result,'idx:',idx)
         while idx > len(result):
             result.append(None)
-        print('with_inner array result after:',idx,result)
         # result.append(with_inner(result[idx] if idx < len(result) else None, key, key_index + 1, value))
         # result.update
         if idx == len(result):
@@ -47,7 +45,6 @@ def with_inner(obj, key,key_index, value):
        
     else:
         key_str = ToString_(k)
-        print('with_inner record:',obj,'key:',key,'key_str:',key_str,'k:',k,'value',value,'result before:',result,'key_index:',key_index)
         result[key_str] = with_inner(result.get(key_str, None), key, key_index + 1, value)
     return result
 
@@ -83,7 +80,6 @@ def with_(data=Uninitialized, *args):
         return data
     
     entryData = normalizeEntries(data, args)
-    print('with_ data:',data,'args:',args,'entryData',entryData,is_vm_array(data))
     if is_vm_array(data):
         result = data.copy()
         for key, element in entryData:
@@ -94,7 +90,6 @@ def with_(data=Uninitialized, *args):
                 index = arr_index(key[0])
                 if index <0:
                     continue
-                print('with_ array key:',key,'element:',element,'index:',index,int(index))
                 val = with_inner(result[int(index)] if index < len(result) else None,key, 1, element)
             else:
                 index = arr_index(key)
@@ -109,7 +104,6 @@ def with_(data=Uninitialized, *args):
         
         result = data.copy()
         for key, element in entryData:
-            print('with_ record key:',key,'element:',element)
             if is_vm_array(key):
                 firstKey = key[0]
                 prop = ToString_(firstKey)
