@@ -1,8 +1,8 @@
 {
   "name": "mirascript",
-  "version": "0.1.5",
+  "version": "0.1.9",
   "private": true,
-  "packageManager": "pnpm@10.21.0",
+  "packageManager": "pnpm@10.22.0",
   "type": "module",
   "scripts": {
     "prepare": "husky || echo Failed to initialize husky",

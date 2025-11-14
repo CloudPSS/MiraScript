@@ -26,6 +26,9 @@ t_eq(sort(["a", "ab", "aa", "b", "ba"]), ["a", "aa", "ab", "b", "ba"]);
 
 // sort mixed
 t_eq(sort([nil, 0]), [nil, 0]);
+t_eq(sort([0, nil]), [0, nil]);
+t_eq(sort([nil, '']), [nil, '']);
+t_eq(sort(['', nil]), ['', nil]);
 t_eq(sort([0, nil, 'x']), [0, nil, 'x']);
 
 // sort custom compare

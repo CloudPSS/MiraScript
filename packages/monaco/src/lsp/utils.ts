@@ -10,8 +10,10 @@ import {
     isVmRecord,
     serialize,
     type VmAny,
+    type VmModule,
     type VmFunctionInfo,
     type VmValue,
+    type VmExtern,
 } from '@mirascript/mirascript';
 import { operations, serializePropName, serializeString } from '@mirascript/mirascript/subtle';
 import type { LocalDefinition } from './compile-result.js';
@@ -125,23 +127,24 @@ export function globalFnDoc(info: VmFunctionInfo): string[] {
         paramDoc.push(`- **返回值**: ${info.returns}`);
     }
     if (paramDoc.length) {
-        doc.push(paramDoc.join('\n'));
+        doc.push('', paramDoc.join('\n'));
     }
     if (info.examples?.length) {
         let exp = `### 示例`;
         for (const example of info.examples) {
             exp += codeblock(example);
         }
-        doc.push(exp);
+        doc.push('', exp);
     }
     return doc;
 }
 
 /** 获取代码块格式化字符串 */
 export function codeblock(value: string): string {
+    const lang = value.startsWith('\0') ? 'mirascript-doc' : 'mirascript';
     const includeFences = /`{3,}/.exec(value);
     const CODEBLOCK_FENCE = includeFences ? '`'.repeat(includeFences[0].length + 1) : '```';
-    return `\n${CODEBLOCK_FENCE}mirascript\n${value}\n${CODEBLOCK_FENCE}\n`;
+    return `\n${CODEBLOCK_FENCE}${lang}\n${value}\n${CODEBLOCK_FENCE}\n`;
 }
 
 /** 检查位置是否在范围内，且范围非空 */
@@ -179,11 +182,14 @@ function serializeForDisplayInner(value: VmValue, maxWidth: number): string {
         if (!len) return '()';
         return `(../* x${len} */)`;
     }
+    if (isVmExtern(value)) {
+        return `/* <extern ${value.describe}> */`;
+    }
     return `/* ${operations.$ToString(value)} */`;
 }
 
 /** 将值序列化为便于展示的字符串 */
-export function serializeForDisplay(value: VmValue, maxEntries = 100, maxWidth = 40): string {
+function serializeForDisplay(value: Exclude<VmValue, VmModule>, maxEntries = 100, maxWidth = 40): string {
     if (isVmPrimitive(value) || isVmFunction(value)) {
         return serializeForDisplayInner(value, maxWidth);
     }
@@ -217,11 +223,24 @@ export function serializeForDisplay(value: VmValue, maxEntries = 100, maxWidth =
             resultLength += entry.length;
         }
     } else {
-        const hint = serializeForDisplayInner(value, 100);
-        const isArray = isVmExtern(value) && Array.isArray(value.value);
+        const hint = serializeForDisplayInner(value satisfies VmExtern, 100);
+        const isArray = Array.isArray(value.value);
         begin = `${hint} ${isArray ? '[' : '('}`;
         end = isArray ? ']' : ')';
         const keys = value.keys();
+        if (keys.length === 0 && !isArray) {
+            if (typeof value.value == 'object') {
+                // 没有可枚举属性，尝试获取所有属性，仅在 LSP 进行展示时使用
+                // 实际程序运行时这些属性仍然不可通过 `keys()` 或 `for .. in` 访问
+                for (const key of Object.getOwnPropertyNames(value.value)) {
+                    if (value.has(key)) keys.push(key);
+                }
+            } else {
+                // 没有可枚举属性的函数
+                begin = hint;
+                end = '';
+            }
+        }
         for (const [index, key] of keys.entries()) {
             if (entries.length > maxEntries) {
                 entries.push(`../* x${keys.length - entries.length} */`);
@@ -243,6 +262,15 @@ export function serializeForDisplay(value: VmValue, maxEntries = 100, maxWidth =
         return `${begin}\n  ${entries.join(',\n  ')}\n${end}`;
     }
     return `${begin}${entries.join(', ')}${end}`;
+}
+
+/** 生成 doc comment */
+export function docComment(doc: string[]): string[] {
+    const lines = doc.flatMap((sec) => sec.split('\n').map((s) => s.trimEnd()));
+    const firstLine = lines.findIndex((line) => line.length > 0);
+    const lastLine = lines.findLastIndex((line) => line.length > 0);
+    if (firstLine < 0 || lastLine < 0) return [];
+    return [`/**`, ...lines.slice(firstLine, lastLine + 1).map((line) => ` * ${line}`), ` */`];
 }
 
 /** 获取变量文档 */
@@ -283,14 +311,7 @@ export function valueDoc(
             for (const k of exports) {
                 const v = value.get(k);
                 const vDoc = valueDoc(k, v, isVmModule(v) ? 'field' : 'declare');
-                const code = [
-                    `/**`,
-                    ...vDoc.doc.flatMap((sec) => sec.split('\n')).map((line) => ` * ${line}`),
-                    ` */`,
-                    'export ' + vDoc.script,
-                    '',
-                    '',
-                ];
+                const code = [...docComment(vDoc.doc), 'export ' + vDoc.script, '', ''];
                 script += code.join('\n');
             }
             script = script.trimEnd();
@@ -312,11 +333,12 @@ export function valueDoc(
 }
 
 /** 获取深层属性 */
-export function getDeep(value: VmAny, path: readonly string[]): VmValue {
+export function getDeep(value: VmAny, path: readonly string[]): VmAny {
     let current: VmAny = value;
     for (const key of path) {
-        if (current == null) return null;
+        if (current == null) return current;
+        if (!operations.$Has(current, key)) return undefined;
         current = operations.$Get(current, key);
     }
-    return current ?? null;
+    return current;
 }

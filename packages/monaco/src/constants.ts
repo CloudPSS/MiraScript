@@ -49,8 +49,5 @@ export const REG_OCT = /0[oO][0-7_]*[0-7]/;
 export const REG_BIN = /0[bB][01_]*[01]/;
 export const REG_NUMBER = /\d[\d_]*(?:\.[\d_]+)?(?:[eE][+-]?[\d_]*\d)?/u;
 
-// Special characters
-export const DOC_HEADER = ' 𝙼𝚒𝚛𝚊𝚂𝚌𝚛𝚒𝚙𝚝 𝙶𝚕𝚘𝚋𝚊𝚕 𝙳𝚎𝚏𝚒𝚗𝚒𝚝𝚒𝚘𝚗𝚜 ';
-
 /** 基础语言服务支持的最大插值字符串 `$` 数量 */
 export const MAX_VERBATIM_LENGTH = 16;

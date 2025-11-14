@@ -192,7 +192,9 @@ interface CustomCompletionItem extends languages.CompletionItem {
 /** 构造 filterText */
 function filterText(key: string, char: string | undefined): string {
     if (char == null || key.startsWith(char)) return key;
-    return key.startsWith('@') || key.startsWith('$') ? key.slice(1) : key;
+    if (key.startsWith('@')) return key.replace(/^@+/, '');
+    if (key.startsWith('$')) return key.replace(/^\$+/, '');
+    return key;
 }
 
 /** 构造选项 */
@@ -316,11 +318,11 @@ export class CompletionItemProvider extends Provider implements languages.Comple
         const locals = new Set<string>();
         while (scope) {
             for (const { definition, fn } of scope.locals) {
-                const name = model.getValueInRange(definition.range);
+                const name =
+                    definition.code === DiagnosticCode.ParameterIt ? 'it' : model.getValueInRange(definition.range);
+                if (char && !name.toLowerCase().includes(char)) continue;
                 if (locals.has(name)) continue; // 子作用域可能会覆盖父作用域的变量
-                if (char && !name.toLowerCase().includes(char)) {
-                    continue;
-                }
+
                 locals.add(name);
                 suggestions.push({
                     insertText: name,

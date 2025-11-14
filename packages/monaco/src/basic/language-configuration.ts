@@ -14,7 +14,7 @@ function indentAction(action: keyof typeof languages.IndentAction): { indentActi
 
 export const configuration = (): languages.LanguageConfiguration => ({
     comments: {
-        lineComment: '//',
+        lineComment: { comment: '//' },
         blockComment: ['/*', '*/'],
     },
     brackets: [
@@ -86,5 +86,6 @@ export function setLanguageConfiguration(): IDisposable[] {
     return [
         languages.setLanguageConfiguration('mirascript', configuration()),
         languages.setLanguageConfiguration('mirascript-template', configuration()),
+        languages.setLanguageConfiguration('mirascript-doc', configuration()),
     ];
 }

@@ -1,0 +1,17 @@
+fn y_combinator(meta) {
+  return (fn { it(it) })(fn { (fn (..args) { meta(it(it))(..args) }) });
+}
+let fib = y_combinator(fn (fib) {
+  (fn (n) {
+    if n <= 2 {
+      return 1;
+    }
+    fib(n - 1) + fib(n - 2)
+  })
+});
+
+t_eq(fib(1), 1);
+t_eq(fib(2), 1);
+t_eq(fib(3), 2);
+t_eq(fib(10), 55);
+t_eq(fib(20), 6765);
