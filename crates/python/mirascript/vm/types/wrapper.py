@@ -45,11 +45,13 @@ class VmWrapper(ABC):
     
     ## 转为字符串
     def toString(self):
-        pass
+        print('VmWrapper toString',self.type,self.describe)
+        if self.describe is  None:
+            return f"<{self.type}>"
+        return f"<{self.type} {self.describe}>"
     
 def isVmWrapper(v):
     if v is None or not isinstance(v,object):
         return False
-    print('isVmWrapper',v,type(v),hasattr(v,VmWrapper._VM_WRAPPER_SYMBOL))
    
     return hasattr(v,VmWrapper._VM_WRAPPER_SYMBOL)

@@ -1,0 +1,121 @@
+from mirascript.vm.helpers import Element
+from mirascript.vm.lib.vm_global.math_unary import trunc
+from mirascript.vm.types.checker import is_vm_array,is_vm_record
+from ....operations import Call_, ToNumber_, ToString_,Type_,is_safe_integer
+from ....types import  VmValue
+from ..._helpers import VmLib, expect_array_or_record,expect_compound,expect_array,expect_callable,throw_error,expect_const
+from mirascript.vm.types.const import Uninitialized,VM_ARRAY_MAX_LENGTH
+from functools import cmp_to_key
+import math
+
+def arr_index(index):
+    idx =trunc(index)
+    if not is_safe_integer(idx) or idx < 0 or idx> VM_ARRAY_MAX_LENGTH:
+        return -1
+    return idx
+
+def with_inner(obj, key,key_index, value):
+    
+    if key_index >= len(key):
+        return value
+    
+    
+    k = key[key_index]
+    result =[]
+    
+    if is_vm_array(obj):
+        result = obj.copy()
+    elif is_vm_record(obj):
+        result = obj.copy()
+    elif arr_index(k) ==k:
+        result = []
+    else:
+        result = {}
+   
+    if is_vm_array(result):
+        idx = int(arr_index(k))
+        print('with_inner:',obj,'key:',key,'key_index:',key_index,'k:',k,'value',value,'result before:',result,'idx:',idx)
+        while idx > len(result):
+            result.append(None)
+        print('with_inner array result after:',idx,result)
+        # result.append(with_inner(result[idx] if idx < len(result) else None, key, key_index + 1, value))
+        # result.update
+        if idx == len(result):
+            result.append( with_inner(None, key, key_index + 1, value))
+        if idx < len(result):
+            result[idx] = with_inner(result[idx], key, key_index + 1, value)
+       
+    else:
+        key_str = ToString_(k)
+        print('with_inner record:',obj,'key:',key,'key_str:',key_str,'k:',k,'value',value,'result before:',result,'key_index:',key_index)
+        result[key_str] = with_inner(result.get(key_str, None), key, key_index + 1, value)
+    return result
+
+def normalizeEntries(data, entries):
+    if len(entries) % 2 != 0:
+        raise throw_error("with_ function requires even number of arguments as key-value pairs", data)
+    
+    entryData = []
+    
+    for i in range(0, len(entries), 2):
+        key = entries[i]
+        expect_const('key', key, data)
+        if key is None or key is Uninitialized:
+            continue
+        t=[]
+        
+        if is_vm_array(key):
+            if len(key) == 0 or None in key or Uninitialized in key:
+                continue
+            if len(key)==1:
+                key =key[0]
+        
+            
+            
+        value = entries[i+1]
+        entryData.append( (key, Element(value)) )
+        # entryData[ToString_(key)] = Element(value)
+    
+    return entryData
+def with_(data=Uninitialized, *args):
+    expect_array_or_record('data', data, [])
+    if len(args) == 0:
+        return data
+    
+    entryData = normalizeEntries(data, args)
+    print('with_ data:',data,'args:',args,'entryData',entryData,is_vm_array(data))
+    if is_vm_array(data):
+        result = data.copy()
+        for key, element in entryData:
+            index=0
+            val=None
+            
+            if is_vm_array(key):
+                index = arr_index(key[0])
+                if index <0:
+                    continue
+                print('with_ array key:',key,'element:',element,'index:',index,int(index))
+                val = with_inner(result[int(index)] if index < len(result) else None,key, 1, element)
+            else:
+                index = arr_index(key)
+                if index <0:
+                    continue
+                val = element
+            while index >= len(result):
+                result.append(None)
+            result[int(index)] = val
+        return result
+    else:
+        
+        result = data.copy()
+        for key, element in entryData:
+            print('with_ record key:',key,'element:',element)
+            if is_vm_array(key):
+                firstKey = key[0]
+                prop = ToString_(firstKey)
+                val = with_inner(result.get(prop, None), key, 1, element)
+            else:
+                prop = ToString_(key)
+                val = element
+            result[prop] = val
+        return result

@@ -7,6 +7,7 @@ def to_string(value):
 
 def to_number(value):
     required('value', value,math.nan)
+    print(f"to_number: converting value {value} of type {type(value)}")
     return ToNumber_(value)
 
 

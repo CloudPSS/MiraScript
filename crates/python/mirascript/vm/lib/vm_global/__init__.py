@@ -12,4 +12,6 @@ from .bit import *
 from .json_ import *
 from .math_additional import *
 from .to_primitive import *
-__all__ = ['debug_print','panic','round','random','max','min','hypot','sum','product'] + [name for name in dir() if not name.startswith('_')]
+from .mod import matrix
+from .time_ import to_datetime,to_iso8601,to_timestamp
+__all__ = ['debug_print','panic','round','random','max','min','hypot','sum','product','matrix','to_datetime','to_iso8601','to_timestamp'] + [name for name in dir() if not name.startswith('_')]

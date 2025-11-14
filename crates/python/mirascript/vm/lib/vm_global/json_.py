@@ -5,6 +5,7 @@ from mirascript.vm.types.checker import is_vm_module
 from mirascript.vm.types.const import Uninitialized
 import math
 from mirascript.vm.operations import numberToString_,innerToString_,ToString_
+from mirascript.vm.types.extern import is_vm_extern
 class NanToNullEncoder(json.JSONEncoder):
     def encode(self, o):
         # def replace_nan(obj):
@@ -52,7 +53,7 @@ class NanToNullEncoder(json.JSONEncoder):
 def to_json(value=Uninitialized):
     required("value",value, None)
     
-    if is_vm_module(value):
+    if is_vm_module(value) or is_vm_extern(value):
         
         try:
             return json.dumps(value.value, cls=NanToNullEncoder,ensure_ascii=False)

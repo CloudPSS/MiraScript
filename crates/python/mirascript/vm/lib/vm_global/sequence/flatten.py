@@ -1,6 +1,7 @@
+from mirascript.vm.types.const import Uninitialized
 from ..._helpers import VmLib, expect_array
-
-def _flatten(data, depth=1):
+from ....operations import ToNumber_
+def flatten(data=Uninitialized, depth=1):
     expect_array('data', data, data)
     def flat(arr, d):
         if d < 1:
@@ -12,14 +13,7 @@ def _flatten(data, depth=1):
             else:
                 result.append(item)
         return result
-    return flat(data, int(depth))
+    d = ToNumber_(depth)
+    print('flatten called with data:',data,d)
+    return flat(data, d)
 
-flatten = VmLib(
-    _flatten,
-    {
-        "summary": "将数组扁平化",
-        "params": {"data": "要扁平化的数组", "depth": "扁平化的深度，默认为 1"},
-        "paramsType": {"data": "array", "depth": "number"},
-        "returnsType": "array",
-    },
-)

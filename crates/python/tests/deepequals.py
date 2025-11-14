@@ -149,13 +149,17 @@ def assert_deep_equal(a: Any, b: Any, *, nan_equal: bool = True, signed_zero_dis
     else:
         raise AssertionError(base_msg)
     
-def assert_not_deep_equal(a: Any, b: Any, **kwargs) -> None:
+def assert_not_deep_equal(a: Any, b: Any, *, nan_equal: bool = True, signed_zero_distinct: bool = True, message: str = None) -> None:
     """
     Assert that deep_equal(a, b) is False. Raises AssertionError otherwise.
     """
-    if not deep_equal(a, b, **kwargs):
+    if not deep_equal(a, b, nan_equal=nan_equal, signed_zero_distinct=signed_zero_distinct):
         return
-    raise AssertionError("Objects are unexpectedly equal")
+    base_msg = f"Objects are unexpectedly equal (nan_equal={nan_equal}, signed_zero_distinct={signed_zero_distinct})"
+    if message:
+        raise AssertionError(f"{base_msg}: {message}")
+    else:
+        raise AssertionError(base_msg)
 
 if __name__ == "__main__":
     # Quick demonstration / smoke tests

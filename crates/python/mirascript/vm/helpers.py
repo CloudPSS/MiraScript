@@ -81,10 +81,11 @@ def Cp():
     """检查点"""
     pass
     global cp
+    current_time = int(time.time() * 1000)
     if not cp or (isinstance(cp, float) and cp != cp):  # NaN 检查
-        cp = int(time.time() * 1000)
-    elif int(time.time() * 1000) - cp > cp_timeout:
-        raise RuntimeError('Execution timeout')
+        cp = current_time
+    elif current_time - cp > cp_timeout:
+        raise RuntimeError(f'Execution timeout, exceeded {cp_timeout} ms , last checkpoint at {cp} ms , current time {current_time} ms')
 
 def CpEnter():
     """进入检查点"""

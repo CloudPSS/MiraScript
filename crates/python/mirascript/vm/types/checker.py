@@ -2,6 +2,8 @@
 import math
 from typing import Any
 
+from mirascript.vm.types.extern import is_vm_extern
+
 from .const import VmFunctionWrapper
 from .wrapper import VmWrapper
 from .module import VmModule
@@ -97,3 +99,10 @@ def is_positive_zero(value: Any) -> bool:
 
 def is_negative_zero(value: Any) -> bool:
     return math.copysign(1.0, value) < 0 and value == 0.0
+
+def is_vm_callable(value) -> bool:
+    if callable(value):
+        return True
+    if is_vm_extern(value) and callable(value.value):
+        return True
+    return False

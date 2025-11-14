@@ -88,7 +88,6 @@ def ToNumber_(value):
     AssertInit_(value)
     if value is None:
         return float(0)
-    # print("ToNumber_ called with value:", value, 'type:', type(value))  # --- DEBUG ---
     if isinstance(value, bool):
         return float(1 if value else 0)
     if isinstance(value, (int, float)):
@@ -97,9 +96,13 @@ def ToNumber_(value):
     if isinstance(value, str): 
         if value.strip() == "":
             return 0
+        
         try:
+            if value.startswith(("0x","0X")):
+                return float(int(value,16))
             return float(value)
         except ValueError:
+            
             return math.nan
     
     
@@ -144,13 +147,15 @@ def innerToString_(val,useBraces,space=True) -> str:
     if callable(val):
         # name = getattr(val, '__name__', None)
         return "<function>"
-        
+    
+    if isVmWrapper(val):
+        return val.toString()
     
     if isinstance(val, (list, tuple)):
         strings =[]
         for v in val:
             strings.append(innerToString_(v,True))
-        print('Array to string:', strings)  # --- DEBUG ---
+        # print('Array to string:', strings)  # --- DEBUG ---
         joined = (", " if space else ",").join(strings)
         if not useBraces:
             return joined
@@ -201,7 +206,7 @@ def Mul_(a,b):
     return ToNumber_(a)*ToNumber_(b)
 
 def Div_(a,b):
-    print("Div_ called with args:", a, b)  # --- DEBUG ---
+    # print("Div_ called with args:", a, b)  # --- DEBUG ---
     a = ToNumber_(a)
     b = ToNumber_(b)
     if b!=0:
@@ -319,7 +324,7 @@ def Aeq_(a,b):
         if absoluteDifference < EPS:
             return True
         base = min(abs(an) , abs(bn))
-        print("Aeq_ absoluteDifference:", absoluteDifference, "base:", base)  # --- DEBUG ---
+        # print("Aeq_ absoluteDifference:", absoluteDifference, "base:", base)  # --- DEBUG ---
         return absoluteDifference < base * EPS
     else:
         as_str = ToString_(a)
@@ -330,7 +335,7 @@ def Aeq_(a,b):
             
         ai = unicodedata.normalize('NFC',as_str.lower())
         bi = unicodedata.normalize('NFC',bs_str.lower())
-        print("Aeq_ string comparison:", as_str, bs_str,ai==bi)  # --- DEBUG ---
+        # print("Aeq_ string comparison:", as_str, bs_str,ai==bi)  # --- DEBUG ---
         return ai == bi
     
 
@@ -458,13 +463,13 @@ def sliceCore(a,start,end,exclusive):
         end = math.ceil(end)
     else:
         end = int(end + 1)
-    print("sliceCore called with a:", a, "start:", start, "end:", end, "exclusive:", exclusive)  # --- DEBUG ---
+    # print("sliceCore called with a:", a, "start:", start, "end:", end, "exclusive:", exclusive)  # --- DEBUG ---
     return a[start:end]
     
     
 def Slice_(a,start,end):
     AssertInit_(a)
-    print("Slice_ called with a:", a, "start:", start, "end:", end)  # --- DEBUG ---
+    # print("Slice_ called with a:", a, "start:", start, "end:", end)  # --- DEBUG ---
     if not isVmArray(a):
         raise VmError(f"`Expected array, got {Type_(a)}",[])
     s = ToNumber_(start) if start is not None else 0
@@ -474,7 +479,7 @@ def Slice_(a,start,end):
 
 def SliceExclusive_(a,start,end):
     AssertInit_(a)
-    print("SliceExclusive_ called with a:", a, "start:", start, "end:", end)  # --- DEBUG ---
+    # print("SliceExclusive_ called with a:", a, "start:", start, "end:", end)  # --- DEBUG ---
     if not isVmArray(a):
         raise VmError(f"`Expected array, got {Type_(a)}",[])
     s = ToNumber_(start) if start is not None else 0
@@ -498,7 +503,7 @@ def Call_(func,*args):
     
 
 def Type_(val):
-    print("Type_ called with val:", val, "type:", type(val))  # --- DEBUG ---
+    # print("Type_ called with val:", val, "type:", type(val))  # --- DEBUG ---
     if val is Uninitialized or val is None:
         return "nil"
     if isinstance(val, bool):
@@ -536,7 +541,7 @@ def IsArray_(val):
     return isVmArray(val)
 
 def AssertNonNil_(val):
-    print("AssertNonNil_ called with val:", val)  # --- DEBUG ---
+    # print("AssertNonNil_ called with val:", val)  # --- DEBUG ---
     AssertInit_(val)
     if val is not None:
         return
@@ -565,7 +570,7 @@ def Has_(obj,key):
 def Get_(obj,key):
     AssertInit_(obj)
     pk = ToString_(key)
-    print("Get_ called with obj:", obj, "key:", pk)  # --- DEBUG ---
+    # print("Get_ called with obj:", obj, "key:", pk)  # --- DEBUG ---
     if obj is None:
         return None
     
@@ -589,7 +594,7 @@ def Get_(obj,key):
 def GetGlobal_(obj,key):
     
     r= Get_(obj,key)
-    print("GetGlobal_ called with obj:", obj, "key:", key, "result:", r)  # --- DEBUG ---
+    # print("GetGlobal_ called with obj:", obj, "key:", key, "result:", r)  # --- DEBUG ---
     return r
     pass
 
@@ -599,7 +604,7 @@ def Set_(obj,key,val):
     pk = ToString_(key)
     if obj is None:
         return
-    print("Set_ called with obj:", obj, "key:", pk, "value:", val)  # --- DEBUG ---
+    # print("Set_ called with obj:", obj, "key:", pk, "value:", val)  # --- DEBUG ---
     if not is_vm_extern(obj):
         raise VmError(f"`Expected extern object, got {Type_(obj)}",None)
     # print("Set_ called", obj, pk, val)  # --- DEBUG ---
@@ -610,7 +615,7 @@ def Set_(obj,key,val):
 
 def Iterable_(val):
     AssertInit_(val)
-    print("Iterable_ called with val:", val,type(val))  # --- DEBUG ---
+    # print("Iterable_ called with val:", val,type(val))  # --- DEBUG ---
     if isVmWrapper(val):
         if hasattr(val,'keys'):
             return val.keys()
@@ -623,7 +628,7 @@ def Iterable_(val):
 
 def RecordSpread_(val):
     AssertInit_(val)
-    print("RecordSpread_ called with val:", val,type(val))  # --- DEBUG ---
+    # print("RecordSpread_ called with val:", val,type(val))  # --- DEBUG ---
     if val is None:
         return {}
     if isVmArray(val):
