@@ -10,8 +10,10 @@ import {
     isVmRecord,
     serialize,
     type VmAny,
+    type VmModule,
     type VmFunctionInfo,
     type VmValue,
+    type VmExtern,
 } from '@mirascript/mirascript';
 import { operations, serializePropName, serializeString } from '@mirascript/mirascript/subtle';
 import type { LocalDefinition } from './compile-result.js';
@@ -187,7 +189,7 @@ function serializeForDisplayInner(value: VmValue, maxWidth: number): string {
 }
 
 /** 将值序列化为便于展示的字符串 */
-export function serializeForDisplay(value: VmValue, maxEntries = 100, maxWidth = 40): string {
+function serializeForDisplay(value: Exclude<VmValue, VmModule>, maxEntries = 100, maxWidth = 40): string {
     if (isVmPrimitive(value) || isVmFunction(value)) {
         return serializeForDisplayInner(value, maxWidth);
     }
@@ -221,11 +223,24 @@ export function serializeForDisplay(value: VmValue, maxEntries = 100, maxWidth =
             resultLength += entry.length;
         }
     } else {
-        const hint = serializeForDisplayInner(value, 100);
-        const isArray = isVmExtern(value) && Array.isArray(value.value);
+        const hint = serializeForDisplayInner(value satisfies VmExtern, 100);
+        const isArray = Array.isArray(value.value);
         begin = `${hint} ${isArray ? '[' : '('}`;
         end = isArray ? ']' : ')';
         const keys = value.keys();
+        if (keys.length === 0 && !isArray) {
+            if (typeof value.value == 'object') {
+                // 没有可枚举属性，尝试获取所有属性，仅在 LSP 进行展示时使用
+                // 实际程序运行时这些属性仍然不可通过 `keys()` 或 `for .. in` 访问
+                for (const key of Object.getOwnPropertyNames(value.value)) {
+                    if (value.has(key)) keys.push(key);
+                }
+            } else {
+                // 没有可枚举属性的函数
+                begin = hint;
+                end = '';
+            }
+        }
         for (const [index, key] of keys.entries()) {
             if (entries.length > maxEntries) {
                 entries.push(`../* x${keys.length - entries.length} */`);
@@ -318,11 +333,12 @@ export function valueDoc(
 }
 
 /** 获取深层属性 */
-export function getDeep(value: VmAny, path: readonly string[]): VmValue {
+export function getDeep(value: VmAny, path: readonly string[]): VmAny {
     let current: VmAny = value;
     for (const key of path) {
-        if (current == null) return null;
+        if (current == null) return current;
+        if (!operations.$Has(current, key)) return undefined;
         current = operations.$Get(current, key);
     }
-    return current ?? null;
+    return current;
 }

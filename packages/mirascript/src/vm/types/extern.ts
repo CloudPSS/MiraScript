@@ -121,11 +121,23 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
         } else if (tag === 'Function' && 'prototype' in this.value && typeof this.value.prototype == 'object') {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
             const { name } = this.value as unknown as Function;
-            if (name) {
-                return `Class ${name}`;
-            } else {
-                return 'Class';
-            }
+            return `class ${name || '<anonymous>'}`;
+        } else if (tag === 'Function') {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+            const { name } = this.value as unknown as Function;
+            return `function ${name || '<anonymous>'}()`;
+        } else if (tag === 'AsyncFunction') {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+            const { name } = this.value as unknown as Function;
+            return `async function ${name || '<anonymous>'}()`;
+        } else if (tag === 'GeneratorFunction') {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+            const { name } = this.value as unknown as Function;
+            return `function* ${name || '<anonymous>'}()`;
+        } else if (tag === 'AsyncGeneratorFunction') {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+            const { name } = this.value as unknown as Function;
+            return `async function* ${name || '<anonymous>'}()`;
         }
         return tag;
     }
