@@ -69,3 +69,8 @@ export function compileSync(script: ScriptInput, config: Config | wasm.Config): 
         ? compileImpl(wasm.compile, script, config)
         : compileImpl(wasm.compile_buffer, script, config);
 }
+
+/** 获取诊断消息 */
+export function getDiagnosticMessage(code: number): string | undefined {
+    return wasm.get_diagnostic_message(code);
+}

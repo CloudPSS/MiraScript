@@ -1,11 +1,12 @@
 import type { VmScript } from '../vm/index.js';
 import type { ScriptInput, TranspileOptions } from './types.js';
 import './types.js';
+import { loadModule } from './loader.js';
 import { emit } from './emit.js';
 import { createScript } from './create-script.js';
 import { compileFast } from './compile-fast.js';
 import { DiagnosticCode, formatDiagnostic, parseDiagnostics } from './diagnostic.js';
-import { generateBytecode, generateBytecodeSync, loadModule } from './generate-bytecode.js';
+import { generateBytecode, generateBytecodeSync } from './generate-bytecode.js';
 import { compileWorker } from './worker-manager.js';
 await loadModule();
 
