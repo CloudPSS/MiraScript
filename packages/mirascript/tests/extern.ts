@@ -40,7 +40,7 @@ test('callable extern', (t) => {
     t.true(isVmCallable(eSin));
     t.is(eSin.value, Math.sin);
     t.is(eSin.thisArg, null);
-    t.is(eSin.describe, 'Function');
+    t.is(eSin.describe, 'function sin()');
     t.is(unwrapFromVmValue(eSin), Math.sin);
     t.false(isProxy(unwrapFromVmValue(eSin)));
     t.is((unwrapFromVmValue(eSin) as typeof Math.sin)(1), Math.sin(1));
@@ -86,39 +86,39 @@ test('describe extern', (t) => {
     t.is(new VmExtern({}, null).describe, 'Object');
     t.is(new VmExtern(Object.create(null), null).describe, 'Object: null prototype');
     t.is(new VmExtern([], null).describe, 'Array');
-    t.is(new VmExtern(() => 0, null).describe, 'Function');
+    t.is(new VmExtern(() => 0, null).describe, 'function <anonymous>()');
     // eslint-disable-next-line @typescript-eslint/require-await
-    t.is(new VmExtern(async () => 0, null).describe, 'AsyncFunction');
+    t.is(new VmExtern(async () => 0, null).describe, 'async function <anonymous>()');
     t.is(
         new VmExtern(function* () {
             yield 0;
         }, null).describe,
-        'GeneratorFunction',
+        'function* <anonymous>()',
     );
     t.is(
         // eslint-disable-next-line @typescript-eslint/require-await
         new VmExtern(async function* () {
             yield 0;
         }, null).describe,
-        'AsyncGeneratorFunction',
+        'async function* <anonymous>()',
     );
     const a = class A {
         x = 1;
     };
     t.is(new VmExtern(new a(), null).describe, 'A');
-    t.is(new VmExtern(a, null).describe, 'Class A');
+    t.is(new VmExtern(a, null).describe, 'class A');
     Object.defineProperty(a, 'name', { value: '' });
     t.is(new VmExtern(new a(), null).describe, 'Object');
-    t.is(new VmExtern(a, null).describe, 'Class');
+    t.is(new VmExtern(a, null).describe, 'class <anonymous>');
     // eslint-disable-next-line unicorn/consistent-function-scoping
     const f = function () {
         return 1;
     };
-    t.is(new VmExtern(f, null).describe, 'Class f');
+    t.is(new VmExtern(f, null).describe, 'class f');
     f.prototype = undefined;
-    t.is(new VmExtern(f, null).describe, 'Function');
+    t.is(new VmExtern(f, null).describe, 'function f()');
     f.prototype = null;
-    t.is(new VmExtern(f, null).describe, 'Class f');
+    t.is(new VmExtern(f, null).describe, 'class f');
 });
 
 test('Date extern', (t) => {

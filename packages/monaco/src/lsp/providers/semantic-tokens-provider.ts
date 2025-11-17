@@ -1,5 +1,5 @@
 import { isVmFunction, isVmModule } from '@mirascript/mirascript';
-import { DiagnosticCode } from '@mirascript/wasm';
+import { DiagnosticCode } from '@mirascript/wasm/types';
 import { Range, type CancellationToken, type editor, type languages } from '../../monaco-api.js';
 import { Provider } from './base.js';
 

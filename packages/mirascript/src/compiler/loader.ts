@@ -1,3 +1,5 @@
+import * as wasm from '@mirascript/wasm';
+
 /** 字节码模块 */
 type BcModule = typeof import('@mirascript/wasm') | typeof import('@mirascript/napi');
 
@@ -16,9 +18,9 @@ export async function loadModule(): Promise<void> {
         } catch (ex) {
             // eslint-disable-next-line no-console
             console.warn('Failed to load compiler bundle, falling back to @mirascript/wasm');
-            mod = await import('@mirascript/wasm');
+            mod = wasm;
         }
-        if ('ready' in mod) await mod.ready;
+        await wasm.ready;
         module = mod;
     })();
     void p.finally(() => {

@@ -1,8 +1,8 @@
 import type { Writable } from 'type-fest';
-import { DiagnosticCode } from '@mirascript/wasm/types';
+import { DiagnosticCode, wasm } from '@mirascript/wasm';
 import type { ScriptInput } from './types.js';
 import { isSafeInteger } from '../helpers/utils.js';
-import { module, checkModule } from './loader.js';
+import { checkModule } from './loader.js';
 
 export { DiagnosticCode };
 
@@ -16,7 +16,7 @@ export function getDiagnosticMessage(code: DiagnosticCode): string | undefined {
         return diagnosticMessages.get(code);
     }
     checkModule();
-    const msg = module.getDiagnosticMessage(code) || undefined;
+    const msg = wasm.get_diagnostic_message(code);
     diagnosticMessages.set(code, msg);
     return msg;
 }

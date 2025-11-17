@@ -1,5 +1,5 @@
 import { type VmAny, isVmExtern, isVmModule, serialize } from '@mirascript/mirascript';
-import { createConfig, wasm } from '@mirascript/wasm';
+import type { wasm } from '@mirascript/wasm';
 import { editor } from '@private/monaco-editor';
 
 /** HTML escape */
@@ -12,14 +12,7 @@ export function escapeHtml(value: string): string {
         .replaceAll("'", '&#39;');
 }
 
-const formatConfig = createConfig({
-    input_mode: 'Script',
-    trivia: true,
-    diagnostic_reference: false,
-    diagnostic_tag: false,
-    diagnostic_sourcemap: false,
-    diagnostic_position_encoding: 'None',
-});
+let formatConfig: wasm.Config;
 /** 将值转为语法高亮的显示 */
 export async function print(value: VmAny | Error): Promise<string> {
     if (value === undefined) return escapeHtml('<uninitialized>');
@@ -35,6 +28,15 @@ export async function print(value: VmAny | Error): Promise<string> {
         return colorized.replace('>&#00;<', '><');
     }
     const valueStr = serialize(value);
+    const { wasm, createConfig } = await import('@mirascript/wasm');
+    formatConfig ??= createConfig({
+        input_mode: 'Script',
+        trivia: true,
+        diagnostic_reference: false,
+        diagnostic_tag: false,
+        diagnostic_sourcemap: false,
+        diagnostic_position_encoding: 'None',
+    });
     const formatter = new wasm.MonacoCompiler(valueStr, formatConfig);
     try {
         const formatted = formatter.parse() && formatter.format();

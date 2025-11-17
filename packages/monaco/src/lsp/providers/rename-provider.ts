@@ -6,7 +6,7 @@ import {
     type languages,
     type Position,
 } from '../../monaco-api.js';
-import { DiagnosticCode } from '@mirascript/wasm';
+import { DiagnosticCode } from '@mirascript/wasm/types';
 import { Provider } from './base.js';
 import type { CompileResult } from '../compile-result.js';
 

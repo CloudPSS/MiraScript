@@ -1,6 +1,6 @@
 import type { CancellationToken, editor, IMarkdownString, IRange, languages, Position } from '../../monaco-api.js';
 import { Provider } from './base.js';
-import { DiagnosticCode } from '@mirascript/wasm';
+import { DiagnosticCode } from '@mirascript/wasm/types';
 import { codeblock, getDeep, valueDoc, paramsList } from '../utils.js';
 import type { FieldsAccessAt, VariableAccessAt } from '../compile-result.js';
 

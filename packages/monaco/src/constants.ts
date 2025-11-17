@@ -1,5 +1,10 @@
 import { constants } from '@mirascript/mirascript/subtle';
-import { wasm } from '@mirascript/wasm';
+
+let wasm: typeof import('@mirascript/wasm').wasm;
+void import('@mirascript/wasm').then(async (mod) => {
+    await mod.ready;
+    wasm = mod.wasm;
+});
 
 /** 所有 MiraScript 关键字 */
 export let keywords = (): readonly string[] => {
