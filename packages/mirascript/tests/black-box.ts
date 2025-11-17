@@ -7,7 +7,7 @@ const TEST_DIR = new URL('../../../tests', import.meta.url);
 const compileAndRun = test.macro<[string]>({
     exec: async (t, file) => {
         const codeUrl = new URL(`./tests/${file}`, TEST_DIR);
-        const code = await fs.promises.readFile(codeUrl, 'utf-8');
+        const code = await fs.promises.readFile(codeUrl, 'utf8');
 
         const script = await compile(code, { pretty: true, sourceMap: true, fileName: codeUrl.href });
         const timeout_fn: Array<[() => unknown, string | undefined]> = [];
@@ -65,7 +65,7 @@ const compileAndRun = test.macro<[string]>({
     title: (providedTitle = 'test', code) => code || providedTitle,
 });
 
-for (const file of fs.readdirSync(TEST_DIR, { encoding: 'utf-8', recursive: true })) {
+for (const file of fs.readdirSync(TEST_DIR, { encoding: 'utf8', recursive: true })) {
     if (file.endsWith('.mira')) {
         test(compileAndRun, file);
     }

@@ -79,7 +79,7 @@ program
                 }
                 return;
             }
-            const context = await readFile(script, 'utf-8');
+            const context = await readFile(script, 'utf8');
             const template = opt.template ?? script.endsWith('.miratpl');
             await execute(context, template, opt.variable, pathToFileURL(script).href);
             return;
