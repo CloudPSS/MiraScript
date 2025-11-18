@@ -313,9 +313,9 @@ function numberToString(value: number): string {
 }
 
 /** 将值转为字符串 */
-function innerToString(value: VmAny, useBraces: boolean): string {
+export function $InnerToString(value: VmAny, useBraces: boolean): string {
     if (value == null) return 'nil';
-    if (isVmWrapper(value)) return value.toString();
+    if (isVmWrapper(value)) return value.toString(useBraces);
     if (typeof value == 'function') {
         const name = getVmFunctionInfo(value)?.fullName;
         return name ? `<function ${name}>` : `<function>`;
@@ -323,7 +323,7 @@ function innerToString(value: VmAny, useBraces: boolean): string {
     if (isVmArray(value)) {
         const strings: string[] = [];
         for (const item of value) {
-            strings.push(innerToString(item, true));
+            strings.push($InnerToString(item, true));
         }
         // 在 join 过程中会自动把 null/undefined 和 empty slot 转为 ''
         // 与 innerToString 行为不一致
@@ -333,7 +333,7 @@ function innerToString(value: VmAny, useBraces: boolean): string {
     }
     if (typeof value == 'object') {
         const entries = keys(value)
-            .map((key) => `${key}: ${innerToString(value[key], true)}`)
+            .map((key) => `${key}: ${$InnerToString(value[key], true)}`)
             .join(', ');
         if (!useBraces) return entries;
         return `(${entries})`;
@@ -347,7 +347,7 @@ export const $ToString = (value: VmAny): string => {
     $AssertInit(value);
     if (typeof value == 'string') return value;
     if (value === null) return '';
-    return innerToString(value, false);
+    return $InnerToString(value, false);
 };
 export const $ToNumber = (value: VmAny): number => {
     $AssertInit(value);

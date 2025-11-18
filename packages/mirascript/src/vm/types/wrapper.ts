@@ -22,7 +22,7 @@ export abstract class VmWrapper<T extends object> {
         return undefined;
     }
     /** 转为字符串 */
-    toString(): string {
+    toString(useBraces: boolean): string {
         const { type, describe } = this;
         if (!describe) return `<${type}>`;
         return `<${type} ${describe}>`;

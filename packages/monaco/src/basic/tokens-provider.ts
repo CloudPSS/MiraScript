@@ -350,8 +350,20 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                     ['comment.doc', 'type.doc', 'keyword.javascript', '', 'type.javascript', 'comment.doc'],
                 ],
                 [
-                    /(\/\*@whitespace*<)(extern )([\w]*)(>@whitespace*\*\/)/,
-                    ['comment.doc', 'type.doc', 'type.javascript', 'comment.doc'],
+                    /(\/\*@whitespace*<)(extern )([\w]*)(\()(\d+)(\))(>@whitespace*\*\/)/,
+                    [
+                        'comment.doc',
+                        'type.doc',
+                        'type.javascript',
+                        'delimiter',
+                        'number.doc',
+                        'delimiter',
+                        'comment.doc',
+                    ],
+                ],
+                [
+                    /(\/\*@whitespace*<)(extern )([\w]*)([^>]*)(>@whitespace*\*\/)/,
+                    ['comment.doc', 'type.doc', 'type.javascript', '', 'comment.doc'],
                 ],
                 [
                     /(\/\*@whitespace*<)(function )([.\w]*)(>@whitespace*\*\/)/,

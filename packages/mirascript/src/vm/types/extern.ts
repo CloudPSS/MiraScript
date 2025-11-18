@@ -1,14 +1,17 @@
 import { VmError } from '../error.js';
 import { VmWrapper } from './wrapper.js';
 import type { TypeName, VmAny, VmConst, VmPrimitive, VmValue } from './index.js';
-import { getPrototypeOf, hasOwn, apply } from '../../helpers/utils.js';
+import { getPrototypeOf, hasOwn, apply, isArray } from '../../helpers/utils.js';
 import { unwrapFromVmValue, wrapToVmValue } from './boundary.js';
+import { $InnerToString } from '../operations.js';
 
 const ObjectPrototype = Object.prototype;
 // eslint-disable-next-line @typescript-eslint/unbound-method
 const ObjectToString = ObjectPrototype.toString;
 // eslint-disable-next-line @typescript-eslint/unbound-method
 const FunctionToString = Function.prototype.toString;
+const ArrayToString = Array.prototype.toString;
+const ArrayMap = Array.prototype.map;
 /** 包装 Mirascript `extern` 类型的对象 */
 export class VmExtern<const T extends object = object> extends VmWrapper<T> {
     constructor(
@@ -88,16 +91,25 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
         return this.value === other.value && this.thisArg === other.thisArg;
     }
     /** @inheritdoc */
-    override toString(): string {
+    override toString(useBraces: boolean): string {
         // eslint-disable-next-line @typescript-eslint/unbound-method
         const { toString } = this.value;
         if (typeof toString != 'function' || toString === ObjectToString || toString === FunctionToString) {
-            return super.toString();
+            return super.toString(useBraces);
+        }
+        if (toString === ArrayToString && isArray(this.value)) {
+            const mapped = ArrayMap.call(this.value, (item: unknown) => {
+                if (item === undefined) return '';
+                return $InnerToString(wrapToVmValue(item ?? null, null), true);
+            });
+            const str = mapped.join(', ');
+            if (useBraces) return `[${str}]`;
+            return str;
         }
         try {
             return String(this.value);
         } catch {
-            return super.toString();
+            return super.toString(useBraces);
         }
     }
     /** @inheritdoc */
@@ -107,7 +119,9 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
     /** @inheritdoc */
     override get describe(): string {
         const tag = ObjectToString.call(this.value).slice(8, -1);
-        if (tag === 'Object') {
+        if (isArray(this.value)) {
+            return `${tag}(${this.value.length})`;
+        } else if (tag === 'Object') {
             const proto = getPrototypeOf(this.value);
             if (proto === ObjectPrototype) {
                 return 'Object';

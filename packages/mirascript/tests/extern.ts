@@ -85,7 +85,7 @@ test('callable extern', (t) => {
 test('describe extern', (t) => {
     t.is(new VmExtern({}, null).describe, 'Object');
     t.is(new VmExtern(Object.create(null), null).describe, 'Object: null prototype');
-    t.is(new VmExtern([], null).describe, 'Array');
+    t.is(new VmExtern([], null).describe, 'Array(0)');
     t.is(new VmExtern(() => 0, null).describe, 'function <anonymous>()');
     // eslint-disable-next-line @typescript-eslint/require-await
     t.is(new VmExtern(async () => 0, null).describe, 'async function <anonymous>()');
@@ -237,7 +237,22 @@ test('extern to_string', (t) => {
             toString: 123,
         },
         normal: {},
-        arr: [1, 2, 3],
+        arr: [
+            1,
+            2,
+            3,
+            /test/i,
+            undefined,
+            null,
+            [1, 2, 3],
+            {
+                toString() {
+                    throw new Error('obj fail');
+                },
+            },
+            // eslint-disable-next-line no-sparse-arrays
+            ,
+        ],
     });
     const e = exec(context);
     t.is(e('ok::to_string()'), 'ok');
@@ -245,7 +260,8 @@ test('extern to_string', (t) => {
     t.is(e('void::to_string()'), '<extern Object>');
     t.is(e('bad::to_string()'), '<extern Object>');
     t.is(e('normal::to_string()'), '<extern Object>');
-    t.is(e('arr::to_string()'), '1,2,3');
+    t.is(e('arr::to_string()'), '1, 2, 3, /test/i, , nil, [1, 2, 3], <extern Object>, ');
+    t.is(e('arr.3::to_string()'), '/test/i');
 });
 
 test('extern json', (t) => {

@@ -24,10 +24,7 @@ export async function print(value: VmAny | Error): Promise<string> {
     await ready;
     const { isVmExtern, isVmModule, serialize } = mirascript;
     if (isVmExtern(value) || isVmModule(value)) {
-        // 添加 `\0` 启用特殊格式化逻辑
-        const colorized = await syntaxHighlight('\0/* ' + value.toString() + ' */', 'mirascript');
-        // 格式化后移除 `\0`
-        return colorized.replace('>&#00;<', '><');
+        return await syntaxHighlight(`/* <${value.type} ${value.describe}> */`, 'mirascript-doc');
     }
     const valueStr = serialize(value);
     const { wasm, createConfig } = mirascriptBc;
