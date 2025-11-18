@@ -10,6 +10,75 @@ let contextProvider: VmContextProvider | undefined;
 /** 设置全局变量提供者 */
 export function setContextProvider(provider: VmContextProvider | undefined): void {
     contextProvider = provider;
+    cachedContext = null;
+}
+
+/** 提供全局变量的执行上下文 */
+type MonacoContext = Readonly<Required<Pick<VmContext, 'get' | 'describe' | 'keys' | 'has'>>>;
+const DEFAULT_MONACO_CONTEXT: MonacoContext = Object.freeze({
+    get(key: string) {
+        return DefaultVmContext.get(key);
+    },
+    has(key: string) {
+        return DefaultVmContext.has(key);
+    },
+    keys() {
+        return DefaultVmContext.keys();
+    },
+    describe(key: string) {
+        return undefined;
+    },
+});
+
+let cachedContext: readonly [editor.ITextModel, MonacoContext] | null = null;
+/** 获取执行上下文 */
+async function getContext(model: editor.ITextModel): Promise<MonacoContext> {
+    if (cachedContext?.[0] === model) {
+        return cachedContext[1];
+    }
+    const context = await contextProvider?.(model);
+    if (!context) {
+        return DEFAULT_MONACO_CONTEXT;
+    }
+    const monacoContext: MonacoContext = Object.freeze({
+        get(key: string) {
+            try {
+                return context.get(key);
+            } catch {
+                return DefaultVmContext.get(key);
+            }
+        },
+        has(key: string) {
+            try {
+                return context.has(key);
+            } catch {
+                return DefaultVmContext.has(key);
+            }
+        },
+        keys() {
+            try {
+                return context.keys();
+            } catch {
+                return DefaultVmContext.keys();
+            }
+        },
+        describe(key: string) {
+            try {
+                return context.describe?.(key) || undefined;
+            } catch {
+                return undefined;
+            }
+        },
+    });
+    const cache = [model, monacoContext] as const;
+    cachedContext = cache;
+    setTimeout(() => {
+        // 延迟清理缓存
+        if (cachedContext === cache) {
+            cachedContext = null;
+        }
+    }, 100);
+    return monacoContext;
 }
 
 /** 提供编辑器 LSP 支持 */
@@ -22,8 +91,8 @@ export abstract class Provider {
         return await compile(model);
     }
     /** 获取执行上下文（全局变量） */
-    async getContext(model: editor.ITextModel): Promise<Readonly<VmContext>> {
-        return (await contextProvider?.(model)) ?? DefaultVmContext;
+    async getContext(model: editor.ITextModel): Promise<MonacoContext> {
+        return getContext(model);
     }
     /** 获取当前位置的值 */
     async getValueAt(
