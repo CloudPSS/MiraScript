@@ -46,7 +46,7 @@ let mode: InputMode =
 let source =
     fromHash(hash.get('source')) ||
     localStorage.getItem(`${STORAGE_PREFIX}source`) ||
-    EXAMPLES[0]?.code ||
+    (await EXAMPLES[0]?.code()) ||
     `debug_print("Hello, World!");`;
 let theme: ThemeMode = (localStorage.getItem(`${STORAGE_PREFIX}theme`) as ThemeMode) || 'auto';
 

@@ -1,17 +1,20 @@
-import * as wasm from '../lib/wasm.js';
+import type { Config as WasmConfig, CompileResult as WasmCompileResult } from '../lib/wasm.js';
 import type { Config, InputMode, DiagnosticPositionEncoding, ScriptInput } from './types.js';
 
-export * from './types.js';
-export { wasm };
+export type { WasmCompileResult, WasmConfig };
 
-export const ready = import('@mirascript/wasm/loader').then(async ({ module }) =>
-    wasm.default({
-        module_or_path: await module,
-    }),
+export let wasm: typeof import('../lib/wasm.js');
+export const ready = Promise.all([import('../lib/wasm.js'), import('@mirascript/wasm/loader')]).then(
+    async ([_wasm, { module }]) => {
+        wasm = _wasm;
+        await wasm.default({
+            module_or_path: await module,
+        });
+    },
 );
 
 /** 创建可重用的配置 */
-export function createConfig(config?: Config | wasm.Config): wasm.Config {
+export function createConfig(config?: Config | WasmConfig): WasmConfig {
     if (!config) return new wasm.Config();
     if (config instanceof wasm.Config) return config;
     const cfg = new wasm.Config();
@@ -20,12 +23,10 @@ export function createConfig(config?: Config | wasm.Config): wasm.Config {
         if (!Object.hasOwn(config, key)) continue;
         let value = config[key as keyof Config] as never;
         if (key === 'input_mode') {
-            value = wasm.InputMode[value as InputMode] satisfies wasm.InputMode as never;
+            value = wasm.InputMode[value as InputMode] as never;
         }
         if (key === 'diagnostic_position_encoding') {
-            value = wasm.DiagnosticPositionEncoding[
-                value as DiagnosticPositionEncoding
-            ] satisfies wasm.DiagnosticPositionEncoding as never;
+            value = wasm.DiagnosticPositionEncoding[value as DiagnosticPositionEncoding] as never;
         }
         if (value === undefined) continue;
         if (!(key in cfg)) continue;
@@ -44,9 +45,9 @@ export interface CompileResult {
 
 /** 编译 */
 function compileImpl<T>(
-    compiler: (script: T, config: wasm.Config) => wasm.CompileResult,
+    compiler: (script: T, config: WasmConfig) => WasmCompileResult,
     script: T,
-    config: Config | wasm.Config,
+    config: Config | WasmConfig,
 ): CompileResult {
     const cfg = createConfig(config);
     const result = compiler(script, cfg);
@@ -64,7 +65,7 @@ function compileImpl<T>(
 }
 
 /** 编译 MiraScript 代码 */
-export function compileSync(script: ScriptInput, config: Config | wasm.Config): CompileResult {
+export function compileSync(script: ScriptInput, config: Config | WasmConfig): CompileResult {
     return typeof script == 'string'
         ? compileImpl(wasm.compile, script, config)
         : compileImpl(wasm.compile_buffer, script, config);

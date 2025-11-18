@@ -1,6 +1,6 @@
 import type { VmAny } from '@mirascript/mirascript';
 import { escapeHtml, print } from './utils.js';
-import { lib } from '@mirascript/mirascript/subtle';
+import { mirascriptSubtle } from './loader.js';
 
 /** 消息 */
 type Message = VmAny[] | string | Error;
@@ -63,7 +63,7 @@ export class ConsoleManager {
         };
         this.entries.push(entry);
         if (Array.isArray(message)) {
-            lib.debug_print(...message);
+            mirascriptSubtle.lib.debug_print(...message);
         } else {
             // eslint-disable-next-line no-console
             console[type](

@@ -1,8 +1,8 @@
-import { type VmScript, compile, type InputMode } from '@mirascript/mirascript';
+import type { VmScript, InputMode, VmAny, VmContext } from '@mirascript/mirascript';
+import type { ConsoleManager } from './console-manager.js';
 import { syntaxHighlight, print } from './utils.js';
 import { getState } from './state-manager.js';
-import type { ConsoleManager } from './console-manager.js';
-import type { VmAny, VmContext } from '@mirascript/mirascript';
+import { mirascript, ready } from './loader.js';
 
 /** 管理编译和运行结果 */
 export function resultManager(
@@ -15,6 +15,7 @@ export function resultManager(
     let cache: { fileName: string; mode: InputMode; source: string; script: VmScript } | null = null;
     /** 编译 */
     async function compileScript(): Promise<VmScript | undefined> {
+        await ready;
         const { mode, source } = getState();
         const cacheHit = cache?.mode === mode && cache.source === source ? cache : null;
         const fileName =
@@ -23,7 +24,7 @@ export function resultManager(
 
         const compStart = performance.now();
         try {
-            const script = await compile(source, {
+            const script = await mirascript.compile(source, {
                 pretty: true,
                 sourceMap: true,
                 input_mode: mode,

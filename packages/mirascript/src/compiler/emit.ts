@@ -1,5 +1,4 @@
 import { OpCode } from '@mirascript/bindings';
-import { toBase64 } from 'js-base64';
 import type { VmConst, VmPrimitive } from '../vm/index.js';
 import type { ScriptInput, TranspileOptions } from './types.js';
 import type { IRange } from './diagnostic.js';
@@ -788,7 +787,7 @@ class Emitter {
         this.codeLines.push(
             // Prevent source map from being recognized as of this file
             `${prefix}sourceURL=${sourceURL}.js`,
-            `${prefix}sourceMappingURL=data:application/json;base64,${toBase64(map.toString())}`,
+            `${prefix}sourceMappingURL=data:application/json,${encodeURIComponent(map.toString())}`,
         );
     }
 }

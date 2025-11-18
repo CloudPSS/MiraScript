@@ -1,12 +1,11 @@
 import type { InputMode } from '@mirascript/mirascript';
 
-export const EXAMPLES: Array<{ order: number; name: string; mode: InputMode; code: string }> = [];
+export const EXAMPLES: Array<{ order: number; name: string; mode: InputMode; code: () => Promise<string> }> = [];
 
 const exampleModules = import.meta.glob('./*.{mira,miratpl}', {
     base: '../../../examples',
     query: '?raw',
     import: 'default',
-    eager: true,
 });
 
 for (const [path, content] of Object.entries(exampleModules)) {
@@ -35,7 +34,7 @@ for (const [path, content] of Object.entries(exampleModules)) {
         order,
         name: displayName,
         mode: isTemplate ? 'Template' : 'Script',
-        code: content as string,
+        code: content as () => Promise<string>,
     });
 }
 
@@ -45,7 +44,8 @@ if (EXAMPLES.length === 0) {
         order: 1,
         name: 'Hello World',
         mode: 'Script',
-        code: `debug_print("Hello, World!");`,
+        // eslint-disable-next-line @typescript-eslint/promise-function-async
+        code: () => Promise.resolve(`debug_print("Hello, World!");`),
     });
 }
 

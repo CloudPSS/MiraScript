@@ -1,6 +1,6 @@
-import { type VmAny, isVmExtern, isVmModule, serialize } from '@mirascript/mirascript';
-import type { wasm } from '@mirascript/wasm';
-import { editor } from '@private/monaco-editor';
+import type { BcModule } from '@mirascript/bindings/wasm';
+import type { VmAny } from '@mirascript/mirascript';
+import { monaco, mirascript, ready, mirascriptBc } from './loader.js';
 
 /** HTML escape */
 export function escapeHtml(value: string): string {
@@ -12,7 +12,7 @@ export function escapeHtml(value: string): string {
         .replaceAll("'", '&#39;');
 }
 
-let formatConfig: wasm.Config;
+let formatConfig: BcModule.WasmConfig;
 /** 将值转为语法高亮的显示 */
 export async function print(value: VmAny | Error): Promise<string> {
     if (value === undefined) return escapeHtml('<uninitialized>');
@@ -21,6 +21,8 @@ export async function print(value: VmAny | Error): Promise<string> {
     if (typeof value == 'function') {
         return syntaxHighlight(String(value), 'javascript');
     }
+    await ready;
+    const { isVmExtern, isVmModule, serialize } = mirascript;
     if (isVmExtern(value) || isVmModule(value)) {
         // 添加 `\0` 启用特殊格式化逻辑
         const colorized = await syntaxHighlight('\0/* ' + value.toString() + ' */', 'mirascript');
@@ -28,7 +30,7 @@ export async function print(value: VmAny | Error): Promise<string> {
         return colorized.replace('>&#00;<', '><');
     }
     const valueStr = serialize(value);
-    const { wasm, createConfig } = await import('@mirascript/wasm');
+    const { wasm, createConfig } = mirascriptBc;
     formatConfig ??= createConfig({
         input_mode: 'Script',
         trivia: true,
@@ -49,11 +51,14 @@ export async function print(value: VmAny | Error): Promise<string> {
     return syntaxHighlight(serialize(valueStr), 'mirascript');
 }
 
-// 加载 javascript 模型以便语法高亮
-editor.createModel('', 'javascript').dispose();
+void ready.then(() => {
+    // 加载 javascript 模型以便语法高亮
+    monaco.editor.createModel('', 'javascript').dispose();
+});
 /** 语法高亮 */
 export async function syntaxHighlight(value: string, languageId: string): Promise<string> {
-    let highlighted = await editor.colorize(value, languageId, { tabSize: 2 });
+    await ready;
+    let highlighted = await monaco.editor.colorize(value, languageId, { tabSize: 2 });
     if (highlighted.endsWith('<br/>') && !value.endsWith('\n')) {
         // 如果高亮结果以 <br/> 结尾且原始值没有换行符，则去掉 <br/>
         highlighted = highlighted.slice(0, -'<br/>'.length);

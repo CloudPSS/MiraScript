@@ -1,6 +1,7 @@
 import type { InputMode } from '@mirascript/mirascript';
-import { loadModule, type BcModule } from '@mirascript/bindings/wasm';
+import type { BcModule } from '@mirascript/bindings/wasm';
 
+const { loadModule } = await import('@mirascript/bindings/wasm');
 const mod = await loadModule();
 const { wasm, createConfig } = mod;
 

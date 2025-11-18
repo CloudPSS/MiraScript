@@ -1,14 +1,6 @@
-import { VmSharedContext } from '@mirascript/mirascript/subtle';
-import {
-    createVmContext,
-    getVmFunctionInfo,
-    VmExtern,
-    VmFunction,
-    VmModule,
-    type VmAny,
-    type VmContext,
-} from '@mirascript/mirascript';
+import type { VmAny, VmContext } from '@mirascript/mirascript';
 import type { ConsoleManager } from './console-manager.js';
+import { mirascript, mirascriptSubtle } from './loader.js';
 
 /** 创建全局环境 */
 export function globals(consoleManager: ConsoleManager): VmContext {
@@ -19,6 +11,8 @@ export function globals(consoleManager: ConsoleManager): VmContext {
     function debugPrint(...args: VmAny[]) {
         consoleManager.log(args);
     }
+    const { VmSharedContext } = mirascriptSubtle;
+    const { VmExtern, VmModule, VmFunction, getVmFunctionInfo, createVmContext } = mirascript;
     return createVmContext(
         {
             extern_arr: new VmExtern(arr),
@@ -32,7 +26,6 @@ export function globals(consoleManager: ConsoleManager): VmContext {
                 }),
             }),
             debug_print: VmFunction(debugPrint, getVmFunctionInfo(VmSharedContext.debug_print)),
-
             // for template examples
             title: 'MiraScript 示例',
             name: 'MiraScript',
