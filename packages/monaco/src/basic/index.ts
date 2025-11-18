@@ -5,7 +5,7 @@ import { registerMiraScriptTokensProvider } from './tokens-provider.js';
 export { configuration };
 /** 注册 */
 export async function registerBasic(): Promise<IDisposable[]> {
-    const { ready } = await import('@mirascript/wasm');
-    await ready;
+    const { loadModule } = await import('@mirascript/bindings/wasm');
+    await loadModule();
     return [...setLanguageConfiguration(), ...registerMiraScriptTokensProvider()];
 }

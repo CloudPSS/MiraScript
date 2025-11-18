@@ -38,8 +38,8 @@ export {
 /** 注册 LSP 相关的编辑器功能 */
 export async function registerLSP(contextProvider: VmContextProvider | undefined): Promise<IDisposable[]> {
     setContextProvider(contextProvider);
-    const { ready } = await import('@mirascript/wasm');
-    await ready;
+    const { loadModule } = await import('@mirascript/bindings/wasm');
+    await loadModule();
 
     const codeActionProvider = new CodeActionProvider();
     const colorProvider = new ColorProvider();

@@ -1,7 +1,6 @@
+import { loadModule } from '@mirascript/bindings';
 import type { VmScript } from '../vm/index.js';
 import type { ScriptInput, TranspileOptions } from './types.js';
-import './types.js';
-import { loadModule } from './loader.js';
 import { emit } from './emit.js';
 import { createScript } from './create-script.js';
 import { compileFast } from './compile-fast.js';

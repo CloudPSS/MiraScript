@@ -1,22 +1,21 @@
 import type { Writable } from 'type-fest';
-import { DiagnosticCode, wasm } from '@mirascript/wasm';
+import { DiagnosticCode, getModule } from '@mirascript/bindings';
 import type { ScriptInput } from './types.js';
 import { isSafeInteger } from '../helpers/utils.js';
-import { checkModule } from './loader.js';
 
 export { DiagnosticCode };
 
-const diagnosticMessages = new Map<DiagnosticCode, string | undefined>();
+const diagnosticMessages = new Map<DiagnosticCode, string | null>();
 /** 获取 {@link DiagnosticCode} 对应的消息 */
-export function getDiagnosticMessage(code: DiagnosticCode): string | undefined {
+export function getDiagnosticMessage(code: DiagnosticCode): string | null {
     if (!isSafeInteger(code) || code < 0 || code >= 0xffff) {
         throw new RangeError(`Invalid DiagnosticCode: ${code}`);
     }
     if (diagnosticMessages.has(code)) {
-        return diagnosticMessages.get(code);
+        return diagnosticMessages.get(code) || null;
     }
-    checkModule();
-    const msg = wasm.get_diagnostic_message(code);
+    const mod = getModule();
+    const msg = mod.getDiagnosticMessage(code);
     diagnosticMessages.set(code, msg);
     return msg;
 }

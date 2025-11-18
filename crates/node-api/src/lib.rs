@@ -1,4 +1,4 @@
-use mira_core::{Config, compile::CompileResult};
+use mira_core::{Config, DiagnosticCode, Keyword, compile::CompileResult, prelude::*};
 use napi::{
     Either, Env, Result, Task,
     bindgen_prelude::{AsyncTask, Object, Uint8Array, Uint32Array},
@@ -77,4 +77,17 @@ pub fn compile(
 ) -> Result<AsyncTask<Compile>> {
     let args = extract_args(&env, script, config)?;
     Ok(AsyncTask::new(args))
+}
+
+#[napi]
+pub fn get_diagnostic_message(code: u16) -> Option<String> {
+    DiagnosticCode::from_code(code)?
+        .message()
+        .to_string()
+        .into()
+}
+
+#[napi]
+pub fn keywords() -> Vec<String> {
+    Keyword::VARIANTS.iter().map(|s| s.to_string()).collect()
 }

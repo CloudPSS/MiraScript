@@ -1,4 +1,4 @@
-import { OpCode } from '@mirascript/wasm/types';
+import { OpCode } from '@mirascript/bindings';
 import { toBase64 } from 'js-base64';
 import type { VmConst, VmPrimitive } from '../vm/index.js';
 import type { ScriptInput, TranspileOptions } from './types.js';

@@ -1,4 +1,4 @@
-import { DiagnosticCode } from '@mirascript/wasm/types';
+import { DiagnosticCode } from '@mirascript/bindings/wasm';
 import { type editor, type languages, type CancellationToken, Position, Range } from '../../monaco-api.js';
 import { Provider } from './base.js';
 import { fnSignature, getDeep, localParamSignature, strictContainsPosition } from '../utils.js';

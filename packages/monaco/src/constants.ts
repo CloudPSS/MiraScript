@@ -1,14 +1,11 @@
 import { constants } from '@mirascript/mirascript/subtle';
+import { getModule } from '@mirascript/bindings/wasm';
 
-let wasm: typeof import('@mirascript/wasm').wasm;
-void import('@mirascript/wasm').then(async (mod) => {
-    await mod.ready;
-    wasm = mod.wasm;
-});
+const wasm = () => getModule().wasm;
 
 /** 所有 MiraScript 关键字 */
 export let keywords = (): readonly string[] => {
-    const kw = wasm.keywords();
+    const kw = wasm().keywords();
     Object.freeze(kw);
     keywords = () => kw;
     return kw;
@@ -16,7 +13,7 @@ export let keywords = (): readonly string[] => {
 
 /** MiraScript 控制流关键字 */
 export let controlKeywords = (): readonly string[] => {
-    const kw = wasm.control_keywords();
+    const kw = wasm().control_keywords();
     Object.freeze(kw);
     controlKeywords = () => kw;
     return kw;
@@ -24,7 +21,7 @@ export let controlKeywords = (): readonly string[] => {
 
 /** MiraScript 数值字面量关键字 */
 export let numericKeywords = (): readonly string[] => {
-    const kw = wasm.numeric_keywords();
+    const kw = wasm().numeric_keywords();
     Object.freeze(kw);
     numericKeywords = () => kw;
     return kw;
@@ -32,7 +29,7 @@ export let numericKeywords = (): readonly string[] => {
 
 /** MiraScript 字面量关键字 */
 export let constantKeywords = (): readonly string[] => {
-    const kw = wasm.constant_keywords();
+    const kw = wasm().constant_keywords();
     Object.freeze(kw);
     constantKeywords = () => kw;
     return kw;
@@ -40,7 +37,7 @@ export let constantKeywords = (): readonly string[] => {
 
 /** MiraScript 保留字关键字 */
 export let reservedKeywords = (): readonly string[] => {
-    const kw = wasm.reserved_keywords();
+    const kw = wasm().reserved_keywords();
     Object.freeze(kw);
     reservedKeywords = () => kw;
     return kw;

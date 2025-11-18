@@ -71,6 +71,11 @@ export function compileSync(script: ScriptInput, config: Config | wasm.Config): 
 }
 
 /** 获取诊断消息 */
-export function getDiagnosticMessage(code: number): string | undefined {
-    return wasm.get_diagnostic_message(code);
+export function getDiagnosticMessage(code: number): string | null {
+    return wasm.get_diagnostic_message(code) || null;
+}
+
+/** 获取关键字列表 */
+export function keywords(): string[] {
+    return wasm.keywords();
 }
