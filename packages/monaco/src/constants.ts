@@ -1,15 +1,9 @@
-import { constants } from '@mirascript/mirascript/subtle';
+import { constants, keywords } from '@mirascript/mirascript/subtle';
 import { getModule } from '@mirascript/bindings/wasm';
 
-const wasm = () => getModule().wasm;
+export { keywords };
 
-/** 所有 MiraScript 关键字 */
-export let keywords = (): readonly string[] => {
-    const kw = wasm().keywords();
-    Object.freeze(kw);
-    keywords = () => kw;
-    return kw;
-};
+const wasm = () => getModule().wasm;
 
 /** MiraScript 控制流关键字 */
 export let controlKeywords = (): readonly string[] => {
