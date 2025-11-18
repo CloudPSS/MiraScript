@@ -490,7 +490,7 @@ export class CompletionItemProvider extends Provider implements languages.Comple
         }
         const { vmValue, isField, vmDescribe } = item as CustomCompletionItem;
         const { label } = item.label;
-        if (vmValue != null || vmDescribe) {
+        if (vmValue !== undefined || vmDescribe) {
             if (item.documentation) return item;
             const last = label.split('.').pop()!;
             const def = valueDoc(last, vmValue, isField ? 'field' : 'hint');

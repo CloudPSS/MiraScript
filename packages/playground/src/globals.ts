@@ -15,6 +15,8 @@ export function globals(consoleManager: ConsoleManager): VmContext {
     const { VmExtern, VmModule, VmFunction, getVmFunctionInfo, createVmContext } = mirascript;
     return createVmContext(
         {
+            null_value: null,
+            undefined_value: undefined,
             extern_arr: new VmExtern(arr),
             obj: { a: [], b: 1, c: '2', d: { e: 3 } },
             arr: [1, 2, 3],
