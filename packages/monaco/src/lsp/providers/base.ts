@@ -45,6 +45,7 @@ async function getContext(model: editor.ITextModel): Promise<MonacoContext> {
             try {
                 return context.get(key);
             } catch {
+                clearCache();
                 return DefaultVmContext.get(key);
             }
         },
@@ -52,6 +53,7 @@ async function getContext(model: editor.ITextModel): Promise<MonacoContext> {
             try {
                 return context.has(key);
             } catch {
+                clearCache();
                 return DefaultVmContext.has(key);
             }
         },
@@ -59,6 +61,7 @@ async function getContext(model: editor.ITextModel): Promise<MonacoContext> {
             try {
                 return context.keys();
             } catch {
+                clearCache();
                 return DefaultVmContext.keys();
             }
         },
@@ -66,18 +69,19 @@ async function getContext(model: editor.ITextModel): Promise<MonacoContext> {
             try {
                 return context.describe?.(key) || undefined;
             } catch {
+                clearCache();
                 return undefined;
             }
         },
     });
     const cache = [model, monacoContext] as const;
     cachedContext = cache;
-    setTimeout(() => {
-        // 延迟清理缓存
+    const clearCache = () => {
         if (cachedContext === cache) {
             cachedContext = null;
         }
-    }, 100);
+    };
+    setTimeout(clearCache, 100);
     return monacoContext;
 }
 
