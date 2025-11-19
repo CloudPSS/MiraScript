@@ -12,7 +12,8 @@ import {
     DiagnosticTag,
     DiagnosticRelatedInformation,
 } from 'vscode';
-import { createConfig, compileSync, DiagnosticCode, ready } from '@mirascript/wasm';
+import { createConfig, compileSync, ready } from '@mirascript/wasm';
+import { DiagnosticCode } from '@mirascript/wasm/types';
 import { getDiagnosticMessage, parseDiagnostics, type SourceDiagnostic } from '@mirascript/mirascript/subtle';
 import { toRange } from '../adapter/utils.js';
 

@@ -40,6 +40,8 @@ export interface VmContext {
 export type VmContextRecord = Record<string, VmValue | undefined>;
 export const VmSharedContext = create(null) as VmSharedContext;
 
+let VmSharedContextKeys: readonly string[] | null = null;
+
 /** 定义在所有 MiraScript 执行上下文中共享的全局变量 */
 export function defineVmContextValue(
     name: string,
@@ -57,6 +59,7 @@ export function defineVmContextValue(
         v = value;
     }
     VmSharedContext[name] = v ?? null;
+    VmSharedContextKeys = null;
 }
 
 /** 无后备的实现 */
@@ -64,7 +67,8 @@ export const DefaultVmContext: VmContext = Object.freeze({
     [kVmContext]: true as const,
     /** @inheritdoc */
     keys(): Iterable<string> {
-        return keys(VmSharedContext);
+        VmSharedContextKeys ??= Object.freeze(keys(VmSharedContext));
+        return VmSharedContextKeys;
     },
     /** @inheritdoc */
     get(key: string): VmValue {

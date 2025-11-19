@@ -1,5 +1,6 @@
 import { OpCode } from '@mirascript/bindings';
 import type { VmConst, VmPrimitive } from '../vm/index.js';
+import { $ToString } from '../vm/operations.js';
 import type { ScriptInput, TranspileOptions } from './types.js';
 import type { IRange } from './diagnostic.js';
 import { SourceMapGenerator } from 'source-map-js';
@@ -102,11 +103,13 @@ class Emitter {
     private readConsts(): void {
         for (let i = 0, index = 0; i < this.constSize; index++) {
             const [constant, size] = readConst(this.constReader, i);
-            this.constants.push(toJavascript(constant));
+            this.constVals.push(constant);
+            this.constLits.push(toJavascript(constant));
             i += size;
         }
     }
-    readonly constants: string[] = [];
+    readonly constVals: VmPrimitive[] = [];
+    readonly constLits: string[] = [];
 
     readonly constSize: number;
     private readonly codeReader: DataView;
@@ -118,6 +121,26 @@ class Emitter {
     private ident(len = 0): string {
         if (!this.pretty) return '';
         return '  '.repeat(this.identCounter + len);
+    }
+
+    readonly globals = new Map<number, [val: string, lit: string, eager: boolean, expr: string]>();
+    /** 读取全局变量 */
+    private rg(constIdx: number, eager: boolean): string {
+        const cached = this.globals.get(constIdx);
+        if (cached != null) {
+            if (eager && !cached[2]) {
+                cached[2] = true;
+                cached[3] = cached[0];
+            }
+            return cached[3];
+        }
+        const constName = this.constVals[constIdx]!;
+        const name = $ToString(constName);
+        const lit = typeof constName == 'string' ? this.constLits[constIdx]! : JSON.stringify(name);
+        const val = `g${this.globals.size + 1}`;
+        const expr = eager ? val : `(${val} === undefined ? (${val} = global.get(${lit})) : ${val})`;
+        this.globals.set(constIdx, [val, lit, eager, expr]);
+        return expr;
     }
 
     readonly codeLines: string[] = [];
@@ -226,7 +249,7 @@ class Emitter {
                 case OpCode.FieldOpt:
                 case OpCode.Field: {
                     const field = read();
-                    const field_name = this.constants[field];
+                    const field_name = this.constLits[field];
                     /* c8 ignore next 3 */
                     if (!field_name) {
                         throw new Error(`Unknown field ${field}`);
@@ -381,7 +404,7 @@ class Emitter {
             case OpCode.Constant: {
                 reg = read();
                 const i = read();
-                const c = this.constants[i];
+                const c = this.constLits[i];
                 code = `${this.wv(reg)} = ${c};`;
                 break;
             }
@@ -439,7 +462,7 @@ class Emitter {
                 reg = read();
                 const value = read();
                 const n = read();
-                const args = createArray(n, () => this.constants[read()]!);
+                const args = createArray(n, () => this.constLits[read()]!);
 
                 code = `${this.wv(reg)} = $${OpCode[opcode]}(${this.rv(value)}, [${args.join(', ')}]);`;
                 break;
@@ -452,7 +475,7 @@ class Emitter {
                 const args = createArray(n, () => read());
                 const ns = read();
                 const spreads = createArray(ns, () => read());
-                const callTarget = opcode === OpCode.Call ? `global.get(${this.constants[func]})` : this.rv(func);
+                const callTarget = opcode === OpCode.Call ? this.rg(func, this.identCounter <= 1) : this.rv(func);
                 code = `${this.wv(reg)} = $Call(${callTarget}, [${args
                     .map((a, i) => {
                         if (spreads.includes(i)) return `...$ArraySpread(${this.rv(a)})`;
@@ -494,7 +517,7 @@ class Emitter {
             case OpCode.Get: {
                 reg = read();
                 const obj = read();
-                const prop = this.constants[read()];
+                const prop = this.constLits[read()];
                 code = `${this.wv(reg)} = $Get(${this.rv(obj)}, ${prop});`;
                 break;
             }
@@ -515,7 +538,7 @@ class Emitter {
             case OpCode.Has: {
                 reg = read();
                 const obj = read();
-                const prop = this.constants[read()];
+                const prop = this.constLits[read()];
                 code = `${this.wv(reg)} = $Has(${this.rv(obj)}, ${prop});`;
                 break;
             }
@@ -536,7 +559,7 @@ class Emitter {
             case OpCode.Set: {
                 reg = read();
                 const obj = read();
-                const prop = this.constants[read()];
+                const prop = this.constLits[read()];
                 code = `$Set(${this.rv(obj)}, ${prop}, ${this.rv(reg)});`;
                 break;
             }
@@ -557,14 +580,13 @@ class Emitter {
             case OpCode.GetGlobal: {
                 reg = read();
                 const i = read();
-                const c = this.constants[i];
-                code = `${this.wv(reg)} = global.get(${c}) ?? null;`;
+                code = `${this.wv(reg)} = ${this.rg(i, this.identCounter <= 1)};`;
                 break;
             }
             case OpCode.GetGlobalDyn: {
                 reg = read();
                 const name = read();
-                code = `${this.wv(reg)} = global.get(${this.rv(name)}) ?? null;`;
+                code = `${this.wv(reg)} = global.get($ToString(${this.rv(name)}));`;
                 break;
             }
             case OpCode.GetUpvalue: {
@@ -743,6 +765,14 @@ class Emitter {
     read(): void {
         this.readConsts();
         this.readCode();
+        if (this.globals.size > 0) {
+            let globalsInit = '';
+            for (const [val, lit, eager] of this.globals.values()) {
+                const expr = eager ? `${val} = global.get(${lit})` : val;
+                globalsInit += globalsInit ? `, ${expr}` : `var /* globals */ ${expr}`;
+            }
+            this.codeLines[0] += globalsInit + ';';
+        }
         this.addSourceMap();
     }
     /** 添加源映射 */

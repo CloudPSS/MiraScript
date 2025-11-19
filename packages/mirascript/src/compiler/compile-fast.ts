@@ -46,7 +46,7 @@ function compileScriptFast(code: string, options: TranspileOptions): VmScript | 
     if (REG_IDENTIFIER_FAST.test(trimmedCode)) {
         // 直接返回标识符
         const id = trimmedCode;
-        return wrapScript(code, (global = GlobalFallback()) => global.get(id) ?? null);
+        return wrapScript(code, (global = GlobalFallback()) => global.get(id));
     }
     if (REG_NUMBER_FULL.test(trimmedCode)) {
         const num = Number(trimmedCode);

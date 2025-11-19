@@ -268,8 +268,8 @@ export class CompletionItemProvider extends Provider implements languages.Comple
         const suggestions: CustomCompletionItem[] = [];
         const localKeys = new Set(locals.map((item) => item.insertText));
         for (const key of new Set(global.keys())) {
+            if (!global.has(key)) continue;
             const element = global.get(key);
-            if (element === undefined) continue;
 
             if (isVmModule(element)) {
                 for (const f of element.keys()) {
