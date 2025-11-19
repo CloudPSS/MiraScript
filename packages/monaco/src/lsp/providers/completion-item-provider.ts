@@ -292,7 +292,7 @@ export class CompletionItemProvider extends Provider implements languages.Comple
                 continue;
             }
 
-            const doc = global.describe?.(key) ?? undefined;
+            const doc = global.describe(key);
             suggestions.push({
                 insertText: localKeys.has(key) ? `global.${key}` : key, // 如果有同名局部变量，使用 global. 前缀
                 filterText: filterText(key, char),
@@ -355,7 +355,7 @@ export class CompletionItemProvider extends Provider implements languages.Comple
         }
         const vmGlobal = await this.getContext(model);
         fields.pop(); // 移除最后一个部分，因为它是当前输入位置的字段名
-        const value = getDeep(vmGlobal.get(def.def.name), fields);
+        const value = getDeep(vmGlobal, def.def.name, fields);
         if (value == null || typeof value != 'object') {
             return [];
         }

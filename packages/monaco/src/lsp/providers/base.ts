@@ -1,4 +1,4 @@
-import type { VmContext } from '@mirascript/mirascript';
+import type { VmContext, VmAny } from '@mirascript/mirascript';
 import { DefaultVmContext, type IRange } from '@mirascript/mirascript/subtle';
 import type { VmContextProvider } from '../../index.js';
 import { type editor, Emitter, type IEvent, type IPosition } from '../../monaco-api.js';
@@ -14,10 +14,16 @@ export function setContextProvider(provider: VmContextProvider | undefined): voi
 }
 
 /** 提供全局变量的执行上下文 */
-type MonacoContext = Readonly<Required<Pick<VmContext, 'get' | 'describe' | 'keys' | 'has'>>>;
+export type MonacoContext = Readonly<Required<Pick<VmContext, 'get' | 'describe' | 'keys' | 'has'>>> & {
+    /** 获取指定 key 的值，找不到时返回 undefined */
+    getOrUndefined(key: string): VmAny;
+};
 const DEFAULT_MONACO_CONTEXT: MonacoContext = Object.freeze({
     get(key: string) {
         return DefaultVmContext.get(key);
+    },
+    getOrUndefined(key: string) {
+        return DefaultVmContext.has(key) ? DefaultVmContext.get(key) : undefined;
     },
     has(key: string) {
         return DefaultVmContext.has(key);
@@ -46,7 +52,15 @@ async function getContext(model: editor.ITextModel): Promise<MonacoContext> {
                 return context.get(key);
             } catch {
                 clearCache();
-                return DefaultVmContext.get(key);
+                return DEFAULT_MONACO_CONTEXT.get(key);
+            }
+        },
+        getOrUndefined(key: string) {
+            try {
+                return context.has(key) ? context.get(key) : undefined;
+            } catch {
+                clearCache();
+                return DEFAULT_MONACO_CONTEXT.getOrUndefined(key);
             }
         },
         has(key: string) {
@@ -54,7 +68,7 @@ async function getContext(model: editor.ITextModel): Promise<MonacoContext> {
                 return context.has(key);
             } catch {
                 clearCache();
-                return DefaultVmContext.has(key);
+                return DEFAULT_MONACO_CONTEXT.has(key);
             }
         },
         keys() {
@@ -62,7 +76,7 @@ async function getContext(model: editor.ITextModel): Promise<MonacoContext> {
                 return context.keys();
             } catch {
                 clearCache();
-                return DefaultVmContext.keys();
+                return DEFAULT_MONACO_CONTEXT.keys();
             }
         },
         describe(key: string) {
@@ -70,7 +84,7 @@ async function getContext(model: editor.ITextModel): Promise<MonacoContext> {
                 return context.describe?.(key) || undefined;
             } catch {
                 clearCache();
-                return undefined;
+                return DEFAULT_MONACO_CONTEXT.describe(key);
             }
         },
     });

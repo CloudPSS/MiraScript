@@ -9,6 +9,7 @@ import {
 } from './index.js';
 import { create, entries, keys } from '../../helpers/utils.js';
 import type * as global from '../lib/global/index.js';
+import { VmError } from '../error.js';
 
 /** 全局导入的标准库 */
 type GlobalKeys = keyof typeof global;
@@ -31,16 +32,26 @@ export interface VmContext {
     keys(): Iterable<string>;
     /** 描述值，返回 MarkDown 文本，仅在 LSP 中使用 */
     describe?(key: string): string | undefined;
-    /** 获取指定 key 的值 `global[key]` */
+    /**
+     * 获取指定 key 的值 `global[key]`
+     * @throws {VmError} 如果值不存在则抛出异常
+     */
     get(key: string): VmValue;
     /** 查找指定 key 是否存在 `key in global` */
     has(key: string): boolean;
 }
 /** MiraScript 执行上下文 */
-export type VmContextRecord = Record<string, VmValue | undefined>;
+export type VmContextRecord = Record<string, VmValue>;
+/** MiraScript 执行上下文 */
+export type VmContextRecordLoose = Record<string, VmValue | undefined>;
 export const VmSharedContext = create(null) as VmSharedContext;
 
 let VmSharedContextKeys: readonly string[] | null = null;
+
+/** 全局变量未找到 */
+function globalVarNotFound(name: string): never {
+    throw new VmError(`Global variable '${name}' is not defined.`, null);
+}
 
 /** 定义在所有 MiraScript 执行上下文中共享的全局变量 */
 export function defineVmContextValue(
@@ -72,7 +83,9 @@ export const DefaultVmContext: VmContext = Object.freeze({
     },
     /** @inheritdoc */
     get(key: string): VmValue {
-        return VmSharedContext[key] ?? null;
+        const val = VmSharedContext[key];
+        if (val === undefined) globalVarNotFound(key);
+        return val;
     },
     /** @inheritdoc */
     has(key: string): boolean {
@@ -91,7 +104,9 @@ class ValueVmContext implements VmContext {
     }
     /** @inheritdoc */
     get(key: string): VmValue {
-        return this.env[key] ?? null;
+        const val = this.env[key];
+        if (val === undefined) globalVarNotFound(key);
+        return val;
     }
     /** @inheritdoc */
     has(key: string): boolean {
@@ -132,7 +147,7 @@ class FactoryVmContext implements VmContext {
 
 /** 以值为后备的实现 */
 type CreateVmContextWithValues = readonly [
-    vmValues?: VmContextRecord | null | undefined,
+    vmValues?: VmContextRecordLoose | null | undefined,
     externValues?: Record<string, unknown> | null | undefined,
     describer?: ((key: string) => string | undefined) | null | undefined,
 ];
