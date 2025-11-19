@@ -173,6 +173,12 @@ pub enum DiagnosticCode {
     UnnecessaryIrrefutablePattern,
     #[strum(message = "Use `and` instead in irrefutable patterns for better readability")]
     MisleadingOrInIrrefutablePattern,
+    #[strum(message = "This `match` expression has no cases; it will never match any value")]
+    MatchExpressionHasNoCases,
+
+    // For analyzer
+    #[strum(message = "Global variable `$0` is not declared")]
+    GlobalVariableNotDeclared,
 
     WarningEnd = 2999,
     // Info 3000~3999

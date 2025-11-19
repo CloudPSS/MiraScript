@@ -35,68 +35,79 @@ const DEFAULT_MONACO_CONTEXT: MonacoContext = Object.freeze({
         return undefined;
     },
 });
-
-let cachedContext: readonly [editor.ITextModel, MonacoContext] | null = null;
 /** 获取执行上下文 */
-async function getContext(model: editor.ITextModel): Promise<MonacoContext> {
+async function getContextImpl(model: editor.ITextModel, clearCache: () => void): Promise<MonacoContext> {
+    try {
+        const context = await contextProvider?.(model);
+        if (!context) {
+            return DEFAULT_MONACO_CONTEXT;
+        }
+
+        const monacoContext: MonacoContext = Object.freeze({
+            get(key: string) {
+                try {
+                    return context.get(key);
+                } catch {
+                    clearCache();
+                    return DEFAULT_MONACO_CONTEXT.get(key);
+                }
+            },
+            getOrUndefined(key: string) {
+                try {
+                    return context.has(key) ? context.get(key) : undefined;
+                } catch {
+                    clearCache();
+                    return DEFAULT_MONACO_CONTEXT.getOrUndefined(key);
+                }
+            },
+            has(key: string) {
+                try {
+                    return context.has(key);
+                } catch {
+                    clearCache();
+                    return DEFAULT_MONACO_CONTEXT.has(key);
+                }
+            },
+            keys() {
+                try {
+                    return context.keys();
+                } catch {
+                    clearCache();
+                    return DEFAULT_MONACO_CONTEXT.keys();
+                }
+            },
+            describe(key: string) {
+                try {
+                    return context.describe?.(key) || undefined;
+                } catch {
+                    clearCache();
+                    return DEFAULT_MONACO_CONTEXT.describe(key);
+                }
+            },
+        });
+        return monacoContext;
+    } catch (ex) {
+        // eslint-disable-next-line no-console
+        console.error('Error getting MiraScript Monaco context:', ex);
+        return DEFAULT_MONACO_CONTEXT;
+    }
+}
+let cachedContext: readonly [editor.ITextModel, Promise<MonacoContext>] | null = null;
+/** 获取执行上下文 */
+export async function getContext(model: editor.ITextModel): Promise<MonacoContext> {
     if (cachedContext?.[0] === model) {
         return cachedContext[1];
     }
-    const context = await contextProvider?.(model);
-    if (!context) {
-        return DEFAULT_MONACO_CONTEXT;
-    }
-    const monacoContext: MonacoContext = Object.freeze({
-        get(key: string) {
-            try {
-                return context.get(key);
-            } catch {
-                clearCache();
-                return DEFAULT_MONACO_CONTEXT.get(key);
-            }
-        },
-        getOrUndefined(key: string) {
-            try {
-                return context.has(key) ? context.get(key) : undefined;
-            } catch {
-                clearCache();
-                return DEFAULT_MONACO_CONTEXT.getOrUndefined(key);
-            }
-        },
-        has(key: string) {
-            try {
-                return context.has(key);
-            } catch {
-                clearCache();
-                return DEFAULT_MONACO_CONTEXT.has(key);
-            }
-        },
-        keys() {
-            try {
-                return context.keys();
-            } catch {
-                clearCache();
-                return DEFAULT_MONACO_CONTEXT.keys();
-            }
-        },
-        describe(key: string) {
-            try {
-                return context.describe?.(key) || undefined;
-            } catch {
-                clearCache();
-                return DEFAULT_MONACO_CONTEXT.describe(key);
-            }
-        },
-    });
-    const cache = [model, monacoContext] as const;
-    cachedContext = cache;
     const clearCache = () => {
         if (cachedContext === cache) {
             cachedContext = null;
         }
     };
+    const context = getContextImpl(model, clearCache);
+    const cache = [model, context] as const;
+    cachedContext = cache;
     setTimeout(clearCache, 100);
-    return monacoContext;
+    return context;
 }
 
 /** 提供编辑器 LSP 支持 */

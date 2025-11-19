@@ -1095,7 +1095,10 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 if !ret.is_empty() {
                     self.op_nil(kw.range(), ret);
                 }
-
+                if items.is_empty() {
+                    self.diagnostics
+                        .push(DiagnosticCode::MatchExpressionHasNoCases, kw.range());
+                }
                 for MatchCase(kw_case, pattern, guard, body) in items {
                     let Expression::Block(_, stmts, expr, end) = body else {
                         return;
