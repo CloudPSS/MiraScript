@@ -114,9 +114,17 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                 { include: '@whitespace' },
                 { include: '@string' },
                 [/(@identifier)/, { cases: identifierCases() }],
-                [REG_OCT, 'number.octal'],
-                [REG_BIN, 'number.binary'],
-                [REG_HEX, 'number.hex'],
+                [
+                    /0[xobXOB]\p{XID_Continue}*/u,
+                    {
+                        cases: {
+                            [REG_OCT.source]: 'number.octal',
+                            [REG_BIN.source]: 'number.binary',
+                            [REG_HEX.source]: 'number.hex',
+                            '@default': 'number.invalid',
+                        },
+                    },
+                ],
                 [
                     REG_NUMBER,
                     {

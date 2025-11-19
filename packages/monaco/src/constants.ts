@@ -37,13 +37,7 @@ export let reservedKeywords = (): readonly string[] => {
     return kw;
 };
 
-export const { REG_IDENTIFIER, REG_ORDINAL } = constants;
-
-export const REG_WHITESPACE = /[ \t\v\f\r\n]/u;
-export const REG_HEX = /0[xX][a-fA-F0-9_]*[a-fA-F0-9]/;
-export const REG_OCT = /0[oO][0-7_]*[0-7]/;
-export const REG_BIN = /0[bB][01_]*[01]/;
-export const REG_NUMBER = /\d[\d_]*(?:\.[\d_]+)?(?:[eE][+-]?[\d_]*\d)?/u;
+export const { REG_IDENTIFIER, REG_ORDINAL, REG_WHITESPACE, REG_BIN, REG_HEX, REG_OCT, REG_NUMBER } = constants;
 
 /** 基础语言服务支持的最大插值字符串 `$` 数量 */
 export const MAX_VERBATIM_LENGTH = 16;
