@@ -221,7 +221,7 @@ export const $Length = (value: VmAny): number => {
     }
     return Number.NaN;
 };
-export const $Omit = (value: VmAny, omitted: ReadonlyArray<string | number>): VmRecord => {
+export const $Omit = (value: VmAny, omitted: ReadonlyArray<number | string>): VmRecord => {
     $AssertInit(value);
     if (value == null || !isVmRecord(value)) return {};
     const result: Record<string, VmConst> = {};
@@ -234,7 +234,7 @@ export const $Omit = (value: VmAny, omitted: ReadonlyArray<string | number>): Vm
     }
     return result;
 };
-export const $Pick = (value: VmAny, picked: ReadonlyArray<string | number>): VmRecord => {
+export const $Pick = (value: VmAny, picked: ReadonlyArray<number | string>): VmRecord => {
     $AssertInit(value);
     if (value == null || !isVmRecord(value)) return {};
     const result: Record<string, VmConst> = {};

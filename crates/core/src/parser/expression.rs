@@ -70,7 +70,7 @@ impl<'s> AstWalker<'s> for MatchCase<'s> {
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
 pub enum Expression<'s> {
     // primary
-    /// string | number | ordinal | `true` | `false` | `nil`
+    /// number | string | ordinal | `true` | `false` | `nil`
     Literal(TokenRef<'s>),
     /// interpolated_string
     ///

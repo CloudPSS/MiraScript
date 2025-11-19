@@ -30,7 +30,7 @@ export function throwError(message: string, recovered: VmAny | (() => VmAny)): n
 
 /** 抛出预期外类型异常 */
 export function throwUnexpectedTypeError(
-    name: string | number,
+    name: number | string,
     expected: string,
     value: VmAny,
     recovered: VmAny | (() => VmAny),
@@ -49,7 +49,7 @@ export function rethrowError(prefix: string, error: unknown, recovered: VmAny | 
 
 /** 标记参数为必须项 */
 export function required<const T = VmValue>(
-    name: string | number,
+    name: number | string,
     value: T | undefined,
     recovered: VmAny | (() => VmAny),
 ): asserts value is T {
@@ -62,7 +62,7 @@ export function required<const T = VmValue>(
 
 /** 标记参数为数组 */
 export function expectArray(
-    name: string | number,
+    name: number | string,
     value: VmAny,
     recovered: VmAny | (() => VmAny),
 ): asserts value is VmArray {
@@ -74,7 +74,7 @@ export function expectArray(
 
 /** 标记参数为记录 */
 export function expectRecord(
-    name: string | number,
+    name: number | string,
     value: VmAny,
     recovered: VmAny | (() => VmAny),
 ): asserts value is VmRecord {
@@ -86,7 +86,7 @@ export function expectRecord(
 
 /** 标记参数为数组或记录 */
 export function expectArrayOrRecord(
-    name: string | number,
+    name: number | string,
     value: VmAny,
     recovered: VmAny | (() => VmAny),
 ): asserts value is VmArray | VmRecord {
@@ -98,7 +98,7 @@ export function expectArrayOrRecord(
 
 /** 标记参数为复合类型 */
 export function expectCompound(
-    name: string | number,
+    name: number | string,
     value: VmAny,
     recovered: VmAny | (() => VmAny),
 ): asserts value is VmArray | VmRecord | VmModule | VmExtern {
@@ -110,7 +110,7 @@ export function expectCompound(
 
 /** 标记参数为常量 */
 export function expectConst(
-    name: string | number,
+    name: number | string,
     value: VmAny,
     recovered: VmAny | (() => VmAny),
 ): asserts value is VmConst {
@@ -122,7 +122,7 @@ export function expectConst(
 
 /** 标记为可调用 */
 export function expectCallable(
-    name: string | number,
+    name: number | string,
     value: VmAny,
     recovered: VmAny | (() => VmAny),
 ): asserts value is VmFunction | VmExtern {

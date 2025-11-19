@@ -43,7 +43,7 @@ export interface SerializeOptions {
     /** 序列化记录 */
     serializeRecord: (value: VmRecord, depth: number, options: SerializeOptions) => string;
     /** 序列化属性名 */
-    serializePropName: (value: string | number, options: SerializeOptions) => string;
+    serializePropName: (value: number | string, options: SerializeOptions) => string;
     /** 序列化模块 */
     serializeModule: (value: VmModule, depth: number, options: SerializeOptions) => string;
     /** 序列化外部值 */

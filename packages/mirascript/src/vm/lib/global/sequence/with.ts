@@ -125,7 +125,7 @@ const _with = VmLib(
         },
         paramsType: {
             data: 'array | record',
-            '..entries': `[..[string | number | (string | number)[], any][]]`,
+            '..entries': `[..[number | string | (number | string)[], any][]]`,
         },
         returnsType: 'type(data)',
         examples: [

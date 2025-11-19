@@ -15,7 +15,7 @@ export const zip = VmLib(
             len = Math.max(len, arr.length);
         }
         if (len === 0) return [];
-        const result: Array<Record<string | number, VmConst>> = [];
+        const result: Array<Record<number | string, VmConst>> = [];
         const isArr = isVmArray(data);
         for (let i = 0; i < len; i++) {
             Cp();

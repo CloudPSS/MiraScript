@@ -32,7 +32,7 @@ export const map = VmLib(
         },
         paramsType: {
             data: 'array | record',
-            f: 'fn(value: any, key: number | string | nil, input: type(data)) -> any',
+            f: 'fn(value: any, key: number | string, input: type(data)) -> any',
         },
         returnsType: 'type(data)',
         examples: ['map([1, 2, 3], fn (v) { v * v }) // [1, 4, 9]'],
@@ -53,7 +53,7 @@ export const filter = VmLib(
         },
         paramsType: {
             data: 'array | record',
-            predicate: 'fn(value: any, key: number | string | nil, input: type(data)) -> boolean',
+            predicate: 'fn(value: any, key: number | string, input: type(data)) -> boolean',
         },
         returnsType: 'type(data)',
         examples: ['filter([1, 2, 3, 4], fn (v) { v % 2 == 0 }) // [2, 4]'],
@@ -74,7 +74,7 @@ export const filter_map = VmLib(
         },
         paramsType: {
             data: 'array | record',
-            f: 'fn(value: any, key: number | string | nil, input: type(data)) -> any | nil',
+            f: 'fn(value: any, key: number | string, input: type(data)) -> any | nil',
         },
         returnsType: 'type(data)',
         examples: ['filter_map([1, 2, 3], fn (v) { if v % 2 == 0 { v * v } else { nil } }) // [4]'],

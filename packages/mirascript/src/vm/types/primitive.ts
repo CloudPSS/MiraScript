@@ -1,5 +1,5 @@
 /** Mirascript 原始值 */
-export type VmPrimitive = null | string | number | boolean;
+export type VmPrimitive = null | number | string | boolean;
 
 /**
  * 检查值是否为 Mirascript 原始值

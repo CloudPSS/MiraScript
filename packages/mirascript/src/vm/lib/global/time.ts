@@ -19,7 +19,7 @@ export const to_timestamp = VmLib(
     {
         summary: '将数据转换为 Unix 毫秒时间戳',
         params: { datetime: '要转换的数据，默认为当前时间' },
-        paramsType: { datetime: 'string | number' },
+        paramsType: { datetime: 'number | string' },
         returnsType: 'number',
         examples: ['to_timestamp("1970-01-01T00:00:00Z") // 0'],
     },
@@ -49,7 +49,7 @@ export const to_datetime = VmLib(
             datetime: '要转换的数据，默认为当前时间',
             offset: '时区偏移量（单位：小时），默认为 0',
         },
-        paramsType: { datetime: 'string | number', offset: 'number' },
+        paramsType: { datetime: 'number | string', offset: 'number' },
         returnsType: 'Date',
         examples: [
             `
@@ -73,7 +73,7 @@ export const to_iso8601 = VmLib(
     {
         summary: '将数据转换为 ISO 8601 格式的字符串',
         params: { datetime: '要转换的数据，默认为当前时间' },
-        paramsType: { datetime: 'string | number' },
+        paramsType: { datetime: 'number | string' },
         returnsType: 'string',
         examples: ['to_iso8601(0) // "1970-01-01T00:00:00.000Z"'],
     },
