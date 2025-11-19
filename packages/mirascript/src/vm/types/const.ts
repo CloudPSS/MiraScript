@@ -1,8 +1,12 @@
+import type { VmArray } from './array.js';
+import type { VmPrimitive } from './primitive.js';
+import type { VmRecord } from './record.js';
+import type { VmAny } from './any.js';
 import { getPrototypeOf, isArray, values } from '../../helpers/utils.js';
-import type { VmAny, VmArray, VmConst, VmImmutable, VmRecord, VmValue } from './index.js';
 import { isVmWrapper } from './wrapper.js';
-import { isVmModule } from './module.js';
-import { isVmFunction } from './function.js';
+
+/** Mirascript 虚拟机内的值语义值 */
+export type VmConst = VmPrimitive | VmRecord | VmArray;
 
 const MAX_DEPTH = 32;
 /**
@@ -97,58 +101,6 @@ export function isVmConst(value: unknown, checkDeep = false): value is VmConst {
             }
         case 'undefined':
         case 'function':
-        case 'bigint':
-        case 'symbol':
-        default:
-            return false; // Other types are not valid
-    }
-}
-/**
- * 检查是否为 Mirascript 不可变值
- */
-export function isVmImmutable(value: VmAny): value is VmImmutable;
-/**
- * 检查是否为 Mirascript 不可变值
- */
-export function isVmImmutable(value: unknown, checkDeep: boolean): value is VmImmutable;
-/**
- * 检查是否为 Mirascript 不可变值
- */
-export function isVmImmutable(value: unknown, checkDeep = false): value is VmImmutable {
-    return isVmModule(value) || isVmFunction(value) || isVmConst(value, checkDeep);
-}
-/**
- * 检查是否为 Mirascript 合法值
- */
-export function isVmValue(value: VmAny): value is VmValue;
-/**
- * 检查是否为 Mirascript 合法值
- */
-export function isVmValue(value: unknown, checkDeep: boolean): value is VmValue;
-/**
- * 检查是否为 Mirascript 合法值
- */
-export function isVmValue(value: unknown, checkDeep = false): value is VmValue {
-    if (value === undefined) return false;
-    return isVmAny(value, checkDeep);
-}
-
-/**
- * 检查是否为 Mirascript 值
- */
-export function isVmAny(value: unknown, checkDeep: boolean): value is VmAny {
-    switch (typeof value) {
-        case 'string':
-        case 'number':
-        case 'boolean':
-        case 'undefined':
-            return true;
-        case 'object':
-            if (value == null) return true;
-            if (isVmWrapper(value)) return true;
-            return isVmConst(value, checkDeep);
-        case 'function':
-            return isVmFunction(value);
         case 'bigint':
         case 'symbol':
         default:

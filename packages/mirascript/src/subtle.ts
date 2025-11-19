@@ -9,7 +9,7 @@ export {
     serializeBoolean,
     serializeNumber,
     serializeString,
-    serializePropName,
+    serializeRecordKey,
     serializeArray,
     serializeRecord,
     type SerializeOptions,

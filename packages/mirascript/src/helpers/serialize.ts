@@ -10,9 +10,10 @@ import {
     isVmFunction,
     isVmModule,
     isVmExtern,
+    isVmArrayLikeRecordByEntires,
 } from '../vm/index.js';
 import { REG_IDENTIFIER, REG_ORDINAL } from './constants.js';
-import { entries, isFinite, isNaN } from '../helpers/utils.js';
+import { entries, hasOwn, isFinite, isNaN } from '../helpers/utils.js';
 
 const REG_IDENTIFIER_FULL = new RegExp(`^${REG_IDENTIFIER.source}$`, REG_IDENTIFIER.flags);
 const REG_ORDINAL_FULL = new RegExp(`^${REG_ORDINAL.source}$`, REG_ORDINAL.flags);
@@ -66,17 +67,23 @@ const DEFAULT_OPTIONS = Object.freeze({
     serializeExtern: serializeNil,
 } satisfies SerializeOptions);
 
+/** 是否为默认选项 */
+function isDefaultOptions(options: Partial<SerializeOptions> | undefined): boolean {
+    return options == null || options === DEFAULT_OPTIONS;
+}
+
 /** 获取选项 */
 function getSerializeOptions(options: Partial<SerializeOptions> | undefined): SerializeOptions {
-    if (options == null) return DEFAULT_OPTIONS;
-    const opt = { ...DEFAULT_OPTIONS };
+    if (isDefaultOptions(options)) return DEFAULT_OPTIONS;
+    let opt: SerializeOptions | null = null;
     for (const key in options) {
+        if (!hasOwn(options, key) || !hasOwn(DEFAULT_OPTIONS, key)) continue;
         const el = options[key as keyof SerializeOptions];
-        if (el != null) {
-            opt[key as keyof SerializeOptions] = el as never;
-        }
+        if (el == null) continue;
+        opt ??= { ...DEFAULT_OPTIONS };
+        opt[key as keyof SerializeOptions] = el as never;
     }
-    return Object.freeze(opt);
+    return opt ? Object.freeze(opt) : DEFAULT_OPTIONS;
 }
 
 /**
@@ -137,8 +144,19 @@ export function serializeString(value: string, options?: Partial<SerializeOption
     return serializeStringImpl(value, getSerializeOptions(options));
 }
 
+/** 使用默认选项序列化属性名 */
+function serializeRecordKeyDefault(key: string): string {
+    if (REG_ORDINAL_FULL.test(key) || REG_IDENTIFIER_FULL.test(key)) {
+        return key;
+    }
+    return serializeStringImpl(key, DEFAULT_OPTIONS);
+}
+
 /** 序列化属性名 */
-function serializePropNameImpl(value: string, options: SerializeOptions): string {
+function serializeRecordKeyOpt(value: string, options: SerializeOptions): string {
+    if (isDefaultOptions(options)) {
+        return serializeRecordKeyDefault(value);
+    }
     if (REG_ORDINAL_FULL.test(value)) {
         // 合法的数字属性名
         return options.serializePropName(Number(value), options);
@@ -152,8 +170,11 @@ function serializePropNameImpl(value: string, options: SerializeOptions): string
 }
 
 /** 序列化属性名 */
-export function serializePropName(value: string, options?: Partial<SerializeOptions>): string {
-    return serializePropNameImpl(value, getSerializeOptions(options));
+export function serializeRecordKey(key: string, options?: Partial<SerializeOptions>): string {
+    if (isDefaultOptions(options)) {
+        return serializeRecordKeyDefault(key);
+    }
+    return serializeRecordKeyOpt(key, getSerializeOptions(options));
 }
 
 /** 序列化 nil 值 */
@@ -220,18 +241,17 @@ export function serializeRecord(value: VmRecord, depth: number, options: Seriali
         if (k === '0') {
             return `(${serializeImpl(v, depth, options)},)`; // 单个元素数组
         }
-        return `(${serializePropNameImpl(k, options)}: ${serializeImpl(v, depth, options)})`;
+        return `(${serializeRecordKeyOpt(k, options)}: ${serializeImpl(v, depth, options)})`;
     }
 
-    // 根据 ES 标准，数字 key 会按顺序枚举
-    const omitKey = e.length < 10 && e.every(([key], index) => key === String(index));
+    const omitKey = isVmArrayLikeRecordByEntires(e);
     let str = '(';
     for (const [key, val] of e) {
         if (str.length > 1) str += ', ';
         if (omitKey) {
             str += serializeImpl(val, depth, options);
         } else {
-            str += `${serializePropNameImpl(key, options)}: ${serializeImpl(val, depth, options)}`;
+            str += `${serializeRecordKeyOpt(key, options)}: ${serializeImpl(val, depth, options)}`;
         }
     }
     str += ')';

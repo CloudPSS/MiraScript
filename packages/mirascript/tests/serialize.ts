@@ -1,6 +1,6 @@
 import test from 'ava';
 import { compile, VmModule, type VmAny, type VmArray, type VmRecord, type VmValue } from '@mirascript/mirascript';
-import { serialize, serializeString, serializePropName } from '@mirascript/mirascript/subtle';
+import { serialize, serializeString, serializeRecordKey } from '@mirascript/mirascript/subtle';
 import { VmExtern } from '../dist/index.js';
 
 test('serializeString', (t) => {
@@ -23,20 +23,52 @@ test('serializeString', (t) => {
     t.is(serializeString('\uDC00\uD800'), `'��'`); // broken surrogate
 });
 
-test('serializePropName', (t) => {
-    t.is(serializePropName('simple'), 'simple');
-    t.is(serializePropName('_simple'), '_simple');
-    t.is(serializePropName('$simple'), '$simple');
-    t.is(serializePropName('simple123'), 'simple123');
-    t.is(serializePropName('$_simple123'), '$_simple123');
-    t.is(serializePropName('123'), '123');
-    t.is(serializePropName('0'), '0');
-    t.is(serializePropName('00'), `'00'`);
-    t.is(serializePropName('with space'), `'with space'`);
-    t.is(serializePropName('with-hyphen'), `'with-hyphen'`);
-    t.is(serializePropName('with.dot'), `'with.dot'`);
-    t.is(serializePropName('你好'), `你好`);
-    t.is(serializePropName('你好，世界！'), `'你好，世界！'`);
+test('serializeRecordKey', (t) => {
+    t.is(serializeRecordKey('simple'), 'simple');
+    t.is(serializeRecordKey('simple', {}), 'simple');
+    t.is(serializeRecordKey('_simple'), '_simple');
+    t.is(serializeRecordKey('_simple', {}), '_simple');
+    t.is(serializeRecordKey('$simple'), '$simple');
+    t.is(serializeRecordKey('$simple', {}), '$simple');
+    t.is(serializeRecordKey('simple123'), 'simple123');
+    t.is(serializeRecordKey('simple123', { serializePropName: String }), 'simple123');
+    t.is(serializeRecordKey('$_simple123'), '$_simple123');
+    t.is(serializeRecordKey('$_simple123', {}), '$_simple123');
+    t.is(serializeRecordKey('123'), '123');
+    t.is(
+        serializeRecordKey('123', {
+            serializePropName: (e) => {
+                t.is(e, 123);
+                return 'xx';
+            },
+        }),
+        'xx',
+    );
+    t.is(serializeRecordKey('0'), '0');
+    t.is(serializeRecordKey('0', {}), '0');
+    t.is(serializeRecordKey('00'), `'00'`);
+    t.is(
+        serializeRecordKey('00', {
+            serializePropName: () => t.fail('serializePropName called'),
+            serializeString: (s) => {
+                t.is(s, '00');
+                return '00';
+            },
+        }),
+        `00`,
+    );
+    t.is(serializeRecordKey('with space'), `'with space'`);
+    t.is(serializeRecordKey('with space', {}), `'with space'`);
+    t.is(serializeRecordKey('with-hyphen'), `'with-hyphen'`);
+    t.is(serializeRecordKey('with-hyphen', {}), `'with-hyphen'`);
+    t.is(serializeRecordKey('with.dot'), `'with.dot'`);
+    t.is(serializeRecordKey('with.dot', { serializePropName: undefined }), `'with.dot'`);
+    t.is(serializeRecordKey('你好'), `你好`);
+    // @ts-expect-error testing null options
+    t.is(serializeRecordKey('你好', { serializePropName: null }), `你好`);
+    t.is(serializeRecordKey('你好，世界！'), `'你好，世界！'`);
+    // @ts-expect-error testing extra options
+    t.is(serializeRecordKey('你好，世界！', { x: 'xx' }), `'你好，世界！'`);
 });
 
 const serializeRoundTrip = test.macro<[value: VmAny, expected?: VmValue]>({
