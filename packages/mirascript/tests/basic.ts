@@ -1,19 +1,40 @@
-import test from 'ava';
-import { compile } from '@mirascript/mirascript';
+import test, { type ThrowsExpectation } from 'ava';
+import { compile, VmError } from '@mirascript/mirascript';
 
 const compileAndRun = test.macro<[string, unknown]>({
     exec: async (t, code, expected) => {
+        const expectError =
+            expected &&
+            typeof expected == 'object' &&
+            'instanceOf' in expected &&
+            typeof expected.instanceOf == 'function'
+                ? (expected as ThrowsExpectation<Error>)
+                : null;
         {
-            const script = await compile(code);
-            t.deepEqual(script.source, code);
-            const result = script();
-            t.deepEqual(result, expected);
+            if (expectError) {
+                await t.throwsAsync(async () => {
+                    const script = await compile(code);
+                    script();
+                }, expectError);
+            } else {
+                const script = await compile(code);
+                const result = script();
+                t.deepEqual(result, expected);
+            }
         }
         {
             // wrap in a block to bypass fast route
-            const script = await compile(`{${code}}`);
-            const result = script();
-            t.deepEqual(result, expected);
+            code = `{${code}}`;
+            if (expectError) {
+                await t.throwsAsync(async () => {
+                    const script = await compile(code);
+                    script();
+                }, expectError);
+            } else {
+                const script = await compile(code);
+                const result = script();
+                t.deepEqual(result, expected);
+            }
         }
     },
     title: (providedTitle = 'value', code) => `${providedTitle} ${code}`,
@@ -47,4 +68,12 @@ test('whitespaces', compileAndRun, ' \n', null);
 
 test('identifier', compileAndRun, '@pi', Math.PI);
 test('identifier with whitespace', compileAndRun, ' @pi\n\r\n ', Math.PI);
-test('non-existent identifier', compileAndRun, '@nonExistent', null);
+
+test('non-existent identifier', compileAndRun, '@nonExistent', {
+    instanceOf: VmError,
+    message: "Global variable '@nonExistent' is not defined.",
+});
+test('bad expression', compileAndRun, '++', {
+    instanceOf: Error,
+    message: /UnknownExpression/,
+});

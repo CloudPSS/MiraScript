@@ -36,15 +36,15 @@ if has_extern {
   t_eq(v_extern::type(), 'extern');
   t_eq(v_extern_another::type(), 'extern');
 } else {
-  t_eq(v_extern::type(), 'nil');
-  t_eq(v_extern_another::type(), 'nil');
+  t_throws(fn { v_extern });
+  t_throws(fn { v_extern_another });
 }
 if has_module {
   t_eq(v_module::type(), 'module');
   t_eq(v_module_another::type(), 'module');
 } else {
-  t_eq(v_module::type(), 'nil');
-  t_eq(v_module_another::type(), 'nil');
+  t_throws(fn { v_module });
+  t_throws(fn { v_module_another });
 }
 
 t_true('v_nil' in global);

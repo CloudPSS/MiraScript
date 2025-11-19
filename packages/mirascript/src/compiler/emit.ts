@@ -477,7 +477,7 @@ class Emitter {
                 const args = createArray(n, () => read());
                 const ns = read();
                 const spreads = createArray(ns, () => read());
-                const callTarget = opcode === OpCode.Call ? this.rg(func, this.identCounter <= 1) : this.rv(func);
+                const callTarget = opcode === OpCode.Call ? this.rg(func, false) : this.rv(func);
                 code = `${this.wv(reg)} = $Call(${callTarget}, [${args
                     .map((a, i) => {
                         if (spreads.includes(i)) return `...$ArraySpread(${this.rv(a)})`;
@@ -582,7 +582,7 @@ class Emitter {
             case OpCode.GetGlobal: {
                 reg = read();
                 const i = read();
-                code = `${this.wv(reg)} = ${this.rg(i, this.identCounter <= 1)};`;
+                code = `${this.wv(reg)} = ${this.rg(i, false)};`;
                 break;
             }
             case OpCode.GetGlobalDyn: {

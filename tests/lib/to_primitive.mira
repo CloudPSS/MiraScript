@@ -90,6 +90,7 @@ t_eq(to_string((1, 2, 3)), "0: 1, 1: 2, 2: 3");
 t_eq(to_string(('x y': 'z w')), 'x y: z w');
 t_eq(to_string([nil, (), [], (x: 1)]), "nil, (), [], (x: 1)");
 t_eq(to_string([[1, 2, '3'], ['4', 5]]), "[1, 2, 3], [4, 5]");
+t_eq(('", \'': 1, '"': 2, "'": 3, '", \'': 4, '\r\n': 'crlf', '\n': 'lf', '\0': '\\0')::to_string(), '", \': 4, ": 2, \': 3, \r\n: crlf, \n: lf, \0: \\0');
 if has_module {
   t_eq(to_string(v_module), "<module v_module>");
 }

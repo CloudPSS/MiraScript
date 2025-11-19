@@ -5,8 +5,10 @@
   "compilerOptions": {
     "rootDir": "./..",
     "noEmit": true,
-    "erasableSyntaxOnly": true
+    "erasableSyntaxOnly": true,
+    "module": "NodeNext",
+    "rewriteRelativeImportExtensions": true
   },
 
-  "include": ["./*"]
+  "include": ["./**/*.ts"]
 }
