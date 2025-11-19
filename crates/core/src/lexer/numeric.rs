@@ -1,3 +1,5 @@
+use std::num::IntErrorKind;
+
 use winnow::{
     combinator::{opt, trace},
     token::{one_of, take_while},
@@ -43,7 +45,7 @@ fn parse_part(str: &str, radix: u32, is_valid_char: impl Fn(u8) -> bool) -> Pars
             has_trailing_underscore: false,
         };
     }
-    let has_invalid_char = bytes.iter().any(|&b| b != b'_' && !is_valid_char(b));
+    let mut has_invalid_char = bytes.iter().any(|&b| b != b'_' && !is_valid_char(b));
     let has_underscore = bytes.contains(&b'_');
     let has_leading_underscore = bytes.first() == Some(&b'_');
     let has_leading_zero = bytes.first() == Some(&b'0');
@@ -59,11 +61,15 @@ fn parse_part(str: &str, radix: u32, is_valid_char: impl Fn(u8) -> bool) -> Pars
         u64::from_str_radix(unsafe { std::str::from_utf8_unchecked(&s) }, radix)
     } else {
         u64::from_str_radix(str, radix)
-    }
-    .ok();
-    // See ParseIntError, only `PosOverflow` is relevant here.
+    };
 
-    let integer_overflow = num.is_none();
+    let integer_overflow = num
+        .as_ref()
+        .is_err_and(|e| e.kind() == &IntErrorKind::PosOverflow);
+    has_invalid_char = has_invalid_char
+        || num.as_ref().is_err_and(|e| {
+            e.kind() == &IntErrorKind::Empty || e.kind() == &IntErrorKind::InvalidDigit
+        });
     let number = num.unwrap_or(u64::MAX);
     let ordinal = number.try_into().ok();
     let is_valid_ordinal = !has_underscore && ordinal.is_some() && !has_leading_zero;
