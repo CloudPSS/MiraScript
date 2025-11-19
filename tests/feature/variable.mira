@@ -27,5 +27,6 @@
 t_eq(x, nil);
 t_eq(global.x, nil);
 t_eq(global['x'], nil);
+t_eq(global[['x']], nil);
 t_eq(outer, nil);
 t_eq(inner, nil);

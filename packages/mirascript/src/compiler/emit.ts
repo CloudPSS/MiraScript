@@ -77,6 +77,8 @@ function createArray<T>(length: number, fn: (index: number) => T): T[] {
     return result;
 }
 
+const SCRIPT_PREFIX = `'use strict'; return ((global = GlobalFallback()) => { try { CpEnter();`;
+const GLOBAL_HINT = `/* globals */`;
 /** 代码生成 */
 class Emitter {
     constructor(
@@ -123,7 +125,7 @@ class Emitter {
         return '  '.repeat(this.identCounter + len);
     }
 
-    readonly globals = new Map<number, [val: string, lit: string, eager: boolean, expr: string]>();
+    readonly globals = new Map<number, [val: string, lit: string, eager: boolean, expr: string, name: string]>();
     /** 读取全局变量 */
     private rg(constIdx: number, eager: boolean): string {
         const cached = this.globals.get(constIdx);
@@ -139,7 +141,7 @@ class Emitter {
         const lit = typeof constName == 'string' ? this.constLits[constIdx]! : JSON.stringify(name);
         const val = `g${this.globals.size + 1}`;
         const expr = eager ? val : `(${val} === undefined ? (${val} = global.get(${lit})) : ${val})`;
-        this.globals.set(constIdx, [val, lit, eager, expr]);
+        this.globals.set(constIdx, [val, lit, eager, expr, name]);
         return expr;
     }
 
@@ -374,7 +376,7 @@ class Emitter {
         switch (opcode) {
             case OpCode.FuncVarg:
             case OpCode.Func: {
-                const script = this.codeOffset === 1;
+                const startFunc = this.codeOffset === 1;
                 reg = read();
                 const varg = opcode === OpCode.FuncVarg;
                 const argn = read();
@@ -390,9 +392,9 @@ class Emitter {
                 const regs = createArray(regn - argn + 1, (i) => (i ? this.wv(i + argn, -1) : this.wv(0, -1))).join(
                     ', ',
                 );
+                const script = startFunc && !varg && argn === 0;
                 if (script) {
-                    args.unshift(`global = GlobalFallback()`);
-                    code = `'use strict'; return ((${args.join(', ')}) => { try { CpEnter(); var ${regs};`;
+                    code = `${SCRIPT_PREFIX} var ${regs};`;
                 } else {
                     code = `${this.wv(reg)} = Function((${args.join(', ')}) => { try { CpEnter(); var ${regs};`;
                 }
@@ -447,7 +449,7 @@ class Emitter {
             case OpCode.InGlobal: {
                 reg = read();
                 const left = read();
-                code = `${this.wv(reg)} = global.has(${this.rv(left)});`;
+                code = `${this.wv(reg)} = global.has($ToString(${this.rv(left)}));`;
                 break;
             }
             case OpCode.Concat: {
@@ -769,7 +771,7 @@ class Emitter {
             let globalsInit = '';
             for (const [val, lit, eager] of this.globals.values()) {
                 const expr = eager ? `${val} = global.get(${lit})` : val;
-                globalsInit += globalsInit ? `, ${expr}` : `var /* globals */ ${expr}`;
+                globalsInit += globalsInit ? `, ${expr}` : `var ${GLOBAL_HINT} ${expr}`;
             }
             this.codeLines[0] += globalsInit + ';';
         }
@@ -794,9 +796,13 @@ class Emitter {
         if (typeof this.source === 'string') {
             map.setSourceContent(fileName, this.source);
         }
-        for (let i = 0; i < this.sourcemaps.length; i++) {
+        let hasStartMap = false;
+        for (let i = 1; i < this.sourcemaps.length; i++) {
             const range = this.sourcemaps[i];
             if (!range) break;
+            if (!hasStartMap && range.startLineNumber === 1 && range.startColumn === 1) {
+                hasStartMap = true;
+            }
             map.addMapping({
                 generated: {
                     // 前两行固定为：
@@ -811,6 +817,84 @@ class Emitter {
                 },
                 source: fileName,
             });
+        }
+        if (!hasStartMap) {
+            map.addMapping({
+                generated: {
+                    line: 3,
+                    column: SCRIPT_PREFIX.length - 'CpEnter();'.length,
+                },
+                original: {
+                    line: 1,
+                    column: 0,
+                },
+                source: fileName,
+            });
+        }
+        {
+            const line0 = this.codeLines[0]!;
+            const file = `${fileName} <globals>`;
+            let globals = `global;\n`;
+            map.addMapping({
+                generated: {
+                    line: 3,
+                    column: line0.indexOf(`global = `),
+                },
+                original: {
+                    line: 1,
+                    column: 0,
+                },
+                source: file,
+                name: 'global',
+            });
+            map.addMapping({
+                generated: {
+                    line: 3,
+                    column: SCRIPT_PREFIX.length,
+                },
+                original: {
+                    line: 1,
+                    column: 7,
+                },
+                source: file,
+                name: '',
+            });
+            let i = 1;
+            let pos = line0.indexOf(GLOBAL_HINT, SCRIPT_PREFIX.length) + GLOBAL_HINT.length;
+            for (const p of this.globals.values()) {
+                i++;
+                if (pos < 0) break;
+                const val = p[0];
+                pos = line0.indexOf(val, pos);
+                if (pos < 0) break;
+                const name = p[4];
+                map.addMapping({
+                    generated: {
+                        line: 3,
+                        column: pos,
+                    },
+                    original: {
+                        line: i,
+                        column: 0,
+                    },
+                    source: file,
+                    name,
+                });
+                globals += `${name};\n`;
+            }
+            map.addMapping({
+                generated: {
+                    line: 3,
+                    column: pos,
+                },
+                original: {
+                    line: i,
+                    column: 0,
+                },
+                source: file,
+                name: '',
+            });
+            map.setSourceContent(file, globals);
         }
         const prefix = '//# ';
         const sourceURL = hasSchema ? fileName : `${ORIGIN}${fileName}`;
