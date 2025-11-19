@@ -15,11 +15,20 @@ export class ModuleLoader<T> {
             this.module = mod;
             return mod;
         })();
-        void l.finally(() => {
-            if (this.loading === l) {
-                this.loading = undefined;
-            }
-        });
+        // Use .then() rather than .finally() to make Node.js happy
+        // Avoid Unhandled rejection
+        void l.then(
+            () => {
+                if (this.loading === l) {
+                    this.loading = undefined;
+                }
+            },
+            () => {
+                if (this.loading === l) {
+                    this.loading = undefined;
+                }
+            },
+        );
         this.loading = l;
         return l;
     };
