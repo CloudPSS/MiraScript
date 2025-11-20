@@ -1,0 +1,36 @@
+t_eq(to_string("Hello, World!"), "Hello, World!");
+t_eq(to_string(""), "");
+t_eq(to_string("é"), "é");
+t_eq(to_string("🦌🦌"), "🦌🦌");
+
+t_eq(to_string(nil), "");
+t_eq(to_string(true), "true");
+t_eq(to_string(false), "false");
+
+t_eq(to_string(0), "0");
+t_eq(to_string(-0), "0");
+t_eq(to_string(1), "1");
+t_eq(to_string(nan), "nan");
+t_eq(to_string(inf), "inf");
+t_eq(to_string(-inf), "-inf");
+
+t_eq(to_string(()), "");
+t_eq(to_string([]), "");
+t_eq(to_string([1, 2, 3]), "1, 2, 3");
+t_eq(to_string((1, 2, 3)), "0: 1, 1: 2, 2: 3");
+t_eq(to_string(('x y': 'z w')), 'x y: z w');
+t_eq(to_string([nil, (), [], (x: 1)]), "nil, (), [], (x: 1)");
+t_eq(to_string([[1, 2, '3'], ['4', 5]]), "[1, 2, 3], [4, 5]");
+t_eq(('", \'': 1, '"': 2, "'": 3, '", \'': 4, '\r\n': 'crlf', '\n': 'lf', '\0': '\\0')::to_string(), '", \': 4, ": 2, \': 3, \r\n: crlf, \n: lf, \0: \\0');
+
+if has_module {
+  t_eq(to_string(v_module), "<module v_module>");
+}
+t_eq(to_string(to_string), "<function global.to_string>");
+t_eq(to_string(matrix.add), "<function matrix.add>");
+if has_extern {
+  t_true(to_string(v_extern)::starts_with("<extern "));
+  t_true(to_string(v_extern)::ends_with(">"));
+}
+t_eq(to_string(fn { }), "<function>");
+t_throws(fn { to_string() });

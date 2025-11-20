@@ -1,0 +1,24 @@
+t_true(to_boolean(true));
+t_false(to_boolean(false));
+
+t_throws(fn { to_boolean(nil) });
+t_throws(fn { to_boolean(nan) });
+t_throws(fn { to_boolean(0) });
+t_throws(fn { to_boolean(-0) });
+t_throws(fn { to_boolean(inf) });
+t_throws(fn { to_boolean(-inf) });
+t_throws(fn { to_boolean(1) });
+t_throws(fn { to_boolean("") });
+t_throws(fn { to_boolean("false") });
+t_throws(fn { to_boolean("0") });
+t_throws(fn { to_boolean([]) });
+t_throws(fn { to_boolean(()) });
+
+t_throws(fn { to_boolean(v_fn) });
+if has_extern {
+  t_throws(fn { to_boolean(v_extern) });
+}
+if has_module {
+  t_throws(fn { to_boolean(v_module) });
+}
+t_throws(fn { to_boolean() });

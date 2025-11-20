@@ -3,3 +3,7 @@ t_eq("é"::chars()::len(), 1);
 t_eq("🫱🏾‍🫲🏼🌍"::chars()::len(), 6);
 t_eq(""::chars()::len(), 0);
 t_eq(nil::chars()::len(), 0);
+
+if has_module {
+  t_eq(chars(v_module), ['<', 'm', 'o', 'd', 'u', 'l', 'e', ' ', 'v', '_', 'm', 'o', 'd', 'u', 'l', 'e', '>']);
+}

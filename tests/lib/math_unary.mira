@@ -9,6 +9,10 @@ fn check_math_unary(fName, f, x, expected) {
   }
 }
 
+fn check_math_unary_throws(fName, f, x) {
+  t_throws(fn { f(x) }, `${ fName }(${ x }) should throw`);
+}
+
 check_math_unary('round', round, 2.5, 2);
 check_math_unary('round', round, -2.5, -2);
 check_math_unary('round', round, 0.500_000_000_000_000_06, 1);
@@ -52,20 +56,18 @@ check_math_unary('round', round, -0.499_999_999_999_999_94, -0);
     t_eq(type(fun), 'function');
     check_math_unary(f, fun, 0, expected.0);
     check_math_unary(f, fun, false, expected.0);
-    check_math_unary(f, fun, nil, expected.0);
     check_math_unary(f, fun, -0, expected.1);
     check_math_unary(f, fun, 1, expected.2);
     check_math_unary(f, fun, true, expected.2);
     check_math_unary(f, fun, -1, expected.3);
     check_math_unary(f, fun, "-1 ", expected.3);
     check_math_unary(f, fun, nan, expected.4);
-    check_math_unary(f, fun, "xx", expected.4);
-    check_math_unary(f, fun, (1,), expected.4);
-    check_math_unary(f, fun, [2], expected.4);
+    check_math_unary(f, fun, "nan", expected.4);
+    check_math_unary(f, fun, " NaN ", expected.4);
     check_math_unary(f, fun, inf, expected.5);
-    check_math_unary(f, fun, "Infinity", expected.5);
+    check_math_unary(f, fun, "Infinity  ", expected.5);
     check_math_unary(f, fun, -inf, expected.6);
-    check_math_unary(f, fun, "-inf", expected.6);
+    check_math_unary(f, fun, " -inf", expected.6);
     check_math_unary(f, fun, @e, expected.7);
     check_math_unary(f, fun, -@e, expected.8);
     check_math_unary(f, fun, 1 / @e, expected.9);
@@ -80,6 +82,18 @@ check_math_unary('round', round, -0.499_999_999_999_999_94, -0);
     check_math_unary(f, fun, 0.5, expected.18);
     check_math_unary(f, fun, 1.5, expected.19);
     check_math_unary(f, fun, -0.5, expected.20);
+
     t_throws(fn { fun() });
+    check_math_unary_throws(f, fun, "xx");
+    check_math_unary_throws(f, fun, nil);
+    check_math_unary_throws(f, fun, (1,));
+    check_math_unary_throws(f, fun, [2]);
+    check_math_unary_throws(f, fun, ['x']);
+    if has_extern {
+      check_math_unary_throws(f, fun, v_extern);
+    }
+    if has_module {
+      check_math_unary_throws(f, fun, v_module);
+    }
   }
 }

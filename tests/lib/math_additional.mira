@@ -1,6 +1,5 @@
 t_eq(factorial(-0), 1);
 t_eq(factorial(0), 1);
-t_eq(factorial(nil), 1);
 t_eq(factorial(1), 1);
 t_eq(factorial(true), 1);
 t_eq(factorial(2), 2);
@@ -19,3 +18,7 @@ t_eq(factorial(171), inf);
 t_eq(factorial(inf), inf);
 
 t_true(factorial(0.1) =~ 0.951_350_769_866_873_3);
+
+t_throws(fn { factorial(nil) });
+t_throws(fn { factorial() });
+t_throws(fn { factorial('x') });
