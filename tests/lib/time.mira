@@ -39,6 +39,11 @@ t_throws(fn { to_timestamp(invalid_num_str) });
 t_throws(fn { to_datetime(invalid_num_str) });
 t_throws(fn { to_iso8601(invalid_num_str) });
 
+let invalid_type = false;
+t_throws(fn { to_timestamp(invalid_type) });
+t_throws(fn { to_datetime(invalid_type) });
+t_throws(fn { to_iso8601(invalid_type) });
+
 // current time
 t_ne(to_timestamp(nil), nan);
 t_eq(to_datetime(nil).year::type(), 'number');

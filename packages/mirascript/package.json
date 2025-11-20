@@ -20,9 +20,11 @@
     "./cli": {
       "@mirascript/dev": "./src/cli/index.ts",
       "default": "./dist/cli/index.js"
-    }
+    },
+    "./package.json": "./package.json"
   },
   "imports": {
+    "#package.json": "./package.json",
     "#compiler/worker": {
       "@mirascript/dev": "./src/compiler/worker.ts",
       "default": "./dist/compiler/worker.js"

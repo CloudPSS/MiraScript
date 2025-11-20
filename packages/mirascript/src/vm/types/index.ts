@@ -74,10 +74,9 @@ export {
     getVmFunctionInfo,
 } from '../../helpers/types.js';
 
-export { wrapToVmValue, unwrapFromVmValue, toVmFunctionProxy, fromVmFunctionProxy } from './boundary.js';
+export { wrapToVmValue, unwrapFromVmValue } from './boundary.js';
 
 export { type VmContext, type VmSharedContext, defineVmContextValue, createVmContext } from './context.js';
-export type { VmScript, VmScriptLike } from './script.js';
 export { VmExtern } from './extern.js';
 export { VmFunction, type VmFunctionInfo, type VmFunctionLike, type VmFunctionOption } from './function.js';
 export { VmModule } from './module.js';

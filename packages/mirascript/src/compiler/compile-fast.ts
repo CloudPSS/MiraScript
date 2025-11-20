@@ -1,6 +1,5 @@
-import { wrapScript } from './create-script.js';
+import { wrapScript, type VmScript } from './create-script.js';
 import type { TranspileOptions } from './types.js';
-import type { VmScript } from '../vm/types/index.js';
 import { GlobalFallback } from '../vm/helpers.js';
 import { isFinite } from '../helpers/utils.js';
 

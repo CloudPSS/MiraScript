@@ -1,8 +1,7 @@
 import { loadModule } from '@mirascript/bindings';
-import type { VmScript } from '../vm/index.js';
 import type { ScriptInput, TranspileOptions } from './types.js';
 import { emit } from './emit/index.js';
-import { createScript } from './create-script.js';
+import { createScript, type VmScript } from './create-script.js';
 import { compileFast } from './compile-fast.js';
 import { DiagnosticCode, formatDiagnostic, parseDiagnostics } from './diagnostic.js';
 import { generateBytecode, generateBytecodeSync } from './generate-bytecode.js';
@@ -10,7 +9,8 @@ import { compileWorker } from './worker-manager.js';
 await loadModule();
 
 export { generateBytecode, generateBytecodeSync };
-export type { TranspileOptions, ScriptInput, InputMode } from './types.js';
+export * from './types.js';
+export type { VmScript };
 
 // 目前编译速度约 2000kB/s
 const WORKER_MIN_LEN = typeof Worker != 'function' ? Number.MAX_VALUE : 1024;

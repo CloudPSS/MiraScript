@@ -40,7 +40,6 @@ export const to_timestamp = VmLib(
 export const to_datetime = VmLib(
     (datetime, offset) => {
         const timestamp = to_timestamp(datetime);
-        if (!isFinite(timestamp)) return null;
         const o = expectNumberRange('offset', offset ?? 0, -24, 24);
         const dateOffset = new Date(timestamp + o * 1000 * 60 * 60);
         return {
@@ -79,7 +78,6 @@ to_datetime(0)
 export const to_iso8601 = VmLib(
     (datetime) => {
         const timestamp = to_timestamp(datetime);
-        if (!isFinite(timestamp)) return null;
         return new Date(timestamp).toISOString();
     },
     {

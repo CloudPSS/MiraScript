@@ -1,8 +1,18 @@
 import { kVmScript, VM_SCRIPT_NAME } from '../helpers/constants.js';
 import { defineProperty } from '../helpers/utils.js';
 import { keys, values } from '../vm/env.js';
-import type { VmScript, VmScriptLike } from '../vm/types/script.js';
+import type { VmValue, VmContext } from '../vm/types/index.js';
 import type { ScriptInput } from './types.js';
+
+/** Mirascript 脚本 */
+export type VmScriptLike = (global?: VmContext) => VmValue;
+
+/** Mirascript 脚本 */
+export type VmScript = VmScriptLike & {
+    readonly [kVmScript]: true;
+    /** 原始代码 */
+    readonly source: string;
+};
 
 /** 生成 JS 函数 */
 export function wrapScript(source: ScriptInput, script: VmScriptLike): VmScript {

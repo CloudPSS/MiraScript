@@ -247,20 +247,28 @@ test('extern to_string', (t) => {
             [1, 2, 3],
             {
                 toString() {
-                    throw new Error('obj fail');
+                    return `Custom String`;
                 },
             },
             // eslint-disable-next-line no-sparse-arrays
             ,
         ],
+        fail_arr: [
+            {
+                toString() {
+                    throw new Error('fail');
+                },
+            },
+        ],
     });
     const e = exec(context);
     t.is(e('ok::to_string()'), 'ok');
-    t.is(e('fail::to_string()'), '<extern Object>');
+    t.throws(() => e('fail::to_string()'), { message: 'Failed to convert value to string: <extern>' });
     t.is(e('void::to_string()'), '<extern Object>');
     t.is(e('bad::to_string()'), '<extern Object>');
     t.is(e('normal::to_string()'), '<extern Object>');
-    t.is(e('arr::to_string()'), '1, 2, 3, /test/i, , nil, [1, 2, 3], <extern Object>, ');
+    t.is(e('arr::to_string()'), '1, 2, 3, /test/i, , nil, [1, 2, 3], Custom String, ');
+    t.throws(() => e('fail_arr::to_string()'), { message: 'Failed to convert value to string: <extern>' });
     t.is(e('arr.3::to_string()'), '/test/i');
 });
 

@@ -1,3 +1,4 @@
+import type { VmScript } from '../compiler/index.js';
 import type {
     VmAny,
     VmArray,
@@ -11,7 +12,6 @@ import type {
     VmModule,
     VmPrimitive,
     VmRecord,
-    VmScript,
     VmValue,
 } from '../vm/types/index.js';
 import type { VmWrapper } from '../vm/types/wrapper.js';

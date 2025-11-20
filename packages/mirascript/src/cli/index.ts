@@ -4,7 +4,7 @@ import { readFile, stat } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { InvalidArgumentError, program } from '@commander-js/extra-typings';
 import { execute } from './execute.js';
-import pkg from '../../package.json' with { type: 'json' };
+import pkg from '#package.json' with { type: 'json' };
 import { compileSync } from '../compiler/index.js';
 import { configCheckpoint, type VmValue } from '../vm/index.js';
 

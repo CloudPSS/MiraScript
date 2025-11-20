@@ -8,8 +8,6 @@ import { $Call } from '../operations.js';
 
 /** 创建 Mirascript 函数在宿主语言运行的代理 */
 export function toVmFunctionProxy<T extends VmFunctionLike>(fn: VmFunction<T>): T {
-    if (!isVmFunction(fn)) return fn;
-
     const cached = (fn as unknown as { [kVmFunctionProxy]?: T })[kVmFunctionProxy];
     if (cached != null) return cached;
 
@@ -75,7 +73,7 @@ export function wrapToVmValue(
 
 /** 取消宿主语言的值的 Mirascript 包装  */
 export function unwrapFromVmValue(value: VmAny): unknown {
-    if (typeof value == 'function') {
+    if (isVmFunction(value)) {
         return toVmFunctionProxy(value);
     }
     if (value == null || typeof value != 'object') return value;
