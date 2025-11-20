@@ -1,4 +1,5 @@
 t_throws(fn { ()::with('x') });
+t_throws(fn { ()::with('x', 'y', 'z') });
 t_throws(fn { nil::with('x', 1) });
 t_throws(fn { nil::with(1, 2) });
 t_throws(fn { nil::with([1], 2) });
@@ -18,8 +19,8 @@ t_eq(ea::with(), []);
 t_eq(ea::with('2', 0), [nil, nil, 0]);
 t_eq(ea::with(['2'], 0), [nil, nil, 0]);
 t_eq(ea::with(['2'], 0, 4, 2), [nil, nil, 0, nil, 2]);
-t_eq([1, 2, 3]::with('a', 'x', 'b', 'y'), [1, 2, 3]);
-t_eq([1, 2, 3]::with(['a', 1], 'x'), [1, 2, 3]);
+t_throws(fn { [1, 2, 3]::with('a', 'x', 'b', 'y') });
+t_throws(fn { [1, 2, 3]::with(['a', 1], 'x') });
 t_eq([1, 2, 3]::with(['1.3', 1], 'x'), [1, [nil, 'x'], 3]);
 t_eq([1, eo, 3]::with(['1.3', 1], 'x'), [1, (1: 'x'), 3]);
 t_eq(eo::with([], 1), ());

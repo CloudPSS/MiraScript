@@ -4,6 +4,7 @@ t_throws(fn { all("1", fn { }) });
 t_throws(fn { all([], ()) });
 t_throws(fn { all([]) });
 t_throws(fn { all() });
+t_throws(fn { all([1], fn { 0 }) });
 
 t_throws(fn { any(nil, fn { }) });
 t_throws(fn { any(1, fn { }) });
@@ -11,6 +12,7 @@ t_throws(fn { any("1", fn { }) });
 t_throws(fn { any([], ()) });
 t_throws(fn { any([]) });
 t_throws(fn { any() });
+t_throws(fn { any([1], fn { }) });
 
 t_true([]::all(fn { false }));
 t_true(()::all(fn { false }));
@@ -35,33 +37,33 @@ t_false(()::any(fn { true }));
   t_eq(v, 1);
   t_eq(k, "0");
   t_eq(data, (1, 2, nil));
-  nil
+  false
 });
 (1, 2, nil)::any(fn (v, k, data) {
   t_eq(v, 1);
   t_eq(k, "0");
   t_eq(data, (1, 2, nil));
-  0
+  true
 });
 
 t_true([1, 2, 3]::all(fn { it > 0 }));
-t_false([nil, 1, 2, 3]::all(fn { it > 0 }));
+t_false([0, 1, 2, 3]::all(fn { it > 0 }));
 t_false([1, 2, 3]::all(fn { it < 3 }));
 t_true([1, 2, 3]::all(fn (v, k) { v > 0 && k >= 0 }));
 t_false([1, 2, 3]::all(fn (v, k) { v > 0 && k > 0 }));
 
-t_false([nil, 1, 2, 3]::any(fn { it > 3 }));
+t_false([0, 1, 2, 3]::any(fn { it > 3 }));
 t_true([1, 2, 3]::any(fn { it > 2 }));
 t_false([1, 2, 3]::any(fn (v, k) { v > 3 && k > 0 }));
 t_true([1, 2, 3]::any(fn (v, k) { v > 2 && k >= 0 }));
 
 t_true((1, 2, 3)::all(fn { it > 0 }));
-t_false((nil, 1, 2, 3)::all(fn { it > 0 }));
+t_false((0, 1, 2, 3)::all(fn { it > 0 }));
 t_false((1, 2, 3)::all(fn { it < 3 }));
 t_true((1, 2, 3)::all(fn (v, k) { v > 0 && k >= 0 }));
 t_false((1, 2, 3)::all(fn (v, k) { v > 0 && k > 0 }));
 
-t_false((nil, 1, 2, 3)::any(fn { it > 3 }));
+t_false((0, 1, 2, 3)::any(fn { it > 3 }));
 t_true((1, 2, 3)::any(fn { it > 2 }));
 t_false((1, 2, 3)::any(fn (v, k) { v > 3 && k > 0 }));
 t_true((1, 2, 3)::any(fn (v, k) { v > 2 && k >= 0 }));

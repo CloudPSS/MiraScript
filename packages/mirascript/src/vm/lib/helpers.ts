@@ -230,7 +230,7 @@ export function getNumbers(args: readonly VmAny[]): number[] {
 
 /** 将值转为数组长度 */
 export function arrayLen(len: number | null | undefined): number {
-    if (len == null || isNaN(len) || len <= 0) {
+    if (len == null || isNaN(len) || len <= -1) {
         throwError('Array length must be a non-negative integer', null);
     }
     len = Math.trunc(len);

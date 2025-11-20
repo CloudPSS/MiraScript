@@ -10,7 +10,6 @@ t_eq(find((), fn (x) { x is nil }), nil);
 
 t_eq(find([], fn (x) { x % 2 == 0 }), nil);
 t_eq(find((), fn (x) { x % 2 == 0 }), nil);
-t_eq(find([1, 2, 3, 4], fn { }), nil);
 
 t_eq(find([1, 2, 3], nil), nil);
 t_eq(find([1, 2, 3], 3), (2, 3));
@@ -23,3 +22,4 @@ t_eq(find([0, 1, 2, nan], nan), (3, nan));
 
 t_throws(fn { find(nil, fn (x) { x }) });
 t_throws(fn { find(v_extern, fn (x) { x }) });
+t_throws(fn { find([1, 2, 3, 4], fn { }) });
