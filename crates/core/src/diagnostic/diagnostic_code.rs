@@ -112,6 +112,8 @@ pub enum DiagnosticCode {
     ExclamationInLiteralPattern,
     #[strum(message = "Only number literals can be prefixed with `+` or `-` in a literal pattern")]
     UnexpectedOperatorInLiteralPattern,
+    #[strum(message = "Only number literals are allowed in a range pattern")]
+    UnexpectedLiteralInRangePattern,
     #[strum(message = "`mut` is not allowed during rebinding")]
     MutInRebindPattern,
     #[strum(message = "variable whose name starts with `@` is not allowed to be rebound")]

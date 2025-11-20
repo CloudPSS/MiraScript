@@ -181,11 +181,28 @@ fn relation_pattern<'s>(i: &mut Input<'s>) -> Result<Pattern<'s>> {
 }
 
 fn range_pattern<'s>(i: &mut Input<'s>) -> Result<Pattern<'s>> {
+    fn range_guard<'s>(p: Pattern<'s>) -> Box<Pattern<'s>> {
+        match p {
+            Pattern::Literal(op, l) => {
+                if l.is_number() || l.is_ordinal() || *l == Keyword::Inf {
+                    Pattern::Literal(op, l)
+                } else {
+                    let tokens = match op {
+                        Some(op) => vec![op, l],
+                        _ => vec![l],
+                    };
+                    Pattern::unknown(tokens, DiagnosticCode::UnexpectedLiteralInRangePattern)
+                }
+            }
+            _ => p,
+        }
+        .into()
+    }
     seq!(Pattern::Range(
-        literal_constant_pattern::<true>.map(Box::new),
+        literal_constant_pattern::<true>.map(range_guard),
         one_of(|t: &Token<'s>| *t == Operator::SpreadRange || *t == Operator::HalfOpenRange)
             .map(TokenRef::borrow),
-        literal_constant_pattern::<true>.map(Box::new),
+        literal_constant_pattern::<true>.map(range_guard),
     ))
     .parse_next(i)
 }

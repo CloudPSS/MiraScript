@@ -1,5 +1,7 @@
 
 t_true(nil is nil);
+t_true(nil is == nil);
+t_true(nil is not != nil);
 
 t_true(true is true);
 t_true(false is false);
@@ -9,10 +11,9 @@ t_false(nan is not nan);
 t_true(inf is inf);
 t_true(0 is -0);
 t_false(-0 is not 0);
-t_true('12' is > 0);
-// FIXME: 模式匹配不应产生异常
-t_throws(fn { 'abc' is > 0 });
-// t_false('abc' is > 0);
+// 没有类型转换
+t_false('12' is > 0);
+t_false('abc' is > 0);
 
 {
   t_true([1, 2, 3] is [1, ..rest] && rest is [2, 3]);
@@ -38,9 +39,13 @@ t_throws(fn { 'abc' is > 0 });
 t_true(1 is 1 or '1');
 t_true(1 is 1..2);
 t_true(1.5 is 1.5..1.5);
-t_false(1.5 is "1"..<1.5);
+t_false(1.5 is 1..<1.5);
 
-t_true("1" is "1".."2");
+// 范围操作仅对数字类型有效
+t_false("1.5" is 1..2);
+const @one = '1';
+const @two = '2';
+t_false("1.5" is @one..@two);
 
 {
   t_true((1, [2]) is (1, [2, ..rr]) && rr is []);

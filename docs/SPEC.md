@@ -650,12 +650,14 @@ fn is_nan { it is nan }
 
 #### 常量模式
 
-常量模式用于匹配常量的值。常量模式的语法为 `<constant>`，其中 `<constant>` 是一个以 `@` 开头的标识符名称。
-
-与 `==` 运算符不同，字面量模式使用相同值语义进行匹配。
+与字面量模式类似，常量模式用于匹配常量的值。常量模式的语法为 `<constant>`，其中 `<constant>` 是一个以 `@` 开头的标识符名称。
 
 ```mira
 fn is_pi { it is @pi }
+fn is_nan {
+  const @nan = nan;
+  it is @nan
+}
 ```
 
 #### 关系模式
@@ -663,6 +665,8 @@ fn is_pi { it is @pi }
 关系模式用于匹配关系运算的结果。关系模式的语法为 `<relation> <value>`，其中 `<relation>` 是 `>`、`<`、`<=`、`==`、`!=`、`=~`、`!~` 运算符，`<value>` 是一个字面量模式或常量模式。
 
 关系模式相当于对匹配到的值进行 `<captured> <relation> <value>` 的判断，当该判断返回 `false` 时，匹配失败。
+
+关系模式中不会进行隐式类型转换，当 `<captured>` 与 `<value>` 类型不一致时，匹配失败。
 
 ```mira
 fn gpa {
@@ -678,9 +682,11 @@ fn gpa {
 
 #### 范围模式
 
-范围模式用于匹配数字或字符串范围。范围模式的语法为 `<start>..<end>` 或 `<start>..<<end>`，其中 `<start>` 和 `<end>` 是数字或字符串的字面量模式或常量模式。
+范围模式用于匹配数字范围。范围模式的语法为 `<start>..<end>` 或 `<start>..<<end>`，其中 `<start>` 和 `<end>` 是数字字面量模式或常量模式。
 
 范围模式相当于对匹配到的值进行 `<captured> >= <start>` 和 `<captured> <= <end>` / `<captured> < <end>` 的判断，当该判断返回 `false` 时，匹配失败。
+
+范围模式中不会进行隐式类型转换，只有当 `<captured>` 为 `number` 时，才会进行后续的测试，否则匹配失败。
 
 ```mira
 fn season {
