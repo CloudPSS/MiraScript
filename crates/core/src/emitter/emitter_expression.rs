@@ -834,6 +834,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     self.emit_expression(left, ret, brk);
                     self.op_if(token.range(), OpCode::If, ret);
                     self.emit_expression(right, ret, brk);
+                    self.op_2(token.range(), OpCode::ToBoolean, ret, ret);
                     self.op_if_end(token.range());
                 } else if **token == Operator::LogicalOr {
                     let ret = if !ret.is_empty() {
@@ -844,6 +845,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     self.emit_expression(left, ret, brk);
                     self.op_if(token.range(), OpCode::IfNot, ret);
                     self.emit_expression(right, ret, brk);
+                    self.op_2(token.range(), OpCode::ToBoolean, ret, ret);
                     self.op_if_end(token.range());
                 } else if **token == Operator::NullCoalescing {
                     let ret = if !ret.is_empty() {
