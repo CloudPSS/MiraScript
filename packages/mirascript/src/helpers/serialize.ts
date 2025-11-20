@@ -1,8 +1,16 @@
 import type { VmArray, VmExtern, VmFunction, VmModule, VmAny, VmRecord } from '../vm/index.js';
 import { REG_IDENTIFIER, REG_ORDINAL } from './constants.js';
 import { entries, hasOwn, isFinite, isNaN } from '../helpers/utils.js';
-import { isVmArray, isVmArrayLikeRecordByEntires, isVmExtern, isVmFunction, isVmModule, isVmRecord } from './types.js';
-import { toString } from './convert.js';
+import {
+    getVmFunctionInfo,
+    isVmArray,
+    isVmArrayLikeRecordByEntires,
+    isVmExtern,
+    isVmFunction,
+    isVmModule,
+    isVmRecord,
+} from './types.js';
+import type { VmWrapper } from '../vm/types/wrapper.js';
 
 const REG_IDENTIFIER_FULL = new RegExp(`^${REG_IDENTIFIER.source}$`, REG_IDENTIFIER.flags);
 const REG_ORDINAL_FULL = new RegExp(`^${REG_ORDINAL.source}$`, REG_ORDINAL.flags);
@@ -297,6 +305,23 @@ export function serialize(value: VmAny, options?: Partial<SerializeOptions>): st
     return serializeImpl(value, 0, getSerializeOptions(options));
 }
 
+/** 将 MiraScript function 转化为 MiraScript 字符串 */
+export function displayFunction(value: VmFunction): string {
+    try {
+        const name = getVmFunctionInfo(value)?.fullName;
+        return name ? `<function ${name}>` : `<function>`;
+    } catch {
+        return `<function>`;
+    }
+}
+/** 将 MiraScript module 转化为 MiraScript 字符串 */
+export function displayWrapper(value: VmWrapper<object>, useBraces: boolean, fallback: string): string {
+    try {
+        return value.toString(useBraces);
+    } catch {
+        return fallback;
+    }
+}
 const DISPLAY_OPTIONS = Object.freeze({
     maxDepth: 3,
     serializeNil,
@@ -309,9 +334,9 @@ const DISPLAY_OPTIONS = Object.freeze({
     serializeArray,
     serializeRecord,
     serializePropName: String,
-    serializeFunction: (value) => toString(value, '<function>'),
-    serializeModule: (value) => toString(value, '<module>'),
-    serializeExtern: (value) => toString(value, '<extern>'),
+    serializeFunction: displayFunction,
+    serializeModule: (value) => displayWrapper(value, true, '<module>'),
+    serializeExtern: (value) => displayWrapper(value, true, '<extern>'),
 } satisfies SerializeOptions);
 /**
  * 将 MiraScript 值转化为 MiraScript 字符串。

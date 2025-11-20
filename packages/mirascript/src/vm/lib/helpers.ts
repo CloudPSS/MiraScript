@@ -1,6 +1,6 @@
 import type { Writable } from 'type-fest';
 import { VM_ARRAY_MAX_LENGTH } from '../../helpers/constants.js';
-import { isNaN, entries, fromEntries, isSafeInteger } from '../../helpers/utils.js';
+import { isNaN, entries, fromEntries, isSafeInteger, isFinite } from '../../helpers/utils.js';
 import { toBoolean, toNumber, toString } from '../../helpers/convert.js';
 import { display } from '../../helpers/serialize.js';
 import { isVmArray, isVmFunction, isVmPrimitive, isVmConst, isVmCallable, isVmRecord } from '../../helpers/types.js';
@@ -82,8 +82,33 @@ export function expectNumber(name: ParamIndex, value: VmAny): number {
     }
     return v;
 }
+/** 标记并转换参数为数字 */
+export function expectNumberRange(name: ParamIndex, value: VmAny, min: number, max: number): number {
+    const v = expectNumber(name, value);
+    if (!isFinite(v)) {
+        throwError(`${describeParam(name)} is not a finite number: ${display(value)}`, Number.NaN);
+    }
+    if (v < min) {
+        throwError(`${describeParam(name)} is less than minimum value ${min}: ${display(value)}`, min);
+    }
+    if (v > max) {
+        throwError(`${describeParam(name)} is greater than maximum value ${max}: ${display(value)}`, max);
+    }
+    return v;
+}
 /** 标记并转换参数为整数 */
 export function expectIntegerRange(name: ParamIndex, value: VmAny, min: number, max: number): number {
+    const i = expectInteger(name, value);
+    if (i < min) {
+        throwError(`${describeParam(name)} is less than minimum value ${min}: ${display(value)}`, min);
+    }
+    if (i > max) {
+        throwError(`${describeParam(name)} is greater than maximum value ${max}: ${display(value)}`, max);
+    }
+    return i;
+}
+/** 标记并转换参数为整数 */
+export function expectInteger(name: ParamIndex, value: VmAny): number {
     required(name, value, 0);
     const v = toNumber(value, null);
     if (v == null) {
@@ -93,17 +118,7 @@ export function expectIntegerRange(name: ParamIndex, value: VmAny, min: number, 
     if (!isSafeInteger(i)) {
         throwUnconvertedTypeError(name, 'integer', value, 0);
     }
-    if (i < min) {
-        throwError(`${describeParam(name)} is less than minimum value ${min}: ${display(value)}`, 0);
-    }
-    if (i > max) {
-        throwError(`${describeParam(name)} is greater than maximum value ${max}: ${display(value)}`, 0);
-    }
     return i;
-}
-/** 标记并转换参数为整数 */
-export function expectInteger(name: ParamIndex, value: VmAny): number {
-    return expectIntegerRange(name, value, Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY);
 }
 
 /** 标记并转换参数为布尔值 */

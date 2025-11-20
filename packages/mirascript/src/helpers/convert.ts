@@ -1,7 +1,7 @@
 import type { VmAny, VmRecord } from '../vm/index.js';
-import { display } from './serialize.js';
+import { display, displayFunction } from './serialize.js';
 import { VmError } from './error.js';
-import { isVmArray, isVmWrapper, getVmFunctionInfo } from './types.js';
+import { isVmArray, isVmWrapper } from './types.js';
 import { keys, isNaN, isFinite } from './utils.js';
 const { POSITIVE_INFINITY, NEGATIVE_INFINITY } = Number;
 
@@ -56,10 +56,7 @@ export function innerToString(value: VmAny, useBraces: boolean): string {
     if (value == null) return 'nil';
     if (typeof value == 'number') return numberToString(value);
     if (typeof value == 'string' || typeof value == 'boolean') return String(value);
-    if (typeof value == 'function') {
-        const name = getVmFunctionInfo(value)?.fullName;
-        return name ? `<function ${name}>` : `<function>`;
-    }
+    if (typeof value == 'function') return displayFunction(value);
     if (isVmWrapper(value)) return value.toString(useBraces);
     if (isVmArray(value)) {
         const strings: string[] = [];

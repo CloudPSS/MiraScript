@@ -1,4 +1,4 @@
-import { describeParam, expectNumber, throwError, throwUnexpectedTypeError, VmLib } from '../helpers.js';
+import { describeParam, expectNumberRange, throwError, throwUnexpectedTypeError, VmLib } from '../helpers.js';
 import { isFinite } from '../../../helpers/utils.js';
 import { toNumber } from '../../../helpers/convert.js';
 import { display } from '../../../helpers/serialize.js';
@@ -9,7 +9,9 @@ export const to_timestamp = VmLib(
             return Date.now();
         }
         if (typeof datetime == 'number') {
-            return new Date(datetime).getTime();
+            const n = new Date(datetime).getTime();
+            if (isFinite(n)) return n;
+            throwError(`${describeParam('datetime')} is an invalid timestamp: ${display(datetime)}`, Number.NaN);
         }
         if (typeof datetime != 'string') {
             throwUnexpectedTypeError('datetime', 'number | string', datetime, Number.NaN);
@@ -33,7 +35,7 @@ export const to_datetime = VmLib(
     (datetime, offset) => {
         const timestamp = to_timestamp(datetime);
         if (!isFinite(timestamp)) return null;
-        const o = expectNumber('offset', offset ?? 0);
+        const o = expectNumberRange('offset', offset ?? 0, -24, 24);
         const dateOffset = new Date(timestamp + o * 1000 * 60 * 60);
         return {
             year: dateOffset.getUTCFullYear(),

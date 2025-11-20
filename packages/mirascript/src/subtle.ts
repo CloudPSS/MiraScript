@@ -5,6 +5,7 @@ export * as convert from './helpers/convert.js';
 export { VmSharedContext, DefaultVmContext } from './vm/types/context.js';
 export * as operations from './vm/operations.js';
 export {
+    display as serializeForDisplay,
     serialize,
     serializeNil,
     serializeBoolean,
