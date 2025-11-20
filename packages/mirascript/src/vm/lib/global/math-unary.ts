@@ -1,12 +1,10 @@
 import type { VmAny } from '../../index.js';
-import { $ToNumber } from '../../operations.js';
-import { required, VmLib } from '../_helpers.js';
+import { expectNumber, VmLib } from '../helpers.js';
 
 /** 生成函数 */
 function build(f: (x: number) => number): (x: VmAny) => number {
     return (x) => {
-        required('x', x, Number.NaN);
-        return f($ToNumber(x));
+        return f(expectNumber('x', x));
     };
 }
 

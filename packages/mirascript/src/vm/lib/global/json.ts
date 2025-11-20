@@ -1,5 +1,5 @@
 import { isVmExtern, isVmModule } from '../../types/index.js';
-import { required, rethrowError, VmLib } from '../_helpers.js';
+import { required, rethrowError, VmLib } from '../helpers.js';
 const { parse, stringify } = JSON;
 
 export const to_json = VmLib(

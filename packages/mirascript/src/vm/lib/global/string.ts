@@ -1,10 +1,8 @@
-import { $ToString } from '../../operations.js';
-import { expectArray, required, VmLib } from '../_helpers.js';
+import { expectArray, expectString, VmLib } from '../helpers.js';
 
 export const chars = VmLib(
     (str) => {
-        required('str', str, null);
-        return [...$ToString(str)];
+        return [...expectString('str', str)];
     },
     {
         summary: '将字符串转换为字符数组',
@@ -17,9 +15,7 @@ export const chars = VmLib(
 
 export const starts_with = VmLib(
     (str, search) => {
-        required('str', str, null);
-        required('search', search, null);
-        return $ToString(str).startsWith($ToString(search));
+        return expectString('str', str).startsWith(expectString('search', search));
     },
     {
         summary: '检查字符串是否以指定子串开头',
@@ -31,9 +27,7 @@ export const starts_with = VmLib(
 );
 export const ends_with = VmLib(
     (str, search) => {
-        required('str', str, null);
-        required('search', search, null);
-        return $ToString(str).endsWith($ToString(search));
+        return expectString('str', str).endsWith(expectString('search', search));
     },
     {
         summary: '检查字符串是否以指定子串结尾',
@@ -46,9 +40,7 @@ export const ends_with = VmLib(
 
 export const contains = VmLib(
     (str, search) => {
-        required('str', str, null);
-        required('search', search, null);
-        return $ToString(str).includes($ToString(search));
+        return expectString('str', str).includes(expectString('search', search));
     },
     {
         summary: '检查字符串是否包含指定子串',
@@ -61,8 +53,7 @@ export const contains = VmLib(
 
 export const trim_start = VmLib(
     (str) => {
-        required('str', str, null);
-        return $ToString(str).trimStart();
+        return expectString('str', str).trimStart();
     },
     {
         summary: '去除字符串开头的空白字符',
@@ -75,8 +66,7 @@ export const trim_start = VmLib(
 
 export const trim_end = VmLib(
     (str) => {
-        required('str', str, null);
-        return $ToString(str).trimEnd();
+        return expectString('str', str).trimEnd();
     },
     {
         summary: '去除字符串结尾的空白字符',
@@ -89,8 +79,7 @@ export const trim_end = VmLib(
 
 export const trim = VmLib(
     (str) => {
-        required('str', str, null);
-        return $ToString(str).trim();
+        return expectString('str', str).trim();
     },
     {
         summary: '去除字符串两端的空白字符',
@@ -103,9 +92,10 @@ export const trim = VmLib(
 
 export const replace = VmLib(
     (str, search, replacement = '') => {
-        required('str', str, null);
-        required('search', search, str);
-        return $ToString(str).replaceAll($ToString(search), $ToString(replacement));
+        return expectString('str', str).replaceAll(
+            expectString('search', search),
+            expectString('replacement', replacement),
+        );
     },
     {
         summary: '替换字符串中的指定子串',
@@ -118,9 +108,8 @@ export const replace = VmLib(
 
 export const split = VmLib(
     (str, separator = '') => {
-        required('str', str, null);
-        const s = $ToString(str);
-        const p = $ToString(separator);
+        const s = expectString('str', str);
+        const p = expectString('separator', separator);
         if (!p) return [...s];
         return s.split(p);
     },
@@ -136,8 +125,8 @@ export const split = VmLib(
 export const join = VmLib(
     (arr, separator = '') => {
         expectArray('arr', arr, null);
-        const s = $ToString(separator);
-        return arr.map((v) => $ToString(v)).join(s);
+        const s = expectString('separator', separator);
+        return arr.map((v) => expectString(null, v)).join(s);
     },
     {
         summary: '将字符串数组连接为单个字符串',

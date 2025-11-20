@@ -49,7 +49,7 @@ export function isVmWrapper<T extends object>(value: unknown): value is VmWrappe
     return value != null && typeof value == 'object' && kVmWrapper in value;
 }
 /** 检查值是否为 Mirascript 模块 */
-export function isVmModule<T extends Record<string, VmValue>>(value: unknown): value is VmModule<T> {
+export function isVmModule<T extends Record<string, VmImmutable>>(value: unknown): value is VmModule<T> {
     return value != null && typeof value == 'object' && kVmModule in value;
 }
 /** 检查值是否为 Mirascript 外部值 */

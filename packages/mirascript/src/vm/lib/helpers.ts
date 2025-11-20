@@ -1,7 +1,7 @@
 import type { Writable } from 'type-fest';
 import { VM_ARRAY_MAX_LENGTH } from '../../helpers/constants.js';
-import { isNaN, entries, fromEntries } from '../../helpers/utils.js';
-import { toNumber } from '../../helpers/convert.js';
+import { isNaN, entries, fromEntries, isSafeInteger } from '../../helpers/utils.js';
+import { toBoolean, toNumber, toString } from '../../helpers/convert.js';
 import { display } from '../../helpers/serialize.js';
 import { isVmArray, isVmFunction, isVmPrimitive, isVmConst, isVmCallable, isVmRecord } from '../../helpers/types.js';
 import { VmError } from '../../helpers/error.js';
@@ -24,18 +24,36 @@ export function throwError(message: string, recovered: VmAny | (() => VmAny)): n
     const recoveredValue = typeof recovered === 'function' && !isVmFunction(recovered) ? recovered() : recovered;
     throw new VmError(message, recoveredValue);
 }
+/** 描述参数 */
+type ParamIndex = number | string | null;
+/** 描述参数 */
+export function describeParam(name: ParamIndex): string {
+    if (name == null) return 'Value';
+    if (typeof name == 'string') {
+        if (!name) return 'Argument';
+        return `Argument '${name}'`;
+    }
+    const pos = name <= 0 ? 'first' : name <= 1 ? 'second' : `${name + 1}th`;
+    return `Argument at the ${pos} position`;
+}
 
 /** 抛出预期外类型异常 */
 export function throwUnexpectedTypeError(
-    name: number | string,
+    name: ParamIndex,
     expected: string,
     value: VmAny,
     recovered: VmAny | (() => VmAny),
 ): never {
-    const actual = display(value);
-    if (typeof name == 'string') throwError(`Argument '${name}' is not ${expected}: ${actual}`, recovered);
-    const pos = name <= 0 ? 'first' : name <= 1 ? 'second' : name + 1 + 'th';
-    throwError(`Argument at the ${pos} position is not ${expected}: ${actual}`, recovered);
+    throwError(`${describeParam(name)} is not ${expected}: ${display(value)}`, recovered);
+}
+/** 抛出预期外类型异常 */
+export function throwUnconvertedTypeError(
+    name: ParamIndex,
+    expected: string,
+    value: VmAny,
+    recovered: VmAny | (() => VmAny),
+): never {
+    throwError(`${describeParam(name)} cannot be converted to ${expected}: ${display(value)}`, recovered);
 }
 
 /** 重新抛出异常 */
@@ -46,20 +64,71 @@ export function rethrowError(prefix: string, error: unknown, recovered: VmAny | 
 
 /** 标记参数为必须项 */
 export function required<const T = VmValue>(
-    name: number | string,
+    name: ParamIndex,
     value: T | undefined,
     recovered: VmAny | (() => VmAny),
 ): asserts value is T {
     if (value === undefined) {
-        if (typeof name == 'string') throwError(`Missing required parameter '${name}'`, recovered);
-        const pos = name <= 0 ? 'first' : name <= 1 ? 'second' : name + 1 + 'th';
-        throwError(`Missing required parameter at the ${pos} position`, recovered);
+        throwError(`${describeParam(name)} is required`, recovered);
     }
+}
+
+/** 标记并转换参数为数字 */
+export function expectNumber(name: ParamIndex, value: VmAny): number {
+    required(name, value, Number.NaN);
+    const v = toNumber(value, null);
+    if (v == null) {
+        throwUnconvertedTypeError(name, 'number', value, Number.NaN);
+    }
+    return v;
+}
+/** 标记并转换参数为整数 */
+export function expectIntegerRange(name: ParamIndex, value: VmAny, min: number, max: number): number {
+    required(name, value, 0);
+    const v = toNumber(value, null);
+    if (v == null) {
+        throwUnconvertedTypeError(name, 'integer', value, 0);
+    }
+    const i = Math.trunc(v);
+    if (!isSafeInteger(i)) {
+        throwUnconvertedTypeError(name, 'integer', value, 0);
+    }
+    if (i < min) {
+        throwError(`${describeParam(name)} is less than minimum value ${min}: ${display(value)}`, 0);
+    }
+    if (i > max) {
+        throwError(`${describeParam(name)} is greater than maximum value ${max}: ${display(value)}`, 0);
+    }
+    return i;
+}
+/** 标记并转换参数为整数 */
+export function expectInteger(name: ParamIndex, value: VmAny): number {
+    return expectIntegerRange(name, value, Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY);
+}
+
+/** 标记并转换参数为布尔值 */
+export function expectBoolean(name: ParamIndex, value: VmAny): boolean {
+    required(name, value, false);
+    const v = toBoolean(value, null);
+    if (v == null) {
+        throwUnconvertedTypeError(name, 'boolean', value, false);
+    }
+    return v;
+}
+
+/** 标记并转换参数为字符串 */
+export function expectString(name: ParamIndex, value: VmAny): string {
+    required(name, value, '');
+    const v = toString(value, null);
+    if (v == null) {
+        throwUnconvertedTypeError(name, 'string', value, '');
+    }
+    return v;
 }
 
 /** 标记参数为数组 */
 export function expectArray(
-    name: number | string,
+    name: ParamIndex,
     value: VmAny,
     recovered: VmAny | (() => VmAny),
 ): asserts value is VmArray {
@@ -71,7 +140,7 @@ export function expectArray(
 
 /** 标记参数为记录 */
 export function expectRecord(
-    name: number | string,
+    name: ParamIndex,
     value: VmAny,
     recovered: VmAny | (() => VmAny),
 ): asserts value is VmRecord {
@@ -83,7 +152,7 @@ export function expectRecord(
 
 /** 标记参数为数组或记录 */
 export function expectArrayOrRecord(
-    name: number | string,
+    name: ParamIndex,
     value: VmAny,
     recovered: VmAny | (() => VmAny),
 ): asserts value is VmArray | VmRecord {
@@ -95,7 +164,7 @@ export function expectArrayOrRecord(
 
 /** 标记参数为复合类型 */
 export function expectCompound(
-    name: number | string,
+    name: ParamIndex,
     value: VmAny,
     recovered: VmAny | (() => VmAny),
 ): asserts value is VmArray | VmRecord | VmModule | VmExtern {
@@ -107,7 +176,7 @@ export function expectCompound(
 
 /** 标记参数为常量 */
 export function expectConst(
-    name: number | string,
+    name: ParamIndex,
     value: VmAny,
     recovered: VmAny | (() => VmAny),
 ): asserts value is VmConst {
@@ -119,7 +188,7 @@ export function expectConst(
 
 /** 标记为可调用 */
 export function expectCallable(
-    name: number | string,
+    name: ParamIndex,
     value: VmAny,
     recovered: VmAny | (() => VmAny),
 ): asserts value is VmFunction | VmExtern {
@@ -132,19 +201,27 @@ export function expectCallable(
 /** Get numbers from the arguments. */
 export function getNumbers(args: readonly VmAny[]): number[] {
     if (args.length === 0) return [];
-    if (args.length === 1 && isVmArray(args[0])) args = args[0];
+    let useFirst = false;
+    if (args.length === 1 && isVmArray(args[0])) {
+        args = args[0];
+        useFirst = true;
+    }
     const numbers: number[] = [];
-    for (const arg of args) {
-        numbers.push(toNumber(arg, undefined));
+    for (let len = args.length, i = 0; i < len; i++) {
+        numbers.push(expectNumber(useFirst ? null : i, args[i]));
     }
     return numbers;
 }
 
 /** 将值转为数组长度 */
 export function arrayLen(len: number | null | undefined): number {
-    if (len == null || isNaN(len) || len <= 0) return 0;
+    if (len == null || isNaN(len) || len <= 0) {
+        throwError('Array length must be a non-negative integer', null);
+    }
     len = Math.trunc(len);
-    if (len > VM_ARRAY_MAX_LENGTH) throwError(`Array length exceeds maximum limit of ${VM_ARRAY_MAX_LENGTH}`, null);
+    if (len > VM_ARRAY_MAX_LENGTH) {
+        throwError(`Array length exceeds maximum limit of ${VM_ARRAY_MAX_LENGTH}`, null);
+    }
     return len;
 }
 

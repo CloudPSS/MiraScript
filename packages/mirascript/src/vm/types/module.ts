@@ -1,10 +1,10 @@
 import { kVmModule } from '../../helpers/constants.js';
 import { hasOwnEnumerable, keys } from '../../helpers/utils.js';
-import type { TypeName, VmAny, VmValue } from './index.js';
+import type { TypeName, VmAny, VmImmutable } from './index.js';
 import { VmWrapper } from './wrapper.js';
 
 /** Mirascript 模块 */
-export class VmModule<const T extends Record<string, VmValue> = Record<string, VmValue>> extends VmWrapper<T> {
+export class VmModule<const T extends Record<string, VmImmutable> = Record<string, VmImmutable>> extends VmWrapper<T> {
     constructor(
         /** 模块名称 */
         readonly name: string,

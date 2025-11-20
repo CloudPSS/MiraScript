@@ -1,6 +1,7 @@
-import { $ToString, $ToNumber } from '../../operations.js';
-import { VmLib } from '../_helpers.js';
+import { describeParam, expectNumber, throwError, throwUnexpectedTypeError, VmLib } from '../helpers.js';
 import { isFinite } from '../../../helpers/utils.js';
+import { toNumber } from '../../../helpers/convert.js';
+import { display } from '../../../helpers/serialize.js';
 
 export const to_timestamp = VmLib(
     (datetime) => {
@@ -10,11 +11,14 @@ export const to_timestamp = VmLib(
         if (typeof datetime == 'number') {
             return new Date(datetime).getTime();
         }
-        const str = $ToString(datetime);
-        if (!str) return Number.NaN;
-        const num = $ToNumber(str);
+        if (typeof datetime != 'string') {
+            throwUnexpectedTypeError('datetime', 'number | string', datetime, Number.NaN);
+        }
+        const num = toNumber(datetime, Number.NaN);
         if (isFinite(num)) return num;
-        return Date.parse(str);
+        const parsed = Date.parse(datetime);
+        if (isFinite(parsed)) return parsed;
+        throwError(`${describeParam('datetime')} cannot be parsed as datetime: ${display(datetime)}`, Number.NaN);
     },
     {
         summary: '将数据转换为 Unix 毫秒时间戳',
@@ -29,7 +33,7 @@ export const to_datetime = VmLib(
     (datetime, offset) => {
         const timestamp = to_timestamp(datetime);
         if (!isFinite(timestamp)) return null;
-        const o = $ToNumber(offset ?? 0) || 0;
+        const o = expectNumber('offset', offset ?? 0);
         const dateOffset = new Date(timestamp + o * 1000 * 60 * 60);
         return {
             year: dateOffset.getUTCFullYear(),

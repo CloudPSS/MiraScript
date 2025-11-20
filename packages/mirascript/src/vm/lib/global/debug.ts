@@ -1,8 +1,8 @@
 import supportsColor from 'supports-color';
 import { VmError } from '../../../helpers/error.js';
-import { $ToString } from '../../operations.js';
+import { toString } from '../../../helpers/convert.js';
 import type { VmAny } from '../../types/index.js';
-import { VmLib } from '../_helpers.js';
+import { VmLib } from '../helpers.js';
 
 export const debug_print = VmLib(
     (...args) => {
@@ -27,7 +27,8 @@ export const panic = VmLib(
         if (message === undefined) console.error(...panic.prefix);
         // eslint-disable-next-line no-console
         else console.error(...panic.prefix, message);
-        const error = message == null ? 'panic' : 'panic: ' + $ToString(message);
+        const mgsStr = toString(message, null);
+        const error = !mgsStr ? 'panic' : 'panic: ' + mgsStr;
         throw new VmError(error, undefined);
     },
     {

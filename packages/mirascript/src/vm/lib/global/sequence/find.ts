@@ -1,8 +1,9 @@
+import { toBoolean } from '../../../../helpers/convert.js';
 import { entries } from '../../../../helpers/utils.js';
 import { Cp } from '../../../helpers.js';
-import { $Call, $Same, $ToBoolean } from '../../../operations.js';
+import { $Call, $Same } from '../../../operations.js';
 import { type VmValue, isVmArray, isVmCallable } from '../../../types/index.js';
-import { VmLib, expectArrayOrRecord, required } from '../../_helpers.js';
+import { VmLib, expectArrayOrRecord, required } from '../../helpers.js';
 
 export const find = VmLib(
     (data, predicate) => {
@@ -11,7 +12,7 @@ export const find = VmLib(
         const p = isVmCallable(predicate)
             ? (value: VmValue, key: number | string, data: VmValue) => {
                   const ret = $Call(predicate, [value, key, data]);
-                  return $ToBoolean(ret);
+                  return toBoolean(ret, undefined);
               }
             : (value: VmValue) => $Same(predicate, value);
         if (isVmArray(data)) {

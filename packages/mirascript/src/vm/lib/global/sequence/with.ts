@@ -1,17 +1,25 @@
 import { VM_ARRAY_MAX_LENGTH } from '../../../../helpers/constants.js';
+import { toNumber, toString } from '../../../../helpers/convert.js';
 import { isVmArray, isVmRecord } from '../../../../helpers/types.js';
-import { isArray, isSafeInteger } from '../../../../helpers/utils.js';
+import { isArray, isInteger, isNaN } from '../../../../helpers/utils.js';
 import { Element } from '../../../helpers.js';
-import { $ToNumber, $ToString } from '../../../operations.js';
 import type { VmArray, VmConst, VmValue } from '../../../types/index.js';
-import { VmLib, expectArrayOrRecord, expectConst, throwError } from '../../_helpers.js';
+import { VmLib, expectArrayOrRecord, expectConst, throwError } from '../../helpers.js';
 
 const arrIndex = (index: NonNullable<VmConst>): number => {
-    const idx = Math.trunc($ToNumber(index));
-    if (!isSafeInteger(idx) || idx < 0 || idx >= VM_ARRAY_MAX_LENGTH) {
-        return -1;
+    const idx = Math.trunc(toNumber(index, Number.NaN));
+    if (isNaN(idx) || idx <= 0) {
+        throwError('Array index must be a non-negative integer', index);
+    }
+    if (idx >= VM_ARRAY_MAX_LENGTH) {
+        throwError(`Array index exceeds maximum limit of ${VM_ARRAY_MAX_LENGTH}`, index);
     }
     return idx;
+};
+
+const isArrIndex = (key: NonNullable<VmConst>): key is number => {
+    if (typeof key != 'number') return false;
+    return isInteger(key) && key >= 0 && key < VM_ARRAY_MAX_LENGTH;
 };
 
 const withInner = (obj: VmConst | undefined, key: VmArray, keyIndex: number, value: VmConst): VmConst => {
@@ -24,7 +32,7 @@ const withInner = (obj: VmConst | undefined, key: VmArray, keyIndex: number, val
         result = [...obj];
     } else if (isVmRecord(obj)) {
         result = { ...obj };
-    } else if (arrIndex(k) === k) {
+    } else if (isArrIndex(k)) {
         result = [];
     } else {
         result = {};
@@ -36,7 +44,7 @@ const withInner = (obj: VmConst | undefined, key: VmArray, keyIndex: number, val
         }
         result[index] = withInner(result[index], key, keyIndex + 1, value);
     } else {
-        const prop = $ToString(k);
+        const prop = toString(k, undefined);
         result[prop] = withInner(result[prop], key, keyIndex + 1, value);
     }
     return result;
@@ -101,10 +109,10 @@ const _with = VmLib(
                 let val: VmConst;
                 if (isVmArray(key)) {
                     const firstKey = key[0]!;
-                    prop = $ToString(firstKey);
+                    prop = toString(firstKey, undefined);
                     val = withInner(result[prop], key, 1, value);
                 } else {
-                    prop = $ToString(key);
+                    prop = toString(key, undefined);
                     val = value;
                 }
                 result[prop] = val;

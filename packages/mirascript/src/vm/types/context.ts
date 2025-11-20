@@ -2,20 +2,24 @@ import { create, entries, keys } from '../../helpers/utils.js';
 import { isVmAny } from '../../helpers/types.js';
 import { VmError } from '../../helpers/error.js';
 import { kVmContext } from '../../helpers/constants.js';
-import type * as global from '../lib/global/index.js';
-import type { VmAny, VmImmutable, VmValue, VmFunctionLike } from './index.js';
+import type { lib } from '../lib/index.js';
+import type { VmAny, VmImmutable, VmValue, VmFunctionLike, VmModule } from './index.js';
 import { wrapToVmValue } from './boundary.js';
 import { VmFunction } from './function.js';
 
-/** 全局导入的标准库 */
-type GlobalKeys = keyof typeof global;
 /** 全局导入的标准库值 */
-type ToGlobalValue<T extends GlobalKeys> = (typeof global)[T] extends VmFunctionLike
-    ? VmFunction<(typeof global)[T]>
-    : (typeof global)[T];
+type ToLibValue<V> = V extends VmFunctionLike
+    ? VmFunction<V>
+    : V extends Record<string, VmImmutable | VmFunctionLike>
+      ? ToLibModule<V>
+      : V;
+/** 全局导入的标准库值 */
+type ToLibModule<V extends Record<string, VmImmutable | VmFunctionLike>> = VmModule<{
+    [key in keyof V]: ToLibValue<V[key]>;
+}>;
 /** 全局导入的标准库 */
 type VmContextBase = {
-    [key in GlobalKeys]: ToGlobalValue<key>;
+    [key in keyof typeof lib]: ToLibValue<(typeof lib)[key]>;
 };
 /** MiraScript 执行上下文的基础，仅包含标准库 */
 export type VmSharedContext = VmContextBase & Record<string, VmImmutable>;

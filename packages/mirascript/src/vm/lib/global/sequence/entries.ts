@@ -1,5 +1,5 @@
 import { isVmArray, isVmRecord, type VmConst } from '../../../types/index.js';
-import { VmLib, expectArrayOrRecord, expectCompound } from '../../_helpers.js';
+import { VmLib, expectArrayOrRecord, expectCompound } from '../../helpers.js';
 import { keys as _keys, values as _values, entries as _entries } from '../../../../helpers/utils.js';
 
 export const keys = VmLib(

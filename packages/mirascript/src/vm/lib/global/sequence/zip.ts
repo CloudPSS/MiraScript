@@ -1,7 +1,7 @@
 import { display } from '../../../../helpers/serialize.js';
 import { Cp } from '../../../helpers.js';
 import { isVmArray, type VmConst, type VmArray } from '../../../types/index.js';
-import { VmLib, throwError } from '../../_helpers.js';
+import { VmLib, throwError } from '../../helpers.js';
 import { entries } from './entries.js';
 
 export const zip = VmLib(

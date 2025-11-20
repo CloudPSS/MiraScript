@@ -1,9 +1,9 @@
 import type { Writable } from 'type-fest';
 import { defineProperty } from '../../helpers/utils.js';
 import { kVmFunction } from '../../helpers/constants.js';
-import { CpEnter, CpExit } from '../helpers.js';
 import type { VmAny, VmValue } from './index.js';
 import { fromVmFunctionProxy } from './boundary.js';
+import { CpEnter, CpExit } from '../checkpoint.js';
 
 /**
  * Mirascript 函数签名

@@ -1,12 +1,10 @@
-import { $ToNumber } from '../../../operations.js';
 import type { VmConst } from '../../../types/index.js';
-import { arrayLen, expectConst, required, VmLib } from '../../_helpers.js';
+import { arrayLen, expectConst, expectNumber, VmLib } from '../../helpers.js';
 
 export const repeat = VmLib(
     (data, times) => {
         expectConst('data', data, []);
-        required('times', times, []);
-        const n = arrayLen($ToNumber(times));
+        const n = arrayLen(expectNumber('times', times));
         const result: VmConst[] = [];
         result.length = n;
         result.fill(data);

@@ -1,5 +1,5 @@
 import type { VmAny } from '../../types/index.js';
-import { getNumbers, VmLib } from '../_helpers.js';
+import { getNumbers, VmLib } from '../helpers.js';
 
 /** 生成函数 */
 function build(f: (...values: readonly number[]) => number): (...values: readonly VmAny[]) => number {

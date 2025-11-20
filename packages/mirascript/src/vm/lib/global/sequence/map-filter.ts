@@ -1,6 +1,7 @@
-import { $Call, $ToBoolean } from '../../../operations.js';
+import { toBoolean } from '../../../../helpers/convert.js';
+import { $Call } from '../../../operations.js';
 import { isVmConst, type VmAny, type VmValue } from '../../../types/index.js';
-import { VmLib, expectCallable, expectConst, map as mapImpl } from '../../_helpers.js';
+import { VmLib, expectCallable, expectConst, map as mapImpl } from '../../helpers.js';
 
 export * from './with.js';
 export * from './entries.js';
@@ -43,7 +44,7 @@ export const filter = VmLib(
     (data, predicate) =>
         mapImplWrapped(data, 'predicate', predicate, (fn, value, key, data) => {
             const ret = $Call(fn, [value, key, data]);
-            return $ToBoolean(ret) ? value : undefined;
+            return toBoolean(ret, undefined) ? value : undefined;
         }),
     {
         summary: '过滤数组或记录中的元素，返回满足条件的元素',

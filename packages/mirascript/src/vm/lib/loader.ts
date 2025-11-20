@@ -1,20 +1,14 @@
 import { VmFunction, VmModule, type VmConst, type VmFunctionLike, type VmImmutable } from '../types/index.js';
 import { create, defineProperty, entries } from '../../helpers/utils.js';
-import { VmSharedContext } from '../types/context.js';
 
-import type { VmLib, VmLibOption } from './_helpers.js';
-import * as global from './global/index.js';
-
-for (const [name, value] of entries(global)) {
-    VmSharedContext[name] = wrapEntry(name, value as RawValue, 'global');
-}
+import type { VmLib, VmLibOption } from './helpers.js';
 
 /** 原始值 */
-type RawValue = VmLib | VmConst | VmModule;
+export type RawValue = VmLib | VmConst | VmModule;
 /** 包装值 */
 type ToWrappedValue<V extends RawValue> = V extends VmFunctionLike ? VmFunction<V> : V;
 /** 包装值 */
-function wrapEntry<const T extends RawValue>(name: string, value: T, module: string): ToWrappedValue<T> {
+export function wrapEntry<const T extends RawValue>(name: string, value: T, module: string): ToWrappedValue<T> {
     if (typeof value == 'function') {
         if (value.name !== name) {
             // 如果函数名和导出名不一致，则重命名
@@ -47,5 +41,3 @@ export function createModule<const T extends Record<string, RawValue>>(name: str
     }
     return new VmModule(name, mod) as ToWrappedModule<T>;
 }
-
-export const lib = global;
