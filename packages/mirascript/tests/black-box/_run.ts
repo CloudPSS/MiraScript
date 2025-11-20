@@ -83,8 +83,14 @@ const compileAndRun = test.macro<[string, boolean, boolean]>({
 
 export function run(extern: boolean, module: boolean): void {
     for (const file of fs.readdirSync(TEST_DIR, { encoding: 'utf8', recursive: true })) {
-        if (file.endsWith('.mira')) {
-            test(compileAndRun, file, extern, module);
+        const f = file.replaceAll('\\', '/');
+        if (f.endsWith('.mira')) {
+            const skip = f.includes('/_') || f.startsWith('_');
+            if (skip) {
+                test.skip(compileAndRun, f, extern, module);
+            } else {
+                test(compileAndRun, f, extern, module);
+            }
         }
     }
 }
