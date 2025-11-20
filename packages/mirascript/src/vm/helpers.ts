@@ -1,5 +1,5 @@
-import { isFinite } from '../helpers/utils.js';
-import { VM_ARRAY_MAX_LENGTH } from '../helpers/constants.js';
+import { defineProperty, isFinite } from '../helpers/utils.js';
+import { VM_ARRAY_MAX_LENGTH, VM_FUNCTION_ANONYMOUS_NAME } from '../helpers/constants.js';
 import { isVmConst } from '../helpers/types.js';
 import { $AssertInit, $ToNumber } from './operations.js';
 import type { VmFunctionLike } from './types/function.js';
@@ -30,7 +30,8 @@ export const ElementOpt = (key: string, value: VmAny): VmConst => {
     return { [key]: value };
 };
 
-export const Function = (fn: VmFunctionLike): VmFunction => {
+export const Function = (fn: VmFunctionLike, name = VM_FUNCTION_ANONYMOUS_NAME): VmFunction => {
+    defineProperty(fn, 'name', { value: name });
     return VmFunction(fn, { isLib: false, injectCp: false });
 };
 

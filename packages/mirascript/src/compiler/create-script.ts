@@ -1,4 +1,4 @@
-import { kVmScript } from '../helpers/constants.js';
+import { kVmScript, VM_SCRIPT_NAME } from '../helpers/constants.js';
 import { defineProperty } from '../helpers/utils.js';
 import { keys, values } from '../vm/env.js';
 import type { VmScript, VmScriptLike } from '../vm/types/script.js';
@@ -10,6 +10,7 @@ export function wrapScript(source: ScriptInput, script: VmScriptLike): VmScript 
     if (kVmScript in script) {
         return script as VmScriptLike as VmScript;
     }
+    defineProperty(script, 'name', { value: VM_SCRIPT_NAME });
     defineProperty(script, kVmScript, { value: true });
     if (typeof source === 'string') {
         defineProperty(script, 'source', { value: source, configurable: true });

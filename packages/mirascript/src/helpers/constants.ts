@@ -15,3 +15,6 @@ export const kVmContext = Symbol.for('mirascript.vm.context');
 export const kVmExtern = Symbol.for('mirascript.vm.extern');
 export const kVmModule = Symbol.for('mirascript.vm.module');
 export const kVmWrapper = Symbol.for('mirascript.vm.wrapper');
+
+export const VM_SCRIPT_NAME = `<script_root>`;
+export const VM_FUNCTION_ANONYMOUS_NAME = `<anonymous>`;

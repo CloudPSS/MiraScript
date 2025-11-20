@@ -1,6 +1,6 @@
 import type { Writable } from 'type-fest';
 import { defineProperty } from '../../helpers/utils.js';
-import { kVmFunction } from '../../helpers/constants.js';
+import { kVmFunction, VM_FUNCTION_ANONYMOUS_NAME } from '../../helpers/constants.js';
 import type { VmAny, VmValue } from './index.js';
 import { fromVmFunctionProxy } from './boundary.js';
 import { CpEnter, CpExit } from '../checkpoint.js';
@@ -56,7 +56,7 @@ export function VmFunction<T extends VmFunctionLike>(fn: T, option: VmFunctionOp
     if (exists) return exists;
 
     const info: Writable<VmFunctionInfo> = {
-        fullName: option.fullName ?? fn.name,
+        fullName: option.fullName ?? (fn.name === VM_FUNCTION_ANONYMOUS_NAME ? '' : fn.name),
         isLib: option.isLib ?? false,
         summary: option.summary || undefined,
         params: option.params,
@@ -77,10 +77,7 @@ export function VmFunction<T extends VmFunctionLike>(fn: T, option: VmFunctionOp
                 CpExit();
             }
         }) as typeof fn;
-        defineProperty(fn, 'name', {
-            value: original.name,
-            configurable: true,
-        });
+        defineProperty(fn, 'name', { value: original.name });
     }
     defineProperty(fn, kVmFunction, {
         value: Object.freeze(info),
