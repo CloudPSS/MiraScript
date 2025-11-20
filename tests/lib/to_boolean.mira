@@ -14,6 +14,10 @@ t_throws(fn { to_boolean("0") });
 t_throws(fn { to_boolean([]) });
 t_throws(fn { to_boolean(()) });
 
+t_eq(to_boolean(nil, 'x'), 'x');
+t_eq(to_boolean('', 'x'), 'x');
+t_eq(to_boolean(v_fn, 'x'), 'x');
+
 t_throws(fn { to_boolean(v_fn) });
 if has_extern {
   t_throws(fn { to_boolean(v_extern) });

@@ -64,6 +64,8 @@ t_throws(fn { matrix.entrywise_divide(nil, [[1]]) });
 t_eq(matrix.multiply(sa, sb), 2);
 t_eq(matrix.multiply(sa, vb), [4, 5]);
 t_eq(matrix.multiply(va, sb), [2, 4, 6]);
+t_eq(matrix.multiply(va, va), 14);
+t_eq(matrix.multiply([1, 2], [4, 3]), 10);
 t_throws(fn { matrix.multiply(va, vb) });
 t_eq(matrix.multiply(va, ma), [11, 24, 45]);
 t_eq(matrix.multiply(ma, va), [19, 29, 39]);

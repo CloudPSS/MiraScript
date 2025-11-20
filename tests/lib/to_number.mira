@@ -54,6 +54,10 @@ t_throws(fn { to_number([1]) });
 t_throws(fn { to_number((1,)) });
 t_throws(fn { to_number(fn { }) });
 
+t_eq(to_number(nil, 'x'), 'x');
+t_eq(to_number('', 'x'), 'x');
+t_eq(to_number(v_fn, 'x'), 'x');
+
 t_throws(fn { to_number(v_fn) });
 if has_extern {
   t_throws(fn { to_number(v_extern) });

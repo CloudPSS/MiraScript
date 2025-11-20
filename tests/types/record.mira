@@ -102,3 +102,14 @@ t_throws(fn {
 '], 'lf');
   t_eq(obj['\r\n'], 'crlf');
 }
+
+{
+  let r = (a: 1, b: 2);
+  t_true('a' in r);
+  t_true('b' in r);
+  t_false('c' in r);
+  let (a, b, c) = ('a', 'b', 'c');
+  t_true(a in r);
+  t_true(b in r);
+  t_false(c in r);
+}

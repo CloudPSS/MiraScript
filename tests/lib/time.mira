@@ -4,11 +4,20 @@ t_eq(to_timestamp(epoch), 0);
 t_eq(to_datetime(epoch), (year: 1970, month: 1, day: 1, hour: 0, minute: 0, second: 0, millisecond: 0, dayOfWeek: 4, offset: 0));
 t_eq(to_iso8601(epoch), '1970-01-01T00:00:00.000Z');
 
+t_eq(to_timestamp(epoch, 'x'), 0);
+t_eq(to_datetime(epoch, nil, 'x'), (year: 1970, month: 1, day: 1, hour: 0, minute: 0, second: 0, millisecond: 0, dayOfWeek: 4, offset: 0));
+t_eq(to_iso8601(epoch, 'x'), '1970-01-01T00:00:00.000Z');
+
 let invalid = inf;
 
 t_throws(fn { to_timestamp(invalid) });
 t_throws(fn { to_datetime(invalid) });
 t_throws(fn { to_iso8601(invalid) });
+
+t_eq(to_timestamp(invalid, 'x'), 'x');
+t_eq(to_datetime(invalid, nil, 'x'), 'x');
+t_eq(to_datetime(invalid, 12, 'x'), 'x');
+t_eq(to_iso8601(invalid, 'x'), 'x');
 
 let str = '2022-03-23T12:34:56.789+08:00';
 
@@ -27,22 +36,34 @@ let not_a_date = 'Hello, World!';
 t_throws(fn { to_timestamp(not_a_date) });
 t_throws(fn { to_datetime(not_a_date) });
 t_throws(fn { to_iso8601(not_a_date) });
+t_eq(to_timestamp(not_a_date, 'x'), 'x');
+t_eq(to_datetime(not_a_date, nil, 'x'), 'x');
+t_eq(to_iso8601(not_a_date, 'x'), 'x');
 
 let num_str = '1.648010096789e12';
 
 t_eq(to_timestamp(num_str), 1_648_010_096_789);
 t_eq(to_datetime(num_str), (year: 2022, month: 3, day: 23, hour: 4, minute: 34, second: 56, millisecond: 789, dayOfWeek: 3, offset: 0));
 t_eq(to_iso8601(num_str), '2022-03-23T04:34:56.789Z');
+t_eq(to_timestamp(num_str, 'x'), 1_648_010_096_789);
+t_eq(to_datetime(num_str, nil, 'x'), (year: 2022, month: 3, day: 23, hour: 4, minute: 34, second: 56, millisecond: 789, dayOfWeek: 3, offset: 0));
+t_eq(to_iso8601(num_str, 'x'), '2022-03-23T04:34:56.789Z');
 
 let invalid_num_str = '1.2e999';
 t_throws(fn { to_timestamp(invalid_num_str) });
 t_throws(fn { to_datetime(invalid_num_str) });
 t_throws(fn { to_iso8601(invalid_num_str) });
+t_eq(to_timestamp(invalid_num_str, 'x'), 'x');
+t_eq(to_datetime(invalid_num_str, nil, 'x'), 'x');
+t_eq(to_iso8601(invalid_num_str, 'x'), 'x');
 
 let invalid_type = false;
 t_throws(fn { to_timestamp(invalid_type) });
 t_throws(fn { to_datetime(invalid_type) });
 t_throws(fn { to_iso8601(invalid_type) });
+t_eq(to_timestamp(invalid_type, 'x'), 'x');
+t_eq(to_datetime(invalid_type, nil, 'x'), 'x');
+t_eq(to_iso8601(invalid_type, 'x'), 'x');
 
 // current time
 t_ne(to_timestamp(nil), nan);
@@ -57,3 +78,4 @@ t_throws(fn { to_datetime(str, nan) });
 t_throws(fn { to_datetime(str, 'x') });
 t_throws(fn { to_datetime(str, 26) });
 t_throws(fn { to_datetime(str, -26) });
+t_throws(fn { to_datetime(str, -26, 'x') });

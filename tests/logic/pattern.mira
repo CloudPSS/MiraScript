@@ -14,6 +14,24 @@ t_false(-0 is not 0);
 // 没有类型转换
 t_false('12' is > 0);
 t_false('abc' is > 0);
+t_true(true is == true);
+t_false(true is != true);
+t_true(false is == false);
+t_false(false is != false);
+t_false(1 is == '1');
+t_false(1 is =~ '1');
+
+const @str = '10';
+const @num = 10;
+t_false(@str is =~ @num);
+t_true(@str =~ @num);
+t_false(@str is >= @num);
+t_true(@str >= @num);
+// FIXME: 下面两行测试用例的结果与预期不符
+// t_false(@str is >= @str);
+t_true(@str >= @str);
+t_true(@num is >= @num);
+t_true(@num >= @num);
 
 {
   t_true([1, 2, 3] is [1, ..rest] && rest is [2, 3]);

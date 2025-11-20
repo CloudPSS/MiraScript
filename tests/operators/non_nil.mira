@@ -1,0 +1,18 @@
+const @NIL = nil;
+let NIL = nil;
+
+t_throws(fn { nil! });
+t_throws(fn { @NIL! });
+t_throws(fn { NIL! });
+t_throws(fn { (nil)! });
+t_throws(fn { (@NIL)! });
+t_throws(fn { (NIL)! });
+
+t_eq(true!, true);
+t_eq(false!, false);
+t_eq(123!, 123);
+t_eq(45.6!, 45.6);
+t_eq('hello'!, 'hello');
+t_eq([1, 2, 3]!, [1, 2, 3]);
+t_eq((a: 1, b: 2)!, (a: 1, b: 2));
+t_eq(sin!, sin);
