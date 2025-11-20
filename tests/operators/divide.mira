@@ -30,3 +30,6 @@ t_eq('8' / '4', 2);
 t_eq(true / 2, 0.5);
 t_eq(false / 10, 0);
 t_eq(false / -10, -0);
+
+t_throws(fn { nil / 1 });
+t_throws(fn { 1 / 'NAN' });

@@ -12,6 +12,7 @@ t_eq(nan - nan, nan);
 t_eq(nan - inf, nan);
 t_eq(inf - nan, nan);
 
-t_eq(nil - true, -1);
-t_eq(nil - false, 0);
+t_throws(fn { nil - 1 });
+t_throws(fn { 1 - 'NAN' });
 t_eq('12' - '3.5', 8.5);
+t_eq(false - true, -1);
