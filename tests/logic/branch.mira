@@ -13,16 +13,12 @@ if F() {
 } else {
   t_true(true);
 }
-if N() {
-  t_never();
-} else {
-  t_true(true);
-}
-if O() {
-  t_true(true);
-} else {
-  t_never();
-}
+t_throws(fn {
+  if N() { }
+});
+t_throws(fn {
+  if O() { }
+});
 
 if !T() {
   t_never();
@@ -34,16 +30,12 @@ if !F() {
 } else {
   t_never();
 }
-if !N() {
-  t_true(true);
-} else {
-  t_never();
-}
-if !O() {
-  t_never();
-} else {
-  t_true(true);
-}
+t_throws(fn {
+  if !N() { }
+});
+t_throws(fn {
+  if !O() { }
+});
 
 if !T() {
   t_never();
