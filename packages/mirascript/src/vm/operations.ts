@@ -2,26 +2,8 @@ import { VmError } from '../helpers/error.js';
 import { hasOwnEnumerable, isNaN, isSafeInteger, keys, create } from '../helpers/utils.js';
 import { toNumber, toString, toBoolean, toFormat } from '../helpers/convert.js';
 import { display } from '../helpers/serialize.js';
-import {
-    isVmPrimitive,
-    isVmArray,
-    isVmRecord,
-    isVmFunction,
-    isVmExtern,
-    isVmModule,
-    isVmWrapper,
-} from '../helpers/types.js';
-import type {
-    TypeName,
-    VmAny,
-    VmImmutable,
-    VmRecord,
-    VmValue,
-    VmArray,
-    VmConst,
-    VmPrimitive,
-    VmFunction,
-} from './types/index.js';
+import { isVmPrimitive, isVmArray, isVmRecord, isVmFunction, isVmExtern, isVmWrapper } from '../helpers/types.js';
+import type { TypeName, VmAny, VmImmutable, VmRecord, VmValue, VmArray, VmConst } from './types/index.js';
 
 const { abs, min, trunc, ceil } = Math;
 const { slice, at } = Array.prototype;
@@ -62,7 +44,10 @@ const isSame = (a: VmValue, b: VmValue): boolean => {
             if (!hasOwnEnumerable(b, key)) {
                 return false;
             }
-            if (!isSame(a[key] ?? null, b[key] ?? null)) {
+            /* c8 ignore next 2 */
+            const av = a[key] ?? null;
+            const bv = b[key] ?? null;
+            if (!isSame(av, bv)) {
                 return false;
             }
         }
@@ -182,28 +167,25 @@ export const $In = (value: VmAny, iterable: VmAny): boolean => {
     $AssertInit(value);
     $AssertInit(iterable);
     if (iterable == null) return false;
+    if (typeof iterable != 'object') return false;
     if (isVmArray(iterable)) {
         if (value == null) {
             // array may have empty slots
-            for (const item of iterable) {
-                if (item == null) return true;
-            }
+            for (const item of iterable) if (item == null) return true;
             return false;
         }
         // JS %SameValueZero is same with `isSame` in this context
         if (isVmPrimitive(value)) return iterable.includes(value);
         // value is not null here, so it's ok to skip empty slots, since `isSame(null, something)` is always false
-        value satisfies NonNullable<VmValue>;
-        return iterable.some((item = null) => isSame(item, value));
+        return iterable.some((item = null) => isSame(item, value satisfies NonNullable<VmValue>));
     }
     // iterable is a record or an extern here, value should be a string
-    if (isVmWrapper(iterable)) return iterable.has($ToString(value));
-    if (typeof iterable == 'object') return hasOwnEnumerable(iterable, $ToString(value));
-    iterable satisfies VmPrimitive | VmFunction;
-    return false;
+    const key = toString(value, undefined);
+    if (isVmWrapper(iterable)) return iterable.has(key);
+    return hasOwnEnumerable(iterable satisfies VmRecord, key);
 };
-export const $Concat = (...args: string[]): string => {
-    return args.map($Format).join('');
+export const $Concat = (...args: readonly string[]): string => {
+    return args.map((a) => toFormat(a, null)).join('');
 };
 export const $Pos = (a: VmAny): number => {
     return $ToNumber(a);
@@ -231,6 +213,7 @@ export const $Omit = (value: VmAny, omitted: ReadonlyArray<number | string>): Vm
     const omittedSet = new Set(omitted.map($ToString));
     for (const key of valueKeys) {
         if (!omittedSet.has(key)) {
+            /* c8 ignore next */
             result[key] = value[key] ?? null;
         }
     }
@@ -295,22 +278,25 @@ export const $Call = (func: VmValue, args: readonly VmAny[]): VmValue => {
     throw new VmError(`Value is not callable: ${display(func)}`, null);
 };
 export const $Type = (value: VmAny): TypeName => {
-    if (value === undefined || value === null) return 'nil';
-    if (isVmExtern(value)) return 'extern';
-    if (isVmModule(value)) return 'module';
+    // 允许未初始化值通过
+    if (value == null) return 'nil';
+    if (isVmWrapper(value)) return value.type;
     if (isVmArray(value)) return 'array';
     if (typeof value == 'object') return 'record';
     return typeof value as TypeName;
 };
 export const $ToBoolean = (value: VmAny): boolean => {
+    if (typeof value == 'boolean') return value;
     $AssertInit(value);
     return toBoolean(value, undefined);
 };
 export const $ToString = (value: VmAny): string => {
+    if (typeof value == 'string') return value;
     $AssertInit(value);
     return toString(value, undefined);
 };
 export const $ToNumber = (value: VmAny): number => {
+    if (typeof value == 'number') return value;
     $AssertInit(value);
     return toNumber(value, undefined);
 };
