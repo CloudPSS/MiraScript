@@ -1,9 +1,8 @@
+import { kVmScript } from '../helpers/constants.js';
 import { defineProperty } from '../helpers/utils.js';
 import { keys, values } from '../vm/env.js';
 import type { VmScript, VmScriptLike } from '../vm/types/script.js';
 import type { ScriptInput } from './types.js';
-
-const kVmScript = Symbol.for('mirascript.vm.script');
 
 /** 生成 JS 函数 */
 export function wrapScript(source: ScriptInput, script: VmScriptLike): VmScript {

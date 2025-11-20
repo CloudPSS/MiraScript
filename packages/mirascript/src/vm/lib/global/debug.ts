@@ -1,5 +1,5 @@
 import supportsColor from 'supports-color';
-import { VmError } from '../../error.js';
+import { VmError } from '../../../helpers/error.js';
 import { $ToString } from '../../operations.js';
 import type { VmAny } from '../../types/index.js';
 import { VmLib } from '../_helpers.js';

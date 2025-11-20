@@ -1,10 +1,9 @@
 import type { Writable } from 'type-fest';
 import { defineProperty } from '../../helpers/utils.js';
+import { kVmFunction } from '../../helpers/constants.js';
 import { CpEnter, CpExit } from '../helpers.js';
 import type { VmAny, VmValue } from './index.js';
 import { fromVmFunctionProxy } from './boundary.js';
-
-const kVmFunction = Symbol.for('mirascript.vm.function');
 
 /**
  * Mirascript 函数签名
@@ -45,17 +44,6 @@ export type VmFunctionOption = Partial<
         readonly injectCp: boolean;
     }
 >;
-
-/** 检查是否为 Mirascript 函数 */
-export function isVmFunction<T extends VmFunctionLike>(value: unknown): value is VmFunction<T> {
-    return getVmFunctionInfo(value) != null;
-}
-
-/** 检查是否为 Mirascript 函数，并获取其信息 */
-export function getVmFunctionInfo(value: unknown): VmFunctionInfo | undefined {
-    if (typeof value != 'function') return undefined;
-    return (value as VmFunction)[kVmFunction];
-}
 
 /** 创建 Mirascript 函数 */
 export function VmFunction<T extends VmFunctionLike>(fn: T, option: VmFunctionOption = {}): VmFunction<T> {

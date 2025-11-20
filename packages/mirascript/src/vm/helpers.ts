@@ -1,16 +1,11 @@
+import { isFinite } from '../helpers/utils.js';
+import { VM_ARRAY_MAX_LENGTH } from '../helpers/constants.js';
+import { isVmConst } from '../helpers/types.js';
 import { $AssertInit, $ToNumber } from './operations.js';
 import type { VmFunctionLike } from './types/function.js';
 import { DefaultVmContext, type VmContext } from './types/context.js';
-import {
-    isVmConst,
-    VmFunction,
-    type VmConst,
-    type VmAny,
-    type VmArray,
-    type VmValue,
-    VM_ARRAY_MAX_LENGTH,
-} from './types/index.js';
-import { isFinite } from '../helpers/utils.js';
+import type { VmConst, VmAny, VmArray, VmValue } from './types/index.js';
+import { VmFunction } from './types/function.js';
 
 export const Vargs = (varags: VmAny[]): VmArray => {
     for (let i = 0, l = varags.length; i < l; i++) {

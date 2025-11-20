@@ -1,4 +1,7 @@
-import { VmError } from './error.js';
+import { VmError } from '../helpers/error.js';
+import { hasOwnEnumerable, isNaN, isSafeInteger, keys, create } from '../helpers/utils.js';
+import { toNumber, toString, toBoolean, toFormat } from '../helpers/convert.js';
+import { display } from '../helpers/serialize.js';
 import {
     isVmPrimitive,
     isVmArray,
@@ -7,22 +10,21 @@ import {
     isVmExtern,
     isVmModule,
     isVmWrapper,
-    getVmFunctionInfo,
-    type TypeName,
-    type VmAny,
-    type VmImmutable,
-    type VmRecord,
-    type VmValue,
-    type VmArray,
-    type VmConst,
-    type VmPrimitive,
-    type VmFunction,
+} from '../helpers/types.js';
+import type {
+    TypeName,
+    VmAny,
+    VmImmutable,
+    VmRecord,
+    VmValue,
+    VmArray,
+    VmConst,
+    VmPrimitive,
+    VmFunction,
 } from './types/index.js';
-import { hasOwnEnumerable, isNaN, isSafeInteger, keys, create } from '../helpers/utils.js';
 
 const { abs, min, trunc, ceil } = Math;
 const { slice, at } = Array.prototype;
-const { POSITIVE_INFINITY, NEGATIVE_INFINITY } = Number;
 
 const isSame = (a: VmValue, b: VmValue): boolean => {
     // Check for NaN
@@ -290,7 +292,7 @@ export const $Call = (func: VmValue, args: readonly VmAny[]): VmValue => {
     if (isVmFunction(func)) {
         return func(...(args as readonly VmValue[])) ?? null;
     }
-    throw new VmError(`Expected callable, got ${$Type(func)}`, null);
+    throw new VmError(`Value is not callable: ${display(func)}`, null);
 };
 export const $Type = (value: VmAny): TypeName => {
     if (value === undefined || value === null) return 'nil';
@@ -302,70 +304,15 @@ export const $Type = (value: VmAny): TypeName => {
 };
 export const $ToBoolean = (value: VmAny): boolean => {
     $AssertInit(value);
-    return value != null && value !== false;
+    return toBoolean(value, undefined);
 };
-/** 将值转为字符串 */
-function numberToString(value: number): string {
-    if (isNaN(value)) return 'nan';
-    if (value === Infinity) return 'inf';
-    if (value === -Infinity) return '-inf';
-    return String(value);
-}
-
-/** 将值转为字符串 */
-export function $InnerToString(value: VmAny, useBraces: boolean): string {
-    if (value == null) return 'nil';
-    if (isVmWrapper(value)) return value.toString(useBraces);
-    if (typeof value == 'function') {
-        const name = getVmFunctionInfo(value)?.fullName;
-        return name ? `<function ${name}>` : `<function>`;
-    }
-    if (isVmArray(value)) {
-        const strings: string[] = [];
-        for (const item of value) {
-            strings.push($InnerToString(item, true));
-        }
-        // 在 join 过程中会自动把 null/undefined 和 empty slot 转为 ''
-        // 与 innerToString 行为不一致
-        const results = strings.join(', ');
-        if (!useBraces) return results;
-        return `[${results}]`;
-    }
-    if (typeof value == 'object') {
-        const entries = keys(value)
-            .map((key) => `${key}: ${$InnerToString(value[key], true)}`)
-            .join(', ');
-        if (!useBraces) return entries;
-        return `(${entries})`;
-    }
-    if (typeof value == 'number') {
-        return numberToString(value);
-    }
-    return String(value);
-}
 export const $ToString = (value: VmAny): string => {
     $AssertInit(value);
-    if (typeof value == 'string') return value;
-    if (value === null) return '';
-    return $InnerToString(value, false);
+    return toString(value, undefined);
 };
 export const $ToNumber = (value: VmAny): number => {
     $AssertInit(value);
-    if (typeof value == 'number') return value;
-    if (value == null) return 0;
-    if (typeof value == 'string') {
-        value = value.trim();
-        if (value === '') return 0;
-        if (value === 'inf' || value === '+inf' || value === 'Infinity' || value === '+Infinity') {
-            return POSITIVE_INFINITY;
-        }
-        if (value === '-inf' || value === '-Infinity') {
-            return NEGATIVE_INFINITY;
-        }
-        return Number(value);
-    }
-    if (typeof value == 'boolean') return value ? 1 : 0;
-    return Number.NaN;
+    return toNumber(value, undefined);
 };
 export const $IsBoolean = (value: VmAny): value is boolean => {
     $AssertInit(value);
@@ -473,36 +420,8 @@ export const $ArraySpread = (array: VmAny): Iterable<VmConst | undefined> => {
     throw new VmError(`Expected array, iterable extern or nil, got ${$Type(array)}`, []);
 };
 
-/** 渲染数字 */
-function formatNumber(value: number): string {
-    if (!Number.isFinite(value)) return numberToString(value);
-    if (value === 0) return '0';
-    const s = value.toString();
-    let ps;
-    const abs = Math.abs(value);
-    if (abs >= 1000 || abs < 0.001) {
-        const ps1 = value.toExponential();
-        const ps2 = value.toExponential(5);
-        ps = ps1.length < ps2.length ? ps1 : ps2;
-    } else {
-        ps = value.toPrecision(6);
-    }
-    return ps.length < s.length ? ps : s;
-}
-
 export const $Format = (value: VmAny, format: VmAny): string => {
     $AssertInit(value);
-    const f = format == null ? '' : typeof format == 'string' ? format.trim() : $ToString(format);
-
-    if (typeof value == 'number') {
-        if (/^\.\d+$/.test(f)) {
-            let digits = Math.trunc(Number(f.slice(1)));
-            if (!(digits <= 100)) digits = 100;
-            return value.toFixed(digits);
-        } else {
-            return formatNumber(value);
-        }
-    }
-
-    return $ToString(value);
+    const f = format == null ? '' : $ToString(format);
+    return toFormat(value, f);
 };

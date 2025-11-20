@@ -1,14 +1,9 @@
+import { VM_ARRAY_MAX_LENGTH } from '../../../../helpers/constants.js';
+import { isVmArray, isVmRecord } from '../../../../helpers/types.js';
 import { isArray, isSafeInteger } from '../../../../helpers/utils.js';
 import { Element } from '../../../helpers.js';
 import { $ToNumber, $ToString } from '../../../operations.js';
-import {
-    isVmArray,
-    isVmRecord,
-    VM_ARRAY_MAX_LENGTH,
-    type VmArray,
-    type VmConst,
-    type VmValue,
-} from '../../../types/index.js';
+import type { VmArray, VmConst, VmValue } from '../../../types/index.js';
 import { VmLib, expectArrayOrRecord, expectConst, throwError } from '../../_helpers.js';
 
 const arrIndex = (index: NonNullable<VmConst>): number => {

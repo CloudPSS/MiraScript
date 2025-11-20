@@ -1,6 +1,6 @@
 import type { VmContext, VmValue } from './index.js';
 
-const kVmScript = Symbol.for('mirascript.vm.script');
+declare const kVmScript: unique symbol;
 
 /** Mirascript 脚本 */
 export type VmScriptLike = (global?: VmContext) => VmValue;
@@ -11,8 +11,3 @@ export type VmScript = VmScriptLike & {
     /** 原始代码 */
     readonly source: string;
 };
-
-/** 检查是否为 Mirascript 脚本 */
-export function isVmScript(value: unknown): value is VmScript {
-    return typeof value === 'function' && (value as VmScript)[kVmScript] === true;
-}

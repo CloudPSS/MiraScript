@@ -1,26 +1,23 @@
 import type { Writable } from 'type-fest';
-import { VmError } from '../error.js';
-import { $ToNumber, $Type } from '../operations.js';
-import {
-    isVmArray,
-    isVmFunction,
-    type VmExtern,
-    type VmFunction,
-    type VmAny,
-    type VmArray,
-    type VmValue,
-    isVmRecord,
-    type VmRecord,
-    type VmModule,
-    isVmPrimitive,
-    type VmConst,
-    isVmConst,
-    VM_ARRAY_MAX_LENGTH,
-    isVmCallable,
-} from '../types/index.js';
-import type { VmFunctionLike, VmFunctionOption } from '../types/function.js';
-import { Cp } from '../helpers.js';
+import { VM_ARRAY_MAX_LENGTH } from '../../helpers/constants.js';
 import { isNaN, entries, fromEntries } from '../../helpers/utils.js';
+import { toNumber } from '../../helpers/convert.js';
+import { display } from '../../helpers/serialize.js';
+import { isVmArray, isVmFunction, isVmPrimitive, isVmConst, isVmCallable, isVmRecord } from '../../helpers/types.js';
+import { VmError } from '../../helpers/error.js';
+import type {
+    VmExtern,
+    VmFunction,
+    VmAny,
+    VmArray,
+    VmValue,
+    VmRecord,
+    VmModule,
+    VmConst,
+    VmFunctionLike,
+    VmFunctionOption,
+} from '../types/index.js';
+import { Cp } from '../helpers.js';
 
 /** 抛出异常 */
 export function throwError(message: string, recovered: VmAny | (() => VmAny)): never {
@@ -35,10 +32,10 @@ export function throwUnexpectedTypeError(
     value: VmAny,
     recovered: VmAny | (() => VmAny),
 ): never {
-    const actual = $Type(value);
-    if (typeof name == 'string') throwError(`Expected ${expected} for parameter '${name}', got ${actual}`, recovered);
+    const actual = display(value);
+    if (typeof name == 'string') throwError(`Argument '${name}' is not ${expected}: ${actual}`, recovered);
     const pos = name <= 0 ? 'first' : name <= 1 ? 'second' : name + 1 + 'th';
-    throwError(`Expected ${expected} at the ${pos} position, got ${actual}`, recovered);
+    throwError(`Argument at the ${pos} position is not ${expected}: ${actual}`, recovered);
 }
 
 /** 重新抛出异常 */
@@ -138,8 +135,7 @@ export function getNumbers(args: readonly VmAny[]): number[] {
     if (args.length === 1 && isVmArray(args[0])) args = args[0];
     const numbers: number[] = [];
     for (const arg of args) {
-        if (arg == null) continue;
-        numbers.push($ToNumber(arg));
+        numbers.push(toNumber(arg, undefined));
     }
     return numbers;
 }

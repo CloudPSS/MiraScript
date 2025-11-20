@@ -1,15 +1,11 @@
-import {
-    VmFunction,
-    type VmAny,
-    type VmImmutable,
-    type VmValue,
-    wrapToVmValue,
-    isVmAny,
-    type VmFunctionLike,
-} from './index.js';
 import { create, entries, keys } from '../../helpers/utils.js';
+import { isVmAny } from '../../helpers/types.js';
+import { VmError } from '../../helpers/error.js';
+import { kVmContext } from '../../helpers/constants.js';
 import type * as global from '../lib/global/index.js';
-import { VmError } from '../error.js';
+import type { VmAny, VmImmutable, VmValue, VmFunctionLike } from './index.js';
+import { wrapToVmValue } from './boundary.js';
+import { VmFunction } from './function.js';
 
 /** 全局导入的标准库 */
 type GlobalKeys = keyof typeof global;
@@ -21,7 +17,6 @@ type ToGlobalValue<T extends GlobalKeys> = (typeof global)[T] extends VmFunction
 type VmContextBase = {
     [key in GlobalKeys]: ToGlobalValue<key>;
 };
-const kVmContext = Symbol.for('mirascript.vm.context');
 /** MiraScript 执行上下文的基础，仅包含标准库 */
 export type VmSharedContext = VmContextBase & Record<string, VmImmutable>;
 /** MiraScript 执行上下文 */
@@ -183,10 +178,4 @@ export function createVmContext(...args: CreateVmContextWithValues | CreateVmCon
         }
     }
     return new ValueVmContext(env, describer ?? undefined);
-}
-
-/** 检查是否为执行上下文 */
-export function isVmContext(context: unknown): context is VmContext {
-    if (context == null || typeof context != 'object') return false;
-    return (context as VmContext)[kVmContext] === true;
 }

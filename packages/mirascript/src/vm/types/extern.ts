@@ -1,9 +1,11 @@
-import { VmError } from '../error.js';
-import { VmWrapper } from './wrapper.js';
-import type { TypeName, VmAny, VmConst, VmPrimitive, VmValue } from './index.js';
+import { VmError } from '../../helpers/error.js';
 import { getPrototypeOf, hasOwn, apply, isArray } from '../../helpers/utils.js';
+import { innerToString } from '../../helpers/convert.js';
+import { isVmExtern } from '../../helpers/types.js';
+import { kVmExtern } from '../../helpers/constants.js';
+import type { TypeName, VmAny, VmConst, VmPrimitive, VmValue } from './index.js';
+import { VmWrapper } from './wrapper.js';
 import { unwrapFromVmValue, wrapToVmValue } from './boundary.js';
-import { $InnerToString } from '../operations.js';
 
 const ObjectPrototype = Object.prototype;
 // eslint-disable-next-line @typescript-eslint/unbound-method
@@ -100,17 +102,13 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
         if (toString === ArrayToString && isArray(this.value)) {
             const mapped = ArrayMap.call(this.value, (item: unknown) => {
                 if (item === undefined) return '';
-                return $InnerToString(wrapToVmValue(item ?? null, null), true);
+                return innerToString(wrapToVmValue(item ?? null, null), true);
             });
             const str = mapped.join(', ');
             if (useBraces) return `[${str}]`;
             return str;
         }
-        try {
-            return String(this.value);
-        } catch {
-            return super.toString(useBraces);
-        }
+        return String(this.value);
     }
     /** @inheritdoc */
     override get type(): TypeName {
@@ -157,9 +155,4 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
     }
 }
 
-const kVmExtern = Symbol.for('mirascript.vm.extern');
 Object.defineProperty(VmExtern.prototype, kVmExtern, { value: true });
-/** 检查值是否为 Mirascript 外部值 */
-export function isVmExtern<T extends object>(value: unknown): value is VmExtern<T> {
-    return value != null && typeof value == 'object' && kVmExtern in value;
-}

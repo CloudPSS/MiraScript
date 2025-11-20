@@ -1,4 +1,4 @@
-import { serialize } from '../../../../subtle.js';
+import { display } from '../../../../helpers/serialize.js';
 import { Cp } from '../../../helpers.js';
 import { isVmArray, type VmConst, type VmArray } from '../../../types/index.js';
 import { VmLib, throwError } from '../../_helpers.js';
@@ -10,7 +10,7 @@ export const zip = VmLib(
         let len = 0;
         for (const { 0: key, 1: arr } of ets) {
             if (!isVmArray(arr)) {
-                throwError(`data[${serialize(key)}] is not an array`, null);
+                throwError(`data[${display(key)}] is not an array: ${display(arr)}`, null);
             }
             len = Math.max(len, arr.length);
         }
