@@ -1,7 +1,13 @@
 import { describeParam, expectNumberRange, throwError, throwUnexpectedTypeError, VmLib } from '../helpers.js';
-import { isFinite } from '../../../helpers/utils.js';
+import { isNaN, isFinite } from '../../../helpers/utils.js';
 import { toNumber } from '../../../helpers/convert.js';
 import { display } from '../../../helpers/serialize.js';
+
+const fromNumber = (datetime: number): number => {
+    const n = new Date(datetime).getTime();
+    if (isFinite(n)) return n;
+    throwError(`${describeParam('datetime')} is an invalid timestamp: ${display(datetime)}`, Number.NaN);
+};
 
 export const to_timestamp = VmLib(
     (datetime) => {
@@ -9,15 +15,15 @@ export const to_timestamp = VmLib(
             return Date.now();
         }
         if (typeof datetime == 'number') {
-            const n = new Date(datetime).getTime();
-            if (isFinite(n)) return n;
-            throwError(`${describeParam('datetime')} is an invalid timestamp: ${display(datetime)}`, Number.NaN);
+            return fromNumber(datetime);
         }
         if (typeof datetime != 'string') {
             throwUnexpectedTypeError('datetime', 'number | string', datetime, Number.NaN);
         }
         const num = toNumber(datetime, Number.NaN);
-        if (isFinite(num)) return num;
+        if (!isNaN(num)) {
+            return fromNumber(num);
+        }
         const parsed = Date.parse(datetime);
         if (isFinite(parsed)) return parsed;
         throwError(`${describeParam('datetime')} cannot be parsed as datetime: ${display(datetime)}`, Number.NaN);
