@@ -2,44 +2,58 @@ import { describeParam, expectNumberRange, throwError, throwUnexpectedTypeError,
 import { isNaN, isFinite } from '../../../helpers/utils.js';
 import { toNumber } from '../../../helpers/convert.js';
 import { display } from '../../../helpers/serialize.js';
+import type { VmAny } from '../../types/index.js';
 
-const fromNumber = (datetime: number): number => {
+const fromNumber = (datetime: number, fallback: boolean): number | null => {
     const n = new Date(datetime).getTime();
     if (isFinite(n)) return n;
+    if (fallback) return null;
     throwError(`${describeParam('datetime')} is an invalid timestamp: ${display(datetime)}`, Number.NaN);
 };
 
+const getTimestamp = (datetime: VmAny, fallback: boolean): number | null => {
+    if (datetime == null) {
+        return Date.now();
+    }
+    if (typeof datetime == 'number') {
+        return fromNumber(datetime, fallback);
+    }
+    if (typeof datetime != 'string') {
+        if (fallback) return null;
+        throwUnexpectedTypeError('datetime', 'number | string', datetime, Number.NaN);
+    }
+    const num = toNumber(datetime, Number.NaN);
+    if (!isNaN(num)) {
+        return fromNumber(num, fallback);
+    }
+    const parsed = Date.parse(datetime);
+    if (isFinite(parsed)) return parsed;
+    if (fallback) return null;
+    throwError(`${describeParam('datetime')} cannot be parsed as datetime: ${display(datetime)}`, Number.NaN);
+};
+
 export const to_timestamp = VmLib(
-    (datetime) => {
-        if (datetime == null) {
-            return Date.now();
-        }
-        if (typeof datetime == 'number') {
-            return fromNumber(datetime);
-        }
-        if (typeof datetime != 'string') {
-            throwUnexpectedTypeError('datetime', 'number | string', datetime, Number.NaN);
-        }
-        const num = toNumber(datetime, Number.NaN);
-        if (!isNaN(num)) {
-            return fromNumber(num);
-        }
-        const parsed = Date.parse(datetime);
-        if (isFinite(parsed)) return parsed;
-        throwError(`${describeParam('datetime')} cannot be parsed as datetime: ${display(datetime)}`, Number.NaN);
+    (datetime, fallback) => {
+        const timestamp = getTimestamp(datetime, fallback !== undefined);
+        if (timestamp == null) return fallback;
+        return timestamp;
     },
     {
         summary: '将数据转换为 Unix 毫秒时间戳',
-        params: { datetime: '要转换的数据，默认为当前时间' },
-        paramsType: { datetime: 'number | string' },
-        returnsType: 'number',
+        params: {
+            datetime: '要转换的数据，默认为当前时间',
+            fallback: '转换失败时的返回值',
+        },
+        paramsType: { datetime: 'number | string', fallback: 'any' },
+        returnsType: 'number | type(fallback)',
         examples: ['to_timestamp("1970-01-01T00:00:00Z") // 0'],
     },
 );
 
 export const to_datetime = VmLib(
-    (datetime, offset) => {
-        const timestamp = to_timestamp(datetime);
+    (datetime, offset, fallback) => {
+        const timestamp = getTimestamp(datetime, fallback !== undefined);
+        if (timestamp == null) return fallback;
         const o = expectNumberRange('offset', offset ?? 0, -24, 24);
         const dateOffset = new Date(timestamp + o * 1000 * 60 * 60);
         return {
@@ -59,9 +73,10 @@ export const to_datetime = VmLib(
         params: {
             datetime: '要转换的数据，默认为当前时间',
             offset: '时区偏移量（单位：小时），默认为 0',
+            fallback: '转换失败时的返回值',
         },
-        paramsType: { datetime: 'number | string', offset: 'number' },
-        returnsType: 'Date',
+        paramsType: { datetime: 'number | string', offset: 'number', fallback: 'any' },
+        returnsType: 'Date | type(fallback)',
         examples: [
             `
 to_datetime(0)
@@ -76,15 +91,19 @@ to_datetime(0)
 );
 
 export const to_iso8601 = VmLib(
-    (datetime) => {
-        const timestamp = to_timestamp(datetime);
+    (datetime, fallback) => {
+        const timestamp = getTimestamp(datetime, fallback !== undefined);
+        if (timestamp == null) return fallback;
         return new Date(timestamp).toISOString();
     },
     {
         summary: '将数据转换为 ISO 8601 格式的字符串',
-        params: { datetime: '要转换的数据，默认为当前时间' },
-        paramsType: { datetime: 'number | string' },
-        returnsType: 'string',
+        params: {
+            datetime: '要转换的数据，默认为当前时间',
+            fallback: '转换失败时的返回值',
+        },
+        paramsType: { datetime: 'number | string', fallback: 'any' },
+        returnsType: 'string | type(fallback)',
         examples: ['to_iso8601(0) // "1970-01-01T00:00:00.000Z"'],
     },
 );

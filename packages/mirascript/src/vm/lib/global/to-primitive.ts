@@ -1,5 +1,5 @@
 import { toBoolean, toFormat, toNumber, toString } from '../../../helpers/convert.js';
-import { required, VmLib } from '../helpers.js';
+import { expectString, required, VmLib } from '../helpers.js';
 
 export const to_string = VmLib(
     (data, fallback) => {
@@ -55,8 +55,7 @@ export const to_boolean = VmLib(
 export const format = VmLib(
     (data, format) => {
         required('data', data, '');
-        required('format', format, '');
-        return toFormat(data, toString(format, ''));
+        return toFormat(data, expectString('format', format));
     },
     {
         summary: '将数据格式化为指定格式的字符串',

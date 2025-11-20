@@ -31,7 +31,7 @@ export const from_json = VmLib(
         try {
             return parse(json);
         } catch (ex) {
-            if (fallback != null) return fallback;
+            if (fallback !== undefined) return fallback;
             rethrowError('Invalid JSON', ex, null);
         }
     },
