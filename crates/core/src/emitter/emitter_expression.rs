@@ -806,12 +806,16 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 if let Some(f) = number_constant(expression) {
                     let r = expr.range();
                     match token.kind {
-                        TokenKind::Operator(Operator::Plus) => self.op_number(r, ret, f),
-                        TokenKind::Operator(Operator::Minus) => self.op_number(r, ret, -f),
-                        TokenKind::Operator(Operator::Exclamation) => self.op_bool(r, ret, false),
-                        _ => unreachable!(),
+                        TokenKind::Operator(Operator::Plus) => {
+                            self.op_number(r, ret, f);
+                            return;
+                        }
+                        TokenKind::Operator(Operator::Minus) => {
+                            self.op_number(r, ret, -f);
+                            return;
+                        }
+                        _ => (),
                     };
-                    return;
                 }
 
                 let reg = self.emit_expression_reg(expression, brk);

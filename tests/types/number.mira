@@ -15,7 +15,7 @@ t_ne(zero, n_zero);
 t_ne([zero], [n_zero]);
 t_eq(-1 * zero, n_zero);
 t_eq(zero / zero, nan);
-t_eq((zero / zero, '' / false), (nan, nan));
+t_eq((zero / zero, ' 0 ' / false), (nan, nan));
 t_eq(zero - zero, zero);
 t_eq(zero + zero, zero);
 t_eq(n_zero - n_zero, zero);
@@ -35,6 +35,24 @@ t_eq(-inf / -inf, nan);
 t_eq(inf / -inf, nan);
 t_eq(-inf / inf, nan);
 
+t_throws(fn { '' / zero });
+t_throws(fn { +'\n' });
+t_throws(fn { +'' });
+t_throws(fn { +'NAN' });
+t_throws(fn { +'Inf' });
+t_throws(fn { +'infinity' });
+t_eq(+`0`, 0);
+t_eq(+`  123  `, 123);
+t_eq(+`-0`, -0);
+t_eq(+`nan`, nan);
+t_eq(+`NaN`, nan);
+t_eq(+`inf`, inf);
+t_eq(+`+inf`, inf);
+t_eq(+`-inf`, -inf);
+t_eq(+`Infinity`, inf);
+t_eq(+`+Infinity`, inf);
+t_eq(+`-Infinity`, -inf);
+
 t_true(nan != nan);
 t_false(nan =~ nan);
 t_true(nan is nan);
@@ -42,3 +60,8 @@ t_true(nan is nan);
 t_false(0 in 0);
 t_false(nan in 0);
 t_false(nan in nan);
+
+t_throws(fn {
+  let n = 0;
+  n.f = 1;
+});
