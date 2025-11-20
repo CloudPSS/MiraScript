@@ -12,6 +12,7 @@ export const all = VmLib(
         if (isVmArray(data)) {
             for (let i = 0; i < data.length; i++) {
                 Cp();
+                /* c8 ignore next */
                 const value = data[i] ?? null;
                 const ret = $Call(predicate, [value, i, data]);
                 if (!toBoolean(ret, undefined)) return false;
@@ -20,6 +21,7 @@ export const all = VmLib(
         } else {
             for (const [key, v] of entries(data)) {
                 Cp();
+                /* c8 ignore next */
                 const value = v ?? null;
                 const ret = $Call(predicate, [value, key, data]);
                 if (!toBoolean(ret, undefined)) return false;
@@ -46,6 +48,7 @@ export const any = VmLib(
         if (isVmArray(data)) {
             for (let i = 0; i < data.length; i++) {
                 Cp();
+                /* c8 ignore next */
                 const value = data[i] ?? null;
                 const ret = $Call(predicate, [value, i, data]);
                 if (toBoolean(ret, undefined)) return true;
@@ -54,6 +57,7 @@ export const any = VmLib(
         } else {
             for (const [key, v] of entries(data)) {
                 Cp();
+                /* c8 ignore next */
                 const value = v ?? null;
                 const ret = $Call(predicate, [value, key, data]);
                 if (toBoolean(ret, undefined)) return true;

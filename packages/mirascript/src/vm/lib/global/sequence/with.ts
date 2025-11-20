@@ -8,7 +8,7 @@ import { VmLib, expectArrayOrRecord, expectConst, throwError } from '../../helpe
 
 const arrIndex = (index: NonNullable<VmConst>): number => {
     const idx = Math.trunc(toNumber(index, Number.NaN));
-    if (isNaN(idx) || idx <= 0) {
+    if (isNaN(idx) || idx < 0) {
         throwError('Array index must be a non-negative integer', index);
     }
     if (idx >= VM_ARRAY_MAX_LENGTH) {
@@ -89,11 +89,9 @@ const _with = VmLib(
                 let val: VmConst;
                 if (isVmArray(key)) {
                     index = arrIndex(key[0]!);
-                    if (index < 0) continue;
                     val = withInner(result[index], key, 1, value);
                 } else {
                     index = arrIndex(key);
-                    if (index < 0) continue;
                     val = value;
                 }
                 while (index > result.length) {
