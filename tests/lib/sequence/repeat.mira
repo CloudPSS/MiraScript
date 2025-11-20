@@ -9,4 +9,5 @@ t_throws(fn { repeat(()) });
 t_throws(fn { repeat((), '') });
 t_throws(fn { repeat((), 'nan') });
 t_throws(fn { repeat(1, inf) });
+t_throws(fn { repeat(1, 1e100) });
 t_throws(fn { repeat(1, -1) });
