@@ -8,6 +8,20 @@ const ORIGIN = `mira://MiraScript/`;
 const PREFIX = '//# ';
 const SOURCE_URL = `${PREFIX}sourceURL`;
 const SOURCE_MAPPING_URL = `${PREFIX}sourceMappingURL`;
+// 前两行固定为：
+// (function anonymous($Add,$Aeq, ...
+// ) {
+const SOURCE_OFFSET = 3;
+
+/**
+ * Node.js Buffer 类型的简易声明，@mirascript/playground 调试环境下会直接加载此文件
+ */
+declare class Buffer {
+    /** @inheritdoc */
+    static from(str: string, encoding: 'utf8'): Buffer;
+    /** @inheritdoc */
+    toString(encoding: 'base64'): string;
+}
 
 const toDataUrl: (json: string) => string =
     typeof Buffer == 'function' && typeof Buffer.from == 'function'
@@ -83,7 +97,7 @@ let sourceId = 1;
 export function createSourceMap(
     source: ScriptInput | undefined,
     sourcemaps: readonly IRange[],
-    globalLine: string | undefined,
+    codeLines: readonly string[],
     globals: GlobalMap,
     options: TranspileOptions,
 ): [string, string] {
@@ -112,10 +126,7 @@ export function createSourceMap(
         }
         map.addMapping({
             generated: {
-                // 前两行固定为：
-                // (function anonymous($Add,$Aeq, ...
-                // ) {
-                line: i + 3,
+                line: i + SOURCE_OFFSET,
                 column: 0,
             },
             original: {
@@ -128,7 +139,7 @@ export function createSourceMap(
     if (!hasStartMap) {
         map.addMapping({
             generated: {
-                line: 3,
+                line: SOURCE_OFFSET,
                 column: SCRIPT_PREFIX.length - 'CpEnter();'.length,
             },
             original: {
@@ -138,6 +149,7 @@ export function createSourceMap(
             source: fileName,
         });
     }
+    const globalLine = codeLines[0];
     if (globalLine?.includes(GLOBAL_HINT)) {
         addGlobalMappings(globalLine, `${fileName} <globals>`, map, globals);
     }

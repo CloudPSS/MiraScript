@@ -717,8 +717,7 @@ export class Emitter {
     /** 添加源映射 */
     addSourceMap(): void {
         if (!this.options.sourceMap) return;
-        this.codeLines.push(
-            ...createSourceMap(this.source, this.sourcemaps, this.codeLines[0], this.globals, this.options),
-        );
+        const mapLines = createSourceMap(this.source, this.sourcemaps, this.codeLines, this.globals, this.options);
+        this.codeLines.push(...mapLines);
     }
 }
