@@ -1,9 +1,10 @@
 import { OpCode } from '@mirascript/bindings';
-import type { VmConst, VmPrimitive } from '../vm/index.js';
-import { $ToString } from '../vm/operations.js';
-import type { ScriptInput, TranspileOptions } from './types.js';
-import type { IRange } from './diagnostic.js';
-import { SourceMapGenerator } from 'source-map-js';
+import type { VmPrimitive } from '../../vm/index.js';
+import type { ScriptInput, TranspileOptions } from '../types.js';
+import type { IRange } from '../diagnostic.js';
+import { readGlobal, type GlobalMap } from './globals.js';
+import { readConst, toJsLiteral } from './consts.js';
+import { createSourceMap } from './sourcemap.js';
 
 /** 生成代码 */
 export function emit(
@@ -18,55 +19,6 @@ export function emit(
     return code;
 }
 
-/** 解析常量 */
-function readConst(reader: DataView, offset: number): [value: VmPrimitive, consumed: number] {
-    const type = reader.getUint8(offset);
-    switch (type) {
-        /* c8 ignore next 2 */
-        case 0:
-            return [null, 1];
-        case 1:
-            return [true, 1];
-        case 2:
-            return [false, 1];
-        case 3: {
-            const ordinal = reader.getInt32(offset + 1, true);
-            return [ordinal, 5];
-        }
-        case 4: {
-            const num = reader.getFloat64(offset + 1, true);
-            return [num, 9];
-        }
-        case 5: {
-            const len = reader.getUint32(offset + 1, true);
-            const str = new TextDecoder().decode(new Uint8Array(reader.buffer, reader.byteOffset + offset + 5, len));
-            return [str, 5 + len];
-        }
-        /* c8 ignore next 2 */
-        default:
-            throw new Error(`Unknown constant type: ${type}`);
-    }
-}
-
-/** 将值转为 JS */
-function toJavascript(value: VmConst | undefined): string {
-    /* c8 ignore next 2 */
-    if (value === null) return 'null';
-    if (value === undefined) return 'undefined';
-    if (typeof value == 'object' || typeof value == 'string') {
-        return JSON.stringify(value);
-    }
-    // JSON 无法处理 NaN 等特殊数字
-    if (value === 0) {
-        if (1 / value === -Infinity) return '-0';
-        return '0';
-    }
-    return String(value);
-}
-
-const ORIGIN = `mira://MiraScript/`;
-let sourceId = 1;
-
 /** 创建数组 */
 function createArray<T>(length: number, fn: (index: number) => T): T[] {
     // micro bench shows that this is faster than Array.from
@@ -80,7 +32,7 @@ function createArray<T>(length: number, fn: (index: number) => T): T[] {
 const SCRIPT_PREFIX = `'use strict'; return ((global = GlobalFallback()) => { try { CpEnter();`;
 const GLOBAL_HINT = `/* globals */`;
 /** 代码生成 */
-class Emitter {
+export class Emitter {
     constructor(
         readonly source: ScriptInput,
         readonly chunk: Uint8Array,
@@ -106,7 +58,7 @@ class Emitter {
         for (let i = 0, index = 0; i < this.constSize; index++) {
             const [constant, size] = readConst(this.constReader, i);
             this.constVals.push(constant);
-            this.constLits.push(toJavascript(constant));
+            this.constLits.push(toJsLiteral(constant));
             i += size;
         }
     }
@@ -125,24 +77,10 @@ class Emitter {
         return '  '.repeat(this.identCounter + len);
     }
 
-    readonly globals = new Map<number, [val: string, lit: string, eager: boolean, expr: string, name: string]>();
+    readonly globals: GlobalMap = new Map();
     /** 读取全局变量 */
     private rg(constIdx: number, eager: boolean): string {
-        const cached = this.globals.get(constIdx);
-        if (cached != null) {
-            if (eager && !cached[2]) {
-                cached[2] = true;
-                cached[3] = cached[0];
-            }
-            return cached[3];
-        }
-        const constName = this.constVals[constIdx]!;
-        const name = $ToString(constName);
-        const lit = typeof constName == 'string' ? this.constLits[constIdx]! : JSON.stringify(name);
-        const val = `g${this.globals.size + 1}`;
-        const expr = eager ? val : `(${val} === undefined ? (${val} = global.get(${lit})) : ${val})`;
-        this.globals.set(constIdx, [val, lit, eager, expr, name]);
-        return expr;
+        return readGlobal(this, constIdx).e;
     }
 
     readonly codeLines: string[] = [];
@@ -769,9 +707,8 @@ class Emitter {
         this.readCode();
         if (this.globals.size > 0) {
             let globalsInit = '';
-            for (const [val, lit, eager] of this.globals.values()) {
-                const expr = eager ? `${val} = global.get(${lit})` : val;
-                globalsInit += globalsInit ? `, ${expr}` : `var ${GLOBAL_HINT} ${expr}`;
+            for (const { v } of this.globals.values()) {
+                globalsInit += globalsInit ? `, ${v}` : `var ${GLOBAL_HINT} ${v}`;
             }
             this.codeLines[0] += globalsInit + ';';
         }
@@ -780,128 +717,8 @@ class Emitter {
     /** 添加源映射 */
     addSourceMap(): void {
         if (!this.options.sourceMap) return;
-        let fileName = (this.options.fileName ?? '').trim();
-        const hasSchema = /^\w+:/.test(fileName);
-        if (!hasSchema) {
-            if (fileName.startsWith('/')) {
-                fileName = fileName.replace(/^\/+\s*/, '');
-            }
-            if (!fileName) {
-                fileName = `${sourceId++}.${this.options.input_mode === 'Template' ? 'miratpl' : 'mira'}`;
-            }
-        }
-        const map = new SourceMapGenerator({
-            file: fileName + '.js',
-        });
-        if (typeof this.source === 'string') {
-            map.setSourceContent(fileName, this.source);
-        }
-        let hasStartMap = false;
-        for (let i = 1; i < this.sourcemaps.length; i++) {
-            const range = this.sourcemaps[i];
-            if (!range) break;
-            if (!hasStartMap && range.startLineNumber === 1 && range.startColumn === 1) {
-                hasStartMap = true;
-            }
-            map.addMapping({
-                generated: {
-                    // 前两行固定为：
-                    // (function anonymous($Add,$Aeq, ...
-                    // ) {
-                    line: i + 3,
-                    column: 0,
-                },
-                original: {
-                    line: range.startLineNumber,
-                    column: range.startColumn - 1,
-                },
-                source: fileName,
-            });
-        }
-        if (!hasStartMap) {
-            map.addMapping({
-                generated: {
-                    line: 3,
-                    column: SCRIPT_PREFIX.length - 'CpEnter();'.length,
-                },
-                original: {
-                    line: 1,
-                    column: 0,
-                },
-                source: fileName,
-            });
-        }
-        {
-            const line0 = this.codeLines[0]!;
-            const file = `${fileName} <globals>`;
-            let globals = `global;\n`;
-            map.addMapping({
-                generated: {
-                    line: 3,
-                    column: line0.indexOf(`global = `),
-                },
-                original: {
-                    line: 1,
-                    column: 0,
-                },
-                source: file,
-                name: 'global',
-            });
-            map.addMapping({
-                generated: {
-                    line: 3,
-                    column: SCRIPT_PREFIX.length,
-                },
-                original: {
-                    line: 1,
-                    column: 7,
-                },
-                source: file,
-                name: '',
-            });
-            let i = 1;
-            let pos = line0.indexOf(GLOBAL_HINT, SCRIPT_PREFIX.length) + GLOBAL_HINT.length;
-            for (const p of this.globals.values()) {
-                i++;
-                if (pos < 0) break;
-                const val = p[0];
-                pos = line0.indexOf(val, pos);
-                if (pos < 0) break;
-                const name = p[4];
-                map.addMapping({
-                    generated: {
-                        line: 3,
-                        column: pos,
-                    },
-                    original: {
-                        line: i,
-                        column: 0,
-                    },
-                    source: file,
-                    name,
-                });
-                globals += `${name};\n`;
-            }
-            map.addMapping({
-                generated: {
-                    line: 3,
-                    column: pos,
-                },
-                original: {
-                    line: i,
-                    column: 0,
-                },
-                source: file,
-                name: '',
-            });
-            map.setSourceContent(file, globals);
-        }
-        const prefix = '//# ';
-        const sourceURL = hasSchema ? fileName : `${ORIGIN}${fileName}`;
         this.codeLines.push(
-            // Prevent source map from being recognized as of this file
-            `${prefix}sourceURL=${sourceURL}.js`,
-            `${prefix}sourceMappingURL=data:application/json,${encodeURIComponent(map.toString())}`,
+            ...createSourceMap(this.source, this.sourcemaps, this.codeLines[0], this.globals, this.options),
         );
     }
 }

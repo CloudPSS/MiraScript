@@ -1,5 +1,5 @@
 import type { ScriptInput, TranspileOptions } from './types.js';
-import { emit } from './emit.js';
+import { emit } from './emit/index.js';
 import { generateBytecode } from './generate-bytecode.js';
 import { DiagnosticCode, parseDiagnostics } from './diagnostic.js';
 
