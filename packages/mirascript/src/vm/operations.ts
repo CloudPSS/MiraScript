@@ -1,6 +1,6 @@
 import { VmError } from '../helpers/error.js';
 import { hasOwnEnumerable, isNaN, isSafeInteger, keys, create } from '../helpers/utils.js';
-import { toNumber, toString, toBoolean, toFormat } from '../helpers/convert.js';
+import { toNumber, toString, toBoolean, toFormat } from '../helpers/convert/index.js';
 import { display } from '../helpers/serialize.js';
 import { isVmPrimitive, isVmArray, isVmRecord, isVmFunction, isVmExtern, isVmWrapper } from '../helpers/types.js';
 import type { TypeName, VmAny, VmImmutable, VmRecord, VmValue, VmArray, VmConst } from './types/index.js';

@@ -1,6 +1,6 @@
 import supportsColor from 'supports-color';
 import { VmError } from '../../../helpers/error.js';
-import { toString } from '../../../helpers/convert.js';
+import { toString } from '../../../helpers/convert/to-string.js';
 import type { VmAny } from '../../types/index.js';
 import { VmLib } from '../helpers.js';
 

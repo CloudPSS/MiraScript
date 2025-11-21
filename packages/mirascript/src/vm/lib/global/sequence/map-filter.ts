@@ -1,4 +1,4 @@
-import { toBoolean } from '../../../../helpers/convert.js';
+import { toBoolean } from '../../../../helpers/convert/to-boolean.js';
 import { $Call } from '../../../operations.js';
 import { isVmConst, type VmAny, type VmValue } from '../../../types/index.js';
 import { VmLib, expectCallable, expectConst, map as mapImpl } from '../../helpers.js';

@@ -1,4 +1,4 @@
-import { toNumber } from '../../../helpers/convert.js';
+import { toNumber } from '../../../helpers/convert/to-number.js';
 import { isArray } from '../../../helpers/utils.js';
 import { Cp } from '../../helpers.js';
 import { $Add, $Call, $Div, $Mul, $Sub } from '../../operations.js';

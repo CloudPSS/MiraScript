@@ -1,6 +1,6 @@
 import { VmError } from '../../helpers/error.js';
 import { getPrototypeOf, hasOwn, apply, isArray } from '../../helpers/utils.js';
-import { innerToString } from '../../helpers/convert.js';
+import { innerToString } from '../../helpers/convert/to-string.js';
 import { isVmExtern } from '../../helpers/types.js';
 import { kVmExtern } from '../../helpers/constants.js';
 import type { TypeName, VmAny, VmConst, VmPrimitive, VmValue } from './index.js';

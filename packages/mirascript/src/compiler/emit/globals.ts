@@ -1,4 +1,4 @@
-import { toString } from '../../helpers/convert.js';
+import { toString } from '../../helpers/convert/to-string.js';
 import { toJsLiteral } from './consts.js';
 import type { Emitter } from './index.js';
 

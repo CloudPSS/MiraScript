@@ -1,4 +1,4 @@
-import { toBoolean } from '../../../../helpers/convert.js';
+import { toBoolean } from '../../../../helpers/convert/to-boolean.js';
 import { entries } from '../../../../helpers/utils.js';
 import { Cp } from '../../../helpers.js';
 import { $Call, $Same } from '../../../operations.js';

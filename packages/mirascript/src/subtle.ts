@@ -1,7 +1,7 @@
 import { getModule } from '@mirascript/bindings';
 
 export * as constants from './helpers/constants.js';
-export * as convert from './helpers/convert.js';
+export * as convert from './helpers/convert/index.js';
 export { VmSharedContext, DefaultVmContext } from './vm/types/context.js';
 export * as operations from './vm/operations.js';
 export {

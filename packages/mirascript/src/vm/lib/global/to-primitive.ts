@@ -1,4 +1,4 @@
-import { toBoolean, toFormat, toNumber, toString } from '../../../helpers/convert.js';
+import { toBoolean, toFormat, toNumber, toString } from '../../../helpers/convert/index.js';
 import { expectString, required, VmLib } from '../helpers.js';
 
 export const to_string = VmLib(
