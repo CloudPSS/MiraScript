@@ -64,11 +64,15 @@ debug_print("Type of array:", type(simple_array));
 debug_print("Type of function:", type(add_function));
 
 // 真值和假值测试
-fn test_truthiness(value) { if value { "truthy" } else { "falsy" } }
+fn test_truthiness(value) {
+  if value { "truthy" } else { "falsy" }
+}
 
-debug_print("nil is", test_truthiness(nil));
+debug_print("true is", test_truthiness(true));
 debug_print("false is", test_truthiness(false));
-debug_print("0 is", test_truthiness(0));
-debug_print("'' is", test_truthiness(''));
-debug_print("[] is", test_truthiness([]));
-debug_print("() is", test_truthiness(()));
+// 不支持转换为 boolean，以下测试均会抛出异常
+// debug_print("nil is", test_truthiness(nil));
+// debug_print("0 is", test_truthiness(0));
+// debug_print("'' is", test_truthiness(''));
+// debug_print("[] is", test_truthiness([]));
+// debug_print("() is", test_truthiness(()));

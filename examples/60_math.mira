@@ -126,7 +126,7 @@ fn average(numbers) {
 
 fn variance(numbers) {
   let avg = average(numbers);
-  if avg {
+  if avg is not nil {
     let mut sum_sq_diff = 0;
     for num in numbers {
       sum_sq_diff += (num - avg)^2;
