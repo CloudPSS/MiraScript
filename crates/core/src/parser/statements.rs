@@ -89,12 +89,11 @@ fn rebind_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
 fn const_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
     seq!(Statement::Const(
         token(Keyword::Const),
-        variable_token(false, false).map(|t| {
+        variable_token(false, false).map(|mut t| {
             if t.to_id_name().is_some_and(|name| !name.starts_with('@')) {
                 t.wrap_as_unknown(DiagnosticCode::InvalidConstantName)
-            } else {
-                t
             }
+            t
         }),
         token_or_insert(Operator::Assign, DiagnosticCode::MissingBindOperator),
         expression_or_insert(|t| *t == Operator::Semicolon).map(Box::new),

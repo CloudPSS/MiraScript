@@ -47,15 +47,6 @@ impl<'s> Token<'s> {
         }
     }
 
-    pub(crate) fn wrap_as_unknown(self, error: DiagnosticCode) -> Self {
-        Token {
-            kind: TokenKind::unknown_range(self.kind, self.range.clone(), error),
-            range: self.range,
-            leading_trivia: self.leading_trivia,
-            tailing_trivia: self.tailing_trivia,
-        }
-    }
-
     pub(crate) fn empty(pos: usize) -> Self {
         Self::new(TokenKind::Empty, pos..pos)
     }
@@ -65,29 +56,12 @@ impl<'s> Token<'s> {
         recovered: R,
         error: DiagnosticCode,
     ) -> Self {
-        Self::new(
-            TokenKind::unknown_range(recovered, range.clone(), error),
-            range,
-        )
-    }
-    pub(crate) fn unknown_range<R: Into<TokenKind<'s>>>(
-        token_range: SourceRange,
-        recovered: R,
-        error_range: SourceRange,
-        error: DiagnosticCode,
-    ) -> Self {
-        Self::new(
-            TokenKind::unknown_range(recovered, error_range, error),
-            token_range,
-        )
+        Self::new(TokenKind::unknown(recovered, range.clone(), error), range)
     }
 
-    pub(crate) fn unknown_errors<E: Into<Vec<SourceDiagnostic>>, R: Into<TokenKind<'s>>>(
-        range: SourceRange,
-        recovered: R,
-        errors: E,
-    ) -> Self {
-        Self::new(TokenKind::unknown_errors(recovered, errors), range)
+    pub(crate) fn wrap_as_unknown(&mut self, error: DiagnosticCode) {
+        let kind = std::mem::replace(&mut self.kind, TokenKind::Empty);
+        self.kind = TokenKind::unknown(kind, self.range.clone(), error);
     }
 }
 

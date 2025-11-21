@@ -319,7 +319,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                             Constant::Number(_) | Constant::Ordinal(_) | Constant::String(_)
                         ) {
                             self.diagnostics.push(
-                                DiagnosticCode::NonNumberOrStringInApproxEqualExpression,
+                                DiagnosticCode::NonNumberOrStringInApproxEqual,
                                 constant.range(),
                             );
                         }
@@ -577,9 +577,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                             }
                             RecordElementBase::Spread(_, pattern) => {
                                 let ret = self.closures.add_reg();
-                                let Some(omitted) = std::mem::take(&mut omitted) else {
-                                    continue;
-                                };
+                                let omitted = std::mem::take(&mut omitted).unwrap_or_default();
                                 self.op_variadic_1(
                                     element.range(),
                                     ret,

@@ -19,10 +19,14 @@ impl<'s> TokenRef<'s> {
         Self::Borrowed(token)
     }
 
-    pub(crate) fn wrap_as_unknown(self, error: DiagnosticCode) -> Self {
+    pub(crate) fn wrap_as_unknown(&mut self, error: DiagnosticCode) {
         match self {
-            Self::Owned(token) => Self::new(token.wrap_as_unknown(error)),
-            Self::Borrowed(token) => Self::new(token.clone().wrap_as_unknown(error)),
+            Self::Owned(token) => token.wrap_as_unknown(error),
+            Self::Borrowed(token) => {
+                let mut cloned = token.clone();
+                cloned.wrap_as_unknown(error);
+                *self = Self::new(cloned);
+            }
         }
     }
 }

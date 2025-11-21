@@ -117,9 +117,8 @@ pub(super) fn token<'s>(
         alt((
             token_parser,
             eof.map(|_| TokenKind::Eof),
-            any.span().map(|range| TokenKind::Unknown {
-                recovered: None,
-                errors: vec![SourceDiagnostic::new(range, DiagnosticCode::UnknownToken)],
+            any.span().map(|range| {
+                TokenKind::unknown(TokenKind::Empty, range, DiagnosticCode::UnknownToken)
             }),
         ))
         .with_span()

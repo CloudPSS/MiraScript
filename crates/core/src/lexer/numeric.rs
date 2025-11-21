@@ -134,21 +134,21 @@ pub(super) fn number<'s>(i: &mut Input<'s>) -> Result<TokenKind<'s>> {
                         }),
                     );
                     if p.has_invalid_char {
-                        return Ok(TokenKind::unknown_range(
+                        return Ok(TokenKind::unknown(
                             result,
                             range_i,
                             DiagnosticCode::InvalidNumberLiteral,
                         ));
                     }
                     if p.integer_overflow {
-                        return Ok(TokenKind::unknown_range(
+                        return Ok(TokenKind::unknown(
                             result,
                             range_i,
                             DiagnosticCode::OverflowIntegerLiteral,
                         ));
                     }
                     if p.has_trailing_underscore {
-                        return Ok(TokenKind::unknown_range(
+                        return Ok(TokenKind::unknown(
                             result,
                             range_i,
                             DiagnosticCode::InvalidNumberLiteralUnderscore,
@@ -212,21 +212,21 @@ pub(super) fn number<'s>(i: &mut Input<'s>) -> Result<TokenKind<'s>> {
             let parse_failed = num.is_err();
             let parsed_num = num.unwrap_or_default();
             if has_invalid_char || parse_failed {
-                return Ok(TokenKind::unknown_range(
+                return Ok(TokenKind::unknown(
                     TokenKind::Number(parsed_num, NumberInfo::Invalid.into()),
                     range,
                     DiagnosticCode::InvalidNumberLiteral,
                 ));
             }
             if has_leading_underscore || has_trailing_underscore {
-                return Ok(TokenKind::unknown_range(
+                return Ok(TokenKind::unknown(
                     TokenKind::Number(parsed_num, NumberInfo::Invalid.into()),
                     range,
                     DiagnosticCode::InvalidNumberLiteralUnderscore,
                 ));
             }
             if parsed_num.is_infinite() || parsed_num.is_nan() {
-                return Ok(TokenKind::unknown_range(
+                return Ok(TokenKind::unknown(
                     TokenKind::Number(parsed_num, NumberInfo::Invalid.into()),
                     range,
                     DiagnosticCode::OverflowNumberLiteral,
@@ -247,17 +247,17 @@ fn handle_ordinal(str: &str, range: SourceRange) -> TokenKind<'_> {
     let result = if p.is_valid_ordinal {
         TokenKind::Ordinal(p.ordinal)
     } else {
-        TokenKind::unknown_range(
+        TokenKind::unknown(
             TokenKind::Ordinal(p.ordinal),
             range.clone(),
             DiagnosticCode::InvalidOrdinalLiteral,
         )
     };
     if p.has_invalid_char {
-        return TokenKind::unknown_range(result, range, DiagnosticCode::InvalidNumberLiteral);
+        return TokenKind::unknown(result, range, DiagnosticCode::InvalidNumberLiteral);
     }
     if p.has_leading_underscore || p.has_trailing_underscore {
-        return TokenKind::unknown_range(
+        return TokenKind::unknown(
             result,
             range,
             DiagnosticCode::InvalidNumberLiteralUnderscore,

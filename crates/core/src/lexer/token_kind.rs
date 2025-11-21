@@ -15,7 +15,7 @@ pub enum TokenKind<'s> {
     Operator(Operator),
     Keyword(Keyword),
     Unknown {
-        recovered: Option<Box<TokenKind<'s>>>,
+        recovered: Box<TokenKind<'s>>,
         errors: Vec<SourceDiagnostic>,
     },
     /// Contains no token, only position information.
@@ -23,20 +23,13 @@ pub enum TokenKind<'s> {
 }
 
 impl<'s> TokenKind<'s> {
-    pub(crate) fn unknown(error_range: SourceRange, error: DiagnosticCode) -> Self {
-        TokenKind::Unknown {
-            recovered: None,
-            errors: vec![SourceDiagnostic::new(error_range, error)],
-        }
-    }
-
-    pub(crate) fn unknown_range<R: Into<TokenKind<'s>>>(
+    pub(crate) fn unknown<R: Into<TokenKind<'s>>>(
         recovered: R,
         error_range: SourceRange,
         error: DiagnosticCode,
     ) -> Self {
         TokenKind::Unknown {
-            recovered: Some(Box::new(recovered.into())),
+            recovered: Box::new(recovered.into()),
             errors: vec![SourceDiagnostic::new(error_range, error)],
         }
     }
@@ -46,7 +39,7 @@ impl<'s> TokenKind<'s> {
         errors: E,
     ) -> Self {
         TokenKind::Unknown {
-            recovered: Some(Box::new(recovered.into())),
+            recovered: Box::new(recovered.into()),
             errors: errors.into(),
         }
     }
@@ -152,13 +145,7 @@ impl Display for TokenKind<'_> {
             }
             Self::Operator(op) => write!(f, "{}", op),
             Self::Keyword(kw) => write!(f, "{}", kw),
-            Self::Unknown { recovered, .. } => {
-                if let Some(recovered) = recovered {
-                    write!(f, "{recovered}")
-                } else {
-                    write!(f, "<?>")
-                }
-            }
+            Self::Unknown { recovered, .. } => write!(f, "<?{recovered}>"),
             Self::Empty => write!(f, ""),
         }
     }

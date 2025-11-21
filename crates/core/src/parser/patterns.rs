@@ -234,8 +234,8 @@ fn discard_bind_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
                     };
                     return Pattern::unknown(tokens, DiagnosticCode::UnknownPattern);
                 };
-                if rebind && let Some(kw_mut) = kw_mut {
-                    let kw_mut = kw_mut.wrap_as_unknown(DiagnosticCode::MutInRebindPattern);
+                if rebind && let Some(mut kw_mut) = kw_mut {
+                    kw_mut.wrap_as_unknown(DiagnosticCode::MutInRebindPattern);
                     return Pattern::Bind(Some(kw_mut), id);
                 }
                 if name.starts_with('@') {
@@ -318,26 +318,13 @@ fn record_like_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
                     continue;
                 }
                 let ListItem(el, _) = part;
-                let range = el.range();
                 let RecordElementBase::Spread(token, pattern) = el.as_mut() else {
                     unreachable!();
                 };
                 if pattern.is_spread_discard() {
-                    *token = Token::unknown_range(
-                        token.range(),
-                        token.kind.to_owned(),
-                        range,
-                        DiagnosticCode::SpreadDiscardInRecordPattern,
-                    )
-                    .into();
+                    token.wrap_as_unknown(DiagnosticCode::SpreadDiscardInRecordPattern);
                 } else if i != len - 1 {
-                    *token = Token::unknown_range(
-                        token.range(),
-                        token.kind.to_owned(),
-                        range,
-                        DiagnosticCode::MispositionedSpreadInRecordPattern,
-                    )
-                    .into();
+                    token.wrap_as_unknown(DiagnosticCode::MispositionedSpreadInRecordPattern);
                 }
             }
             Pattern::Record(open, parts, close)
