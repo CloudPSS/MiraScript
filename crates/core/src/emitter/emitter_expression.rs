@@ -178,10 +178,21 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 }
             }
             NonNil(expression, _) => self.declare_expression(expression),
-            Prefix(_, expression) => self.declare_expression(expression),
-            Infix(left, _, right) => {
+            Prefix(op, expression) => {
+                self.declare_expression(expression);
+                if let Expression::Literal(lit) = expression.as_ref() {
+                    self.check_static_operator_usage(op, lit);
+                }
+            }
+            Infix(left, op, right) => {
                 self.declare_expression(left);
                 self.declare_expression(right);
+                if let Expression::Literal(l_lit) = left.as_ref() {
+                    self.check_static_operator_usage(op, l_lit);
+                }
+                if let Expression::Literal(r_lit) = right.as_ref() {
+                    self.check_static_operator_usage(op, r_lit);
+                }
             }
             Is(expression, _, pattern) => {
                 self.declare_expression(expression);

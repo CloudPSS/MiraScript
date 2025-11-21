@@ -156,14 +156,10 @@ pub enum DiagnosticCode {
     // Static type checking errors
     #[strum(message = "Non-number literal cannot be used in range")]
     NonNumberInRange,
-    #[strum(message = "Non-number literal cannot be used in comparison expression")]
-    NonNumberInComparison,
+    #[strum(message = "Non-number-or-string literal cannot be used in comparison expression")]
+    NonNumberOrStringInComparison,
     #[strum(message = "Non-number literal cannot be used in arithmetic expression")]
     NonNumberInArithmetic,
-    #[strum(
-        message = "Non-number-or-string literal cannot be used in approximate-equality expression"
-    )]
-    NonNumberOrStringInApproxEqual,
     #[strum(message = "Non-boolean literal cannot be used in logical expression")]
     NonBooleanInLogical,
 

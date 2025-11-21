@@ -12,7 +12,7 @@ t_eq(nan + nan, nan);
 t_eq(nan + inf, nan);
 t_eq(inf + nan, nan);
 
-t_throws(fn { 1 + nil });
-t_throws(fn { '' + 1 });
-t_eq(true + false, 1);
-t_eq('12' + '3.5', 15.5);
+t_throws(fn { 1 + { nil } });
+t_throws(fn { ({ '' } + 1) });
+t_eq({ true } + { false }, 1);
+t_eq({ '12' } + { '3.5' }, 15.5);

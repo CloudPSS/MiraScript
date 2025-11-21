@@ -29,5 +29,5 @@ t_eq((2^3)^2, 64);
 t_eq(2^2^2^2, 65536);
 t_eq((2^2)^(2^2), 256);
 
-t_throws(fn { nil^1 });
-t_throws(fn { 1^'NAN' });
+t_throws(fn { ({ nil })^1 });
+t_throws(fn { 1^{ 'NAN' } });

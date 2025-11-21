@@ -311,15 +311,15 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     // 比较运算，本身不进行类型转换
                     self.emit_literal_constant(constant, const_reg);
                     self.op_binary(pattern.range(), success, op, value, const_reg);
-                } else if matches!(op, OpCode::Aeq | OpCode::Naeq) {
-                    // 近似比较运算，仅支持数字和字符串
+                } else {
+                    // 近似比较运算和关系运算，仅支持数字和字符串
                     if let Some(lit) = self.emit_literal_constant(constant, const_reg) {
                         if !matches!(
                             lit,
                             Constant::Number(_) | Constant::Ordinal(_) | Constant::String(_)
                         ) {
                             self.diagnostics.push(
-                                DiagnosticCode::NonNumberOrStringInApproxEqual,
+                                DiagnosticCode::NonNumberOrStringInComparison,
                                 constant.range(),
                             );
                         }
@@ -328,19 +328,6 @@ impl<'s, 'c> Emitter<'s, 'c> {
                         self.emit_constant_guard(success, pattern, value, const_reg);
                     }
                     self.op_if(pattern.range(), OpCode::If, success);
-                    self.op_binary(pattern.range(), success, op, value, const_reg);
-                    self.op_if_end(pattern.range());
-                } else {
-                    // 关系运算，仅支持数字
-                    self.emit_literal_guard(success, pattern, value, Constant::Ordinal(0));
-                    self.op_if(pattern.range(), OpCode::If, success);
-                    if !matches!(
-                        self.emit_literal_constant(constant, const_reg),
-                        Some(Constant::Number(_) | Constant::Ordinal(_)) | None
-                    ) {
-                        self.diagnostics
-                            .push(DiagnosticCode::NonNumberInComparison, constant.range());
-                    }
                     self.op_binary(pattern.range(), success, op, value, const_reg);
                     self.op_if_end(pattern.range());
                 }

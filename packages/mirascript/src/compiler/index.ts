@@ -3,7 +3,7 @@ import type { ScriptInput, TranspileOptions } from './types.js';
 import { emit } from './emit/index.js';
 import { createScript, type VmScript } from './create-script.js';
 import { compileFast } from './compile-fast.js';
-import { DiagnosticCode, formatDiagnostic, parseDiagnostics } from './diagnostic.js';
+import { DiagnosticCode, formatDiagnostics, parseDiagnostics } from './diagnostic.js';
 import { generateBytecode, generateBytecodeSync } from './generate-bytecode.js';
 import { compileWorker } from './worker-manager.js';
 await loadModule();
@@ -16,9 +16,9 @@ export type { VmScript };
 const WORKER_MIN_LEN = typeof Worker != 'function' ? Number.MAX_VALUE : 1024;
 
 /** 报告编译错误 */
-function reportDiagnostic(source: ScriptInput, diagnostics: Uint32Array): never {
+function reportDiagnostic(source: ScriptInput, diagnostics: Uint32Array, fileName: string | undefined): never {
     const parsed = parseDiagnostics(source, diagnostics);
-    const messages = parsed.errors.map(formatDiagnostic);
+    const messages = formatDiagnostics(parsed.errors, source, fileName);
     throw new Error(`Failed to compile:\n${messages.join('\n')}`);
 }
 
@@ -31,7 +31,7 @@ export function emitScript(
     options: TranspileOptions,
 ): VmScript {
     if (!code) {
-        reportDiagnostic(source, diagnostics);
+        reportDiagnostic(source, diagnostics, options.fileName);
     }
     const sourcemaps = options.sourceMap
         ? parseDiagnostics(source, diagnostics, (c) => c === DiagnosticCode.SourceMap).sourcemaps
@@ -59,7 +59,7 @@ export async function compile(this: void, source: ScriptInput, options: Transpil
     }
     const [target, diagnostics] = await compileWorker(source, options);
     if (target == null) {
-        reportDiagnostic(source, diagnostics);
+        reportDiagnostic(source, diagnostics, options.fileName);
     }
     return createScript(source, target);
 }
