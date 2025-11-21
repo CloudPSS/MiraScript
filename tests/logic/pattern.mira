@@ -27,8 +27,7 @@ t_false(@str is =~ @num);
 t_true(@str =~ @num);
 t_false(@str is >= @num);
 t_true(@str >= @num);
-// FIXME: 下面两行测试用例的结果与预期不符
-// t_false(@str is >= @str);
+t_false(@str is >= @str);
 t_true(@str >= @str);
 t_true(@num is >= @num);
 t_true(@num >= @num);

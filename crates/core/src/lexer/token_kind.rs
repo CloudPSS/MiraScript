@@ -75,6 +75,19 @@ impl<'s> TokenKind<'s> {
             _ => None,
         }
     }
+
+    pub(crate) fn is_number_nan_literal(&self) -> bool {
+        self.is_number_literal() || matches!(self, Self::Keyword(Keyword::Nan))
+    }
+    pub(crate) fn is_number_literal(&self) -> bool {
+        self.is_finite_number_literal() || matches!(self, Self::Keyword(Keyword::Inf))
+    }
+    pub(crate) fn is_finite_number_literal(&self) -> bool {
+        self.is_number() || self.is_ordinal()
+    }
+    pub(crate) fn is_boolean_literal(&self) -> bool {
+        matches!(self, Self::Keyword(Keyword::True | Keyword::False))
+    }
 }
 
 impl PartialEq for TokenKind<'_> {

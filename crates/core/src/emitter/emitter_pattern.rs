@@ -306,15 +306,44 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     self.unreachable(op, constant, file!(), line!());
                     return;
                 };
-                let reg = self.closures.add_reg();
-                if let Some(lit) = self.emit_literal_constant(constant, reg) {
-                    self.emit_literal_guard(success, pattern, value, lit);
+                let const_reg = self.closures.add_reg();
+                if matches!(op, OpCode::Eq | OpCode::Neq) {
+                    // 比较运算，本身不进行类型转换
+                    self.emit_literal_constant(constant, const_reg);
+                    self.op_binary(pattern.range(), success, op, value, const_reg);
+                } else if matches!(op, OpCode::Aeq | OpCode::Naeq) {
+                    // 近似比较运算，仅支持数字和字符串
+                    if let Some(lit) = self.emit_literal_constant(constant, const_reg) {
+                        if !matches!(
+                            lit,
+                            Constant::Number(_) | Constant::Ordinal(_) | Constant::String(_)
+                        ) {
+                            self.diagnostics.push(
+                                DiagnosticCode::NonNumberOrStringInApproxEqualExpression,
+                                constant.range(),
+                            );
+                        }
+                        self.emit_literal_guard(success, pattern, value, lit);
+                    } else {
+                        self.emit_constant_guard(success, pattern, value, const_reg);
+                    }
+                    self.op_if(pattern.range(), OpCode::If, success);
+                    self.op_binary(pattern.range(), success, op, value, const_reg);
+                    self.op_if_end(pattern.range());
                 } else {
-                    self.emit_constant_guard(success, pattern, value, reg);
+                    // 关系运算，仅支持数字
+                    self.emit_literal_guard(success, pattern, value, Constant::Ordinal(0));
+                    self.op_if(pattern.range(), OpCode::If, success);
+                    if !matches!(
+                        self.emit_literal_constant(constant, const_reg),
+                        Some(Constant::Number(_) | Constant::Ordinal(_)) | None
+                    ) {
+                        self.diagnostics
+                            .push(DiagnosticCode::NonNumberInComparison, constant.range());
+                    }
+                    self.op_binary(pattern.range(), success, op, value, const_reg);
+                    self.op_if_end(pattern.range());
                 }
-                self.op_if(pattern.range(), OpCode::If, success);
-                self.op_3(pattern.range(), op, success, value, reg);
-                self.op_if_end(pattern.range());
             }
             Range(l, token, r) => {
                 if success.is_empty() {
@@ -700,10 +729,6 @@ impl<'s, 'c> Emitter<'s, 'c> {
             And(left, op, right) | Or(left, op, right) => {
                 // No short-circuiting in pattern matching
                 if success.is_empty() {
-                    if pattern.is_or() {
-                        self.diagnostics
-                            .push(DiagnosticCode::MisleadingOrInIrrefutablePattern, op.range());
-                    }
                     self.emit_pattern(Register::EMPTY, left, value, bind_type);
                     self.emit_pattern(Register::EMPTY, right, value, bind_type);
                 } else {

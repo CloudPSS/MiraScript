@@ -139,11 +139,9 @@ fn literal_constant_pattern<'s, const CUT: bool>(i: &mut Input<'s>) -> Result<Pa
                         DiagnosticCode::ExclamationInLiteralPattern,
                     );
                 }
-                if !(l.is_number() || l.is_ordinal() || *l == Keyword::Inf) {
-                    return Pattern::Literal(None, l.clone()).wrap_as_unknown(
-                        [op.into(), l],
-                        DiagnosticCode::UnexpectedOperatorInLiteralPattern,
-                    );
+                if !(l.is_number_literal()) {
+                    return Pattern::Literal(None, l.clone())
+                        .wrap_as_unknown([op.into(), l], DiagnosticCode::NonNumberInArithmetic);
                 }
                 Pattern::Literal(Some(op.into()), l)
             })
@@ -184,14 +182,14 @@ fn range_pattern<'s>(i: &mut Input<'s>) -> Result<Pattern<'s>> {
     fn range_guard<'s>(p: Pattern<'s>) -> Box<Pattern<'s>> {
         match p {
             Pattern::Literal(op, l) => {
-                if l.is_number() || l.is_ordinal() || *l == Keyword::Inf {
+                if l.is_number_literal() {
                     Pattern::Literal(op, l)
                 } else {
                     let tokens = match op {
                         Some(op) => vec![op, l],
                         _ => vec![l],
                     };
-                    Pattern::unknown(tokens, DiagnosticCode::UnexpectedLiteralInRangePattern)
+                    Pattern::unknown(tokens, DiagnosticCode::NonNumberInRange)
                 }
             }
             _ => p,

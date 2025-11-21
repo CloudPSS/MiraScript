@@ -188,11 +188,10 @@ const makeDeepRecord = (depth: number): VmRecord => {
     return { d: makeDeepRecord(depth - 1) };
 };
 
-// TODO: fix stack overflow
 for (const depth of [0, 1, 5, 10, 20, 100, 128]) {
     test(`deep array ${depth}`, serializeRoundTrip, makeDeepArray(depth));
     test(`deep record ${depth}`, serializeRoundTrip, makeDeepRecord(depth));
 }
 
-test('deep array maxDepth', (t) => t.deepEqual(serialize(makeDeepArray(256)), serialize(makeDeepArray(128))));
-test('deep record maxDepth', (t) => t.deepEqual(serialize(makeDeepRecord(256)), serialize(makeDeepRecord(128))));
+test('deep array maxDepth', (t) => t.deepEqual(serialize(makeDeepArray(512)), serialize(makeDeepArray(128))));
+test('deep record maxDepth', (t) => t.deepEqual(serialize(makeDeepRecord(512)), serialize(makeDeepRecord(128))));
