@@ -54,7 +54,8 @@ export class SignatureHelpProvider extends Provider implements languages.Signatu
             const callable = getDeep(globals, name, callableInfo.fields);
             const info = getVmFunctionInfo(callable);
             if (!info) return undefined;
-            sig = { ...fnSignature(name, info), name, summary: info.summary };
+            const fnName = callableInfo.fields.length ? callableInfo.fields.at(-1)! : name;
+            sig = { ...fnSignature(fnName, info), name: fnName, summary: info.summary };
         } else if (callableInfo.def.def.fn) {
             const { fn, definition } = callableInfo.def.def;
             const params = localParamSignature(model, fn);
