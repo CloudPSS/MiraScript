@@ -76,7 +76,7 @@ export {
 
 export { wrapToVmValue, unwrapFromVmValue } from './boundary.js';
 
-export { type VmContext, type VmSharedContext, defineVmContextValue, createVmContext } from './context.js';
+export { type VmContext, defineVmContextValue, createVmContext } from './context.js';
 export { VmExtern } from './extern.js';
 export { VmFunction, type VmFunctionInfo, type VmFunctionLike, type VmFunctionOption } from './function.js';
 export { VmModule } from './module.js';

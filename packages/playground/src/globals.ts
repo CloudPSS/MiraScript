@@ -1,4 +1,4 @@
-import type { VmAny, VmContext } from '@mirascript/mirascript';
+import type { VmAny, VmContext, VmFunction } from '@mirascript/mirascript';
 import type { ConsoleManager } from './console-manager.js';
 import { mirascript, mirascriptSubtle } from './loader.js';
 
@@ -7,27 +7,30 @@ export function globals(consoleManager: ConsoleManager): VmContext {
     const arr = [1, 2, [1, 2], { x: 0 }];
     arr[100] = 100; // make a sparse array
 
-    /** 创建简单的 debug_print 函数 */
-    function debugPrint(...args: VmAny[]) {
-        consoleManager.log(args);
-    }
-    const { VmSharedContext } = mirascriptSubtle;
+    const { DefaultVmContext } = mirascriptSubtle;
     const { VmExtern, VmModule, VmFunction, getVmFunctionInfo, createVmContext } = mirascript;
     return createVmContext(
         {
             null_value: null,
             undefined_value: undefined,
             extern_arr: new VmExtern(arr),
+            // eslint-disable-next-line no-sparse-arrays
+            sparse_arr: [1, 2, , 4],
             obj: { a: [], b: 1, c: '2', d: { e: 3 } },
             arr: [1, 2, 3],
             long_str: 'Long string content'.repeat(10000),
             mod: new VmModule('test', {
-                s: VmSharedContext.sin,
+                s: DefaultVmContext.get('sin') as VmFunction,
                 inner: new VmModule('inner', {
-                    s: VmSharedContext.sin,
+                    s: DefaultVmContext.get('sin') as VmFunction,
                 }),
             }),
-            debug_print: VmFunction(debugPrint, getVmFunctionInfo(VmSharedContext.debug_print)),
+            debug_print: VmFunction(
+                (...args: VmAny[]) => {
+                    consoleManager.log(args);
+                },
+                getVmFunctionInfo(DefaultVmContext.get('debug_print')),
+            ),
             // for template examples
             title: 'MiraScript 示例',
             name: 'MiraScript',
@@ -46,8 +49,8 @@ export function globals(consoleManager: ConsoleManager): VmContext {
                 b: 1,
                 c: '2',
                 d: { e: 3 },
-                s: VmSharedContext.sin,
-                m: VmSharedContext.matrix,
+                s: DefaultVmContext.get('sin'),
+                m: DefaultVmContext.get('matrix'),
                 undefined: undefined,
             },
             globalThis,

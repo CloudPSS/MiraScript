@@ -2,33 +2,17 @@ import { create, entries, keys } from '../../helpers/utils.js';
 import { isVmAny } from '../../helpers/types.js';
 import { VmError } from '../../helpers/error.js';
 import { kVmContext } from '../../helpers/constants.js';
-import type { lib } from '../lib/index.js';
-import type { VmAny, VmImmutable, VmValue, VmFunctionLike, VmModule } from './index.js';
+import type { VmAny, VmImmutable, VmValue } from './index.js';
 import { wrapToVmValue } from './boundary.js';
 import { VmFunction } from './function.js';
+const { freeze } = Object;
 
-/** 全局导入的标准库值 */
-type ToLibValue<V> = V extends VmFunctionLike
-    ? VmFunction<V>
-    : V extends Record<string, VmImmutable | VmFunctionLike>
-      ? ToLibModule<V>
-      : V;
-/** 全局导入的标准库值 */
-type ToLibModule<V extends Record<string, VmImmutable | VmFunctionLike>> = VmModule<{
-    [key in keyof V]: ToLibValue<V[key]>;
-}>;
-/** 全局导入的标准库 */
-type VmContextBase = {
-    [key in keyof typeof lib]: ToLibValue<(typeof lib)[key]>;
-};
-/** MiraScript 执行上下文的基础，仅包含标准库 */
-export type VmSharedContext = VmContextBase & Record<string, VmImmutable>;
 /** MiraScript 执行上下文 */
 export interface VmContext {
     /** 内部标识符 */
     readonly [kVmContext]: true;
     /** 枚举所有 key，仅在 LSP 中使用 */
-    keys(): Iterable<string>;
+    keys(): readonly string[];
     /** 描述值，返回 MarkDown 文本，仅在 LSP 中使用 */
     describe?(key: string): string | undefined;
     /**
@@ -43,9 +27,9 @@ export interface VmContext {
 export type VmContextRecord = Record<string, VmValue>;
 /** MiraScript 执行上下文 */
 export type VmContextRecordLoose = Record<string, VmValue | undefined>;
-export const VmSharedContext = create(null) as VmSharedContext;
-
-let VmSharedContextKeys: readonly string[] | null = null;
+export const VM_SHARED_CONTEXT = create(null) as Record<string, VmImmutable>;
+/** 缓存 {@link VM_SHARED_CONTEXT} 的 keys */
+let VM_SHARED_CONTEXT_KEYS: readonly string[] | null = null;
 
 /** 全局变量未找到 */
 function globalVarNotFound(name: string): never {
@@ -58,7 +42,7 @@ export function defineVmContextValue(
     value: VmImmutable | ((...args: VmAny[]) => VmAny),
     override = false,
 ): void {
-    if (!override && name in VmSharedContext) throw new Error(`Global variable '${name}' is already defined.`);
+    if (!override && name in VM_SHARED_CONTEXT) throw new Error(`Global variable '${name}' is already defined.`);
     let v: VmImmutable;
     if (typeof value == 'function') {
         v = VmFunction(value, {
@@ -68,38 +52,42 @@ export function defineVmContextValue(
     } else {
         v = value;
     }
-    VmSharedContext[name] = v ?? null;
-    VmSharedContextKeys = null;
+    VM_SHARED_CONTEXT[name] = v ?? null;
+    VM_SHARED_CONTEXT_KEYS = null;
 }
 
 /** 无后备的实现 */
-export const DefaultVmContext: VmContext = Object.freeze({
+export const DefaultVmContext: VmContext = freeze({
     [kVmContext]: true as const,
     /** @inheritdoc */
-    keys(): Iterable<string> {
-        VmSharedContextKeys ??= Object.freeze(keys(VmSharedContext));
-        return VmSharedContextKeys;
+    keys(): readonly string[] {
+        VM_SHARED_CONTEXT_KEYS ??= freeze(keys(VM_SHARED_CONTEXT));
+        return VM_SHARED_CONTEXT_KEYS;
     },
     /** @inheritdoc */
     get(key: string): VmValue {
-        const val = VmSharedContext[key];
+        const val = VM_SHARED_CONTEXT[key];
         if (val === undefined) globalVarNotFound(key);
         return val;
     },
     /** @inheritdoc */
     has(key: string): boolean {
-        return key in VmSharedContext;
+        return key in VM_SHARED_CONTEXT;
     },
 });
 
 /** 以值为后备的实现 */
 class ValueVmContext implements VmContext {
     readonly [kVmContext] = true;
-    private cachedKeys: readonly string[] | null = null;
+    private cachedKeys: readonly [def: readonly string[], all: readonly string[]] | null = null;
     /** @inheritdoc */
-    keys(): Iterable<string> {
-        this.cachedKeys ??= keys(this.env);
-        return [...this.cachedKeys, ...DefaultVmContext.keys()];
+    keys(): readonly string[] {
+        const defaultKeys = DefaultVmContext.keys();
+        if (this.cachedKeys?.[0] !== defaultKeys) {
+            const allKeys = freeze([...keys(this.env), ...defaultKeys]);
+            this.cachedKeys = freeze([defaultKeys, allKeys]);
+        }
+        return this.cachedKeys[1];
     }
     /** @inheritdoc */
     get(key: string): VmValue {
@@ -122,9 +110,9 @@ class ValueVmContext implements VmContext {
 class FactoryVmContext implements VmContext {
     readonly [kVmContext] = true;
     /** @inheritdoc */
-    keys(): Iterable<string> {
+    keys(): readonly string[] {
         if (!this.enumerator) return DefaultVmContext.keys();
-        return [...this.enumerator(), ...DefaultVmContext.keys()];
+        return freeze([...this.enumerator(), ...DefaultVmContext.keys()]);
     }
     /** @inheritdoc */
     get(key: string): VmValue {
@@ -169,7 +157,7 @@ export function createVmContext(...args: CreateVmContextWithValues | CreateVmCon
     }
 
     const [vmValues, externValues, describer] = args as CreateVmContextWithValues;
-    const env = create(VmSharedContext) as VmContextRecord;
+    const env = create(VM_SHARED_CONTEXT) as VmContextRecord;
     if (vmValues) {
         for (const [key, value] of entries(vmValues)) {
             if (!isVmAny(value, false)) continue;

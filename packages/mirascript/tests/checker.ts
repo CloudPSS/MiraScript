@@ -17,7 +17,7 @@ import {
     isVmArrayLikeRecordByEntires,
     isVmArrayLikeRecordByKeys,
 } from '@mirascript/mirascript';
-import { DefaultVmContext, lib, VmSharedContext } from '@mirascript/mirascript/subtle';
+import { DefaultVmContext, lib } from '@mirascript/mirascript/subtle';
 
 test('isVmScript', async (t) => {
     t.true(isVmScript(await compile('nil')));
@@ -49,8 +49,6 @@ test('isVmCallable', async (t) => {
 test('isVmContext', (t) => {
     t.false(isVmContext(null));
     t.false(isVmContext(() => null));
-    t.false(isVmContext(VmSharedContext));
-    t.false(isVmContext({ __proto__: VmSharedContext }));
     t.false(isVmContext({}));
     t.false(isVmContext({ __proto__: null }));
 
