@@ -58,7 +58,7 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
         numericKeywords: numericKeywords(),
 
         inlineDocParam: /\(parameter(?: pattern)?\)/,
-        inlineDocMod: ['local', 'global', 'field'].join('|'),
+        inlineDocMod: ['local', 'global', 'field', 'module'].join('|'),
 
         start: mode === 'template' ? 'root_template' : mode === 'doc' ? 'root_doc' : 'root',
         tokenPostfix: '.mirascript',
@@ -279,10 +279,6 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                     ['entity.name.label', '', 'delimiter', 'variable.other.constant.emphasis'],
                 ],
                 [/(@whitespace*)(\(module\))(@whitespace*)(@identifier)/, ['', 'entity.name.label', '', 'type']],
-                [
-                    /(@whitespace*)(\(@inlineDocMod\))(@whitespace+)(@identifier)/,
-                    ['', 'entity.name.label', '', 'variable'],
-                ],
                 [/(\(@inlineDocMod\))(@whitespace+)/, ['entity.name.label', '']],
                 { include: '@doc_mode' },
             ],
