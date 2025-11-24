@@ -27,7 +27,7 @@ export interface VmContext {
 export type VmContextRecord = Record<string, VmValue>;
 /** MiraScript 执行上下文 */
 export type VmContextRecordLoose = Record<string, VmValue | undefined>;
-export const VM_SHARED_CONTEXT = create(null) as Record<string, VmImmutable>;
+export const VM_SHARED_CONTEXT: Record<string, VmImmutable> = create(null);
 /** 缓存 {@link VM_SHARED_CONTEXT} 的 keys */
 let VM_SHARED_CONTEXT_KEYS: readonly string[] | null = null;
 
@@ -157,7 +157,7 @@ export function createVmContext(...args: CreateVmContextWithValues | CreateVmCon
     }
 
     const [vmValues, externValues, describer] = args as CreateVmContextWithValues;
-    const env = create(VM_SHARED_CONTEXT) as VmContextRecord;
+    const env: VmContextRecord = create(VM_SHARED_CONTEXT);
     if (vmValues) {
         for (const [key, value] of entries(vmValues)) {
             if (!isVmAny(value, false)) continue;

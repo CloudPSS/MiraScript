@@ -30,7 +30,7 @@ export const ElementOpt = (key: string, value: VmAny): VmConst => {
     return { [key]: value };
 };
 
-export const Function = (fn: VmFunctionLike, name = VM_FUNCTION_ANONYMOUS_NAME): VmFunction => {
+export const Function = (fn: VmFunctionLike, name: string = VM_FUNCTION_ANONYMOUS_NAME): VmFunction => {
     defineProperty(fn, 'name', { value: name });
     return VmFunction(fn, { isLib: false, injectCp: false });
 };

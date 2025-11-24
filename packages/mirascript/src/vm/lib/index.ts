@@ -13,4 +13,4 @@ for (const [name, value] of entries(mods)) {
     VM_SHARED_CONTEXT[name] = wrapEntry(name, mod, 'global');
 }
 
-export const lib = Object.freeze(Object.assign(create(null), global, mods));
+export const lib: Readonly<typeof global & typeof mods> = Object.freeze(Object.assign(create(null), global, mods));

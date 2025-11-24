@@ -104,9 +104,7 @@ export async function compile(model: editor.ITextModel): Promise<CompileResult> 
     const value = model.getValue();
     const req: Req = [cacheKey, version, value, mode];
     const res = USE_WORKER ? compileWorker(req) : compileSync(req);
-    void res.then((result) => {
-        setMarkers(model, result);
-    });
+    void res.then(async (result) => setMarkers(model, result));
     const item: CacheValue = {
         version,
         lastAccess: Date.now(),
