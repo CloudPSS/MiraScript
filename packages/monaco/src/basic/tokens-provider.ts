@@ -13,10 +13,10 @@ import {
     keywords,
     numericKeywords,
 } from '../constants.js';
-import { lib } from '@mirascript/mirascript/subtle';
+import { VmSharedContext } from '@mirascript/mirascript/subtle';
 import { isVmModule } from '@mirascript/mirascript';
 
-const moduleNames = Object.keys(lib).filter((name) => isVmModule(lib[name as never]));
+const moduleNames = Object.keys(VmSharedContext).filter((name) => isVmModule(VmSharedContext[name as never]));
 
 /** 匹配 identifier */
 function identifierCases(
