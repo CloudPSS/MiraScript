@@ -200,10 +200,9 @@ export const $Length = (value: VmAny): number => {
     $AssertInit(value);
     if (isVmArray(value)) return value.length;
     if (isVmRecord(value)) return keys(value).length;
-    if (isVmWrapper(value)) {
-        return value.keys().length;
-    }
-    return Number.NaN;
+    if (isVmWrapper(value)) return value.keys().length;
+
+    throw new VmError(`Value has no length: ${display(value)}`, 0);
 };
 export const $Omit = (value: VmAny, omitted: ReadonlyArray<number | string>): VmRecord => {
     $AssertInit(value);
@@ -250,14 +249,14 @@ const sliceCore = (value: VmArray, start: number, end: number, exclusive: boolea
 };
 export const $Slice = (value: VmAny, start: VmAny, end: VmAny): VmArray => {
     $AssertInit(value);
-    if (!isVmArray(value)) throw new VmError(`Expected array, got ${$Type(value)}`, []);
+    if (!isVmArray(value)) throw new VmError(`Expected array, got ${display(value)}`, []);
     const s = start != null ? $ToNumber(start) : 0;
     const e = end != null ? $ToNumber(end) : value.length - 1;
     return sliceCore(value, s, e, false);
 };
 export const $SliceExclusive = (value: VmAny, start: VmAny, end: VmAny): VmArray => {
     $AssertInit(value);
-    if (!isVmArray(value)) throw new VmError(`Expected array, got ${$Type(value)}`, []);
+    if (!isVmArray(value)) throw new VmError(`Expected array, got ${display(value)}`, []);
     const s = start != null ? $ToNumber(start) : 0;
     const e = end != null ? $ToNumber(end) : value.length;
     return sliceCore(value, s, e, true);
@@ -323,7 +322,7 @@ export const $IsArray = (value: VmAny): value is VmArray => {
 export const $AssertNonNil = (value: VmAny): asserts value is NonNullable<VmValue> => {
     $AssertInit(value);
     if (value !== null) return;
-    throw new VmError('Expected non-nil value', null);
+    throw new VmError(`Expected non-nil value`, null);
 };
 export const $Has = (obj: VmAny, key: VmAny): boolean => {
     $AssertInit(obj);
@@ -350,7 +349,7 @@ export const $Set = (obj: VmAny, key: VmAny, value: VmAny): void => {
     $AssertInit(value);
     const pk = $ToString(key);
     if (obj == null) return;
-    if (!isVmExtern(obj)) throw new VmError(`Expected extern, got ${$Type(obj)}`, undefined);
+    if (!isVmExtern(obj)) throw new VmError(`Expected extern, got ${display(obj)}`, undefined);
     obj.set(pk, value);
 };
 export const $Iterable = (value: VmAny): Iterable<VmValue | undefined> => {
@@ -358,7 +357,7 @@ export const $Iterable = (value: VmAny): Iterable<VmValue | undefined> => {
     if (isVmWrapper(value)) return value.keys();
     if (isVmArray(value)) return value;
     if (value != null && typeof value == 'object') return keys(value);
-    throw new VmError(`Value is not iterable`, isVmFunction(value) ? [] : [value]);
+    throw new VmError(`Value is not iterable: ${display(value)}`, isVmFunction(value) ? [] : [value]);
 };
 
 export const $RecordSpread = (record: VmAny): VmRecord | null => {
@@ -384,7 +383,7 @@ export const $RecordSpread = (record: VmAny): VmRecord | null => {
         }
         return result;
     }
-    throw new VmError(`Expected record, array, extern or nil, got ${$Type(record)}`, null);
+    throw new VmError(`Expected record, array, extern or nil, got ${display(record)}`, null);
 };
 
 export const $ArraySpread = (array: VmAny): Iterable<VmConst | undefined> => {
@@ -403,7 +402,7 @@ export const $ArraySpread = (array: VmAny): Iterable<VmConst | undefined> => {
         }
         return result;
     }
-    throw new VmError(`Expected array, iterable extern or nil, got ${$Type(array)}`, []);
+    throw new VmError(`Expected array, iterable extern or nil, got ${display(array)}`, []);
 };
 
 export const $Format = (value: VmAny, format: VmAny): string => {

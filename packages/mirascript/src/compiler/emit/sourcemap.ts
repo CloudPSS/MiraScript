@@ -5,9 +5,14 @@ import { GLOBAL_HINT, SCRIPT_PREFIX } from './constants.js';
 import type { GlobalMap } from './globals.js';
 
 const ORIGIN = `mira://MiraScript/`;
-const PREFIX = '//# ';
-const SOURCE_URL = `${PREFIX}sourceURL`;
-const SOURCE_MAPPING_URL = `${PREFIX}sourceMappingURL`;
+const { SOURCE_URL, SOURCE_MAPPING_URL } = ((source, mapping, url) => {
+    // 避免被识别为当前文件的源映射
+    const prefix = '//# ';
+    return {
+        SOURCE_URL: prefix.concat(source, url),
+        SOURCE_MAPPING_URL: prefix.concat(source, mapping, url),
+    };
+})(`source`, `Mapping`, `URL`);
 // 前两行固定为：
 // (function anonymous($Add,$Aeq, ...
 // ) {
