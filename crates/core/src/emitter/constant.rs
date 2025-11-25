@@ -4,7 +4,7 @@ use strum::{EnumDiscriminants, IntoDiscriminant};
 #[derive(EnumDiscriminants, Clone, Debug)]
 #[repr(u8)]
 pub enum Constant<'s> {
-    // Nil = 0,
+    Nil = 0,
     True = 1,
     False = 2,
     Ordinal(i32),

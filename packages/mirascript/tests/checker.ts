@@ -12,8 +12,12 @@ import {
     VmModule,
     VmExtern,
     isVmCallable,
+    type VmRecord,
+    isVmArrayLikeRecord,
+    isVmArrayLikeRecordByEntires,
+    isVmArrayLikeRecordByKeys,
 } from '@mirascript/mirascript';
-import { DefaultVmContext, lib, VmSharedContext } from '@mirascript/mirascript/subtle';
+import { DefaultVmContext, lib } from '@mirascript/mirascript/subtle';
 
 test('isVmScript', async (t) => {
     t.true(isVmScript(await compile('nil')));
@@ -45,8 +49,6 @@ test('isVmCallable', async (t) => {
 test('isVmContext', (t) => {
     t.false(isVmContext(null));
     t.false(isVmContext(() => null));
-    t.false(isVmContext(VmSharedContext));
-    t.false(isVmContext({ __proto__: VmSharedContext }));
     t.false(isVmContext({}));
     t.false(isVmContext({ __proto__: null }));
 
@@ -72,6 +74,43 @@ test('isVmAny', (t) => {
     t.true(isVmAny([new Map()], false));
     t.true(isVmAny([/r/], false));
     t.true(isVmAny([0n], false));
+});
+
+test('isVmArrayLikeRecord', (t) => {
+    const r1 = { '0': 1, '1': 2, '2': 3 };
+    const r2 = { '0': 1, '2': 3 };
+    const r3 = { '1': 2, '2': 3 };
+    const r4 = { a: 1, b: 2 };
+    const r5 = {};
+    const r6 = { '1': 1, '0': 2 };
+    const r7 = Object.create(null) as Record<string, number>;
+    r7['1'] = 2;
+    r7['0'] = 1;
+    const r8 = { '0.0': 1 };
+    const r9 = { '0': 1, '1.2': 2, '2': 3 };
+    const r10 = { '0': 1, '1': 2, '2': 3, length: 3 };
+
+    const test = (r: VmRecord, ex: boolean) => {
+        t.is(isVmArrayLikeRecord(r), ex, JSON.stringify(r));
+        t.is(isVmArrayLikeRecordByKeys(Object.keys(r)), ex);
+        t.is(isVmArrayLikeRecordByEntires(Object.entries(r)), ex);
+    };
+
+    test(r1, true);
+    test(r2, false);
+    test(r3, false);
+    test(r4, false);
+    test(r5, true);
+    test(r6, true);
+    test(r7, true);
+    test(r8, false);
+    test(r9, false);
+    test(r10, false);
+
+    // eslint-disable-next-line unicorn/no-new-array
+    const vl: readonly never[] = new Array(2 ** 31);
+    t.false(isVmArrayLikeRecordByKeys(vl));
+    t.false(isVmArrayLikeRecordByEntires(vl));
 });
 
 test('isVmValue', (t) => {

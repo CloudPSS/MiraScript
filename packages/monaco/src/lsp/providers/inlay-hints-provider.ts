@@ -1,6 +1,6 @@
 import { languages, Range, type CancellationToken, type editor, type IEvent } from '../../monaco-api.js';
 import { Provider } from './base.js';
-import { DiagnosticCode } from '@mirascript/wasm';
+import { DiagnosticCode } from '@mirascript/bindings/wasm';
 
 /** @inheritdoc */
 export class InlayHintsProvider extends Provider implements languages.InlayHintsProvider {

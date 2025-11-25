@@ -1,0 +1,31 @@
+{
+  "name": "@mirascript/bindings",
+  "version": "0.1.17",
+  "author": "CloudPSS",
+  "license": "MIT",
+  "description": "MiraScript compiler bindings",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./wasm": "./dist/wasm.js",
+    "./napi": "./dist/napi.js"
+  },
+  "imports": {
+    "#bundle": {
+      "node": "./dist/napi.js",
+      "default": "./dist/wasm.js"
+    }
+  },
+  "scripts": {
+    "watch": "pnpm build --watch",
+    "build": "pnpm clean && tsc",
+    "clean": "rimraf dist",
+    "prepublishOnly": "pnpm build"
+  },
+  "dependencies": {
+    "@mirascript/napi": "workspace:~",
+    "@mirascript/wasm": "workspace:~"
+  }
+}

@@ -9,17 +9,14 @@ pub(super) fn recover_token<'s>(
     diagnostics_collector: &mut DiagnosticsCollector<'_, '_>,
 ) -> Option<Token<'s>> {
     match t.kind {
+        TokenKind::Empty => None,
         TokenKind::Unknown {
-            recovered: Some(token),
+            recovered: token,
             errors,
         } => {
             diagnostics_collector.extend(errors);
             t.kind = *token;
             recover_token(t, diagnostics_collector)
-        }
-        TokenKind::Unknown { errors, .. } => {
-            diagnostics_collector.extend(errors);
-            None
         }
         TokenKind::InterpolatedString(ref mut v, _) => {
             diagnostics_collector.push(DiagnosticCode::Interpolation, t.range.clone());

@@ -1,9 +1,10 @@
+import { kVmModule } from '../../helpers/constants.js';
 import { hasOwnEnumerable, keys } from '../../helpers/utils.js';
-import type { TypeName, VmAny, VmValue } from './index.js';
+import type { TypeName, VmAny, VmImmutable } from './index.js';
 import { VmWrapper } from './wrapper.js';
 
 /** Mirascript 模块 */
-export class VmModule<const T extends Record<string, VmValue> = Record<string, VmValue>> extends VmWrapper<T> {
+export class VmModule<const T extends Record<string, VmImmutable> = Record<string, VmImmutable>> extends VmWrapper<T> {
     constructor(
         /** 模块名称 */
         readonly name: string,
@@ -39,9 +40,4 @@ export class VmModule<const T extends Record<string, VmValue> = Record<string, V
     }
 }
 
-const kVmModule = Symbol.for('mirascript.vm.module');
 Object.defineProperty(VmModule.prototype, kVmModule, { value: true });
-/** 检查值是否为 Mirascript 模块 */
-export function isVmModule<T extends Record<string, VmValue>>(value: unknown): value is VmModule<T> {
-    return value != null && typeof value == 'object' && kVmModule in value;
-}

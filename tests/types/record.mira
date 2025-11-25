@@ -17,7 +17,7 @@ t_eq(("$x": 1, "$y": 2, "$x$y"?: 3, "$y$x"?: nil), (1: 1, 2: 2, '12': 3));
 t_eq((0?: nil, 1?: 1), (1: 1));
 
 {
-  let obj = (a: 1, b: 2, c: nil, '': 'empty key', true: 'tv', false: fv);
+  let obj = (a: 1, b: 2, c: nil, '': 'empty key', true: 'tv', false: v_false);
   t_eq(obj.a, 1);
   t_eq(obj.b, 2);
   t_eq(obj['a'], 1);
@@ -53,7 +53,7 @@ t_eq((0?: nil, 1?: 1), (1: 1));
 }
 
 {
-  let mut obj = (0, 'str', true, nil, (a: 1, b: 2), [1, 2, 3], v_extern, v_module, v_fn);
+  let mut obj = (0, 'str', true, nil, (a: 1, b: 2), [1, 2, 3], v_fn);
   t_eq(obj.0, 0);
   t_eq(obj.1, 'str');
   t_eq(obj.2, true);
@@ -65,15 +65,12 @@ t_eq((0?: nil, 1?: 1), (1: 1));
   t_eq(obj.5.2, 3);
   t_eq(obj.5::len(), 3);
   t_eq(obj.6, nil);
-  t_eq(obj.7, nil);
-  t_eq(obj.8, nil);
 
   t_true(3 in obj);
   t_true(6 in obj);
-  t_true(7 in obj);
-  t_true(8 in obj);
+  t_false(7 in obj);
 
-  obj = (0?: 0, 1?: 'str', 2?: true, 3?: nil, 4?: (a: 1, b: 2), 5?: [1, 2, 3], 6?: v_extern, 7?: v_module, 8?: vfn);
+  obj = (0?: 0, 1?: 'str', 2?: true, 3?: nil, 4?: (a: 1, b: 2), 5?: [1, 2, 3], 6?: v_fn);
   t_eq(obj.0, 0);
   t_eq(obj.1, 'str');
   t_eq(obj.2, true);
@@ -85,13 +82,9 @@ t_eq((0?: nil, 1?: 1), (1: 1));
   t_eq(obj.5.2, 3);
   t_eq(obj.5::len(), 3);
   t_eq(obj.6, nil);
-  t_eq(obj.7, nil);
-  t_eq(obj.8, nil);
 
   t_false(3 in obj);
   t_false(6 in obj);
-  t_false(7 in obj);
-  t_false(8 in obj);
 }
 
 t_throws(fn {
@@ -108,4 +101,15 @@ t_throws(fn {
   t_eq(obj['
 '], 'lf');
   t_eq(obj['\r\n'], 'crlf');
+}
+
+{
+  let r = (a: 1, b: 2);
+  t_true('a' in r);
+  t_true('b' in r);
+  t_false('c' in r);
+  let (a, b, c) = ('a', 'b', 'c');
+  t_true(a in r);
+  t_true(b in r);
+  t_false(c in r);
 }

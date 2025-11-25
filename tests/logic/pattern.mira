@@ -1,5 +1,7 @@
 
 t_true(nil is nil);
+t_true(nil is == nil);
+t_true(nil is not != nil);
 
 t_true(true is true);
 t_true(false is false);
@@ -9,6 +11,31 @@ t_false(nan is not nan);
 t_true(inf is inf);
 t_true(0 is -0);
 t_false(-0 is not 0);
+// 没有类型转换
+t_false('12' is > 0);
+t_false('abc' is > 0);
+t_false(10 is < '20');
+t_true('b' is > 'a');
+t_true('abc' is > 'ab');
+t_false('abc' is < 'ab');
+t_true(true is == true);
+t_false(true is != true);
+t_true(false is == false);
+t_false(false is != false);
+t_false(1 is == '1');
+t_false(1 is =~ '1');
+t_true('a' is =~ 'A');
+
+const @str = '10';
+const @num = 10;
+t_false(@str is =~ @num);
+t_true(@str =~ @num);
+t_false(@str is >= @num);
+t_true(@str >= @num);
+t_true(@str is >= @str);
+t_true(@str >= @str);
+t_true(@num is >= @num);
+t_true(@num >= @num);
 
 {
   t_true([1, 2, 3] is [1, ..rest] && rest is [2, 3]);
@@ -34,9 +61,13 @@ t_false(-0 is not 0);
 t_true(1 is 1 or '1');
 t_true(1 is 1..2);
 t_true(1.5 is 1.5..1.5);
-t_false(1.5 is "1"..<1.5);
+t_false(1.5 is 1..<1.5);
 
-t_true("1" is "1".."2");
+// 范围操作仅对数字类型有效
+t_false("1.5" is 1..2);
+const @one = '1';
+const @two = '2';
+t_false("1.5" is @one..@two);
 
 {
   t_true((1, [2]) is (1, [2, ..rr]) && rr is []);
@@ -48,4 +79,13 @@ t_true("1" is "1".."2");
   t_true(v is x and > 10 and < 20 is y);
   t_eq(x, 12);
   t_true(y);
+}
+
+{
+  let v = (a: (x: (1.23, true, 3, z: ['x', 2, (d: 12)])));
+  t_true(v is (a: (x: (v1, v2, 3, z: [v3, 2, (d: v4)]))));
+  t_eq(v1, 1.23);
+  t_eq(v2, true);
+  t_eq(v3, 'x');
+  t_eq(v4, 12);
 }

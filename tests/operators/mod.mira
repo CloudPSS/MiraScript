@@ -53,3 +53,6 @@ t_eq(1 % nan, nan);
 t_eq(nan % nan, nan);
 t_eq(nan % inf, nan);
 t_eq(inf % nan, nan);
+
+t_throws(fn { ({ nil } % 1) });
+t_throws(fn { 1 % { 'NAN' } });

@@ -30,6 +30,7 @@ export default defineConfig({
     },
     build: {
         cssMinify: 'lightningcss',
+        minify: true,
         sourcemap: true,
         emptyOutDir: true,
     },

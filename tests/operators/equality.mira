@@ -1,15 +1,15 @@
 // nil
 t_true(nil == nil);
 t_false(nil != nil);
-t_true(nil =~ nil);
-t_false(nil !~ nil);
+t_throws(fn { ({ nil } =~ { nil }) });
+t_throws(fn { ({ nil } !~ { nil }) });
 
 // boolean
 t_true(true == true);
 t_true(false == false);
 t_false(true == false);
-t_true(true =~ true);
-t_false(false =~ true);
+t_true({ true } =~ { true });
+t_false({ false } =~ { true });
 
 // number
 t_true(1 == 1);
@@ -52,26 +52,26 @@ t_true(1 =~ '1');
 t_true(1 =~ '1.0');
 t_true('1' =~ 1);
 t_true('1.0' =~ 1);
-t_true(true =~ 'true');
-t_true('true' =~ true);
-t_false('1' =~ true);
-t_true(1 =~ true);
-t_true(true =~ 1);
-t_true(0 =~ false);
-t_true(false =~ 0);
-t_true('' =~ nil);
-t_true(nil =~ '');
+t_true({ true } =~ 'true');
+t_true('true' =~ { true });
+t_false('1' =~ { true });
+t_true(1 =~ { true });
+t_true({ true } =~ 1);
+t_true(0 =~ { false });
+t_true({ false } =~ 0);
+t_true('' =~ { nil });
+t_true({ nil } =~ '');
 t_false('' =~ '0');
 t_true(fn { } =~ '<function>');
-t_true(fn { } !~ fn { });
+t_throws(fn { (fn { } !~ fn { }) });
 
 // complex
 t_true((1, 2, 3) == (1, 2, 3));
 t_true([1, 2, 3, nil, "xx", ("a", [true])] == [1, 2, 3, nil, "xx", ("a", [true])]);
-t_false((1, 2, 3) =~ (1, 2, 3));
+t_throws(fn { (1, 2, 3) =~ (1, 2, 3) });
 
 t_true([1, 2, 3] == [1, 2, 3]);
-t_false([1, 2, 3] =~ [1, 2, 3]);
+t_throws(fn { [1, 2, 3] =~ [1, 2, 3] });
 
 t_false([1, 2] == (1, 2));
 t_false((1, 2, 3) == (1, 2, 4));
@@ -100,6 +100,7 @@ if has_extern {
   t_false(nil == v_extern);
   t_false(v_extern == ());
   t_false(() == v_extern);
+  t_throws(fn { v_extern =~ v_extern_another });
 }
 
 // module
@@ -110,4 +111,11 @@ if has_module {
   t_false(nil == v_module);
   t_false(v_module == ());
   t_false(() == v_module);
+  t_throws(fn { v_module =~ v_module_another });
+}
+
+if has_extern && has_module {
+  t_false(v_extern == v_module);
+  t_true(v_module != v_extern);
+  t_throws(fn { v_module =~ v_extern });
 }

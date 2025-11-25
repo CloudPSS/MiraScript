@@ -4,26 +4,29 @@ t_eq(+0, 0);
 t_ne(-0, 0);
 
 t_eq(2 + 2, 4);
-t_eq('   1' + '2  ', 3);
-t_eq('1' + '', 1);
-t_eq('Hello, ' + 'World!', nan);
-t_eq([1] + 2, nan);
+t_eq(`${ 1 }` + 2, 3);
+t_eq({ '   1' } + { '2  ' }, 3);
+t_eq({ '1' } + { '0' }, 1);
+t_throws(fn { 1 + { nil } });
+t_throws(fn { ({ '' } + 1) });
+t_throws(fn { +{ '\n' } });
+t_throws(fn { ({ true } + { 'World' }) });
+t_throws(fn { [1] + 2 });
 
 t_eq(2 - 1, 1);
-t_eq(true - false, 1);
-t_eq(nil - '\n', 0);
+t_eq({ true } - { false }, 1);
 
-t_eq(+nil, 0);
-t_eq(+true, 1);
-t_eq(+false, 0);
-t_eq(+'12', 12);
-t_eq(+[1], nan);
+t_throws(fn { +{ nil } });
+t_eq(+{ true }, 1);
+t_eq(+{ false }, 0);
+t_eq(+{ '12' }, 12);
+t_throws(fn { +[1] });
 
-t_eq(-nil, -0);
-t_eq(-true, -1);
-t_eq(-false, -0);
-t_eq(-'12.7', -12.7);
-t_eq(-(1,), nan);
+t_throws(fn { -{ nil } });
+t_eq(-{ true }, -1);
+t_eq(-{ false }, -0);
+t_eq(-{ '12.7' }, -12.7);
+t_throws(fn { -(1,) });
 
 t_eq(+(-3), -3);
 t_eq(+(+3), 3);

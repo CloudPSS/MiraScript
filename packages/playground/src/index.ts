@@ -1,33 +1,11 @@
 import './index.css';
-import * as monaco from '@private/monaco-editor';
-import { KeyCode, KeyMod } from '@private/monaco-editor';
-import { registerMiraScript } from '@mirascript/monaco';
-import { configCheckpoint, type InputMode } from '@mirascript/mirascript';
-import * as mirascript from '@mirascript/mirascript';
-import * as mirascriptSubtle from '@mirascript/mirascript/subtle';
-import { ConsoleManager } from './console-manager.js';
+import type { InputMode } from '@mirascript/mirascript';
 import { EXAMPLES } from './examples.js';
 import { getState, setState, type ThemeMode } from './state-manager.js';
-import { globals } from './globals.js';
 import { resultManager } from './result-manager.js';
+import { monaco, globals, mirascript, consoleManager, ready } from './loader.js';
 
-// 暴露到全局以便调试
-Object.defineProperty(globalThis, 'mirascript', {
-    value: Object.freeze({
-        __proto__: null,
-        ...mirascript,
-        subtle: Object.freeze({
-            __proto__: null,
-            ...mirascriptSubtle,
-        }),
-    }),
-});
-
-// 初始化控制台管理器
-const consoleManager = new ConsoleManager(document.querySelector<HTMLDivElement>('#console-output')!);
-
-const g = globals(consoleManager);
-registerMiraScript(monaco, () => g);
+await ready;
 
 let modelIndex = 1;
 const createModel = () => {
@@ -106,10 +84,12 @@ function initExampleSelector() {
         const example = EXAMPLES[selectedKey];
         if (!example) return;
 
-        // 更新编辑器状态
-        setState({ mode: example.mode, source: example.code });
-        elModeSelect.value = example.mode;
-        updateModel();
+        void example.code().then((code) => {
+            // 更新编辑器状态
+            setState({ mode: example.mode, source: code });
+            elModeSelect.value = example.mode;
+            updateModel();
+        });
     });
 }
 
@@ -183,7 +163,7 @@ setTimeout(() => {
     editor.addAction({
         id: 'SwitchMode',
         label: 'Switch Mode',
-        keybindings: [KeyMod.CtrlCmd | KeyCode.KeyM],
+        keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyM],
         run: () => {
             const { mode } = getState();
             setState({ mode: mode === 'Script' ? 'Template' : 'Script' });
@@ -195,7 +175,7 @@ setTimeout(() => {
     editor.addAction({
         id: 'RunCode',
         label: 'Run Code',
-        keybindings: [KeyMod.CtrlCmd | KeyCode.Enter],
+        keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
         run: () => {
             void run();
         },
@@ -211,9 +191,8 @@ setTimeout(() => {
     });
 }, 0);
 
-const compileAndRun = resultManager(consoleManager, elCompiledOutput, elResultOutput, g);
+const compileAndRun = resultManager(consoleManager, elCompiledOutput, elResultOutput, globals);
 
-configCheckpoint(500);
 /** 编译运行 */
 async function run() {
     if (elRunBtn.disabled) return;
@@ -235,10 +214,10 @@ async function run() {
 Object.defineProperty(globalThis, 'playgroundRun', {
     value: async () => {
         try {
-            configCheckpoint(Number.POSITIVE_INFINITY);
+            mirascript.configCheckpoint(Number.POSITIVE_INFINITY);
             return await run();
         } finally {
-            configCheckpoint(500);
+            mirascript.configCheckpoint(500);
         }
     },
 });

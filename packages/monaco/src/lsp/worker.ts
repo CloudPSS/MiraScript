@@ -1,9 +1,12 @@
-import { createConfig, type CompileResult, wasm, ready } from '@mirascript/wasm';
 import type { InputMode } from '@mirascript/mirascript';
-await ready;
+import type { BcModule } from '@mirascript/bindings/wasm';
+
+const { loadModule } = await import('@mirascript/bindings/wasm');
+const mod = await loadModule();
+const { wasm, createConfig } = mod;
 
 /** Monaco 编译结果 */
-export interface MonacoResult extends CompileResult {
+export interface MonacoResult extends BcModule.CompileResult {
     /** 格式化结果 */
     formatted?: string;
 }

@@ -1,11 +1,19 @@
-import { isArray } from '../../helpers/utils.js';
-import { isVmExtern, VmExtern } from './extern.js';
-import { isVmFunction, VmFunction } from './function.js';
-import { VmModule, isVmModule } from './module.js';
-import { isVmWrapper } from './wrapper.js';
+import type { VmExtern } from './extern.js';
+import type { VmFunction } from './function.js';
+import type { VmModule } from './module.js';
 
+/** 类型名称 */
+export type TypeName = keyof VmValueMap;
+
+/** Mirascript 虚拟机内的未初始化变量 */
+export type VmUninitialized = undefined;
 /** Mirascript 原始值 */
-export type VmPrimitive = null | string | number | boolean;
+export type VmPrimitive = null | number | string | boolean;
+/**
+ * Mirascript 数组
+ * 数组中的 `undefined`、`null` 及 <empty slot> 均视作 `nil`
+ */
+export type VmArray = ReadonlyArray<VmConst | undefined>;
 /**
  * Mirascript 记录
  * 仅拥有且可枚举的字符串键视作存在
@@ -14,29 +22,14 @@ export type VmPrimitive = null | string | number | boolean;
 export type VmRecord = {
     readonly [key: string]: VmConst | undefined;
 };
-/**
- * Mirascript 数组
- * 数组中的 `undefined`、`null` 及 <empty slot> 均视作 `nil`
- */
-export type VmArray = ReadonlyArray<VmConst | undefined>;
-
 /** Mirascript 虚拟机内的值语义值 */
 export type VmConst = VmPrimitive | VmRecord | VmArray;
-
 /** Mirascript 虚拟机内的不可变值 */
 export type VmImmutable = VmConst | VmFunction | VmModule;
-
 /** Mirascript 虚拟机内的合法值 */
 export type VmValue = VmImmutable | VmExtern;
-
-/** Mirascript 虚拟机内的未初始化变量 */
-export type VmUninitialized = undefined;
-
 /** Mirascript 虚拟机内的值（包括未初始化变量） */
 export type VmAny = VmValue | VmUninitialized;
-
-/** 类型名称 */
-export type TypeName = keyof VmValueMap;
 
 /** 类型名称映射 */
 export interface VmValueMap {
@@ -60,53 +53,30 @@ export interface VmValueMap {
     module: VmModule;
 }
 
-/**
- * 检查值是否为 Mirascript 数组
- */
-export function isVmArray(value: VmAny): value is VmArray {
-    if (!isArray(value)) return false;
-    value as VmArray satisfies VmArray;
-    return true;
-}
+export {
+    isVmAny,
+    isVmArray,
+    isVmArrayLikeRecord,
+    isVmArrayLikeRecordByEntires,
+    isVmArrayLikeRecordByKeys,
+    isVmCallable,
+    isVmConst,
+    isVmContext,
+    isVmExtern,
+    isVmFunction,
+    isVmImmutable,
+    isVmModule,
+    isVmPrimitive,
+    isVmRecord,
+    isVmScript,
+    isVmValue,
+    isVmWrapper,
+    getVmFunctionInfo,
+} from '../../helpers/types.js';
 
-/**
- * 检查值是否为 Mirascript 记录
- */
-export function isVmRecord(value: VmAny): value is VmRecord {
-    if (value == null || typeof value !== 'object') return false;
-    if (isVmWrapper(value)) return false;
-    if (isVmArray(value)) return false;
-    value satisfies VmRecord;
-    return true;
-}
+export { wrapToVmValue, unwrapFromVmValue } from './boundary.js';
 
-/**
- * 检查值是否为 Mirascript 原始值
- */
-export function isVmPrimitive(value: unknown): value is VmPrimitive {
-    if (value === null || typeof value == 'number' || typeof value == 'string' || typeof value == 'boolean') {
-        value as VmPrimitive satisfies typeof value;
-        value satisfies VmPrimitive;
-        return true;
-    }
-    return false;
-}
-
-export { VmFunction, isVmFunction, VmExtern, isVmExtern, VmModule, isVmModule, isVmWrapper };
-export { wrapToVmValue, unwrapFromVmValue, toVmFunctionProxy, fromVmFunctionProxy } from './boundary.js';
-
-/** 检查值是否为 Mirascript 可调用值 */
-// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-export function isVmCallable(value: unknown): value is VmFunction | VmExtern<Function> {
-    return isVmFunction(value) || (isVmExtern(value) && typeof value.value == 'function');
-}
-
-export { getVmFunctionInfo, type VmFunctionInfo, type VmFunctionLike, type VmFunctionOption } from './function.js';
-
-export { type VmContext, type VmSharedContext, isVmContext, defineVmContextValue, createVmContext } from './context.js';
-
-export { type VmScript, isVmScript } from './script.js';
-
-export { isVmAny, isVmConst, isVmImmutable, isVmValue } from './checker.js';
-
-export const VM_ARRAY_MAX_LENGTH = 2 ** 31 - 1;
+export { type VmContext, defineVmContextValue, createVmContext } from './context.js';
+export { VmExtern } from './extern.js';
+export { VmFunction, type VmFunctionInfo, type VmFunctionLike, type VmFunctionOption } from './function.js';
+export { VmModule } from './module.js';

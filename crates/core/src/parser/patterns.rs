@@ -139,11 +139,9 @@ fn literal_constant_pattern<'s, const CUT: bool>(i: &mut Input<'s>) -> Result<Pa
                         DiagnosticCode::ExclamationInLiteralPattern,
                     );
                 }
-                if !(l.is_number() || l.is_ordinal() || *l == Keyword::Inf) {
-                    return Pattern::Literal(None, l.clone()).wrap_as_unknown(
-                        [op.into(), l],
-                        DiagnosticCode::UnexpectedOperatorInLiteralPattern,
-                    );
+                if !(l.is_number_literal()) {
+                    return Pattern::Literal(None, l.clone())
+                        .wrap_as_unknown([op.into(), l], DiagnosticCode::NonNumberInArithmetic);
                 }
                 Pattern::Literal(Some(op.into()), l)
             })
@@ -181,11 +179,28 @@ fn relation_pattern<'s>(i: &mut Input<'s>) -> Result<Pattern<'s>> {
 }
 
 fn range_pattern<'s>(i: &mut Input<'s>) -> Result<Pattern<'s>> {
+    fn range_guard<'s>(p: Pattern<'s>) -> Box<Pattern<'s>> {
+        match p {
+            Pattern::Literal(op, l) => {
+                if l.is_number_literal() {
+                    Pattern::Literal(op, l)
+                } else {
+                    let tokens = match op {
+                        Some(op) => vec![op, l],
+                        _ => vec![l],
+                    };
+                    Pattern::unknown(tokens, DiagnosticCode::NonNumberInRange)
+                }
+            }
+            _ => p,
+        }
+        .into()
+    }
     seq!(Pattern::Range(
-        literal_constant_pattern::<true>.map(Box::new),
+        literal_constant_pattern::<true>.map(range_guard),
         one_of(|t: &Token<'s>| *t == Operator::SpreadRange || *t == Operator::HalfOpenRange)
             .map(TokenRef::borrow),
-        literal_constant_pattern::<true>.map(Box::new),
+        literal_constant_pattern::<true>.map(range_guard),
     ))
     .parse_next(i)
 }
@@ -219,8 +234,8 @@ fn discard_bind_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
                     };
                     return Pattern::unknown(tokens, DiagnosticCode::UnknownPattern);
                 };
-                if rebind && let Some(kw_mut) = kw_mut {
-                    let kw_mut = kw_mut.wrap_as_unknown(DiagnosticCode::MutInRebindPattern);
+                if rebind && let Some(mut kw_mut) = kw_mut {
+                    kw_mut.wrap_as_unknown(DiagnosticCode::MutInRebindPattern);
                     return Pattern::Bind(Some(kw_mut), id);
                 }
                 if name.starts_with('@') {
@@ -303,26 +318,13 @@ fn record_like_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
                     continue;
                 }
                 let ListItem(el, _) = part;
-                let range = el.range();
                 let RecordElementBase::Spread(token, pattern) = el.as_mut() else {
                     unreachable!();
                 };
                 if pattern.is_spread_discard() {
-                    *token = Token::unknown_range(
-                        token.range(),
-                        token.kind.to_owned(),
-                        range,
-                        DiagnosticCode::SpreadDiscardInRecordPattern,
-                    )
-                    .into();
+                    token.wrap_as_unknown(DiagnosticCode::SpreadDiscardInRecordPattern);
                 } else if i != len - 1 {
-                    *token = Token::unknown_range(
-                        token.range(),
-                        token.kind.to_owned(),
-                        range,
-                        DiagnosticCode::MispositionedSpreadInRecordPattern,
-                    )
-                    .into();
+                    token.wrap_as_unknown(DiagnosticCode::MispositionedSpreadInRecordPattern);
                 }
             }
             Pattern::Record(open, parts, close)

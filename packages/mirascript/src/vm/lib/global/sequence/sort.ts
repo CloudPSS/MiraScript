@@ -1,6 +1,7 @@
-import { $Call, $ToNumber } from '../../../operations.js';
+import { toNumber } from '../../../../helpers/convert/to-number.js';
+import { $Call } from '../../../operations.js';
 import type { VmAny, VmConst, VmValue } from '../../../types/index.js';
-import { VmLib, expectArray, expectCallable } from '../../_helpers.js';
+import { VmLib, expectArray, expectCallable } from '../../helpers.js';
 
 /** 默认比较 */
 function defaultCompare(a: VmValue = null, b: VmValue = null): number {
@@ -13,8 +14,8 @@ function defaultCompare(a: VmValue = null, b: VmValue = null): number {
         return 0;
     }
     // nan is treated as 0
-    const an = $ToNumber(a) || 0;
-    const bn = $ToNumber(b) || 0;
+    const an = toNumber(a, 0) || 0;
+    const bn = toNumber(b, 0) || 0;
     if (an < bn) return -1;
     if (an > bn) return 1;
     return 0;
@@ -26,7 +27,7 @@ function cmp(comparator: VmAny, recovered: VmValue): typeof defaultCompare {
     expectCallable('comparator', comparator, recovered);
     return (a: VmValue = null, b: VmValue = null) => {
         const ret = $Call(comparator, [a, b]);
-        return $ToNumber(ret);
+        return toNumber(ret, 0);
     };
 }
 

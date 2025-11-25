@@ -329,9 +329,9 @@ fn interpolation<'s>(dollars: &'s str) -> impl Parser<'s, StringFragment<'s>> {
                 if let TokenKind::Keyword(kw) = kind
                     && !kw.is_constant()
                 {
-                    kind = TokenKind::unknown_range(
+                    kind = TokenKind::unknown(
                         // Recover to nil for further analysis
-                        TokenKind::Keyword(Keyword::Nil),
+                        Keyword::Nil,
                         range.clone(),
                         if kw.is_reserved() {
                             DiagnosticCode::InvalidReservedKeyword

@@ -1,4 +1,4 @@
-import { DiagnosticCode } from '@mirascript/wasm';
+import { DiagnosticCode } from '@mirascript/bindings/wasm';
 import { type editor, Range, type IPosition, type IRange } from '../monaco-api.js';
 import {
     getVmFunctionInfo,
@@ -15,8 +15,9 @@ import {
     type VmValue,
     type VmExtern,
 } from '@mirascript/mirascript';
-import { operations, serializePropName, serializeString } from '@mirascript/mirascript/subtle';
+import { operations, serializeRecordKey, serializeString } from '@mirascript/mirascript/subtle';
 import type { LocalDefinition } from './compile-result.js';
+import type { MonacoContext } from './providers/base.js';
 
 /** 参数签名 */
 export type ParamSignature = [name: string, sig: string, doc: string];
@@ -217,7 +218,7 @@ function serializeForDisplay(value: Exclude<VmValue, VmModule>, maxEntries = 100
                 entries.push(`../* x${e.length - entries.length} */`);
                 break;
             }
-            const sk = serializePropName(key);
+            const sk = serializeRecordKey(key);
             const entry = `${sk}: ${serializeForDisplayInner(value ?? null, maxWidth - sk.length - 4)}`;
             entries.push(entry);
             resultLength += entry.length;
@@ -251,7 +252,7 @@ function serializeForDisplay(value: Exclude<VmValue, VmModule>, maxEntries = 100
                 // 数组索引
                 entry = serializeForDisplayInner(value.get(key) ?? null, maxWidth - 2);
             } else {
-                const sk = serializePropName(key);
+                const sk = serializeRecordKey(key);
                 entry = `${sk}: ${serializeForDisplayInner(value.get(key) ?? null, maxWidth - sk.length - 4)}`;
             }
             entries.push(entry);
@@ -333,8 +334,9 @@ export function valueDoc(
 }
 
 /** 获取深层属性 */
-export function getDeep(value: VmAny, path: readonly string[]): VmAny {
-    let current: VmAny = value;
+export function getDeep(globals: MonacoContext, name: string, path: readonly string[]): VmAny {
+    if (!globals.has(name)) return undefined;
+    let current: VmAny = globals.get(name);
     for (const key of path) {
         if (current == null) return current;
         if (!operations.$Has(current, key)) return undefined;

@@ -7,6 +7,7 @@ import {
     isVmFunction,
     type VmFunction,
     type VmContext,
+    VmError,
 } from '@mirascript/mirascript';
 import { DefaultVmContext } from '@mirascript/mirascript/subtle';
 
@@ -27,7 +28,7 @@ function checkContext(t: ExecutionContext, context: VmContext): Set<string> {
     t.truthy(context.get('to_string'));
     t.truthy(context.get('to_number'));
     t.truthy(context.get('to_boolean'));
-    t.is(context.get(rk), null);
+    t.throws(() => context.get(rk), { message: `Global variable '${rk}' is not defined.`, instanceOf: VmError });
 
     defineVmContextValue(rk, rk);
     const newKeys = new Set(context.keys());
@@ -103,7 +104,7 @@ test('FactoryContext', (t) => {
     );
 
     t.is(context.get(''), null);
-    t.is(context.get('aa'), null);
+    t.throws(() => context.get('aa'), { message: `Global variable 'aa' is not defined.`, instanceOf: VmError });
 
     t.true(context.has(''));
     t.false(context.has('aa'));

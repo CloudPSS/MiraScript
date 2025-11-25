@@ -3,8 +3,9 @@
 t_true(atan2(1, 1) =~ 0.785_398_163_397_448_3);
 t_true(atan2(0, 1) == 0);
 t_true(atan2(1, 0) =~ 1.570_796_326_794_896_6);
-t_eq(atan2(true, nil), atan2(1, 0));
 t_true(atan2(-1, -1) =~ -2.356_194_490_192_345);
+t_throws(fn { atan2(nil, 1) });
+t_throws(fn { atan2(1, '') });
 
 // pow
 t_eq(pow(nan, 0), 1);

@@ -40,7 +40,7 @@ test('callable extern', (t) => {
     t.true(isVmCallable(eSin));
     t.is(eSin.value, Math.sin);
     t.is(eSin.thisArg, null);
-    t.is(eSin.describe, 'Function');
+    t.is(eSin.describe, 'function sin()');
     t.is(unwrapFromVmValue(eSin), Math.sin);
     t.false(isProxy(unwrapFromVmValue(eSin)));
     t.is((unwrapFromVmValue(eSin) as typeof Math.sin)(1), Math.sin(1));
@@ -85,40 +85,40 @@ test('callable extern', (t) => {
 test('describe extern', (t) => {
     t.is(new VmExtern({}, null).describe, 'Object');
     t.is(new VmExtern(Object.create(null), null).describe, 'Object: null prototype');
-    t.is(new VmExtern([], null).describe, 'Array');
-    t.is(new VmExtern(() => 0, null).describe, 'Function');
+    t.is(new VmExtern([], null).describe, 'Array(0)');
+    t.is(new VmExtern(() => 0, null).describe, 'function <anonymous>()');
     // eslint-disable-next-line @typescript-eslint/require-await
-    t.is(new VmExtern(async () => 0, null).describe, 'AsyncFunction');
+    t.is(new VmExtern(async () => 0, null).describe, 'async function <anonymous>()');
     t.is(
         new VmExtern(function* () {
             yield 0;
         }, null).describe,
-        'GeneratorFunction',
+        'function* <anonymous>()',
     );
     t.is(
         // eslint-disable-next-line @typescript-eslint/require-await
         new VmExtern(async function* () {
             yield 0;
         }, null).describe,
-        'AsyncGeneratorFunction',
+        'async function* <anonymous>()',
     );
     const a = class A {
         x = 1;
     };
     t.is(new VmExtern(new a(), null).describe, 'A');
-    t.is(new VmExtern(a, null).describe, 'Class A');
+    t.is(new VmExtern(a, null).describe, 'class A');
     Object.defineProperty(a, 'name', { value: '' });
     t.is(new VmExtern(new a(), null).describe, 'Object');
-    t.is(new VmExtern(a, null).describe, 'Class');
+    t.is(new VmExtern(a, null).describe, 'class <anonymous>');
     // eslint-disable-next-line unicorn/consistent-function-scoping
     const f = function () {
         return 1;
     };
-    t.is(new VmExtern(f, null).describe, 'Class f');
+    t.is(new VmExtern(f, null).describe, 'class f');
     f.prototype = undefined;
-    t.is(new VmExtern(f, null).describe, 'Function');
+    t.is(new VmExtern(f, null).describe, 'function f()');
     f.prototype = null;
-    t.is(new VmExtern(f, null).describe, 'Class f');
+    t.is(new VmExtern(f, null).describe, 'class f');
 });
 
 test('Date extern', (t) => {
@@ -237,15 +237,40 @@ test('extern to_string', (t) => {
             toString: 123,
         },
         normal: {},
-        arr: [1, 2, 3],
+        arr: [
+            1,
+            2,
+            3,
+            /test/i,
+            undefined,
+            null,
+            [1, 2, 3],
+            {
+                toString() {
+                    return `Custom String`;
+                },
+            },
+            // eslint-disable-next-line no-sparse-arrays
+            ,
+        ],
+        fail_arr: [
+            {
+                toString() {
+                    throw new Error('fail');
+                },
+            },
+        ],
     });
     const e = exec(context);
     t.is(e('ok::to_string()'), 'ok');
-    t.is(e('fail::to_string()'), '<extern Object>');
+    t.throws(() => e('fail::to_string()'), { message: 'Failed to convert value to string: <extern>' });
+    t.is(e('fail::to_string(0)'), 0);
     t.is(e('void::to_string()'), '<extern Object>');
     t.is(e('bad::to_string()'), '<extern Object>');
     t.is(e('normal::to_string()'), '<extern Object>');
-    t.is(e('arr::to_string()'), '1,2,3');
+    t.is(e('arr::to_string()'), '1, 2, 3, /test/i, , nil, [1, 2, 3], Custom String, ');
+    t.throws(() => e('fail_arr::to_string()'), { message: 'Failed to convert value to string: <extern>' });
+    t.is(e('arr.3::to_string()'), '/test/i');
 });
 
 test('extern json', (t) => {
@@ -377,7 +402,7 @@ test('extern iterable', (t) => {
     t.deepEqual(e('[..map.keys()]'), ['a', 'b', 'c']);
     t.deepEqual(e('[..map.values()]'), [1, 2, 3]);
     t.deepEqual(e('[..set]'), [100, 200, 300]);
-    t.throws(() => e('[..noniter]'), { message: 'Expected array, iterable extern or nil, got extern' });
+    t.throws(() => e('[..noniter]'), { message: 'Expected array, iterable extern or nil, got <extern Object>' });
 });
 
 test('extern spread', (t) => {

@@ -1,8 +1,9 @@
+import { toBoolean } from '../../../../helpers/convert/to-boolean.js';
 import { entries } from '../../../../helpers/utils.js';
 import { Cp } from '../../../helpers.js';
-import { $Call, $ToBoolean } from '../../../operations.js';
+import { $Call } from '../../../operations.js';
 import { isVmArray } from '../../../types/index.js';
-import { expectArrayOrRecord, expectCallable, VmLib } from '../../_helpers.js';
+import { expectArrayOrRecord, expectCallable, VmLib } from '../../helpers.js';
 
 export const all = VmLib(
     (data, predicate) => {
@@ -11,17 +12,19 @@ export const all = VmLib(
         if (isVmArray(data)) {
             for (let i = 0; i < data.length; i++) {
                 Cp();
+                /* c8 ignore next */
                 const value = data[i] ?? null;
                 const ret = $Call(predicate, [value, i, data]);
-                if (!$ToBoolean(ret)) return false;
+                if (!toBoolean(ret, undefined)) return false;
             }
             return true;
         } else {
             for (const [key, v] of entries(data)) {
                 Cp();
+                /* c8 ignore next */
                 const value = v ?? null;
                 const ret = $Call(predicate, [value, key, data]);
-                if (!$ToBoolean(ret)) return false;
+                if (!toBoolean(ret, undefined)) return false;
             }
             return true;
         }
@@ -45,17 +48,19 @@ export const any = VmLib(
         if (isVmArray(data)) {
             for (let i = 0; i < data.length; i++) {
                 Cp();
+                /* c8 ignore next */
                 const value = data[i] ?? null;
                 const ret = $Call(predicate, [value, i, data]);
-                if ($ToBoolean(ret)) return true;
+                if (toBoolean(ret, undefined)) return true;
             }
             return false;
         } else {
             for (const [key, v] of entries(data)) {
                 Cp();
+                /* c8 ignore next */
                 const value = v ?? null;
                 const ret = $Call(predicate, [value, key, data]);
-                if ($ToBoolean(ret)) return true;
+                if (toBoolean(ret, undefined)) return true;
             }
             return false;
         }

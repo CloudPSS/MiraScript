@@ -7,25 +7,28 @@
     {
       let x = 3;
       t_eq(x, 3);
-      t_eq(global.x, nil);
-      t_eq(global['x'], nil);
+      t_false('x' in global);
+      t_throws(fn { global.x });
       t_eq(inner, 'y');
       t_eq(outer, 'x');
     }
     t_eq(x, 2);
-    t_eq(global.x, nil);
-    t_eq(global['x'], nil);
+    t_false('x' in global);
+    t_throws(fn { global.x });
     t_eq(inner, 'y');
     t_eq(outer, 'x');
   }
   t_eq(x, 1);
-  t_eq(global.x, nil);
-  t_eq(global['x'], nil);
-  t_eq(inner, nil);
+  t_false('x' in global);
+  t_false('inner' in global);
+  t_throws(fn { inner });
   t_eq(outer, 'x');
 }
-t_eq(x, nil);
-t_eq(global.x, nil);
-t_eq(global['x'], nil);
-t_eq(outer, nil);
-t_eq(inner, nil);
+t_false('x' in global);
+t_false(['x'] in global);
+t_throws(fn { x });
+t_throws(fn { global.x });
+t_throws(fn { global['x'] });
+t_throws(fn { global[['x']] });
+t_throws(fn { outer });
+t_throws(fn { inner });

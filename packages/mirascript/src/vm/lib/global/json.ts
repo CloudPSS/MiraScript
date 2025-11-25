@@ -1,5 +1,5 @@
 import { isVmExtern, isVmModule } from '../../types/index.js';
-import { required, rethrowError, VmLib } from '../_helpers.js';
+import { required, rethrowError, VmLib } from '../helpers.js';
 const { parse, stringify } = JSON;
 
 export const to_json = VmLib(
@@ -31,7 +31,7 @@ export const from_json = VmLib(
         try {
             return parse(json);
         } catch (ex) {
-            if (fallback != null) return fallback;
+            if (fallback !== undefined) return fallback;
             rethrowError('Invalid JSON', ex, null);
         }
     },

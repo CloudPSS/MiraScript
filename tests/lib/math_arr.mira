@@ -4,20 +4,22 @@ t_eq(max(1, 2, 3), 3);
 t_eq(max([1, 2, 3]), 3);
 t_eq(max(-1, -2, -3), -1);
 t_eq(max(), -inf);
-t_eq(max(nil), -inf);
-t_eq(max([nil]), -inf);
+t_eq(max([]), -inf);
 t_eq(max(-0, 0), 0);
 t_eq(max(-0, 0, nan), nan);
+t_throws(fn { max(nil) });
+t_throws(fn { max([nil]) });
 
 // min
 t_eq(min(1, 2, 3), 1);
 t_eq(min([1, 2, 3]), 1);
 t_eq(min(-1, -2, -3), -3);
 t_eq(min(), inf);
-t_eq(min(nil), inf);
-t_eq(min([nil]), inf);
+t_eq(min([]), inf);
 t_eq(min(-0, 0), -0);
 t_eq(min(-0, 0, nan), nan);
+t_throws(fn { min(nil) });
+t_throws(fn { min([nil]) });
 
 // hypot
 t_eq(hypot(3, 4), 5);
@@ -25,27 +27,30 @@ t_eq(hypot(5, 12), 13);
 t_eq(hypot(1, 1), 1.414_213_562_373_095_1);
 t_eq(hypot([3, 4]), 5);
 t_eq(hypot(), 0);
+t_eq(hypot([]), 0);
 t_eq(hypot(nan, 1, 2), nan);
-t_eq(hypot(nil), 0);
-t_eq(hypot([nil]), 0);
+t_throws(fn { hypot(nil) });
+t_throws(fn { hypot([nil]) });
 
 // sum
 t_eq(sum(1, 2, 3, 4), 10);
 t_eq(sum(1, 2, 3, 4, nan), nan);
 t_eq(sum([1, 2, 3, 4]), 10);
 t_eq(sum(), -0);
+t_eq(sum([]), -0);
 t_eq(sum(-0), -0);
 t_eq(sum(-0, -0), -0);
 t_eq(sum(-0, 0), 0);
-t_eq(sum(nil), -0);
-t_eq(sum([nil]), -0);
+t_throws(fn { sum(nil) });
+t_throws(fn { sum([nil]) });
 
 // product
 t_eq(product(1, 2, 3, 4), 24);
 t_eq(product(1, 2, 3, 4, nan), nan);
 t_eq(product([1, 2, 3, 4]), 24);
 t_eq(product(), 1);
+t_eq(product([]), 1);
 t_eq(product(-0), -0);
 t_eq(product(-0, -0), 0);
-t_eq(product(nil), 1);
-t_eq(product([nil]), 1);
+t_throws(fn { product(nil) });
+t_throws(fn { product([nil]) });

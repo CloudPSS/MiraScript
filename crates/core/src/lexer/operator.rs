@@ -89,38 +89,38 @@ pub enum Operator {
     #[strum(props(logical = true, compound = true))]
     LogicalOrAssign,
     /// `??`
-    #[strum(props(logical = true, infix = true))]
+    #[strum(props(null_coalescing = true, infix = true))]
     NullCoalescing,
     /// `??=`
-    #[strum(props(logical = true, compound = true))]
+    #[strum(props(null_coalescing = true, compound = true))]
     NullCoalescingAssign,
 
     /// `=`
     Assign,
 
     /// `==`
-    #[strum(props(relation = true, infix = true))]
+    #[strum(props(equality = true, infix = true))]
     Equal,
     /// `!=`
-    #[strum(props(relation = true, infix = true))]
+    #[strum(props(equality = true, infix = true))]
     NotEqual,
     /// `=~`
-    #[strum(props(relation = true, infix = true))]
+    #[strum(props(comparison = true, infix = true))]
     TildeEqual,
     /// `!~`
-    #[strum(props(relation = true, infix = true))]
+    #[strum(props(comparison = true, infix = true))]
     TildeNotEqual,
     /// `>`
-    #[strum(props(relation = true, infix = true))]
+    #[strum(props(comparison = true, infix = true))]
     Greater,
     /// `>=`
-    #[strum(props(relation = true, infix = true))]
+    #[strum(props(comparison = true, infix = true))]
     GreaterEqual,
     /// `<`
-    #[strum(props(relation = true, infix = true))]
+    #[strum(props(comparison = true, infix = true))]
     Less,
     /// `<=`
-    #[strum(props(relation = true, infix = true))]
+    #[strum(props(comparison = true, infix = true))]
     LessEqual,
 
     /// `;`
@@ -174,26 +174,32 @@ impl Operator {
         }
     }
 
-    pub fn is_arithmetic(&self) -> bool {
+    pub(crate) fn is_arithmetic(&self) -> bool {
         self.get_bool("arithmetic").unwrap_or(false)
     }
-    pub fn is_logical(&self) -> bool {
+    pub(crate) fn is_logical(&self) -> bool {
         self.get_bool("logical").unwrap_or(false)
     }
-    pub fn is_relation(&self) -> bool {
-        self.get_bool("relation").unwrap_or(false)
+    pub(crate) fn is_equality(&self) -> bool {
+        self.get_bool("equality").unwrap_or(false)
+    }
+    pub(crate) fn is_comparison(&self) -> bool {
+        self.get_bool("comparison").unwrap_or(false)
+    }
+    pub(crate) fn is_relation(&self) -> bool {
+        self.is_equality() || self.is_comparison()
     }
 
-    pub fn is_infix(&self) -> bool {
+    pub(crate) fn is_infix(&self) -> bool {
         self.get_bool("infix").unwrap_or(false)
     }
-    pub fn is_prefix(&self) -> bool {
+    pub(crate) fn is_prefix(&self) -> bool {
         self.get_bool("prefix").unwrap_or(false)
     }
-    pub fn is_postfix(&self) -> bool {
+    pub(crate) fn is_postfix(&self) -> bool {
         self.get_bool("postfix").unwrap_or(false)
     }
-    pub fn is_compound(&self) -> bool {
+    pub(crate) fn is_compound(&self) -> bool {
         self.get_bool("compound").unwrap_or(false)
     }
 }

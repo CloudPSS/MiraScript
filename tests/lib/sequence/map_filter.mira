@@ -143,7 +143,10 @@ t_throws(fn () {
 });
 
 // 测试布尔值转换
-t_eq(filter([0, 1, 2, nan, "", "hello", nil, false, true], fn (x) { x }), [0, 1, 2, nan, "", "hello", true]);
+t_throws(fn () { [0]::filter(fn { it }) });
+t_throws(fn () { [nan]::filter(fn { it }) });
+t_throws(fn () { (nil,)::filter(fn { it }) });
+t_throws(fn () { ''::filter(fn { it }) });
 
 // mapper 返回函数
 t_eq(map(0, fn (x) {

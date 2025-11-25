@@ -19,7 +19,11 @@ fn min(a, b) {
 }
 
 fn sign(x) {
-  if x > 0 { 1 } else if x < 0 { -1 } else { 0 }
+  match x {
+    case > 0 { 1 }
+    case < 0 { -1 }
+    case _ { x }
+  }
 }
 
 // 阶乘函数
@@ -122,7 +126,7 @@ fn average(numbers) {
 
 fn variance(numbers) {
   let avg = average(numbers);
-  if avg {
+  if avg is not nil {
     let mut sum_sq_diff = 0;
     for num in numbers {
       sum_sq_diff += (num - avg)^2;

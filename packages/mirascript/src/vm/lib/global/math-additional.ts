@@ -1,7 +1,6 @@
 /* eslint-disable no-loss-of-precision */
 import { isInteger, isNaN } from '../../../helpers/utils.js';
-import { $ToNumber } from '../../operations.js';
-import { required, VmLib } from '../_helpers.js';
+import { expectNumber, VmLib } from '../helpers.js';
 const { sqrt, pow, exp } = Math;
 
 const GAMMA_G = 4.742_187_5;
@@ -18,8 +17,7 @@ const SQRT_2_PI = sqrt(2 * Math.PI);
 
 export const factorial = VmLib(
     (x): number => {
-        required('x', x, Number.NaN);
-        let n = $ToNumber(x);
+        let n = expectNumber('x', x);
         if (isNaN(n) || n < 0) return Number.NaN;
         if (n >= 171) return Number.POSITIVE_INFINITY; // will overflow
 

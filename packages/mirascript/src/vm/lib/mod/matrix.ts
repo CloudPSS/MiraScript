@@ -1,7 +1,8 @@
-import { isArray } from '../../../../helpers/utils.js';
-import { Cp } from '../../../helpers.js';
-import { $Add, $Call, $Div, $Mul, $Sub, $ToNumber } from '../../../operations.js';
-import { isVmArray, isVmConst, type VmAny, type VmArray, type VmConst, type VmValue } from '../../../types/index.js';
+import { toNumber } from '../../../helpers/convert/to-number.js';
+import { isArray } from '../../../helpers/utils.js';
+import { Cp } from '../../helpers.js';
+import { $Add, $Call, $Div, $Mul, $Sub } from '../../operations.js';
+import { isVmArray, isVmConst, type VmAny, type VmArray, type VmConst, type VmValue } from '../../types/index.js';
 import {
     VmLib,
     expectArray,
@@ -12,7 +13,8 @@ import {
     getNumbers,
     arrayLen,
     map,
-} from '../../_helpers.js';
+    expectInteger,
+} from '../helpers.js';
 
 /** 计算尺寸 */
 function sizeImpl(matrix: VmValue): [] | [number] | [number, number] {
@@ -35,7 +37,7 @@ function sizeImpl(matrix: VmValue): [] | [number] | [number, number] {
 
 /** 数组元素转为 number */
 function num(v: VmConst | undefined): number {
-    return $ToNumber(v ?? null);
+    return toNumber(v, undefined);
 }
 
 export const size = VmLib(
@@ -535,7 +537,7 @@ export const identity = VmLib(
 export const diagonal = VmLib(
     (x, k = 0) => {
         expectArray('x', x, []);
-        const fk = Math.round($ToNumber(k) || 0);
+        const fk = expectInteger('k', k);
         if (x.every((e) => isArray(e))) {
             // 获取对角线元素
             const diag: VmConst[] = [];

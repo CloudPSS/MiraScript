@@ -29,12 +29,6 @@ MiraScript 支持以下数据类型：
 
 除了 `extern` 类型，MiraScript 的所有类型都是不可变的。不可变性意味着一旦创建，数据的值就不能被修改。注意 `module` 类型可以包含 `extern` 类型的值，因此其深层次的值可能是可变的。
 
-### 真值和假值
-
-MiraScript 中的真值和假值是指在布尔上下文中被视为 `true` 或 `false` 的值。
-
-MiraScript 中的假值只有 `nil` 和 `false` 两个值，所有其他值都被视为真值。
-
 ## 抽象操作
 
 TODO:
@@ -235,6 +229,28 @@ debug_print(array[4..<-2]); // 输出 ""
 
 `..` 和 `..<` 操作符的优先级介于加法运算（二元 `+`、`-`）和模式匹配（`is`）之间。
 
+### 类型转换
+
+在需要时，MiraScript 会对值的类型进行转换，规则如下：
+
+#### 转换为 `string`
+
+基本上，所有 MiraScript 值都可以成功转换为 `string`。其中，`nil` 将被转换为空字符串；`record` 和 `array` 的元素之间将使用 `', '` 连接。
+
+#### 转换为 `number`
+
+MiraScript 中以下值支持转换为 `number`：
+
+- `true`：转换为 `1`；
+- `false`：转换为 `0`；
+- `string`：除了表示数字的字符串外，`"nan"` `"NaN"` `"[+-]?inf"` `"[+-]Infinity"` 也可以被转换为 `number`。
+
+除此之外的其他值，包括不表示数字的字符串、空字符串，在转换过程中均会产生异常。
+
+#### 转换为 `boolean`
+
+MiraScript 不支持其他类型转换为 `boolean`。所有转换的尝试均产生异常。
+
 ### 表达式
 
 MiraScript 的表达式是一个值的计算，表达式可以是一个值、一个变量、一个函数调用、一个操作符等。MiraScript 的表达式包括：
@@ -302,7 +318,7 @@ debug_print("the sum of ${a} and ${b} is $(a + b)"); // 输出 "the sum of 1 and
 |        |          |          | 不相等 `x != y`     | 等价于 `!(x == y)`                 |
 |        |          |          | 近似相等 `x =~ y`   | 操作数为 `number` 或 `string` 类型 |
 |        |          |          | 不近似相等 `x !~ y` | 等价于 `!(x =~ y)`                 |
-|        | 逻辑与   | 从左到右 | 逻辑与 `x && y`     |                                    |
+|        | 逻辑与   | 从左到右 | 逻辑与 `x && y`     | 操作数为 `boolean` 类型            |
 |        | 逻辑或   | 从左到右 | 逻辑或 `x \|\| y`   |                                    |
 | 最低   | 空合并   | 从左到右 | 空合并 `x ?? y`     |                                    |
 
@@ -338,15 +354,15 @@ let y = x.2 ?? 0; // y 的值为 0
 
 ##### 短路求值
 
-MiraScript 的逻辑运算符支持短路求值，`&&`、`||` 和 `??` 运算符的右操作数只有在左操作数为真值、假值或 `nil` 时才会被求值。
+MiraScript 的逻辑运算符支持短路求值，`&&`、`||` 和 `??` 运算符的右操作数只有在左操作数为 `true`、`false` 或 `nil` 时才会被求值。
 
 ```mira
-let x = nil;
-let y = "";
+let x = false;
+let y = true;
 let z = 0;
-let and_result = x && y;     // x 为假值，y 不会被求值，and_result 的值为 nil
-let or_result = y || z;      // y 为真值，z 不会被求值，or_result 的值为 ""
-let nil_coalescing = y ?? z; // y 不为 nil，z 不会被求值，nil_coalescing 的值为 ""
+let and_result = x && y;     // x 为 false，y 不会被求值，and_result 的值为 false
+let or_result = y || z;      // y 为 true，z 不会被求值，or_result 的值为 true
+let nil_coalescing = x ?? z; // y 不为 nil，z 不会被求值，nil_coalescing 的值为 false
 ```
 
 MiraScript 的链式调用也支持短路求值，在函数调用中，当操作数不是标识符且值为 `nil` 时，参数不会被求值，调用的返回值为 `nil`。
@@ -522,9 +538,9 @@ let z = {
 
 #### `if` 表达式
 
-`if` 表达式用于条件判断，语法为 `if <condition> <then_expression> [else <else_expression>]`。其中 `<condition>` 是一个条件表达式，无需使用括号括起来；`<then_expression>` 是条件为真值时执行的表达式，必须为块表达式；`<else_expression>` 是条件为假值时执行的表达式，必须为 `if` 表达式或块表达式。
+`if` 表达式用于条件判断，语法为 `if <condition> <then_expression> [else <else_expression>]`。其中 `<condition>` 是一个条件表达式，无需使用括号括起来；`<then_expression>` 是条件为 `true` 时执行的表达式，必须为块表达式；`<else_expression>` 是条件为 `false` 时执行的表达式，必须为 `if` 表达式或块表达式；条件为其他值时会抛出异常。
 
-`if` 表达式的值为 `<then_expression>` 或 `<else_expression>` 的值。当条件为假值且不存在 `<else_expression>` 时，`if` 表达式的值为 `nil`。
+`if` 表达式的值为 `<then_expression>` 或 `<else_expression>` 的值。当条件为 `false` 且不存在 `<else_expression>` 时，`if` 表达式的值为 `nil`。
 
 ```mira
 let x = 1;
@@ -634,12 +650,14 @@ fn is_nan { it is nan }
 
 #### 常量模式
 
-常量模式用于匹配常量的值。常量模式的语法为 `<constant>`，其中 `<constant>` 是一个以 `@` 开头的标识符名称。
-
-与 `==` 运算符不同，字面量模式使用相同值语义进行匹配。
+与字面量模式类似，常量模式用于匹配常量的值。常量模式的语法为 `<constant>`，其中 `<constant>` 是一个以 `@` 开头的标识符名称。
 
 ```mira
 fn is_pi { it is @pi }
+fn is_nan {
+  const @nan = nan;
+  it is @nan
+}
 ```
 
 #### 关系模式
@@ -647,6 +665,8 @@ fn is_pi { it is @pi }
 关系模式用于匹配关系运算的结果。关系模式的语法为 `<relation> <value>`，其中 `<relation>` 是 `>`、`<`、`<=`、`==`、`!=`、`=~`、`!~` 运算符，`<value>` 是一个字面量模式或常量模式。
 
 关系模式相当于对匹配到的值进行 `<captured> <relation> <value>` 的判断，当该判断返回 `false` 时，匹配失败。
+
+关系模式中不会进行隐式类型转换，当 `<captured>` 与 `<value>` 类型不一致时，匹配失败。
 
 ```mira
 fn gpa {
@@ -662,9 +682,11 @@ fn gpa {
 
 #### 范围模式
 
-范围模式用于匹配数字或字符串范围。范围模式的语法为 `<start>..<end>` 或 `<start>..<<end>`，其中 `<start>` 和 `<end>` 是数字或字符串的字面量模式或常量模式。
+范围模式用于匹配数字范围。范围模式的语法为 `<start>..<end>` 或 `<start>..<<end>`，其中 `<start>` 和 `<end>` 是数字字面量模式或常量模式。
 
 范围模式相当于对匹配到的值进行 `<captured> >= <start>` 和 `<captured> <= <end>` / `<captured> < <end>` 的判断，当该判断返回 `false` 时，匹配失败。
+
+范围模式中不会进行隐式类型转换，只有当 `<captured>` 为 `number` 时，才会进行后续的测试，否则匹配失败。
 
 ```mira
 fn season {

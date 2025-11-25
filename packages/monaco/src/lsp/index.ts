@@ -17,7 +17,6 @@ import { RangeProvider } from './providers/range-provider.js';
 import { RenameProvider } from './providers/rename-provider.js';
 import { DocumentSemanticTokensProvider } from './providers/semantic-tokens-provider.js';
 import { SignatureHelpProvider } from './providers/signature-help-provider.js';
-import { ready } from '@mirascript/wasm';
 
 export {
     CodeActionProvider,
@@ -39,7 +38,8 @@ export {
 /** 注册 LSP 相关的编辑器功能 */
 export async function registerLSP(contextProvider: VmContextProvider | undefined): Promise<IDisposable[]> {
     setContextProvider(contextProvider);
-    await ready;
+    const { loadModule } = await import('@mirascript/bindings/wasm');
+    await loadModule();
 
     const codeActionProvider = new CodeActionProvider();
     const colorProvider = new ColorProvider();

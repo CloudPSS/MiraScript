@@ -1,10 +1,9 @@
-import { $ToNumber } from '../../../operations.js';
-import { VmLib, expectArray } from '../../_helpers.js';
+import { VmLib, expectArray, expectNumber } from '../../helpers.js';
 
 export const flatten = VmLib(
     (data, depth = 1) => {
         expectArray('data', data, data);
-        return data.flat($ToNumber(depth) as 1);
+        return data.flat(expectNumber('depth', depth) as 1);
     },
     {
         summary: '将数组扁平化',

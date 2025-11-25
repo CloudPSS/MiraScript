@@ -12,6 +12,7 @@ import {
     VmFunction,
     VmModule,
     type VmFunctionOption,
+    type VmImmutable,
     type VmPrimitive,
     type VmValue,
 } from '@mirascript/mirascript';
@@ -70,12 +71,12 @@ class MiraConfigData extends Disposable {
         });
     }
     /** 创建值 */
-    private static createValue(value: VmValue | VmFunctionOption, maybeFunction?: boolean): VmValue {
+    private static createValue(value: VmImmutable | VmFunctionOption, maybeFunction?: boolean): VmImmutable {
         if (value == null || typeof value != 'object') {
             return value;
         }
         if (!maybeFunction || isVmArray(value) || isVmExtern(value) || isVmModule(value)) {
-            return value as VmValue;
+            return value as VmImmutable;
         }
 
         return VmFunction(() => {
@@ -129,7 +130,7 @@ class MiraConfigData extends Disposable {
             const value = modules[moduleName];
             if (value == null || typeof value != 'object') continue;
 
-            const module: Record<string, VmValue> = Object.create(null);
+            const module: Record<string, VmImmutable> = Object.create(null);
             for (const key in value) {
                 const func = value[key];
                 if (func === undefined) continue;

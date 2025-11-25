@@ -13,10 +13,12 @@ import {
     keywords,
     numericKeywords,
 } from '../constants.js';
-import { lib } from '@mirascript/mirascript/subtle';
+import { DefaultVmContext } from '@mirascript/mirascript/subtle';
 import { isVmModule } from '@mirascript/mirascript';
 
-const moduleNames = Object.keys(lib).filter((name) => isVmModule(lib[name as never]));
+const moduleNames = [...DefaultVmContext.keys()].filter(
+    (name) => DefaultVmContext.has(name) && isVmModule(DefaultVmContext.get(name)),
+);
 
 /** 匹配 identifier */
 function identifierCases(
@@ -114,9 +116,17 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                 { include: '@whitespace' },
                 { include: '@string' },
                 [/(@identifier)/, { cases: identifierCases() }],
-                [REG_OCT, 'number.octal'],
-                [REG_BIN, 'number.binary'],
-                [REG_HEX, 'number.hex'],
+                [
+                    /0[xobXOB]\p{XID_Continue}*/u,
+                    {
+                        cases: {
+                            [REG_OCT.source]: 'number.octal',
+                            [REG_BIN.source]: 'number.binary',
+                            [REG_HEX.source]: 'number.hex',
+                            '@default': 'number.invalid',
+                        },
+                    },
+                ],
                 [
                     REG_NUMBER,
                     {
@@ -268,7 +278,7 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                     /(@inlineDocParam)(@whitespace+)(\.\.|)(@identifier)/,
                     ['entity.name.label', '', 'delimiter', 'variable.other.constant.emphasis'],
                 ],
-                [/(@whitespace*)(\(module\))(\s*)(@identifier)/, ['', 'entity.name.label', '', 'type']],
+                [/(@whitespace*)(\(module\))(@whitespace*)(@identifier)/, ['', 'entity.name.label', '', 'type']],
                 [/(\(@inlineDocMod\))(@whitespace+)/, ['entity.name.label', '']],
                 { include: '@doc_mode' },
             ],
@@ -350,8 +360,20 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                     ['comment.doc', 'type.doc', 'keyword.javascript', '', 'type.javascript', 'comment.doc'],
                 ],
                 [
-                    /(\/\*@whitespace*<)(extern )([\w]*)(>@whitespace*\*\/)/,
-                    ['comment.doc', 'type.doc', 'type.javascript', 'comment.doc'],
+                    /(\/\*@whitespace*<)(extern )([\w]*)(\()(\d+)(\))(>@whitespace*\*\/)/,
+                    [
+                        'comment.doc',
+                        'type.doc',
+                        'type.javascript',
+                        'delimiter',
+                        'number.doc',
+                        'delimiter',
+                        'comment.doc',
+                    ],
+                ],
+                [
+                    /(\/\*@whitespace*<)(extern )([\w]*)([^>]*)(>@whitespace*\*\/)/,
+                    ['comment.doc', 'type.doc', 'type.javascript', '', 'comment.doc'],
                 ],
                 [
                     /(\/\*@whitespace*<)(function )([.\w]*)(>@whitespace*\*\/)/,

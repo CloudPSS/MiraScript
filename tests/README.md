@@ -43,4 +43,4 @@ let v_module = /* 名为 v_module 的模块 */;
 let v_module_another = /* 名为 v_module_another 的模块 */;
 ```
 
-参考 [packages/mirascript/tests/black-box.ts](../packages/mirascript/tests/black-box.ts) 中的实现。
+参考 [packages/mirascript/tests/black-box/\_run.ts](../packages/mirascript/tests/black-box/_run.ts) 中的实现。

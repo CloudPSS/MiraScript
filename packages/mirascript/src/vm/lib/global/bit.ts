@@ -1,9 +1,8 @@
-import { $ToNumber } from '../../operations.js';
-import { VmLib } from '../_helpers.js';
+import { VmLib, expectNumber } from '../helpers.js';
 
 export const b_and = VmLib(
     (x, y) => {
-        return $ToNumber(x) & $ToNumber(y);
+        return expectNumber(0, x) & expectNumber(1, y);
     },
     {
         summary: '返回两个数的按位与',
@@ -16,7 +15,7 @@ export const b_and = VmLib(
 
 export const b_or = VmLib(
     (x, y) => {
-        return $ToNumber(x) | $ToNumber(y);
+        return expectNumber(0, x) | expectNumber(1, y);
     },
     {
         summary: '返回两个数的按位或',
@@ -29,7 +28,7 @@ export const b_or = VmLib(
 
 export const b_not = VmLib(
     (x) => {
-        return ~$ToNumber(x);
+        return ~expectNumber('x', x);
     },
     {
         summary: '返回一个数的按位取反',
@@ -42,7 +41,7 @@ export const b_not = VmLib(
 
 export const b_xor = VmLib(
     (x, y) => {
-        return $ToNumber(x) ^ $ToNumber(y);
+        return expectNumber(0, x) ^ expectNumber(1, y);
     },
     {
         summary: '返回两个数的按位异或',
@@ -55,7 +54,7 @@ export const b_xor = VmLib(
 
 export const shl = VmLib(
     (x, y) => {
-        return $ToNumber(x) << $ToNumber(y);
+        return expectNumber(0, x) << expectNumber(1, y);
     },
     {
         summary: '返回第一个操作数左移指定的位数',
@@ -68,7 +67,7 @@ export const shl = VmLib(
 
 export const sar = VmLib(
     (x, y) => {
-        return $ToNumber(x) >> $ToNumber(y);
+        return expectNumber(0, x) >> expectNumber(1, y);
     },
     {
         summary: '返回第一个操作数右移指定的位数',
@@ -81,7 +80,7 @@ export const sar = VmLib(
 
 export const shr = VmLib(
     (x, y) => {
-        return $ToNumber(x) >>> $ToNumber(y);
+        return expectNumber(0, x) >>> expectNumber(1, y);
     },
     {
         summary: '返回第一个操作数无符号右移指定的位数',

@@ -1,3 +1,4 @@
+import { kVmWrapper } from '../../helpers/constants.js';
 import type { TypeName, VmAny } from './index.js';
 
 /**
@@ -22,16 +23,11 @@ export abstract class VmWrapper<T extends object> {
         return undefined;
     }
     /** 转为字符串 */
-    toString(): string {
+    toString(useBraces: boolean): string {
         const { type, describe } = this;
         if (!describe) return `<${type}>`;
         return `<${type} ${describe}>`;
     }
 }
 
-const kVmWrapper = Symbol.for('mirascript.vm.wrapper');
 Object.defineProperty(VmWrapper.prototype, kVmWrapper, { value: true });
-/** 检查值是否为 MiraScript 包装器 */
-export function isVmWrapper<T extends object>(value: unknown): value is VmWrapper<T> {
-    return value != null && typeof value == 'object' && kVmWrapper in value;
-}

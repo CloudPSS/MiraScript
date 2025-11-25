@@ -110,8 +110,6 @@ pub enum DiagnosticCode {
     PatternExpected,
     #[strum(message = "Operator `!` is not allowed in a literal pattern")]
     ExclamationInLiteralPattern,
-    #[strum(message = "Only number literals can be prefixed with `+` or `-` in a literal pattern")]
-    UnexpectedOperatorInLiteralPattern,
     #[strum(message = "`mut` is not allowed during rebinding")]
     MutInRebindPattern,
     #[strum(message = "variable whose name starts with `@` is not allowed to be rebound")]
@@ -152,8 +150,18 @@ pub enum DiagnosticCode {
     MisuseOfGlobalKeyword,
     #[strum(message = "Cannot infer key from the expression")]
     BadOmitKeyRecordExpression,
-    #[strum(message = "Cannot assign to the expression")]
+    #[strum(message = "Can only assign to a variable or a field access")]
     UnassignableExpression,
+
+    // Static type checking errors
+    #[strum(message = "Non-number literal cannot be used in range")]
+    NonNumberInRange,
+    #[strum(message = "Non-number-or-string literal cannot be used in comparison expression")]
+    NonNumberOrStringInComparison,
+    #[strum(message = "Non-number literal cannot be used in arithmetic expression")]
+    NonNumberInArithmetic,
+    #[strum(message = "Non-boolean literal cannot be used in logical expression")]
+    NonBooleanInLogical,
 
     ErrorEnd = 1999,
     // Warning 2000~2999
@@ -171,8 +179,12 @@ pub enum DiagnosticCode {
         message = "This pattern in a irrefutable matching is unnecessary; consider removing it or using in an `is` expression instead"
     )]
     UnnecessaryIrrefutablePattern,
-    #[strum(message = "Use `and` instead in irrefutable patterns for better readability")]
-    MisleadingOrInIrrefutablePattern,
+    #[strum(message = "This `match` expression has no cases; it will never match any value")]
+    MatchExpressionHasNoCases,
+
+    // For analyzer
+    #[strum(message = "Global variable `$0` is not declared")]
+    GlobalVariableNotDeclared,
 
     WarningEnd = 2999,
     // Info 3000~3999

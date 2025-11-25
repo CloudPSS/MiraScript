@@ -1,0 +1,68 @@
+t_eq(to_number(1), 1);
+t_ne(+0, -0);
+t_eq(to_number(+0), +0);
+t_eq(to_number(-0), -0);
+t_eq(to_number(nan), nan);
+t_eq(to_number(inf), inf);
+
+t_eq(to_number(' 0 '), 0);
+t_eq(to_number('+0'), 0);
+t_eq(to_number('-0'), -0);
+t_eq(to_number('1'), 1);
+t_eq(to_number(' 1.0 '), 1);
+t_eq(to_number(' +1.0 '), 1);
+t_eq(to_number('0x1'), 1);
+t_eq(to_number('0xf'), 15);
+t_eq(to_number('0xF'), 15);
+t_eq(to_number('0XF'), 15);
+t_eq(to_number('nan'), nan);
+t_eq(to_number('inf'), inf);
+t_eq(to_number(' +inf '), inf);
+t_eq(to_number('Infinity'), inf);
+t_eq(to_number('+Infinity'), inf);
+t_eq(to_number(' -inf '), -inf);
+t_eq(to_number('-Infinity'), -inf);
+
+t_eq(to_number(true), 1);
+t_eq(to_number(false), 0);
+
+t_throws(fn { to_number(nil) });
+
+t_throws(fn { to_number('') });
+t_throws(fn { to_number('  ') });
+t_throws(fn { to_number('-+0') });
+t_throws(fn { to_number('+ 1.0') });
+t_throws(fn { to_number('112_334') });
+t_throws(fn { to_number('112,334') });
+t_throws(fn { to_number('112 334') });
+t_throws(fn { to_number('0x 1') });
+t_throws(fn { to_number('0x F') });
+t_throws(fn { to_number('0xff_ff') });
+t_throws(fn { to_number('0 xF') });
+t_throws(fn { to_number('Inf') });
+t_throws(fn { to_number('INF') });
+t_throws(fn { to_number('+ inf') });
+t_throws(fn { to_number('+ inf ') });
+t_throws(fn { to_number('- inf') });
+t_throws(fn { to_number('i_n_f') });
+t_throws(fn { to_number('infinity') });
+t_throws(fn { to_number('INFINITY') });
+
+t_throws(fn { to_number(()) });
+t_throws(fn { to_number([]) });
+t_throws(fn { to_number([1]) });
+t_throws(fn { to_number((1,)) });
+t_throws(fn { to_number(fn { }) });
+
+t_eq(to_number(nil, 'x'), 'x');
+t_eq(to_number('', 'x'), 'x');
+t_eq(to_number(v_fn, 'x'), 'x');
+
+t_throws(fn { to_number(v_fn) });
+if has_extern {
+  t_throws(fn { to_number(v_extern) });
+}
+if has_module {
+  t_throws(fn { to_number(v_module) });
+}
+t_throws(fn { to_number() });

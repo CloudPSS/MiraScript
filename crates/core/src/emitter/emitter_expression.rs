@@ -178,10 +178,21 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 }
             }
             NonNil(expression, _) => self.declare_expression(expression),
-            Prefix(_, expression) => self.declare_expression(expression),
-            Infix(left, _, right) => {
+            Prefix(op, expression) => {
+                self.declare_expression(expression);
+                if let Expression::Literal(lit) = expression.as_ref() {
+                    self.check_static_operator_usage(op, lit);
+                }
+            }
+            Infix(left, op, right) => {
                 self.declare_expression(left);
                 self.declare_expression(right);
+                if let Expression::Literal(l_lit) = left.as_ref() {
+                    self.check_static_operator_usage(op, l_lit);
+                }
+                if let Expression::Literal(r_lit) = right.as_ref() {
+                    self.check_static_operator_usage(op, r_lit);
+                }
             }
             Is(expression, _, pattern) => {
                 self.declare_expression(expression);
@@ -806,12 +817,16 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 if let Some(f) = number_constant(expression) {
                     let r = expr.range();
                     match token.kind {
-                        TokenKind::Operator(Operator::Plus) => self.op_number(r, ret, f),
-                        TokenKind::Operator(Operator::Minus) => self.op_number(r, ret, -f),
-                        TokenKind::Operator(Operator::Exclamation) => self.op_bool(r, ret, false),
-                        _ => unreachable!(),
+                        TokenKind::Operator(Operator::Plus) => {
+                            self.op_number(r, ret, f);
+                            return;
+                        }
+                        TokenKind::Operator(Operator::Minus) => {
+                            self.op_number(r, ret, -f);
+                            return;
+                        }
+                        _ => (),
                     };
-                    return;
                 }
 
                 let reg = self.emit_expression_reg(expression, brk);
@@ -834,6 +849,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     self.emit_expression(left, ret, brk);
                     self.op_if(token.range(), OpCode::If, ret);
                     self.emit_expression(right, ret, brk);
+                    self.op_2(token.range(), OpCode::ToBoolean, ret, ret);
                     self.op_if_end(token.range());
                 } else if **token == Operator::LogicalOr {
                     let ret = if !ret.is_empty() {
@@ -844,6 +860,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     self.emit_expression(left, ret, brk);
                     self.op_if(token.range(), OpCode::IfNot, ret);
                     self.emit_expression(right, ret, brk);
+                    self.op_2(token.range(), OpCode::ToBoolean, ret, ret);
                     self.op_if_end(token.range());
                 } else if **token == Operator::NullCoalescing {
                     let ret = if !ret.is_empty() {
@@ -1095,7 +1112,10 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 if !ret.is_empty() {
                     self.op_nil(kw.range(), ret);
                 }
-
+                if items.is_empty() {
+                    self.diagnostics
+                        .push(DiagnosticCode::MatchExpressionHasNoCases, kw.range());
+                }
                 for MatchCase(kw_case, pattern, guard, body) in items {
                     let Expression::Block(_, stmts, expr, end) = body else {
                         return;

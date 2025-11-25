@@ -1,5 +1,5 @@
 import { isVmFunction, isVmModule } from '@mirascript/mirascript';
-import { DiagnosticCode } from '@mirascript/wasm';
+import { DiagnosticCode } from '@mirascript/bindings/wasm';
 import { Range, type CancellationToken, type editor, type languages } from '../../monaco-api.js';
 import { Provider } from './base.js';
 
@@ -66,12 +66,15 @@ export class DocumentSemanticTokensProvider extends Provider implements language
                     const id = model.getValueInRange(range);
                     if (id.startsWith('@')) {
                         tokenType = TokenType.CONSTANT;
-                    } else if (isVmFunction(globals.get(id))) {
-                        tokenType = TokenType.FUNCTION;
-                    } else if (isVmModule(globals.get(id))) {
-                        tokenType = TokenType.MODULE;
                     } else {
-                        tokenType = TokenType.GLOBAL;
+                        const val = globals.getOrUndefined(id);
+                        if (isVmFunction(val)) {
+                            tokenType = TokenType.FUNCTION;
+                        } else if (isVmModule(val)) {
+                            tokenType = TokenType.MODULE;
+                        } else {
+                            tokenType = TokenType.GLOBAL;
+                        }
                     }
                     break;
                 }

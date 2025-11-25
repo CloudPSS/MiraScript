@@ -1,20 +1,21 @@
 import type { Writable } from 'type-fest';
-import { DiagnosticCode, wasm } from '@mirascript/wasm';
+import { DiagnosticCode, getModule } from '@mirascript/bindings';
 import type { ScriptInput } from './types.js';
 import { isSafeInteger } from '../helpers/utils.js';
 
 export { DiagnosticCode };
 
-const diagnosticMessages = new Map<DiagnosticCode, string | undefined>();
+const diagnosticMessages = new Map<DiagnosticCode, string | null>();
 /** 获取 {@link DiagnosticCode} 对应的消息 */
-export function getDiagnosticMessage(code: DiagnosticCode): string | undefined {
+export function getDiagnosticMessage(code: DiagnosticCode): string | null {
     if (!isSafeInteger(code) || code < 0 || code >= 0xffff) {
         throw new RangeError(`Invalid DiagnosticCode: ${code}`);
     }
     if (diagnosticMessages.has(code)) {
-        return diagnosticMessages.get(code);
+        return diagnosticMessages.get(code) || null;
     }
-    const msg = wasm.get_diagnostic_message(code);
+    const mod = getModule();
+    const msg = mod.getDiagnosticMessage(code);
     diagnosticMessages.set(code, msg);
     return msg;
 }
@@ -182,13 +183,22 @@ function formatRange(range: IRange): string {
 }
 
 /** 生成诊断消息的字符串 */
-export function formatDiagnostic(diagnostic: SourceDiagnostic): string {
-    const range = formatRange(diagnostic.range);
-    const codeName = DiagnosticCode[diagnostic.code] || `Unknown(${diagnostic.code})`;
-    let message = getDiagnosticMessage(diagnostic.code);
-    for (const ref of diagnostic.references) {
-        const refRange = formatRange(ref.range);
-        message += `\n    (${refRange}): ${getDiagnosticMessage(ref.code)}`;
+export function formatDiagnostics(
+    diagnostics: Iterable<SourceDiagnostic>,
+    source: ScriptInput,
+    fileName: string | undefined,
+): string[] {
+    const rangePrefix = fileName ? `${fileName}:` : '';
+    const messages: string[] = [];
+    for (const diagnostic of diagnostics) {
+        const range = formatRange(diagnostic.range);
+        const codeName = DiagnosticCode[diagnostic.code] || `Unknown(${diagnostic.code})`;
+        let message = getDiagnosticMessage(diagnostic.code);
+        for (const ref of diagnostic.references) {
+            const refRange = formatRange(ref.range);
+            message += `\n    (${refRange}): ${getDiagnosticMessage(ref.code)}`;
+        }
+        messages.push(`  ${codeName}(${rangePrefix}${range}): ${message}`);
     }
-    return `  ${codeName}(${range}): ${message}`;
+    return messages;
 }

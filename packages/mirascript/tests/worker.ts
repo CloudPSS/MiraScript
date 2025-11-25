@@ -1,5 +1,6 @@
 import test from 'ava';
 import sinon from 'sinon';
+import { setTimeout } from 'node:timers/promises';
 
 const addEventListener = sinon.fake(((
     type: string,
@@ -19,7 +20,7 @@ let callback: ((ev: MessageEvent) => void) | undefined;
 
 test.before('load', async (t) => {
     await import('#compiler/worker');
-    await new Promise((resolve) => setTimeout(resolve, 200)); // Wait for async initialization
+    await setTimeout(500); // Wait for async initialization
     t.true(addEventListener.calledOnceWith('message', sinon.match.func));
     t.true(postMessage.calledOnceWith('ready'));
 });
@@ -29,17 +30,19 @@ test.beforeEach(() => {
     postMessage.resetHistory();
 });
 
+const WORKER_DELAY = 50;
+
 test.serial('bad message', async (t) => {
     callback!(new MessageEvent('message', { data: 'bad message' }));
     callback!(new MessageEvent('message', { data: ['bad message'] }));
     callback!(new MessageEvent('message', { data: [0] }));
-    await new Promise((resolve) => setTimeout(resolve, 10));
+    await setTimeout(WORKER_DELAY);
     t.false(postMessage.calledOnce);
 });
 
 test.serial('compile', async (t) => {
     callback!(new MessageEvent('message', { data: [0, 'nil', {}] }));
-    await new Promise((resolve) => setTimeout(resolve, 10));
+    await setTimeout(WORKER_DELAY);
     t.true(
         postMessage.calledOnceWith([0, sinon.match.string, sinon.match.instanceOf(Uint32Array)], {
             transfer: [sinon.match.instanceOf(ArrayBuffer)],
@@ -48,13 +51,13 @@ test.serial('compile', async (t) => {
 });
 test.serial('compile error', async (t) => {
     callback!(new MessageEvent('message', { data: [1, ''] }));
-    await new Promise((resolve) => setTimeout(resolve, 10));
+    await setTimeout(WORKER_DELAY);
     t.true(postMessage.calledOnceWith([1, sinon.match.instanceOf(Error)]));
 });
 
 test.serial('compile syntax error', async (t) => {
     callback!(new MessageEvent('message', { data: [2, '1 + ', {}] }));
-    await new Promise((resolve) => setTimeout(resolve, 10));
+    await setTimeout(WORKER_DELAY);
     t.true(
         postMessage.calledOnceWith([2, undefined, sinon.match.instanceOf(Uint32Array)], {
             transfer: [sinon.match.instanceOf(ArrayBuffer)],
@@ -77,6 +80,6 @@ test.serial('arg error', async (t) => {
             ],
         }),
     );
-    await new Promise((resolve) => setTimeout(resolve, 10));
+    await setTimeout(WORKER_DELAY);
     t.true(postMessage.calledOnceWith([1, sinon.match.instanceOf(Error).and(sinon.match.has('message', '0'))]));
 });

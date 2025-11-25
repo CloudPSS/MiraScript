@@ -1,4 +1,7 @@
 if !has_extern {
+  t_throws(fn {
+    v_extern;
+  });
   return;
 }
 

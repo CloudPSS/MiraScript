@@ -1,0 +1,5 @@
+
+fn cn {
+  if it > 100 { it } else { cn(it + 1) }
+}
+t_eq(cn(0), 101);

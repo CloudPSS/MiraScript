@@ -81,9 +81,9 @@ debug_print("broken_nested.level1.level2.level3.value =", broken_nested.level1.l
 
 // 使用 if 表达式进行空检查
 fn safe_access(obj) {
-  if obj.level1 {
-    if obj.level1.level2 {
-      if obj.level1.level2.level3 { obj.level1.level2.level3.value ?? "No value" } else { "Level3 missing" }
+  if obj.level1 is not nil {
+    if obj.level1.level2 is not nil {
+      if obj.level1.level2.level3 is not nil { obj.level1.level2.level3.value ?? "No value" } else { "Level3 missing" }
     } else { "Level2 missing" }
   } else { "Level1 missing" }
 }

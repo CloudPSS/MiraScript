@@ -1,17 +1,14 @@
-import { isVmFunction, type VmFunctionLike, type VmFunction } from './function.js';
-import { isVmExtern, VmExtern } from './extern.js';
-import { isVmWrapper } from './wrapper.js';
+import { defineProperty, apply } from '../../helpers/utils.js';
+import { isVmExtern, isVmFunction, isVmWrapper } from '../../helpers/types.js';
+import { kVmFunctionProxy } from '../../helpers/constants.js';
+import type { VmFunctionLike, VmFunction } from './function.js';
+import { VmExtern } from './extern.js';
 import type { VmAny, VmConst, VmModule, VmPrimitive, VmValue } from './index.js';
 import { $Call } from '../operations.js';
-import { defineProperty, apply } from '../../helpers/utils.js';
-
-const kProxy = Symbol.for('mirascript.vm.function.proxy');
 
 /** 创建 Mirascript 函数在宿主语言运行的代理 */
 export function toVmFunctionProxy<T extends VmFunctionLike>(fn: VmFunction<T>): T {
-    if (!isVmFunction(fn)) return fn;
-
-    const cached = (fn as unknown as { [kProxy]?: T })[kProxy];
+    const cached = (fn as unknown as { [kVmFunctionProxy]?: T })[kVmFunctionProxy];
     if (cached != null) return cached;
 
     const proxy = (...args: unknown[]) => {
@@ -22,8 +19,8 @@ export function toVmFunctionProxy<T extends VmFunctionLike>(fn: VmFunction<T>): 
         );
         return unwrapFromVmValue(ret);
     };
-    defineProperty(fn, kProxy, { value: proxy });
-    defineProperty(proxy, kProxy, { value: fn });
+    defineProperty(fn, kVmFunctionProxy, { value: proxy });
+    defineProperty(proxy, kVmFunctionProxy, { value: fn });
     defineProperty(proxy, 'name', {
         value: fn.name,
         configurable: true,
@@ -35,7 +32,7 @@ export function toVmFunctionProxy<T extends VmFunctionLike>(fn: VmFunction<T>): 
 export function fromVmFunctionProxy<T extends VmFunctionLike>(fn: T): VmFunction<T> | undefined {
     if (isVmFunction(fn)) return fn;
 
-    const original = (fn as unknown as { [kProxy]?: VmFunction<T> })[kProxy];
+    const original = (fn as unknown as { [kVmFunctionProxy]?: VmFunction<T> })[kVmFunctionProxy];
     if (original && isVmFunction(original)) return original;
 
     return undefined;
@@ -76,7 +73,7 @@ export function wrapToVmValue(
 
 /** 取消宿主语言的值的 Mirascript 包装  */
 export function unwrapFromVmValue(value: VmAny): unknown {
-    if (typeof value == 'function') {
+    if (isVmFunction(value)) {
         return toVmFunctionProxy(value);
     }
     if (value == null || typeof value != 'object') return value;

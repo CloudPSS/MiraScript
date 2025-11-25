@@ -76,11 +76,15 @@ async function compileWorker(req: Req): Promise<CompileResult> {
     return new CompileResult(key, version, source, result);
 }
 
+let compileImpl: typeof import('./worker.js').compile;
 /** 使用当前线程编译 */
 async function compileSync(req: Req): Promise<CompileResult> {
     const [key, version, script, mode] = req;
-    const { compile } = await import('./worker.js');
-    const result = compile(script, mode);
+    if (compileImpl == null) {
+        const mod = await import('./worker.js');
+        compileImpl = mod.compile;
+    }
+    const result = compileImpl(script, mode);
     return new CompileResult(key, version, script, result);
 }
 
@@ -100,9 +104,7 @@ export async function compile(model: editor.ITextModel): Promise<CompileResult> 
     const value = model.getValue();
     const req: Req = [cacheKey, version, value, mode];
     const res = USE_WORKER ? compileWorker(req) : compileSync(req);
-    void res.then((result) => {
-        setMarkers(model, result);
-    });
+    void res.then(async (result) => setMarkers(model, result));
     const item: CacheValue = {
         version,
         lastAccess: Date.now(),

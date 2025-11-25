@@ -16,6 +16,7 @@ mod emitter_statement;
 mod emitter_struct;
 mod opcode;
 mod scope;
+mod static_checker;
 mod utils;
 mod variable;
 

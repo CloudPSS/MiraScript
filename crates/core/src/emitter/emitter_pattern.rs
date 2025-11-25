@@ -11,7 +11,10 @@ use crate::{
 };
 
 use super::{
-    Emitter, OpCode, emitter_scope::check_variable_initialized, opcode::OpParam, opcode::Register,
+    Emitter, OpCode,
+    constant::Constant,
+    emitter_scope::check_variable_initialized,
+    opcode::{OpParam, Register},
     variable::BindType,
 };
 
@@ -136,7 +139,11 @@ impl<'s, 'c> Emitter<'s, 'c> {
         }
     }
 
-    fn emit_literal_constant(&mut self, pattern_constant: &'s Pattern<'s>, value: Register) {
+    fn emit_literal_constant(
+        &mut self,
+        pattern_constant: &'s Pattern<'s>,
+        value: Register,
+    ) -> Option<Constant<'s>> {
         match pattern_constant {
             Literal(prefix, lit) => {
                 if let Some(lit_num) = match &lit.kind {
@@ -151,38 +158,47 @@ impl<'s, 'c> Emitter<'s, 'c> {
                         .is_some_and(|f| *f.as_ref() == Operator::Minus);
                     let lit_num = if inv { -lit_num } else { lit_num };
                     self.op_number(pattern_constant.range(), value, lit_num);
+                    Some(Constant::Number(lit_num))
                 } else {
                     match &lit.kind {
                         TokenKind::Keyword(Keyword::Nil) => {
                             self.op_nil(pattern_constant.range(), value);
+                            Some(Constant::Nil)
                         }
                         TokenKind::Keyword(Keyword::True) => {
                             self.op_bool(pattern_constant.range(), value, true);
+                            Some(Constant::True)
                         }
                         TokenKind::Keyword(Keyword::False) => {
                             self.op_bool(pattern_constant.range(), value, false);
+                            Some(Constant::False)
                         }
                         TokenKind::String(s, _) => {
                             self.op_string(pattern_constant.range(), value, s.as_ref());
+                            Some(Constant::String(s.as_ref().into()))
                         }
-                        _ => self.unreachable(prefix, lit, file!(), line!()),
+                        _ => {
+                            self.unreachable(prefix, lit, file!(), line!());
+                            None
+                        }
                     }
                 }
             }
             Constant(var) => {
                 self.emit_var_read(var, value);
+                None
             }
-            _ => unreachable!(),
+            _ => None,
         }
     }
 
-    fn emit_constant_pattern(
+    fn emit_constant_pattern<const SAME: bool>(
         &mut self,
-        op: OpCode,
         success: Register,
         pattern: &'s Pattern<'s>,
         value: Register,
     ) -> bool {
+        let op: OpCode = if SAME { OpCode::Same } else { OpCode::Nsame };
         match pattern {
             Literal(_, lit) => {
                 if success.is_empty() {
@@ -214,9 +230,53 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 self.op_3(pattern.range(), op, success, reg, value);
                 true
             }
-            Grouping(_, pattern, _) => self.emit_constant_pattern(op, success, pattern, value),
+            Grouping(_, pattern, _) => self.emit_constant_pattern::<SAME>(success, pattern, value),
             _ => false,
         }
+    }
+
+    fn emit_literal_guard(
+        &mut self,
+        success: Register,
+        pattern: &'s Pattern<'s>,
+        value: Register,
+        literal: Constant<'s>,
+    ) {
+        match literal {
+            Constant::Nil => self.op_binary(
+                pattern.range(),
+                success,
+                OpCode::Same,
+                Register::EMPTY,
+                value,
+            ),
+            Constant::True | Constant::False => {
+                self.op_unary(pattern.range(), success, OpCode::IsBoolean, value)
+            }
+            Constant::Ordinal(_) | Constant::Number(_) => {
+                self.op_unary(pattern.range(), success, OpCode::IsNumber, value)
+            }
+            Constant::String(_) => self.op_unary(pattern.range(), success, OpCode::IsString, value),
+        }
+    }
+    fn emit_constant_guard(
+        &mut self,
+        success: Register,
+        pattern: &'s Pattern<'s>,
+        value: Register,
+        constant: Register,
+    ) {
+        let constant_type = self.closures.add_reg();
+        self.op_unary(pattern.range(), constant_type, OpCode::Type, constant);
+        let value_type = self.closures.add_reg();
+        self.op_unary(pattern.range(), value_type, OpCode::Type, value);
+        self.op_binary(
+            pattern.range(),
+            success,
+            OpCode::Same,
+            constant_type,
+            value_type,
+        );
     }
 
     pub fn emit_pattern(
@@ -226,7 +286,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
         value: Register,
         bind_type: Option<BindType>,
     ) {
-        if self.emit_constant_pattern(OpCode::Same, success, pattern, value) {
+        if self.emit_constant_pattern::<true>(success, pattern, value) {
             return;
         }
         match pattern {
@@ -246,9 +306,31 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     self.unreachable(op, constant, file!(), line!());
                     return;
                 };
-                let reg = self.closures.add_reg();
-                self.emit_literal_constant(constant, reg);
-                self.op_3(pattern.range(), op, success, value, reg);
+                let const_reg = self.closures.add_reg();
+                if matches!(op, OpCode::Eq | OpCode::Neq) {
+                    // 比较运算，本身不进行类型转换
+                    self.emit_literal_constant(constant, const_reg);
+                    self.op_binary(pattern.range(), success, op, value, const_reg);
+                } else {
+                    // 近似比较运算和关系运算，仅支持数字和字符串
+                    if let Some(lit) = self.emit_literal_constant(constant, const_reg) {
+                        if !matches!(
+                            lit,
+                            Constant::Number(_) | Constant::Ordinal(_) | Constant::String(_)
+                        ) {
+                            self.diagnostics.push(
+                                DiagnosticCode::NonNumberOrStringInComparison,
+                                constant.range(),
+                            );
+                        }
+                        self.emit_literal_guard(success, pattern, value, lit);
+                    } else {
+                        self.emit_constant_guard(success, pattern, value, const_reg);
+                    }
+                    self.op_if(pattern.range(), OpCode::If, success);
+                    self.op_binary(pattern.range(), success, op, value, const_reg);
+                    self.op_if_end(pattern.range());
+                }
             }
             Range(l, token, r) => {
                 if success.is_empty() {
@@ -260,6 +342,8 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 }
                 let start = self.closures.add_reg();
                 let end = self.closures.add_reg();
+                self.emit_literal_guard(success, pattern, value, Constant::Ordinal(0));
+                self.op_if(pattern.range(), OpCode::If, success);
                 self.emit_literal_constant(l, start);
                 self.emit_literal_constant(r, end);
                 self.op_3(pattern.range(), OpCode::Lte, start, start, value);
@@ -275,6 +359,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     value,
                 );
                 self.op_3(pattern.range(), OpCode::And, success, start, end);
+                self.op_if_end(pattern.range());
             }
             Discard(_) => {
                 if success.is_empty() {
@@ -479,9 +564,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                             }
                             RecordElementBase::Spread(_, pattern) => {
                                 let ret = self.closures.add_reg();
-                                let Some(omitted) = std::mem::take(&mut omitted) else {
-                                    continue;
-                                };
+                                let omitted = std::mem::take(&mut omitted).unwrap_or_default();
                                 self.op_variadic_1(
                                     element.range(),
                                     ret,
@@ -631,10 +714,6 @@ impl<'s, 'c> Emitter<'s, 'c> {
             And(left, op, right) | Or(left, op, right) => {
                 // No short-circuiting in pattern matching
                 if success.is_empty() {
-                    if pattern.is_or() {
-                        self.diagnostics
-                            .push(DiagnosticCode::MisleadingOrInIrrefutablePattern, op.range());
-                    }
                     self.emit_pattern(Register::EMPTY, left, value, bind_type);
                     self.emit_pattern(Register::EMPTY, right, value, bind_type);
                 } else {
@@ -654,7 +733,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     self.diagnostics
                         .push(DiagnosticCode::UnnecessaryIrrefutablePattern, kw.range());
                     self.emit_pattern(Register::EMPTY, p, value, bind_type);
-                } else if self.emit_constant_pattern(OpCode::Nsame, success, p, value) {
+                } else if self.emit_constant_pattern::<false>(success, p, value) {
                 } else {
                     self.emit_pattern(success, p, value, bind_type);
                     self.op_2(kw.range(), OpCode::Not, success, success);

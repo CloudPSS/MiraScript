@@ -1,0 +1,21 @@
+
+t_true('v_nil' in global);
+t_true('v_true' in global);
+t_true('v_false' in global);
+
+t_true(['v_nil'] in global);
+t_true(['v_true'] in global);
+t_true(['v_false'] in global);
+
+t_eq(global[['v_nil']], nil);
+t_eq(global[['v_true']], true);
+t_eq(global[['v_false']], false);
+
+t_eq(global.v_nil, nil);
+t_eq(global.v_true, true);
+t_eq(global.v_false, false);
+
+t_false(1 in global);
+t_false(`null` in global);
+t_throws(fn { global.1 });
+t_throws(fn { global.null });

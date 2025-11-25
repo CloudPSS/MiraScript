@@ -1,4 +1,4 @@
-import { VmLib, expectArray } from '../../_helpers.js';
+import { VmLib, expectArray } from '../../helpers.js';
 
 export const len = VmLib(
     (arr) => {

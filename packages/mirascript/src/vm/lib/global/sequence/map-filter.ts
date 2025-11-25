@@ -1,6 +1,7 @@
-import { $Call, $ToBoolean } from '../../../operations.js';
+import { toBoolean } from '../../../../helpers/convert/to-boolean.js';
+import { $Call } from '../../../operations.js';
 import { isVmConst, type VmAny, type VmValue } from '../../../types/index.js';
-import { VmLib, expectCallable, expectConst, map as mapImpl } from '../../_helpers.js';
+import { VmLib, expectCallable, expectConst, map as mapImpl } from '../../helpers.js';
 
 export * from './with.js';
 export * from './entries.js';
@@ -32,7 +33,7 @@ export const map = VmLib(
         },
         paramsType: {
             data: 'array | record',
-            f: 'fn(value: any, key: number | string | nil, input: type(data)) -> any',
+            f: 'fn(value: any, key: number | string, input: type(data)) -> any',
         },
         returnsType: 'type(data)',
         examples: ['map([1, 2, 3], fn (v) { v * v }) // [1, 4, 9]'],
@@ -43,7 +44,7 @@ export const filter = VmLib(
     (data, predicate) =>
         mapImplWrapped(data, 'predicate', predicate, (fn, value, key, data) => {
             const ret = $Call(fn, [value, key, data]);
-            return $ToBoolean(ret) ? value : undefined;
+            return toBoolean(ret, undefined) ? value : undefined;
         }),
     {
         summary: '过滤数组或记录中的元素，返回满足条件的元素',
@@ -53,7 +54,7 @@ export const filter = VmLib(
         },
         paramsType: {
             data: 'array | record',
-            predicate: 'fn(value: any, key: number | string | nil, input: type(data)) -> boolean',
+            predicate: 'fn(value: any, key: number | string, input: type(data)) -> boolean',
         },
         returnsType: 'type(data)',
         examples: ['filter([1, 2, 3, 4], fn (v) { v % 2 == 0 }) // [2, 4]'],
@@ -74,7 +75,7 @@ export const filter_map = VmLib(
         },
         paramsType: {
             data: 'array | record',
-            f: 'fn(value: any, key: number | string | nil, input: type(data)) -> any | nil',
+            f: 'fn(value: any, key: number | string, input: type(data)) -> any | nil',
         },
         returnsType: 'type(data)',
         examples: ['filter_map([1, 2, 3], fn (v) { if v % 2 == 0 { v * v } else { nil } }) // [4]'],

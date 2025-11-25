@@ -10,26 +10,15 @@ pub(crate) trait AstWalker<'s> {
 impl<'s> AstWalker<'s> for Token<'s> {
     fn collect_diagnostics(&mut self, collector: &mut DiagnosticsCollector<'_, '_>) {
         // Parsing 阶段不会创建新的 TokenKind::InterpolatedString，无需处理
-
-        if !self.is_unknown() {
-            return;
-        }
         let TokenKind::Unknown {
             mut errors,
             recovered,
-        } = std::mem::replace(&mut self.kind, TokenKind::Eof)
+        } = std::mem::replace(&mut self.kind, TokenKind::Empty)
         else {
-            unreachable!();
+            return;
         };
         collector.append(&mut errors);
-        if let Some(recovered) = recovered {
-            self.kind = *recovered;
-        } else {
-            self.kind = TokenKind::Unknown {
-                recovered: None,
-                errors,
-            }
-        }
+        self.kind = *recovered;
     }
     fn range(&self) -> SourceRange {
         self.range.clone()

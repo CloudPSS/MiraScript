@@ -8,13 +8,16 @@ t_eq(matrix.diagonal([1], -1), [[0], [1]]);
 let m = [[1, 2, 3], [4, 5, 6], [7, 8, 9], [10]];
 t_eq(matrix.diagonal(m), [1, 5, 9]);
 t_eq(matrix.diagonal(m, 0), [1, 5, 9]);
-t_eq(matrix.diagonal(m, nan), [1, 5, 9]);
 t_eq(matrix.diagonal(m, 1), [2, 6]);
 t_eq(matrix.diagonal(m, -1), [4, 8]);
 t_eq(matrix.diagonal(m, -2), [7]);
 t_eq(matrix.diagonal(m, -3), [10]);
 t_eq(matrix.diagonal(m, -4), []);
 t_eq(matrix.diagonal(m, -5), []);
-t_eq(matrix.diagonal(m, -inf), []);
+t_throws(fn { matrix.diagonal(m, nan) });
+t_throws(fn { matrix.diagonal(m, -2e40) });
+t_throws(fn { matrix.diagonal(m, 2e40) });
+t_throws(fn { matrix.diagonal(m, inf) });
+t_throws(fn { matrix.diagonal(m, -inf) });
 
 t_eq(matrix.diagonal([[1], nil]), [[[1], 0], [0, nil]]);
