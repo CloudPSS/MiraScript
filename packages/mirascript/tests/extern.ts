@@ -264,6 +264,7 @@ test('extern to_string', (t) => {
     const e = exec(context);
     t.is(e('ok::to_string()'), 'ok');
     t.throws(() => e('fail::to_string()'), { message: 'Failed to convert value to string: <extern>' });
+    t.is(e('fail::to_string(0)'), 0);
     t.is(e('void::to_string()'), '<extern Object>');
     t.is(e('bad::to_string()'), '<extern Object>');
     t.is(e('normal::to_string()'), '<extern Object>');
@@ -401,7 +402,7 @@ test('extern iterable', (t) => {
     t.deepEqual(e('[..map.keys()]'), ['a', 'b', 'c']);
     t.deepEqual(e('[..map.values()]'), [1, 2, 3]);
     t.deepEqual(e('[..set]'), [100, 200, 300]);
-    t.throws(() => e('[..noniter]'), { message: 'Expected array, iterable extern or nil, got extern' });
+    t.throws(() => e('[..noniter]'), { message: 'Expected array, iterable extern or nil, got <extern Object>' });
 });
 
 test('extern spread', (t) => {

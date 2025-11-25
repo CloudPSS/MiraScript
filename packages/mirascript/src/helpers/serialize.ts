@@ -310,6 +310,7 @@ export function displayFunction(value: VmFunction): string {
     try {
         const name = getVmFunctionInfo(value)?.fullName;
         return name ? `<function ${name}>` : `<function>`;
+        /* c8 ignore next 3 */
     } catch {
         return `<function>`;
     }
