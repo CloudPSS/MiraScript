@@ -1,4 +1,5 @@
 import { isNaN } from '../helpers/utils.js';
+// 不使用 performance.now()，精度够即可，且性能开销更小
 const { now } = Date;
 const TIME_ORIGIN = now() - 1000 * 3600 * 24; // 减去一天，防止系统时间被调整到过去时出问题
 const timestamp = () => now() - TIME_ORIGIN;
