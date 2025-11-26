@@ -21,7 +21,6 @@ if has_extern {
   t_eq(to_json(v_extern), '{}');
 }
 
-t_eq(from_json(nil), nil);
 t_eq(from_json('null'), nil);
 t_eq(from_json('true'), true);
 t_eq(from_json('false'), false);
@@ -30,17 +29,21 @@ t_eq(from_json(@'"\u0000"'@), '\0');
 t_eq(from_json('[1, 2, "3", "NaN"]'), [1, 2, "3", "NaN"]);
 t_eq(from_json('{"a": 1, "b": 2, "c": true, "d": null }'), (a: 1, b: 2, c: true, d: nil));
 t_eq(from_json('{"0": "X"}'), ("X",));
-t_eq(from_json(sin), sin);
+t_eq(from_json('  "x"  '), 'x');
 t_eq(from_json('x', sin), sin);
-t_throws(fn {
-  from_json('n');
-});
-t_throws(fn {
-  from_json();
-});
-t_throws(fn {
-  from_json('');
-});
+t_throws(fn { from_json(nil) });
+t_throws(fn { from_json(sin) });
+t_throws(fn { from_json('n') });
+t_throws(fn { from_json() });
+t_throws(fn { from_json('') });
+t_throws(fn { from_json(`'a'`) });
+t_throws(fn { from_json(`NaN`) });
+t_throws(fn { from_json(`{"x":NaN}`) });
+t_throws(fn { from_json(`{"x":nan}`) });
+t_throws(fn { from_json(`{"x":1,}`) });
+t_throws(fn { from_json(`{a:1}`) });
+t_throws(fn { from_json(`{} // Comment is not allowed in JSON`) });
+t_throws(fn { from_json(`{} /* And this */`) });
 
 let values = [0, 1, 2, random(), [1, 2, 3], [random(), 'x', '🫎'], (random(), 'x', '🫎'), (name: "Alice", age: 30, is_student: false, scores: [95.5, 88.0, 76.5], address: (street: "123 Main St", city: "Wonderland", zip: "12345"), hobbies: ["reading", "chess", "hiking"], metadata: nil)];
 for v in values {
