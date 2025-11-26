@@ -111,15 +111,17 @@ export async function makeModelMarkers(
             const template = getDiagnosticMessage(DiagnosticCode.GlobalVariableNotDeclared);
             if (!template) continue;
             const message = formatMessage(model, template, name);
-            markers.push(
-                makeMarkerData(
-                    model,
-                    g.references[0]!.range,
-                    DiagnosticCode.GlobalVariableNotDeclared,
-                    message,
-                    MarkerSeverity.Warning,
-                ),
-            );
+            for (const ref of g.references) {
+                markers.push(
+                    makeMarkerData(
+                        model,
+                        ref.range,
+                        DiagnosticCode.GlobalVariableNotDeclared,
+                        message,
+                        MarkerSeverity.Warning,
+                    ),
+                );
+            }
         }
     }
     return markers;
