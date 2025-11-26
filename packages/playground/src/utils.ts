@@ -1,6 +1,5 @@
-import type { BcModule } from '@mirascript/bindings/wasm';
 import type { VmAny } from '@mirascript/mirascript';
-import { monaco, mirascript, ready, mirascriptBc } from './loader.js';
+import { monaco, mirascript, ready, mirascriptMonaco } from './loader.js';
 
 /** HTML escape */
 export function escapeHtml(value: string): string {
@@ -12,7 +11,6 @@ export function escapeHtml(value: string): string {
         .replaceAll("'", '&#39;');
 }
 
-let formatConfig: BcModule.WasmConfig;
 /** 将值转为语法高亮的显示 */
 export async function print(value: VmAny | Error): Promise<string> {
     if (value === undefined) return escapeHtml('<uninitialized>');
@@ -27,23 +25,15 @@ export async function print(value: VmAny | Error): Promise<string> {
         return await syntaxHighlight(`/* <${value.type} ${value.describe}> */`, 'mirascript-doc');
     }
     const valueStr = serialize(value);
-    const { wasm, createConfig } = mirascriptBc;
-    formatConfig ??= createConfig({
-        input_mode: 'Script',
-        trivia: true,
-        diagnostic_reference: false,
-        diagnostic_tag: false,
-        diagnostic_sourcemap: false,
-        diagnostic_position_encoding: 'None',
-    });
-    const formatter = new wasm.MonacoCompiler(valueStr, formatConfig);
+    const model = monaco.editor.createModel(valueStr, 'mirascript');
+    const { FormatterProvider } = mirascriptMonaco;
     try {
-        const formatted = formatter.parse() && formatter.format();
+        const formatted = await FormatterProvider.format(model);
         if (formatted) {
             return syntaxHighlight(formatted, 'mirascript');
         }
     } finally {
-        formatter.free();
+        model.dispose();
     }
     return syntaxHighlight(serialize(valueStr), 'mirascript');
 }
