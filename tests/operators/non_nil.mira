@@ -4,9 +4,9 @@ let NIL = nil;
 t_throws(fn { nil! });
 t_throws(fn { @NIL! });
 t_throws(fn { NIL! });
-t_throws(fn { (nil)! });
-t_throws(fn { (@NIL)! });
-t_throws(fn { (NIL)! });
+t_throws(fn { ({ nil })! });
+t_throws(fn { ({ @NIL })! });
+t_throws(fn { ({ NIL })! });
 
 t_eq(true!, true);
 t_eq(false!, false);
