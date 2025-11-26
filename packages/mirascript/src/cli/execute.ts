@@ -2,9 +2,16 @@
 import styles from 'ansi-styles';
 import supportsColor from 'supports-color';
 import { compile } from '../index.js';
-import { createVmContext, VmFunction, type VmValue } from '../vm/index.js';
-import { debug_print } from '../vm/lib/global/debug.js';
+import { createVmContext, type VmValue } from '../vm/index.js';
+import { debug_print, panic } from '../vm/lib/global/debug.js';
 import { print } from './print.js';
+
+panic.serializer = debug_print.serializer = (arg, format) => {
+    if (format === '%o' || format === '%O' || !format) {
+        return print(arg);
+    }
+    return null;
+};
 
 /** 执行脚本 */
 export async function execute(
@@ -15,14 +22,7 @@ export async function execute(
 ): Promise<void> {
     try {
         const f = await compile(script, { input_mode: template ? 'Template' : 'Script', sourceMap: true, fileName });
-        const r = f(
-            createVmContext({
-                debug_print: VmFunction((...values) => {
-                    console.log(...debug_print.prefix, ...values.map((v) => (typeof v == 'string' ? v : print(v))));
-                }, debug_print),
-                ...variables,
-            }),
-        );
+        const r = f(createVmContext(variables));
         if (template) {
             console.log(r);
         } else {

@@ -48,7 +48,7 @@ async function renderDebugPrint(args: VmAny[]): Promise<string> {
                 continue;
             }
             const arg = values[valIndex++]!;
-            let formatted: string | Promise<string>;
+            let formatted: string | { style: string } | Promise<string>;
             switch (specifier) {
                 case '%s':
                     formatted = escapeHtml(toString(arg));
@@ -59,6 +59,9 @@ async function renderDebugPrint(args: VmAny[]): Promise<string> {
                     break;
                 case '%i':
                     formatted = escapeHtml(toString(Math.trunc(toNumber(arg, Number.NaN))));
+                    break;
+                case '%c':
+                    formatted = { style: toString(arg) };
                     break;
                 default:
                     formatted = print(arg);
@@ -73,8 +76,21 @@ async function renderDebugPrint(args: VmAny[]): Promise<string> {
         const remaining = values.slice(valIndex);
         rendered.push(...remaining.map(async (v) => ' ' + (await printValue(v))));
     }
+    let currentStyle = '';
+    let final = '';
     // eslint-disable-next-line @typescript-eslint/await-thenable
-    return Promise.all(rendered).then((parts) => parts.join(''));
+    for (const part of await Promise.all(rendered)) {
+        if (typeof part === 'string') {
+            if (currentStyle) {
+                final += `<span style="${currentStyle}">${part}</span>`;
+            } else {
+                final += part;
+            }
+        } else {
+            currentStyle = part.style;
+        }
+    }
+    return final;
 }
 
 /** 管理控制台输出的类 */
