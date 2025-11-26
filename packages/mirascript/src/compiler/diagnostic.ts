@@ -8,11 +8,12 @@ export { DiagnosticCode };
 const diagnosticMessages = new Map<DiagnosticCode, string | null>();
 /** 获取 {@link DiagnosticCode} 对应的消息 */
 export function getDiagnosticMessage(code: DiagnosticCode): string | null {
-    if (!isSafeInteger(code) || code < 0 || code >= 0xffff) {
+    if (code < 0 || code >= 0xffff || !isSafeInteger(code)) {
         throw new RangeError(`Invalid DiagnosticCode: ${code}`);
     }
-    if (diagnosticMessages.has(code)) {
-        return diagnosticMessages.get(code) || null;
+    const cached = diagnosticMessages.get(code);
+    if (cached !== undefined) {
+        return cached;
     }
     const mod = getModule();
     const msg = mod.getDiagnosticMessage(code);
@@ -83,6 +84,23 @@ interface ParsedDiagnostics {
     sourcemaps: IRange[];
 }
 
+const {
+    ErrorStart,
+    ErrorEnd,
+    WarningStart,
+    WarningEnd,
+    InfoStart,
+    InfoEnd,
+    HintStart,
+    HintEnd,
+    TagStart,
+    TagEnd,
+    ReferenceStart,
+    ReferenceEnd,
+    TagRefStart,
+    TagRefEnd,
+    SourceMap,
+} = DiagnosticCode;
 /** 分析诊断信息，{@link diagnostic_position_encoding} 不能设为 `None` */
 export function parseDiagnostics(
     source: ScriptInput,
@@ -122,17 +140,17 @@ export function parseDiagnostics(
     for (let i = 0; i < parsed.length; i++) {
         const diagnostic = parsed[i]!;
         const { code } = diagnostic;
-        if (code > DiagnosticCode.ErrorStart && code < DiagnosticCode.ErrorEnd) {
+        if (code > ErrorStart && code < ErrorEnd) {
             _errors.push(diagnostic);
-        } else if (code > DiagnosticCode.WarningStart && code < DiagnosticCode.WarningEnd) {
+        } else if (code > WarningStart && code < WarningEnd) {
             _warnings.push(diagnostic);
-        } else if (code > DiagnosticCode.InfoStart && code < DiagnosticCode.InfoEnd) {
+        } else if (code > InfoStart && code < InfoEnd) {
             _infos.push(diagnostic);
-        } else if (code > DiagnosticCode.HintStart && code < DiagnosticCode.HintEnd) {
+        } else if (code > HintStart && code < HintEnd) {
             _hints.push(diagnostic);
-        } else if (code > DiagnosticCode.TagStart && code < DiagnosticCode.TagEnd) {
+        } else if (code > TagStart && code < TagEnd) {
             _tags.push(diagnostic);
-        } else if (code === DiagnosticCode.SourceMap) {
+        } else if (code === SourceMap) {
             _sourcemaps.push(diagnostic.range);
             continue;
         } else {
@@ -143,11 +161,11 @@ export function parseDiagnostics(
         while (i + 1 < parsed.length) {
             const ref = parsed[i + 1]!;
             let isRef = false;
-            if (ref.code > DiagnosticCode.TagRefStart && ref.code < DiagnosticCode.TagRefEnd) {
+            if (ref.code > TagRefStart && ref.code < TagRefEnd) {
                 isRef = true;
                 _tagsReferences.push(ref);
             }
-            if (ref.code > DiagnosticCode.ReferenceStart && ref.code < DiagnosticCode.ReferenceEnd) {
+            if (ref.code > ReferenceStart && ref.code < ReferenceEnd) {
                 isRef = true;
                 _references.push(ref);
             }
