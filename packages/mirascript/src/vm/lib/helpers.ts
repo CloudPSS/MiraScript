@@ -243,6 +243,7 @@ export function arrayLen(len: number | null | undefined): number {
 /** 应用映射函数 */
 export function map(
     data: VmConst,
+    /** 返回 `undefined` 表示跳过该元素 */
     mapper: (value: VmConst, index: number | string | null, data: VmConst) => VmConst | undefined,
 ): VmConst {
     if (isVmPrimitive(data)) {
