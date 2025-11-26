@@ -47,5 +47,5 @@ export function configCheckpoint(timeout = CP_DEFAULT_TIMEOUT): void {
     if (typeof timeout !== 'number' || timeout <= 0 || isNaN(timeout)) {
         throw new RangeError('Invalid timeout value');
     }
-    cpTimeout = timeout;
+    cpTimeout = Math.ceil(timeout);
 }
