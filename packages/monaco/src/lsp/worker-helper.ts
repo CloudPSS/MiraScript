@@ -1,7 +1,7 @@
-import type { editor } from '../monaco-api.js';
+import { editor } from '../monaco-api.js';
 import type { Ready, CacheKey, Req, Res, ResOk } from './worker.js';
 import { CompileResult } from './compile-result.js';
-import { setMarkers } from './diagnostics.js';
+import { makeModelMarkers } from './diagnostics.js';
 
 /** 缓存 */
 type CacheValue = {
@@ -89,7 +89,7 @@ async function compileSync(req: Req): Promise<CompileResult> {
 }
 
 const USE_WORKER = typeof Worker === 'function';
-/** 注册 worker */
+/** 编译并设置缓存 */
 export async function compile(model: editor.ITextModel): Promise<CompileResult> {
     const uri = model.uri.toString();
     const version = model.getVersionId();
@@ -104,7 +104,13 @@ export async function compile(model: editor.ITextModel): Promise<CompileResult> 
     const value = model.getValue();
     const req: Req = [cacheKey, version, value, mode];
     const res = USE_WORKER ? compileWorker(req) : compileSync(req);
-    void res.then(async (result) => setMarkers(model, result));
+    void res.then(async (result) => {
+        const setModelMarkers = editor?.setModelMarkers;
+        if (typeof setModelMarkers != 'function') return;
+        const markers = await makeModelMarkers(model, result);
+        if (!markers) return;
+        setModelMarkers(model, 'mirascript', markers);
+    });
     const item: CacheValue = {
         version,
         lastAccess: Date.now(),

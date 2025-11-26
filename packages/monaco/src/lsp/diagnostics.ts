@@ -1,7 +1,7 @@
 import { DiagnosticCode, getDiagnosticMessage } from '@mirascript/mirascript/subtle';
-import { editor, MarkerSeverity, MarkerTag, Uri, type IRange } from '../monaco-api.js';
+import { type editor, MarkerSeverity, MarkerTag, Uri, type IRange } from '../monaco-api.js';
 import type { CompileResult, SourceDiagnostic } from './compile-result.js';
-import { getContext } from './providers/base.js';
+import { Provider } from './providers/base.js';
 
 const formatMessage = (model: editor.ITextModel, template: string, $0?: string | IRange): string => {
     if (template.includes(`$0`)) {
@@ -90,12 +90,12 @@ const makeMarker = (
 };
 
 /** 设置标记 */
-export async function setMarkers(model: editor.ITextModel, result: CompileResult): Promise<void> {
-    const setModelMarkers = editor?.setModelMarkers;
-    if (typeof setModelMarkers != 'function') return;
-
+export async function makeModelMarkers(
+    model: editor.ITextModel,
+    result: CompileResult,
+): Promise<editor.IMarkerData[] | null> {
     const { version } = result;
-    if (version !== model.getVersionId()) return;
+    if (version !== model.getVersionId()) return null;
 
     const errors = result.errors.map((d) => makeMarker(model, d, MarkerSeverity.Error));
     const warnings = result.warnings.map((d) => makeMarker(model, d, MarkerSeverity.Warning));
@@ -104,7 +104,7 @@ export async function setMarkers(model: editor.ITextModel, result: CompileResult
     const markers = [...errors, ...warnings, ...infos, ...hints];
     const { globals } = result.groupedTags(model);
     if (globals.length) {
-        const context = await getContext(model);
+        const context = await Provider.getContext(model);
         for (const g of globals) {
             const { name } = g;
             if (context.has(name)) continue;
@@ -122,5 +122,5 @@ export async function setMarkers(model: editor.ITextModel, result: CompileResult
             );
         }
     }
-    setModelMarkers(model, 'mirascript', markers);
+    return markers;
 }

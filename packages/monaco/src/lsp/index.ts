@@ -2,12 +2,11 @@ import { languages, type IDisposable } from '../monaco-api.js';
 import '../basic/index.js';
 import type { VmContextProvider } from '../index.js';
 
-import { setContextProvider } from './providers/base.js';
+import { Provider } from './providers/base.js';
 import { CodeActionProvider } from './providers/code-action-provider.js';
 import { ColorProvider } from './providers/color-provider.js';
 import { CompletionItemProvider } from './providers/completion-item-provider.js';
 import { DefinitionReferenceProvider } from './providers/definition-reference-provider.js';
-import {} from './diagnostics.js';
 import { DocumentHighlightProvider } from './providers/document-highlight-provider.js';
 import { DocumentSymbolProvider } from './providers/document-symbol-provider.js';
 import { FormatterProvider } from './providers/formatter-provider.js';
@@ -32,12 +31,12 @@ export {
     RangeProvider,
     RenameProvider,
     SignatureHelpProvider,
-    setContextProvider,
+    Provider,
 };
 
 /** 注册 LSP 相关的编辑器功能 */
 export async function registerLSP(contextProvider: VmContextProvider | undefined): Promise<IDisposable[]> {
-    setContextProvider(contextProvider);
+    Provider.setContextProvider(contextProvider);
     const { loadModule } = await import('@mirascript/bindings/wasm');
     await loadModule();
 

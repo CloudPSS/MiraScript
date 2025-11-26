@@ -1,7 +1,7 @@
 import { Disposable, workspace, type TextDocument } from 'vscode';
 import { pathToFileURL } from 'node:url';
 import { cosmiconfig, type Loader } from 'cosmiconfig';
-import { setContextProvider } from '@mirascript/monaco/lsp';
+import { Provider } from '@mirascript/monaco/lsp';
 import type { ModelAdapter } from '../adapter/model.js';
 import {
     createVmContext,
@@ -156,7 +156,7 @@ export class ConfigManager extends Disposable {
             this.cacheByConfig.clear();
             this.cacheByFile.clear();
         });
-        setContextProvider(async (model) => {
+        Provider.setContextProvider(async (model) => {
             const { document } = model as ModelAdapter;
             const config = await this.config(document);
             return createVmContext(
