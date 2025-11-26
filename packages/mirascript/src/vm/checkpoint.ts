@@ -1,6 +1,6 @@
 import { isNaN } from '../helpers/utils.js';
 const { now } = Date;
-const TIME_ORIGIN = now();
+const TIME_ORIGIN = now() - 1_000_000;
 const timestamp = () => now() - TIME_ORIGIN;
 
 const MAX_DEPTH = 128;
