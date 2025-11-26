@@ -1,0 +1,29 @@
+
+fn analyze_data(data) {
+  match (data::type(), data) {
+    case ("nil",) { "No data provided" }
+    case ("array", []) { "Empty array" }
+    case ("array", [single]) { "Array with one element: $single" }
+    case ("array", [first, ..rest]) { "Array starting with $first, has ${ len(rest) } more elements" }
+    case ("record", (name: "John", age: > 18 and < 65)) { "Working-age John" }
+    case ("record", (name: n and !~ '', age: a and > 0)) { "Person named $n, age $a" }
+    case ("number", x and > 0) { "Positive number: $x" }
+    case ("string", x and not "") { "Non-empty string: $x" }
+    case (t,) { "Unknown data type: $t" }
+  }
+}
+
+t_eq(analyze_data(nil), "No data provided");
+t_eq(analyze_data([]), "Empty array");
+t_eq(analyze_data([42]), "Array with one element: 42");
+t_eq(analyze_data([1, 2, 3]), "Array starting with 1, has 2 more elements");
+t_eq(analyze_data((name: "John", age: 25)), "Working-age John");
+t_eq(analyze_data((name: "Alice", age: 30)), "Person named Alice, age 30");
+t_eq(analyze_data((name: "Alice", age: 0)), "Unknown data type: record");
+t_eq(analyze_data((name: "Alice", age: '30')), "Unknown data type: record");
+t_eq(analyze_data((name: inf, age: 30)), "Unknown data type: record");
+t_eq(analyze_data((name: "", age: 30)), "Unknown data type: record");
+t_eq(analyze_data(42), "Positive number: 42");
+t_eq(analyze_data("Hello"), "Non-empty string: Hello");
+t_eq(analyze_data(true), "Unknown data type: boolean");
+t_eq(analyze_data(''), "Unknown data type: string");

@@ -13,7 +13,7 @@ export function escapeHtml(value: string): string {
 
 /** 将值转为语法高亮的显示 */
 export async function print(value: VmAny | Error): Promise<string> {
-    if (value === undefined) return escapeHtml('<uninitialized>');
+    if (value === undefined) return `<span style="color: #888">&lt;uninitialized&gt;</span>`;
     if (value === null) return syntaxHighlight('nil', 'mirascript');
     if (value instanceof Error) return escapeHtml(value.toString());
     if (typeof value == 'function') {

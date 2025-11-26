@@ -27,12 +27,10 @@ fn channels($$) {
 t_eq(project::channels(), expected_channels);
 
 fn channels_opt($$) {
-  values($$.revision.implements.diagram.cells)::filter_map(fn {
-    if it.definition is not 'model/CloudPSS/_newChannel' {
-      return nil;
+  values($$.revision.implements.diagram.cells ?? ())::filter_map(fn {
+    if it.definition is 'model/CloudPSS/_newChannel' {
+      return (key: it.id, name: if it.args.Name !~ '' { it.args.Name } else { it.label });
     }
-
-    (key: it.id, name: if it.args.Name !~ '' { it.args.Name } else { it.label })
   })
 }
 t_eq(project::channels_opt(), expected_channels);

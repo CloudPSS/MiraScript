@@ -8,7 +8,7 @@ debug_print("基本记录:", person);
 // 序数记录
 let coordinates = (10, 20, 30); // 相当于 (0: 10, 1: 20, 2: 30)
 debug_print("坐标:", coordinates);
-debug_print("X: ${ coordinates.0 }, Y: ${ coordinates[1] }, Z: ${ coordinates.2 }");
+debug_print("X: %o, Y: %o, Z: %o", coordinates.0, coordinates[1], coordinates.2);
 
 // 混合命名记录
 let mixed = ("first", "second", name: "Bob", "third"); // 0: "first" 1: "second" name: "Bob" 2: "third"
@@ -52,11 +52,9 @@ fn analyze_person(p) {
 }
 
 debug_print("记录模式匹配:");
-debug_print(analyze_person((name: "Alice", age: 30)));
-debug_print(analyze_person((name: "Bob", age: 25)));
-debug_print(analyze_person((name: "Charlie", age: 15)));
-debug_print(analyze_person((name: "David")));
-debug_print(analyze_person(("x", "y")));
+for v in [(name: "Alice", age: 30), (name: "Bob", age: 25), (name: "Charlie", age: 15), (name: "David"), ("x", "y")] {
+  debug_print("analyze_person(%o) = %o", v, analyze_person(v));
+}
 
 // 记录解构
 let user = (id: 123, profile: (name: "Eve", email: "eve@example.com", preferences: (theme: "dark", language: "en")));
@@ -64,17 +62,17 @@ let user = (id: 123, profile: (name: "Eve", email: "eve@example.com", preference
 // 嵌套解构
 let (id: user_id, profile: (name: user_name, :email, preferences: (:theme, :language))) = user;
 debug_print("解构结果:");
-debug_print("ID:", user_id);
-debug_print("Name:", user_name);
-debug_print("Email:", email);
-debug_print("Theme:", theme);
-debug_print("Language:", language);
+debug_print("ID: %o", user_id);
+debug_print("Name: %o", user_name);
+debug_print("Email: %o", email);
+debug_print("Theme: %o", theme);
+debug_print("Language: %o", language);
 
 // 部分解构
 let (name: extracted_name, ..rest_info) = person;
 debug_print("部分解构:");
-debug_print("Name:", extracted_name);
-debug_print("Rest:", rest_info);
+debug_print("Name: %o", extracted_name);
+debug_print("Rest: %o", rest_info);
 
 // 记录作为函数参数
 fn create_greeting(person_info) {
@@ -95,8 +93,8 @@ debug_print(create_greeting((id: 123)));
 let company = (name: "TechCorp", departments: (engineering: (head: "Alice", members: ["Bob", "Charlie", "David"]), marketing: (head: "Eve", members: ["Frank", "Grace"])));
 
 debug_print("嵌套访问:");
-debug_print("Engineering head:", company.departments.engineering.head);
-debug_print("Marketing members:", company.departments.marketing.members);
+debug_print("Engineering head: %o", company.departments.engineering.head);
+debug_print("Marketing members: %o", company.departments.marketing.members);
 
 // 记录的函数式操作
 fn map_record_values(record, mapper) {
@@ -109,7 +107,7 @@ fn map_record_values(record, mapper) {
 
 let numbers_record = (a: 1, b: 2, c: 3);
 let doubled_record = map_record_values(numbers_record, fn { it * 2 });
-debug_print("映射记录值:", doubled_record);
+debug_print("映射记录值: %o", doubled_record);
 
 // 记录合并函数
 fn merge_records(r1, r2) { (..r1, ..r2) }
@@ -117,4 +115,4 @@ fn merge_records(r1, r2) { (..r1, ..r2) }
 let settings1 = (color: "blue", size: "large");
 let settings2 = (color: "red", position: "center");
 let merged_settings = merge_records(settings1, settings2);
-debug_print("合并记录:", merged_settings);
+debug_print("合并记录: %o", merged_settings);

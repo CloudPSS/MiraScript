@@ -5,41 +5,42 @@ let a = 10;
 let b = 3;
 
 debug_print("算术运算:");
-debug_print(a, "+", b, "=>", a + b);
-debug_print(a, "-", b, "=>", a - b);
-debug_print(a, "*", b, "=>", a * b);
-debug_print(a, "/", b, "=>", a / b);
-debug_print(a, "%", b, "=>", a % b);
-debug_print(a, "^", b, "=>", a^b);
+debug_print("%o + %o => %o", a, b, a + b);
+debug_print("%o - %o => %o", a, b, a - b);
+debug_print("%o * %o => %o", a, b, a * b);
+debug_print("%o / %o => %o", a, b, a / b);
+debug_print("%o % %o => %o", a, b, a % b);
+debug_print("%o^%o => %o", a, b, a^b);
 
 // 一元运算符
 debug_print("一元运算:");
-debug_print("+$a =>", +a);
-debug_print("-$a =>", -a);
-debug_print("!true =>", !true);
-debug_print("!false =>", !false);
+debug_print("+%o => %o", a, +a);
+debug_print("-%o => %o", a, -a);
+debug_print("!%o => %o", true, !true);
+debug_print("!%o => %o", false, !false);
 
 // 比较运算符
 debug_print("比较运算:");
-debug_print(a, ">", b, "=>", a > b);
-debug_print(a, "<", b, "=>", a < b);
-debug_print(a, ">=", b, "=>", a >= b);
-debug_print(a, "<=", b, "=>", a <= b);
-debug_print(a, "==", b, "=>", a == b);
-debug_print(a, "!=", b, "=>", a != b);
+debug_print("%o > %o => %o", a, b, a > b);
+debug_print("%o < %o => %o", a, b, a < b);
+debug_print("%o >= %o => %o", a, b, a >= b);
+debug_print("%o <= %o => %o", a, b, a <= b);
+debug_print("%o == %o => %o", a, b, a == b);
+debug_print("%o != %o => %o", a, b, a != b);
 
 // 近似相等
 debug_print("近似相等:");
 let x = 1.0;
 let y = 1.000_000_000_000_000_2;
-debug_print("$x =~ $y =>", x =~ y);
-debug_print("'A' =~ 'a' =>", 'A' =~ 'a');
+debug_print("%o =~ %o => %o", x, y, x =~ y);
+debug_print("%o =~ %o => %o", 'A', 'a', 'A' =~ 'a');
 
 // 逻辑运算符
 debug_print("逻辑运算:");
-debug_print("true && false =>", true && false);
-debug_print("true || false =>", true || false);
-debug_print("nil ?? 'default' =>", nil ?? 'default');
+debug_print("%o && %o => %o", true, false, true && false);
+debug_print("%o || %o => %o", true, false, true || false);
+debug_print("%o ?? %o => %o", nil, 'default', nil ?? 'default');
+debug_print("%o ?? %o => %o", 'value', 'default', 'value' ?? 'default');
 
 // 短路求值演示
 fn side_effect(value) {
@@ -48,25 +49,25 @@ fn side_effect(value) {
 }
 
 debug_print("短路求值:");
-debug_print("false && side_effect(1) =>", false && side_effect(1));
-debug_print("true || side_effect(2) =>", true || side_effect(2));
-debug_print("'value' ?? side_effect(3) =>", 'value' ?? side_effect(3));
+debug_print("%o && side_effect(%o) => %o", false, 1, false && side_effect(1));
+debug_print("%o || side_effect(%o) => %o", true, 2, true || side_effect(2));
+debug_print("%o ?? side_effect(%o) => %o", 'value', 3, 'value' ?? side_effect(3));
 
 // 包含运算符
 let record = (a: 1, b: 2, c: 3);
 let array = [1, 2, 3, 4, 5];
 
 debug_print("包含运算:");
-debug_print("'a' in record =>", 'a' in record);
-debug_print("'d' in record =>", 'd' in record);
-debug_print("3 in array =>", 3 in array);
-debug_print("6 in array =>", 6 in array);
+debug_print("%o in %o => %o", 'a', record, 'a' in record);
+debug_print("%o in %o => %o", 'd', record, 'd' in record);
+debug_print("%o in %o => %o", 3, array, 3 in array);
+debug_print("%o in %o => %o", 6, array, 6 in array);
 
 // 模式匹配运算符
 debug_print("模式匹配:");
 // 演示模式匹配
 if (1, 2) is (x, y) {
-  debug_print("匹配成功: x=$x, y=$y");
+  debug_print("匹配成功: x=%o, y=%o", x, y);
 }
 
 // 运算符优先级演示
@@ -79,12 +80,12 @@ debug_print("2 * 3 ^ 4 =>", 2 * 3^4);
 // 链式调用和扩展调用
 let numbers = [1, 2, 3, 4, 5];
 let result = numbers::filter(fn { it % 2 == 1 })::map(fn { it * 2 })::sum();
-debug_print("链式调用结果:", result);
+debug_print("链式调用结果: %o", result);
 
 // 空安全访问
 let maybe_record = nil;
 let safe_access = maybe_record.nonexistent ?? "default";
-debug_print("空安全访问:", safe_access);
+debug_print("空安全访问: %o", safe_access);
 
 // 非空断言（会在运行时检查）
 // let unsafe_access = maybe_record.nonexistent!; // 这会抛出 NilError

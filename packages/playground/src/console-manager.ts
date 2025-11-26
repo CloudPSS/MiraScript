@@ -12,6 +12,71 @@ const background: Record<Level, string> = {
     warn: 'background: #c39c00; color: #fff;',
     info: 'background: #369481; color: #fff;',
 };
+
+/** 默认渲染 */
+async function printValue(arg: VmAny): Promise<string> {
+    if (typeof arg == 'string') return escapeHtml(arg);
+    return print(arg);
+}
+/** 渲染 debug_print 的调用 */
+async function renderDebugPrint(args: VmAny[]): Promise<string> {
+    if (args.length === 0) {
+        return '';
+    }
+    if (args.length <= 1 || typeof args[0] != 'string' || !args[0].includes('%')) {
+        return (await Promise.all(args.map(printValue))).join(' ');
+    }
+
+    const { toString, toNumber } = mirascriptSubtle.convert;
+    const [format, ...values] = args;
+    const parts = format.split(/(%[%sdifoOc])/g);
+    const rendered = [];
+    let valIndex = 0;
+    for (let i = 0; i < parts.length; i++) {
+        if (i % 2 === 0) {
+            // Regular string part
+            rendered.push(escapeHtml(parts[i]!));
+            continue;
+        }
+        // Specifier part
+        const specifier = parts[i]!;
+        if (specifier === '%%') {
+            rendered.push('%');
+        } else {
+            if (valIndex >= values.length) {
+                rendered.push(specifier);
+                continue;
+            }
+            const arg = values[valIndex++]!;
+            let formatted: string | Promise<string>;
+            switch (specifier) {
+                case '%s':
+                    formatted = escapeHtml(toString(arg));
+                    break;
+                case '%f':
+                case '%d':
+                    formatted = escapeHtml(toString(toNumber(arg, Number.NaN)));
+                    break;
+                case '%i':
+                    formatted = escapeHtml(toString(Math.trunc(toNumber(arg, Number.NaN))));
+                    break;
+                default:
+                    formatted = print(arg);
+                    break;
+            }
+            rendered.push(formatted);
+        }
+    }
+
+    // Append any remaining arguments separated by spaces
+    if (valIndex < values.length) {
+        const remaining = values.slice(valIndex);
+        rendered.push(...remaining.map(async (v) => ' ' + (await printValue(v))));
+    }
+    // eslint-disable-next-line @typescript-eslint/await-thenable
+    return Promise.all(rendered).then((parts) => parts.join(''));
+}
+
 /** 管理控制台输出的类 */
 export class ConsoleManager {
     private entries: Array<{
@@ -89,14 +154,7 @@ export class ConsoleManager {
             if (typeof message == 'string') {
                 rendered = message;
             } else if (Array.isArray(message)) {
-                rendered = (
-                    await Promise.all(
-                        message.map(async (arg) => {
-                            if (typeof arg == 'string') return escapeHtml(arg);
-                            return print(arg);
-                        }),
-                    )
-                ).join(' ');
+                rendered = await renderDebugPrint(message);
             } else {
                 rendered = message.message;
             }

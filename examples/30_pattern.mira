@@ -21,8 +21,8 @@ fn analyze_data(data) {
     case ("array", []) { "Empty array" }
     case ("array", [single]) { "Array with one element: $single" }
     case ("array", [first, ..rest]) { "Array starting with $first, has ${ len(rest) } more elements" }
-    case ("object", (name: "John", age: > 18 and < 65)) { "Working-age John" }
-    case ("object", (name: n, age: a)) { "Person named $n, age $a" }
+    case ("record", (name: "John", age: > 18 and < 65)) { "Working-age John" }
+    case ("record", (name: n, age: a)) { "Person named $n, age $a" }
     case ("number", x and > 0) { "Positive number: $x" }
     case ("string", x and not "") { "Non-empty string: $x" }
     case _ { "Unknown data type: ${ type(data) }" }
@@ -30,15 +30,9 @@ fn analyze_data(data) {
 }
 
 // 测试各种数据类型
-debug_print(analyze_data(nil));
-debug_print(analyze_data([]));
-debug_print(analyze_data([42]));
-debug_print(analyze_data([1, 2, 3]));
-debug_print(analyze_data((name: "John", age: 25)));
-debug_print(analyze_data((name: "Alice", age: 30)));
-debug_print(analyze_data(42));
-debug_print(analyze_data("Hello"));
-debug_print(analyze_data(true));
+for data in [nil, [], [42], [1, 2, 3], (name: "John", age: 25), (name: "Alice", age: 30), 42, "Hello", true] {
+  debug_print("analyze_data(%o) = %o", data, analyze_data(data));
+}
 
 fn is_palindrome {
   let ch = it::chars();

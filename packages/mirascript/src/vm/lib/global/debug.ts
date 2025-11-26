@@ -6,8 +6,16 @@ import { VmLib } from '../helpers.js';
 
 export const debug_print = VmLib(
     (...args) => {
-        // eslint-disable-next-line no-console
-        console.log(...debug_print.prefix, ...args);
+        if (args.length > 1 && typeof args[0] == 'string' && args[0].includes('%')) {
+            const [prefix, ...additional] = debug_print.prefix;
+            const [format, ...argsRest] = args;
+            const newPrefix = `${prefix} ${format}`;
+            // eslint-disable-next-line no-console
+            console.log(newPrefix, ...additional, ...argsRest);
+        } else {
+            // eslint-disable-next-line no-console
+            console.log(...debug_print.prefix, ...args);
+        }
     },
     {
         summary: '打印调试信息到控制台',
@@ -17,7 +25,7 @@ export const debug_print = VmLib(
         examples: ['debug_print("value:", 42);'],
     },
     {
-        prefix: ['MiraScript'] as readonly string[],
+        prefix: ['MiraScript'] as readonly [prefix: string, ...additional: readonly string[]],
     },
 );
 
@@ -44,10 +52,11 @@ export const panic = VmLib(
 );
 
 if (typeof location != 'undefined') {
-    const badge = '%cMiraScript';
+    const badge = '%cMiraScript%c';
     const common = 'display: inline-block; padding: 1px 4px; border-radius: 3px;';
-    debug_print.prefix = [badge, `${common} background: #007acc; color: #fff;`];
-    panic.prefix = [badge, `${common} background: #d23d3d; color: #fff;`];
+    const reset = '';
+    debug_print.prefix = [badge, `${common} background: #007acc; color: #fff;`, reset];
+    panic.prefix = [badge, `${common} background: #d23d3d; color: #fff;`, reset];
 } else {
     if (supportsColor.stdout) {
         debug_print.prefix = ['\u001B[44;37m MiraScript \u001B[0m'];
