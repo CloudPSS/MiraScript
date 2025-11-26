@@ -1,5 +1,7 @@
 import { isNaN } from '../helpers/utils.js';
-const now = typeof performance != 'undefined' && performance.now ? performance.now.bind(performance) : Date.now;
+const { now } = Date;
+const TIME_ORIGIN = now();
+const timestamp = () => now() - TIME_ORIGIN;
 
 const MAX_DEPTH = 128;
 const CP_UNSET = -1;
@@ -12,8 +14,8 @@ let cpTimeout = CP_DEFAULT_TIMEOUT;
 /** 检查点 */
 export function Cp(): void {
     if (cp === CP_UNSET) {
-        cp = now();
-    } else if (now() - cp > cpTimeout) {
+        cp = timestamp();
+    } else if (timestamp() - cp > cpTimeout) {
         throw new RangeError('Execution timeout');
     }
 }
@@ -21,7 +23,7 @@ export function Cp(): void {
 export function CpEnter(): void {
     cpDepth++;
     if (cpDepth <= 1) {
-        cp = now();
+        cp = timestamp();
         cpDepth = 1;
     } else if (cpDepth > MAX_DEPTH) {
         throw new RangeError('Maximum call depth exceeded');
