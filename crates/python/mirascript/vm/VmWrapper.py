@@ -46,6 +46,5 @@ class VmWrapper(ABC):
 def isVmWrapper(v):
     if v is None or not isinstance(v,object):
         return False
-    print('isVmWrapper',v,type(v))
    
     return hasattr(v,VmWrapper._VM_WRAPPER_SYMBOL)

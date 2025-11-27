@@ -45,7 +45,6 @@ class VmWrapper(ABC):
     
     ## 转为字符串
     def toString(self):
-        print('VmWrapper toString',self.type,self.describe)
         if self.describe is  None:
             return f"<{self.type}>"
         return f"<{self.type} {self.describe}>"

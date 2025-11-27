@@ -45,7 +45,7 @@ class BlackBoxTests(unittest.TestCase):
             self.assertFalse(v,msg=message)
 
         def t_throws(fn,message=None):
-            # print('t_throws',fn,type(fn))  # --- DEBUG ---
+            # print('t_throws start',fn,type(fn))  # --- DEBUG ---
             with self.assertRaises(VmError, msg=message):
                 fn()
             # print('t_throws end',fn,type(fn))  # --- DEBUG ---

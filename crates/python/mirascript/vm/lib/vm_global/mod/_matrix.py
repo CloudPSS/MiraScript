@@ -1,13 +1,14 @@
 import math
+from mirascript.helpers.convert.to_number import toNumber
 from mirascript.vm.types.checker import is_vm_array
 from ..._helpers import (
-     expect_array, expect_callable, expect_const, required, throw_error,
+     expect_array, expect_callable, expect_const, expect_integer, required, throw_error,
     get_numbers, map_vm
 )
 from ..._helpers_utils import array_len
 from ..math_unary import round_
 from ....helpers import Cp
-from ....operations import Add_, Call_, Div_, Mul_, Sub_, ToNumber_
+from ....operations import Add_, Call_, Div_, Mul_, Sub_
 from ....types import is_vm_any, is_vm_const, VmValue
 __all__=['size','entrywise','transpose','add','subtract','entrywise_multiply','entrywise_divide','multiply','invert'
         ,'diagonal','zeros','ones','identity' ]
@@ -31,7 +32,7 @@ def sizeImpl(matrix):
     return [numRows, numCols]
 
 def num(v):
-    return ToNumber_(v if v is not None else None)
+    return toNumber(v if v is not None else None)
 
 
 def size(matrix):
@@ -361,7 +362,7 @@ def invert(matrix):
 
 def diagonal(vector,k=0):
     expect_array('vector', vector, [])
-    fk  = round_(k)
+    fk  = expect_integer('k', k)
     if math.isnan(fk):
         fk = 0
     
@@ -397,6 +398,7 @@ def diagonal(vector,k=0):
     return result
 
 def filled(size, value):
+   
     s= get_numbers(size)
     if len(s) ==0:
         return []

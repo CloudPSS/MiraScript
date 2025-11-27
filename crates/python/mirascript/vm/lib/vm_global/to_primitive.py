@@ -1,21 +1,27 @@
-from ...operations import ToBoolean_,ToString_,ToNumber_,Format_
-from .._helpers import required
+from mirascript.helpers.convert.to_boolean import toBoolean
+from mirascript.helpers.convert.to_format import toFormat
+from mirascript.helpers.convert.to_number import toNumber
+from mirascript.helpers.convert.to_string import toString
+
+from .._helpers import expect_string, required
 import math
 from mirascript.vm.types.const import Uninitialized
-def to_string(value=Uninitialized):
+def to_string(value=Uninitialized,fallback=Uninitialized):
     required('value', value,'')
-    return ToString_(value)
+    return toString(value,fallback)
 
-def to_number(value=Uninitialized):
+def to_number(value=Uninitialized,fallback=Uninitialized):
     required('value', value,math.nan)
-    return ToNumber_(value)
+    x= toNumber(value,fallback)
+    return x
 
 
-def to_boolean(value=Uninitialized):
+def to_boolean(value=Uninitialized,fallback=Uninitialized):
     required('value', value,False)
-    return ToBoolean_(value)
+    return toBoolean(value,fallback)
 
 
 def format(value=Uninitialized,fmt=Uninitialized):
     required('value', value,'')
-    return Format_(value,fmt)
+    
+    return toFormat(value,expect_string('fmt', fmt))

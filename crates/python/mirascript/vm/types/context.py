@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 from typing import Any, Callable, Dict, Iterable, Optional
 from collections.abc import Mapping
+
+from mirascript.vm.error import VmError
+from mirascript.vm.types.const import Uninitialized
 from .checker import is_vm_any
 
 # from .function import VmFunction
@@ -32,7 +35,11 @@ class VmContext:
         return VmSharedContext.keys()
 
     def get(self, key: str) -> Any:
-        return VmSharedContext.get(key, None)
+        # return VmSharedContext.get(key, None)
+        val = VmSharedContext.get(key, Uninitialized)
+        if val is Uninitialized:
+            raise VmError(f"Global variable '{key}' is not defined.", None)
+        return val
 
     def has(self, key: str) -> bool:
         return key in VmSharedContext
@@ -56,7 +63,11 @@ class ValueVmContext(VmContext):
         return list(self._cached_keys) + list(VmSharedContext.keys())
 
     def get(self, key: str) -> Any:
-        return self.env.get(key, None)
+        # return self.env.get(key, None)
+        val = self.env.get(key, Uninitialized)
+        if val is Uninitialized:
+            raise VmError(f"Global variable '{key}' is not defined.", None)
+        return val
 
     def has(self, key: str) -> bool:
         return key in self.env

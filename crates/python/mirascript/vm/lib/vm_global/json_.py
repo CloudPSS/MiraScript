@@ -4,7 +4,8 @@ from mirascript.vm.lib._helpers import required,rethrow_error
 from mirascript.vm.types.checker import is_vm_module
 from mirascript.vm.types.const import Uninitialized
 import math
-from mirascript.vm.operations import numberToString_,innerToString_,ToString_
+from mirascript.vm.operations import ToString_
+from mirascript.helpers.convert.to_string import innerToString_
 from mirascript.vm.types.extern import is_vm_extern
 class NanToNullEncoder(json.JSONEncoder):
     def encode(self, o):

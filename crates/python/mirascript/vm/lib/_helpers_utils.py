@@ -1,3 +1,4 @@
+import math
 from ._helpers import  throw_error
 from ..types import VmFunction, VmModule
 from mirascript.vm.lib.vm_global.math_unary import trunc
@@ -31,15 +32,11 @@ def create_module(name: str, lib: dict) -> VmModule:
 
 
 def array_len(length):
-    if (
-        length is None
-        or isinstance(length, float)
-        and (length != length)
-        or length <= 0
-    ):
-        return 0
+    if length is None or math.isnan(length) or length<=-1:
+        throw_error('Array length must be a non-negative integer', None)
+        
     # length = int(length)
     length =trunc(length)
     if length > VM_ARRAY_MAX_LENGTH:
-        throw_error("Array length exceeds maximum", None)
+        throw_error(f"Array length exceeds maximum limit of {VM_ARRAY_MAX_LENGTH}", None)
     return int(length)

@@ -1,6 +1,5 @@
 from mirascript.vm.types.const import Uninitialized
-from ..._helpers import  expect_array
-from ....operations import ToNumber_
+from ..._helpers import  expect_array, expect_number
 def flatten(data=Uninitialized, depth=1):
     expect_array('data', data, data)
     def flat(arr, d):
@@ -13,6 +12,6 @@ def flatten(data=Uninitialized, depth=1):
             else:
                 result.append(item)
         return result
-    d = ToNumber_(depth)
+    d = expect_number('depth', depth)
     return flat(data, d)
 

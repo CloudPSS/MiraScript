@@ -1,12 +1,10 @@
 import math
-from ...operations import ToNumber_
-from .._helpers import required
+from .._helpers import expect_number, required
 from mirascript.vm.types.const import Uninitialized
 import decimal
 def build(func, nan=None,inf=None,neginf=None,poszero=None,negzero=None,except_inf=None):
     def wrapper(x=Uninitialized):
-        required('x', x, math.nan)
-        x = ToNumber_(x)
+        x = expect_number('x',x)
         if math.isnan(x):
             if nan is not None:
                 return nan
@@ -37,20 +35,18 @@ def build(func, nan=None,inf=None,neginf=None,poszero=None,negzero=None,except_i
         
     return wrapper
 abs_ = build(abs,math.nan,math.inf,math.inf,0.0,0.0)
-# trunc  =lambda x=Uninitialized: ( build(math.trunc,math.nan,math.inf,-math.inf,+0.0,-0.0)(abs_(x))*math.copysign(1,ToNumber_(x)) )
 def trunc(x=Uninitialized):
     ret = build(math.trunc,math.nan,math.inf,-math.inf)(x)
-    return math.copysign(ret,ToNumber_(x))
+    return math.copysign(ret,expect_number('x', x))
 floor = build(math.floor,math.nan,math.inf,-math.inf,+0.0,-0.0)
 def ceil(x=Uninitialized):
     
     ret = build(math.ceil,math.nan,math.inf,-math.inf)(x)
     
     if ret==0.0:
-        return math.copysign(0.0,ToNumber_(x))
+        return math.copysign(0.0,expect_number('x', x))
     return ret
         
-    # return ( build(math.ceil,math.nan,math.inf,-math.inf,+0.0,-0.0)(abs_(x))*math.copysign(1,ToNumber_(x)) )
 round_ = build(lambda x: round(x,0))
 
 
@@ -64,8 +60,7 @@ asinh = build(math.asinh,math.nan,math.inf,-math.inf)
 atan = build(math.atan,math.nan)
 # atanh = build(math.atanh,math.nan,math.nan,math.nan)
 def atanh(x=Uninitialized):
-    required('x', x, math.nan)
-    x = ToNumber_(x)
+    x= expect_number('x', x)
     ret = build(math.atanh,math.nan)(x)
     if math.isnan(ret):
         if x == 1.0:
@@ -87,8 +82,7 @@ log = build(math.log,math.nan,math.inf,math.nan,-math.inf,-math.inf)
 log10 = build(math.log10,math.nan,math.inf,math.nan,-math.inf,-math.inf)
 # log1p = build(math.log1p,math.nan,math.inf,math.nan,0,-0)
 def log1p(x=Uninitialized):
-    required('x', x, math.nan)
-    x = ToNumber_(x)
+    x = expect_number('x', x)
     ret = build(math.log1p,math.nan,math.inf,math.nan)(x)
     if math.isnan(ret):
         if x == -1.0:
@@ -100,70 +94,3 @@ log2 = build(math.log2,math.nan,math.inf,math.nan,-math.inf,-math.inf)
 sqrt = build(math.sqrt,math.nan)
 cbrt = build(lambda x: math.copysign(abs(x)**(1/3),x),math.nan)
 
-
-# def trunc(x):
-#     return math.trunc(ToNumber_(x))
-# def floor(x):
-#     return math.floor(ToNumber_(x))
-# def ceil(x):
-#     return math.ceil(ToNumber_(x))
-# def round_(x):
-#     return round(ToNumber_(x))
-# def sign(x):
-#     v = ToNumber_(x)
-#     if v>0:
-#         return 1
-#     elif v<0:
-#         return -1
-#     else:
-#         return 0
-# def abs_(x):
-#     return abs(ToNumber_(x))        
-# def acos(x):    
-#     return math.acos(ToNumber_(x))  
-# def acosh(x):    
-#     return math.acosh(ToNumber_(x))
-# def asin(x):
-#     return math.asin(ToNumber_(x))  
-# def asinh(x):    
-#     return math.asinh(ToNumber_(x))
-# def atan(x):
-#     return math.atan(ToNumber_(x))
-# def atanh(x):    
-#     return math.atanh(ToNumber_(x))
-
-# def cos(x):
-#     return math.cos(ToNumber_(x))
-# def cosh(x):
-#     return math.cosh(ToNumber_(x))
-# def sin(x):
-#     return math.sin(ToNumber_(x))
-# def sinh(x):
-#     return math.sinh(ToNumber_(x))
-# def tan(x):
-#     return math.tan(ToNumber_(x))
-# def tanh(x):
-#     return math.tanh(ToNumber_(x))
-
-# def exp(x):
-#     return math.exp(ToNumber_(x))
-  
-# def expm1(x):
-#     return math.expm1(ToNumber_(x))
-# def log(x):
-#     return math.log(ToNumber_(x))
-
-# def log10(x):
-#     return math.log10(ToNumber_(x))
-# def log1p(x):
-#     return math.log1p(ToNumber_(x))
-# def log2(x):
-#     return math.log2(ToNumber_(x))
-
-  
-# def sqrt(x):
-#     return math.sqrt(ToNumber_(x))
-
-
-# def cbrt(x):
-#     return math.copysign(abs(ToNumber_(x))**(1/3),ToNumber_(x))

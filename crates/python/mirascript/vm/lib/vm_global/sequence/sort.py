@@ -1,4 +1,5 @@
-from ....operations import Call_, ToNumber_, ToString_,Type_
+from mirascript.helpers.convert.to_number import toNumber
+from ....operations import Call_
 from ....types import  VmValue
 from ..._helpers import  expect_array_or_record,expect_compound,expect_array,expect_callable
 from mirascript.vm.types.const import Uninitialized
@@ -19,10 +20,10 @@ def default_compare(a=Uninitialized, b=Uninitialized):
    
     if a is b:
         return 0
-    a_num = ToNumber_(a)
+    a_num = toNumber(a,0)
     if math.isnan(a_num):
         a_num = 0
-    b_num = ToNumber_(b) 
+    b_num = toNumber(b,0) 
     if math.isnan(b_num):
         b_num = 0
     return a_num - b_num
@@ -34,7 +35,7 @@ def cmp(comparator,recovered):
     
     def compare(a: VmValue, b: VmValue):
         ret = Call_(comparator, a, b)
-        return ToNumber_(ret)
+        return toNumber(ret,0)
         
     return compare 
 def sort(data=Uninitialized, comparator=Uninitialized):

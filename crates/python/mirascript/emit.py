@@ -669,15 +669,6 @@ class Emitter:
         elif opcode == OpCode.InGlobal:
             reg = read()
             left = read()
-            # code = ast.Expr(
-            #         value=ast.Call(
-            #             func=ast.Attribute(
-            #                 value=ast.Name(id='context', ctx=ast.Load()),
-            #                 attr='has',
-            #                 ctx=ast.Load()),
-            #             args=[
-            #                 ast.Name(id=self.rv(left), ctx=ast.Load())],
-            #             keywords=[]))
             code = ast.Assign(
                     targets=[
                         ast.Name(id=self.wv(reg), ctx=ast.Store())],
@@ -687,7 +678,12 @@ class Emitter:
                             attr='has',
                             ctx=ast.Load()),
                         args=[
-                            ast.Name(id=self.rv(left), ctx=ast.Load())],
+                            ast.Call(
+                                func=ast.Name(id='ToString_', ctx=ast.Load()),
+                                args=[
+                                     ast.Name(id=self.rv(left), ctx=ast.Load())],
+                                keywords=[])
+                           ],
                         keywords=[]),lineno=0)
             
         
@@ -770,8 +766,11 @@ class Emitter:
         elif opcode in (OpCode.AssertInit, OpCode.AssertNonNil):
             reg = read()
             opcode_name = get_opcode_name(opcode)
-            code =ast.Expr( value=ast_call(f"{opcode_name}_", [ast.Constant(value=None)]))
-            # code = assign_call('', f"{opcode_name}_", [ast.Name(id=self.rv(reg), ctx=ast.Load())])
+            # code =ast.Expr( value=ast_call(f"{opcode_name}_", [ast.Constant(value=None)]))
+            if reg==0:
+                code =ast.Expr( value=ast_call(f"{opcode_name}_", [ast.Constant(value=None)]))
+            else:
+                code = assign_call('', f"{opcode_name}_", [ast.Name(id=self.rv(reg), ctx=ast.Load())])
         #     code = f"${opcode_name}({self.rv(reg)})"
         
         # # 处理属性访问相关操作

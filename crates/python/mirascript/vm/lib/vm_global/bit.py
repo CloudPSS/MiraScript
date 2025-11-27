@@ -1,8 +1,8 @@
-from ...operations import ToNumber_
+from mirascript.vm.lib._helpers import expect_number
 import math
 
 def to_int32(x):
-    x = ToNumber_(x)
+    x = expect_number('x', x)
     if math.isnan(x):
         return 0
     
@@ -69,8 +69,8 @@ def sar(a, b):
 def shr(a, b):
     a = to_int32(a)
     b = to_int32(b)
-    a = int(ToNumber_(a))
-    b = int(ToNumber_(b))
+    a = int(expect_number('a', a))
+    b = int(expect_number('b', b))
     if a >= 0:
         return float(int(a) >> int(b))
     else:

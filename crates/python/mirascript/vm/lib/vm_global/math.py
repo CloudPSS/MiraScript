@@ -1,11 +1,12 @@
 import math
 import random
-from ...operations import ToNumber_
+
+from mirascript.vm.lib._helpers import expect_number
 
 
 def atan2(y,x):
-    return math.atan2(ToNumber_(y),ToNumber_(x))
+    return math.atan2(expect_number('y', y),expect_number('x', x))
 def pow(x,y):
-    return math.pow(ToNumber_(x),ToNumber_(y))
+    return math.pow(expect_number('x', x),expect_number('y', y))
 def random_():
   return random.random()

@@ -1,7 +1,8 @@
 import math
-from .._helpers import required
-from ...operations import ToString_,ToNumber_
-from mirascript.vm.operations import numberToString_,is_decimal_number
+
+from mirascript.vm.types.const import Uninitialized
+from .._helpers import expect_number
+from mirascript.vm.operations import is_decimal_number
 GAMMA_G = 4.742_187_5
 
 GAMMA_P = [
@@ -12,9 +13,8 @@ GAMMA_P = [
     -0.261_908_384_015_814_086_7e-4, 0.368_991_826_595_316_227_04e-5,
 ]
 
-def factorial(x):
-    required('x', x, None)
-    n = ToNumber_(x)
+def factorial(x=Uninitialized):
+    n= expect_number('x', x)
     if math.isnan(n) or n < 0 :
         return math.nan
     if n >= 171:

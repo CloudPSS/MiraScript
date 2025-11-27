@@ -1,7 +1,8 @@
+from mirascript.helpers.convert.to_number import is_decimal_number, toNumber
 from mirascript.vm.helpers import Element
 from mirascript.vm.lib.vm_global.math_unary import trunc
 from mirascript.vm.types.checker import is_vm_array,is_vm_record
-from ....operations import Call_, ToNumber_, ToString_,Type_,is_safe_integer
+from ....operations import Call_, ToString_,Type_,is_safe_integer
 from ....types import  VmValue
 from ..._helpers import  expect_array_or_record,expect_compound,expect_array,expect_callable,throw_error,expect_const
 from mirascript.vm.types.const import Uninitialized,VM_ARRAY_MAX_LENGTH
@@ -9,10 +10,18 @@ from functools import cmp_to_key
 import math
 
 def arr_index(index):
-    idx =trunc(index)
-    if not is_safe_integer(idx) or idx < 0 or idx> VM_ARRAY_MAX_LENGTH:
-        return -1
+    idx =trunc(toNumber(index,math.nan))
+    if math.isnan(idx) or idx <0:
+        throw_error('Array index must be a non-negative integer', index)
+    
+    if idx>= VM_ARRAY_MAX_LENGTH:
+        throw_error(f'Array index exceeds maximum limit of {VM_ARRAY_MAX_LENGTH}', index)
     return idx
+
+def isArrIndex(key):
+    if not isinstance(key, (int,float,bool)):
+        return False
+    return is_decimal_number(key) ==False and key >=0 and key <= VM_ARRAY_MAX_LENGTH
 
 def with_inner(obj, key,key_index, value):
     
@@ -27,7 +36,7 @@ def with_inner(obj, key,key_index, value):
         result = obj.copy()
     elif is_vm_record(obj):
         result = obj.copy()
-    elif arr_index(k) ==k:
+    elif isArrIndex(k):
         result = []
     else:
         result = {}

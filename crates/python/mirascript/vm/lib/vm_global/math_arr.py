@@ -1,4 +1,4 @@
-from mirascript.vm.operations import ToNumber_
+
 from .._helpers import get_numbers
 from functools import reduce as _reduce
 import math
@@ -39,20 +39,3 @@ hypot = build(math.hypot)
 sum_ = build(lambda *args: _reduce(lambda a, b: a + b, args, -0.0))
 product = build(lambda *args: _reduce(lambda a, b: a * b, args, 1.0))
 
-# def min_(*arr):
-    
-#     numbers = get_numbers(arr)
-#     return min(numbers)
-
-# def hypot(*arr):
-#     numbers = get_numbers(arr)
-#     return math.hypot(*numbers)
-
-# def sum_(*arr):
-
-#     numbers = get_numbers(arr)
-#     return sum(numbers)
-
-# def product(*arr):
-#     numbers = get_numbers(arr)
-#     return _reduce(lambda a,b:a*b, numbers, 1)

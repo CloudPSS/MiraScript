@@ -1,6 +1,10 @@
 import math
 import re
 
+from mirascript.helpers.convert.to_boolean import toBoolean
+from mirascript.helpers.convert.to_format import toFormat
+from mirascript.helpers.convert.to_number import toNumber
+from mirascript.helpers.convert.to_string import toString
 from mirascript.vm.error import VmError
 
 from mirascript.vm.types.checker import is_vm_primitive
@@ -10,11 +14,10 @@ from mirascript.vm.types.wrapper import VmWrapper,isVmWrapper
 from ..vm.types.checker import is_vm_const, is_vm_record
 
 from .types.extern import VmExtern, is_vm_extern
-from mirascript.vm.types.const import getVmFunctionInfo
+from mirascript.vm.types.const import Uninitialized, getVmFunctionInfo
 import locale
 import numpy as np
 import unicodedata
-Uninitialized = type("Uninitialized", (), {})()
 ## 标记当前值未返回的值
 LoopContinue = type("LoopContinue", (), {})()
 ## 标记当前值为Break
@@ -40,13 +43,16 @@ def is_safe_integer(n):
     
     return MIN_SAFE_INTEGER <= n <= MAX_SAFE_INTEGER
 
-def isNumber_(a):
+
+
+
+def IsNumber_(a):
     if isinstance(a, bool):
         return False
     return isinstance(a, (int, float))
 
 def isSame(a,b):
-    if(isNumber_(a) and isNumber_(b)):
+    if(IsNumber_(a) and IsNumber_(b)):
         return a ==b or (math.isnan(a) and math.isnan(b))
     if a==b and type(a) is type(b):
         return True
@@ -62,21 +68,13 @@ def AssertInit_(val):
 def ToBoolean_(value):
     AssertInit_(value)
     # print("ToBoolean_ called with value:", value, "type:", type(value))  # --- DEBUG ---
-    if value is None:
-        return False
-    if isinstance(value, bool):
-        return value
+    return toBoolean(value)
     
-    return True
     
 def isVmArray(value):
     if type(value) is list:
         return True
 
-def is_number_regex(s):
-    # 匹配整数、小数、科学计数法
-    pattern = r'^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$'
-    return bool(re.match(pattern, s))
 
 def ToNumber_(value):
     """
@@ -91,118 +89,21 @@ def ToNumber_(value):
         转换后的数字，如果无法转换则返回默认值
     """
     AssertInit_(value)
-    if value is None:
-        return float(0)
-    if isinstance(value, bool):
-        return float(1 if value else 0)
-    if isinstance(value, (int, float)):
-        return float(value)
-    
-    if isinstance(value, str): 
-        if value.strip() == "":
-            return 0
-        try:
-            value = value.strip()
-            if value.startswith(("0x","0X")):
-                    return float(int(value,16))
-            if not is_number_regex(value):
-                if value=='inf' or value=='+inf' or value=='Infinity' or value=='+Infinity':
-                    return math.inf
-                if value=='-inf' or value=='-Infinity':
-                    return -math.inf
-                return math.nan
-       
-            
-            return float(value)
-        except ValueError:
-            
-            return math.nan
-    
-    
-    
-    
-    return math.nan
+    return toNumber(value)
     
 
 
-
-def numberToString_(x) -> str:
-    
-    # 1. If x is nan, return "nan"
-    if math.isnan(x):
-        return "nan"
-    
-    # 2. If x is either +0 or -0, return "0"
-    if x == 0:
-        return "0"
-    
-    if x < 0:
-        return "-" + numberToString_(-x)
-    
-    if math.isinf(x):
-        return "inf"
-    
-    # 5. Python 的 repr() 已经给出了符合规范的最短表示
-    # 直接返回（Python 的 repr 遵循与 ECMAScript 相同的 IEEE 754 规则）
-    result = repr(x)
-    
-    # 去除整数的 .0 后缀（Python 对整数值浮点数会添加 .0）
-    if result.endswith('.0') and 'e' not in result.lower():
-        result = result[:-2]
-    
-    return result
    
 
-def innerToString_(val,useBraces) -> str:
-    if val is None:
-        return "nil"
-    
-    if callable(val):
-        name = getVmFunctionInfo(val)
-        if name:
-            return f"<function {name}>"
-        return "<function>"
-    
-    if isVmWrapper(val):
-        return val.toString()
-    
-    if isinstance(val, (list, tuple)):
-        strings =[]
-        for v in val:
-            strings.append(innerToString_(v,True))
-        # print('Array to string:', strings)  # --- DEBUG ---
-        joined = (", ").join(strings)
-        if not useBraces:
-            return joined
-        return f"[{joined}]"
-    
-    if isinstance(val, dict):
-        strings =[]
-        
-        for k,v in val.items():
-            strings.append(f"{k}: {innerToString_(v,True)}")
-        joined = (", ").join(strings)
-        if not useBraces:
-            return joined
-        return f"({joined})"
-    if isinstance(val,bool):
-        return "true" if val else "false"
-        # return "true" if val else "0"
-    
-    if isinstance(val,(int,float)):
-        
-        return numberToString_(val)
-    return str(val)
-
-def ToString_(val) -> str:
+def ToString_(val):
     AssertInit_(val)
     if val is None:
         return ""
-    return innerToString_(val,False)
+    return toString(val,Uninitialized,False)
 
 def overloadNumberString_(a,b):
     
-    if  isNumber_(a) or isNumber_(b):
+    if  IsNumber_(a) or IsNumber_(b):
         return True
     if isinstance(a,str) or isinstance(b,str): 
         return False
@@ -275,7 +176,6 @@ def Mod_(a,b):
     return math.fmod(x, y)
     
 def Pow_(a,b):
-    
     return np.pow(ToNumber_(a),ToNumber_(b))
 
 def And_(a,b):
@@ -395,7 +295,7 @@ def Concat_(*args):
     result = ""
     for a in args:
         AssertInit_(a)
-        result += Format_(a)
+        result += toFormat(a,None)
     return result
 
 
@@ -556,11 +456,10 @@ def IsArray_(val):
     return isVmArray(val)
 
 def AssertNonNil_(val):
-    # print("AssertNonNil_ called with val:", val)  # --- DEBUG ---
     AssertInit_(val)
     if val is not None:
         return
-    raise VmError("Nil value error",None)
+    raise VmError("Expected non-nil value",None)
 
 def Has_(obj,key):
     AssertInit_(obj)
@@ -677,58 +576,14 @@ def ArraySpread_(val):
     raise VmError(f"`Expected array, iterable extern or nil, got {Type_(val)}",None)
 
 
-def formatNumber_(num):
-    AssertInit_(num)
-    if not math.isfinite(num):
-        return numberToString_(num)
-    
-    if num ==0:
-        return "0"
-    
-    s= numberToString_(num)
-    
-    ps=''
-    absVal = abs(num)
-    if absVal >=1000 or absVal <0.001:
-        ps1=format(num, f'.0e')
-        ps2=format(num, f'.5e')
-        ps = ps1 if len(ps1)<len(ps2) else ps2
-        
-    else:
-        ps=format(float(num), f'.6')
-    
-    return  ps if len(ps)<len(s) else s
-        
-    
-    
 
 def Format_(val, fmt=None):
     AssertInit_(val)
     
     f = ''
     if fmt is not None:
-        if not isinstance(fmt, str):
-            f = ToString_(fmt)
-        else:
-            f = fmt.strip()
-    if isinstance(val, bool):
-        return ToString_(val)
-    
-    if isinstance(val, (int, float)):
-        r = re.match(r'^\.\d+$', f)
-        if r:
-            
-            ff = float(f[1:])
-            if math.isinf(ff):
-                digits = 100
-            else:
-                digits =math.trunc(ff)
-                if not( digits <= 100):
-                    digits = 100
-            return f"{val:.{digits}f}"
-        else:
-            return formatNumber_(val)
-    return ToString_(val)
+        f = ToString_(fmt)
+    return toFormat(val,f)
 
 
 
@@ -755,3 +610,4 @@ def RangeExclusive_(start,end):
         result.append(s)
         s+=1
     return result
+
