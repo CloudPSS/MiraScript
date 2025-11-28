@@ -67,13 +67,9 @@ export type LocalDefinitionType = (typeof LocalDefinitionType)[number];
 export const LocalDefinitionType = [...LocalVariableType, ...LocalFunctionType, ...ParameterDefinitionType] as const;
 
 /** 源代码定义信息 */
-export interface LocalDefinition<T extends LocalDefinitionType = LocalDefinitionType>
-    extends SourceDefinitionBase<
-        | DiagnosticCode.ReadLocal
-        | DiagnosticCode.WriteLocal
-        | DiagnosticCode.ReadWriteLocal
-        | DiagnosticCode.RedeclareLocal
-    > {
+export interface LocalDefinition<T extends LocalDefinitionType = LocalDefinitionType> extends SourceDefinitionBase<
+    DiagnosticCode.ReadLocal | DiagnosticCode.WriteLocal | DiagnosticCode.ReadWriteLocal | DiagnosticCode.RedeclareLocal
+> {
     /** 符号定义 */
     readonly definition: SourceDiagnostic<T>;
     /** 定义的函数，仅对 LocalFunction 有效 */
