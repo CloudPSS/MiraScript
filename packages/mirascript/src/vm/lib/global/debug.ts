@@ -4,13 +4,24 @@ import { toString } from '../../../helpers/convert/index.js';
 import type { VmAny } from '../../types/index.js';
 import { VmLib } from '../helpers.js';
 
-/** 默认的序列化函数 */
-function defaultSerializer(arg: VmAny, format: string): string | null {
+/** 序列化格式 */
+type SerializeFormat =
+    /** 表示未指定格式 */
+    | ''
+    /** 以 `%` 开头的格式占位符 */
+    | `%${string}`;
+/**
+ * 默认的序列化函数
+ * @param arg 要序列化的值
+ * @param format 序列化格式
+ * @returns 序列化后的字符串，或 null 表示直接将原值传递给控制台
+ */
+function defaultSerializer(arg: VmAny, format: SerializeFormat): string | null {
     return null;
 }
 
 /** 序列化值 */
-function serializeValue(arg: VmAny, format: string, serializer?: typeof defaultSerializer): string | null {
+function serializeValue(arg: VmAny, format: SerializeFormat, serializer: typeof defaultSerializer): string | null {
     if (serializer == null || serializer === defaultSerializer) {
         return defaultSerializer(arg, format);
     }
@@ -23,9 +34,10 @@ function serializeValue(arg: VmAny, format: string, serializer?: typeof defaultS
 
 export const debug_print = VmLib(
     (...args) => {
+        const { serializer } = debug_print;
         if (args.length <= 1 || typeof args[0] != 'string' || !args[0].includes('%')) {
             // eslint-disable-next-line no-console
-            console.log(...debug_print.prefix, ...args.map((v) => serializeValue(v, '', debug_print.serializer) ?? v));
+            console.log(...debug_print.prefix, ...args.map((v) => serializeValue(v, '', serializer) ?? v));
             return;
         }
         const [prefix, ...additional] = debug_print.prefix;
@@ -52,7 +64,7 @@ export const debug_print = VmLib(
                     continue;
                 }
                 const arg = values[valIndex++]!;
-                const f = serializeValue(arg, specifier, debug_print.serializer);
+                const f = serializeValue(arg, specifier as SerializeFormat, serializer);
                 if (f != null) {
                     messageToConsole.push('%s');
                     valuesToConsole.push(f);
@@ -66,7 +78,7 @@ export const debug_print = VmLib(
         // Append any remaining arguments separated by spaces
         if (valIndex < values.length) {
             const remaining = values.slice(valIndex);
-            valuesToConsole.push(...remaining.map((v) => serializeValue(v, '', debug_print.serializer) ?? v));
+            valuesToConsole.push(...remaining.map((v) => serializeValue(v, '', serializer) ?? v));
         }
         // eslint-disable-next-line no-console
         console.log(messageToConsole.join(''), ...valuesToConsole);
