@@ -9,7 +9,7 @@ import {
     type VmContext,
     VmError,
 } from '@mirascript/mirascript';
-import { DefaultVmContext } from '@mirascript/mirascript/subtle';
+import { DefaultVmContext, lib } from '@mirascript/mirascript/subtle';
 
 function checkContext(t: ExecutionContext, context: VmContext): Set<string> {
     const rk = `$$$RANDOM_GLOBAL_VALUE%${Math.random()}${Date.now()}`;
@@ -30,12 +30,18 @@ function checkContext(t: ExecutionContext, context: VmContext): Set<string> {
     t.truthy(context.get('to_boolean'));
     t.throws(() => context.get(rk), { message: `Global variable '${rk}' is not defined.`, instanceOf: VmError });
 
-    defineVmContextValue(rk, rk);
+    t.is(context.describe('to_string'), lib.to_string.summary);
+    t.is(context.describe('to_number'), lib.to_number.summary);
+    t.is(context.describe('to_boolean'), lib.to_boolean.summary);
+    t.is(context.describe(rk), undefined);
+
+    defineVmContextValue(rk, rk, false, rk);
     const newKeys = new Set(context.keys());
 
     t.true(newKeys.has(rk));
     t.true(context.has(rk));
     t.is(context.get(rk), rk);
+    t.is(context.describe(rk), rk);
 
     return newKeys;
 }
@@ -66,6 +72,7 @@ test('ValueContext', (t) => {
             $fn: (() => 0) as never,
         },
         { c: [4, 5], $ud2: undefined, $nul2: null },
+        (key) => key,
     );
     const keys = checkContext(t, context);
 
@@ -95,12 +102,26 @@ test('ValueContext', (t) => {
     t.false(context.has('$set'));
     t.false(context.has('$date'));
     t.false(context.has('$fn'));
+
+    t.is(context.describe('sin'), 'sin');
+    t.is(context.describe('a'), 'a');
+    t.is(context.describe('b'), 'b');
+    t.is(context.describe('c'), 'c');
+    t.is(context.describe('$ud'), '$ud');
+    t.is(context.describe('$nul'), '$nul');
+    t.is(context.describe('$ud2'), '$ud2');
+    t.is(context.describe('$nul2'), '$nul2');
+
+    t.is(context.describe('$set'), undefined);
+    t.is(context.describe('$date'), undefined);
+    t.is(context.describe('$fn'), undefined);
 });
 
 test('FactoryContext', (t) => {
     const context = createVmContext(
         (key) => (key.length === 1 ? 'k_' + key : !key ? null : undefined),
         () => ['d'],
+        (key) => key,
     );
 
     t.is(context.get(''), null);
@@ -125,6 +146,12 @@ test('FactoryContext', (t) => {
     t.is(context.get('b'), 'k_b');
     t.is(context.get('c'), 'k_c');
     t.is(context.get('d'), 'k_d');
+
+    t.is(context.describe('a'), 'a');
+    t.is(context.describe('b'), 'b');
+    t.is(context.describe('c'), 'c');
+    t.is(context.describe('d'), 'd');
+    t.is(context.describe('aa'), undefined);
 });
 
 test('FactoryContextNoEnumerator', (t) => {

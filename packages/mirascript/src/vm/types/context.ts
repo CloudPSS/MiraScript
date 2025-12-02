@@ -14,7 +14,7 @@ export interface VmContext {
     /** 枚举所有 key，仅在 LSP 中使用 */
     keys(): readonly string[];
     /** 描述值，返回 MarkDown 文本，仅在 LSP 中使用 */
-    describe?(key: string): string | undefined;
+    describe(key: string): string | undefined;
     /**
      * 获取指定 key 的值 `global[key]`
      * @throws {VmError} 如果值不存在则抛出异常
@@ -42,6 +42,7 @@ export function defineVmContextValue(
     name: string,
     value: VmImmutable | ((...args: VmAny[]) => VmAny),
     override = false,
+    description: string | null | undefined = undefined,
 ): void {
     if (!override && name in VM_SHARED_CONTEXT) throw new Error(`Global variable '${name}' is already defined.`);
     let v: VmImmutable;
@@ -54,6 +55,7 @@ export function defineVmContextValue(
         v = value;
     }
     VM_SHARED_CONTEXT[name] = v ?? null;
+    if (description) VM_SHARED_CONTEXT_DESCRIPTIONS[name] = description;
     VM_SHARED_CONTEXT_KEYS = null;
 }
 
