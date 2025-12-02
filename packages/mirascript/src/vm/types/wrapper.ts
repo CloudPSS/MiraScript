@@ -16,15 +16,19 @@ export abstract class VmWrapper<T extends object> {
     abstract same(other: VmAny): boolean;
     /** 获取类型 */
     abstract get type(): TypeName;
-    /** 获取描述 */
-    abstract get describe(): string;
+    /** 获取当前对象的描述 */
+    abstract get tag(): string;
+    /** 描述键对应的值 */
+    describe(key: string): string | undefined {
+        return undefined;
+    }
     /** Convert the object to JSON */
     toJSON(): undefined {
         return undefined;
     }
     /** 转为字符串 */
     toString(useBraces: boolean): string {
-        const { type, describe } = this;
+        const { type, tag: describe } = this;
         if (!describe) return `<${type}>`;
         return `<${type} ${describe}>`;
     }

@@ -66,8 +66,8 @@ test('empty', compileAndRun, '', null);
 test('whitespace', compileAndRun, ' ', null);
 test('whitespaces', compileAndRun, ' \n', null);
 
-test('identifier', compileAndRun, '@pi', Math.PI);
-test('identifier with whitespace', compileAndRun, ' @pi\n\r\n ', Math.PI);
+test('identifier', compileAndRun, 'PI', Math.PI);
+test('identifier with whitespace', compileAndRun, ' PI\n\r\n ', Math.PI);
 
 test('non-existent identifier', compileAndRun, '@nonExistent', {
     instanceOf: VmError,

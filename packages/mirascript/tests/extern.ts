@@ -40,7 +40,7 @@ test('callable extern', (t) => {
     t.true(isVmCallable(eSin));
     t.is(eSin.value, Math.sin);
     t.is(eSin.thisArg, null);
-    t.is(eSin.describe, 'function sin()');
+    t.is(eSin.tag, 'function sin()');
     t.is(unwrapFromVmValue(eSin), Math.sin);
     t.false(isProxy(unwrapFromVmValue(eSin)));
     t.is((unwrapFromVmValue(eSin) as typeof Math.sin)(1), Math.sin(1));
@@ -50,7 +50,7 @@ test('callable extern', (t) => {
     t.false(isVmCallable(eMath));
     t.is(eMath.value, Math);
     t.is(eMath.thisArg, null);
-    t.is(eMath.describe, 'Math');
+    t.is(eMath.tag, 'Math');
     t.is(unwrapFromVmValue(eMath), Math);
     t.false(isProxy(unwrapFromVmValue(eMath)));
 
@@ -83,42 +83,42 @@ test('callable extern', (t) => {
 });
 
 test('describe extern', (t) => {
-    t.is(new VmExtern({}, null).describe, 'Object');
-    t.is(new VmExtern(Object.create(null), null).describe, 'Object: null prototype');
-    t.is(new VmExtern([], null).describe, 'Array(0)');
-    t.is(new VmExtern(() => 0, null).describe, 'function <anonymous>()');
+    t.is(new VmExtern({}, null).tag, 'Object');
+    t.is(new VmExtern(Object.create(null), null).tag, 'Object: null prototype');
+    t.is(new VmExtern([], null).tag, 'Array(0)');
+    t.is(new VmExtern(() => 0, null).tag, 'function <anonymous>()');
     // eslint-disable-next-line @typescript-eslint/require-await
-    t.is(new VmExtern(async () => 0, null).describe, 'async function <anonymous>()');
+    t.is(new VmExtern(async () => 0, null).tag, 'async function <anonymous>()');
     t.is(
         new VmExtern(function* () {
             yield 0;
-        }, null).describe,
+        }, null).tag,
         'function* <anonymous>()',
     );
     t.is(
         // eslint-disable-next-line @typescript-eslint/require-await
         new VmExtern(async function* () {
             yield 0;
-        }, null).describe,
+        }, null).tag,
         'async function* <anonymous>()',
     );
     const a = class A {
         x = 1;
     };
-    t.is(new VmExtern(new a(), null).describe, 'A');
-    t.is(new VmExtern(a, null).describe, 'class A');
+    t.is(new VmExtern(new a(), null).tag, 'A');
+    t.is(new VmExtern(a, null).tag, 'class A');
     Object.defineProperty(a, 'name', { value: '' });
-    t.is(new VmExtern(new a(), null).describe, 'Object');
-    t.is(new VmExtern(a, null).describe, 'class <anonymous>');
+    t.is(new VmExtern(new a(), null).tag, 'Object');
+    t.is(new VmExtern(a, null).tag, 'class <anonymous>');
     // eslint-disable-next-line unicorn/consistent-function-scoping
     const f = function () {
         return 1;
     };
-    t.is(new VmExtern(f, null).describe, 'class f');
+    t.is(new VmExtern(f, null).tag, 'class f');
     f.prototype = undefined;
-    t.is(new VmExtern(f, null).describe, 'function f()');
+    t.is(new VmExtern(f, null).tag, 'function f()');
     f.prototype = null;
-    t.is(new VmExtern(f, null).describe, 'class f');
+    t.is(new VmExtern(f, null).tag, 'class f');
 });
 
 test('Date extern', (t) => {

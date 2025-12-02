@@ -5,6 +5,7 @@ import {
     isVmModule,
     type VmFunctionInfo,
     type VmExtern,
+    isVmWrapper,
 } from '@mirascript/mirascript';
 import { DiagnosticCode, lib, operations } from '@mirascript/mirascript/subtle';
 import {
@@ -283,6 +284,7 @@ export class CompletionItemProvider extends Provider implements languages.Comple
                         insertText: localKeys.has(key) ? `global.${key}.${f}` : `${key}.${f}`,
                         filterText: filterText(f, char),
                         range,
+                        vmDescribe: element.describe(f),
                         ...completion(model, DESC_GLOBAL, `${key}.${f}`, field, undefined, true),
                     });
                 }
@@ -367,9 +369,11 @@ export class CompletionItemProvider extends Provider implements languages.Comple
                 continue;
             }
             const field = operations.$Get(value, key);
+            const doc = isVmWrapper(value) ? value.describe(key) : undefined;
             result.push({
                 insertText: key,
                 range,
+                vmDescribe: doc,
                 ...completion(model, DESC_FIELD, key, field, undefined, true),
             });
         }

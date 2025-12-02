@@ -115,7 +115,7 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
         return 'extern';
     }
     /** @inheritdoc */
-    override get describe(): string {
+    override get tag(): string {
         const tag = ObjectToString.call(this.value).slice(8, -1);
         if (isArray(this.value)) {
             return `${tag}(${this.value.length})`;

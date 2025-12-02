@@ -277,19 +277,17 @@ export type VmLibOption = Pick<
     'summary' | 'params' | 'paramsType' | 'returns' | 'returnsType' | 'examples'
 >;
 /** 库函数 */
-export type VmLib<T extends VmFunctionLike = VmFunctionLike> = T & VmLibOption;
+export type VmLib<T extends VmFunctionLike | VmConst = VmFunctionLike> = (T extends VmFunctionLike ? T : { value: T }) &
+    VmLibOption;
 
 /** 创建库函数 */
-export function VmLib<const T extends VmFunctionLike, P extends Record<string, unknown> = Record<never, never>>(
-    fn: T,
-    option: VmLibOption,
-    properties?: P,
-): VmLib<T> & P {
-    /* c8 ignore next 2 */
-    if (typeof fn != 'function') throw new TypeError('Invalid function');
-    if (isVmFunction(fn)) throw new TypeError('Cannot create VmLib from a VmFunction');
+export function VmLib<
+    const T extends VmFunctionLike | VmConst,
+    P extends Record<string, unknown> = Record<never, never>,
+>(value: T, option: VmLibOption, properties?: P): VmLib<T> & P {
+    if (isVmFunction(value)) throw new TypeError('Cannot create VmLib from a VmFunction');
 
-    const ret = fn as Writable<VmLib<T>> & P;
+    const ret = (typeof value == 'function' ? value : { value: value }) as unknown as Writable<VmLib<T>> & P;
     Object.assign(ret, properties);
     ret.params = option.params;
     ret.paramsType = option.paramsType;

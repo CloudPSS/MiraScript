@@ -35,7 +35,7 @@ export class VmModule<const T extends Record<string, VmImmutable> = Record<strin
         return 'module';
     }
     /** @inheritdoc */
-    override get describe(): string {
+    override get tag(): string {
         return this.name;
     }
 }

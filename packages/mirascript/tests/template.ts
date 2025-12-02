@@ -32,4 +32,4 @@ test('whitespaces', compileAndRun, ' \n', ' \n');
 test('large no interpolation', compileAndRun, 'Hello, World!'.repeat(1000), 'Hello, World!'.repeat(1000));
 test('only one interpolation', compileAndRun, '$("Hello, World!")', 'Hello, World!');
 test('interpolation', compileAndRun, 'Hello, $("World")!', 'Hello, World!');
-test('interpolations', compileAndRun, 'Hello, $("World")! ${ let pi = @pi; pi / @e }', 'Hello, World! 1.15573');
+test('interpolations', compileAndRun, 'Hello, $("World")! ${ let pi = PI; pi / E }', 'Hello, World! 1.15573');

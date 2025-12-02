@@ -1,4 +1,4 @@
-import { create, entries, keys } from '../../helpers/utils.js';
+import { create, entries, hasOwn, keys } from '../../helpers/utils.js';
 import { isVmAny } from '../../helpers/types.js';
 import { VmError } from '../../helpers/error.js';
 import { kVmContext } from '../../helpers/constants.js';
@@ -28,6 +28,7 @@ export type VmContextRecord = Record<string, VmValue>;
 /** MiraScript 执行上下文 */
 export type VmContextRecordLoose = Record<string, VmValue | undefined>;
 export const VM_SHARED_CONTEXT: Record<string, VmImmutable> = create(null);
+export const VM_SHARED_CONTEXT_DESCRIPTIONS: Record<string, string | undefined> = create(null);
 /** 缓存 {@link VM_SHARED_CONTEXT} 的 keys */
 let VM_SHARED_CONTEXT_KEYS: readonly string[] | null = null;
 
@@ -74,6 +75,10 @@ export const DefaultVmContext: VmContext = freeze({
     has(key: string): boolean {
         return key in VM_SHARED_CONTEXT;
     },
+    /** @inheritdoc */
+    describe(key: string): string | undefined {
+        return VM_SHARED_CONTEXT_DESCRIPTIONS[key];
+    },
 });
 
 /** 以值为后备的实现 */
@@ -99,10 +104,14 @@ class ValueVmContext implements VmContext {
     has(key: string): boolean {
         return key in this.env;
     }
+    /** @inheritdoc */
+    describe(key: string): string | undefined {
+        if (this.describer != null && hasOwn(this.env, key)) return this.describer(key);
+        return VM_SHARED_CONTEXT_DESCRIPTIONS[key];
+    }
     constructor(
         private readonly env: VmContextRecord,
-        /** @inheritdoc */
-        readonly describe?: (key: string) => string | undefined,
+        private readonly describer?: (key: string) => string | undefined,
     ) {}
 }
 
@@ -124,11 +133,15 @@ class FactoryVmContext implements VmContext {
     has(key: string): boolean {
         return this.getter(key) !== undefined || DefaultVmContext.has(key);
     }
+    /** @inheritdoc */
+    describe(key: string): string | undefined {
+        if (this.describer != null && this.getter(key) !== undefined) return this.describer(key);
+        return VM_SHARED_CONTEXT_DESCRIPTIONS[key];
+    }
     constructor(
         private readonly getter: (key: string) => VmValue | undefined,
         private readonly enumerator?: () => Iterable<string>,
-        /** @inheritdoc */
-        readonly describe?: (key: string) => string | undefined,
+        private readonly describer?: (key: string) => string | undefined,
     ) {}
 }
 

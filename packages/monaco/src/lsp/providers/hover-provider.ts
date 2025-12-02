@@ -3,6 +3,8 @@ import { Provider } from './base.js';
 import { DiagnosticCode } from '@mirascript/bindings/wasm';
 import { codeblock, getDeep, valueDoc, paramsList } from '../utils.js';
 import type { FieldsAccessAt, VariableAccessAt } from '../compile-result.js';
+import { isVmWrapper } from '@mirascript/mirascript';
+import { operations } from '@mirascript/mirascript/subtle';
 
 /** @inheritdoc */
 export class HoverProvider extends Provider implements languages.HoverProvider {
@@ -115,10 +117,17 @@ export class HoverProvider extends Provider implements languages.HoverProvider {
             return undefined;
         }
         const vmGlobal = await this.getContext(model);
-        const value = getDeep(vmGlobal, def.name, fields);
-        if (value == null) return undefined;
         const lastField = fields.pop()!;
+        const obj = getDeep(vmGlobal, def.name, fields);
+        if (obj == null) return undefined;
+        const value = operations.$Get(obj, lastField);
         const { script, doc } = valueDoc(lastField, value, 'field');
+        if (isVmWrapper(obj)) {
+            const describe = obj.describe(lastField);
+            if (describe) {
+                doc.unshift(describe);
+            }
+        }
         return {
             contents: [{ value: codeblock(`\0(field) ${script}`) }, ...doc.map((d) => ({ value: d }))],
             range,
