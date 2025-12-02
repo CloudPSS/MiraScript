@@ -2,8 +2,10 @@
 
 // 基本数学常数
 debug_print("数学常数:");
-debug_print("π ≈", @pi);
-debug_print("e ≈", @e);
+debug_print("π ≈", PI);
+debug_print("e ≈", E);
+debug_print("√(1/2) ≈", SQRT1_2);
+debug_print("√2 ≈", SQRT2);
 
 // 基本数学函数
 fn abs(x) {
@@ -94,7 +96,7 @@ fn sqrt_newton(x) {
 }
 
 // 计算圆的面积和周长
-fn circle_properties(radius) { (radius: radius, area: @pi * radius^2, circumference: 2 * @pi * radius) }
+fn circle_properties(radius) { (radius: radius, area: PI * radius^2, circumference: 2 * PI * radius) }
 
 // 解二次方程 ax² + bx + c = 0
 fn quadratic_equation(a, b, c) {

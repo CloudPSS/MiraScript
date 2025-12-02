@@ -653,10 +653,9 @@ fn is_nan { it is nan }
 与字面量模式类似，常量模式用于匹配常量的值。常量模式的语法为 `<constant>`，其中 `<constant>` 是一个以 `@` 开头的标识符名称。
 
 ```mira
-fn is_pi { it is @pi }
-fn is_nan {
-  const @nan = nan;
-  it is @nan
+fn is_pi {
+  const @pi = PI;
+  it is @pi
 }
 ```
 
