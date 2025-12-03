@@ -4,5 +4,9 @@ let pq = (valid: false, error: "Not found");
 t_eq((if pv.valid { pv } else { pq }).value, 42);
 t_eq((if pv.valid { pv } else { pq }).error, nil);
 
-t_eq((if pq.valid { pq } else { pv }).value, 42);
-t_eq((if pq.valid { pq } else { pv }).error, nil);
+t_eq({
+  if pq.valid { pq } else { pv }
+}.value, 42);
+t_eq({
+  if pq.valid { pq } else { pv }
+}.error, nil);

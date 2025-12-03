@@ -177,9 +177,9 @@ fn arg_list<'s>(
 }
 
 enum AccessIndex<'s> {
-    /// '.' identifier
+    /// `.` identifier
     Access(TokenRef<'s>, TokenRef<'s>),
-    /// '[' expression ']'
+    /// `[` expression `]`
     Index(TokenRef<'s>, Box<Expression<'s>>, TokenRef<'s>),
     ///  `[` additive_expression? (`..` | `..<`) additive_expression? `]`
     Slice(
@@ -189,6 +189,8 @@ enum AccessIndex<'s> {
         Option<Box<Expression<'s>>>,
         TokenRef<'s>,
     ),
+    /// `!`
+    NonNil(TokenRef<'s>),
 }
 fn access_index<'s>(i: &mut Input<'s>) -> Result<AccessIndex<'s>> {
     fn access_token<'s>(i: &mut Input<'s>) -> Result<TokenRef<'s>> {
@@ -210,9 +212,14 @@ fn access_index<'s>(i: &mut Input<'s>) -> Result<AccessIndex<'s>> {
             .map(TokenRef::borrow)
             .parse_next(i)
     }
+    fn non_nil<'s>(i: &mut Input<'s>) -> Result<TokenRef<'s>> {
+        token(Operator::Exclamation).parse_next(i)
+    }
 
     alt((
-        // '.' identifier
+        // `!`
+        non_nil.map(AccessIndex::NonNil),
+        // `.` identifier
         (token(Operator::Dot), access_token).map(|(d, i)| AccessIndex::Access(d, i)),
         // `[` (`..` | `..<`) `]` | `[` (`..` | `..<`) additive `]`
         (
@@ -266,6 +273,9 @@ fn extension_call<'s>(i: &mut Input<'s>) -> Result<Call<'s>> {
                 let mut acc = Expression::Variable(first);
                 for access_index in rest {
                     match access_index {
+                        AccessIndex::NonNil(token) => {
+                            acc = Expression::NonNil(Box::new(acc), token);
+                        }
                         AccessIndex::Access(dot, token) => {
                             acc = Expression::Access(Box::new(acc), dot, token);
                         }
@@ -320,10 +330,10 @@ fn postfix<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     let functions: Vec<Function<'s>> = repeat(
         0..,
         alt((
-            token(Operator::Exclamation).map(Function::NonNil),
             (token(Operator::ColonColon), extension_call)
                 .map(|(kw, (ex, o, a, c))| Function::Extension(kw, ex, o, a, c)),
             access_index.map(|t| match t {
+                AccessIndex::NonNil(token) => Function::NonNil(token),
                 AccessIndex::Access(dot, token) => Function::Access(dot, token),
                 AccessIndex::Index(open, exp, close) => Function::Index(open, exp, close),
                 AccessIndex::Slice(left, start, op, end, right) => {

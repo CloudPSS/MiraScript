@@ -35,3 +35,16 @@ t_throws(fn { N() || O() });
 t_eq(F() || F(), false);
 t_eq(F() || F(), false);
 t_throws(fn { N() || N() });
+
+// precedence
+fn get_x { it.x }
+let obj = (x: true);
+t_eq(!obj.x, false);
+t_eq(!!obj!.x, true);
+t_eq(!obj['x'], false);
+t_eq(!!obj!!['x']!!, true);
+t_eq(!obj::get_x(), false);
+t_eq(!!obj!::get_x!(), true);
+t_throws(fn { (!obj).x });
+t_throws(fn { (!obj)::get_x() });
+t_throws(fn { (!obj)['x'] });
