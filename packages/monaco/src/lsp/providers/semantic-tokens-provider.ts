@@ -1,6 +1,6 @@
 import { isVmFunction, isVmModule } from '@mirascript/mirascript';
 import { DiagnosticCode } from '@mirascript/bindings/wasm';
-import { Range, type CancellationToken, type editor, type languages } from '../../monaco-api.js';
+import type { CancellationToken, editor, languages } from '../../monaco-api.js';
 import { Provider } from './base.js';
 
 enum TokenType {
@@ -56,8 +56,6 @@ export class DocumentSemanticTokensProvider extends Provider implements language
         // [diffRow, diffCol, length, tokenType(index), tokenModifiers(bit field)]
         const data = [];
         for (const { code, range, references } of compiled.tags) {
-            if (Range.isEmpty(range)) continue;
-
             let tokenType: TokenType | -1 = -1;
             let onlyReferences = false;
             // eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check
@@ -92,6 +90,7 @@ export class DocumentSemanticTokensProvider extends Provider implements language
                     tokenType = TokenType.VARIABLE_MUTABLE;
                     break;
                 }
+                case DiagnosticCode.ParameterIt:
                 case DiagnosticCode.ParameterImmutable:
                 case DiagnosticCode.ParameterSubPatternImmutable:
                 case DiagnosticCode.ParameterImmutableRest: {
