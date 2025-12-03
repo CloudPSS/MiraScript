@@ -28,9 +28,9 @@ export abstract class VmWrapper<T extends object> {
     }
     /** 转为字符串 */
     toString(useBraces: boolean): string {
-        const { type, tag: describe } = this;
-        if (!describe) return `<${type}>`;
-        return `<${type} ${describe}>`;
+        const { type, tag } = this;
+        if (!tag) return `<${type}>`;
+        return `<${type} ${tag}>`;
     }
 }
 

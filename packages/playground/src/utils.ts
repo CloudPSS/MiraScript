@@ -22,7 +22,7 @@ export async function print(value: VmAny | Error): Promise<string> {
     await ready;
     const { isVmExtern, isVmModule, serialize } = mirascript;
     if (isVmExtern(value) || isVmModule(value)) {
-        return await syntaxHighlight(`/* <${value.type} ${value.describe}> */`, 'mirascript-doc');
+        return await syntaxHighlight(`/* <${value.type} ${value.tag}> */`, 'mirascript-doc');
     }
     const valueStr = serialize(value);
     const model = monaco.editor.createModel(valueStr, 'mirascript');

@@ -184,7 +184,7 @@ function serializeForDisplayInner(value: VmValue, maxWidth: number): string {
         return `(../* x${len} */)`;
     }
     if (isVmExtern(value)) {
-        return `/* <extern ${value.describe}> */`;
+        return `/* <extern ${value.tag}> */`;
     }
     return `/* ${operations.$ToString(value)} */`;
 }
