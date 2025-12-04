@@ -295,6 +295,6 @@ export function VmLib<
     ret.returnsType = option.returnsType;
     ret.summary = option.summary;
     ret.examples = option.examples;
-    ret.injectCp = option.injectCp ?? true;
+    ret.injectCp = option.injectCp ?? false;
     return ret as VmLib<T> & P;
 }

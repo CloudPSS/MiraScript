@@ -112,7 +112,6 @@ export const panic = VmLib(
         paramsType: { message: 'string' },
         returnsType: 'never',
         examples: ['panic("boom");'],
-        injectCp: false,
     },
     {
         prefix: ['MiraScript'] as readonly string[],

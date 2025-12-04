@@ -34,7 +34,8 @@ test('isVmFunction', async (t) => {
     t.false(isVmFunction(() => 0));
     t.false(isVmFunction({}));
     t.true(isVmFunction((await compile('abs'))()));
-    t.false(isVmFunction(lib.abs));
+    t.true(isVmFunction(lib.abs));
+    t.false(isVmFunction(lib.from_json));
 });
 
 test('isVmCallable', async (t) => {
@@ -43,7 +44,8 @@ test('isVmCallable', async (t) => {
     t.true(isVmCallable((await compile('abs'))()));
     t.true(isVmCallable(new VmExtern(() => 0)));
     t.false(isVmCallable(new VmExtern({})));
-    t.false(isVmCallable(lib.abs));
+    t.true(isVmCallable(lib.abs));
+    t.false(isVmCallable(lib.from_json));
 });
 
 test('isVmContext', (t) => {
