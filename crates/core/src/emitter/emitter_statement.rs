@@ -230,7 +230,13 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 };
                 let func_var = self.scopes.find_local_variable(name).unwrap();
                 let func_reg = self.closures.initialize_variable(func_var);
-                self.emit_fn(func_reg, name_token.range.end, args, body);
+                self.emit_fn(
+                    func_reg,
+                    name_token.range(),
+                    name_token.range.end,
+                    args,
+                    body,
+                );
                 false
             }
             Return(_, expression, _) => {

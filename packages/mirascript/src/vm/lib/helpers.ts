@@ -274,7 +274,7 @@ export function map(
 /** 库函数选项 */
 export type VmLibOption = Pick<
     VmFunctionOption,
-    'summary' | 'params' | 'paramsType' | 'returns' | 'returnsType' | 'examples'
+    'summary' | 'params' | 'paramsType' | 'returns' | 'returnsType' | 'examples' | 'injectCp'
 >;
 /** 库函数 */
 export type VmLib<T extends VmFunctionLike | VmConst = VmFunctionLike> = (T extends VmFunctionLike ? T : { value: T }) &
@@ -295,5 +295,6 @@ export function VmLib<
     ret.returnsType = option.returnsType;
     ret.summary = option.summary;
     ret.examples = option.examples;
+    ret.injectCp = option.injectCp ?? true;
     return ret as VmLib<T> & P;
 }

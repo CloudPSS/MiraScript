@@ -1,4 +1,4 @@
-import { defineProperty, isFinite } from '../helpers/utils.js';
+import { create, defineProperty, isFinite } from '../helpers/utils.js';
 import { VM_ARRAY_MAX_LENGTH, VM_FUNCTION_ANONYMOUS_NAME } from '../helpers/constants.js';
 import { isVmConst } from '../helpers/types.js';
 import { $AssertInit, $ToNumber } from './operations.js';
@@ -9,6 +9,7 @@ import { VmFunction } from './types/function.js';
 
 export { Cp, CpEnter, CpExit } from './checkpoint.js';
 
+/** 过滤剩余参数数组 */
 export const Vargs = (varags: VmAny[]): VmArray => {
     for (let i = 0, l = varags.length; i < l; i++) {
         const el = varags[i];
@@ -18,23 +19,29 @@ export const Vargs = (varags: VmAny[]): VmArray => {
     }
     return varags as VmArray;
 };
+
+/** 构造 record | array 元素 */
 export const Element = (value: VmAny): VmConst => {
     $AssertInit(value);
     if (!isVmConst(value)) return null;
     return value;
 };
 
+const EMPTY = create(null);
+/** 构造 record 可选元素 */
 export const ElementOpt = (key: string, value: VmAny): VmConst => {
     $AssertInit(value);
-    if (value == null || !isVmConst(value)) return {};
-    return { [key]: value };
+    if (value == null || !isVmConst(value)) return EMPTY;
+    return { __proto__: null, [key]: value };
 };
 
-export const Function = (fn: VmFunctionLike, name: string = VM_FUNCTION_ANONYMOUS_NAME): VmFunction => {
-    defineProperty(fn, 'name', { value: name });
+/** 构造函数和函数表达式 */
+export const Function = (name: string | null | undefined, fn: VmFunctionLike): VmFunction => {
+    defineProperty(fn, 'name', { value: name || VM_FUNCTION_ANONYMOUS_NAME });
     return VmFunction(fn, { isLib: false, injectCp: false });
 };
 
+/** 读取闭包上值 */
 export const Upvalue = (value: VmAny): VmValue => {
     $AssertInit(value);
     return value;

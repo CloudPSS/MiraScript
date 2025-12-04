@@ -1148,7 +1148,13 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 }
             }
             Function(kw, args, body) => {
-                self.emit_fn(ret, kw.range.end, args, body);
+                self.emit_fn(
+                    ret,
+                    kw.range.start..kw.range.start,
+                    kw.range.end,
+                    args,
+                    body,
+                );
             }
             Unknown { .. } => {
                 // Load nil as result of unknown expression

@@ -101,6 +101,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
     pub fn emit_fn(
         &mut self,
         ret: Register,
+        name_range: SourceRange,
         scope_start: usize,
         args: &'s Option<ParameterList<'s>>,
         body: &'s Expression<'s>,
@@ -109,11 +110,19 @@ impl<'s, 'c> Emitter<'s, 'c> {
             // unreachable!("Expected block expression");
             return;
         };
-        self.emit_fn_like(ret, scope_start..cp.range.start, args, stmts, expr);
+        self.emit_fn_like(
+            ret,
+            name_range,
+            scope_start..cp.range.start,
+            args,
+            stmts,
+            expr,
+        );
     }
     pub fn emit_fn_like(
         &mut self,
         ret: Register,
+        name_range: SourceRange,
         scope_range: SourceRange,
         args: &'s Option<ParameterList<'s>>,
         stmts: &'s Vec<Statement<'s>>,
@@ -126,10 +135,8 @@ impl<'s, 'c> Emitter<'s, 'c> {
 
         let pos = self.chunk.code.len();
         self.chunk.code.push(OpCode::Func.code());
-        self.diagnostics.push(
-            crate::DiagnosticCode::SourceMap,
-            scope_range.start..scope_range.start,
-        );
+        self.diagnostics
+            .push(crate::DiagnosticCode::SourceMap, name_range);
 
         if let Some(args) = args {
             for (i, arg) in args.iter().enumerate() {

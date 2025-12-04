@@ -2,6 +2,10 @@
 
 fn check_math_unary(fName, f, x, expected) {
   let actual = f(x);
+  if actual::type() is not 'number' {
+    t_eq(actual, expected, `${ fName }(${ x }) should be ${ expected }, actual: ${ actual }`);
+    return;
+  }
   if expected is nan or +inf or -inf || trunc(expected) == expected {
     t_eq(actual, expected, `${ fName }(${ x }) should be ${ expected }, actual: ${ actual }`);
   } else {

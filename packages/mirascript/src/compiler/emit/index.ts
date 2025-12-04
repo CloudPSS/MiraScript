@@ -5,6 +5,7 @@ import type { IRange } from '../diagnostic.js';
 import { readGlobal, type GlobalMap } from './globals.js';
 import { readConst, toJsLiteral } from './consts.js';
 import { createSourceMap } from './sourcemap.js';
+import { GLOBAL_HINT, SCRIPT_PREFIX } from './constants.js';
 
 /** 生成代码 */
 export function emit(
@@ -29,8 +30,6 @@ function createArray<T>(length: number, fn: (index: number) => T): T[] {
     return result;
 }
 
-const SCRIPT_PREFIX = `'use strict'; return ((global = GlobalFallback()) => { try { CpEnter();`;
-const GLOBAL_HINT = `/* globals */`;
 /** 代码生成 */
 export class Emitter {
     constructor(
@@ -70,6 +69,8 @@ export class Emitter {
     private codeOffset = 0;
     private closureCounter = 0;
     private identCounter = 0;
+    /** 记录函数声明所在位置 */
+    private readonly functions: number[] = [];
 
     /** 制造缩进 */
     private ident(len = 0): string {
@@ -334,7 +335,13 @@ export class Emitter {
                 if (script) {
                     code = `${SCRIPT_PREFIX} var ${regs};`;
                 } else {
-                    code = `${this.wv(reg)} = Function((${args.join(', ')}) => { try { CpEnter(); var ${regs};`;
+                    if (!this.options.sourceMap) {
+                        code = `${this.wv(reg)} = Function(null ,(${args.join(', ')}) => { try { CpEnter(); var ${regs};`;
+                    } else {
+                        const index = this.functions.length;
+                        this.functions.push(this.codeLines.length);
+                        code = `${this.wv(reg)} = Function(fnName_${index} ,(${args.join(', ')}) => { try { CpEnter(); var ${regs};`;
+                    }
                 }
                 if (varg) {
                     code += ` var ${this.wv(argn, -1)} = Vargs(vargs);`;
@@ -716,8 +723,10 @@ export class Emitter {
     }
     /** 添加源映射 */
     addSourceMap(): void {
-        if (!this.options.sourceMap) return;
-        const mapLines = createSourceMap(this.source, this.sourcemaps, this.codeLines, this.globals, this.options);
-        this.codeLines.push(...mapLines);
+        if (this.options.sourceMap) {
+            createSourceMap(this.source, this.sourcemaps, this.codeLines, this.functions, this.globals, this.options);
+        } else {
+            this.codeLines.unshift(`'use strict';`);
+        }
     }
 }

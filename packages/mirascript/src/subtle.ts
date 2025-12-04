@@ -18,7 +18,8 @@ export {
 } from './helpers/serialize.js';
 export { lib } from './vm/lib/index.js';
 export * from './compiler/diagnostic.js';
-export { generateBytecode, generateBytecodeSync, emitScript } from './compiler/index.js';
+export { emitScript } from './compiler/emit-script.js';
+export { generateBytecode, generateBytecodeSync, type VmBytecodeResult } from './compiler/generate-bytecode.js';
 
 /** 所有 MiraScript 关键字 */
 export let keywords: () => readonly string[] = () => {
