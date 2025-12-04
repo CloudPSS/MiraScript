@@ -1,8 +1,7 @@
 import type { IRange } from '../diagnostic.js';
 import type { ScriptInput, TranspileOptions } from '../types.js';
 import { SourceMapGenerator } from 'source-map-js';
-import { GLOBAL_HINT, SCRIPT_PREFIX } from './constants.js';
-import type { GlobalMap } from './globals.js';
+import { SCRIPT_PREFIX } from './constants.js';
 import { toJsLiteral } from './consts.js';
 
 const ORIGIN = `mira://MiraScript/`;
@@ -35,70 +34,6 @@ const toDataUrl: (json: string) => string =
         ? (s) => `data:application/json;base64,${Buffer.from(s, 'utf8').toString('base64')}`
         : (s) => `data:application/json;charset=utf-8,${encodeURIComponent(s)}`;
 
-/** 添加全局变量的源映射 */
-function addGlobalMappings(globalLine: string, fileName: string, map: SourceMapGenerator, globals: GlobalMap) {
-    let globalFile = `global;\n`;
-    map.addMapping({
-        generated: {
-            line: 3,
-            column: globalLine.indexOf(`global = `),
-        },
-        original: {
-            line: 1,
-            column: 0,
-        },
-        source: fileName,
-        name: 'global',
-    });
-    map.addMapping({
-        generated: {
-            line: 3,
-            column: SCRIPT_PREFIX.length,
-        },
-        original: {
-            line: 1,
-            column: 7,
-        },
-        source: fileName,
-        name: '',
-    });
-    let i = 1;
-    let pos = globalLine.indexOf(GLOBAL_HINT, SCRIPT_PREFIX.length) + GLOBAL_HINT.length;
-    for (const p of globals.values()) {
-        i++;
-        if (pos < 0) break;
-        const { v, n } = p;
-        pos = globalLine.indexOf(v, pos);
-        if (pos < 0) break;
-        map.addMapping({
-            generated: {
-                line: 3,
-                column: pos,
-            },
-            original: {
-                line: i,
-                column: 0,
-            },
-            source: fileName,
-            name: n,
-        });
-        globalFile += `${n};\n`;
-    }
-    map.addMapping({
-        generated: {
-            line: 3,
-            column: pos,
-        },
-        original: {
-            line: i,
-            column: 0,
-        },
-        source: fileName,
-        name: '',
-    });
-    map.setSourceContent(fileName, globalFile);
-}
-
 let sourceId = 1;
 /** 创建源映射 */
 export function createSourceMap(
@@ -106,7 +41,6 @@ export function createSourceMap(
     sourcemaps: readonly IRange[],
     codeLines: string[],
     functions: readonly number[],
-    globals: GlobalMap,
     options: TranspileOptions,
 ): void {
     let fileName = (options.fileName ?? '').trim();
@@ -167,10 +101,6 @@ export function createSourceMap(
             const fnName = mapping && line ? line.slice(mapping.startColumn - 1, mapping.endColumn - 1) : '';
             fnNames += `var fnName_${i} = ${fnName ? toJsLiteral(fnName) : 'null'};`;
         }
-    }
-    const globalLine = codeLines[0];
-    if (globalLine?.includes(GLOBAL_HINT)) {
-        addGlobalMappings(globalLine, `${fileName} <globals>`, map, globals);
     }
     const sourceURL = hasSchema ? fileName : `${ORIGIN}${fileName}`;
     const dataUrl = toDataUrl(map.toString());

@@ -1,11 +1,11 @@
 import { OpCode } from '@mirascript/bindings';
+import { toString } from '../../helpers/convert/to-string.js';
 import type { VmPrimitive } from '../../vm/index.js';
 import type { ScriptInput, TranspileOptions } from '../types.js';
 import type { IRange } from '../diagnostic.js';
-import { readGlobal, type GlobalMap } from './globals.js';
 import { readConsts, toJsLiteral } from './consts.js';
 import { createSourceMap } from './sourcemap.js';
-import { GLOBAL_HINT, SCRIPT_PREFIX } from './constants.js';
+import { SCRIPT_PREFIX } from './constants.js';
 
 /** 生成代码 */
 export function emit(
@@ -77,10 +77,16 @@ export class Emitter {
         return '  '.repeat(this.identCounter + len);
     }
 
-    readonly globals: GlobalMap = new Map();
     /** 读取全局变量 */
-    private rg(constIdx: number, eager: boolean): string {
-        return readGlobal(this, constIdx).e;
+    private rg(constIdx: number): string {
+        const constName = this.constVals[constIdx]!;
+        let lit;
+        if (typeof constName == 'string') {
+            lit = this.constLits[constIdx]!;
+        } else {
+            lit = toJsLiteral(toString(constName, undefined));
+        }
+        return `global.get(${lit})`;
     }
 
     readonly codeLines: string[] = [];
@@ -422,7 +428,7 @@ export class Emitter {
                 const args = createArray(n, () => read());
                 const ns = read();
                 const spreads = createArray(ns, () => read());
-                const callTarget = opcode === OpCode.Call ? this.rg(func, false) : this.rv(func);
+                const callTarget = opcode === OpCode.Call ? this.rg(func) : this.rv(func);
                 code = `${this.wv(reg)} = $Call(${callTarget}, [${args
                     .map((a, i) => {
                         if (spreads.includes(i)) return `...$ArraySpread(${this.rv(a)})`;
@@ -527,7 +533,7 @@ export class Emitter {
             case OpCode.GetGlobal: {
                 reg = read();
                 const i = read();
-                code = `${this.wv(reg)} = ${this.rg(i, false)};`;
+                code = `${this.wv(reg)} = ${this.rg(i)};`;
                 break;
             }
             case OpCode.GetGlobalDyn: {
@@ -712,19 +718,12 @@ export class Emitter {
     read(): void {
         this.readConsts();
         this.readCode();
-        if (this.globals.size > 0) {
-            let globalsInit = '';
-            for (const { v } of this.globals.values()) {
-                globalsInit += globalsInit ? `, ${v}` : `var ${GLOBAL_HINT} ${v}`;
-            }
-            this.codeLines[0] += globalsInit + ';';
-        }
         this.addSourceMap();
     }
     /** 添加源映射 */
     addSourceMap(): void {
         if (this.options.sourceMap) {
-            createSourceMap(this.source, this.sourcemaps, this.codeLines, this.functions, this.globals, this.options);
+            createSourceMap(this.source, this.sourcemaps, this.codeLines, this.functions, this.options);
         } else {
             this.codeLines.unshift(`'use strict';`);
         }
