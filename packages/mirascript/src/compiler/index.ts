@@ -1,11 +1,10 @@
-import { loadModule } from '@mirascript/bindings';
 import type { ScriptInput, TranspileOptions } from './types.js';
 import { createScript, type VmScript } from './create-script.js';
 import { compileFast } from './compile-fast.js';
 import { generateBytecode, generateBytecodeSync } from './generate-bytecode.js';
 import { compileWorker } from './worker-manager.js';
 import { emitScript, reportDiagnostic } from './emit-script.js';
-await loadModule();
+import './load-module.js';
 
 export * from './types.js';
 export type { VmScript };

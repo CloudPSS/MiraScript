@@ -1,4 +1,5 @@
 import { getModule } from '@mirascript/bindings';
+import './compiler/load-module.js';
 
 export * as constants from './helpers/constants.js';
 export * as convert from './helpers/convert/index.js';

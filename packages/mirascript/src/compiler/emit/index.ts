@@ -3,7 +3,7 @@ import type { VmPrimitive } from '../../vm/index.js';
 import type { ScriptInput, TranspileOptions } from '../types.js';
 import type { IRange } from '../diagnostic.js';
 import { readGlobal, type GlobalMap } from './globals.js';
-import { readConst, toJsLiteral } from './consts.js';
+import { readConsts, toJsLiteral } from './consts.js';
 import { createSourceMap } from './sourcemap.js';
 import { GLOBAL_HINT, SCRIPT_PREFIX } from './constants.js';
 
@@ -46,22 +46,21 @@ export class Emitter {
         this.constSize = reader.getUint32(8 + this.codeSize, true);
 
         this.codeReader = new DataView(chunk.buffer, chunk.byteOffset + 8, this.codeSize);
-        this.constReader = new DataView(chunk.buffer, chunk.byteOffset + 12 + this.codeSize, this.constSize);
+        this.constVals = readConsts(
+            new Uint8Array(chunk.buffer, chunk.byteOffset + 12 + this.codeSize, this.constSize),
+        );
     }
     readonly pretty;
     readonly chunkSize: number;
     readonly codeSize: number;
-    private readonly constReader: DataView;
     /** 读取常量表 */
     private readConsts(): void {
-        for (let i = 0, index = 0; i < this.constSize; index++) {
-            const [constant, size] = readConst(this.constReader, i);
-            this.constVals.push(constant);
-            this.constLits.push(toJsLiteral(constant));
-            i += size;
+        const { constVals, constLits } = this;
+        for (let i = 0, len = constVals.length; i < len; i++) {
+            constLits.push(toJsLiteral(constVals[i]));
         }
     }
-    readonly constVals: VmPrimitive[] = [];
+    readonly constVals: VmPrimitive[];
     readonly constLits: string[] = [];
 
     readonly constSize: number;
@@ -328,9 +327,10 @@ export class Emitter {
                     }
                     return `${wv} = null`;
                 });
-                const regs = createArray(regn - argn + 1, (i) => (i ? this.wv(i + argn, -1) : this.wv(0, -1))).join(
-                    ', ',
-                );
+                let regs = '_';
+                for (let i = 1 + argn; i < regn + 1; i++) {
+                    regs += ',' + this.wv(i, -1);
+                }
                 const script = startFunc && !varg && argn === 0;
                 if (script) {
                     code = `${SCRIPT_PREFIX} var ${regs};`;
