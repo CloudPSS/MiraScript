@@ -90,7 +90,11 @@ export class DocumentSemanticTokensProvider extends Provider implements language
                     tokenType = TokenType.VARIABLE_MUTABLE;
                     break;
                 }
-                case DiagnosticCode.ParameterIt:
+                case DiagnosticCode.ParameterIt: {
+                    tokenType = TokenType.PARAM;
+                    onlyReferences = true; // it 本身在源码中不存在
+                    break;
+                }
                 case DiagnosticCode.ParameterImmutable:
                 case DiagnosticCode.ParameterSubPatternImmutable:
                 case DiagnosticCode.ParameterImmutableRest: {
