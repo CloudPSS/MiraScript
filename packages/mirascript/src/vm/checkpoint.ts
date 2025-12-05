@@ -4,6 +4,7 @@ const { now } = Date;
 const TIME_ORIGIN = now() - 1000 * 3600 * 24; // 减去一天，防止系统时间被调整到过去时出问题
 const timestamp = () => now() - TIME_ORIGIN;
 
+const CP_DEFAULT_INTERVAL = 100; // 每 100 次调用检查一次
 const MAX_DEPTH = 128;
 const CP_UNSET = -1;
 /** Default timeout in milliseconds */
@@ -12,12 +13,20 @@ const CP_DEFAULT_TIMEOUT = 100;
 let cpDepth = 0;
 let cp = CP_UNSET;
 let cpTimeout = CP_DEFAULT_TIMEOUT;
+let cpInterval = CP_DEFAULT_INTERVAL;
+let cpCount = 0;
 /** 检查点 */
 export function Cp(): void {
     if (cp === CP_UNSET) {
         cp = timestamp();
-    } else if (timestamp() - cp > cpTimeout) {
-        throw new RangeError('Execution timeout');
+        return;
+    }
+    cpCount++;
+    if (cpCount >= cpInterval) {
+        cpCount = 0;
+        if (timestamp() - cp >= cpTimeout) {
+            throw new RangeError('Execution timed out');
+        }
     }
 }
 /** 检查点 */
@@ -43,9 +52,16 @@ export function CpExit(): void {
     }
 }
 /** 设置检查点超时时间 */
-export function configCheckpoint(timeout: number = CP_DEFAULT_TIMEOUT): void {
+export function configCheckpoint(
+    timeout: number = CP_DEFAULT_TIMEOUT,
+    checkInterval: number = CP_DEFAULT_INTERVAL,
+): void {
     if (typeof timeout !== 'number' || timeout <= 0 || isNaN(timeout)) {
         throw new RangeError('Invalid timeout value');
     }
+    if (typeof checkInterval !== 'number' || checkInterval <= 0 || isNaN(checkInterval)) {
+        throw new RangeError('Invalid check interval value');
+    }
     cpTimeout = Math.ceil(timeout);
+    cpInterval = Math.ceil(checkInterval);
 }

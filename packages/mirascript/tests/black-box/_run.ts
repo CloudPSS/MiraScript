@@ -27,7 +27,7 @@ function createContext(
                 t.throws(fn as () => unknown, { instanceOf: VmError }, String(message || '') || undefined);
             }),
             t_timeout: VmFunction((fn: unknown, message?: unknown) => {
-                timeout_fn.push([fn as () => unknown, String(message || '') || 'Execution timeout']);
+                timeout_fn.push([fn as () => unknown, String(message || '') || 'Execution timed out']);
             }),
             t_never: VmFunction((message?: unknown) => {
                 t.fail(String(message || '') || undefined);
@@ -75,7 +75,7 @@ const compileAndRun = test.macro<[string, boolean, boolean]>({
         script(createContext(t, timeout_fn, extern, module));
         // 在脚本之后执行，否则脚本本身超时
         for (const [fn, message] of timeout_fn) {
-            t.throws(fn, { instanceOf: RangeError, message: 'Execution timeout' }, message);
+            t.throws(fn, { instanceOf: RangeError, message: 'Execution timed out' }, message);
         }
     },
     title: (providedTitle = 'test', code) => code || providedTitle,
