@@ -1,4 +1,4 @@
-import { create, entries, hasOwn, keys } from '../../helpers/utils.js';
+import { create, defineProperty, entries, hasOwn, keys } from '../../helpers/utils.js';
 import { isVmAny } from '../../helpers/types.js';
 import { VmError } from '../../helpers/error.js';
 import { kVmContext } from '../../helpers/constants.js';
@@ -26,7 +26,7 @@ export interface VmContext {
 /** MiraScript 执行上下文 */
 export type VmContextRecord = Record<string, VmValue>;
 /** MiraScript 执行上下文 */
-export type VmContextRecordLoose = Record<string, VmValue | undefined>;
+export type VmContextRecordLoose = Record<string, VmAny>;
 export const VM_SHARED_CONTEXT: Record<string, VmImmutable> = create(null);
 export const VM_SHARED_CONTEXT_DESCRIPTIONS: Record<string, string | undefined> = create(null);
 /** 缓存 {@link VM_SHARED_CONTEXT} 的 keys */
@@ -60,7 +60,8 @@ export function defineVmContextValue(
 }
 
 /** 无后备的实现 */
-export const DefaultVmContext: VmContext = freeze({
+export const DefaultVmContext: Readonly<VmContext> = freeze({
+    __proto__: null,
     [kVmContext]: true as const,
     /** @inheritdoc */
     keys(): readonly string[] {
@@ -85,7 +86,7 @@ export const DefaultVmContext: VmContext = freeze({
 
 /** 以值为后备的实现 */
 class ValueVmContext implements VmContext {
-    readonly [kVmContext] = true;
+    declare readonly [kVmContext]: true;
     private cachedKeys: readonly [def: readonly string[], all: readonly string[]] | null = null;
     /** @inheritdoc */
     keys(): readonly string[] {
@@ -108,18 +109,20 @@ class ValueVmContext implements VmContext {
     }
     /** @inheritdoc */
     describe(key: string): string | undefined {
-        if (this.describer != null && hasOwn(this.env, key)) return this.describer(key);
+        if (hasOwn(this.env, key)) return this.describer?.(key);
         return VM_SHARED_CONTEXT_DESCRIPTIONS[key];
     }
     constructor(
         private readonly env: VmContextRecord,
-        private readonly describer?: (key: string) => string | undefined,
+        private readonly describer: ((key: string) => string | undefined) | null,
     ) {}
 }
+defineProperty(ValueVmContext.prototype, kVmContext, { value: true });
+freeze(ValueVmContext.prototype);
 
 /** 以工厂函数为后备的实现 */
 class FactoryVmContext implements VmContext {
-    readonly [kVmContext] = true;
+    declare readonly [kVmContext]: true;
     /** @inheritdoc */
     keys(): readonly string[] {
         if (!this.enumerator) return DefaultVmContext.keys();
@@ -137,41 +140,51 @@ class FactoryVmContext implements VmContext {
     }
     /** @inheritdoc */
     describe(key: string): string | undefined {
-        if (this.describer != null && this.getter(key) !== undefined) return this.describer(key);
+        if (this.getter(key) !== undefined) return this.describer?.(key);
         return VM_SHARED_CONTEXT_DESCRIPTIONS[key];
     }
     constructor(
         private readonly getter: (key: string) => VmValue | undefined,
-        private readonly enumerator?: () => Iterable<string>,
-        private readonly describer?: (key: string) => string | undefined,
+        private readonly enumerator: (() => Iterable<string>) | null,
+        private readonly describer: ((key: string) => string | undefined) | null,
     ) {}
 }
+defineProperty(FactoryVmContext.prototype, kVmContext, { value: true });
+freeze(FactoryVmContext.prototype);
 
-/** 以值为后备的实现 */
-type CreateVmContextWithValues = readonly [
-    vmValues?: VmContextRecordLoose | null | undefined,
-    externValues?: Record<string, unknown> | null | undefined,
-    describer?: ((key: string) => string | undefined) | null | undefined,
-];
-/** 以工厂函数为后备的实现 */
-type CreateVmContextWithFactory = readonly [
+/** 获取用于执行脚本的默认执行上下文 */
+export function createVmContext(): Readonly<VmContext>;
+/** 创建用于执行脚本的执行上下文 */
+export function createVmContext(
+    vmValues?: VmContextRecordLoose | null,
+    externValues?: Record<string, unknown> | null,
+    describer?: ((key: string) => string | undefined) | null,
+): VmContext;
+/** 创建用于执行脚本的执行上下文 */
+export function createVmContext(
     getter: (key: string) => VmValue | undefined,
-    enumerator?: (() => Iterable<string>) | null | undefined,
-    describer?: ((key: string) => string | undefined) | null | undefined,
-];
+    enumerator?: (() => Iterable<string>) | null,
+    describer?: ((key: string) => string | undefined) | null,
+): VmContext;
 
 /** 创建用于执行脚本的执行上下文 */
-export function createVmContext(...args: CreateVmContextWithValues | CreateVmContextWithFactory): VmContext {
-    if (args[0] == null && args[1] == null) {
-        return { ...DefaultVmContext };
+export function createVmContext(
+    arg0: VmContextRecordLoose | ((key: string) => VmValue | undefined) | null = null,
+    arg1: Record<string, unknown> | (() => Iterable<string>) | null = null,
+    describer: ((key: string) => string | undefined) | null = null,
+): VmContext {
+    if (arg0 == null && arg1 == null) {
+        return DefaultVmContext;
     }
 
-    if (typeof args[0] == 'function') {
-        const [getter, enumerator, describer] = args as CreateVmContextWithFactory;
-        return new FactoryVmContext(getter, enumerator ?? undefined, describer ?? undefined);
+    if (typeof arg0 == 'function') {
+        const getter = arg0;
+        const enumerator = arg1 as (() => Iterable<string>) | null;
+        return new FactoryVmContext(getter, enumerator, describer);
     }
 
-    const [vmValues, externValues, describer] = args as CreateVmContextWithValues;
+    const vmValues = arg0;
+    const externValues = arg1 as Record<string, unknown> | null;
     const env: VmContextRecord = create(VM_SHARED_CONTEXT);
     if (vmValues) {
         for (const [key, value] of entries(vmValues)) {
@@ -184,5 +197,5 @@ export function createVmContext(...args: CreateVmContextWithValues | CreateVmCon
             env[key] = value == null ? null : wrapToVmValue(value, null);
         }
     }
-    return new ValueVmContext(env, describer ?? undefined);
+    return new ValueVmContext(env, describer);
 }

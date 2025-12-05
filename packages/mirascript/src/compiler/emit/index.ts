@@ -50,7 +50,7 @@ export class Emitter {
             new Uint8Array(chunk.buffer, chunk.byteOffset + 12 + this.codeSize, this.constSize),
         );
     }
-    readonly pretty;
+    readonly pretty: boolean;
     readonly chunkSize: number;
     readonly codeSize: number;
     /** 读取常量表 */

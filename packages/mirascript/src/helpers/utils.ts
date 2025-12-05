@@ -6,12 +6,7 @@ export const { apply } = Reflect;
 /**
  * Determines whether an object has an enumerable property with the specified name.
  */
-export const hasOwnEnumerable = Function.call.bind<
-    object['propertyIsEnumerable'],
-    [],
-    [o: object, v: PropertyKey],
-    boolean
->(
+export const hasOwnEnumerable = Function.call.bind(
     // eslint-disable-next-line @typescript-eslint/unbound-method
     Object.prototype.propertyIsEnumerable,
-);
+) as (o: object, v: PropertyKey) => boolean;

@@ -53,9 +53,8 @@ test('DefaultContext', (t) => {
 
 test('EmptyContext', (t) => {
     const context = createVmContext();
-    t.deepEqual(context, DefaultVmContext);
-    t.not(context, DefaultVmContext);
-    t.false(Object.isFrozen(context));
+    t.is(context, DefaultVmContext);
+    t.true(Object.isFrozen(context));
     checkContext(t, context);
 });
 
@@ -155,7 +154,7 @@ test('FactoryContext', (t) => {
 });
 
 test('FactoryContextNoEnumerator', (t) => {
-    const context = createVmContext((key) => (!key.startsWith('$') ? 'k_' + key : undefined));
+    const context = createVmContext((key) => (key.length === 1 ? 'k_' + key : !key ? null : undefined));
 
     const keys = checkContext(t, context);
 

@@ -43,7 +43,7 @@ export function CpExit(): void {
     }
 }
 /** 设置检查点超时时间 */
-export function configCheckpoint(timeout = CP_DEFAULT_TIMEOUT): void {
+export function configCheckpoint(timeout: number = CP_DEFAULT_TIMEOUT): void {
     if (typeof timeout !== 'number' || timeout <= 0 || isNaN(timeout)) {
         throw new RangeError('Invalid timeout value');
     }
