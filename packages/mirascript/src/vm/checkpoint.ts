@@ -18,13 +18,13 @@ let cpInterval = CP_DEFAULT_INTERVAL | 0;
 let cpCounter = 0;
 /** 检查点 */
 export function Cp(): void {
-    if (cp === CP_UNSET) {
+    if ((cp | 0) === (CP_UNSET | 0)) {
         cpCounter = 0;
         cp = timestamp() | 0;
         return;
     }
     // 不是每次都查时间
-    if ((cpCounter = (cpCounter + 1) | 0) % cpInterval !== 0) {
+    if ((cpCounter = (cpCounter + 1) | 0) % (cpInterval | 0) !== 0) {
         return;
     }
     cpCounter = 0;
@@ -61,11 +61,15 @@ export function configCheckpoint(
     timeout: number = CP_DEFAULT_TIMEOUT,
     checkInterval: number = CP_DEFAULT_INTERVAL,
 ): void {
-    if (typeof timeout !== 'number' || timeout <= 0 || timeout >= INT_MAX || isNaN(timeout)) {
+    if (typeof timeout !== 'number' || timeout <= 0 || isNaN(timeout)) {
         throw new RangeError('Invalid timeout value');
+    } else if (timeout > INT_MAX) {
+        timeout = INT_MAX;
     }
-    if (typeof checkInterval !== 'number' || checkInterval <= 0 || checkInterval >= INT_MAX || isNaN(checkInterval)) {
+    if (typeof checkInterval !== 'number' || checkInterval <= 0 || isNaN(checkInterval)) {
         throw new RangeError('Invalid check interval value');
+    } else if (checkInterval > INT_MAX) {
+        checkInterval = INT_MAX;
     }
     cpTimeout = timeout | 0;
     cpInterval = checkInterval | 0;
