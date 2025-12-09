@@ -39,7 +39,7 @@ test('constants', (t) => {
             '___',
             '_privateVar',
         ],
-        ['1invalidStart', 'invalid-char!', 'white space', '', '@$a', '$@a'],
+        ['1invalidStart', 'invalid-char!', 'white space', '', '@$a', '$@a', ' a', 'a '],
     );
 
     testRegExp(

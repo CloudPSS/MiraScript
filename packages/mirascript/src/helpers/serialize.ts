@@ -1,5 +1,5 @@
 import type { VmArray, VmExtern, VmFunction, VmModule, VmAny, VmRecord } from '../vm/index.js';
-import { REG_IDENTIFIER, REG_ORDINAL } from './constants.js';
+import { REG_IDENTIFIER_FULL, REG_ORDINAL_FULL } from './constants.js';
 import { entries, hasOwn, isFinite, isNaN } from '../helpers/utils.js';
 import {
     getVmFunctionInfo,
@@ -11,9 +11,6 @@ import {
     isVmRecord,
 } from './types.js';
 import type { VmWrapper } from '../vm/types/wrapper.js';
-
-const REG_IDENTIFIER_FULL = new RegExp(`^${REG_IDENTIFIER.source}$`, REG_IDENTIFIER.flags);
-const REG_ORDINAL_FULL = new RegExp(`^${REG_ORDINAL.source}$`, REG_ORDINAL.flags);
 
 /** 序列化设置 */
 export interface SerializeOptions {
