@@ -1,6 +1,6 @@
 {
   "name": "@mirascript/bindings",
-  "version": "0.1.19",
+  "version": "0.1.20",
   "author": "CloudPSS",
   "license": "MIT",
   "description": "MiraScript compiler bindings",
