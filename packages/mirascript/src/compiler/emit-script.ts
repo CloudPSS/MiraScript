@@ -26,5 +26,5 @@ export function emitScript(
         ? parseDiagnostics(source, diagnostics, (c) => c === DiagnosticCode.SourceMap).sourcemaps
         : [];
     const target = emit(source, code, sourcemaps, options);
-    return createScript(source, target);
+    return createScript(source, options.input_mode ?? 'Script', target);
 }
