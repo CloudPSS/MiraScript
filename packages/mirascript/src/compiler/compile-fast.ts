@@ -2,7 +2,7 @@ import { wrapScript, type VmScript } from './create-script.js';
 import type { TranspileOptions } from './types.js';
 import { GlobalFallback } from '../vm/helpers.js';
 import type { VmContext, VmValue } from '../vm/index.js';
-import { isFinite, isNaN } from '../helpers/utils.js';
+import { isFinite } from '../helpers/utils.js';
 import { keywords } from './keywords.js';
 
 const REG_NUMBER_FULL = /^(?:[+-])?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?$/;
@@ -20,40 +20,56 @@ const REG_IDENTIFIER_FAST = /^(?:\$+|@+|[A-Za-z])[a-zA-Z0-9_]*$/;
 const FAST_SCRIPT_MAX_LEN = 32;
 
 /** 构造返回常量的函数 */
-function constant(value: string | number): () => VmValue {
-    let code: string;
-    if (value == null) {
-        return () => null;
-    }
-    if (typeof value === 'string') {
-        // 对字符串进行转义
-        code = JSON.stringify(value)!;
-    } else if (typeof value === 'number') {
-        if (isNaN(value)) {
-            return () => 0 / 0;
-        } else if (value === Infinity) {
-            return () => 1 / 0;
-        } else if (value === -Infinity) {
-            return () => -1 / 0;
-        } else if (value === 0) {
-            if (Object.is(value, -0)) {
-                return () => -0;
-            } else {
-                return () => 0;
-            }
+function constantFiniteNumber(value: number): () => number {
+    if (value === 0) {
+        if (Object.is(value, -0)) {
+            return () => -0;
+        } else {
+            return () => 0;
         }
-        code = value.toString();
-    } else {
-        throw new TypeError(`Unsupported constant value: ${value satisfies never as string}`);
     }
-
     // eslint-disable-next-line @typescript-eslint/no-implied-eval, @typescript-eslint/no-unsafe-call
-    return new Function(`return () => ${code};`)() as () => VmValue;
+    return new Function(`return () => ${value};`)() as () => number;
+}
+/** 构造返回常量的函数 */
+function constantString(value: string): () => string {
+    const code = JSON.stringify(value);
+    // eslint-disable-next-line @typescript-eslint/no-implied-eval, @typescript-eslint/no-unsafe-call
+    return new Function(`return () => ${code};`)() as () => string;
+}
+
+/** 构造返回常量的函数 */
+function nan(): () => number {
+    return () => 0 / 0;
+}
+
+/** 构造返回常量的函数 */
+function posInf(): () => number {
+    return () => +1 / 0;
+}
+
+/** 构造返回常量的函数 */
+function negInf(): () => number {
+    return () => -1 / 0;
+}
+
+/** 构造返回常量的函数 */
+function constantBoolean(value: boolean): () => boolean {
+    if (value) {
+        return () => true;
+    } else {
+        return () => false;
+    }
+}
+
+/** 构造返回常量的函数 */
+function nil(): () => null {
+    return () => null;
 }
 
 /** 构造返回全局变量的函数 */
 function globalVariable(id: string): (global: VmContext | undefined) => VmValue {
-    const code = `return (global = GlobalFallback()) => global.get(${JSON.stringify(id)});`;
+    const code = `return (global = GlobalFallback()) => global.get(\`${id}\`);`;
 
     // eslint-disable-next-line @typescript-eslint/no-implied-eval, @typescript-eslint/no-unsafe-call
     return new Function('GlobalFallback', code)(GlobalFallback) as (global: VmContext | undefined) => VmValue;
@@ -69,22 +85,22 @@ function compileScriptFast(code: string, options: TranspileOptions): VmScript | 
     const mode = options.input_mode ?? 'Script';
     const trimmedCode = code.trim();
     if (!trimmedCode) {
-        return wrapScript(code, mode, () => null);
+        return wrapScript(code, mode, nil());
     }
     switch (trimmedCode) {
         case 'nil':
-            return wrapScript(code, mode, () => null);
+            return wrapScript(code, mode, nil());
         case 'true':
-            return wrapScript(code, mode, () => true);
+            return wrapScript(code, mode, constantBoolean(true));
         case 'false':
-            return wrapScript(code, mode, () => false);
+            return wrapScript(code, mode, constantBoolean(false));
         case 'nan':
-            return wrapScript(code, mode, () => 0 / 0);
+            return wrapScript(code, mode, nan());
         case 'inf':
         case '+inf':
-            return wrapScript(code, mode, () => 1 / 0);
+            return wrapScript(code, mode, posInf());
         case '-inf':
-            return wrapScript(code, mode, () => -1 / 0);
+            return wrapScript(code, mode, negInf());
     }
     if (REG_IDENTIFIER_FAST.test(trimmedCode)) {
         // 直接返回标识符
@@ -99,7 +115,7 @@ function compileScriptFast(code: string, options: TranspileOptions): VmScript | 
         const num = Number(trimmedCode);
         if (!isFinite(num)) return undefined;
         // 直接返回数字
-        return wrapScript(code, mode, constant(num));
+        return wrapScript(code, mode, constantFiniteNumber(num));
     }
     return undefined;
 }
@@ -115,7 +131,7 @@ function compileTemplateFast(code: string, options: TranspileOptions): VmScript 
     if (!code.includes('$')) {
         const mode = options.input_mode ?? 'Template';
         // 不包含插值的模板
-        return wrapScript(code, mode, constant(code));
+        return wrapScript(code, mode, constantString(code));
     }
     return undefined;
 }

@@ -47,8 +47,8 @@ test('keyword literal', compileAndRun, '+inf', Number.POSITIVE_INFINITY);
 test('keyword literal', compileAndRun, '-inf', Number.NEGATIVE_INFINITY);
 test('keyword literal', compileAndRun, '+ inf', Number.POSITIVE_INFINITY);
 test('keyword literal', compileAndRun, '- inf', Number.NEGATIVE_INFINITY);
-test('keyword literal', compileAndRun, 'true', true);
-test('keyword literal', compileAndRun, 'false', false);
+test('keyword literal', compileAndRun, 'true  ', true);
+test('keyword literal', compileAndRun, '  false', false);
 
 test('number literal', compileAndRun, '1', 1);
 test('number literal', compileAndRun, '1.0', 1);
@@ -67,11 +67,19 @@ test('whitespace', compileAndRun, ' ', null);
 test('whitespaces', compileAndRun, ' \n', null);
 
 test('identifier', compileAndRun, 'PI', Math.PI);
-test('identifier with whitespace', compileAndRun, ' PI\n\r\n ', Math.PI);
+test('identifier with whitespace', compileAndRun, ' \n SQRT1_2\n\r\n ', Math.SQRT1_2);
 
+test('keyword', compileAndRun, 'if', {
+    instanceOf: Error,
+    message: /MissingCloseBrace/,
+});
 test('non-existent identifier', compileAndRun, '@nonExistent', {
     instanceOf: VmError,
     message: "Global variable '@nonExistent' is not defined.",
+});
+test('non-existent identifier', compileAndRun, 'no', {
+    instanceOf: VmError,
+    message: "Global variable 'no' is not defined.",
 });
 test('bad expression', compileAndRun, '++', {
     instanceOf: Error,
