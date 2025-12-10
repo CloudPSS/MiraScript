@@ -16,11 +16,24 @@ export async function print(value: VmAny | Error): Promise<string> {
     if (value === undefined) return `<span style="color: #888">&lt;uninitialized&gt;</span>`;
     if (value === null) return syntaxHighlight('nil', 'mirascript');
     if (value instanceof Error) return escapeHtml(value.toString());
-    if (typeof value == 'function') {
-        return syntaxHighlight(String(value), 'javascript');
-    }
     await ready;
-    const { isVmExtern, isVmModule, serialize } = mirascript;
+    const { isVmExtern, isVmModule, serialize, isVmFunction, getVmFunctionInfo } = mirascript;
+    if (isVmFunction(value)) {
+        const info = getVmFunctionInfo(value)!;
+        if (info.isLib) {
+            return await syntaxHighlight(
+                `fn ${value.name}(${Object.entries(info.params ?? {})
+                    .map(([pn]) => {
+                        const type = info.paramsType?.[pn];
+                        return type ? `${pn}: ${type}` : pn;
+                    })
+                    .join(', ')})${info.returnsType ? ` -> ${info.returnsType}` : ''}`,
+                'mirascript-doc',
+            );
+        } else {
+            return syntaxHighlight(String(value), 'javascript');
+        }
+    }
     if (isVmExtern(value) || isVmModule(value)) {
         return await syntaxHighlight(`/* <${value.type} ${value.tag}> */`, 'mirascript-doc');
     }
