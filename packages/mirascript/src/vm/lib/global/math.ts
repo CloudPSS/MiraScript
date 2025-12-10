@@ -1,5 +1,5 @@
 import { expectNumber, VmLib } from '../helpers.js';
-const { atan2: _atan2, pow: _pow } = Math;
+const { atan2: _atan2, pow: _pow, random: _random } = Math;
 
 export const atan2 = VmLib((x, y) => _atan2(expectNumber(0, x), expectNumber(1, y)), {
     summary: '返回从原点到点 (x, y) 的角度（弧度）',
@@ -13,7 +13,7 @@ export const pow = VmLib((x, y) => _pow(expectNumber(0, x), expectNumber(1, y)),
     paramsType: { x: 'number', y: 'number' },
     returnsType: 'number',
 });
-export const random = VmLib(Math.random, {
+export const random = VmLib(() => _random(), {
     summary: '返回 [0, 1) 之间的伪随机数',
     params: {},
     paramsType: {},
