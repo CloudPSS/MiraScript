@@ -28,6 +28,7 @@ git commit -m "v$Version"
  
 git tag -a "v$Version" -m "v$Version" 
 
+npm login --registry https://registry.npmjs.org
 pnpm -r publish --access public --registry https://registry.npmjs.org
 
 $packages = Get-ChildItem ./packages -Directory
