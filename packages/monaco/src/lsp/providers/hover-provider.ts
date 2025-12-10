@@ -24,7 +24,7 @@ export class HoverProvider extends Provider implements languages.HoverProvider {
                 contents.push({ value: d });
             }
             const describe = globals.describe(def.name);
-            if (describe) {
+            if (describe && describe !== doc[0]) {
                 contents.push({ value: describe });
             }
             range = def.references[ref!]?.range;
