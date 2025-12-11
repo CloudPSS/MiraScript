@@ -403,6 +403,8 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
             ],
             type_doc: [
                 [/;/, { token: 'delimiter', next: '@pop', goBack: 1 }],
+                [/(\()(\.\.|)(@identifier)(?=,|\))/, ['@brackets', 'delimiter', 'variable.emphasis']],
+                [/(,)(@whitespace*)(\.\.|)(@identifier)(?=,|\))/, ['delimiter', '', 'delimiter', 'variable.emphasis']],
                 [/(fn)(\()/, ['type', '@brackets']],
                 [/(type)(\()(@identifier)(\))/, ['type', '@brackets', 'variable.emphasis.doc', '@brackets']],
                 [

@@ -34,7 +34,7 @@ function globalParamsSignature(info: VmFunctionInfo | undefined): ParamSignature
     for (const key of params) {
         const type = info.paramsType?.[key] ?? '';
         const doc = info.params?.[key] ?? '';
-        paramItems.push([key, type ? `${key}: ${type}` : key, doc ? `\`${key}\`: ${doc}` : '']);
+        paramItems.push([key, `${key}: ${type || 'any'}`, doc ? `\`${key}\`: ${doc}` : '']);
     }
     return paramItems;
 }
@@ -88,10 +88,14 @@ export function localParamSignature(
             a.code === DiagnosticCode.ParameterMutableRest ||
             a.code === DiagnosticCode.ParameterImmutableRest;
         const argsInParam = args.filter((arg) => Range.containsRange(a.range, arg.definition.range));
-        const argName =
-            argsInParam.length === 0
-                ? `arg_${i}`
-                : argsInParam.map((arg) => model.getValueInRange(arg.definition.range)).join('_');
+        let argName: string;
+        if (argsInParam.length > 0) {
+            argName = argsInParam.map((arg) => model.getValueInRange(arg.definition.range)).join('_');
+        } else if (rest) {
+            argName = 'args';
+        } else {
+            argName = `arg${i}`;
+        }
         if (rest) return [`..${argName}`, `..${argName}`, ''];
         return [argName, argName, ''];
     });
