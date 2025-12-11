@@ -58,8 +58,7 @@ test('callable extern', (t) => {
     t.true(isVmExtern(eMSin));
     t.true(isVmCallable(eMSin));
     t.is(eMSin.value, Math.sin);
-    t.is(eMSin.thisArg, eMath);
-    t.true(eMSin.thisArg!.same(eMath));
+    t.is(eMSin.thisArg, Math);
     t.not(unwrapFromVmValue(eMSin), Math.sin);
     t.true(isProxy(unwrapFromVmValue(eMSin)));
     t.is((unwrapFromVmValue(eMSin) as typeof Math.sin)(1), Math.sin(1));

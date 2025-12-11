@@ -5,9 +5,10 @@ import {
     getVmFunctionInfo,
     isVmExtern,
     isVmFunction,
+    VmError,
     type VmFunction,
     type VmContext,
-    VmError,
+    type VmContextRecord,
 } from '@mirascript/mirascript';
 import { DefaultVmContext, lib } from '@mirascript/mirascript/subtle';
 
@@ -59,20 +60,59 @@ test('EmptyContext', (t) => {
 });
 
 test('ValueContext', (t) => {
-    const context = createVmContext(
-        {
-            a: 1,
-            b: [1, 2, 3],
-            sin: 'sin',
-            $ud: undefined,
-            $nul: null,
-            $set: new Set() as never,
-            $date: new Date() as never,
-            $fn: (() => 0) as never,
-        },
-        { c: [4, 5], $ud2: undefined, $nul2: null },
-        (key) => key,
-    );
+    const env: VmContextRecord = {
+        a: 1,
+        b: [1, 2, 3],
+        sin: 'sin',
+        $ud: undefined,
+        $nul: null,
+    };
+    const context = createVmContext(env, null, (key) => key);
+    const keys = checkContext(t, context);
+
+    t.is(context.get('sin'), 'sin');
+    t.deepEqual(context.get('a'), 1);
+    t.deepEqual(context.get('b'), [1, 2, 3]);
+
+    t.true(context.has('a'));
+    t.true(context.has('b'));
+    t.false(context.has('c'));
+
+    t.true(keys.has('a'));
+    t.true(keys.has('b'));
+    t.false(keys.has('c'));
+
+    t.true(keys.has('$ud'));
+    t.true(keys.has('$nul'));
+
+    t.is(context.get('$ud'), null);
+    t.is(context.get('$nul'), null);
+
+    t.is(context.describe('sin'), 'sin');
+    t.is(context.describe('a'), 'a');
+    t.is(context.describe('b'), 'b');
+    t.is(context.describe('c'), undefined);
+    t.is(context.describe('$ud'), '$ud');
+    t.is(context.describe('$nul'), '$nul');
+
+    env['c'] = [4, 5];
+    t.true(context.has('c'));
+    t.is(context.get('c'), env['c']);
+    t.is(context.describe('c'), 'c');
+});
+
+test('Value2Context', (t) => {
+    const env: VmContextRecord = {
+        a: 1,
+        b: [1, 2, 3],
+        sin: 'sin',
+        $ud: undefined,
+        $nul: null,
+        $set: new Set() as never,
+        $date: new Date() as never,
+        $fn: (() => 0) as never,
+    };
+    const context = createVmContext(env, { c: [4, 5], $ud2: undefined, $nul2: null }, (key) => key);
     const keys = checkContext(t, context);
 
     t.is(context.get('sin'), 'sin');
@@ -98,9 +138,9 @@ test('ValueContext', (t) => {
     t.is(context.get('$ud2'), null);
     t.is(context.get('$nul2'), null);
 
-    t.false(context.has('$set'));
-    t.false(context.has('$date'));
-    t.false(context.has('$fn'));
+    t.true(context.has('$set'));
+    t.true(context.has('$date'));
+    t.true(context.has('$fn'));
 
     t.is(context.describe('sin'), 'sin');
     t.is(context.describe('a'), 'a');
@@ -111,9 +151,44 @@ test('ValueContext', (t) => {
     t.is(context.describe('$ud2'), '$ud2');
     t.is(context.describe('$nul2'), '$nul2');
 
-    t.is(context.describe('$set'), undefined);
-    t.is(context.describe('$date'), undefined);
-    t.is(context.describe('$fn'), undefined);
+    t.is(context.describe('$set'), '$set');
+    t.is(context.describe('$date'), '$date');
+    t.is(context.describe('$fn'), '$fn');
+
+    env['c'] = [1, 5];
+    t.true(context.has('c'));
+    t.is(context.get('c'), env['c']);
+    t.is(context.describe('c'), 'c');
+});
+test('Value2Context extern only', (t) => {
+    const extern: Record<string, unknown> = {
+        $set: new Set(),
+        $date: new Date(),
+        $fn: () => 0,
+    };
+    const context = createVmContext(null, extern, (key) => key);
+    const keys = checkContext(t, context);
+
+    t.true(context.has('$set'));
+    t.true(context.has('$date'));
+    t.true(context.has('$fn'));
+
+    t.true(keys.has('$set'));
+    t.true(keys.has('$date'));
+    t.true(keys.has('$fn'));
+
+    t.true(isVmExtern(context.get('$set')));
+    t.false(isVmExtern(context.get('$date')));
+    t.true(isVmExtern(context.get('$fn')));
+
+    // Will be cached
+    t.is(context.get('$set'), context.get('$set'));
+    t.is(context.get('$date'), context.get('$date'));
+    t.is(context.get('$fn'), context.get('$fn'));
+
+    t.is(context.describe('$set'), '$set');
+    t.is(context.describe('$date'), '$date');
+    t.is(context.describe('$fn'), '$fn');
 });
 
 test('FactoryContext', (t) => {

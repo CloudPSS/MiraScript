@@ -14,11 +14,12 @@ const ObjectToString = ObjectPrototype.toString;
 const FunctionToString = Function.prototype.toString;
 const ArrayToString = Array.prototype.toString;
 const ArrayMap = Array.prototype.map;
+
 /** 包装 Mirascript `extern` 类型的对象 */
 export class VmExtern<const T extends object = object> extends VmWrapper<T> {
     constructor(
         value: T,
-        readonly thisArg: T extends (...args: readonly never[]) => unknown ? VmExtern | null : null = null,
+        readonly thisArg: ThisParameterType<T> | null = null,
     ) {
         super(value);
     }
@@ -54,7 +55,7 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
     override get(key: string): VmAny {
         if (!this.has(key)) return undefined;
         const prop = (this.value as Record<string, unknown>)[key];
-        return wrapToVmValue(prop, this, (v) => this.assumeVmValue(v, key as keyof T));
+        return wrapToVmValue(prop, this.value, (v) => this.assumeVmValue(v, key as keyof T));
     }
     /** Set a property on the object */
     set(key: string, value: VmValue): boolean {
@@ -69,7 +70,7 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
         if (typeof value != 'function') {
             throw VmError.from(`Not a callable extern`, null, null);
         }
-        const caller = this.thisArg?.value ?? null;
+        const caller = this.thisArg;
         const unwrappedArgs = args.map(unwrapFromVmValue);
         let ret: unknown;
         try {
@@ -102,7 +103,7 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
         if (toString === ArrayToString && isArray(this.value)) {
             const mapped = ArrayMap.call(this.value, (item: unknown) => {
                 if (item === undefined) return '';
-                return innerToString(wrapToVmValue(item ?? null, null), true);
+                return innerToString(wrapToVmValue(item ?? null, null, null), true);
             });
             const str = mapped.join(', ');
             if (useBraces) return `[${str}]`;
