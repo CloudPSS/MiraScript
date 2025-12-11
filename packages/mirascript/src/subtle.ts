@@ -21,3 +21,4 @@ export { lib } from './vm/lib/index.js';
 export * from './compiler/diagnostic.js';
 export { emitScript } from './compiler/emit-script.js';
 export { generateBytecode, generateBytecodeSync, type VmBytecodeResult } from './compiler/generate-bytecode.js';
+export { type GlobalReferenceChain, analyzeGlobalReferences } from './helpers/analyze.js';
