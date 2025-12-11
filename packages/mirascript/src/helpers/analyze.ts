@@ -12,6 +12,7 @@ const REG_CHAIN = new RegExp(
     'u',
 );
 
+const { parseInt } = Number;
 /**
  * 分析表达式依赖的全局变量
  */
@@ -22,12 +23,14 @@ export function analyzeGlobalReferences(expression: string, mode?: InputMode): G
     const [code, diagnostics] = generateBytecodeSync(expression, {
         input_mode: mode || 'Script',
         diagnostic_position_encoding: 'Utf16',
-        diagnostic_error: false,
+        // 需要设为 true 以便在编译失败时返回空的 bytecode
+        diagnostic_error: true,
         diagnostic_warning: false,
         diagnostic_info: false,
         diagnostic_hint: false,
         diagnostic_reference: false,
         diagnostic_tag: true,
+        diagnostic_sourcemap: false,
         trivia: false,
     });
     if (code == null || diagnostics.length === 0) {
@@ -55,8 +58,11 @@ export function analyzeGlobalReferences(expression: string, mode?: InputMode): G
     const accessChains: GlobalReferenceChain[] = [];
     for (const chainStr of result) {
         const parts = chainStr.split('.').map((part) => {
-            const num = Number.parseInt(part, 10);
-            return Number.isNaN(num) ? part : num;
+            if (/^\d/.test(part)) {
+                // 数字开头的部分一定是数字
+                return parseInt(part, 10);
+            }
+            return part;
         });
         accessChains.push(parts as unknown as GlobalReferenceChain);
     }
