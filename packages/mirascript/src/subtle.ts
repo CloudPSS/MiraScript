@@ -4,8 +4,7 @@ export { keywords } from './compiler/keywords.js';
 export * as constants from './helpers/constants.js';
 export * as convert from './helpers/convert/index.js';
 export { DefaultVmContext } from './vm/types/context.js';
-export * as operations from './vm/operations.js';
-export * as helpers from './vm/helpers.js';
+export * as operations from './vm/operations/index.js';
 export {
     display as serializeForDisplay,
     serialize,

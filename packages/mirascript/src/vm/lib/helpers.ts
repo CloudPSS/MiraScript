@@ -17,7 +17,7 @@ import type {
     VmFunctionLike,
     VmFunctionOption,
 } from '../types/index.js';
-import { Cp } from '../helpers.js';
+import { Cp } from '../checkpoint.js';
 
 /** 抛出异常 */
 export function throwError(message: string, recovered: VmAny | (() => VmAny)): never {

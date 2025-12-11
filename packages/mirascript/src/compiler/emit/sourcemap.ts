@@ -91,20 +91,20 @@ export function createSourceMap(
             source: fileName,
         });
     }
-    let fnNames = `'use strict';`;
     if (typeof source === 'string') {
         const lines = source.split(/\r?\n/);
-        for (let i = 0; i < functions.length; i++) {
-            const index = functions[i]!;
-            const mapping = sourcemaps[index];
-            const line = mapping ? lines[mapping.startLineNumber - 1] : undefined;
-            const fnName = mapping && line ? line.slice(mapping.startColumn - 1, mapping.endColumn - 1) : '';
-            fnNames += `var fnName_${i} = ${fnName ? toJsLiteral(fnName) : 'null'};`;
+        for (const codeLineNo of functions) {
+            const mapping = sourcemaps[codeLineNo];
+            const sourceLine = mapping ? lines[mapping.startLineNumber - 1] : undefined;
+            const fnName =
+                mapping && sourceLine ? sourceLine.slice(mapping.startColumn - 1, mapping.endColumn - 1) : '';
+            if (!fnName) continue;
+            const codeLine = codeLines[codeLineNo]!;
+            codeLines[codeLineNo] = codeLine.replace(`= Fn(null,`, `= Fn(${toJsLiteral(fnName)},`);
         }
     }
     const sourceURL = hasSchema ? fileName : `${ORIGIN}${fileName}`;
     const dataUrl = toDataUrl(map.toString());
-    codeLines.unshift(fnNames);
     codeLines.push(
         // Prevent source map from being recognized as of this file
         `${SOURCE_URL}=${sourceURL}.js`,

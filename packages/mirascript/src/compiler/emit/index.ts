@@ -128,7 +128,7 @@ export class Emitter {
                 continue;
             }
             this.codeOffset++;
-            const body = this.ident(-1) + `} finally { CpExit(); } });`;
+            const body = this.ident(-1) + `} finally { $CpExit(); } });`;
             this.codeLines.push(body);
             this.closureCounter--;
             this.identCounter--;
@@ -204,8 +204,8 @@ export class Emitter {
                     const opt = opcode === OpCode.FieldOpt;
                     // Use computed property names to avoid prototype pollution
                     code = opt
-                        ? `...ElementOpt(${field_name}, ${this.rv(value)}),`
-                        : `[${field_name}]: Element(${this.rv(value)}),`;
+                        ? `...$ElOpt(${field_name}, ${this.rv(value)}),`
+                        : `[${field_name}]: $El(${this.rv(value)}),`;
                     break;
                 }
                 case OpCode.FieldOptDyn:
@@ -214,8 +214,8 @@ export class Emitter {
                     const value = read();
                     const opt = opcode === OpCode.FieldOptDyn;
                     code = opt
-                        ? `...ElementOpt(${this.rv(field)}, ${this.rv(value)}),`
-                        : `[${this.rv(field)}]: Element(${this.rv(value)}),`;
+                        ? `...$ElOpt(${this.rv(field)}, ${this.rv(value)}),`
+                        : `[${this.rv(field)}]: $El(${this.rv(value)}),`;
                     break;
                 }
                 case OpCode.FieldOptIndex:
@@ -223,9 +223,7 @@ export class Emitter {
                     const field = this.readIndex(wide);
                     const value = read();
                     const opt = opcode === OpCode.FieldOptIndex;
-                    code = opt
-                        ? `...ElementOpt(${field}, ${this.rv(value)}),`
-                        : `[${field}]: Element(${this.rv(value)}),`;
+                    code = opt ? `...$ElOpt(${field}, ${this.rv(value)}),` : `[${field}]: $El(${this.rv(value)}),`;
                     break;
                 }
                 case OpCode.Spread: {
@@ -263,25 +261,25 @@ export class Emitter {
             switch (opcode) {
                 case OpCode.Item: {
                     const value = read();
-                    code = `Element(${this.rv(value)}),`;
+                    code = `$El(${this.rv(value)}),`;
                     break;
                 }
                 case OpCode.ItemRange: {
                     const start = this.readIndex(wide);
                     const end = this.readIndex(wide);
-                    code = `...ArrayRange(${start}, ${end}),`;
+                    code = `...$ArrayRange(${start}, ${end}),`;
                     break;
                 }
                 case OpCode.ItemRangeDyn: {
                     const start = read();
                     const end = read();
-                    code = `...ArrayRange(${this.rv(start)}, ${this.rv(end)}),`;
+                    code = `...$ArrayRange(${this.rv(start)}, ${this.rv(end)}),`;
                     break;
                 }
                 case OpCode.ItemRangeExclusiveDyn: {
                     const start = read();
                     const end = read();
-                    code = `...ArrayRangeExclusive(${this.rv(start)}, ${this.rv(end)}),`;
+                    code = `...$ArrayRangeExclusive(${this.rv(start)}, ${this.rv(end)}),`;
                     break;
                 }
                 case OpCode.Spread: {
@@ -329,7 +327,7 @@ export class Emitter {
                     const wv = this.wv(i + 1, -1);
                     if (varg && i === argn - 1) {
                         // 最后一个参数为可变参数
-                        return `...vargs`;
+                        return `...args`;
                     }
                     return `${wv} = null`;
                 });
@@ -341,16 +339,13 @@ export class Emitter {
                 if (script) {
                     code = `${SCRIPT_PREFIX} var ${regs};`;
                 } else {
-                    if (!this.options.sourceMap) {
-                        code = `${this.wv(reg)} = Function(null ,(${args.join(', ')}) => { try { CpEnter(); var ${regs};`;
-                    } else {
-                        const index = this.functions.length;
+                    if (this.options.sourceMap) {
                         this.functions.push(this.codeLines.length);
-                        code = `${this.wv(reg)} = Function(fnName_${index} ,(${args.join(', ')}) => { try { CpEnter(); var ${regs};`;
                     }
+                    code = `${this.wv(reg)} = $Fn(null, (${args.join(', ')}) => { try { $CpEnter(); var ${regs};`;
                 }
                 if (varg) {
-                    code += ` var ${this.wv(argn, -1)} = Vargs(vargs);`;
+                    code += ` var ${this.wv(argn, -1)} = $VArgs(args);`;
                 }
                 break;
             }
@@ -546,7 +541,7 @@ export class Emitter {
                 reg = read();
                 const level = read();
                 const up = read();
-                code = `${this.wv(reg)} = Upvalue(${this.rv(up, level)});`;
+                code = `${this.wv(reg)} = $Upvalue(${this.rv(up, level)});`;
                 break;
             }
             case OpCode.SetUpvalue: {
@@ -640,7 +635,7 @@ export class Emitter {
                 const regs = createArray(nreg - 1, (i) => this.wv(i + 2, -1));
                 regs.unshift('_');
                 const ir = this.wv(1, -1);
-                code = `for (let ${ir} of $Iterable(${this.rv(iterable)})) { ${ir} ??= null; Cp(); let ${regs.join(', ')};`;
+                code = `for (let ${ir} of $Iterable(${this.rv(iterable)})) { ${ir} ??= null; $Cp(); let ${regs.join(', ')};`;
                 break;
             }
             case OpCode.LoopRange:
@@ -652,14 +647,14 @@ export class Emitter {
                 const regs = createArray(nreg - 1, (i) => this.wv(i + 2, -1));
                 regs.unshift('_');
                 const i = this.wv(1, -1);
-                code = `for (let start = $ToNumber(${this.rv(start)}), end = $ToNumber(${this.rv(end)}), ${i} = start; ${i} ${exclusive ? '<' : '<='} end; ${i} += 1) { Cp(); let ${regs.join(', ')};`;
+                code = `for (let start = $ToNumber(${this.rv(start)}), end = $ToNumber(${this.rv(end)}), ${i} = start; ${i} ${exclusive ? '<' : '<='} end; ${i} += 1) { $Cp(); let ${regs.join(', ')};`;
                 break;
             }
             case OpCode.Loop: {
                 const nreg = read();
                 const regs = createArray(nreg, (i) => this.wv(i + 1, -1));
                 regs.unshift('_');
-                code = `while (true) { Cp(); let ${regs.join(', ')};`;
+                code = `while (true) { $Cp(); let ${regs.join(', ')};`;
                 break;
             }
             case OpCode.Break: {
@@ -724,8 +719,7 @@ export class Emitter {
     addSourceMap(): void {
         if (this.options.sourceMap) {
             createSourceMap(this.source, this.sourcemaps, this.codeLines, this.functions, this.options);
-        } else {
-            this.codeLines.unshift(`'use strict';`);
         }
+        this.codeLines.unshift(`'use strict';`);
     }
 }

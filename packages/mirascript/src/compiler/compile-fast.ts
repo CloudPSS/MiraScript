@@ -1,6 +1,6 @@
 import { wrapScript, type VmScript } from './create-script.js';
 import type { TranspileOptions } from './types.js';
-import { GlobalFallback } from '../vm/helpers.js';
+import { $GlobalFallback } from '../vm/operations/index.js';
 import type { VmContext, VmValue } from '../vm/index.js';
 import { isFinite } from '../helpers/utils.js';
 import { keywords } from './keywords.js';
@@ -69,10 +69,10 @@ function nil(): () => null {
 
 /** 构造返回全局变量的函数 */
 function globalVariable(id: string): (global: VmContext | undefined) => VmValue {
-    const code = `return (global = GlobalFallback()) => global.get(\`${id}\`);`;
+    const code = `return (global = $GlobalFallback()) => global.get(\`${id}\`);`;
 
     // eslint-disable-next-line @typescript-eslint/no-implied-eval, @typescript-eslint/no-unsafe-call
-    return new Function('GlobalFallback', code)(GlobalFallback) as (global: VmContext | undefined) => VmValue;
+    return new Function('$GlobalFallback', code)($GlobalFallback) as (global: VmContext | undefined) => VmValue;
 }
 
 let kw: Set<string> | undefined;

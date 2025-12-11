@@ -2,7 +2,7 @@ import { VM_ARRAY_MAX_LENGTH } from '../../../../helpers/constants.js';
 import { toNumber, toString } from '../../../../helpers/convert/index.js';
 import { isVmArray, isVmRecord } from '../../../../helpers/types.js';
 import { isArray, isInteger, isNaN } from '../../../../helpers/utils.js';
-import { Element } from '../../../helpers.js';
+import { $El } from '../../../operations/helpers.js';
 import type { VmArray, VmConst, VmValue } from '../../../types/index.js';
 import { VmLib, expectArrayOrRecord, expectConst, throwError } from '../../helpers.js';
 
@@ -69,7 +69,7 @@ const normalizeEntries = (data: VmConst, entries: Array<VmValue | undefined>): M
             }
         }
         const value = entries[i + 1]!;
-        entryData.set(key, Element(value));
+        entryData.set(key, $El(value));
     }
     return entryData;
 };

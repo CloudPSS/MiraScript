@@ -4,7 +4,7 @@ import { kVmFunctionProxy } from '../../helpers/constants.js';
 import type { VmFunctionLike, VmFunction } from './function.js';
 import { VmExtern } from './extern.js';
 import type { VmAny, VmConst, VmModule, VmPrimitive, VmValue } from './index.js';
-import { $Call } from '../operations.js';
+import { $Call } from '../operations/call.js';
 
 /** 创建 Mirascript 函数在宿主语言运行的代理 */
 export function toVmFunctionProxy<T extends VmFunctionLike>(fn: VmFunction<T>): T {
