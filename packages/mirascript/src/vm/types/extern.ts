@@ -15,6 +15,17 @@ const FunctionToString = Function.prototype.toString;
 const ArrayToString = Array.prototype.toString;
 const ArrayMap = Array.prototype.map;
 
+/** 获取类的名称，如果无法确定则返回 null */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+function classNameOf(kls: Function): string | null {
+    const { name } = kls;
+    if (typeof name == 'string' && name.length > 2) {
+        // Looks like a non-minified name
+        return name;
+    }
+    return null;
+}
+
 /** 包装 Mirascript `extern` 类型的对象 */
 export class VmExtern<const T extends object = object> extends VmWrapper<T> {
     constructor(
@@ -144,28 +155,20 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
                 return 'Object: null prototype';
             }
             if (typeof proto.constructor === 'function' && proto.constructor.name) {
-                return proto.constructor.name;
+                return classNameOf(proto.constructor) ?? 'Object';
             }
         } else if (tag === 'Function' && 'prototype' in this.value && typeof this.value.prototype == 'object') {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-            const { name } = this.value as unknown as Function;
-            return `class ${name || '<anonymous>'}`;
+            const className = classNameOf(this.value as unknown as new () => unknown);
+            if (!className) return `class`;
+            return `class ${className}`;
         } else if (tag === 'Function') {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-            const { name } = this.value as unknown as Function;
-            return `function ${name || '<anonymous>'}()`;
+            return `function`;
         } else if (tag === 'AsyncFunction') {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-            const { name } = this.value as unknown as Function;
-            return `async function ${name || '<anonymous>'}()`;
+            return `async function`;
         } else if (tag === 'GeneratorFunction') {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-            const { name } = this.value as unknown as Function;
-            return `function* ${name || '<anonymous>'}()`;
+            return `function*`;
         } else if (tag === 'AsyncGeneratorFunction') {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-            const { name } = this.value as unknown as Function;
-            return `async function* ${name || '<anonymous>'}()`;
+            return `async function*`;
         }
         return tag;
     }

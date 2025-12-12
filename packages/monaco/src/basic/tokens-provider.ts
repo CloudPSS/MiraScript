@@ -285,7 +285,7 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
 
             doc_mode: [
                 [
-                    /(@identifier)(@whitespace*)(:)(@whitespace*)(\/\*@whitespace*<)(extern )((?:async )?function\*?)(@whitespace*)([<>.\w]*)(\(\))(>@whitespace*\*\/)/,
+                    /(@identifier)(@whitespace*)(:)(@whitespace*)(\/\*@whitespace*<)(extern )((?:async )?function\*?)(>@whitespace*\*\/)/,
                     [
                         'entity.name.function.doc',
                         '',
@@ -294,9 +294,6 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                         'comment.doc',
                         'type.doc',
                         'keyword.javascript',
-                        '',
-                        'entity.name.function.javascript',
-                        'delimiter',
                         'comment.doc',
                     ],
                 ],
@@ -344,16 +341,8 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                 [/(@identifier)(@whitespace*)(:)(@whitespace+)/, ['variable.other.property', '', 'delimiter', '']],
 
                 [
-                    /(\/\*@whitespace*<)(extern )((?:async )?function\*?)(@whitespace*)([<>.\w]*)(\(\))(>@whitespace*\*\/)/,
-                    [
-                        'comment.doc',
-                        'type.doc',
-                        'keyword.javascript',
-                        '',
-                        'entity.name.function.javascript',
-                        'delimiter',
-                        'comment.doc',
-                    ],
+                    /(\/\*@whitespace*<)(extern )((?:async )?function\*?)(>@whitespace*\*\/)/,
+                    ['comment.doc', 'type.doc', 'keyword.javascript', 'comment.doc'],
                 ],
                 [
                     /(\/\*@whitespace*<)(extern )(class)(@whitespace*)([<>.\w]*)(>@whitespace*\*\/)/,
