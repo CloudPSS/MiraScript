@@ -8,6 +8,7 @@ import {
     isVmModule,
     isVmPrimitive,
     isVmRecord,
+    isVmWrapper,
     serialize,
     type VmAny,
     type VmModule,
@@ -283,12 +284,18 @@ export function valueDoc(
     name: string,
     value: VmAny,
     type: 'field' | 'declare' | 'hint',
+    parent: VmModule | VmExtern | MonacoContext | null,
 ): { script: string; doc: string[] } {
     const info = getVmFunctionInfo(value);
+    const describe = parent?.describe?.(name);
     if (info) {
+        const doc = globalFnDoc(info);
+        if (describe && doc[0] !== describe) {
+            doc.unshift(describe);
+        }
         return {
             script: fnSignature(name, info).toString() + (type === 'declare' ? ';' : ''),
-            doc: globalFnDoc(info),
+            doc,
         };
     }
     let prefix;
@@ -315,7 +322,7 @@ export function valueDoc(
             script = '\n';
             for (const k of exports) {
                 const v = value.get(k);
-                const vDoc = valueDoc(k, v, isVmModule(v) ? 'field' : 'declare');
+                const vDoc = valueDoc(k, v, isVmModule(v) ? 'field' : 'declare', value);
                 const code = [...docComment(vDoc.doc), 'export ' + vDoc.script, '', ''];
                 script += code.join('\n');
             }
@@ -334,17 +341,29 @@ export function valueDoc(
     } else {
         valueStr = serializeForDisplay(value, type === 'declare' ? 1000 : 100, type === 'declare' ? 80 : 40);
     }
-    return { script: `${prefix}${valueStr}${suffix}`, doc: [] };
+    return {
+        script: `${prefix}${valueStr}${suffix}`,
+        doc: describe ? [describe] : [],
+    };
 }
 
 /** 获取深层属性 */
-export function getDeep(globals: MonacoContext, name: string, path: readonly string[]): VmAny {
-    if (!globals.has(name)) return undefined;
+export function getDeep(
+    globals: MonacoContext,
+    name: string,
+    path: readonly string[],
+): [parent: VmModule | VmExtern | MonacoContext | null, value: VmAny] {
+    if (!globals.has(name)) return [null, undefined];
     let current: VmAny = globals.get(name);
-    for (const key of path) {
-        if (current == null) return current;
-        if (!operations.$Has(current, key)) return undefined;
-        current = operations.$Get(current, key);
+    if (!path.length) {
+        return [globals, current];
     }
-    return current;
+    let parent: VmAny = null;
+    for (const key of path) {
+        if (current == null) return [null, undefined];
+        if (!operations.$Has(current, key)) return [null, undefined];
+        parent = current;
+        current = operations.$Get(parent, key);
+    }
+    return [isVmWrapper(parent) ? parent : null, current];
 }

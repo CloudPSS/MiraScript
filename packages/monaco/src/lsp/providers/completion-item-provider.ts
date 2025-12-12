@@ -5,6 +5,7 @@ import {
     isVmModule,
     type VmFunctionInfo,
     type VmExtern,
+    type VmModule,
     isVmWrapper,
 } from '@mirascript/mirascript';
 import { DiagnosticCode, lib, operations } from '@mirascript/mirascript/subtle';
@@ -17,7 +18,7 @@ import {
     type Position,
     Range,
 } from '../../monaco-api.js';
-import { Provider } from './base.js';
+import { Provider, type MonacoContext } from './base.js';
 import { codeblock, getDeep, valueDoc, paramsList, strictContainsPosition, wordAt } from '../utils.js';
 import { keywords, reservedKeywords } from '../../constants.js';
 import type { LocalDefinition } from '../compile-result.js';
@@ -184,10 +185,10 @@ function kwSuggestion(kw: string, range: languages.CompletionItemRanges): langua
 interface CustomCompletionItem extends languages.CompletionItem {
     /** 是否为字段 */
     isField: boolean;
+    /** 对应的父值 */
+    vmParent?: MonacoContext | VmExtern | VmModule;
     /** 对应的变量值 */
     vmValue?: VmValue;
-    /** 描述 */
-    vmDescribe?: string;
 }
 
 /** 构造 filterText */
@@ -284,7 +285,7 @@ export class CompletionItemProvider extends Provider implements languages.Comple
                         insertText: localKeys.has(key) ? `global.${key}.${f}` : `${key}.${f}`,
                         filterText: filterText(f, char),
                         range,
-                        vmDescribe: element.describe(f),
+                        vmParent: element,
                         ...completion(model, DESC_GLOBAL, `${key}.${f}`, field, undefined, true),
                     });
                 }
@@ -294,12 +295,11 @@ export class CompletionItemProvider extends Provider implements languages.Comple
                 continue;
             }
 
-            const doc = global.describe(key);
             suggestions.push({
                 insertText: localKeys.has(key) ? `global.${key}` : key, // 如果有同名局部变量，使用 global. 前缀
                 filterText: filterText(key, char),
                 range,
-                vmDescribe: doc,
+                vmParent: global,
                 ...completion(model, DESC_GLOBAL, key, element, undefined, false),
             });
         }
@@ -357,7 +357,7 @@ export class CompletionItemProvider extends Provider implements languages.Comple
         }
         const vmGlobal = await this.getContext(model);
         fields.pop(); // 移除最后一个部分，因为它是当前输入位置的字段名
-        const value = getDeep(vmGlobal, def.def.name, fields);
+        const [, value] = getDeep(vmGlobal, def.def.name, fields);
         if (value == null || typeof value != 'object') {
             return [];
         }
@@ -369,11 +369,10 @@ export class CompletionItemProvider extends Provider implements languages.Comple
                 continue;
             }
             const field = operations.$Get(value, key);
-            const doc = isVmWrapper(value) ? value.describe(key) : undefined;
             result.push({
                 insertText: key,
                 range,
-                vmDescribe: doc,
+                vmParent: isVmWrapper(value) ? value : undefined,
                 ...completion(model, DESC_FIELD, key, field, undefined, true),
             });
         }
@@ -492,14 +491,14 @@ export class CompletionItemProvider extends Provider implements languages.Comple
             // not a dynamic completion item
             return item;
         }
-        const { vmValue, isField, vmDescribe } = item as CustomCompletionItem;
+        const { vmValue, isField, vmParent } = item as CustomCompletionItem;
         const { label } = item.label;
-        if (vmValue !== undefined || vmDescribe) {
+        if (vmValue !== undefined || vmParent) {
             if (item.documentation) return item;
             const last = label.split('.').pop()!;
-            const def = valueDoc(last, vmValue, isField ? 'field' : 'hint');
+            const def = valueDoc(last, vmValue, isField ? 'field' : 'hint', vmParent ?? null);
             item.documentation = {
-                value: `${codeblock('\0' + def.script)}\n${def.doc.join('\n')}\n${vmDescribe ?? ''}`,
+                value: `${codeblock('\0' + def.script)}\n${def.doc.join('\n')}`,
             };
         }
         return item;

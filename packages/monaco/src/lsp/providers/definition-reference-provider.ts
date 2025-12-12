@@ -34,9 +34,9 @@ export class DefinitionReferenceProvider
         const { globalModel } = this;
         const globals = await this.getContext(model);
         const [name, ...access] = path;
-        const value = getDeep(globals, name!, access);
+        const [parent, value] = getDeep(globals, name!, access);
         if (value === undefined) return undefined;
-        const { script, doc } = valueDoc(path.at(-1)!, value, 'declare');
+        const { script, doc } = valueDoc(path.at(-1)!, value, 'declare', parent);
         const code = ['', ...docComment(doc), script, ''];
         globalModel.setValue(code.join('\n'));
         return {
