@@ -17,7 +17,7 @@ export function toVmFunctionProxy<T extends VmFunctionLike>(fn: VmFunction<T>): 
             // 作为函数参数传入的值一定丢失了它的 this
             args.map((v) => wrapToVmValue(v, null, null)),
         );
-        return unwrapFromVmValue(ret);
+        return unwrapFromVmValue(ret, true);
     };
     defineProperty(fn, kVmFunctionProxy, { value: proxy });
     defineProperty(proxy, kVmFunctionProxy, { value: fn });
@@ -82,7 +82,7 @@ function bindThis<T extends (...args: unknown[]) => unknown>(fn: T, thisArg: unk
 }
 
 /** 取消宿主语言的值的 Mirascript 包装  */
-export function unwrapFromVmValue(value: VmAny): unknown {
+export function unwrapFromVmValue(value: VmAny, bindThisArg = true): unknown {
     if (isVmFunction(value)) {
         return toVmFunctionProxy(value);
     }
@@ -93,5 +93,5 @@ export function unwrapFromVmValue(value: VmAny): unknown {
         return value.value;
     }
     const f = value as VmExtern<(...args: unknown[]) => unknown>;
-    return bindThis(f.value, f.thisArg);
+    return bindThisArg ? bindThis(f.value, f.thisArg) : f.value;
 }

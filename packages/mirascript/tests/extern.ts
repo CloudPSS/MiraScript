@@ -61,6 +61,7 @@ test('callable extern', (t) => {
     t.is(eMSin.thisArg, Math);
     t.not(unwrapFromVmValue(eMSin), Math.sin);
     t.true(isProxy(unwrapFromVmValue(eMSin)));
+    t.false(isProxy(unwrapFromVmValue(eMSin, false)));
     t.is((unwrapFromVmValue(eMSin) as typeof Math.sin)(1), Math.sin(1));
 
     t.false(e('`__proto__` in sin'));
@@ -413,6 +414,19 @@ test('extern spread', (t) => {
 
     t.deepEqual(e('(..obj, c: 3)'), { a: 1, b: 2, c: 3, n: null });
     t.deepEqual(e('(..arr)'), { 0: 3, 1: 4, 2: 5 });
+});
+
+test('extern keys', (t) => {
+    const v = { __proto__: Math, _private: 123, public: 456 };
+    const e = new VmExtern(v, null);
+    const keys = e.keys();
+    t.deepEqual(keys.sort(), ['public']);
+    const allKeys = e.keys(true);
+    t.deepEqual(allKeys.sort(), ['public', ...Object.getOwnPropertyNames(Math)].sort());
+    for (const key of allKeys) {
+        t.true(e.has(key));
+        t.is(unwrapFromVmValue(e.get(key), false), v[key as keyof typeof v]);
+    }
 });
 
 test('custom extern', (t) => {

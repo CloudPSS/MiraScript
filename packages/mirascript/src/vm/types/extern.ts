@@ -26,7 +26,7 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
 
     /** Check if the object has a property */
     protected access(key: string, read: boolean): boolean {
-        // __proto__ and other private properties are not accessible
+        // __proto__ and other “private” properties are not accessible
         if (key.startsWith('_')) return false;
         // Function-specific properties are not accessible
         if (typeof this.value == 'function' && (key === 'prototype' || key === 'arguments' || key === 'caller'))
@@ -53,14 +53,15 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
     }
     /** @inheritdoc */
     override get(key: string): VmAny {
-        if (!this.has(key)) return undefined;
+        if (!(key in this.value)) return undefined;
+        if (!this.access(key, true)) return undefined;
         const prop = (this.value as Record<string, unknown>)[key];
         return wrapToVmValue(prop, this.value, (v) => this.assumeVmValue(v, key as keyof T));
     }
     /** Set a property on the object */
     set(key: string, value: VmValue): boolean {
         if (!this.access(key, false)) return false;
-        const prop = unwrapFromVmValue(value);
+        const prop = unwrapFromVmValue(value, true);
         (this.value as Record<string, unknown>)[key] = prop;
         return true;
     }
@@ -71,7 +72,7 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
             throw VmError.from(`Not a callable extern`, null, null);
         }
         const caller = this.thisArg;
-        const unwrappedArgs = args.map(unwrapFromVmValue);
+        const unwrappedArgs = args.map((arg) => unwrapFromVmValue(arg, true));
         let ret: unknown;
         try {
             ret = apply(value, caller, unwrappedArgs);
@@ -85,7 +86,7 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
         if (!includeNonEnumerable) {
             const keys: string[] = [];
             for (const key in this.value) {
-                if (this.has(key)) keys.push(key);
+                if (this.access(key, true)) keys.push(key);
             }
             return keys;
         } else {
@@ -93,7 +94,7 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
             let e: unknown = this.value;
             while (e && (typeof e == 'object' || typeof e == 'function')) {
                 for (const key of Object.getOwnPropertyNames(e)) {
-                    if (this.has(key)) {
+                    if (this.access(key, true)) {
                         keys.add(key);
                     }
                 }
