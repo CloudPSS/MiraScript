@@ -7,6 +7,7 @@ import {
     type VmExtern,
     type VmModule,
     isVmWrapper,
+    serialize,
 } from '@mirascript/mirascript';
 import { DiagnosticCode, lib, operations } from '@mirascript/mirascript/subtle';
 import {
@@ -20,7 +21,7 @@ import {
 } from '../../monaco-api.js';
 import { Provider, type MonacoContext } from './base.js';
 import { codeblock, getDeep, valueDoc, paramsList, strictContainsPosition, wordAt } from '../utils.js';
-import { keywords, reservedKeywords } from '../../constants.js';
+import { keywords, REG_IDENTIFIER_FULL, REG_ORDINAL_FULL, reservedKeywords } from '../../constants.js';
 import type { LocalDefinition } from '../compile-result.js';
 
 const DESC_GLOBAL = '(global)';
@@ -296,7 +297,11 @@ export class CompletionItemProvider extends Provider implements languages.Comple
             }
 
             suggestions.push({
-                insertText: localKeys.has(key) ? `global.${key}` : key, // 如果有同名局部变量，使用 global. 前缀
+                insertText: localKeys.has(key)
+                    ? `global.${key}` // 如果有同名局部变量，使用 global. 前缀
+                    : REG_IDENTIFIER_FULL.test(key)
+                      ? key
+                      : `global[${serialize(key)}]`,
                 filterText: filterText(key, char),
                 range,
                 vmParent: global,
@@ -366,6 +371,9 @@ export class CompletionItemProvider extends Provider implements languages.Comple
         for (const k of keys) {
             const key = String(k);
             if (char && !String(key).toLowerCase().includes(char)) {
+                continue;
+            }
+            if (!REG_IDENTIFIER_FULL.test(key) && !REG_ORDINAL_FULL.test(key)) {
                 continue;
             }
             const field = operations.$Get(value, key);

@@ -301,7 +301,7 @@ export function valueDoc(
     let prefix;
     let suffix = '';
     if (type === 'hint') {
-        prefix = `${name} = `;
+        prefix = `${serializeRecordKey(name)} = `;
     } else if (type === 'declare') {
         if (name.startsWith('@')) {
             prefix = `const ${name} = `;

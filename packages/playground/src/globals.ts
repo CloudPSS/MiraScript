@@ -11,6 +11,7 @@ export function globals(consoleManager: ConsoleManager): VmContext {
     const { VmExtern, VmModule, VmFunction, getVmFunctionInfo, createVmContext } = mirascript;
     return createVmContext(
         {
+            'invalid-key!': 'This key is invalid in MiraScript',
             null_value: null,
             undefined_value: undefined,
             extern_arr: new VmExtern(arr),
@@ -52,6 +53,7 @@ export function globals(consoleManager: ConsoleManager): VmContext {
                 s: DefaultVmContext.get('sin'),
                 m: DefaultVmContext.get('matrix'),
                 undefined: undefined,
+                'invalid-key!': 'This key is invalid in MiraScript',
             },
             globalThis,
         },
