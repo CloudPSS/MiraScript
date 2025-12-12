@@ -50,7 +50,7 @@
     "supports-color": "^10.2.2"
   },
   "devDependencies": {
-    "@types/node": "^24.10.2",
+    "@types/node": "^25.0.1",
     "@types/sinon": "^21.0.0",
     "ava": "^6.4.1",
     "c8": "^10.1.3",
