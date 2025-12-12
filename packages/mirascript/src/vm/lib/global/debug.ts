@@ -101,7 +101,7 @@ export const panic = VmLib(
         // eslint-disable-next-line no-console
         if (message === undefined) console.error(...panic.prefix);
         // eslint-disable-next-line no-console
-        else console.error(...panic.prefix, serializeValue(message, '', panic.serializer));
+        else console.error(...panic.prefix, serializeValue(message, '', panic.serializer) ?? message);
         const mgsStr = toString(message, null);
         const error = !mgsStr ? 'panic' : 'panic: ' + mgsStr;
         throw new VmError(error, undefined);
