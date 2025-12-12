@@ -240,21 +240,6 @@ function completion(
     };
 }
 
-/** 获取所有键 */
-function externKeys(value: VmExtern): string[] {
-    const keys = new Set<string>();
-    let e: unknown = value.value;
-    while (e && (typeof e == 'object' || typeof e == 'function')) {
-        for (const key of Object.getOwnPropertyNames(e)) {
-            if (value.has(key)) {
-                keys.add(key);
-            }
-        }
-        e = Object.getPrototypeOf(e);
-    }
-    return Array.from(keys);
-}
-
 /**
  * 自动完成
  */
@@ -366,7 +351,7 @@ export class CompletionItemProvider extends Provider implements languages.Comple
         if (value == null || typeof value != 'object') {
             return [];
         }
-        const keys = isVmExtern(value) ? externKeys(value) : lib.keys(value);
+        const keys = isVmExtern(value) ? value.keys(true) : lib.keys(value);
         const result: CustomCompletionItem[] = [];
         for (const k of keys) {
             const key = String(k);

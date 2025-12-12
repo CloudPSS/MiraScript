@@ -81,12 +81,26 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
         return wrapToVmValue(ret, null, (obj) => this.assumeVmValue(obj, undefined));
     }
     /** @inheritdoc */
-    override keys(): string[] {
-        const keys: string[] = [];
-        for (const key in this.value) {
-            if (this.has(key)) keys.push(key);
+    override keys(includeNonEnumerable = false): string[] {
+        if (!includeNonEnumerable) {
+            const keys: string[] = [];
+            for (const key in this.value) {
+                if (this.has(key)) keys.push(key);
+            }
+            return keys;
+        } else {
+            const keys = new Set<string>();
+            let e: unknown = this.value;
+            while (e && (typeof e == 'object' || typeof e == 'function')) {
+                for (const key of Object.getOwnPropertyNames(e)) {
+                    if (this.has(key)) {
+                        keys.add(key);
+                    }
+                }
+                e = Object.getPrototypeOf(e);
+            }
+            return Array.from(keys);
         }
-        return keys;
     }
     /** @inheritdoc */
     override same(other: VmAny): boolean {
