@@ -42,7 +42,7 @@ const compileAndRun = test.macro<[string, unknown]>({
         }
         if (scriptSource) {
             // create from source code
-            const script = createScript(code, 'Script', `return ` + scriptSource);
+            const script = createScript(code, 'Script', scriptSource);
             if (expectError) {
                 t.throws(() => {
                     script();

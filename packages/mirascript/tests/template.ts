@@ -25,10 +25,12 @@ const compileAndRun = test.macro<[string, unknown]>({
             t.deepEqual(result, expected);
         }
         {
-            const script = compileSync(code, { input_mode: 'Template', sourceMap: false });
-            const scriptSource = script.toString();
-            const script2 = createScript(code, 'Template', `return ` + scriptSource);
-            const result = script2();
+            const script = createScript(
+                code,
+                'Template',
+                compileSync(code, { input_mode: 'Template', sourceMap: false }).toString(),
+            );
+            const result = script();
             t.deepEqual(result, expected);
         }
     },

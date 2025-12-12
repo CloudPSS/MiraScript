@@ -100,7 +100,7 @@ export function createSourceMap(
                 mapping && sourceLine ? sourceLine.slice(mapping.startColumn - 1, mapping.endColumn - 1) : '';
             if (!fnName) continue;
             const codeLine = codeLines[codeLineNo]!;
-            codeLines[codeLineNo] = codeLine.replace(`= Fn(null,`, `= Fn(${toJsLiteral(fnName)},`);
+            codeLines[codeLineNo] = codeLine.replace(`= $Fn(null,`, `= $Fn(${toJsLiteral(fnName)},`);
         }
     }
     const sourceURL = hasSchema ? fileName : `${ORIGIN}${fileName}`;

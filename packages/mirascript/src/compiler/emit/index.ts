@@ -720,6 +720,5 @@ export class Emitter {
         if (this.options.sourceMap) {
             createSourceMap(this.source, this.sourcemaps, this.codeLines, this.functions, this.options);
         }
-        this.codeLines.unshift(`'use strict';`);
     }
 }

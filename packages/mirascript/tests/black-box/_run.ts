@@ -90,7 +90,7 @@ const compileAndRun = test.macro<[string, boolean, boolean]>({
 
         const script = await compile(code, { pretty: true, sourceMap: true, fileName: codeUrl.href });
         runScript(t, file, extern, module, script);
-        const scriptCopy = createScript(code, 'Script', `return ` + script.toString());
+        const scriptCopy = createScript(code, 'Script', script.toString());
         runScript(t, file, extern, module, scriptCopy);
     },
     title: (providedTitle = 'test', code) => code || providedTitle,

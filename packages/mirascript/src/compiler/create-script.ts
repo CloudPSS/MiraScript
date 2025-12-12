@@ -49,7 +49,7 @@ export function createScript(source: ScriptInput, mode: InputMode, code: string)
     let script;
     try {
         // eslint-disable-next-line @typescript-eslint/no-implied-eval, @typescript-eslint/no-unsafe-call
-        script = new Function(keys, code)(...values) as VmScriptLike;
+        script = new Function(keys, `'use strict';\nreturn ${code}`)(...values) as VmScriptLike;
         /* c8 ignore next 3 */
     } catch (error) {
         throw new Error(`Failed to create script`, { cause: error });
