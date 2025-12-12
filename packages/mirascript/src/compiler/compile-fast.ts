@@ -2,7 +2,7 @@ import { wrapScript, type VmScript } from './create-script.js';
 import type { TranspileOptions } from './types.js';
 import { $GlobalFallback } from '../vm/operations/index.js';
 import type { VmContext, VmValue } from '../vm/index.js';
-import { isFinite } from '../helpers/utils.js';
+import { defineProperty, isFinite } from '../helpers/utils.js';
 import { keywords } from './keywords.js';
 
 const REG_NUMBER_FULL = /^(?:[+-])?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?$/;
@@ -28,16 +28,30 @@ function constantFiniteNumber(value: number): () => number {
             return () => 0;
         }
     }
-    // eslint-disable-next-line @typescript-eslint/no-implied-eval, @typescript-eslint/no-unsafe-call
-    return new Function(`return () => ${value};`)() as () => number;
+    const f = () => value;
+    defineProperty(f, 'toString', {
+        value: () => {
+            return `() => ${value};`;
+        },
+        writable: false,
+        enumerable: false,
+        configurable: false,
+    });
+    return f;
 }
 /** 构造返回常量的函数 */
 function constantString(value: string): () => string {
-    const code = JSON.stringify(value);
-    // eslint-disable-next-line @typescript-eslint/no-implied-eval, @typescript-eslint/no-unsafe-call
-    return new Function(`return () => ${code};`)() as () => string;
+    const f = () => value;
+    defineProperty(f, 'toString', {
+        value: () => {
+            return `() => ${JSON.stringify(value)};`;
+        },
+        writable: false,
+        enumerable: false,
+        configurable: false,
+    });
+    return f;
 }
-
 /** 构造返回常量的函数 */
 function nan(): () => number {
     return () => 0 / 0;
@@ -69,10 +83,16 @@ function nil(): () => null {
 
 /** 构造返回全局变量的函数 */
 function globalVariable(id: string): (global: VmContext | undefined) => VmValue {
-    const code = `return (global = $GlobalFallback()) => global.get(\`${id}\`);`;
-
-    // eslint-disable-next-line @typescript-eslint/no-implied-eval, @typescript-eslint/no-unsafe-call
-    return new Function('$GlobalFallback', code)($GlobalFallback) as (global: VmContext | undefined) => VmValue;
+    const f = (global = $GlobalFallback()): VmValue => global.get(id);
+    defineProperty(f, 'toString', {
+        value: () => {
+            return `(global = $GlobalFallback()) => global.get(${JSON.stringify(id)});`;
+        },
+        writable: false,
+        enumerable: false,
+        configurable: false,
+    });
+    return f;
 }
 
 let kw: Set<string> | undefined;

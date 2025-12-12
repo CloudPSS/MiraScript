@@ -1,5 +1,6 @@
 import test from 'ava';
 import { compile, compileSync } from '@mirascript/mirascript';
+import { createScript } from '@mirascript/mirascript/subtle';
 
 const compileAndRun = test.macro<[string, unknown]>({
     exec: async (t, code, expected) => {
@@ -21,6 +22,13 @@ const compileAndRun = test.macro<[string, unknown]>({
         {
             const script = compileSync(code, { input_mode: 'Template', sourceMap: false });
             const result = script();
+            t.deepEqual(result, expected);
+        }
+        {
+            const script = compileSync(code, { input_mode: 'Template', sourceMap: false });
+            const scriptSource = script.toString();
+            const script2 = createScript(code, 'Template', `return ` + scriptSource);
+            const result = script2();
             t.deepEqual(result, expected);
         }
     },

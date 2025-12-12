@@ -14,7 +14,9 @@ export type VmScript = VmScriptLike & {
     readonly source: string;
 };
 
-/** 生成 JS 函数 */
+/**
+ * 将 JS 函数包装为 Mirascript 脚本
+ */
 export function wrapScript(source: ScriptInput, mode: InputMode, script: VmScriptLike): VmScript {
     /* c8 ignore next 3 */
     if (kVmScript in script) {
@@ -40,7 +42,9 @@ const [keys, values] = (() => {
     return [keys.join(','), values] as const;
 })();
 
-/** 生成 JS 函数 */
+/**
+ * 从 MiraScript 编译结果源代码生成 Mirascript 脚本
+ */
 export function createScript(source: ScriptInput, mode: InputMode, code: string): VmScript {
     let script;
     try {
