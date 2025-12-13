@@ -11,24 +11,22 @@ const CP_UNSET = -1;
 /** Default timeout in milliseconds */
 const CP_DEFAULT_TIMEOUT = 100;
 
-let cpDepth = 0;
-let cp = CP_UNSET | 0;
 let cpTimeout = CP_DEFAULT_TIMEOUT | 0;
 let cpInterval = CP_DEFAULT_INTERVAL | 0;
+
+let cpDepth = 0;
+let cp = CP_UNSET | 0;
 let cpCounter = 0;
 /** 检查点 */
 export function Cp(): void {
-    if ((cp | 0) === (CP_UNSET | 0)) {
-        cpCounter = 0;
-        cp = timestamp() | 0;
-        return;
-    }
     // 不是每次都查时间
     if ((cpCounter = (cpCounter + 1) | 0) % (cpInterval | 0) !== 0) {
         return;
     }
     cpCounter = 0;
-    if ((timestamp() | 0) - (cp | 0) >= (cpTimeout | 0)) {
+    if ((cp | 0) === (CP_UNSET | 0)) {
+        cp = timestamp() | 0;
+    } else if ((timestamp() | 0) - (cp | 0) >= (cpTimeout | 0)) {
         throw new RangeError('Execution timed out');
     }
 }
@@ -36,7 +34,8 @@ export function Cp(): void {
 export function CpEnter(): void {
     cpDepth = (cpDepth | 0) + 1;
     if ((cpDepth | 0) <= 1) {
-        cp = timestamp() | 0;
+        cp = CP_UNSET | 0;
+        cpCounter = 0;
         cpDepth = 1;
     } else if ((cpDepth | 0) > MAX_DEPTH) {
         throw new RangeError('Maximum call depth exceeded');
@@ -49,6 +48,7 @@ export function CpExit(): void {
     cpDepth = (cpDepth | 0) - 1;
     if ((cpDepth | 0) < 1) {
         cp = CP_UNSET | 0;
+        cpCounter = 0;
         cpDepth = 0;
     } else {
         Cp();
