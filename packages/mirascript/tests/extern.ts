@@ -138,6 +138,7 @@ test('Date extern', (t) => {
     const e = exec(context);
     t.is(e('Date::type()'), 'extern');
     t.is(e('d::type()'), 'number');
+    t.is(e('construct::type()'), 'extern');
 
     t.false(e('`prototype` in Date'));
 
