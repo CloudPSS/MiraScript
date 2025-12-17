@@ -18,7 +18,6 @@ export default {
     onDuplicateRoutes: 'throw',
 
     markdown: {
-        mermaid: true,
         hooks: {
             onBrokenMarkdownImages: 'throw',
             onBrokenMarkdownLinks: 'throw',

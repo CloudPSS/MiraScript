@@ -15,6 +15,12 @@ await esbuild.build({
     platform: 'browser',
     bundle: true,
     packages: 'bundle',
+    banner: {
+        js: `(async () => {`,
+    },
+    footer: {
+        js: `})();`,
+    },
     loader: {
         '.ttf': 'dataurl',
     },
