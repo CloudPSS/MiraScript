@@ -61,7 +61,7 @@ export class MiraScriptMonacoLoader implements IDisposable {
         }
     }
 }
-export { registerMonacoApi, registerContribution };
+export { registerMonacoApi };
 /**
  * 注册 MiraScript Monaco 编辑器扩展。
  */
