@@ -6,7 +6,7 @@
   "description": "An expression based scripting language.",
   "type": "module",
   "main": "./dist/index.js",
-  "bin": "./dist/cli/index.js",
+  "bin": "./cli.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
@@ -34,7 +34,7 @@
     "watch": "pnpm build:ts --watch",
     "build:ts": "pnpm clean && tsc",
     "build": "pnpm build:ts --emitDeclarationOnly && node ./esbuild.config.js",
-    "mirascript": "node --enable-source-maps ./dist/cli/index.js",
+    "mirascript": "node --enable-source-maps ./cli.js",
     "deps": "madge --circular --warning ./src",
     "clean": "rimraf dist",
     "test": "c8 ava",

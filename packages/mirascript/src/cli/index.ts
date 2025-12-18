@@ -1,4 +1,3 @@
-/* c8 ignore start */
 /* eslint-disable no-console */
 import { readFile, stat } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
@@ -10,9 +9,10 @@ import { configCheckpoint, type VmValue } from '../vm/index.js';
 
 const DEFAULT_TIMEOUT = 3000;
 
-program.name(pkg.name.split('/').pop()!).version(pkg.version).description(pkg.description);
-
-program
+export default program
+    .name(pkg.name.split('/').pop()!)
+    .version(pkg.version)
+    .description(pkg.description)
     .option(
         '-v, --variable <key=value>',
         '设置全局变量，可以多次使用',
@@ -86,5 +86,3 @@ program
         }
         program.help({ error: true });
     });
-
-await program.parseAsync();
