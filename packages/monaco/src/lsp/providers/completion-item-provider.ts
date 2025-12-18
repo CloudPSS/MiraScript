@@ -268,7 +268,8 @@ export class CompletionItemProvider extends Provider implements languages.Comple
                     if (field === undefined) continue;
 
                     suggestions.push({
-                        insertText: localKeys.has(key) ? `global.${key}.${f}` : `${key}.${f}`,
+                        insertText:
+                            localKeys.has(key) || keywords().includes(key) ? `global.${key}.${f}` : `${key}.${f}`,
                         filterText: filterText(f, char),
                         range,
                         vmParent: element,
@@ -282,11 +283,12 @@ export class CompletionItemProvider extends Provider implements languages.Comple
             }
 
             suggestions.push({
-                insertText: localKeys.has(key)
-                    ? `global.${key}` // 如果有同名局部变量，使用 global. 前缀
-                    : REG_IDENTIFIER_FULL.test(key)
-                      ? key
-                      : `global[${serialize(key)}]`,
+                insertText:
+                    localKeys.has(key) || keywords().includes(key)
+                        ? `global.${key}` // 如果有同名局部变量，使用 global. 前缀
+                        : REG_IDENTIFIER_FULL.test(key)
+                          ? key
+                          : `global[${serialize(key)}]`,
                 filterText: filterText(key, char),
                 range,
                 vmParent: global,

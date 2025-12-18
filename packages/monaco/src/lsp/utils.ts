@@ -323,7 +323,7 @@ export function valueDoc(
             for (const k of exports) {
                 const v = value.get(k);
                 const vDoc = valueDoc(k, v, isVmModule(v) ? 'field' : 'declare', value);
-                const code = [...docComment(vDoc.doc), 'export ' + vDoc.script, '', ''];
+                const code = [...docComment(vDoc.doc), 'pub ' + vDoc.script, '', ''];
                 script += code.join('\n');
             }
             script = script.trimEnd();
