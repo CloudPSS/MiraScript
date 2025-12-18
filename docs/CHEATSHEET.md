@@ -6,7 +6,7 @@ MiraScript 是一门表达式优先、不可变数据为核心的脚本语言。
 
 - **注释**：`//` 单行；`/* ... */` 多行（不可嵌套）。
 - **标识符**：以 `$`/`@`/字母/`_` 开头，可包含数字和 `_`；`@` 开头必须用 `const`，`$` 和 `__` 前缀保留。
-- **字面量**：`nil`、布尔、数字（含二/八/十六进制、`inf`/`nan`、下划线分隔）、字符串（单/双/反引号，支持转义与逐字字符串 `@"..."@`）。
+- **字面量**：`nil`、布尔（`true` / `false`）、数字（含二 `0b101` / 八 `0o777` /十六进制 `0xcf`、`inf` / `nan`、下划线分隔）、字符串（单 `'` / 双 `"` / 反引号 `` ` ``，支持转义与逐字字符串 `@"..."@`）。
 - **记录**：`(key: value, ..spread)`；可省略键名或使用序数；`?:` 省略为 `nil` 的键。
 - **数组**：`[1, 2, ..other]`，支持范围填充 `[start..end]` / `[start..<end]`。
 
@@ -48,11 +48,9 @@ MiraScript 是一门表达式优先、不可变数据为核心的脚本语言。
 ## 模式匹配速览
 
 - **字面量/常量**：`case 1 { ... }`、`case @x { ... }`。
-- **关系**：`case > 0 { ... }`、`case = ~ 0.5 { ... }`。
-- **范围**：`case 1..10 { ... }`、`case 0..<1 { ... }`。
+- **关系/范围**：`case > 0 { ... }`、`case =~ 0.5 { ... }`、`case 1..10 { ... }`、`case 0..<1 { ... }`。
 - **变量/弃元**：`case mut x { ... }`、`case y { ... }`、`case _ { ... }`。
-- **记录**：`case (:x, y: 0, ..rest) { ... }`。
-- **数组**：`case [head, ..tail] { ... }`。
+- **记录/数组**：`case (:x, y: 0, ..rest) { ... }`、`case [head, ..tail] { ... }`。
 - **逻辑**：`pattern and pattern`、`pattern or pattern`、`not pattern`（不短路）。
 
 ## 常用内建与技巧
@@ -69,19 +67,20 @@ MiraScript 是一门表达式优先、不可变数据为核心的脚本语言。
 
 ## MiraScript vs MathJS
 
-|              | MiraScript                                                                        | MathJS                                                 |
-| ------------ | --------------------------------------------------------------------------------- | ------------------------------------------------------ |
-| 变量声明     | `let mut x = 1;`                                                                  | `x = 1;`                                               |
-| 数组/矩阵    | `[[1,2,3], [4,5,6]]`                                                              | `[1,2,3; 4,5,6]`                                       |
-| 序列         | `[1..10]`                                                                         | `1:10`                                                 |
-| 对象         | `(a: 1, b: 'str')`                                                                | `{a: 1, b: 'str'}`                                     |
-| 格式化字符串 | `'$(data.value) kW'`                                                              | `print('$data kW', { data: data.value })`              |
-| 矩阵操作     | `matrix.add(mA, mB)`                                                              | `mA + mB`                                              |
-| 函数调用     | `cells::values()::map(fn { it.key })` / <br/> `map(values(cells), fn { it.key })` | `mapper(v, i, arr) = v.key; values(cells).map(mapper)` |
-| 数值比较     | `value !~ 1` / `x =~ y`                                                           | `value != 1` / `x == y`                                |
-| 字符串比较   | `str == "Alice"`                                                                  | `equalText(str, "Alice)`                               |
-| 逻辑运算     | `x \|\| y && z`                                                                   | `x or y and z`                                         |
-| 函数声明     | `fn add(x, y) { x + y }`                                                          | `add(x, y) = x + y`                                    |
-| 数学常量     | `sin(PI / 2) + log(E)`                                                            | `sin(pi / 2) + log(e)` / `sin(PI / 2) + log(E)`        |
-| 条件运算     | `if cond { a } else { b }`                                                        | `cond ? a : b`                                         |
-| 类型判断     | `type(x) == 'string'`                                                             | `is(x, 'string')`                                      |
+|                   | MiraScript                                                                        | MathJS                                                      |
+| ----------------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| 变量声明          | `let mut x = 1;` / `let x = 1;`                                                   | `x = 1;`                                                    |
+| 数组/矩阵         | `[[1,2,3], [4,5,6]]`                                                              | `[1,2,3; 4,5,6]`                                            |
+| 序列              | `[1..9]` / `[1..<10]`                                                             | `1:9`                                                       |
+| 记录（对象）      | `(a: 1, b: 'str')`                                                                | `{a: 1, b: 'str'}`                                          |
+| 格式化字符串      | `'$(data.value) kW'`                                                              | `print('$data kW', { data: data.value })`                   |
+| 矩阵操作          | `matrix.add(mA, mB)`                                                              | `mA + mB`                                                   |
+| 函数调用/扩展调用 | `cells::values()::map(fn { it.key })` / <br/> `map(values(cells), fn { it.key })` | `mapper(v, i, arr) = v.key; values(cells).map(mapper)`      |
+| 数值比较          | `value !~ 1` / `x =~ y`                                                           | `value != 1` / `x == y`                                     |
+| 字符串比较        | `str == "Alice"`                                                                  | `equalText(str, "Alice)`                                    |
+| 逻辑运算          | `x \|\| y && z`                                                                   | `x or y and z`                                              |
+| 函数声明          | `fn add(x, y) { x + y }`                                                          | `add(x, y) = x + y`                                         |
+| 数学常量          | `sin(PI / 2) + log(E)`                                                            | `sin(pi / 2) + log(e)` / `sin(PI / 2) + log(E)`             |
+| 条件运算          | `if cond { a } else { b }`                                                        | `cond ? a : b`                                              |
+| 类型判断          | `type(x) == 'string'`                                                             | `is(x, 'string')`                                           |
+| 空安全            | `context.Vm ?? 1`                                                                 | `is(context, 'Object') ? (context.Vm ? context.Vm : 1) : 1` |

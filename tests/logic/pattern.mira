@@ -89,3 +89,39 @@ t_false("1.5" is @one..@two);
   t_eq(v3, 'x');
   t_eq(v4, 12);
 }
+
+// 余元处理
+{
+  t_true((1, 2, 3) is (1, 2));
+  t_false((1, 2) is (1, 2, 3));
+  t_false([1, 2, 3] is [1, 2]);
+  t_true([1, 2] is [1, 2]);
+  t_false([1, 2] is [1, 2, 3]);
+}
+
+{
+  t_true((a: 1, b: 2) is (a: 1));
+  t_false((a: 1) is (a: 1, b: 2));
+}
+
+{
+  t_true((a: 1, b: 2) is (a: 1, ..rest) && rest is (b: 2));
+  t_true((a: 1) is (a: 1, ..rest2) && rest2 is ());
+}
+
+// ?: 可选字段
+{
+  t_false((a: 1) is (a: x, b: y));
+  t_eq(x, 1);
+  t_eq(y, nil);
+}
+{
+  t_true((a: 1) is (a: x, b?: y));
+  t_eq(x, 1);
+  t_eq(y, nil);
+}
+{
+  t_true((a: 1, b: nil) is (a: x, b: y));
+  t_eq(x, 1);
+  t_eq(y, nil);
+}
