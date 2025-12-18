@@ -1,6 +1,6 @@
 {
   "name": "@mirascript/website",
-  "version": "5.4.30",
+  "version": "0.1.25",
   "homepage": "https://mira.cloudpss.net",
   "private": true,
   "scripts": {
