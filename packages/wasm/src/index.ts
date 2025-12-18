@@ -7,13 +7,15 @@ export let wasm: typeof import('../lib/wasm.js');
 
 const module = import('@mirascript/wasm/loader').then(async ({ module }) => module);
 
+let readyResolve: () => void;
+export const ready = new Promise<void>((resolve) => {
+    readyResolve = resolve;
+});
 // 避免 vite 打包时出错
 void import('../lib/wasm.js').then(async (mod) => {
-    mod.initSync({ module: await module });
+    await mod.default({ module_or_path: await module });
     wasm = mod;
-});
-export const ready = module.then(async () => {
-    await new Promise<void>((resolve) => setTimeout(resolve, 1));
+    readyResolve();
 });
 
 /** 创建可重用的配置 */

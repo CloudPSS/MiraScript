@@ -4,29 +4,41 @@ async function loadFallback() {
         (document?.currentScript instanceof HTMLScriptElement
             ? document.currentScript.src
             : (document.currentScript?.href?.baseVal ?? '')) || document.location.href;
-    return await body(fetch(new URL('../../lib/wasm_bg.wasm', fallbackUrl)));
+    const url = new URL('../../lib/wasm_bg.wasm', fallbackUrl);
+    if (await isValidUrl(url)) {
+        return url;
+    }
+    throw new Error('Failed to load wasm module');
 }
 
-/** 获取模块的响应体 */
-async function body(response: Response | Promise<Response>): Promise<BufferSource> {
-    const resp = await response;
-    if (resp.ok) {
-        return await resp.arrayBuffer();
-    } else {
-        throw new Error(`Failed to fetch wasm module: ${resp.status} ${resp.statusText}`);
-    }
+/** 检查 URL 是否有效 */
+async function isValidUrl(url: URL): Promise<boolean> {
+    const resp = await fetch(url, { method: 'HEAD' });
+    return (resp.ok && resp.headers.get('Content-Type')?.startsWith('application/wasm')) ?? false;
 }
 
 /** 加载模块 */
-async function loadMod(mod: unknown): Promise<BufferSource> {
+async function loadMod(mod: unknown): Promise<BufferSource | URL> {
     if (mod && typeof mod == 'object' && 'default' in mod) {
         return loadMod(mod.default);
     }
-    if (typeof mod == 'string' && mod.startsWith('data:')) {
-        return await body(fetch(mod));
+    if (typeof mod == 'string') {
+        if (mod.startsWith('data:')) {
+            return new URL(mod);
+        }
+        if (mod.startsWith('http://') || mod.startsWith('https://') || mod.startsWith('/')) {
+            const url = new URL(mod, document?.baseURI);
+            if (await isValidUrl(url)) {
+                return url;
+            }
+        }
+        throw new Error('Failed to load wasm module');
     }
-    if (mod instanceof Response) {
-        return await body(mod);
+    if (typeof URL == 'function' && mod instanceof URL) {
+        if (await isValidUrl(mod)) {
+            return mod;
+        }
+        throw new Error('Failed to load wasm module');
     }
     if (ArrayBuffer.isView(mod) || mod instanceof ArrayBuffer) {
         return mod as ArrayBuffer;
@@ -37,7 +49,7 @@ async function loadMod(mod: unknown): Promise<BufferSource> {
     throw new Error('Failed to load wasm module');
 }
 
-export const module: Promise<BufferSource> = /* @__PURE__ */ (async () => {
+export const module: Promise<BufferSource | URL> = /* @__PURE__ */ (async () => {
     try {
         // use ?url to force vite to load as bytes
         // https://github.com/vitejs/vite/issues/12366
@@ -46,7 +58,7 @@ export const module: Promise<BufferSource> = /* @__PURE__ */ (async () => {
         if (!import.meta.url) {
             return await loadFallback();
         } else {
-            return await body(fetch(new URL('../../lib/wasm_bg.wasm?url', import.meta.url)));
+            return await loadMod(new URL('../../lib/wasm_bg.wasm?url', import.meta.url));
         }
     }
 })();
