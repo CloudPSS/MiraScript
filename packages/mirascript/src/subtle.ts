@@ -1,6 +1,6 @@
 import './compiler/load-module.js';
 
-export { KEYWORDS, OpCode } from '@mirascript/constants';
+export { OpCode, isKeyword } from '@mirascript/constants';
 export * as constants from './helpers/constants.js';
 export * as convert from './helpers/convert/index.js';
 export { DefaultVmContext } from './vm/types/context.js';

@@ -1,4 +1,5 @@
 import type * as wasm from './constants.g.js';
+import { KEYWORDS } from './constants.g.js';
 
 export {
     DiagnosticCode,
@@ -25,3 +26,10 @@ export type ScriptInput = string | Uint8Array;
 export type DiagnosticPositionEncoding = keyof typeof wasm.DiagnosticPositionEncoding;
 /** 输入模式 */
 export type InputMode = keyof typeof wasm.InputMode;
+
+const keywordsSet = new Set<string>(KEYWORDS);
+/** 检查是否为 MiraScript 关键字 */
+export function isKeyword(word: string): word is (typeof KEYWORDS)[number] {
+    if (typeof word !== 'string') return false;
+    return keywordsSet.has(word);
+}

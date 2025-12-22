@@ -1,4 +1,4 @@
-import { KEYWORDS } from '@mirascript/constants';
+import { isKeyword } from '@mirascript/constants';
 import { wrapScript, type VmScript } from './create-script.js';
 import type { TranspileOptions } from './types.js';
 import { $GlobalFallback } from '../vm/operations/index.js';
@@ -95,8 +95,6 @@ function globalVariable(id: string): (global: VmContext | undefined) => VmValue 
     return f;
 }
 
-let kw: Set<string> | undefined;
-
 /**
  * 对短代码进行编译
  */
@@ -125,8 +123,7 @@ function compileScriptFast(code: string, options: TranspileOptions): VmScript | 
     if (REG_IDENTIFIER_FAST.test(trimmedCode)) {
         // 直接返回标识符
         const id = trimmedCode;
-        kw ??= new Set(KEYWORDS);
-        if (kw.has(id)) {
+        if (isKeyword(id)) {
             return undefined; // 关键字不处理
         }
         return wrapScript(code, mode, globalVariable(id));

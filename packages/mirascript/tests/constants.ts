@@ -1,14 +1,15 @@
 import test from 'ava';
-import { KEYWORDS, constants } from '@mirascript/mirascript/subtle';
+import { isKeyword, constants } from '@mirascript/mirascript/subtle';
 
 test('keywords', (t) => {
-    const kw = KEYWORDS;
-    t.true(Array.isArray(kw));
-    t.true(kw.length > 0);
-    t.true(Object.isFrozen(kw), 'keywords array should be frozen');
-    t.true(kw.includes('nil'));
-    t.true(kw.includes('fn'));
-    t.true(kw.includes('return'));
+    t.false(isKeyword('myVariable'));
+    t.false(isKeyword(''));
+    t.false(isKeyword(null as never));
+    // eslint-disable-next-line unicorn/new-for-builtins
+    t.false(isKeyword(new String('nil') as never));
+    t.true(isKeyword('nil'));
+    t.true(isKeyword('fn'));
+    t.true(isKeyword('return'));
 });
 
 test('constants', (t) => {
