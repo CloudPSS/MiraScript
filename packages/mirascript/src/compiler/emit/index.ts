@@ -1,4 +1,4 @@
-import { OpCode } from '@mirascript/bindings';
+import { OpCode } from '@mirascript/constants';
 import { toString } from '../../helpers/convert/to-string.js';
 import type { VmPrimitive } from '../../vm/index.js';
 import type { ScriptInput, TranspileOptions } from '../types.js';

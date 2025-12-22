@@ -1,5 +1,5 @@
 import type { Config as WasmConfig, CompileResult as WasmCompileResult } from '../lib/wasm.js';
-import type { Config, InputMode, DiagnosticPositionEncoding, ScriptInput } from './types.js';
+import type { Config, InputMode, DiagnosticPositionEncoding, ScriptInput } from '@mirascript/constants';
 
 export type { WasmCompileResult, WasmConfig };
 
@@ -72,14 +72,4 @@ export function compileSync(script: ScriptInput, config: Config | WasmConfig): C
     return typeof script == 'string'
         ? compileImpl(wasm.compile, script, config)
         : compileImpl(wasm.compile_buffer, script, config);
-}
-
-/** 获取诊断消息 */
-export function getDiagnosticMessage(code: number): string | null {
-    return wasm.get_diagnostic_message(code) || null;
-}
-
-/** 获取关键字列表 */
-export function keywords(): string[] {
-    return wasm.keywords();
 }

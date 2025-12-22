@@ -1,6 +1,7 @@
 use strum::{Display, EnumMessage, FromRepr, IntoStaticStr};
 
-#[cfg_attr(feature = "wasm", wasm_bindgen::prelude::wasm_bindgen)]
+/// Diagnostic codes for MiraScript compiler and tools.
+#[cfg_attr(feature = "wasm-constants", wasm_bindgen::prelude::wasm_bindgen)]
 #[derive(
     Debug, Clone, Copy, PartialEq, PartialOrd, EnumMessage, FromRepr, Display, IntoStaticStr,
 )]

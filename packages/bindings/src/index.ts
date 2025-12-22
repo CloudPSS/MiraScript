@@ -2,7 +2,6 @@ import * as bundle from '#bundle';
 import * as wasm from './wasm.js';
 import { ModuleLoader } from './loader.js';
 
-export * from './common.js';
 /** 字节码模块 */
 export type { BcModule } from '#bundle';
 /** 字节码模块 */

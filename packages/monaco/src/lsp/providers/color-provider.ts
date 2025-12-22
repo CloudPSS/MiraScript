@@ -1,6 +1,6 @@
 import type { editor, languages, CancellationToken } from '../../monaco-api.js';
 import { Provider } from './base.js';
-import { DiagnosticCode } from '@mirascript/bindings/wasm';
+import { DiagnosticCode } from '@mirascript/constants';
 
 const REG_COLOR_STR = /^(@*)(['"`])(#(?:[0-9a-f]{6}|[0-9a-f]{3}|[0-9a-f]{8}|[0-9a-f]{4}))\2\1$/iu;
 const { parseInt } = Number;

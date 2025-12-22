@@ -44,6 +44,7 @@
   "dependencies": {
     "@commander-js/extra-typings": "^14.0.0",
     "@mirascript/bindings": "workspace:~",
+    "@mirascript/constants": "workspace:~",
     "ansi-styles": "^6.2.3",
     "commander": "^14.0.2",
     "source-map-js": "^1.2.1",
@@ -55,7 +56,7 @@
     "ava": "^6.4.1",
     "c8": "^10.1.3",
     "madge": "^8.0.0",
-    "sinon": "^21.0.0",
+    "sinon": "^21.0.1",
     "tinybench": "^6.0.0",
     "type-fest": "^5.3.1"
   }

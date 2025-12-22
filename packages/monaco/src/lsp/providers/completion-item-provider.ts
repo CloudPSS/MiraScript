@@ -21,7 +21,7 @@ import {
 } from '../../monaco-api.js';
 import { Provider, type MonacoContext } from './base.js';
 import { codeblock, getDeep, valueDoc, paramsList, strictContainsPosition, wordAt } from '../utils.js';
-import { keywords, REG_IDENTIFIER_FULL, REG_ORDINAL_FULL, reservedKeywords } from '../../constants.js';
+import { KEYWORDS, RESERVED_KEYWORDS, REG_IDENTIFIER_FULL, REG_ORDINAL_FULL, isKeyword } from '../../constants.js';
 import type { LocalDefinition } from '../compile-result.js';
 
 const DESC_GLOBAL = '(global)';
@@ -32,9 +32,8 @@ const SUGGEST_KEYWORDS: string[] = [];
 
 const loadSuggestKeywords = () => {
     if (SUGGEST_KEYWORDS.length > 0) return SUGGEST_KEYWORDS; // 已加载过
-    const reserved = reservedKeywords();
-    for (const kw of keywords()) {
-        if (reserved.includes(kw)) continue; // 跳过保留关键字
+    for (const kw of KEYWORDS) {
+        if (RESERVED_KEYWORDS.includes(kw as never)) continue; // 跳过保留关键字
         SUGGEST_KEYWORDS.push(kw);
     }
     return SUGGEST_KEYWORDS;
@@ -268,8 +267,7 @@ export class CompletionItemProvider extends Provider implements languages.Comple
                     if (field === undefined) continue;
 
                     suggestions.push({
-                        insertText:
-                            localKeys.has(key) || keywords().includes(key) ? `global.${key}.${f}` : `${key}.${f}`,
+                        insertText: localKeys.has(key) || isKeyword(key) ? `global.${key}.${f}` : `${key}.${f}`,
                         filterText: filterText(f, char),
                         range,
                         vmParent: element,
@@ -284,7 +282,7 @@ export class CompletionItemProvider extends Provider implements languages.Comple
 
             suggestions.push({
                 insertText:
-                    localKeys.has(key) || keywords().includes(key)
+                    localKeys.has(key) || isKeyword(key)
                         ? `global.${key}` // 如果有同名局部变量，使用 global. 前缀
                         : REG_IDENTIFIER_FULL.test(key)
                           ? key

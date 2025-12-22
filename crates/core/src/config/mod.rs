@@ -1,6 +1,9 @@
 /// Mode for reading input.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "wasm", wasm_bindgen::prelude::wasm_bindgen)]
+#[cfg_attr(
+    any(feature = "wasm", feature = "wasm-constants"),
+    wasm_bindgen::prelude::wasm_bindgen
+)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum InputMode {
     Script,
@@ -9,7 +12,10 @@ pub enum InputMode {
 
 /// Encoding for counting positions in diagnostics.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "wasm", wasm_bindgen::prelude::wasm_bindgen)]
+#[cfg_attr(
+    any(feature = "wasm", feature = "wasm-constants"),
+    wasm_bindgen::prelude::wasm_bindgen
+)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DiagnosticPositionEncoding {
     /// Use the default encoding (UTF-8) and
@@ -29,7 +35,10 @@ pub enum DiagnosticPositionEncoding {
     derive(serde::Serialize, serde::Deserialize),
     serde(default)
 )]
-#[cfg_attr(feature = "wasm", wasm_bindgen::prelude::wasm_bindgen)]
+#[cfg_attr(
+    any(feature = "wasm", feature = "wasm-constants"),
+    wasm_bindgen::prelude::wasm_bindgen
+)]
 #[derive(Debug, Clone, PartialEq)]
 pub struct Config {
     #[cfg(feature = "formatter")]

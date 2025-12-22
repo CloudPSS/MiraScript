@@ -15,6 +15,7 @@ harness = false
 default = []
 formatter = []
 wasm = ["dep:wasm-bindgen"]
+wasm-constants = ["dep:wasm-bindgen"]
 serde = ["dep:serde"]
 
 [dev-dependencies]

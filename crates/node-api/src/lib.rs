@@ -78,16 +78,3 @@ pub fn compile(
     let args = extract_args(&env, script, config)?;
     Ok(AsyncTask::new(args))
 }
-
-#[napi]
-pub fn get_diagnostic_message(code: u16) -> Option<String> {
-    DiagnosticCode::from_code(code)?
-        .message()
-        .to_string()
-        .into()
-}
-
-#[napi]
-pub fn keywords() -> Vec<String> {
-    Keyword::VARIANTS.iter().map(|s| s.to_string()).collect()
-}

@@ -1,4 +1,4 @@
-import { DiagnosticCode } from '@mirascript/bindings/wasm';
+import { DiagnosticCode } from '@mirascript/constants';
 import { type editor, Range, type IPosition, type IRange } from '../monaco-api.js';
 import {
     getVmFunctionInfo,

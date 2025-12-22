@@ -1,9 +1,9 @@
+import { KEYWORDS } from '@mirascript/constants';
 import { wrapScript, type VmScript } from './create-script.js';
 import type { TranspileOptions } from './types.js';
 import { $GlobalFallback } from '../vm/operations/index.js';
 import type { VmContext, VmValue } from '../vm/index.js';
 import { defineProperty, isFinite } from '../helpers/utils.js';
-import { keywords } from './keywords.js';
 
 const REG_NUMBER_FULL = /^(?:[+-])?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?$/;
 // 只识别 ASCII 范围内的标识符，以提升性能
@@ -125,7 +125,7 @@ function compileScriptFast(code: string, options: TranspileOptions): VmScript | 
     if (REG_IDENTIFIER_FAST.test(trimmedCode)) {
         // 直接返回标识符
         const id = trimmedCode;
-        kw ??= new Set(keywords());
+        kw ??= new Set(KEYWORDS);
         if (kw.has(id)) {
             return undefined; // 关键字不处理
         }

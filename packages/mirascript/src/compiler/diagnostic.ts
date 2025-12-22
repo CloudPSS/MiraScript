@@ -1,24 +1,16 @@
 import type { Writable } from 'type-fest';
-import { DiagnosticCode, getModule } from '@mirascript/bindings';
+import { DIAGNOSTIC_MESSAGES, DiagnosticCode } from '@mirascript/constants';
 import type { ScriptInput } from './types.js';
 import { isSafeInteger } from '../helpers/utils.js';
 
 export { DiagnosticCode };
 
-const diagnosticMessages = new Map<DiagnosticCode, string | null>();
 /** 获取 {@link DiagnosticCode} 对应的消息 */
 export function getDiagnosticMessage(code: DiagnosticCode): string | null {
     if (code < 0 || code >= 0xffff || !isSafeInteger(code)) {
         throw new RangeError(`Invalid DiagnosticCode: ${code}`);
     }
-    const cached = diagnosticMessages.get(code);
-    if (cached !== undefined) {
-        return cached;
-    }
-    const mod = getModule();
-    const msg = mod.getDiagnosticMessage(code);
-    diagnosticMessages.set(code, msg);
-    return msg;
+    return DIAGNOSTIC_MESSAGES[code] ?? null;
 }
 
 /**

@@ -1,0 +1,22 @@
+[package]
+name = "constants"
+description = "MiraScript constants"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = []
+
+# [dev-dependencies]
+# wasm-bindgen-test = "0.3.34"
+
+[dependencies]
+wasm-bindgen = "0.2"
+mira-core = { path = "../core", features = ["wasm-constants", "formatter"] }

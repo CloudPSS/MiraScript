@@ -8,10 +8,10 @@ import {
     REG_NUMBER,
     REG_IDENTIFIER,
     MAX_VERBATIM_LENGTH,
-    constantKeywords,
-    controlKeywords,
-    keywords,
-    numericKeywords,
+    CONSTANT_KEYWORDS,
+    CONTROL_KEYWORDS,
+    KEYWORDS,
+    NUMERIC_KEYWORDS,
 } from '../constants.js';
 import { DefaultVmContext } from '@mirascript/mirascript/subtle';
 import { isVmModule } from '@mirascript/mirascript';
@@ -52,10 +52,10 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
         whitespace: REG_WHITESPACE,
         identifier: REG_IDENTIFIER,
 
-        keywords: keywords(),
-        controlKeywords: controlKeywords(),
-        constantKeywords: constantKeywords(),
-        numericKeywords: numericKeywords(),
+        keywords: KEYWORDS,
+        controlKeywords: CONTROL_KEYWORDS,
+        constantKeywords: CONSTANT_KEYWORDS,
+        numericKeywords: NUMERIC_KEYWORDS,
 
         inlineDocParam: /\(parameter(?: pattern)?\)/,
         inlineDocMod: ['local', 'global', 'field', 'module'].join('|'),

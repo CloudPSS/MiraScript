@@ -1,8 +1,7 @@
 use strum::{Display, VariantArray};
-#[cfg(feature = "wasm")]
-use wasm_bindgen::prelude::*;
 
-#[cfg_attr(feature = "wasm", wasm_bindgen)]
+/// MiraScript OpCodes
+#[cfg_attr(feature = "wasm-constants", wasm_bindgen::prelude::wasm_bindgen)]
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, VariantArray, Display)]
 pub enum OpCode {

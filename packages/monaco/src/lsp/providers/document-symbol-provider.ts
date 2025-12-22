@@ -1,5 +1,5 @@
 import { languages, Range, type CancellationToken, type editor } from '../../monaco-api.js';
-import { DiagnosticCode } from '@mirascript/bindings/wasm';
+import { DiagnosticCode } from '@mirascript/constants';
 import { Provider } from './base.js';
 import type { SourceScope } from '../compile-result.js';
 
