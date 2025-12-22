@@ -1,4 +1,4 @@
-use mira_core::{Config, DiagnosticCode, Keyword, compile::CompileResult, prelude::*};
+use mira_core::{Config, compile::CompileResult};
 use napi::{
     Either, Env, Result, Task,
     bindgen_prelude::{AsyncTask, Object, Uint8Array, Uint32Array},
