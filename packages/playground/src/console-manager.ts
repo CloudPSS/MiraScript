@@ -168,11 +168,11 @@ export class ConsoleManager {
             const date = new Date(this.d0 + timestamp);
             let rendered;
             if (typeof message == 'string') {
-                rendered = message;
+                rendered = escapeHtml(message);
             } else if (Array.isArray(message)) {
                 rendered = await renderDebugPrint(message);
             } else {
-                rendered = message.message;
+                rendered = escapeHtml(message.message);
             }
             return /* html */ `<div class="console-entry ${type}">
                 <time class="console-time" datetime="${date.toISOString()}">${time}</time>

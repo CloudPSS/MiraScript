@@ -1,6 +1,6 @@
 import type { VmScript, InputMode, VmAny, VmContext } from '@mirascript/mirascript';
 import type { ConsoleManager } from './console-manager.js';
-import { syntaxHighlight, print } from './utils.js';
+import { syntaxHighlight, print, escapeHtml } from './utils.js';
 import { getState } from './state-manager.js';
 import { mirascript, ready } from './loader.js';
 
@@ -65,7 +65,7 @@ export function resultManager(
             elCompiledOutput.dataset['code'] = '';
             elCompiledOutput.innerHTML = /*html*/ `
             <div class="section-title">Compilation Error:</div>
-            <div class="result-error">${errorText}</div>
+            <div class="result-error">${escapeHtml(errorText)}</div>
         `;
             elResultOutput.innerHTML = /*html*/ `
             <div class="section-title">Execution Result:</div>
@@ -102,7 +102,7 @@ export function resultManager(
             const errorText = String(ex);
             elResultOutput.innerHTML = /* html */ `
             <div class="section-title">Execution Error:</div>
-            <div class="result-error">${errorText}</div>
+            <div class="result-error">${escapeHtml(errorText)}</div>
         `;
             consoleManager.error(`Execution failed in ${(execEnd - execStart).toFixed(3)}ms:`);
             consoleManager.error(ex as Error);
