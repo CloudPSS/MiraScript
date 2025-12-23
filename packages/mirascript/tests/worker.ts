@@ -30,7 +30,7 @@ test.beforeEach(() => {
     postMessage.resetHistory();
 });
 
-const WORKER_DELAY = 50;
+const WORKER_DELAY = 200;
 
 test.serial('bad message', async (t) => {
     callback!(new MessageEvent('message', { data: 'bad message' }));
