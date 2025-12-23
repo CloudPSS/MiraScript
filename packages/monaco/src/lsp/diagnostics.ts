@@ -6,7 +6,7 @@ import { Provider } from './providers/base.js';
 const formatMessage = (model: editor.ITextModel, template: string, $0?: string | IRange): string => {
     if (template.includes(`$0`)) {
         const replacement = typeof $0 == 'string' ? $0 : $0 ? model.getValueInRange($0) : '';
-        template = template.replaceAll(`$0`, replacement);
+        template = template.replaceAll(`$0`, () => replacement);
     }
     return template;
 };
