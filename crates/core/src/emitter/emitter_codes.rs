@@ -150,6 +150,16 @@ impl<'s, 'c> Emitter<'s, 'c> {
     pub fn op_uninit(&mut self, mapping: SourceRange, reg: Register) {
         self.op_1(mapping, OpCode::Uninit, reg);
     }
+    pub fn op_format(
+        &mut self,
+        mapping: SourceRange,
+        ret: Register,
+        val: Register,
+        fmt: impl Into<Cow<'s, str>>,
+    ) {
+        let fmt = self.add_const_string(fmt);
+        self.op_3(mapping, OpCode::Format, ret, val, fmt);
+    }
     pub fn op_unary(&mut self, mapping: SourceRange, ret: Register, op: OpCode, reg: Register) {
         self.op_2(mapping, op, ret, reg);
     }

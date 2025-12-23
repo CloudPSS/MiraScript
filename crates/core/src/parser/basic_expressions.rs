@@ -20,7 +20,7 @@ fn to_interpolate_expr<'s>(token: &'s Token<'s>) -> Expression<'s> {
     };
     let expressions: Vec<Expression<'s>> = v[0..v.len() - 1]
         .iter()
-        .map(|(_, tokens)| {
+        .map(|(_, tokens, _)| {
             let last_token = tokens.last().map_or(&TokenKind::Eof, |t| &t.kind);
             if *last_token == TokenKind::Eof {
                 return Expression::unknown(

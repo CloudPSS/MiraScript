@@ -49,11 +49,9 @@ pub fn to_input<'s>(text: &'s str, config: &'s Config) -> Input<'s> {
     }
 }
 
-fn lex_impl<'s, const BALANCED: bool>(
+pub(crate) fn lex_impl<'s>(
     input: &mut Input<'s>,
-    mut depth: i32,
-    open: Operator,
-    close: Operator,
+    mut should_break: impl FnMut(&Token<'s>) -> bool,
 ) -> Result<Vec<Token<'s>>> {
     let mut tokens = vec![];
     loop {
@@ -63,16 +61,8 @@ fn lex_impl<'s, const BALANCED: bool>(
         #[cfg_attr(not(feature = "formatter"), allow(unused_mut))]
         let mut token = tokens::token(input, prev_token)?;
 
-        if BALANCED {
-            if open == token.kind {
-                depth += 1;
-            } else if close == token.kind {
-                depth -= 1;
-            }
-        }
-
         let eof = matches!(token.kind, TokenKind::Eof);
-        if BALANCED && depth <= 0 || eof {
+        if eof || should_break(&token) {
             #[cfg(feature = "formatter")]
             if input.state.trivia {
                 token.leading_trivia = leading_trivia;
@@ -95,15 +85,7 @@ fn lex_impl<'s, const BALANCED: bool>(
 }
 
 pub fn lex<'s>(input: &mut Input<'s>) -> Result<Vec<Token<'s>>> {
-    lex_impl::<false>(input, 1, Operator::Unknown, Operator::Unknown)
-}
-
-pub(crate) fn lex_balanced<'s>(
-    input: &mut Input<'s>,
-    open: Operator,
-    close: Operator,
-) -> Result<Vec<Token<'s>>> {
-    lex_impl::<true>(input, 0, open, close)
+    lex_impl(input, |_| false)
 }
 
 pub fn lex_string<'s>(input: &mut Input<'s>) -> Result<Vec<Token<'s>>> {

@@ -384,12 +384,18 @@ export class Emitter {
             case OpCode.Nsame:
             case OpCode.In:
             case OpCode.And:
-            case OpCode.Or:
-            case OpCode.Format: {
+            case OpCode.Or: {
                 reg = read();
                 const left = read();
                 const right = read();
                 code = `${this.wv(reg)} = $${OpCode[opcode]}(${this.rv(left)}, ${this.rv(right)});`;
+                break;
+            }
+            case OpCode.Format: {
+                reg = read();
+                const left = read();
+                const right = readIndex();
+                code = `${this.wv(reg)} = $${OpCode[opcode]}(${this.rv(left)}, ${this.constLits[right]});`;
                 break;
             }
             case OpCode.InGlobal: {

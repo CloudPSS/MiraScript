@@ -51,7 +51,7 @@ impl<'o> FormatManager<'o> {
                     self.write_str(&text[0..1]);
                     self.write_str(&text[1..].to_ascii_uppercase());
                 }
-                StringFragment::Interpolation(_, _, surround) => {
+                StringFragment::Interpolation(_, _, fmt, surround) => {
                     let surround = surround.as_deref();
                     self.write_str(&dollars);
                     if let Some((start, _)) = surround {
@@ -59,6 +59,10 @@ impl<'o> FormatManager<'o> {
                     }
                     if let Some(e) = exprs.next() {
                         e.format(self, measurement);
+                    }
+                    if !fmt.is_empty() {
+                        self.write_str("#");
+                        self.write_str(fmt);
                     }
                     if let Some((_, end)) = surround {
                         self.write_str(&end.to_string());

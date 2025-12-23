@@ -30,6 +30,8 @@ pub enum Operator {
     Dot,
     /// `->`
     Arrow,
+    /// `#`
+    Format,
 
     /// `..`
     SpreadRange,
@@ -249,6 +251,7 @@ impl Display for Operator {
             Comma => f.write_str(","),
             Dot => f.write_str("."),
             Arrow => f.write_str("->"),
+            Format => f.write_str("#"),
             SpreadRange => f.write_str(".."),
             HalfOpenRange => f.write_str("..<"),
             Plus => f.write_str("+"),

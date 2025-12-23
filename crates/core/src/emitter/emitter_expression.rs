@@ -493,35 +493,43 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     self.unreachable(*token, expressions, file!(), line!());
                     return;
                 };
-                let mut args_reg = vec![];
+                let mut parts = vec![];
                 let mut s_iter = strs.iter();
                 let mut e_iter = expressions.iter();
                 loop {
-                    let Some((str, _)) = s_iter.next() else {
+                    let Some((str, _, fmt)) = s_iter.next() else {
                         break;
                     };
                     if !str.is_empty() {
                         let reg = self.closures.add_reg();
                         self.op_string(token.range(), reg, str.as_ref());
-                        args_reg.push(reg);
+                        parts.push((reg, None));
                     }
                     if let Some(expression) = e_iter.next() {
                         let reg = self.emit_expression_reg(expression, brk);
-                        args_reg.push(reg);
+                        parts.push((reg, Some(*fmt)));
                     }
                 }
-                if args_reg.is_empty() {
+                if parts.is_empty() {
                     self.op_string(token.range(), ret, "");
-                } else if args_reg.len() == 1 {
-                    self.op_binary(
+                } else if parts.len() == 1 {
+                    if let Some(fmt) = parts[0].1 {
+                        self.op_format(token.range(), ret, parts[0].0, fmt);
+                    } else {
+                        self.op_unary(token.range(), ret, OpCode::Assign, parts[0].0);
+                    }
+                } else {
+                    for (p, fmt) in parts.iter() {
+                        if let Some(fmt) = *fmt {
+                            self.op_format(token.range(), *p, *p, fmt);
+                        }
+                    }
+                    self.op_variadic(
                         token.range(),
                         ret,
-                        OpCode::Format,
-                        args_reg[0],
-                        Register::EMPTY,
+                        OpCode::Concat,
+                        parts.into_iter().map(|p| p.0).collect(),
                     );
-                } else {
-                    self.op_variadic(token.range(), ret, OpCode::Concat, args_reg);
                 }
             }
             Variable(token) => self.emit_var_read(token, ret),

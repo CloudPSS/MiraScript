@@ -79,8 +79,8 @@ pub enum OpCode {
     /// CONCAT %ret `n` %1 %2 ... %n\
     /// %ret = %1 .. %2 .. ... .. %n
     Concat,
-    /// FORMAT %ret %1 %2\
-    /// %ret = format(%1, %2)
+    /// FORMAT %ret %1 `index`\
+    /// %ret = format(%1, CONSTANTS\[index])
     Format,
     /// AND %ret %1 %2\
     /// %ret = %1 && %2

@@ -9,9 +9,12 @@ pub enum TokenKind<'s> {
     Ordinal(i32),
     Number(f64, Box<NumberInfo<'s>>),
     String(Cow<'s, str>, Box<StringInfo<'s>>),
-    /// Interpolated string, stored as a tuple of the string parts and the tokens that are interpolated.
-    /// The last tuple element is the string part after the last interpolation, with the tokens being empty.
-    InterpolatedString(Vec<(Cow<'s, str>, Vec<Token<'s>>)>, Box<StringInfo<'s>>),
+    /// Interpolated string, stored as a tuple of the string parts, the tokens that are interpolated, and format string of tokens.
+    /// The last tuple element is the string part after the last interpolation, with the tokens and format being empty.
+    InterpolatedString(
+        Vec<(Cow<'s, str>, Vec<Token<'s>>, &'s str)>,
+        Box<StringInfo<'s>>,
+    ),
     Operator(Operator),
     Keyword(Keyword),
     Unknown {
@@ -132,13 +135,17 @@ impl Display for TokenKind<'_> {
             }
             Self::InterpolatedString(v, _) => {
                 write!(f, "\"")?;
-                for (s, e) in v {
+                for (s, e, fmt) in v {
                     write!(f, "{}", s.escape_debug())?;
                     if !e.is_empty() {
-                        write!(f, "$")?;
+                        write!(f, "$(")?;
                         for token in e {
                             write!(f, "{token}")?;
                         }
+                        if !fmt.is_empty() {
+                            write!(f, ":{fmt}")?;
+                        }
+                        write!(f, ")")?;
                     }
                 }
                 write!(f, "\"")
