@@ -8,17 +8,6 @@ import { VmFunction } from '../types/function.js';
 import { $AssertInit } from './common.js';
 import { $ToNumber } from './convert.js';
 
-/** 过滤剩余参数数组 */
-export const $VArgs = (varags: VmAny[]): VmArray => {
-    for (let i = 0, l = varags.length; i < l; i++) {
-        const el = varags[i];
-        if (!isVmConst(el)) {
-            varags[i] = null;
-        }
-    }
-    return varags as VmArray;
-};
-
 /** 构造 record | array 元素 */
 export const $El = (value: VmAny): VmConst => {
     $AssertInit(value);
