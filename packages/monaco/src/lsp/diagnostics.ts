@@ -6,6 +6,9 @@ import { Provider } from './providers/base.js';
 const formatMessage = (model: editor.ITextModel, template: string, $0?: string | IRange): string => {
     if (template.includes(`$0`)) {
         const replacement = typeof $0 == 'string' ? $0 : $0 ? model.getValueInRange($0) : '';
+        // Replace each '$' in the captured text with '$$$$' so that after replaceAll processes
+        // the string and interprets '$' as a special placeholder, we still end up with literal
+        // '$$' in the final message. The quadruple dollar signs here are intentional.
         template = template.replaceAll(`$0`, replacement.replaceAll('$', '$$$$'));
     }
     return template;
