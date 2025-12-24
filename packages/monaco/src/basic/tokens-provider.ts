@@ -115,7 +115,6 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                 ],
                 { include: '@whitespace' },
                 { include: '@string' },
-                { include: '@format' },
                 [/(@identifier)/, { cases: identifierCases() }],
                 [
                     /0[xobXOB]\p{XID_Continue}*/u,
@@ -258,6 +257,7 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                 [/\(/, { token: '@brackets', next: '@parenthesized_inner' }],
                 [/\)/, { token: 'punctuation.section.embedded', bracket: '@close', next: '@pop' }],
                 [/[[\]{}]/, '@brackets'],
+                { include: '@format' },
                 { include: '@common' },
             ],
             parenthesized_inner: [
