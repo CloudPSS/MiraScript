@@ -146,9 +146,25 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                 [/\/\*{2}/, 'comment.doc', '@doc_comment'],
                 [/\/\*/, 'comment.block', '@block_comment'],
             ],
-            format: [
-                [/(#)([^)]*)(?=\))/, ['punctuation', 'string.format']],
-                [/#/, 'punctuation'],
+            format: [[/#/, 'punctuation', '@format_string']],
+            format_string: [
+                [/\\./, 'string.escape.format'],
+                [/\(/, { token: 'string.format', next: '@format_string_inner' }],
+                [/\)/, { token: 'string.format', next: '@pop', goBack: 1 }],
+                [/\[/, { token: 'string.format', next: '@format_string_class' }],
+                [/[^()\\[]+/, 'string.format'],
+            ],
+            format_string_inner: [
+                [/\\./, 'string.escape.format'],
+                [/\(/, { token: 'string.format', next: '@push' }],
+                [/\)/, { token: 'string.format', next: '@pop' }],
+                [/\[/, { token: 'string.format', next: '@format_string_class' }],
+                [/[^()\\[\]]+/, 'string.format'],
+            ],
+            format_string_class: [
+                [/\\./, 'string.escape.format'],
+                [/\]/, { token: 'string.format', next: '@pop' }],
+                [/[^\\\]]+/, 'string.format'],
             ],
             string: [
                 [/["'`]/, { token: 'string.quote.open', next: '@string_normal.$#', bracket: '@open' }],

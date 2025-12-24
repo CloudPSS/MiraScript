@@ -2,7 +2,7 @@ use std::{borrow::Cow, iter::zip, vec};
 
 use winnow::{
     combinator::{alt, eof, fail, opt, peek, preceded},
-    stream::AsChar,
+    stream::{AsChar, Offset},
     token::{any, literal, one_of, take_till, take_while},
 };
 
@@ -277,7 +277,50 @@ fn escaped_char_impl<'s>(i: &mut Input<'s>) -> Result<StringFragment<'s>> {
 }
 
 fn format_string<'s>(i: &mut Input<'s>) -> Result<&'s str> {
-    take_while(0.., |ch| ch != ')').parse_next(i)
+    let start = i.checkpoint();
+
+    let mut depth = 0; // 括号深度
+    let mut in_class = false; // 是否在字符类 [... ] 内
+
+    while !i.is_empty() {
+        let checkpoint = i.checkpoint();
+
+        match i.next_token() {
+            Some('\\') => {
+                // 转义：跳过下一个字符
+                let _ = i.next_token();
+            }
+            Some('[') if !in_class => {
+                in_class = true;
+            }
+            Some(']') if in_class => {
+                in_class = false;
+            }
+            Some('(') if !in_class => {
+                depth += 1;
+            }
+            Some(')') if !in_class => {
+                if depth == 0 {
+                    // 找到插值结束符，回退这个 ')'
+                    // 返回从 start 到当前位置的字符串
+                    let offset = checkpoint.offset_from(&start);
+                    i.reset(&start);
+                    return Ok(i.next_slice(offset));
+                } else {
+                    depth -= 1;
+                }
+            }
+            Some(_) => {
+                // 其他字符，继续
+            }
+            None => break,
+        }
+    }
+
+    // 如果到这里说明没找到匹配的 ')'
+    i.reset(&start);
+    let offset = i.eof_offset();
+    Ok(i.next_slice(offset))
 }
 
 fn interpolation<'s>(dollars: &'s str) -> impl Parser<'s, StringFragment<'s>> {
