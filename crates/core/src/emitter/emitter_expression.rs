@@ -503,25 +503,23 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     if !str.is_empty() {
                         let reg = self.closures.add_reg();
                         self.op_string(token.range(), reg, str.as_ref());
-                        parts.push((reg, None));
+                        parts.push((reg, ""));
                     }
                     if let Some(expression) = e_iter.next() {
                         let reg = self.emit_expression_reg(expression, brk);
-                        parts.push((reg, Some(*fmt)));
+                        parts.push((reg, *fmt));
                     }
                 }
                 if parts.is_empty() {
                     self.op_string(token.range(), ret, "");
                 } else if parts.len() == 1 {
-                    if let Some(fmt) = parts[0].1 {
-                        self.op_format(token.range(), ret, parts[0].0, fmt);
-                    } else {
-                        self.op_unary(token.range(), ret, OpCode::Assign, parts[0].0);
-                    }
+                    // Must be "$(expr)" without any surrounding string parts
+                    // Since "str" will be an Literal expression
+                    self.op_format(token.range(), ret, parts[0].0, parts[0].1);
                 } else {
                     for (p, fmt) in parts.iter() {
-                        if let Some(fmt) = *fmt {
-                            self.op_format(token.range(), *p, *p, fmt);
+                        if !fmt.is_empty() {
+                            self.op_format(token.range(), *p, *p, *fmt);
                         }
                     }
                     self.op_variadic(

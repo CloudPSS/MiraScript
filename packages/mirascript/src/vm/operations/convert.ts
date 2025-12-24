@@ -17,8 +17,7 @@ export const $ToNumber = (value: VmAny): number => {
     $AssertInit(value);
     return toNumber(value, undefined);
 };
-export const $Format = (value: VmAny, format: VmAny): string => {
+export const $Format = (value: VmAny, format: string | null): string => {
     $AssertInit(value);
-    const f = format == null ? '' : $ToString(format);
-    return toFormat(value, f);
+    return toFormat(value, format);
 };
