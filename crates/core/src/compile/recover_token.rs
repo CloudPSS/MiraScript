@@ -9,7 +9,6 @@ pub(super) fn recover_token<'s>(
     diagnostics_collector: &mut DiagnosticsCollector<'_, '_>,
 ) -> Option<Token<'s>> {
     match t.kind {
-        TokenKind::Empty => None,
         TokenKind::Unknown {
             recovered: token,
             errors,

@@ -59,6 +59,8 @@ pub enum DiagnosticCode {
     UnterminatedInterpolation,
     #[strum(message = "Invalid interpolation expression")]
     BadInterpolation,
+    #[strum(message = "Empty interpolation expression")]
+    EmptyInterpolation,
     #[strum(message = "Unexpected `_`; it is a reserved keyword for discarding values")]
     UnexpectedUnderscore,
     #[strum(message = "Unexpected `global`; it is a reserved keyword for global variables")]

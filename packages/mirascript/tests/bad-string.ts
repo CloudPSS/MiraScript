@@ -58,11 +58,19 @@ test('Unterminated string literal with block interpolation', compileAndRun, '`he
     instanceOf: Error,
     message: /UnterminatedInterpolation/,
 });
-test.skip('Empty expr interpolation', compileAndRun, '`hello $()!`', {
+test('Empty expr interpolation', compileAndRun, '`hello $()!`', {
     instanceOf: Error,
-    message: /UnterminatedInterpolation/,
+    message: /EmptyInterpolation\(1:10\)/,
 });
-test.skip('Empty expr interpolation with format', compileAndRun, '`hello $(#.2)!`', {
+test('Empty expr interpolation with format', compileAndRun, '`hello $(#.2)!`', {
     instanceOf: Error,
-    message: /UnterminatedInterpolation/,
+    message: /EmptyInterpolation\(1:10\)/,
+});
+test('Bad expr interpolation with unknown token', compileAndRun, '`hello $(~)!`', {
+    instanceOf: Error,
+    message: /EmptyInterpolation\(1:10-11\)/,
+});
+test('Bad expr interpolation with unknown tokens', compileAndRun, '`hello $(~~)!`', {
+    instanceOf: Error,
+    message: /EmptyInterpolation\(1:10-12\)/,
 });

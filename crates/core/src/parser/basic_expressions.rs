@@ -15,12 +15,22 @@ use super::{
 };
 
 fn to_interpolate_expr<'s>(token: &'s Token<'s>) -> Expression<'s> {
-    let TokenKind::InterpolatedString(v, _) = &token.kind else {
+    let TokenKind::InterpolatedString(parts, _) = &token.kind else {
         unreachable!("Expected InterpolatedString");
     };
-    let expressions: Vec<Expression<'s>> = v[0..v.len() - 1]
+    let expressions: Vec<Expression<'s>> = parts[0..parts.len() - 1]
         .iter()
         .map(|(_, tokens, _)| {
+            debug_assert!(
+                !tokens.is_empty(),
+                "Expected non-empty tokens in interpolation {token:?}"
+            );
+            if tokens.iter().all(|t| t.is_empty()) {
+                return Expression::unknown(
+                    tokens.iter().map(TokenRef::borrow).collect::<Vec<_>>(),
+                    DiagnosticCode::EmptyInterpolation,
+                );
+            }
             let last_token = tokens.last().map_or(&TokenKind::Eof, |t| &t.kind);
             if *last_token == TokenKind::Eof {
                 return Expression::unknown(

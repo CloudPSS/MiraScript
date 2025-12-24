@@ -20,7 +20,7 @@ pub enum StringFragment<'s> {
     Interpolation(
         /// The dollar signs used for interpolation
         &'s str,
-        /// The tokens inside the interpolation
+        /// The tokens inside the interpolation, will be taken to `TokenKind::InterpolatedString`
         Vec<Token<'s>>,
         /// The format string of the tokens inside the interpolation
         &'s str,
@@ -276,6 +276,10 @@ fn escaped_char_impl<'s>(i: &mut Input<'s>) -> Result<StringFragment<'s>> {
     .parse_next(i)
 }
 
+fn format_string<'s>(i: &mut Input<'s>) -> Result<&'s str> {
+    take_while(0.., |ch| ch != ')').parse_next(i)
+}
+
 fn interpolation<'s>(dollars: &'s str) -> impl Parser<'s, StringFragment<'s>> {
     move |i: &mut Input<'s>| -> Result<StringFragment<'s>> {
         // save cp
@@ -323,7 +327,7 @@ fn interpolation<'s>(dollars: &'s str) -> impl Parser<'s, StringFragment<'s>> {
                 })?;
 
                 let format = if has_format {
-                    take_till(0.., ')').parse_next(i)?
+                    format_string.parse_next(i)?
                 } else {
                     ""
                 };

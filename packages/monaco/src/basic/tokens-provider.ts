@@ -115,6 +115,7 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                 ],
                 { include: '@whitespace' },
                 { include: '@string' },
+                { include: '@format' },
                 [/(@identifier)/, { cases: identifierCases() }],
                 [
                     /0[xobXOB]\p{XID_Continue}*/u,
@@ -144,6 +145,10 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                 [/\/\/.*$/, 'comment.line'],
                 [/\/\*{2}/, 'comment.doc', '@doc_comment'],
                 [/\/\*/, 'comment.block', '@block_comment'],
+            ],
+            format: [
+                [/(#)([^)]*)(?=\))/, ['punctuation', 'string.format']],
+                [/#/, 'punctuation'],
             ],
             string: [
                 [/["'`]/, { token: 'string.quote.open', next: '@string_normal.$#', bracket: '@open' }],
