@@ -1,13 +1,13 @@
 import { Bench } from 'tinybench';
 import { compile, compileSync, createVmContext } from '@mirascript/mirascript';
 
-const bench = new Bench({ name: 'simple benchmark', time: 1000 });
-const source = `sin(x) + cos(y + PI / 2)`;
+const bench = new Bench({ name: 'simple benchmark', time: 100 });
+const source = `sin(x) + cos(y + PI / 2) + `.repeat(1) + '0';
 const env = { x: 1, y: 2 };
 
 bench
     .add('compile', async () => {
-        await compile(source);
+        await Promise.all(Array.from({ length: 10 }).map(async () => compile(source)));
     })
     .add('compileSync', () => {
         compileSync(source);

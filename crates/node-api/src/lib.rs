@@ -1,3 +1,5 @@
+use std::panic::{AssertUnwindSafe, catch_unwind};
+
 use mira_core::{Config, compile::CompileResult};
 use napi::{
     Either, Env, Result, Task,
@@ -39,15 +41,25 @@ fn to_result(data: CompileResult) -> JsCompileResult {
     }
 }
 
+fn wrap_panic<F, R>(f: F) -> Result<R>
+where
+    F: FnOnce() -> Result<R>,
+{
+    catch_unwind(AssertUnwindSafe(f))
+        .map_err(|_| napi::Error::from_reason("Panic occurred".to_string()))?
+}
+
 #[napi]
 pub fn compile_sync(
     env: Env,
     script: Either<String, Uint8Array>,
     config: Object,
 ) -> Result<JsCompileResult> {
-    let args = extract_args(&env, script, config)?;
-    let data = compile_impl(&args);
-    Ok(to_result(data))
+    wrap_panic(|| {
+        let args = extract_args(&env, script, config)?;
+        let data = compile_impl(&args);
+        Ok(to_result(data))
+    })
 }
 
 pub struct Compile {
@@ -61,11 +73,11 @@ impl Task for Compile {
     type JsValue = JsCompileResult;
 
     fn compute(&mut self) -> Result<Self::Output> {
-        Ok(compile_impl(self))
+        wrap_panic(|| Ok(compile_impl(self)))
     }
 
     fn resolve(&mut self, _env: Env, output: Self::Output) -> Result<Self::JsValue> {
-        Ok(to_result(output))
+        wrap_panic(|| Ok(to_result(output)))
     }
 }
 
@@ -75,6 +87,8 @@ pub fn compile(
     script: Either<String, Uint8Array>,
     config: Object,
 ) -> Result<AsyncTask<Compile>> {
-    let args = extract_args(&env, script, config)?;
-    Ok(AsyncTask::new(args))
+    wrap_panic(|| {
+        let args = extract_args(&env, script, config)?;
+        Ok(AsyncTask::new(args))
+    })
 }
