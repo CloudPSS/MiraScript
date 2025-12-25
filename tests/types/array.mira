@@ -43,6 +43,29 @@ t_true((1, 2, 3) in arr);
 t_false(2 in arr);
 t_false(nil in arr);
 t_true(nil in [nil]);
+t_eq(arr[0], 0);
+t_eq(arr[0.999_999_999], 0);
+t_eq(arr[1], 1);
+t_eq(arr[1.999_999_999], 1);
+t_eq(arr[2], nan);
+t_eq(arr[3], (0, -0));
+t_eq(arr[4], (1, 2, 3));
+t_eq(arr[-1], (1, 2, 3));
+t_eq(arr[-1.999_999_999], (1, 2, 3));
+t_eq(arr[-2], (0, -0));
+t_eq(arr[-3], nan);
+t_eq(arr[-4], 1);
+t_eq(arr[-5], 0);
+
+t_eq(arr[true], 1);
+t_eq(arr[false], 0);
+
+t_eq(arr[-6], nil);
+t_eq(arr[5], nil);
+t_eq(arr[500], nil);
+t_eq(arr[nan], nil);
+t_eq(arr[inf], nil);
+t_eq(arr.xxx, nil);
 
 t_throws(fn {
   let a = [];

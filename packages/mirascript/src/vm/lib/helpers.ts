@@ -1,6 +1,6 @@
 import type { Writable } from 'type-fest';
 import { VM_ARRAY_MAX_LENGTH } from '../../helpers/constants.js';
-import { isNaN, entries, fromEntries, isSafeInteger, isFinite } from '../../helpers/utils.js';
+import { isNaN, NotNumber, entries, fromEntries, isSafeInteger, isFinite } from '../../helpers/utils.js';
 import { toBoolean, toNumber, toString } from '../../helpers/convert/index.js';
 import { display } from '../../helpers/serialize.js';
 import { isVmArray, isVmFunction, isVmPrimitive, isVmConst, isVmCallable, isVmRecord } from '../../helpers/types.js';
@@ -75,10 +75,10 @@ export function required<const T = VmValue>(
 
 /** 标记并转换参数为数字 */
 export function expectNumber(name: ParamIndex, value: VmAny): number {
-    required(name, value, Number.NaN);
+    required(name, value, NotNumber);
     const v = toNumber(value, null);
     if (v == null) {
-        throwUnconvertedTypeError(name, 'number', value, Number.NaN);
+        throwUnconvertedTypeError(name, 'number', value, NotNumber);
     }
     return v;
 }
@@ -86,7 +86,7 @@ export function expectNumber(name: ParamIndex, value: VmAny): number {
 export function expectNumberRange(name: ParamIndex, value: VmAny, min: number, max: number): number {
     const v = expectNumber(name, value);
     if (!isFinite(v)) {
-        throwError(`${describeParam(name)} is not a finite number: ${display(value)}`, Number.NaN);
+        throwError(`${describeParam(name)} is not a finite number: ${display(value)}`, NotNumber);
     }
     if (v < min) {
         throwError(`${describeParam(name)} is less than minimum value ${min}: ${display(value)}`, min);

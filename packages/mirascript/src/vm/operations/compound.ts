@@ -1,12 +1,12 @@
 import { VmError } from '../../helpers/error.js';
-import { hasOwnEnumerable, isNaN, keys, create } from '../../helpers/utils.js';
-import { toString } from '../../helpers/convert/index.js';
+import { hasOwnEnumerable, isNaN, NotNumber, keys, create } from '../../helpers/utils.js';
+import { toNumber, toString } from '../../helpers/convert/index.js';
 import { display } from '../../helpers/serialize.js';
 import { isVmPrimitive, isVmArray, isVmRecord, isVmFunction, isVmExtern, isVmWrapper } from '../../helpers/types.js';
-import type { VmAny, VmImmutable, VmRecord, VmValue, VmConst } from '../types/index.js';
+import type { VmAny, VmRecord, VmValue, VmConst } from '../types/index.js';
 import { isSame } from './utils.js';
 import { $AssertInit } from './common.js';
-import { $ToNumber, $ToString } from './convert.js';
+import { $ToString } from './convert.js';
 
 const { trunc } = Math;
 const { at } = Array.prototype;
@@ -76,7 +76,8 @@ export const $Has = (obj: VmAny, key: VmAny): boolean => {
 export const $Get = (obj: VmAny, key: VmAny): VmValue => {
     $AssertInit(obj);
     if (isVmArray(obj)) {
-        const index = $ToNumber(key);
+        $AssertInit(key);
+        const index = toNumber(key, NotNumber);
         if (isNaN(index)) return null;
         return (at.call(obj, trunc(index)) as VmConst | undefined) ?? null;
     }
@@ -84,7 +85,7 @@ export const $Get = (obj: VmAny, key: VmAny): VmValue => {
     if (obj == null || typeof obj != 'object') return null;
     if (isVmWrapper(obj)) return obj.get(pk) ?? null;
     if (!hasOwnEnumerable(obj, pk)) return null;
-    return (obj as Record<string, VmImmutable>)[pk] ?? null;
+    return obj[pk] ?? null;
 };
 export const $Set = (obj: VmAny, key: VmAny, value: VmAny): void => {
     $AssertInit(obj);

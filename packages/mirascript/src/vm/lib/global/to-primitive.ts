@@ -1,4 +1,5 @@
 import { toBoolean, toFormat, toNumber, toString } from '../../../helpers/convert/index.js';
+import { NotNumber } from '../../../helpers/utils.js';
 import { expectString, required, VmLib } from '../helpers.js';
 
 export const to_string = VmLib(
@@ -20,7 +21,7 @@ export const to_string = VmLib(
 
 export const to_number = VmLib(
     (data, fallback) => {
-        required('data', data, Number.NaN);
+        required('data', data, NotNumber);
         return toNumber(data, fallback);
     },
     {

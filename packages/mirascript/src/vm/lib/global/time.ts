@@ -1,5 +1,5 @@
 import { describeParam, expectNumberRange, throwError, throwUnexpectedTypeError, VmLib } from '../helpers.js';
-import { isNaN, isFinite } from '../../../helpers/utils.js';
+import { isNaN, NotNumber, isFinite } from '../../../helpers/utils.js';
 import { toNumber } from '../../../helpers/convert/to-number.js';
 import { display } from '../../../helpers/serialize.js';
 import type { VmAny } from '../../types/index.js';
@@ -8,7 +8,7 @@ const fromNumber = (datetime: number, fallback: boolean): number | null => {
     const n = new Date(datetime).getTime();
     if (isFinite(n)) return n;
     if (fallback) return null;
-    throwError(`${describeParam('datetime')} is an invalid timestamp: ${display(datetime)}`, Number.NaN);
+    throwError(`${describeParam('datetime')} is an invalid timestamp: ${display(datetime)}`, NotNumber);
 };
 
 const getTimestamp = (datetime: VmAny, fallback: boolean): number | null => {
@@ -20,16 +20,16 @@ const getTimestamp = (datetime: VmAny, fallback: boolean): number | null => {
     }
     if (typeof datetime != 'string') {
         if (fallback) return null;
-        throwUnexpectedTypeError('datetime', 'number | string', datetime, Number.NaN);
+        throwUnexpectedTypeError('datetime', 'number | string', datetime, NotNumber);
     }
-    const num = toNumber(datetime, Number.NaN);
+    const num = toNumber(datetime, NotNumber);
     if (!isNaN(num)) {
         return fromNumber(num, fallback);
     }
     const parsed = Date.parse(datetime);
     if (isFinite(parsed)) return parsed;
     if (fallback) return null;
-    throwError(`${describeParam('datetime')} cannot be parsed as datetime: ${display(datetime)}`, Number.NaN);
+    throwError(`${describeParam('datetime')} cannot be parsed as datetime: ${display(datetime)}`, NotNumber);
 };
 
 export const to_timestamp = VmLib(

@@ -14,3 +14,13 @@ t_eq(n[`${ 'x' }`], nil);
 t_false('x' in n);
 t_false(nil in n);
 t_false(() in n);
+
+{
+  let n = nil;
+  t_eq(n, nil);
+  t_eq(n.x, nil);
+  t_eq(n['x'], nil);
+  t_eq(n[0], nil);
+  t_eq(n[true], nil);
+  t_eq(n[false], nil);
+}

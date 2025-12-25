@@ -1,5 +1,13 @@
 export const { isArray } = Array;
-export const { isFinite, isNaN, isInteger, isSafeInteger } = Number;
+export const {
+    isFinite,
+    isNaN,
+    isInteger,
+    isSafeInteger,
+    NaN: NotNumber,
+    POSITIVE_INFINITY: PositiveInfinity,
+    NEGATIVE_INFINITY: NegativeInfinity,
+} = Number;
 export const { hasOwn, keys, values, entries, create, getPrototypeOf, fromEntries, defineProperty } = Object;
 export const { apply } = Reflect;
 

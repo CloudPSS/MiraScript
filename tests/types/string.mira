@@ -20,3 +20,13 @@ t_throws(fn {
   let s = "";
   s[0] = 'a';
 });
+
+{
+  let s = "abc";
+  t_eq(s, "abc");
+  t_eq(s.x, nil);
+  t_eq(s['x'], nil);
+  t_eq(s[0], nil);
+  t_eq(s[true], nil);
+  t_eq(s[false], nil);
+}

@@ -1,8 +1,9 @@
+import { NotNumber } from '../../../../helpers/utils.js';
 import { VmLib, expectArray } from '../../helpers.js';
 
 export const len = VmLib(
     (arr) => {
-        expectArray('arr', arr, Number.NaN);
+        expectArray('arr', arr, NotNumber);
         return arr.length;
     },
     {
