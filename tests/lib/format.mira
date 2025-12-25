@@ -7,6 +7,12 @@ let long_precision = ".999999999999999999999999999999999999999999999999999999999
 t_eq(format(12, long_precision), "12.0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
 t_eq(format(PI, ".0"), "3");
 t_eq(format(PI, ""), "3.14159");
+t_eq(format(nan, nil), "nan");
+t_eq(format(nan, ""), "nan");
+t_eq(format(nan, ".2"), "nan");
+t_eq(format(inf, ".2"), "inf");
+t_eq(format(-inf, ".2"), "-inf");
+t_eq(format(-inf, ""), "-inf");
 
 t_eq(`$(PI)`, "3.14159");
 t_eq(`$(PI)$(E)`, "3.141592.71828");
