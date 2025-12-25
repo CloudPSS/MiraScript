@@ -230,7 +230,7 @@ function serializeForDisplay(value: Exclude<VmValue, VmModule>, maxEntries = 100
         }
     } else {
         const hint = serializeForDisplayInner(value satisfies VmExtern, 100);
-        const isArray = Array.isArray(value.value);
+        const isArray = value.isArrayLike();
         begin = `${hint} ${isArray ? '[' : '('}`;
         end = isArray ? ']' : ')';
         const keys = value.keys();

@@ -14,6 +14,8 @@ const ObjectToString = ObjectPrototype.toString;
 const FunctionToString = Function.prototype.toString;
 const ArrayToString = Array.prototype.toString;
 const ArrayMap = Array.prototype.map;
+// eslint-disable-next-line @typescript-eslint/unbound-method
+const TypedArrayToString = Uint8Array.prototype.toString;
 
 /** 获取类的名称，如果无法确定则返回 null */
 // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
@@ -120,13 +122,17 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
         return this.value === other.value && this.thisArg === other.thisArg;
     }
     /** @inheritdoc */
+    isArrayLike(): this is VmExtern<ArrayLike<unknown>> {
+        return isArray(this.value) || (ArrayBuffer.isView(this.value) && 'length' in this.value);
+    }
+    /** @inheritdoc */
     override toString(useBraces: boolean): string {
         // eslint-disable-next-line @typescript-eslint/unbound-method
         const { toString } = this.value;
         if (typeof toString != 'function' || toString === ObjectToString || toString === FunctionToString) {
             return super.toString(useBraces);
         }
-        if (toString === ArrayToString && isArray(this.value)) {
+        if ((toString === ArrayToString || toString === TypedArrayToString) && this.isArrayLike()) {
             const mapped = ArrayMap.call(this.value, (item: unknown) => {
                 if (item === undefined) return '';
                 return innerToString(wrapToVmValue(item ?? null, null, null), true);
@@ -144,7 +150,7 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
     /** @inheritdoc */
     override get tag(): string {
         const tag = ObjectToString.call(this.value).slice(8, -1);
-        if (isArray(this.value)) {
+        if (this.isArrayLike()) {
             return `${tag}(${this.value.length})`;
         } else if (tag === 'Object') {
             const proto = getPrototypeOf(this.value);
