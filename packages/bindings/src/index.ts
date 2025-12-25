@@ -12,8 +12,15 @@ const loader = new ModuleLoader<BcModuleType>(async () => {
         return await bundle.loadModule();
         /* c8 ignore next 5 */
     } catch (ex) {
-        // eslint-disable-next-line no-console
-        console.warn('Failed to load compiler bundle, falling back to @mirascript/wasm');
+        if (typeof process === 'undefined' || !process?.getBuiltinModule) {
+            // eslint-disable-next-line no-console
+            console.warn('Failed to load compiler bundle, falling back to @mirascript/wasm');
+        } else {
+            process.getBuiltinModule('node:util').debuglog('mirascript')(
+                'Failed to load compiler bundle, falling back to @mirascript/wasm. Error:',
+                ex,
+            );
+        }
         return await wasm.loadModule();
     }
 });
