@@ -200,14 +200,14 @@ freeze(FactoryVmContext.prototype);
 export function createVmContext(): Readonly<VmContext>;
 /** 创建用于执行脚本的执行上下文 */
 export function createVmContext(
-    vmValues?: VmContextRecord | null,
-    externValues?: Record<string, unknown> | null,
+    getter: (key: string) => VmValue | undefined,
+    enumerator?: (() => Iterable<string>) | null,
     describer?: ((key: string) => string | undefined) | null,
 ): VmContext;
 /** 创建用于执行脚本的执行上下文 */
 export function createVmContext(
-    getter: (key: string) => VmValue | undefined,
-    enumerator?: (() => Iterable<string>) | null,
+    vmValues?: VmContextRecord | null,
+    externValues?: Record<string, unknown> | null,
     describer?: ((key: string) => string | undefined) | null,
 ): VmContext;
 
