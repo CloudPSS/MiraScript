@@ -46,6 +46,10 @@ importers:
       '@mirascript/wasm':
         specifier: workspace:~
         version: link:../wasm
+    devDependencies:
+      '@types/node':
+        specifier: ^25.0.3
+        version: 25.0.3
 
   packages/constants:
     devDependencies:
@@ -14224,7 +14228,7 @@ snapshots:
 
   '@types/sax@1.2.7':
     dependencies:
-      '@types/node': 17.0.45
+      '@types/node': 25.0.3
 
   '@types/send@0.17.6':
     dependencies:

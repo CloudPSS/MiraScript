@@ -27,5 +27,8 @@
   "dependencies": {
     "@mirascript/napi": "workspace:~",
     "@mirascript/wasm": "workspace:~"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.3"
   }
 }
