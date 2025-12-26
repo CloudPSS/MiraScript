@@ -8,6 +8,7 @@ param (
 ) 
 & {
     $ErrorActionPreference = "Stop"
+    $env:COREPACK_ENABLE_STRICT = 0
     $env:SKIP_YARN_COREPACK_CHECK = 1
     yarn version --no-git-tag-version
 
