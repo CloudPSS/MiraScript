@@ -33,10 +33,6 @@ repository:
         captures:
           1: { name: punctuation.separator.period.mira }
           2: { name: support.type.property-name.mira }
-      - match: (#)([^)]*)(?=\))
-        captures:
-          1: { name: punctuation.format.mira }
-          2: { name: string.format.mira }
       - include: '#verbatim_strings2'
       - include: '#verbatim_strings'
       - include: '#strings'
@@ -166,6 +162,10 @@ repository:
         endCaptures:
           0: { name: punctuation.definition.template-expression.end.mira }
         patterns:
+          - match: (:(?!:))([^)]*)(?=\))
+            captures:
+              1: { name: punctuation.format.mira }
+              2: { name: string.format.mira }
           - include: '#parenthesized'
           - include: '#source'
   interpolation2:

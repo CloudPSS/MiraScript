@@ -23,7 +23,6 @@ pub(super) fn token<'s>(
             } else {
                 number
             },
-            '#' => any.value(TokenKind::Operator(Operator::Format)),
             '@' => alt((
                 string::string,
                 identifier(!dot),

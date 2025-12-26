@@ -279,12 +279,12 @@ debug_print(@@"hello, $name: $$name"@@); // 输出 "hello, $name: world"
 
 let a = 1;
 let b = 2;
-debug_print("the sum of ${a} and ${b} is $(a + b#.1)"); // 输出 "the sum of 1 and 2 is 3.0"
+debug_print("the sum of ${a} and ${b} is $(a + b:.1)"); // 输出 "the sum of 1 and 2 is 3.0"
 ```
 
-插值字符串的语法是 `<prefix> ( <expression> # <format> )`，其中 `<prefix>` 是指定数量的 `$`，`<expression>` 是一个表达式。插值字符串的值为 `<expression>` 的值。
+插值字符串的语法是 `<prefix> ( <expression> : <format> )`，其中 `<prefix>` 是指定数量的 `$`，`<expression>` 是一个表达式。插值字符串的值为 `<expression>` 的值。
 
-使用默认格式时，`# <format>` 可以省略。
+使用默认格式时，`: <format>` 可以省略。
 
 当 `<expression>` 为一个**标识符**或**块表达式**时，括号 `()` 可以省略。
 

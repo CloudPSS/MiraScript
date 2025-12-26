@@ -61,7 +61,7 @@ impl<'o> FormatManager<'o> {
                         e.format(self, measurement);
                     }
                     if !fmt.is_empty() {
-                        self.write_str("#");
+                        self.write_str(":");
                         self.write_str(fmt);
                     }
                     if let Some((_, end)) = surround {

@@ -145,7 +145,7 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                 [/\/\*{2}/, 'comment.doc', '@doc_comment'],
                 [/\/\*/, 'comment.block', '@block_comment'],
             ],
-            format: [[/#/, 'punctuation', '@format_string']],
+            format: [[/:(?!:)/, 'punctuation', '@format_string']],
             format_string: [
                 [/\\./, 'string.escape.format'],
                 [/\(/, { token: 'string.format', next: '@format_string_inner' }],

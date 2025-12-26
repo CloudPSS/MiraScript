@@ -359,7 +359,7 @@ fn interpolation<'s>(dollars: &'s str) -> impl Parser<'s, StringFragment<'s>> {
                         depth += 1;
                     } else if *t == Operator::CloseParen {
                         depth -= 1;
-                    } else if depth == 1 && *t == Operator::Format {
+                    } else if depth == 1 && *t == Operator::Colon {
                         has_format = true;
                         return true;
                     }
@@ -376,7 +376,7 @@ fn interpolation<'s>(dollars: &'s str) -> impl Parser<'s, StringFragment<'s>> {
                 };
 
                 let end = if has_format {
-                    let last = tokens.pop_if(|f| *f == Operator::Format);
+                    let last = tokens.pop_if(|f| *f == Operator::Colon);
                     debug_assert!(last.is_some());
                     Some(token(i, None)?)
                 } else {

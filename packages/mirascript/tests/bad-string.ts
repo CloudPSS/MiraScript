@@ -50,7 +50,7 @@ test('Unterminated string literal with expr interpolation', compileAndRun, '`hel
     instanceOf: Error,
     message: /UnterminatedInterpolation/,
 });
-test('Unterminated string literal with expr format interpolation', compileAndRun, '`hello $(name#', {
+test('Unterminated string literal with expr format interpolation', compileAndRun, '`hello $(name:', {
     instanceOf: Error,
     message: /UnterminatedString/,
 });
@@ -62,7 +62,7 @@ test('Empty expr interpolation', compileAndRun, '`hello $()!`', {
     instanceOf: Error,
     message: /EmptyInterpolation\(1:10\)/,
 });
-test('Empty expr interpolation with format', compileAndRun, '`hello $(#.2)!`', {
+test('Empty expr interpolation with format', compileAndRun, '`hello $(:.2)!`', {
     instanceOf: Error,
     message: /EmptyInterpolation\(1:10\)/,
 });
