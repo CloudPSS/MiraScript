@@ -9,7 +9,7 @@ import {
     isVmWrapper,
     serialize,
 } from '@mirascript/mirascript';
-import { DiagnosticCode, lib, operations } from '@mirascript/mirascript/subtle';
+import { DiagnosticCode } from '@mirascript/mirascript/subtle';
 import {
     type editor,
     languages,
@@ -20,7 +20,16 @@ import {
     Range,
 } from '../../monaco-api.js';
 import { Provider, type MonacoContext } from './base.js';
-import { codeblock, getDeep, valueDoc, paramsList, strictContainsPosition, wordAt } from '../utils.js';
+import {
+    codeblock,
+    getDeep,
+    valueDoc,
+    paramsList,
+    strictContainsPosition,
+    wordAt,
+    getField,
+    listFields,
+} from '../utils.js';
 import { KEYWORDS, RESERVED_KEYWORDS, REG_IDENTIFIER_FULL, REG_ORDINAL_FULL, isKeyword } from '../../constants.js';
 import type { LocalDefinition } from '../compile-result.js';
 
@@ -351,7 +360,7 @@ export class CompletionItemProvider extends Provider implements languages.Comple
         if (value == null || typeof value != 'object') {
             return [];
         }
-        const keys = isVmExtern(value) ? value.keys(true) : lib.keys(value);
+        const keys = listFields(value, true);
         const result: CustomCompletionItem[] = [];
         for (const k of keys) {
             const key = String(k);
@@ -361,7 +370,7 @@ export class CompletionItemProvider extends Provider implements languages.Comple
             if (!REG_IDENTIFIER_FULL.test(key) && !REG_ORDINAL_FULL.test(key)) {
                 continue;
             }
-            const field = operations.$Get(value, key);
+            const field = getField(value, key);
             result.push({
                 insertText: key,
                 range,

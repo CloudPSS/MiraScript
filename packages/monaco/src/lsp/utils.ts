@@ -16,9 +16,11 @@ import {
     type VmValue,
     type VmExtern,
 } from '@mirascript/mirascript';
-import { operations, serializeRecordKey, serializeString } from '@mirascript/mirascript/subtle';
+import { lib, operations, serializeRecordKey, serializeString } from '@mirascript/mirascript/subtle';
 import type { LocalDefinition } from './compile-result.js';
 import type { MonacoContext } from './providers/base.js';
+
+const UNKNOWN_REPR = '/* .. */';
 
 /** 参数签名 */
 export type ParamSignature = [name: string, sig: string, doc: string];
@@ -194,6 +196,15 @@ function serializeForDisplayInner(value: VmValue, maxWidth: number): string {
     return `/* ${operations.$ToString(value)} */`;
 }
 
+/** 获取并序列化字段 */
+function serializeField(obj: VmAny, key: string | number, maxWidth: number): string {
+    const value = getField(obj, key);
+    if (value === undefined) {
+        return UNKNOWN_REPR;
+    }
+    return serializeForDisplayInner(value, maxWidth);
+}
+
 /** 将值序列化为便于展示的字符串 */
 function serializeForDisplay(value: Exclude<VmValue, VmModule>, maxEntries = 100, maxWidth = 40): string {
     if (isVmPrimitive(value) || isVmFunction(value)) {
@@ -205,26 +216,31 @@ function serializeForDisplay(value: Exclude<VmValue, VmModule>, maxEntries = 100
     if (isVmArray(value)) {
         begin = '[';
         end = ']';
-        for (const v of value) {
+        const len = value.length;
+        if (len === 0) return '[]';
+        for (let i = 0; i < len; i++) {
             if (entries.length > maxEntries) {
                 entries.push(`../* x${value.length - entries.length} */`);
                 break;
             }
-            const entry = serializeForDisplayInner(v ?? null, maxWidth - 2);
+            const entry = serializeField(value, i, maxWidth - 2);
             entries.push(entry);
             resultLength += entry.length;
         }
     } else if (isVmRecord(value)) {
+        const keys = Object.keys(value);
+        if (keys.length === 0) return '()';
         begin = '(';
         end = ')';
-        const e = Object.entries(value);
-        for (const [key, value] of e) {
+
+        for (const key of keys) {
             if (entries.length > maxEntries) {
-                entries.push(`../* x${e.length - entries.length} */`);
+                entries.push(`../* x${keys.length - entries.length} */`);
                 break;
             }
             const sk = serializeRecordKey(key);
-            const entry = `${sk}: ${serializeForDisplayInner(value ?? null, maxWidth - sk.length - 4)}`;
+            const sv = serializeField(value, key, maxWidth - sk.length - 4);
+            const entry = `${sk}: ${sv}`;
             entries.push(entry);
             resultLength += entry.length;
         }
@@ -335,11 +351,13 @@ export function valueDoc(
         }
         return { script, doc: doc ? [doc] : [] };
     }
-    let valueStr;
-    if (value === undefined) {
-        valueStr = '/* ... */';
-    } else {
-        valueStr = serializeForDisplay(value, type === 'declare' ? 1000 : 100, type === 'declare' ? 80 : 40);
+    let valueStr = UNKNOWN_REPR;
+    if (value !== undefined) {
+        try {
+            valueStr = serializeForDisplay(value, type === 'declare' ? 1000 : 100, type === 'declare' ? 80 : 40);
+        } catch (ex) {
+            // 序列化失败，保持默认值
+        }
     }
     return {
         script: `${prefix}${valueStr}${suffix}`,
@@ -366,4 +384,32 @@ export function getDeep(
         current = operations.$Get(parent, key);
     }
     return [isVmWrapper(parent) ? parent : null, current];
+}
+
+/** 获取属性 */
+export function getField(obj: VmAny, key: string | number): VmAny {
+    if (obj == null) return undefined;
+    try {
+        if (!operations.$Has(obj, key)) return undefined;
+    } catch {
+        return undefined;
+    }
+    try {
+        return operations.$Get(obj, key);
+    } catch {
+        return undefined;
+    }
+}
+
+/** 列出属性 */
+export function listFields(obj: VmAny, includeNonEnumerable: boolean): Array<string | number> {
+    if (obj == null || typeof obj != 'object') return [];
+    if (isVmWrapper(obj)) {
+        try {
+            return obj.keys(includeNonEnumerable);
+        } catch {
+            return [];
+        }
+    }
+    return lib.keys(obj);
 }

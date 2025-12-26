@@ -394,6 +394,10 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                     ['comment.doc', 'type.doc', 'entity.name.label', 'comment.doc'],
                 ],
 
+                [
+                    /(let)(@whitespace+)(mut)(@whitespace+)(@identifier)/,
+                    [{ token: 'keyword.$1' }, '', 'keyword.mut', '', 'variable'],
+                ],
                 [/(let|const)(@whitespace+)(@identifier)/, [{ token: 'keyword.$1' }, '', 'variable.other.constant']],
                 [/(fn)(@whitespace+)(@identifier)$/, ['keyword.fn.doc', '', 'entity.name.function.doc']],
                 [
@@ -403,10 +407,6 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                 [
                     /(fn)(@whitespace+)(@identifier)/,
                     ['keyword.fn.doc', '', { token: 'entity.name.function.doc', next: '@type_doc' }],
-                ],
-                [
-                    /(let)(@whitespace+)(mut)(@whitespace+)(@identifier)/,
-                    [{ token: 'keyword.$1' }, '', 'keyword.mut', '', 'variable'],
                 ],
                 [/[[\](){}]/, '@brackets'],
                 { include: '@common' },
