@@ -63,14 +63,18 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
         start: mode === 'template' ? 'root_template' : mode === 'doc' ? 'root_doc' : 'root',
         tokenPostfix: '.mirascript',
         tokenizer: {
-            root: [[/[[\](){}]/, '@brackets'], { include: '@common' }],
+            root: [
+                [/[[\](){}]/, '@brackets'],
+                // 用于修正关键字做为属性名时的高亮问题，由于与格式化字符串冲突，仅 root 规则启用，其余情况改由 semantic 高亮处理
+                [/(@identifier)(@whitespace*)(\??:)(?!:)/, ['variable.other.property', '', 'delimiter']],
+                { include: '@common' },
+            ],
             root_template: [
                 [/[^$]+/, 'string'],
                 [/(?=\$)/, '', '@string_interpolation.$S3'],
                 [/[$]/, 'string'],
             ],
             common: [
-                [/(@identifier)(@whitespace*)(\??:)(?!:)/, ['variable.other.property', '', 'delimiter']],
                 [
                     /(fn)(@whitespace+)(@identifier)(?=$|@whitespace|[[({,;])/,
                     ['keyword', '', { cases: identifierCases(undefined, 'entity.name.function') }],
