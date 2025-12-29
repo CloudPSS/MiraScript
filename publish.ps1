@@ -57,9 +57,10 @@ param (
     }
 
     if (-not $NoPublish) {
+        Remove-Item Alias:curl -ErrorAction SilentlyContinue
         $packageNames | ForEach-Object {
             Write-Host "Syncing $_" -ForegroundColor Yellow
-            $result = curl.exe -X PUT "https://registry-direct.npmmirror.com/$_/sync" 2>$null | ConvertFrom-Json
+            $result = curl -X PUT "https://registry-direct.npmmirror.com/$_/sync" 2>$null | ConvertFrom-Json
             if ($result.ok -eq $false) {
                 Write-Error $result.error $result.reason
             } else {
