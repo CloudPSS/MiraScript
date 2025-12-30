@@ -69,21 +69,22 @@ export const to_datetime = VmLib(
         };
     },
     {
-        summary: '将数据转换为 Date 记录',
+        summary: '将数据转换为 DateTime 记录',
         params: {
             datetime: '要转换的数据，默认为当前时间',
             offset: '时区偏移量（单位：小时），默认为 0',
             fallback: '转换失败时的返回值',
         },
         paramsType: { datetime: 'number | string', offset: 'number', fallback: 'any' },
-        returnsType: 'Date | type(fallback)',
+        returnsType: 'DateTime | type(fallback)',
         examples: [
             `
 to_datetime(0)
 // (
-//    year: 1970, month: 1, day: 1,
-//    hour: 0, minute: 0, second: 0,
-//    millisecond: 0, dayOfWeek: 4, offset: 0
+//   year: 1970, month: 1, day: 1,
+//   hour: 0, minute: 0, second: 0,
+//   millisecond: 0,
+//   dayOfWeek: 4, offset: 0
 // )
             `.trim(),
         ],
