@@ -1,8 +1,10 @@
 import type { VmScript, InputMode, VmAny, VmContext } from '@mirascript/mirascript';
 import type { ConsoleManager } from './console-manager.js';
-import { syntaxHighlight, print, escapeHtml } from './utils.js';
+import { print, escapeHtml } from './utils.js';
 import { getState } from './state-manager.js';
-import { mirascript, ready } from './loader.js';
+import { mirascript, monaco, ready } from './loader.js';
+import { createEditor } from './monaco.js';
+import operationDts from './operation.d.ts?raw';
 
 /** 管理编译和运行结果 */
 export function resultManager(
@@ -13,6 +15,7 @@ export function resultManager(
 ): () => Promise<VmAny> {
     let fileCounter = 1;
     let cache: { fileName: string; mode: InputMode; source: string; script: VmScript } | null = null;
+    let editor: import('@private/monaco-editor').editor.IStandaloneCodeEditor | null = null;
     /** 编译 */
     async function compileScript(): Promise<VmScript | undefined> {
         await ready;
@@ -45,21 +48,33 @@ export function resultManager(
                 elCompiledOutput.dataset['code'] = compiledCode;
 
                 requestIdleCallback(
-                    // eslint-disable-next-line @typescript-eslint/no-misused-promises
-                    async () => {
+                    () => {
                         if (elCompiledOutput.dataset['code'] !== compiledCode) return;
-                        const highlightedJS = await syntaxHighlight(compiledCode, 'javascript');
-                        if (elCompiledOutput.dataset['code'] !== compiledCode) return;
-                        elCompiledOutput.innerHTML = /*html*/ `
-                        <div class="section-title">Compiled JavaScript:</div>
-                        <div class="compiled-code">${highlightedJS}</div>
-                    `;
+                        if (!editor) {
+                            monaco.typescript.javascriptDefaults.addExtraLib(operationDts, `file:///operation.d.ts`);
+                            const div = document.createElement('div');
+                            div.id = 'compiled-editor';
+                            elCompiledOutput.replaceChildren(div);
+                            editor = createEditor(div, {
+                                readOnly: true,
+                                minimap: { enabled: false },
+                                wordWrap: 'on',
+                                wrappingIndent: 'deepIndent',
+                                language: 'javascript',
+                                value: compiledCode,
+                            });
+                        } else {
+                            editor.setValue(compiledCode);
+                            elCompiledOutput.replaceChildren(editor.getContainerDomNode());
+                            editor.layout();
+                        }
                     },
                     { timeout: 100 },
                 );
             }
             return script;
         } catch (ex) {
+            cache = null;
             const compEnd = performance.now();
             const errorText = String(ex);
             elCompiledOutput.dataset['code'] = '';

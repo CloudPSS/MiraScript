@@ -1,9 +1,11 @@
 import './index.css';
+import './theme.js';
 import type { InputMode } from '@mirascript/mirascript';
 import { EXAMPLES } from './examples.js';
-import { getState, setState, type ThemeMode } from './state-manager.js';
+import { getState, setState } from './state-manager.js';
 import { resultManager } from './result-manager.js';
 import { monaco, globals, mirascript, consoleManager, ready } from './loader.js';
+import { createEditor } from './monaco.js';
 
 await ready;
 
@@ -32,43 +34,11 @@ const updateModel = () => {
 
 // UI 元素
 const elEditor = document.querySelector<HTMLDivElement>('#editor')!;
-const elThemeSelect = document.querySelector<HTMLSelectElement>('#theme-select')!;
 const elExampleSelect = document.querySelector<HTMLSelectElement>('#example-select')!;
 const elModeSelect = document.querySelector<HTMLSelectElement>('#mode-select')!;
 const elRunBtn = document.querySelector<HTMLButtonElement>('#run-btn')!;
 const elCompiledOutput = document.querySelector<HTMLDivElement>('#compiled-output')!;
 const elResultOutput = document.querySelector<HTMLDivElement>('#result-output')!;
-
-/** 初始化主题选择器 */
-function initThemeSelector() {
-    const { theme } = getState();
-    elThemeSelect.value = theme;
-
-    // 应用初始主题
-    applyTheme(theme);
-
-    elThemeSelect.addEventListener('change', () => {
-        const newTheme = elThemeSelect.value as ThemeMode;
-        setState({ theme: newTheme });
-        applyTheme(newTheme);
-    });
-}
-
-const systemTheme = matchMedia('(prefers-color-scheme: dark)');
-/** 应用主题 */
-function applyTheme(theme: ThemeMode) {
-    document.documentElement.dataset['theme'] = theme;
-
-    // 更新Monaco编辑器主题
-    const isDark = theme === 'dark' || (theme === 'auto' && systemTheme.matches);
-    editor.updateOptions({ theme: isDark ? 'vs-dark' : 'vs' });
-}
-systemTheme.addEventListener('change', () => {
-    const { theme } = getState();
-    if (theme === 'auto') {
-        applyTheme('auto');
-    }
-});
 
 /** 初始化示例选择器 */
 function initExampleSelector() {
@@ -132,29 +102,17 @@ function initTabs() {
     }
 }
 
-const overlay = monaco.utils.createOverflowWidgetsDomNode(elEditor);
-const editor = monaco.editor.create(elEditor, {
-    fontFamily: 'var(--code-font)',
-    useShadowDOM: true,
-    overflowWidgetsDomNode: overlay,
-    formatOnType: true,
-    formatOnPaste: true,
-    fontLigatures: true,
-    automaticLayout: true,
+const editor = createEditor(elEditor, {
     wordWrap: 'on',
     wrappingIndent: 'indent',
-    theme: systemTheme.matches ? 'vs-dark' : 'vs', // 初始主题，会在后面更新
-    tabSize: 2,
+    formatOnType: true,
+    formatOnPaste: true,
     minimap: { renderCharacters: false },
-    'semanticHighlighting.enabled': true,
     model: createModel(),
 });
 
-editor.onDidDispose(() => overlay.dispose());
-
 // 初始化所有组件
 setTimeout(() => {
-    initThemeSelector();
     initExampleSelector();
     initModeSelector();
     initTabs();
