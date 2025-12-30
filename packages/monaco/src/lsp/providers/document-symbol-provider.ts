@@ -11,7 +11,7 @@ export class DocumentSymbolProvider extends Provider implements languages.Docume
         const unhandledChildren = new Set(scope.children);
         for (const { definition } of scope.locals) {
             const { range } = definition;
-            let kind: languages.SymbolKind = languages.SymbolKind.Variable;
+            let kind: languages.SymbolKind | undefined;
             let name: string | undefined;
             let children: languages.DocumentSymbol[] = [];
             let allRange = range;
@@ -35,8 +35,10 @@ export class DocumentSymbolProvider extends Provider implements languages.Docume
                     break;
                 }
             }
+            name ??= model.getValueInRange(definition.range);
+            kind ??= name.startsWith('@') ? languages.SymbolKind.Constant : languages.SymbolKind.Variable;
             symbols.push({
-                name: name ?? model.getValueInRange(definition.range),
+                name,
                 detail: '',
                 kind,
                 range: allRange,
