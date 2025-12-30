@@ -25,17 +25,19 @@ const sliceCore = (value: VmArray, start: number, end: number, exclusive: boolea
     return slice.call(value, start, end) satisfies unknown[] as VmArray;
 };
 
-export const $Slice = (value: VmAny, start: VmAny, end: VmAny): VmArray => {
+/** 获取数组切片 */
+export function $Slice(value: VmAny, start: VmAny, end: VmAny): VmArray {
     $AssertInit(value);
     if (!isVmArray(value)) throw new VmError(`Expected array, got ${display(value)}`, []);
     const s = start != null ? $ToNumber(start) : 0;
     const e = end != null ? $ToNumber(end) : value.length - 1;
     return sliceCore(value, s, e, false);
-};
-export const $SliceExclusive = (value: VmAny, start: VmAny, end: VmAny): VmArray => {
+}
+/** 获取数组切片（不包含结束位置） */
+export function $SliceExclusive(value: VmAny, start: VmAny, end: VmAny): VmArray {
     $AssertInit(value);
     if (!isVmArray(value)) throw new VmError(`Expected array, got ${display(value)}`, []);
     const s = start != null ? $ToNumber(start) : 0;
     const e = end != null ? $ToNumber(end) : value.length;
     return sliceCore(value, s, e, true);
-};
+}

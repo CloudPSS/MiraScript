@@ -11,7 +11,8 @@ import { $ToString } from './convert.js';
 const { trunc } = Math;
 const { at } = Array.prototype;
 
-export const $In = (value: VmAny, iterable: VmAny): boolean => {
+/** 检查值是否在可迭代对象中 */
+export function $In(value: VmAny, iterable: VmAny): boolean {
     $AssertInit(value);
     $AssertInit(iterable);
     if (iterable == null) return false;
@@ -31,16 +32,20 @@ export const $In = (value: VmAny, iterable: VmAny): boolean => {
     const key = toString(value, undefined);
     if (isVmWrapper(iterable)) return iterable.has(key);
     return hasOwnEnumerable(iterable satisfies VmRecord, key);
-};
-export const $Length = (value: VmAny): number => {
+}
+
+/** 获取值的长度 */
+export function $Length(value: VmAny): number {
     $AssertInit(value);
     if (isVmArray(value)) return value.length;
     if (isVmRecord(value)) return keys(value).length;
     if (isVmWrapper(value)) return value.keys().length;
 
     throw new VmError(`Value has no length: ${display(value)}`, 0);
-};
-export const $Omit = (value: VmAny, omitted: ReadonlyArray<number | string>): VmRecord => {
+}
+
+/** 删除记录中的指定字段 */
+export function $Omit(value: VmAny, omitted: ReadonlyArray<number | string>): VmRecord {
     $AssertInit(value);
     if (value == null || !isVmRecord(value)) return {};
     const result: Record<string, VmConst> = {};
@@ -53,8 +58,10 @@ export const $Omit = (value: VmAny, omitted: ReadonlyArray<number | string>): Vm
         }
     }
     return result;
-};
-export const $Pick = (value: VmAny, picked: ReadonlyArray<number | string>): VmRecord => {
+}
+
+/** 选择记录中的指定字段 */
+export function $Pick(value: VmAny, picked: ReadonlyArray<number | string>): VmRecord {
     $AssertInit(value);
     if (value == null || !isVmRecord(value)) return {};
     const result: Record<string, VmConst> = {};
@@ -65,15 +72,17 @@ export const $Pick = (value: VmAny, picked: ReadonlyArray<number | string>): VmR
         }
     }
     return result;
-};
-export const $Has = (obj: VmAny, key: VmAny): boolean => {
+}
+/** 检查是否拥有字段 */
+export function $Has(obj: VmAny, key: VmAny): boolean {
     $AssertInit(obj);
     const pk = $ToString(key);
     if (obj == null || typeof obj != 'object') return false;
     if (isVmWrapper(obj)) return obj.has(pk);
     return hasOwnEnumerable(obj, pk);
-};
-export const $Get = (obj: VmAny, key: VmAny): VmValue => {
+}
+/** 获取字段 */
+export function $Get(obj: VmAny, key: VmAny): VmValue {
     $AssertInit(obj);
     if (isVmArray(obj)) {
         $AssertInit(key);
@@ -86,24 +95,26 @@ export const $Get = (obj: VmAny, key: VmAny): VmValue => {
     if (isVmWrapper(obj)) return obj.get(pk) ?? null;
     if (!hasOwnEnumerable(obj, pk)) return null;
     return obj[pk] ?? null;
-};
-export const $Set = (obj: VmAny, key: VmAny, value: VmAny): void => {
+}
+/** 设置字段 */
+export function $Set(obj: VmAny, key: VmAny, value: VmAny): void {
     $AssertInit(obj);
     $AssertInit(value);
     const pk = $ToString(key);
     if (obj == null) return;
     if (!isVmExtern(obj)) throw new VmError(`Expected extern, got ${display(obj)}`, undefined);
     obj.set(pk, value);
-};
-export const $Iterable = (value: VmAny): Iterable<VmValue | undefined> => {
+}
+/** 获取可迭代对象 */
+export function $Iterable(value: VmAny): Iterable<VmValue | undefined> {
     $AssertInit(value);
     if (isVmWrapper(value)) return value.keys();
     if (isVmArray(value)) return value;
     if (value != null && typeof value == 'object') return keys(value);
     throw new VmError(`Value is not iterable: ${display(value)}`, isVmFunction(value) ? [] : [value]);
-};
-
-export const $RecordSpread = (record: VmAny): VmRecord | null => {
+}
+/** 展开记录 */
+export function $RecordSpread(record: VmAny): VmRecord | null {
     $AssertInit(record);
     if (record == null || isVmRecord(record)) return record;
     if (isVmArray(record)) {
@@ -127,9 +138,10 @@ export const $RecordSpread = (record: VmAny): VmRecord | null => {
         return result;
     }
     throw new VmError(`Expected record, array, extern or nil, got ${display(record)}`, null);
-};
+}
 
-export const $ArraySpread = (array: VmAny): Iterable<VmConst | undefined> => {
+/** 展开数组 */
+export function $ArraySpread(array: VmAny): Iterable<VmConst | undefined> {
     $AssertInit(array);
     if (array == null) return [];
     if (isVmArray(array)) return array;
@@ -146,4 +158,4 @@ export const $ArraySpread = (array: VmAny): Iterable<VmConst | undefined> => {
         return result;
     }
     throw new VmError(`Expected array, iterable extern or nil, got ${display(array)}`, []);
-};
+}

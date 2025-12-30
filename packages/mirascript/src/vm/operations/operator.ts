@@ -6,93 +6,112 @@ import { $ToBoolean, $ToNumber, $ToString } from './convert.js';
 import { isSame, overloadNumberString } from './utils.js';
 
 // String operations
-export const $Concat = (...args: readonly string[]): string => {
+/** 字符串连接 */
+export function $Concat(...args: readonly string[]): string {
     return args.map((a) => toFormat(a, null)).join('');
-};
+}
 
 // Unary operations
-export const $Pos = (a: VmAny): number => {
+/** 正号 */
+export function $Pos(a: VmAny): number {
     return $ToNumber(a);
-};
-export const $Neg = (a: VmAny): number => {
+}
+/** 负号 */
+export function $Neg(a: VmAny): number {
     return -$ToNumber(a);
-};
-export const $Not = (a: VmAny): boolean => {
+}
+/** 非 */
+export function $Not(a: VmAny): boolean {
     return !$ToBoolean(a);
-};
+}
 
 // Math operations
-export const $Add = (a: VmAny, b: VmAny): number => {
+/** 加法 */
+export function $Add(a: VmAny, b: VmAny): number {
     return $ToNumber(a) + $ToNumber(b);
-};
-export const $Sub = (a: VmAny, b: VmAny): number => {
+}
+/** 减法 */
+export function $Sub(a: VmAny, b: VmAny): number {
     return $ToNumber(a) - $ToNumber(b);
-};
-export const $Mul = (a: VmAny, b: VmAny): number => {
+}
+/** 乘法 */
+export function $Mul(a: VmAny, b: VmAny): number {
     return $ToNumber(a) * $ToNumber(b);
-};
-export const $Div = (a: VmAny, b: VmAny): number => {
+}
+/** 除法 */
+export function $Div(a: VmAny, b: VmAny): number {
     return $ToNumber(a) / $ToNumber(b);
-};
-export const $Mod = (a: VmAny, b: VmAny): number => {
+}
+/** 取模 */
+export function $Mod(a: VmAny, b: VmAny): number {
     return $ToNumber(a) % $ToNumber(b);
-};
-export const $Pow = (a: VmAny, b: VmAny): number => {
+}
+/** 乘方 */
+export function $Pow(a: VmAny, b: VmAny): number {
     return $ToNumber(a) ** $ToNumber(b);
-};
+}
 
 // Logical operations without short-circuiting
-export const $And = (a: VmAny, b: VmAny): boolean => {
+/** 与 */
+export function $And(a: VmAny, b: VmAny): boolean {
     return $ToBoolean(a) && $ToBoolean(b);
-};
-export const $Or = (a: VmAny, b: VmAny): boolean => {
+}
+/** 或 */
+export function $Or(a: VmAny, b: VmAny): boolean {
     return $ToBoolean(a) || $ToBoolean(b);
-};
+}
 
 // Comparison operations
-export const $Gt = (a: VmAny, b: VmAny): boolean => {
+/** 大于 */
+export function $Gt(a: VmAny, b: VmAny): boolean {
     if (overloadNumberString(a, b)) {
         return $ToNumber(a) > $ToNumber(b);
     } else {
         return $ToString(a) > $ToString(b);
     }
-};
-export const $Gte = (a: VmAny, b: VmAny): boolean => {
+}
+/** 大于等于 */
+export function $Gte(a: VmAny, b: VmAny): boolean {
     if (overloadNumberString(a, b)) {
         return $ToNumber(a) >= $ToNumber(b);
     } else {
         return $ToString(a) >= $ToString(b);
     }
-};
-export const $Lt = (a: VmAny, b: VmAny): boolean => {
+}
+/** 小于 */
+export function $Lt(a: VmAny, b: VmAny): boolean {
     if (overloadNumberString(a, b)) {
         return $ToNumber(a) < $ToNumber(b);
     } else {
         return $ToString(a) < $ToString(b);
     }
-};
-export const $Lte = (a: VmAny, b: VmAny): boolean => {
+}
+/** 小于等于 */
+export function $Lte(a: VmAny, b: VmAny): boolean {
     if (overloadNumberString(a, b)) {
         return $ToNumber(a) <= $ToNumber(b);
     } else {
         return $ToString(a) <= $ToString(b);
     }
-};
+}
 
 // Equality operations
-export const $Eq = (a: VmAny, b: VmAny): boolean => {
+/** 等于 */
+export function $Eq(a: VmAny, b: VmAny): boolean {
     $AssertInit(a);
     $AssertInit(b);
     // Number comparison is a special case to handle NaN correctly
     if (typeof a == 'number' && typeof b == 'number') return a === b;
     return isSame(a, b);
-};
-export const $Neq = (a: VmAny, b: VmAny): boolean => {
+}
+/** 不等于 */
+export function $Neq(a: VmAny, b: VmAny): boolean {
     return !$Eq(a, b);
-};
+}
 
 const { abs, min } = Math;
-export const $Aeq = (a: VmAny, b: VmAny): boolean => {
+/** 近似等于 */
+export function $Aeq(a: VmAny, b: VmAny): boolean {
     if (overloadNumberString(a, b)) {
         const an = $ToNumber(a);
         const bn = $ToNumber(b);
@@ -116,16 +135,19 @@ export const $Aeq = (a: VmAny, b: VmAny): boolean => {
         const bn = bi.normalize('NFC');
         return an === bn;
     }
-};
-export const $Naeq = (a: VmAny, b: VmAny): boolean => {
+}
+/** 不近似等于 */
+export function $Naeq(a: VmAny, b: VmAny): boolean {
     return !$Aeq(a, b);
-};
+}
 
-export const $Same = (a: VmAny, b: VmAny): boolean => {
+/** 全等于 */
+export function $Same(a: VmAny, b: VmAny): boolean {
     $AssertInit(a);
     $AssertInit(b);
     return isSame(a, b);
-};
-export const $Nsame = (a: VmAny, b: VmAny): boolean => {
+}
+/** 不全等于 */
+export function $Nsame(a: VmAny, b: VmAny): boolean {
     return !$Same(a, b);
-};
+}

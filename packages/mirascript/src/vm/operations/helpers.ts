@@ -9,31 +9,31 @@ import { $AssertInit } from './common.js';
 import { $ToNumber } from './convert.js';
 
 /** 构造 record | array 元素 */
-export const $El = (value: VmAny): VmConst => {
+export function $El(value: VmAny): VmConst {
     $AssertInit(value);
     if (!isVmConst(value)) return null;
     return value;
-};
+}
 
 const EMPTY = create(null);
 /** 构造 record 可选元素 */
-export const $ElOpt = (key: string, value: VmAny): VmConst => {
+export function $ElOpt(key: string, value: VmAny): VmConst {
     $AssertInit(value);
     if (value == null || !isVmConst(value)) return EMPTY;
     return { __proto__: null, [key]: value };
-};
+}
 
 /** 构造函数和函数表达式 */
-export const $Fn = (name: string | null | undefined, fn: VmFunctionLike): VmFunction => {
+export function $Fn<T extends VmFunctionLike>(name: string | null | undefined, fn: T): VmFunction<T> {
     defineProperty(fn, 'name', { value: name || VM_FUNCTION_ANONYMOUS_NAME });
     return VmFunction(fn, { isLib: false, injectCp: false });
-};
+}
 
 /** 读取闭包上值 */
-export const $Upvalue = (value: VmAny): VmValue => {
+export function $Upvalue(value: VmAny): VmValue {
     $AssertInit(value);
     return value;
-};
+}
 
 const assertArrayLength = (start: number, end: number) => {
     if (end - start > VM_ARRAY_MAX_LENGTH) {
@@ -43,7 +43,8 @@ const assertArrayLength = (start: number, end: number) => {
 const isEmptyRange = (start: number, end: number) => {
     return !isFinite(start) || !isFinite(end) || start > end;
 };
-export const $ArrayRange = (start: VmAny, end: VmAny): VmArray => {
+/** 构造范围数组 */
+export function $ArrayRange(start: VmAny, end: VmAny): VmArray {
     const s = $ToNumber(start);
     const e = $ToNumber(end);
     if (isEmptyRange(s, e)) return [];
@@ -53,8 +54,9 @@ export const $ArrayRange = (start: VmAny, end: VmAny): VmArray => {
         arr.push(i);
     }
     return arr;
-};
-export const $ArrayRangeExclusive = (start: VmAny, end: VmAny): VmArray => {
+}
+/** 构造范围数组（不包含结束值） */
+export function $ArrayRangeExclusive(start: VmAny, end: VmAny): VmArray {
     const s = $ToNumber(start);
     const e = $ToNumber(end);
     if (isEmptyRange(s, e)) return [];
@@ -64,7 +66,7 @@ export const $ArrayRangeExclusive = (start: VmAny, end: VmAny): VmArray => {
         arr.push(i);
     }
     return arr;
-};
+}
 
 /** 默认执行上下文 */
 export function $GlobalFallback(): VmContext {

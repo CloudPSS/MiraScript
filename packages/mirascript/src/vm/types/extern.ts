@@ -31,7 +31,9 @@ function classNameOf(kls: Function): string | null {
 /** 包装 Mirascript `extern` 类型的对象 */
 export class VmExtern<const T extends object = object> extends VmWrapper<T> {
     constructor(
+        /** 包装值 */
         value: T,
+        /** 当 {@link value} 是函数时，绑定的 this 参数 */
         readonly thisArg: ThisParameterType<T> | null = null,
     ) {
         super(value);
