@@ -97,27 +97,26 @@ function globalVariable(id: string): VmScriptLike {
 /**
  * 对短代码进行编译
  */
-function compileScriptFast(code: string, options: TranspileOptions): VmScript | undefined {
+function compileScriptFast(code: string): VmScript | undefined {
     if (code.length > FAST_SCRIPT_MAX_LEN) return undefined; // 超过长度限制，直接返回 undefined
-    const mode = options.input_mode ?? 'Script';
     const trimmedCode = code.trim();
     if (!trimmedCode) {
-        return wrapScript(code, mode, nil());
+        return wrapScript(code, 'Script', nil());
     }
     switch (trimmedCode) {
         case 'nil':
-            return wrapScript(code, mode, nil());
+            return wrapScript(code, 'Script', nil());
         case 'true':
-            return wrapScript(code, mode, constantBoolean(true));
+            return wrapScript(code, 'Script', constantBoolean(true));
         case 'false':
-            return wrapScript(code, mode, constantBoolean(false));
+            return wrapScript(code, 'Script', constantBoolean(false));
         case 'nan':
-            return wrapScript(code, mode, nan());
+            return wrapScript(code, 'Script', nan());
         case 'inf':
         case '+inf':
-            return wrapScript(code, mode, posInf());
+            return wrapScript(code, 'Script', posInf());
         case '-inf':
-            return wrapScript(code, mode, negInf());
+            return wrapScript(code, 'Script', negInf());
     }
     if (REG_IDENTIFIER_FAST.test(trimmedCode)) {
         // 直接返回标识符
@@ -125,13 +124,13 @@ function compileScriptFast(code: string, options: TranspileOptions): VmScript | 
         if (isKeyword(id)) {
             return undefined; // 关键字不处理
         }
-        return wrapScript(code, mode, globalVariable(id));
+        return wrapScript(code, 'Script', globalVariable(id));
     }
     if (REG_NUMBER_FULL.test(trimmedCode)) {
         const num = Number(trimmedCode);
         if (!isFinite(num)) return undefined;
         // 直接返回数字
-        return wrapScript(code, mode, constantFiniteNumber(num));
+        return wrapScript(code, 'Script', constantFiniteNumber(num));
     }
     return undefined;
 }
@@ -141,13 +140,12 @@ const FAST_TEMPLATE_MAX_LEN = 1024;
 /**
  * 对短代码进行编译
  */
-function compileTemplateFast(code: string, options: TranspileOptions): VmScript | undefined {
+function compileTemplateFast(code: string): VmScript | undefined {
     if (code.length > FAST_TEMPLATE_MAX_LEN) return undefined; // 超过长度限制，直接返回 undefined
 
     if (!code.includes('$')) {
-        const mode = options.input_mode ?? 'Template';
         // 不包含插值的模板
-        return wrapScript(code, mode, constantString(code));
+        return wrapScript(code, 'Template', constantString(code));
     }
     return undefined;
 }
@@ -157,5 +155,5 @@ function compileTemplateFast(code: string, options: TranspileOptions): VmScript 
  */
 export function compileFast(code: string, options: TranspileOptions): VmScript | undefined {
     if (options.sourceMap) return undefined; // 不支持源映射
-    return (options.input_mode === 'Template' ? compileTemplateFast : compileScriptFast)(code, options);
+    return (options.input_mode === 'Template' ? compileTemplateFast : compileScriptFast)(code);
 }
