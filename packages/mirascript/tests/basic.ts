@@ -22,8 +22,14 @@ const compileAndRun = test.macro<[string, unknown]>({
             } else {
                 const script = await compile(code);
                 scriptSource = script.toString();
-                const result = script();
-                t.deepEqual(result, expected);
+                {
+                    const result = script();
+                    t.deepEqual(result, expected);
+                }
+                {
+                    const result = script(null);
+                    t.deepEqual(result, expected);
+                }
             }
         }
         {
@@ -36,6 +42,8 @@ const compileAndRun = test.macro<[string, unknown]>({
                 }, expectError);
             } else {
                 const script = await compile(code);
+                // should accept a global context
+                t.is(script.length, 1);
                 const result = script();
                 t.deepEqual(result, expected);
             }

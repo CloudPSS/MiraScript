@@ -1,8 +1,7 @@
 import { isKeyword } from '@mirascript/constants';
-import { wrapScript, type VmScript } from './create-script.js';
+import { wrapScript, type VmScript, type VmScriptLike } from './create-script.js';
 import type { TranspileOptions } from './types.js';
 import { $GlobalFallback } from '../vm/operations/index.js';
-import type { VmContext, VmValue } from '../vm/index.js';
 import { defineProperty, isFinite } from '../helpers/utils.js';
 
 const REG_NUMBER_FULL = /^(?:[+-])?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?$/;
@@ -82,11 +81,11 @@ function nil(): () => null {
 }
 
 /** 构造返回全局变量的函数 */
-function globalVariable(id: string): (global: VmContext | undefined) => VmValue {
-    const f = (global = $GlobalFallback()): VmValue => global.get(id);
+function globalVariable(id: string): VmScriptLike {
+    const f: VmScriptLike = (global) => (global ?? $GlobalFallback()).get(id);
     defineProperty(f, 'toString', {
         value: () => {
-            return `(global = $GlobalFallback()) => global.get(${JSON.stringify(id)});`;
+            return `(global) => (global ?? $GlobalFallback()).get(${JSON.stringify(id)});`;
         },
         writable: false,
         enumerable: false,

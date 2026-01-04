@@ -5,7 +5,7 @@ import type { VmValue, VmContext } from '../vm/types/index.js';
 import type { InputMode, ScriptInput } from './types.js';
 
 /** Mirascript 脚本 */
-export type VmScriptLike = (global?: VmContext) => VmValue;
+export type VmScriptLike = (global?: VmContext | null) => VmValue;
 
 /** Mirascript 脚本 */
 export type VmScript = VmScriptLike & {

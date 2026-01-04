@@ -1,3 +1,13 @@
+/** MiraScript 执行上下文 */
+type VmContext = {
+    /**
+     * 获取指定 key 的值 `global[key]`
+     * @throws {VmError} 如果值不存在则抛出异常
+     */
+    get(key: string): VmValue;
+    /** 查找指定 key 是否存在 `key in global` */
+    has(key: string): boolean;
+};
 /** Mirascript 虚拟机内的未初始化变量 */
 type VmUninitialized = undefined;
 /** Mirascript 原始值 */
