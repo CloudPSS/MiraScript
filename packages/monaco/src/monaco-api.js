@@ -29,13 +29,13 @@ export function registerMonacoApi(monacoApi) {
     if (
         !monacoApi ||
         typeof monacoApi !== 'object' ||
-        !monaco.languages ||
-        // 'function' != typeof monaco.languages.register ||
-        // 'function' != typeof monaco.languages.onLanguage ||
-        !monaco.editor ||
-        // 'function' != typeof monaco.editor.create ||
-        // 'function' != typeof monaco.editor.createModel ||
-        // 'function' != typeof monaco.editor.createWebWorker ||
+        !monacoApi.languages ||
+        // 'function' != typeof monacoApi.languages.register ||
+        // 'function' != typeof monacoApi.languages.onLanguage ||
+        !monacoApi.editor ||
+        // 'function' != typeof monacoApi.editor.create ||
+        // 'function' != typeof monacoApi.editor.createModel ||
+        // 'function' != typeof monacoApi.editor.createWebWorker ||
         'function' != typeof monacoApi.Uri ||
         'function' != typeof monacoApi.Range ||
         'function' != typeof monacoApi.Position ||
