@@ -29,10 +29,10 @@ export function registerMonacoApi(monacoApi) {
     if (
         !monacoApi ||
         typeof monacoApi !== 'object' ||
-        // !monaco.languages ||
+        !monaco.languages ||
         // 'function' != typeof monaco.languages.register ||
         // 'function' != typeof monaco.languages.onLanguage ||
-        // !monaco.editor ||
+        !monaco.editor ||
         // 'function' != typeof monaco.editor.create ||
         // 'function' != typeof monaco.editor.createModel ||
         // 'function' != typeof monaco.editor.createWebWorker ||
