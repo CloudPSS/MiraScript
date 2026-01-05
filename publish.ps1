@@ -25,6 +25,14 @@ param (
     $Version = $rootPkg.version
     $NpmTag = if ($Version -match "-") { "next" } else { "latest" }
 
+    $packages = Get-ChildItem ./packages -Directory
+    $packageNames = $packages | ForEach-Object {
+        Push-Location $_
+        $pkg = Read-Json ./package.json
+        Pop-Location
+        $pkg.name
+    }
+
     Write-Host "Building version $Version" -ForegroundColor Yellow
     pnpm -r build
 
@@ -45,15 +53,6 @@ param (
     if (-not $NoPublish) {
         npm login --registry https://registry.npmjs.org
         pnpm -r publish --access public --registry https://registry.npmjs.org --tag $NpmTag
-    }
-
-    $packages = Get-ChildItem ./packages -Directory
-
-    $packageNames = $packages | ForEach-Object {
-        Push-Location $_
-        $pkg = Read-Json ./package.json
-        Pop-Location
-        $pkg.name
     }
 
     if (-not $NoPublish) {
