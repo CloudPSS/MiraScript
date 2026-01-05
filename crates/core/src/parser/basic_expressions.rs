@@ -318,6 +318,7 @@ fn extension_call<'s>(i: &mut Input<'s>) -> Result<Call<'s>> {
 fn postfix<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     enum Function<'s> {
         Call(TokenRef<'s>, Vec<ArgElement<'s>>, TokenRef<'s>),
+        TaggedString(Box<Expression<'s>>),
         Extension(
             TokenRef<'s>,
             Callable<'s>,
@@ -342,6 +343,10 @@ fn postfix<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
         alt((
             (token(Operator::ColonColon), extension_call)
                 .map(|(kw, (ex, o, a, c))| Function::Extension(kw, ex, o, a, c)),
+            one_of(|t: &Token<'s>| matches!(t.kind, TokenKind::String(..))).map(|token| {
+                Function::TaggedString(Box::new(Expression::Literal(TokenRef::borrow(token))))
+            }),
+            interpolation.map(|ex| Function::TaggedString(ex.into())),
             access_index.map(|t| match t {
                 AccessIndex::NonNil(token) => Function::NonNil(token),
                 AccessIndex::Access(dot, token) => Function::Access(dot, token),
@@ -366,6 +371,7 @@ fn postfix<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
         Function::Call(o, args, c) => {
             Expression::Call(Callable::Expression(Box::new(acc)), o, args, c)
         }
+        Function::TaggedString(ex) => Expression::TaggedString(Box::new(acc), ex),
         Function::Extension(e, ex, o, arg, c) => {
             Expression::Extension(Box::new(acc), e, ex, o, arg, c)
         }

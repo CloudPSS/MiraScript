@@ -51,6 +51,7 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
 
         whitespace: REG_WHITESPACE,
         identifier: REG_IDENTIFIER,
+        identifierNoAtOnly: /(?:(?:_+|\$+|\p{XID_Start})\p{XID_Continue}*|@+\p{XID_Continue}+)/u,
 
         keywords: KEYWORDS,
         controlKeywords: CONTROL_KEYWORDS,
@@ -102,12 +103,12 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                 ],
                 [String.raw`\b(${moduleNames.join('|')})(@whitespace*(?=!?\.))`, ['type', '']],
                 [
-                    /(\.)(@whitespace*)(@identifier)(@whitespace*)(!?)(@whitespace*(?=\())/,
+                    /(\.)(@whitespace*)(@identifierNoAtOnly)(@whitespace*)(!?)(@whitespace*(?=\(|@*['"`]))/,
                     ['delimiter', '', 'entity.name.function', '', 'delimiter', ''],
                 ],
                 [/(\.)(@whitespace*)(@identifier)/, ['delimiter', '', 'variable']],
                 [
-                    /(@identifier)(@whitespace*)(!?)(@whitespace*(?=\())/,
+                    /(@identifierNoAtOnly)(@whitespace*)(!?)(@whitespace*(?=\(|@*['"`]))/,
                     [
                         {
                             cases: identifierCases(undefined, `entity.name.function`),

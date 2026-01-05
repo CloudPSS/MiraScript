@@ -59,6 +59,10 @@ impl<'o> FormatManager<'o> {
         item.measure(self, self.indent)
     }
 
+    pub fn ends_with(&self, s: &str) -> bool {
+        self.current_line.ends_with(s)
+    }
+
     pub(super) fn make_indent(&self, indent: usize) -> std::iter::RepeatN<char> {
         if self.use_spaces {
             std::iter::repeat_n(' ', indent * self.tab_size)

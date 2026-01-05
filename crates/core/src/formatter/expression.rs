@@ -67,6 +67,9 @@ impl Formattable for Expression<'_> {
             Variable(v) => v.measure(formatter, indent),
             Record(_, list_items, _) => list_items.measure(formatter, indent),
             Array(_, list_items, _) => list_items.measure(formatter, indent),
+            TaggedString(callable, expression) => {
+                callable.measure(formatter, indent) + expression.measure(formatter, indent)
+            }
             Call(callable, _, list_items, _) => {
                 callable.measure(formatter, indent) + list_items.measure(formatter, indent)
             }
@@ -104,6 +107,13 @@ impl Formattable for Expression<'_> {
                 formatter.write_token(op);
                 list_items[..].format(formatter, measurement);
                 formatter.write_token(cp);
+            }
+            TaggedString(callable, expression) => {
+                callable.format(formatter, measurement);
+                if formatter.ends_with("@") {
+                    formatter.write_space();
+                }
+                expression.format(formatter, measurement);
             }
             Call(callable, op, list_items, cp) => {
                 callable.format(formatter, measurement);

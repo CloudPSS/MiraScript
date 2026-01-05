@@ -4,7 +4,7 @@ use crate::{
     SourceRange,
     diagnostic::{DiagnosticCode, SourceDiagnostic},
     emitter::{emitter_scope::check_variable_initialized, utils::is_global_expression},
-    lexer::{Keyword, Operator, TokenKind},
+    lexer::{Keyword, Operator, Token, TokenKind},
     parser::{
         ArgElement, ArrayElementBase, AstWalker, Callable, ElseBlock,
         Expression::{self, *},
@@ -32,6 +32,16 @@ fn number_constant(exp: &Expression<'_>) -> Option<f64> {
 }
 
 impl<'s, 'c> Emitter<'s, 'c> {
+    fn declare_callable_expr(&mut self, callable: &'s Expression<'s>) {
+        // 此时的 Grouping 用于标记 callable 为复杂表达式以启用空安全，跳过 declare_expression 的 Grouping 处理
+        if let Expression::Grouping(_, inner, _) = callable
+            && (inner.is_variable() || inner.is_grouping())
+        {
+            self.declare_expression(inner);
+        } else {
+            self.declare_expression(callable);
+        }
+    }
     fn declare_call(
         &mut self,
         this: Option<&'s Expression<'s>>,
@@ -77,19 +87,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
         }
 
         match callable {
-            Callable::Expression(callable) => {
-                // 此时的 Grouping 用于标记 callable 为复杂表达式以启用空安全，跳过 declare_expression 的 Grouping 处理
-                let mut declared = false;
-                if let Expression::Grouping(_, inner, _) = callable.as_ref()
-                    && (inner.is_variable() || inner.is_grouping())
-                {
-                    self.declare_expression(inner);
-                    declared = true;
-                }
-                if !declared {
-                    self.declare_expression(callable);
-                }
-            }
+            Callable::Expression(callable) => self.declare_callable_expr(callable),
             Callable::Type(_) => (),
         }
         args.iter().for_each(|arg| {
@@ -156,6 +154,10 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     }
                 },
             }),
+            TaggedString(callable, expression) => {
+                self.declare_callable_expr(callable);
+                self.declare_expression(expression);
+            }
             Call(callable, l, expressions, r) => {
                 self.declare_call(None, l, r, callable, expressions);
             }
@@ -379,6 +381,35 @@ impl<'s, 'c> Emitter<'s, 'c> {
         Some(id)
     }
 
+    fn emit_expr_callable(
+        &mut self,
+        callable: &'s Expression<'s>,
+        args_reg: impl FnOnce(&mut Self) -> (Vec<Register>, Vec<OpParam>),
+        ret: Register,
+        brk: Option<Register>,
+    ) {
+        if let Some(id) = self.emit_global_access(callable) {
+            // Global function call
+            let (args, spreads) = args_reg(self);
+            self.op_call(callable.range(), ret, id, args, spreads);
+            return;
+        }
+
+        // Local function call
+        let callable_reg = self.emit_expression_reg(callable, brk);
+        let complex = !callable.is_variable();
+        if complex {
+            self.op_if(callable.range(), OpCode::IfNotNil, callable_reg);
+        }
+        let (args, spreads) = args_reg(self);
+        self.op_call_dyn(callable.range(), ret, callable_reg, args, spreads);
+        if complex {
+            self.op_else(callable.range());
+            self.op_nil(callable.range(), ret);
+            self.op_if_end(callable.range());
+        }
+    }
+
     fn emit_call(
         &mut self,
         callable: &'s Callable<'s>,
@@ -407,27 +438,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     }
                     (args_reg, spread)
                 };
-
-                if let Some(id) = self.emit_global_access(callable) {
-                    // Global function call
-                    let (args, spreads) = args_reg(self);
-                    self.op_call(callable.range(), ret, id, args, spreads);
-                    return;
-                }
-
-                // Local function call
-                let callable_reg = self.emit_expression_reg(callable, brk);
-                let complex = !callable.is_variable();
-                if complex {
-                    self.op_if(callable.range(), OpCode::IfNotNil, callable_reg);
-                }
-                let (args, spreads) = args_reg(self);
-                self.op_call_dyn(callable.range(), ret, callable_reg, args, spreads);
-                if complex {
-                    self.op_else(callable.range());
-                    self.op_nil(callable.range(), ret);
-                    self.op_if_end(callable.range());
-                }
+                self.emit_expr_callable(callable, args_reg, ret, brk);
             }
             Callable::Type(_) => {
                 let arg0 = arg0.map_or(Register::EMPTY, |f| self.emit_expression_reg(f, brk));
@@ -743,6 +754,69 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     }
                 }
                 self.op(close.range(), OpCode::Freeze);
+            }
+            TaggedString(callable, expression) => {
+                let args_reg = |s: &mut Self| {
+                    let template_reg = s.closures.add_reg();
+                    let mut args_reg = vec![template_reg];
+                    match expression.as_ref() {
+                        Literal(..) => {
+                            let r = expression.range();
+                            let reg = s.emit_expression_reg(expression, brk);
+                            s.op_1(r.start..r.start, OpCode::Array, template_reg);
+                            s.op_1(r.clone(), OpCode::Item, reg);
+                            s.op(r.end..r.end, OpCode::Freeze);
+                        }
+                        InterpolatedString(
+                            Token {
+                                kind: TokenKind::InterpolatedString(parts, _),
+                                ..
+                            },
+                            exprs,
+                        ) => {
+                            for (e, (_, _, fmt)) in exprs.iter().zip(parts.iter()) {
+                                let arg_pack_reg = s.closures.add_reg();
+                                let arg_reg = s.emit_expression_reg(e, brk);
+                                let fmt_reg = if !fmt.is_empty() {
+                                    let fr = s.closures.add_reg();
+                                    s.op_string(e.range(), fr, *fmt);
+                                    fr
+                                } else {
+                                    Register::EMPTY
+                                };
+                                s.op_1(e.range(), OpCode::Record, arg_pack_reg);
+                                s.op_2(e.range(), OpCode::FieldIndex, OpParam::from(0), arg_reg);
+                                if !fmt.is_empty() {
+                                    s.op_2(
+                                        e.range(),
+                                        OpCode::FieldIndex,
+                                        OpParam::from(1),
+                                        fmt_reg,
+                                    );
+                                }
+                                s.op(e.range(), OpCode::Freeze);
+                                args_reg.push(arg_pack_reg);
+                            }
+                            let r = expression.range();
+                            let template_part_regs: Vec<_> = parts
+                                .iter()
+                                .map(|(str, _, _)| {
+                                    let reg = s.closures.add_reg();
+                                    s.op_string(r.clone(), reg, str.as_ref());
+                                    reg
+                                })
+                                .collect();
+                            s.op_1(r.start..r.start, OpCode::Array, template_reg);
+                            for p in template_part_regs {
+                                s.op_1(r.clone(), OpCode::Item, p);
+                            }
+                            s.op(r.end..r.end, OpCode::Freeze);
+                        }
+                        _ => s.unreachable(expression, expression, file!(), line!()),
+                    };
+                    (args_reg, vec![])
+                };
+                self.emit_expr_callable(callable, args_reg, ret, brk);
             }
             Call(callable, _, args, _) => {
                 if let Some((first, rest)) = args.split_first()

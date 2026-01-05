@@ -102,6 +102,8 @@ pub enum Expression<'s> {
         Vec<ArgElement<'s>>,
         TokenRef<'s>,
     ),
+    /// expression ( interpolated_string | string )
+    TaggedString(Box<Expression<'s>>, Box<Expression<'s>>),
     /// expression `::` extension `(` arguments `)`
     /// extension
     ///     : identifier (`.` ( identifier | ordinal ))*
@@ -339,6 +341,10 @@ impl<'s> AstWalker<'s> for Expression<'s> {
                 exps.collect_diagnostics(collector);
                 cp.collect_diagnostics(collector);
             }
+            TaggedString(callable, exp) => {
+                callable.collect_diagnostics(collector);
+                exp.collect_diagnostics(collector);
+            }
             Call(exp, op, args, cp) => {
                 exp.collect_diagnostics(collector);
                 op.collect_diagnostics(collector);
@@ -478,6 +484,7 @@ impl<'s> AstWalker<'s> for Expression<'s> {
             InterpolatedString(token, _) => token.range.clone(),
             Literal(token) | Variable(token) => token.range.clone(),
             Index(exp, _, _, r) | Slice(exp, _, _, _, _, r) => exp.range().start..r.range.end,
+            TaggedString(callable, exp) => callable.range().start..exp.range().end,
             Call(callable, _, _, cp) => callable.range().start..cp.range.end,
             Extension(expression, _, _, _, _, cp) => expression.range().start..cp.range.end,
             Access(expression, _, cp) => expression.range().start..cp.range.end,

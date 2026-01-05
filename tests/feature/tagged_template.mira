@@ -1,0 +1,14 @@
+fn collect(template, ..args) { (:template, :args) }
+
+t_eq(collect`Hello, ${ "World" }!`, (template: ["Hello, ", "!"], args: [("World",)]));
+t_eq(collect`Sum of ${ 1 } + ${ 2 } = ${ 1 + 2 }`, (template: ["Sum of ", " + ", " = ", ""], args: [(1,), (2,), (3,)]));
+t_eq(collect`No substitutions here.`, (template: ["No substitutions here."], args: []));
+t_eq(collect`Substitution with fmt $(1:fmt)`, (template: ["Substitution with fmt ", ""], args: [(1, "fmt")]));
+t_eq(collect`Multiple fmt $(1:fmt1) and $(2:fmt2) substitutions`, (template: ["Multiple fmt ", " and ", " substitutions"], args: [(1, "fmt1"), (2, "fmt2")]));
+t_eq(collect"$(1)$(2)$(3)", (template: ["", "", "", ""], args: [(1,), (2,), (3,)]));
+
+t_eq(collect"$('x')\n$('y')", (template: ["", "\n", ""], args: [("x",), ("y",)]));
+t_eq(collect@"$('x')\n$('y')"@, (template: ["", "\\n", ""], args: [("x",), ("y",)]));
+
+let empty = nil;
+(empty)`${ t_never() }`;
