@@ -2,6 +2,7 @@
 /dist/
 /deb-dist/
 /packages/*/dist/
+/packages/*/build/
 /packages/*/deb-dist/
 /*.deb
 /packages/*/*.deb
