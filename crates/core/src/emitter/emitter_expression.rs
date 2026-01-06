@@ -46,6 +46,15 @@ impl<'s, 'c> Emitter<'s, 'c> {
             self.declare_expression(callable);
         }
     }
+    fn declare_cond_expr(&mut self, cond: &'s Expression<'s>) {
+        if let Literal(lit) = cond
+            && !lit.is_boolean_literal()
+        {
+            self.diagnostics
+                .push(DiagnosticCode::NonBooleanInLogical, lit.range());
+        }
+        self.declare_expression(cond);
+    }
     fn declare_indexing_expr(&mut self, record_like: &'s Expression<'s>) {
         if record_like.is_literal() || record_like.is_interpolated_string() {
             self.diagnostics
@@ -1047,7 +1056,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 self.enter_scope(kw.range.end..body.range().end);
 
                 let cond_reg = self.closures.add_reg();
-                self.declare_expression(cond);
+                self.declare_cond_expr(cond);
                 self.declare_block(stmts, expr);
 
                 let pos = self.chunk.code.len();
@@ -1178,7 +1187,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
             }
             If(kw, cond, then_expr, else_part) => {
                 self.enter_scope(kw.range.end..expr.range().end);
-                self.declare_expression(cond);
+                self.declare_cond_expr(cond);
 
                 let cond_reg = self.emit_expression_reg(cond, brk);
                 self.op_if(kw.range(), OpCode::If, cond_reg);
