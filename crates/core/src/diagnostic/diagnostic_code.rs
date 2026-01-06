@@ -156,16 +156,6 @@ pub enum DiagnosticCode {
     #[strum(message = "Can only assign to a variable or a field access")]
     UnassignableExpression,
 
-    // Static type checking errors
-    #[strum(message = "Non-number literal cannot be used in range")]
-    NonNumberInRange,
-    #[strum(message = "Non-number-or-string literal cannot be used in comparison expression")]
-    NonNumberOrStringInComparison,
-    #[strum(message = "Non-number literal cannot be used in arithmetic expression")]
-    NonNumberInArithmetic,
-    #[strum(message = "Non-boolean literal cannot be used in logical expression")]
-    NonBooleanInLogical,
-
     ErrorEnd = 1999,
     // Warning 2000~2999
     WarningStart = 2000,
@@ -184,6 +174,20 @@ pub enum DiagnosticCode {
     UnnecessaryIrrefutablePattern,
     #[strum(message = "This `match` expression has no cases; it will never match any value")]
     MatchExpressionHasNoCases,
+
+    // Static type checking warnings
+    #[strum(message = "Non-number literal cannot be used in range")]
+    NonNumberInRange,
+    #[strum(message = "Non-number-or-string literal cannot be used in comparison expression")]
+    NonNumberOrStringInComparison,
+    #[strum(message = "Non-number literal cannot be used in arithmetic expression")]
+    NonNumberInArithmetic,
+    #[strum(message = "Non-boolean literal cannot be used in logical expression")]
+    NonBooleanInLogical,
+    #[strum(message = "Literal cannot be called as a function")]
+    LiteralNotCallable,
+    #[strum(message = "Literal cannot be accessed as a record or array")]
+    LiteralNotIndexable,
 
     // For analyzer
     #[strum(message = "Global variable `$0` is not declared")]

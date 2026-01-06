@@ -39,8 +39,19 @@ impl<'s, 'c> Emitter<'s, 'c> {
         {
             self.declare_expression(inner);
         } else {
+            if callable.is_literal() || callable.is_interpolated_string() {
+                self.diagnostics
+                    .push(DiagnosticCode::LiteralNotCallable, callable.range());
+            }
             self.declare_expression(callable);
         }
+    }
+    fn declare_indexing_expr(&mut self, record_like: &'s Expression<'s>) {
+        if record_like.is_literal() || record_like.is_interpolated_string() {
+            self.diagnostics
+                .push(DiagnosticCode::LiteralNotIndexable, record_like.range());
+        }
+        self.declare_expression(record_like);
     }
     fn declare_call(
         &mut self,
@@ -165,9 +176,9 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 self.declare_expression(expression);
                 self.declare_call(Some(expression), l, r, callable, expressions);
             }
-            Access(expression, _, _) => self.declare_expression(expression),
+            Access(expression, _, _) => self.declare_indexing_expr(expression),
             Index(expression, _, prop, _) => {
-                self.declare_expression(expression);
+                self.declare_indexing_expr(expression);
                 self.declare_expression(prop);
             }
             Slice(expression, _, start, _, end, _) => {
