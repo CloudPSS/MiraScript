@@ -39,24 +39,19 @@ export function fromVmFunctionProxy<T extends VmFunctionLike>(fn: T): VmFunction
 }
 
 /** 将宿主语言的值包装为 Mirascript 类型 */
-export function wrapToVmValue(
+export function wrapToVmConst(
     value: unknown,
-    thisArg: unknown = null,
     assumeVmValue: ((obj: object) => obj is Exclude<VmConst, VmPrimitive>) | null = null,
-): VmValue {
+): VmConst {
     if (value == null) return null;
     switch (typeof value) {
-        case 'function': {
-            const unwrapped = fromVmFunctionProxy(value as VmFunctionLike);
-            if (unwrapped != null) return unwrapped;
-            return new VmExtern(value as () => never, thisArg);
-        }
+        case 'function':
+            return null;
         case 'object': {
-            if (isVmWrapper(value)) return value as VmModule | VmExtern;
+            if (isVmWrapper(value)) return null;
             if (value instanceof Date) return value.valueOf();
             if (assumeVmValue?.(value)) return value;
-            // Only functions preserve thisArg
-            return new VmExtern(value);
+            return null;
         }
         case 'string':
         case 'number':
@@ -69,6 +64,27 @@ export function wrapToVmValue(
         default:
             return null;
     }
+}
+/** 将宿主语言的值包装为 Mirascript 类型 */
+export function wrapToVmValue(
+    value: unknown,
+    thisArg: unknown = null,
+    assumeVmValue: ((obj: object) => obj is Exclude<VmConst, VmPrimitive>) | null = null,
+): VmValue {
+    if (value == null) return null;
+    if (typeof value == 'function') {
+        const unwrapped = fromVmFunctionProxy(value as VmFunctionLike);
+        if (unwrapped != null) return unwrapped;
+        return new VmExtern(value as () => never, thisArg);
+    }
+    const constValue = wrapToVmConst(value, assumeVmValue);
+    if (constValue != null) return constValue;
+    if (typeof value == 'object') {
+        if (isVmWrapper(value)) return value as VmModule | VmExtern;
+        // Only functions preserve thisArg
+        return new VmExtern(value);
+    }
+    return null;
 }
 
 /** 创建绑定 */

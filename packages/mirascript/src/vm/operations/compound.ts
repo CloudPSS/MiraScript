@@ -1,8 +1,9 @@
 import { VmError } from '../../helpers/error.js';
-import { hasOwnEnumerable, isNaN, NotNumber, keys, create } from '../../helpers/utils.js';
+import { hasOwnEnumerable, isNaN, NotNumber, keys, create, isFinite } from '../../helpers/utils.js';
 import { toNumber, toString } from '../../helpers/convert/index.js';
 import { display } from '../../helpers/serialize.js';
 import { isVmPrimitive, isVmArray, isVmRecord, isVmFunction, isVmExtern, isVmWrapper } from '../../helpers/types.js';
+import { wrapToVmConst } from '../types/boundary.js';
 import type { VmAny, VmRecord, VmValue, VmConst } from '../types/index.js';
 import { isSame } from './utils.js';
 import { $AssertInit } from './common.js';
@@ -92,7 +93,17 @@ export function $Get(obj: VmAny, key: VmAny): VmValue {
     }
     const pk = $ToString(key);
     if (obj == null || typeof obj != 'object') return null;
-    if (isVmWrapper(obj)) return obj.get(pk) ?? null;
+    if (isVmWrapper(obj)) {
+        if (isFinite(key) && isVmExtern(obj) && obj.isArrayLike()) {
+            let index = trunc(key as number);
+            const { length } = obj.value;
+            if (index < 0) index += length;
+            if (index >= 0 && index < length) {
+                return obj.get(String(index)) ?? null;
+            }
+        }
+        return obj.get(pk) ?? null;
+    }
     if (!hasOwnEnumerable(obj, pk)) return null;
     return obj[pk] ?? null;
 }
@@ -145,17 +156,21 @@ export function $ArraySpread(array: VmAny): Iterable<VmConst | undefined> {
     $AssertInit(array);
     if (array == null) return [];
     if (isVmArray(array)) return array;
-    if (isVmExtern(array) && typeof (array.value as Iterable<unknown>)[Symbol.iterator] == 'function') {
-        const result: VmConst[] = [];
-        for (const item of array.value as Iterable<unknown>) {
-            // 当前只有 Primitive 不会进行二次包装
-            if (isVmPrimitive(item)) {
-                result.push(item);
-            } else {
-                result.push(null);
+    if (isVmExtern(array)) {
+        if (array.isArrayLike()) {
+            const result: VmConst[] = [];
+            for (let i = 0, len = array.value.length; i < len; i++) {
+                const item = array.value[i];
+                result.push(wrapToVmConst(item, (v) => array.assumeVmValue(v, i)));
             }
+            return result;
+        } else if (typeof (array.value as Iterable<unknown>)[Symbol.iterator] == 'function') {
+            const result: VmConst[] = [];
+            for (const item of array.value as Iterable<unknown>) {
+                result.push(wrapToVmConst(item, (v) => array.assumeVmValue(v, Symbol.iterator as never)));
+            }
+            return result;
         }
-        return result;
     }
     throw new VmError(`Expected array, iterable extern or nil, got ${display(array)}`, []);
 }

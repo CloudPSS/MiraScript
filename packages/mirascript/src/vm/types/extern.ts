@@ -58,7 +58,7 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
     }
 
     /** 决定是否对属性进行包装 */
-    protected assumeVmValue(value: object, key: keyof T | undefined): value is Exclude<VmConst, VmPrimitive> {
+    assumeVmValue(value: object, key: keyof T | undefined): value is Exclude<VmConst, VmPrimitive> {
         return false;
     }
 

@@ -10,7 +10,6 @@ import {
     isVmModule,
     isVmRecord,
 } from './types.js';
-import type { VmWrapper } from '../vm/types/wrapper.js';
 
 /** 序列化设置 */
 export interface SerializeOptions {
@@ -302,7 +301,7 @@ export function serialize(value: VmAny, options?: Partial<SerializeOptions>): st
     return serializeImpl(value, 0, getSerializeOptions(options));
 }
 
-/** 将 MiraScript function 转化为 MiraScript 字符串 */
+/** 将 MiraScript 函数转化为 MiraScript 字符串 */
 export function displayFunction(value: VmFunction): string {
     try {
         const name = getVmFunctionInfo(value)?.fullName;
@@ -312,12 +311,27 @@ export function displayFunction(value: VmFunction): string {
         return `<function>`;
     }
 }
-/** 将 MiraScript module 转化为 MiraScript 字符串 */
-export function displayWrapper(value: VmWrapper<object>, useBraces: boolean, fallback: string): string {
+/** 将 MiraScript 模块转化为 MiraScript 字符串 */
+export function displayModule(value: VmModule): string {
     try {
-        return value.toString(useBraces);
+        return value.toString(true);
+        /* c8 ignore next 3 */
     } catch {
-        return fallback;
+        return `<module>`;
+    }
+}
+/** 将 MiraScript 外部值转化为 MiraScript 字符串 */
+export function displayExtern(value: VmExtern): string {
+    try {
+        const tag = `<extern ${value.tag}>`;
+        const rep = value.toString(true);
+        if (rep === tag || rep.length > 50) {
+            return tag;
+        }
+        return `${tag} ${rep}`;
+        /* c8 ignore next 3 */
+    } catch {
+        return `<extern>`;
     }
 }
 const DISPLAY_OPTIONS = Object.freeze({
@@ -333,8 +347,8 @@ const DISPLAY_OPTIONS = Object.freeze({
     serializeRecord,
     serializePropName: String,
     serializeFunction: displayFunction,
-    serializeModule: (value) => displayWrapper(value, true, '<module>'),
-    serializeExtern: (value) => displayWrapper(value, true, '<extern>'),
+    serializeModule: displayModule,
+    serializeExtern: displayExtern,
 } satisfies SerializeOptions);
 /**
  * 将 MiraScript 值转化为 MiraScript 字符串。

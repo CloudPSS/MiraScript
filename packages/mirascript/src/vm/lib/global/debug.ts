@@ -114,7 +114,7 @@ export const panic = VmLib(
         examples: ['panic("boom");'],
     },
     {
-        prefix: ['MiraScript'] as readonly string[],
+        prefix: ['MiraScript'] as readonly [prefix: string, ...additional: readonly string[]],
         serializer: defaultSerializer,
     },
 );
