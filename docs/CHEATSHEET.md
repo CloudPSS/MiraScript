@@ -86,7 +86,6 @@ MiraScript 是一门表达式优先、不可变数据为核心的脚本语言。
 | 函数声明     | `fn add(x, y) { x + y }`            | `add(x, y) = x + y`                                         |
 | 类型判断     | `type(x) == 'string'`               | `is(x, 'string')`                                           |
 | 空值合并     | `context.Vm ?? 1`                   | `is(context, 'Object') ? (context.Vm ? context.Vm : 1) : 1` |
-| 条件运算     | `if cond { a } else { b }`          | `cond ? a : b`                                              |
 
 <style>
   #mirascript-vs-mathjs + table {
