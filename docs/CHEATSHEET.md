@@ -88,6 +88,9 @@ MiraScript 是一门表达式优先、不可变数据为核心的脚本语言。
 | 空值合并     | `context.Vm ?? 1`                           | `is(context, 'Object') ? (context.Vm ? context.Vm : 1) : 1` |
 
 <style>
+  body > hr:first-child, body > #mdxformat-md {
+    display: none;
+  }
   #mirascript-vs-mathjs + table {
     th:first-child {
       width: 15%;
@@ -105,6 +108,7 @@ MiraScript 是一门表达式优先、不可变数据为核心的脚本语言。
       background-color: #8883;
       padding: 1px 3px;
       border-radius: 4px;
+      print-color-adjust: exact;
     }
   }
 </style>
