@@ -158,6 +158,9 @@ impl Formattable for Expression<'_> {
             }
             Prefix(op, expression) => {
                 formatter.write_token(op);
+                if op.is_keyword() {
+                    formatter.write_space();
+                }
                 expression.format(formatter, measurement);
             }
             Infix(l, op, r) => {

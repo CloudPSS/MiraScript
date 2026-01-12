@@ -934,12 +934,27 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     TokenKind::Operator(Operator::Plus) => OpCode::Pos,
                     TokenKind::Operator(Operator::Minus) => OpCode::Neg,
                     TokenKind::Operator(Operator::Exclamation) => OpCode::Not,
+                    TokenKind::Keyword(Keyword::Not) => {
+                        self.diagnostics
+                            .push(DiagnosticCode::PreferLogicalOperatorNot, token.range());
+                        OpCode::Not
+                    }
                     _ => unreachable!(),
                 };
                 self.op_unary(token.range(), ret, op, reg);
             }
-            Infix(left, token, right) => {
-                if **token == Operator::LogicalAnd {
+            Infix(left, op, right) => {
+                let mut kind: Cow<'_, TokenKind> = Cow::Borrowed(&op.kind);
+                if *kind == Keyword::And {
+                    self.diagnostics
+                        .push(DiagnosticCode::PreferLogicalOperatorAnd, op.range());
+                    kind = Cow::Owned(TokenKind::Operator(Operator::LogicalAnd));
+                } else if *kind == Keyword::Or {
+                    self.diagnostics
+                        .push(DiagnosticCode::PreferLogicalOperatorOr, op.range());
+                    kind = Cow::Owned(TokenKind::Operator(Operator::LogicalOr));
+                }
+                if *kind == Operator::LogicalAnd {
                     // ret is used in the immediate if, so we need to ensure it is not empty
                     let ret = if !ret.is_empty() {
                         ret
@@ -947,51 +962,51 @@ impl<'s, 'c> Emitter<'s, 'c> {
                         self.closures.add_reg()
                     };
                     self.emit_expression(left, ret, brk);
-                    self.op_if(token.range(), OpCode::If, ret);
+                    self.op_if(op.range(), OpCode::If, ret);
                     self.emit_expression(right, ret, brk);
-                    self.op_2(token.range(), OpCode::ToBoolean, ret, ret);
-                    self.op_if_end(token.range());
-                } else if **token == Operator::LogicalOr {
+                    self.op_2(op.range(), OpCode::ToBoolean, ret, ret);
+                    self.op_if_end(op.range());
+                } else if *kind == Operator::LogicalOr {
                     let ret = if !ret.is_empty() {
                         ret
                     } else {
                         self.closures.add_reg()
                     };
                     self.emit_expression(left, ret, brk);
-                    self.op_if(token.range(), OpCode::IfNot, ret);
+                    self.op_if(op.range(), OpCode::IfNot, ret);
                     self.emit_expression(right, ret, brk);
-                    self.op_2(token.range(), OpCode::ToBoolean, ret, ret);
-                    self.op_if_end(token.range());
-                } else if **token == Operator::NullCoalescing {
+                    self.op_2(op.range(), OpCode::ToBoolean, ret, ret);
+                    self.op_if_end(op.range());
+                } else if *kind == Operator::NullCoalescing {
                     let ret = if !ret.is_empty() {
                         ret
                     } else {
                         self.closures.add_reg()
                     };
                     self.emit_expression(left, ret, brk);
-                    self.op_if(token.range(), OpCode::IfNil, ret);
+                    self.op_if(op.range(), OpCode::IfNil, ret);
                     self.emit_expression(right, ret, brk);
-                    self.op_if_end(token.range());
-                } else if **token == Keyword::In && is_global_expression(right) {
+                    self.op_if_end(op.range());
+                } else if *kind == Keyword::In && is_global_expression(right) {
                     let left_reg = self.emit_expression_reg(left, brk);
                     self.op_unary(
-                        token.range.start..right.range().end,
+                        op.range.start..right.range().end,
                         ret,
                         OpCode::InGlobal,
                         left_reg,
                     );
                 } else {
-                    let Some(op) = (match token.kind {
+                    let Some(code) = (match op.kind {
                         TokenKind::Operator(o) => o.to_infix_op(),
                         TokenKind::Keyword(Keyword::In) => Some(OpCode::In),
                         _ => None,
                     }) else {
                         // Unexpected infix operator
-                        return self.unreachable(token, token, file!(), line!());
+                        return self.unreachable(op, op, file!(), line!());
                     };
                     let left_reg = self.emit_expression_reg(left, brk);
                     let right_reg = self.emit_expression_reg(right, brk);
-                    self.op_binary(token.range(), ret, op, left_reg, right_reg);
+                    self.op_binary(op.range(), ret, code, left_reg, right_reg);
                 }
             }
             Is(expression, _, pattern) => {

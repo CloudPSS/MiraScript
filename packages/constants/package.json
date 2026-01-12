@@ -17,7 +17,7 @@
   },
   "scripts": {
     "wasm": "wasm-pack build --target nodejs --out-dir ../../packages/constants/lib ../../crates/constants",
-    "watch": "nodemon -e rs,js,ts --watch ../../crates/constants --watch ../../crates/core --watch ./src --exec 'pnpm build'",
+    "watch": "nodemon -e rs,js,ts --watch ../../crates/constants --watch ../../crates/core --exec 'pnpm build'",
     "build": "pnpm wasm --dev && node ./scripts/build.ts && tsc",
     "clean": "rimraf dist lib",
     "prepublishOnly": "pnpm clean && pnpm build"

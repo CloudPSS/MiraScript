@@ -209,13 +209,11 @@ fn access_index<'s>(i: &mut Input<'s>) -> Result<AccessIndex<'s>> {
             .parse_next(i)
     }
     fn additive<'s>(i: &mut Input<'s>) -> Result<Box<Expression<'s>>> {
-        pratt(
-            precedence_of(&TokenKind::Operator(Operator::SpreadRange)) + 2,
-            false,
-        )
-        .verify_map(verify_expr)
-        .map(Box::new)
-        .parse_next(i)
+        let precedence_additive = precedence_of(&TokenKind::Operator(Operator::SpreadRange)).0 + 2;
+        pratt(precedence_additive, false)
+            .verify_map(verify_expr)
+            .map(Box::new)
+            .parse_next(i)
     }
     fn range_op<'s>(i: &mut Input<'s>) -> Result<TokenRef<'s>> {
         one_of(|t: &Token<'s>| *t == Operator::SpreadRange || *t == Operator::HalfOpenRange)
@@ -384,38 +382,36 @@ fn postfix<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     }))
 }
 
-fn precedence_of(t: &TokenKind<'_>) -> u8 {
+fn precedence_of(t: &TokenKind<'_>) -> (u8, bool) {
+    use crate::lexer::{Keyword::*, Operator::*, TokenKind::*};
     match t {
-        TokenKind::Operator(Operator::Caret) => 110,
-        TokenKind::Operator(Operator::Exclamation) => 100,
-        TokenKind::Operator(Operator::Asterisk)
-        | TokenKind::Operator(Operator::Slash)
-        | TokenKind::Operator(Operator::Percent) => 90,
-        TokenKind::Operator(Operator::Plus) | TokenKind::Operator(Operator::Minus) => 80,
-        TokenKind::Operator(Operator::SpreadRange)
-        | TokenKind::Operator(Operator::HalfOpenRange) => 70,
-        TokenKind::Keyword(Keyword::Is) => 60,
-        TokenKind::Keyword(Keyword::In)
-        | TokenKind::Operator(Operator::Less)
-        | TokenKind::Operator(Operator::LessEqual)
-        | TokenKind::Operator(Operator::Greater)
-        | TokenKind::Operator(Operator::GreaterEqual) => 50,
-        TokenKind::Operator(Operator::Equal)
-        | TokenKind::Operator(Operator::NotEqual)
-        | TokenKind::Operator(Operator::TildeEqual)
-        | TokenKind::Operator(Operator::TildeNotEqual) => 40,
-        TokenKind::Operator(Operator::LogicalAnd) => 30,
-        TokenKind::Operator(Operator::LogicalOr) => 20,
-        TokenKind::Operator(Operator::NullCoalescing) => 10,
-        _ => 0,
+        Operator(Caret) => (110, false),
+        Operator(Exclamation) | Keyword(Not) => (100, true),
+        Operator(Asterisk) | Operator(Slash) | Operator(Percent) => (90, false),
+        Operator(Plus) | Operator(Minus) => (80, true),
+        Operator(SpreadRange) | Operator(HalfOpenRange) => (70, false),
+        Keyword(Is) => (60, false),
+        Keyword(In)
+        | Operator(Less)
+        | Operator(LessEqual)
+        | Operator(Greater)
+        | Operator(GreaterEqual) => (50, false),
+        Operator(Equal) | Operator(NotEqual) | Operator(TildeEqual) | Operator(TildeNotEqual) => {
+            (40, false)
+        }
+        Operator(LogicalAnd) | Keyword(And) => (30, false),
+        Operator(LogicalOr) | Keyword(Or) => (20, false),
+        Operator(NullCoalescing) => (10, false),
+        _ => (0, false),
     }
 }
 
 fn pratt_prefix<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     let token = peek(any).parse_next(i)?;
-    if *token == Operator::Plus || *token == Operator::Minus || *token == Operator::Exclamation {
+    let (precedence, is_prefix) = precedence_of(token);
+    if is_prefix {
         let op = any.parse_next(i)?;
-        let expr = pratt(precedence_of(op), false)
+        let expr = pratt(precedence, false)
             .verify_map(verify_expr)
             .parse_next(i)?;
         Ok(Expression::Prefix(op.into(), expr.into()))
@@ -435,6 +431,7 @@ fn pratt_infix<'s>(
         let right = pattern(false).map(Box::new).parse_next(i)?;
         return Ok(Iterable::Value(Expression::Is(left, op.into(), right)));
     }
+    // 调整优先级以实现右结合
     let precedence = if *op == Operator::Caret {
         precedence - 1
     } else {
@@ -473,7 +470,7 @@ fn pratt<'s>(precedence: u8, allow_range: bool) -> impl Parser<'s, Iterable<'s>>
             }
 
             let op = peek(any).parse_next(i)?;
-            let op_precedence = precedence_of(op);
+            let (op_precedence, _) = precedence_of(op);
             if op_precedence <= precedence {
                 break;
             }
