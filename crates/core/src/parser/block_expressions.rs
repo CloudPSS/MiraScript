@@ -3,12 +3,15 @@ use winnow::{
     token::any,
 };
 
-use super::basic_expressions::iterable;
-use super::expressions::{expression, expression_or_insert};
-use super::helper::{statements_and_expression, token, token_or_insert};
-use super::parameter_list::parameter_list;
-use super::patterns::{pattern, pattern_or_insert};
-use super::prelude::*;
+use super::{
+    basic_expressions::iterable,
+    expressions::{expression, expression_or_insert},
+    helper::{statements_and_expression, token, token_or_insert},
+    json_expressions::json_expression,
+    parameter_list::parameter_list,
+    patterns::{pattern, pattern_or_insert},
+    prelude::*,
+};
 
 fn optional_else<'s>(i: &mut Input<'s>) -> Result<Option<ElseBlock<'s>>> {
     let Some(kw_else) = opt(token(Keyword::Else)).parse_next(i)? else {
@@ -149,7 +152,10 @@ pub(super) fn for_in_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>>
 
 pub(super) fn block_like_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     dispatch! {peek(any);
-        t if *t == Operator::OpenBrace => block_expression,
+        t if *t == Operator::OpenBrace => alt((
+            json_expression,
+            block_expression,
+        )),
         t if *t == Keyword::If => if_expression,
         t if *t == Keyword::Fn => fn_expression,
         t if *t == Keyword::Loop => loop_expression,

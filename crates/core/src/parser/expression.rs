@@ -86,6 +86,10 @@ pub enum Expression<'s> {
     /// Use `()` for an empty record.
     ///
     /// For a single-element-unnamed record, use `(` expression `,` `)`.
+    ///
+    /// For convenience for JSON-like data, allows following JSON-style trailing record:
+    ///
+    /// `{` ( ( string | interpolated_string ) `:` expression `,` )+ `}`
     Record(TokenRef<'s>, Vec<RecordElement<'s>>, TokenRef<'s>),
     /// `[` element* `]`
     ///

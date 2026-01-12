@@ -15,6 +15,7 @@ mod expression;
 mod expressions;
 mod helper;
 mod iterable;
+mod json_expressions;
 mod list_item;
 mod parameter_list;
 mod pattern;

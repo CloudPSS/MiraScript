@@ -112,8 +112,8 @@ fn array<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     .parse_next(i)
 }
 
-fn interpolation<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
-    let token = one_of(|t: &Token<'s>| matches!(&t.kind, &TokenKind::InterpolatedString(_, _)))
+pub(super) fn interpolation<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
+    let token = one_of(|t: &Token<'s>| matches!(&t.kind, &TokenKind::InterpolatedString(..)))
         .parse_next(i)?;
     Ok(to_interpolate_expr(token))
 }

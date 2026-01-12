@@ -7,6 +7,7 @@ use super::{
     block_expressions::*,
     expressions::{expression, expression_or_insert},
     helper::{token, token_or_insert, variable_token},
+    json_expressions::json_expression,
     parameter_list::parameter_list,
     patterns::pattern_or_insert,
     prelude::*,
@@ -124,13 +125,18 @@ fn assign_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
     .parse_next(i)
 }
 
-fn expression_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
-    let mut insert_semicolon = peek(one_of(|t: &Token<'s>| {
+fn insert_semicolon<'s>(i: &mut Input<'s>) -> Result<()> {
+    peek(one_of(|t: &Token<'s>| {
         *t != Operator::CloseBrace
             && *t != TokenKind::Eof
             && *t != Keyword::Case
             && *t != Keyword::Else
-    }));
+    }))
+    .value(())
+    .parse_next(i)
+}
+
+fn expression_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
     seq!(Statement::Expression(
         expression.map(Box::new),
         _: insert_semicolon,
@@ -149,9 +155,24 @@ fn unknown_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
     .parse_next(i)
 }
 
+fn braced_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
+    // Use this instead of alt to skip block_expression while data is json (without `;`)
+    let cp = i.checkpoint();
+    if let Ok(json) = json_expression.parse_next(i) {
+        insert_semicolon.parse_next(i)?;
+        let semi = semicolon.parse_next(i)?;
+        return Ok(Statement::Expression(json.into(), semi));
+    }
+    i.reset(&cp);
+    block_expression
+        .map(Box::new)
+        .map(Statement::BlockExpression)
+        .parse_next(i)
+}
+
 pub(super) fn statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
     dispatch! {peek(any);
-        t if *t == Operator::OpenBrace => block_expression.map(Box::new).map(Statement::BlockExpression),
+        t if *t == Operator::OpenBrace => braced_statement,
         t if *t == Keyword::If => if_expression.map(Box::new).map(Statement::BlockExpression),
         t if *t == Keyword::Loop => loop_expression.map(Box::new).map(Statement::BlockExpression),
         t if *t == Keyword::While => while_expression.map(Box::new).map(Statement::BlockExpression),

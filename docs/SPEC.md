@@ -168,6 +168,12 @@ let unnamed_record = (-4, 3);
 debug_print(`${unnamed_record.0}, ${unnamed_record[1]}`); // 输出 "-4, 3"
 ```
 
+也可以使用 JSON Object 语法书写记录字面量。此时，记录的键必须使用引号，不允许省略。
+
+```mira
+let json_record = {"key1": "value1", "key2": 2, "key3": true};
+```
+
 #### 数组字面量
 
 表示一个 `array` 类型的值。使用 `[]` 括起来，数组的元素用逗号分隔。数组的元素可以是任意类型。

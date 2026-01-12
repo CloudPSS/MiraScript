@@ -565,6 +565,12 @@ impl<'s, 'c> Emitter<'s, 'c> {
             Variable(token) => self.emit_var_read(token, ret),
             Grouping(_, expression, _) => self.emit_expression(expression, ret, brk),
             Record(open, elements, close) => {
+                if **open == Operator::OpenBrace && **close == Operator::CloseBrace {
+                    self.diagnostics.push(
+                        DiagnosticCode::PreferParenthesesForRecordLiteral,
+                        expr.range(),
+                    );
+                }
                 let mut elements_regs = vec![];
                 for element in elements {
                     match element.deref() {

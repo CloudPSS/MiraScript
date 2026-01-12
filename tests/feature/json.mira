@@ -1,0 +1,23 @@
+let y = 'foo';
+t_eq({"x": 1, "$y": 12}, (x: 1, foo: 12));
+
+fn j { {"x": 1, "$it": {"z": 7, "w": [1, 2, {"x": 0}]}} }
+t_eq(j('foo'), (x: 1, foo: (z: 7, w: [1, 2, (x: 0)])));
+
+fn r {
+  return {"a": 5, "b": 6};
+}
+t_eq(r(), (a: 5, b: 6));
+
+fn b {
+  if it { {"X": 1} } else { {"X": 2} }
+}
+t_eq(b(true), (X: 1));
+t_eq(b(false), (X: 2));
+
+let lit = {"a": {"b": {"c": 10}}};
+t_eq(lit, (a: (b: (c: 10))));
+
+// Empty brace is parsed as block expression, not JSON
+let empty = { };
+t_eq(empty, nil);
