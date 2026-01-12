@@ -413,3 +413,26 @@ export function listFields(obj: VmAny, includeNonEnumerable: boolean): Array<str
     }
     return lib.keys(obj);
 }
+
+/** 是否已弃用 */
+export function isDeprecatedGlobal(globals: MonacoContext, name: string): VmFunctionInfo['deprecated'] {
+    if (!globals.has(name)) {
+        return undefined;
+    }
+    const value = globals.get(name);
+    const funcInfo = getVmFunctionInfo(value);
+    if (funcInfo) {
+        return funcInfo.deprecated;
+    }
+    const info = lib[name as 'PI'];
+    if (!info?.deprecated) return undefined;
+    if (info.value !== value) return undefined;
+    const { use } = info.deprecated;
+    if (use) {
+        // Check that the replacement refers to the same value in the current context
+        if (!globals.has(use)) return undefined;
+        const replacement = globals.get(use);
+        if (replacement !== info.value) return undefined;
+    }
+    return info.deprecated;
+}

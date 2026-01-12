@@ -29,6 +29,7 @@ import {
     wordAt,
     getField,
     listFields,
+    isDeprecatedGlobal,
 } from '../utils.js';
 import { KEYWORDS, RESERVED_KEYWORDS, REG_IDENTIFIER_FULL, REG_ORDINAL_FULL, isKeyword } from '../../constants.js';
 import type { LocalDefinition } from '../compile-result.js';
@@ -289,6 +290,10 @@ export class CompletionItemProvider extends Provider implements languages.Comple
                 continue;
             }
 
+            if (isDeprecatedGlobal(global, key)) {
+                // skip deprecated globals in completion
+                continue;
+            }
             suggestions.push({
                 insertText:
                     localKeys.has(key) || isKeyword(key)

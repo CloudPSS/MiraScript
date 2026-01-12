@@ -1,7 +1,8 @@
 import { DiagnosticCode, getDiagnosticMessage } from '@mirascript/mirascript/subtle';
 import { type editor, MarkerSeverity, MarkerTag, Uri, type IRange } from '../monaco-api.js';
-import type { CompileResult, SourceDiagnostic } from './compile-result.js';
 import { Provider } from './providers/base.js';
+import type { CompileResult, SourceDiagnostic } from './compile-result.js';
+import { isDeprecatedGlobal } from './utils.js';
 
 const formatMessage = (model: editor.ITextModel, template: string, $0?: string | IRange): string => {
     if (template.includes(`$0`)) {
@@ -20,6 +21,7 @@ const makeMarkerData = (
     code: DiagnosticCode | string,
     message: string | undefined,
     severity: MarkerSeverity,
+    tags?: MarkerTag[],
 ): editor.IMarkerData => {
     const { startLineNumber, startColumn, endLineNumber, endColumn } = range;
     if (!message) {
@@ -39,6 +41,7 @@ const makeMarkerData = (
         severity,
         modelVersionId: model.getVersionId(),
         source: 'MiraScript',
+        tags,
     };
     const codeName = typeof code == 'number' ? DiagnosticCode[code] : undefined;
     if (codeName) {
@@ -110,20 +113,46 @@ export async function makeModelMarkers(
         const context = await Provider.getContext(model);
         for (const g of globals) {
             const { name } = g;
-            if (context.has(name)) continue;
-            const template = getDiagnosticMessage(DiagnosticCode.GlobalVariableNotDeclared);
-            if (!template) continue;
-            const message = formatMessage(model, template, name);
-            for (const ref of g.references) {
-                markers.push(
-                    makeMarkerData(
-                        model,
-                        ref.range,
-                        DiagnosticCode.GlobalVariableNotDeclared,
-                        message,
-                        MarkerSeverity.Warning,
-                    ),
-                );
+            if (!context.has(name)) {
+                const template = getDiagnosticMessage(DiagnosticCode.GlobalVariableNotDeclared);
+                if (!template) continue;
+                const message = formatMessage(model, template, name);
+                for (const ref of g.references) {
+                    markers.push(
+                        makeMarkerData(
+                            model,
+                            ref.range,
+                            DiagnosticCode.GlobalVariableNotDeclared,
+                            message,
+                            MarkerSeverity.Warning,
+                        ),
+                    );
+                }
+                continue;
+            }
+            const deprecated = isDeprecatedGlobal(context, name);
+            if (deprecated) {
+                const replacement = deprecated.use;
+                if (replacement) {
+                    const template = getDiagnosticMessage(deprecated.message);
+                    if (!template) continue;
+                    const message = formatMessage(model, template, replacement);
+                    for (const ref of g.references) {
+                        markers.push(
+                            makeMarkerData(model, ref.range, deprecated.message, message, MarkerSeverity.Hint, [
+                                MarkerTag.Deprecated,
+                            ]),
+                        );
+                    }
+                } else {
+                    for (const ref of g.references) {
+                        markers.push(
+                            makeMarkerData(model, ref.range, deprecated.message, undefined, MarkerSeverity.Hint, [
+                                MarkerTag.Deprecated,
+                            ]),
+                        );
+                    }
+                }
             }
         }
     }

@@ -1,3 +1,4 @@
+import { DiagnosticCode } from '@mirascript/constants';
 import { VmLib } from '../helpers.js';
 
 export const PI = VmLib(Math.PI, {
@@ -7,6 +8,22 @@ export const PI = VmLib(Math.PI, {
 export const E = VmLib(Math.E, {
     summary: '自然对数的底数',
     returnsType: 'number',
+});
+export const pi = VmLib(Math.PI, {
+    summary: '圆周率',
+    returnsType: 'number',
+    deprecated: {
+        use: 'PI',
+        message: DiagnosticCode.PreferUppercaseConstant,
+    },
+});
+export const e = VmLib(Math.E, {
+    summary: '自然对数的底数',
+    returnsType: 'number',
+    deprecated: {
+        use: 'E',
+        message: DiagnosticCode.PreferUppercaseConstant,
+    },
 });
 export const SQRT1_2 = VmLib(Math.SQRT1_2, {
     summary: '1 的平方根除以 2',

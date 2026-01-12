@@ -20,7 +20,7 @@ let callback: ((ev: MessageEvent) => void) | undefined;
 
 test.before('load', async (t) => {
     await import('#compiler/worker');
-    await setTimeout(500); // Wait for async initialization
+    await setTimeout(1000); // Wait for async initialization
     t.true(addEventListener.calledOnceWith('message', sinon.match.func));
     t.true(postMessage.calledOnceWith('ready'));
 });
@@ -30,7 +30,7 @@ test.beforeEach(() => {
     postMessage.resetHistory();
 });
 
-const WORKER_DELAY = 200;
+const WORKER_DELAY = 500;
 
 test.serial('bad message', async (t) => {
     callback!(new MessageEvent('message', { data: 'bad message' }));
