@@ -227,6 +227,14 @@ pub enum Expression<'s> {
         Box<Expression<'s>>,
         Option<ElseBlock<'s>>,
     ),
+    /// cond ? expression : expression
+    Cond(
+        Box<Expression<'s>>,
+        TokenRef<'s>,
+        Box<Expression<'s>>,
+        TokenRef<'s>,
+        Box<Expression<'s>>,
+    ),
     /// `match` expression `{` ( `case` pattern (`if` expression)? block_expression )* `}`
     ///
     /// The value of the block is the value of the matched expression.
@@ -443,6 +451,13 @@ impl<'s> AstWalker<'s> for Expression<'s> {
                 cond.collect_diagnostics(collector);
                 then_block.collect_diagnostics(collector);
             }
+            Cond(cond, q1, then_exp, q2, else_exp) => {
+                cond.collect_diagnostics(collector);
+                q1.collect_diagnostics(collector);
+                then_exp.collect_diagnostics(collector);
+                q2.collect_diagnostics(collector);
+                else_exp.collect_diagnostics(collector);
+            }
             Match(kw, expression, op, arms, cp) => {
                 kw.collect_diagnostics(collector);
                 expression.collect_diagnostics(collector);
@@ -499,6 +514,7 @@ impl<'s> AstWalker<'s> for Expression<'s> {
             While(kw, _, _, Some(else_block))
             | ForIn(kw, _, _, _, _, Some(else_block))
             | If(kw, _, _, Some(else_block)) => kw.range.start..else_block.range().end,
+            Cond(cond, _, _, _, else_exp) => cond.range().start..else_exp.range().end,
             Match(kw, _, _, _, cp) => kw.range.start..cp.range.end,
             Function(kw, _, expression) => kw.range.start..expression.range().end,
             Unknown {

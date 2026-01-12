@@ -36,6 +36,11 @@ impl Formattable for Expression<'_> {
                     + iterable.measure(formatter, indent)
                     + else_block.measure(formatter, indent)
             }
+            Cond(cond, _, then_exp, _, else_exp) => {
+                cond.measure(formatter, indent)
+                    + then_exp.measure(formatter, indent)
+                    + else_exp.measure(formatter, indent)
+            }
             If(_, cond, body, else_block) => {
                 cond.measure(formatter, indent)
                     + body.measure(formatter, indent)
@@ -239,6 +244,17 @@ impl Formattable for Expression<'_> {
                 formatter.write_space();
                 body.format(formatter, measurement);
                 else_block.format(formatter, measurement);
+            }
+            Cond(cond, op_question, then_exp, op_colon, else_exp) => {
+                cond.format(formatter, measurement);
+                formatter.write_space();
+                formatter.write_token(op_question);
+                formatter.write_space();
+                then_exp.format(formatter, measurement);
+                formatter.write_space();
+                formatter.write_token(op_colon);
+                formatter.write_space();
+                else_exp.format(formatter, measurement);
             }
             If(kw, cond, body, else_block) => {
                 formatter.write_token(kw);

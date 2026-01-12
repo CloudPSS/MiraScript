@@ -1,0 +1,7 @@
+fn foo { it > 10 ? "Greater than 10" : it > 0 ? "Between 1 and 10" : "Zero or negative" }
+
+t_eq(foo(12), "Greater than 10");
+t_eq(foo(5), "Between 1 and 10");
+t_eq(foo(0), "Zero or negative");
+
+t_throws(fn { nil ? "Yes" : "No" });

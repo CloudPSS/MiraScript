@@ -77,6 +77,8 @@ pub enum DiagnosticCode {
     MissingCloseParen,
     #[strum(message = "Missing `;` at the end of the statement")]
     MissingSemicolon,
+    #[strum(message = "Missing `:` in the conditional expression")]
+    MissingColon,
     #[strum(message = "Operator `=` is expected in a bind statement or const statement")]
     MissingBindOperator,
     #[strum(message = "Constant name must start with '@'")]

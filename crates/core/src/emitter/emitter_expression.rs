@@ -265,6 +265,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                         .push(DiagnosticCode::KeywordElse, kw_else.range());
                 });
             }
+            Cond(..) => {}
             If(kw_if, _, then_block, else_part) => {
                 let mut else_part = else_part.as_ref();
                 self.diagnostics.push(
@@ -1199,6 +1200,22 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     }
                     self.op_if_end(kw.range());
                 }
+            }
+            Cond(cond, op_question, then_expr, op_colon, else_expr) => {
+                self.diagnostics
+                    .push(DiagnosticCode::PreferIfExpression, expr.range());
+
+                self.enter_scope(expr.range());
+                self.declare_cond_expr(cond);
+
+                let cond_reg = self.emit_expression_reg(cond, brk);
+                self.op_if(op_question.range(), OpCode::If, cond_reg);
+                self.emit_expression(then_expr, ret, brk);
+                self.op_else(op_colon.range());
+                self.emit_expression(else_expr, ret, brk);
+                self.op_if_end(expr.range().end..expr.range().end);
+
+                self.exit_scope();
             }
             If(kw, cond, then_expr, else_part) => {
                 self.enter_scope(kw.range.end..expr.range().end);

@@ -209,7 +209,8 @@ fn access_index<'s>(i: &mut Input<'s>) -> Result<AccessIndex<'s>> {
             .parse_next(i)
     }
     fn additive<'s>(i: &mut Input<'s>) -> Result<Box<Expression<'s>>> {
-        let precedence_additive = precedence_of(&TokenKind::Operator(Operator::SpreadRange)).0 + 2;
+        let mut precedence_additive = precedence_of(&TokenKind::Operator(Operator::SpreadRange));
+        precedence_additive.value += 2;
         pratt(precedence_additive, false)
             .verify_map(verify_expr)
             .map(Box::new)
@@ -382,34 +383,47 @@ fn postfix<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     }))
 }
 
-fn precedence_of(t: &TokenKind<'_>) -> (u8, bool) {
+#[derive(Default)]
+struct PrecedenceResult {
+    value: u8,
+    can_be_prefix: bool,
+    right_associative: bool,
+}
+
+fn precedence_of(t: &TokenKind<'_>) -> PrecedenceResult {
     use crate::lexer::{Keyword::*, Operator::*, TokenKind::*};
-    match t {
-        Operator(Caret) => (110, false),
-        Operator(Exclamation) | Keyword(Not) => (100, true),
-        Operator(Asterisk) | Operator(Slash) | Operator(Percent) => (90, false),
-        Operator(Plus) | Operator(Minus) => (80, true),
-        Operator(SpreadRange) | Operator(HalfOpenRange) => (70, false),
-        Keyword(Is) => (60, false),
+    let (precedence, can_be_prefix) = match t {
+        Operator(Caret) => (200, false),
+        Operator(Exclamation) | Keyword(Not) => (190, true),
+        Operator(Asterisk) | Operator(Slash) | Operator(Percent) => (180, false),
+        Operator(Plus) | Operator(Minus) => (170, true),
+        Operator(SpreadRange) | Operator(HalfOpenRange) => (140, false),
+        Keyword(Is) => (120, false),
         Keyword(In)
         | Operator(Less)
         | Operator(LessEqual)
         | Operator(Greater)
-        | Operator(GreaterEqual) => (50, false),
+        | Operator(GreaterEqual) => (100, false),
         Operator(Equal) | Operator(NotEqual) | Operator(TildeEqual) | Operator(TildeNotEqual) => {
-            (40, false)
+            (90, false)
         }
-        Operator(LogicalAnd) | Keyword(And) => (30, false),
-        Operator(LogicalOr) | Keyword(Or) => (20, false),
-        Operator(NullCoalescing) => (10, false),
-        _ => (0, false),
+        Operator(LogicalAnd) | Keyword(And) => (70, false),
+        Operator(LogicalOr) | Keyword(Or) => (60, false),
+        Operator(NullCoalescing) => (50, false),
+        Operator(Question) => (30, true),
+        _ => return PrecedenceResult::default(),
+    };
+    PrecedenceResult {
+        value: precedence,
+        can_be_prefix,
+        right_associative: matches!(t, Operator(Caret) | Operator(Question)),
     }
 }
 
 fn pratt_prefix<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     let token = peek(any).parse_next(i)?;
-    let (precedence, is_prefix) = precedence_of(token);
-    if is_prefix {
+    let precedence = precedence_of(token);
+    if precedence.can_be_prefix {
         let op = any.parse_next(i)?;
         let expr = pratt(precedence, false)
             .verify_map(verify_expr)
@@ -423,7 +437,7 @@ fn pratt_prefix<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
 fn pratt_infix<'s>(
     left: Box<Expression<'s>>,
     op: &'s Token<'s>,
-    precedence: u8,
+    mut precedence: PrecedenceResult,
     allow_range: bool,
     i: &mut Input<'s>,
 ) -> Result<Iterable<'s>> {
@@ -432,15 +446,28 @@ fn pratt_infix<'s>(
         return Ok(Iterable::Value(Expression::Is(left, op.into(), right)));
     }
     // 调整优先级以实现右结合
-    let precedence = if *op == Operator::Caret {
-        precedence - 1
-    } else {
-        precedence
+    if precedence.right_associative {
+        precedence.value -= 1;
+    }
+    let parse_right = |i: &mut Input<'s>| {
+        let expr = pratt(precedence, false)
+            .verify_map(verify_expr)
+            .parse_next(i)?;
+        Ok(Box::new(expr))
     };
-    let right = pratt(precedence, false)
-        .verify_map(verify_expr)
-        .parse_next(i)?
-        .into();
+    if *op == Operator::Question {
+        let then_exp = expression.parse_next(i)?.into();
+        let colon = token_or_insert(Operator::Colon, DiagnosticCode::MissingColon).parse_next(i)?;
+        let else_exp = parse_right(i)?;
+        return Ok(Iterable::Value(Expression::Cond(
+            left,
+            op.into(),
+            then_exp,
+            colon,
+            else_exp,
+        )));
+    }
+    let right = parse_right(i)?;
     if *op == Operator::SpreadRange || *op == Operator::HalfOpenRange {
         return if allow_range {
             Ok(Iterable::Range(Range(left, op.into(), right)))
@@ -460,7 +487,7 @@ fn pratt_infix<'s>(
     Ok(Iterable::Value(Expression::Infix(left, op.into(), right)))
 }
 
-fn pratt<'s>(precedence: u8, allow_range: bool) -> impl Parser<'s, Iterable<'s>> {
+fn pratt<'s>(precedence: PrecedenceResult, allow_range: bool) -> impl Parser<'s, Iterable<'s>> {
     move |i: &mut Input<'s>| {
         let mut left = pratt_prefix.parse_next(i)?;
 
@@ -470,8 +497,8 @@ fn pratt<'s>(precedence: u8, allow_range: bool) -> impl Parser<'s, Iterable<'s>>
             }
 
             let op = peek(any).parse_next(i)?;
-            let (op_precedence, _) = precedence_of(op);
-            if op_precedence <= precedence {
+            let op_precedence = precedence_of(op);
+            if op_precedence.value <= precedence.value {
                 break;
             }
 
@@ -494,9 +521,11 @@ fn verify_expr<'s>(e: Iterable<'s>) -> Option<Expression<'s>> {
 }
 
 pub(super) fn basic_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
-    pratt(0, false).verify_map(verify_expr).parse_next(i)
+    pratt(PrecedenceResult::default(), false)
+        .verify_map(verify_expr)
+        .parse_next(i)
 }
 
 pub(super) fn iterable<'s>(i: &mut Input<'s>) -> Result<Iterable<'s>> {
-    pratt(0, true).parse_next(i)
+    pratt(PrecedenceResult::default(), true).parse_next(i)
 }
