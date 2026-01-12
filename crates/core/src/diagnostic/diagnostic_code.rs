@@ -191,23 +191,9 @@ pub enum DiagnosticCode {
     #[strum(message = "Literal cannot be accessed as a record or array")]
     LiteralNotIndexable,
 
-    // Code style warnings
-    #[strum(message = "Prefer if expression over conditional expression")]
-    PreferIfExpression,
-    #[strum(message = "Prefer `()` over `{}` for record literal declaration")]
-    PreferParenthesesForRecordLiteral,
-    #[strum(message = "Prefer `&&` over `and` for logical operations")]
-    PreferLogicalOperatorAnd,
-    #[strum(message = "Prefer `||` over `or` for logical operations")]
-    PreferLogicalOperatorOr,
-    #[strum(message = "Prefer `!` over `not` for logical operations")]
-    PreferLogicalOperatorNot,
-
     // For analyzer
     #[strum(message = "Global variable `$0` is not declared")]
     GlobalVariableNotDeclared,
-    #[strum(message = "Prefer uppercase for constant $0")]
-    PreferUppercaseConstant,
 
     WarningEnd = 2999,
     // Info 3000~3999
@@ -221,6 +207,22 @@ pub enum DiagnosticCode {
     UnusedLocalVariable,
     #[strum(message = "Local function is unused; consider removing it")]
     UnusedLocalFunction,
+
+    // Code style
+    #[strum(message = "Prefer `&&` over `and` for logical operations")]
+    PreferLogicalOperatorAnd,
+    #[strum(message = "Prefer `||` over `or` for logical operations")]
+    PreferLogicalOperatorOr,
+    #[strum(message = "Prefer `!` over `not` for logical operations")]
+    PreferLogicalOperatorNot,
+    #[strum(message = "Prefer `()` over `{}` for record literal declaration")]
+    PreferParenthesesForRecordLiteral,
+    #[strum(message = "Prefer if expression over conditional expression")]
+    PreferIfExpression,
+
+    // For analyzer
+    #[strum(message = "Prefer uppercase for constant $0")]
+    PreferUppercaseConstant,
 
     HintEnd = 4999,
     // Reference 5000~5999
