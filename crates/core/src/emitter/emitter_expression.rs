@@ -127,7 +127,10 @@ impl<'s, 'c> Emitter<'s, 'c> {
             }
             Variable(_) => (),
             Grouping(op, expression, cp) => {
-                if matches!(
+                if !matches!(
+                    expression.as_ref(), Expression::Record(open, _, close)
+                    if **open == Operator::OpenBrace && **close == Operator::CloseBrace
+                ) && matches!(
                     expression.as_ref(),
                     Expression::Variable(..)
                         | Expression::Literal(..)
