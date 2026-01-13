@@ -25,7 +25,7 @@
   },
   "devDependencies": {
     "@mirascript/constants": "workspace:~",
-    "@types/node": "^25.0.6",
+    "@types/node": "^25.0.7",
     "nodemon": "^3.1.11"
   }
 }

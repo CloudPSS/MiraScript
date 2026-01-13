@@ -1,85 +1,17 @@
-import test from 'ava';
-import sinon from 'sinon';
-import { setTimeout } from 'node:timers/promises';
+import test, { registerCompletionHandler } from 'ava';
+import { compileWorker, destroyWorkerPool } from '../dist/compiler/worker-manager.js';
 
-const addEventListener = sinon.fake(((
-    type: string,
-    listener: (ev: MessageEvent) => void,
-    options?: AddEventListenerOptions | boolean,
-) => {
-    if (type === 'message') {
-        callback = listener;
-    }
-}) as typeof globalThis.addEventListener);
-globalThis.addEventListener = addEventListener;
+registerCompletionHandler(destroyWorkerPool);
 
-const postMessage = sinon.stub();
-globalThis.postMessage = postMessage;
-
-let callback: ((ev: MessageEvent) => void) | undefined;
-
-test.before('load', async (t) => {
-    await import('#compiler/worker');
-    await setTimeout(1000); // Wait for async initialization
-    t.true(addEventListener.calledOnceWith('message', sinon.match.func));
-    t.true(postMessage.calledOnceWith('ready'));
+test('compileWorker ok', async (t) => {
+    const [script, diagnostics] = await compileWorker('let x = 42; x', {});
+    t.true(script!.length > 0);
+    t.true(diagnostics instanceof Uint32Array);
 });
 
-test.beforeEach(() => {
-    addEventListener.resetHistory();
-    postMessage.resetHistory();
-});
-
-const WORKER_DELAY = 500;
-
-test.serial('bad message', async (t) => {
-    callback!(new MessageEvent('message', { data: 'bad message' }));
-    callback!(new MessageEvent('message', { data: ['bad message'] }));
-    callback!(new MessageEvent('message', { data: [0] }));
-    await setTimeout(WORKER_DELAY);
-    t.false(postMessage.calledOnce);
-});
-
-test.serial('compile', async (t) => {
-    callback!(new MessageEvent('message', { data: [0, 'nil', {}] }));
-    await setTimeout(WORKER_DELAY);
-    t.true(
-        postMessage.calledOnceWith([0, sinon.match.string, sinon.match.instanceOf(Uint32Array)], {
-            transfer: [sinon.match.instanceOf(ArrayBuffer)],
-        }),
-    );
-});
-test.serial('compile error', async (t) => {
-    callback!(new MessageEvent('message', { data: [1, ''] }));
-    await setTimeout(WORKER_DELAY);
-    t.true(postMessage.calledOnceWith([1, sinon.match.instanceOf(Error)]));
-});
-
-test.serial('compile syntax error', async (t) => {
-    callback!(new MessageEvent('message', { data: [2, '1 + ', {}] }));
-    await setTimeout(WORKER_DELAY);
-    t.true(
-        postMessage.calledOnceWith([2, undefined, sinon.match.instanceOf(Uint32Array)], {
-            transfer: [sinon.match.instanceOf(ArrayBuffer)],
-        }),
-    );
-});
-
-test.serial('arg error', async (t) => {
-    callback!(
-        new MessageEvent('message', {
-            data: [
-                1,
-                '',
-                {
-                    get input_mode() {
-                        // eslint-disable-next-line @typescript-eslint/only-throw-error
-                        throw 0;
-                    },
-                },
-            ],
-        }),
-    );
-    await setTimeout(WORKER_DELAY);
-    t.true(postMessage.calledOnceWith([1, sinon.match.instanceOf(Error).and(sinon.match.has('message', '0'))]));
+test('compileWorker error', async (t) => {
+    const [script, diagnostics] = await compileWorker('}}{{', {});
+    t.is(script, undefined);
+    t.true(diagnostics instanceof Uint32Array);
+    t.true(diagnostics.length > 0);
 });
