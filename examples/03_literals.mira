@@ -104,7 +104,7 @@ let single_record = ("single_value",);
 debug_print("单元素记录:", single_record);
 
 // 兼容 JSON 形式的记录
-let json_record = {"key1": "value1", "key2": 42, "key3": false};
+let json_record = { "key1": "value1", "key2": 42, "key3": false };
 debug_print("JSON 形式记录:", json_record);
 
 // 记录展开
