@@ -12,7 +12,7 @@ const entryPoints = [...Object.values(packageJson.exports), ...Object.values(pac
 
 const external = Object.entries(packageJson.imports)
     .map(([key, value]) => {
-        if (typeof value == 'object' && 'node' in value) {
+        if (typeof value == 'object' && ('node' in value || '@mirascript/dev' in value)) {
             return key;
         }
         return undefined;

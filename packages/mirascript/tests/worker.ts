@@ -1,4 +1,5 @@
 import test, { registerCompletionHandler } from 'ava';
+import '@cloudpss/worker/polyfill';
 import { compileWorker, destroyWorkerPool } from '../dist/compiler/worker-manager.js';
 
 registerCompletionHandler(destroyWorkerPool);

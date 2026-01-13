@@ -1,13 +1,13 @@
 import { WorkerPool, type WorkerMethod } from '@cloudpss/worker/pool';
 import type WorkerApi from './worker.js';
-import { Worker } from '@cloudpss/worker/ponyfill';
 
 const pool = /*#__PURE__*/ new WorkerPool<typeof WorkerApi>(
-    () =>
-        new Worker(new URL('#compiler/worker', import.meta.url), {
+    () => {
+        return new Worker(new URL('#compiler/worker', import.meta.url), {
             type: 'module',
             name: '@mirascript/compiler',
-        }),
+        });
+    },
     {
         name: '@mirascript/compiler',
     },
