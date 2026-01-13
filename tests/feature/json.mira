@@ -1,24 +1,27 @@
 let y = 'foo';
-t_eq({"x": 1, "$y": 12}, (x: 1, foo: 12));
-t_eq({"$y": true}, (foo: true));
-t_eq({"$y": true}[y], true);
-t_eq({"$y": true}.foo, true);
+t_eq({ "x": 1, "$y": 12 }, (x: 1, foo: 12));
+t_eq({ "$y": true }, (foo: true));
+t_eq({ "$y": true }[y], true);
+t_eq({ "$y": true }.foo, true);
 
-fn j { {"x": 1, "$it": {"z": 7, "w": [1, 2, {"x": 0}]}} }
+fn j { { "x": 1, "$it": { "z": 7, "w": [1, 2, { "x": 0 }] } } }
 t_eq(j('foo'), (x: 1, foo: (z: 7, w: [1, 2, (x: 0)])));
 
 fn r {
-  return {"a": 5, "b": 6};
+  return { "a": 5, "b": 6 };
 }
 t_eq(r(), (a: 5, b: 6));
 
+fn e { { "a": it + 1, "b": it + 2 } }
+t_eq(e(10), (a: 11, b: 12));
+
 fn b {
-  if it { {"X": 1} } else { {"X": 2} }
+  if it { { "X": 1 } } else { { "X": 2 } }
 }
 t_eq(b(true), (X: 1));
 t_eq(b(false), (X: 2));
 
-let lit = {"a": {"b": {"c": 10}}};
+let lit = { "a": { "b": { "c": 10 } } };
 t_eq(lit, (a: (b: (c: 10))));
 
 // Empty brace is parsed as block expression, not JSON
@@ -26,5 +29,5 @@ let empty = { };
 t_eq(empty, nil);
 
 if has_extern {
-  t_eq({"x": 1, "$y": v_extern}, (x: 1, foo: nil));
+  t_eq({ "x": 1, "$y": v_extern }, (x: 1, foo: nil));
 }

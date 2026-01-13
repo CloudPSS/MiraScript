@@ -171,7 +171,7 @@ debug_print(`${unnamed_record.0}, ${unnamed_record[1]}`); // 输出 "-4, 3"
 也可以使用 JSON Object 语法书写记录字面量。此时，记录的键必须使用引号，不允许省略。
 
 ```mira
-let json_record = {"key1": "value1", "key2": 2, "key3": true};
+let json_record = { "key1": "value1", "key2": 2, "key3": true };
 ```
 
 #### 数组字面量
