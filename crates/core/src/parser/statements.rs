@@ -172,7 +172,6 @@ fn braced_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
 
 pub(super) fn statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
     dispatch! {peek(any);
-        t if *t == Operator::OpenBrace => braced_statement,
         t if *t == Keyword::If => if_expression.map(Box::new).map(Statement::BlockExpression),
         t if *t == Keyword::Loop => loop_expression.map(Box::new).map(Statement::BlockExpression),
         t if *t == Keyword::While => while_expression.map(Box::new).map(Statement::BlockExpression),
@@ -188,6 +187,8 @@ pub(super) fn statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
 
         t if *t == Keyword::Let => bind_statement,
         t if *t == Keyword::Const => const_statement,
+
+        t if *t == Operator::OpenBrace => braced_statement,
 
         &Token{..} => alt((
             rebind_statement,

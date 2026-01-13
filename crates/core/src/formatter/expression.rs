@@ -102,9 +102,15 @@ impl Formattable for Expression<'_> {
             }
             Record(op, list_items, cp) => {
                 formatter.write_token(op);
+                if **op == Operator::OpenBrace {
+                    formatter.write_space();
+                }
                 list_items[..].format(formatter, measurement);
                 if list_items.len() == 1 && list_items[0].is_unnamed() {
                     formatter.write_token_or(list_items[0].tail_comma(), Operator::Comma);
+                }
+                if **cp == Operator::CloseBrace {
+                    formatter.write_space();
                 }
                 formatter.write_token(cp);
             }
