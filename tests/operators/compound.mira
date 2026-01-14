@@ -1,0 +1,36 @@
+let mut x = 1;
+
+x += 2;
+t_eq(x, 3);
+
+x -= 1;
+t_eq(x, 2);
+
+x *= 3;
+t_eq(x, 6);
+
+x /= 1 + 2;
+t_eq(x, 2);
+
+x %= 1 * 2 + 1;
+t_eq(x, 2);
+
+x ^= 3;
+t_eq(x, 8);
+
+let mut b = true;
+
+// Short-circuiting compound assignments
+b ||= nil;
+t_eq(b, true);
+
+b &&= false;
+t_eq(b, false);
+
+let mut n = nil;
+
+n ??= 5;
+t_eq(n, 5);
+
+n ??= 10;
+t_eq(n, 5);

@@ -10,7 +10,9 @@ use super::{
     prelude::*,
 };
 
-fn json_start<'s>(i: &mut Input<'s>) -> Result<()> {
+/// Check for the start of a JSON object-like expression
+/// Always wraps in `peek` or `not` to avoid consuming input
+pub(super) fn json_start<'s>(i: &mut Input<'s>) -> Result<()> {
     (
         // { "xxx" :
         token(Operator::OpenBrace),

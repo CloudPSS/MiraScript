@@ -4,22 +4,32 @@ t_eq({ "$y": true }, (foo: true));
 t_eq({ "$y": true }[y], true);
 t_eq({ "$y": true }.foo, true);
 
-fn j { { "x": 1, "$it": { "z": 7, "w": [1, 2, { "x": 0 }] } } }
-t_eq(j('foo'), (x: 1, foo: (z: 7, w: [1, 2, (x: 0)])));
+fn implicit_return_json { { "x": 1, "$it": { "z": 7, "w": [1, 2, { "x": 0 }] } } }
+t_eq(implicit_return_json('foo'), (x: 1, foo: (z: 7, w: [1, 2, (x: 0)])));
 
-fn r {
+fn return_json {
   return { "a": 5, "b": 6 };
 }
-t_eq(r(), (a: 5, b: 6));
+t_eq(return_json(), (a: 5, b: 6));
 
-fn e { { "a": it + 1, "b": it + 2 } }
-t_eq(e(10), (a: 11, b: 12));
+fn dot_field { { "a": it, "b": 20 }.a }
+t_eq(dot_field(10), 10);
+t_eq(dot_field({ "a": 1 }), (a: 1));
 
-fn b {
+fn access_field(it, field) { { "a": it + 1, "b": it + 2 }[field] }
+t_eq(access_field(10, 'a'), 11);
+t_eq(access_field(20, 'b'), 22);
+t_eq(access_field(5, 'c'), nil);
+
+fn call_extension(it) { { "a": 1 }::with("x", it) }
+t_eq(call_extension(42), (a: 1, x: 42));
+t_eq(call_extension('test'), (a: 1, x: 'test'));
+
+fn if_expr {
   if it { { "X": 1 } } else { { "X": 2 } }
 }
-t_eq(b(true), (X: 1));
-t_eq(b(false), (X: 2));
+t_eq(if_expr(true), (X: 1));
+t_eq(if_expr(false), (X: 2));
 
 let lit = { "a": { "b": { "c": 10 } } };
 t_eq(lit, (a: (b: (c: 10))));

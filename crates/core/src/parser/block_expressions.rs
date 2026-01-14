@@ -1,5 +1,5 @@
 use winnow::{
-    combinator::{alt, dispatch, fail, opt, peek, repeat, seq},
+    combinator::{alt, dispatch, fail, not, opt, peek, repeat, seq},
     token::any,
 };
 
@@ -7,7 +7,7 @@ use super::{
     basic_expressions::iterable,
     expressions::{expression, expression_or_insert},
     helper::{statements_and_expression, token, token_or_insert},
-    json_expressions::json_expression,
+    json_expressions::{json_expression, json_start},
     parameter_list::parameter_list,
     patterns::{pattern, pattern_or_insert},
     prelude::*,
@@ -36,6 +36,7 @@ pub(super) fn if_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
 }
 
 pub(super) fn block_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
+    not(json_start).parse_next(i)?;
     (
         token_or_insert(Operator::OpenBrace, DiagnosticCode::MissingOpenBrace),
         statements_and_expression,
