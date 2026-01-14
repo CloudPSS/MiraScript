@@ -14,11 +14,11 @@ function createCodeAction(
     const code = getDiagnosticCode(marker);
     if (!code) return undefined;
 
+    const range = Range.lift(marker);
     const action: languages.CodeAction = {
         title: '',
         diagnostics: [marker],
     };
-    const range = Range.lift(marker);
     const edits = (
         ...textEdits: Array<languages.IWorkspaceTextEdit['textEdit'] | undefined>
     ): languages.WorkspaceEdit => {
@@ -179,10 +179,16 @@ export class CodeActionProvider extends Provider implements languages.CodeAction
         const result = await this.getCompileResult(model);
         if (!result) return undefined;
         const context = await this.getContext(model);
+        const actions = [];
+        for (const marker of markers) {
+            const action = createCodeAction(result, context, model, marker);
+            if (action == null || (only && action.kind ? action.kind !== only : false)) {
+                continue;
+            }
+            actions.push(action);
+        }
         return {
-            actions: markers
-                .map((marker) => createCodeAction(result, context, model, marker))
-                .filter((a): a is languages.CodeAction => a != null && (only && a.kind ? a.kind === only : true)),
+            actions,
             dispose: () => void 0,
         };
     }
