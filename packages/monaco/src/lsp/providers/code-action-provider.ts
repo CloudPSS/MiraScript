@@ -50,7 +50,7 @@ function createCodeAction(
         const current = model.getValueInRange(range);
         let fixed = current;
         if (current.startsWith('{ ')) {
-            fixed = `(${fixed.slice(12)}`;
+            fixed = `(${fixed.slice(2)}`;
         } else if (current.startsWith('{')) {
             fixed = `(${fixed.slice(1)}`;
         }
