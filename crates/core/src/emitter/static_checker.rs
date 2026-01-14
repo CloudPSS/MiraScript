@@ -1,5 +1,5 @@
 use crate::{
-    DiagnosticCode,
+    DiagnosticCode, Keyword,
     lexer::TokenKind,
     parser::{AstWalker, TokenRef},
 };
@@ -12,6 +12,12 @@ impl<'s, 'c> Emitter<'s, 'c> {
         operator: &TokenRef<'s>,
         literal: &TokenRef<'s>,
     ) {
+        if (**operator == Keyword::And || **operator == Keyword::Or || **operator == Keyword::Not)
+            && !literal.is_boolean_literal()
+        {
+            self.diagnostics
+                .push(DiagnosticCode::NonBooleanInLogical, literal.range());
+        }
         let TokenKind::Operator(op) = &operator.kind else {
             return;
         };

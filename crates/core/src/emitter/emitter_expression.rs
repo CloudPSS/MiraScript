@@ -144,10 +144,10 @@ impl<'s, 'c> Emitter<'s, 'c> {
                         | Expression::Access(..)
                         | Expression::Index(..)
                 ) {
-                    self.diagnostics
-                        .push(DiagnosticCode::UnnecessaryParentheses, op.range());
-                    self.diagnostics
-                        .push(DiagnosticCode::UnnecessaryParentheses, cp.range());
+                    self.diagnostics.push(
+                        DiagnosticCode::UnnecessaryParentheses,
+                        op.range().start..cp.range().end,
+                    );
                 }
                 self.declare_expression(expression)
             }
@@ -268,17 +268,20 @@ impl<'s, 'c> Emitter<'s, 'c> {
                         .push(DiagnosticCode::KeywordElse, kw_else.range());
                 });
             }
-            Cond(..) => {}
-            If(kw_if, _, then_block, else_part) => {
+            Cond(_, op_q, _, op_c, _) => {
+                self.diagnostics
+                    .push(DiagnosticCode::PreferIfExpression, outer.range());
+                self.diagnostics
+                    .push(DiagnosticCode::IfExpression, outer.range());
+                self.diagnostics
+                    .push(DiagnosticCode::KeywordIf, op_q.range());
+                self.diagnostics
+                    .push(DiagnosticCode::KeywordElse, op_c.range());
+            }
+            If(kw_if, _, _, else_part) => {
                 let mut else_part = else_part.as_ref();
-                self.diagnostics.push(
-                    DiagnosticCode::IfExpression,
-                    kw_if.range.start
-                        ..else_part
-                            .map(|e| e.1.range())
-                            .unwrap_or_else(|| then_block.range())
-                            .end,
-                );
+                self.diagnostics
+                    .push(DiagnosticCode::IfExpression, outer.range());
                 self.diagnostics
                     .push(DiagnosticCode::KeywordIf, kw_if.range());
 
@@ -1211,9 +1214,6 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 }
             }
             Cond(cond, op_question, then_expr, op_colon, else_expr) => {
-                self.diagnostics
-                    .push(DiagnosticCode::PreferIfExpression, expr.range());
-
                 self.enter_scope(expr.range());
                 self.declare_cond_expr(cond);
 

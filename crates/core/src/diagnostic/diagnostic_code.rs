@@ -162,8 +162,6 @@ pub enum DiagnosticCode {
     // Warning 2000~2999
     WarningStart = 2000,
 
-    #[strum(message = "Unnecessary parentheses; consider removing them")]
-    UnnecessaryParentheses,
     // The null value in MiraScript is represented by `nil`,
     // Emit a warning when a global variable is read as `null` `undefined` or similar.
     #[strum(
@@ -219,6 +217,9 @@ pub enum DiagnosticCode {
     PreferParenthesesForRecordLiteral,
     #[strum(message = "Prefer if expression over conditional expression")]
     PreferIfExpression,
+
+    #[strum(message = "Unnecessary parentheses; consider removing them")]
+    UnnecessaryParentheses,
 
     // For analyzer
     #[strum(message = "Prefer uppercase for constant $0")]

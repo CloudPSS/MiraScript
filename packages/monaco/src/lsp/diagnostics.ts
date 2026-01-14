@@ -55,6 +55,23 @@ const makeMarkerData = (
     return marker;
 };
 
+/** Get code from marker */
+export function getDiagnosticCode(marker: editor.IMarkerData | undefined | null): DiagnosticCode | undefined {
+    if (!marker) return undefined;
+    const { code } = marker;
+    if (typeof code == 'object') {
+        const codeName = code.value;
+        if (codeName in DiagnosticCode) {
+            return DiagnosticCode[codeName as keyof typeof DiagnosticCode];
+        }
+    } else if (typeof code == 'string') {
+        if (code in DiagnosticCode) {
+            return DiagnosticCode[code as keyof typeof DiagnosticCode];
+        }
+    }
+    return undefined;
+}
+
 const makeMarker = (
     model: editor.ITextModel,
     diagnostic: SourceDiagnostic,
