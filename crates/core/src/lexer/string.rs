@@ -353,13 +353,18 @@ fn interpolation<'s>(dollars: &'s str) -> impl Parser<'s, StringFragment<'s>> {
             Some('(') => {
                 // '$' '(' expression [ ':' format ] ')'
                 let mut depth = 0;
+                let mut brace_depth = 0;
                 let mut has_format = false;
                 let mut tokens = lex_impl(i, |t| {
                     if *t == Operator::OpenParen {
                         depth += 1;
                     } else if *t == Operator::CloseParen {
                         depth -= 1;
-                    } else if depth == 1 && *t == Operator::Colon {
+                    } else if *t == Operator::OpenBrace {
+                        brace_depth += 1;
+                    } else if *t == Operator::CloseBrace {
+                        brace_depth -= 1;
+                    } else if depth == 1 && brace_depth == 0 && *t == Operator::Colon {
                         has_format = true;
                         return true;
                     }

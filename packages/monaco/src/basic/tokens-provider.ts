@@ -248,26 +248,28 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
             braced: [
                 [/\{/, { token: '@brackets', next: '@braced_inner' }],
                 [/\}/, { token: 'punctuation.section.embedded', bracket: '@close', next: '@pop' }],
-                [/[[\]()]/, '@brackets'],
+                [/\(/, { token: '@brackets', next: '@parenthesized_inner' }],
+                [/[[\])]+/, '@brackets'],
                 { include: '@common' },
             ],
             braced_inner: [
                 [/\{/, { token: '@brackets', next: '@push' }],
                 [/\}/, { token: '@brackets', next: '@pop' }],
-                [/[[\]()]/, '@brackets'],
+                [/[[\]()]+/, '@brackets'],
                 { include: '@common' },
             ],
             parenthesized: [
                 [/\(/, { token: '@brackets', next: '@parenthesized_inner' }],
                 [/\)/, { token: 'punctuation.section.embedded', bracket: '@close', next: '@pop' }],
-                [/[[\]{}]/, '@brackets'],
+                [/\{/, { token: '@brackets', next: '@braced_inner' }],
+                [/[[\]}]+/, '@brackets'],
                 { include: '@format' },
                 { include: '@common' },
             ],
             parenthesized_inner: [
                 [/\(/, { token: '@brackets', next: '@push' }],
                 [/\)/, { token: '@brackets', next: '@pop' }],
-                [/[[\]{}]/, '@brackets'],
+                [/[[\]{}]+/, '@brackets'],
                 { include: '@common' },
             ],
 
