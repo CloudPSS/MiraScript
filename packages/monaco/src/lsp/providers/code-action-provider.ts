@@ -62,6 +62,17 @@ function createCodeAction(
         if (fixed === current) {
             return undefined;
         }
+        const prefix = model.getValueInRange({
+            startLineNumber: range.startLineNumber,
+            startColumn: range.startColumn - 1,
+            endLineNumber: range.startLineNumber,
+            endColumn: range.startColumn,
+        });
+        if (prefix === '$') {
+            // In string "${...}", we should add extra parentheses
+            // to "$((...))" to represent a record literal
+            fixed = `(${fixed})`;
+        }
         action.title = 'Convert record literal to parentheses';
         action.kind = 'quickfix';
         action.edit = edits({
