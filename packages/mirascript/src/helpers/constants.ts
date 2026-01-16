@@ -8,7 +8,7 @@ export const REG_HEX = /0[xX][a-fA-F0-9_]*[a-fA-F0-9]/;
 export const REG_OCT = /0[oO][0-7_]*[0-7]/;
 export const REG_BIN = /0[bB][01_]*[01]/;
 export const REG_NUMBER = /\d[\d_]*(?:\.[\d_]+)?(?:[eE][+-]?[\d_]*\d)?/u;
-export const VM_ARRAY_MAX_LENGTH = 2 ** 31 - 1;
+export const VM_ARRAY_MAX_LENGTH = 0x800_0000; // 128 MB, v8's max array length
 
 export const kVmScript = Symbol.for('mirascript.vm.script');
 export const kVmFunction = Symbol.for('mirascript.vm.function');

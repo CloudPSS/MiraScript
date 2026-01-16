@@ -35,8 +35,8 @@ export function $Upvalue(value: VmAny): VmValue {
     return value;
 }
 
-const assertArrayLength = (start: number, end: number) => {
-    if (end - start > VM_ARRAY_MAX_LENGTH) {
+const assertArrayLength = (len: number) => {
+    if (len > VM_ARRAY_MAX_LENGTH) {
         throw new RangeError(`Array length exceeds maximum limit of ${VM_ARRAY_MAX_LENGTH}`);
     }
 };
@@ -48,7 +48,7 @@ export function $ArrayRange(start: VmAny, end: VmAny): VmArray {
     const s = $ToNumber(start);
     const e = $ToNumber(end);
     if (isEmptyRange(s, e)) return [];
-    assertArrayLength(s, e);
+    assertArrayLength(e - s + 1);
     const arr = [];
     for (let i = s; i <= e; i++) {
         arr.push(i);
@@ -60,7 +60,7 @@ export function $ArrayRangeExclusive(start: VmAny, end: VmAny): VmArray {
     const s = $ToNumber(start);
     const e = $ToNumber(end);
     if (isEmptyRange(s, e)) return [];
-    assertArrayLength(s, e);
+    assertArrayLength(e - s);
     const arr = [];
     for (let i = s; i < e; i++) {
         arr.push(i);

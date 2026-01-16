@@ -46,19 +46,19 @@ export function isSame(a: VmValue, b: VmValue): boolean {
         // Compare record fields
         const aKeys = keys(a);
         const bKeys = keys(b);
-        if (aKeys.length !== bKeys.length) {
-            return false;
-        }
-        for (const key of aKeys) {
-            if (!hasOwnEnumerable(b, key)) {
-                return false;
-            }
-            /* c8 ignore next 2 */
+
+        const len = aKeys.length;
+        if (len !== bKeys.length) return false;
+
+        if (len === 0) return true;
+
+        let i = len;
+        while (i--) {
+            const key = aKeys[i]!;
+            if (!hasOwnEnumerable(b, key)) return false;
             const av = a[key] ?? null;
             const bv = b[key] ?? null;
-            if (!isSame(av, bv)) {
-                return false;
-            }
+            if (!isSame(av, bv)) return false;
         }
         return true;
     }
