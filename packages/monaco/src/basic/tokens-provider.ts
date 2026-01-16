@@ -249,7 +249,7 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                 [/\{/, { token: '@brackets', next: '@braced_inner' }],
                 [/\}/, { token: 'punctuation.section.embedded', bracket: '@close', next: '@pop' }],
                 [/\(/, { token: '@brackets', next: '@parenthesized_inner' }],
-                [/[[\])]+/, '@brackets'],
+                [/[[\])]/, '@brackets'],
                 { include: '@common' },
             ],
             braced_inner: [
@@ -262,14 +262,14 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                 [/\(/, { token: '@brackets', next: '@parenthesized_inner' }],
                 [/\)/, { token: 'punctuation.section.embedded', bracket: '@close', next: '@pop' }],
                 [/\{/, { token: '@brackets', next: '@braced_inner' }],
-                [/[[\]}]+/, '@brackets'],
+                [/[[\]}]/, '@brackets'],
                 { include: '@format' },
                 { include: '@common' },
             ],
             parenthesized_inner: [
                 [/\(/, { token: '@brackets', next: '@push' }],
                 [/\)/, { token: '@brackets', next: '@pop' }],
-                [/[[\]{}]+/, '@brackets'],
+                [/[[\]{}]/, '@brackets'],
                 { include: '@common' },
             ],
 
