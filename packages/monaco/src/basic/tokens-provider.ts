@@ -255,7 +255,7 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
             braced_inner: [
                 [/\{/, { token: '@brackets', next: '@push' }],
                 [/\}/, { token: '@brackets', next: '@pop' }],
-                [/[[\]()]+/, '@brackets'],
+                [/[[\]()]/, '@brackets'],
                 { include: '@common' },
             ],
             parenthesized: [
