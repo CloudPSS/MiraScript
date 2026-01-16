@@ -1,5 +1,5 @@
 import { VmError } from '../../helpers/error.js';
-import { getPrototypeOf, hasOwn, apply, isArray } from '../../helpers/utils.js';
+import { getPrototypeOf, getOwnPropertyNames, hasOwn, apply, isArray } from '../../helpers/utils.js';
 import { innerToString } from '../../helpers/convert/to-string.js';
 import { isVmExtern } from '../../helpers/types.js';
 import { kVmExtern } from '../../helpers/constants.js';
@@ -20,6 +20,10 @@ const TypedArrayToString = Uint8Array.prototype.toString;
 /** 获取类的名称，如果无法确定则返回 null */
 // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
 function classNameOf(kls: Function): string | null {
+    const { displayName } = kls as typeof kls & { displayName?: string };
+    if (typeof displayName === 'string' && displayName.trim()) {
+        return displayName.trim();
+    }
     const { name } = kls;
     if (typeof name == 'string' && name.length > 2) {
         // Looks like a non-minified name
@@ -39,7 +43,10 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
         super(value);
     }
 
-    /** Check if the object has a property */
+    /**
+     * Check if the object has a property
+     * This method will be used in {@link get}, {@link set}, {@link has}, and {@link keys} methods
+     */
     protected access(key: string, read: boolean): boolean {
         // __proto__ and other “private” properties are not accessible
         if (key.startsWith('_')) return false;
@@ -107,15 +114,13 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
         } else {
             const keys = new Set<string>();
             let e: unknown = this.value;
-            while (e && (typeof e == 'object' || typeof e == 'function')) {
-                for (const key of Object.getOwnPropertyNames(e)) {
-                    if (this.access(key, true)) {
-                        keys.add(key);
-                    }
+            while (e != null && (typeof e == 'object' || typeof e == 'function')) {
+                for (const key of getOwnPropertyNames(e)) {
+                    keys.add(key);
                 }
-                e = Object.getPrototypeOf(e);
+                e = getPrototypeOf(e);
             }
-            return Array.from(keys);
+            return Array.from(keys).filter((key) => this.access(key, true));
         }
     }
     /** @inheritdoc */
@@ -123,7 +128,11 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
         if (!isVmExtern(other)) return false;
         return this.value === other.value && this.thisArg === other.thisArg;
     }
-    /** @inheritdoc */
+    /**
+     * Should this extern be treated as array-like?
+     *
+     * By default, this method returns true if the wrapped value is an Array or a TypedArray.
+     */
     isArrayLike(): this is VmExtern<ArrayLike<unknown>> {
         return isArray(this.value) || (ArrayBuffer.isView(this.value) && 'length' in this.value);
     }
@@ -132,9 +141,11 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
         // eslint-disable-next-line @typescript-eslint/unbound-method
         const { toString } = this.value;
         if (typeof toString != 'function' || toString === ObjectToString || toString === FunctionToString) {
+            // When the toString method is not overridden or invalid, provide a better default representation
             return super.toString(useBraces);
         }
         if ((toString === ArrayToString || toString === TypedArrayToString) && this.isArrayLike()) {
+            // Handle array-like externs specially when using default toString
             const mapped = ArrayMap.call(this.value, (item: unknown) => {
                 if (item === undefined) return '';
                 return innerToString(wrapToVmValue(item ?? null, null, null), true);
@@ -143,6 +154,7 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
             if (useBraces) return `[${str}]`;
             return str;
         }
+        // Use the wrapped object's toString method
         return String(this.value);
     }
     /** @inheritdoc */
@@ -162,7 +174,7 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
             if (proto == null) {
                 return 'Object: null prototype';
             }
-            if (typeof proto.constructor === 'function' && proto.constructor.name) {
+            if (typeof proto.constructor === 'function') {
                 return classNameOf(proto.constructor) ?? 'Object';
             }
         } else if (tag === 'Function' && 'prototype' in this.value && typeof this.value.prototype == 'object') {

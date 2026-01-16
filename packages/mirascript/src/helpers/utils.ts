@@ -8,8 +8,8 @@ export const {
     POSITIVE_INFINITY: PositiveInfinity,
     NEGATIVE_INFINITY: NegativeInfinity,
 } = Number;
-export const { hasOwn, keys, values, entries, create, getPrototypeOf, fromEntries, defineProperty } = Object;
-export const { apply } = Reflect;
+export const { hasOwn, keys, values, entries, create, fromEntries, defineProperty, getOwnPropertyNames } = Object;
+export const { apply, getPrototypeOf } = Reflect;
 
 /**
  * Determines whether an object has an enumerable property with the specified name.

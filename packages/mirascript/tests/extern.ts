@@ -116,6 +116,9 @@ test('describe extern', (t) => {
     Object.defineProperty(a, 'name', { value: '' });
     t.is(new VmExtern(new a(), null).tag, 'Object');
     t.is(new VmExtern(a, null).tag, 'class');
+    Object.defineProperty(a, 'displayName', { value: 'ADisplayName' });
+    t.is(new VmExtern(new a(), null).tag, 'ADisplayName');
+    t.is(new VmExtern(a, null).tag, 'class ADisplayName');
     // eslint-disable-next-line unicorn/consistent-function-scoping
     const f = function () {
         return 1;
