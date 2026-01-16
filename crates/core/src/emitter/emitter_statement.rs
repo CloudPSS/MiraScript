@@ -3,7 +3,7 @@ use crate::{
     emitter::{emitter_scope::check_variable_initialized, opcode::OpParam},
     lexer::{Keyword, Operator, TokenKind},
     parser::{
-        AstWalker, Expression,
+        AstWalker, Expression, Pattern,
         Statement::{self, *},
     },
 };
@@ -15,7 +15,13 @@ impl<'s, 'c> Emitter<'s, 'c> {
         match stmt {
             Expression(expr, _) | BlockExpression(expr) => self.declare_expression(expr),
             Bind(_, pattern, _, expr, _) => {
-                self.declare_pattern(pattern, Some(BindType::Let));
+                if matches!(pattern.as_ref(), Pattern::Bind(None, _))
+                    && matches!(expr.as_ref(), Expression::Function(..))
+                {
+                    self.declare_pattern(pattern, Some(BindType::LetFunc));
+                } else {
+                    self.declare_pattern(pattern, Some(BindType::Let));
+                }
                 self.declare_expression(expr);
             }
             Rebind(pattern, _, expr, _) => {
