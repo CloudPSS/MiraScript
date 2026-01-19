@@ -1,7 +1,16 @@
 import test from 'ava';
 import type { ExecutionContext } from 'ava';
 import fs from 'node:fs';
-import { createVmContext, VmError, VmFunction, VmModule, compile, configCheckpoint } from '@mirascript/mirascript';
+import {
+    createVmContext,
+    VmError,
+    VmFunction,
+    VmModule,
+    compile,
+    configCheckpoint,
+    type VmScript,
+} from '@mirascript/mirascript';
+import { createScript } from '@mirascript/mirascript/subtle';
 
 function createContext(
     t: ExecutionContext,
@@ -27,7 +36,7 @@ function createContext(
                 t.throws(fn as () => unknown, { instanceOf: VmError }, String(message || '') || undefined);
             }),
             t_timeout: VmFunction((fn: unknown, message?: unknown) => {
-                timeout_fn.push([fn as () => unknown, String(message || '') || 'Execution timeout']);
+                timeout_fn.push([fn as () => unknown, String(message || '') || 'Execution timed out']);
             }),
             t_never: VmFunction((message?: unknown) => {
                 t.fail(String(message || '') || undefined);
@@ -64,19 +73,27 @@ function createContext(
 
 const TEST_DIR = new URL('../../../../tests', import.meta.url);
 
+const runScript = (t: ExecutionContext, file: string, extern: boolean, module: boolean, script: VmScript) => {
+    const timeout_fn: Array<[() => unknown, string]> = [];
+    configCheckpoint(file.endsWith('_huge.mira') ? 1000 : undefined);
+    script(createContext(t, timeout_fn, extern, module));
+    // 在脚本之后执行，否则脚本本身超时
+    for (const [fn, message] of timeout_fn) {
+        t.throws(fn, { instanceOf: RangeError, message: 'Execution timed out' }, message);
+    }
+};
+
 const compileAndRun = test.macro<[string, boolean, boolean]>({
     exec: async (t, file, extern, module) => {
         const codeUrl = new URL(`./tests/${file}`, TEST_DIR);
         const code = await fs.promises.readFile(codeUrl, 'utf8');
 
         const script = await compile(code, { pretty: true, sourceMap: true, fileName: codeUrl.href });
-        const timeout_fn: Array<[() => unknown, string]> = [];
-        configCheckpoint(file.endsWith('_huge.mira') ? 1000 : undefined);
-        script(createContext(t, timeout_fn, extern, module));
-        // 在脚本之后执行，否则脚本本身超时
-        for (const [fn, message] of timeout_fn) {
-            t.throws(fn, { instanceOf: RangeError, message: 'Execution timeout' }, message);
-        }
+        configCheckpoint(300);
+        runScript(t, file, extern, module, script);
+        const scriptCopy = createScript(code, 'Script', script.toString());
+        runScript(t, file, extern, module, scriptCopy);
+        configCheckpoint();
     },
     title: (providedTitle = 'test', code) => code || providedTitle,
 });

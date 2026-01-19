@@ -8,10 +8,10 @@ import {
     REG_NUMBER,
     REG_IDENTIFIER,
     MAX_VERBATIM_LENGTH,
-    constantKeywords,
-    controlKeywords,
-    keywords,
-    numericKeywords,
+    CONSTANT_KEYWORDS,
+    CONTROL_KEYWORDS,
+    KEYWORDS,
+    NUMERIC_KEYWORDS,
 } from '../constants.js';
 import { DefaultVmContext } from '@mirascript/mirascript/subtle';
 import { isVmModule } from '@mirascript/mirascript';
@@ -51,11 +51,12 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
 
         whitespace: REG_WHITESPACE,
         identifier: REG_IDENTIFIER,
+        identifierNoAtOnly: /(?:(?:_+|\$+|\p{XID_Start})\p{XID_Continue}*|@+\p{XID_Continue}+)/u,
 
-        keywords: keywords(),
-        controlKeywords: controlKeywords(),
-        constantKeywords: constantKeywords(),
-        numericKeywords: numericKeywords(),
+        keywords: KEYWORDS,
+        controlKeywords: CONTROL_KEYWORDS,
+        constantKeywords: CONSTANT_KEYWORDS,
+        numericKeywords: NUMERIC_KEYWORDS,
 
         inlineDocParam: /\(parameter(?: pattern)?\)/,
         inlineDocMod: ['local', 'global', 'field', 'module'].join('|'),
@@ -63,14 +64,18 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
         start: mode === 'template' ? 'root_template' : mode === 'doc' ? 'root_doc' : 'root',
         tokenPostfix: '.mirascript',
         tokenizer: {
-            root: [[/[[\](){}]/, '@brackets'], { include: '@common' }],
+            root: [
+                [/[[\](){}]/, '@brackets'],
+                // 用于修正关键字做为属性名时的高亮问题，由于与格式化字符串冲突，仅 root 规则启用，其余情况改由 semantic 高亮处理
+                [/(@identifier)(@whitespace*)(\??:)(?!:)/, ['variable.other.property', '', 'delimiter']],
+                { include: '@common' },
+            ],
             root_template: [
                 [/[^$]+/, 'string'],
                 [/(?=\$)/, '', '@string_interpolation.$S3'],
                 [/[$]/, 'string'],
             ],
             common: [
-                [/(@identifier)(@whitespace*)(\??:)(?!:)/, ['variable.other.property', '', 'delimiter']],
                 [
                     /(fn)(@whitespace+)(@identifier)(?=$|@whitespace|[[({,;])/,
                     ['keyword', '', { cases: identifierCases(undefined, 'entity.name.function') }],
@@ -98,12 +103,12 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                 ],
                 [String.raw`\b(${moduleNames.join('|')})(@whitespace*(?=!?\.))`, ['type', '']],
                 [
-                    /(\.)(@whitespace*)(@identifier)(@whitespace*)(!?)(@whitespace*(?=\())/,
+                    /(\.)(@whitespace*)(@identifierNoAtOnly)(@whitespace*)(!?)(@whitespace*(?=\(|@*['"`]))/,
                     ['delimiter', '', 'entity.name.function', '', 'delimiter', ''],
                 ],
                 [/(\.)(@whitespace*)(@identifier)/, ['delimiter', '', 'variable']],
                 [
-                    /(@identifier)(@whitespace*)(!?)(@whitespace*(?=\())/,
+                    /(@identifierNoAtOnly)(@whitespace*)(!?)(@whitespace*(?=\(|@*['"`]))/,
                     [
                         {
                             cases: identifierCases(undefined, `entity.name.function`),
@@ -136,14 +141,33 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                         },
                     },
                 ],
-                [/(\.\.|\?:|[-+=/~?:;,.!@$%^&|*<>])/, 'delimiter'],
-                [REG_ORDINAL, 'number.ordinal'],
+                [/(\.\.|\?:|::|[-+=/~?:;,.!@$%^&|*<>])/, 'delimiter'],
             ],
             whitespace: [
                 [/(@whitespace)+/, ''],
                 [/\/\/.*$/, 'comment.line'],
                 [/\/\*{2}/, 'comment.doc', '@doc_comment'],
                 [/\/\*/, 'comment.block', '@block_comment'],
+            ],
+            format: [[/:(?!:)/, 'punctuation.format', '@format_string']],
+            format_string: [
+                [/\\./, 'string.escape.format'],
+                [/\(/, { token: 'string.format', next: '@format_string_inner' }],
+                [/\)/, { token: 'string.format', next: '@pop', goBack: 1 }],
+                [/\[/, { token: 'string.format', next: '@format_string_class' }],
+                [/[^()\\[]+/, 'string.format'],
+            ],
+            format_string_inner: [
+                [/\\./, 'string.escape.format'],
+                [/\(/, { token: 'string.format', next: '@push' }],
+                [/\)/, { token: 'string.format', next: '@pop' }],
+                [/\[/, { token: 'string.format', next: '@format_string_class' }],
+                [/[^()\\[\]]+/, 'string.format'],
+            ],
+            format_string_class: [
+                [/\\./, 'string.escape.format'],
+                [/\]/, { token: 'string.format', next: '@pop' }],
+                [/[^\\\]]+/, 'string.format'],
             ],
             string: [
                 [/["'`]/, { token: 'string.quote.open', next: '@string_normal.$#', bracket: '@open' }],
@@ -224,7 +248,8 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
             braced: [
                 [/\{/, { token: '@brackets', next: '@braced_inner' }],
                 [/\}/, { token: 'punctuation.section.embedded', bracket: '@close', next: '@pop' }],
-                [/[[\]()]/, '@brackets'],
+                [/\(/, { token: '@brackets', next: '@parenthesized_inner' }],
+                [/[[\])]/, '@brackets'],
                 { include: '@common' },
             ],
             braced_inner: [
@@ -236,7 +261,9 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
             parenthesized: [
                 [/\(/, { token: '@brackets', next: '@parenthesized_inner' }],
                 [/\)/, { token: 'punctuation.section.embedded', bracket: '@close', next: '@pop' }],
-                [/[[\]{}]/, '@brackets'],
+                [/\{/, { token: '@brackets', next: '@braced_inner' }],
+                [/[[\]}]/, '@brackets'],
+                { include: '@format' },
                 { include: '@common' },
             ],
             parenthesized_inner: [
@@ -285,7 +312,7 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
 
             doc_mode: [
                 [
-                    /(@identifier)(@whitespace*)(:)(@whitespace*)(\/\*@whitespace*<)(extern )((?:async )?function\*?)(@whitespace*)([<>.\w]*)(\(\))(>@whitespace*\*\/)/,
+                    /(@identifier)(@whitespace*)(:)(@whitespace*)(\/\*@whitespace*<)(extern )((?:async )?function\*?)(>@whitespace*\*\/)/,
                     [
                         'entity.name.function.doc',
                         '',
@@ -294,9 +321,6 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                         'comment.doc',
                         'type.doc',
                         'keyword.javascript',
-                        '',
-                        'entity.name.function.javascript',
-                        'delimiter',
                         'comment.doc',
                     ],
                 ],
@@ -344,16 +368,8 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                 [/(@identifier)(@whitespace*)(:)(@whitespace+)/, ['variable.other.property', '', 'delimiter', '']],
 
                 [
-                    /(\/\*@whitespace*<)(extern )((?:async )?function\*?)(@whitespace*)([<>.\w]*)(\(\))(>@whitespace*\*\/)/,
-                    [
-                        'comment.doc',
-                        'type.doc',
-                        'keyword.javascript',
-                        '',
-                        'entity.name.function.javascript',
-                        'delimiter',
-                        'comment.doc',
-                    ],
+                    /(\/\*@whitespace*<)(extern )((?:async )?function\*?)(>@whitespace*\*\/)/,
+                    ['comment.doc', 'type.doc', 'keyword.javascript', 'comment.doc'],
                 ],
                 [
                     /(\/\*@whitespace*<)(extern )(class)(@whitespace*)([<>.\w]*)(>@whitespace*\*\/)/,
@@ -384,6 +400,10 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                     ['comment.doc', 'type.doc', 'entity.name.label', 'comment.doc'],
                 ],
 
+                [
+                    /(let)(@whitespace+)(mut)(@whitespace+)(@identifier)/,
+                    [{ token: 'keyword.$1' }, '', 'keyword.mut', '', 'variable'],
+                ],
                 [/(let|const)(@whitespace+)(@identifier)/, [{ token: 'keyword.$1' }, '', 'variable.other.constant']],
                 [/(fn)(@whitespace+)(@identifier)$/, ['keyword.fn.doc', '', 'entity.name.function.doc']],
                 [
@@ -394,15 +414,13 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                     /(fn)(@whitespace+)(@identifier)/,
                     ['keyword.fn.doc', '', { token: 'entity.name.function.doc', next: '@type_doc' }],
                 ],
-                [
-                    /(let)(@whitespace+)(mut)(@whitespace+)(@identifier)/,
-                    [{ token: 'keyword.$1' }, '', 'keyword.mut', '', 'variable'],
-                ],
                 [/[[\](){}]/, '@brackets'],
                 { include: '@common' },
             ],
             type_doc: [
                 [/;/, { token: 'delimiter', next: '@pop', goBack: 1 }],
+                [/(\()(\.\.|)(@identifier)(?=,|\))/, ['@brackets', 'delimiter', 'variable.emphasis']],
+                [/(,)(@whitespace*)(\.\.|)(@identifier)(?=,|\))/, ['delimiter', '', 'delimiter', 'variable.emphasis']],
                 [/(fn)(\()/, ['type', '@brackets']],
                 [/(type)(\()(@identifier)(\))/, ['type', '@brackets', 'variable.emphasis.doc', '@brackets']],
                 [

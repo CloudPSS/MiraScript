@@ -86,6 +86,7 @@ pub(super) fn token<'s>(
                 "?:".value(TokenKind::Operator(Operator::QuestionColon)),
                 "??=".value(TokenKind::Operator(Operator::NullCoalescingAssign)),
                 "??".value(TokenKind::Operator(Operator::NullCoalescing)),
+                any.value(TokenKind::Operator(Operator::Question)),
             )),
             '(' => any.value(TokenKind::Operator(Operator::OpenParen)),
             ')' => any.value(TokenKind::Operator(Operator::CloseParen)),

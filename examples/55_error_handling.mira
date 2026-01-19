@@ -22,8 +22,8 @@ fn get_config_value(config, key, default_value) { config[key] ?? default_value }
 
 let config = (timeout: 5000, debug: true);
 debug_print("配置值:");
-debug_print("timeout:", get_config_value(config, 'timeout', 1000));
-debug_print("retries:", get_config_value(config, 'retries', 3));
+debug_print("timeout: %o", get_config_value(config, 'timeout', 1000));
+debug_print("retries: %o", get_config_value(config, 'retries', 3));
 
 // 空安全链式调用
 let user_data = (profile: (personal: (name: "Alice", email: "alice@example.com"), preferences: (theme: "dark", language: "zh")));
@@ -31,9 +31,9 @@ let user_data = (profile: (personal: (name: "Alice", email: "alice@example.com")
 let empty_data = nil;
 
 debug_print("空安全访问:");
-debug_print("用户名:", user_data.profile.personal.name ?? '未知');
-debug_print("主题:", user_data.profile.preferences.theme ?? '默认');
-debug_print("空数据访问:", empty_data.profile.personal.name ?? '无数据');
+debug_print("用户名: %o", user_data.profile.personal.name ?? '未知');
+debug_print("主题: %o", user_data.profile.preferences.theme ?? '默认');
+debug_print("空数据访问: %o", empty_data.profile.personal.name ?? '无数据');
 
 // 类型检查和转换
 fn safe_string_to_number(str) {
@@ -56,7 +56,7 @@ debug_print("字符串转数字:");
 let test_strings = ["10", "100", "abc", "", 42];
 for test in test_strings {
   let converted = safe_string_to_number(test);
-  debug_print("'$test' ->", converted ?? '转换失败');
+  debug_print("%o -> %o", test, converted ?? '转换失败');
 }
 
 // 函数参数验证
@@ -78,7 +78,7 @@ for shape in shapes {
       debug_print("无法计算面积: 形状无效或参数错误");
     }
     case a {
-      debug_print("面积:", a);
+      debug_print("面积: %o", a);
     }
   }
 }
@@ -119,9 +119,9 @@ let test_users = [(name: "Alice", age: 30, email: "alice@example.com"), (name: "
 for user in test_users {
   let validation = validate_user(user);
   if validation.valid {
-    debug_print("用户验证通过:", user);
+    debug_print("用户验证通过: %o", user);
   } else {
-    debug_print("用户验证失败:", user);
+    debug_print("用户验证失败: %o", user);
     for error in validation.errors {
       debug_print("  - $error");
     }

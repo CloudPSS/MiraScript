@@ -1,18 +1,19 @@
-/* c8 ignore start */
 /* eslint-disable no-console */
 import { readFile, stat } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { InvalidArgumentError, program } from '@commander-js/extra-typings';
 import { execute } from './execute.js';
+import { isNaN, PositiveInfinity } from '../helpers/utils.js';
 import pkg from '#package.json' with { type: 'json' };
 import { compileSync } from '../compiler/index.js';
 import { configCheckpoint, type VmValue } from '../vm/index.js';
 
 const DEFAULT_TIMEOUT = 3000;
 
-program.name(pkg.name.split('/').pop()!).version(pkg.version).description(pkg.description);
-
-program
+export default program
+    .name(pkg.name.split('/').pop()!)
+    .version(pkg.version)
+    .description(pkg.description)
     .option(
         '-v, --variable <key=value>',
         '设置全局变量，可以多次使用',
@@ -41,7 +42,7 @@ program
         '脚本执行超时时间（毫秒，0 表示不超时）',
         (v) => {
             const ms = Number.parseFloat(v);
-            if (Number.isNaN(ms) || ms < 0) {
+            if (isNaN(ms) || ms < 0) {
                 throw new InvalidArgumentError('超时时间必须是非负整数');
             }
             return ms;
@@ -52,7 +53,7 @@ program
     .option('-e, --eval <script>', '要执行的脚本')
     .argument('[script]', '要执行的脚本文件路径（如果提供了 -e 则忽略此参数）')
     .action(async (script, opt) => {
-        configCheckpoint(opt.timeout || Number.POSITIVE_INFINITY);
+        configCheckpoint(opt.timeout || PositiveInfinity);
         if (opt.eval != null) {
             const template = !!opt.template;
             await execute(opt.eval, template, opt.variable, template ? 'eval.miratpl' : 'eval.mira');
@@ -86,5 +87,3 @@ program
         }
         program.help({ error: true });
     });
-
-await program.parseAsync();

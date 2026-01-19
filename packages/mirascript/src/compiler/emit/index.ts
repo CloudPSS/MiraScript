@@ -1,10 +1,11 @@
-import { OpCode } from '@mirascript/bindings';
+import { OpCode } from '@mirascript/constants';
+import { toString } from '../../helpers/convert/to-string.js';
 import type { VmPrimitive } from '../../vm/index.js';
 import type { ScriptInput, TranspileOptions } from '../types.js';
 import type { IRange } from '../diagnostic.js';
-import { readGlobal, type GlobalMap } from './globals.js';
-import { readConst, toJsLiteral } from './consts.js';
+import { readConsts, toJsLiteral } from './consts.js';
 import { createSourceMap } from './sourcemap.js';
+import { SCRIPT_PREFIX } from './constants.js';
 
 /** 生成代码 */
 export function emit(
@@ -29,8 +30,6 @@ function createArray<T>(length: number, fn: (index: number) => T): T[] {
     return result;
 }
 
-const SCRIPT_PREFIX = `'use strict'; return ((global = GlobalFallback()) => { try { CpEnter();`;
-const GLOBAL_HINT = `/* globals */`;
 /** 代码生成 */
 export class Emitter {
     constructor(
@@ -47,22 +46,21 @@ export class Emitter {
         this.constSize = reader.getUint32(8 + this.codeSize, true);
 
         this.codeReader = new DataView(chunk.buffer, chunk.byteOffset + 8, this.codeSize);
-        this.constReader = new DataView(chunk.buffer, chunk.byteOffset + 12 + this.codeSize, this.constSize);
+        this.constVals = readConsts(
+            new Uint8Array(chunk.buffer, chunk.byteOffset + 12 + this.codeSize, this.constSize),
+        );
     }
-    readonly pretty;
+    readonly pretty: boolean;
     readonly chunkSize: number;
     readonly codeSize: number;
-    private readonly constReader: DataView;
     /** 读取常量表 */
     private readConsts(): void {
-        for (let i = 0, index = 0; i < this.constSize; index++) {
-            const [constant, size] = readConst(this.constReader, i);
-            this.constVals.push(constant);
-            this.constLits.push(toJsLiteral(constant));
-            i += size;
+        const { constVals, constLits } = this;
+        for (let i = 0, len = constVals.length; i < len; i++) {
+            constLits.push(toJsLiteral(constVals[i]));
         }
     }
-    readonly constVals: VmPrimitive[] = [];
+    readonly constVals: VmPrimitive[];
     readonly constLits: string[] = [];
 
     readonly constSize: number;
@@ -70,6 +68,8 @@ export class Emitter {
     private codeOffset = 0;
     private closureCounter = 0;
     private identCounter = 0;
+    /** 记录函数声明所在位置 */
+    private readonly functions: number[] = [];
 
     /** 制造缩进 */
     private ident(len = 0): string {
@@ -77,10 +77,16 @@ export class Emitter {
         return '  '.repeat(this.identCounter + len);
     }
 
-    readonly globals: GlobalMap = new Map();
     /** 读取全局变量 */
-    private rg(constIdx: number, eager: boolean): string {
-        return readGlobal(this, constIdx).e;
+    private rg(constIdx: number): string {
+        const constName = this.constVals[constIdx]!;
+        let lit;
+        if (typeof constName == 'string') {
+            lit = this.constLits[constIdx]!;
+        } else {
+            lit = toJsLiteral(toString(constName, undefined));
+        }
+        return `global.get(${lit})`;
     }
 
     readonly codeLines: string[] = [];
@@ -122,7 +128,7 @@ export class Emitter {
                 continue;
             }
             this.codeOffset++;
-            const body = this.ident(-1) + `} finally { CpExit(); } });`;
+            const body = this.ident(-1) + `} finally { $CpExit(); } });`;
             this.codeLines.push(body);
             this.closureCounter--;
             this.identCounter--;
@@ -198,8 +204,8 @@ export class Emitter {
                     const opt = opcode === OpCode.FieldOpt;
                     // Use computed property names to avoid prototype pollution
                     code = opt
-                        ? `...ElementOpt(${field_name}, ${this.rv(value)}),`
-                        : `[${field_name}]: Element(${this.rv(value)}),`;
+                        ? `...$ElOpt(${field_name}, ${this.rv(value)}),`
+                        : `[${field_name}]: $El(${this.rv(value)}),`;
                     break;
                 }
                 case OpCode.FieldOptDyn:
@@ -208,8 +214,8 @@ export class Emitter {
                     const value = read();
                     const opt = opcode === OpCode.FieldOptDyn;
                     code = opt
-                        ? `...ElementOpt(${this.rv(field)}, ${this.rv(value)}),`
-                        : `[${this.rv(field)}]: Element(${this.rv(value)}),`;
+                        ? `...$ElOpt(${this.rv(field)}, ${this.rv(value)}),`
+                        : `[${this.rv(field)}]: $El(${this.rv(value)}),`;
                     break;
                 }
                 case OpCode.FieldOptIndex:
@@ -217,9 +223,7 @@ export class Emitter {
                     const field = this.readIndex(wide);
                     const value = read();
                     const opt = opcode === OpCode.FieldOptIndex;
-                    code = opt
-                        ? `...ElementOpt(${field}, ${this.rv(value)}),`
-                        : `[${field}]: Element(${this.rv(value)}),`;
+                    code = opt ? `...$ElOpt(${field}, ${this.rv(value)}),` : `[${field}]: $El(${this.rv(value)}),`;
                     break;
                 }
                 case OpCode.Spread: {
@@ -257,25 +261,25 @@ export class Emitter {
             switch (opcode) {
                 case OpCode.Item: {
                     const value = read();
-                    code = `Element(${this.rv(value)}),`;
+                    code = `$El(${this.rv(value)}),`;
                     break;
                 }
                 case OpCode.ItemRange: {
                     const start = this.readIndex(wide);
                     const end = this.readIndex(wide);
-                    code = `...ArrayRange(${start}, ${end}),`;
+                    code = `...$ArrayRange(${start}, ${end}),`;
                     break;
                 }
                 case OpCode.ItemRangeDyn: {
                     const start = read();
                     const end = read();
-                    code = `...ArrayRange(${this.rv(start)}, ${this.rv(end)}),`;
+                    code = `...$ArrayRange(${this.rv(start)}, ${this.rv(end)}),`;
                     break;
                 }
                 case OpCode.ItemRangeExclusiveDyn: {
                     const start = read();
                     const end = read();
-                    code = `...ArrayRangeExclusive(${this.rv(start)}, ${this.rv(end)}),`;
+                    code = `...$ArrayRangeExclusive(${this.rv(start)}, ${this.rv(end)}),`;
                     break;
                 }
                 case OpCode.Spread: {
@@ -323,21 +327,25 @@ export class Emitter {
                     const wv = this.wv(i + 1, -1);
                     if (varg && i === argn - 1) {
                         // 最后一个参数为可变参数
-                        return `...vargs`;
+                        return `...args`;
                     }
                     return `${wv} = null`;
                 });
-                const regs = createArray(regn - argn + 1, (i) => (i ? this.wv(i + argn, -1) : this.wv(0, -1))).join(
-                    ', ',
-                );
+                let regs = '_';
+                for (let i = 1 + argn; i < regn + 1; i++) {
+                    regs += ',' + this.wv(i, -1);
+                }
                 const script = startFunc && !varg && argn === 0;
                 if (script) {
                     code = `${SCRIPT_PREFIX} var ${regs};`;
                 } else {
-                    code = `${this.wv(reg)} = Function((${args.join(', ')}) => { try { CpEnter(); var ${regs};`;
+                    if (this.options.sourceMap) {
+                        this.functions.push(this.codeLines.length);
+                    }
+                    code = `${this.wv(reg)} = $Fn(null, (${args.join(', ')}) => { try { $CpEnter(); var ${regs};`;
                 }
                 if (varg) {
-                    code += ` var ${this.wv(argn, -1)} = Vargs(vargs);`;
+                    code += ` var ${this.wv(argn, -1)} = $VArgs(args);`;
                 }
                 break;
             }
@@ -376,12 +384,18 @@ export class Emitter {
             case OpCode.Nsame:
             case OpCode.In:
             case OpCode.And:
-            case OpCode.Or:
-            case OpCode.Format: {
+            case OpCode.Or: {
                 reg = read();
                 const left = read();
                 const right = read();
                 code = `${this.wv(reg)} = $${OpCode[opcode]}(${this.rv(left)}, ${this.rv(right)});`;
+                break;
+            }
+            case OpCode.Format: {
+                reg = read();
+                const left = read();
+                const right = readIndex();
+                code = `${this.wv(reg)} = $${OpCode[opcode]}(${this.rv(left)}, ${this.constLits[right]});`;
                 break;
             }
             case OpCode.InGlobal: {
@@ -415,7 +429,7 @@ export class Emitter {
                 const args = createArray(n, () => read());
                 const ns = read();
                 const spreads = createArray(ns, () => read());
-                const callTarget = opcode === OpCode.Call ? this.rg(func, false) : this.rv(func);
+                const callTarget = opcode === OpCode.Call ? this.rg(func) : this.rv(func);
                 code = `${this.wv(reg)} = $Call(${callTarget}, [${args
                     .map((a, i) => {
                         if (spreads.includes(i)) return `...$ArraySpread(${this.rv(a)})`;
@@ -520,7 +534,7 @@ export class Emitter {
             case OpCode.GetGlobal: {
                 reg = read();
                 const i = read();
-                code = `${this.wv(reg)} = ${this.rg(i, false)};`;
+                code = `${this.wv(reg)} = ${this.rg(i)};`;
                 break;
             }
             case OpCode.GetGlobalDyn: {
@@ -533,7 +547,7 @@ export class Emitter {
                 reg = read();
                 const level = read();
                 const up = read();
-                code = `${this.wv(reg)} = Upvalue(${this.rv(up, level)});`;
+                code = `${this.wv(reg)} = $Upvalue(${this.rv(up, level)});`;
                 break;
             }
             case OpCode.SetUpvalue: {
@@ -627,7 +641,7 @@ export class Emitter {
                 const regs = createArray(nreg - 1, (i) => this.wv(i + 2, -1));
                 regs.unshift('_');
                 const ir = this.wv(1, -1);
-                code = `for (let ${ir} of $Iterable(${this.rv(iterable)})) { ${ir} ??= null; Cp(); let ${regs.join(', ')};`;
+                code = `for (let ${ir} of $Iterable(${this.rv(iterable)})) { ${ir} ??= null; $Cp(); let ${regs.join(', ')};`;
                 break;
             }
             case OpCode.LoopRange:
@@ -639,14 +653,14 @@ export class Emitter {
                 const regs = createArray(nreg - 1, (i) => this.wv(i + 2, -1));
                 regs.unshift('_');
                 const i = this.wv(1, -1);
-                code = `for (let start = $ToNumber(${this.rv(start)}), end = $ToNumber(${this.rv(end)}), ${i} = start; ${i} ${exclusive ? '<' : '<='} end; ${i} += 1) { Cp(); let ${regs.join(', ')};`;
+                code = `for (let start = $ToNumber(${this.rv(start)}), end = $ToNumber(${this.rv(end)}), ${i} = start; ${i} ${exclusive ? '<' : '<='} end; ${i} += 1) { $Cp(); let ${regs.join(', ')};`;
                 break;
             }
             case OpCode.Loop: {
                 const nreg = read();
                 const regs = createArray(nreg, (i) => this.wv(i + 1, -1));
                 regs.unshift('_');
-                code = `while (true) { Cp(); let ${regs.join(', ')};`;
+                code = `while (true) { $Cp(); let ${regs.join(', ')};`;
                 break;
             }
             case OpCode.Break: {
@@ -705,19 +719,12 @@ export class Emitter {
     read(): void {
         this.readConsts();
         this.readCode();
-        if (this.globals.size > 0) {
-            let globalsInit = '';
-            for (const { v } of this.globals.values()) {
-                globalsInit += globalsInit ? `, ${v}` : `var ${GLOBAL_HINT} ${v}`;
-            }
-            this.codeLines[0] += globalsInit + ';';
-        }
         this.addSourceMap();
     }
     /** 添加源映射 */
     addSourceMap(): void {
-        if (!this.options.sourceMap) return;
-        const mapLines = createSourceMap(this.source, this.sourcemaps, this.codeLines, this.globals, this.options);
-        this.codeLines.push(...mapLines);
+        if (this.options.sourceMap) {
+            createSourceMap(this.source, this.sourcemaps, this.codeLines, this.functions, this.options);
+        }
     }
 }

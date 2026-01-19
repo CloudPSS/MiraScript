@@ -6,7 +6,7 @@ export let monaco: typeof import('@private/monaco-editor');
 export let mirascript: typeof import('@mirascript/mirascript');
 export let mirascriptSubtle: typeof import('@mirascript/mirascript/subtle');
 export let globals: VmContext;
-export let mirascriptBc: import('@mirascript/bindings/wasm').BcModuleType;
+export let mirascriptMonaco: typeof import('@mirascript/monaco/lsp');
 export const consoleManager = new ConsoleManager(document.querySelector<HTMLDivElement>('#console-output')!);
 
 /** 加载 */
@@ -14,13 +14,12 @@ async function load() {
     mirascript = await import('@mirascript/mirascript');
     mirascriptSubtle = await import('@mirascript/mirascript/subtle');
     monaco = await import('@private/monaco-editor');
-    const { loadModule } = await import('@mirascript/bindings/wasm');
-    mirascriptBc = await loadModule();
 
     mirascript.configCheckpoint(500);
     globals = g(consoleManager);
     const { registerMiraScript } = await import('@mirascript/monaco');
     registerMiraScript(monaco, () => globals);
+    mirascriptMonaco = await import('@mirascript/monaco/lsp');
 
     // 暴露到全局以便调试
     Object.defineProperty(globalThis, 'mirascript', {

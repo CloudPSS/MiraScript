@@ -1,6 +1,6 @@
 import type { CancellationToken, editor, IMarkdownString, IRange, languages, Position } from '../../monaco-api.js';
 import { Provider } from './base.js';
-import { DiagnosticCode } from '@mirascript/bindings/wasm';
+import { DiagnosticCode } from '@mirascript/constants';
 import { codeblock, getDeep, valueDoc, paramsList } from '../utils.js';
 import type { FieldsAccessAt, VariableAccessAt } from '../compile-result.js';
 
@@ -16,14 +16,10 @@ export class HoverProvider extends Provider implements languages.HoverProvider {
         if ('name' in def) {
             const globals = await this.getContext(model);
             const value = globals.getOrUndefined(def.name);
-            const { script, doc } = valueDoc(def.name, value, 'hint');
+            const { script, doc } = valueDoc(def.name, value, 'hint', globals);
             contents.push({ value: codeblock(`\0(global) ${script}`) });
             for (const d of doc) {
                 contents.push({ value: d });
-            }
-            const describe = globals.describe(def.name);
-            if (describe) {
-                contents.push({ value: describe });
             }
             range = def.references[ref!]?.range;
         } else {
@@ -115,10 +111,10 @@ export class HoverProvider extends Provider implements languages.HoverProvider {
             return undefined;
         }
         const vmGlobal = await this.getContext(model);
-        const value = getDeep(vmGlobal, def.name, fields);
+        const lastField = fields.at(-1)!;
+        const [obj, value] = getDeep(vmGlobal, def.name, fields);
         if (value == null) return undefined;
-        const lastField = fields.pop()!;
-        const { script, doc } = valueDoc(lastField, value, 'field');
+        const { script, doc } = valueDoc(lastField, value, 'field', obj);
         return {
             contents: [{ value: codeblock(`\0(field) ${script}`) }, ...doc.map((d) => ({ value: d }))],
             range,

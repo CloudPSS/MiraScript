@@ -7,12 +7,6 @@ import { compile } from '../worker-helper.js';
 import { wordAt } from '../utils.js';
 
 let contextProvider: VmContextProvider | undefined;
-/** 设置全局变量提供者 */
-export function setContextProvider(provider: VmContextProvider | undefined): void {
-    contextProvider = provider;
-    cachedContext = null;
-}
-
 /** 提供全局变量的执行上下文 */
 export type MonacoContext = Readonly<Required<Pick<VmContext, 'get' | 'describe' | 'keys' | 'has'>>> & {
     /** 获取指定 key 的值，找不到时返回 undefined */
@@ -93,35 +87,44 @@ async function getContextImpl(model: editor.ITextModel, clearCache: () => void):
     }
 }
 let cachedContext: readonly [editor.ITextModel, Promise<MonacoContext>] | null = null;
-/** 获取执行上下文 */
-export async function getContext(model: editor.ITextModel): Promise<MonacoContext> {
-    if (cachedContext?.[0] === model) {
-        return cachedContext[1];
-    }
-    const clearCache = () => {
-        if (cachedContext === cache) {
-            cachedContext = null;
-        }
-    };
-    const context = getContextImpl(model, clearCache);
-    const cache = [model, context] as const;
-    cachedContext = cache;
-    setTimeout(clearCache, 100);
-    return context;
-}
 
 /** 提供编辑器 LSP 支持 */
 export abstract class Provider {
+    /** 设置全局变量提供者 */
+    static setContextProvider(provider: VmContextProvider | undefined): void {
+        contextProvider = provider;
+        cachedContext = null;
+    }
     /** 获取编译结果 */
-    async getCompileResult(model: editor.ITextModel): Promise<CompileResult | undefined> {
+    static async getCompileResult(model: editor.ITextModel): Promise<CompileResult | undefined> {
         if (model.uri.scheme === 'mirascript') {
             return undefined; // 不处理标准库
         }
         return await compile(model);
     }
+    /** 获取编译结果 */
+    async getCompileResult(model: editor.ITextModel): Promise<CompileResult | undefined> {
+        return Provider.getCompileResult(model);
+    }
+    /** 获取执行上下文（全局变量） */
+    static async getContext(model: editor.ITextModel): Promise<MonacoContext> {
+        if (cachedContext?.[0] === model) {
+            return cachedContext[1];
+        }
+        const clearCache = () => {
+            if (cachedContext === cache) {
+                cachedContext = null;
+            }
+        };
+        const context = getContextImpl(model, clearCache);
+        const cache = [model, context] as const;
+        cachedContext = cache;
+        setTimeout(clearCache, 100);
+        return context;
+    }
     /** 获取执行上下文（全局变量） */
     async getContext(model: editor.ITextModel): Promise<MonacoContext> {
-        return getContext(model);
+        return Provider.getContext(model);
     }
     /** 获取当前位置的值 */
     async getValueAt(

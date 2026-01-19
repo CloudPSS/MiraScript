@@ -2,14 +2,14 @@ use std::{borrow::Cow, iter::zip, vec};
 
 use winnow::{
     combinator::{alt, eof, fail, opt, peek, preceded},
-    stream::AsChar,
+    stream::{AsChar, Offset},
     token::{any, literal, one_of, take_till, take_while},
 };
 
 use super::{
     identifier::{identifier, is_identifier_special, is_identifier_start},
-    lex_balanced,
     prelude::*,
+    tokens::token,
 };
 
 #[derive(Debug, Clone)]
@@ -17,7 +17,16 @@ pub enum StringFragment<'s> {
     Literal(&'s str),
     EscapedChar(char, &'s str),
     InvalidEscapedChar(SourceRange, DiagnosticCode),
-    Interpolation(&'s str, Vec<Token<'s>>, Option<Box<(Token<'s>, Token<'s>)>>),
+    Interpolation(
+        /// The dollar signs used for interpolation
+        &'s str,
+        /// The tokens inside the interpolation, will be taken to `TokenKind::InterpolatedString`
+        Vec<Token<'s>>,
+        /// The format string of the tokens inside the interpolation
+        &'s str,
+        /// The begin and end tokens for the interpolation, if any
+        Option<Box<(Token<'s>, Token<'s>)>>,
+    ),
     EndOfString,
     EndOfFile,
 }
@@ -91,11 +100,11 @@ pub(super) fn string_content<'s>(mut info: StringInfo<'s>) -> impl Parser<'s, To
             let mut interpolations = vec![];
             let mut literal_pushed = false;
             for frag in info.content.iter_mut() {
-                if let StringFragment::Interpolation(_, expr, _) = frag {
+                if let StringFragment::Interpolation(_, expr, fmt, _) = frag {
                     if !literal_pushed {
                         literals.push(Cow::Borrowed(""));
                     }
-                    interpolations.push(std::mem::take(expr));
+                    interpolations.push((std::mem::take(expr), *fmt));
                     literal_pushed = false;
                     continue;
                 }
@@ -119,9 +128,11 @@ pub(super) fn string_content<'s>(mut info: StringInfo<'s>) -> impl Parser<'s, To
             if !literal_pushed {
                 literals.push(Cow::Borrowed(""));
             }
-            interpolations.push(vec![]);
+            interpolations.push((vec![], ""));
             TokenKind::InterpolatedString(
-                zip(literals, interpolations).collect(),
+                zip(literals, interpolations)
+                    .map(|(l, (e, f))| (l, e, f))
+                    .collect(),
                 info.clone().into(),
             )
         } else {
@@ -265,6 +276,53 @@ fn escaped_char_impl<'s>(i: &mut Input<'s>) -> Result<StringFragment<'s>> {
     .parse_next(i)
 }
 
+fn format_string<'s>(i: &mut Input<'s>) -> Result<&'s str> {
+    let start = i.checkpoint();
+
+    let mut depth = 0; // 括号深度
+    let mut in_class = false; // 是否在字符类 [... ] 内
+
+    while !i.is_empty() {
+        let checkpoint = i.checkpoint();
+
+        match i.next_token() {
+            Some('\\') => {
+                // 转义：跳过下一个字符
+                let _ = i.next_token();
+            }
+            Some('[') if !in_class => {
+                in_class = true;
+            }
+            Some(']') if in_class => {
+                in_class = false;
+            }
+            Some('(') if !in_class => {
+                depth += 1;
+            }
+            Some(')') if !in_class => {
+                if depth == 0 {
+                    // 找到插值结束符，回退这个 ')'
+                    // 返回从 start 到当前位置的字符串
+                    let offset = checkpoint.offset_from(&start);
+                    i.reset(&start);
+                    return Ok(i.next_slice(offset));
+                } else {
+                    depth -= 1;
+                }
+            }
+            Some(_) => {
+                // 其他字符，继续
+            }
+            None => break,
+        }
+    }
+
+    // 如果到这里说明没找到匹配的 ')'
+    i.reset(&start);
+    let offset = i.eof_offset();
+    Ok(i.next_slice(offset))
+}
+
 fn interpolation<'s>(dollars: &'s str) -> impl Parser<'s, StringFragment<'s>> {
     move |i: &mut Input<'s>| -> Result<StringFragment<'s>> {
         // save cp
@@ -275,52 +333,73 @@ fn interpolation<'s>(dollars: &'s str) -> impl Parser<'s, StringFragment<'s>> {
         let part = match first {
             Some('{') => {
                 // '$' block_expression
-                let tokens = match lex_balanced(i, Operator::OpenBrace, Operator::CloseBrace) {
+                let mut depth = 0;
+                let tokens = match lex_impl(i, |t| {
+                    if *t == Operator::OpenBrace {
+                        depth += 1;
+                    } else if *t == Operator::CloseBrace {
+                        depth -= 1;
+                    }
+                    depth <= 0
+                }) {
                     Ok(tokens) => tokens,
                     Err(e) => {
                         i.reset(&cp);
                         return Err(e);
                     }
                 };
-                StringFragment::Interpolation(dollars, tokens, None)
+                StringFragment::Interpolation(dollars, tokens, "", None)
             }
             Some('(') => {
-                // '$' '(' expression ')'
-                let tokens = lex_balanced(i, Operator::OpenParen, Operator::CloseParen)
-                    .inspect_err(|_| {
-                        i.reset(&cp);
-                    })?;
+                // '$' '(' expression [ ':' format ] ')'
+                let mut depth = 0;
+                let mut brace_depth = 0;
+                let mut has_format = false;
+                let mut tokens = lex_impl(i, |t| {
+                    if *t == Operator::OpenParen {
+                        depth += 1;
+                    } else if *t == Operator::CloseParen {
+                        depth -= 1;
+                    } else if *t == Operator::OpenBrace {
+                        brace_depth += 1;
+                    } else if *t == Operator::CloseBrace {
+                        brace_depth -= 1;
+                    } else if depth == 1 && brace_depth == 0 && *t == Operator::Colon {
+                        has_format = true;
+                        return true;
+                    }
+                    depth <= 0
+                })
+                .inspect_err(|_| {
+                    i.reset(&cp);
+                })?;
 
-                let begin = tokens.first().unwrap();
-                let end = if tokens.len() >= 2 {
-                    tokens.last()
+                let format = if has_format {
+                    format_string.parse_next(i)?
                 } else {
-                    None
+                    ""
                 };
 
-                let is_end_paren = end.is_some_and(|t| *t == Operator::CloseParen);
-
-                let filtered_tokens = tokens[1..if is_end_paren {
-                    tokens.len() - 1
+                let end = if has_format {
+                    let last = tokens.pop_if(|f| *f == Operator::Colon);
+                    debug_assert!(last.is_some());
+                    Some(token(i, None)?)
                 } else {
-                    tokens.len()
-                }]
-                    .to_vec();
+                    tokens.pop_if(|f| *f == Operator::CloseParen)
+                }
+                .unwrap_or_else(|| Token::empty(tokens.last().unwrap().range.end));
+                let begin = tokens.remove(0);
 
-                let filtered_tokens = if filtered_tokens.is_empty() {
-                    debug_assert!(!tokens.is_empty());
+                let filtered_tokens = if tokens.is_empty() {
                     vec![Token::empty(begin.range.end)]
                 } else {
-                    filtered_tokens
+                    tokens
                 };
                 StringFragment::Interpolation(
                     dollars,
                     filtered_tokens,
-                    Some(Box::new((
-                        begin.clone(),
-                        end.cloned()
-                            .unwrap_or_else(|| Token::empty(begin.range.end)),
-                    ))),
+                    format,
+                    Some(Box::new((begin, end))),
                 )
             }
             Some(ch) if is_identifier_start(ch) || is_identifier_special(ch) => {
@@ -341,7 +420,7 @@ fn interpolation<'s>(dollars: &'s str) -> impl Parser<'s, StringFragment<'s>> {
                     );
                 }
                 let id = Token::new(kind, range);
-                StringFragment::Interpolation(dollars, vec![id], None)
+                StringFragment::Interpolation(dollars, vec![id], "", None)
             }
             _ => {
                 // invalid interpolation, return as literal

@@ -32,10 +32,10 @@ impl<'s, 'c> Emitter<'s, 'c> {
                         | Pattern::Record(..)
                         | Pattern::Array(..)
                 ) {
-                    self.diagnostics
-                        .push(DiagnosticCode::UnnecessaryParentheses, op.range());
-                    self.diagnostics
-                        .push(DiagnosticCode::UnnecessaryParentheses, cp.range());
+                    self.diagnostics.push(
+                        DiagnosticCode::UnnecessaryParentheses,
+                        op.range().start..cp.range().end,
+                    );
                 }
                 self.declare_pattern(pattern, bind_type)
             }

@@ -1,0 +1,29 @@
+{
+  "name": "@mirascript/constants",
+  "version": "0.1.39",
+  "author": "CloudPSS",
+  "license": "MIT",
+  "description": "MiraScript constants",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./types": "./dist/types.js",
+    "./loader": {
+      "node": "./dist/loader/node.js",
+      "default": "./dist/loader/web.js"
+    }
+  },
+  "scripts": {
+    "wasm": "wasm-pack build --target nodejs --out-dir ../../packages/constants/lib ../../crates/constants",
+    "watch": "nodemon -e rs,js,ts --watch ../../crates/constants --watch ../../crates/core --exec 'pnpm build'",
+    "build": "pnpm wasm --dev && node ./scripts/build.ts && tsc",
+    "clean": "rimraf dist lib",
+    "prepublishOnly": "pnpm clean && pnpm build"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.9",
+    "nodemon": "^3.1.11"
+  }
+}

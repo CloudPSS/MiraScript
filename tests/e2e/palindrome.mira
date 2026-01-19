@@ -1,0 +1,22 @@
+fn is_palindrome {
+  let ch = it::chars();
+  return is_palindrome_helper(ch);
+
+  fn is_palindrome_helper {
+    match it {
+      case [] or [_] { true }
+      case [' ', ..rest] { is_palindrome_helper(rest) }
+      case [..rest, ' '] { is_palindrome_helper(rest) }
+      case [left, ..rest, right] if left == right { is_palindrome_helper(rest) }
+      case _ { false }
+    }
+  }
+}
+
+t_true(is_palindrome("racecar"));
+t_true(is_palindrome("a man a plan a canal panama"));
+t_true(is_palindrome("no x in nixon"));
+t_true(is_palindrome("🦌🫎🫎🫎🦌"));
+
+t_false(is_palindrome("hello"));
+t_false(is_palindrome("not a palindrome"));

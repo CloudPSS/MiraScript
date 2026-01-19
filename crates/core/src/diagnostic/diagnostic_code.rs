@@ -1,6 +1,7 @@
 use strum::{Display, EnumMessage, FromRepr, IntoStaticStr};
 
-#[cfg_attr(feature = "wasm", wasm_bindgen::prelude::wasm_bindgen)]
+/// Diagnostic codes for MiraScript compiler and tools.
+#[cfg_attr(feature = "wasm-constants", wasm_bindgen::prelude::wasm_bindgen)]
 #[derive(
     Debug, Clone, Copy, PartialEq, PartialOrd, EnumMessage, FromRepr, Display, IntoStaticStr,
 )]
@@ -58,6 +59,8 @@ pub enum DiagnosticCode {
     UnterminatedInterpolation,
     #[strum(message = "Invalid interpolation expression")]
     BadInterpolation,
+    #[strum(message = "Empty interpolation expression")]
+    EmptyInterpolation,
     #[strum(message = "Unexpected `_`; it is a reserved keyword for discarding values")]
     UnexpectedUnderscore,
     #[strum(message = "Unexpected `global`; it is a reserved keyword for global variables")]
@@ -74,6 +77,8 @@ pub enum DiagnosticCode {
     MissingCloseParen,
     #[strum(message = "Missing `;` at the end of the statement")]
     MissingSemicolon,
+    #[strum(message = "Missing `:` in the conditional expression")]
+    MissingColon,
     #[strum(message = "Operator `=` is expected in a bind statement or const statement")]
     MissingBindOperator,
     #[strum(message = "Constant name must start with '@'")]
@@ -153,22 +158,10 @@ pub enum DiagnosticCode {
     #[strum(message = "Can only assign to a variable or a field access")]
     UnassignableExpression,
 
-    // Static type checking errors
-    #[strum(message = "Non-number literal cannot be used in range")]
-    NonNumberInRange,
-    #[strum(message = "Non-number-or-string literal cannot be used in comparison expression")]
-    NonNumberOrStringInComparison,
-    #[strum(message = "Non-number literal cannot be used in arithmetic expression")]
-    NonNumberInArithmetic,
-    #[strum(message = "Non-boolean literal cannot be used in logical expression")]
-    NonBooleanInLogical,
-
     ErrorEnd = 1999,
     // Warning 2000~2999
     WarningStart = 2000,
 
-    #[strum(message = "Unnecessary parentheses; consider removing them")]
-    UnnecessaryParentheses,
     // The null value in MiraScript is represented by `nil`,
     // Emit a warning when a global variable is read as `null` `undefined` or similar.
     #[strum(
@@ -181,6 +174,20 @@ pub enum DiagnosticCode {
     UnnecessaryIrrefutablePattern,
     #[strum(message = "This `match` expression has no cases; it will never match any value")]
     MatchExpressionHasNoCases,
+
+    // Static type checking warnings
+    #[strum(message = "Non-number literal cannot be used in range")]
+    NonNumberInRange,
+    #[strum(message = "Non-number-or-string literal cannot be used in comparison expression")]
+    NonNumberOrStringInComparison,
+    #[strum(message = "Non-number literal cannot be used in arithmetic expression")]
+    NonNumberInArithmetic,
+    #[strum(message = "Non-boolean literal cannot be used in logical expression")]
+    NonBooleanInLogical,
+    #[strum(message = "Literal cannot be called as a function")]
+    LiteralNotCallable,
+    #[strum(message = "Literal cannot be accessed as a record or array")]
+    LiteralNotIndexable,
 
     // For analyzer
     #[strum(message = "Global variable `$0` is not declared")]
@@ -198,6 +205,25 @@ pub enum DiagnosticCode {
     UnusedLocalVariable,
     #[strum(message = "Local function is unused; consider removing it")]
     UnusedLocalFunction,
+
+    // Code style
+    #[strum(message = "Prefer `&&` over `and` for logical operations")]
+    PreferLogicalOperatorAnd,
+    #[strum(message = "Prefer `||` over `or` for logical operations")]
+    PreferLogicalOperatorOr,
+    #[strum(message = "Prefer `!` over `not` for logical operations")]
+    PreferLogicalOperatorNot,
+    #[strum(message = "Prefer `()` over `{}` for record literal declaration")]
+    PreferParenthesesForRecordLiteral,
+    #[strum(message = "Prefer if expression over conditional expression")]
+    PreferIfExpression,
+
+    #[strum(message = "Unnecessary parentheses; consider removing them")]
+    UnnecessaryParentheses,
+
+    // For analyzer
+    #[strum(message = "Prefer uppercase for constant $0")]
+    PreferUppercaseConstant,
 
     HintEnd = 4999,
     // Reference 5000~5999

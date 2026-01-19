@@ -17,15 +17,15 @@ repository:
         end: '(?=[^[:alnum:]_$])'
         patterns:
           - include: '#functions'
-      - begin: (?=((\$+|\@+|[[:alpha:]_])[[:alnum:]_]*)(?![[:alnum:]_])(?=\s*(!\s*)?\())
-        end: '(?=\s*(!\s*)?\()'
+      - begin: (?=((\$+|\@+|[[:alpha:]_])[[:alnum:]_]*)(?![[:alnum:]_])(?=\s*(!\s*)?[('"`]))
+        end: (?=\s*(!\s*)?[('"`])
         patterns:
           - include: '#functions'
       - match: (\.)\s*(\d+)
         captures:
           1: { name: punctuation.separator.period.mira }
           2: { name: constant.numeric.mira }
-      - match: (\.)\s*((?:\$+|\@+|[[:alpha:]_])[[:alnum:]_]*)(?=\s*(!\s*)?\()
+      - match: (\.)\s*((?:\$+|\@+|[[:alpha:]_])[[:alnum:]_]*)(?=\s*(!\s*)?[('"`])
         captures:
           1: { name: punctuation.separator.period.mira }
           2: { name: entity.name.function.mira }
@@ -162,6 +162,10 @@ repository:
         endCaptures:
           0: { name: punctuation.definition.template-expression.end.mira }
         patterns:
+          - match: (:(?!:))([^)]*)(?=\))
+            captures:
+              1: { name: punctuation.format.mira }
+              2: { name: string.format.mira }
           - include: '#parenthesized'
           - include: '#source'
   interpolation2:

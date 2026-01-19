@@ -1,5 +1,5 @@
-import type { Config } from '@mirascript/bindings';
-export type { InputMode, ScriptInput } from '@mirascript/bindings';
+import type { Config } from '@mirascript/constants';
+export type { InputMode, ScriptInput } from '@mirascript/constants';
 
 /** 代码编译选项 */
 export type CompileOptions = Config;

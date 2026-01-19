@@ -15,10 +15,10 @@ let square = fn { it * it };
 
 debug_print("基本函数调用:");
 debug_print(greet("Alice"));
-debug_print("add(3, 4) =", add(3, 4));
-debug_print("double(5) =", double(5));
-debug_print("multiply(6, 7) =", multiply(6, 7));
-debug_print("square(8) =", square(8));
+debug_print("add(%o, %o) = %o", 3, 4, add(3, 4));
+debug_print("double(%o) = %o", 5, double(5));
+debug_print("multiply(%o, %o) = %o", 6, 7, multiply(6, 7));
+debug_print("square(%o) = %o", 8, square(8));
 
 // 高阶函数
 fn apply_twice(func, value) { func(func(value)) }
@@ -32,8 +32,8 @@ fn map_array(array, func) {
 }
 
 debug_print("高阶函数:");
-debug_print("apply_twice(double, 3) =", apply_twice(double, 3));
-debug_print("map_array([1, 2, 3], square) =", map_array([1, 2, 3], square));
+debug_print("apply_twice(double, %o) = %o", 3, apply_twice(double, 3));
+debug_print("map_array(%o, square) = %o", [1, 2, 3], map_array([1, 2, 3], square));
 
 // 闭包示例
 fn create_counter(initial) {
@@ -63,21 +63,25 @@ let times_three = create_multiplier(3);
 let times_five = create_multiplier(5);
 
 debug_print("函数工厂:");
-debug_print("times_three(4) =", times_three(4));
-debug_print("times_five(4) =", times_five(4));
+debug_print("times_three(%o) =", 4, times_three(4));
+debug_print("times_five(%o) =", 4, times_five(4));
 
 // 递归函数
-fn factorial(n) { if n <= 1 { 1 } else { n * factorial(n - 1) } }
+fn factorial(n) {
+  if n <= 1 { 1 } else { n * factorial(n - 1) }
+}
 
-fn fibonacci(n) { if n <= 2 { n } else { fibonacci(n - 1) + fibonacci(n - 2) } }
+fn fibonacci(n) {
+  if n <= 2 { n } else { fibonacci(n - 1) + fibonacci(n - 2) }
+}
 
 debug_print("递归函数:");
-debug_print("factorial(5) =", factorial(5));
-debug_print("fibonacci(8) =", fibonacci(8));
+debug_print("factorial(%o) = %o", 5, factorial(5));
+debug_print("fibonacci(%o) = %o", 8, fibonacci(8));
 
 // 立即调用函数表达式 (IIFE)
 let result = (fn (x, y) { x + y })(10, 20);
-debug_print("IIFE 结果:", result);
+debug_print("IIFE 结果: %o", result);
 
 // 函数作为参数的实际应用
 fn filter_array(array, predicate) {
@@ -105,20 +109,20 @@ let sum = numbers::reduce_array(fn (acc, x) { acc + x }, 0);
 let product = numbers::reduce_array(fn (acc, x) { acc * x }, 1);
 
 debug_print("函数式编程:");
-debug_print("偶数:", evens);
-debug_print("总和:", sum);
-debug_print("乘积:", product);
+debug_print("偶数: %o", evens);
+debug_print("总和: %o", sum);
+debug_print("乘积: %o", product);
 
 // 柯里化示例
 fn curry_add(x) { (fn (y) { x + y }) }
 
 let add_five = curry_add(5);
 debug_print("柯里化:");
-debug_print("add_five(3) =", add_five(3));
+debug_print("add_five(%o) = %o", 3, add_five(3));
 
 // 部分应用
 fn partial_apply(func, first_arg) { (fn (second_arg) { func(first_arg, second_arg) }) }
 
 let multiply_by_three = partial_apply(multiply, 3);
 debug_print("部分应用:");
-debug_print("multiply_by_three(7) =", multiply_by_three(7));
+debug_print("multiply_by_three(%o) = %o", 7, multiply_by_three(7));

@@ -6,20 +6,20 @@ let user = (name: "Alice", profile: (age: 30, email: "alice@example.com"));
 let empty_user = nil;
 
 debug_print("空安全访问:");
-debug_print("user.name =", user.name);
-debug_print("user.profile.age =", user.profile.age);
-debug_print("empty_user.name =", empty_user.name); // 返回 nil，不抛出异常
-debug_print("empty_user.profile.age =", empty_user.profile.age); // 返回 nil
+debug_print("user.name = %o", user.name);
+debug_print("user.profile.age = %o", user.profile.age);
+debug_print("empty_user.name = %o", empty_user.name); // 返回 nil，不抛出异常
+debug_print("empty_user.profile.age = %o", empty_user.profile.age); // 返回 nil
 
 // 使用空合并操作符提供默认值
 debug_print("使用空合并操作符:");
-debug_print("user.name ?? 'Unknown' =", user.name ?? 'Unknown');
-debug_print("empty_user.name ?? 'Unknown' =", empty_user.name ?? 'Unknown');
-debug_print("user.profile.phone ?? 'No phone' =", user.profile.phone ?? 'No phone');
+debug_print("user.name ?? %o = %o", 'Unknown', user.name ?? 'Unknown');
+debug_print("empty_user.name ?? %o = %o", 'Unknown', empty_user.name ?? 'Unknown');
+debug_print("user.profile.phone ?? %o = %o", 'No phone', user.profile.phone ?? 'No phone');
 
 // 非空断言示例（小心使用！）
 debug_print("非空断言示例:");
-debug_print("user.name! =", user.name!);
+debug_print("user.name! = %o", user.name!);
 // debug_print("empty_user.name! =", empty_user.name!); // 这会抛出 NilError
 
 // 安全的函数调用链
@@ -28,8 +28,8 @@ let real_func = fn { it * 2 };
 
 debug_print("安全的函数调用:");
 // 通过添加括号转为间接调用，以启用空安全
-debug_print("(maybe_func)(5) =", (maybe_func)(5)); // 返回 nil
-debug_print("(real_func)(5) =", (real_func)(5));
+debug_print("(maybe_func)(%o) = %o", 5, (maybe_func)(5)); // 返回 nil
+debug_print("(real_func)(%o) = %o", 5, (real_func)(5));
 
 // 使用模式匹配处理 nil 值
 fn safe_divide(a, b) {
@@ -76,8 +76,8 @@ let deeply_nested = (level1: (level2: (level3: (value: "深层值"))));
 let broken_nested = (level1: (level2: nil));
 
 debug_print("链式空安全:");
-debug_print("deeply_nested.level1.level2.level3.value =", deeply_nested.level1.level2.level3.value);
-debug_print("broken_nested.level1.level2.level3.value =", broken_nested.level1.level2.level3.value);
+debug_print("deeply_nested.level1.level2.level3.value = %o", deeply_nested.level1.level2.level3.value);
+debug_print("broken_nested.level1.level2.level3.value = %o", broken_nested.level1.level2.level3.value);
 
 // 使用 if 表达式进行空检查
 fn safe_access(obj) {
@@ -98,9 +98,9 @@ let maybe_array = nil;
 let real_array = [1, 2, 3, 4, 5];
 
 debug_print("空安全数组操作:");
-debug_print("maybe_array[0] =", maybe_array[0]);
-debug_print("real_array[0] =", real_array[0]);
-debug_print("real_array[10] =", real_array[10]); // 超出范围返回 nil
+debug_print("maybe_array[%o] = %o", 0, maybe_array[0]);
+debug_print("real_array[%o] = %o", 0, real_array[0]);
+debug_print("real_array[%o] = %o", 10, real_array[10]); // 超出范围返回 nil
 
 // 使用空合并创建默认结构
 fn create_user_with_defaults(input) { (name: input.name ?? "Anonymous", age: input.age ?? 0, email: input.email ?? "no-email@example.com", active: input.active ?? true) }
@@ -109,7 +109,7 @@ let partial_user = (name: "John");
 let full_user = create_user_with_defaults(partial_user);
 
 debug_print("创建带默认值的用户:");
-debug_print("full_user =", full_user);
+debug_print("full_user = %o", full_user);
 
 // 空值传播示例
 fn process_user_email(user) { user.profile.email::trim() }
@@ -117,5 +117,5 @@ fn process_user_email(user) { user.profile.email::trim() }
 let user_with_email = (profile: (email: "  ALICE@EXAMPLE.COM  "));
 
 debug_print("空值传播:");
-debug_print("process_user_email(user_with_email) =", process_user_email(user_with_email));
-debug_print("process_user_email(empty_user) =", process_user_email(empty_user));
+debug_print("process_user_email(%o) = %o", user_with_email, process_user_email(user_with_email));
+debug_print("process_user_email(%o) = %o", empty_user, process_user_email(empty_user));

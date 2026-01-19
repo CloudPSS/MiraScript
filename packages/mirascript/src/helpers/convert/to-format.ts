@@ -3,18 +3,17 @@ import { isFinite } from '../utils.js';
 import { toString } from './to-string.js';
 
 /** 渲染数字 */
-function formatNumber(value: number): string {
-    if (!isFinite(value)) return toString(value, undefined as never);
-    if (value === 0) return '0';
-    const s = value.toString();
+function formatNumber(finite: number): string {
+    if (finite === 0) return '0';
+    const s = finite.toString();
     let ps;
-    const abs = Math.abs(value);
+    const abs = Math.abs(finite);
     if (abs >= 1000 || abs < 0.001) {
-        const ps1 = value.toExponential();
-        const ps2 = value.toExponential(5);
+        const ps1 = finite.toExponential();
+        const ps2 = finite.toExponential(5);
         ps = ps1.length < ps2.length ? ps1 : ps2;
     } else {
-        ps = value.toPrecision(6);
+        ps = finite.toPrecision(6);
     }
     return ps.length < s.length ? ps : s;
 }
@@ -24,6 +23,9 @@ export function toFormat(value: VmAny, format: string | null | undefined): strin
     const f = format == null ? '' : format.trim();
 
     if (typeof value == 'number') {
+        if (!isFinite(value)) {
+            return toString(value, undefined as never);
+        }
         if (/^\.\d+$/.test(f)) {
             let digits = Math.trunc(Number(f.slice(1)));
             if (!(digits <= 100)) digits = 100;

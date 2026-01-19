@@ -90,10 +90,17 @@ pub enum Keyword {
     // Color(-1, 2, 3) -> nil
 
     // module
-    #[strum(props(control = true, reserved = true))]
-    Import,
-    #[strum(props(control = true, reserved = true))]
-    Export,
+    // mod x {
+    //   pub fn foo() { }
+    //   pub const @VAL = 42;
+    //   pub let mut counter = 0;
+    // }
+    #[strum(props(reserved = true))]
+    Mod,
+    #[strum(props(reserved = true))]
+    Pub,
+    #[strum(props(reserved = true))]
+    Use,
 
     // algebraic effects
     #[strum(props(reserved = true))]

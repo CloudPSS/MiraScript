@@ -1,4 +1,4 @@
-import { DiagnosticCode } from '@mirascript/bindings/wasm';
+import { DiagnosticCode } from '@mirascript/constants';
 import { type editor, Range, type IPosition, type IRange } from '../monaco-api.js';
 import {
     getVmFunctionInfo,
@@ -8,6 +8,7 @@ import {
     isVmModule,
     isVmPrimitive,
     isVmRecord,
+    isVmWrapper,
     serialize,
     type VmAny,
     type VmModule,
@@ -15,9 +16,11 @@ import {
     type VmValue,
     type VmExtern,
 } from '@mirascript/mirascript';
-import { operations, serializeRecordKey, serializeString } from '@mirascript/mirascript/subtle';
+import { lib, operations, serializeRecordKey, serializeString } from '@mirascript/mirascript/subtle';
 import type { LocalDefinition } from './compile-result.js';
 import type { MonacoContext } from './providers/base.js';
+
+const UNKNOWN_REPR = '/* .. */';
 
 /** 参数签名 */
 export type ParamSignature = [name: string, sig: string, doc: string];
@@ -34,7 +37,7 @@ function globalParamsSignature(info: VmFunctionInfo | undefined): ParamSignature
     for (const key of params) {
         const type = info.paramsType?.[key] ?? '';
         const doc = info.params?.[key] ?? '';
-        paramItems.push([key, type ? `${key}: ${type}` : key, doc ? `\`${key}\`: ${doc}` : '']);
+        paramItems.push([key, `${key}: ${type || 'any'}`, doc ? `\`${key}\`: ${doc}` : '']);
     }
     return paramItems;
 }
@@ -88,10 +91,14 @@ export function localParamSignature(
             a.code === DiagnosticCode.ParameterMutableRest ||
             a.code === DiagnosticCode.ParameterImmutableRest;
         const argsInParam = args.filter((arg) => Range.containsRange(a.range, arg.definition.range));
-        const argName =
-            argsInParam.length === 0
-                ? `arg_${i}`
-                : argsInParam.map((arg) => model.getValueInRange(arg.definition.range)).join('_');
+        let argName: string;
+        if (argsInParam.length > 0) {
+            argName = argsInParam.map((arg) => model.getValueInRange(arg.definition.range)).join('_');
+        } else if (rest) {
+            argName = 'args';
+        } else {
+            argName = `arg${i}`;
+        }
         if (rest) return [`..${argName}`, `..${argName}`, ''];
         return [argName, argName, ''];
     });
@@ -184,9 +191,18 @@ function serializeForDisplayInner(value: VmValue, maxWidth: number): string {
         return `(../* x${len} */)`;
     }
     if (isVmExtern(value)) {
-        return `/* <extern ${value.describe}> */`;
+        return `/* <extern ${value.tag}> */`;
     }
     return `/* ${operations.$ToString(value)} */`;
+}
+
+/** 获取并序列化字段 */
+function serializeField(obj: VmAny, key: string | number, maxWidth: number): string {
+    const value = getField(obj, key);
+    if (value === undefined) {
+        return UNKNOWN_REPR;
+    }
+    return serializeForDisplayInner(value, maxWidth);
 }
 
 /** 将值序列化为便于展示的字符串 */
@@ -200,32 +216,37 @@ function serializeForDisplay(value: Exclude<VmValue, VmModule>, maxEntries = 100
     if (isVmArray(value)) {
         begin = '[';
         end = ']';
-        for (const v of value) {
+        const len = value.length;
+        if (len === 0) return '[]';
+        for (let i = 0; i < len; i++) {
             if (entries.length > maxEntries) {
                 entries.push(`../* x${value.length - entries.length} */`);
                 break;
             }
-            const entry = serializeForDisplayInner(v ?? null, maxWidth - 2);
+            const entry = serializeField(value, i, maxWidth - 2);
             entries.push(entry);
             resultLength += entry.length;
         }
     } else if (isVmRecord(value)) {
+        const keys = Object.keys(value);
+        if (keys.length === 0) return '()';
         begin = '(';
         end = ')';
-        const e = Object.entries(value);
-        for (const [key, value] of e) {
+
+        for (const key of keys) {
             if (entries.length > maxEntries) {
-                entries.push(`../* x${e.length - entries.length} */`);
+                entries.push(`../* x${keys.length - entries.length} */`);
                 break;
             }
             const sk = serializeRecordKey(key);
-            const entry = `${sk}: ${serializeForDisplayInner(value ?? null, maxWidth - sk.length - 4)}`;
+            const sv = serializeField(value, key, maxWidth - sk.length - 4);
+            const entry = `${sk}: ${sv}`;
             entries.push(entry);
             resultLength += entry.length;
         }
     } else {
         const hint = serializeForDisplayInner(value satisfies VmExtern, 100);
-        const isArray = Array.isArray(value.value);
+        const isArray = value.isArrayLike();
         begin = `${hint} ${isArray ? '[' : '('}`;
         end = isArray ? ']' : ')';
         const keys = value.keys();
@@ -279,18 +300,24 @@ export function valueDoc(
     name: string,
     value: VmAny,
     type: 'field' | 'declare' | 'hint',
+    parent: VmModule | VmExtern | MonacoContext | null,
 ): { script: string; doc: string[] } {
     const info = getVmFunctionInfo(value);
+    const describe = parent?.describe?.(name);
     if (info) {
+        const doc = globalFnDoc(info);
+        if (describe && doc[0] !== describe) {
+            doc.unshift(describe);
+        }
         return {
             script: fnSignature(name, info).toString() + (type === 'declare' ? ';' : ''),
-            doc: globalFnDoc(info),
+            doc,
         };
     }
     let prefix;
     let suffix = '';
     if (type === 'hint') {
-        prefix = `${name} = `;
+        prefix = `${serializeRecordKey(name)} = `;
     } else if (type === 'declare') {
         if (name.startsWith('@')) {
             prefix = `const ${name} = `;
@@ -311,8 +338,8 @@ export function valueDoc(
             script = '\n';
             for (const k of exports) {
                 const v = value.get(k);
-                const vDoc = valueDoc(k, v, isVmModule(v) ? 'field' : 'declare');
-                const code = [...docComment(vDoc.doc), 'export ' + vDoc.script, '', ''];
+                const vDoc = valueDoc(k, v, isVmModule(v) ? 'field' : 'declare', value);
+                const code = [...docComment(vDoc.doc), 'pub ' + vDoc.script, '', ''];
                 script += code.join('\n');
             }
             script = script.trimEnd();
@@ -324,23 +351,88 @@ export function valueDoc(
         }
         return { script, doc: doc ? [doc] : [] };
     }
-    let valueStr;
-    if (value === undefined) {
-        valueStr = '/* ... */';
-    } else {
-        valueStr = serializeForDisplay(value, type === 'declare' ? 1000 : 100, type === 'declare' ? 80 : 40);
+    let valueStr = UNKNOWN_REPR;
+    if (value !== undefined) {
+        try {
+            valueStr = serializeForDisplay(value, type === 'declare' ? 1000 : 100, type === 'declare' ? 80 : 40);
+        } catch (ex) {
+            // 序列化失败，保持默认值
+        }
     }
-    return { script: `${prefix}${valueStr}${suffix}`, doc: [] };
+    return {
+        script: `${prefix}${valueStr}${suffix}`,
+        doc: describe ? [describe] : [],
+    };
 }
 
 /** 获取深层属性 */
-export function getDeep(globals: MonacoContext, name: string, path: readonly string[]): VmAny {
-    if (!globals.has(name)) return undefined;
+export function getDeep(
+    globals: MonacoContext,
+    name: string,
+    path: readonly string[],
+): [parent: VmModule | VmExtern | MonacoContext | null, value: VmAny] {
+    if (!globals.has(name)) return [null, undefined];
     let current: VmAny = globals.get(name);
-    for (const key of path) {
-        if (current == null) return current;
-        if (!operations.$Has(current, key)) return undefined;
-        current = operations.$Get(current, key);
+    if (!path.length) {
+        return [globals, current];
     }
-    return current;
+    let parent: VmAny = null;
+    for (const key of path) {
+        if (current == null) return [null, undefined];
+        if (!operations.$Has(current, key)) return [null, undefined];
+        parent = current;
+        current = operations.$Get(parent, key);
+    }
+    return [isVmWrapper(parent) ? parent : null, current];
+}
+
+/** 获取属性 */
+export function getField(obj: VmAny, key: string | number): VmAny {
+    if (obj == null) return undefined;
+    try {
+        if (!operations.$Has(obj, key)) return undefined;
+    } catch {
+        return undefined;
+    }
+    try {
+        return operations.$Get(obj, key);
+    } catch {
+        return undefined;
+    }
+}
+
+/** 列出属性 */
+export function listFields(obj: VmAny, includeNonEnumerable: boolean): Array<string | number> {
+    if (obj == null || typeof obj != 'object') return [];
+    if (isVmWrapper(obj)) {
+        try {
+            return obj.keys(includeNonEnumerable);
+        } catch {
+            return [];
+        }
+    }
+    return lib.keys(obj);
+}
+
+/** 是否已弃用 */
+export function isDeprecatedGlobal(globals: MonacoContext, name: string): VmFunctionInfo['deprecated'] {
+    if (!globals.has(name)) {
+        return undefined;
+    }
+    const value = globals.get(name);
+    const funcInfo = getVmFunctionInfo(value);
+    if (funcInfo) {
+        return funcInfo.deprecated;
+    }
+    const info = lib[name as 'PI'];
+    if (!info?.deprecated) return undefined;
+    if (info.value !== value) return undefined;
+    const { use } = info.deprecated;
+    if (use) {
+        // Check that the replacement refers to the same value in the current context
+        if (!globals.has(use)) return undefined;
+        const replacement = globals.get(use);
+        if (replacement !== info.value) return undefined;
+    }
+    return info.deprecated;
 }

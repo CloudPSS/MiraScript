@@ -27,7 +27,7 @@ export const configuration = (): languages.LanguageConfiguration => ({
         }),
         ['[', ']'],
     ],
-    wordPattern: /(-?\d+\.\w+([+-]\w*)?)|([^`~!#%^&*()\-=+[{\]}\\|;:'",.<>/?\s]+)/g,
+    wordPattern: /((?<!\.\s*)[\d_]+\.[\d_]+([eE][+-]?[\d_]+)?)|([^`~!#%^&*()\-=+[{\]}\\|;:'",.<>/?\s]+)/g,
     autoClosingPairs: [
         { open: '{', close: '}' },
         { open: '[', close: ']' },

@@ -1,7 +1,7 @@
 import { toBoolean } from '../../../../helpers/convert/to-boolean.js';
 import { entries } from '../../../../helpers/utils.js';
-import { Cp } from '../../../helpers.js';
-import { $Call } from '../../../operations.js';
+import { Cp } from '../../../checkpoint.js';
+import { $Call } from '../../../operations/index.js';
 import { isVmArray } from '../../../types/index.js';
 import { expectArrayOrRecord, expectCallable, VmLib } from '../../helpers.js';
 

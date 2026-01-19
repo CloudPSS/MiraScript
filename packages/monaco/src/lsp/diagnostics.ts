@@ -1,12 +1,16 @@
 import { DiagnosticCode, getDiagnosticMessage } from '@mirascript/mirascript/subtle';
-import { editor, MarkerSeverity, MarkerTag, Uri, type IRange } from '../monaco-api.js';
+import { type editor, MarkerSeverity, MarkerTag, Uri, type IRange } from '../monaco-api.js';
+import { Provider } from './providers/base.js';
 import type { CompileResult, SourceDiagnostic } from './compile-result.js';
-import { getContext } from './providers/base.js';
+import { isDeprecatedGlobal } from './utils.js';
 
 const formatMessage = (model: editor.ITextModel, template: string, $0?: string | IRange): string => {
     if (template.includes(`$0`)) {
         const replacement = typeof $0 == 'string' ? $0 : $0 ? model.getValueInRange($0) : '';
-        template = template.replaceAll(`$0`, replacement);
+        // Replace each '$' in the captured text with '$$$$' so that after replaceAll processes
+        // the string and interprets '$' as a special placeholder, we still end up with literal
+        // '$$' in the final message. The quadruple dollar signs here are intentional.
+        template = template.replaceAll(`$0`, replacement.replaceAll('$', '$$$$'));
     }
     return template;
 };
@@ -17,6 +21,7 @@ const makeMarkerData = (
     code: DiagnosticCode | string,
     message: string | undefined,
     severity: MarkerSeverity,
+    tags?: MarkerTag[],
 ): editor.IMarkerData => {
     const { startLineNumber, startColumn, endLineNumber, endColumn } = range;
     if (!message) {
@@ -36,6 +41,7 @@ const makeMarkerData = (
         severity,
         modelVersionId: model.getVersionId(),
         source: 'MiraScript',
+        tags,
     };
     const codeName = typeof code == 'number' ? DiagnosticCode[code] : undefined;
     if (codeName) {
@@ -48,6 +54,23 @@ const makeMarkerData = (
     }
     return marker;
 };
+
+/** Get code from marker */
+export function getDiagnosticCode(marker: editor.IMarkerData | undefined | null): DiagnosticCode | undefined {
+    if (!marker) return undefined;
+    const { code } = marker;
+    if (typeof code == 'object') {
+        const codeName = code.value;
+        if (codeName in DiagnosticCode) {
+            return DiagnosticCode[codeName as keyof typeof DiagnosticCode];
+        }
+    } else if (typeof code == 'string') {
+        if (code in DiagnosticCode) {
+            return DiagnosticCode[code as keyof typeof DiagnosticCode];
+        }
+    }
+    return undefined;
+}
 
 const makeMarker = (
     model: editor.ITextModel,
@@ -90,12 +113,12 @@ const makeMarker = (
 };
 
 /** 设置标记 */
-export async function setMarkers(model: editor.ITextModel, result: CompileResult): Promise<void> {
-    const setModelMarkers = editor?.setModelMarkers;
-    if (typeof setModelMarkers != 'function') return;
-
+export async function makeModelMarkers(
+    model: editor.ITextModel,
+    result: CompileResult,
+): Promise<editor.IMarkerData[] | null> {
     const { version } = result;
-    if (version !== model.getVersionId()) return;
+    if (version !== model.getVersionId()) return null;
 
     const errors = result.errors.map((d) => makeMarker(model, d, MarkerSeverity.Error));
     const warnings = result.warnings.map((d) => makeMarker(model, d, MarkerSeverity.Warning));
@@ -104,23 +127,51 @@ export async function setMarkers(model: editor.ITextModel, result: CompileResult
     const markers = [...errors, ...warnings, ...infos, ...hints];
     const { globals } = result.groupedTags(model);
     if (globals.length) {
-        const context = await getContext(model);
+        const context = await Provider.getContext(model);
         for (const g of globals) {
             const { name } = g;
-            if (context.has(name)) continue;
-            const template = getDiagnosticMessage(DiagnosticCode.GlobalVariableNotDeclared);
-            if (!template) continue;
-            const message = formatMessage(model, template, name);
-            markers.push(
-                makeMarkerData(
-                    model,
-                    g.references[0]!.range,
-                    DiagnosticCode.GlobalVariableNotDeclared,
-                    message,
-                    MarkerSeverity.Warning,
-                ),
-            );
+            if (!context.has(name)) {
+                const template = getDiagnosticMessage(DiagnosticCode.GlobalVariableNotDeclared);
+                if (!template) continue;
+                const message = formatMessage(model, template, name);
+                for (const ref of g.references) {
+                    markers.push(
+                        makeMarkerData(
+                            model,
+                            ref.range,
+                            DiagnosticCode.GlobalVariableNotDeclared,
+                            message,
+                            MarkerSeverity.Warning,
+                        ),
+                    );
+                }
+                continue;
+            }
+            const deprecated = isDeprecatedGlobal(context, name);
+            if (deprecated) {
+                const replacement = deprecated.use;
+                if (replacement) {
+                    const template = getDiagnosticMessage(deprecated.message);
+                    if (!template) continue;
+                    const message = formatMessage(model, template, replacement);
+                    for (const ref of g.references) {
+                        markers.push(
+                            makeMarkerData(model, ref.range, deprecated.message, message, MarkerSeverity.Hint, [
+                                MarkerTag.Deprecated,
+                            ]),
+                        );
+                    }
+                } else {
+                    for (const ref of g.references) {
+                        markers.push(
+                            makeMarkerData(model, ref.range, deprecated.message, undefined, MarkerSeverity.Hint, [
+                                MarkerTag.Deprecated,
+                            ]),
+                        );
+                    }
+                }
+            }
         }
     }
-    setModelMarkers(model, 'mirascript', markers);
+    return markers;
 }

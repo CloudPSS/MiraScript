@@ -1,6 +1,6 @@
 {
   "name": "@mirascript/bindings",
-  "version": "0.1.17",
+  "version": "0.1.39",
   "author": "CloudPSS",
   "license": "MIT",
   "description": "MiraScript compiler bindings",
@@ -27,5 +27,8 @@
   "dependencies": {
     "@mirascript/napi": "workspace:~",
     "@mirascript/wasm": "workspace:~"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.9"
   }
 }

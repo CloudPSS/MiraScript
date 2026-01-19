@@ -1,8 +1,8 @@
 import type { IRange } from '../diagnostic.js';
 import type { ScriptInput, TranspileOptions } from '../types.js';
 import { SourceMapGenerator } from 'source-map-js';
-import { GLOBAL_HINT, SCRIPT_PREFIX } from './constants.js';
-import type { GlobalMap } from './globals.js';
+import { SCRIPT_PREFIX } from './constants.js';
+import { toJsLiteral } from './consts.js';
 
 const ORIGIN = `mira://MiraScript/`;
 const { SOURCE_URL, SOURCE_MAPPING_URL } = ((source, mapping, url) => {
@@ -13,10 +13,11 @@ const { SOURCE_URL, SOURCE_MAPPING_URL } = ((source, mapping, url) => {
         SOURCE_MAPPING_URL: prefix.concat(source, mapping, url),
     };
 })(`source`, `Mapping`, `URL`);
-// 前两行固定为：
+// 前 3 行固定为：
 // (function anonymous($Add,$Aeq, ...
 // ) {
-const SOURCE_OFFSET = 3;
+// 'use strict';
+const SOURCE_OFFSET = 4;
 
 /**
  * Node.js Buffer 类型的简易声明，@mirascript/playground 调试环境下会直接加载此文件
@@ -33,79 +34,15 @@ const toDataUrl: (json: string) => string =
         ? (s) => `data:application/json;base64,${Buffer.from(s, 'utf8').toString('base64')}`
         : (s) => `data:application/json;charset=utf-8,${encodeURIComponent(s)}`;
 
-/** 添加全局变量的源映射 */
-function addGlobalMappings(globalLine: string, fileName: string, map: SourceMapGenerator, globals: GlobalMap) {
-    let globalFile = `global;\n`;
-    map.addMapping({
-        generated: {
-            line: 3,
-            column: globalLine.indexOf(`global = `),
-        },
-        original: {
-            line: 1,
-            column: 0,
-        },
-        source: fileName,
-        name: 'global',
-    });
-    map.addMapping({
-        generated: {
-            line: 3,
-            column: SCRIPT_PREFIX.length,
-        },
-        original: {
-            line: 1,
-            column: 7,
-        },
-        source: fileName,
-        name: '',
-    });
-    let i = 1;
-    let pos = globalLine.indexOf(GLOBAL_HINT, SCRIPT_PREFIX.length) + GLOBAL_HINT.length;
-    for (const p of globals.values()) {
-        i++;
-        if (pos < 0) break;
-        const { v, n } = p;
-        pos = globalLine.indexOf(v, pos);
-        if (pos < 0) break;
-        map.addMapping({
-            generated: {
-                line: 3,
-                column: pos,
-            },
-            original: {
-                line: i,
-                column: 0,
-            },
-            source: fileName,
-            name: n,
-        });
-        globalFile += `${n};\n`;
-    }
-    map.addMapping({
-        generated: {
-            line: 3,
-            column: pos,
-        },
-        original: {
-            line: i,
-            column: 0,
-        },
-        source: fileName,
-        name: '',
-    });
-    map.setSourceContent(fileName, globalFile);
-}
-
 let sourceId = 1;
 /** 创建源映射 */
 export function createSourceMap(
     source: ScriptInput | undefined,
     sourcemaps: readonly IRange[],
-    codeLines: readonly string[],
-    globals: GlobalMap,
+    codeLines: string[],
+    functions: readonly number[],
     options: TranspileOptions,
-): [string, string] {
+): void {
     let fileName = (options.fileName ?? '').trim();
     const hasSchema = /^\w+:/.test(fileName);
     if (!hasSchema) {
@@ -154,15 +91,23 @@ export function createSourceMap(
             source: fileName,
         });
     }
-    const globalLine = codeLines[0];
-    if (globalLine?.includes(GLOBAL_HINT)) {
-        addGlobalMappings(globalLine, `${fileName} <globals>`, map, globals);
+    if (typeof source === 'string') {
+        const lines = source.split(/\r?\n/);
+        for (const codeLineNo of functions) {
+            const mapping = sourcemaps[codeLineNo];
+            const sourceLine = mapping ? lines[mapping.startLineNumber - 1] : undefined;
+            const fnName =
+                mapping && sourceLine ? sourceLine.slice(mapping.startColumn - 1, mapping.endColumn - 1) : '';
+            if (!fnName) continue;
+            const codeLine = codeLines[codeLineNo]!;
+            codeLines[codeLineNo] = codeLine.replace(`= $Fn(null,`, `= $Fn(${toJsLiteral(fnName)},`);
+        }
     }
     const sourceURL = hasSchema ? fileName : `${ORIGIN}${fileName}`;
     const dataUrl = toDataUrl(map.toString());
-    return [
+    codeLines.push(
         // Prevent source map from being recognized as of this file
         `${SOURCE_URL}=${sourceURL}.js`,
         `${SOURCE_MAPPING_URL}=${dataUrl}`,
-    ];
+    );
 }

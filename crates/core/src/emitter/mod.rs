@@ -36,6 +36,7 @@ pub fn emit<'s, 'c>(
     ));
     emitter.emit_fn_like(
         Register::EMPTY,
+        0..0,
         0..script.2.range.end,
         &args,
         &script.0,

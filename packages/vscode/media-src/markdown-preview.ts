@@ -2,11 +2,9 @@ let init = async () => {
     const loader = Promise.resolve().then(async () => {
         const monaco = await import('@private/monaco-editor/api');
         await import('@private/monaco-editor/themes');
-        const { registerMonacoApi, registerContribution } = await import('@mirascript/monaco');
-        registerMonacoApi(monaco);
-        registerContribution();
-        const { registerBasic } = await import('@mirascript/monaco/basic');
-        await registerBasic();
+        const { registerMiraScript } = await import('@mirascript/monaco');
+        const loader = registerMiraScript(monaco);
+        await loader.loadBasicFeatures();
         return monaco;
     });
     init = async () => loader; // 重置 init 函数，避免重复加载

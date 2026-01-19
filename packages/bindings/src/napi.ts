@@ -1,7 +1,6 @@
 import { ModuleLoader } from './loader.js';
 import type * as BcModule from '@mirascript/napi';
 
-export * from './common.js';
 /** 字节码模块 */
 export type { BcModule };
 /** 字节码模块 */

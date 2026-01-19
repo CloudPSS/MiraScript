@@ -4,6 +4,11 @@ import {
     CompletionItemTag,
     CompletionList,
     CompletionTriggerKind,
+    Diagnostic,
+    type DiagnosticCollection,
+    DiagnosticRelatedInformation,
+    DiagnosticSeverity,
+    DiagnosticTag,
     Disposable,
     DocumentHighlight,
     DocumentHighlightKind,
@@ -44,15 +49,18 @@ import {
     fromPosition,
     fromRange,
     toCompletionItem,
+    toLocation,
     toMarkdownString,
     toPosition,
     toRange,
     toTextEdit,
+    toUri,
 } from '../adapter/utils.js';
 import { registerMonacoApi } from '@mirascript/monaco';
 import * as monaco from '@private/monaco-editor/baseapi';
-import type { languages as monacoLanguages } from '@private/monaco-editor';
+import type { editor, languages as monacoLanguages } from '@private/monaco-editor';
 
+const diagnosticDisabledSchemes = new Set(['git', 'vsls', 'github', 'azurerepos', 'mirascript']);
 /**
  * Manages all language service providers.
  */
@@ -65,7 +73,12 @@ export class ProvidersManager extends Disposable {
                 disposable.dispose();
             }
         });
-        const api = { ...monaco };
+        const api = {
+            ...monaco,
+            editor: {
+                setModelMarkers: this.setModelMarkers,
+            },
+        };
         (api as Record<string, unknown>)['languages'] = {
             SymbolKind,
             DocumentHighlightKind,
@@ -79,6 +92,60 @@ export class ProvidersManager extends Disposable {
         registerMonacoApi(api);
         void this.registerProviders();
     }
+
+    private readonly diagnosticCollections = new Map<string, DiagnosticCollection>();
+    /** 设置标签 */
+    setModelMarkers: typeof editor.setModelMarkers = (model, owner, markers) => {
+        const doc = (model as ModelAdapter).document;
+        if (!doc || diagnosticDisabledSchemes.has(doc.uri.scheme)) return;
+        let c = this.diagnosticCollections.get(owner);
+        if (!c) {
+            c = languages.createDiagnosticCollection(owner);
+            this.disposables.push(c);
+            this.diagnosticCollections.set(owner, c);
+        }
+        c.set(
+            doc.uri,
+            markers.map((marker) => {
+                const d = new Diagnostic(toRange(marker), marker.message);
+                switch (marker.severity as number as monaco.MarkerSeverity) {
+                    case monaco.MarkerSeverity.Error:
+                        d.severity = DiagnosticSeverity.Error;
+                        break;
+                    case monaco.MarkerSeverity.Warning:
+                        d.severity = DiagnosticSeverity.Warning;
+                        break;
+                    case monaco.MarkerSeverity.Info:
+                        d.severity = DiagnosticSeverity.Information;
+                        break;
+                    case monaco.MarkerSeverity.Hint:
+                        d.severity = DiagnosticSeverity.Hint;
+                        break;
+                }
+                d.source = marker.source;
+                if (typeof marker.code == 'object') {
+                    d.code = {
+                        ...marker.code,
+                        target: toUri(marker.code.target),
+                    };
+                } else {
+                    d.code = marker.code;
+                }
+                d.relatedInformation = marker.relatedInformation?.map(
+                    (i) => new DiagnosticRelatedInformation(toLocation({ uri: i.resource, range: i }), i.message),
+                );
+                d.tags = marker.tags?.map((t) => {
+                    switch (t as number as monaco.MarkerTag) {
+                        case monaco.MarkerTag.Deprecated:
+                            return DiagnosticTag.Deprecated;
+                        case monaco.MarkerTag.Unnecessary:
+                            return DiagnosticTag.Unnecessary;
+                    }
+                });
+                return d;
+            }),
+        );
+    };
 
     /** 注册 Providers */
     private async registerProviders(): Promise<void> {

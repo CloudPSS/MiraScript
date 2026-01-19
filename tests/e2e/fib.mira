@@ -1,0 +1,18 @@
+fn fib {
+  match it {
+    case <= 2 { 1 }
+    case _ { fib(it - 1) + fib(it - 2) }
+  }
+}
+
+t_eq(fib(1), 1);
+t_eq(fib(2), 1);
+t_eq(fib(3), 2);
+t_eq(fib(4), 3);
+t_eq(fib(5), 5);
+t_eq(fib(6), 8);
+t_eq(fib(7), 13);
+t_eq(fib(8), 21);
+t_eq(fib(9), 34);
+t_eq(fib(10), 55);
+t_eq(fib(20), 6765);

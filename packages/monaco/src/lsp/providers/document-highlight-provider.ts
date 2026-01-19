@@ -1,6 +1,6 @@
 import { DiagnosticCode } from '@mirascript/mirascript/subtle';
 import { type Position, languages, type editor, type CancellationToken, Range } from '../../monaco-api.js';
-import { keywords } from '../../constants.js';
+import { isKeyword } from '../../constants.js';
 import { Provider } from './base.js';
 
 /** @inheritdoc */
@@ -12,7 +12,7 @@ export class DocumentHighlightProvider extends Provider implements languages.Doc
         token: CancellationToken,
     ): Promise<languages.DocumentHighlight[] | undefined> {
         const word = model.getWordAtPosition(position);
-        if (word && keywords().includes(word.word)) {
+        if (word && isKeyword(word.word)) {
             const result = await this.highlightKeyword(model, position, word.word);
             if (result) return result;
         }

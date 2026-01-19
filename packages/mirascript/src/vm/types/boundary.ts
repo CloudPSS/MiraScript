@@ -4,7 +4,7 @@ import { kVmFunctionProxy } from '../../helpers/constants.js';
 import type { VmFunctionLike, VmFunction } from './function.js';
 import { VmExtern } from './extern.js';
 import type { VmAny, VmConst, VmModule, VmPrimitive, VmValue } from './index.js';
-import { $Call } from '../operations.js';
+import { $Call } from '../operations/call.js';
 
 /** 创建 Mirascript 函数在宿主语言运行的代理 */
 export function toVmFunctionProxy<T extends VmFunctionLike>(fn: VmFunction<T>): T {
@@ -15,9 +15,9 @@ export function toVmFunctionProxy<T extends VmFunctionLike>(fn: VmFunction<T>): 
         const ret = $Call(
             fn,
             // 作为函数参数传入的值一定丢失了它的 this
-            args.map((v) => wrapToVmValue(v, null)),
+            args.map((v) => wrapToVmValue(v, null, null)),
         );
-        return unwrapFromVmValue(ret);
+        return unwrapFromVmValue(ret, true);
     };
     defineProperty(fn, kVmFunctionProxy, { value: proxy });
     defineProperty(proxy, kVmFunctionProxy, { value: fn });
@@ -29,34 +29,29 @@ export function toVmFunctionProxy<T extends VmFunctionLike>(fn: VmFunction<T>): 
 }
 
 /** 解开 Mirascript 函数在宿主语言运行的代理 */
-export function fromVmFunctionProxy<T extends VmFunctionLike>(fn: T): VmFunction<T> | undefined {
+export function fromVmFunctionProxy<T extends VmFunctionLike>(fn: T): VmFunction<T> | null {
     if (isVmFunction(fn)) return fn;
 
     const original = (fn as unknown as { [kVmFunctionProxy]?: VmFunction<T> })[kVmFunctionProxy];
     if (original && isVmFunction(original)) return original;
 
-    return undefined;
+    return null;
 }
 
 /** 将宿主语言的值包装为 Mirascript 类型 */
-export function wrapToVmValue(
+export function wrapToVmConst(
     value: unknown,
-    thisArg: VmExtern | null = null,
-    assumeVmValue?: (obj: object) => obj is Exclude<VmConst, VmPrimitive>,
-): VmValue {
+    assumeVmValue: ((obj: object) => obj is Exclude<VmConst, VmPrimitive>) | null = null,
+): VmConst {
     if (value == null) return null;
     switch (typeof value) {
-        case 'function': {
-            const unwrapped = fromVmFunctionProxy(value as VmFunctionLike);
-            if (unwrapped) return unwrapped;
-            return new VmExtern(value as () => never, thisArg);
-        }
+        case 'function':
+            return null;
         case 'object': {
-            if (isVmWrapper(value)) return value as VmModule | VmExtern;
+            if (isVmWrapper(value)) return null;
             if (value instanceof Date) return value.valueOf();
             if (assumeVmValue?.(value)) return value;
-            // Only functions preserve thisArg
-            return new VmExtern(value);
+            return null;
         }
         case 'string':
         case 'number':
@@ -70,9 +65,40 @@ export function wrapToVmValue(
             return null;
     }
 }
+/** 将宿主语言的值包装为 Mirascript 类型 */
+export function wrapToVmValue(
+    value: unknown,
+    thisArg: unknown = null,
+    assumeVmValue: ((obj: object) => obj is Exclude<VmConst, VmPrimitive>) | null = null,
+): VmValue {
+    if (value == null) return null;
+    if (typeof value == 'function') {
+        const unwrapped = fromVmFunctionProxy(value as VmFunctionLike);
+        if (unwrapped != null) return unwrapped;
+        return new VmExtern(value as () => never, thisArg);
+    }
+    const constValue = wrapToVmConst(value, assumeVmValue);
+    if (constValue != null) return constValue;
+    if (typeof value == 'object') {
+        if (isVmWrapper(value)) return value as VmModule | VmExtern;
+        // Only functions preserve thisArg
+        return new VmExtern(value);
+    }
+    return null;
+}
+
+/** 创建绑定 */
+function bindThis<T extends (...args: unknown[]) => unknown>(fn: T, thisArg: unknown): T {
+    if (thisArg == null) return fn;
+    return new Proxy(fn, {
+        apply(target, _thisArg, args) {
+            return apply(target, thisArg, args);
+        },
+    });
+}
 
 /** 取消宿主语言的值的 Mirascript 包装  */
-export function unwrapFromVmValue(value: VmAny): unknown {
+export function unwrapFromVmValue(value: VmAny, bindThisArg = true): unknown {
     if (isVmFunction(value)) {
         return toVmFunctionProxy(value);
     }
@@ -83,10 +109,5 @@ export function unwrapFromVmValue(value: VmAny): unknown {
         return value.value;
     }
     const f = value as VmExtern<(...args: unknown[]) => unknown>;
-    const caller = f.thisArg!.value;
-    return new Proxy(f.value, {
-        apply(target, thisArg, args): unknown {
-            return apply(target, caller, args);
-        },
-    });
+    return bindThisArg ? bindThis(f.value, f.thisArg) : f.value;
 }

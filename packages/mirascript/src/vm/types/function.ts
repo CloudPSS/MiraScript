@@ -1,4 +1,5 @@
 import type { Writable } from 'type-fest';
+import type { DiagnosticCode } from '@mirascript/constants';
 import { defineProperty } from '../../helpers/utils.js';
 import { kVmFunction, VM_FUNCTION_ANONYMOUS_NAME } from '../../helpers/constants.js';
 import type { VmAny, VmValue } from './index.js';
@@ -36,6 +37,8 @@ export interface VmFunctionInfo {
     readonly examples?: string[];
     /** 如果添加了包装，返回原函数 */
     readonly original?: VmFunctionLike;
+    /** 标记为弃用 */
+    readonly deprecated?: { use?: string; message: DiagnosticCode };
 }
 
 /** Mirascript 函数创建选项 */
@@ -64,6 +67,7 @@ export function VmFunction<T extends VmFunctionLike>(fn: T, option: VmFunctionOp
         returns: option.returns || undefined,
         returnsType: option.returnsType || undefined,
         examples: option.examples?.length ? option.examples : undefined,
+        deprecated: option.deprecated ?? undefined,
     };
     if (option.injectCp) {
         const original = fn;

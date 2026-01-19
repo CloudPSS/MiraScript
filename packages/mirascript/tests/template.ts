@@ -1,5 +1,6 @@
 import test from 'ava';
 import { compile, compileSync } from '@mirascript/mirascript';
+import { createScript } from '@mirascript/mirascript/subtle';
 
 const compileAndRun = test.macro<[string, unknown]>({
     exec: async (t, code, expected) => {
@@ -23,6 +24,15 @@ const compileAndRun = test.macro<[string, unknown]>({
             const result = script();
             t.deepEqual(result, expected);
         }
+        {
+            const script = createScript(
+                code,
+                'Template',
+                compileSync(code, { input_mode: 'Template', sourceMap: false }).toString(),
+            );
+            const result = script();
+            t.deepEqual(result, expected);
+        }
     },
     title: (providedTitle = '', code) => providedTitle || code,
 });
@@ -32,4 +42,4 @@ test('whitespaces', compileAndRun, ' \n', ' \n');
 test('large no interpolation', compileAndRun, 'Hello, World!'.repeat(1000), 'Hello, World!'.repeat(1000));
 test('only one interpolation', compileAndRun, '$("Hello, World!")', 'Hello, World!');
 test('interpolation', compileAndRun, 'Hello, $("World")!', 'Hello, World!');
-test('interpolations', compileAndRun, 'Hello, $("World")! ${ let pi = @pi; pi / @e }', 'Hello, World! 1.15573');
+test('interpolations', compileAndRun, 'Hello, $("World")! ${ let pi = PI; pi / E }', 'Hello, World! 1.15573');

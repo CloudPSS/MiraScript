@@ -1,5 +1,5 @@
 import { describeParam, expectNumberRange, throwError, throwUnexpectedTypeError, VmLib } from '../helpers.js';
-import { isNaN, isFinite } from '../../../helpers/utils.js';
+import { isNaN, NotNumber, isFinite } from '../../../helpers/utils.js';
 import { toNumber } from '../../../helpers/convert/to-number.js';
 import { display } from '../../../helpers/serialize.js';
 import type { VmAny } from '../../types/index.js';
@@ -8,7 +8,7 @@ const fromNumber = (datetime: number, fallback: boolean): number | null => {
     const n = new Date(datetime).getTime();
     if (isFinite(n)) return n;
     if (fallback) return null;
-    throwError(`${describeParam('datetime')} is an invalid timestamp: ${display(datetime)}`, Number.NaN);
+    throwError(`${describeParam('datetime')} is an invalid timestamp: ${display(datetime)}`, NotNumber);
 };
 
 const getTimestamp = (datetime: VmAny, fallback: boolean): number | null => {
@@ -20,16 +20,16 @@ const getTimestamp = (datetime: VmAny, fallback: boolean): number | null => {
     }
     if (typeof datetime != 'string') {
         if (fallback) return null;
-        throwUnexpectedTypeError('datetime', 'number | string', datetime, Number.NaN);
+        throwUnexpectedTypeError('datetime', 'number | string', datetime, NotNumber);
     }
-    const num = toNumber(datetime, Number.NaN);
+    const num = toNumber(datetime, NotNumber);
     if (!isNaN(num)) {
         return fromNumber(num, fallback);
     }
     const parsed = Date.parse(datetime);
     if (isFinite(parsed)) return parsed;
     if (fallback) return null;
-    throwError(`${describeParam('datetime')} cannot be parsed as datetime: ${display(datetime)}`, Number.NaN);
+    throwError(`${describeParam('datetime')} cannot be parsed as datetime: ${display(datetime)}`, NotNumber);
 };
 
 export const to_timestamp = VmLib(
@@ -69,21 +69,22 @@ export const to_datetime = VmLib(
         };
     },
     {
-        summary: '将数据转换为 Date 记录',
+        summary: '将数据转换为 DateTime 记录',
         params: {
             datetime: '要转换的数据，默认为当前时间',
             offset: '时区偏移量（单位：小时），默认为 0',
             fallback: '转换失败时的返回值',
         },
         paramsType: { datetime: 'number | string', offset: 'number', fallback: 'any' },
-        returnsType: 'Date | type(fallback)',
+        returnsType: 'DateTime | type(fallback)',
         examples: [
             `
 to_datetime(0)
 // (
-//    year: 1970, month: 1, day: 1,
-//    hour: 0, minute: 0, second: 0,
-//    millisecond: 0, dayOfWeek: 4, offset: 0
+//   year: 1970, month: 1, day: 1,
+//   hour: 0, minute: 0, second: 0,
+//   millisecond: 0,
+//   dayOfWeek: 4, offset: 0
 // )
             `.trim(),
         ],

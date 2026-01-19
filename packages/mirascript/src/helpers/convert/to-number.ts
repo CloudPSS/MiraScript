@@ -1,8 +1,7 @@
 import type { VmAny } from '../../vm/index.js';
 import { VmError } from '../error.js';
 import { display } from '../serialize.js';
-import { isNaN } from '../utils.js';
-const { POSITIVE_INFINITY, NEGATIVE_INFINITY } = Number;
+import { isNaN, NegativeInfinity, NotNumber, PositiveInfinity } from '../utils.js';
 
 /** 转换为 number */
 export function toNumber<F = undefined>(value: VmAny, fallback?: F): number | Exclude<F, undefined> {
@@ -16,20 +15,20 @@ export function toNumber<F = undefined>(value: VmAny, fallback?: F): number | Ex
         value = value.trim();
         if (value !== '') {
             if (value === 'inf' || value === '+inf' || value === 'Infinity' || value === '+Infinity') {
-                return POSITIVE_INFINITY;
+                return PositiveInfinity;
             }
             if (value === '-inf' || value === '-Infinity') {
-                return NEGATIVE_INFINITY;
+                return NegativeInfinity;
             }
             if (value === 'nan' || value === 'NaN') {
-                return Number.NaN;
+                return NotNumber;
             }
             const num = Number(value);
             if (!isNaN(num)) return num;
         }
     }
     if (fallback === undefined) {
-        throw new VmError(`Failed to convert value to number: ${display(value)}`, Number.NaN);
+        throw new VmError(`Failed to convert value to number: ${display(value)}`, NotNumber);
     }
     return fallback as Exclude<F, undefined>;
 }

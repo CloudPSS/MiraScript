@@ -1,6 +1,6 @@
 {
   "name": "@mirascript/playground",
-  "version": "0.1.17",
+  "version": "0.1.39",
   "author": "CloudPSS",
   "license": "MIT",
   "description": "MiraScript Playground - An online code editor for MiraScript",
@@ -15,15 +15,15 @@
     "@mirascript/bindings": "workspace:~",
     "@mirascript/mirascript": "workspace:~",
     "@mirascript/monaco": "workspace:~",
-    "@private/monaco-editor": "^0.0.55"
+    "@private/monaco-editor": "^0.0.60"
   },
   "devDependencies": {
     "fflate": "^0.8.2",
     "js-base64": "^3.7.8",
     "lightningcss": "^1.30.2",
     "rollup-plugin-sourcemaps2": "^0.5.4",
-    "type-fest": "^5.2.0",
-    "vite": "^7.2.4",
-    "vite-plugin-checker": "^0.11.0"
+    "type-fest": "^5.4.1",
+    "vite": "^7.3.1",
+    "vite-plugin-checker": "^0.12.0"
   }
 }

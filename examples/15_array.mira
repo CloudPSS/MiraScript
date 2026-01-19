@@ -19,7 +19,7 @@ debug_print("过滤后的数组:", filtered);
 
 // 数组模式匹配示例
 let [first, second, ..rest] = array;
-debug_print("First: $first, Second: $second, Rest length:", len(rest));
+debug_print("First: %o, Second: %o, Rest length: %o", first, second, len(rest));
 
 // 返回原数组和过滤后的数组用于检查
 (array, filtered)

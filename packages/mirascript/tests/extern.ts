@@ -40,7 +40,7 @@ test('callable extern', (t) => {
     t.true(isVmCallable(eSin));
     t.is(eSin.value, Math.sin);
     t.is(eSin.thisArg, null);
-    t.is(eSin.describe, 'function sin()');
+    t.is(eSin.tag, 'function');
     t.is(unwrapFromVmValue(eSin), Math.sin);
     t.false(isProxy(unwrapFromVmValue(eSin)));
     t.is((unwrapFromVmValue(eSin) as typeof Math.sin)(1), Math.sin(1));
@@ -50,7 +50,7 @@ test('callable extern', (t) => {
     t.false(isVmCallable(eMath));
     t.is(eMath.value, Math);
     t.is(eMath.thisArg, null);
-    t.is(eMath.describe, 'Math');
+    t.is(eMath.tag, 'Math');
     t.is(unwrapFromVmValue(eMath), Math);
     t.false(isProxy(unwrapFromVmValue(eMath)));
 
@@ -58,10 +58,10 @@ test('callable extern', (t) => {
     t.true(isVmExtern(eMSin));
     t.true(isVmCallable(eMSin));
     t.is(eMSin.value, Math.sin);
-    t.is(eMSin.thisArg, eMath);
-    t.true(eMSin.thisArg!.same(eMath));
+    t.is(eMSin.thisArg, Math);
     t.not(unwrapFromVmValue(eMSin), Math.sin);
     t.true(isProxy(unwrapFromVmValue(eMSin)));
+    t.false(isProxy(unwrapFromVmValue(eMSin, false)));
     t.is((unwrapFromVmValue(eMSin) as typeof Math.sin)(1), Math.sin(1));
 
     t.false(e('`__proto__` in sin'));
@@ -83,42 +83,51 @@ test('callable extern', (t) => {
 });
 
 test('describe extern', (t) => {
-    t.is(new VmExtern({}, null).describe, 'Object');
-    t.is(new VmExtern(Object.create(null), null).describe, 'Object: null prototype');
-    t.is(new VmExtern([], null).describe, 'Array(0)');
-    t.is(new VmExtern(() => 0, null).describe, 'function <anonymous>()');
+    t.is(new VmExtern({}, null).tag, 'Object');
+    t.is(new VmExtern(Object.create(null), null).tag, 'Object: null prototype');
+    t.is(new VmExtern([], null).tag, 'Array(0)');
+    t.is(new VmExtern(() => 0, null).tag, 'function');
     // eslint-disable-next-line @typescript-eslint/require-await
-    t.is(new VmExtern(async () => 0, null).describe, 'async function <anonymous>()');
+    t.is(new VmExtern(async () => 0, null).tag, 'async function');
     t.is(
         new VmExtern(function* () {
             yield 0;
-        }, null).describe,
-        'function* <anonymous>()',
+        }, null).tag,
+        'function*',
     );
     t.is(
         // eslint-disable-next-line @typescript-eslint/require-await
         new VmExtern(async function* () {
             yield 0;
-        }, null).describe,
-        'async function* <anonymous>()',
+        }, null).tag,
+        'async function*',
     );
     const a = class A {
         x = 1;
     };
-    t.is(new VmExtern(new a(), null).describe, 'A');
-    t.is(new VmExtern(a, null).describe, 'class A');
+    t.is(new VmExtern(new a(), null).tag, 'Object');
+    t.is(new VmExtern(a, null).tag, 'class');
+    Object.defineProperty(a, 'name', { value: 'ALongName' });
+    t.is(new VmExtern(new a(), null).tag, 'ALongName');
+    t.is(new VmExtern(a, null).tag, 'class ALongName');
+    const ab = a.bind(null);
+    t.is(new VmExtern(new ab(), null).tag, 'ALongName');
+    t.is(new VmExtern(ab, null).tag, 'function');
     Object.defineProperty(a, 'name', { value: '' });
-    t.is(new VmExtern(new a(), null).describe, 'Object');
-    t.is(new VmExtern(a, null).describe, 'class <anonymous>');
+    t.is(new VmExtern(new a(), null).tag, 'Object');
+    t.is(new VmExtern(a, null).tag, 'class');
+    Object.defineProperty(a, 'displayName', { value: 'ADisplayName' });
+    t.is(new VmExtern(new a(), null).tag, 'ADisplayName');
+    t.is(new VmExtern(a, null).tag, 'class ADisplayName');
     // eslint-disable-next-line unicorn/consistent-function-scoping
     const f = function () {
         return 1;
     };
-    t.is(new VmExtern(f, null).describe, 'class f');
+    t.is(new VmExtern(f, null).tag, 'class');
     f.prototype = undefined;
-    t.is(new VmExtern(f, null).describe, 'function f()');
+    t.is(new VmExtern(f, null).tag, 'function');
     f.prototype = null;
-    t.is(new VmExtern(f, null).describe, 'class f');
+    t.is(new VmExtern(f, null).tag, 'class');
 });
 
 test('Date extern', (t) => {
@@ -132,6 +141,7 @@ test('Date extern', (t) => {
     const e = exec(context);
     t.is(e('Date::type()'), 'extern');
     t.is(e('d::type()'), 'number');
+    t.is(e('construct::type()'), 'extern');
 
     t.false(e('`prototype` in Date'));
 
@@ -385,23 +395,39 @@ test('extern iterable', (t) => {
     const context = createVmContext(null, {
         arr: [10, 20, 30],
         map: new Map([
-            ['a', 1],
-            ['b', 2],
-            ['c', 3],
+            ['a', new Date(1)],
+            ['b', new Date(2)],
+            ['c', new Date(3)],
         ]),
         set: new Set([100, 200, 300]),
         noniter: {
             a: 1,
             b: 2,
         },
+        tarr: new Uint16Array([1, 2, 3]),
     });
     const e = exec(context);
 
     t.deepEqual(e('[..arr]'), [10, 20, 30]);
+    t.deepEqual(e('arr[-1]'), 30);
+    t.deepEqual(e('arr.3'), null);
+    t.deepEqual(e('arr[3]'), null);
+    t.deepEqual(e('arr[2.99]'), 30);
+    t.deepEqual(e('arr["2.99"]'), null);
+    t.deepEqual(e('arr[-3]'), 10);
+    t.deepEqual(e('arr["-3"]'), null);
+    t.deepEqual(e('arr[-4]'), null);
+    t.deepEqual(e('[..tarr]'), [1, 2, 3]);
+    t.deepEqual(e('tarr[-1]'), 3);
     t.deepEqual(e('[..map]'), [null, null, null]);
+    t.deepEqual(e('map.get("a")'), 1);
     t.deepEqual(e('[..map.keys()]'), ['a', 'b', 'c']);
     t.deepEqual(e('[..map.values()]'), [1, 2, 3]);
     t.deepEqual(e('[..set]'), [100, 200, 300]);
+    t.deepEqual(e('arr::len()'), 3);
+    t.deepEqual(e('tarr::len()'), 3);
+    t.throws(() => e('set::len()'), { message: "Argument 'arr' is not array-like extern: <extern Set>" });
+    t.throws(() => e('arr[1..2]'), { message: 'Expected array, got <extern Array(3)> [10, 20, 30]' });
     t.throws(() => e('[..noniter]'), { message: 'Expected array, iterable extern or nil, got <extern Object>' });
 });
 
@@ -416,9 +442,22 @@ test('extern spread', (t) => {
     t.deepEqual(e('(..arr)'), { 0: 3, 1: 4, 2: 5 });
 });
 
+test('extern keys', (t) => {
+    const v = { __proto__: Math, _private: 123, public: 456 };
+    const e = new VmExtern(v, null);
+    const keys = e.keys();
+    t.deepEqual(keys.sort(), ['public']);
+    const allKeys = e.keys(true);
+    t.deepEqual(allKeys.sort(), ['public', ...Object.getOwnPropertyNames(Math)].sort());
+    for (const key of allKeys) {
+        t.true(e.has(key));
+        t.is(unwrapFromVmValue(e.get(key), false), v[key as keyof typeof v]);
+    }
+});
+
 test('custom extern', (t) => {
     class MyExtern extends VmExtern {
-        protected override assumeVmValue(value: object, key: undefined): value is VmRecord | VmArray {
+        override assumeVmValue(value: object, key: undefined): value is VmRecord | VmArray {
             return true;
         }
     }

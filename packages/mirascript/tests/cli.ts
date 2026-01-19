@@ -1,7 +1,14 @@
 import test from 'ava';
+import program from '../dist/cli/index.js';
 import { print } from '../dist/cli/print.js';
 import { execute } from '../dist/cli/execute.js';
 import { compile, createVmContext, VmModule } from '../dist/index.js';
+
+test('cli program', (t) => {
+    t.is(program.name(), 'mirascript');
+    t.regex(program.version()!, /^\d+\.\d+\.\d+(-.+)?$/);
+    t.is(typeof program.description(), 'string');
+});
 
 test('cli print', async (t) => {
     t.snapshot(print(null));
@@ -24,7 +31,7 @@ test('cli print', async (t) => {
 });
 
 test('cli execute', async (t) => {
-    t.is(await execute('true', false, {}), undefined);
-    t.is(await execute('true', true, {}), undefined);
-    t.is(await execute('debug_print(1, "x", sin)', false, {}), undefined);
+    t.is(await execute('true', false, {}, ''), undefined);
+    t.is(await execute('true', true, {}, ''), undefined);
+    t.is(await execute('debug_print(1, "x", sin)', false, {}, ''), undefined);
 });

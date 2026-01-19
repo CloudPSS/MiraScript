@@ -11,6 +11,8 @@ use super::opcode::Register;
 pub(crate) enum BindType {
     /// The variable is bound by `let` statement.
     Let,
+    /// The variable is bound by `let` statement with an function expression.
+    LetFunc,
     /// The variable is bound by `const` statement.
     Const,
     /// The variable is bound as a pattern in `for`, `while`, `match` or `is` expressions.
@@ -152,9 +154,8 @@ impl<'s> Variable<'s> {
         let hint = if !self.mutable {
             match self.bind_type {
                 BindType::Const => DiagnosticCode::LocalConst,
-                BindType::Let => DiagnosticCode::LocalImmutable,
-                BindType::Init => DiagnosticCode::LocalImmutable,
-                BindType::Func => DiagnosticCode::LocalFunction,
+                BindType::Let | BindType::Init => DiagnosticCode::LocalImmutable,
+                BindType::Func | BindType::LetFunc => DiagnosticCode::LocalFunction,
                 BindType::Parameter => DiagnosticCode::ParameterImmutable,
                 BindType::RestParameter => DiagnosticCode::ParameterImmutableRest,
                 BindType::ItParameter => DiagnosticCode::ParameterIt,
@@ -165,9 +166,8 @@ impl<'s> Variable<'s> {
         } else {
             match self.bind_type {
                 BindType::Const => DiagnosticCode::LocalConst,
-                BindType::Let => DiagnosticCode::LocalMutable,
-                BindType::Init => DiagnosticCode::LocalMutable,
-                BindType::Func => DiagnosticCode::LocalFunction,
+                BindType::Let | BindType::Init => DiagnosticCode::LocalMutable,
+                BindType::Func | BindType::LetFunc => DiagnosticCode::LocalFunction,
                 BindType::Parameter => DiagnosticCode::ParameterMutable,
                 BindType::RestParameter => DiagnosticCode::ParameterMutableRest,
                 BindType::ItParameter => DiagnosticCode::ParameterIt,
@@ -191,7 +191,7 @@ impl<'s> Variable<'s> {
             )
         {
             diagnostics.push(
-                if self.bind_type == BindType::Func {
+                if matches!(self.bind_type, BindType::Func | BindType::LetFunc) {
                     DiagnosticCode::UnusedLocalFunction
                 } else {
                     DiagnosticCode::UnusedLocalVariable

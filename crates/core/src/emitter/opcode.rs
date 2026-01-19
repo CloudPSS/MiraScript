@@ -1,8 +1,7 @@
 use strum::{Display, VariantArray};
-#[cfg(feature = "wasm")]
-use wasm_bindgen::prelude::*;
 
-#[cfg_attr(feature = "wasm", wasm_bindgen)]
+/// MiraScript OpCodes
+#[cfg_attr(feature = "wasm-constants", wasm_bindgen::prelude::wasm_bindgen)]
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, VariantArray, Display)]
 pub enum OpCode {
@@ -80,8 +79,8 @@ pub enum OpCode {
     /// CONCAT %ret `n` %1 %2 ... %n\
     /// %ret = %1 .. %2 .. ... .. %n
     Concat,
-    /// FORMAT %ret %1 %2\
-    /// %ret = format(%1, %2)
+    /// FORMAT %ret %1 `index`\
+    /// %ret = format(%1, CONSTANTS\[index])
     Format,
     /// AND %ret %1 %2\
     /// %ret = %1 && %2
@@ -340,9 +339,7 @@ impl OpCode {
 
 pub trait OpParamTrait {
     fn value(&self) -> u32;
-    fn is_wide(&self) -> bool {
-        self.value() > OpCode::PARAM_MAX
-    }
+    fn is_wide(&self) -> bool;
     fn code(&self) -> u8 {
         debug_assert!(!self.is_wide());
         self.value() as u8
@@ -374,6 +371,9 @@ impl OpParamTrait for Register {
     fn value(&self) -> u32 {
         self.0
     }
+    fn is_wide(&self) -> bool {
+        self.value() > u8::MAX as u32
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -388,6 +388,10 @@ impl OpParam {
 impl OpParamTrait for OpParam {
     fn value(&self) -> u32 {
         self.0 as u32
+    }
+
+    fn is_wide(&self) -> bool {
+        self.0 < i8::MIN as i32 || self.0 > i8::MAX as i32
     }
 }
 

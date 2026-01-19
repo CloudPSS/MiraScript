@@ -21,7 +21,9 @@ fn fib_cached(n) {
 }
 
 // 简单递归实现
-fn fib_simple(n) { if n <= 2 { n } else { fib_simple(n - 1) + fib_simple(n - 2) } }
+fn fib_simple(n) {
+  if n <= 2 { n } else { fib_simple(n - 1) + fib_simple(n - 2) }
+}
 
 // 迭代实现
 fn fib_iterative(n) {
@@ -44,9 +46,13 @@ fn fib_iterative(n) {
 }
 
 // 尾递归实现
-fn fib_tail_recursive(n, a, b) { if n <= 2 { b } else { fib_tail_recursive(n - 1, b, a + b) } }
+fn fib_tail_recursive(n, a, b) {
+  if n <= 2 { b } else { fib_tail_recursive(n - 1, b, a + b) }
+}
 
-fn fib_tail(n) { if n <= 2 { n } else { fib_tail_recursive(n, 1, 2) } }
+fn fib_tail(n) {
+  if n <= 2 { n } else { fib_tail_recursive(n, 1, 2) }
+}
 
 // 测试不同实现
 fn test_fibonacci() {
@@ -54,11 +60,11 @@ fn test_fibonacci() {
 
   debug_print("斐波那契数列计算:");
   for n in test_numbers {
-    debug_print("fib($n):");
-    debug_print("  缓存递归:", fib_cached(n));
-    debug_print("  简单递归:", fib_simple(n));
-    debug_print("  迭代实现:", fib_iterative(n));
-    debug_print("  尾递归:", fib_tail(n));
+    debug_print("fib(%o):", n);
+    debug_print("  缓存递归: %o", fib_cached(n));
+    debug_print("  简单递归: %o", fib_simple(n));
+    debug_print("  迭代实现: %o", fib_iterative(n));
+    debug_print("  尾递归: %o", fib_tail(n));
     debug_print("");
   }
 }

@@ -105,12 +105,24 @@ export function toMarkdownString<const T extends IMarkdownString | string | unde
 }
 
 /**
+ * Converts a Monaco Editor Uri to a VS Code Uri.
+ */
+export function toUri<const T extends MonacoUri | undefined = MonacoUri>(uri: T): T extends MonacoUri ? VsUri : T {
+    if (uri == null) return undefined as never;
+    if (uri instanceof VsUri) return uri as never;
+    return VsUri.parse(uri.toString()) as never;
+}
+/** Monaco Editor Location */
+type MonacoLocation = { uri: MonacoUri; range: IRange };
+/**
  * Converts a Monaco Editor Location to a VS Code Location.
  */
-export function toLocation(location: { uri: MonacoUri; range: IRange } | undefined): VsLocation | undefined {
-    if (location == null) return undefined;
-    if (location instanceof VsLocation) return location;
-    return new VsLocation(VsUri.parse(location.uri.toString()), toRange(location.range));
+export function toLocation<const T extends MonacoLocation | undefined = MonacoLocation>(
+    location: T,
+): T extends MonacoLocation ? VsLocation : undefined {
+    if (location == null) return undefined as never;
+    if (location instanceof VsLocation) return location as never;
+    return new VsLocation(toUri(location.uri), toRange(location.range)) as never;
 }
 /**
  * Convert to VS Code CompletionItem

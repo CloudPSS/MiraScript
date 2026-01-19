@@ -11,9 +11,11 @@ export function globals(consoleManager: ConsoleManager): VmContext {
     const { VmExtern, VmModule, VmFunction, getVmFunctionInfo, createVmContext } = mirascript;
     return createVmContext(
         {
+            'invalid-key!': 'This key is invalid in MiraScript',
             null_value: null,
             undefined_value: undefined,
             extern_arr: new VmExtern(arr),
+            extern_buf: new VmExtern(new Uint8Array(100)),
             // eslint-disable-next-line no-sparse-arrays
             sparse_arr: [1, 2, , 4],
             obj: { a: [], b: 1, c: '2', d: { e: 3 } },
@@ -52,6 +54,7 @@ export function globals(consoleManager: ConsoleManager): VmContext {
                 s: DefaultVmContext.get('sin'),
                 m: DefaultVmContext.get('matrix'),
                 undefined: undefined,
+                'invalid-key!': 'This key is invalid in MiraScript',
             },
             globalThis,
         },

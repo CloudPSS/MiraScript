@@ -1,17 +1,20 @@
 import type { Config as WasmConfig, CompileResult as WasmCompileResult } from '../lib/wasm.js';
-import type { Config, InputMode, DiagnosticPositionEncoding, ScriptInput } from './types.js';
+import type { Config, InputMode, DiagnosticPositionEncoding, ScriptInput } from '@mirascript/constants';
 
 export type { WasmCompileResult, WasmConfig };
 
 export let wasm: typeof import('../lib/wasm.js');
-export const ready = Promise.all([import('../lib/wasm.js'), import('@mirascript/wasm/loader')]).then(
-    async ([_wasm, { module }]) => {
-        wasm = _wasm;
-        await wasm.default({
-            module_or_path: await module,
-        });
-    },
-);
+
+const module = import('@mirascript/wasm/loader').then(async ({ module }) => module);
+
+// 避免 vite 打包时出错
+void import('../lib/wasm.js').then(async (mod) => {
+    mod.initSync({ module: await module });
+    wasm = mod;
+});
+export const ready = module.then(async () => {
+    await new Promise<void>((resolve) => setTimeout(resolve, 1));
+});
 
 /** 创建可重用的配置 */
 export function createConfig(config?: Config | WasmConfig): WasmConfig {
@@ -69,14 +72,4 @@ export function compileSync(script: ScriptInput, config: Config | WasmConfig): C
     return typeof script == 'string'
         ? compileImpl(wasm.compile, script, config)
         : compileImpl(wasm.compile_buffer, script, config);
-}
-
-/** 获取诊断消息 */
-export function getDiagnosticMessage(code: number): string | null {
-    return wasm.get_diagnostic_message(code) || null;
-}
-
-/** 获取关键字列表 */
-export function keywords(): string[] {
-    return wasm.keywords();
 }

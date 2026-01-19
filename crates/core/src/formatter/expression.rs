@@ -36,6 +36,11 @@ impl Formattable for Expression<'_> {
                     + iterable.measure(formatter, indent)
                     + else_block.measure(formatter, indent)
             }
+            Cond(cond, _, then_exp, _, else_exp) => {
+                cond.measure(formatter, indent)
+                    + then_exp.measure(formatter, indent)
+                    + else_exp.measure(formatter, indent)
+            }
             If(_, cond, body, else_block) => {
                 cond.measure(formatter, indent)
                     + body.measure(formatter, indent)
@@ -67,6 +72,9 @@ impl Formattable for Expression<'_> {
             Variable(v) => v.measure(formatter, indent),
             Record(_, list_items, _) => list_items.measure(formatter, indent),
             Array(_, list_items, _) => list_items.measure(formatter, indent),
+            TaggedString(callable, expression) => {
+                callable.measure(formatter, indent) + expression.measure(formatter, indent)
+            }
             Call(callable, _, list_items, _) => {
                 callable.measure(formatter, indent) + list_items.measure(formatter, indent)
             }
@@ -94,9 +102,15 @@ impl Formattable for Expression<'_> {
             }
             Record(op, list_items, cp) => {
                 formatter.write_token(op);
+                if **op == Operator::OpenBrace {
+                    formatter.write_space();
+                }
                 list_items[..].format(formatter, measurement);
                 if list_items.len() == 1 && list_items[0].is_unnamed() {
                     formatter.write_token_or(list_items[0].tail_comma(), Operator::Comma);
+                }
+                if **cp == Operator::CloseBrace {
+                    formatter.write_space();
                 }
                 formatter.write_token(cp);
             }
@@ -104,6 +118,13 @@ impl Formattable for Expression<'_> {
                 formatter.write_token(op);
                 list_items[..].format(formatter, measurement);
                 formatter.write_token(cp);
+            }
+            TaggedString(callable, expression) => {
+                callable.format(formatter, measurement);
+                if formatter.ends_with("@") {
+                    formatter.write_space();
+                }
+                expression.format(formatter, measurement);
             }
             Call(callable, op, list_items, cp) => {
                 callable.format(formatter, measurement);
@@ -148,6 +169,9 @@ impl Formattable for Expression<'_> {
             }
             Prefix(op, expression) => {
                 formatter.write_token(op);
+                if op.is_keyword() {
+                    formatter.write_space();
+                }
                 expression.format(formatter, measurement);
             }
             Infix(l, op, r) => {
@@ -226,6 +250,17 @@ impl Formattable for Expression<'_> {
                 formatter.write_space();
                 body.format(formatter, measurement);
                 else_block.format(formatter, measurement);
+            }
+            Cond(cond, op_question, then_exp, op_colon, else_exp) => {
+                cond.format(formatter, measurement);
+                formatter.write_space();
+                formatter.write_token(op_question);
+                formatter.write_space();
+                then_exp.format(formatter, measurement);
+                formatter.write_space();
+                formatter.write_token(op_colon);
+                formatter.write_space();
+                else_exp.format(formatter, measurement);
             }
             If(kw, cond, body, else_block) => {
                 formatter.write_token(kw);

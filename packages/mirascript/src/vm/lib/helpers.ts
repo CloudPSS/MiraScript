@@ -1,6 +1,6 @@
 import type { Writable } from 'type-fest';
 import { VM_ARRAY_MAX_LENGTH } from '../../helpers/constants.js';
-import { isNaN, entries, fromEntries, isSafeInteger, isFinite } from '../../helpers/utils.js';
+import { isNaN, NotNumber, entries, fromEntries, isSafeInteger, isFinite } from '../../helpers/utils.js';
 import { toBoolean, toNumber, toString } from '../../helpers/convert/index.js';
 import { display } from '../../helpers/serialize.js';
 import { isVmArray, isVmFunction, isVmPrimitive, isVmConst, isVmCallable, isVmRecord } from '../../helpers/types.js';
@@ -17,7 +17,7 @@ import type {
     VmFunctionLike,
     VmFunctionOption,
 } from '../types/index.js';
-import { Cp } from '../helpers.js';
+import { Cp } from '../checkpoint.js';
 
 /** 抛出异常 */
 export function throwError(message: string, recovered: VmAny | (() => VmAny)): never {
@@ -75,10 +75,10 @@ export function required<const T = VmValue>(
 
 /** 标记并转换参数为数字 */
 export function expectNumber(name: ParamIndex, value: VmAny): number {
-    required(name, value, Number.NaN);
+    required(name, value, NotNumber);
     const v = toNumber(value, null);
     if (v == null) {
-        throwUnconvertedTypeError(name, 'number', value, Number.NaN);
+        throwUnconvertedTypeError(name, 'number', value, NotNumber);
     }
     return v;
 }
@@ -86,7 +86,7 @@ export function expectNumber(name: ParamIndex, value: VmAny): number {
 export function expectNumberRange(name: ParamIndex, value: VmAny, min: number, max: number): number {
     const v = expectNumber(name, value);
     if (!isFinite(v)) {
-        throwError(`${describeParam(name)} is not a finite number: ${display(value)}`, Number.NaN);
+        throwError(`${describeParam(name)} is not a finite number: ${display(value)}`, NotNumber);
     }
     if (v < min) {
         throwError(`${describeParam(name)} is less than minimum value ${min}: ${display(value)}`, min);
@@ -243,6 +243,7 @@ export function arrayLen(len: number | null | undefined): number {
 /** 应用映射函数 */
 export function map(
     data: VmConst,
+    /** 返回 `undefined` 表示跳过该元素 */
     mapper: (value: VmConst, index: number | string | null, data: VmConst) => VmConst | undefined,
 ): VmConst {
     if (isVmPrimitive(data)) {
@@ -273,22 +274,20 @@ export function map(
 /** 库函数选项 */
 export type VmLibOption = Pick<
     VmFunctionOption,
-    'summary' | 'params' | 'paramsType' | 'returns' | 'returnsType' | 'examples'
+    'summary' | 'params' | 'paramsType' | 'returns' | 'returnsType' | 'examples' | 'injectCp' | 'deprecated'
 >;
 /** 库函数 */
-export type VmLib<T extends VmFunctionLike = VmFunctionLike> = T & VmLibOption;
+export type VmLib<T extends VmFunctionLike | VmConst = VmFunctionLike> = (T extends VmFunctionLike ? T : { value: T }) &
+    VmLibOption;
 
 /** 创建库函数 */
-export function VmLib<const T extends VmFunctionLike, P extends Record<string, unknown> = Record<never, never>>(
-    fn: T,
-    option: VmLibOption,
-    properties?: P,
-): VmLib<T> & P {
-    /* c8 ignore next 2 */
-    if (typeof fn != 'function') throw new TypeError('Invalid function');
-    if (isVmFunction(fn)) throw new TypeError('Cannot create VmLib from a VmFunction');
+export function VmLib<
+    const T extends VmFunctionLike | VmConst,
+    P extends Record<string, unknown> = Record<never, never>,
+>(value: T, option: VmLibOption, properties?: P): VmLib<T> & P {
+    if (isVmFunction(value)) throw new TypeError('Cannot create VmLib from a VmFunction');
 
-    const ret = fn as Writable<VmLib<T>> & P;
+    const ret = (typeof value == 'function' ? value : { value: value }) as unknown as Writable<VmLib<T>> & P;
     Object.assign(ret, properties);
     ret.params = option.params;
     ret.paramsType = option.paramsType;
@@ -296,5 +295,7 @@ export function VmLib<const T extends VmFunctionLike, P extends Record<string, u
     ret.returnsType = option.returnsType;
     ret.summary = option.summary;
     ret.examples = option.examples;
+    ret.injectCp = option.injectCp ?? false;
+    ret.deprecated = option.deprecated ?? undefined;
     return ret as VmLib<T> & P;
 }

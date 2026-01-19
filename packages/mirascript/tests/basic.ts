@@ -1,5 +1,6 @@
 import test, { type ThrowsExpectation } from 'ava';
 import { compile, VmError } from '@mirascript/mirascript';
+import { createScript } from '@mirascript/mirascript/subtle';
 
 const compileAndRun = test.macro<[string, unknown]>({
     exec: async (t, code, expected) => {
@@ -10,16 +11,25 @@ const compileAndRun = test.macro<[string, unknown]>({
             typeof expected.instanceOf == 'function'
                 ? (expected as ThrowsExpectation<Error>)
                 : null;
+        let scriptSource;
         {
             if (expectError) {
                 await t.throwsAsync(async () => {
                     const script = await compile(code);
+                    scriptSource = script.toString();
                     script();
                 }, expectError);
             } else {
                 const script = await compile(code);
-                const result = script();
-                t.deepEqual(result, expected);
+                scriptSource = script.toString();
+                {
+                    const result = script();
+                    t.deepEqual(result, expected);
+                }
+                {
+                    const result = script(null);
+                    t.deepEqual(result, expected);
+                }
             }
         }
         {
@@ -32,6 +42,20 @@ const compileAndRun = test.macro<[string, unknown]>({
                 }, expectError);
             } else {
                 const script = await compile(code);
+                // should accept a global context
+                t.is(script.length, 1);
+                const result = script();
+                t.deepEqual(result, expected);
+            }
+        }
+        if (scriptSource) {
+            // create from source code
+            const script = createScript(code, 'Script', scriptSource);
+            if (expectError) {
+                t.throws(() => {
+                    script();
+                }, expectError);
+            } else {
                 const result = script();
                 t.deepEqual(result, expected);
             }
@@ -47,8 +71,8 @@ test('keyword literal', compileAndRun, '+inf', Number.POSITIVE_INFINITY);
 test('keyword literal', compileAndRun, '-inf', Number.NEGATIVE_INFINITY);
 test('keyword literal', compileAndRun, '+ inf', Number.POSITIVE_INFINITY);
 test('keyword literal', compileAndRun, '- inf', Number.NEGATIVE_INFINITY);
-test('keyword literal', compileAndRun, 'true', true);
-test('keyword literal', compileAndRun, 'false', false);
+test('keyword literal', compileAndRun, 'true  ', true);
+test('keyword literal', compileAndRun, '  false', false);
 
 test('number literal', compileAndRun, '1', 1);
 test('number literal', compileAndRun, '1.0', 1);
@@ -62,16 +86,29 @@ test('number literal', compileAndRun, '0', 0);
 test('number literal', compileAndRun, '-0', -0);
 test('number literal', compileAndRun, '-1e+2', -100);
 
+test('string literal', compileAndRun, '`hello`', 'hello');
+test('string literal with escapes', compileAndRun, '`hello\\nworld`', 'hello\nworld');
+test('string literal with unicode escapes', compileAndRun, '`\\u{0041}\\u{0042}\\u{0043}`', 'ABC');
+test('empty string literal', compileAndRun, '``', '');
+
 test('empty', compileAndRun, '', null);
 test('whitespace', compileAndRun, ' ', null);
 test('whitespaces', compileAndRun, ' \n', null);
 
-test('identifier', compileAndRun, '@pi', Math.PI);
-test('identifier with whitespace', compileAndRun, ' @pi\n\r\n ', Math.PI);
+test('identifier', compileAndRun, 'PI', Math.PI);
+test('identifier with whitespace', compileAndRun, ' \n SQRT1_2\n\r\n ', Math.SQRT1_2);
 
+test('keyword', compileAndRun, 'if', {
+    instanceOf: Error,
+    message: /MissingCloseBrace/,
+});
 test('non-existent identifier', compileAndRun, '@nonExistent', {
     instanceOf: VmError,
     message: "Global variable '@nonExistent' is not defined.",
+});
+test('non-existent identifier', compileAndRun, 'no', {
+    instanceOf: VmError,
+    message: "Global variable 'no' is not defined.",
 });
 test('bad expression', compileAndRun, '++', {
     instanceOf: Error,

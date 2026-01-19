@@ -102,41 +102,46 @@ fn const_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
     .parse_next(i)
 }
 
-fn assign_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
-    fn is_assign_op(t: &Token<'_>) -> bool {
-        *t == Operator::PlusAssign
-            || *t == Operator::MinusAssign
-            || *t == Operator::AsteriskAssign
-            || *t == Operator::SlashAssign
-            || *t == Operator::PercentAssign
-            || *t == Operator::CaretAssign
-            || *t == Operator::LogicalAndAssign
-            || *t == Operator::LogicalOrAssign
-            || *t == Operator::NullCoalescingAssign
-            || *t == Operator::Assign
-    }
-    seq!(Statement::Assign(
-        expression_or_insert(is_assign_op).map(Box::new),
-        one_of(is_assign_op).map(TokenRef::borrow),
-        expression_or_insert(|t| *t == Operator::Semicolon).map(Box::new),
-        semicolon,
-    ))
-    .parse_next(i)
-}
-
-fn expression_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
-    let mut insert_semicolon = peek(one_of(|t: &Token<'s>| {
+fn insert_semicolon<'s>(i: &mut Input<'s>) -> Result<()> {
+    peek(one_of(|t: &Token<'s>| {
         *t != Operator::CloseBrace
             && *t != TokenKind::Eof
             && *t != Keyword::Case
             && *t != Keyword::Else
-    }));
-    seq!(Statement::Expression(
-        expression.map(Box::new),
-        _: insert_semicolon,
-        semicolon
-    ))
+    }))
+    .value(())
     .parse_next(i)
+}
+
+fn assign_or_expression_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
+    fn is_assign_op(t: &Token<'_>) -> bool {
+        matches!(t.kind, TokenKind::Operator(t) if t == Operator::Assign || t.is_compound())
+    }
+
+    // Common expr of expr1 = expr2; and expr1;
+    let expr1 = expression_or_insert(is_assign_op)
+        .map(Box::new)
+        .parse_next(i)?;
+    let cp = i.checkpoint();
+    // Try to parse as assignment first
+    let assign: Result<_> = one_of(is_assign_op).parse_next(i);
+    if let Ok(assign) = assign {
+        let expr2 = expression_or_insert(|t| *t == Operator::Semicolon)
+            .map(Box::new)
+            .parse_next(i)?;
+        let semi = semicolon.parse_next(i)?;
+        return Ok(Statement::Assign(
+            expr1,
+            TokenRef::Borrowed(assign),
+            expr2,
+            semi,
+        ));
+    }
+    // Fallback to expression statement
+    i.reset(&cp);
+    insert_semicolon.parse_next(i)?;
+    let semi = semicolon.parse_next(i)?;
+    Ok(Statement::Expression(expr1, semi))
 }
 
 fn unknown_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
@@ -168,10 +173,10 @@ pub(super) fn statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
         t if *t == Keyword::Let => bind_statement,
         t if *t == Keyword::Const => const_statement,
 
+
         &Token{..} => alt((
             rebind_statement,
-            assign_statement,
-            expression_statement,
+            assign_or_expression_statement,
             unknown_statement,
         )),
     }

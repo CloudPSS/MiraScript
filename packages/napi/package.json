@@ -1,6 +1,6 @@
 {
   "name": "@mirascript/napi",
-  "version": "0.1.17",
+  "version": "0.1.39",
   "author": "CloudPSS",
   "license": "MIT",
   "description": "MiraScript compiler for Node.JS",
@@ -25,13 +25,13 @@
     "node": ">= 16"
   },
   "scripts": {
-    "build": "pnpm run build:debug --release",
+    "build": "docker buildx build --platform amd64,arm64 -f ./Dockerfile --pull --output type=local,dest=./dist,platform-split=false ../.. || pnpm run build:debug --release",
     "build:debug": "napi build --manifest-path ../../crates/node-api/Cargo.toml --output-dir dist --platform --esm",
     "watch": "nodemon --watch ../../crates/ --ext rs --exec \"pnpm run build:debug\""
   },
   "devDependencies": {
-    "@napi-rs/cli": "^3.4.1",
-    "@types/node": "^24.10.1",
+    "@napi-rs/cli": "^3.5.1",
+    "@types/node": "^25.0.9",
     "nodemon": "^3.1.11"
   }
 }

@@ -1,7 +1,9 @@
 // MiraScript 控制流示例
 
 // if 表达式
-fn classify_number(n) { if n > 0 { "positive" } else if n < 0 { "negative" } else { "zero" } }
+fn classify_number(n) {
+  if n > 0 { "positive" } else if n < 0 { "negative" } else { "zero" }
+}
 
 debug_print("分类数字:");
 debug_print("classify_number(5) =", classify_number(5));
@@ -31,30 +33,30 @@ fn describe_value(value) {
 debug_print("值描述:");
 let test_values = [nil, true, false, 0, 5, 15, -3, "", "hello", [], [42], [1, 2, 3], (), (name: "Alice")];
 for value in test_values {
-  debug_print(describe_value(value));
+  debug_print(`describe_value(%o) = %o`, value, describe_value(value));
 }
 
 // for 循环
 debug_print("for 循环示例:");
 
 // 遍历数字范围
-debug_print("遍历范围 1..5:");
+debug_print("遍历范围 %o..%o:", 1, 5);
 for i in 1..5 {
-  debug_print("  $i");
+  debug_print("  %o", i);
 }
 
 // 遍历数组
 let fruits = ["apple", "banana", "orange"];
 debug_print("遍历水果数组:");
 for fruit in fruits {
-  debug_print("  $fruit");
+  debug_print("  %o", fruit);
 }
 
 // 遍历记录
 let person = (name: "Bob", age: 25, city: "New York");
 debug_print("遍历记录键:");
 for key in person {
-  debug_print("  $key:", person[key]);
+  debug_print("  $key: %o", person[key]);
 }
 
 // 带 else 的 for 循环

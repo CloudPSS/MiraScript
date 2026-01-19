@@ -23,3 +23,13 @@ t_throws(fn {
   let b = true;
   b.f = 1;
 });
+
+{
+  let b = true;
+  t_eq(b, true);
+  t_eq(b.x, nil);
+  t_eq(b['x'], nil);
+  t_eq(b[0], nil);
+  t_eq(b[true], nil);
+  t_eq(b[false], nil);
+}

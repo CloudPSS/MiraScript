@@ -20,6 +20,8 @@ pub enum Operator {
     CloseBracket,
     /// `:`
     Colon,
+    /// `?`
+    Question,
     /// `?:`
     QuestionColon,
     /// `::`
@@ -244,6 +246,7 @@ impl Display for Operator {
             OpenBracket => f.write_str("["),
             CloseBracket => f.write_str("]"),
             Colon => f.write_str(":"),
+            Question => f.write_str("?"),
             QuestionColon => f.write_str("?:"),
             ColonColon => f.write_str("::"),
             Comma => f.write_str(","),

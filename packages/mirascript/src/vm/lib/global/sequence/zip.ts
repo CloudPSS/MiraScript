@@ -1,5 +1,5 @@
 import { display } from '../../../../helpers/serialize.js';
-import { Cp } from '../../../helpers.js';
+import { Cp } from '../../../checkpoint.js';
 import { isVmArray, type VmConst, type VmArray } from '../../../types/index.js';
 import { VmLib, throwError } from '../../helpers.js';
 import { entries } from './entries.js';

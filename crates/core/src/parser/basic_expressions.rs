@@ -15,12 +15,22 @@ use super::{
 };
 
 fn to_interpolate_expr<'s>(token: &'s Token<'s>) -> Expression<'s> {
-    let TokenKind::InterpolatedString(v, _) = &token.kind else {
+    let TokenKind::InterpolatedString(parts, _) = &token.kind else {
         unreachable!("Expected InterpolatedString");
     };
-    let expressions: Vec<Expression<'s>> = v[0..v.len() - 1]
+    let expressions: Vec<Expression<'s>> = parts[0..parts.len() - 1]
         .iter()
-        .map(|(_, tokens)| {
+        .map(|(_, tokens, _)| {
+            debug_assert!(
+                !tokens.is_empty(),
+                "Expected non-empty tokens in interpolation {token:?}"
+            );
+            if tokens.iter().all(|t| t.is_empty()) {
+                return Expression::unknown(
+                    tokens.iter().map(TokenRef::borrow).collect::<Vec<_>>(),
+                    DiagnosticCode::EmptyInterpolation,
+                );
+            }
             let last_token = tokens.last().map_or(&TokenKind::Eof, |t| &t.kind);
             if *last_token == TokenKind::Eof {
                 return Expression::unknown(
@@ -102,8 +112,8 @@ fn array<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     .parse_next(i)
 }
 
-fn interpolation<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
-    let token = one_of(|t: &Token<'s>| matches!(&t.kind, &TokenKind::InterpolatedString(_, _)))
+pub(super) fn interpolation<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
+    let token = one_of(|t: &Token<'s>| matches!(&t.kind, &TokenKind::InterpolatedString(..)))
         .parse_next(i)?;
     Ok(to_interpolate_expr(token))
 }
@@ -177,9 +187,9 @@ fn arg_list<'s>(
 }
 
 enum AccessIndex<'s> {
-    /// '.' identifier
+    /// `.` identifier
     Access(TokenRef<'s>, TokenRef<'s>),
-    /// '[' expression ']'
+    /// `[` expression `]`
     Index(TokenRef<'s>, Box<Expression<'s>>, TokenRef<'s>),
     ///  `[` additive_expression? (`..` | `..<`) additive_expression? `]`
     Slice(
@@ -189,6 +199,8 @@ enum AccessIndex<'s> {
         Option<Box<Expression<'s>>>,
         TokenRef<'s>,
     ),
+    /// `!`
+    NonNil(TokenRef<'s>),
 }
 fn access_index<'s>(i: &mut Input<'s>) -> Result<AccessIndex<'s>> {
     fn access_token<'s>(i: &mut Input<'s>) -> Result<TokenRef<'s>> {
@@ -197,22 +209,26 @@ fn access_index<'s>(i: &mut Input<'s>) -> Result<AccessIndex<'s>> {
             .parse_next(i)
     }
     fn additive<'s>(i: &mut Input<'s>) -> Result<Box<Expression<'s>>> {
-        pratt(
-            precedence_of(&TokenKind::Operator(Operator::SpreadRange)) + 2,
-            false,
-        )
-        .verify_map(verify_expr)
-        .map(Box::new)
-        .parse_next(i)
+        let mut precedence_additive = precedence_of(&TokenKind::Operator(Operator::SpreadRange));
+        precedence_additive.value += 2;
+        pratt(precedence_additive, false)
+            .verify_map(verify_expr)
+            .map(Box::new)
+            .parse_next(i)
     }
     fn range_op<'s>(i: &mut Input<'s>) -> Result<TokenRef<'s>> {
         one_of(|t: &Token<'s>| *t == Operator::SpreadRange || *t == Operator::HalfOpenRange)
             .map(TokenRef::borrow)
             .parse_next(i)
     }
+    fn non_nil<'s>(i: &mut Input<'s>) -> Result<TokenRef<'s>> {
+        token(Operator::Exclamation).parse_next(i)
+    }
 
     alt((
-        // '.' identifier
+        // `!`
+        non_nil.map(AccessIndex::NonNil),
+        // `.` identifier
         (token(Operator::Dot), access_token).map(|(d, i)| AccessIndex::Access(d, i)),
         // `[` (`..` | `..<`) `]` | `[` (`..` | `..<`) additive `]`
         (
@@ -266,6 +282,9 @@ fn extension_call<'s>(i: &mut Input<'s>) -> Result<Call<'s>> {
                 let mut acc = Expression::Variable(first);
                 for access_index in rest {
                     match access_index {
+                        AccessIndex::NonNil(token) => {
+                            acc = Expression::NonNil(Box::new(acc), token);
+                        }
                         AccessIndex::Access(dot, token) => {
                             acc = Expression::Access(Box::new(acc), dot, token);
                         }
@@ -298,6 +317,7 @@ fn extension_call<'s>(i: &mut Input<'s>) -> Result<Call<'s>> {
 fn postfix<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     enum Function<'s> {
         Call(TokenRef<'s>, Vec<ArgElement<'s>>, TokenRef<'s>),
+        TaggedString(Box<Expression<'s>>),
         Extension(
             TokenRef<'s>,
             Callable<'s>,
@@ -320,10 +340,14 @@ fn postfix<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     let functions: Vec<Function<'s>> = repeat(
         0..,
         alt((
-            token(Operator::Exclamation).map(Function::NonNil),
             (token(Operator::ColonColon), extension_call)
                 .map(|(kw, (ex, o, a, c))| Function::Extension(kw, ex, o, a, c)),
+            one_of(|t: &Token<'s>| matches!(t.kind, TokenKind::String(..))).map(|token| {
+                Function::TaggedString(Box::new(Expression::Literal(TokenRef::borrow(token))))
+            }),
+            interpolation.map(|ex| Function::TaggedString(ex.into())),
             access_index.map(|t| match t {
+                AccessIndex::NonNil(token) => Function::NonNil(token),
                 AccessIndex::Access(dot, token) => Function::Access(dot, token),
                 AccessIndex::Index(open, exp, close) => Function::Index(open, exp, close),
                 AccessIndex::Slice(left, start, op, end, right) => {
@@ -346,6 +370,7 @@ fn postfix<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
         Function::Call(o, args, c) => {
             Expression::Call(Callable::Expression(Box::new(acc)), o, args, c)
         }
+        Function::TaggedString(ex) => Expression::TaggedString(Box::new(acc), ex),
         Function::Extension(e, ex, o, arg, c) => {
             Expression::Extension(Box::new(acc), e, ex, o, arg, c)
         }
@@ -358,38 +383,49 @@ fn postfix<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     }))
 }
 
-fn precedence_of(t: &TokenKind<'_>) -> u8 {
-    match t {
-        TokenKind::Operator(Operator::Caret) => 110,
-        TokenKind::Operator(Operator::Exclamation) => 100,
-        TokenKind::Operator(Operator::Asterisk)
-        | TokenKind::Operator(Operator::Slash)
-        | TokenKind::Operator(Operator::Percent) => 90,
-        TokenKind::Operator(Operator::Plus) | TokenKind::Operator(Operator::Minus) => 80,
-        TokenKind::Operator(Operator::SpreadRange)
-        | TokenKind::Operator(Operator::HalfOpenRange) => 70,
-        TokenKind::Keyword(Keyword::Is) => 60,
-        TokenKind::Keyword(Keyword::In)
-        | TokenKind::Operator(Operator::Less)
-        | TokenKind::Operator(Operator::LessEqual)
-        | TokenKind::Operator(Operator::Greater)
-        | TokenKind::Operator(Operator::GreaterEqual) => 50,
-        TokenKind::Operator(Operator::Equal)
-        | TokenKind::Operator(Operator::NotEqual)
-        | TokenKind::Operator(Operator::TildeEqual)
-        | TokenKind::Operator(Operator::TildeNotEqual) => 40,
-        TokenKind::Operator(Operator::LogicalAnd) => 30,
-        TokenKind::Operator(Operator::LogicalOr) => 20,
-        TokenKind::Operator(Operator::NullCoalescing) => 10,
-        _ => 0,
+#[derive(Default)]
+struct PrecedenceResult {
+    value: u8,
+    can_be_prefix: bool,
+    right_associative: bool,
+}
+
+fn precedence_of(t: &TokenKind<'_>) -> PrecedenceResult {
+    use crate::lexer::{Keyword::*, Operator::*, TokenKind::*};
+    let (precedence, can_be_prefix) = match t {
+        Operator(Caret) => (200, false),
+        Operator(Exclamation) | Keyword(Not) => (190, true),
+        Operator(Asterisk) | Operator(Slash) | Operator(Percent) => (180, false),
+        Operator(Plus) | Operator(Minus) => (170, true),
+        Operator(SpreadRange) | Operator(HalfOpenRange) => (140, false),
+        Keyword(Is) => (120, false),
+        Keyword(In)
+        | Operator(Less)
+        | Operator(LessEqual)
+        | Operator(Greater)
+        | Operator(GreaterEqual) => (100, false),
+        Operator(Equal) | Operator(NotEqual) | Operator(TildeEqual) | Operator(TildeNotEqual) => {
+            (90, false)
+        }
+        Operator(LogicalAnd) | Keyword(And) => (70, false),
+        Operator(LogicalOr) | Keyword(Or) => (60, false),
+        Operator(NullCoalescing) => (50, false),
+        Operator(Question) => (30, true),
+        _ => return PrecedenceResult::default(),
+    };
+    PrecedenceResult {
+        value: precedence,
+        can_be_prefix,
+        right_associative: matches!(t, Operator(Caret) | Operator(Question)),
     }
 }
 
 fn pratt_prefix<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     let token = peek(any).parse_next(i)?;
-    if *token == Operator::Plus || *token == Operator::Minus || *token == Operator::Exclamation {
+    let precedence = precedence_of(token);
+    if precedence.can_be_prefix {
         let op = any.parse_next(i)?;
-        let expr = pratt(precedence_of(op), false)
+        let expr = pratt(precedence, false)
             .verify_map(verify_expr)
             .parse_next(i)?;
         Ok(Expression::Prefix(op.into(), expr.into()))
@@ -401,7 +437,7 @@ fn pratt_prefix<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
 fn pratt_infix<'s>(
     left: Box<Expression<'s>>,
     op: &'s Token<'s>,
-    precedence: u8,
+    mut precedence: PrecedenceResult,
     allow_range: bool,
     i: &mut Input<'s>,
 ) -> Result<Iterable<'s>> {
@@ -409,15 +445,29 @@ fn pratt_infix<'s>(
         let right = pattern(false).map(Box::new).parse_next(i)?;
         return Ok(Iterable::Value(Expression::Is(left, op.into(), right)));
     }
-    let precedence = if *op == Operator::Caret {
-        precedence - 1
-    } else {
-        precedence
+    // 调整优先级以实现右结合
+    if precedence.right_associative {
+        precedence.value -= 1;
+    }
+    let parse_right = |i: &mut Input<'s>| {
+        let expr = pratt(precedence, false)
+            .verify_map(verify_expr)
+            .parse_next(i)?;
+        Ok(Box::new(expr))
     };
-    let right = pratt(precedence, false)
-        .verify_map(verify_expr)
-        .parse_next(i)?
-        .into();
+    if *op == Operator::Question {
+        let then_exp = expression.parse_next(i)?.into();
+        let colon = token_or_insert(Operator::Colon, DiagnosticCode::MissingColon).parse_next(i)?;
+        let else_exp = parse_right(i)?;
+        return Ok(Iterable::Value(Expression::Cond(
+            left,
+            op.into(),
+            then_exp,
+            colon,
+            else_exp,
+        )));
+    }
+    let right = parse_right(i)?;
     if *op == Operator::SpreadRange || *op == Operator::HalfOpenRange {
         return if allow_range {
             Ok(Iterable::Range(Range(left, op.into(), right)))
@@ -437,7 +487,7 @@ fn pratt_infix<'s>(
     Ok(Iterable::Value(Expression::Infix(left, op.into(), right)))
 }
 
-fn pratt<'s>(precedence: u8, allow_range: bool) -> impl Parser<'s, Iterable<'s>> {
+fn pratt<'s>(precedence: PrecedenceResult, allow_range: bool) -> impl Parser<'s, Iterable<'s>> {
     move |i: &mut Input<'s>| {
         let mut left = pratt_prefix.parse_next(i)?;
 
@@ -448,7 +498,7 @@ fn pratt<'s>(precedence: u8, allow_range: bool) -> impl Parser<'s, Iterable<'s>>
 
             let op = peek(any).parse_next(i)?;
             let op_precedence = precedence_of(op);
-            if op_precedence <= precedence {
+            if op_precedence.value <= precedence.value {
                 break;
             }
 
@@ -471,9 +521,11 @@ fn verify_expr<'s>(e: Iterable<'s>) -> Option<Expression<'s>> {
 }
 
 pub(super) fn basic_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
-    pratt(0, false).verify_map(verify_expr).parse_next(i)
+    pratt(PrecedenceResult::default(), false)
+        .verify_map(verify_expr)
+        .parse_next(i)
 }
 
 pub(super) fn iterable<'s>(i: &mut Input<'s>) -> Result<Iterable<'s>> {
-    pratt(0, true).parse_next(i)
+    pratt(PrecedenceResult::default(), true).parse_next(i)
 }

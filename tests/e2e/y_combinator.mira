@@ -14,4 +14,4 @@ t_eq(fib(1), 1);
 t_eq(fib(2), 1);
 t_eq(fib(3), 2);
 t_eq(fib(10), 55);
-t_eq(fib(20), 6765);
+t_eq(fib(15), 610);

@@ -65,3 +65,13 @@ t_throws(fn {
   let n = 0;
   n.f = 1;
 });
+
+{
+  let n = 0;
+  t_eq(n, 0);
+  t_eq(n.x, nil);
+  t_eq(n['x'], nil);
+  t_eq(n[0], nil);
+  t_eq(n[true], nil);
+  t_eq(n[false], nil);
+}

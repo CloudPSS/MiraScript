@@ -1,8 +1,9 @@
 import type { editor, languages, CancellationToken } from '../../monaco-api.js';
 import { Provider } from './base.js';
-import { DiagnosticCode } from '@mirascript/bindings/wasm';
+import { DiagnosticCode } from '@mirascript/constants';
 
 const REG_COLOR_STR = /^(@*)(['"`])(#(?:[0-9a-f]{6}|[0-9a-f]{3}|[0-9a-f]{8}|[0-9a-f]{4}))\2\1$/iu;
+const { parseInt } = Number;
 
 /** 解析颜色 */
 function parseColorString(text: string):
@@ -27,33 +28,33 @@ function parseColorString(text: string):
         if (colorCode.length === 3) {
             // 处理 #RGB 格式
             color = {
-                red: Number.parseInt(colorCode[0]! + colorCode[0]!, 16) / 255,
-                green: Number.parseInt(colorCode[1]! + colorCode[1]!, 16) / 255,
-                blue: Number.parseInt(colorCode[2]! + colorCode[2]!, 16) / 255,
+                red: parseInt(colorCode[0]! + colorCode[0]!, 16) / 255,
+                green: parseInt(colorCode[1]! + colorCode[1]!, 16) / 255,
+                blue: parseInt(colorCode[2]! + colorCode[2]!, 16) / 255,
                 alpha: 1,
             };
         } else if (colorCode.length === 6) {
             color = {
-                red: Number.parseInt(colorCode.slice(0, 2), 16) / 255,
-                green: Number.parseInt(colorCode.slice(2, 4), 16) / 255,
-                blue: Number.parseInt(colorCode.slice(4, 6), 16) / 255,
+                red: parseInt(colorCode.slice(0, 2), 16) / 255,
+                green: parseInt(colorCode.slice(2, 4), 16) / 255,
+                blue: parseInt(colorCode.slice(4, 6), 16) / 255,
                 alpha: 1, // 假设不透明
             };
         } else if (colorCode.length === 8) {
             // 处理 #RRGGBBAA 格式
             color = {
-                red: Number.parseInt(colorCode.slice(0, 2), 16) / 255,
-                green: Number.parseInt(colorCode.slice(2, 4), 16) / 255,
-                blue: Number.parseInt(colorCode.slice(4, 6), 16) / 255,
-                alpha: Number.parseInt(colorCode.slice(6, 8), 16) / 255,
+                red: parseInt(colorCode.slice(0, 2), 16) / 255,
+                green: parseInt(colorCode.slice(2, 4), 16) / 255,
+                blue: parseInt(colorCode.slice(4, 6), 16) / 255,
+                alpha: parseInt(colorCode.slice(6, 8), 16) / 255,
             };
         } else if (colorCode.length === 4) {
             // 处理 #RGBA 格式
             color = {
-                red: Number.parseInt(colorCode[0]! + colorCode[0]!, 16) / 255,
-                green: Number.parseInt(colorCode[1]! + colorCode[1]!, 16) / 255,
-                blue: Number.parseInt(colorCode[2]! + colorCode[2]!, 16) / 255,
-                alpha: Number.parseInt(colorCode[3]! + colorCode[3]!, 16) / 255,
+                red: parseInt(colorCode[0]! + colorCode[0]!, 16) / 255,
+                green: parseInt(colorCode[1]! + colorCode[1]!, 16) / 255,
+                blue: parseInt(colorCode[2]! + colorCode[2]!, 16) / 255,
+                alpha: parseInt(colorCode[3]! + colorCode[3]!, 16) / 255,
             };
         } else {
             return undefined; // 不支持的颜色格式

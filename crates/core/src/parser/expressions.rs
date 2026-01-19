@@ -4,9 +4,7 @@ use winnow::{
     token::{any, take_till},
 };
 
-use super::{
-    basic_expressions::basic_expression, block_expressions::block_like_expression, prelude::*,
-};
+use super::{basic_expressions::basic_expression, prelude::*};
 
 fn unknown_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     take_till(1.., |t: &Token<'s>| {
@@ -47,7 +45,7 @@ fn unknown_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
 }
 
 pub(super) fn expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
-    alt((basic_expression, block_like_expression, unknown_expression)).parse_next(i)
+    alt((basic_expression, unknown_expression)).parse_next(i)
 }
 
 pub(super) fn expression_or_insert<'s>(

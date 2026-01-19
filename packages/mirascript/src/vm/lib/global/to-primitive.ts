@@ -1,4 +1,5 @@
 import { toBoolean, toFormat, toNumber, toString } from '../../../helpers/convert/index.js';
+import { NotNumber } from '../../../helpers/utils.js';
 import { expectString, required, VmLib } from '../helpers.js';
 
 export const to_string = VmLib(
@@ -20,7 +21,7 @@ export const to_string = VmLib(
 
 export const to_number = VmLib(
     (data, fallback) => {
-        required('data', data, Number.NaN);
+        required('data', data, NotNumber);
         return toNumber(data, fallback);
     },
     {
@@ -29,7 +30,7 @@ export const to_number = VmLib(
             data: '要转换的数据',
             fallback: '转换失败时的返回值',
         },
-        paramsType: { data: 'any', fallback: 'any' },
+        paramsType: { data: 'string | number | boolean', fallback: 'any' },
         returnsType: 'number | type(fallback)',
         examples: ['to_number("1.5") // 1.5'],
     },
@@ -41,14 +42,14 @@ export const to_boolean = VmLib(
         return toBoolean(data, fallback);
     },
     {
-        summary: '将数据转换为布尔值',
+        summary: '将布尔值标准化',
         params: {
-            data: '要转换的数据',
-            fallback: '转换失败时的返回值',
+            data: '要转换的数据，仅当为布尔类型时才会参与转换',
+            fallback: '当输入不是布尔值时返回的值',
         },
-        paramsType: { data: 'any', fallback: 'any' },
+        paramsType: { data: 'boolean', fallback: 'any' },
         returnsType: 'boolean | type(fallback)',
-        examples: ['to_boolean(nil) // false'],
+        examples: ['to_boolean(true, false) // true', 'to_boolean(nil, "failed") // "failed"'],
     },
 );
 

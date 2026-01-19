@@ -285,6 +285,12 @@ body > .playground {
     }
   }
 
+  #compiled-editor {
+    height: calc(100% + 32px);
+    width: calc(100% + 32px);
+    margin: -16px;
+  }
+
   .console-entry {
     margin-bottom: 8px;
     line-height: 1.5em;

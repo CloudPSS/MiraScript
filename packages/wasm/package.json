@@ -1,6 +1,6 @@
 {
   "name": "@mirascript/wasm",
-  "version": "0.1.17",
+  "version": "0.1.39",
   "author": "CloudPSS",
   "license": "MIT",
   "description": "MiraScript compiler for WebAssembly",
@@ -24,7 +24,8 @@
     "prepublishOnly": "pnpm clean && pnpm build && rimraf lib/.gitignore"
   },
   "devDependencies": {
-    "@types/node": "^24.10.1",
+    "@mirascript/constants": "workspace:~",
+    "@types/node": "^25.0.9",
     "nodemon": "^3.1.11"
   }
 }

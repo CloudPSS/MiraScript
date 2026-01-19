@@ -86,6 +86,10 @@ pub enum Expression<'s> {
     /// Use `()` for an empty record.
     ///
     /// For a single-element-unnamed record, use `(` expression `,` `)`.
+    ///
+    /// For convenience for JSON-like data, allows following JSON-style trailing record:
+    ///
+    /// `{` ( ( string | interpolated_string ) `:` expression `,` )+ `}`
     Record(TokenRef<'s>, Vec<RecordElement<'s>>, TokenRef<'s>),
     /// `[` element* `]`
     ///
@@ -102,6 +106,8 @@ pub enum Expression<'s> {
         Vec<ArgElement<'s>>,
         TokenRef<'s>,
     ),
+    /// expression ( interpolated_string | string )
+    TaggedString(Box<Expression<'s>>, Box<Expression<'s>>),
     /// expression `::` extension `(` arguments `)`
     /// extension
     ///     : identifier (`.` ( identifier | ordinal ))*
@@ -225,6 +231,14 @@ pub enum Expression<'s> {
         Box<Expression<'s>>,
         Option<ElseBlock<'s>>,
     ),
+    /// cond ? expression : expression
+    Cond(
+        Box<Expression<'s>>,
+        TokenRef<'s>,
+        Box<Expression<'s>>,
+        TokenRef<'s>,
+        Box<Expression<'s>>,
+    ),
     /// `match` expression `{` ( `case` pattern (`if` expression)? block_expression )* `}`
     ///
     /// The value of the block is the value of the matched expression.
@@ -339,6 +353,10 @@ impl<'s> AstWalker<'s> for Expression<'s> {
                 exps.collect_diagnostics(collector);
                 cp.collect_diagnostics(collector);
             }
+            TaggedString(callable, exp) => {
+                callable.collect_diagnostics(collector);
+                exp.collect_diagnostics(collector);
+            }
             Call(exp, op, args, cp) => {
                 exp.collect_diagnostics(collector);
                 op.collect_diagnostics(collector);
@@ -437,6 +455,13 @@ impl<'s> AstWalker<'s> for Expression<'s> {
                 cond.collect_diagnostics(collector);
                 then_block.collect_diagnostics(collector);
             }
+            Cond(cond, q1, then_exp, q2, else_exp) => {
+                cond.collect_diagnostics(collector);
+                q1.collect_diagnostics(collector);
+                then_exp.collect_diagnostics(collector);
+                q2.collect_diagnostics(collector);
+                else_exp.collect_diagnostics(collector);
+            }
             Match(kw, expression, op, arms, cp) => {
                 kw.collect_diagnostics(collector);
                 expression.collect_diagnostics(collector);
@@ -478,6 +503,7 @@ impl<'s> AstWalker<'s> for Expression<'s> {
             InterpolatedString(token, _) => token.range.clone(),
             Literal(token) | Variable(token) => token.range.clone(),
             Index(exp, _, _, r) | Slice(exp, _, _, _, _, r) => exp.range().start..r.range.end,
+            TaggedString(callable, exp) => callable.range().start..exp.range().end,
             Call(callable, _, _, cp) => callable.range().start..cp.range.end,
             Extension(expression, _, _, _, _, cp) => expression.range().start..cp.range.end,
             Access(expression, _, cp) => expression.range().start..cp.range.end,
@@ -492,6 +518,7 @@ impl<'s> AstWalker<'s> for Expression<'s> {
             While(kw, _, _, Some(else_block))
             | ForIn(kw, _, _, _, _, Some(else_block))
             | If(kw, _, _, Some(else_block)) => kw.range.start..else_block.range().end,
+            Cond(cond, _, _, _, else_exp) => cond.range().start..else_exp.range().end,
             Match(kw, _, _, _, cp) => kw.range.start..cp.range.end,
             Function(kw, _, expression) => kw.range.start..expression.range().end,
             Unknown {

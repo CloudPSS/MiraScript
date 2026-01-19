@@ -4,7 +4,7 @@ use crate::{
     SourceRange,
     diagnostic::{DiagnosticCode, SourceDiagnostic},
     emitter::{emitter_scope::check_variable_initialized, utils::is_global_expression},
-    lexer::{Keyword, Operator, TokenKind},
+    lexer::{Keyword, Operator, Token, TokenKind},
     parser::{
         ArgElement, ArrayElementBase, AstWalker, Callable, ElseBlock,
         Expression::{self, *},
@@ -32,6 +32,36 @@ fn number_constant(exp: &Expression<'_>) -> Option<f64> {
 }
 
 impl<'s, 'c> Emitter<'s, 'c> {
+    fn declare_callable_expr(&mut self, callable: &'s Expression<'s>) {
+        // 此时的 Grouping 用于标记 callable 为复杂表达式以启用空安全，跳过 declare_expression 的 Grouping 处理
+        if let Expression::Grouping(_, inner, _) = callable
+            && (inner.is_variable() || inner.is_grouping())
+        {
+            self.declare_expression(inner);
+        } else {
+            if callable.is_literal() || callable.is_interpolated_string() {
+                self.diagnostics
+                    .push(DiagnosticCode::LiteralNotCallable, callable.range());
+            }
+            self.declare_expression(callable);
+        }
+    }
+    fn declare_cond_expr(&mut self, cond: &'s Expression<'s>) {
+        if let Literal(lit) = cond
+            && !lit.is_boolean_literal()
+        {
+            self.diagnostics
+                .push(DiagnosticCode::NonBooleanInLogical, lit.range());
+        }
+        self.declare_expression(cond);
+    }
+    fn declare_indexing_expr(&mut self, record_like: &'s Expression<'s>) {
+        if record_like.is_literal() || record_like.is_interpolated_string() {
+            self.diagnostics
+                .push(DiagnosticCode::LiteralNotIndexable, record_like.range());
+        }
+        self.declare_expression(record_like);
+    }
     fn declare_call(
         &mut self,
         this: Option<&'s Expression<'s>>,
@@ -77,19 +107,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
         }
 
         match callable {
-            Callable::Expression(callable) => {
-                // 此时的 Grouping 用于标记 callable 为复杂表达式以启用空安全，跳过 declare_expression 的 Grouping 处理
-                let mut declared = false;
-                if let Expression::Grouping(_, inner, _) = callable.as_ref()
-                    && (inner.is_variable() || inner.is_grouping())
-                {
-                    self.declare_expression(inner);
-                    declared = true;
-                }
-                if !declared {
-                    self.declare_expression(callable);
-                }
-            }
+            Callable::Expression(callable) => self.declare_callable_expr(callable),
             Callable::Type(_) => (),
         }
         args.iter().for_each(|arg| {
@@ -109,7 +127,10 @@ impl<'s, 'c> Emitter<'s, 'c> {
             }
             Variable(_) => (),
             Grouping(op, expression, cp) => {
-                if matches!(
+                if !matches!(
+                    expression.as_ref(), Expression::Record(open, _, close)
+                    if **open == Operator::OpenBrace && **close == Operator::CloseBrace
+                ) && matches!(
                     expression.as_ref(),
                     Expression::Variable(..)
                         | Expression::Literal(..)
@@ -123,10 +144,10 @@ impl<'s, 'c> Emitter<'s, 'c> {
                         | Expression::Access(..)
                         | Expression::Index(..)
                 ) {
-                    self.diagnostics
-                        .push(DiagnosticCode::UnnecessaryParentheses, op.range());
-                    self.diagnostics
-                        .push(DiagnosticCode::UnnecessaryParentheses, cp.range());
+                    self.diagnostics.push(
+                        DiagnosticCode::UnnecessaryParentheses,
+                        op.range().start..cp.range().end,
+                    );
                 }
                 self.declare_expression(expression)
             }
@@ -156,6 +177,10 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     }
                 },
             }),
+            TaggedString(callable, expression) => {
+                self.declare_callable_expr(callable);
+                self.declare_expression(expression);
+            }
             Call(callable, l, expressions, r) => {
                 self.declare_call(None, l, r, callable, expressions);
             }
@@ -163,9 +188,9 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 self.declare_expression(expression);
                 self.declare_call(Some(expression), l, r, callable, expressions);
             }
-            Access(expression, _, _) => self.declare_expression(expression),
+            Access(expression, _, _) => self.declare_indexing_expr(expression),
             Index(expression, _, prop, _) => {
-                self.declare_expression(expression);
+                self.declare_indexing_expr(expression);
                 self.declare_expression(prop);
             }
             Slice(expression, _, start, _, end, _) => {
@@ -243,16 +268,20 @@ impl<'s, 'c> Emitter<'s, 'c> {
                         .push(DiagnosticCode::KeywordElse, kw_else.range());
                 });
             }
-            If(kw_if, _, then_block, else_part) => {
+            Cond(_, op_q, _, op_c, _) => {
+                self.diagnostics
+                    .push(DiagnosticCode::PreferIfExpression, outer.range());
+                self.diagnostics
+                    .push(DiagnosticCode::IfExpression, outer.range());
+                self.diagnostics
+                    .push(DiagnosticCode::KeywordIf, op_q.range());
+                self.diagnostics
+                    .push(DiagnosticCode::KeywordElse, op_c.range());
+            }
+            If(kw_if, _, _, else_part) => {
                 let mut else_part = else_part.as_ref();
-                self.diagnostics.push(
-                    DiagnosticCode::IfExpression,
-                    kw_if.range.start
-                        ..else_part
-                            .map(|e| e.1.range())
-                            .unwrap_or_else(|| then_block.range())
-                            .end,
-                );
+                self.diagnostics
+                    .push(DiagnosticCode::IfExpression, outer.range());
                 self.diagnostics
                     .push(DiagnosticCode::KeywordIf, kw_if.range());
 
@@ -379,6 +408,35 @@ impl<'s, 'c> Emitter<'s, 'c> {
         Some(id)
     }
 
+    fn emit_expr_callable(
+        &mut self,
+        callable: &'s Expression<'s>,
+        args_reg: impl FnOnce(&mut Self) -> (Vec<Register>, Vec<OpParam>),
+        ret: Register,
+        brk: Option<Register>,
+    ) {
+        if let Some(id) = self.emit_global_access(callable) {
+            // Global function call
+            let (args, spreads) = args_reg(self);
+            self.op_call(callable.range(), ret, id, args, spreads);
+            return;
+        }
+
+        // Local function call
+        let callable_reg = self.emit_expression_reg(callable, brk);
+        let complex = !callable.is_variable();
+        if complex {
+            self.op_if(callable.range(), OpCode::IfNotNil, callable_reg);
+        }
+        let (args, spreads) = args_reg(self);
+        self.op_call_dyn(callable.range(), ret, callable_reg, args, spreads);
+        if complex {
+            self.op_else(callable.range());
+            self.op_nil(callable.range(), ret);
+            self.op_if_end(callable.range());
+        }
+    }
+
     fn emit_call(
         &mut self,
         callable: &'s Callable<'s>,
@@ -407,27 +465,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     }
                     (args_reg, spread)
                 };
-
-                if let Some(id) = self.emit_global_access(callable) {
-                    // Global function call
-                    let (args, spreads) = args_reg(self);
-                    self.op_call(callable.range(), ret, id, args, spreads);
-                    return;
-                }
-
-                // Local function call
-                let callable_reg = self.emit_expression_reg(callable, brk);
-                let complex = !callable.is_variable();
-                if complex {
-                    self.op_if(callable.range(), OpCode::IfNotNil, callable_reg);
-                }
-                let (args, spreads) = args_reg(self);
-                self.op_call_dyn(callable.range(), ret, callable_reg, args, spreads);
-                if complex {
-                    self.op_else(callable.range());
-                    self.op_nil(callable.range(), ret);
-                    self.op_if_end(callable.range());
-                }
+                self.emit_expr_callable(callable, args_reg, ret, brk);
             }
             Callable::Type(_) => {
                 let arg0 = arg0.map_or(Register::EMPTY, |f| self.emit_expression_reg(f, brk));
@@ -493,40 +531,52 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     self.unreachable(*token, expressions, file!(), line!());
                     return;
                 };
-                let mut args_reg = vec![];
+                let mut parts = vec![];
                 let mut s_iter = strs.iter();
                 let mut e_iter = expressions.iter();
                 loop {
-                    let Some((str, _)) = s_iter.next() else {
+                    let Some((str, _, fmt)) = s_iter.next() else {
                         break;
                     };
                     if !str.is_empty() {
                         let reg = self.closures.add_reg();
                         self.op_string(token.range(), reg, str.as_ref());
-                        args_reg.push(reg);
+                        parts.push((reg, ""));
                     }
                     if let Some(expression) = e_iter.next() {
                         let reg = self.emit_expression_reg(expression, brk);
-                        args_reg.push(reg);
+                        parts.push((reg, *fmt));
                     }
                 }
-                if args_reg.is_empty() {
+                if parts.is_empty() {
                     self.op_string(token.range(), ret, "");
-                } else if args_reg.len() == 1 {
-                    self.op_binary(
+                } else if parts.len() == 1 {
+                    // Must be "$(expr)" without any surrounding string parts
+                    // Since "str" will be an Literal expression
+                    self.op_format(token.range(), ret, parts[0].0, parts[0].1);
+                } else {
+                    for (p, fmt) in parts.iter() {
+                        if !fmt.is_empty() {
+                            self.op_format(token.range(), *p, *p, *fmt);
+                        }
+                    }
+                    self.op_variadic(
                         token.range(),
                         ret,
-                        OpCode::Format,
-                        args_reg[0],
-                        Register::EMPTY,
+                        OpCode::Concat,
+                        parts.into_iter().map(|p| p.0).collect(),
                     );
-                } else {
-                    self.op_variadic(token.range(), ret, OpCode::Concat, args_reg);
                 }
             }
             Variable(token) => self.emit_var_read(token, ret),
             Grouping(_, expression, _) => self.emit_expression(expression, ret, brk),
             Record(open, elements, close) => {
+                if **open == Operator::OpenBrace && **close == Operator::CloseBrace {
+                    self.diagnostics.push(
+                        DiagnosticCode::PreferParenthesesForRecordLiteral,
+                        expr.range(),
+                    );
+                }
                 let mut elements_regs = vec![];
                 for element in elements {
                     match element.deref() {
@@ -738,6 +788,69 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 }
                 self.op(close.range(), OpCode::Freeze);
             }
+            TaggedString(callable, expression) => {
+                let args_reg = |s: &mut Self| {
+                    let template_reg = s.closures.add_reg();
+                    let mut args_reg = vec![template_reg];
+                    match expression.as_ref() {
+                        Literal(..) => {
+                            let r = expression.range();
+                            let reg = s.emit_expression_reg(expression, brk);
+                            s.op_1(r.start..r.start, OpCode::Array, template_reg);
+                            s.op_1(r.clone(), OpCode::Item, reg);
+                            s.op(r.end..r.end, OpCode::Freeze);
+                        }
+                        InterpolatedString(
+                            Token {
+                                kind: TokenKind::InterpolatedString(parts, _),
+                                ..
+                            },
+                            exprs,
+                        ) => {
+                            for (e, (_, _, fmt)) in exprs.iter().zip(parts.iter()) {
+                                let arg_pack_reg = s.closures.add_reg();
+                                let arg_reg = s.emit_expression_reg(e, brk);
+                                let fmt_reg = if !fmt.is_empty() {
+                                    let fr = s.closures.add_reg();
+                                    s.op_string(e.range(), fr, *fmt);
+                                    fr
+                                } else {
+                                    Register::EMPTY
+                                };
+                                s.op_1(e.range(), OpCode::Record, arg_pack_reg);
+                                s.op_2(e.range(), OpCode::FieldIndex, OpParam::from(0), arg_reg);
+                                if !fmt.is_empty() {
+                                    s.op_2(
+                                        e.range(),
+                                        OpCode::FieldIndex,
+                                        OpParam::from(1),
+                                        fmt_reg,
+                                    );
+                                }
+                                s.op(e.range(), OpCode::Freeze);
+                                args_reg.push(arg_pack_reg);
+                            }
+                            let r = expression.range();
+                            let template_part_regs: Vec<_> = parts
+                                .iter()
+                                .map(|(str, _, _)| {
+                                    let reg = s.closures.add_reg();
+                                    s.op_string(r.clone(), reg, str.as_ref());
+                                    reg
+                                })
+                                .collect();
+                            s.op_1(r.start..r.start, OpCode::Array, template_reg);
+                            for p in template_part_regs {
+                                s.op_1(r.clone(), OpCode::Item, p);
+                            }
+                            s.op(r.end..r.end, OpCode::Freeze);
+                        }
+                        _ => s.unreachable(expression, expression, file!(), line!()),
+                    };
+                    (args_reg, vec![])
+                };
+                self.emit_expr_callable(callable, args_reg, ret, brk);
+            }
             Call(callable, _, args, _) => {
                 if let Some((first, rest)) = args.split_first()
                     && let ArrayElementBase::Element(first) = first.deref()
@@ -834,12 +947,27 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     TokenKind::Operator(Operator::Plus) => OpCode::Pos,
                     TokenKind::Operator(Operator::Minus) => OpCode::Neg,
                     TokenKind::Operator(Operator::Exclamation) => OpCode::Not,
+                    TokenKind::Keyword(Keyword::Not) => {
+                        self.diagnostics
+                            .push(DiagnosticCode::PreferLogicalOperatorNot, token.range());
+                        OpCode::Not
+                    }
                     _ => unreachable!(),
                 };
                 self.op_unary(token.range(), ret, op, reg);
             }
-            Infix(left, token, right) => {
-                if **token == Operator::LogicalAnd {
+            Infix(left, op, right) => {
+                let mut kind: Cow<'_, TokenKind> = Cow::Borrowed(&op.kind);
+                if *kind == Keyword::And {
+                    self.diagnostics
+                        .push(DiagnosticCode::PreferLogicalOperatorAnd, op.range());
+                    kind = Cow::Owned(TokenKind::Operator(Operator::LogicalAnd));
+                } else if *kind == Keyword::Or {
+                    self.diagnostics
+                        .push(DiagnosticCode::PreferLogicalOperatorOr, op.range());
+                    kind = Cow::Owned(TokenKind::Operator(Operator::LogicalOr));
+                }
+                if *kind == Operator::LogicalAnd {
                     // ret is used in the immediate if, so we need to ensure it is not empty
                     let ret = if !ret.is_empty() {
                         ret
@@ -847,51 +975,51 @@ impl<'s, 'c> Emitter<'s, 'c> {
                         self.closures.add_reg()
                     };
                     self.emit_expression(left, ret, brk);
-                    self.op_if(token.range(), OpCode::If, ret);
+                    self.op_if(op.range(), OpCode::If, ret);
                     self.emit_expression(right, ret, brk);
-                    self.op_2(token.range(), OpCode::ToBoolean, ret, ret);
-                    self.op_if_end(token.range());
-                } else if **token == Operator::LogicalOr {
+                    self.op_2(op.range(), OpCode::ToBoolean, ret, ret);
+                    self.op_if_end(op.range());
+                } else if *kind == Operator::LogicalOr {
                     let ret = if !ret.is_empty() {
                         ret
                     } else {
                         self.closures.add_reg()
                     };
                     self.emit_expression(left, ret, brk);
-                    self.op_if(token.range(), OpCode::IfNot, ret);
+                    self.op_if(op.range(), OpCode::IfNot, ret);
                     self.emit_expression(right, ret, brk);
-                    self.op_2(token.range(), OpCode::ToBoolean, ret, ret);
-                    self.op_if_end(token.range());
-                } else if **token == Operator::NullCoalescing {
+                    self.op_2(op.range(), OpCode::ToBoolean, ret, ret);
+                    self.op_if_end(op.range());
+                } else if *kind == Operator::NullCoalescing {
                     let ret = if !ret.is_empty() {
                         ret
                     } else {
                         self.closures.add_reg()
                     };
                     self.emit_expression(left, ret, brk);
-                    self.op_if(token.range(), OpCode::IfNil, ret);
+                    self.op_if(op.range(), OpCode::IfNil, ret);
                     self.emit_expression(right, ret, brk);
-                    self.op_if_end(token.range());
-                } else if **token == Keyword::In && is_global_expression(right) {
+                    self.op_if_end(op.range());
+                } else if *kind == Keyword::In && is_global_expression(right) {
                     let left_reg = self.emit_expression_reg(left, brk);
                     self.op_unary(
-                        token.range.start..right.range().end,
+                        op.range.start..right.range().end,
                         ret,
                         OpCode::InGlobal,
                         left_reg,
                     );
                 } else {
-                    let Some(op) = (match token.kind {
+                    let Some(code) = (match op.kind {
                         TokenKind::Operator(o) => o.to_infix_op(),
                         TokenKind::Keyword(Keyword::In) => Some(OpCode::In),
                         _ => None,
                     }) else {
                         // Unexpected infix operator
-                        return self.unreachable(token, token, file!(), line!());
+                        return self.unreachable(op, op, file!(), line!());
                     };
                     let left_reg = self.emit_expression_reg(left, brk);
                     let right_reg = self.emit_expression_reg(right, brk);
-                    self.op_binary(token.range(), ret, op, left_reg, right_reg);
+                    self.op_binary(op.range(), ret, code, left_reg, right_reg);
                 }
             }
             Is(expression, _, pattern) => {
@@ -956,7 +1084,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 self.enter_scope(kw.range.end..body.range().end);
 
                 let cond_reg = self.closures.add_reg();
-                self.declare_expression(cond);
+                self.declare_cond_expr(cond);
                 self.declare_block(stmts, expr);
 
                 let pos = self.chunk.code.len();
@@ -1085,9 +1213,22 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     self.op_if_end(kw.range());
                 }
             }
+            Cond(cond, op_question, then_expr, op_colon, else_expr) => {
+                self.enter_scope(expr.range());
+                self.declare_cond_expr(cond);
+
+                let cond_reg = self.emit_expression_reg(cond, brk);
+                self.op_if(op_question.range(), OpCode::If, cond_reg);
+                self.emit_expression(then_expr, ret, brk);
+                self.op_else(op_colon.range());
+                self.emit_expression(else_expr, ret, brk);
+                self.op_if_end(expr.range().end..expr.range().end);
+
+                self.exit_scope();
+            }
             If(kw, cond, then_expr, else_part) => {
                 self.enter_scope(kw.range.end..expr.range().end);
-                self.declare_expression(cond);
+                self.declare_cond_expr(cond);
 
                 let cond_reg = self.emit_expression_reg(cond, brk);
                 self.op_if(kw.range(), OpCode::If, cond_reg);
@@ -1148,7 +1289,13 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 }
             }
             Function(kw, args, body) => {
-                self.emit_fn(ret, kw.range.end, args, body);
+                self.emit_fn(
+                    ret,
+                    kw.range.start..kw.range.start,
+                    kw.range.end,
+                    args,
+                    body,
+                );
             }
             Unknown { .. } => {
                 // Load nil as result of unknown expression

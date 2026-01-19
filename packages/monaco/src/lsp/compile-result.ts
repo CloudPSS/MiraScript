@@ -1,7 +1,7 @@
 import type { Writable } from 'type-fest';
 import { type editor, Range, type IRange, type IPosition, Position } from '../monaco-api.js';
 import { strictContainsPosition } from './utils.js';
-import { REG_IDENTIFIER, REG_ORDINAL } from '../constants.js';
+import { REG_IDENTIFIER_FULL, REG_ORDINAL_FULL } from '../constants.js';
 import type { CacheKey, MonacoResult } from './worker.js';
 import {
     parseDiagnostics,
@@ -67,13 +67,9 @@ export type LocalDefinitionType = (typeof LocalDefinitionType)[number];
 export const LocalDefinitionType = [...LocalVariableType, ...LocalFunctionType, ...ParameterDefinitionType] as const;
 
 /** 源代码定义信息 */
-export interface LocalDefinition<T extends LocalDefinitionType = LocalDefinitionType>
-    extends SourceDefinitionBase<
-        | DiagnosticCode.ReadLocal
-        | DiagnosticCode.WriteLocal
-        | DiagnosticCode.ReadWriteLocal
-        | DiagnosticCode.RedeclareLocal
-    > {
+export interface LocalDefinition<T extends LocalDefinitionType = LocalDefinitionType> extends SourceDefinitionBase<
+    DiagnosticCode.ReadLocal | DiagnosticCode.WriteLocal | DiagnosticCode.ReadWriteLocal | DiagnosticCode.RedeclareLocal
+> {
     /** 符号定义 */
     readonly definition: SourceDiagnostic<T>;
     /** 定义的函数，仅对 LocalFunction 有效 */
@@ -502,8 +498,8 @@ export class CompileResult {
                 (part, index) =>
                     // 如果是最后一个部分，则可以为空（表示当前位置的字段名），否则必须是合法的标识符
                     (index === chainParts.length - 1 ? !part : false) ||
-                    REG_IDENTIFIER.test(part) ||
-                    REG_ORDINAL.test(part),
+                    REG_IDENTIFIER_FULL.test(part) ||
+                    REG_ORDINAL_FULL.test(part),
             )
         ) {
             return undefined;

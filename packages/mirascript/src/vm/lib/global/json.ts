@@ -1,5 +1,5 @@
 import { isVmExtern, isVmModule } from '../../types/index.js';
-import { required, rethrowError, VmLib } from '../helpers.js';
+import { expectString, required, rethrowError, VmLib } from '../helpers.js';
 const { parse, stringify } = JSON;
 
 export const to_json = VmLib(
@@ -21,15 +21,15 @@ export const to_json = VmLib(
         paramsType: { data: 'any' },
         returnsType: 'string',
         examples: ['to_json([1, 2, 3]) // "[1,2,3]"'],
+        injectCp: true,
     },
 );
 
 export const from_json = VmLib(
     (json, fallback) => {
-        required('json', json, null);
-        if (typeof json != 'string') return json;
+        const j = expectString('json', json);
         try {
-            return parse(json);
+            return parse(j);
         } catch (ex) {
             if (fallback !== undefined) return fallback;
             rethrowError('Invalid JSON', ex, null);
@@ -41,5 +41,6 @@ export const from_json = VmLib(
         paramsType: { json: 'string', fallback: 'any' },
         returnsType: 'any',
         examples: [`from_json('{"a":1}') // (a: 1)`],
+        injectCp: true,
     },
 );

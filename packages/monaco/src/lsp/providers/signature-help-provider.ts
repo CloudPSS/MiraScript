@@ -1,4 +1,4 @@
-import { DiagnosticCode } from '@mirascript/bindings/wasm';
+import { DiagnosticCode } from '@mirascript/constants';
 import { type editor, type languages, type CancellationToken, Position, Range } from '../../monaco-api.js';
 import { Provider } from './base.js';
 import { fnSignature, getDeep, localParamSignature, strictContainsPosition } from '../utils.js';
@@ -51,7 +51,7 @@ export class SignatureHelpProvider extends Provider implements languages.Signatu
         if ('name' in callableInfo.def.def) {
             const { name } = callableInfo.def.def;
             const globals = await this.getContext(model);
-            const callable = getDeep(globals, name, callableInfo.fields);
+            const [, callable] = getDeep(globals, name, callableInfo.fields);
             const info = getVmFunctionInfo(callable);
             if (!info) return undefined;
             const fnName = callableInfo.fields.length ? callableInfo.fields.at(-1)! : name;

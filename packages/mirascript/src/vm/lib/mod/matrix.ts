@@ -1,7 +1,7 @@
 import { toNumber } from '../../../helpers/convert/to-number.js';
 import { isArray } from '../../../helpers/utils.js';
-import { Cp } from '../../helpers.js';
-import { $Add, $Call, $Div, $Mul, $Sub } from '../../operations.js';
+import { Cp } from '../../checkpoint.js';
+import { $Add, $Call, $Div, $Mul, $Sub } from '../../operations/index.js';
 import { isVmArray, isVmConst, type VmAny, type VmArray, type VmConst, type VmValue } from '../../types/index.js';
 import {
     VmLib,
