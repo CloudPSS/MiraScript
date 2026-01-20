@@ -7,5 +7,5 @@ This module provides the main entry point for compiling MiraScript code
 from .mirascript import Config
 from .diagnostics import Diagnostic
 from .main import compile
-__version__ = '0.0.16'
+__version__ = '0.0.17'
 __all__ = ["Config", "Diagnostic", "compile","__version__"]
