@@ -15,10 +15,7 @@ from ..vm.types.checker import is_vm_const, is_vm_record
 
 from .types.extern import VmExtern, is_vm_extern
 from mirascript.vm.types.const import Uninitialized, getVmFunctionInfo
-import locale
-import numpy as np
 import unicodedata
-import traceback
 ## 标记当前值未返回的值
 LoopContinue = type("LoopContinue", (), {})()
 ## 标记当前值为Break
