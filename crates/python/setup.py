@@ -73,6 +73,10 @@ setup(
     author_email='zhangdaming@cloudpss.net',
     packages=find_packages( include=("mirascript*",)),
     include_package_data=True,
+    # Ensure compiled extension and type stubs are included in distributions
+    package_data={
+        'mirascript': ['*.pyd', '*.pyi']
+    },
     platforms="any",
     python_requires='>=3.7',
     install_requires=[],
