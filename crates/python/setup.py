@@ -51,7 +51,7 @@ if parts is not None:
         try:
             subprocess.run(['git', 'add', pkg_init], check=True)
             subprocess.run(['git', 'commit', '-m', f'Bump version to {new_version}','--no-verify'], check=True)
-            subprocess.run(['git', 'tag', f'python_{new_version}'], check=True)
+            subprocess.run(['git', 'tag', f'python-{new_version}'], check=True)
         except Exception:
             # If git commands fail, continue but surface a warning
             print('Warning: git operations failed; version file updated but not tagged')
