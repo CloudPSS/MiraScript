@@ -1,14 +1,17 @@
+import logging
 import struct
 import json
 import base64
 import traceback
 from typing import Any, Union, List, Tuple, Optional, Dict
 import ast
+import sys
 
 from mirascript.vm.operations import ToString_, is_decimal_number
 from .vm.helpers import GlobalFallback
 from .vm.env import vm_globals
 from .deep_nonlocal_fix import deep_nonlocal_fix
+
 class OpCodes:
     """MiraScript 操作码"""
 
@@ -639,9 +642,24 @@ class Emitter:
             # code = f"return {self.rv(reg)};"
             code =ast.Return(value=create_parameter(self.rv(reg)))
         
+        elif opcode == OpCode.Format:
+            reg = read()
+            leftValue = read()
+            fmtValue = read_index()
+            
+            code =ast.Assign(
+                    targets=[
+                        ast.Name(id=self.wv(reg), ctx=ast.Store())],
+                    value=ast.Call(
+                        func=ast.Name(id='Format_', ctx=ast.Load()),
+                        args=[
+                            ast.Name(id=self.rv(leftValue), ctx=ast.Load()),
+                            ast.Constant(value=self.constants[fmtValue])],
+                        keywords=[]),lineno=0)
+            
         elif opcode in (OpCode.Add, OpCode.Sub, OpCode.Mul, OpCode.Div, OpCode.Mod, OpCode.Pow,
                        OpCode.Gt, OpCode.Gte, OpCode.Lt, OpCode.Lte, OpCode.Eq, OpCode.Neq,
-                       OpCode.Aeq, OpCode.Naeq, OpCode.Same, OpCode.Nsame, OpCode.In, OpCode.And, OpCode.Or,OpCode.Format):
+                       OpCode.Aeq, OpCode.Naeq, OpCode.Same, OpCode.Nsame, OpCode.In, OpCode.And, OpCode.Or):
             reg = read()
             left = read()
             right = read()
@@ -649,6 +667,7 @@ class Emitter:
             opArgs=[]
             leftValue=self.rv(left)
             rightValue=self.rv(right)
+            
             if leftValue=='None':
                 opArgs.append(ast.Constant(value=None))
             else:
@@ -657,7 +676,6 @@ class Emitter:
                 opArgs.append(ast.Constant(value=None))
             else:
                 opArgs.append(ast.Name(id=rightValue, ctx=ast.Load()))
-
             code =ast.Assign(
                     targets=[
                         ast.Name(id=self.wv(reg), ctx=ast.Store())],
@@ -716,10 +734,17 @@ class Emitter:
             spreads = [read() for _ in range(ns)]
             
             if opcode == OpCode.Call:
-                call_target=ast.Subscript(
-                                value=ast.Name(id='context', ctx=ast.Load()),
-                                slice=ast.Constant(value=self.constants[func]),
-                                ctx=ast.Load())
+                # Compatibility: ast.Index was removed in Python 3.9.
+                # Use ast.Index for older Pythons, and plain expr (ast.Constant) for 3.9+.
+                if sys.version_info >= (3, 9):
+                    slice_node = ast.Constant(value=self.constants[func])
+                else:
+                    slice_node = ast.Index(value=ast.Constant(value=self.constants[func]))
+
+                call_target = ast.Subscript(
+                    value=ast.Name(id='context', ctx=ast.Load()),
+                    slice=slice_node,
+                    ctx=ast.Load())
             else:
                 call_target = ast.Name(id=self.rv(func), ctx=ast.Load())
                 
@@ -1051,10 +1076,7 @@ class Emitter:
         else:
             # 默认处理未知 opcode
             opcode_name = get_opcode_name(opcode)
-            print(f"Unknown opcode: {opcode_name} ({opcode}) at offset {self.code_offset - 1}")
-        #     code = f"; // {opcode_name}"
-        
-        # self.code_lines.append(ident + code)
+            logging.debug(f"Unknown opcode: {opcode_name} ({opcode}) at offset {self.code_offset - 1}")
         
         if current_blocks_body is None :
             if not isinstance(code,ast.FunctionDef):
@@ -1066,11 +1088,6 @@ class Emitter:
                 
         else:
             current_blocks_body.append(code)
-            
-        # if code is not None:
-        #     self.current_blocks.body.append(code)
-        # elif opcode not in (OpCode.FuncVarg, OpCode.Func):
-        #     print('opcode:',opcode)
             
         
         
@@ -1130,6 +1147,8 @@ def set_ast_positions(node, lineno=1, col_offset=0):
         node.lineno = lineno
     if not hasattr(node, 'col_offset'):
         node.col_offset = col_offset
+    if not hasattr(node, 'annotation '):
+        node.annotation  = None
 
 ## 将所有 nonlocal 声明提升到函数体顶部,有些情况下nonlocal声明可能在条件语句或循环内
 # ...existing code...
@@ -1138,6 +1157,10 @@ def set_ast_positions(node, lineno=1, col_offset=0):
 def emit( chunk: bytes) :
     """生成代码"""
     try:
+        try:
+            import astor 
+        except ImportError:
+            astor =None
         
         gen = Emitter( chunk)
         gen.read()
@@ -1146,20 +1169,6 @@ def emit( chunk: bytes) :
             script =deep_nonlocal_fix(gen.func_script)
             set_ast_positions(script)
             module = ast.Module(body=[script], type_ignores=[])
-            code_script=ast.unparse(gen.func_script)
-            f =open('out_script.py', 'w', encoding='utf-8')
-            f.write("""from mirascript.vm.operations import *
-from mirascript.vm.types.checker import is_vm_const
-from mirascript.vm.types.extern import VmExtern
-from mirascript.vm.helpers import GlobalFallback,Element,ArrayRange,ArrayRangeExclusive,ElementOpt,Upvalue
-from mirascript.vm.helpers import CpEnter,CpExit
-Uninitialized = type("Uninitialized", (), {})()\n""")
-            f.write(code_script)
-            f.write("\nscript()")
-            f.close()
-            f2 =open('out_script2.py', 'w', encoding='utf-8')
-            f2.write(ast.dump(module,indent=4))
-            f2.close()
             code=compile(module, "<string>", "exec")
         if code is not None:
             exec(code, vm_globals,)
@@ -1167,7 +1176,6 @@ Uninitialized = type("Uninitialized", (), {})()\n""")
 
     except Exception as e:
         traceback.print_exc()
-        print(f"Error during code emission: {e}")
         
         return None
 

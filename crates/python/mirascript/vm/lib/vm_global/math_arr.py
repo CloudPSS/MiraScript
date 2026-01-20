@@ -2,6 +2,7 @@
 from .._helpers import get_numbers
 from functools import reduce as _reduce
 import math
+import sys
 from ...types.checker import is_positive_zero, is_negative_zero
 
 def build(func):
@@ -35,7 +36,28 @@ def _min(*args):
     return low
 
 min_ = build(_min)
-hypot = build(math.hypot)
+
+def hypot(*args):
+    numbers = get_numbers(args)
+    if len(numbers) == 0:
+        return 0.0
+    # math.hypot accepts an arbitrary number of args starting Python 3.8.
+    # For older Pythons, provide a compatible fallback.
+    if sys.version_info >= (3, 8):
+        return math.hypot(*numbers)
+
+    if len(numbers) == 1:
+        return abs(numbers[0])
+    if len(numbers) == 2:
+        return math.hypot(numbers[0], numbers[1])
+
+    # Manual computation for >2 args on older Pythons
+    s = 0.0
+    for n in numbers:
+        if math.isnan(n):
+            return math.nan
+        s += n * n
+    return math.sqrt(s)
 sum_ = build(lambda *args: _reduce(lambda a, b: a + b, args, -0.0))
 product = build(lambda *args: _reduce(lambda a, b: a * b, args, 1.0))
 

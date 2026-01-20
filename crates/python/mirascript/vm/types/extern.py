@@ -94,7 +94,7 @@ class VmExtern(VmWrapper):
     def callable(self) -> bool:
         return callable(self.value)
 
-    def keys(self) -> list[str]:
+    def keys(self):
         keys = []
         for key, _ in self.value.items():
             if self.has(key):

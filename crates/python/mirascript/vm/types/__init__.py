@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from typing import Tuple, Union
-from .const import VmAny, VmPrimitive, VmRecord, VmArray,VmValue,VmFunctionWrapper,VmFunctionInfo,VmFunctionOption,VmFunctionLike,VmUninitialized
+from .const import VmAny, VmPrimitive, VmRecord, VmArray,VmValue,VmUninitialized
 from .extern import VmExtern, wrap_to_vm_value, unwrap_from_vm_value
 from .function import VmFunction
 from .module import VmModule
@@ -16,6 +16,6 @@ __all__ = [
   'VmModule', 'VmWrapper', 'VmContext', 
   'create_vm_context', 'DefaultVmContext', 'VmScript', 'is_vm_script',
   'is_vm_any', 'is_vm_const', 'is_vm_immutable', 'is_vm_value',
-  'VmPrimitive', 'VmRecord', 'VmArray','VmValue', 'VmFunctionWrapper', 'VmFunctionInfo', 'VmFunctionOption', 'VmFunctionLike','VmAny','VmUninitialized'
+  'VmPrimitive', 'VmRecord', 'VmArray','VmValue',   'VmAny','VmUninitialized'
 ]
 

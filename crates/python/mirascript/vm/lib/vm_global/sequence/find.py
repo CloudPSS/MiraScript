@@ -1,4 +1,4 @@
-from ..._helpers import  VmLibOption, expect_array_or_record, expect_callable,required
+from ..._helpers import  expect_array_or_record, expect_callable,required
 from ....types.checker import is_vm_array, is_vm_callable
 from ....operations import  Call_,ToBoolean_,Same_
 from mirascript.vm.types.const import Uninitialized

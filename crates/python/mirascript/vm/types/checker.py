@@ -4,7 +4,6 @@ from typing import Any
 
 from mirascript.vm.types.extern import is_vm_extern
 
-from .const import VmFunctionWrapper
 from .wrapper import VmWrapper
 from .module import VmModule
 

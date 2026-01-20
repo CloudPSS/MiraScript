@@ -66,8 +66,6 @@ def deep_equal(a: Any, b: Any, *, nan_equal: bool = True, signed_zero_distinct: 
     if nan_equal:
         if _is_nan(a) and _is_nan(b):
             return True
-    # print("deep_equal a:",a,type(a))  # --- DEBUG ---
-    # print("deep_equal b:",b,type(b))  # --- DEBUG ---
     
     # Both floats: handle signed zero and normal equality
     if isinstance(a, float) and isinstance(b, float):

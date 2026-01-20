@@ -1,6 +1,6 @@
 import json
 # from ...error import VMError
-from mirascript.vm.lib._helpers import required,rethrow_error
+from mirascript.vm.lib._helpers import expect_string, required,rethrow_error
 from mirascript.vm.types.checker import is_vm_module
 from mirascript.vm.types.const import Uninitialized
 import math
@@ -67,15 +67,28 @@ def to_json(value=Uninitialized):
 
 def from_json(value=Uninitialized,fallback=None):
     required("value",value, None)
-    if not isinstance(value, str):
-      return value
-    
+    j =expect_string("value",value)
     try:
-        return json.loads(value)
+        def parse_constant(x):
+            if x == 'NaN' or x == 'Infinity' or x == '-Infinity':
+                raise ValueError( f'{x} is not valid JSON')
+            return x
+        r = json.loads(j,parse_constant=parse_constant)
+        return r
     except Exception as e:
         if fallback is not None:
             return fallback
         rethrow_error("Invalid JSON", e, None)
+    
+    # if not isinstance(value, str):
+    #   return value
+    
+    # try:
+    #     return json.loads(value)
+    # except Exception as e:
+    #     if fallback is not None:
+    #         return fallback
+    #     rethrow_error("Invalid JSON", e, None)
         
         
 if __name__ == "__main__":

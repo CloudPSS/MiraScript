@@ -24,9 +24,7 @@ def deep_nonlocal_fix(node, nonlocal_vars=None):
                     elif isinstance(s, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Lambda)):
                         continue
                     else:
-                        # print(s)
                         if s is None:
-                            # print("Found None node in collect_from_nodes")
                             continue
                         for field, value in ast.iter_fields(s):
                             if isinstance(value, list):

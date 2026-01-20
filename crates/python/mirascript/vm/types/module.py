@@ -18,7 +18,7 @@ class VmModule(VmWrapper):
 			return None
 		return self.value.get(key, None)
 
-	def keys(self) -> list[str]:
+	def keys(self):
 		return list(self.value.keys())
 
 	def same(self, other) -> bool:

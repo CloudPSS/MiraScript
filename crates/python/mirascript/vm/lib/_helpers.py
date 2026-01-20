@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 # 依赖：VmError, $ToNumber, $Type, is_vm_array, is_vm_extern,  VmExtern, VmFunction, is_vm_record, VmModule, is_vm_primitive, is_vm_const, VM_ARRAY_MAX_LENGTH, Cp
 import math
-from typing import Optional, TypeVar, TypedDict, Union, cast
 
 from mirascript.helpers.convert.to_number import toNumber
 from mirascript.helpers.convert.to_string import toString
@@ -194,13 +193,5 @@ def map_vm(data, mapper):
             else:
                 entries.append((key, None))
         return dict(entries)
-
-
-class VmLibOption(TypedDict, total=False):
-    summary: str
-    params: dict[str, str]
-    paramsType: dict[str, str]
-    returns: str
-    returnsType: str
 
 

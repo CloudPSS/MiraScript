@@ -24,9 +24,16 @@ if __name__ == "__main__":
     
     
     fs= open(os.path.join(os.path.dirname(__file__),'..','..','examples',script_file),'r',encoding='utf-8')
-    # print(fs.read())
     script=fs.read()
     fs.close()
+    
+    script="""
+   let v_number=2;
+debug_print("Complex Parentheses with format: $({
+  fn multiply(x, y) { x * y }
+  multiply(v_number, 2)
+}:.2)")
+    """
     try:
         result, diagnostics = mirascript.compile(script, mirascript.Config(input_mode="script"))
         assert callable(result), "Compilation failed, result is not callable"
