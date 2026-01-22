@@ -110,7 +110,7 @@ param (
         if (-not $NoCommit) {
             Write-Host "[4/5] Committing changes to Git..." -ForegroundColor Yellow
             git add pyproject.toml
-            git commit -m "chore(python): release v$Version"
+            git commit -m "build: chore(python): release v$Version" 
             
             if ($LASTEXITCODE -eq 0) {
                 Write-Host "  ✓ Changes committed" -ForegroundColor Green
