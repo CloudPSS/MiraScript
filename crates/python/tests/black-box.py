@@ -2,7 +2,7 @@ import logging
 import unittest
 import os
 from pathlib import Path
-
+import mirascript
 from mirascript.main import compile as mira_compile
 from mirascript.vm import VmError, VmFunction, VmModule
 from mirascript.vm.types.context import create_vm_context
@@ -13,7 +13,7 @@ from mirascript.vm.lib.vm_global.json_ import NanToNullEncoder
 TEST_DIR = Path(__file__).resolve().parents[3] / "tests"  # 对应 ts 中 ../../../tests
 import sys
 sys.setrecursionlimit(10000)
-
+print(mirascript.__version__)
 class BlackBoxTests(unittest.TestCase):
     def setUp(self) -> None:
         if mira_compile is None:
