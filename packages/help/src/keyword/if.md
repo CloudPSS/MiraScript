@@ -1,3 +1,8 @@
+---
+token: 'if'
+order: 14
+---
+
 `if` 表达式根据条件选择分支。条件必须是 `boolean`。
 
 ```mira

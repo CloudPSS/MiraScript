@@ -1,3 +1,8 @@
+---
+token: 'continue'
+order: 22
+---
+
 `continue` 用于跳过本次循环剩余部分，进入下一次循环。
 
 ```mira

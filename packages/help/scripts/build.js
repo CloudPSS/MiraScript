@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 const packageRoot = path.resolve(import.meta.dirname, '..');
@@ -6,111 +6,15 @@ const srcRoot = path.join(packageRoot, 'src');
 const distRoot = path.join(packageRoot, 'dist');
 
 /**
- * NOTE:
- * - Keys are the actual keyword/operator tokens used in source code.
- * - Values are the raw Markdown texts.
- * - Filenames are platform-safe (avoid `:` `?` etc on Windows).
+ * Front-matter driven docs.
+ *
+ * Each markdown file under `src/keyword` and `src/operator` must have:
+ *
+ * ---
+ * token: "..."   # actual token used in source code
+ * order: 123      # used to keep generated output stable
+ * ---
  */
-
-const KEYWORD_SOURCES = [
-    ['true', 'keyword/true.md'],
-    ['false', 'keyword/false.md'],
-    ['nil', 'keyword/nil.md'],
-    ['nan', 'keyword/nan.md'],
-    ['inf', 'keyword/inf.md'],
-
-    ['_', 'keyword/underscore.md'],
-    ['global', 'keyword/global.md'],
-
-    ['in', 'keyword/in.md'],
-    ['is', 'keyword/is.md'],
-    ['and', 'keyword/and.md'],
-    ['or', 'keyword/or.md'],
-    ['not', 'keyword/not.md'],
-
-    ['type', 'keyword/type.md'],
-
-    ['if', 'keyword/if.md'],
-    ['else', 'keyword/else.md'],
-    ['match', 'keyword/match.md'],
-    ['case', 'keyword/case.md'],
-    ['for', 'keyword/for.md'],
-    ['while', 'keyword/while.md'],
-    ['loop', 'keyword/loop.md'],
-    ['break', 'keyword/break.md'],
-    ['continue', 'keyword/continue.md'],
-    ['return', 'keyword/return.md'],
-
-    ['fn', 'keyword/fn.md'],
-    ['op', 'keyword/op.md'],
-    ['let', 'keyword/let.md'],
-    ['const', 'keyword/const.md'],
-    ['mut', 'keyword/mut.md'],
-    ['where', 'keyword/where.md'],
-
-    ['mod', 'keyword/mod.md'],
-    ['pub', 'keyword/pub.md'],
-    ['use', 'keyword/use.md'],
-
-    ['effect', 'keyword/effect.md'],
-    ['try', 'keyword/try.md'],
-    ['handle', 'keyword/handle.md'],
-    ['finally', 'keyword/finally.md'],
-    ['perform', 'keyword/perform.md'],
-    ['resume', 'keyword/resume.md'],
-];
-
-const OPERATOR_SOURCES = [
-    ['(', 'operator/open_paren.md'],
-    [')', 'operator/close_paren.md'],
-    ['[', 'operator/open_bracket.md'],
-    [']', 'operator/close_bracket.md'],
-    [':', 'operator/colon.md'],
-    ['?', 'operator/question.md'],
-    ['?:', 'operator/question_colon.md'],
-    ['::', 'operator/colon_colon.md'],
-    [',', 'operator/comma.md'],
-    ['.', 'operator/dot.md'],
-    ['->', 'operator/arrow.md'],
-
-    ['..', 'operator/spread_range.md'],
-    ['..<', 'operator/half_open_range.md'],
-
-    ['+', 'operator/plus.md'],
-    ['+=', 'operator/plus_assign.md'],
-    ['-', 'operator/minus.md'],
-    ['-=', 'operator/minus_assign.md'],
-    ['*', 'operator/asterisk.md'],
-    ['*=', 'operator/asterisk_assign.md'],
-    ['/', 'operator/slash.md'],
-    ['/=', 'operator/slash_assign.md'],
-    ['%', 'operator/percent.md'],
-    ['%=', 'operator/percent_assign.md'],
-    ['^', 'operator/caret.md'],
-    ['^=', 'operator/caret_assign.md'],
-
-    ['!', 'operator/exclamation.md'],
-    ['&&', 'operator/logical_and.md'],
-    ['&&=', 'operator/logical_and_assign.md'],
-    ['||', 'operator/logical_or.md'],
-    ['||=', 'operator/logical_or_assign.md'],
-    ['??', 'operator/null_coalescing.md'],
-    ['??=', 'operator/null_coalescing_assign.md'],
-
-    ['=', 'operator/assign.md'],
-    ['==', 'operator/equal.md'],
-    ['!=', 'operator/not_equal.md'],
-    ['=~', 'operator/tilde_equal.md'],
-    ['!~', 'operator/tilde_not_equal.md'],
-    ['>', 'operator/greater.md'],
-    ['>=', 'operator/greater_equal.md'],
-    ['<', 'operator/less.md'],
-    ['<=', 'operator/less_equal.md'],
-
-    [';', 'operator/semicolon.md'],
-    ['{', 'operator/open_brace.md'],
-    ['}', 'operator/close_brace.md'],
-];
 
 /**
  * Read a markdown file under `src/`.
@@ -122,18 +26,125 @@ async function readMarkdown(relativePath) {
     return readFile(fullPath, 'utf8');
 }
 
+const FRONT_MATTER_RE = /^---\r?\n([\s\S]*?)\r?\n---\r?\n/;
+
 /**
- * Load markdown docs and return `[token, rawMarkdown]` entries.
- * @param {Array<[string, string]>} pairs
+ * Parse the YAML subset we use in front-matter: `key: value`.
+ * @param {string} yaml
+ * @returns {Record<string, string | number | boolean | null>}
+ */
+function parseFrontMatterYaml(yaml) {
+    /** @type {Record<string, string | number | boolean | null>} */
+    const out = {};
+    const lines = yaml.split(/\r?\n/);
+    for (const rawLine of lines) {
+        const line = rawLine.trim();
+        if (!line || line.startsWith('#')) continue;
+
+        const m = /^([A-Za-z0-9_-]+)\s*:\s*(.*)$/.exec(line);
+        if (!m) continue;
+
+        const key = m[1];
+        let value = m[2].trim();
+
+        if (value === 'null' || value === '~') {
+            out[key] = null;
+            continue;
+        }
+        if (value === 'true') {
+            out[key] = true;
+            continue;
+        }
+        if (value === 'false') {
+            out[key] = false;
+            continue;
+        }
+        if (/^-?\d+$/.test(value)) {
+            out[key] = Number.parseInt(value, 10);
+            continue;
+        }
+
+        const quote = value.at(0);
+        if ((quote === '"' || quote === "'") && value.length >= 2 && value.endsWith(quote)) {
+            value = value.slice(1, -1);
+            if (quote === '"') {
+                value = value
+                    .replaceAll(String.raw`\n`, '\n')
+                    .replaceAll(String.raw`\r`, '\r')
+                    .replaceAll(String.raw`\t`, '\t')
+                    .replaceAll(String.raw`\"`, '"')
+                    .replaceAll('\\\\', '\\');
+            } else {
+                value = value.replaceAll("''", "'");
+            }
+        }
+
+        out[key] = value;
+    }
+    return out;
+}
+
+/**
+ * Extract front-matter and strip it from markdown.
+ * @param {string} markdown
+ * @param {string} relativePath
+ * @returns {{ attributes: Record<string, unknown>, body: string }}
+ */
+function splitFrontMatter(markdown, relativePath) {
+    const m = FRONT_MATTER_RE.exec(markdown);
+    if (!m) {
+        throw new Error(`Missing front-matter in ${relativePath}. Add token/order mapping.`);
+    }
+
+    const attributes = parseFrontMatterYaml(m[1]);
+    const body = markdown.slice(m[0].length);
+    return { attributes, body };
+}
+
+/**
+ * Load docs under a folder like `keyword` or `operator`.
+ * @param {string} folder
  * @returns {Promise<Array<[string, string]>>}
  */
-async function loadDocs(pairs) {
+async function loadDocsFromFolder(folder) {
+    const dirPath = path.join(srcRoot, folder);
+    const dirents = await readdir(dirPath, { withFileTypes: true });
+
+    /** @type {Array<{ token: string; order: number; body: string; file: string }>} */
+    const items = [];
+
+    for (const dirent of dirents) {
+        if (!dirent.isFile()) continue;
+        if (!dirent.name.endsWith('.md')) continue;
+
+        const relativePath = path.posix.join(folder, dirent.name);
+        const markdown = await readMarkdown(relativePath);
+        const { attributes, body } = splitFrontMatter(markdown, relativePath);
+
+        const { token, order } = attributes;
+        if (typeof token !== 'string' || token.length === 0) {
+            throw new TypeError(`Invalid front-matter field 'token' in ${relativePath}`);
+        }
+        if (typeof order !== 'number' || !Number.isFinite(order)) {
+            throw new TypeError(`Invalid front-matter field 'order' in ${relativePath}`);
+        }
+
+        items.push({ token, order, body, file: relativePath });
+    }
+
+    items.sort((a, b) => a.order - b.order);
+
+    const seenToken = new Set();
     /** @type {Array<[string, string]>} */
     const entries = [];
-    for (const [token, mdPath] of pairs) {
-        const content = await readMarkdown(mdPath);
-        entries.push([token, content]);
+    for (const item of items) {
+        if (seenToken.has(item.token)) {
+            throw new Error(`Duplicate token '${item.token}' (found in ${item.file})`);
+        }
+        seenToken.add(item.token);
+        entries.push([item.token, item.body]);
     }
+
     return entries;
 }
 
@@ -162,8 +173,8 @@ function renderDtsObjectType(entries) {
  * @returns {Promise<void>}
  */
 async function main() {
-    const keywordEntries = await loadDocs(KEYWORD_SOURCES);
-    const operatorEntries = await loadDocs(OPERATOR_SOURCES);
+    const keywordEntries = await loadDocsFromFolder('keyword');
+    const operatorEntries = await loadDocsFromFolder('operator');
 
     await mkdir(distRoot, { recursive: true });
 

@@ -1,3 +1,8 @@
+---
+token: 'in'
+order: 8
+---
+
 `in` 用于“包含/存在”判断：`key in container`。
 
 - 常见容器：`record` / `module` / `extern` / `global`

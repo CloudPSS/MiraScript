@@ -1,3 +1,8 @@
+---
+token: 'case'
+order: 17
+---
+
 `case` 是 `match` 表达式中的分支。
 
 ```mira

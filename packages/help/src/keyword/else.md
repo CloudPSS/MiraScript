@@ -1,3 +1,8 @@
+---
+token: 'else'
+order: 15
+---
+
 `else` 用于 `if` 表达式的备用分支。
 
 ```mira

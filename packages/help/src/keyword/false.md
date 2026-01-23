@@ -1,3 +1,8 @@
+---
+token: 'false'
+order: 2
+---
+
 `false` 是布尔字面量，表示逻辑假。
 
 ```mira

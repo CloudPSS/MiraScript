@@ -1,3 +1,8 @@
+---
+token: 'is'
+order: 9
+---
+
 `is` 用于模式匹配：`value is pattern`，结果为 `boolean`。
 
 ```mira

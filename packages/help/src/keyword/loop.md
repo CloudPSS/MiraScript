@@ -1,3 +1,8 @@
+---
+token: 'loop'
+order: 20
+---
+
 `loop` 创建一个无限循环，通常配合 `break` 退出。
 
 ```mira

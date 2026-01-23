@@ -1,3 +1,8 @@
+---
+token: 'for'
+order: 18
+---
+
 `for` 用于遍历可迭代对象。
 
 ```mira
