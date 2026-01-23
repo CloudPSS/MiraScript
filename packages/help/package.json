@@ -15,5 +15,8 @@
     "build": "pnpm clean && node ./scripts/build.js",
     "clean": "rimraf dist",
     "prepublishOnly": "pnpm build"
+  },
+  "devDependencies": {
+    "js-yaml": "^4.1.1"
   }
 }

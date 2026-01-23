@@ -1,5 +1,6 @@
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { load } from 'js-yaml';
 
 const packageRoot = path.resolve(import.meta.dirname, '..');
 const srcRoot = path.join(packageRoot, 'src');
@@ -29,62 +30,6 @@ async function readMarkdown(relativePath) {
 const FRONT_MATTER_RE = /^---\r?\n([\s\S]*?)\r?\n---\r?\n/;
 
 /**
- * Parse the YAML subset we use in front-matter: `key: value`.
- * @param {string} yaml
- * @returns {Record<string, string | number | boolean | null>}
- */
-function parseFrontMatterYaml(yaml) {
-    /** @type {Record<string, string | number | boolean | null>} */
-    const out = {};
-    const lines = yaml.split(/\r?\n/);
-    for (const rawLine of lines) {
-        const line = rawLine.trim();
-        if (!line || line.startsWith('#')) continue;
-
-        const m = /^([A-Za-z0-9_-]+)\s*:\s*(.*)$/.exec(line);
-        if (!m) continue;
-
-        const key = m[1];
-        let value = m[2].trim();
-
-        if (value === 'null' || value === '~') {
-            out[key] = null;
-            continue;
-        }
-        if (value === 'true') {
-            out[key] = true;
-            continue;
-        }
-        if (value === 'false') {
-            out[key] = false;
-            continue;
-        }
-        if (/^-?\d+$/.test(value)) {
-            out[key] = Number.parseInt(value, 10);
-            continue;
-        }
-
-        const quote = value.at(0);
-        if ((quote === '"' || quote === "'") && value.length >= 2 && value.endsWith(quote)) {
-            value = value.slice(1, -1);
-            if (quote === '"') {
-                value = value
-                    .replaceAll(String.raw`\n`, '\n')
-                    .replaceAll(String.raw`\r`, '\r')
-                    .replaceAll(String.raw`\t`, '\t')
-                    .replaceAll(String.raw`\"`, '"')
-                    .replaceAll('\\\\', '\\');
-            } else {
-                value = value.replaceAll("''", "'");
-            }
-        }
-
-        out[key] = value;
-    }
-    return out;
-}
-
-/**
  * Extract front-matter and strip it from markdown.
  * @param {string} markdown
  * @param {string} relativePath
@@ -96,7 +41,7 @@ function splitFrontMatter(markdown, relativePath) {
         throw new Error(`Missing front-matter in ${relativePath}. Add token/order mapping.`);
     }
 
-    const attributes = parseFrontMatterYaml(m[1]);
+    const attributes = load(m[1]);
     const body = markdown.slice(m[0].length);
     return { attributes, body };
 }
@@ -155,7 +100,7 @@ async function loadDocsFromFolder(folder) {
  */
 function renderObjectLiteral(entries) {
     const lines = entries.map(([k, v]) => `  ${JSON.stringify(k)}: ${JSON.stringify(v)},`);
-    return `({\n${lines.join('\n')}\n})`;
+    return `Object.freeze({\n${lines.join('\n')}\n})`;
 }
 
 /**
@@ -164,7 +109,7 @@ function renderObjectLiteral(entries) {
  * @returns {string}
  */
 function renderDtsObjectType(entries) {
-    const lines = entries.map(([k]) => `  ${JSON.stringify(k)}: string;`);
+    const lines = entries.map(([k]) => `  readonly ${JSON.stringify(k)}: string;`);
     return `{\n${lines.join('\n')}\n}`;
 }
 
