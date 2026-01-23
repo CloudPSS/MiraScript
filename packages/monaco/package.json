@@ -35,6 +35,7 @@
   "dependencies": {
     "@mirascript/bindings": "workspace:~",
     "@mirascript/constants": "workspace:~",
+    "@mirascript/help": "workspace:~",
     "@mirascript/mirascript": "workspace:~"
   },
   "peerDependencies": {

@@ -60,6 +60,8 @@ importers:
         specifier: ^3.1.11
         version: 3.1.11
 
+  packages/help: {}
+
   packages/mirascript:
     dependencies:
       '@cloudpss/worker':
@@ -114,6 +116,9 @@ importers:
       '@mirascript/constants':
         specifier: workspace:~
         version: link:../constants
+      '@mirascript/help':
+        specifier: workspace:~
+        version: link:../help
       '@mirascript/mirascript':
         specifier: workspace:~
         version: link:../mirascript

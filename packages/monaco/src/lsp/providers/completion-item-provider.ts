@@ -10,6 +10,7 @@ import {
     serialize,
 } from '@mirascript/mirascript';
 import { DiagnosticCode } from '@mirascript/mirascript/subtle';
+import { KEYWORDS as HELP_KEYWORDS } from '@mirascript/help';
 import {
     type editor,
     languages,
@@ -59,9 +60,7 @@ const COMMON_GLOBAL_SUGGESTIONS = (
             kind: languages.CompletionItemKind.Keyword,
             insertText: 'type',
             commitCharacters: ['('],
-            documentation: {
-                value: `使用 \`type()\` 调用获取表达式的类型。${codeblock('type(expression);\nexpression::type();')}`,
-            },
+            documentation: { value: HELP_KEYWORDS.type },
             range,
         },
         {
@@ -69,9 +68,7 @@ const COMMON_GLOBAL_SUGGESTIONS = (
             kind: languages.CompletionItemKind.Keyword,
             insertText: 'global',
             commitCharacters: ['.', '['],
-            documentation: {
-                value: `使用 \`global\` 获取全局变量。${codeblock('global.variableName;\nglobal["variableName"];\n"variableName" in global;')}`,
-            },
+            documentation: { value: HELP_KEYWORDS.global },
             range,
         },
     ];
@@ -183,10 +180,12 @@ const COMMON_GLOBAL_SUGGESTIONS = (
 
 /** 构造关键字选项 */
 function kwSuggestion(kw: string, range: languages.CompletionItemRanges): languages.CompletionItem {
+    const doc = (HELP_KEYWORDS as Record<string, string | undefined>)[kw];
     return {
         label: kw,
         kind: languages.CompletionItemKind.Keyword,
         insertText: kw,
+        documentation: doc ? { value: doc } : undefined,
         range,
     };
 }
