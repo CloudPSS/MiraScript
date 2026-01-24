@@ -100,6 +100,7 @@ async function loadDocsFromFolder(folder) {
  */
 function renderObjectLiteral(entries) {
     const lines = entries.map(([k, v]) => `  ${JSON.stringify(k)}: ${JSON.stringify(v)},`);
+    lines.unshift('  __proto__: null,');
     return `Object.freeze({\n${lines.join('\n')}\n})`;
 }
 
