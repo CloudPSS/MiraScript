@@ -16,7 +16,7 @@ fn is_spring(month) {
 
 ---
 
-对于 `record` / `module` / `extern` 类型，`in` 用于判断某个键是否在容器中存在
+对于 `record` / `module` / `extern` 类型，`in` 用于判断某个键是否在容器中存在：
 
 ```mira
 let record = (a: 1, b: 2, c: 3);
