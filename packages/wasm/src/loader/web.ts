@@ -1,10 +1,50 @@
-/** 回退加载 */
-async function loadFallback() {
+/** 从 Document 推断 URL */
+async function load3() {
     const fallbackUrl =
         (document?.currentScript instanceof HTMLScriptElement
             ? document.currentScript.src
             : (document.currentScript?.href?.baseVal ?? '')) || document.location.href;
     return await body(fetch(new URL('../../lib/wasm_bg.wasm', fallbackUrl)));
+}
+
+/** 从 import.meta 推断 URL */
+async function load2() {
+    return await body(fetch(new URL('../../lib/wasm_bg.wasm', import.meta.url)));
+}
+
+/** 由 esm 加载模块 */
+async function load1() {
+    /** 加载模块 */
+    async function loadMod(mod: unknown): Promise<BufferSource> {
+        if (mod && typeof mod == 'object' && 'default' in mod) {
+            return loadMod(mod.default);
+        }
+        if (
+            mod instanceof URL ||
+            (typeof mod == 'string' &&
+                (mod.startsWith('data:') ||
+                    mod.startsWith('http:') ||
+                    mod.startsWith('https:') ||
+                    mod.startsWith('//')))
+        ) {
+            return await body(fetch(mod));
+        }
+        if (mod instanceof Response) {
+            return await body(mod);
+        }
+        if (ArrayBuffer.isView(mod) || mod instanceof ArrayBuffer) {
+            return mod as ArrayBuffer;
+        }
+        if (mod instanceof WebAssembly.Module) {
+            return mod as unknown as BufferSource;
+        }
+        throw new Error('Failed to load wasm module');
+    }
+
+    // use ?url to force vite to load as bytes
+    // https://github.com/vitejs/vite/issues/12366
+    const mod: unknown = await import('../../lib/wasm_bg.wasm?url', { with: { type: 'bytes' } });
+    return await loadMod(mod);
 }
 
 /** 获取模块的响应体 */
@@ -17,36 +57,8 @@ async function body(response: Response | Promise<Response>): Promise<BufferSourc
     }
 }
 
-/** 加载模块 */
-async function loadMod(mod: unknown): Promise<BufferSource> {
-    if (mod && typeof mod == 'object' && 'default' in mod) {
-        return loadMod(mod.default);
-    }
-    if (typeof mod == 'string' && mod.startsWith('data:')) {
-        return await body(fetch(mod));
-    }
-    if (mod instanceof Response) {
-        return await body(mod);
-    }
-    if (ArrayBuffer.isView(mod) || mod instanceof ArrayBuffer) {
-        return mod as ArrayBuffer;
-    }
-    if (mod instanceof WebAssembly.Module) {
-        return mod as unknown as BufferSource;
-    }
-    throw new Error('Failed to load wasm module');
-}
-
 export const module: Promise<BufferSource> = /* @__PURE__ */ (async () => {
-    try {
-        // use ?url to force vite to load as bytes
-        // https://github.com/vitejs/vite/issues/12366
-        return await loadMod(await import('../../lib/wasm_bg.wasm?url', { with: { type: 'bytes' } }));
-    } catch {
-        if (!import.meta.url) {
-            return await loadFallback();
-        } else {
-            return await body(fetch(new URL('../../lib/wasm_bg.wasm?url', import.meta.url)));
-        }
-    }
+    return load1()
+        .catch(async () => load2())
+        .catch(async () => load3());
 })();
