@@ -299,21 +299,20 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     );
                     return;
                 }
-                let Some(op) = (match op.kind {
-                    TokenKind::Operator(op) if op.is_relation() => op.to_infix_op(),
+                let Some((op, opcode)) = (match op.kind {
+                    TokenKind::Operator(op) if op.is_relation() => {
+                        op.to_infix_op().map(|c| (op, c))
+                    }
                     _ => None,
                 }) else {
                     self.unreachable(op, constant, file!(), line!());
                     return;
                 };
                 let const_reg = self.closures.add_reg();
-                if matches!(op, OpCode::Eq | OpCode::Neq) {
-                    // 比较运算，本身不进行类型转换
-                    self.emit_literal_constant(constant, const_reg);
-                    self.op_binary(pattern.range(), success, op, value, const_reg);
-                } else {
-                    // 近似比较运算和关系运算，仅支持数字和字符串
-                    if let Some(lit) = self.emit_literal_constant(constant, const_reg) {
+
+                if let Some(lit) = self.emit_literal_constant(constant, const_reg) {
+                    if op.is_comparison() {
+                        // 近似比较运算和关系运算，仅支持数字和字符串
                         if !matches!(
                             lit,
                             Constant::Number(_) | Constant::Ordinal(_) | Constant::String(_)
@@ -323,14 +322,16 @@ impl<'s, 'c> Emitter<'s, 'c> {
                                 constant.range(),
                             );
                         }
-                        self.emit_literal_guard(success, pattern, value, lit);
                     } else {
-                        self.emit_constant_guard(success, pattern, value, const_reg);
+                        // 相等运算，本身不进行类型转换，字面量支持所有常量类型
                     }
-                    self.op_if(pattern.range(), OpCode::If, success);
-                    self.op_binary(pattern.range(), success, op, value, const_reg);
-                    self.op_if_end(pattern.range());
+                    self.emit_literal_guard(success, pattern, value, lit);
+                } else {
+                    self.emit_constant_guard(success, pattern, value, const_reg);
                 }
+                self.op_if(pattern.range(), OpCode::If, success);
+                self.op_binary(pattern.range(), success, opcode, value, const_reg);
+                self.op_if_end(pattern.range());
             }
             Range(l, token, r) => {
                 if success.is_empty() {

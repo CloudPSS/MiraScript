@@ -689,9 +689,7 @@ fn is_pi {
 
 关系模式用于匹配关系运算的结果。关系模式的语法为 `<relation> <value>`，其中 `<relation>` 是 `>`、`<`、`<=`、`==`、`!=`、`=~`、`!~` 运算符，`<value>` 是一个字面量模式或常量模式。
 
-关系模式相当于对匹配到的值进行 `<captured> <relation> <value>` 的判断，当该判断返回 `false` 时，匹配失败。
-
-关系模式中不会进行隐式类型转换，当 `<captured>` 与 `<value>` 类型不一致时，匹配失败。
+关系模式相当于对匹配到的值进行 `type(<captured>) == type(<value>) && <captured> <relation> <value>` 的判断，当该判断返回 `false` 时，匹配失败。
 
 ```mira
 fn gpa {
