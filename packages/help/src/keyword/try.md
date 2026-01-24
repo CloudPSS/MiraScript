@@ -1,6 +1,6 @@
 ---
 token: 'try'
-order: 34
+reserved: true
 ---
 
 `try` 是保留关键字。

@@ -1,6 +1,6 @@
 ---
 token: 'pub'
-order: 31
+reserved: true
 ---
 
 `pub` 是保留关键字。

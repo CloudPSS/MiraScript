@@ -1,6 +1,5 @@
 ---
 token: 'return'
-order: 23
 ---
 
 `return` 用于从函数中返回值。

@@ -1,6 +1,6 @@
 ---
 token: 'perform'
-order: 37
+reserved: true
 ---
 
 `perform` 是保留关键字。

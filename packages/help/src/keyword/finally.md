@@ -1,6 +1,6 @@
 ---
 token: 'finally'
-order: 36
+reserved: true
 ---
 
 `finally` 是保留关键字。

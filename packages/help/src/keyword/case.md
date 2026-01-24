@@ -1,13 +1,16 @@
 ---
 token: 'case'
-order: 17
 ---
 
 `case` 是 `match` 表达式中的分支。
 
 ```mira
-match 3 {
-  case 1..3 { "small" }
-  case _ { "other" }
+fn age_group(age) {
+  match age {
+    case 0..12 { "child"}
+    case 13..19 { "teenager" }
+    case 20..64 { "adult" }
+    case _ { "senior" }
+  }
 }
 ```

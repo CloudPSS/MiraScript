@@ -1,11 +1,10 @@
 ---
 token: '::'
-order: 8
 ---
 
-`::` 用于扩展调用（extension call）：`value::method(args...)`。
+`::` 用于扩展调用。
 
 ```mira
 "Hello"::chars()::join("");
-1::type();
+// 相当于 join(chars("Hello"), "");
 ```

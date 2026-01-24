@@ -1,16 +1,16 @@
 ---
 token: '_'
-order: 6
 ---
 
-`_` 是“丢弃”标识符（discard）。常用于：
-
-- 忽略不需要的值
-- 在模式匹配/参数模式中表示“我不关心这部分”
+`_` 是弃元关键字，用于在模式匹配中匹配并忽略任意值。
 
 ```mira
-let (_, y) = (1, 2);
-// y == 2
+let (_, y) = (1, 2); // y == 2
 
-fn head { match it { case [x, .._] { x } case _ { nil } } }
+fn head {
+  match it {
+    case [x, ..] { x }
+    case _ { nil }
+  }
+}
 ```

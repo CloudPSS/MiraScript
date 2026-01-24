@@ -1,6 +1,6 @@
 ---
 token: 'where'
-order: 29
+reserved: true
 ---
 
 `where` 是保留关键字。

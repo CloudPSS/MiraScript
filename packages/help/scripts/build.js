@@ -13,7 +13,6 @@ const distRoot = path.join(packageRoot, 'dist');
  *
  * ---
  * token: "..."   # actual token used in source code
- * order: 123      # used to keep generated output stable
  * ---
  */
 
@@ -42,7 +41,9 @@ function splitFrontMatter(markdown, relativePath) {
     }
 
     const attributes = load(m[1]);
-    const body = markdown.slice(m[0].length);
+    let body = markdown.slice(m[0].length);
+    // Trim leading newlines and tailing newlines
+    body = body.replace(/^\r?\n+/, '').replace(/\r?\n+$/, '') + '\n';
     return { attributes, body };
 }
 
@@ -58,6 +59,26 @@ async function loadDocsFromFolder(folder) {
     /** @type {Array<{ token: string; order: number; body: string; file: string }>} */
     const items = [];
 
+    /**
+     * Check and add an item.
+     * @param {{ token: string | string[]; body: string; reserved: boolean; file: string }} item
+     */
+    function putItem(item) {
+        if (Array.isArray(item.token)) {
+            for (const token of item.token) {
+                items.push({ token, body: item.body, reserved: item.reserved, file: item.file });
+            }
+            return;
+        }
+        if (typeof item.token != 'string' || !item.token.length) {
+            throw new TypeError(`Invalid front-matter field 'token' in ${item.file}`);
+        }
+        if (item.reserved) {
+            return; // skip reserved tokens
+        }
+        items.push(item);
+    }
+
     for (const dirent of dirents) {
         if (!dirent.isFile()) continue;
         if (!dirent.name.endsWith('.md')) continue;
@@ -65,19 +86,9 @@ async function loadDocsFromFolder(folder) {
         const relativePath = path.posix.join(folder, dirent.name);
         const markdown = await readMarkdown(relativePath);
         const { attributes, body } = splitFrontMatter(markdown, relativePath);
-
-        const { token, order } = attributes;
-        if (typeof token !== 'string' || token.length === 0) {
-            throw new TypeError(`Invalid front-matter field 'token' in ${relativePath}`);
-        }
-        if (typeof order !== 'number' || !Number.isFinite(order)) {
-            throw new TypeError(`Invalid front-matter field 'order' in ${relativePath}`);
-        }
-
-        items.push({ token, order, body, file: relativePath });
+        const { token, reserved } = attributes;
+        putItem({ token, body, reserved: Boolean(reserved), file: relativePath });
     }
-
-    items.sort((a, b) => a.order - b.order);
 
     const seenToken = new Set();
     /** @type {Array<[string, string]>} */

@@ -1,6 +1,6 @@
 ---
 token: 'resume'
-order: 38
+reserved: true
 ---
 
 `resume` 是保留关键字。

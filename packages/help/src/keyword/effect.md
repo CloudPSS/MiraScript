@@ -1,6 +1,6 @@
 ---
 token: 'effect'
-order: 33
+reserved: true
 ---
 
 `effect` 是保留关键字。

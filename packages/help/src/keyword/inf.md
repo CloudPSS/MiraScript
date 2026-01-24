@@ -1,6 +1,5 @@
 ---
 token: 'inf'
-order: 5
 ---
 
 `inf` 是正无穷大的 `number` 常量。
