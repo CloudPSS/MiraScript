@@ -1,7 +1,8 @@
-import type { CancellationToken, editor, IMarkdownString, IRange, languages, Position } from '../../monaco-api.js';
+import type { editor, CancellationToken, IMarkdownString, IRange, languages, Position } from '../../monaco-api.js';
 import { Provider } from './base.js';
 import { DiagnosticCode } from '@mirascript/constants';
 import { codeblock, getDeep, valueDoc, paramsList } from '../utils.js';
+import { tokenAt } from '../monaco-private.js';
 import type { FieldsAccessAt, VariableAccessAt } from '../compile-result.js';
 import { KEYWORDS as HELP_KEYWORDS, OPERATORS as HELP_OPERATORS } from '@mirascript/help';
 
@@ -151,37 +152,53 @@ export class HoverProvider extends Provider implements languages.HoverProvider {
 
     /** 语法元素提示 */
     private provideSyntaxHover(model: editor.ITextModel, position: Position): languages.Hover | undefined {
+        const token = tokenAt(model, position);
+        if (token?.type && token.type !== 'other') {
+            return undefined;
+        }
+
+        if (token?.text && (token.text in HELP_KEYWORDS || token.text in HELP_OPERATORS)) {
+            const doc =
+                HELP_KEYWORDS[token.text as keyof typeof HELP_KEYWORDS] ??
+                HELP_OPERATORS[token.text as keyof typeof HELP_OPERATORS];
+            return {
+                contents: [{ value: doc }],
+                range: {
+                    startLineNumber: position.lineNumber,
+                    endLineNumber: position.lineNumber,
+                    startColumn: token.startColumn,
+                    endColumn: token.endColumn,
+                },
+            };
+        }
+
         const word = model.getWordAtPosition(position);
-        if (word) {
-            const doc = (HELP_KEYWORDS as Record<string, string | undefined>)[word.word];
-            if (doc) {
-                return {
-                    contents: [{ value: doc }],
-                    range: {
-                        startLineNumber: position.lineNumber,
-                        endLineNumber: position.lineNumber,
-                        startColumn: word.startColumn,
-                        endColumn: word.endColumn,
-                    },
-                };
-            }
+        if (word?.word && word.word in HELP_KEYWORDS) {
+            const doc = HELP_KEYWORDS[word.word as keyof typeof HELP_KEYWORDS];
+            return {
+                contents: [{ value: doc }],
+                range: {
+                    startLineNumber: position.lineNumber,
+                    endLineNumber: position.lineNumber,
+                    startColumn: word.startColumn,
+                    endColumn: word.endColumn,
+                },
+            };
         }
 
         const lineContent = model.getLineContent(position.lineNumber);
         const hit = operatorAt(lineContent, position.column);
-        if (hit) {
-            const doc = (HELP_OPERATORS as Record<string, string | undefined>)[hit.token];
-            if (doc) {
-                return {
-                    contents: [{ value: doc }],
-                    range: {
-                        startLineNumber: position.lineNumber,
-                        endLineNumber: position.lineNumber,
-                        startColumn: hit.range.startColumn,
-                        endColumn: hit.range.endColumn,
-                    },
-                };
-            }
+        if (hit && hit.token in HELP_OPERATORS) {
+            const doc = HELP_OPERATORS[hit.token as keyof typeof HELP_OPERATORS];
+            return {
+                contents: [{ value: doc }],
+                range: {
+                    startLineNumber: position.lineNumber,
+                    endLineNumber: position.lineNumber,
+                    startColumn: hit.range.startColumn,
+                    endColumn: hit.range.endColumn,
+                },
+            };
         }
 
         return undefined;

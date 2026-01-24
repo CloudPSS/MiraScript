@@ -3,6 +3,7 @@
   "extends": "../../tsconfig.json",
 
   "compilerOptions": {
+    "allowJs": true,
     "noEmit": true
   },
   "exclude": ["./node_modules"]

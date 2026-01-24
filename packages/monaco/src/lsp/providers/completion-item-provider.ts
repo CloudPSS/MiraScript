@@ -21,17 +21,8 @@ import {
     Range,
 } from '../../monaco-api.js';
 import { Provider, type MonacoContext } from './base.js';
-import {
-    codeblock,
-    getDeep,
-    valueDoc,
-    paramsList,
-    strictContainsPosition,
-    wordAt,
-    getField,
-    listFields,
-    isDeprecatedGlobal,
-} from '../utils.js';
+import { strictContainsPosition, wordAt } from '../monaco-utils.js';
+import { codeblock, getDeep, valueDoc, paramsList, getField, listFields, isDeprecatedGlobal } from '../utils.js';
 import { KEYWORDS, RESERVED_KEYWORDS, REG_IDENTIFIER_FULL, REG_ORDINAL_FULL, isKeyword } from '../../constants.js';
 import type { LocalDefinition } from '../compile-result.js';
 
