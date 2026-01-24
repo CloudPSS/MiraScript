@@ -16,15 +16,24 @@ debug_print(..point_info("Not a point"));
 
 // 更复杂的模式匹配示例
 fn analyze_data(data) {
-  match (data::type(), data) {
-    case ("nil",) { "No data provided" }
-    case ("array", []) { "Empty array" }
-    case ("array", [single]) { "Array with one element: $single" }
-    case ("array", [first, ..rest]) { "Array starting with $first, has ${ len(rest) } more elements" }
-    case ("record", (name: "John", age: > 18 and < 65)) { "Working-age John" }
-    case ("record", (name: n, age: a)) { "Person named $n, age $a" }
-    case ("number", x and > 0) { "Positive number: $x" }
-    case ("string", x and not "") { "Non-empty string: $x" }
+  match data {
+    // 字面量模式，匹配 nil 值
+    case nil { "No data provided" }
+    // 关系模式，相当于 type(data) == 'number' && data > 0
+    case > 0 { "Positive number: $data" }
+    // 关系模式，相当于 type(data) == 'string' && data != ""
+    case != "" { "Non-empty string: $data" }
+    // 数组模式，匹配空数组
+    case [] { "Empty array" }
+    // 数组模式，匹配单元素数组，并绑定该元素到变量 single
+    case [single] { "Array with one element: $single" }
+    // 数组模式，匹配长度大于等于 1 的数组，绑定第一个元素到 first，剩余元素到 rest
+    case [first, ..rest] { "Array starting with $first, has ${ len(rest) } more elements" }
+    // 记录模式，匹配特定字段值的记录，其中 name 为字面量模式，age 为复合的关系模式
+    case (name: "John", age: > 18 and < 65) { "Working-age John" }
+    // 记录模式，其中 name 和 age 都是复合模式，绑定变量同时进行关系判断
+    case (name: n and != "", age: a and > 0) { "Person named $n, age $a" }
+    // 弃元模式，匹配所有其他情况
     case _ { "Unknown data type: ${ type(data) }" }
   }
 }
