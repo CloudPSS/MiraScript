@@ -158,8 +158,8 @@ importers:
         specifier: workspace:~
         version: link:../monaco
       '@private/monaco-editor':
-        specifier: ^0.0.62
-        version: 0.0.62
+        specifier: ^0.0.63
+        version: 0.0.63
     devDependencies:
       fflate:
         specifier: ^0.8.2
@@ -196,8 +196,8 @@ importers:
         specifier: workspace:~
         version: link:../monaco
       '@private/monaco-editor':
-        specifier: ^0.0.62
-        version: 0.0.62
+        specifier: ^0.0.63
+        version: 0.0.63
       '@types/node':
         specifier: ^25.0.10
         version: 25.0.10
@@ -259,8 +259,8 @@ importers:
         specifier: ^4.7.0
         version: 4.7.0(monaco-editor@0.55.1)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@private/monaco-editor':
-        specifier: ^0.0.62
-        version: 0.0.62
+        specifier: ^0.0.63
+        version: 0.0.63
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -3265,11 +3265,11 @@ packages:
     resolution:
       { integrity: sha512-wwQAWhWSuHaag8c4q/KN/vCoeOJYshAIvMQwD4GpSb3OiZklFfvAgmj0VCBBImRpuF/aFgIRzllXlVX93Jevww== }
 
-  '@private/monaco-editor@0.0.62':
+  '@private/monaco-editor@0.0.63':
     resolution:
       {
-        integrity: sha512-4CafBBWP1P2AjH54IUL+oakgl4fknF1Af6rjWx03fha3FWKts817CFYLazRl6Eq9hgOYzEyQPISJjJnQniipnA==,
-        tarball: https://packages.aliyun.com/60c179fc44816b8ed233a8bb/npm/npm-registry/@private/monaco-editor/-/@private/monaco-editor-0.0.62.tgz,
+        integrity: sha512-6gS8qQJnKtb5fRicStjoKR9q5JcySK8Qwcyrop1sCH1Fg05ozq3f0fziSayK1zj8xGJZfvIIbBnYWldEqUXjAQ==,
+        tarball: https://packages.aliyun.com/60c179fc44816b8ed233a8bb/npm/npm-registry/@private/monaco-editor/-/@private/monaco-editor-0.0.63.tgz,
       }
 
   '@rollup/plugin-babel@5.3.1':
@@ -4359,9 +4359,9 @@ packages:
     resolution:
       { integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA== }
 
-  baseline-browser-mapping@2.9.17:
+  baseline-browser-mapping@2.9.18:
     resolution:
-      { integrity: sha512-agD0MgJFUP/4nvjqzIB29zRPUuCF7Ge6mEv9s8dHrtYD7QWXRcx75rOADE/d5ah1NI+0vkDl0yorDd5U852IQQ== }
+      { integrity: sha512-e23vBV1ZLfjb9apvfPk4rHVu2ry6RIr2Wfs+O324okSidrX7pTAnEJPCh/O5BtRlr7QtZI7ktOP3vsqr7Z5XoA== }
     hasBin: true
 
   batch@0.6.1:
@@ -10085,9 +10085,9 @@ packages:
     resolution:
       { integrity: sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw== }
 
-  undici@7.19.0:
+  undici@7.19.1:
     resolution:
-      { integrity: sha512-Heho1hJD81YChi+uS2RkSjcVO+EQLmLSyUlHyp7Y/wFbxQaGb4WXVKD073JytrjXJVkSZVzoE2MCSOKugFGtOQ== }
+      { integrity: sha512-Gpq0iNm5M6cQWlyHQv9MV+uOj1jWk7LpkoE5vSp/7zjb4zMdAcUD+VL5y0nH4p9EbUklq00eVIIX/XcDHzu5xg== }
     engines: { node: '>=20.18.1' }
 
   unicode-canonical-property-names-ecmascript@2.0.1:
@@ -14001,7 +14001,7 @@ snapshots:
 
   '@polka/url@1.0.0-next.29': {}
 
-  '@private/monaco-editor@0.0.62': {}
+  '@private/monaco-editor@0.0.63': {}
 
   '@rollup/plugin-babel@5.3.1(@babel/core@7.28.6)(rollup@2.79.2)':
     dependencies:
@@ -14983,7 +14983,7 @@ snapshots:
 
   base64-js@1.5.1: {}
 
-  baseline-browser-mapping@2.9.17: {}
+  baseline-browser-mapping@2.9.18: {}
 
   batch@0.6.1: {}
 
@@ -15087,7 +15087,7 @@ snapshots:
 
   browserslist@4.28.1:
     dependencies:
-      baseline-browser-mapping: 2.9.17
+      baseline-browser-mapping: 2.9.18
       caniuse-lite: 1.0.30001766
       electron-to-chromium: 1.5.278
       node-releases: 2.0.27
@@ -15234,7 +15234,7 @@ snapshots:
       parse5: 7.3.0
       parse5-htmlparser2-tree-adapter: 7.1.0
       parse5-parser-stream: 7.1.2
-      undici: 7.19.0
+      undici: 7.19.1
       whatwg-mimetype: 4.0.0
 
   chokidar@3.6.0:
@@ -20395,7 +20395,7 @@ snapshots:
 
   undici-types@7.16.0: {}
 
-  undici@7.19.0: {}
+  undici@7.19.1: {}
 
   unicode-canonical-property-names-ecmascript@2.0.1: {}
 
