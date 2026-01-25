@@ -2,13 +2,15 @@
 token: 'for'
 ---
 
-## `for` 用于遍历可迭代对象。
+`for` 用于遍历可迭代对象。
 
-遍历一个范围
+---
+
+遍历一个范围：
 
 ```mira
 let mut sum = 0;
-for i in 1..3 {
+for i in 1..3 { // 或者 1..<4
   sum += i;
 }
 // sum == 6
@@ -16,7 +18,7 @@ for i in 1..3 {
 
 ---
 
-遍历一个数组
+遍历一个数组：
 
 ```mira
 let arr = [10, 20, 30];
@@ -29,7 +31,7 @@ for value in arr {
 
 ---
 
-遍历一个记录
+遍历一个记录：
 
 ```mira
 let record = (a: 1, b: 2, c: 3);
