@@ -18,31 +18,31 @@ where
         }
     }
 
-    fn format(&self, formatter: &mut Formatter, measurement: usize) {
+    fn format(&self, formatter: &mut Formatter, complexity: usize) {
         use RecordElementBase::*;
         match self {
             Named(name, colon, e) => {
                 formatter.write_token(name);
                 formatter.write_token(colon);
                 formatter.write_space();
-                e.format(formatter, measurement);
+                e.format(formatter, complexity);
             }
             InterpolateNamed(i, colon, e) => {
-                i.format(formatter, measurement);
+                i.format(formatter, complexity);
                 formatter.write_token(colon);
                 formatter.write_space();
-                e.format(formatter, measurement);
+                e.format(formatter, complexity);
             }
             OmitNamed(colon, e) => {
                 formatter.write_token(colon);
-                e.format(formatter, measurement);
+                e.format(formatter, complexity);
             }
             Unnamed(e) => {
-                e.format(formatter, measurement);
+                e.format(formatter, complexity);
             }
             Spread(op, e) => {
                 formatter.write_token(op);
-                e.format(formatter, measurement);
+                e.format(formatter, complexity);
             }
         }
     }

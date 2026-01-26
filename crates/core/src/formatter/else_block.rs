@@ -7,29 +7,10 @@ impl Formattable for ElseBlock<'_> {
         self.1.measure(formatter, indent)
     }
 
-    fn format(&self, formatter: &mut Formatter, measurement: usize) {
+    fn format(&self, formatter: &mut Formatter, complexity: usize) {
         formatter.write_space();
         formatter.write_token(&self.0);
         formatter.write_space();
-        self.1.format(formatter, measurement);
-    }
-}
-
-impl Formattable for Option<ElseBlock<'_>> {
-    fn measure(&self, formatter: &Formatter, indent: usize) -> usize {
-        if let Some(else_block) = self {
-            if else_block.1.is_if() {
-                return usize::max(1, else_block.measure(formatter, indent));
-            }
-            else_block.measure(formatter, indent)
-        } else {
-            0
-        }
-    }
-
-    fn format(&self, formatter: &mut Formatter, measurement: usize) {
-        if let Some(else_block) = self {
-            else_block.format(formatter, measurement)
-        }
+        self.1.format(formatter, complexity);
     }
 }

@@ -11,13 +11,13 @@ impl<E: Formattable, S: Formattable> Formattable for ArrayElementBase<'_, E, S> 
         }
     }
 
-    fn format(&self, formatter: &mut Formatter, measurement: usize) {
+    fn format(&self, formatter: &mut Formatter, complexity: usize) {
         use ArrayElementBase::*;
         match self {
-            Element(e) => e.format(formatter, measurement),
+            Element(e) => e.format(formatter, complexity),
             Spread(op, e) => {
                 formatter.write_token(op);
-                e.format(formatter, measurement);
+                e.format(formatter, complexity);
             }
         }
     }

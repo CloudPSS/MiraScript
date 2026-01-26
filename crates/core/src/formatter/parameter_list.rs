@@ -7,12 +7,10 @@ impl Formattable for ParameterList<'_> {
         self.1.measure(formatter, indent)
     }
 
-    fn format(&self, formatter: &mut Formatter, measurement: usize) {
+    fn format(&self, formatter: &mut Formatter, complexity: usize) {
         formatter.write_token(&self.0);
         if !self.1.is_empty() {
-            formatter.indent();
-            self.1.format(formatter, measurement);
-            formatter.unindent();
+            self.1.format(formatter, complexity);
         }
         formatter.write_token(&self.2);
     }
