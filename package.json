@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "prepare": "husky || echo Failed to initialize husky",
+    "format:mira": "pnpm -C packages/cli run mirascript format --write '../../**/*.mira'",
     "format": "prettier --cache --cache-strategy content --write .",
     "lint": "eslint --cache --cache-location node_modules/.cache/eslint/ --cache-strategy content"
   },

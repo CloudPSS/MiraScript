@@ -19,7 +19,7 @@ fn add(a, b) {
 定义一个变量，并使用函数表达式初始化：
 
 ```mira
-let multiply = fn(x, y) {
+let multiply = fn (x, y) {
   return x * y;
 };
 ```
