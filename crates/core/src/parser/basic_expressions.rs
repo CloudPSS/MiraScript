@@ -136,11 +136,7 @@ fn pseudo_function<'t, 's: 't, const EXTENSION_CALL: bool>(i: &mut Input<'s>) ->
         )),
     )
         .parse_next(i)?;
-    let exp = if args.len() != (1 - provided)
-        || args
-            .first()
-            .is_some_and(|a| a.is_spread() || a.has_tail_comma())
-    {
+    let exp = if args.len() != (1 - provided) || args.first().is_some_and(|a| a.is_spread()) {
         vec![ListItem::new(ArrayElementBase::Element(
             Expression::unknown_range(
                 [],

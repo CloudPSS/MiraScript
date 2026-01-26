@@ -309,9 +309,13 @@ impl<'s> Expression<'s> {
         error_range: SourceRange,
         error: DiagnosticCode,
     ) -> Self {
+        let mut tokens = tokens.into();
+        if tokens.is_empty() {
+            tokens.push(Token::empty_range(error_range.clone()).into());
+        }
         Expression::Unknown {
             recovered: None,
-            tokens: tokens.into(),
+            tokens,
             errors: vec![SourceDiagnostic::new(error_range, error)],
         }
     }
