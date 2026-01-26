@@ -1,10 +1,11 @@
 /* eslint-disable no-console */
 import styles from 'ansi-styles';
 import supportsColor from 'supports-color';
-import { compile } from '../index.js';
-import { createVmContext, type VmValue } from '../vm/index.js';
-import { debug_print, panic } from '../vm/lib/global/debug.js';
+import { compile, createVmContext, type VmValue } from '@mirascript/mirascript';
+import { lib } from '@mirascript/mirascript/subtle';
 import { print } from './print.js';
+
+const { panic, debug_print } = lib;
 
 panic.serializer = debug_print.serializer = (arg, format) => {
     if (format === '%o' || format === '%O' || !format) {

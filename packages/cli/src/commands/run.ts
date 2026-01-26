@@ -1,19 +1,15 @@
-/* eslint-disable no-console */
 import { readFile, stat } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { InvalidArgumentError, program } from '@commander-js/extra-typings';
-import { execute } from './execute.js';
-import { isNaN, PositiveInfinity } from '../helpers/utils.js';
-import pkg from '#package.json' with { type: 'json' };
-import { compileSync } from '../compiler/index.js';
-import { configCheckpoint, type VmValue } from '../vm/index.js';
+import { compileSync, configCheckpoint, type VmValue } from '@mirascript/mirascript';
+import { execute } from '../utils/execute.js';
 
 const DEFAULT_TIMEOUT = 3000;
 
-export default program
-    .name(pkg.name.split('/').pop()!)
-    .version(pkg.version)
-    .description(pkg.description)
+/* eslint-disable no-console */
+program
+    .command('run', { isDefault: true })
+    .description('执行 MiraScript 脚本，默认命令')
     .option(
         '-v, --variable <key=value>',
         '设置全局变量，可以多次使用',
@@ -42,7 +38,7 @@ export default program
         '脚本执行超时时间（毫秒，0 表示不超时）',
         (v) => {
             const ms = Number.parseFloat(v);
-            if (isNaN(ms) || ms < 0) {
+            if (Number.isNaN(ms) || ms < 0) {
                 throw new InvalidArgumentError('超时时间必须是非负整数');
             }
             return ms;
@@ -53,7 +49,7 @@ export default program
     .option('-e, --eval <script>', '要执行的脚本')
     .argument('[script]', '要执行的脚本文件路径（如果提供了 -e 则忽略此参数）')
     .action(async (script, opt) => {
-        configCheckpoint(opt.timeout || PositiveInfinity);
+        configCheckpoint(opt.timeout || Number.POSITIVE_INFINITY);
         if (opt.eval != null) {
             const template = !!opt.template;
             await execute(opt.eval, template, opt.variable, template ? 'eval.miratpl' : 'eval.mira');
