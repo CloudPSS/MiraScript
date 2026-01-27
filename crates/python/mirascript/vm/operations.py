@@ -494,10 +494,9 @@ def Get_(obj,key):
     return None
 
 def GetGlobal_(obj,key):
-    
-    r= Get_(obj,key)
+    pk = ToString_(key)
+    r= obj.get(pk)
     return r
-    pass
 
 def Set_(obj,key,val):
     AssertInit_(obj)

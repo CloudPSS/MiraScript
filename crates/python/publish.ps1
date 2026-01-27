@@ -141,7 +141,7 @@ param (
             # 使用 maturin publish 发布
             # 如果需要指定 token，可以使用: maturin publish --username __token__ --password $env:PYPI_TOKEN
             maturin publish 
-            
+            docker run --rm -v D:\code\core:/core -w /core/crates/python -v C:\Users\dps-zdm\.pypirc:/root/.pypirc --entrypoint "/bin/sh" $dockerImage -c ". /opt/venv/bin/activate && maturin publish --no-sdist"
             if ($LASTEXITCODE -eq 0) {
                 Write-Host "  ✓ Publish succeeded!" -ForegroundColor Green
             }
