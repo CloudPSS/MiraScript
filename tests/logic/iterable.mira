@@ -78,3 +78,16 @@ for k in 1 + 0.25 * 2..<{ 4 * 1 } {
   seq = [..seq, k];
 }
 t_eq(seq, [1.5, 2.5, 3.5]);
+
+// Scope in for
+{
+  let i = 'i';
+  let r = for i in [1, 2, 3] {
+    t_eq(i::type(), 'number');
+  } else {
+    t_eq(i, 'i');
+    1
+  };
+  t_eq(r, 1);
+  t_eq(i, 'i');
+}

@@ -1216,6 +1216,8 @@ impl<'s, 'c> Emitter<'s, 'c> {
             Cond(cond, op_question, then_expr, op_colon, else_expr) => {
                 self.enter_scope(expr.range());
                 self.declare_cond_expr(cond);
+                self.declare_expression(then_expr);
+                self.declare_expression(else_expr);
 
                 let cond_reg = self.emit_expression_reg(cond, brk);
                 self.op_if(op_question.range(), OpCode::If, cond_reg);
@@ -1229,6 +1231,9 @@ impl<'s, 'c> Emitter<'s, 'c> {
             If(kw, cond, then_expr, else_part) => {
                 self.enter_scope(kw.range.end..expr.range().end);
                 self.declare_cond_expr(cond);
+                // Then_expr 一定是 block_expression
+                // Else_part 如果存在，其表达式也一定是 block_expression/if_expression
+                // 都有自己独立的 scope，不需要在此处 declare
 
                 let cond_reg = self.emit_expression_reg(cond, brk);
                 self.op_if(kw.range(), OpCode::If, cond_reg);

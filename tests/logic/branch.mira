@@ -44,3 +44,44 @@ if !T() {
 } else {
   t_never();
 }
+
+{
+  let a = 1;
+  if 2 is a && {
+    t_eq(a, 2);
+    true
+  } {
+    t_eq(a, 2);
+  } else {
+    t_never();
+  }
+  t_eq(a, 1);
+}
+{
+  let a = 1;
+  if 2 is a && {
+    t_eq(a, 2);
+    false
+  } {
+    t_never();
+  } else {
+    t_eq(a, 2);
+  }
+  t_eq(a, 1);
+}
+{
+  let a = 1;
+  if 2 is a && {
+    let c = 3 is a;
+    t_eq(a, 3);
+    t_eq(c, true);
+    true
+  } {
+    let c = 3 is a;
+    t_eq(a, 3);
+    t_eq(c, true);
+  } else {
+    t_never();
+  }
+  t_eq(a, 1);
+}

@@ -116,3 +116,8 @@ test('bad expression', compileAndRun, '++', {
     instanceOf: Error,
     message: /UnknownExpression/,
 });
+test('is expression', compileAndRun, '1 is a && a == 1', true);
+test('is expression', compileAndRun, 'a == 1 && 1 is a', {
+    instanceOf: Error,
+    message: /UninitializedVariable/,
+});
