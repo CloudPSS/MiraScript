@@ -49,7 +49,11 @@ export const to_boolean = VmLib(
         },
         paramsType: { data: 'boolean', fallback: 'any' },
         returnsType: 'boolean | type(fallback)',
-        examples: ['to_boolean(true, false) // true', 'to_boolean(nil, "failed") // "failed"'],
+        examples: [
+            'to_boolean(true, false)   // true',
+            'to_boolean(nil, "failed") // "failed"',
+            'to_boolean(0, "failed")   // "failed"',
+        ],
     },
 );
 
