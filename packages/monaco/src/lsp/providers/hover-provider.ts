@@ -188,24 +188,26 @@ export class HoverProvider extends Provider implements languages.HoverProvider {
             if (REG_NUMBER_ALL_FULL.test(token.text)) {
                 const num = convert.toNumber(token.text.replaceAll('_', ''), null);
                 if (num == null) return undefined;
-                const contents: IMarkdownString[] = [
-                    { value: `数字字面量` },
-                    { value: codeblock('val: ' + serializeNumber(num)) },
-                ];
+                const contents: string[] = [];
                 if (Number.isInteger(num)) {
                     const abs = Math.abs(num);
                     if (abs <= BIN_MAX) {
-                        contents.push({ value: codeblock('bin: ' + serializeInteger(num, 2)) });
+                        contents.push('\0(bin) ' + serializeInteger(num, 2));
                     }
                     if (abs <= OCT_MAX) {
-                        contents.push({ value: codeblock('oct: ' + serializeInteger(num, 8)) });
+                        contents.push('\0(oct) ' + serializeInteger(num, 8));
                     }
                     if (abs <= HEX_MAX) {
-                        contents.push({ value: codeblock('hex: ' + serializeInteger(num, 16)) });
+                        contents.push('\0(hex) ' + serializeInteger(num, 16));
                     }
                 }
+                if (contents.length) {
+                    contents.unshift(`\0(dec) ` + serializeNumber(num));
+                } else {
+                    contents.push(`\0(number) ` + serializeNumber(num));
+                }
                 return {
-                    contents,
+                    contents: [{ value: codeblock(contents.join('\n')) }],
                     range: rangeAt(position, token),
                 };
             }
