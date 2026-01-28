@@ -31,7 +31,22 @@ fn describe_value(value) {
 }
 
 debug_print("值描述:");
-let test_values = [nil, true, false, 0, 5, 15, -3, "", "hello", [], [42], [1, 2, 3], (), (name: "Alice")];
+let test_values = [
+  nil,
+  true,
+  false,
+  0,
+  5,
+  15,
+  -3,
+  "",
+  "hello",
+  [],
+  [42],
+  [1, 2, 3],
+  (),
+  (name: "Alice"),
+];
 for value in test_values {
   debug_print(`describe_value(%o) = %o`, value, describe_value(value));
 }

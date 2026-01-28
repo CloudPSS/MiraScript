@@ -39,7 +39,17 @@ fn analyze_data(data) {
 }
 
 // 测试各种数据类型
-for data in [nil, [], [42], [1, 2, 3], (name: "John", age: 25), (name: "Alice", age: 30), 42, "Hello", true] {
+for data in [
+  nil,
+  [],
+  [42],
+  [1, 2, 3],
+  (name: "John", age: 25),
+  (name: "Alice", age: 30),
+  42,
+  "Hello",
+  true,
+] {
   debug_print("analyze_data(%o) = %o", data, analyze_data(data));
 }
 

@@ -6,18 +6,27 @@ t_eq("Braced: ${ v_number }, ${ v_string }, ${ v_false }", "Braced: 42, Hello, M
 t_eq("Mixed: $v_number and ${ v_string }!", "Mixed: 42 and Hello, Mira!!");
 t_eq("Nested: ${ 'Mira' }", "Nested: Mira");
 t_eq("Parentheses: $(v_number + 8) $(v_true)", "Parentheses: 50 true");
-t_eq("Complex Braced: ${
-  fn add(x, y) { x + y }
-  add(v_number, 52)
-}", "Complex Braced: 94");
-t_eq("Complex Parentheses: $({
-  fn multiply(x, y) { x * y }
-  multiply(v_number, 2)
-})", "Complex Parentheses: 84");
-t_eq("Complex Parentheses with format: $({
-  fn multiply(x, y) { x * y }
-  multiply(v_number, 2)
-}:.2)", "Complex Parentheses with format: 84.00");
+t_eq(
+  "Complex Braced: ${
+    fn add(x, y) { x + y }
+    add(v_number, 52)
+  }",
+  "Complex Braced: 94",
+);
+t_eq(
+  "Complex Parentheses: $({
+    fn multiply(x, y) { x * y }
+    multiply(v_number, 2)
+  })",
+  "Complex Parentheses: 84",
+);
+t_eq(
+  "Complex Parentheses with format: $({
+    fn multiply(x, y) { x * y }
+    multiply(v_number, 2)
+  }:.2)",
+  "Complex Parentheses with format: 84.00",
+);
 
 t_eq("Json: ${ "a": 1, "b": v_string, "c": [v_number, v_false] }", "Json: a: 1, b: Hello, Mira!, c: [42, false]");
 t_eq("Json in parentheses: $({ "x": v_number * 2, "y": v_true })", "Json in parentheses: x: 84, y: true");

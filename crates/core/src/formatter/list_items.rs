@@ -21,7 +21,11 @@ where
             .map(|item| item.deref().measure(formatter, indent))
             .max()
             .unwrap_or(0);
-        if inner == 0 { 0 } else { inner + 1 }
+        if inner == 0 {
+            if self.len() > 8 { 1 } else { 0 }
+        } else {
+            inner + 1
+        }
     }
 
     fn format(&self, formatter: &mut Formatter, complexity: usize) {
