@@ -20,9 +20,12 @@ t_true('abc' is > 'ab');
 t_false('abc' is < 'ab');
 t_true(true is == true);
 t_false(true is != true);
+t_false(true is != 0);
+t_false(false is != 0);
 t_true(false is == false);
 t_false(false is != false);
 t_false(1 is == '1');
+t_false(1 is != '1');
 t_false(1 is =~ '1');
 t_true('a' is =~ 'A');
 
@@ -36,6 +39,16 @@ t_true(@str is >= @str);
 t_true(@str >= @str);
 t_true(@num is >= @num);
 t_true(@num >= @num);
+
+const @record = (1, 2);
+t_true((1, 2) is @record);
+t_true((1, 2) is == @record);
+t_false((1,) is @record);
+t_false((1, 2, 3) is @record);
+t_false([1, 2] is @record);
+t_false([1, 2] is == @record);
+t_false([1, 2] is != @record);
+t_true([1, 2] is not != @record);
 
 {
   t_true([1, 2, 3] is [1, ..rest] && rest is [2, 3]);

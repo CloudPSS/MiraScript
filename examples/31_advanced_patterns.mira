@@ -163,7 +163,19 @@ fn type_based_processing(value) {
 }
 
 debug_print("类型模式:");
-let type_tests = [42, -17, 0, nan, "hello", "", true, [1, 2, 3], (a: 1, b: 2), fn { }, nil];
+let type_tests = [
+  42,
+  -17,
+  0,
+  nan,
+  "hello",
+  "",
+  true,
+  [1, 2, 3],
+  (a: 1, b: 2),
+  fn { },
+  nil,
+];
 for test in type_tests {
   debug_print(" ", type_based_processing(test));
 }

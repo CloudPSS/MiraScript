@@ -1,8 +1,48 @@
-import type { CancellationToken, editor, IMarkdownString, IRange, languages, Position } from '../../monaco-api.js';
-import { Provider } from './base.js';
 import { DiagnosticCode } from '@mirascript/constants';
-import { codeblock, getDeep, valueDoc, paramsList } from '../utils.js';
+import { convert } from '@mirascript/mirascript/subtle';
+import { KEYWORDS as HELP_KEYWORDS, OPERATORS as HELP_OPERATORS } from '@mirascript/help';
+import { REG_BIN, REG_HEX, REG_NUMBER, REG_OCT } from '../../constants.js';
+import type { editor, CancellationToken, IMarkdownString, IRange, languages, Position } from '../../monaco-api.js';
+import { codeblock, getDeep, valueDoc, paramsList, serializeNumber, serializeInteger } from '../utils.js';
+import { tokenAt } from '../monaco-private.js';
+import { rangeAt } from '../monaco-utils.js';
 import type { FieldsAccessAt, VariableAccessAt } from '../compile-result.js';
+import { Provider } from './base.js';
+
+const OPERATOR_TOKENS_DESC = Object.keys(HELP_OPERATORS as Record<string, string>).sort((a, b) => b.length - a.length);
+const REG_NUMBER_ALL_FULL = new RegExp(
+    `^(?:${REG_BIN.source}|${REG_OCT.source}|${REG_HEX.source}|${REG_NUMBER.source})$`,
+    REG_NUMBER.flags,
+);
+
+const BIN_MAX = 2 ** 32 - 1;
+const OCT_MAX = 8 ** 18 - 1;
+const HEX_MAX = 16 ** 16 - 1;
+
+/** 在指定位置查找操作符 */
+function operatorAt(lineContent: string, column: number): { token: string; range: IRange } | undefined {
+    const index = Math.max(0, column - 1);
+    for (const token of OPERATOR_TOKENS_DESC) {
+        for (let offset = 0; offset < token.length; offset++) {
+            const start = index - offset;
+            if (start < 0) continue;
+            const end = start + token.length;
+            if (end > lineContent.length) continue;
+            if (lineContent.slice(start, end) !== token) continue;
+            if (index < start || index >= end) continue;
+            return {
+                token,
+                range: {
+                    startLineNumber: 0,
+                    startColumn: start + 1,
+                    endLineNumber: 0,
+                    endColumn: end + 1,
+                },
+            };
+        }
+    }
+    return undefined;
+}
 
 /** @inheritdoc */
 export class HoverProvider extends Provider implements languages.HoverProvider {
@@ -120,6 +160,81 @@ export class HoverProvider extends Provider implements languages.HoverProvider {
             range,
         };
     }
+
+    /** 语法元素提示 */
+    private provideSyntaxHover(model: editor.ITextModel, position: Position): languages.Hover | undefined {
+        const token = tokenAt(model, position);
+        if (token?.type && token.type !== 'other') {
+            return undefined;
+        }
+
+        if (token?.text) {
+            if (token.text in HELP_KEYWORDS) {
+                const doc = HELP_KEYWORDS[token.text as keyof typeof HELP_KEYWORDS];
+                return {
+                    contents: [{ value: doc }],
+                    range: rangeAt(position, token),
+                };
+            }
+
+            if (token.text in HELP_OPERATORS) {
+                const doc = HELP_OPERATORS[token.text as keyof typeof HELP_OPERATORS];
+                return {
+                    contents: [{ value: doc }],
+                    range: rangeAt(position, token),
+                };
+            }
+
+            if (REG_NUMBER_ALL_FULL.test(token.text)) {
+                const num = convert.toNumber(token.text.replaceAll('_', ''), null);
+                if (num == null) return undefined;
+                const contents: string[] = [];
+                if (Number.isInteger(num)) {
+                    const abs = Math.abs(num);
+                    if (abs <= BIN_MAX) {
+                        contents.push('\0(bin) ' + serializeInteger(num, 2));
+                    }
+                    if (abs <= OCT_MAX) {
+                        contents.push('\0(oct) ' + serializeInteger(num, 8));
+                    }
+                    if (abs <= HEX_MAX) {
+                        contents.push('\0(hex) ' + serializeInteger(num, 16));
+                    }
+                }
+                if (contents.length) {
+                    contents.unshift(`\0(dec) ` + serializeNumber(num));
+                } else {
+                    contents.push(`\0(number) ` + serializeNumber(num));
+                }
+                return {
+                    contents: [{ value: codeblock(contents.join('\n')) }],
+                    range: rangeAt(position, token),
+                };
+            }
+        }
+
+        const word = model.getWordAtPosition(position);
+        if (word?.word && word.word in HELP_KEYWORDS) {
+            const doc = HELP_KEYWORDS[word.word as keyof typeof HELP_KEYWORDS];
+            return {
+                contents: [{ value: doc }],
+                range: rangeAt(position, word),
+            };
+        }
+
+        const lineContent = model.getLineContent(position.lineNumber);
+        const hit = operatorAt(lineContent, position.column);
+        if (hit && hit.token in HELP_OPERATORS) {
+            const doc = HELP_OPERATORS[hit.token as keyof typeof HELP_OPERATORS];
+            return {
+                contents: [{ value: doc }],
+                range: rangeAt(position, hit.range),
+            };
+        }
+
+        return undefined;
+    }
+
     /** @inheritdoc */
     async provideHover(
         model: editor.ITextModel,
@@ -128,8 +243,9 @@ export class HoverProvider extends Provider implements languages.HoverProvider {
         context?: languages.HoverContext<languages.Hover>,
     ): Promise<languages.Hover | undefined> {
         const value = await this.getValueAt(model, position);
-        if (!value) return undefined;
-        if ('fields' in value) {
+        if (!value) {
+            return this.provideSyntaxHover(model, position);
+        } else if ('fields' in value) {
             return this.provideFieldHover(model, value.range, value.fields);
         } else {
             return this.provideVariableHover(model, value.variable);

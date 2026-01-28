@@ -60,3 +60,20 @@ t_timeout(fn {
 t_timeout(fn {
   while true { }
 });
+
+// Scope in while
+{
+  let a = 12;
+  while 1 is a {
+    t_eq(a, 1);
+    break;
+  } else {
+    t_never();
+  }
+
+  while 1 is not a {
+    t_never();
+  } else {
+    t_eq(a, 12);
+  }
+}

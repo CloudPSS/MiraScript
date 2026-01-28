@@ -58,9 +58,6 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
         constantKeywords: CONSTANT_KEYWORDS,
         numericKeywords: NUMERIC_KEYWORDS,
 
-        inlineDocParam: /\(parameter(?: pattern)?\)/,
-        inlineDocMod: ['local', 'global', 'field', 'module'].join('|'),
-
         start: mode === 'template' ? 'root_template' : mode === 'doc' ? 'root_doc' : 'root',
         tokenPostfix: '.mirascript',
         tokenizer: {
@@ -292,21 +289,21 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
 
             root_doc: [
                 // inline doc, start with `\0`
-                [/^\0/, { token: '', switchTo: '@inline_doc' }],
+                [/(?=^\0)/, { token: '', switchTo: '@inline_doc' }],
                 [/(?=.)/, { token: '', switchTo: '@doc_mode' }],
             ],
 
             inline_doc: [
                 [
-                    /(@inlineDocParam)(@whitespace+)(\.\.|)(mut)(@whitespace+)(@identifier)/,
+                    /(\0\(parameter(?: pattern)?\))(@whitespace+)(\.\.|)(mut)(@whitespace+)(@identifier)/,
                     ['entity.name.label', '', 'delimiter', 'keyword.mut', '', 'variable.emphasis'],
                 ],
                 [
-                    /(@inlineDocParam)(@whitespace+)(\.\.|)(@identifier)/,
+                    /(\0\(parameter(?: pattern)?\))(@whitespace+)(\.\.|)(@identifier)/,
                     ['entity.name.label', '', 'delimiter', 'variable.other.constant.emphasis'],
                 ],
-                [/(@whitespace*)(\(module\))(@whitespace*)(@identifier)/, ['', 'entity.name.label', '', 'type']],
-                [/(\(@inlineDocMod\))(@whitespace+)/, ['entity.name.label', '']],
+                [/(@whitespace*|\0)(\(module\))(@whitespace*)(@identifier)/, ['', 'entity.name.label', '', 'type']],
+                [/(\0\([^)]+\))(@whitespace+)/, ['entity.name.label', '']],
                 { include: '@doc_mode' },
             ],
 

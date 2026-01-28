@@ -27,12 +27,24 @@ t_eq(map((a: 1, b: 2, c: 3), fn (x) {
 }), (a: nil, b: nil, c: 3));
 
 // 测试 map 返回 function 的情况
-t_eq(map([1, 2], fn (x) {
-  return fn { };
-}), [nil, nil]);
-t_eq(map((a: 1, b: 2, c: nil), fn (x) {
-  return fn { };
-}), (a: nil, b: nil, c: nil));
+t_eq(
+  map(
+    [1, 2],
+    fn (x) {
+      return fn { };
+    },
+  ),
+  [nil, nil],
+);
+t_eq(
+  map(
+    (a: 1, b: 2, c: nil),
+    fn (x) {
+      return fn { };
+    },
+  ),
+  (a: nil, b: nil, c: nil),
+);
 
 // 测试 filter 函数
 
@@ -149,15 +161,39 @@ t_throws(fn () { (nil,)::filter(fn { it }) });
 t_throws(fn () { ''::filter(fn { it }) });
 
 // mapper 返回函数
-t_eq(map(0, fn (x) {
-  return fn { x };
-}), nil);
-t_eq(map([0], fn (x) {
-  return fn { x };
-}), [nil]);
-t_eq(filter_map([0], fn (x) {
-  return fn { x };
-}), [nil]);
-t_eq(filter_map((x: 1), fn (x) {
-  return fn { x };
-}), (x: nil));
+t_eq(
+  map(
+    0,
+    fn (x) {
+      return fn { x };
+    },
+  ),
+  nil,
+);
+t_eq(
+  map(
+    [0],
+    fn (x) {
+      return fn { x };
+    },
+  ),
+  [nil],
+);
+t_eq(
+  filter_map(
+    [0],
+    fn (x) {
+      return fn { x };
+    },
+  ),
+  [nil],
+);
+t_eq(
+  filter_map(
+    (x: 1),
+    fn (x) {
+      return fn { x };
+    },
+  ),
+  (x: nil),
+);

@@ -13,12 +13,12 @@ impl Formattable for Pattern<'_> {
         }
     }
 
-    fn format(&self, formatter: &mut Formatter, measurement: usize) {
+    fn format(&self, formatter: &mut Formatter, complexity: usize) {
         use Pattern::*;
         match self {
             Grouping(op, pattern, cp) => {
                 formatter.write_token(op);
-                pattern.format(formatter, measurement);
+                pattern.format(formatter, complexity);
                 formatter.write_token(cp);
             }
             Literal(op, literal) => {
@@ -33,12 +33,12 @@ impl Formattable for Pattern<'_> {
             Relation(op, constant) => {
                 formatter.write_token(op);
                 formatter.write_space();
-                constant.format(formatter, measurement);
+                constant.format(formatter, complexity);
             }
             Range(left, op, right) => {
-                left.format(formatter, measurement);
+                left.format(formatter, complexity);
                 formatter.write_token(op);
-                right.format(formatter, measurement);
+                right.format(formatter, complexity);
             }
             Discard(kw) => {
                 formatter.write_token(kw);
@@ -52,7 +52,7 @@ impl Formattable for Pattern<'_> {
             }
             Record(op, list_items, cp) => {
                 formatter.write_token(op);
-                list_items[..].format(formatter, measurement);
+                list_items.format(formatter, complexity);
                 if list_items.len() == 1 && list_items[0].is_unnamed() {
                     formatter.write_token_or(list_items[0].tail_comma(), Operator::Comma);
                 }
@@ -60,21 +60,21 @@ impl Formattable for Pattern<'_> {
             }
             Array(op, list_items, cp) => {
                 formatter.write_token(op);
-                list_items[..].format(formatter, measurement);
+                list_items.format(formatter, complexity);
                 formatter.write_token(cp);
             }
             SpreadDiscard(_) => (),
             And(left, kw, right) | Or(left, kw, right) => {
-                left.format(formatter, measurement);
+                left.format(formatter, complexity);
                 formatter.write_space();
                 formatter.write_token(kw);
                 formatter.write_space();
-                right.format(formatter, measurement);
+                right.format(formatter, complexity);
             }
             Not(kw, pattern) => {
                 formatter.write_token(kw);
                 formatter.write_space();
-                pattern.format(formatter, measurement);
+                pattern.format(formatter, complexity);
             }
             Unknown { .. } => (),
         }

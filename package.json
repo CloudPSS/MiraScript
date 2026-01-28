@@ -1,11 +1,12 @@
 {
   "name": "mirascript",
-  "version": "0.1.39",
+  "version": "0.1.41",
   "private": true,
-  "packageManager": "pnpm@10.28.0+sha512.05df71d1421f21399e053fde567cea34d446fa02c76571441bfc1c7956e98e363088982d940465fd34480d4d90a0668bc12362f8aa88000a64e83d0b0e47be48",
+  "packageManager": "pnpm@10.28.2+sha512.41872f037ad22f7348e3b1debbaf7e867cfd448f2726d9cf74c08f19507c31d2c8e7a11525b983febc2df640b5438dee6023ebb1f84ed43cc2d654d2bc326264",
   "type": "module",
   "scripts": {
     "prepare": "husky || echo Failed to initialize husky",
+    "format:mira": "pnpm -C packages/cli run mirascript format --write '../../**/*.mira'",
     "format": "prettier --cache --cache-strategy content --write .",
     "lint": "eslint --cache --cache-location node_modules/.cache/eslint/ --cache-strategy content"
   },

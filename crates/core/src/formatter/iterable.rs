@@ -11,14 +11,14 @@ impl Formattable for Iterable<'_> {
         }
     }
 
-    fn format(&self, formatter: &mut Formatter, measurement: usize) {
+    fn format(&self, formatter: &mut Formatter, complexity: usize) {
         use Iterable::*;
         match self {
             Range(range) => {
-                range.format(formatter, measurement);
+                range.format(formatter, complexity);
             }
             Value(expression) => {
-                expression.format(formatter, measurement);
+                expression.format(formatter, complexity);
             }
         }
     }

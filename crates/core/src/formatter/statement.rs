@@ -1,6 +1,21 @@
-use crate::Statement;
+use crate::{Expression, Pattern, Statement, parser::TokenRef};
 
 use super::prelude::*;
+
+fn format_bind(
+    pattern: &Pattern,
+    op: &TokenRef,
+    expression: &Expression,
+    semicolon: &TokenRef,
+    formatter: &mut Formatter,
+) {
+    formatter.format(pattern);
+    formatter.write_space();
+    formatter.write_token(op);
+    formatter.write_space();
+    formatter.format(expression);
+    formatter.write_token(semicolon);
+}
 
 impl Formattable for Statement<'_> {
     fn measure(&self, formatter: &Formatter, indent: usize) -> usize {
@@ -11,32 +26,22 @@ impl Formattable for Statement<'_> {
         }
     }
 
-    fn format(&self, formatter: &mut Formatter, measurement: usize) {
+    fn format(&self, formatter: &mut Formatter, complexity: usize) {
         use Statement::*;
         match self {
             Empty(semicolon) => formatter.write_token(semicolon),
             Expression(expression, semicolon) => {
-                expression.format(formatter, measurement);
+                formatter.format(expression.as_ref());
                 formatter.write_token(semicolon);
             }
-            BlockExpression(expression) => expression.format(formatter, measurement),
+            BlockExpression(expression) => expression.format(formatter, complexity),
             Bind(kw, pattern, op, expression, semicolon) => {
                 formatter.write_token(kw);
                 formatter.write_space();
-                pattern.format(formatter, measurement);
-                formatter.write_space();
-                formatter.write_token(op);
-                formatter.write_space();
-                expression.format(formatter, measurement);
-                formatter.write_token(semicolon);
+                format_bind(pattern, op, expression, semicolon, formatter);
             }
             Rebind(pattern, op, expression, semicolon) => {
-                pattern.format(formatter, measurement);
-                formatter.write_space();
-                formatter.write_token(op);
-                formatter.write_space();
-                expression.format(formatter, measurement);
-                formatter.write_token(semicolon);
+                format_bind(pattern, op, expression, semicolon, formatter);
             }
             Const(kw, id, op, expression, semicolon) => {
                 formatter.write_token(kw);
@@ -45,32 +50,42 @@ impl Formattable for Statement<'_> {
                 formatter.write_space();
                 formatter.write_token(op);
                 formatter.write_space();
-                expression.format(formatter, measurement);
+                formatter.format(expression);
                 formatter.write_token(semicolon);
             }
             Assign(assignee, op, expression, semicolon) => {
-                assignee.format(formatter, measurement);
+                formatter.format(assignee);
                 formatter.write_space();
                 formatter.write_token(op);
                 formatter.write_space();
-                expression.format(formatter, measurement);
+                formatter.format(expression);
                 formatter.write_token(semicolon);
             }
             Function(kw, id, parameter_list, expression) => {
                 formatter.write_token(kw);
                 formatter.write_space();
                 formatter.write_token(id);
-                if let Some(param) = parameter_list {
-                    param.format(formatter, measurement);
+                let mut p_complexity = 0;
+                if let Some(parameter_list) = parameter_list {
+                    p_complexity = formatter.measure(parameter_list);
+                    parameter_list.format(formatter, p_complexity);
                 }
                 formatter.write_space();
-                expression.format(formatter, measurement);
+                let e_complexity = formatter.measure(expression);
+                expression.format(
+                    formatter,
+                    if p_complexity > 0 {
+                        e_complexity.max(1)
+                    } else {
+                        e_complexity
+                    },
+                );
             }
             Return(kw, expression, semicolon) => {
                 formatter.write_token(kw);
                 if let Some(expr) = expression {
                     formatter.write_space();
-                    expr.format(formatter, measurement);
+                    formatter.format(expr);
                 }
                 formatter.write_token(semicolon);
             }
@@ -78,7 +93,7 @@ impl Formattable for Statement<'_> {
                 formatter.write_token(kw);
                 if let Some(expr) = expression {
                     formatter.write_space();
-                    expr.format(formatter, measurement);
+                    formatter.format(expr);
                 }
                 formatter.write_token(semicolon);
             }

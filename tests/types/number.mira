@@ -42,6 +42,7 @@ t_throws(fn { +{ 'NAN' } });
 t_throws(fn { +{ 'Inf' } });
 t_throws(fn { +{ 'infinity' } });
 t_eq(+{ `0` }, 0);
+t_eq(+{ ` 077 ` }, 77);
 t_eq(+{ `  123  ` }, 123);
 t_eq(+{ `-0` }, -0);
 t_eq(+{ `nan` }, nan);
@@ -52,6 +53,9 @@ t_eq(+{ `-inf` }, -inf);
 t_eq(+{ `Infinity` }, inf);
 t_eq(+{ `+Infinity` }, inf);
 t_eq(+{ `-Infinity` }, -inf);
+t_eq(+{ `0xf` }, 15);
+t_eq(+{ `-0xF` }, -15);
+t_eq(+{ `0XF` }, 15);
 
 t_true(nan != nan);
 t_false(nan =~ nan);

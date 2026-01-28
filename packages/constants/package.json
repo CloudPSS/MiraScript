@@ -1,6 +1,6 @@
 {
   "name": "@mirascript/constants",
-  "version": "0.1.39",
+  "version": "0.1.41",
   "author": "CloudPSS",
   "license": "MIT",
   "description": "MiraScript constants",
@@ -23,7 +23,7 @@
     "prepublishOnly": "pnpm clean && pnpm build"
   },
   "devDependencies": {
-    "@types/node": "^25.0.9",
+    "@types/node": "^25.0.10",
     "nodemon": "^3.1.11"
   }
 }

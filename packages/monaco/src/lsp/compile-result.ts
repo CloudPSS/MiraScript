@@ -1,6 +1,6 @@
 import type { Writable } from 'type-fest';
 import { type editor, Range, type IRange, type IPosition, Position } from '../monaco-api.js';
-import { strictContainsPosition } from './utils.js';
+import { strictContainsPosition } from './monaco-utils.js';
 import { REG_IDENTIFIER_FULL, REG_ORDINAL_FULL } from '../constants.js';
 import type { CacheKey, MonacoResult } from './worker.js';
 import {

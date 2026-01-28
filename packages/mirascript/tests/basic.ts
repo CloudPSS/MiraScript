@@ -98,6 +98,8 @@ test('whitespaces', compileAndRun, ' \n', null);
 test('identifier', compileAndRun, 'PI', Math.PI);
 test('identifier with whitespace', compileAndRun, ' \n SQRT1_2\n\r\n ', Math.SQRT1_2);
 
+test('type with trailing comman', compileAndRun, 'type(1,)', 'number');
+
 test('keyword', compileAndRun, 'if', {
     instanceOf: Error,
     message: /MissingCloseBrace/,
@@ -113,4 +115,9 @@ test('non-existent identifier', compileAndRun, 'no', {
 test('bad expression', compileAndRun, '++', {
     instanceOf: Error,
     message: /UnknownExpression/,
+});
+test('is expression', compileAndRun, '1 is a && a == 1', true);
+test('is expression', compileAndRun, 'a == 1 && 1 is a', {
+    instanceOf: Error,
+    message: /UninitializedVariable/,
 });

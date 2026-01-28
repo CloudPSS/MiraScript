@@ -40,11 +40,11 @@ pub fn format(input: &Script<'_>, options: &FormatOptions) -> String {
     let Script(stmts, expr, eof) = input;
     let mut formatter = Formatter::new(options, 0);
     for statement in stmts {
-        statement.format(&mut formatter, usize::MAX);
+        formatter.format(statement);
         formatter.new_line();
     }
     if let Some(expression) = expr {
-        expression.format(&mut formatter, usize::MAX);
+        formatter.format(expression);
     }
 
     let end_empty_lines = eof

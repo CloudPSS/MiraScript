@@ -50,6 +50,9 @@ impl<'s> Token<'s> {
     pub(crate) fn empty(pos: usize) -> Self {
         Self::new(TokenKind::Empty, pos..pos)
     }
+    pub(crate) fn empty_range(range: SourceRange) -> Self {
+        Self::new(TokenKind::Empty, range)
+    }
 
     pub(crate) fn unknown<R: Into<TokenKind<'s>>>(
         range: SourceRange,

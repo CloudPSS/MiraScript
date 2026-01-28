@@ -17,7 +17,17 @@ t_eq(("$x": 1, "$y": 2, "$x$y"?: 3, "$y$x"?: nil), (1: 1, 2: 2, '12': 3));
 t_eq((0?: nil, 1?: 1), (1: 1));
 
 {
-  let obj = (a: 1, b: 2, c: nil, '': 'empty key', true: 'tv', false: v_false, 1: 'one', '-1': 'minus one', '0': 'zero');
+  let obj = (
+    a: 1,
+    b: 2,
+    c: nil,
+    '': 'empty key',
+    true: 'tv',
+    false: v_false,
+    1: 'one',
+    '-1': 'minus one',
+    '0': 'zero',
+  );
   t_eq(obj.a, 1);
   t_eq(obj.b, 2);
   t_eq(obj['a'], 1);

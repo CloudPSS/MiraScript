@@ -1,8 +1,9 @@
 import { DiagnosticCode } from '@mirascript/constants';
+import { getVmFunctionInfo } from '@mirascript/mirascript';
 import { type editor, type languages, type CancellationToken, Position, Range } from '../../monaco-api.js';
 import { Provider } from './base.js';
-import { fnSignature, getDeep, localParamSignature, strictContainsPosition } from '../utils.js';
-import { getVmFunctionInfo } from '@mirascript/mirascript';
+import { fnSignature, getDeep, localParamSignature } from '../utils.js';
+import { strictContainsPosition } from '../monaco-utils.js';
 
 /** @inheritdoc */
 export class SignatureHelpProvider extends Provider implements languages.SignatureHelpProvider {

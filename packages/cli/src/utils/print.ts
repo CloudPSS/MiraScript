@@ -1,5 +1,6 @@
 import styles from 'ansi-styles';
 import supportsColor from 'supports-color';
+import type { VmAny, VmRecord } from '@mirascript/mirascript';
 import {
     serialize,
     serializeNumber,
@@ -7,8 +8,7 @@ import {
     serializeNil,
     type SerializeOptions,
     operations,
-} from '../subtle.js';
-import type { VmAny, VmRecord } from '../vm/index.js';
+} from '@mirascript/mirascript/subtle';
 
 const noColor = !supportsColor.stdout;
 

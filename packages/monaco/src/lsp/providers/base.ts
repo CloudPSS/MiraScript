@@ -4,7 +4,7 @@ import type { VmContextProvider } from '../../index.js';
 import { type editor, Emitter, type IEvent, type IPosition } from '../../monaco-api.js';
 import type { CompileResult, FieldsAccessAt, VariableAccessAt } from '../compile-result.js';
 import { compile } from '../worker-helper.js';
-import { wordAt } from '../utils.js';
+import { wordAt } from '../monaco-utils.js';
 
 let contextProvider: VmContextProvider | undefined;
 /** 提供全局变量的执行上下文 */

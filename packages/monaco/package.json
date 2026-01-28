@@ -1,6 +1,6 @@
 {
   "name": "@mirascript/monaco",
-  "version": "0.1.39",
+  "version": "0.1.41",
   "author": "CloudPSS",
   "license": "MIT",
   "description": "Monaco Editor integration for Mirascript.",
@@ -35,12 +35,13 @@
   "dependencies": {
     "@mirascript/bindings": "workspace:~",
     "@mirascript/constants": "workspace:~",
+    "@mirascript/help": "workspace:~",
     "@mirascript/mirascript": "workspace:~"
   },
   "peerDependencies": {
     "monaco-editor": ">= 0.0.40"
   },
   "devDependencies": {
-    "type-fest": "^5.4.1"
+    "type-fest": "^5.4.2"
   }
 }
