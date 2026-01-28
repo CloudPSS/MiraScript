@@ -221,8 +221,8 @@ export function serializeNumber(num: number): string {
             expPart = '';
         }
     }
-    intPart = serializeIntegerImpl(Number(intPart), 10, '', 3);
-    if (fracPart) fracPart = serializeIntegerImpl(Number(fracPart), 10, '', -3);
+    if (intPart.length > 5) intPart = serializeIntegerImpl(Number(intPart), 10, '', 3);
+    if (fracPart.length > 5) fracPart = serializeIntegerImpl(Number(fracPart), 10, '', -3);
     return intPart + (fracPart ? '.' + fracPart : '') + expPart;
 }
 
