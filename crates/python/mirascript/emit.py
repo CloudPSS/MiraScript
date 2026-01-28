@@ -1169,6 +1169,16 @@ def emit( chunk: bytes) :
             script =deep_nonlocal_fix(gen.func_script)
             set_ast_positions(script)
             module = ast.Module(body=[script], type_ignores=[])
+            
+            if astor is not None:
+                code_str = astor.to_source(module)
+                fs = open("debug_mira_script.py", "w", encoding="utf-8")
+                fs.write("from mirascript.vm.helpers import *\n")
+                fs.write("from mirascript.vm.operations import *\n")
+                fs.write("from mirascript.vm.types.const import *\n")
+                fs.write(code_str)
+                # print("Generated Code:\n", code_str)  # --- DEBUG ---
+            
             code=compile(module, "<string>", "exec")
         if code is not None:
             exec(code, vm_globals,)

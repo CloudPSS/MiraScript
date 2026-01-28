@@ -61,3 +61,4 @@ coverage/
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+crates/python/debug_mira_script.py

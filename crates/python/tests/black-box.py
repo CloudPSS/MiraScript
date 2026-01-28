@@ -29,6 +29,7 @@ class BlackBoxTests(unittest.TestCase):
         result_lines = []
 
         def t_eq(a, b,message=None):
+            print(f"t_eq: {a} == {b}")  # --- DEBUG ---
             assert_deep_equal(a, b,message=message)
 
         def t_ne(a, b,message=None):
@@ -41,6 +42,7 @@ class BlackBoxTests(unittest.TestCase):
             self.assertFalse(v,msg=message)
 
         def t_throws(fn,message=None):
+            print(f"t_throws: expecting exception from {fn}")  # --- DEBUG ---
             with self.assertRaises(VmError, msg=message):
                 fn()
         def t_timeout(fn,message=None):
@@ -108,8 +110,7 @@ class BlackBoxTests(unittest.TestCase):
                 # if  'lib' in mira_path.parts:
                 #     # 这个测试文件目前有问题，跳过
                 #     continue
-            # if 'array.mira' not in str(mira_path):
-            #     # 这个测试文件目前有问题，跳过
+            # if 'to_number.mira' not in str(mira_path):
             #     continue
             logging.info(f"Running test: {mira_path}, index {files.index(mira_path)} len {len(files)}")  # --- DEBUG ---
             # with self.subTest(mira_file=str(mira_path.relative_to(TEST_DIR))):
