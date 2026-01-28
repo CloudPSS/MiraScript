@@ -1,12 +1,19 @@
-import type { editor, CancellationToken, IMarkdownString, IRange, languages, Position } from '../../monaco-api.js';
-import { Provider } from './base.js';
 import { DiagnosticCode } from '@mirascript/constants';
+import { convert } from '@mirascript/mirascript/subtle';
+import { KEYWORDS as HELP_KEYWORDS, OPERATORS as HELP_OPERATORS } from '@mirascript/help';
+import { REG_BIN, REG_HEX, REG_NUMBER, REG_OCT } from '../../constants.js';
+import type { editor, CancellationToken, IMarkdownString, IRange, languages, Position } from '../../monaco-api.js';
 import { codeblock, getDeep, valueDoc, paramsList } from '../utils.js';
 import { tokenAt } from '../monaco-private.js';
+import { rangeAt } from '../monaco-utils.js';
 import type { FieldsAccessAt, VariableAccessAt } from '../compile-result.js';
-import { KEYWORDS as HELP_KEYWORDS, OPERATORS as HELP_OPERATORS } from '@mirascript/help';
+import { Provider } from './base.js';
 
 const OPERATOR_TOKENS_DESC = Object.keys(HELP_OPERATORS as Record<string, string>).sort((a, b) => b.length - a.length);
+const REG_NUMBER_ALL_FULL = new RegExp(
+    `^(?:${REG_BIN.source}|${REG_OCT.source}|${REG_HEX.source}|${REG_NUMBER.source})$`,
+    REG_NUMBER.flags,
+);
 
 /** 在指定位置查找操作符 */
 function operatorAt(lineContent: string, column: number): { token: string; range: IRange } | undefined {
@@ -31,6 +38,24 @@ function operatorAt(lineContent: string, column: number): { token: string; range
         }
     }
     return undefined;
+}
+
+/** 格式化数字 */
+function formatNumber(num: number, base: number, prefix: string, sep: number): string {
+    let str = Math.abs(num).toString(base);
+    if (base > 10) str = str.toUpperCase();
+    if (sep > 0 && str.length > sep) {
+        const seg = [];
+        while (str.length > sep) {
+            seg.unshift(str.slice(-sep));
+            str = str.slice(0, -sep);
+        }
+        if (str.length > 0) {
+            seg.unshift(str);
+        }
+        str = seg.join('_');
+    }
+    return (num < 0 ? '-' : '') + prefix + str;
 }
 
 /** @inheritdoc */
@@ -163,12 +188,7 @@ export class HoverProvider extends Provider implements languages.HoverProvider {
                 HELP_OPERATORS[token.text as keyof typeof HELP_OPERATORS];
             return {
                 contents: [{ value: doc }],
-                range: {
-                    startLineNumber: position.lineNumber,
-                    endLineNumber: position.lineNumber,
-                    startColumn: token.startColumn,
-                    endColumn: token.endColumn,
-                },
+                range: rangeAt(position, token),
             };
         }
 
@@ -177,27 +197,40 @@ export class HoverProvider extends Provider implements languages.HoverProvider {
             const doc = HELP_KEYWORDS[word.word as keyof typeof HELP_KEYWORDS];
             return {
                 contents: [{ value: doc }],
-                range: {
-                    startLineNumber: position.lineNumber,
-                    endLineNumber: position.lineNumber,
-                    startColumn: word.startColumn,
-                    endColumn: word.endColumn,
-                },
+                range: rangeAt(position, word),
             };
         }
 
+        if (token?.text && word?.word === token.text) {
+            if (REG_NUMBER_ALL_FULL.test(token.text)) {
+                const num = convert.toNumber(token.text.replaceAll('_', ''), null);
+                if (num == null) return undefined;
+                const contents: IMarkdownString[] = [{ value: `数字字面量：` }, { value: codeblock(String(num)) }];
+                if (Number.isInteger(num)) {
+                    const abs = Math.abs(num);
+                    if (abs <= 0xffff_ffff) {
+                        contents.push(
+                            { value: codeblock(formatNumber(num, 2, '0b', 8)) },
+                            { value: codeblock(formatNumber(num, 8, '0o', 6)) },
+                        );
+                    }
+                    if (abs <= 0xffff_ffff_ffff_ffffn) {
+                        contents.push({ value: codeblock(formatNumber(num, 16, '0x', 4)) });
+                    }
+                }
+                return {
+                    contents,
+                    range: rangeAt(position, token),
+                };
+            }
+        }
         const lineContent = model.getLineContent(position.lineNumber);
         const hit = operatorAt(lineContent, position.column);
         if (hit && hit.token in HELP_OPERATORS) {
             const doc = HELP_OPERATORS[hit.token as keyof typeof HELP_OPERATORS];
             return {
                 contents: [{ value: doc }],
-                range: {
-                    startLineNumber: position.lineNumber,
-                    endLineNumber: position.lineNumber,
-                    startColumn: hit.range.startColumn,
-                    endColumn: hit.range.endColumn,
-                },
+                range: rangeAt(position, hit.range),
             };
         }
 

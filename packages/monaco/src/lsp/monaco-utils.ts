@@ -12,3 +12,19 @@ export function wordAt(model: editor.ITextModel, position: IPosition): { word: s
     const range = new Range(position.lineNumber, word.startColumn, position.lineNumber, word.endColumn);
     return { word: word.word, range };
 }
+
+/** 生成范围 */
+export function rangeAt(
+    ...args:
+        | [lineAndColumn: { lineNumber: number; startColumn: number; endColumn: number }, empty?: null | undefined]
+        | [line: { lineNumber: number }, column: { startColumn: number; endColumn: number }]
+): Range {
+    if (args.length === 1 || args[1] == null) {
+        const { lineNumber, startColumn, endColumn } = args[0];
+        return new Range(lineNumber, startColumn, lineNumber, endColumn);
+    } else {
+        const { lineNumber } = args[0];
+        const { startColumn, endColumn } = args[1];
+        return new Range(lineNumber, startColumn, lineNumber, endColumn);
+    }
+}
