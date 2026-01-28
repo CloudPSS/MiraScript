@@ -90,9 +90,13 @@ class FactoryVmContext(VmContext):
 
     def get(self, key: str) -> Any:
         value = self.getter(key)
-        if value is not None:
+        if value is not Uninitialized:
             return value
-        return VmSharedContext.get(key, None)
+        value= VmSharedContext.get(key, Uninitialized)
+        if value is not Uninitialized:
+            return value
+        
+        raise VmError(f"Global variable '{key}' is not defined.", None)
 
     def has(self, key: str) -> bool:
         return self.getter(key) is not None or key in VmSharedContext
