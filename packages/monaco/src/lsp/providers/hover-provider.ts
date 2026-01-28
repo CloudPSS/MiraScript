@@ -3,7 +3,7 @@ import { convert } from '@mirascript/mirascript/subtle';
 import { KEYWORDS as HELP_KEYWORDS, OPERATORS as HELP_OPERATORS } from '@mirascript/help';
 import { REG_BIN, REG_HEX, REG_NUMBER, REG_OCT } from '../../constants.js';
 import type { editor, CancellationToken, IMarkdownString, IRange, languages, Position } from '../../monaco-api.js';
-import { codeblock, getDeep, valueDoc, paramsList } from '../utils.js';
+import { codeblock, getDeep, valueDoc, paramsList, serializeNumber, serializeInteger } from '../utils.js';
 import { tokenAt } from '../monaco-private.js';
 import { rangeAt } from '../monaco-utils.js';
 import type { FieldsAccessAt, VariableAccessAt } from '../compile-result.js';
@@ -38,24 +38,6 @@ function operatorAt(lineContent: string, column: number): { token: string; range
         }
     }
     return undefined;
-}
-
-/** 格式化数字 */
-function formatNumber(num: number, base: number, prefix: string, sep: number): string {
-    let str = Math.abs(num).toString(base);
-    if (base > 10) str = str.toUpperCase();
-    if (sep > 0 && str.length > sep) {
-        const seg = [];
-        while (str.length > sep) {
-            seg.unshift(str.slice(-sep));
-            str = str.slice(0, -sep);
-        }
-        if (str.length > 0) {
-            seg.unshift(str);
-        }
-        str = seg.join('_');
-    }
-    return (num < 0 ? '-' : '') + prefix + str;
 }
 
 /** @inheritdoc */
@@ -205,17 +187,20 @@ export class HoverProvider extends Provider implements languages.HoverProvider {
             if (REG_NUMBER_ALL_FULL.test(token.text)) {
                 const num = convert.toNumber(token.text.replaceAll('_', ''), null);
                 if (num == null) return undefined;
-                const contents: IMarkdownString[] = [{ value: `数字字面量：` }, { value: codeblock(String(num)) }];
+                const contents: IMarkdownString[] = [
+                    { value: `数字字面量：` },
+                    { value: codeblock(serializeNumber(num)) },
+                ];
                 if (Number.isInteger(num)) {
                     const abs = Math.abs(num);
                     if (abs <= 0xffff_ffff) {
                         contents.push(
-                            { value: codeblock(formatNumber(num, 2, '0b', 8)) },
-                            { value: codeblock(formatNumber(num, 8, '0o', 6)) },
+                            { value: codeblock(serializeInteger(num, 2)) },
+                            { value: codeblock(serializeInteger(num, 8)) },
                         );
                     }
                     if (abs <= 0xffff_ffff_ffff_ffffn) {
-                        contents.push({ value: codeblock(formatNumber(num, 16, '0x', 4)) });
+                        contents.push({ value: codeblock(serializeInteger(num, 16)) });
                     }
                 }
                 return {

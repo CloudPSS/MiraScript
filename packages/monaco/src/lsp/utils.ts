@@ -155,6 +155,77 @@ export function codeblock(value: string): string {
     return `\n${CODEBLOCK_FENCE}${lang}\n${value}\n${CODEBLOCK_FENCE}\n`;
 }
 
+/** 格式化数字 */
+function serializeIntegerImpl(num: number, base: number, prefix: string, sep: number): string {
+    let str = Math.abs(num).toString(base);
+    if (base > 10) str = str.toUpperCase();
+    if (sep !== 0 && str.length > Math.abs(sep)) {
+        const seg = [];
+        if (sep > 0) {
+            while (str.length > sep) {
+                seg.unshift(str.slice(-sep));
+                str = str.slice(0, -sep);
+            }
+            if (str.length > 0) {
+                seg.unshift(str);
+            }
+        } else {
+            while (str.length > -sep) {
+                seg.push(str.slice(0, -sep));
+                str = str.slice(-sep);
+            }
+            if (str.length > 0) {
+                seg.push(str);
+            }
+        }
+        str = seg.join('_');
+    }
+    return (num < 0 ? '-' : '') + prefix + str;
+}
+
+/** 格式化数字 */
+export function serializeInteger(num: number, base: 2 | 8 | 16, sep = true): string {
+    const prefix = base === 2 ? '0b' : base === 8 ? '0o' : '0x';
+    const sepSize = sep ? (base === 2 ? 8 : base === 8 ? 6 : 4) : 0;
+    return serializeIntegerImpl(num, base, prefix, sepSize);
+}
+
+/** 格式化数字 */
+export function serializeNumber(num: number): string {
+    if (!Number.isFinite(num)) {
+        return serialize(num);
+    }
+    const str = String(num);
+    const dot = str.indexOf('.');
+    const exp = str.indexOf('e');
+    let intPart: string;
+    let fracPart: string;
+    let expPart: string;
+    if (dot >= 0) {
+        intPart = str.slice(0, dot);
+        if (exp >= 0) {
+            fracPart = str.slice(dot + 1, exp);
+            expPart = str.slice(exp);
+        } else {
+            fracPart = str.slice(dot + 1);
+            expPart = '';
+        }
+    } else {
+        if (exp >= 0) {
+            intPart = str.slice(0, exp);
+            fracPart = '';
+            expPart = str.slice(exp);
+        } else {
+            intPart = str;
+            fracPart = '';
+            expPart = '';
+        }
+    }
+    intPart = serializeIntegerImpl(Number(intPart), 10, '', 3);
+    if (fracPart) fracPart = serializeIntegerImpl(Number(fracPart), 10, '', -3);
+    return intPart + (fracPart ? '.' + fracPart : '') + expPart;
+}
+
 /** 将值序列化为便于展示的字符串 */
 function serializeForDisplayInner(value: VmValue, maxWidth: number): string {
     if (maxWidth < 10) maxWidth = 10;
@@ -163,6 +234,9 @@ function serializeForDisplayInner(value: VmValue, maxWidth: number): string {
             return serializeString(value);
         }
         return `${serializeString(value.slice(0, maxWidth))}..`;
+    }
+    if (typeof value === 'number') {
+        return serializeNumber(value);
     }
     if (isVmPrimitive(value)) {
         return serialize(value);
