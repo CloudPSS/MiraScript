@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "mirascript"
-version = "0.1.11"
+version = "0.1.12"
 requires-python = ">=3.7"
 description = "MiraScript 的 Python 绑定允许在 Python 中使用 MiraScript 编译器。它提供了一个简单的接口来编译 MiraScript 脚本，并返回编译结果和诊断信息。"
 readme = "README.md"
