@@ -15,6 +15,10 @@ const REG_NUMBER_ALL_FULL = new RegExp(
     REG_NUMBER.flags,
 );
 
+const BIN_MAX = 2 ** 32 - 1;
+const OCT_MAX = 8 ** 18 - 1;
+const HEX_MAX = 16 ** 16 - 1;
+
 /** 在指定位置查找操作符 */
 function operatorAt(lineContent: string, column: number): { token: string; range: IRange } | undefined {
     const index = Math.max(0, column - 1);
@@ -188,19 +192,19 @@ export class HoverProvider extends Provider implements languages.HoverProvider {
                 const num = convert.toNumber(token.text.replaceAll('_', ''), null);
                 if (num == null) return undefined;
                 const contents: IMarkdownString[] = [
-                    { value: `数字字面量：` },
-                    { value: codeblock(serializeNumber(num)) },
+                    { value: `数字字面量` },
+                    { value: codeblock('val: ' + serializeNumber(num)) },
                 ];
                 if (Number.isInteger(num)) {
                     const abs = Math.abs(num);
-                    if (abs <= 0xffff_ffff) {
-                        contents.push(
-                            { value: codeblock(serializeInteger(num, 2)) },
-                            { value: codeblock(serializeInteger(num, 8)) },
-                        );
+                    if (abs <= BIN_MAX) {
+                        contents.push({ value: codeblock('bin: ' + serializeInteger(num, 2)) });
                     }
-                    if (abs <= 0xffff_ffff_ffff_ffffn) {
-                        contents.push({ value: codeblock(serializeInteger(num, 16)) });
+                    if (abs <= OCT_MAX) {
+                        contents.push({ value: codeblock('oct: ' + serializeInteger(num, 8)) });
+                    }
+                    if (abs <= HEX_MAX) {
+                        contents.push({ value: codeblock('hex: ' + serializeInteger(num, 16)) });
                     }
                 }
                 return {

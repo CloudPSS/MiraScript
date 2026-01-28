@@ -159,20 +159,21 @@ export function codeblock(value: string): string {
 function serializeIntegerImpl(num: number, base: number, prefix: string, sep: number): string {
     let str = Math.abs(num).toString(base);
     if (base > 10) str = str.toUpperCase();
-    if (sep !== 0 && str.length > Math.abs(sep)) {
+    const sepSize = Math.abs(sep);
+    if (sep !== 0 && str.length > sepSize) {
         const seg = [];
         if (sep > 0) {
-            while (str.length > sep) {
-                seg.unshift(str.slice(-sep));
-                str = str.slice(0, -sep);
+            while (str.length > sepSize) {
+                seg.unshift(str.slice(-sepSize));
+                str = str.slice(0, -sepSize);
             }
             if (str.length > 0) {
                 seg.unshift(str);
             }
         } else {
-            while (str.length > -sep) {
-                seg.push(str.slice(0, -sep));
-                str = str.slice(-sep);
+            while (str.length > sepSize) {
+                seg.push(str.slice(0, sepSize));
+                str = str.slice(sepSize);
             }
             if (str.length > 0) {
                 seg.push(str);
