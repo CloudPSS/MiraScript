@@ -26,7 +26,7 @@ export const e = VmLib(Math.E, {
     },
 });
 export const SQRT1_2 = VmLib(Math.SQRT1_2, {
-    summary: '1 的平方根除以 2',
+    summary: '½ 的平方根',
     returnsType: 'number',
 });
 export const SQRT2 = VmLib(Math.SQRT2, {
