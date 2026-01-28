@@ -168,26 +168,23 @@ export class HoverProvider extends Provider implements languages.HoverProvider {
             return undefined;
         }
 
-        if (token?.text && (token.text in HELP_KEYWORDS || token.text in HELP_OPERATORS)) {
-            const doc =
-                HELP_KEYWORDS[token.text as keyof typeof HELP_KEYWORDS] ??
-                HELP_OPERATORS[token.text as keyof typeof HELP_OPERATORS];
-            return {
-                contents: [{ value: doc }],
-                range: rangeAt(position, token),
-            };
-        }
+        if (token?.text) {
+            if (token.text in HELP_KEYWORDS) {
+                const doc = HELP_KEYWORDS[token.text as keyof typeof HELP_KEYWORDS];
+                return {
+                    contents: [{ value: doc }],
+                    range: rangeAt(position, token),
+                };
+            }
 
-        const word = model.getWordAtPosition(position);
-        if (word?.word && word.word in HELP_KEYWORDS) {
-            const doc = HELP_KEYWORDS[word.word as keyof typeof HELP_KEYWORDS];
-            return {
-                contents: [{ value: doc }],
-                range: rangeAt(position, word),
-            };
-        }
+            if (token.text in HELP_OPERATORS) {
+                const doc = HELP_OPERATORS[token.text as keyof typeof HELP_OPERATORS];
+                return {
+                    contents: [{ value: doc }],
+                    range: rangeAt(position, token),
+                };
+            }
 
-        if (token?.text && word?.word === token.text) {
             if (REG_NUMBER_ALL_FULL.test(token.text)) {
                 const num = convert.toNumber(token.text.replaceAll('_', ''), null);
                 if (num == null) return undefined;
@@ -213,6 +210,16 @@ export class HoverProvider extends Provider implements languages.HoverProvider {
                 };
             }
         }
+
+        const word = model.getWordAtPosition(position);
+        if (word?.word && word.word in HELP_KEYWORDS) {
+            const doc = HELP_KEYWORDS[word.word as keyof typeof HELP_KEYWORDS];
+            return {
+                contents: [{ value: doc }],
+                range: rangeAt(position, word),
+            };
+        }
+
         const lineContent = model.getLineContent(position.lineNumber);
         const hit = operatorAt(lineContent, position.column);
         if (hit && hit.token in HELP_OPERATORS) {
