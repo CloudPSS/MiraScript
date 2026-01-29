@@ -4,6 +4,7 @@ import type { VmContextProvider } from '../index.js';
 
 import { Provider } from './providers/base.js';
 import { CodeActionProvider } from './providers/code-action-provider.js';
+import { CodeLensProvider } from './providers/code-lens-provider.js';
 import { ColorProvider } from './providers/color-provider.js';
 import { CompletionItemProvider } from './providers/completion-item-provider.js';
 import { DefinitionReferenceProvider } from './providers/definition-reference-provider.js';
@@ -19,6 +20,7 @@ import { SignatureHelpProvider } from './providers/signature-help-provider.js';
 
 export {
     CodeActionProvider,
+    CodeLensProvider,
     ColorProvider,
     CompletionItemProvider,
     DefinitionReferenceProvider,
@@ -41,6 +43,7 @@ export async function registerLSP(contextProvider: VmContextProvider | undefined
     await loadModule();
 
     const codeActionProvider = new CodeActionProvider();
+    const codeLensProvider = new CodeLensProvider();
     const colorProvider = new ColorProvider();
     const completionItemProvider = new CompletionItemProvider();
     const definitionReferenceProvider = new DefinitionReferenceProvider();
@@ -57,6 +60,7 @@ export async function registerLSP(contextProvider: VmContextProvider | undefined
     const language: languages.LanguageSelector = ['mirascript', 'mirascript-template'];
     return [
         languages.registerCodeActionProvider(language, codeActionProvider),
+        languages.registerCodeLensProvider(language, codeLensProvider),
         languages.registerColorProvider(language, colorProvider),
 
         languages.registerDefinitionProvider(language, definitionReferenceProvider),

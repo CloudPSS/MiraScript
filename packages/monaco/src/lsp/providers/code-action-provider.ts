@@ -208,7 +208,5 @@ export class CodeActionProvider extends Provider implements languages.CodeAction
     resolveCodeAction?(
         codeAction: languages.CodeAction,
         token: CancellationToken,
-    ): languages.ProviderResult<languages.CodeAction> {
-        return codeAction;
-    }
+    ): languages.ProviderResult<languages.CodeAction>;
 }

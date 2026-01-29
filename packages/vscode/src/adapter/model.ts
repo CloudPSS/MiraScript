@@ -10,11 +10,21 @@ const EMPTY_DISPOSABLE: IDisposable = Object.freeze({
     },
 });
 
+const cache = new WeakMap<TextDocument, ModelAdapter>();
 /**
  * Adapts a VS Code TextDocument to a Monaco Editor ITextModel.
  */
 export class ModelAdapter implements editor.ITextModel {
-    constructor(readonly document: TextDocument) {}
+    /** Get or create a ModelAdapter for a TextDocument */
+    static from(document: TextDocument): ModelAdapter {
+        let adapter = cache.get(document);
+        if (!adapter) {
+            adapter = new ModelAdapter(document);
+            cache.set(document, adapter);
+        }
+        return adapter;
+    }
+    private constructor(readonly document: TextDocument) {}
     /** @inheritdoc */
     getCustomLineHeightsDecorations(ownerId?: number): editor.IModelDecoration[] {
         return [];

@@ -1,14 +1,11 @@
 import {
+    CodeLens,
     type CompletionItem,
     CompletionItemKind,
     CompletionItemTag,
     CompletionList,
     CompletionTriggerKind,
-    Diagnostic,
     type DiagnosticCollection,
-    DiagnosticRelatedInformation,
-    DiagnosticSeverity,
-    DiagnosticTag,
     Disposable,
     DocumentHighlight,
     DocumentHighlightKind,
@@ -31,6 +28,8 @@ import {
     WorkspaceEdit,
 } from 'vscode';
 import {
+    CodeLensProvider,
+    CodeActionProvider,
     FormatterProvider,
     DocumentSemanticTokensProvider,
     DocumentHighlightProvider,
@@ -46,15 +45,16 @@ import {
 import { ModelAdapter } from '../adapter/model.js';
 import {
     CompletionItemInsertTextRule,
+    fromDiagnostic,
     fromPosition,
     fromRange,
+    toCodeAction,
     toCompletionItem,
-    toLocation,
+    toDiagnostic,
     toMarkdownString,
     toPosition,
     toRange,
     toTextEdit,
-    toUri,
 } from '../adapter/utils.js';
 import { registerMonacoApi } from '@mirascript/monaco';
 import * as monaco from '@private/monaco-editor/baseapi';
@@ -106,44 +106,7 @@ export class ProvidersManager extends Disposable {
         }
         c.set(
             doc.uri,
-            markers.map((marker) => {
-                const d = new Diagnostic(toRange(marker), marker.message);
-                switch (marker.severity as number as monaco.MarkerSeverity) {
-                    case monaco.MarkerSeverity.Error:
-                        d.severity = DiagnosticSeverity.Error;
-                        break;
-                    case monaco.MarkerSeverity.Warning:
-                        d.severity = DiagnosticSeverity.Warning;
-                        break;
-                    case monaco.MarkerSeverity.Info:
-                        d.severity = DiagnosticSeverity.Information;
-                        break;
-                    case monaco.MarkerSeverity.Hint:
-                        d.severity = DiagnosticSeverity.Hint;
-                        break;
-                }
-                d.source = marker.source;
-                if (typeof marker.code == 'object') {
-                    d.code = {
-                        ...marker.code,
-                        target: toUri(marker.code.target),
-                    };
-                } else {
-                    d.code = marker.code;
-                }
-                d.relatedInformation = marker.relatedInformation?.map(
-                    (i) => new DiagnosticRelatedInformation(toLocation({ uri: i.resource, range: i }), i.message),
-                );
-                d.tags = marker.tags?.map((t) => {
-                    switch (t as number as monaco.MarkerTag) {
-                        case monaco.MarkerTag.Deprecated:
-                            return DiagnosticTag.Deprecated;
-                        case monaco.MarkerTag.Unnecessary:
-                            return DiagnosticTag.Unnecessary;
-                    }
-                });
-                return d;
-            }),
+            markers.map((marker) => toDiagnostic(marker)),
         );
     };
 
@@ -151,11 +114,12 @@ export class ProvidersManager extends Disposable {
     private async registerProviders(): Promise<void> {
         const selector = ['mirascript', 'mirascript-template'];
 
-        // const codeActionProvider = new CodeActionProvider();
+        const codeLensProvider = new CodeLensProvider();
+        const codeActionProvider = new CodeActionProvider();
         // const colorProvider = new ColorProvider();
 
         const definitionReferenceProvider = new DefinitionReferenceProvider(
-            new ModelAdapter(await workspace.openTextDocument(Uri.parse('mirascript:///lib/global.mira'))),
+            ModelAdapter.from(await workspace.openTextDocument(Uri.parse('mirascript:///lib/global.mira'))),
         );
 
         const documentHighlightProvider = new DocumentHighlightProvider();
@@ -174,10 +138,46 @@ export class ProvidersManager extends Disposable {
         const signatureHelpProvider = new SignatureHelpProvider();
 
         this.disposables.push(
+            languages.registerCodeActionsProvider(selector, {
+                provideCodeActions: async (document, range, context, token) => {
+                    const result = await codeActionProvider.provideCodeActions(
+                        ModelAdapter.from(document),
+                        fromRange(range),
+                        {
+                            markers: context.diagnostics.map((d) => fromDiagnostic(d)),
+                            trigger: context.triggerKind satisfies 1 | 2 as never,
+                        },
+                        token,
+                    );
+                    if (!result) return null;
+                    return result.actions.map(toCodeAction);
+                },
+            }),
+            languages.registerCodeLensProvider(selector, {
+                get onDidChangeCodeLenses() {
+                    return codeLensProvider.onDidChange;
+                },
+                provideCodeLenses: async (document, token) => {
+                    const result = await codeLensProvider.provideCodeLenses(ModelAdapter.from(document), token);
+                    if (!result) return null;
+                    return result.lenses.map((lens) => {
+                        const l = new CodeLens(toRange(lens.range));
+                        if (lens.command) {
+                            l.command = {
+                                title: lens.command.title,
+                                command: lens.command.id,
+                                tooltip: lens.command.tooltip,
+                                arguments: lens.command.arguments,
+                            };
+                        }
+                        return l;
+                    });
+                },
+            }),
             languages.registerDocumentFormattingEditProvider(selector, {
                 provideDocumentFormattingEdits: async (document, options, token) => {
                     const result = await formatterProvider.provideDocumentFormattingEdits(
-                        new ModelAdapter(document),
+                        ModelAdapter.from(document),
                         options,
                         token,
                     );
@@ -190,7 +190,7 @@ export class ProvidersManager extends Disposable {
                 {
                     provideDocumentSemanticTokens: async (document, token) => {
                         const result = await documentSemanticTokensProvider.provideDocumentSemanticTokens(
-                            new ModelAdapter(document),
+                            ModelAdapter.from(document),
                             null,
                             token,
                         );
@@ -217,7 +217,7 @@ export class ProvidersManager extends Disposable {
             languages.registerHoverProvider(selector, {
                 provideHover: async (document, position, token) => {
                     const result = await hoverProvider.provideHover(
-                        new ModelAdapter(document),
+                        ModelAdapter.from(document),
                         fromPosition(position),
                         token,
                     );
@@ -228,7 +228,7 @@ export class ProvidersManager extends Disposable {
             languages.registerRenameProvider(selector, {
                 prepareRename: async (document, position, token) => {
                     const result = await renameProvider.resolveRenameLocation(
-                        new ModelAdapter(document),
+                        ModelAdapter.from(document),
                         fromPosition(position),
                         token,
                     );
@@ -243,7 +243,7 @@ export class ProvidersManager extends Disposable {
                 },
                 provideRenameEdits: async (document, position, newName, token) => {
                     const result = await renameProvider.provideRenameEdits(
-                        new ModelAdapter(document),
+                        ModelAdapter.from(document),
                         fromPosition(position),
                         newName,
                         token,
@@ -270,7 +270,7 @@ export class ProvidersManager extends Disposable {
             languages.registerDocumentHighlightProvider(selector, {
                 provideDocumentHighlights: async (document, position, token) => {
                     const result = await documentHighlightProvider.provideDocumentHighlights(
-                        new ModelAdapter(document),
+                        ModelAdapter.from(document),
                         fromPosition(position),
                         token,
                     );
@@ -281,7 +281,7 @@ export class ProvidersManager extends Disposable {
             languages.registerDocumentSymbolProvider(selector, {
                 provideDocumentSymbols: async (document, token) => {
                     const result = await documentSymbolProvider.provideDocumentSymbols(
-                        new ModelAdapter(document),
+                        ModelAdapter.from(document),
                         token,
                     );
                     if (!result) return null;
@@ -304,7 +304,7 @@ export class ProvidersManager extends Disposable {
             languages.registerInlayHintsProvider(selector, {
                 provideInlayHints: async (document, range, token) => {
                     const result = await inlayHintsProvider.provideInlayHints(
-                        new ModelAdapter(document),
+                        ModelAdapter.from(document),
                         fromRange(range),
                         token,
                     );
@@ -332,7 +332,7 @@ export class ProvidersManager extends Disposable {
                 {
                     provideCompletionItems: async (document, position, token, context) => {
                         const result = await completionItemProvider.provideCompletionItems(
-                            new ModelAdapter(document),
+                            ModelAdapter.from(document),
                             fromPosition(position),
                             context,
                             token,
@@ -353,7 +353,7 @@ export class ProvidersManager extends Disposable {
                 {
                     provideSignatureHelp: async (document, position, token, context) => {
                         const result = await signatureHelpProvider.provideSignatureHelp(
-                            new ModelAdapter(document),
+                            ModelAdapter.from(document),
                             fromPosition(position),
                             token,
                             context,
@@ -378,14 +378,14 @@ export class ProvidersManager extends Disposable {
             ),
             // languages.registerFoldingRangeProvider(selector, {
             //     provideFoldingRanges: async (document, context, token) => {
-            //         const result = await rangeProvider.provideFoldingRanges(new ModelAdapter(document), context, token);
+            //         const result = await rangeProvider.provideFoldingRanges(ModelAdapter.from(document), context, token);
             //         return result;
             //     },
             // }),
             languages.registerSelectionRangeProvider(selector, {
                 provideSelectionRanges: async (document, positions, token) => {
                     const result = await rangeProvider.provideSelectionRanges(
-                        new ModelAdapter(document),
+                        ModelAdapter.from(document),
                         positions.map(fromPosition),
                         token,
                     );
@@ -409,7 +409,7 @@ export class ProvidersManager extends Disposable {
             languages.registerDefinitionProvider(selector, {
                 provideDefinition: async (document, position, token) => {
                     const result = await definitionReferenceProvider.provideDefinition(
-                        new ModelAdapter(document),
+                        ModelAdapter.from(document),
                         fromPosition(position),
                         token,
                     );
@@ -425,7 +425,7 @@ export class ProvidersManager extends Disposable {
             languages.registerReferenceProvider(selector, {
                 provideReferences: async (document, position, context, token) => {
                     const result = await definitionReferenceProvider.provideReferences(
-                        new ModelAdapter(document),
+                        ModelAdapter.from(document),
                         fromPosition(position),
                         context,
                         token,

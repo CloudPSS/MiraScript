@@ -5,18 +5,27 @@ import {
     Range as MonacoRange,
     type IMarkdownString,
     type Uri as MonacoUri,
+    MarkerSeverity,
+    MarkerTag,
 } from '@private/monaco-editor/baseapi';
-import type { languages as monacoLanguages } from '@private/monaco-editor';
+import type { languages as monacoLanguages, editor as monacoEditor } from '@private/monaco-editor';
 import {
+    Diagnostic,
     Range as VsRange,
     Position as VsPosition,
     TextEdit as VsTextEdit,
+    WorkspaceEdit as VsWorkspaceEdit,
     MarkdownString as VsMarkdownString,
     Location as VsLocation,
     Uri as VsUri,
     type CompletionItem as VsCompletionItem,
     type CompletionItemKind,
     SnippetString,
+    DiagnosticRelatedInformation,
+    DiagnosticTag,
+    DiagnosticSeverity,
+    CodeAction,
+    CodeActionKind,
 } from 'vscode';
 
 export enum CompletionItemInsertTextRule {
@@ -84,7 +93,26 @@ export function toTextEdit(edit: { range: IRange; text: string | null }): VsText
     }
     return VsTextEdit.replace(toRange(edit.range), edit.text);
 }
-
+/**
+ * Converts a Monaco Editor WorkspaceEdit to a VS Code WorkspaceEdit.
+ */
+export function toWorkspaceEdit(edit: monacoLanguages.WorkspaceEdit): VsWorkspaceEdit {
+    const we = new VsWorkspaceEdit();
+    if (edit.edits) {
+        for (const e of edit.edits) {
+            if ('redo' in e) {
+                throw new Error('Cannot convert ICustomEdit to VS Code WorkspaceEdit.');
+            }
+            if ('resource' in e) {
+                const uri = toUri(e.resource);
+                we.replace(uri, toRange(e.textEdit.range), e.textEdit.text, e.metadata);
+            } else {
+                throw new Error('Cannot convert IWorkspaceFileEdit to VS Code WorkspaceEdit.');
+            }
+        }
+    }
+    return we;
+}
 /**
  * Converts a Monaco Editor IMarkdownString to a VS Code MarkdownString.
  */
@@ -157,4 +185,109 @@ export function toCompletionItem(
         original: item,
     };
     return ci;
+}
+
+/** Converted Diagnostics */
+const MonacoDiagnostics = new WeakMap<monacoEditor.IMarkerData, MonacoDiagnostic>();
+/** Monaco Diagnostic adapter */
+class MonacoDiagnostic extends Diagnostic {
+    constructor(readonly marker: monacoEditor.IMarkerData) {
+        super(toRange(marker), marker.message);
+        switch (marker.severity as number as MarkerSeverity) {
+            case MarkerSeverity.Error:
+                this.severity = DiagnosticSeverity.Error;
+                break;
+            case MarkerSeverity.Warning:
+                this.severity = DiagnosticSeverity.Warning;
+                break;
+            case MarkerSeverity.Info:
+                this.severity = DiagnosticSeverity.Information;
+                break;
+            case MarkerSeverity.Hint:
+                this.severity = DiagnosticSeverity.Hint;
+                break;
+        }
+        this.source = marker.source;
+        if (typeof marker.code == 'object') {
+            this.code = {
+                ...marker.code,
+                target: toUri(marker.code.target),
+            };
+        } else {
+            this.code = marker.code;
+        }
+        this.relatedInformation = marker.relatedInformation?.map(
+            (i) => new DiagnosticRelatedInformation(toLocation({ uri: i.resource, range: i }), i.message),
+        );
+        this.tags = marker.tags?.map((t) => {
+            switch (t as number as MarkerTag) {
+                case MarkerTag.Deprecated:
+                    return DiagnosticTag.Deprecated;
+                case MarkerTag.Unnecessary:
+                    return DiagnosticTag.Unnecessary;
+            }
+        });
+    }
+}
+/** Converts a Monaco marker to a VS Code Diagnostic. */
+export function toDiagnostic(marker: monacoEditor.IMarkerData): Diagnostic {
+    let diagnostic = MonacoDiagnostics.get(marker);
+    if (diagnostic) return diagnostic;
+    diagnostic = new MonacoDiagnostic(marker);
+    MonacoDiagnostics.set(marker, diagnostic);
+    return diagnostic;
+}
+
+/** Converts a VS Code Diagnostic to a Monaco marker. */
+export function fromDiagnostic(diagnostic: Diagnostic): monacoEditor.IMarkerData {
+    if (diagnostic instanceof MonacoDiagnostic) {
+        return diagnostic.marker;
+    }
+    throw new Error('Cannot convert Diagnostic to Monaco marker.');
+}
+
+/** Converts a Monaco CodeAction to a VS Code CodeAction. */
+export function toCodeAction(action: monacoLanguages.CodeAction): CodeAction {
+    const ca = new CodeAction(action.title);
+    switch (action.kind) {
+        case 'quickfix':
+            ca.kind = CodeActionKind.QuickFix;
+            break;
+        case 'refactor':
+            ca.kind = CodeActionKind.Refactor;
+            break;
+        case 'refactor.extract':
+            ca.kind = CodeActionKind.RefactorExtract;
+            break;
+        case 'refactor.inline':
+            ca.kind = CodeActionKind.RefactorInline;
+            break;
+        case 'refactor.move':
+            ca.kind = CodeActionKind.RefactorMove;
+            break;
+        case 'refactor.rewrite':
+            ca.kind = CodeActionKind.RefactorRewrite;
+            break;
+        case 'source':
+            ca.kind = CodeActionKind.Source;
+            break;
+        case 'source.organizeImports':
+            ca.kind = CodeActionKind.SourceOrganizeImports;
+            break;
+        case 'source.fixAll':
+            ca.kind = CodeActionKind.SourceFixAll;
+            break;
+        case 'notebook':
+            ca.kind = CodeActionKind.Notebook;
+            break;
+        case undefined:
+        default:
+            break;
+    }
+    if (action.edit) ca.edit = toWorkspaceEdit(action.edit);
+    if (action.diagnostics) ca.diagnostics = action.diagnostics.map(toDiagnostic);
+    if (action.command) throw new Error('Cannot convert CodeAction with command to VS Code CodeAction.');
+    ca.isPreferred = action.isPreferred;
+    ca.disabled = action.disabled ? { reason: action.disabled } : undefined;
+    return ca;
 }
