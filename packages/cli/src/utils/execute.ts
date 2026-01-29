@@ -8,6 +8,9 @@ import { print } from './print.js';
 const { panic, debug_print } = lib;
 
 panic.serializer = debug_print.serializer = (arg, format) => {
+    if (!format && typeof arg == 'string') {
+        return null;
+    }
     if (format === '%o' || format === '%O' || !format) {
         return print(arg);
     }

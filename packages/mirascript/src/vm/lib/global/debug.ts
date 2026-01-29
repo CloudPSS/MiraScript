@@ -10,78 +10,170 @@ type SerializeFormat =
     | ''
     /** 以 `%` 开头的格式占位符 */
     | `%${string}`;
-/**
- * 默认的序列化函数
- * @param arg 要序列化的值
- * @param format 序列化格式
- * @returns 序列化后的字符串，或 null 表示直接将原值传递给控制台
- */
+
+/** 默认的序列化函数 */
 function defaultSerializer(arg: VmAny, format: SerializeFormat): string | null {
     return null;
 }
 
+/** 格式化结果 */
+interface FormatResult {
+    /** 模板字符串数组 */
+    templates: readonly string[];
+    /** 值数组，长度为 {@link templates}.length - 1 */
+    values: readonly VmAny[];
+    /** 格式化字符串数组，与 {@link values} 一一对应 */
+    formats: readonly SerializeFormat[];
+}
+
 /** 序列化值 */
-function serializeValue(arg: VmAny, format: SerializeFormat, serializer: typeof defaultSerializer): string | null {
+function serializeValue(
+    options: PrintOptions,
+    arg: VmAny,
+    format: SerializeFormat,
+): string | null | PromiseLike<string> {
+    const { serializer } = options;
     if (serializer == null || serializer === defaultSerializer) {
         return defaultSerializer(arg, format);
     }
     try {
-        return serializer(arg, format);
+        return serializer.call(options, arg, format);
     } catch {
         return defaultSerializer(arg, format);
     }
 }
 
-export const debug_print = VmLib(
-    (...args) => {
-        const { serializer } = debug_print;
-        if (args.length <= 1 || typeof args[0] != 'string' || !args[0].includes('%')) {
-            // eslint-disable-next-line no-console
-            console.log(...debug_print.prefix, ...args.map((v) => serializeValue(v, '', serializer) ?? v));
-            return;
-        }
-        const [prefix, ...additional] = debug_print.prefix;
+/** 构造格式化字符串 */
+function buildFormatString(
+    options: PrintOptions,
+    args: readonly VmAny[],
+): readonly [format: string, values: readonly VmAny[]] {
+    const [prefix, ...additional] = options.prefix;
+    if (args.length <= 1 || typeof args[0] != 'string') {
+        return [prefix || '', [...additional, ...args]];
+    } else {
         const [arg0, ...argsRest] = args;
-        const format = `${prefix || ''} ${arg0}`;
         const values = [...additional, ...argsRest];
+        if (!prefix) {
+            return [arg0, argsRest];
+        } else {
+            return [`${prefix} ${arg0}`, values];
+        }
+    }
+}
+
+/** 默认的格式化函数 */
+const printFormatter: PrintOptions['formatter'] = function (args) {
+    const [format, values] = buildFormatString(this, args);
+    const templates: string[] = [];
+    const formats: SerializeFormat[] = [];
+    let valIndex = 0;
+    if (format.includes('%')) {
         const parts = format.split(/(%[%\w])/g);
-        const messageToConsole: string[] = [];
-        const valuesToConsole: unknown[] = [];
-        let valIndex = 0;
         for (let i = 0; i < parts.length; i++) {
             if (i % 2 === 0) {
                 // Regular string part
-                messageToConsole.push(parts[i]!);
+                templates.push(parts[i]!);
                 continue;
             }
             // Specifier part
-            const specifier = parts[i]!;
-            if (specifier === '%%') {
-                messageToConsole.push('%');
-            } else {
-                if (valIndex >= values.length) {
-                    messageToConsole.push(specifier);
-                    continue;
-                }
-                const arg = values[valIndex++]!;
-                const f = serializeValue(arg, specifier as SerializeFormat, serializer);
-                if (f != null) {
-                    messageToConsole.push('%s');
-                    valuesToConsole.push(f);
+            let specifier = parts[i]!;
+            if (specifier === '%%' || valIndex >= values.length) {
+                if (specifier === '%%') specifier = '%';
+                if (!templates.length) {
+                    templates.push(specifier);
                 } else {
-                    messageToConsole.push(specifier);
-                    valuesToConsole.push(arg);
+                    templates[templates.length - 1] += specifier;
+                }
+                continue;
+            }
+            formats.push(specifier as SerializeFormat);
+            valIndex++;
+        }
+    } else if (format) {
+        templates.push(format);
+    }
+    // Append any remaining arguments separated by spaces
+    if (valIndex < values.length) {
+        if (templates.length) {
+            templates[templates.length - 1] += ' ';
+        }
+        for (let i = valIndex; i < values.length; i++) {
+            formats.push('');
+            templates.push(i < values.length - 1 ? ' ' : '');
+        }
+        valIndex++;
+    }
+    return {
+        templates,
+        values,
+        formats,
+    };
+};
+
+/** 默认的输出函数 */
+const createPrinter = (consoleMethod: (...args: unknown[]) => void): PrintOptions['printer'] => {
+    return function ({ templates, formats, values }: FormatResult) {
+        let format = '';
+        const formattedValues: unknown[] = [];
+        let needAwait = false;
+        for (let i = 0; i < templates.length; i++) {
+            format += templates[i]!;
+            if (i < values.length) {
+                const f = formats[i] ?? '';
+                const v = values[i]!;
+                const serialized = serializeValue(this, v, f);
+                if (serialized == null) {
+                    format += f || (typeof v == 'string' ? '%s' : '%o');
+                    formattedValues.push(v);
+                } else if (typeof serialized == 'string') {
+                    format += '%s';
+                    formattedValues.push(serialized);
+                } else {
+                    needAwait = true;
+                    format += '%s';
+                    formattedValues.push(serialized);
                 }
             }
         }
-
-        // Append any remaining arguments separated by spaces
-        if (valIndex < values.length) {
-            const remaining = values.slice(valIndex);
-            valuesToConsole.push(...remaining.map((v) => serializeValue(v, '', serializer) ?? v));
+        if (!needAwait) {
+            consoleMethod(format, ...formattedValues);
+        } else {
+            void Promise.all(formattedValues).then((resolvedValues) => {
+                consoleMethod(format, ...resolvedValues);
+            });
         }
-        // eslint-disable-next-line no-console
-        console.log(messageToConsole.join(''), ...valuesToConsole);
+    };
+};
+
+/** 打印输出选项 */
+interface PrintOptions {
+    /** 输出时的固定前缀 */
+    prefix: readonly [prefix: string, ...additional: readonly string[]];
+    /**
+     * 序列化函数
+     * @param arg 要序列化的值
+     * @param format 序列化格式
+     * @returns 序列化后的字符串，或 null 表示直接将原值传递给控制台
+     */
+    serializer: (this: PrintOptions, arg: VmAny, format: SerializeFormat) => string | null | PromiseLike<string>;
+    /** 格式化函数 */
+    formatter: (this: PrintOptions, args: readonly VmAny[]) => FormatResult;
+    /** 输出函数 */
+    printer: (this: PrintOptions, format: FormatResult) => void;
+}
+
+const printOptions: PrintOptions = {
+    prefix: ['MiraScript'] as readonly [prefix: string, ...additional: readonly string[]],
+    serializer: defaultSerializer,
+    formatter: printFormatter,
+    printer: () => undefined,
+};
+
+export const debug_print = VmLib(
+    (...args) => {
+        const formatResult = debug_print.formatter(args);
+        debug_print.printer(formatResult);
     },
     {
         summary: '打印调试信息到控制台',
@@ -91,17 +183,16 @@ export const debug_print = VmLib(
         examples: ['debug_print("value:", 42);'],
     },
     {
-        prefix: ['MiraScript'] as readonly [prefix: string, ...additional: readonly string[]],
-        serializer: defaultSerializer,
+        ...printOptions,
+        // eslint-disable-next-line no-console
+        printer: createPrinter(console.log),
     },
 );
 
 export const panic = VmLib(
     (message: VmAny) => {
-        // eslint-disable-next-line no-console
-        if (message === undefined) console.error(...panic.prefix);
-        // eslint-disable-next-line no-console
-        else console.error(...panic.prefix, serializeValue(message, '', panic.serializer) ?? message);
+        const formatResult = message === undefined ? panic.formatter([]) : panic.formatter([message]);
+        panic.printer(formatResult);
         const mgsStr = toString(message, null);
         const error = !mgsStr ? 'panic' : 'panic: ' + mgsStr;
         throw new VmError(error, undefined);
@@ -114,8 +205,9 @@ export const panic = VmLib(
         examples: ['panic("boom");'],
     },
     {
-        prefix: ['MiraScript'] as readonly [prefix: string, ...additional: readonly string[]],
-        serializer: defaultSerializer,
+        ...printOptions,
+        // eslint-disable-next-line no-console
+        printer: createPrinter(console.error),
     },
 );
 

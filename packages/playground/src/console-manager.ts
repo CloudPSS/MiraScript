@@ -20,62 +20,51 @@ async function printValue(arg: VmAny): Promise<string> {
 }
 /** 渲染 debug_print 的调用 */
 async function renderDebugPrint(args: VmAny[]): Promise<string> {
-    if (args.length === 0) {
-        return '';
-    }
-    if (args.length <= 1 || typeof args[0] != 'string' || !args[0].includes('%')) {
-        return (await Promise.all(args.map(printValue))).join(' ');
-    }
-
+    const { debug_print } = mirascriptSubtle.lib;
+    const { templates, values, formats } = debug_print.formatter.call(
+        {
+            ...debug_print,
+            prefix: [''],
+        },
+        args,
+    );
     const { toString, toNumber } = mirascriptSubtle.convert;
-    const [format, ...values] = args;
-    const parts = format.split(/(%[%sdifoOc])/g);
     const rendered = [];
-    let valIndex = 0;
-    for (let i = 0; i < parts.length; i++) {
-        if (i % 2 === 0) {
-            // Regular string part
-            rendered.push(escapeHtml(parts[i]!));
+    for (let i = 0; i < templates.length; i++) {
+        const template = templates[i]!;
+        rendered.push(escapeHtml(template));
+        if (i >= values.length) {
             continue;
         }
-        // Specifier part
-        const specifier = parts[i]!;
-        if (specifier === '%%') {
-            rendered.push('%');
-        } else {
-            if (valIndex >= values.length) {
-                rendered.push(specifier);
-                continue;
-            }
-            const arg = values[valIndex++]!;
-            let formatted: string | { style: string } | Promise<string>;
-            switch (specifier) {
-                case '%s':
-                    formatted = escapeHtml(toString(arg));
-                    break;
-                case '%f':
-                case '%d':
-                    formatted = escapeHtml(toString(toNumber(arg, Number.NaN)));
-                    break;
-                case '%i':
-                    formatted = escapeHtml(toString(Math.trunc(toNumber(arg, Number.NaN))));
-                    break;
-                case '%c':
-                    formatted = { style: toString(arg) };
-                    break;
-                default:
-                    formatted = print(arg);
-                    break;
-            }
-            rendered.push(formatted);
+        const value = values[i]!;
+        const format = formats[i] ?? '';
+
+        let formatted: string | { style: string } | Promise<string>;
+        switch (format.toLowerCase()) {
+            case '%s':
+                formatted = escapeHtml(toString(value));
+                break;
+            case '%f':
+            case '%d':
+                formatted = escapeHtml(toString(toNumber(value, Number.NaN)));
+                break;
+            case '%i':
+                formatted = escapeHtml(toString(Math.trunc(toNumber(value, Number.NaN))));
+                break;
+            case '%c':
+                formatted = { style: toString(value) };
+                break;
+            case '%o':
+                formatted = print(value);
+                break;
+            case '':
+            default:
+                formatted = printValue(value);
+                break;
         }
+        rendered.push(formatted);
     }
 
-    // Append any remaining arguments separated by spaces
-    if (valIndex < values.length) {
-        const remaining = values.slice(valIndex);
-        rendered.push(...remaining.map(async (v) => ' ' + (await printValue(v))));
-    }
     let currentStyle = '';
     let final = '';
     // eslint-disable-next-line @typescript-eslint/await-thenable
