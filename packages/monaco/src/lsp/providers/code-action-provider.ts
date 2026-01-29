@@ -40,7 +40,7 @@ function createCodeAction(
         if (current === uppercase || !Object.is(context.getOrUndefined(current), context.getOrUndefined(uppercase))) {
             return undefined;
         }
-        action.title = 'Convert to uppercase constant';
+        action.title = '转换为大写常量';
         action.kind = 'quickfix';
         action.edit = edits({
             range,
@@ -73,7 +73,7 @@ function createCodeAction(
             // to "$((...))" to represent a record literal
             fixed = `(${fixed})`;
         }
-        action.title = 'Convert record literal to parentheses';
+        action.title = '转换为使用括号的记录字面量';
         action.kind = 'quickfix';
         action.edit = edits({
             range,
@@ -102,7 +102,7 @@ function createCodeAction(
         if (!fixed) {
             return undefined;
         }
-        action.title = `Convert to '${fixed}' operator`;
+        action.title = `转换为 '${fixed}' 运算符`;
         action.kind = 'quickfix';
         action.edit = edits({
             range: range0,
@@ -120,7 +120,7 @@ function createCodeAction(
         if (fixed === current) {
             return undefined;
         }
-        action.title = 'Remove unnecessary parentheses';
+        action.title = '移除不必要的括号';
         action.kind = 'quickfix';
         action.edit = edits({
             range,
@@ -164,7 +164,7 @@ function createCodeAction(
             return `{ ${expr} }`;
         };
         const fixed = `if ${cond} ${wrapIfNeeded(thenExpr, false)} else ${wrapIfNeeded(elseExpr, true)}`;
-        action.title = 'Convert to if expression';
+        action.title = '转换为 if 表达式';
         action.kind = 'quickfix';
         action.edit = edits({
             range,

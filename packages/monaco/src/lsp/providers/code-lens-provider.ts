@@ -21,7 +21,7 @@ export class CodeLensProvider extends Provider implements languages.CodeLensProv
                     range: definition.range,
                     command: {
                         id: 'editor.action.findReferences',
-                        title: `${references.length} reference${references.length !== 1 ? 's' : ''}`,
+                        title: `${references.length} 个引用`,
                         arguments: [model.uri, Range.getStartPosition(definition.range)],
                     },
                 });
