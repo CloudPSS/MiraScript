@@ -50,6 +50,12 @@ export type VmFunctionOption = Partial<Omit<VmFunctionInfo, 'original'>> & {
     readonly injectCp?: boolean;
 };
 
+const nameIfNotAnonymous = <T>({ name }: { name: string | undefined }, fallback: T): string | T => {
+    if (!name) return fallback;
+    if (name === VM_FUNCTION_ANONYMOUS_NAME) return fallback;
+    return name;
+};
+
 /** 创建 Mirascript 函数 */
 export function VmFunction<T extends VmFunctionLike>(
     fn: T,
@@ -64,15 +70,15 @@ export function VmFunction<T extends VmFunctionLike>(
     if (exists) return exists;
     let opt: VmFunctionOption;
     if (isVmFunction(option)) {
-        opt = option[kVmFunction];
+        opt = { ...option[kVmFunction], name: nameIfNotAnonymous(option, null) };
     } else if (typeof option == 'function') {
-        opt = { ...option, isLib: true, name: option.name };
+        opt = { ...option, isLib: true, name: nameIfNotAnonymous(option, null) };
     } else {
         opt = option;
     }
 
     const info: Writable<VmFunctionInfo> = {
-        fullName: opt.fullName ?? (fn.name === VM_FUNCTION_ANONYMOUS_NAME ? '' : fn.name),
+        fullName: opt.fullName ?? nameIfNotAnonymous(fn, ''),
         isLib: opt.isLib ?? false,
         summary: opt.summary || undefined,
         params: opt.params,
@@ -82,7 +88,7 @@ export function VmFunction<T extends VmFunctionLike>(
         examples: opt.examples?.length ? opt.examples : undefined,
         deprecated: opt.deprecated ?? undefined,
     };
-    const name = opt.name ?? (fn.name || option.name);
+    const name = opt.name ?? fn.name;
     if (opt.injectCp) {
         const original = fn;
         info.original = original;
