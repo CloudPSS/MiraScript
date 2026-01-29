@@ -66,7 +66,7 @@ export function VmFunction<T extends VmFunctionLike>(
     if (isVmFunction(option)) {
         opt = option[kVmFunction];
     } else if (typeof option == 'function') {
-        opt = { ...option, isLib: true } satisfies VmFunctionOption;
+        opt = { ...option, isLib: true, name: option.name };
     } else {
         opt = option;
     }
