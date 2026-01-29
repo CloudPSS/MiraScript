@@ -109,6 +109,8 @@ export class DocumentSemanticTokensProvider extends Provider implements language
                     tokenType = TokenType.CONSTANT;
                     break;
                 }
+                // case DiagnosticCode.RecordFieldStringName:
+                case DiagnosticCode.RecordFieldOrdinalName:
                 case DiagnosticCode.RecordFieldIdName: {
                     tokenType = TokenType.PROPERTY;
                     break;

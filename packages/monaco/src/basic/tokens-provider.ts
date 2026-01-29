@@ -64,7 +64,7 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
             root: [
                 [/[[\](){}]/, '@brackets'],
                 // 用于修正关键字做为属性名时的高亮问题，由于与格式化字符串冲突，仅 root 规则启用，其余情况改由 semantic 高亮处理
-                [/(@identifier)(@whitespace*)(\??:)(?!:)/, ['variable.other.property', '', 'delimiter']],
+                [/(0|[1-9]\d*|@identifier)(@whitespace*)(\??:)(?!:)/, ['variable.other.property', '', 'delimiter']],
                 { include: '@common' },
             ],
             root_template: [
@@ -86,13 +86,13 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                     ['keyword.flow', '', { cases: identifierCases() }, '', 'keyword.flow'],
                 ],
                 [
-                    /(\.)(@whitespace*)(\d+)/,
+                    /(\.)(@whitespace*)(\d+\b)/,
                     [
                         'delimiter',
                         '',
                         {
                             cases: {
-                                [REG_ORDINAL.source]: 'number.ordinal',
+                                [REG_ORDINAL.source]: 'variable',
                                 '@default': 'number.float',
                             },
                         },
@@ -103,7 +103,7 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                     /(\.)(@whitespace*)(@identifierNoAtOnly)(@whitespace*)(!?)(@whitespace*(?=\(|@*['"`]))/,
                     ['delimiter', '', 'entity.name.function', '', 'delimiter', ''],
                 ],
-                [/(\.)(@whitespace*)(@identifier)/, ['delimiter', '', 'variable']],
+                [/(\.)(@whitespace*)(@identifier\b)/, ['delimiter', '', 'variable']],
                 [
                     /(@identifierNoAtOnly)(@whitespace*)(!?)(@whitespace*(?=\(|@*['"`]))/,
                     [
