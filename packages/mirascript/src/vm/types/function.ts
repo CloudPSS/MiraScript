@@ -82,7 +82,7 @@ export function VmFunction<T extends VmFunctionLike>(
         examples: opt.examples?.length ? opt.examples : undefined,
         deprecated: opt.deprecated ?? undefined,
     };
-    const name = opt.name ?? fn.name;
+    const name = opt.name ?? (fn.name || option.name);
     if (opt.injectCp) {
         const original = fn;
         info.original = original;
