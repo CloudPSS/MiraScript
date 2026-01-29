@@ -1,4 +1,3 @@
-import type { Writable } from 'type-fest';
 import { VM_ARRAY_MAX_LENGTH } from '../../helpers/constants.js';
 import { isNaN, NotNumber, entries, fromEntries, isSafeInteger, isFinite } from '../../helpers/utils.js';
 import { toBoolean, toNumber, toString } from '../../helpers/convert/index.js';
@@ -287,14 +286,17 @@ export function VmLib<
 >(value: T, option: VmLibOption, properties?: P): VmLib<T> & P {
     if (isVmFunction(value)) throw new TypeError('Cannot create VmLib from a VmFunction');
 
-    const ret = (typeof value == 'function' ? value : { value: value }) as unknown as Writable<VmLib<T>> & P;
+    // 后续在 wrapEntry 中会处理函数的包装
+    const ret = (typeof value == 'function' ? value : { __proto__: null, value: value }) as VmLib<T> & P;
+    Object.defineProperties(ret, {
+        summary: { enumerable: true, value: option.summary },
+        params: { enumerable: true, value: option.params },
+        paramsType: { enumerable: true, value: option.paramsType },
+        returns: { enumerable: true, value: option.returns },
+        returnsType: { enumerable: true, value: option.returnsType },
+        examples: { enumerable: true, value: option.examples },
+        deprecated: { enumerable: true, value: option.deprecated ?? undefined },
+    });
     Object.assign(ret, properties);
-    ret.params = option.params;
-    ret.paramsType = option.paramsType;
-    ret.returns = option.returns;
-    ret.returnsType = option.returnsType;
-    ret.summary = option.summary;
-    ret.examples = option.examples;
-    ret.deprecated = option.deprecated ?? undefined;
-    return ret as VmLib<T> & P;
+    return ret;
 }

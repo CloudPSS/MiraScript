@@ -72,12 +72,18 @@ export function VmFunction<T extends VmFunctionLike>(
     if (isVmFunction(option)) {
         opt = { ...option[kVmFunction], name: nameIfNotAnonymous(option, null) };
     } else if (typeof option == 'function') {
-        opt = { ...option, isLib: true, name: nameIfNotAnonymous(option, null) };
+        opt = {
+            ...option,
+            isLib: true,
+            injectCp: false,
+            name: nameIfNotAnonymous(option, null),
+        };
     } else {
         opt = option;
     }
 
-    const info: Writable<VmFunctionInfo> = {
+    const info: Writable<VmFunctionInfo & { __proto__: null }> = {
+        __proto__: null,
         fullName: opt.fullName ?? nameIfNotAnonymous(fn, ''),
         isLib: opt.isLib ?? false,
         summary: opt.summary || undefined,

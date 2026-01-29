@@ -46,20 +46,10 @@ export function wrapEntry<const T extends RawValue>(
     }
     if (value.name !== name) {
         // 如果函数名和导出名不一致，则重命名
-        defineProperty(value, 'name', {
-            value: name,
-            configurable: true,
-        });
+        defineProperty(value, 'name', { value: name });
     }
-    return [
-        VmFunction(value, {
-            ...value,
-            isLib: true,
-            injectCp: false,
-            fullName: `${module}.${name}`,
-        }) as ToWrappedValue<T>,
-        value.summary || undefined,
-    ];
+    defineProperty(value, 'fullName', { enumerable: true, value: `${module}.${name}` });
+    return [VmFunction(value, value) as ToWrappedValue<T>, value.summary || undefined];
 }
 
 /** 创建模块 */
