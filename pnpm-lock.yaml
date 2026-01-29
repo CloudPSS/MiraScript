@@ -260,8 +260,8 @@ importers:
         specifier: ^3.9.2
         version: 3.9.2(@docusaurus/plugin-content-docs@3.9.2(@mdx-js/react@3.1.1(@types/react@19.2.10)(react@19.2.4))(esbuild@0.27.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3))(esbuild@0.27.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@easyops-cn/docusaurus-search-local':
-        specifier: ^0.52.2
-        version: 0.52.2(@docusaurus/theme-common@3.9.2(@docusaurus/plugin-content-docs@3.9.2(@mdx-js/react@3.1.1(@types/react@19.2.10)(react@19.2.4))(esbuild@0.27.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3))(esbuild@0.27.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@mdx-js/react@3.1.1(@types/react@19.2.10)(react@19.2.4))(esbuild@0.27.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
+        specifier: ^0.52.3
+        version: 0.52.3(@docusaurus/theme-common@3.9.2(@docusaurus/plugin-content-docs@3.9.2(@mdx-js/react@3.1.1(@types/react@19.2.10)(react@19.2.4))(esbuild@0.27.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3))(esbuild@0.27.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@mdx-js/react@3.1.1(@types/react@19.2.10)(react@19.2.4))(esbuild@0.27.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
       '@mdx-js/react':
         specifier: ^3.1.1
         version: 3.1.1(@types/react@19.2.10)(react@19.2.4)
@@ -1928,9 +1928,9 @@ packages:
     resolution:
       { integrity: sha512-drg76jS6syilOUmVNkyo1c7ZEBPcPuK+aJA7AksM5ZIIbV57DMHCywiCr+uHyv8BE5jUTU98j/H7gVrkHrWW3Q== }
 
-  '@easyops-cn/docusaurus-search-local@0.52.2':
+  '@easyops-cn/docusaurus-search-local@0.52.3':
     resolution:
-      { integrity: sha512-oEHkHe/OWHFcJxOhicS5UqohDOyPieREH+oNoImL/VcdrPzDxT2LB5Scov6WMOpOyDcSMJ6QCvjj63PEhhU8Nw== }
+      { integrity: sha512-bkKHD+FoAY+sBvd9vcHudx8X5JQXkyGBcpstpJwOUTTpKwT0rOtUtnfmizpMu113LqdHxOxvlekYkGeTNGYYvw== }
     engines: { node: '>=12' }
     peerDependencies:
       '@docusaurus/theme-common': ^2 || ^3
@@ -5270,9 +5270,9 @@ packages:
     engines: { node: '>=0.10.0' }
     hasBin: true
 
-  electron-to-chromium@1.5.279:
+  electron-to-chromium@1.5.282:
     resolution:
-      { integrity: sha512-0bblUU5UNdOt5G7XqGiJtpZMONma6WAfq9vsFmtn9x1+joAObr6x1chfqyxFSDCAFwFhCQDrqeAr6MYdpwJ9Hg== }
+      { integrity: sha512-FCPkJtpst28UmFzd903iU7PdeVTfY0KAeJy+Lk0GLZRwgwYHn/irRcaCbQQOmr5Vytc/7rcavsYLvTM8RiHYhQ== }
 
   emittery@1.2.0:
     resolution:
@@ -9338,9 +9338,9 @@ packages:
       { integrity: sha512-tsaTIkKW9b4N+AEj+SVA+WhJzV7/zMhcSu78mLKWSk7cXMOSHsBKFWUs0fWwq8QyK3MgJBQRX6Gbi4kYbdvGkQ== }
     engines: { node: '>=18' }
 
-  string-width@8.1.0:
+  string-width@8.1.1:
     resolution:
-      { integrity: sha512-Kxl3KJGb/gxkaUMOjRsQ8IrXiGW75O4E3RPjFIINOVH8AMl2SQ/yWdTzWwF3FevIX9LcMAjJW+GRwAlAbTSXdg== }
+      { integrity: sha512-KpqHIdDL9KwYk22wEOg/VIqYbrnLeSApsKT/bSj6Ez7pn3CftUiLAv2Lccpq1ALcpLV9UX1Ppn92npZWu2w/aw== }
     engines: { node: '>=20' }
 
   string.prototype.matchall@4.0.12:
@@ -12578,7 +12578,7 @@ snapshots:
       cssesc: 3.0.0
       immediate: 3.3.0
 
-  '@easyops-cn/docusaurus-search-local@0.52.2(@docusaurus/theme-common@3.9.2(@docusaurus/plugin-content-docs@3.9.2(@mdx-js/react@3.1.1(@types/react@19.2.10)(react@19.2.4))(esbuild@0.27.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3))(esbuild@0.27.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@mdx-js/react@3.1.1(@types/react@19.2.10)(react@19.2.4))(esbuild@0.27.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)':
+  '@easyops-cn/docusaurus-search-local@0.52.3(@docusaurus/theme-common@3.9.2(@docusaurus/plugin-content-docs@3.9.2(@mdx-js/react@3.1.1(@types/react@19.2.10)(react@19.2.4))(esbuild@0.27.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3))(esbuild@0.27.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@mdx-js/react@3.1.1(@types/react@19.2.10)(react@19.2.4))(esbuild@0.27.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)':
     dependencies:
       '@docusaurus/plugin-content-docs': 3.9.2(@mdx-js/react@3.1.1(@types/react@19.2.10)(react@19.2.4))(debug@4.4.3)(esbuild@0.27.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
       '@docusaurus/theme-common': 3.9.2(@docusaurus/plugin-content-docs@3.9.2(@mdx-js/react@3.1.1(@types/react@19.2.10)(react@19.2.4))(esbuild@0.27.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3))(esbuild@0.27.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -14683,7 +14683,7 @@ snapshots:
     dependencies:
       baseline-browser-mapping: 2.9.19
       caniuse-lite: 1.0.30001766
-      electron-to-chromium: 1.5.279
+      electron-to-chromium: 1.5.282
       node-releases: 2.0.27
       update-browserslist-db: 1.2.3(browserslist@4.28.1)
 
@@ -14884,7 +14884,7 @@ snapshots:
   cli-truncate@5.1.1:
     dependencies:
       slice-ansi: 7.1.2
-      string-width: 8.1.0
+      string-width: 8.1.1
 
   cli-width@4.1.0: {}
 
@@ -15413,7 +15413,7 @@ snapshots:
     dependencies:
       jake: 10.9.4
 
-  electron-to-chromium@1.5.279: {}
+  electron-to-chromium@1.5.282: {}
 
   emittery@1.2.0: {}
 
@@ -19370,7 +19370,7 @@ snapshots:
       get-east-asian-width: 1.4.0
       strip-ansi: 7.1.2
 
-  string-width@8.1.0:
+  string-width@8.1.1:
     dependencies:
       get-east-asian-width: 1.4.0
       strip-ansi: 7.1.2
