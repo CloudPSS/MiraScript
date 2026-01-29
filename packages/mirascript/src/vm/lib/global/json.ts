@@ -21,7 +21,6 @@ export const to_json = VmLib(
         paramsType: { data: 'any' },
         returnsType: 'string',
         examples: ['to_json([1, 2, 3]) // "[1,2,3]"'],
-        injectCp: true,
     },
 );
 
@@ -41,6 +40,5 @@ export const from_json = VmLib(
         paramsType: { json: 'string', fallback: 'any' },
         returnsType: 'any',
         examples: [`from_json('{"a":1}') // (a: 1)`],
-        injectCp: true,
     },
 );
