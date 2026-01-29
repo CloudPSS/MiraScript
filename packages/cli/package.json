@@ -37,7 +37,7 @@
     "supports-color": "^10.2.2"
   },
   "devDependencies": {
-    "@types/node": "^25.0.10",
+    "@types/node": "^25.1.0",
     "type-fest": "^5.4.2"
   }
 }
