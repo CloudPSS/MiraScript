@@ -73,7 +73,7 @@ function createCodeAction(
             // to "$((...))" to represent a record literal
             fixed = `(${fixed})`;
         }
-        action.title = '转换为使用括号的记录字面量';
+        action.title = `转换为使用圆括号的记录字面量`;
         action.kind = 'quickfix';
         action.edit = edits({
             range,
