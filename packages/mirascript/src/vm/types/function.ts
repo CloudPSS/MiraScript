@@ -5,6 +5,7 @@ import { kVmFunction, VM_FUNCTION_ANONYMOUS_NAME } from '../../helpers/constants
 import { isVmFunction, type VmAny, type VmValue } from './index.js';
 import { fromVmFunctionProxy } from './boundary.js';
 import { CpEnter, CpExit } from '../checkpoint.js';
+import type { VmLib } from '../lib/helpers.js';
 
 /**
  * Mirascript 函数签名
@@ -50,7 +51,10 @@ export type VmFunctionOption = Partial<Omit<VmFunctionInfo, 'original'>> & {
 };
 
 /** 创建 Mirascript 函数 */
-export function VmFunction<T extends VmFunctionLike>(fn: T, option: VmFunctionOption | VmFunction = {}): VmFunction<T> {
+export function VmFunction<T extends VmFunctionLike>(
+    fn: T,
+    option: VmFunctionOption | VmFunction | VmLib<T> = {},
+): VmFunction<T> {
     if (typeof fn != 'function') {
         throw new TypeError('Invalid function');
     }
@@ -58,21 +62,28 @@ export function VmFunction<T extends VmFunctionLike>(fn: T, option: VmFunctionOp
     const exists = fromVmFunctionProxy(fn);
     // 如果已经是 VmFunction，则直接返回
     if (exists) return exists;
-    if (isVmFunction(option)) option = option[kVmFunction];
+    let opt: VmFunctionOption;
+    if (isVmFunction(option)) {
+        opt = option[kVmFunction];
+    } else if (typeof option == 'function') {
+        opt = { ...option, isLib: true } satisfies VmFunctionOption;
+    } else {
+        opt = option;
+    }
 
     const info: Writable<VmFunctionInfo> = {
-        fullName: option.fullName ?? (fn.name === VM_FUNCTION_ANONYMOUS_NAME ? '' : fn.name),
-        isLib: option.isLib ?? false,
-        summary: option.summary || undefined,
-        params: option.params,
-        paramsType: option.paramsType,
-        returns: option.returns || undefined,
-        returnsType: option.returnsType || undefined,
-        examples: option.examples?.length ? option.examples : undefined,
-        deprecated: option.deprecated ?? undefined,
+        fullName: opt.fullName ?? (fn.name === VM_FUNCTION_ANONYMOUS_NAME ? '' : fn.name),
+        isLib: opt.isLib ?? false,
+        summary: opt.summary || undefined,
+        params: opt.params,
+        paramsType: opt.paramsType,
+        returns: opt.returns || undefined,
+        returnsType: opt.returnsType || undefined,
+        examples: opt.examples?.length ? opt.examples : undefined,
+        deprecated: opt.deprecated ?? undefined,
     };
-    const name = option.name ?? fn.name;
-    if (option.injectCp) {
+    const name = opt.name ?? fn.name;
+    if (opt.injectCp) {
         const original = fn;
         info.original = original;
         fn = ((...args) => {
