@@ -97,6 +97,8 @@ const printFormatter: PrintOptions['formatter'] = function (args) {
     if (valIndex < values.length) {
         if (templates.length) {
             templates[templates.length - 1] += ' ';
+        } else {
+            templates.push('');
         }
         for (let i = valIndex; i < values.length; i++) {
             formats.push('');
