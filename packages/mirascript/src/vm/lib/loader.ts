@@ -8,7 +8,7 @@ import {
 } from '../types/index.js';
 import { create, defineProperty, entries } from '../../helpers/utils.js';
 
-import type { VmLib, VmLibOption } from './helpers.js';
+import type { VmLib } from './helpers.js';
 
 /** 内置模块 */
 class VmBuiltinModule<const T extends Record<string, VmImmutable> = Record<string, VmImmutable>> extends VmModule<T> {
@@ -53,10 +53,10 @@ export function wrapEntry<const T extends RawValue>(
     }
     return [
         VmFunction(value, {
+            ...value,
             isLib: true,
-            injectCp: true,
+            injectCp: false,
             fullName: `${module}.${name}`,
-            ...(value as VmLibOption),
         }) as ToWrappedValue<T>,
         value.summary || undefined,
     ];

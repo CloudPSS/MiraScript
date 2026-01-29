@@ -31,7 +31,7 @@ export function globals(consoleManager: ConsoleManager): VmContext {
                 (...args: VmAny[]) => {
                     consoleManager.log(args);
                 },
-                getVmFunctionInfo(DefaultVmContext.get('debug_print')),
+                { ...getVmFunctionInfo(DefaultVmContext.get('debug_print')), name: 'debug_print' },
             ),
             // for template examples
             title: 'MiraScript 示例',

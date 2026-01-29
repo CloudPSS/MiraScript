@@ -1,4 +1,4 @@
-import { create, defineProperty, isFinite } from '../../helpers/utils.js';
+import { create, isFinite } from '../../helpers/utils.js';
 import { VM_ARRAY_MAX_LENGTH, VM_FUNCTION_ANONYMOUS_NAME } from '../../helpers/constants.js';
 import { isVmConst } from '../../helpers/types.js';
 import type { VmFunctionLike } from '../types/function.js';
@@ -25,8 +25,7 @@ export function $ElOpt(key: string, value: VmAny): VmConst {
 
 /** 构造函数和函数表达式 */
 export function $Fn<T extends VmFunctionLike>(name: string | null | undefined, fn: T): VmFunction<T> {
-    defineProperty(fn, 'name', { value: name || VM_FUNCTION_ANONYMOUS_NAME });
-    return VmFunction(fn, { isLib: false, injectCp: false });
+    return VmFunction(fn, { isLib: false, injectCp: false, name: name || VM_FUNCTION_ANONYMOUS_NAME });
 }
 
 /** 读取闭包上值 */

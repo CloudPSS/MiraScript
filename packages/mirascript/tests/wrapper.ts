@@ -28,6 +28,10 @@ test('VmFunction', (t) => {
     t.is(getVmFunctionInfo(vmFn)?.original, undefined);
 
     t.throws(() => VmFunction(123 as never), { instanceOf: TypeError });
+
+    const namedFn = VmFunction((a, b) => Number(a) + Number(b), { name: 'add', fullName: 'math.add' });
+    t.is(getVmFunctionInfo(namedFn)?.fullName, 'math.add');
+    t.is(namedFn.name, 'add');
 });
 
 test('VmModule', async (t) => {

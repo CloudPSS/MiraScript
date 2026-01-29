@@ -45,6 +45,7 @@ export function defineVmContextValue(
     let v: VmImmutable;
     if (typeof value == 'function') {
         v = VmFunction(value, {
+            name,
             isLib: true,
             fullName: `global.${name}`,
         });

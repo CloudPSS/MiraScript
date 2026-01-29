@@ -2,7 +2,7 @@ import type { Writable } from 'type-fest';
 import type { DiagnosticCode } from '@mirascript/constants';
 import { defineProperty } from '../../helpers/utils.js';
 import { kVmFunction, VM_FUNCTION_ANONYMOUS_NAME } from '../../helpers/constants.js';
-import type { VmAny, VmValue } from './index.js';
+import { isVmFunction, type VmAny, type VmValue } from './index.js';
 import { fromVmFunctionProxy } from './boundary.js';
 import { CpEnter, CpExit } from '../checkpoint.js';
 
@@ -18,7 +18,7 @@ export type VmFunctionLike = (...args: ReadonlyArray<VmValue | undefined>) => Vm
 export type VmFunction<T extends VmFunctionLike = VmFunctionLike> = T & { readonly [kVmFunction]: VmFunctionInfo };
 
 /** Mirascript 函数信息 */
-export interface VmFunctionInfo {
+export type VmFunctionInfo = {
     /** 完整名称 */
     readonly fullName: string;
     /** 是否为库函数 */
@@ -39,17 +39,18 @@ export interface VmFunctionInfo {
     readonly original?: VmFunctionLike;
     /** 标记为弃用 */
     readonly deprecated?: { use?: string; message: DiagnosticCode };
-}
+};
 
 /** Mirascript 函数创建选项 */
-export type VmFunctionOption = Partial<
-    Omit<VmFunctionInfo, 'original'> & {
-        readonly injectCp: boolean;
-    }
->;
+export type VmFunctionOption = Partial<Omit<VmFunctionInfo, 'original'>> & {
+    /** 函数名称 */
+    readonly name?: string | null | undefined;
+    /** 是否注入检查点 */
+    readonly injectCp?: boolean;
+};
 
 /** 创建 Mirascript 函数 */
-export function VmFunction<T extends VmFunctionLike>(fn: T, option: VmFunctionOption = {}): VmFunction<T> {
+export function VmFunction<T extends VmFunctionLike>(fn: T, option: VmFunctionOption | VmFunction = {}): VmFunction<T> {
     if (typeof fn != 'function') {
         throw new TypeError('Invalid function');
     }
@@ -57,6 +58,7 @@ export function VmFunction<T extends VmFunctionLike>(fn: T, option: VmFunctionOp
     const exists = fromVmFunctionProxy(fn);
     // 如果已经是 VmFunction，则直接返回
     if (exists) return exists;
+    if (isVmFunction(option)) option = option[kVmFunction];
 
     const info: Writable<VmFunctionInfo> = {
         fullName: option.fullName ?? (fn.name === VM_FUNCTION_ANONYMOUS_NAME ? '' : fn.name),
@@ -69,6 +71,7 @@ export function VmFunction<T extends VmFunctionLike>(fn: T, option: VmFunctionOp
         examples: option.examples?.length ? option.examples : undefined,
         deprecated: option.deprecated ?? undefined,
     };
+    const name = option.name ?? fn.name;
     if (option.injectCp) {
         const original = fn;
         info.original = original;
@@ -81,10 +84,8 @@ export function VmFunction<T extends VmFunctionLike>(fn: T, option: VmFunctionOp
                 CpExit();
             }
         }) as typeof fn;
-        defineProperty(fn, 'name', { value: original.name });
     }
-    defineProperty(fn, kVmFunction, {
-        value: Object.freeze(info),
-    });
+    defineProperty(fn, 'name', { value: name, configurable: true });
+    defineProperty(fn, kVmFunction, { value: Object.freeze(info) });
     return fn as VmFunction<T>;
 }

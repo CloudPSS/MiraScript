@@ -111,9 +111,12 @@ class MiraConfigData extends Disposable {
 
             this.globals.set(
                 key,
-                VmFunction(() => {
-                    throw new Error('Function is not implemented.');
-                }, value ?? {}),
+                VmFunction(
+                    () => {
+                        throw new Error('Function is not implemented.');
+                    },
+                    { ...value, name: key },
+                ),
             );
         }
         const externs = config.externs ?? {};
