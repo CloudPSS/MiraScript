@@ -2,6 +2,7 @@ import type { editor, IDisposable, IPosition, IRange, Position, Range, Selection
 import { EndOfLine, type TextDocument } from 'vscode';
 import { fromPosition, fromRange, toPosition, toRange } from './utils.js';
 import { MIRA_CONTENT_PROVIDER, MIRA_TEXT_SCHEME } from './text-provider.js';
+import { createAdapterFactory } from './base.js';
 
 /** empty IDisposable */
 const EMPTY_DISPOSABLE: IDisposable = Object.freeze({
@@ -10,21 +11,26 @@ const EMPTY_DISPOSABLE: IDisposable = Object.freeze({
     },
 });
 
-const cache = new WeakMap<TextDocument, ModelAdapter>();
 /**
  * Adapts a VS Code TextDocument to a Monaco Editor ITextModel.
  */
 export class ModelAdapter implements editor.ITextModel {
     /** Get or create a ModelAdapter for a TextDocument */
-    static from(document: TextDocument): ModelAdapter {
-        let adapter = cache.get(document);
-        if (!adapter) {
-            adapter = new ModelAdapter(document);
-            cache.set(document, adapter);
-        }
-        return adapter;
+    static readonly from = createAdapterFactory<TextDocument, ModelAdapter>(
+        (document) => new ModelAdapter(document),
+        (document, adapter) => {
+            adapter.#document = document;
+        },
+        (adapter) => adapter.#document,
+    )[0];
+    private constructor(document: TextDocument) {
+        this.#document = document;
     }
-    private constructor(readonly document: TextDocument) {}
+    #document: TextDocument;
+    /** Adapts the underlying TextDocument */
+    get document(): TextDocument {
+        return this.#document;
+    }
     /** @inheritdoc */
     getCustomLineHeightsDecorations(ownerId?: number): editor.IModelDecoration[] {
         return [];
@@ -47,11 +53,11 @@ export class ModelAdapter implements editor.ITextModel {
     }
     /** @inheritdoc */
     get uri(): Uri {
-        return this.document.uri;
+        return this.#document.uri;
     }
     /** @inheritdoc */
     get id(): string {
-        return this.document.uri.toString();
+        return this.#document.uri.toString();
     }
     /** @inheritdoc */
     findMatches(
@@ -226,26 +232,26 @@ export class ModelAdapter implements editor.ITextModel {
     }
     /** @inheritdoc */
     getVersionId(): number {
-        return this.document.version;
+        return this.#document.version;
     }
     /** @inheritdoc */
     getAlternativeVersionId(): number {
-        return this.document.version;
+        return this.#document.version;
     }
     /** @inheritdoc */
     setValue(newValue: string | editor.ITextSnapshot): void {
         // Not supported, TextDocument is readonly
-        if (this.document.uri.scheme !== MIRA_TEXT_SCHEME) {
+        if (this.#document.uri.scheme !== MIRA_TEXT_SCHEME) {
             throw new Error('setValue is not supported on ModelAdapter.');
         }
         MIRA_CONTENT_PROVIDER.setContent(
-            this.document.uri,
+            this.#document.uri,
             typeof newValue === 'string' ? newValue : (newValue.read() ?? ''),
         );
     }
     /** @inheritdoc */
     getValue(eol?: editor.EndOfLinePreference, preserveBOM?: boolean): string {
-        return this.document.getText();
+        return this.#document.getText();
     }
     /** @inheritdoc */
     createSnapshot(preserveBOM?: boolean): editor.ITextSnapshot {
@@ -270,7 +276,7 @@ export class ModelAdapter implements editor.ITextModel {
         if (r.endColumn < 1) r.endColumn = 1;
         if (r.startLineNumber < 1) r.startLineNumber = 1;
         if (r.endLineNumber < 1) r.endLineNumber = 1;
-        return this.document.getText(toRange(r));
+        return this.#document.getText(toRange(r));
     }
     /** @inheritdoc */
     getValueLengthInRange(range: IRange, eol?: editor.EndOfLinePreference): number {
@@ -282,11 +288,11 @@ export class ModelAdapter implements editor.ITextModel {
     }
     /** @inheritdoc */
     getLineCount(): number {
-        return this.document.lineCount;
+        return this.#document.lineCount;
     }
     /** @inheritdoc */
     getLineContent(lineNumber: number): string {
-        return this.document.lineAt(lineNumber - 1).text;
+        return this.#document.lineAt(lineNumber - 1).text;
     }
     /** @inheritdoc */
     getLineLength(lineNumber: number): number {
@@ -303,11 +309,11 @@ export class ModelAdapter implements editor.ITextModel {
     }
     /** @inheritdoc */
     getEOL(): string {
-        return this.document.eol === EndOfLine.LF ? '\n' : '\r\n';
+        return this.#document.eol === EndOfLine.LF ? '\n' : '\r\n';
     }
     /** @inheritdoc */
     getEndOfLineSequence(): editor.EndOfLineSequence {
-        return this.document.eol === EndOfLine.LF
+        return this.#document.eol === EndOfLine.LF
             ? (0 satisfies editor.EndOfLineSequence.LF)
             : (1 satisfies editor.EndOfLineSequence.CRLF);
     }
@@ -337,7 +343,7 @@ export class ModelAdapter implements editor.ITextModel {
     }
     /** @inheritdoc */
     validatePosition(position: IPosition): Position {
-        return fromPosition(this.document.validatePosition(toPosition(position)));
+        return fromPosition(this.#document.validatePosition(toPosition(position)));
     }
     /** @inheritdoc */
     modifyPosition(position: IPosition, offset: number): Position {
@@ -350,16 +356,16 @@ export class ModelAdapter implements editor.ITextModel {
     }
     /** @inheritdoc */
     validateRange(range: IRange): Range {
-        return fromRange(this.document.validateRange(toRange(range)));
+        return fromRange(this.#document.validateRange(toRange(range)));
     }
     /** @inheritdoc */
     getOffsetAt(position: IPosition): number {
         const p = toPosition(position);
-        return this.document.offsetAt(p);
+        return this.#document.offsetAt(p);
     }
     /** @inheritdoc */
     getPositionAt(offset: number): Position {
-        const pos = this.document.positionAt(offset);
+        const pos = this.#document.positionAt(offset);
         return fromPosition(pos);
     }
 
@@ -374,18 +380,18 @@ export class ModelAdapter implements editor.ITextModel {
     }
     /** @inheritdoc */
     isDisposed(): boolean {
-        return this.document.isClosed;
+        return this.#document.isClosed;
     }
     /** @inheritdoc */
     getLanguageId(): string {
-        return this.document.languageId;
+        return this.#document.languageId;
     }
     /** @inheritdoc */
     getWordAtPosition(position: IPosition): editor.IWordAtPosition | null {
-        const w = this.document.getWordRangeAtPosition(toPosition(position));
+        const w = this.#document.getWordRangeAtPosition(toPosition(position));
         if (!w) return null;
         return {
-            word: this.document.getText(w),
+            word: this.#document.getText(w),
             startColumn: w.start.character + 1,
             endColumn: w.end.character + 1,
         };

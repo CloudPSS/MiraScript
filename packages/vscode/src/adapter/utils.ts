@@ -1,24 +1,15 @@
-import {
-    type IRange,
-    type IPosition,
-    Position as MonacoPosition,
-    Range as MonacoRange,
-    type IMarkdownString,
-    type Uri as MonacoUri,
-    MarkerSeverity,
-    MarkerTag,
-} from '@private/monaco-editor/baseapi';
+import * as monaco from '@private/monaco-editor/baseapi';
 import type { languages as monacoLanguages, editor as monacoEditor } from '@private/monaco-editor';
 import {
     Diagnostic,
-    Range as VsRange,
-    Position as VsPosition,
-    TextEdit as VsTextEdit,
-    WorkspaceEdit as VsWorkspaceEdit,
-    MarkdownString as VsMarkdownString,
-    Location as VsLocation,
-    Uri as VsUri,
-    type CompletionItem as VsCompletionItem,
+    CompletionItem,
+    Range,
+    Position,
+    TextEdit,
+    WorkspaceEdit,
+    MarkdownString,
+    Location,
+    Uri,
     type CompletionItemKind,
     SnippetString,
     DiagnosticRelatedInformation,
@@ -26,7 +17,16 @@ import {
     DiagnosticSeverity,
     CodeAction,
     CodeActionKind,
+    type Command,
+    CodeLens,
+    InlayHint,
+    InlayHintLabelPart,
+    SignatureHelp,
+    SignatureInformation,
+    ParameterInformation,
+    DocumentSymbol,
 } from 'vscode';
+import { createAdapterFactory } from './base.js';
 
 export enum CompletionItemInsertTextRule {
     None = 0,
@@ -44,10 +44,10 @@ export enum CompletionItemInsertTextRule {
 /**
  * Converts a Monaco Editor range to a VS Code Range.
  */
-export function toRange<T extends IRange | null | undefined>(range: T): T extends IRange ? VsRange : T {
+export function toRange<T extends monaco.IRange | null | undefined>(range: T): T extends monaco.IRange ? Range : T {
     if (range == null) return range as never;
-    if (range instanceof VsRange) return range as never;
-    return new VsRange(
+    if (range instanceof Range) return range as never;
+    return new Range(
         range.startLineNumber - 1,
         range.startColumn - 1,
         range.endLineNumber - 1,
@@ -58,9 +58,9 @@ export function toRange<T extends IRange | null | undefined>(range: T): T extend
 /**
  * Converts a VS Code Range to a Monaco Editor range.
  */
-export function fromRange(range: VsRange): MonacoRange {
-    if (range instanceof MonacoRange) return range;
-    return new MonacoRange(
+export function fromRange(range: Range): monaco.Range {
+    if (range instanceof monaco.Range) return range;
+    return new monaco.Range(
         range.start.line + 1,
         range.start.character + 1,
         range.end.line + 1,
@@ -71,33 +71,33 @@ export function fromRange(range: VsRange): MonacoRange {
 /**
  * Converts a Monaco Editor position to a VS Code Position.
  */
-export function toPosition(position: IPosition): VsPosition {
-    if (position instanceof VsPosition) return position;
-    return new VsPosition(position.lineNumber - 1, position.column - 1);
+export function toPosition(position: monaco.IPosition): Position {
+    if (position instanceof Position) return position;
+    return new Position(position.lineNumber - 1, position.column - 1);
 }
 
 /**
  * Converts a VS Code Position to a Monaco Editor position.
  */
-export function fromPosition(position: VsPosition): MonacoPosition {
-    if (position instanceof MonacoPosition) return position;
-    return new MonacoPosition(position.line + 1, position.character + 1);
+export function fromPosition(position: Position): monaco.Position {
+    if (position instanceof monaco.Position) return position;
+    return new monaco.Position(position.line + 1, position.character + 1);
 }
 /**
  * Converts a Monaco Editor TextEdit to a VS Code TextEdit.
  */
-export function toTextEdit(edit: { range: IRange; text: string | null }): VsTextEdit {
-    if (edit instanceof VsTextEdit) return edit;
+export function toTextEdit(edit: { range: monaco.IRange; text: string | null }): TextEdit {
+    if (edit instanceof TextEdit) return edit;
     if (!edit.text) {
-        return VsTextEdit.delete(toRange(edit.range));
+        return TextEdit.delete(toRange(edit.range));
     }
-    return VsTextEdit.replace(toRange(edit.range), edit.text);
+    return TextEdit.replace(toRange(edit.range), edit.text);
 }
 /**
  * Converts a Monaco Editor WorkspaceEdit to a VS Code WorkspaceEdit.
  */
-export function toWorkspaceEdit(edit: monacoLanguages.WorkspaceEdit): VsWorkspaceEdit {
-    const we = new VsWorkspaceEdit();
+export function toWorkspaceEdit(edit: monacoLanguages.WorkspaceEdit): WorkspaceEdit {
+    const we = new WorkspaceEdit();
     if (edit.edits) {
         for (const e of edit.edits) {
             if ('redo' in e) {
@@ -116,13 +116,13 @@ export function toWorkspaceEdit(edit: monacoLanguages.WorkspaceEdit): VsWorkspac
 /**
  * Converts a Monaco Editor IMarkdownString to a VS Code MarkdownString.
  */
-export function toMarkdownString<const T extends IMarkdownString | string | undefined = IMarkdownString>(
+export function toMarkdownString<const T extends monaco.IMarkdownString | string | undefined = monaco.IMarkdownString>(
     markdown: T,
-): T extends IMarkdownString ? VsMarkdownString : T {
+): T extends monaco.IMarkdownString ? MarkdownString : T {
     if (markdown == null) return undefined as never;
     if (typeof markdown == 'string') return markdown as never;
-    if (markdown instanceof VsMarkdownString) return markdown as never;
-    const result = new VsMarkdownString(markdown.value);
+    if (markdown instanceof MarkdownString) return markdown as never;
+    const result = new MarkdownString(markdown.value);
     if (markdown.isTrusted !== undefined) {
         result.isTrusted = markdown.isTrusted;
     }
@@ -135,159 +135,261 @@ export function toMarkdownString<const T extends IMarkdownString | string | unde
 /**
  * Converts a Monaco Editor Uri to a VS Code Uri.
  */
-export function toUri<const T extends MonacoUri | undefined = MonacoUri>(uri: T): T extends MonacoUri ? VsUri : T {
+export function toUri<const T extends monaco.Uri | undefined = monaco.Uri>(uri: T): T extends monaco.Uri ? Uri : T {
     if (uri == null) return undefined as never;
-    if (uri instanceof VsUri) return uri as never;
-    return VsUri.parse(uri.toString()) as never;
+    if (uri instanceof Uri) return uri as never;
+    return Uri.parse(uri.toString()) as never;
 }
-/** Monaco Editor Location */
-type MonacoLocation = { uri: MonacoUri; range: IRange };
 /**
  * Converts a Monaco Editor Location to a VS Code Location.
  */
-export function toLocation<const T extends MonacoLocation | undefined = MonacoLocation>(
+export function toLocation<const T extends monacoLanguages.Location | undefined = monacoLanguages.Location>(
     location: T,
-): T extends MonacoLocation ? VsLocation : undefined {
+): T extends monacoLanguages.Location ? Location : undefined {
     if (location == null) return undefined as never;
-    if (location instanceof VsLocation) return location as never;
-    return new VsLocation(toUri(location.uri), toRange(location.range)) as never;
-}
-/**
- * Convert to VS Code CompletionItem
- */
-export function toCompletionItem(
-    item: Omit<monacoLanguages.CompletionItem, 'kind'> & { kind: number },
-): VsCompletionItem & { original: monacoLanguages.CompletionItem } {
-    const range =
-        'insert' in item.range
-            ? {
-                  inserting: toRange(item.range.insert),
-                  replacing: toRange(item.range.replace),
-              }
-            : toRange(item.range);
-    const ci: VsCompletionItem & { original: monacoLanguages.CompletionItem } = {
-        label: item.label,
-        kind: item.kind as CompletionItemKind,
-        tags: item.tags,
-        detail: item.detail,
-        documentation: toMarkdownString(item.documentation),
-        sortText: item.sortText,
-        filterText: item.filterText,
-        preselect: item.preselect,
-        insertText:
-            item.insertTextRules === CompletionItemInsertTextRule.InsertAsSnippet
-                ? new SnippetString(item.insertText)
-                : item.insertText,
-        range,
-        commitCharacters: item.commitCharacters,
-        additionalTextEdits: item.additionalTextEdits?.map(toTextEdit),
-        command: undefined,
-        original: item,
-    };
-    return ci;
+    if (location instanceof Location) return location as never;
+    return new Location(toUri(location.uri), toRange(location.range)) as never;
 }
 
-/** Converted Diagnostics */
-const MonacoDiagnostics = new WeakMap<monacoEditor.IMarkerData, MonacoDiagnostic>();
-/** Monaco Diagnostic adapter */
-class MonacoDiagnostic extends Diagnostic {
-    constructor(readonly marker: monacoEditor.IMarkerData) {
-        super(toRange(marker), marker.message);
-        switch (marker.severity as number as MarkerSeverity) {
-            case MarkerSeverity.Error:
-                this.severity = DiagnosticSeverity.Error;
+/** Converts a Monaco Editor Command to a VS Code Command */
+export function toCommand<const T extends monacoLanguages.Command | undefined = monacoLanguages.Command>(
+    command: T,
+): T extends monacoLanguages.Command ? Command : undefined {
+    if (command == null) return undefined as never;
+    if ('command' in command && 'title' in command) return command as never;
+    return {
+        title: command.title,
+        command: command.id,
+        arguments: command.arguments,
+        tooltip: command.tooltip,
+    } as never;
+}
+
+export const [toCompletionItem, fromCompletionItem] = createAdapterFactory<
+    monacoLanguages.CompletionItem,
+    CompletionItem
+>(
+    (item) => {
+        return new CompletionItem(item.label);
+    },
+    (item, ci) => {
+        ci.label = item.label;
+        ci.kind = item.kind as unknown as CompletionItemKind;
+        ci.tags = item.tags;
+        ci.detail = item.detail;
+        ci.documentation = toMarkdownString(item.documentation);
+        ci.sortText = item.sortText;
+        ci.filterText = item.filterText;
+        ci.preselect = item.preselect;
+        ci.insertText =
+            item.insertTextRules === CompletionItemInsertTextRule.InsertAsSnippet
+                ? new SnippetString(item.insertText)
+                : item.insertText;
+        const range =
+            'insert' in item.range
+                ? {
+                      inserting: toRange(item.range.insert),
+                      replacing: toRange(item.range.replace),
+                  }
+                : toRange(item.range);
+        ci.range = range;
+        ci.commitCharacters = item.commitCharacters;
+        ci.additionalTextEdits = item.additionalTextEdits?.map(toTextEdit);
+        ci.command = toCommand(item.command);
+    },
+);
+
+export const [toDiagnosticRelatedInformation, fromDiagnosticRelatedInformation] = createAdapterFactory<
+    monacoEditor.IRelatedInformation,
+    DiagnosticRelatedInformation
+>(
+    (info) => {
+        return new DiagnosticRelatedInformation(toLocation({ uri: info.resource, range: info }), info.message);
+    },
+    (info, dri) => {
+        dri.location = toLocation({ uri: info.resource, range: info });
+        dri.message = info.message;
+    },
+);
+
+export const [toDiagnostic, fromDiagnostic] = createAdapterFactory<monacoEditor.IMarkerData, Diagnostic>(
+    (marker) => {
+        return new Diagnostic(toRange(marker), marker.message);
+    },
+    (marker, diagnostic) => {
+        diagnostic.range = toRange(marker);
+        diagnostic.message = marker.message;
+        switch (marker.severity as number as monaco.MarkerSeverity) {
+            case monaco.MarkerSeverity.Error:
+                diagnostic.severity = DiagnosticSeverity.Error;
                 break;
-            case MarkerSeverity.Warning:
-                this.severity = DiagnosticSeverity.Warning;
+            case monaco.MarkerSeverity.Warning:
+                diagnostic.severity = DiagnosticSeverity.Warning;
                 break;
-            case MarkerSeverity.Info:
-                this.severity = DiagnosticSeverity.Information;
+            case monaco.MarkerSeverity.Info:
+                diagnostic.severity = DiagnosticSeverity.Information;
                 break;
-            case MarkerSeverity.Hint:
-                this.severity = DiagnosticSeverity.Hint;
+            case monaco.MarkerSeverity.Hint:
+                diagnostic.severity = DiagnosticSeverity.Hint;
                 break;
         }
-        this.source = marker.source;
+        diagnostic.source = marker.source;
         if (typeof marker.code == 'object') {
-            this.code = {
+            diagnostic.code = {
                 ...marker.code,
                 target: toUri(marker.code.target),
             };
         } else {
-            this.code = marker.code;
+            diagnostic.code = marker.code;
         }
-        this.relatedInformation = marker.relatedInformation?.map(
-            (i) => new DiagnosticRelatedInformation(toLocation({ uri: i.resource, range: i }), i.message),
-        );
-        this.tags = marker.tags?.map((t) => {
-            switch (t as number as MarkerTag) {
-                case MarkerTag.Deprecated:
+        diagnostic.relatedInformation = marker.relatedInformation?.map(toDiagnosticRelatedInformation);
+        diagnostic.tags = marker.tags?.map((t) => {
+            switch (t as number as monaco.MarkerTag) {
+                case monaco.MarkerTag.Deprecated:
                     return DiagnosticTag.Deprecated;
-                case MarkerTag.Unnecessary:
+                case monaco.MarkerTag.Unnecessary:
                     return DiagnosticTag.Unnecessary;
             }
         });
-    }
-}
-/** Converts a Monaco marker to a VS Code Diagnostic. */
-export function toDiagnostic(marker: monacoEditor.IMarkerData): Diagnostic {
-    let diagnostic = MonacoDiagnostics.get(marker);
-    if (diagnostic) return diagnostic;
-    diagnostic = new MonacoDiagnostic(marker);
-    MonacoDiagnostics.set(marker, diagnostic);
-    return diagnostic;
-}
+    },
+);
 
-/** Converts a VS Code Diagnostic to a Monaco marker. */
-export function fromDiagnostic(diagnostic: Diagnostic): monacoEditor.IMarkerData {
-    if (diagnostic instanceof MonacoDiagnostic) {
-        return diagnostic.marker;
-    }
-    throw new Error('Cannot convert Diagnostic to Monaco marker.');
-}
+export const [toCodeAction, fromCodeAction] = createAdapterFactory<monacoLanguages.CodeAction, CodeAction>(
+    (action) => {
+        return new CodeAction(action.title);
+    },
+    (action, ca) => {
+        switch (action.kind) {
+            case 'quickfix':
+                ca.kind = CodeActionKind.QuickFix;
+                break;
+            case 'refactor':
+                ca.kind = CodeActionKind.Refactor;
+                break;
+            case 'refactor.extract':
+                ca.kind = CodeActionKind.RefactorExtract;
+                break;
+            case 'refactor.inline':
+                ca.kind = CodeActionKind.RefactorInline;
+                break;
+            case 'refactor.move':
+                ca.kind = CodeActionKind.RefactorMove;
+                break;
+            case 'refactor.rewrite':
+                ca.kind = CodeActionKind.RefactorRewrite;
+                break;
+            case 'source':
+                ca.kind = CodeActionKind.Source;
+                break;
+            case 'source.organizeImports':
+                ca.kind = CodeActionKind.SourceOrganizeImports;
+                break;
+            case 'source.fixAll':
+                ca.kind = CodeActionKind.SourceFixAll;
+                break;
+            case 'notebook':
+                ca.kind = CodeActionKind.Notebook;
+                break;
+            case undefined:
+            default:
+                break;
+        }
+        if (action.edit) ca.edit = toWorkspaceEdit(action.edit);
+        if (action.diagnostics) ca.diagnostics = action.diagnostics.map(toDiagnostic);
+        if (action.command) throw new Error('Cannot convert CodeAction with command to VS Code CodeAction.');
+        ca.isPreferred = action.isPreferred;
+        ca.disabled = action.disabled ? { reason: action.disabled } : undefined;
+    },
+);
 
-/** Converts a Monaco CodeAction to a VS Code CodeAction. */
-export function toCodeAction(action: monacoLanguages.CodeAction): CodeAction {
-    const ca = new CodeAction(action.title);
-    switch (action.kind) {
-        case 'quickfix':
-            ca.kind = CodeActionKind.QuickFix;
-            break;
-        case 'refactor':
-            ca.kind = CodeActionKind.Refactor;
-            break;
-        case 'refactor.extract':
-            ca.kind = CodeActionKind.RefactorExtract;
-            break;
-        case 'refactor.inline':
-            ca.kind = CodeActionKind.RefactorInline;
-            break;
-        case 'refactor.move':
-            ca.kind = CodeActionKind.RefactorMove;
-            break;
-        case 'refactor.rewrite':
-            ca.kind = CodeActionKind.RefactorRewrite;
-            break;
-        case 'source':
-            ca.kind = CodeActionKind.Source;
-            break;
-        case 'source.organizeImports':
-            ca.kind = CodeActionKind.SourceOrganizeImports;
-            break;
-        case 'source.fixAll':
-            ca.kind = CodeActionKind.SourceFixAll;
-            break;
-        case 'notebook':
-            ca.kind = CodeActionKind.Notebook;
-            break;
-        case undefined:
-        default:
-            break;
-    }
-    if (action.edit) ca.edit = toWorkspaceEdit(action.edit);
-    if (action.diagnostics) ca.diagnostics = action.diagnostics.map(toDiagnostic);
-    if (action.command) throw new Error('Cannot convert CodeAction with command to VS Code CodeAction.');
-    ca.isPreferred = action.isPreferred;
-    ca.disabled = action.disabled ? { reason: action.disabled } : undefined;
-    return ca;
-}
+export const [toCodeLens, fromCodeLens] = createAdapterFactory<monacoLanguages.CodeLens, CodeLens>(
+    (lens) => new CodeLens(toRange(lens.range)),
+    (lens, cl) => {
+        cl.range = toRange(lens.range);
+        cl.command = toCommand(lens.command);
+    },
+);
+
+export const [toInlayHintLabelPart, fromInlayHintLabelPart] = createAdapterFactory<
+    monacoLanguages.InlayHintLabelPart,
+    InlayHintLabelPart
+>(
+    (part) => new InlayHintLabelPart(part.label),
+    (part, lp) => {
+        lp.value = part.label;
+        lp.tooltip = toMarkdownString(part.tooltip);
+        lp.location = toLocation(part.location);
+        lp.command = toCommand(part.command);
+    },
+);
+
+export const [toInlayHint, fromInlayHint] = createAdapterFactory<monacoLanguages.InlayHint, InlayHint>(
+    (item) =>
+        new InlayHint(
+            toPosition(item.position),
+            typeof item.label === 'string' ? item.label : item.label.map(toInlayHintLabelPart),
+        ),
+    (item, h) => {
+        h.label = typeof item.label === 'string' ? item.label : item.label.map(toInlayHintLabelPart);
+        h.position = toPosition(item.position);
+        h.kind = item.kind;
+        h.paddingLeft = item.paddingLeft;
+        h.paddingRight = item.paddingRight;
+        h.tooltip = toMarkdownString(item.tooltip);
+        h.textEdits = item.textEdits?.map(toTextEdit);
+    },
+);
+
+export const [toParameterInformation, fromParameterInformation] = createAdapterFactory<
+    monacoLanguages.ParameterInformation,
+    ParameterInformation
+>(
+    (param) => new ParameterInformation(param.label),
+    (param, pi) => {
+        pi.label = param.label;
+        pi.documentation = toMarkdownString(param.documentation);
+    },
+);
+
+export const [toSignatureInformation, fromSignatureInformation] = createAdapterFactory<
+    monacoLanguages.SignatureInformation,
+    SignatureInformation
+>(
+    (sig) => new SignatureInformation(sig.label),
+    (sig, si) => {
+        si.label = sig.label;
+        si.documentation = toMarkdownString(sig.documentation);
+        si.parameters = sig.parameters?.map(toParameterInformation);
+    },
+);
+
+export const [toSignatureHelp, fromSignatureHelp] = createAdapterFactory<monacoLanguages.SignatureHelp, SignatureHelp>(
+    () => new SignatureHelp(),
+    (sh, s) => {
+        s.signatures = sh.signatures.map(toSignatureInformation);
+        s.activeParameter = sh.activeParameter;
+        s.activeSignature = sh.activeSignature;
+    },
+);
+
+export const [toDocumentSymbol, fromDocumentSymbol] = createAdapterFactory<
+    monacoLanguages.DocumentSymbol,
+    DocumentSymbol
+>(
+    (symbol) =>
+        new DocumentSymbol(
+            symbol.name,
+            symbol.detail,
+            symbol.kind,
+            toRange(symbol.range),
+            toRange(symbol.selectionRange),
+        ),
+    (symbol, ds) => {
+        ds.name = symbol.name;
+        ds.detail = symbol.detail;
+        ds.kind = symbol.kind;
+        ds.range = toRange(symbol.range);
+        ds.selectionRange = toRange(symbol.selectionRange);
+        ds.children = symbol.children?.map(toDocumentSymbol) ?? [];
+    },
+);
