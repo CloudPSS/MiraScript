@@ -1,7 +1,7 @@
+import { SourceMapGenerator } from 'source-map-js';
 import type { IRange } from '../diagnostic.js';
 import type { ScriptInput, TranspileOptions } from '../types.js';
-import { SourceMapGenerator } from 'source-map-js';
-import { SCRIPT_PREFIX } from './constants.js';
+import type { ScriptPrefix } from './constants.js';
 import { toJsLiteral } from './consts.js';
 
 const ORIGIN = `mira://MiraScript/`;
@@ -38,6 +38,7 @@ let sourceId = 1;
 /** 创建源映射 */
 export function createSourceMap(
     source: ScriptInput | undefined,
+    scriptPrefix: ScriptPrefix,
     sourcemaps: readonly IRange[],
     codeLines: string[],
     functions: readonly number[],
@@ -82,7 +83,7 @@ export function createSourceMap(
         map.addMapping({
             generated: {
                 line: SOURCE_OFFSET,
-                column: SCRIPT_PREFIX.length - 'CpEnter();'.length,
+                column: scriptPrefix.length - 'CpEnter();'.length,
             },
             original: {
                 line: 1,

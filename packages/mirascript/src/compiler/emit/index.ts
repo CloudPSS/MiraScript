@@ -5,7 +5,7 @@ import type { ScriptInput, TranspileOptions } from '../types.js';
 import type { IRange } from '../diagnostic.js';
 import { readConsts, toJsLiteral } from './consts.js';
 import { createSourceMap } from './sourcemap.js';
-import { SCRIPT_PREFIX } from './constants.js';
+import { SCRIPT_PREFIX, SCRIPT_PREFIX_NO_GLOBAL, type ScriptPrefix } from './constants.js';
 
 /** 生成代码 */
 export function emit(
@@ -77,6 +77,8 @@ export class Emitter {
         return '  '.repeat(this.identCounter + len);
     }
 
+    /** 是否使用全局变量 */
+    private useGlobal = false;
     /** 读取全局变量 */
     private rg(constIdx: number): string {
         const constName = this.constVals[constIdx]!;
@@ -86,6 +88,7 @@ export class Emitter {
         } else {
             lit = toJsLiteral(toString(constName, undefined));
         }
+        this.useGlobal = true;
         return `global.get(${lit})`;
     }
 
@@ -337,7 +340,7 @@ export class Emitter {
                 }
                 const script = startFunc && !varg && argn === 0;
                 if (script) {
-                    code = `${SCRIPT_PREFIX} var ${regs};`;
+                    code = `var ${regs};`;
                 } else {
                     if (this.options.sourceMap) {
                         this.functions.push(this.codeLines.length);
@@ -401,6 +404,7 @@ export class Emitter {
             case OpCode.InGlobal: {
                 reg = read();
                 const left = read();
+                this.useGlobal = true;
                 code = `${this.wv(reg)} = global.has($ToString(${this.rv(left)}));`;
                 break;
             }
@@ -540,6 +544,7 @@ export class Emitter {
             case OpCode.GetGlobalDyn: {
                 reg = read();
                 const name = read();
+                this.useGlobal = true;
                 code = `${this.wv(reg)} = global.get($ToString(${this.rv(name)}));`;
                 break;
             }
@@ -719,12 +724,14 @@ export class Emitter {
     read(): void {
         this.readConsts();
         this.readCode();
-        this.addSourceMap();
+        const prefix: ScriptPrefix = this.useGlobal ? SCRIPT_PREFIX : SCRIPT_PREFIX_NO_GLOBAL;
+        this.codeLines[0] = `${prefix} ${this.codeLines[0]}`;
+        this.addSourceMap(prefix);
     }
     /** 添加源映射 */
-    addSourceMap(): void {
+    addSourceMap(prefix: ScriptPrefix): void {
         if (this.options.sourceMap) {
-            createSourceMap(this.source, this.sourcemaps, this.codeLines, this.functions, this.options);
+            createSourceMap(this.source, prefix, this.sourcemaps, this.codeLines, this.functions, this.options);
         }
     }
 }
