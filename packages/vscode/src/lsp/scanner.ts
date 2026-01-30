@@ -55,6 +55,6 @@ export class Scanner extends Disposable {
         if (document.languageId !== 'mirascript' && document.languageId !== 'mirascript-template') {
             return;
         }
-        void Provider.getCompileResult(new ModelAdapter(document));
+        void Provider.getCompileResult(ModelAdapter.from(document));
     }
 }
