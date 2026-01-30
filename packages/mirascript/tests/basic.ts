@@ -42,8 +42,8 @@ const compileAndRun = test.macro<[string, unknown]>({
                 }, expectError);
             } else {
                 const script = await compile(code);
-                // should accept a global context
-                t.is(script.length, 1);
+                // should accept a global context or not, if not used
+                t.assert(script.length <= 1);
                 const result = script();
                 t.deepEqual(result, expected);
             }
