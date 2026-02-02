@@ -22,10 +22,6 @@ export abstract class VmWrapper<T extends object> {
     describe(key: string): string | undefined {
         return undefined;
     }
-    /** Convert the object to JSON */
-    toJSON(): undefined {
-        return undefined;
-    }
     /** 转为字符串 */
     toString(useBraces: boolean): string {
         const { type, tag } = this;

@@ -10,11 +10,6 @@ import {
     type VmAny,
 } from '@mirascript/mirascript';
 
-test('toJSON', (t) => {
-    t.deepEqual(JSON.stringify(new VmExtern({})), undefined);
-    t.deepEqual(JSON.stringify(new VmModule('test', {})), undefined);
-});
-
 test('VmFunction', (t) => {
     const fn = (a: VmAny, b: VmAny) => Number(a) + Number(b);
     t.is(getVmFunctionInfo(VmFunction(fn, { injectCp: true }))?.original, fn);
