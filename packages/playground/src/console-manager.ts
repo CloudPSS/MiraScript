@@ -21,7 +21,7 @@ async function printValue(arg: VmAny): Promise<string> {
 /** 渲染 debug_print 的调用 */
 async function renderDebugPrint(args: VmAny[]): Promise<string> {
     const { debug_print } = mirascriptSubtle.lib;
-    const { templates, values, formats } = debug_print.formatter.call(
+    const { templates, values, formats } = debug_print.parser.call(
         {
             ...debug_print,
             prefix: [''],
@@ -45,9 +45,9 @@ async function renderDebugPrint(args: VmAny[]): Promise<string> {
                 formatted = escapeHtml(toString(value));
                 break;
             case '%f':
-            case '%d':
                 formatted = escapeHtml(toString(toNumber(value, Number.NaN)));
                 break;
+            case '%d':
             case '%i':
                 formatted = escapeHtml(toString(Math.trunc(toNumber(value, Number.NaN))));
                 break;

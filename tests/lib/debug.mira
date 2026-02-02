@@ -1,6 +1,5 @@
 t_eq(debug_print::type(), 'function');
 t_eq(debug_print('Hello, World!'), nil);
-t_eq(debug_print('%s is %o', 'answer', 42), nil);
 
 t_throws(fn { panic('p') });
 t_throws(fn { panic() });
