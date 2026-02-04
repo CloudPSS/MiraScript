@@ -74,6 +74,10 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
             ],
             common: [
                 [
+                    /(mod)(@whitespace+)(@identifier)(?=$|@whitespace|[[({,;])/,
+                    ['keyword', '', { cases: identifierCases(undefined, 'entity.name.namespace') }],
+                ],
+                [
                     /(fn)(@whitespace+)(@identifier)(?=$|@whitespace|[[({,;])/,
                     ['keyword', '', { cases: identifierCases(undefined, 'entity.name.function') }],
                 ],

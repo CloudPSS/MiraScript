@@ -1036,6 +1036,46 @@ fn add_one {
   }
   ```
 
+#### `mod` 语句
+
+定义一个模块。
+
+`mod` 语句的语法为：
+
+```mira
+mod <name> {
+  <statements>
+}
+```
+
+其中 `<name>` 是模块的名称；`<statements>` 是模块内的语句。
+
+在模块内的 `let` 语句、`const` 语句、函数声明语句和 `mod` 语句前添加 `pub` 关键字，可以将其导出为模块的公共成员。
+
+```mira
+mod math {
+  pub const @pi = 3.14159;
+  pub fn add(x, y) {
+    x + y
+  }
+}
+```
+
+通过成员访问操作符访问模块的成员时，始终会获取到模块成员的当前值。
+
+```mira
+mod counter {
+  pub let mut value = 0;
+  pub fn increment() {
+    value += 1;
+  }
+}
+
+debug_print(counter.value); // 输出 0
+counter.increment();
+debug_print(counter.value); // 输出 1
+```
+
 #### 空语句
 
 空语句用于占位，语法为 `;`。

@@ -11,12 +11,16 @@ repository:
         captures:
           1: { name: support.type.property-name.mira }
           2: { name: punctuation.separator.key-value.mira }
-      - begin: (fn)\s+
+      - begin: \b(fn)\s+
         beginCaptures:
           1: { name: keyword.declaration.fn.mira }
         end: '(?=[^[:alnum:]_$])'
         patterns:
           - include: '#functions'
+      - match: \b(mod)\s+((?:\$+|\@+|[[:alpha:]_])[[:alnum:]_]*)(?![[:alnum:]_])
+        captures:
+          1: { name: keyword.module.$1.mira }
+          2: { name: entity.name.namespace.mira }
       - begin: (?=((\$+|\@+|[[:alpha:]_])[[:alnum:]_]*)(?![[:alnum:]_])(?=\s*(!\s*)?[('"`]))
         end: (?=\s*(!\s*)?[('"`])
         patterns:
@@ -68,8 +72,8 @@ repository:
         match: \b(if|else|match|case|for|while|loop|break|continue|return)\b
       - name: keyword.declaration.$1.mira
         match: \b(fn|op|let|mut|const|type|where)\b
-      - name: keyword.operator.expression.$1.mira
-        match: \b(import|export)\b
+      - name: keyword.module.$1.mira
+        match: \b(mod|pub|use)\b
       - name: keyword.reserved.$1.mira
         match: \b(effect|try|handle|finally|perform|resume)\b
   variables:
