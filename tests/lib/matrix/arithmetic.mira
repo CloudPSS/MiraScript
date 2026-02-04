@@ -14,6 +14,7 @@ t_eq(matrix.entrywise([[], [1], [1, 2]], 1, fn { 'x' }), [['x', 'x'], ['x', 'x']
 t_eq(matrix.entrywise([1, 2], ['a', 'b', 'c'], fn (x, y) { (x, y) }), [(1, 'a'), (2, 'b'), (nil, 'c')]);
 t_eq(matrix.entrywise([nil, nan], nil, fn (x, y) { (x, y) }), [(nil, nil), (nan, nil)]);
 t_eq(matrix.entrywise([[nil]], [[nan]], fn (x, y) { (x, y) }), [[(nil, nan)]]);
+t_eq(matrix.entrywise([[1], [2]], [[3, 4]], fn (x, y) { x + y }), [[4, 5], [5, 6]]);
 
 t_eq(matrix.add(sa, sb), 3);
 t_eq(matrix.add(sa, vb), [5, 6]);

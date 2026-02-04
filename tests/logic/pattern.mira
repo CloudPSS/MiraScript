@@ -71,6 +71,14 @@ t_true([1, 2] is not != @record);
   t_eq(rc, 3);
 }
 
+// 匹配 key 为关键字的记录
+{
+  let x = (not: 12);
+  let ok = x is (not: no);
+  t_eq(no, 12);
+  t_true(ok);
+}
+
 t_true(1 is 1 or '1');
 t_true(1 is 1..2);
 t_true(1.5 is 1.5..1.5);

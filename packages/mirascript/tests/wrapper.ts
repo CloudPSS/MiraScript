@@ -4,7 +4,6 @@ import {
     createVmContext,
     getVmFunctionInfo,
     isVmFunction,
-    VmExtern,
     VmFunction,
     VmModule,
     type VmAny,
@@ -12,13 +11,22 @@ import {
 
 test('VmFunction', (t) => {
     const fn = (a: VmAny, b: VmAny) => Number(a) + Number(b);
-    t.is(getVmFunctionInfo(VmFunction(fn, { injectCp: true }))?.original, fn);
+
+    const wrappedFn = VmFunction(fn, { injectCp: true });
+    t.not(wrappedFn, fn);
+    t.deepEqual(wrappedFn(1, 2), 3);
+    t.true(isVmFunction(wrappedFn));
+    t.is(wrappedFn, VmFunction(wrappedFn));
+    t.is(wrappedFn.name, 'fn');
+    t.is(getVmFunctionInfo(wrappedFn)?.fullName, 'fn');
+    t.is(getVmFunctionInfo(wrappedFn)?.original, fn);
 
     const vmFn = VmFunction(fn);
-    t.is(vmFn, fn as VmFunction<(a: VmAny, b: VmAny) => number>);
+    t.is(vmFn as unknown, fn);
     t.deepEqual(vmFn(1, 2), 3);
     t.true(isVmFunction(vmFn));
     t.is(vmFn, VmFunction(vmFn));
+    t.is(vmFn.name, 'fn');
     t.is(getVmFunctionInfo(vmFn)?.fullName, 'fn');
     t.is(getVmFunctionInfo(vmFn)?.original, undefined);
 
@@ -27,6 +35,15 @@ test('VmFunction', (t) => {
     const namedFn = VmFunction((a, b) => Number(a) + Number(b), { name: 'add', fullName: 'math.add' });
     t.is(getVmFunctionInfo(namedFn)?.fullName, 'math.add');
     t.is(namedFn.name, 'add');
+
+    const recreateFn = VmFunction((a: VmAny, b: VmAny) => Number(a) * Number(b), namedFn);
+    t.not(recreateFn, fn);
+    t.deepEqual(recreateFn(1, 2), 2);
+    t.true(isVmFunction(recreateFn));
+    t.is(recreateFn, VmFunction(recreateFn));
+    t.is(recreateFn.name, 'add');
+    t.is(getVmFunctionInfo(recreateFn)?.fullName, 'math.add');
+    t.is(getVmFunctionInfo(recreateFn)?.original, undefined);
 });
 
 test('VmModule', async (t) => {
