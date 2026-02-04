@@ -62,6 +62,14 @@ impl<'s> Token<'s> {
         Self::new(TokenKind::unknown(recovered, range.clone(), error), range)
     }
 
+    pub(crate) fn unknown_at<R: Into<TokenKind<'s>>>(
+        pos: usize,
+        recovered: R,
+        error: DiagnosticCode,
+    ) -> Self {
+        Self::unknown(pos..pos, recovered, error)
+    }
+
     pub(crate) fn wrap_as_unknown(&mut self, error: DiagnosticCode) {
         let kind = std::mem::replace(&mut self.kind, TokenKind::Empty);
         self.kind = TokenKind::unknown(kind, self.range.clone(), error);

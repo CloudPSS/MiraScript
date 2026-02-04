@@ -9,6 +9,7 @@ use crate::{
 use super::{
     Emitter, OpCode,
     closure::Closure,
+    emitter_statement::ModuleExports,
     opcode::{OpParam, OpParamTrait, Register},
     variable::BindType,
 };
@@ -77,22 +78,23 @@ impl<'s, 'c> Emitter<'s, 'c> {
         scope_range: SourceRange,
         ret: Register,
         brk: Option<Register>,
+        exports: &mut ModuleExports<'s, 'c>,
     ) -> bool {
         // 提升函数实现
         for stmt in stmts {
             if matches!(stmt, Statement::Function(..)) {
-                self.emit_statement(stmt, brk);
+                self.emit_statement(stmt, brk, exports);
             }
         }
         let mut has_never = false;
         for stmt in stmts {
             if !matches!(stmt, Statement::Function(..)) {
-                let never = self.emit_statement(stmt, brk);
+                let never = self.emit_statement(stmt, brk, exports);
                 has_never |= never;
             }
         }
         if let Some(expr) = expr {
-            self.emit_expression(expr, ret, brk);
+            self.emit_expression(expr, ret, brk, &mut None);
         } else if !has_never && !ret.is_empty() {
             self.op_nil(scope_range.end..scope_range.end, ret);
         };
@@ -201,7 +203,14 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 match arg.deref() {
                     ArrayElementBase::Element(arg) => {
                         if !arg.is_bind() {
-                            self.emit_pattern(Register::EMPTY, arg, reg, Some(BindType::Parameter));
+                            self.emit_pattern(
+                                Register::EMPTY,
+                                arg,
+                                reg,
+                                Some(BindType::Parameter),
+                                &None,
+                                &mut None,
+                            );
                         }
                     }
                     ArrayElementBase::Spread(_, arg) => {
@@ -211,6 +220,8 @@ impl<'s, 'c> Emitter<'s, 'c> {
                                 arg,
                                 reg,
                                 Some(BindType::RestParameter),
+                                &None,
+                                &mut None,
                             );
                         }
                     }
@@ -219,7 +230,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
         }
 
         let ret_reg = self.closures.add_reg();
-        let never = self.emit_block(stmts, expr, scope_range.clone(), ret_reg, None);
+        let never = self.emit_block(stmts, expr, scope_range.clone(), ret_reg, None, &mut None);
         if !never {
             // 从 block 隐式返回
             self.op_return(scope_range.end..scope_range.end, ret_reg);

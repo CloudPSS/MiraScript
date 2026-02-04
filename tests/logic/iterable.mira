@@ -15,10 +15,8 @@ if has_extern {
     t_eq(k::type(), "string");
   }
 }
-if has_module {
-  for k in v_module {
-    t_eq(k::type(), "string");
-  }
+for k in v_module {
+  t_eq(k::type(), "string");
 }
 
 let mut seq = [];

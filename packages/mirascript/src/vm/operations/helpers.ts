@@ -1,12 +1,25 @@
-import { create, isFinite } from '../../helpers/utils.js';
+import { create, defineProperty, entries, isFinite } from '../../helpers/utils.js';
 import { VM_ARRAY_MAX_LENGTH, VM_FUNCTION_ANONYMOUS_NAME } from '../../helpers/constants.js';
 import { isVmConst } from '../../helpers/types.js';
 import type { VmFunctionLike } from '../types/function.js';
 import { DefaultVmContext, type VmContext } from '../types/context.js';
-import type { VmConst, VmAny, VmArray, VmValue } from '../types/index.js';
+import type { VmConst, VmAny, VmArray, VmValue, VmImmutable } from '../types/index.js';
+import { VmModule } from '../types/module.js';
 import { VmFunction } from '../types/function.js';
 import { $AssertInit } from './common.js';
 import { $ToNumber } from './convert.js';
+
+/** 构造 module */
+export function $Module<const T extends Record<string, () => VmImmutable>>(
+    name: string,
+    body: T,
+): VmModule<{ [K in keyof T]: ReturnType<T[K]> }> {
+    const mod = create(null) as { [K in keyof T]: ReturnType<T[K]> };
+    for (const [key, get] of entries(body)) {
+        defineProperty(mod, key, { __proto__: null, get, enumerable: true });
+    }
+    return new VmModule(name, mod);
+}
 
 /** 构造 record | array 元素 */
 export function $El(value: VmAny): VmConst {

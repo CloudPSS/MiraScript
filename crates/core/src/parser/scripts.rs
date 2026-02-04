@@ -63,12 +63,7 @@ pub fn script<'s>(i: &mut Input<'s>) -> Result<Script<'s>> {
     }
     let (statements, exp) = construct_statements_and_expression(statements, exp);
     let eof = eof.map(TokenRef::borrow).unwrap_or_else(|| {
-        Token::unknown(
-            SourceRange::default(),
-            TokenKind::Eof,
-            DiagnosticCode::UnexpectedToken,
-        )
-        .into()
+        Token::unknown_at(0, TokenKind::Eof, DiagnosticCode::UnexpectedToken).into()
     });
     Ok(Script(statements, exp, eof))
 }

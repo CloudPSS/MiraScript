@@ -14,6 +14,7 @@ use super::{
     Emitter, OpCode,
     constant::Constant,
     emitter_scope::check_variable_initialized,
+    emitter_statement::ModuleExports,
     opcode::{OpParam, Register},
     variable::BindType,
 };
@@ -285,12 +286,16 @@ impl<'s, 'c> Emitter<'s, 'c> {
         pattern: &'s Pattern<'s>,
         value: Register,
         bind_type: Option<BindType>,
+        kw_pub: &Option<TokenRef<'s>>,
+        exports: &mut ModuleExports<'s, 'c>,
     ) {
         if self.emit_constant_pattern::<true>(success, pattern, value) {
             return;
         }
         match pattern {
-            Grouping(_, pattern, _) => self.emit_pattern(success, pattern, value, bind_type),
+            Grouping(_, pattern, _) => {
+                self.emit_pattern(success, pattern, value, bind_type, kw_pub, exports)
+            }
             Relation(op, constant) => {
                 if success.is_empty() {
                     self.diagnostics.push(
@@ -410,6 +415,8 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     } else if level == self.closures.len() {
                         let register = variable.register();
                         self.op_unary(pattern.range(), register, OpCode::Assign, value);
+                        let id_const = self.add_const_string(id);
+                        self.emit_pub(kw_pub, exports, register, id_const);
                     } else {
                         let register = variable.register();
                         let level = self.closures.len() - level;
@@ -476,7 +483,9 @@ impl<'s, 'c> Emitter<'s, 'c> {
                                 }
                                 let ret = self.closures.add_reg();
                                 self.op_3(element.range(), OpCode::Get, ret, value, const_id);
-                                self.emit_pattern(sub_flag, pattern, ret, bind_type);
+                                self.emit_pattern(
+                                    sub_flag, pattern, ret, bind_type, kw_pub, exports,
+                                );
                                 if let Some(omitted) = omitted.as_mut() {
                                     omitted.push(const_id);
                                 }
@@ -514,7 +523,9 @@ impl<'s, 'c> Emitter<'s, 'c> {
                                 }
                                 let ret = self.closures.add_reg();
                                 self.op_3(element.range(), OpCode::Get, ret, value, const_id);
-                                self.emit_pattern(sub_flag, pattern, ret, bind_type);
+                                self.emit_pattern(
+                                    sub_flag, pattern, ret, bind_type, kw_pub, exports,
+                                );
                                 if let Some(omitted) = omitted.as_mut() {
                                     omitted.push(const_id);
                                 }
@@ -552,7 +563,9 @@ impl<'s, 'c> Emitter<'s, 'c> {
                                     self.op_if(element.range(), OpCode::If, sub_flag);
                                 }
                                 self.op_get_index(element.range(), ret, value, i as i32);
-                                self.emit_pattern(sub_flag, pattern, ret, bind_type);
+                                self.emit_pattern(
+                                    sub_flag, pattern, ret, bind_type, kw_pub, exports,
+                                );
                                 if let Some(omitted) = omitted.as_mut() {
                                     let const_id = self.add_const_ordinal(i as i32);
                                     omitted.push(const_id);
@@ -573,7 +586,9 @@ impl<'s, 'c> Emitter<'s, 'c> {
                                     value,
                                     omitted,
                                 );
-                                self.emit_pattern(sub_flag, pattern, ret, bind_type);
+                                self.emit_pattern(
+                                    sub_flag, pattern, ret, bind_type, kw_pub, exports,
+                                );
                             }
                         }
 
@@ -621,7 +636,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
 
                     let ret = self.closures.add_reg();
                     self.op_get_index(item.range(), ret, value, i as i32);
-                    self.emit_pattern(sub_flag, pattern, ret, bind_type);
+                    self.emit_pattern(sub_flag, pattern, ret, bind_type, kw_pub, exports);
 
                     if !sub_flag.is_empty() {
                         self.op_3(item.range(), OpCode::And, flag, flag, sub_flag);
@@ -637,7 +652,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
 
                         let ret = self.closures.add_reg();
                         self.op_get_index(item.range(), ret, value, -1 - (i as i32));
-                        self.emit_pattern(sub_flag, pattern, ret, bind_type);
+                        self.emit_pattern(sub_flag, pattern, ret, bind_type, kw_pub, exports);
 
                         if !sub_flag.is_empty() {
                             self.op_3(item.range(), OpCode::And, flag, flag, sub_flag);
@@ -678,7 +693,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                                 OpParam::from(-(after.len() as i32) - 1),
                             );
                         }
-                        self.emit_pattern(sub_flag, spread_inner, ret, bind_type);
+                        self.emit_pattern(sub_flag, spread_inner, ret, bind_type, kw_pub, exports);
 
                         if !sub_flag.is_empty() {
                             self.op_3(spread.range(), OpCode::And, flag, flag, sub_flag);
@@ -715,8 +730,8 @@ impl<'s, 'c> Emitter<'s, 'c> {
             And(left, op, right) | Or(left, op, right) => {
                 // No short-circuiting in pattern matching
                 if success.is_empty() {
-                    self.emit_pattern(Register::EMPTY, left, value, bind_type);
-                    self.emit_pattern(Register::EMPTY, right, value, bind_type);
+                    self.emit_pattern(Register::EMPTY, left, value, bind_type, kw_pub, exports);
+                    self.emit_pattern(Register::EMPTY, right, value, bind_type, kw_pub, exports);
                 } else {
                     let opcode = if *op.as_ref() == Keyword::And {
                         OpCode::And
@@ -724,8 +739,8 @@ impl<'s, 'c> Emitter<'s, 'c> {
                         OpCode::Or
                     };
                     let right_success = self.closures.add_reg();
-                    self.emit_pattern(success, left, value, bind_type);
-                    self.emit_pattern(right_success, right, value, bind_type);
+                    self.emit_pattern(success, left, value, bind_type, kw_pub, exports);
+                    self.emit_pattern(right_success, right, value, bind_type, kw_pub, exports);
                     self.op_3(op.range(), opcode, success, right_success, success);
                 }
             }
@@ -733,10 +748,10 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 if success.is_empty() {
                     self.diagnostics
                         .push(DiagnosticCode::UnnecessaryIrrefutablePattern, kw.range());
-                    self.emit_pattern(Register::EMPTY, p, value, bind_type);
+                    self.emit_pattern(Register::EMPTY, p, value, bind_type, kw_pub, exports);
                 } else if self.emit_constant_pattern::<false>(success, p, value) {
                 } else {
-                    self.emit_pattern(success, p, value, bind_type);
+                    self.emit_pattern(success, p, value, bind_type, kw_pub, exports);
                     self.op_2(kw.range(), OpCode::Not, success, success);
                 }
             }

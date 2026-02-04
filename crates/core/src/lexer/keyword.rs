@@ -94,10 +94,10 @@ pub enum Keyword {
     //   pub fn foo() { }
     //   pub const @VAL = 42;
     //   pub let mut counter = 0;
+    //   pub mod inner {}
     // }
-    #[strum(props(reserved = true))]
+    // x.foo();
     Mod,
-    #[strum(props(reserved = true))]
     Pub,
     #[strum(props(reserved = true))]
     Use,

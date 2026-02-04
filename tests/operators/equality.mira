@@ -104,17 +104,15 @@ if has_extern {
 }
 
 // module
-if has_module {
-  t_false(v_module == v_module_another);
-  t_true(v_module == v_module);
-  t_false(v_module == nil);
-  t_false(nil == v_module);
-  t_false(v_module == ());
-  t_false(() == v_module);
-  t_throws(fn { v_module =~ v_module_another });
-}
+t_false(v_module == v_module_another);
+t_true(v_module == v_module);
+t_false(v_module == nil);
+t_false(nil == v_module);
+t_false(v_module == ());
+t_false(() == v_module);
+t_throws(fn { v_module =~ v_module_another });
 
-if has_extern && has_module {
+if has_extern {
   t_false(v_extern == v_module);
   t_true(v_module != v_extern);
   t_throws(fn { v_module =~ v_extern });

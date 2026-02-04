@@ -62,8 +62,8 @@ pub(super) fn block_expression_no_expr<'s>(i: &mut Input<'s>) -> Result<Expressi
                     let pos = expr.range();
                     statements.push(Statement::Expression(
                         expr,
-                        TokenRef::new(Token::unknown(
-                            pos.end..pos.end,
+                        TokenRef::new(Token::unknown_at(
+                            pos.end,
                             Operator::Semicolon,
                             DiagnosticCode::MissingSemicolon,
                         )),

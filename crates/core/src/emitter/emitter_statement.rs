@@ -1,3 +1,5 @@
+use std::vec;
+
 use crate::{
     diagnostic::DiagnosticCode,
     emitter::{emitter_scope::check_variable_initialized, opcode::OpParam},
@@ -5,16 +7,23 @@ use crate::{
     parser::{
         AstWalker, Expression, Pattern,
         Statement::{self, *},
+        TokenRef,
     },
 };
 
 use super::{Emitter, OpCode, opcode::Register, utils::is_global_expression, variable::BindType};
 
+pub(super) type ModuleExports<'s, 'c> = Option<Vec<Box<dyn FnOnce(&mut Emitter<'s, 'c>)>>>;
+
 impl<'s, 'c> Emitter<'s, 'c> {
     pub fn declare_statement(&mut self, stmt: &'s Statement<'s>) {
         match stmt {
             Expression(expr, _) | BlockExpression(expr) => self.declare_expression(expr),
-            Bind(_, pattern, _, expr, _) => {
+            Module(_, _, id, body) => {
+                self.declare_variable(id, false, BindType::Module);
+                self.declare_expression(body);
+            }
+            Bind(_, _, pattern, _, expr, _) => {
                 if matches!(pattern.as_ref(), Pattern::Bind(None, _))
                     && matches!(expr.as_ref(), Expression::Function(..))
                 {
@@ -28,7 +37,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 self.declare_pattern(pattern, None);
                 self.declare_expression(expr);
             }
-            Const(_, id_token, _, expr, _) => {
+            Const(_, _, id_token, _, expr, _) => {
                 self.declare_variable(id_token, false, BindType::Const);
                 self.declare_expression(expr);
             }
@@ -36,7 +45,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 self.declare_expression(assignee);
                 self.declare_expression(expr);
             }
-            Function(_, name, _, _) => {
+            Function(_, _, name, _, _) => {
                 self.declare_variable(name, false, BindType::Func);
             }
             Return(_, expr, _) | Break(_, expr, _) => {
@@ -48,23 +57,77 @@ impl<'s, 'c> Emitter<'s, 'c> {
             Empty(_) | Unknown { .. } => (),
         }
     }
-    pub fn emit_statement(&mut self, stmt: &'s Statement<'s>, brk: Option<Register>) -> bool {
+
+    pub(super) fn emit_pub(
+        &mut self,
+        kw_pub: &Option<TokenRef<'s>>,
+        exports: &mut ModuleExports<'s, 'c>,
+        reg: Register,
+        id_const: OpParam,
+    ) {
+        if let Some(kw_pub) = kw_pub {
+            if let Some(exports) = exports {
+                let range = kw_pub.range();
+                let id = id_const;
+                let a = reg;
+                exports.push(Box::new(move |emitter| {
+                    emitter.op_2(range, OpCode::Field, id, a);
+                }));
+            } else {
+                self.diagnostics
+                    .push(DiagnosticCode::UnexpectedPub, kw_pub.range());
+            }
+        }
+    }
+
+    pub fn emit_statement(
+        &mut self,
+        stmt: &'s Statement<'s>,
+        brk: Option<Register>,
+        exports: &mut ModuleExports<'s, 'c>,
+    ) -> bool {
         match stmt {
             Expression(expression, _) | BlockExpression(expression) => {
-                self.emit_expression(expression, Register::EMPTY, brk);
+                self.emit_expression(expression, Register::EMPTY, brk, &mut None);
                 false
             }
-            Bind(_, pattern, _, expression, _) => {
+            Module(kw_pub, _, id_token, body) => {
+                let Some(id) = id_token.to_id_name() else {
+                    return false;
+                };
+                let Some((_, variable)) = self.scopes.find_variable(id) else {
+                    return false;
+                };
+                let reg = self.closures.initialize_variable(variable);
+                let id_const = self.add_const_string(id);
+                self.emit_pub(kw_pub, exports, reg, id_const);
+                let mut mod_exports: ModuleExports<'s, 'c> = Some(vec![]);
+                self.emit_expression(body, Register::EMPTY, brk, &mut mod_exports);
+                self.op_2(id_token.range(), OpCode::Module, reg, id_const);
+                for e in mod_exports.unwrap() {
+                    e(self);
+                }
+                self.op(id_token.range(), OpCode::Freeze);
+                false
+            }
+            Bind(kw_pub, _, pattern, _, expression, _) => {
                 let value_reg = self.emit_expression_reg(expression, brk);
-                self.emit_pattern(Register::EMPTY, pattern, value_reg, Some(BindType::Let));
+                self.emit_pattern(
+                    Register::EMPTY,
+                    pattern,
+                    value_reg,
+                    Some(BindType::Let),
+                    kw_pub,
+                    exports,
+                );
                 false
             }
             Rebind(pattern, _, expression, _) => {
                 let value_reg = self.emit_expression_reg(expression, brk);
-                self.emit_pattern(Register::EMPTY, pattern, value_reg, None);
+                self.emit_pattern(Register::EMPTY, pattern, value_reg, None, &None, &mut None);
                 false
             }
-            Const(_, id_token, _, expression, _) => {
+            Const(kw_pub, _, id_token, _, expression, _) => {
                 let Some(id) = id_token.to_id_name() else {
                     return false;
                 };
@@ -73,7 +136,9 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 };
                 self.closures.initialize_variable(variable);
                 let reg = variable.register();
-                self.emit_expression(expression, reg, brk);
+                let id_const = self.add_const_string(id);
+                self.emit_pub(kw_pub, exports, reg, id_const);
+                self.emit_expression(expression, reg, brk, &mut None);
                 false
             }
             Assign(assignee, op, expression, _) => {
@@ -202,18 +267,18 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     }
                 };
                 if !is_compound {
-                    self.emit_expression(expression, assignee_reg, brk);
+                    self.emit_expression(expression, assignee_reg, brk, &mut None);
                 } else if *op == Operator::LogicalAndAssign {
                     self.op_if(stmt.range(), OpCode::If, assignee_reg);
-                    self.emit_expression(expression, assignee_reg, brk);
+                    self.emit_expression(expression, assignee_reg, brk, &mut None);
                     self.op_if_end(stmt.range());
                 } else if *op == Operator::LogicalOrAssign {
                     self.op_if(stmt.range(), OpCode::IfNot, assignee_reg);
-                    self.emit_expression(expression, assignee_reg, brk);
+                    self.emit_expression(expression, assignee_reg, brk, &mut None);
                     self.op_if_end(stmt.range());
                 } else if *op == Operator::NullCoalescingAssign {
                     self.op_if(stmt.range(), OpCode::IfNil, assignee_reg);
-                    self.emit_expression(expression, assignee_reg, brk);
+                    self.emit_expression(expression, assignee_reg, brk, &mut None);
                     self.op_if_end(stmt.range());
                 } else {
                     let Some(op) = (match op.kind {
@@ -230,12 +295,14 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 final_op(self);
                 false
             }
-            Function(_, name_token, args, body) => {
-                let TokenKind::Identifier(name) = &name_token.kind else {
+            Function(kw_pub, _, name_token, args, body) => {
+                let TokenKind::Identifier(name) = name_token.kind else {
                     unreachable!("Expected identifier token");
                 };
                 let func_var = self.scopes.find_local_variable(name).unwrap();
                 let func_reg = self.closures.initialize_variable(func_var);
+                let id_const = self.add_const_string(name);
+                self.emit_pub(kw_pub, exports, func_reg, id_const);
                 self.emit_fn(
                     func_reg,
                     name_token.range(),

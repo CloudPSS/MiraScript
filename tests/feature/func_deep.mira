@@ -382,10 +382,8 @@ t_eq(f('x'), 'x');
 t_eq(f(123), 123);
 t_eq(f([]), []);
 
+t_eq(f(v_module), v_module);
+
 if has_extern {
   t_eq(f(v_extern), v_extern);
-}
-
-if has_module {
-  t_eq(f(v_module), v_module);
 }

@@ -31,6 +31,8 @@ pub(crate) enum BindType {
     ParameterSubPattern,
     /// The variable is bound as a function statement.
     Func,
+    /// The variable is bound by `mod` statement.
+    Module,
 }
 
 pub(crate) struct Variable<'s> {
@@ -156,6 +158,7 @@ impl<'s> Variable<'s> {
                 BindType::Const => DiagnosticCode::LocalConst,
                 BindType::Let | BindType::Init => DiagnosticCode::LocalImmutable,
                 BindType::Func | BindType::LetFunc => DiagnosticCode::LocalFunction,
+                BindType::Module => DiagnosticCode::LocalModule,
                 BindType::Parameter => DiagnosticCode::ParameterImmutable,
                 BindType::RestParameter => DiagnosticCode::ParameterImmutableRest,
                 BindType::ItParameter => DiagnosticCode::ParameterIt,
@@ -168,6 +171,7 @@ impl<'s> Variable<'s> {
                 BindType::Const => DiagnosticCode::LocalConst,
                 BindType::Let | BindType::Init => DiagnosticCode::LocalMutable,
                 BindType::Func | BindType::LetFunc => DiagnosticCode::LocalFunction,
+                BindType::Module => DiagnosticCode::LocalModule,
                 BindType::Parameter => DiagnosticCode::ParameterMutable,
                 BindType::RestParameter => DiagnosticCode::ParameterMutableRest,
                 BindType::ItParameter => DiagnosticCode::ParameterIt,

@@ -83,10 +83,8 @@ t_eq(to_number('', 'x'), 'x');
 t_eq(to_number(v_fn, 'x'), 'x');
 
 t_throws(fn { to_number(v_fn) });
+t_throws(fn { to_number(v_module) });
 if has_extern {
   t_throws(fn { to_number(v_extern) });
-}
-if has_module {
-  t_throws(fn { to_number(v_module) });
 }
 t_throws(fn { to_number() });

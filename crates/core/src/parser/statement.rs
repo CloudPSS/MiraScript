@@ -12,8 +12,16 @@ pub enum Statement<'s> {
     ///
     /// No trailing semicolon in this case. For expressions that end with a semicolon, use [Statement::Expression].
     BlockExpression(Box<Expression<'s>>),
-    /// `'let' pattern '=' expression ';'`
+    /// `'pub'? 'mod' identifier block_expression_no_expr`
+    Module(
+        Option<TokenRef<'s>>,
+        TokenRef<'s>,
+        TokenRef<'s>,
+        Box<Expression<'s>>,
+    ),
+    /// `'pub'? 'let' pattern '=' expression ';'`
     Bind(
+        Option<TokenRef<'s>>,
         TokenRef<'s>,
         Box<Pattern<'s>>,
         TokenRef<'s>,
@@ -27,8 +35,9 @@ pub enum Statement<'s> {
         Box<Expression<'s>>,
         TokenRef<'s>,
     ),
-    /// `'const' @id '=' expression ';'`
+    /// `'pub'? 'const' @id '=' expression ';'`
     Const(
+        Option<TokenRef<'s>>,
         TokenRef<'s>,
         TokenRef<'s>,
         TokenRef<'s>,
@@ -47,7 +56,7 @@ pub enum Statement<'s> {
         Box<Expression<'s>>,
         TokenRef<'s>,
     ),
-    /// `'fn' identifier (parameters) block_expression`
+    /// `'pub'? 'fn' identifier (parameters) block_expression`
     ///
     /// Parameters are a list of identifiers, trailing comma is optional.
     ///
@@ -60,6 +69,7 @@ pub enum Statement<'s> {
     ///
     /// The function body is a block expression.
     Function(
+        Option<TokenRef<'s>>,
         TokenRef<'s>,
         TokenRef<'s>,
         Option<ParameterList<'s>>,
@@ -126,7 +136,14 @@ impl<'s> AstWalker<'s> for Statement<'s> {
                 c.collect_diagnostics(collector);
             }
             BlockExpression(expr) => expr.collect_diagnostics(collector),
-            Bind(kw_let, pattern, eq, expr, c) => {
+            Module(kw_pub, kw_mod, id, body) => {
+                kw_pub.collect_diagnostics(collector);
+                kw_mod.collect_diagnostics(collector);
+                id.collect_diagnostics(collector);
+                body.collect_diagnostics(collector);
+            }
+            Bind(kw_pub, kw_let, pattern, eq, expr, c) => {
+                kw_pub.collect_diagnostics(collector);
                 kw_let.collect_diagnostics(collector);
                 pattern.collect_diagnostics(collector);
                 eq.collect_diagnostics(collector);
@@ -139,7 +156,8 @@ impl<'s> AstWalker<'s> for Statement<'s> {
                 expr.collect_diagnostics(collector);
                 c.collect_diagnostics(collector);
             }
-            Const(kw_const, id, eq, expr, c) => {
+            Const(kw_pub, kw_const, id, eq, expr, c) => {
+                kw_pub.collect_diagnostics(collector);
                 kw_const.collect_diagnostics(collector);
                 id.collect_diagnostics(collector);
                 eq.collect_diagnostics(collector);
@@ -152,8 +170,9 @@ impl<'s> AstWalker<'s> for Statement<'s> {
                 expr.collect_diagnostics(collector);
                 c.collect_diagnostics(collector);
             }
-            Function(kw, id, params, body) => {
-                kw.collect_diagnostics(collector);
+            Function(kw_pub, kw_fn, id, params, body) => {
+                kw_pub.collect_diagnostics(collector);
+                kw_fn.collect_diagnostics(collector);
                 id.collect_diagnostics(collector);
                 params.collect_diagnostics(collector);
                 body.collect_diagnostics(collector);
@@ -184,11 +203,20 @@ impl<'s> AstWalker<'s> for Statement<'s> {
             Empty(c) => c.range(),
             Expression(expr, c) => expr.range().start..c.range.end,
             BlockExpression(expr) => expr.range(),
-            Bind(kw_let, _, _, _, c) => kw_let.range.start..c.range.end,
+            Module(kw_pub, kw_mod, _, body) => {
+                kw_pub.as_ref().unwrap_or(kw_mod).range.start..body.range().end
+            }
+            Bind(kw_pub, kw_let, _, _, _, c) => {
+                kw_pub.as_ref().unwrap_or(kw_let).range.start..c.range.end
+            }
             Rebind(pattern, _, _, c) => pattern.range().start..c.range.end,
-            Const(kw_const, _, _, _, c) => kw_const.range.start..c.range.end,
+            Const(kw_pub, kw_const, _, _, _, c) => {
+                kw_pub.as_ref().unwrap_or(kw_const).range.start..c.range.end
+            }
             Assign(exp, _, _, c) => exp.range().start..c.range.end,
-            Function(kw, _, _, body) => kw.range.start..body.range().end,
+            Function(kw_pub, kw_fn, _, _, body) => {
+                kw_pub.as_ref().unwrap_or(kw_fn).range.start..body.range().end
+            }
             Return(kw, _, c) | Break(kw, _, c) | Continue(kw, c) => kw.range.start..c.range.end,
             Unknown { tokens, errors: _ } => tokens.range(),
         }

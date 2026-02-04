@@ -25,9 +25,7 @@ t_throws(fn { [..1] });
 t_throws(fn { [.."x"] });
 t_throws(fn { [..true] });
 t_throws(fn { [..()] });
-if has_module {
-  t_throws(fn { [..v_module] });
-}
+t_throws(fn { [..v_module] });
 if has_extern {
   t_throws(fn { [..v_extern] });
 }

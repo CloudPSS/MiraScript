@@ -19,10 +19,8 @@ t_eq(to_boolean('', 'x'), 'x');
 t_eq(to_boolean(v_fn, 'x'), 'x');
 
 t_throws(fn { to_boolean(v_fn) });
+t_throws(fn { to_boolean(v_module) });
 if has_extern {
   t_throws(fn { to_boolean(v_extern) });
-}
-if has_module {
-  t_throws(fn { to_boolean(v_module) });
 }
 t_throws(fn { to_boolean() });

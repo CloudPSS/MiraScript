@@ -153,6 +153,9 @@ pub enum OpCode {
     /// RECORD %ret\
     /// %ret = (
     Record,
+    /// MODULE %ret `name`\
+    /// %ret = mod CONSTANTS\[name] {
+    Module,
     /// FIELD `name` %field\
     /// \[CONSTANTS\[name]]: %field,
     Field,

@@ -32,19 +32,14 @@ t_eq(v_fn::type(), 'function');
 t_eq(v_fn_another::type(), 'function');
 t_eq(v_fn(), 'I am a function');
 t_eq(v_fn_another(), 'I am another function');
+t_eq(v_module::type(), 'module');
+t_eq(v_module_another::type(), 'module');
 if has_extern {
   t_eq(v_extern::type(), 'extern');
   t_eq(v_extern_another::type(), 'extern');
 } else {
   t_throws(fn { v_extern });
   t_throws(fn { v_extern_another });
-}
-if has_module {
-  t_eq(v_module::type(), 'module');
-  t_eq(v_module_another::type(), 'module');
-} else {
-  t_throws(fn { v_module });
-  t_throws(fn { v_module_another });
 }
 
 t_true('v_nil' in global);
@@ -63,13 +58,11 @@ if has_extern {
   t_eq(v_extern['whatever'], nil);
 }
 
-if has_module {
-  t_false(v_module == v_module_another);
-  t_false('whatever' in v_module);
-  t_eq(v_module['whatever'], nil);
-}
+t_false(v_module == v_module_another);
+t_false('whatever' in v_module);
+t_eq(v_module['whatever'], nil);
 
 t_false(v_fn == v_fn_another);
-if has_extern && has_module {
+if has_extern {
   t_false(v_extern == v_module);
 }

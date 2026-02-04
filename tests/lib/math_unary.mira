@@ -692,11 +692,9 @@ check_math_unary('round', round, -0.499_999_999_999_999_94, -0);
     check_math_unary_throws(f, fun, (1,));
     check_math_unary_throws(f, fun, [2]);
     check_math_unary_throws(f, fun, ['x']);
+    check_math_unary_throws(f, fun, v_module);
     if has_extern {
       check_math_unary_throws(f, fun, v_extern);
-    }
-    if has_module {
-      check_math_unary_throws(f, fun, v_module);
     }
   }
 }

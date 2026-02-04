@@ -185,6 +185,45 @@ export class Emitter {
         return this.readBlockEnd(OpCode.IfEnd);
     }
 
+    /** 读取 module */
+    private readModule(obj: number): void {
+        this.identCounter++;
+        while (this.codeOffset < this.codeSize) {
+            const opcode_raw = this.codeReader.getUint8(this.codeOffset++);
+            const opcode = opcode_raw & 0x7f;
+            const wide = opcode_raw >= 0x80;
+            const read = () => this.readParam(wide);
+            let code = '';
+            switch (opcode) {
+                case OpCode.Field: {
+                    const field = read();
+                    const field_name = this.constLits[field];
+                    /* c8 ignore next 3 */
+                    if (!field_name) {
+                        throw new Error(`Unknown field ${field}`);
+                    }
+                    const value = read();
+                    code = `[${field_name}]: () => ${this.rv(value)},`;
+                    break;
+                }
+                case OpCode.Freeze: {
+                    this.identCounter--;
+                    code = `});`;
+                    break;
+                }
+                default: {
+                    code = `// ?${OpCode[opcode] ?? opcode}`;
+                    break;
+                }
+            }
+            const ident = this.ident();
+            this.codeLines.push(ident + code);
+            if (opcode === OpCode.Freeze) {
+                return;
+            }
+        }
+    }
+
     /** 读取 record */
     private readRecord(obj: number): void {
         this.identCounter++;
@@ -600,6 +639,13 @@ export class Emitter {
                 code = `${this.wv(reg)} = $SliceExclusive(${this.rv(obj)}, ${this.rv(start)}, ${this.rv(end)});`;
                 break;
             }
+            case OpCode.Module: {
+                reg = read();
+                const nameIdx = read();
+                const name = this.constLits[nameIdx];
+                code = `${this.wv(reg)} = $Module(${name}, {`;
+                break;
+            }
             case OpCode.Record: {
                 reg = read();
                 code = `${this.wv(reg)} = ({`;
@@ -707,6 +753,10 @@ export class Emitter {
                 this.identCounter++;
                 this.closureCounter++;
                 this.readBlockEnd(OpCode.LoopEnd);
+                break;
+            }
+            case OpCode.Module: {
+                this.readModule(reg);
                 break;
             }
             case OpCode.Record: {

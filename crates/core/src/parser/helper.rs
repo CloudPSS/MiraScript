@@ -104,15 +104,7 @@ pub(super) fn token_or_insert<'s>(
         opt(one_of(|t: &Token<'s>| token == *t))
             .map(|t: Option<&Token<'s>>| match t {
                 Some(t) => t.into(),
-                None => Token::unknown(
-                    SourceRange {
-                        start: pos,
-                        end: pos,
-                    },
-                    token.into(),
-                    error,
-                )
-                .into(),
+                None => Token::unknown_at(pos, token.into(), error).into(),
             })
             .parse_next(i)
     }

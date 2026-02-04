@@ -14,9 +14,7 @@ t_eq(to_json(1.5), '1.5');
 t_eq(to_json("Hello, World!"), '"Hello, World!"');
 t_eq(to_json("é"), '"é"');
 t_eq(to_json([]), '[]');
-if has_module {
-  t_eq(to_json(v_module), '{}');
-}
+t_eq(to_json(v_module), '{}');
 if has_extern {
   t_eq(to_json(v_extern), '{}');
 }

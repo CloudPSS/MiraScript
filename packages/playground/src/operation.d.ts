@@ -117,6 +117,11 @@ function $ToString(value: VmAny): string;
 function $ToNumber(value: VmAny): number;
 /** 格式化值 */
 function $Format(value: VmAny, format: string | null): string;
+/** 构造 module */
+function $Module<const T extends Record<string, () => VmImmutable>>(
+    name: string,
+    body: T,
+): VmModule<{ [K in keyof T]: ReturnType<T[K]> }>;
 /** 构造 record | array 元素 */
 function $El(value: VmAny): VmConst;
 /** 构造 record 可选元素 */

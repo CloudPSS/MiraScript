@@ -32,15 +32,14 @@ let v_number = 42;
 let v_string = "Hello, Mira!";
 let v_fn = fn() { return "I am a function"; };
 let v_fn_another = fn() { return "I am another function"; };
+let v_module = /* 名为 v_module 的模块 */;
+let v_module_another = /* 名为 v_module_another 的模块 */;
 
 /** 可选测试数据 */
 let has_extern = true; /* v_extern 和 v_extern_another 存在 */
 let v_extern = /* 空外部对象 */;
 let v_extern_another = /* 另一个外部对象 */;
 
-let has_module = true; /* v_module 和 v_module_another 存在 */
-let v_module = /* 名为 v_module 的模块 */;
-let v_module_another = /* 名为 v_module_another 的模块 */;
 ```
 
 参考 [packages/mirascript/tests/black-box/\_run.ts](../packages/mirascript/tests/black-box/_run.ts) 中的实现。

@@ -24,21 +24,22 @@ fn empty_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
 
 fn fn_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
     (
+        opt(token(Keyword::Pub)),
         token(Keyword::Fn),
         opt(variable_token(false, false)),
         parameter_list,
         block_expression.map(Box::new),
     )
-        .map(|(kw, name, params, body)| {
+        .map(|(kw_pub, kw_fn, name, params, body)| {
             let name = name.unwrap_or_else(|| {
-                Token::unknown(
-                    kw.range.end..kw.range.end,
+                Token::unknown_at(
+                    kw_fn.range.end,
                     TokenKind::Identifier("<name>"),
                     DiagnosticCode::MissingFunctionName,
                 )
                 .into()
             });
-            Statement::Function(kw, name, params, body)
+            Statement::Function(kw_pub, kw_fn, name, params, body)
         })
         .parse_next(i)
 }
@@ -67,6 +68,7 @@ fn continue_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
 
 fn bind_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
     seq!(Statement::Bind(
+        opt(token(Keyword::Pub)),
         token(Keyword::Let),
         pattern_or_insert(false, |t| *t == Operator::Assign).map(Box::new),
         token_or_insert(Operator::Assign, DiagnosticCode::MissingBindOperator),
@@ -88,6 +90,7 @@ fn rebind_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
 
 fn const_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
     seq!(Statement::Const(
+        opt(token(Keyword::Pub)),
         token(Keyword::Const),
         variable_token(false, false).map(|mut t| {
             if t.to_id_name().is_some_and(|name| !name.starts_with('@')) {
@@ -154,6 +157,27 @@ fn unknown_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
     .parse_next(i)
 }
 
+fn mod_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
+    (
+        opt(token(Keyword::Pub)),
+        token(Keyword::Mod),
+        opt(variable_token(false, false)),
+        block_expression_no_expr.map(Box::new),
+    )
+        .map(|(kw_pub, kw_mod, name, body)| {
+            let name = name.unwrap_or_else(|| {
+                Token::unknown_at(
+                    kw_mod.range.end,
+                    TokenKind::Identifier("<name>"),
+                    DiagnosticCode::MissingModuleName,
+                )
+                .into()
+            });
+            Statement::Module(kw_pub, kw_mod, name, body)
+        })
+        .parse_next(i)
+}
+
 pub(super) fn statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
     dispatch! {peek(any);
         t if *t == Operator::OpenBrace => block_expression.map(Box::new).map(Statement::BlockExpression),
@@ -163,18 +187,17 @@ pub(super) fn statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
         t if *t == Keyword::Match => match_expression.map(Box::new).map(Statement::BlockExpression),
         t if *t == Keyword::For => for_in_expression.map(Box::new).map(Statement::BlockExpression),
 
-        t if *t == Keyword::Fn => fn_statement,
         t if *t == Keyword::Return => return_statement,
         t if *t == Keyword::Break => break_statement,
         t if *t == Keyword::Continue => continue_statement,
 
         t if *t == Operator::Semicolon => empty_statement,
 
-        t if *t == Keyword::Let => bind_statement,
-        t if *t == Keyword::Const => const_statement,
-
-
         &Token{..} => alt((
+            mod_statement,
+            fn_statement,
+            const_statement,
+            bind_statement,
             rebind_statement,
             assign_or_expression_statement,
             unknown_statement,

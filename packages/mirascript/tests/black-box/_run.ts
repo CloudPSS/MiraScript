@@ -12,12 +12,7 @@ import {
 } from '@mirascript/mirascript';
 import { createScript } from '@mirascript/mirascript/subtle';
 
-function createContext(
-    t: ExecutionContext,
-    timeout_fn: Array<[() => unknown, string]>,
-    extern: boolean,
-    module: boolean,
-) {
+function createContext(t: ExecutionContext, timeout_fn: Array<[() => unknown, string]>, extern: boolean) {
     return createVmContext(
         {
             t_eq: VmFunction((a: unknown, b: unknown, message?: unknown) => {
@@ -53,18 +48,13 @@ function createContext(
             v_string: 'Hello, Mira!',
             v_fn: VmFunction(() => 'I am a function'),
             v_fn_another: VmFunction(() => 'I am another function'),
+            v_module: new VmModule('v_module', {}),
+            v_module_another: new VmModule('v_module_another', {}),
             has_extern: extern,
             ...(extern
                 ? {
                       v_extern: {},
                       v_extern_another: {},
-                  }
-                : {}),
-            has_module: module,
-            ...(module
-                ? {
-                      v_module: new VmModule('v_module', {}),
-                      v_module_another: new VmModule('v_module_another', {}),
                   }
                 : {}),
         },
@@ -73,40 +63,40 @@ function createContext(
 
 const TEST_DIR = new URL('../../../../tests', import.meta.url);
 
-const runScript = (t: ExecutionContext, file: string, extern: boolean, module: boolean, script: VmScript) => {
+const runScript = (t: ExecutionContext, file: string, extern: boolean, script: VmScript) => {
     const timeout_fn: Array<[() => unknown, string]> = [];
     configCheckpoint(file.endsWith('_huge.mira') ? 1000 : undefined);
-    script(createContext(t, timeout_fn, extern, module));
+    script(createContext(t, timeout_fn, extern));
     // 在脚本之后执行，否则脚本本身超时
     for (const [fn, message] of timeout_fn) {
         t.throws(fn, { instanceOf: RangeError, message: 'Execution timed out' }, message);
     }
 };
 
-const compileAndRun = test.macro<[string, boolean, boolean]>({
-    exec: async (t, file, extern, module) => {
+const compileAndRun = test.macro<[string, boolean]>({
+    exec: async (t, file, extern) => {
         const codeUrl = new URL(`./tests/${file}`, TEST_DIR);
         const code = await fs.promises.readFile(codeUrl, 'utf8');
 
         const script = await compile(code, { pretty: true, sourceMap: true, fileName: codeUrl.href });
         configCheckpoint(300);
-        runScript(t, file, extern, module, script);
+        runScript(t, file, extern, script);
         const scriptCopy = createScript(code, 'Script', script.toString());
-        runScript(t, file, extern, module, scriptCopy);
+        runScript(t, file, extern, scriptCopy);
         configCheckpoint();
     },
     title: (providedTitle = 'test', code) => code || providedTitle,
 });
 
-export function run(extern: boolean, module: boolean): void {
+export function run(extern: boolean): void {
     for (const file of fs.readdirSync(TEST_DIR, { encoding: 'utf8', recursive: true })) {
         const f = file.replaceAll('\\', '/');
         if (f.endsWith('.mira')) {
             const skip = f.includes('/_') || f.startsWith('_');
             if (skip) {
-                test.skip(compileAndRun, f, extern, module);
+                test.skip(compileAndRun, f, extern);
             } else {
-                test(compileAndRun, f, extern, module);
+                test(compileAndRun, f, extern);
             }
         }
     }

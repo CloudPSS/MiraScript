@@ -7,19 +7,17 @@ globals:
   v_false: false
   v_number: 42
   v_string: 'Hello, Mira!'
-  # 可选外部对象 / 模块指示器
+  # 可选外部对象指示器
   has_extern: true
-  has_module: true
+
+modules:
+  v_module: {}
+  v_module_another: {}
 
 externs:
   # 可选外部对象
   v_extern: {}
   v_extern_another: {}
-
-modules:
-  # 可选模块
-  v_module: {}
-  v_module_another: {}
 
 functions:
   v_fn:

@@ -85,6 +85,8 @@ pub enum DiagnosticCode {
     InvalidConstantName,
     #[strum(message = "Missing function name in the declaration")]
     MissingFunctionName,
+    #[strum(message = "Missing module name in the declaration")]
+    MissingModuleName,
     #[strum(message = "Extension call must be ended with parameter list; add `(` here")]
     MissingOpenParenAfterExtension,
     #[strum(message = "`type` is a function-like keyword; add `(` here")]
@@ -157,6 +159,8 @@ pub enum DiagnosticCode {
     BadOmitKeyRecordExpression,
     #[strum(message = "Can only assign to a variable or a field access")]
     UnassignableExpression,
+    #[strum(message = "Unexpected `pub` outside of a module declaration")]
+    UnexpectedPub,
 
     ErrorEnd = 1999,
     // Warning 2000~2999
@@ -254,6 +258,7 @@ pub enum DiagnosticCode {
     LocalImmutable,
     LocalMutable,
     LocalFunction,
+    LocalModule,
 
     // parameter declarations
     ParameterIt,

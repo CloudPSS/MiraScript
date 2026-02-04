@@ -4,9 +4,7 @@ t_throws(fn { ()::len() });
 if has_extern {
   t_throws(fn { v_extern::len() });
 }
-if has_module {
-  t_throws(fn { v_module::len() });
-}
+t_throws(fn { v_module::len() });
 t_throws(fn { "str"::len() });
 
 t_eq([]::len(), 0);

@@ -42,12 +42,10 @@ t_throws(fn () {
   [..()];
 });
 
+t_throws(fn () { (..v_module) });
+t_throws(fn () { [..v_module] });
+
 if has_extern {
   t_eq((..v_extern), ());
   t_throws(fn () { [..v_extern] });
-}
-
-if has_module {
-  t_throws(fn () { (..v_module) });
-  t_throws(fn () { [..v_module] });
 }

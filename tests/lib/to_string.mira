@@ -28,9 +28,7 @@ t_eq(to_string(nil, 'x'), '');
 t_eq(to_string('', 'x'), '');
 t_eq(to_string(to_string, 'x'), '<function global.to_string>');
 
-if has_module {
-  t_eq(to_string(v_module), "<module v_module>");
-}
+t_eq(to_string(v_module), "<module v_module>");
 t_eq(to_string(to_string), "<function global.to_string>");
 t_eq(to_string(matrix.add), "<function matrix.add>");
 if has_extern {

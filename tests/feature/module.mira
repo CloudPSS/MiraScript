@@ -1,0 +1,36 @@
+mod test {
+  pub let (a, b) = (12, 'xyz');
+  pub const @C = 3.14;
+  pub fn add(x, y) { x + y }
+  let mut step = 1;
+  pub let mut counter = 0;
+  pub fn inc() {
+    counter += step;
+  }
+  pub fn set_step(s) {
+    step = s;
+  }
+  pub mod inner { }
+}
+
+t_eq(type(test), "module");
+t_eq(to_string(test), "<module test>");
+t_eq(test.a, 12);
+t_eq(test.b, 'xyz');
+t_eq(test.@C, 3.14);
+t_eq(test.add(3, 4), 7);
+t_eq(test.counter, 0);
+test.inc();
+t_eq(test.counter, 1);
+test.set_step(5);
+test.inc();
+t_eq(test.counter, 6);
+t_eq(type(test.inner), "module");
+t_eq(to_string(test.inner), "<module inner>");
+
+for key in test {
+  t_true(key == 'a' || key == 'b' || key == '@C' || key == 'add' || key == 'inc' || key == 'set_step' || key == 'counter' || key == 'inner');
+}
+
+let (:set_step) = test;
+t_eq(set_step, test.set_step);

@@ -35,16 +35,35 @@ impl Formattable for Statement<'_> {
                 formatter.write_token(semicolon);
             }
             BlockExpression(expression) => expression.format(formatter, complexity),
-            Bind(kw, pattern, op, expression, semicolon) => {
-                formatter.write_token(kw);
+            Module(kw_pub, kw_mod, id, body) => {
+                if let Some(kw_pub) = kw_pub {
+                    formatter.write_token(kw_pub);
+                    formatter.write_space();
+                }
+                formatter.write_token(kw_mod);
+                formatter.write_space();
+                formatter.write_token(id);
+                formatter.write_space();
+                body.format(formatter, complexity);
+            }
+            Bind(kw_pub, kw_let, pattern, op, expression, semicolon) => {
+                if let Some(kw_pub) = kw_pub {
+                    formatter.write_token(kw_pub);
+                    formatter.write_space();
+                }
+                formatter.write_token(kw_let);
                 formatter.write_space();
                 format_bind(pattern, op, expression, semicolon, formatter);
             }
             Rebind(pattern, op, expression, semicolon) => {
                 format_bind(pattern, op, expression, semicolon, formatter);
             }
-            Const(kw, id, op, expression, semicolon) => {
-                formatter.write_token(kw);
+            Const(kw_pub, kw_const, id, op, expression, semicolon) => {
+                if let Some(kw_pub) = kw_pub {
+                    formatter.write_token(kw_pub);
+                    formatter.write_space();
+                }
+                formatter.write_token(kw_const);
                 formatter.write_space();
                 formatter.write_token(id);
                 formatter.write_space();
@@ -61,8 +80,12 @@ impl Formattable for Statement<'_> {
                 formatter.format(expression);
                 formatter.write_token(semicolon);
             }
-            Function(kw, id, parameter_list, expression) => {
-                formatter.write_token(kw);
+            Function(kw_pub, kw_fn, id, parameter_list, expression) => {
+                if let Some(kw_pub) = kw_pub {
+                    formatter.write_token(kw_pub);
+                    formatter.write_space();
+                }
+                formatter.write_token(kw_fn);
                 formatter.write_space();
                 formatter.write_token(id);
                 let mut p_complexity = 0;
