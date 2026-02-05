@@ -1,4 +1,4 @@
-export * from './math.js';
+export * from './math/index.js';
 export * from './bit.js';
 export * from './sequence/index.js';
 export * from './debug.js';

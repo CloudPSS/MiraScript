@@ -1,5 +1,5 @@
-import type { VmAny } from '../../index.js';
-import { expectNumber, VmLib } from '../helpers.js';
+import type { VmAny } from '../../../index.js';
+import { expectNumber, VmLib } from '../../helpers.js';
 
 /** 生成函数 */
 function build(f: (x: number) => number): (x: VmAny) => number {

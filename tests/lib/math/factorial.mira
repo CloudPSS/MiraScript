@@ -4,20 +4,22 @@ t_eq(factorial(1), 1);
 t_eq(factorial(true), 1);
 t_eq(factorial(2), 2);
 
+t_true(0.1::factorial() =~ 0.951_350_769_866_873_3);
+
+t_true(21.9::factorial() =~ 823_457_908_078_612_600_000);
 t_eq(factorial(22), 1_124_000_727_777_607_680_000);
+t_true(22.1::factorial() =~ 1.534_916_550_141_593_3e+21);
 
 t_eq(factorial(-1), nan);
 t_eq(factorial(nan), nan);
 t_eq(factorial(-inf), nan);
 
 t_true(169.999_999_999_999::factorial() =~ 7.257_415_615_270_898e+306);
-t_true(factorial(170) == 7.257_415_615_307_999e+306);
+t_eq(factorial(170), 7.257_415_615_307_999e+306);
 t_true(170.000_000_000_001::factorial() =~ 7.257_415_615_345_094e+306);
 
 t_eq(factorial(171), inf);
 t_eq(factorial(inf), inf);
-
-t_true(factorial(0.1) =~ 0.951_350_769_866_873_3);
 
 t_throws(fn { factorial(nil) });
 t_throws(fn { factorial() });

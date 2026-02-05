@@ -1,4 +1,4 @@
-import { expectNumber, VmLib } from '../helpers.js';
+import { expectNumber, VmLib } from '../../helpers.js';
 const { atan2: _atan2, pow: _pow, random: _random } = Math;
 
 export const atan2 = VmLib((x, y) => _atan2(expectNumber(0, x), expectNumber(1, y)), {
@@ -20,7 +20,7 @@ export const random = VmLib(() => _random(), {
     returnsType: 'number',
 });
 
-export * from './math-arr.js';
-export * from './math-const.js';
-export * from './math-unary.js';
-export * from './math-additional.js';
+export * from './arr.js';
+export * from './const.js';
+export * from './unary.js';
+export * from './factorial.js';

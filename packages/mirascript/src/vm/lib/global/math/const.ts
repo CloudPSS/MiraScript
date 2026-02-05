@@ -1,5 +1,5 @@
 import { DiagnosticCode } from '@mirascript/constants';
-import { VmLib } from '../helpers.js';
+import { VmLib } from '../../helpers.js';
 
 export const PI = VmLib(Math.PI, {
     summary: '圆周率',
