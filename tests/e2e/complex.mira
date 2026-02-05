@@ -1,6 +1,10 @@
 mod complex {
+  /** The imaginary unit. */
   pub let I = (0, 1);
 
+  /** 
+   * Creates a complex number from real and imaginary parts.
+   */
   pub fn from(x, y) {
     if y is not nil {
       return (+x, +y);
@@ -15,26 +19,41 @@ mod complex {
     }
   }
 
+  /** 
+   * Creates a complex number from polar coordinates.
+   */
   pub fn from_polar(r, theta) { (r * cos(theta), r * sin(theta)) }
 
+  /** 
+   * Adds two complex numbers.
+   */
   pub fn add(x, y) {
     let (a1, b1) = from(x);
     let (a2, b2) = from(y);
     (a1 + a2, b1 + b2)
   }
 
+  /** 
+   * Subtracts two complex numbers.
+   */
   pub fn subtract(x, y) {
     let (a1, b1) = from(x);
     let (a2, b2) = from(y);
     (a1 - a2, b1 - b2)
   }
 
+  /** 
+   * Multiplies two complex numbers.
+   */
   pub fn multiply(x, y) {
     let (a1, b1) = from(x);
     let (a2, b2) = from(y);
     (a1 * a2 - b1 * b2, a1 * b2 + a2 * b1)
   }
 
+  /** 
+   * Divides two complex numbers.
+   */
   pub fn divide(x, y) {
     let (a1, b1) = from(x);
     let (a2, b2) = from(y);
@@ -42,29 +61,112 @@ mod complex {
     ((a1 * a2 + b1 * b2) / denom, (b1 * a2 - a1 * b2) / denom)
   }
 
+  /** 
+   * Powers a complex number to a exponent.
+   */
+  pub fn pow(x, y) {
+    let (a, b) = from(x);
+    let (c, d) = from(y);
+    let r = hypot(a, b);
+    let theta = atan2(b, a);
+    let r_n = global.pow(r, c) * global.exp(-d * theta);
+    let theta_n = c * theta + d * global.log(r);
+    (r_n * global.cos(theta_n), r_n * global.sin(theta_n))
+  }
+  /** 
+   * Returns the real part of a complex number.
+   */
   pub fn re(z) {
     let (a, _) = from(z);
     a
   }
 
+  /** 
+   * Returns the imaginary part of a complex number.
+   */
   pub fn im(z) {
     let (_, b) = from(z);
     b
   }
 
+  /** 
+   * Returns the argument (angle) of a complex number.
+   */
   pub fn arg(z) {
     let (a, b) = from(z);
     atan2(b, a)
   }
 
+  /** 
+   * Returns the absolute value (magnitude) of a complex number.
+   */
   pub fn abs(z) {
     let (a, b) = from(z);
     hypot(a, b)
   }
 
+  /** 
+   * Returns the complex conjugate of a complex number.
+   */
   pub fn conj(z) {
     let (a, b) = from(z);
     (a, -b)
+  }
+
+  /** 
+   * Returns the sine of a complex number.
+   */
+  pub fn sin(z) {
+    let (a, b) = from(z);
+    (global.sin(a) * global.cosh(b), global.cos(a) * global.sinh(b))
+  }
+
+  /** 
+   * Returns the cosine of a complex number.
+   */
+  pub fn cos(z) {
+    let (a, b) = from(z);
+    (global.cos(a) * global.cosh(b), -global.sin(a) * global.sinh(b))
+  }
+
+  /** 
+   * Returns the tangent of a complex number.
+   */
+  pub fn tan(z) {
+    let (a, b) = from(z);
+    let denom = global.cos(2 * a) + global.cosh(2 * b);
+    (global.sin(2 * a) / denom, global.sinh(2 * b) / denom)
+  }
+
+  /** 
+   * Returns the exponential of a complex number.
+   */
+  pub fn exp(z) {
+    let (a, b) = from(z);
+    let exp_a = global.exp(a);
+    (exp_a * global.cos(b), exp_a * global.sin(b))
+  }
+
+  /** 
+   * Returns the natural logarithm of a complex number.
+   */
+  pub fn log(z) {
+    let (a, b) = from(z);
+    let r = hypot(a, b);
+    let theta = global.atan2(b, a);
+    (global.log(r), theta)
+  }
+
+  /** 
+   * Returns the string representation of a complex number.
+   */
+  pub fn to_string(z) {
+    let (a, b) = from(z);
+    match b {
+      case 0 { "$(a)" }
+      case < 0 { "$(a) - $(-b)i" }
+      case _ { "$(a) + $(b)i" }
+    }
   }
 }
 
@@ -87,4 +189,11 @@ t_eq(complex.from(3, 4), (3, 4));
   let (x, y) = complex.from_polar(5, PI / 2);
   t_true(x =~ 0);
   t_true(y =~ 5);
+}
+
+{
+  let zero = E::complex.pow(PI::complex.multiply(complex.I))::complex.add(1);
+  let (x, y) = zero;
+  t_true(x =~ 0);
+  t_true(y =~ 0);
 }

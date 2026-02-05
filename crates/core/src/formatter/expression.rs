@@ -323,7 +323,7 @@ impl Formattable for Expression<'_> {
                 for (i, MatchCase(kw, pattern, guard, expression)) in items.iter().enumerate() {
                     formatter.write_token(kw);
                     formatter.write_space();
-                    pattern.format(formatter, complexity);
+                    formatter.format(pattern);
                     formatter.write_space();
                     if let Some((kw, expr)) = guard {
                         formatter.write_token(kw);

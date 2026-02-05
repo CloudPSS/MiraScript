@@ -16,7 +16,7 @@ export class CodeLensProvider extends Provider implements languages.CodeLensProv
 
         const lenses: languages.CodeLens[] = [];
         for (const { definition, references } of result.groupedTags(model).locals) {
-            if (definition.code === DiagnosticCode.LocalFunction) {
+            if (definition.code === DiagnosticCode.LocalFunction || definition.code === DiagnosticCode.LocalModule) {
                 lenses.push({
                     range: definition.range,
                     command: {
