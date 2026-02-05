@@ -203,7 +203,7 @@ export class Emitter {
                         throw new Error(`Unknown field ${field}`);
                     }
                     const value = read();
-                    code = `[${field_name}]: () => ${this.rv(value)},`;
+                    code = `[${field_name}]: () => $Upvalue(${this.rv(value)}),`;
                     break;
                 }
                 case OpCode.Freeze: {

@@ -2,11 +2,10 @@ use std::borrow::Cow;
 
 use crate::{
     DiagnosticCode,
-    diagnostic::DiagnosticsCollector,
     parser::{AstWalker, TokenRef},
 };
 
-use super::{Emitter, OpCode, opcode::Register, variable::Variable};
+use super::{Emitter, OpCode, opcode::Register};
 
 pub(super) type ModuleExports<'s, 'c> = Option<ModuleExportsData<'s, 'c>>;
 
@@ -34,24 +33,33 @@ impl<'s, 'c> ModuleExportsData<'s, 'c> {
     }
 }
 
-pub(super) fn emit_pub<'s, 'c>(
-    diagnostics: &mut DiagnosticsCollector<'s, 'c>,
-    kw_pub: &Option<TokenRef<'s>>,
-    exports: &mut ModuleExports<'s, 'c>,
-    variable: &mut Variable<'s>,
-) {
-    if let Some(kw_pub) = kw_pub {
-        if let Some(exports) = exports {
-            let range = kw_pub.range();
-            let id = variable.name();
-            let a = variable.register();
-            variable.mark_exported(&exports.module_id);
-            exports.exports.push(Box::new(move |emitter| {
-                let id = emitter.add_const_string(id);
-                emitter.op_2(range, OpCode::Field, id, a);
-            }));
-        } else {
-            diagnostics.push(DiagnosticCode::UnexpectedPub, kw_pub.range());
-        }
+impl<'s, 'c> Emitter<'s, 'c> {
+    pub(super) fn declare_pub(
+        &mut self,
+        exports: &mut ModuleExports<'s, 'c>,
+        kw_pub: &Option<TokenRef<'s>>,
+        variable_name: &'s str,
+    ) {
+        let Some(kw_pub) = kw_pub else {
+            return;
+        };
+        let Some(exports) = exports else {
+            self.diagnostics
+                .push(DiagnosticCode::UnexpectedPub, kw_pub.range());
+            return;
+        };
+        let range = kw_pub.range();
+        let variable = self
+            .scopes
+            .find_local_variable(variable_name)
+            .unwrap_or_else(|| {
+                panic!("Variable '{variable_name}' not found in current scope when declaring pub");
+            });
+        let reg = variable.register();
+        variable.mark_exported(&exports.module_id);
+        exports.exports.push(Box::new(move |emitter| {
+            let id = emitter.add_const_string(variable_name);
+            emitter.op_2(range, OpCode::Field, id, reg);
+        }));
     }
 }

@@ -222,7 +222,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
             }
             Is(expression, _, pattern) => {
                 self.declare_expression(expression);
-                self.declare_pattern(pattern, Some(BindType::Init));
+                self.declare_pattern(pattern, Some(BindType::Init), &None, &mut None);
             }
             Block(_, _, _, _) => (),
             Loop(kw_loop, body) => {
@@ -352,7 +352,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
             return self.emit_expression_reg(inner, brk);
         }
         let reg = self.closures.add_reg();
-        self.emit_expression(expr, reg, brk, &mut None);
+        self.emit_expression(expr, reg, brk);
         reg
     }
 
@@ -512,7 +512,6 @@ impl<'s, 'c> Emitter<'s, 'c> {
         expr: &'s Expression<'s>,
         ret: Register,
         brk: Option<Register>,
-        exports: &mut ModuleExports<'s, 'c>,
     ) {
         match expr {
             Literal(token) => match &token.kind {
@@ -571,7 +570,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 }
             }
             Variable(token) => self.emit_var_read(token, ret),
-            Grouping(_, expression, _) => self.emit_expression(expression, ret, brk, &mut None),
+            Grouping(_, expression, _) => self.emit_expression(expression, ret, brk),
             Record(open, elements, close) => {
                 if **open == Operator::OpenBrace && **close == Operator::CloseBrace {
                     self.diagnostics.push(
@@ -868,7 +867,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
             Access(expression, _, id) => {
                 let r = id.range();
                 if !is_global_expression(expression) {
-                    self.emit_expression(expression, ret, brk, &mut None);
+                    self.emit_expression(expression, ret, brk);
                     match id.kind {
                         TokenKind::Identifier(id) => self.op_get(r, ret, ret, id),
                         TokenKind::Ordinal(ord) => self.op_get_index(r, ret, ret, ord),
@@ -887,7 +886,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
             Index(expression, open, index, close) => {
                 let r = open.range.start..close.range.end;
                 if !is_global_expression(expression) {
-                    self.emit_expression(expression, ret, brk, &mut None);
+                    self.emit_expression(expression, ret, brk);
                     let index_reg = self.emit_expression_reg(index, brk);
                     self.op_get_dyn(r, ret, ret, index_reg);
                 } else {
@@ -925,7 +924,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 );
             }
             NonNil(expression, kw) => {
-                self.emit_expression(expression, ret, brk, &mut None);
+                self.emit_expression(expression, ret, brk);
                 self.op_non_nil(kw.range(), ret);
             }
             Prefix(token, expression) => {
@@ -976,9 +975,9 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     } else {
                         self.closures.add_reg()
                     };
-                    self.emit_expression(left, ret, brk, &mut None);
+                    self.emit_expression(left, ret, brk);
                     self.op_if(op.range(), OpCode::If, ret);
-                    self.emit_expression(right, ret, brk, &mut None);
+                    self.emit_expression(right, ret, brk);
                     self.op_2(op.range(), OpCode::ToBoolean, ret, ret);
                     self.op_if_end(op.range());
                 } else if *kind == Operator::LogicalOr {
@@ -987,9 +986,9 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     } else {
                         self.closures.add_reg()
                     };
-                    self.emit_expression(left, ret, brk, &mut None);
+                    self.emit_expression(left, ret, brk);
                     self.op_if(op.range(), OpCode::IfNot, ret);
-                    self.emit_expression(right, ret, brk, &mut None);
+                    self.emit_expression(right, ret, brk);
                     self.op_2(op.range(), OpCode::ToBoolean, ret, ret);
                     self.op_if_end(op.range());
                 } else if *kind == Operator::NullCoalescing {
@@ -998,9 +997,9 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     } else {
                         self.closures.add_reg()
                     };
-                    self.emit_expression(left, ret, brk, &mut None);
+                    self.emit_expression(left, ret, brk);
                     self.op_if(op.range(), OpCode::IfNil, ret);
-                    self.emit_expression(right, ret, brk, &mut None);
+                    self.emit_expression(right, ret, brk);
                     self.op_if_end(op.range());
                 } else if *kind == Keyword::In && is_global_expression(right) {
                     let left_reg = self.emit_expression_reg(left, brk);
@@ -1026,19 +1025,12 @@ impl<'s, 'c> Emitter<'s, 'c> {
             }
             Is(expression, _, pattern) => {
                 let reg_exp = self.emit_expression_reg(expression, brk);
-                self.emit_pattern(
-                    ret,
-                    pattern,
-                    reg_exp,
-                    Some(BindType::Init),
-                    &None,
-                    &mut None,
-                );
+                self.emit_pattern(ret, pattern, reg_exp, Some(BindType::Init));
             }
             Block(_, stmts, ret_expr, _) => {
                 self.enter_scope(expr.range());
-                self.declare_block(stmts, ret_expr);
-                self.emit_block(stmts, ret_expr, expr.range(), ret, brk, exports);
+                self.declare_block(stmts, ret_expr, &mut None);
+                self.emit_block(stmts, ret_expr, expr.range(), ret, brk);
                 self.exit_scope();
             }
             Loop(kw, expression) => {
@@ -1050,14 +1042,13 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     // unreachable!("Expected block expression");
                     return;
                 };
-                self.declare_block(stmts, ret_expr);
+                self.declare_block(stmts, ret_expr, &mut None);
                 self.emit_block(
                     stmts,
                     ret_expr,
                     expression.range(),
                     Register::EMPTY,
                     Some(ret),
-                    &mut None,
                 );
                 self.op(
                     expression.range().end..expression.range().end,
@@ -1095,23 +1086,16 @@ impl<'s, 'c> Emitter<'s, 'c> {
 
                 let cond_reg = self.closures.add_reg();
                 self.declare_cond_expr(cond);
-                self.declare_block(stmts, expr);
+                self.declare_block(stmts, expr, &mut None);
 
                 let pos = self.chunk.code.len();
                 self.op(kw.range(), OpCode::Loop);
-                self.emit_expression(cond, cond_reg, Some(ret), &mut None);
+                self.emit_expression(cond, cond_reg, Some(ret));
                 self.op_if(cond.range(), OpCode::IfNot, cond_reg);
                 self.op(cond.range(), OpCode::Break);
                 self.op_if_end(cond.range());
 
-                self.emit_block(
-                    stmts,
-                    expr,
-                    body.range(),
-                    Register::EMPTY,
-                    Some(ret),
-                    &mut None,
-                );
+                self.emit_block(stmts, expr, body.range(), Register::EMPTY, Some(ret));
                 self.op(body.range().end..body.range().end, OpCode::LoopEnd);
 
                 let nreg: OpParam = self.closures.current().reg_len().into();
@@ -1127,7 +1111,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 if !ret.is_empty() {
                     self.op_if(kw.range(), OpCode::IfNotInit, ret);
                     if let Some(ElseBlock(_, else_expr)) = else_part {
-                        self.emit_expression(else_expr, ret, None, &mut None);
+                        self.emit_expression(else_expr, ret, None);
                     } else {
                         self.op_nil(kw.range(), ret);
                     }
@@ -1142,7 +1126,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 // 先进入 scope 再进入 closure
                 self.enter_leveled_scope(kw.range.end..body.range().end, self.closures.len() + 1);
 
-                self.declare_pattern(pattern, Some(BindType::Init));
+                self.declare_pattern(pattern, Some(BindType::Init), &None, &mut None);
                 match iterable.as_ref() {
                     Iterable::Value(value) => {
                         self.declare_expression(value);
@@ -1179,7 +1163,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 // 根据虚拟机定义，iterator 寄存器为闭包内第一个寄存器
                 // 进入 closure 后立即分配
                 let iterator = self.closures.add_reg();
-                self.declare_block(stmts, expr);
+                self.declare_block(stmts, expr, &mut None);
 
                 let ret = if !ret.is_empty() {
                     self.op_uninit(kw.range(), ret);
@@ -1192,22 +1176,8 @@ impl<'s, 'c> Emitter<'s, 'c> {
 
                 let pos = self.chunk.code.len();
                 self.op(kw.range(), loop_op);
-                self.emit_pattern(
-                    Register::EMPTY,
-                    pattern,
-                    iterator,
-                    Some(BindType::Init),
-                    &None,
-                    &mut None,
-                );
-                self.emit_block(
-                    stmts,
-                    expr,
-                    body.range(),
-                    Register::EMPTY,
-                    Some(ret),
-                    &mut None,
-                );
+                self.emit_pattern(Register::EMPTY, pattern, iterator, Some(BindType::Init));
+                self.emit_block(stmts, expr, body.range(), Register::EMPTY, Some(ret));
                 self.op(body.range().end..body.range().end, OpCode::LoopEnd);
                 let nreg: OpParam = self.closures.current().reg_len().into();
                 if nreg.is_wide() || loop_iterable_reg1.is_wide() || loop_iterable_reg2.is_wide() {
@@ -1237,7 +1207,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 if !ret.is_empty() {
                     self.op_if(kw.range(), OpCode::IfNotInit, ret);
                     if let Some(ElseBlock(_, else_expr)) = else_part {
-                        self.emit_expression(else_expr, ret, None, &mut None);
+                        self.emit_expression(else_expr, ret, None);
                     } else {
                         self.op_nil(kw.range(), ret);
                     }
@@ -1252,9 +1222,9 @@ impl<'s, 'c> Emitter<'s, 'c> {
 
                 let cond_reg = self.emit_expression_reg(cond, brk);
                 self.op_if(op_question.range(), OpCode::If, cond_reg);
-                self.emit_expression(then_expr, ret, brk, &mut None);
+                self.emit_expression(then_expr, ret, brk);
                 self.op_else(op_colon.range());
-                self.emit_expression(else_expr, ret, brk, &mut None);
+                self.emit_expression(else_expr, ret, brk);
                 self.op_if_end(expr.range().end..expr.range().end);
 
                 self.exit_scope();
@@ -1268,10 +1238,10 @@ impl<'s, 'c> Emitter<'s, 'c> {
 
                 let cond_reg = self.emit_expression_reg(cond, brk);
                 self.op_if(kw.range(), OpCode::If, cond_reg);
-                self.emit_expression(then_expr, ret, brk, &mut None);
+                self.emit_expression(then_expr, ret, brk);
                 if let Some(ElseBlock(kw_else, else_expr)) = else_part {
                     self.op_else(kw_else.range());
-                    self.emit_expression(else_expr, ret, brk, &mut None);
+                    self.emit_expression(else_expr, ret, brk);
                 } else if !ret.is_empty() {
                     self.op_else(kw.range());
                     self.op_nil(kw.range(), ret);
@@ -1300,30 +1270,22 @@ impl<'s, 'c> Emitter<'s, 'c> {
 
                     self.enter_scope(kw_case.range.end..end.range.end);
 
-                    self.declare_pattern(pattern, Some(BindType::Init));
+                    self.declare_pattern(pattern, Some(BindType::Init), &None, &mut None);
                     if let Some((_, expr)) = guard.as_ref() {
                         self.declare_expression(expr);
                     }
-                    self.declare_block(stmts, expr);
-
+                    self.declare_block(stmts, expr, &mut None);
                     self.op_if(kw_case.range(), OpCode::IfNot, matched);
                     {
-                        self.emit_pattern(
-                            matched,
-                            pattern,
-                            matcher,
-                            Some(BindType::Init),
-                            &None,
-                            &mut None,
-                        );
+                        self.emit_pattern(matched, pattern, matcher, Some(BindType::Init));
                         if let Some((kw_if, expr)) = guard.as_ref() {
                             self.op_if(kw_if.range(), OpCode::If, matched);
-                            self.emit_expression(expr, matched, brk, &mut None);
+                            self.emit_expression(expr, matched, brk);
                             self.op_if_end(body.range().start..body.range().start);
                         }
                         self.op_if(kw_case.range(), OpCode::If, matched);
                         {
-                            self.emit_block(stmts, expr, body.range(), ret, brk, &mut None);
+                            self.emit_block(stmts, expr, body.range(), ret, brk);
                         }
                         self.op_if_end(body.range().end..body.range().end);
                     }

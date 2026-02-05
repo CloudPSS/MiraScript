@@ -12,8 +12,9 @@ impl<'s> Scope<'s> {
             level,
         }
     }
-    pub fn declare_variable(&mut self, variable: Variable<'s>) {
+    pub fn declare_variable(&mut self, variable: Variable<'s>) -> &Variable<'s> {
         self.variables.push(variable);
+        self.variables.last().unwrap()
     }
 
     pub fn find_variable(&mut self, name: &str) -> Option<&mut Variable<'s>> {

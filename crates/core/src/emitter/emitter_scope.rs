@@ -142,18 +142,17 @@ impl<'s, 'c> Emitter<'s, 'c> {
         id_token: &Token<'s>,
         mutable: bool,
         bind_type: BindType,
-    ) -> bool {
+    ) -> Option<&Variable<'s>> {
         let id = id_token
             .to_id_name()
             .expect("Variable must have an identifier");
         if self.check_local_variable(id_token, id).is_some() {
-            return false;
+            return None;
         }
         let scope = self.scopes.current();
         let scope_level = scope.level;
         let register = self.closures.add_variable_reg(scope_level);
         let var = Variable::new(id, id_token.range(), mutable, bind_type, register);
-        scope.declare_variable(var);
-        true
+        Some(scope.declare_variable(var))
     }
 }

@@ -1,4 +1,14 @@
 mod test {
+  // Function will be hoisted
+  t_eq(add(2, 3), 5);
+  t_eq(test.add(10, 20), 30);
+
+  t_throws(fn { @C });
+  t_throws(fn { test.@C });
+
+  t_throws(fn { counter });
+  t_throws(fn { test.counter });
+
   pub let (a, b) = (12, 'xyz');
   pub const @C = 3.14;
   pub fn add(x, y) { x + y }
@@ -11,7 +21,17 @@ mod test {
     step = s;
   }
   pub mod inner { }
+
+  // Cannot write to module fields
+  t_throws(fn {
+    test.counter = 0;
+  });
 }
+
+// Cannot write to module fields
+t_throws(fn {
+  test.counter = 0;
+});
 
 t_eq(type(test), "module");
 t_eq(to_string(test), "<module test>");
