@@ -19,7 +19,7 @@ mod complex {
   /** 
    * Creates a complex number from polar coordinates.
    */
-  pub fn from_polar(r, theta) { (r * cos(theta), r * sin(theta)) }
+  pub fn from_polar(r, theta) { (r * global.cos(theta), r * global.sin(theta)) }
 
   /** 
    * Adds two complex numbers.

@@ -14,21 +14,25 @@ const GAMMA_P = [
 ];
 
 const SQRT_2_PI = sqrt(2 * Math.PI);
+const FACT_MAX = 171;
+const CACHE: Array<number | undefined> = [1, 1];
 
 export const factorial = VmLib(
     (x): number => {
         let n = expectNumber('x', x);
         if (isNaN(n) || n < 0) return NotNumber;
-        if (n >= 171) return PositiveInfinity; // will overflow
+        if (n >= FACT_MAX) return PositiveInfinity; // will overflow
 
         if (isInteger(n)) {
-            if (n === 0 || n === 1) return 1;
+            const cached = CACHE[n];
+            if (cached != null) return cached;
 
-            let r = 1;
+            let r = 1n;
             for (let i = 2; i <= n; i++) {
-                r *= i;
+                r *= BigInt(i);
+                CACHE[i] = Number(r);
             }
-            return r;
+            return CACHE[n]!;
         }
 
         if (n > 85) {

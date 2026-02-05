@@ -11,7 +11,7 @@ t_eq(factorial(nan), nan);
 t_eq(factorial(-inf), nan);
 
 t_true(169.999_999_999_999::factorial() =~ 7.257_415_615_270_898e+306);
-t_true(factorial(170) == 7.257_415_615_307_994e+306);
+t_true(factorial(170) == 7.257_415_615_307_999e+306);
 t_true(170.000_000_000_001::factorial() =~ 7.257_415_615_345_094e+306);
 
 t_eq(factorial(171), inf);
