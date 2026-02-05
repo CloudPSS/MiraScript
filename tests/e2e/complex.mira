@@ -10,10 +10,7 @@ mod complex {
       return (+x, +y);
     } else {
       match x {
-        case (
-          x,
-          y,
-        ) { (+x, +y) }
+        case (x, y) { (+x, +y) }
         case x { (+x, 0) }
       }
     }
