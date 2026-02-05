@@ -88,7 +88,7 @@ function $Call<T extends VmValue, A extends readonly VmValue[]>(func: T, args: A
 /** 过滤剩余参数数组 */
 function $VArgs(varags: VmAny[]): VmArray;
 /** 断言值已初始化 */
-function $AssertInit(value: VmAny): asserts value is VmValue;
+function $AssertInit<T extends VmValue>(value: T | undefined): asserts value is T;
 /** 检查值是否在可迭代对象中 */
 function $In(value: VmAny, iterable: VmAny): boolean;
 /** 获取值的长度 */
@@ -118,7 +118,7 @@ function $ToNumber(value: VmAny): number;
 /** 格式化值 */
 function $Format(value: VmAny, format: string | null): string;
 /** 构造 module */
-function $Module<const T extends Record<string, () => VmImmutable>>(
+function $Module<T extends Record<string, () => VmImmutable>>(
     name: string,
     body: T,
 ): VmModule<{ [K in keyof T]: ReturnType<T[K]> }>;
@@ -129,7 +129,7 @@ function $ElOpt(key: string, value: VmAny): VmConst;
 /** 构造函数和函数表达式 */
 function $Fn<T extends VmFunctionLike>(name: string | null | undefined, fn: T): VmFunction<T>;
 /** 读取闭包上值 */
-function $Upvalue(value: VmAny): VmValue;
+function $Upvalue<T extends VmValue>(value: T | undefined): T;
 /** 构造范围数组 */
 function $ArrayRange(start: VmAny, end: VmAny): VmArray;
 /** 构造范围数组（不包含结束值） */
@@ -197,4 +197,4 @@ function $IsRecord(value: VmAny): value is VmRecord;
 /** 判断值是否为数组 */
 function $IsArray(value: VmAny): value is VmArray;
 /** 断言值非 nil */
-function $AssertNonNil(value: VmAny): asserts value is NonNullable<VmValue>;
+function $AssertNonNil<T extends VmValue>(value: T | undefined): asserts value is NonNullable<T>;

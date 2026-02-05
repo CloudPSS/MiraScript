@@ -38,7 +38,7 @@ export function $IsArray(value: VmAny): value is VmArray {
     return isVmArray(value);
 }
 /** 断言值非 nil */
-export function $AssertNonNil(value: VmAny): asserts value is NonNullable<VmValue> {
+export function $AssertNonNil<T extends VmValue>(value: T | undefined): asserts value is NonNullable<T> {
     $AssertInit(value);
     if (value !== null) return;
     throw new VmError(`Expected non-nil value`, null);

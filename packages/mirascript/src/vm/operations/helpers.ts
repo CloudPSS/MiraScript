@@ -10,7 +10,7 @@ import { $AssertInit } from './common.js';
 import { $ToNumber } from './convert.js';
 
 /** 构造 module */
-export function $Module<const T extends Record<string, () => VmImmutable>>(
+export function $Module<T extends Record<string, () => VmImmutable>>(
     name: string,
     body: T,
 ): VmModule<{ [K in keyof T]: ReturnType<T[K]> }> {
@@ -42,7 +42,7 @@ export function $Fn<T extends VmFunctionLike>(name: string | null | undefined, f
 }
 
 /** 读取闭包上值 */
-export function $Upvalue(value: VmAny): VmValue {
+export function $Upvalue<T extends VmValue>(value: T | undefined): T {
     $AssertInit(value);
     return value;
 }
