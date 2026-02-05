@@ -108,6 +108,11 @@ export class HoverProvider extends Provider implements languages.HoverProvider {
                     };
                     break;
                 }
+                case DiagnosticCode.LocalModule:
+                    content = {
+                        value: codeblock(`\0mod ${model.getValueInRange(tag.range)}`),
+                    };
+                    break;
                 case DiagnosticCode.LocalImmutable:
                     content = {
                         value: codeblock(`\0let ${model.getValueInRange(tag.range)}`),

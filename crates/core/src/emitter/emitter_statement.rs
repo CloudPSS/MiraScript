@@ -1,5 +1,3 @@
-use std::vec;
-
 use crate::{
     diagnostic::DiagnosticCode,
     emitter::{emitter_scope::check_variable_initialized, opcode::OpParam},
@@ -7,13 +5,16 @@ use crate::{
     parser::{
         AstWalker, Expression, Pattern,
         Statement::{self, *},
-        TokenRef,
     },
 };
 
-use super::{Emitter, OpCode, opcode::Register, utils::is_global_expression, variable::BindType};
-
-pub(super) type ModuleExports<'s, 'c> = Option<Vec<Box<dyn FnOnce(&mut Emitter<'s, 'c>)>>>;
+use super::{
+    Emitter, OpCode,
+    emitter_pub::{ModuleExports, ModuleExportsData, emit_pub},
+    opcode::Register,
+    utils::is_global_expression,
+    variable::BindType,
+};
 
 impl<'s, 'c> Emitter<'s, 'c> {
     pub fn declare_statement(&mut self, stmt: &'s Statement<'s>) {
@@ -58,28 +59,6 @@ impl<'s, 'c> Emitter<'s, 'c> {
         }
     }
 
-    pub(super) fn emit_pub(
-        &mut self,
-        kw_pub: &Option<TokenRef<'s>>,
-        exports: &mut ModuleExports<'s, 'c>,
-        reg: Register,
-        id_const: OpParam,
-    ) {
-        if let Some(kw_pub) = kw_pub {
-            if let Some(exports) = exports {
-                let range = kw_pub.range();
-                let id = id_const;
-                let a = reg;
-                exports.push(Box::new(move |emitter| {
-                    emitter.op_2(range, OpCode::Field, id, a);
-                }));
-            } else {
-                self.diagnostics
-                    .push(DiagnosticCode::UnexpectedPub, kw_pub.range());
-            }
-        }
-    }
-
     pub fn emit_statement(
         &mut self,
         stmt: &'s Statement<'s>,
@@ -99,15 +78,10 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     return false;
                 };
                 let reg = self.closures.initialize_variable(variable);
-                let id_const = self.add_const_string(id);
-                self.emit_pub(kw_pub, exports, reg, id_const);
-                let mut mod_exports: ModuleExports<'s, 'c> = Some(vec![]);
+                emit_pub(&mut self.diagnostics, kw_pub, exports, variable);
+                let mut mod_exports = ModuleExportsData::new(id_token);
                 self.emit_expression(body, Register::EMPTY, brk, &mut mod_exports);
-                self.op_2(id_token.range(), OpCode::Module, reg, id_const);
-                for e in mod_exports.unwrap() {
-                    e(self);
-                }
-                self.op(id_token.range(), OpCode::Freeze);
+                mod_exports.unwrap().commit(self, id, reg);
                 false
             }
             Bind(kw_pub, _, pattern, _, expression, _) => {
@@ -136,8 +110,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 };
                 self.closures.initialize_variable(variable);
                 let reg = variable.register();
-                let id_const = self.add_const_string(id);
-                self.emit_pub(kw_pub, exports, reg, id_const);
+                emit_pub(&mut self.diagnostics, kw_pub, exports, variable);
                 self.emit_expression(expression, reg, brk, &mut None);
                 false
             }
@@ -301,8 +274,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 };
                 let func_var = self.scopes.find_local_variable(name).unwrap();
                 let func_reg = self.closures.initialize_variable(func_var);
-                let id_const = self.add_const_string(name);
-                self.emit_pub(kw_pub, exports, func_reg, id_const);
+                emit_pub(&mut self.diagnostics, kw_pub, exports, func_var);
                 self.emit_fn(
                     func_reg,
                     name_token.range(),

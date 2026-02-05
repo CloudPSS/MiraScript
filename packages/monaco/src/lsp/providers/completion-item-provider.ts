@@ -250,6 +250,7 @@ export class CompletionItemProvider extends Provider implements languages.Comple
         char: string | undefined,
         locals: readonly CustomCompletionItem[],
         range: languages.CompletionItemRanges,
+        hasGlobalPrefix: boolean,
     ): Promise<CustomCompletionItem[]> {
         const global = await this.getContext(model);
         const suggestions: CustomCompletionItem[] = [];
@@ -257,6 +258,29 @@ export class CompletionItemProvider extends Provider implements languages.Comple
         for (const key of new Set(global.keys())) {
             if (!global.has(key)) continue;
             const element = global.get(key);
+
+            let prefix = key;
+            const edits: editor.ISingleEditOperation[] = [];
+            if (!REG_IDENTIFIER_FULL.test(key)) {
+                const kStr = serialize(key);
+                if (hasGlobalPrefix) {
+                    prefix = `[${kStr}]`;
+                    // 删除多余的 . 前缀
+                    edits.push({
+                        range: {
+                            startLineNumber: range.replace.startLineNumber,
+                            startColumn: range.replace.startColumn - 1,
+                            endLineNumber: range.replace.endLineNumber,
+                            endColumn: range.replace.endColumn,
+                        },
+                        text: '',
+                    });
+                } else {
+                    prefix = `global[${serialize(key)}]`;
+                }
+            } else if (!hasGlobalPrefix && (localKeys.has(key) || isKeyword(key))) {
+                prefix = `global.${key}`;
+            }
 
             if (isVmModule(element)) {
                 for (const f of element.keys()) {
@@ -267,9 +291,10 @@ export class CompletionItemProvider extends Provider implements languages.Comple
                     if (field === undefined) continue;
 
                     suggestions.push({
-                        insertText: localKeys.has(key) || isKeyword(key) ? `global.${key}.${f}` : `${key}.${f}`,
+                        insertText: `${prefix}.${f}`,
                         filterText: filterText(f, char),
                         range,
+                        additionalTextEdits: edits,
                         vmParent: element,
                         ...completion(model, DESC_GLOBAL, `${key}.${f}`, field, undefined, true),
                     });
@@ -285,14 +310,10 @@ export class CompletionItemProvider extends Provider implements languages.Comple
                 continue;
             }
             suggestions.push({
-                insertText:
-                    localKeys.has(key) || isKeyword(key)
-                        ? `global.${key}` // 如果有同名局部变量，使用 global. 前缀
-                        : REG_IDENTIFIER_FULL.test(key)
-                          ? key
-                          : `global[${serialize(key)}]`,
+                insertText: prefix,
                 filterText: filterText(key, char),
                 range,
+                additionalTextEdits: edits,
                 vmParent: global,
                 ...completion(model, DESC_GLOBAL, key, element, undefined, false),
             });
@@ -320,12 +341,18 @@ export class CompletionItemProvider extends Provider implements languages.Comple
                 if (locals.has(name)) continue; // 子作用域可能会覆盖父作用域的变量
 
                 locals.add(name);
-                suggestions.push({
+                const suggestion = {
                     insertText: name,
                     filterText: filterText(name, char),
                     range,
                     ...completion(model, DESC_LOCAL, name, undefined, fn, false),
-                });
+                };
+                if (definition.code === DiagnosticCode.LocalModule) {
+                    suggestion.kind = languages.CompletionItemKind.Module;
+                } else if (definition.code === DiagnosticCode.LocalFunction) {
+                    suggestion.kind = languages.CompletionItemKind.Function;
+                }
+                suggestions.push(suggestion);
             }
             if (!scope.parent) break;
             scope = scope.parent;
@@ -404,7 +431,13 @@ export class CompletionItemProvider extends Provider implements languages.Comple
                     model,
                     undefined,
                     [],
-                    undefined as unknown as languages.CompletionItemRanges,
+                    this.toCompletionItemRanges(position, {
+                        startLineNumber: position.lineNumber,
+                        startColumn: position.column,
+                        endLineNumber: position.lineNumber,
+                        endColumn: position.column,
+                    }),
+                    true,
                 );
                 return { suggestions: globals };
             }
@@ -473,7 +506,7 @@ export class CompletionItemProvider extends Provider implements languages.Comple
 
         const suggestions = COMMON_GLOBAL_SUGGESTIONS(completionRange, prev === '::');
         const locals = await this.completeLocal(model, position, char, completionRange);
-        const globals = await this.completeGlobal(model, char, locals, completionRange);
+        const globals = await this.completeGlobal(model, char, locals, completionRange, false);
         suggestions.push(...locals, ...globals);
 
         return { suggestions };

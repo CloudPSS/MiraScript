@@ -306,7 +306,10 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                     /(\0\(parameter(?: pattern)?\))(@whitespace+)(\.\.|)(@identifier)/,
                     ['entity.name.label', '', 'delimiter', 'variable.other.constant.emphasis'],
                 ],
-                [/(@whitespace*|\0)(\(module\))(@whitespace*)(@identifier)/, ['', 'entity.name.label', '', 'type']],
+                [
+                    /(@whitespace*|\0)(\(global\))(@whitespace*)(@identifier)(@whitespace*)(=)/,
+                    ['', 'entity.name.label', '', 'variable', '', 'operator'],
+                ],
                 [/(\0\([^)]+\))(@whitespace+)/, ['entity.name.label', '']],
                 { include: '@doc_mode' },
             ],

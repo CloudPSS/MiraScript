@@ -80,6 +80,10 @@ export class DocumentSemanticTokensProvider extends Provider implements language
                     tokenType = TokenType.FUNCTION;
                     break;
                 }
+                case DiagnosticCode.LocalModule: {
+                    tokenType = TokenType.MODULE;
+                    break;
+                }
                 case DiagnosticCode.ParameterMutable:
                 case DiagnosticCode.ParameterSubPatternMutable:
                 case DiagnosticCode.ParameterMutableRest: {
@@ -134,6 +138,9 @@ export class DocumentSemanticTokensProvider extends Provider implements language
                 });
             }
             for (const ref of references) {
+                if (ref.code === DiagnosticCode.ExportedLocal) {
+                    continue; // 导出位置的类型为模块，与原始定义位置不同
+                }
                 data.push({
                     row: ref.range.startLineNumber - 1,
                     col: ref.range.startColumn - 1,

@@ -120,7 +120,7 @@ impl<'s> Variable<'s> {
     }
 
     #[inline]
-    pub fn mark_read(&mut self, #[allow(unused)] token: &Token<'_>) {
+    pub fn mark_read(&mut self, token: &Token<'_>) {
         self.reference.push(SourceDiagnostic::new(
             token.range(),
             DiagnosticCode::ReadLocal,
@@ -128,7 +128,7 @@ impl<'s> Variable<'s> {
     }
 
     #[inline]
-    pub fn mark_write(&mut self, #[allow(unused)] token: &Token<'_>) {
+    pub fn mark_write(&mut self, token: &Token<'_>) {
         self.reference.push(SourceDiagnostic::new(
             token.range(),
             DiagnosticCode::WriteLocal,
@@ -136,7 +136,7 @@ impl<'s> Variable<'s> {
     }
 
     #[inline]
-    pub fn mark_read_write(&mut self, #[allow(unused)] token: &Token<'_>) {
+    pub fn mark_read_write(&mut self, token: &Token<'_>) {
         self.reference.push(SourceDiagnostic::new(
             token.range(),
             DiagnosticCode::ReadWriteLocal,
@@ -144,10 +144,18 @@ impl<'s> Variable<'s> {
     }
 
     #[inline]
-    pub fn mark_redeclare(&mut self, #[allow(unused)] token: &Token<'_>) {
+    pub fn mark_redeclare(&mut self, token: &Token<'_>) {
         self.reference.push(SourceDiagnostic::new(
             token.range(),
             DiagnosticCode::RedeclareLocal,
+        ));
+    }
+
+    #[inline]
+    pub fn mark_exported(&mut self, module_id_token: &Token<'_>) {
+        self.reference.push(SourceDiagnostic::new(
+            module_id_token.range(),
+            DiagnosticCode::ExportedLocal,
         ));
     }
 
@@ -183,7 +191,10 @@ impl<'s> Variable<'s> {
         let mut used = false;
         diagnostics.push(hint, self.declaration.clone());
         for reference in self.reference.iter() {
-            if **reference == DiagnosticCode::ReadLocal {
+            if matches!(
+                **reference,
+                DiagnosticCode::ReadLocal | DiagnosticCode::ExportedLocal
+            ) {
                 used = true;
             }
         }

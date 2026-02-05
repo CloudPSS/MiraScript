@@ -17,9 +17,6 @@ interface SourceDefinitionBase<R extends DiagnosticCode = DiagnosticCode> {
     /** 符号引用 */
     readonly references: ReadonlyArray<SourceDiagnostic<R> | SourceReference<R>>;
 }
-/** 局部函数类型 */
-export type LocalFunctionType = (typeof LocalFunctionType)[number];
-export const LocalFunctionType = [DiagnosticCode.LocalFunction] as const;
 
 /** 局部变量类型 */
 export type LocalVariableType = (typeof LocalVariableType)[number];
@@ -27,6 +24,8 @@ export const LocalVariableType = [
     DiagnosticCode.LocalMutable,
     DiagnosticCode.LocalImmutable,
     DiagnosticCode.LocalConst,
+    DiagnosticCode.LocalFunction,
+    DiagnosticCode.LocalModule,
 ] as const;
 /** 显式参数类型 */
 export type ParameterExplicitType = (typeof ParameterExplicitType)[number];
@@ -64,11 +63,15 @@ export const ParameterPlaceholderType = [
 ] as const;
 /** 局部定义类型 */
 export type LocalDefinitionType = (typeof LocalDefinitionType)[number];
-export const LocalDefinitionType = [...LocalVariableType, ...LocalFunctionType, ...ParameterDefinitionType] as const;
+export const LocalDefinitionType = [...LocalVariableType, ...ParameterDefinitionType] as const;
 
 /** 源代码定义信息 */
 export interface LocalDefinition<T extends LocalDefinitionType = LocalDefinitionType> extends SourceDefinitionBase<
-    DiagnosticCode.ReadLocal | DiagnosticCode.WriteLocal | DiagnosticCode.ReadWriteLocal | DiagnosticCode.RedeclareLocal
+    | DiagnosticCode.ReadLocal
+    | DiagnosticCode.WriteLocal
+    | DiagnosticCode.ReadWriteLocal
+    | DiagnosticCode.RedeclareLocal
+    | DiagnosticCode.ExportedLocal
 > {
     /** 符号定义 */
     readonly definition: SourceDiagnostic<T>;

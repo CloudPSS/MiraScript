@@ -318,10 +318,16 @@ pub enum DiagnosticCode {
     TagRefStart = 11000,
 
     // mark local accesses
+    // read
     ReadLocal,
+    // compound read-write
     ReadWriteLocal,
+    // write
     WriteLocal,
+    // redeclare local declarations, will also report as error
     RedeclareLocal,
+    // export by `pub` keyword, mark on the module identifier
+    ExportedLocal,
 
     // mark function calls
     Callable,

@@ -2,6 +2,7 @@ use std::ops::Deref;
 
 use crate::{
     diagnostic::DiagnosticCode,
+    emitter::emitter_pub::emit_pub,
     lexer::{Keyword, Operator, TokenKind},
     parser::{
         ArrayElementBase, AstWalker,
@@ -13,8 +14,8 @@ use crate::{
 use super::{
     Emitter, OpCode,
     constant::Constant,
+    emitter_pub::ModuleExports,
     emitter_scope::check_variable_initialized,
-    emitter_statement::ModuleExports,
     opcode::{OpParam, Register},
     variable::BindType,
 };
@@ -413,10 +414,9 @@ impl<'s, 'c> Emitter<'s, 'c> {
                         );
                         variable.put_decl_ref(&mut self.diagnostics);
                     } else if level == self.closures.len() {
+                        emit_pub(&mut self.diagnostics, kw_pub, exports, variable);
                         let register = variable.register();
                         self.op_unary(pattern.range(), register, OpCode::Assign, value);
-                        let id_const = self.add_const_string(id);
-                        self.emit_pub(kw_pub, exports, register, id_const);
                     } else {
                         let register = variable.register();
                         let level = self.closures.len() - level;

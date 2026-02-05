@@ -11,6 +11,7 @@ mod emitter_closure;
 mod emitter_codes;
 mod emitter_expression;
 mod emitter_pattern;
+mod emitter_pub;
 mod emitter_scope;
 mod emitter_statement;
 mod emitter_struct;

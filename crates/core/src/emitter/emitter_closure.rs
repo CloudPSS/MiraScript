@@ -9,7 +9,7 @@ use crate::{
 use super::{
     Emitter, OpCode,
     closure::Closure,
-    emitter_statement::ModuleExports,
+    emitter_pub::ModuleExports,
     opcode::{OpParam, OpParamTrait, Register},
     variable::BindType,
 };

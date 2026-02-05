@@ -406,7 +406,7 @@ export function valueDoc(
             }
             script = script.trimEnd();
         } else {
-            script = `(module) ${value.name}`;
+            script = `mod ${value.name}`;
             if (value.name !== name) {
                 script = `${prefix}${script}`;
             }

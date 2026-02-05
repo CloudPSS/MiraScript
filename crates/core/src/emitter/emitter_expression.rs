@@ -14,7 +14,7 @@ use crate::{
 
 use super::{
     Emitter, OpCode,
-    emitter_statement::ModuleExports,
+    emitter_pub::ModuleExports,
     opcode::{OpParam, OpParamTrait, Register},
     variable::BindType,
 };
