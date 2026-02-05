@@ -1,0 +1,90 @@
+mod complex {
+  pub let I = (0, 1);
+
+  pub fn from(x, y) {
+    if y is not nil {
+      return (+x, +y);
+    } else {
+      match x {
+        case (
+          x,
+          y,
+        ) { (+x, +y) }
+        case x { (+x, 0) }
+      }
+    }
+  }
+
+  pub fn from_polar(r, theta) { (r * cos(theta), r * sin(theta)) }
+
+  pub fn add(x, y) {
+    let (a1, b1) = from(x);
+    let (a2, b2) = from(y);
+    (a1 + a2, b1 + b2)
+  }
+
+  pub fn subtract(x, y) {
+    let (a1, b1) = from(x);
+    let (a2, b2) = from(y);
+    (a1 - a2, b1 - b2)
+  }
+
+  pub fn multiply(x, y) {
+    let (a1, b1) = from(x);
+    let (a2, b2) = from(y);
+    (a1 * a2 - b1 * b2, a1 * b2 + a2 * b1)
+  }
+
+  pub fn divide(x, y) {
+    let (a1, b1) = from(x);
+    let (a2, b2) = from(y);
+    let denom = a2 * a2 + b2 * b2;
+    ((a1 * a2 + b1 * b2) / denom, (b1 * a2 - a1 * b2) / denom)
+  }
+
+  pub fn re(z) {
+    let (a, _) = from(z);
+    a
+  }
+
+  pub fn im(z) {
+    let (_, b) = from(z);
+    b
+  }
+
+  pub fn arg(z) {
+    let (a, b) = from(z);
+    atan2(b, a)
+  }
+
+  pub fn abs(z) {
+    let (a, b) = from(z);
+    hypot(a, b)
+  }
+
+  pub fn conj(z) {
+    let (a, b) = from(z);
+    (a, -b)
+  }
+}
+
+t_eq(complex.add(1, 2), (3, 0));
+t_eq(complex.add(1, complex.I), (1, 1));
+t_eq(complex.add((1, 2), (3, 4)), (4, 6));
+t_eq(complex.subtract((5, 6), (2, 3)), (3, 3));
+t_eq(complex.multiply((1, 2), (3, 4)), (-5, 10));
+t_eq(complex.divide((7, 10), (3, 4)), (61 / 25, 2 / 25));
+t_eq(complex.re((3, 4)), 3);
+t_eq(complex.im((3, 4)), 4);
+t_eq(complex.arg((0, 1)), PI / 2);
+t_eq(complex.abs((3, 4)), 5);
+t_eq(complex.conj((3, 4)), (3, -4));
+t_eq(complex.from(5), (5, 0));
+t_eq(complex.from((3, 4)), (3, 4));
+t_eq(complex.from(3, 4), (3, 4));
+
+{
+  let (x, y) = complex.from_polar(5, PI / 2);
+  t_true(x =~ 0);
+  t_true(y =~ 5);
+}
