@@ -141,19 +141,19 @@ world`; // 无需使用 `\n` 转义换行符
 使用 `?:` 省略值为 `nil` 的键。
 
 ```mira
-let simple_record = (key1: "value1", key2: 2, key3: true); // 简单键名必须为合法的标识符
-let ordinal_record = (0: 1, 1: 2, 2: 3);                   // 或序数
-let unnamed_record = ("value1", 2, true);                  // 未命名键被自动命名为 `0`、`1`、`2`
-let spread_record = (key1: "new", ..simple_record, key3: false);
+let simple_record = (key1: "value1", key2: 2, key3: true);   // 简单键名必须为合法的标识符
+let ordinal_record = (0: 1, 1: 2, 2: 3);                     // 或序数
+let unnamed_record = ("value1", 2, true);                    // 未命名键被自动命名为 `0`、`1`、`2`
 // 按照顺序覆盖，`spread_record` 的值为 `(key1: "value1", key2: 2, key3: false)`
-let empty_record = ();                                    // 空记录
-let single_record = (key1: "value1");                     // 单个键值对的记录
-let special_name_record = ("name\n": "value1");           // 键名不是有效标识符
-let single_unnamed_record = ("value1", );                 // 为了避免歧义，必须使用逗号
+let spread_record = (key1: "new", ..simple_record, key3: false);
+let empty_record = ();                                      // 空记录
+let single_record = (key1: "value1");                       // 单个键值对的记录
+let special_name_record = ("name\n": "value1");             // 键名不是有效标识符
+let single_unnamed_record = ("value1", );                   // 为了避免歧义，必须使用逗号
 let interpolated_name_record = (`${ 1 + 2 }`: "value1");    // 键名为插值字符串的值，即 `3`
-let omit_name_record = (:simple_record);                  // 键名推断为 `simple_record`
-let invalid_mix = (..simple_record, "new");               // 错误，为避免歧义，未命名的键值对不能与其他构造混用
-let skip_nil = (nil?: nil, no_nil?: "no_nil");            // 使用 `?:` 省略值为 `nil` 的键，值为 `(no_nil: "no_nil")`
+let omit_name_record = (:simple_record);                    // 键名推断为 `simple_record`
+let invalid_mix = (..simple_record, "new");                 // 错误，为避免歧义，未命名的键值对不能与其他构造混用
+let skip_nil = (nil?: nil, no_nil?: "no_nil");              // 使用 `?:` 省略值为 `nil` 的键，值为 `(no_nil: "no_nil")`
 ```
 
 使用 `.`、`[]` 操作符访问记录的属性：

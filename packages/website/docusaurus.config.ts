@@ -58,6 +58,9 @@ export default {
                     beforeDefaultRemarkPlugins: [],
                     beforeDefaultRehypePlugins: [],
                 },
+                theme: {
+                    customCss: './src/css/index.css',
+                },
             } satisfies import('@docusaurus/preset-classic').Options,
         ],
     ],

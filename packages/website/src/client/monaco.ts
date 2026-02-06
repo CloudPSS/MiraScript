@@ -1,6 +1,5 @@
 import ExecutionEnvironment from '@docusaurus/ExecutionEnvironment';
-import { useEffect, useMemo, useState } from 'react';
-import { useColorMode } from '@docusaurus/theme-common';
+import { useEffect, useState } from 'react';
 import { loader } from '@monaco-editor/react';
 
 const monacoModule = ExecutionEnvironment.canUseDOM
@@ -8,6 +7,7 @@ const monacoModule = ExecutionEnvironment.canUseDOM
           const monaco = await import('@private/monaco-editor');
           const { registerMiraScript } = await import('@mirascript/monaco');
           const loader = registerMiraScript(monaco);
+          loader.features.codeLens = false;
           await loader.loadBasicFeatures();
           monaco.editor.createModel('', 'mirascript').dispose();
           monaco.editor.createModel('', 'mirascript-template').dispose();
@@ -19,13 +19,9 @@ loader.config({ monaco: monacoModule as never });
 /** 使用 Monaco 编辑器 */
 export function useMonaco(): typeof import('@private/monaco-editor') | null {
     const [monaco, setMonaco] = useState<typeof import('@private/monaco-editor') | null>(null);
-    const { colorMode } = useColorMode();
     useEffect(() => {
         void monacoModule?.then(setMonaco);
     }, []);
-    useMemo(() => {
-        monaco?.editor.setTheme(colorMode === 'dark' ? 'vs-dark' : 'vs');
-    }, [monaco, colorMode]);
 
     return monaco;
 }

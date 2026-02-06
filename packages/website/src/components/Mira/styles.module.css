@@ -1,3 +1,26 @@
-.pre {
+.host {
+  display: block;
+  position: relative;
+}
+
+.editor-holder {
   user-select: auto;
+  position: absolute;
+  inset: var(--ifm-pre-border-radius) 0;
+  user-select: none;
+}
+
+.editor :global(.monaco-editor) {
+  --vscode-editor-background: var(--ifm-pre-background);
+  --vscode-editorGutter-background: var(--ifm-pre-background);
+}
+
+.pre {
+  user-select: text;
+}
+
+@media print {
+  .editor-holder {
+    display: none;
+  }
 }
