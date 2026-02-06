@@ -25,6 +25,7 @@ export function globals(consoleManager: ConsoleManager): VmContext {
                 s: DefaultVmContext.get('sin') as VmFunction,
                 inner: new VmModule('inner', {
                     s: DefaultVmContext.get('sin') as VmFunction,
+                    empty: new VmModule('empty', {}),
                 }),
             }),
             debug_print: VmFunction(

@@ -396,14 +396,22 @@ export function valueDoc(
         let script;
         if (type === 'declare') {
             const exports = value.keys();
-            script = `mod ${value.name};\n\n`;
-            for (const k of exports) {
-                const v = value.get(k);
-                const vDoc = valueDoc(k, v, isVmModule(v) ? 'field' : 'declare', value);
-                const code = [...docComment(vDoc.doc), 'pub ' + vDoc.script, '', ''];
-                script += code.join('\n');
+            if (!exports.length) {
+                script = `mod ${value.name} { }`;
+            } else {
+                script = `mod ${value.name} {\n`;
+                for (const k of exports) {
+                    const v = value.get(k);
+                    const vDoc = valueDoc(k, v, 'declare', value);
+                    const code = [...docComment(vDoc.doc), 'pub ' + vDoc.script];
+                    const lines = code.flatMap((line) => line.split('\n'));
+                    for (const line of lines) {
+                        script += line ? '  ' + line + '\n' : '\n';
+                    }
+                    script += '\n';
+                }
+                script = script.trimEnd() + '\n}';
             }
-            script = script.trimEnd();
         } else {
             script = `mod ${value.name}`;
             if (value.name !== name) {
