@@ -36,52 +36,87 @@ export {
     Provider,
 };
 
+/** 支持的功能 */
+export type LspFeatures = {
+    codeAction: CodeActionProvider;
+    codeLens: CodeLensProvider;
+    color: ColorProvider;
+    completionItem: CompletionItemProvider;
+    definitionReference: DefinitionReferenceProvider;
+    documentHighlight: DocumentHighlightProvider;
+    documentSymbol: DocumentSymbolProvider;
+    formatter: FormatterProvider;
+    hover: HoverProvider;
+    inlayHints: InlayHintsProvider;
+    range: RangeProvider;
+    rename: RenameProvider;
+    documentSemanticTokens: DocumentSemanticTokensProvider;
+    signatureHelp: SignatureHelpProvider;
+};
+
+/** 配置启用功能 */
+export type LspFeaturesConfig = { [K in keyof LspFeatures]?: boolean | undefined };
+
 /** 注册 LSP 相关的编辑器功能 */
-export async function registerLSP(contextProvider: VmContextProvider | undefined): Promise<IDisposable[]> {
+export async function registerLSP(
+    contextProvider: VmContextProvider | undefined,
+    features: LspFeaturesConfig = {},
+): Promise<IDisposable[]> {
     Provider.setContextProvider(contextProvider);
     const { loadModule } = await import('@mirascript/bindings/wasm');
     await loadModule();
+    const disposables: IDisposable[] = [];
+    const registerIfEnabled = <T extends keyof LspFeatures>(
+        feature: T,
+        provider: new (enabled: () => boolean) => LspFeatures[T],
+        register: (language: languages.LanguageSelector, provider: LspFeatures[T]) => IDisposable | IDisposable[],
+    ): void => {
+        const providerInstance = new provider(() => features[feature] !== false);
+        const d = register(['mirascript', 'mirascript-template'], providerInstance);
+        if (Array.isArray(d)) disposables.push(...d);
+        else disposables.push(d);
+    };
 
-    const codeActionProvider = new CodeActionProvider();
-    const codeLensProvider = new CodeLensProvider();
-    const colorProvider = new ColorProvider();
-    const completionItemProvider = new CompletionItemProvider();
-    const definitionReferenceProvider = new DefinitionReferenceProvider();
-    const documentHighlightProvider = new DocumentHighlightProvider();
-    const documentSymbolProvider = new DocumentSymbolProvider();
-    const formatterProvider = new FormatterProvider();
-    const hoverProvider = new HoverProvider();
-    const inlayHintsProvider = new InlayHintsProvider();
-    const rangeProvider = new RangeProvider();
-    const renameProvider = new RenameProvider();
-    const documentSemanticTokensProvider = new DocumentSemanticTokensProvider();
-    const signatureHelpProvider = new SignatureHelpProvider();
+    registerIfEnabled('codeAction', CodeActionProvider, languages.registerCodeActionProvider);
+    registerIfEnabled('codeLens', CodeLensProvider, languages.registerCodeLensProvider);
+    registerIfEnabled('color', ColorProvider, languages.registerColorProvider);
 
-    const language: languages.LanguageSelector = ['mirascript', 'mirascript-template'];
-    return [
-        languages.registerCodeActionProvider(language, codeActionProvider),
-        languages.registerCodeLensProvider(language, codeLensProvider),
-        languages.registerColorProvider(language, colorProvider),
+    registerIfEnabled('definitionReference', DefinitionReferenceProvider, (language, provider) => {
+        return [
+            languages.registerDefinitionProvider(language, provider),
+            languages.registerReferenceProvider(language, provider),
+        ];
+    });
 
-        languages.registerDefinitionProvider(language, definitionReferenceProvider),
-        languages.registerReferenceProvider(language, definitionReferenceProvider),
+    registerIfEnabled('documentHighlight', DocumentHighlightProvider, languages.registerDocumentHighlightProvider);
+    registerIfEnabled('documentSymbol', DocumentSymbolProvider, languages.registerDocumentSymbolProvider);
 
-        languages.registerDocumentHighlightProvider(language, documentHighlightProvider),
-        languages.registerDocumentSymbolProvider(language, documentSymbolProvider),
+    registerIfEnabled('formatter', FormatterProvider, (language, provider) => {
+        return [
+            languages.registerDocumentFormattingEditProvider(language, provider),
+            // languages.registerDocumentRangeFormattingEditProvider(language, provider),
+            // languages.registerOnTypeFormattingEditProvider(language, provider),
+        ];
+    });
 
-        languages.registerDocumentFormattingEditProvider(language, formatterProvider),
-        // languages.registerDocumentRangeFormattingEditProvider(language, formatterProvider),
-        // languages.registerOnTypeFormattingEditProvider(language, formatterProvider),
+    registerIfEnabled('hover', HoverProvider, languages.registerHoverProvider);
+    registerIfEnabled('inlayHints', InlayHintsProvider, languages.registerInlayHintsProvider);
 
-        languages.registerHoverProvider(language, hoverProvider),
-        languages.registerInlayHintsProvider(language, inlayHintsProvider),
+    registerIfEnabled('range', RangeProvider, (language, provider) => {
+        return [
+            languages.registerFoldingRangeProvider(language, provider),
+            languages.registerSelectionRangeProvider(language, provider),
+        ];
+    });
 
-        languages.registerFoldingRangeProvider(language, rangeProvider),
-        languages.registerSelectionRangeProvider(language, rangeProvider),
+    registerIfEnabled(
+        'documentSemanticTokens',
+        DocumentSemanticTokensProvider,
+        languages.registerDocumentSemanticTokensProvider,
+    );
+    registerIfEnabled('rename', RenameProvider, languages.registerRenameProvider);
+    registerIfEnabled('completionItem', CompletionItemProvider, languages.registerCompletionItemProvider);
+    registerIfEnabled('signatureHelp', SignatureHelpProvider, languages.registerSignatureHelpProvider);
 
-        languages.registerDocumentSemanticTokensProvider(language, documentSemanticTokensProvider),
-        languages.registerRenameProvider(language, renameProvider),
-        languages.registerCompletionItemProvider(language, completionItemProvider),
-        languages.registerSignatureHelpProvider(language, signatureHelpProvider),
-    ];
+    return disposables;
 }

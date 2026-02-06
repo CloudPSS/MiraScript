@@ -17,27 +17,26 @@ export class DefinitionReferenceProvider
     extends Provider
     implements languages.DefinitionProvider, languages.ReferenceProvider
 {
-    constructor(
-        private readonly globalModel = editor.createModel(
-            ``,
-            'mirascript-doc',
-            Uri.parse('mirascript:///lib/global.mira'),
-        ),
-    ) {
-        super();
+    private _globalModel?: editor.ITextModel;
+    /** 全局模型 */
+    protected get globalModel(): editor.ITextModel {
+        if (!this._globalModel || this._globalModel.isDisposed()) {
+            this._globalModel = editor.createModel(``, 'mirascript-doc', Uri.parse('mirascript:///lib/global.mira'));
+        }
+        return this._globalModel;
     }
     /** 准备要显示的定义 */
     private async prepareGlobal(
         model: editor.ITextModel,
         path: readonly string[],
     ): Promise<{ uri: Uri; range: IRange } | undefined> {
-        const { globalModel } = this;
         const globals = await this.getContext(model);
         const [name, ...access] = path;
         const [parent, value] = getDeep(globals, name!, access);
         if (value === undefined) return undefined;
         const { script, doc } = valueDoc(path.at(-1)!, value, 'declare', parent);
         const code = ['', ...docComment(doc), script, ''];
+        const { globalModel } = this;
         globalModel.setValue(code.join('\n'));
         return {
             uri: globalModel.uri,

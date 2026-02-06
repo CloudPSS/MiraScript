@@ -1,6 +1,7 @@
 import type { VmContext } from '@mirascript/mirascript';
 import { type editor, languages, registerMonacoApi, type IDisposable, type MonacoApi } from './monaco-api.js';
 import { registerContribution } from './contribute.js';
+import type { LspFeaturesConfig } from './lsp/index.js';
 
 /** 提供全局变量信息 */
 export type VmContextProvider = (model: editor.ITextModel) => languages.ProviderResult<VmContext>;
@@ -19,6 +20,7 @@ export class MiraScriptMonacoLoader implements IDisposable {
         languages.onLanguageEncountered('mirascript-template', _loadBasicFeatures);
         languages.onLanguage('mirascript-template', _loadFullFeatures);
     }
+    features: LspFeaturesConfig = {};
     private _basicFeaturesLoaded = false;
     private _lspFeaturesLoaded = false;
     /** 加载基础功能 */
@@ -41,7 +43,7 @@ export class MiraScriptMonacoLoader implements IDisposable {
             await basic; // 确保基础功能已加载
             if (this._lspFeaturesLoaded || this.disposed) return;
             this._lspFeaturesLoaded = true;
-            this.disposables.push(...(await registerLSP(this.contextProvider)));
+            this.disposables.push(...(await registerLSP(this.contextProvider, this.features)));
         } catch (error) {
             // eslint-disable-next-line no-console
             console.error('Failed to load MiraScript LSP features:', error);

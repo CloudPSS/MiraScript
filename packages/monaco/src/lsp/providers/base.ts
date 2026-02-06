@@ -90,6 +90,11 @@ let cachedContext: readonly [editor.ITextModel, Promise<MonacoContext>] | null =
 
 /** 提供编辑器 LSP 支持 */
 export abstract class Provider {
+    constructor(private readonly enabled: () => boolean = () => true) {}
+    /** 是否启用 */
+    get isEnabled(): boolean {
+        return this.enabled();
+    }
     /** 设置全局变量提供者 */
     static setContextProvider(provider: VmContextProvider | undefined): void {
         contextProvider = provider;
@@ -104,6 +109,7 @@ export abstract class Provider {
     }
     /** 获取编译结果 */
     async getCompileResult(model: editor.ITextModel): Promise<CompileResult | undefined> {
+        if (!this.isEnabled) return undefined;
         return Provider.getCompileResult(model);
     }
     /** 获取执行上下文（全局变量） */
