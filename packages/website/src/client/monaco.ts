@@ -11,6 +11,21 @@ const monacoModule = ExecutionEnvironment.canUseDOM
           await loader.loadBasicFeatures();
           monaco.editor.createModel('', 'mirascript').dispose();
           monaco.editor.createModel('', 'mirascript-template').dispose();
+          monaco.languages.registerCodeLensProvider(['mirascript', 'mirascript-template'], {
+              provideCodeLenses(model, token) {
+                  const { uri } = model;
+                  const title = uri.scheme === 'title' ? uri.fragment : '';
+                  return {
+                      lenses: [
+                          {
+                              range: { startLineNumber: 1, startColumn: 1, endLineNumber: 1, endColumn: 1 },
+                              id: 'title',
+                              command: { id: '', title: title, arguments: [model.uri] },
+                          },
+                      ],
+                  };
+              },
+          });
           return monaco;
       })
     : null;

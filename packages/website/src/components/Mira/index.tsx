@@ -24,12 +24,13 @@ function useHighlighting(value: string, language: string) {
 }
 
 /** MiraScript 编辑器 */
-export default function Mira({ value, mode }: { value: string; mode: InputMode }): JSX.Element {
+export default function Mira({ value, mode, title }: { value: string; mode: InputMode; title: string }): JSX.Element {
     const highlighted = useHighlighting(value, mode === 'Template' ? 'mirascript-template' : 'mirascript');
     const { colorMode } = useColorMode();
     const { ref, inView } = useInView({ triggerOnce: true });
     const editor = inView ? (
         <Editor
+            path={title ? `title:///#${encodeURIComponent(title)}` : undefined}
             className={styles['editor']}
             value={value}
             theme={colorMode === 'dark' ? 'vs-dark' : 'vs'}

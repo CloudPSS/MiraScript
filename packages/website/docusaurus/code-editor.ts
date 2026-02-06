@@ -16,6 +16,7 @@ export default function remarkCodeEditor() {
             node.data = {
                 hName: 'mira',
                 hProperties: {
+                    title: codeNode.meta || '',
                     value: codeNode.value,
                     mode: codeNode.lang === 'miratpl' ? 'Template' : 'Script',
                 },

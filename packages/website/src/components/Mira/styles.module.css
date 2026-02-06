@@ -6,13 +6,15 @@
 .editor-holder {
   user-select: auto;
   position: absolute;
-  inset: var(--ifm-pre-border-radius) 0;
+  inset: calc(var(--ifm-pre-border-radius) - 1.5px) 0;
   user-select: none;
+  border-radius: var(--ifm-pre-border-radius);
+  background: var(--ifm-pre-background);
 }
 
 .editor :global(.monaco-editor) {
-  --vscode-editor-background: var(--ifm-pre-background);
-  --vscode-editorGutter-background: var(--ifm-pre-background);
+  --vscode-editor-background: transparent;
+  --vscode-editorGutter-background: transparent;
 }
 
 .pre {
