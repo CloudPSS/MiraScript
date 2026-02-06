@@ -393,11 +393,10 @@ export function valueDoc(
         prefix = `${name}: `;
     }
     if (isVmModule(value)) {
-        const doc = `模块 \`${value.name}\``;
         let script;
         if (type === 'declare') {
             const exports = value.keys();
-            script = '\n';
+            script = `mod ${value.name};\n\n`;
             for (const k of exports) {
                 const v = value.get(k);
                 const vDoc = valueDoc(k, v, isVmModule(v) ? 'field' : 'declare', value);
@@ -411,7 +410,7 @@ export function valueDoc(
                 script = `${prefix}${script}`;
             }
         }
-        return { script, doc: doc ? [doc] : [] };
+        return { script, doc: [`模块 \`${value.name}\``] };
     }
     let valueStr = UNKNOWN_REPR;
     if (value !== undefined) {
