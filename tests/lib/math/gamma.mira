@@ -24,3 +24,25 @@ t_eq(factorial(inf), inf);
 t_throws(fn { factorial(nil) });
 t_throws(fn { factorial() });
 t_throws(fn { factorial('x') });
+
+t_eq(gamma(-0), -inf);
+t_eq(gamma(0), inf);
+t_eq(gamma(1), 1);
+t_eq(gamma(true), 1);
+t_eq(gamma(2), 1);
+
+t_eq(gamma(145.3), factorial(144.3));
+t_eq(gamma(5.5), factorial(4.5));
+
+t_eq(gamma(-1), nan);
+t_eq(gamma(nan), nan);
+t_eq(gamma(-inf), nan);
+t_eq(gamma(171), 7.257_415_615_307_999e+306);
+t_eq(gamma(172), inf);
+t_eq(gamma(inf), inf);
+
+t_true(gamma(-1.4) =~ 2.659_271_872_880_030_4);
+
+t_throws(fn { gamma(nil) });
+t_throws(fn { gamma() });
+t_throws(fn { gamma('x') });
