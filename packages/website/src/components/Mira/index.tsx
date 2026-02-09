@@ -1,13 +1,12 @@
 import type { JSX } from 'react';
-import { useInView } from 'react-intersection-observer';
 import type { InputMode } from '@mirascript/mirascript';
 import styles from './styles.module.css';
 import { Editor } from '../../client/monaco';
 
 /** MiraScript 编辑器 */
 export default function Mira({ value, mode, title }: { value: string; mode: InputMode; title: string }): JSX.Element {
-    const { ref, inView } = useInView({ triggerOnce: true });
-    const editor = inView ? (
+    const lineCount = value.split('\n').length;
+    const editor = (
         <Editor
             path={title ? `title:///#${encodeURIComponent(title)}` : undefined}
             className={styles['editor']}
@@ -22,15 +21,13 @@ export default function Mira({ value, mode, title }: { value: string; mode: Inpu
                 fontFamily: 'var(--ifm-font-family-monospace)',
                 readOnly: true,
                 lineDecorationsWidth: 0,
-                lineNumbersMinChars: 3,
+                lineNumbersMinChars: Math.floor(Math.log10(lineCount)) + 3,
             }}
         />
-    ) : null;
+    );
     return (
         <div className={styles['host']}>
-            <div className={styles['editor-holder']} ref={ref}>
-                {editor}
-            </div>
+            <div className={styles['editor-holder']}>{editor}</div>
             <pre className={styles['pre']}>
                 <code>{value}</code>
             </pre>

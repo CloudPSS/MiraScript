@@ -23,6 +23,11 @@ export default {
             onBrokenMarkdownImages: 'throw',
             onBrokenMarkdownLinks: 'throw',
         },
+        remarkRehypeOptions: {
+            handlers: {
+                ...extendedTableHandlers,
+            },
+        },
     },
     plugins: [
         () => ({
