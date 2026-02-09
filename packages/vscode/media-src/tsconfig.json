@@ -4,7 +4,8 @@
 
   "compilerOptions": {
     "allowJs": true,
-    "noEmit": true
+    "noEmit": true,
+    "rootDir": "./"
   },
   "include": ["."]
 }

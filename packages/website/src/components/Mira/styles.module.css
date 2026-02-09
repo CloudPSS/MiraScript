@@ -1,4 +1,7 @@
 .host {
+  --ifm-pre-color: #9cdcfe;
+  --ifm-pre-background: #1e1e1e;
+
   display: block;
   position: relative;
 }

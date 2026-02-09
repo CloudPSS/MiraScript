@@ -1,5 +1,6 @@
 import type { Config } from '@docusaurus/types';
 import remarkIns from 'remark-ins';
+import { themes as prismThemes } from 'prism-react-renderer';
 import remarkJoinCjkLines from 'remark-join-cjk-lines';
 import { remarkExtendedTable, extendedTableHandlers } from 'remark-extended-table';
 import rehypeCodeEditor from './docusaurus/code-editor';
@@ -64,4 +65,11 @@ export default {
             } satisfies import('@docusaurus/preset-classic').Options,
         ],
     ],
+    themeConfig: {
+        prism: {
+            additionalLanguages: ['powershell', 'ini'],
+            theme: prismThemes.vsDark,
+            // darkTheme: prismThemes.vsDark,
+        },
+    },
 } satisfies Config;
