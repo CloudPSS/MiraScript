@@ -127,7 +127,7 @@ let result = 4::square()::add_one()::halve();
 debug_print("计算结果:", result);
 ```
 
-## 实际应用：文本词频统计
+### 文本词频统计
 
 ```mira
 let text = "the quick brown fox jumps over the lazy dog the fox";

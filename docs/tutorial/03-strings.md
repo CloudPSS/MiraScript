@@ -111,13 +111,6 @@ debug_print(@"Hello, $name! Path: C:\Users"@);
 
 ## 常用字符串函数
 
-### 获取长度
-
-```mira
-let text = "Hello";
-debug_print("长度:", len(text));  // 5
-```
-
 ### 查找与判断
 
 ```mira
@@ -159,6 +152,10 @@ let word = "Hi!";
 let characters = chars(word);
 debug_print("字符数组:", characters);  // ["H", "i", "!"]
 ```
+
+:::tip
+使用 `len(chars(str))` 获取字符串长度，确保正确处理多字节字符。
+:::
 
 ## 类型转换
 

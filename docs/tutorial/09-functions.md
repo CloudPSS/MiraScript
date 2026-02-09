@@ -170,10 +170,10 @@ debug_print(greet("小红"));            // greeting 为 nil，使用默认值
 ```mira
 fn create_counter(start) {
   let mut count = start;
-  fn {
+  return fn () {
     count += 1;
     count
-  }
+  };
 }
 
 let counter = create_counter(0);
@@ -193,7 +193,7 @@ debug_print(counter()); // 4，不受影响
 
 ```mira
 fn create_multiplier(factor) {
-  fn { it * factor }
+  return fn { it * factor };
 }
 
 let times3 = create_multiplier(3);

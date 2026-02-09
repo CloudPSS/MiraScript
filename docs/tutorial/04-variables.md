@@ -100,7 +100,7 @@ debug_print("外层:", value);   // 10，不受内层影响
 
 ## 查看类型
 
-使用 `type()` 函数可以查看任何值的类型：
+使用 `type()` 关键字可以查看任何值的类型：
 
 ```mira
 debug_print(type(42));          // "number"
@@ -130,13 +130,9 @@ debug_print(to_string(true));         // "true"
 debug_print(to_number("abc", 0));     // 0
 ```
 
-:::warning
-MiraScript 在大多数情况下不会自动转换类型。例如 `"3" + 4` 不会自动将字符串转为数字，而是会报错。需要显式使用 `to_number()` 或 `to_string()` 进行转换。
-:::
-
 ## 小结
 
 - `let` 声明不可变绑定，`let mut` 声明可变绑定
 - `const @NAME` 声明常量，以 `@` 开头
 - `{ }` 创建块作用域，内部变量对外不可见
-- `type()` 查看类型，`to_number()`、`to_string()` 进行类型转换
+- `type()` 查看类型，`to_number()`、`to_string()` 进行显式类型转换

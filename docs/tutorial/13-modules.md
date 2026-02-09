@@ -84,7 +84,7 @@ mod app {
 
   pub mod cache {
     pub let mut size = 0;
-    pub fn add() { size += 1 }
+    pub fn add() { size += 1; }
   }
 }
 

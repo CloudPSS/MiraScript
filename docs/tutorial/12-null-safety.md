@@ -15,7 +15,7 @@ debug_print(record.age);    // nil，属性不存在
 
 fn find_even(arr) {
   for n in arr {
-    if n % 2 == 0 { return n }
+    if n % 2 == 0 { return n; }
   }
 }
 debug_print(find_even([1, 3, 5])); // nil，没找到偶数
@@ -122,7 +122,7 @@ debug_print(display);
 fn process(input) {
   match type(input) {
     case "number" { "数字 $input 的平方是 $(input^2)" }
-    case "string" { "字符串 '$input' 的长度是 ${ len(input) }" }
+    case "string" { "字符串 '$input' 的长度是 ${ len(input::chars()) }" }
     case "array" { "数组有 ${ len(input) } 个元素" }
     case "nil" { "空值" }
     case t { "不支持的类型: $t" }

@@ -228,8 +228,8 @@ let [x, y, z] = [10, 20, 30];
 debug_print("x=$x, y=$y, z=$z");
 
 // 记录解构
-let (name: n, age: a) = (name: "小明", age: 20);
-debug_print("$n，$a 岁");
+let (name: name, age: age) = (name: "小明", age: 20);
+debug_print("$name，$age 岁");
 
 // 交换变量
 let mut a = 1;

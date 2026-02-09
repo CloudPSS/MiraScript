@@ -36,12 +36,12 @@ debug_print("1 + 2 =", 1 + 2);
 
 ## 语句与分号
 
-MiraScript 中的语句以分号 `;` 结尾。当一行代码独占一行时，分号可以省略。一个程序可以包含多条语句：
+MiraScript 中的语句以分号 `;` 结尾。一个程序可以包含多条语句：
 
 ```mira
-debug_print("第一行")
-debug_print("第二行")
-debug_print("计算结果:", 10 * 2 + 3)
+debug_print("第一行");
+debug_print("第二行");
+debug_print("计算结果:", 10 * 2 + 3);
 ```
 
 ## 注释
@@ -55,7 +55,7 @@ debug_print("计算结果:", 10 * 2 + 3)
    可以跨越多行
    适合书写较长的说明 */
 
-debug_print("注释不影响代码执行") // 行尾也可以写注释
+debug_print("注释不影响代码执行"); // 行尾也可以写注释
 ```
 
 ## 基本数据类型概览
@@ -78,7 +78,7 @@ debug_print(false);
 debug_print(nil);
 ```
 
-使用 `type()` 函数可以查看一个值的类型：
+使用 `type()` 关键字可以查看一个值的类型：
 
 ```mira
 debug_print(type(42));        // "number"
