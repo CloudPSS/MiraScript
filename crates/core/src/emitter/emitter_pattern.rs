@@ -16,7 +16,7 @@ use super::{
     emitter_pub::ModuleExports,
     emitter_scope::check_variable_initialized,
     opcode::{OpParam, Register},
-    variable::{self, BindType},
+    variable::BindType,
 };
 
 impl<'s, 'c> Emitter<'s, 'c> {

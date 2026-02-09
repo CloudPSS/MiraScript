@@ -1,18 +1,15 @@
-import { DiagnosticCode, getDiagnosticMessage } from '@mirascript/mirascript/subtle';
+import { DiagnosticCode, getDiagnosticMessage, formatDiagnosticMessage } from '@mirascript/mirascript/subtle';
 import { type editor, MarkerSeverity, MarkerTag, Uri, type IRange } from '../monaco-api.js';
 import { Provider } from './providers/base.js';
 import type { CompileResult, SourceDiagnostic } from './compile-result.js';
 import { isDeprecatedGlobal } from './utils.js';
 
-const formatMessage = (model: editor.ITextModel, template: string, $0?: string | IRange): string => {
-    if (template.includes(`$0`)) {
-        const replacement = typeof $0 == 'string' ? $0 : $0 ? model.getValueInRange($0) : '';
-        // Replace each '$' in the captured text with '$$$$' so that after replaceAll processes
-        // the string and interprets '$' as a special placeholder, we still end up with literal
-        // '$$' in the final message. The quadruple dollar signs here are intentional.
-        template = template.replaceAll(`$0`, replacement.replaceAll('$', '$$$$'));
-    }
-    return template;
+const formatMessage = (model: editor.ITextModel, code: DiagnosticCode, $0?: string | IRange): string => {
+    return formatDiagnosticMessage(code, () => {
+        if (!$0) return undefined;
+        if (typeof $0 == 'string') return $0;
+        return model.getValueInRange($0);
+    });
 };
 
 const makeMarkerData = (
@@ -28,8 +25,7 @@ const makeMarkerData = (
         if (typeof code != 'number') {
             message = '';
         } else {
-            const template = getDiagnosticMessage(code);
-            message = template ? formatMessage(model, template, range) : 'Unknown diagnostic';
+            message = formatMessage(model, code, range);
         }
     }
     const marker: editor.IMarkerData = {
@@ -131,9 +127,7 @@ export async function makeModelMarkers(
         for (const g of globals) {
             const { name } = g;
             if (!context.has(name)) {
-                const template = getDiagnosticMessage(DiagnosticCode.GlobalVariableNotDeclared);
-                if (!template) continue;
-                const message = formatMessage(model, template, name);
+                const message = formatMessage(model, DiagnosticCode.GlobalVariableNotDeclared, name);
                 for (const ref of g.references) {
                     markers.push(
                         makeMarkerData(
@@ -151,9 +145,7 @@ export async function makeModelMarkers(
             if (deprecated) {
                 const replacement = deprecated.use;
                 if (replacement) {
-                    const template = getDiagnosticMessage(deprecated.message);
-                    if (!template) continue;
-                    const message = formatMessage(model, template, replacement);
+                    const message = formatMessage(model, deprecated.message, replacement);
                     for (const ref of g.references) {
                         markers.push(
                             makeMarkerData(model, ref.range, deprecated.message, message, MarkerSeverity.Hint, [

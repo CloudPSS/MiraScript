@@ -1,4 +1,6 @@
-# MiraScript
+---
+title: 设计文档
+---
 
 ## 工具链
 
@@ -28,10 +30,6 @@ MiraScript 支持以下数据类型：
 除了 `function`、`module` 和 `extern` 外，MiraScript 的所有类型均为值类型。这意味着在进行比较时，MiraScript 会比较数据类型的值，而不是它们的引用。
 
 除了 `extern` 类型，MiraScript 的所有类型都是不可变的。不可变性意味着一旦创建，数据的值就不能被修改。注意 `module` 类型可以包含 `extern` 类型的值，因此其深层次的值可能是可变的。
-
-## 抽象操作
-
-TODO:
 
 ## MiraScript 语言
 
@@ -1044,13 +1042,3 @@ debug_print(counter.value); // 输出 1
 #### 空语句
 
 空语句用于占位，语法为 `;`。
-
-## 字节码
-
-TODO:
-
-## 标准库
-
-MiraScript 的标准库包含了一些常用的函数和模块，方便用户在编写脚本时使用。
-
-TODO:

@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "prepare": "husky || echo Failed to initialize husky",
-    "format:mira": "pnpm -C packages/cli run mirascript format --write '../../**/*.mira'",
+    "format:mira": "pnpm run mirascript format --write '../../**/*.mira'",
     "format": "prettier --cache --cache-strategy content --write .",
     "lint": "eslint --cache --cache-location node_modules/.cache/eslint/ --cache-strategy content"
   },
@@ -20,6 +20,7 @@
     "@cloudpss/lint-staged-config": "^3.0.36",
     "@cloudpss/prettier-config": "^3.0.36",
     "@cloudpss/tsconfig": "^3.0.36",
+    "@mirascript/cli": "workspace:*",
     "better-typescript-lib": "^2.12.0",
     "esbuild": "^0.27.3",
     "husky": "^9.1.7",

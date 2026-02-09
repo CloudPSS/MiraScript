@@ -12,154 +12,152 @@ pub enum DiagnosticCode {
     // Error 1000~1999
     ErrorStart = 1000,
 
-    #[strum(message = "Unknown internal error occurred")]
+    #[strum(message = "发生未知内部错误")]
     InternalError,
-    #[strum(message = "Unknown lexer error occurred")]
+    #[strum(message = "发生未知词法错误")]
     LexerError,
-    #[strum(message = "Unknown parser error occurred")]
+    #[strum(message = "发生未知解析错误")]
     ParserError,
-    #[strum(message = "Unknown emitter error occurred")]
+    #[strum(message = "发生未知生成错误")]
     EmitterError,
-    #[strum(message = "Unknown optimizer error occurred")]
+    #[strum(message = "发生未知优化错误")]
     OptimizerError,
-    #[strum(message = "This feature is not implemented yet")]
+    #[strum(message = "该功能尚未实现")]
     Unimplemented,
 
-    #[strum(message = "Unknown token encountered")]
+    #[strum(message = "遇到未知的记号")]
     UnknownToken,
-    #[strum(message = "Unexpected token found")]
+    #[strum(message = "发现意外的记号")]
     UnexpectedToken,
-    #[strum(message = "`$0` is a reserved keyword and cannot be used as an identifier")]
+    #[strum(message = "`$0` 是保留关键字，不能用作标识符")]
     InvalidReservedKeyword,
-    #[strum(message = "`$0` is a keyword and cannot be used as an identifier")]
+    #[strum(message = "`$0` 是关键字，不能用作标识符")]
     InvalidKeyword,
-    #[strum(message = "A number literal cannot start or end with an underscore")]
+    #[strum(message = "数字字面量不能以下划线开头或结尾")]
     InvalidNumberLiteralUnderscore,
-    #[strum(message = "Invalid number literal")]
+    #[strum(message = "无效的数字字面量")]
     InvalidNumberLiteral,
-    #[strum(message = "Number literal is too large")]
+    #[strum(message = "数字字面量过大")]
     OverflowNumberLiteral,
-    #[strum(message = "Integer literal is too large")]
+    #[strum(message = "整数字面量过大")]
     OverflowIntegerLiteral,
-    #[strum(
-        message = "Invalid ordinal literal; consider remove leading zeros and underscores, or use `[$0]` instead"
-    )]
+    #[strum(message = "无效的序数字面量；请移除前导零和下划线，或改用 `[$0]`")]
     InvalidOrdinalLiteral,
-    #[strum(message = "String literal is not terminated")]
+    #[strum(message = "字符串字面量未终止")]
     UnterminatedString,
-    #[strum(message = "Invalid escape sequence in string")]
+    #[strum(message = "字符串中的转义序列无效")]
     InvalidEscapeSequence,
-    #[strum(message = "The value of hex escape sequence is not a valid ASCII character")]
+    #[strum(message = "十六进制转义序列的值不是有效的 ASCII 字符")]
     InvalidHexEscapeSequence,
-    #[strum(message = "The value of Unicode escape sequence is not a valid Unicode code point")]
+    #[strum(message = "Unicode 转义序列的值不是有效的 Unicode 码点")]
     InvalidUnicodeEscapeSequence,
-    #[strum(message = "An expression is expected after `..`")]
+    #[strum(message = "在 `..` 之后需要表达式")]
     BadArraySpread,
-    #[strum(message = "Interpolation expression is not terminated")]
+    #[strum(message = "插值表达式未终止")]
     UnterminatedInterpolation,
-    #[strum(message = "Invalid interpolation expression")]
+    #[strum(message = "无效的插值表达式")]
     BadInterpolation,
-    #[strum(message = "Empty interpolation expression")]
+    #[strum(message = "插值表达式为空")]
     EmptyInterpolation,
-    #[strum(message = "Unexpected `_`; it is a reserved keyword for discarding values")]
+    #[strum(message = "意外的 `_`；它是用于丢弃值的保留关键字")]
     UnexpectedUnderscore,
-    #[strum(message = "Unexpected `global`; it is a reserved keyword for global variables")]
+    #[strum(message = "意外的 `global`；它是用于全局变量的保留关键字")]
     UnexpectedGlobal,
-    #[strum(message = "Missing `,` in the list")]
+    #[strum(message = "列表中缺少 `,`")]
     MissingComma,
-    #[strum(message = "Missing `]` to close the bracket")]
+    #[strum(message = "缺少 `]` 以关闭中括号")]
     MissingCloseBracket,
-    #[strum(message = "Missing `{` to open the brace")]
+    #[strum(message = "缺少 `{` 以打开花括号")]
     MissingOpenBrace,
-    #[strum(message = "Missing `}` to close the brace")]
+    #[strum(message = "缺少 `}` 以关闭花括号")]
     MissingCloseBrace,
-    #[strum(message = "Missing `)` to close the parenthesis")]
+    #[strum(message = "缺少 `)` 以关闭括号")]
     MissingCloseParen,
-    #[strum(message = "Missing `;` at the end of the statement")]
+    #[strum(message = "语句末尾缺少 `;`")]
     MissingSemicolon,
-    #[strum(message = "Missing `:` in the conditional expression")]
+    #[strum(message = "条件表达式中缺少 `:`")]
     MissingColon,
-    #[strum(message = "Operator `=` is expected in a bind statement or const statement")]
+    #[strum(message = "在 bind 或 const 语句中需要 `=` 运算符")]
     MissingBindOperator,
-    #[strum(message = "Constant name must start with '@'")]
+    #[strum(message = "常量名必须以 `@` 开头")]
     InvalidConstantName,
-    #[strum(message = "Missing function name in the declaration")]
+    #[strum(message = "声明中缺少函数名")]
     MissingFunctionName,
-    #[strum(message = "Missing module name in the declaration")]
+    #[strum(message = "声明中缺少模块名")]
     MissingModuleName,
-    #[strum(message = "Extension call must be ended with parameter list; add `(` here")]
+    #[strum(message = "扩展调用必须以参数列表结尾；请在此处添加 `(`")]
     MissingOpenParenAfterExtension,
-    #[strum(message = "`type` is a function-like keyword; add `(` here")]
+    #[strum(message = "`type` 是类函数关键字；请在此处添加 `(`")]
     MissingOpenParenAfterType,
-    #[strum(message = "`type` call must have exactly one argument")]
+    #[strum(message = "`type` 调用必须恰好有一个参数")]
     InvalidTypeCall,
-    #[strum(message = "Unexpected record literal; a grouping expression is expected")]
+    #[strum(message = "意外的记录字面量；此处需要分组表达式")]
     RecordLiteralInExtensionCaller,
-    #[strum(message = "Missing `case` in the statement")]
+    #[strum(message = "语句中缺少 `case`")]
     MissingCase,
-    #[strum(message = "Unknown expression encountered")]
+    #[strum(message = "遇到未知的表达式")]
     UnknownExpression,
-    #[strum(message = "Unmatched `}` found")]
+    #[strum(message = "发现未匹配的 `}`")]
     UnmatchedCloseBrace,
-    #[strum(message = "Unmatched `]` found")]
+    #[strum(message = "发现未匹配的 `]`")]
     UnmatchedCloseBracket,
-    #[strum(message = "Unmatched `)` found")]
+    #[strum(message = "发现未匹配的 `)`")]
     UnmatchedCloseParen,
-    #[strum(message = "Unknown pattern encountered")]
+    #[strum(message = "遇到未知的模式")]
     UnknownPattern,
-    #[strum(message = "Only constants or literal values are allowed here")]
+    #[strum(message = "此处只允许常量或字面量")]
     InvalidConstantLiteral,
-    #[strum(message = "Unknown statement encountered")]
+    #[strum(message = "遇到未知的语句")]
     UnknownStatement,
-    #[strum(message = "An expression is expected here")]
+    #[strum(message = "此处需要表达式")]
     ExpressionExpected,
-    #[strum(message = "A pattern is expected here")]
+    #[strum(message = "此处需要模式")]
     PatternExpected,
-    #[strum(message = "Operator `!` is not allowed in a literal pattern")]
+    #[strum(message = "字面量模式中不允许 `!` 运算符")]
     ExclamationInLiteralPattern,
-    #[strum(message = "`mut` is not allowed during rebinding")]
+    #[strum(message = "重绑定时不允许使用 `mut`")]
     MutInRebindPattern,
-    #[strum(message = "variable whose name starts with `@` is not allowed to be rebound")]
+    #[strum(message = "名称以 `@` 开头的变量不允许被重绑定")]
     ConstantInBindPattern,
-    #[strum(message = "Cannot use `mut` in a discard pattern")]
+    #[strum(message = "弃元模式中不能使用 `mut`")]
     MutInDiscardPattern,
-    #[strum(message = "Discard pattern should be omitted in a spread pattern")]
+    #[strum(message = "展开模式中应省略丢弃弃元")]
     DiscardInSpreadPattern,
-    #[strum(message = "Spread discard in record pattern is not allowed")]
+    #[strum(message = "记录模式中不允许展开弃元")]
     SpreadDiscardInRecordPattern,
-    #[strum(message = "Spread in record pattern should be the last field")]
+    #[strum(message = "记录模式中的展开模式应为最后一个字段")]
     MispositionedSpreadInRecordPattern,
-    #[strum(message = "Interpolated names are not allowed in record patterns")]
+    #[strum(message = "记录模式中不允许插值名称")]
     InterpolatedNameRecordPattern,
-    #[strum(message = "A bind pattern is required when omitting a record field name")]
+    #[strum(message = "省略记录字段名时需要绑定模式")]
     BadOmitKeyRecordPattern,
-    #[strum(message = "Range pattern in array pattern should be parenthesized")]
+    #[strum(message = "数组模式中的范围模式应加括号")]
     AmbiguousRangePattern,
-    #[strum(message = "Spread pattern can only be used once in an array pattern")]
+    #[strum(message = "数组模式中展开模式只能使用一次")]
     DuplicateSpreadPattern,
-    #[strum(message = "Rest parameter should be the last parameter in a function declaration")]
+    #[strum(message = "函数声明中剩余参数应为最后一个参数")]
     MispositionedRestParameter,
-    #[strum(message = "Cannot assign to an undeclared variable")]
+    #[strum(message = "不能对未声明的变量赋值")]
     UndefinedVariableAssignment,
-    #[strum(message = "Cannot assign to an immutable variable...")]
+    #[strum(message = "不能对不可变变量赋值...")]
     ImmutableVariableAssignment,
-    #[strum(message = "Cannot access a variable before it is...")]
+    #[strum(message = "变量无法在此之前访问...")]
     UninitializedVariable,
-    #[strum(message = "The variable is already...")]
+    #[strum(message = "该变量已...")]
     DuplicateVariableDeclaration,
-    #[strum(message = "Unexpected `break` outside of a loop")]
+    #[strum(message = "在循环之外出现意外的 `break`")]
     UnexpectedBreak,
-    #[strum(message = "Unexpected `continue` outside of a loop")]
+    #[strum(message = "在循环之外出现意外的 `continue`")]
     UnexpectedContinue,
     #[strum(
-        message = "`global` keyword can only be used as `global.<name>`, `global[<name>]`, or on the right-hand side of the `in` operator"
+        message = "`global` 关键字只能用作 `global.<name>`、`global[<name>]` 或 `in` 运算符右侧"
     )]
     MisuseOfGlobalKeyword,
-    #[strum(message = "Cannot infer key from the expression")]
+    #[strum(message = "无法从表达式推断键名")]
     BadOmitKeyRecordExpression,
-    #[strum(message = "Can only assign to a variable or a field access")]
+    #[strum(message = "只能对变量或字段访问赋值")]
     UnassignableExpression,
-    #[strum(message = "Unexpected `pub` outside of a module declaration")]
+    #[strum(message = "在模块声明之外出现意外的 `pub`")]
     UnexpectedPub,
 
     ErrorEnd = 1999,
@@ -168,33 +166,29 @@ pub enum DiagnosticCode {
 
     // The null value in MiraScript is represented by `nil`,
     // Emit a warning when a global variable is read as `null` `undefined` or similar.
-    #[strum(
-        message = "Either use `global.$0` explicitly or `nil` if you want to use the nil value"
-    )]
+    #[strum(message = "`$0` 不是空值；显式使用全局变量 `global.$0` 或空值 `nil`")]
     MisleadingNilVariable,
-    #[strum(
-        message = "This pattern in a irrefutable matching is unnecessary; consider removing it or using in an `is` expression instead"
-    )]
+    #[strum(message = "不可失败匹配中的该模式是多余的；请考虑移除它或改为在 `is` 表达式中使用")]
     UnnecessaryIrrefutablePattern,
-    #[strum(message = "This `match` expression has no cases; it will never match any value")]
+    #[strum(message = "该 `match` 表达式没有分支；它永远不会匹配任何值")]
     MatchExpressionHasNoCases,
 
     // Static type checking warnings
-    #[strum(message = "Non-number literal cannot be used in range")]
+    #[strum(message = "范围中不能使用非数字字面量")]
     NonNumberInRange,
-    #[strum(message = "Non-number-or-string literal cannot be used in comparison expression")]
+    #[strum(message = "比较表达式中不能使用非数字或字符串字面量")]
     NonNumberOrStringInComparison,
-    #[strum(message = "Non-number literal cannot be used in arithmetic expression")]
+    #[strum(message = "算术表达式中不能使用非数字字面量")]
     NonNumberInArithmetic,
-    #[strum(message = "Non-boolean literal cannot be used in logical expression")]
+    #[strum(message = "逻辑表达式中不能使用非布尔字面量")]
     NonBooleanInLogical,
-    #[strum(message = "Literal cannot be called as a function")]
+    #[strum(message = "字面量不能作为函数调用")]
     LiteralNotCallable,
-    #[strum(message = "Literal cannot be accessed as a record or array")]
+    #[strum(message = "字面量不能作为记录或数组访问")]
     LiteralNotIndexable,
 
     // For analyzer
-    #[strum(message = "Global variable `$0` is not declared")]
+    #[strum(message = "全局变量 `$0` 未声明")]
     GlobalVariableNotDeclared,
 
     WarningEnd = 2999,
@@ -205,45 +199,45 @@ pub enum DiagnosticCode {
     // Hint 4000~4999
     HintStart = 4000,
 
-    #[strum(message = "Local variable is unused; consider removing it or use `_` to ignore it")]
+    #[strum(message = "局部变量未使用；请考虑删除它或使用 `_` 忽略")]
     UnusedLocalVariable,
-    #[strum(message = "Local function is unused; consider removing it")]
+    #[strum(message = "局部函数未使用；请考虑删除它")]
     UnusedLocalFunction,
 
     // Code style
-    #[strum(message = "Prefer `&&` over `and` for logical operations")]
+    #[strum(message = "逻辑运算中更推荐使用 `&&` 而非 `and`")]
     PreferLogicalOperatorAnd,
-    #[strum(message = "Prefer `||` over `or` for logical operations")]
+    #[strum(message = "逻辑运算中更推荐使用 `||` 而非 `or`")]
     PreferLogicalOperatorOr,
-    #[strum(message = "Prefer `!` over `not` for logical operations")]
+    #[strum(message = "逻辑运算中更推荐使用 `!` 而非 `not`")]
     PreferLogicalOperatorNot,
-    #[strum(message = "Prefer `()` over `{}` for record literal declaration")]
+    #[strum(message = "记录字面量声明中更推荐使用 `()` 而非 `{}`")]
     PreferParenthesesForRecordLiteral,
-    #[strum(message = "Prefer if expression over conditional expression")]
+    #[strum(message = "更推荐使用 if 表达式而非条件表达式")]
     PreferIfExpression,
 
-    #[strum(message = "Unnecessary parentheses; consider removing them")]
+    #[strum(message = "考虑移除多余的括号")]
     UnnecessaryParentheses,
 
     // For analyzer
-    #[strum(message = "Prefer uppercase for constant $0")]
+    #[strum(message = "常量 $0 建议使用大写")]
     PreferUppercaseConstant,
 
     HintEnd = 4999,
     // Reference 5000~5999
     ReferenceStart = 5000,
 
-    #[strum(message = "...declared here")]
+    #[strum(message = "...在此处声明")]
     VariableDeclaredHere,
-    #[strum(message = "...declared here")]
+    #[strum(message = "...在此处声明")]
     FunctionDeclaredHere,
-    #[strum(message = "...declared as a parameter here")]
+    #[strum(message = "...在此处作为参数声明")]
     ParameterDeclaredHere,
-    #[strum(message = "...declared as the auto parameter `it` by this function here")]
+    #[strum(message = "...在此处被该函数声明为自动参数 `it`")]
     ParameterItDeclaredHere,
-    #[strum(message = "...declared as a rest parameter here")]
+    #[strum(message = "...在此处作为剩余参数声明")]
     ParameterRestDeclaredHere,
-    #[strum(message = "...declared as a sub-pattern of parameter pattern here")]
+    #[strum(message = "...在此处作为参数模式的子模式声明")]
     ParameterSubPatternDeclaredHere,
 
     ReferenceEnd = 5999,

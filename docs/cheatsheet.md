@@ -1,9 +1,8 @@
 ---
+title: 速查表
 mdx:
   format: md
 ---
-
-# MiraScript 速查表
 
 MiraScript 是一门表达式优先、不可变数据为核心的脚本语言。
 

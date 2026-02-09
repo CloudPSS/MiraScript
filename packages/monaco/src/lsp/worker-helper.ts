@@ -105,6 +105,7 @@ export async function compile(model: editor.ITextModel): Promise<CompileResult> 
     const req: Req = [cacheKey, version, value, mode];
     const res = USE_WORKER ? compileWorker(req) : compileSync(req);
     void res.then(async (result) => {
+        if (model.isDisposed()) return;
         const setModelMarkers = editor?.setModelMarkers;
         if (typeof setModelMarkers != 'function') return;
         const markers = await makeModelMarkers(model, result);

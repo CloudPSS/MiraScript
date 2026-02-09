@@ -13,6 +13,39 @@ export function getDiagnosticMessage(code: DiagnosticCode): string | null {
     return DIAGNOSTIC_MESSAGES[code] ?? null;
 }
 
+/** 生成诊断消息的字符串 */
+export function formatDiagnosticMessage(code: DiagnosticCode, $0?: string | (() => string | undefined)): string {
+    let template = getDiagnosticMessage(code);
+    if (!template) {
+        return `Unknown diagnostic code: ${code}`;
+    }
+    if (template.includes(`$0`)) {
+        const replacement = (typeof $0 == 'function' ? $0() : $0) ?? '';
+        // Replace each '$' in the captured text with '$$$$' so that after replaceAll processes
+        // the string and interprets '$' as a special placeholder, we still end up with literal
+        // '$$' in the final message. The quadruple dollar signs here are intentional.
+        template = template.replaceAll(`$0`, replacement.replaceAll('$', '$$$$'));
+    }
+    return template;
+}
+
+/** 获取诊断消息的级别 */
+export function getDiagnosticSeverity(code: DiagnosticCode): 'error' | 'warning' | 'info' | 'hint' | 'tag' | undefined {
+    if (code > DiagnosticCode.ErrorStart && code < DiagnosticCode.ErrorEnd) {
+        return 'error';
+    } else if (code > DiagnosticCode.WarningStart && code < DiagnosticCode.WarningEnd) {
+        return 'warning';
+    } else if (code > DiagnosticCode.InfoStart && code < DiagnosticCode.InfoEnd) {
+        return 'info';
+    } else if (code > DiagnosticCode.HintStart && code < DiagnosticCode.HintEnd) {
+        return 'hint';
+    } else if (code > DiagnosticCode.TagStart && code < DiagnosticCode.TagEnd) {
+        return 'tag';
+    } else {
+        return undefined;
+    }
+}
+
 /**
  * A range in the editor. This interface is suitable for serialization.
  */
@@ -76,23 +109,7 @@ interface ParsedDiagnostics {
     sourcemaps: IRange[];
 }
 
-const {
-    ErrorStart,
-    ErrorEnd,
-    WarningStart,
-    WarningEnd,
-    InfoStart,
-    InfoEnd,
-    HintStart,
-    HintEnd,
-    TagStart,
-    TagEnd,
-    ReferenceStart,
-    ReferenceEnd,
-    TagRefStart,
-    TagRefEnd,
-    SourceMap,
-} = DiagnosticCode;
+const { ReferenceStart, ReferenceEnd, TagRefStart, TagRefEnd, SourceMap } = DiagnosticCode;
 /** 分析诊断信息，{@link diagnostic_position_encoding} 不能设为 `None` */
 export function parseDiagnostics(
     source: ScriptInput,
@@ -132,22 +149,30 @@ export function parseDiagnostics(
     for (let i = 0; i < parsed.length; i++) {
         const diagnostic = parsed[i]!;
         const { code } = diagnostic;
-        if (code > ErrorStart && code < ErrorEnd) {
-            _errors.push(diagnostic);
-        } else if (code > WarningStart && code < WarningEnd) {
-            _warnings.push(diagnostic);
-        } else if (code > InfoStart && code < InfoEnd) {
-            _infos.push(diagnostic);
-        } else if (code > HintStart && code < HintEnd) {
-            _hints.push(diagnostic);
-        } else if (code > TagStart && code < TagEnd) {
-            _tags.push(diagnostic);
-        } else if (code === SourceMap) {
+        if (code === SourceMap) {
             _sourcemaps.push(diagnostic.range);
             continue;
-        } else {
-            // 非法诊断代码，跳过
-            continue;
+        }
+        switch (getDiagnosticSeverity(code)) {
+            case 'error':
+                _errors.push(diagnostic);
+                break;
+            case 'warning':
+                _warnings.push(diagnostic);
+                break;
+            case 'info':
+                _infos.push(diagnostic);
+                break;
+            case 'hint':
+                _hints.push(diagnostic);
+                break;
+            case 'tag':
+                _tags.push(diagnostic);
+                break;
+            case undefined:
+            default:
+                // 非法诊断代码，跳过
+                continue;
         }
         diagnostic.references = [];
         while (i + 1 < parsed.length) {
