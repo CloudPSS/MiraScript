@@ -3,7 +3,7 @@ import path from 'node:path';
 import { load } from 'js-yaml';
 
 const packageRoot = path.resolve(import.meta.dirname, '..');
-const srcRoot = path.join(packageRoot, 'src');
+const srcRoot = path.join(packageRoot, '../../docs/references');
 const distRoot = path.join(packageRoot, 'dist');
 
 /**
@@ -86,8 +86,8 @@ async function loadDocsFromFolder(folder) {
         const relativePath = path.posix.join(folder, dirent.name);
         const markdown = await readMarkdown(relativePath);
         const { attributes, body } = splitFrontMatter(markdown, relativePath);
-        const { token, reserved } = attributes;
-        putItem({ token, body, reserved: Boolean(reserved), file: relativePath });
+        const { token, title, reserved } = attributes;
+        putItem({ token: token ?? title, body, reserved: Boolean(reserved), file: relativePath });
     }
 
     const seenToken = new Set();
