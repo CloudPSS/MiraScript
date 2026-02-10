@@ -10,7 +10,7 @@ export default {
     title: 'MiraScript',
     tagline: 'A powerful scripting language',
     url: 'https://mira.cloudpss.net',
-    favicon: 'img/mirascript-logo.svg',
+    favicon: 'favicon.svg',
 
     baseUrl: '/',
     trailingSlash: true,
@@ -111,7 +111,7 @@ export default {
                 },
             ],
             logo: {
-                src: 'img/mirascript-logo.svg',
+                src: 'favicon.svg',
                 alt: 'MiraScript Logo',
             },
         },
