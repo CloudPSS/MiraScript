@@ -27,9 +27,9 @@ function ResultItem({ item }: { item: Result }): JSX.Element {
 }
 
 /** 结果显示 */
-function Results({ results }: { results: Result[] }): JSX.Element {
+function Results({ results, outdated }: { results: Result[]; outdated: boolean }): JSX.Element {
     return (
-        <pre className={styles['results']}>
+        <pre className={`${styles['results']} ${outdated ? styles['results-outdated'] : ''}`}>
             {results.map((item, index) => (
                 <ResultItem key={index} item={item} />
             ))}
@@ -41,6 +41,7 @@ function Results({ results }: { results: Result[] }): JSX.Element {
 export default function Mira({ value, mode, title }: { value: string; mode: InputMode; title: string }): JSX.Element {
     const lineCount = value.split('\n').length;
     const [results, setResults] = useState<Result[]>([]);
+    const [resultsOutdated, setResultsOutdated] = useState(true);
     const monaco = useMonaco();
     const editor = monaco && (
         <div className={styles['editor-holder']}>
@@ -72,12 +73,15 @@ export default function Mira({ value, mode, title }: { value: string; mode: Inpu
                         keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
                         run: (editor) => {
                             void import('./runner').then(async ({ runMiraScript }) => {
-                                const results = await runMiraScript(editor.getValue(), mode);
+                                const code = editor.getValue();
+                                const results = await runMiraScript(code, mode);
                                 setResults(results);
+                                setResultsOutdated(code !== editor.getValue());
                             });
                         },
                     });
                 }}
+                onChange={() => setResultsOutdated(true)}
             />
         </div>
     );
@@ -87,10 +91,10 @@ export default function Mira({ value, mode, title }: { value: string; mode: Inpu
             <div className={`${styles['host']} ${hasResults ? styles['with-results'] : ''}`}>
                 {editor}
                 <pre className={styles['pre']}>
-                    <code>{value}</code>
+                    <code>{value} </code>
                 </pre>
             </div>
-            {hasResults ? <Results results={results} /> : null}
+            {hasResults ? <Results results={results} outdated={resultsOutdated} /> : null}
         </>
     );
 }

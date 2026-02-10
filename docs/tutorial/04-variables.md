@@ -103,7 +103,7 @@ debug_print("外层:", value);   // 10，不受内层影响
 使用 `type()` 关键字可以查看任何值的类型：
 
 ```mira
-debug_print(type(42));          // "number"
+debug_print(type(42));         // "number"
 debug_print(type("hello"));    // "string"
 debug_print(type(true));       // "boolean"
 debug_print(type(nil));        // "nil"

@@ -29,7 +29,8 @@
 
     @supports (selector(::selection)) {
       &::selection {
-        background: transparent;
+        color: transparent !important;
+        background: transparent !important;
       }
     }
 
@@ -55,6 +56,12 @@
   border-top-right-radius: 0;
   margin-top: 0;
   max-height: 50vh;
+}
+
+.results-outdated {
+  > * {
+    opacity: 0.7;
+  }
 }
 
 .result-item {
