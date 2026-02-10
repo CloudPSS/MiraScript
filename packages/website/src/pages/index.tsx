@@ -62,12 +62,12 @@ let msg = match score {
         title: '函数 & 扩展调用',
         code: `// 函数声明 & 单参数简写
 fn double { it * 2 }
-fn add(x, y) { x + y }
 
 // 扩展调用链
-let result = [1, 2, 3]
+let result = [5, 2, 8, 1, 9, 3, 7, 4, 6]
   ::map(double)
-  ::filter(fn { it > 3 });
+  ::filter(fn { it > 3 })
+  ::sort();
   
 result`,
         context: {},
@@ -129,7 +129,7 @@ export default function Home(): JSX.Element {
                     </p>
                     <div className={styles['heroButtons']}>
                         <Link className={styles['btnPrimary']} to="/tutorial/introduction/">
-                            快速开始 →
+                            交互式教程
                         </Link>
                         <Link className={styles['btnSecondary']} to="/cheatsheet/">
                             速查表
@@ -143,7 +143,7 @@ export default function Home(): JSX.Element {
                 <section className={styles['features']}>
                     <div className={styles['featuresInner']}>
                         <h2 className={styles['sectionTitle']}>语言特性</h2>
-                        <p className={styles['sectionSubtitle']}>专为嵌入式场景打造的表达式语言</p>
+                        <p className={styles['sectionSubtitle']}>专为嵌入场景打造的表达式语言</p>
                         <div className={styles['featureGrid']}>
                             {features.map((f) => (
                                 <div key={f.title} className={styles['featureCard']}>
@@ -210,13 +210,13 @@ export default function Home(): JSX.Element {
                 {/* CTA */}
                 <section className={styles['cta']}>
                     <h2 className={styles['ctaTitle']}>准备好开始了吗？</h2>
-                    <p className={styles['ctaDesc']}>跟随交互式教程，几分钟内上手 MiraScript。</p>
+                    <p className={styles['ctaDesc']}>跟随教程，几分钟内上手 MiraScript。</p>
                     <div className={styles['ctaButtons']}>
                         <Link className={styles['btnPrimary']} to="/tutorial/introduction/">
-                            阅读教程 →
+                            交互式教程
                         </Link>
                         <Link className={styles['btnSecondary']} to="/cheatsheet/">
-                            查看速查表
+                            速查表
                         </Link>
                     </div>
                 </section>

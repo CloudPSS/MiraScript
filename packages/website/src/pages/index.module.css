@@ -209,12 +209,12 @@
 
 .codeExample {
   border-radius: 12px;
-  overflow: hidden;
   border: 1px solid var(--ifm-color-emphasis-200);
   background: #1e1e1e;
 }
 
 .codeHeader {
+  border-radius: 12px 12px 0 0;
   padding: 0.6rem 1rem;
   background: #2d2d2d;
   color: #a0aec0;
