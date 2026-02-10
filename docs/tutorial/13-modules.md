@@ -147,7 +147,7 @@ debug_print("矩阵乘法:", matrix.multiply(a, b));
 
 ```mira
 // 创建特殊矩阵
-debug_print("3×3 单位矩阵:", matrix.identity(3, 3));
+debug_print("3×3 单位矩阵:", matrix.identity(3));
 debug_print("2×3 零矩阵:", matrix.zeros(2, 3));
 ```
 
