@@ -4,7 +4,7 @@
 
 ## 声明函数
 
-使用 `fn` 关键字声明函数。函数体是一个块表达式，最后一个表达式的值就是函数的返回值：
+使用 [`fn` 关键字](../references/keyword/fn.md) 声明函数。函数体是一个块表达式，最后一个表达式的值就是函数的返回值：
 
 ```mira
 fn greet(name) {
@@ -215,19 +215,6 @@ fn factorial(n) {
 
 debug_print("5! =", factorial(5));   // 120
 debug_print("10! =", factorial(10)); // 3628800
-```
-
-### 经典示例：斐波那契数列
-
-```mira
-fn fib(n) {
-  if n <= 2 { n }
-  else { fib(n - 1) + fib(n - 2) }
-}
-
-for i in 1..10 {
-  debug_print("fib($i) =", fib(i));
-}
 ```
 
 ## 实际应用

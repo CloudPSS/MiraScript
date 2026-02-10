@@ -6,7 +6,7 @@
 
 `::` 运算符将左侧的值作为右侧函数的**第一个参数**传入：
 
-```text
+```miradoc
 value::func(other_args)
 // 等价于
 func(value, other_args)
@@ -78,7 +78,7 @@ let result = 42
 debug_print(result);
 ```
 
-## 数据处理实例
+## 实际应用
 
 ### 统计分析
 

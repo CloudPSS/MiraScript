@@ -9,7 +9,7 @@ export default function remarkCodeEditor() {
     return (tree: Root): void => {
         visit(tree, { type: 'code' }, (node: Node) => {
             const codeNode = node as Code;
-            if (codeNode.lang !== 'mira' && codeNode.lang !== 'miratpl') {
+            if (codeNode.lang !== 'mira' && codeNode.lang !== 'miratpl' && codeNode.lang !== 'miradoc') {
                 return;
             }
             node.type = 'miraCodeBlock';
@@ -19,6 +19,7 @@ export default function remarkCodeEditor() {
                     title: codeNode.meta || '',
                     value: codeNode.value,
                     mode: codeNode.lang === 'miratpl' ? 'Template' : 'Script',
+                    readOnly: codeNode.lang === 'miradoc',
                 },
             };
         });

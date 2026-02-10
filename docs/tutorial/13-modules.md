@@ -128,7 +128,7 @@ debug_print("mul(3, 4) =", mul(3, 4));
 
 ## 内置模块：`matrix`
 
-MiraScript 提供了 `matrix` 模块用于矩阵运算。矩阵用二维数组表示：
+MiraScript 提供了 [`matrix` 模块](../lib/10-matrix.md) 用于矩阵运算。矩阵用二维数组表示：
 
 ```mira
 let m = [[1, 2], [3, 4]];

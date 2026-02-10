@@ -4,7 +4,7 @@
 
 ## 布尔值
 
-MiraScript 中的布尔类型只有两个值：`true`（真）和 `false`（假）。
+MiraScript 中的布尔类型只有两个值：[`true`](../references/keyword/true.md)（真）和 [`false`](../references/keyword/false.md)（假）。
 
 ```mira
 let is_student = true;
@@ -26,19 +26,18 @@ debug_print("3 == 3:", 3 == 3);   // true
 debug_print("3 != 4:", 3 != 4);   // true
 ```
 
-:::warning 严格相等
-`==` 是**严格相等**，不会进行类型转换。不同类型的值永远不相等：
+### 严格相等
+
+[`==` 运算符](../references/operator/equal.md) 是**严格相等**，不会进行类型转换。不同类型的值永远不相等：
 
 ```mira
 debug_print(1 == "1");     // false，number 和 string 不同类型
 debug_print(0 == false);   // false，number 和 boolean 不同类型
 ```
 
-:::
-
 ### 近似相等
 
-`=~` 运算符用于近似比较，对数字允许微小误差，对字符串忽略大小写：
+[`=~` 运算符](../references/operator/tilde_equal.md) 用于近似比较，对数字允许微小误差，对字符串忽略大小写：
 
 ```mira
 debug_print(0.1 + 0.2 == 0.3);   // false，浮点精度问题

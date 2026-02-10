@@ -4,16 +4,7 @@
 
 ## `for` 循环
 
-`for` 循环用于遍历数组、记录或范围中的每个元素：
-
-### 遍历数组
-
-```mira
-let fruits = ["苹果", "香蕉", "橘子"];
-for fruit in fruits {
-  debug_print("水果:", fruit);
-}
-```
+`for` 循环用于遍历范围、数组或记录中的每个元素：
 
 ### 遍历范围
 
@@ -30,6 +21,15 @@ for i in 1..5 {
 // 0 到 4（不包含 5）
 for i in 0..<5 {
   debug_print("i =", i);
+}
+```
+
+### 遍历数组
+
+```mira
+let fruits = ["苹果", "香蕉", "橘子"];
+for fruit in fruits {
+  debug_print("水果:", fruit);
 }
 ```
 

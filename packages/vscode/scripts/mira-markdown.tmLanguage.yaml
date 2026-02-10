@@ -6,7 +6,7 @@ repository:
   mira-code-block:
     patterns:
       - name: markup.fenced_code.block.markdown
-        begin: (^|\G)(\s*)(\`{3,}|~{3,})\s*(?i:(mira|mirascript|mira-doc|mirascript-doc)(\s+[^`~]*)?$)
+        begin: (^|\G)(\s*)(\`{3,}|~{3,})\s*(?i:(mira|mirascript|miradoc|mirascript-doc)(\s+[^`~]*)?$)
         end: (^|\G)(\2|\s{0,3})(\3)\s*$
 
         beginCaptures:

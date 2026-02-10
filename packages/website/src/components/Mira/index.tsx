@@ -38,7 +38,7 @@ function Results({ results, outdated }: { results: Result[]; outdated: boolean }
 }
 
 /** MiraScript 编辑器 */
-export default function Mira({ value, mode, title }: { value: string; mode: InputMode; title: string }): JSX.Element {
+export default function Mira({ value, mode, title, readOnly }: { value: string; mode: InputMode; title: string; readOnly: boolean }): JSX.Element {
     const lineCount = value.split('\n').length;
     const [results, setResults] = useState<Result[]>([]);
     const [resultsOutdated, setResultsOutdated] = useState(true);
@@ -50,7 +50,7 @@ export default function Mira({ value, mode, title }: { value: string; mode: Inpu
                 className={styles['editor']}
                 value={value}
                 theme="vs-dark"
-                language={mode === 'Template' ? 'mirascript-template' : 'mirascript'}
+                language={mode === 'Template' ? 'mirascript-template' : readOnly ? 'mirascript-doc' : 'mirascript'}
                 options={{
                     scrollBeyondLastLine: false,
                     minimap: { enabled: false },
@@ -64,6 +64,7 @@ export default function Mira({ value, mode, title }: { value: string; mode: Inpu
                     lineDecorationsWidth: 0,
                     lineNumbersMinChars: Math.floor(Math.log10(lineCount)) + 3,
                     tabSize: 2,
+                    readOnly: readOnly,
                     'semanticHighlighting.enabled': true,
                 }}
                 onMount={(editor) => {

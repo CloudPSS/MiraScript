@@ -18,6 +18,11 @@ export default {
     onBrokenAnchors: 'throw',
     onDuplicateRoutes: 'throw',
 
+    future: {
+        v4: true,
+        experimental_faster: true,
+    },
+
     markdown: {
         hooks: {
             onBrokenMarkdownImages: 'throw',
@@ -46,6 +51,16 @@ export default {
                 };
             },
         }),
+        // [
+        //     '@easyops-cn/docusaurus-search-local',
+        //     {
+        //         docsRouteBasePath: '/',
+        //         docsDir: '../../docs',
+        //         indexBlog: false,
+        //         language: ['zh', 'en'],
+        //         hashed: 'query',
+        //     } satisfies import('@easyops-cn/docusaurus-search-local').PluginOptions,
+        // ],
     ],
     presets: [
         [
@@ -73,11 +88,12 @@ export default {
     themeConfig: {
         navbar: {
             title: 'MiraScript',
+            items: [],
         },
         prism: {
             additionalLanguages: ['powershell', 'ini'],
             theme: prismThemes.vsDark,
             // darkTheme: prismThemes.vsDark,
         },
-    },
+    } satisfies import('@docusaurus/preset-classic').ThemeConfig,
 } satisfies Config;

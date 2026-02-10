@@ -213,5 +213,8 @@ for (const mod of modules) {
 
 // ── _category_.json ─────────────────────────────────────────────────────
 
-writeFileSync(resolve(outDir, '_category_.json'), JSON.stringify({ label: '标准库', position: 2 }, null, 2) + '\n');
+writeFileSync(
+  resolve(outDir, '_category_.json'),
+  JSON.stringify({ label: '标准库', position: 2, link: { type: 'generated-index' } }, null, 2) + '\n',
+);
 console.log('写入 docs/lib/_category_.json');

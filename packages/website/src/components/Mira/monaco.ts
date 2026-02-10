@@ -21,7 +21,7 @@ async function loadMonaco(): Promise<typeof import('@private/monaco-editor')> {
         if (!editor) return;
         void editor.getAction('run-mirascript')?.run();
     });
-    monaco.languages.registerCodeLensProvider(['mirascript', 'mirascript-template'], {
+    monaco.languages.registerCodeLensProvider(['mirascript', 'mirascript-template', 'mirascript-doc'], {
         provideCodeLenses(model, token) {
             const { uri } = model;
             const title = uri.scheme === 'title' ? uri.fragment : '';
@@ -37,15 +37,27 @@ async function loadMonaco(): Promise<typeof import('@private/monaco-editor')> {
                     },
                 });
             }
-            lenses.push({
-                range: { startLineNumber: 1, startColumn: 1, endLineNumber: 1, endColumn: 1 },
-                id: 'run-mirascript',
-                command: {
+            if (model.getLanguageId() !== 'mirascript-doc') {
+                lenses.push({
+                    range: { startLineNumber: 1, startColumn: 1, endLineNumber: 1, endColumn: 1 },
                     id: 'run-mirascript',
-                    title: '运行 (Ctrl+Enter)',
-                    arguments: [model.uri],
-                },
-            });
+                    command: {
+                        id: 'run-mirascript',
+                        title: '运行 (Ctrl+Enter)',
+                        arguments: [model.uri],
+                    },
+                });
+            } else if (!lenses.length) {
+                lenses.push({
+                    range: { startLineNumber: 1, startColumn: 1, endLineNumber: 1, endColumn: 1 },
+                    id: 'placeholder',
+                    command: {
+                        id: '',
+                        title: '',
+                        arguments: [model.uri],
+                    },
+                });
+            }
             return { lenses };
         },
     });

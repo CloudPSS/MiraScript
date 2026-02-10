@@ -77,16 +77,16 @@ MiraScript 支持单行注释和多行注释：
 表示一个数字值。
 
 ```mira
-1
-0.12      // 对于包含小数点的数字，其整数和小数部分均不能省略
-1.0e-10   // 科学计数法
-0xFF      // 十六进制数字
-0o10      // 八进制数字
-0b1010    // 二进制数字
-1_000_000 // 数字字面量可以使用下划线分隔符
+1;
+0.12;      // 对于包含小数点的数字，其整数和小数部分均不能省略
+1.0e-10;   // 科学计数法
+0xFF;      // 十六进制数字
+0o10;      // 八进制数字
+0b1010;    // 二进制数字
+1_000_000; // 数字字面量可以使用下划线分隔符
 
-inf // 正无穷大
-nan // 非数
+inf; // 正无穷大
+nan; // 非数
 ```
 
 ##### 序数
@@ -855,7 +855,7 @@ MiraScript 的语句一般分号 `;` 结尾。MiraScript 的语句包括：
 
 `const` 语句的语法为：
 
-```mira
+```miradoc
 const <constant> = <expression>;
 ```
 
@@ -867,7 +867,7 @@ const <constant> = <expression>;
 
 `let` 语句的语法为：
 
-```mira
+```miradoc
 let <pattern> = <expression>;
 ```
 
@@ -888,19 +888,19 @@ let [first, _, ..mut rest] = [1, 2, 3, 4]; // 数组模式，first 初始化为 
 
 赋值语句有以下几种形式：
 
-- ```mira
+- ```miradoc
   <pattern> = <expression>;
   ```
 
   与 let 语句类似，对模式中的变量重新赋值。模式中的变量必须已经声明且为 `mut`，此时的模式不能包含 `mut` 关键字。
 
-- ```mira
+- ```miradoc
   <variable> <compound_assignment> <expression>;
   ```
 
   修改单个变量的值，`<compound_assignment>` 是 `=` 运算符或复合赋值运算符，如 `+=`、`-=`、`*=`、`/=` 等。
 
-- ```mira
+- ```miradoc
   <extern>.<property_id> <compound_assignment> <expression>;
   <extern>[<property_expr>] <compound_assignment> <expression>;
   ```
@@ -927,7 +927,7 @@ ex[1 + 2] += 1; // 对 extern 对象 ex 的属性 "3" 复合赋值
 
 函数声明语句用于定义一个函数。与函数表达式类似，函数声明的语法为
 
-```mira
+```miradoc
 fn <name>(<parameters>) <body>
 ```
 
@@ -949,7 +949,7 @@ fn add_one {
 
 - `return` 语句
 
-  ```mira
+  ```miradoc
   return <expression>;
   ```
 
@@ -963,7 +963,7 @@ fn add_one {
 
 - `break` 语句
 
-  ```mira
+  ```miradoc
   break <expression>;
   ```
 
@@ -982,7 +982,7 @@ fn add_one {
 
 - `continue` 语句
 
-  ```mira
+  ```miradoc
   continue;
   ```
 
@@ -1005,7 +1005,7 @@ fn add_one {
 
 `mod` 语句的语法为：
 
-```mira
+```miradoc
 mod <name> {
   <statements>
 }

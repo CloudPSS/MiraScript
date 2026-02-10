@@ -1,6 +1,6 @@
 # 数组
 
-数组是一组有序的值的集合，是 MiraScript 中最常用的数据结构之一。
+数组（array）是一组有序的值的集合，是 MiraScript 中最常用的数据结构之一。
 
 ## 创建数组
 
@@ -144,12 +144,12 @@ debug_print("降序:", desc);
 
 ### `find` —— 查找
 
-返回第一个满足条件的元素，找不到则返回 `nil`：
+返回第一个满足条件元素的索引和值，找不到则返回 `nil`：
 
 ```mira
 let numbers = [1, 3, 5, 8, 9, 12];
 let first_even = find(numbers, fn { it % 2 == 0 });
-debug_print("第一个偶数:", first_even); // 8
+debug_print("第一个偶数:", first_even); // (3, 8)
 ```
 
 ### `reverse` —— 反转
