@@ -1,5 +1,5 @@
 ---
-title: 速查表
+title: 速查手册
 mdx:
   format: md
 ---

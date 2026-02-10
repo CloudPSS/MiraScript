@@ -2,6 +2,7 @@
   "label": "诊断代码",
   "position": 3,
   "link": {
-    "type": "generated-index"
+    "type": "generated-index",
+    "slug": "/code/"
   }
 }

@@ -132,7 +132,7 @@ export default function Home(): JSX.Element {
                             交互式教程
                         </Link>
                         <Link className={styles['btnSecondary']} to="/cheatsheet/">
-                            速查表
+                            速查手册
                         </Link>
                     </div>
                 </div>
@@ -216,7 +216,7 @@ export default function Home(): JSX.Element {
                             交互式教程
                         </Link>
                         <Link className={styles['btnSecondary']} to="/cheatsheet/">
-                            速查表
+                            速查手册
                         </Link>
                     </div>
                 </section>

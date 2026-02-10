@@ -89,7 +89,20 @@ export default {
     themeConfig: {
         navbar: {
             title: 'MiraScript',
-            items: [],
+            items: [
+                {
+                    to: '/tutorial/introduction/',
+                    label: '入门教程',
+                },
+                {
+                    to: '/lib/',
+                    label: 'API 文档',
+                },
+                {
+                    to: '/cheatsheet/',
+                    label: '速查手册',
+                },
+            ],
             logo: {
                 src: 'img/mirascript-logo.svg',
                 alt: 'MiraScript Logo',

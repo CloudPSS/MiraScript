@@ -2,6 +2,7 @@
   "label": "运算符",
   "position": 20,
   "link": {
-    "type": "generated-index"
+    "type": "generated-index",
+    "slug": "/references/operator/"
   }
 }

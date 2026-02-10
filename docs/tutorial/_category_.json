@@ -2,6 +2,8 @@
   "label": "入门教程",
   "position": 1,
   "link": {
-    "type": "generated-index"
+    "type": "generated-index",
+    "slug": "/tutorial/",
+    "description": "通过一系列循序渐进的教程，快速了解和掌握 MiraScript 的基础知识和核心概念。"
   }
 }

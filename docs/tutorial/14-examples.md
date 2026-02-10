@@ -206,6 +206,6 @@ debug_print("排序后:", insertion_sort(data));
 
 你已经掌握了 MiraScript 的核心功能，可以继续探索：
 
-- 查阅 [速查表](../99-cheatsheet.md) 快速回顾语法
+- 查阅 [速查手册](../99-cheatsheet.md) 快速回顾语法
 - 阅读 [语言规范](../references/00-spec.md) 了解完整的语言细节
 - 在实际项目中使用 MiraScript 编写脚本，实践出真知

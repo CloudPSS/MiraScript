@@ -78,7 +78,7 @@ const categoryFile = '_category_.json';
 writtenFiles.add(categoryFile);
 writeFileSync(
   resolve(outDir, categoryFile),
-  JSON.stringify({ label: '诊断代码', position: 3, link: { type: 'generated-index' } }, null, 2) + '\n',
+  JSON.stringify({ label: '诊断代码', position: 3, link: { type: 'generated-index', slug: '/code/' } }, null, 2) + '\n',
 );
 
 // ── 检查多余文件 ────────────────────────────────────────────────────────

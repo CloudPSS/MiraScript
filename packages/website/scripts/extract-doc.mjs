@@ -215,6 +215,6 @@ for (const mod of modules) {
 
 writeFileSync(
   resolve(outDir, '_category_.json'),
-  JSON.stringify({ label: '标准库', position: 2, link: { type: 'generated-index' } }, null, 2) + '\n',
+  JSON.stringify({ label: '标准库', position: 2, link: { type: 'generated-index', slug: '/lib/' } }, null, 2) + '\n',
 );
 console.log('写入 docs/lib/_category_.json');
