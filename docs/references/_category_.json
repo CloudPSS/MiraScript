@@ -3,6 +3,7 @@
   "position": 10,
   "link": {
     "type": "generated-index",
-    "slug": "/references/"
+    "slug": "/references/",
+    "description": "MiraScript 语言核心参考文档。"
   }
 }

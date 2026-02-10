@@ -3,6 +3,7 @@
   "position": 3,
   "link": {
     "type": "generated-index",
-    "slug": "/code/"
+    "slug": "/code/",
+    "description": "MiraScript 诊断代码参考。"
   }
 }

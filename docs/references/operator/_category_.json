@@ -3,6 +3,7 @@
   "position": 20,
   "link": {
     "type": "generated-index",
-    "slug": "/references/operator/"
+    "slug": "/references/operator/",
+    "description": "MiraScript 语言运算符参考。"
   }
 }

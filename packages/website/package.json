@@ -13,6 +13,9 @@
     "serve": "docusaurus serve --no-open",
     "write-translations": "docusaurus write-translations",
     "write-heading-ids": "docusaurus write-heading-ids",
+    "extract-code": "node ./scripts/extract-code.mjs",
+    "extract-doc": "node ./scripts/extract-doc.mjs",
+    "prebuild": "pnpm run extract-code && pnpm run extract-doc",
     "typecheck": "tsc"
   },
   "dependencies": {

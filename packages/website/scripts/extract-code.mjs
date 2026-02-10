@@ -74,12 +74,7 @@ for (const { code, name, message, severity: sev } of entries) {
 
 // ── _category_.json ─────────────────────────────────────────────────────
 
-const categoryFile = '_category_.json';
-writtenFiles.add(categoryFile);
-writeFileSync(
-  resolve(outDir, categoryFile),
-  JSON.stringify({ label: '诊断代码', position: 3, link: { type: 'generated-index', slug: '/code/' } }, null, 2) + '\n',
-);
+writtenFiles.add('_category_.json');
 
 // ── 检查多余文件 ────────────────────────────────────────────────────────
 

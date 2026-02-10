@@ -1,5 +1,7 @@
 ---
 title: 设计文档
+description: MiraScript 设计文档，包含语言规范、工具链设计等内容。
+toc_max_heading_level: 6
 ---
 
 ## 工具链
@@ -22,14 +24,14 @@ MiraScript 支持以下数据类型：
 - `record`：记录类型，表示一个不可变的键值对集合。记录的键必须是字符串，值可以是任意值类型。记录的键值对在创建时确定，不能修改。
 - `array`：数组类型，表示一个不可变的有序值集合。数组的值可以是任意值类型。数组的元素在创建时确定，不能修改。
 - `function`：函数类型，表示一个可调用的函数对象。
-- `module`：模块类型，表示一个 Mirascript 模块。模块是一个不可变的键值对集合，其值可以为任意类型。
+- `module`：模块类型，表示一个 Mirascript 模块。模块是一个（外部）不可变的键值对集合，其值可以为任意类型。
 - `extern`：外部类型，来自宿主环境且无法映射为 MiraScript 原生类型的对象，MiraScript 不对其进行任何限制。外部对象可以是任意宿主环境支持的对象类型，如 JavaScript 对象、Python 对象等。MiraScript 不对外部对象的属性和方法进行限制，允许用户自由访问和操作外部对象。
 
 ### 值语义和可变性
 
 除了 `function`、`module` 和 `extern` 外，MiraScript 的所有类型均为值类型。这意味着在进行比较时，MiraScript 会比较数据类型的值，而不是它们的引用。
 
-除了 `extern` 类型，MiraScript 的所有类型都是不可变的。不可变性意味着一旦创建，数据的值就不能被修改。注意 `module` 类型可以包含 `extern` 类型的值，因此其深层次的值可能是可变的。
+除了 `extern` 类型，MiraScript 的所有类型都是不可变的。不可变性意味着一旦创建，数据的值就不能被修改。注意 `module` 类型可以包含 `pub let mut` 导出，其值可能由模块方法更改。
 
 ## MiraScript 语言
 
@@ -498,12 +500,21 @@ let result2 = add(..array);
 
 ##### 模板调用
 
-当函数调用的参数是一个模板字符串时，会进行模板调用。以模板字符数组作为第一个参数，插值表达式个格式作为其余参数调用函数。
+当函数调用的参数是一个模板字符串时，会进行模板调用。以模板字符数组作为第一个参数，插值表达式及格式作为其余参数调用函数。
 
 ```mira
-foo"Hello $(name:fmt)";
+debug_print"PI = $(PI:fmt), E = $(E)";
 // 相当于：
-foo(["Hello ", ""], (name, "fmt"));
+debug_print(['PI = ', ', E = ', ''], (PI, 'fmt'), (E,));
+```
+
+##### `type()` 表达式
+
+`type()` 表达式用于获取一个值的类型，语法为 `type(<expression>)`。其中 `<expression>` 是一个表达式。也可以使用 `<expression>::type()` 的形式调用。
+
+```mira
+type(1);       // "number"
+"str"::type(); // "string"
 ```
 
 #### 块表达式

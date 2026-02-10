@@ -3,6 +3,7 @@
   "position": 2,
   "link": {
     "type": "generated-index",
-    "slug": "/lib/"
+    "slug": "/lib/",
+    "description": "MiraScript 默认定义的全局变量和标准库模块。"
   }
 }
