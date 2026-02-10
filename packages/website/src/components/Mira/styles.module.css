@@ -9,6 +9,7 @@
 .editor-holder {
   user-select: auto;
   position: absolute;
+  z-index: 1;
   inset: calc(var(--ifm-pre-border-radius) - 1.5px) 0;
   user-select: none;
   border-radius: var(--ifm-pre-border-radius);
@@ -21,7 +22,6 @@
 
 .pre {
   user-select: text;
-  z-index: -1;
 
   .editor-holder + & {
     --ifm-pre-color: transparent;
