@@ -59,10 +59,12 @@ export async function runMiraScript(
                 }, lib.debug_print),
             }),
         );
-        results.push({
-            type: 'result',
-            content: [{ value: serializeForDisplay(result) }],
-        });
+        if (result != null) {
+            results.push({
+                type: 'result',
+                content: [{ value: serializeForDisplay(result) }],
+            });
+        }
     } catch (error) {
         results.push({
             type: 'error',
