@@ -21,6 +21,22 @@
 
 .pre {
   user-select: text;
+  z-index: -1;
+
+  .editor-holder + & {
+    --ifm-pre-color: transparent;
+    pointer-events: none;
+
+    @supports (selector(::selection)) {
+      &::selection {
+        background: transparent;
+      }
+    }
+
+    @supports not (selector(::selection)) {
+      user-select: none;
+    }
+  }
 }
 
 .with-results {
@@ -87,14 +103,6 @@
 
   &::before {
     content: '✔ ';
-  }
-}
-
-@media screen {
-  .pre {
-    > * {
-      opacity: 0;
-    }
   }
 }
 

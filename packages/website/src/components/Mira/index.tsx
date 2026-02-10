@@ -43,41 +43,49 @@ export default function Mira({ value, mode, title }: { value: string; mode: Inpu
     const [results, setResults] = useState<Result[]>([]);
     const monaco = useMonaco();
     const editor = monaco && (
-        <Editor
-            path={title ? `title:///#${encodeURIComponent(title)}` : undefined}
-            className={styles['editor']}
-            value={value}
-            theme="vs-dark"
-            language={mode === 'Template' ? 'mirascript-template' : 'mirascript'}
-            options={{
-                scrollBeyondLastLine: false,
-                minimap: { enabled: false },
-                fontSize: 14.4,
-                lineHeight: 14.4 * 1.45,
-                fontFamily: 'var(--ifm-font-family-monospace)',
-                lineDecorationsWidth: 0,
-                lineNumbersMinChars: Math.floor(Math.log10(lineCount)) + 3,
-            }}
-            onMount={(editor) => {
-                editor.addAction({
-                    id: 'run-mirascript',
-                    label: '运行',
-                    keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
-                    run: (editor) => {
-                        void import('./runner').then(async ({ runMiraScript }) => {
-                            const results = await runMiraScript(editor.getValue(), mode);
-                            setResults(results);
-                        });
-                    },
-                });
-            }}
-        />
+        <div className={styles['editor-holder']}>
+            <Editor
+                path={title ? `title:///#${encodeURIComponent(title)}` : undefined}
+                className={styles['editor']}
+                value={value}
+                theme="vs-dark"
+                language={mode === 'Template' ? 'mirascript-template' : 'mirascript'}
+                options={{
+                    scrollBeyondLastLine: false,
+                    minimap: { enabled: false },
+                    formatOnType: true,
+                    formatOnPaste: true,
+                    fontSize: 14.4,
+                    lineHeight: 14.4 * 1.45,
+                    fontFamily: 'var(--ifm-font-family-monospace)',
+                    fontLigatures: true,
+                    automaticLayout: true,
+                    lineDecorationsWidth: 0,
+                    lineNumbersMinChars: Math.floor(Math.log10(lineCount)) + 3,
+                    tabSize: 2,
+                    'semanticHighlighting.enabled': true,
+                }}
+                onMount={(editor) => {
+                    editor.addAction({
+                        id: 'run-mirascript',
+                        label: '运行',
+                        keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
+                        run: (editor) => {
+                            void import('./runner').then(async ({ runMiraScript }) => {
+                                const results = await runMiraScript(editor.getValue(), mode);
+                                setResults(results);
+                            });
+                        },
+                    });
+                }}
+            />
+        </div>
     );
     const hasResults = results.length > 0;
     return (
         <>
             <div className={`${styles['host']} ${hasResults ? styles['with-results'] : ''}`}>
-                <div className={styles['editor-holder']}>{editor}</div>
+                {editor}
                 <pre className={styles['pre']}>
                     <code>{value}</code>
                 </pre>
