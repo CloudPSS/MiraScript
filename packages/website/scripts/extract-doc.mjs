@@ -47,6 +47,28 @@ function renderDeprecated(deprecated) {
 }
 
 /**
+ * 生成示例
+ * @param {string} example
+ * @returns {string[]}
+ */
+function renderExample(example) {
+  const lines = [];
+  let fence = '```';
+  while (example.includes(fence)) {
+    fence += '`';
+  }
+  lines.push(`${fence}mira`);
+  try {
+    compileSync(example);
+  } catch (e) {
+    console.error(`示例代码编译错误：\n${example}`);
+  }
+  lines.push(example);
+  lines.push(fence);
+  return lines;
+}
+
+/**
  * 生成一个函数条目的 Markdown
  * @param {string} name
  * @param {object} entry
@@ -90,16 +112,9 @@ function renderFunction(name, entry) {
     lines.push('**示例**');
     lines.push('');
     for (const ex of entry.examples) {
-      lines.push('`````mira');
-      try {
-        compileSync(ex);
-      } catch (e) {
-        console.error(`示例代码编译错误：\n${ex}`);
-      }
-      lines.push(ex);
-      lines.push('`````');
+      lines.push(...renderExample(ex));
+      lines.push('');
     }
-    lines.push('');
   }
 
   return lines.join('\n');
