@@ -57,6 +57,7 @@ export default function Mira({
     const [results, setResults] = useState<Result[]>([]);
     const [resultsOutdated, setResultsOutdated] = useState(true);
     const monaco = useMonaco();
+    const language = mode === 'Template' ? 'mirascript-template' : mode === 'Doc' ? 'mirascript-doc' : 'mirascript';
     const editor = monaco && (
         <div className={styles['editor-holder']}>
             <Editor
@@ -64,7 +65,7 @@ export default function Mira({
                 className={styles['editor']}
                 value={value}
                 theme="vs-dark"
-                language={mode === 'Template' ? 'mirascript-template' : mode === 'Doc' ? 'mirascript-doc' : 'mirascript'}
+                language={language}
                 options={{
                     scrollBeyondLastLine: false,
                     minimap: { enabled: false },

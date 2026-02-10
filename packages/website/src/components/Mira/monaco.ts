@@ -6,6 +6,7 @@ import { loader } from '@monaco-editor/react';
 /** 加载 monaco */
 async function loadMonaco(): Promise<typeof import('@private/monaco-editor')> {
     const monaco = await import('@private/monaco-editor');
+    monaco.editor.setTheme('vs-dark');
 
     const { registerMiraScript } = await import('@mirascript/monaco');
     const loader = registerMiraScript(monaco);
