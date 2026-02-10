@@ -16,7 +16,13 @@ export async function runMiraScript(
 ): Promise<Result[]> {
     const results: Result[] = [];
     try {
-        const fn = await compile(script, { input_mode: mode, sourceMap: true, pretty: true });
+        const fn = await compile(script, {
+            input_mode: mode,
+            diagnostic_position_encoding: 'Utf32',
+            fileName: 'live-code.' + (mode === 'Script' ? 'mira' : 'miratpl'),
+            sourceMap: true,
+            pretty: true,
+        });
         const result = fn(
             createVmContext({
                 ...context,
