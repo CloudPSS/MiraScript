@@ -1,4 +1,4 @@
-import { compile, createVmContext, VmFunction, type InputMode } from '@mirascript/mirascript';
+import { compile, createVmContext, VmFunction, type InputMode, type VmAny } from '@mirascript/mirascript';
 import { lib, serializeForDisplay } from '@mirascript/mirascript/subtle';
 
 /** 结果 */
@@ -9,12 +9,17 @@ export type Result = {
 
 const printOptions = { ...lib.debug_print, prefix: [] };
 /** 运行 MiraScript 代码 */
-export async function runMiraScript(script: string, mode: InputMode): Promise<Result[]> {
+export async function runMiraScript(
+    script: string,
+    mode: InputMode,
+    context: Record<string, VmAny> = {},
+): Promise<Result[]> {
     const results: Result[] = [];
     try {
         const fn = await compile(script, { input_mode: mode, sourceMap: true, pretty: true });
         const result = fn(
             createVmContext({
+                ...context,
                 debug_print: VmFunction((...args) => {
                     lib.debug_print(...args);
                     const content: Result['content'] = [];

@@ -1,5 +1,5 @@
 import { useState, type JSX } from 'react';
-import type { InputMode } from '@mirascript/mirascript';
+import type { InputMode, VmAny } from '@mirascript/mirascript';
 import { Editor, useMonaco } from './monaco';
 import styles from './styles.module.css';
 import { Highlight } from './highlight';
@@ -38,7 +38,19 @@ function Results({ results, outdated }: { results: Result[]; outdated: boolean }
 }
 
 /** MiraScript 编辑器 */
-export default function Mira({ value, mode, title, readOnly }: { value: string; mode: InputMode; title: string; readOnly: boolean }): JSX.Element {
+export default function Mira({
+    value,
+    mode,
+    title,
+    readOnly,
+    context,
+}: {
+    value: string;
+    mode: InputMode | 'Doc';
+    title?: string;
+    readOnly?: boolean;
+    context?: Record<string, VmAny>;
+}): JSX.Element {
     const lineCount = value.split('\n').length;
     const [results, setResults] = useState<Result[]>([]);
     const [resultsOutdated, setResultsOutdated] = useState(true);
@@ -50,7 +62,7 @@ export default function Mira({ value, mode, title, readOnly }: { value: string; 
                 className={styles['editor']}
                 value={value}
                 theme="vs-dark"
-                language={mode === 'Template' ? 'mirascript-template' : readOnly ? 'mirascript-doc' : 'mirascript'}
+                language={mode === 'Template' ? 'mirascript-template' : mode === 'Doc' ? 'mirascript-doc' : 'mirascript'}
                 options={{
                     scrollBeyondLastLine: false,
                     minimap: { enabled: false },
@@ -68,19 +80,21 @@ export default function Mira({ value, mode, title, readOnly }: { value: string; 
                     'semanticHighlighting.enabled': true,
                 }}
                 onMount={(editor) => {
-                    editor.addAction({
-                        id: 'run-mirascript',
-                        label: '运行',
-                        keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
-                        run: (editor) => {
-                            void import('./runner').then(async ({ runMiraScript }) => {
-                                const code = editor.getValue();
-                                const results = await runMiraScript(code, mode);
-                                setResults(results);
-                                setResultsOutdated(code !== editor.getValue());
-                            });
-                        },
-                    });
+                    if (mode !== 'Doc') {
+                        editor.addAction({
+                            id: 'run-mirascript',
+                            label: '运行',
+                            keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
+                            run: (editor) => {
+                                void import('./runner').then(async ({ runMiraScript }) => {
+                                    const code = editor.getValue();
+                                    const results = await runMiraScript(code, mode, context);
+                                    setResults(results);
+                                    setResultsOutdated(code !== editor.getValue());
+                                });
+                            },
+                        });
+                    }
                 }}
                 onChange={() => setResultsOutdated(true)}
             />

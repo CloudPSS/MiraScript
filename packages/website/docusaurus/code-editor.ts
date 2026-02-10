@@ -18,7 +18,7 @@ export default function remarkCodeEditor() {
                 hProperties: {
                     title: codeNode.meta || '',
                     value: codeNode.value,
-                    mode: codeNode.lang === 'miratpl' ? 'Template' : 'Script',
+                    mode: codeNode.lang === 'miratpl' ? 'Template' : codeNode.lang === 'miradoc' ? 'Doc' : 'Script',
                     readOnly: codeNode.lang === 'miradoc',
                 },
             };
