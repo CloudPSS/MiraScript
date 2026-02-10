@@ -616,7 +616,7 @@ loop {
 
 #### 函数表达式
 
-函数表达式用于定义一个函数，函数表达式的语法为 `fn (<parameters>) <body>`。其中 `<parameters>` 是函数的参数列表，可以是一个或多个参数，参数之间用逗号分隔；`<body>` 是函数的函数体，是一个块表达式，表示函数的实现，该表达式的值即为函数的返回值。
+函数表达式用于定义一个匿名函数，语法为 `fn (<parameters>) <body>`。其中 `<parameters>` 是函数的参数列表，可以是一个或多个参数，参数之间用逗号分隔；`<body>` 是函数的函数体，是一个块表达式，表示函数的实现，该表达式的值即为函数的返回值。
 
 ```mira
 let add = fn (x, y) {
@@ -954,61 +954,63 @@ fn add_one {
 }
 ```
 
+在运行过程中，函数声明语句定义的函数会被提升到当前作用域的顶部，可以在函数声明之前调用该函数。
+
 #### 控制流语句
 
 控制流语句用于控制程序的执行流程。MiraScript 支持以下控制流语句：
 
-- `return` 语句
+##### `return` 语句
 
-  ```miradoc
-  return <expression>;
-  ```
+```miradoc
+return <expression>;
+```
 
-  用于从函数或脚本中返回一个值。其中 `<expression>` 是一个可选的表达式，如果省略，则返回 `nil`。
+用于从函数或脚本中返回一个值。其中 `<expression>` 是一个可选的表达式，如果省略，则返回 `nil`。
 
-  ```mira
-  fn add(x, y) {
-    return x + y;
+```mira
+fn add(x, y) {
+  return x + y;
+}
+```
+
+##### `break` 语句
+
+```miradoc
+break <expression>;
+```
+
+用于跳出循环。其中 `<expression>` 是一个可选的表达式，作为循环表达式的值，如果省略，则循环表达式的求值结果为 `nil`。
+
+```mira
+let mut i = 0;
+let result = while i < 10 {
+  i += 1;
+  if i == 5 {
+    break i; // 跳出循环，返回 5
   }
-  ```
+};
+debug_print(result); // 输出 5
+```
 
-- `break` 语句
+##### `continue` 语句
 
-  ```miradoc
-  break <expression>;
-  ```
+```miradoc
+continue;
+```
 
-  用于跳出循环。其中 `<expression>` 是一个可选的表达式，作为循环表达式的值，如果省略，则循环表达式的求值结果为 `nil`。
+用于跳过当前循环的剩余部分，继续下一次循环。
 
-  ```mira
-  let mut i = 0;
-  let result = while i < 10 {
-    i += 1;
-    if i == 5 {
-      break i; // 跳出循环，返回 5
-    }
-  };
-  debug_print(result); // 输出 5
-  ```
-
-- `continue` 语句
-
-  ```miradoc
-  continue;
-  ```
-
-  用于跳过当前循环的剩余部分，继续下一次循环。
-
-  ```mira
-  let mut i = 0;
-  while i < 10 {
-    i += 1;
-    if i % 2 == 0 {
-      continue; // 跳过偶数
-    }
-    debug_print(i); // 输出奇数
+```mira
+let mut i = 0;
+while i < 10 {
+  i += 1;
+  if i % 2 == 0 {
+    continue; // 跳过偶数
   }
-  ```
+  debug_print(i); // 输出奇数
+}
+```
 
 #### `mod` 语句
 
