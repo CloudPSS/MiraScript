@@ -23,7 +23,7 @@ export let CancellationTokenSource,
  * @param {object} monacoApi - Monaco API 对象，必须包含特定方法和属性。
  */
 export function registerMonacoApi(monacoApi) {
-    if (monaco) {
+    if (monaco && monaco !== monacoApi) {
         throw new Error('MiraScriptMonacoLoader has already been registered.');
     }
     if (

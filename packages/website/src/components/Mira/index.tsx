@@ -4,6 +4,7 @@ import { Editor, useMonaco } from './monaco';
 import styles from './styles.module.css';
 import { Highlight } from './highlight';
 import type { Result } from './runner';
+import { setMonacoContext } from './monaco-context';
 
 /** 结果显示 */
 function ResultItem({ item }: { item: Result }): JSX.Element {
@@ -84,6 +85,8 @@ export default function Mira({
                     'semanticHighlighting.enabled': true,
                 }}
                 onMount={(editor) => {
+                    setMonacoContext(editor.getModel(), context);
+
                     if (mode !== 'Doc') {
                         editor.addAction({
                             id: 'run-mirascript',

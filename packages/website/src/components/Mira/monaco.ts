@@ -2,6 +2,7 @@ import ExecutionEnvironment from '@docusaurus/ExecutionEnvironment';
 import type { languages, Uri } from '@private/monaco-editor';
 import { useEffect, useState } from 'react';
 import { loader } from '@monaco-editor/react';
+import { getMonacoContext } from './monaco-context';
 
 /** 加载 monaco */
 async function loadMonaco(): Promise<typeof import('@private/monaco-editor')> {
@@ -9,7 +10,7 @@ async function loadMonaco(): Promise<typeof import('@private/monaco-editor')> {
     monaco.editor.setTheme('vs-dark');
 
     const { registerMiraScript } = await import('@mirascript/monaco');
-    const loader = registerMiraScript(monaco);
+    const loader = registerMiraScript(monaco, getMonacoContext);
     loader.features.codeLens = false;
     await loader.loadBasicFeatures();
     monaco.editor.createModel('', 'mirascript').dispose();

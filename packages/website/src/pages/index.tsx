@@ -104,7 +104,7 @@ function CodeSnippet({ title, code, context }: { title: string; code: string; co
                 <span className={styles['codeDot']} />
                 {title}
             </div>
-            <Highlight value={code} mode="Script" context={context} readOnly autoRun />
+            <Highlight value={code} mode="Script" context={context} autoRun />
         </div>
     );
 }

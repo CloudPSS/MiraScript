@@ -87,6 +87,9 @@ export default {
         ],
     ],
     themeConfig: {
+        colorMode: {
+            respectPrefersColorScheme: true,
+        },
         navbar: {
             title: 'MiraScript',
             items: [
