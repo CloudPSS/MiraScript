@@ -69,6 +69,7 @@ export default function Mira({
                 options={{
                     scrollBeyondLastLine: false,
                     minimap: { enabled: false },
+                    scrollbar: { ignoreHorizontalScrollbarInContentHeight: true, alwaysConsumeMouseWheel: false },
                     formatOnType: true,
                     formatOnPaste: true,
                     fontSize: 14.4,
