@@ -10,6 +10,7 @@ export default {
     title: 'MiraScript',
     tagline: 'A powerful scripting language',
     url: 'https://mira.cloudpss.net',
+    favicon: 'img/mirascript-logo.svg',
 
     baseUrl: '/',
     trailingSlash: true,
@@ -51,16 +52,16 @@ export default {
                 };
             },
         }),
-        // [
-        //     '@easyops-cn/docusaurus-search-local',
-        //     {
-        //         docsRouteBasePath: '/',
-        //         docsDir: '../../docs',
-        //         indexBlog: false,
-        //         language: ['zh', 'en'],
-        //         hashed: 'query',
-        //     } satisfies import('@easyops-cn/docusaurus-search-local').PluginOptions,
-        // ],
+        [
+            '@easyops-cn/docusaurus-search-local',
+            {
+                docsRouteBasePath: '/',
+                docsDir: '../../docs',
+                indexBlog: false,
+                language: ['zh', 'en'],
+                hashed: 'query',
+            } satisfies import('@easyops-cn/docusaurus-search-local').PluginOptions,
+        ],
     ],
     presets: [
         [
@@ -89,6 +90,10 @@ export default {
         navbar: {
             title: 'MiraScript',
             items: [],
+            logo: {
+                src: 'img/mirascript-logo.svg',
+                alt: 'MiraScript Logo',
+            },
         },
         prism: {
             additionalLanguages: ['powershell', 'ini'],
