@@ -154,7 +154,7 @@ debug_print("字符数组:", characters);  // ["H", "i", "!"]
 ```
 
 :::tip
-使用 `len(chars(str))` 获取字符串长度，确保正确处理多字节字符。
+使用 `len(chars(str))` 获取字符串长度。
 :::
 
 ## 类型转换
