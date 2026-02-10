@@ -14,7 +14,6 @@ use crate::{
 
 use super::{
     Emitter, OpCode,
-    emitter_pub::ModuleExports,
     opcode::{OpParam, OpParamTrait, Register},
     variable::BindType,
 };
@@ -556,17 +555,19 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     // Since "str" will be an Literal expression
                     self.op_format(token.range(), ret, parts[0].0, parts[0].1);
                 } else {
-                    for (p, fmt) in parts.iter() {
-                        if !fmt.is_empty() {
-                            self.op_format(token.range(), *p, *p, *fmt);
-                        }
-                    }
-                    self.op_variadic(
-                        token.range(),
-                        ret,
-                        OpCode::Concat,
-                        parts.into_iter().map(|p| p.0).collect(),
-                    );
+                    let parts = parts
+                        .into_iter()
+                        .map(|(p, fmt)| {
+                            if fmt.is_empty() {
+                                p
+                            } else {
+                                let fmt_reg = self.closures.add_reg();
+                                self.op_format(token.range(), fmt_reg, p, fmt);
+                                fmt_reg
+                            }
+                        })
+                        .collect();
+                    self.op_variadic(token.range(), ret, OpCode::Concat, parts);
                 }
             }
             Variable(token) => self.emit_var_read(token, ret),
