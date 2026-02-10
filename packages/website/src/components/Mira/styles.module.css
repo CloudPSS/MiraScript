@@ -23,6 +23,73 @@
   user-select: text;
 }
 
+.with-results {
+  > .pre {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    margin-bottom: 0;
+  }
+}
+
+.results {
+  --ifm-pre-color: #dcdcdc;
+  --ifm-pre-background: #2c2c2c;
+
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  margin-top: 0;
+  max-height: 50vh;
+}
+
+.result-item {
+  position: relative;
+  display: block;
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.9em;
+  white-space: pre-wrap;
+  word-break: break-word;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0;
+  padding: 0.05em 0.5em;
+  padding-left: 2em;
+  margin: 0 -0.3em;
+
+  &:first-child {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  &::before {
+    position: absolute;
+    content: '';
+    display: inline-block;
+    width: 1.5em;
+    left: 0.5em;
+  }
+}
+
+.result-log {
+  &::before {
+    color: #61dafb;
+    content: '🛈 ';
+  }
+}
+
+.result-error {
+  color: #f48771;
+
+  &::before {
+    content: '❌ ';
+  }
+}
+
+.result-result {
+  color: #73c991;
+
+  &::before {
+    content: '✔ ';
+  }
+}
+
 @media screen {
   .pre {
     > * {

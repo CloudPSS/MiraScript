@@ -1,12 +1,48 @@
-import type { JSX } from 'react';
+import { useState, type JSX } from 'react';
 import type { InputMode } from '@mirascript/mirascript';
+import { Editor, useMonaco } from './monaco';
 import styles from './styles.module.css';
-import { Editor } from '../../client/monaco';
+import { Highlight } from './highlight';
+import type { Result } from './runner';
+
+/** 结果显示 */
+function ResultItem({ item }: { item: Result }): JSX.Element {
+    const H = (item: Result['content'][number], i: number): JSX.Element => {
+        if (typeof item === 'string') {
+            return (
+                <span key={i} className={styles['result-content']}>
+                    {item}
+                </span>
+            );
+        }
+        return <Highlight key={i} code={item.value} language="mirascript" />;
+    };
+    if (item.type === 'error') {
+        return <code className={`${styles['result-item']} ${styles['result-error']}`}>{item.content.map((c, i) => H(c, i))}</code>;
+    } else if (item.type === 'log') {
+        return <code className={`${styles['result-item']} ${styles['result-log']}`}>{item.content.map((c, i) => H(c, i))}</code>;
+    } else {
+        return <code className={`${styles['result-item']} ${styles['result-result']}`}>{item.content.map((c, i) => H(c, i))}</code>;
+    }
+}
+
+/** 结果显示 */
+function Results({ results }: { results: Result[] }): JSX.Element {
+    return (
+        <pre className={styles['results']}>
+            {results.map((item, index) => (
+                <ResultItem key={index} item={item} />
+            ))}
+        </pre>
+    );
+}
 
 /** MiraScript 编辑器 */
 export default function Mira({ value, mode, title }: { value: string; mode: InputMode; title: string }): JSX.Element {
     const lineCount = value.split('\n').length;
-    const editor = (
+    const [results, setResults] = useState<Result[]>([]);
+    const monaco = useMonaco();
+    const editor = monaco && (
         <Editor
             path={title ? `title:///#${encodeURIComponent(title)}` : undefined}
             className={styles['editor']}
@@ -19,18 +55,34 @@ export default function Mira({ value, mode, title }: { value: string; mode: Inpu
                 fontSize: 14.4,
                 lineHeight: 14.4 * 1.45,
                 fontFamily: 'var(--ifm-font-family-monospace)',
-                readOnly: true,
                 lineDecorationsWidth: 0,
                 lineNumbersMinChars: Math.floor(Math.log10(lineCount)) + 3,
             }}
+            onMount={(editor) => {
+                editor.addAction({
+                    id: 'run-mirascript',
+                    label: '运行',
+                    keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
+                    run: (editor) => {
+                        void import('./runner').then(async ({ runMiraScript }) => {
+                            const results = await runMiraScript(editor.getValue(), mode);
+                            setResults(results);
+                        });
+                    },
+                });
+            }}
         />
     );
+    const hasResults = results.length > 0;
     return (
-        <div className={styles['host']}>
-            <div className={styles['editor-holder']}>{editor}</div>
-            <pre className={styles['pre']}>
-                <code>{value}</code>
-            </pre>
-        </div>
+        <>
+            <div className={`${styles['host']} ${hasResults ? styles['with-results'] : ''}`}>
+                <div className={styles['editor-holder']}>{editor}</div>
+                <pre className={styles['pre']}>
+                    <code>{value}</code>
+                </pre>
+            </div>
+            {hasResults ? <Results results={results} /> : null}
+        </>
     );
 }

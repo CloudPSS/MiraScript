@@ -71,6 +71,9 @@ export default {
         ],
     ],
     themeConfig: {
+        navbar: {
+            title: 'MiraScript',
+        },
         prism: {
             additionalLanguages: ['powershell', 'ini'],
             theme: prismThemes.vsDark,
