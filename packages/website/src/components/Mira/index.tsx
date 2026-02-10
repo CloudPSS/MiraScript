@@ -43,12 +43,14 @@ export default function Mira({
     mode,
     title,
     readOnly,
+    autoRun,
     context,
 }: {
     value: string;
     mode: InputMode | 'Doc';
     title?: string;
     readOnly?: boolean;
+    autoRun?: boolean;
     context?: Record<string, VmAny>;
 }): JSX.Element {
     const lineCount = value.split('\n').length;
@@ -94,6 +96,9 @@ export default function Mira({
                                 });
                             },
                         });
+                        if (autoRun) {
+                            void editor.getAction('run-mirascript')?.run();
+                        }
                     }
                 }}
                 onChange={() => setResultsOutdated(true)}

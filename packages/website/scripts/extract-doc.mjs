@@ -182,7 +182,7 @@ for (const [i, mod] of modules.entries()) {
     const num = moduleIndex.get(mod.name);
     lines.push(`## 模块 \`${mod.name}\``);
     lines.push('');
-    lines.push(`见[${mod.name}](./${num}-${mod.name}.md)。`);
+    lines.push(`参见 [模块 ${mod.name}](./${num}-${mod.name}.md)。`);
     lines.push('');
   }
 

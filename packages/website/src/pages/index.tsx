@@ -91,7 +91,7 @@ debug_print(user.address.city);  // => nil
 
 // 空合并与默认值
 let city = user.address.city ?? "未知";
-debug_print(user.name!);         // 断言非空`,
+debug_print(user.name!, city);         // 断言非空`,
         context: {},
     },
 ];
@@ -104,7 +104,7 @@ function CodeSnippet({ title, code, context }: { title: string; code: string; co
                 <span className={styles['codeDot']} />
                 {title}
             </div>
-            <Highlight value={code} mode="Script" context={context} readOnly />
+            <Highlight value={code} mode="Script" context={context} readOnly autoRun />
         </div>
     );
 }
