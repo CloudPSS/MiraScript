@@ -1,5 +1,6 @@
 /* eslint-disable no-console */
 /* eslint-disable unicorn/prefer-single-call */
+import { compileSync } from '@mirascript/mirascript';
 import { lib, formatDiagnosticMessage } from '@mirascript/mirascript/subtle';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -88,11 +89,16 @@ function renderFunction(name, entry) {
   if (entry.examples?.length) {
     lines.push('**示例**');
     lines.push('');
-    lines.push('```mira');
     for (const ex of entry.examples) {
+      lines.push('`````mira');
+      try {
+        compileSync(ex);
+      } catch (e) {
+        console.error(`示例代码编译错误：\n${ex}`);
+      }
       lines.push(ex);
+      lines.push('`````');
     }
-    lines.push('```');
     lines.push('');
   }
 
