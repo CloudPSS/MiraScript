@@ -60,7 +60,7 @@ const nameIfNotAnonymous = <T>({ name }: { name: string | undefined }, fallback:
 /** 创建 Mirascript 函数 */
 export function VmFunction<T extends VmFunctionLike>(
     fn: T,
-    option: VmFunctionOption | VmFunction | VmLib<T> = {},
+    option: NoInfer<VmFunctionOption | VmFunction | VmLib<T>> = {},
 ): VmFunction<T> {
     if (typeof fn != 'function') {
         throw new TypeError('Invalid function');

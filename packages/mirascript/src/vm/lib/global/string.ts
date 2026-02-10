@@ -2,7 +2,7 @@ import { expectArray, expectString, VmLib } from '../helpers.js';
 
 export const chars = VmLib(
     (str) => {
-        return [...expectString('str', str)];
+        return Array.from(expectString('str', str));
     },
     {
         summary: '将字符串转换为字符数组',
