@@ -102,6 +102,10 @@ export default {
                     to: '/cheatsheet/',
                     label: '速查手册',
                 },
+                {
+                    href: 'https://mira.cloudpss.net/playground/',
+                    label: '在线编辑器',
+                },
             ],
             logo: {
                 src: 'img/mirascript-logo.svg',
@@ -109,7 +113,6 @@ export default {
             },
         },
         prism: {
-            additionalLanguages: ['powershell', 'ini'],
             theme: prismThemes.vsDark,
             // darkTheme: prismThemes.vsDark,
         },
