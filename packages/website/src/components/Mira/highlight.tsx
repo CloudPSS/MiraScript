@@ -1,8 +1,17 @@
 import { useEffect, useState, type JSX } from 'react';
 import { useMonaco } from './monaco';
+import { useColorMode } from '@docusaurus/theme-common';
 
 /** 语法高亮 */
-export function Highlight({ code, language, ...props }: { code: string; language?: 'mirascript' | 'mirascript-template' | 'mirascript-doc' }): JSX.Element {
+export default function Highlight({
+    code,
+    language,
+    ...props
+}: {
+    code: string;
+    language?: 'mirascript' | 'mirascript-template' | 'mirascript-doc';
+}): JSX.Element {
+    const { colorMode } = useColorMode();
     const monaco = useMonaco();
     const [html, setHtml] = useState<string>('');
     useEffect(() => {
@@ -13,7 +22,7 @@ export function Highlight({ code, language, ...props }: { code: string; language
             }
             setHtml(colored);
         });
-    }, [monaco, code, language]);
+    }, [monaco, code, language, colorMode]);
     if (!html) {
         return <span {...props}>{code} </span>;
     }

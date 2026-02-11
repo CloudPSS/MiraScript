@@ -1,10 +1,10 @@
-import { useState, type JSX } from 'react';
+import { useId, useState, type JSX } from 'react';
 import type { InputMode, VmAny } from '@mirascript/mirascript';
-import { Editor, useMonaco } from './monaco';
-import styles from './styles.module.css';
-import { Highlight } from './highlight';
 import type { Result } from './runner';
-import { setMonacoContext } from './monaco-context';
+import { getMonacoContext, setMonacoContext } from './monaco-context';
+import Editor from './editor';
+import Highlight from './highlight';
+import styles from './styles.module.css';
 
 /** 结果显示 */
 function ResultItem({ item }: { item: Result }): JSX.Element {
@@ -18,13 +18,7 @@ function ResultItem({ item }: { item: Result }): JSX.Element {
         }
         return <Highlight key={i} code={item.value} language="mirascript" />;
     };
-    if (item.type === 'error') {
-        return <code className={`${styles['result-item']} ${styles['result-error']}`}>{item.content.map((c, i) => H(c, i))}</code>;
-    } else if (item.type === 'log') {
-        return <code className={`${styles['result-item']} ${styles['result-log']}`}>{item.content.map((c, i) => H(c, i))}</code>;
-    } else {
-        return <code className={`${styles['result-item']} ${styles['result-result']}`}>{item.content.map((c, i) => H(c, i))}</code>;
-    }
+    return <div className={`${styles['result-item']} ${styles[`result-${item.type}`]}`}>{item.content.map((c, i) => H(c, i))}</div>;
 }
 
 /** 结果显示 */
@@ -57,12 +51,12 @@ export default function Mira({
     const lineCount = value.split('\n').length;
     const [results, setResults] = useState<Result[]>([]);
     const [resultsOutdated, setResultsOutdated] = useState(true);
-    const monaco = useMonaco();
     const language = mode === 'Template' ? 'mirascript-template' : mode === 'Doc' ? 'mirascript-doc' : 'mirascript';
-    const editor = monaco && (
+    const path = `markdown:///${useId()}${title ? `?title=${encodeURIComponent(title)}` : ''}`;
+    const editor = (
         <div className={styles['editor-holder']}>
             <Editor
-                path={title ? `title:///#${encodeURIComponent(title)}` : undefined}
+                path={path}
                 className={styles['editor']}
                 value={value}
                 theme="vs-dark"
@@ -71,20 +65,13 @@ export default function Mira({
                     scrollBeyondLastLine: false,
                     minimap: { enabled: false },
                     scrollbar: { ignoreHorizontalScrollbarInContentHeight: true, alwaysConsumeMouseWheel: false },
-                    formatOnType: true,
-                    formatOnPaste: true,
                     fontSize: 14.4,
                     lineHeight: 14.4 * 1.45,
-                    fontFamily: 'var(--ifm-font-family-monospace)',
-                    fontLigatures: true,
-                    automaticLayout: true,
                     lineDecorationsWidth: 0,
                     lineNumbersMinChars: Math.floor(Math.log10(lineCount)) + 3,
-                    tabSize: 2,
                     readOnly: readOnly,
-                    'semanticHighlighting.enabled': true,
                 }}
-                onMount={(editor) => {
+                onMount={(editor, monaco: typeof import('@private/monaco-editor')) => {
                     setMonacoContext(editor.getModel(), context);
 
                     if (mode !== 'Doc') {
@@ -95,7 +82,7 @@ export default function Mira({
                             run: (editor) => {
                                 void import('./runner').then(async ({ runMiraScript }) => {
                                     const code = editor.getValue();
-                                    const results = await runMiraScript(code, mode, context);
+                                    const results = await runMiraScript(code, mode, getMonacoContext(editor.getModel()!));
                                     setResults(results);
                                     setResultsOutdated(code !== editor.getValue());
                                 });

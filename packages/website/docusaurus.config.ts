@@ -19,6 +19,8 @@ export default {
     onBrokenAnchors: 'throw',
     onDuplicateRoutes: 'throw',
 
+    i18n: { defaultLocale: 'zh-hans', locales: ['zh-hans'] },
+
     future: {
         v4: true,
         experimental_faster: true,
@@ -46,6 +48,10 @@ export default {
                                 test: /\.wasm$/,
                                 resourceQuery: /url/,
                                 type: 'asset/resource',
+                            },
+                            {
+                                test: /\.(mira|miratpl)$/,
+                                type: 'asset/source',
                             },
                         ],
                     },
@@ -106,7 +112,7 @@ export default {
                     label: '速查手册',
                 },
                 {
-                    href: 'https://mira.cloudpss.net/playground/',
+                    href: '/playground/',
                     label: '在线编辑器',
                 },
             ],

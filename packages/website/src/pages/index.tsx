@@ -1,10 +1,10 @@
 import type { JSX } from 'react';
 import Link from '@docusaurus/Link';
+import type { VmAny } from '@mirascript/mirascript';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
 import Highlight from '../components/Mira/index';
 import styles from './index.module.css';
-import type { VmAny } from '@mirascript/mirascript';
 
 /* ---------- Feature 数据 ---------- */
 const features = [
