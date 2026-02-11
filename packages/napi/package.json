@@ -25,7 +25,8 @@
     "node": ">= 16"
   },
   "scripts": {
-    "build": "docker buildx build --platform amd64,arm64 -f ./Dockerfile --pull --output type=local,dest=./dist,platform-split=false ../.. || pnpm run build:debug --release",
+    "build": "pnpm build:docker || pnpm build:debug --release",
+    "build:docker": "docker buildx build --platform amd64,arm64 -f ./Dockerfile --pull --output type=local,dest=./dist,platform-split=false ../..",
     "build:debug": "napi build --manifest-path ../../crates/node-api/Cargo.toml --output-dir dist --platform --esm",
     "watch": "nodemon --watch ../../crates/ --ext rs --exec \"pnpm run build:debug\""
   },
