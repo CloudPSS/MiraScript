@@ -41,11 +41,7 @@ await esbuild.build({
     target: 'esnext',
     bundle: true,
     packages: 'bundle',
-    platform: 'node',
-    mainFields: ['exports', 'module', 'main'],
-    banner: {
-        js: /* js */ `import { createRequire as Ĩ } from 'node:module';const require = Ĩ(import.meta.url);const { dirname: __dirname, filename: __filename } = import.meta;`,
-    },
+    platform: 'browser',
     external: [
         'vscode',
         ...builtinModules.flatMap((m) => [m, `node:${m}`]),

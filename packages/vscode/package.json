@@ -1,5 +1,5 @@
 {
-  "name": "@mirascript/vscode",
+  "name": "mirascript",
   "version": "0.1.44",
   "author": "CloudPSS",
   "publisher": "CloudPSS",
@@ -24,19 +24,22 @@
     "build": "pnpm build:icon && pnpm build:language-configuration && pnpm build:language && pnpm build:esbuild",
     "watch:language": "nodemon --watch scripts --exec 'pnpm build:language' --ext yaml",
     "watch:esbuild": "nodemon --watch esbuild.config.js --watch src --ext js,ts --exec 'pnpm build:esbuild'",
-    "watch:ts": "rimraf ./dist && tsc --watch"
+    "watch:ts": "rimraf ./dist && tsc --watch",
+    "vscode:prepublish": "pnpm build && pnpm pack --out mirascript-vscode.tgz",
+    "vscode:pack": "vsce package --no-dependencies --pre-release --allow-missing-repository --skip-license"
   },
   "dependencies": {
-    "@mirascript/wasm": "workspace:~"
-  },
-  "devDependencies": {
     "@mirascript/mirascript": "workspace:~",
     "@mirascript/monaco": "workspace:~",
+    "@mirascript/wasm": "workspace:~",
+    "cosmiconfig": "^9.0.0"
+  },
+  "devDependencies": {
     "@mirascript/website": "workspace:~",
     "@private/monaco-editor": "^0.0.64",
-    "@types/node": "^25.2.2",
-    "@types/vscode": "^1.109.0",
-    "cosmiconfig": "^9.0.0",
+    "@types/node": "^25.2.3",
+    "@types/vscode": "1.90.0",
+    "@vscode/vsce": "^3.7.1",
     "js-yaml": "^4.1.1",
     "nodemon": "^3.1.11",
     "svg2png-wasm": "^1.4.1"
