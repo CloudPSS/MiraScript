@@ -1,6 +1,0 @@
-.vscode/**
-.vscode-test/**
-.gitignore
-scripts/**
-src/**
-media-src/**

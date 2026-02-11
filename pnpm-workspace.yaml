@@ -9,8 +9,6 @@ ignoredBuiltDependencies:
 
 onlyBuiltDependencies:
   - '@swc/core'
-  - '@vscode/vsce-sign'
-  - keytar
 
 publicHoistPattern:
   - '*eslint*'
