@@ -1,9 +1,5 @@
 # Change Log
 
-All notable changes to the "vscode" extension will be documented in this file.
+## [0.1.45] - 2026-02-11
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
-
-## [Unreleased]
-
-- Initial release
+- 发布 VsCode 扩展
