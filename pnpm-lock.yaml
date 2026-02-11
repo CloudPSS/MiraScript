@@ -217,6 +217,9 @@ importers:
       '@mirascript/monaco':
         specifier: workspace:~
         version: link:../monaco
+      '@mirascript/website':
+        specifier: workspace:^
+        version: link:../website
       '@private/monaco-editor':
         specifier: ^0.0.64
         version: 0.0.64
@@ -235,6 +238,9 @@ importers:
       nodemon:
         specifier: ^3.1.11
         version: 3.1.11
+      svg2png-wasm:
+        specifier: ^1.4.1
+        version: 1.4.1
 
   packages/wasm:
     devDependencies:
@@ -10025,6 +10031,10 @@ packages:
   svg-parser@2.0.4:
     resolution:
       { integrity: sha512-e4hG1hRwoOdRb37cIMSgzNsxyzKfayW6VOflrwvR+/bzrkyxY/31WkbgnQpgtrNp1SdpJvpUAGTa/ZoiPNDuRQ== }
+
+  svg2png-wasm@1.4.1:
+    resolution:
+      { integrity: sha512-ZFy1NtwZVAsslaTQoI+/QqX2sg0vjmgJ/jGAuLZZvYcRlndI54hLPiwLC9JzXlFBerfxN5JiS7kpEUG0mrXS3Q== }
 
   svgo@3.3.2:
     resolution:
@@ -20463,6 +20473,8 @@ snapshots:
   supports-preserve-symlinks-flag@1.0.0: {}
 
   svg-parser@2.0.4: {}
+
+  svg2png-wasm@1.4.1: {}
 
   svgo@3.3.2:
     dependencies:

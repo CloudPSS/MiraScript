@@ -6,6 +6,7 @@
   "license": "MIT",
   "displayName": "MiraScript",
   "description": "MiraScript language support for Visual Studio Code.",
+  "icon": "./dist/icon.png",
   "categories": [
     "Programming Languages"
   ],
@@ -16,10 +17,11 @@
     "vscode": "^1.90.0"
   },
   "scripts": {
+    "build:icon": "node scripts/icon.js",
     "build:language-configuration": "node scripts/language-configuration.js",
     "build:language": "node scripts/language.js",
     "build:esbuild": "node ./esbuild.config.js",
-    "build": "pnpm build:language-configuration && pnpm build:language && pnpm build:esbuild",
+    "build": "pnpm build:icon && pnpm build:language-configuration && pnpm build:language && pnpm build:esbuild",
     "watch:language": "nodemon --watch scripts --exec 'pnpm build:language' --ext yaml",
     "watch:esbuild": "nodemon --watch esbuild.config.js --watch src --ext js,ts --exec 'pnpm build:esbuild'",
     "watch:ts": "rimraf ./dist && tsc --watch"
@@ -30,12 +32,14 @@
   "devDependencies": {
     "@mirascript/mirascript": "workspace:~",
     "@mirascript/monaco": "workspace:~",
+    "@mirascript/website": "workspace:~",
     "@private/monaco-editor": "^0.0.64",
     "@types/node": "^25.2.2",
     "@types/vscode": "^1.109.0",
     "cosmiconfig": "^9.0.0",
     "js-yaml": "^4.1.1",
-    "nodemon": "^3.1.11"
+    "nodemon": "^3.1.11",
+    "svg2png-wasm": "^1.4.1"
   },
   "contributes": {
     "markdown.previewScripts": [
