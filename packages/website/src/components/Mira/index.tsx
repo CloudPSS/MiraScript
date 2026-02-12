@@ -2,6 +2,7 @@ import { useId, useState, type JSX } from 'react';
 import type { InputMode, VmAny } from '@mirascript/mirascript';
 import type { Result } from './runner';
 import { getMonacoContext, setMonacoContext } from './monaco-context';
+import { useMonaco } from './monaco';
 import Editor from './editor';
 import Highlight from './highlight';
 import styles from './styles.module.css';
@@ -53,7 +54,7 @@ export default function Mira({
     const [resultsOutdated, setResultsOutdated] = useState(true);
     const language = mode === 'Template' ? 'mirascript-template' : mode === 'Doc' ? 'mirascript-doc' : 'mirascript';
     const path = `markdown:///${useId()}${title ? `?title=${encodeURIComponent(title)}` : ''}`;
-    const editor = (
+    const editor = useMonaco() && (
         <div className={styles['editor-holder']}>
             <Editor
                 path={path}

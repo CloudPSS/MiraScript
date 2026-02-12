@@ -7,9 +7,7 @@
 }
 
 .editor-holder {
-  user-select: auto;
   position: absolute;
-  z-index: 1;
   inset: calc(var(--ifm-pre-border-radius) - 1.5px) 0;
   user-select: none;
   border-radius: var(--ifm-pre-border-radius);
