@@ -29,7 +29,7 @@ let a_exists = 'a' in record; // true
 
 ```mira
 if 'my_global' in global {
-  my_global += 1;
+  debug_print('my_global exists');
 }
 ```
 

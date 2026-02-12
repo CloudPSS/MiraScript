@@ -9,7 +9,7 @@ title: '!'
 逻辑非：
 
 ```mira
-!x // x 必须是 boolean
+!x; // x 必须是 boolean
 ```
 
 ---
@@ -17,7 +17,6 @@ title: '!'
 非空断言：
 
 ```mira
-
 let x = nil;
 x!; // panic
 ```

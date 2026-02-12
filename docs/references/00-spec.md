@@ -486,7 +486,10 @@ let result2 = add(..array);
 扩展调用运算符 `::` 将左操作数作为右侧函数调用的第一个参数，用以简化函数调用的语法。
 
 ```mira
-[1, 2, 3]::filter(fn { it > 1 })::(fn { `The array is: $it` })()::debug_print();
+[1, 2, 3]
+  ::filter(fn { it > 1 })
+  ::(fn { `The array is: $it` })()
+  ::debug_print();
 // 相当于
 // debug_print(
 //   (fn { `The array is: $it` })(

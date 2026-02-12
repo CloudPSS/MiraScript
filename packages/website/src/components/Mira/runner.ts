@@ -119,7 +119,9 @@ export async function runMiraScript(
         const result = script(
             createVmContext((key) => {
                 if (key === 'debug_print') return debug_print;
-                return context?.get(key);
+                if (context == null) return undefined;
+                if (!context.has(key)) return undefined;
+                return context.get(key);
             }),
         );
         const t = now();
