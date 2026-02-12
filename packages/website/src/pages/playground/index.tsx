@@ -27,7 +27,7 @@ function EditorPanel({ setResults }: { setResults: React.Dispatch<React.SetState
         <>
             <div className={styles['editor-header']}>
                 <h3>编辑器</h3>
-                <label htmlFor="example-select">示例：</label>
+                <label htmlFor="example-select">示例</label>
                 <select
                     id="example-select"
                     className={styles['editor-options']}
@@ -47,8 +47,21 @@ function EditorPanel({ setResults }: { setResults: React.Dispatch<React.SetState
                         </option>
                     ))}
                 </select>
-                <button className={styles['editor-options']} onClick={() => void run(state.source)}>
-                    运行 (Ctrl+Enter)
+                <label htmlFor="mode-select">模式</label>
+                <select
+                    id="mode-select"
+                    className={styles['editor-options']}
+                    value={state.mode}
+                    onChange={(e) => {
+                        const mode = e.target.value as 'Script' | 'Template';
+                        setState({ mode });
+                    }}
+                >
+                    <option value="Script">Script</option>
+                    <option value="Template">Template</option>
+                </select>
+                <button className={styles['editor-options']} onClick={() => void run(state.source)} title="Ctrl+Enter">
+                    运行
                 </button>
             </div>
             <Editor
