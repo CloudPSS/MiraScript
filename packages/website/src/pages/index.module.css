@@ -211,6 +211,7 @@
   border-radius: 12px;
   border: 1px solid var(--ifm-color-emphasis-200);
   background: #1e1e1e;
+  overflow: hidden;
 }
 
 .codeHeader {

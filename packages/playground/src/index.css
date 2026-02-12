@@ -376,7 +376,7 @@ body > .playground {
     user-select: none;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 960px) {
     .header-controls {
       display: flex;
       gap: 12px;

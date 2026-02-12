@@ -8,7 +8,7 @@
     'editor-header output-header'
     'editor-content output-content';
 
-  @media (max-width: 768px) {
+  @media (max-width: 1000px) {
     & {
       grid-template-columns: 1fr;
       grid-template-rows: auto 1fr auto 1fr;
