@@ -47,6 +47,16 @@
       "type": "extensionHost",
       "request": "launch",
       "args": ["--extensionDevelopmentPath=${workspaceFolder}/packages/vscode", "--disable-extensions"]
+    },
+    {
+      "name": "Extension (Web)",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}/packages/vscode",
+        "--extensionDevelopmentKind=web",
+        "--disable-extensions"
+      ]
     }
   ]
 }
