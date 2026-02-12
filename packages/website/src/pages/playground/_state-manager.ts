@@ -16,7 +16,7 @@ export interface State {
 let getState: () => State, setState: (state: Partial<State>) => void;
 if (ExecutionEnvironment.canUseDOM) {
     const STORAGE_PREFIX = 'mirascript-playground-state-';
-    const hash = ExecutionEnvironment.canUseDOM ? new URLSearchParams(location.hash.slice(1)) : new URLSearchParams();
+    const hash = new URLSearchParams(location.hash.slice(1));
 
     const fromHash = (value: string | null): string | undefined => {
         if (!value) return undefined;
@@ -50,7 +50,6 @@ if (ExecutionEnvironment.canUseDOM) {
 
     hash.set('mode', mode);
     hash.set('source', toHash(source));
-    history.replaceState({}, '', `#${hash.toString()}`);
 
     /** 读取状态 */
     getState = (): State => {
