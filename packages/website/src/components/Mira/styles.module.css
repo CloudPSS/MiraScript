@@ -92,7 +92,7 @@
 .result-log {
   &::before {
     color: #61dafb;
-    content: '🛈 ';
+    content: 'ⓘ ';
   }
 }
 
