@@ -119,6 +119,8 @@ export default {
             logo: {
                 src: 'favicon.svg',
                 alt: 'MiraScript Logo',
+                width: 32,
+                height: 32,
             },
         },
         prism: {
