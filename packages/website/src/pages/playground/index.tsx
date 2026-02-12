@@ -4,11 +4,11 @@ import Editor from '../../components/Mira/editor';
 import Highlight from '../../components/Mira/highlight';
 import { setMonacoContext } from '../../components/Mira/monaco-context';
 import { runMiraScript, type Result } from '../../components/Mira/runner';
-import styles from './index.module.css';
-import { usePlaygroundState } from './state-manager';
-import { EXAMPLES } from './examples';
-import { globals } from './globals';
+import { usePlaygroundState } from './_state-manager';
+import { EXAMPLES } from './_examples';
+import { globals } from './_globals';
 import { configCheckpoint } from '@mirascript/mirascript';
+import styles from './index.module.css';
 
 /** 编辑面板 */
 function EditorPanel({ setResults }: { setResults: React.Dispatch<React.SetStateAction<Result[]>> }): JSX.Element {

@@ -1,5 +1,5 @@
 import type { InputMode } from '@mirascript/mirascript';
-import { EXAMPLES } from './examples';
+import { EXAMPLES } from './_examples';
 import { fromUint8Array, toUint8Array } from 'js-base64';
 import { deflateSync, inflateSync } from 'fflate';
 import { useState } from 'react';
