@@ -24,7 +24,7 @@ export type Result = {
 };
 
 const printOptions = { ...lib.debug_print, prefix: [] };
-let cache: { fileName: string; mode: InputMode; source: string; script: VmScript } | null = null;
+let cache: { fileName: string; mode: InputMode; source: string; script: VmScript | null } | null = null;
 /** 运行 MiraScript 代码 */
 export async function runMiraScript(
     source: string,
@@ -69,6 +69,9 @@ export async function runMiraScript(
             content: [error instanceof Error ? error.message : String(error)],
             timestamp: now(),
         });
+        if (!cacheHit) {
+            cache = { fileName, mode, source: source, script: null };
+        }
     }
     if (!script) {
         return results;

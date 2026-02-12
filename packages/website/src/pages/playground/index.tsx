@@ -51,14 +51,17 @@ function EditorPanel({ setResults }: { setResults: React.Dispatch<React.SetState
                 <select
                     id="mode-select"
                     className={styles['editor-options']}
-                    value={state.mode}
                     onChange={(e) => {
                         const mode = e.target.value as 'Script' | 'Template';
                         setState({ mode });
                     }}
                 >
-                    <option value="Script">Script</option>
-                    <option value="Template">Template</option>
+                    <option value="Script" selected={state.mode === 'Script'}>
+                        Script
+                    </option>
+                    <option value="Template" selected={state.mode === 'Template'}>
+                        Template
+                    </option>
                 </select>
                 <button className={styles['editor-options']} onClick={() => void run(state.source)} title="Ctrl+Enter">
                     运行
@@ -68,6 +71,8 @@ function EditorPanel({ setResults }: { setResults: React.Dispatch<React.SetState
                 className={styles['editor-content']}
                 language={lang}
                 value={state.source}
+                keepCurrentModel
+                path={`playground.${lang === 'mirascript' ? 'mira' : 'miratpl'}`}
                 options={{
                     wordWrap: 'on',
                     wrappingIndent: 'indent',
