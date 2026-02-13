@@ -9,11 +9,9 @@ import { createEditor } from './monaco.js';
 
 await ready;
 
-let modelIndex = 1;
 const createModel = () => {
     const { source, mode } = getState();
-    // 使用唯一的URI避免冲突
-    const uri = monaco.Uri.parse(`file:///playground-${modelIndex++}.${mode === 'Template' ? 'miratpl' : 'mira'}`);
+    const uri = monaco.Uri.parse(`file:///playground`);
     const model = monaco.editor.createModel(source, mode === 'Template' ? 'mirascript-template' : 'mirascript', uri);
     model.setEOL(monaco.editor.EndOfLineSequence.LF);
     return model;
@@ -21,15 +19,15 @@ const createModel = () => {
 
 const updateModel = () => {
     const oldModel = editor.getModel();
+    if (!oldModel) return;
     const { source, mode } = getState();
-    if (oldModel?.getLanguageId() === (mode === 'Template' ? 'mirascript-template' : 'mirascript')) {
-        // 如果语言模式没有变化，直接更新内容
-        oldModel.setValue(source);
-        return;
+    const language = mode === 'Template' ? 'mirascript-template' : 'mirascript';
+    if (oldModel.getLanguageId() !== language) {
+        monaco.editor.setModelLanguage(oldModel, language);
     }
-    const newModel = createModel();
-    editor.setModel(newModel);
-    oldModel?.dispose();
+    if (oldModel.getValue() !== source) {
+        oldModel.setValue(source);
+    }
 };
 
 // UI 元素

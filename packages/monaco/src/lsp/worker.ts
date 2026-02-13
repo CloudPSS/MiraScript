@@ -1,5 +1,6 @@
 import type { InputMode } from '@mirascript/mirascript';
 import type { BcModule } from '@mirascript/bindings/wasm';
+import type { Tagged } from 'type-fest';
 
 const { loadModule } = await import('@mirascript/bindings/wasm');
 const mod = await loadModule();
@@ -11,8 +12,8 @@ export interface MonacoResult extends BcModule.CompileResult {
     formatted?: string;
 }
 
-/** 缓存 Key (id, uri, inputMode) */
-export type CacheKey = `${string}\0${string}\0${InputMode}`;
+/** 缓存 Key (model id) */
+export type CacheKey = Tagged<string, 'modelId'>;
 /** 请求参数 */
 export type Req = [key: CacheKey, version: number, script: string, mode: InputMode];
 /** 编译结果 */

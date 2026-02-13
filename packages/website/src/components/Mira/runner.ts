@@ -8,12 +8,10 @@ import {
 } from '@mirascript/mirascript';
 import { lib, serializeForDisplay } from '@mirascript/mirascript/subtle';
 
-let fileCounter = 1;
 /** 创建名称 */
 function createFileName(mode: InputMode, fileBaseName = 'live-code'): string {
-    const counter = fileCounter++;
     const ext = mode === 'Script' ? 'mira' : 'miratpl';
-    return `${fileBaseName}-${counter}.${ext}`;
+    return `${fileBaseName}.${ext}`;
 }
 
 /** 结果 */

@@ -13,7 +13,6 @@ export function resultManager(
     elResultOutput: HTMLElement,
     globals: VmContext,
 ): () => Promise<VmAny> {
-    let fileCounter = 1;
     let cache: { fileName: string; mode: InputMode; source: string; script: VmScript } | null = null;
     let editor: import('@private/monaco-editor').editor.IStandaloneCodeEditor | null = null;
     /** 编译 */
@@ -21,9 +20,7 @@ export function resultManager(
         await ready;
         const { mode, source } = getState();
         const cacheHit = cache?.mode === mode && cache.source === source ? cache : null;
-        const fileName =
-            cacheHit?.fileName ??
-            (mode === 'Script' ? `playground_${fileCounter++}.mira` : `playground_${fileCounter++}.miratpl`);
+        const fileName = cacheHit?.fileName ?? (mode === 'Script' ? `playground.mira` : `playground.miratpl`);
 
         const compStart = performance.now();
         try {

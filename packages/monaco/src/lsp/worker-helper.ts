@@ -1,3 +1,4 @@
+import type { InputMode } from '@mirascript/constants';
 import { editor } from '../monaco-api.js';
 import type { Ready, CacheKey, Req, Res, ResOk } from './worker.js';
 import { CompileResult } from './compile-result.js';
@@ -7,6 +8,7 @@ import { makeModelMarkers } from './diagnostics.js';
 type CacheValue = {
     readonly version: number;
     readonly result: Promise<CompileResult>;
+    readonly mode: InputMode;
     lastAccess: number;
 };
 /** 编译结果缓存，避免重复编译 */
@@ -91,12 +93,11 @@ async function compileSync(req: Req): Promise<CompileResult> {
 const USE_WORKER = typeof Worker === 'function';
 /** 编译并设置缓存 */
 export async function compile(model: editor.ITextModel): Promise<CompileResult> {
-    const uri = model.uri.toString();
     const version = model.getVersionId();
     const mode = model.getLanguageId() === 'mirascript-template' ? 'Template' : 'Script';
-    const cacheKey = `${model.id}\0${uri}\0${mode}` as const;
+    const cacheKey = model.id as CacheKey;
     const cached = cache.get(cacheKey);
-    if (cached?.version === version) {
+    if (cached?.version === version && cached.mode === mode) {
         cached.lastAccess = Date.now();
         return cached.result;
     }
@@ -115,6 +116,7 @@ export async function compile(model: editor.ITextModel): Promise<CompileResult> 
     const item: CacheValue = {
         version,
         lastAccess: Date.now(),
+        mode,
         result: res,
     };
     cache.set(cacheKey, item);
