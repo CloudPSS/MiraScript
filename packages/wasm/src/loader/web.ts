@@ -1,5 +1,5 @@
 /** 从 Document 推断 URL */
-async function load4() {
+async function loadDocument() {
     const fallbackUrl =
         (document?.currentScript instanceof HTMLScriptElement
             ? document.currentScript.src
@@ -8,48 +8,65 @@ async function load4() {
 }
 
 /** 从 import.meta.url 推断 URL */
-async function load2() {
+async function loadUrl() {
     return await body(fetch(new URL('../../lib/wasm_bg.wasm', import.meta.url)));
 }
 
 /** 从 import.meta.resolve 推断 URL */
-async function load3() {
+async function loadResolve() {
     return await body(fetch(new URL(import.meta.resolve('../../lib/wasm_bg.wasm'))));
 }
 
 /** 由 esm 加载模块 */
-async function load1() {
-    /** 加载模块 */
-    async function loadMod(mod: unknown): Promise<BufferSource> {
-        if (mod && typeof mod == 'object' && 'default' in mod) {
-            return loadMod(mod.default);
-        }
-        if (
-            mod instanceof URL ||
-            (typeof mod == 'string' &&
-                (mod.startsWith('data:') ||
-                    mod.startsWith('http:') ||
-                    mod.startsWith('https:') ||
-                    mod.startsWith('//')))
-        ) {
-            return await body(fetch(mod));
-        }
-        if (mod instanceof Response) {
-            return await body(mod);
-        }
-        if (ArrayBuffer.isView(mod) || mod instanceof ArrayBuffer) {
-            return mod as ArrayBuffer;
-        }
-        if (mod instanceof WebAssembly.Module) {
-            return mod as unknown as BufferSource;
-        }
-        throw new Error('Failed to load wasm module');
-    }
-
+async function loadEsm() {
     // use ?url to force vite to load as bytes
     // https://github.com/vitejs/vite/issues/12366
-    const mod: unknown = await import('../../lib/wasm_bg.wasm?url', { with: { type: 'bytes' } });
-    return await loadMod(mod);
+    const m: unknown = await import('../../lib/wasm_bg.wasm?url', { with: { type: 'bytes' } });
+    return await mod(m);
+}
+
+/** 由 esm.sh 加载模块 */
+async function loadEsmSh() {
+    const url = new URL(import.meta.url);
+    const { pathname } = url;
+    if (!pathname.includes('/@mirascript/wasm')) {
+        throw new Error('Not loaded from esm.sh');
+    }
+    const segments = pathname.split('/');
+    let newUrl = url.origin;
+    for (let i = 0; i < segments.length; i++) {
+        const segment = segments[i]!;
+        newUrl += segment + '/';
+        if (i >= 1 && segments[i - 1] === '@mirascript' && (segment === 'wasm' || segment?.startsWith('wasm@'))) {
+            break;
+        }
+    }
+    newUrl += 'lib/wasm_bg.wasm';
+    return await body(fetch(newUrl));
+}
+
+/** 加载模块 */
+async function mod(m: unknown): Promise<BufferSource> {
+    if (m && typeof m == 'object' && 'default' in m) {
+        return mod(m.default);
+    }
+    if (
+        m instanceof URL ||
+        (typeof m == 'string' &&
+            (m.startsWith('data:') || m.startsWith('http:') || m.startsWith('https:') || m.startsWith('//')))
+    ) {
+        return await body(fetch(m));
+    }
+    if (m instanceof Response) {
+        return await body(m);
+    }
+    if (ArrayBuffer.isView(m) || m instanceof ArrayBuffer) {
+        return m as ArrayBuffer;
+    }
+    if (m instanceof WebAssembly.Module) {
+        return m as unknown as BufferSource;
+    }
+    throw new Error('Failed to load wasm module');
 }
 
 /** 获取模块的响应体 */
@@ -63,8 +80,15 @@ async function body(response: Response | Promise<Response>): Promise<BufferSourc
 }
 
 export const module: Promise<BufferSource> = /* @__PURE__ */ (async () => {
-    return load1()
-        .catch(async () => load2())
-        .catch(async () => load3())
-        .catch(async () => load4());
+    const candidates = [loadEsmSh, loadEsm, loadUrl, loadResolve, loadDocument];
+    for (const candidate of candidates) {
+        try {
+            const mod = await candidate();
+            if (mod == null) continue;
+            return mod;
+        } catch {
+            // ignore
+        }
+    }
+    throw new Error('Failed to load wasm module');
 })();
