@@ -1,40 +1,7 @@
-import {
-    CompletionItemKind,
-    CompletionItemTag,
-    CompletionList,
-    CompletionTriggerKind,
-    type DiagnosticCollection,
-    Disposable,
-    DocumentHighlight,
-    DocumentHighlightKind,
-    Hover,
-    InlayHintKind,
-    languages,
-    SelectionRange,
-    SemanticTokens,
-    SignatureHelpTriggerKind,
-    SymbolKind,
-    Uri,
-    workspace,
-} from 'vscode';
-import {
-    CodeLensProvider,
-    CodeActionProvider,
-    FormatterProvider,
-    DocumentSemanticTokensProvider,
-    DocumentHighlightProvider,
-    DocumentSymbolProvider,
-    HoverProvider,
-    RenameProvider,
-    InlayHintsProvider,
-    CompletionItemProvider,
-    SignatureHelpProvider,
-    RangeProvider,
-    DefinitionReferenceProvider,
-} from '@mirascript/monaco/lsp';
+import type { DiagnosticCollection } from 'vscode';
+import { Disposable, languages, workspace, vscode, miraMonaco, miraMonacoLsp, Uri } from '#loader';
 import { ModelAdapter } from '../adapter/model.js';
 import {
-    CompletionItemInsertTextRule,
     fromCompletionItem,
     fromDiagnostic,
     fromPosition,
@@ -52,9 +19,22 @@ import {
     toTextEdit,
     toWorkspaceEdit,
 } from '../adapter/utils.js';
-import { registerMonacoApi } from '@mirascript/monaco';
-import * as monaco from '@private/monaco-editor/baseapi';
-import type { editor } from '@private/monaco-editor';
+import { createMonacoApi } from '../adapter/api.js';
+const {
+    CodeLensProvider,
+    CodeActionProvider,
+    FormatterProvider,
+    DocumentSemanticTokensProvider,
+    DocumentHighlightProvider,
+    DocumentSymbolProvider,
+    HoverProvider,
+    RenameProvider,
+    InlayHintsProvider,
+    CompletionItemProvider,
+    SignatureHelpProvider,
+    RangeProvider,
+    DefinitionReferenceProvider,
+} = miraMonacoLsp;
 
 const diagnosticDisabledSchemes = new Set(['git', 'vsls', 'github', 'azurerepos', 'mirascript']);
 /**
@@ -69,42 +49,26 @@ export class ProvidersManager extends Disposable {
                 disposable.dispose();
             }
         });
-        const api = {
-            ...monaco,
-            editor: {
-                setModelMarkers: this.setModelMarkers,
-            },
+        const api = createMonacoApi();
+        api.editor.setModelMarkers = (model, owner, markers) => {
+            const doc = (model as ModelAdapter).document;
+            if (!doc || diagnosticDisabledSchemes.has(doc.uri.scheme)) return;
+            let c = this.diagnosticCollections.get(owner);
+            if (!c) {
+                c = languages.createDiagnosticCollection(owner);
+                this.disposables.push(c);
+                this.diagnosticCollections.set(owner, c);
+            }
+            c.set(
+                doc.uri,
+                markers.map((marker) => toDiagnostic(marker)),
+            );
         };
-        (api as Record<string, unknown>)['languages'] = {
-            SymbolKind,
-            DocumentHighlightKind,
-            InlayHintKind,
-            CompletionItemKind,
-            CompletionTriggerKind,
-            CompletionItemTag,
-            CompletionItemInsertTextRule,
-            SignatureHelpTriggerKind,
-        };
-        registerMonacoApi(api);
+        miraMonaco.registerMonacoApi(api);
         this.registerProviders();
     }
 
     private readonly diagnosticCollections = new Map<string, DiagnosticCollection>();
-    /** 设置标签 */
-    setModelMarkers: typeof editor.setModelMarkers = (model, owner, markers) => {
-        const doc = (model as ModelAdapter).document;
-        if (!doc || diagnosticDisabledSchemes.has(doc.uri.scheme)) return;
-        let c = this.diagnosticCollections.get(owner);
-        if (!c) {
-            c = languages.createDiagnosticCollection(owner);
-            this.disposables.push(c);
-            this.diagnosticCollections.set(owner, c);
-        }
-        c.set(
-            doc.uri,
-            markers.map((marker) => toDiagnostic(marker)),
-        );
-    };
 
     /** 注册 Providers */
     private registerProviders(): void {
@@ -180,7 +144,7 @@ export class ProvidersManager extends Disposable {
                             token,
                         );
                         if (!result) return null;
-                        return new SemanticTokens(result.data);
+                        return new vscode.SemanticTokens(result.data);
                     },
                 },
                 {
@@ -207,7 +171,10 @@ export class ProvidersManager extends Disposable {
                         token,
                     );
                     if (!result) return null;
-                    return new Hover(result.contents.map(toMarkdownString), result.range && toRange(result.range));
+                    return new vscode.Hover(
+                        result.contents.map(toMarkdownString),
+                        result.range && toRange(result.range),
+                    );
                 },
             }),
             languages.registerRenameProvider(selector, {
@@ -248,7 +215,7 @@ export class ProvidersManager extends Disposable {
                         token,
                     );
                     if (!result) return null;
-                    return result.map((item) => new DocumentHighlight(toRange(item.range), item.kind));
+                    return result.map((item) => new vscode.DocumentHighlight(toRange(item.range), item.kind));
                 },
             }),
             languages.registerDocumentSymbolProvider(selector, {
@@ -283,7 +250,7 @@ export class ProvidersManager extends Disposable {
                             token,
                         );
                         if (!result) return null;
-                        return new CompletionList(result.suggestions.map(toCompletionItem), result.incomplete);
+                        return new vscode.CompletionList(result.suggestions.map(toCompletionItem), result.incomplete);
                     },
                     resolveCompletionItem: (item, token) => {
                         const i = fromCompletionItem(item);
@@ -324,13 +291,13 @@ export class ProvidersManager extends Disposable {
                         token,
                     );
                     if (!result) return null;
-                    const ranges: SelectionRange[] = [];
+                    const ranges: vscode.SelectionRange[] = [];
                     for (let i = 0; i < positions.length; i++) {
                         const range = result[i];
                         if (!range?.length) continue;
-                        let current: SelectionRange | undefined;
+                        let current: vscode.SelectionRange | undefined;
                         for (const r of range) {
-                            const sr = new SelectionRange(toRange(r.range), current);
+                            const sr = new vscode.SelectionRange(toRange(r.range), current);
                             current = sr;
                         }
                         if (current) {

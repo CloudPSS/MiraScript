@@ -1,40 +1,9 @@
-import { Disposable, workspace, type TextDocument } from 'vscode';
-import { pathToFileURL } from 'node:url';
-import { cosmiconfig, type Loader } from 'cosmiconfig';
-import { Provider } from '@mirascript/monaco/lsp';
+import type { TextDocument } from 'vscode';
 import type { ModelAdapter } from '../adapter/model.js';
-import {
-    createVmContext,
-    isVmArray,
-    isVmExtern,
-    isVmModule,
-    VmExtern,
-    VmFunction,
-    VmModule,
-    type VmFunctionOption,
-    type VmImmutable,
-    type VmPrimitive,
-    type VmValue,
-} from '@mirascript/mirascript';
-
-const jsLoader: Loader = async (filepath, content) => {
-    const url = pathToFileURL(filepath);
-    url.search = content;
-    const mod = (await import(url.href)) as { default: unknown };
-    return mod.default ?? mod;
-};
-const explorer = cosmiconfig('mira', {
-    cache: false,
-    searchStrategy: 'project',
-    loaders: {
-        '.js': jsLoader,
-        '.cjs': jsLoader,
-        '.mjs': jsLoader,
-        '.ts': jsLoader,
-        '.mts': jsLoader,
-        '.cts': jsLoader,
-    },
-});
+import type { VmFunctionOption, VmImmutable, VmPrimitive, VmValue } from '@mirascript/mirascript';
+import { Disposable, explorer, workspace, mira, miraMonacoLsp } from '#loader';
+const { createVmContext, isVmArray, isVmExtern, isVmModule, VmExtern, VmFunction, VmModule } = mira;
+const { Provider } = miraMonacoLsp;
 
 /** 配置信息 */
 export interface MiraConfig {

@@ -12,9 +12,16 @@
   ],
   "private": true,
   "type": "module",
-  "main": "./dist/main.js",
+  "main": "./dist/main.mjs",
+  "browser": "./dist/browser.cjs",
   "engines": {
     "vscode": "^1.90.0"
+  },
+  "imports": {
+    "#loader": {
+      "web-extension": "./src/loader/browser.ts",
+      "default": "./src/loader/index.ts"
+    }
   },
   "scripts": {
     "build:icon": "node scripts/icon.js",

@@ -1,5 +1,5 @@
-import { Disposable, workspace, type TextDocument, window } from 'vscode';
-import { Provider } from '@mirascript/monaco/lsp';
+import type { TextDocument } from 'vscode';
+import { Disposable, workspace, window, miraMonacoLsp } from '#loader';
 import { ModelAdapter } from '../adapter/model.js';
 
 /** 扫描工作区 */
@@ -55,6 +55,6 @@ export class Scanner extends Disposable {
         if (document.languageId !== 'mirascript' && document.languageId !== 'mirascript-template') {
             return;
         }
-        void Provider.getCompileResult(ModelAdapter.from(document));
+        void miraMonacoLsp.Provider.getCompileResult(ModelAdapter.from(document));
     }
 }

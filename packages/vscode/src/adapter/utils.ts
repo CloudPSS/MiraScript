@@ -1,31 +1,6 @@
 import * as monaco from '@private/monaco-editor/baseapi';
 import type { languages as monacoLanguages, editor as monacoEditor } from '@private/monaco-editor';
-import {
-    Diagnostic,
-    CompletionItem,
-    Range,
-    Position,
-    TextEdit,
-    WorkspaceEdit,
-    MarkdownString,
-    Location,
-    Uri,
-    type CompletionItemKind,
-    SnippetString,
-    DiagnosticRelatedInformation,
-    DiagnosticTag,
-    DiagnosticSeverity,
-    CodeAction,
-    CodeActionKind,
-    type Command,
-    CodeLens,
-    InlayHint,
-    InlayHintLabelPart,
-    SignatureHelp,
-    SignatureInformation,
-    ParameterInformation,
-    DocumentSymbol,
-} from 'vscode';
+import { vscode } from '#loader';
 import { createAdapterFactory } from './base.js';
 
 export enum CompletionItemInsertTextRule {
@@ -44,10 +19,12 @@ export enum CompletionItemInsertTextRule {
 /**
  * Converts a Monaco Editor range to a VS Code Range.
  */
-export function toRange<T extends monaco.IRange | null | undefined>(range: T): T extends monaco.IRange ? Range : T {
+export function toRange<T extends monaco.IRange | null | undefined>(
+    range: T,
+): T extends monaco.IRange ? vscode.Range : T {
     if (range == null) return range as never;
-    if (range instanceof Range) return range as never;
-    return new Range(
+    if (range instanceof vscode.Range) return range as never;
+    return new vscode.Range(
         range.startLineNumber - 1,
         range.startColumn - 1,
         range.endLineNumber - 1,
@@ -58,7 +35,7 @@ export function toRange<T extends monaco.IRange | null | undefined>(range: T): T
 /**
  * Converts a VS Code Range to a Monaco Editor range.
  */
-export function fromRange(range: Range): monaco.Range {
+export function fromRange(range: vscode.Range): monaco.Range {
     if (range instanceof monaco.Range) return range;
     return new monaco.Range(
         range.start.line + 1,
@@ -71,33 +48,33 @@ export function fromRange(range: Range): monaco.Range {
 /**
  * Converts a Monaco Editor position to a VS Code Position.
  */
-export function toPosition(position: monaco.IPosition): Position {
-    if (position instanceof Position) return position;
-    return new Position(position.lineNumber - 1, position.column - 1);
+export function toPosition(position: monaco.IPosition): vscode.Position {
+    if (position instanceof vscode.Position) return position;
+    return new vscode.Position(position.lineNumber - 1, position.column - 1);
 }
 
 /**
  * Converts a VS Code Position to a Monaco Editor position.
  */
-export function fromPosition(position: Position): monaco.Position {
+export function fromPosition(position: vscode.Position): monaco.Position {
     if (position instanceof monaco.Position) return position;
     return new monaco.Position(position.line + 1, position.character + 1);
 }
 /**
  * Converts a Monaco Editor TextEdit to a VS Code TextEdit.
  */
-export function toTextEdit(edit: { range: monaco.IRange; text: string | null }): TextEdit {
-    if (edit instanceof TextEdit) return edit;
+export function toTextEdit(edit: { range: monaco.IRange; text: string | null }): vscode.TextEdit {
+    if (edit instanceof vscode.TextEdit) return edit;
     if (!edit.text) {
-        return TextEdit.delete(toRange(edit.range));
+        return vscode.TextEdit.delete(toRange(edit.range));
     }
-    return TextEdit.replace(toRange(edit.range), edit.text);
+    return vscode.TextEdit.replace(toRange(edit.range), edit.text);
 }
 /**
  * Converts a Monaco Editor WorkspaceEdit to a VS Code WorkspaceEdit.
  */
-export function toWorkspaceEdit(edit: monacoLanguages.WorkspaceEdit): WorkspaceEdit {
-    const we = new WorkspaceEdit();
+export function toWorkspaceEdit(edit: monacoLanguages.WorkspaceEdit): vscode.WorkspaceEdit {
+    const we = new vscode.WorkspaceEdit();
     if (edit.edits) {
         for (const e of edit.edits) {
             if ('redo' in e) {
@@ -118,11 +95,11 @@ export function toWorkspaceEdit(edit: monacoLanguages.WorkspaceEdit): WorkspaceE
  */
 export function toMarkdownString<const T extends monaco.IMarkdownString | string | undefined = monaco.IMarkdownString>(
     markdown: T,
-): T extends monaco.IMarkdownString ? MarkdownString : T {
+): T extends monaco.IMarkdownString ? vscode.MarkdownString : T {
     if (markdown == null) return undefined as never;
     if (typeof markdown == 'string') return markdown as never;
-    if (markdown instanceof MarkdownString) return markdown as never;
-    const result = new MarkdownString(markdown.value);
+    if (markdown instanceof vscode.MarkdownString) return markdown as never;
+    const result = new vscode.MarkdownString(markdown.value);
     if (markdown.isTrusted !== undefined) {
         result.isTrusted = markdown.isTrusted;
     }
@@ -135,26 +112,28 @@ export function toMarkdownString<const T extends monaco.IMarkdownString | string
 /**
  * Converts a Monaco Editor Uri to a VS Code Uri.
  */
-export function toUri<const T extends monaco.Uri | undefined = monaco.Uri>(uri: T): T extends monaco.Uri ? Uri : T {
+export function toUri<const T extends monaco.Uri | undefined = monaco.Uri>(
+    uri: T,
+): T extends monaco.Uri ? vscode.Uri : T {
     if (uri == null) return undefined as never;
-    if (uri instanceof Uri) return uri as never;
-    return Uri.parse(uri.toString()) as never;
+    if (uri instanceof vscode.Uri) return uri as never;
+    return vscode.Uri.parse(uri.toString()) as never;
 }
 /**
  * Converts a Monaco Editor Location to a VS Code Location.
  */
 export function toLocation<const T extends monacoLanguages.Location | undefined = monacoLanguages.Location>(
     location: T,
-): T extends monacoLanguages.Location ? Location : undefined {
+): T extends monacoLanguages.Location ? vscode.Location : undefined {
     if (location == null) return undefined as never;
-    if (location instanceof Location) return location as never;
-    return new Location(toUri(location.uri), toRange(location.range)) as never;
+    if (location instanceof vscode.Location) return location as never;
+    return new vscode.Location(toUri(location.uri), toRange(location.range)) as never;
 }
 
 /** Converts a Monaco Editor Command to a VS Code Command */
 export function toCommand<const T extends monacoLanguages.Command | undefined = monacoLanguages.Command>(
     command: T,
-): T extends monacoLanguages.Command ? Command : undefined {
+): T extends monacoLanguages.Command ? vscode.Command : undefined {
     if (command == null) return undefined as never;
     if ('command' in command && 'title' in command) return command as never;
     return {
@@ -167,14 +146,14 @@ export function toCommand<const T extends monacoLanguages.Command | undefined = 
 
 export const [toCompletionItem, fromCompletionItem] = createAdapterFactory<
     monacoLanguages.CompletionItem,
-    CompletionItem
+    vscode.CompletionItem
 >(
     (item) => {
-        return new CompletionItem(item.label);
+        return new vscode.CompletionItem(item.label);
     },
     (item, ci) => {
         ci.label = item.label;
-        ci.kind = item.kind as unknown as CompletionItemKind;
+        ci.kind = item.kind as unknown as vscode.CompletionItemKind;
         ci.tags = item.tags;
         ci.detail = item.detail;
         ci.documentation = toMarkdownString(item.documentation);
@@ -183,7 +162,7 @@ export const [toCompletionItem, fromCompletionItem] = createAdapterFactory<
         ci.preselect = item.preselect;
         ci.insertText =
             item.insertTextRules === CompletionItemInsertTextRule.InsertAsSnippet
-                ? new SnippetString(item.insertText)
+                ? new vscode.SnippetString(item.insertText)
                 : item.insertText;
         const range =
             'insert' in item.range
@@ -201,10 +180,10 @@ export const [toCompletionItem, fromCompletionItem] = createAdapterFactory<
 
 export const [toDiagnosticRelatedInformation, fromDiagnosticRelatedInformation] = createAdapterFactory<
     monacoEditor.IRelatedInformation,
-    DiagnosticRelatedInformation
+    vscode.DiagnosticRelatedInformation
 >(
     (info) => {
-        return new DiagnosticRelatedInformation(toLocation({ uri: info.resource, range: info }), info.message);
+        return new vscode.DiagnosticRelatedInformation(toLocation({ uri: info.resource, range: info }), info.message);
     },
     (info, dri) => {
         dri.location = toLocation({ uri: info.resource, range: info });
@@ -212,25 +191,25 @@ export const [toDiagnosticRelatedInformation, fromDiagnosticRelatedInformation] 
     },
 );
 
-export const [toDiagnostic, fromDiagnostic] = createAdapterFactory<monacoEditor.IMarkerData, Diagnostic>(
+export const [toDiagnostic, fromDiagnostic] = createAdapterFactory<monacoEditor.IMarkerData, vscode.Diagnostic>(
     (marker) => {
-        return new Diagnostic(toRange(marker), marker.message);
+        return new vscode.Diagnostic(toRange(marker), marker.message);
     },
     (marker, diagnostic) => {
         diagnostic.range = toRange(marker);
         diagnostic.message = marker.message;
         switch (marker.severity as number as monaco.MarkerSeverity) {
             case monaco.MarkerSeverity.Error:
-                diagnostic.severity = DiagnosticSeverity.Error;
+                diagnostic.severity = vscode.DiagnosticSeverity.Error;
                 break;
             case monaco.MarkerSeverity.Warning:
-                diagnostic.severity = DiagnosticSeverity.Warning;
+                diagnostic.severity = vscode.DiagnosticSeverity.Warning;
                 break;
             case monaco.MarkerSeverity.Info:
-                diagnostic.severity = DiagnosticSeverity.Information;
+                diagnostic.severity = vscode.DiagnosticSeverity.Information;
                 break;
             case monaco.MarkerSeverity.Hint:
-                diagnostic.severity = DiagnosticSeverity.Hint;
+                diagnostic.severity = vscode.DiagnosticSeverity.Hint;
                 break;
         }
         diagnostic.source = marker.source;
@@ -246,49 +225,49 @@ export const [toDiagnostic, fromDiagnostic] = createAdapterFactory<monacoEditor.
         diagnostic.tags = marker.tags?.map((t) => {
             switch (t as number as monaco.MarkerTag) {
                 case monaco.MarkerTag.Deprecated:
-                    return DiagnosticTag.Deprecated;
+                    return vscode.DiagnosticTag.Deprecated;
                 case monaco.MarkerTag.Unnecessary:
-                    return DiagnosticTag.Unnecessary;
+                    return vscode.DiagnosticTag.Unnecessary;
             }
         });
     },
 );
 
-export const [toCodeAction, fromCodeAction] = createAdapterFactory<monacoLanguages.CodeAction, CodeAction>(
+export const [toCodeAction, fromCodeAction] = createAdapterFactory<monacoLanguages.CodeAction, vscode.CodeAction>(
     (action) => {
-        return new CodeAction(action.title);
+        return new vscode.CodeAction(action.title);
     },
     (action, ca) => {
         switch (action.kind) {
             case 'quickfix':
-                ca.kind = CodeActionKind.QuickFix;
+                ca.kind = vscode.CodeActionKind.QuickFix;
                 break;
             case 'refactor':
-                ca.kind = CodeActionKind.Refactor;
+                ca.kind = vscode.CodeActionKind.Refactor;
                 break;
             case 'refactor.extract':
-                ca.kind = CodeActionKind.RefactorExtract;
+                ca.kind = vscode.CodeActionKind.RefactorExtract;
                 break;
             case 'refactor.inline':
-                ca.kind = CodeActionKind.RefactorInline;
+                ca.kind = vscode.CodeActionKind.RefactorInline;
                 break;
             case 'refactor.move':
-                ca.kind = CodeActionKind.RefactorMove;
+                ca.kind = vscode.CodeActionKind.RefactorMove;
                 break;
             case 'refactor.rewrite':
-                ca.kind = CodeActionKind.RefactorRewrite;
+                ca.kind = vscode.CodeActionKind.RefactorRewrite;
                 break;
             case 'source':
-                ca.kind = CodeActionKind.Source;
+                ca.kind = vscode.CodeActionKind.Source;
                 break;
             case 'source.organizeImports':
-                ca.kind = CodeActionKind.SourceOrganizeImports;
+                ca.kind = vscode.CodeActionKind.SourceOrganizeImports;
                 break;
             case 'source.fixAll':
-                ca.kind = CodeActionKind.SourceFixAll;
+                ca.kind = vscode.CodeActionKind.SourceFixAll;
                 break;
             case 'notebook':
-                ca.kind = CodeActionKind.Notebook;
+                ca.kind = vscode.CodeActionKind.Notebook;
                 break;
             case undefined:
             default:
@@ -302,8 +281,8 @@ export const [toCodeAction, fromCodeAction] = createAdapterFactory<monacoLanguag
     },
 );
 
-export const [toCodeLens, fromCodeLens] = createAdapterFactory<monacoLanguages.CodeLens, CodeLens>(
-    (lens) => new CodeLens(toRange(lens.range)),
+export const [toCodeLens, fromCodeLens] = createAdapterFactory<monacoLanguages.CodeLens, vscode.CodeLens>(
+    (lens) => new vscode.CodeLens(toRange(lens.range)),
     (lens, cl) => {
         cl.range = toRange(lens.range);
         cl.command = toCommand(lens.command);
@@ -312,9 +291,9 @@ export const [toCodeLens, fromCodeLens] = createAdapterFactory<monacoLanguages.C
 
 export const [toInlayHintLabelPart, fromInlayHintLabelPart] = createAdapterFactory<
     monacoLanguages.InlayHintLabelPart,
-    InlayHintLabelPart
+    vscode.InlayHintLabelPart
 >(
-    (part) => new InlayHintLabelPart(part.label),
+    (part) => new vscode.InlayHintLabelPart(part.label),
     (part, lp) => {
         lp.value = part.label;
         lp.tooltip = toMarkdownString(part.tooltip);
@@ -323,9 +302,9 @@ export const [toInlayHintLabelPart, fromInlayHintLabelPart] = createAdapterFacto
     },
 );
 
-export const [toInlayHint, fromInlayHint] = createAdapterFactory<monacoLanguages.InlayHint, InlayHint>(
+export const [toInlayHint, fromInlayHint] = createAdapterFactory<monacoLanguages.InlayHint, vscode.InlayHint>(
     (item) =>
-        new InlayHint(
+        new vscode.InlayHint(
             toPosition(item.position),
             typeof item.label === 'string' ? item.label : item.label.map(toInlayHintLabelPart),
         ),
@@ -342,9 +321,9 @@ export const [toInlayHint, fromInlayHint] = createAdapterFactory<monacoLanguages
 
 export const [toParameterInformation, fromParameterInformation] = createAdapterFactory<
     monacoLanguages.ParameterInformation,
-    ParameterInformation
+    vscode.ParameterInformation
 >(
-    (param) => new ParameterInformation(param.label),
+    (param) => new vscode.ParameterInformation(param.label),
     (param, pi) => {
         pi.label = param.label;
         pi.documentation = toMarkdownString(param.documentation);
@@ -353,9 +332,9 @@ export const [toParameterInformation, fromParameterInformation] = createAdapterF
 
 export const [toSignatureInformation, fromSignatureInformation] = createAdapterFactory<
     monacoLanguages.SignatureInformation,
-    SignatureInformation
+    vscode.SignatureInformation
 >(
-    (sig) => new SignatureInformation(sig.label),
+    (sig) => new vscode.SignatureInformation(sig.label),
     (sig, si) => {
         si.label = sig.label;
         si.documentation = toMarkdownString(sig.documentation);
@@ -363,8 +342,11 @@ export const [toSignatureInformation, fromSignatureInformation] = createAdapterF
     },
 );
 
-export const [toSignatureHelp, fromSignatureHelp] = createAdapterFactory<monacoLanguages.SignatureHelp, SignatureHelp>(
-    () => new SignatureHelp(),
+export const [toSignatureHelp, fromSignatureHelp] = createAdapterFactory<
+    monacoLanguages.SignatureHelp,
+    vscode.SignatureHelp
+>(
+    () => new vscode.SignatureHelp(),
     (sh, s) => {
         s.signatures = sh.signatures.map(toSignatureInformation);
         s.activeParameter = sh.activeParameter;
@@ -374,10 +356,10 @@ export const [toSignatureHelp, fromSignatureHelp] = createAdapterFactory<monacoL
 
 export const [toDocumentSymbol, fromDocumentSymbol] = createAdapterFactory<
     monacoLanguages.DocumentSymbol,
-    DocumentSymbol
+    vscode.DocumentSymbol
 >(
     (symbol) =>
-        new DocumentSymbol(
+        new vscode.DocumentSymbol(
             symbol.name,
             symbol.detail,
             symbol.kind,

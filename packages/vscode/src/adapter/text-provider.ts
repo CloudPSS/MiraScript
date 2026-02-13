@@ -1,19 +1,12 @@
-import {
-    type CancellationToken,
-    EventEmitter as Emitter,
-    type ProviderResult,
-    type TextDocumentContentProvider,
-    type Uri,
-    workspace,
-} from 'vscode';
+import { vscode, workspace, type Uri } from '#loader';
 
 export const MIRA_TEXT_SCHEME = 'mirascript';
 /**
  * 提供可修改的文本内容（只读）
  */
-class MiraTextDocumentContentProvider implements TextDocumentContentProvider {
+class MiraTextDocumentContentProvider implements vscode.TextDocumentContentProvider {
     private readonly content = new Map<string, string>();
-    private readonly onDidChangeEmitter = new Emitter<Uri>();
+    private readonly onDidChangeEmitter = new vscode.EventEmitter<Uri>();
     /** 设置文本内容 */
     setContent(uri: Uri, value: string | undefined): void {
         if (value == null) {
@@ -25,7 +18,7 @@ class MiraTextDocumentContentProvider implements TextDocumentContentProvider {
     }
     readonly onDidChange = this.onDidChangeEmitter.event;
     /** @inheritdoc */
-    provideTextDocumentContent(uri: Uri, token: CancellationToken): ProviderResult<string> {
+    provideTextDocumentContent(uri: Uri, token: vscode.CancellationToken): vscode.ProviderResult<string> {
         return this.content.get(uri.toString()) ?? '';
     }
 }

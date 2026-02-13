@@ -1,5 +1,5 @@
 import type { editor, IDisposable, IPosition, IRange, Position, Range, Selection, Uri } from '@private/monaco-editor';
-import { EndOfLine, type TextDocument } from 'vscode';
+import type { EndOfLine, TextDocument } from 'vscode';
 import { fromPosition, fromRange, toPosition, toRange } from './utils.js';
 import { MIRA_CONTENT_PROVIDER, MIRA_TEXT_SCHEME } from './text-provider.js';
 import { createAdapterFactory } from './base.js';
@@ -309,11 +309,11 @@ export class ModelAdapter implements editor.ITextModel {
     }
     /** @inheritdoc */
     getEOL(): string {
-        return this.#document.eol === EndOfLine.LF ? '\n' : '\r\n';
+        return this.#document.eol === (1 satisfies EndOfLine.LF) ? '\n' : '\r\n';
     }
     /** @inheritdoc */
     getEndOfLineSequence(): editor.EndOfLineSequence {
-        return this.#document.eol === EndOfLine.LF
+        return this.#document.eol === (1 satisfies EndOfLine.LF)
             ? (0 satisfies editor.EndOfLineSequence.LF)
             : (1 satisfies editor.EndOfLineSequence.CRLF);
     }
