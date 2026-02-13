@@ -4,30 +4,15 @@ import type { Result } from './runner';
 import { getMonacoContext, setMonacoContext } from './monaco-context';
 import { useMonaco } from './monaco';
 import Editor from './editor';
-import Highlight from './highlight';
-import styles from './styles.module.css';
-
-/** 结果显示 */
-function ResultItem({ item }: { item: Result }): JSX.Element {
-    const H = (item: Result['content'][number], i: number): JSX.Element => {
-        if (typeof item === 'string') {
-            return (
-                <span key={i} className={styles['result-content']}>
-                    {item}
-                </span>
-            );
-        }
-        return <Highlight key={i} code={item.value} language="mirascript" />;
-    };
-    return <div className={`${styles['result-item']} ${styles[`result-${item.type}`]}`}>{item.content.map((c, i) => H(c, i))}</div>;
-}
+import styles from './index.module.css';
+import ResultItem from './result';
 
 /** 结果显示 */
 function Results({ results, outdated }: { results: Result[]; outdated: boolean }): JSX.Element {
     return (
         <pre className={`${styles['results']} ${outdated ? styles['results-outdated'] : ''}`}>
             {results.map((item, index) => (
-                <ResultItem key={index} item={item} />
+                <ResultItem key={index} item={item} styles={styles} />
             ))}
         </pre>
     );

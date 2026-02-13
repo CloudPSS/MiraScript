@@ -64,19 +64,8 @@
 }
 
 .result-item {
-  position: relative;
-  font-family: var(--ifm-font-family-monospace);
-  font-size: 0.9em;
-  white-space: pre-wrap;
-  word-break: break-word;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 0.05em 0.5em;
   padding-left: 2em;
   margin: 0 -0.3em;
-
-  &:first-child {
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-  }
 
   &::before {
     position: absolute;

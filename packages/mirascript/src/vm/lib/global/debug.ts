@@ -49,7 +49,7 @@ function buildFormatString(
     args: readonly VmAny[],
 ): readonly [format: string, values: readonly VmAny[]] {
     const [prefix, ...additional] = options.prefix;
-    if (args.length <= 1 || typeof args[0] != 'string') {
+    if (typeof args[0] != 'string') {
         return [prefix || '', [...additional, ...args]];
     } else {
         const [arg0, ...argsRest] = args;

@@ -24,7 +24,7 @@ export default function Highlight({
         });
     }, [monaco, code, language, colorMode]);
     if (!html) {
-        return <span {...props}>{code} </span>;
+        return <span {...props}>{code}</span>;
     }
     return <span dangerouslySetInnerHTML={{ __html: html }} {...props} />;
 }

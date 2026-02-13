@@ -1,9 +1,9 @@
 import { useState, type JSX } from 'react';
 import Layout from '@theme/Layout';
-import Editor from '../../components/Mira/editor';
-import Highlight from '../../components/Mira/highlight';
-import { setMonacoContext } from '../../components/Mira/monaco-context';
-import { runMiraScript, type Result } from '../../components/Mira/runner';
+import Editor from '@site/src/components/Mira/editor';
+import ResultItem from '@site/src/components/Mira/result';
+import { setMonacoContext } from '@site/src/components/Mira/monaco-context';
+import { runMiraScript, type Result } from '@site/src/components/Mira/runner';
 import { usePlaygroundState } from './_state-manager';
 import { EXAMPLES } from './_examples';
 import { globals } from './_globals';
@@ -95,38 +95,6 @@ function EditorPanel({ setResults }: { setResults: React.Dispatch<React.SetState
     );
 }
 
-/** 结果显示 */
-function ResultItem({ item }: { item: Result }): JSX.Element {
-    let inner;
-    if (
-        item.type === 'result' &&
-        item.content.length === 1 &&
-        typeof item.content[0] == 'object' &&
-        typeof item.content[0].raw == 'string' &&
-        item.content[0].raw.toLowerCase().startsWith('<!doctype html>')
-    ) {
-        // 特殊处理 HTML 输出
-        inner = <iframe srcDoc={item.content[0].raw}></iframe>;
-    } else {
-        const H = (item: Result['content'][number], i: number): JSX.Element => {
-            if (typeof item === 'string') {
-                return (
-                    <span key={i} className={styles['result-content']}>
-                        {item}
-                    </span>
-                );
-            }
-            return <Highlight key={i} code={item.value} language="mirascript" />;
-        };
-        inner = item.content.map((c, i) => H(c, i));
-    }
-    return (
-        <div className={`${styles['result-item']} ${styles[`result-${item.type}`]}`}>
-            <time>{item.timestamp.toFixed(2)}</time>
-            {inner}
-        </div>
-    );
-}
 /** 输出面板 */
 function OutputPanel({ results }: { results: Result[] }): JSX.Element {
     return (
@@ -136,7 +104,7 @@ function OutputPanel({ results }: { results: Result[] }): JSX.Element {
             </div>
             <div className={styles['output-content']}>
                 {results.map((result, index) => (
-                    <ResultItem key={index} item={result} />
+                    <ResultItem key={index} item={result} styles={styles} showTimestamp />
                 ))}
             </div>
         </>
