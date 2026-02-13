@@ -86,7 +86,7 @@ export class ProvidersManager extends Disposable {
             SignatureHelpTriggerKind,
         };
         registerMonacoApi(api);
-        void this.registerProviders();
+        this.registerProviders();
     }
 
     private readonly diagnosticCollections = new Map<string, DiagnosticCollection>();
@@ -107,16 +107,16 @@ export class ProvidersManager extends Disposable {
     };
 
     /** 注册 Providers */
-    private async registerProviders(): Promise<void> {
+    private registerProviders(): void {
         const selector = ['mirascript', 'mirascript-template'];
 
         const codeLensProvider = new CodeLensProvider();
         const codeActionProvider = new CodeActionProvider();
         // const colorProvider = new ColorProvider();
 
-        const definitionReferenceProvider = new DefinitionReferenceProvider(
-            ModelAdapter.from(await workspace.openTextDocument(Uri.parse('mirascript:///lib/global.mira'))),
-        );
+        const definitionReferenceProvider = new DefinitionReferenceProvider();
+        definitionReferenceProvider.createGlobalModel = async (uri) =>
+            ModelAdapter.from(await workspace.openTextDocument(Uri.parse(uri)));
 
         const documentHighlightProvider = new DocumentHighlightProvider();
         const documentSymbolProvider = new DocumentSymbolProvider();

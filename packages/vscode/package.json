@@ -20,7 +20,7 @@
     "build:icon": "node scripts/icon.js",
     "build:language-configuration": "node scripts/language-configuration.js",
     "build:language": "node scripts/language.js",
-    "build:esbuild": "node ./esbuild.config.js",
+    "build:esbuild": "tsc --noEmit && node ./esbuild.config.js",
     "prebuild": "rimraf ./dist && pnpm build:icon && pnpm build:language-configuration && pnpm build:language && pnpm build:esbuild",
     "build:pack": "pnpm pack --out build/mirascript-vscode.tgz",
     "build:docker": "docker buildx build -f ./Dockerfile --pull --output type=local,dest=./build --secret id=.npmrc,src=$HOME/.npmrc .",
