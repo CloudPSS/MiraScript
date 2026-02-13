@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>$title</title>
     <style>
-        :root { color-scheme: light; background: #fff }
+        :root { color-scheme: dark; background: #222 }
         body { margin: 20px; }
         h1 { color: #469649; }
         .info, .summary { margin-top: 20px; padding: 10px; background-color: #42aa4940; border-radius: 5px; }
