@@ -1,6 +1,6 @@
 {
   "name": "@mirascript/wasm",
-  "version": "0.1.47",
+  "version": "0.1.48",
   "author": "CloudPSS",
   "license": "MIT",
   "description": "MiraScript compiler for WebAssembly",
