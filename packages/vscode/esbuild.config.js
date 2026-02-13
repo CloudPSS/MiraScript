@@ -55,7 +55,7 @@ await esbuild.build({
     sourcemap: true,
     format: 'esm',
     charset: 'utf8',
-    entryPoints: { browser: './src/main.ts' },
+    entryPoints: { browser: './src/browser.ts' },
     outExtension: { '.js': '.cjs' },
     minify: false,
     outdir: './dist',

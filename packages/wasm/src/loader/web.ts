@@ -12,11 +12,6 @@ async function loadUrl() {
     return await body(fetch(new URL('../../lib/wasm_bg.wasm', import.meta.url)));
 }
 
-/** 从 import.meta.resolve 推断 URL */
-async function loadResolve() {
-    return await body(fetch(new URL(import.meta.resolve('../../lib/wasm_bg.wasm'))));
-}
-
 /** 由 esm 加载模块 */
 async function loadEsm() {
     // use ?url to force vite to load as bytes
@@ -80,7 +75,7 @@ async function body(response: Response | Promise<Response>): Promise<BufferSourc
 }
 
 export const module: Promise<BufferSource> = /* @__PURE__ */ (async () => {
-    const candidates = [loadEsmSh, loadEsm, loadUrl, loadResolve, loadDocument];
+    const candidates = [loadEsmSh, loadEsm, loadUrl, loadDocument];
     for (const candidate of candidates) {
         try {
             const mod = await candidate();

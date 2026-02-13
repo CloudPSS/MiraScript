@@ -59,6 +59,15 @@ async function compileWorker(req: Req): Promise<CompileResult> {
         });
     }
 
+    try {
+        await worker;
+    } catch (ex) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to initialize worker, use sync compile:', ex);
+        USE_WORKER = false;
+        return compileSync(req);
+    }
+
     const instance = await worker;
     instance.postMessage(req);
     const [key, version, source] = req;
@@ -90,7 +99,7 @@ async function compileSync(req: Req): Promise<CompileResult> {
     return new CompileResult(key, version, script, result);
 }
 
-const USE_WORKER = typeof Worker === 'function';
+let USE_WORKER = typeof Worker === 'function';
 /** 编译并设置缓存 */
 export async function compile(model: editor.ITextModel): Promise<CompileResult> {
     const version = model.getVersionId();
