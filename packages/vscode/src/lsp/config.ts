@@ -1,7 +1,7 @@
 import type { TextDocument } from 'vscode';
 import type { ModelAdapter } from '../adapter/model.js';
 import type { VmFunctionOption, VmImmutable, VmPrimitive, VmValue } from '@mirascript/mirascript';
-import { Disposable, explorer, workspace, mira, miraMonacoLsp } from '#loader';
+import { Disposable, workspace, mira, miraMonacoLsp, loadConfig, searchConfig } from '#loader';
 const { createVmContext, isVmArray, isVmExtern, isVmModule, VmExtern, VmFunction, VmModule } = mira;
 const { Provider } = miraMonacoLsp;
 
@@ -57,7 +57,7 @@ class MiraConfigData extends Disposable {
     async reload(config?: MiraConfig): Promise<void> {
         if (config == null && this.document != null) {
             try {
-                config = (await explorer.load(this.document.uri.fsPath))?.config as MiraConfig;
+                config = (await loadConfig(this.document.uri))?.config as MiraConfig;
             } catch {
                 // ignore
             }
@@ -142,11 +142,10 @@ export class ConfigManager extends Disposable {
     readonly cacheByConfig = new Map<string, MiraConfigData>();
     /** 查找配置 */
     async config(editor: TextDocument): Promise<MiraConfigData> {
-        const filePath = editor.uri.fsPath;
-        const cached = this.cacheByFile.get(filePath);
+        const cached = this.cacheByFile.get(editor.uri.toString());
         if (cached) return cached;
 
-        const config = await explorer.search(filePath);
+        const config = await searchConfig(editor.uri);
         if (config == null) return MiraConfigData.default;
 
         let data = this.cacheByConfig.get(config.filepath);
@@ -155,7 +154,7 @@ export class ConfigManager extends Disposable {
             await data.reload(config.config as MiraConfig);
             this.cacheByConfig.set(config.filepath, data);
         }
-        this.cacheByFile.set(filePath, data);
+        this.cacheByFile.set(editor.uri.toString(), data);
         return data;
     }
 }
