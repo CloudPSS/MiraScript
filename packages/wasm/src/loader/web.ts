@@ -1,5 +1,5 @@
 /** 从 Document 推断 URL */
-async function load3() {
+async function load4() {
     const fallbackUrl =
         (document?.currentScript instanceof HTMLScriptElement
             ? document.currentScript.src
@@ -7,9 +7,14 @@ async function load3() {
     return await body(fetch(new URL('../../lib/wasm_bg.wasm', fallbackUrl)));
 }
 
-/** 从 import.meta 推断 URL */
+/** 从 import.meta.url 推断 URL */
 async function load2() {
     return await body(fetch(new URL('../../lib/wasm_bg.wasm', import.meta.url)));
+}
+
+/** 从 import.meta.resolve 推断 URL */
+async function load3() {
+    return await body(fetch(new URL(import.meta.resolve('../../lib/wasm_bg.wasm'))));
 }
 
 /** 由 esm 加载模块 */
@@ -60,5 +65,6 @@ async function body(response: Response | Promise<Response>): Promise<BufferSourc
 export const module: Promise<BufferSource> = /* @__PURE__ */ (async () => {
     return load1()
         .catch(async () => load2())
-        .catch(async () => load3());
+        .catch(async () => load3())
+        .catch(async () => load4());
 })();
