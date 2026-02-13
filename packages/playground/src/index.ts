@@ -7,6 +7,10 @@ import { resultManager } from './result-manager.js';
 import { monaco, globals, mirascript, consoleManager, ready } from './loader.js';
 import { createEditor } from './monaco.js';
 
+if (!location.pathname.endsWith('/')) {
+    location.pathname += '/';
+}
+
 await ready;
 
 const createModel = () => {
