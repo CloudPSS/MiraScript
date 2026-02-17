@@ -50,6 +50,7 @@
 .results {
   --ifm-pre-color: #dcdcdc;
   --ifm-pre-background: #2c2c2c;
+  --result-border-color: #444950;
 
   border-top-left-radius: 0;
   border-top-right-radius: 0;
