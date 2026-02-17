@@ -2,6 +2,14 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      if (!location.pathname.endsWith('/')) location.pathname += '/';
+    </script>
+    <style>
+      :root {
+        color-scheme: light dark;
+      }
+    </style>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="../website/static/favicon.svg" />
     <title>MiraScript Playground</title>
@@ -9,16 +17,6 @@
       http-equiv="Content-Security-Policy"
       content="default-src 'self'; font-src 'self' data:; style-src 'self' 'unsafe-inline' data:; script-src 'self' 'unsafe-eval'; object-src 'none'; img-src 'self' data:; connect-src 'self';"
     />
-    <script>
-      if (!location.pathname.endsWith('/')) {
-        location.pathname += '/';
-      }
-    </script>
-    <style>
-      :root {
-        color-scheme: light dark;
-      }
-    </style>
   </head>
   <body>
     <div class="playground">
