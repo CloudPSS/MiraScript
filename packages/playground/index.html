@@ -9,6 +9,16 @@
       http-equiv="Content-Security-Policy"
       content="default-src 'self'; font-src 'self' data:; style-src 'self' 'unsafe-inline' data:; script-src 'self' 'unsafe-eval'; object-src 'none'; img-src 'self' data:; connect-src 'self';"
     />
+    <script>
+      if (!location.pathname.endsWith('/')) {
+        location.pathname += '/';
+      }
+    </script>
+    <style>
+      :root {
+        color-scheme: light dark;
+      }
+    </style>
   </head>
   <body>
     <div class="playground">
