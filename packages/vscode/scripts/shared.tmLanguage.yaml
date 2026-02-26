@@ -21,7 +21,7 @@ repository:
         captures:
           1: { name: keyword.module.$1.mira }
           2: { name: entity.name.namespace.mira }
-      - begin: (?=((\$+|\@+|[[:alpha:]_])[[:alnum:]_]*)(?![[:alnum:]_])(?=\s*(!\s*)?[('"`]))
+      - begin: (?=((\$+|\@+[[:alnum:]_]|[[:alpha:]_])[[:alnum:]_]*)(?![[:alnum:]_])(?=\s*(!\s*)?[('"`]))
         end: (?=\s*(!\s*)?[('"`])
         patterns:
           - include: '#functions'
@@ -29,7 +29,7 @@ repository:
         captures:
           1: { name: punctuation.separator.period.mira }
           2: { name: constant.numeric.mira }
-      - match: (\.)\s*((?:\$+|\@+|[[:alpha:]_])[[:alnum:]_]*)(?=\s*(!\s*)?[('"`])
+      - match: (\.)\s*((?:\$+|\@+[[:alnum:]_]|[[:alpha:]_])[[:alnum:]_]*)(?=\s*(!\s*)?[('"`])
         captures:
           1: { name: punctuation.separator.period.mira }
           2: { name: entity.name.function.mira }
@@ -140,7 +140,7 @@ repository:
   interpolation:
     patterns:
       - name: meta.embedded.template.mira
-        match: (\$)(?:(?:(if|else|match|case|for|while|loop|break|continue|return)|(true|false|nil)|(_|global|in|is|and|or|not|type|fn|op|let|mut|const|type|where|import|export|effect|try|handle|finally|perform|resume)|(nan|inf))(?![[:alnum:]_])|((?:\$+|\@+|[[:alpha:]_])[[:alnum:]_]*))
+        match: (\$)(?:(?:(if|else|match|case|for|while|loop|break|continue|return)|(true|false|nil)|(_|global|in|is|and|or|not|type|fn|op|let|mut|const|type|where|effect|try|handle|finally|perform|resume)|(nan|inf))(?![[:alnum:]_])|((?:\$+|\@+|[[:alpha:]_])[[:alnum:]_]*))
         captures:
           1: { name: punctuation.definition.template-expression.begin.mira }
           2: { name: keyword.control.$2.mira }
