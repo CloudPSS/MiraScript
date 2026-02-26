@@ -1,7 +1,7 @@
 # MiraScript
 
-[![Visual Studio Marketplace](https://img.shields.io/visual-studio-marketplace/v/CloudPSS.mirascript?label=VS%20Code%20Marketplace&cacheSeconds=14400)](https://marketplace.visualstudio.com/items?itemName=CloudPSS.mirascript)
-[![Open VSX Registry](https://img.shields.io/open-vsx/v/CloudPSS/mirascript?label=Open%20VSX%20Registry&cacheSeconds=14400)](https://open-vsx.org/extension/CloudPSS/mirascript)
+[![Visual Studio Marketplace](https://img.shields.io/visual-studio-marketplace/v/CloudPSS.mirascript?label=VS%20Code%20Marketplace&cacheSeconds=7200)](https://marketplace.visualstudio.com/items?itemName=CloudPSS.mirascript)
+[![Open VSX Registry](https://img.shields.io/open-vsx/v/CloudPSS/mirascript?label=Open%20VSX%20Registry)](https://open-vsx.org/extension/CloudPSS/mirascript)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 MiraScript 语言的 Visual Studio Code 扩展，提供全面的语言支持与智能编辑体验。

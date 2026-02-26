@@ -8,8 +8,8 @@ WORKDIR /mirascript-vscode/package
 RUN --mount=type=secret,target=/root/.npmrc \
   npm install --omit=dev
 
-RUN vsce package --out mirascript-vscode.vsix
+RUN vsce package
 
 FROM scratch
 
-COPY --from=builder /mirascript-vscode/package/mirascript-vscode.vsix /
+COPY --from=builder /mirascript-vscode/package/*.vsix /
