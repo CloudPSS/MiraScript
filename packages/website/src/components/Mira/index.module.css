@@ -21,6 +21,10 @@
 .pre {
   user-select: text;
 
+  > code {
+    display: block;
+  }
+
   .editor-holder + & {
     --ifm-pre-color: transparent;
     pointer-events: none;

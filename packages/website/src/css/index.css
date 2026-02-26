@@ -16,3 +16,13 @@
     'Segoe UI Symbol';
   --ifm-font-family-monospace: 'Sarasa Mono TC', monospace, var(--ifm-font-family-base);
 }
+
+.theme-layout-navbar,
+.theme-doc-sidebar-container,
+.theme-doc-breadcrumbs,
+.theme-doc-toc-desktop,
+.theme-doc-toc-mobile,
+.pagination-nav__link,
+a[class^='skipToContent_'] {
+  user-select: none;
+}
