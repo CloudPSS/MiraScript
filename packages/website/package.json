@@ -43,7 +43,7 @@
     "remark-extended-table": "^2.0.3",
     "remark-frontmatter": "^5.0.0",
     "remark-gfm": "^4.0.1",
-    "remark-ins": "^1.2.2",
+    "remark-ins": "^1.2.3",
     "remark-join-cjk-lines": "^1.0.14"
   },
   "devDependencies": {
