@@ -1,6 +1,7 @@
 t_eq("Normal: $v_number, $v_string, $v_false", "Normal: 42, Hello, Mira!, false");
 t_eq("Escaped: \$v_number, \$v_string, \$v_false", ["Escaped: $", "v_number, $", "v_string, $", "v_false"]::join(""));
 t_eq(@"Raw: \$v_number, \$v_string, \$v_false"@, @@"Raw: \42, \Hello, Mira!, \false"@@);
+t_eq(@@"Raw: \$v_number, \$v_string, \$v_false"@@, @@@"Raw: \$v_number, \$v_string, \$v_false"@@@);
 
 t_eq("Braced: ${ v_number }, ${ v_string }, ${ v_false }", "Braced: 42, Hello, Mira!, false");
 t_eq("Mixed: $v_number and ${ v_string }!", "Mixed: 42 and Hello, Mira!!");
