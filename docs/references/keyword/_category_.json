@@ -1,6 +1,7 @@
 {
   "label": "关键字",
   "position": 10,
+  "className": "category-keyword",
   "link": {
     "type": "generated-index",
     "slug": "/references/keyword/",

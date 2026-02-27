@@ -1,6 +1,7 @@
 {
   "label": "语言参考",
   "position": 10,
+  "className": "category-references",
   "link": {
     "type": "generated-index",
     "slug": "/references/",

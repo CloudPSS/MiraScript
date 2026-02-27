@@ -1,6 +1,7 @@
 {
   "label": "运算符",
   "position": 20,
+  "className": "category-operator",
   "link": {
     "type": "generated-index",
     "slug": "/references/operator/",

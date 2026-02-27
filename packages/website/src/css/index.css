@@ -26,3 +26,13 @@
 a[class^='skipToContent_'] {
   user-select: none;
 }
+
+:root.docs-doc-page:is([class*='docs-doc-id-references/operator/'], [class*='docs-doc-id-references/keyword/']) {
+  .theme-doc-markdown header > h1 {
+    font-family: var(--ifm-font-family-monospace);
+  }
+}
+
+.theme-doc-sidebar-item-category:is(.category-operator, .category-keyword) > .menu__list {
+  font-family: var(--ifm-font-family-monospace);
+}

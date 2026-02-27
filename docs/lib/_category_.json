@@ -1,6 +1,7 @@
 {
   "label": "标准库",
   "position": 2,
+  "className": "category-lib",
   "link": {
     "type": "generated-index",
     "slug": "/lib/",
