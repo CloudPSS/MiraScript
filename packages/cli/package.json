@@ -23,7 +23,6 @@
   "scripts": {
     "watch": "pnpm build --watch",
     "build": "pnpm clean && node ./esbuild.config.js",
-    "mirascript": "node --enable-source-maps ./cli.js",
     "clean": "rimraf dist",
     "prepublishOnly": "pnpm build"
   },
@@ -37,7 +36,7 @@
     "supports-color": "^10.2.2"
   },
   "devDependencies": {
-    "@types/node": "^25.3.1",
+    "@types/node": "^25.3.2",
     "type-fest": "^5.4.4"
   }
 }

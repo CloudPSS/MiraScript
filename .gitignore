@@ -11,6 +11,7 @@
 
 target/
 /docs/*.html
+.docusaurus/
 
 # generated files
 *.g.*

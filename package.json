@@ -2,12 +2,14 @@
   "name": "mirascript",
   "version": "0.1.50",
   "private": true,
-  "packageManager": "pnpm@10.30.2",
+  "packageManager": "pnpm@10.30.3",
   "type": "module",
   "scripts": {
     "prepare": "husky || echo Failed to initialize husky",
-    "format:mira": "pnpm run mirascript format --write '../../**/*.mira'",
-    "format": "prettier --cache --cache-strategy content --write .",
+    "format:mira": "pnpm exec mirascript format --write './**/*.mira'",
+    "format:rs": "cargo fmt --all",
+    "format:ts": "prettier --cache --cache-strategy content --write .",
+    "format": "pnpm run format:mira && pnpm run format:rs && pnpm run format:ts",
     "lint": "eslint --cache --cache-location node_modules/.cache/eslint/ --cache-strategy content"
   },
   "prettier": "@cloudpss/prettier-config",
