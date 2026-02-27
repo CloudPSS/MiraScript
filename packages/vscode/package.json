@@ -39,8 +39,7 @@
   "dependencies": {
     "@mirascript/mirascript": "workspace:~",
     "@mirascript/monaco": "workspace:~",
-    "@mirascript/wasm": "workspace:~",
-    "cosmiconfig": "^9.0.0"
+    "@mirascript/wasm": "workspace:~"
   },
   "devDependencies": {
     "@private/monaco-editor": "^0.0.65",

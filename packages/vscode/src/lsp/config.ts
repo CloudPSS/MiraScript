@@ -1,7 +1,8 @@
 import type { TextDocument } from 'vscode';
+import { load as parseYaml } from 'js-yaml';
 import type { ModelAdapter } from '../adapter/model.js';
 import type { VmFunctionOption, VmImmutable, VmPrimitive, VmValue } from '@mirascript/mirascript';
-import { Disposable, workspace, mira, miraMonacoLsp, loadConfig, searchConfig } from '#loader';
+import { Disposable, workspace, mira, miraMonacoLsp, type Uri } from '#loader';
 const { createVmContext, isVmArray, isVmExtern, isVmModule, VmExtern, VmFunction, VmModule } = mira;
 const { Provider } = miraMonacoLsp;
 
@@ -15,6 +16,93 @@ export interface MiraConfig {
     modules: Record<string, Record<string, VmFunctionOption | VmPrimitive>>;
     /** 全局外部对象 */
     externs: Record<string, object>;
+}
+
+/** 搜索配置文件 */
+async function searchConfig(uri: Uri): Promise<Uri | null> {
+    const configs = await workspace.findFiles(
+        '**/.mirarc{,.json,.yaml,.yml,.js,.cjs,.mjs,.ts,.mts,.cts}',
+        '**/node_modules/**',
+    );
+    if (!configs.length) {
+        return null;
+    }
+    const candidates = [];
+    for (const config of configs) {
+        if (uri.scheme !== config.scheme || uri.authority !== config.authority) {
+            continue;
+        }
+        if (uri.path.startsWith(config.path.replace(/\.mirarc(\..+)?$/, ''))) {
+            candidates.push(config);
+        }
+    }
+    if (candidates.length === 0) {
+        return null;
+    }
+    candidates.sort((a, b) => b.path.length - a.path.length);
+    return candidates[0]!;
+}
+
+/** 加载 Yaml/Json 配置 */
+function loadYamlConfig(uri: Uri, data: string): unknown {
+    const parsed = parseYaml(data);
+    return parsed;
+}
+/** 加载 JS/TS 配置 */
+async function loadJsConfig(uri: Uri, data: string): Promise<unknown> {
+    const isTs = uri.path.endsWith('ts');
+    const mime = isTs ? 'application/typescript' : 'application/javascript';
+    const directUri = () => `${uri.toString()}?t=${Date.now()}`;
+    const dataUri = () => {
+        return `data:${mime},${encodeURIComponent(data)}?t=${Date.now()}`;
+    };
+    const blobUri = () => {
+        const blob = new Blob([data], { type: mime });
+        const url = URL.createObjectURL(blob);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        return url;
+    };
+    let module: unknown = null;
+    try {
+        module = await import(directUri());
+    } catch {
+        // ignore
+    }
+    try {
+        module = await import(dataUri());
+    } catch {
+        // ignore
+    }
+    try {
+        module = await import(blobUri());
+    } catch {
+        // ignore
+    }
+    if (module == null) {
+        throw new Error(`Failed to load config from ${uri.toString()}`);
+    }
+    if (typeof module == 'object' && 'default' in module) {
+        return module.default;
+    }
+    return module;
+}
+const decoder = new TextDecoder();
+/** 加载配置 */
+async function loadConfig(uri: Uri): Promise<MiraConfig> {
+    const content = await workspace.fs.readFile(uri);
+    const str = decoder.decode(content);
+    if (
+        uri.path.endsWith('.js') ||
+        uri.path.endsWith('.cjs') ||
+        uri.path.endsWith('.mjs') ||
+        uri.path.endsWith('.ts') ||
+        uri.path.endsWith('.mts') ||
+        uri.path.endsWith('.cts')
+    ) {
+        return (await loadJsConfig(uri, str)) as MiraConfig;
+    } else {
+        return loadYamlConfig(uri, str) as MiraConfig;
+    }
 }
 
 /** 配置信息 */
@@ -54,10 +142,11 @@ class MiraConfigData extends Disposable {
     }
     readonly globals = new Map<string, VmValue>();
     /** 加载配置 */
-    async reload(config?: MiraConfig): Promise<void> {
-        if (config == null && this.document != null) {
+    async reload(): Promise<void> {
+        let config: MiraConfig | undefined;
+        if (this.document != null) {
             try {
-                config = (await loadConfig(this.document.uri))?.config as MiraConfig;
+                config = await loadConfig(this.document.uri);
             } catch {
                 // ignore
             }
@@ -148,11 +237,11 @@ export class ConfigManager extends Disposable {
         const config = await searchConfig(editor.uri);
         if (config == null) return MiraConfigData.default;
 
-        let data = this.cacheByConfig.get(config.filepath);
+        let data = this.cacheByConfig.get(config.toString());
         if (data == null) {
-            data = new MiraConfigData(await workspace.openTextDocument(config.filepath));
-            await data.reload(config.config as MiraConfig);
-            this.cacheByConfig.set(config.filepath, data);
+            data = new MiraConfigData(await workspace.openTextDocument(config));
+            await data.reload();
+            this.cacheByConfig.set(config.toString(), data);
         }
         this.cacheByFile.set(editor.uri.toString(), data);
         return data;

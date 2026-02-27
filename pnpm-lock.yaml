@@ -216,9 +216,6 @@ importers:
       '@mirascript/wasm':
         specifier: workspace:~
         version: link:../wasm
-      cosmiconfig:
-        specifier: ^9.0.0
-        version: 9.0.0(typescript@5.9.3)
     devDependencies:
       '@private/monaco-editor':
         specifier: ^0.0.65
