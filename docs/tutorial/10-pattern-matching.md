@@ -76,6 +76,22 @@ debug_print("38°C:", classify_temp(38));
 
 支持的关系运算符：`>`、`>=`、`<`、`<=`、`==`、`!=`、`=~`、`!~`。
 
+:::warning
+
+与直接使用 [比较运算符](./05-booleans.md#比较运算符) 相比，在模式匹配中不会进行类型转换，类型不一致总是导致匹配失败。因此，不推荐在关系模式中使用 `!=` 和 `!~`，除非你明确知道左侧的值类型。
+
+```mira
+let v = '42';
+
+debug_print(v != 42); // true，因为 '42' 和 42 类型不同
+debug_print(v =~ 42); // true，隐式转换后 '42' 等于 42
+
+debug_print(match v { case != 42 { true } case _ { false }}); // false，类型不一致导致匹配失败
+debug_print(match v { case =~ 42 { true } case _ { false }}); // false，类型不一致导致匹配失败
+```
+
+:::
+
 ## 范围模式
 
 使用 `..` 或 `..<` 匹配数值范围：

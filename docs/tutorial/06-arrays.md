@@ -105,7 +105,7 @@ debug_print("追加元素:", appended); // [1, 2, 3, 4]
 
 ```mira
 let arr = [10, 20, 30];
-debug_print("长度:", len(arr)); // 3
+debug_print("长度:", len(arr));      // 3
 debug_print("空数组长度:", len([])); // 0
 ```
 
@@ -172,7 +172,7 @@ debug_print("展平:", flatten(nested)); // [1, 2, 3, 4, 5, 6]
 
 ```mira
 let numbers = [2, 4, 6, 8];
-debug_print("全部是偶数:", all(numbers, fn { it % 2 == 0 })); // true
+debug_print("全部是偶数:", all(numbers, fn { it % 2 == 0 }));  // true
 debug_print("存在大于 5:", any(numbers, fn { it > 5 }));       // true
 ```
 

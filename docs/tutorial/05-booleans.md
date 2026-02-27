@@ -45,6 +45,28 @@ debug_print(0.1 + 0.2 =~ 0.3);   // true，近似相等
 debug_print("Hello" =~ "hello"); // true，忽略大小写
 ```
 
+### 隐式类型转换
+
+在进行**比较**运算和**近似相等**运算时，MiraScript 会对两侧的操作数进行类型转换：
+
+- 至少有一个操作数是 `number` 时，另一个操作数会被转换为 `number`；
+- 否则，至少有一个操作数是 `string` 时，另一个操作数会被转换为 `string`；
+- 否则，两个操作数都会被转换为 `number`。
+
+```mira
+debug_print(1 == "1");       // false，严格相等不转换类型
+debug_print(1 =~ "1");       // true，近似相等会转换 "1" 为数字 1
+debug_print(0 =~ false);     // true，近似相等会转换 false 为数字 0
+debug_print("0" =~ false);   // false，近似相等会转换 false 为字符串 "false"，与 "0" 不相等
+debug_print(false =~ false); // true，两侧均非 number/string，转换为数字 0，相等
+```
+
+:::tip
+
+为了避免预期外的隐式转换，建议在比较时确保其中一个操作数为 `number` 类型（此时另一个操作数的转换行为固定），或者明确进行类型转换。
+
+:::
+
 ## 逻辑运算符
 
 逻辑运算符用于组合布尔表达式：
