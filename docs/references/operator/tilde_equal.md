@@ -11,8 +11,11 @@ title: '=~'
 如果其中一个操作数为 `number` 类型，另一个操作数在比较前也会自动转换为 `number` 类型。
 
 ```mira
-0.1 + 0.2 =~ 0.3; // true
-1 =~ "1";        // true
+0.1 + 0.2 =~ 0.3 // true
+```
+
+```mira
+1 =~ "1"         // true
 ```
 
 ---
@@ -20,5 +23,5 @@ title: '=~'
 对于 `string` 类型，`=~` 运算符进行大小写不敏感的[正规化（NFC）](https://unicode.org/reports/tr15/)比较。
 
 ```mira
-"café" =~ "CAFÉ"; // true
+"café" =~ "CAFÉ" // true
 ```
