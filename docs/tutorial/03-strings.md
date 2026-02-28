@@ -60,7 +60,7 @@ debug_print("我叫 $name，今年 $age 岁");
 
 ### 插入表达式
 
-使用 `$(表达式)` 插入任意表达式的计算结果：
+使用 `$(..)` 插入任意表达式的计算结果：
 
 ```mira
 let a = 3;
@@ -72,7 +72,7 @@ debug_print("√($a² + $b²) = $(sqrt(a^2 + b^2))");
 
 ### 插入块表达式
 
-使用 `${...}` 插入一个代码块的结果：
+使用 `${..}` 插入一个代码块的结果：
 
 ```mira
 let score = 85;
@@ -81,7 +81,7 @@ debug_print("成绩：$score，等级：${ if score >= 90 { "优" } else if scor
 
 ### 格式化输出
 
-在插值表达式后添加 `:格式` 可以控制输出格式：
+在插值表达式 `$(..)` 后添加 `:格式` 可以控制输出格式：
 
 ```mira
 let pi = PI;
@@ -159,7 +159,7 @@ debug_print("字符数组:", characters);  // ["H", "i", "!"]
 
 ## 类型转换
 
-使用 `to_string()` 可以将其他类型转为字符串：
+使用 [`to_string()`](../lib/00-global.md#fn-to_stringdata-fallback) 可以将其他类型转为字符串：
 
 ```mira
 debug_print(to_string(42));      // "42"

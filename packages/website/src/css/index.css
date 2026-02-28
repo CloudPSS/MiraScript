@@ -36,3 +36,23 @@ a[class^='skipToContent_'] {
 .theme-doc-sidebar-item-category:is(.category-operator, .category-keyword) > .menu__list {
   font-family: var(--ifm-font-family-monospace);
 }
+
+:root {
+  --ifm-color-primary: #6d2eff;
+  --ifm-color-primary-dark: #5810ff;
+  --ifm-color-primary-darker: #4d01ff;
+  --ifm-color-primary-darkest: #4000d3;
+  --ifm-color-primary-light: #824cff;
+  --ifm-color-primary-lighter: #8d5bff;
+  --ifm-color-primary-lightest: #ac88ff;
+}
+
+[data-theme='dark'] {
+  --ifm-color-primary: #8688f3;
+  --ifm-color-primary-dark: #6466f0;
+  --ifm-color-primary-darker: #5355ee;
+  --ifm-color-primary-darkest: #3034ea;
+  --ifm-color-primary-light: #a8aaf6;
+  --ifm-color-primary-lighter: #b9bbf8;
+  --ifm-color-primary-lightest: #dcdcfc;
+}

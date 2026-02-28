@@ -26,11 +26,12 @@ debug_print("空记录:", empty);
 ```
 
 :::info 单元素记录
+
 创建只有一个未命名元素的记录时，需要加尾逗号以区别于括号分组：
 
 ```mira
 let group = (42);    // 这是分组表达式，值为 42
-let record = (42, ); // 这才是单元素记录
+let record = (42,);  // 这才是单元素记录
 debug_print(type(group));   // "number"
 debug_print(type(record));  // "record"
 ```
@@ -136,7 +137,7 @@ debug_print("所有值:", values(person));
 debug_print("键值对:", entries(person));
 ```
 
-`keys()` 返回键名数组，`values()` 返回值数组，`entries()` 返回 `(key, value)` 记录的数组。
+[`keys()`](../lib/00-global.md#fn-keysdata) 返回键名数组，[`values()`](../lib/00-global.md#fn-valuesdata) 返回值数组，[`entries()`](../lib/00-global.md#fn-entriesdata) 返回 `(key, value)` 记录的数组。
 
 ## 嵌套记录
 

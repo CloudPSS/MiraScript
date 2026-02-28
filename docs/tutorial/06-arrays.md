@@ -178,7 +178,7 @@ debug_print("存在大于 5:", any(numbers, fn { it > 5 }));       // true
 
 ## 检查元素是否存在
 
-使用 `in` 运算符检查数组是否包含某个值：
+使用 [`in` 运算符](../references/keyword/in.md) 检查数组是否包含某个值：
 
 ```mira
 let colors = ["red", "green", "blue"];

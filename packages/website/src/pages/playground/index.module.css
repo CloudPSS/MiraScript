@@ -73,19 +73,21 @@
 
     &:focus {
       outline: none;
-      border-color: var(--ifm-color-primary);
+      border-color: var(--ifm-color-primary-dark);
     }
   }
   button {
     background-color: var(--ifm-color-primary);
-    color: #fff;
+    color: var(--ifm-button-color);
+    font-weight: var(--ifm-button-font-weight);
     border: none;
-    border-radius: 4px;
+    border-radius: var(--ifm-button-border-radius);
     padding: 6px 12px;
     font-size: 12px;
     cursor: pointer;
 
-    &:hover {
+    &:hover,
+    &:focus {
       background-color: var(--ifm-color-primary-dark);
     }
   }
