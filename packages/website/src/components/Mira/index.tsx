@@ -47,6 +47,7 @@ export default function Mira({
                 value={value}
                 theme="vs-dark"
                 language={language}
+                loading={<></>}
                 options={{
                     scrollBeyondLastLine: false,
                     minimap: { enabled: false },
