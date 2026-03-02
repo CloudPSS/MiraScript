@@ -185,7 +185,7 @@ function $Slice(value: VmAny, start: VmAny, end: VmAny): VmArray;
 /** 获取数组切片（不包含结束位置） */
 function $SliceExclusive(value: VmAny, start: VmAny, end: VmAny): VmArray;
 /** 获取值的类型名称 */
-function $Type(value: VmAny): TypeName;
+function $Type(value: VmAny): VmTypeName;
 /** 判断值是否为布尔值 */
 function $IsBoolean(value: VmAny): value is boolean;
 /** 判断值是否为数字 */

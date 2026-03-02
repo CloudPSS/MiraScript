@@ -1,5 +1,5 @@
 import { kVmWrapper } from '../../helpers/constants.js';
-import type { TypeName, VmAny } from './index.js';
+import type { VmTypeName, VmAny } from './index.js';
 
 /**
  * Mirascript 特殊值的包装器
@@ -15,7 +15,7 @@ export abstract class VmWrapper<T extends object> {
     /** 与其他值比较 */
     abstract same(other: VmAny): boolean;
     /** 获取类型 */
-    abstract get type(): TypeName;
+    abstract get type(): VmTypeName;
     /** 获取当前对象的描述 */
     abstract get tag(): string;
     /** 描述键对应的值 */

@@ -3,7 +3,7 @@ import type { VmFunction } from './function.js';
 import type { VmModule } from './module.js';
 
 /** 类型名称 */
-export type TypeName = keyof VmValueMap;
+export type VmTypeName = keyof VmValueMap;
 
 /** Mirascript 虚拟机内的未初始化变量 */
 export type VmUninitialized = undefined;

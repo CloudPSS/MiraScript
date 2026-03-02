@@ -3,7 +3,7 @@ import { getPrototypeOf, getOwnPropertyNames, hasOwn, apply, isArray } from '../
 import { innerToString } from '../../helpers/convert/to-string.js';
 import { isVmExtern } from '../../helpers/types.js';
 import { kVmExtern } from '../../helpers/constants.js';
-import type { TypeName, VmAny, VmConst, VmPrimitive, VmValue } from './index.js';
+import type { VmTypeName, VmAny, VmConst, VmPrimitive, VmValue } from './index.js';
 import { VmWrapper } from './wrapper.js';
 import { unwrapFromVmValue, wrapToVmValue } from './boundary.js';
 
@@ -158,7 +158,7 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
         return String(this.value);
     }
     /** @inheritdoc */
-    override get type(): TypeName {
+    override get type(): VmTypeName {
         return 'extern';
     }
     /** @inheritdoc */

@@ -1,6 +1,6 @@
 import { kVmModule } from '../../helpers/constants.js';
 import { hasOwnEnumerable, keys } from '../../helpers/utils.js';
-import type { TypeName, VmAny, VmImmutable } from './index.js';
+import type { VmTypeName, VmAny, VmImmutable } from './index.js';
 import { VmWrapper } from './wrapper.js';
 
 /** Mirascript 模块 */
@@ -31,7 +31,7 @@ export class VmModule<const T extends Record<string, VmImmutable> = Record<strin
         return this === other;
     }
     /** @inheritdoc */
-    override get type(): TypeName {
+    override get type(): VmTypeName {
         return 'module';
     }
     /** @inheritdoc */
