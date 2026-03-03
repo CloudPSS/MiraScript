@@ -1,0 +1,38 @@
+t_throws(fn { new_record(-1, fn { }) });
+t_throws(fn { new_record(0) });
+t_throws(fn { new_array(-1, fn { }) });
+t_throws(fn { new_array(0) });
+
+t_eq(new_record(2, fn { (it, it + 1) }), (1, 2));
+t_eq(new_record('1.5', fn { (it, it + 0.5) }), (0.5,));
+t_eq(new_record(3, fn { nil }), ());
+t_eq(new_record(2, fn {
+  if it is 0 { ('x', 1) } else { nil }
+}), (x: 1));
+t_eq(new_record(3, fn { 0 }), ('': nil));
+t_eq(
+  new_record(
+    3,
+    fn {
+      return fn { };
+    },
+  ),
+  ('': nil),
+);
+
+t_eq(new_array(2, fn { it + 1 }), [1, 2]);
+t_eq(new_array('1.5', fn { it + 0.5 }), [0.5]);
+t_eq(new_array(3, fn { nil }), [nil, nil, nil]);
+t_eq(new_array(2, fn {
+  if it is 0 { 'x' } else { nil }
+}), ['x', nil]);
+t_eq(new_array(3, fn { 0 }), [0, 0, 0]);
+t_eq(
+  new_array(
+    3,
+    fn {
+      return fn { };
+    },
+  ),
+  [nil, nil, nil],
+);

@@ -122,7 +122,7 @@ const _with = VmLib(
         summary: '在数组或记录中设置多个键值对',
         params: {
             data: '要设置的数组或记录',
-            '..entries': '要设置的键值对，成对出现',
+            '..entries': '要设置的键值对，成对出现；键可以是一个值或一个数组（表示嵌套路径）',
         },
         paramsType: {
             data: 'array | record',
