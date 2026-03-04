@@ -682,6 +682,40 @@ max(3, 7, 2) // 7
 min(3, 7, 2) // 2
 ```
 
+### `fn new_array(length, generator)`
+
+根据生成器函数创建一个数组
+
+**参数**
+
+- `length`: `number`: 数组的长度
+- `generator`: `fn(index: number) -> any`: 生成器函数，返回数组元素的值
+
+**返回值** `array`
+
+**示例**
+
+```mira
+new_array(5, fn { it * it }) // [0, 1, 4, 9, 16]
+```
+
+### `fn new_record(size, generator)`
+
+根据生成器函数创建一个记录
+
+**参数**
+
+- `size`: `number`: 记录的大小
+- `generator`: `fn(index: number) -> (string, any) | nil`: 生成器函数，返回键值对或 nil（表示跳过该条目）
+
+**返回值** `record`
+
+**示例**
+
+```mira
+new_record(3, fn { (it, it * 2) }) // (0, 2, 4)
+```
+
 ### `fn panic(message)`
 
 产生错误，并打印错误信息到控制台
@@ -1074,6 +1108,22 @@ to_iso8601(0) // "1970-01-01T00:00:00.000Z"
 to_json([1, 2, 3]) // "[1,2,3]"
 ```
 
+### `fn to_lowercase(str)`
+
+将字符串转换为小写
+
+**参数**
+
+- `str`: `string`: 要转换的字符串
+
+**返回值** `string`
+
+**示例**
+
+```mira
+to_lowercase("MIRA") // "mira"
+```
+
 ### `fn to_number(data, fallback)`
 
 将数据转换为数字
@@ -1123,6 +1173,22 @@ to_string([1, 2]) // "1, 2"
 
 ```mira
 to_timestamp("1970-01-01T00:00:00Z") // 0
+```
+
+### `fn to_uppercase(str)`
+
+将字符串转换为大写
+
+**参数**
+
+- `str`: `string`: 要转换的字符串
+
+**返回值** `string`
+
+**示例**
+
+```mira
+to_uppercase("mira") // "MIRA"
 ```
 
 ### `fn trim(str)`
@@ -1206,7 +1272,7 @@ values((a: 1, b: 2)) // [1, 2]
 **参数**
 
 - `data`: `array | record`: 要设置的数组或记录
-- `..entries`: `[..[number | string | (number | string)[], any][]]`: 要设置的键值对，成对出现
+- `..entries`: `[..[number | string | (number | string)[], any][]]`: 要设置的键值对，成对出现；键可以是一个值或一个数组（表示嵌套路径）
 
 **返回值** `type(data)`
 
