@@ -9,7 +9,8 @@
   "scripts": {
     "start": "vite",
     "build": "vite build",
-    "serve": "vite preview"
+    "serve": "vite preview",
+    "copy": "cp -rf dist/* /usr/share/cloudpss/static/mira"
   },
   "dependencies": {
     "@mirascript/bindings": "workspace:~",
