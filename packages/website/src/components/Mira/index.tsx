@@ -38,7 +38,7 @@ export default function Mira({
     const [results, setResults] = useState<Result[]>([]);
     const [resultsOutdated, setResultsOutdated] = useState(true);
     const language = mode === 'Template' ? 'mirascript-template' : mode === 'Doc' ? 'mirascript-doc' : 'mirascript';
-    const path = `markdown:///${useId()}${title ? `?title=${encodeURIComponent(title)}` : ''}`;
+    const path = `markdown:///${useId()}/live-editor${title ? `?title=${encodeURIComponent(title)}` : ''}`;
     const editor = useMonaco() && (
         <div className={styles['editor-holder']}>
             <Editor

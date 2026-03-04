@@ -71,6 +71,7 @@ function EditorPanel({ setResults }: { setResults: React.Dispatch<React.SetState
                 className={styles['editor-content']}
                 language={lang}
                 value={state.source}
+                path="file:///playground"
                 options={{
                     wordWrap: 'on',
                     wrappingIndent: 'indent',
