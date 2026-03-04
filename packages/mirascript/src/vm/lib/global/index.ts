@@ -4,5 +4,5 @@ export * from './sequence/index.js';
 export * from './debug.js';
 export * from './json.js';
 export * from './to-primitive.js';
-export * from './string.js';
+export * from './string/index.js';
 export * from './time.js';

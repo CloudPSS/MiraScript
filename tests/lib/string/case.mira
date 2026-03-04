@@ -1,0 +1,15 @@
+t_eq("mira"::to_uppercase(), "MIRA");
+t_eq("MIRA"::to_lowercase(), "mira");
+t_eq("mira"::to_lowercase(), "mira");
+t_eq("MIRA"::to_uppercase(), "MIRA");
+t_eq("MiRa"::to_uppercase(), "MIRA");
+t_eq("MiRa"::to_lowercase(), "mira");
+
+t_eq("café"::to_uppercase(), "CAFÉ");
+t_eq("CAFÉ"::to_lowercase(), "café");
+
+t_eq(nil::to_uppercase(), "");
+t_eq(nil::to_lowercase(), "");
+
+t_eq((a: 'x', B: 'Y')::to_uppercase(), 'A: X, B: Y');
+t_eq((a: 'x', B: 'Y')::to_lowercase(), 'a: x, b: y');
