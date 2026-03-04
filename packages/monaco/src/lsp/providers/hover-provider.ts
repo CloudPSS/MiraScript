@@ -194,7 +194,13 @@ export class HoverProvider extends Provider implements languages.HoverProvider {
                 const num = convert.toNumber(token.text.replaceAll('_', ''), null);
                 if (num == null) return undefined;
                 const contents: string[] = [];
-                if (Number.isInteger(num)) {
+                if (
+                    !token.text.includes('.') &&
+                    !token.text.includes('e') &&
+                    !token.text.includes('E') &&
+                    Number.isInteger(num)
+                ) {
+                    contents.push(`\0(dec) ` + serializeNumber(num));
                     const abs = Math.abs(num);
                     if (abs <= BIN_MAX) {
                         contents.push('\0(bin) ' + serializeInteger(num, 2));
@@ -205,9 +211,6 @@ export class HoverProvider extends Provider implements languages.HoverProvider {
                     if (abs <= HEX_MAX) {
                         contents.push('\0(hex) ' + serializeInteger(num, 16));
                     }
-                }
-                if (contents.length) {
-                    contents.unshift(`\0(dec) ` + serializeNumber(num));
                 } else {
                     contents.push(`\0(number) ` + serializeNumber(num));
                 }
