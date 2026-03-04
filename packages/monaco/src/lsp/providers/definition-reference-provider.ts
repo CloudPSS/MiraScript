@@ -31,25 +31,51 @@ export class DefinitionReferenceProvider
     /** 准备要显示的定义 */
     private async prepareGlobal(
         model: editor.ITextModel,
-        path: readonly string[],
+        paths: ReadonlyArray<readonly string[]>,
+        focus = 0,
     ): Promise<{ uri: Uri; range: IRange } | undefined> {
-        const globals = await this.getContext(model);
-        const [name, ...access] = path;
-        const [parent, value] = getDeep(globals, name!, access);
-        if (value === undefined) return undefined;
-        const { script, doc } = valueDoc(path.at(-1)!, value, 'declare', parent);
-        const code = [...docComment(doc), script, ''];
         const globalModel = await this.getGlobalModel();
         if (!globalModel) return undefined;
+        const globals = await this.getContext(model);
+        const code: string[] = [];
+        const focusRange: Writable<IRange> = {
+            startColumn: 1,
+            startLineNumber: 1,
+            endColumn: 1,
+            endLineNumber: 1,
+        };
+        for (const [index, path] of paths.entries()) {
+            const [name, ...access] = path;
+            const [parent, value] = getDeep(globals, name!, access);
+            if (value === undefined) return undefined;
+            const { script, doc } = valueDoc(path.at(-1)!, value, 'declare', parent);
+            if (index !== focus) {
+                code.push(...docComment(doc), ...script.split('\n'), '');
+                continue;
+            }
+            code.push(...docComment(doc));
+            const defName = path.at(-1)!;
+            const scriptLines = script.split('\n');
+            const decLine = scriptLines.findIndex((line) => line.includes(defName));
+            if (decLine < 0) {
+                focusRange.startLineNumber = code.length + 1;
+                code.push(...script.split('\n'));
+                focusRange.endLineNumber = code.length + 1;
+            } else {
+                code.push(...script.split('\n'));
+                const decLineText = scriptLines[decLine]!;
+                focusRange.startLineNumber = code.length - scriptLines.length + decLine + 1;
+                focusRange.endLineNumber = focusRange.startLineNumber;
+                const nameIndex = decLineText.indexOf(defName);
+                focusRange.startColumn = nameIndex + 1;
+                focusRange.endColumn = nameIndex + defName.length + 1;
+            }
+            code.push('');
+        }
         globalModel.setValue(code.join('\n'));
         return {
             uri: globalModel.uri,
-            range: {
-                startColumn: 1,
-                startLineNumber: code.length - 1,
-                endColumn: 1,
-                endLineNumber: code.length - 1,
-            },
+            range: focusRange,
         };
     }
     /** @inheritdoc */
@@ -64,7 +90,7 @@ export class DefinitionReferenceProvider
             const { def } = value.variable;
             let link: languages.LocationLink | undefined;
             if ('name' in def) {
-                link = await this.prepareGlobal(model, [def.name]);
+                link = await this.prepareGlobal(model, [[def.name]]);
             } else {
                 link = { uri: model.uri, range: def.definition.range };
             }
@@ -77,7 +103,9 @@ export class DefinitionReferenceProvider
                 fields,
             } = value.fields;
             if ('name' in def) {
-                const link: languages.LocationLink | undefined = await this.prepareGlobal(model, [def.name, ...fields]);
+                const link: languages.LocationLink | undefined = await this.prepareGlobal(model, [
+                    [def.name, ...fields],
+                ]);
                 if (!link) return undefined;
                 link.originSelectionRange = value.range;
                 return [link];
@@ -102,7 +130,7 @@ export class DefinitionReferenceProvider
             }));
             if (context.includeDeclaration) {
                 if ('name' in def) {
-                    const link = await this.prepareGlobal(model, [def.name]);
+                    const link = await this.prepareGlobal(model, [[def.name]]);
                     if (link) links.push(link);
                 } else if (!Range.isEmpty(def.definition.range)) {
                     links.push({ uri: model.uri, range: def.definition.range });
