@@ -8,7 +8,7 @@ export type BcModuleType = typeof BcModule;
 
 const loader = new ModuleLoader<BcModuleType>(async () => {
     const wasm = await import('@mirascript/wasm');
-    await wasm.ready;
+    await wasm.init();
     return wasm;
 });
 

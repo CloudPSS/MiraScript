@@ -41,7 +41,7 @@ async function loadEsmSh() {
 }
 
 /** 加载模块 */
-async function mod(m: unknown): Promise<BufferSource> {
+async function mod(m: unknown): Promise<BufferSource | Response> {
     if (m && typeof m == 'object' && 'default' in m) {
         return mod(m.default);
     }
@@ -65,16 +65,16 @@ async function mod(m: unknown): Promise<BufferSource> {
 }
 
 /** 获取模块的响应体 */
-async function body(response: Response | Promise<Response>): Promise<BufferSource> {
+async function body(response: Response | Promise<Response>): Promise<Response> {
     const resp = await response;
     if (resp.ok) {
-        return await resp.arrayBuffer();
+        return resp;
     } else {
         throw new Error(`Failed to fetch wasm module: ${resp.status} ${resp.statusText}`);
     }
 }
 
-export const module: Promise<BufferSource> = /* @__PURE__ */ (async () => {
+export const module: Promise<Response | BufferSource> = /* @__PURE__ */ (async () => {
     const candidates = [loadEsmSh, loadEsm, loadUrl, loadDocument];
     for (const candidate of candidates) {
         try {
