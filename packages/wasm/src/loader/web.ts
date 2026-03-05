@@ -23,8 +23,8 @@ async function loadEsm() {
 /** 由 esm.sh 加载模块 */
 async function loadEsmSh() {
     const url = new URL(import.meta.url);
-    const { pathname } = url;
-    if (!pathname.includes('/@mirascript/wasm')) {
+    const { pathname, protocol } = url;
+    if (!pathname.includes('/@mirascript/wasm') || !(protocol === 'https:' || protocol === 'http:')) {
         throw new Error('Not loaded from esm.sh');
     }
     const segments = pathname.split('/');
