@@ -32,7 +32,7 @@
   },
   "devDependencies": {
     "@napi-rs/cli": "^3.5.1",
-    "@types/node": "^25.3.3",
+    "@types/node": "^25.3.5",
     "nodemon": "^3.1.14"
   }
 }
