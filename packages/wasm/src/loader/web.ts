@@ -1,12 +1,3 @@
-/** 从 Document 推断 URL */
-async function loadDocument() {
-    const fallbackUrl =
-        (document?.currentScript instanceof HTMLScriptElement
-            ? document.currentScript.src
-            : (document.currentScript?.href?.baseVal ?? '')) || document.location.href;
-    return await body(fetch(new URL('../../lib/wasm_bg.wasm', fallbackUrl)));
-}
-
 /** 从 import.meta.url 推断 URL */
 async function loadUrl() {
     return await body(fetch(new URL('../../lib/wasm_bg.wasm', import.meta.url)));
@@ -75,7 +66,7 @@ async function body(response: Response | Promise<Response>): Promise<Response> {
 }
 
 export const module: Promise<Response | BufferSource> = /* @__PURE__ */ (async () => {
-    const candidates = [loadEsmSh, loadEsm, loadUrl, loadDocument];
+    const candidates = [loadEsmSh, loadEsm, loadUrl];
     for (const candidate of candidates) {
         try {
             const mod = await candidate();
