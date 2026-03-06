@@ -26,6 +26,6 @@ mira-core = { path = "." }
 [dependencies]
 unicode-ident = "1.0"
 winnow = "0.7"
-strum = { version = "0.27", features = ["derive"] }
+strum = { version = "0.28", features = ["derive"] }
 wasm-bindgen = { version = "0.2", optional = true }
 serde = { version = "1", optional = true, features = ["derive"] }
