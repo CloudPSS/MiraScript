@@ -1,0 +1,45 @@
+t_throws(fn { unique() });
+t_throws(fn { unique(nil) });
+t_throws(fn { unique(()) });
+t_throws(fn { unique(1) });
+t_throws(fn { unique("1") });
+t_throws(fn { unique([], ()) });
+t_throws(fn { unique(["1", 2], fn { nil }) });
+t_eq(unique([]), []);
+
+// unique numbers
+t_eq(unique([3, 1, 2]), [3, 1, 2]);
+t_eq(unique([1, 2, 3]), [1, 2, 3]);
+t_eq(unique([nan, inf, -inf, 0, 1, -1]), [nan, inf, -inf, 0, 1, -1]);
+t_eq(unique([inf, -inf, -0, 0, 1, -1, nan]), [inf, -inf, -0, 1, -1, nan]);
+t_eq(unique([0, 1, 11, 10]), [0, 1, 11, 10]);
+t_eq(unique([0, 0]), [0]);
+
+// unique strings
+t_eq(unique(["c", "a", "b"]), ["c", "a", "b"]);
+t_eq(unique(["a", "b", "c"]), ["a", "b", "c"]);
+t_eq(unique(["c", "C", "a", "A", "b", "B"]), ["c", "C", "a", "A", "b", "B"]);
+t_eq(unique(["a", "A"]), ["a", "A"]);
+t_eq(unique(["a", "a"]), ["a"]);
+t_eq(unique(["a", "A", "a", "A"]), ["a", "A"]);
+t_eq(unique(["a", "aa", "ab", "b", "ba"]), ["a", "aa", "ab", "b", "ba"]);
+t_eq(unique(["a", "ab", "aa", "b", "ba"]), ["a", "ab", "aa", "b", "ba"]);
+
+// unique mixed
+t_eq(unique([nil, 0]), [nil, 0]);
+t_eq(unique([0, nil]), [0, nil]);
+t_eq(unique([nil, '']), [nil, '']);
+t_eq(unique(['', nil]), ['', nil]);
+t_eq(unique([0, nil, 'x']), [0, nil, 'x']);
+
+// unique composed
+t_eq(unique([(0, 'x'), (2, 'y'), (1, 'z')]), [(0, 'x'), (2, 'y'), (1, 'z')]);
+t_eq(unique([(0, 'x'), (0, 'y'), (0, 'z')]), [(0, 'x'), (0, 'y'), (0, 'z')]);
+t_eq(unique([(0, 'x'), (0, 'y'), (0, 'x')]), [(0, 'x'), (0, 'y')]);
+
+// unique custom equal
+t_eq(unique([3, 1, '2', '3', 2], fn (a, b) { a =~ b }), [3, 1, '2']);
+
+let arr = [1, 3, 2, 1];
+t_eq(unique(arr, fn (a, b) { a == b }), [1, 3, 2]);
+t_eq(arr, [1, 3, 2, 1]); // no modify

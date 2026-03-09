@@ -6,6 +6,7 @@ t_throws(fn { sort_by("1", fn { }) });
 t_throws(fn { sort_by([]) });
 t_throws(fn { sort_by([], ()) });
 t_throws(fn { sort_by([], fn { }, ()) });
+t_throws(fn { sort_by(["1", 2], fn { it }, fn { nil }) });
 t_eq(sort_by([], fn { }), []);
 
 t_eq(sort_by([3, 1, 2], fn (a) { a }), [1, 2, 3]);

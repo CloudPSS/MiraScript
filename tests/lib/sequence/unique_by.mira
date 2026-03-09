@@ -1,0 +1,30 @@
+t_throws(fn { unique_by() });
+t_throws(fn { unique_by(nil, fn { }) });
+t_throws(fn { unique_by((), fn { }) });
+t_throws(fn { unique_by(1, fn { }) });
+t_throws(fn { unique_by("1", fn { }) });
+t_throws(fn { unique_by([]) });
+t_throws(fn { unique_by([], ()) });
+t_throws(fn { unique_by([], fn { }, ()) });
+t_throws(fn { unique_by(["1", 2], fn { it }, fn { nil }) });
+t_eq(unique_by([], fn { }), []);
+
+t_eq(unique_by([3, 1, 2], fn (a) { a }), [3, 1, 2]);
+t_eq(
+  unique_by(
+    [nil, 0, nan],
+    fn (_, k, a) {
+      t_eq(type(k), 'number');
+      t_eq(a, [nil, 0, nan]);
+      k
+    },
+  ),
+  [nil, 0, nan],
+);
+t_eq(unique_by([nil, 0, nan], fn (_, _, a) { a }), [nil]);
+t_eq(unique_by([(0, 'x'), (2, 'y'), (1, 'z')], fn (a) { a[0] }), [(0, 'x'), (2, 'y'), (1, 'z')]);
+t_eq(unique_by([(0, 'x'), (0, 'y'), (0, 'z')], fn (a) { a[0] }), [(0, 'x')]);
+
+let arr = [1, 3, 2, 1];
+t_eq(unique_by(arr, fn (a) { a }, fn (a, b) { a == b }), [1, 3, 2]);
+t_eq(arr, [1, 3, 2, 1]); // no modify

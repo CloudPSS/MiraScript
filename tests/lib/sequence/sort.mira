@@ -4,6 +4,7 @@ t_throws(fn { sort(()) });
 t_throws(fn { sort(1) });
 t_throws(fn { sort("1") });
 t_throws(fn { sort([], ()) });
+t_throws(fn { sort(["1", 2], fn { nil }) });
 t_eq(sort([]), []);
 
 // sort numbers

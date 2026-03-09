@@ -8,5 +8,6 @@ export * from './reverse.js';
 export * from './zip.js';
 export * from './all-any.js';
 export * from './sort.js';
+export * from './unique.js';
 export * from './repeat.js';
 export * from './new.js';
