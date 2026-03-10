@@ -25,17 +25,13 @@
   border-left: 1px solid var(--ifm-color-emphasis-300);
 }
 
-.panel-content {
-  contain: strict;
-}
-
 .editor-content {
-  composes: panel-content;
   grid-area: editor-content;
 }
 
 .output-content {
-  composes: panel-content right-panel;
+  composes: right-panel;
+  contain: strict;
   grid-area: output-content;
   overflow: auto;
 }

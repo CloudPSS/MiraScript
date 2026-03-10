@@ -100,14 +100,49 @@ debug_print(user.name!, city);         // 断言非空`,
 function CodeSnippet({ title, code, context }: { title: string; code: string; context: Record<string, VmAny> }): JSX.Element {
     return (
         <div className={styles['codeExample']}>
-            <div className={styles['codeHeader']}>
-                <span className={styles['codeDot']} />
-                {title}
-            </div>
+            <div className={styles['codeHeader']}>{title}</div>
             <Highlight value={code} mode="Script" context={context} autoRun />
         </div>
     );
 }
+
+/** CTA */
+function CtaButtons(): JSX.Element {
+    return (
+        <div className={styles['ctaButtons']}>
+            <Link className={styles['btnPrimary']} to="/tutorial/introduction/">
+                交互式教程
+            </Link>
+            <Link className={styles['btnSecondary']} to="/cheatsheet/">
+                速查手册
+            </Link>
+        </div>
+    );
+}
+
+/* ---------- Comparison 数据 ---------- */
+const comparisons = [
+    {
+        icon: '⚡',
+        title: '高性能',
+        desc: 'Rust 编写的解释器内核，支持编译到 WebAssembly，在浏览器和服务端均可高效运行。',
+    },
+    {
+        icon: '🧩',
+        title: '易于嵌入',
+        desc: '提供 Node.js、Python、WASM 等多平台绑定，轻松集成到你的应用中。',
+    },
+    {
+        icon: '🎨',
+        title: '开发者体验',
+        desc: '内建 VS Code 扩展、Monaco 编辑器集成，提供语法高亮和智能提示。',
+    },
+    {
+        icon: '📖',
+        title: '完善文档',
+        desc: '交互式教程、可运行的代码示例、完整的语言参考，快速上手不迷路。',
+    },
+];
 
 /* ---------- 主页组件 ---------- */
 
@@ -118,28 +153,17 @@ export default function Home(): JSX.Element {
     const { siteConfig } = useDocusaurusContext();
     return (
         <Layout title={siteConfig.title} description={siteConfig.tagline}>
-            {/* Hero */}
             <header className={styles['hero']}>
-                <div className={styles['heroContent']}>
-                    <h1 className={styles['heroTitle']}>MiraScript</h1>
-                    <p className={styles['heroTagline']}>
-                        表达式优先、不可变数据为核心的现代脚本语言。
-                        <br />
-                        简洁、安全、易于嵌入。
-                    </p>
-                    <div className={styles['heroButtons']}>
-                        <Link className={styles['btnPrimary']} to="/tutorial/introduction/">
-                            交互式教程
-                        </Link>
-                        <Link className={styles['btnSecondary']} to="/cheatsheet/">
-                            速查手册
-                        </Link>
-                    </div>
-                </div>
+                <h1 className={styles['heroTitle']}>MiraScript</h1>
+                <p className={styles['heroTagline']}>
+                    表达式优先、不可变数据为核心的现代脚本语言。
+                    <br />
+                    简洁、安全、易于嵌入。
+                </p>
+                <CtaButtons />
             </header>
 
             <main>
-                {/* Features */}
                 <section className={styles['features']}>
                     <div className={styles['featuresInner']}>
                         <h2 className={styles['sectionTitle']}>语言特性</h2>
@@ -156,7 +180,6 @@ export default function Home(): JSX.Element {
                     </div>
                 </section>
 
-                {/* Code Showcase */}
                 <section className={styles['codeShowcase']}>
                     <div className={styles['codeShowcaseInner']}>
                         <h2 className={styles['sectionTitle']}>代码示例</h2>
@@ -169,58 +192,29 @@ export default function Home(): JSX.Element {
                     </div>
                 </section>
 
-                {/* Why MiraScript */}
                 <section className={styles['comparison']}>
                     <div className={styles['comparisonInner']}>
                         <h2 className={styles['sectionTitle']}>为什么选择 MiraScript</h2>
                         <p className={styles['sectionSubtitle']}>与传统脚本语言相比的优势</p>
                         <ul className={styles['comparisonList']}>
-                            <li className={styles['comparisonItem']}>
-                                <span className={styles['comparisonIcon']}>⚡</span>
-                                <div className={styles['comparisonText']}>
-                                    <strong>高性能</strong>
-                                    <p>Rust 编写的解释器内核，支持编译到 WebAssembly，在浏览器和服务端均可高效运行。</p>
-                                </div>
-                            </li>
-                            <li className={styles['comparisonItem']}>
-                                <span className={styles['comparisonIcon']}>🧩</span>
-                                <div className={styles['comparisonText']}>
-                                    <strong>易于嵌入</strong>
-                                    <p>提供 Node.js、Python、WASM 等多平台绑定，轻松集成到你的应用中。</p>
-                                </div>
-                            </li>
-                            <li className={styles['comparisonItem']}>
-                                <span className={styles['comparisonIcon']}>🎨</span>
-                                <div className={styles['comparisonText']}>
-                                    <strong>开发者体验</strong>
-                                    <p>内建 VS Code 扩展、Monaco 编辑器集成，提供语法高亮和智能提示。</p>
-                                </div>
-                            </li>
-                            <li className={styles['comparisonItem']}>
-                                <span className={styles['comparisonIcon']}>📖</span>
-                                <div className={styles['comparisonText']}>
-                                    <strong>完善文档</strong>
-                                    <p>交互式教程、可运行的代码示例、完整的语言参考，快速上手不迷路。</p>
-                                </div>
-                            </li>
+                            {comparisons.map((c) => (
+                                <li key={c.title} className={styles['comparisonItem']}>
+                                    <span className={styles['comparisonIcon']}>{c.icon}</span>
+                                    <div className={styles['comparisonText']}>
+                                        <strong>{c.title}</strong>
+                                        <p>{c.desc}</p>
+                                    </div>
+                                </li>
+                            ))}
                         </ul>
                     </div>
                 </section>
-
-                {/* CTA */}
-                <section className={styles['cta']}>
-                    <h2 className={styles['ctaTitle']}>准备好开始了吗？</h2>
-                    <p className={styles['ctaDesc']}>跟随教程，几分钟内上手 MiraScript。</p>
-                    <div className={styles['ctaButtons']}>
-                        <Link className={styles['btnPrimary']} to="/tutorial/introduction/">
-                            交互式教程
-                        </Link>
-                        <Link className={styles['btnSecondary']} to="/cheatsheet/">
-                            速查手册
-                        </Link>
-                    </div>
-                </section>
             </main>
+            <footer className={styles['cta']}>
+                <h2 className={styles['ctaTitle']}>准备好开始了吗？</h2>
+                <p className={styles['ctaDesc']}>跟随教程，几分钟内上手 MiraScript。</p>
+                <CtaButtons />
+            </footer>
         </Layout>
     );
 }

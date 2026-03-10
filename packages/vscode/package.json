@@ -42,7 +42,7 @@
     "@mirascript/wasm": "workspace:~"
   },
   "devDependencies": {
-    "@private/monaco-editor": "^0.0.69",
+    "@private/monaco-editor": "^0.0.70",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^25.4.0",
     "@types/vscode": "1.90.0",

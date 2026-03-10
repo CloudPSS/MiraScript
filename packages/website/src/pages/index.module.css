@@ -18,12 +18,6 @@
   pointer-events: none;
 }
 
-.heroContent {
-  position: relative;
-  max-width: 800px;
-  margin: 0 auto;
-}
-
 .heroTitle {
   font-size: 3.5rem;
   font-weight: 800;
@@ -43,13 +37,6 @@
   max-width: 600px;
   margin-left: auto;
   margin-right: auto;
-}
-
-.heroButtons {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-  flex-wrap: wrap;
 }
 
 .btnPrimary {
@@ -150,21 +137,26 @@
   }
 }
 
-.featureCard {
-  padding: 1.5rem;
-  border-radius: 12px;
+.card {
   border: 1px solid var(--ifm-color-emphasis-200);
   background: var(--ifm-background-surface-color);
   transition: all 0.2s ease;
+
+  &:hover {
+    border-color: var(--ifm-color-primary);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+  }
 }
 
-.featureCard:hover {
-  border-color: var(--ifm-color-primary);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  transform: translateY(-2px);
+.featureCard {
+  composes: card;
+  padding: 1.5rem;
+  border-radius: 12px;
 }
 
 .featureIcon {
+  user-select: none;
   font-size: 2rem;
   margin-bottom: 0.75rem;
   display: block;
@@ -225,16 +217,16 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-}
 
-.codeDot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #4299e1;
+  &::before {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #4299e1;
+  }
 }
-
 /* Comparison Table */
 .comparison {
   padding: 4rem 2rem;
@@ -255,19 +247,19 @@
 }
 
 .comparisonItem {
+  composes: card;
   display: flex;
   align-items: flex-start;
   gap: 1rem;
   padding: 1rem 1.25rem;
   border-radius: 10px;
-  border: 1px solid var(--ifm-color-emphasis-200);
-  background: var(--ifm-background-surface-color);
 }
 
 .comparisonIcon {
+  user-select: none;
   font-size: 1.5rem;
   flex-shrink: 0;
-  margin-top: 0.1rem;
+  align-self: center;
 }
 
 .comparisonText {
