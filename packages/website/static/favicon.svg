@@ -10,15 +10,14 @@
     </linearGradient>
   </defs>
   <!-- Rounded square background -->
-  <rect x="32" y="32" width="448" height="448" rx="80" ry="80" fill="url(#bg)" />
+  <rect x="0" y="0" width="512" height="512" rx="100" ry="100" fill="url(#bg)" />
   <!-- Code bracket left < -->
-  <path d="M200 160 L120 256 L200 352" stroke="url(#accent)" stroke-width="36" stroke-linecap="round"
+  <path d="M180 136 L90 256 L180 376" stroke="url(#accent)" opacity="0.9" stroke-width="45" stroke-linecap="round"
     stroke-linejoin="round" fill="none" />
   <!-- Code bracket right > -->
-  <path d="M312 160 L392 256 L312 352" stroke="url(#accent)" stroke-width="36" stroke-linecap="round"
+  <path d="M332 136 L422 256 L332 376" stroke="url(#accent)" opacity="0.9" stroke-width="45" stroke-linecap="round"
     stroke-linejoin="round" fill="none" />
   <!-- Star/sparkle in center -->
-  <g transform="translate(256, 256)">
-    <path d="M0 -40 L10 -10 L40 0 L10 10 L0 40 L-10 10 L-40 0 L-10 -10 Z" fill="white" opacity="0.95" />
-  </g>
+  <path transform="translate(256, 256)" d="M0 -80 L20 -20 L80 0 L20 20 L0 80 L-20 20 L-80 0 L-20 -20 Z"
+    fill="url(#accent)" />
 </svg>
