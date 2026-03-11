@@ -6,8 +6,8 @@ t_eq(false::type(), 'boolean');
 t_eq(nil::type(), 'nil');
 t_eq(''::type(), 'string');
 t_eq('abc'::type(), 'string');
-t_eq(()::type(), 'record');
-t_eq([]::type(), 'array');
+t_eq(type((),), 'record');
+t_eq(type([]), 'array');
 
 // type as identifier name
 {
