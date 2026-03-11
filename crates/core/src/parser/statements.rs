@@ -31,7 +31,7 @@ fn fn_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
         block_expression.map(Box::new),
     )
         .map(|(kw_pub, kw_fn, name, params, body)| {
-            let name = name.unwrap_or_else(|| {
+            let mut name = name.unwrap_or_else(|| {
                 Token::unknown_at(
                     kw_fn.range.end,
                     TokenKind::Identifier("<name>"),
@@ -39,6 +39,9 @@ fn fn_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
                 )
                 .into()
             });
+            if name.to_id_name() == Some("type") {
+                name.wrap_as_unknown(DiagnosticCode::MissingOpenParenAfterType);
+            }
             Statement::Function(kw_pub, kw_fn, name, params, body)
         })
         .parse_next(i)

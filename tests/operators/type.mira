@@ -29,3 +29,43 @@ t_eq(type([]), 'array');
   t_eq(type::type(), 'string');
   t_eq(type, 'type');
 }
+
+// type as identifier name - other use cases
+{
+  let type = ['type'];
+  for i in type {
+    t_eq(i::type(), 'string');
+    t_eq(i, 'type');
+  }
+}
+{
+  let type = '123';
+  t_eq(type::chars(), ['1', '2', '3']);
+}
+{
+  let type = 5;
+  let mut sum = 0;
+  for i in 0..type {
+    sum += i;
+  }
+  t_eq(sum, 15);
+}
+{
+  let type = false;
+  while type {
+    t_never();
+  }
+}
+{
+  let type = true;
+  if !type {
+    t_never();
+  }
+}
+{
+  let type = 1;
+  match type {
+    case 1 { t_eq(type, 1) }
+    case _ { t_never() }
+  }
+}

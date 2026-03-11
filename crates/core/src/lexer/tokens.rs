@@ -134,12 +134,11 @@ pub(super) fn token<'s>(
             // `?:` 和 `:` 之前的标识符是字段名称，而不是关键字。
             prev_token.kind = TokenKind::Identifier(kw.into());
         } else if kw == Keyword::Type
-            && !(cur_token == Operator::OpenParen
-                || cur_token == Operator::OpenBrace
-                || cur_token.is_identifier())
+            && !(cur_token == Operator::OpenParen || cur_token.is_identifier())
         {
             // `type()` 关键字必须作为类函数调用使用，否则 `type` 是一个普通标识符。
-            // 不支持使用 `fn type() {}` 或 `fn type {}` 定义函数，因此 `type` 标识符后面不能是 `(`、`{`。
+            // 不支持使用 `fn type() {}` 或 `fn type {}` 定义函数，因此 `fn type` 标识符后面不能是 `(`、`{`，
+            // 但 `match type {..}` 是合法的，因此 `type` 后面可以跟 `{`，`fn type {}` 在 parser 阶段处理。
             // 预留 type id {} 语法，允许 type 后面直接跟一个标识符作为类型定义。
             prev_token.kind = TokenKind::Identifier(kw.into());
         }
