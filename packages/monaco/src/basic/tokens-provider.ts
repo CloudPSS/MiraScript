@@ -108,6 +108,13 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                     ['delimiter', '', 'entity.name.function', '', 'delimiter', ''],
                 ],
                 [/(\.)(@whitespace*)(@identifier\b)/, ['delimiter', '', 'variable']],
+                // 不可变通过 semantic token 处理，避免在无 semantic token 支持的环境下高亮不一致，此处仅用于将非保留关键字识别为 identifier。
+                [/(let)(@whitespace+)(@identifier)(@whitespace+)(=)/, ['keyword', '', 'variable', '', 'delimiter']],
+                [
+                    /(type)(@whitespace*)(!)(@whitespace*)([(])/,
+                    ['entity.name.function', '', 'delimiter', '', '@brackets'],
+                ],
+                [/(type)(@whitespace*)([-+=/~?:;,.!@$%^&|*<>])/, ['variable', '', 'delimiter']],
                 [
                     /(@identifierNoAtOnly)(@whitespace*)(!?)(@whitespace*(?=\(|@*['"`]))/,
                     [
