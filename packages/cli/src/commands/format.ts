@@ -3,11 +3,11 @@ import fs from 'node:fs/promises';
 import { program } from '@commander-js/extra-typings';
 import { loadModule, type BcModule } from '@mirascript/bindings/wasm';
 
-let templateConfig: BcModule.WasmConfig | null = null;
-let scriptConfig: BcModule.WasmConfig | null = null;
+let templateConfig: BcModule.wasm.Config | null = null;
+let scriptConfig: BcModule.wasm.Config | null = null;
 
 /** 获取配置 */
-async function getConfig(templateMode: boolean): Promise<BcModule.WasmConfig> {
+async function getConfig(templateMode: boolean): Promise<BcModule.wasm.Config> {
     const mod = await loadModule();
     if (templateMode) {
         if (!templateConfig) {
