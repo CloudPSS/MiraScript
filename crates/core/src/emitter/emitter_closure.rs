@@ -230,11 +230,19 @@ impl<'s, 'c> Emitter<'s, 'c> {
             }
         }
 
-        let ret_reg = self.closures.add_reg();
-        let never = self.emit_block(stmts, expr, scope_range.clone(), ret_reg, None);
-        if !never {
-            // 从 block 隐式返回
-            self.op_return(scope_range.end..scope_range.end, ret_reg);
+        if expr.is_none() {
+            let never = self.emit_block(stmts, &None, scope_range.clone(), Register::EMPTY, None);
+            if !never {
+                // 从 block 隐式返回
+                self.op_return(scope_range.end..scope_range.end, Register::EMPTY);
+            }
+        } else {
+            let ret_reg = self.closures.add_reg();
+            let never = self.emit_block(stmts, expr, scope_range.clone(), ret_reg, None);
+            if !never {
+                // 从 block 隐式返回
+                self.op_return(scope_range.end..scope_range.end, ret_reg);
+            }
         }
         self.op(scope_range.end..scope_range.end, OpCode::FuncEnd);
 

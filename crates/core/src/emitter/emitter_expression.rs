@@ -424,7 +424,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
 
         // Local function call
         let callable_reg = self.emit_expression_reg(callable, brk);
-        let complex = !callable.is_variable();
+        let complex = !callable.is_variable() && !callable.is_non_nil();
         if complex {
             self.op_if(callable.range(), OpCode::IfNotNil, callable_reg);
         }
