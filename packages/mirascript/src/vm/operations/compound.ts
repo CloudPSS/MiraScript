@@ -2,12 +2,21 @@ import { VmError } from '../../helpers/error.js';
 import { hasOwnEnumerable, isNaN, NotNumber, keys, create, isFinite } from '../../helpers/utils.js';
 import { toNumber, toString } from '../../helpers/convert/index.js';
 import { display } from '../../helpers/serialize.js';
-import { isVmPrimitive, isVmArray, isVmRecord, isVmFunction, isVmExtern, isVmWrapper } from '../../helpers/types.js';
+import {
+    isVmPrimitive,
+    isVmArray,
+    isVmRecord,
+    isVmFunction,
+    isVmExtern,
+    isVmWrapper,
+    isVmConst,
+} from '../../helpers/types.js';
 import { wrapToVmConst } from '../types/boundary.js';
 import type { VmAny, VmRecord, VmValue, VmConst } from '../types/index.js';
 import { isSame } from './utils.js';
 import { $AssertInit } from './common.js';
 import { $ToString } from './convert.js';
+import { $El } from './helpers.js';
 
 const { trunc } = Math;
 const { at } = Array.prototype;
@@ -82,6 +91,7 @@ export function $Has(obj: VmAny, key: VmAny): boolean {
     if (isVmWrapper(obj)) return obj.has(pk);
     return hasOwnEnumerable(obj, pk);
 }
+
 /** 获取字段 */
 export function $Get(obj: VmAny, key: VmAny): VmValue {
     $AssertInit(obj);
@@ -89,7 +99,7 @@ export function $Get(obj: VmAny, key: VmAny): VmValue {
         $AssertInit(key);
         const index = toNumber(key, NotNumber);
         if (isNaN(index)) return null;
-        return (at.call(obj, trunc(index)) as VmConst | undefined) ?? null;
+        return $El((at.call(obj, trunc(index)) ?? null) as VmAny);
     }
     const pk = $ToString(key);
     if (obj == null || typeof obj != 'object') return null;
@@ -105,7 +115,7 @@ export function $Get(obj: VmAny, key: VmAny): VmValue {
         return obj.get(pk) ?? null;
     }
     if (!hasOwnEnumerable(obj, pk)) return null;
-    return obj[pk] ?? null;
+    return $El(obj[pk] ?? null);
 }
 /** 设置字段 */
 export function $Set(obj: VmAny, key: VmAny, value: VmAny): void {
@@ -141,8 +151,7 @@ export function $RecordSpread(record: VmAny): VmRecord | null {
         const result: Record<string, VmConst> = create(null);
         for (const key of record.keys()) {
             const value = record.get(key) ?? null;
-            // 当前只有 Primitive 不会进行二次包装
-            if (isVmPrimitive(value)) {
+            if (isVmConst(value)) {
                 result[key] = value;
             }
         }
