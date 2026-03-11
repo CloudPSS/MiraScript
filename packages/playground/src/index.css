@@ -72,7 +72,7 @@ body {
   }
 }
 
-body > .playground {
+.playground {
   contain: strict;
   height: 100vh;
   display: grid;
@@ -260,7 +260,8 @@ body > .playground {
 
   #editor {
     grid-area: editor-content;
-    contain: strict;
+    contain: size;
+    position: relative;
   }
 
   .tab-content {
