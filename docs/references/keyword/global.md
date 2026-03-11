@@ -6,12 +6,13 @@ title: 'global'
 
 ---
 
-当变量名与局部变量冲突时，可以使用 `global` 关键字来访问全局变量。
+当变量名与局部变量或关键字冲突时，可以使用 `global` 关键字来访问全局变量。
 
 ```mira
 let some_name = 'shadow';
 some_name; // 访问局部变量 'some_name'
 global.some_name; // 访问全局变量 'some_name'
+global.if; // 访问全局变量 'if'，而不是关键字 'if'
 ```
 
 ---
