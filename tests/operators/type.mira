@@ -1,0 +1,31 @@
+t_eq(1::type(), 'number');
+t_eq(1.0::type(), 'number');
+t_eq(nan::type(), 'number');
+t_eq(true::type(), 'boolean');
+t_eq(false::type(), 'boolean');
+t_eq(nil::type(), 'nil');
+t_eq(''::type(), 'string');
+t_eq('abc'::type(), 'string');
+t_eq(()::type(), 'record');
+t_eq([]::type(), 'array');
+
+// type as identifier name
+{
+  let type = 'type';
+  t_eq(type::type(), 'string');
+  t_eq(type, 'type');
+}
+
+// type as identifier name - destructuring assignment
+{
+  let (:type) = (type: 'type');
+  t_eq(type::type(), 'string');
+  t_eq(type, 'type');
+}
+
+// type as identifier name - omit name destructuring assignment
+{
+  let (type, ) = ('type', );
+  t_eq(type::type(), 'string');
+  t_eq(type, 'type');
+}
