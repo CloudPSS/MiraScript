@@ -453,7 +453,7 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
             type_doc_no_type: [
                 [/\)/, { token: '@brackets', next: '@pop' }],
                 [/@identifier/, 'variable.emphasis'],
-                [/[,]/, 'delimiter'],
+                [/[,.]/, 'delimiter'],
                 [/[[\]()]/, '@brackets'],
                 { include: '@whitespace' },
             ],
