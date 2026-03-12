@@ -416,6 +416,15 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                 [/(let|const)(@whitespace+)(@identifier)/, [{ token: 'keyword.$1' }, '', 'variable.other.constant']],
                 [/(fn)(@whitespace+)(@identifier)$/, ['keyword.fn.doc', '', 'entity.name.function.doc']],
                 [
+                    /(fn)(@whitespace+)(@identifier)(\((?=(?:@identifier|@whitespace+|,|\.\.)+\)))/,
+                    [
+                        'keyword.fn.doc',
+                        '',
+                        'entity.name.function.doc',
+                        { token: '@brackets', next: '@type_doc_no_type' },
+                    ],
+                ],
+                [
                     /(fn)(@whitespace+)(@identifier)(\()(\.\.)(\))/,
                     ['keyword.fn.doc', '', 'entity.name.function.doc', '@brackets', 'delimiter', '@brackets'],
                 ],
@@ -438,6 +447,13 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                 [/@identifier/, 'type'],
                 [/[&|.,]/, 'delimiter'],
                 [/->/, 'delimiter'],
+                [/[[\]()]/, '@brackets'],
+                { include: '@whitespace' },
+            ],
+            type_doc_no_type: [
+                [/\)/, { token: '@brackets', next: '@pop' }],
+                [/@identifier/, 'variable.emphasis'],
+                [/[,]/, 'delimiter'],
                 [/[[\]()]/, '@brackets'],
                 { include: '@whitespace' },
             ],
