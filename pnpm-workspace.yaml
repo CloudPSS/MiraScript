@@ -16,5 +16,16 @@ publicHoistPattern:
   - '*commitlint*'
   - lint-staged
   - '@typescript/*'
+  # website
+  - '@rspack/core'
+  - 'unist-util-visit'
+  - '@types/react'
+  - '@types/react-dom'
+  - '@types/mdast'
+  - '@types/hast'
+  - 'react'
+  - 'react-dom'
+  - 'prism-react-renderer'
+  - '@docusaurus/*'
 
 shellEmulator: true

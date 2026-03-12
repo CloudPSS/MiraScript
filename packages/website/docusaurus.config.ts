@@ -55,6 +55,9 @@ export default {
                             },
                         ],
                     },
+                    output: {
+                        assetModuleFilename: 'assets/[hash][ext][query]',
+                    },
                 };
             },
         }),
