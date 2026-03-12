@@ -154,9 +154,9 @@ debug_print("展开调用:", add(..pair)); // 等价于 add(3, 4)
 MiraScript 没有专门的默认参数语法，但可以用 `??` 空合并运算符实现：
 
 ```mira
-fn greet(name, greeting) {
-  let g = greeting ?? "你好";
-  "$g，$name！"
+fn greet(name, mut greeting) {
+  greeting ??= "你好";
+  "$greeting，$name！"
 }
 
 debug_print(greet("小明", "早上好"));
