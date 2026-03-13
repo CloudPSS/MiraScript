@@ -1,4 +1,4 @@
-import { useState, type JSX } from 'react';
+import { useEffect, useRef, useState, type JSX } from 'react';
 import Layout from '@theme/Layout';
 import Editor from '@site/src/components/Mira/editor';
 import ResultItem from '@site/src/components/Mira/result';
@@ -14,15 +14,20 @@ import styles from './index.module.css';
 function EditorPanel({ setResults }: { setResults: React.Dispatch<React.SetStateAction<Result[]>> }): JSX.Element {
     const [state, setState] = usePlaygroundState();
     const lang = state.mode === 'Script' ? 'mirascript' : 'mirascript-template';
-    const run = async (source: string) => {
-        try {
-            configCheckpoint(800);
-            const results = await runMiraScript(source, state.mode, globals(), 'playground', true);
-            setResults(results);
-        } finally {
-            configCheckpoint();
-        }
-    };
+    const run = useRef<(source: string) => Promise<void>>(async () => {
+        /* noop */
+    });
+    useEffect(() => {
+        run.current = async (source: string) => {
+            try {
+                configCheckpoint(800);
+                const results = await runMiraScript(source, state.mode, globals(), 'playground', true);
+                setResults(results);
+            } finally {
+                configCheckpoint();
+            }
+        };
+    }, [state.mode]);
     return (
         <>
             <div className={styles['editor-header']}>
@@ -63,7 +68,7 @@ function EditorPanel({ setResults }: { setResults: React.Dispatch<React.SetState
                         Template
                     </option>
                 </select>
-                <button className={styles['editor-options']} onClick={() => void run(state.source)} title="Ctrl+Enter">
+                <button className={styles['editor-options']} onClick={() => void run.current(state.source)} title="Ctrl+Enter">
                     运行
                 </button>
             </div>
@@ -83,7 +88,7 @@ function EditorPanel({ setResults }: { setResults: React.Dispatch<React.SetState
                         id: 'run-mirascript',
                         label: '运行',
                         keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
-                        run: async (editor) => run(editor.getValue()),
+                        run: async (editor) => run.current(editor.getValue()),
                     });
                 }}
                 onChange={(value) => {
