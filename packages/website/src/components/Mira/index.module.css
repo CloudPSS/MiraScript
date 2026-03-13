@@ -13,9 +13,15 @@
   border-radius: var(--ifm-pre-border-radius);
 }
 
-.editor :global(.monaco-editor) {
-  --vscode-editor-background: transparent;
-  --vscode-editorGutter-background: transparent;
+.editor {
+  :global(.monaco-editor) {
+    --vscode-editor-background: transparent;
+    --vscode-editorGutter-background: transparent;
+  }
+
+  :global(.context-view.monaco-component) {
+    display: none;
+  }
 }
 
 .pre {
