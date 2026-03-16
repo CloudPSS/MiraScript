@@ -121,7 +121,7 @@ debug_print(contact); // phone 字段不会出现
 
 ```mira
 let config = (host: "localhost", port: 8080);
-debug_print("有 host:", "host" in config);     // true
+debug_print("有 host:", "host" in config);       // true
 debug_print("有 timeout:", "timeout" in config); // false
 ```
 

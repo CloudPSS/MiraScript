@@ -118,16 +118,16 @@ MiraScript 提供了显式类型转换函数：
 
 ```mira
 // 转为数字
-debug_print(to_number("42"));         // 42
-debug_print(to_number(true));         // 1
-debug_print(to_number(false));        // 0
+debug_print(to_number("42"));      // 42
+debug_print(to_number(true));      // 1
+debug_print(to_number(false));     // 0
 
 // 转为字符串
-debug_print(to_string(42));           // "42"
-debug_print(to_string(true));         // "true"
+debug_print(to_string(42));        // "42"
+debug_print(to_string(true));      // "true"
 
 // 带默认值的转换（转换失败时返回默认值而非报错）
-debug_print(to_number("abc", 0));     // 0
+debug_print(to_number("abc", 0));  // 0
 ```
 
 ## 小结
