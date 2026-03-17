@@ -1,5 +1,5 @@
-import ExecutionEnvironment from '@docusaurus/ExecutionEnvironment';
-import { useState } from 'react';
+import useIsBrowser from '@docusaurus/useIsBrowser';
+import { useEffect, useState } from 'react';
 import type { InputMode } from '@mirascript/mirascript';
 import { EXAMPLES } from './_examples';
 import { fromUint8Array, toUint8Array } from 'js-base64';
@@ -14,9 +14,22 @@ export interface State {
 }
 
 let getState: () => State, setState: (state: Partial<State>) => void;
-if (ExecutionEnvironment.canUseDOM) {
+
+const defaultCode = (await EXAMPLES[0]?.code()) || `debug_print("Hello, World!");`;
+const defaultMode: InputMode = 'Script';
+
+/** 保存 URL 到剪贴板 */
+function saveUrlToClipboard(e: KeyboardEvent): void {
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        void navigator.clipboard.writeText(location.href);
+    }
+}
+
+/** 初始化状态管理器 */
+function initStateManager(canUseDOM: boolean): void {
     const STORAGE_PREFIX = 'mirascript-playground-state-';
-    const hash = new URLSearchParams(location.hash.slice(1));
+    const hash = new URLSearchParams(canUseDOM ? location.hash.slice(1) : '');
 
     const fromHash = (value: string | null): string | undefined => {
         if (!value) return undefined;
@@ -40,13 +53,12 @@ if (ExecutionEnvironment.canUseDOM) {
         }
     };
 
-    let mode: InputMode =
-        (hash.get('mode') as InputMode) || (localStorage.getItem(`${STORAGE_PREFIX}mode`) as InputMode) || 'Script';
-    let source =
-        fromHash(hash.get('source')) ||
-        localStorage.getItem(`${STORAGE_PREFIX}source`) ||
-        (await EXAMPLES[0]?.code()) ||
-        `debug_print("Hello, World!");`;
+    let mode: InputMode = canUseDOM
+        ? (hash.get('mode') as InputMode) || (localStorage.getItem(`${STORAGE_PREFIX}mode`) as InputMode) || defaultMode
+        : defaultMode;
+    let source = canUseDOM
+        ? fromHash(hash.get('source')) || localStorage.getItem(`${STORAGE_PREFIX}source`) || defaultCode
+        : defaultCode;
 
     hash.set('mode', mode);
     hash.set('source', toHash(source));
@@ -73,32 +85,20 @@ if (ExecutionEnvironment.canUseDOM) {
         }
         history.replaceState({}, '', `#${hash.toString()}`);
     };
-
-    /** 保存 URL 到剪贴板 */
-    async function saveUrlToClipboard(): Promise<void> {
-        await navigator.clipboard.writeText(location.href);
+    if (canUseDOM) {
+        // Ctrl + S 保存 URL 到剪贴板
+        globalThis.addEventListener('keydown', saveUrlToClipboard);
     }
-
-    // Ctrl + S 保存 URL 到剪贴板
-    globalThis.addEventListener('keydown', (e) => {
-        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-            e.preventDefault();
-            void saveUrlToClipboard();
-        }
-    });
-} else {
-    getState = () => ({
-        mode: 'Script',
-        source: '',
-    });
-    setState = () => {
-        // do nothing
-    };
 }
 
 /** 演练场上下文 */
 export function usePlaygroundState(): [State, (state: Partial<State>) => void] {
-    const [currentState, setCurrentState] = useState<State>(getState());
+    const isBrowser = useIsBrowser();
+    const [currentState, setCurrentState] = useState<State>({ mode: defaultMode, source: defaultCode });
+    useEffect(() => {
+        initStateManager(isBrowser);
+        setCurrentState(getState());
+    }, [isBrowser]);
 
     const setStateWrapper = (state: Partial<State>): void => {
         setState(state);
