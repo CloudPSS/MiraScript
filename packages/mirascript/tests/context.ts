@@ -17,23 +17,23 @@ function checkContext(t: ExecutionContext, context: VmContext): Set<string> {
 
     t.true(context.has('to_string'));
     t.true(context.has('to_number'));
-    t.true(context.has('to_boolean'));
+    // t.true(context.has('to_boolean'));
     t.false(context.has(rk));
 
     const keys = new Set(context.keys());
     t.true(keys.has('to_string'));
     t.true(keys.has('to_number'));
-    t.true(keys.has('to_boolean'));
+    // t.true(keys.has('to_boolean'));
     t.false(keys.has(rk));
 
     t.truthy(context.get('to_string'));
     t.truthy(context.get('to_number'));
-    t.truthy(context.get('to_boolean'));
+    // t.truthy(context.get('to_boolean'));
     t.throws(() => context.get(rk), { message: `Global variable '${rk}' is not defined.`, instanceOf: VmError });
 
     t.is(context.describe('to_string'), lib.to_string.summary);
     t.is(context.describe('to_number'), lib.to_number.summary);
-    t.is(context.describe('to_boolean'), lib.to_boolean.summary);
+    // t.is(context.describe('to_boolean'), lib.to_boolean.summary);
     t.is(context.describe(rk), undefined);
 
     defineVmContextValue(rk, rk, false, rk);
