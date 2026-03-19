@@ -266,9 +266,6 @@ export const [toCodeAction, fromCodeAction] = createAdapterFactory<monacoLanguag
             case 'source.fixAll':
                 ca.kind = vscode.CodeActionKind.SourceFixAll;
                 break;
-            case 'notebook':
-                ca.kind = vscode.CodeActionKind.Notebook;
-                break;
             case undefined:
             default:
                 break;

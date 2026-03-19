@@ -15,7 +15,7 @@
   "main": "./dist/main.mjs",
   "browser": "./dist/browser.cjs",
   "engines": {
-    "vscode": "^1.90.0"
+    "vscode": "^1.80.0"
   },
   "imports": {
     "#loader": {
@@ -45,7 +45,7 @@
     "@private/monaco-editor": "^0.0.70",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^25.5.0",
-    "@types/vscode": "1.90.0",
+    "@types/vscode": "1.80.0",
     "js-yaml": "^4.1.1",
     "nodemon": "^3.1.14",
     "svg2png-wasm": "^1.4.1"

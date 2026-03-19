@@ -36,6 +36,6 @@
   },
   "devDependencies": {
     "@types/node": "^25.5.0",
-    "type-fest": "^5.4.4"
+    "type-fest": "^5.5.0"
   }
 }
