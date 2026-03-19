@@ -223,19 +223,26 @@ fn escaped_char<'s>(ats: usize) -> impl Parser<'s, StringFragment<'s>> {
 }
 
 fn escaped_char_impl<'s>(i: &mut Input<'s>) -> Result<StringFragment<'s>> {
+    fn escaped_char_1<'s>(i: &mut Input<'s>) -> Result<StringFragment<'s>> {
+        let ch = any.parse_next(i)?;
+        match ch {
+            '0' => Ok(StringFragment::EscapedChar('\0', "0")),
+            'r' => Ok(StringFragment::EscapedChar('\r', "r")),
+            'n' => Ok(StringFragment::EscapedChar('\n', "n")),
+            't' => Ok(StringFragment::EscapedChar('\t', "t")),
+            'b' => Ok(StringFragment::EscapedChar('\x08', "b")),
+            'f' => Ok(StringFragment::EscapedChar('\x0C', "f")),
+            'v' => Ok(StringFragment::EscapedChar('\x0B', "v")),
+            '\\' => Ok(StringFragment::EscapedChar('\\', "\\")),
+            '"' => Ok(StringFragment::EscapedChar('"', "\"")),
+            '\'' => Ok(StringFragment::EscapedChar('\'', "'")),
+            '`' => Ok(StringFragment::EscapedChar('`', "`")),
+            '$' => Ok(StringFragment::EscapedChar('$', "$")),
+            _ => fail.parse_next(i),
+        }
+    }
     alt((
-        '0'.value(StringFragment::EscapedChar('\0', "0")),
-        'r'.value(StringFragment::EscapedChar('\r', "r")),
-        'n'.value(StringFragment::EscapedChar('\n', "n")),
-        't'.value(StringFragment::EscapedChar('\t', "t")),
-        'b'.value(StringFragment::EscapedChar('\x08', "b")),
-        'f'.value(StringFragment::EscapedChar('\x0C', "f")),
-        'v'.value(StringFragment::EscapedChar('\x0B', "v")),
-        '\\'.value(StringFragment::EscapedChar('\\', "\\")),
-        '"'.value(StringFragment::EscapedChar('"', "\"")),
-        '\''.value(StringFragment::EscapedChar('\'', "'")),
-        '`'.value(StringFragment::EscapedChar('`', "`")),
-        '$'.value(StringFragment::EscapedChar('$', "$")),
+        escaped_char_1,
         (
             'x',
             (one_of(AsChar::is_hex_digit), one_of(AsChar::is_hex_digit)),
