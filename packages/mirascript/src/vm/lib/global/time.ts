@@ -44,7 +44,7 @@ export const to_timestamp = VmLib(
             datetime: '要转换的数据，默认为当前时间',
             fallback: '转换失败时的返回值',
         },
-        paramsType: { datetime: 'number | string', fallback: 'any' },
+        paramsType: { datetime: 'number | string | nil', fallback: 'any' },
         returnsType: 'number | type(fallback)',
         examples: ['to_timestamp("1970-01-01T00:00:00Z") // 0'],
     },
@@ -75,7 +75,7 @@ export const to_datetime = VmLib(
             offset: '时区偏移量（单位：小时），默认为 0',
             fallback: '转换失败时的返回值',
         },
-        paramsType: { datetime: 'number | string', offset: 'number', fallback: 'any' },
+        paramsType: { datetime: 'number | string | nil', offset: 'number | nil', fallback: 'any' },
         returnsType: 'DateTime | type(fallback)',
         examples: [
             `
@@ -103,7 +103,7 @@ export const to_iso8601 = VmLib(
             datetime: '要转换的数据，默认为当前时间',
             fallback: '转换失败时的返回值',
         },
-        paramsType: { datetime: 'number | string', fallback: 'any' },
+        paramsType: { datetime: 'number | string | nil', fallback: 'any' },
         returnsType: 'string | type(fallback)',
         examples: ['to_iso8601(0) // "1970-01-01T00:00:00.000Z"'],
     },

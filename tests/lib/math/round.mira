@@ -1,0 +1,40 @@
+fn check_math_round(fName, f, x, n, expected) {
+  let actual = f(x, n);
+  if actual::type() is not 'number' {
+    t_eq(actual, expected, `$fName($x, $n) should be $expected, actual: $actual`);
+    return;
+  }
+  if expected is nan or +inf or -inf || trunc(expected) == expected {
+    t_eq(actual, expected, `$fName($x, $n) should be $expected, actual: $actual`);
+  } else {
+    t_true(actual =~ expected, `$fName($x, $n) should be $expected, actual: $actual`);
+  }
+}
+
+fn check_math_round_throws(fName, f, x, n) {
+  t_throws(fn { f(x, n) }, `$fName($x, $n) should throw`);
+}
+
+{
+  let round = [[2.55, 1, 2.6], [-2.55, 1, -2.6], [0.050_000_000_000_000_06, 1, 0.1], [0.049_999_999_999_999_94, 1, 0], [-0.050_000_000_000_000_06, 1, -0.1], [-0.049_999_999_999_999_94, 1, -0]];
+  let trunc = [[2.55, 1, 2.5], [-2.55, 1, -2.5], [0.050_000_000_000_000_06, 1, 0], [0.049_999_999_999_999_94, 1, 0], [-0.050_000_000_000_000_06, 1, -0], [-0.049_999_999_999_999_94, 1, -0]];
+  let floor = [[2.55, 1, 2.5], [-2.55, 1, -2.6], [0.050_000_000_000_000_06, 1, 0], [0.049_999_999_999_999_94, 1, 0], [-0.050_000_000_000_000_06, 1, -0.1], [-0.049_999_999_999_999_94, 1, -0.1]];
+  let ceil = [[2.55, 1, 2.6], [-2.55, 1, -2.5], [0.050_000_000_000_000_06, 1, 0.1], [0.049_999_999_999_999_94, 1, 0.1], [-0.050_000_000_000_000_06, 1, -0], [-0.049_999_999_999_999_94, 1, -0]];
+
+  let fns = (:round, :trunc, :floor, :ceil);
+
+  for fName in fns {
+    let f = global[fName];
+    for [x, n, expected] in fns[fName] {
+      check_math_round(fName, f, x, n, expected);
+      check_math_round(fName, f, `$(x:.20)`, `$n`, expected);
+      check_math_round(fName, f, x, n + 0.1, expected);
+    }
+    check_math_round_throws(fName, f, 1.5, -1);
+    check_math_round_throws(fName, f, 1.5, 16);
+    check_math_round_throws(fName, f, 1.5, 'x');
+    check_math_round_throws(fName, f, 1.5, nan);
+    check_math_round_throws(fName, f, 1.5, inf);
+    check_math_round_throws(fName, f, 1.5, -inf);
+  }
+}

@@ -8,44 +8,6 @@ function build(f: (x: number) => number): (x: VmAny) => number {
     };
 }
 
-export const trunc = VmLib(build(Math.trunc), {
-    summary: '返回数值的整数部分（去除小数）',
-    params: { x: '要取整数部分的数' },
-    paramsType: { x: 'number' },
-    returnsType: 'number',
-});
-export const floor = VmLib(build(Math.floor), {
-    summary: '返回小于等于给定数的最大整数',
-    params: { x: '要向下取整的数' },
-    paramsType: { x: 'number' },
-    returnsType: 'number',
-});
-export const ceil = VmLib(build(Math.ceil), {
-    summary: '返回大于等于给定数的最小整数',
-    params: { x: '要向上取整的数' },
-    paramsType: { x: 'number' },
-    returnsType: 'number',
-});
-
-const _round = Math.round;
-const _abs = Math.abs;
-export const round = VmLib(
-    build((x) => {
-        // Ref: https://github.com/python/cpython/blob/9ce99c6c1901705238e4cb3ce81eb6f499e7b4f4/Objects/floatobject.c#L1052-L1060
-        let rounded = _round(x);
-        if (_abs(x - rounded) === 0.5) {
-            // 使用银行家舍入法
-            rounded = 2 * _round(x / 2);
-        }
-        return rounded;
-    }),
-    {
-        summary: '返回四舍五入后的整数',
-        params: { x: '要四舍五入的数' },
-        paramsType: { x: 'number' },
-        returnsType: 'number',
-    },
-);
 export const sign = VmLib(build(Math.sign), {
     summary: '返回数值的符号（正数为 1，负数为 -1，零为 0）',
     params: { x: '要判断符号的数' },
