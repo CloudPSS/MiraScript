@@ -27,7 +27,6 @@
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
-    "@cloudpss/worker": "^0.1.10",
     "@commander-js/extra-typings": "^14.0.0",
     "@mirascript/bindings": "workspace:~",
     "@mirascript/mirascript": "workspace:~",

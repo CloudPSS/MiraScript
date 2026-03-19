@@ -24,3 +24,5 @@
 //   t_throws(fn { to_boolean(v_extern) });
 // }
 // t_throws(fn { to_boolean() });
+
+t_true(true);

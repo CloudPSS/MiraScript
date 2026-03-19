@@ -56,9 +56,6 @@ importers:
 
   packages/cli:
     dependencies:
-      '@cloudpss/worker':
-        specifier: ^0.1.10
-        version: 0.1.10
       '@commander-js/extra-typings':
         specifier: ^14.0.0
         version: 14.0.0(commander@14.0.3)
@@ -103,8 +100,8 @@ importers:
   packages/mirascript:
     dependencies:
       '@cloudpss/worker':
-        specifier: ^0.1.10
-        version: 0.1.10
+        specifier: ^0.1.11
+        version: 0.1.11
       '@mirascript/bindings':
         specifier: workspace:~
         version: link:../bindings
@@ -1200,9 +1197,9 @@ packages:
     peerDependencies:
       typescript: '>=5'
 
-  '@cloudpss/worker@0.1.10':
+  '@cloudpss/worker@0.1.11':
     resolution:
-      { integrity: sha512-iEhJwITa0qAme6PU42OKO2egaPb2DZESdIqGRVIIfXd3BETIzGkE7JA4IgXzl5GnIKBhrDwGkZO7DkT1Pviorg== }
+      { integrity: sha512-jyd9UrFsGZbStqO4WGREpwS1uZdn6mhObh0403zfrC424Od3JynUNaOufioNhFzByW1+o8LkJMPa2cY0GNuZ5w== }
     engines: { node: '>= 20' }
 
   '@colors/colors@1.5.0':
@@ -4363,9 +4360,9 @@ packages:
     resolution:
       { integrity: sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g== }
 
-  '@vercel/nft@1.3.2':
+  '@vercel/nft@1.4.0':
     resolution:
-      { integrity: sha512-HC8venRc4Ya7vNeBsJneKHHMDDWpQie7VaKhAIOst3MKO+DES+Y/SbzSp8mFkD7OzwAE2HhHkeSuSmwS20mz3A== }
+      { integrity: sha512-rr7JVnI7YGjA4lngucrWjZ7eCOJZZQaDHB+5NRGOuNc+k4PU2Lb9PmYm8uBmW8qichF7WkR2RmwmhXHBhx6wzw== }
     engines: { node: '>=20' }
     hasBin: true
 
@@ -8065,9 +8062,9 @@ packages:
       { integrity: sha512-Ie9z/WINcxxLp27BKOCHGde4ITq9UklYKDzVo1nhk5sqGEXU3FpkwP5GM2voTGJkGd9B3Otl+Q4uwSOeSUtOBA== }
     engines: { node: '>=14.16' }
 
-  pkijs@3.3.3:
+  pkijs@3.4.0:
     resolution:
-      { integrity: sha512-+KD8hJtqQMYoTuL1bbGOqxb4z+nZkTAwVdNtWwe8Tc2xNbEmdJYIYoc6Qt0uF55e6YW6KuTHw1DjQ18gMhzepw== }
+      { integrity: sha512-emEcLuomt2j03vxD54giVB4SxTjnsqkU692xZOZXHDVoYyypEm+b3jpiTcc+Cf+myooc+/Ly0z01jqeNHVgJGw== }
     engines: { node: '>=16.0.0' }
 
   plur@6.0.0:
@@ -11212,7 +11209,7 @@ snapshots:
     dependencies:
       typescript: 5.9.3
 
-  '@cloudpss/worker@0.1.10': {}
+  '@cloudpss/worker@0.1.11': {}
 
   '@colors/colors@1.5.0':
     optional: true
@@ -14375,7 +14372,7 @@ snapshots:
 
   '@ungap/structured-clone@1.3.0': {}
 
-  '@vercel/nft@1.3.2(rollup@4.59.0)(supports-color@10.2.2)':
+  '@vercel/nft@1.4.0(rollup@4.59.0)(supports-color@10.2.2)':
     dependencies:
       '@mapbox/node-pre-gyp': 2.0.3(supports-color@10.2.2)
       '@rollup/pluginutils': 5.3.0(rollup@4.59.0)
@@ -14634,7 +14631,7 @@ snapshots:
 
   ava@7.0.0(rollup@4.59.0)(supports-color@10.2.2):
     dependencies:
-      '@vercel/nft': 1.3.2(rollup@4.59.0)(supports-color@10.2.2)
+      '@vercel/nft': 1.4.0(rollup@4.59.0)(supports-color@10.2.2)
       acorn: 8.16.0
       acorn-walk: 8.3.5
       ansi-styles: 6.2.3
@@ -17829,7 +17826,7 @@ snapshots:
     dependencies:
       find-up: 6.3.0
 
-  pkijs@3.3.3:
+  pkijs@3.4.0:
     dependencies:
       '@noble/hashes': 1.4.0
       asn1js: 3.0.7
@@ -18833,7 +18830,7 @@ snapshots:
   selfsigned@5.5.0:
     dependencies:
       '@peculiar/x509': 1.14.3
-      pkijs: 3.3.3
+      pkijs: 3.4.0
 
   semver-diff@4.0.0:
     dependencies:
