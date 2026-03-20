@@ -8,7 +8,7 @@
 
 ### 遍历范围
 
-使用 `..` 或 `..<` 指定数字范围：
+使用 [`..`](../references/operator/spread_range.md) 或 [`..<`](../references/operator/half_open_range.md) 指定数字范围：
 
 ```mira
 // 1 到 5（包含 5）
