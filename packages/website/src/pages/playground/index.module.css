@@ -1,6 +1,5 @@
 .root {
   display: grid;
-  contain: strict;
   user-select: none;
   grid-template-columns: 1fr 1fr;
   grid-template-rows: auto 1fr;
@@ -27,6 +26,7 @@
 
 .editor-content {
   grid-area: editor-content;
+  contain: size;
 }
 
 .output-content {

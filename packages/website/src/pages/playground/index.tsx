@@ -73,7 +73,7 @@ function EditorPanel({ setResults }: { setResults: React.Dispatch<React.SetState
                 </button>
             </div>
             <Editor
-                className={styles['editor-content']}
+                wrapperProps={{ className: styles['editor-content'] }}
                 language={lang}
                 value={state.source}
                 path="file:///playground"
