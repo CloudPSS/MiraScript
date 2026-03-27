@@ -3,6 +3,7 @@ import {
     createVmContext,
     VmFunction,
     type InputMode,
+    type VmAny,
     type VmContext,
     type VmScript,
 } from '@mirascript/mirascript';
@@ -20,6 +21,11 @@ export type Result = {
     timestamp: number;
     content: Array<string | { value: string; raw: unknown }>;
 };
+
+/** 打印输出 */
+function serialize(value: VmAny): string {
+    return serializeForDisplay(value, { maxDepth: 128 });
+}
 
 const printOptions = { ...lib.debug_print, prefix: [] };
 let cache: { fileName: string; mode: InputMode; source: string; script: VmScript | null } | null = null;
@@ -98,15 +104,13 @@ export async function runMiraScript(
                     case '%o':
                     case '%O':
                         content.push({
-                            value: serializeForDisplay(value),
+                            value: serialize(value),
                             raw: value,
                         });
                         continue;
                     case '':
                     default:
-                        content.push(
-                            typeof value == 'string' ? value : { value: serializeForDisplay(value), raw: value },
-                        );
+                        content.push(typeof value == 'string' ? value : { value: serialize(value), raw: value });
                         continue;
                 }
             }
@@ -133,7 +137,7 @@ export async function runMiraScript(
         if (result != null) {
             results.push({
                 type: 'result',
-                content: [{ value: serializeForDisplay(result), raw: result }],
+                content: [{ value: serialize(result), raw: result }],
                 timestamp: t,
             });
         }
