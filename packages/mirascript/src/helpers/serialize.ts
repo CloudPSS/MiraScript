@@ -92,7 +92,18 @@ function getSerializeOptions(options: Partial<SerializeOptions> | undefined): Re
  * 将 MiraScript 字符串序列化为 MiraScript 字面量。
  */
 function serializeStringImpl(value: string, options: Readonly<SerializeOptions>): string {
-    if (!/[\p{C}'"`$\\]/u.test(value)) {
+    if (value.length === 0) {
+        const oq = options.serializeStringQuote(`'`, true, options);
+        const cq = options.serializeStringQuote(`'`, false, options);
+        return oq + cq;
+    }
+    if (value.length === 1 && /[\p{M}\p{C}]/u.test(value)) {
+        const oq = options.serializeStringQuote(`'`, true, options);
+        const cq = options.serializeStringQuote(`'`, false, options);
+        const c = options.serializeStringEscape(String.raw`\u{${value.codePointAt(0)!.toString(16)}}`, options);
+        return oq + c + cq;
+    }
+    if (!/[\\'"`$\p{C}\u2028\u2029]/u.test(value)) {
         // 不包含特殊字符
         const oq = options.serializeStringQuote(`'`, true, options);
         const cq = options.serializeStringQuote(`'`, false, options);
@@ -121,7 +132,7 @@ function serializeStringImpl(value: string, options: Readonly<SerializeOptions>)
             ret += options.serializeStringEscape(String.raw`\\`, options);
         } else if (char === '$') {
             ret += options.serializeStringEscape(String.raw`\$`, options);
-        } else if (/\p{C}/u.test(char)) {
+        } else if (/[\p{C}\u2028\u2029]/u.test(char)) {
             const code = char.codePointAt(0)!;
             if (code <= 0x7f) {
                 ret += options.serializeStringEscape(String.raw`\x${code.toString(16).padStart(2, '0')}`, options);
