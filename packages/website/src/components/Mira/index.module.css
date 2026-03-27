@@ -32,9 +32,11 @@
   }
 
   .editor-holder + & {
-    --ifm-pre-color: transparent;
-    pointer-events: none;
-    overflow: hidden;
+    @media screen {
+      --ifm-pre-color: transparent;
+      pointer-events: none;
+      overflow: hidden;
+    }
 
     @supports (selector(::selection)) {
       &::selection {

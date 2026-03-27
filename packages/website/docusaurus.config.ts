@@ -88,6 +88,9 @@ export default {
                     rehypePlugins: [rehypeCodeEditor],
                     beforeDefaultRemarkPlugins: [],
                     beforeDefaultRehypePlugins: [],
+
+                    showLastUpdateTime: true,
+                    editUrl: 'https://github.com/CloudPSS/MiraScript/edit/main/packages/website',
                 },
                 theme: {
                     customCss: './src/css/index.css',
@@ -117,6 +120,12 @@ export default {
                 {
                     href: '/playground/',
                     label: '在线编辑器',
+                },
+                {
+                    href: 'https://github.com/CloudPSS/MiraScript',
+                    position: 'right',
+                    className: 'navbar__github-link',
+                    title: 'GitHub',
                 },
             ],
             logo: {

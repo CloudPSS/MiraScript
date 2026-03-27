@@ -147,7 +147,7 @@ let result = obj.prop ?? "default";
 
 ## 系统要求
 
-- Visual Studio Code `≥ 1.90.0`
+- Visual Studio Code `≥ 1.80.0`
 
 ## 许可证
 
