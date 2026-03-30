@@ -96,27 +96,43 @@ function serializeStringEscaped(escaped: string, options: Readonly<SerializeOpti
 }
 
 /**
+ * 将 MiraScript 普通字符串序列化为 MiraScript 字面量。
+ */
+function serializeStringContent(value: string, options: Readonly<SerializeOptions>): string {
+    return options.serializeStringContent(value, options);
+}
+
+const STRING_QUOTE = `'`;
+const STRING_REG = new RegExp(String.raw`[${STRING_QUOTE}\\\$\p{C}\u2028\u2029]`, 'gu');
+/**
  * 将 MiraScript 字符串序列化为 MiraScript 字面量。
  */
 function serializeStringImpl(value: string, options: Readonly<SerializeOptions>): string {
-    const oq = options.serializeStringQuote(`'`, true, options);
-    const cq = options.serializeStringQuote(`'`, false, options);
+    const oq = options.serializeStringQuote(STRING_QUOTE, true, options);
+    const cq = options.serializeStringQuote(STRING_QUOTE, false, options);
     if (value.length === 0) {
         return oq + cq;
     }
-    if (value.length === 1 && /[\p{M}\p{C}]/u.test(value)) {
-        const c = options.serializeStringEscape(String.raw`\u{${value.codePointAt(0)!.toString(16)}}`, options);
-        return oq + c + cq;
-    }
-    if (!/[\\'"`$\p{C}\u2028\u2029]/u.test(value)) {
-        // 不包含特殊字符
-        const c = options.serializeStringContent(value, options);
-        return oq + c + cq;
-    }
+
     let ret = oq;
-    for (const char of value) {
-        if (char === "'") {
-            ret += serializeStringEscaped(`'`, options);
+    let lastIndex = 0;
+
+    // 当开头字符是 \p{M} 时，使用转义序列化
+    while (value.length > lastIndex && /^[\p{M}]$/u.test(value[lastIndex]!)) {
+        const c = serializeStringEscaped(`u{${value.codePointAt(lastIndex)!.toString(16)}}`, options);
+        ret += c;
+        lastIndex += 1;
+    }
+
+    // 序列化字符串内容，遇到特殊字符时使用转义序列化
+    STRING_REG.lastIndex = lastIndex;
+    let match: RegExpExecArray | null;
+    while ((match = STRING_REG.exec(value)) !== null) {
+        const char = match[0];
+        ret += serializeStringContent(value.slice(lastIndex, match.index), options);
+        lastIndex = STRING_REG.lastIndex;
+        if (char === STRING_QUOTE) {
+            ret += serializeStringEscaped(STRING_QUOTE, options);
         } else if (char === '\0') {
             ret += serializeStringEscaped(`0`, options);
         } else if (char === '\n') {
@@ -135,20 +151,19 @@ function serializeStringImpl(value: string, options: Readonly<SerializeOptions>)
             ret += serializeStringEscaped(`\\`, options);
         } else if (char === '$') {
             ret += serializeStringEscaped(`$`, options);
-        } else if (/[\p{C}\u2028\u2029]/u.test(char)) {
+        } else {
             const code = char.codePointAt(0)!;
             if (code <= 0x7f) {
                 ret += serializeStringEscaped(`x${code.toString(16).padStart(2, '0')}`, options);
             } else if (code >= 0xd800 && code <= 0xdfff) {
                 // 无效的代理对
-                ret += options.serializeStringContent('�', options);
+                ret += serializeStringContent('�', options);
             } else {
                 ret += serializeStringEscaped(`u{${code.toString(16)}}`, options);
             }
-        } else {
-            ret += options.serializeStringContent(char, options); // 普通字符直接添加
         }
     }
+    ret += serializeStringContent(value.slice(lastIndex), options);
     ret += cq;
     return ret;
 }
