@@ -89,64 +89,67 @@ function getSerializeOptions(options: Partial<SerializeOptions> | undefined): Re
 }
 
 /**
+ * 将 MiraScript 转义字符串序列化为 MiraScript 字面量。
+ */
+function serializeStringEscaped(escaped: string, options: Readonly<SerializeOptions>): string {
+    return options.serializeStringEscape('\\' + escaped, options);
+}
+
+/**
  * 将 MiraScript 字符串序列化为 MiraScript 字面量。
  */
 function serializeStringImpl(value: string, options: Readonly<SerializeOptions>): string {
+    const oq = options.serializeStringQuote(`'`, true, options);
+    const cq = options.serializeStringQuote(`'`, false, options);
     if (value.length === 0) {
-        const oq = options.serializeStringQuote(`'`, true, options);
-        const cq = options.serializeStringQuote(`'`, false, options);
         return oq + cq;
     }
     if (value.length === 1 && /[\p{M}\p{C}]/u.test(value)) {
-        const oq = options.serializeStringQuote(`'`, true, options);
-        const cq = options.serializeStringQuote(`'`, false, options);
         const c = options.serializeStringEscape(String.raw`\u{${value.codePointAt(0)!.toString(16)}}`, options);
         return oq + c + cq;
     }
     if (!/[\\'"`$\p{C}\u2028\u2029]/u.test(value)) {
         // 不包含特殊字符
-        const oq = options.serializeStringQuote(`'`, true, options);
-        const cq = options.serializeStringQuote(`'`, false, options);
         const c = options.serializeStringContent(value, options);
         return oq + c + cq;
     }
-    let ret = options.serializeStringQuote(`'`, true, options);
+    let ret = oq;
     for (const char of value) {
         if (char === "'") {
-            ret += options.serializeStringEscape(String.raw`\'`, options);
+            ret += serializeStringEscaped(`'`, options);
         } else if (char === '\0') {
-            ret += options.serializeStringEscape(String.raw`\0`, options);
+            ret += serializeStringEscaped(`0`, options);
         } else if (char === '\n') {
-            ret += options.serializeStringEscape(String.raw`\n`, options);
+            ret += serializeStringEscaped(`n`, options);
         } else if (char === '\r') {
-            ret += options.serializeStringEscape(String.raw`\r`, options);
+            ret += serializeStringEscaped(`r`, options);
         } else if (char === '\t') {
-            ret += options.serializeStringEscape(String.raw`\t`, options);
+            ret += serializeStringEscaped(`t`, options);
         } else if (char === '\b') {
-            ret += options.serializeStringEscape(String.raw`\b`, options);
+            ret += serializeStringEscaped(`b`, options);
         } else if (char === '\f') {
-            ret += options.serializeStringEscape(String.raw`\f`, options);
+            ret += serializeStringEscaped(`f`, options);
         } else if (char === '\v') {
-            ret += options.serializeStringEscape(String.raw`\v`, options);
+            ret += serializeStringEscaped(`v`, options);
         } else if (char === '\\') {
-            ret += options.serializeStringEscape(String.raw`\\`, options);
+            ret += serializeStringEscaped(`\\`, options);
         } else if (char === '$') {
-            ret += options.serializeStringEscape(String.raw`\$`, options);
+            ret += serializeStringEscaped(`$`, options);
         } else if (/[\p{C}\u2028\u2029]/u.test(char)) {
             const code = char.codePointAt(0)!;
             if (code <= 0x7f) {
-                ret += options.serializeStringEscape(String.raw`\x${code.toString(16).padStart(2, '0')}`, options);
+                ret += serializeStringEscaped(`x${code.toString(16).padStart(2, '0')}`, options);
             } else if (code >= 0xd800 && code <= 0xdfff) {
                 // 无效的代理对
                 ret += options.serializeStringContent('�', options);
             } else {
-                ret += options.serializeStringEscape(String.raw`\u{${code.toString(16)}}`, options);
+                ret += serializeStringEscaped(`u{${code.toString(16)}}`, options);
             }
         } else {
             ret += options.serializeStringContent(char, options); // 普通字符直接添加
         }
     }
-    ret += options.serializeStringQuote(`'`, false, options);
+    ret += cq;
     return ret;
 }
 

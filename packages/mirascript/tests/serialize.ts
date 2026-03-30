@@ -17,8 +17,8 @@ test('serializeString', (t) => {
     t.is(serializeString('`\'"'), `'\`\\'"'`);
     t.is(serializeString('$a'), String.raw`'\$a'`);
     t.is(
-        serializeString('\u000A\u000D\u001C\u001D\u0085\u2028\u2029\uFEFF'),
-        `'\\n\\r\\x1c\\x1d\\u{85}\u2028\u2029\\u{feff}'`,
+        serializeString('\u000A\u000D\u001C\u001D\u0085\u2028\u2029\uFEFF\uD804\uDCBD'),
+        String.raw`'\n\r\x1c\x1d\u{85}\u{2028}\u{2029}\u{feff}\u{110bd}'`,
     );
     t.is(serializeString('\uDC00\uD800'), `'��'`); // broken surrogate
 });
