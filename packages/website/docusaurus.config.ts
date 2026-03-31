@@ -50,6 +50,10 @@ export default {
                                 type: 'asset/resource',
                             },
                             {
+                                test: /\.node$/,
+                                type: 'asset/resource',
+                            },
+                            {
                                 test: /\.(mira|miratpl)$/,
                                 type: 'asset/source',
                             },
