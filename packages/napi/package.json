@@ -4,7 +4,7 @@
   "author": "CloudPSS",
   "license": "MIT",
   "description": "MiraScript compiler for Node.JS",
-  "type": "module",
+  "type": "commonjs",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": "./dist/index.js",
@@ -27,7 +27,7 @@
   "scripts": {
     "build": "pnpm build:docker || pnpm build:debug --release",
     "build:docker": "docker buildx build --platform amd64,arm64 -f ./Dockerfile --pull --output type=local,dest=./dist,platform-split=false ../..",
-    "build:debug": "napi build --manifest-path ../../crates/node-api/Cargo.toml --output-dir dist --platform --esm",
+    "build:debug": "napi build --manifest-path ../../crates/node-api/Cargo.toml --output-dir dist --platform",
     "watch": "nodemon --watch ../../crates/ --ext rs --exec \"pnpm run build:debug\""
   },
   "devDependencies": {
