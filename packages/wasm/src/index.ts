@@ -1,11 +1,12 @@
 import type { Config, InputMode, DiagnosticPositionEncoding, ScriptInput } from '@mirascript/constants';
 import * as wasm from '../lib/wasm.js';
+import { loadModule } from '#loader';
 
 export { wasm };
 
 /** 初始化模块 */
 export async function init(): Promise<void> {
-    const { module } = await import('@mirascript/wasm/loader');
+    const module = await loadModule();
     await wasm.default({ module_or_path: module });
 }
 

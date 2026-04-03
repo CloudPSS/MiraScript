@@ -65,7 +65,8 @@ async function body(response: Response | Promise<Response>): Promise<Response> {
     }
 }
 
-export const module: Promise<Response | BufferSource> = /* @__PURE__ */ (async () => {
+/** 加载 wasm 模块 */
+export async function loadModule(): Promise<BufferSource | Response> {
     const candidates = [loadEsmSh, loadEsm, loadUrl];
     for (const candidate of candidates) {
         try {
@@ -77,4 +78,4 @@ export const module: Promise<Response | BufferSource> = /* @__PURE__ */ (async (
         }
     }
     throw new Error('Failed to load wasm module');
-})();
+}
