@@ -23,7 +23,7 @@ const distRoot = path.join(packageRoot, 'dist');
  */
 async function readMarkdown(relativePath) {
     const fullPath = path.join(srcRoot, relativePath);
-    return readFile(fullPath, 'utf8');
+    return await readFile(fullPath, 'utf8');
 }
 
 const FRONT_MATTER_RE = /^---\r?\n([\s\S]*?)\r?\n---\r?\n/;

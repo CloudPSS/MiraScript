@@ -1,3 +1,5 @@
+/// <reference types="node" />
+
 import fs from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { loadModule as loadWeb } from './web.js';

@@ -3,6 +3,7 @@
   "extends": "../../tsconfig.json",
 
   "compilerOptions": {
+    "types": ["node"],
     "allowJs": true,
     "sourceMap": true
   }
