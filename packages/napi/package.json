@@ -31,7 +31,7 @@
     "watch": "nodemon --watch ../../crates/ --ext rs --exec \"pnpm run build:debug\""
   },
   "devDependencies": {
-    "@napi-rs/cli": "^3.6.0",
+    "@napi-rs/cli": "^3.6.1",
     "@types/node": "^25.5.2",
     "nodemon": "^3.1.14"
   }
