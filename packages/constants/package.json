@@ -8,12 +8,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
-    ".": "./dist/index.js",
-    "./types": "./dist/types.js",
-    "./loader": {
-      "node": "./dist/loader/node.js",
-      "default": "./dist/loader/web.js"
-    }
+    ".": "./dist/index.js"
   },
   "scripts": {
     "wasm": "wasm-pack build --target nodejs --out-dir ../../packages/constants/lib ../../crates/constants",

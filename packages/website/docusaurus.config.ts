@@ -102,6 +102,7 @@ export default {
             } satisfies import('@docusaurus/preset-classic').Options,
         ],
     ],
+    clientModules: ['./src/js/index.ts'],
     themeConfig: {
         colorMode: {
             respectPrefersColorScheme: true,
