@@ -6,6 +6,17 @@ import { remarkExtendedTable, extendedTableHandlers } from 'remark-extended-tabl
 import rehypeCodeEditor from './docusaurus/code-editor';
 import remarkCodeEditor from './docusaurus/code-editor';
 
+const MDX_OPTIONS = {
+    admonitions: {
+        extendDefaults: true,
+        keywords: ['summary'],
+    },
+    remarkPlugins: [remarkJoinCjkLines, remarkIns, remarkExtendedTable, remarkCodeEditor],
+    rehypePlugins: [rehypeCodeEditor],
+    beforeDefaultRemarkPlugins: [],
+    beforeDefaultRehypePlugins: [],
+};
+
 export default {
     title: 'MiraScript',
     tagline: 'A powerful scripting language',
@@ -83,19 +94,18 @@ export default {
                 docs: {
                     routeBasePath: '/',
                     path: '../../docs',
-
-                    admonitions: {
-                        extendDefaults: true,
-                        keywords: ['summary'],
-                    },
-                    remarkPlugins: [remarkJoinCjkLines, remarkIns, remarkExtendedTable, remarkCodeEditor],
-                    rehypePlugins: [rehypeCodeEditor],
-                    beforeDefaultRemarkPlugins: [],
-                    beforeDefaultRehypePlugins: [],
-
                     showLastUpdateTime: true,
                     editUrl: 'https://github.com/CloudPSS/MiraScript/edit/main/packages/website',
+                    ...MDX_OPTIONS,
                 },
+                blog: false,
+                // {
+                //     routeBasePath: '/blog',
+                //     path: '../../blog',
+                //     showReadingTime: true,
+                //     editUrl: 'https://github.com/CloudPSS/MiraScript/edit/main/packages/website',
+                //     ...MDX_OPTIONS,
+                // },
                 theme: {
                     customCss: './src/css/index.css',
                 },
