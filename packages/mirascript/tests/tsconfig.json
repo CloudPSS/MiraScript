@@ -7,7 +7,8 @@
     "noEmit": true,
     "erasableSyntaxOnly": true,
     "module": "NodeNext",
-    "rewriteRelativeImportExtensions": true
+    "rewriteRelativeImportExtensions": true,
+    "types": ["node"]
   },
 
   "include": ["./**/*.ts"]
