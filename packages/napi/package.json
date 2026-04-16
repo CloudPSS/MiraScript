@@ -1,6 +1,6 @@
 {
   "name": "@mirascript/napi",
-  "version": "0.1.62-alpha.18",
+  "version": "0.1.62-alpha.19",
   "author": "CloudPSS",
   "license": "MIT",
   "description": "MiraScript compiler for Node.JS",
