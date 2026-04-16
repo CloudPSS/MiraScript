@@ -27,7 +27,7 @@ runs:
         targets: wasm32-unknown-unknown
 
     - name: Setup pnpm
-      uses: wyvox/action-setup-pnpm@v3
+      uses: wyvox/action-setup-pnpm@v4
       with:
         node-registry-url: 'https://registry.npmjs.org/'
         args: ${{ inputs.pnpm-args }}
