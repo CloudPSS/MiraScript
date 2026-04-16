@@ -13,7 +13,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install
         uses: ./.github/actions/install
@@ -38,7 +38,7 @@ jobs:
           mv -f packages/playground/dist/ website-build/debug/
 
       - name: Upload npm package artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: npm-package
           path: |
@@ -46,8 +46,8 @@ jobs:
             packages/*/lib/
           if-no-files-found: error
 
-      - name: Upload website artifact
-        uses: actions/upload-artifact@v4
+      - name: Upload Pages artifact
+        uses: actions/upload-artifact@v7
         with:
           name: website
           path: website-build/
