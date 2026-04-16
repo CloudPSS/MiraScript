@@ -24,13 +24,13 @@ test('compare objects with undefined and null prototypes', (t) => {
 });
 
 test('array range should throw on excessive length', (t) => {
-    t.notThrows(() => $ArrayRange(0, 134_217_727));
-    t.notThrows(() => $ArrayRangeExclusive(0, 134_217_728));
-    t.throws(() => $ArrayRange(0, 134_217_728), {
+    t.notThrows(() => $ArrayRange(0, 16_777_215));
+    t.notThrows(() => $ArrayRangeExclusive(0, 16_777_216));
+    t.throws(() => $ArrayRange(0, 16_777_216), {
         instanceOf: RangeError,
         message: /^Array length exceeds maximum limit/,
     });
-    t.throws(() => $ArrayRangeExclusive(0, 134_217_729), {
+    t.throws(() => $ArrayRangeExclusive(0, 16_777_217), {
         instanceOf: RangeError,
         message: /^Array length exceeds maximum limit/,
     });
