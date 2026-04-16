@@ -135,12 +135,12 @@ jobs:
           name: vscode-package
 
       - name: Publish to Open VSX
-        run: npx ovsx         publish -p ${{ secrets.OVSX_PAT }} -i *.vsix ${{ contains(github.ref, '-') && '--pre-release' || '' }}
+        run: npx ovsx         publish -p ${{ secrets.OVSX_PAT }} -i *.vsix
 
       - name: Publish to Visual Studio Marketplace
         # The VS Marketplace doesn't support prerelease versions
         if: "! contains(github.ref, '-')"
-        run: npx @vscode/vsce publish -p ${{ secrets.VSCE_PAT }} -i *.vsix ${{ contains(github.ref, '-') && '--pre-release' || '' }}
+        run: npx @vscode/vsce publish -p ${{ secrets.VSCE_PAT }} -i *.vsix
 
   publish-github:
     needs: [build, build-vscode]
