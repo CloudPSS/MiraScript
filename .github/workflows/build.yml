@@ -23,8 +23,8 @@ jobs:
         with:
           targets: wasm32-unknown-unknown
 
-      - name: Install wasm-pack
-        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+      - name: Install tools
+        run: npm install -g wasm-pack @napi-rs/cli @vscode/vsce
 
       - name: Setup pnpm
         uses: wyvox/action-setup-pnpm@v3
