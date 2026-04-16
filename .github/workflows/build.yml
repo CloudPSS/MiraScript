@@ -12,14 +12,13 @@ jobs:
       contents: read
 
     steps:
-      - name: Set private token
-        run: npm config set //packages.aliyun.com/60c179fc44816b8ed233a8bb/npm/npm-registry/:_authToken '${{ secrets.ALIYUN_NPM_TOKEN }}'
-
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Install
         uses: ./.github/actions/install
+        with:
+          ALIYUN_NPM_TOKEN: ${{ secrets.ALIYUN_NPM_TOKEN }}
 
       # Build every package except vscode (built separately so that the vsix can be produced after npm packages are published on release).
       - name: Build
