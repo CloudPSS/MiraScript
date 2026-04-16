@@ -36,13 +36,15 @@ jobs:
           path: packages/
 
       - name: Publish to npm
+        env:
+          NPM_CONFIG_PROVENANCE: true
         run: |
           TAG=latest
           if [[ "${GITHUB_REF}" == *"-"* ]]; then
             TAG=next
           fi
           echo "Publishing with tag: $TAG"
-          pnpm -r publish --no-git-checks --access public --registry https://registry.npmjs.org/ --tag $TAG --provenance
+          pnpm -r publish --no-git-checks --access public --registry https://registry.npmjs.org/ --tag $TAG
 
       - name: Sync to npmmirror
         run: |
