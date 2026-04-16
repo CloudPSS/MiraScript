@@ -17,10 +17,6 @@ runs:
       run: |
         npm config set -L project '//packages.aliyun.com/60c179fc44816b8ed233a8bb/npm/npm-registry/:_authToken' '${{ inputs.ALIYUN_NPM_TOKEN }}'
 
-    - name: Install tools
-      shell: bash
-      run: npm install -g wasm-pack @napi-rs/cli @vscode/vsce
-
     - name: Setup Rust
       uses: dtolnay/rust-toolchain@stable
       with:
@@ -31,3 +27,7 @@ runs:
       with:
         node-registry-url: 'https://registry.npmjs.org/'
         args: ${{ inputs.pnpm-args }}
+
+    - name: Install tools
+      shell: bash
+      run: pnpm install -g wasm-pack @napi-rs/cli @vscode/vsce
