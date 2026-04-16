@@ -3,8 +3,7 @@
 [CmdletBinding()]
 param (
     [switch] $NoCommit,
-    [switch] $NoTag,
-    [switch] $NoPublish
+    [switch] $NoTag
 ) 
 & {
     $ErrorActionPreference = "Stop"
@@ -33,9 +32,6 @@ param (
         $pkg.name
     }
 
-    Write-Host "Building version $Version" -ForegroundColor Yellow
-    pnpm -r build
-
     Write-Host "Publishing version $Version@$NpmTag" -ForegroundColor Yellow
     pnpm -r --workspace-concurrency=1 exec pnpm version "$Version" --no-git-tag-version --no-workspaces-update
     pnpm -r --workspace-concurrency=1 exec git add ./package.json
@@ -47,24 +43,6 @@ param (
 
         if (-not $NoTag) {
             git tag -a "v$Version" -m "v$Version"
-        }
-    }
-
-    if (-not $NoPublish) {
-        npm login --registry https://registry.npmjs.org
-        pnpm -r publish --access public --registry https://registry.npmjs.org --tag $NpmTag
-    }
-
-    if (-not $NoPublish) {
-        Remove-Item Alias:curl -ErrorAction SilentlyContinue
-        $packageNames | ForEach-Object {
-            Write-Host "Syncing $_" -ForegroundColor Yellow
-            $result = curl -X PUT "https://registry-direct.npmmirror.com/$_/sync" 2>$null | ConvertFrom-Json
-            if ($result.ok -eq $false) {
-                Write-Error $result.error $result.reason
-            } else {
-                Write-Host "OK, see https://registry-direct.npmmirror.com/-/package/$_/syncs/$($result.logId)/log"
-            }
         }
     }
 
