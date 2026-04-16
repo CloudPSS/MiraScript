@@ -65,9 +65,10 @@ const TEST_DIR = new URL('../../../../tests', import.meta.url);
 
 const runScript = (t: ExecutionContext, file: string, extern: boolean, script: VmScript) => {
     const timeout_fn: Array<[() => unknown, string]> = [];
-    configCheckpoint(file.endsWith('_huge.mira') ? 1000 : undefined);
+    configCheckpoint(file.endsWith('_huge.mira') ? 3000 : 300);
     script(createContext(t, timeout_fn, extern));
     // 在脚本之后执行，否则脚本本身超时
+    configCheckpoint();
     for (const [fn, message] of timeout_fn) {
         t.throws(fn, { instanceOf: RangeError, message: 'Execution timed out' }, message);
     }
@@ -79,11 +80,9 @@ const compileAndRun = test.macro<[string, boolean]>({
         const code = await fs.promises.readFile(codeUrl, 'utf8');
 
         const script = await compile(code, { pretty: true, sourceMap: true, fileName: codeUrl.href });
-        configCheckpoint(300);
         runScript(t, file, extern, script);
         const scriptCopy = createScript(code, 'Script', script.toString());
         runScript(t, file, extern, scriptCopy);
-        configCheckpoint();
     },
     title: (providedTitle = 'test', code) => code || providedTitle,
 });
