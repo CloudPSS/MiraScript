@@ -14,7 +14,9 @@ runs:
   steps:
     - name: Set private token
       shell: bash
-      run: npm config set //packages.aliyun.com/60c179fc44816b8ed233a8bb/npm/npm-registry/:_authToken '${{ inputs.ALIYUN_NPM_TOKEN }}'
+      run: |
+        npm config set '//packages.aliyun.com/60c179fc44816b8ed233a8bb/npm/npm-registry/:_authToken' '${{ inputs.ALIYUN_NPM_TOKEN }}'
+        npm config list
 
     - name: Install tools
       shell: bash
