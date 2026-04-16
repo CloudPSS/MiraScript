@@ -18,16 +18,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: wasm32-unknown-unknown
-
-      - name: Install tools
-        run: npm install -g wasm-pack @napi-rs/cli @vscode/vsce
-
-      - name: Setup pnpm
-        uses: wyvox/action-setup-pnpm@v3
+      - name: Install
+        uses: ./.github/actions/install
 
       # Build every package except vscode (built separately so that the vsix can be produced after npm packages are published on release).
       - name: Build
@@ -41,16 +33,23 @@ jobs:
           FORCE_COLOR: 1
         run: pnpm -r --if-present run test
 
-      - name: Upload playground artifact
+      - name: Pack website artifact
+        run: |
+          mv -f packages/website/build/ website-build/
+          mv -f packages/playground/dist/ website-build/debug/
+
+      - name: Upload npm package artifact
         uses: actions/upload-artifact@v4
         with:
-          name: playground
-          path: packages/playground/dist/
+          name: npm-package
+          path: |
+            packages/*/dist/
+            packages/*/lib/
           if-no-files-found: error
 
       - name: Upload website artifact
         uses: actions/upload-artifact@v4
         with:
           name: website
-          path: packages/website/build/
+          path: website-build/
           if-no-files-found: error

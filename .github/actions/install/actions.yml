@@ -1,0 +1,27 @@
+name: Install
+description: Install all required tools and dependencies for building and testing MiraScript.
+
+inputs:
+  pnpm-args:
+    description: 'Directly pass args to pnpm'
+    required: false
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set private token
+      run: npm config set //packages.aliyun.com/60c179fc44816b8ed233a8bb/npm/npm-registry/:_authToken '${{ secrets.ALIYUN_NPM_TOKEN }}'
+
+    - name: Install tools
+      run: npm install -g wasm-pack @napi-rs/cli @vscode/vsce
+
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: wasm32-unknown-unknown
+
+    - name: Setup pnpm
+      uses: wyvox/action-setup-pnpm@v3
+      with:
+        node-registry-url: 'https://registry.npmjs.org/'
+        args: ${{ inputs.pnpm-args }}
