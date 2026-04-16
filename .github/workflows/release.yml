@@ -37,7 +37,7 @@ jobs:
 
       - name: Publish to npm
         env:
-          NPM_CONFIG_PROVENANCE: true
+          NPM_CONFIG_PROVENANCE: false # Enable after make this repository public
         run: |
           TAG=latest
           if [[ "${GITHUB_REF}" == *"-"* ]]; then
