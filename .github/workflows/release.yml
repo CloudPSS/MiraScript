@@ -1,0 +1,77 @@
+name: Release
+
+on:
+  push:
+    tags: ['*']
+
+jobs:
+  build:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/build.yml
+
+  publish-npm:
+    needs: build
+
+    permissions:
+      contents: read
+      id-token: write
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install
+        uses: ./.github/actions/install
+        with:
+          ALIYUN_NPM_TOKEN: ${{ secrets.ALIYUN_NPM_TOKEN }}
+
+      - name: Download npm package artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: npm-package
+
+      - name: Publish to npm
+        run: |
+          TAG=latest
+          if [[ "${GITHUB_REF}" == *"-"* ]]; then
+            TAG=next
+          fi
+          echo "Publishing with tag: $TAG"
+          pnpm -r publish --access public --registry https://registry.npmjs.org/ --tag $TAG
+
+      - name: Sync to npmmirror
+        run: |
+          for package_dir in packages/*; do
+            if [[ ! -d "$package_dir" ]]; then
+              continue
+            fi
+
+            package_json="$package_dir/package.json"
+            if [[ ! -f "$package_json" ]]; then
+              continue
+            fi
+
+            is_private=$(jq -r '.private // false' "$package_json")
+            if [[ "$is_private" == "true" ]]; then
+              continue
+            fi
+
+            package_name=$(jq -r '.name // empty' "$package_json")
+            if [[ -z "$package_name" ]]; then
+              continue
+            fi
+
+            echo "Syncing $package_name"
+            response=$(curl -fsSL -X PUT "https://registry-direct.npmmirror.com/$package_name/sync")
+            ok=$(jq -r '.ok' <<< "$response")
+
+            if [[ "$ok" != "true" ]]; then
+              jq -r '(.error // "Sync failed"), (.reason // empty)' <<< "$response" >&2
+              exit 1
+            fi
+
+            log_id=$(jq -r '.logId' <<< "$response")
+            echo "OK, see https://registry-direct.npmmirror.com/-/package/$package_name/syncs/$log_id/log"
+          done
