@@ -28,11 +28,19 @@ runs:
 
     - name: Setup pnpm
       uses: wyvox/action-setup-pnpm@v4
+      if: inputs.node-version != ''
       with:
         node-registry-url: 'https://registry.npmjs.org/'
         args: ${{ inputs.pnpm-args }}
-        node-version-file: ${{ inputs.node-version && '' || 'package.json' }}
+        node-version-file: ''
         node-version: ${{ inputs.node-version }}
+
+    - name: Setup pnpm
+      uses: wyvox/action-setup-pnpm@v4
+      if: inputs.node-version == ''
+      with:
+        node-registry-url: 'https://registry.npmjs.org/'
+        args: ${{ inputs.pnpm-args }}
 
     - name: Install tools
       shell: bash
