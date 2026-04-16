@@ -13,8 +13,7 @@
   },
   "scripts": {
     "build": "pnpm clean && node ./scripts/build.js",
-    "clean": "rimraf dist",
-    "prepublishOnly": "pnpm build"
+    "clean": "rimraf dist"
   },
   "devDependencies": {
     "js-yaml": "^4.1.1"

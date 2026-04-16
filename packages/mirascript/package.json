@@ -32,8 +32,7 @@
     "deps": "pnpm dlx madge --circular --warning ./src",
     "clean": "rimraf dist",
     "test": "c8 ava",
-    "bench": "node ./bench/index.ts",
-    "prepublishOnly": "pnpm build"
+    "bench": "node ./bench/index.ts"
   },
   "dependencies": {
     "@cloudpss/worker": "^0.1.11",

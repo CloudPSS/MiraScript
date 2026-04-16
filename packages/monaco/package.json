@@ -29,8 +29,7 @@
   },
   "scripts": {
     "build": "pnpm clean && tsc && node ./esbuild.config.js",
-    "clean": "rimraf dist",
-    "prepublishOnly": "pnpm build"
+    "clean": "rimraf dist"
   },
   "dependencies": {
     "@mirascript/bindings": "workspace:~",

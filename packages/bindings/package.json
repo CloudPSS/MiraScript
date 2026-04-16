@@ -21,8 +21,7 @@
   "scripts": {
     "watch": "pnpm build --watch",
     "build": "pnpm clean && tsc",
-    "clean": "rimraf dist",
-    "prepublishOnly": "pnpm build"
+    "clean": "rimraf dist"
   },
   "dependencies": {
     "@mirascript/napi": "workspace:~",

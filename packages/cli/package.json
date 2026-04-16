@@ -23,8 +23,7 @@
   "scripts": {
     "watch": "pnpm build --watch",
     "build": "pnpm clean && node ./esbuild.config.js",
-    "clean": "rimraf dist",
-    "prepublishOnly": "pnpm build"
+    "clean": "rimraf dist"
   },
   "dependencies": {
     "@commander-js/extra-typings": "^14.0.0",
