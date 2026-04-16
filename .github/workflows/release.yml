@@ -12,6 +12,43 @@ jobs:
     uses: ./.github/workflows/build.yml
     secrets: inherit
 
+  build-vscode:
+    needs: build
+
+    permissions:
+      contents: read
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install
+        uses: ./.github/actions/install
+        with:
+          ALIYUN_NPM_TOKEN: ${{ secrets.ALIYUN_NPM_TOKEN }}
+
+      - name: Build vscode package
+        run: |
+          cd packages/vscode
+          pnpm build
+          pnpm pack --out mirascript-vscode.tgz
+
+          mkdir -p ~/vscode-build
+          tar -xzf mirascript-vscode.tgz --strip-components=1 -C ~/vscode-build/
+          cd ~/vscode-build
+          npm install --omit=dev
+          npm pkg set name="mirascript"
+          vsce package
+
+      - name: Upload vscode artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: vscode-package
+          path: ~/vscode-build/*.vsix
+          archive: false
+          if-no-files-found: error
+
   publish-npm:
     needs: build
 
@@ -33,6 +70,7 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           name: npm-package
+          path: packages/
 
       - name: Publish to npm
         run: |
