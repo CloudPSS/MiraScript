@@ -42,7 +42,7 @@ jobs:
             TAG=next
           fi
           echo "Publishing with tag: $TAG"
-          pnpm -r publish --no-git-checks --access public --registry https://registry.npmjs.org/ --tag $TAG
+          pnpm -r publish --no-git-checks --access public --registry https://registry.npmjs.org/ --tag $TAG --provenance
 
       - name: Sync to npmmirror
         run: |
@@ -103,12 +103,14 @@ jobs:
 
       - name: Build vscode package
         run: |
+          mkdir -p ~/vscode-build
+          cp .npmrc ~/vscode-build/
+
           cd packages/vscode
           pnpm build
           pnpm pack --out mirascript-vscode.tgz
-
-          mkdir -p ~/vscode-build
           tar -xzf mirascript-vscode.tgz --strip-components=1 -C ~/vscode-build/
+
           cd ~/vscode-build
           npm install --omit=dev
           npm pkg set name="mirascript"
