@@ -37,6 +37,8 @@ jobs:
             run build
 
       - name: Test
+        env:
+          FORCE_COLOR: 1
         run: pnpm -r --if-present run test
 
       - name: Upload playground artifact
