@@ -56,6 +56,10 @@ jobs:
       contents: read
 
     steps:
+      - name: Configure Git
+        run: |
+          git config --global core.autocrlf input
+
       - name: Checkout
         uses: actions/checkout@v6
 
