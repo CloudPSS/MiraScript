@@ -1,0 +1,54 @@
+name: Build
+
+on:
+  workflow_call:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Set private token
+        if: secrets.ALIYUN_NPM_TOKEN
+        run: npm config set //packages.aliyun.com/60c179fc44816b8ed233a8bb/npm/npm-registry/:_authToken ${{ secrets.ALIYUN_NPM_TOKEN }}
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - name: Setup pnpm
+        uses: wyvox/action-setup-pnpm@v3
+
+      # Build every package except vscode (built separately so that the vsix can be produced after npm packages are published on release).
+      - name: Build
+        run: |
+          pnpm -r \
+            --filter='!@mirascript/vscode' \
+            run build
+
+      - name: Test
+        run: pnpm -r --if-present run test
+
+      - name: Upload playground artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: playground
+          path: packages/playground/dist/
+          if-no-files-found: error
+
+      - name: Upload website artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: website
+          path: packages/website/build/
+          if-no-files-found: error
