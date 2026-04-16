@@ -1,6 +1,6 @@
 {
   "name": "@mirascript/cli",
-  "version": "0.1.62-alpha.3",
+  "version": "0.1.62-alpha.4",
   "author": "CloudPSS",
   "license": "MIT",
   "description": "Cli for MiraScript, an expression based scripting language.",
