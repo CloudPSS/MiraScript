@@ -14,7 +14,8 @@
   },
   "icon": "./dist/icon.png",
   "categories": [
-    "Programming Languages"
+    "Programming Languages",
+    "Formatters"
   ],
   "private": true,
   "type": "module",
