@@ -9,7 +9,9 @@ jobs:
   build:
     permissions:
       contents: read
+
     uses: ./.github/workflows/build.yml
+    secrets: inherit
 
   deploy-pages:
     needs: build

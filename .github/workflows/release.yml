@@ -8,7 +8,9 @@ jobs:
   build:
     permissions:
       contents: read
+
     uses: ./.github/workflows/build.yml
+    secrets: inherit
 
   publish-npm:
     needs: build
