@@ -4,6 +4,14 @@
   "author": "CloudPSS",
   "license": "MIT",
   "description": "Monaco Editor integration for Mirascript.",
+  "keywords": [
+    "mirascript",
+    "monaco",
+    "editor",
+    "language-service",
+    "lsp"
+  ],
+  "homepage": "https://mira.cloudpss.net",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/CloudPSS/MiraScript.git",

@@ -4,6 +4,14 @@
   "author": "CloudPSS",
   "license": "MIT",
   "description": "An expression based scripting language.",
+  "keywords": [
+    "mirascript",
+    "language",
+    "compiler",
+    "runtime",
+    "vm"
+  ],
+  "homepage": "https://mira.cloudpss.net",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/CloudPSS/MiraScript.git",

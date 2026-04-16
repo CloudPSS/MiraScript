@@ -6,6 +6,7 @@
   "license": "MIT",
   "displayName": "MiraScript",
   "description": "MiraScript language support for Visual Studio Code.",
+  "homepage": "https://mira.cloudpss.net",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/CloudPSS/MiraScript.git",

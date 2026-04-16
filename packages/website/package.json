@@ -1,6 +1,7 @@
 {
   "name": "@mirascript/website",
   "version": "0.1.62-alpha.21",
+  "description": "Website of Mirascript",
   "homepage": "https://mira.cloudpss.net",
   "repository": {
     "type": "git",

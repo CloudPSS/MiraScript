@@ -4,6 +4,14 @@
   "author": "CloudPSS",
   "license": "MIT",
   "description": "Help documentation for Mirascript core language.",
+  "keywords": [
+    "mirascript",
+    "help",
+    "documentation",
+    "keywords",
+    "operators"
+  ],
+  "homepage": "https://mira.cloudpss.net",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/CloudPSS/MiraScript.git",

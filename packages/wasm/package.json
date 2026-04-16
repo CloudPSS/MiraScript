@@ -4,6 +4,14 @@
   "author": "CloudPSS",
   "license": "MIT",
   "description": "MiraScript compiler for WebAssembly",
+  "keywords": [
+    "mirascript",
+    "wasm",
+    "webassembly",
+    "compiler",
+    "browser"
+  ],
+  "homepage": "https://mira.cloudpss.net",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/CloudPSS/MiraScript.git",
