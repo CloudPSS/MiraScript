@@ -38,13 +38,8 @@ jobs:
       - name: Publish to npm
         env:
           NPM_CONFIG_PROVENANCE: false # Enable after make this repository public
-        run: |
-          TAG=latest
-          if [[ "${GITHUB_REF}" == *"-"* ]]; then
-            TAG=next
-          fi
-          echo "Publishing with tag: $TAG"
-          pnpm -r publish --no-git-checks --access public --registry https://registry.npmjs.org/ --tag $TAG
+          TAG: ${{ contains(github.ref, '-') && 'next' || 'latest' }}
+        run: pnpm -r publish --no-git-checks --access public --registry https://registry.npmjs.org/ --tag $TAG
 
       - name: Sync to npmmirror
         run: |
@@ -116,7 +111,7 @@ jobs:
           cd ~/vscode-build
           npm install --omit=dev
           npm pkg set name="mirascript"
-          vsce package
+          vsce package ${{ contains(github.ref, '-') && '--pre-release' || '' }}
 
       - name: Upload vscode artifact
         uses: actions/upload-artifact@v7
@@ -138,11 +133,11 @@ jobs:
         with:
           name: vscode-package
 
-      - name: Publish to Open VSX
-        run: npx ovsx         publish -p ${{ secrets.OVSX_PAT }} -i *.vsix ${{ contains(github.ref, '-') && '--pre-release' || '' }}
-
       - name: Publish to Visual Studio Marketplace
-        run: npx @vscode/vsce publish -p ${{ secrets.VSCE_PAT }} -i *.vsix ${{ contains(github.ref, '-') && '--pre-release' || '' }}
+        run: npx @vscode/vsce publish -p ${{ secrets.VSCE_PAT }} -i *.vsix
+
+      - name: Publish to Open VSX
+        run: npx ovsx         publish -p ${{ secrets.OVSX_PAT }} -i *.vsix
 
   publish-github:
     needs: [build, build-vscode]
