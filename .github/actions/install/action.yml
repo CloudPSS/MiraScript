@@ -8,6 +8,10 @@ inputs:
   pnpm-args:
     description: 'Directly pass args to pnpm'
     required: false
+    default: '--frozen-lockfile'
+  node-version:
+    description: 'The Node.js version to use. Default to the version specified in .nvmrc or package.json.'
+    required: false
 
 runs:
   using: 'composite'
@@ -27,6 +31,8 @@ runs:
       with:
         node-registry-url: 'https://registry.npmjs.org/'
         args: ${{ inputs.pnpm-args }}
+        node-version-file: ${{ inputs.node-version && '' || 'package.json' }}
+        node-version: ${{ inputs.node-version }}
 
     - name: Install tools
       shell: bash
