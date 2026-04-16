@@ -1,6 +1,6 @@
 {
   "name": "@mirascript/monaco",
-  "version": "0.1.62-alpha.19",
+  "version": "0.1.62-alpha.20",
   "author": "CloudPSS",
   "license": "MIT",
   "description": "Monaco Editor integration for Mirascript.",
