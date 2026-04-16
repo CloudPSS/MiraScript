@@ -4,6 +4,11 @@
   "author": "CloudPSS",
   "license": "MIT",
   "description": "MiraScript compiler bindings",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CloudPSS/MiraScript.git",
+    "directory": "packages/bindings"
+  },
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

@@ -4,6 +4,11 @@
   "author": "CloudPSS",
   "license": "MIT",
   "description": "MiraScript compiler for Node.JS",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CloudPSS/MiraScript.git",
+    "directory": "packages/napi"
+  },
   "type": "commonjs",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

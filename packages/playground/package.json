@@ -4,6 +4,11 @@
   "author": "CloudPSS",
   "license": "MIT",
   "description": "MiraScript Playground - An online code editor for MiraScript",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CloudPSS/MiraScript.git",
+    "directory": "packages/playground"
+  },
   "private": true,
   "type": "module",
   "scripts": {

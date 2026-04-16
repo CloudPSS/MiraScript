@@ -6,6 +6,11 @@
   "license": "MIT",
   "displayName": "MiraScript",
   "description": "MiraScript language support for Visual Studio Code.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CloudPSS/MiraScript.git",
+    "directory": "packages/vscode"
+  },
   "icon": "./dist/icon.png",
   "categories": [
     "Programming Languages"
