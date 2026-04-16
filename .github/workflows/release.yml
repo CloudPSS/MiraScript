@@ -137,10 +137,10 @@ jobs:
           name: vscode-package
 
       - name: Publish to Open VSX
-        run: ovsx publish -p ${{ secrets.OVSX_PAT }} -i *.vsix ${{ contains(github.ref, '-') && '--pre-release' || '' }}
+        run: npx ovsx         publish -p ${{ secrets.OVSX_PAT }} -i *.vsix ${{ contains(github.ref, '-') && '--pre-release' || '' }}
 
       - name: Publish to Visual Studio Marketplace
-        run: vsce publish -p ${{ secrets.VSCE_PAT }} -i *.vsix ${{ contains(github.ref, '-') && '--pre-release' || '' }}
+        run: npx @vscode/vsce publish -p ${{ secrets.VSCE_PAT }} -i *.vsix ${{ contains(github.ref, '-') && '--pre-release' || '' }}
 
   publish-github:
     needs: [build, build-vscode]

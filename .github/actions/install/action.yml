@@ -30,4 +30,4 @@ runs:
 
     - name: Install tools
       shell: bash
-      run: pnpm install -g wasm-pack @napi-rs/cli @vscode/vsce ovsx
+      run: pnpm install -g wasm-pack @napi-rs/cli @vscode/vsce
