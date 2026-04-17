@@ -35,6 +35,7 @@ jobs:
           path: |
             packages/*/dist/
             packages/*/lib/
+            !*.node
           if-no-files-found: error
 
       - name: Upload Pages artifact
@@ -132,9 +133,7 @@ jobs:
         with:
           ALIYUN_NPM_TOKEN: ${{ secrets.ALIYUN_NPM_TOKEN }}
           rust-targets: x86_64-unknown-linux-gnu,aarch64-unknown-linux-gnu,x86_64-unknown-linux-musl,aarch64-unknown-linux-musl
-          tools: cargo-zigbuild
-      - name: Setup zig
-        uses: mlugg/setup-zig@v2
+          tools: cross
 
       - name: Download npm package artifact
         uses: actions/download-artifact@v8
@@ -145,10 +144,10 @@ jobs:
       - name: Build artifact
         run: |
           cd packages/napi
-          pnpm run build --cross-compile --target x86_64-unknown-linux-gnu.2.17
-          pnpm run build --cross-compile --target aarch64-unknown-linux-gnu.2.17
-          pnpm run build --cross-compile --target x86_64-unknown-linux-musl
-          pnpm run build --cross-compile --target aarch64-unknown-linux-musl
+          pnpm run build --use-cross --target x86_64-unknown-linux-gnu
+          pnpm run build --use-cross --target aarch64-unknown-linux-gnu
+          pnpm run build --use-cross --target x86_64-unknown-linux-musl
+          pnpm run build --use-cross --target aarch64-unknown-linux-musl
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
