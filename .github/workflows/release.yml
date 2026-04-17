@@ -39,7 +39,22 @@ jobs:
         env:
           NPM_CONFIG_PROVENANCE: false # Enable after make this repository public
           TAG: ${{ contains(github.ref, '-') && 'next' || 'latest' }}
-        run: pnpm -r publish --no-git-checks --access public --registry https://registry.npmjs.org/ --tag $TAG
+        run: |
+          cd packages/napi
+          pnpm napi create-npm-dirs
+          pnpm napi artifacts --output-dir dist
+          pnpm napi pre-publish -t npm --no-gh-release --skip-optional-publish
+
+          for target in npm/*; do
+            if [[ -d "$target" ]]; then
+              cd "$target"
+              npm publish --access public --registry https://registry.npmjs.org/ --tag $TAG
+              cd -
+            fi
+          done
+
+          cd ../..
+          pnpm -r publish --no-git-checks --access public --registry https://registry.npmjs.org/ --tag $TAG
 
       - name: Sync to npmmirror
         run: |
