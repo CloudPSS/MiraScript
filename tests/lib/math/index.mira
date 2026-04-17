@@ -1,4 +1,4 @@
-// math.ts 中的函数
+// math/index.ts 中的函数
 // atan2
 t_true(atan2(1, 1) =~ 0.785_398_163_397_448_3);
 t_true(atan2(0, 1) == 0);
