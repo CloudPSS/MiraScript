@@ -35,7 +35,7 @@ jobs:
           path: |
             packages/*/dist/
             packages/*/lib/
-            !*.node
+            !**/*.node
           if-no-files-found: error
 
       - name: Upload Pages artifact
@@ -120,6 +120,10 @@ jobs:
   build-linux:
     needs: build
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target:
+          [x86_64-unknown-linux-gnu, aarch64-unknown-linux-gnu, x86_64-unknown-linux-musl, aarch64-unknown-linux-musl]
 
     permissions:
       contents: read
@@ -132,7 +136,7 @@ jobs:
         uses: ./.github/actions/install
         with:
           ALIYUN_NPM_TOKEN: ${{ secrets.ALIYUN_NPM_TOKEN }}
-          rust-targets: x86_64-unknown-linux-gnu,aarch64-unknown-linux-gnu,x86_64-unknown-linux-musl,aarch64-unknown-linux-musl
+          rust-targets: ${{ matrix.target }}
           tools: cross
 
       - name: Download npm package artifact
@@ -144,15 +148,12 @@ jobs:
       - name: Build artifact
         run: |
           cd packages/napi
-          pnpm run build --use-cross --target x86_64-unknown-linux-gnu
-          pnpm run build --use-cross --target aarch64-unknown-linux-gnu
-          pnpm run build --use-cross --target x86_64-unknown-linux-musl
-          pnpm run build --use-cross --target aarch64-unknown-linux-musl
+          pnpm run build --use-cross --target ${{ matrix.target }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
-          name: linux-napi
+          name: linux-napi-${{ matrix.target }}
           path: packages/napi/dist/*.node
           if-no-files-found: error
 
@@ -188,7 +189,8 @@ jobs:
       - name: Download Linux artifact
         uses: actions/download-artifact@v8
         with:
-          name: linux-napi
+          pattern: linux-napi-*
+          merge-multiple: true
           path: packages/napi/dist/
 
       - name: Reupload npm package artifact

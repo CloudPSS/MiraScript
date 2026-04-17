@@ -38,7 +38,7 @@
     "node": ">= 16"
   },
   "scripts": {
-    "build": "pnpm clean && pnpm build:debug --release",
+    "build": "pnpm run build:debug --release",
     "build:debug": "napi build --manifest-path ../../crates/node-api/Cargo.toml --output-dir dist --platform",
     "watch": "nodemon --watch ../../crates/ --ext rs --exec \"pnpm run build:debug\"",
     "clean": "rimraf dist"
