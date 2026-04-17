@@ -1,3 +1,3 @@
 import { run } from './_run.ts';
 
-run(false, false);
+run(false);
