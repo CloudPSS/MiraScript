@@ -132,6 +132,7 @@ jobs:
         with:
           ALIYUN_NPM_TOKEN: ${{ secrets.ALIYUN_NPM_TOKEN }}
           rust-targets: x86_64-unknown-linux-gnu,aarch64-unknown-linux-gnu,x86_64-unknown-linux-musl,aarch64-unknown-linux-musl
+          tools: cargo-zigbuild
 
       - name: Download npm package artifact
         uses: actions/download-artifact@v8
@@ -142,10 +143,10 @@ jobs:
       - name: Build artifact
         run: |
           cd packages/napi
-          pnpm run build --target x86_64-unknown-linux-gnu
-          pnpm run build --target aarch64-unknown-linux-gnu
-          pnpm run build --target x86_64-unknown-linux-musl
-          pnpm run build --target aarch64-unknown-linux-musl
+          pnpm run build --cross-compile --target x86_64-unknown-linux-gnu.2.17
+          pnpm run build --cross-compile --target aarch64-unknown-linux-gnu.2.17
+          pnpm run build --cross-compile --target x86_64-unknown-linux-musl
+          pnpm run build --cross-compile --target aarch64-unknown-linux-musl
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7

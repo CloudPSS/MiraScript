@@ -16,6 +16,9 @@ inputs:
     description: 'Comma-separated list of Rust targets to install. Default to wasm32-unknown-unknown.'
     required: false
     default: 'wasm32-unknown-unknown'
+  tools:
+    description: 'Comma-separated list of additional tools to install with taiki-e/install-action. Default to empty.'
+    required: false
 
 runs:
   using: 'composite'
@@ -30,9 +33,10 @@ runs:
       with:
         targets: ${{ inputs.rust-targets }}
 
-    - name: Setup wasm-pack
-      shell: bash
-      run: npm install -g wasm-pack
+    - name: Setup tools
+      uses: taiki-e/install-action@v2
+      with:
+        tool: wasm-bindgen wasm-pack ${{ inputs.tools }}
 
     - name: Setup pnpm
       uses: wyvox/action-setup-pnpm@v4
