@@ -26,6 +26,10 @@ runs:
       with:
         targets: wasm32-unknown-unknown
 
+    - name: Setup wasm-pack
+      shell: bash
+      run: curl https://wasm-bindgen.github.io/wasm-pack/installer/init.sh -sSf | bash
+
     - name: Setup pnpm
       uses: wyvox/action-setup-pnpm@v4
       if: inputs.node-version != ''
