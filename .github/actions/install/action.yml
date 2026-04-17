@@ -12,6 +12,10 @@ inputs:
   node-version:
     description: 'The Node.js version to use. Default to the version specified in .nvmrc or package.json.'
     required: false
+  rust-targets:
+    description: 'Comma-separated list of Rust targets to install. Default to wasm32-unknown-unknown.'
+    required: false
+    default: 'wasm32-unknown-unknown'
 
 runs:
   using: 'composite'
@@ -24,11 +28,11 @@ runs:
     - name: Setup Rust
       uses: dtolnay/rust-toolchain@stable
       with:
-        targets: wasm32-unknown-unknown
+        targets: ${{ inputs.rust-targets }}
 
     - name: Setup wasm-pack
       shell: bash
-      run: curl https://wasm-bindgen.github.io/wasm-pack/installer/init.sh -sSf | bash
+      run: npm install -g wasm-pack
 
     - name: Setup pnpm
       uses: wyvox/action-setup-pnpm@v4
