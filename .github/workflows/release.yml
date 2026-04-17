@@ -112,7 +112,7 @@ jobs:
           touch .vscodeignore # Make vsce happy
           npm install --omit=dev
           npm pkg set name="mirascript"
-          vsce package ${{ contains(github.ref, '-') && '--pre-release' || '' }}
+          npx @vscode/vsce package ${{ contains(github.ref, '-') && '--pre-release' || '' }}
 
       - name: Upload vscode artifact
         uses: actions/upload-artifact@v7
