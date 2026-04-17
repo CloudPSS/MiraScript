@@ -44,8 +44,160 @@ jobs:
           path: website-build/
           if-no-files-found: error
 
-  test:
+  build-macos:
     needs: build
+    runs-on: macos-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install
+        uses: ./.github/actions/install
+        with:
+          ALIYUN_NPM_TOKEN: ${{ secrets.ALIYUN_NPM_TOKEN }}
+
+      - name: Download npm package artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: npm-package
+          path: packages/
+
+      - name: Build artifact
+        run: |
+          cd packages/napi
+          pnpm run build --target x86_64-apple-darwin
+          pnpm run build --target aarch64-apple-darwin
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: macos-napi
+          path: packages/napi/dist/*.node
+          if-no-files-found: error
+
+  build-windows:
+    needs: build
+    runs-on: windows-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install
+        uses: ./.github/actions/install
+        with:
+          ALIYUN_NPM_TOKEN: ${{ secrets.ALIYUN_NPM_TOKEN }}
+
+      - name: Download npm package artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: npm-package
+          path: packages/
+
+      - name: Build artifact
+        run: |
+          cd packages/napi
+          pnpm run build --target x86_64-pc-windows-msvc
+          pnpm run build --target aarch64-pc-windows-msvc
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: windows-napi
+          path: packages/napi/dist/*.node
+          if-no-files-found: error
+
+  build-linux:
+    needs: build
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install
+        uses: ./.github/actions/install
+        with:
+          ALIYUN_NPM_TOKEN: ${{ secrets.ALIYUN_NPM_TOKEN }}
+
+      - name: Download npm package artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: npm-package
+          path: packages/
+
+      - name: Build artifact
+        run: |
+          cd packages/napi
+          pnpm run build --target x86_64-unknown-linux-gnu
+          pnpm run build --target aarch64-unknown-linux-gnu
+          pnpm run build --target x86_64-unknown-linux-musl
+          pnpm run build --target aarch64-unknown-linux-musl
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: linux-napi
+          path: packages/napi/dist/*.node
+          if-no-files-found: error
+
+  build-all:
+    needs: [build, build-macos, build-windows, build-linux]
+    runs-on: ubuntu-slim
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Download npm package artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: npm-package
+          path: packages/
+
+      - name: Download macOS artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: macos-napi
+          path: packages/napi/dist/
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: windows-napi
+          path: packages/napi/dist/
+
+      - name: Download Linux artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: linux-napi
+          path: packages/napi/dist/
+
+      - name: Reupload npm package artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: npm-package
+          path: |
+            packages/*/dist/
+            packages/*/lib/
+          if-no-files-found: error
+          overwrite: true
+
+  test:
+    needs: build-all
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
@@ -67,7 +219,6 @@ jobs:
         uses: ./.github/actions/install
         with:
           ALIYUN_NPM_TOKEN: ${{ secrets.ALIYUN_NPM_TOKEN }}
-          pnpm-args: '--frozen-lockfile'
           node-version: ${{ matrix.node }}
 
       - name: Download npm package artifact
