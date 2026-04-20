@@ -25,7 +25,7 @@ debug_print("未命名:", unnamed);
 debug_print("空记录:", empty);
 ```
 
-:::info 单元素记录
+:::info[单元素记录]
 
 创建只有一个未命名元素的记录时，需要加尾逗号以区别于括号分组：
 
