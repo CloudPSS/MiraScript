@@ -31,6 +31,8 @@ export const values = VmLib(
     (data) => {
         expectArrayOrRecord('data', data, []);
         if (isVmArray(data)) {
+            // holes & undefined values will be kept as-is,
+            // and handled by further processing if needed
             return data;
         }
         return _values(data);
