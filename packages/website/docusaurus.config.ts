@@ -149,10 +149,10 @@ export default {
                     to: '/playground/',
                     label: '在线编辑器',
                 },
-                // {
-                //     to: '/blog/',
-                //     label: '博客',
-                // },
+                {
+                    to: '/blog/',
+                    label: '博客',
+                },
                 {
                     href: 'https://github.com/CloudPSS/MiraScript',
                     position: 'right',

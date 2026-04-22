@@ -73,7 +73,7 @@ MiraScript 是一门表达式优先、不可变数据为核心的脚本语言。
 | 数组/矩阵    | `[[1 ,2 ,3], [4, 5, 6]]`                    | `[[1 ,2 ,3], [4, 5, 6]]` / `[1, 2, 3; 4, 5, 6]`             |
 | 序列         | `[1..9]` / `[1..<10]`                       | `1:9`                                                       |
 | 记录（对象） | `(a: 1, b: 'str')` / `{"a": 1, "b": "str"}` | `{a: 1, b: 'str'}` / `{"a": 1, "b": "str"}`                 |
-| 格式化字符串 | `'$(data.value) kW'`                        | `print('$data kW', { data: data.value })`                   |
+| 格式化字符串 | `'$(data.value) kW'`                        | `print('$1 kW', [data.value])`                              |
 | 矩阵操作     | `matrix.add(mA, mB)`                        | `mA + mB`                                                   |
 | 函数调用     | `map(values(cells), fn { it.key })`         | `values(cells).map(mapper(v, i, arr) = v.key)`              |
 | 数值近似相等 | `x =~ y` / `value !~ 1`                     | `x == y` / `value != 1`                                     |
