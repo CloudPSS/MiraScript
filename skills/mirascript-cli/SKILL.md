@@ -186,6 +186,6 @@ mirascript --template -e "Hello, \${name}!" -v "name='World'"
 
 ## 注意事项
 
-- **多行代码**：在 shell 中传递多行代码时，使用引号包裹或 heredoc；在 PowerShell 中使用 `@'...'@` 多行字符串
+- **多行代码**：在 shell 中传递多行代码时，使用 heredoc；在 PowerShell 中使用 `echo @''@| mirascript -` 避免 `npx` 传递参数错误
 - **引号转义**：`-v` 中的字符串字面量须注意 shell 引号转义，优先使用逐字字符串 `@"..."@` 避免转义冲突
 - **超时限制**：默认超时 3000ms，复杂算法或循环测试时加 `--timeout 0`
