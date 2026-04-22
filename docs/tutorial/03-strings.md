@@ -109,6 +109,14 @@ let name = "Alice";
 debug_print(@"Hello, $name! Path: C:\Users"@);
 ```
 
+要在逐字字符串中使用 `$` 或 `"@`，使用更多的 `@` 包裹：
+
+```mira
+// 使用与 @ 数量相同的 $ 来插值
+let name = "Bob";
+debug_print(@@"Hello, $$name! This is a literal @""@ and $ symbol."@@);
+```
+
 ## 常用字符串函数
 
 ### 查找与判断

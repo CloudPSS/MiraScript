@@ -60,7 +60,7 @@ debug_print("3 × 4 =", multiply(3, 4));
 debug_print("3³ =", cube(3));
 ```
 
-:::info 函数声明 vs 函数表达式
+:::info[函数声明 vs 函数表达式]
 函数声明 `fn name(...)` 会被**提升**，可以在声明之前调用。函数表达式没有这个特性：
 
 ```mira
