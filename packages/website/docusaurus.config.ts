@@ -38,6 +38,7 @@ export default {
     },
 
     markdown: {
+        format: 'detect',
         hooks: {
             onBrokenMarkdownImages: 'throw',
             onBrokenMarkdownLinks: 'throw',
@@ -96,16 +97,28 @@ export default {
                     path: '../../docs',
                     showLastUpdateTime: true,
                     editUrl: 'https://github.com/CloudPSS/MiraScript/edit/main/packages/website',
+
+                    onInlineTags: 'throw',
+
                     ...MDX_OPTIONS,
                 },
-                blog: false,
-                // {
-                //     routeBasePath: '/blog',
-                //     path: '../../blog',
-                //     showReadingTime: true,
-                //     editUrl: 'https://github.com/CloudPSS/MiraScript/edit/main/packages/website',
-                //     ...MDX_OPTIONS,
-                // },
+                blog: {
+                    blogSidebarCount: 'ALL',
+                    blogTitle: '博客',
+                    blogDescription: 'MiraScript 博客',
+                    blogSidebarTitle: '所有文章',
+
+                    routeBasePath: '/blog',
+                    path: '../../blog',
+                    showReadingTime: true,
+                    editUrl: 'https://github.com/CloudPSS/MiraScript/edit/main/packages/website',
+
+                    onInlineTags: 'throw',
+                    onInlineAuthors: 'throw',
+                    onUntruncatedBlogPosts: 'throw',
+
+                    ...MDX_OPTIONS,
+                },
                 theme: {
                     customCss: './src/css/index.css',
                 },
@@ -133,9 +146,13 @@ export default {
                     label: '速查手册',
                 },
                 {
-                    href: '/playground/',
+                    to: '/playground/',
                     label: '在线编辑器',
                 },
+                // {
+                //     to: '/blog/',
+                //     label: '博客',
+                // },
                 {
                     href: 'https://github.com/CloudPSS/MiraScript',
                     position: 'right',
