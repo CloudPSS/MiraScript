@@ -4,10 +4,11 @@ import { createScript, type VmScript } from './create-script.js';
 import { compileFast } from './compile-fast.js';
 import { generateBytecode, generateBytecodeSync } from './generate-bytecode.js';
 import { compileWorker } from './worker-manager.js';
-import { emitScript, reportDiagnostic } from './emit-script.js';
+import { emitScript, CompileError } from './emit-script.js';
 
 export * from './types.js';
 export type { VmScript };
+export { CompileError };
 
 // 目前编译速度约 2000kB/s
 const WORKER_MIN_LEN = typeof Worker != 'function' ? Number.MAX_VALUE : 1024;
@@ -39,7 +40,7 @@ export async function compile(this: void, source: ScriptInput, options?: Transpi
     }
     const [target, diagnostics] = await compileWorker(source, options);
     if (target == null) {
-        reportDiagnostic(source, diagnostics, options.fileName);
+        throw new CompileError(source, diagnostics, options.fileName);
     }
     return createScript(source, options.input_mode ?? 'Script', target);
 }

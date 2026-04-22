@@ -59,9 +59,11 @@ program
         if (script) {
             let codeStr: string;
             let template: boolean;
+            let url: string;
             if (script === '-') {
                 codeStr = await text(process.stdin);
                 template = !!opt.template;
+                url = 'stdin';
             } else {
                 try {
                     const s = await stat(script);
@@ -86,8 +88,9 @@ program
 
                 codeStr = await readFile(script, 'utf8');
                 template = opt.template ?? script.endsWith('.miratpl');
+                url = pathToFileURL(script).href;
             }
-            await execute(codeStr, template, opt.variable, pathToFileURL(script).href);
+            await execute(codeStr, template, opt.variable, url);
             return;
         }
         program.help({ error: true });

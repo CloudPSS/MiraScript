@@ -4,11 +4,20 @@ import { emit } from './emit/index.js';
 import { createScript, type VmScript } from './create-script.js';
 import { DiagnosticCode, formatDiagnostics, parseDiagnostics } from './diagnostic.js';
 
-/** 报告编译错误 */
-export function reportDiagnostic(source: ScriptInput, diagnostics: Uint32Array, fileName: string | undefined): never {
-    const parsed = parseDiagnostics(source, diagnostics);
-    const messages = formatDiagnostics(parsed.errors, source, fileName);
-    throw new Error(`Failed to compile:\n${messages.join('\n')}`);
+/** 编译错误 */
+export class CompileError extends Error {
+    constructor(
+        source: ScriptInput,
+        diagnostics: Uint32Array,
+        readonly fileName: string | undefined,
+    ) {
+        const parsed = parseDiagnostics(source, diagnostics);
+        const messages = formatDiagnostics(parsed.errors, source, fileName);
+        super(`Failed to compile:\n${messages.join('\n')}`);
+        this.diagnostics = messages;
+    }
+    readonly diagnostics: readonly string[];
+    override readonly name = 'CompileError';
 }
 
 /**
@@ -20,7 +29,7 @@ export function emitScript(
     options: TranspileOptions,
 ): VmScript {
     if (!code) {
-        reportDiagnostic(source, diagnostics, options.fileName);
+        throw new CompileError(source, diagnostics, options.fileName);
     }
     const sourcemaps = options.sourceMap
         ? parseDiagnostics(source, diagnostics, (c) => c === DiagnosticCode.SourceMap).sourcemaps
