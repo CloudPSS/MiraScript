@@ -66,7 +66,7 @@ fn add(x, y) {
   x + y
 }
 
-// 单参数简写——省略参数名，使用 it
+// 单参数简写——省略参数名和圆括号，使用 it
 fn double { it * 2 }
 fn square { it^2 }
 ```
@@ -281,21 +281,21 @@ let value = maybe_nil!;
 
 ### 集合操作
 
-| 函数                      | 说明               |
-| ------------------------- | ------------------ |
-| `len(arr)`                | 数组或记录的长度   |
-| `keys(record)`            | 记录的键列表       |
-| `values(record)`          | 记录的值列表       |
-| `map(data, fn)`           | 映射每个元素       |
-| `filter(data, fn)`        | 过滤元素           |
-| `filter_map(data, fn)`    | 映射并过滤 nil     |
-| `find(data, fn)`          | 查找第一个匹配元素 |
-| `all(data, fn)`           | 所有元素满足条件   |
-| `any(data, fn)`           | 存在元素满足条件   |
-| `sort(data, fn?)`         | 排序               |
-| `sort_by(data, key, fn?)` | 按字段排序         |
-| `join(arr, sep)`          | 数组连接为字符串   |
-| `with(data, ..entries)`   | 创建更新后的副本   |
+| 函数                                                        | 说明                                      |
+| ----------------------------------------------------------- | ----------------------------------------- |
+| `len(arr)`                                                  | 数组或记录的长度                          |
+| `keys(record)`                                              | 记录的键列表                              |
+| `values(record)`                                            | 记录的值列表                              |
+| `map(data, fn)`                                             | 映射每个元素                              |
+| `filter(data, fn)`                                          | 过滤元素                                  |
+| `filter_map(data, fn)`                                      | 映射并过滤 nil                            |
+| `find(data, fn)`                                            | 查找第一个匹配元素（返回 `(key, value)`） |
+| `all(data, fn)`                                             | 所有元素满足条件                          |
+| `any(data, fn)`                                             | 存在元素满足条件                          |
+| `sort(data, comparer?)` / `sort_by(data, keyFn, comparer?)` | 排序                                      |
+| `unique(data, equal?)` / `unique_by(data, keyFn, equal?)`   | 去重                                      |
+| `join(arr, sep)`                                            | 数组连接为字符串                          |
+| `with(data, ..entries)`                                     | 创建更新后的副本                          |
 
 ### 字符串操作
 
@@ -314,7 +314,8 @@ let value = maybe_nil!;
 | `type(value)`            | 返回类型字符串 |
 | `to_number(v, default?)` | 转为数字       |
 | `to_string(v)`           | 转为字符串     |
-| `to_boolean(v)`          | 转为布尔值     |
+
+❌ 不支持 `to_boolean(v)` 及隐式转换为布尔值，依据需求生成合适的布尔表达式。
 
 ### 数学
 
