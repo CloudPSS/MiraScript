@@ -13,27 +13,29 @@ NotReturned = type("NotReturned", (), {})()
 
 # 类型别名
 VmPrimitive = Union[type(None), str, int, float, bool]
-        
+
 VmRecord = dict
 VmArray = list
 VmConst = Union[type(None), str, int, float, bool, dict, list]
 
 
-
-VM_ARRAY_MAX_LENGTH = 2 ** 31 - 1
-
-class VmFunctionLike():
-    def __call__(self, *args): ... # type: ignore
+VM_ARRAY_MAX_LENGTH = 2**31 - 1
 
 
-VmImmutable = Union[ VmConst ,  VmModule]
+class VmFunctionLike:
+    def __call__(self, *args): ...  # type: ignore
 
-VmValue =Union[ VmImmutable , VmExtern]
+
+VmImmutable = Union[VmConst, VmModule]
+
+VmValue = Union[VmImmutable, VmExtern]
 VmUninitialized = type(Uninitialized)
-VmAny = Union[VmValue , VmUninitialized]
+VmAny = Union[VmValue, VmUninitialized]
 
-kVmFunction = 'mirascript_vm_function'
-def getVmFunctionInfo(value) :
-    if (not callable(value)):
+kVmFunction = "mirascript_vm_function"
+
+
+def getVmFunctionInfo(value):
+    if not callable(value):
         return None
     return getattr(value, kVmFunction, None)

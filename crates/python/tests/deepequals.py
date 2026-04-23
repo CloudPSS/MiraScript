@@ -25,12 +25,14 @@ from typing import Any
 import math
 from collections.abc import Mapping, Sequence, Set
 
+
 def _is_nan(x: Any) -> bool:
     try:
         # math.isnan raises for non-floats, so guard safely
         return isinstance(x, float) and math.isnan(x)
     except Exception:
         return False
+
 
 def _is_signed_zero(x: Any) -> bool:
     # Only floats have signed zero behavior in Python
@@ -40,7 +42,10 @@ def _is_signed_zero(x: Any) -> bool:
     # copysign(1.0, x) returns -1.0 for negative zero
     return x == 0.0 and math.copysign(1.0, x) < 0
 
-def deep_equal(a: Any, b: Any, *, nan_equal: bool = True, signed_zero_distinct: bool = True) -> bool:
+
+def deep_equal(
+    a: Any, b: Any, *, nan_equal: bool = True, signed_zero_distinct: bool = True
+) -> bool:
     """
     Recursively compare a and b for deep equality with special float rules.
 
@@ -53,7 +58,7 @@ def deep_equal(a: Any, b: Any, *, nan_equal: bool = True, signed_zero_distinct: 
     - True if considered equal under the given rules, else False.
     """
     # Identity fast-path
-    
+
     if a is b:
         # But if both are floats and signed_zero_distinct is True we still must
         # ensure +0.0 vs -0.0 are distinguished even if identical object (rare).
@@ -66,7 +71,7 @@ def deep_equal(a: Any, b: Any, *, nan_equal: bool = True, signed_zero_distinct: 
     if nan_equal:
         if _is_nan(a) and _is_nan(b):
             return True
-    
+
     # Both floats: handle signed zero and normal equality
     if isinstance(a, float) and isinstance(b, float):
         # If values equal (this includes +0.0 == -0.0)
@@ -91,23 +96,37 @@ def deep_equal(a: Any, b: Any, *, nan_equal: bool = True, signed_zero_distinct: 
             # Try to find a matching key in b_keys_unmatched using deep equality
             match_index = None
             for i, kb in enumerate(b_keys_unmatched):
-                if deep_equal(ka, kb, nan_equal=nan_equal, signed_zero_distinct=signed_zero_distinct):
+                if deep_equal(
+                    ka,
+                    kb,
+                    nan_equal=nan_equal,
+                    signed_zero_distinct=signed_zero_distinct,
+                ):
                     match_index = i
                     break
             if match_index is None:
                 return False
             kb = b_keys_unmatched.pop(match_index)
             vb = b[kb]
-            if not deep_equal(va, vb, nan_equal=nan_equal, signed_zero_distinct=signed_zero_distinct):
+            if not deep_equal(
+                va, vb, nan_equal=nan_equal, signed_zero_distinct=signed_zero_distinct
+            ):
                 return False
         return True
 
     # Sequence (list/tuple) — ordered comparison; but strings are sequences too
-    if isinstance(a, Sequence) and isinstance(b, Sequence) and not isinstance(a, (str, bytes, bytearray)) and not isinstance(b, (str, bytes, bytearray)):
+    if (
+        isinstance(a, Sequence)
+        and isinstance(b, Sequence)
+        and not isinstance(a, (str, bytes, bytearray))
+        and not isinstance(b, (str, bytes, bytearray))
+    ):
         if len(a) != len(b):
             return False
         for xa, xb in zip(a, b):
-            if not deep_equal(xa, xb, nan_equal=nan_equal, signed_zero_distinct=signed_zero_distinct):
+            if not deep_equal(
+                xa, xb, nan_equal=nan_equal, signed_zero_distinct=signed_zero_distinct
+            ):
                 return False
         return True
 
@@ -120,7 +139,12 @@ def deep_equal(a: Any, b: Any, *, nan_equal: bool = True, signed_zero_distinct: 
         for xa in a:
             matched = False
             for i, xb in enumerate(b_items):
-                if deep_equal(xa, xb, nan_equal=nan_equal, signed_zero_distinct=signed_zero_distinct):
+                if deep_equal(
+                    xa,
+                    xb,
+                    nan_equal=nan_equal,
+                    signed_zero_distinct=signed_zero_distinct,
+                ):
                     matched = True
                     b_items.pop(i)
                     break
@@ -134,7 +158,15 @@ def deep_equal(a: Any, b: Any, *, nan_equal: bool = True, signed_zero_distinct: 
         # If equality throws, fallback to identity (already checked) -> not equal
         return False
 
-def assert_deep_equal(a: Any, b: Any, *, nan_equal: bool = True, signed_zero_distinct: bool = True, message: str = None) -> None:
+
+def assert_deep_equal(
+    a: Any,
+    b: Any,
+    *,
+    nan_equal: bool = True,
+    signed_zero_distinct: bool = True,
+    message: str = None,
+) -> None:
     """
     Assert that deep_equal(a, b) is True. Raises AssertionError otherwise.
     The raised message includes a brief description of the mismatch.
@@ -146,18 +178,29 @@ def assert_deep_equal(a: Any, b: Any, *, nan_equal: bool = True, signed_zero_dis
         raise AssertionError(f"{base_msg}: {message}")
     else:
         raise AssertionError(base_msg)
-    
-def assert_not_deep_equal(a: Any, b: Any, *, nan_equal: bool = True, signed_zero_distinct: bool = True, message: str = None) -> None:
+
+
+def assert_not_deep_equal(
+    a: Any,
+    b: Any,
+    *,
+    nan_equal: bool = True,
+    signed_zero_distinct: bool = True,
+    message: str = None,
+) -> None:
     """
     Assert that deep_equal(a, b) is False. Raises AssertionError otherwise.
     """
-    if not deep_equal(a, b, nan_equal=nan_equal, signed_zero_distinct=signed_zero_distinct):
+    if not deep_equal(
+        a, b, nan_equal=nan_equal, signed_zero_distinct=signed_zero_distinct
+    ):
         return
     base_msg = f"Objects are unexpectedly equal (nan_equal={nan_equal}, signed_zero_distinct={signed_zero_distinct})"
     if message:
         raise AssertionError(f"{base_msg}: {message}")
     else:
         raise AssertionError(base_msg)
+
 
 if __name__ == "__main__":
     # Quick demonstration / smoke tests

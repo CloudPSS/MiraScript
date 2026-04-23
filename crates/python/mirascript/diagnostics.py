@@ -1,6 +1,4 @@
-
 from .mirascript import get_diagnostic_message
-
 
 # DiagnosticLevel = Literal["Error", "Warning", "Info", "Hint", "Reference", "Unknown"]
 
@@ -69,7 +67,7 @@ class Diagnostic:
         )
 
 
-def decode_diagnostics(diagnostics) :
+def decode_diagnostics(diagnostics):
     """
     解析诊断信息
 

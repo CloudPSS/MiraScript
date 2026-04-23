@@ -9,7 +9,6 @@ from mirascript.vm.helpers import config_checkpoint
 from mirascript.mirascript import Config
 from .deepequals import assert_deep_equal, assert_not_deep_equal
 
-
 TEST_DIR = (Path(__file__) / "../../../../tests").resolve()
 
 SKIP_TESTS = {
@@ -21,7 +20,6 @@ SKIP_TESTS = {
     "lib/sequence/unique_by.mira",
     "lib/sequence/unique.mira",
     "lib/sequence/new.mira",
-    "lib/math/round.mira",
     "logic/loop.mira",
     "feature/module.mira",
 }

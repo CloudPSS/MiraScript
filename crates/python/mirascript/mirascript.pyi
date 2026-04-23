@@ -1,4 +1,3 @@
-
 # from .diagnostics import DiagnosticLevel
 
 class ConfigData(object):
@@ -28,7 +27,7 @@ class Config:
         """
         ...
 
-def compile(script: str, config: Config) :
+def compile(script: str, config: Config):
     """
     编译 MiraScript 代码，生成字节码
 
@@ -41,7 +40,7 @@ def compile(script: str, config: Config) :
     """
     ...
 
-def get_diagnostic_message(code: int) :
+def get_diagnostic_message(code: int):
     """
     获取诊断信息的消息
 
@@ -53,7 +52,7 @@ def get_diagnostic_message(code: int) :
     """
     ...
 
-def op_codes() :
+def op_codes():
     """
     获取 MiraScript 的所有操作码
 
