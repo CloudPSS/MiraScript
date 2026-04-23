@@ -36,8 +36,8 @@ def unwrap_from_vm_value(value):
 
 
 class VmExtern(VmWrapper):
-
-    _VM_EXTERN_SYMBOL = "mirascript.vm.extern"
+    
+    _VM_EXTERN_SYMBOL='mirascript.vm.extern'
 
     def __init__(self, value, caller=None):
         super().__init__(value)
@@ -45,20 +45,20 @@ class VmExtern(VmWrapper):
         setattr(self, self._VM_EXTERN_SYMBOL, True)
 
     def access(self, key: str, read: bool) -> bool:
-
+        
         if key.startswith("_"):
             return False
         if callable(self.value) and key in ("prototype", "arguments", "caller"):
             return False
         if hasattr(self.value, key):
             return True
-
+        
         if not read:
             return True
-
-        if not key in self.value:
+        
+        if not key  in self.value:
             return False
-
+        
         if key == "constructor":
             return False
         # 跳过内建属性
@@ -70,7 +70,7 @@ class VmExtern(VmWrapper):
     def get(self, key: str) -> Any:
         if not self.has(key):
             return None
-
+        
         prop = self.value[key]
         return wrap_to_vm_value(prop, self)
 
@@ -83,7 +83,7 @@ class VmExtern(VmWrapper):
 
     def call(self, args):
         if not callable(self.value):
-            raise VmError.from_("Not a callable extern", None, None)
+            raise VmError.from_("Not a callable extern",None,None)
         caller = self.caller.value if self.caller else None
         unwrapped_args = [unwrap_from_vm_value(a) for a in args]
         # Python 没有 Reflect.apply，直接调用

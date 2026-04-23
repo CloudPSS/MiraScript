@@ -11,30 +11,27 @@ MAX_DEPTH = 100
 REG_IDENTIFIER_FULL = REG_IDENTIFIER
 REG_ORDINAL_FULL = REG_ORDINAL
 
-
 def serializeNil() -> str:
-    return "nil"
-
+    return 'nil'
 
 def serializeBoolean(value: bool) -> str:
-    return "true" if value else "false"
-
+    return 'true' if value else 'false'
 
 def serializeNumber(value: float) -> str:
     if math.isnan(value):
-        return "nan"
+        return 'nan'
     if not math.isfinite(value):
-        return "-inf" if value < 0 else "inf"
-    if value == 0:
-        if math.copysign(1, value) < 0:
-            return "-0"
-        return "0"
+        return '-inf' if value < 0 else 'inf'
+    if value ==0:
+        if math.copysign(1,value)<0:
+            return '-0'
+        return '0'
     return str(value)
 
 
-def serializeStringImpl(value, options):
-    import re
 
+def serializeStringImpl(value,options):
+    import re
     if not re.search(r'[\\p{C}\'"`$\\]', value, re.UNICODE):
         # 不包含特殊字符
         oq = options.serializeStringQuote("'", True, options)
@@ -46,40 +43,40 @@ def serializeStringImpl(value, options):
         if char == "'":
             esc = options.serializeStringEscape("\\'", "'", options)
             ret += esc
-        elif char == "\0":
-            esc = options.serializeStringEscape("\\0", "\0", options)
+        elif char == '\0':
+            esc = options.serializeStringEscape("\\0", '\0', options)
             ret += esc
-        elif char == "\n":
-            esc = options.serializeStringEscape("\\n", "\n", options)
+        elif char == '\n':
+            esc = options.serializeStringEscape("\\n", '\n', options)
             ret += esc
-        elif char == "\r":
-            esc = options.serializeStringEscape("\\r", "\r", options)
+        elif char == '\r':
+            esc = options.serializeStringEscape("\\r", '\r', options)
             ret += esc
-        elif char == "\t":
-            esc = options.serializeStringEscape("\\t", "\t", options)
+        elif char == '\t':
+            esc = options.serializeStringEscape("\\t", '\t', options)
             ret += esc
-        elif char == "\b":
-            esc = options.serializeStringEscape("\\b", "\b", options)
+        elif char == '\b':
+            esc = options.serializeStringEscape("\\b", '\b', options)
             ret += esc
-        elif char == "\f":
-            esc = options.serializeStringEscape("\\f", "\f", options)
+        elif char == '\f':
+            esc = options.serializeStringEscape("\\f", '\f', options)
             ret += esc
-        elif char == "\v":
-            esc = options.serializeStringEscape("\\v", "\v", options)
+        elif char == '\v':
+            esc = options.serializeStringEscape("\\v", '\v', options)
             ret += esc
-        elif char == "\\":
-            esc = options.serializeStringEscape("\\\\", "\\", options)
+        elif char == '\\':
+            esc = options.serializeStringEscape("\\\\", '\\', options)
             ret += esc
-        elif char == "$":
-            esc = options.serializeStringEscape("\\$", "$", options)
+        elif char == '$':
+            esc = options.serializeStringEscape("\\$", '$', options)
             ret += esc
-        elif re.match(r"\p{C}", char, re.UNICODE):
+        elif re.match(r'\p{C}', char, re.UNICODE):
             code = ord(char)
-            if code <= 0x7F:
+            if code <= 0x7f:
                 esc = options.serializeStringEscape(f"\\x{code:02x}", char, options)
                 ret += esc
-            elif 0xD800 <= code <= 0xDFFF:
-                ret += "�"
+            elif 0xd800 <= code <= 0xdfff:
+                ret += '�'
             else:
                 esc = options.serializeStringEscape(f"\\u{{{code:x}}}", char, options)
                 ret += esc
@@ -87,19 +84,18 @@ def serializeStringImpl(value, options):
             ret += char
     ret += options.serializeStringQuote("'", False, options)
     return ret
-
-
-def serializeArray(value, depth, options) -> str:
+    
+    
+def serializeArray(value, depth,options) -> str:
     if len(value) == 0:
-        return "[]"
-    str_ = "["
+        return '[]'
+    str_ = '['
     for i, v in enumerate(value):
         if i > 0:
-            str_ += ", "
-        str_ += serializeImpl(v, depth, options)
-    str_ += "]"
+            str_ += ', '
+        str_ += serializeImpl(v, depth,options)
+    str_ += ']'
     return str_
-
 
 def serializeRecord(value, depth, options) -> str:
     custom_value = custom_value_of(value)
@@ -107,26 +103,23 @@ def serializeRecord(value, depth, options) -> str:
         return serializeImpl(custom_value, depth - 1, options)
     entries = list(value.items())
     if len(entries) == 0:
-        return "()"
+        return '()'
     if len(entries) == 1:
         k, v = entries[0]
-        if k == "0":
+        if k == '0':
             return f"({serializeImpl(v, depth, options)},)"
         return f"({serialize_prop_name(k)}: {serializeImpl(v, depth, options)})"
-    omit_key = len(entries) < 10 and all(
-        str(index) == key for index, (key, _) in enumerate(entries)
-    )
-    str_ = "("
+    omit_key = len(entries) < 10 and all(str(index) == key for index, (key, _) in enumerate(entries))
+    str_ = '('
     for idx, (key, val) in enumerate(entries):
         if len(str_) > 1:
-            str_ += ", "
+            str_ += ', '
         if omit_key:
             str_ += serializeImpl(val, depth, options)
         else:
             str_ += f"{serialize_prop_name(key)}: {serializeImpl(val, depth, options)}"
-    str_ += ")"
+    str_ += ')'
     return str_
-
 
 def displayFunction(value):
     try:
@@ -136,82 +129,73 @@ def displayFunction(value):
         return "<function>"
     except Exception:
         return "<function>"
-
-
 class DEFAULT_OPTIONS:
-    serializeNil = serializeNil
-    serializeBoolean = serializeBoolean
-    serializeNumber = serializeNumber
-    serializeString = serializeStringImpl
-    serializeStringQuote = lambda value: value
-    serializeStringEscape = lambda value: value
-    serializeStringContent = lambda value: value
+    serializeNil=serializeNil
+    serializeBoolean=serializeBoolean
+    serializeNumber=serializeNumber
+    serializeString=serializeStringImpl
+    serializeStringQuote= lambda value: value
+    serializeStringEscape=lambda value: value
+    serializeStringContent=lambda value: value
     serializeArray = serializeArray
     serializeRecord = serializeRecord
     serializePropName = str
-    serializeFunction = serializeNil
+    serializeFunction= serializeNil
     serializeModule = serializeNil
     serializeExtern = serializeNil
-
-
 # DEFAULT_OPTIONS= DefaultOptions()
 
 
-def mergeOptions(base, options):
+def mergeOptions(base,options):
     if options is None or options is Uninitialized:
         return base
     result = base.copy()
     for key, value in options.items():
         result[key] = value
     return result
-
-
 def getSerializeOptions(options):
     if options is None or options is Uninitialized:
         return DISPLAY_OPTIONS
     return mergeOptions(DISPLAY_OPTIONS, options)
 
-
 def serialize_string(value: str) -> str:
     import re
-
     if not re.search(r"[\p{C}'\"`$\\]", value):
         return f"'{value}'"
     ret = "'"
     for char in value:
         if char == "'":
             ret += "\\'"
-        elif char == "\0":
+        elif char == '\0':
             ret += "\\0"
-        elif char == "\n":
+        elif char == '\n':
             ret += "\\n"
-        elif char == "\r":
+        elif char == '\r':
             ret += "\\r"
-        elif char == "\t":
+        elif char == '\t':
             ret += "\\t"
-        elif char == "\b":
+        elif char == '\b':
             ret += "\\b"
-        elif char == "\f":
+        elif char == '\f':
             ret += "\\f"
-        elif char == "\v":
+        elif char == '\v':
             ret += "\\v"
-        elif char == "\\":
+        elif char == '\\':
             ret += "\\\\"
-        elif char == "$":
+        elif char == '$':
             ret += "\\$"
-        elif re.match(r"\p{C}", char):
+        elif re.match(r'\p{C}', char):
             code = ord(char)
-            if code <= 0x7F:
+            if code <= 0x7f:
                 ret += f"\\x{code:02x}"
-            elif 0xD800 <= code <= 0xDFFF:
-                ret += "�"
+            elif 0xd800 <= code <= 0xdfff:
+                ret += '�'
             else:
                 ret += f"\\u{{{code:x}}}"
         else:
             ret += char
     ret += "'"
     return ret
-
 
 def serialize_prop_name(value: str) -> str:
     if REG_ORDINAL_FULL.fullmatch(value):
@@ -221,14 +205,19 @@ def serialize_prop_name(value: str) -> str:
     return serialize_string(value)
 
 
+
+
+
+
 def custom_value_of(value):
-    this_value_of = getattr(value, "valueOf", None)
+    this_value_of = getattr(value, 'valueOf', None)
     if not callable(this_value_of):
         return None
     custom_value = this_value_of()
     if custom_value is value:
         return None
     return custom_value
+
 
 
 def serializeImpl(value, depth: int, options) -> str:
@@ -239,29 +228,30 @@ def serializeImpl(value, depth: int, options) -> str:
     if isinstance(value, (int, float)):
         return options.serializeNumber(value)
     if isinstance(value, str):
-        return options.serializeString(value, options)
-
+        return options.serializeString(value,  options)
+    
+    
     if isVmFunction(value):
         return options.serializeFunction(value)
     if is_vm_module(value):
         return options.serializeModule(value)
     if is_vm_extern(value):
         return options.serializeExtern(value)
-
+    
     if is_vm_array(value):
         return serializeArray(value, depth + 1, options)
     if is_vm_record(value):
         return serializeRecord(value, depth + 1, options)
-
+    
+    
     # 不支持序列化的值
     return options.serializeNil(options)
 
-
 def serialize(value, options=Uninitialized) -> str:
-    return serializeImpl(value, 0, getSerializeOptions(options))
+    return serializeImpl(value, 0,  getSerializeOptions(options))
 
 
-def displayWrapper(value, useBraces, fallback):
+def displayWrapper(value,useBraces,fallback):
     try:
         return value.toString(useBraces)
     except Exception:
@@ -269,19 +259,19 @@ def displayWrapper(value, useBraces, fallback):
 
 
 class DISPLAY_OPTIONS:
-    serializeNil = serializeNil
-    serializeBoolean = serializeBoolean
-    serializeNumber = serializeNumber
-    serializeString = serializeStringImpl
-    serializeStringQuote = lambda value, open, options: value
-    serializeStringEscape = lambda value, open, options: value
-    serializeStringContent = lambda value, options: value
+    serializeNil=serializeNil
+    serializeBoolean=serializeBoolean
+    serializeNumber=serializeNumber
+    serializeString=serializeStringImpl
+    serializeStringQuote= lambda value,open,options: value
+    serializeStringEscape=lambda value,open,options: value
+    serializeStringContent=lambda value,options: value
     serializeArray = serializeArray
     serializeRecord = serializeRecord
     serializePropName = str
-    serializeFunction = displayFunction
-    serializeModule = lambda value: displayWrapper(value, True, "<module>")
-    serializeExtern = lambda value: displayWrapper(value, True, "<extern>")
+    serializeFunction= displayFunction
+    serializeModule = lambda value: displayWrapper(value,True,'<module>')
+    serializeExtern = lambda value: displayWrapper(value,True,'<extern>')
 
 
 def display(value, options=Uninitialized):

@@ -7,7 +7,10 @@ from mirascript.vm.types.extern import is_vm_extern
 from .wrapper import VmWrapper
 from .module import VmModule
 
+
 MAX_DEPTH = 100
+
+
 
 
 def is_vm_primitive(value) -> bool:
@@ -95,7 +98,6 @@ def is_positive_zero(value: Any) -> bool:
 
 def is_negative_zero(value: Any) -> bool:
     return math.copysign(1.0, value) < 0 and value == 0.0
-
 
 def is_vm_callable(value) -> bool:
     if callable(value):

@@ -92,10 +92,10 @@ class FactoryVmContext(VmContext):
         value = self.getter(key)
         if value is not Uninitialized:
             return value
-        value = VmSharedContext.get(key, Uninitialized)
+        value= VmSharedContext.get(key, Uninitialized)
         if value is not Uninitialized:
             return value
-
+        
         raise VmError(f"Global variable '{key}' is not defined.", None)
 
     def has(self, key: str) -> bool:
@@ -107,7 +107,8 @@ def create_vm_context(*args) -> VmContext:
         return VmContext()
     if callable(args[0]):
         return FactoryVmContext(args[0], args[1] if len(args) > 1 else None)
-
+    
+    
     vm_values = args[0] if len(args) > 0 else None
     extern_values = args[1] if len(args) > 1 else None
     env = dict(VmSharedContext)

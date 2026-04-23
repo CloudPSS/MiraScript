@@ -4,7 +4,6 @@ import re
 from mirascript.vm.types.const import Uninitialized
 from .to_string import numberToString_, toString
 
-
 def formatNumber(num):
     if not math.isfinite(num):
         return toString(num)
@@ -31,7 +30,7 @@ def toFormat(val, fmt=None):
     f = ""
     if fmt is not None and fmt is not Uninitialized:
         f = fmt.strip()
-
+        
     if isinstance(val, bool):
         return toString(val)
 

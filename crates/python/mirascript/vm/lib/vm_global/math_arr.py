@@ -1,17 +1,15 @@
+
 from .._helpers import get_numbers
 from functools import reduce as _reduce
 import math
 import sys
 from ...types.checker import is_positive_zero, is_negative_zero
 
-
 def build(func):
     def wrapper(*args):
         numbers = get_numbers(args)
         return func(*numbers)
-
     return wrapper
-
 
 def _max(*args):
     high = -math.inf
@@ -24,9 +22,7 @@ def _max(*args):
             high = num
     return high
 
-
 max_ = build(_max)
-
 
 def _min(*args):
     low = math.inf
@@ -39,9 +35,7 @@ def _min(*args):
             low = num
     return low
 
-
 min_ = build(_min)
-
 
 def hypot(*args):
     numbers = get_numbers(args)
@@ -64,7 +58,6 @@ def hypot(*args):
             return math.nan
         s += n * n
     return math.sqrt(s)
-
-
 sum_ = build(lambda *args: _reduce(lambda a, b: a + b, args, -0.0))
 product = build(lambda *args: _reduce(lambda a, b: a * b, args, 1.0))
+
