@@ -79,14 +79,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "constants"
-version = "0.1.0"
-dependencies = [
- "mira-core",
- "wasm-bindgen",
-]
-
-[[package]]
 name = "convert_case"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -314,16 +306,16 @@ dependencies = [
 ]
 
 [[package]]
-name = "mira-cli"
-version = "0.1.0"
+name = "mira-constants"
+version = "0.1.62-alpha.23"
 dependencies = [
- "mimalloc",
  "mira-core",
+ "wasm-bindgen",
 ]
 
 [[package]]
 name = "mira-core"
-version = "0.1.0"
+version = "0.1.62-alpha.23"
 dependencies = [
  "divan",
  "mimalloc",
@@ -336,13 +328,33 @@ dependencies = [
 ]
 
 [[package]]
-name = "mirascript"
-version = "1.0.0"
+name = "mira-napi"
+version = "0.1.62-alpha.23"
+dependencies = [
+ "mimalloc",
+ "mira-core",
+ "napi",
+ "napi-build",
+ "napi-derive",
+]
+
+[[package]]
+name = "mira-python"
+version = "0.1.62-alpha.23"
 dependencies = [
  "mimalloc",
  "mira-core",
  "pyo3",
  "serde",
+]
+
+[[package]]
+name = "mira-wasm"
+version = "0.1.62-alpha.23"
+dependencies = [
+ "console_error_panic_hook",
+ "mira-core",
+ "wasm-bindgen",
 ]
 
 [[package]]
@@ -402,17 +414,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8eb602b84d7c1edae45e50bbf1374696548f36ae179dfa667f577e384bb90c2b"
 dependencies = [
  "libloading",
-]
-
-[[package]]
-name = "node-api"
-version = "0.0.0"
-dependencies = [
- "mimalloc",
- "mira-core",
- "napi",
- "napi-build",
- "napi-derive",
 ]
 
 [[package]]
@@ -666,15 +667,6 @@ name = "unicode-segmentation"
 version = "1.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9629274872b2bfaf8d66f5f15725007f635594914870f65218920345aa11aa8c"
-
-[[package]]
-name = "wasm"
-version = "0.1.0"
-dependencies = [
- "console_error_panic_hook",
- "mira-core",
- "wasm-bindgen",
-]
 
 [[package]]
 name = "wasm-bindgen"

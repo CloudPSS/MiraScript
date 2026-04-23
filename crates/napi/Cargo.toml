@@ -1,6 +1,6 @@
 [package]
-name = "node-api"
-version = "0.0.0"
+name = "mira-napi"
+version = "0.1.62-alpha.23"
 edition = "2024"
 publish = false
 
