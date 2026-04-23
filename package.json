@@ -17,11 +17,11 @@
     "extends": "@cloudpss"
   },
   "devDependencies": {
-    "@cloudpss/commitlint-config": "^3.0.37",
-    "@cloudpss/eslint-config": "^3.0.37",
-    "@cloudpss/lint-staged-config": "^3.0.37",
-    "@cloudpss/prettier-config": "^3.0.37",
-    "@cloudpss/tsconfig": "^3.0.37",
+    "@cloudpss/commitlint-config": "^3.0.38",
+    "@cloudpss/eslint-config": "^3.0.38",
+    "@cloudpss/lint-staged-config": "^3.0.38",
+    "@cloudpss/prettier-config": "^3.0.38",
+    "@cloudpss/tsconfig": "^3.0.38",
     "@mirascript/cli": "workspace:*",
     "better-typescript-lib": "^2.12.0",
     "esbuild": "^0.28.0",
