@@ -78,11 +78,11 @@ def toString(value, fallback=Uninitialized, useBraces=False):
     if isinstance(value, str):
         return value
     try:
-        x= innerToString_(value, useBraces)
+        x = innerToString_(value, useBraces)
         return x
     except Exception as ex:
         if fallback is Uninitialized:
-            e= VmError(f"Cannot convert to string: {value}", "") 
+            e = VmError(f"Cannot convert to string: {value}", "")
             e.__cause__ = ex
             raise e
         return fallback

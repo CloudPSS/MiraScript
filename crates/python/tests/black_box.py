@@ -9,7 +9,6 @@ from mirascript.vm.helpers import config_checkpoint
 from mirascript.mirascript import Config
 from tests.deepequals import assert_deep_equal, assert_not_deep_equal
 
-
 TEST_DIR = (Path(__file__) / "../../../../tests").resolve()
 
 SKIP_TESTS = {

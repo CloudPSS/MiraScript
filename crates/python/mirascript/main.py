@@ -5,9 +5,7 @@ from .diagnostics import decode_diagnostics, Diagnostic
 DefaultConfig = Config(input_mode="script")
 
 
-def compile(
-    script: str, config: Config = DefaultConfig
-) :
+def compile(script: str, config: Config = DefaultConfig):
     """
     编译 MiraScript 代码，生成 Python 函数
 
@@ -23,4 +21,3 @@ def compile(
     decoded_diagnostics = decode_diagnostics(diagnostics)
     func = emit(bytecode) if bytecode else None
     return func, decoded_diagnostics
-
