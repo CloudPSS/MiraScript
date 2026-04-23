@@ -330,7 +330,7 @@ export class CompileResult {
         const { locals, params, ranges } = this.groupedTags(model);
 
         // 1. 提取所有 Scope 范围
-        const scopes = ranges
+        const scopes: Array<Writable<SourceScope>> = ranges
             .filter((r) => r.code === DiagnosticCode.Scope)
             .map((r) => {
                 return {
@@ -339,7 +339,7 @@ export class CompileResult {
                     params: [],
                     parent: undefined,
                     children: [],
-                } as Writable<SourceScope>;
+                };
             });
 
         // 2. 按范围嵌套关系构建父子树

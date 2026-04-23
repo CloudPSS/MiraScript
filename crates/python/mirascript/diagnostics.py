@@ -1,8 +1,8 @@
-from typing import Literal, TypedDict
+
 from .mirascript import get_diagnostic_message
 
 
-DiagnosticLevel = Literal["Error", "Warning", "Info", "Hint", "Reference", "Unknown"]
+# DiagnosticLevel = Literal["Error", "Warning", "Info", "Hint", "Reference", "Unknown"]
 
 
 class Diagnostic:
@@ -10,7 +10,7 @@ class Diagnostic:
     诊断信息类
     """
 
-    __cache: dict[int, tuple[DiagnosticLevel, str, str]] = {}
+    __cache = {}
 
     start_line: int
     """起始行号"""
@@ -22,7 +22,7 @@ class Diagnostic:
     """结束列号"""
     code: int
     """诊断代码"""
-    level: DiagnosticLevel
+    level: str
     """诊断级别"""
     name: str
     """诊断名称"""
@@ -69,7 +69,7 @@ class Diagnostic:
         )
 
 
-def decode_diagnostics(diagnostics: list[int]) -> list[Diagnostic]:
+def decode_diagnostics(diagnostics) :
     """
     解析诊断信息
 

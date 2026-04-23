@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import styles from 'ansi-styles';
 import supportsColor from 'supports-color';
-import { compile, createVmContext, type VmValue } from '@mirascript/mirascript';
+import { compile, CompileError, createVmContext, type VmValue } from '@mirascript/mirascript';
 import { lib } from '@mirascript/mirascript/subtle';
 import { print } from './print.js';
 
@@ -33,11 +33,16 @@ export async function execute(
             console.log(print(r));
         }
     } catch (ex) {
-        const { stack } = ex as Error;
-        if (supportsColor.stderr) {
-            console.error(styles.red.open + stack + styles.red.close);
+        let message: string | undefined;
+        if (ex instanceof CompileError) {
+            message = ex.message;
         } else {
-            console.error(stack);
+            message = (ex as Error).stack ?? (ex as Error).message ?? String(ex);
+        }
+        if (supportsColor.stderr) {
+            console.error(styles.red.open + message + styles.red.close);
+        } else {
+            console.error(message);
         }
         process.exitCode = 2;
     }

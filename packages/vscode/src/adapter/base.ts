@@ -9,7 +9,7 @@ export function createAdapterFactory<From extends object, To extends object>(
     type ToWithSymbol = To & { [symbol]: From };
     const map = new WeakMap<From, ToWithSymbol>();
     const adapt = (from: From): To => {
-        if (from == null || typeof from !== 'object') return from as unknown as To;
+        if (from == null || typeof from !== 'object') return from;
 
         let to = map.get(from);
         if (to == null) {
@@ -23,7 +23,7 @@ export function createAdapterFactory<From extends object, To extends object>(
         return to;
     };
     const reverse = (to: To): From => {
-        if (to == null || typeof to !== 'object') return to as unknown as From;
+        if (to == null || typeof to !== 'object') return to;
 
         if (extract) {
             const result = extract(to);

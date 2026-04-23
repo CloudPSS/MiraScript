@@ -130,10 +130,10 @@ class MiraConfigData extends Disposable {
     /** 创建值 */
     private static createValue(value: VmImmutable | VmFunctionOption, maybeFunction?: boolean): VmImmutable {
         if (value == null || typeof value != 'object') {
-            return value;
+            return value satisfies VmImmutable;
         }
         if (!maybeFunction || isVmArray(value) || isVmExtern(value) || isVmModule(value)) {
-            return value as VmImmutable;
+            return value satisfies VmImmutable;
         }
 
         return VmFunction(() => {

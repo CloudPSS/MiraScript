@@ -11,6 +11,7 @@ test.serial('model can be loaded multiple times', async (t) => {
     const distTempPath = path.resolve(import.meta.dirname, '../dist_temp/');
     await fs.cp(distPath, distTempPath, { recursive: true });
     t.teardown(() => fs.rm(distTempPath, { recursive: true, force: true }));
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
     mod2 = (await import('../dist_temp/index.js' as string)) as typeof import('../dist/index.js');
     t.not(mod1, mod2);
     t.not(mod1.compile, mod2.compile);

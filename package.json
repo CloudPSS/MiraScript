@@ -2,7 +2,7 @@
   "name": "mirascript",
   "version": "0.1.62-alpha.23",
   "private": true,
-  "packageManager": "pnpm@10.33.0+sha512.10568bb4a6afb58c9eb3630da90cc9516417abebd3fabbe6739f0ae795728da1491e9db5a544c76ad8eb7570f5c4bb3d6c637b2cb41bfdcdb47fa823c8649319",
+  "packageManager": "pnpm@10.33.1",
   "type": "module",
   "engines": {
     "node": ">= 20"
@@ -20,11 +20,11 @@
     "extends": "@cloudpss"
   },
   "devDependencies": {
-    "@cloudpss/commitlint-config": "^3.0.37",
-    "@cloudpss/eslint-config": "^3.0.37",
-    "@cloudpss/lint-staged-config": "^3.0.37",
-    "@cloudpss/prettier-config": "^3.0.37",
-    "@cloudpss/tsconfig": "^3.0.37",
+    "@cloudpss/commitlint-config": "^3.0.38",
+    "@cloudpss/eslint-config": "^3.0.38",
+    "@cloudpss/lint-staged-config": "^3.0.38",
+    "@cloudpss/prettier-config": "^3.0.38",
+    "@cloudpss/tsconfig": "^3.0.38",
     "@mirascript/cli": "workspace:*",
     "better-typescript-lib": "^2.12.0",
     "esbuild": "^0.28.0",

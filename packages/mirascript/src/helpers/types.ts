@@ -68,6 +68,7 @@ export function isVmCallable<E extends Function, F extends VmFunctionLike>(
 /** 检查值是否为 Mirascript 原始值 */
 export function isVmPrimitive(value: unknown): value is VmPrimitive {
     if (value === null || typeof value == 'number' || typeof value == 'string' || typeof value == 'boolean') {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
         value as VmPrimitive satisfies typeof value;
         value satisfies VmPrimitive;
         return true;
