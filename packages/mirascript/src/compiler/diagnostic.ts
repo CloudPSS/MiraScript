@@ -116,10 +116,10 @@ export function parseDiagnostics(
     diagnostics: Uint32Array,
     filter?: (code: DiagnosticCode) => boolean,
 ): ParsedDiagnostics {
-    const parsed = [];
+    const parsed: Array<Writable<SourceDiagnostic & SourceReference>> = [];
     const bufLen = diagnostics.length;
     for (let i = 0; i < bufLen; i += 5) {
-        const code = diagnostics[i + 4]! as DiagnosticCode;
+        const code: DiagnosticCode = diagnostics[i + 4]!;
         if (filter && !filter(code)) {
             continue;
         }

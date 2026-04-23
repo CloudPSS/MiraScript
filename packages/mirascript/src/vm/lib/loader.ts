@@ -59,8 +59,8 @@ export type ToWrappedModule<T extends Record<string, RawValue>> = VmBuiltinModul
 
 /** 创建模块 */
 export function createModule<const T extends Record<string, RawValue>>(name: string, lib: T): ToWrappedModule<T> {
-    const mod = create(null) as Record<string, VmImmutable>;
-    const descriptions = create(null) as Record<string, string | undefined>;
+    const mod: Record<string, VmImmutable> = create(null);
+    const descriptions: Record<string, string | undefined> = create(null);
     for (const [key, value] of entries(lib)) {
         const [wrappedValue, description] = wrapEntry(key, value, name);
         mod[key] = wrappedValue;

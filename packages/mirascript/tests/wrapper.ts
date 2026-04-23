@@ -22,7 +22,7 @@ test('VmFunction', (t) => {
     t.is(getVmFunctionInfo(wrappedFn)?.original, fn);
 
     const vmFn = VmFunction(fn);
-    t.is(vmFn as unknown, fn);
+    t.is(vmFn, fn as VmFunction<typeof fn>);
     t.deepEqual(vmFn(1, 2), 3);
     t.true(isVmFunction(vmFn));
     t.is(vmFn, VmFunction(vmFn));

@@ -9,7 +9,7 @@ import { rangeAt } from '../monaco-utils.js';
 import type { FieldsAccessAt, VariableAccessAt } from '../compile-result.js';
 import { Provider } from './base.js';
 
-const OPERATOR_TOKENS_DESC = Object.keys(HELP_OPERATORS as Record<string, string>).sort((a, b) => b.length - a.length);
+const OPERATOR_TOKENS_DESC = Object.keys(HELP_OPERATORS).sort((a, b) => b.length - a.length);
 const REG_NUMBER_ALL_FULL = new RegExp(
     `^(?:${REG_BIN.source}|${REG_OCT.source}|${REG_HEX.source}|${REG_NUMBER.source})$`,
     REG_NUMBER.flags,

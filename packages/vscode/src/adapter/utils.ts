@@ -198,7 +198,7 @@ export const [toDiagnostic, fromDiagnostic] = createAdapterFactory<monacoEditor.
     (marker, diagnostic) => {
         diagnostic.range = toRange(marker);
         diagnostic.message = marker.message;
-        switch (marker.severity as number as monaco.MarkerSeverity) {
+        switch (marker.severity) {
             case monaco.MarkerSeverity.Error:
                 diagnostic.severity = vscode.DiagnosticSeverity.Error;
                 break;
@@ -223,7 +223,7 @@ export const [toDiagnostic, fromDiagnostic] = createAdapterFactory<monacoEditor.
         }
         diagnostic.relatedInformation = marker.relatedInformation?.map(toDiagnosticRelatedInformation);
         diagnostic.tags = marker.tags?.map((t) => {
-            switch (t as number as monaco.MarkerTag) {
+            switch (t) {
                 case monaco.MarkerTag.Deprecated:
                     return vscode.DiagnosticTag.Deprecated;
                 case monaco.MarkerTag.Unnecessary:
