@@ -1,5 +1,5 @@
 from .mirascript import Config, compile as _compile
-from .emit import emit, Script
+from .emit import emit
 from .diagnostics import decode_diagnostics, Diagnostic
 
 DefaultConfig = Config(input_mode="script")
@@ -7,7 +7,7 @@ DefaultConfig = Config(input_mode="script")
 
 def compile(
     script: str, config: Config = DefaultConfig
-) -> tuple[Script | None, list[Diagnostic]]:
+) :
     """
     编译 MiraScript 代码，生成 Python 函数
 
@@ -23,3 +23,4 @@ def compile(
     decoded_diagnostics = decode_diagnostics(diagnostics)
     func = emit(bytecode) if bytecode else None
     return func, decoded_diagnostics
+

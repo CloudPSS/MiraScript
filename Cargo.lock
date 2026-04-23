@@ -336,6 +336,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "mirascript"
+version = "1.0.0"
+dependencies = [
+ "mimalloc",
+ "mira-core",
+ "pyo3",
+ "serde",
+]
+
+[[package]]
 name = "napi"
 version = "3.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -494,16 +504,6 @@ dependencies = [
  "pyo3-build-config",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "python"
-version = "0.1.0"
-dependencies = [
- "mimalloc",
- "mira-core",
- "pyo3",
- "serde",
 ]
 
 [[package]]

@@ -1,0 +1,5 @@
+# Include compiled extension modules and type stubs in source distributions
+include mirascript/*.pyd
+include mirascript/*.pyi
+recursive-include mirascript/helpers *.py
+recursive-include mirascript/vm *.py
