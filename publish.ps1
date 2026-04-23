@@ -24,18 +24,32 @@ param (
     $Version = $rootPkg.version
     $NpmTag = if ($Version -match "-") { "next" } else { "latest" }
 
-    $packages = Get-ChildItem ./packages -Directory
-    $packageNames = $packages | ForEach-Object {
-        Push-Location $_
-        $pkg = Read-Json ./package.json
-        Pop-Location
-        $pkg.name
+    Write-Host "Publishing version $Version@$NpmTag" -ForegroundColor Yellow
+
+    # set cargo version for all packages
+    foreach ($file in Get-ChildItem -File ./crates/*/Cargo.toml) {
+        $dirname = Split-Path $file.FullName -Parent | Split-Path -Leaf
+        Write-Output "Updating crates/$dirname to version $Version"
+        $lines = Get-Content $file.FullName
+        $lines = $lines -replace '^version\s*=\s*".*?"$', "version = `"$Version`""
+        $content = "$($lines -join "`n")`n"
+        Set-Content $file.FullName -Value $content -NoNewLine
+        git add $file.FullName
+    }
+    cargo update --offline
+    git add ./Cargo.lock
+
+    # set npm version for all packages
+    foreach ($file in Get-ChildItem -File ./packages/*/package.json) {
+        $dirname = Split-Path $file.FullName -Parent | Split-Path -Leaf
+        Write-Output "Updating packages/$dirname to version $Version"
+        $pkg = Read-Json $file.FullName
+        $pkg.version = $Version
+        Write-Json $pkg $file.FullName
+        git add $file.FullName
     }
 
-    Write-Host "Publishing version $Version@$NpmTag" -ForegroundColor Yellow
-    pnpm -r --workspace-concurrency=1 exec pnpm version "$Version" --no-git-tag-version --no-workspaces-update
-    pnpm -r --workspace-concurrency=1 exec git add ./package.json
-
+    # set root npm version
     git add ./package.json
 
     if (-not $NoCommit) {
