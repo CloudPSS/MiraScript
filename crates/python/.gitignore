@@ -1,4 +1,5 @@
 /target
+debug_result.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
