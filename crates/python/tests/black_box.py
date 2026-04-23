@@ -28,18 +28,13 @@ SKIP_TESTS = {
 
 class BlackBoxTests(unittest.TestCase):
     def setUp(self) -> None:
+        logging.basicConfig(level=logging.DEBUG)
         sys.setrecursionlimit(10000)
         if mira_compile is None:
             self.skipTest("mirascript Python API not available")
 
     def run_mira_file(self, mira_path: Path):
         code = mira_path.read_text(encoding="utf-8")
-        expected_path = Path(str(mira_path) + ".jsonl")
-        expected = (
-            expected_path.read_text(encoding="utf-8")
-            if expected_path.exists()
-            else None
-        )
 
         # 收集超时回调与脚本输出
         timeout_fns = []
@@ -110,7 +105,9 @@ class BlackBoxTests(unittest.TestCase):
         script, x = mira_compile(
             code,
             Config(
-                **{"pretty": True, "sourceMap": True, "fileName": mira_path.as_uri()}
+                pretty=True,
+                sourceMap=True,
+                fileName=mira_path.as_uri(),
             ),
         )
         ctx = create_vm_context(externs, globals_)
@@ -124,18 +121,26 @@ class BlackBoxTests(unittest.TestCase):
             ):
                 fn()
 
-    def test(self):
-        files = TEST_DIR.rglob("*.mira")
 
-        for mira_path in files:
-            file = mira_path.relative_to(TEST_DIR).as_posix()
-            if file in SKIP_TESTS:
-                logging.debug(f"Skipping test {file}")
-                continue
-            with self.subTest(file=file):
-                self.run_mira_file(mira_path)
+files = TEST_DIR.rglob("*.mira")
 
+for mira_path in files:
+    file = mira_path.relative_to(TEST_DIR).as_posix()
+    test_name = "test_" + (
+        file.removesuffix(".mira").replace("/", "_").replace(".", "_").replace("-", "_")
+    )
+    if file in SKIP_TESTS:
+        setattr(
+            BlackBoxTests,
+            test_name,
+            lambda self: self.skipTest("Test skipped due to known issues"),
+        )
+    else:
+        setattr(
+            BlackBoxTests,
+            test_name,
+            lambda self, mira_path=mira_path: self.run_mira_file(mira_path),
+        )
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
     unittest.main()

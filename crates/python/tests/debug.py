@@ -1,6 +1,5 @@
 import mirascript
 import traceback
-import os
 import sys
 import astor
 from pathlib import Path

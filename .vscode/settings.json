@@ -43,7 +43,8 @@
   "cSpell.words": ["cloudpss", "mirascript", "napi"],
   "editor.tabSize": 2,
   "files.eol": "\n",
+  "js/ts.tsdk.path": "./node_modules/typescript/lib",
   "npm.packageManager": "pnpm",
-  "python.analysis.typeCheckingMode": "standard",
-  "typescript.tsdk": "./node_modules/typescript/lib"
+  "python-envs.workspaceSearchPaths": ["./crates/python/.venv"],
+  "python.analysis.typeCheckingMode": "standard"
 }

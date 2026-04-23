@@ -30,3 +30,8 @@ build-backend = "maturin"
 [tool.maturin]
 bindings = "pyo3"
 features = ["pyo3/extension-module"]
+
+[tool.poe.tasks]
+test = "python -m unittest -b -c ./tests/black_box.py"
+format = "black ."
+debug = { cmd = "python ${POE_ROOT}/tests/debug.py", cwd = "${POE_PWD}" }
