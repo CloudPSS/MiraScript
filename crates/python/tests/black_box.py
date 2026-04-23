@@ -7,7 +7,7 @@ from mirascript.vm import VmError, VmFunction, VmModule
 from mirascript.vm.types.context import create_vm_context
 from mirascript.vm.helpers import config_checkpoint
 from mirascript.mirascript import Config
-from .deepequals import assert_deep_equal, assert_not_deep_equal
+from tests.deepequals import assert_deep_equal, assert_not_deep_equal
 
 TEST_DIR = (Path(__file__) / "../../../../tests").resolve()
 
