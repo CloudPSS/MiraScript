@@ -26,6 +26,7 @@ wasm-opt = [
 ]
 
 [lib]
+name = "wasm"
 crate-type = ["cdylib", "rlib"]
 
 [features]

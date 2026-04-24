@@ -9,6 +9,7 @@ publish = false
 wasm-opt = false
 
 [lib]
+name = "constants"
 crate-type = ["cdylib", "rlib"]
 
 [features]
