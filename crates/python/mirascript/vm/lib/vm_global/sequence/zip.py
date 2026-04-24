@@ -10,7 +10,6 @@ def zip(data):
     ets = entries(data)
     l = 0
     for el in ets:
-
         key = el["0"]
         arr = el["1"]
         if not is_vm_array(arr):

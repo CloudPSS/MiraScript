@@ -36,7 +36,6 @@ def unwrap_from_vm_value(value):
 
 
 class VmExtern(VmWrapper):
-
     _VM_EXTERN_SYMBOL = "mirascript.vm.extern"
 
     def __init__(self, value, caller=None):
@@ -45,7 +44,6 @@ class VmExtern(VmWrapper):
         setattr(self, self._VM_EXTERN_SYMBOL, True)
 
     def access(self, key: str, read: bool) -> bool:
-
         if key.startswith("_"):
             return False
         if callable(self.value) and key in ("prototype", "arguments", "caller"):

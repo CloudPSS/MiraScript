@@ -1,5 +1,5 @@
 import math
-import random
+from random import random as _random
 
 from mirascript.vm.lib._helpers import expect_number
 
@@ -12,5 +12,5 @@ def pow(x, y):
     return math.pow(expect_number("x", x), expect_number("y", y))
 
 
-def random_():
-    return random.random()
+def random():
+    return _random()

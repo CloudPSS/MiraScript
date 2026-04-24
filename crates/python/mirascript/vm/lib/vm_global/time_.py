@@ -1,3 +1,8 @@
+from typing import Union
+import time
+import math
+from datetime import datetime as datetime_dt, timezone
+
 from mirascript.helpers.convert.to_number import toNumber
 from mirascript.helpers.serialize import display
 from mirascript.vm.lib._helpers import (
@@ -7,9 +12,6 @@ from mirascript.vm.lib._helpers import (
     throw_unexpected_type_error,
 )
 from mirascript.vm.types.const import Uninitialized
-import time
-import math
-from datetime import datetime as datetime_dt, timezone
 
 
 def fromNumber(datetime, fallback):
@@ -38,7 +40,7 @@ def fromNumber(datetime, fallback):
             )
 
 
-def getTimestamp(datetime, fallback) -> float | None:
+def getTimestamp(datetime, fallback) -> Union[float, None]:
     if datetime is None:
         return time.time() * 1000
     if isinstance(datetime, bool):

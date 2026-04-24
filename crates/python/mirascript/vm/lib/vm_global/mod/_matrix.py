@@ -144,7 +144,6 @@ def entrywiseImpl(a, b, f, vvf=None, mmf=None, vmf=None, mvf=None):
         return result
 
     if len(aDims) == 1:
-
         if vmf is not None:
             return vmf(a, b, aDims[0], bDims[0], bDims[1])
         aLen = aDims[0]
@@ -187,7 +186,6 @@ def entrywiseImpl(a, b, f, vvf=None, mmf=None, vmf=None, mvf=None):
     for i in range(rr):
         newRow = []
         for j in range(cc):
-
             ar = 0 if aDims[0] == 1 else i
             ac = 0 if aDims[1] == 1 else j
             br = 0 if bDims[0] == 1 else i
@@ -393,7 +391,6 @@ def diagonal(vector, k=0):
         fk = 0
 
     if all(is_vm_array(v) for v in vector):
-
         diag = []
         for i in range(len(vector)):
             row = vector[i]
@@ -425,7 +422,6 @@ def diagonal(vector, k=0):
 
 
 def filled(size, value):
-
     s = get_numbers(size)
     if len(s) == 0:
         return []
@@ -442,7 +438,6 @@ def filled(size, value):
 
 
 def zeros(*size):
-
     return filled(size, 0)
 
 

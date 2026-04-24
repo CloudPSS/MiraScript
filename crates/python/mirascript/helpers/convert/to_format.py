@@ -38,7 +38,6 @@ def toFormat(val, fmt=None):
     if isinstance(val, (int, float)):
         r = re.match(r"^\.\d+$", f)
         if r:
-
             ff = float(f[1:])
             if math.isinf(ff):
                 digits = 100

@@ -75,7 +75,6 @@ def ToBoolean_(value):
 
 
 def isVmArray(value):
-
     if type(value) is list:
         return True
     return False
@@ -105,7 +104,6 @@ def ToString_(val):
 
 
 def overloadNumberString_(a, b):
-
     if IsNumber_(a) or IsNumber_(b):
         return True
     if isinstance(a, str) or isinstance(b, str):
@@ -137,7 +135,6 @@ def Div_(a, b):
 
 
 def Mod_(a, b):
-
     x = ToNumber_(a)
     y = ToNumber_(b)
     """
@@ -223,7 +220,6 @@ def Lte_(a, b):
 
 
 def Eq_(a, b):
-
     AssertInit_(a)
     AssertInit_(b)
 
@@ -239,7 +235,6 @@ def Neq_(a, b):
 
 ## 高级相等比较
 def Aeq_(a, b):
-
     if overloadNumberString_(a, b):
         an = ToNumber_(a)
         bn = ToNumber_(b)
@@ -297,7 +292,6 @@ def In_(a, b):
         return False
     pk = ToString_(a)
     if isinstance(b, dict):
-
         return pk in b
     if isVmWrapper(b):
         return b.has(pk)
@@ -424,7 +418,6 @@ def Call_(func, *args):
     if isinstance(func, VmExtern) and hasattr(func, "callable"):
         return func.call(args)
     if callable(func):
-
         if len(args) == 0:
             return func()
         return func(*args)
@@ -512,7 +505,6 @@ def Get_(obj, key):
     if isinstance(obj, dict):
         return obj.get(pk, None)
     if isinstance(obj, (list, tuple)):
-
         try:
             idx = int(float(key))
             return obj[idx]

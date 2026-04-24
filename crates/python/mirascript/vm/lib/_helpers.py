@@ -88,7 +88,6 @@ def expect_integer(name, value):
 
 
 def expect_number_range(name, value, min_=None, max_=None):
-
     v = expect_number(name, value)
     if not math.isfinite(v):
         throw_error(

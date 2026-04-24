@@ -5,7 +5,7 @@ import sys
 from ...types.checker import is_positive_zero, is_negative_zero
 
 
-def build(func):
+def _build(func):
     def wrapper(*args):
         numbers = get_numbers(args)
         return func(*numbers)
@@ -13,7 +13,8 @@ def build(func):
     return wrapper
 
 
-def _max(*args):
+@_build
+def max_(*args):
     high = -math.inf
     for num in args:
         if math.isnan(num):
@@ -25,10 +26,8 @@ def _max(*args):
     return high
 
 
-max_ = build(_max)
-
-
-def _min(*args):
+@_build
+def min_(*args):
     low = math.inf
     for num in args:
         if math.isnan(num):
@@ -38,9 +37,6 @@ def _min(*args):
         elif num < low:
             low = num
     return low
-
-
-min_ = build(_min)
 
 
 def hypot(*args):
@@ -66,5 +62,5 @@ def hypot(*args):
     return math.sqrt(s)
 
 
-sum_ = build(lambda *args: _reduce(lambda a, b: a + b, args, -0.0))
-product = build(lambda *args: _reduce(lambda a, b: a * b, args, 1.0))
+sum_ = _build(lambda *args: _reduce(lambda a, b: a + b, args, -0.0))
+product = _build(lambda *args: _reduce(lambda a, b: a * b, args, 1.0))

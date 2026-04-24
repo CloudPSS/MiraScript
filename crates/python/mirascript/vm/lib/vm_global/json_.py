@@ -59,7 +59,6 @@ def to_json(value=Uninitialized):
     required("value", value, None)
 
     if is_vm_module(value) or is_vm_extern(value):
-
         try:
             return json.dumps(value.value, cls=NanToNullEncoder, ensure_ascii=False)
         except Exception as e:

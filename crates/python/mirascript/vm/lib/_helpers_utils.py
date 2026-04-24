@@ -7,9 +7,7 @@ from ..error import VmError
 
 
 def wrap_entry(name: str, value, module: str):
-
     if callable(value):
-
         # Python 函数名不可直接更改，跳过重命名
         return VmFunction(
             value,

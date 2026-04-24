@@ -1,8 +1,9 @@
-import mirascript
 import traceback
 import sys
 import astor
 from pathlib import Path
+
+import mirascript
 
 if __name__ == "__main__":
     # Read script file from arg

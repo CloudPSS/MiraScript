@@ -36,7 +36,6 @@ def isArrIndex(key):
 
 
 def with_inner(obj, key, key_index, value):
-
     if key_index >= len(key):
         return value
 
@@ -128,7 +127,6 @@ def with_(data=Uninitialized, *args):
             result[int(index)] = val
         return result
     else:
-
         result = data.copy()
         for key, element in entryData:
             if is_vm_array(key):

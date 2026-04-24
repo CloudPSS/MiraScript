@@ -13,7 +13,6 @@ import math
 
 
 def default_compare(a=Uninitialized, b=Uninitialized):
-
     if a is Uninitialized:
         a = ""
     if b is Uninitialized:

@@ -5,7 +5,6 @@ from mirascript.vm.types.wrapper import VmWrapper, isVmWrapper
 
 
 def numberToString_(x) -> str:
-
     # 1. If x is nan, return "nan"
     if math.isnan(x):
         return "nan"
@@ -67,7 +66,6 @@ def innerToString_(val, useBraces) -> str:
         # return "true" if val else "0"
 
     if isinstance(val, (int, float)):
-
         return numberToString_(val)
     return str(val)
 

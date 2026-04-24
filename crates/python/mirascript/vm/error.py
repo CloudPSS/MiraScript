@@ -2,7 +2,6 @@
 
 
 class VmError(Exception):
-
     def __init__(self, message, recovered):
         super().__init__(message)
         self.message = message

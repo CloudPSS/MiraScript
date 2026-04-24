@@ -17,8 +17,11 @@ t_eq(factorial(-inf), nan);
 t_true(169.999_999_999_999::factorial() =~ 7.257_415_615_270_898e+306);
 t_eq(factorial(170), 7.257_415_615_307_999e+306);
 t_true(170.000_000_000_001::factorial() =~ 7.257_415_615_345_094e+306);
+t_true(factorial(170.6) =~ 1.585_896_909_667_256_3e+308);
 
+t_eq(factorial(170.8), inf);
 t_eq(factorial(171), inf);
+t_eq(factorial(171.1), inf);
 t_eq(factorial(inf), inf);
 
 t_throws(fn { factorial(nil) });
@@ -38,7 +41,10 @@ t_eq(gamma(-1), nan);
 t_eq(gamma(nan), nan);
 t_eq(gamma(-inf), nan);
 t_eq(gamma(171), 7.257_415_615_307_999e+306);
+t_true(gamma(171.6) =~ 1.585_896_909_667_256_3e+308);
+t_eq(gamma(171.8), inf);
 t_eq(gamma(172), inf);
+t_eq(gamma(172.5), inf);
 t_eq(gamma(inf), inf);
 
 t_true(gamma(-1.4) =~ 2.659_271_872_880_030_4);

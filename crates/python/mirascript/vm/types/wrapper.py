@@ -2,11 +2,9 @@ from abc import ABC, abstractmethod
 
 
 class VmWrapper(ABC):
-
     _VM_WRAPPER_SYMBOL = "mirascript.vm.wrapper"
 
     def __init__(self, value):
-
         self.value = value
         # 设置标识符号
         setattr(self, self._VM_WRAPPER_SYMBOL, True)

@@ -161,7 +161,6 @@ def create_if(name: str, negate) -> ast.If:
 
 
 def create_range_loop(index, start, end, exclusive=False):
-
     s = ast.Assign(
         targets=[ast.Name(id="start", ctx=ast.Store())],
         value=ast.Call(
@@ -284,7 +283,6 @@ class Emitter:
         return regs
 
     def create_function(self, func_name, regs):
-
         args = ast.arguments(
             posonlyargs=[],
             args=[],
@@ -316,7 +314,6 @@ class Emitter:
         return [code, try_code]
 
     def create_loop(self, nreg, code, increment: Optional[ast.AugAssign] = None):
-
         func_name = self.fun_name()
         [loop_func_code, try_code] = self.create_function(
             func_name, self.create_regs_array(nreg - 1, 2)
@@ -384,7 +381,6 @@ class Emitter:
             )[0]
             self.code_offset += 4
         else:
-
             value = struct.unpack(
                 "<b", self.code_data[self.code_offset : self.code_offset + 1]
             )[0]
@@ -495,7 +491,6 @@ class Emitter:
                 value = read()
                 opt = opcode == OpCode.FieldOpt
                 if opt:
-
                     add_Element([ast.Constant(value=f"{field_name}"), self.rv(value)])
 
                 else:

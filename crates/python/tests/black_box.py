@@ -15,7 +15,6 @@ SKIP_TESTS = {
     "e2e/complex.mira",
     "lib/sequence/sort_by.mira",
     "lib/sequence/sort.mira",
-    "lib/math/gamma.mira",
     "lib/string/case.mira",
     "lib/sequence/unique_by.mira",
     "lib/sequence/unique.mira",
@@ -127,7 +126,7 @@ files = TEST_DIR.rglob("*.mira")
 for mira_path in files:
     file = mira_path.relative_to(TEST_DIR).as_posix()
     test_name = "test_" + (
-        file.removesuffix(".mira").replace("/", "_").replace(".", "_").replace("-", "_")
+        file.replace(".mira", "").replace("/", "_").replace(".", "_").replace("-", "_")
     )
     if file in SKIP_TESTS:
         setattr(

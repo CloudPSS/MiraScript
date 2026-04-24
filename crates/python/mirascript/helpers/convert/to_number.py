@@ -1,3 +1,4 @@
+from typing import TypeVar, Union
 import math
 import re
 from mirascript.vm.error import VmError
@@ -12,12 +13,6 @@ def is_decimal_number(num):
     return False
 
 
-def is_number_regex(s):
-    # 匹配整数、小数、科学计数法
-    pattern = r"^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$"
-    return bool(re.match(pattern, s))
-
-
 def parseNumericLiteral(s):
     if s == "":
         return None
@@ -26,13 +21,13 @@ def parseNumericLiteral(s):
         return None
 
     if re.match(r"^0[bB][01]+$", s):
-        return int(s[2:], 2)
+        return float(int(s[2:], 2))
     elif re.match(r"^0[oO][0-7]+$", s):
-        return int(s[2:], 8)
+        return float(int(s[2:], 8))
     elif re.match(r"^0[xX][0-9a-fA-F]+$", s):
-        return int(s[2:], 16)
+        return float(int(s[2:], 16))
     elif re.match(r"^[0-9][0-9]*$", s):
-        return int(s, 10)
+        return float(int(s, 10))
     elif re.match(r"^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$", s):
         return float(s)
     else:
@@ -40,7 +35,6 @@ def parseNumericLiteral(s):
 
 
 def stringToNumber(s):
-
     s = s.strip()
     if s == "":
         return None
@@ -64,7 +58,10 @@ def stringToNumber(s):
         return parseNumericLiteral(s)
 
 
-def toNumber(value, fallback=Uninitialized):
+T = TypeVar("T")
+
+
+def toNumber(value, fallback: T = Uninitialized) -> Union[float, T]:
     if isinstance(value, bool):
         return float(1 if value else 0)
 

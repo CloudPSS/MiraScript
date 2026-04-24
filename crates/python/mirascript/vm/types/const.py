@@ -23,7 +23,8 @@ VM_ARRAY_MAX_LENGTH = 2**31 - 1
 
 
 class VmFunctionLike:
-    def __call__(self, *args): ...  # type: ignore
+    def __call__(self, *args):
+        ...  # type: ignore
 
 
 VmImmutable = Union[VmConst, VmModule]
