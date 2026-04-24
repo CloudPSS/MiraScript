@@ -19,7 +19,6 @@ SKIP_TESTS = {
     "lib/sequence/unique.mira",
     "lib/sequence/new.mira",
     "lib/math/round.mira",
-    "logic/loop.mira",
     "feature/module.mira",
 }
 

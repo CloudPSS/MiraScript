@@ -1,13 +1,9 @@
 from mirascript.vm.operations import ToString_
 from ...error import VmError
 
-RED = "\033[91m"
-GREEN = "\033[92m"
-YELLOW = "\033[93m"
-BLUE = "\033[94m"
-MAGENTA = "\033[95m"
-CYAN = "\033[96m"
-WHITE = "\033[97m"
+
+DEBUG = "\033[44;37m"
+PANIC = "\033[41;37m"
 RESET = "\033[0m"
 
 
@@ -15,15 +11,15 @@ RESET = "\033[0m"
 
 
 def debug_print(*args):
-    print(CYAN, "MiraScript", *args, RESET)
+    print(f"{DEBUG} MiraScript {RESET}", *args, )
 
 
 def panic(*msg):
     # raise RuntimeError(msg)
     if not msg:
-        print(RED, "MiraScript", RESET)
+        print(f"{PANIC} MiraScript {RESET}")
     else:
-        print(RED, "MiraScript:", *msg, RESET)
+        print(f"{PANIC} MiraScript {RESET}", *msg)
 
     error = f"panic: {ToString_(msg)}" if len(msg) > 0 else "panic"
 
