@@ -74,10 +74,22 @@ def split(string=Uninitialized, separator=""):
 
 
 def join(string_array=Uninitialized, separator=""):
-    _expect_array("str_array", string_array, None)
+    _expect_array("arr", string_array, None)
     str_list = []
     for item in string_array:
         str_list.append(ToString_(item))
     sep = ToString_(separator)
 
     return sep.join(str_list)
+
+
+def to_uppercase(string=Uninitialized):
+    _required("str", string, None)
+    s = ToString_(string)
+    return s.upper()
+
+
+def to_lowercase(string=Uninitialized):
+    _required("str", string, None)
+    s = ToString_(string)
+    return s.lower()

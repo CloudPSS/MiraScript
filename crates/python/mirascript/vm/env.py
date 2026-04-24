@@ -2,7 +2,7 @@ from typing import Callable
 
 from . import operations, helpers
 
-vm_globals: "dict[str, Callable]" = { }
+vm_globals: "dict[str, Callable]" = {}
 
 for k in dir(operations):
     if not k.startswith("_"):
