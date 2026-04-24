@@ -1,8 +1,8 @@
 import math
 
 from mirascript.vm.types.const import Uninitialized
-from .._helpers import expect_number
-from mirascript.vm.operations import is_decimal_number
+from .._helpers import _expect_number
+from mirascript.vm.operations import isDecimalNumber
 
 
 def _factorial(n: float):
@@ -21,7 +21,7 @@ def _gamma(n: float):
         return math.nan
     if n >= 172:
         return math.inf
-    if not is_decimal_number(n):
+    if not isDecimalNumber(n):
         if n > 0:
             return _factorial(n - 1)
         elif n == 0:
@@ -38,16 +38,16 @@ def _gamma(n: float):
 
 
 def gamma(x=Uninitialized):
-    n = expect_number("x", x)
+    n = _expect_number("x", x)
     return _gamma(n)
 
 
 def factorial(x=Uninitialized):
-    n = expect_number("x", x)
+    n = _expect_number("x", x)
     if math.isnan(n) or n < 0:
         return math.nan
     if n >= 171:
         return math.inf
-    if not is_decimal_number(n):
+    if not isDecimalNumber(n):
         return _factorial(n)
     return _gamma(n + 1)

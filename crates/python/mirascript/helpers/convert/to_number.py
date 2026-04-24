@@ -5,7 +5,7 @@ from mirascript.vm.error import VmError
 from mirascript.vm.types.const import Uninitialized
 
 
-def is_decimal_number(num):
+def isDecimalNumber(num):
     """判断数字是否为小数（不是整数）"""
 
     if isinstance(num, (int, float)):

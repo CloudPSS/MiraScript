@@ -2,16 +2,16 @@ import math
 from mirascript.helpers.convert.to_number import toNumber
 from mirascript.vm.types.checker import is_vm_array
 from ..._helpers import (
-    expect_array,
-    expect_callable,
-    expect_const,
-    expect_integer,
-    required,
-    throw_error,
-    get_numbers,
-    map_vm,
+    _expect_array,
+    _expect_callable,
+    _expect_const,
+    _expect_integer,
+    _required,
+    _throw_error,
+    _get_numbers,
+    _map_vm,
 )
-from ..._helpers_utils import array_len
+from ..._helpers_utils import _array_len
 from ..math_unary import round_
 from ....helpers import Cp
 from ....operations import Add_, Call_, Div_, Mul_, Sub_
@@ -58,12 +58,12 @@ def num(v):
 
 
 def size(matrix):
-    required("matrix", matrix, [])
+    _required("matrix", matrix, [])
     return sizeImpl(matrix)
 
 
 def transpose(matrix):
-    required("matrix", matrix, [])
+    _required("matrix", matrix, [])
     dims = sizeImpl(matrix)
 
     if len(dims) < 2:
@@ -149,7 +149,7 @@ def entrywiseImpl(a, b, f, vvf=None, mmf=None, vmf=None, mvf=None):
         aLen = aDims[0]
         numRows, numCols = bDims
         if aLen != numCols:
-            throw_error("Array length mismatch", [])
+            _throw_error("Array length mismatch", [])
         result = []
         for i in range(numRows):
             newRow = []
@@ -166,7 +166,7 @@ def entrywiseImpl(a, b, f, vvf=None, mmf=None, vmf=None, mvf=None):
         bLen = bDims[0]
         numRows, numCols = aDims
         if bLen != numCols:
-            throw_error("Array length mismatch", [])
+            _throw_error("Array length mismatch", [])
         result = []
         for i in range(numRows):
             newRow = []
@@ -206,9 +206,9 @@ def entrywiseImpl(a, b, f, vvf=None, mmf=None, vmf=None, mvf=None):
 
 
 def entrywise(matrix, scalar, fn):
-    expect_const("matrix", matrix, [])
-    expect_const("scalar", scalar, [])
-    expect_callable("fn", fn, [])
+    _expect_const("matrix", matrix, [])
+    _expect_const("scalar", scalar, [])
+    _expect_callable("fn", fn, [])
 
     def f(a, b):
         ret = Call_(fn, *(a, b))
@@ -220,32 +220,32 @@ def entrywise(matrix, scalar, fn):
 
 
 def add(a, b):
-    expect_const("a", a, [])
-    expect_const("b", b, [])
+    _expect_const("a", a, [])
+    _expect_const("b", b, [])
     return entrywiseImpl(a, b, Add_)
 
 
 def subtract(a, b):
-    expect_const("a", a, [])
-    expect_const("b", b, [])
+    _expect_const("a", a, [])
+    _expect_const("b", b, [])
     return entrywiseImpl(a, b, Sub_)
 
 
 def entrywise_multiply(a, b):
-    expect_const("a", a, [])
-    expect_const("b", b, [])
+    _expect_const("a", a, [])
+    _expect_const("b", b, [])
     return entrywiseImpl(a, b, Mul_)
 
 
 def entrywise_divide(a, b):
-    expect_const("a", a, [])
-    expect_const("b", b, [])
+    _expect_const("a", a, [])
+    _expect_const("b", b, [])
     return entrywiseImpl(a, b, Div_)
 
 
 def multiply(a, b):
-    expect_const("a", a, [])
-    expect_const("b", b, [])
+    _expect_const("a", a, [])
+    _expect_const("b", b, [])
 
     def vvf(a, b, aLen, bLen):
         rr = max(aLen, bLen)
@@ -259,7 +259,7 @@ def multiply(a, b):
 
     def mmf(a, b, aRows, aCols, bRows, bCols):
         if aCols != bRows:
-            throw_error("Matrix size mismatch for multiplication", [])
+            _throw_error("Matrix size mismatch for multiplication", [])
         result = []
         for i in range(aRows):
             newRow = []
@@ -277,7 +277,7 @@ def multiply(a, b):
 
     def vmf(a, b, aLen, bRows, bCols):
         if aLen != bRows:
-            throw_error("Vector and matrix size mismatch for multiplication", [])
+            _throw_error("Vector and matrix size mismatch for multiplication", [])
 
         result = []
         for i in range(bCols):
@@ -293,7 +293,7 @@ def multiply(a, b):
 
     def mvf(a, b, aRows, aCols, bLen):
         if aCols != bLen:
-            throw_error("Matrix and vector size mismatch for multiplication", [])
+            _throw_error("Matrix and vector size mismatch for multiplication", [])
         result = []
         for i in range(aRows):
             sum = 0
@@ -309,20 +309,20 @@ def multiply(a, b):
 
 
 def invert(matrix):
-    expect_const("matrix", matrix, [])
+    _expect_const("matrix", matrix, [])
     dims = sizeImpl(matrix)
 
     if len(dims) == 0:
         return Div_(1, matrix)
     if len(dims) == 1:
-        return map_vm(
+        return _map_vm(
             matrix,
             lambda *v: Div_(1, v[0]),
         )
 
     numRows, numCols = dims
     if numRows != numCols:
-        throw_error("Only square matrices can be inverted", [])
+        _throw_error("Only square matrices can be inverted", [])
     m = matrix
 
     if numRows == 1:
@@ -330,7 +330,7 @@ def invert(matrix):
     if numRows == 2:
         det = Sub_(Mul_(m[0][0], m[1][1]), Mul_(m[0][1], m[1][0]))
         if det == 0:
-            throw_error("Matrix is singular and cannot be inverted", [])
+            _throw_error("Matrix is singular and cannot be inverted", [])
         return [
             [Div_(m[1][1], det), Div_(-m[0][1], det)],
             [Div_(-m[1][0], det), Div_(m[0][0], det)],
@@ -385,8 +385,8 @@ def invert(matrix):
 
 
 def diagonal(vector, k=0):
-    expect_array("vector", vector, [])
-    fk = expect_integer("k", k)
+    _expect_array("vector", vector, [])
+    fk = _expect_integer("k", k)
     if math.isnan(fk):
         fk = 0
 
@@ -404,8 +404,8 @@ def diagonal(vector, k=0):
         return diag
 
     l = len(vector)
-    m = array_len(l - fk if fk < 0 else l)
-    n = array_len(l + fk if fk > 0 else l)
+    m = _array_len(l - fk if fk < 0 else l)
+    n = _array_len(l + fk if fk > 0 else l)
 
     result = []
     for i in range(m):
@@ -422,13 +422,13 @@ def diagonal(vector, k=0):
 
 
 def filled(size, value):
-    s = get_numbers(size)
+    s = _get_numbers(size)
     if len(s) == 0:
         return []
 
     while len(s) > 0:
         # s.insert(0,1)
-        repeat = array_len(s.pop())
+        repeat = _array_len(s.pop())
         Cp()
         data = []
         for i in range(repeat):
@@ -446,16 +446,16 @@ def ones(*size):
 
 
 def identity(*size):
-    s = get_numbers(size)
+    s = _get_numbers(size)
     if len(s) == 0:
         return []
     if len(s) > 2:
-        throw_error("Identity matrix must be 1D or 2D", [])
+        _throw_error("Identity matrix must be 1D or 2D", [])
     if len(s) == 1:
         s = [s[0], s[0]]
 
-    m = array_len(s[0])
-    n = array_len(s[1])
+    m = _array_len(s[0])
+    n = _array_len(s[1])
 
     result = []
     for i in range(m):

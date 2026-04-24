@@ -1,9 +1,9 @@
-from mirascript.vm.lib._helpers import expect_number
+from mirascript.vm.lib._helpers import _expect_number
 import math
 
 
-def to_int32(x):
-    x = expect_number("x", x)
+def _to_int32(x):
+    x = _expect_number("x", x)
     if math.isnan(x):
         return 0
 
@@ -12,8 +12,8 @@ def to_int32(x):
 
 
 def b_and(a, b):
-    a = to_int32(a)
-    b = to_int32(b)
+    a = _to_int32(a)
+    b = _to_int32(b)
 
     result = a & b
 
@@ -24,8 +24,8 @@ def b_and(a, b):
 
 
 def b_or(a, b):
-    a = to_int32(a)
-    b = to_int32(b)
+    a = _to_int32(a)
+    b = _to_int32(b)
     result = (a | b) & 0xFFFFFFFF
     if result & 0x80000000:
         result -= 0x100000000
@@ -33,7 +33,7 @@ def b_or(a, b):
 
 
 def b_not(a):
-    a = to_int32(a)
+    a = _to_int32(a)
     result = (~a) & 0xFFFFFFFF
     if result & 0x80000000:
         result -= 0x100000000
@@ -42,8 +42,8 @@ def b_not(a):
 
 
 def b_xor(a, b):
-    a = to_int32(a)
-    b = to_int32(b)
+    a = _to_int32(a)
+    b = _to_int32(b)
     result = (a ^ b) & 0xFFFFFFFF
 
     if result & 0x80000000:
@@ -53,8 +53,8 @@ def b_xor(a, b):
 
 
 def shl(a, b):
-    a = to_int32(a)
-    b = to_int32(b)
+    a = _to_int32(a)
+    b = _to_int32(b)
 
     b &= 31  # 只保留低5位（0~31）
     a &= 0xFFFFFFFF  # 保持32位范围
@@ -62,18 +62,18 @@ def shl(a, b):
 
 
 def sar(a, b):
-    a = to_int32(a)
-    b = to_int32(b)
+    a = _to_int32(a)
+    b = _to_int32(b)
     result = a >> b
 
     return result
 
 
 def shr(a, b):
-    a = to_int32(a)
-    b = to_int32(b)
-    a = int(expect_number("a", a))
-    b = int(expect_number("b", b))
+    a = _to_int32(a)
+    b = _to_int32(b)
+    a = int(_expect_number("a", a))
+    b = int(_expect_number("b", b))
     if a >= 0:
         return float(int(a) >> int(b))
     else:

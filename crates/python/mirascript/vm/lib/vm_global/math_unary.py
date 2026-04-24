@@ -1,5 +1,5 @@
 import math
-from .._helpers import expect_number, required
+from .._helpers import _expect_number, _required
 from mirascript.vm.types.const import Uninitialized
 import decimal
 
@@ -8,7 +8,7 @@ def _build(
     func, nan=None, inf=None, neginf=None, poszero=None, negzero=None, except_inf=None
 ):
     def wrapper(x=Uninitialized):
-        x = expect_number("x", x)
+        x = _expect_number("x", x)
         if math.isnan(x):
             if nan is not None:
                 return nan
@@ -44,7 +44,7 @@ abs_ = _build(abs, math.nan, math.inf, math.inf, 0.0, 0.0)
 
 def trunc(x=Uninitialized):
     ret = _build(math.trunc, math.nan, math.inf, -math.inf)(x)
-    return math.copysign(ret, expect_number("x", x))
+    return math.copysign(ret, _expect_number("x", x))
 
 
 floor = _build(math.floor, math.nan, math.inf, -math.inf, +0.0, -0.0)
@@ -54,7 +54,7 @@ def ceil(x=Uninitialized):
     ret = _build(math.ceil, math.nan, math.inf, -math.inf)(x)
 
     if ret == 0.0:
-        return math.copysign(0.0, expect_number("x", x))
+        return math.copysign(0.0, _expect_number("x", x))
     return ret
 
 
@@ -72,7 +72,7 @@ atan = _build(math.atan, math.nan)
 
 # atanh = build(math.atanh,math.nan,math.nan,math.nan)
 def atanh(x=Uninitialized):
-    x = expect_number("x", x)
+    x = _expect_number("x", x)
     ret = _build(math.atanh, math.nan)(x)
     if math.isnan(ret):
         if x == 1.0:
@@ -98,7 +98,7 @@ log10 = _build(math.log10, math.nan, math.inf, math.nan, -math.inf, -math.inf)
 
 # log1p = build(math.log1p,math.nan,math.inf,math.nan,0,-0)
 def log1p(x=Uninitialized):
-    x = expect_number("x", x)
+    x = _expect_number("x", x)
     ret = _build(math.log1p, math.nan, math.inf, math.nan)(x)
     if math.isnan(ret):
         if x == -1.0:

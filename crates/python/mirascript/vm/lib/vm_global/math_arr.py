@@ -1,4 +1,4 @@
-from .._helpers import get_numbers
+from .._helpers import _get_numbers
 from functools import reduce as _reduce
 import math
 import sys
@@ -7,7 +7,7 @@ from ...types.checker import is_positive_zero, is_negative_zero
 
 def _build(func):
     def wrapper(*args):
-        numbers = get_numbers(args)
+        numbers = _get_numbers(args)
         return func(*numbers)
 
     return wrapper
@@ -40,7 +40,7 @@ def min_(*args):
 
 
 def hypot(*args):
-    numbers = get_numbers(args)
+    numbers = _get_numbers(args)
     if len(numbers) == 0:
         return 0.0
     # math.hypot accepts an arbitrary number of args starting Python 3.8.

@@ -28,7 +28,7 @@ def describeParam(name):
     return f"parameter at the {pos} position"
 
 
-def throw_error(message: str, recovered):
+def _throw_error(message: str, recovered):
     recovered_value = recovered() if callable(recovered) else recovered
     raise VmError(message, recovered_value)
 
@@ -36,46 +36,46 @@ def throw_error(message: str, recovered):
 def throw_unexpected_type_error(name, expected, value, recovered):
     actual = Type_(value)
     if isinstance(name, str):
-        throw_error(
+        _throw_error(
             f"Expected {expected} for parameter '{name}', got {actual}", recovered
         )
         return
     pos = "first" if name <= 0 else "second" if name <= 1 else f"{name+1}th"
-    throw_error(f"Expected {expected} at the {pos} position, got {actual}", recovered)
+    _throw_error(f"Expected {expected} at the {pos} position, got {actual}", recovered)
 
 
-def rethrow_error(prefix: str, error, recovered):
+def _rethrow_error(prefix: str, error, recovered):
     recovered_value = recovered() if callable(recovered) else recovered
     raise VmError.from_(prefix, error, recovered_value)
 
 
-def required(name, value, recovered):
+def _required(name, value, recovered):
     if value is Uninitialized:
         if isinstance(name, str):
-            throw_error(f"Missing required parameter '{name}'", recovered)
+            _throw_error(f"Missing required parameter '{name}'", recovered)
             return
         pos = "first" if name <= 0 else "second" if name <= 1 else f"{name+1}th"
-        throw_error(f"Missing required parameter at the {pos} position", recovered)
+        _throw_error(f"Missing required parameter at the {pos} position", recovered)
 
 
-def expect_number(name, value):
-    required(name, value, math.nan)
+def _expect_number(name, value):
+    _required(name, value, math.nan)
     v = toNumber(value)
     if v is None:
         throw_unexpected_type_error(name, "number", value, math.nan)
     return v
 
 
-def expect_string(name, value):
-    required(name, value, "")
+def _expect_string(name, value):
+    _required(name, value, "")
     v = toString(value)
     if v is None:
         throw_unexpected_type_error(name, "string", value, "")
     return v
 
 
-def expect_integer(name, value):
-    required(name, value, 0)
+def _expect_integer(name, value):
+    _required(name, value, 0)
     v = toNumber(value, None)
     if v is None:
         throw_unexpected_type_error(name, "integer", value, 0)
@@ -87,85 +87,85 @@ def expect_integer(name, value):
     return i
 
 
-def expect_number_range(name, value, min_=None, max_=None):
-    v = expect_number(name, value)
+def _expect_number_range(name, value, min_=None, max_=None):
+    v = _expect_number(name, value)
     if not math.isfinite(v):
-        throw_error(
+        _throw_error(
             f"{describeParam(name)} is less than minimum value {min_}: {display(value)}",
             math.nan,
         )
     if min_ is not None:
         if v < min_:
-            throw_error(
+            _throw_error(
                 f"{describeParam(name)} is less than minimum value {min_}: {display(value)}",
                 min_,
             )
     if max_ is not None:
         if v > max_:
-            throw_error(
+            _throw_error(
                 f"{describeParam(name)} is greater than maximum value {max_}: {display(value)}",
                 max_,
             )
     return v
 
 
-def expect_integer_range(name, value, min_, max_):
-    v = expect_integer(name, value)
+def _expect_integer_range(name, value, min_, max_):
+    v = _expect_integer(name, value)
     if v < min_:
-        throw_error(
+        _throw_error(
             f"{describeParam(name)} is less than minimum value {min_}: {display(value)}",
             min_,
         )
     if v > max_:
-        throw_error(
+        _throw_error(
             f"{describeParam(name)} is greater than maximum value {max_}: {display(value)}",
             max_,
         )
     return v
 
 
-def expect_array(name, value, recovered):
-    required(name, value, recovered)
+def _expect_array(name, value, recovered):
+    _required(name, value, recovered)
     if not is_vm_array(value):
         throw_unexpected_type_error(name, "array", value, recovered)
 
 
-def expect_record(name, value, recovered):
-    required(name, value, recovered)
+def _expect_record(name, value, recovered):
+    _required(name, value, recovered)
     if not is_vm_record(value):
         throw_unexpected_type_error(name, "record", value, recovered)
 
 
-def expect_array_or_record(name, value, recovered):
-    required(name, value, recovered)
+def _expect_array_or_record(name, value, recovered):
+    _required(name, value, recovered)
     if not is_vm_array(value) and not is_vm_record(value):
         throw_unexpected_type_error(name, "array | record", value, recovered)
 
 
-def expect_compound(name, value, recovered):
-    required(name, value, recovered)
+def _expect_compound(name, value, recovered):
+    _required(name, value, recovered)
     if is_vm_primitive(value) or callable(value):
         throw_unexpected_type_error(
             name, "array | record | module | extern", value, recovered
         )
 
 
-def expect_const(name, value, recovered):
-    required(name, value, recovered)
+def _expect_const(name, value, recovered):
+    _required(name, value, recovered)
     if not is_vm_const(value):
         throw_unexpected_type_error(
             name, "nil | number | boolean | string | array | record", value, recovered
         )
 
 
-def expect_callable(name, value, recovered):
-    required(name, value, recovered)
+def _expect_callable(name, value, recovered):
+    _required(name, value, recovered)
     callable_ = callable(value)
     if not callable_:
         throw_unexpected_type_error(name, "callable", value, recovered)
 
 
-def get_numbers(args):
+def _get_numbers(args):
     if not args:
         return []
     useFirst = False
@@ -176,11 +176,11 @@ def get_numbers(args):
     # for arg in args:
     for i in range(len(args)):
         arg = args[i]
-        numbers.append(expect_number(name=None if useFirst else i, value=arg))
+        numbers.append(_expect_number(name=None if useFirst else i, value=arg))
     return numbers
 
 
-def map_vm(data, mapper):
+def _map_vm(data, mapper):
     if is_vm_primitive(data):
         ret = mapper(data, None, data)
         if ret is Uninitialized:

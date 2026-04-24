@@ -1,16 +1,16 @@
-from mirascript.helpers.convert.to_number import is_decimal_number, toNumber
+from mirascript.helpers.convert.to_number import isDecimalNumber, toNumber
 from mirascript.vm.helpers import Element
 from mirascript.vm.lib.vm_global.math_unary import trunc
 from mirascript.vm.types.checker import is_vm_array, is_vm_record
 from ....operations import Call_, ToString_, Type_, is_safe_integer
 from ....types import VmValue
 from ..._helpers import (
-    expect_array_or_record,
-    expect_compound,
-    expect_array,
-    expect_callable,
-    throw_error,
-    expect_const,
+    _expect_array_or_record,
+    _expect_compound,
+    _expect_array,
+    _expect_callable,
+    _throw_error,
+    _expect_const,
 )
 from mirascript.vm.types.const import Uninitialized, VM_ARRAY_MAX_LENGTH
 from functools import cmp_to_key
@@ -20,10 +20,10 @@ import math
 def arr_index(index):
     idx = trunc(toNumber(index, math.nan))
     if math.isnan(idx) or idx < 0:
-        throw_error("Array index must be a non-negative integer", index)
+        _throw_error("Array index must be a non-negative integer", index)
 
     if idx >= VM_ARRAY_MAX_LENGTH:
-        throw_error(
+        _throw_error(
             f"Array index exceeds maximum limit of {VM_ARRAY_MAX_LENGTH}", index
         )
     return idx
@@ -32,7 +32,7 @@ def arr_index(index):
 def isArrIndex(key):
     if not isinstance(key, (int, float, bool)):
         return False
-    return is_decimal_number(key) == False and key >= 0 and key <= VM_ARRAY_MAX_LENGTH
+    return isDecimalNumber(key) == False and key >= 0 and key <= VM_ARRAY_MAX_LENGTH
 
 
 def with_inner(obj, key, key_index, value):
@@ -72,7 +72,7 @@ def with_inner(obj, key, key_index, value):
 
 def normalizeEntries(data, entries):
     if len(entries) % 2 != 0:
-        raise throw_error(
+        raise _throw_error(
             "with_ function requires even number of arguments as key-value pairs", data
         )
 
@@ -80,7 +80,7 @@ def normalizeEntries(data, entries):
 
     for i in range(0, len(entries), 2):
         key = entries[i]
-        expect_const("key", key, data)
+        _expect_const("key", key, data)
         if key is None or key is Uninitialized:
             continue
         t = []
@@ -99,7 +99,7 @@ def normalizeEntries(data, entries):
 
 
 def with_(data=Uninitialized, *args):
-    expect_array_or_record("data", data, [])
+    _expect_array_or_record("data", data, [])
     if len(args) == 0:
         return data
 

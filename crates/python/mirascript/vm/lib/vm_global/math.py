@@ -1,15 +1,15 @@
 import math
 from random import random as _random
 
-from mirascript.vm.lib._helpers import expect_number
+from mirascript.vm.lib._helpers import _expect_number
 
 
 def atan2(y, x):
-    return math.atan2(expect_number("y", y), expect_number("x", x))
+    return math.atan2(_expect_number("y", y), _expect_number("x", x))
 
 
 def pow(x, y):
-    return math.pow(expect_number("x", x), expect_number("y", y))
+    return math.pow(_expect_number("x", x), _expect_number("y", y))
 
 
 def random():

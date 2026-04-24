@@ -7,8 +7,8 @@ from mirascript.helpers.convert.to_number import toNumber
 from mirascript.helpers.serialize import display
 from mirascript.vm.lib._helpers import (
     describeParam,
-    expect_number_range,
-    throw_error,
+    _expect_number_range,
+    _throw_error,
     throw_unexpected_type_error,
 )
 from mirascript.vm.types.const import Uninitialized
@@ -34,7 +34,7 @@ def fromNumber(datetime, fallback):
         else:
             # 这里需要根据你的错误处理机制来调整
             # 假设你有一个throw_error函数
-            throw_error(
+            _throw_error(
                 f"{describeParam('datetime')} is an invalid timestamp: {display(datetime)}",
                 math.nan,
             )
@@ -83,7 +83,7 @@ def getTimestamp(datetime, fallback) -> Union[float, None]:
             # return float('nan')
             if fallback:
                 return None
-            throw_error(
+            _throw_error(
                 f"{describeParam('datetime')} cannot be parsed as datetime:  {display(datetime)}",
                 math.nan,
             )
@@ -116,7 +116,7 @@ def to_datetime(
     timestamp = getTimestamp(datetime_value, fallback is not Uninitialized)
     if timestamp is None:
         return fallback
-    o = expect_number_range(
+    o = _expect_number_range(
         "offset", 0 if offset is Uninitialized or offset is None else offset, -24, 24
     )
     # 解析 offset（小时），若不可用或不是有限数则视为 0

@@ -1,9 +1,9 @@
 from mirascript.vm.types.const import Uninitialized
-from ..._helpers import expect_array, expect_number
+from ..._helpers import _expect_array, _expect_number
 
 
 def flatten(data=Uninitialized, depth=1):
-    expect_array("data", data, data)
+    _expect_array("data", data, data)
 
     def flat(arr, d):
         if d < 1:
@@ -16,5 +16,5 @@ def flatten(data=Uninitialized, depth=1):
                 result.append(item)
         return result
 
-    d = expect_number("depth", depth)
+    d = _expect_number("depth", depth)
     return flat(data, d)

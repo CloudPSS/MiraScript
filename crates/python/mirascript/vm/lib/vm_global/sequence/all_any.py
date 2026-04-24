@@ -1,5 +1,5 @@
 from mirascript.vm.types.const import Uninitialized
-from ..._helpers import throw_error, expect_array_or_record, expect_callable
+from ..._helpers import _throw_error, _expect_array_or_record, _expect_callable
 from mirascript.vm.types.checker import is_vm_array
 from ....operations import Call_, ToBoolean_
 
@@ -7,8 +7,8 @@ __all__ = ["all", "any"]
 
 
 def all(data=Uninitialized, fn=Uninitialized):
-    expect_array_or_record("data", data, None)
-    expect_callable("fn", fn, data)
+    _expect_array_or_record("data", data, None)
+    _expect_callable("fn", fn, data)
 
     if is_vm_array(data):
         for i, item in enumerate(data):
@@ -25,8 +25,8 @@ def all(data=Uninitialized, fn=Uninitialized):
 
 
 def any(data=Uninitialized, fn=Uninitialized):
-    expect_array_or_record("data", data, None)
-    expect_callable("fn", fn, data)
+    _expect_array_or_record("data", data, None)
+    _expect_callable("fn", fn, data)
 
     if is_vm_array(data):
         for i, item in enumerate(data):

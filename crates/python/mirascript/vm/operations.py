@@ -3,7 +3,7 @@ import re
 
 from mirascript.helpers.convert.to_boolean import toBoolean
 from mirascript.helpers.convert.to_format import toFormat
-from mirascript.helpers.convert.to_number import toNumber
+from mirascript.helpers.convert.to_number import isDecimalNumber, toNumber
 from mirascript.helpers.convert.to_string import toString
 from mirascript.vm.error import VmError
 
@@ -23,20 +23,12 @@ LoopContinue = type("LoopContinue", (), {})()
 LoopBreak = type("LoopBreak", (), {})()
 
 
-def is_decimal_number(num):
-    """判断数字是否为小数（不是整数）"""
-
-    if isinstance(num, (int, float)):
-        return isinstance(num, float) and not num.is_integer()
-    return False
-
-
 def is_safe_integer(n):
     """
     检查是否为安全整数（在 64 位浮点数精确表示范围内）
     类似于 JavaScript 的 Number.isSafeInteger()
     """
-    if is_decimal_number(n):
+    if isDecimalNumber(n):
         return False
 
     # 64 位浮点数能精确表示的最大整数范围

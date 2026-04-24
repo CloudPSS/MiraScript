@@ -2,7 +2,7 @@ from typing import Any, Callable, Dict, List, TypeVar, Union
 
 from ....types.checker import is_vm_array
 from .entries import entries
-from ..._helpers import throw_error
+from ..._helpers import _throw_error
 from ....helpers import Cp
 
 
@@ -13,7 +13,7 @@ def zip(data):
         key = el["0"]
         arr = el["1"]
         if not is_vm_array(arr):
-            raise throw_error(f"zip expected array but got {type(arr)}", None)
+            raise _throw_error(f"zip expected array but got {type(arr)}", None)
 
         l = max(l, len(arr))
 

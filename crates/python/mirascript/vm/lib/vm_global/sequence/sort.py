@@ -2,10 +2,10 @@ from mirascript.helpers.convert.to_number import toNumber
 from ....operations import Call_
 from ....types import VmValue
 from ..._helpers import (
-    expect_array_or_record,
-    expect_compound,
-    expect_array,
-    expect_callable,
+    _expect_array_or_record,
+    _expect_compound,
+    _expect_array,
+    _expect_callable,
 )
 from mirascript.vm.types.const import Uninitialized
 from functools import cmp_to_key
@@ -38,7 +38,7 @@ def default_compare(a=Uninitialized, b=Uninitialized):
 def cmp(comparator, recovered):
     if comparator is None or comparator is Uninitialized:
         return default_compare
-    expect_callable("comparator", comparator, recovered)
+    _expect_callable("comparator", comparator, recovered)
 
     def compare(a: VmValue, b: VmValue):
         ret = Call_(comparator, a, b)
@@ -48,7 +48,7 @@ def cmp(comparator, recovered):
 
 
 def sort(data=Uninitialized, comparator=Uninitialized):
-    expect_array("data", data, data)
+    _expect_array("data", data, data)
     compare = cmp(comparator, data)
     arr = []
     for item in data:
@@ -58,8 +58,8 @@ def sort(data=Uninitialized, comparator=Uninitialized):
 
 
 def sort_by(data=Uninitialized, key_fn=Uninitialized, comparator=Uninitialized):
-    expect_array("data", data, data)
-    expect_callable("key_fn", key_fn, data)
+    _expect_array("data", data, data)
+    _expect_callable("key_fn", key_fn, data)
     compare = cmp(comparator, data)
 
     arr = []

@@ -15,20 +15,18 @@ def is_vm_primitive(value) -> bool:
 
 
 def is_vm_array(value):
-    # VmArray 应为普通数组
     if not isinstance(value, list):
         return False
     return True
 
 
 def is_vm_record(value):
-    # VmRecord 应为普通对象或空原型对象
     if not isinstance(value, dict):
         return False
     return True
 
 
-def is_vm_const_inner(value, depth):
+def _is_vm_const_inner(value, depth):
     if depth >= MAX_DEPTH:
         return False
     depth += 1
@@ -57,7 +55,7 @@ def is_vm_const(value, check_deep=False):
             return is_vm_record(value)
         return False
     else:
-        return is_vm_const_inner(value, 1)
+        return _is_vm_const_inner(value, 1)
 
 
 def is_vm_immutable(value, check_deep=False):

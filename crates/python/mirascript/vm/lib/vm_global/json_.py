@@ -1,32 +1,15 @@
 import json
+import math
 
-# from ...error import VMError
-from mirascript.vm.lib._helpers import expect_string, required, rethrow_error
+from mirascript.vm.lib._helpers import _expect_string, _required, _rethrow_error
 from mirascript.vm.types.checker import is_vm_module
 from mirascript.vm.types.const import Uninitialized
-import math
-from mirascript.vm.operations import ToString_
 from mirascript.helpers.convert.to_string import innerToString_
 from mirascript.vm.types.extern import is_vm_extern
 
 
 class NanToNullEncoder(json.JSONEncoder):
     def encode(self, o):
-        # def replace_nan(obj):
-        #     if isinstance(obj, ( float)):
-        #         if math.isnan(obj) or math.isinf(obj):
-        #             return None
-
-        #     elif isinstance(obj, list):
-        #         return [replace_nan(item) for item in obj]
-        #     elif isinstance(obj, dict):
-        #         return {key: replace_nan(value) for key, value in obj.items()}
-        #     return obj
-
-        # val = replace_nan(o)
-
-        # if isinstance(o, ( float)):
-        #     return numberToString_(o)
         if o is None:
             return "null"
         if isinstance(o, (float)):
@@ -56,13 +39,13 @@ class NanToNullEncoder(json.JSONEncoder):
 
 
 def to_json(value=Uninitialized):
-    required("value", value, None)
+    _required("value", value, None)
 
     if is_vm_module(value) or is_vm_extern(value):
         try:
             return json.dumps(value.value, cls=NanToNullEncoder, ensure_ascii=False)
         except Exception as e:
-            rethrow_error("Failed to convert extern to JSON", e, "{}")
+            _rethrow_error("Failed to convert extern to JSON", e, "{}")
 
     if callable(value):
         return None
@@ -70,8 +53,8 @@ def to_json(value=Uninitialized):
 
 
 def from_json(value=Uninitialized, fallback=None):
-    required("value", value, None)
-    j = expect_string("value", value)
+    _required("value", value, None)
+    j = _expect_string("value", value)
     try:
 
         def parse_constant(x):
@@ -84,19 +67,4 @@ def from_json(value=Uninitialized, fallback=None):
     except Exception as e:
         if fallback is not None:
             return fallback
-        rethrow_error("Invalid JSON", e, None)
-
-    # if not isinstance(value, str):
-    #   return value
-
-    # try:
-    #     return json.loads(value)
-    # except Exception as e:
-    #     if fallback is not None:
-    #         return fallback
-    #     rethrow_error("Invalid JSON", e, None)
-
-
-if __name__ == "__main__":
-    var_1_7 = ["Hello world"]
-    print(to_json(var_1_7))
+        _rethrow_error("Invalid JSON", e, None)
