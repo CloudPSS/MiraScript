@@ -1,10 +1,11 @@
 /target
-debug_result.py
+debug_output.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
 .pytest_cache/
 *.py[cod]
+*.pdb
 
 # C extensions
 *.so

@@ -1487,7 +1487,8 @@ def emit(chunk: bytes, filename: str = "<mira_script>") -> Any:
         exec(code, vm_globals)
         vm_script = vm_globals.get("script", None)
         if vm_script is not None:
-            vm_script.__module__ = module
+            setattr(vm_script, "__filename__", filename)
+            setattr(vm_script, "__ast__", module)
         return vm_script
 
     except Exception as e:

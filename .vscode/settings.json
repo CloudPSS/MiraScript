@@ -46,5 +46,6 @@
   "js/ts.tsdk.path": "./node_modules/typescript/lib",
   "npm.packageManager": "pnpm",
   "python-envs.workspaceSearchPaths": ["./crates/python/.venv"],
-  "python.analysis.typeCheckingMode": "standard"
+  "python.analysis.typeCheckingMode": "standard",
+  "python.defaultInterpreterPath": "${workspaceFolder}/crates/python/.venv/Scripts/python"
 }
