@@ -36,7 +36,7 @@ export const map = VmLib(
             f: 'fn(value: any, key: number | string, input: type(data)) -> any',
         },
         returnsType: 'type(data)',
-        examples: ['map([1, 2, 3], fn (v) { v * v }) // [1, 4, 9]'],
+        examples: ['map([1, 2, 3], fn { it * it }) // [1, 4, 9]'],
     },
 );
 
@@ -57,7 +57,7 @@ export const filter = VmLib(
             predicate: 'fn(value: any, key: number | string, input: type(data)) -> boolean',
         },
         returnsType: 'type(data)',
-        examples: ['filter([1, 2, 3, 4], fn (v) { v % 2 == 0 }) // [2, 4]'],
+        examples: ['filter([1, 2, 3, 4], fn { it % 2 == 0 }) // [2, 4]'],
     },
 );
 
@@ -68,7 +68,7 @@ export const filter_map = VmLib(
             return ret ?? undefined;
         }),
     {
-        summary: '对数组或记录中的每个元素应用函数，并返回非 nil 的结果',
+        summary: '对数组或记录中的每个元素应用函数，并返回非 `nil` 的结果',
         params: {
             data: '要映射的数组或记录',
             f: '应用于每个元素的函数',
@@ -78,6 +78,6 @@ export const filter_map = VmLib(
             f: 'fn(value: any, key: number | string, input: type(data)) -> any | nil',
         },
         returnsType: 'type(data)',
-        examples: ['filter_map([1, 2, 3], fn (v) { if v % 2 == 0 { v * v } else { nil } }) // [4]'],
+        examples: ['filter_map([1, 2, 3], fn {\n  if it % 2 == 0 { it * it } else { nil } \n}) // [4]'],
     },
 );
