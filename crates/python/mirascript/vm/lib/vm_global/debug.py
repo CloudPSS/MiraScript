@@ -1,4 +1,5 @@
-from mirascript.vm.operations import ToString_
+import sys
+from ...operations import ToString_
 from ...error import VmError
 
 
@@ -6,20 +7,19 @@ DEBUG = "\033[44;37m"
 PANIC = "\033[41;37m"
 RESET = "\033[0m"
 
-
-# debug_print=lambda *args: print(CYAN,"MiraScript",*args,RESET),
+DEBUG_PREFIX = f"{DEBUG} MiraScript {RESET}" if sys.stdout.isatty() else "[MiraScript]"
+PANIC_PREFIX = f"{PANIC} MiraScript {RESET}" if sys.stdout.isatty() else "[MiraScript]"
 
 
 def debug_print(*args):
-    print(f"{DEBUG} MiraScript {RESET}", *args, )
+    print(DEBUG_PREFIX, *args)
 
 
 def panic(*msg):
-    # raise RuntimeError(msg)
     if not msg:
-        print(f"{PANIC} MiraScript {RESET}")
+        print(PANIC_PREFIX)
     else:
-        print(f"{PANIC} MiraScript {RESET}", *msg)
+        print(PANIC_PREFIX, *msg)
 
     error = f"panic: {ToString_(msg)}" if len(msg) > 0 else "panic"
 

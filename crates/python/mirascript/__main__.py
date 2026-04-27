@@ -76,14 +76,17 @@ if __name__ == "__main__":
 
     # Compile and execute the script
     result, diagnostics = _compile(script, mode)
-    for diag in diagnostics:
-        print(diag)
-    if result is None:
-        sys.exit(1)
-    assert callable(result), "Compilation failed, result is not callable"
 
     if args.generate:
         _print_debug(result, args.generate)
+
+    for diag in diagnostics:
+        print(diag)
+
+    if result is None:
+        sys.exit(1)
+
+    assert callable(result), "Compilation failed, result is not callable"
 
     try:
         print("[OK]", result())
