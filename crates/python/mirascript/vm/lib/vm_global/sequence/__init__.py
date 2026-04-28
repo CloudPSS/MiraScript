@@ -7,6 +7,7 @@ from .flatten import flatten
 from .repeat import repeat
 from .reverse import reverse
 from .sort import sort, sort_by
+from .unique import unique, unique_by
 from .zip import zip
 from .with_ import with_
 

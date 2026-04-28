@@ -34,9 +34,16 @@ t_eq(sort([0, nil, 'x']), [0, nil, 'x']);
 
 // sort custom compare
 t_eq(sort([3, 1, 2], fn (a, b) { b - a }), [3, 2, 1]);
-t_eq(sort(["c", "a", "b"], fn (a, b) {
-  if a > b { -1 } else if a < b { 1 } else { 0 }
-}), ["c", "b", "a"]);
+t_eq(
+  sort(
+    ["c", "a", "b"],
+    fn (a, b, ..rest) {
+      t_eq(rest, []); // no more arguments
+      if a > b { -1 } else if a < b { 1 } else { 0 }
+    },
+  ),
+  ["c", "b", "a"],
+);
 t_eq(sort(["c", "a", "b"], fn (a, b) {
   if a > b { -1 } else if a < b { true } else { false }
 }), ["c", "b", "a"]);

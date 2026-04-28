@@ -38,7 +38,16 @@ t_eq(unique([(0, 'x'), (0, 'y'), (0, 'z')]), [(0, 'x'), (0, 'y'), (0, 'z')]);
 t_eq(unique([(0, 'x'), (0, 'y'), (0, 'x')]), [(0, 'x'), (0, 'y')]);
 
 // unique custom equal
-t_eq(unique([3, 1, '2', '3', 2], fn (a, b) { a =~ b }), [3, 1, '2']);
+t_eq(
+  unique(
+    [3, 1, '2', '3', 2],
+    fn (a, b, ..rest) {
+      t_eq(rest, []); // no more arguments
+      a =~ b
+    },
+  ),
+  [3, 1, '2'],
+);
 
 let arr = [1, 3, 2, 1];
 t_eq(unique(arr, fn (a, b) { a == b }), [1, 3, 2]);
