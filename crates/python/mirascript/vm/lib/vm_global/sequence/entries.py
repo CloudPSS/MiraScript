@@ -1,5 +1,3 @@
-from typing import Union
-
 from mirascript.vm.types.const import Uninitialized
 from ....types.checker import is_vm_array, is_vm_record
 from ..._helpers import _expect_array_or_record, _expect_compound

@@ -1,5 +1,4 @@
-from dataclasses import dataclass
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Union
 from .module import VmModule
 from .extern import VmExtern
 
@@ -23,8 +22,7 @@ VM_ARRAY_MAX_LENGTH = 2**31 - 1
 
 
 class VmFunctionLike:
-    def __call__(self, *args):
-        ...  # type: ignore
+    def __call__(self, *args): ...  # type: ignore
 
 
 VmImmutable = Union[VmConst, VmModule]

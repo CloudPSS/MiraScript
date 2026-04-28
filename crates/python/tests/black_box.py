@@ -13,7 +13,6 @@ TEST_DIR = (Path(__file__) / "../../../../tests").resolve()
 
 SKIP_TESTS = {
     "e2e/complex.mira",
-    "lib/sequence/new.mira",
     "lib/math/round.mira",
     "feature/module.mira",
     "logic/loop.mira",

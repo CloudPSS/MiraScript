@@ -10,5 +10,6 @@ from .sort import sort, sort_by
 from .unique import unique, unique_by
 from .zip import zip
 from .with_ import with_
+from .new import new_array, new_record
 
 globals()["with"] = with_

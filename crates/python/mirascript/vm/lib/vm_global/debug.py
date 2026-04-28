@@ -2,7 +2,6 @@ import sys
 from ...operations import ToString_
 from ...error import VmError
 
-
 DEBUG = "\033[44;37m"
 PANIC = "\033[41;37m"
 RESET = "\033[0m"
