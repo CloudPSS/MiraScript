@@ -1369,7 +1369,8 @@ class Emitter:
             #     code = "continue;"
             # code = ast.Continue()
             code = ast.Return(value=ast.Name(id="LoopContinue", ctx=ast.Load()))
-
+        elif opcode == OpCode.Noop:
+            pass
         else:
             # 默认处理未知 opcode
             opcode_name = get_opcode_name(opcode)

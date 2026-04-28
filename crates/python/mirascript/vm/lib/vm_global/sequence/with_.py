@@ -1,20 +1,15 @@
-from mirascript.helpers.convert.to_number import isDecimalNumber, toNumber
-from mirascript.vm.helpers import Element
-from mirascript.vm.lib.vm_global.math_unary import trunc
-from mirascript.vm.types.checker import is_vm_array, is_vm_record
-from ....operations import Call_, ToString_, Type_, is_safe_integer
-from ....types import VmValue
+import math
+from .....helpers.convert.to_number import isDecimalNumber, toNumber
+from ....helpers import Element
+from ....types.checker import is_vm_array, is_vm_record
+from ....operations import ToString_
 from ..._helpers import (
     _expect_array_or_record,
-    _expect_compound,
-    _expect_array,
-    _expect_callable,
     _throw_error,
     _expect_const,
 )
+from ..math.round import trunc
 from mirascript.vm.types.const import Uninitialized, VM_ARRAY_MAX_LENGTH
-from functools import cmp_to_key
-import math
 
 
 def arr_index(index):

@@ -90,8 +90,8 @@ let user = (name: "Alice");
 debug_print(user.address.city);  // => nil
 
 // 空合并与默认值
-let city = user.address.city ?? "未知";
-debug_print(user.name!, city);         // 断言非空`,
+let city = user.address.city ?? "未知"; // '??' 空合并
+debug_print(user.name!, city);          // '!'  断言非空`,
         context: {},
     },
 ];

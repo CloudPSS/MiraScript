@@ -25,4 +25,4 @@
 // }
 // t_throws(fn { to_boolean() });
 
-t_true(true);
+t_false('to_boolean' in global);

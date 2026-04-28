@@ -1,8 +1,8 @@
-from .._helpers import _get_numbers
-from functools import reduce as _reduce
 import math
 import sys
-from ...types.checker import is_positive_zero, is_negative_zero
+from functools import reduce as _reduce
+from ..._helpers import _get_numbers
+from ....types.checker import is_positive_zero, is_negative_zero
 
 
 def _build(func):
@@ -56,8 +56,8 @@ def hypot(*args):
     # Manual computation for >2 args on older Pythons
     s = 0.0
     for n in numbers:
-        if math.isnan(n):
-            return math.nan
+        if math.isinf(n):
+            return math.inf
         s += n * n
     return math.sqrt(s)
 

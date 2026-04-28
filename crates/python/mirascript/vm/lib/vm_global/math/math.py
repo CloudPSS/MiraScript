@@ -1,7 +1,7 @@
 import math
 from random import random as _random
 
-from mirascript.vm.lib._helpers import _expect_number
+from ..._helpers import _expect_number
 
 
 def atan2(y, x):

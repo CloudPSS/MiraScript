@@ -1,17 +1,13 @@
-# -*- coding: utf-8 -*-
-# 依赖：VmError, $ToNumber, $Type, is_vm_array, is_vm_extern,  VmExtern, VmFunction, is_vm_record, VmModule, is_vm_primitive, is_vm_const, VM_ARRAY_MAX_LENGTH, Cp
 import math
 
-from mirascript.helpers.convert.to_number import toNumber
-from mirascript.helpers.convert.to_string import toString
-from mirascript.helpers.serialize import display
+from ...helpers.convert.to_number import toNumber
+from ...helpers.convert.to_string import toString
+from ...helpers.serialize import display
 
-
-from .. import VmExtern, VmFunction, VmModule, is_vm_const
+from .. import is_vm_const
 from ..operations import Type_, is_safe_integer
 from ..error import VmError
 from ..types.checker import is_vm_array, is_vm_record
-from ..types.const import VM_ARRAY_MAX_LENGTH, VmAny, VmValue
 from ..helpers import Cp
 from ..types.const import Uninitialized
 from ..types.checker import is_vm_primitive
@@ -58,7 +54,7 @@ def _required(name, value, recovered):
         _throw_error(f"Missing required parameter at the {pos} position", recovered)
 
 
-def _expect_number(name, value):
+def _expect_number(name, value) -> float:
     _required(name, value, math.nan)
     v = toNumber(value)
     if v is None:
@@ -66,7 +62,7 @@ def _expect_number(name, value):
     return v
 
 
-def _expect_string(name, value):
+def _expect_string(name, value) -> str:
     _required(name, value, "")
     v = toString(value)
     if v is None:
@@ -74,12 +70,12 @@ def _expect_string(name, value):
     return v
 
 
-def _expect_integer(name, value):
+def _expect_integer(name, value) -> float:
     _required(name, value, 0)
     v = toNumber(value, None)
     if v is None:
         throw_unexpected_type_error(name, "integer", value, 0)
-    from mirascript.vm.lib.vm_global.math_unary import trunc
+    from mirascript.vm.lib.vm_global.math.round import trunc
 
     i = trunc(v)
     if not is_safe_integer(i):

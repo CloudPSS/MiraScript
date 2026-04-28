@@ -56,6 +56,33 @@ t_true([1, 2] is not != @record);
   t_false([10] is [y and > 10]);
   t_eq(y, 10);
 }
+{
+  let arr = [1, 2, 3, 4, 5];
+  let ok = arr is [first, ..middle, last];
+
+  t_eq(first, 1);
+  t_eq(middle, [2, 3, 4]);
+  t_eq(last, 5);
+  t_true(ok);
+}
+{
+  let arr = [1, 5];
+  let ok = arr is [first, ..middle, last];
+
+  t_eq(first, 1);
+  t_eq(middle, []);
+  t_eq(last, 5);
+  t_true(ok);
+}
+{
+  let arr = [1];
+  let ok = arr is [first, ..middle, last];
+
+  t_eq(first, 1);
+  t_eq(middle, []);
+  t_eq(last, 1);
+  t_false(ok);
+}
 
 {
   t_true((1, 2, 3) is (1, ..r_rest) && r_rest is (1: 2, 2: 3));

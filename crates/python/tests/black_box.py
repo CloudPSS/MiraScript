@@ -13,7 +13,6 @@ TEST_DIR = (Path(__file__) / "../../../../tests").resolve()
 
 SKIP_TESTS = {
     "e2e/complex.mira",
-    "lib/math/round.mira",
     "feature/module.mira",
     "logic/loop.mira",
 }
@@ -122,18 +121,13 @@ for mira_path in files:
     test_name = "test_" + (
         file.replace(".mira", "").replace("/", "_").replace(".", "_").replace("-", "_")
     )
-    if file in SKIP_TESTS:
-        setattr(
-            BlackBoxTests,
-            test_name,
-            lambda self: self.skipTest("Test skipped due to known issues"),
-        )
-    else:
-        setattr(
-            BlackBoxTests,
-            test_name,
-            lambda self, mira_path=mira_path: self.run_mira_file(mira_path),
-        )
+    test = (
+        (lambda self: self.skipTest("Test skipped due to known issues"))
+        if file in SKIP_TESTS
+        else (lambda self, mira_path=mira_path: self.run_mira_file(mira_path))
+    )
+    test.__doc__ = file
+    setattr(BlackBoxTests, test_name, test)
 
 if __name__ == "__main__":
     unittest.main()

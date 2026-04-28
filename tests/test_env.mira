@@ -45,6 +45,17 @@ if has_extern {
 t_true('v_nil' in global);
 t_false('v_whatever' in global);
 
+// 全局对象不应该有这些属性
+// JS 常见的属性，但在 MiraScript 中不应该存在
+t_false('__proto__' in global);
+t_false('constructor' in global);
+t_false('toString' in global);
+// Python 常见的属性，但在 MiraScript 中不应该存在
+t_false('ToString' in global);
+t_false('with_' in global);
+t_false('Call_' in global);
+t_false('max_' in global);
+
 if has_extern {
   t_true(v_extern == v_extern);
   t_false(v_extern == v_extern_another);

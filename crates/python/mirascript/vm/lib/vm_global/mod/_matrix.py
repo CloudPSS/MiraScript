@@ -12,10 +12,9 @@ from ..._helpers import (
     _map_vm,
 )
 from ..._helpers_utils import _array_len
-from ..math_unary import round_
 from ....helpers import Cp
 from ....operations import Add_, Call_, Div_, Mul_, Sub_
-from ....types import is_vm_any, is_vm_const, VmValue
+from ....types import is_vm_const
 
 __all__ = [
     "size",

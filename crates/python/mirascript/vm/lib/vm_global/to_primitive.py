@@ -19,9 +19,9 @@ def to_number(value=Uninitialized, fallback=Uninitialized):
     return x
 
 
-def to_boolean(value=Uninitialized, fallback=Uninitialized):
-    _required("value", value, False)
-    return toBoolean(value, fallback)
+# def to_boolean(value=Uninitialized, fallback=Uninitialized):
+#     _required("value", value, False)
+#     return toBoolean(value, fallback)
 
 
 def format(value=Uninitialized, fmt=Uninitialized):

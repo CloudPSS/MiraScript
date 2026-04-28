@@ -1,9 +1,8 @@
 import math
-from ._helpers import _throw_error
 from ..types import VmFunction, VmModule
-from mirascript.vm.lib.vm_global.math_unary import trunc
-from ..types.const import VM_ARRAY_MAX_LENGTH, VmAny, VmValue
-from ..error import VmError
+from ..types.const import VM_ARRAY_MAX_LENGTH
+from ._helpers import _throw_error
+from .vm_global.math.round import trunc
 
 
 def wrap_entry(name: str, value, module: str):
@@ -32,7 +31,6 @@ def _array_len(length):
     if length is None or math.isnan(length) or length <= -1:
         _throw_error("Array length must be a non-negative integer", None)
 
-    # length = int(length)
     length = trunc(length)
     if length > VM_ARRAY_MAX_LENGTH:
         _throw_error(
