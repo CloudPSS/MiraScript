@@ -1,0 +1,32 @@
+let r = 6;
+let b = while {
+  let i = 12;
+  break i + r;
+} {
+  t_never();
+};
+t_eq(b, 18); // while 循环的返回值
+
+while false {
+  t_never();
+}
+
+t_throws(fn {
+  while { } { }
+});
+t_throws(fn {
+  while 0 { }
+});
+t_throws(fn {
+  while nan { }
+});
+t_throws(fn {
+  while nil { }
+});
+// compile empty loops
+t_timeout(fn {
+  loop { }
+});
+t_timeout(fn {
+  while true { }
+});

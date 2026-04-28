@@ -11,10 +11,11 @@ from tests.deepequals import assert_deep_equal, assert_not_deep_equal
 
 TEST_DIR = (Path(__file__) / "../../../../tests").resolve()
 
+# 要跳过的测试文件列表（相对于 TEST_DIR），使用 POSIX 路径格式（即使在 Windows 上），不添加 "./" 前缀
+# 如 "e2e/complex.mira" 表示 TEST_DIR/e2e/complex.mira
 SKIP_TESTS = {
     "e2e/complex.mira",
     "feature/module.mira",
-    "logic/loop.mira",
 }
 
 
@@ -116,15 +117,15 @@ class BlackBoxTests(unittest.TestCase):
 
 files = TEST_DIR.rglob("*.mira")
 
-for mira_path in files:
-    file = mira_path.relative_to(TEST_DIR).as_posix()
+for test_file in files:
+    file = test_file.relative_to(TEST_DIR).as_posix()
     test_name = "test_" + (
         file.replace(".mira", "").replace("/", "_").replace(".", "_").replace("-", "_")
     )
     test = (
         (lambda self: self.skipTest("Test skipped due to known issues"))
         if file in SKIP_TESTS
-        else (lambda self, mira_path=mira_path: self.run_mira_file(mira_path))
+        else (lambda self, mira_path=test_file: self.run_mira_file(mira_path))
     )
     test.__doc__ = file
     setattr(BlackBoxTests, test_name, test)

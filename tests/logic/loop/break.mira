@@ -1,0 +1,10 @@
+let mut count = 0;
+let r = while count < 5 {
+  count += 1;
+  if count == 3 {
+    break count * 2; // 返回 6
+  }
+};
+
+t_eq(r, 6);
+t_eq(count, 3); // 循环结束时 count 的值

@@ -1,6 +1,6 @@
 from .mirascript import Config, compile as _compile
 from .emit import emit
-from .diagnostics import decode_diagnostics, Diagnostic
+from .diagnostics import decode_diagnostics
 
 DefaultConfig = Config(input_mode="script")
 

@@ -1126,11 +1126,16 @@ class Emitter:
             up = read()
             if not current_blocks_body:
                 raise ValueError("No current block to set upvalue")
+            if not reg:
+                val = ast.Constant(value=None)
+            else:
+                val = ast.Name(id=self.rv(reg), ctx=ast.Load())
 
-            current_blocks_body.insert(0, ast.Nonlocal(names=[self.rv(up, level)]))
+            upvalue_name = self.rv(up, level)
+            current_blocks_body.insert(0, ast.Nonlocal(names=[upvalue_name]))
             code = ast.Assign(
-                targets=[ast.Name(id=self.rv(up, level), ctx=ast.Store())],
-                value=ast.Name(id=self.rv(reg), ctx=ast.Load()),
+                targets=[ast.Name(id=upvalue_name, ctx=ast.Store())],
+                value=val,
                 lineno=0,
             )
 
@@ -1474,6 +1479,8 @@ def set_ast_positions(node, lineno=1, col_offset=0):
 
 def emit(chunk: bytes, filename: str = "<mira_script>") -> Any:
     """生成代码"""
+    result = None
+    module = None
     try:
         gen = Emitter(chunk)
         gen.read()
@@ -1483,16 +1490,20 @@ def emit(chunk: bytes, filename: str = "<mira_script>") -> Any:
         script = deep_nonlocal_fix(gen.func_script)
         set_ast_positions(script)
         module = ast.Module(body=[script], type_ignores=[])
-
         code = compile(module, filename, "exec")
         exec(code, vm_globals)
-        vm_script = vm_globals.get("script", None)
-        if vm_script is not None:
-            setattr(vm_script, "__filename__", filename)
-            setattr(vm_script, "__ast__", module)
-        return vm_script
+        result = vm_globals.get("script", None)
+        return result
 
     except Exception as e:
-        traceback.print_exc()
+        ex = e
 
-        return None
+        def r(*args, **kwargs):
+            raise ex
+
+        result = r
+        return result
+    finally:
+        if result is not None:
+            setattr(result, "__filename__", filename)
+            setattr(result, "__ast__", module)
