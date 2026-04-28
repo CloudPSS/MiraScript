@@ -32,6 +32,28 @@ for mut i in 1..2 {
 }
 test_closure();
 
+let mut w = 1;
+while w is mut i and <= 2 {
+  match i {
+    case 1 {
+      getter1 = fn { i };
+      setter1 = fn {
+        i = it;
+      };
+    }
+    case 2 {
+      getter2 = fn { i };
+      setter2 = fn {
+        i = it;
+      };
+    }
+  }
+  w += 1;
+} else {
+  t_eq(w, 3);
+}
+test_closure();
+
 let mut c = 1;
 loop {
   let mut i = c;
