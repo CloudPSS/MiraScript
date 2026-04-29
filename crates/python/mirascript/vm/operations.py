@@ -1,5 +1,4 @@
 import math
-import re
 
 from mirascript.helpers.convert.to_boolean import toBoolean
 from mirascript.helpers.convert.to_format import toFormat
@@ -11,10 +10,10 @@ from mirascript.vm.types.checker import is_vm_primitive
 from mirascript.vm.types.module import VmModule
 from mirascript.vm.types.wrapper import VmWrapper, isVmWrapper
 
-from ..vm.types.checker import is_vm_const, is_vm_record
+from ..vm.types.checker import is_vm_record
 
 from .types.extern import VmExtern, is_vm_extern
-from mirascript.vm.types.const import Uninitialized, getVmFunctionInfo
+from mirascript.vm.types.const import Uninitialized
 import unicodedata
 
 ## 标记当前值未返回的值
@@ -88,7 +87,7 @@ def ToNumber_(value):
     return toNumber(value)
 
 
-def ToString_(val):
+def ToString_(val) -> str:
     AssertInit_(val)
     if val is None:
         return ""
@@ -103,19 +102,19 @@ def overloadNumberString_(a, b):
     return True
 
 
-def Add_(a, b):
+def Add_(a, b) -> float:
     return ToNumber_(a) + ToNumber_(b)
 
 
-def Sub_(a, b):
+def Sub_(a, b) -> float:
     return ToNumber_(a) - ToNumber_(b)
 
 
-def Mul_(a, b):
+def Mul_(a, b) -> float:
     return ToNumber_(a) * ToNumber_(b)
 
 
-def Div_(a, b):
+def Div_(a, b) -> float:
     a = ToNumber_(a)
     b = ToNumber_(b)
     if b != 0:
@@ -126,7 +125,7 @@ def Div_(a, b):
     return math.copysign(1, a) * math.copysign(1, b) * math.inf
 
 
-def Mod_(a, b):
+def Mod_(a, b) -> float:
     x = ToNumber_(a)
     y = ToNumber_(b)
     """
@@ -168,50 +167,50 @@ def Mod_(a, b):
     return math.fmod(x, y)
 
 
-def Pow_(a, b):
+def Pow_(a, b) -> float:
     try:
         return math.pow(ToNumber_(a), ToNumber_(b))
-    except ValueError as e:
+    except ValueError:
         return math.nan
 
 
-def And_(a, b):
+def And_(a, b) -> bool:
     return ToBoolean_(a) and ToBoolean_(b)
 
 
-def Or_(a, b):
+def Or_(a, b) -> bool:
     return ToBoolean_(a) or ToBoolean_(b)
 
 
-def Gt_(a, b):
+def Gt_(a, b) -> bool:
     if overloadNumberString_(a, b):
         return ToNumber_(a) > ToNumber_(b)
     else:
         return str(a) > str(b)
 
 
-def Gte_(a, b):
+def Gte_(a, b) -> bool:
     if overloadNumberString_(a, b):
         return ToNumber_(a) >= ToNumber_(b)
     else:
         return str(a) >= str(b)
 
 
-def Lt_(a, b):
+def Lt_(a, b) -> bool:
     if overloadNumberString_(a, b):
         return ToNumber_(a) < ToNumber_(b)
     else:
         return str(a) < str(b)
 
 
-def Lte_(a, b):
+def Lte_(a, b) -> bool:
     if overloadNumberString_(a, b):
         return ToNumber_(a) <= ToNumber_(b)
     else:
         return str(a) <= str(b)
 
 
-def Eq_(a, b):
+def Eq_(a, b) -> bool:
     AssertInit_(a)
     AssertInit_(b)
 
@@ -221,12 +220,12 @@ def Eq_(a, b):
     return isSame(a, b)
 
 
-def Neq_(a, b):
+def Neq_(a, b) -> bool:
     return not Eq_(a, b)
 
 
 ## 高级相等比较
-def Aeq_(a, b):
+def Aeq_(a, b) -> bool:
     if overloadNumberString_(a, b):
         an = ToNumber_(a)
         bn = ToNumber_(b)
@@ -252,21 +251,21 @@ def Aeq_(a, b):
         return ai == bi
 
 
-def Naeq_(a, b):
+def Naeq_(a, b) -> bool:
     return not Aeq_(a, b)
 
 
-def Same_(a, b):
+def Same_(a, b) -> bool:
     AssertInit_(a)
     AssertInit_(b)
     return isSame(a, b)
 
 
-def Nsame_(a, b):
+def Nsame_(a, b) -> bool:
     return not Same_(a, b)
 
 
-def In_(a, b):
+def In_(a, b) -> bool:
     AssertInit_(a)
     AssertInit_(b)
     if b is None:
@@ -291,7 +290,7 @@ def In_(a, b):
     return False
 
 
-def Concat_(*args):
+def Concat_(*args) -> str:
     result = ""
     for a in args:
         AssertInit_(a)
@@ -299,30 +298,28 @@ def Concat_(*args):
     return result
 
 
-def Pos_(a):
-    # TO DO: implement Pos_
+def Pos_(a) -> float:
     return ToNumber_(a)
-    pass
 
 
-def Neg_(a):
+def Neg_(a) -> float:
     return -ToNumber_(a)
 
 
-def Not_(a):
+def Not_(a) -> bool:
     return not ToBoolean_(a)
 
 
-def Length_(a):
+def Length_(a) -> float:
     AssertInit_(a)
     if isVmArray(a):
-        return len(a)
+        return float(len(a))
     if isinstance(a, str):
-        return len(a)
+        return float(len(a))
     if isinstance(a, dict):
-        return len(a)
+        return float(len(a))
     if isinstance(a, VmWrapper) and hasattr(a, "length"):
-        return a.length()
+        return float(a.length())
     raise TypeError(f"`Expected array, string or record, got {Type_(a)}")
 
 

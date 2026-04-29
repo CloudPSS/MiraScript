@@ -1,8 +1,17 @@
-let whitespaces = "\t\v\f \u{A0} \n\r\u{FEFF}\u{2028}\u{2029}";
-
-t_eq("$(whitespaces)1$(whitespaces)"::trim(), "1");
-t_eq("$(whitespaces)1$(whitespaces)"::trim_start(), "1$(whitespaces)");
-t_eq("$(whitespaces)1$(whitespaces)"::trim_end(), "$(whitespaces)1");
 
 t_eq(nil::trim(), "");
 t_eq(1::trim(), "1");
+
+let line_terminators = "\r\n\u{2028}\u{2029}";
+let white_spaces = "\t\v\f\u{FEFF}\u{20}\u{A0}\u{1680}\u{2000}\u{2001}\u{2002}\u{2003}\u{2004}\u{2005}\u{2006}\u{2007}\u{2008}\u{2009}\u{200A}\u{202F}\u{205F}\u{3000}";
+
+let whitespaces = [..chars(line_terminators), ..chars(white_spaces), line_terminators, white_spaces, "$line_terminators$white_spaces"];
+
+for c in whitespaces {
+  t_eq(c::trim(), "");
+  t_eq(c::trim_start(), "");
+  t_eq(c::trim_end(), "");
+  t_eq("$(c)1$(c)"::trim(), "1");
+  t_eq("$(c)1$(c)"::trim_start(), "1$(c)");
+  t_eq("$(c)1$(c)"::trim_end(), "$(c)1");
+}
