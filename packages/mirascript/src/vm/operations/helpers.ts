@@ -38,7 +38,7 @@ export function $ElOpt(key: string, value: VmAny): VmConst {
 
 /** 构造函数和函数表达式 */
 export function $Fn<T extends VmFunctionLike>(name: string | null | undefined, fn: T): VmFunction<T> {
-    return VmFunction(fn, { isLib: false, injectCp: false, name: name || VM_FUNCTION_ANONYMOUS_NAME });
+    return VmFunction(fn, { isLib: false, name: name || VM_FUNCTION_ANONYMOUS_NAME });
 }
 
 /** 读取闭包上值 */

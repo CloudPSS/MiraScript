@@ -5,7 +5,6 @@ import { kVmFunction, VM_FUNCTION_ANONYMOUS_NAME } from '../../helpers/constants
 import { isVmFunction } from '../../helpers/types.js';
 import type { VmAny, VmValue } from './index.js';
 import { fromVmFunctionProxy } from './boundary.js';
-import { CpEnter, CpExit } from '../checkpoint.js';
 import type { VmLib } from '../lib/helpers.js';
 
 /**
@@ -37,8 +36,6 @@ export type VmFunctionInfo = {
     readonly returnsType?: string;
     /** 文档字符串 */
     readonly examples?: string[];
-    /** 如果添加了包装，返回原函数 */
-    readonly original?: VmFunctionLike;
     /** 标记为弃用 */
     readonly deprecated?: { use?: string; message: DiagnosticCode };
 };
@@ -47,8 +44,6 @@ export type VmFunctionInfo = {
 export type VmFunctionOption = Partial<Omit<VmFunctionInfo, 'original'>> & {
     /** 函数名称 */
     readonly name?: string | null | undefined;
-    /** 是否注入检查点 */
-    readonly injectCp?: boolean;
 };
 
 const nameIfNotAnonymous = <T>({ name }: { name: string | undefined }, fallback: T): string | T => {
@@ -76,7 +71,6 @@ export function VmFunction<T extends VmFunctionLike>(
         opt = {
             ...option,
             isLib: true,
-            injectCp: false,
             name: nameIfNotAnonymous(option, null),
         };
     } else {
@@ -96,19 +90,6 @@ export function VmFunction<T extends VmFunctionLike>(
         deprecated: opt.deprecated ?? undefined,
     };
     const name = opt.name ?? fn.name;
-    if (opt.injectCp) {
-        const original = fn;
-        info.original = original;
-        fn = ((...args) => {
-            try {
-                CpEnter();
-                const ret = original(...args);
-                return ret;
-            } finally {
-                CpExit();
-            }
-        }) as typeof fn;
-    }
     defineProperty(fn, 'name', { value: name, configurable: true });
     defineProperty(fn, kVmFunction, { value: Object.freeze(info) });
     return fn as VmFunction<T>;

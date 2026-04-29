@@ -12,15 +12,6 @@ import {
 test('VmFunction', (t) => {
     const fn = (a: VmAny, b: VmAny) => Number(a) + Number(b);
 
-    const wrappedFn = VmFunction(fn, { injectCp: true });
-    t.not(wrappedFn, fn);
-    t.deepEqual(wrappedFn(1, 2), 3);
-    t.true(isVmFunction(wrappedFn));
-    t.is(wrappedFn, VmFunction(wrappedFn));
-    t.is(wrappedFn.name, 'fn');
-    t.is(getVmFunctionInfo(wrappedFn)?.fullName, 'fn');
-    t.is(getVmFunctionInfo(wrappedFn)?.original, fn);
-
     const vmFn = VmFunction(fn);
     t.is(vmFn, fn as VmFunction<typeof fn>);
     t.deepEqual(vmFn(1, 2), 3);
@@ -28,7 +19,6 @@ test('VmFunction', (t) => {
     t.is(vmFn, VmFunction(vmFn));
     t.is(vmFn.name, 'fn');
     t.is(getVmFunctionInfo(vmFn)?.fullName, 'fn');
-    t.is(getVmFunctionInfo(vmFn)?.original, undefined);
 
     t.throws(() => VmFunction(123 as never), { instanceOf: TypeError });
 
@@ -43,7 +33,6 @@ test('VmFunction', (t) => {
     t.is(recreateFn, VmFunction(recreateFn));
     t.is(recreateFn.name, 'add');
     t.is(getVmFunctionInfo(recreateFn)?.fullName, 'math.add');
-    t.is(getVmFunctionInfo(recreateFn)?.original, undefined);
 });
 
 test('VmModule', async (t) => {
