@@ -17,7 +17,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Topic :: Software Development :: Code Generators",
 ]
-dependencies = []
+dependencies = ["typing_extensions>=4.7.1,<5.0.0"]
 
 [project.urls]
 source = "https://github.com/CloudPSS/MiraScript"
@@ -34,4 +34,5 @@ bindings = "pyo3"
 test = "python -m unittest -b -c tests.black_box"
 test37 = "python3.7 -m unittest -b -c tests.black_box"
 format = "black ."
+check = "pyright ."
 debug = { cmd = "python -m mirascript -g debug_output.py", cwd = "${POE_CWD}" }

@@ -1,14 +1,10 @@
 import math
 from ..._helpers import _expect_number
-from mirascript.vm.types.const import Uninitialized
-from ._helper import _build
-
+from mirascript.vm.types.types import Uninitialized
+from ._helper import _build, _run
 
 abs_ = _build(abs, math.nan, math.inf, math.inf, 0.0, 0.0)
-
-
 sign = _build(lambda v: 1 if v > 0 else -1 if v < 0 else v)
-
 acos = _build(math.acos, math.nan, math.nan, math.nan)
 acosh = _build(math.acosh, math.nan)
 asin = _build(math.asin, math.nan, math.nan, math.nan)
@@ -16,10 +12,9 @@ asinh = _build(math.asinh, math.nan, math.inf, -math.inf)
 atan = _build(math.atan, math.nan)
 
 
-# atanh = build(math.atanh,math.nan,math.nan,math.nan)
 def atanh(x=Uninitialized):
     x = _expect_number("x", x)
-    ret = _build(math.atanh, math.nan)(x)
+    ret = _run(x, math.atanh, math.nan)
     if math.isnan(ret):
         if x == 1.0:
             return math.inf
@@ -42,10 +37,9 @@ log = _build(math.log, math.nan, math.inf, math.nan, -math.inf, -math.inf)
 log10 = _build(math.log10, math.nan, math.inf, math.nan, -math.inf, -math.inf)
 
 
-# log1p = build(math.log1p,math.nan,math.inf,math.nan,0,-0)
 def log1p(x=Uninitialized):
     x = _expect_number("x", x)
-    ret = _build(math.log1p, math.nan, math.inf, math.nan)(x)
+    ret = _run(x, math.log1p, math.nan, math.inf, math.nan)
     if math.isnan(ret):
         if x == -1.0:
             return -math.inf

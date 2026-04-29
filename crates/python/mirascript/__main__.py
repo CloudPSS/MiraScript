@@ -3,14 +3,12 @@ import sys
 import argparse
 import traceback
 
-from .mirascript import Config
-from .main import compile
+from .compiler import compile, InputMode
 
 
-def _compile(script: str, mode: str):
+def _compile(script: str, mode: InputMode):
     try:
-        config = Config(input_mode=mode)
-        bytecode, diagnostics = compile(script, config)
+        bytecode, diagnostics = compile(script, input_mode=mode)
         return bytecode, diagnostics
     except Exception as e:
         traceback.print_exc()

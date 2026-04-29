@@ -1,7 +1,8 @@
 from inspect import ismodule
 
 from ..types.context import VmSharedContext
-from ..types.const import Uninitialized
+from ..types.types import Uninitialized
+from ...helpers import types as checker
 from .. import types
 from . import vm_global
 from ._helpers_utils import wrap_entry
@@ -19,7 +20,7 @@ for name in dir(vm_global):
         continue
     if hasattr(types, name) and getattr(types, name) == value:
         continue
-    if hasattr(types.checker, name) and getattr(types.checker, name) == value:
+    if hasattr(checker, name) and getattr(checker, name) == value:
         continue
     VmSharedContext[name] = wrap_entry(name, value, "global")
 

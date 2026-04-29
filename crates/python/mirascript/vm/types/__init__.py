@@ -1,34 +1,38 @@
-# -*- coding: utf-8 -*-
-from typing import Tuple, Union
-from .const import VmAny, VmPrimitive, VmRecord, VmArray, VmValue, VmUninitialized
-from .extern import VmExtern, wrap_to_vm_value, unwrap_from_vm_value
-from .function import VmFunction
+from typing_extensions import TYPE_CHECKING
+
+from .types import (
+    VmExtern,
+    VmUninitialized,
+    VmPrimitive,
+    VmRecord,
+    VmArray,
+    VmConst,
+    VmImmutable,
+    VmValue,
+    VmAny,
+    VmFunction,
+)
+from .function import vm_function
 from .module import VmModule
 from .wrapper import VmWrapper
-from .context import VmContext, create_vm_context, DefaultVmContext
+from .context import VmContext
 from .script import VmScript, is_vm_script
-from .checker import is_vm_any, is_vm_const, is_vm_immutable, is_vm_value
 
 __all__ = [
     "VmExtern",
-    "wrap_to_vm_value",
-    "unwrap_from_vm_value",
+    "vm_function",
     "VmFunction",
     "VmModule",
     "VmWrapper",
     "VmContext",
-    "create_vm_context",
-    "DefaultVmContext",
     "VmScript",
     "is_vm_script",
-    "is_vm_any",
-    "is_vm_const",
-    "is_vm_immutable",
-    "is_vm_value",
     "VmPrimitive",
     "VmRecord",
     "VmArray",
     "VmValue",
     "VmAny",
     "VmUninitialized",
+    "VmConst",
+    "VmImmutable",
 ]

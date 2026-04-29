@@ -1,31 +1,30 @@
-# VmFunction 相关实现，Python 版
-from functools import wraps
-from ..helpers import CpEnter, CpExit
+from typing_extensions import TypeVar, TypeAlias, Callable, TYPE_CHECKING, overload
 
-from .const import kVmFunction
+from ...helpers.constants import kVmFunction
+
+if TYPE_CHECKING:
+    from . import VmValue
+
+VmFunction: TypeAlias = Callable[..., "VmValue"]
+T = TypeVar("T", bound=VmFunction)
 
 
-def VmFunction(fn, option=None):
-    if not callable(fn):
+@overload
+def vm_function(name: str) -> Callable[[T], T]: ...
+@overload
+def vm_function(fn: T) -> T: ...
+def vm_function(name_or_fn):  # type: ignore
+    """将一个 Python 函数标记为一个 VmFunction"""
+    if isinstance(name_or_fn, str):
+
+        def decorator(fn: T, name=name_or_fn) -> T:
+            fn.__name__ = name
+            setattr(fn, kVmFunction, True)
+            return fn
+
+        return decorator
+    if not callable(name_or_fn):
         raise TypeError("Invalid function")
-    option = option or {}
-    if option.get("injectCp"):
-        original = fn
 
-        @wraps(original)
-        def wrapped(*args):
-            try:
-                CpEnter()
-                return original(*args)
-            finally:
-                CpExit()
-
-        fn = wrapped
-
-        setattr(
-            fn,
-            kVmFunction,
-            option.get("fullName", getattr(original, "__name__", "unknown")),
-        )
-
-    return fn
+    setattr(name_or_fn, kVmFunction, True)
+    return name_or_fn

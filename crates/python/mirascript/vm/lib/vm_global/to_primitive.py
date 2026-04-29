@@ -5,7 +5,7 @@ from mirascript.helpers.convert.to_string import toString
 
 from .._helpers import _expect_string, _required
 import math
-from mirascript.vm.types.const import Uninitialized
+from mirascript.vm.types.types import Uninitialized
 
 
 def to_string(value=Uninitialized, fallback=Uninitialized):

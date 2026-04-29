@@ -1,17 +1,21 @@
 import math
 from typing import NoReturn
 
+from mirascript.helpers.types import (
+    is_vm_array,
+    is_vm_const,
+    is_vm_primitive,
+    is_vm_record,
+)
+
 from ...helpers.convert.to_number import toNumber
 from ...helpers.convert.to_string import toString
 from ...helpers.serialize import display
 
-from .. import is_vm_const
 from ..operations import Type_, is_safe_integer
 from ..error import VmError
-from ..types.checker import is_vm_array, is_vm_record
 from ..helpers import Cp
-from ..types.const import Uninitialized
-from ..types.checker import is_vm_primitive
+from ..types.types import Uninitialized
 
 
 def _describe_param(name):

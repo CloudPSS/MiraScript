@@ -1,6 +1,6 @@
 import math
 from mirascript.helpers.convert.to_number import toNumber
-from mirascript.vm.types.checker import is_vm_array
+from mirascript.helpers.types import is_vm_array, is_vm_const
 from ..._helpers import (
     _expect_array,
     _expect_callable,
@@ -14,7 +14,6 @@ from ..._helpers import (
 from ..._helpers_utils import _array_len
 from ....helpers import Cp
 from ....operations import Add_, Call_, Div_, Mul_, Sub_
-from ....types import is_vm_const
 
 __all__ = [
     "size",

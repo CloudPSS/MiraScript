@@ -1,7 +1,8 @@
+from mirascript.helpers.types import is_vm_const
+
 from ..._helpers import _expect_callable, _expect_const, _map_vm
-from ....types import is_vm_const
 from ....operations import Call_, ToBoolean_
-from mirascript.vm.types.const import Uninitialized
+from mirascript.vm.types.types import Uninitialized
 
 
 def _map_impl_wrapped(data, fn_name, fn, mapper):

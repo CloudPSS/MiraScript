@@ -1,6 +1,6 @@
 from .._helpers import _required, _expect_array
 from ...operations import ToString_
-from mirascript.vm.types.const import Uninitialized
+from mirascript.vm.types.types import Uninitialized
 
 _WHITESPACE_CHARS = "\r\n\u2028\u2029\t\v\f\ufeff\x20\xa0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f\u3000"
 

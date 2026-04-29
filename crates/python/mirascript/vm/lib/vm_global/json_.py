@@ -2,40 +2,21 @@ import json
 import math
 
 from mirascript.vm.lib._helpers import _expect_string, _required, _rethrow_error
-from mirascript.vm.types.checker import is_vm_module
-from mirascript.vm.types.const import Uninitialized
-from mirascript.helpers.convert.to_string import innerToString_
-from mirascript.vm.types.extern import is_vm_extern
+from mirascript.helpers.types import is_vm_module, is_vm_extern
+from mirascript.helpers.constants import Uninitialized
+from mirascript.helpers.convert.to_string import toString
 
 
-class NanToNullEncoder(json.JSONEncoder):
+class _NanToNullEncoder(json.JSONEncoder):
     def encode(self, o):
-        if o is None:
+        if callable(o):
             return "null"
-        if isinstance(o, (float)):
+        if isinstance(o, (float, int, bool)):
             if math.isnan(o) or math.isinf(o):
                 return "null"
-        if isinstance(o, str):
-            return super().encode(o)
-        #
-        if isinstance(o, (list)):
-            r = "[" + ",".join([self.encode(item) for item in o]) + "]"
-            return r
-        if isinstance(o, (dict)):
-            r = "{"
-            first = True
-            for key in o:
-                if not first:
-                    r += ","
-                first = False
-                r += self.encode(str(key))
-                r += ":"
-                r += self.encode(o[key])
-            r += "}"
-            return r
+            return toString(o)
 
-        r = innerToString_(o, True)
-        return r
+        return super().encode(o)
 
 
 def to_json(value=Uninitialized):
@@ -43,13 +24,13 @@ def to_json(value=Uninitialized):
 
     if is_vm_module(value) or is_vm_extern(value):
         try:
-            return json.dumps(value.value, cls=NanToNullEncoder, ensure_ascii=False)
+            return json.dumps(value.value, cls=_NanToNullEncoder, ensure_ascii=False)
         except Exception as e:
             _rethrow_error("Failed to convert extern to JSON", e, "{}")
 
     if callable(value):
         return None
-    return json.dumps(value, cls=NanToNullEncoder, ensure_ascii=False)
+    return json.dumps(value, cls=_NanToNullEncoder, ensure_ascii=False)
 
 
 def from_json(value=Uninitialized, fallback=None):

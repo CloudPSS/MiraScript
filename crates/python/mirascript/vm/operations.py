@@ -4,16 +4,16 @@ from mirascript.helpers.convert.to_boolean import toBoolean
 from mirascript.helpers.convert.to_format import toFormat
 from mirascript.helpers.convert.to_number import isDecimalNumber, toNumber
 from mirascript.helpers.convert.to_string import toString
+from mirascript.helpers.types import is_vm_primitive, is_vm_record
 from mirascript.vm.error import VmError
 
-from mirascript.vm.types.checker import is_vm_primitive
 from mirascript.vm.types.module import VmModule
 from mirascript.vm.types.wrapper import VmWrapper, isVmWrapper
 
-from ..vm.types.checker import is_vm_record
+from ..vm.types.function import vm_function
 
-from .types.extern import VmExtern, is_vm_extern
-from mirascript.vm.types.const import Uninitialized
+from ..helpers.types import is_vm_extern, is_vm_array, is_vm_module
+from mirascript.vm.types.types import Uninitialized
 import unicodedata
 
 ## 标记当前值未返回的值
@@ -65,12 +65,6 @@ def ToBoolean_(value):
     return toBoolean(value)
 
 
-def isVmArray(value):
-    if type(value) is list:
-        return True
-    return False
-
-
 def ToNumber_(value):
     """
     将输入值转换为数字
@@ -91,7 +85,7 @@ def ToString_(val) -> str:
     AssertInit_(val)
     if val is None:
         return ""
-    return toString(val, Uninitialized, False)
+    return toString(val)
 
 
 def overloadNumberString_(a, b):
@@ -270,7 +264,7 @@ def In_(a, b) -> bool:
     AssertInit_(b)
     if b is None:
         return False
-    if isVmArray(b):
+    if is_vm_array(b):
         if a is None:
             return a in b
 
@@ -312,14 +306,12 @@ def Not_(a) -> bool:
 
 def Length_(a) -> float:
     AssertInit_(a)
-    if isVmArray(a):
+    if is_vm_array(a):
         return float(len(a))
     if isinstance(a, str):
         return float(len(a))
     if isinstance(a, dict):
         return float(len(a))
-    if isinstance(a, VmWrapper) and hasattr(a, "length"):
-        return float(a.length())
     raise TypeError(f"`Expected array, string or record, got {Type_(a)}")
 
 
@@ -385,7 +377,7 @@ def sliceCore(a, start, end, exclusive):
 
 def Slice_(a, start, end):
     AssertInit_(a)
-    if not isVmArray(a):
+    if not is_vm_array(a):
         raise VmError(f"`Expected array, got {Type_(a)}", [])
     s = ToNumber_(start) if start is not None else 0
     e = ToNumber_(end) if end is not None else len(a) - 1
@@ -394,7 +386,7 @@ def Slice_(a, start, end):
 
 def SliceExclusive_(a, start, end):
     AssertInit_(a)
-    if not isVmArray(a):
+    if not is_vm_array(a):
         raise VmError(f"`Expected array, got {Type_(a)}", [])
     s = ToNumber_(start) if start is not None else 0
     e = ToNumber_(end) if end is not None else len(a)
@@ -404,8 +396,8 @@ def SliceExclusive_(a, start, end):
 def Call_(func, *args):
     for a in args:
         AssertInit_(a)
-    if isinstance(func, VmExtern) and hasattr(func, "callable"):
-        return func.call(args)
+    # if isinstance(func, VmExtern) and hasattr(func, "callable"):
+    #     return func.call(args)
     if callable(func):
         if len(args) == 0:
             return func()
@@ -422,13 +414,13 @@ def Type_(val):
         return "number"
     if isinstance(val, str):
         return "string"
-    if isVmArray(val):
+    if is_vm_array(val):
         return "array"
     if is_vm_record(val):
         return "record"
-    if isinstance(val, VmExtern):
+    if is_vm_extern(val):
         return "extern"
-    if isinstance(val, VmModule):
+    if is_vm_module(val):
         return "module"
     if callable(val):
         return "function"
@@ -452,7 +444,7 @@ def IsRecord_(val):
 
 def IsArray_(val):
     AssertInit_(val)
-    return isVmArray(val)
+    return is_vm_array(val)
 
 
 def AssertNonNil_(val):
@@ -504,12 +496,6 @@ def Get_(obj, key):
     return None
 
 
-def GetGlobal_(obj, key):
-    pk = ToString_(key)
-    r = obj.get(pk)
-    return r
-
-
 def Set_(obj, key, val):
     AssertInit_(obj)
     AssertInit_(val)
@@ -538,7 +524,7 @@ def RecordSpread_(val):
     AssertInit_(val)
     if val is None:
         return {}
-    if isVmArray(val):
+    if is_vm_array(val):
         result = {}
         for i in range(len(val)):
             result[str(i)] = val[i]
@@ -563,7 +549,7 @@ def ArraySpread_(val):
     AssertInit_(val)
     if val is None:
         return []
-    if isVmArray(val):
+    if is_vm_array(val):
         return val
 
     raise VmError(f"`Expected array, iterable extern or nil, got {Type_(val)}", None)
@@ -599,3 +585,7 @@ def RangeExclusive_(start, end):
         result.append(s)
         s += 1
     return result
+
+
+def Fn_(name):
+    return vm_function(name)

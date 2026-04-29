@@ -2,11 +2,9 @@ import logging
 import unittest
 import sys
 from pathlib import Path
-from mirascript.main import compile as mira_compile
-from mirascript.vm import VmError, VmFunction, VmModule
-from mirascript.vm.types.context import create_vm_context
+from mirascript import compile as mira_compile
+from mirascript.vm import VmError, vm_function, VmModule, VmContext
 from mirascript.vm.helpers import config_checkpoint
-from mirascript.mirascript import Config
 from tests.deepequals import assert_deep_equal, assert_not_deep_equal
 
 TEST_DIR = (Path(__file__) / "../../../../tests").resolve()
@@ -32,58 +30,64 @@ class BlackBoxTests(unittest.TestCase):
         # 收集超时回调与脚本输出
         timeout_fns = []
 
+        @vm_function
         def t_eq(a, b, message=None):
             logging.debug(f"t_eq: {a} == {b}")
             assert_deep_equal(a, b, message=message)
 
+        @vm_function
         def t_ne(a, b, message=None):
             logging.debug(f"t_ne: {a} != {b}")
             assert_not_deep_equal(a, b, message=message)
 
+        @vm_function
         def t_true(v, message=None):
+            logging.debug(f"t_true: {v}")
             self.assertTrue(v, msg=message)
 
+        @vm_function
         def t_false(v, message=None):
+            logging.debug(f"t_false: {v}")
             self.assertFalse(v, msg=message)
 
+        @vm_function
         def t_throws(fn, message=None):
             logging.debug(f"t_throws: expecting exception from {fn}")
             with self.assertRaises(VmError, msg=message):
                 fn()
 
+        @vm_function
         def t_timeout(fn, message=None):
+            logging.debug(f"t_timeout: expecting timeout from {fn}")
             timeout_fns.append(
                 [fn, message if message is not None else "Execution timed out"]
             )
 
+        @vm_function
         def t_never(message=None):
+            logging.debug("t_never: this should never be called")
             msg = message or "This should never be called"
             self.fail(msg)
 
         # environment values passed to script
-        externs = {
-            "t_eq": VmFunction(t_eq),
-            "t_ne": VmFunction(t_ne),
-            "t_true": VmFunction(t_true),
-            "t_false": VmFunction(t_false),
-            "t_throws": VmFunction(t_throws),
-            "t_timeout": VmFunction(t_timeout),
-            "t_never": VmFunction(t_never),
+        globals_ = {
+            "t_eq": t_eq,
+            "t_ne": t_ne,
+            "t_true": t_true,
+            "t_false": t_false,
+            "t_throws": t_throws,
+            "t_timeout": t_timeout,
+            "t_never": t_never,
             "v_array": [],
             "v_record": {},
-        }
-        globals_ = {
             "v_nil": None,
             "v_true": True,
             "v_false": False,
             "v_number": 42,
             "v_string": "Hello, Mira!",
-            "v_fn": VmFunction(lambda: "I am a function"),
-            "v_fn_another": VmFunction(lambda: "I am another function"),
-            "has_extern": True,
-            "v_extern": {},
-            "v_extern_another": {},
-            "has_module": True,
+            "v_fn": vm_function(lambda: "I am a function"),
+            "v_fn_another": vm_function(lambda: "I am another function"),
+            "has_extern": False,
             "v_module": VmModule("v_module", {}),
             "v_module_another": VmModule("v_module_another", {}),
         }
@@ -95,16 +99,11 @@ class BlackBoxTests(unittest.TestCase):
             config_checkpoint(1000)
 
         # compile and run
-        script, x = mira_compile(
-            code,
-            Config(
-                pretty=True,
-                sourceMap=True,
-                fileName=mira_path.as_uri(),
-            ),
-        )
-        ctx = create_vm_context(externs, globals_)
+        script, _ = mira_compile(code)
+        ctx = VmContext(globals_)
         # script 应当是可调用的：script(ctx)
+        if script is None:
+            self.fail("Compilation failed, no script generated")
         script(ctx)
 
         # run timeout callbacks after script execution

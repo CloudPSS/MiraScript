@@ -1,9 +1,9 @@
-from mirascript.vm.types.const import Uninitialized
-from ....types.checker import is_vm_array, is_vm_record
+from mirascript.helpers.types import is_vm_array
+from mirascript.vm.types.types import Uninitialized, VmAny
 from ..._helpers import _expect_array_or_record, _expect_compound
 
 
-def keys(data=Uninitialized):
+def keys(data: VmAny = Uninitialized):
     _expect_compound("data", data, [])
 
     if is_vm_array(data):

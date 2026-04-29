@@ -1,15 +1,17 @@
 import math
+import re
 
-from mirascript.helpers.types import isVmFunction
-from mirascript.vm.types.checker import is_vm_array, is_vm_module, is_vm_record
-from mirascript.vm.types.const import Uninitialized, getVmFunctionInfo
-from mirascript.vm.types.extern import is_vm_extern
-from .constants import REG_IDENTIFIER, REG_ORDINAL
+from .constants import Uninitialized
+from .types import is_vm_function, is_vm_extern, is_vm_array, is_vm_module, is_vm_record
 
 MAX_DEPTH = 100
 
-REG_IDENTIFIER_FULL = REG_IDENTIFIER
-REG_ORDINAL_FULL = REG_ORDINAL
+
+REG_IDENTIFIER = re.compile(r"(?:_+|@+|\$+|[A-Za-z])[A-Za-z0-9_]*", re.UNICODE)
+REG_ORDINAL = re.compile(
+    r"(?:214748364[0-7]|21474836[0-3]\d|2147483[0-5]\d{2}|214748[0-2]\d{3}|21474[0-7]\d{4}|2147[0-3]\d{5}|214[0-6]\d{6}|21[0-3]\d{7}|20\d{8}|1\d{9}|[1-9]\d{0,8}|0)",
+    re.UNICODE,
+)
 
 
 def serializeNil() -> str:
@@ -130,7 +132,7 @@ def serializeRecord(value, depth, options) -> str:
 
 def displayFunction(value):
     try:
-        name = getVmFunctionInfo(value)
+        name = value.__name__
         if name:
             return f"<function {name}>"
         return "<function>"
@@ -214,9 +216,9 @@ def serialize_string(value: str) -> str:
 
 
 def serialize_prop_name(value: str) -> str:
-    if REG_ORDINAL_FULL.fullmatch(value):
+    if REG_ORDINAL.fullmatch(value):
         return value
-    if REG_IDENTIFIER_FULL.fullmatch(value):
+    if REG_IDENTIFIER.fullmatch(value):
         return value
     return serialize_string(value)
 
@@ -241,7 +243,7 @@ def serializeImpl(value, depth: int, options) -> str:
     if isinstance(value, str):
         return options.serializeString(value, options)
 
-    if isVmFunction(value):
+    if is_vm_function(value):
         return options.serializeFunction(value)
     if is_vm_module(value):
         return options.serializeModule(value)

@@ -1,7 +1,7 @@
 from ..._helpers import _expect_callable, _expect_integer_range
-from ....operations import Call_, ToBoolean_, Get_
+from ....operations import Call_, Get_
 from ....helpers import Element
-from mirascript.vm.types.const import VM_ARRAY_MAX_LENGTH, Uninitialized
+from mirascript.helpers.constants import VM_ARRAY_MAX_LENGTH, Uninitialized
 from mirascript.helpers.convert.to_string import toString
 
 

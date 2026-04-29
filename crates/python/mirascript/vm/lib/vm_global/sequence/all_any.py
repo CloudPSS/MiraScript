@@ -1,6 +1,6 @@
-from mirascript.vm.types.const import Uninitialized
-from ..._helpers import _throw_error, _expect_array_or_record, _expect_callable
-from mirascript.vm.types.checker import is_vm_array
+from mirascript.helpers.types import is_vm_array
+from mirascript.vm.types.types import Uninitialized
+from ..._helpers import _expect_array_or_record, _expect_callable
 from ....operations import Call_, ToBoolean_
 
 __all__ = ["all", "any"]

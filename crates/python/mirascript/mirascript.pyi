@@ -1,14 +1,4 @@
-# from .diagnostics import DiagnosticLevel
-
-class ConfigData(object):
-    """
-    MiraScript 编译配置数据
-
-    Attributes:
-        input_mode (str): 输入模式，支持 'script' 和 'template'
-    """
-
-    input_mode: str
+from typing_extensions import Literal
 
 class Config:
     """
@@ -18,7 +8,7 @@ class Config:
         input_mode (str): 输入模式，支持 'script' 和 'template'
     """
 
-    def __init__(self, **data) -> None:
+    def __init__(self, **attr) -> None:
         """
         初始化编译配置
 
@@ -27,7 +17,7 @@ class Config:
         """
         ...
 
-def compile(script: str, config: Config):
+def compile(script: str, config: Config) -> "tuple[bytes | None, list[int]]":
     """
     编译 MiraScript 代码，生成字节码
 
@@ -40,7 +30,11 @@ def compile(script: str, config: Config):
     """
     ...
 
-def get_diagnostic_message(code: int):
+def get_diagnostic_message(
+    code: int,
+) -> tuple[
+    Literal["Error", "Warning", "Info", "Hint", "Reference", "Unknown"], str, str
+]:
     """
     获取诊断信息的消息
 
@@ -52,7 +46,7 @@ def get_diagnostic_message(code: int):
     """
     ...
 
-def op_codes():
+def op_codes() -> dict[str, int]:
     """
     获取 MiraScript 的所有操作码
 

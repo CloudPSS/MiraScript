@@ -2,7 +2,7 @@ import math
 import decimal
 from typing import Callable
 from ..._helpers import _expect_number
-from mirascript.vm.types.const import Uninitialized
+from mirascript.vm.types.types import Uninitialized
 
 
 def _run(

@@ -1,8 +1,9 @@
-from typing import TypeVar, Union
+from typing_extensions import TypeVar, overload
 import math
 import re
+
 from mirascript.vm.error import VmError
-from mirascript.vm.types.const import Uninitialized
+from mirascript.vm.types.types import Uninitialized
 
 
 def isDecimalNumber(num):
@@ -61,7 +62,11 @@ def stringToNumber(s):
 T = TypeVar("T")
 
 
-def toNumber(value, fallback: T = Uninitialized) -> Union[float, T]:
+@overload
+def toNumber(value) -> float: ...
+@overload
+def toNumber(value, fallback: T) -> "float | T": ...
+def toNumber(value, fallback: T = Uninitialized) -> "float | T":
     if isinstance(value, bool):
         return float(1 if value else 0)
 

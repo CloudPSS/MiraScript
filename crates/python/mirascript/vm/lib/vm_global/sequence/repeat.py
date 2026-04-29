@@ -1,6 +1,6 @@
 from ..._helpers import _expect_const, _expect_number, _required
 from ..._helpers_utils import _array_len
-from mirascript.vm.types.const import Uninitialized
+from mirascript.vm.types.types import Uninitialized
 
 
 def repeat(data=Uninitialized, times=Uninitialized):

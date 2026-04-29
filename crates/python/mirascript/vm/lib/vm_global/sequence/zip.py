@@ -1,6 +1,5 @@
-from typing import Any, Callable, Dict, List, TypeVar, Union
+from mirascript.helpers.types import is_vm_array
 
-from ....types.checker import is_vm_array
 from .entries import entries
 from ..._helpers import _throw_error
 from ....helpers import Cp

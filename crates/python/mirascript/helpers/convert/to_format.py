@@ -1,14 +1,10 @@
 import math
 import re
 
-from mirascript.vm.types.const import Uninitialized
-from .to_string import numberToString_, toString
+from .to_string import toString
 
 
 def formatNumber(num):
-    if not math.isfinite(num):
-        return toString(num)
-
     if num == 0:
         return "0"
 
@@ -27,25 +23,23 @@ def formatNumber(num):
     return ps if len(ps) < len(s) else s
 
 
-def toFormat(val, fmt=None):
-    f = ""
-    if fmt is not None and fmt is not Uninitialized:
-        f = fmt.strip()
+def toFormat(val, fmt: "str | None" = None) -> str:
+    fmt = fmt.strip() if fmt is not None else ""
 
     if isinstance(val, bool):
         return toString(val)
 
     if isinstance(val, (int, float)):
-        r = re.match(r"^\.\d+$", f)
+        if not math.isfinite(val):
+            return toString(val)
+        r = re.match(r"^\.\d+$", fmt)
         if r:
-            ff = float(f[1:])
-            if math.isinf(ff):
-                digits = 100
-            else:
-                digits = math.trunc(ff)
-                if not (digits <= 100):
-                    digits = 100
-            return f"{val:.{digits}f}"
+            ff = float(fmt[1:])
+            if ff < 0:
+                ff = 0
+            elif ff > 100:
+                ff = 100
+            return f"{val:.{math.trunc(ff)}f}"
         else:
             return formatNumber(val)
     return toString(val)

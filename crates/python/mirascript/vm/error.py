@@ -1,7 +1,6 @@
-## VM 预期的错误
-
-
 class VmError(Exception):
+    """VM 预期的错误"""
+
     def __init__(self, message, recovered):
         super().__init__(message)
         self.message = message

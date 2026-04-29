@@ -2,7 +2,7 @@ from mirascript.helpers.convert.to_number import toNumber
 from ....operations import Call_
 from ....types import VmValue
 from ..._helpers import _expect_array, _expect_callable
-from mirascript.vm.types.const import Uninitialized
+from mirascript.vm.types.types import Uninitialized
 from functools import cmp_to_key
 import math
 

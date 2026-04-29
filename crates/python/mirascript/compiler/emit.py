@@ -1,62 +1,19 @@
 import logging
 import struct
-import traceback
-from typing import Any, Union, List, Tuple, Optional
+from typing_extensions import Any, Union, List, Tuple, Optional, TypeAlias
 import ast
 import sys
 
-from .vm.operations import ToString_
-from .vm.env import vm_globals
+from ..vm.operations import ToString_
+from ..vm.env import vm_globals
+from .script import wrap_vm_script, VmScript
 from .deep_nonlocal_fix import deep_nonlocal_fix
-
-
-class OpCodes:
-    """MiraScript 操作码"""
-
-    def __init__(self) -> None:
-        from .mirascript import op_codes
-
-        self.__dict__.update(op_codes())
-
-    def __getattr__(self, name: str) -> int:
-        if name in self.__dict__:
-            return self.__dict__[name]
-        raise AttributeError(f"No such OpCode: {name}")
-
-    def __setattr__(self, name: str, value) -> None:
-        raise AttributeError("OpCodes is immutable, cannot set attributes.")
-
-    def __delattr__(self, name: str) -> None:
-        raise AttributeError("OpCodes is immutable, cannot delete attributes.")
-
-
-OpCode = OpCodes()
-"""MiraScript 操作码"""
+from .opcode import OpCode, get_opcode_name
 
 # 类型定义
-VmPrimitive = Union[None, bool, int, float, str]
-VmConst = Union[VmPrimitive, dict, list]
-ScriptInput = Union[str, bytes]
-
-
-class TranspileOptions:
-    """转译选项"""
-
-    def __init__(
-        self,
-        pretty: bool = False,
-        source_map: bool = False,
-        file_name: Optional[str] = None,
-        input_mode: str = "Script",
-    ):
-        self.pretty = pretty
-        self.source_map = source_map
-        self.file_name = file_name
-        self.input_mode = input_mode
-
-
-ORIGIN = "mira://MiraScript"
-source_id = 1
+VmPrimitive: TypeAlias = Union[None, bool, int, float, str]
+VmConst: TypeAlias = Union[VmPrimitive, dict, list]
+ScriptInput: TypeAlias = Union[str, bytes]
 
 
 def read_const(data: bytes, offset: int) -> Tuple[VmPrimitive, int]:
@@ -98,14 +55,6 @@ def to_python(value: VmConst) -> Any:
     return value
 
 
-def get_opcode_name(opcode: int) -> str:
-    """获取操作码名称"""
-    for attr_name in dir(OpCode):
-        if not attr_name.startswith("_") and getattr(OpCode, attr_name, None) == opcode:
-            return attr_name
-    return str(opcode)
-
-
 def ast_call(func_id: str, call_args: List[Any]) -> ast.Call:
     """生成 call"""
     return ast.Call(
@@ -113,11 +62,28 @@ def ast_call(func_id: str, call_args: List[Any]) -> ast.Call:
     )
 
 
+def subscript(value: ast.expr, slice: ast.expr, ctx=ast.Load()) -> ast.Subscript:
+    # Compatibility: ast.Index was removed in Python 3.9.
+    # Use ast.Index for older Pythons, and plain expr (ast.Constant) for 3.9+.
+    if sys.version_info < (3, 9):
+        slice = ast.Index(value=slice)
+
+    return ast.Subscript(
+        value=value,
+        slice=slice,
+        ctx=ctx,
+    )
+
+
 def assign_call(target_id: str, func_id: str, call_args: List[Any]) -> ast.Assign:
     """生成 assign call"""
+    return assign(target_id, ast_call(func_id, call_args))
+
+
+def assign(target_id: str, value: ast.expr) -> ast.Assign:
     return ast.Assign(
         targets=[ast.Name(id=target_id, ctx=ast.Store())],
-        value=ast_call(func_id=func_id, call_args=call_args),
+        value=value,
         lineno=0,
     )
 
@@ -193,18 +159,6 @@ def create_range_loop(index, start, end, exclusive=False):
     return s, e, i, w
 
 
-# def RangeExclusive_(start,end):
-#     pass
-#     s = ToNumber_(start)
-#     e = ToNumber_(end)
-#     if math.isnan(s) or math.isnan(e):
-#         return []
-#     # return list(range(int(s),int(e)))
-#     result=[]
-#     while s<e:
-#         result.append(s)
-#         s+=1
-#     return result
 class Emitter:
     """代码生成"""
 
@@ -710,7 +664,13 @@ class Emitter:
                     finalbody=[cp("CpExit")],
                     orelse=[],
                 )
-
+                code.decorator_list.append(
+                    ast.Call(
+                        func=ast.Name(id="Fn_", ctx=ast.Load()),
+                        args=[ast.Constant(value="")],
+                        keywords=[],
+                    )
+                )
                 code.body.append(try_code)
 
             if varg:
@@ -820,20 +780,13 @@ class Emitter:
             left = read()
             code = ast.Assign(
                 targets=[ast.Name(id=self.wv(reg), ctx=ast.Store())],
-                value=ast.Call(
-                    func=ast.Attribute(
-                        value=ast.Name(id="context", ctx=ast.Load()),
-                        attr="has",
-                        ctx=ast.Load(),
+                value=ast.Compare(
+                    left=ast_call(
+                        "ToString_",
+                        [ast.Name(id=self.rv(left), ctx=ast.Load())],
                     ),
-                    args=[
-                        ast.Call(
-                            func=ast.Name(id="ToString_", ctx=ast.Load()),
-                            args=[ast.Name(id=self.rv(left), ctx=ast.Load())],
-                            keywords=[],
-                        )
-                    ],
-                    keywords=[],
+                    ops=[ast.In()],
+                    comparators=[ast.Name(id="context", ctx=ast.Load())],
                 ),
                 lineno=0,
             )
@@ -877,19 +830,9 @@ class Emitter:
             spreads = [read() for _ in range(ns)]
 
             if opcode == OpCode.Call:
-                # Compatibility: ast.Index was removed in Python 3.9.
-                # Use ast.Index for older Pythons, and plain expr (ast.Constant) for 3.9+.
-                if sys.version_info >= (3, 9):
-                    slice_node = ast.Constant(value=self.constants[func])
-                else:
-                    slice_node = ast.Index(
-                        value=ast.Constant(value=self.constants[func])
-                    )
-
-                call_target = ast.Subscript(
-                    value=ast.Name(id="context", ctx=ast.Load()),
-                    slice=slice_node,
-                    ctx=ast.Load(),
+                call_target = subscript(
+                    ast.Name(id="context", ctx=ast.Load()),
+                    ast.Constant(value=self.constants[func]),
                 )
             else:
                 call_target = ast.Name(id=self.rv(func), ctx=ast.Load())
@@ -1090,22 +1033,24 @@ class Emitter:
             reg = read()
             i = read()
             c = self.constants[i]
-            code = assign_call(
+            code = assign(
                 self.wv(reg),
-                "GetGlobal_",
-                [ast.Name(id="context", ctx=ast.Load()), ast.Constant(value=c)],
+                subscript(
+                    ast.Name(id="context", ctx=ast.Load()),
+                    ast.Constant(value=c),
+                ),
             )
 
         elif opcode == OpCode.GetGlobalDyn:
             reg = read()
             name = read()
-            code = assign_call(
+            slice = ast_call("ToString_", [ast.Name(id=self.rv(name), ctx=ast.Load())])
+            code = assign(
                 self.wv(reg),
-                "GetGlobal_",
-                [
+                subscript(
                     ast.Name(id="context", ctx=ast.Load()),
-                    ast.Name(id=self.rv(name), ctx=ast.Load()),
-                ],
+                    slice,
+                ),
             )
         #     code = f"{self.wv(reg)} = global[{self.rv(name)}] ?? null;"
 
@@ -1477,7 +1422,9 @@ def set_ast_positions(node, lineno=1, col_offset=0):
         node.annotation = None
 
 
-def emit(chunk: bytes, filename: str = "<mira_script>") -> Any:
+def emit(
+    chunk: bytes, *, filename: "str|None" = None, source: str = ""
+) -> "VmScript | None":
     """生成代码"""
     result = None
     module = None
@@ -1490,20 +1437,10 @@ def emit(chunk: bytes, filename: str = "<mira_script>") -> Any:
         script = deep_nonlocal_fix(gen.func_script)
         set_ast_positions(script)
         module = ast.Module(body=[script], type_ignores=[])
-        code = compile(module, filename, "exec")
+        code = compile(module, filename or "<mira_script>", "exec")
         exec(code, vm_globals)
         result = vm_globals.get("script", None)
-        return result
+        return wrap_vm_script(result, filename=filename, ast=module, source=source)
 
     except Exception as e:
-        ex = e
-
-        def r(*args, **kwargs):
-            raise ex
-
-        result = r
-        return result
-    finally:
-        if result is not None:
-            setattr(result, "__filename__", filename)
-            setattr(result, "__ast__", module)
+        return wrap_vm_script(e, filename=filename, ast=module, source=source)

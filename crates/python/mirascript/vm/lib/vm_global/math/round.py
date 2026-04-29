@@ -1,6 +1,6 @@
 import math
 from ..._helpers import _expect_number, _expect_integer_range
-from mirascript.vm.types.const import Uninitialized
+from mirascript.vm.types.types import Uninitialized
 from ._helper import _run
 
 

@@ -1,4 +1,4 @@
-from mirascript.vm.types.const import Uninitialized
+from mirascript.vm.types.types import Uninitialized
 from ..._helpers import _expect_array, _expect_number
 
 

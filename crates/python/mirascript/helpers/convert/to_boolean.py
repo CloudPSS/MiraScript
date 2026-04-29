@@ -1,8 +1,16 @@
+from typing_extensions import TypeVar, overload
+
 from mirascript.vm.error import VmError
-from mirascript.vm.types.const import Uninitialized
+from mirascript.vm.types.types import Uninitialized
+
+T = TypeVar("T")
 
 
-def toBoolean(value, fallback=Uninitialized):
+@overload
+def toBoolean(value) -> bool: ...
+@overload
+def toBoolean(value, fallback: T) -> "bool | T": ...
+def toBoolean(value, fallback: T = Uninitialized) -> "bool | T":
     if isinstance(value, bool):
         return value
     if fallback is Uninitialized:

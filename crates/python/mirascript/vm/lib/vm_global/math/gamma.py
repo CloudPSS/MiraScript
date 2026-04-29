@@ -1,6 +1,6 @@
 import math
 
-from mirascript.vm.types.const import Uninitialized
+from mirascript.vm.types.types import Uninitialized
 from ..._helpers import _expect_number
 from mirascript.vm.operations import isDecimalNumber
 

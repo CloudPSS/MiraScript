@@ -1,21 +1,13 @@
 import math
-from ..types import VmFunction, VmModule
-from ..types.const import VM_ARRAY_MAX_LENGTH
+from ..types import VmModule, vm_function, VmValue
+from ...helpers.constants import VM_ARRAY_MAX_LENGTH
 from ._helpers import _throw_error
 from .vm_global.math.round import trunc
 
 
-def wrap_entry(name: str, value, module: str):
+def wrap_entry(name: str, value: VmValue, module: str):
     if callable(value):
-        # Python 函数名不可直接更改，跳过重命名
-        return VmFunction(
-            value,
-            {
-                "isLib": True,
-                "injectCp": True,
-                "fullName": f"{module}.{name}",
-            },
-        )
+        return vm_function(f"{module}.{name}")(value)
     else:
         return value
 

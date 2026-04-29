@@ -1,10 +1,12 @@
 import math
+from mirascript.vm.types.types import Uninitialized
+from typing_extensions import TypeVar, overload
+
 from mirascript.vm.error import VmError
-from mirascript.vm.types.const import Uninitialized, getVmFunctionInfo
-from mirascript.vm.types.wrapper import VmWrapper, isVmWrapper
+from ..types import is_vm_wrapper
 
 
-def numberToString_(x) -> str:
+def _numberToString(x) -> str:
     # 1. If x is nan, return "nan"
     if math.isnan(x):
         return "nan"
@@ -14,7 +16,7 @@ def numberToString_(x) -> str:
         return "0"
 
     if x < 0:
-        return "-" + numberToString_(-x)
+        return "-" + _numberToString(-x)
 
     if math.isinf(x):
         return "inf"
@@ -30,23 +32,23 @@ def numberToString_(x) -> str:
     return result
 
 
-def innerToString_(val, useBraces) -> str:
+def _innerToString(val, useBraces) -> str:
     if val is None:
         return "nil"
 
     if callable(val):
-        name = getVmFunctionInfo(val)
+        name = val.__name__
         if name:
             return f"<function {name}>"
         return "<function>"
 
-    if isVmWrapper(val):
+    if is_vm_wrapper(val):
         return val.toString()
 
     if isinstance(val, (list, tuple)):
         strings = []
         for v in val:
-            strings.append(innerToString_(v, True))
+            strings.append(_innerToString(v, True))
         joined = (", ").join(strings)
         if not useBraces:
             return joined
@@ -56,7 +58,7 @@ def innerToString_(val, useBraces) -> str:
         strings = []
 
         for k, v in val.items():
-            strings.append(f"{k}: {innerToString_(v,True)}")
+            strings.append(f"{k}: {_innerToString(v,True)}")
         joined = (", ").join(strings)
         if not useBraces:
             return joined
@@ -66,17 +68,24 @@ def innerToString_(val, useBraces) -> str:
         # return "true" if val else "0"
 
     if isinstance(val, (int, float)):
-        return numberToString_(val)
+        return _numberToString(val)
     return str(val)
 
 
-def toString(value, fallback=Uninitialized, useBraces=False):
-    if value is None:
+T = TypeVar("T")
+
+
+@overload
+def toString(value) -> str: ...
+@overload
+def toString(value, fallback: T) -> "str | T": ...
+def toString(value, fallback: T = Uninitialized) -> "str | T":
+    if value is None or value is Uninitialized:
         return ""
     if isinstance(value, str):
         return value
     try:
-        x = innerToString_(value, useBraces)
+        x = _innerToString(value, False)
         return x
     except Exception as ex:
         if fallback is Uninitialized:

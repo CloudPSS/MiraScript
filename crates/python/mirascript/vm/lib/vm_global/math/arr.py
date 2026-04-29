@@ -2,7 +2,14 @@ import math
 import sys
 from functools import reduce as _reduce
 from ..._helpers import _get_numbers
-from ....types.checker import is_positive_zero, is_negative_zero
+
+
+def _is_positive_zero(num):
+    return num == 0.0 and math.copysign(1, num) > 0
+
+
+def _is_negative_zero(num):
+    return num == 0.0 and math.copysign(1, num) < 0
 
 
 def _build(func):
@@ -19,7 +26,7 @@ def max_(*args):
     for num in args:
         if math.isnan(num):
             return math.nan
-        if is_positive_zero(num) and is_negative_zero(high):
+        if _is_positive_zero(num) and _is_negative_zero(high):
             high = num
         elif num > high:
             high = num
@@ -32,7 +39,7 @@ def min_(*args):
     for num in args:
         if math.isnan(num):
             return math.nan
-        if is_negative_zero(num) and is_positive_zero(low):
+        if _is_negative_zero(num) and _is_positive_zero(low):
             low = num
         elif num < low:
             low = num

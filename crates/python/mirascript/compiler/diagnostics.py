@@ -1,6 +1,10 @@
-from .mirascript import get_diagnostic_message
+from typing_extensions import TypeAlias, Literal
 
-# DiagnosticLevel = Literal["Error", "Warning", "Info", "Hint", "Reference", "Unknown"]
+from ..mirascript import get_diagnostic_message
+
+DiagnosticLevel: TypeAlias = Literal[
+    "Error", "Warning", "Info", "Hint", "Reference", "Unknown"
+]
 
 
 class Diagnostic:
@@ -20,7 +24,7 @@ class Diagnostic:
     """结束列号"""
     code: int
     """诊断代码"""
-    level: str
+    level: DiagnosticLevel
     """诊断级别"""
     name: str
     """诊断名称"""
@@ -67,7 +71,7 @@ class Diagnostic:
         )
 
 
-def decode_diagnostics(diagnostics):
+def decode_diagnostics(diagnostics: "list[int]") -> "list[Diagnostic]":
     """
     解析诊断信息
 

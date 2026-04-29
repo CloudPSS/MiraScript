@@ -1,15 +1,16 @@
 import math
+
+from mirascript.helpers.types import is_vm_array, is_vm_record
 from .....helpers.convert.to_number import isDecimalNumber, toNumber
 from ....helpers import Element
-from ....types.checker import is_vm_array, is_vm_record
 from ....operations import ToString_
 from ..._helpers import (
     _expect_array_or_record,
     _throw_error,
     _expect_const,
 )
+from .....helpers.constants import Uninitialized, VM_ARRAY_MAX_LENGTH
 from ..math.round import trunc
-from mirascript.vm.types.const import Uninitialized, VM_ARRAY_MAX_LENGTH
 
 
 def arr_index(index):
