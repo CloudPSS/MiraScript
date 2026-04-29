@@ -2,12 +2,13 @@ from typing_extensions import Protocol, Mapping, Any
 from ast import Module
 
 from ..helpers.constants import kVmScript
+from ..vm.types.context import VmContext
 
 
 class VmScriptLike(Protocol):
     """A protocol representing a callable object that can be executed with an optional global context."""
 
-    def __call__(self, global_ctx: "Mapping[str, Any] | None" = None) -> Any: ...
+    def __call__(self, global_ctx: "VmContext | None" = None) -> Any: ...
 
 
 class VmScript(VmScriptLike):
@@ -28,7 +29,7 @@ def wrap_vm_script(
     if isinstance(func, Exception):
         err = func
 
-        def error_func(global_ctx: "Mapping[str, Any] | None" = None):
+        def error_func(global_ctx: "VmContext | None" = None, *args, **kwargs):
             raise err
 
         func = error_func

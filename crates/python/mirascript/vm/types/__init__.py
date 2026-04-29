@@ -16,7 +16,6 @@ from .function import vm_function
 from .module import VmModule
 from .wrapper import VmWrapper
 from .context import VmContext
-from .script import VmScript, is_vm_script
 
 __all__ = [
     "VmExtern",
@@ -25,8 +24,6 @@ __all__ = [
     "VmModule",
     "VmWrapper",
     "VmContext",
-    "VmScript",
-    "is_vm_script",
     "VmPrimitive",
     "VmRecord",
     "VmArray",

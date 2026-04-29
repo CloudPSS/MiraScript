@@ -1,4 +1,5 @@
 import math
+from enum import Enum
 
 from mirascript.helpers.convert.to_boolean import toBoolean
 from mirascript.helpers.convert.to_format import toFormat
@@ -7,19 +8,22 @@ from mirascript.helpers.convert.to_string import toString
 from mirascript.helpers.types import is_vm_primitive, is_vm_record
 from mirascript.vm.error import VmError
 
-from mirascript.vm.types.module import VmModule
-from mirascript.vm.types.wrapper import VmWrapper, isVmWrapper
-
 from ..vm.types.function import vm_function
 
-from ..helpers.types import is_vm_extern, is_vm_array, is_vm_module
+from ..helpers.types import is_vm_extern, is_vm_array, is_vm_module, is_vm_wrapper
 from mirascript.vm.types.types import Uninitialized
 import unicodedata
 
+
+class LoopControl(Enum):
+    Continue = type("LoopContinue", (), {})()
+    Break = type("LoopBreak", (), {})()
+
+
 ## 标记当前值未返回的值
-LoopContinue = type("LoopContinue", (), {})()
+LoopContinue = LoopControl.Continue
 ## 标记当前值为Break
-LoopBreak = type("LoopBreak", (), {})()
+LoopBreak = LoopControl.Break
 
 
 def is_safe_integer(n):
@@ -48,9 +52,9 @@ def isSame(a, b):
         return a == b or (math.isnan(a) and math.isnan(b))
     if a == b and type(a) is type(b):
         return True
-    if isinstance(a, VmWrapper):
+    if is_vm_wrapper(a):
         return a.same(b)
-    if isinstance(b, VmWrapper):
+    if is_vm_wrapper(b):
         return b.same(a)
     return False
 
@@ -278,7 +282,7 @@ def In_(a, b) -> bool:
     pk = ToString_(a)
     if isinstance(b, dict):
         return pk in b
-    if isVmWrapper(b):
+    if is_vm_wrapper(b):
         return b.has(pk)
 
     return False
@@ -460,7 +464,7 @@ def Has_(obj, key):
     if obj is None:
         return False
 
-    if isinstance(obj, VmWrapper):
+    if is_vm_wrapper(obj):
         return obj.has(pk)
     if isinstance(obj, dict):
         return pk in obj
@@ -481,7 +485,7 @@ def Get_(obj, key):
     if obj is None:
         return None
 
-    if isinstance(obj, VmWrapper):
+    if is_vm_wrapper(obj):
         return obj.get(pk)
     if isinstance(obj, dict):
         return obj.get(pk, None)
@@ -510,7 +514,7 @@ def Set_(obj, key, val):
 
 def Iterable_(val):
     AssertInit_(val)
-    if isVmWrapper(val):
+    if is_vm_wrapper(val):
         if hasattr(val, "keys"):
             return val.keys()
     if isinstance(val, (list, tuple)):
@@ -524,23 +528,12 @@ def RecordSpread_(val):
     AssertInit_(val)
     if val is None:
         return {}
-    if is_vm_array(val):
-        result = {}
-        for i in range(len(val)):
-            result[str(i)] = val[i]
-        return result
-    if isinstance(val, dict):
+    if is_vm_record(val):
         return val
+    if is_vm_array(val):
+        return {str(i): val[i] for i in range(len(val))}
     if is_vm_extern(val):
-        result = {}
-        for key in val.keys():
-            value = val.get(key)
-            if is_vm_primitive(value):
-                result[key] = value
-        return result
-
-    if isinstance(val, VmWrapper) and hasattr(val, "to_dict"):
-        return val.to_dict()
+        return {}
 
     raise VmError(f"`Expected record, extern or nil, got {Type_(val)}", None)
 

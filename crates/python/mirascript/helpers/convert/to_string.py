@@ -1,12 +1,12 @@
 import math
-from mirascript.vm.types.types import Uninitialized
 from typing_extensions import TypeVar, overload
 
-from mirascript.vm.error import VmError
-from ..types import is_vm_wrapper
+from ...vm.types.types import Uninitialized, VmAny, VmValue
+from ...vm.error import VmError
+from ..serialize import displayFunction
 
 
-def _numberToString(x) -> str:
+def _numberToString(x: "float | int") -> str:
     # 1. If x is nan, return "nan"
     if math.isnan(x):
         return "nan"
@@ -32,18 +32,15 @@ def _numberToString(x) -> str:
     return result
 
 
-def _innerToString(val, useBraces) -> str:
+def _innerToString(val: VmValue, useBraces: bool) -> str:
     if val is None:
         return "nil"
-
+    if isinstance(val, bool):
+        return "true" if val else "false"
+    if isinstance(val, (int, float)):
+        return _numberToString(val)
     if callable(val):
-        name = val.__name__
-        if name:
-            return f"<function {name}>"
-        return "<function>"
-
-    if is_vm_wrapper(val):
-        return val.toString()
+        return displayFunction(val)
 
     if isinstance(val, (list, tuple)):
         strings = []
@@ -63,12 +60,6 @@ def _innerToString(val, useBraces) -> str:
         if not useBraces:
             return joined
         return f"({joined})"
-    if isinstance(val, bool):
-        return "true" if val else "false"
-        # return "true" if val else "0"
-
-    if isinstance(val, (int, float)):
-        return _numberToString(val)
     return str(val)
 
 
@@ -76,10 +67,10 @@ T = TypeVar("T")
 
 
 @overload
-def toString(value) -> str: ...
+def toString(value: VmAny) -> str: ...
 @overload
-def toString(value, fallback: T) -> "str | T": ...
-def toString(value, fallback: T = Uninitialized) -> "str | T":
+def toString(value: VmAny, fallback: T) -> "str | T": ...
+def toString(value: VmAny, fallback: T = Uninitialized) -> "str | T":
     if value is None or value is Uninitialized:
         return ""
     if isinstance(value, str):

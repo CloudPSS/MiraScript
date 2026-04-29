@@ -8,6 +8,7 @@ from typing_extensions import (
 from .constants import kVmScript, kVmContext, kVmFunction
 from ..vm.types.module import VmModule
 from ..vm.types.types import Uninitialized
+from ..vm.types.wrapper import VmWrapper
 
 if TYPE_CHECKING:
     from ..compiler import VmScript
@@ -44,9 +45,9 @@ def is_vm_extern(value) -> "TypeGuard[VmExtern]":
     return False
 
 
-def is_vm_wrapper(value) -> "TypeGuard[VmModule | VmExtern]":
+def is_vm_wrapper(value) -> "TypeGuard[VmWrapper]":
     """检查值是否为 Mirascript 包装器"""
-    return is_vm_module(value) or is_vm_extern(value)
+    return isinstance(value, VmWrapper)
 
 
 def is_vm_callable(value) -> "TypeGuard[VmFunction | VmExtern]":
@@ -82,10 +83,14 @@ def _is_vm_const(value, depth: int) -> "TypeGuard[VmConst]":
             return True
         return False
     else:
+        inner_depth = depth - 1
         if is_vm_array(value):
-            return all(_is_vm_const(v, depth - 1) for v in value)
+            return all(_is_vm_const(v, inner_depth) for v in value)
         if is_vm_record(value):
-            return all(_is_vm_const(v, depth - 1) for v in value.values())
+            return all(
+                _is_vm_const(v, inner_depth) and isinstance(k, str)
+                for k, v in value.items()
+            )
         return False
 
 

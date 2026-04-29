@@ -3,7 +3,9 @@ import sys
 import argparse
 import traceback
 
-from .compiler import compile, InputMode
+from mirascript.vm.types.context import VmContext
+
+from .compiler import compile, InputMode, VmScript
 
 
 def _compile(script: str, mode: InputMode):
@@ -16,7 +18,7 @@ def _compile(script: str, mode: InputMode):
         sys.exit(2)
 
 
-def _print_debug(script, output_file):
+def _print_debug(script: VmScript, output_file):
     try:
         import astor
 
@@ -24,16 +26,17 @@ def _print_debug(script, output_file):
             f.write(
                 "from mirascript.vm.helpers import *\n"
                 "from mirascript.vm.operations import *\n"
-                "from mirascript.vm.types.const import *\n"
                 "\n"
-                f"{astor.to_source(script.__ast__)}"
+                f"{astor.to_source(script.ast)}"
                 "\n"
                 "if __name__ == '__main__':\n"
                 "    result = script()\n"
                 "    print('[OK]', result)"
             )
     except ImportError:
-        print("Warning: 'astor' library not found, skipping output generation.")
+        print(
+            "Warning: 'astor' library not found, skipping output generation. Try again with `pip install mirascript[cli_debug]` to enable this feature."
+        )
 
 
 if __name__ == "__main__":
@@ -50,7 +53,7 @@ if __name__ == "__main__":
         "-g",
         "--generate",
         action="store",
-        help="Output generated code to the specified file",
+        help="Output generated code to the specified file, needs 'cli_debug' extra enabled",
     )
     parser.add_argument(
         "script_file",
@@ -75,7 +78,7 @@ if __name__ == "__main__":
     # Compile and execute the script
     result, diagnostics = _compile(script, mode)
 
-    if args.generate:
+    if result and args.generate:
         _print_debug(result, args.generate)
 
     for diag in diagnostics:

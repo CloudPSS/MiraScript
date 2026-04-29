@@ -5,7 +5,7 @@ from mirascript.helpers.types import is_vm_const
 
 from ..helpers.constants import VM_ARRAY_MAX_LENGTH
 from .operations import ToNumber_, AssertInit_
-from .types.context import DefaultVmContext
+from .types.context import VmSharedContext
 
 
 def Vargs(varags):
@@ -135,4 +135,4 @@ def config_checkpoint(timeout=100):
 
 
 def GlobalFallback():
-    return DefaultVmContext
+    return VmSharedContext

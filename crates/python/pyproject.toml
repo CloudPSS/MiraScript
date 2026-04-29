@@ -17,7 +17,8 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Topic :: Software Development :: Code Generators",
 ]
-dependencies = ["typing_extensions>=4.7.1,<5.0.0"]
+dependencies = ["typing_extensions>=4.7.1"]
+optional-dependencies = { cli_debug = ["astor>=0.8.0"] }
 
 [project.urls]
 source = "https://github.com/CloudPSS/MiraScript"
