@@ -3,8 +3,7 @@ import sys
 import argparse
 import traceback
 
-from mirascript.vm.types.context import VmContext
-
+from .vm.types.context import VmContext
 from .compiler import compile, InputMode, VmScript
 
 
@@ -24,9 +23,6 @@ def _print_debug(script: VmScript, output_file):
 
         with open(output_file, "w", encoding="utf-8") as f:
             f.write(
-                "from mirascript.vm.helpers import *\n"
-                "from mirascript.vm.operations import *\n"
-                "\n"
                 f"{astor.to_source(script.ast)}"
                 "\n"
                 "if __name__ == '__main__':\n"
