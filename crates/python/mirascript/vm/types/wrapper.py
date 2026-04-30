@@ -1,10 +1,17 @@
 from abc import ABC, abstractmethod
-from typing_extensions import Sequence, Any, Optional
+from typing_extensions import Sequence, Any, Optional, TypeVar, Generic
+
+T = TypeVar("T")
 
 
-class VmWrapper(ABC):
-    def __init__(self, value):
-        self.value = value
+class VmWrapper(ABC, Generic[T]):
+
+    def __init__(self, value: T):
+        self.__value = value
+
+    @property
+    def value(self) -> T:
+        return self.__value
 
     @abstractmethod
     def has(self, key: str) -> bool:

@@ -11,10 +11,7 @@ TEST_DIR = (Path(__file__) / "../../../../tests").resolve()
 
 # 要跳过的测试文件列表（相对于 TEST_DIR），使用 POSIX 路径格式（即使在 Windows 上），不添加 "./" 前缀
 # 如 "e2e/complex.mira" 表示 TEST_DIR/e2e/complex.mira
-SKIP_TESTS = {
-    "e2e/complex.mira",
-    "feature/module.mira",
-}
+SKIP_TESTS = {}
 
 
 class BlackBoxTests(unittest.TestCase):

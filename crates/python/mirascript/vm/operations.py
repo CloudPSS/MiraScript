@@ -1,19 +1,25 @@
 import math
-from enum import Enum
-
-from mirascript.helpers.convert.to_boolean import toBoolean
-from mirascript.helpers.convert.to_format import toFormat
-from mirascript.helpers.convert.to_number import isDecimalNumber, toNumber
-from mirascript.helpers.convert.to_string import toString
-from mirascript.helpers.types import is_vm_primitive, is_vm_record
-from mirascript.vm.error import VmError
-
-from ..vm.types.function import vm_function
-from ..helpers.constants import kVmScript
-
-from ..helpers.types import is_vm_extern, is_vm_array, is_vm_module, is_vm_wrapper
-from mirascript.vm.types.types import Uninitialized
 import unicodedata
+from enum import Enum
+from typing_extensions import Callable, Mapping, Any
+
+from ..helpers.convert.to_boolean import toBoolean
+from ..helpers.convert.to_format import toFormat
+from ..helpers.convert.to_number import isDecimalNumber, toNumber
+from ..helpers.convert.to_string import toString
+from ..helpers.constants import kVmScript
+from ..helpers.types import (
+    is_vm_primitive,
+    is_vm_record,
+    is_vm_extern,
+    is_vm_array,
+    is_vm_module,
+    is_vm_wrapper,
+)
+from .error import VmError
+from .types.module import VmModule
+from .types.function import vm_function
+from .types.types import Uninitialized, VmValue
 
 
 class LoopControl(Enum):
@@ -527,7 +533,7 @@ def RecordSpread(val):
     if is_vm_record(val):
         return val
     if is_vm_array(val):
-        return {str(i): val[i] for i in range(len(val))}
+        return {ToString(i): val[i] for i in range(len(val))}
     if is_vm_extern(val):
         return {}
 
@@ -568,7 +574,6 @@ def RangeExclusive(start, end):
     e = ToNumber(end)
     if math.isnan(s) or math.isnan(e):
         return []
-    # return list(range(int(s),int(e)))
     result = []
     while s < e:
         result.append(s)
@@ -623,3 +628,41 @@ def Script(func):
 
     setattr(script_wrapper, kVmScript, True)
     return script_wrapper
+
+
+def Module(name: str):
+
+    def decorator(kls: type):
+
+        from .helpers import Upvalue
+
+        pub: "dict[str, Callable[[], Any]]" = {}
+        for attr_name in dir(kls):
+            attr = getattr(kls, attr_name)
+            pub_name = getattr(attr, "mirascript.mod.pub", None)
+            if pub_name is not None and callable(attr):
+                pub[pub_name] = attr
+
+        class Mod(Mapping[str, VmValue]):
+
+            def __getitem__(self, key: str) -> VmValue:
+                getter = pub[key]
+                return Upvalue(getter())
+
+            def __iter__(self):
+                return iter(pub.keys())
+
+            def __len__(self):
+                return len(pub)
+
+        return VmModule(name, Mod())
+
+    return decorator
+
+
+def Pub(name: str):
+    def decorator(method: "Callable"):
+        setattr(method, "mirascript.mod.pub", name)
+        return method
+
+    return decorator

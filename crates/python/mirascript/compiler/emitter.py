@@ -74,18 +74,17 @@ class Emitter:
     ):
         closure_name = f"closure_{self.source_map_index}"
         block = helper.set_position(helper.if_expr(test=helper.const(True)))
-        closure = helper.set_position(
-            ast.FunctionDef(
-                name=closure_name,
-                args=helper.args(),
-                body=[
-                    self.create_regs_array(helper, nreg - 1, 2),
-                    block,
-                    helper.ret("LoopContinue"),
-                ],
-                decorator_list=[helper.load_var("Closure")],
-            )
+        closure = helper.func_def(
+            closure_name,
+            helper.args(kwarg=None, vararg=None),
+            [
+                self.create_regs_array(helper, nreg - 1, 2),
+                block,
+                helper.ret("LoopContinue"),
+            ],
+            ["Closure"],
         )
+
         hint = helper.vm_hint()
         if hint:
             closure.body.insert(0, hint)
@@ -100,7 +99,7 @@ class Emitter:
                     test=helper.compare(
                         result_name,
                         ast.Is(),
-                        helper.load_var("LoopContinue"),
+                        helper.load("LoopContinue"),
                     ),
                     body=[ast.Continue()],
                     orelse=[
@@ -108,7 +107,7 @@ class Emitter:
                             test=helper.compare(
                                 result_name,
                                 ast.Is(),
-                                helper.load_var("LoopBreak"),
+                                helper.load("LoopBreak"),
                             ),
                             body=[ast.Break()],
                             orelse=[helper.ret(result_name)],
@@ -240,22 +239,13 @@ class Emitter:
             def read():
                 return self.read_param(wide)
 
-            def add_Element(argsValue: list, fun_id="ElementOpt", key=None) -> None:
-                block.keys.append(key)
-                block.values.append(
-                    ast.Call(
-                        func=ast.Name(id=fun_id, ctx=ast.Load()),
-                        args=[
-                            (
-                                ast.Name(id=a, ctx=ast.Load())
-                                if not isinstance(a, ast.expr)
-                                else a
-                            )
-                            for a in argsValue
-                        ],
-                        keywords=[],
-                    )
-                )
+            def el_opt(name: "str | ast.expr", value: "str | ast.expr"):
+                block.keys.append(None)
+                block.values.append(helper.call("ElementOpt", [name, value]))
+
+            def el(name: "str | ast.expr", value: "str | ast.expr"):
+                block.keys.append(helper.load(name))
+                block.values.append(helper.call("Element", [value]))
 
             if opcode in (OpCode.FieldOpt, OpCode.Field):
                 field = read()
@@ -265,41 +255,30 @@ class Emitter:
                 value = read()
                 opt = opcode == OpCode.FieldOpt
                 if opt:
-                    add_Element([ast.Constant(value=f"{field_name}"), self.rv(value)])
+                    el_opt(helper.const(field_name), self.rv(value))
 
                 else:
-                    add_Element(
-                        [self.rv(value)],
-                        fun_id="Element",
-                        key=ast.Constant(value=field_name),
-                    )
+                    el(helper.const(field_name), self.rv(value))
             elif opcode in (OpCode.FieldOptDyn, OpCode.FieldDyn):
                 field = read()
                 value = read()
                 opt = opcode == OpCode.FieldOptDyn
                 if opt:
-                    add_Element([self.rv(field), self.rv(value)])
+                    el_opt(self.rv(field), self.rv(value))
                 else:
-                    add_Element(
-                        [self.rv(value)],
-                        fun_id="Element",
-                        key=ast.Name(id=self.rv(field), ctx=ast.Load()),
-                    )
+                    el(self.rv(field), self.rv(value))
             elif opcode in (OpCode.FieldOptIndex, OpCode.FieldIndex):
                 field = self.read_index(wide)
                 value = read()
                 opt = opcode == OpCode.FieldOptIndex
                 if opt:
-                    add_Element([ast.Constant(value=ToString(field)), self.rv(value)])
+                    el_opt(helper.const(ToString(field)), self.rv(value))
                 else:
-                    add_Element(
-                        [self.rv(value)],
-                        fun_id="Element",
-                        key=ast.Constant(value=str(field)),
-                    )
+                    el(helper.const(ToString(field)), self.rv(value))
             elif opcode == OpCode.Spread:
                 value = read()
-                add_Element([self.rv(value)], "RecordSpread")
+                block.keys.append(None)
+                block.values.append(helper.call("RecordSpread", [self.rv(value)]))
             elif opcode == OpCode.Freeze:
                 return
             else:
@@ -350,12 +329,36 @@ class Emitter:
                 )
             elif opcode == OpCode.Spread:
                 value = read()
-                # code = f"...$ArraySpread({self.rv(value)}),"
                 block.elts.append(
                     helper.vm_element(
                         self.rv(value), helper_name="ArraySpread", spread=True
                     )
                 )
+            elif opcode == OpCode.Freeze:
+                return
+            else:
+                self.unknown_opcode(opcode)
+
+    def read_module(self, block: ast.ClassDef) -> None:
+        """读取 module"""
+
+        while self.code_offset < len(self.code_data):
+            opcode, wide, helper = self.read_opcode()
+
+            if opcode == OpCode.Field:
+                field = self.read_index(wide)
+                field_name = self.constants[field]
+                if not isinstance(field_name, str):
+                    raise ValueError(f"Unknown field {field},{self.constants}")
+                value = self.read_param(wide)
+                args = helper.args(kwarg=None, vararg=None)
+                getter = helper.func_def(
+                    f"field_{self.code_offset}",
+                    args,
+                    [helper.ret(self.rv(value))],
+                    [helper.call("Pub", [helper.const(field_name)])],
+                )
+                block.body.append(getter)
             elif opcode == OpCode.Freeze:
                 return
             else:
@@ -382,7 +385,7 @@ class Emitter:
             varg = opcode == OpCode.FuncVarg
             argn = read()
             regn = read()
-            args = helper.args()
+            args = helper.args(vararg="vargs")
             for i in range(argn):
                 wv = self.wv(i + 1, -1)
                 if varg and i == argn - 1:
@@ -397,18 +400,14 @@ class Emitter:
             if script:
                 args.args.insert(0, ast.arg(arg="context"))
                 args.defaults.insert(0, helper.const(None))
-                code = ast.FunctionDef(
-                    "script", args=args, body=[regs], decorator_list=[], lineno=0
-                )
+                code = helper.func_def("script", args, [regs])
                 self.func_script = code
-                code.decorator_list.append(helper.load_var("Script"))
+                code.decorator_list.append(helper.load("Script"))
                 code.body.append(helper.assign_call("context", "Context", ["context"]))
 
             else:
                 func_name = self.wv(reg)
-                code = ast.FunctionDef(
-                    func_name, args=args, body=[regs], decorator_list=[], lineno=0
-                )
+                code = helper.func_def(func_name, args, [regs])
                 source_line = (
                     self.source_lines[helper.lineno - 1]
                     if helper.lineno - 1 < len(self.source_lines)
@@ -493,7 +492,7 @@ class Emitter:
                 helper.compare(
                     helper.call("ToString", [self.rv(left)]),
                     ast.In(),
-                    helper.load_var("context"),
+                    helper.load("context"),
                 ),
             )
 
@@ -530,10 +529,11 @@ class Emitter:
                     "context", helper.const(self.constants[func])
                 )
             else:
-                call_target = helper.load_var(self.rv(func))
+                call_target = helper.load(self.rv(func))
 
-            call_args = helper.tuple(
-                [
+            fun_args = [
+                call_target,
+                *(
                     (
                         helper.vm_element(
                             self.rv(a), helper_name="ArraySpread", spread=True
@@ -542,19 +542,15 @@ class Emitter:
                         else self.rv(a)
                     )
                     for i, a in enumerate(args)
-                ]
-            )
+                ),
+            ]
 
-            fun_args = [call_target]
-
-            if len(call_args.elts) > 0:
-                fun_args.append(helper.starred(call_args))
             code = helper.assign_call(self.wv(reg), "Call", fun_args)
 
         elif opcode == OpCode.Assign:
             reg = read()
             value = read()
-            val = helper.load_var(self.rv(value))
+            val = helper.load(self.rv(value))
             code = helper.assign(self.wv(reg), val)
 
         elif opcode in (
@@ -580,9 +576,7 @@ class Emitter:
         elif opcode in (OpCode.AssertInit, OpCode.AssertNonNil):
             reg = read()
             opcode_name = get_opcode_name(opcode)
-            code = helper.expr(
-                helper.call(opcode_name, [helper.load_var(self.rv(reg))])
-            )
+            code = helper.expr(helper.call(opcode_name, [self.rv(reg)]))
 
         # # 处理属性访问相关操作
         elif opcode == OpCode.Get:
@@ -710,7 +704,7 @@ class Emitter:
             local = self.rv(reg)
             upvalue_name = self.wv(up, level)
             self.mark_nonlocal(upvalue_name)
-            code = helper.assign(upvalue_name, helper.load_var(local))
+            code = helper.assign(upvalue_name, helper.load(local))
 
         # # 处理数组切片
         elif opcode == OpCode.Slice:
@@ -766,7 +760,20 @@ class Emitter:
                 [self.rv(obj), self.rv(start), self.rv(end)],
             )
 
-        # # 处理数据结构初始化
+        # 处理数据结构初始化
+        elif opcode == OpCode.Module:
+            reg = read()
+            nameIdx = read_index()
+            name = self.constants[nameIdx]
+            code = helper.set_position(
+                ast.ClassDef(
+                    name=self.wv(reg),
+                    keywords=[],
+                    bases=[],
+                    decorator_list=[helper.call("Module", [helper.const(name)])],
+                    body=[helper.vm_hint()],
+                )
+            )
         elif opcode == OpCode.Record:
             reg = read()
             code = helper.assign(self.wv(reg), helper.dict([]))
@@ -892,3 +899,6 @@ class Emitter:
         elif opcode == OpCode.Array:
             assert isinstance(code, ast.Assign) and isinstance(code.value, ast.List)
             self.read_array(reg, code.value)
+        elif opcode == OpCode.Module:
+            assert isinstance(code, ast.ClassDef)
+            self.read_module(code)

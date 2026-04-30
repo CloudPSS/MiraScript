@@ -1,23 +1,24 @@
-# -*- coding: utf-8 -*-
-from typing import Any
+from typing_extensions import Mapping, TYPE_CHECKING
+
 from .wrapper import VmWrapper
 
+if TYPE_CHECKING:
+    from .types import VmValue
 
-class VmModule(VmWrapper):
+
+class VmModule(VmWrapper["Mapping[str, VmValue]"]):
     """
     Mirascript 模块包装器
     """
 
-    def __init__(self, name: str, value: dict):
+    def __init__(self, name: str, value: "Mapping[str, VmValue]"):
         super().__init__(value)
         self.name = name
 
     def has(self, key):
         return key in self.value
 
-    def get(self, key: str) -> Any:
-        if not self.has(key):
-            return None
+    def get(self, key) -> "VmValue":
         return self.value.get(key, None)
 
     def keys(self):
