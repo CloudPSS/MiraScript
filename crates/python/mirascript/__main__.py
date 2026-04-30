@@ -4,12 +4,14 @@ import argparse
 import traceback
 
 from .vm.types.context import VmContext
-from .compiler import compile, InputMode, VmScript
+from .compiler import compile, InputMode, VmScript, Diagnostic
 
 
-def _compile(script: str, mode: InputMode):
+def _compile(
+    script: str, mode: InputMode, filename: "str | None" = None
+) -> "tuple[VmScript | None, list[Diagnostic]]":
     try:
-        bytecode, diagnostics = compile(script, input_mode=mode)
+        bytecode, diagnostics = compile(script, input_mode=mode, filename=filename)
         return bytecode, diagnostics
     except Exception as e:
         traceback.print_exc()
@@ -68,6 +70,7 @@ if __name__ == "__main__":
     if args.script_file == "-":
         script = sys.stdin.read()
         mode = "template" if args.template else "script"
+        script_file = "<stdin>"
     else:
         script_file = Path(args.script_file).resolve()
         if not script_file.is_file():
@@ -79,7 +82,7 @@ if __name__ == "__main__":
         )
 
     # Compile and execute the script
-    result, diagnostics = _compile(script, mode)
+    result, diagnostics = _compile(script, mode, str(script_file))
 
     if result and args.generate:
         _print_debug(result, args.generate)

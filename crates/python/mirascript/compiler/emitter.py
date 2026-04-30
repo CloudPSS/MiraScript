@@ -1,5 +1,5 @@
 from mirascript.compiler.diagnostics import SourceMapEntry
-from typing_extensions import Any, Union, List, Tuple, Optional, TypeAlias
+from typing_extensions import Any, Union, List, Tuple, Optional, TypeAlias, Sequence
 import ast
 import sys
 
@@ -47,13 +47,6 @@ def assign(target_id: str, value: ast.expr) -> ast.Assign:
     )
 
 
-def cp(id):
-    """生成 Cp 调用"""
-    return ast.Expr(
-        value=ast.Call(func=ast.Name(id=id, ctx=ast.Load()), args=[], keywords=[])
-    )
-
-
 def create_parameter(name):
     """生成参数"""
     if name == "None":
@@ -77,43 +70,25 @@ def create_if(name: str, negate) -> ast.If:
     )
 
 
-def create_range_loop(index, start, end, exclusive=False):
-    s = ast.Assign(
-        targets=[ast.Name(id="start", ctx=ast.Store())],
-        value=ast.Call(
-            func=ast.Name(id="ToNumber", ctx=ast.Load()),
-            args=[ast.Name(id=start, ctx=ast.Load())],
-            keywords=[],
-        ),
-    )
-    e = ast.Assign(
-        targets=[ast.Name(id="end", ctx=ast.Store())],
-        value=ast.Call(
-            func=ast.Name(id="ToNumber", ctx=ast.Load()),
-            args=[ast.Name(id=end, ctx=ast.Load())],
-            keywords=[],
-        ),
-    )
-    i = ast.Assign(
-        targets=[ast.Name(id=index, ctx=ast.Store())],
-        value=ast.Name(id="start", ctx=ast.Load()),
-    )
-    w = ast.While(
-        test=ast.Compare(
-            left=ast.Name(id=index, ctx=ast.Load()),
-            ops=[ast.LtE() if not exclusive else ast.Lt()],
-            comparators=[ast.Name(id="end", ctx=ast.Load())],
-        ),
-        body=[],
-        orelse=[],
+def create_range_loop(
+    helper: ASTHelper, index: str, start: str, end: str, exclusive=False
+):
+    start_name = f"start_{helper.lineno}"
+    end_name = f"end_{helper.lineno}"
+    s = helper.assign_call(start_name, "ToNumber", [helper.load_var(start)])
+    e = helper.assign_call(end_name, "ToNumber", [helper.load_var(end)])
+    i = helper.assign(index, helper.load_var(start_name))
+    w = helper.set_position(
+        ast.While(
+            test=ast.Compare(
+                left=helper.load_var(index),
+                ops=[ast.LtE() if not exclusive else ast.Lt()],
+                comparators=[helper.load_var(end_name)],
+            ),
+            body=[],
+        )
     )
     return s, e, i, w
-
-
-class _ClosureContext:
-    def __init__(self, helper: ASTHelper, closure_counter: int):
-        self.closure_counter = closure_counter
-        self.func_node = ast.FunctionDef()
 
 
 class Emitter:
@@ -122,12 +97,14 @@ class Emitter:
     def __init__(
         self,
         chunk: bytes,
-        source_map: "list[SourceMapEntry]",
+        source_lines: "Sequence[str]",
+        source_map: "Sequence[SourceMapEntry]",
     ):
         self.const_data, self.code_data = split_chunk(chunk)
         self.constants = read_constants(self.const_data)
         self.source_map = source_map
         self.source_map_index = 0
+        self.source_lines = source_lines
 
         self.func_script = None
         self.code_offset = 0
@@ -152,109 +129,74 @@ class Emitter:
     def wv(self, i: int, level: int = 0) -> str:
         """Write variable"""
         if not i:
-            return ""
+            return "_"
         return self.rv(i, level)
 
-    def fun_name(self) -> str:
-        """函数名称"""
-        self.fun_name_counter += 1
-        return f"fun_{self.fun_name_counter}"
-
-    def create_regs_array(self, nreg, start_index=0):
-        target = ast.Tuple(elts=[], ctx=ast.Store())
-        regsValue = ast.Tuple(elts=[], ctx=ast.Load())
-        regs = ast.Assign(targets=[target], value=regsValue, lineno=0)
-
-        for i in range(nreg + 1):
-            if i:
-                target.elts.append(
-                    ast.Name(id=self.wv(i + start_index, -1), ctx=ast.Store())
-                )
-                regsValue.elts.append(ast.Name(id="Uninitialized", ctx=ast.Load()))
-            else:
-                target.elts.append(ast.Name(id=self.wv(0, -1), ctx=ast.Store()))
-                regsValue.elts.append(ast.Name(id="Uninitialized", ctx=ast.Load()))
-
-        return regs
-
-    def create_function(self, func_name, regs):
-        args = ast.arguments(
-            posonlyargs=[],
-            args=[],
-            vararg=None,
-            kwonlyargs=[],
-            kw_defaults=[],
-            kwarg=None,
-            defaults=[],
+    def create_regs_array(self, helper: ASTHelper, nreg: int, start_index: int = 0):
+        target = helper.tuple(
+            (self.wv(i + start_index if i else 0, -1) for i in range(nreg + 1)),
+            ctx=ast.Store(),
         )
+        values = helper.tuple(["Uninitialized"] * (nreg + 1))
+        return helper.assign(target, values)
 
-        code = ast.FunctionDef(
-            func_name, args=args, body=[], decorator_list=[], lineno=0
+    def create_loop(
+        self, helper: ASTHelper, nreg, code, increment: Optional[ast.AugAssign] = None
+    ):
+        closure_name = f"closure_{self.source_map_index}"
+        source = (
+            self.source_lines[helper.lineno - 1]
+            if helper.lineno - 1 < len(self.source_lines)
+            else ""
         )
-
-        try_code = ast.Try(
-            body=[cp("CpEnter"), regs],
-            handlers=[],
-            finalbody=[
-                ast.Expr(
-                    value=ast.Call(
-                        func=ast.Name(id="CpExit", ctx=ast.Load()), args=[], keywords=[]
-                    )
-                )
-            ],
-            orelse=[],
-        )
-        code.body.append(try_code)
-
-        return [code, try_code]
-
-    def create_loop(self, nreg, code, increment: Optional[ast.AugAssign] = None):
-        func_name = self.fun_name()
-        [loop_func_code, try_code] = self.create_function(
-            func_name, self.create_regs_array(nreg - 1, 2)
-        )
-        code.body.append(loop_func_code)
-        loop_func_code.body.append(
-            ast.Return(value=ast.Name(id="LoopContinue", ctx=ast.Load()))
-        )
-
-        code.body.append(
-            ast.Assign(
-                targets=[ast.Name(id=f"inner{func_name}Result", ctx=ast.Store())],
-                value=ast_call("Call", [ast.Name(id=func_name, ctx=ast.Load())]),
-                lineno=0,
+        block = helper.set_position(ast.If(test=helper.const(True), body=[]))
+        closure = helper.set_position(
+            ast.FunctionDef(
+                name=closure_name,
+                args=ast.arguments(),
+                body=[
+                    self.create_regs_array(helper, nreg - 1, 2),
+                    block,
+                    helper.ret("LoopContinue"),
+                ],
+                decorator_list=[helper.load_var("Closure")],
             )
         )
+        if source:
+            closure.body.insert(
+                0, helper.expr(helper.const(f"{helper.lineno}: {source.strip()} ..."))
+            )
+        code.body.append(closure)
+
+        result_name = f"{closure_name}_result"
+        code.body.append(helper.assign_call(result_name, closure_name, []))
         code.body.append(increment) if increment else None
         code.body.append(
-            ast.If(
-                test=ast.Compare(
-                    left=ast.Name(id=f"inner{func_name}Result", ctx=ast.Load()),
-                    ops=[ast.Is()],
-                    comparators=[ast.Name(id="LoopContinue", ctx=ast.Load())],
+            helper.set_position(
+                ast.If(
+                    test=ast.Compare(
+                        left=helper.load_var(result_name),
+                        ops=[ast.Is()],
+                        comparators=[helper.load_var("LoopContinue")],
+                    ),
+                    body=[ast.Continue()],
+                    orelse=[
+                        ast.If(
+                            test=ast.Compare(
+                                left=helper.load_var(result_name),
+                                ops=[ast.Is()],
+                                comparators=[helper.load_var("LoopBreak")],
+                            ),
+                            body=[ast.Break()],
+                            orelse=[helper.ret(result_name)],
+                        )
+                    ],
                 ),
-                body=[ast.Continue()],
-                orelse=[
-                    ast.If(
-                        test=ast.Compare(
-                            left=ast.Name(id=f"inner{func_name}Result", ctx=ast.Load()),
-                            ops=[ast.Is()],
-                            comparators=[ast.Name(id="LoopBreak", ctx=ast.Load())],
-                        ),
-                        body=[ast.Break()],
-                        orelse=[
-                            ast.Return(
-                                value=ast.Name(
-                                    id=f"inner{func_name}Result", ctx=ast.Load()
-                                )
-                            )
-                        ],
-                    )
-                ],
+                deep=True,
             )
         )
 
-        return try_code
+        return block
 
     def read_param(self, wide: bool) -> int:
         value, size = _read_param(self.code_data, self.code_offset, wide)
@@ -320,6 +262,8 @@ class Emitter:
                 continue
 
             self.skip_opcode()
+            if not current_blocks_body:
+                current_blocks_body.append(ast.Pass(lineno=0))
 
             if end_opcode == OpCode.LoopEnd:
                 self.closure_counter -= 1
@@ -514,25 +458,8 @@ class Emitter:
                     args.args.append(ast.arg(f"{wv}"))
                     args.defaults.append(ast.Constant(value=None, lineno=0))
 
-            target = ast.Tuple(elts=[], ctx=ast.Store())
-            regsValue = ast.Tuple(elts=[], ctx=ast.Load())
-            regs = ast.Assign(targets=[target], value=regsValue, lineno=0)
-            for i in range(regn - argn + 1):
-                if i:
-                    target.elts.append(
-                        ast.Name(id=self.wv(i + argn, -1), ctx=ast.Store())
-                    )
-                    regsValue.elts.append(ast.Name(id="Uninitialized", ctx=ast.Load()))
-                else:
-                    target.elts.append(ast.Name(id=self.wv(0, -1), ctx=ast.Store()))
-                    regsValue.elts.append(ast.Name(id="Uninitialized", ctx=ast.Load()))
+            regs = self.create_regs_array(helper, regn - argn, argn)
 
-            try_code = ast.Try(
-                body=[cp("CpEnter"), regs],
-                handlers=[],
-                finalbody=[cp("CpExit")],
-                orelse=[],
-            )
             if script:
                 args.args.insert(0, ast.arg(arg="context"))
                 args.defaults.insert(
@@ -544,36 +471,36 @@ class Emitter:
                     ),
                 )
                 code = ast.FunctionDef(
-                    "script", args=args, body=[], decorator_list=[], lineno=0
+                    "script", args=args, body=[regs], decorator_list=[], lineno=0
                 )
                 self.func_script = code
-                code.body.append(try_code)
+                code.decorator_list.append(helper.load_var("Script"))
 
             else:
                 func_name = self.wv(reg)
                 code = ast.FunctionDef(
-                    func_name, args=args, body=[], decorator_list=[], lineno=0
+                    func_name, args=args, body=[regs], decorator_list=[], lineno=0
+                )
+                source_line = (
+                    self.source_lines[helper.lineno - 1]
+                    if helper.lineno - 1 < len(self.source_lines)
+                    else ""
+                )
+                fn_decl_name = (
+                    source_line[helper.col_offset : helper.end_col_offset].strip()
+                    if helper.col_offset is not None
+                    and helper.end_col_offset is not None
+                    and helper.col_offset < len(source_line)
+                    and helper.end_col_offset <= len(source_line)
+                    else ""
                 )
                 code.decorator_list.append(
-                    ast.Call(
-                        func=ast.Name(id="Fn", ctx=ast.Load()),
-                        args=[ast.Constant(value="")],
-                        keywords=[],
-                    )
+                    helper.call("Fn", [helper.const(fn_decl_name)])
                 )
-                code.body.append(try_code)
 
             if varg:
-                try_code.body.append(
-                    ast.Assign(
-                        targets=[ast.Name(id=self.wv(argn, -1), ctx=ast.Store())],
-                        value=ast.Call(
-                            func=ast.Name(id="Vargs", ctx=ast.Load()),
-                            args=[ast.Name(id="vargs", ctx=ast.Load())],
-                            keywords=[],
-                        ),
-                        lineno=0,
-                    )
+                code.body.append(
+                    helper.assign_call(self.wv(argn, -1), "Vargs", ["vargs"])
                 )
 
         elif opcode == OpCode.Constant:
@@ -1111,46 +1038,38 @@ class Emitter:
                 orelse=[],
             )
 
-        #     code = f"if ({self.rv(cond)} !== null) {{"
-
-        # # 处理循环语句
         elif opcode == OpCode.LoopFor:
             nreg = read()
             iterable = read()
-            regs = [self.wv(i + 2, -1) for i in range(nreg - 1)]
-            # code = f"for (let {self.wv(1, -1)} of $Iterable({self.rv(iterable)})) {{ Cp(); let _, {', '.join(regs)};"
-
-            code = ast.For(
-                target=ast.Name(id=self.wv(1, -1), ctx=ast.Store()),
-                iter=ast_call(
-                    "Iterable", [ast.Name(id=self.rv(iterable), ctx=ast.Load())]
-                ),
-                body=[],
-                orelse=[],
-                lineno=0,
+            code = helper.set_position(
+                ast.For(
+                    target=helper.store_var(self.wv(1, -1)),
+                    iter=helper.call("Iterable", [self.rv(iterable)]),
+                    body=[],
+                )
             )
 
-            loop_node = self.create_loop(nreg, code)
+            loop_node = self.create_loop(helper, nreg, code)
 
         elif opcode in (OpCode.LoopRange, OpCode.LoopRangeExclusive):
+            assert current_blocks_body is not None
+
             nreg = read()
             start = read()
             end = read()
-            exclusive = opcode == OpCode.LoopRangeExclusive
 
             s, e, i, code = create_range_loop(
-                self.wv(1, -1), self.rv(start), self.rv(end), exclusive
+                helper,
+                self.wv(1, -1),
+                self.rv(start),
+                self.rv(end),
+                opcode == OpCode.LoopRangeExclusive,
             )
-            # code = ast.For(
-            #                 target=ast.Name(id=self.wv(1, -1), ctx=ast.Store()),
-            #                 iter=ast_call('Range_' if not exclusive else 'RangeExclusive_', [ast.Name(id=self.rv(start), ctx=ast.Load()), ast.Name(id=self.rv(end), ctx=ast.Load())]),
-            #                 body=[],
-            #                 orelse=[],lineno=0)
-
             current_blocks_body.append(s)
             current_blocks_body.append(e)
             current_blocks_body.append(i)
             loop_node = self.create_loop(
+                helper,
                 nreg,
                 code,
                 ast.AugAssign(
@@ -1162,19 +1081,14 @@ class Emitter:
         elif opcode == OpCode.Loop:
             nreg = read()
 
-            code = ast.While(
-                test=ast.Constant(value=True),
-                body=[
-                    ast.Expr(
-                        value=ast.Call(
-                            func=ast.Name(id="Cp", ctx=ast.Load()), args=[], keywords=[]
-                        )
-                    )
-                ],
-                orelse=[],
+            code = helper.set_position(
+                ast.While(
+                    test=helper.const(True),
+                    body=[],
+                )
             )
 
-            loop_node = self.create_loop(nreg, code)
+            loop_node = self.create_loop(helper, nreg, code)
 
         elif opcode == OpCode.Break:
             # code = ast.Break()
@@ -1190,25 +1104,15 @@ class Emitter:
             self.unknown_opcode(opcode)
 
         if current_blocks_body is None:
-            if not isinstance(code, ast.FunctionDef):
-                raise ValueError(
-                    "current_blocks_body is None, please set it before calling read"
-                )
-            try_code = code.body[0]
-            if not isinstance(try_code, ast.Try):
-                raise ValueError(f"Expected Try node, got {type(try_code)}")
-            current_blocks_body = try_code.body
-
+            assert isinstance(code, ast.FunctionDef)
+            current_blocks_body = code.body
         else:
             current_blocks_body.append(code)
 
         # 处理特殊的 opcode 后续逻辑
         if opcode in (OpCode.FuncVarg, OpCode.Func):
             assert isinstance(code, ast.FunctionDef)
-            try_code = code.body[0]
-            if not isinstance(try_code, ast.Try):
-                raise ValueError(f"Expected Try node, got {type(try_code)}")
-            self.read_closure(try_code.body)
+            self.read_closure(code.body)
             pass
         elif opcode in (
             OpCode.If,

@@ -5,8 +5,10 @@ from ast import (
     Expr,
     Load,
     Name,
+    Return,
     Starred,
     Store,
+    Tuple,
     expr_context,
     expr,
     Subscript,
@@ -14,7 +16,7 @@ from ast import (
     Constant,
 )
 import sys
-from typing_extensions import TypeVar, Sequence
+from typing_extensions import TypeVar, Iterable
 
 T = TypeVar("T", bound=AST)
 
@@ -77,6 +79,12 @@ class ASTHelper:
         """生成一个表达式语句的 AST 节点"""
         return self.set_position(Expr(value=value))
 
+    def ret(self, value: "expr | str") -> Return:
+        """生成一个返回语句的 AST 节点"""
+        if isinstance(value, str):
+            value = self.load_var(value)
+        return self.set_position(Return(value=value))
+
     def subscript(
         self, value: "str | expr", slice: expr, ctx: expr_context = Load()
     ) -> Subscript:
@@ -98,7 +106,7 @@ class ASTHelper:
             )
         )
 
-    def assign(self, target: "str | expr | Sequence[expr]", value: expr) -> Assign:
+    def assign(self, target: "str | expr | Iterable[expr]", value: expr) -> Assign:
         """生成一个赋值语句的 AST 节点"""
         if isinstance(target, str):
             target = self.store_var(target)
@@ -110,7 +118,7 @@ class ASTHelper:
         )
 
     def call(
-        self, func: "expr | str", args: "Sequence[expr | str] | None" = None
+        self, func: "expr | str", args: "Iterable[expr | str] | None" = None
     ) -> Call:
         """生成一个函数调用的 AST 节点"""
         if isinstance(func, str):
@@ -133,18 +141,25 @@ class ASTHelper:
             value = self.load_var(value)
         return self.set_position(Starred(value=value, ctx=ctx))
 
+    def tuple(
+        self, elements: "Iterable[expr | str]", ctx: expr_context = Load()
+    ) -> Tuple:
+        """生成一个元组的 AST 节点"""
+        elts = [self.var(e, ctx=ctx) if isinstance(e, str) else e for e in elements]
+        return self.set_position(Tuple(elts=elts, ctx=ctx))
+
     def assign_call(
         self,
-        target: "str | expr | Sequence[expr]",
+        target: "str | expr | Iterable[expr]",
         func: "expr | str",
-        args: "Sequence[expr | str] | None" = None,
+        args: "Iterable[expr | str] | None" = None,
     ) -> Assign:
         """生成一个赋值调用的 AST 节点"""
         call_node = self.call(func, args)
         return self.assign(target, call_node)
 
     def vm_element(
-        self, args: "str | Sequence[str | expr]", helper_name="Element", spread=False
+        self, args: "str | Iterable[str | expr]", helper_name="Element", spread=False
     ) -> "Call | Starred":
         """生成一个虚拟机元素的 AST 节点"""
         if isinstance(args, str):

@@ -28,7 +28,8 @@ def emit(
     """生成代码"""
     module = None
     try:
-        gen = Emitter(chunk, source_map or [])
+        source_lines = source.splitlines(True)
+        gen = Emitter(chunk, source_lines, source_map or [])
         gen.read()
         if gen.func_script is None:
             return None
@@ -38,6 +39,15 @@ def emit(
         ast_helper.set_position(script, deep=True)
         module = ast.Module(
             body=[
+                ast.Expr(
+                    value=ast.Constant(
+                        value=f"\nGenerated from {filename or '<unknown>'}:\n\n```mira\n{source}\n```\n",
+                        lineno=0,
+                        col_offset=0,
+                    ),
+                    lineno=0,
+                    col_offset=0,
+                ),
                 ast.ImportFrom(
                     module="mirascript.vm.env",
                     names=[
@@ -64,7 +74,7 @@ def emit(
         linecache.cache[filename] = (
             len(source),
             None,
-            source.splitlines(True),
+            source_lines,
             filename,
         )
         return wrap_vm_script(result, filename=filename, ast=module, source=source)

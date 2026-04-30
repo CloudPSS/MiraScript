@@ -99,7 +99,7 @@ class BlackBoxTests(unittest.TestCase):
             config_checkpoint(1000)
 
         # compile and run
-        script, _ = mira_compile(code)
+        script, _ = mira_compile(code, filename=mira_path)
         ctx = VmContext(globals_)
         # script 应当是可调用的：script(ctx)
         if script is None:

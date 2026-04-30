@@ -9,6 +9,7 @@ from mirascript.helpers.types import is_vm_primitive, is_vm_record
 from mirascript.vm.error import VmError
 
 from ..vm.types.function import vm_function
+from ..helpers.constants import kVmScript
 
 from ..helpers.types import is_vm_extern, is_vm_array, is_vm_module, is_vm_wrapper
 from mirascript.vm.types.types import Uninitialized
@@ -576,4 +577,49 @@ def RangeExclusive(start, end):
 
 
 def Fn(name):
-    return vm_function(name)
+
+    def decorator(func):
+
+        from mirascript.vm.helpers import CpEnter, CpExit
+
+        fn = func
+
+        def fn_wrapper(*args, **kwargs):
+            try:
+                CpEnter()
+                return fn(*args, **kwargs)
+            finally:
+                CpExit()
+
+        return vm_function(name)(fn_wrapper)
+
+    return decorator
+
+
+def Closure(func):
+
+    from mirascript.vm.helpers import CpEnter, CpExit
+
+    def closure_wrapper():
+        try:
+            CpEnter()
+            return func()
+        finally:
+            CpExit()
+
+    return closure_wrapper
+
+
+def Script(func):
+
+    from mirascript.vm.helpers import CpEnter, CpExit
+
+    def script_wrapper(*args, **kwargs):
+        try:
+            CpEnter()
+            return func(*args, **kwargs)
+        finally:
+            CpExit()
+
+    setattr(script_wrapper, kVmScript, True)
+    return script_wrapper
