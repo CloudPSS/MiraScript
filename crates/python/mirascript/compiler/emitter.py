@@ -1,7 +1,5 @@
-from mirascript.compiler.diagnostics import SourceMapEntry
-from typing_extensions import Any, Union, List, Tuple, Optional, TypeAlias, Sequence
+from typing_extensions import Union, List, Optional, Sequence
 import ast
-import sys
 
 from ..vm.operations import ToString
 from .opcode import OpCode, get_opcode_name
@@ -12,83 +10,7 @@ from .consts import (
     read_param as _read_param,
 )
 from .ast_helper import ASTHelper
-
-
-def ast_call(func_id: str, call_args: List[Any]) -> ast.Call:
-    """生成 call"""
-    return ast.Call(
-        func=ast.Name(id=func_id, ctx=ast.Load()), args=call_args, keywords=[], lineno=0
-    )
-
-
-def subscript(value: ast.expr, slice: ast.expr, ctx=ast.Load()) -> ast.Subscript:
-    # Compatibility: ast.Index was removed in Python 3.9.
-    # Use ast.Index for older Pythons, and plain expr (ast.Constant) for 3.9+.
-    if sys.version_info < (3, 9):
-        slice = ast.Index(value=slice)
-
-    return ast.Subscript(
-        value=value,
-        slice=slice,
-        ctx=ctx,
-    )
-
-
-def assign_call(target_id: str, func_id: str, call_args: List[Any]) -> ast.Assign:
-    """生成 assign call"""
-    return assign(target_id, ast_call(func_id, call_args))
-
-
-def assign(target_id: str, value: ast.expr) -> ast.Assign:
-    return ast.Assign(
-        targets=[ast.Name(id=target_id, ctx=ast.Store())],
-        value=value,
-        lineno=0,
-    )
-
-
-def create_parameter(name):
-    """生成参数"""
-    if name == "None":
-        return ast.Constant(value=None, lineno=0)
-    return ast.Name(id=name, ctx=ast.Load(), lineno=0)
-
-
-def create_if(name: str, negate) -> ast.If:
-    return ast.If(
-        test=ast.Compare(
-            left=ast.Call(
-                func=ast.Name(id="ToBoolean", ctx=ast.Load()),
-                args=[ast.Name(id=name, ctx=ast.Load())],
-                keywords=[],
-            ),
-            ops=[ast.NotEq()],
-            comparators=[ast.Constant(value=negate)],
-        ),
-        body=[],
-        orelse=[],
-    )
-
-
-def create_range_loop(
-    helper: ASTHelper, index: str, start: str, end: str, exclusive=False
-):
-    start_name = f"start_{helper.lineno}"
-    end_name = f"end_{helper.lineno}"
-    s = helper.assign_call(start_name, "ToNumber", [helper.load_var(start)])
-    e = helper.assign_call(end_name, "ToNumber", [helper.load_var(end)])
-    i = helper.assign(index, helper.load_var(start_name))
-    w = helper.set_position(
-        ast.While(
-            test=ast.Compare(
-                left=helper.load_var(index),
-                ops=[ast.LtE() if not exclusive else ast.Lt()],
-                comparators=[helper.load_var(end_name)],
-            ),
-            body=[],
-        )
-    )
-    return s, e, i, w
+from .diagnostics import SourceMapEntry
 
 
 class Emitter:
@@ -108,8 +30,15 @@ class Emitter:
 
         self.func_script = None
         self.code_offset = 0
-        self.closure_counter = 0
-        self.fun_name_counter = 0
+        self.closures: List[ast.FunctionDef] = []
+
+    @property
+    def closure_counter(self) -> int:
+        return len(self.closures)
+
+    @property
+    def current_closure(self) -> Optional[ast.FunctionDef]:
+        return self.closures[-1] if self.closures else None
 
     def unknown_opcode(self, opcode: int) -> None:
         if not opcode:
@@ -137,23 +66,18 @@ class Emitter:
             (self.wv(i + start_index if i else 0, -1) for i in range(nreg + 1)),
             ctx=ast.Store(),
         )
-        values = helper.tuple(["Uninitialized"] * (nreg + 1))
+        values = helper.tuple(helper.uninitialized() for _ in range(nreg + 1))
         return helper.assign(target, values)
 
     def create_loop(
         self, helper: ASTHelper, nreg, code, increment: Optional[ast.AugAssign] = None
     ):
         closure_name = f"closure_{self.source_map_index}"
-        source = (
-            self.source_lines[helper.lineno - 1]
-            if helper.lineno - 1 < len(self.source_lines)
-            else ""
-        )
-        block = helper.set_position(ast.If(test=helper.const(True), body=[]))
+        block = helper.set_position(helper.if_expr(test=helper.const(True)))
         closure = helper.set_position(
             ast.FunctionDef(
                 name=closure_name,
-                args=ast.arguments(),
+                args=helper.args(),
                 body=[
                     self.create_regs_array(helper, nreg - 1, 2),
                     block,
@@ -162,10 +86,9 @@ class Emitter:
                 decorator_list=[helper.load_var("Closure")],
             )
         )
-        if source:
-            closure.body.insert(
-                0, helper.expr(helper.const(f"{helper.lineno}: {source.strip()} ..."))
-            )
+        hint = helper.vm_hint()
+        if hint:
+            closure.body.insert(0, hint)
         code.body.append(closure)
 
         result_name = f"{closure_name}_result"
@@ -174,18 +97,18 @@ class Emitter:
         code.body.append(
             helper.set_position(
                 ast.If(
-                    test=ast.Compare(
-                        left=helper.load_var(result_name),
-                        ops=[ast.Is()],
-                        comparators=[helper.load_var("LoopContinue")],
+                    test=helper.compare(
+                        result_name,
+                        ast.Is(),
+                        helper.load_var("LoopContinue"),
                     ),
                     body=[ast.Continue()],
                     orelse=[
                         ast.If(
-                            test=ast.Compare(
-                                left=helper.load_var(result_name),
-                                ops=[ast.Is()],
-                                comparators=[helper.load_var("LoopBreak")],
+                            test=helper.compare(
+                                result_name,
+                                ast.Is(),
+                                helper.load_var("LoopBreak"),
                             ),
                             body=[ast.Break()],
                             orelse=[helper.ret(result_name)],
@@ -196,7 +119,7 @@ class Emitter:
             )
         )
 
-        return block
+        return block, closure
 
     def read_param(self, wide: bool) -> int:
         value, size = _read_param(self.code_data, self.code_offset, wide)
@@ -225,6 +148,7 @@ class Emitter:
                 col_offset=source_map_entry.start_column - 1,
                 end_lineno=source_map_entry.end_line,
                 end_col_offset=source_map_entry.end_column - 1,
+                source_lines=self.source_lines,
             )
         )
         if not peek:
@@ -236,24 +160,42 @@ class Emitter:
         self.code_offset += 1
         self.source_map_index += 1
 
-    def read_closure(self, current_blocks_body: List[ast.stmt]) -> None:
-        """读取闭包"""
-        self.closure_counter += 1
+    def mark_nonlocal(self, name: str) -> None:
+        """标记非局部变量"""
+        current_closure = self.current_closure
+        assert current_closure is not None, "No closure to mark nonlocal variable"
+        body = current_closure.body
+        if body and isinstance(body[0], ast.Nonlocal):
+            nc = body[0].names
+        else:
+            nc = []
+            body.insert(0, ast.Nonlocal(names=nc))
+        if name not in nc:
+            nc.append(name)
 
+    def read_closure(self, closure: ast.FunctionDef) -> None:
+        """读取闭包"""
+
+        self.closures.append(closure)  # 进入闭包
         while self.code_offset < len(self.code_data):
             opcode, wide, helper = self.read_opcode(peek=True)
 
             if opcode != OpCode.FuncEnd:
-                self.read(current_blocks_body)
+                self.read(closure.body)
                 continue
             self.skip_opcode()
-            self.closure_counter -= 1
+            self.closures.pop()  # 退出当前闭包
             break
 
     def read_block_end(
-        self, end_opcode: int, current_blocks_body: List[ast.stmt]
+        self,
+        end_opcode: int,
+        current_blocks_body: List[ast.stmt],
+        closure: Optional[ast.FunctionDef] = None,
     ) -> None:
         """读取块结束"""
+        if closure is not None:
+            self.closures.append(closure)  # 进入闭包
         while self.code_offset < len(self.code_data):
             opcode, wide, helper = self.read_opcode(peek=True)
 
@@ -263,10 +205,10 @@ class Emitter:
 
             self.skip_opcode()
             if not current_blocks_body:
-                current_blocks_body.append(ast.Pass(lineno=0))
+                current_blocks_body.append(helper.pass_stmt())
 
-            if end_opcode == OpCode.LoopEnd:
-                self.closure_counter -= 1
+            if closure is not None:
+                self.closures.pop()  # 退出当前闭包
             break
 
     def read_if_else(self, block: ast.If) -> None:
@@ -429,7 +371,7 @@ class Emitter:
         def read_index():
             return self.read_index(wide)
 
-        code = ast.Pass()
+        code = None
         reg = 0
         func_name = None
         loop_node = None
@@ -440,41 +382,27 @@ class Emitter:
             varg = opcode == OpCode.FuncVarg
             argn = read()
             regn = read()
-            args = ast.arguments(
-                posonlyargs=[],
-                args=[],
-                vararg=ast.arg(arg="args"),
-                kwonlyargs=[],
-                kw_defaults=[],
-                kwarg=ast.arg(arg="kwargs"),
-                defaults=[],
-            )
+            args = helper.args()
             for i in range(argn):
                 wv = self.wv(i + 1, -1)
                 if varg and i == argn - 1:
-                    # 最后一个参数为可变参数
-                    args.vararg = ast.arg(arg="vargs")
+                    # 最后一个参数为可变参数，已在 helper.args() 初始化为 vargs
+                    pass
                 else:
                     args.args.append(ast.arg(f"{wv}"))
-                    args.defaults.append(ast.Constant(value=None, lineno=0))
+                    args.defaults.append(helper.const(None))
 
             regs = self.create_regs_array(helper, regn - argn, argn)
 
             if script:
                 args.args.insert(0, ast.arg(arg="context"))
-                args.defaults.insert(
-                    0,
-                    ast.Call(
-                        func=ast.Name(id="GlobalFallback", ctx=ast.Load()),
-                        args=[],
-                        keywords=[],
-                    ),
-                )
+                args.defaults.insert(0, helper.const(None))
                 code = ast.FunctionDef(
                     "script", args=args, body=[regs], decorator_list=[], lineno=0
                 )
                 self.func_script = code
                 code.decorator_list.append(helper.load_var("Script"))
+                code.body.append(helper.assign_call("context", "Context", ["context"]))
 
             else:
                 func_name = self.wv(reg)
@@ -507,42 +435,25 @@ class Emitter:
             reg = read()
             i = read()
             c = self.constants[i]
-            code = ast.Assign(
-                targets=[ast.Name(id=self.wv(reg), ctx=ast.Store())],
-                value=ast.Constant(value=c),
-                lineno=0,
-            )
+            code = helper.assign(self.wv(reg), helper.const(c))
 
         elif opcode == OpCode.Uninit:
             reg = read()
-            # code = f"{self.wv(reg)} = undefined;"
-            code = ast.Assign(
-                targets=[ast.Name(id=self.wv(reg), ctx=ast.Store())],
-                value=ast.Name(id="Uninitialized", ctx=ast.Load()),
-                lineno=0,
-            )
+            code = helper.assign(self.wv(reg), helper.uninitialized())
 
         elif opcode == OpCode.Return:
             reg = read()
-            # code = f"return {self.rv(reg)};"
-            code = ast.Return(value=create_parameter(self.rv(reg)))
+            code = helper.ret(self.rv(reg))
 
         elif opcode == OpCode.Format:
             reg = read()
             leftValue = read()
             fmtValue = read_index()
 
-            code = ast.Assign(
-                targets=[ast.Name(id=self.wv(reg), ctx=ast.Store())],
-                value=ast.Call(
-                    func=ast.Name(id="Format", ctx=ast.Load()),
-                    args=[
-                        ast.Name(id=self.rv(leftValue), ctx=ast.Load()),
-                        ast.Constant(value=self.constants[fmtValue]),
-                    ],
-                    keywords=[],
-                ),
-                lineno=0,
+            code = helper.assign_call(
+                self.wv(reg),
+                "Format",
+                [self.rv(leftValue), helper.const(self.constants[fmtValue])],
             )
 
         elif opcode in (
@@ -570,54 +481,27 @@ class Emitter:
             left = read()
             right = read()
             opcode_name = get_opcode_name(opcode)
-            opArgs = []
-            leftValue = self.rv(left)
-            rightValue = self.rv(right)
-
-            if leftValue == "None":
-                opArgs.append(ast.Constant(value=None))
-            else:
-                opArgs.append(ast.Name(id=leftValue, ctx=ast.Load()))
-            if rightValue == "None":
-                opArgs.append(ast.Constant(value=None))
-            else:
-                opArgs.append(ast.Name(id=rightValue, ctx=ast.Load()))
-            code = ast.Assign(
-                targets=[ast.Name(id=self.wv(reg), ctx=ast.Store())],
-                value=ast.Call(
-                    func=ast.Name(id=f"{opcode_name}", ctx=ast.Load()),
-                    args=opArgs,
-                    keywords=[],
-                ),
-                lineno=0,
+            code = helper.assign_call(
+                self.wv(reg), opcode_name, [self.rv(left), self.rv(right)]
             )
 
         elif opcode == OpCode.InGlobal:
             reg = read()
             left = read()
-            code = ast.Assign(
-                targets=[ast.Name(id=self.wv(reg), ctx=ast.Store())],
-                value=ast.Compare(
-                    left=ast_call(
-                        "ToString",
-                        [ast.Name(id=self.rv(left), ctx=ast.Load())],
-                    ),
-                    ops=[ast.In()],
-                    comparators=[ast.Name(id="context", ctx=ast.Load())],
+            code = helper.assign(
+                self.wv(reg),
+                helper.compare(
+                    helper.call("ToString", [self.rv(left)]),
+                    ast.In(),
+                    helper.load_var("context"),
                 ),
-                lineno=0,
             )
 
         elif opcode == OpCode.Concat:
             reg = read()
             n = read()
-            args = [self.rv(read()) for _ in range(n)]
-            opcode_name = get_opcode_name(opcode)
-            code = assign_call(
-                self.wv(reg),
-                f"{opcode_name}",
-                [ast.Name(id=a, ctx=ast.Load()) for a in args],
-            )
+            parts = [self.rv(read()) for _ in range(n)]
+            code = helper.assign_call(self.wv(reg), "Concat", parts)
 
         elif opcode in (OpCode.Omit, OpCode.Pick):
             reg = read()
@@ -626,17 +510,12 @@ class Emitter:
             args = [self.constants[read()] for _ in range(n)]
             opcode_name = get_opcode_name(opcode)
 
-            call_args = ast.List(
-                elts=[ast.Constant(value=a) for a in args], ctx=ast.Load()
-            )
-            code = assign_call(
+            call_args = helper.list(helper.const(value=a) for a in args)
+            code = helper.assign_call(
                 self.wv(reg),
-                f"{opcode_name}",
-                [ast.Name(id=self.rv(value), ctx=ast.Load()), call_args],
+                opcode_name,
+                [self.rv(value), call_args],
             )
-
-        #
-        #     code = f"{self.wv(reg)} = ${opcode_name}({self.rv(value)}, [{', '.join(args)}]);"
 
         elif opcode in (OpCode.Call, OpCode.CallDyn):
             reg = read()
@@ -653,18 +532,20 @@ class Emitter:
             else:
                 call_target = helper.load_var(self.rv(func))
 
-            call_args = ast.Tuple(elts=[], ctx=ast.Load())
-            for i, a in enumerate(args):
-                if i in spreads:
-                    call_args.elts.append(
+            call_args = helper.tuple(
+                [
+                    (
                         helper.vm_element(
                             self.rv(a), helper_name="ArraySpread", spread=True
                         )
+                        if i in spreads
+                        else self.rv(a)
                     )
-                else:
-                    call_args.elts.append(helper.load_var(self.rv(a)))
+                    for i, a in enumerate(args)
+                ]
+            )
 
-            fun_args: list = [call_target]
+            fun_args = [call_target]
 
             if len(call_args.elts) > 0:
                 fun_args.append(helper.starred(call_args))
@@ -708,173 +589,128 @@ class Emitter:
             reg = read()
             obj = read()
             prop = self.constants[read()]
-            code = assign_call(
+            code = helper.assign_call(
                 self.wv(reg),
                 "Get",
-                [ast.Name(id=self.rv(obj), ctx=ast.Load()), ast.Constant(value=prop)],
+                [self.rv(obj), helper.const(prop)],
             )
 
         elif opcode == OpCode.GetIndex:
             reg = read()
             obj = read()
             index = read_index()
-            code = assign_call(
+            code = helper.assign_call(
                 self.wv(reg),
                 "Get",
-                [ast.Name(id=self.rv(obj), ctx=ast.Load()), ast.Constant(value=index)],
+                [self.rv(obj), helper.const(index)],
             )
-        #     code = f"{self.wv(reg)} = $Get({self.rv(obj)}, {index});"
 
         elif opcode == OpCode.GetDyn:
             reg = read()
             obj = read()
             index = read()
-            code = assign_call(
+            code = helper.assign_call(
                 self.wv(reg),
                 "Get",
-                [
-                    ast.Name(id=self.rv(obj), ctx=ast.Load()),
-                    ast.Name(id=self.rv(index), ctx=ast.Load()),
-                ],
+                [self.rv(obj), self.rv(index)],
             )
-        #     code = f"{self.wv(reg)} = $Get({self.rv(obj)}, {self.rv(index)});"
 
         elif opcode == OpCode.Has:
             reg = read()
             obj = read()
             prop = self.constants[read()]
-            code = assign_call(
+            code = helper.assign_call(
                 self.wv(reg),
                 "Has",
-                [ast.Name(id=self.rv(obj), ctx=ast.Load()), ast.Constant(value=prop)],
+                [self.rv(obj), helper.const(prop)],
             )
-        #     code = f"{self.wv(reg)} = $Has({self.rv(obj)}, {prop});"
 
         elif opcode == OpCode.HasIndex:
             reg = read()
             obj = read()
             index = read_index()
-            code = assign_call(
+            code = helper.assign_call(
                 self.wv(reg),
                 "Has",
-                [ast.Name(id=self.rv(obj), ctx=ast.Load()), ast.Constant(value=index)],
+                [self.rv(obj), helper.const(index)],
             )
-        #     code = f"{self.wv(reg)} = $Has({self.rv(obj)}, {index});"
 
         elif opcode == OpCode.HasDyn:
             reg = read()
             obj = read()
             index = read()
-            code = assign_call(
+            code = helper.assign_call(
                 self.wv(reg),
                 "Has",
-                [
-                    ast.Name(id=self.rv(obj), ctx=ast.Load()),
-                    ast.Name(id=self.rv(index), ctx=ast.Load()),
-                ],
+                [self.rv(obj), self.rv(index)],
             )
-        #     code = f"{self.wv(reg)} = $Has({self.rv(obj)}, {self.rv(index)});"
 
         elif opcode == OpCode.Set:
             reg = read()
             obj = read()
             prop = self.constants[read()]
-            code = assign_call(
-                self.wv(reg),
-                "Set",
-                [
-                    ast.Name(id=self.rv(obj), ctx=ast.Load()),
-                    ast.Constant(value=prop),
-                    ast.Name(id=self.rv(reg), ctx=ast.Load()),
-                ],
+            code = helper.expr(
+                helper.call(
+                    "Set",
+                    [self.rv(obj), helper.const(prop), self.rv(reg)],
+                )
             )
-        #     code = f"$Set({self.rv(obj)}, {prop}, {self.rv(reg)});"
 
         elif opcode == OpCode.SetIndex:
             reg = read()
             obj = read()
             index = read_index()
-            code = assign_call(
-                self.wv(reg),
-                "Set",
-                [
-                    ast.Name(id=self.rv(obj), ctx=ast.Load()),
-                    ast.Constant(value=index),
-                    ast.Name(id=self.rv(reg), ctx=ast.Load()),
-                ],
+            code = helper.expr(
+                helper.call(
+                    "Set",
+                    [self.rv(obj), helper.const(index), self.rv(reg)],
+                )
             )
-        #     code = f"$Set({self.rv(obj)}, {index}, {self.rv(reg)});"
 
         elif opcode == OpCode.SetDyn:
             reg = read()
             obj = read()
             index = read()
-            code = assign_call(
-                self.wv(reg),
-                "Set",
-                [
-                    ast.Name(id=self.rv(obj), ctx=ast.Load()),
-                    ast.Name(id=self.rv(index), ctx=ast.Load()),
-                    ast.Name(id=self.rv(reg), ctx=ast.Load()),
-                ],
+            code = helper.expr(
+                helper.call(
+                    "Set",
+                    [self.rv(obj), self.rv(index), self.rv(reg)],
+                )
             )
-        #     code = f"$Set({self.rv(obj)}, {self.rv(index)}, {self.rv(reg)});"
 
         # 处理全局变量访问
         elif opcode == OpCode.GetGlobal:
             reg = read()
             i = read()
-            c = self.constants[i]
-            code = assign(
-                self.wv(reg),
-                subscript(
-                    ast.Name(id="context", ctx=ast.Load()),
-                    ast.Constant(value=c),
-                ),
-            )
+            c = helper.const(self.constants[i])
+            code = helper.assign(self.wv(reg), helper.subscript("context", c))
 
         elif opcode == OpCode.GetGlobalDyn:
             reg = read()
             name = read()
-            slice = ast_call("ToString", [ast.Name(id=self.rv(name), ctx=ast.Load())])
-            code = assign(
-                self.wv(reg),
-                subscript(
-                    ast.Name(id="context", ctx=ast.Load()),
-                    slice,
-                ),
-            )
-        #     code = f"{self.wv(reg)} = global[{self.rv(name)}] ?? null;"
+            slice = helper.call("ToString", [self.rv(name)])
+            code = helper.assign(self.wv(reg), helper.subscript("context", slice))
 
         # # 处理闭包变量
         elif opcode == OpCode.GetUpvalue:
             reg = read()
             level = read()
             up = read()
-            code = assign_call(
-                self.wv(reg),
-                "Upvalue",
-                [ast.Name(id=self.rv(up, level), ctx=ast.Load())],
-            )
+
+            local = self.wv(reg)
+            upvalue_name = self.rv(up, level)
+            self.mark_nonlocal(upvalue_name)
+            code = helper.assign_call(self.wv(reg), "Upvalue", [upvalue_name])
 
         elif opcode == OpCode.SetUpvalue:
             reg = read()
             level = read()
             up = read()
-            if not current_blocks_body:
-                raise ValueError("No current block to set upvalue")
-            if not reg:
-                val = ast.Constant(value=None)
-            else:
-                val = ast.Name(id=self.rv(reg), ctx=ast.Load())
 
-            upvalue_name = self.rv(up, level)
-            current_blocks_body.insert(0, ast.Nonlocal(names=[upvalue_name]))
-            code = ast.Assign(
-                targets=[ast.Name(id=upvalue_name, ctx=ast.Store())],
-                value=val,
-                lineno=0,
-            )
+            local = self.rv(reg)
+            upvalue_name = self.wv(up, level)
+            self.mark_nonlocal(upvalue_name)
+            code = helper.assign(upvalue_name, helper.load_var(local))
 
         # # 处理数组切片
         elif opcode == OpCode.Slice:
@@ -882,171 +718,101 @@ class Emitter:
             obj = read()
             start = read_index()
             end = read_index()
-            code = assign_call(
+            code = helper.assign_call(
                 self.wv(reg),
                 "Slice",
-                [
-                    ast.Name(id=self.rv(obj), ctx=ast.Load()),
-                    ast.Constant(value=start),
-                    ast.Constant(value=end),
-                ],
+                [self.rv(obj), helper.const(start), helper.const(end)],
             )
-        #     code = f"{self.wv(reg)} = $Slice({self.rv(obj)}, {start}, {end});"
 
         elif opcode == OpCode.SliceStart:
             reg = read()
             obj = read()
             end = read_index()
-            code = assign_call(
+            code = helper.assign_call(
                 self.wv(reg),
                 "Slice",
-                [
-                    ast.Name(id=self.rv(obj), ctx=ast.Load()),
-                    ast.Constant(value=None),
-                    ast.Constant(value=end),
-                ],
+                [self.rv(obj), helper.const(None), helper.const(end)],
             )
-        #     code = f"{self.wv(reg)} = $Slice({self.rv(obj)}, null, {end});"
 
         elif opcode == OpCode.SliceEnd:
             reg = read()
             obj = read()
             start = read_index()
-            code = assign_call(
+            code = helper.assign_call(
                 self.wv(reg),
                 "Slice",
-                [
-                    ast.Name(id=self.rv(obj), ctx=ast.Load()),
-                    ast.Constant(value=start),
-                    ast.Constant(value=None),
-                ],
+                [self.rv(obj), helper.const(start), helper.const(None)],
             )
-        #     code = f"{self.wv(reg)} = $Slice({self.rv(obj)}, {start}, null);"
 
         elif opcode == OpCode.SliceDyn:
             reg = read()
             obj = read()
             start = read()
             end = read()
-            code = assign_call(
+            code = helper.assign_call(
                 self.wv(reg),
                 "Slice",
-                [
-                    create_parameter(self.rv(obj)),
-                    create_parameter(self.rv(start)),
-                    create_parameter(self.rv(end)),
-                ],
+                [self.rv(obj), self.rv(start), self.rv(end)],
             )
-        #     code = f"{self.wv(reg)} = $Slice({self.rv(obj)}, {self.rv(start)}, {self.rv(end)});"
 
         elif opcode == OpCode.SliceExclusiveDyn:
             reg = read()
             obj = read()
             start = read()
             end = read()
-
-            code = assign_call(
+            code = helper.assign_call(
                 self.wv(reg),
                 "SliceExclusive",
-                [
-                    create_parameter(self.rv(obj)),
-                    create_parameter(self.rv(start)),
-                    create_parameter(self.rv(end)),
-                ],
+                [self.rv(obj), self.rv(start), self.rv(end)],
             )
-        #     code = f"{self.wv(reg)} = $SliceExclusive({self.rv(obj)}, {self.rv(start)}, {self.rv(end)});"
 
         # # 处理数据结构初始化
         elif opcode == OpCode.Record:
             reg = read()
-            # code = f"{self.wv(reg)} = ({{"
-            code = ast.Assign(
-                targets=[ast.Name(id=self.wv(reg), ctx=ast.Store())],
-                value=ast.Dict(keys=[], values=[]),
-                lineno=0,
-            )
+            code = helper.assign(self.wv(reg), helper.dict([]))
 
         elif opcode == OpCode.Array:
             reg = read()
-            code = ast.Assign(
-                targets=[ast.Name(id=self.wv(reg), ctx=ast.Store())],
-                value=ast.List(elts=[], ctx=ast.Load()),
-                lineno=0,
-            )
-        #     code = f"{self.wv(reg)} = (["
+            code = helper.assign(self.wv(reg), helper.list([]))
 
         # # 处理条件语句
         elif opcode == OpCode.If:
             cond = read()
-            code = create_if(self.rv(cond), False)
-        #     code = f"if ($ToBoolean({self.rv(cond)})) {{"
+            code = helper.vm_if(self.rv(cond), False)
 
         elif opcode == OpCode.IfNot:
             cond = read()
-            code = create_if(self.rv(cond), True)
-        #     code = f"if (!$ToBoolean({self.rv(cond)})) {{"
+            code = helper.vm_if(self.rv(cond), True)
 
         elif opcode == OpCode.IfInit:
             cond = read()
-            code = ast.If(
-                test=ast.Compare(
-                    left=ast.Name(id=self.rv(cond), ctx=ast.Load()),
-                    ops=[ast.IsNot()],
-                    comparators=[ast.Name(id="Uninitialized", ctx=ast.Load())],
-                ),
-                body=[],
-                orelse=[],
+            code = helper.if_expr(
+                helper.compare(self.rv(cond), ast.IsNot(), helper.uninitialized())
             )
-
-        #     code = f"if ({self.rv(cond)} !== undefined) {{"
 
         elif opcode == OpCode.IfNotInit:
             cond = read()
-            code = ast.If(
-                test=ast.Compare(
-                    left=ast.Name(id=self.rv(cond), ctx=ast.Load()),
-                    ops=[ast.Is()],
-                    comparators=[ast.Name(id="Uninitialized", ctx=ast.Load())],
-                ),
-                body=[],
-                orelse=[],
+            code = helper.if_expr(
+                helper.compare(self.rv(cond), ast.Is(), helper.uninitialized())
             )
-        #     code = f"if ({self.rv(cond)} === undefined) {{"
 
         elif opcode == OpCode.IfNil:
             cond = read()
-            code = ast.If(
-                test=ast.Compare(
-                    left=ast.Name(id=self.rv(cond), ctx=ast.Load()),
-                    ops=[ast.Is()],
-                    comparators=[ast.Constant(value=None)],
-                ),
-                body=[],
-                orelse=[],
+            code = helper.if_expr(
+                helper.compare(self.rv(cond), ast.Is(), helper.const(None))
             )
-        #     code = f"if ({self.rv(cond)} === null) {{"
 
         elif opcode == OpCode.IfNotNil:
             cond = read()
-            code = ast.If(
-                test=ast.Compare(
-                    left=ast.Name(id=self.rv(cond), ctx=ast.Load()),
-                    ops=[ast.IsNot()],
-                    comparators=[ast.Constant(value=None)],
-                ),
-                body=[],
-                orelse=[],
+            code = helper.if_expr(
+                helper.compare(self.rv(cond), ast.IsNot(), helper.const(None))
             )
 
         elif opcode == OpCode.LoopFor:
             nreg = read()
             iterable = read()
-            code = helper.set_position(
-                ast.For(
-                    target=helper.store_var(self.wv(1, -1)),
-                    iter=helper.call("Iterable", [self.rv(iterable)]),
-                    body=[],
-                )
+            code = helper.for_expr(
+                self.wv(1, -1), helper.call("Iterable", [self.rv(iterable)])
             )
 
             loop_node = self.create_loop(helper, nreg, code)
@@ -1058,61 +824,46 @@ class Emitter:
             start = read()
             end = read()
 
-            s, e, i, code = create_range_loop(
-                helper,
+            init, code = helper.vm_range_loop(
                 self.wv(1, -1),
                 self.rv(start),
                 self.rv(end),
                 opcode == OpCode.LoopRangeExclusive,
             )
-            current_blocks_body.append(s)
-            current_blocks_body.append(e)
-            current_blocks_body.append(i)
+            current_blocks_body.extend(init)
             loop_node = self.create_loop(
                 helper,
                 nreg,
                 code,
-                ast.AugAssign(
-                    target=ast.Name(id=self.wv(1, -1), ctx=ast.Store()),
-                    op=ast.Add(),
-                    value=ast.Constant(value=1),
-                ),
+                helper.aug_assign(self.wv(1, -1), ast.Add(), helper.const(1)),
             )
         elif opcode == OpCode.Loop:
             nreg = read()
 
-            code = helper.set_position(
-                ast.While(
-                    test=helper.const(True),
-                    body=[],
-                )
-            )
+            code = helper.while_expr(helper.const(True))
 
             loop_node = self.create_loop(helper, nreg, code)
 
         elif opcode == OpCode.Break:
-            # code = ast.Break()
-            code = ast.Return(value=ast.Name(id="LoopBreak", ctx=ast.Load()))
-
+            code = helper.ret("LoopBreak")
         elif opcode == OpCode.Continue:
-            #     code = "continue;"
-            # code = ast.Continue()
-            code = ast.Return(value=ast.Name(id="LoopContinue", ctx=ast.Load()))
+            code = helper.ret("LoopContinue")
         elif opcode == OpCode.Noop:
-            pass
+            self.source_map_index -= 1  # Noop 不消耗 source map
         else:
             self.unknown_opcode(opcode)
 
         if current_blocks_body is None:
             assert isinstance(code, ast.FunctionDef)
             current_blocks_body = code.body
-        else:
+        elif code is not None:
+            assert current_blocks_body is not None
             current_blocks_body.append(code)
 
         # 处理特殊的 opcode 后续逻辑
         if opcode in (OpCode.FuncVarg, OpCode.Func):
             assert isinstance(code, ast.FunctionDef)
-            self.read_closure(code.body)
+            self.read_closure(code)
             pass
         elif opcode in (
             OpCode.If,
@@ -1125,7 +876,7 @@ class Emitter:
             assert isinstance(code, ast.If)
             self.read_if_else(code)
             if len(code.body) < 1:
-                code.body.append(ast.Pass())
+                code.body.append(helper.pass_stmt())
 
         elif opcode in (
             OpCode.Loop,
@@ -1133,9 +884,8 @@ class Emitter:
             OpCode.LoopRange,
             OpCode.LoopRangeExclusive,
         ):
-            self.closure_counter += 1
             assert loop_node is not None
-            self.read_block_end(OpCode.LoopEnd, loop_node.body)
+            self.read_block_end(OpCode.LoopEnd, loop_node[0].body, loop_node[1])
         elif opcode == OpCode.Record:
             assert isinstance(code, ast.Assign) and isinstance(code.value, ast.Dict)
             self.read_record(reg, code.value)

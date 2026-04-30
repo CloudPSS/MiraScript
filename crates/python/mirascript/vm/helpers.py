@@ -1,30 +1,20 @@
 import time
 import math
 
-from mirascript.helpers.types import is_vm_const
-
+from ..helpers.types import is_vm_const, is_vm_context
 from ..helpers.constants import VM_ARRAY_MAX_LENGTH
 from .operations import ToNumber, AssertInit
-from .types.context import VmSharedContext
+from .types.context import VmContext, VmSharedContext
 
 
 def Vargs(varags):
     """将非常量元素置为 None，返回新列表"""
-    # 这里假设 is_vm_const 已在其他地方实现
-    args = list(varags)
-    for i in range(len(args)):
-        el = args[i]
-        if not is_vm_const(el):
-            args[i] = None
-    return args
+    return [var if is_vm_const(var) else None for var in varags]
 
 
 def Element(value):
-    # 假设 $AssertInit 已在其他地方实现
     AssertInit(value)
-    if not is_vm_const(value):
-        return None
-    return value
+    return value if is_vm_const(value) else None
 
 
 def ElementOpt(key, value):
@@ -39,23 +29,23 @@ def Upvalue(value):
     return value
 
 
-def assert_array_length(start, end):
+def _assert_array_length(start, end):
     if end - start > VM_ARRAY_MAX_LENGTH:
         raise RuntimeError(
             f"Array length exceeds maximum limit of {VM_ARRAY_MAX_LENGTH}"
         )
 
 
-def is_empty_range(start, end):
+def _is_empty_range(start, end):
     return not math.isfinite(start) or not math.isfinite(end) or start > end
 
 
 def ArrayRange(start, end):
     s = ToNumber(start)
     e = ToNumber(end)
-    if is_empty_range(s, e):
+    if _is_empty_range(s, e):
         return []
-    assert_array_length(s, e)
+    _assert_array_length(s, e)
     arr = []
     i = s
     while i <= e:
@@ -67,9 +57,9 @@ def ArrayRange(start, end):
 def ArrayRangeExclusive(start, end):
     s = ToNumber(start)
     e = ToNumber(end)
-    if is_empty_range(s, e):
+    if _is_empty_range(s, e):
         return []
-    assert_array_length(s, e)
+    _assert_array_length(s, e)
     arr = []
     i = s
     while i < e:
@@ -81,7 +71,7 @@ def ArrayRangeExclusive(start, end):
 MAX_DEPTH = 128
 cp_depth = 0
 cp = float("nan")
-cp_timeout = 100  # 默认超时时间，单位毫秒
+cp_timeout = 500  # 默认超时时间，单位毫秒
 
 
 def Cp():
@@ -134,5 +124,9 @@ def config_checkpoint(timeout=100):
     cp_timeout = timeout
 
 
-def GlobalFallback():
-    return VmSharedContext
+def Context(context: "VmContext | None" = None) -> VmContext:
+    if context is None:
+        return VmSharedContext
+    if not is_vm_context(context):
+        return VmContext(context)
+    return context
