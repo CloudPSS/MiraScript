@@ -1,4 +1,6 @@
 import math
+from types import ModuleType
+
 from ..types import VmModule, vm_function, VmValue
 from ...helpers.constants import VM_ARRAY_MAX_LENGTH
 from ._helpers import _throw_error
@@ -12,9 +14,17 @@ def wrap_entry(name: str, value: VmValue, module: str):
         return value
 
 
-def create_module(name: str, lib: dict) -> VmModule:
+def create_module(name: str, lib: ModuleType) -> VmModule:
     mod = {}
-    for key, value in lib.items():
+    keys = (
+        lib.__all__
+        if hasattr(lib, "__all__") and isinstance(lib.__all__, list)
+        else dir(lib)
+    )
+    for key in keys:
+        if key.startswith("_") or key.endswith("_") or not hasattr(lib, key):
+            continue
+        value = getattr(lib, key)
         mod[key] = wrap_entry(key, value, name)
     return VmModule(name, mod)
 

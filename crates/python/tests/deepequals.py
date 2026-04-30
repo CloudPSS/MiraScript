@@ -21,9 +21,8 @@ Notes:
 - This implementation aims for clarity and correctness over extreme performance.
 """
 
-from typing import Any
+from typing_extensions import Any, Mapping, Sequence, Set
 import math
-from collections.abc import Mapping, Sequence, Set
 
 
 def _is_nan(x: Any) -> bool:

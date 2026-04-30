@@ -1,10 +1,16 @@
 import ast
 import linecache
+from typing_extensions import TYPE_CHECKING
 
-from .diagnostics import SourceMapEntry
+
 from .script import VmScriptLike, wrap_vm_script, VmScript
 from .emitter import Emitter
 from .ast_helper import ASTHelper
+
+if TYPE_CHECKING:
+    from . import InputMode
+    from .diagnostics import SourceMapEntry
+
 
 _filename_counter = 1
 
@@ -24,6 +30,7 @@ def emit(
     filename: "str | None" = None,
     source: str = "",
     source_map: "list[SourceMapEntry] | None" = None,
+    input_mode: "InputMode",
 ) -> "VmScript | None":
     """生成代码"""
     module = None
@@ -36,37 +43,37 @@ def emit(
 
         script = gen.func_script
         ast_helper = ASTHelper()
-        ast_helper.set_position(script, deep=True)
+        fence = "`" * 5
+        ext = "miratpl" if input_mode == "template" else "mira"
+        filename = _filename(filename)
+        hint = (
+            "\nGenerated from "
+            + filename.replace("\\", "/")
+            + ":\n\n"
+            + fence
+            + ext
+            + "\n"
+            + source.rstrip("\r\n")
+            + "\n"
+            + fence
+            + "\n"
+        )
         module = ast.Module(
             body=[
-                ast.Expr(
-                    value=ast.Constant(
-                        value=f"\nGenerated from {filename or '<unknown>'}:\n\n```mira\n{source}\n```\n",
-                        lineno=0,
-                        col_offset=0,
-                    ),
-                    lineno=0,
-                    col_offset=0,
-                ),
-                ast.ImportFrom(
-                    module="mirascript.vm.env",
-                    names=[
-                        ast.alias(
-                            name="*",
-                            asname=None,
-                            lineno=0,
-                            col_offset=0,
-                        )
-                    ],
-                    level=0,
-                    lineno=0,
-                    col_offset=0,
+                ast_helper.vm_hint(hint),
+                ast_helper.set_position(
+                    ast.ImportFrom(
+                        module="mirascript.vm.env",
+                        names=[
+                            ast.alias(name="*", asname=None, lineno=0, col_offset=0)
+                        ],
+                        level=0,
+                    )
                 ),
                 script,
             ],
             type_ignores=[],
         )
-        filename = _filename(filename)
         code = compile(module, filename, "exec")
         exec_globals = {}
         exec(code, exec_globals)

@@ -1,4 +1,3 @@
-from typing import Union
 import time
 import math
 from datetime import datetime as datetime_dt, timezone
@@ -14,7 +13,7 @@ from .._helpers import (
 )
 
 
-def fromNumber(datetime: Union[float, int], fallback: bool) -> Union[float, None]:
+def _from_number(datetime: "float | int", fallback: bool) -> "float | None":
     try:
         # 尝试将数值转换为datetime对象并获取时间戳
         dt = datetime_dt.fromtimestamp(datetime / 1000.0, tz=timezone.utc)
@@ -28,11 +27,11 @@ def fromNumber(datetime: Union[float, int], fallback: bool) -> Union[float, None
         )
 
 
-def getTimestamp(datetime, fallback: bool) -> Union[float, None]:
+def _timestamp(datetime, fallback: bool) -> "float | None":
     if datetime is None:
         return time.time() * 1000.0
     if isinstance(datetime, (int, float)) and not isinstance(datetime, bool):
-        return fromNumber(datetime, fallback)
+        return _from_number(datetime, fallback)
     if not isinstance(datetime, str):
         if fallback:
             return None
@@ -40,7 +39,7 @@ def getTimestamp(datetime, fallback: bool) -> Union[float, None]:
 
     num = toNumber(datetime, math.nan)
     if not math.isnan(num):
-        return fromNumber(num, fallback)
+        return _from_number(num, fallback)
 
     try:
         d = datetime_dt.fromisoformat(datetime)
@@ -64,7 +63,7 @@ def getTimestamp(datetime, fallback: bool) -> Union[float, None]:
 def to_timestamp(dt=Uninitialized, fallback=Uninitialized):
     """将输入转换为 Unix 毫秒时间戳。"""
     # 未传入或显式未初始化 -> 当前时间（毫秒）
-    timestamp = getTimestamp(dt, fallback is not Uninitialized)
+    timestamp = _timestamp(dt, fallback is not Uninitialized)
     if timestamp is None:
         return fallback
     return timestamp
@@ -74,7 +73,7 @@ def to_datetime(
     datetime_value=Uninitialized, offset=Uninitialized, fallback=Uninitialized
 ):
     """将输入转换为 Date 记录（UTC），并应用小时为单位的偏移量。"""
-    timestamp = getTimestamp(datetime_value, fallback is not Uninitialized)
+    timestamp = _timestamp(datetime_value, fallback is not Uninitialized)
     if timestamp is None:
         return fallback
     # 解析 offset（小时），若不可用或不是有限数则视为 0
@@ -105,7 +104,7 @@ def to_datetime(
 
 def to_iso8601(datetime=Uninitialized, fallback=Uninitialized):
     """将输入转换为 ISO 8601 字符串（UTC，精确到毫秒）。"""
-    timestamp = getTimestamp(datetime, fallback is not Uninitialized)
+    timestamp = _timestamp(datetime, fallback is not Uninitialized)
     if timestamp is None:
         return fallback
 

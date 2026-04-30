@@ -630,7 +630,7 @@ def Module(name: str):
             attr = getattr(kls, attr_name)
             pub_name = getattr(attr, _PUB_ATTR, None)
             if pub_name is not None:
-                assert callable(attr), f"Public attribute {attr_name} must be callable"
+                assert callable(attr), f"Public attribute {pub_name} must be callable"
                 pub[pub_name] = attr
 
         class Mod(Mapping[str, VmValue]):
@@ -645,6 +645,9 @@ def Module(name: str):
             def __len__(self):
                 return len(pub)
 
+            def __contains__(self, key) -> bool:
+                return key in pub
+
         return VmModule(name, Mod())
 
     return decorator
@@ -653,6 +656,7 @@ def Module(name: str):
 def Pub(name: str):
 
     def decorator(method: Callable):
+        assert callable(method), f"Public attribute {name} must be callable"
         setattr(method, _PUB_ATTR, name)
         return method
 

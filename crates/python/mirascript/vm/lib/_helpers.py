@@ -1,5 +1,5 @@
 import math
-from typing import NoReturn
+from typing_extensions import NoReturn
 
 from ...helpers.types import is_vm_array, is_vm_const, is_vm_primitive, is_vm_record
 from ...helpers.convert.to_number import toNumber

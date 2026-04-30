@@ -38,6 +38,7 @@ def compile(
             filename=str(filename) if filename else None,
             source=script,
             source_map=source_map,
+            input_mode=input_mode,
         )
         if bytecode
         else None

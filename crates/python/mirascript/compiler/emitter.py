@@ -63,17 +63,18 @@ class Emitter:
 
     def create_regs_array(self, helper: ASTHelper, nreg: int, start_index: int = 0):
         target = helper.tuple(
-            (self.wv(i + start_index if i else 0, -1) for i in range(nreg + 1)),
-            ctx=ast.Store(),
+            (self.wv(i + start_index if i else 0, -1) for i in range(nreg + 1)), "Store"
         )
-        values = helper.tuple(helper.uninitialized() for _ in range(nreg + 1))
+        values = helper.binary(
+            helper.tuple([helper.uninitialized()]), "Mult", helper.const_int(nreg + 1)
+        )
         return helper.assign(target, values)
 
     def create_loop(
         self, helper: ASTHelper, nreg, code, increment: Optional[ast.AugAssign] = None
     ):
         closure_name = f"closure_{self.source_map_index}"
-        block = helper.set_position(helper.if_expr(test=helper.const(True)))
+        block = helper.if_expr(test=helper.const(True))
         closure = helper.func_def(
             closure_name,
             helper.args(kwarg=None, vararg=None),
@@ -93,31 +94,7 @@ class Emitter:
         result_name = f"{closure_name}_result"
         code.body.append(helper.assign_call(result_name, closure_name, []))
         code.body.append(increment) if increment else None
-        code.body.append(
-            helper.set_position(
-                ast.If(
-                    test=helper.compare(
-                        result_name,
-                        ast.Is(),
-                        helper.load("LoopContinue"),
-                    ),
-                    body=[ast.Continue()],
-                    orelse=[
-                        ast.If(
-                            test=helper.compare(
-                                result_name,
-                                ast.Is(),
-                                helper.load("LoopBreak"),
-                            ),
-                            body=[ast.Break()],
-                            orelse=[helper.ret(result_name)],
-                        )
-                    ],
-                ),
-                deep=True,
-            )
-        )
-
+        code.body.append(helper.vm_loop_control(result_name))
         return block, closure
 
     def read_param(self, wide: bool) -> int:
@@ -168,7 +145,7 @@ class Emitter:
             nc = body[0].names
         else:
             nc = []
-            body.insert(0, ast.Nonlocal(names=nc))
+            body.insert(0, ast.Nonlocal(names=nc, lineno=0, col_offset=0))
         if name not in nc:
             nc.append(name)
 
@@ -353,7 +330,7 @@ class Emitter:
                 value = self.read_param(wide)
                 args = helper.args(kwarg=None, vararg=None)
                 getter = helper.func_def(
-                    f"field_{self.code_offset}",
+                    f"pub_{self.code_offset}",
                     args,
                     [helper.ret(self.rv(value))],
                     [helper.call("Pub", [helper.const(field_name)])],
@@ -392,13 +369,13 @@ class Emitter:
                     # 最后一个参数为可变参数，已在 helper.args() 初始化为 vargs
                     pass
                 else:
-                    args.args.append(ast.arg(f"{wv}"))
+                    args.args.append(helper.arg(wv))
                     args.defaults.append(helper.const(None))
 
             regs = self.create_regs_array(helper, regn - argn, argn)
 
             if script:
-                args.args.insert(0, ast.arg(arg="context"))
+                args.args.insert(0, helper.arg("context"))
                 args.defaults.insert(0, helper.const(None))
                 code = helper.func_def("script", args, [regs])
                 self.func_script = code
@@ -491,7 +468,7 @@ class Emitter:
                 self.wv(reg),
                 helper.compare(
                     helper.call("ToString", [self.rv(left)]),
-                    ast.In(),
+                    "In",
                     helper.load("context"),
                 ),
             )
@@ -578,7 +555,7 @@ class Emitter:
             opcode_name = get_opcode_name(opcode)
             code = helper.expr(helper.call(opcode_name, [self.rv(reg)]))
 
-        # # 处理属性访问相关操作
+        # 处理属性访问相关操作
         elif opcode == OpCode.Get:
             reg = read()
             obj = read()
@@ -685,7 +662,7 @@ class Emitter:
             slice = helper.call("ToString", [self.rv(name)])
             code = helper.assign(self.wv(reg), helper.subscript("context", slice))
 
-        # # 处理闭包变量
+        # 处理闭包变量
         elif opcode == OpCode.GetUpvalue:
             reg = read()
             level = read()
@@ -706,7 +683,7 @@ class Emitter:
             self.mark_nonlocal(upvalue_name)
             code = helper.assign(upvalue_name, helper.load(local))
 
-        # # 处理数组切片
+        # 处理数组切片
         elif opcode == OpCode.Slice:
             reg = read()
             obj = read()
@@ -765,14 +742,10 @@ class Emitter:
             reg = read()
             nameIdx = read_index()
             name = self.constants[nameIdx]
-            code = helper.set_position(
-                ast.ClassDef(
-                    name=self.wv(reg),
-                    keywords=[],
-                    bases=[],
-                    decorator_list=[helper.call("Module", [helper.const(name)])],
-                    body=[helper.vm_hint()],
-                )
+            code = helper.class_def(
+                self.wv(reg),
+                [helper.vm_hint()],
+                decorator_list=[helper.call("Module", [helper.const(name)])],
             )
         elif opcode == OpCode.Record:
             reg = read()
@@ -794,25 +767,25 @@ class Emitter:
         elif opcode == OpCode.IfInit:
             cond = read()
             code = helper.if_expr(
-                helper.compare(self.rv(cond), ast.IsNot(), helper.uninitialized())
+                helper.compare(self.rv(cond), "IsNot", helper.uninitialized())
             )
 
         elif opcode == OpCode.IfNotInit:
             cond = read()
             code = helper.if_expr(
-                helper.compare(self.rv(cond), ast.Is(), helper.uninitialized())
+                helper.compare(self.rv(cond), "Is", helper.uninitialized())
             )
 
         elif opcode == OpCode.IfNil:
             cond = read()
             code = helper.if_expr(
-                helper.compare(self.rv(cond), ast.Is(), helper.const(None))
+                helper.compare(self.rv(cond), "Is", helper.const(None))
             )
 
         elif opcode == OpCode.IfNotNil:
             cond = read()
             code = helper.if_expr(
-                helper.compare(self.rv(cond), ast.IsNot(), helper.const(None))
+                helper.compare(self.rv(cond), "IsNot", helper.const(None))
             )
 
         elif opcode == OpCode.LoopFor:
@@ -842,7 +815,7 @@ class Emitter:
                 helper,
                 nreg,
                 code,
-                helper.aug_assign(self.wv(1, -1), ast.Add(), helper.const(1)),
+                helper.aug_assign(self.wv(1, -1), helper.op("Add"), helper.const(1)),
             )
         elif opcode == OpCode.Loop:
             nreg = read()
