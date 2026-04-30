@@ -1,5 +1,5 @@
 from mirascript.helpers.convert.to_boolean import toBoolean
-from ....operations import isSame, Call_
+from ....operations import isSame, Call
 from ....types import VmValue
 from ..._helpers import _expect_array, _expect_callable
 from mirascript.vm.types.types import Uninitialized
@@ -21,7 +21,7 @@ def eq(equaler, recovered):
     _expect_callable("equal", equaler, recovered)
 
     def equal(a: VmValue, b: VmValue):
-        ret = Call_(equaler, a, b)
+        ret = Call(equaler, a, b)
         return toBoolean(ret)
 
     return equal
@@ -54,7 +54,7 @@ def unique_by(data=Uninitialized, key_fn=Uninitialized, equal=Uninitialized):
 
     for i in range(l):
         item = data[i]
-        key = Call_(key_fn, item, i, data)
+        key = Call(key_fn, item, i, data)
         found = False
         for unique_key in keys:
             if e(key, unique_key):

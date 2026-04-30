@@ -3,7 +3,7 @@ import math
 from mirascript.helpers.types import is_vm_array, is_vm_record
 from .....helpers.convert.to_number import isDecimalNumber, toNumber
 from ....helpers import Element
-from ....operations import ToString_
+from ....operations import ToString
 from ..._helpers import (
     _expect_array_or_record,
     _throw_error,
@@ -59,7 +59,7 @@ def with_inner(obj, key, key_index, value):
             result[idx] = with_inner(result[idx], key, key_index + 1, value)
 
     else:
-        key_str = ToString_(k)
+        key_str = ToString(k)
         result[key_str] = with_inner(
             result.get(key_str, None), key, key_index + 1, value
         )
@@ -127,10 +127,10 @@ def with_(data=Uninitialized, *args):
         for key, element in entryData:
             if is_vm_array(key):
                 firstKey = key[0]
-                prop = ToString_(firstKey)
+                prop = ToString(firstKey)
                 val = with_inner(result.get(prop, None), key, 1, element)
             else:
-                prop = ToString_(key)
+                prop = ToString(key)
                 val = element
             result[prop] = val
         return result

@@ -4,7 +4,7 @@ import math
 from mirascript.helpers.types import is_vm_const
 
 from ..helpers.constants import VM_ARRAY_MAX_LENGTH
-from .operations import ToNumber_, AssertInit_
+from .operations import ToNumber, AssertInit
 from .types.context import VmSharedContext
 
 
@@ -21,21 +21,21 @@ def Vargs(varags):
 
 def Element(value):
     # 假设 $AssertInit 已在其他地方实现
-    AssertInit_(value)
+    AssertInit(value)
     if not is_vm_const(value):
         return None
     return value
 
 
 def ElementOpt(key, value):
-    AssertInit_(value)
+    AssertInit(value)
     if value is None or not is_vm_const(value):
         return {}
     return {key: value}
 
 
 def Upvalue(value):
-    AssertInit_(value)
+    AssertInit(value)
     return value
 
 
@@ -51,8 +51,8 @@ def is_empty_range(start, end):
 
 
 def ArrayRange(start, end):
-    s = ToNumber_(start)
-    e = ToNumber_(end)
+    s = ToNumber(start)
+    e = ToNumber(end)
     if is_empty_range(s, e):
         return []
     assert_array_length(s, e)
@@ -65,8 +65,8 @@ def ArrayRange(start, end):
 
 
 def ArrayRangeExclusive(start, end):
-    s = ToNumber_(start)
-    e = ToNumber_(end)
+    s = ToNumber(start)
+    e = ToNumber(end)
     if is_empty_range(s, e):
         return []
     assert_array_length(s, e)

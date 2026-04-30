@@ -1,5 +1,5 @@
 import sys
-from ...operations import ToString_
+from ...operations import ToString
 from ...error import VmError
 
 DEBUG = "\033[44;37m"
@@ -20,6 +20,6 @@ def panic(*msg):
     else:
         print(PANIC_PREFIX, *msg)
 
-    error = f"panic: {ToString_(msg)}" if len(msg) > 0 else "panic"
+    error = f"panic: {ToString(msg)}" if len(msg) > 0 else "panic"
 
     raise VmError("MiraScript panic", error)

@@ -12,7 +12,7 @@ from ...helpers.convert.to_number import toNumber
 from ...helpers.convert.to_string import toString
 from ...helpers.serialize import display
 
-from ..operations import Type_, is_safe_integer
+from ..operations import Type, is_safe_integer
 from ..error import VmError
 from ..helpers import Cp
 from ..types.types import Uninitialized
@@ -35,7 +35,7 @@ def _throw_error(message: str, recovered) -> NoReturn:
 
 
 def _throw_unexpected_type_error(name, expected, value, recovered) -> NoReturn:
-    actual = Type_(value)
+    actual = Type(value)
     if isinstance(name, str):
         return _throw_error(
             f"Expected {expected} for parameter '{name}', got {actual}", recovered

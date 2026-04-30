@@ -3,16 +3,12 @@ from typing_extensions import TypeAlias, Literal
 from ..mirascript import get_diagnostic_message
 
 DiagnosticLevel: TypeAlias = Literal[
-    "Error", "Warning", "Info", "Hint", "Reference", "Unknown"
+    "Error", "Warning", "Info", "Hint", "Reference", "SourceMap", "Unknown"
 ]
 
 
-class Diagnostic:
-    """
-    诊断信息类
-    """
-
-    __cache = {}
+class DiagnosticPosition:
+    """诊断位置"""
 
     start_line: int
     """起始行号"""
@@ -22,6 +18,27 @@ class Diagnostic:
     """结束行号"""
     end_column: int
     """结束列号"""
+
+    def __init__(
+        self,
+        start_line: int,
+        start_column: int,
+        end_line: int,
+        end_column: int,
+    ):
+        self.start_line = start_line
+        self.start_column = start_column
+        self.end_line = end_line
+        self.end_column = end_column
+
+
+class Diagnostic(DiagnosticPosition):
+    """
+    诊断信息类
+    """
+
+    __cache = {}
+
     code: int
     """诊断代码"""
     level: DiagnosticLevel
@@ -39,11 +56,13 @@ class Diagnostic:
         end_column: int,
         code: int,
     ):
-        self.start_line = start_line
-        self.start_column = start_column
-        self.end_line = end_line
-        self.end_column = end_column
+        super().__init__(start_line, start_column, end_line, end_column)
         self.code = code
+        if code == 12000:
+            self.level = "SourceMap"
+            self.name = "SourceMap"
+            self.message = "Source map information"
+            return
         info = Diagnostic.__cache.get(self.code)
         if info is None:
             try:
@@ -71,7 +90,13 @@ class Diagnostic:
         )
 
 
-def decode_diagnostics(diagnostics: "list[int]") -> "list[Diagnostic]":
+class SourceMapEntry(DiagnosticPosition):
+    """源映射信息"""
+
+
+def decode_diagnostics(
+    diagnostics: "list[int]",
+) -> "tuple[list[Diagnostic], list[SourceMapEntry]]":
     """
     解析诊断信息
 
@@ -79,6 +104,29 @@ def decode_diagnostics(diagnostics: "list[int]") -> "list[Diagnostic]":
         diagnostics (list[int]): 诊断信息列表，包含 [start_line, start_column, end_line, end_column, code]
 
     Returns:
-        list[Diagnostic]: 解析后的诊断信息列表
+        tuple[list[Diagnostic], list[SourceMapEntry]]: 解析后的诊断信息列表和源映射信息列表
     """
-    return [Diagnostic(*diagnostics[i : i + 5]) for i in range(0, len(diagnostics), 5)]
+    diagnostics_list = []
+    source_map_list = []
+    for i in range(0, len(diagnostics), 5):
+        code = diagnostics[i + 4]
+        if code == 12000:
+            source_map_list.append(
+                SourceMapEntry(
+                    start_line=diagnostics[i],
+                    start_column=diagnostics[i + 1],
+                    end_line=diagnostics[i + 2],
+                    end_column=diagnostics[i + 3],
+                )
+            )
+        else:
+            diagnostics_list.append(
+                Diagnostic(
+                    start_line=diagnostics[i],
+                    start_column=diagnostics[i + 1],
+                    end_line=diagnostics[i + 2],
+                    end_column=diagnostics[i + 3],
+                    code=code,
+                )
+            )
+    return diagnostics_list, source_map_list

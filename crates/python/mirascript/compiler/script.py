@@ -1,14 +1,15 @@
-from typing_extensions import Protocol, Mapping, Any
+from typing_extensions import Protocol
 from ast import Module
 
 from ..helpers.constants import kVmScript
 from ..vm.types.context import VmContext
+from ..vm.types.types import VmValue
 
 
 class VmScriptLike(Protocol):
     """A protocol representing a callable object that can be executed with an optional global context."""
 
-    def __call__(self, global_ctx: "VmContext | None" = None) -> Any: ...
+    def __call__(self, global_ctx: "VmContext | None" = None) -> VmValue: ...
 
 
 class VmScript(VmScriptLike):

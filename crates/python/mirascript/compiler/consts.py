@@ -6,6 +6,8 @@ from ..vm.types.types import VmPrimitive
 _ORDINAL = Struct("<i")
 _NUM = Struct("<d")
 _LEN = Struct("<I")
+_SLEN = Struct("<i")
+_SBYTE = Struct("<b")
 
 
 def _read_constant(data: bytes, offset: int) -> Tuple[VmPrimitive, int]:
@@ -59,3 +61,25 @@ def split_chunk(chunk: bytes) -> Tuple[bytes, bytes]:
     code_data = chunk[8 : 8 + code_size]
     const_data = chunk[12 + code_size : 12 + code_size + const_size]
     return const_data, code_data
+
+
+def read_param(data: bytes, offset: int, wide: bool) -> Tuple[int, int]:
+    """读取参数"""
+
+    if wide:
+        (param,) = _LEN.unpack_from(data, offset)
+        return param, 4
+    else:
+        param = data[offset]
+        return param, 1
+
+
+def read_index(data: bytes, offset: int, wide: bool) -> Tuple[int, int]:
+    """读取索引"""
+
+    if wide:
+        (index,) = _SLEN.unpack_from(data, offset)
+        return index, 4
+    else:
+        (index,) = _SBYTE.unpack_from(data, offset)
+        return index, 1

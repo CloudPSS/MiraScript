@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing_extensions import Sequence, Any, Optional
 
 
 class VmWrapper(ABC):
@@ -6,30 +7,30 @@ class VmWrapper(ABC):
         self.value = value
 
     @abstractmethod
-    def has(self, key):
+    def has(self, key: str) -> bool:
         pass
 
     @abstractmethod
-    def get(self, key):
+    def get(self, key: str) -> Any:
         pass
 
     @abstractmethod
-    def keys(self):
+    def keys(self) -> Sequence[str]:
         pass
 
     @abstractmethod
-    def same(self, other):
+    def same(self, other: Any) -> bool:
         pass
 
     @property
     @abstractmethod
-    def type(self):
-        return None
+    def type(self) -> str:
+        pass
 
     @property
     @abstractmethod
-    def describe(self):
-        return None
+    def describe(self) -> Optional[str]:
+        pass
 
     def __str__(self) -> str:
         if not self.describe:

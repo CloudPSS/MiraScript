@@ -30,6 +30,10 @@ def compile(
     """
     config = _CompileConfig(input_mode=input_mode)
     bytecode, diagnostics = _compile(script, config)
-    decoded_diagnostics = decode_diagnostics(diagnostics)
-    func = emit(bytecode, filename=filename, source=script) if bytecode else None
+    decoded_diagnostics, source_map = decode_diagnostics(diagnostics)
+    func = (
+        emit(bytecode, filename=filename, source=script, source_map=source_map)
+        if bytecode
+        else None
+    )
     return func, decoded_diagnostics

@@ -13,7 +13,7 @@ from ..._helpers import (
 )
 from ..._helpers_utils import _array_len
 from ....helpers import Cp
-from ....operations import Add_, Call_, Div_, Mul_, Sub_
+from ....operations import Add, Call, Div, Mul, Sub
 
 __all__ = [
     "size",
@@ -209,7 +209,7 @@ def entrywise(matrix, scalar, fn):
     _expect_callable("fn", fn, [])
 
     def f(a, b):
-        ret = Call_(fn, *(a, b))
+        ret = Call(fn, *(a, b))
         if not is_vm_const(ret):
             return None
         return ret
@@ -220,25 +220,25 @@ def entrywise(matrix, scalar, fn):
 def add(a, b):
     _expect_const("a", a, [])
     _expect_const("b", b, [])
-    return entrywiseImpl(a, b, Add_)
+    return entrywiseImpl(a, b, Add)
 
 
 def subtract(a, b):
     _expect_const("a", a, [])
     _expect_const("b", b, [])
-    return entrywiseImpl(a, b, Sub_)
+    return entrywiseImpl(a, b, Sub)
 
 
 def entrywise_multiply(a, b):
     _expect_const("a", a, [])
     _expect_const("b", b, [])
-    return entrywiseImpl(a, b, Mul_)
+    return entrywiseImpl(a, b, Mul)
 
 
 def entrywise_divide(a, b):
     _expect_const("a", a, [])
     _expect_const("b", b, [])
-    return entrywiseImpl(a, b, Div_)
+    return entrywiseImpl(a, b, Div)
 
 
 def multiply(a, b):
@@ -268,7 +268,7 @@ def multiply(a, b):
                     aItem = aRow[k] if aRow and k < len(aRow) else None
                     bRow = b[k] if k < len(b) else None
                     bItem = bRow[j] if bRow and j < len(bRow) else None
-                    sum = Add_(sum, Mul_(aItem, bItem))
+                    sum = Add(sum, Mul(aItem, bItem))
                 newRow.append(sum)
             result.append(newRow)
         return result
@@ -299,11 +299,11 @@ def multiply(a, b):
                 aRow = a[i] if i < len(a) else None
                 aItem = aRow[j] if aRow and j < len(aRow) else None
                 bItem = b[j] if j < len(b) else None
-                sum = Add_(sum, Mul_(aItem, bItem))
+                sum = Add(sum, Mul(aItem, bItem))
             result.append(sum)
         return result
 
-    return entrywiseImpl(a, b, Mul_, vvf=vvf, mmf=mmf, vmf=vmf, mvf=mvf)
+    return entrywiseImpl(a, b, Mul, vvf=vvf, mmf=mmf, vmf=vmf, mvf=mvf)
 
 
 def invert(matrix):
@@ -311,11 +311,11 @@ def invert(matrix):
     dims = sizeImpl(matrix)
 
     if len(dims) == 0:
-        return Div_(1, matrix)
+        return Div(1, matrix)
     if len(dims) == 1:
         return _map_vm(
             matrix,
-            lambda *v: Div_(1, v[0]),
+            lambda *v: Div(1, v[0]),
         )
 
     numRows, numCols = dims
@@ -324,14 +324,14 @@ def invert(matrix):
     m = matrix
 
     if numRows == 1:
-        return [[Div_(1, m[0][0])]]
+        return [[Div(1, m[0][0])]]
     if numRows == 2:
-        det = Sub_(Mul_(m[0][0], m[1][1]), Mul_(m[0][1], m[1][0]))
+        det = Sub(Mul(m[0][0], m[1][1]), Mul(m[0][1], m[1][0]))
         if det == 0:
             _throw_error("Matrix is singular and cannot be inverted", [])
         return [
-            [Div_(m[1][1], det), Div_(-m[0][1], det)],
-            [Div_(-m[1][0], det), Div_(m[0][0], det)],
+            [Div(m[1][1], det), Div(-m[0][1], det)],
+            [Div(-m[1][0], det), Div(m[0][0], det)],
         ]
 
     A = []
@@ -368,17 +368,17 @@ def invert(matrix):
             if r != c:
                 if AR[c] == 0:
                     continue
-                factor = Div_(-AR[c], AC[c])
+                factor = Div(-AR[c], AC[c])
                 for col in range(c, numCols):
-                    AR[col] = Add_(AR[col], Mul_(factor, AC[col]))
+                    AR[col] = Add(AR[col], Mul(factor, AC[col]))
                 for col in range(numCols):
-                    BR[col] = Add_(BR[col], Mul_(factor, BC[col]))
+                    BR[col] = Add(BR[col], Mul(factor, BC[col]))
             else:
                 factor = AC[c]
                 for col in range(c, numCols):
-                    AR[col] = Div_(AR[col], factor)
+                    AR[col] = Div(AR[col], factor)
                 for col in range(numCols):
-                    BR[col] = Div_(BR[col], factor)
+                    BR[col] = Div(BR[col], factor)
     return B
 
 

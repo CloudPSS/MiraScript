@@ -21,11 +21,13 @@ class OpCodes:
 OpCode = OpCodes()
 """MiraScript 操作码"""
 
+_ReverseOpCode = {v: k for k, v in OpCode.__dict__.items() if not k.startswith("_")}
+
 
 def get_opcode_name(opcode: int) -> str:
     """获取操作码名称"""
 
-    for attr_name in dir(OpCode):
-        if not attr_name.startswith("_") and getattr(OpCode, attr_name, None) == opcode:
-            return attr_name
-    return str(opcode)
+    name = _ReverseOpCode.get(opcode, None)
+    if name is None:
+        return str(opcode)
+    return name

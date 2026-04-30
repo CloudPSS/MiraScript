@@ -1,5 +1,5 @@
 from ..._helpers import _expect_callable, _expect_integer_range
-from ....operations import Call_, Get_
+from ....operations import Call, Get
 from ....helpers import Element
 from mirascript.helpers.constants import VM_ARRAY_MAX_LENGTH, Uninitialized
 from mirascript.helpers.convert.to_string import toString
@@ -10,11 +10,11 @@ def new_record(size=Uninitialized, generator=Uninitialized):
     _expect_callable("generator", generator, None)
     record = {}
     for i in range(n):
-        entry = Call_(generator, i)
+        entry = Call(generator, i)
         if entry is None:
             continue
-        key = Get_(entry, 0)
-        value = Get_(entry, 1)
+        key = Get(entry, 0)
+        value = Get(entry, 1)
         record[toString(key)] = Element(value)
     return record
 
@@ -22,4 +22,4 @@ def new_record(size=Uninitialized, generator=Uninitialized):
 def new_array(length=Uninitialized, generator=Uninitialized):
     n = int(_expect_integer_range("length", length, 0, VM_ARRAY_MAX_LENGTH))
     _expect_callable("generator", generator, None)
-    return [Element(Call_(generator, i)) for i in range(n)]
+    return [Element(Call(generator, i)) for i in range(n)]

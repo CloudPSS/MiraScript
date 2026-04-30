@@ -18,20 +18,27 @@ def _compile(script: str, mode: InputMode):
 
 
 def _print_debug(script: VmScript, output_file):
-    try:
-        import astor
+    import ast
 
-        with open(output_file, "w", encoding="utf-8") as f:
-            f.write(
-                f"{astor.to_source(script.ast)}"
-                "\n"
-                "if __name__ == '__main__':\n"
-                "    result = script()\n"
-                "    print('[OK]', result)"
+    unparse = getattr(ast, "unparse", None)
+    if not unparse:
+        try:
+            import astunparse
+
+            unparse = astunparse.unparse
+        except ImportError:
+            unparse = None
+            raise ImportError(
+                "Neither 'ast.unparse' nor 'astunparse' is available. Please install 'astunparse' with `pip install astunparse` to enable debug output generation."
             )
-    except ImportError:
-        print(
-            "Warning: 'astor' library not found, skipping output generation. Try again with `pip install mirascript[cli_debug]` to enable this feature."
+
+    with open(output_file, "w", encoding="utf-8") as f:
+        f.write(
+            f"{unparse(script.ast)}"
+            "\n\n"
+            "if __name__ == '__main__':\n"
+            "    result = script()\n"
+            "    print('[OK]', result)"
         )
 
 

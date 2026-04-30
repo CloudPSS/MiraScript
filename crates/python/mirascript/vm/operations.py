@@ -41,14 +41,14 @@ def is_safe_integer(n):
     return MIN_SAFE_INTEGER <= n <= MAX_SAFE_INTEGER
 
 
-def IsNumber_(a):
+def IsNumber(a):
     if isinstance(a, bool):
         return False
     return isinstance(a, (int, float))
 
 
-def isSame(a, b):
-    if IsNumber_(a) and IsNumber_(b):
+def isSame(a, b) -> bool:
+    if IsNumber(a) and IsNumber(b):
         return a == b or (math.isnan(a) and math.isnan(b))
     if a == b and type(a) is type(b):
         return True
@@ -59,17 +59,17 @@ def isSame(a, b):
     return False
 
 
-def AssertInit_(val):
+def AssertInit(val):
     if val is Uninitialized:
         raise VmError("Uninitialized value`", None)
 
 
-def ToBoolean_(value):
-    AssertInit_(value)
+def ToBoolean(value):
+    AssertInit(value)
     return toBoolean(value)
 
 
-def ToNumber_(value):
+def ToNumber(value):
     """
     将输入值转换为数字
 
@@ -81,40 +81,40 @@ def ToNumber_(value):
     返回:
         转换后的数字，如果无法转换则返回默认值
     """
-    AssertInit_(value)
+    AssertInit(value)
     return toNumber(value)
 
 
-def ToString_(val) -> str:
-    AssertInit_(val)
+def ToString(val) -> str:
+    AssertInit(val)
     if val is None:
         return ""
     return toString(val)
 
 
-def overloadNumberString_(a, b):
-    if IsNumber_(a) or IsNumber_(b):
+def _overloadNumberString(a, b):
+    if IsNumber(a) or IsNumber(b):
         return True
     if isinstance(a, str) or isinstance(b, str):
         return False
     return True
 
 
-def Add_(a, b) -> float:
-    return ToNumber_(a) + ToNumber_(b)
+def Add(a, b) -> float:
+    return ToNumber(a) + ToNumber(b)
 
 
-def Sub_(a, b) -> float:
-    return ToNumber_(a) - ToNumber_(b)
+def Sub(a, b) -> float:
+    return ToNumber(a) - ToNumber(b)
 
 
-def Mul_(a, b) -> float:
-    return ToNumber_(a) * ToNumber_(b)
+def Mul(a, b) -> float:
+    return ToNumber(a) * ToNumber(b)
 
 
-def Div_(a, b) -> float:
-    a = ToNumber_(a)
-    b = ToNumber_(b)
+def Div(a, b) -> float:
+    a = ToNumber(a)
+    b = ToNumber(b)
     if b != 0:
         return a / b
 
@@ -123,9 +123,9 @@ def Div_(a, b) -> float:
     return math.copysign(1, a) * math.copysign(1, b) * math.inf
 
 
-def Mod_(a, b) -> float:
-    x = ToNumber_(a)
-    y = ToNumber_(b)
+def Mod(a, b) -> float:
+    x = ToNumber(a)
+    y = ToNumber(b)
     """
     IEEE 754 标准的取余运算 (remainder operation)
     对应 ECMAScript 的 % 运算符
@@ -165,52 +165,52 @@ def Mod_(a, b) -> float:
     return math.fmod(x, y)
 
 
-def Pow_(a, b) -> float:
+def Pow(a, b) -> float:
     try:
-        return math.pow(ToNumber_(a), ToNumber_(b))
+        return math.pow(ToNumber(a), ToNumber(b))
     except ValueError:
         return math.nan
 
 
-def And_(a, b) -> bool:
-    return ToBoolean_(a) and ToBoolean_(b)
+def And(a, b) -> bool:
+    return ToBoolean(a) and ToBoolean(b)
 
 
-def Or_(a, b) -> bool:
-    return ToBoolean_(a) or ToBoolean_(b)
+def Or(a, b) -> bool:
+    return ToBoolean(a) or ToBoolean(b)
 
 
-def Gt_(a, b) -> bool:
-    if overloadNumberString_(a, b):
-        return ToNumber_(a) > ToNumber_(b)
+def Gt(a, b) -> bool:
+    if _overloadNumberString(a, b):
+        return ToNumber(a) > ToNumber(b)
     else:
         return str(a) > str(b)
 
 
-def Gte_(a, b) -> bool:
-    if overloadNumberString_(a, b):
-        return ToNumber_(a) >= ToNumber_(b)
+def Gte(a, b) -> bool:
+    if _overloadNumberString(a, b):
+        return ToNumber(a) >= ToNumber(b)
     else:
         return str(a) >= str(b)
 
 
-def Lt_(a, b) -> bool:
-    if overloadNumberString_(a, b):
-        return ToNumber_(a) < ToNumber_(b)
+def Lt(a, b) -> bool:
+    if _overloadNumberString(a, b):
+        return ToNumber(a) < ToNumber(b)
     else:
         return str(a) < str(b)
 
 
-def Lte_(a, b) -> bool:
-    if overloadNumberString_(a, b):
-        return ToNumber_(a) <= ToNumber_(b)
+def Lte(a, b) -> bool:
+    if _overloadNumberString(a, b):
+        return ToNumber(a) <= ToNumber(b)
     else:
         return str(a) <= str(b)
 
 
-def Eq_(a, b) -> bool:
-    AssertInit_(a)
-    AssertInit_(b)
+def Eq(a, b) -> bool:
+    AssertInit(a)
+    AssertInit(b)
 
     if isinstance(a, (int, float)) and isinstance(b, (int, float)):
         return a == b
@@ -218,15 +218,15 @@ def Eq_(a, b) -> bool:
     return isSame(a, b)
 
 
-def Neq_(a, b) -> bool:
-    return not Eq_(a, b)
+def Neq(a, b) -> bool:
+    return not Eq(a, b)
 
 
 ## 高级相等比较
-def Aeq_(a, b) -> bool:
-    if overloadNumberString_(a, b):
-        an = ToNumber_(a)
-        bn = ToNumber_(b)
+def Aeq(a, b) -> bool:
+    if _overloadNumberString(a, b):
+        an = ToNumber(a)
+        bn = ToNumber(b)
         EPS = 1e-15
         if math.isnan(an) or math.isnan(bn):
             return False
@@ -238,8 +238,8 @@ def Aeq_(a, b) -> bool:
         base = min(abs(an), abs(bn))
         return absoluteDifference < base * EPS
     else:
-        as_str = ToString_(a)
-        bs_str = ToString_(b)
+        as_str = ToString(a)
+        bs_str = ToString(b)
 
         if as_str == bs_str:
             return True
@@ -249,23 +249,23 @@ def Aeq_(a, b) -> bool:
         return ai == bi
 
 
-def Naeq_(a, b) -> bool:
-    return not Aeq_(a, b)
+def Naeq(a, b) -> bool:
+    return not Aeq(a, b)
 
 
-def Same_(a, b) -> bool:
-    AssertInit_(a)
-    AssertInit_(b)
+def Same(a, b) -> bool:
+    AssertInit(a)
+    AssertInit(b)
     return isSame(a, b)
 
 
-def Nsame_(a, b) -> bool:
-    return not Same_(a, b)
+def Nsame(a, b) -> bool:
+    return not Same(a, b)
 
 
-def In_(a, b) -> bool:
-    AssertInit_(a)
-    AssertInit_(b)
+def In(a, b) -> bool:
+    AssertInit(a)
+    AssertInit(b)
     if b is None:
         return False
     if is_vm_array(b):
@@ -279,7 +279,7 @@ def In_(a, b) -> bool:
             if isSame(a, item):
                 return True
         return False
-    pk = ToString_(a)
+    pk = ToString(a)
     if isinstance(b, dict):
         return pk in b
     if is_vm_wrapper(b):
@@ -288,65 +288,61 @@ def In_(a, b) -> bool:
     return False
 
 
-def Concat_(*args) -> str:
+def Concat(*args) -> str:
     result = ""
     for a in args:
-        AssertInit_(a)
+        AssertInit(a)
         result += toFormat(a, None)
     return result
 
 
-def Pos_(a) -> float:
-    return ToNumber_(a)
+def Pos(a) -> float:
+    return ToNumber(a)
 
 
-def Neg_(a) -> float:
-    return -ToNumber_(a)
+def Neg(a) -> float:
+    return -ToNumber(a)
 
 
-def Not_(a) -> bool:
-    return not ToBoolean_(a)
+def Not(a) -> bool:
+    return not ToBoolean(a)
 
 
-def Length_(a) -> float:
-    AssertInit_(a)
-    if is_vm_array(a):
+def Length(a) -> float:
+    AssertInit(a)
+    if isinstance(a, (str, list, dict)):
         return float(len(a))
-    if isinstance(a, str):
-        return float(len(a))
-    if isinstance(a, dict):
-        return float(len(a))
-    raise TypeError(f"`Expected array, string or record, got {Type_(a)}")
+    raise TypeError(f"`Expected array, string or record, got {Type(a)}")
 
 
-def Omit_(a, b):
-    AssertInit_(a)
+def Omit(a, b):
+    AssertInit(a)
     if a is None or not is_vm_record(a):
         return {}
     result = {}
 
     valueKeys = a.keys()
-    omittedSet = set([ToString_(x) for x in b])
+    omittedSet = set([ToString(x) for x in b])
     for key in valueKeys:
         if key not in omittedSet:
             result[key] = a[key]
     return result
 
 
-def Pick_(a, b):
-    AssertInit_(a)
+def Pick(a, b):
+    AssertInit(a)
     if a is None or not is_vm_record(a):
         return {}
     result = {}
     for key in b:
-        k = ToString_(key)
+        k = ToString(key)
         if k in a:
             result[k] = a[k]
 
     return result
 
 
-def sliceCore(a, start, end, exclusive):
+def _slice(a, start, end, exclusive):
     length = len(a)
 
     if math.isnan(start):
@@ -364,7 +360,6 @@ def sliceCore(a, start, end, exclusive):
             start = length
         else:
             start = 0
-    # --- DEBUG ---
 
     if math.isinf(end):
         if end > 0:
@@ -379,27 +374,27 @@ def sliceCore(a, start, end, exclusive):
     return a[start:end]
 
 
-def Slice_(a, start, end):
-    AssertInit_(a)
+def Slice(a, start, end):
+    AssertInit(a)
     if not is_vm_array(a):
-        raise VmError(f"`Expected array, got {Type_(a)}", [])
-    s = ToNumber_(start) if start is not None else 0
-    e = ToNumber_(end) if end is not None else len(a) - 1
-    return sliceCore(a, s, e, False)
+        raise VmError(f"`Expected array, got {Type(a)}", [])
+    s = ToNumber(start) if start is not None else 0
+    e = ToNumber(end) if end is not None else len(a) - 1
+    return _slice(a, s, e, False)
 
 
-def SliceExclusive_(a, start, end):
-    AssertInit_(a)
+def SliceExclusive(a, start, end):
+    AssertInit(a)
     if not is_vm_array(a):
-        raise VmError(f"`Expected array, got {Type_(a)}", [])
-    s = ToNumber_(start) if start is not None else 0
-    e = ToNumber_(end) if end is not None else len(a)
-    return sliceCore(a, s, e, True)
+        raise VmError(f"`Expected array, got {Type(a)}", [])
+    s = ToNumber(start) if start is not None else 0
+    e = ToNumber(end) if end is not None else len(a)
+    return _slice(a, s, e, True)
 
 
-def Call_(func, *args):
+def Call(func, *args):
     for a in args:
-        AssertInit_(a)
+        AssertInit(a)
     # if isinstance(func, VmExtern) and hasattr(func, "callable"):
     #     return func.call(args)
     if callable(func):
@@ -409,7 +404,7 @@ def Call_(func, *args):
     raise VmError(f"{type(func)}, {func} object is not callable", None)
 
 
-def Type_(val):
+def Type(val):
     if val is Uninitialized or val is None:
         return "nil"
     if isinstance(val, bool):
@@ -431,36 +426,36 @@ def Type_(val):
     return type(val).__name__
 
 
-def IsBoolean_(val):
-    AssertInit_(val)
+def IsBoolean(val):
+    AssertInit(val)
     return isinstance(val, bool)
 
 
-def IsString_(val):
-    AssertInit_(val)
+def IsString(val):
+    AssertInit(val)
     return isinstance(val, str)
 
 
-def IsRecord_(val):
-    AssertInit_(val)
+def IsRecord(val):
+    AssertInit(val)
     return is_vm_record(val)
 
 
-def IsArray_(val):
-    AssertInit_(val)
+def IsArray(val):
+    AssertInit(val)
     return is_vm_array(val)
 
 
-def AssertNonNil_(val):
-    AssertInit_(val)
+def AssertNonNil(val):
+    AssertInit(val)
     if val is not None:
         return
     raise VmError("Expected non-nil value", None)
 
 
-def Has_(obj, key):
-    AssertInit_(obj)
-    pk = ToString_(key)
+def Has(obj, key):
+    AssertInit(obj)
+    pk = ToString(key)
     if obj is None:
         return False
 
@@ -479,9 +474,9 @@ def Has_(obj, key):
     return False
 
 
-def Get_(obj, key):
-    AssertInit_(obj)
-    pk = ToString_(key)
+def Get(obj, key):
+    AssertInit(obj)
+    pk = ToString(key)
     if obj is None:
         return None
 
@@ -500,20 +495,20 @@ def Get_(obj, key):
     return None
 
 
-def Set_(obj, key, val):
-    AssertInit_(obj)
-    AssertInit_(val)
-    pk = ToString_(key)
+def Set(obj, key, val):
+    AssertInit(obj)
+    AssertInit(val)
+    pk = ToString(key)
     if obj is None:
         return
     if not is_vm_extern(obj):
-        raise VmError(f"`Expected extern object, got {Type_(obj)}", None)
+        raise VmError(f"`Expected extern object, got {Type(obj)}", None)
 
     obj.set(pk, val)
 
 
-def Iterable_(val):
-    AssertInit_(val)
+def Iterable(val):
+    AssertInit(val)
     if is_vm_wrapper(val):
         if hasattr(val, "keys"):
             return val.keys()
@@ -521,11 +516,11 @@ def Iterable_(val):
         return val
     if isinstance(val, dict):
         return val.keys()
-    raise VmError(f"`Value is not iterable {Type_(val)}", None)
+    raise VmError(f"`Value is not iterable {Type(val)}", None)
 
 
-def RecordSpread_(val):
-    AssertInit_(val)
+def RecordSpread(val):
+    AssertInit(val)
     if val is None:
         return {}
     if is_vm_record(val):
@@ -535,28 +530,28 @@ def RecordSpread_(val):
     if is_vm_extern(val):
         return {}
 
-    raise VmError(f"`Expected record, extern or nil, got {Type_(val)}", None)
+    raise VmError(f"`Expected record, extern or nil, got {Type(val)}", None)
 
 
-def ArraySpread_(val):
-    AssertInit_(val)
+def ArraySpread(val):
+    AssertInit(val)
     if val is None:
         return []
     if is_vm_array(val):
         return val
 
-    raise VmError(f"`Expected array, iterable extern or nil, got {Type_(val)}", None)
+    raise VmError(f"`Expected array, iterable extern or nil, got {Type(val)}", None)
 
 
-def Format_(val, fmt=None):
-    AssertInit_(val)
+def Format(val, fmt=None):
+    AssertInit(val)
 
     return toFormat(val, fmt)
 
 
-def Range_(start, end):
-    s = ToNumber_(start)
-    e = ToNumber_(end)
+def Range(start, end):
+    s = ToNumber(start)
+    e = ToNumber(end)
     if math.isnan(s) or math.isnan(e):
         return []
     result = []
@@ -566,10 +561,10 @@ def Range_(start, end):
     return result
 
 
-def RangeExclusive_(start, end):
+def RangeExclusive(start, end):
     pass
-    s = ToNumber_(start)
-    e = ToNumber_(end)
+    s = ToNumber(start)
+    e = ToNumber(end)
     if math.isnan(s) or math.isnan(e):
         return []
     # return list(range(int(s),int(e)))
@@ -580,5 +575,5 @@ def RangeExclusive_(start, end):
     return result
 
 
-def Fn_(name):
+def Fn(name):
     return vm_function(name)

@@ -1,40 +1,41 @@
 import ast
+import linecache
 
+from .diagnostics import SourceMapEntry
 from .script import VmScriptLike, wrap_vm_script, VmScript
-from .deep_nonlocal_fix import deep_nonlocal_fix
 from .emitter import Emitter
+from .ast_helper import ASTHelper
+
+_filename_counter = 1
 
 
-def _set_ast_positions(node: ast.AST, lineno=1, col_offset=0):
-    """为AST节点设置行号和列偏移量"""
-    for field, value in ast.iter_fields(node):
-        if isinstance(value, list):
-            for item in value:
-                if isinstance(item, ast.AST):
-                    _set_ast_positions(item, lineno, col_offset)
-        elif isinstance(value, ast.AST):
-            _set_ast_positions(value, lineno, col_offset)
-
-    # 设置当前节点的位置信息
-    if not hasattr(node, "lineno"):
-        setattr(node, "lineno", lineno)
-    if not hasattr(node, "col_offset"):
-        setattr(node, "col_offset", col_offset)
+def _filename(filename: "str | None") -> str:
+    """获取文件名"""
+    global _filename_counter
+    if filename is None:
+        filename = f"<mirascript_{_filename_counter}>"
+        _filename_counter += 1
+    return filename
 
 
 def emit(
-    chunk: bytes, *, filename: "str | None" = None, source: str = ""
+    chunk: bytes,
+    *,
+    filename: "str | None" = None,
+    source: str = "",
+    source_map: "list[SourceMapEntry] | None" = None,
 ) -> "VmScript | None":
     """生成代码"""
     module = None
     try:
-        gen = Emitter(chunk)
+        gen = Emitter(chunk, source_map or [])
         gen.read()
         if gen.func_script is None:
             return None
 
-        script = deep_nonlocal_fix(gen.func_script)
-        _set_ast_positions(script)
+        script = gen.func_script
+        ast_helper = ASTHelper()
+        ast_helper.set_position(script, deep=True)
         module = ast.Module(
             body=[
                 ast.ImportFrom(
@@ -55,10 +56,17 @@ def emit(
             ],
             type_ignores=[],
         )
-        code = compile(module, filename or "<mira_script>", "exec")
+        filename = _filename(filename)
+        code = compile(module, filename, "exec")
         exec_globals = {}
         exec(code, exec_globals)
         result: VmScriptLike = exec_globals.get("script", None)  # type: ignore
+        linecache.cache[filename] = (
+            len(source),
+            None,
+            source.splitlines(True),
+            filename,
+        )
         return wrap_vm_script(result, filename=filename, ast=module, source=source)
 
     except Exception as e:

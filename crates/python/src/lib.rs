@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use mira_core::{
-    config::{Config as ConfigData, InputMode},
+    config::{Config as ConfigData, DiagnosticPositionEncoding, InputMode},
     prelude::*,
     Compiler, DiagnosticCode, OpCode,
 };
@@ -12,7 +12,7 @@ use pyo3::{exceptions::PyValueError, prelude::*, types::PyDict};
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 #[pyclass]
-#[derive(Debug, Default)]
+#[derive(Debug)]
 struct Config {
     pub data: ConfigData,
 }
@@ -22,11 +22,13 @@ impl Config {
     #[new]
     #[pyo3(signature = (**data))]
     fn new(data: Option<&Bound<'_, PyDict>>) -> PyResult<Self> {
+        let mut config = ConfigData::new();
+        config.diagnostic_position_encoding = DiagnosticPositionEncoding::Utf32;
+        config.diagnostic_sourcemap = true;
         let Some(data) = data else {
-            return Ok(Config::default());
+            return Ok(Config { data: config });
         };
 
-        let mut config = ConfigData::new();
         if let Some(input_mode) = data.get_item("input_mode")? {
             config.input_mode = input_mode
                 .extract::<String>()
