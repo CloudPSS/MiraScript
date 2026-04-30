@@ -6,53 +6,12 @@ import sys
 
 from ..vm.operations import ToString_
 from ..vm.env import vm_globals
+from ..vm.types.types import VmPrimitive
 from .script import wrap_vm_script, VmScript
 from .deep_nonlocal_fix import deep_nonlocal_fix
 from .opcode import OpCode, get_opcode_name
-
-# 类型定义
-VmPrimitive: TypeAlias = Union[None, bool, int, float, str]
-VmConst: TypeAlias = Union[VmPrimitive, dict, list]
-ScriptInput: TypeAlias = Union[str, bytes]
-
-
-def read_const(data: bytes, offset: int) -> Tuple[VmPrimitive, int]:
-    """解析常量"""
-
-    type_byte = data[offset]
-
-    if type_byte == 0:
-        return None, 1
-    elif type_byte == 1:
-        return True, 1
-    elif type_byte == 2:
-        return False, 1
-    elif type_byte == 3:
-        ordinal = struct.unpack("<i", data[offset + 1 : offset + 5])[0]
-        return ordinal, 5
-    elif type_byte == 4:
-        num = struct.unpack("<d", data[offset + 1 : offset + 9])[0]
-
-        return num, 9
-    elif type_byte == 5:
-        length = struct.unpack("<I", data[offset + 1 : offset + 5])[0]
-        str_bytes = data[offset + 5 : offset + 5 + length]
-        text = str_bytes.decode("utf-8")
-        return text, 5 + length
-    else:
-        raise ValueError(f"Unknown constant type: {type_byte}")
-
-
-def to_python(value: VmConst) -> Any:
-    """将值转为 Python"""
-
-    if value is None:
-        return None
-    if isinstance(value, (dict, list, str, bool)):
-        return value
-    if isinstance(value, (int, float)):
-        return float(value)
-    return value
+from .consts import read_constants, split_chunk
+from .ast_helper import ASTHelper
 
 
 def ast_call(func_id: str, call_args: List[Any]) -> ast.Call:
@@ -163,23 +122,8 @@ class Emitter:
     """代码生成"""
 
     def __init__(self, chunk: bytes):
-        self.chunk = chunk
-        # 解析 chunk 头部
-        self.chunk_size = struct.unpack("<I", chunk[0:4])[0]
-        self.code_size = struct.unpack("<I", chunk[4:8])[0]
-        self.const_size = struct.unpack(
-            "<I", chunk[8 + self.code_size : 12 + self.code_size]
-        )[0]
-
-        # 设置数据视图
-        self.code_data = chunk[8 : 8 + self.code_size]
-        self.const_data = chunk[
-            12 + self.code_size : 12 + self.code_size + self.const_size
-        ]
-
-        # 初始化状态
-        self.constants: List[Any] = []
-        self.code_lines: List[str] = []
+        self.const_data, self.code_data = split_chunk(chunk)
+        self.constants = read_constants(self.const_data)
 
         self.func_script = None
         self.code_offset = 0
@@ -188,18 +132,6 @@ class Emitter:
         self.current_blocks_body = None
         self.pre_blocks = None
         self.fun_name_counter = 0
-
-    def read_consts(self) -> None:
-        """读取常量表"""
-        i = 0
-        while i < self.const_size:
-            constant, size = read_const(self.const_data, i)
-            self.constants.append(to_python(constant))
-            i += size
-
-    def ident(self, length: int = 0) -> str:
-        """制造缩进"""
-        return "  " * (self.ident_counter + length)
 
     def rv(self, i: int, level: int = 0) -> str:
         """Read variable"""
@@ -346,7 +278,7 @@ class Emitter:
         self.closure_counter += 1
         self.ident_counter += 1
 
-        while self.code_offset < self.code_size:
+        while self.code_offset < len(self.code_data):
             opcode_raw = self.code_data[self.code_offset]
             opcode = opcode_raw & 0x7F
 
@@ -362,7 +294,7 @@ class Emitter:
         self, end_opcode: int, current_blocks_body: List[ast.stmt]
     ) -> None:
         """读取块结束"""
-        while self.code_offset < self.code_size:
+        while self.code_offset < len(self.code_data):
             opcode_raw = self.code_data[self.code_offset]
             opcode = opcode_raw & 0x7F
 
@@ -384,7 +316,7 @@ class Emitter:
         """读取 if else 或 if 结束"""
         self.ident_counter += 1
         body = block.body
-        while self.code_offset < self.code_size:
+        while self.code_offset < len(self.code_data):
             opcode_raw = self.code_data[self.code_offset]
             opcode = opcode_raw & 0x7F
 
@@ -411,7 +343,7 @@ class Emitter:
         """读取 record"""
         self.ident_counter += 1
 
-        while self.code_offset < self.code_size:
+        while self.code_offset < len(self.code_data):
             opcode_raw = self.code_data[self.code_offset]
             self.code_offset += 1
             opcode = opcode_raw & 0x7F
@@ -481,7 +413,6 @@ class Emitter:
                 value = read()
                 add_Element([self.rv(value)], "RecordSpread_")
 
-            ident = self.ident()
             # self.code_lines.append(ident + code)
 
             if opcode == OpCode.Freeze:
@@ -491,7 +422,7 @@ class Emitter:
         """读取 array"""
         self.ident_counter += 1
 
-        while self.code_offset < self.code_size:
+        while self.code_offset < len(self.code_data):
             opcode_raw = self.code_data[self.code_offset]
             self.code_offset += 1
             opcode = opcode_raw & 0x7F
@@ -557,7 +488,6 @@ class Emitter:
                 opcode_name = get_opcode_name(opcode)
                 code = f"// ?{opcode_name}"
 
-            ident = self.ident()
             # self.code_lines.append(ident + code)
 
             if opcode == OpCode.Freeze:
@@ -578,7 +508,6 @@ class Emitter:
         def read_index():
             return self.read_index(wide)
 
-        ident = self.ident()
         code = ast.Pass()
         reg = 0
         func_name = None
@@ -1399,7 +1328,7 @@ class Emitter:
 
     def read(self) -> None:
         """读取 chunk"""
-        self.read_consts()
+        self.constants = read_constants(self.const_data)
         self.read_code()
 
 
@@ -1418,8 +1347,6 @@ def set_ast_positions(node, lineno=1, col_offset=0):
         node.lineno = lineno
     if not hasattr(node, "col_offset"):
         node.col_offset = col_offset
-    if not hasattr(node, "annotation "):
-        node.annotation = None
 
 
 def emit(

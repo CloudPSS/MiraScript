@@ -15,7 +15,10 @@ VM_ARRAY_MAX_LENGTH = 0x100_0000
 
 
 class _Uninitialized(Enum):
-    _ = type("VmUninitialized", (), {})()
+    _ = object()
+
+    def __bool__(self) -> bool:
+        return self is not _Uninitialized._
 
 
 VmUninitialized: TypeAlias = Literal[_Uninitialized._]
