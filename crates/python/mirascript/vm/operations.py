@@ -5,7 +5,8 @@ from typing_extensions import Callable, Mapping, Any
 
 from ..helpers.convert.to_boolean import toBoolean
 from ..helpers.convert.to_format import toFormat
-from ..helpers.convert.to_number import isDecimalNumber, toNumber
+from ..helpers.convert.to_number import toNumber
+from ..helpers.checker import is_safe_integer
 from ..helpers.convert.to_string import toString
 from ..helpers.constants import kVmScript
 from ..helpers.types import (
@@ -23,29 +24,14 @@ from .types.types import Uninitialized, VmValue
 
 
 class LoopControl(Enum):
-    Continue = type("LoopContinue", (), {})()
-    Break = type("LoopBreak", (), {})()
+    Continue = object()
+    Break = object()
 
 
 ## 标记当前值未返回的值
 LoopContinue = LoopControl.Continue
 ## 标记当前值为Break
 LoopBreak = LoopControl.Break
-
-
-def is_safe_integer(n):
-    """
-    检查是否为安全整数（在 64 位浮点数精确表示范围内）
-    类似于 JavaScript 的 Number.isSafeInteger()
-    """
-    if isDecimalNumber(n):
-        return False
-
-    # 64 位浮点数能精确表示的最大整数范围
-    MIN_SAFE_INTEGER = -(2**53) + 1
-    MAX_SAFE_INTEGER = 2**53 - 1
-
-    return MIN_SAFE_INTEGER <= n <= MAX_SAFE_INTEGER
 
 
 def IsNumber(a):
@@ -585,7 +571,7 @@ def Fn(name):
 
     def decorator(func):
 
-        from mirascript.vm.helpers import CpEnter, CpExit
+        from .helpers import CpEnter, CpExit
 
         fn = func
 
@@ -603,7 +589,7 @@ def Fn(name):
 
 def Closure(func):
 
-    from mirascript.vm.helpers import CpEnter, CpExit
+    from .helpers import CpEnter, CpExit
 
     def closure_wrapper():
         try:
@@ -630,17 +616,21 @@ def Script(func):
     return script_wrapper
 
 
+_PUB_ATTR = "__mirascript.mod.pub__"
+
+
 def Module(name: str):
 
-    def decorator(kls: type):
+    from .helpers import Upvalue
 
-        from .helpers import Upvalue
+    def decorator(kls: type):
 
         pub: "dict[str, Callable[[], Any]]" = {}
         for attr_name in dir(kls):
             attr = getattr(kls, attr_name)
-            pub_name = getattr(attr, "mirascript.mod.pub", None)
-            if pub_name is not None and callable(attr):
+            pub_name = getattr(attr, _PUB_ATTR, None)
+            if pub_name is not None:
+                assert callable(attr), f"Public attribute {attr_name} must be callable"
                 pub[pub_name] = attr
 
         class Mod(Mapping[str, VmValue]):
@@ -661,8 +651,9 @@ def Module(name: str):
 
 
 def Pub(name: str):
-    def decorator(method: "Callable"):
-        setattr(method, "mirascript.mod.pub", name)
+
+    def decorator(method: Callable):
+        setattr(method, _PUB_ATTR, name)
         return method
 
     return decorator

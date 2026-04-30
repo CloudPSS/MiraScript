@@ -1,21 +1,14 @@
 import math
 from typing import NoReturn
 
-from mirascript.helpers.types import (
-    is_vm_array,
-    is_vm_const,
-    is_vm_primitive,
-    is_vm_record,
-)
-
+from ...helpers.types import is_vm_array, is_vm_const, is_vm_primitive, is_vm_record
 from ...helpers.convert.to_number import toNumber
 from ...helpers.convert.to_string import toString
 from ...helpers.serialize import display
-
 from ..operations import Type, is_safe_integer
 from ..error import VmError
 from ..helpers import Cp
-from ..types.types import Uninitialized
+from ..types.types import Uninitialized, VmAny, VmValue
 
 
 def _describe_param(name):
@@ -49,97 +42,101 @@ def _rethrow_error(prefix: str, error, recovered) -> NoReturn:
     raise VmError.from_(prefix, error, recovered_value)
 
 
-def _required(name, value, recovered):
+def _required(name: "str | int | None", value: VmAny, recovered) -> VmValue:
     if value is Uninitialized:
         if isinstance(name, str):
             _throw_error(f"Missing required parameter '{name}'", recovered)
             return
         pos = "first" if name <= 0 else "second" if name <= 1 else f"{name+1}th"
         _throw_error(f"Missing required parameter at the {pos} position", recovered)
+    return value
 
 
-def _expect_number(name, value) -> float:
-    _required(name, value, math.nan)
-    v = toNumber(value)
-    if v is None:
+def _expect_number(name: "str | int | None", value: VmAny) -> float:
+    value = _required(name, value, math.nan)
+    value = toNumber(value)
+    if value is None:
         _throw_unexpected_type_error(name, "number", value, math.nan)
-    return v
+    return value
 
 
-def _expect_string(name, value) -> str:
-    _required(name, value, "")
-    v = toString(value)
-    if v is None:
+def _expect_string(name: str, value: VmAny) -> str:
+    value = _required(name, value, "")
+    value = toString(value)
+    if value is None:
         _throw_unexpected_type_error(name, "string", value, "")
-    return v
+    return value
 
 
-def _expect_integer(name, value) -> float:
-    _required(name, value, 0)
-    v = toNumber(value, None)
-    if v is None:
+def _expect_integer(name: str, value: VmAny) -> float:
+    value = _required(name, value, 0)
+    value = toNumber(value, None)
+    if value is None:
         _throw_unexpected_type_error(name, "integer", value, 0)
     from mirascript.vm.lib.vm_global.math.round import trunc
 
-    i = trunc(v)
+    i = trunc(value)
     if not is_safe_integer(i):
         _throw_unexpected_type_error(name, "integer", value, 0)
     return i
 
 
-def _expect_number_range(name, value, min_=None, max_=None):
-    v = _expect_number(name, value)
-    if not math.isfinite(v):
+def _expect_number_range(name: str, value: VmAny, min_=None, max_=None) -> float:
+    value = _expect_number(name, value)
+    if not math.isfinite(value):
         _throw_error(
             f"{_describe_param(name)} is less than minimum value {min_}: {display(value)}",
             math.nan,
         )
     if min_ is not None:
-        if v < min_:
+        if value < min_:
             _throw_error(
                 f"{_describe_param(name)} is less than minimum value {min_}: {display(value)}",
                 min_,
             )
     if max_ is not None:
-        if v > max_:
+        if value > max_:
             _throw_error(
                 f"{_describe_param(name)} is greater than maximum value {max_}: {display(value)}",
                 max_,
             )
-    return v
+    return value
 
 
-def _expect_integer_range(name, value, min_, max_):
-    v = _expect_integer(name, value)
-    if v < min_:
+def _expect_integer_range(name: str, value: VmAny, min_: int, max_: int) -> float:
+    value = _expect_integer(name, value)
+    if value < min_:
         _throw_error(
             f"{_describe_param(name)} is less than minimum value {min_}: {display(value)}",
             min_,
         )
-    if v > max_:
+    if value > max_:
         _throw_error(
             f"{_describe_param(name)} is greater than maximum value {max_}: {display(value)}",
             max_,
         )
-    return v
+    return value
 
 
 def _expect_array(name, value, recovered):
     _required(name, value, recovered)
     if not is_vm_array(value):
         _throw_unexpected_type_error(name, "array", value, recovered)
+    return value
 
 
 def _expect_record(name, value, recovered):
     _required(name, value, recovered)
     if not is_vm_record(value):
         _throw_unexpected_type_error(name, "record", value, recovered)
+    return value
 
 
 def _expect_array_or_record(name, value, recovered):
     _required(name, value, recovered)
     if not is_vm_array(value) and not is_vm_record(value):
         _throw_unexpected_type_error(name, "array | record", value, recovered)
+    return value
 
 
 def _expect_compound(name, value, recovered):
@@ -148,6 +145,7 @@ def _expect_compound(name, value, recovered):
         _throw_unexpected_type_error(
             name, "array | record | module | extern", value, recovered
         )
+    return value
 
 
 def _expect_const(name, value, recovered):
@@ -165,7 +163,7 @@ def _expect_callable(name, value, recovered):
         _throw_unexpected_type_error(name, "callable", value, recovered)
 
 
-def _get_numbers(args):
+def _get_numbers(args: "list[VmValue] | None") -> "list[float]":
     if not args:
         return []
     useFirst = False
@@ -173,7 +171,6 @@ def _get_numbers(args):
         args = args[0]
         useFirst = True
     numbers = []
-    # for arg in args:
     for i in range(len(args)):
         arg = args[i]
         numbers.append(_expect_number(name=None if useFirst else i, value=arg))

@@ -39,7 +39,7 @@ const withInner = (obj: VmConst | undefined, key: VmArray, keyIndex: number, val
     }
     if (isArray(result)) {
         const index = arrIndex(k);
-        while (index > result.length) {
+        while (index >= result.length) {
             result.push(null);
         }
         result[index] = withInner(result[index], key, keyIndex + 1, value);
@@ -64,7 +64,8 @@ const normalizeEntries = (data: VmConst, entries: Array<VmValue | undefined>): M
         if (isVmArray(key)) {
             if (key.length === 0 || key.includes(null) || key.includes(undefined)) {
                 continue;
-            } else if (key.length === 1) {
+            }
+            if (key.length === 1) {
                 key = key[0]!;
             }
         }

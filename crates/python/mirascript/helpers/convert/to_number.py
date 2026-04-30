@@ -2,19 +2,11 @@ from typing_extensions import TypeVar, overload
 import math
 import re
 
-from mirascript.vm.error import VmError
-from mirascript.vm.types.types import Uninitialized
+from ...vm.error import VmError
+from ...vm.types.types import Uninitialized
 
 
-def isDecimalNumber(num):
-    """判断数字是否为小数（不是整数）"""
-
-    if isinstance(num, (int, float)):
-        return isinstance(num, float) and not num.is_integer()
-    return False
-
-
-def parseNumericLiteral(s):
+def _parse_number(s: str) -> "float | None":
     if s == "":
         return None
     ch = s[0]
@@ -35,7 +27,7 @@ def parseNumericLiteral(s):
         return None
 
 
-def stringToNumber(s):
+def _string_to_number(s: str) -> "float | None":
     s = s.strip()
     if s == "":
         return None
@@ -46,17 +38,17 @@ def stringToNumber(s):
     if s == "nan" or s == "NaN":
         return math.nan
     if s.startswith("-"):
-        num = parseNumericLiteral(s[1:])
+        num = _parse_number(s[1:])
         if num is not None:
             return -num
         return None
     elif s.startswith("+"):
-        num = parseNumericLiteral(s[1:])
+        num = _parse_number(s[1:])
         if num is not None:
             return num
         return None
     else:
-        return parseNumericLiteral(s)
+        return _parse_number(s)
 
 
 T = TypeVar("T")
@@ -68,13 +60,13 @@ def toNumber(value) -> float: ...
 def toNumber(value, fallback: T) -> "float | T": ...
 def toNumber(value, fallback: T = Uninitialized) -> "float | T":
     if isinstance(value, bool):
-        return float(1 if value else 0)
+        return 1.0 if value else 0.0
 
     if isinstance(value, (int, float)):
         return float(value)
 
     if isinstance(value, str):
-        num = stringToNumber(value)
+        num = _string_to_number(value)
         if num is not None:
             return num
 

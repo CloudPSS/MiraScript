@@ -1,8 +1,7 @@
 import math
 
-from mirascript.vm.types.types import Uninitialized
+from ....types.types import Uninitialized
 from ..._helpers import _expect_number
-from mirascript.vm.operations import isDecimalNumber
 
 
 def _factorial(n: float):
@@ -21,7 +20,7 @@ def _gamma(n: float):
         return math.nan
     if n >= 172:
         return math.inf
-    if not isDecimalNumber(n):
+    if n.is_integer():
         if n > 0:
             return _factorial(n - 1)
         elif n == 0:
@@ -48,6 +47,6 @@ def factorial(x=Uninitialized):
         return math.nan
     if n >= 171:
         return math.inf
-    if not isDecimalNumber(n):
+    if n.is_integer():
         return _factorial(n)
     return _gamma(n + 1)
