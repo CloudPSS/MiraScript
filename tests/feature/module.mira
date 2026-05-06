@@ -3,6 +3,9 @@ mod test {
   t_eq(add(2, 3), 5);
   t_eq(test.add(10, 20), 30);
 
+  t_eq(type(test), "module");
+  t_eq(to_string(test), "<module test>");
+
   t_throws(fn { @C });
   t_throws(fn { test.@C });
 
