@@ -2,7 +2,7 @@ from mirascript.helpers.types import is_vm_array
 
 from .entries import entries
 from ..._helpers import _throw_error
-from ....helpers import Cp
+from ....operations.cp import Cp
 
 
 def zip(data):

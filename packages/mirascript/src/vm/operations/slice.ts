@@ -13,6 +13,7 @@ const sliceCore = (value: VmArray, start: number, end: number, exclusive: boolea
 
     if (isNaN(start)) start = 0;
     else if (start < 0) start = length + start;
+
     if (isNaN(end)) end = exclusive ? length : length - 1;
     else if (end < 0) end = length + end;
 

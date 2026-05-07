@@ -3,8 +3,7 @@ import unittest
 import sys
 from pathlib import Path
 from mirascript import compile as mira_compile
-from mirascript.vm import VmError, vm_function, VmModule, VmContext
-from mirascript.vm.helpers import config_checkpoint
+from mirascript.vm import VmError, vm_function, VmModule, VmContext, config_checkpoint
 from tests.deepequals import assert_deep_equal, assert_not_deep_equal
 
 TEST_DIR = (Path(__file__) / "../../../../tests").resolve()

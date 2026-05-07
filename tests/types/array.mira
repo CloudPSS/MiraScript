@@ -51,6 +51,8 @@ t_true((1, 2, 3) in arr);
 t_false(2 in arr);
 t_false(nil in arr);
 t_true(nil in [nil]);
+t_false(false in arr);
+t_false("" in arr);
 t_eq(arr[0], 0);
 t_eq(arr[-0], 0);
 t_eq(arr[0.999_999_999], 0);

@@ -7,3 +7,4 @@ export * from './helpers.js';
 export * from './compound.js';
 export * from './cp.js';
 export * from './call.js';
+export * from './array-range.js';

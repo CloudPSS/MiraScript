@@ -5,9 +5,8 @@ from ...helpers.types import is_vm_array, is_vm_const, is_vm_primitive, is_vm_re
 from ...helpers.convert.to_number import toNumber
 from ...helpers.convert.to_string import toString
 from ...helpers.serialize import display
-from ..operations import Type, is_safe_integer
+from ..operations import Type, Cp, is_safe_integer
 from ..error import VmError
-from ..helpers import Cp
 from ..types.types import Uninitialized, VmAny, VmValue
 
 
@@ -103,7 +102,9 @@ def _expect_number_range(name: str, value: VmAny, min_=None, max_=None) -> float
     return value
 
 
-def _expect_integer_range(name: str, value: VmAny, min_: int, max_: int) -> float:
+def _expect_integer_range(
+    name: str, value: VmAny, min_: "int | float", max_: "int | float"
+) -> float:
     value = _expect_integer(name, value)
     if value < min_:
         _throw_error(

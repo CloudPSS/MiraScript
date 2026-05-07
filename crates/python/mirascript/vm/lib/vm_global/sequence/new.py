@@ -1,8 +1,7 @@
 from ..._helpers import _expect_callable, _expect_integer_range
-from ....operations import Call, Get
-from ....helpers import Element
-from mirascript.helpers.constants import VM_ARRAY_MAX_LENGTH, Uninitialized
-from mirascript.helpers.convert.to_string import toString
+from ....operations import Call, Get, Element
+from .....helpers.constants import VM_ARRAY_MAX_LENGTH, Uninitialized
+from .....helpers.convert.to_string import toString
 
 
 def new_record(size=Uninitialized, generator=Uninitialized):

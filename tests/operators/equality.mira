@@ -69,6 +69,19 @@ t_throws(fn { (fn { } !~ fn { }) });
 t_true((1, 2, 3) == (1, 2, 3));
 t_true([1, 2, 3, nil, "xx", ("a", [true])] == [1, 2, 3, nil, "xx", ("a", [true])]);
 t_throws(fn { (1, 2, 3) =~ (1, 2, 3) });
+t_true([1, 2, 3] != (1, 2, 3));
+
+// mixed
+t_false(0 == false);
+t_false(0 == nil);
+t_false(0 == "0");
+t_false(false == "");
+t_false(false == nil);
+t_false([0] == [false]);
+t_false([0] == [nil]);
+t_false([0] == ["0"]);
+t_false([false] == [""]);
+t_false([false] == [nil]);
 
 t_true([1, 2, 3] == [1, 2, 3]);
 t_throws(fn { [1, 2, 3] =~ [1, 2, 3] });

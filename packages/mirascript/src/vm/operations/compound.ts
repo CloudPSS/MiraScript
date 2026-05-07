@@ -1,5 +1,5 @@
 import { VmError } from '../../helpers/error.js';
-import { hasOwnEnumerable, isNaN, NotNumber, keys, create, isFinite } from '../../helpers/utils.js';
+import { hasOwnEnumerable, NotNumber, keys, create, isFinite } from '../../helpers/utils.js';
 import { toNumber, toString } from '../../helpers/convert/index.js';
 import { display } from '../../helpers/serialize.js';
 import {
@@ -57,7 +57,7 @@ export function $Length(value: VmAny): number {
 /** 删除记录中的指定字段 */
 export function $Omit(value: VmAny, omitted: ReadonlyArray<number | string>): VmRecord {
     $AssertInit(value);
-    if (value == null || !isVmRecord(value)) return {};
+    if (!isVmRecord(value)) return {};
     const result: Record<string, VmConst> = {};
     const valueKeys = keys(value);
     const omittedSet = new Set(omitted.map($ToString));
@@ -73,7 +73,7 @@ export function $Omit(value: VmAny, omitted: ReadonlyArray<number | string>): Vm
 /** 选择记录中的指定字段 */
 export function $Pick(value: VmAny, picked: ReadonlyArray<number | string>): VmRecord {
     $AssertInit(value);
-    if (value == null || !isVmRecord(value)) return {};
+    if (!isVmRecord(value)) return {};
     const result: Record<string, VmConst> = {};
     for (const key of picked) {
         const k = $ToString(key);
@@ -98,7 +98,7 @@ export function $Get(obj: VmAny, key: VmAny): VmValue {
     if (isVmArray(obj)) {
         $AssertInit(key);
         const index = toNumber(key, NotNumber);
-        if (isNaN(index)) return null;
+        if (!isFinite(index)) return null;
         return $El((at.call(obj, trunc(index)) ?? null) as VmAny);
     }
     const pk = $ToString(key);

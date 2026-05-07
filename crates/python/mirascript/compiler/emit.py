@@ -63,7 +63,7 @@ def emit(
                 ast_helper.vm_hint(hint),
                 ast_helper.set_position(
                     ast.ImportFrom(
-                        module="mirascript.vm.env",
+                        module="mirascript.vm.operations",
                         names=[
                             ast.alias(name="*", asname=None, lineno=0, col_offset=0)
                         ],

@@ -33,11 +33,29 @@ t_eq(
 );
 
 t_eq(arr[..], arr);
+
 t_eq(arr[nan..nan], arr);
 t_eq(arr[nan..<nan], arr);
+
+t_eq(arr[0..<nan], arr);
+t_eq(arr[0..nan], arr);
+
+t_eq(arr[nan..-1], arr);
+t_eq(arr[nan..<-0.1], arr);
+
 t_eq(arr[-inf..inf], arr);
 t_eq(arr[-inf..-inf], []);
 t_eq(arr[inf..inf], []);
+t_eq(arr[inf..-inf], []);
+
+t_eq(arr[-inf..<inf], arr);
+t_eq(arr[-inf..<-inf], []);
+t_eq(arr[inf..<inf], []);
+t_eq(arr[inf..<-inf], []);
+
+t_eq(arr[inf..-1], []);
+t_eq(arr[0..-1], arr);
+t_eq(arr[0..<-0.1], arr);
 
 t_eq(arr[0..2], [0, 1, 2]);
 t_eq(arr[1 + 1..2 + 3], [2, 3, 4, 5]);

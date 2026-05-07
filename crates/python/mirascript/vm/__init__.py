@@ -2,10 +2,10 @@
 
 from .error import *
 from .types import *
-from .helpers import config_checkpoint
+from .operations.cp import config_checkpoint
 from .lib._loader import lib
 
-_all__ = [
+__all__ = [
     "VmError",
     "VmExtern",
     "VmFunction",

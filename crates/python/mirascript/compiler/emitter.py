@@ -337,6 +337,8 @@ class Emitter:
                 )
                 block.body.append(getter)
             elif opcode == OpCode.Freeze:
+                if block.body == []:
+                    block.body.append(helper.pass_stmt())
                 return
             else:
                 self.unknown_opcode(opcode)
@@ -744,7 +746,7 @@ class Emitter:
             name = self.constants[nameIdx]
             code = helper.class_def(
                 self.wv(reg),
-                [helper.vm_hint()],
+                [],
                 decorator_list=[helper.call("Module", [helper.const(name)])],
             )
         elif opcode == OpCode.Record:

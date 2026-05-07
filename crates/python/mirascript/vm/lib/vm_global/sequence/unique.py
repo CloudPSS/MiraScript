@@ -1,10 +1,8 @@
-from mirascript.helpers.convert.to_boolean import toBoolean
-from ....operations import isSame, Call
+from .....helpers.convert.to_boolean import toBoolean
+from ....operations import Call, is_same
 from ....types import VmValue
 from ..._helpers import _expect_array, _expect_callable
-from mirascript.vm.types.types import Uninitialized
-from functools import cmp_to_key
-import math
+from ....types.types import Uninitialized
 
 
 def default_equal(a=None, b=None):
@@ -12,7 +10,7 @@ def default_equal(a=None, b=None):
         a = None
     if b is Uninitialized:
         b = None
-    return isSame(a, b)
+    return is_same(a, b)
 
 
 def eq(equaler, recovered):
