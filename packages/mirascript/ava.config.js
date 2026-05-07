@@ -1,7 +1,4 @@
 export default {
     files: ['tests/**/*'],
-    extensions: {
-        ts: 'module',
-    },
-    nodeArguments: ['--experimental-strip-types'],
+    extensions: ['js', 'ts'],
 };
