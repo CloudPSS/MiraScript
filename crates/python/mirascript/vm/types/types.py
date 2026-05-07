@@ -10,9 +10,9 @@ VmExtern: TypeAlias = Never
 VmPrimitive: TypeAlias = "str | int | float | bool | None"
 """Mirascript 原始值"""
 
-VmRecord: TypeAlias = "dict[str, VmValue]"
+VmRecord: TypeAlias = "dict[str, VmConst]"
 """Mirascript 记录"""
-VmArray: TypeAlias = "list[VmValue]"
+VmArray: TypeAlias = "list[VmConst]"
 """Mirascript 数组"""
 
 VmConst: TypeAlias = "VmPrimitive | VmRecord | VmArray"

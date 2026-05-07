@@ -1,33 +1,11 @@
 import math
-from typing_extensions import TypeGuard
 
+from ...helpers.checker import is_number
 from ...helpers.types import is_vm_array, is_vm_record, is_vm_wrapper
+from ..types.types import VmValue
 
 
-def is_number(a) -> "TypeGuard[int | float]":
-    if isinstance(a, bool):
-        return False
-    return isinstance(a, (int, float))
-
-
-_MIN_SAFE_INTEGER = -(2**53) + 1
-_MAX_SAFE_INTEGER = 2**53 - 1
-
-
-def is_safe_integer(num: "float | int") -> bool:
-    """
-    检查是否为安全整数（在 64 位浮点数精确表示范围内）
-    类似于 JavaScript 的 Number.isSafeInteger()
-    """
-
-    num = float(num)
-    if not num.is_integer():
-        return False
-
-    return _MIN_SAFE_INTEGER <= num <= _MAX_SAFE_INTEGER
-
-
-def overload_number_string(a, b) -> bool:
+def overload_number_string(a: VmValue, b: VmValue) -> bool:
     if is_number(a) or is_number(b):
         return True
     if isinstance(a, str) or isinstance(b, str):
@@ -35,7 +13,7 @@ def overload_number_string(a, b) -> bool:
     return True
 
 
-def is_same(a, b) -> bool:
+def is_same(a: VmValue, b: VmValue) -> bool:
     if is_number(a) and is_number(b):
         return a == b or (math.isnan(a) and math.isnan(b))
     if a is b:

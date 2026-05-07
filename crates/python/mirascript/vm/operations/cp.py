@@ -1,4 +1,7 @@
+import math
 import time
+
+from ...helpers.checker import is_number
 
 MAX_DEPTH = 128
 cp_depth = 0
@@ -43,14 +46,9 @@ def CpExit():
         Cp()
 
 
-def config_checkpoint(timeout=100):
+def config_checkpoint(timeout: "float | int" = 100):
     """设置检查点超时时间"""
     global cp_timeout
-    if (
-        not isinstance(timeout, (int, float))
-        or timeout is None
-        or timeout <= 0
-        or (isinstance(timeout, float) and timeout != timeout)
-    ):
+    if not is_number(timeout) or timeout <= 0 or math.isnan(timeout):
         raise ValueError("Invalid timeout value")
-    cp_timeout = timeout
+    cp_timeout = int(timeout) if math.isfinite(timeout) else 1000000000000000

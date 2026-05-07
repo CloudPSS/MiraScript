@@ -2,6 +2,7 @@ import time
 import math
 from datetime import datetime as datetime_dt, timezone
 
+from ....helpers.checker import is_number
 from ....helpers.convert.to_number import toNumber
 from ....helpers.serialize import display
 from ...types.types import Uninitialized
@@ -30,7 +31,7 @@ def _from_number(datetime: "float | int", fallback: bool) -> "float | None":
 def _timestamp(datetime, fallback: bool) -> "float | None":
     if datetime is None:
         return time.time() * 1000.0
-    if isinstance(datetime, (int, float)) and not isinstance(datetime, bool):
+    if is_number(datetime):
         return _from_number(datetime, fallback)
     if not isinstance(datetime, str):
         if fallback:

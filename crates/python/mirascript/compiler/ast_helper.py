@@ -45,9 +45,10 @@ from typing_extensions import (
     TYPE_CHECKING,
 )
 
+from ..helpers.checker import is_number
+
 if TYPE_CHECKING:
 
-    from ..helpers.constants import VmUninitialized
     from ..vm.types.types import VmPrimitive
 
     T = TypeVar("T", bound=AST)
@@ -180,7 +181,7 @@ class ASTHelper:
 
     def const(self, value: "VmPrimitive" = None) -> expr:
         """生成一个常量的 AST 节点"""
-        if not isinstance(value, bool) and isinstance(value, (int, float)):
+        if is_number(value):
             value = float(value)
         return self.set_position(Constant(value=value))
 

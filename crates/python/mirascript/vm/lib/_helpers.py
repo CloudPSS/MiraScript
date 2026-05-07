@@ -5,7 +5,8 @@ from ...helpers.types import is_vm_array, is_vm_const, is_vm_primitive, is_vm_re
 from ...helpers.convert.to_number import toNumber
 from ...helpers.convert.to_string import toString
 from ...helpers.serialize import display
-from ..operations import Type, Cp, is_safe_integer
+from ...helpers.checker import is_safe_integer
+from ..operations import Type, Cp
 from ..error import VmError
 from ..types.types import Uninitialized, VmAny, VmValue
 
@@ -41,7 +42,7 @@ def _rethrow_error(prefix: str, error, recovered) -> NoReturn:
     raise VmError.from_(prefix, error, recovered_value)
 
 
-def _required(name: "str | int | None", value: VmAny, recovered) -> VmValue:
+def _required(name: "str | int", value: VmAny, recovered) -> VmValue:
     if value is Uninitialized:
         if isinstance(name, str):
             _throw_error(f"Missing required parameter '{name}'", recovered)
@@ -51,7 +52,7 @@ def _required(name: "str | int | None", value: VmAny, recovered) -> VmValue:
     return value
 
 
-def _expect_number(name: "str | int | None", value: VmAny) -> float:
+def _expect_number(name: "str | int", value: VmAny) -> float:
     value = _required(name, value, math.nan)
     value = toNumber(value)
     if value is None:
@@ -174,7 +175,7 @@ def _get_numbers(args: "list[VmValue] | None") -> "list[float]":
     numbers = []
     for i in range(len(args)):
         arg = args[i]
-        numbers.append(_expect_number(name=None if useFirst else i, value=arg))
+        numbers.append(_expect_number(name="values" if useFirst else i, value=arg))
     return numbers
 
 

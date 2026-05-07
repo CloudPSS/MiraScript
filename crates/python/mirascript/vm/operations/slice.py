@@ -1,9 +1,9 @@
 import math
 
+from ...helpers.checker import is_safe_integer
 from ...helpers.types import is_vm_array
 from ..error import VmError
 from ..types.types import VmArray
-from .utils import is_safe_integer
 from .common import AssertInit
 from .convert import ToNumber
 from .type_check import Type

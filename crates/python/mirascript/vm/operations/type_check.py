@@ -6,9 +6,9 @@ from ...helpers.types import (
     is_vm_module,
     is_vm_record,
 )
+from ...helpers.checker import is_number
 from ...vm.error import VmError
 from .common import AssertInit
-from .utils import is_number
 
 
 def Type(val):

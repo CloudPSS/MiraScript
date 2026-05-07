@@ -1,5 +1,6 @@
 import math
 
+from .....helpers.checker import is_number
 from .....helpers.types import is_vm_array, is_vm_record
 from .....helpers.convert.to_number import toNumber
 from .....helpers.convert.to_string import toString
@@ -26,9 +27,7 @@ def _arr_index(index):
 
 
 def _is_arr_index(key):
-    if isinstance(key, bool):
-        return False
-    if not isinstance(key, (int, float)):
+    if not is_number(key):
         return False
     return key.is_integer() and key >= 0 and key <= VM_ARRAY_MAX_LENGTH
 

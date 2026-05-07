@@ -1,6 +1,7 @@
 import math
 import re
 
+from ..checker import is_number
 from .to_string import toString
 
 
@@ -26,10 +27,7 @@ def formatNumber(num):
 def toFormat(val, fmt: "str | None" = None) -> str:
     fmt = fmt.strip() if fmt is not None else ""
 
-    if isinstance(val, bool):
-        return toString(val)
-
-    if isinstance(val, (int, float)):
+    if is_number(val):
         if not math.isfinite(val):
             return toString(val)
         r = re.match(r"^\.\d+$", fmt)
