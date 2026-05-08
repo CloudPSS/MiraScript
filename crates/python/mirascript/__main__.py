@@ -57,8 +57,16 @@ if __name__ == "__main__":
     parser.add_argument(
         "-g",
         "--generate",
+        metavar="output.py",
         action="store",
-        help="Output generated code to the specified file, needs 'cli_debug' extra enabled",
+        help="Output generated code to the specified file",
+    )
+    parser.add_argument(
+        "-e",
+        "--eval",
+        action="store",
+        metavar="SCRIPT",
+        help="Evaluate a MiraScript code snippet directly from the command line",
     )
     parser.add_argument(
         "script_file",
@@ -67,7 +75,16 @@ if __name__ == "__main__":
         help="Path to the MiraScript file to compile (use '-' for stdin)",
     )
     args = parser.parse_args()
-    if args.script_file == "-":
+    if args.eval:
+        script = args.eval
+        mode = "script"
+        script_file = "<eval>"
+        if args.script_file != "-":
+            print(
+                "Warning: --eval option ignores the script_file argument",
+                file=sys.stderr,
+            )
+    elif args.script_file == "-":
         script = sys.stdin.read()
         mode = "template" if args.template else "script"
         script_file = "<stdin>"

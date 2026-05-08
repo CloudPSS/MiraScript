@@ -2,6 +2,21 @@
 
 MiraScript 的 Python 绑定允许在 Python 中使用 MiraScript 编译器。它提供了一个简单的接口来编译 MiraScript 脚本，并返回编译结果和诊断信息。
 
+## 安装
+
+```bash
+pip install mirascript
+```
+
+## 基本示例
+
+```python
+from mirascript import compile
+
+script, diagnostics = compile("sin(x) + cos(PI - x)")
+result = script({"x": 1.3})
+```
+
 ## 开发
 
 1. 初始化环境
