@@ -44,7 +44,7 @@
     "build": "pnpm build:ts --emitDeclarationOnly && node ./esbuild.config.js",
     "deps": "pnpm dlx madge --circular --warning ./src",
     "clean": "rimraf dist",
-    "test": "c8 ava",
+    "test": "FORCE_COLOR=1 c8 ava --no-worker-threads",
     "bench": "node ./bench/index.ts"
   },
   "dependencies": {

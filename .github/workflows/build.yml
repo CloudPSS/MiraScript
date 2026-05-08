@@ -242,6 +242,4 @@ jobs:
           path: packages/
 
       - name: Run tests
-        env:
-          FORCE_COLOR: 1
         run: pnpm -r --if-present run test
