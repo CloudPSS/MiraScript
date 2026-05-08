@@ -1,14 +1,10 @@
 packages:
   - packages/*
 
-ignoredBuiltDependencies:
-  - eslint-config-prettier
-  - esbuild
-  - core-js
-  - core-js-pure
-
-onlyBuiltDependencies:
-  - '@swc/core'
+allowBuilds:
+  '@swc/core': true
+  core-js: false
+  esbuild: false
 
 publicHoistPattern:
   - '*eslint*'
