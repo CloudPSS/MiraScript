@@ -39,17 +39,16 @@ runs:
         tool: wasm-bindgen wasm-pack ${{ inputs.tools }}
 
     - name: Setup pnpm
-      uses: wyvox/action-setup-pnpm@v4
+      uses: pnpm/action-setup@v6
+      with:
+        cache: true
+
+    - name: Setup node
+      uses: actions/setup-node@v6
       if: inputs.node-version != ''
       with:
-        node-registry-url: 'https://registry.npmjs.org/'
-        args: ${{ inputs.pnpm-args }}
-        node-version-file: ''
         node-version: ${{ inputs.node-version }}
 
-    - name: Setup pnpm
-      uses: wyvox/action-setup-pnpm@v4
-      if: inputs.node-version == ''
-      with:
-        node-registry-url: 'https://registry.npmjs.org/'
-        args: ${{ inputs.pnpm-args }}
+    - name: Install dependencies
+      shell: bash
+      run: pnpm install ${{ inputs.pnpm-args }}
