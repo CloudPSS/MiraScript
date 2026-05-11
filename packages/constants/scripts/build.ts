@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import fs from 'node:fs/promises';
 import * as lib from '../lib/constants.js';
 

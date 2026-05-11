@@ -6,11 +6,11 @@ allowBuilds:
   core-js: false
   esbuild: false
 
+configDependencies:
+  '@cloudpss/pnpm-plugin-config': 'latest'
+
 publicHoistPattern:
-  - '*eslint*'
-  - '*prettier*'
-  - '*commitlint*'
-  - lint-staged
+  # better-typescript-lib
   - '@typescript/*'
   # website
   - '@rspack/core'
@@ -23,5 +23,3 @@ publicHoistPattern:
   - 'react-dom'
   - 'prism-react-renderer'
   - '@docusaurus/*'
-
-shellEmulator: true

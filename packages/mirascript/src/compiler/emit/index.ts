@@ -193,7 +193,7 @@ export class Emitter {
             const opcode = opcode_raw & 0x7f;
             const wide = opcode_raw >= 0x80;
             const read = () => this.readParam(wide);
-            let code = '';
+            let code: string;
             switch (opcode) {
                 case OpCode.Field: {
                     const field = read();
@@ -232,7 +232,7 @@ export class Emitter {
             const opcode = opcode_raw & 0x7f;
             const wide = opcode_raw >= 0x80;
             const read = () => this.readParam(wide);
-            let code = '';
+            let code: string;
             switch (opcode) {
                 case OpCode.FieldOpt:
                 case OpCode.Field: {
@@ -299,7 +299,7 @@ export class Emitter {
             const opcode = opcode_raw & 0x7f;
             const wide = opcode_raw >= 0x80;
             const read = () => this.readParam(wide);
-            let code = '';
+            let code: string;
             switch (opcode) {
                 case OpCode.Item: {
                     const value = read();
@@ -355,7 +355,7 @@ export class Emitter {
         const read = () => this.readParam(wide);
         const readIndex = () => this.readIndex(wide);
         const ident = this.ident();
-        let code = '';
+        let code: string;
         let reg = 0;
         switch (opcode) {
             case OpCode.FuncVarg:

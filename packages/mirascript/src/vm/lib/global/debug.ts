@@ -112,7 +112,6 @@ const printParser: PrintOptions['parser'] = function (args) {
             formats.push('');
             templates.push(i < values.length - 1 ? ' ' : '');
         }
-        valIndex++;
     }
     return {
         templates,
