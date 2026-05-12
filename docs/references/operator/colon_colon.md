@@ -6,5 +6,5 @@ title: '::'
 
 ```mira
 "Hello"::chars()::join("|")
-// 相当于 join(chars("Hello"), "");
+// 相当于 join(chars("Hello"), "|");
 ```
