@@ -18,10 +18,6 @@
     --vscode-editor-background: transparent;
     --vscode-editorGutter-background: transparent;
   }
-
-  :global(.context-view.monaco-component) {
-    display: none;
-  }
 }
 
 .pre {
