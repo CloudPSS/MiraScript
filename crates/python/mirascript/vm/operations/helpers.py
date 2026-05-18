@@ -5,8 +5,8 @@ from ...helpers.types import is_vm_const, is_vm_context
 from ...helpers.constants import kVmScript
 from ..types.context import VmContext, VmSharedContext
 from ..types.module import VmModule
-from ..types.types import VmValue
-from ..types.function import vm_function
+from ..types.types import VmAny, VmConst, VmRecord, VmValue
+from ..types.function import VmFunction, vm_function
 from .common import AssertInit
 from .cp import CpEnter, CpExit
 
@@ -22,7 +22,7 @@ LoopBreak = _LoopControl.Break
 """标记当前值为Break"""
 
 
-def Closure(func):
+def Closure(func: "Callable[[], Any]") -> "Callable[[], Any]":
 
     def closure_wrapper():
         try:
@@ -34,7 +34,7 @@ def Closure(func):
     return closure_wrapper
 
 
-def Script(func):
+def Script(func: "Callable[..., Any]") -> "Callable[..., Any]":
 
     def script_wrapper(*args, **kwargs):
         try:
@@ -95,21 +95,23 @@ def Pub(name: str):
     return decorator
 
 
-def Element(value):
+def Element(value: "VmAny") -> "VmConst | None":
     AssertInit(value)
     return value if is_vm_const(value) else None
 
 
-def ElementOpt(key, value):
+def ElementOpt(key: str, value: "VmAny") -> "VmRecord":
     AssertInit(value)
     if value is None or not is_vm_const(value):
         return {}
     return {key: value}
 
 
-def Fn(name):
+def Fn(name: "str") -> Callable[["VmFunction"], "VmFunction"]:
 
-    def decorator(func):
+    def decorator(func: "VmFunction"):
+
+        assert callable(func), f"Function {name} must be callable"
 
         def fn_wrapper(*args, **kwargs):
             try:
@@ -118,14 +120,17 @@ def Fn(name):
             finally:
                 CpExit()
 
+        if hasattr(func.__code__, "replace"):
+            func.__code__ = func.__code__.replace(co_name=name)
+
         return vm_function(name)(fn_wrapper)
 
     return decorator
 
 
-def Upvalue(value):
+def Upvalue(value: "VmAny") -> "VmValue":
     AssertInit(value)
-    return value
+    return value  # type: ignore
 
 
 def Context(context: "VmContext | None" = None) -> VmContext:
