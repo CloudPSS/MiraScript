@@ -51,7 +51,7 @@ class VmContext(Mapping[str, VmValue]):
         try:
             return self._data[key]
         except KeyError:
-            raise VmError(f"Global variable '{key}' is not defined.", None)
+            raise VmError(f"Global variable '{key}' is not defined.", None) from None
 
     def __setitem__(self, key, value):
         _check_kv(key, value)
