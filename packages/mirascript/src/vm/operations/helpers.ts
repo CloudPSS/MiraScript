@@ -15,7 +15,7 @@ export function $Module<T extends Record<string, () => VmImmutable>>(
 ): VmModule<{ [K in keyof T]: ReturnType<T[K]> }> {
     const mod = create(null) as { [K in keyof T]: ReturnType<T[K]> };
     for (const [key, get] of entries(body)) {
-        defineProperty(mod, key, { __proto__: null, get, enumerable: true });
+        defineProperty(mod, key, { __proto__: null, get, enumerable: true, configurable: true });
     }
     return new VmModule(name, mod);
 }

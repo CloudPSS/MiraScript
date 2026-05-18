@@ -8,7 +8,8 @@ export const {
     POSITIVE_INFINITY: PositiveInfinity,
     NEGATIVE_INFINITY: NegativeInfinity,
 } = Number;
-export const { hasOwn, keys, values, entries, create, fromEntries, defineProperty, getOwnPropertyNames } = Object;
+export const { hasOwn, keys, values, entries, create, fromEntries, defineProperty, getOwnPropertyNames, freeze } =
+    Object;
 export const { apply, getPrototypeOf } = Reflect;
 
 /**

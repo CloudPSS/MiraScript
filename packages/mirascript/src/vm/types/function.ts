@@ -1,6 +1,6 @@
 import type { Writable } from 'type-fest';
 import type { DiagnosticCode } from '@mirascript/constants';
-import { defineProperty } from '../../helpers/utils.js';
+import { defineProperty, freeze } from '../../helpers/utils.js';
 import { kVmFunction, VM_FUNCTION_ANONYMOUS_NAME } from '../../helpers/constants.js';
 import { isVmFunction } from '../../helpers/types.js';
 import type { VmAny, VmValue } from './index.js';
@@ -91,6 +91,6 @@ export function VmFunction<T extends VmFunctionLike>(
     };
     const name = opt.name ?? fn.name;
     defineProperty(fn, 'name', { value: name, configurable: true });
-    defineProperty(fn, kVmFunction, { value: Object.freeze(info) });
+    defineProperty(fn, kVmFunction, { value: freeze(info) });
     return fn as VmFunction<T>;
 }

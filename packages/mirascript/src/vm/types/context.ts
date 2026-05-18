@@ -1,10 +1,9 @@
-import { create, defineProperty, hasOwn, keys } from '../../helpers/utils.js';
+import { create, defineProperty, hasOwn, keys, freeze } from '../../helpers/utils.js';
 import { VmError } from '../../helpers/error.js';
 import { kVmContext } from '../../helpers/constants.js';
 import type { VmAny, VmImmutable, VmValue } from './index.js';
 import { wrapToVmValue } from './boundary.js';
 import { VmFunction } from './function.js';
-const { freeze } = Object;
 
 /** MiraScript 执行上下文 */
 export interface VmContext {
