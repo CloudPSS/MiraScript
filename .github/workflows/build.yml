@@ -45,12 +45,29 @@ jobs:
           path: website-build/
           if-no-files-found: error
 
+      - name: Build python sdist
+        uses: PyO3/maturin-action@v1
+        with:
+          command: sdist
+          args: --out dist
+          working-directory: crates/python
+
+      - name: Upload python sdist
+        uses: actions/upload-artifact@v7
+        with:
+          name: python-sdist
+          path: crates/python/dist/*
+          if-no-files-found: error
+
   build-macos:
     needs: build
     runs-on: macos-latest
 
     permissions:
       contents: read
+    strategy:
+      matrix:
+        arch: [x86_64, aarch64]
 
     steps:
       - name: Checkout
@@ -60,7 +77,7 @@ jobs:
         uses: ./.github/actions/install
         with:
           ALIYUN_NPM_TOKEN: ${{ secrets.ALIYUN_NPM_TOKEN }}
-          rust-targets: x86_64-apple-darwin,aarch64-apple-darwin
+          rust-targets: ${{ matrix.arch }}-apple-darwin
 
       - name: Download npm package artifact
         uses: actions/download-artifact@v8
@@ -68,17 +85,37 @@ jobs:
           name: npm-package
           path: packages/
 
-      - name: Build artifact
+      - name: Build napi artifact
         run: |
           cd packages/napi
-          pnpm run build --target x86_64-apple-darwin
-          pnpm run build --target aarch64-apple-darwin
+          pnpm run build --target ${{ matrix.arch }}-apple-darwin
 
-      - name: Upload artifact
+      - name: Upload napi artifact
         uses: actions/upload-artifact@v7
         with:
-          name: macos-napi
+          name: napi-${{ matrix.arch }}-apple-darwin
           path: packages/napi/dist/*.node
+          if-no-files-found: error
+
+      - name: Build python wheel
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.arch }}-apple-darwin
+          args: --release --out dist
+          working-directory: crates/python
+
+      - name: Build free-threaded python wheel
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.arch }}-apple-darwin
+          args: --release --out dist -i python3.14t
+          working-directory: crates/python
+
+      - name: Upload python wheel artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: python-wheel-${{ matrix.arch }}-apple-darwin
+          path: crates/python/dist/*.whl
           if-no-files-found: error
 
   build-windows:
@@ -87,6 +124,9 @@ jobs:
 
     permissions:
       contents: read
+    strategy:
+      matrix:
+        arch: [x86_64, aarch64]
 
     steps:
       - name: Checkout
@@ -96,7 +136,7 @@ jobs:
         uses: ./.github/actions/install
         with:
           ALIYUN_NPM_TOKEN: ${{ secrets.ALIYUN_NPM_TOKEN }}
-          rust-targets: x86_64-pc-windows-msvc,aarch64-pc-windows-msvc
+          rust-targets: ${{ matrix.arch }}-pc-windows-msvc
 
       - name: Download npm package artifact
         uses: actions/download-artifact@v8
@@ -104,17 +144,37 @@ jobs:
           name: npm-package
           path: packages/
 
-      - name: Build artifact
+      - name: Build napi artifact
         run: |
           cd packages/napi
-          pnpm run build --target x86_64-pc-windows-msvc
-          pnpm run build --target aarch64-pc-windows-msvc
+          pnpm run build --target ${{ matrix.arch }}-pc-windows-msvc
 
-      - name: Upload artifact
+      - name: Upload napi artifact
         uses: actions/upload-artifact@v7
         with:
-          name: windows-napi
+          name: napi-${{ matrix.arch }}-pc-windows-msvc
           path: packages/napi/dist/*.node
+          if-no-files-found: error
+
+      - name: Build python wheel
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.arch }}-pc-windows-msvc
+          args: --release --out dist
+          working-directory: crates/python
+
+      - name: Build free-threaded python wheel
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.arch }}-pc-windows-msvc
+          args: --release --out dist -i python3.14t
+          working-directory: crates/python
+
+      - name: Upload python wheel artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: python-wheel-${{ matrix.arch }}-pc-windows-msvc
+          path: crates/python/dist/*.whl
           if-no-files-found: error
 
   build-linux:
@@ -122,8 +182,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        target:
-          [x86_64-unknown-linux-gnu, aarch64-unknown-linux-gnu, x86_64-unknown-linux-musl, aarch64-unknown-linux-musl]
+        arch: [x86_64, aarch64]
+        libc: [gnu, musl]
 
     permissions:
       contents: read
@@ -136,7 +196,7 @@ jobs:
         uses: ./.github/actions/install
         with:
           ALIYUN_NPM_TOKEN: ${{ secrets.ALIYUN_NPM_TOKEN }}
-          rust-targets: ${{ matrix.target }}
+          rust-targets: ${{ matrix.arch }}-unknown-linux-${{ matrix.libc }}
           tools: cross
 
       - name: Download npm package artifact
@@ -145,16 +205,39 @@ jobs:
           name: npm-package
           path: packages/
 
-      - name: Build artifact
+      - name: Build napi artifact
         run: |
           cd packages/napi
-          pnpm run build --use-cross --target ${{ matrix.target }}
+          pnpm run build --use-cross --target ${{ matrix.arch }}-unknown-linux-${{ matrix.libc }}
 
-      - name: Upload artifact
+      - name: Upload napi artifact
         uses: actions/upload-artifact@v7
         with:
-          name: linux-napi-${{ matrix.target }}
+          name: napi-${{ matrix.arch }}-unknown-linux-${{ matrix.libc }}
           path: packages/napi/dist/*.node
+          if-no-files-found: error
+
+      - name: Build python wheel
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.arch }}-unknown-linux-${{ matrix.libc }}
+          args: --release --out dist
+          working-directory: crates/python
+          manylinux: auto
+
+      - name: Build free-threaded python wheel
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.arch }}-unknown-linux-${{ matrix.libc }}
+          args: --release --out dist -i python3.14t
+          working-directory: crates/python
+          manylinux: auto
+
+      - name: Upload python wheel artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: python-wheel-${{ matrix.arch }}-unknown-linux-${{ matrix.libc }}
+          path: crates/python/dist/*.whl
           if-no-files-found: error
 
   build-all:
@@ -174,19 +257,7 @@ jobs:
           name: npm-package
           path: packages/
 
-      - name: Download macOS artifact
-        uses: actions/download-artifact@v8
-        with:
-          name: macos-napi
-          path: packages/napi/dist/
-
-      - name: Download Windows artifact
-        uses: actions/download-artifact@v8
-        with:
-          name: windows-napi
-          path: packages/napi/dist/
-
-      - name: Download Linux artifact
+      - name: Download napi artifact
         uses: actions/download-artifact@v8
         with:
           pattern: linux-napi-*
@@ -203,7 +274,21 @@ jobs:
           if-no-files-found: error
           overwrite: true
 
-  test:
+      - name: Download wheel artifacts
+        uses: actions/download-artifact@v8
+        with:
+          pattern: python-*
+          merge-multiple: true
+          path: crates/python/dist/
+
+      - name: Reupload python artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: python-artifacts
+          path: crates/python/dist/*
+          if-no-files-found: error
+
+  test-node:
     needs: build-all
     strategy:
       fail-fast: false
@@ -243,3 +328,46 @@ jobs:
 
       - name: Run tests
         run: pnpm -r --if-present run test
+
+  test-python:
+    needs: build-all
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+        python:
+          - '3.7'
+          - '3.14'
+          - '3.14t'
+    runs-on: ${{ matrix.os }}
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Configure Git
+        run: |
+          git config --global core.autocrlf input
+
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Download wheels
+        uses: actions/download-artifact@v8
+        with:
+          name: python-artifacts
+          path: crates/python/dist/
+
+      - name: Run tests
+        run: |
+          cd crates/python
+          pip install --no-index --find-links dist mirascript
+          python -m unittest -b -c tests.black_box

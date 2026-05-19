@@ -91,6 +91,34 @@ jobs:
             echo "OK, see https://registry-direct.npmmirror.com/-/package/$package_name/syncs/$log_id/log"
           done
 
+  publish-pypi:
+    needs: build
+
+    permissions:
+      contents: read
+      id-token: write
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: 3.14
+
+      - name: Download wheel artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: python-artifacts
+          path: crates/python/dist/
+
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: crates/python/dist
+
   build-vscode:
     needs: [build, publish-npm]
 
