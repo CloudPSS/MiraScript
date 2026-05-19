@@ -1,5 +1,6 @@
 const @NIL = nil;
 let NIL = nil;
+let NON_NIL = 123;
 
 t_throws(fn { nil! });
 t_throws(fn { @NIL! });
@@ -7,6 +8,14 @@ t_throws(fn { NIL! });
 t_throws(fn { ({ nil })! });
 t_throws(fn { ({ @NIL })! });
 t_throws(fn { ({ NIL })! });
+fn test_non_nil(x) {
+  x!;
+}
+
+t_throws(fn { test_non_nil(nil) });
+t_throws(fn { test_non_nil(@NIL) });
+t_throws(fn { test_non_nil(NIL) });
+t_eq(test_non_nil(NON_NIL), nil);
 
 t_eq(true!, true);
 t_eq(false!, false);

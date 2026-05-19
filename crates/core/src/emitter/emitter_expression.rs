@@ -532,12 +532,8 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     return;
                 };
                 let mut parts = vec![];
-                let mut s_iter = strs.iter();
                 let mut e_iter = expressions.iter();
-                loop {
-                    let Some((str, _, fmt)) = s_iter.next() else {
-                        break;
-                    };
+                for (str, _, fmt) in strs.iter() {
                     if !str.is_empty() {
                         let reg = self.closures.add_reg();
                         self.op_string(token.range(), reg, str.as_ref());
@@ -868,10 +864,15 @@ impl<'s, 'c> Emitter<'s, 'c> {
             Access(expression, _, id) => {
                 let r = id.range();
                 if !is_global_expression(expression) {
-                    self.emit_expression(expression, ret, brk);
+                    let obj_reg = if ret.is_empty() {
+                        self.closures.add_reg()
+                    } else {
+                        ret
+                    };
+                    self.emit_expression(expression, obj_reg, brk);
                     match id.kind {
-                        TokenKind::Identifier(id) => self.op_get(r, ret, ret, id),
-                        TokenKind::Ordinal(ord) => self.op_get_index(r, ret, ret, ord),
+                        TokenKind::Identifier(id) => self.op_get(r, ret, obj_reg, id),
+                        TokenKind::Ordinal(ord) => self.op_get_index(r, ret, obj_reg, ord),
                         _ => unreachable!("Expected identifier token"),
                     };
                 } else {
@@ -887,9 +888,14 @@ impl<'s, 'c> Emitter<'s, 'c> {
             Index(expression, open, index, close) => {
                 let r = open.range.start..close.range.end;
                 if !is_global_expression(expression) {
-                    self.emit_expression(expression, ret, brk);
+                    let obj_reg = if ret.is_empty() {
+                        self.closures.add_reg()
+                    } else {
+                        ret
+                    };
+                    self.emit_expression(expression, obj_reg, brk);
                     let index_reg = self.emit_expression_reg(index, brk);
-                    self.op_get_dyn(r, ret, ret, index_reg);
+                    self.op_get_dyn(r, ret, obj_reg, index_reg);
                 } else {
                     self.diagnostics
                         .push(DiagnosticCode::GlobalDynamicAccess, index.range());
@@ -925,8 +931,13 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 );
             }
             NonNil(expression, kw) => {
-                self.emit_expression(expression, ret, brk);
-                self.op_non_nil(kw.range(), ret);
+                let obj_reg = if ret.is_empty() {
+                    self.closures.add_reg()
+                } else {
+                    ret
+                };
+                self.emit_expression(expression, obj_reg, brk);
+                self.op_non_nil(kw.range(), obj_reg);
             }
             Prefix(token, expression) => {
                 if let Some(f) = number_constant(expression) {
