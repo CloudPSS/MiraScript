@@ -28,7 +28,7 @@ result = script({"x": 1.3})
    # 安装依赖
    pip install -r requirements.txt
    # 安装 bindings 和模块
-   maturin develop
+   poe init
    ```
 
 2. 黑盒测试

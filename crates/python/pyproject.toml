@@ -31,6 +31,7 @@ build-backend = "maturin"
 bindings = "pyo3"
 
 [tool.poe.tasks]
+init = "maturin develop"
 test = "python -m unittest -b -c tests.black_box"
 test37 = "python3.7 -m unittest -b -c tests.black_box"
 format = "black ."
