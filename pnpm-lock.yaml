@@ -5,7 +5,7 @@ importers:
   .:
     configDependencies:
       '@cloudpss/pnpm-plugin-config':
-        specifier: latest
+        specifier: ~4.0.2
         version: 4.0.2
 
 packages:
@@ -156,8 +156,8 @@ importers:
         specifier: ^25.8.0
         version: 25.8.0
       ava:
-        specifier: ^8.0.0
-        version: 8.0.0(rollup@4.60.1)(supports-color@10.2.2)
+        specifier: ^8.0.1
+        version: 8.0.1(rollup@4.60.1)(supports-color@10.2.2)
       c8:
         specifier: ^11.0.0
         version: 11.0.0
@@ -1712,6 +1712,11 @@ packages:
     engines: { node: '>=18' }
     peerDependencies:
       postcss: ^8.4
+
+  '@cto.af/wtf8@0.0.5':
+    resolution:
+      { integrity: sha512-LfUFi+Vv4eDzj+XAtR89e3wwjXA/NZjUSwU5NhwbBrLecxPaBYFy3exCuc1j+D4UZeOVdqlsl8G7LmOt18V0tg== }
+    engines: { node: '>=20' }
 
   '@discoveryjs/json-ext@0.5.7':
     resolution:
@@ -4640,10 +4645,10 @@ packages:
     peerDependencies:
       postcss: ^8.1.0
 
-  ava@8.0.0:
+  ava@8.0.1:
     resolution:
-      { integrity: sha512-KMUyT3LcnZ/5ipDAqnTGn6PQUvr1Jk4dex3v7ieQrGaMlAblfIpMLwK56HfPcObvJEzyhCWXfZjbM98FeAy0oQ== }
-    engines: { node: ^22.20 || ^24.12 || >=25 }
+      { integrity: sha512-YlwwL5HX2EJRE75e2LR8nio8lKAJ702sFbv0QYnhzngAjyo9wB+Xg4JZh5f432khlWfVD5OQ93rrRopEXJptpg== }
+    engines: { node: ^22.20 || ^24.12 || >=26 }
     hasBin: true
     peerDependencies:
       '@ava/typescript': '*'
@@ -4877,9 +4882,9 @@ packages:
     resolution:
       { integrity: sha512-iwSsYWaCOoh26cV8NwNRViHlrfUvYsHDfRVcbtmw0Kg6PJIZZXwMkj1442FYLBGkeUf1juAsU3DTfxW579mrPA== }
 
-  cbor@10.0.12:
+  cbor2@2.3.0:
     resolution:
-      { integrity: sha512-exQDevYd7ZQLP4moMQcZkKCVZsXLAtUSflObr3xTh4xzFIv/xBCdvCd6L259kQOUP2kcTC0jvC6PpZIf/WmRXA== }
+      { integrity: sha512-76WB3hq8BoaGkMkBVJ27fW5LJU+qqDLEpgRNCG/SYKhODWXpVPOTD4UcUto3IEzYLA52nsvbhb0wabhHDn3qXg== }
     engines: { node: '>=20' }
 
   ccount@2.0.1:
@@ -7655,11 +7660,6 @@ packages:
       { integrity: sha512-jakjZi93UtB3jHMWsXL68FXSAosbLfY0In5gtKq3niLSkrWznrVBzXFNOEMJUfc9+Ke7SHWoAZsiMkNP3vq6Jw== }
     engines: { node: '>=10' }
     hasBin: true
-
-  nofilter@3.1.0:
-    resolution:
-      { integrity: sha512-l2NNj07e9afPnhAhvgVrCD/oy2Ai1yfLpuo3EpiO1jFTsB4sFz6oIfAfSZyQzVpkZQ9xS8ZS5g1jCBgq4Hwo0g== }
-    engines: { node: '>=12.19' }
 
   nopt@8.1.0:
     resolution:
@@ -11558,6 +11558,8 @@ snapshots:
     dependencies:
       postcss: 8.5.14
 
+  '@cto.af/wtf8@0.0.5': {}
+
   '@discoveryjs/json-ext@0.5.7': {}
 
   '@docsearch/core@4.6.3(@types/react@19.2.14)(react-dom@19.2.4)(react@19.2.4)':
@@ -14607,7 +14609,7 @@ snapshots:
       postcss: 8.5.14
       postcss-value-parser: 4.2.0
 
-  ava@8.0.0(rollup@4.60.1)(supports-color@10.2.2):
+  ava@8.0.1(rollup@4.60.1)(supports-color@10.2.2):
     dependencies:
       '@vercel/nft': 1.5.0(rollup@4.60.1)(supports-color@10.2.2)
       acorn: 8.16.0
@@ -14616,7 +14618,7 @@ snapshots:
       arrgv: 1.0.2
       arrify: 3.0.0
       callsites: 4.2.0
-      cbor: 10.0.12
+      cbor2: 2.3.0
       chalk: 5.6.2
       chunkd: 2.0.1
       ci-info: 4.4.0
@@ -14886,9 +14888,9 @@ snapshots:
 
   caniuse-lite@1.0.30001793: {}
 
-  cbor@10.0.12:
+  cbor2@2.3.0:
     dependencies:
-      nofilter: 3.1.0
+      '@cto.af/wtf8': 0.0.5
 
   ccount@2.0.1: {}
 
@@ -17479,8 +17481,6 @@ snapshots:
       supports-color: 5.5.0
       touch: 3.1.1
       undefsafe: 2.0.5
-
-  nofilter@3.1.0: {}
 
   nopt@8.1.0:
     dependencies:
