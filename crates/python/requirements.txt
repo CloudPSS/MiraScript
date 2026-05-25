@@ -1,6 +1,6 @@
 maturin>=1.13.1
 black>=24.8.0
 poethepoet>=0.30.0
-typing_extensions>=4.13.2
+typing_extensions>=4.7.1
 pyright>=1.1.409
 astunparse>=1.6.3
