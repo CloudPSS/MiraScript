@@ -46,6 +46,9 @@ coverage/
 *.cpuprofile
 *.heapprofile
 *.heapsnapshot
+*.profraw
+*.profdata
+*.prof
 
 # IDEs and editors
 /.idea
