@@ -38,19 +38,19 @@ jobs:
             !**/*.node
           if-no-files-found: error
 
-      - name: Upload Pages artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: website
-          path: website-build/
-          if-no-files-found: error
-
       - name: Build python sdist
         uses: PyO3/maturin-action@v1
         with:
           command: sdist
           args: --out dist
           working-directory: crates/python
+
+      - name: Upload Pages artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: website
+          path: website-build/
+          if-no-files-found: error
 
       - name: Upload python sdist
         uses: actions/upload-artifact@v7
@@ -90,13 +90,6 @@ jobs:
           cd packages/napi
           pnpm run build --target ${{ matrix.arch }}-apple-darwin
 
-      - name: Upload napi artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: napi-${{ matrix.arch }}-apple-darwin
-          path: packages/napi/dist/*.node
-          if-no-files-found: error
-
       - name: Build python wheel
         uses: PyO3/maturin-action@v1
         with:
@@ -110,6 +103,13 @@ jobs:
           target: ${{ matrix.arch }}-apple-darwin
           args: --release --out dist -i python3.14t
           working-directory: crates/python
+
+      - name: Upload napi artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: napi-${{ matrix.arch }}-apple-darwin
+          path: packages/napi/dist/*.node
+          if-no-files-found: error
 
       - name: Upload python wheel artifact
         uses: actions/upload-artifact@v7
@@ -149,13 +149,6 @@ jobs:
           cd packages/napi
           pnpm run build --target ${{ matrix.arch }}-pc-windows-msvc
 
-      - name: Upload napi artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: napi-${{ matrix.arch }}-pc-windows-msvc
-          path: packages/napi/dist/*.node
-          if-no-files-found: error
-
       - name: Build python wheel
         uses: PyO3/maturin-action@v1
         with:
@@ -169,6 +162,13 @@ jobs:
           target: ${{ matrix.arch }}-pc-windows-msvc
           args: --release --out dist -i python3.14t
           working-directory: crates/python
+
+      - name: Upload napi artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: napi-${{ matrix.arch }}-pc-windows-msvc
+          path: packages/napi/dist/*.node
+          if-no-files-found: error
 
       - name: Upload python wheel artifact
         uses: actions/upload-artifact@v7
@@ -210,13 +210,6 @@ jobs:
           cd packages/napi
           pnpm run build --use-cross --target ${{ matrix.arch }}-unknown-linux-${{ matrix.libc }}
 
-      - name: Upload napi artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: napi-${{ matrix.arch }}-unknown-linux-${{ matrix.libc }}
-          path: packages/napi/dist/*.node
-          if-no-files-found: error
-
       - name: Build python wheel
         uses: PyO3/maturin-action@v1
         with:
@@ -232,6 +225,13 @@ jobs:
           args: --release --out dist -i python3.14t
           working-directory: crates/python
           manylinux: auto
+
+      - name: Upload napi artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: napi-${{ matrix.arch }}-unknown-linux-${{ matrix.libc }}
+          path: packages/napi/dist/*.node
+          if-no-files-found: error
 
       - name: Upload python wheel artifact
         uses: actions/upload-artifact@v7

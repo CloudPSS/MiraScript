@@ -1,3 +1,4 @@
+/* eslint-disable no-useless-assignment */
 import type { VmPrimitive } from '../../vm/index.js';
 const { stringify } = JSON;
 /** 将值转为 JS 字面量 */
