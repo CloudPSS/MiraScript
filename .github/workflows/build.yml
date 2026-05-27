@@ -28,16 +28,6 @@ jobs:
           mv -f packages/website/build/ website-build/
           mv -f packages/playground/dist/ website-build/debug/
 
-      - name: Upload npm package artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: npm-package
-          path: |
-            packages/*/dist/
-            packages/*/lib/
-            !**/*.node
-          if-no-files-found: error
-
       - name: Build python sdist
         uses: PyO3/maturin-action@v1
         with:
@@ -50,6 +40,16 @@ jobs:
         with:
           name: website
           path: website-build/
+          if-no-files-found: error
+
+      - name: Upload npm package artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: npm-package
+          path: |
+            packages/*/dist/
+            packages/*/lib/
+            !**/*.node
           if-no-files-found: error
 
       - name: Upload python sdist
