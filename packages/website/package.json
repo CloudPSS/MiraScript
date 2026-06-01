@@ -27,7 +27,7 @@
   "dependencies": {
     "@docusaurus/core": "3.10.1",
     "@docusaurus/preset-classic": "3.10.1",
-    "@easyops-cn/docusaurus-search-local": "^0.55.1",
+    "@easyops-cn/docusaurus-search-local": "^0.55.2",
     "@mirascript/bindings": "workspace:~",
     "@mirascript/mirascript": "workspace:~",
     "@mirascript/monaco": "workspace:~",

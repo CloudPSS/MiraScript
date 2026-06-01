@@ -1,5 +1,5 @@
 configDependencies:
-  '@cloudpss/pnpm-plugin-config': '~4.0.2'
+  '@cloudpss/pnpm-plugin-config': '~4.0.5'
 
 packages:
   - packages/*
@@ -23,10 +23,3 @@ publicHoistPattern:
   - 'react-dom'
   - 'prism-react-renderer'
   - '@docusaurus/*'
-
-catalog:
-  '@cloudpss/commitlint-config': 4.0.2
-  '@cloudpss/eslint-config': 4.0.2
-  '@cloudpss/lint-staged-config': 4.0.2
-  '@cloudpss/prettier-config': 4.0.2
-  '@cloudpss/tsconfig': 4.0.2

@@ -5,16 +5,16 @@ importers:
   .:
     configDependencies:
       '@cloudpss/pnpm-plugin-config':
-        specifier: ~4.0.2
-        version: 4.0.2
+        specifier: ~4.0.5
+        version: 4.0.5
 
 packages:
-  '@cloudpss/pnpm-plugin-config@4.0.2':
+  '@cloudpss/pnpm-plugin-config@4.0.5':
     resolution:
-      { integrity: sha512-J5raJNuH/d3ashRWgaKAsqDQc5UFSAGKVHnkIU6OBLtEk2TnVlYkI0fy71KoFLr4Gn50dyaGYjgMKVwufSr3dw== }
+      { integrity: sha512-eygk2PerwG7pnq0xDLsdf5zm/ZRcztQEobu9stoIfACLoHl9L9E6qd9pxBC1The8+0dJWNxJHrbbMDlehytCKA== }
 
 snapshots:
-  '@cloudpss/pnpm-plugin-config@4.0.2': {}
+  '@cloudpss/pnpm-plugin-config@4.0.5': {}
 
 ---
 lockfileVersion: '9.0'
@@ -27,41 +27,41 @@ settings:
 catalogs:
   default:
     '@cloudpss/commitlint-config':
-      specifier: 4.0.2
-      version: 4.0.2
+      specifier: ~4.0.5
+      version: 4.0.5
     '@cloudpss/eslint-config':
-      specifier: 4.0.2
-      version: 4.0.2
+      specifier: ~4.0.5
+      version: 4.0.5
     '@cloudpss/lint-staged-config':
-      specifier: 4.0.2
-      version: 4.0.2
+      specifier: ~4.0.5
+      version: 4.0.5
     '@cloudpss/prettier-config':
-      specifier: 4.0.2
-      version: 4.0.2
+      specifier: ~4.0.5
+      version: 4.0.5
     '@cloudpss/tsconfig':
-      specifier: 4.0.2
-      version: 4.0.2
+      specifier: ~4.0.5
+      version: 4.0.5
 
-pnpmfileChecksum: sha256-M9ZM8GBhP7fMLzo/LPnhWgBcqkIrDzi99W14tEjihRQ=
+pnpmfileChecksum: sha256-cuV1UUv3qi3w+EahqwT6FgI1vAXOGG93T1bjk+PdvYs=
 
 importers:
   .:
     devDependencies:
       '@cloudpss/commitlint-config':
         specifier: 'catalog:'
-        version: 4.0.2(@types/node@25.9.1)(conventional-commits-parser@6.4.0)(typescript@6.0.3)
+        version: 4.0.5(@types/node@25.9.1)(conventional-commits-parser@6.4.0)(typescript@6.0.3)
       '@cloudpss/eslint-config':
         specifier: 'catalog:'
-        version: 4.0.2(jiti@2.6.1)(typescript@6.0.3)
+        version: 4.0.5(jiti@2.6.1)(typescript@6.0.3)
       '@cloudpss/lint-staged-config':
         specifier: 'catalog:'
-        version: 4.0.2(jiti@2.6.1)
+        version: 4.0.5(jiti@2.6.1)
       '@cloudpss/prettier-config':
         specifier: 'catalog:'
-        version: 4.0.2
+        version: 4.0.5
       '@cloudpss/tsconfig':
         specifier: 'catalog:'
-        version: 4.0.2(typescript@6.0.3)
+        version: 4.0.5(typescript@6.0.3)
       '@mirascript/cli':
         specifier: workspace:*
         version: link:packages/cli
@@ -294,8 +294,8 @@ importers:
         specifier: 3.10.1
         version: 3.10.1(@algolia/client-search@5.53.0)(@docusaurus/faster@3.10.1)(@mdx-js/react@3.1.1)(@rspack/core@1.7.11)(@swc/core@1.15.40)(@types/react@19.2.15)(esbuild@0.28.0)(postcss@8.5.15)(react-dom@19.2.4)(react@19.2.4)(search-insights@2.17.3)(typescript@6.0.3)
       '@easyops-cn/docusaurus-search-local':
-        specifier: ^0.55.1
-        version: 0.55.1(@docusaurus/faster@3.10.1)(@docusaurus/theme-common@3.10.1)(@mdx-js/react@3.1.1)(@rspack/core@1.7.11)(@swc/core@1.15.40)(esbuild@0.28.0)(postcss@8.5.15)(react-dom@19.2.4)(react@19.2.4)(typescript@6.0.3)
+        specifier: ^0.55.2
+        version: 0.55.2(@docusaurus/faster@3.10.1)(@docusaurus/theme-common@3.10.1)(@mdx-js/react@3.1.1)(@rspack/core@1.7.11)(@swc/core@1.15.40)(esbuild@0.28.0)(postcss@8.5.15)(react-dom@19.2.4)(react@19.2.4)(typescript@6.0.3)
       '@mirascript/bindings':
         specifier: workspace:~
         version: link:../bindings
@@ -1231,25 +1231,25 @@ packages:
     peerDependencies:
       typescript: '>=4.5.2'
 
-  '@cloudpss/commitlint-config@4.0.2':
+  '@cloudpss/commitlint-config@4.0.5':
     resolution:
-      { integrity: sha512-71ldMvSXQrycznOqOrvc4HlPlmnLj/nDCyUWJXgQyQeONG0hEoBsm9mr0zPhVqZRxkZOev5U/yS6Qa+lEnv5rQ== }
+      { integrity: sha512-JXFdXtjPCBneaDFX1oYMvmHhdRoG4Y1JGH4LuQ7Q7tNlr7fXeVVE+QzwoPv4SJoZ2j+UV9l3U+SlnSPds88c4Q== }
 
-  '@cloudpss/eslint-config@4.0.2':
+  '@cloudpss/eslint-config@4.0.5':
     resolution:
-      { integrity: sha512-TkMdgZleYAH51FetGaniHbPIrf1r1KhbNBdnGGXqDIcGs8RadBsgc/JckeEtNRIS7AHxEfd6SI3uCGm226B/AA== }
+      { integrity: sha512-2k8eJm5iuK6zJZDOtc0j82tcDj6ddpLilTqSZeGR3g5jgI/4XMCAZ5inajfQrSVW9gjDTrCdcIn9w70dDWo6eA== }
 
-  '@cloudpss/lint-staged-config@4.0.2':
+  '@cloudpss/lint-staged-config@4.0.5':
     resolution:
-      { integrity: sha512-sIrcTfe+aps7z420pT3Q1zrYQassdyX57i7Yxze39raTKzxSI4TLAbUkz6+JLjmwvBb6+d5/aJZuD3fxsDurNg== }
+      { integrity: sha512-HloQz7J+WblUEzS37k95rKAFcb8fyOaZePkMRo/9jEhqvtk7qdGNBkI6p2pVebyAjgR8MMGtPguxKdtUeaUJ7w== }
 
-  '@cloudpss/prettier-config@4.0.2':
+  '@cloudpss/prettier-config@4.0.5':
     resolution:
-      { integrity: sha512-lh70kg4dFuw8/j3j/XVdBx+oMetDR0jSpqVRzMBZmyathbDyEZwYrofWjxd4D+0BSkP9pyk/mcJR1wa92QTBlw== }
+      { integrity: sha512-EEmfDnCj4fpnBxoSfa//cuydqxrz/R/h+h7ot29wFpfMYh/0RRMavACVfHDASOIRgIEpWyL/SYDQgvB8XvIfpQ== }
 
-  '@cloudpss/tsconfig@4.0.2':
+  '@cloudpss/tsconfig@4.0.5':
     resolution:
-      { integrity: sha512-H+O8Yn4ykuwY1mr6ki5Uw4KUAp6uObUgVC2PaX+9KH2C5cbTX21Ltn5NYYwEzRA4Nm42uR2o55xt7tmkG+XDTw== }
+      { integrity: sha512-vxAfyOFmd7gy3YOfnAH1M3Qdvi6M/0w/GfpK9GTp7flhbCa7fa8jCAiRv4rNy6iZVCR/MZxlAk51/dY38FGJ0w== }
     peerDependencies:
       typescript: '>=5'
 
@@ -1973,9 +1973,9 @@ packages:
     resolution:
       { integrity: sha512-drg76jS6syilOUmVNkyo1c7ZEBPcPuK+aJA7AksM5ZIIbV57DMHCywiCr+uHyv8BE5jUTU98j/H7gVrkHrWW3Q== }
 
-  '@easyops-cn/docusaurus-search-local@0.55.1':
+  '@easyops-cn/docusaurus-search-local@0.55.2':
     resolution:
-      { integrity: sha512-jmBKj1J+tajqNrCvECwKCQYTWwHVZDGApy8lLOYEPe+Dm0/f3Ccdw8BP5/OHNpltr7WDNY2roQXn+TWn2f1kig== }
+      { integrity: sha512-dI/riu+MbDxkAjAHAdc0uahjXRaWKvbIPe9IAmA6AGcUfnVb9xd8s2I/6wEPTOXsAd6eFqn4Yis3WBWh3KUd3g== }
     engines: { node: '>=12' }
     peerDependencies:
       '@docusaurus/theme-common': ^2 || ^3
@@ -5800,10 +5800,10 @@ packages:
     peerDependencies:
       eslint: '>=7.0.0'
 
-  eslint-plugin-jsdoc@62.9.0:
+  eslint-plugin-jsdoc@63.0.0:
     resolution:
-      { integrity: sha512-PY7/X4jrVgoIDncUmITlUqK546Ltmx/Pd4Hdsu4CvSjryQZJI2mEV4vrdMufyTetMiZ5taNSqvK//BTgVUlNkA== }
-    engines: { node: ^20.19.0 || ^22.13.0 || >=24 }
+      { integrity: sha512-eDHuVGyZydr4BKgjXouU7bsn5qaqUlObXBSWRJk3vXcQgXVFnrwWIqpP7uBhRX9NQpk6NIIFyRc6F6omZNi/8g== }
+    engines: { node: ^22.13.0 || >=24 }
     peerDependencies:
       eslint: ^7.0.0 || ^8.0.0 || ^9.0.0 || ^10.0.0
 
@@ -9452,9 +9452,9 @@ packages:
       { integrity: sha512-M/Q0B2cp4K7kynaT/vnED1j8TlLY+Pp7C6Wl2bl/7u/F0mUVwdyOpwomQb8JpYLitHUssAJRmLZdMCGsrx7i+g== }
     engines: { node: '>=18' }
 
-  tinyexec@1.2.3:
+  tinyexec@1.2.4:
     resolution:
-      { integrity: sha512-g62dB+w1/OEFnPvmX0yd/HnetYITOL+1nJW7kitOycOeAvmbWC/nu0fwmmQ/kupNojqExzyC/T++pST/jRJ2mQ== }
+      { integrity: sha512-SHf/r48b7vOrjve9PxJo3MN5v5yuyjHvdUcrQffT3WXMUfnGmHDVbC4k3sHJaJTgZCwpUplIaAo5ANtMyp3YHg== }
     engines: { node: '>=18' }
 
   tinyglobby@0.2.17:
@@ -11081,7 +11081,7 @@ snapshots:
     dependencies:
       typescript: 6.0.3
 
-  '@cloudpss/commitlint-config@4.0.2(@types/node@25.9.1)(conventional-commits-parser@6.4.0)(typescript@6.0.3)':
+  '@cloudpss/commitlint-config@4.0.5(@types/node@25.9.1)(conventional-commits-parser@6.4.0)(typescript@6.0.3)':
     dependencies:
       '@commitlint/cli': 21.0.2(@types/node@25.9.1)(conventional-commits-parser@6.4.0)(typescript@6.0.3)
     transitivePeerDependencies:
@@ -11090,14 +11090,14 @@ snapshots:
       - conventional-commits-parser
       - typescript
 
-  '@cloudpss/eslint-config@4.0.2(jiti@2.6.1)(typescript@6.0.3)':
+  '@cloudpss/eslint-config@4.0.5(jiti@2.6.1)(typescript@6.0.3)':
     dependencies:
-      '@cloudpss/tsconfig': 4.0.2(typescript@6.0.3)
+      '@cloudpss/tsconfig': 4.0.5(typescript@6.0.3)
       '@eslint/compat': 2.1.0(eslint@10.4.1)
       '@eslint/js': 10.0.1(eslint@10.4.1)
       eslint: 10.4.1(jiti@2.6.1)
       eslint-config-prettier: 10.1.8(eslint@10.4.1)
-      eslint-plugin-jsdoc: 62.9.0(eslint@10.4.1)
+      eslint-plugin-jsdoc: 63.0.0(eslint@10.4.1)
       eslint-plugin-unicorn: 64.0.0(eslint@10.4.1)
       typescript-eslint: 8.60.0(eslint@10.4.1)(typescript@6.0.3)
     transitivePeerDependencies:
@@ -11105,7 +11105,7 @@ snapshots:
       - supports-color
       - typescript
 
-  '@cloudpss/lint-staged-config@4.0.2(jiti@2.6.1)':
+  '@cloudpss/lint-staged-config@4.0.5(jiti@2.6.1)':
     dependencies:
       eslint: 10.4.1(jiti@2.6.1)
       husky: 9.1.7
@@ -11115,11 +11115,11 @@ snapshots:
       - jiti
       - supports-color
 
-  '@cloudpss/prettier-config@4.0.2':
+  '@cloudpss/prettier-config@4.0.5':
     dependencies:
       prettier: 3.8.3
 
-  '@cloudpss/tsconfig@4.0.2(typescript@6.0.3)':
+  '@cloudpss/tsconfig@4.0.5(typescript@6.0.3)':
     dependencies:
       typescript: 6.0.3
 
@@ -11139,7 +11139,7 @@ snapshots:
       '@commitlint/load': 21.0.2(@types/node@25.9.1)(typescript@6.0.3)
       '@commitlint/read': 21.0.2(conventional-commits-parser@6.4.0)
       '@commitlint/types': 21.0.1
-      tinyexec: 1.2.3
+      tinyexec: 1.2.4
       yargs: 18.0.0
     transitivePeerDependencies:
       - '@types/node'
@@ -11204,7 +11204,7 @@ snapshots:
       '@commitlint/top-level': 21.0.2
       '@commitlint/types': 21.0.1
       git-raw-commits: 5.0.1(conventional-commits-parser@6.4.0)
-      tinyexec: 1.2.3
+      tinyexec: 1.2.4
     transitivePeerDependencies:
       - conventional-commits-filter
       - conventional-commits-parser
@@ -12521,7 +12521,7 @@ snapshots:
       cssesc: 3.0.0
       immediate: 3.3.0
 
-  '@easyops-cn/docusaurus-search-local@0.55.1(@docusaurus/faster@3.10.1)(@docusaurus/theme-common@3.10.1)(@mdx-js/react@3.1.1)(@rspack/core@1.7.11)(@swc/core@1.15.40)(esbuild@0.28.0)(postcss@8.5.15)(react-dom@19.2.4)(react@19.2.4)(typescript@6.0.3)':
+  '@easyops-cn/docusaurus-search-local@0.55.2(@docusaurus/faster@3.10.1)(@docusaurus/theme-common@3.10.1)(@mdx-js/react@3.1.1)(@rspack/core@1.7.11)(@swc/core@1.15.40)(esbuild@0.28.0)(postcss@8.5.15)(react-dom@19.2.4)(react@19.2.4)(typescript@6.0.3)':
     dependencies:
       '@docusaurus/plugin-content-docs': 3.10.1(@docusaurus/faster@3.10.1)(@mdx-js/react@3.1.1)(@rspack/core@1.7.11)(@swc/core@1.15.40)(debug@4.4.3)(esbuild@0.28.0)(postcss@8.5.15)(react-dom@19.2.4)(react@19.2.4)(typescript@6.0.3)
       '@docusaurus/theme-common': 3.10.1(@docusaurus/plugin-content-docs@3.10.1)(@swc/core@1.15.40)(esbuild@0.28.0)(postcss@8.5.15)(react-dom@19.2.4)(react@19.2.4)
@@ -15618,7 +15618,7 @@ snapshots:
     dependencies:
       eslint: 10.4.1(jiti@2.6.1)
 
-  eslint-plugin-jsdoc@62.9.0(eslint@10.4.1):
+  eslint-plugin-jsdoc@63.0.0(eslint@10.4.1):
     dependencies:
       '@es-joy/jsdoccomment': 0.86.0
       '@es-joy/resolve.exports': 1.2.0
@@ -19112,7 +19112,7 @@ snapshots:
 
   tinyexec@1.2.2: {}
 
-  tinyexec@1.2.3: {}
+  tinyexec@1.2.4: {}
 
   tinyglobby@0.2.17:
     dependencies:
