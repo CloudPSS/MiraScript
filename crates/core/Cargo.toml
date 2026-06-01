@@ -1,6 +1,6 @@
 [package]
 name = "mira-core"
-version = "0.1.62-alpha.23"
+version = "0.1.62"
 edition = "2024"
 publish = false
 
