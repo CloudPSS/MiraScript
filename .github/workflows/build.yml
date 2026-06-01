@@ -90,6 +90,9 @@ jobs:
           cd packages/napi
           pnpm run build --target ${{ matrix.arch }}-apple-darwin
 
+      - uses: actions/setup-python@v6
+        with:
+          python-version: 3.14
       - name: Build python wheel
         uses: PyO3/maturin-action@v1
         with:
@@ -97,6 +100,9 @@ jobs:
           args: --release --out dist
           working-directory: crates/python
 
+      - uses: actions/setup-python@v6
+        with:
+          python-version: 3.14t
       - name: Build free-threaded python wheel
         uses: PyO3/maturin-action@v1
         with:
@@ -149,6 +155,9 @@ jobs:
           cd packages/napi
           pnpm run build --target ${{ matrix.arch }}-pc-windows-msvc
 
+      - uses: actions/setup-python@v6
+        with:
+          python-version: 3.14
       - name: Build python wheel
         uses: PyO3/maturin-action@v1
         with:
@@ -156,6 +165,9 @@ jobs:
           args: --release --out dist
           working-directory: crates/python
 
+      - uses: actions/setup-python@v6
+        with:
+          python-version: 3.14t
       - name: Build free-threaded python wheel
         uses: PyO3/maturin-action@v1
         with:
@@ -179,7 +191,7 @@ jobs:
 
   build-linux:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.arch == 'x86_64' && 'ubuntu-latest' || 'ubuntu-24.04-arm' }}
     strategy:
       matrix:
         arch: [x86_64, aarch64]
