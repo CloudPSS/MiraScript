@@ -191,7 +191,7 @@ jobs:
 
   build-linux:
     needs: build
-    runs-on: ${{ matrix.arch == 'x86_64' && 'ubuntu-latest' || 'ubuntu-24.04-arm' }}
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         arch: [x86_64, aarch64]
@@ -220,7 +220,6 @@ jobs:
       - name: Build napi artifact
         run: |
           cd packages/napi
-          rustup --verbose toolchain add stable-x86_64-unknown-linux-gnu --profile minimal --force-non-host # Make `cross` work on aarch64 runner
           pnpm run build --use-cross --target ${{ matrix.arch }}-unknown-linux-${{ matrix.libc }}
 
       - name: Build python wheel
@@ -229,7 +228,7 @@ jobs:
           target: ${{ matrix.arch }}-unknown-linux-${{ matrix.libc }}
           args: --release --out dist
           working-directory: crates/python
-          manylinux: ${{ matrix.libc == 'gnu' && 'auto' || 'musllinux_1_2' }}
+          manylinux: ${{ matrix.libc == 'gnu' && '2_28' || 'musllinux_1_2' }}
 
       - name: Build free-threaded python wheel
         uses: PyO3/maturin-action@v1
@@ -237,7 +236,7 @@ jobs:
           target: ${{ matrix.arch }}-unknown-linux-${{ matrix.libc }}
           args: --release --out dist -i python3.14t
           working-directory: crates/python
-          manylinux: ${{ matrix.libc == 'gnu' && 'auto' || 'musllinux_1_2' }}
+          manylinux: ${{ matrix.libc == 'gnu' && '2_28' || 'musllinux_1_2' }}
 
       - name: Upload napi artifact
         uses: actions/upload-artifact@v7
