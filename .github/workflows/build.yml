@@ -61,7 +61,7 @@ jobs:
 
   build-macos:
     needs: build
-    runs-on: macos-latest
+    runs-on: ${{ matrix.arch == 'x86_64' && 'macos-15-intel' || 'macos-latest' }}
 
     permissions:
       contents: read
@@ -120,7 +120,7 @@ jobs:
 
   build-windows:
     needs: build
-    runs-on: windows-latest
+    runs-on: ${{ matrix.arch == 'x86_64' && 'windows-latest' || 'windows-11-arm' }}
 
     permissions:
       contents: read
@@ -216,7 +216,7 @@ jobs:
           target: ${{ matrix.arch }}-unknown-linux-${{ matrix.libc }}
           args: --release --out dist
           working-directory: crates/python
-          manylinux: auto
+          manylinux: ${{ matrix.libc == 'gnu' && 'auto' || 'musllinux_1_2' }}
 
       - name: Build free-threaded python wheel
         uses: PyO3/maturin-action@v1
@@ -224,7 +224,7 @@ jobs:
           target: ${{ matrix.arch }}-unknown-linux-${{ matrix.libc }}
           args: --release --out dist -i python3.14t
           working-directory: crates/python
-          manylinux: auto
+          manylinux: ${{ matrix.libc == 'gnu' && 'auto' || 'musllinux_1_2' }}
 
       - name: Upload napi artifact
         uses: actions/upload-artifact@v7
