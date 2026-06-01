@@ -272,7 +272,7 @@ jobs:
       - name: Download napi artifact
         uses: actions/download-artifact@v8
         with:
-          pattern: linux-napi-*
+          pattern: napi-*
           merge-multiple: true
           path: packages/napi/dist/
 
@@ -390,7 +390,9 @@ jobs:
           path: crates/python/dist/
 
       - name: Run tests
+        shell: bash
         run: |
           cd crates/python
+          rm -rf ./mirascript
           pip install --pre --find-links ./dist mirascript
           python -m unittest -b -c tests.black_box
