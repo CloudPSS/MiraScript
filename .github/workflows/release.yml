@@ -186,7 +186,7 @@ jobs:
       contents: read
 
     environment:
-      name: vscode
+      name: ${{ matrix.marketplace.name }}
       url: ${{ matrix.marketplace.url }}
 
     runs-on: ubuntu-latest
@@ -197,7 +197,7 @@ jobs:
           name: vscode-package
 
       - name: Publish to ${{ matrix.marketplace.name }}
-        if: ${{ matrix.marketplace.prerelease  || ! contains(github.ref, '-') }}
+        if: matrix.marketplace.prerelease || ! contains(github.ref, '-')
         run: npx ${{ matrix.marketplace.pkg }} publish -p ${{ secrets.PAT }} -i *.vsix
 
   publish-github:
