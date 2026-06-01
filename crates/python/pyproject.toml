@@ -6,7 +6,7 @@ keywords = ["mirascript", "language", "compiler", "runtime", "vm"]
 readme = "README.md"
 requires-python = ">=3.7"
 authors = [{ name = "CloudPSS", email = "zhangdaming@cloudpss.net" }]
-license = { text = "MIT License" }
+license = "MIT"
 classifiers = [
     "Development Status :: 4 - Beta",
     "Programming Language :: Rust",
@@ -19,9 +19,12 @@ classifiers = [
 ]
 dependencies = ["typing_extensions>=4.7.1"]
 
+[project.scripts]
+mirascript = "mirascript.__main__:main"
+
 [project.urls]
-source = "https://github.com/CloudPSS/MiraScript"
-documentation = "https://mira.cloudpss.net/"
+Repository = "https://github.com/CloudPSS/MiraScript"
+Documentation = "https://mira.cloudpss.net/"
 
 [build-system]
 requires = ["maturin>=1.0,<2.0"]

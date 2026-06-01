@@ -10,6 +10,14 @@ pip install mirascript
 
 ## 基本示例
 
+作为 CLI 工具使用：
+
+```bash
+mirascript -v x=1.3 -e "sin(x) + cos(PI - x)"
+```
+
+在代码中使用：
+
 ```python
 from mirascript import compile
 

@@ -11,15 +11,15 @@ def _compile(
     script: str, mode: InputMode, filename: "str | None" = None
 ) -> "tuple[VmScript | None, list[Diagnostic]]":
     try:
-        bytecode, diagnostics = compile(script, input_mode=mode, filename=filename)
-        return bytecode, diagnostics
+        script, diagnostics = compile(script, input_mode=mode, filename=filename)
+        return script, diagnostics
     except Exception as e:
-        traceback.print_exc()
-        print(f"Error during compilation: {e}")
+        traceback.print_exc(file=sys.stderr)
+        print(f"Error during compilation: {e}", file=sys.stderr)
         sys.exit(2)
 
 
-def _print_debug(script: VmScript, output_file):
+def _print_debug(script: VmScript, output_file: str, variables: dict):
     import ast
 
     unparse = getattr(ast, "unparse", None)
@@ -39,14 +39,14 @@ def _print_debug(script: VmScript, output_file):
             f"{unparse(script.ast)}"
             "\n\n"
             "if __name__ == '__main__':\n"
-            "    result = script()\n"
+            f"    result = script({variables})\n"
             "    print('[OK]', result)"
         )
 
 
-if __name__ == "__main__":
+def main(prog="mirascript") -> int:
     parser = argparse.ArgumentParser(
-        description="Compile and execute a MiraScript file"
+        prog=prog, description="Compile and execute a MiraScript file"
     )
     parser.add_argument(
         "-t",
@@ -71,19 +71,62 @@ if __name__ == "__main__":
     parser.add_argument(
         "script_file",
         nargs="?",
-        default="-",
         help="Path to the MiraScript file to compile (use '-' for stdin)",
     )
+    parser.add_argument(
+        "-v",
+        "--variable",
+        action="append",
+        metavar="NAME=VALUE",
+        help="Define a variable for evaluation (can be used multiple times)",
+    )
     args = parser.parse_args()
+
+    variables = {}
+    if args.variable:
+        has_error = False
+        for var in args.variable:
+            if "=" not in var:
+                print(
+                    f"Error: Invalid variable definition '{var}'. Expected format NAME=VALUE.",
+                    file=sys.stderr,
+                )
+                return 1
+            name, value = var.split("=", 1)
+            try:
+                script, diagnostics = _compile(
+                    f"return ({value});", "script", f"<variable:{name}>"
+                )
+                if script is None:
+                    print(
+                        f"Error: Failed to compile variable '{name}={value}'. Diagnostics:",
+                        *[diag for diag in diagnostics if diag.level == "Error"],
+                        file=sys.stderr,
+                    )
+                    has_error = True
+                    continue
+                variables[name] = script()
+            except Exception as e:
+                print(
+                    f"Error evaluating variable '{name}={value}': {e}", file=sys.stderr
+                )
+                has_error = True
+        if has_error:
+            return 1
+
     if args.eval:
         script = args.eval
-        mode = "script"
+        mode = "template" if args.template else "script"
         script_file = "<eval>"
-        if args.script_file != "-":
+        if args.script_file is not None:
             print(
-                "Warning: --eval option ignores the script_file argument",
+                "Error: --eval option cannot be used with a script file argument.",
                 file=sys.stderr,
             )
+            return 1
+    elif args.script_file is None:
+        parser.print_help()
+        return 1
     elif args.script_file == "-":
         script = sys.stdin.read()
         mode = "template" if args.template else "script"
@@ -91,8 +134,8 @@ if __name__ == "__main__":
     else:
         script_file = Path(args.script_file).resolve()
         if not script_file.is_file():
-            print(f"Error: File '{script_file}' does not exist.")
-            sys.exit(1)
+            print(f"Error: File '{script_file}' does not exist.", file=sys.stderr)
+            return 1
         script = script_file.read_text(encoding="utf-8")
         mode = (
             "template" if args.template or script_file.suffix != ".mira" else "script"
@@ -102,15 +145,22 @@ if __name__ == "__main__":
     result, diagnostics = _compile(script, mode, str(script_file))
 
     for diag in diagnostics:
-        print(diag)
+        print(diag, file=sys.stderr)
 
     if result is None:
-        sys.exit(1)
+        return 1
 
     try:
-        print("[OK]", result())
+        print("[OK]", result(variables))
     except Exception as e:
         traceback.print_exc()
+        return 1
 
     if result and args.generate:
-        _print_debug(result, args.generate)
+        _print_debug(result, args.generate, variables)
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(None))
