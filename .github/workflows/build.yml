@@ -220,6 +220,7 @@ jobs:
       - name: Build napi artifact
         run: |
           cd packages/napi
+          rustup --verbose toolchain add stable-x86_64-unknown-linux-gnu --profile minimal --force-non-host # Make `cross` work on aarch64 runner
           pnpm run build --use-cross --target ${{ matrix.arch }}-unknown-linux-${{ matrix.libc }}
 
       - name: Build python wheel
