@@ -19,6 +19,10 @@ jobs:
       contents: read
       id-token: write
 
+    environment:
+      name: npm
+      url: https://www.npmjs.com/package/@mirascript/mirascript
+
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -98,15 +102,14 @@ jobs:
       contents: read
       id-token: write
 
+    environment:
+      name: PyPI
+      url: https://pypi.org/project/mirascript/
+
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-
-      - name: Install Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: 3.14
 
       - name: Download wheel artifacts
         uses: actions/download-artifact@v8
@@ -167,8 +170,24 @@ jobs:
   publish-vscode:
     needs: build-vscode
 
+    strategy:
+      matrix:
+        marketplace:
+          - name: Open VSX
+            url: https://open-vsx.org/extension/CloudPSS/mirascript
+            pkg: ovsx
+            prerelease: true
+          - name: Visual Studio Marketplace
+            url: https://marketplace.visualstudio.com/items?itemName=CloudPSS.mirascript
+            pkg: '@vscode/vsce'
+            prerelease: false
+
     permissions:
       contents: read
+
+    environment:
+      name: vscode
+      url: ${{ matrix.marketplace.url }}
 
     runs-on: ubuntu-latest
     steps:
@@ -177,40 +196,21 @@ jobs:
         with:
           name: vscode-package
 
-      - name: Publish to Open VSX
-        run: npx ovsx         publish -p ${{ secrets.OVSX_PAT }} -i *.vsix
-
-      - name: Publish to Visual Studio Marketplace
-        # The VS Marketplace doesn't support prerelease versions
-        if: "! contains(github.ref, '-')"
-        run: npx @vscode/vsce publish -p ${{ secrets.VSCE_PAT }} -i *.vsix
+      - name: Publish to ${{ matrix.marketplace.name }}
+        if: ${{ matrix.marketplace.prerelease  || ! contains(github.ref, '-') }}
+        run: npx ${{ matrix.marketplace.pkg }} publish -p ${{ secrets.PAT }} -i *.vsix
 
   publish-github:
-    needs: [build, build-vscode]
+    needs: build
 
     permissions:
       contents: write
 
     runs-on: ubuntu-latest
+
     steps:
-      - name: Download website artifact
-        uses: actions/download-artifact@v8
-        with:
-          name: website
-          path: website/
-
-      - name: Pack website release artifact
-        run: |
-          tar -czf website.tar.gz -C website .
-
-      - name: Download vscode artifact
-        uses: actions/download-artifact@v8
-        with:
-          name: vscode-package
-
-      - name: Publish to GitHub Releases
+      - name: Create GitHub Release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: '*.vsix,website.tar.gz'
           generateReleaseNotes: true
           prerelease: ${{ contains(github.ref, '-') }}
