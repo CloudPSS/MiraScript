@@ -315,7 +315,7 @@ jobs:
         node:
           - 'lts/-1'
           - 'lts/*'
-          - 'latest'
+          # - 'latest' # https://github.com/bcoe/c8/pull/578
     runs-on: ${{ matrix.os }}
 
     permissions:
@@ -365,6 +365,11 @@ jobs:
         include:
           - os: windows-latest
             python: '3.7'
+          - os: windows-11-arm
+            python: '3.11'
+        exclude:
+          - os: windows-11-arm
+            python: '3.8'
     runs-on: ${{ matrix.os }}
 
     permissions:
