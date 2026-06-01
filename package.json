@@ -2,7 +2,7 @@
   "name": "mirascript",
   "version": "0.1.62-alpha.23",
   "private": true,
-  "packageManager": "pnpm@11.3.0",
+  "packageManager": "pnpm@11.5.0",
   "type": "module",
   "engines": {
     "node": ">= 20"

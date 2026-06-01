@@ -38,7 +38,7 @@
     "remark-directive": "^4.0.0",
     "remark-extended-table": "^2.0.3",
     "remark-gfm": "^4.0.1",
-    "remark-ins": "^1.2.4",
+    "remark-ins": "^1.2.5",
     "remark-join-cjk-lines": "^1.0.15"
   },
   "devDependencies": {

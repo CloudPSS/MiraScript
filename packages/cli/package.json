@@ -39,11 +39,11 @@
     "clean": "rimraf dist"
   },
   "dependencies": {
-    "@commander-js/extra-typings": "^14.0.0",
+    "@commander-js/extra-typings": "^15.0.0",
     "@mirascript/bindings": "workspace:~",
     "@mirascript/mirascript": "workspace:~",
     "ansi-styles": "^6.2.3",
-    "commander": "^14.0.3",
+    "commander": "^15.0.0",
     "supports-color": "^10.2.2"
   },
   "devDependencies": {
