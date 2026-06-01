@@ -392,5 +392,5 @@ jobs:
       - name: Run tests
         run: |
           cd crates/python
-          pip install --find-links ./dist mirascript
+          pip install --pre --find-links ./dist mirascript
           python -m unittest -b -c tests.black_box
