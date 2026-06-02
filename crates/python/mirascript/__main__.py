@@ -3,7 +3,6 @@ import sys
 import argparse
 import traceback
 
-from .vm.types.context import VmContext
 from .compiler import compile, InputMode, VmScript, Diagnostic
 
 
@@ -48,6 +47,8 @@ def main(prog="mirascript") -> int:
     parser = argparse.ArgumentParser(
         prog=prog, description="Compile and execute a MiraScript file"
     )
+    if parser.prog == "__main__.py" and __name__ == "__main__":
+        parser.prog = "python -m mirascript"
     parser.add_argument(
         "-t",
         "--template",
