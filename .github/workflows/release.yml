@@ -31,7 +31,7 @@ jobs:
       - name: Install
         uses: ./.github/actions/install
         with:
-          ALIYUN_NPM_TOKEN: ${{ secrets.ALIYUN_NPM_TOKEN }}
+          skip-pnpm-install: true
 
       - name: Download npm package artifact
         uses: actions/download-artifact@v8

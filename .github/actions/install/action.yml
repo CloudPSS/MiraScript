@@ -4,11 +4,15 @@ description: Install all required tools and dependencies for building and testin
 inputs:
   ALIYUN_NPM_TOKEN:
     description: 'The npm token for aliyun registry, used for installing dependencies with `@private/` scope.'
-    required: true
+    required: false
   pnpm-args:
     description: 'Directly pass args to pnpm'
     required: false
     default: '--frozen-lockfile'
+  skip-pnpm-install:
+    description: 'Whether to skip npm install step. Default to false.'
+    required: false
+    default: 'false'
   node-version:
     description: 'The Node.js version to use. Default to the version specified in .nvmrc or package.json.'
     required: false
@@ -24,6 +28,7 @@ runs:
   using: 'composite'
   steps:
     - name: Set private token
+      if: ${{ inputs.ALIYUN_NPM_TOKEN }}
       shell: bash
       run: |
         npm config set -L project '//packages.aliyun.com/60c179fc44816b8ed233a8bb/npm/npm-registry/:_authToken' '${{ inputs.ALIYUN_NPM_TOKEN }}'
@@ -34,9 +39,10 @@ runs:
         targets: ${{ inputs.rust-targets }}
 
     - name: Setup tools
+      if: ${{ inputs.tools }}
       uses: taiki-e/install-action@v2
       with:
-        tool: wasm-bindgen wasm-pack ${{ inputs.tools }}
+        tool: ${{ inputs.tools }}
 
     - name: Setup pnpm
       uses: pnpm/action-setup@v6
@@ -51,4 +57,5 @@ runs:
 
     - name: Install dependencies
       shell: bash
-      run: pnpm install ${{ inputs.pnpm-args }}
+      if: ${{ inputs.skip-pnpm-install == 'false' }}
+      run: pnpm ci ${{ inputs.pnpm-args }}
