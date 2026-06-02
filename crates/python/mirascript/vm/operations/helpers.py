@@ -3,7 +3,7 @@ from typing_extensions import Callable, Mapping, Any
 
 from ...helpers.types import is_vm_const, is_vm_context
 from ...helpers.constants import kVmScript
-from ..types.context import VmContext, VmSharedContext
+from ..types.context import VmContext, VmContextLike, VmSharedContext
 from ..types.module import VmModule
 from ..types.types import VmAny, VmConst, VmRecord, VmValue
 from ..types.function import VmFunction, vm_function
@@ -133,7 +133,7 @@ def Upvalue(value: "VmAny") -> "VmValue":
     return value  # type: ignore
 
 
-def Context(context: "VmContext | None" = None) -> VmContext:
+def Context(context: "VmContextLike | None" = None) -> VmContext:
     if context is None:
         return VmSharedContext
     if not is_vm_context(context):

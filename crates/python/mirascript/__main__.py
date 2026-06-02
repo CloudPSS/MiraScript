@@ -3,14 +3,15 @@ import sys
 import argparse
 import traceback
 
+from .vm.types.types import VmValue
 from .compiler import compile, InputMode, VmScript, Diagnostic
 
 
 def _compile(
-    script: str, mode: InputMode, filename: "str | None" = None
+    code: str, mode: InputMode, filename: "str | None" = None
 ) -> "tuple[VmScript | None, list[Diagnostic]]":
     try:
-        script, diagnostics = compile(script, input_mode=mode, filename=filename)
+        script, diagnostics = compile(code, input_mode=mode, filename=filename)
         return script, diagnostics
     except Exception as e:
         traceback.print_exc(file=sys.stderr)
@@ -43,7 +44,7 @@ def _print_debug(script: VmScript, output_file: str, variables: dict):
         )
 
 
-def main(prog="mirascript") -> int:
+def main(prog: "str | None" = "mirascript") -> int:
     parser = argparse.ArgumentParser(
         prog=prog, description="Compile and execute a MiraScript file"
     )
@@ -83,7 +84,7 @@ def main(prog="mirascript") -> int:
     )
     args = parser.parse_args()
 
-    variables = {}
+    variables: "dict[str, VmValue]" = {}
     if args.variable:
         has_error = False
         for var in args.variable:

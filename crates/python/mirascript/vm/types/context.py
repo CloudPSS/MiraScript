@@ -1,9 +1,7 @@
 from typing_extensions import (
     Optional,
     Mapping,
-    Dict,
-    Unpack,
-    TypedDict,
+    TypeAlias,
 )
 
 from .types import VmValue
@@ -25,12 +23,15 @@ def _check_kv(key, value):
         )
 
 
-class VmContext(Mapping[str, VmValue]):
+VmContextLike: TypeAlias = Mapping[str, VmValue]
+
+
+class VmContext(VmContextLike):
     """Mirascript 虚拟机上下文，提供全局变量访问接口"""
 
     def __init__(
         self,
-        values: Optional[Mapping[str, VmValue]] = None,
+        values: Optional[VmContextLike] = None,
         no_defaults: bool = False,
         **kwargs: VmValue,
     ):
@@ -42,7 +43,7 @@ class VmContext(Mapping[str, VmValue]):
             self._checked_merge(values)
         self._checked_merge(kwargs)
 
-    def _checked_merge(self, other: Mapping[str, VmValue]):
+    def _checked_merge(self, other: VmContextLike):
         for key, value in other.items():
             _check_kv(key, value)
         self._data.update(other)

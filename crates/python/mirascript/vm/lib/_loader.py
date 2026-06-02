@@ -1,7 +1,8 @@
 from inspect import ismodule
+from typing import cast
 
 from ..types.context import VmSharedContext
-from ..types.types import Uninitialized
+from ..types.types import Uninitialized, VmValue
 from ...helpers import types as checker
 from .. import types
 from . import vm_global
@@ -22,7 +23,7 @@ for name in dir(vm_global):
         continue
     if hasattr(checker, name) and getattr(checker, name) == value:
         continue
-    VmSharedContext[name] = wrap_entry(name, value, "global")
+    VmSharedContext[name] = wrap_entry(name, cast(VmValue, value), "global")
 
 
 lib = vm_global

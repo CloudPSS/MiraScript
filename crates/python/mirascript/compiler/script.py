@@ -2,14 +2,14 @@ from typing_extensions import Protocol
 from ast import Module
 
 from ..helpers.constants import kVmScript
-from ..vm.types.context import VmContext
+from ..vm.types.context import VmContextLike
 from ..vm.types.types import VmValue
 
 
 class VmScriptLike(Protocol):
     """A protocol representing a callable object that can be executed with an optional global context."""
 
-    def __call__(self, global_ctx: "VmContext | None" = None) -> VmValue: ...
+    def __call__(self, global_ctx: "VmContextLike | None" = None) -> VmValue: ...
 
 
 class VmScript(VmScriptLike):
@@ -30,7 +30,7 @@ def wrap_vm_script(
     if isinstance(func, Exception):
         err = func
 
-        def error_func(global_ctx: "VmContext | None" = None, *args, **kwargs):
+        def error_func(global_ctx: "VmContextLike | None" = None, *args, **kwargs):
             raise err
 
         func = error_func
