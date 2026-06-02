@@ -3,6 +3,7 @@ import pkg from '#package.json' with { type: 'json' };
 
 import './commands/run.js';
 import './commands/format.js';
+import './commands/repl.js';
 
 let p = program;
 const binName = Object.keys(pkg.bin)[0];
