@@ -1,5 +1,4 @@
 import styles from 'ansi-styles';
-import supportsColor from 'supports-color';
 import type { VmAny, VmRecord } from '@mirascript/mirascript';
 import {
     serialize,
@@ -9,8 +8,7 @@ import {
     type SerializeOptions,
     operations,
 } from '@mirascript/mirascript/subtle';
-
-const noColor = !supportsColor.stdout;
+import { noColor } from './color.js';
 
 const options: Partial<SerializeOptions> = {
     maxDepth: 3,

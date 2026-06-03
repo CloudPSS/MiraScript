@@ -1,10 +1,20 @@
 import { start, Recoverable } from 'node:repl';
+import { homedir } from 'node:os';
+import path from 'node:path';
 import { callbackify } from 'node:util';
 import { once } from 'node:events';
 import { isNativeError } from 'node:util/types';
-import { compile, CompileError, createVmContext, type TranspileOptions, type VmAny } from '@mirascript/mirascript';
-import { print } from './print.js';
+import {
+    compile,
+    CompileError,
+    createVmContext,
+    type TranspileOptions,
+    type VmAny,
+    type VmValue,
+} from '@mirascript/mirascript';
 import { DiagnosticCode, constants } from '@mirascript/mirascript/subtle';
+import { print } from './print.js';
+import { noColor } from './color.js';
 
 /** 检查错误 */
 function throwRecoverableError(error: unknown): never {
@@ -14,6 +24,8 @@ function throwRecoverableError(error: unknown): never {
         error.message.includes(DiagnosticCode[DiagnosticCode.MissingCloseBracket]) ||
         error.message.includes(DiagnosticCode[DiagnosticCode.MissingCloseParen]) ||
         error.message.includes(DiagnosticCode[DiagnosticCode.UnterminatedInterpolation]) ||
+        error.message.includes(DiagnosticCode[DiagnosticCode.ExpressionExpected]) ||
+        error.message.includes(DiagnosticCode[DiagnosticCode.PatternExpected]) ||
         error.message.includes(DiagnosticCode[DiagnosticCode.UnterminatedString]) ||
         error.message.includes(DiagnosticCode[DiagnosticCode.MissingSemicolon])
     ) {
@@ -26,10 +38,28 @@ const REG_BINDING = new RegExp(
     String.raw`^\s*(?:const|let|let\s+mut)\s+(${constants.REG_IDENTIFIER.source})\s*=\s*`,
     'u',
 );
+const REG_MODULE = new RegExp(String.raw`^\s*mod\s+(${constants.REG_IDENTIFIER.source})\s*\{`, 'u');
+
 /** 启动 REPL */
 export async function startRepl(): Promise<void> {
-    const context: Record<string, VmAny> = Object.create(null);
-    const vmContext = createVmContext(context);
+    let lastResult: VmValue = null;
+    const context = new Map<string, VmValue>();
+    const vmContext = createVmContext(
+        (key) => {
+            if (context.has(key)) {
+                return context.get(key)!;
+            }
+            if (key === '$') {
+                return lastResult;
+            }
+            return undefined;
+        },
+        () => {
+            const keys = [...context.keys()];
+            keys.push('$');
+            return keys;
+        },
+    );
     const evaluator = async (cmd: string, fileName: string): Promise<VmAny> => {
         const opt: TranspileOptions = { input_mode: 'Script', fileName, pretty: true, sourceMap: true };
         try {
@@ -39,18 +69,29 @@ export async function startRepl(): Promise<void> {
                 const varName = bind[1]!;
                 const script = await compile(`${code};return ${varName};`, opt);
                 const result = script(vmContext);
-                context[varName] = result;
+                context.set(varName, result);
                 return result;
-            } else {
-                const script = await compile(code, opt);
-                return script(vmContext);
             }
+            const mod = REG_MODULE.exec(code);
+            if (mod) {
+                const modName = mod[1]!;
+                const script = await compile(`${code};return ${modName};`, opt);
+                const result = script(vmContext);
+                context.set(modName, result);
+                return result;
+            }
+
+            const script = await compile(code, opt);
+            const result = script(vmContext);
+            lastResult = result;
+            return result;
         } catch (err) {
             throwRecoverableError(err);
         }
     };
     const repl = start({
-        prompt: '> ',
+        useColors: !noColor,
+        useGlobal: false,
         eval: callbackify(async (cmd: string, _: unknown, fileName: string) => evaluator(cmd, fileName)),
         completer: (line: string) => {
             const lastToken = line.split(/[\s.]+/).pop() ?? '';
@@ -66,10 +107,16 @@ export async function startRepl(): Promise<void> {
             return print(value);
         },
     });
+    repl.setupHistory({
+        filePath: path.resolve(homedir(), '.mirascript_repl_history'),
+        removeHistoryDuplicates: true,
+        onHistoryFileLoaded: (err) => {
+            // Ignore error if history file does not exist
+        },
+    });
     repl.on('reset', () => {
-        for (const k of Object.keys(context)) {
-            delete context[k];
-        }
+        context.clear();
+        lastResult = null;
     });
     await once(repl, 'exit');
 }
