@@ -164,7 +164,7 @@ def assert_deep_equal(
     *,
     nan_equal: bool = True,
     signed_zero_distinct: bool = True,
-    message: str = None,
+    message: "str | None" = None,
 ) -> None:
     """
     Assert that deep_equal(a, b) is True. Raises AssertionError otherwise.
@@ -185,7 +185,7 @@ def assert_not_deep_equal(
     *,
     nan_equal: bool = True,
     signed_zero_distinct: bool = True,
-    message: str = None,
+    message: "str | None" = None,
 ) -> None:
     """
     Assert that deep_equal(a, b) is False. Raises AssertionError otherwise.
