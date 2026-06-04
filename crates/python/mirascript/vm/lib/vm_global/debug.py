@@ -2,24 +2,28 @@ import sys
 from ...operations import ToString
 from ...error import VmError
 
-DEBUG = "\033[44;37m"
-PANIC = "\033[41;37m"
-RESET = "\033[0m"
+_DEBUG = "\033[44;37m"
+_PANIC = "\033[41;37m"
+_RESET = "\033[0m"
 
-DEBUG_PREFIX = f"{DEBUG} MiraScript {RESET}" if sys.stdout.isatty() else "[MiraScript]"
-PANIC_PREFIX = f"{PANIC} MiraScript {RESET}" if sys.stdout.isatty() else "[MiraScript]"
+_DEBUG_PREFIX = (
+    f"{_DEBUG} MiraScript {_RESET}" if sys.stdout.isatty() else "[MiraScript]"
+)
+_PANIC_PREFIX = (
+    f"{_PANIC} MiraScript {_RESET}" if sys.stdout.isatty() else "[MiraScript]"
+)
 
 
 def debug_print(*args):
-    print(DEBUG_PREFIX, *args)
+    print(_DEBUG_PREFIX, *args)
 
 
-def panic(*msg):
+def panic(msg=None):
     if not msg:
-        print(PANIC_PREFIX)
+        print(_PANIC_PREFIX)
     else:
-        print(PANIC_PREFIX, *msg)
+        print(_PANIC_PREFIX, msg)
 
-    error = f"panic: {ToString(msg)}" if len(msg) > 0 else "panic"
+    error = f"panic: {ToString(msg)}" if msg is not None else "panic"
 
     raise VmError("MiraScript panic", error)

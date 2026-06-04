@@ -37,3 +37,6 @@ if has_extern {
 }
 t_eq(to_string(fn { }), "<function>");
 t_throws(fn { to_string() });
+
+// Allow more arguments, but ignore them
+t_eq(to_string("Hello, World!", 'x', 2), "Hello, World!");

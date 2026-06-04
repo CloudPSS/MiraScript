@@ -88,3 +88,6 @@ if has_extern {
   t_throws(fn { to_number(v_extern) });
 }
 t_throws(fn { to_number() });
+
+// Allow more arguments, but ignore them
+t_eq(to_number("Hello, World!", 'x', 2), 'x');

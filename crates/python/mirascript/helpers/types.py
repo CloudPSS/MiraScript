@@ -24,7 +24,7 @@ def is_vm_context(context) -> "TypeIs[VmContext]":
 
 def is_vm_function(value) -> "TypeIs[VmFunction]":
     """检查是否为 Mirascript 函数"""
-    return callable(value) and getattr(value, kVmFunction, False)
+    return callable(value) and getattr(value, kVmFunction, None) is not None
 
 
 def is_vm_module(value) -> "TypeIs[VmModule]":
