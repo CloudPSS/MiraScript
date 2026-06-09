@@ -1,5 +1,5 @@
 import { VmError } from '../../helpers/error.js';
-import { isVmArray, isVmRecord, isVmWrapper } from '../../helpers/types.js';
+import { getVmType, isVmArray, isVmRecord } from '../../helpers/types.js';
 import type { VmTypeName, VmAny, VmArray, VmRecord, VmValue } from '../types/index.js';
 import { $AssertInit } from './common.js';
 
@@ -7,10 +7,7 @@ import { $AssertInit } from './common.js';
 export function $Type(value: VmAny): VmTypeName {
     // 允许未初始化值通过
     if (value == null) return 'nil';
-    if (isVmWrapper(value)) return value.type;
-    if (isVmArray(value)) return 'array';
-    if (typeof value == 'object') return 'record';
-    return typeof value as VmTypeName;
+    return getVmType(value);
 }
 /** 判断值是否为布尔值 */
 export function $IsBoolean(value: VmAny): value is boolean {

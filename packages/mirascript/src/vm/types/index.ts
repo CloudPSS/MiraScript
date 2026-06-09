@@ -72,6 +72,7 @@ export {
     isVmValue,
     isVmWrapper,
     getVmFunctionInfo,
+    getVmType,
 } from '../../helpers/types.js';
 
 export { wrapToVmValue, unwrapFromVmValue } from './boundary.js';

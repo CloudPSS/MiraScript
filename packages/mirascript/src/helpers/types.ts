@@ -12,6 +12,7 @@ import type {
     VmModule,
     VmPrimitive,
     VmRecord,
+    VmTypeName,
     VmValue,
 } from '../vm/types/index.js';
 import type { VmWrapper } from '../vm/types/wrapper.js';
@@ -265,4 +266,18 @@ export function isVmValue(value: unknown, checkDeep: boolean): value is VmValue;
 export function isVmValue(value: unknown, checkDeep = false): value is VmValue {
     if (value === undefined) return false;
     return isVmAny(value, checkDeep);
+}
+
+/** 获取 MiraScript 类型 */
+export function getVmType(value: VmValue): VmTypeName;
+/** 获取 MiraScript 类型 */
+export function getVmType(value: VmAny): VmTypeName | 'uninitialized';
+/** 获取 MiraScript 类型 */
+export function getVmType(value: VmAny): VmTypeName | 'uninitialized' {
+    if (value === undefined) return 'uninitialized';
+    if (value === null) return 'nil';
+    if (isVmWrapper(value)) return value.type;
+    if (isVmArray(value)) return 'array';
+    if (typeof value == 'object') return 'record';
+    return typeof value as VmTypeName;
 }

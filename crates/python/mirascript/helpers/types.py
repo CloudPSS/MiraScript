@@ -134,3 +134,26 @@ def is_vm_value(value, check_deep=False) -> "TypeIs[VmValue]":
     if value is Uninitialized:
         return False
     return is_vm_any(value, check_deep)
+
+
+def get_vm_type(value: "VmAny"):
+    """获取 Mirascript 类型"""
+    if value is Uninitialized:
+        return "uninitialized"
+    if isinstance(value, bool):
+        return "boolean"
+    if isinstance(value, (int, float)):
+        return "number"
+    if isinstance(value, str):
+        return "string"
+    if is_vm_record(value):
+        return "record"
+    if is_vm_array(value):
+        return "array"
+    if is_vm_function(value):
+        return "function"
+    if is_vm_module(value):
+        return "module"
+    if is_vm_extern(value):
+        return "extern"
+    return "unknown"

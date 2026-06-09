@@ -16,6 +16,7 @@ import {
     isVmArrayLikeRecord,
     isVmArrayLikeRecordByEntires,
     isVmArrayLikeRecordByKeys,
+    getVmType,
 } from '@mirascript/mirascript';
 import { DefaultVmContext, lib } from '@mirascript/mirascript/subtle';
 
@@ -206,4 +207,17 @@ test('isVmConst with deep check', async (t) => {
         deep = [deep];
     }
     t.false(isVmConst(deep, true));
+});
+
+test('getVmType', async (t) => {
+    t.is(getVmType(1), 'number');
+    t.is(getVmType('test'), 'string');
+    t.is(getVmType(true), 'boolean');
+    t.is(getVmType(null), 'nil');
+    t.is(getVmType(undefined), 'uninitialized');
+    t.is(getVmType({}), 'record');
+    t.is(getVmType([]), 'array');
+    t.is(getVmType(new VmModule('test', {})), 'module');
+    t.is(getVmType(new VmExtern({})), 'extern');
+    t.is(getVmType((await compile('abs'))()), 'function');
 });

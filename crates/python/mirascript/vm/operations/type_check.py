@@ -1,9 +1,7 @@
 from ...helpers.constants import Uninitialized
 from ...helpers.types import (
+    get_vm_type,
     is_vm_array,
-    is_vm_extern,
-    is_vm_function,
-    is_vm_module,
     is_vm_record,
 )
 from ...helpers.checker import is_number
@@ -14,23 +12,7 @@ from .common import AssertInit
 def Type(val):
     if val is Uninitialized or val is None:
         return "nil"
-    if isinstance(val, bool):
-        return "boolean"
-    if isinstance(val, (int, float)):
-        return "number"
-    if isinstance(val, str):
-        return "string"
-    if is_vm_array(val):
-        return "array"
-    if is_vm_record(val):
-        return "record"
-    if is_vm_extern(val):
-        return "extern"
-    if is_vm_module(val):
-        return "module"
-    if is_vm_function(val):
-        return "function"
-    return type(val).__name__
+    return get_vm_type(val)
 
 
 def IsBoolean(val):
