@@ -122,8 +122,6 @@ def Set(obj, key, val):
     AssertInit(obj)
     AssertInit(val)
     pk = ToString(key)
-    if obj is None:
-        return
     if not is_vm_extern(obj):
         raise VmError(f"`Expected extern object, got {Type(obj)}", None)
 

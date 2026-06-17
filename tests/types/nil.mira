@@ -2,13 +2,19 @@ t_eq(nil, nil);
 
 let n = nil;
 
-n.f = 1;
+t_throws(fn {
+  n.f = 1;
+});
 t_eq(n.f, nil);
 
-n[0] = 1;
+t_throws(fn {
+  n[0] = 1;
+});
 t_eq(n[0], nil);
 
-n[`${ 'x' }`] = 1;
+t_throws(fn {
+  n[`${ 'x' }`] = 1;
+});
 t_eq(n[`${ 'x' }`], nil);
 
 t_false('x' in n);

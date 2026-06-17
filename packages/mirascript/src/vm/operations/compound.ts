@@ -122,7 +122,6 @@ export function $Set(obj: VmAny, key: VmAny, value: VmAny): void {
     $AssertInit(obj);
     $AssertInit(value);
     const pk = $ToString(key);
-    if (obj == null) return;
     if (!isVmExtern(obj)) throw new VmError(`Expected extern, got ${display(obj)}`, undefined);
     obj.set(pk, value);
 }
