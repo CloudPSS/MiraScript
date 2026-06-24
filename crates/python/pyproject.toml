@@ -17,7 +17,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Topic :: Software Development :: Code Generators",
 ]
-dependencies = ["typing_extensions>=4.7.1"]
+dependencies = ["typing-extensions>=4.7.1"]
 
 [project.scripts]
 mirascript = "mirascript.__main__:main"
