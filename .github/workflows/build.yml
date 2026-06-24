@@ -402,4 +402,4 @@ jobs:
           cd crates/python
           rm -rf ./mirascript
           pip install --pre --find-links ./dist mirascript
-          python -m unittest -b -c tests.black_box
+          python -m unittest -b -c tests.black_box -v
