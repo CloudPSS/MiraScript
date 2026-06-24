@@ -17,7 +17,10 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Topic :: Software Development :: Code Generators",
 ]
-dependencies = ["typing-extensions>=4.7.1"]
+dependencies = [
+    "typing-extensions>=4.7.1",
+    "astunparse>=1.6.3; python_version < '3.9'",
+]
 
 [project.scripts]
 mirascript = "mirascript.__main__:main"
@@ -33,10 +36,20 @@ build-backend = "maturin"
 [tool.maturin]
 bindings = "pyo3"
 
+[tool.uv]
+environments = ["python_version >= '3.10'"]
+
+[dependency-groups]
+dev = [
+    "black>=26.5.1",
+    "maturin>=1.14.1",
+    "poethepoet>=0.46.0",
+    "pyright>=1.1.410",
+]
+
 [tool.poe.tasks]
 init = "maturin develop"
 test = "python -m unittest -b -c tests.black_box"
-test37 = "python3.7 -m unittest -b -c tests.black_box"
 format = "black ."
 check = "pyright ."
 debug = { cmd = "python -m mirascript -g debug_output.py", cwd = "${POE_CWD}" }

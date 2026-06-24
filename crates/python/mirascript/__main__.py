@@ -19,7 +19,7 @@ def _compile(
         sys.exit(2)
 
 
-def _print_debug(script: VmScript, output_file: str, variables: dict):
+def _get_unparse():
     import ast
 
     unparse = getattr(ast, "unparse", None)
@@ -33,6 +33,11 @@ def _print_debug(script: VmScript, output_file: str, variables: dict):
             raise ImportError(
                 "Neither 'ast.unparse' nor 'astunparse' is available. Please install 'astunparse' with `pip install astunparse` to enable debug output generation."
             )
+    return unparse
+
+
+def _print_debug(script: VmScript, output_file: str, variables: dict):
+    unparse = _get_unparse()
 
     with open(output_file, "w", encoding="utf-8") as f:
         f.write(
@@ -152,14 +157,14 @@ def main(prog: "str | None" = "mirascript") -> int:
     if result is None:
         return 1
 
+    if result and args.generate:
+        _print_debug(result, args.generate, variables)
+
     try:
         print("[OK]", result(variables))
     except Exception as e:
         traceback.print_exc()
         return 1
-
-    if result and args.generate:
-        _print_debug(result, args.generate, variables)
 
     return 0
 

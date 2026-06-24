@@ -30,29 +30,25 @@ result = script({"x": 1.3})
 1. 初始化环境
 
    ```bash
-   # 配置 Python 虚拟环境
-   python -m venv .venv
-   source .venv/bin/activate # Windows: .venv\Scripts\activate
-   # 安装依赖
-   pip install -r requirements.txt
-   # 安装 bindings 和模块
-   poe init
+   # 安装依赖并安装 bindings 和模块
+   uv sync
+   uv run poe init
    ```
 
 2. 黑盒测试
 
    ```bash
-   poe test
+   uv run poe test
    ```
 
 3. 生成代码并运行
 
    ```bash
-   poe debug <file.mira>
+   uv run poe debug <file.mira>
    ```
 
 4. 格式化
 
    ```bash
-   poe format
+   uv run poe format
    ```
