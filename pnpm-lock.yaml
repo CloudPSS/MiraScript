@@ -245,6 +245,12 @@ importers:
         specifier: ^7.0.15
         version: 7.0.15
     devDependencies:
+      '@types/node':
+        specifier: ^26.0.0
+        version: 26.0.0
+      ava:
+        specifier: ^8.0.1
+        version: 8.0.1(rollup@4.60.1)
       js-yaml:
         specifier: ^5.1.0
         version: 5.1.0
@@ -13073,6 +13079,19 @@ snapshots:
 
   '@leichtgewicht/ip-codec@2.0.5': {}
 
+  '@mapbox/node-pre-gyp@2.0.3':
+    dependencies:
+      consola: 3.4.2
+      detect-libc: 2.1.2
+      https-proxy-agent: 7.0.6
+      node-fetch: 2.7.0
+      nopt: 8.1.0
+      semver: 7.8.5
+      tar: 7.5.16
+    transitivePeerDependencies:
+      - encoding
+      - supports-color
+
   '@mapbox/node-pre-gyp@2.0.3(supports-color@10.2.2)':
     dependencies:
       consola: 3.4.2
@@ -14265,7 +14284,7 @@ snapshots:
 
   '@types/sax@1.2.7':
     dependencies:
-      '@types/node': 17.0.45
+      '@types/node': 26.0.0
 
   '@types/send@0.17.6':
     dependencies:
@@ -14401,6 +14420,25 @@ snapshots:
       eslint-visitor-keys: 5.0.1
 
   '@ungap/structured-clone@1.3.2': {}
+
+  '@vercel/nft@1.10.2(rollup@4.60.1)':
+    dependencies:
+      '@mapbox/node-pre-gyp': 2.0.3
+      '@rollup/pluginutils': 5.4.0(rollup@4.60.1)
+      acorn: 8.17.0
+      acorn-import-attributes: 1.9.5(acorn@8.17.0)
+      async-sema: 3.1.1
+      bindings: 1.5.0
+      estree-walker: 2.0.2
+      glob: 13.0.6
+      graceful-fs: 4.2.11
+      node-gyp-build: 4.8.4
+      picomatch: 4.0.4
+      resolve-from: 5.0.0
+    transitivePeerDependencies:
+      - encoding
+      - rollup
+      - supports-color
 
   '@vercel/nft@1.10.2(rollup@4.60.1)(supports-color@10.2.2)':
     dependencies:
@@ -14651,6 +14689,53 @@ snapshots:
       picocolors: 1.1.1
       postcss: 8.5.15
       postcss-value-parser: 4.2.0
+
+  ava@8.0.1(rollup@4.60.1):
+    dependencies:
+      '@vercel/nft': 1.10.2(rollup@4.60.1)
+      acorn: 8.17.0
+      acorn-walk: 8.3.5
+      ansi-styles: 6.2.3
+      arrgv: 1.0.2
+      arrify: 3.0.0
+      callsites: 4.2.0
+      cbor2: 2.3.0
+      chalk: 5.6.2
+      chunkd: 2.0.1
+      ci-info: 4.4.0
+      ci-parallel-vars: 1.0.1
+      cli-truncate: 6.0.1
+      code-excerpt: 4.0.0
+      common-path-prefix: 3.0.0
+      concordance: 5.0.4
+      currently-unhandled: 0.4.1
+      debug: 4.4.3(supports-color@5.5.0)
+      emittery: 2.0.0
+      figures: 6.1.0
+      globby: 16.2.0
+      ignore-by-default: 2.1.0
+      indent-string: 5.0.0
+      is-plain-object: 5.0.0
+      is-promise: 4.0.0
+      matcher: 6.0.0
+      memoize: 11.0.0
+      ms: 2.1.3
+      p-map: 7.0.4
+      package-config: 5.0.0
+      picomatch: 4.0.4
+      plur: 6.0.0
+      pretty-ms: 9.3.0
+      resolve-cwd: 3.0.0
+      slash: 5.1.0
+      stack-utils: 2.0.6
+      supertap: 3.0.1
+      temp-dir: 3.0.0
+      write-file-atomic: 7.0.1
+      yargs: 18.0.0
+    transitivePeerDependencies:
+      - encoding
+      - rollup
+      - supports-color
 
   ava@8.0.1(rollup@4.60.1)(supports-color@10.2.2):
     dependencies:
@@ -16408,6 +16493,13 @@ snapshots:
     dependencies:
       quick-lru: 5.1.1
       resolve-alpn: 1.2.1
+
+  https-proxy-agent@7.0.6:
+    dependencies:
+      agent-base: 7.1.4
+      debug: 4.4.3(supports-color@5.5.0)
+    transitivePeerDependencies:
+      - supports-color
 
   https-proxy-agent@7.0.6(supports-color@10.2.2):
     dependencies:

@@ -1,0 +1,106 @@
+import test from 'ava';
+import { parse } from '../src/parser.ts';
+import { toJSONSchema } from '../src/json.ts';
+
+test('primitive JSON schemas', (t) => {
+    t.deepEqual(toJSONSchema(parse('string')), { type: 'string' });
+    t.deepEqual(toJSONSchema(parse('number')), { type: 'number' });
+    t.deepEqual(toJSONSchema(parse('boolean')), { type: 'boolean' });
+    t.deepEqual(toJSONSchema(parse('nil')), { type: 'null' });
+    t.deepEqual(toJSONSchema(parse('array')), { type: 'array' });
+    t.deepEqual(toJSONSchema(parse('record')), { type: 'object' });
+    t.deepEqual(toJSONSchema(parse('any')), {});
+    t.deepEqual(toJSONSchema(parse('unknown')), {});
+    t.deepEqual(toJSONSchema(parse('never')), {});
+    t.deepEqual(toJSONSchema(parse('extern')), {});
+});
+
+test('named type JSON schema', (t) => {
+    t.deepEqual(toJSONSchema(parse('MyType')), {});
+});
+
+test('string literal JSON schema', (t) => {
+    t.deepEqual(toJSONSchema(parse('"hello"')), {
+        type: 'string',
+        const: 'hello',
+    });
+});
+
+test('boolean literal JSON schemas', (t) => {
+    t.deepEqual(toJSONSchema(parse('true')), {
+        type: 'boolean',
+        const: true,
+    });
+    t.deepEqual(toJSONSchema(parse('false')), {
+        type: 'boolean',
+        const: false,
+    });
+});
+
+test('literal union JSON schema', (t) => {
+    t.deepEqual(toJSONSchema(parse('"on" | "off"')), {
+        type: 'string',
+        enum: ['on', 'off'],
+    });
+});
+
+test('mixed literal union JSON schema', (t) => {
+    t.deepEqual(toJSONSchema(parse('"on" | true')), {
+        enum: ['on', true],
+    });
+});
+
+test('array JSON schema', (t) => {
+    t.deepEqual(toJSONSchema(parse('number[]')), {
+        type: 'array',
+        items: { type: 'number' },
+    });
+});
+
+test('array generic JSON schema', (t) => {
+    t.deepEqual(toJSONSchema(parse('array<number>')), {
+        type: 'array',
+        items: { type: 'number' },
+    });
+});
+
+test('record generic JSON schema', (t) => {
+    t.deepEqual(toJSONSchema(parse('record<number>')), {
+        type: 'object',
+        additionalProperties: { type: 'number' },
+    });
+});
+
+test('union JSON schema', (t) => {
+    t.deepEqual(toJSONSchema(parse('string | number')), {
+        anyOf: [{ type: 'string' }, { type: 'number' }],
+    });
+});
+
+test('record JSON schema', (t) => {
+    t.deepEqual(toJSONSchema(parse('(a: number, b?: string)')), {
+        type: 'object',
+        properties: {
+            a: { type: 'number' },
+            b: { type: 'string' },
+        },
+        required: ['a'],
+    });
+});
+
+test('empty record JSON schema', (t) => {
+    t.deepEqual(toJSONSchema(parse('()')), {
+        type: 'object',
+        properties: {},
+    });
+});
+
+test('record with string field name JSON schema', (t) => {
+    t.deepEqual(toJSONSchema(parse('("field-name": number)')), {
+        type: 'object',
+        properties: {
+            'field-name': { type: 'number' },
+        },
+        required: ['field-name'],
+    });
+});

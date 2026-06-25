@@ -1,5 +1,5 @@
 import type { JSONSchema7 } from 'json-schema';
-import type { KnownType, NamedType, Type } from './parser.js';
+import type { KnownType, LiteralType, NamedType, Type } from './parser.js';
 
 /** Converts a KnownType or NamedType into JSON Schema */
 function string(type: KnownType | NamedType): JSONSchema7 {
@@ -41,11 +41,21 @@ export function toJSONSchema(type: Type): JSONSchema7 {
         };
     }
     if (type.kind === 'union') {
+        const literals = type.types.filter(isLiteralType);
+        if (literals.length === type.types.length) {
+            return literalEnum(literals);
+        }
         return {
             anyOf: type.types.map(toJSONSchema),
         };
     }
     if (type.kind === 'record') {
+        if (type.value !== undefined) {
+            return {
+                type: 'object',
+                additionalProperties: toJSONSchema(type.value),
+            };
+        }
         const properties: Record<string, JSONSchema7> = {};
         const required: string[] = [];
         for (const field of type.fields) {
@@ -54,12 +64,42 @@ export function toJSONSchema(type: Type): JSONSchema7 {
                 required.push(field.name);
             }
         }
-        return {
+        const schema: JSONSchema7 = {
             type: 'object',
             properties,
-            required: required.length > 0 ? required : undefined,
         };
+        if (required.length > 0) {
+            schema.required = required;
+        }
+        return schema;
+    }
+    if (type.kind === 'literal') {
+        return literal(type);
     }
     (type) satisfies never;
     return {};
+}
+
+/** Converts a LiteralType into JSON Schema */
+function literal(type: LiteralType): JSONSchema7 {
+    if (typeof type.value === 'boolean') {
+        return { type: 'boolean', const: type.value };
+    }
+    return { type: 'string', const: type.value };
+}
+
+/** Converts a union of LiteralTypes into a single JSON Schema enum */
+function literalEnum(types: LiteralType[]): JSONSchema7 {
+    const values = types.map((t) => t.value);
+    const valueTypes = new Set(values.map((v) => (typeof v === 'boolean' ? 'boolean' : 'string')));
+    const schema: JSONSchema7 = { enum: values };
+    if (valueTypes.size === 1) {
+        schema.type = valueTypes.values().next().value!;
+    }
+    return schema;
+}
+
+/** Type guard for LiteralType */
+function isLiteralType(type: Type): type is LiteralType {
+    return typeof type === 'object' && type.kind === 'literal';
 }

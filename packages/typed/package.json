@@ -24,9 +24,12 @@
   },
   "scripts": {
     "build": "peggy src/type.peggy --multi-output ./dist --dts --format es --source-map && tsc",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist",
+    "test": "ava --no-worker-threads"
   },
   "devDependencies": {
+    "@types/node": "^26.0.0",
+    "ava": "^8.0.1",
     "js-yaml": "^5.1.0",
     "peggy": "^5.1.0"
   },

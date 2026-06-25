@@ -64,8 +64,18 @@ PostfixType
 ///////////////////////////////////////////////////////////////////////////////
 
 PrimaryType
-  = Identifier {
-      return named(text());
+  = name:Identifier generic:(_ "<" _ t:Type _ ">")? {
+      if (generic) {
+        const t = generic[3];
+        if (name === 'array') return array(t);
+        if (name === 'record') return { kind: "record", fields: [], value: t };
+      }
+      if (name === 'true') return { kind: "literal", value: true };
+      if (name === 'false') return { kind: "literal", value: false };
+      return named(name);
+    }
+  / lit:String {
+      return { kind: "literal", value: lit };
     }
   / "(" _ t:Type _ ")" {
       return t;
@@ -86,7 +96,7 @@ FieldList
     }
 
 Field
-  = name:Identifier opt:("?"?) _ ":" _ t:Type {
+  = name:FieldName opt:("?"?) _ ":" _ t:Type {
       return {
         name,
         optional: opt !== null,
@@ -99,9 +109,17 @@ Field
       };
     }
 
+FieldName
+  = Identifier
+  / String
+
 ///////////////////////////////////////////////////////////////////////////////
 // Lexer
 ///////////////////////////////////////////////////////////////////////////////
+
+String
+  = '"' @$[^"]* '"'
+  / "'" @$[^']* "'"
 
 Identifier
   = $([a-zA-Z_][a-zA-Z0-9_]*)

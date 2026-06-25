@@ -1,7 +1,15 @@
 import { parse as _parse } from '../dist/type.js';
 
 /** MiraScript type */
-export type Type = KnownType | NamedType | ArrayType | UnionType | RecordType;
+export type Type = KnownType | NamedType | LiteralType | ArrayType | UnionType | RecordType;
+
+/** Literal type in MiraScript */
+export interface LiteralType {
+    /** Tag */
+    kind: 'literal';
+    /** Literal value */
+    value: string | boolean;
+}
 
 /** Known type names in MiraScript */
 export type KnownType =
@@ -41,6 +49,8 @@ export interface RecordType {
     kind: 'record';
     /** Fields in the record */
     fields: RecordField[];
+    /** Value type for record<T> */
+    value?: Type;
 }
 
 /** Record field in MiraScript */
