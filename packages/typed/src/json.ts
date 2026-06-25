@@ -41,13 +41,22 @@ export function toJSONSchema(type: Type): JSONSchema7 {
         };
     }
     if (type.kind === 'union') {
-        const literals = type.types.filter(isLiteralType);
-        if (literals.length === type.types.length) {
-            return literalEnum(literals);
+        const anyOf = [];
+        const literals = [];
+        for (const t of type.types) {
+            if (isLiteralType(t)) {
+                literals.push(t);
+            } else {
+                anyOf.push(toJSONSchema(t));
+            }
         }
-        return {
-            anyOf: type.types.map(toJSONSchema),
-        };
+        if (literals.length > 0) {
+            anyOf.push(literalEnum(literals));
+        }
+        if (anyOf.length === 1) {
+            return anyOf[0]!;
+        }
+        return { anyOf };
     }
     if (type.kind === 'record') {
         if (type.value !== undefined) {

@@ -50,6 +50,15 @@ test('mixed literal union JSON schema', (t) => {
     });
 });
 
+test('mixed union JSON schema', (t) => {
+    t.deepEqual(toJSONSchema(parse('| "private" | "public" | (search: string)')), {
+        anyOf: [
+            { type: 'object', properties: { search: { type: 'string' } }, required: ['search'] },
+            { type: 'string', enum: ['private', 'public'] },
+        ],
+    });
+});
+
 test('array JSON schema', (t) => {
     t.deepEqual(toJSONSchema(parse('number[]')), {
         type: 'array',

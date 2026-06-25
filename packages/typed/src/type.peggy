@@ -21,31 +21,20 @@ function record(fields) {
 }
 
 Start
-  = _ t:Type _ { return t; }
+  = _ @Type _
 
 ///////////////////////////////////////////////////////////////////////////////
 // Type (union)
 ///////////////////////////////////////////////////////////////////////////////
 
 Type
-  = head:UnionType {
-      return head;
-    }
+  = UnionType
 
 UnionType
-  = _ "|" _ first:PostfixType rest:(_ "|" _ PostfixType)* {
-      return union([
-        first,
-        ...rest.map(x => x[3])
-      ]);
+  = _ ( "|" _ )? u:PostfixType|1.., _ "|" _ | {
+      if (u.length === 1) return u[0];
+      return union(u);
     }
-  / first:PostfixType rest:(_ "|" _ PostfixType)+ {
-      return union([
-        first,
-        ...rest.map(x => x[3])
-      ]);
-    }
-  / PostfixType
 
 ///////////////////////////////////////////////////////////////////////////////
 // Array
@@ -64,11 +53,10 @@ PostfixType
 ///////////////////////////////////////////////////////////////////////////////
 
 PrimaryType
-  = name:Identifier generic:(_ "<" _ t:Type _ ">")? {
+  = name:Identifier generic:(_ "<" _ @Type _ ">")? {
       if (generic) {
-        const t = generic[3];
-        if (name === 'array') return array(t);
-        if (name === 'record') return { kind: "record", fields: [], value: t };
+        if (name === 'array') return array(generic);
+        if (name === 'record') return { kind: "record", fields: [], value: generic };
       }
       if (name === 'true') return { kind: "literal", value: true };
       if (name === 'false') return { kind: "literal", value: false };
@@ -77,9 +65,7 @@ PrimaryType
   / lit:String {
       return { kind: "literal", value: lit };
     }
-  / "(" _ t:Type _ ")" {
-      return t;
-    }
+  / "(" _ @Type _ ")"
   / RecordType
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -91,9 +77,7 @@ RecordType
   / "(" _ fields:FieldList _ ")" { return record(fields); }
 
 FieldList
-  = fields:Field|1.., _ "," _ | ( _ "," _ )? {
-      return fields;
-    }
+  = @Field|1.., _ "," _ | ( _ "," _ )?
 
 Field
   = name:FieldName opt:("?"?) _ ":" _ t:Type {
@@ -103,11 +87,7 @@ Field
         type: t
       };
     }
-  / t:Type {
-      return {
-        type: t
-      };
-    }
+  / type:Type { return { type }; }
 
 FieldName
   = Identifier
@@ -117,9 +97,48 @@ FieldName
 // Lexer
 ///////////////////////////////////////////////////////////////////////////////
 
+HexDigit
+  = [0-9a-f]i
+
+EscapeSequence
+  = "\\" char:(['"`\\nrtbfv0$]) {
+    switch (char) {
+      case 'n': return '\n';
+      case 'r': return '\r';
+      case 't': return '\t';
+      case 'b': return '\b';
+      case 'f': return '\f';
+      case 'v': return '\v';
+      case '0': return '\0';
+      default: return char;
+    }
+  } / "\\x" hex:$(HexDigit HexDigit) {
+    const code = parseInt(hex, 16);
+    // Valid ASCII characters are in the range 0x00 to 0x7F.
+    if (code >= 128) throw new Error(`Invalid hex escape sequence: \\x${hex}`);
+    return String.fromCharCode(code);
+  } / "\\u{" hex:$(HexDigit+) "}" {
+    const code = parseInt(hex, 16);
+    // Valid Unicode code points are in the range 0x0000 to 0x10FFFF, not including the surrogate halves (0xD800 to 0xDFFF). 
+    if (code > 0x10FFFF || (code >= 0xD800 && code <= 0xDFFF)) {
+      throw new Error(`Invalid Unicode code point: \\u{${hex}}`);
+    }
+    return String.fromCodePoint(code);
+  }
+
 String
-  = '"' @$[^"]* '"'
-  / "'" @$[^']* "'"
+  = '"' @$[^\\$"]* '"'
+  / "'" @$[^\\$']* "'"
+  / "`" @$[^\\$`]* "`"
+  / '"' parts:( EscapeSequence / $[^\\$"]+ )+ '"' {
+      return parts.join('');
+    }
+  / "'" parts:( EscapeSequence / $[^\\$']+ )+ "'" {
+      return parts.join('');
+    }
+  / "`" parts:( EscapeSequence / $[^\\$`]+ )+ "`" {
+      return parts.join('');
+    }
 
 Identifier
   = $([a-zA-Z_][a-zA-Z0-9_]*)

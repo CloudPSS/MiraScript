@@ -18,12 +18,50 @@ test('string literal type', (t) => {
     t.deepEqual(parse('"hello"'), { kind: 'literal', value: 'hello' });
 });
 
+test('string literal type with escaped characters', (t) => {
+    t.deepEqual(parse(String.raw`'\''`), { kind: 'literal', value: "'" });
+    t.deepEqual(parse('`\\n`'), { kind: 'literal', value: '\n' });
+    t.deepEqual(parse(String.raw`'\"'`), { kind: 'literal', value: '"' });
+    t.deepEqual(parse(String.raw`'\\'`), { kind: 'literal', value: '\\' });
+    t.deepEqual(parse(String.raw`'\n'`), { kind: 'literal', value: '\n' });
+    t.deepEqual(parse(String.raw`'\t'`), { kind: 'literal', value: '\t' });
+    t.deepEqual(parse(String.raw`'\x41'`), { kind: 'literal', value: 'A' });
+    t.deepEqual(parse(String.raw`'\u{41}'`), { kind: 'literal', value: 'A' });
+    t.deepEqual(parse(String.raw`'\\u{41}'`), { kind: 'literal', value: String.raw`\u{41}` });
+    t.deepEqual(parse(String.raw`"hello\nworld"`), { kind: 'literal', value: 'hello\nworld' });
+    t.deepEqual(parse(String.raw`"hello\tworld"`), { kind: 'literal', value: 'hello\tworld' });
+    t.deepEqual(parse(String.raw`"hello\\"`), { kind: 'literal', value: 'hello\\' });
+    t.deepEqual(parse(String.raw`"hello\""`), { kind: 'literal', value: 'hello"' });
+    t.deepEqual(parse(String.raw`"hello\x41world"`), { kind: 'literal', value: 'helloAworld' });
+    t.deepEqual(parse(String.raw`"hello\u{41}world"`), { kind: 'literal', value: 'helloAworld' });
+});
+
+test('string literal type with invalid escape sequences', (t) => {
+    t.throws(() => parse(String.raw`'\x4'`));
+    t.throws(() => parse(String.raw`'\u{4'`));
+    t.throws(() => parse(String.raw`'\xff'`));
+    t.throws(() => parse(String.raw`'\u{110000}'`));
+    t.throws(() => parse(String.raw`'\x1'`));
+    t.throws(() => parse(String.raw`'\x1g'`));
+    t.throws(() => parse(String.raw`'\x'`));
+});
+
+test('string literal type with interpolation', (t) => {
+    t.throws(() => parse('`hello ${name}`'));
+    t.throws(() => parse('`hello ${name} world`'));
+    t.throws(() => parse('`hello ${name} world ${age}`'));
+});
+
 test('empty string literal type', (t) => {
     t.deepEqual(parse('""'), { kind: 'literal', value: '' });
 });
 
 test('single-quoted string literal type', (t) => {
     t.deepEqual(parse("'hello'"), { kind: 'literal', value: 'hello' });
+});
+
+test('backtick-quoted string literal type', (t) => {
+    t.deepEqual(parse('`hello`'), { kind: 'literal', value: 'hello' });
 });
 
 test('boolean literal types', (t) => {
@@ -58,6 +96,13 @@ test('union type', (t) => {
     t.deepEqual(parse('string | number'), {
         kind: 'union',
         types: ['string', 'number'],
+    });
+    t.deepEqual(parse('true | false'), {
+        kind: 'union',
+        types: [
+            { kind: 'literal', value: true },
+            { kind: 'literal', value: false },
+        ],
     });
 });
 
