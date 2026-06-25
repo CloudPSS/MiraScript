@@ -206,17 +206,17 @@ impl<'s, 'c> Emitter<'s, 'c> {
             Prefix(op, expression) => {
                 self.declare_expression(expression);
                 if let Expression::Literal(lit) = expression.as_ref() {
-                    self.check_static_operator_usage(op, lit);
+                    self.check_static_operator_usage(op, lit, false);
                 }
             }
             Infix(left, op, right) => {
                 self.declare_expression(left);
                 self.declare_expression(right);
                 if let Expression::Literal(l_lit) = left.as_ref() {
-                    self.check_static_operator_usage(op, l_lit);
+                    self.check_static_operator_usage(op, l_lit, false);
                 }
                 if let Expression::Literal(r_lit) = right.as_ref() {
-                    self.check_static_operator_usage(op, r_lit);
+                    self.check_static_operator_usage(op, r_lit, true);
                 }
             }
             Is(expression, _, pattern) => {

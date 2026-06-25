@@ -182,6 +182,8 @@ pub enum DiagnosticCode {
     NonNumberInArithmetic,
     #[strum(message = "逻辑表达式中不能使用非布尔字面量")]
     NonBooleanInLogical,
+    #[strum(message = "`in` 运算符右侧必须为复合类型")]
+    NonCompoundIn,
     #[strum(message = "字面量不能作为函数调用")]
     LiteralNotCallable,
     #[strum(message = "字面量不能作为记录或数组访问")]

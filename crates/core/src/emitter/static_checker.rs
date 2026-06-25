@@ -11,7 +11,16 @@ impl<'s, 'c> Emitter<'s, 'c> {
         &mut self,
         operator: &TokenRef<'s>,
         literal: &TokenRef<'s>,
+        right: bool,
     ) {
+        if right
+            && (**operator == Keyword::In || **operator == Keyword::NotIn)
+            && **literal != Keyword::Global
+        {
+            self.diagnostics
+                .push(DiagnosticCode::NonCompoundIn, literal.range());
+            return;
+        }
         if (**operator == Keyword::And || **operator == Keyword::Or || **operator == Keyword::Not)
             && !literal.is_boolean_literal()
         {
