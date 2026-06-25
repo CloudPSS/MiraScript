@@ -1,0 +1,36 @@
+{
+  "name": "@mirascript/typed",
+  "version": "0.1.62",
+  "author": "CloudPSS",
+  "license": "MIT",
+  "description": "Parse MiraScript type definitions and generate TypeScript types / JSON schemas.",
+  "keywords": [
+    "mirascript",
+    "json-schema",
+    "types"
+  ],
+  "homepage": "https://mira.cloudpss.net",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CloudPSS/MiraScript.git",
+    "directory": "packages/typed"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "peggy src/type.peggy --multi-output ./dist --dts --format es --source-map && tsc",
+    "clean": "rimraf dist"
+  },
+  "devDependencies": {
+    "js-yaml": "^5.1.0",
+    "peggy": "^5.1.0"
+  },
+  "dependencies": {
+    "@types/json-schema": "^7.0.15"
+  }
+}
