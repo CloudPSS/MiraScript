@@ -113,34 +113,43 @@ pub(super) fn token<'s>(
         }
         .parse_next(i)
     };
-    let cur_token = preceded(
-        space0,
-        alt((
-            token_parser,
-            eof.map(|_| TokenKind::Eof),
-            any.span().map(|range| {
-                TokenKind::unknown(TokenKind::Empty, range, DiagnosticCode::UnknownToken)
-            }),
-        ))
-        .with_span()
-        .map(|(kind, range)| Token::new(kind, range)),
-    )
-    .parse_next(input)?;
+
+    let parse_token = |i: &mut Input<'s>| {
+        preceded(
+            space0,
+            alt((
+                token_parser,
+                eof.map(|_| TokenKind::Eof),
+                any.span().map(|range| {
+                    TokenKind::unknown(TokenKind::Empty, range, DiagnosticCode::UnknownToken)
+                }),
+            ))
+            .with_span()
+            .map(|(kind, range)| Token::new(kind, range)),
+        )
+        .parse_next(i)
+    };
+    let cur_token = parse_token(input)?;
 
     if let Some(prev_token) = prev_token
-        && let TokenKind::Keyword(kw) = prev_token.kind
+        && let TokenKind::Keyword(prev_kw) = prev_token.kind
     {
         if cur_token == Operator::Colon || cur_token == Operator::QuestionColon {
             // `?:` 和 `:` 之前的标识符是字段名称，而不是关键字。
-            prev_token.kind = TokenKind::Identifier(kw.into());
-        } else if kw == Keyword::Type
+            prev_token.kind = TokenKind::Identifier(prev_kw.into());
+        } else if prev_kw == Keyword::Type
             && !(cur_token == Operator::OpenParen || cur_token.is_identifier())
         {
             // `type()` 关键字必须作为类函数调用使用，否则 `type` 是一个普通标识符。
             // 不支持使用 `fn type() {}` 或 `fn type {}` 定义函数，因此 `fn type` 标识符后面不能是 `(`、`{`，
             // 但 `match type {..}` 是合法的，因此 `type` 后面可以跟 `{`，`fn type {}` 在 parser 阶段处理。
             // 预留 type id {} 语法，允许 type 后面直接跟一个标识符作为类型定义。
-            prev_token.kind = TokenKind::Identifier(kw.into());
+            prev_token.kind = TokenKind::Identifier(prev_kw.into());
+        } else if cur_token == Keyword::In && prev_kw == Keyword::Not {
+            // `not in` 是一个关键字
+            prev_token.kind = TokenKind::Keyword(Keyword::NotIn);
+            // 当前的 `in` 关键字已经被合并到 `not in`，因此需要重新解析当前的 token。
+            return parse_token(input);
         }
     }
     Ok(cur_token)

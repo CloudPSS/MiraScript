@@ -35,6 +35,8 @@ pub enum Keyword {
 
     // operators
     In,
+    #[strum(to_string = "not in")]
+    NotIn,
     Is,
     And,
     Or,
@@ -183,6 +185,7 @@ fn test_keyword() {
     assert_eq!(Keyword::from_str("global"), Ok(Keyword::Global));
 
     assert_eq!(Keyword::from_str("in"), Ok(Keyword::In));
+    assert_eq!(Keyword::from_str("not in"), Ok(Keyword::NotIn));
     assert_eq!(Keyword::from_str("is"), Ok(Keyword::Is));
 
     assert_eq!(

@@ -1013,19 +1013,21 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     self.op_if(op.range(), OpCode::IfNil, ret);
                     self.emit_expression(right, ret, brk);
                     self.op_if_end(op.range());
-                } else if *kind == Keyword::In && is_global_expression(right) {
+                } else if (*kind == Keyword::In || *kind == Keyword::NotIn)
+                    && is_global_expression(right)
+                {
                     let left_reg = self.emit_expression_reg(left, brk);
-                    self.op_unary(
-                        op.range.start..right.range().end,
-                        ret,
-                        OpCode::InGlobal,
-                        left_reg,
-                    );
+                    let range = op.range.start..right.range().end;
+                    self.op_unary(range.clone(), ret, OpCode::InGlobal, left_reg);
+                    if *kind == Keyword::NotIn {
+                        self.op_2(range, OpCode::Not, ret, ret);
+                    }
                 } else {
-                    let Some(code) = (match op.kind {
-                        TokenKind::Operator(o) => o.to_infix_op(),
-                        TokenKind::Keyword(Keyword::In) => Some(OpCode::In),
-                        _ => None,
+                    let (Some(code), inv) = (match op.kind {
+                        TokenKind::Operator(o) => (o.to_infix_op(), false),
+                        TokenKind::Keyword(Keyword::In) => (Some(OpCode::In), false),
+                        TokenKind::Keyword(Keyword::NotIn) => (Some(OpCode::In), true),
+                        _ => (None, false),
                     }) else {
                         // Unexpected infix operator
                         return self.unreachable(op, op, file!(), line!());
@@ -1033,6 +1035,9 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     let left_reg = self.emit_expression_reg(left, brk);
                     let right_reg = self.emit_expression_reg(right, brk);
                     self.op_binary(op.range(), ret, code, left_reg, right_reg);
+                    if inv {
+                        self.op_2(op.range(), OpCode::Not, ret, ret);
+                    }
                 }
             }
             Is(expression, _, pattern) => {

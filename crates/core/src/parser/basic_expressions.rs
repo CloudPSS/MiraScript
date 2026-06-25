@@ -396,6 +396,7 @@ fn precedence_of(t: &TokenKind<'_>) -> PrecedenceResult {
         Operator(SpreadRange) | Operator(HalfOpenRange) => (140, false),
         Keyword(Is) => (120, false),
         Keyword(In)
+        | Keyword(NotIn)
         | Operator(Less)
         | Operator(LessEqual)
         | Operator(Greater)

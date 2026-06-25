@@ -1,0 +1,23 @@
+t_true('1' in ['1', '2', '3']);
+t_true(nan in [nan, 1, 2]);
+t_false(nan not in [nan, 1, 2]);
+
+t_true('sin' in global);
+t_false('sin' not in global);
+
+t_true(1 in ('x', 'y', 'z'));
+t_true('1' in ('x', 'y', 'z'));
+
+t_true(0 in [-0]);
+t_true(-0 in [0]);
+t_true('hello' in ['hello', 'world']);
+t_false('Hello' in ['hello', 'world']);
+
+t_true([0, nan, 1, 2] in [[0, nan, 1, 2], [3, 4, 5]]);
+
+// 第二个操作数必须为数组或记录
+t_false('h' in 'hello');
+t_false(true in true);
+t_false(false in false);
+t_false(nan in nan);
+t_true(true not in true);

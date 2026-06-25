@@ -79,6 +79,7 @@ fn record_element<'t, 's: 't, E: Clone + PartialEq + 's, I: Clone + PartialEq + 
             || *last == Keyword::Case
             || *last == Keyword::Else
             || *last == Keyword::In
+            || *last == Keyword::NotIn
             || *last == Keyword::Let
             || *last == Keyword::Const
         {

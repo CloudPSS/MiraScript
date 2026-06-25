@@ -53,6 +53,7 @@ fn array_element<'s, E: Clone + PartialEq + 's, S: Clone + PartialEq + 's>(
             || *last == Keyword::Case
             || *last == Keyword::Else
             || *last == Keyword::In
+            || *last == Keyword::NotIn
             || *last == Keyword::Let
             || *last == Keyword::Const
         {
