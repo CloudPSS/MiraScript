@@ -23,3 +23,10 @@ publicHoistPattern:
   - 'react-dom'
   - 'prism-react-renderer'
   - '@docusaurus/*'
+
+catalog:
+  '@cloudpss/commitlint-config': ~4.0.6
+  '@cloudpss/eslint-config': ~4.0.6
+  '@cloudpss/lint-staged-config': ~4.0.6
+  '@cloudpss/prettier-config': ~4.0.6
+  '@cloudpss/tsconfig': ~4.0.6
