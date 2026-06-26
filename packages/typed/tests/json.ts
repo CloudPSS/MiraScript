@@ -81,6 +81,29 @@ test('record generic JSON schema', (t) => {
     });
 });
 
+test('record key-value JSON schema', (t) => {
+    t.deepEqual(toJSONSchema(parse('record<string, number>')), {
+        type: 'object',
+        additionalProperties: { type: 'number' },
+    });
+    t.deepEqual(toJSONSchema(parse('record<number, boolean>')), {
+        type: 'object',
+        patternProperties: { [`^${REG_NUMBER.source}$`]: { type: 'boolean' } },
+    });
+    t.deepEqual(toJSONSchema(parse('record<"id" | "name", boolean>')), {
+        type: 'object',
+        properties: { id: { type: 'boolean' }, name: { type: 'boolean' } },
+    });
+    t.deepEqual(toJSONSchema(parse('record<"id" | "name" | boolean, boolean>')), {
+        type: 'object',
+        patternProperties: { '^id|name|true|false$': { type: 'boolean' } },
+    });
+    t.deepEqual(toJSONSchema(parse('record<"id", boolean>')), {
+        type: 'object',
+        properties: { id: { type: 'boolean' } },
+    });
+});
+
 test('union JSON schema', (t) => {
     t.deepEqual(toJSONSchema(parse('string | number')), {
         anyOf: [{ type: 'string' }, { type: 'number' }],

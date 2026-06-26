@@ -1,5 +1,30 @@
+{{
+import { KEYWORDS } from '@mirascript/constants';
+
+const BUILT_IN_TYPES = new Set([
+  'any',
+  'unknown',
+  'never',
+
+  'boolean',
+  'number',
+  'string',
+  'record',
+  'array',
+  'extern',
+  'module',
+  'nil',
+]);
+
+const BUILT_IN_LITERALS = new Map([
+  ['true', true],
+  ['false', false],
+])
+}}
+
 {
 function named(name) {
+  if (KEYWORDS.includes(name)) throw new Error(`'${name}' is a reserved keyword`);
   return name;
 }
 
@@ -33,7 +58,8 @@ function string(parts) {
 }
 
 Start
-  = _ @Type _
+  = _ @NamedFunction _
+  / _ @Type _
 
 ///////////////////////////////////////////////////////////////////////////////
 // Type (union)
@@ -65,21 +91,25 @@ PostfixType
 
 PrimaryType
   = FunctionType
-  / name:Identifier generic:(_ "<" _ @TypeParamList _ ">")? {
-      if (name === 'fn') throw new Error("'fn' is a reserved keyword");
+  / name:Identifier generic:(_ "<" _ @TypeArgList _ ">")? {
       if (generic) {
         if (name === 'array') {
           if (generic.length !== 1) throw new Error("'array' expects one generic type parameter");
           return array(generic[0]);
         }
         if (name === 'record') {
-          if (generic.length !== 1) throw new Error("'record' expects one generic type parameter");
-          return { kind: "record", fields: [], value: generic[0] };
+          if (generic.length === 1) return { kind: "record", value: generic[0] };
+          if (generic.length === 2) return { kind: "record", key: generic[0], value: generic[1] };
+          throw new Error("'record' expects one or two generic type parameters");
         }
         throw new Error(`'${name}' is not a generic type`);
       }
-      if (name === 'true') return { kind: "literal", value: true };
-      if (name === 'false') return { kind: "literal", value: false };
+      if (BUILT_IN_LITERALS.has(name)) {
+        return { kind: "literal", value: BUILT_IN_LITERALS.get(name) };
+      }
+      if (BUILT_IN_TYPES.has(name)) {
+        return name;
+      }
       return named(name);
     }
   / lit:String {
@@ -89,20 +119,38 @@ PrimaryType
   / "(" _ @Type _ ")"
   / RecordType
 
+
+///////////////////////////////////////////////////////////////////////////////
+// Generics
+///////////////////////////////////////////////////////////////////////////////
+
+TypeParamList
+  = @Identifier|1.., _ "," _ | ( _ "," _ )?
+
+TypeArgList
+  = @Type|1.., _ "," _ | ( _ "," _ )?
+
 ///////////////////////////////////////////////////////////////////////////////
 // Function
 ///////////////////////////////////////////////////////////////////////////////
 
 FunctionType
-  = "fn" typeParams:(_ "<" _ @TypeParamList _ ">")? _ "(" _ params:FunctionParamList? _ ")" ret:(_ "->" _ @Type)? {
+  = "fn" _ body:FunctionBody { return body; }
+
+NamedFunction
+  = "fn" _ name:Identifier _ body:FunctionBody {
+      if (KEYWORDS.includes(name)) throw new Error(`'${name}' is a reserved keyword`);
+      body.name = name;
+      return body;
+    }
+
+FunctionBody
+  = typeParams:(_ "<" _ @TypeParamList _ ">")? _ "(" _ params:FunctionParamList? _ ")" ret:(_ "->" _ @Type)? {
       const result = { kind: "function", params: params ?? [] };
       if (typeParams !== null) result.typeParams = typeParams.map(name => Symbol(name));
       if (ret !== null) result.returns = ret;
       return result;
     }
-
-TypeParamList
-  = @Identifier|1.., _ "," _ | ( _ "," _ )?
 
 FunctionParamList
   = params:FunctionParam|1.., _ "," _ | ( _ "," _ )? {

@@ -64,14 +64,21 @@ export interface ArrayType {
 }
 
 /** Record type in MiraScript */
-export interface RecordType {
-    /** Tag */
-    kind: 'record';
-    /** Fields in the record */
-    fields: RecordField[];
-    /** Value type for record<T> */
-    value?: Type;
-}
+export type RecordType =
+    | {
+          /** Tag */
+          kind: 'record';
+          /** Fields in the record */
+          fields: RecordField[];
+      }
+    | {
+          /** Tag */
+          kind: 'record';
+          /** Key type for record<K, V> */
+          key?: Type;
+          /** Value type for record<T> or record<K, V> */
+          value: Type;
+      };
 
 /** Record field in MiraScript */
 export interface RecordField {
@@ -87,6 +94,8 @@ export interface RecordField {
 export interface FunctionType {
     /** Tag */
     kind: 'function';
+    /** Function name (only allowed at the top level) */
+    name?: string;
     /** Generic type parameters */
     typeParams?: GenericType[];
     /** Function parameters */
@@ -137,10 +146,14 @@ function resolveGenerics(type: Type, scope = new Map<string, GenericType>()): Ty
         return type;
     }
     if (type.kind === 'record') {
-        for (const field of type.fields) {
-            field.type = resolveGenerics(field.type, scope);
+        if ('fields' in type) {
+            for (const field of type.fields) {
+                field.type = resolveGenerics(field.type, scope);
+            }
+        } else {
+            if (type.key != null) type.key = resolveGenerics(type.key, scope);
+            if (type.value != null) type.value = resolveGenerics(type.value, scope);
         }
-        if (type.value != null) type.value = resolveGenerics(type.value, scope);
         return type;
     }
     if (type.kind === 'literal') {

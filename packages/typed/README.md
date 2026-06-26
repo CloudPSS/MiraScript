@@ -5,7 +5,8 @@
 ## MiraScript 类型定义概览
 
 - 内置类型：`nil` `string` `number` `boolean` `record` `array`
-  - 其中 `record` `array` 支持泛型：`record<fieldType>` `array<elementType>`
+  - `array` 支持泛型：`array<elementType>`
+  - `record` 支持 `record<valueType>` 与 `record<keyType, valueType>`
 - 联合类型：`typeA | typeB`
   - 可选前缀 `|`
 - 数组类型：`type[]`（同 `array<type>`）
@@ -24,6 +25,7 @@
   - rest 参数必须是最后一个参数
   - 支持嵌套，例如函数作为参数：`fn(arg: number, callback: fn(result: string, error: any) -> any)`
   - 支持泛型：`fn<T, U>(arg: T) -> U`，同名泛型参数在不同作用域中为不同 symbol
+  - 顶层函数可携带函数名：`fn fnName<T>(arg: T) -> any`
 - 字符串插值类型：三种引号均支持 `$()` 插值
   - 示例：`` `hello $(type)` ``、`"value: $(string | number)"`
   - `$` 必须紧接 `(`，否则报错；`\$` 可表示字面量 `$`

@@ -191,10 +191,25 @@ test('array generic type', (t) => {
 test('record generic type', (t) => {
     t.deepEqual(parse('record<number>'), {
         kind: 'record',
-        fields: [],
         value: 'number',
     });
-    t.throws(() => parse('record<number, string>'));
+    t.deepEqual(parse('record<string, number>'), {
+        kind: 'record',
+        key: 'string',
+        value: 'number',
+    });
+    t.deepEqual(parse('record<"id" | "name", boolean>'), {
+        kind: 'record',
+        key: {
+            kind: 'union',
+            types: [
+                { kind: 'literal', value: 'id' },
+                { kind: 'literal', value: 'name' },
+            ],
+        },
+        value: 'boolean',
+    });
+    t.throws(() => parse('record<number, string, boolean>'));
 });
 
 test('union type', (t) => {
@@ -387,6 +402,21 @@ test('function type with trailing comma', (t) => {
     });
 });
 
+test('named function type at top level', (t) => {
+    const result = parse('fn fnName<T>(arg: T) -> any') as FunctionType;
+    t.is(result.kind, 'function');
+    t.is(result.name, 'fnName');
+    t.is(result.typeParams?.length, 1);
+    t.is(result.params[0]!.name, 'arg');
+    t.is(result.params[0]!.type, result.typeParams![0]!);
+    t.is(result.returns, 'any');
+});
+
+test('nested function type cannot have a name', (t) => {
+    t.throws(() => parse('fn(callback: fn fnName(x: any) -> any)'));
+    t.throws(() => parse('fn() -> fn fnName() -> any'));
+});
+
 test('function type with omitted param types', (t) => {
     t.deepEqual(parse('fn(a, b: number, c, ..d) -> string'), {
         kind: 'function',
@@ -474,6 +504,7 @@ test('invalid syntax throws', (t) => {
     t.throws(() => parse('fn | "12"'));
     t.throws(() => parse('fn(,)'));
     t.throws(() => parse('any<x>'));
+    t.throws(() => parse('fn fn()'));
 });
 
 test('priority of types', (t) => {
