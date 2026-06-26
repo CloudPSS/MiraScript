@@ -2,6 +2,8 @@
 
 `@mirascript/typed` 提供解析 MiraScript 类型定义的能力。
 
+注意，MiraScript 不支持编译/运行时类型检查，也不能直接在 MiraScript 中使用类型标注。类型定义仅用于文档、代码提示、JSON Schema 生成等场景。
+
 ## MiraScript 类型定义概览
 
 - 内置类型：`nil` `string` `number` `boolean` `record` `array`
