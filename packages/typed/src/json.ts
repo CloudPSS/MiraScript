@@ -127,8 +127,15 @@ function isLiteralType(type: Type): type is LiteralType {
     return typeof type === 'object' && type.kind === 'literal';
 }
 
+/** Options for toJSONSchema */
+export interface ToJSONSchemaOptions {
+    /** When true, object schemas allow arbitrary additional properties */
+    loose?: boolean;
+}
+
 /** Converts a Type object into JSON Schema */
-export function toJSONSchema(type: Type): JSONSchema7 {
+export function toJSONSchema(type: Type, options?: ToJSONSchemaOptions): JSONSchema7 {
+    const loose = options?.loose ?? false;
     if (typeof type === 'symbol') {
         return {};
     }
@@ -138,7 +145,7 @@ export function toJSONSchema(type: Type): JSONSchema7 {
     if (type.kind === 'array') {
         return {
             type: 'array',
-            items: toJSONSchema(type.element),
+            items: toJSONSchema(type.element, options),
         };
     }
     if (type.kind === 'union') {
@@ -148,7 +155,7 @@ export function toJSONSchema(type: Type): JSONSchema7 {
             if (isLiteralType(t)) {
                 literals.push(t);
             } else {
-                anyOf.push(toJSONSchema(t));
+                anyOf.push(toJSONSchema(t, options));
             }
         }
         if (literals.length > 0) {
@@ -164,14 +171,15 @@ export function toJSONSchema(type: Type): JSONSchema7 {
             const properties: Record<string, JSONSchema7> = {};
             const required: string[] = [];
             for (const field of type.fields) {
-                properties[field.name] = toJSONSchema(field.type);
-                if (!field.optional) {
+                properties[field.name] = toJSONSchema(field.type, options);
+                if (!field.optional && !loose) {
                     required.push(field.name);
                 }
             }
             const schema: JSONSchema7 = {
                 type: 'object',
                 properties,
+                additionalProperties: loose,
             };
             if (required.length > 0) {
                 schema.required = required;
@@ -179,7 +187,7 @@ export function toJSONSchema(type: Type): JSONSchema7 {
             return schema;
         }
 
-        const valueSchema = toJSONSchema(type.value);
+        const valueSchema = toJSONSchema(type.value, options);
         if (type.key == null) {
             return {
                 type: 'object',
@@ -188,15 +196,19 @@ export function toJSONSchema(type: Type): JSONSchema7 {
         }
         if (typeof type.key == 'object') {
             if (isLiteralType(type.key)) {
-                return {
+                const schema: JSONSchema7 = {
                     type: 'object',
                     properties: { [String(type.key.value)]: valueSchema },
+                    additionalProperties: loose,
                 };
+                return schema;
             } else if (type.key.kind === 'union' && type.key.types.every(isLiteralType)) {
-                return {
+                const schema: JSONSchema7 = {
                     type: 'object',
                     properties: Object.fromEntries(type.key.types.map((t) => [String(t.value), valueSchema])),
+                    additionalProperties: loose,
                 };
+                return schema;
             }
         }
         const pattern = templatePartPattern(type.key, false);
@@ -206,10 +218,12 @@ export function toJSONSchema(type: Type): JSONSchema7 {
                 additionalProperties: valueSchema,
             };
         }
-        return {
+        const schema: JSONSchema7 = {
             type: 'object',
             patternProperties: { [`^${pattern}$`]: valueSchema },
+            additionalProperties: loose,
         };
+        return schema;
     }
     if (type.kind === 'literal') {
         return literal(type);

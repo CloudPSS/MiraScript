@@ -54,7 +54,12 @@ test('mixed literal union JSON schema', (t) => {
 test('mixed union JSON schema', (t) => {
     t.deepEqual(toJSONSchema(parse('| "private" | "public" | (search: string)')), {
         anyOf: [
-            { type: 'object', properties: { search: { type: 'string' } }, required: ['search'] },
+            {
+                type: 'object',
+                properties: { search: { type: 'string' } },
+                required: ['search'],
+                additionalProperties: false,
+            },
             { type: 'string', enum: ['private', 'public'] },
         ],
     });
@@ -89,18 +94,44 @@ test('record key-value JSON schema', (t) => {
     t.deepEqual(toJSONSchema(parse('record<number, boolean>')), {
         type: 'object',
         patternProperties: { [`^${REG_NUMBER.source}$`]: { type: 'boolean' } },
+        additionalProperties: false,
     });
     t.deepEqual(toJSONSchema(parse('record<"id" | "name", boolean>')), {
         type: 'object',
         properties: { id: { type: 'boolean' }, name: { type: 'boolean' } },
+        additionalProperties: false,
     });
     t.deepEqual(toJSONSchema(parse('record<"id" | "name" | boolean, boolean>')), {
         type: 'object',
         patternProperties: { '^id|name|true|false$': { type: 'boolean' } },
+        additionalProperties: false,
     });
     t.deepEqual(toJSONSchema(parse('record<"id", boolean>')), {
         type: 'object',
         properties: { id: { type: 'boolean' } },
+        additionalProperties: false,
+    });
+});
+
+test('loose mode JSON schema allows arbitrary additional properties', (t) => {
+    t.deepEqual(toJSONSchema(parse('(a: number)'), { loose: true }), {
+        type: 'object',
+        properties: { a: { type: 'number' } },
+        additionalProperties: true,
+    });
+    t.deepEqual(toJSONSchema(parse('record<number>'), { loose: true }), {
+        type: 'object',
+        additionalProperties: { type: 'number' },
+    });
+    t.deepEqual(toJSONSchema(parse('record<number, boolean>'), { loose: true }), {
+        type: 'object',
+        patternProperties: { [`^${REG_NUMBER.source}$`]: { type: 'boolean' } },
+        additionalProperties: true,
+    });
+    t.deepEqual(toJSONSchema(parse('record<"id" | "name", boolean>'), { loose: true }), {
+        type: 'object',
+        properties: { id: { type: 'boolean' }, name: { type: 'boolean' } },
+        additionalProperties: true,
     });
 });
 
@@ -118,6 +149,7 @@ test('record JSON schema', (t) => {
             b: { type: 'string' },
         },
         required: ['a'],
+        additionalProperties: false,
     });
 });
 
@@ -129,6 +161,7 @@ test('record with anonymous field JSON schema', (t) => {
             '1': { type: 'string' },
         },
         required: ['0', '1'],
+        additionalProperties: false,
     });
 });
 
@@ -142,6 +175,7 @@ test('record with mixed anonymous and named fields JSON schema', (t) => {
             '3': { type: 'null' },
         },
         required: ['0', 'b', '3'],
+        additionalProperties: false,
     });
 });
 
@@ -149,6 +183,7 @@ test('empty record JSON schema', (t) => {
     t.deepEqual(toJSONSchema(parse('()')), {
         type: 'object',
         properties: {},
+        additionalProperties: false,
     });
 });
 
@@ -159,6 +194,7 @@ test('record with string field name JSON schema', (t) => {
             'field-name': { type: 'number' },
         },
         required: ['field-name'],
+        additionalProperties: false,
     });
 });
 

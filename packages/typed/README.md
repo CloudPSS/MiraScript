@@ -46,6 +46,10 @@ import { parse, toJSONSchema } from '@mirascript/typed';
 const type = parse('record<number>');
 console.log(toJSONSchema(type));
 // { type: 'object', additionalProperties: { type: 'number' } }
+console.log(toJSONSchema(parse('(a: number)'), { loose: false }));
+// { type: 'object', properties: { a: { type: 'number' } }, required: ['a'], additionalProperties: false }
+console.log(toJSONSchema(parse('(a: number)'), { loose: true }));
+// { type: 'object', properties: { a: { type: 'number' } }, additionalProperties: true }
 ```
 
 ## 常用导出
