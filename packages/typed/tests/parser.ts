@@ -286,11 +286,51 @@ test('function type with trailing comma', (t) => {
         params: [{ name: 'a', type: 'number' }],
         returns: 'string',
     });
+    t.deepEqual(parse('fn(..,)'), {
+        kind: 'function',
+        params: [{ name: '', type: { kind: 'array', element: 'any' }, spread: true }],
+    });
+    t.deepEqual(parse('fn(..rest,) -> string'), {
+        kind: 'function',
+        params: [{ name: 'rest', type: { kind: 'array', element: 'any' }, spread: true }],
+        returns: 'string',
+    });
+});
+
+test('function type with omitted param types', (t) => {
+    t.deepEqual(parse('fn(a, b: number, c, ..d) -> string'), {
+        kind: 'function',
+        params: [
+            { name: 'a', type: 'any' },
+            { name: 'b', type: 'number' },
+            { name: 'c', type: 'any' },
+            { name: 'd', type: { kind: 'array', element: 'any' }, spread: true },
+        ],
+        returns: 'string',
+    });
+});
+
+test('function type with omitted rest param name', (t) => {
+    t.deepEqual(parse('fn(..) -> string'), {
+        kind: 'function',
+        params: [{ name: '', type: { kind: 'array', element: 'any' }, spread: true }],
+        returns: 'string',
+    });
+});
+
+test('rest parameter must be the last parameter', (t) => {
+    t.throws(() => parse('fn(..a, b) -> string'));
+    t.throws(() => parse('fn(a, ..b, c) -> string'));
+    t.throws(() => parse('fn(..a, ..b) -> string'));
 });
 
 test('invalid syntax throws', (t) => {
     t.throws(() => parse(''));
     t.throws(() => parse('number['));
+    t.throws(() => parse('fn'));
+    t.throws(() => parse('fn | "12"'));
+    t.throws(() => parse('fn(,)'));
+    t.throws(() => parse('any<x>'));
 });
 
 test('priority of types', (t) => {

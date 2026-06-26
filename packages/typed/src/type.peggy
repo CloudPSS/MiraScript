@@ -54,9 +54,11 @@ PostfixType
 PrimaryType
   = FunctionType
   / name:Identifier generic:(_ "<" _ @Type _ ">")? {
+      if (name === 'fn') throw new Error("'fn' is a reserved keyword");
       if (generic) {
         if (name === 'array') return array(generic);
         if (name === 'record') return { kind: "record", fields: [], value: generic };
+        throw new Error(`'${name}' is not a generic type`);
       }
       if (name === 'true') return { kind: "literal", value: true };
       if (name === 'false') return { kind: "literal", value: false };
@@ -73,20 +75,30 @@ PrimaryType
 ///////////////////////////////////////////////////////////////////////////////
 
 FunctionType
-  = "fn" _ "(" _ params:FunctionParamList _ ")" ret:(_ "->" _ @Type)? {
-      const result = { kind: "function", params };
+  = "fn" _ "(" _ params:FunctionParamList? _ ")" ret:(_ "->" _ @Type)? {
+      const result = { kind: "function", params: params ?? [] };
       if (ret !== null) result.returns = ret;
       return result;
     }
 
 FunctionParamList
-  = @FunctionParam|.., _ "," _ | ( _ "," _ )?
+  = params:FunctionParam|1.., _ "," _ | ( _ "," _ )? {
+      for (let i = 0; i < params.length - 1; i++) {
+        if (params[i].spread) throw new Error("Rest parameter must be last");
+      }
+      return params;
+    }
 
 FunctionParam
-  = spread:".."? name:Identifier _ ":" _ t:Type {
-      const param = { name, type: t };
-      if (spread !== null) param.spread = true;
-      return param;
+  = spread:".." name:Identifier? _ t:(":" _ @Type)? {
+      return {
+        name: name ?? "",
+        spread: true,
+        type: t ?? { kind: "array", element: "any" }
+      }
+    }
+  / name:Identifier _ t:(":" _ @Type)? {
+      return { name, type: t ?? "any" };
     }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -94,8 +106,7 @@ FunctionParam
 ///////////////////////////////////////////////////////////////////////////////
 
 RecordType
-  = "(" _ ")" { return record([]); } 
-  / "(" _ fields:FieldList _ ")" { return record(fields); }
+  = "(" _ fields:FieldList? _ ")" { return record(fields ?? []); }
 
 FieldList
   = @Field|1.., _ "," _ | ( _ "," _ )?
