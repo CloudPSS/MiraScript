@@ -1,5 +1,5 @@
 import test from 'ava';
-import { parse, type FunctionType } from '../src/parser.ts';
+import { parse, type FunctionType, type TemplateType } from '../src/parser.ts';
 
 test('primitive types', (t) => {
     t.is(parse('nil'), 'nil');
@@ -67,9 +67,26 @@ test('string literal type with invalid escape sequences', (t) => {
 });
 
 test('string literal type with interpolation', (t) => {
+    t.deepEqual(parse('`hello $(name)`'), {
+        kind: 'template',
+        parts: [{ kind: 'literal', value: 'hello ' }, 'name'],
+    });
+    t.deepEqual(parse('`hello $(name) world`'), {
+        kind: 'template',
+        parts: [{ kind: 'literal', value: 'hello ' }, 'name', { kind: 'literal', value: ' world' }],
+    });
+    t.deepEqual(parse('`hello $(name) world $( age )`'), {
+        kind: 'template',
+        parts: [{ kind: 'literal', value: 'hello ' }, 'name', { kind: 'literal', value: ' world ' }, 'age'],
+    });
+});
+
+test('string literal type with bad interpolation', (t) => {
     t.throws(() => parse('`hello ${name}`'));
-    t.throws(() => parse('`hello ${name} world`'));
-    t.throws(() => parse('`hello ${name} world ${age}`'));
+    t.throws(() => parse('`hello $name`'));
+    t.throws(() => parse('`$`'));
+    t.throws(() => parse('`$()`'));
+    t.throws(() => parse('`$(x`'));
 });
 
 test('empty string literal type', (t) => {
@@ -82,6 +99,53 @@ test('single-quoted string literal type', (t) => {
 
 test('backtick-quoted string literal type', (t) => {
     t.deepEqual(parse('`hello`'), { kind: 'literal', value: 'hello' });
+});
+
+test('string interpolation type with all quote styles', (t) => {
+    t.deepEqual(parse('"hello $(name)"'), {
+        kind: 'template',
+        parts: [{ kind: 'literal', value: 'hello ' }, 'name'],
+    });
+    t.deepEqual(parse('"hello $(nil)"'), {
+        kind: 'template',
+        parts: [{ kind: 'literal', value: 'hello ' }, 'nil'],
+    });
+    t.deepEqual(parse("'hello $(name)'"), {
+        kind: 'template',
+        parts: [{ kind: 'literal', value: 'hello ' }, 'name'],
+    });
+    t.deepEqual(parse('`hello $(name)`'), {
+        kind: 'template',
+        parts: [{ kind: 'literal', value: 'hello ' }, 'name'],
+    });
+});
+
+test('string interpolation type with escaped dollar', (t) => {
+    t.deepEqual(parse(String.raw`"hello \$(name)"`), {
+        kind: 'literal',
+        value: 'hello $(name)',
+    });
+});
+
+test('string interpolation type with complex type', (t) => {
+    t.deepEqual(parse('`value: $(string | number)`'), {
+        kind: 'template',
+        parts: [
+            { kind: 'literal', value: 'value: ' },
+            { kind: 'union', types: ['string', 'number'] },
+        ],
+    });
+});
+
+test('string interpolation type with generic function', (t) => {
+    const result = parse('`callback: $(fn<T>(x: T) -> T)`') as TemplateType;
+    t.is(result.kind, 'template');
+    t.deepEqual(result.parts[0], { kind: 'literal', value: 'callback: ' });
+    const fn = result.parts[1] as FunctionType;
+    t.is(fn.kind, 'function');
+    t.is(fn.typeParams!.length, 1);
+    t.is(fn.params[0]!.type, fn.typeParams![0]!);
+    t.is(fn.returns, fn.typeParams![0]);
 });
 
 test('boolean literal types', (t) => {

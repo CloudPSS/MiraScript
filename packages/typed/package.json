@@ -35,6 +35,7 @@
     "peggy": "^5.1.0"
   },
   "dependencies": {
+    "@mirascript/constants": "workspace:~",
     "@types/json-schema": "^7.0.15"
   }
 }

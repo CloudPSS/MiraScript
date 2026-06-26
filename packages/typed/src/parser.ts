@@ -6,6 +6,7 @@ export type Type =
     | NamedType
     | GenericType
     | LiteralType
+    | TemplateType
     | ArrayType
     | UnionType
     | RecordType
@@ -20,6 +21,14 @@ export interface LiteralType {
     kind: 'literal';
     /** Literal value */
     value: string | boolean;
+}
+
+/** Template literal type in MiraScript */
+export interface TemplateType {
+    /** Tag */
+    kind: 'template';
+    /** Interpolated parts, strings are represented as {@link LiteralType} objects, other parts are nested {@link Type} objects. */
+    parts: Type[];
 }
 
 /** Known type names in MiraScript */
@@ -134,6 +143,10 @@ function resolveGenerics(type: Type, scope = new Map<string, GenericType>()): Ty
         return type;
     }
     if (type.kind === 'literal') {
+        return type;
+    }
+    if (type.kind === 'template') {
+        type.parts = type.parts.map((part) => resolveGenerics(part, scope));
         return type;
     }
     /* c8 ignore next */

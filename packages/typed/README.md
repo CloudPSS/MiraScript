@@ -19,8 +19,14 @@
 - 函数类型：`fn(arg: type, ..rest: type) -> returnType`
   - 无返回值：`fn(arg: type)`
   - 无参数：`fn() -> returnType`
+  - 参数类型可省略，默认为 `any`：`fn(a, b: number, ..rest)`
+  - rest 参数名可省略：`fn(..) -> string`
+  - rest 参数必须是最后一个参数
   - 支持嵌套，例如函数作为参数：`fn(arg: number, callback: fn(result: string, error: any) -> any)`
-  - 支持泛型：`fn<T, U>(arg: T) -> U`
+  - 支持泛型：`fn<T, U>(arg: T) -> U`，同名泛型参数在不同作用域中为不同 symbol
+- 字符串插值类型：三种引号均支持 `$()` 插值
+  - 示例：`` `hello $(type)` ``、`"value: $(string | number)"`
+  - `$` 必须紧接 `(`，否则报错；`\$` 可表示字面量 `$`
 
 ## 安装
 
@@ -42,7 +48,7 @@ console.log(toJSONSchema(type));
 
 - `parse()`：将类型字符串解析为 `Type` 对象
 - `toJSONSchema()`：将 `Type` 对象转换为 JSON Schema
-- `Type`、`KnownType`、`RecordType` 等类型定义
+- `Type`、`KnownType`、`RecordType`、`FunctionType`、`TemplateType`、`GenericType` 等类型定义
 
 ## 开发
 

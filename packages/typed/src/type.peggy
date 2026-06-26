@@ -18,6 +18,34 @@ function record(fields) {
   }
   return { kind: "record", fields };
 }
+
+function literal(value) {
+  return { kind: "literal", value };
+}
+
+function interpolated(type) {
+  return { __type: type };
+}
+
+function string(parts) {
+  const result = [];
+  for (const part of parts) {
+    if (part.kind === 'literal' && typeof part.value == 'string') {
+      if (result.length > 0 && result[result.length - 1].kind === 'literal') {
+        result[result.length - 1].value += part.value;
+      } else {
+        result.push({ kind: 'literal', value: part.value });
+      }
+    } else {
+      result.push(part);
+    }
+  }
+  if (result.length === 0) return '';
+  if (result.length === 1 && result[0].kind === 'literal') {
+    return result[0].value;
+  }
+  return { kind: 'template', parts: result };
+}
 }
 
 Start
@@ -71,7 +99,8 @@ PrimaryType
       return named(name);
     }
   / lit:String {
-      return { kind: "literal", value: lit };
+      if (typeof lit == 'string') return { kind: "literal", value: lit };
+      return lit;
     }
   / "(" _ @Type _ ")"
   / RecordType
@@ -125,7 +154,7 @@ Field
   = name:FieldName opt:("?"?) _ ":" _ t:Type {
       return {
         name,
-        optional: opt !== null,
+        optional: opt != null,
         type: t
       };
     }
@@ -133,7 +162,10 @@ Field
 
 FieldName
   = Identifier
-  / String
+  / name:String {
+      if (typeof name != 'string') throw new Error('Field name must be a string literal');
+      return name;
+    }
 
 ///////////////////////////////////////////////////////////////////////////////
 // Lexer
@@ -169,18 +201,33 @@ EscapeSequence
   }
 
 String
-  = '"' @$[^\\$"]* '"'
-  / "'" @$[^\\$']* "'"
-  / "`" @$[^\\$`]* "`"
-  / '"' parts:( EscapeSequence / $[^\\$"]+ )+ '"' {
-      return parts.join('');
-    }
-  / "'" parts:( EscapeSequence / $[^\\$']+ )+ "'" {
-      return parts.join('');
-    }
-  / "`" parts:( EscapeSequence / $[^\\$`]+ )+ "`" {
-      return parts.join('');
-    }
+  = '"' parts:DoubleQuotePart* '"' { return string(parts); }
+  / "'" parts:SingleQuotePart* "'" { return string(parts); }
+  / "`" parts:BacktickPart* "`" { return string(parts); }
+
+DoubleQuotePart
+  = "$" "(" _ @Type _ ")"
+  / chars:DoubleQuoteChar+ { return literal(chars.join('')); }
+
+SingleQuotePart
+  = "$" "(" _ @Type _ ")"
+  / chars:SingleQuoteChar+ { return literal(chars.join('')); }
+
+BacktickPart
+  = "$" "(" _ @Type _ ")"
+  / chars:BacktickChar+ { return literal(chars.join('')); }
+
+DoubleQuoteChar
+  = EscapeSequence
+  / [^\\$"]
+
+SingleQuoteChar
+  = EscapeSequence
+  / [^\\$']
+
+BacktickChar
+  = EscapeSequence
+  / [^\\$`]
 
 Identifier
   = $(("_"+ / "@"+ / "$"+ / [\p{XID_Start}]u) [\p{XID_Continue}]u*)

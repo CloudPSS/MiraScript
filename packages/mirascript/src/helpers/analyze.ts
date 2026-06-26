@@ -1,6 +1,6 @@
+import { REG_IDENTIFIER } from '@mirascript/constants';
 import { generateBytecodeSync } from '../compiler/generate-bytecode.js';
 import { DiagnosticCode, parseDiagnostics } from '../compiler/diagnostic.js';
-import { REG_IDENTIFIER } from './constants.js';
 import type { InputMode } from '../compiler/types.js';
 
 /** 一个访问链，第一个元素为全局变量名称 */

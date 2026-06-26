@@ -5,10 +5,6 @@ export {
     CONTROL_KEYWORDS,
     NUMERIC_KEYWORDS,
     RESERVED_KEYWORDS,
-} from '@mirascript/constants';
-import { constants } from '@mirascript/mirascript/subtle';
-
-export const {
     REG_IDENTIFIER,
     REG_ORDINAL,
     REG_WHITESPACE,
@@ -18,7 +14,7 @@ export const {
     REG_NUMBER,
     REG_IDENTIFIER_FULL,
     REG_ORDINAL_FULL,
-} = constants;
+} from '@mirascript/constants';
 
 /** 基础语言服务支持的最大插值字符串 `$` 数量 */
 export const MAX_VERBATIM_LENGTH = 16;

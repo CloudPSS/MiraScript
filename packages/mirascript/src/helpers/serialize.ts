@@ -1,5 +1,5 @@
+import { REG_IDENTIFIER_FULL, REG_ORDINAL_FULL } from '@mirascript/constants';
 import type { VmArray, VmExtern, VmFunction, VmModule, VmAny, VmRecord } from '../vm/index.js';
-import { REG_IDENTIFIER_FULL, REG_ORDINAL_FULL } from './constants.js';
 import { entries, hasOwn, isFinite, isNaN } from '../helpers/utils.js';
 import {
     getVmFunctionInfo,

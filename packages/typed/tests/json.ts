@@ -1,4 +1,5 @@
 import test from 'ava';
+import { REG_NUMBER } from '@mirascript/constants';
 import { parse } from '../src/parser.ts';
 import { toJSONSchema } from '../src/json.ts';
 
@@ -142,4 +143,31 @@ test('function type JSON schema', (t) => {
     t.deepEqual(toJSONSchema(parse('fn(arg: number, ..rest: string) -> boolean')), {});
     t.deepEqual(toJSONSchema(parse('fn() -> number')), {});
     t.deepEqual(toJSONSchema(parse('fn(callback: fn(result: string) -> any)')), {});
+});
+
+test('template type JSON schema', (t) => {
+    t.deepEqual(toJSONSchema(parse('`hello $(name)`')), {
+        type: 'string',
+        pattern: '^hello (.*?)$',
+    });
+    t.deepEqual(toJSONSchema(parse('`value: $(string | number)`')), {
+        type: 'string',
+        pattern: `^value: (.*?)$`,
+    });
+    t.deepEqual(toJSONSchema(parse('`flag: $(true | false | nil)`')), {
+        type: 'string',
+        pattern: '^flag: (true|false|)$',
+    });
+    t.deepEqual(toJSONSchema(parse('`prefix$(nil)suffix`')), {
+        type: 'string',
+        pattern: '^prefix()suffix$',
+    });
+    t.deepEqual(toJSONSchema(parse('`prefix$(number | nil)suffix`')), {
+        type: 'string',
+        pattern: `^prefix(${REG_NUMBER.source}|)suffix$`,
+    });
+    t.deepEqual(toJSONSchema(parse('`prefix$("x" | "y" | nil)suffix`')), {
+        type: 'string',
+        pattern: `^prefix(x|y|)suffix$`,
+    });
 });

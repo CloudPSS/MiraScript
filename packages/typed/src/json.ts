@@ -1,5 +1,6 @@
 import type { JSONSchema7 } from 'json-schema';
-import type { KnownType, LiteralType, NamedType, Type } from './parser.js';
+import { REG_NUMBER } from '@mirascript/constants';
+import type { KnownType, LiteralType, NamedType, TemplateType, Type } from './parser.js';
 
 /** Converts a KnownType or NamedType into JSON Schema */
 function string(type: KnownType | NamedType): JSONSchema7 {
@@ -27,6 +28,78 @@ function string(type: KnownType | NamedType): JSONSchema7 {
         default:
             return {};
     }
+}
+
+/** Escapes a literal string for use in a regular expression */
+function escapeRegex(value: string): string {
+    return value.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
+}
+
+const RE_ANY = '.*?';
+const RE_NUMBER = REG_NUMBER.source;
+const RE_BOOLEAN = 'true|false';
+
+/** Converts a template interpolation part into a regex pattern fragment */
+function templatePartPattern(part: Type, grouping: boolean): string {
+    let result: string;
+    if (typeof part === 'symbol') {
+        result = RE_ANY;
+    } else if (typeof part === 'string') {
+        switch (part) {
+            case 'number':
+                result = RE_NUMBER;
+                break;
+            case 'boolean':
+                result = RE_BOOLEAN;
+                break;
+            case 'nil':
+            case 'never':
+                result = '';
+                break;
+            case 'array':
+            case 'record':
+            case 'extern':
+            case 'any':
+            case 'unknown':
+            case 'string':
+            default:
+                result = RE_ANY;
+                break;
+        }
+    } else if (part.kind === 'literal') {
+        if (typeof part.value === 'boolean') {
+            result = String(part.value);
+        } else {
+            result = escapeRegex(part.value);
+        }
+    } else if (part.kind === 'union') {
+        const patterns = new Set(part.types.map((p) => templatePartPattern(p, false)));
+
+        if (patterns.size === 0) {
+            result = '';
+        } else if (patterns.has(RE_ANY)) {
+            result = RE_ANY;
+        } else {
+            result = Array.from(patterns).join('|');
+        }
+    } else {
+        result = RE_ANY;
+    }
+    if (!grouping) return result;
+    if (result.startsWith('(') && result.endsWith(')')) return result;
+    return `(${result})`;
+}
+
+/** Converts a TemplateType into a JSON Schema pattern */
+function templatePattern(type: TemplateType): string {
+    return `^${type.parts
+        .map((p) => {
+            if (typeof p == 'object' && p.kind === 'literal' && typeof p.value === 'string') {
+                return templatePartPattern(p, false);
+            }
+            return templatePartPattern(p, true);
+        })
+        .join('')}$`;
 }
 
 /** Converts a Type object into JSON Schema */
@@ -90,6 +163,9 @@ export function toJSONSchema(type: Type): JSONSchema7 {
     }
     if (type.kind === 'function') {
         return {};
+    }
+    if (type.kind === 'template') {
+        return { type: 'string', pattern: templatePattern(type) };
     }
     /* c8 ignore next 3 */
     (type) satisfies never;

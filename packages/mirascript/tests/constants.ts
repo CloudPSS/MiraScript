@@ -1,5 +1,6 @@
 import test from 'ava';
-import { isKeyword, constants } from '@mirascript/mirascript/subtle';
+import * as constants from '@mirascript/constants';
+import { isKeyword } from '@mirascript/mirascript/subtle';
 
 test('keywords', (t) => {
     t.false(isKeyword('myVariable'));

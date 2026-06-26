@@ -11,6 +11,7 @@ export {
     CONSTANT_KEYWORDS,
     RESERVED_KEYWORDS,
 } from './constants.g.js';
+export * from './regex.js';
 
 /** 配置选项 */
 export type Config = Partial<
