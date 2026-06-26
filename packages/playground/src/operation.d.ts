@@ -137,7 +137,7 @@ function $ArrayRangeExclusive(start: VmAny, end: VmAny): VmArray;
 /** 默认执行上下文 */
 function $GlobalFallback(): VmContext;
 /** 字符串连接 */
-function $Concat(...args: readonly string[]): string;
+function $Concat(...args: readonly VmAny[]): string;
 /** 正号 */
 function $Pos(a: VmAny): number;
 /** 负号 */

@@ -1,6 +1,6 @@
 import { VmError } from '../../helpers/error.js';
 import { display } from '../../helpers/serialize.js';
-import { isVmFunction, isVmExtern, isVmConst } from '../../helpers/types.js';
+import { isVmExtern, isVmConst } from '../../helpers/types.js';
 import type { VmExtern, VmFunction, VmAny, VmArray, VmValue } from '../types/index.js';
 import { $AssertInit } from './common.js';
 
@@ -32,11 +32,11 @@ export function $Call<T extends VmValue, A extends readonly VmValue[]>(func: T, 
     for (let i = 0; i < argsLen; i++) {
         $AssertInit(args[i]);
     }
+    if (typeof func == 'function') {
+        return (func(...args) ?? null) as CallReturn<T>;
+    }
     if (isVmExtern(func)) {
         return (func.call(args) ?? null) as CallReturn<T>;
-    }
-    if (isVmFunction(func)) {
-        return (func(...args) ?? null) as CallReturn<T>;
     }
     throw new VmError(`Value is not callable: ${display(func)}`, null);
 }

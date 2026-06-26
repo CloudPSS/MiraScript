@@ -6,16 +6,16 @@ import type { VmAny, VmValue } from '../types/index.js';
  * 确定操作的重载
  * @returns 如果应按数字处理则返回 true；如果应按字符串处理则返回 false
  */
-export function overloadNumberString(a: VmAny, b: VmAny): boolean {
+export const overloadNumberString = (a: VmAny, b: VmAny): boolean => {
     if (typeof a == 'number' || typeof b == 'number') return true;
     if (typeof a == 'string' || typeof b == 'string') return false;
     return true;
-}
+};
 
 /**
  * 检查两个 VmValue 是否相同
  */
-export function isSame(a: VmValue, b: VmValue): boolean {
+export const isSame = (a: VmValue, b: VmValue): boolean => {
     // Check for NaN
     if (typeof a == 'number' && typeof b == 'number') {
         return a === b || (isNaN(a) && isNaN(b));
@@ -63,4 +63,4 @@ export function isSame(a: VmValue, b: VmValue): boolean {
         return true;
     }
     return false;
-}
+};

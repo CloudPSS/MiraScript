@@ -9,44 +9,44 @@ import { VmFunction } from '../types/function.js';
 import { $AssertInit } from './common.js';
 
 /** 构造 module */
-export function $Module<T extends Record<string, () => VmImmutable>>(
+export const $Module = <T extends Record<string, () => VmImmutable>>(
     name: string,
     body: T,
-): VmModule<{ [K in keyof T]: ReturnType<T[K]> }> {
+): VmModule<{ [K in keyof T]: ReturnType<T[K]> }> => {
     const mod = create(null) as { [K in keyof T]: ReturnType<T[K]> };
     for (const [key, get] of entries(body)) {
         defineProperty(mod, key, { __proto__: null, get, enumerable: true, configurable: true });
     }
     return new VmModule(name, mod);
-}
+};
 
 /** 构造 record | array 元素 */
-export function $El(value: VmAny): VmConst {
+export const $El = (value: VmAny): VmConst => {
     $AssertInit(value);
     if (!isVmConst(value)) return null;
     return value;
-}
+};
 
 const EMPTY = create(null);
 /** 构造 record 可选元素 */
-export function $ElOpt(key: string, value: VmAny): VmConst {
+export const $ElOpt = (key: string, value: VmAny): VmConst => {
     $AssertInit(value);
     if (value == null || !isVmConst(value)) return EMPTY;
     return { __proto__: null, [key]: value };
-}
+};
 
 /** 构造函数和函数表达式 */
-export function $Fn<T extends VmFunctionLike>(name: string | null | undefined, fn: T): VmFunction<T> {
+export const $Fn = <T extends VmFunctionLike>(name: string | null | undefined, fn: T): VmFunction<T> => {
     return VmFunction(fn, { isLib: false, name: name || VM_FUNCTION_ANONYMOUS_NAME });
-}
+};
 
 /** 读取闭包上值 */
-export function $Upvalue<T extends VmValue>(value: T | undefined): T {
+export const $Upvalue = <T extends VmValue>(value: T | undefined): T => {
     $AssertInit(value);
     return value;
-}
+};
 
 /** 默认执行上下文 */
-export function $GlobalFallback(): VmContext {
+export const $GlobalFallback = (): VmContext => {
     return DefaultVmContext;
-}
+};

@@ -12,7 +12,7 @@ const isEmptyRange = (start: number, end: number) => {
     return !isFinite(start) || !isFinite(end) || start > end;
 };
 /** 构造范围数组 */
-export function $ArrayRange(start: VmAny, end: VmAny): VmArray {
+export const $ArrayRange = (start: VmAny, end: VmAny): VmArray => {
     const s = $ToNumber(start);
     const e = $ToNumber(end);
     if (isEmptyRange(s, e)) return [];
@@ -22,9 +22,9 @@ export function $ArrayRange(start: VmAny, end: VmAny): VmArray {
         arr.push(i);
     }
     return arr;
-}
+};
 /** 构造范围数组（不包含结束值） */
-export function $ArrayRangeExclusive(start: VmAny, end: VmAny): VmArray {
+export const $ArrayRangeExclusive = (start: VmAny, end: VmAny): VmArray => {
     const s = $ToNumber(start);
     const e = $ToNumber(end);
     if (isEmptyRange(s, e)) return [];
@@ -34,4 +34,4 @@ export function $ArrayRangeExclusive(start: VmAny, end: VmAny): VmArray {
         arr.push(i);
     }
     return arr;
-}
+};

@@ -18,7 +18,7 @@ let cpDepth = 0;
 let cp = CP_UNSET | 0;
 let cpCounter = 0;
 /** 检查点 */
-export function Cp(): void {
+export const Cp = (): void => {
     // 不是每次都查时间
     if ((cpCounter = (cpCounter + 1) | 0) % (cpInterval | 0) !== 0) {
         return;
@@ -29,9 +29,9 @@ export function Cp(): void {
     } else if ((timestamp() | 0) - (cp | 0) >= (cpTimeout | 0)) {
         throw new RangeError('Execution timed out');
     }
-}
+};
 /** 检查点 */
-export function CpEnter(): void {
+export const CpEnter = (): void => {
     cpDepth = (cpDepth | 0) + 1;
     if ((cpDepth | 0) <= 1) {
         cp = CP_UNSET | 0;
@@ -42,9 +42,9 @@ export function CpEnter(): void {
     } else {
         Cp();
     }
-}
+};
 /** 检查点 */
-export function CpExit(): void {
+export const CpExit = (): void => {
     cpDepth = (cpDepth | 0) - 1;
     if ((cpDepth | 0) < 1) {
         cp = CP_UNSET | 0;
@@ -53,7 +53,7 @@ export function CpExit(): void {
     } else {
         Cp();
     }
-}
+};
 
 const INT_MAX = 0x7fff_ffff;
 /** 设置检查点超时时间 */
