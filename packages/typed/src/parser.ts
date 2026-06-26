@@ -1,7 +1,7 @@
 import { parse as _parse } from '../dist/type.js';
 
 /** MiraScript type */
-export type Type = KnownType | NamedType | LiteralType | ArrayType | UnionType | RecordType;
+export type Type = KnownType | NamedType | LiteralType | ArrayType | UnionType | RecordType | FunctionType;
 
 /** Literal type in MiraScript */
 export interface LiteralType {
@@ -61,6 +61,26 @@ export interface RecordField {
     optional?: boolean;
     /** Field type */
     type: Type;
+}
+
+/** Function type in MiraScript */
+export interface FunctionType {
+    /** Tag */
+    kind: 'function';
+    /** Function parameters */
+    params: FunctionParameter[];
+    /** Return type */
+    returns?: Type;
+}
+
+/** Function parameter in MiraScript */
+export interface FunctionParameter {
+    /** Parameter name */
+    name: string;
+    /** Parameter type */
+    type: Type;
+    /** Whether the parameter is a rest parameter */
+    spread?: boolean;
 }
 
 /**

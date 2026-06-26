@@ -52,7 +52,8 @@ PostfixType
 ///////////////////////////////////////////////////////////////////////////////
 
 PrimaryType
-  = name:Identifier generic:(_ "<" _ @Type _ ">")? {
+  = FunctionType
+  / name:Identifier generic:(_ "<" _ @Type _ ">")? {
       if (generic) {
         if (name === 'array') return array(generic);
         if (name === 'record') return { kind: "record", fields: [], value: generic };
@@ -66,6 +67,27 @@ PrimaryType
     }
   / "(" _ @Type _ ")"
   / RecordType
+
+///////////////////////////////////////////////////////////////////////////////
+// Function
+///////////////////////////////////////////////////////////////////////////////
+
+FunctionType
+  = "fn" _ "(" _ params:FunctionParamList _ ")" ret:(_ "->" _ @Type)? {
+      const result = { kind: "function", params };
+      if (ret !== null) result.returns = ret;
+      return result;
+    }
+
+FunctionParamList
+  = @FunctionParam|.., _ "," _ | ( _ "," _ )?
+
+FunctionParam
+  = spread:".."? name:Identifier _ ":" _ t:Type {
+      const param = { name, type: t };
+      if (spread !== null) param.spread = true;
+      return param;
+    }
 
 ///////////////////////////////////////////////////////////////////////////////
 // Record

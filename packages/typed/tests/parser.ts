@@ -234,7 +234,124 @@ test('single anonymous record field requires trailing comma', (t) => {
     t.is(parse('(number)'), 'number');
 });
 
+test('function type with return', (t) => {
+    t.deepEqual(parse('fn(arg: number, ..rest: string) -> boolean'), {
+        kind: 'function',
+        params: [
+            { name: 'arg', type: 'number' },
+            { name: 'rest', type: 'string', spread: true },
+        ],
+        returns: 'boolean',
+    });
+});
+
+test('function type without return', (t) => {
+    t.deepEqual(parse('fn(arg: number)'), {
+        kind: 'function',
+        params: [{ name: 'arg', type: 'number' }],
+    });
+});
+
+test('function type without parameters', (t) => {
+    t.deepEqual(parse('fn() -> number'), {
+        kind: 'function',
+        params: [],
+        returns: 'number',
+    });
+});
+
+test('function type with callback parameter', (t) => {
+    t.deepEqual(parse('fn(arg: number, callback: fn(result: string, error: any) -> any)'), {
+        kind: 'function',
+        params: [
+            { name: 'arg', type: 'number' },
+            {
+                name: 'callback',
+                type: {
+                    kind: 'function',
+                    params: [
+                        { name: 'result', type: 'string' },
+                        { name: 'error', type: 'any' },
+                    ],
+                    returns: 'any',
+                },
+            },
+        ],
+    });
+});
+
+test('function type with trailing comma', (t) => {
+    t.deepEqual(parse('fn(a: number,) -> string'), {
+        kind: 'function',
+        params: [{ name: 'a', type: 'number' }],
+        returns: 'string',
+    });
+});
+
 test('invalid syntax throws', (t) => {
     t.throws(() => parse(''));
     t.throws(() => parse('number['));
+});
+
+test('priority of types', (t) => {
+    t.deepEqual(parse('string | number[]'), {
+        kind: 'union',
+        types: ['string', { kind: 'array', element: 'number' }],
+    });
+    t.deepEqual(parse('(string | number)[]'), {
+        kind: 'array',
+        element: {
+            kind: 'union',
+            types: ['string', 'number'],
+        },
+    });
+    t.deepEqual(parse('fn() -> boolean | string[]'), {
+        kind: 'function',
+        params: [],
+        returns: {
+            kind: 'union',
+            types: ['boolean', { kind: 'array', element: 'string' }],
+        },
+    });
+    t.deepEqual(parse('fn() -> (boolean | string)[]'), {
+        kind: 'function',
+        params: [],
+        returns: {
+            kind: 'array',
+            element: {
+                kind: 'union',
+                types: ['boolean', 'string'],
+            },
+        },
+    });
+    t.deepEqual(parse('(fn () -> boolean) | string[]'), {
+        kind: 'union',
+        types: [
+            {
+                kind: 'function',
+                params: [],
+                returns: 'boolean',
+            },
+            { kind: 'array', element: 'string' },
+        ],
+    });
+    t.deepEqual(parse('fn() | string[]'), {
+        kind: 'union',
+        types: [
+            {
+                kind: 'function',
+                params: [],
+            },
+            { kind: 'array', element: 'string' },
+        ],
+    });
+    t.deepEqual(parse('fn(a: number) -> fn(b: boolean) -> string'), {
+        kind: 'function',
+        params: [{ name: 'a', type: 'number' }],
+        returns: {
+            kind: 'function',
+            params: [{ name: 'b', type: 'boolean' }],
+            returns: 'string',
+        },
+    });
 });

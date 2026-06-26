@@ -137,3 +137,9 @@ test('record with string field name JSON schema', (t) => {
         required: ['field-name'],
     });
 });
+
+test('function type JSON schema', (t) => {
+    t.deepEqual(toJSONSchema(parse('fn(arg: number, ..rest: string) -> boolean')), {});
+    t.deepEqual(toJSONSchema(parse('fn() -> number')), {});
+    t.deepEqual(toJSONSchema(parse('fn(callback: fn(result: string) -> any)')), {});
+});

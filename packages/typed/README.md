@@ -16,6 +16,10 @@
   - 匿名字段：`(typeA, typeB)` （只包含一个匿名字段时尾随 `,` 不能省略 `(type,)`）
   - 可选属性：`(field?: type)`
   - 支持使用字符串做字段名以包含特殊字符：`("field-name": type)`
+- 函数类型：`fn(arg: type, ..rest: type) -> returnType`
+  - 无返回值：`fn(arg: type)`
+  - 无参数：`fn() -> returnType`
+  - 支持嵌套，例如函数作为参数：`fn(arg: number, callback: fn(result: string, error: any) -> any)`
 
 ## 安装
 
