@@ -23,28 +23,12 @@ function literal(value) {
   return { kind: "literal", value };
 }
 
-function interpolated(type) {
-  return { __type: type };
-}
-
 function string(parts) {
-  const result = [];
-  for (const part of parts) {
-    if (part.kind === 'literal' && typeof part.value == 'string') {
-      if (result.length > 0 && result[result.length - 1].kind === 'literal') {
-        result[result.length - 1].value += part.value;
-      } else {
-        result.push({ kind: 'literal', value: part.value });
-      }
-    } else {
-      result.push(part);
-    }
+  if (parts.length === 0) return '';
+  if (parts.length === 1 && parts[0].kind === 'literal') {
+    return parts[0].value;
   }
-  if (result.length === 0) return '';
-  if (result.length === 1 && result[0].kind === 'literal') {
-    return result[0].value;
-  }
-  return { kind: 'template', parts: result };
+  return { kind: 'template', parts };
 }
 }
 
@@ -171,7 +155,7 @@ FieldName
 // Lexer
 ///////////////////////////////////////////////////////////////////////////////
 
-HexDigit
+HexDigit "hex digit"
   = [0-9a-f]i
 
 EscapeSequence
@@ -200,7 +184,7 @@ EscapeSequence
     return String.fromCodePoint(code);
   }
 
-String
+String "string"
   = '"' parts:DoubleQuotePart* '"' { return string(parts); }
   / "'" parts:SingleQuotePart* "'" { return string(parts); }
   / "`" parts:BacktickPart* "`" { return string(parts); }
@@ -229,8 +213,8 @@ BacktickChar
   = EscapeSequence
   / [^\\$`]
 
-Identifier
+Identifier "identifier"
   = $(("_"+ / "@"+ / "$"+ / [\p{XID_Start}]u) [\p{XID_Continue}]u*)
 
-_
+_ "whitespace"
   = [ \t\v\f\r\n]*

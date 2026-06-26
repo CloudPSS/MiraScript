@@ -110,10 +110,11 @@ export interface FunctionParameter {
  * scoped per function declaration.
  */
 function resolveGenerics(type: Type, scope = new Map<string, GenericType>()): Type {
-    if (typeof type === 'symbol') {
+    /* c8 ignore next 3 */
+    if (typeof type == 'symbol') {
         return type;
     }
-    if (typeof type === 'string') {
+    if (typeof type == 'string') {
         return scope.get(type) ?? type;
     }
     if (type.kind === 'function') {
@@ -149,7 +150,7 @@ function resolveGenerics(type: Type, scope = new Map<string, GenericType>()): Ty
         type.parts = type.parts.map((part) => resolveGenerics(part, scope));
         return type;
     }
-    /* c8 ignore next */
+    /* c8 ignore next 3 */
     (type) satisfies never;
     return type;
 }

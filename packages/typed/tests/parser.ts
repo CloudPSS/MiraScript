@@ -137,6 +137,24 @@ test('string interpolation type with complex type', (t) => {
     });
 });
 
+test('string interpolation type with literal', (t) => {
+    t.deepEqual(parse('`value: $(true)`'), {
+        kind: 'template',
+        parts: [
+            { kind: 'literal', value: 'value: ' },
+            { kind: 'literal', value: true },
+        ],
+    });
+    t.deepEqual(parse('`value: $("x")$(`y`)`'), {
+        kind: 'template',
+        parts: [
+            { kind: 'literal', value: 'value: ' },
+            { kind: 'literal', value: 'x' },
+            { kind: 'literal', value: 'y' },
+        ],
+    });
+});
+
 test('string interpolation type with generic function', (t) => {
     const result = parse('`callback: $(fn<T>(x: T) -> T)`') as TemplateType;
     t.is(result.kind, 'template');
@@ -299,6 +317,11 @@ test('single anonymous record field requires trailing comma', (t) => {
         fields: [{ name: '0', type: 'number' }],
     });
     t.is(parse('(number)'), 'number');
+});
+
+test('record type with bad field name', (t) => {
+    t.throws(() => parse('(1a: number)'));
+    t.throws(() => parse('("field$(name)": number)'));
 });
 
 test('function type with return', (t) => {

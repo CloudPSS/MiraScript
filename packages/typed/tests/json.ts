@@ -146,17 +146,23 @@ test('function type JSON schema', (t) => {
 });
 
 test('template type JSON schema', (t) => {
-    t.deepEqual(toJSONSchema(parse('`hello $(name)`')), {
-        type: 'string',
-        pattern: '^hello (.*?)$',
-    });
+    for (const name of ['name', 'array', 'record', 'extern', 'any', 'unknown', 'name[]']) {
+        t.deepEqual(toJSONSchema(parse(`"hello $(${name})"`)), {
+            type: 'string',
+            pattern: '^hello (.*?)$',
+        });
+    }
     t.deepEqual(toJSONSchema(parse('`value: $(string | number)`')), {
         type: 'string',
         pattern: `^value: (.*?)$`,
     });
+    t.deepEqual(toJSONSchema(parse('`value: $(boolean | number)`')), {
+        type: 'string',
+        pattern: `^value: (true|false|${REG_NUMBER.source})$`,
+    });
     t.deepEqual(toJSONSchema(parse('`flag: $(true | false | nil)`')), {
         type: 'string',
-        pattern: '^flag: (true|false|)$',
+        pattern: '^flag: (true|false)?$',
     });
     t.deepEqual(toJSONSchema(parse('`prefix$(nil)suffix`')), {
         type: 'string',
@@ -164,10 +170,14 @@ test('template type JSON schema', (t) => {
     });
     t.deepEqual(toJSONSchema(parse('`prefix$(number | nil)suffix`')), {
         type: 'string',
-        pattern: `^prefix(${REG_NUMBER.source}|)suffix$`,
+        pattern: `^prefix(${REG_NUMBER.source})?suffix$`,
     });
     t.deepEqual(toJSONSchema(parse('`prefix$("x" | "y" | nil)suffix`')), {
         type: 'string',
-        pattern: `^prefix(x|y|)suffix$`,
+        pattern: `^prefix(x|y)?suffix$`,
+    });
+    t.deepEqual(toJSONSchema(parse('`prefix$(boolean | "")suffix`')), {
+        type: 'string',
+        pattern: `^prefix(true|false)?suffix$`,
     });
 });

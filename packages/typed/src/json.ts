@@ -74,19 +74,20 @@ function templatePartPattern(part: Type, grouping: boolean): string {
         }
     } else if (part.kind === 'union') {
         const patterns = new Set(part.types.map((p) => templatePartPattern(p, false)));
-
-        if (patterns.size === 0) {
-            result = '';
-        } else if (patterns.has(RE_ANY)) {
+        if (patterns.has(RE_ANY)) {
             result = RE_ANY;
         } else {
+            const hasEmpty = patterns.delete('');
             result = Array.from(patterns).join('|');
+            if (hasEmpty) {
+                result = `(${result})?`;
+            }
         }
     } else {
         result = RE_ANY;
     }
     if (!grouping) return result;
-    if (result.startsWith('(') && result.endsWith(')')) return result;
+    if (result.startsWith('(')) return result;
     return `(${result})`;
 }
 
