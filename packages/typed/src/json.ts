@@ -85,6 +85,7 @@ export function toJSONSchema(type: Type): JSONSchema7 {
     if (type.kind === 'literal') {
         return literal(type);
     }
+    /* c8 ignore next 3 */
     (type) satisfies never;
     return {};
 }

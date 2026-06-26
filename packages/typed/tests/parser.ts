@@ -14,6 +14,20 @@ test('named type', (t) => {
     t.is(parse('MyType'), 'MyType');
 });
 
+test('unicode named type', (t) => {
+    t.is(parse('类型'), '类型');
+    t.is(parse('My类型'), 'My类型');
+});
+
+test('special character named type', (t) => {
+    t.is(parse('_MyType'), '_MyType');
+    t.is(parse('$MyType'), '$MyType');
+    t.is(parse('@MyType'), '@MyType');
+    t.is(parse('$_MyType'), '$_MyType');
+    t.throws(() => parse('1MyType'));
+    t.throws(() => parse('$@MyType'));
+});
+
 test('string literal type', (t) => {
     t.deepEqual(parse('"hello"'), { kind: 'literal', value: 'hello' });
 });
@@ -25,6 +39,11 @@ test('string literal type with escaped characters', (t) => {
     t.deepEqual(parse(String.raw`'\\'`), { kind: 'literal', value: '\\' });
     t.deepEqual(parse(String.raw`'\n'`), { kind: 'literal', value: '\n' });
     t.deepEqual(parse(String.raw`'\t'`), { kind: 'literal', value: '\t' });
+    t.deepEqual(parse(String.raw`'\r'`), { kind: 'literal', value: '\r' });
+    t.deepEqual(parse(String.raw`'\b'`), { kind: 'literal', value: '\b' });
+    t.deepEqual(parse(String.raw`'\f'`), { kind: 'literal', value: '\f' });
+    t.deepEqual(parse(String.raw`'\v'`), { kind: 'literal', value: '\v' });
+    t.deepEqual(parse(String.raw`'\0'`), { kind: 'literal', value: '\0' });
     t.deepEqual(parse(String.raw`'\x41'`), { kind: 'literal', value: 'A' });
     t.deepEqual(parse(String.raw`'\u{41}'`), { kind: 'literal', value: 'A' });
     t.deepEqual(parse(String.raw`'\\u{41}'`), { kind: 'literal', value: String.raw`\u{41}` });
@@ -41,6 +60,7 @@ test('string literal type with invalid escape sequences', (t) => {
     t.throws(() => parse(String.raw`'\u{4'`));
     t.throws(() => parse(String.raw`'\xff'`));
     t.throws(() => parse(String.raw`'\u{110000}'`));
+    t.throws(() => parse(String.raw`'\u{D800}\u{DC00}'`));
     t.throws(() => parse(String.raw`'\x1'`));
     t.throws(() => parse(String.raw`'\x1g'`));
     t.throws(() => parse(String.raw`'\x'`));

@@ -97,6 +97,30 @@ test('record JSON schema', (t) => {
     });
 });
 
+test('record with anonymous field JSON schema', (t) => {
+    t.deepEqual(toJSONSchema(parse('(number, string)')), {
+        type: 'object',
+        properties: {
+            '0': { type: 'number' },
+            '1': { type: 'string' },
+        },
+        required: ['0', '1'],
+    });
+});
+
+test('record with mixed anonymous and named fields JSON schema', (t) => {
+    t.deepEqual(toJSONSchema(parse('(number, b: string, c?: boolean, nil)')), {
+        type: 'object',
+        properties: {
+            '0': { type: 'number' },
+            b: { type: 'string' },
+            c: { type: 'boolean' },
+            '3': { type: 'null' },
+        },
+        required: ['0', 'b', '3'],
+    });
+});
+
 test('empty record JSON schema', (t) => {
     t.deepEqual(toJSONSchema(parse('()')), {
         type: 'object',

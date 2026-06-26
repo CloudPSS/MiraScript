@@ -32,7 +32,6 @@ Type
 
 UnionType
   = _ ( "|" _ )? u:PostfixType|1.., _ "|" _ | {
-      if (u.length === 1) return u[0];
       return union(u);
     }
 
@@ -141,7 +140,7 @@ String
     }
 
 Identifier
-  = $([a-zA-Z_][a-zA-Z0-9_]*)
+  = $(("_"+ / "@"+ / "$"+ / [\p{XID_Start}]u) [\p{XID_Continue}]u*)
 
 _
-  = [ \t\r\n]*
+  = [ \t\v\f\r\n]*
