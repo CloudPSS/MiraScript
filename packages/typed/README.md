@@ -20,6 +20,7 @@
   - 无返回值：`fn(arg: type)`
   - 无参数：`fn() -> returnType`
   - 支持嵌套，例如函数作为参数：`fn(arg: number, callback: fn(result: string, error: any) -> any)`
+  - 支持泛型：`fn<T, U>(arg: T) -> U`
 
 ## 安装
 

@@ -1,7 +1,18 @@
 import { parse as _parse } from '../dist/type.js';
 
 /** MiraScript type */
-export type Type = KnownType | NamedType | LiteralType | ArrayType | UnionType | RecordType | FunctionType;
+export type Type =
+    | KnownType
+    | NamedType
+    | GenericType
+    | LiteralType
+    | ArrayType
+    | UnionType
+    | RecordType
+    | FunctionType;
+
+/** Generic type parameter reference in MiraScript */
+export type GenericType = symbol;
 
 /** Literal type in MiraScript */
 export interface LiteralType {
@@ -67,6 +78,8 @@ export interface RecordField {
 export interface FunctionType {
     /** Tag */
     kind: 'function';
+    /** Generic type parameters */
+    typeParams?: GenericType[];
     /** Function parameters */
     params: FunctionParameter[];
     /** Return type */
@@ -84,8 +97,53 @@ export interface FunctionParameter {
 }
 
 /**
+ * Replaces generic type parameter names in the AST with unique symbols,
+ * scoped per function declaration.
+ */
+function resolveGenerics(type: Type, scope = new Map<string, GenericType>()): Type {
+    if (typeof type === 'symbol') {
+        return type;
+    }
+    if (typeof type === 'string') {
+        return scope.get(type) ?? type;
+    }
+    if (type.kind === 'function') {
+        const newScope = new Map(scope);
+        for (const sym of type.typeParams ?? []) {
+            newScope.set(sym.description!, sym);
+        }
+        for (const param of type.params) {
+            param.type = resolveGenerics(param.type, newScope);
+        }
+        if (type.returns != null) type.returns = resolveGenerics(type.returns, newScope);
+        return type;
+    }
+    if (type.kind === 'array') {
+        type.element = resolveGenerics(type.element, scope);
+        return type;
+    }
+    if (type.kind === 'union') {
+        type.types = type.types.map((t) => resolveGenerics(t, scope));
+        return type;
+    }
+    if (type.kind === 'record') {
+        for (const field of type.fields) {
+            field.type = resolveGenerics(field.type, scope);
+        }
+        if (type.value != null) type.value = resolveGenerics(type.value, scope);
+        return type;
+    }
+    if (type.kind === 'literal') {
+        return type;
+    }
+    /* c8 ignore next */
+    (type) satisfies never;
+    return type;
+}
+
+/**
  * Parses a type string into a Type object.
  */
 export function parse(type: string): Type {
-    return _parse(type) as Type;
+    return resolveGenerics(_parse(type) as Type);
 }

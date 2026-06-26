@@ -31,6 +31,9 @@ function string(type: KnownType | NamedType): JSONSchema7 {
 
 /** Converts a Type object into JSON Schema */
 export function toJSONSchema(type: Type): JSONSchema7 {
+    if (typeof type === 'symbol') {
+        return {};
+    }
     if (typeof type === 'string') {
         return string(type);
     }

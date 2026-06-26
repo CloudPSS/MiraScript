@@ -1,5 +1,5 @@
 import test from 'ava';
-import { parse } from '../src/parser.ts';
+import { parse, type FunctionType } from '../src/parser.ts';
 
 test('primitive types', (t) => {
     t.is(parse('nil'), 'nil');
@@ -102,6 +102,8 @@ test('nested array type', (t) => {
 
 test('array generic type', (t) => {
     t.deepEqual(parse('array<number>'), { kind: 'array', element: 'number' });
+    t.deepEqual(parse('array<any,>'), { kind: 'array', element: 'any' });
+    t.throws(() => parse('array<number, string>'));
 });
 
 test('record generic type', (t) => {
@@ -110,6 +112,7 @@ test('record generic type', (t) => {
         fields: [],
         value: 'number',
     });
+    t.throws(() => parse('record<number, string>'));
 });
 
 test('union type', (t) => {
@@ -316,6 +319,59 @@ test('function type with omitted rest param name', (t) => {
         params: [{ name: '', type: { kind: 'array', element: 'any' }, spread: true }],
         returns: 'string',
     });
+});
+
+test('generic function type', (t) => {
+    const result = parse('fn<T, U>(arg: T) -> U') as FunctionType;
+    t.is(result.kind, 'function');
+    t.is(result.typeParams?.length, 2);
+    t.is(typeof result.typeParams![0], 'symbol');
+    t.is(typeof result.typeParams![1], 'symbol');
+    t.is(result.typeParams![0]!.description, 'T');
+    t.is(result.typeParams![1]!.description, 'U');
+    t.is(result.params[0]!.type, result.typeParams![0]!);
+    t.is(result.returns, result.typeParams![1]);
+});
+
+test('generic function type with single type parameter', (t) => {
+    const result = parse('fn<T>(x: T) -> T') as FunctionType;
+    t.is(result.kind, 'function');
+    t.is(result.typeParams?.length, 1);
+    t.is(typeof result.typeParams![0], 'symbol');
+    t.is(result.typeParams![0]!.description, 'T');
+    t.is(result.params[0]!.type, result.typeParams![0]!);
+    t.is(result.returns, result.typeParams![0]);
+});
+
+test('generic function type without parameters and return', (t) => {
+    const result = parse('fn<T,>()') as FunctionType;
+    t.is(result.kind, 'function');
+    t.is(result.typeParams?.length, 1);
+    t.is(typeof result.typeParams![0], 'symbol');
+    t.is(result.params.length, 0);
+});
+
+test('nested generic function type', (t) => {
+    const result = parse('fn<T>(callback: fn<U>(x: U) -> T) -> T') as FunctionType;
+    t.is(result.kind, 'function');
+    const outerT = result.typeParams![0]!;
+    const innerFn = result.params[0]!.type as FunctionType;
+    const innerU = innerFn.typeParams![0]!;
+    t.is(outerT.description, 'T');
+    t.is(innerU.description, 'U');
+    t.is(innerFn.params[0]!.type, innerU);
+    t.is(innerFn.returns, outerT);
+    t.is(result.returns, outerT);
+});
+
+test('nested generic function with same name uses different symbols', (t) => {
+    const result = parse('fn<T>(arg: T, callback: fn<T>(data: T))') as FunctionType;
+    const outerT = result.typeParams![0]!;
+    const innerFn = result.params[1]!.type as FunctionType;
+    const innerT = innerFn.typeParams![0]!;
+    t.not(outerT, innerT);
+    t.is(result.params[0]!.type, outerT);
+    t.is(innerFn.params[0]!.type, innerT);
 });
 
 test('rest parameter must be the last parameter', (t) => {

@@ -53,11 +53,17 @@ PostfixType
 
 PrimaryType
   = FunctionType
-  / name:Identifier generic:(_ "<" _ @Type _ ">")? {
+  / name:Identifier generic:(_ "<" _ @TypeParamList _ ">")? {
       if (name === 'fn') throw new Error("'fn' is a reserved keyword");
       if (generic) {
-        if (name === 'array') return array(generic);
-        if (name === 'record') return { kind: "record", fields: [], value: generic };
+        if (name === 'array') {
+          if (generic.length !== 1) throw new Error("'array' expects one generic type parameter");
+          return array(generic[0]);
+        }
+        if (name === 'record') {
+          if (generic.length !== 1) throw new Error("'record' expects one generic type parameter");
+          return { kind: "record", fields: [], value: generic[0] };
+        }
         throw new Error(`'${name}' is not a generic type`);
       }
       if (name === 'true') return { kind: "literal", value: true };
@@ -75,11 +81,15 @@ PrimaryType
 ///////////////////////////////////////////////////////////////////////////////
 
 FunctionType
-  = "fn" _ "(" _ params:FunctionParamList? _ ")" ret:(_ "->" _ @Type)? {
+  = "fn" typeParams:(_ "<" _ @TypeParamList _ ">")? _ "(" _ params:FunctionParamList? _ ")" ret:(_ "->" _ @Type)? {
       const result = { kind: "function", params: params ?? [] };
+      if (typeParams !== null) result.typeParams = typeParams.map(name => Symbol(name));
       if (ret !== null) result.returns = ret;
       return result;
     }
+
+TypeParamList
+  = @Identifier|1.., _ "," _ | ( _ "," _ )?
 
 FunctionParamList
   = params:FunctionParam|1.., _ "," _ | ( _ "," _ )? {
