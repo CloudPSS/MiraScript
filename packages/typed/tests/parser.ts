@@ -57,6 +57,7 @@ test('string literal type with escaped characters', (t) => {
 
 test('string literal type with invalid escape sequences', (t) => {
     t.throws(() => parse(String.raw`'\x4'`));
+    t.throws(() => parse(String.raw`'\e'`));
     t.throws(() => parse(String.raw`'\u{4'`));
     t.throws(() => parse(String.raw`'\xff'`));
     t.throws(() => parse(String.raw`'\u{110000}'`));
@@ -347,6 +348,21 @@ test('function type with return', (t) => {
             { name: 'rest', type: 'string', spread: true },
         ],
         returns: 'boolean',
+    });
+});
+
+test('function type with union types', (t) => {
+    t.deepEqual(parse('fn(arg: number | string, ..rest: | string | string[]) -> | boolean | nil'), {
+        kind: 'function',
+        params: [
+            { name: 'arg', type: { kind: 'union', types: ['number', 'string'] } },
+            {
+                name: 'rest',
+                type: { kind: 'union', types: ['string', { kind: 'array', element: 'string' }] },
+                spread: true,
+            },
+        ],
+        returns: { kind: 'union', types: ['boolean', 'nil'] },
     });
 });
 

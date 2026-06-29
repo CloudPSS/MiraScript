@@ -251,15 +251,15 @@ BacktickPart
 
 DoubleQuoteChar
   = EscapeSequence
-  / [^\\$"]
+  / $[^\\$"]+
 
 SingleQuoteChar
   = EscapeSequence
-  / [^\\$']
+  / $[^\\$']+
 
 BacktickChar
   = EscapeSequence
-  / [^\\$`]
+  / $[^\\$`]+
 
 Identifier "identifier"
   = $(("_"+ / "@"+ / "$"+ / [\p{XID_Start}]u) [\p{XID_Continue}]u*)
