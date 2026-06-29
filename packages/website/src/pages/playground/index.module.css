@@ -21,7 +21,7 @@
 }
 
 .right-panel {
-  border-left: 1px solid var(--ifm-color-emphasis-300);
+  border-left: 1px solid var(--ifm-color-emphasis-200);
 }
 
 .editor-content {
@@ -42,8 +42,8 @@
   align-items: center;
   padding: 0 16px;
   gap: 16px;
-  background-color: var(--ifm-color-emphasis-200);
-  border-bottom: 1px solid var(--ifm-color-emphasis-300);
+  background-color: var(--ifm-color-emphasis-100);
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
 
   h3 {
     padding: 12px 0;
@@ -58,7 +58,7 @@
     margin-right: -8px;
   }
   select {
-    background-color: var(--ifm-color-emphasis-200);
+    background-color: var(--ifm-color-emphasis-100);
     color: var(--text-primary);
     border: 1px solid var(--ifm-color-primary);
     border-radius: 4px;
@@ -101,7 +101,7 @@
 
 .result-item {
   --result-timestamp-width: 6em;
-  --result-border-color: var(--ifm-color-emphasis-300);
+  --result-border-color: var(--ifm-color-emphasis-200);
   font-size: 0.8rem;
 }
 
