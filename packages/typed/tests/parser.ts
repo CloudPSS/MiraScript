@@ -507,6 +507,34 @@ test('nested generic function with same name uses different symbols', (t) => {
     t.is(innerFn.params[0]!.type, innerT);
 });
 
+test('complex generic function type', (t) => {
+    const result = parse(
+        'fn<T, U>(arg: record<T, U>, callback: fn<V>(data: V) -> "$(T | U | V)") -> T[] | U',
+    ) as FunctionType;
+    const outerT = result.typeParams![0]!;
+    const outerU = result.typeParams![1]!;
+    const outerArg = result.params[0]!.type;
+    t.deepEqual(outerArg, { kind: 'record', key: outerT, value: outerU });
+    const innerFn = result.params[1]!.type as FunctionType;
+    const innerV = innerFn.typeParams![0]!;
+    t.is(innerFn.params[0]!.type, innerV);
+    const template = innerFn.returns as TemplateType;
+    t.deepEqual(template, {
+        kind: 'template',
+        parts: [
+            {
+                kind: 'union',
+                types: [outerT, outerU, innerV],
+            },
+        ],
+    });
+    t.deepEqual(result.returns, { kind: 'union', types: [{ kind: 'array', element: outerT }, outerU] });
+
+    t.is(outerT.description, 'T');
+    t.is(outerU.description, 'U');
+    t.is(innerV.description, 'V');
+});
+
 test('rest parameter must be the last parameter', (t) => {
     t.throws(() => parse('fn(..a, b) -> string'));
     t.throws(() => parse('fn(a, ..b, c) -> string'));
