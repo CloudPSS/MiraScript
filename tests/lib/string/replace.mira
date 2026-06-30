@@ -1,6 +1,8 @@
 t_eq("Hello, World!"::replace("World", "Mira"), "Hello, Mira!");
 t_eq("Hello, World! World!"::replace("World", "Mira"), "Hello, Mira! Mira!");
 t_eq("xxx"::replace("xx", "y"), "yx");
+t_eq("xxxx"::replace("xx", "y"), "yy");
+t_eq("xxxxx"::replace("xx", "y"), "yyx");
 t_eq(123::replace(1, 2), "223");
 t_eq(nil::replace(nil, nil), "");
 t_eq("Hello"::replace("l"), "Heo");

@@ -173,3 +173,22 @@ t_false("1.5" is @one..@two);
   t_eq(x, 1);
   t_eq(y, nil);
 }
+{
+  t_false((a: 1, b: nil) is (a: x, b?: 12));
+  t_eq(x, 1);
+}
+
+// 逻辑模式
+{
+  let value = [1, 2, 3];
+  let matched1 = value is [x, y, 5] and [0, 0, z];
+  t_false(matched1);
+  t_eq(x, 1);
+  t_eq(y, 2);
+  t_eq(z, 3);
+  let matched2 = value is [a, b, 3] or [3, 2, c];
+  t_true(matched2);
+  t_eq(a, 1);
+  t_eq(b, 2);
+  t_eq(c, 3);
+}

@@ -1,5 +1,5 @@
 import math
-from typing_extensions import NoReturn
+from typing_extensions import NoReturn, Sequence
 
 from ...helpers.types import is_vm_array, is_vm_const, is_vm_primitive, is_vm_record
 from ...helpers.convert.to_number import toNumber
@@ -165,7 +165,7 @@ def _expect_callable(name, value, recovered):
         _throw_unexpected_type_error(name, "callable", value, recovered)
 
 
-def _get_numbers(args: "list[VmValue] | None") -> "list[float]":
+def _get_numbers(args: "Sequence[VmValue] | None") -> "list[float]":
     if not args:
         return []
     useFirst = False

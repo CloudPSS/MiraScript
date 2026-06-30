@@ -931,13 +931,13 @@ ex.foo = 1; // 对 extern 对象 ex 的属性 "foo" 赋值
 ex[1 + 2] += 1; // 对 extern 对象 ex 的属性 "3" 复合赋值
 ```
 
-当 `<extern>` 表达式的求值结果不是 `extern` 对象或 `nil` 时，赋值语句会抛出 `TypeError` 异常。
+当 `<extern>` 表达式的求值结果不是 `extern` 对象时，赋值语句会抛出 `TypeError` 异常。
 
 #### 表达式语句
 
 表达式语句用于执行一个表达式，并忽略其返回值。表达式语句的语法为 `<expression>;`，其中 `<expression>` 是一个表达式。
 
-当表达式以 `}` 结尾时，表达式语句的 `;` 须省略。
+对于块结构的表达式，表达式语句的 `;` 须省略。
 
 #### 函数声明语句
 
@@ -1052,9 +1052,11 @@ mod counter {
   }
 }
 
+let (:value) = counter;
 debug_print(counter.value); // 输出 0
 counter.increment();
 debug_print(counter.value); // 输出 1
+debug_print(value);         // 输出 0
 ```
 
 #### 空语句
