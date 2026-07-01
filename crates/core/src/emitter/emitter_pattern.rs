@@ -519,6 +519,9 @@ impl<'s, 'c> Emitter<'s, 'c> {
                                 self.emit_failed_pattern(pattern, bind_type);
                                 self.op_if_end(element.range());
                             }
+                            if !sub_flag.is_empty() {
+                                self.op_3(element.range(), OpCode::And, success, success, sub_flag);
+                            }
                         }
                         RecordElementBase::InterpolateNamed(..) => {}
                         RecordElementBase::OmitNamed(colon, pattern) => {
@@ -561,6 +564,9 @@ impl<'s, 'c> Emitter<'s, 'c> {
                                 self.emit_failed_pattern(pattern, bind_type);
                                 self.op_if_end(element.range());
                             }
+                            if !sub_flag.is_empty() {
+                                self.op_3(element.range(), OpCode::And, success, success, sub_flag);
+                            }
                         }
                         RecordElementBase::Unnamed(pattern) => {
                             let ret = self.closures.add_reg();
@@ -599,6 +605,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                                 self.op_else(element.range());
                                 self.emit_failed_pattern(pattern, bind_type);
                                 self.op_if_end(element.range());
+                                self.op_3(element.range(), OpCode::And, success, success, sub_flag);
                             }
                         }
                         RecordElementBase::Spread(_, pattern) => {
@@ -612,12 +619,17 @@ impl<'s, 'c> Emitter<'s, 'c> {
                                     omitted,
                                 );
                                 self.emit_pattern(sub_flag, pattern, ret, bind_type);
+                                if !sub_flag.is_empty() {
+                                    self.op_3(
+                                        element.range(),
+                                        OpCode::And,
+                                        success,
+                                        success,
+                                        sub_flag,
+                                    );
+                                }
                             }
                         }
-                    }
-
-                    if (has_normal || has_rest && !has_discard_rest) && !sub_flag.is_empty() {
-                        self.op_3(element.range(), OpCode::And, success, success, sub_flag);
                     }
                 }
 

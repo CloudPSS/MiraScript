@@ -843,9 +843,9 @@ fn is_on_axis { it is (_, 0) or (0, _) }
 
 fn discount {
   match it {
-    case (items: > 100) or (cost: > 500) { 0.2 }
-    case (items: > 50) or (cost: > 200) { 0.15 }
-    case (items: > 10) or (cost: > 100) { 0.1 }
+    case (items: > 100, ..) or (cost: > 500, ..) { 0.2 }
+    case (items: > 50, ..) or (cost: > 200, ..) { 0.15 }
+    case (items: > 10, ..) or (cost: > 100, ..) { 0.1 }
     case _ { 0 }
   }
 }

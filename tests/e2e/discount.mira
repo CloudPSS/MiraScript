@@ -1,0 +1,18 @@
+fn discount {
+  match it {
+    case (items: > 100, ..) or (cost: > 500, ..) { 0.2 }
+    case (items: > 50, ..) or (cost: > 200, ..) { 0.15 }
+    case (items: > 10, ..) or (cost: > 100, ..) { 0.1 }
+    case _ { 0 }
+  }
+}
+
+t_eq(discount('a'), 0);
+t_eq(discount(()), 0);
+
+t_eq(discount((items: 101, cost: 100)), 0.2);
+t_eq(discount((items: 50, cost: 201)), 0.15);
+t_eq(discount((items: 11, cost: 100)), 0.1);
+t_eq(discount((items: 10, cost: 100)), 0);
+t_eq(discount((items: 100)), 0.15);
+t_eq(discount((cost: 201)), 0.15);
