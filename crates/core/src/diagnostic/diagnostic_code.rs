@@ -123,8 +123,6 @@ pub enum DiagnosticCode {
     MutInDiscardPattern,
     #[strum(message = "展开模式中应省略丢弃弃元")]
     DiscardInSpreadPattern,
-    #[strum(message = "记录模式中不允许展开弃元")]
-    SpreadDiscardInRecordPattern,
     #[strum(message = "记录模式中的展开模式应为最后一个字段")]
     MispositionedSpreadInRecordPattern,
     #[strum(message = "记录模式中不允许插值名称")]

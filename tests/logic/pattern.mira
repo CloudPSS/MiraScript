@@ -138,9 +138,36 @@ t_false("1.5" is @one..@two);
   t_eq(v4, 12);
 }
 
+
+{
+  t_false([1, 2, 3] is (a, b,c));
+  t_eq(a, 1);
+  t_eq(b, 2);
+  t_eq(c, 3);
+}
+{
+  t_false([1, 2, 3] is ());
+  t_false([1, 2, 3] is (..));
+  t_false([1, 2, 3] is (..rest));
+  t_eq(rest, ());
+}
+if has_extern {
+  t_false(v_extern is ());
+  t_false(v_extern is (..));
+  t_false(v_extern is (..rest));
+  t_eq(rest, ());
+}
+{
+  t_false((1, 2, 3) is [a, b, c]);
+  t_eq(a, nil);
+  t_eq(b, nil);
+  t_eq(c, nil);
+}
+
 // 余元处理
 {
-  t_true((1, 2, 3) is (1, 2));
+  t_false((1, 2, 3) is (1, 2));
+  t_true((1, 2) is (1, 2));
   t_false((1, 2) is (1, 2, 3));
   t_false([1, 2, 3] is [1, 2]);
   t_true([1, 2] is [1, 2]);
@@ -148,8 +175,9 @@ t_false("1.5" is @one..@two);
 }
 
 {
-  t_true((a: 1, b: 2) is (a: 1));
+  t_false((a: 1, b: 2) is (a: 1));
   t_false((a: 1) is (a: 1, b: 2));
+  t_true((a: 1, b: 2) is (a: 1, ..));
 }
 
 {
@@ -159,9 +187,28 @@ t_false("1.5" is @one..@two);
 
 // ?: 可选字段
 {
+  t_true(() is (a?: x, b?: y));
+  t_eq(x, nil);
+  t_eq(y, nil);
+}
+{
+  t_true(() is(?:a, ?:b));
+  t_eq(a, nil);
+  t_eq(b, nil);
+}
+{
+  t_false([] is (?:x));
+  t_eq(x, nil);
+}
+{
   t_false((a: 1) is (a: x, b: y));
   t_eq(x, 1);
   t_eq(y, nil);
+}
+{
+  t_false((a: 1) is (:a, :b));
+  t_eq(a, 1);
+  t_eq(b, nil);
 }
 {
   t_true((a: 1) is (a: x, b?: y));
@@ -169,13 +216,59 @@ t_false("1.5" is @one..@two);
   t_eq(y, nil);
 }
 {
+  t_true((a: 1) is (:a, ?:b));
+  t_eq(a, 1);
+  t_eq(b, nil);
+}
+{
   t_true((a: 1, b: nil) is (a: x, b: y));
   t_eq(x, 1);
   t_eq(y, nil);
 }
 {
+  t_true((a: 1, b: nil) is (:a, :b));
+  t_eq(a, 1);
+  t_eq(b, nil);
+}
+{
   t_false((a: 1, b: nil) is (a: x, b?: 12));
   t_eq(x, 1);
+}
+{
+  t_false((a: 1, b: nil) is (:a, b?: 12));
+  t_eq(a, 1);
+}
+{
+  t_false((a: 1, b: nil) is (a: x, c?: y));
+  t_eq(x, 1);
+  t_eq(y, nil);
+}
+{
+  t_false((a: 1, b: nil) is (:a, ?:c));
+  t_eq(a, 1);
+  t_eq(c, nil);
+}
+{
+  t_true((a: 1, b: nil) is (a: x, c?: y, ..));
+  t_eq(x, 1);
+  t_eq(y, nil);
+}
+{
+  t_true((a: 1, b: nil) is (: a, ?: c, ..));
+  t_eq(a, 1);
+  t_eq(c, nil);
+}
+{
+  t_true((a: 1, b: nil) is (a: x, c?: y, ..rest));
+  t_eq(x, 1);
+  t_eq(y, nil);
+  t_eq(rest, (b: nil));
+}
+{
+  t_true((a: 1, b: nil) is (: a, ?: c, ..rest));
+  t_eq(a, 1);
+  t_eq(c, nil);
+  t_eq(rest, (b: nil));
 }
 
 // 逻辑模式

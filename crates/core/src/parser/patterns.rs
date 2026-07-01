@@ -318,12 +318,10 @@ fn record_like_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
                     continue;
                 }
                 let ListItem(el, _) = part;
-                let RecordElementBase::Spread(token, pattern) = el.as_mut() else {
+                let RecordElementBase::Spread(token, _) = el.as_mut() else {
                     unreachable!();
                 };
-                if pattern.is_spread_discard() {
-                    token.wrap_as_unknown(DiagnosticCode::SpreadDiscardInRecordPattern);
-                } else if i != len - 1 {
+                if i != len - 1 {
                     token.wrap_as_unknown(DiagnosticCode::MispositionedSpreadInRecordPattern);
                 }
             }

@@ -88,9 +88,9 @@ fn analyze_person(person) {
 }
 
 debug_print("记录模式:");
-let person_tests = [(name: "Alice", age: 30), (name: "Bob", age: 70), (name: "Charlie", age: 25), (name: "David", age: 10), (name: "Eve"), (age: 45), (), "not a record"];
+let person_tests = [(name: "Alice", age: 30), (name: "Bob", age: 70), (name: "Charlie", age: 25), (name: "David", age: 10), (name: "Eve"), (age: 45), (), (name: "Frank", age: 80, city: "New York")];
 for test in person_tests {
-  debug_print(" ", analyze_person(test));
+  debug_print(" ", test, ": ", analyze_person(test));
 }
 
 // 逻辑模式组合
@@ -114,8 +114,8 @@ for test in number_tests {
 // 嵌套模式匹配
 fn analyze_nested_structure(data) {
   match data {
-    case (users: []) { "用户列表为空" }
-    case (users: [(name: "admin", ..admin_info)]) { "只有管理员: $admin_info" }
+    case (users: [], ..) { "用户列表为空" }
+    case (users: [(name: "admin", ..admin_info)], ..) { "只有管理员: $admin_info" }
     case (users: [first, ..others], config: (debug: true)) { "调试模式，用户: $first，还有 ${ len(others) } 个用户" }
     case (users: users, config: config) { "有 ${ len(users) } 个用户，配置: $config" }
     case _ { "未知结构" }
@@ -123,7 +123,7 @@ fn analyze_nested_structure(data) {
 }
 
 debug_print("嵌套模式:");
-let nested_tests = [(users: [], config: (debug: false)), (users: [(name: "admin", role: "administrator")], config: (debug: false)), (users: [(name: "alice"), (name: "bob")], config: (debug: true)), (users: [(name: "charlie")], config: (timeout: 5000)), "invalid"];
+let nested_tests = [(users: [], config: (debug: false)), (users: [(name: "admin", role: "administrator")], config: (debug: false)), (users: [(name: "alice"), (name: "bob")], config: (debug: true)), (users: [(name: "charlie")], config: (timeout: 5000)), ()];
 for test in nested_tests {
   debug_print(" ", analyze_nested_structure(test));
 }
@@ -152,12 +152,12 @@ fn type_based_processing(value) {
     case ("number", x and < 0) { "负数: $x" }
     case ("number", x) { "零或 NaN: $x" }
     case ("string", x and not "") { "非空字符串: '$x'" }
-    case ("string",) { "空字符串" }
+    case ("string", _) { "空字符串" }
     case ("boolean", x) { "布尔值: $x" }
     case ("array", x) { "数组，长度: ${ len(x) }" }
     case ("record", x) { "记录，键数: ${ x::keys()::len() }" }
-    case ("function",) { "函数" }
-    case ("nil",) { "空值" }
+    case ("function", _) { "函数" }
+    case ("nil", _) { "空值" }
     case _ { "未知类型" }
   }
 }

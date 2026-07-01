@@ -10,6 +10,8 @@ fn m {
     case 1..9 and m if m % 2 == 1 { 'odd digit' }
     case (x, y) if x == y { 'tuple with equal elements' }
     case (x, y) if x != y { 'tuple with unequal elements' }
+    case (x, y, ..) if x == y { 'tuple with equal elements and more' }
+    case (x, y, ..) if x != y { 'tuple with unequal elements and more' }
   }
 }
 
@@ -30,7 +32,8 @@ t_eq(m(7), 'odd digit');
 t_eq(m(8), 'even digit');
 t_eq(m(9), 'odd digit');
 t_eq(m((1, 1)), 'tuple with equal elements');
-t_eq(m((1, 1, 2)), 'tuple with equal elements');
+t_eq(m((1, 1, 2)), 'tuple with equal elements and more');
 t_eq(m((1, 2)), 'tuple with unequal elements');
 t_eq(m((nan, nan)), 'tuple with unequal elements');
+t_eq(m((1, 2, 3)), 'tuple with unequal elements and more');
 t_eq(m(()), nil);

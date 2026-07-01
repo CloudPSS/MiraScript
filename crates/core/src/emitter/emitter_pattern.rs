@@ -378,8 +378,6 @@ impl<'s, 'c> Emitter<'s, 'c> {
             }
             Discard(_) => {
                 if success.is_empty() {
-                    // TODO: useless irrefutable pattern except in array patterns
-                    // or use directly in `let _ = <value>`
                     return;
                 }
                 self.op_bool(pattern.range(), success, true);
@@ -438,8 +436,15 @@ impl<'s, 'c> Emitter<'s, 'c> {
             }
             Record(_, elements, _) => {
                 let is_empty = elements.is_empty();
+                let (has_rest, has_discard_rest) = elements.last().map_or((false, false), |e| {
+                    let RecordElementBase::Spread(_, pattern) = e.deref() else {
+                        return (false, false);
+                    };
+                    (true, matches!(pattern.as_ref(), SpreadDiscard(_)))
+                });
+                let has_normal = elements.len() > 1 || (elements.len() == 1 && !has_rest);
                 if success.is_empty() {
-                    if is_empty {
+                    if is_empty || has_discard_rest {
                         self.diagnostics.push(
                             DiagnosticCode::UnnecessaryIrrefutablePattern,
                             pattern.range(),
@@ -450,136 +455,155 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     self.op_2(pattern.range(), OpCode::IsRecord, success, value);
                 }
 
-                if !is_empty {
-                    // 不论是否成功匹配，都进行子模式匹配
-                    // 以便使用 let (:e) = mod; 语法对非记录进行解构
+                // 不论是否成功匹配，都进行子模式匹配
+                // 以便使用 let (:e) = mod; 语法对非记录进行解构
 
-                    let sub_flag = if success.is_empty() {
-                        // 此时匹配成功与否并不重要，而且也要把这是非条件匹配的信息传到子级
-                        Register::EMPTY
-                    } else {
-                        self.closures.add_reg()
-                    };
+                let sub_flag = if success.is_empty() {
+                    // 此时匹配成功与否并不重要，而且也要把这是非条件匹配的信息传到子级
+                    Register::EMPTY
+                } else {
+                    self.closures.add_reg()
+                };
 
-                    let has_omitted = elements
-                        .last()
-                        .is_some_and(|e| matches!(e.deref(), RecordElementBase::Spread(_, _)));
-                    let mut omitted = if has_omitted { Some(vec![]) } else { None };
+                let test_len = !success.is_empty() && !has_rest;
+                let expected_len_reg = if test_len {
+                    let reg = self.closures.add_reg();
+                    self.op_number(pattern.range(), reg, elements.len() as f64);
+                    reg
+                } else {
+                    Register::EMPTY
+                };
 
-                    fn is_optional(token: &TokenRef<'_>) -> bool {
-                        *token.as_ref() == Operator::QuestionColon
-                    }
-                    for (i, element) in elements.iter().enumerate() {
-                        match element.deref() {
-                            RecordElementBase::Named(token, colon, pattern) => {
-                                let Some((id_type, id)) = token.to_field_name() else {
-                                    unreachable!("Expected identifier token");
-                                };
-                                self.diagnostics.push(id_type, token.range());
-                                let const_id = self.add_const_string(id);
-                                let required = !sub_flag.is_empty() && !is_optional(colon);
-                                if required {
-                                    self.op_3(
-                                        element.range(),
-                                        OpCode::Has,
-                                        sub_flag,
-                                        value,
-                                        const_id,
-                                    );
-                                    self.op_if(element.range(), OpCode::If, sub_flag);
-                                }
-                                let ret = self.closures.add_reg();
-                                self.op_3(element.range(), OpCode::Get, ret, value, const_id);
-                                self.emit_pattern(sub_flag, pattern, ret, bind_type);
-                                if let Some(omitted) = omitted.as_mut() {
-                                    omitted.push(const_id);
-                                }
-                                if required {
-                                    self.op_else(element.range());
-                                    self.emit_failed_pattern(pattern, bind_type);
-                                    self.op_if_end(element.range());
-                                }
-                            }
-                            RecordElementBase::InterpolateNamed(..) => {}
-                            RecordElementBase::OmitNamed(colon, pattern) => {
-                                let Pattern::Bind(_, id_token) = pattern.as_ref() else {
-                                    continue;
-                                };
-                                let Some(id) = id_token.to_id_name() else {
-                                    continue;
-                                };
-                                self.diagnostics
-                                    .push(DiagnosticCode::OmitNamedRecordField, colon.range());
-                                self.diagnostics.push(
-                                    DiagnosticCode::OmitNamedRecordFieldName,
-                                    id_token.range(),
+                let mut omitted = if has_rest && !has_discard_rest {
+                    Some(vec![])
+                } else {
+                    None
+                };
+
+                fn is_optional(token: &TokenRef<'_>) -> bool {
+                    *token.as_ref() == Operator::QuestionColon
+                }
+                for (i, element) in elements.iter().enumerate() {
+                    match element.deref() {
+                        RecordElementBase::Named(token, colon, pattern) => {
+                            let Some((id_type, id)) = token.to_field_name() else {
+                                unreachable!("Expected identifier token");
+                            };
+                            self.diagnostics.push(id_type, token.range());
+                            let const_id = self.add_const_string(id);
+                            if test_len && is_optional(colon) {
+                                let has_field = self.closures.add_reg();
+                                self.op_3(element.range(), OpCode::Has, has_field, value, const_id);
+                                self.op_2(element.range(), OpCode::Not, has_field, has_field);
+                                self.op_3(
+                                    element.range(),
+                                    OpCode::Sub,
+                                    expected_len_reg,
+                                    expected_len_reg,
+                                    has_field,
                                 );
-                                let const_id = self.add_const_string(id);
-                                let required = !sub_flag.is_empty() && !is_optional(colon);
-                                if required {
-                                    self.op_3(
-                                        element.range(),
-                                        OpCode::Has,
-                                        sub_flag,
-                                        value,
-                                        const_id,
-                                    );
-                                    self.op_if(element.range(), OpCode::If, sub_flag);
-                                }
-                                let ret = self.closures.add_reg();
-                                self.op_3(element.range(), OpCode::Get, ret, value, const_id);
-                                self.emit_pattern(sub_flag, pattern, ret, bind_type);
-                                if let Some(omitted) = omitted.as_mut() {
-                                    omitted.push(const_id);
-                                }
-                                if required {
-                                    self.op_else(element.range());
-                                    self.emit_failed_pattern(pattern, bind_type);
-                                    self.op_if_end(element.range());
-                                }
                             }
-                            RecordElementBase::Unnamed(pattern) => {
-                                let ret = self.closures.add_reg();
-                                let code = match i {
-                                    0 => DiagnosticCode::UnnamedRecordField0,
-                                    1 => DiagnosticCode::UnnamedRecordField1,
-                                    2 => DiagnosticCode::UnnamedRecordField2,
-                                    3 => DiagnosticCode::UnnamedRecordField3,
-                                    4 => DiagnosticCode::UnnamedRecordField4,
-                                    5 => DiagnosticCode::UnnamedRecordField5,
-                                    6 => DiagnosticCode::UnnamedRecordField6,
-                                    7 => DiagnosticCode::UnnamedRecordField7,
-                                    8 => DiagnosticCode::UnnamedRecordField8,
-                                    9 => DiagnosticCode::UnnamedRecordField9,
-                                    _ => DiagnosticCode::UnnamedRecordFieldN,
-                                };
-                                let start = pattern.range().start;
-                                self.diagnostics.push(code, start..start);
-                                if !sub_flag.is_empty() {
-                                    self.op_3(
-                                        element.range(),
-                                        OpCode::HasIndex,
-                                        sub_flag,
-                                        value,
-                                        OpParam::from(i),
-                                    );
-                                    self.op_if(element.range(), OpCode::If, sub_flag);
-                                }
-                                self.op_get_index(element.range(), ret, value, i as i32);
-                                self.emit_pattern(sub_flag, pattern, ret, bind_type);
-                                if let Some(omitted) = omitted.as_mut() {
-                                    let const_id = self.add_const_ordinal(i as i32);
-                                    omitted.push(const_id);
-                                }
-                                if !sub_flag.is_empty() {
-                                    self.op_else(element.range());
-                                    self.emit_failed_pattern(pattern, bind_type);
-                                    self.op_if_end(element.range());
-                                }
+                            let required = !sub_flag.is_empty() && !is_optional(colon);
+                            if required {
+                                self.op_3(element.range(), OpCode::Has, sub_flag, value, const_id);
+                                self.op_if(element.range(), OpCode::If, sub_flag);
                             }
-                            RecordElementBase::Spread(_, pattern) => {
+                            let ret = self.closures.add_reg();
+                            self.op_3(element.range(), OpCode::Get, ret, value, const_id);
+                            self.emit_pattern(sub_flag, pattern, ret, bind_type);
+                            if let Some(omitted) = omitted.as_mut() {
+                                omitted.push(const_id);
+                            }
+                            if required {
+                                self.op_else(element.range());
+                                self.emit_failed_pattern(pattern, bind_type);
+                                self.op_if_end(element.range());
+                            }
+                        }
+                        RecordElementBase::InterpolateNamed(..) => {}
+                        RecordElementBase::OmitNamed(colon, pattern) => {
+                            let Pattern::Bind(_, id_token) = pattern.as_ref() else {
+                                continue;
+                            };
+                            let Some(id) = id_token.to_id_name() else {
+                                continue;
+                            };
+                            self.diagnostics
+                                .push(DiagnosticCode::OmitNamedRecordField, colon.range());
+                            self.diagnostics
+                                .push(DiagnosticCode::OmitNamedRecordFieldName, id_token.range());
+                            let const_id = self.add_const_string(id);
+                            if test_len && is_optional(colon) {
+                                let has_field = self.closures.add_reg();
+                                self.op_3(element.range(), OpCode::Has, has_field, value, const_id);
+                                self.op_2(element.range(), OpCode::Not, has_field, has_field);
+                                self.op_3(
+                                    element.range(),
+                                    OpCode::Sub,
+                                    expected_len_reg,
+                                    expected_len_reg,
+                                    has_field,
+                                );
+                            }
+                            let required = !sub_flag.is_empty() && !is_optional(colon);
+                            if required {
+                                self.op_3(element.range(), OpCode::Has, sub_flag, value, const_id);
+                                self.op_if(element.range(), OpCode::If, sub_flag);
+                            }
+                            let ret = self.closures.add_reg();
+                            self.op_3(element.range(), OpCode::Get, ret, value, const_id);
+                            self.emit_pattern(sub_flag, pattern, ret, bind_type);
+                            if let Some(omitted) = omitted.as_mut() {
+                                omitted.push(const_id);
+                            }
+                            if required {
+                                self.op_else(element.range());
+                                self.emit_failed_pattern(pattern, bind_type);
+                                self.op_if_end(element.range());
+                            }
+                        }
+                        RecordElementBase::Unnamed(pattern) => {
+                            let ret = self.closures.add_reg();
+                            let code = match i {
+                                0 => DiagnosticCode::UnnamedRecordField0,
+                                1 => DiagnosticCode::UnnamedRecordField1,
+                                2 => DiagnosticCode::UnnamedRecordField2,
+                                3 => DiagnosticCode::UnnamedRecordField3,
+                                4 => DiagnosticCode::UnnamedRecordField4,
+                                5 => DiagnosticCode::UnnamedRecordField5,
+                                6 => DiagnosticCode::UnnamedRecordField6,
+                                7 => DiagnosticCode::UnnamedRecordField7,
+                                8 => DiagnosticCode::UnnamedRecordField8,
+                                9 => DiagnosticCode::UnnamedRecordField9,
+                                _ => DiagnosticCode::UnnamedRecordFieldN,
+                            };
+                            let start = pattern.range().start;
+                            self.diagnostics.push(code, start..start);
+                            if !sub_flag.is_empty() {
+                                self.op_3(
+                                    element.range(),
+                                    OpCode::HasIndex,
+                                    sub_flag,
+                                    value,
+                                    OpParam::from(i),
+                                );
+                                self.op_if(element.range(), OpCode::If, sub_flag);
+                            }
+                            self.op_get_index(element.range(), ret, value, i as i32);
+                            self.emit_pattern(sub_flag, pattern, ret, bind_type);
+                            if let Some(omitted) = omitted.as_mut() {
+                                let const_id = self.add_const_ordinal(i as i32);
+                                omitted.push(const_id);
+                            }
+                            if !sub_flag.is_empty() {
+                                self.op_else(element.range());
+                                self.emit_failed_pattern(pattern, bind_type);
+                                self.op_if_end(element.range());
+                            }
+                        }
+                        RecordElementBase::Spread(_, pattern) => {
+                            if let Some(omitted) = std::mem::take(&mut omitted) {
                                 let ret = self.closures.add_reg();
-                                let omitted = std::mem::take(&mut omitted).unwrap_or_default();
                                 self.op_variadic_1(
                                     element.range(),
                                     ret,
@@ -590,11 +614,26 @@ impl<'s, 'c> Emitter<'s, 'c> {
                                 self.emit_pattern(sub_flag, pattern, ret, bind_type);
                             }
                         }
-
-                        if !sub_flag.is_empty() {
-                            self.op_3(element.range(), OpCode::And, success, success, sub_flag);
-                        }
                     }
+
+                    if (has_normal || has_rest && !has_discard_rest) && !sub_flag.is_empty() {
+                        self.op_3(element.range(), OpCode::And, success, success, sub_flag);
+                    }
+                }
+
+                // 最后进行长度测试
+                if !success.is_empty() && !has_rest {
+                    self.op_if(pattern.range(), OpCode::If, success);
+                    let len_reg = self.closures.add_reg();
+                    self.op_2(pattern.range(), OpCode::Length, len_reg, value);
+                    self.op_3(
+                        pattern.range(),
+                        OpCode::Eq,
+                        success,
+                        len_reg,
+                        expected_len_reg,
+                    );
+                    self.op_if_end(pattern.range());
                 }
             }
             Array(_, items, _) => {
