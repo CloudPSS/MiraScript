@@ -103,12 +103,12 @@ jobs:
 
       - uses: actions/setup-python@v6
         with:
-          python-version: 3.15t
+          python-version: 3.14t
       - name: Build free-threaded python wheel
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.arch }}-apple-darwin
-          args: --release --out dist -i python3.15t
+          args: --release --out dist -i python3.14t
           working-directory: crates/python
 
       - name: Upload napi artifact
@@ -168,12 +168,12 @@ jobs:
 
       - uses: actions/setup-python@v6
         with:
-          python-version: 3.15t
+          python-version: 3.14t
       - name: Build free-threaded python wheel
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.arch }}-pc-windows-msvc
-          args: --release --out dist -i python3.15t
+          args: --release --out dist -i python3.14t
           working-directory: crates/python
 
       - name: Upload napi artifact
@@ -363,7 +363,7 @@ jobs:
         python:
           - '3.8'
           - '3.14'
-          - '3.15t'
+          # - '3.15t'
         include:
           - os: windows-latest
             python: '3.7'
