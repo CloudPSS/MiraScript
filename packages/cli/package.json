@@ -35,7 +35,7 @@
   },
   "scripts": {
     "watch": "pnpm build --watch",
-    "build": "pnpm clean && node ./esbuild.config.js",
+    "build": "pnpm clean && pnpm tsc && node ./esbuild.config.js",
     "clean": "rimraf dist"
   },
   "dependencies": {

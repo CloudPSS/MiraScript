@@ -10,3 +10,5 @@ export const kVmWrapper = Symbol.for('mirascript.vm.wrapper');
 
 export const VM_SCRIPT_NAME = `<script_root>`;
 export const VM_FUNCTION_ANONYMOUS_NAME = `<anonymous>`;
+
+export * from '@mirascript/constants';
