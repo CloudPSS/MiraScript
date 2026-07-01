@@ -138,9 +138,8 @@ t_false("1.5" is @one..@two);
   t_eq(v4, 12);
 }
 
-
 {
-  t_false([1, 2, 3] is (a, b,c));
+  t_false([1, 2, 3] is (a, b, c));
   t_eq(a, 1);
   t_eq(b, 2);
   t_eq(c, 3);
@@ -192,7 +191,7 @@ if has_extern {
   t_eq(y, nil);
 }
 {
-  t_true(() is(?:a, ?:b));
+  t_true(() is (?:a, ?:b));
   t_eq(a, nil);
   t_eq(b, nil);
 }
@@ -254,7 +253,7 @@ if has_extern {
   t_eq(y, nil);
 }
 {
-  t_true((a: 1, b: nil) is (: a, ?: c, ..));
+  t_true((a: 1, b: nil) is (:a, ?:c, ..));
   t_eq(a, 1);
   t_eq(c, nil);
 }
@@ -265,7 +264,7 @@ if has_extern {
   t_eq(rest, (b: nil));
 }
 {
-  t_true((a: 1, b: nil) is (: a, ?: c, ..rest));
+  t_true((a: 1, b: nil) is (:a, ?:c, ..rest));
   t_eq(a, 1);
   t_eq(c, nil);
   t_eq(rest, (b: nil));

@@ -34,7 +34,7 @@ for (const [path, content] of Object.entries(exampleModules)) {
         order,
         name: displayName,
         mode: isTemplate ? 'Template' : 'Script',
-        code: content as () => Promise<string>,
+        code: content,
     });
 }
 

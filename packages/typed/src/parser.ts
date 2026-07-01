@@ -33,16 +33,7 @@ export interface TemplateType {
 
 /** Known type names in MiraScript */
 export type KnownType =
-    | 'string'
-    | 'number'
-    | 'boolean'
-    | 'nil'
-    | 'array'
-    | 'record'
-    | 'extern'
-    | 'any'
-    | 'unknown'
-    | 'never';
+    'string' | 'number' | 'boolean' | 'nil' | 'array' | 'record' | 'extern' | 'any' | 'unknown' | 'never';
 
 /** Named type in MiraScript */
 export type NamedType = string & Record<never, never>;
