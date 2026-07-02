@@ -442,9 +442,8 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     };
                     (true, matches!(pattern.as_ref(), SpreadDiscard(_)))
                 });
-                let has_normal = elements.len() > 1 || (elements.len() == 1 && !has_rest);
                 if success.is_empty() {
-                    if is_empty || has_discard_rest {
+                    if is_empty {
                         self.diagnostics.push(
                             DiagnosticCode::UnnecessaryIrrefutablePattern,
                             pattern.range(),

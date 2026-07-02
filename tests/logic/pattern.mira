@@ -284,3 +284,16 @@ if has_extern {
   t_eq(b, 2);
   t_eq(c, 3);
 }
+
+{
+  let person = (name: "小明", age: 20, city: "北京");
+  let (:name, :age) = person;
+  t_eq(name, "小明");
+  t_eq(age, 20);
+}
+{
+  let person = (name: "小明", age: 20, city: "北京");
+  let (:name, :age, ..) = person;
+  t_eq(name, "小明");
+  t_eq(age, 20);
+}

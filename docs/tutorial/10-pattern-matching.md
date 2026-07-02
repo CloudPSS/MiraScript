@@ -86,8 +86,8 @@ let v = '42';
 debug_print(v != 42); // true，因为 '42' 和 42 类型不同
 debug_print(v =~ 42); // true，隐式转换后 '42' 等于 42
 
-debug_print(match v { case != 42 { true } case _ { false }}); // false，类型不一致导致匹配失败
-debug_print(match v { case =~ 42 { true } case _ { false }}); // false，类型不一致导致匹配失败
+debug_print(v is != 42); // false，类型不一致导致匹配失败
+debug_print(v is =~ 42); // false，类型不一致导致匹配失败
 ```
 
 :::
@@ -166,7 +166,7 @@ debug_print(greet_person(42));
 
 ```mira
 let person = (name: "小明", age: 20, city: "北京");
-let (:name, :age) = person;
+let (:name, :age, ..) = person;
 debug_print("$name，$age 岁");
 ```
 
@@ -178,7 +178,7 @@ let data = (
   scores: [85, 92, 78],
 );
 
-let (user: (:name), scores: [first, ..]) = data;
+let (user: (:name, ..), scores: [first, ..]) = data;
 debug_print("$name 的第一门成绩:", first);
 ```
 
