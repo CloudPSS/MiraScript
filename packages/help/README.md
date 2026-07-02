@@ -1,16 +1,16 @@
 # @mirascript/help
 
-`@mirascript/help` 用于将仓库中的参考文档编译为可直接消费的帮助数据，当前主要生成关键字和运算符说明表，供编辑器集成或网站功能使用。
+`@mirascript/help` 将仓库文档编译为可直接消费的帮助数据，主要用于编辑器提示、站点展示和文档检索。
 
 ## 数据来源
 
-构建脚本会读取仓库中的 `docs/references` 文档目录，并根据 front-matter 中的 `token`、`title` 等字段生成发布内容。
+构建过程会读取 `docs/references` 下的文档，并基于 front-matter 中的 `token`、`title` 等字段生成产物。
 
-## 导出内容
+## 主要导出
 
 - `KEYWORDS`：关键字到 Markdown 文本的映射
 - `OPERATORS`：运算符到 Markdown 文本的映射
-- `Keyword` / `Operator`：由生成结果推导出的字面量类型
+- `Keyword` / `Operator`：由生成结果推导的字面量类型
 
 ## 安装
 
@@ -18,7 +18,7 @@
 pnpm add @mirascript/help
 ```
 
-## 示例
+## 快速开始
 
 ```ts
 import { KEYWORDS, OPERATORS } from '@mirascript/help';
@@ -33,4 +33,4 @@ console.log(OPERATORS['??']);
 pnpm --filter @mirascript/help build
 ```
 
-如果新增或调整 `docs/references` 下的文档，需要重新执行构建以刷新 `dist/` 内容。
+当 `docs/references` 内容变更后，请重新构建以刷新 `dist/`。

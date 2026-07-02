@@ -1,10 +1,8 @@
-# MiraScript 黑盒测试
+# MiraScript 测试说明
 
-运行黑盒测试以验证 MiraScript 的跨平台兼容性和功能完整性。
+本目录用于存放语言特性测试、逻辑测试与端到端测试数据。黑盒测试运行时会向脚本注入一组断言函数和预置变量。
 
-## 测试环境
-
-运行测试时，需要提供以下测试上下文，该上下文包含一组用于断言和测试的工具函数。
+## 黑盒测试上下文
 
 ```mira
 /** 断言两个值严格相等 */
@@ -39,7 +37,10 @@ let v_module_another = /* 名为 v_module_another 的模块 */;
 let has_extern = true; /* v_extern 和 v_extern_another 存在 */
 let v_extern = /* 空外部对象 */;
 let v_extern_another = /* 另一个外部对象 */;
-
 ```
 
-参考 [packages/mirascript/tests/black-box/\_run.ts](../packages/mirascript/tests/black-box/_run.ts) 中的实现。
+## 参考实现
+
+测试上下文的注入逻辑可参考：
+
+- `packages/mirascript/tests/black-box/_run.ts`

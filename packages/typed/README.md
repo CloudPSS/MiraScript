@@ -1,10 +1,28 @@
 # @mirascript/typed
 
-`@mirascript/typed` 提供解析 MiraScript 类型定义的能力。
+`@mirascript/typed` 用于解析 MiraScript 类型定义，并可将结果转换为 JSON Schema。
 
-注意，MiraScript 不支持编译/运行时类型检查，也不能直接在 MiraScript 中使用类型标注。类型定义仅用于文档、代码提示、JSON Schema 生成等场景。
+MiraScript 本身不执行编译期或运行时类型检查。该包主要用于文档、提示系统和结构化数据校验场景。
 
-## MiraScript 类型定义概览
+## 安装
+
+```bash
+pnpm add @mirascript/typed
+```
+
+## 快速开始
+
+```ts
+import { parse, toJSONSchema } from '@mirascript/typed';
+
+const type = parse('record<number>');
+console.log(toJSONSchema(type));
+
+console.log(toJSONSchema(parse('(a: number)'), { loose: false }));
+console.log(toJSONSchema(parse('(a: number)'), { loose: true }));
+```
+
+## 类型语法概览
 
 - 内置类型：`nil` `string` `number` `boolean` `record` `array`
   - `array` 支持泛型：`array<elementType>`
@@ -32,31 +50,11 @@
   - 示例：`` `hello $(type)` ``、`"value: $(string | number)"`
   - `$` 必须紧接 `(`，否则报错；`\$` 可表示字面量 `$`
 
-## 安装
-
-```bash
-pnpm add @mirascript/typed
-```
-
-## 基本示例
-
-```ts
-import { parse, toJSONSchema } from '@mirascript/typed';
-
-const type = parse('record<number>');
-console.log(toJSONSchema(type));
-// { type: 'object', additionalProperties: { type: 'number' } }
-console.log(toJSONSchema(parse('(a: number)'), { loose: false }));
-// { type: 'object', properties: { a: { type: 'number' } }, required: ['a'], additionalProperties: false }
-console.log(toJSONSchema(parse('(a: number)'), { loose: true }));
-// { type: 'object', properties: { a: { type: 'number' } }, additionalProperties: true }
-```
-
 ## 常用导出
 
-- `parse()`：将类型字符串解析为 `Type` 对象
-- `toJSONSchema()`：将 `Type` 对象转换为 JSON Schema
-- `Type`、`KnownType`、`RecordType`、`FunctionType`、`TemplateType`、`GenericType` 等类型定义
+- `parse()`：将类型字符串解析为 `Type`
+- `toJSONSchema()`：将 `Type` 转换为 JSON Schema
+- `Type`、`KnownType`、`RecordType`、`FunctionType`、`TemplateType`、`GenericType` 等类型
 
 ## 开发
 

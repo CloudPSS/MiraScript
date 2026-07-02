@@ -1,13 +1,13 @@
 # @mirascript/napi
 
-`@mirascript/napi` 提供 MiraScript 编译器的 Node.js 原生绑定，是面向服务端和本地 CLI 场景的高性能实现。该包通常作为底层依赖被 `@mirascript/bindings` 自动加载，而不是由业务代码直接依赖。
+`@mirascript/napi` 提供 MiraScript 编译器的 Node.js 原生绑定，适合服务端和本地工具链场景。
 
-## 特点
+## 能力概览
 
 - 基于 `napi-rs` 构建
-- 面向 Node.js 环境
-- 支持多平台预构建二进制发布
-- 适合 CLI、构建工具和本地开发服务场景
+- 面向 Node.js 运行时
+- 支持多平台目标产物
+- 常作为 `@mirascript/bindings` 的后端实现
 
 ## 安装
 
@@ -15,17 +15,9 @@
 pnpm add @mirascript/napi
 ```
 
-## 典型关系
+## 使用建议
 
-大多数情况下建议直接使用 `@mirascript/bindings`：
-
-```ts
-import { loadModule } from '@mirascript/bindings';
-
-const mod = await loadModule();
-```
-
-只有在你明确需要直接依赖原生实现时，才需要单独引入本包。
+大多数场景建议直接依赖 `@mirascript/bindings`，由其自动选择 NAPI 或 WASM 实现。仅在明确需要原生实现时再直接依赖本包。
 
 ## 构建
 
@@ -34,7 +26,7 @@ pnpm --filter @mirascript/napi build:debug
 pnpm --filter @mirascript/napi build
 ```
 
-- `build:debug`：本机构建当前平台二进制
-- `build`：优先尝试通过 Docker Buildx 生成多平台产物，失败时回退到本地构建
+- `build:debug`：构建当前平台调试产物
+- `build`：构建发布产物
 
-构建本包需要 Rust 工具链；多平台构建还需要 Docker Buildx。
+构建依赖 Rust 工具链。
