@@ -6,18 +6,10 @@
   <h3>MiraScript</h3>
 
   <p>
-    <a href="https://www.npmjs.com/package/@mirascript/mirascript">
-      <img alt="npm @mirascript/mirascript" src="https://img.shields.io/npm/v/%40mirascript%2Fmirascript?style=for-the-badge&logo=npm&label=%40mirascript%2Fmirascript" />
-    </a>
-    <a href="https://pypi.org/project/mirascript/">
-      <img alt="PyPI mirascript" src="https://img.shields.io/pypi/v/mirascript?style=for-the-badge&logo=pypi&label=mirascript" />
-    </a>
-    <a href="https://open-vsx.org/extension/CloudPSS/mirascript">
-      <img alt="Open VSX MiraScript" src="https://img.shields.io/open-vsx/v/CloudPSS/mirascript?style=for-the-badge&logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMzYgMTM2Jz48cGF0aCBkPSdNMzAgNDQuMkw1Mi42IDVINy4zek00LjYgODguNWg0NS4zTDI3LjIgNDkuNHptNTEgMGwyMi42IDM5LjIgMjIuNi0zOS4yeicgZmlsbD0nI2MxNjBlZic%2BPC9wYXRoPjxwYXRoIGQ9J001Mi42IDVMMzAgNDQuMmg0NS4yek0yNy4yIDQ5LjRsMjIuNyAzOS4xIDIyLjYtMzkuMXptNTEgMEw1NS42IDg4LjVoNDUuMnonIGZpbGw9JyNhNjBlZTUnPjwvcGF0aD48L3N2Zz4%3D&label=MiraScript" />
-    </a>
-    <a href="LICENSE">
-      <img alt="License MIT" src="https://img.shields.io/badge/License-MIT-2563eb?style=for-the-badge" />
-    </a>
+    <a href="https://www.npmjs.com/package/@mirascript/mirascript"><img alt="npm @mirascript/mirascript" src="https://img.shields.io/npm/v/%40mirascript%2Fmirascript?style=for-the-badge&logo=npm&label=%40mirascript%2Fmirascript" /></a>
+    <a href="https://pypi.org/project/mirascript/"><img alt="PyPI mirascript" src="https://img.shields.io/pypi/v/mirascript?style=for-the-badge&logo=pypi&label=mirascript" /></a>
+    <a href="https://open-vsx.org/extension/CloudPSS/mirascript"><img alt="Open VSX MiraScript" src="https://img.shields.io/open-vsx/v/CloudPSS/mirascript?style=for-the-badge&logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMzYgMTM2Jz48cGF0aCBkPSdNMzAgNDQuMkw1Mi42IDVINy4zek00LjYgODguNWg0NS4zTDI3LjIgNDkuNHptNTEgMGwyMi42IDM5LjIgMjIuNi0zOS4yeicgZmlsbD0nI2MxNjBlZic%2BPC9wYXRoPjxwYXRoIGQ9J001Mi42IDVMMzAgNDQuMmg0NS4yek0yNy4yIDQ5LjRsMjIuNyAzOS4xIDIyLjYtMzkuMXptNTEgMEw1NS42IDg4LjVoNDUuMnonIGZpbGw9JyNhNjBlZTUnPjwvcGF0aD48L3N2Zz4%3D&label=MiraScript" /></a>
+    <a href="LICENSE"><img alt="License MIT" src="https://img.shields.io/badge/License-MIT-2563eb?style=for-the-badge" /></a>
   </p>
 
   <p>
