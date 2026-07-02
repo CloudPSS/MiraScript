@@ -360,13 +360,13 @@ arr = [..arr, 4];   // 错误！
 // ✅ 使用 let mut 或构造新绑定
 let arr2 = [..arr, 4];
 
-// ❌ 在末尾使用 return
+// ⚠️ 在末尾使用 return
 fn f(x) { return x * 2; }
 
 // ✅ 隐式返回
 fn f(x) { x * 2 }
 
-// ❌ 不必要的 let mut
+// ⚠️ 不必要的 let mut
 let mut x = 10;   // 若后续从未重新赋值
 // ✅
 let x = 10;

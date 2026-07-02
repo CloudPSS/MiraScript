@@ -6,12 +6,6 @@
 
 `::` 运算符将左侧的值作为右侧函数的**第一个参数**传入：
 
-```miradoc
-value::func(..other_args)
-// 等价于
-func(value, ..other_args)
-```
-
 ```mira
 fn double { it * 2 }
 fn add(x, y) { x + y }
