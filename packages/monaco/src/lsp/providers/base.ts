@@ -40,7 +40,7 @@ async function getContextImpl(model: editor.ITextModel, clearCache: () => void):
         const monacoContext: MonacoContext = Object.freeze({
             get(key: string) {
                 try {
-                    return context.get(key);
+                    return context.get(key) ?? null;
                 } catch {
                     clearCache();
                     return DEFAULT_MONACO_CONTEXT.get(key);
@@ -48,7 +48,7 @@ async function getContextImpl(model: editor.ITextModel, clearCache: () => void):
             },
             getOrUndefined(key: string) {
                 try {
-                    return context.has(key) ? context.get(key) : undefined;
+                    return context.has(key) ? (context.get(key) ?? null) : undefined;
                 } catch {
                     clearCache();
                     return DEFAULT_MONACO_CONTEXT.getOrUndefined(key);

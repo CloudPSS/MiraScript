@@ -1,5 +1,5 @@
 import { isVmFunction, isVmModule } from '@mirascript/mirascript';
-import { DiagnosticCode } from '@mirascript/constants';
+import { DiagnosticCode, isKeyword } from '@mirascript/constants';
 import type { CancellationToken, editor, languages } from '../../monaco-api.js';
 import { Provider } from './base.js';
 
@@ -66,7 +66,11 @@ export class DocumentSemanticTokensProvider extends Provider implements language
                         tokenType = TokenType.CONSTANT;
                     } else {
                         const val = globals.getOrUndefined(id);
-                        if (isVmFunction(val)) {
+                        if (val === undefined && !isKeyword(id)) {
+                            // 对于非关键字的全局变量，如果在上下文中找不到，则不进行标记，使用语法高亮
+                            // 关键字使用语义高亮，以避免被标记为关键字
+                            break;
+                        } else if (isVmFunction(val)) {
                             tokenType = TokenType.FUNCTION;
                         } else if (isVmModule(val)) {
                             tokenType = TokenType.MODULE;

@@ -90,21 +90,19 @@ class ValueVmContext implements VmContext {
     }
     /** @inheritdoc */
     get(key: string): VmValue {
-        if (hasOwn(this.env, key)) return this.env[key] ?? null;
-        {
-            const val = VM_SHARED_CONTEXT[key];
-            if (val !== undefined) return val;
-            return globalVarNotFound(key);
+        if (hasOwn(this.env, key)) {
+            return this.env[key] ?? null;
         }
+        return DefaultVmContext.get(key);
     }
     /** @inheritdoc */
     has(key: string): boolean {
-        return hasOwn(this.env, key) || key in VM_SHARED_CONTEXT;
+        return hasOwn(this.env, key) || DefaultVmContext.has(key);
     }
     /** @inheritdoc */
     describe(key: string): string | undefined {
         if (hasOwn(this.env, key)) return this.describer?.(key);
-        return VM_SHARED_CONTEXT_DESCRIPTIONS[key];
+        return DefaultVmContext.describe(key);
     }
     constructor(
         private readonly env: VmContextRecord,
@@ -123,7 +121,9 @@ class Value2VmContext implements VmContext {
     }
     /** @inheritdoc */
     get(key: string): VmValue {
-        if (this.env != null && hasOwn(this.env, key)) return this.env[key] ?? null;
+        if (this.env != null && hasOwn(this.env, key)) {
+            return this.env[key] ?? null;
+        }
         if (hasOwn(this.extern, key)) {
             const val = this.extern[key];
             if (val == null) return null;
@@ -138,18 +138,18 @@ class Value2VmContext implements VmContext {
             return cached;
         }
 
-        const val = VM_SHARED_CONTEXT[key];
-        if (val !== undefined) return val;
-        return globalVarNotFound(key);
+        return DefaultVmContext.get(key);
     }
     /** @inheritdoc */
     has(key: string): boolean {
-        return (this.env != null && hasOwn(this.env, key)) || hasOwn(this.extern, key) || key in VM_SHARED_CONTEXT;
+        return (this.env != null && hasOwn(this.env, key)) || hasOwn(this.extern, key) || DefaultVmContext.has(key);
     }
     /** @inheritdoc */
     describe(key: string): string | undefined {
-        if ((this.env != null && hasOwn(this.env, key)) || hasOwn(this.extern, key)) return this.describer?.(key);
-        return VM_SHARED_CONTEXT_DESCRIPTIONS[key];
+        if ((this.env != null && hasOwn(this.env, key)) || hasOwn(this.extern, key)) {
+            return this.describer?.(key);
+        }
+        return DefaultVmContext.describe(key);
     }
     private readonly externCache = new WeakMap<object, VmValue>();
     constructor(
@@ -173,19 +173,16 @@ class FactoryVmContext implements VmContext {
     get(key: string): VmValue {
         const value = this.getter(key);
         if (value !== undefined) return value;
-
-        const val = VM_SHARED_CONTEXT[key];
-        if (val !== undefined) return val;
-        return globalVarNotFound(key);
+        return DefaultVmContext.get(key);
     }
     /** @inheritdoc */
     has(key: string): boolean {
-        return this.getter(key) !== undefined || key in VM_SHARED_CONTEXT;
+        return this.getter(key) !== undefined || DefaultVmContext.has(key);
     }
     /** @inheritdoc */
     describe(key: string): string | undefined {
         if (this.getter(key) !== undefined) return this.describer?.(key);
-        return VM_SHARED_CONTEXT_DESCRIPTIONS[key];
+        return DefaultVmContext.describe(key);
     }
     constructor(
         private readonly getter: (key: string) => VmValue | undefined,
