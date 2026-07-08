@@ -36,6 +36,6 @@
   },
   "dependencies": {
     "@mirascript/constants": "workspace:~",
-    "@types/json-schema": "^7.0.15"
+    "json-schema-typed": "^8.0.2"
   }
 }

@@ -37,6 +37,11 @@ function union(types) {
   return { kind: "union", types };
 }
 
+function intersection(types) {
+  if (types.length === 1) return types[0];
+  return { kind: "intersection", types };
+}
+
 function record(fields) {
   for(let i = 0; i < fields.length; i++) {
     fields[i].name ??= String(i);
@@ -62,15 +67,20 @@ Start
   / _ @Type _
 
 ///////////////////////////////////////////////////////////////////////////////
-// Type (union)
+// Type (union / intersection)
 ///////////////////////////////////////////////////////////////////////////////
 
 Type
   = UnionType
 
 UnionType
-  = _ ( "|" _ )? u:PostfixType|1.., _ "|" _ | {
+  = _ ( "|" _ )? u:IntersectionType|1.., _ "|" _ | {
       return union(u);
+    }
+
+IntersectionType
+  = _ ( "&" _ )? i:PostfixType|1.., _ "&" _ | {
+      return intersection(i);
     }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -1,6 +1,6 @@
 import test from 'ava';
 import { REG_NUMBER } from '@mirascript/constants';
-import { parse } from '../src/parser.ts';
+import { parse, type Type } from '../src/parser.ts';
 import { toJSONSchema } from '../src/json.ts';
 
 test('primitive JSON schemas', (t) => {
@@ -141,6 +141,161 @@ test('union JSON schema', (t) => {
     });
 });
 
+test('intersection JSON schema', (t) => {
+    t.deepEqual(toJSONSchema(parse('string & "x"')), {
+        allOf: [{ type: 'string' }, { type: 'string', const: 'x' }],
+    });
+    t.deepEqual(toJSONSchema(parse('string & ("x" & "$(string)")')), {
+        allOf: [{ type: 'string' }, { type: 'string', const: 'x' }, { type: 'string', pattern: '^(.*?)$' }],
+    });
+    t.deepEqual(toJSONSchema(parse('(a: number) & (b: string)')), {
+        type: 'object',
+        properties: {
+            a: { type: 'number' },
+            b: { type: 'string' },
+        },
+        required: ['a', 'b'],
+        additionalProperties: false,
+    });
+    t.deepEqual(toJSONSchema(parse('(a: number) & (a?: string) & () & (a: false)')), {
+        type: 'object',
+        properties: {
+            a: {
+                allOf: [{ type: 'number' }, { type: 'string' }, { type: 'boolean', const: false }],
+            },
+        },
+        required: ['a'],
+        additionalProperties: false,
+    });
+    t.deepEqual(toJSONSchema(parse('(t: string) & ((x: number) | (y: number))')), {
+        anyOf: [
+            {
+                type: 'object',
+                properties: { t: { type: 'string' }, x: { type: 'number' } },
+                required: ['t', 'x'],
+                additionalProperties: false,
+            },
+            {
+                type: 'object',
+                properties: { t: { type: 'string' }, y: { type: 'number' } },
+                required: ['t', 'y'],
+                additionalProperties: false,
+            },
+        ],
+    });
+    t.deepEqual(toJSONSchema(parse('(t: string) & ((x: number) | ((y: number) & ((z: boolean) | (w: nil))))')), {
+        anyOf: [
+            {
+                type: 'object',
+                properties: { t: { type: 'string' }, x: { type: 'number' } },
+                required: ['t', 'x'],
+                additionalProperties: false,
+            },
+            {
+                type: 'object',
+                properties: { t: { type: 'string' }, y: { type: 'number' }, z: { type: 'boolean' } },
+                required: ['t', 'y', 'z'],
+                additionalProperties: false,
+            },
+            {
+                type: 'object',
+                properties: { t: { type: 'string' }, y: { type: 'number' }, w: { type: 'null' } },
+                required: ['t', 'y', 'w'],
+                additionalProperties: false,
+            },
+        ],
+    });
+    t.deepEqual(toJSONSchema(parse('((a: number) | (b: number)) & ((x: string) | (y: string))')), {
+        anyOf: [
+            {
+                type: 'object',
+                properties: {
+                    a: { type: 'number' },
+                    x: { type: 'string' },
+                },
+                required: ['a', 'x'],
+                additionalProperties: false,
+            },
+            {
+                type: 'object',
+                properties: {
+                    a: { type: 'number' },
+                    y: { type: 'string' },
+                },
+                required: ['a', 'y'],
+                additionalProperties: false,
+            },
+            {
+                type: 'object',
+                properties: {
+                    b: { type: 'number' },
+                    x: { type: 'string' },
+                },
+                required: ['b', 'x'],
+                additionalProperties: false,
+            },
+            {
+                type: 'object',
+                properties: {
+                    b: { type: 'number' },
+                    y: { type: 'string' },
+                },
+                required: ['b', 'y'],
+                additionalProperties: false,
+            },
+        ],
+    });
+    t.deepEqual(toJSONSchema(parse('(number,) & (string,)')), {
+        type: 'object',
+        properties: {
+            '0': {
+                allOf: [{ type: 'number' }, { type: 'string' }],
+            },
+        },
+        required: ['0'],
+        additionalProperties: false,
+    });
+    t.deepEqual(toJSONSchema(parse('(a?: number) & (a?: string)')), {
+        type: 'object',
+        properties: {
+            a: {
+                allOf: [{ type: 'number' }, { type: 'string' }],
+            },
+        },
+        additionalProperties: false,
+    });
+});
+
+test('edge-case JSON schema branches', (t) => {
+    // Generic symbols should map to unconstrained schema.
+    t.deepEqual(toJSONSchema(Symbol('T')), {});
+    t.deepEqual(toJSONSchema({ kind: 'template', parts: [Symbol('T')] }), {
+        type: 'string',
+        pattern: '^(.*?)$',
+    });
+
+    // Internal AST edge case: single-member intersection should unwrap.
+    t.deepEqual(toJSONSchema({ kind: 'intersection', types: ['string'] }), { type: 'string' });
+
+    // Internal AST edge case: distributing over a one-member union keeps one branch.
+    t.deepEqual(
+        toJSONSchema({
+            kind: 'intersection',
+            types: [{ kind: 'union', types: ['string'] }, 'number'],
+        }),
+        { allOf: [{ type: 'string' }, { type: 'number' }] },
+    );
+
+    // Internal AST edge case: distribution produces a single flattened member.
+    t.deepEqual(
+        toJSONSchema({
+            kind: 'intersection',
+            types: [{ kind: 'union', types: [{ kind: 'intersection', types: ['string'] }] }],
+        }),
+        { type: 'string' },
+    );
+});
+
 test('record JSON schema', (t) => {
     t.deepEqual(toJSONSchema(parse('(a: number, b?: string)')), {
         type: 'object',
@@ -212,6 +367,10 @@ test('template type JSON schema', (t) => {
         });
     }
     t.deepEqual(toJSONSchema(parse('`value: $(string | number)`')), {
+        type: 'string',
+        pattern: `^value: (.*?)$`,
+    });
+    t.deepEqual(toJSONSchema(parse('`value: $(string & number)`')), {
         type: 'string',
         pattern: `^value: (.*?)$`,
     });

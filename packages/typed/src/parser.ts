@@ -9,6 +9,7 @@ export type Type =
     | TemplateType
     | ArrayType
     | UnionType
+    | IntersectionType
     | RecordType
     | FunctionType;
 
@@ -43,6 +44,14 @@ export interface UnionType {
     /** Tag */
     kind: 'union';
     /** Types in the union */
+    types: Type[];
+}
+
+/** Intersection type in MiraScript */
+export interface IntersectionType {
+    /** Tag */
+    kind: 'intersection';
+    /** Types in the intersection */
     types: Type[];
 }
 
@@ -133,6 +142,10 @@ function resolveGenerics(type: Type, scope = new Map<string, GenericType>()): Ty
         return type;
     }
     if (type.kind === 'union') {
+        type.types = type.types.map((t) => resolveGenerics(t, scope));
+        return type;
+    }
+    if (type.kind === 'intersection') {
         type.types = type.types.map((t) => resolveGenerics(t, scope));
         return type;
     }

@@ -26,7 +26,9 @@ console.log(toJSONSchema(parse('(a: number)'), { loose: true }));
 
 - 内置类型：`nil` `string` `number` `boolean` `record` `array`
   - `array` 支持泛型：`array<elementType>`
-  - `record` 支持 `record<valueType>` 与 `record<keyType, valueType>`
+  - `record` 支持泛型：`record<valueType>` 与 `record<keyType, valueType>`
+- 交叉类型：`typeA & typeB`
+  - 可选前缀 `&`
 - 联合类型：`typeA | typeB`
   - 可选前缀 `|`
 - 数组类型：`type[]`（同 `array<type>`）

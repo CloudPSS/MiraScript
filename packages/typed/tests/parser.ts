@@ -234,6 +234,27 @@ test('union type with leading pipe', (t) => {
     });
 });
 
+test('intersection type', (t) => {
+    t.deepEqual(parse('A & B'), {
+        kind: 'intersection',
+        types: ['A', 'B'],
+    });
+    t.deepEqual(parse('true & false'), {
+        kind: 'intersection',
+        types: [
+            { kind: 'literal', value: true },
+            { kind: 'literal', value: false },
+        ],
+    });
+});
+
+test('intersection type with leading ampersand', (t) => {
+    t.deepEqual(parse('& A & B'), {
+        kind: 'intersection',
+        types: ['A', 'B'],
+    });
+});
+
 test('record type', (t) => {
     t.deepEqual(parse('(a: number, b: string)'), {
         kind: 'record',
@@ -570,6 +591,26 @@ test('priority of types', (t) => {
             kind: 'union',
             types: ['boolean', { kind: 'array', element: 'string' }],
         },
+    });
+    t.deepEqual(parse('string | number & boolean[]'), {
+        kind: 'union',
+        types: [
+            'string',
+            {
+                kind: 'intersection',
+                types: ['number', { kind: 'array', element: 'boolean' }],
+            },
+        ],
+    });
+    t.deepEqual(parse('(string | number) & boolean[]'), {
+        kind: 'intersection',
+        types: [
+            {
+                kind: 'union',
+                types: ['string', 'number'],
+            },
+            { kind: 'array', element: 'boolean' },
+        ],
     });
     t.deepEqual(parse('fn() -> (boolean | string)[]'), {
         kind: 'function',
