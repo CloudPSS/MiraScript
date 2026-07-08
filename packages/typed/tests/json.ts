@@ -8,7 +8,7 @@ test('primitive JSON schemas', (t) => {
     t.deepEqual(toJSONSchema(parse('number')), { type: 'number' });
     t.deepEqual(toJSONSchema(parse('boolean')), { type: 'boolean' });
     t.deepEqual(toJSONSchema(parse('nil')), { type: 'null' });
-    t.deepEqual(toJSONSchema(parse('array')), { type: 'array' });
+    t.deepEqual(toJSONSchema(parse('array')), { type: 'array', items: {} });
     t.deepEqual(toJSONSchema(parse('record')), { type: 'object' });
     t.deepEqual(toJSONSchema(parse('any')), {});
     t.deepEqual(toJSONSchema(parse('unknown')), {});

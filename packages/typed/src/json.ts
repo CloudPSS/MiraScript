@@ -14,7 +14,7 @@ function string(type: KnownType | NamedType): JSONSchema7 {
         case 'nil':
             return { type: 'null' };
         case 'array':
-            return { type: 'array' };
+            return { type: 'array', items: {} };
         case 'record':
             return { type: 'object' };
         case 'extern':
