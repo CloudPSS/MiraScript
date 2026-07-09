@@ -55,6 +55,7 @@ console.log(toJSONSchema(parse('(a: number)'), { loose: true }));
 ## 常用导出
 
 - `parse()`：将类型字符串解析为 `Type`
+- `simplify()`：在 `Type` AST 层做归一化和展开，默认开启全部简化；可通过 `SimplifyOptions` 逐项关闭
 - `toJSONSchema()`：将 `Type` 转换为 JSON Schema
 - `Type`、`KnownType`、`RecordType`、`FunctionType`、`TemplateType`、`GenericType` 等类型
 

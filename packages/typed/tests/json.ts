@@ -1,7 +1,7 @@
 import test from 'ava';
 import { REG_NUMBER } from '@mirascript/constants';
-import { parse, type Type } from '../src/parser.ts';
-import { toJSONSchema } from '../src/json.ts';
+import { parse } from '../dist/parser.js';
+import { toJSONSchema } from '../dist/json.js';
 
 test('primitive JSON schemas', (t) => {
     t.deepEqual(toJSONSchema(parse('string')), { type: 'string' });

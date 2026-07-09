@@ -1,5 +1,6 @@
 import type { JSONSchema } from 'json-schema-typed';
 import { REG_NUMBER } from '@mirascript/constants';
+import { simplify } from './simplifier.js';
 import type { KnownType, LiteralType, NamedType, TemplateType, Type } from './parser.js';
 
 /** Converts a KnownType or NamedType into JSON Schema */
@@ -130,80 +131,6 @@ function isLiteralType(type: Type): type is LiteralType {
     return typeof type === 'object' && type.kind === 'literal';
 }
 
-/** Type guard for object record with explicit fields */
-function isFieldRecordType(type: Type): type is Extract<Type, { kind: 'record'; fields: unknown[] }> {
-    return typeof type == 'object' && type.kind === 'record' && 'fields' in type;
-}
-
-/** Merges record field lists for intersection semantics. */
-function mergeRecordFieldIntersections(types: Type[]): Type {
-    const merged = new Map<string, { optional: boolean; type: Type }>();
-    for (const t of types) {
-        if (!isFieldRecordType(t)) continue;
-        for (const field of t.fields) {
-            const prev = merged.get(field.name);
-            if (prev == null) {
-                merged.set(field.name, {
-                    optional: field.optional ?? false,
-                    type: field.type,
-                });
-                continue;
-            }
-            merged.set(field.name, {
-                // In intersections, required wins over optional.
-                optional: (prev.optional ?? false) && (field.optional ?? false),
-                type: {
-                    kind: 'intersection',
-                    types: [prev.type, field.type],
-                },
-            });
-        }
-    }
-
-    return {
-        kind: 'record',
-        fields: Array.from(merged.entries()).map(([name, field]) => ({
-            name,
-            optional: field.optional,
-            type: field.type,
-        })),
-    };
-}
-
-/** Flattens nested intersection nodes into a single-level list. */
-function flattenIntersectionTypes(types: Type[]): Type[] {
-    const result: Type[] = [];
-    for (const t of types) {
-        if (typeof t === 'object' && t.kind === 'intersection') {
-            result.push(...flattenIntersectionTypes(t.types));
-        } else {
-            result.push(t);
-        }
-    }
-    return result;
-}
-
-/** Distributes intersection over direct union members. */
-function distributeIntersectionOverUnions(types: Type[]): Type[] {
-    let combinations: Type[][] = [[]];
-    for (const t of types) {
-        const choices = typeof t === 'object' && t.kind === 'union' ? t.types : [t];
-        const next: Type[][] = [];
-        for (const combo of combinations) {
-            for (const choice of choices) {
-                next.push([...combo, choice]);
-            }
-        }
-        combinations = next;
-    }
-
-    return combinations.map((combo) => {
-        const flattened = flattenIntersectionTypes(combo);
-        if (flattened.length === 1) return flattened[0]!;
-        return { kind: 'intersection', types: flattened };
-    });
-}
-
 /** Options for toJSONSchema */
 export interface ToJSONSchemaOptions {
     /** When true, object schemas allow arbitrary additional properties */
@@ -213,37 +140,27 @@ export interface ToJSONSchemaOptions {
 /** Converts a Type object into JSON Schema */
 export function toJSONSchema(type: Type, options?: ToJSONSchemaOptions): JSONSchema {
     const loose = options?.loose ?? false;
-    if (typeof type === 'symbol') {
+    const simplified = simplify(type);
+    if (typeof simplified === 'symbol') {
         return {};
     }
-    if (typeof type === 'string') {
-        return string(type);
+    if (typeof simplified === 'string') {
+        return string(simplified);
     }
-    if (type.kind === 'array') {
+    if (simplified.kind === 'array') {
         return {
             type: 'array',
-            items: toJSONSchema(type.element, options),
+            items: toJSONSchema(simplified.element, options),
         };
     }
-    if (type.kind === 'union') {
+    if (simplified.kind === 'union') {
         const anyOf: JSONSchema[] = [];
         const literals = [];
-        for (const t of type.types) {
+        for (const t of simplified.types) {
             if (isLiteralType(t)) {
                 literals.push(t);
             } else {
-                const item = toJSONSchema(t, options);
-                if (
-                    typeof item == 'object' &&
-                    item != null &&
-                    'anyOf' in item &&
-                    Object.keys(item).length === 1 &&
-                    Array.isArray(item.anyOf)
-                ) {
-                    anyOf.push(...item.anyOf);
-                } else {
-                    anyOf.push(item);
-                }
+                anyOf.push(toJSONSchema(t, options));
             }
         }
         if (literals.length > 0) {
@@ -254,30 +171,18 @@ export function toJSONSchema(type: Type, options?: ToJSONSchemaOptions): JSONSch
         }
         return { anyOf };
     }
-    if (type.kind === 'intersection') {
-        const flattenedTypes = flattenIntersectionTypes(type.types);
-        if (flattenedTypes.some((t) => typeof t == 'object' && t.kind === 'union')) {
-            const distributed = distributeIntersectionOverUnions(flattenedTypes);
-            if (distributed.length === 1) {
-                return toJSONSchema(distributed[0]!, options);
-            }
-            return toJSONSchema({ kind: 'union', types: distributed }, options);
-        }
-        if (flattenedTypes.every(isFieldRecordType)) {
-            const merged = mergeRecordFieldIntersections(flattenedTypes);
-            return toJSONSchema(merged, options);
-        }
-        const allOf = flattenedTypes.map((t) => toJSONSchema(t, options));
+    if (simplified.kind === 'intersection') {
+        const allOf = simplified.types.map((t) => toJSONSchema(t, options));
         if (allOf.length === 1) {
             return allOf[0]!;
         }
         return { allOf };
     }
-    if (type.kind === 'record') {
-        if ('fields' in type) {
+    if (simplified.kind === 'record') {
+        if ('fields' in simplified) {
             const properties: Record<string, JSONSchema> = {};
             const required: string[] = [];
-            for (const field of type.fields) {
+            for (const field of simplified.fields) {
                 properties[field.name] = toJSONSchema(field.type, options);
                 if (!field.optional && !loose) {
                     required.push(field.name);
@@ -294,31 +199,31 @@ export function toJSONSchema(type: Type, options?: ToJSONSchemaOptions): JSONSch
             return schema;
         }
 
-        const valueSchema = toJSONSchema(type.value, options);
-        if (type.key == null) {
+        const valueSchema = toJSONSchema(simplified.value, options);
+        if (simplified.key == null) {
             return {
                 type: 'object',
                 additionalProperties: valueSchema,
             };
         }
-        if (typeof type.key == 'object') {
-            if (isLiteralType(type.key)) {
+        if (typeof simplified.key == 'object') {
+            if (isLiteralType(simplified.key)) {
                 const schema: JSONSchema = {
                     type: 'object',
-                    properties: { [String(type.key.value)]: valueSchema },
+                    properties: { [String(simplified.key.value)]: valueSchema },
                     additionalProperties: loose,
                 };
                 return schema;
-            } else if (type.key.kind === 'union' && type.key.types.every(isLiteralType)) {
+            } else if (simplified.key.kind === 'union' && simplified.key.types.every(isLiteralType)) {
                 const schema: JSONSchema = {
                     type: 'object',
-                    properties: Object.fromEntries(type.key.types.map((t) => [String(t.value), valueSchema])),
+                    properties: Object.fromEntries(simplified.key.types.map((t) => [String(t.value), valueSchema])),
                     additionalProperties: loose,
                 };
                 return schema;
             }
         }
-        const pattern = templatePartPattern(type.key, false);
+        const pattern = templatePartPattern(simplified.key, false);
         if (pattern === RE_ANY) {
             return {
                 type: 'object',
@@ -332,16 +237,16 @@ export function toJSONSchema(type: Type, options?: ToJSONSchemaOptions): JSONSch
         };
         return schema;
     }
-    if (type.kind === 'literal') {
-        return literal(type);
+    if (simplified.kind === 'literal') {
+        return literal(simplified);
     }
-    if (type.kind === 'function') {
+    if (simplified.kind === 'function') {
         return {};
     }
-    if (type.kind === 'template') {
-        return { type: 'string', pattern: templatePattern(type) };
+    if (simplified.kind === 'template') {
+        return { type: 'string', pattern: templatePattern(simplified) };
     }
     /* c8 ignore next 3 */
-    (type) satisfies never;
+    simplified satisfies never;
     return {};
 }

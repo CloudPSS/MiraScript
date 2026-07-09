@@ -1,5 +1,5 @@
 import test from 'ava';
-import { parse, type FunctionType, type TemplateType } from '../src/parser.ts';
+import { parse, type FunctionType, type TemplateType } from '../dist/parser.js';
 
 test('primitive types', (t) => {
     t.is(parse('nil'), 'nil');
