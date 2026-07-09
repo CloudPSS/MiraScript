@@ -6,6 +6,10 @@ export interface SimplifyOptions {
     flattenUnions?: boolean;
     /** Flatten nested intersection nodes. */
     flattenIntersections?: boolean;
+    /** Remove duplicate members inside union nodes. */
+    deduplicateUnions?: boolean;
+    /** Remove duplicate members inside intersection nodes. */
+    deduplicateIntersections?: boolean;
     /** Remove single-member union nodes. */
     unwrapSingleUnion?: boolean;
     /** Remove single-member intersection nodes. */
@@ -19,6 +23,8 @@ export interface SimplifyOptions {
 const DEFAULT_OPTIONS: Required<SimplifyOptions> = {
     flattenUnions: true,
     flattenIntersections: true,
+    deduplicateUnions: true,
+    deduplicateIntersections: true,
     unwrapSingleUnion: true,
     unwrapSingleIntersection: true,
     distributeIntersectionsOverUnions: true,
@@ -38,6 +44,59 @@ function isTypeObject(type: Type): type is Exclude<Type, GenericType | string> {
 /** Checks whether a record type uses the explicit fields form. */
 function isFieldRecordType(type: Type): type is Extract<RecordType, { fields: RecordField[] }> {
     return isTypeObject(type) && type.kind === 'record' && 'fields' in type;
+}
+
+/** Builds a stable key for type-level deduplication within one simplify call. */
+function getTypeDedupKey(type: Type, symbols: Map<symbol, number>): string {
+    if (typeof type === 'string') return `string:${type}`;
+    if (typeof type === 'symbol') {
+        const existing = symbols.get(type);
+        if (existing != null) return `symbol:${existing}`;
+        const next = symbols.size + 1;
+        symbols.set(type, next);
+        return `symbol:${next}`;
+    }
+    switch (type.kind) {
+        case 'array':
+            return `array:${getTypeDedupKey(type.element, symbols)}`;
+        case 'union':
+            return `union:[${type.types.map((t) => getTypeDedupKey(t, symbols)).join(',')}]`;
+        case 'intersection':
+            return `intersection:[${type.types.map((t) => getTypeDedupKey(t, symbols)).join(',')}]`;
+        case 'record':
+            if ('fields' in type) {
+                return `recordFields:[${type.fields
+                    .map((f) => `${f.name}:${String(Boolean(f.optional))}:${getTypeDedupKey(f.type, symbols)}`)
+                    .join(',')}]`;
+            }
+            return `recordKV:${type.key == null ? 'none' : getTypeDedupKey(type.key, symbols)}:${getTypeDedupKey(type.value, symbols)}`;
+        case 'literal':
+            return `literal:${typeof type.value}:${String(type.value)}`;
+        case 'template':
+            return `template:[${type.parts.map((p) => getTypeDedupKey(p, symbols)).join(',')}]`;
+        case 'function':
+            return `function:${
+                type.name ?? ''
+            }:<${(type.typeParams ?? []).map((p) => getTypeDedupKey(p, symbols)).join(',')}>(${type.params
+                .map((p) => `${p.name}:${String(Boolean(p.spread))}:${getTypeDedupKey(p.type, symbols)}`)
+                .join(',')})=>${type.returns == null ? 'void' : getTypeDedupKey(type.returns, symbols)}`;
+        default:
+            return 'unknown';
+    }
+}
+
+/** Removes duplicate members from union/intersection type member lists. */
+function deduplicateTypeMembers(types: Type[]): Type[] {
+    const symbols = new Map<symbol, number>();
+    const seen = new Set<string>();
+    const result: Type[] = [];
+    for (const type of types) {
+        const key = getTypeDedupKey(type, symbols);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        result.push(type);
+    }
+    return result;
 }
 
 /** Flattens nested union nodes when the corresponding option is enabled. */
@@ -175,10 +234,13 @@ function simplifyImpl(type: Type, config: Required<SimplifyOptions>): Type {
     }
 
     if (type.kind === 'union') {
-        const simplifiedTypes = flattenUnionTypes(
+        let simplifiedTypes = flattenUnionTypes(
             type.types.map((item) => simplifyImpl(item, config)),
             config,
         );
+        if (config.deduplicateUnions) {
+            simplifiedTypes = deduplicateTypeMembers(simplifiedTypes);
+        }
         if (config.unwrapSingleUnion && simplifiedTypes.length === 1) {
             return simplifiedTypes[0]!;
         }
@@ -187,18 +249,34 @@ function simplifyImpl(type: Type, config: Required<SimplifyOptions>): Type {
     }
 
     if (type.kind === 'intersection') {
-        const simplifiedTypes = flattenIntersectionTypes(
+        let simplifiedTypes = flattenIntersectionTypes(
             type.types.map((item) => simplifyImpl(item, config)),
             config,
         );
+        if (config.deduplicateIntersections) {
+            simplifiedTypes = deduplicateTypeMembers(simplifiedTypes);
+        }
         if (
             config.distributeIntersectionsOverUnions &&
             simplifiedTypes.some((item) => isTypeObject(item) && item.kind === 'union')
         ) {
             return distributeIntersectionsOverUnions(simplifiedTypes, config);
         }
-        if (config.mergeRecordIntersections && simplifiedTypes.every(isFieldRecordType)) {
-            return simplifyImpl(mergeRecordFieldIntersections(simplifiedTypes), config);
+        if (config.mergeRecordIntersections) {
+            const recordTypes = simplifiedTypes.filter(isFieldRecordType);
+            if (recordTypes.length >= 2) {
+                const nonRecordTypes = simplifiedTypes.filter((item) => !isFieldRecordType(item));
+                const mergedRecord = simplifyImpl(mergeRecordFieldIntersections(recordTypes), config);
+                let mergedTypes = [mergedRecord, ...nonRecordTypes];
+                if (config.deduplicateIntersections) {
+                    mergedTypes = deduplicateTypeMembers(mergedTypes);
+                }
+                if (config.unwrapSingleIntersection && mergedTypes.length === 1) {
+                    return mergedTypes[0]!;
+                }
+                type.types = mergedTypes;
+                return type;
+            }
         }
         if (config.unwrapSingleIntersection && simplifiedTypes.length === 1) {
             return simplifiedTypes[0]!;

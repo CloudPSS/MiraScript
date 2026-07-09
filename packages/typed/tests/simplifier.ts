@@ -13,6 +13,21 @@ test('simplify flattens unions and intersections', (t) => {
     });
     t.is(simplify({ kind: 'union', types: ['string'] }), 'string');
     t.is(simplify({ kind: 'intersection', types: ['string'] }), 'string');
+    t.is(simplify(parse('string | string')), 'string');
+    t.is(simplify(parse('string & string')), 'string');
+    t.deepEqual(simplify(parse('string & string & (a: string) & (a: string, b?: number)')), {
+        kind: 'intersection',
+        types: [
+            {
+                kind: 'record',
+                fields: [
+                    { name: 'a', optional: false, type: 'string' },
+                    { name: 'b', optional: true, type: 'number' },
+                ],
+            },
+            'string',
+        ],
+    });
 });
 
 test('simplify distributes intersections over unions and merges record fields', (t) => {
@@ -48,6 +63,19 @@ test('simplify distributes intersections over unions and merges record fields', 
             },
         ],
     });
+    t.deepEqual(simplify(parse('(a: number) & string & (b: boolean)')), {
+        kind: 'intersection',
+        types: [
+            {
+                kind: 'record',
+                fields: [
+                    { name: 'a', optional: false, type: 'number' },
+                    { name: 'b', optional: false, type: 'boolean' },
+                ],
+            },
+            'string',
+        ],
+    });
 });
 
 test('simplify options can disable individual passes', (t) => {
@@ -65,5 +93,13 @@ test('simplify options can disable individual passes', (t) => {
             { kind: 'record', fields: [{ name: 'a', optional: false, type: 'number' }] },
             { kind: 'record', fields: [{ name: 'b', optional: false, type: 'string' }] },
         ],
+    });
+    t.deepEqual(simplify(parse('string | string'), { deduplicateUnions: false }), {
+        kind: 'union',
+        types: ['string', 'string'],
+    });
+    t.deepEqual(simplify(parse('string & string'), { deduplicateIntersections: false }), {
+        kind: 'intersection',
+        types: ['string', 'string'],
     });
 });

@@ -25,7 +25,7 @@ function string(type: KnownType | NamedType): JSONSchema {
         case 'unknown':
             return {};
         case 'never':
-            return {};
+            return false;
         default:
             return {};
     }
@@ -109,26 +109,20 @@ function templatePattern(type: TemplateType): string {
 
 /** Converts a LiteralType into JSON Schema */
 function literal(type: LiteralType): JSONSchema {
-    if (typeof type.value === 'boolean') {
-        return { type: 'boolean', const: type.value };
-    }
-    return { type: 'string', const: type.value };
+    return { const: type.value };
 }
 
 /** Converts a union of LiteralTypes into a single JSON Schema enum */
 function literalEnum(types: LiteralType[]): JSONSchema {
-    const values = types.map((t) => t.value);
-    const valueTypes = new Set(values.map((v) => (typeof v === 'boolean' ? 'boolean' : 'string')));
-    const schema: JSONSchema = { enum: values };
-    if (valueTypes.size === 1) {
-        schema.type = valueTypes.values().next().value!;
-    }
+    const schema: JSONSchema = {
+        enum: types.map((t) => t.value),
+    };
     return schema;
 }
 
 /** Type guard for LiteralType */
 function isLiteralType(type: Type): type is LiteralType {
-    return typeof type === 'object' && type.kind === 'literal';
+    return typeof type == 'object' && type.kind === 'literal';
 }
 
 /** Options for toJSONSchema */
@@ -141,10 +135,10 @@ export interface ToJSONSchemaOptions {
 export function toJSONSchema(type: Type, options?: ToJSONSchemaOptions): JSONSchema {
     const loose = options?.loose ?? false;
     const simplified = simplify(type);
-    if (typeof simplified === 'symbol') {
+    if (typeof simplified == 'symbol') {
         return {};
     }
-    if (typeof simplified === 'string') {
+    if (typeof simplified == 'string') {
         return string(simplified);
     }
     if (simplified.kind === 'array') {
@@ -155,7 +149,7 @@ export function toJSONSchema(type: Type, options?: ToJSONSchemaOptions): JSONSch
     }
     if (simplified.kind === 'union') {
         const anyOf: JSONSchema[] = [];
-        const literals = [];
+        const literals: LiteralType[] = [];
         for (const t of simplified.types) {
             if (isLiteralType(t)) {
                 literals.push(t);

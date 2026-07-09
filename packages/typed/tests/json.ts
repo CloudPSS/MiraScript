@@ -12,7 +12,7 @@ test('primitive JSON schemas', (t) => {
     t.deepEqual(toJSONSchema(parse('record')), { type: 'object' });
     t.deepEqual(toJSONSchema(parse('any')), {});
     t.deepEqual(toJSONSchema(parse('unknown')), {});
-    t.deepEqual(toJSONSchema(parse('never')), {});
+    t.deepEqual(toJSONSchema(parse('never')), false);
     t.deepEqual(toJSONSchema(parse('extern')), {});
 });
 
@@ -22,25 +22,21 @@ test('named type JSON schema', (t) => {
 
 test('string literal JSON schema', (t) => {
     t.deepEqual(toJSONSchema(parse('"hello"')), {
-        type: 'string',
         const: 'hello',
     });
 });
 
 test('boolean literal JSON schemas', (t) => {
     t.deepEqual(toJSONSchema(parse('true')), {
-        type: 'boolean',
         const: true,
     });
     t.deepEqual(toJSONSchema(parse('false')), {
-        type: 'boolean',
         const: false,
     });
 });
 
 test('literal union JSON schema', (t) => {
     t.deepEqual(toJSONSchema(parse('"on" | "off"')), {
-        type: 'string',
         enum: ['on', 'off'],
     });
 });
@@ -48,6 +44,12 @@ test('literal union JSON schema', (t) => {
 test('mixed literal union JSON schema', (t) => {
     t.deepEqual(toJSONSchema(parse('"on" | true')), {
         enum: ['on', true],
+    });
+});
+
+test('preserve literal union and primitive types in mixed union JSON schema', (t) => {
+    t.deepEqual(toJSONSchema(parse('string | "on" | "off"')), {
+        anyOf: [{ type: 'string' }, { enum: ['on', 'off'] }],
     });
 });
 
@@ -60,7 +62,7 @@ test('mixed union JSON schema', (t) => {
                 required: ['search'],
                 additionalProperties: false,
             },
-            { type: 'string', enum: ['private', 'public'] },
+            { enum: ['private', 'public'] },
         ],
     });
 });
@@ -143,10 +145,10 @@ test('union JSON schema', (t) => {
 
 test('intersection JSON schema', (t) => {
     t.deepEqual(toJSONSchema(parse('string & "x"')), {
-        allOf: [{ type: 'string' }, { type: 'string', const: 'x' }],
+        allOf: [{ type: 'string' }, { const: 'x' }],
     });
     t.deepEqual(toJSONSchema(parse('string & ("x" & "$(string)")')), {
-        allOf: [{ type: 'string' }, { type: 'string', const: 'x' }, { type: 'string', pattern: '^(.*?)$' }],
+        allOf: [{ type: 'string' }, { const: 'x' }, { type: 'string', pattern: '^(.*?)$' }],
     });
     t.deepEqual(toJSONSchema(parse('(a: number) & (b: string)')), {
         type: 'object',
@@ -161,7 +163,7 @@ test('intersection JSON schema', (t) => {
         type: 'object',
         properties: {
             a: {
-                allOf: [{ type: 'number' }, { type: 'string' }, { type: 'boolean', const: false }],
+                allOf: [{ type: 'number' }, { type: 'string' }, { const: false }],
             },
         },
         required: ['a'],
