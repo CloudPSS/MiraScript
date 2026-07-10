@@ -25,6 +25,18 @@ const UNKNOWN_REPR = '/* .. */';
 /** 参数签名 */
 export type ParamSignature = [name: string, sig: string, doc: string];
 
+/** 缩进 */
+function indent(str: string, level: number, skipFirstLine = false): string {
+    if (level <= 0) return str;
+    const prefix = ' '.repeat(level);
+    const lines = str.split('\n');
+    const lineCount = lines.length;
+    for (let i = skipFirstLine ? 1 : 0; i < lineCount; i++) {
+        lines[i] = prefix + lines[i];
+    }
+    return lines.join('\n');
+}
+
 /** 生成参数签名 */
 function globalParamsSignature(info: VmFunctionInfo | undefined): ParamSignature[] {
     if (info == null || (!info.params && !info.paramsType)) return [['..', '..', '']];
@@ -65,7 +77,7 @@ export function fnSignature(
                 (prefix.length + this.returns.length > SIG_WIDTH ||
                     prefix.length + this.returns.length + params.reduce((a, b) => a + b[1].length, 0) > SIG_WIDTH)
             ) {
-                p = `(\n${params.map((item) => `  ${item[1]},`).join('\n')}\n)`;
+                p = `(\n${params.map((item) => indent(item[1], 2) + ',').join('\n')}\n)`;
             } else {
                 p = `(${params.map((item) => item[1]).join(', ')})`;
             }
@@ -128,11 +140,11 @@ export function globalFnDoc(info: VmFunctionInfo): string[] {
     if (info.params) {
         for (const [key, value] of Object.entries(info.params)) {
             if (!value) continue;
-            paramDoc.push(`- \`${key}\`: ${value}`);
+            paramDoc.push(`- \`${key}\`: ${indent(value, 2, true)}`);
         }
     }
     if (info.returns) {
-        paramDoc.push(`- **返回值**: ${info.returns}`);
+        paramDoc.push(`- **返回值**: ${indent(info.returns, 2, true)}`);
     }
     if (paramDoc.length) {
         doc.push('', paramDoc.join('\n'));

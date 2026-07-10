@@ -321,7 +321,7 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
 
             doc_mode: [
                 [
-                    /(@identifier)(@whitespace*)(:)(@whitespace*)(\/\*@whitespace*<)(extern )((?:async )?function\*?)(>@whitespace*\*\/)/,
+                    /(@identifier)(@whitespace*)(\??:)(@whitespace*)(\/\*@whitespace*<)(extern )((?:async )?function\*?)(>@whitespace*\*\/)/,
                     [
                         'entity.name.function.doc',
                         '',
@@ -334,7 +334,7 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                     ],
                 ],
                 [
-                    /(@identifier)(@whitespace*)(:)(@whitespace*)(\/\*@whitespace*<)(extern )(class)(@whitespace*)([<>.\w]*)(>@whitespace*\*\/)/,
+                    /(@identifier)(@whitespace*)(\??:)(@whitespace*)(\/\*@whitespace*<)(extern )(class)(@whitespace*)([<>.\w]*)(>@whitespace*\*\/)/,
                     [
                         'type.doc',
                         '',
@@ -349,7 +349,7 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                     ],
                 ],
                 [
-                    /(@identifier)(@whitespace*)(:)(@whitespace*)(\/\*@whitespace*<)(extern )([\w]*)(>@whitespace*\*\/)/,
+                    /(@identifier)(@whitespace*)(\??:)(@whitespace*)(\/\*@whitespace*<)(extern )([\w]*)(>@whitespace*\*\/)/,
                     [
                         'variable.other.property.doc',
                         '',
@@ -362,7 +362,7 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                     ],
                 ],
                 [
-                    /(@identifier)(@whitespace*)(:)(@whitespace*)(\/\*@whitespace*<)(function )([.\w]*)(>@whitespace*\*\/)/,
+                    /(@identifier)(@whitespace*)(\??:)(@whitespace*)(\/\*@whitespace*<)(function )([.\w]*)(>@whitespace*\*\/)/,
                     [
                         'entity.name.function.doc',
                         '',
@@ -374,7 +374,7 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                         'comment.doc',
                     ],
                 ],
-                [/(@identifier)(@whitespace*)(:)(@whitespace+)/, ['variable.other.property', '', 'delimiter', '']],
+                [/(@identifier)(@whitespace*)(\??:)(@whitespace+)/, ['variable.other.property', '', 'delimiter', '']],
 
                 [
                     /(\/\*@whitespace*<)(extern )((?:async )?function\*?)(>@whitespace*\*\/)/,
@@ -440,14 +440,17 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                 [/(fn)(\()/, ['type', '@brackets']],
                 [/(type)(\()(@identifier)(\))/, ['type', '@brackets', 'variable.emphasis.doc', '@brackets']],
                 [
-                    /(@identifier)(:)(@whitespace*)(fn)(\()/,
+                    /(@identifier)(\??:)(@whitespace*)(fn)(\()/,
                     ['entity.name.function.emphasis.doc', 'delimiter', '', 'type', '@brackets'],
                 ],
-                [/(@identifier)(:)/, ['variable.emphasis', 'delimiter']],
+                [/(@identifier)(\??:)/, ['variable.emphasis', 'delimiter']],
                 [/@identifier/, 'type'],
-                [/[&|.,]/, 'delimiter'],
+                [/</, { token: 'delimiter', next: '@type_doc' }],
+                [/>/, { token: 'delimiter', next: '@pop' }],
+                [/[&|.,:?<>]/, 'delimiter'],
                 [/->/, 'delimiter'],
                 [/[[\]()]/, '@brackets'],
+                { include: '@string' },
                 { include: '@whitespace' },
             ],
             type_doc_no_type: [
@@ -455,6 +458,7 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
                 [/@identifier/, 'variable.emphasis'],
                 [/[,.]/, 'delimiter'],
                 [/[[\]()]/, '@brackets'],
+                { include: '@string' },
                 { include: '@whitespace' },
             ],
         },

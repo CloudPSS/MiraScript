@@ -12,7 +12,8 @@ await ready;
 const createModel = () => {
     const { source, mode } = getState();
     const uri = monaco.Uri.parse(`file:///playground`);
-    const model = monaco.editor.createModel(source, mode === 'Template' ? 'mirascript-template' : 'mirascript', uri);
+    const language = mode === 'Template' ? 'mirascript-template' : 'mirascript';
+    const model = monaco.editor.createModel(source, language, uri);
     model.setEOL(monaco.editor.EndOfLineSequence.LF);
     return model;
 };
