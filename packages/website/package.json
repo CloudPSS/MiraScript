@@ -25,8 +25,8 @@
     "typecheck": "tsc"
   },
   "dependencies": {
-    "@docusaurus/core": "3.10.1",
-    "@docusaurus/preset-classic": "3.10.1",
+    "@docusaurus/core": "3.10.2",
+    "@docusaurus/preset-classic": "3.10.2",
     "@easyops-cn/docusaurus-search-local": "^0.55.2",
     "@mirascript/bindings": "workspace:~",
     "@mirascript/mirascript": "workspace:~",
@@ -34,7 +34,7 @@
     "@monaco-editor/react": "^4.7.0",
     "@private/monaco-editor": "^0.0.71",
     "fflate": "^0.8.3",
-    "js-base64": "^3.8.0",
+    "js-base64": "^3.8.1",
     "remark-directive": "^4.0.0",
     "remark-extended-table": "^2.0.3",
     "remark-gfm": "^4.0.1",
@@ -42,8 +42,8 @@
     "remark-join-cjk-lines": "^1.0.15"
   },
   "devDependencies": {
-    "@docusaurus/faster": "^3.10.1",
-    "@docusaurus/tsconfig": "^3.10.1"
+    "@docusaurus/faster": "^3.10.2",
+    "@docusaurus/tsconfig": "^3.10.2"
   },
   "browserslist": {
     "production": [
