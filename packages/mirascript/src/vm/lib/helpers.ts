@@ -271,10 +271,7 @@ export function map(
 }
 
 /** 库函数选项 */
-export type VmLibOption = Pick<
-    VmFunctionOption,
-    'summary' | 'params' | 'paramsType' | 'returns' | 'returnsType' | 'examples' | 'deprecated'
->;
+export type VmLibOption = Pick<VmFunctionOption, 'summary' | 'params' | 'returns' | 'examples' | 'deprecated'>;
 /** 库函数 */
 export type VmLib<T extends VmFunctionLike | VmConst = VmFunctionLike> = (T extends VmFunctionLike ? T : { value: T }) &
     VmLibOption;
@@ -291,9 +288,7 @@ export function VmLib<
     Object.defineProperties(ret, {
         summary: { enumerable: true, value: option.summary },
         params: { enumerable: true, value: option.params },
-        paramsType: { enumerable: true, value: option.paramsType },
         returns: { enumerable: true, value: option.returns },
-        returnsType: { enumerable: true, value: option.returnsType },
         examples: { enumerable: true, value: option.examples },
         deprecated: { enumerable: true, value: option.deprecated ?? undefined },
     });

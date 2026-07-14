@@ -6,9 +6,11 @@ export const starts_with = VmLib(
     },
     {
         summary: '检查字符串是否以指定子串开头',
-        params: { str: '要检查的字符串', search: '要匹配的子串' },
-        paramsType: { str: 'string', search: 'string' },
-        returnsType: 'boolean',
+        params: {
+            str: { type: 'string', description: '要检查的字符串' },
+            search: { type: 'string', description: '要匹配的子串' },
+        },
+        returns: { type: 'boolean' },
         examples: ['starts_with("mira", "mi") // true'],
     },
 );
@@ -18,9 +20,11 @@ export const ends_with = VmLib(
     },
     {
         summary: '检查字符串是否以指定子串结尾',
-        params: { str: '要检查的字符串', search: '要匹配的子串' },
-        paramsType: { str: 'string', search: 'string' },
-        returnsType: 'boolean',
+        params: {
+            str: { type: 'string', description: '要检查的字符串' },
+            search: { type: 'string', description: '要匹配的子串' },
+        },
+        returns: { type: 'boolean' },
         examples: ['ends_with("mira", "ra") // true'],
     },
 );
@@ -31,9 +35,11 @@ export const contains = VmLib(
     },
     {
         summary: '检查字符串是否包含指定子串',
-        params: { str: '要检查的字符串', search: '要匹配的子串' },
-        paramsType: { str: 'string', search: 'string' },
-        returnsType: 'boolean',
+        params: {
+            str: { type: 'string', description: '要检查的字符串' },
+            search: { type: 'string', description: '要匹配的子串' },
+        },
+        returns: { type: 'boolean' },
         examples: ['contains("hello", "ll") // true'],
     },
 );

@@ -23,11 +23,11 @@ export async function print(value: VmAny | Error): Promise<string> {
         if (info.isLib) {
             return await syntaxHighlight(
                 `fn ${value.name}(${Object.entries(info.params ?? {})
-                    .map(([pn]) => {
-                        const type = info.paramsType?.[pn];
+                    .map(([pn, pi]) => {
+                        const { type } = pi;
                         return type ? `${pn}: ${type}` : pn;
                     })
-                    .join(', ')})${info.returnsType ? ` -> ${info.returnsType}` : ''}`,
+                    .join(', ')})${info.returns?.type ? ` -> ${info.returns.type}` : ''}`,
                 'mirascript-doc',
             );
         } else {

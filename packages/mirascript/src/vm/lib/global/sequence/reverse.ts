@@ -9,9 +9,8 @@ export const reverse = VmLib(
     },
     {
         summary: '返回数组的反转副本',
-        params: { arr: '要反转的数组' },
-        paramsType: { arr: 'array' },
-        returnsType: 'array',
+        params: { arr: { type: 'array', description: '要反转的数组' } },
+        returns: { type: 'array' },
         examples: ['reverse([1, 2, 3]) // [3, 2, 1]'],
     },
 );

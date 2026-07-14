@@ -15,9 +15,8 @@ export const len = VmLib(
     },
     {
         summary: '返回数组的长度',
-        params: { arr: '要求长度的数组' },
-        paramsType: { arr: 'array | extern' },
-        returnsType: 'number',
+        params: { arr: { type: 'array | extern', description: '要求长度的数组' } },
+        returns: { type: 'number' },
         examples: ['len([1, 2, 3]) // 3'],
     },
 );

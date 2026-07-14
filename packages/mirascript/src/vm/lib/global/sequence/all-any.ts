@@ -31,12 +31,14 @@ export const all = VmLib(
     },
     {
         summary: '检查数组或记录中的所有键值对是否都满足条件',
-        params: { data: '要检查的数组或记录', predicate: '用于测试每个键值对的函数，返回 true 或 false' },
-        paramsType: {
-            data: 'array | record',
-            predicate: 'fn(value: any, key: number | string, input: type(data)) -> boolean',
+        params: {
+            data: { type: 'array | record', description: '要检查的数组或记录' },
+            predicate: {
+                type: 'fn(value: any, key: number | string, input: type(data)) -> boolean',
+                description: '用于测试每个键值对的函数',
+            },
         },
-        returnsType: 'boolean',
+        returns: { type: 'boolean' },
         examples: ['all([1, 2, 3], fn { it > 0 }) // true'],
     },
 );
@@ -67,12 +69,14 @@ export const any = VmLib(
     },
     {
         summary: '检查数组或记录中的是否存在满足条件的键值对',
-        params: { data: '要检查的数组或记录', predicate: '用于测试每个键值对的函数，返回 true 或 false' },
-        paramsType: {
-            data: 'array | record',
-            predicate: 'fn(value: any, key: number | string, input: type(data)) -> boolean',
+        params: {
+            data: { type: 'array | record', description: '要检查的数组或记录' },
+            predicate: {
+                type: 'fn(value: any, key: number | string, input: type(data)) -> boolean',
+                description: '用于测试每个键值对的函数',
+            },
         },
-        returnsType: 'boolean',
+        returns: { type: 'boolean' },
         examples: ['any([0, 1, 2], fn { it > 1 }) // true'],
     },
 );

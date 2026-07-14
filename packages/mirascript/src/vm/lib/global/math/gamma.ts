@@ -208,9 +208,8 @@ export const gamma = VmLib(
     },
     {
         summary: '返回 Gamma 函数的值',
-        params: { x: '要计算 Gamma 函数的数值' },
-        paramsType: { x: 'number' },
-        returnsType: 'number',
+        params: { x: { type: 'number', description: '要计算 Gamma 函数的数值' } },
+        returns: { type: 'number' },
         examples: ['gamma(5) // 24'],
     },
 );
@@ -237,9 +236,8 @@ export const factorial = VmLib(
     },
     {
         summary: '返回一个数的阶乘',
-        params: { x: '要计算阶乘的数值' },
-        paramsType: { x: 'number' },
-        returnsType: 'number',
+        params: { x: { type: 'number', description: '要计算阶乘的数值' } },
+        returns: { type: 'number' },
         examples: ['factorial(5) // 120'],
     },
 );

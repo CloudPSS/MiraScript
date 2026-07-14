@@ -29,9 +29,8 @@ export const zip = VmLib(
     },
     {
         summary: '将数组的数组/记录转换为数组/记录的数组',
-        params: { data: '要转换的数组/记录' },
-        paramsType: { data: 'array | record' },
-        returnsType: '(array | record)[]',
+        params: { data: { type: 'array | record', description: '要转换的数组/记录' } },
+        returns: { type: '(array | record)[]' },
         examples: [
             'zip((x: [1, 2], y: ["a", "b"])) // [(x: 1, y: "a"), (x: 2, y: "b")]',
             `zip([[1, 2], ["a", "b"]]) // [[1, "a"], [2, "b"]]`,

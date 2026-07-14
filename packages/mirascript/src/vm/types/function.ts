@@ -18,6 +18,11 @@ export type VmFunctionLike = (...args: ReadonlyArray<VmValue | undefined>) => Vm
 /** Mirascript 函数 */
 export type VmFunction<T extends VmFunctionLike = VmFunctionLike> = T & { readonly [kVmFunction]: VmFunctionInfo };
 
+/** Mirascript 值信息 */
+export type VmValueInfo = {
+    readonly type: string;
+    readonly description?: string;
+};
 /** Mirascript 函数信息 */
 export type VmFunctionInfo = {
     /** 完整名称 */
@@ -27,13 +32,9 @@ export type VmFunctionInfo = {
     /** 文档字符串 */
     readonly summary?: string;
     /** 文档字符串 */
-    readonly params?: Record<string, string>;
+    readonly params?: Record<string, VmValueInfo>;
     /** 文档字符串 */
-    readonly paramsType?: Record<string, string>;
-    /** 文档字符串 */
-    readonly returns?: string;
-    /** 文档字符串 */
-    readonly returnsType?: string;
+    readonly returns?: VmValueInfo;
     /** 文档字符串 */
     readonly examples?: string[];
     /** 标记为弃用 */
@@ -41,7 +42,7 @@ export type VmFunctionInfo = {
 };
 
 /** Mirascript 函数创建选项 */
-export type VmFunctionOption = Partial<Omit<VmFunctionInfo, 'original'>> & {
+export type VmFunctionOption = Partial<VmFunctionInfo> & {
     /** 函数名称 */
     readonly name?: string | null | undefined;
 };
@@ -83,9 +84,7 @@ export function VmFunction<T extends VmFunctionLike>(
         isLib: opt.isLib ?? false,
         summary: opt.summary || undefined,
         params: opt.params,
-        paramsType: opt.paramsType,
-        returns: opt.returns || undefined,
-        returnsType: opt.returnsType || undefined,
+        returns: opt.returns ?? undefined,
         examples: opt.examples?.length ? opt.examples : undefined,
         deprecated: opt.deprecated ?? undefined,
     };

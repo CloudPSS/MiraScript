@@ -21,9 +21,14 @@ export const new_record = VmLib(
     },
     {
         summary: '根据生成器函数创建一个记录',
-        params: { size: '记录的大小', generator: '生成器函数，返回键值对或 nil（表示跳过该条目）' },
-        paramsType: { size: 'number', generator: 'fn(index: number) -> (string, any) | nil' },
-        returnsType: 'record',
+        params: {
+            size: { type: 'number', description: '记录的大小' },
+            generator: {
+                type: 'fn(index: number) -> (string, any) | nil',
+                description: '生成器函数，返回键值对或 nil（表示跳过该条目）',
+            },
+        },
+        returns: { type: 'record' },
         examples: ['new_record(3, fn { (it, it * 2) }) // (0, 2, 4)'],
     },
 );
@@ -40,9 +45,11 @@ export const new_array = VmLib(
     },
     {
         summary: '根据生成器函数创建一个数组',
-        params: { length: '数组的长度', generator: '生成器函数，返回数组元素的值' },
-        paramsType: { length: 'number', generator: 'fn(index: number) -> any' },
-        returnsType: 'array',
+        params: {
+            length: { type: 'number', description: '数组的长度' },
+            generator: { type: 'fn(index: number) -> any', description: '生成器函数，返回数组元素的值' },
+        },
+        returns: { type: 'array' },
         examples: ['new_array(5, fn { it * it }) // [0, 1, 4, 9, 16]'],
     },
 );

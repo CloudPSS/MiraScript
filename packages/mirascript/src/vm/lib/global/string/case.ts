@@ -6,9 +6,8 @@ export const to_uppercase = VmLib(
     },
     {
         summary: '将字符串转换为大写',
-        params: { str: '要转换的字符串' },
-        paramsType: { str: 'string' },
-        returnsType: 'string',
+        params: { str: { type: 'string', description: '要转换的字符串' } },
+        returns: { type: 'string' },
         examples: ['to_uppercase("mira") // "MIRA"'],
     },
 );
@@ -19,9 +18,8 @@ export const to_lowercase = VmLib(
     },
     {
         summary: '将字符串转换为小写',
-        params: { str: '要转换的字符串' },
-        paramsType: { str: 'string' },
-        returnsType: 'string',
+        params: { str: { type: 'string', description: '要转换的字符串' } },
+        returns: { type: 'string' },
         examples: ['to_lowercase("MIRA") // "mira"'],
     },
 );

@@ -7,9 +7,11 @@ export const flatten = VmLib(
     },
     {
         summary: '将数组扁平化',
-        params: { data: '要扁平化的数组', depth: '扁平化的深度，默认为 1' },
-        paramsType: { data: 'array', depth: 'number' },
-        returnsType: 'array',
+        params: {
+            data: { type: 'array', description: '要扁平化的数组' },
+            depth: { type: 'number | nil', description: '扁平化的深度，默认为 1' },
+        },
+        returns: { type: 'array' },
         examples: ['flatten([[1, 2], [3, [4]]], 2) // [1, 2, 3, 4]'],
     },
 );

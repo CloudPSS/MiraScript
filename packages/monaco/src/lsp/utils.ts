@@ -39,16 +39,11 @@ function indent(str: string, level: number, skipFirstLine = false): string {
 
 /** 生成参数签名 */
 function globalParamsSignature(info: VmFunctionInfo | undefined): ParamSignature[] {
-    if (info == null || (!info.params && !info.paramsType)) return [['..', '..', '']];
+    if (!info?.params) return [['..', '..', '']];
     const paramItems: ParamSignature[] = [];
-    const params = Object.keys(info.paramsType ?? {});
-    for (const key of Object.keys(info.params ?? {})) {
-        if (params.includes(key)) continue;
-        params.push(key);
-    }
-    for (const key of params) {
-        const type = info.paramsType?.[key] ?? '';
-        const doc = info.params?.[key] ?? '';
+    for (const [key, value] of Object.entries(info.params)) {
+        const type = value.type ?? '';
+        const doc = value.description ?? '';
         paramItems.push([key, `${key}: ${type || 'any'}`, doc ? `\`${key}\`: ${doc}` : '']);
     }
     return paramItems;
@@ -66,7 +61,7 @@ export function fnSignature(
 } {
     const prefix = id ? `fn ${id}` : 'fn';
     const params = globalParamsSignature(info);
-    const returns = info.returnsType ? ` -> ${info.returnsType}` : '';
+    const returns = info.returns?.type ? ` -> ${info.returns.type}` : '';
     return {
         params,
         returns,
@@ -138,13 +133,13 @@ export function globalFnDoc(info: VmFunctionInfo): string[] {
     }
     const paramDoc = [];
     if (info.params) {
-        for (const [key, value] of Object.entries(info.params)) {
-            if (!value) continue;
-            paramDoc.push(`- \`${key}\`: ${indent(value, 2, true)}`);
+        for (const [key, { description }] of Object.entries(info.params)) {
+            if (!description) continue;
+            paramDoc.push(`- \`${key}\`: ${indent(description, 2, true)}`);
         }
     }
-    if (info.returns) {
-        paramDoc.push(`- **返回值**: ${indent(info.returns, 2, true)}`);
+    if (info.returns?.description) {
+        paramDoc.push(`- **返回值**: ${indent(info.returns.description, 2, true)}`);
     }
     if (paramDoc.length) {
         doc.push('', paramDoc.join('\n'));

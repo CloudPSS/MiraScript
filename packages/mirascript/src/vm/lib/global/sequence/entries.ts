@@ -20,9 +20,10 @@ export const keys = VmLib(
     },
     {
         summary: '返回数组、记录、外部对象或模块的键列表',
-        params: { data: '要获取键的数组、记录、外部对象或模块' },
-        paramsType: { data: 'array | record | extern | module' },
-        returnsType: 'number[] | string[]',
+        params: {
+            data: { type: 'array | record | extern | module', description: '要获取键的数组、记录、外部对象或模块' },
+        },
+        returns: { type: 'number[] | string[]' },
         examples: ['keys([10, 20]) // [0, 1]', 'keys((10, 20)) // ["0", "1"]'],
     },
 );
@@ -39,9 +40,8 @@ export const values = VmLib(
     },
     {
         summary: '返回数组或记录的值列表',
-        params: { data: '要获取值的数组或记录' },
-        paramsType: { data: 'array | record' },
-        returnsType: 'array',
+        params: { data: { type: 'array | record', description: '要获取值的数组或记录' } },
+        returns: { type: 'array' },
         examples: ['values((a: 1, b: 2)) // [1, 2]'],
     },
 );
@@ -61,9 +61,8 @@ export const entries = VmLib(
     },
     {
         summary: '返回数组或记录的键值对列表',
-        params: { data: '要获取键值对的数组或记录' },
-        paramsType: { data: 'array | record' },
-        returnsType: '(number, any)[] | (string, any)[]',
+        params: { data: { type: 'array | record', description: '要获取键值对的数组或记录' } },
+        returns: { type: '(number, any)[] | (string, any)[]' },
         examples: ['entries([1]) // [(0, 1)]', 'entries((a: 1)) // [("a", 1)]'],
     },
 );

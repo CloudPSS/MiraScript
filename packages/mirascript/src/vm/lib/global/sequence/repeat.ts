@@ -13,14 +13,10 @@ export const repeat = VmLib(
     {
         summary: '创建一个包含重复元素的数组',
         params: {
-            data: '要重复的元素',
-            times: '重复的次数，必须是非负整数',
+            data: { type: 'any', description: '要重复的元素' },
+            times: { type: 'number', description: '重复的次数，必须是非负整数' },
         },
-        paramsType: {
-            data: 'any',
-            times: 'number',
-        },
-        returnsType: 'type(data)[]',
+        returns: { type: 'type(data)[]' },
         examples: ['repeat(0, 5) // [0, 0, 0, 0, 0]', 'repeat("a", 3) // ["a", "a", "a"]'],
     },
 );

@@ -41,11 +41,10 @@ export const to_timestamp = VmLib(
     {
         summary: '将数据转换为 Unix 毫秒时间戳',
         params: {
-            datetime: '要转换的数据，默认为当前时间',
-            fallback: '转换失败时的返回值',
+            datetime: { type: 'number | string | nil', description: '要转换的数据，默认为当前时间' },
+            fallback: { type: 'any', description: '转换失败时的返回值' },
         },
-        paramsType: { datetime: 'number | string | nil', fallback: 'any' },
-        returnsType: 'number | type(fallback)',
+        returns: { type: 'number | type(fallback)' },
         examples: ['to_timestamp("1970-01-01T00:00:00Z") // 0'],
     },
 );
@@ -71,12 +70,11 @@ export const to_datetime = VmLib(
     {
         summary: '将数据转换为 DateTime 记录',
         params: {
-            datetime: '要转换的数据，默认为当前时间',
-            offset: '时区偏移量（单位：小时），默认为 0',
-            fallback: '转换失败时的返回值',
+            datetime: { type: 'number | string | nil', description: '要转换的数据，默认为当前时间' },
+            offset: { type: 'number | nil', description: '时区偏移量（单位：小时），默认为 0' },
+            fallback: { type: 'any', description: '转换失败时的返回值' },
         },
-        paramsType: { datetime: 'number | string | nil', offset: 'number | nil', fallback: 'any' },
-        returnsType: 'DateTime | type(fallback)',
+        returns: { type: 'DateTime | type(fallback)' },
         examples: [
             `
 to_datetime(0)
@@ -100,11 +98,10 @@ export const to_iso8601 = VmLib(
     {
         summary: '将数据转换为 ISO 8601 格式的字符串',
         params: {
-            datetime: '要转换的数据，默认为当前时间',
-            fallback: '转换失败时的返回值',
+            datetime: { type: 'number | string | nil', description: '要转换的数据，默认为当前时间' },
+            fallback: { type: 'any', description: '转换失败时的返回值' },
         },
-        paramsType: { datetime: 'number | string | nil', fallback: 'any' },
-        returnsType: 'string | type(fallback)',
+        returns: { type: 'string | type(fallback)' },
         examples: ['to_iso8601(0) // "1970-01-01T00:00:00.000Z"'],
     },
 );

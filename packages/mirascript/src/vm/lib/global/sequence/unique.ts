@@ -39,14 +39,13 @@ export const unique = VmLib(
     {
         summary: '对数组中的元素进行去重，并返回去重后的结果',
         params: {
-            data: '要去重的数组',
-            equal: '用于判等两个元素的函数，返回一个布尔值，默认使用严格相等比较',
+            data: { type: 'array', description: '要去重的数组' },
+            equal: {
+                type: 'fn(a: any, b: any) -> boolean',
+                description: '用于判等两个元素的函数，返回一个布尔值，默认使用严格相等比较',
+            },
         },
-        paramsType: {
-            data: 'array',
-            equal: 'fn(a: any, b: any) -> boolean',
-        },
-        returnsType: 'array',
+        returns: { type: 'array' },
         examples: ['unique([1, 2, 2, 3]) // [1, 2, 3]'],
     },
 );
@@ -80,16 +79,17 @@ export const unique_by = VmLib(
     {
         summary: '根据键函数对数组中的元素进行去重，并返回去重后的结果',
         params: {
-            data: '要去重的数组',
-            key: '用于提取去重键的函数，接受一个元素并返回其去重键',
-            equal: '用于判同两个元素的函数，返回一个布尔值，默认使用严格相等比较',
+            data: { type: 'array', description: '要去重的数组' },
+            key: {
+                type: 'fn(value: any, index: number, arr: type(data)) -> any',
+                description: '用于提取去重键的函数，接受一个元素并返回其去重键',
+            },
+            equal: {
+                type: 'fn(a: any, b: any) -> boolean',
+                description: '用于判同两个元素的函数，返回一个布尔值，默认使用严格相等比较',
+            },
         },
-        paramsType: {
-            data: 'array',
-            key: 'fn(value: any, index: number, arr: type(data)) -> any',
-            equal: 'fn(a: any, b: any) -> boolean',
-        },
-        returnsType: 'array',
+        returns: { type: 'array' },
         examples: ['unique_by(["apple", "banana", "apricot"], fn { chars(it)[0] }) // ["apple", "banana"]'],
     },
 );

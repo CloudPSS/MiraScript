@@ -199,9 +199,10 @@ export const debug_print = VmLib(
     },
     {
         summary: '打印调试信息到控制台',
-        params: { '..args': '要打印的调试信息，可以是任意类型' },
-        paramsType: { '..args': 'any[]' },
-        returnsType: 'nil',
+        params: {
+            '..args': { type: 'any[]', description: '要打印的值，可以是任意类型' },
+        },
+        returns: { type: 'nil' },
         examples: ['debug_print("value:", 42);'],
     },
     // eslint-disable-next-line no-console
@@ -217,9 +218,8 @@ export const panic = VmLib(
     },
     {
         summary: '产生错误，并打印错误信息到控制台',
-        params: { message: '要打印的错误信息' },
-        paramsType: { message: 'string' },
-        returnsType: 'never',
+        params: { message: { type: 'string', description: '要打印的错误信息' } },
+        returns: { type: 'never' },
         examples: ['panic("boom");'],
     },
     // eslint-disable-next-line no-console

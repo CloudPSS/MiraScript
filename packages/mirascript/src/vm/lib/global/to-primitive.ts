@@ -10,11 +10,10 @@ export const to_string = VmLib(
     {
         summary: '将数据转换为字符串',
         params: {
-            data: '要转换的数据',
-            fallback: '转换失败时的返回值',
+            data: { type: 'any', description: '要转换的数据' },
+            fallback: { type: 'any', description: '转换失败时的返回值' },
         },
-        paramsType: { data: 'any', fallback: 'any' },
-        returnsType: 'string | type(fallback)',
+        returns: { type: 'string | type(fallback)' },
         examples: ['to_string([1, 2]) // "1, 2"'],
     },
 );
@@ -27,11 +26,10 @@ export const to_number = VmLib(
     {
         summary: '将数据转换为数字',
         params: {
-            data: '要转换的数据',
-            fallback: '转换失败时的返回值',
+            data: { type: 'string | number | boolean', description: '要转换的数据' },
+            fallback: { type: 'any', description: '转换失败时的返回值' },
         },
-        paramsType: { data: 'string | number | boolean', fallback: 'any' },
-        returnsType: 'number | type(fallback)',
+        returns: { type: 'number | type(fallback)' },
         examples: ['to_number("1.5") // 1.5'],
     },
 );
@@ -44,11 +42,11 @@ export const to_number = VmLib(
 //     {
 //         summary: '将布尔值标准化',
 //         params: {
-//             data: '要转换的数据，仅当为布尔类型时才会参与转换',
-//             fallback: '当输入不是布尔值时返回的值',
+//             data: { type: 'boolean', description: '要转换的数据，仅当为布尔类型时才会参与转换' },
+//             fallback: { type: 'any', description: '当输入不是布尔值时返回的值' },
 //         },
-//         paramsType: { data: 'boolean', fallback: 'any' },
-//         returnsType: 'boolean | type(fallback)',
+//
+//         returns: { type: 'boolean | type(fallback)' },
 //         examples: [
 //             'to_boolean(true, false)   // true',
 //             'to_boolean(nil, "failed") // "failed"',
@@ -64,9 +62,11 @@ export const format = VmLib(
     },
     {
         summary: '将数据格式化为指定格式的字符串',
-        params: { data: '要格式化的数据', format: '格式字符串' },
-        paramsType: { data: 'any', format: 'string' },
-        returnsType: 'string',
+        params: {
+            data: { type: 'any', description: '要格式化的数据' },
+            format: { type: 'string', description: '格式字符串' },
+        },
+        returns: { type: 'string' },
         examples: ['format(12, ".3") // "12.000"'],
     },
 );

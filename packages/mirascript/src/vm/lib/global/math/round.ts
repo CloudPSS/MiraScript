@@ -14,21 +14,27 @@ function build(f: (x: number) => number): (x: VmAny, n: VmAny) => number {
 
 export const trunc = VmLib(build(Math.trunc), {
     summary: '向零方向舍入数值',
-    params: { x: '要舍入的数', n: '小数位数，默认为 0' },
-    paramsType: { x: 'number', n: 'number | nil' },
-    returnsType: 'number',
+    params: {
+        x: { type: 'number', description: '要舍入的数' },
+        n: { type: 'number | nil', description: '小数位数，默认为 0' },
+    },
+    returns: { type: 'number' },
 });
 export const floor = VmLib(build(Math.floor), {
     summary: '向下舍入数值',
-    params: { x: '要舍入的数', n: '小数位数，默认为 0' },
-    paramsType: { x: 'number', n: 'number | nil' },
-    returnsType: 'number',
+    params: {
+        x: { type: 'number', description: '要舍入的数' },
+        n: { type: 'number | nil', description: '小数位数，默认为 0' },
+    },
+    returns: { type: 'number' },
 });
 export const ceil = VmLib(build(Math.ceil), {
     summary: '向上舍入数值',
-    params: { x: '要舍入的数', n: '小数位数，默认为 0' },
-    paramsType: { x: 'number', n: 'number | nil' },
-    returnsType: 'number',
+    params: {
+        x: { type: 'number', description: '要舍入的数' },
+        n: { type: 'number | nil', description: '小数位数，默认为 0' },
+    },
+    returns: { type: 'number' },
 });
 const _round = Math.round;
 const _abs = Math.abs;
@@ -44,8 +50,10 @@ export const round = VmLib(
     }),
     {
         summary: '四舍五入数值',
-        params: { x: '要舍入的数', n: '小数位数，默认为 0' },
-        paramsType: { x: 'number', n: 'number' },
-        returnsType: 'number',
+        params: {
+            x: { type: 'number', description: '要舍入的数' },
+            n: { type: 'number | nil', description: '小数位数，默认为 0' },
+        },
+        returns: { type: 'number' },
     },
 );

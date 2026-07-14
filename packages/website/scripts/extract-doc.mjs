@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 /* eslint-disable unicorn/prefer-single-call */
-import { compileSync } from '@mirascript/mirascript';
+import { compileSync, getVmType } from '@mirascript/mirascript';
 import { lib, formatDiagnosticMessage } from '@mirascript/mirascript/subtle';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -22,14 +22,18 @@ function formatSignature(name, entry) {
 }
 
 /**
- * 格式化参数类型标注  `name: type`
- * @param {string} paramName
- * @param {Record<string,string>|undefined} paramsType
+ * 格式化参数类型标注  `name: type — description`
+ * @param {object} paramInfo
+ * @param {number} indent
  * @returns {string}
  */
-function paramTypeStr(paramName, paramsType) {
-  if (!paramsType?.[paramName]) return '';
-  return `: \`${paramsType[paramName]}\``;
+function paramDescStr(paramInfo, indent) {
+  if (!paramInfo) return '';
+  const typeStr = paramInfo.type ? `: \`${paramInfo.type}\`` : '';
+  const descStr = paramInfo.description ? ` — ${paramInfo.description}` : '';
+  const str = `${typeStr}${descStr}`;
+  if (!indent) return str;
+  return str.replaceAll('\n', `\n${' '.repeat(indent)}`);
 }
 
 /**
@@ -95,15 +99,14 @@ function renderFunction(name, entry) {
     lines.push('**参数**');
     lines.push('');
     for (const [pName, pDesc] of Object.entries(entry.params)) {
-      lines.push(`- \`${pName}\`${paramTypeStr(pName, entry.paramsType)}: ${pDesc}`);
+      lines.push(`- \`${pName}\`${paramDescStr(pDesc, 2)}`);
     }
     lines.push('');
   }
 
   // 返回值
-  if (entry.returnsType) {
-    const desc = entry.returns ? ` — ${entry.returns}` : '';
-    lines.push(`**返回值** \`${entry.returnsType}\`${desc}`);
+  if (entry.returns) {
+    lines.push(`**返回值**${paramDescStr(entry.returns, 0)}`);
     lines.push('');
   }
 
@@ -128,8 +131,7 @@ function renderFunction(name, entry) {
  */
 function renderConst(name, entry) {
   const lines = [];
-  const typeStr = entry.returnsType ? `: \`${entry.returnsType}\`` : '';
-  lines.push(`### \`${name}\`${typeStr}`);
+  lines.push(`### \`${name}\`: \`${getVmType(entry.value)}\``);
   lines.push('');
 
   if (entry.deprecated) {
@@ -157,7 +159,7 @@ for (const [name, value] of Object.entries(lib)) {
   } else if (typeof value === 'function') {
     globals.push({ name, entry: value, kind: 'function' });
   } else {
-    globals.push({ name, entry: value, kind: 'const' });
+    globals.push({ name, entry: value, kind: 'const', value: value?.value });
   }
 }
 

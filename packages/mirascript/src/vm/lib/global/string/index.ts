@@ -10,9 +10,8 @@ export const chars = VmLib(
     },
     {
         summary: '将字符串转换为字符数组',
-        params: { str: '要转换的字符串' },
-        paramsType: { str: 'string' },
-        returnsType: 'string[]',
+        params: { str: { type: 'string', description: '要转换的字符串' } },
+        returns: { type: 'string[]' },
         examples: ['chars("Mira") // ["M", "i", "r", "a"]'],
     },
 );
@@ -26,9 +25,12 @@ export const replace = VmLib(
     },
     {
         summary: '替换字符串中的指定子串',
-        params: { str: '要处理的字符串', search: '要替换的子串', replacement: '替换后的字符串' },
-        paramsType: { str: 'string', search: 'string', replacement: 'string' },
-        returnsType: 'string',
+        params: {
+            str: { type: 'string', description: '要处理的字符串' },
+            search: { type: 'string', description: '要替换的子串' },
+            replacement: { type: 'string', description: '替换后的字符串' },
+        },
+        returns: { type: 'string' },
         examples: ['replace("foo bar foo", "foo", "baz") // "baz bar baz"'],
     },
 );
@@ -42,9 +44,11 @@ export const split = VmLib(
     },
     {
         summary: '将字符串拆分为子串数组',
-        params: { str: '要拆分的字符串', separator: '分隔符' },
-        paramsType: { str: 'string', separator: 'string' },
-        returnsType: 'string[]',
+        params: {
+            str: { type: 'string', description: '要拆分的字符串' },
+            separator: { type: 'string', description: '分隔符' },
+        },
+        returns: { type: 'string[]' },
         examples: ['split("a,b,c", ",") // ["a", "b", "c"]'],
     },
 );
@@ -57,9 +61,11 @@ export const join = VmLib(
     },
     {
         summary: '将字符串数组连接为单个字符串',
-        params: { arr: '要连接的字符串数组', separator: '分隔符' },
-        paramsType: { arr: 'string[]', separator: 'string' },
-        returnsType: 'string',
+        params: {
+            arr: { type: 'string[]', description: '要连接的字符串数组' },
+            separator: { type: 'string', description: '分隔符' },
+        },
+        returns: { type: 'string' },
         examples: ['join(["a", "b", "c"], "-") // "a-b-c"'],
     },
 );

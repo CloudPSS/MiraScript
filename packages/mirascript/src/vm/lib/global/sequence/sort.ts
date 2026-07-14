@@ -45,14 +45,13 @@ export const sort = VmLib(
     {
         summary: '对数组中的元素进行排序，并返回排序后的结果',
         params: {
-            data: '要排序的数组',
-            comparator: '用于比较两个元素的函数，返回一个数字，表示它们的相对顺序，默认按升序排列',
+            data: { type: 'array', description: '要排序的数组' },
+            comparator: {
+                type: 'fn(a: any, b: any) -> number',
+                description: '用于比较两个元素的函数，返回一个数字，表示它们的相对顺序，默认按升序排列',
+            },
         },
-        paramsType: {
-            data: 'array',
-            comparator: 'fn(a: any, b: any) -> number',
-        },
-        returnsType: 'array',
+        returns: { type: 'array' },
         examples: ['sort(["c", "a", "b"]) // ["a", "b", "c"]'],
     },
 );
@@ -77,16 +76,17 @@ export const sort_by = VmLib(
     {
         summary: '根据键函数对数组中的元素进行排序，并返回排序后的结果',
         params: {
-            data: '要排序的数组',
-            key: '用于提取排序键的函数，接受一个元素并返回其排序键',
-            comparator: '用于比较两个排序键的函数，返回一个数字，表示它们的相对顺序，默认按升序排列',
+            data: { type: 'array', description: '要排序的数组' },
+            key: {
+                type: 'fn(value: any, index: number, arr: type(data)) -> any',
+                description: '用于提取排序键的函数，接受一个元素并返回其排序键',
+            },
+            comparator: {
+                type: 'fn(a: any, b: any) -> number',
+                description: '用于比较两个排序键的函数，返回一个数字，表示它们的相对顺序，默认按升序排列',
+            },
         },
-        paramsType: {
-            data: 'array',
-            key: 'fn(value: any, index: number, arr: type(data)) -> any',
-            comparator: 'fn(a: any, b: any) -> number',
-        },
-        returnsType: 'array',
+        returns: { type: 'array' },
         examples: ['sort_by([(0, "x"), (2, "y"), (1, "z")], fn (item) { item[0] }) // [(0, "x"), (1, "z"), (2, "y")]'],
     },
 );
