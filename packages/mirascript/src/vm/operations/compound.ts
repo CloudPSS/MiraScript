@@ -1,5 +1,5 @@
 import { VmError } from '../../helpers/error.js';
-import { hasOwnEnumerable, NotNumber, keys, create, isFinite } from '../../helpers/utils.js';
+import { hasOwnEnumerable, NotNumber, keys, create, isFinite, keysLength } from '../../helpers/utils.js';
 import { toNumber, toString } from '../../helpers/convert/index.js';
 import { display } from '../../helpers/serialize.js';
 import {
@@ -48,7 +48,7 @@ export const $In = (value: VmAny, iterable: VmAny): boolean => {
 export const $Length = (value: VmAny): number => {
     $AssertInit(value);
     if (isVmArray(value)) return value.length;
-    if (isVmRecord(value)) return keys(value).length;
+    if (isVmRecord(value)) return keysLength(value);
     if (isVmWrapper(value)) return value.keys().length;
 
     throw new VmError(`Value has no length: ${display(value)}`, 0);

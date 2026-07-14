@@ -12,6 +12,13 @@ export const { hasOwn, keys, values, entries, create, fromEntries, definePropert
     Object;
 export const { apply, getPrototypeOf } = Reflect;
 
+// Polyfill for https://github.com/tc39/proposal-object-keys-length
+/** 获取对象的键数量 */
+export const keysLength =
+    'keysLength' in Object && typeof Object.keysLength == 'function'
+        ? (Object.keysLength as (o: object) => number)
+        : (o: object): number => keys(o).length;
+
 /**
  * Determines whether an object has an enumerable property with the specified name.
  */
