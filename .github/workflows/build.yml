@@ -89,7 +89,7 @@ jobs:
       - name: Build napi artifact
         run: |
           cd packages/napi
-          pnpm run build --target ${{ matrix.arch }}-apple-darwin
+          pnpm run build --target ${{ matrix.arch }}-apple-darwin --release
 
       - uses: actions/setup-python@v6
         with:
@@ -154,7 +154,7 @@ jobs:
       - name: Build napi artifact
         run: |
           cd packages/napi
-          pnpm run build --target ${{ matrix.arch }}-pc-windows-msvc
+          pnpm run build --target ${{ matrix.arch }}-pc-windows-msvc --release
 
       - uses: actions/setup-python@v6
         with:
@@ -221,7 +221,7 @@ jobs:
       - name: Build napi artifact
         run: |
           cd packages/napi
-          pnpm run build --use-cross --target ${{ matrix.arch }}-unknown-linux-${{ matrix.libc }}
+          pnpm run build --use-cross --target ${{ matrix.arch }}-unknown-linux-${{ matrix.libc }} --release
 
       - name: Build python wheel
         uses: PyO3/maturin-action@v1

@@ -38,9 +38,8 @@
     "node": ">= 16"
   },
   "scripts": {
-    "build": "pnpm run build:debug --release",
-    "build:debug": "napi build --manifest-path ../../crates/napi/Cargo.toml --output-dir dist --platform",
-    "watch": "nodemon --watch ../../crates/ --ext rs --exec \"pnpm run build:debug\"",
+    "build": "napi build --manifest-path ../../crates/napi/Cargo.toml --output-dir dist --platform",
+    "watch": "nodemon --watch ../../crates/ --ext rs --exec \"pnpm run build\"",
     "clean": "rimraf dist"
   },
   "devDependencies": {
