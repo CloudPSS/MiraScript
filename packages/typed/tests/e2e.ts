@@ -1,16 +1,16 @@
 import test from 'ava';
-import { parse } from '../dist/index.js';
+import { parse, simplify, stringify } from '../dist/index.js';
 import { lib } from '@mirascript/mirascript/subtle';
 import type { VmLibOption } from '../../mirascript/src/vm/lib/helpers.ts';
 
 const lt = test.macro<[name: string, param: string, value: VmLibOption]>({
     exec: (t, name, param, value) => {
-        if (param === 'returns') {
-            t.assert(parse(value.returns?.type ?? 'nil'));
-            return;
-        }
-        const p = value.params?.[param]?.type ?? 'nil';
-        t.assert(parse(p));
+        const typeStr = param === 'returns' ? (value.returns?.type ?? 'nil') : (value.params?.[param]?.type ?? 'nil');
+        const parsed = parse(typeStr);
+        const simplified = simplify(parsed);
+        const stringified = stringify(simplified);
+        const reparsed = parse(stringified);
+        t.deepEqual(reparsed, simplified);
     },
     title: (t, name, param, value) => {
         let type: string;

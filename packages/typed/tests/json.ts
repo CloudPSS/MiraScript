@@ -8,16 +8,16 @@ test('primitive JSON schemas', (t) => {
     t.deepEqual(toJSONSchema(parse('number')), { type: 'number' });
     t.deepEqual(toJSONSchema(parse('boolean')), { type: 'boolean' });
     t.deepEqual(toJSONSchema(parse('nil')), { type: 'null' });
-    t.deepEqual(toJSONSchema(parse('array')), { type: 'array', items: {} });
+    t.deepEqual(toJSONSchema(parse('array')), { type: 'array', items: true });
     t.deepEqual(toJSONSchema(parse('record')), { type: 'object' });
-    t.deepEqual(toJSONSchema(parse('any')), {});
-    t.deepEqual(toJSONSchema(parse('unknown')), {});
+    t.deepEqual(toJSONSchema(parse('any')), true);
+    t.deepEqual(toJSONSchema(parse('unknown')), true);
     t.deepEqual(toJSONSchema(parse('never')), false);
-    t.deepEqual(toJSONSchema(parse('extern')), {});
+    t.deepEqual(toJSONSchema(parse('extern')), true);
 });
 
 test('named type JSON schema', (t) => {
-    t.deepEqual(toJSONSchema(parse('MyType')), {});
+    t.deepEqual(toJSONSchema(parse('MyType')), true);
 });
 
 test('string literal JSON schema', (t) => {
@@ -356,9 +356,9 @@ test('record with string field name JSON schema', (t) => {
 });
 
 test('function type JSON schema', (t) => {
-    t.deepEqual(toJSONSchema(parse('fn(arg: number, ..rest: string) -> boolean')), {});
-    t.deepEqual(toJSONSchema(parse('fn() -> number')), {});
-    t.deepEqual(toJSONSchema(parse('fn(callback: fn(result: string) -> any)')), {});
+    t.deepEqual(toJSONSchema(parse('fn(arg: number, ..rest: string) -> boolean')), false);
+    t.deepEqual(toJSONSchema(parse('fn() -> number')), false);
+    t.deepEqual(toJSONSchema(parse('fn(callback: fn(result: string) -> any)')), false);
 });
 
 test('template type JSON schema', (t) => {
@@ -399,5 +399,110 @@ test('template type JSON schema', (t) => {
     t.deepEqual(toJSONSchema(parse('`prefix$(boolean | "")suffix`')), {
         type: 'string',
         pattern: `^prefix(true|false)?suffix$`,
+    });
+});
+
+test('tuple JSON schema', (t) => {
+    t.deepEqual(toJSONSchema(parse('[number, string]')), {
+        type: 'array',
+        prefixItems: [{ type: 'number' }, { type: 'string' }],
+        items: false,
+    });
+});
+
+test('tuple with rest element JSON schema', (t) => {
+    t.deepEqual(toJSONSchema(parse('[number, ..string[]]')), {
+        type: 'array',
+        prefixItems: [{ type: 'number' }],
+        items: { type: 'string' },
+    });
+});
+
+test('tuple with rest element in middle JSON schema', (t) => {
+    t.deepEqual(toJSONSchema(parse('[number, ..string[], boolean]')), {
+        type: 'array',
+        prefixItems: [{ type: 'number' }],
+        items: { anyOf: [{ type: 'string' }, { type: 'boolean' }] },
+    });
+});
+
+test('tuple with rest element at start JSON schema', (t) => {
+    t.deepEqual(toJSONSchema(parse('[..number[], string]')), {
+        type: 'array',
+        items: { anyOf: [{ type: 'number' }, { type: 'string' }] },
+    });
+});
+
+test('tuple with multiple rest element JSON schema', (t) => {
+    t.deepEqual(toJSONSchema(parse('[number, ..string[], ..boolean[], number]')), {
+        type: 'array',
+        prefixItems: [{ type: 'number' }],
+        items: {
+            anyOf: [{ type: 'string' }, { type: 'boolean' }, { type: 'number' }],
+        },
+    });
+});
+
+test('tuple with bare rest element JSON schema (non-array)', (t) => {
+    t.deepEqual(toJSONSchema(parse('[number, ..string]')), {
+        type: 'array',
+        prefixItems: [{ type: 'number' }],
+        items: true,
+    });
+});
+
+test('tuple with user-type rest element JSON schema', (t) => {
+    t.deepEqual(toJSONSchema(parse('[number, ..MyType]')), {
+        type: 'array',
+        prefixItems: [{ type: 'number' }],
+        items: true,
+    });
+});
+
+test('tuple with bare rest in middle JSON schema', (t) => {
+    t.deepEqual(toJSONSchema(parse('[number, ..string, boolean]')), {
+        type: 'array',
+        prefixItems: [{ type: 'number' }],
+        items: true,
+    });
+});
+
+test('single element tuple JSON schema', (t) => {
+    t.deepEqual(toJSONSchema(parse('[number]')), {
+        type: 'array',
+        prefixItems: [{ type: 'number' }],
+        items: false,
+    });
+});
+
+test('empty tuple JSON schema', (t) => {
+    t.deepEqual(toJSONSchema(parse('[]')), {
+        type: 'array',
+        items: false,
+    });
+});
+
+test('nested tuple JSON schema', (t) => {
+    t.deepEqual(toJSONSchema(parse('[[number, string], boolean]')), {
+        type: 'array',
+        prefixItems: [
+            {
+                type: 'array',
+                prefixItems: [{ type: 'number' }, { type: 'string' }],
+                items: false,
+            },
+            { type: 'boolean' },
+        ],
+        items: false,
+    });
+});
+
+test('reflection type JSON schema', (t) => {
+    t.deepEqual(toJSONSchema(parse('type(MyVar)')), true);
+});
+
+test('reflection type in union JSON schema', (t) => {
+    t.deepEqual(toJSONSchema(parse('type(A) | string')), {
+        anyOf: [true, { type: 'string' }],
     });
 });

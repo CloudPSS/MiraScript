@@ -654,3 +654,213 @@ test('priority of types', (t) => {
         },
     });
 });
+
+test('tuple type', (t) => {
+    t.deepEqual(parse('[number, string]'), {
+        kind: 'tuple',
+        elements: [
+            { type: 'number', spread: false },
+            { type: 'string', spread: false },
+        ],
+    });
+});
+
+test('tuple type with rest element', (t) => {
+    t.deepEqual(parse('[number, ..string[]]'), {
+        kind: 'tuple',
+        elements: [
+            { type: 'number', spread: false },
+            { type: { kind: 'array', element: 'string' }, spread: true },
+        ],
+    });
+});
+
+test('tuple type single element', (t) => {
+    t.deepEqual(parse('[number]'), {
+        kind: 'tuple',
+        elements: [{ type: 'number', spread: false }],
+    });
+});
+
+test('tuple type with trailing comma', (t) => {
+    t.deepEqual(parse('[number,]'), {
+        kind: 'tuple',
+        elements: [{ type: 'number', spread: false }],
+    });
+});
+
+test('tuple type with union elements', (t) => {
+    t.deepEqual(parse('[string | number, boolean]'), {
+        kind: 'tuple',
+        elements: [
+            { type: { kind: 'union', types: ['string', 'number'] }, spread: false },
+            { type: 'boolean', spread: false },
+        ],
+    });
+});
+
+test('tuple type with nested tuple', (t) => {
+    t.deepEqual(parse('[[number, string], boolean]'), {
+        kind: 'tuple',
+        elements: [
+            {
+                type: {
+                    kind: 'tuple',
+                    elements: [
+                        { type: 'number', spread: false },
+                        { type: 'string', spread: false },
+                    ],
+                },
+                spread: false,
+            },
+            { type: 'boolean', spread: false },
+        ],
+    });
+});
+
+test('tuple type with function element', (t) => {
+    t.deepEqual(parse('[fn(x: number) -> string, boolean]'), {
+        kind: 'tuple',
+        elements: [
+            {
+                type: {
+                    kind: 'function',
+                    params: [{ name: 'x', type: 'number' }],
+                    returns: 'string',
+                },
+                spread: false,
+            },
+            { type: 'boolean', spread: false },
+        ],
+    });
+});
+
+test('empty tuple type', (t) => {
+    t.deepEqual(parse('[]'), {
+        kind: 'tuple',
+        elements: [],
+    });
+});
+
+test('tuple type with multiple rest elements', (t) => {
+    t.deepEqual(parse('[..number[], ..string[]]'), {
+        kind: 'tuple',
+        elements: [
+            { type: { kind: 'array', element: 'number' }, spread: true },
+            { type: { kind: 'array', element: 'string' }, spread: true },
+        ],
+    });
+});
+
+test('tuple type with rest element in middle', (t) => {
+    t.deepEqual(parse('[number, ..string[], boolean]'), {
+        kind: 'tuple',
+        elements: [
+            { type: 'number', spread: false },
+            { type: { kind: 'array', element: 'string' }, spread: true },
+            { type: 'boolean', spread: false },
+        ],
+    });
+});
+
+test('tuple type with rest element at start', (t) => {
+    t.deepEqual(parse('[..number[], string]'), {
+        kind: 'tuple',
+        elements: [
+            { type: { kind: 'array', element: 'number' }, spread: true },
+            { type: 'string', spread: false },
+        ],
+    });
+});
+
+test('tuple type with bare rest element (non-array)', (t) => {
+    t.deepEqual(parse('[number, ..string]'), {
+        kind: 'tuple',
+        elements: [
+            { type: 'number', spread: false },
+            { type: 'string', spread: true },
+        ],
+    });
+});
+
+test('tuple type with user-type rest element', (t) => {
+    t.deepEqual(parse('[number, ..MyType]'), {
+        kind: 'tuple',
+        elements: [
+            { type: 'number', spread: false },
+            { type: 'MyType', spread: true },
+        ],
+    });
+});
+
+test('reflection type', (t) => {
+    t.deepEqual(parse('type(MyVar)'), {
+        kind: 'reflection',
+        name: 'MyVar',
+    });
+});
+
+test('reflection type with keyword-like name', (t) => {
+    t.deepEqual(parse('type(string)'), {
+        kind: 'reflection',
+        name: 'string',
+    });
+});
+
+test('reflection type in union', (t) => {
+    t.deepEqual(parse('type(A) | string'), {
+        kind: 'union',
+        types: [{ kind: 'reflection', name: 'A' }, 'string'],
+    });
+});
+
+test('tuples and reflection types together', (t) => {
+    t.deepEqual(parse('[type(A), ..type(B)[]]'), {
+        kind: 'tuple',
+        elements: [
+            { type: { kind: 'reflection', name: 'A' }, spread: false },
+            { type: { kind: 'array', element: { kind: 'reflection', name: 'B' } }, spread: true },
+        ],
+    });
+});
+
+test('type as a regular named type', (t) => {
+    t.is(parse('type'), 'type');
+});
+
+test('type as a regular named type in union', (t) => {
+    t.deepEqual(parse('type | string'), {
+        kind: 'union',
+        types: ['type', 'string'],
+    });
+});
+
+test('type as a regular named type in record generic', (t) => {
+    t.deepEqual(parse('record<type, number>'), {
+        kind: 'record',
+        key: 'type',
+        value: 'number',
+    });
+});
+
+test('reflection of type itself', (t) => {
+    t.deepEqual(parse('type(type)'), {
+        kind: 'reflection',
+        name: 'type',
+    });
+});
+
+test('reflection of type in union', (t) => {
+    t.deepEqual(parse('type(type) | string'), {
+        kind: 'union',
+        types: [{ kind: 'reflection', name: 'type' }, 'string'],
+    });
+});
+
+test('type as a regular named type in function param', (t) => {
+    t.deepEqual(parse('fn(x: type) -> type'), {
+        kind: 'function',
+        params: [{ name: 'x', type: 'type' }],
+        returns: 'type',
+    });
+});

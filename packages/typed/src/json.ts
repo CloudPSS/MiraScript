@@ -15,19 +15,19 @@ function string(type: KnownType | NamedType): JSONSchema {
         case 'nil':
             return { type: 'null' };
         case 'array':
-            return { type: 'array', items: {} };
+            return { type: 'array', items: true };
         case 'record':
             return { type: 'object' };
         case 'extern':
-            return {};
+            return true;
         case 'any':
-            return {};
+            return true;
         case 'unknown':
-            return {};
+            return true;
         case 'never':
             return false;
         default:
-            return {};
+            return true;
     }
 }
 
@@ -235,12 +235,60 @@ export function toJSONSchema(type: Type, options?: ToJSONSchemaOptions): JSONSch
         return literal(simplified);
     }
     if (simplified.kind === 'function') {
-        return {};
+        return false;
     }
     if (simplified.kind === 'template') {
         return { type: 'string', pattern: templatePattern(simplified) };
     }
+    if (simplified.kind === 'tuple') {
+        // Collect element schemas, unwrapping array from rest elements (..T[] → T).
+        // Non-array rest (e.g. ..string) is treated as any ({}).
+        const elementSchemas = simplified.elements.map((e) => {
+            const t = e.type;
+            if (!e.spread) return toJSONSchema(t, options);
+            if (typeof t == 'object' && t.kind === 'array') {
+                return toJSONSchema(t.element, options);
+            }
+            return true;
+        });
+
+        const prefixItems = [];
+        let i = 0;
+        for (; i < elementSchemas.length; i++) {
+            const el = simplified.elements[i]!;
+            if (el.spread) break;
+            prefixItems.push(elementSchemas[i]!);
+        }
+
+        const items = [];
+        let hasAny = false;
+        for (; i < elementSchemas.length; i++) {
+            const schema = elementSchemas[i]!;
+            items.push(schema);
+            if (schema === true) {
+                hasAny = true;
+            }
+        }
+
+        const schema: JSONSchema = { type: 'array' };
+        if (prefixItems.length > 0) {
+            schema.prefixItems = prefixItems;
+        }
+        if (hasAny) {
+            schema.items = true;
+        } else if (items.length > 1) {
+            schema.items = { anyOf: items };
+        } else if (items.length === 1) {
+            schema.items = items[0]!;
+        } else {
+            schema.items = loose;
+        }
+        return schema;
+    }
+    if (simplified.kind === 'reflection') {
+        return true;
+    }
     /* c8 ignore next 3 */
     simplified satisfies never;
-    return {};
+    return true;
 }

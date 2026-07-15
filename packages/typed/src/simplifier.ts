@@ -18,6 +18,8 @@ export interface SimplifyOptions {
     distributeIntersectionsOverUnions?: boolean;
     /** Merge intersections of explicit record fields. */
     mergeRecordIntersections?: boolean;
+    /** Inline tuple spread elements (..[A, B] → A, B). */
+    expandTupleSpreads?: boolean;
 }
 
 const DEFAULT_OPTIONS: Required<SimplifyOptions> = {
@@ -29,6 +31,7 @@ const DEFAULT_OPTIONS: Required<SimplifyOptions> = {
     unwrapSingleIntersection: true,
     distributeIntersectionsOverUnions: true,
     mergeRecordIntersections: true,
+    expandTupleSpreads: true,
 };
 
 /** Fills in default simplification options. */
@@ -80,6 +83,12 @@ function getTypeDedupKey(type: Type, symbols: Map<symbol, number>): string {
             }:<${(type.typeParams ?? []).map((p) => getTypeDedupKey(p, symbols)).join(',')}>(${type.params
                 .map((p) => `${p.name}:${String(Boolean(p.spread))}:${getTypeDedupKey(p.type, symbols)}`)
                 .join(',')})=>${type.returns == null ? 'void' : getTypeDedupKey(type.returns, symbols)}`;
+        case 'tuple':
+            return `tuple:[${type.elements
+                .map((e) => `${String(Boolean(e.spread))}:${getTypeDedupKey(e.type, symbols)}`)
+                .join(',')}]`;
+        case 'reflection':
+            return `reflection:${type.name}`;
         default:
             return 'unknown';
     }
@@ -220,6 +229,27 @@ function simplifyImpl(type: Type, config: Required<SimplifyOptions>): Type {
 
     if (type.kind === 'template') {
         type.parts = type.parts.map((part) => simplifyImpl(part, config));
+        return type;
+    }
+
+    if (type.kind === 'tuple') {
+        type.elements = type.elements.flatMap((element) => {
+            const simplifiedType = simplifyImpl(element.type, config);
+            if (
+                config.expandTupleSpreads &&
+                element.spread &&
+                typeof simplifiedType === 'object' &&
+                simplifiedType.kind === 'tuple'
+            ) {
+                // Inline tuple spread: ..[A, B] → A, B
+                return simplifiedType.elements;
+            }
+            return [{ ...element, type: simplifiedType }];
+        });
+        return type;
+    }
+
+    if (type.kind === 'reflection') {
         return type;
     }
 

@@ -11,7 +11,9 @@ export type Type =
     | UnionType
     | IntersectionType
     | RecordType
-    | FunctionType;
+    | FunctionType
+    | TupleType
+    | ReflectionType;
 
 /** Generic type parameter reference in MiraScript */
 export type GenericType = symbol;
@@ -114,6 +116,30 @@ export interface FunctionParameter {
     spread?: boolean;
 }
 
+/** Tuple type in MiraScript */
+export interface TupleType {
+    /** Tag */
+    kind: 'tuple';
+    /** Elements in the tuple */
+    elements: TupleElement[];
+}
+
+/** Tuple element in MiraScript */
+export interface TupleElement {
+    /** Element type */
+    type: Type;
+    /** Whether the element is a rest element */
+    spread?: boolean;
+}
+
+/** Reflection type in MiraScript */
+export interface ReflectionType {
+    /** Tag */
+    kind: 'reflection';
+    /** The name of the variable being reflected */
+    name: string;
+}
+
 /**
  * Replaces generic type parameter names in the AST with unique symbols,
  * scoped per function declaration.
@@ -165,6 +191,15 @@ function resolveGenerics(type: Type, scope = new Map<string, GenericType>()): Ty
     }
     if (type.kind === 'template') {
         type.parts = type.parts.map((part) => resolveGenerics(part, scope));
+        return type;
+    }
+    if (type.kind === 'tuple') {
+        for (const element of type.elements) {
+            element.type = resolveGenerics(element.type, scope);
+        }
+        return type;
+    }
+    if (type.kind === 'reflection') {
         return type;
     }
     /* c8 ignore next 3 */

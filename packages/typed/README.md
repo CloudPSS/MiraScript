@@ -51,11 +51,21 @@ console.log(toJSONSchema(parse('(a: number)'), { loose: true }));
 - 字符串插值类型：三种引号均支持 `$()` 插值
   - 示例：`` `hello $(type)` ``、`"value: $(string | number)"`
   - `$` 必须紧接 `(`，否则报错；`\$` 可表示字面量 `$`
+- 元组类型：`[typeA, typeB]` 和 `[typeA, ..typeB]`
+  - 固定长度元组：`[number, string, boolean]`
+  - 带剩余元素的元组：`[number, ..string[]]`（至少一个 `number`，后跟任意个 `string`）
+  - 剩余元素可出现在任意位置：`[number, ..string[], boolean]`、`[..number[], string]`
+  - 空元组：`[]`
+  - 嵌套元组：`[[number, string], boolean]`
+- 反射类型：`type(identifier)`
+  - 获取指定标识符的类型：`type(MyVar)`
+  - 可用于联合类型：`type(A) | string`
 
 ## 常用导出
 
 - `parse()`：将类型字符串解析为 `Type`
 - `simplify()`：在 `Type` AST 层做归一化和展开，默认开启全部简化；可通过 `SimplifyOptions` 逐项关闭
+- `stringify()`：将 `Type` 转换为类型字符串
 - `toJSONSchema()`：将 `Type` 转换为 JSON Schema
 - `Type`、`KnownType`、`RecordType`、`FunctionType`、`TemplateType`、`GenericType` 等类型
 

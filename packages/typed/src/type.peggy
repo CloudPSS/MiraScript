@@ -60,6 +60,10 @@ function string(parts) {
   }
   return { kind: 'template', parts };
 }
+
+function tupleElement(type, spread) {
+  return { type, spread: spread ?? false };
+}
 }
 
 Start
@@ -101,6 +105,8 @@ PostfixType
 
 PrimaryType
   = FunctionType
+  / ReflectionType
+  / TupleType
   / name:Identifier generic:(_ "<" _ @TypeArgList _ ">")? {
       if (generic) {
         if (name === 'array') {
@@ -120,6 +126,10 @@ PrimaryType
       if (BUILT_IN_TYPES.has(name)) {
         return name;
       }
+      // `type` is a non-reserved keyword — allow it as a plain named type
+      if (name === 'type') {
+        return name;
+      }
       return named(name);
     }
   / lit:String {
@@ -128,6 +138,33 @@ PrimaryType
     }
   / "(" _ @Type _ ")"
   / RecordType
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Reflection
+///////////////////////////////////////////////////////////////////////////////
+
+ReflectionType
+  = "type" _ "(" _ name:Identifier _ ")" {
+      return { kind: "reflection", name };
+    }
+
+///////////////////////////////////////////////////////////////////////////////
+// Tuple
+///////////////////////////////////////////////////////////////////////////////
+
+TupleType
+  = "[" _ elements:TupleElementList? _ "]" {
+      return { kind: "tuple", elements: elements ?? [] };
+    }
+
+TupleElementList
+  = @TupleElement|1.., _ "," _ | ( _ "," _ )?
+
+TupleElement
+  = spread:".."? _ type:Type {
+      return tupleElement(type, spread != null);
+    }
 
 
 ///////////////////////////////////////////////////////////////////////////////
