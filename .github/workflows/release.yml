@@ -47,7 +47,7 @@ jobs:
           cd packages/napi
           pnpm napi create-npm-dirs
           pnpm napi artifacts --output-dir dist
-          pnpm napi pre-publish -t npm --no-gh-release --skip-optional-publish
+          pnpm napi pre-publish --tag-style npm --no-gh-release --skip-optional-publish
 
           for target in npm/*; do
             if [[ -d "$target" ]]; then
