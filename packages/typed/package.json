@@ -28,6 +28,7 @@
     "test": "c8 ava --no-worker-threads"
   },
   "devDependencies": {
+    "@mirascript/mirascript": "workspace:~",
     "@types/node": "^26.1.1",
     "ava": "^8.0.1",
     "c8": "^11.0.0",
