@@ -1,5 +1,8 @@
 import type { GenericType, RecordField, RecordType, Type } from './parser.js';
 
+/** Top types that can be absorbed / eliminated in simplification. */
+type TopType = 'unknown' | 'never' | 'any';
+
 /** Controls which type simplifications are applied. */
 export interface SimplifyOptions {
     /** Flatten nested union nodes. */
@@ -20,6 +23,33 @@ export interface SimplifyOptions {
     mergeRecordIntersections?: boolean;
     /** Inline tuple spread elements (..[A, B] → A, B). */
     expandTupleSpreads?: boolean;
+    /**
+     * Eliminate / absorb top types in unions.
+     * - `unknown | T` → `unknown`
+     * - `any | T` → `any`
+     * - `T | never` → `T`
+     * `true` enables all, or pass a subset of `'unknown' | 'never' | 'any'`.
+     */
+    simplifyTopTypesInUnions?: boolean | TopType[];
+    /**
+     * Eliminate / absorb top types in intersections.
+     * - `never & T` → `never`
+     * - `T & unknown` → `T`
+     * - `T & any` → `T`
+     * `true` enables all, or pass a subset of `'unknown' | 'never' | 'any'`.
+     */
+    simplifyTopTypesInIntersections?: boolean | TopType[];
+    /** `record<string, V>` → `record<V>` (string is the default key). */
+    normalizeGenericRecord?: boolean;
+    /** `array<any | unknown>` → `array` (no element constraint). */
+    normalizeGenericArray?: boolean;
+}
+
+/** Resolves the top types option into an array of top types. */
+function resolveTopTypes(value: boolean | TopType[] | undefined): TopType[] {
+    if (value === false || value == null) return [];
+    if (value === true) return ['unknown', 'never', 'any'];
+    return value;
 }
 
 const DEFAULT_OPTIONS: Required<SimplifyOptions> = {
@@ -32,6 +62,10 @@ const DEFAULT_OPTIONS: Required<SimplifyOptions> = {
     distributeIntersectionsOverUnions: true,
     mergeRecordIntersections: true,
     expandTupleSpreads: true,
+    simplifyTopTypesInUnions: true,
+    simplifyTopTypesInIntersections: true,
+    normalizeGenericRecord: true,
+    normalizeGenericArray: true,
 };
 
 /** Fills in default simplification options. */
@@ -96,6 +130,7 @@ function getTypeDedupKey(type: Type, symbols: Map<symbol, number>): string {
 
 /** Removes duplicate members from union/intersection type member lists. */
 function deduplicateTypeMembers(types: Type[]): Type[] {
+    if (types.length <= 1) return types;
     const symbols = new Map<symbol, number>();
     const seen = new Set<string>();
     const result: Type[] = [];
@@ -212,6 +247,9 @@ function simplifyImpl(type: Type, config: Required<SimplifyOptions>): Type {
 
     if (type.kind === 'array') {
         type.element = simplifyImpl(type.element, config);
+        if (config.normalizeGenericArray && (type.element === 'any' || type.element === 'unknown')) {
+            return 'array';
+        }
         return type;
     }
 
@@ -259,6 +297,9 @@ function simplifyImpl(type: Type, config: Required<SimplifyOptions>): Type {
         } else {
             if (type.key != null) type.key = simplifyImpl(type.key, config);
             type.value = simplifyImpl(type.value, config);
+            if (config.normalizeGenericRecord && type.key === 'string') {
+                delete type.key;
+            }
         }
         return type;
     }
@@ -268,11 +309,23 @@ function simplifyImpl(type: Type, config: Required<SimplifyOptions>): Type {
             type.types.map((item) => simplifyImpl(item, config)),
             config,
         );
+
+        // Top-type elimination: unknown | T → unknown, any | T → any, T | never → T
+        const topTypes = resolveTopTypes(config.simplifyTopTypesInUnions);
+        if (topTypes.length > 0) {
+            if (topTypes.includes('any') && simplifiedTypes.includes('any')) return 'any';
+            if (topTypes.includes('unknown') && simplifiedTypes.includes('unknown')) return 'unknown';
+            if (topTypes.includes('never')) {
+                simplifiedTypes = simplifiedTypes.filter((t) => t !== 'never');
+            }
+        }
+
         if (config.deduplicateUnions) {
             simplifiedTypes = deduplicateTypeMembers(simplifiedTypes);
         }
-        if (config.unwrapSingleUnion && simplifiedTypes.length === 1) {
-            return simplifiedTypes[0]!;
+        if (config.unwrapSingleUnion) {
+            if (simplifiedTypes.length === 1) return simplifiedTypes[0]!;
+            if (simplifiedTypes.length === 0) return 'never';
         }
         type.types = simplifiedTypes;
         return type;
@@ -283,6 +336,30 @@ function simplifyImpl(type: Type, config: Required<SimplifyOptions>): Type {
             type.types.map((item) => simplifyImpl(item, config)),
             config,
         );
+
+        // Top-type elimination: never & T → never, T & unknown → T, T & any → T
+        const topTypes = resolveTopTypes(config.simplifyTopTypesInIntersections);
+        if (topTypes.length > 0) {
+            const typeNames = new Set(simplifiedTypes.filter((t): t is string => typeof t === 'string'));
+            if (topTypes.includes('never') && typeNames.has('never')) return 'never';
+            let filtered = false;
+            if (topTypes.includes('unknown') && typeNames.has('unknown')) {
+                simplifiedTypes = simplifiedTypes.filter((t) => t !== 'unknown');
+                filtered = true;
+            }
+            if (topTypes.includes('any') && typeNames.has('any')) {
+                simplifiedTypes = simplifiedTypes.filter((t) => t !== 'any');
+                filtered = true;
+            }
+            if (filtered) {
+                if (simplifiedTypes.length === 1) return simplifiedTypes[0]!;
+                if (simplifiedTypes.length === 0) {
+                    // All members were the same eliminated top type
+                    return typeNames.has('any') ? 'any' : 'unknown';
+                }
+            }
+        }
+
         if (config.deduplicateIntersections) {
             simplifiedTypes = deduplicateTypeMembers(simplifiedTypes);
         }

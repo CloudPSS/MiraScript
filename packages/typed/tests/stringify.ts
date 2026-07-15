@@ -69,7 +69,7 @@ test('stringify record fields', (t) => {
 
 test('stringify record generic', (t) => {
     t.is(stringify(simplify(parse('record<number>'))), 'record<number>');
-    t.is(stringify(simplify(parse('record<string, number>'))), 'record<string, number>');
+    t.is(stringify(simplify(parse('record<string, number>'))), 'record<number>');
 });
 
 test('stringify function', (t) => {

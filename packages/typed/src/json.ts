@@ -1,7 +1,9 @@
-import type { JSONSchema } from 'json-schema-typed';
+import { type JSONSchema, $schema } from 'json-schema-typed';
 import { REG_NUMBER } from '@mirascript/constants';
 import { simplify } from './simplifier.js';
 import type { KnownType, LiteralType, NamedType, TemplateType, Type } from './parser.js';
+
+export type { JSONSchema } from 'json-schema-typed';
 
 /** Converts a KnownType or NamedType into JSON Schema */
 function string(type: KnownType | NamedType): JSONSchema {
@@ -132,8 +134,8 @@ export interface ToJSONSchemaOptions {
 }
 
 /** Converts a Type object into JSON Schema */
-export function toJSONSchema(type: Type, options?: ToJSONSchemaOptions): JSONSchema {
-    const loose = options?.loose ?? false;
+function toJSONSchemaImpl(type: Type, options: Required<ToJSONSchemaOptions>): JSONSchema {
+    const { loose } = options;
     const simplified = simplify(type);
     if (typeof simplified == 'symbol') {
         return {};
@@ -144,7 +146,7 @@ export function toJSONSchema(type: Type, options?: ToJSONSchemaOptions): JSONSch
     if (simplified.kind === 'array') {
         return {
             type: 'array',
-            items: toJSONSchema(simplified.element, options),
+            items: toJSONSchemaImpl(simplified.element, options),
         };
     }
     if (simplified.kind === 'union') {
@@ -153,12 +155,22 @@ export function toJSONSchema(type: Type, options?: ToJSONSchemaOptions): JSONSch
         for (const t of simplified.types) {
             if (isLiteralType(t)) {
                 literals.push(t);
-            } else {
-                anyOf.push(toJSONSchema(t, options));
+                continue;
             }
+            const child = toJSONSchemaImpl(t, options);
+            if (child === true) {
+                return true;
+            }
+            if (child === false) {
+                continue;
+            }
+            anyOf.push(child);
         }
         if (literals.length > 0) {
             anyOf.push(literalEnum(literals));
+        }
+        if (anyOf.length === 0) {
+            return false;
         }
         if (anyOf.length === 1) {
             return anyOf[0]!;
@@ -166,7 +178,7 @@ export function toJSONSchema(type: Type, options?: ToJSONSchemaOptions): JSONSch
         return { anyOf };
     }
     if (simplified.kind === 'intersection') {
-        const allOf = simplified.types.map((t) => toJSONSchema(t, options));
+        const allOf = simplified.types.map((t) => toJSONSchemaImpl(t, options));
         if (allOf.length === 1) {
             return allOf[0]!;
         }
@@ -177,7 +189,7 @@ export function toJSONSchema(type: Type, options?: ToJSONSchemaOptions): JSONSch
             const properties: Record<string, JSONSchema> = {};
             const required: string[] = [];
             for (const field of simplified.fields) {
-                properties[field.name] = toJSONSchema(field.type, options);
+                properties[field.name] = toJSONSchemaImpl(field.type, options);
                 if (!field.optional && !loose) {
                     required.push(field.name);
                 }
@@ -193,7 +205,7 @@ export function toJSONSchema(type: Type, options?: ToJSONSchemaOptions): JSONSch
             return schema;
         }
 
-        const valueSchema = toJSONSchema(simplified.value, options);
+        const valueSchema = toJSONSchemaImpl(simplified.value, options);
         if (simplified.key == null) {
             return {
                 type: 'object',
@@ -245,9 +257,9 @@ export function toJSONSchema(type: Type, options?: ToJSONSchemaOptions): JSONSch
         // Non-array rest (e.g. ..string) is treated as any ({}).
         const elementSchemas = simplified.elements.map((e) => {
             const t = e.type;
-            if (!e.spread) return toJSONSchema(t, options);
+            if (!e.spread) return toJSONSchemaImpl(t, options);
             if (typeof t == 'object' && t.kind === 'array') {
-                return toJSONSchema(t.element, options);
+                return toJSONSchemaImpl(t.element, options);
             }
             return true;
         });
@@ -291,4 +303,21 @@ export function toJSONSchema(type: Type, options?: ToJSONSchemaOptions): JSONSch
     /* c8 ignore next 3 */
     simplified satisfies never;
     return true;
+}
+
+/** Converts a Type object into JSON Schema */
+export function toJSONSchema(
+    type: Type,
+    options?: ToJSONSchemaOptions,
+): JSONSchema.Interface & { $schema: typeof $schema } {
+    let schema = toJSONSchemaImpl(type, { loose: options?.loose ?? false });
+    if (schema === true) {
+        schema = {};
+    } else if (schema === false) {
+        schema = { not: true };
+    }
+    return {
+        ...schema,
+        $schema,
+    };
 }
