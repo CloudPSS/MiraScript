@@ -44,9 +44,10 @@ jobs:
           TAG: ${{ contains(github.ref, '-') && 'next' || 'latest' }}
         run: |
           cd packages/napi
-          pnpm napi create-npm-dirs
-          pnpm napi artifacts --output-dir dist
-          pnpm napi pre-publish --tag-style npm --no-gh-release --skip-optional-publish
+          pnpm install -g @napi-rs/cli
+          napi create-npm-dirs
+          napi artifacts --output-dir dist
+          napi pre-publish --tag-style npm --no-gh-release --skip-optional-publish
 
           for target in npm/*; do
             if [[ -d "$target" ]]; then
