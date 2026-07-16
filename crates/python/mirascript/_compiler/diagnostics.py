@@ -1,7 +1,5 @@
 from typing_extensions import TypeAlias, Literal
 
-from .core import get_diagnostic_message
-
 DiagnosticLevel: TypeAlias = Literal[
     "Error", "Warning", "Info", "Hint", "Reference", "SourceMap", "Unknown"
 ]
@@ -66,6 +64,8 @@ class Diagnostic(DiagnosticPosition):
         info = Diagnostic.__cache.get(self.code)
         if info is None:
             try:
+                from .core import get_diagnostic_message
+
                 info = get_diagnostic_message(self.code)
                 Diagnostic.__cache[self.code] = info
             except:

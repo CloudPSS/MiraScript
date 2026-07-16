@@ -1,7 +1,6 @@
 from pathlib import Path
 from typing_extensions import Literal, TypeAlias
 
-from .core import Config as _CompileConfig, compile as _compile
 from .emit import emit
 from .script import VmScript, VmScriptLike
 from .diagnostics import Diagnostic, decode_diagnostics
@@ -29,8 +28,11 @@ def compile(
         (VmScript | None): 编译后的 Python 函数
         list[Diagnostic]: 编译过程中产生的诊断信息
     """
-    config = _CompileConfig(input_mode=input_mode)
-    bytecode, diagnostics = _compile(script, config)
+
+    from .core import Config, compile
+
+    config = Config(input_mode=input_mode)
+    bytecode, diagnostics = compile(script, config)
     decoded_diagnostics, source_map = decode_diagnostics(diagnostics)
     func = (
         emit(
