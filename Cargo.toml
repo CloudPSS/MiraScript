@@ -9,9 +9,8 @@ debug-assertions = true
 opt-level = 3
 lto = "fat"
 codegen-units = 1
-strip = "symbols"
+strip = "none"
+debug = "line-tables-only"
 
 [profile.profiling]
 inherits = "release"
-strip = "none"
-debug = "line-tables-only"

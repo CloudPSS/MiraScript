@@ -1,35 +1,41 @@
 import math
 import time
+from threading import local
 
 from ..._helpers.checker import is_number
 
 MAX_DEPTH = 128
-cp_depth = 0
-cp = float("nan")
-cp_timeout = 500  # 默认超时时间，单位毫秒
+TIMEOUT = 500  # 默认超时时间，单位毫秒
+
+
+class ThreadLocalData(local):
+    cp_depth: int = 0
+    cp: float = float("nan")
+
+
+thread_local = ThreadLocalData()
 
 
 def Cp():
     """检查点"""
-    pass
-    global cp
     current_time = int(time.time() * 1000)
-    if not cp or (isinstance(cp, float) and cp != cp):  # NaN 检查
-        cp = current_time
-    elif current_time - cp > cp_timeout:
+    if not thread_local.cp or (
+        isinstance(thread_local.cp, float) and thread_local.cp != thread_local.cp
+    ):  # NaN 检查
+        thread_local.cp = current_time
+    elif current_time - thread_local.cp > TIMEOUT:
         raise RuntimeError(
-            f"Execution timed out, exceeded {cp_timeout} ms , last checkpoint at {cp} ms , current time {current_time} ms"
+            f"Execution timed out, exceeded {TIMEOUT} ms , last checkpoint at {thread_local.cp} ms , current time {current_time} ms"
         )
 
 
 def CpEnter():
     """进入检查点"""
-    global cp_depth, cp
-    cp_depth += 1
-    if cp_depth <= 1:
-        cp = int(time.time() * 1000)
-        cp_depth = 1
-    elif cp_depth > MAX_DEPTH:
+    thread_local.cp_depth += 1
+    if thread_local.cp_depth <= 1:
+        thread_local.cp = int(time.time() * 1000)
+        thread_local.cp_depth = 1
+    elif thread_local.cp_depth > MAX_DEPTH:
         raise RuntimeError("Maximum call depth exceeded")
     else:
         Cp()
@@ -37,18 +43,17 @@ def CpEnter():
 
 def CpExit():
     """退出检查点"""
-    global cp_depth, cp
-    cp_depth -= 1
-    if cp_depth < 1:
-        cp = float("nan")
-        cp_depth = 0
+    thread_local.cp_depth -= 1
+    if thread_local.cp_depth < 1:
+        thread_local.cp = float("nan")
+        thread_local.cp_depth = 0
     else:
         Cp()
 
 
 def config_checkpoint(timeout: "float | int" = 100):
     """设置检查点超时时间"""
-    global cp_timeout
+    global TIMEOUT
     if not is_number(timeout) or timeout <= 0 or math.isnan(timeout):
         raise ValueError("Invalid timeout value")
-    cp_timeout = int(timeout) if math.isfinite(timeout) else 1000000000000000
+    TIMEOUT = int(timeout) if math.isfinite(timeout) else 1000000000000000
