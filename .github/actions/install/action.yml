@@ -21,9 +21,9 @@ inputs:
     description: 'The Node.js version to use. Default to the version specified in .nvmrc or package.json.'
     required: false
   rust-targets:
-    description: 'Comma-separated list of Rust targets to install. Default to wasm32-unknown-unknown.'
+    description: 'Comma-separated list of Rust targets to install. Default to false, will skip Rust setup.'
     required: false
-    default: 'wasm32-unknown-unknown'
+    default: 'false'
   tools:
     description: 'Comma-separated list of additional tools to install with taiki-e/install-action. Default to empty.'
     required: false

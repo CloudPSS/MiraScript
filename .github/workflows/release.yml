@@ -107,19 +107,16 @@ jobs:
 
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
       - name: Download wheel artifacts
         uses: actions/download-artifact@v8
         with:
           name: python-artifacts
-          path: crates/python/dist/
+          path: python-artifacts/
 
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          packages-dir: crates/python/dist
+          packages-dir: python-artifacts/
 
   build-vscode:
     needs: [build, publish-npm]

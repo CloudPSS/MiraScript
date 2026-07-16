@@ -21,6 +21,7 @@ jobs:
         uses: ./.github/actions/install
         with:
           ALIYUN_NPM_TOKEN: ${{ secrets.ALIYUN_NPM_TOKEN }}
+          rust-targets: wasm32-unknown-unknown # Use wasm32-unknown-unknown to build wasm bindings
           tools: wasm-bindgen wasm-pack
           check-lockfile: true # Check once at here, and trust the lockfile for the rest of the workflow
 
