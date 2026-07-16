@@ -39,6 +39,7 @@ runs:
 
     - name: Setup Rust
       uses: dtolnay/rust-toolchain@stable
+      if: ${{ inputs.rust-targets != 'false' }}
       with:
         targets: ${{ inputs.rust-targets }}
 

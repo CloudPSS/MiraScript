@@ -334,6 +334,7 @@ jobs:
       - name: Install
         uses: ./.github/actions/install
         with:
+          rust-targets: false
           ALIYUN_NPM_TOKEN: ${{ secrets.ALIYUN_NPM_TOKEN }}
           node-version: ${{ matrix.node }}
           pnpm-args: '--frozen-lockfile --ignore-scripts'
