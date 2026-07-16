@@ -34,7 +34,7 @@
     "@monaco-editor/react": "^4.7.0",
     "@private/monaco-editor": "^0.0.71",
     "fflate": "^0.8.3",
-    "js-base64": "^3.8.1",
+    "js-base64": "^3.9.0",
     "remark-directive": "^4.0.0",
     "remark-extended-table": "^2.0.3",
     "remark-gfm": "^4.0.1",
