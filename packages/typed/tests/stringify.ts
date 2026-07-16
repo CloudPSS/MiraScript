@@ -71,7 +71,7 @@ test('stringify record generic', (t) => {
     t.is(stringify(simplify(parse('record<number>'))), 'record<number>');
     t.is(stringify(simplify(parse('record<string, number>'))), 'record<number>');
     t.is(stringify(simplify(parse('record<number, number>'))), 'record<number, number>');
-    t.is(stringify(simplify(parse('record<"$(string)", number>'))), 'record<"$(string)", number>');
+    t.is(stringify(simplify(parse('record<"$(string)", number>'))), 'record<`$(string)`, number>');
 });
 
 test('stringify function', (t) => {
