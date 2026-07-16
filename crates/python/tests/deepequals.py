@@ -153,7 +153,7 @@ def deep_equal(
     # Fallback to regular equality
     try:
         return a == b
-    except Exception:
+    except:
         # If equality throws, fallback to identity (already checked) -> not equal
         return False
 

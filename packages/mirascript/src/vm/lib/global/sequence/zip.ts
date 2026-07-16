@@ -7,17 +7,17 @@ import { entries } from './entries.js';
 export const zip = VmLib(
     (data) => {
         const ets = entries(data);
-        let len = 0;
+        let length = 0;
         for (const { 0: key, 1: arr } of ets) {
             if (!isVmArray(arr)) {
                 throwError(`data[${display(key)}] is not an array: ${display(arr)}`, null);
             }
-            len = Math.max(len, arr.length);
+            length = Math.max(length, arr.length);
         }
-        if (len === 0) return [];
+        if (length === 0) return [];
         const result: Array<Record<number | string, VmConst>> = [];
         const isArr = isVmArray(data);
-        for (let i = 0; i < len; i++) {
+        for (let i = 0; i < length; i++) {
             Cp();
             const obj: Record<number | string, VmConst> = isArr ? ([] as Record<number, VmConst>) : {};
             for (const { 0: key, 1: arr } of ets) {

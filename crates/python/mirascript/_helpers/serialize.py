@@ -34,17 +34,24 @@ def serializeNumber(value: float) -> str:
     return str(value)
 
 
-def serializeStringImpl(value, options):
-    import re
+STRING_QUOTE = "'"
+STRING_REG = re.compile(r"[\0-\x1f'\"`$\\\u2028\u2029]", re.UNICODE)
 
-    if not re.search(r'[\\p{C}\'"`$\\]', value, re.UNICODE):
+
+def serializeStringImpl(value: str, options):
+    oq = options.serializeStringQuote(STRING_QUOTE, True, options)
+    cq = options.serializeStringQuote(STRING_QUOTE, False, options)
+    if len(value) == 0:
+        return oq + cq
+
+    if not STRING_REG.search(value):
         # 不包含特殊字符
-        oq = options.serializeStringQuote("'", True, options)
-        cq = options.serializeStringQuote("'", False, options)
         c = options.serializeStringContent(value, options)
         return oq + c + cq
-    ret = options.serializeStringQuote("'", True, options)
+
+    ret = oq
     for char in value:
+        code = ord(char)
         if char == "'":
             esc = options.serializeStringEscape("\\'", "'", options)
             ret += esc
@@ -75,19 +82,15 @@ def serializeStringImpl(value, options):
         elif char == "$":
             esc = options.serializeStringEscape("\\$", "$", options)
             ret += esc
-        elif re.match(r"\p{C}", char, re.UNICODE):
-            code = ord(char)
-            if code <= 0x7F:
-                esc = options.serializeStringEscape(f"\\x{code:02x}", char, options)
-                ret += esc
-            elif 0xD800 <= code <= 0xDFFF:
-                ret += "�"
-            else:
-                esc = options.serializeStringEscape(f"\\u{{{code:x}}}", char, options)
-                ret += esc
+        elif 0xD800 <= code <= 0xDFFF:
+            ret += "�"
+        elif code == 0x2028 or code == 0x2029:
+            ret += options.serializeStringEscape(f"\\u{{{code:x}}}", char, options)
+        elif code <= 0x1F:
+            ret += options.serializeStringEscape(f"\\x{code:02x}", char, options)
         else:
             ret += char
-    ret += options.serializeStringQuote("'", False, options)
+    ret += cq
     return ret
 
 
