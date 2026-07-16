@@ -154,7 +154,7 @@ function getTokensProvider(mode: string): languages.IMonarchLanguage {
             whitespace: [
                 [/(@whitespace)+/, ''],
                 [/\/\/.*$/, 'comment.line'],
-                [/\/\*{2}/, 'comment.doc', '@doc_comment'],
+                [/\/\*{2}(?!\/)/, 'comment.doc', '@doc_comment'],
                 [/\/\*/, 'comment.block', '@block_comment'],
             ],
             format: [[/:(?!:)/, 'punctuation.format', '@format_string']],

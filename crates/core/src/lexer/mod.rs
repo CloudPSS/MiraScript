@@ -57,9 +57,8 @@ pub(crate) fn lex_impl<'s>(
     loop {
         #[cfg_attr(not(feature = "formatter"), allow(unused))]
         let leading_trivia = trivia::leading_trivia(input)?;
-        let prev_token = tokens.last_mut();
         #[cfg_attr(not(feature = "formatter"), allow(unused_mut))]
-        let mut token = tokens::token(input, prev_token)?;
+        let mut token = tokens::token(input, tokens.last_mut())?;
 
         let eof = matches!(token.kind, TokenKind::Eof);
         if eof || should_break(&token) {
@@ -74,6 +73,21 @@ pub(crate) fn lex_impl<'s>(
         #[cfg_attr(not(feature = "formatter"), allow(unused))]
         let tailing_trivia = trivia::tailing_trivia(input)?;
 
+        if matches!(token.kind, TokenKind::Empty) {
+            std::mem::drop(token);
+            #[cfg(feature = "formatter")]
+            if input.state.trivia
+                && let Some(prev_token) = tokens.last_mut()
+            {
+                let all_tailing_trivia = std::mem::take(&mut prev_token.tailing_trivia)
+                    .into_iter()
+                    .chain(leading_trivia)
+                    .chain(tailing_trivia)
+                    .collect();
+                prev_token.tailing_trivia = all_tailing_trivia;
+            }
+            continue;
+        }
         #[cfg(feature = "formatter")]
         if input.state.trivia {
             token.leading_trivia = leading_trivia;
