@@ -148,6 +148,7 @@ pub(super) fn token<'s>(
         } else if cur_token == Keyword::In && prev_kw == Keyword::Not {
             // `not in` 是一个关键字
             prev_token.kind = TokenKind::Keyword(Keyword::NotIn);
+            prev_token.range.end = cur_token.range.end;
             // 当前的 `in` 关键字已经被合并到 `not in`，因此需要重新解析当前的 token。
             return parse_token(input);
         }
