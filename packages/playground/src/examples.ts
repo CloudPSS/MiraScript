@@ -17,7 +17,7 @@ for (const [path, content] of Object.entries(exampleModules)) {
     const match = regex.exec(filename);
     if (!match || match.length < 4) {
         // eslint-disable-next-line no-console
-        console.warn(`文件名格式不正确: ${filename}`);
+        console.warn(`Incorrect filename format: ${filename}`);
         continue;
     }
 

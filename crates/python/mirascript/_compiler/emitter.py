@@ -846,7 +846,6 @@ class Emitter:
         if opcode in (OpCode.FuncVarg, OpCode.Func):
             assert isinstance(code, ast.FunctionDef)
             self.read_closure(code)
-            pass
         elif opcode in (
             OpCode.If,
             OpCode.IfNot,

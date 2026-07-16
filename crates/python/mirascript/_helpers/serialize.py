@@ -256,7 +256,7 @@ def serializeImpl(value, depth: int, options) -> str:
         return serializeRecord(value, depth + 1, options)
 
     # 不支持序列化的值
-    return options.serializeNil(options)
+    return options.serializeNil()
 
 
 def serialize(value, options=Uninitialized) -> str:

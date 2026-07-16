@@ -10,6 +10,7 @@ const compileAndRun = test.macro<[string, RegExp | VmValue, Options?]>({
     exec: async (t, code, expected, options) => {
         const expectError = expected instanceof RegExp ? { message: expected } : null;
         let scriptSource;
+        let wrappedScriptSource;
         {
             if (expectError) {
                 await t.throwsAsync(async () => {
@@ -34,12 +35,22 @@ const compileAndRun = test.macro<[string, RegExp | VmValue, Options?]>({
             } else {
                 const script = await compile(`{\n${code}\n}`);
                 t.assert(script.length <= 1);
+                wrappedScriptSource = script.toString();
                 t.deepEqual(script(), expected);
             }
         }
         if (scriptSource) {
             // create from source code
             const script = createScript(code, 'Script', scriptSource);
+            if (expectError) {
+                t.throws(() => script(), expectError);
+            } else {
+                t.deepEqual(script(), expected);
+            }
+        }
+        if (wrappedScriptSource) {
+            // create from source code
+            const script = createScript(`{\n${code}\n}`, 'Script', wrappedScriptSource);
             if (expectError) {
                 t.throws(() => script(), expectError);
             } else {

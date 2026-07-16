@@ -1,8 +1,9 @@
 #!/usr/bin/env pwsh
 $ErrorActionPreference = "Stop"
 
-$env:https_proxy = ''
+Remove-Item Env:https_proxy -ErrorAction SilentlyContinue
 # 触发 2FA 验证
+npm login --registry=https://registry.npmjs.org/
 npm trust list --registry=https://registry.npmjs.org/
 
 Get-ChildItem -Path "packages/*" -Directory | ForEach-Object {
@@ -18,6 +19,10 @@ Get-ChildItem -Path "packages/*" -Directory | ForEach-Object {
   try {
     Write-Host "Trusting $target"
     $output = "$(npm trust list --registry=https://registry.npmjs.org/)"
+    if ($LASTEXITCODE -ne 0) {
+      Write-Error "Failed to list trust for $target with exit code $LASTEXITCODE"
+      return
+    }
 
     if ($output -match '\bid:\s+(\S+)') {
       $id = $Matches[1]
@@ -33,6 +38,10 @@ Get-ChildItem -Path "packages/*" -Directory | ForEach-Object {
     }
 
     npm trust github --allow-publish --allow-stage-publish --file release.yml --env npm --registry https://registry.npmjs.org/ --yes
+    if ($LASTEXITCODE -ne 0) {
+      Write-Error "Failed to trust $target with exit code $LASTEXITCODE"
+      return
+    }
   } finally {
     Pop-Location
   }
