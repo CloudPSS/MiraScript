@@ -7,7 +7,7 @@ use mira_core::{
 };
 use pyo3::{exceptions::PyValueError, prelude::*, types::PyDict};
 
-#[cfg(feature = "mimalloc")]
+#[cfg(all(feature = "mimalloc", not(target_os = "macos")))]
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
