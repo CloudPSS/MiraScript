@@ -28,11 +28,11 @@ const compileAndRun = test.macro<[string, RegExp | VmValue, Options?]>({
             // wrap in a block to bypass fast route
             if (expectError) {
                 await t.throwsAsync(async () => {
-                    const script = await compile(`{${code}}`);
+                    const script = await compile(`{\n${code}\n}`);
                     script();
                 }, expectError);
             } else {
-                const script = await compile(`{${code}}`);
+                const script = await compile(`{\n${code}\n}`);
                 t.assert(script.length <= 1);
                 t.deepEqual(script(), expected);
             }
