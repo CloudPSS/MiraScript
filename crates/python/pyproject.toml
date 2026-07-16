@@ -35,6 +35,7 @@ build-backend = "maturin"
 
 [tool.maturin]
 bindings = "pyo3"
+module-name = "mirascript._compiler.core"
 
 [tool.uv]
 environments = ["python_version >= '3.10'"]
@@ -43,8 +44,8 @@ environments = ["python_version >= '3.10'"]
 dev = [
     "black>=26.5.1",
     "maturin>=1.14.1",
-    "poethepoet>=0.46.0",
-    "pyright>=1.1.410",
+    "poethepoet>=0.48.0",
+    "pyright>=1.1.411",
 ]
 
 [tool.poe.tasks]

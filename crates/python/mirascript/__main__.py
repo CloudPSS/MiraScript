@@ -3,8 +3,7 @@ import sys
 import argparse
 import traceback
 
-from .vm.types.types import VmValue
-from .compiler import compile, InputMode, VmScript, Diagnostic
+from . import VmValue, compile, InputMode, VmScript, Diagnostic
 
 
 def _compile(

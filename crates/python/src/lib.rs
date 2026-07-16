@@ -73,7 +73,7 @@ fn get_diagnostic_message(code: u16) -> PyResult<(&'static str, &'static str, &'
 }
 
 #[pymodule]
-fn mirascript(m: &Bound<'_, PyModule>) -> PyResult<()> {
+fn core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(compile, m)?)?;
     m.add_function(wrap_pyfunction!(get_diagnostic_message, m)?)?;
     m.add_function(wrap_pyfunction!(op_codes, m)?)?;
