@@ -20,6 +20,7 @@ jobs:
         with:
           ALIYUN_NPM_TOKEN: ${{ secrets.ALIYUN_NPM_TOKEN }}
           tools: wasm-bindgen wasm-pack
+          check-lockfile: true # Check once at here, and trust the lockfile for the rest of the workflow
 
       - name: Build
         run: pnpm -r run build

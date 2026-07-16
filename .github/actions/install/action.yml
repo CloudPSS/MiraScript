@@ -9,6 +9,10 @@ inputs:
     description: 'Directly pass args to pnpm'
     required: false
     default: '--frozen-lockfile'
+  check-lockfile:
+    description: 'Whether to check if the lockfile is up-to-date. Default to false.'
+    required: false
+    default: 'false'
   skip-pnpm-install:
     description: 'Whether to skip npm install step. Default to false.'
     required: false
@@ -51,14 +55,22 @@ runs:
 
     - name: Setup node
       uses: actions/setup-node@v7
+      if: ${{ inputs.node-version }}
       with:
         node-version: ${{ inputs.node-version }}
+
+    - name: Setup node
+      uses: actions/setup-node@v7
+      if: ${{ !inputs.node-version }}
+      with:
         node-version-file: package.json
 
     - name: Install dependencies
       shell: bash
       if: ${{ inputs.skip-pnpm-install == 'false' }}
-      run: pnpm ci ${{ inputs.pnpm-args }}
+      run: |
+        pnpm config set trustLockfile ${{ inputs.check-lockfile == 'true' }}
+        pnpm ci ${{ inputs.pnpm-args }}
 
     - name: Skip dependencies
       shell: bash
