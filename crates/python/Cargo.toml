@@ -9,7 +9,7 @@ name = "mirascript"
 crate-type = ["cdylib"]
 
 [features]
-default = ["mimalloc"]
+default = []
 mimalloc = ["dep:mimalloc"]
 
 [dependencies]
