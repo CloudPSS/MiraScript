@@ -31,7 +31,7 @@ jobs:
       - name: Install
         uses: ./.github/actions/install
         with:
-          skip-pnpm-install: true
+          ALIYUN_NPM_TOKEN: ${{ secrets.ALIYUN_NPM_TOKEN }}
 
       - name: Download npm package artifact
         uses: actions/download-artifact@v8
@@ -44,10 +44,9 @@ jobs:
           TAG: ${{ contains(github.ref, '-') && 'next' || 'latest' }}
         run: |
           cd packages/napi
-          pnpm install -g @napi-rs/cli
-          napi create-npm-dirs
-          napi artifacts --output-dir dist
-          napi pre-publish --tag-style npm --no-gh-release --skip-optional-publish
+          pnpm napi create-npm-dirs
+          pnpm napi artifacts --output-dir dist
+          pnpm napi pre-publish --tag-style npm --no-gh-release --skip-optional-publish
 
           for target in npm/*; do
             if [[ -d "$target" ]]; then
