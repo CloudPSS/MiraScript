@@ -10,9 +10,10 @@ debug = 2
 opt-level = 3
 lto = "fat"
 codegen-units = 1
-strip = "none"
-debug = "line-tables-only"
+strip = "debuginfo"
+debug = "none"
 
 [profile.profiling]
 inherits = "release"
-debug = 2
+strip = "none"
+debug = "line-tables-only"
