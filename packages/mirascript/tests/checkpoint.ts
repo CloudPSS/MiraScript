@@ -21,6 +21,7 @@ test('configure timeout', (t) => {
 });
 
 test('callstack limit', async (t) => {
+    configCheckpoint(200);
     const script = await compile(`
         fn c { c() }
         c()
@@ -45,4 +46,5 @@ test('callstack limit', async (t) => {
         f(100)
     `);
     t.is(script2(), 100);
+    configCheckpoint();
 });
