@@ -39,6 +39,7 @@ const compileAndRun = test.macro<[string, unknown]>({
 
 test('empty', compileAndRun, '', '');
 test('whitespaces', compileAndRun, ' \n', ' \n');
+test('special chars', compileAndRun, '\0\r\n\b\v\f\u2028\u2029<>&', '\0\r\n\b\v\f\u2028\u2029<>&');
 test('large no interpolation', compileAndRun, 'Hello, World!'.repeat(1000), 'Hello, World!'.repeat(1000));
 test('only one interpolation', compileAndRun, '$("Hello, World!")', 'Hello, World!');
 test('interpolation', compileAndRun, 'Hello, $("World")!', 'Hello, World!');

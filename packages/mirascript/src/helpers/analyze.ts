@@ -11,6 +11,7 @@ const REG_CHAIN = new RegExp(
     String.raw`^(${REG_IDENTIFIER.source})(?:${REG_SPILT.source}(?:\d+|${REG_IDENTIFIER.source}))*`,
     'u',
 );
+const MAX_LINE_LENGTH = 1000;
 
 const { parseInt } = Number;
 /**
@@ -47,6 +48,7 @@ export function analyzeGlobalReferences(expression: string, mode?: InputMode): G
         // 分析每个全局变量访问
         const line = lines[global.range.startLineNumber - 1];
         if (!line) continue;
+        if (line.length > MAX_LINE_LENGTH) continue; // 过长的行不分析
         const access = line.slice(global.range.startColumn - 1);
         const chain = REG_CHAIN.exec(access);
         if (chain == null) continue;

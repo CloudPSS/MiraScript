@@ -18,6 +18,13 @@ const REG_IDENTIFIER_FAST = /^(?:\$+|@+|[A-Za-z])[a-zA-Z0-9_]*$/;
 
 const FAST_SCRIPT_MAX_LEN = 32;
 
+/** 生成安全的 JS 字符串 */
+function safeStringify(value: string): string {
+    return JSON.stringify(value).replaceAll(/[<>&\u2028\u2029/]/gu, (c) => {
+        return String.raw`\u${c.codePointAt(0)?.toString(16).padStart(4, '0')}`;
+    });
+}
+
 /** 构造返回常量的函数 */
 function constantFiniteNumber(value: number): () => number {
     if (value === 0) {
@@ -43,7 +50,7 @@ function constantString(value: string): () => string {
     const f = () => value;
     defineProperty(f, 'toString', {
         value: () => {
-            return `() => ${JSON.stringify(value)};`;
+            return `() => ${safeStringify(value)};`;
         },
         writable: false,
         enumerable: false,
@@ -85,7 +92,7 @@ function globalVariable(id: string): VmScriptLike {
     const f: VmScriptLike = (global) => (global ?? $GlobalFallback()).get(id);
     defineProperty(f, 'toString', {
         value: () => {
-            return `(global) => (global ?? $GlobalFallback()).get(${JSON.stringify(id)});`;
+            return `(global) => (global ?? $GlobalFallback()).get(${safeStringify(id)});`;
         },
         writable: false,
         enumerable: false,
