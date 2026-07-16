@@ -34,27 +34,6 @@ export const to_number = VmLib(
     },
 );
 
-// export const to_boolean = VmLib(
-//     (data, fallback) => {
-//         required('data', data, false);
-//         return toBoolean(data, fallback);
-//     },
-//     {
-//         summary: '将布尔值标准化',
-//         params: {
-//             data: { type: 'boolean', description: '要转换的数据，仅当为布尔类型时才会参与转换' },
-//             fallback: { type: 'any', description: '当输入不是布尔值时返回的值' },
-//         },
-//
-//         returns: { type: 'boolean | type(fallback)' },
-//         examples: [
-//             'to_boolean(true, false)   // true',
-//             'to_boolean(nil, "failed") // "failed"',
-//             'to_boolean(0, "failed")   // "failed"',
-//         ],
-//     },
-// );
-
 export const format = VmLib(
     (data, format) => {
         required('data', data, '');
