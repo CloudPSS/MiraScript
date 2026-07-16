@@ -1,6 +1,6 @@
 {
   "name": "@mirascript/typed",
-  "version": "0.1.65",
+  "version": "0.1.66",
   "author": "CloudPSS",
   "license": "MIT",
   "description": "Parse MiraScript type definitions and generate TypeScript types / JSON schemas.",

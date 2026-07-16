@@ -1,7 +1,7 @@
 [package]
 name = "mira-constants"
 description = "MiraScript constants"
-version = "0.1.65"
+version = "0.1.66"
 edition = "2024"
 publish = false
 
