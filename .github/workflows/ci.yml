@@ -39,6 +39,5 @@ jobs:
           path: website-build/
 
       - name: Deploy to GitHub Pages
-        if: false # Enable after make this repository public
         id: deployment
         uses: actions/deploy-pages@v5

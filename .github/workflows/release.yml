@@ -2,7 +2,7 @@ name: Release
 
 on:
   push:
-    tags: ['*']
+    tags: ['v*']
 
 jobs:
   build:
@@ -41,7 +41,6 @@ jobs:
 
       - name: Publish to npm
         env:
-          NPM_CONFIG_PROVENANCE: false # Enable after make this repository public
           TAG: ${{ contains(github.ref, '-') && 'next' || 'latest' }}
         run: |
           cd packages/napi
