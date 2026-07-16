@@ -1,7 +1,7 @@
 import math
 import unicodedata
 
-from ..._helpers.convert.to_format import toFormat
+from ..._helpers.convert import to_format
 from .common import AssertInit
 from .convert import ToNumber, ToBoolean, ToString
 from .utils import is_number, is_same, overload_number_string
@@ -13,7 +13,7 @@ def Concat(*args) -> str:
     result = ""
     for a in args:
         AssertInit(a)
-        result += toFormat(a, None)
+        result += to_format(a, None)
     return result
 
 

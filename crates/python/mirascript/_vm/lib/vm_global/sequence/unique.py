@@ -1,4 +1,4 @@
-from ....._helpers.convert.to_boolean import toBoolean
+from ....._helpers.convert import to_boolean
 from ....operations import Call, is_same
 from ....types import VmValue
 from ..._helpers import _expect_array, _expect_callable
@@ -20,7 +20,7 @@ def eq(equaler, recovered):
 
     def equal(a: VmValue, b: VmValue):
         ret = Call(equaler, a, b)
-        return toBoolean(ret)
+        return to_boolean(ret)
 
     return equal
 

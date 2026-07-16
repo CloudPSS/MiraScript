@@ -1,21 +1,22 @@
 import math
 
 from ...._helpers.constants import Uninitialized
-from ...._helpers.convert.to_boolean import toBoolean
-from ...._helpers.convert.to_format import toFormat
-from ...._helpers.convert.to_number import toNumber
-from ...._helpers.convert.to_string import toString
+from ...._helpers.convert import (
+    to_format as _to_format,
+    to_number as _to_number,
+    to_string as _to_string,
+)
 from .._helpers import _expect_string, _required
 
 
 def to_string(value=Uninitialized, fallback=Uninitialized):
     _required("value", value, "")
-    return toString(value, fallback)
+    return _to_string(value, fallback)
 
 
 def to_number(value=Uninitialized, fallback=Uninitialized):
     _required("value", value, math.nan)
-    x = toNumber(value, fallback)
+    x = _to_number(value, fallback)
     return x
 
 
@@ -27,4 +28,4 @@ def to_number(value=Uninitialized, fallback=Uninitialized):
 def format(value=Uninitialized, fmt=Uninitialized):
     _required("value", value, "")
 
-    return toFormat(value, _expect_string("fmt", fmt))
+    return _to_format(value, _expect_string("fmt", fmt))

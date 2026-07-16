@@ -2,8 +2,7 @@ import math
 from typing_extensions import NoReturn, Sequence
 
 from ..._helpers.types import is_vm_array, is_vm_const, is_vm_primitive, is_vm_record
-from ..._helpers.convert.to_number import toNumber
-from ..._helpers.convert.to_string import toString
+from ..._helpers.convert import to_number, to_string
 from ..._helpers.serialize import display
 from ..._helpers.checker import is_safe_integer
 from ..operations import Type, Cp
@@ -54,7 +53,7 @@ def _required(name: "str | int", value: VmAny, recovered) -> VmValue:
 
 def _expect_number(name: "str | int", value: VmAny) -> float:
     value = _required(name, value, math.nan)
-    value = toNumber(value)
+    value = to_number(value)
     if value is None:
         _throw_unexpected_type_error(name, "number", value, math.nan)
     return value
@@ -62,7 +61,7 @@ def _expect_number(name: "str | int", value: VmAny) -> float:
 
 def _expect_string(name: str, value: VmAny) -> str:
     value = _required(name, value, "")
-    value = toString(value)
+    value = to_string(value)
     if value is None:
         _throw_unexpected_type_error(name, "string", value, "")
     return value
@@ -70,7 +69,7 @@ def _expect_string(name: str, value: VmAny) -> str:
 
 def _expect_integer(name: str, value: VmAny) -> float:
     value = _required(name, value, 0)
-    value = toNumber(value, None)
+    value = to_number(value, None)
     if value is None:
         _throw_unexpected_type_error(name, "integer", value, 0)
     from .vm_global.math.round import trunc

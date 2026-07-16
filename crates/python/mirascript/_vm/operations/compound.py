@@ -1,7 +1,6 @@
 import math
 
-from ..._helpers.convert.to_number import toNumber
-from ..._helpers.convert.to_string import toString
+from ..._helpers.convert import to_number, to_string
 from ..._helpers.types import (
     is_vm_array,
     is_vm_extern,
@@ -31,7 +30,7 @@ def In(value, iterable) -> bool:
                 return True
 
         return False
-    pk = toString(value)
+    pk = to_string(value)
     if is_vm_record(iterable):
         return pk in iterable
     if is_vm_wrapper(iterable):
@@ -86,7 +85,7 @@ def Has(obj, key):
         return pk in obj
     if is_vm_array(obj):
         try:
-            idx = toNumber(key)
+            idx = to_number(key)
             if not idx.is_integer():
                 return False
             return 0 <= idx < len(obj)
@@ -99,7 +98,7 @@ def Get(obj, key):
     AssertInit(obj)
     if is_vm_array(obj):
         AssertInit(key)
-        index = toNumber(key, math.nan)
+        index = to_number(key, math.nan)
         if not math.isfinite(index):
             return None
         try:
@@ -146,7 +145,7 @@ def RecordSpread(record):
     if is_vm_record(record):
         return record
     if is_vm_array(record):
-        return {toString(i): record[i] for i in range(len(record))}
+        return {to_string(i): record[i] for i in range(len(record))}
     if is_vm_extern(record):
         return {}
 

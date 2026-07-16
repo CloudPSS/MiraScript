@@ -4,6 +4,7 @@ from typing import cast
 from ..types.context import VmSharedContext
 from ..types.types import Uninitialized, VmValue
 from ..._helpers import types as checker
+from ..._helpers import convert as converter
 from .. import types
 from . import vm_global
 from ._helpers_utils import wrap_entry
@@ -22,6 +23,8 @@ for name in dir(vm_global):
     if hasattr(types, name) and getattr(types, name) == value:
         continue
     if hasattr(checker, name) and getattr(checker, name) == value:
+        continue
+    if hasattr(converter, name) and getattr(converter, name) == value:
         continue
     VmSharedContext[name] = wrap_entry(name, cast(VmValue, value), "global")
 

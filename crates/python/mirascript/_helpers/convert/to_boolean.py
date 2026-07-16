@@ -7,10 +7,10 @@ T = TypeVar("T")
 
 
 @overload
-def toBoolean(value) -> bool: ...
+def to_boolean(value) -> bool: ...
 @overload
-def toBoolean(value, fallback: T) -> "bool | T": ...
-def toBoolean(value, fallback: T = Uninitialized) -> "bool | T":
+def to_boolean(value, fallback: T) -> "bool | T": ...
+def to_boolean(value, fallback: T = Uninitialized) -> "bool | T":
     if isinstance(value, bool):
         return value
     if fallback is Uninitialized:

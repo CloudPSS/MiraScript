@@ -3,7 +3,7 @@ import math
 
 from ...._helpers.types import is_vm_module, is_vm_extern
 from ...._helpers.constants import Uninitialized
-from ...._helpers.convert.to_string import toString
+from ...._helpers.convert import to_string
 from .._helpers import _expect_string, _required, _rethrow_error
 
 
@@ -14,7 +14,7 @@ class _NanToNullEncoder(json.JSONEncoder):
         if isinstance(o, (float, int, bool)):
             if math.isnan(o) or math.isinf(o):
                 return "null"
-            return toString(o)
+            return to_string(o)
 
         return super().encode(o)
 

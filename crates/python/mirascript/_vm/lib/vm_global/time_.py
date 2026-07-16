@@ -3,7 +3,7 @@ import math
 from datetime import datetime as datetime_dt, timezone
 
 from ...._helpers.checker import is_number
-from ...._helpers.convert.to_number import toNumber
+from ...._helpers.convert import to_number
 from ...._helpers.serialize import display
 from ...types.types import Uninitialized
 from .._helpers import (
@@ -38,7 +38,7 @@ def _timestamp(datetime, fallback: bool) -> "float | None":
             return None
         _throw_unexpected_type_error("datetime", "number | string", datetime, math.nan)
 
-    num = toNumber(datetime, math.nan)
+    num = to_number(datetime, math.nan)
     if not math.isnan(num):
         return _from_number(num, fallback)
 

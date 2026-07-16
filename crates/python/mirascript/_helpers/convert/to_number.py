@@ -55,10 +55,10 @@ T = TypeVar("T")
 
 
 @overload
-def toNumber(value) -> float: ...
+def to_number(value) -> float: ...
 @overload
-def toNumber(value, fallback: T) -> "float | T": ...
-def toNumber(value, fallback: T = Uninitialized) -> "float | T":
+def to_number(value, fallback: T) -> "float | T": ...
+def to_number(value, fallback: T = Uninitialized) -> "float | T":
     if isinstance(value, bool):
         return 1.0 if value else 0.0
 

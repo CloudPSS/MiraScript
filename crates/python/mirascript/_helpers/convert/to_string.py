@@ -6,7 +6,7 @@ from ..._vm.error import VmError
 from ..serialize import displayFunction
 
 
-def _numberToString(x: "float | int") -> str:
+def _number_to_string(x: "float | int") -> str:
     # 1. If x is nan, return "nan"
     if math.isnan(x):
         return "nan"
@@ -16,7 +16,7 @@ def _numberToString(x: "float | int") -> str:
         return "0"
 
     if x < 0:
-        return "-" + _numberToString(-x)
+        return "-" + _number_to_string(-x)
 
     if math.isinf(x):
         return "inf"
@@ -32,20 +32,20 @@ def _numberToString(x: "float | int") -> str:
     return result
 
 
-def _innerToString(val: VmValue, useBraces: bool) -> str:
+def _inner_to_string(val: VmValue, useBraces: bool) -> str:
     if val is None:
         return "nil"
     if isinstance(val, bool):
         return "true" if val else "false"
     if isinstance(val, (int, float)):
-        return _numberToString(val)
+        return _number_to_string(val)
     if callable(val):
         return displayFunction(val)
 
     if isinstance(val, (list, tuple)):
         strings = []
         for v in val:
-            strings.append(_innerToString(v, True))
+            strings.append(_inner_to_string(v, True))
         joined = (", ").join(strings)
         if not useBraces:
             return joined
@@ -55,7 +55,7 @@ def _innerToString(val: VmValue, useBraces: bool) -> str:
         strings = []
 
         for k, v in val.items():
-            strings.append(f"{k}: {_innerToString(v,True)}")
+            strings.append(f"{k}: {_inner_to_string(v,True)}")
         joined = (", ").join(strings)
         if not useBraces:
             return joined
@@ -67,16 +67,16 @@ T = TypeVar("T")
 
 
 @overload
-def toString(value: VmAny) -> str: ...
+def to_string(value: VmAny) -> str: ...
 @overload
-def toString(value: VmAny, fallback: T) -> "str | T": ...
-def toString(value: VmAny, fallback: T = Uninitialized) -> "str | T":
+def to_string(value: VmAny, fallback: T) -> "str | T": ...
+def to_string(value: VmAny, fallback: T = Uninitialized) -> "str | T":
     if value is None or value is Uninitialized:
         return ""
     if isinstance(value, str):
         return value
     try:
-        x = _innerToString(value, False)
+        x = _inner_to_string(value, False)
         return x
     except Exception as ex:
         if fallback is Uninitialized:

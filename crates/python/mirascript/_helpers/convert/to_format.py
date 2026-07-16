@@ -2,14 +2,14 @@ import math
 import re
 
 from ..checker import is_number
-from .to_string import toString
+from .to_string import to_string
 
 
 def formatNumber(num):
     if num == 0:
         return "0"
 
-    s = toString(num)
+    s = to_string(num)
 
     ps = ""
     absVal = abs(num)
@@ -24,12 +24,12 @@ def formatNumber(num):
     return ps if len(ps) < len(s) else s
 
 
-def toFormat(val, fmt: "str | None" = None) -> str:
+def to_format(val, fmt: "str | None" = None) -> str:
     fmt = fmt.strip() if fmt is not None else ""
 
     if is_number(val):
         if not math.isfinite(val):
-            return toString(val)
+            return to_string(val)
         r = re.match(r"^\.\d+$", fmt)
         if r:
             ff = float(fmt[1:])
@@ -40,4 +40,4 @@ def toFormat(val, fmt: "str | None" = None) -> str:
             return f"{val:.{math.trunc(ff)}f}"
         else:
             return formatNumber(val)
-    return toString(val)
+    return to_string(val)

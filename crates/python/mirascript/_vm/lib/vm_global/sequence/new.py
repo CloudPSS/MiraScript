@@ -1,7 +1,7 @@
 from ..._helpers import _expect_callable, _expect_integer_range
 from ....operations import Call, Get, Element
 from ....._helpers.constants import VM_ARRAY_MAX_LENGTH, Uninitialized
-from ....._helpers.convert.to_string import toString
+from ....._helpers.convert import to_string
 
 
 def new_record(size=Uninitialized, generator=Uninitialized):
@@ -14,7 +14,7 @@ def new_record(size=Uninitialized, generator=Uninitialized):
             continue
         key = Get(entry, 0)
         value = Get(entry, 1)
-        record[toString(key)] = Element(value)
+        record[to_string(key)] = Element(value)
     return record
 
 

@@ -2,8 +2,7 @@ import math
 
 from ....._helpers.checker import is_number
 from ....._helpers.types import is_vm_array, is_vm_record
-from ....._helpers.convert.to_number import toNumber
-from ....._helpers.convert.to_string import toString
+from ....._helpers.convert import to_number, to_string
 from ....._helpers.constants import Uninitialized, VM_ARRAY_MAX_LENGTH
 from ....operations.helpers import Element
 from ..._helpers import (
@@ -15,7 +14,7 @@ from ..math.round import trunc
 
 
 def _arr_index(index):
-    idx = trunc(toNumber(index, math.nan))
+    idx = trunc(to_number(index, math.nan))
     if math.isnan(idx) or idx < 0:
         _throw_error("Array index must be a non-negative integer", index)
 
@@ -53,7 +52,7 @@ def _with_inner(obj, key, key_index, value):
             result.append(None)
         result[index] = _with_inner(result[index], key, key_index + 1, value)
     else:
-        key_str = toString(k)
+        key_str = to_string(k)
         result[key_str] = _with_inner(
             result.get(key_str, None), key, key_index + 1, value
         )
@@ -119,10 +118,10 @@ def with_(data=Uninitialized, *args):
         for key, element in entryData:
             if is_vm_array(key):
                 firstKey = key[0]
-                prop = toString(firstKey)
+                prop = to_string(firstKey)
                 val = _with_inner(result.get(prop, None), key, 1, element)
             else:
-                prop = toString(key)
+                prop = to_string(key)
                 val = element
             result[prop] = val
         return result

@@ -1,6 +1,6 @@
 import math
 
-from ....._helpers.convert.to_number import toNumber
+from ....._helpers.convert import to_number
 from ....._helpers.types import is_vm_array, is_vm_const
 from ....operations import Add, Call, Div, Mul, Sub, Cp
 from ..._helpers import (
@@ -52,7 +52,7 @@ def sizeImpl(matrix):
 
 
 def num(v):
-    return toNumber(v if v is not None else None)
+    return to_number(v if v is not None else None)
 
 
 def size(matrix):
