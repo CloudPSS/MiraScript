@@ -155,8 +155,9 @@ jobs:
 
           cd ~/vscode-build
           touch .vscodeignore # Make vsce happy
-          npm install --omit=dev
           npm pkg set name="mirascript"
+          npm pkg delete scripts devDependencies
+          npm install
           npx @vscode/vsce package ${{ contains(github.ref, '-') && '--pre-release' || '' }}
 
       - name: Upload vscode artifact
