@@ -339,7 +339,10 @@ jobs:
           rust-targets: false
           ALIYUN_NPM_TOKEN: ${{ secrets.ALIYUN_NPM_TOKEN }}
           node-version: ${{ matrix.node }}
-          pnpm-args: '--frozen-lockfile --ignore-scripts'
+          pnpm-args: '--frozen-lockfile --ignore-scripts --prod'
+
+      - name: Install test packages
+        run: pnpm add -g ava c8
 
       - name: Download npm package artifact
         uses: actions/download-artifact@v8
@@ -347,9 +350,14 @@ jobs:
           name: npm-package
           path: packages/
 
-      - name: Run tests
+      - name: Run mirascript tests
         run: |
           cd packages/mirascript
+          pnpm run test
+
+      - name: Run typed tests
+        run: |
+          cd packages/typed
           pnpm run test
 
   test-python:
@@ -398,12 +406,15 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           name: python-artifacts
-          path: crates/python/dist/
+          path: python-artifacts/
+
+      - name: Install wheels
+        run: |
+          pip install --pre --find-links ./python-artifacts/ mirascript
 
       - name: Run tests
         shell: bash
         run: |
           cd crates/python
           rm -rf ./mirascript
-          pip install --pre --find-links ./dist mirascript
           python -m unittest -b -c tests.black_box -v

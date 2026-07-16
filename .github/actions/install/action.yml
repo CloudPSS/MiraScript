@@ -71,7 +71,7 @@ runs:
       if: ${{ inputs.skip-pnpm-install == 'false' }}
       run: |
         pnpm config set trustLockfile ${{ inputs.check-lockfile == 'false' }}
-        pnpm ci ${{ inputs.pnpm-args }}
+        pnpm install ${{ inputs.pnpm-args }}
 
     - name: Skip dependencies
       shell: bash
