@@ -199,7 +199,6 @@ jobs:
     strategy:
       matrix:
         arch: [x86_64, aarch64]
-        libc: [gnu, musl]
 
     permissions:
       contents: read
@@ -212,7 +211,7 @@ jobs:
         uses: ./.github/actions/install
         with:
           ALIYUN_NPM_TOKEN: ${{ secrets.ALIYUN_NPM_TOKEN }}
-          rust-targets: ${{ matrix.arch }}-unknown-linux-${{ matrix.libc }}
+          rust-targets: ${{ matrix.arch }}-unknown-linux-gnu,${{ matrix.arch }}-unknown-linux-musl
           tools: cross
 
       - name: Download npm package artifact
@@ -221,38 +220,59 @@ jobs:
           name: npm-package
           path: packages/
 
-      - name: Build napi artifact
+      - name: Build gnu napi artifact
         run: |
           cd packages/napi
-          pnpm run build --use-cross --target ${{ matrix.arch }}-unknown-linux-${{ matrix.libc }} --release
+          pnpm run build --use-cross --target ${{ matrix.arch }}-unknown-linux-gnu --release
 
-      - name: Build python wheel
+      - name: Build musl napi artifact
+        run: |
+          cd packages/napi
+          pnpm run build --use-cross --target ${{ matrix.arch }}-unknown-linux-musl --release
+
+      - name: Build gnu python wheel
         uses: PyO3/maturin-action@v1
         with:
-          target: ${{ matrix.arch }}-unknown-linux-${{ matrix.libc }}
+          target: ${{ matrix.arch }}-unknown-linux-gnu
           args: --release --out dist
           working-directory: crates/python
-          manylinux: ${{ matrix.libc == 'gnu' && (matrix.arch == 'aarch64' && '2_28' || '2_17') || 'musllinux_1_2' }}
+          manylinux: ${{ matrix.arch == 'aarch64' && '2_28' || '2_17' }}
 
-      - name: Build free-threaded python wheel
+      - name: Build musl python wheel
         uses: PyO3/maturin-action@v1
         with:
-          target: ${{ matrix.arch }}-unknown-linux-${{ matrix.libc }}
+          target: ${{ matrix.arch }}-unknown-linux-musl
+          args: --release --out dist
+          working-directory: crates/python
+          manylinux: 'musllinux_1_2'
+
+      - name: Build gnu free-threaded python wheel
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.arch }}-unknown-linux-gnu
           args: --release --out dist -i python3.15t
           working-directory: crates/python
-          manylinux: ${{ matrix.libc == 'gnu' && (matrix.arch == 'aarch64' && '2_28' || '2_17') || 'musllinux_1_2' }}
+          manylinux: ${{ matrix.arch == 'aarch64' && '2_28' || '2_17' }}
+
+      - name: Build musl free-threaded python wheel
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.arch }}-unknown-linux-musl
+          args: --release --out dist -i python3.15t
+          working-directory: crates/python
+          manylinux: 'musllinux_1_2'
 
       - name: Upload napi artifact
         uses: actions/upload-artifact@v7
         with:
-          name: napi-${{ matrix.arch }}-unknown-linux-${{ matrix.libc }}
+          name: napi-${{ matrix.arch }}-unknown-linux
           path: packages/napi/dist/*.node
           if-no-files-found: error
 
       - name: Upload python wheel artifact
         uses: actions/upload-artifact@v7
         with:
-          name: python-wheel-${{ matrix.arch }}-unknown-linux-${{ matrix.libc }}
+          name: python-wheel-${{ matrix.arch }}-unknown-linux
           path: crates/python/dist/*.whl
           if-no-files-found: error
 
