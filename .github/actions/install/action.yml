@@ -59,3 +59,8 @@ runs:
       shell: bash
       if: ${{ inputs.skip-pnpm-install == 'false' }}
       run: pnpm ci ${{ inputs.pnpm-args }}
+
+    - name: Skip dependencies
+      shell: bash
+      if: ${{ inputs.skip-pnpm-install == 'true' }}
+      run: pnpm config set verifyDepsBeforeRun false
