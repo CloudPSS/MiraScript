@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing_extensions import TypeAlias, Literal
 from enum import Enum
 
@@ -15,14 +16,14 @@ VM_ARRAY_MAX_LENGTH = 0x100_0000
 
 
 class _Uninitialized(Enum):
-    _ = object()
+    U = object()
 
     def __bool__(self) -> bool:
-        return self is not _Uninitialized._
+        return self is not _Uninitialized.U
 
 
-VmUninitialized: TypeAlias = Literal[_Uninitialized._]
+Uninitialized: VmUninitialized = _Uninitialized.U
 """Mirascript 虚拟机内的未初始化变量"""
 
-Uninitialized: VmUninitialized = _Uninitialized._
+VmUninitialized: TypeAlias = Literal[_Uninitialized.U]
 """Mirascript 虚拟机内的未初始化变量"""

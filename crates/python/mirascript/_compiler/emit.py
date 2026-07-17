@@ -13,15 +13,15 @@ if TYPE_CHECKING:
     from .diagnostics import SourceMapEntry
 
 
-_filename_counter = 1
+_filename_counter = 0
 
 
 def _filename(filename: str | None) -> str:
     """获取文件名"""
-    global _filename_counter
     if filename is None:
-        filename = f"<mirascript_{_filename_counter}>"
+        global _filename_counter
         _filename_counter += 1
+        filename = f"<mirascript_{_filename_counter}>"
     return filename
 
 

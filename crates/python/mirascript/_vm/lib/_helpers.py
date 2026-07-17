@@ -46,10 +46,11 @@ def _rethrow_error(prefix: str, error, recovered) -> NoReturn:
 def _required(name: "str | int", value: VmAny, recovered) -> VmValue:
     if value is Uninitialized:
         if isinstance(name, str):
-            _throw_error(f"Missing required parameter '{name}'", recovered)
-            return
+            return _throw_error(f"Missing required parameter '{name}'", recovered)
         pos = "first" if name <= 0 else "second" if name <= 1 else f"{name+1}th"
-        _throw_error(f"Missing required parameter at the {pos} position", recovered)
+        return _throw_error(
+            f"Missing required parameter at the {pos} position", recovered
+        )
     return value
 
 
