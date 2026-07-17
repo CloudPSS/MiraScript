@@ -27,6 +27,7 @@ mira-core = { path = "." }
 [dependencies]
 mimalloc = { version = "0.1", optional = true, features = [
   "local_dynamic_tls",
+  "v2",
 ] }
 unicode-ident = "1"
 winnow = "1"
