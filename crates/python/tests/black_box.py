@@ -19,7 +19,7 @@ TEST_DIR = (Path(__file__) / "../../../../tests").resolve()
 # 如 "e2e/complex.mira" 表示 TEST_DIR/e2e/complex.mira
 SKIP_TESTS = {}
 
-MAX_WORKERS = 4
+MAX_WORKERS = 2
 
 
 class BlackBoxTests(unittest.TestCase):
@@ -28,7 +28,7 @@ class BlackBoxTests(unittest.TestCase):
     def setUp(self) -> None:
         logging.basicConfig(level=logging.DEBUG)
         sys.setrecursionlimit(10000)
-        config_checkpoint(5000)
+        config_checkpoint(10000)
         if mira_compile is None:
             self.skipTest("mirascript Python API not available")
 
