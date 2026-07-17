@@ -1,15 +1,13 @@
 from typing_extensions import TYPE_CHECKING, overload, Literal
 
-from .constants import kVmScript, kVmContext, kVmFunction
+from .constants import Uninitialized, kVmScript, kVmContext, kVmFunction
 from .._vm.types.module import VmModule
-from .._vm.types.types import Uninitialized
 from .._vm.types.wrapper import VmWrapper
 
 if TYPE_CHECKING:
     from typing_extensions import TypeIs
     from .._compiler import VmScript
-    from .._vm.types.types import *
-    from .._vm.types.context import VmContext
+    from .._vm.types import *
 
 
 def is_vm_script(value) -> "TypeIs[VmScript]":

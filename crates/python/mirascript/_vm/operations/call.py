@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from ..._helpers.types import is_vm_const, is_vm_function
 from ..._helpers.constants import kVmFunction
 from ..error import VmError
@@ -22,6 +24,6 @@ def Call(func: VmAny, *args: VmAny) -> VmValue:
     raise VmError(f"{type(func)}, {func} object is not callable", None)
 
 
-def Vargs(varags: "list[VmAny]") -> "VmArray":
+def Vargs(varags: list[VmAny]) -> VmArray:
     """将非常量元素置为 None，返回新列表"""
     return [var if is_vm_const(var) else None for var in varags]

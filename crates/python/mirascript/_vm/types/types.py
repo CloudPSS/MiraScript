@@ -1,11 +1,11 @@
-from typing_extensions import TypeAlias, Never
+from __future__ import annotations
+from typing_extensions import TypeAlias, Never, TYPE_CHECKING
+from ..._helpers.constants import VmUninitialized, Uninitialized
 
-from .module import VmModule
-from .function import VmFunction
-from ..._helpers.constants import Uninitialized, VmUninitialized
+if TYPE_CHECKING:
+    from .module import VmModule
+    from .function import VmFunction
 
-VmExtern: TypeAlias = Never
-"""Mirascript 虚拟机内的外部对象，Python 环境暂不支持外部对象，因此该类型永远没有值"""
 
 VmPrimitive: TypeAlias = "str | int | float | bool | None"
 """Mirascript 原始值"""
@@ -25,17 +25,18 @@ VmValue: TypeAlias = "VmImmutable | VmExtern"
 VmAny: TypeAlias = "VmValue | VmUninitialized"
 """Mirascript 虚拟机内的值（包括未初始化变量）"""
 
+VmExtern: TypeAlias = Never
+"""Mirascript 虚拟机内的外部对象，Python 环境暂不支持外部对象，因此该类型永远没有值"""
+
 __all__ = [
-    "Uninitialized",
     "VmUninitialized",
+    "Uninitialized",
     "VmPrimitive",
     "VmRecord",
     "VmArray",
     "VmConst",
     "VmImmutable",
-    "VmModule",
     "VmExtern",
-    "VmFunction",
     "VmValue",
     "VmAny",
 ]

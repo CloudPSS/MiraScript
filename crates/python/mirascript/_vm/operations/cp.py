@@ -17,7 +17,7 @@ class ThreadLocalData(local):
 thread_local = ThreadLocalData()
 
 
-def Cp():
+def Cp() -> None:
     """检查点"""
     current_time = int(time() * 1000)
     if not thread_local.cp:
@@ -28,7 +28,7 @@ def Cp():
         )
 
 
-def CpEnter():
+def CpEnter() -> None:
     """进入检查点"""
     thread_local.cp_depth += 1
     if thread_local.cp_depth <= 1:
@@ -40,7 +40,7 @@ def CpEnter():
         Cp()
 
 
-def CpExit():
+def CpExit() -> None:
     """退出检查点"""
     thread_local.cp_depth -= 1
     if thread_local.cp_depth < 1:
@@ -53,7 +53,7 @@ def CpExit():
 _MAX_TIMEOUT = 24 * 60 * 60 * 1000  # 最大超时时间，单位毫秒
 
 
-def config_checkpoint(timeout: "float | int" = 100):
+def config_checkpoint(timeout: "float | int" = 100) -> None:
     """设置检查点超时时间"""
     global TIMEOUT
     if not is_number(timeout) or timeout <= 0 or isnan(timeout):

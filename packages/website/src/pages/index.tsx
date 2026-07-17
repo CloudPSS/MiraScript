@@ -156,9 +156,9 @@ export default function Home(): JSX.Element {
             <header className={styles['hero']}>
                 <h1 className={styles['heroTitle']}>MiraScript</h1>
                 <p className={styles['heroTagline']}>
-                    表达式优先、不可变数据为核心的现代脚本语言。
+                    表达式优先、不可变数据为核心的现代脚本语言
                     <br />
-                    简洁、安全、易于嵌入。
+                    简洁、安全、易于嵌入
                 </p>
                 <CtaButtons />
             </header>

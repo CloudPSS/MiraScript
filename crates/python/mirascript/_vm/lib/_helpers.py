@@ -99,7 +99,9 @@ def _expect_integer(name: str | int, value: VmAny) -> float:
     return i
 
 
-def _expect_number_range(name: str | int, value: VmAny, min_=None, max_=None) -> float:
+def _expect_number_range(
+    name: str | int, value: VmAny, min_: float | None = None, max_: float | None = None
+) -> float:
     value = _expect_number(name, value)
     if not math.isfinite(value):
         return _throw_error(

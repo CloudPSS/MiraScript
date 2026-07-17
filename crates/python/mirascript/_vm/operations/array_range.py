@@ -1,7 +1,7 @@
 import math
 
 from ..._helpers.constants import VM_ARRAY_MAX_LENGTH
-from ..types.types import VmArray
+from ..types.types import VmAny, VmArray
 from .convert import ToNumber
 
 
@@ -16,7 +16,7 @@ def _is_empty_range(start: float, end: float) -> bool:
     return not math.isfinite(start) or not math.isfinite(end) or start > end
 
 
-def ArrayRange(start, end) -> VmArray:
+def ArrayRange(start: VmAny, end: VmAny) -> VmArray:
     s = ToNumber(start)
     e = ToNumber(end)
     if _is_empty_range(s, e):
@@ -30,7 +30,7 @@ def ArrayRange(start, end) -> VmArray:
     return arr
 
 
-def ArrayRangeExclusive(start, end) -> VmArray:
+def ArrayRangeExclusive(start: VmAny, end: VmAny) -> VmArray:
     s = ToNumber(start)
     e = ToNumber(end)
     if _is_empty_range(s, e):

@@ -1,6 +1,5 @@
 from .types import (
     VmExtern,
-    VmUninitialized,
     VmPrimitive,
     VmRecord,
     VmArray,
@@ -8,9 +7,10 @@ from .types import (
     VmImmutable,
     VmValue,
     VmAny,
-    VmFunction,
+    VmUninitialized,
+    Uninitialized,
 )
-from .function import vm_function
+from .function import vm_function, VmFunction
 from .module import VmModule
 from .wrapper import VmWrapper
 from .context import VmContext
@@ -28,6 +28,7 @@ __all__ = [
     "VmValue",
     "VmAny",
     "VmUninitialized",
+    "Uninitialized",
     "VmConst",
     "VmImmutable",
 ]

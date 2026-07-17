@@ -4,20 +4,17 @@ from typing_extensions import (
     ParamSpec,
     Callable,
     Protocol,
-    TYPE_CHECKING,
     overload,
 )
 from dataclasses import dataclass
 from inspect import signature
+from types import CodeType
 
 from ..._helpers.constants import kVmFunction
-
-if TYPE_CHECKING:
-    from . import VmValue
-    from types import CodeType
+from .types import VmValue, VmAny
 
 P = ParamSpec("P")
-V = TypeVar("V", bound="VmValue", covariant=True)
+V = TypeVar("V", bound=VmValue, covariant=True, default=VmValue)
 
 
 class VmFunction(Protocol[P, V]):
@@ -60,11 +57,14 @@ def _create_vm_function(name: str, fn: F) -> F:
 def vm_function(name: str) -> Callable[[F], F]: ...
 @overload
 def vm_function(fn: F) -> F: ...
-def vm_function(name_or_fn):  # type: ignore
+def vm_function(  # pyright: ignore[reportInconsistentOverload]
+    name_or_fn: str | F,
+) -> Callable[[F], F] | F:
     """将一个 Python 函数包装为一个 VmFunction"""
     if isinstance(name_or_fn, str):
+        name = name_or_fn
 
-        def decorator(fn: F, name=name_or_fn) -> F:
+        def decorator(fn: F) -> F:
             return _create_vm_function(name, fn)
 
         return decorator
