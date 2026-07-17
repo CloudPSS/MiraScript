@@ -87,3 +87,49 @@ impl Display for Token<'_> {
         self.kind.fmt(f)
     }
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct TokenId(pub usize);
+
+#[derive(Debug, Clone, Default)]
+pub struct TokenArena<'s> {
+    tokens: Vec<Token<'s>>,
+}
+
+impl<'s> TokenArena<'s> {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self {
+            tokens: Vec::with_capacity(capacity),
+        }
+    }
+
+    pub fn alloc(&mut self, token: Token<'s>) -> TokenId {
+        let id = TokenId(self.tokens.len());
+        self.tokens.push(token);
+        id
+    }
+
+    pub fn get(&self, id: TokenId) -> Option<&Token<'s>> {
+        self.tokens.get(id.0)
+    }
+
+    pub fn get_mut(&mut self, id: TokenId) -> Option<&mut Token<'s>> {
+        self.tokens.get_mut(id.0)
+    }
+
+    pub fn as_slice(&self) -> &[Token<'s>] {
+        &self.tokens
+    }
+
+    pub fn len(&self) -> usize {
+        self.tokens.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.tokens.is_empty()
+    }
+}
