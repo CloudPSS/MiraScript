@@ -1,7 +1,8 @@
+from __future__ import annotations
 from typing_extensions import Union, List, Optional, Sequence
 import ast
 
-from .._vm.operations import ToString
+from .._helpers.convert import to_string
 from .opcode import OpCode, get_opcode_name
 from .consts import (
     read_constants,
@@ -19,8 +20,8 @@ class Emitter:
     def __init__(
         self,
         chunk: bytes,
-        source_lines: "Sequence[str]",
-        source_map: "Sequence[SourceMapEntry]",
+        source_lines: Sequence[str],
+        source_map: Sequence[SourceMapEntry],
     ):
         self.const_data, self.code_data = split_chunk(chunk)
         self.constants = read_constants(self.const_data)
@@ -71,7 +72,7 @@ class Emitter:
         return helper.assign(target, values)
 
     def create_loop(
-        self, helper: ASTHelper, nreg, code, increment: Optional[ast.AugAssign] = None
+        self, helper: ASTHelper, nreg, code, increment: ast.AugAssign | None = None
     ):
         closure_name = f"closure_{self.source_map_index}"
         block = helper.if_expr(test=helper.const(True))
@@ -107,7 +108,7 @@ class Emitter:
         self.code_offset += size
         return value
 
-    def read_opcode(self, peek=False) -> "tuple[int, bool, ASTHelper]":
+    def read_opcode(self, peek=False) -> tuple[int, bool, ASTHelper]:
         opcode_raw = self.code_data[self.code_offset]
         opcode = opcode_raw & 0x7F
         wide = opcode_raw >= 0x80
@@ -249,9 +250,9 @@ class Emitter:
                 value = read()
                 opt = opcode == OpCode.FieldOptIndex
                 if opt:
-                    el_opt(helper.const(ToString(field)), self.rv(value))
+                    el_opt(helper.const(to_string(field)), self.rv(value))
                 else:
-                    el(helper.const(ToString(field)), self.rv(value))
+                    el(helper.const(to_string(field)), self.rv(value))
             elif opcode == OpCode.Spread:
                 value = read()
                 block.keys.append(None)

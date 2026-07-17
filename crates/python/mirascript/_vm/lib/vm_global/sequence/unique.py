@@ -1,5 +1,6 @@
 from ....._helpers.convert import to_boolean
-from ....operations import Call, is_same
+from ....operations.utils import is_same
+from ....operations import Call
 from ....types import VmValue
 from ..._helpers import _expect_array, _expect_callable
 from ....types.types import Uninitialized
