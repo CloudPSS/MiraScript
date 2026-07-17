@@ -33,7 +33,9 @@ def _throw_unexpected_type_error(name, expected, value, recovered) -> NoReturn:
             f"Expected {expected} for parameter '{name}', got {actual}", recovered
         )
     pos = "first" if name <= 0 else "second" if name <= 1 else f"{name+1}th"
-    _throw_error(f"Expected {expected} at the {pos} position, got {actual}", recovered)
+    return _throw_error(
+        f"Expected {expected} at the {pos} position, got {actual}", recovered
+    )
 
 
 def _rethrow_error(prefix: str, error, recovered) -> NoReturn:

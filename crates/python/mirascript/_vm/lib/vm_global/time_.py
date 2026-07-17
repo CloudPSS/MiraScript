@@ -1,3 +1,4 @@
+from __future__ import annotations
 import time
 import math
 from datetime import datetime as datetime_dt, timezone
@@ -14,7 +15,7 @@ from .._helpers import (
 )
 
 
-def _from_number(datetime: "float | int", fallback: bool) -> "float | None":
+def _from_number(datetime: float | int, fallback: bool) -> float | None:
     try:
         # 尝试将数值转换为datetime对象并获取时间戳
         dt = datetime_dt.fromtimestamp(datetime / 1000.0, tz=timezone.utc)
@@ -22,13 +23,13 @@ def _from_number(datetime: "float | int", fallback: bool) -> "float | None":
     except (ValueError, OSError, OverflowError):
         if fallback:
             return None
-        _throw_error(
+        return _throw_error(
             f"{_describe_param('datetime')} is an invalid timestamp: {display(datetime)}",
             math.nan,
         )
 
 
-def _timestamp(datetime, fallback: bool) -> "float | None":
+def _timestamp(datetime, fallback: bool) -> float | None:
     if datetime is None:
         return time.time() * 1000.0
     if is_number(datetime):
@@ -55,7 +56,7 @@ def _timestamp(datetime, fallback: bool) -> "float | None":
         except Exception:
             if fallback:
                 return None
-            _throw_error(
+            return _throw_error(
                 f"{_describe_param('datetime')} cannot be parsed as datetime:  {display(datetime)}",
                 math.nan,
             )

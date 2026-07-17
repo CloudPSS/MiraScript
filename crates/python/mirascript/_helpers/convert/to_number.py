@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing_extensions import TypeVar, overload
 import math
 import re
@@ -57,8 +58,8 @@ T = TypeVar("T")
 @overload
 def to_number(value) -> float: ...
 @overload
-def to_number(value, fallback: T) -> "float | T": ...
-def to_number(value, fallback: T = Uninitialized) -> "float | T":
+def to_number(value, fallback: T) -> float | T: ...
+def to_number(value, fallback: T = Uninitialized) -> float | T:
     if isinstance(value, bool):
         return 1.0 if value else 0.0
 

@@ -1,3 +1,4 @@
+from __future__ import annotations
 import math
 import re
 
@@ -5,7 +6,7 @@ from ..checker import is_number
 from .to_string import to_string
 
 
-def formatNumber(num):
+def _format_number(num):
     if num == 0:
         return "0"
 
@@ -24,12 +25,12 @@ def formatNumber(num):
     return ps if len(ps) < len(s) else s
 
 
-def to_format(val, fmt: "str | None" = None) -> str:
+def to_format(value, fmt: str | None = None) -> str:
     fmt = fmt.strip() if fmt is not None else ""
 
-    if is_number(val):
-        if not math.isfinite(val):
-            return to_string(val)
+    if is_number(value):
+        if not math.isfinite(value):
+            return to_string(value)
         r = re.match(r"^\.\d+$", fmt)
         if r:
             ff = float(fmt[1:])
@@ -37,7 +38,7 @@ def to_format(val, fmt: "str | None" = None) -> str:
                 ff = 0
             elif ff > 100:
                 ff = 100
-            return f"{val:.{math.trunc(ff)}f}"
+            return f"{value:.{math.trunc(ff)}f}"
         else:
-            return formatNumber(val)
-    return to_string(val)
+            return _format_number(value)
+    return to_string(value)

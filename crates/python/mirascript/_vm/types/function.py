@@ -1,13 +1,14 @@
-from dataclasses import dataclass
-from inspect import signature
+from __future__ import annotations
 from typing_extensions import (
     TypeVar,
     ParamSpec,
-    TypeAlias,
     Callable,
+    Protocol,
     TYPE_CHECKING,
     overload,
 )
+from dataclasses import dataclass
+from inspect import signature
 
 from ..._helpers.constants import kVmFunction
 
@@ -15,8 +16,18 @@ if TYPE_CHECKING:
     from . import VmValue
 
 P = ParamSpec("P")
-V = TypeVar("V", bound="VmValue")
-VmFunction: TypeAlias = Callable[P, "VmValue"]
+V = TypeVar("V", bound="VmValue", covariant=True)
+
+
+class VmFunction(Protocol[P, V]):
+    """VmFunction 是一个可调用对象，它接受任意数量的参数，并返回一个 VmValue。"""
+
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> V: ...
+
+    __name__: str
+
+
+F = TypeVar("F", bound=VmFunction)
 
 
 @dataclass
@@ -28,7 +39,7 @@ class VmFunctionMeta:
 _MAX_ARGS = 2**31 - 1
 
 
-def _create_vm_function(name: str, fn: Callable) -> Callable:
+def _create_vm_function(name: str, fn: F) -> F:
     info = VmFunctionMeta()
     sig = signature(fn)
     for param in sig.parameters.values():
@@ -44,14 +55,14 @@ def _create_vm_function(name: str, fn: Callable) -> Callable:
 
 
 @overload
-def vm_function(name: str) -> Callable[[Callable[P, V]], Callable[P, V]]: ...
+def vm_function(name: str) -> Callable[[F], F]: ...
 @overload
-def vm_function(fn: Callable[P, V]) -> Callable[P, V]: ...
+def vm_function(fn: F) -> F: ...
 def vm_function(name_or_fn):  # type: ignore
     """将一个 Python 函数包装为一个 VmFunction"""
     if isinstance(name_or_fn, str):
 
-        def decorator(fn: Callable[P, V], name=name_or_fn) -> Callable[P, V]:
+        def decorator(fn: F, name=name_or_fn) -> F:
             return _create_vm_function(name, fn)
 
         return decorator

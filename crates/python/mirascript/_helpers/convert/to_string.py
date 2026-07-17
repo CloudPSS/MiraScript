@@ -1,12 +1,13 @@
-import math
+from __future__ import annotations
 from typing_extensions import TypeVar, overload
+import math
 
 from ..._vm.types.types import Uninitialized, VmAny, VmValue
 from ..._vm.error import VmError
 from ..serialize import display_function
 
 
-def _number_to_string(x: "float | int") -> str:
+def _number_to_string(x: float | int) -> str:
     # 1. If x is nan, return "nan"
     if math.isnan(x):
         return "nan"
@@ -69,8 +70,8 @@ T = TypeVar("T")
 @overload
 def to_string(value: VmAny) -> str: ...
 @overload
-def to_string(value: VmAny, fallback: T) -> "str | T": ...
-def to_string(value: VmAny, fallback: T = Uninitialized) -> "str | T":
+def to_string(value: VmAny, fallback: T) -> str | T: ...
+def to_string(value: VmAny, fallback: T = Uninitialized) -> str | T:
     if value is None or value is Uninitialized:
         return ""
     if isinstance(value, str):

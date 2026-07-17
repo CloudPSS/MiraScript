@@ -1,7 +1,9 @@
+from __future__ import annotations
 from dataclasses import dataclass
 import math
 import re
-from typing_extensions import Callable, Optional, TYPE_CHECKING
+from typing_extensions import Callable, TYPE_CHECKING
+
 
 from .constants import Uninitialized
 from .types import is_vm_function, is_vm_extern, is_vm_array, is_vm_module, is_vm_record
@@ -16,16 +18,16 @@ REG_ORDINAL = re.compile(
 )
 
 
-def serialize_nil(options: Optional["SerializeOptions"] = None) -> str:
+def serialize_nil(options: SerializeOptions | None = None) -> str:
     return "nil"
 
 
-def serialize_boolean(value: bool, options: Optional["SerializeOptions"] = None) -> str:
+def serialize_boolean(value: bool, options: SerializeOptions | None = None) -> str:
     return "true" if value else "false"
 
 
 def serialize_number(
-    value: "float | int", options: Optional["SerializeOptions"] = None
+    value: float | int, options: SerializeOptions | None = None
 ) -> str:
     if math.isnan(value):
         return "nan"
@@ -38,11 +40,11 @@ def serialize_number(
     return str(value)
 
 
-def _serialize_string_escaped(escaped: str, options: "SerializeOptions") -> str:
+def _serialize_string_escaped(escaped: str, options: SerializeOptions) -> str:
     return options.serialize_string_escape("\\" + escaped, options)
 
 
-def _serialize_string_content(content: str, options: "SerializeOptions") -> str:
+def _serialize_string_content(content: str, options: SerializeOptions) -> str:
     return options.serialize_string_content(content, options)
 
 
@@ -50,7 +52,7 @@ STRING_QUOTE = "'"
 STRING_REG = re.compile(r"[\0-\x1f'$\\\u2028\u2029]", re.UNICODE)
 
 
-def _serialize_string_impl(value: str, options: "SerializeOptions") -> str:
+def _serialize_string_impl(value: str, options: SerializeOptions) -> str:
     oq = options.serialize_string_quote(STRING_QUOTE, True, options)
     cq = options.serialize_string_quote(STRING_QUOTE, False, options)
     if len(value) == 0:
@@ -96,13 +98,13 @@ def _serialize_string_impl(value: str, options: "SerializeOptions") -> str:
     return ret
 
 
-def serialize_string(value: str, options: Optional["SerializeOptions"] = None) -> str:
+def serialize_string(value: str, options: SerializeOptions | None = None) -> str:
     if options is None:
         options = SerializeOptions()
     return _serialize_string_impl(value, options)
 
 
-def serialize_record_key(key: str, options: "SerializeOptions") -> str:
+def serialize_record_key(key: str, options: SerializeOptions) -> str:
     if REG_ORDINAL.fullmatch(key):
         return options.serialize_prop_name(int(key), options)
     if REG_IDENTIFIER.fullmatch(key):
@@ -110,11 +112,13 @@ def serialize_record_key(key: str, options: "SerializeOptions") -> str:
     return options.serialize_string(key, options)
 
 
-def _serialize_prop_name(key: str | int, options: Optional["SerializeOptions"]) -> str:
+def _serialize_prop_name(
+    key: str | int, options: SerializeOptions | None = None
+) -> str:
     return str(key) if isinstance(key, int) else key
 
 
-def serialize_array(value: "VmArray", depth: int, options: "SerializeOptions") -> str:
+def serialize_array(value: VmArray, depth: int, options: SerializeOptions) -> str:
     if depth > options.max_depth or len(value) == 0:
         return "[]"
     result = "["
@@ -126,7 +130,7 @@ def serialize_array(value: "VmArray", depth: int, options: "SerializeOptions") -
     return result
 
 
-def serialize_record(value: "VmRecord", depth: int, options: "SerializeOptions") -> str:
+def serialize_record(value: VmRecord, depth: int, options: SerializeOptions) -> str:
     if depth > options.max_depth or len(value) == 0:
         return "()"
     entries = list(value.items())
@@ -148,7 +152,7 @@ def serialize_record(value: "VmRecord", depth: int, options: "SerializeOptions")
     return result
 
 
-def _serialize_impl(value: "VmAny", depth: int, options: "SerializeOptions") -> str:
+def _serialize_impl(value: VmAny, depth: int, options: SerializeOptions) -> str:
     if value is None or value is Uninitialized:
         return options.serialize_nil(options)
     if isinstance(value, bool):
@@ -174,13 +178,11 @@ def _serialize_impl(value: "VmAny", depth: int, options: "SerializeOptions") -> 
     return options.serialize_nil(options)
 
 
-def serialize(value: "VmAny", options: Optional["SerializeOptions"] = None) -> str:
+def serialize(value: VmAny, options: SerializeOptions | None = None) -> str:
     return _serialize_impl(value, 0, SerializeOptions() if options is None else options)
 
 
-def display_function(
-    value: "VmFunction", options: Optional["SerializeOptions"] = None
-) -> str:
+def display_function(value: VmFunction, options: SerializeOptions | None = None) -> str:
     try:
         name = value.__name__
         if name:
@@ -191,9 +193,9 @@ def display_function(
 
 
 def display_module(
-    value: "VmModule",
-    depth: Optional[int] = None,
-    options: Optional["SerializeOptions"] = None,
+    value: VmModule,
+    depth: int | None = None,
+    options: SerializeOptions | None = None,
 ) -> str:
     try:
         return str(value)
@@ -202,9 +204,9 @@ def display_module(
 
 
 def display_extern(
-    value: "VmExtern",
-    depth: Optional[int] = None,
-    options: Optional["SerializeOptions"] = None,
+    value: VmExtern,
+    depth: int | None = None,
+    options: SerializeOptions | None = None,
 ) -> str:
     try:
         return str(value)
@@ -212,42 +214,40 @@ def display_extern(
         return "<extern>"
 
 
-def display(value: "VmAny", options: Optional["DisplayOptions"] = None) -> str:
+def display(value: VmAny, options: DisplayOptions | None = None) -> str:
     return _serialize_impl(value, 0, DisplayOptions() if options is None else options)
 
 
 @dataclass
 class SerializeOptions:
     max_depth: int = 128
-    serialize_nil: "Callable[[SerializeOptions], str]" = serialize_nil
-    serialize_boolean: "Callable[[bool, SerializeOptions], str]" = serialize_boolean
-    serialize_number: "Callable[[float | int, SerializeOptions], str]" = (
-        serialize_number
-    )
-    serialize_string: "Callable[[str, SerializeOptions], str]" = _serialize_string_impl
-    serialize_string_quote: "Callable[[str, bool, SerializeOptions], str]" = (
+    serialize_nil: Callable[[SerializeOptions], str] = serialize_nil
+    serialize_boolean: Callable[[bool, SerializeOptions], str] = serialize_boolean
+    serialize_number: Callable[[float | int, SerializeOptions], str] = serialize_number
+    serialize_string: Callable[[str, SerializeOptions], str] = _serialize_string_impl
+    serialize_string_quote: Callable[[str, bool, SerializeOptions], str] = (
         lambda value, open, options: value
     )
-    serialize_string_escape: "Callable[[str, SerializeOptions], str]" = (
+    serialize_string_escape: Callable[[str, SerializeOptions], str] = (
         lambda value, options: value
     )
-    serialize_string_content: "Callable[[str, SerializeOptions], str]" = (
+    serialize_string_content: Callable[[str, SerializeOptions], str] = (
         lambda value, options: value
     )
-    serialize_array: "Callable[[VmArray, int, SerializeOptions], str]" = serialize_array
-    serialize_record: "Callable[[VmRecord, int, SerializeOptions], str]" = (
+    serialize_array: Callable[[VmArray, int, SerializeOptions], str] = serialize_array
+    serialize_record: Callable[[VmRecord, int, SerializeOptions], str] = (
         serialize_record
     )
-    serialize_prop_name: "Callable[[str | int, SerializeOptions], str]" = (
+    serialize_prop_name: Callable[[str | int, SerializeOptions], str] = (
         _serialize_prop_name
     )
-    serialize_function: "Callable[[VmFunction, SerializeOptions], str]" = (
+    serialize_function: Callable[[VmFunction, SerializeOptions], str] = (
         lambda value, options: serialize_nil(options)
     )
-    serialize_module: "Callable[[VmModule, int, SerializeOptions], str]" = (
+    serialize_module: Callable[[VmModule, int, SerializeOptions], str] = (
         lambda value, depth, options: serialize_nil(options)
     )
-    serialize_extern: "Callable[[VmExtern, int, SerializeOptions], str]" = (
+    serialize_extern: Callable[[VmExtern, int, SerializeOptions], str] = (
         lambda value, depth, options: serialize_nil(options)
     )
 
@@ -255,12 +255,6 @@ class SerializeOptions:
 @dataclass
 class DisplayOptions(SerializeOptions):
     max_depth: int = 3
-    serialize_function: "Callable[[VmFunction, SerializeOptions], str]" = (
-        display_function
-    )
-    serialize_module: "Callable[[VmModule, int, SerializeOptions], str]" = (
-        display_module
-    )
-    serialize_extern: "Callable[[VmExtern, int, SerializeOptions], str]" = (
-        display_extern
-    )
+    serialize_function: Callable[[VmFunction, SerializeOptions], str] = display_function
+    serialize_module: Callable[[VmModule, int, SerializeOptions], str] = display_module
+    serialize_extern: Callable[[VmExtern, int, SerializeOptions], str] = display_extern

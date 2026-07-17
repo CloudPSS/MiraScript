@@ -1,3 +1,4 @@
+from __future__ import annotations
 from pathlib import Path
 import sys
 import argparse
@@ -7,8 +8,8 @@ from . import VmValue, compile, InputMode, VmScript, Diagnostic
 
 
 def _compile(
-    code: str, mode: InputMode, filename: "str | None" = None
-) -> "tuple[VmScript | None, list[Diagnostic]]":
+    code: str, mode: InputMode, filename: str | None = None
+) -> tuple[VmScript | None, list[Diagnostic]]:
     try:
         script, diagnostics = compile(code, input_mode=mode, filename=filename)
         return script, diagnostics
@@ -47,7 +48,7 @@ def _print_debug(script: VmScript, output_file: str, variables: dict):
         )
 
 
-def main(prog: "str | None" = "mirascript") -> int:
+def main(prog: str | None = "mirascript") -> int:
     parser = argparse.ArgumentParser(
         prog=prog, description="Compile and execute a MiraScript file"
     )
@@ -87,7 +88,7 @@ def main(prog: "str | None" = "mirascript") -> int:
     )
     args = parser.parse_args()
 
-    variables: "dict[str, VmValue]" = {}
+    variables: dict[str, VmValue] = {}
     if args.variable:
         has_error = False
         for var in args.variable:

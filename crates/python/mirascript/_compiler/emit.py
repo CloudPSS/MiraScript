@@ -1,6 +1,7 @@
+from __future__ import annotations
+from typing_extensions import TYPE_CHECKING
 import ast
 import linecache
-from typing_extensions import TYPE_CHECKING
 
 
 from .script import VmScriptLike, wrap_vm_script, VmScript
@@ -15,7 +16,7 @@ if TYPE_CHECKING:
 _filename_counter = 1
 
 
-def _filename(filename: "str | None") -> str:
+def _filename(filename: str | None) -> str:
     """获取文件名"""
     global _filename_counter
     if filename is None:
@@ -27,11 +28,11 @@ def _filename(filename: "str | None") -> str:
 def emit(
     chunk: bytes,
     *,
-    filename: "str | None" = None,
+    filename: str | None = None,
     source: str = "",
-    source_map: "list[SourceMapEntry] | None" = None,
-    input_mode: "InputMode",
-) -> "VmScript | None":
+    source_map: list[SourceMapEntry] | None = None,
+    input_mode: InputMode,
+) -> VmScript | None:
     """生成代码"""
     module = None
     try:
