@@ -27,9 +27,15 @@ export type ParamSignature = [name: string, sig: string, doc: string];
 
 /** 缩进 */
 function indent(str: string, level: number, skipFirstLine = false): string {
-    if (level <= 0) return str;
     const prefix = ' '.repeat(level);
     const lines = str.split('\n');
+    // remove leading and trailing empty lines
+    while (lines.length && lines[0]!.trim() === '') {
+        lines.shift();
+    }
+    while (lines.length && lines.at(-1)!.trim() === '') {
+        lines.pop();
+    }
     const lineCount = lines.length;
     for (let i = skipFirstLine ? 1 : 0; i < lineCount; i++) {
         lines[i] = prefix + lines[i];
@@ -44,7 +50,7 @@ function globalParamsSignature(info: VmFunctionInfo | undefined): ParamSignature
     for (const [key, value] of Object.entries(info.params)) {
         const type = value.type ?? '';
         const doc = value.description ?? '';
-        paramItems.push([key, `${key}: ${type || 'any'}`, doc ? `\`${key}\`: ${doc}` : '']);
+        paramItems.push([key, `${key}: ${type || 'any'}`, doc ? `\`${key}\`: ${indent(doc, 0, true)}` : '']);
     }
     return paramItems;
 }
