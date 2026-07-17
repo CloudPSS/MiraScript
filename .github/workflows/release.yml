@@ -206,8 +206,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Download website artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: website
+          skip-decompress: true
       - name: Create GitHub Release
         uses: ncipollo/release-action@v1
         with:
           generateReleaseNotes: true
           prerelease: ${{ contains(github.ref, '-') }}
+          artifacts: website.zip
