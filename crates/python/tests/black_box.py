@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 import logging
 import unittest
 import sys
@@ -18,13 +19,27 @@ TEST_DIR = (Path(__file__) / "../../../../tests").resolve()
 # 如 "e2e/complex.mira" 表示 TEST_DIR/e2e/complex.mira
 SKIP_TESTS = {}
 
+MAX_WORKERS = 4
+
 
 class BlackBoxTests(unittest.TestCase):
+    pool = ThreadPoolExecutor(max_workers=MAX_WORKERS)
+
     def setUp(self) -> None:
         logging.basicConfig(level=logging.DEBUG)
         sys.setrecursionlimit(10000)
+        config_checkpoint(5000)
         if mira_compile is None:
             self.skipTest("mirascript Python API not available")
+
+    def dispatch(self, mira_path: Path):
+        # Test parallel execution
+        futures = [
+            self.pool.submit(self.run_mira_file, mira_path) for _ in range(MAX_WORKERS)
+        ]
+        self.run_mira_file(mira_path)
+        for future in futures:
+            future.result()
 
     def run_mira_file(self, mira_path: Path):
         code = mira_path.read_text(encoding="utf-8")
@@ -94,12 +109,6 @@ class BlackBoxTests(unittest.TestCase):
             "v_module_another": VmModule("v_module_another", {}),
         }
 
-        # adjust checkpoint for huge tests (mimic TS behavior)
-        if mira_path.name.endswith("_huge.mira"):
-            config_checkpoint(5000)
-        else:
-            config_checkpoint(1000)
-
         # compile and run
         script, _ = mira_compile(code, filename=mira_path)
         ctx = VmContext(globals_)
@@ -126,7 +135,7 @@ for test_file in files:
     test = (
         (lambda self: self.skipTest("Test skipped due to known issues"))
         if file in SKIP_TESTS
-        else (lambda self, mira_path=test_file: self.run_mira_file(mira_path))
+        else (lambda self, mira_path=test_file: self.dispatch(mira_path))
     )
     test.__doc__ = file
     setattr(BlackBoxTests, test_name, test)
