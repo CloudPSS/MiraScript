@@ -1,6 +1,4 @@
-# from .lib._loader import *
-
-from .error import *
+from .error import VmError
 from .types import *
 from .operations.cp import config_checkpoint
 from .lib._loader import lib

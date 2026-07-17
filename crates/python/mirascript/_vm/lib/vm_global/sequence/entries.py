@@ -4,7 +4,7 @@ from ..._helpers import _expect_array_or_record, _expect_compound
 
 
 def keys(data: VmAny = Uninitialized):
-    _expect_compound("data", data, [])
+    data = _expect_compound("data", data, [])
 
     if is_vm_array(data):
         return list(range(len(data)))
@@ -13,7 +13,7 @@ def keys(data: VmAny = Uninitialized):
 
 
 def values(data=Uninitialized):
-    _expect_array_or_record("data", data, [])
+    data = _expect_array_or_record("data", data, [])
 
     if is_vm_array(data):
         return list(data)
@@ -22,7 +22,7 @@ def values(data=Uninitialized):
 
 
 def entries(data=Uninitialized):
-    _expect_array_or_record("data", data, [])
+    data = _expect_array_or_record("data", data, [])
     if is_vm_array(data):
         # return list(enumerate(data)) # type: ignore
 

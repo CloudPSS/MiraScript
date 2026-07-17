@@ -1,4 +1,5 @@
 from .._helpers import _required, _expect_array
+from ...types.types import VmAny
 from ...operations import ToString
 from ...types.types import Uninitialized
 
@@ -69,18 +70,22 @@ def trim(string=Uninitialized):
     return s.strip(_WHITESPACE_CHARS)
 
 
-def replace(string=Uninitialized, search=Uninitialized, replacement=""):
-    _required("str", string, None)
-    _required("search", search, None)
-    _required("replacement", replacement, None)
+def replace(
+    string: VmAny = Uninitialized,
+    search: VmAny = Uninitialized,
+    replacement: VmAny = "",
+):
+    string = _required("str", string, None)
+    search = _required("search", search, None)
+    replacement = _required("replacement", replacement, None)
     s = ToString(string)
     old = ToString(search)
     new = ToString(replacement)
     return s.replace(old, new)
 
 
-def split(string=Uninitialized, separator=""):
-    _required("str", string, None)
+def split(string: VmAny = Uninitialized, separator: VmAny = ""):
+    string = _required("str", string, None)
     s = ToString(string)
     sep = ToString(separator)
 
@@ -90,8 +95,8 @@ def split(string=Uninitialized, separator=""):
     return s.split(sep)
 
 
-def join(string_array=Uninitialized, separator=""):
-    _expect_array("arr", string_array, None)
+def join(string_array: VmAny = Uninitialized, separator: VmAny = ""):
+    string_array = _expect_array("arr", string_array, None)
     str_list = [ToString(item) for item in string_array]
     sep = ToString(separator)
 

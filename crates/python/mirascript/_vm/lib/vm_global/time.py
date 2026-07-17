@@ -1,6 +1,6 @@
 from __future__ import annotations
-import time
 import math
+from time import time
 from datetime import datetime as datetime_dt, timezone
 
 from ...._helpers.checker import is_number
@@ -33,7 +33,7 @@ def _from_number(datetime: float | int, fallback: bool) -> float | None:
 
 def _timestamp(datetime, fallback: bool) -> float | None:
     if datetime is None:
-        return time.time() * 1000.0
+        return time() * 1000.0
     if is_number(datetime):
         return _from_number(datetime, fallback)
     if not isinstance(datetime, str):

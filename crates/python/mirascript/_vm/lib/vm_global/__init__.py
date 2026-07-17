@@ -3,8 +3,8 @@ from .math import *
 from .sequence import *
 from .string import *
 from .bit import *
-from .json_ import *
+from .json import *
 from .math.gamma import *
 from .to_primitive import *
 from .mod import matrix
-from .time_ import *
+from .time import *

@@ -1,5 +1,6 @@
+from __future__ import annotations
 import math
-from typing_extensions import NoReturn, Sequence
+from typing_extensions import NoReturn, Sequence, TYPE_CHECKING
 
 from ..._helpers.types import is_vm_array, is_vm_const, is_vm_primitive, is_vm_record
 from ..._helpers.convert import to_number, to_string
@@ -7,7 +8,20 @@ from ..._helpers.serialize import display
 from ..._helpers.checker import is_safe_integer
 from ..operations import Type, Cp
 from ..error import VmError
-from ..types.types import Uninitialized, VmAny, VmValue
+from ..types.types import Uninitialized
+
+if TYPE_CHECKING:
+    from ..types.types import (
+        VmPrimitive,
+        VmFunction,
+        VmModule,
+        VmExtern,
+        VmValue,
+        VmAny,
+        VmArray,
+        VmRecord,
+        VmConst,
+    )
 
 
 def _describe_param(name):
@@ -21,12 +35,14 @@ def _describe_param(name):
     return f"parameter at the {pos} position"
 
 
-def _throw_error(message: str, recovered) -> NoReturn:
+def _throw_error(message: str, recovered: VmAny) -> NoReturn:
     recovered_value = recovered() if callable(recovered) else recovered
     raise VmError(message, recovered_value)
 
 
-def _throw_unexpected_type_error(name, expected, value, recovered) -> NoReturn:
+def _throw_unexpected_type_error(
+    name: str | int, expected: str, value: VmAny, recovered: VmAny
+) -> NoReturn:
     actual = Type(value)
     if isinstance(name, str):
         return _throw_error(
@@ -38,12 +54,12 @@ def _throw_unexpected_type_error(name, expected, value, recovered) -> NoReturn:
     )
 
 
-def _rethrow_error(prefix: str, error, recovered) -> NoReturn:
+def _rethrow_error(prefix: str, error: Exception, recovered: VmAny) -> NoReturn:
     recovered_value = recovered() if callable(recovered) else recovered
     raise VmError.from_(prefix, error, recovered_value)
 
 
-def _required(name: "str | int", value: VmAny, recovered) -> VmValue:
+def _required(name: str | int, value: VmAny, recovered: VmAny) -> VmValue:
     if value is Uninitialized:
         if isinstance(name, str):
             return _throw_error(f"Missing required parameter '{name}'", recovered)
@@ -54,7 +70,7 @@ def _required(name: "str | int", value: VmAny, recovered) -> VmValue:
     return value
 
 
-def _expect_number(name: "str | int", value: VmAny) -> float:
+def _expect_number(name: str | int, value: VmAny) -> float:
     value = _required(name, value, math.nan)
     value = to_number(value)
     if value is None:
@@ -62,7 +78,7 @@ def _expect_number(name: "str | int", value: VmAny) -> float:
     return value
 
 
-def _expect_string(name: str, value: VmAny) -> str:
+def _expect_string(name: str | int, value: VmAny) -> str:
     value = _required(name, value, "")
     value = to_string(value)
     if value is None:
@@ -70,11 +86,11 @@ def _expect_string(name: str, value: VmAny) -> str:
     return value
 
 
-def _expect_integer(name: str, value: VmAny) -> float:
+def _expect_integer(name: str | int, value: VmAny) -> float:
     value = _required(name, value, 0)
     value = to_number(value, None)
     if value is None:
-        _throw_unexpected_type_error(name, "integer", value, 0)
+        return _throw_unexpected_type_error(name, "integer", value, 0)
     from .vm_global.math.round import trunc
 
     i = trunc(value)
@@ -83,22 +99,22 @@ def _expect_integer(name: str, value: VmAny) -> float:
     return i
 
 
-def _expect_number_range(name: str, value: VmAny, min_=None, max_=None) -> float:
+def _expect_number_range(name: str | int, value: VmAny, min_=None, max_=None) -> float:
     value = _expect_number(name, value)
     if not math.isfinite(value):
-        _throw_error(
+        return _throw_error(
             f"{_describe_param(name)} is less than minimum value {min_}: {display(value)}",
             math.nan,
         )
     if min_ is not None:
         if value < min_:
-            _throw_error(
+            return _throw_error(
                 f"{_describe_param(name)} is less than minimum value {min_}: {display(value)}",
                 min_,
             )
     if max_ is not None:
         if value > max_:
-            _throw_error(
+            return _throw_error(
                 f"{_describe_param(name)} is greater than maximum value {max_}: {display(value)}",
                 max_,
             )
@@ -106,65 +122,70 @@ def _expect_number_range(name: str, value: VmAny, min_=None, max_=None) -> float
 
 
 def _expect_integer_range(
-    name: str, value: VmAny, min_: "int | float", max_: "int | float"
+    name: str | int, value: VmAny, min_: int | float, max_: int | float
 ) -> float:
     value = _expect_integer(name, value)
     if value < min_:
-        _throw_error(
+        return _throw_error(
             f"{_describe_param(name)} is less than minimum value {min_}: {display(value)}",
             min_,
         )
     if value > max_:
-        _throw_error(
+        return _throw_error(
             f"{_describe_param(name)} is greater than maximum value {max_}: {display(value)}",
             max_,
         )
     return value
 
 
-def _expect_array(name, value, recovered):
-    _required(name, value, recovered)
+def _expect_array(name: str | int, value: VmAny, recovered: VmAny) -> VmArray:
+    value = _required(name, value, recovered)
     if not is_vm_array(value):
-        _throw_unexpected_type_error(name, "array", value, recovered)
+        return _throw_unexpected_type_error(name, "array", value, recovered)
     return value
 
 
-def _expect_record(name, value, recovered):
-    _required(name, value, recovered)
+def _expect_record(name: str | int, value: VmAny, recovered: VmAny) -> VmRecord:
+    value = _required(name, value, recovered)
     if not is_vm_record(value):
-        _throw_unexpected_type_error(name, "record", value, recovered)
+        return _throw_unexpected_type_error(name, "record", value, recovered)
     return value
 
 
-def _expect_array_or_record(name, value, recovered):
-    _required(name, value, recovered)
+def _expect_array_or_record(
+    name: str, value: VmAny, recovered: VmAny
+) -> VmArray | VmRecord:
+    value = _required(name, value, recovered)
     if not is_vm_array(value) and not is_vm_record(value):
-        _throw_unexpected_type_error(name, "array | record", value, recovered)
+        return _throw_unexpected_type_error(name, "array | record", value, recovered)
     return value
 
 
-def _expect_compound(name, value, recovered):
-    _required(name, value, recovered)
+def _expect_compound(
+    name: str, value: VmAny, recovered: VmAny
+) -> VmArray | VmRecord | VmModule | VmExtern:
+    value = _required(name, value, recovered)
     if is_vm_primitive(value) or callable(value):
-        _throw_unexpected_type_error(
+        return _throw_unexpected_type_error(
             name, "array | record | module | extern", value, recovered
         )
     return value
 
 
-def _expect_const(name, value, recovered):
-    _required(name, value, recovered)
+def _expect_const(name: str | int, value: VmAny, recovered: VmAny) -> VmConst:
+    value = _required(name, value, recovered)
     if not is_vm_const(value):
-        _throw_unexpected_type_error(
+        return _throw_unexpected_type_error(
             name, "nil | number | boolean | string | array | record", value, recovered
         )
+    return value
 
 
-def _expect_callable(name, value, recovered):
+def _expect_callable(name: str | int, value: VmAny, recovered: VmAny) -> VmFunction:
     _required(name, value, recovered)
-    callable_ = callable(value)
-    if not callable_:
-        _throw_unexpected_type_error(name, "callable", value, recovered)
+    if not callable(value):
+        return _throw_unexpected_type_error(name, "callable", value, recovered)
+    return value
 
 
 def _get_numbers(args: "Sequence[VmValue] | None") -> "list[float]":

@@ -1,9 +1,9 @@
 import math
+from ....types.types import Uninitialized
 from ..._helpers import _expect_number
-from mirascript._vm.types.types import Uninitialized
 from ._helper import _build, _run
 
-abs_ = _build(abs, math.nan, math.inf, math.inf, 0.0, 0.0)
+abs = _build(math.fabs, math.nan, math.inf, math.inf, 0.0, 0.0)
 sign = _build(lambda v: 1 if v > 0 else -1 if v < 0 else v)
 acos = _build(math.acos, math.nan, math.nan, math.nan)
 acosh = _build(math.acosh, math.nan)
@@ -50,4 +50,4 @@ def log1p(x=Uninitialized):
 
 log2 = _build(math.log2, math.nan, math.inf, math.nan, -math.inf, -math.inf)
 sqrt = _build(math.sqrt, math.nan)
-cbrt = _build(lambda x: math.copysign(abs(x) ** (1 / 3), x), math.nan)
+cbrt = _build(lambda x: math.copysign(math.fabs(x) ** (1 / 3), x), math.nan)

@@ -23,7 +23,7 @@ MAX_WORKERS = 2
 
 
 class BlackBoxTests(unittest.TestCase):
-    pool = ThreadPoolExecutor(max_workers=MAX_WORKERS)
+    pool = ThreadPoolExecutor(max_workers=MAX_WORKERS) if MAX_WORKERS > 0 else None
 
     def setUp(self) -> None:
         logging.basicConfig(level=logging.DEBUG)
@@ -34,9 +34,14 @@ class BlackBoxTests(unittest.TestCase):
 
     def dispatch(self, mira_path: Path):
         # Test parallel execution
-        futures = [
-            self.pool.submit(self.run_mira_file, mira_path) for _ in range(MAX_WORKERS)
-        ]
+        futures = (
+            [
+                self.pool.submit(self.run_mira_file, mira_path)
+                for _ in range(MAX_WORKERS)
+            ]
+            if self.pool is not None
+            else []
+        )
         self.run_mira_file(mira_path)
         for future in futures:
             future.result()

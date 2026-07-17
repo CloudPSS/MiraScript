@@ -1,7 +1,15 @@
 import math
+import builtins
 from ..._helpers import _expect_number, _expect_integer_range
-from mirascript._vm.types.types import Uninitialized
+from ....types.types import Uninitialized
 from ._helper import _run
+
+__all__ = [
+    "trunc",
+    "floor",
+    "ceil",
+    "round",
+]
 
 
 def _build(func):
@@ -24,4 +32,4 @@ def _build(func):
 trunc = _build(math.trunc)
 floor = _build(math.floor)
 ceil = _build(math.ceil)
-round_ = _build(lambda x: round(x, 0))
+round = _build(lambda x: builtins.round(x, 0))

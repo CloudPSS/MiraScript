@@ -26,7 +26,7 @@ def _get_unparse():
         return ast.unparse
 
     try:
-        from astunparse import unparse
+        from astunparse import unparse  # pyright: ignore[reportMissingImports]
 
         return unparse
     except ImportError:

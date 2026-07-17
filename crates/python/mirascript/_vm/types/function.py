@@ -14,6 +14,7 @@ from ..._helpers.constants import kVmFunction
 
 if TYPE_CHECKING:
     from . import VmValue
+    from types import CodeType
 
 P = ParamSpec("P")
 V = TypeVar("V", bound="VmValue", covariant=True)
@@ -25,6 +26,7 @@ class VmFunction(Protocol[P, V]):
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> V: ...
 
     __name__: str
+    __code__: CodeType
 
 
 F = TypeVar("F", bound=VmFunction)

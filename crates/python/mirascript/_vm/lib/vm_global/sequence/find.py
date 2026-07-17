@@ -1,13 +1,12 @@
-from mirascript._helpers.types import is_vm_array, is_vm_callable
-
+from ....._helpers.types import is_vm_array, is_vm_callable
 from ..._helpers import _expect_array_or_record, _required
 from ....operations import Call, ToBoolean, Same
-from mirascript._vm.types.types import Uninitialized
+from ....types.types import Uninitialized
 
 
-def find_(data=Uninitialized, predicate=Uninitialized):
-    _expect_array_or_record("data", data, None)
-    _required("predicate", predicate, None)
+def find(data=Uninitialized, predicate=Uninitialized):
+    data = _expect_array_or_record("data", data, None)
+    predicate = _required("predicate", predicate, None)
     if is_vm_callable(predicate) == False:
 
         def p(value, key, data):
@@ -16,7 +15,6 @@ def find_(data=Uninitialized, predicate=Uninitialized):
     else:
 
         def p(value, key, data):
-            # ret = predicate(value, key, data)
             ret = Call(predicate, *(value, key, data))
             return ToBoolean(ret)
 

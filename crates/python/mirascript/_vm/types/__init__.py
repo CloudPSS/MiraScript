@@ -1,5 +1,3 @@
-from typing_extensions import TYPE_CHECKING
-
 from .types import (
     VmExtern,
     VmUninitialized,

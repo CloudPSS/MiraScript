@@ -7,8 +7,8 @@ __all__ = ["all", "any"]
 
 
 def all(data=Uninitialized, fn=Uninitialized):
-    _expect_array_or_record("data", data, None)
-    _expect_callable("fn", fn, data)
+    data = _expect_array_or_record("data", data, None)
+    fn = _expect_callable("fn", fn, data)
 
     if is_vm_array(data):
         for i, item in enumerate(data):
@@ -25,8 +25,8 @@ def all(data=Uninitialized, fn=Uninitialized):
 
 
 def any(data=Uninitialized, fn=Uninitialized):
-    _expect_array_or_record("data", data, None)
-    _expect_callable("fn", fn, data)
+    data = _expect_array_or_record("data", data, None)
+    fn = _expect_callable("fn", fn, data)
 
     if is_vm_array(data):
         for i, item in enumerate(data):

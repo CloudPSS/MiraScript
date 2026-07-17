@@ -2,6 +2,15 @@ import math
 import sys
 from functools import reduce as _reduce
 from ..._helpers import _get_numbers
+from .unary import abs
+
+__all__ = [
+    "max",
+    "min",
+    "hypot",
+    "sum",
+    "product",
+]
 
 
 def _is_positive_zero(num):
@@ -21,7 +30,7 @@ def _build(func):
 
 
 @_build
-def max_(*args):
+def max(*args):
     high = -math.inf
     for num in args:
         if math.isnan(num):
@@ -34,7 +43,7 @@ def max_(*args):
 
 
 @_build
-def min_(*args):
+def min(*args):
     low = math.inf
     for num in args:
         if math.isnan(num):
@@ -69,5 +78,5 @@ def hypot(*args):
     return math.sqrt(s)
 
 
-sum_ = _build(lambda *args: _reduce(lambda a, b: a + b, args, -0.0))
+sum = _build(lambda *args: _reduce(lambda a, b: a + b, args, -0.0))
 product = _build(lambda *args: _reduce(lambda a, b: a * b, args, 1.0))
