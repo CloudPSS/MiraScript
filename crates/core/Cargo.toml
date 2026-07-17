@@ -21,8 +21,7 @@ mimalloc = ["dep:mimalloc"]
 
 [dev-dependencies]
 divan = "0.1.21"
-mimalloc = "0.1"
-mira-core = { path = "." }
+mira-core = { path = ".", features = ["mimalloc"] }
 
 [dependencies]
 unicode-ident = "1"
