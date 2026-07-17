@@ -151,11 +151,7 @@ def deep_equal(
                 return False
         return True
     # Fallback to regular equality
-    try:
-        return a == b
-    except:
-        # If equality throws, fallback to identity (already checked) -> not equal
-        return False
+    return a == b
 
 
 def assert_deep_equal(

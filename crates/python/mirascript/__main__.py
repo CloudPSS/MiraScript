@@ -21,18 +21,17 @@ def _compile(
 def _get_unparse():
     import ast
 
-    unparse = getattr(ast, "unparse", None)
-    if not unparse:
-        try:
-            import astunparse
+    if hasattr(ast, "unparse"):
+        return ast.unparse
 
-            unparse = astunparse.unparse
-        except ImportError:
-            unparse = None
-            raise ImportError(
-                "Neither 'ast.unparse' nor 'astunparse' is available. Please install 'astunparse' with `pip install astunparse` to enable debug output generation."
-            )
-    return unparse
+    try:
+        from astunparse import unparse
+
+        return unparse
+    except ImportError:
+        raise ImportError(
+            "Neither 'ast.unparse' nor 'astunparse' is available. Please install 'astunparse' with `pip install astunparse` to enable debug output generation."
+        )
 
 
 def _print_debug(script: VmScript, output_file: str, variables: dict):

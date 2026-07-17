@@ -11,81 +11,25 @@ import {
     isVmRecord,
 } from './types.js';
 
-/** 序列化设置 */
-export interface SerializeOptions {
-    /** 最大递归深度，超过该深度的值将被序列化为 `nil`，默认值为 128 */
-    maxDepth: number;
-    /** 序列化 nil 值 */
-    serializeNil: (options: SerializeOptions) => string;
-    /** 序列化布尔值 */
-    serializeBoolean: (value: boolean, options: SerializeOptions) => string;
-    /** 序列化数字 */
-    serializeNumber: (value: number, options: SerializeOptions) => string;
-    /** 序列化字符串 */
-    serializeString: (value: string, options: SerializeOptions) => string;
-    /** 序列化字符串引号 */
-    serializeStringQuote: (value: string, open: boolean, options: SerializeOptions) => string;
-    /** 序列化字符串转义序列 */
-    serializeStringEscape: (value: string, options: SerializeOptions) => string;
-    /** 序列化字符串常规内容 */
-    serializeStringContent: (value: string, options: SerializeOptions) => string;
-    /** 序列化函数 */
-    serializeFunction: (value: VmFunction, options: SerializeOptions) => string;
-    /** 序列化数组 */
-    serializeArray: (value: VmArray, depth: number, options: SerializeOptions) => string;
-    /** 序列化记录 */
-    serializeRecord: (value: VmRecord, depth: number, options: SerializeOptions) => string;
-    /** 序列化属性名 */
-    serializePropName: (value: number | string, options: SerializeOptions) => string;
-    /** 序列化模块 */
-    serializeModule: (value: VmModule, depth: number, options: SerializeOptions) => string;
-    /** 序列化外部值 */
-    serializeExtern: (value: VmExtern, depth: number, options: SerializeOptions) => string;
+/** 序列化 nil 值 */
+export function serializeNil(): string {
+    return 'nil';
 }
 
-const DEFAULT_OPTIONS = Object.freeze({
-    maxDepth: 128,
-    serializeNil,
-    serializeBoolean,
-    serializeNumber,
-    serializeString: serializeStringImpl,
-    serializeStringQuote: (value) => value,
-    serializeStringEscape: (value) => value,
-    serializeStringContent: (value) => value,
-    serializeArray,
-    serializeRecord,
-    serializePropName: String,
-    serializeFunction: serializeNil,
-    serializeModule: serializeNil,
-    serializeExtern: serializeNil,
-} satisfies SerializeOptions);
-
-/** 是否为默认选项 */
-function isDefaultOptions(options: Partial<SerializeOptions> | undefined): boolean {
-    return options == null || options === DEFAULT_OPTIONS;
+/** 序列化布尔值 */
+export function serializeBoolean(value: boolean): string {
+    return value ? 'true' : 'false';
 }
 
-/** 合并选项 */
-function mergeOptions(
-    base: Readonly<SerializeOptions>,
-    options: Partial<SerializeOptions> | null | undefined,
-): Readonly<SerializeOptions> {
-    if (options == null) return base;
-    let opt: SerializeOptions | null = null;
-    for (const key in options) {
-        if (!hasOwn(options, key) || !hasOwn(base, key)) continue;
-        const el = options[key as keyof SerializeOptions];
-        if (el == null) continue;
-        opt ??= { ...base };
-        opt[key as keyof SerializeOptions] = el as never;
+/** 序列化数字 */
+export function serializeNumber(value: number): string {
+    if (isNaN(value)) return 'nan';
+    if (!isFinite(value)) return value < 0 ? '-inf' : 'inf';
+    if (value === 0) {
+        if (1 / value < 0) return '-0';
+        return '0';
     }
-    return opt ? Object.freeze(opt) : base;
-}
-
-/** 获取选项 */
-function getSerializeOptions(options: Partial<SerializeOptions> | undefined): Readonly<SerializeOptions> {
-    if (isDefaultOptions(options)) return DEFAULT_OPTIONS;
-    return mergeOptions(DEFAULT_OPTIONS, options);
+    return String(value);
 }
 
 /**
@@ -208,38 +152,17 @@ export function serializeRecordKey(key: string, options?: Partial<SerializeOptio
     return serializeRecordKeyOpt(key, getSerializeOptions(options));
 }
 
-/** 序列化 nil 值 */
-export function serializeNil(): string {
-    return 'nil';
-}
-
-/** 序列化布尔值 */
-export function serializeBoolean(value: boolean): string {
-    return value ? 'true' : 'false';
-}
-
-/** 序列化数字 */
-export function serializeNumber(value: number): string {
-    if (isNaN(value)) return 'nan';
-    if (!isFinite(value)) return value < 0 ? '-inf' : 'inf';
-    if (value === 0) {
-        if (1 / value < 0) return '-0';
-        return '0';
-    }
-    return String(value);
-}
-
 /** 序列化数组 */
 export function serializeArray(value: VmArray, depth: number, options: Readonly<SerializeOptions>): string {
     if (depth > options.maxDepth) return `[]`;
     if (value.length === 0) return '[]';
-    let str = '[';
+    let result = '[';
     for (let i = 0; i < value.length; i++) {
-        if (i > 0) str += ', ';
-        str += serializeImpl(value[i], depth, options);
+        if (i > 0) result += ', ';
+        result += serializeImpl(value[i], depth, options);
     }
-    str += ']';
-    return str;
+    result += ']';
+    return result;
 }
 
 // eslint-disable-next-line @typescript-eslint/unbound-method
@@ -276,17 +199,17 @@ export function serializeRecord(value: VmRecord, depth: number, options: Readonl
     }
 
     const omitKey = isVmArrayLikeRecordByEntires(e);
-    let str = '(';
+    let result = '(';
     for (const [key, val] of e) {
-        if (str.length > 1) str += ', ';
+        if (result.length > 1) result += ', ';
         if (omitKey) {
-            str += serializeImpl(val, depth, options);
+            result += serializeImpl(val, depth, options);
         } else {
-            str += `${serializeRecordKeyOpt(key, options)}: ${serializeImpl(val, depth, options)}`;
+            result += `${serializeRecordKeyOpt(key, options)}: ${serializeImpl(val, depth, options)}`;
         }
     }
-    str += ')';
-    return str;
+    result += ')';
+    return result;
 }
 
 /** 序列化 */
@@ -340,6 +263,7 @@ export function displayFunction(value: VmFunction): string {
         return `<function>`;
     }
 }
+
 /** 将 MiraScript 模块转化为 MiraScript 字符串 */
 export function displayModule(value: VmModule): string {
     try {
@@ -349,6 +273,7 @@ export function displayModule(value: VmModule): string {
         return `<module>`;
     }
 }
+
 /** 将 MiraScript 外部值转化为 MiraScript 字符串 */
 export function displayExtern(value: VmExtern): string {
     try {
@@ -363,6 +288,92 @@ export function displayExtern(value: VmExtern): string {
         return `<extern>`;
     }
 }
+
+/**
+ * 将 MiraScript 值转化为 MiraScript 字符串。
+ */
+export function display(value: VmAny, options?: Partial<SerializeOptions>): string {
+    const opt = mergeOptions(DISPLAY_OPTIONS, options);
+    return serializeImpl(value, 0, opt);
+}
+
+/** 序列化设置 */
+export interface SerializeOptions {
+    /** 最大递归深度，超过该深度的值将被序列化为 `nil`，默认值为 128 */
+    maxDepth: number;
+    /** 序列化 nil 值 */
+    serializeNil: (options: SerializeOptions) => string;
+    /** 序列化布尔值 */
+    serializeBoolean: (value: boolean, options: SerializeOptions) => string;
+    /** 序列化数字 */
+    serializeNumber: (value: number, options: SerializeOptions) => string;
+    /** 序列化字符串 */
+    serializeString: (value: string, options: SerializeOptions) => string;
+    /** 序列化字符串引号 */
+    serializeStringQuote: (value: string, open: boolean, options: SerializeOptions) => string;
+    /** 序列化字符串转义序列 */
+    serializeStringEscape: (value: string, options: SerializeOptions) => string;
+    /** 序列化字符串常规内容 */
+    serializeStringContent: (value: string, options: SerializeOptions) => string;
+    /** 序列化数组 */
+    serializeArray: (value: VmArray, depth: number, options: SerializeOptions) => string;
+    /** 序列化记录 */
+    serializeRecord: (value: VmRecord, depth: number, options: SerializeOptions) => string;
+    /** 序列化属性名 */
+    serializePropName: (value: number | string, options: SerializeOptions) => string;
+    /** 序列化函数 */
+    serializeFunction: (value: VmFunction, options: SerializeOptions) => string;
+    /** 序列化模块 */
+    serializeModule: (value: VmModule, depth: number, options: SerializeOptions) => string;
+    /** 序列化外部值 */
+    serializeExtern: (value: VmExtern, depth: number, options: SerializeOptions) => string;
+}
+
+/** 是否为默认选项 */
+function isDefaultOptions(options: Partial<SerializeOptions> | undefined): boolean {
+    return options == null || options === DEFAULT_OPTIONS;
+}
+
+/** 合并选项 */
+function mergeOptions(
+    base: Readonly<SerializeOptions>,
+    options: Partial<SerializeOptions> | null | undefined,
+): Readonly<SerializeOptions> {
+    if (options == null) return base;
+    let opt: SerializeOptions | null = null;
+    for (const key in options) {
+        if (!hasOwn(options, key) || !hasOwn(base, key)) continue;
+        const el = options[key as keyof SerializeOptions];
+        if (el == null) continue;
+        opt ??= { ...base };
+        opt[key as keyof SerializeOptions] = el as never;
+    }
+    return opt ? Object.freeze(opt) : base;
+}
+
+/** 获取选项 */
+function getSerializeOptions(options: Partial<SerializeOptions> | undefined): Readonly<SerializeOptions> {
+    if (isDefaultOptions(options)) return DEFAULT_OPTIONS;
+    return mergeOptions(DEFAULT_OPTIONS, options);
+}
+
+const DEFAULT_OPTIONS = Object.freeze({
+    maxDepth: 128,
+    serializeNil,
+    serializeBoolean,
+    serializeNumber,
+    serializeString: serializeStringImpl,
+    serializeStringQuote: (value) => value,
+    serializeStringEscape: (value) => value,
+    serializeStringContent: (value) => value,
+    serializeArray,
+    serializeRecord,
+    serializePropName: String,
+    serializeFunction: serializeNil,
+    serializeModule: serializeNil,
+    serializeExtern: serializeNil,
+} satisfies SerializeOptions);
+
 const DISPLAY_OPTIONS = Object.freeze({
     maxDepth: 3,
     serializeNil,
@@ -379,10 +390,3 @@ const DISPLAY_OPTIONS = Object.freeze({
     serializeModule: displayModule,
     serializeExtern: displayExtern,
 } satisfies SerializeOptions);
-/**
- * 将 MiraScript 值转化为 MiraScript 字符串。
- */
-export function display(value: VmAny, options?: Partial<SerializeOptions>): string {
-    const opt = mergeOptions(DISPLAY_OPTIONS, options);
-    return serializeImpl(value, 0, opt);
-}

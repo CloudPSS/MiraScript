@@ -1,4 +1,4 @@
-from ..._helpers import _expect_array_or_record, _expect_compound, _expect_array
+from ..._helpers import _expect_array
 
 
 def reverse(data):

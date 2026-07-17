@@ -1,11 +1,13 @@
+from dataclasses import dataclass
 import math
 import re
+from typing_extensions import Callable, TYPE_CHECKING
 
 from .constants import Uninitialized
 from .types import is_vm_function, is_vm_extern, is_vm_array, is_vm_module, is_vm_record
 
-MAX_DEPTH = 100
-
+if TYPE_CHECKING:
+    from .._vm.types import VmFunction, VmModule, VmAny, VmArray, VmExtern, VmRecord
 
 REG_IDENTIFIER = re.compile(r"(?:_+|@+|\$+|[A-Za-z])[A-Za-z0-9_]*", re.UNICODE)
 REG_ORDINAL = re.compile(
@@ -14,15 +16,17 @@ REG_ORDINAL = re.compile(
 )
 
 
-def serializeNil() -> str:
+def serialize_nil(options: "SerializeOptions | None" = None) -> str:
     return "nil"
 
 
-def serializeBoolean(value: bool) -> str:
+def serialize_boolean(value: bool, options: "SerializeOptions | None" = None) -> str:
     return "true" if value else "false"
 
 
-def serializeNumber(value: float) -> str:
+def serialize_number(
+    value: "float | int", options: "SerializeOptions | None" = None
+) -> str:
     if math.isnan(value):
         return "nan"
     if not math.isfinite(value):
@@ -34,106 +38,145 @@ def serializeNumber(value: float) -> str:
     return str(value)
 
 
+def _serialize_string_escaped(escaped: str, options: "SerializeOptions") -> str:
+    return options.serialize_string_escape("\\" + escaped, options)
+
+
+def _serialize_string_content(content: str, options: "SerializeOptions") -> str:
+    return options.serialize_string_content(content, options)
+
+
 STRING_QUOTE = "'"
-STRING_REG = re.compile(r"[\0-\x1f'\"`$\\\u2028\u2029]", re.UNICODE)
+STRING_REG = re.compile(r"[\0-\x1f'$\\\u2028\u2029]", re.UNICODE)
 
 
-def serializeStringImpl(value: str, options):
-    oq = options.serializeStringQuote(STRING_QUOTE, True, options)
-    cq = options.serializeStringQuote(STRING_QUOTE, False, options)
+def _serialize_string_impl(value: str, options: "SerializeOptions") -> str:
+    oq = options.serialize_string_quote(STRING_QUOTE, True, options)
+    cq = options.serialize_string_quote(STRING_QUOTE, False, options)
     if len(value) == 0:
         return oq + cq
 
     if not STRING_REG.search(value):
         # 不包含特殊字符
-        c = options.serializeStringContent(value, options)
+        c = _serialize_string_content(value, options)
         return oq + c + cq
 
     ret = oq
     for char in value:
         code = ord(char)
         if char == "'":
-            esc = options.serializeStringEscape("\\'", "'", options)
-            ret += esc
+            ret += _serialize_string_escaped("'", options)
         elif char == "\0":
-            esc = options.serializeStringEscape("\\0", "\0", options)
-            ret += esc
+            ret += _serialize_string_escaped("0", options)
         elif char == "\n":
-            esc = options.serializeStringEscape("\\n", "\n", options)
-            ret += esc
+            ret += _serialize_string_escaped("n", options)
         elif char == "\r":
-            esc = options.serializeStringEscape("\\r", "\r", options)
-            ret += esc
+            ret += _serialize_string_escaped("r", options)
         elif char == "\t":
-            esc = options.serializeStringEscape("\\t", "\t", options)
-            ret += esc
+            ret += _serialize_string_escaped("t", options)
         elif char == "\b":
-            esc = options.serializeStringEscape("\\b", "\b", options)
-            ret += esc
+            ret += _serialize_string_escaped("b", options)
         elif char == "\f":
-            esc = options.serializeStringEscape("\\f", "\f", options)
-            ret += esc
+            ret += _serialize_string_escaped("f", options)
         elif char == "\v":
-            esc = options.serializeStringEscape("\\v", "\v", options)
-            ret += esc
+            ret += _serialize_string_escaped("v", options)
         elif char == "\\":
-            esc = options.serializeStringEscape("\\\\", "\\", options)
-            ret += esc
+            ret += _serialize_string_escaped("\\", options)
         elif char == "$":
-            esc = options.serializeStringEscape("\\$", "$", options)
-            ret += esc
+            ret += _serialize_string_escaped("$", options)
         elif 0xD800 <= code <= 0xDFFF:
             ret += "�"
         elif code == 0x2028 or code == 0x2029:
-            ret += options.serializeStringEscape(f"\\u{{{code:x}}}", char, options)
+            ret += _serialize_string_escaped(f"u{{{code:x}}}", options)
         elif code <= 0x1F:
-            ret += options.serializeStringEscape(f"\\x{code:02x}", char, options)
+            ret += _serialize_string_escaped(f"x{code:02x}", options)
         else:
             ret += char
     ret += cq
     return ret
 
 
-def serializeArray(value, depth, options) -> str:
-    if len(value) == 0:
+def serialize_string(value: str, options: "SerializeOptions | None" = None) -> str:
+    if options is None:
+        options = SerializeOptions()
+    return _serialize_string_impl(value, options)
+
+
+def serialize_record_key(key: str, options: "SerializeOptions") -> str:
+    if REG_ORDINAL.fullmatch(key):
+        return options.serialize_prop_name(int(key), options)
+    if REG_IDENTIFIER.fullmatch(key):
+        return options.serialize_prop_name(key, options)
+    return options.serialize_string(key, options)
+
+
+def serialize_array(value: "VmArray", depth: int, options: "SerializeOptions") -> str:
+    if depth > options.max_depth or len(value) == 0:
         return "[]"
-    str_ = "["
+    result = "["
     for i, v in enumerate(value):
         if i > 0:
-            str_ += ", "
-        str_ += serializeImpl(v, depth, options)
-    str_ += "]"
-    return str_
+            result += ", "
+        result += _serialize_impl(v, depth, options)
+    result += "]"
+    return result
 
 
-def serializeRecord(value, depth, options) -> str:
-    custom_value = custom_value_of(value)
-    if custom_value is not None:
-        return serializeImpl(custom_value, depth - 1, options)
-    entries = list(value.items())
-    if len(entries) == 0:
+def serialize_record(value: "VmRecord", depth: int, options: "SerializeOptions") -> str:
+    if depth > options.max_depth or len(value) == 0:
         return "()"
+    entries = list(value.items())
     if len(entries) == 1:
         k, v = entries[0]
         if k == "0":
-            return f"({serializeImpl(v, depth, options)},)"
-        return f"({serialize_prop_name(k)}: {serializeImpl(v, depth, options)})"
-    omit_key = len(entries) < 10 and all(
-        str(index) == key for index, (key, _) in enumerate(entries)
-    )
-    str_ = "("
-    for idx, (key, val) in enumerate(entries):
-        if len(str_) > 1:
-            str_ += ", "
+            return f"({_serialize_impl(v, depth, options)},)"
+        return f"({serialize_record_key(k, options)}: {_serialize_impl(v, depth, options)})"
+    omit_key = all(str(index) == key for index, (key, _) in enumerate(entries))
+    result = "("
+    for key, val in entries:
+        if len(result) > 1:
+            result += ", "
         if omit_key:
-            str_ += serializeImpl(val, depth, options)
+            result += _serialize_impl(val, depth, options)
         else:
-            str_ += f"{serialize_prop_name(key)}: {serializeImpl(val, depth, options)}"
-    str_ += ")"
-    return str_
+            result += f"{serialize_record_key(key, options)}: {_serialize_impl(val, depth, options)}"
+    result += ")"
+    return result
 
 
-def displayFunction(value):
+def _serialize_impl(value: "VmAny", depth: int, options: "SerializeOptions") -> str:
+    if value is None or value is Uninitialized:
+        return options.serialize_nil(options)
+    if isinstance(value, bool):
+        return options.serialize_boolean(value, options)
+    if isinstance(value, (int, float)):
+        return options.serialize_number(value, options)
+    if isinstance(value, str):
+        return options.serialize_string(value, options)
+
+    if is_vm_function(value):
+        return options.serialize_function(value, options)
+    if is_vm_module(value):
+        return options.serialize_module(value, depth + 1, options)
+    if is_vm_extern(value):
+        return options.serialize_extern(value, depth + 1, options)
+
+    if is_vm_array(value):
+        return options.serialize_array(value, depth + 1, options)
+    if is_vm_record(value):
+        return options.serialize_record(value, depth + 1, options)
+
+    # 不支持序列化的值
+    return options.serialize_nil(options)
+
+
+def serialize(value: "VmAny", options: "SerializeOptions | None" = None) -> str:
+    return _serialize_impl(value, 0, SerializeOptions() if options is None else options)
+
+
+def display_function(
+    value: "VmFunction", options: "SerializeOptions | None" = None
+) -> str:
     try:
         name = value.__name__
         if name:
@@ -143,152 +186,77 @@ def displayFunction(value):
         return "<function>"
 
 
-class DEFAULT_OPTIONS:
-    serializeNil = serializeNil
-    serializeBoolean = serializeBoolean
-    serializeNumber = serializeNumber
-    serializeString = serializeStringImpl
-    serializeStringQuote = lambda value: value
-    serializeStringEscape = lambda value: value
-    serializeStringContent = lambda value: value
-    serializeArray = serializeArray
-    serializeRecord = serializeRecord
-    serializePropName = str
-    serializeFunction = serializeNil
-    serializeModule = serializeNil
-    serializeExtern = serializeNil
-
-
-# DEFAULT_OPTIONS= DefaultOptions()
-
-
-def mergeOptions(base, options):
-    if options is None or options is Uninitialized:
-        return base
-    result = base.copy()
-    for key, value in options.items():
-        result[key] = value
-    return result
-
-
-def getSerializeOptions(options):
-    if options is None or options is Uninitialized:
-        return DISPLAY_OPTIONS
-    return mergeOptions(DISPLAY_OPTIONS, options)
-
-
-def serialize_string(value: str) -> str:
-    import re
-
-    if not re.search(r"[\p{C}'\"`$\\]", value):
-        return f"'{value}'"
-    ret = "'"
-    for char in value:
-        if char == "'":
-            ret += "\\'"
-        elif char == "\0":
-            ret += "\\0"
-        elif char == "\n":
-            ret += "\\n"
-        elif char == "\r":
-            ret += "\\r"
-        elif char == "\t":
-            ret += "\\t"
-        elif char == "\b":
-            ret += "\\b"
-        elif char == "\f":
-            ret += "\\f"
-        elif char == "\v":
-            ret += "\\v"
-        elif char == "\\":
-            ret += "\\\\"
-        elif char == "$":
-            ret += "\\$"
-        elif re.match(r"\p{C}", char):
-            code = ord(char)
-            if code <= 0x7F:
-                ret += f"\\x{code:02x}"
-            elif 0xD800 <= code <= 0xDFFF:
-                ret += "�"
-            else:
-                ret += f"\\u{{{code:x}}}"
-        else:
-            ret += char
-    ret += "'"
-    return ret
-
-
-def serialize_prop_name(value: str) -> str:
-    if REG_ORDINAL.fullmatch(value):
-        return value
-    if REG_IDENTIFIER.fullmatch(value):
-        return value
-    return serialize_string(value)
-
-
-def custom_value_of(value):
-    this_value_of = getattr(value, "valueOf", None)
-    if not callable(this_value_of):
-        return None
-    custom_value = this_value_of()
-    if custom_value is value:
-        return None
-    return custom_value
-
-
-def serializeImpl(value, depth: int, options) -> str:
-    if value is None or depth > MAX_DEPTH:
-        return options.serializeNil()
-    if isinstance(value, bool):
-        return options.serializeBoolean(value)
-    if isinstance(value, (int, float)):
-        return options.serializeNumber(value)
-    if isinstance(value, str):
-        return options.serializeString(value, options)
-
-    if is_vm_function(value):
-        return options.serializeFunction(value)
-    if is_vm_module(value):
-        return options.serializeModule(value)
-    if is_vm_extern(value):
-        return options.serializeExtern(value)
-
-    if is_vm_array(value):
-        return serializeArray(value, depth + 1, options)
-    if is_vm_record(value):
-        return serializeRecord(value, depth + 1, options)
-
-    # 不支持序列化的值
-    return options.serializeNil()
-
-
-def serialize(value, options=Uninitialized) -> str:
-    return serializeImpl(value, 0, getSerializeOptions(options))
-
-
-def displayWrapper(value, useBraces, fallback):
+def display_module(
+    value: "VmModule",
+    depth: "int | None" = None,
+    options: "SerializeOptions | None" = None,
+) -> str:
     try:
-        return value.toString(useBraces)
+        return str(value)
     except Exception:
-        return fallback
+        return "<module>"
 
 
-class DISPLAY_OPTIONS:
-    serializeNil = serializeNil
-    serializeBoolean = serializeBoolean
-    serializeNumber = serializeNumber
-    serializeString = serializeStringImpl
-    serializeStringQuote = lambda value, open, options: value
-    serializeStringEscape = lambda value, open, options: value
-    serializeStringContent = lambda value, options: value
-    serializeArray = serializeArray
-    serializeRecord = serializeRecord
-    serializePropName = str
-    serializeFunction = displayFunction
-    serializeModule = lambda value: displayWrapper(value, True, "<module>")
-    serializeExtern = lambda value: displayWrapper(value, True, "<extern>")
+def display_extern(
+    value: "VmExtern",
+    depth: "int | None" = None,
+    options: "SerializeOptions | None" = None,
+) -> str:
+    try:
+        return str(value)
+    except Exception:
+        return "<extern>"
 
 
-def display(value, options=Uninitialized):
-    opt = mergeOptions(DISPLAY_OPTIONS, options)
-    return serializeImpl(value, 0, opt)
+def display(value: "VmAny", options: "DisplayOptions | None" = None) -> str:
+    return _serialize_impl(value, 0, DisplayOptions() if options is None else options)
+
+
+@dataclass
+class SerializeOptions:
+    max_depth: int = 128
+    serialize_nil: "Callable[[SerializeOptions], str]" = serialize_nil
+    serialize_boolean: "Callable[[bool, SerializeOptions], str]" = serialize_boolean
+    serialize_number: "Callable[[float | int, SerializeOptions], str]" = (
+        serialize_number
+    )
+    serialize_string: "Callable[[str, SerializeOptions], str]" = _serialize_string_impl
+    serialize_string_quote: "Callable[[str, bool, SerializeOptions], str]" = (
+        lambda value, open, options: value
+    )
+    serialize_string_escape: "Callable[[str, SerializeOptions], str]" = (
+        lambda value, options: value
+    )
+    serialize_string_content: "Callable[[str, SerializeOptions], str]" = (
+        lambda value, options: value
+    )
+    serialize_array: "Callable[[VmArray, int, SerializeOptions], str]" = serialize_array
+    serialize_record: "Callable[[VmRecord, int, SerializeOptions], str]" = (
+        serialize_record
+    )
+    serialize_prop_name: "Callable[[str | int, SerializeOptions], str]" = (
+        lambda value, options: value if isinstance(value, str) else str(int(value))
+    )
+    serialize_function: "Callable[[VmFunction, SerializeOptions], str]" = (
+        lambda value, options: serialize_nil(options)
+    )
+    serialize_module: "Callable[[VmModule, int, SerializeOptions], str]" = (
+        lambda value, depth, options: serialize_nil(options)
+    )
+    serialize_extern: "Callable[[VmExtern, int, SerializeOptions], str]" = (
+        lambda value, depth, options: serialize_nil(options)
+    )
+
+
+@dataclass
+class DisplayOptions(SerializeOptions):
+    max_depth: int = 3
+    serialize_function: "Callable[[VmFunction, SerializeOptions], str]" = (
+        display_function
+    )
+    serialize_module: "Callable[[VmModule, int, SerializeOptions], str]" = (
+        display_module
+    )
+    serialize_extern: "Callable[[VmExtern, int, SerializeOptions], str]" = (
+        display_extern
+    )

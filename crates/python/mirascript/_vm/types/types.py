@@ -26,7 +26,6 @@ VmAny: TypeAlias = "VmValue | VmUninitialized"
 """Mirascript 虚拟机内的值（包括未初始化变量）"""
 
 __all__ = [
-    "VmExtern",
     "Uninitialized",
     "VmUninitialized",
     "VmPrimitive",
@@ -34,7 +33,9 @@ __all__ = [
     "VmArray",
     "VmConst",
     "VmImmutable",
+    "VmModule",
+    "VmExtern",
+    "VmFunction",
     "VmValue",
     "VmAny",
-    "VmFunction",
 ]

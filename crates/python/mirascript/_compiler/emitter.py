@@ -673,7 +673,7 @@ class Emitter:
             local = self.wv(reg)
             upvalue_name = self.rv(up, level)
             self.mark_nonlocal(upvalue_name)
-            code = helper.assign_call(self.wv(reg), "Upvalue", [upvalue_name])
+            code = helper.assign_call(local, "Upvalue", [upvalue_name])
 
         elif opcode == OpCode.SetUpvalue:
             reg = read()

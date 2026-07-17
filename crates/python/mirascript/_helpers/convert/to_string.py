@@ -3,7 +3,7 @@ from typing_extensions import TypeVar, overload
 
 from ..._vm.types.types import Uninitialized, VmAny, VmValue
 from ..._vm.error import VmError
-from ..serialize import displayFunction
+from ..serialize import display_function
 
 
 def _number_to_string(x: "float | int") -> str:
@@ -40,7 +40,7 @@ def _inner_to_string(val: VmValue, useBraces: bool) -> str:
     if isinstance(val, (int, float)):
         return _number_to_string(val)
     if callable(val):
-        return displayFunction(val)
+        return display_function(val)
 
     if isinstance(val, (list, tuple)):
         strings = []
