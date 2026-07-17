@@ -5,14 +5,14 @@ use super::prelude::*;
 #[derive(Debug)]
 pub enum TokenRef<'s> {
     /// A reference to a token that is owned by the parser.
-    Owned(Token<'s>),
+    Owned(Box<Token<'s>>),
     /// A reference to a token that is borrowed from the input.
     Borrowed(&'s Token<'s>),
 }
 
 impl<'s> TokenRef<'s> {
     pub(crate) fn new(token: Token<'s>) -> Self {
-        Self::Owned(token)
+        Self::Owned(Box::new(token))
     }
 
     pub(crate) fn borrow(token: &'s Token<'s>) -> Self {

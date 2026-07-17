@@ -15,7 +15,7 @@ mod trivia;
 
 pub use keyword::Keyword;
 pub use operator::Operator;
-pub use token::Token;
+pub use token::{Token, TokenArena, TokenId};
 pub use token_kind::TokenKind;
 
 use crate::Config;
