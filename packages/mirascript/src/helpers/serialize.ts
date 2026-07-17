@@ -4,7 +4,7 @@ import { entries, hasOwn, isFinite, isNaN } from '../helpers/utils.js';
 import {
     getVmFunctionInfo,
     isVmArray,
-    isVmArrayLikeRecordByEntires,
+    isVmArrayLikeRecordByEntries,
     isVmExtern,
     isVmFunction,
     isVmModule,
@@ -48,6 +48,7 @@ function serializeStringContent(value: string, options: Readonly<SerializeOption
 
 const STRING_QUOTE = `'`;
 const STRING_REG = new RegExp(String.raw`[${STRING_QUOTE}\\\$\p{C}\u2028\u2029]`, 'gu');
+const STRING_MARK = /^[\p{M}]$/u;
 /**
  * 将 MiraScript 字符串序列化为 MiraScript 字面量。
  */
@@ -62,10 +63,13 @@ function serializeStringImpl(value: string, options: Readonly<SerializeOptions>)
     let lastIndex = 0;
 
     // 当开头字符是 \p{M} 时，使用转义序列化
-    while (value.length > lastIndex && /^[\p{M}]$/u.test(value[lastIndex]!)) {
-        const c = serializeStringEscaped(`u{${value.codePointAt(lastIndex)!.toString(16)}}`, options);
+    while (value.length > lastIndex) {
+        const cp = value.codePointAt(lastIndex)!;
+        const ch = String.fromCodePoint(cp);
+        if (!STRING_MARK.test(ch)) break;
+        const c = serializeStringEscaped(`u{${cp.toString(16)}}`, options);
         ret += c;
-        lastIndex += 1;
+        lastIndex += ch.length;
     }
 
     // 序列化字符串内容，遇到特殊字符时使用转义序列化
@@ -198,7 +202,7 @@ export function serializeRecord(value: VmRecord, depth: number, options: Readonl
         return `(${serializeRecordKeyOpt(k, options)}: ${serializeImpl(v, depth, options)})`;
     }
 
-    const omitKey = isVmArrayLikeRecordByEntires(e);
+    const omitKey = isVmArrayLikeRecordByEntries(e);
     let result = '(';
     for (const [key, val] of e) {
         if (result.length > 1) result += ', ';

@@ -68,8 +68,11 @@ test('stringify record fields', (t) => {
 });
 
 test('stringify record generic', (t) => {
+    // Omit key
     t.is(stringify(simplify(parse('record<number>'))), 'record<number>');
+    // string key is simplified
     t.is(stringify(simplify(parse('record<string, number>'))), 'record<number>');
+    // non-string key is preserved
     t.is(stringify(simplify(parse('record<number, number>'))), 'record<number, number>');
     t.is(stringify(simplify(parse('record<"$(string)", number>'))), 'record<`$(string)`, number>');
 });

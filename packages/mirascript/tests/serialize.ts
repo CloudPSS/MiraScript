@@ -22,6 +22,8 @@ test('serializeString', (t) => {
         String.raw`'\n\r\x1c\x1d\u{85}\u{2028}\u{2029}\u{feff}\u{110bd}'`,
     );
     t.is(serializeString('\u0300xx\nabc\u0300'), `'\\u{300}xx\\nabc\u{300}'`); // starts and ends with combining marks
+    t.is(serializeString('\u{11303}xx\nabc\u{11303}'), `'\\u{11303}xx\\nabc\u{11303}'`); // starts and ends with combining marks outside BMP
+    t.is(serializeString('\u0300xx\nabc\u0300'), `'\\u{300}xx\\nabc\u{300}'`); // starts and ends with combining marks
     t.is(serializeString('\u0300\nabc\u0300'), `'\\u{300}\\nabc\u{300}'`); // starts and ends with combining marks
     t.is(serializeString('\u0300xx\n\u0300'), `'\\u{300}xx\\n\u{300}'`); // starts and ends with combining marks
     t.is(serializeString('\u0300\u0301'), String.raw`'\u{300}\u{301}'`); // all combining marks

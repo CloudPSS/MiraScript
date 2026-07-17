@@ -94,7 +94,7 @@ export function isVmRecord(value: VmAny): value is VmRecord {
 }
 
 /** 检查是否为仅包含从 0 开始的连续数字键的 MiraScript 记录 */
-export function isVmArrayLikeRecordByEntires(entries: ReadonlyArray<readonly [string, unknown]>): boolean {
+export function isVmArrayLikeRecordByEntries(entries: ReadonlyArray<readonly [string, unknown]>): boolean {
     const { length } = entries;
     if (length === 0) return true;
     if (length > VM_ARRAY_MAX_LENGTH) return false;

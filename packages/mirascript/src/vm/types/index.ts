@@ -57,7 +57,7 @@ export {
     isVmAny,
     isVmArray,
     isVmArrayLikeRecord,
-    isVmArrayLikeRecordByEntires,
+    isVmArrayLikeRecordByEntries,
     isVmArrayLikeRecordByKeys,
     isVmCallable,
     isVmConst,

@@ -14,7 +14,7 @@ import {
     isVmCallable,
     type VmRecord,
     isVmArrayLikeRecord,
-    isVmArrayLikeRecordByEntires,
+    isVmArrayLikeRecordByEntries,
     isVmArrayLikeRecordByKeys,
     getVmType,
 } from '@mirascript/mirascript';
@@ -96,7 +96,7 @@ test('isVmArrayLikeRecord', (t) => {
     const test = (r: VmRecord, ex: boolean) => {
         t.is(isVmArrayLikeRecord(r), ex, JSON.stringify(r));
         t.is(isVmArrayLikeRecordByKeys(Object.keys(r)), ex);
-        t.is(isVmArrayLikeRecordByEntires(Object.entries(r)), ex);
+        t.is(isVmArrayLikeRecordByEntries(Object.entries(r)), ex);
     };
 
     test(r1, true);
@@ -113,7 +113,7 @@ test('isVmArrayLikeRecord', (t) => {
     // eslint-disable-next-line unicorn/no-new-array
     const vl: readonly never[] = new Array(2 ** 31);
     t.false(isVmArrayLikeRecordByKeys(vl));
-    t.false(isVmArrayLikeRecordByEntires(vl));
+    t.false(isVmArrayLikeRecordByEntries(vl));
 });
 
 test('isVmValue', (t) => {
