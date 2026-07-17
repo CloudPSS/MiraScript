@@ -12,7 +12,7 @@ use crate::{
 };
 use crate::{
     diagnostic::{DiagnosticCode, SourceRange},
-    lexer::TokenArena,
+    lexer::Token,
 };
 
 mod recover_token;
@@ -34,7 +34,7 @@ impl<'s, 'c: 's> Compiler<'s, 'c> {
         }
     }
 
-    pub fn lex(&mut self) -> Option<TokenArena<'s>> {
+    pub fn lex(&mut self) -> Option<Box<[Token<'s>]>> {
         let current_lexer = if self.config.input_mode == InputMode::Script {
             lexer::lex
         } else {
@@ -60,15 +60,15 @@ impl<'s, 'c: 's> Compiler<'s, 'c> {
         };
 
         // Try to recover from lexing errors
-        let tokens = tokens
-            .into_iter()
-            .filter_map(|t| recover_token::recover_token(t, &mut self.diagnostics_collector))
-            .collect();
-        Some(TokenArena::from_tokens(tokens))
+        Some(
+            tokens
+                .into_iter()
+                .filter_map(|t| recover_token::recover_token(t, &mut self.diagnostics_collector))
+                .collect(),
+        )
     }
 
-    pub fn parse<'t>(&mut self, tokens: &'t TokenArena<'t>) -> Option<Script<'t>> {
-        let tokens = tokens.as_slice();
+    pub fn parse<'t>(&mut self, tokens: &'t [Token<'t>]) -> Option<Script<'t>> {
         assert!(!tokens.is_empty(), "Cannot parse an empty token list");
 
         // Parsing
