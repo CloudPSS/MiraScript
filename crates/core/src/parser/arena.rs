@@ -85,7 +85,7 @@ impl<'s> PatternArena<'s> {
         self.items.get(id.0)
     }
 
-    pub fn get_mut(&mut self, id: PatternId) -> Option<&mut Pattern<'s> {
+    pub fn get_mut(&mut self, id: PatternId) -> Option<&mut Pattern<'s>> {
         self.items.get_mut(id.0)
     }
 }

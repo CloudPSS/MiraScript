@@ -6,8 +6,8 @@ use winnow::{
 
 use crate::lexer::Token;
 
-mod array_element;
 mod arena;
+mod array_element;
 mod array_helper;
 mod ast_visitor;
 mod basic_expressions;
@@ -30,8 +30,8 @@ mod statement;
 mod statements;
 mod token_ref;
 
-pub use array_element::{ArgElement, ArrayElement, ArrayElementBase, ArrayPattern};
 pub use arena::{ExprArena, ExprId, PatternArena, PatternId, StmtArena, StmtId};
+pub use array_element::{ArgElement, ArrayElement, ArrayElementBase, ArrayPattern};
 pub(super) use ast_visitor::*;
 pub use expression::{Callable, ElseBlock, Expression, MatchCase};
 pub use iterable::Iterable;
