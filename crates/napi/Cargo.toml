@@ -9,12 +9,11 @@ crate-type = ["cdylib"]
 
 [features]
 default = ["mimalloc"]
-mimalloc = ["dep:mimalloc"]
+mimalloc = ["mira-core/mimalloc"]
 
 [dependencies]
 napi = { version = "3", features = ["serde-json"] }
 napi-derive = "3"
-mimalloc = { version = "0.1", optional = true }
 mira-core = { path = "../core", features = ["serde"] }
 
 [build-dependencies]

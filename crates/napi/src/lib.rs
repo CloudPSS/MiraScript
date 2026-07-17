@@ -7,14 +7,6 @@ use napi::{
 };
 use napi_derive::napi;
 
-#[cfg(all(
-    feature = "mimalloc",
-    not(target_os = "macos"),
-    not(target_os = "linux")
-))]
-#[global_allocator]
-static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
-
 #[napi]
 pub struct JsCompileResult {
     pub chunk: Option<Uint8Array>,

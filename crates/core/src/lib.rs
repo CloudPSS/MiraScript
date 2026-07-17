@@ -22,3 +22,7 @@ pub mod prelude {
     pub use std::string::ToString as _;
     pub use strum::VariantArray as _;
 }
+
+#[cfg(all(feature = "mimalloc", not(target_family = "wasm")))]
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;

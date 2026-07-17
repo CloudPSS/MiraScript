@@ -17,6 +17,7 @@ formatter = []
 wasm = ["dep:wasm-bindgen"]
 wasm-constants = ["dep:wasm-bindgen"]
 serde = ["dep:serde"]
+mimalloc = ["dep:mimalloc"]
 
 [dev-dependencies]
 divan = "0.1.21"
@@ -24,6 +25,7 @@ mimalloc = "0.1"
 mira-core = { path = "." }
 
 [dependencies]
+mimalloc = { version = "0.1", optional = true }
 unicode-ident = "1.0"
 winnow = { version = "1" }
 strum = { version = "0.28", features = ["derive"] }

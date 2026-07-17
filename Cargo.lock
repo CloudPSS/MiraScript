@@ -306,7 +306,6 @@ dependencies = [
 name = "mira-napi"
 version = "0.1.71"
 dependencies = [
- "mimalloc",
  "mira-core",
  "napi",
  "napi-build",
@@ -317,7 +316,6 @@ dependencies = [
 name = "mira-python"
 version = "0.1.71"
 dependencies = [
- "mimalloc",
  "mira-core",
  "pyo3",
  "serde",
