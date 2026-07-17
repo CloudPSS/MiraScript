@@ -152,7 +152,8 @@ let grade = if score >= 90 {
 debug_print("成绩 $score 分，评级：$grade");
 ```
 
-:::warning 条件必须是布尔值
+:::warning[条件必须是布尔值]
+
 MiraScript **不支持**将数字、字符串等隐式转换为布尔值。以下写法会产生运行时错误：
 
 ```mira
