@@ -25,12 +25,13 @@ mimalloc = "0.1"
 mira-core = { path = "." }
 
 [dependencies]
-mimalloc = { version = "0.1", optional = true, features = [
-  #"local_dynamic_tls",
-  "v2",
-] }
 unicode-ident = "1"
 winnow = "1"
 strum = { version = "0.28", features = ["derive"] }
 wasm-bindgen = { version = "0.2", optional = true }
 serde = { version = "1", optional = true, features = ["derive"] }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+mimalloc = { version = "0.1", optional = true, features = [] }
+[target.'cfg(not(target_os = "windows"))'.dependencies]
+mimalloc = { version = "0.1", optional = true, features = ["v2"] }
