@@ -1,6 +1,21 @@
 from .._helpers import _required, _expect_array
 from ...operations import ToString
-from mirascript._vm.types.types import Uninitialized
+from ...types.types import Uninitialized
+
+__all__ = [
+    "chars",
+    "starts_with",
+    "ends_with",
+    "contains",
+    "trim_start",
+    "trim_end",
+    "trim",
+    "replace",
+    "split",
+    "join",
+    "to_uppercase",
+    "to_lowercase",
+]
 
 _WHITESPACE_CHARS = "\r\n\u2028\u2029\t\v\f\ufeff\x20\xa0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f\u3000"
 

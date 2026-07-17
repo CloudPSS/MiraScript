@@ -1,6 +1,16 @@
 from .._helpers import _expect_number
 import math
 
+__all__ = [
+    "b_and",
+    "b_or",
+    "b_not",
+    "b_xor",
+    "shl",
+    "sar",
+    "shr",
+]
+
 
 def _to_int32(x):
     x = _expect_number("x", x)

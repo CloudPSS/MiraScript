@@ -3,6 +3,11 @@ import math
 from ....types.types import Uninitialized
 from ..._helpers import _expect_number
 
+__all__ = [
+    "gamma",
+    "factorial",
+]
+
 
 def _factorial(n: float):
     if n >= 171:

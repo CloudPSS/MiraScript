@@ -6,6 +6,11 @@ from ...._helpers.constants import Uninitialized
 from ...._helpers.convert import to_string
 from .._helpers import _expect_string, _required, _rethrow_error
 
+__all__ = [
+    "to_json",
+    "from_json",
+]
+
 
 class _NanToNullEncoder(json.JSONEncoder):
     def encode(self, o):
