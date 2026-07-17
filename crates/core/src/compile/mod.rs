@@ -12,7 +12,7 @@ use crate::{
 };
 use crate::{
     diagnostic::{DiagnosticCode, SourceRange},
-    lexer::{Token, TokenArena},
+    lexer::TokenArena,
 };
 
 mod recover_token;
@@ -60,14 +60,11 @@ impl<'s, 'c: 's> Compiler<'s, 'c> {
         };
 
         // Try to recover from lexing errors
-        let mut arena = TokenArena::with_capacity(tokens.len());
-        for token in tokens
+        let tokens = tokens
             .into_iter()
             .filter_map(|t| recover_token::recover_token(t, &mut self.diagnostics_collector))
-        {
-            arena.alloc(token);
-        }
-        Some(arena)
+            .collect();
+        Some(TokenArena::from_tokens(tokens))
     }
 
     pub fn parse<'t>(&mut self, tokens: &'t TokenArena<'t>) -> Option<Script<'t>> {

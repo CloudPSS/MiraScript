@@ -107,6 +107,10 @@ impl<'s> TokenArena<'s> {
         }
     }
 
+    pub fn from_tokens(tokens: Vec<Token<'s>>) -> Self {
+        Self { tokens }
+    }
+
     pub fn alloc(&mut self, token: Token<'s>) -> TokenId {
         let id = TokenId(self.tokens.len());
         self.tokens.push(token);
