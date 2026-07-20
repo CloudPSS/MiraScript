@@ -388,9 +388,9 @@ fn array_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
                 let ArrayElementBase::Spread(kw, p) = part else {
                     unreachable!();
                 };
+                let pattern = std::mem::replace(&mut **p, Pattern::SpreadDiscard(kw.range.start));
                 *part = ArrayElementBase::Element(Box::new(
-                    p.to_owned()
-                        .wrap_as_unknown([kw.clone()], DiagnosticCode::DuplicateSpreadPattern),
+                    pattern.wrap_as_unknown([kw.clone()], DiagnosticCode::DuplicateSpreadPattern),
                 ));
             }
         }

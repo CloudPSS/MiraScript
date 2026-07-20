@@ -66,9 +66,9 @@ pub(super) fn parameter_list<'s>(i: &mut Input<'s>) -> Result<Option<ParameterLi
         let ArrayElementBase::Spread(kw, p) = item else {
             unreachable!();
         };
+        let pattern = std::mem::replace(&mut **p, Pattern::SpreadDiscard(kw.range.start));
         *item = ArrayElementBase::Element(Box::new(
-            p.to_owned()
-                .wrap_as_unknown([kw.clone()], DiagnosticCode::MispositionedRestParameter),
+            pattern.wrap_as_unknown([kw.clone()], DiagnosticCode::MispositionedRestParameter),
         ));
     }
     Ok(Some(list))
