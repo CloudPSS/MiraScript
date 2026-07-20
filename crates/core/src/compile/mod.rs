@@ -68,12 +68,16 @@ impl<'s, 'c: 's> Compiler<'s, 'c> {
         )
     }
 
-    pub fn parse<'t>(&mut self, tokens: &'t [Token<'t>]) -> Option<Script<'t>> {
+    pub fn parse<'t, 'a>(
+        &mut self,
+        arena: &'a crate::arena::AstArena,
+        tokens: &'t [Token<'t>],
+    ) -> Option<Script<'t, 'a>> {
         assert!(!tokens.is_empty(), "Cannot parse an empty token list");
 
         // Parsing
         let mut stream = parser::to_input(tokens);
-        let Ok(mut script) = parser::parse(&mut stream) else {
+        let Ok(mut script) = parser::parse(arena, &mut stream) else {
             let remaining = stream.peek_finish();
             let range = if remaining.is_empty() {
                 tokens.last().unwrap().range.clone()
@@ -93,7 +97,7 @@ impl<'s, 'c: 's> Compiler<'s, 'c> {
         Some(script)
     }
 
-    pub fn emit(&mut self, script: &Script<'s>) -> Option<Vec<u8>> {
+    pub fn emit<'a>(&mut self, script: &Script<'s, 'a>) -> Option<Vec<u8>> {
         // Emitting
         let bytecode = emitter::emit(script, &mut self.diagnostics_collector);
 
@@ -118,7 +122,8 @@ impl<'s, 'c: 's> Compiler<'s, 'c> {
         let Some(tokens) = compiler.lex() else {
             return (None, compiler.encode_diagnostics());
         };
-        let Some(script) = compiler.parse(&tokens) else {
+        let arena = crate::arena::AstArena::new();
+        let Some(script) = compiler.parse(&arena, &tokens) else {
             return (None, compiler.encode_diagnostics());
         };
         let Some(chunk) = compiler.emit(&script) else {

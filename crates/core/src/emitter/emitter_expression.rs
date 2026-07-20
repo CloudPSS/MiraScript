@@ -18,7 +18,7 @@ use super::{
     variable::BindType,
 };
 
-fn number_constant(exp: &Expression<'_>) -> Option<f64> {
+fn number_constant(exp: &Expression<'_, '_>) -> Option<f64> {
     match exp {
         Expression::Literal(token) => match token.kind {
             TokenKind::Number(n, _) => Some(n),
@@ -32,7 +32,7 @@ fn number_constant(exp: &Expression<'_>) -> Option<f64> {
 }
 
 impl<'s, 'c> Emitter<'s, 'c> {
-    fn declare_callable_expr(&mut self, callable: &'s Expression<'s>) {
+    fn declare_callable_expr<'a>(&mut self, callable: &'s Expression<'s, 'a>) {
         // 此时的 Grouping 用于标记 callable 为复杂表达式以启用空安全，跳过 declare_expression 的 Grouping 处理
         if let Expression::Grouping(_, inner, _) = callable
             && (inner.is_variable() || inner.is_grouping())
@@ -46,7 +46,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
             self.declare_expression(callable);
         }
     }
-    fn declare_cond_expr(&mut self, cond: &'s Expression<'s>) {
+    fn declare_cond_expr<'a>(&mut self, cond: &'s Expression<'s, 'a>) {
         if let Literal(lit) = cond
             && !lit.is_boolean_literal()
         {
@@ -55,20 +55,20 @@ impl<'s, 'c> Emitter<'s, 'c> {
         }
         self.declare_expression(cond);
     }
-    fn declare_indexing_expr(&mut self, record_like: &'s Expression<'s>) {
+    fn declare_indexing_expr<'a>(&mut self, record_like: &'s Expression<'s, 'a>) {
         if record_like.is_literal() || record_like.is_interpolated_string() {
             self.diagnostics
                 .push(DiagnosticCode::LiteralNotIndexable, record_like.range());
         }
         self.declare_expression(record_like);
     }
-    fn declare_call(
+    fn declare_call<'a>(
         &mut self,
-        this: Option<&'s Expression<'s>>,
+        this: Option<&'s Expression<'s, 'a>>,
         l: &'s TokenRef<'s>,
         r: &'s TokenRef<'s>,
-        callable: &'s Callable<'s>,
-        args: &'s [ArgElement<'s>],
+        callable: &'s Callable<'s, 'a>,
+        args: &'s [ArgElement<'s, 'a>],
     ) {
         if self.config.diagnostic_tag {
             let start = this.map_or_else(|| callable.range().start, |c| c.range().start);
@@ -117,7 +117,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
             };
         });
     }
-    pub fn declare_expression(&mut self, outer: &'s Expression<'s>) {
+    pub fn declare_expression<'a>(&mut self, outer: &'s Expression<'s, 'a>) {
         match outer {
             Literal(_) => (),
             InterpolatedString(_, exprs) => {
@@ -325,9 +325,9 @@ impl<'s, 'c> Emitter<'s, 'c> {
             Unknown { .. } => (),
         }
     }
-    pub fn emit_expression_reg(
+    pub fn emit_expression_reg<'a>(
         &mut self,
-        expr: &'s Expression<'s>,
+        expr: &'s Expression<'s, 'a>,
         brk: Option<Register>,
     ) -> Register {
         if let Variable(id_token) = expr {
@@ -379,7 +379,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
         Some(id)
     }
 
-    fn emit_global_access(&mut self, expr: &'s Expression<'s>) -> Option<Cow<'s, str>> {
+    fn emit_global_access<'a>(&mut self, expr: &'s Expression<'s, 'a>) -> Option<Cow<'s, str>> {
         let id = if let Variable(id_token) = expr {
             let id = id_token.to_id_name()?;
             if self.scopes.find_variable(id).is_some() {
@@ -408,9 +408,9 @@ impl<'s, 'c> Emitter<'s, 'c> {
         Some(id)
     }
 
-    fn emit_expr_callable(
+    fn emit_expr_callable<'a>(
         &mut self,
-        callable: &'s Expression<'s>,
+        callable: &'s Expression<'s, 'a>,
         args_reg: impl FnOnce(&mut Self) -> (Vec<Register>, Vec<OpParam>),
         ret: Register,
         brk: Option<Register>,
@@ -437,11 +437,11 @@ impl<'s, 'c> Emitter<'s, 'c> {
         }
     }
 
-    fn emit_call(
+    fn emit_call<'a>(
         &mut self,
-        callable: &'s Callable<'s>,
-        arg0: Option<&'s Expression<'s>>,
-        args: &'s [ArgElement<'s>],
+        callable: &'s Callable<'s, 'a>,
+        arg0: Option<&'s Expression<'s, 'a>>,
+        args: &'s [ArgElement<'s, 'a>],
         ret: Register,
         brk: Option<Register>,
     ) {
@@ -506,9 +506,9 @@ impl<'s, 'c> Emitter<'s, 'c> {
         }
     }
 
-    pub fn emit_expression(
+    pub fn emit_expression<'a>(
         &mut self,
-        expr: &'s Expression<'s>,
+        expr: &'s Expression<'s, 'a>,
         ret: Register,
         brk: Option<Register>,
     ) {

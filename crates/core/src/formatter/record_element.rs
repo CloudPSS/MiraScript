@@ -2,7 +2,7 @@ use crate::parser::RecordElementBase;
 
 use super::prelude::*;
 
-impl<E, I> Formattable for RecordElementBase<'_, E, I>
+impl<E, I> Formattable for RecordElementBase<'_, '_, E, I>
 where
     E: Formattable,
     I: Formattable,

@@ -5,11 +5,12 @@ use winnow::{
 
 use super::{expressions::expression, prelude::*, statements::statement};
 
-pub(super) fn construct_statements_and_expression<'s>(
-    mut statements: Vec<Statement<'s>>,
-    expression: Option<Expression<'s>>,
-) -> (Vec<Statement<'s>>, Option<Box<Expression<'s>>>) {
-    let expression = expression.map(Box::new);
+pub(super) fn construct_statements_and_expression<'s, 'a>(
+    arena: &'a AstArena,
+    mut statements: Vec<Statement<'s, 'a>>,
+    expression: Option<Expression<'s, 'a>>,
+) -> (Vec<Statement<'s, 'a>>, Option<ABox<'a, Expression<'s, 'a>>>) {
+    let expression = expression.map(|e| arena.alloc(e));
     if expression.is_some() || statements.is_empty() {
         return (statements, expression);
     }
@@ -25,12 +26,21 @@ pub(super) fn construct_statements_and_expression<'s>(
     (statements, expression)
 }
 
-pub(super) fn statements_and_expression<'s>(
+pub(super) fn statements_and_expression<'s, 'a>(
+    arena: &'a AstArena,
     i: &mut Input<'s>,
-) -> Result<(Vec<Statement<'s>>, Option<Box<Expression<'s>>>)> {
-    let (statements, expression): (Vec<_>, _) =
-        (repeat(0.., statement), opt(expression)).parse_next(i)?;
-    Ok(construct_statements_and_expression(statements, expression))
+) -> Result<(
+    Vec<Statement<'s, 'a>>,
+    Option<ABox<'a, Expression<'s, 'a>>>,
+)> {
+    let (statements, expression): (Vec<_>, _) = (
+        repeat(0.., |i: &mut Input<'s>| statement(arena, i)),
+        opt(|i: &mut Input<'s>| expression(arena, i)),
+    )
+        .parse_next(i)?;
+    Ok(construct_statements_and_expression(
+        arena, statements, expression,
+    ))
 }
 
 pub(super) fn literal_token<'s>(i: &mut Input<'s>) -> Result<TokenRef<'s>> {
@@ -55,7 +65,7 @@ pub(super) fn variable_token<'s>(
     move |i: &mut Input<'s>| {
         let t = one_of(|t: &Token<'s>| {
             matches!(&t.kind, &TokenKind::Identifier(_))
-                || matches!(&t.kind, &TokenKind::Keyword(kw) 
+                || matches!(&t.kind, &TokenKind::Keyword(kw)
                     if kw.is_reserved() || kw == Keyword::Underscore || kw == Keyword::Global)
         })
         .parse_next(i)?;

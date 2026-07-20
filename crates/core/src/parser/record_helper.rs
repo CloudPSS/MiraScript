@@ -21,20 +21,22 @@ fn record_name<'s>(i: &mut Input<'s>) -> Result<TokenRef<'s>> {
     .parse_next(i)
 }
 
-fn record_element<'t, 's: 't, E: Clone + PartialEq + 's, I: Clone + PartialEq + 's>(
+fn record_element<'t, 's: 't + 'a, 'a, E: PartialEq + 'a, I: PartialEq + 'a>(
+    arena: &'a AstArena,
     named: impl Parser<'s, E>,
     mut interpolate_name: impl FnMut(&'s Token<'s>) -> I + Copy,
     omit_named: impl Parser<'s, E>,
     unnamed: impl Parser<'s, E>,
     spread: impl Parser<'s, E>,
     mut missing: impl FnMut(usize) -> E + Copy,
-) -> impl Parser<'s, ListItem<'s, RecordElementBase<'s, E, I>>> {
+) -> impl Parser<'s, ListItem<'s, 'a, RecordElementBase<'s, 'a, E, I>>> {
     let colon = |t: &Token<'s>| -> bool { *t == Operator::Colon || *t == Operator::QuestionColon };
     move |i: &mut Input<'s>| {
         let first = peek(any).parse_next(i)?;
         if *first == Operator::Comma {
             return Ok(ListItem::new_with_comma(
-                RecordElementBase::Unnamed(missing(first.range.start).into()),
+                arena,
+                RecordElementBase::Unnamed(arena.alloc(missing(first.range.start))),
                 token(Operator::Comma).parse_next(i)?,
             ));
         }
@@ -47,9 +49,9 @@ fn record_element<'t, 's: 't, E: Clone + PartialEq + 's, I: Clone + PartialEq + 
         }
         let result = alt((
             (token(Operator::SpreadRange), spread)
-                .map(|(s, e)| RecordElementBase::Spread(s, e.into())),
+                .map(|(s, e)| RecordElementBase::Spread(s, arena.alloc(e))),
             (one_of(colon), omit_named)
-                .map(|(c, o)| RecordElementBase::OmitNamed(c.into(), o.into())),
+                .map(|(c, o)| RecordElementBase::OmitNamed(c.into(), arena.alloc(o))),
             (
                 one_of(|t: &Token<'s>| t.is_interpolated_string()),
                 one_of(colon),
@@ -57,14 +59,14 @@ fn record_element<'t, 's: 't, E: Clone + PartialEq + 's, I: Clone + PartialEq + 
             )
                 .map(|(r, c, n)| {
                     RecordElementBase::InterpolateNamed(
-                        Box::new(interpolate_name(r)),
+                        arena.alloc(interpolate_name(r)),
                         c.into(),
-                        n.into(),
+                        arena.alloc(n),
                     )
                 }),
             (record_name, one_of(colon), named)
-                .map(|(r, c, n)| RecordElementBase::Named(r, c.into(), n.into())),
-            unnamed.map(|u| RecordElementBase::Unnamed(u.into())),
+                .map(|(r, c, n)| RecordElementBase::Named(r, c.into(), arena.alloc(n))),
+            unnamed.map(|u| RecordElementBase::Unnamed(arena.alloc(u))),
         ))
         .parse_next(i)?;
         let last = peek(any).parse_next(i)?;
@@ -83,14 +85,15 @@ fn record_element<'t, 's: 't, E: Clone + PartialEq + 's, I: Clone + PartialEq + 
             || *last == Keyword::Let
             || *last == Keyword::Const
         {
-            return Ok(ListItem::new(result));
+            return Ok(ListItem::new(arena, result));
         }
         let comma = token_or_insert(Operator::Comma, DiagnosticCode::MissingComma).parse_next(i)?;
-        Ok(ListItem::new_with_comma(result, comma))
+        Ok(ListItem::new_with_comma(arena, result, comma))
     }
 }
 
-pub(super) fn record_base<'t, 's: 't, E: Clone + PartialEq + 's, I: Clone + PartialEq + 's>(
+pub(super) fn record_base<'t, 's: 't + 'a, 'a, E: PartialEq + 'a, I: PartialEq + 'a>(
+    arena: &'a AstArena,
     named: impl Parser<'s, E>,
     interpolate_name: impl FnMut(&'s Token<'s>) -> I + Copy,
     omit_named: impl Parser<'s, E>,
@@ -101,7 +104,7 @@ pub(super) fn record_base<'t, 's: 't, E: Clone + PartialEq + 's, I: Clone + Part
     's,
     (
         TokenRef<'s>,
-        Vec<ListItem<'s, RecordElementBase<'s, E, I>>>,
+        Vec<ListItem<'s, 'a, RecordElementBase<'s, 'a, E, I>>>,
         TokenRef<'s>,
     ),
 > {
@@ -110,6 +113,7 @@ pub(super) fn record_base<'t, 's: 't, E: Clone + PartialEq + 's, I: Clone + Part
         let parts: Vec<_> = repeat(
             0..,
             record_element(
+                arena,
                 named,
                 interpolate_name,
                 omit_named,

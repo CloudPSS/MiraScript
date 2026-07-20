@@ -2,7 +2,7 @@ use crate::parser::Range;
 
 use super::prelude::*;
 
-impl Formattable for Range<'_> {
+impl Formattable for Range<'_, '_> {
     fn measure(&self, formatter: &Formatter, indent: usize) -> usize {
         let inner = usize::max(
             self.0.measure(formatter, indent),

@@ -2,7 +2,7 @@ use crate::{Expression, Operator, parser::MatchCase};
 
 use super::prelude::*;
 
-impl Formattable for Expression<'_> {
+impl Formattable for Expression<'_, '_> {
     fn measure(&self, formatter: &Formatter, indent: usize) -> usize {
         use Expression::*;
         match self {

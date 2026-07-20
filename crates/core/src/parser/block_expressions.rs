@@ -13,33 +13,45 @@ use super::{
     prelude::*,
 };
 
-fn optional_else<'s>(i: &mut Input<'s>) -> Result<Option<ElseBlock<'s>>> {
+fn optional_else<'s, 'a>(
+    arena: &'a AstArena,
+    i: &mut Input<'s>,
+) -> Result<Option<ElseBlock<'s, 'a>>> {
     let Some(kw_else) = opt(token(Keyword::Else)).parse_next(i)? else {
         return Ok(None);
     };
 
-    let block = alt((if_expression, block_expression))
-        .map(Box::new)
-        .parse_next(i)?;
+    let block = alt((
+        |i: &mut Input<'s>| if_expression(arena, i),
+        |i: &mut Input<'s>| block_expression(arena, i),
+    ))
+    .map(|e| arena.alloc(e))
+    .parse_next(i)?;
 
     Ok(Some(ElseBlock(kw_else, block)))
 }
 
-pub(super) fn if_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
+pub(super) fn if_expression<'s, 'a>(
+    arena: &'a AstArena,
+    i: &mut Input<'s>,
+) -> Result<Expression<'s, 'a>> {
     seq!(Expression::If(
         token(Keyword::If),
-        expression_or_insert(|t| *t == Operator::OpenBrace).map(Box::new),
-        block_expression.map(Box::new),
-        optional_else,
+        expression_or_insert(arena, |t| *t == Operator::OpenBrace).map(|e| arena.alloc(e)),
+        (|i: &mut Input<'s>| block_expression(arena, i)).map(|e| arena.alloc(e)),
+        |i: &mut Input<'s>| optional_else(arena, i),
     ))
     .parse_next(i)
 }
 
-pub(super) fn block_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
+pub(super) fn block_expression<'s, 'a>(
+    arena: &'a AstArena,
+    i: &mut Input<'s>,
+) -> Result<Expression<'s, 'a>> {
     not(json_start).parse_next(i)?;
     (
         token_or_insert(Operator::OpenBrace, DiagnosticCode::MissingOpenBrace),
-        statements_and_expression,
+        |i: &mut Input<'s>| statements_and_expression(arena, i),
         token_or_insert(Operator::CloseBrace, DiagnosticCode::MissingCloseBrace),
     )
         .map(|(open, (statements, expression), close)| {
@@ -48,10 +60,13 @@ pub(super) fn block_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> 
         .parse_next(i)
 }
 
-pub(super) fn block_expression_no_expr<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
+pub(super) fn block_expression_no_expr<'s, 'a>(
+    arena: &'a AstArena,
+    i: &mut Input<'s>,
+) -> Result<Expression<'s, 'a>> {
     (
         token_or_insert(Operator::OpenBrace, DiagnosticCode::MissingOpenBrace),
-        statements_and_expression,
+        |i: &mut Input<'s>| statements_and_expression(arena, i),
         token_or_insert(Operator::CloseBrace, DiagnosticCode::MissingCloseBrace),
     )
         .map(|(open, (mut statements, expr), close)| {
@@ -75,61 +90,75 @@ pub(super) fn block_expression_no_expr<'s>(i: &mut Input<'s>) -> Result<Expressi
         .parse_next(i)
 }
 
-pub(super) fn fn_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
+pub(super) fn fn_expression<'s, 'a>(
+    arena: &'a AstArena,
+    i: &mut Input<'s>,
+) -> Result<Expression<'s, 'a>> {
     seq!(Expression::Function(
         token(Keyword::Fn),
-        parameter_list,
-        block_expression.map(Box::new),
+        |i: &mut Input<'s>| parameter_list(arena, i),
+        (|i: &mut Input<'s>| block_expression(arena, i)).map(|e| arena.alloc(e)),
     ))
     .parse_next(i)
 }
 
-pub(super) fn loop_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
+pub(super) fn loop_expression<'s, 'a>(
+    arena: &'a AstArena,
+    i: &mut Input<'s>,
+) -> Result<Expression<'s, 'a>> {
     seq!(Expression::Loop(
         token(Keyword::Loop),
-        block_expression_no_expr.map(Box::new),
+        (|i: &mut Input<'s>| block_expression_no_expr(arena, i)).map(|e| arena.alloc(e)),
     ))
     .parse_next(i)
 }
 
-pub(super) fn while_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
+pub(super) fn while_expression<'s, 'a>(
+    arena: &'a AstArena,
+    i: &mut Input<'s>,
+) -> Result<Expression<'s, 'a>> {
     seq!(Expression::While(
         token(Keyword::While),
-        expression_or_insert(|t| *t == Operator::OpenBrace).map(Box::new),
-        block_expression_no_expr.map(Box::new),
-        optional_else,
+        expression_or_insert(arena, |t| *t == Operator::OpenBrace).map(|e| arena.alloc(e)),
+        (|i: &mut Input<'s>| block_expression_no_expr(arena, i)).map(|e| arena.alloc(e)),
+        |i: &mut Input<'s>| optional_else(arena, i),
     ))
     .parse_next(i)
 }
 
-pub(super) fn match_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
-    fn branch_parser<'s>(i: &mut Input<'s>) -> Result<MatchCase<'s>> {
+pub(super) fn match_expression<'s, 'a>(
+    arena: &'a AstArena,
+    i: &mut Input<'s>,
+) -> Result<Expression<'s, 'a>> {
+    fn branch_parser<'s, 'a>(arena: &'a AstArena, i: &mut Input<'s>) -> Result<MatchCase<'s, 'a>> {
         (
             alt((
                 (
                     token(Keyword::Case),
-                    pattern_or_insert(false, |t| *t == Operator::OpenBrace || *t == Keyword::If),
+                    pattern_or_insert(arena, false, |t| {
+                        *t == Operator::OpenBrace || *t == Keyword::If
+                    }),
                     opt((
                         token(Keyword::If),
-                        expression_or_insert(|t| *t == Operator::OpenBrace),
+                        expression_or_insert(arena, |t| *t == Operator::OpenBrace),
                     )),
                 ),
                 (
                     token_or_insert(Keyword::Case, DiagnosticCode::MissingCase),
-                    pattern(false),
-                    opt((token(Keyword::If), expression)),
+                    pattern(arena, false),
+                    opt((token(Keyword::If), |i: &mut Input<'s>| expression(arena, i))),
                 ),
             )),
-            block_expression,
+            |i: &mut Input<'s>| block_expression(arena, i),
         )
             .map(|((kw_case, pattern, guard), body)| MatchCase(kw_case, pattern, guard, body))
             .parse_next(i)
     }
     (
         token(Keyword::Match),
-        expression_or_insert(|t| *t == Operator::OpenBrace).map(Box::new),
+        expression_or_insert(arena, |t| *t == Operator::OpenBrace).map(|e| arena.alloc(e)),
         token_or_insert(Operator::OpenBrace, DiagnosticCode::MissingOpenBrace),
-        repeat(0.., branch_parser),
+        repeat(0.., |i: &mut Input<'s>| branch_parser(arena, i)),
         token_or_insert(Operator::CloseBrace, DiagnosticCode::MissingCloseBrace),
     )
         .map(|(kw_match, expr, open, branches, close)| {
@@ -138,31 +167,37 @@ pub(super) fn match_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> 
         .parse_next(i)
 }
 
-pub(super) fn for_in_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
+pub(super) fn for_in_expression<'s, 'a>(
+    arena: &'a AstArena,
+    i: &mut Input<'s>,
+) -> Result<Expression<'s, 'a>> {
     seq!(Expression::ForIn(
         token(Keyword::For),
         // 由后边的 `in` 定位，无条件插入
-        pattern_or_insert(false, |_| true).map(Box::new),
+        pattern_or_insert(arena, false, |_| true).map(|p| arena.alloc(p)),
         token(Keyword::In),
-        iterable.map(Box::new),
-        block_expression_no_expr.map(Box::new),
-        optional_else,
+        (|i: &mut Input<'s>| iterable(arena, i)).map(|e| arena.alloc(e)),
+        (|i: &mut Input<'s>| block_expression_no_expr(arena, i)).map(|e| arena.alloc(e)),
+        |i: &mut Input<'s>| optional_else(arena, i),
     ))
     .parse_next(i)
 }
 
-pub(super) fn block_like_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
+pub(super) fn block_like_expression<'s, 'a>(
+    arena: &'a AstArena,
+    i: &mut Input<'s>,
+) -> Result<Expression<'s, 'a>> {
     dispatch! {peek(any);
         t if *t == Operator::OpenBrace => alt((
-            json_expression,
-            block_expression,
+            |i: &mut Input<'s>| json_expression(arena, i),
+            |i: &mut Input<'s>| block_expression(arena, i),
         )),
-        t if *t == Keyword::If => if_expression,
-        t if *t == Keyword::Fn => fn_expression,
-        t if *t == Keyword::Loop => loop_expression,
-        t if *t == Keyword::While => while_expression,
-        t if *t == Keyword::Match => match_expression,
-        t if *t == Keyword::For => for_in_expression,
+        t if *t == Keyword::If => |i: &mut Input<'s>| if_expression(arena, i),
+        t if *t == Keyword::Fn => |i: &mut Input<'s>| fn_expression(arena, i),
+        t if *t == Keyword::Loop => |i: &mut Input<'s>| loop_expression(arena, i),
+        t if *t == Keyword::While => |i: &mut Input<'s>| while_expression(arena, i),
+        t if *t == Keyword::Match => |i: &mut Input<'s>| match_expression(arena, i),
+        t if *t == Keyword::For => |i: &mut Input<'s>| for_in_expression(arena, i),
 
         &Token{..} => fail,
     }

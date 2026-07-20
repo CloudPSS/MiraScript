@@ -2,7 +2,7 @@ use crate::parser::ElseBlock;
 
 use super::prelude::*;
 
-impl Formattable for ElseBlock<'_> {
+impl Formattable for ElseBlock<'_, '_> {
     fn measure(&self, formatter: &Formatter, indent: usize) -> usize {
         self.1.measure(formatter, indent)
     }

@@ -15,7 +15,7 @@ use super::{
     record_helper::record_base,
 };
 
-fn unknown_pattern<'s>(i: &mut Input<'s>) -> Result<Pattern<'s>> {
+fn unknown_pattern<'s, 'a>(_arena: &'a AstArena, i: &mut Input<'s>) -> Result<Pattern<'s, 'a>> {
     take_till(1.., |t: &Token<'s>| {
         *t == TokenKind::Eof
             || *t == Keyword::If
@@ -45,12 +45,13 @@ fn unknown_pattern<'s>(i: &mut Input<'s>) -> Result<Pattern<'s>> {
     .parse_next(i)
 }
 
-pub(super) fn pattern_or_insert<'s>(
+pub(super) fn pattern_or_insert<'s: 'a, 'a>(
+    arena: &'a AstArena,
     rebind: bool,
     mut insert_cond: impl FnMut(&'s Token<'s>) -> bool + Copy,
-) -> impl Parser<'s, Pattern<'s>> {
+) -> impl Parser<'s, Pattern<'s, 'a>> {
     move |i: &mut Input<'s>| {
-        let p = opt(pattern(rebind)).parse_next(i)?;
+        let p = opt(pattern(arena, rebind)).parse_next(i)?;
         if let Some(p) = p {
             return Ok(p);
         }
@@ -63,7 +64,7 @@ pub(super) fn pattern_or_insert<'s>(
     }
 }
 
-pub(super) fn pattern_expected<'s>(pos: usize) -> Pattern<'s> {
+pub(super) fn pattern_expected<'s, 'a>(pos: usize) -> Pattern<'s, 'a> {
     Pattern::unknown_range(
         vec![Token::empty(pos).into()],
         pos..pos,
@@ -71,58 +72,67 @@ pub(super) fn pattern_expected<'s>(pos: usize) -> Pattern<'s> {
     )
 }
 
-pub(super) fn pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
-    move |i: &mut Input<'s>| or_pattern(rebind).parse_next(i)
+pub(super) fn pattern<'s: 'a, 'a>(
+    arena: &'a AstArena,
+    rebind: bool,
+) -> impl Parser<'s, Pattern<'s, 'a>> {
+    move |i: &mut Input<'s>| or_pattern(arena, rebind).parse_next(i)
 }
 
-fn primary_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
+fn primary_pattern<'s: 'a, 'a>(
+    arena: &'a AstArena,
+    rebind: bool,
+) -> impl Parser<'s, Pattern<'s, 'a>> {
     move |i: &mut Input<'s>| {
         alt((
-            relation_pattern,
-            record_like_pattern(rebind),
-            array_pattern(rebind),
-            range_pattern,
-            literal_constant_pattern::<false>,
-            discard_bind_pattern(rebind),
-            not_pattern(rebind),
-            unknown_pattern,
+            |i: &mut Input<'s>| relation_pattern(arena, i),
+            record_like_pattern(arena, rebind),
+            array_pattern(arena, rebind),
+            |i: &mut Input<'s>| range_pattern(arena, i),
+            |i: &mut Input<'s>| literal_constant_pattern::<false>(arena, i),
+            discard_bind_pattern(arena, rebind),
+            not_pattern(arena, rebind),
+            |i: &mut Input<'s>| unknown_pattern(arena, i),
         ))
         .parse_next(i)
     }
 }
 
-fn not_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
+fn not_pattern<'s: 'a, 'a>(arena: &'a AstArena, rebind: bool) -> impl Parser<'s, Pattern<'s, 'a>> {
     move |i: &mut Input<'s>| {
-        (token(Keyword::Not), primary_pattern(rebind))
-            .map(|(kw_not, p)| Pattern::Not(kw_not, Box::new(p)))
+        (token(Keyword::Not), primary_pattern(arena, rebind))
+            .map(|(kw_not, p)| Pattern::Not(kw_not, arena.alloc(p)))
             .parse_next(i)
     }
 }
 
-fn and_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
+fn and_pattern<'s: 'a, 'a>(arena: &'a AstArena, rebind: bool) -> impl Parser<'s, Pattern<'s, 'a>> {
     move |i: &mut Input<'s>| {
         separated_foldl1(
-            primary_pattern(rebind),
+            primary_pattern(arena, rebind),
             token(Keyword::And),
-            |left, op, right| Pattern::And(Box::new(left), op, Box::new(right)),
+            |left, op, right| Pattern::And(arena.alloc(left), op, arena.alloc(right)),
         )
         .parse_next(i)
     }
 }
 
-fn or_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
+fn or_pattern<'s: 'a, 'a>(arena: &'a AstArena, rebind: bool) -> impl Parser<'s, Pattern<'s, 'a>> {
     move |i: &mut Input<'s>| {
         separated_foldl1(
-            and_pattern(rebind),
+            and_pattern(arena, rebind),
             token(Keyword::Or),
-            |left, op, right| Pattern::Or(Box::new(left), op, Box::new(right)),
+            |left, op, right| Pattern::Or(arena.alloc(left), op, arena.alloc(right)),
         )
         .parse_next(i)
     }
 }
 
-fn literal_constant_pattern<'s, const CUT: bool>(i: &mut Input<'s>) -> Result<Pattern<'s>> {
-    let literal_pattern = |i: &mut Input<'s>| -> Result<Pattern<'s>> {
+fn literal_constant_pattern<'s, 'a, const CUT: bool>(
+    arena: &'a AstArena,
+    i: &mut Input<'s>,
+) -> Result<Pattern<'s, 'a>> {
+    let literal_pattern = |i: &mut Input<'s>| -> Result<Pattern<'s, 'a>> {
         (
             opt(one_of(|t: &Token<'s>| {
                 *t == Operator::Plus || *t == Operator::Minus || *t == Operator::Exclamation
@@ -135,28 +145,35 @@ fn literal_constant_pattern<'s, const CUT: bool>(i: &mut Input<'s>) -> Result<Pa
                 };
                 if *op == Operator::Exclamation {
                     return Pattern::Literal(None, l.clone()).wrap_as_unknown(
+                        arena,
                         [op.into(), l],
                         DiagnosticCode::ExclamationInLiteralPattern,
                     );
                 }
                 if !(l.is_number_literal()) {
-                    return Pattern::Literal(None, l.clone())
-                        .wrap_as_unknown([op.into(), l], DiagnosticCode::NonNumberInArithmetic);
+                    return Pattern::Literal(None, l.clone()).wrap_as_unknown(
+                        arena,
+                        [op.into(), l],
+                        DiagnosticCode::NonNumberInArithmetic,
+                    );
                 }
                 Pattern::Literal(Some(op.into()), l)
             })
             .parse_next(i)
     };
 
-    let constant_pattern = |i: &mut Input<'s>| -> Result<Pattern<'s>> {
+    let constant_pattern = |i: &mut Input<'s>| -> Result<Pattern<'s, 'a>> {
         variable_token(false, false)
             .verify_map(|t: TokenRef<'s>| {
                 let name = t.to_id_name()?;
                 let is_const = name.starts_with('@');
                 Some(if !is_const {
                     if CUT {
-                        Pattern::Constant(t.clone())
-                            .wrap_as_unknown([t], DiagnosticCode::InvalidConstantLiteral)
+                        Pattern::Constant(t.clone()).wrap_as_unknown(
+                            arena,
+                            [t],
+                            DiagnosticCode::InvalidConstantLiteral,
+                        )
                     } else {
                         return None;
                     }
@@ -169,18 +186,18 @@ fn literal_constant_pattern<'s, const CUT: bool>(i: &mut Input<'s>) -> Result<Pa
     alt((constant_pattern, literal_pattern)).parse_next(i)
 }
 
-fn relation_pattern<'s>(i: &mut Input<'s>) -> Result<Pattern<'s>> {
+fn relation_pattern<'s, 'a>(arena: &'a AstArena, i: &mut Input<'s>) -> Result<Pattern<'s, 'a>> {
     seq!(Pattern::Relation(
         one_of(|t: &Token<'s>| matches!(t.kind, TokenKind::Operator(op) if op.is_relation()))
             .map(TokenRef::borrow),
-        literal_constant_pattern::<true>.map(Box::new),
+        (|i: &mut Input<'s>| literal_constant_pattern::<true>(arena, i)).map(|p| arena.alloc(p)),
     ))
     .parse_next(i)
 }
 
-fn range_pattern<'s>(i: &mut Input<'s>) -> Result<Pattern<'s>> {
-    fn range_guard<'s>(p: Pattern<'s>) -> Box<Pattern<'s>> {
-        match p {
+fn range_pattern<'s, 'a>(arena: &'a AstArena, i: &mut Input<'s>) -> Result<Pattern<'s, 'a>> {
+    fn range_guard<'s, 'a>(arena: &'a AstArena, p: Pattern<'s, 'a>) -> ABox<'a, Pattern<'s, 'a>> {
+        arena.alloc(match p {
             Pattern::Literal(op, l) => {
                 if l.is_number_literal() {
                     Pattern::Literal(op, l)
@@ -193,19 +210,23 @@ fn range_pattern<'s>(i: &mut Input<'s>) -> Result<Pattern<'s>> {
                 }
             }
             _ => p,
-        }
-        .into()
+        })
     }
     seq!(Pattern::Range(
-        literal_constant_pattern::<true>.map(range_guard),
+        (|i: &mut Input<'s>| literal_constant_pattern::<true>(arena, i))
+            .map(|p| range_guard(arena, p)),
         one_of(|t: &Token<'s>| *t == Operator::SpreadRange || *t == Operator::HalfOpenRange)
             .map(TokenRef::borrow),
-        literal_constant_pattern::<true>.map(range_guard),
+        (|i: &mut Input<'s>| literal_constant_pattern::<true>(arena, i))
+            .map(|p| range_guard(arena, p)),
     ))
     .parse_next(i)
 }
 
-fn discard_bind_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
+fn discard_bind_pattern<'s: 'a, 'a>(
+    arena: &'a AstArena,
+    rebind: bool,
+) -> impl Parser<'s, Pattern<'s, 'a>> {
     move |i: &mut Input<'s>| {
         (opt(token(Keyword::Mut)), variable_token(true, false))
             .map(|(kw_mut, id)| {
@@ -240,8 +261,11 @@ fn discard_bind_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
                 }
                 if name.starts_with('@') {
                     let tokens = vec![kw_mut.clone().unwrap(), id.clone()];
-                    return Pattern::Bind(kw_mut, id)
-                        .wrap_as_unknown(tokens, DiagnosticCode::ConstantInBindPattern);
+                    return Pattern::Bind(kw_mut, id).wrap_as_unknown(
+                        arena,
+                        tokens,
+                        DiagnosticCode::ConstantInBindPattern,
+                    );
                 }
                 Pattern::Bind(kw_mut, id)
             })
@@ -249,17 +273,20 @@ fn discard_bind_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
     }
 }
 
-fn pattern_spread<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
+fn pattern_spread<'s: 'a, 'a>(
+    arena: &'a AstArena,
+    rebind: bool,
+) -> impl Parser<'s, Pattern<'s, 'a>> {
     move |i: &mut Input<'s>| {
         let pos = i.previous_token_end();
-        opt(pattern(rebind))
+        opt(pattern(arena, rebind))
             .map(|p| {
                 let Some(p) = p else {
                     return Pattern::SpreadDiscard(pos);
                 };
                 if let Pattern::Discard(t) = &p {
                     let tokens = [t.clone()];
-                    p.wrap_as_unknown(tokens, DiagnosticCode::DiscardInSpreadPattern)
+                    p.wrap_as_unknown(arena, tokens, DiagnosticCode::DiscardInSpreadPattern)
                 } else {
                     p
                 }
@@ -268,16 +295,20 @@ fn pattern_spread<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
     }
 }
 
-fn record_like_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
-    let omit_named = move |i: &mut Input<'s>| -> Result<Pattern<'s>> {
+fn record_like_pattern<'s: 'a, 'a>(
+    arena: &'a AstArena,
+    rebind: bool,
+) -> impl Parser<'s, Pattern<'s, 'a>> {
+    let omit_named = move |i: &mut Input<'s>| -> Result<Pattern<'s, 'a>> {
         // omit named 会消费 `:`，可以无条件插入
-        pattern_or_insert(rebind, |_| true)
+        pattern_or_insert(arena, rebind, |_| true)
             .with_taken()
             .map(|(p, t)| {
                 if p.is_bind() || p.is_unknown() {
                     p
                 } else {
                     p.wrap_as_unknown(
+                        arena,
                         t.iter().map(TokenRef::borrow).collect::<Vec<_>>(),
                         DiagnosticCode::BadOmitKeyRecordPattern,
                     )
@@ -288,7 +319,7 @@ fn record_like_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
 
     // unnamed 不额外消费字符，仅在分隔符前插入
     let unnamed = move |i: &mut Input<'s>| {
-        pattern_or_insert(rebind, |t| {
+        pattern_or_insert(arena, rebind, |t| {
             *t == Operator::Comma || *t == Operator::CloseParen
         })
         .parse_next(i)
@@ -296,12 +327,13 @@ fn record_like_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
 
     move |i: &mut Input<'s>| {
         let (open, mut parts, close) = record_base(
+            arena,
             // named 会消费 name `:`，可以无条件插入
-            pattern_or_insert(rebind, |_| true),
+            pattern_or_insert(arena, rebind, |_| true),
             |t| Pattern::unknown([t.into()], DiagnosticCode::InterpolatedNameRecordPattern),
             omit_named,
             unnamed,
-            pattern_spread(rebind),
+            pattern_spread(arena, rebind),
             pattern_expected,
         )
         .parse_next(i)?;
@@ -331,19 +363,21 @@ fn record_like_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
     }
 }
 
-pub(crate) fn array_pattern_like<'s>(
+pub(crate) fn array_pattern_like<'s: 'a, 'a>(
+    arena: &'a AstArena,
     open: impl Parser<'s, TokenRef<'s>>,
     close: impl Parser<'s, TokenRef<'s>>,
     rebind: bool,
-) -> impl Parser<'s, Pattern<'s>> {
+) -> impl Parser<'s, Pattern<'s, 'a>> {
     let element_pattern = move |i: &mut Input<'s>| {
-        pattern_or_insert(rebind, |t| {
+        pattern_or_insert(arena, rebind, |t| {
             *t == Operator::Comma || *t == Operator::CloseBracket
         })
         .with_taken()
         .map(|(p, t)| {
             if matches!(p, Pattern::Range(..)) {
                 p.wrap_as_unknown(
+                    arena,
                     t.iter().map(TokenRef::borrow).collect::<Vec<_>>(),
                     DiagnosticCode::AmbiguousRangePattern,
                 )
@@ -355,10 +389,11 @@ pub(crate) fn array_pattern_like<'s>(
     };
     move |i: &mut Input<'s>| {
         let (open, parts, close) = array_base(
+            arena,
             open,
             close,
             element_pattern,
-            pattern_spread(rebind),
+            pattern_spread(arena, rebind),
             pattern_expected,
         )
         .parse_next(i)?;
@@ -366,9 +401,13 @@ pub(crate) fn array_pattern_like<'s>(
     }
 }
 
-fn array_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
-    move |i: &mut Input<'s>| -> Result<Pattern<'s>> {
+fn array_pattern<'s: 'a, 'a>(
+    arena: &'a AstArena,
+    rebind: bool,
+) -> impl Parser<'s, Pattern<'s, 'a>> {
+    move |i: &mut Input<'s>| -> Result<Pattern<'s, 'a>> {
         let mut p = array_pattern_like(
+            arena,
             token(Operator::OpenBracket),
             token_or_insert(Operator::CloseBracket, DiagnosticCode::MissingCloseBracket),
             rebind,
@@ -389,9 +428,11 @@ fn array_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
                     unreachable!();
                 };
                 let pattern = std::mem::replace(&mut **p, Pattern::SpreadDiscard(kw.range.start));
-                *part = ArrayElementBase::Element(Box::new(
-                    pattern.wrap_as_unknown([kw.clone()], DiagnosticCode::DuplicateSpreadPattern),
-                ));
+                *part = ArrayElementBase::Element(arena.alloc(pattern.wrap_as_unknown(
+                    arena,
+                    [kw.clone()],
+                    DiagnosticCode::DuplicateSpreadPattern,
+                )));
             }
         }
 

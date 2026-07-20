@@ -2,7 +2,7 @@ use crate::parser::ParameterList;
 
 use super::prelude::*;
 
-impl Formattable for ParameterList<'_> {
+impl Formattable for ParameterList<'_, '_> {
     fn measure(&self, formatter: &Formatter, indent: usize) -> usize {
         self.1.measure(formatter, indent)
     }

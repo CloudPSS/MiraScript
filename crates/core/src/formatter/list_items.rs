@@ -4,7 +4,7 @@ use crate::{Operator, parser::ListItem};
 
 use super::prelude::*;
 
-impl<T> Formattable for Vec<ListItem<'_, T>>
+impl<T> Formattable for Vec<ListItem<'_, '_, T>>
 where
     T: Formattable,
 {

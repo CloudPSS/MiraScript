@@ -25,8 +25,8 @@ use emitter_struct::Emitter;
 pub use opcode::OpCode;
 use opcode::Register;
 
-pub fn emit<'s, 'c>(
-    script: &Script<'s>,
+pub fn emit<'s, 'c, 'a>(
+    script: &Script<'s, 'a>,
     diagnostics_collector: &mut DiagnosticsCollector<'s, 'c>,
 ) -> Vec<u8> {
     let mut emitter = Emitter::new(diagnostics_collector);

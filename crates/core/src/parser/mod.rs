@@ -1,5 +1,5 @@
 use winnow::{
-    ModalResult, Parser as _,
+    ModalResult,
     error::{EmptyError, ErrMode},
     stream::TokenSlice,
 };
@@ -52,12 +52,15 @@ impl<'s, Output, F> Parser<'s, Output> for F where
 }
 
 mod prelude {
+    pub(super) use bumpalo::boxed::Box as ABox;
+
     pub(super) use super::{
         ArgElement, ArrayElement, ArrayElementBase, ArrayPattern, AstWalker, Callable, ElseBlock,
         Expression, Input, Iterable, ListItem, MatchCase, ParameterList, Parser, Pattern, Range,
         RecordElement, RecordElementBase, RecordPattern, Result, Script, Statement, TokenRef,
     };
     pub(super) use crate::{
+        arena::AstArena,
         diagnostic::{DiagnosticCode, DiagnosticsCollector, SourceDiagnostic, SourceRange},
         lexer::{Keyword, Operator, Token, TokenKind},
     };
@@ -71,6 +74,6 @@ pub fn to_input<'s>(tokens: &'s [Token<'s>]) -> Input<'s> {
     TokenSlice::new(tokens)
 }
 
-pub fn parse<'s>(i: &mut Input<'s>) -> Result<Script<'s>> {
-    scripts::script.parse_next(i)
+pub fn parse<'s, 'a>(arena: &'a crate::arena::AstArena, i: &mut Input<'s>) -> Result<Script<'s, 'a>> {
+    scripts::script(arena, i)
 }

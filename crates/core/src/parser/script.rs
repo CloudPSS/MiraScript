@@ -7,14 +7,14 @@ use super::prelude::*;
 /// statement* expression? EOF
 ///
 /// A script is a source file that contains a sequence of statements and an optional expression.
-#[derive(Debug, Clone, PartialEq)]
-pub struct Script<'s>(
-    pub Vec<Statement<'s>>,
-    pub Option<Box<Expression<'s>>>,
+#[derive(Debug, PartialEq)]
+pub struct Script<'s, 'a>(
+    pub Vec<Statement<'s, 'a>>,
+    pub Option<ABox<'a, Expression<'s, 'a>>>,
     pub TokenRef<'s>,
 );
 
-impl<'s> AstWalker<'s> for Script<'s> {
+impl<'s, 'a> AstWalker<'s> for Script<'s, 'a> {
     fn collect_diagnostics(&mut self, collector: &mut DiagnosticsCollector<'_, '_>) {
         for statement in &mut self.0 {
             statement.collect_diagnostics(collector);
@@ -33,8 +33,8 @@ impl<'s> AstWalker<'s> for Script<'s> {
     }
 }
 
-impl<'s> Deref for Script<'s> {
-    type Target = Vec<Statement<'s>>;
+impl<'s, 'a> Deref for Script<'s, 'a> {
+    type Target = Vec<Statement<'s, 'a>>;
 
     fn deref(&self) -> &Self::Target {
         &self.0

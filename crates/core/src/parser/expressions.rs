@@ -6,7 +6,7 @@ use winnow::{
 
 use super::{basic_expressions::basic_expression, prelude::*};
 
-fn unknown_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
+fn unknown_expression<'s, 'a>(i: &mut Input<'s>) -> Result<Expression<'s, 'a>> {
     take_till(1.., |t: &Token<'s>| {
         *t == TokenKind::Eof
             || *t == Keyword::If
@@ -44,15 +44,23 @@ fn unknown_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     .parse_next(i)
 }
 
-pub(super) fn expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
-    alt((basic_expression, unknown_expression)).parse_next(i)
+pub(super) fn expression<'s: 'a, 'a>(
+    arena: &'a AstArena,
+    i: &mut Input<'s>,
+) -> Result<Expression<'s, 'a>> {
+    alt((
+        |i: &mut Input<'s>| basic_expression(arena, i),
+        unknown_expression,
+    ))
+    .parse_next(i)
 }
 
-pub(super) fn expression_or_insert<'s>(
+pub(super) fn expression_or_insert<'s: 'a, 'a>(
+    arena: &'a AstArena,
     mut insert_cond: impl FnMut(&'s Token<'s>) -> bool + Copy,
-) -> impl Parser<'s, Expression<'s>> {
+) -> impl Parser<'s, Expression<'s, 'a>> {
     move |i: &mut Input<'s>| {
-        let e = opt(expression).parse_next(i)?;
+        let e = opt(|i: &mut Input<'s>| expression(arena, i)).parse_next(i)?;
         if let Some(e) = e {
             return Ok(e);
         }
@@ -65,7 +73,7 @@ pub(super) fn expression_or_insert<'s>(
     }
 }
 
-pub(super) fn expression_expected<'s>(pos: usize) -> Expression<'s> {
+pub(super) fn expression_expected<'s, 'a>(pos: usize) -> Expression<'s, 'a> {
     Expression::unknown_range(
         vec![Token::empty(pos).into()],
         pos..pos,

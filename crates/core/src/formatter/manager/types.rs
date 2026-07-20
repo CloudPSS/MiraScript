@@ -22,7 +22,7 @@ pub(crate) trait Formattable {
     fn format(&self, formatter: &mut FormatManager, complexity: usize);
 }
 
-impl<T: Formattable> Formattable for Box<T> {
+impl<T: Formattable> Formattable for bumpalo::boxed::Box<'_, T> {
     fn measure(&self, formatter: &FormatManager, indent: usize) -> usize {
         self.as_ref().measure(formatter, indent)
     }

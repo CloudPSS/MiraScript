@@ -1,3 +1,4 @@
+pub mod arena;
 pub mod compile;
 pub mod config;
 pub mod diagnostic;
@@ -5,6 +6,7 @@ pub mod emitter;
 pub mod lexer;
 pub mod parser;
 
+pub use arena::AstArena;
 pub use compile::Compiler;
 pub use config::Config;
 pub use diagnostic::{DiagnosticCode, SerializedDiagnostics, SourceDiagnostic, SourceRange};

@@ -61,7 +61,7 @@ impl<'s, E: AstWalker<'s>> AstWalker<'s> for Option<E> {
     }
 }
 
-impl<'s, E: AstWalker<'s>> AstWalker<'s> for Box<E> {
+impl<'s, 'a, E: AstWalker<'s>> AstWalker<'s> for ABox<'a, E> {
     fn collect_diagnostics(&mut self, collector: &mut DiagnosticsCollector<'_, '_>) {
         self.deref_mut().collect_diagnostics(collector);
     }

@@ -2,7 +2,7 @@ use crate::parser::Iterable;
 
 use super::prelude::*;
 
-impl Formattable for Iterable<'_> {
+impl Formattable for Iterable<'_, '_> {
     fn measure(&self, formatter: &Formatter, indent: usize) -> usize {
         use Iterable::*;
         match self {

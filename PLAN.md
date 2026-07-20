@@ -1,6 +1,6 @@
 # Arena 编译器重构计划
 
-> **状态**: 方案已探明，待实施  
+> **状态**: 已实施（见文末"实施备忘"）  
 > **预估工作量**: 2-3 个完整工作日  
 > **影响范围**: ~55 文件, ~100+ 处 `Box` 替换, 303 编译错误（替换后）
 
@@ -203,4 +203,14 @@ impl AstArena {
 - **不要**使用 `&'a mut T` — `Clone` 不兼容
 - **不要**使用 `bumpalo::boxed::Box<'static, T>` — `TokenRef<'s>` 不满足 `'static`
 - `AstArena` 在 `Compiler::compile()` 中创建，单次编译结束后自然 drop
-- `bumpalo::boxed::Box` 的 `Clone` 实现会将 clone 分配到**同一** arena
+- ~~`bumpalo::boxed::Box` 的 `Clone` 实现会将 clone 分配到**同一** arena~~（已证伪，见下）
+
+---
+
+## 7. 实施备忘（2026-07-20）
+
+- **`bumpalo::boxed::Box` 不实现 `Clone`**（bumpalo 3.x 实际无 `Clone`/`CloneIn`，clone 需要 arena 而 `Clone::clone` 拿不到）。所有 AST 类型的 derive 从 `Debug, Clone, PartialEq` 改为 `Debug, PartialEq`；仅有的 2 处 AST 深拷贝（`parameter_list.rs`、`patterns.rs` spread 错误恢复）改用 `std::mem::replace` 移出原值，语义等价。
+- bumpalo Box 不支持 `*box` 移出，改用 `ABox::into_inner()`。
+- parser 工厂函数生命周期写为 `<'s: 'a, 'a>`（`ABox<'a, T>` 要求 `T: 'a`）。
+- PLAN 遗漏的 `crates/wasm/src/monaco.rs` 已适配：`MonacoCompiler` 新增 `arena: Option<AstArena>` 字段，沿用现有 `'static` unsafe 自引用模式。
+- 性能结论：bench 前后基本持平（compile median 59.19 µs → ~58.7-60.0 µs），未达预期 10-30%，原因可能是 mimalloc 全局分配器掩盖了小对象分配收益。

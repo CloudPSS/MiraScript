@@ -2,12 +2,12 @@ use crate::parser::helper::unknown_range;
 
 use super::prelude::*;
 
-#[derive(Debug, Clone, PartialEq, strum::EnumIs)]
-pub enum Pattern<'s> {
+#[derive(Debug, PartialEq, strum::EnumIs)]
+pub enum Pattern<'s, 'a> {
     /// `(` pattern `)`
     ///
     /// Grouping pattern.
-    Grouping(TokenRef<'s>, Box<Pattern<'s>>, TokenRef<'s>),
+    Grouping(TokenRef<'s>, ABox<'a, Pattern<'s, 'a>>, TokenRef<'s>),
     /// ( `+` | `-` )? literal
     ///
     /// Matches against a literal value.
@@ -19,11 +19,11 @@ pub enum Pattern<'s> {
     /// ( `>` | `>=` | `<=` | `<` | `==` | `!=` | `=~` | `!~` ) (pattern_constant | pattern_literal)
     ///
     /// Matches against a relation with constant values.
-    Relation(TokenRef<'s>, Box<Pattern<'s>>),
+    Relation(TokenRef<'s>, ABox<'a, Pattern<'s, 'a>>),
     /// (pattern_constant | pattern_literal) ( `..` | `..<` ) (pattern_constant | pattern_literal)
     ///
     /// Matches against a range of constant values.
-    Range(Box<Pattern<'s>>, TokenRef<'s>, Box<Pattern<'s>>),
+    Range(ABox<'a, Pattern<'s, 'a>>, TokenRef<'s>, ABox<'a, Pattern<'s, 'a>>),
     /// `_`
     ///
     /// Matches and discards a value.
@@ -48,7 +48,7 @@ pub enum Pattern<'s> {
     ///     ;
     /// ``````
     /// Matches a record pattern.
-    Record(TokenRef<'s>, Vec<RecordPattern<'s>>, TokenRef<'s>),
+    Record(TokenRef<'s>, Vec<RecordPattern<'s, 'a>>, TokenRef<'s>),
     /// ```antlr
     /// pattern_array
     ///     : '[' sub_pattern* ']'
@@ -58,7 +58,7 @@ pub enum Pattern<'s> {
     ///     | '..' pattern? ','?
     ///     ;
     /// ```
-    Array(TokenRef<'s>, Vec<ArrayPattern<'s>>, TokenRef<'s>),
+    Array(TokenRef<'s>, Vec<ArrayPattern<'s, 'a>>, TokenRef<'s>),
     /// prefix<`..`>
     ///
     /// Contains no token.
@@ -73,27 +73,28 @@ pub enum Pattern<'s> {
     /// pattern `and` pattern
     ///
     /// Matches all of the patterns.
-    And(Box<Pattern<'s>>, TokenRef<'s>, Box<Pattern<'s>>),
+    And(ABox<'a, Pattern<'s, 'a>>, TokenRef<'s>, ABox<'a, Pattern<'s, 'a>>),
     /// pattern `or` pattern
     ///
     /// Matches any of the patterns.
-    Or(Box<Pattern<'s>>, TokenRef<'s>, Box<Pattern<'s>>),
+    Or(ABox<'a, Pattern<'s, 'a>>, TokenRef<'s>, ABox<'a, Pattern<'s, 'a>>),
     /// `not` pattern
     ///
     /// Matches if the pattern does not match.
-    Not(TokenRef<'s>, Box<Pattern<'s>>),
+    Not(TokenRef<'s>, ABox<'a, Pattern<'s, 'a>>),
 
     /// Unknown pattern.
     Unknown {
-        recovered: Option<Box<Pattern<'s>>>,
+        recovered: Option<ABox<'a, Pattern<'s, 'a>>>,
         tokens: Vec<TokenRef<'s>>,
         errors: Vec<SourceDiagnostic>,
     },
 }
 
-impl<'s> Pattern<'s> {
+impl<'s, 'a> Pattern<'s, 'a> {
     pub(crate) fn wrap_as_unknown<T: Into<Vec<TokenRef<'s>>>>(
         self,
+        arena: &'a AstArena,
         tokens: T,
         error: DiagnosticCode,
     ) -> Self {
@@ -102,7 +103,7 @@ impl<'s> Pattern<'s> {
         let mut range = tokens[0].range.clone();
         range.end = tokens.last().unwrap().range.end;
         Pattern::Unknown {
-            recovered: Some(Box::new(self)),
+            recovered: Some(arena.alloc(self)),
             tokens,
             errors: vec![SourceDiagnostic::new(range, error)],
         }
@@ -143,7 +144,7 @@ impl<'s> Pattern<'s> {
     }
 }
 
-impl<'s> AstWalker<'s> for Pattern<'s> {
+impl<'s, 'a> AstWalker<'s> for Pattern<'s, 'a> {
     fn collect_diagnostics(&mut self, collector: &mut DiagnosticsCollector<'_, '_>) {
         use Pattern::*;
         match self {
@@ -209,9 +210,10 @@ impl<'s> AstWalker<'s> for Pattern<'s> {
             } => {
                 collector.append(errors);
                 tokens.collect_diagnostics(collector);
-                if let Some(mut recovered) = std::mem::take(recovered) {
+                if let Some(recovered) = std::mem::take(recovered) {
+                    let mut recovered = ABox::into_inner(recovered);
                     recovered.collect_diagnostics(collector);
-                    *self = *recovered;
+                    *self = recovered;
                 }
             }
         }

@@ -1,38 +1,38 @@
 use super::prelude::*;
 
-#[derive(Debug, Clone, PartialEq, strum::EnumIs)]
-pub enum Statement<'s> {
+#[derive(Debug, PartialEq, strum::EnumIs)]
+pub enum Statement<'s, 'a> {
     /// `';'`
     ///
     /// An empty statement.
     Empty(TokenRef<'s>),
     /// `expression ';'`
-    Expression(Box<Expression<'s>>, TokenRef<'s>),
+    Expression(ABox<'a, Expression<'s, 'a>>, TokenRef<'s>),
     /// `expression_ends_with_block`
     ///
     /// No trailing semicolon in this case. For expressions that end with a semicolon, use [Statement::Expression].
-    BlockExpression(Box<Expression<'s>>),
+    BlockExpression(ABox<'a, Expression<'s, 'a>>),
     /// `'pub'? 'mod' identifier block_expression_no_expr`
     Module(
         Option<TokenRef<'s>>,
         TokenRef<'s>,
         TokenRef<'s>,
-        Box<Expression<'s>>,
+        ABox<'a, Expression<'s, 'a>>,
     ),
     /// `'pub'? 'let' pattern '=' expression ';'`
     Bind(
         Option<TokenRef<'s>>,
         TokenRef<'s>,
-        Box<Pattern<'s>>,
+        ABox<'a, Pattern<'s, 'a>>,
         TokenRef<'s>,
-        Box<Expression<'s>>,
+        ABox<'a, Expression<'s, 'a>>,
         TokenRef<'s>,
     ),
     /// `pattern_rebind '=' expression ';'`
     Rebind(
-        Box<Pattern<'s>>,
+        ABox<'a, Pattern<'s, 'a>>,
         TokenRef<'s>,
-        Box<Expression<'s>>,
+        ABox<'a, Expression<'s, 'a>>,
         TokenRef<'s>,
     ),
     /// `'pub'? 'const' @id '=' expression ';'`
@@ -41,7 +41,7 @@ pub enum Statement<'s> {
         TokenRef<'s>,
         TokenRef<'s>,
         TokenRef<'s>,
-        Box<Expression<'s>>,
+        ABox<'a, Expression<'s, 'a>>,
         TokenRef<'s>,
     ),
     /// `expression ('=' | '+=' | '-=' | '*=' | '/=' | '%=' | '^=' | '&&=' | '||=') expression ';'`
@@ -51,9 +51,9 @@ pub enum Statement<'s> {
     /// - `expression_access` where the accessed is an extern
     /// - `expression_index` where the indexed is an extern
     Assign(
-        Box<Expression<'s>>,
+        ABox<'a, Expression<'s, 'a>>,
         TokenRef<'s>,
-        Box<Expression<'s>>,
+        ABox<'a, Expression<'s, 'a>>,
         TokenRef<'s>,
     ),
     /// `'pub'? 'fn' identifier (parameters) block_expression`
@@ -72,17 +72,17 @@ pub enum Statement<'s> {
         Option<TokenRef<'s>>,
         TokenRef<'s>,
         TokenRef<'s>,
-        Option<ParameterList<'s>>,
-        Box<Expression<'s>>,
+        Option<ParameterList<'s, 'a>>,
+        ABox<'a, Expression<'s, 'a>>,
     ),
     /// `return expression;` or `return;`
     ///
     /// If the expression is omitted, the return value is `nil`.
-    Return(TokenRef<'s>, Option<Box<Expression<'s>>>, TokenRef<'s>),
+    Return(TokenRef<'s>, Option<ABox<'a, Expression<'s, 'a>>>, TokenRef<'s>),
     /// `break expression;` or `break;`
     ///
     /// The expression is only allowed in a `loop` expression.
-    Break(TokenRef<'s>, Option<Box<Expression<'s>>>, TokenRef<'s>),
+    Break(TokenRef<'s>, Option<ABox<'a, Expression<'s, 'a>>>, TokenRef<'s>),
     /// `continue;`
     Continue(TokenRef<'s>, TokenRef<'s>),
     /// Unknown statement.
@@ -92,7 +92,7 @@ pub enum Statement<'s> {
     },
 }
 
-impl<'s> Statement<'s> {
+impl<'s, 'a> Statement<'s, 'a> {
     pub(crate) fn unknown<T: Into<Vec<TokenRef<'s>>>>(tokens: T, error: DiagnosticCode) -> Self {
         let tokens = tokens.into();
         assert!(!tokens.is_empty());
@@ -126,7 +126,7 @@ impl<'s> Statement<'s> {
     }
 }
 
-impl<'s> AstWalker<'s> for Statement<'s> {
+impl<'s, 'a> AstWalker<'s> for Statement<'s, 'a> {
     fn collect_diagnostics(&mut self, collector: &mut DiagnosticsCollector<'_, '_>) {
         use Statement::*;
         match self {

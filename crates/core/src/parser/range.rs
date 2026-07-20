@@ -3,20 +3,20 @@ use super::prelude::*;
 /// A range expression.
 ///
 /// `start..end` or `start..<end`
-#[derive(Debug, Clone, PartialEq)]
-pub struct Range<'s>(
-    pub Box<Expression<'s>>,
+#[derive(Debug, PartialEq)]
+pub struct Range<'s, 'a>(
+    pub ABox<'a, Expression<'s, 'a>>,
     pub TokenRef<'s>,
-    pub Box<Expression<'s>>,
+    pub ABox<'a, Expression<'s, 'a>>,
 );
 
-impl<'s> Range<'s> {
+impl<'s, 'a> Range<'s, 'a> {
     pub fn exclusive(&self) -> bool {
         *self.1.as_ref() == Operator::HalfOpenRange
     }
 }
 
-impl<'s> AstWalker<'s> for Range<'s> {
+impl<'s, 'a> AstWalker<'s> for Range<'s, 'a> {
     fn collect_diagnostics(&mut self, collector: &mut DiagnosticsCollector<'_, '_>) {
         let Range(start, op, end) = self;
         start.collect_diagnostics(collector);

@@ -10,15 +10,15 @@ use super::{
     statements::{semicolon, statement},
 };
 
-pub fn script<'s>(i: &mut Input<'s>) -> Result<Script<'s>> {
+pub fn script<'s, 'a>(arena: &'a AstArena, i: &mut Input<'s>) -> Result<Script<'s, 'a>> {
     let mut statements = vec![];
-    let exp: Option<Expression>;
+    let exp: Option<Expression<'s, 'a>>;
     let eof: Option<&Token>;
     loop {
-        let s: Vec<_> = repeat(0.., statement).parse_next(i)?;
+        let s: Vec<_> = repeat(0.., |i: &mut Input<'s>| statement(arena, i)).parse_next(i)?;
         let s_empty = s.is_empty();
         statements.extend(s);
-        let e = opt(expression).parse_next(i)?;
+        let e = opt(|i: &mut Input<'s>| expression(arena, i)).parse_next(i)?;
         let next = peek(opt(any)).parse_next(i)?;
         if let Some(next) = next {
             if next.is_eof() {
@@ -33,7 +33,7 @@ pub fn script<'s>(i: &mut Input<'s>) -> Result<Script<'s>> {
         }
         if let Some(e) = e {
             let s = semicolon.parse_next(i)?;
-            statements.push(Statement::Expression(e.into(), s));
+            statements.push(Statement::Expression(arena.alloc(e), s));
         } else if s_empty {
             // eats nothing in this loop and not reach the end
             // eats next token and try again
@@ -61,7 +61,7 @@ pub fn script<'s>(i: &mut Input<'s>) -> Result<Script<'s>> {
             }
         }
     }
-    let (statements, exp) = construct_statements_and_expression(statements, exp);
+    let (statements, exp) = construct_statements_and_expression(arena, statements, exp);
     let eof = eof.map(TokenRef::borrow).unwrap_or_else(|| {
         Token::unknown_at(0, TokenKind::Eof, DiagnosticCode::UnexpectedToken).into()
     });

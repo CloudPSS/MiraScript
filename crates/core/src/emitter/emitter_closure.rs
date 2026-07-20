@@ -59,10 +59,10 @@ impl DerefMut for Closures {
 }
 
 impl<'s, 'c> Emitter<'s, 'c> {
-    pub fn declare_block(
+    pub fn declare_block<'a>(
         &mut self,
-        stmts: &'s Vec<Statement<'s>>,
-        expr: &'s Option<Box<Expression<'s>>>,
+        stmts: &'s Vec<Statement<'s, 'a>>,
+        expr: &'s Option<bumpalo::boxed::Box<'a, Expression<'s, 'a>>>,
         exports: &mut ModuleExports<'s, 'c>,
     ) {
         for stmt in stmts {
@@ -72,10 +72,10 @@ impl<'s, 'c> Emitter<'s, 'c> {
             self.declare_expression(expr);
         }
     }
-    pub fn emit_block(
+    pub fn emit_block<'a>(
         &mut self,
-        stmts: &'s Vec<Statement<'s>>,
-        expr: &'s Option<Box<Expression<'s>>>,
+        stmts: &'s Vec<Statement<'s, 'a>>,
+        expr: &'s Option<bumpalo::boxed::Box<'a, Expression<'s, 'a>>>,
         scope_range: SourceRange,
         ret: Register,
         brk: Option<Register>,
@@ -100,13 +100,13 @@ impl<'s, 'c> Emitter<'s, 'c> {
         };
         has_never
     }
-    pub fn emit_fn(
+    pub fn emit_fn<'a>(
         &mut self,
         ret: Register,
         name_range: SourceRange,
         scope_start: usize,
-        args: &'s Option<ParameterList<'s>>,
-        body: &'s Expression<'s>,
+        args: &'s Option<ParameterList<'s, 'a>>,
+        body: &'s Expression<'s, 'a>,
     ) {
         let Expression::Block(_, stmts, expr, cp) = body else {
             // unreachable!("Expected block expression");
@@ -121,14 +121,14 @@ impl<'s, 'c> Emitter<'s, 'c> {
             expr,
         );
     }
-    pub fn emit_fn_like(
+    pub fn emit_fn_like<'a>(
         &mut self,
         ret: Register,
         name_range: SourceRange,
         scope_range: SourceRange,
-        args: &'s Option<ParameterList<'s>>,
-        stmts: &'s Vec<Statement<'s>>,
-        expr: &'s Option<Box<Expression<'s>>>,
+        args: &'s Option<ParameterList<'s, 'a>>,
+        stmts: &'s Vec<Statement<'s, 'a>>,
+        expr: &'s Option<bumpalo::boxed::Box<'a, Expression<'s, 'a>>>,
     ) {
         let arg_len = args.as_ref().map_or(1, |args| args.len());
         let mut has_var_args = false;

@@ -1,12 +1,12 @@
 use super::prelude::*;
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum Iterable<'s> {
-    Range(Range<'s>),
-    Value(Expression<'s>),
+#[derive(Debug, PartialEq)]
+pub enum Iterable<'s, 'a> {
+    Range(Range<'s, 'a>),
+    Value(Expression<'s, 'a>),
 }
 
-impl<'s> AstWalker<'s> for Iterable<'s> {
+impl<'s, 'a> AstWalker<'s> for Iterable<'s, 'a> {
     fn collect_diagnostics(&mut self, collector: &mut DiagnosticsCollector<'_, '_>) {
         match self {
             Iterable::Range(range) => range.collect_diagnostics(collector),

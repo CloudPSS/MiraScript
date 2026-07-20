@@ -17,7 +17,7 @@ fn format_bind(
     formatter.write_token(semicolon);
 }
 
-impl Formattable for Statement<'_> {
+impl Formattable for Statement<'_, '_> {
     fn measure(&self, formatter: &Formatter, indent: usize) -> usize {
         use Statement::*;
         match self {

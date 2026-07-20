@@ -9,28 +9,28 @@ use super::{
 };
 
 /// `(` ...items `)`
-#[derive(Debug, Clone, PartialEq)]
-pub struct ParameterList<'s>(
+#[derive(Debug, PartialEq)]
+pub struct ParameterList<'s, 'a>(
     pub TokenRef<'s>,
-    pub Vec<ArrayPattern<'s>>,
+    pub Vec<ArrayPattern<'s, 'a>>,
     pub TokenRef<'s>,
 );
 
-impl<'s> Deref for ParameterList<'s> {
-    type Target = Vec<ArrayPattern<'s>>;
+impl<'s, 'a> Deref for ParameterList<'s, 'a> {
+    type Target = Vec<ArrayPattern<'s, 'a>>;
 
     fn deref(&self) -> &Self::Target {
         &self.1
     }
 }
 
-impl DerefMut for ParameterList<'_> {
+impl DerefMut for ParameterList<'_, '_> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.1
     }
 }
 
-impl<'s> AstWalker<'s> for ParameterList<'s> {
+impl<'s, 'a> AstWalker<'s> for ParameterList<'s, 'a> {
     fn collect_diagnostics(&mut self, collector: &mut DiagnosticsCollector<'_, '_>) {
         self.0.collect_diagnostics(collector);
         self.1.collect_diagnostics(collector);
@@ -41,8 +41,12 @@ impl<'s> AstWalker<'s> for ParameterList<'s> {
     }
 }
 
-pub(super) fn parameter_list<'s>(i: &mut Input<'s>) -> Result<Option<ParameterList<'s>>> {
+pub(super) fn parameter_list<'s, 'a>(
+    arena: &'a AstArena,
+    i: &mut Input<'s>,
+) -> Result<Option<ParameterList<'s, 'a>>> {
     let list = opt(array_pattern_like(
+        arena,
         token(Operator::OpenParen),
         token_or_insert(Operator::CloseParen, DiagnosticCode::MissingCloseParen),
         false,
@@ -67,9 +71,11 @@ pub(super) fn parameter_list<'s>(i: &mut Input<'s>) -> Result<Option<ParameterLi
             unreachable!();
         };
         let pattern = std::mem::replace(&mut **p, Pattern::SpreadDiscard(kw.range.start));
-        *item = ArrayElementBase::Element(Box::new(
-            pattern.wrap_as_unknown([kw.clone()], DiagnosticCode::MispositionedRestParameter),
-        ));
+        *item = ArrayElementBase::Element(arena.alloc(pattern.wrap_as_unknown(
+            arena,
+            [kw.clone()],
+            DiagnosticCode::MispositionedRestParameter,
+        )));
     }
     Ok(Some(list))
 }

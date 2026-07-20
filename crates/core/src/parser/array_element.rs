@@ -1,22 +1,22 @@
 use super::prelude::*;
 
-#[derive(Debug, Clone, PartialEq, strum::EnumIs)]
-pub enum ArrayElementBase<'s, E, S> {
+#[derive(Debug, PartialEq, strum::EnumIs)]
+pub enum ArrayElementBase<'s, 'a, E, S> {
     /// Element
-    Element(Box<E>),
+    Element(ABox<'a, E>),
     /// `..` Spread
-    Spread(TokenRef<'s>, Box<S>),
+    Spread(TokenRef<'s>, ABox<'a, S>),
 }
 
 use ArrayElementBase::*;
 
-pub type ArrayElement<'s> = ListItem<'s, ArrayElementBase<'s, Iterable<'s>, Expression<'s>>>;
+pub type ArrayElement<'s, 'a> = ListItem<'s, 'a, ArrayElementBase<'s, 'a, Iterable<'s, 'a>, Expression<'s, 'a>>>;
 
-pub type ArgElement<'s> = ListItem<'s, ArrayElementBase<'s, Expression<'s>, Expression<'s>>>;
+pub type ArgElement<'s, 'a> = ListItem<'s, 'a, ArrayElementBase<'s, 'a, Expression<'s, 'a>, Expression<'s, 'a>>>;
 
-pub type ArrayPattern<'s> = ListItem<'s, ArrayElementBase<'s, Pattern<'s>, Pattern<'s>>>;
+pub type ArrayPattern<'s, 'a> = ListItem<'s, 'a, ArrayElementBase<'s, 'a, Pattern<'s, 'a>, Pattern<'s, 'a>>>;
 
-impl<'s, E: AstWalker<'s>, S: AstWalker<'s>> AstWalker<'s> for ArrayElementBase<'s, E, S> {
+impl<'s, 'a, E: AstWalker<'s>, S: AstWalker<'s>> AstWalker<'s> for ArrayElementBase<'s, 'a, E, S> {
     fn collect_diagnostics(&mut self, collector: &mut DiagnosticsCollector<'_, '_>) {
         match self {
             Element(value) => {

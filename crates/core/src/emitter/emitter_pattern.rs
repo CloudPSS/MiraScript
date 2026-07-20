@@ -20,9 +20,9 @@ use super::{
 };
 
 impl<'s, 'c> Emitter<'s, 'c> {
-    pub fn declare_pattern(
+    pub fn declare_pattern<'a>(
         &mut self,
-        pattern: &'s Pattern<'s>,
+        pattern: &'s Pattern<'s, 'a>,
         bind_type: Option<BindType>,
         kw_pub: &Option<TokenRef<'s>>,
         exports: &mut ModuleExports<'s, 'c>,
@@ -94,7 +94,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
         }
     }
 
-    fn emit_failed_pattern(&mut self, pattern: &'s Pattern<'s>, bind_type: Option<BindType>) {
+    fn emit_failed_pattern<'a>(&mut self, pattern: &'s Pattern<'s, 'a>, bind_type: Option<BindType>) {
         // This function is called from `emit_pattern`,
         // Do not emit diagnostics, initialization, or set markers
         match pattern {
@@ -153,9 +153,9 @@ impl<'s, 'c> Emitter<'s, 'c> {
         }
     }
 
-    fn emit_literal_constant(
+    fn emit_literal_constant<'a>(
         &mut self,
-        pattern_constant: &'s Pattern<'s>,
+        pattern_constant: &'s Pattern<'s, 'a>,
         value: Register,
     ) -> Option<Constant<'s>> {
         match pattern_constant {
@@ -206,10 +206,10 @@ impl<'s, 'c> Emitter<'s, 'c> {
         }
     }
 
-    fn emit_constant_pattern<const SAME: bool>(
+    fn emit_constant_pattern<'a, const SAME: bool>(
         &mut self,
         success: Register,
-        pattern: &'s Pattern<'s>,
+        pattern: &'s Pattern<'s, 'a>,
         value: Register,
     ) -> bool {
         let op: OpCode = if SAME { OpCode::Same } else { OpCode::Nsame };
@@ -249,10 +249,10 @@ impl<'s, 'c> Emitter<'s, 'c> {
         }
     }
 
-    fn emit_literal_guard(
+    fn emit_literal_guard<'a>(
         &mut self,
         success: Register,
-        pattern: &'s Pattern<'s>,
+        pattern: &'s Pattern<'s, 'a>,
         value: Register,
         literal: Constant<'s>,
     ) {
@@ -273,10 +273,10 @@ impl<'s, 'c> Emitter<'s, 'c> {
             Constant::String(_) => self.op_unary(pattern.range(), success, OpCode::IsString, value),
         }
     }
-    fn emit_constant_guard(
+    fn emit_constant_guard<'a>(
         &mut self,
         success: Register,
-        pattern: &'s Pattern<'s>,
+        pattern: &'s Pattern<'s, 'a>,
         value: Register,
         constant: Register,
     ) {
@@ -293,10 +293,10 @@ impl<'s, 'c> Emitter<'s, 'c> {
         );
     }
 
-    pub fn emit_pattern(
+    pub fn emit_pattern<'a>(
         &mut self,
         success: Register,
-        pattern: &'s Pattern<'s>,
+        pattern: &'s Pattern<'s, 'a>,
         value: Register,
         bind_type: Option<BindType>,
     ) {

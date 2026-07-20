@@ -17,9 +17,9 @@ use super::{
 };
 
 impl<'s, 'c> Emitter<'s, 'c> {
-    pub fn declare_statement(
+    pub fn declare_statement<'a>(
         &mut self,
-        stmt: &'s Statement<'s>,
+        stmt: &'s Statement<'s, 'a>,
         exports: &mut ModuleExports<'s, 'c>,
     ) {
         match stmt {
@@ -74,7 +74,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
         }
     }
 
-    pub fn emit_statement(&mut self, stmt: &'s Statement<'s>, brk: Option<Register>) -> bool {
+    pub fn emit_statement<'a>(&mut self, stmt: &'s Statement<'s, 'a>, brk: Option<Register>) -> bool {
         match stmt {
             Expression(expression, _) | BlockExpression(expression) => {
                 self.emit_expression(expression, Register::EMPTY, brk);

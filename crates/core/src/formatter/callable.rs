@@ -2,7 +2,7 @@ use crate::parser::Callable;
 
 use super::prelude::*;
 
-impl Formattable for Callable<'_> {
+impl Formattable for Callable<'_, '_> {
     fn measure(&self, formatter: &Formatter, indent: usize) -> usize {
         use Callable::*;
         match self {

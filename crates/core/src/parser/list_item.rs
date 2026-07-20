@@ -3,10 +3,10 @@ use std::ops::{Deref, DerefMut};
 use super::prelude::*;
 
 /// item ','?
-#[derive(Debug, Clone, PartialEq)]
-pub struct ListItem<'s, T>(pub Box<T>, pub Option<TokenRef<'s>>);
+#[derive(Debug, PartialEq)]
+pub struct ListItem<'s, 'a, T>(pub ABox<'a, T>, pub Option<TokenRef<'s>>);
 
-impl<'s, T: AstWalker<'s>> AstWalker<'s> for ListItem<'s, T> {
+impl<'s, 'a, T: AstWalker<'s>> AstWalker<'s> for ListItem<'s, 'a, T> {
     fn collect_diagnostics(&mut self, collector: &mut DiagnosticsCollector<'_, '_>) {
         self.0.collect_diagnostics(collector);
         self.1.collect_diagnostics(collector);
@@ -19,13 +19,13 @@ impl<'s, T: AstWalker<'s>> AstWalker<'s> for ListItem<'s, T> {
     }
 }
 
-impl<'s, T> ListItem<'s, T> {
-    pub fn new_with_comma(item: T, tail_comma: TokenRef<'s>) -> Self {
-        Self(Box::new(item), Some(tail_comma))
+impl<'s, 'a, T> ListItem<'s, 'a, T> {
+    pub fn new_with_comma(arena: &'a AstArena, item: T, tail_comma: TokenRef<'s>) -> Self {
+        Self(arena.alloc(item), Some(tail_comma))
     }
 
-    pub fn new(item: T) -> Self {
-        Self(Box::new(item), None)
+    pub fn new(arena: &'a AstArena, item: T) -> Self {
+        Self(arena.alloc(item), None)
     }
 
     pub fn has_tail_comma(&self) -> bool {
@@ -36,11 +36,11 @@ impl<'s, T> ListItem<'s, T> {
     }
 
     pub fn unwrap(self) -> T {
-        *self.0
+        ABox::into_inner(self.0)
     }
 }
 
-impl<T> Deref for ListItem<'_, T> {
+impl<T> Deref for ListItem<'_, '_, T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -48,7 +48,7 @@ impl<T> Deref for ListItem<'_, T> {
     }
 }
 
-impl<T> DerefMut for ListItem<'_, T> {
+impl<T> DerefMut for ListItem<'_, '_, T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
     }

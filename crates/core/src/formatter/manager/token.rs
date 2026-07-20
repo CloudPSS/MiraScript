@@ -27,7 +27,7 @@ impl<'o> FormatManager<'o> {
     pub fn write_str_token<'s>(
         &mut self,
         s: &Token<'_>,
-        expressions: &[Expression<'s>],
+        expressions: &[Expression<'s, '_>],
         measurement: usize,
     ) {
         for trivia in &s.leading_trivia {

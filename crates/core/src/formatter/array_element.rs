@@ -2,7 +2,7 @@ use crate::parser::ArrayElementBase;
 
 use super::prelude::*;
 
-impl<E: Formattable, S: Formattable> Formattable for ArrayElementBase<'_, E, S> {
+impl<E: Formattable, S: Formattable> Formattable for ArrayElementBase<'_, '_, E, S> {
     fn measure(&self, formatter: &Formatter, indent: usize) -> usize {
         use ArrayElementBase::*;
         match self {

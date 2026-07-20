@@ -28,43 +28,52 @@ pub(super) fn json_start<'s>(i: &mut Input<'s>) -> Result<()> {
         .parse_next(i)
 }
 
-enum JsonFieldName<'s> {
+enum JsonFieldName<'s, 'a> {
     Literal(TokenRef<'s>),
-    Interpolated(Box<Expression<'s>>),
+    Interpolated(ABox<'a, Expression<'s, 'a>>),
 }
-struct JsonElement<'s> {
-    key: JsonFieldName<'s>,
+struct JsonElement<'s, 'a> {
+    key: JsonFieldName<'s, 'a>,
     colon: TokenRef<'s>,
-    value: Box<Expression<'s>>,
+    value: ABox<'a, Expression<'s, 'a>>,
     comma: TokenRef<'s>,
 }
-fn json_field_name<'s>(i: &mut Input<'s>) -> Result<JsonFieldName<'s>> {
+fn json_field_name<'s: 'a, 'a>(
+    arena: &'a AstArena,
+    i: &mut Input<'s>,
+) -> Result<JsonFieldName<'s, 'a>> {
     alt((
         // "xxx"
         one_of(|t: &Token<'s>| matches!(&t.kind, &TokenKind::String(..)))
             .map(|t: &Token<'s>| JsonFieldName::Literal(t.into())),
         // `$xxx`
-        interpolation.map(|e| JsonFieldName::Interpolated(Box::new(e))),
+        (|i: &mut Input<'s>| interpolation(arena, i))
+            .map(|e| JsonFieldName::Interpolated(arena.alloc(e))),
     ))
     .parse_next(i)
 }
 
-pub(super) fn json_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
+pub(super) fn json_expression<'s: 'a, 'a>(
+    arena: &'a AstArena,
+    i: &mut Input<'s>,
+) -> Result<Expression<'s, 'a>> {
     // Peek to see if it's a JSON object-like expression
     peek(json_start).parse_next(i)?;
     let open = token(Operator::OpenBrace).parse_next(i)?;
     let elements: Vec<_> = repeat(
         1..,
         (
-            json_field_name,
+            |i: &mut Input<'s>| json_field_name(arena, i),
             token_or_insert(Operator::Colon, DiagnosticCode::MissingColon),
-            expression_or_insert(|t| *t == Operator::Comma || *t == Operator::CloseBrace),
+            expression_or_insert(arena, |t| {
+                *t == Operator::Comma || *t == Operator::CloseBrace
+            }),
             token_or_insert(Operator::Comma, DiagnosticCode::MissingComma),
         )
             .map(|(key, colon, value, comma)| JsonElement {
                 key,
                 colon,
-                value: Box::new(value),
+                value: arena.alloc(value),
                 comma,
             }),
     )
@@ -85,9 +94,9 @@ pub(super) fn json_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
             };
             if idx == el_count - 1 && e.comma.is_unknown() {
                 // Remove the trailing comma diagnostic for the last element
-                RecordElement::new(el)
+                RecordElement::new(arena, el)
             } else {
-                RecordElement::new_with_comma(el, e.comma)
+                RecordElement::new_with_comma(arena, el, e.comma)
             }
         })
         .collect();

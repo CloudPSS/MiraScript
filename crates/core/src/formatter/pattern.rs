@@ -2,7 +2,7 @@ use crate::{Operator, Pattern};
 
 use super::prelude::*;
 
-impl Formattable for Pattern<'_> {
+impl Formattable for Pattern<'_, '_> {
     fn measure(&self, formatter: &Formatter, indent: usize) -> usize {
         use Pattern::*;
         match self {

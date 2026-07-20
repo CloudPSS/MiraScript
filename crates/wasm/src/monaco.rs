@@ -1,7 +1,8 @@
 use std::pin::Pin;
 
 use mira_core::{
-    Compiler, Config, Script, SourceDiagnostic, diagnostic::encode_diagnostics, lexer::Token,
+    AstArena, Compiler, Config, Script, SourceDiagnostic, diagnostic::encode_diagnostics,
+    lexer::Token,
 };
 use wasm_bindgen::prelude::*;
 
@@ -12,7 +13,9 @@ pub struct MonacoCompiler {
     has_parse_error: bool,
     diagnostics: Vec<SourceDiagnostic>,
     tokens: Pin<Box<[Token<'static>]>>,
-    script: Option<Script<'static>>,
+    script: Option<Script<'static, 'static>>,
+    // Must be declared after `script` so the script is dropped before the arena.
+    arena: Option<AstArena>,
 }
 
 #[wasm_bindgen]
@@ -26,6 +29,7 @@ impl MonacoCompiler {
             has_parse_error: false,
             tokens: Box::pin([]),
             script: None,
+            arena: None,
         }
     }
 
@@ -38,11 +42,18 @@ impl MonacoCompiler {
         };
         let config: &'static Config = unsafe { &*(&self.config as *const Config) };
         let mut compiler = Compiler::new(input, config);
+        // Drop the old script before replacing the arena it was allocated in.
+        self.script = None;
         if let Some(tokens) = compiler.lex() {
             self.tokens = tokens.into();
             let tokens =
                 unsafe { std::slice::from_raw_parts(self.tokens.as_ptr(), self.tokens.len()) };
-            if let Some(script) = compiler.parse(tokens) {
+            self.arena = Some(AstArena::new());
+            // Safety: the arena outlives the script — `script` is always dropped
+            // (set to `None`) before `arena` is replaced or dropped.
+            let arena: &'static AstArena =
+                unsafe { &*(self.arena.as_ref().unwrap() as *const AstArena) };
+            if let Some(script) = compiler.parse(arena, tokens) {
                 self.script = Some(script);
                 self.diagnostics = compiler.diagnostics_collector.drain(..).collect();
                 self.has_parse_error = self.diagnostics.iter().any(|d| d.is_error());

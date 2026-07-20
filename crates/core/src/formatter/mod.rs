@@ -36,7 +36,7 @@ impl Default for FormatOptions {
     }
 }
 
-pub fn format(input: &Script<'_>, options: &FormatOptions) -> String {
+pub fn format(input: &Script<'_, '_>, options: &FormatOptions) -> String {
     let Script(stmts, expr, eof) = input;
     let mut formatter = Formatter::new(options, 0);
     for statement in stmts {
@@ -66,7 +66,7 @@ pub fn format(input: &Script<'_>, options: &FormatOptions) -> String {
     formatter.done()
 }
 
-pub fn format_statement(input: &Statement<'_>, options: &FormatOptions, indent: usize) -> String {
+pub fn format_statement(input: &Statement<'_, '_>, options: &FormatOptions, indent: usize) -> String {
     let mut formatter = Formatter::new(options, indent);
     let measurement = input.measure(&formatter, indent);
     input.format(&mut formatter, measurement);
