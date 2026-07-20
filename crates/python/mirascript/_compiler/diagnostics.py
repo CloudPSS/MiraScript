@@ -68,7 +68,7 @@ class Diagnostic(DiagnosticPosition):
 
                 info = get_diagnostic_message(self.code)
                 Diagnostic.__cache[self.code] = info
-            except:
+            except Exception:
                 info = (
                     "Unknown",
                     f"{self.code}",

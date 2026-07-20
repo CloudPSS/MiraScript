@@ -838,9 +838,7 @@ class Emitter:
 
         if current_blocks_body is None:
             assert isinstance(code, ast.FunctionDef)
-            current_blocks_body = code.body
         elif code is not None:
-            assert current_blocks_body is not None
             current_blocks_body.append(code)
 
         # 处理特殊的 opcode 后续逻辑

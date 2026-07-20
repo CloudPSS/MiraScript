@@ -11,7 +11,7 @@ from inspect import signature
 from types import CodeType
 
 from ..._helpers.constants import kVmFunction
-from .types import VmValue, VmAny
+from .types import VmValue
 
 P = ParamSpec("P")
 V = TypeVar("V", bound=VmValue, covariant=True, default=VmValue)
@@ -42,7 +42,7 @@ def _create_vm_function(name: str, fn: F) -> F:
     info = VmFunctionMeta()
     sig = signature(fn)
     for param in sig.parameters.values():
-        if param.kind is (param.VAR_POSITIONAL):
+        if param.kind == param.VAR_POSITIONAL:
             info.max_args = _MAX_ARGS
         elif param.kind in (param.POSITIONAL_ONLY, param.POSITIONAL_OR_KEYWORD):
             info.max_args += 1

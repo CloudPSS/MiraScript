@@ -20,7 +20,7 @@ thread_local = ThreadLocalData()
 def Cp() -> None:
     """检查点"""
     current_time = int(time() * 1000)
-    if not thread_local.cp:
+    if thread_local.cp is None:
         thread_local.cp = current_time
     elif current_time - thread_local.cp > TIMEOUT:
         raise RuntimeError(

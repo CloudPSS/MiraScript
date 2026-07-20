@@ -89,7 +89,7 @@ def Has(obj, key):
             if not idx.is_integer():
                 return False
             return 0 <= idx < len(obj)
-        except:
+        except Exception:
             return False
     return False
 

@@ -12,7 +12,6 @@ from ..types.types import Uninitialized
 
 if TYPE_CHECKING:
     from ..types.types import (
-        VmPrimitive,
         VmFunction,
         VmModule,
         VmExtern,
@@ -193,14 +192,14 @@ def _expect_callable(name: str | int, value: VmAny, recovered: VmAny) -> VmFunct
 def _get_numbers(args: "Sequence[VmValue] | None") -> "list[float]":
     if not args:
         return []
-    useFirst = False
+    use_first = False
     if len(args) == 1 and is_vm_array(args[0]):
         args = args[0]
-        useFirst = True
+        use_first = True
     numbers = []
     for i in range(len(args)):
         arg = args[i]
-        numbers.append(_expect_number(name="values" if useFirst else i, value=arg))
+        numbers.append(_expect_number(name="values" if use_first else i, value=arg))
     return numbers
 
 

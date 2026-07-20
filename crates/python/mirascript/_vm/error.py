@@ -15,8 +15,12 @@ class VmError(Exception):
 
     @staticmethod
     def from_(prefix: str, error: Exception, recovered: VmAny) -> VmError:
-        if prefix and not prefix.endswith(":"):
-            prefix += ":"
+        if prefix:
+            if prefix.endswith(":"):
+                prefix += " "
+            elif not prefix.endswith(": "):
+                prefix += ": "
         vmError = VmError(f"{prefix}{str(error)}", recovered)
+        vmError.__cause__ = error
 
         return vmError
