@@ -1,5 +1,5 @@
 import { VM_ARRAY_MAX_LENGTH } from '../../helpers/constants.js';
-import { isNaN, NotNumber, entries, fromEntries, isSafeInteger, isFinite } from '../../helpers/utils.js';
+import { NotNumber, entries, fromEntries, isSafeInteger, isFinite } from '../../helpers/utils.js';
 import { toBoolean, toNumber, toString } from '../../helpers/convert/index.js';
 import { display } from '../../helpers/serialize.js';
 import { isVmArray, isVmFunction, isVmPrimitive, isVmConst, isVmCallable, isVmRecord } from '../../helpers/types.js';
@@ -229,7 +229,7 @@ export function getNumbers(args: readonly VmAny[]): number[] {
 
 /** 将值转为数组长度 */
 export function arrayLen(len: number | null | undefined): number {
-    if (len == null || isNaN(len) || len <= -1) {
+    if (len == null || !isFinite(len) || len <= -1) {
         throwError('Array length must be a non-negative integer', null);
     }
     len = Math.trunc(len);

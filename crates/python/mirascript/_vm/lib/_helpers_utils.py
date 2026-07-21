@@ -4,7 +4,6 @@ from types import ModuleType
 from ..types import VmModule, vm_function, VmValue
 from ..._helpers.constants import VM_ARRAY_MAX_LENGTH
 from ._helpers import _throw_error
-from .vm_global.math.round import trunc
 
 
 def wrap_entry(name: str, value: VmValue, module: str):
@@ -29,13 +28,13 @@ def create_module(name: str, lib: ModuleType) -> VmModule:
     return VmModule(name, mod)
 
 
-def _array_len(length):
-    if length is None or math.isnan(length) or length <= -1:
+def _array_len(length: int | float | None) -> int:
+    if length is None or not math.isfinite(length) or length <= -1:
         _throw_error("Array length must be a non-negative integer", None)
 
-    length = trunc(length)
+    length = math.trunc(length)
     if length > VM_ARRAY_MAX_LENGTH:
         _throw_error(
             f"Array length exceeds maximum limit of {VM_ARRAY_MAX_LENGTH}", None
         )
-    return int(length)
+    return length
