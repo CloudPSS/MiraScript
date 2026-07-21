@@ -345,6 +345,7 @@ jobs:
 
     permissions:
       contents: read
+      code-quality: write
 
     steps:
       - name: Configure Git
@@ -373,10 +374,26 @@ jobs:
           cd packages/mirascript
           pnpm run test
 
+      - name: Upload mirascript coverage report
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/upload-code-coverage@v1
+        with:
+          file: packages/mirascript/coverage/cobertura-coverage.xml
+          language: TypeScript
+          label: npm/mirascript
+
       - name: Run typed tests
         run: |
           cd packages/typed
           pnpm run test
+
+      - name: Upload typed coverage report
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/upload-code-coverage@v1
+        with:
+          file: packages/typed/coverage/cobertura-coverage.xml
+          language: TypeScript
+          label: npm/typed
 
   test-python:
     needs: build-all
@@ -406,6 +423,7 @@ jobs:
 
     permissions:
       contents: read
+      code-quality: write
 
     steps:
       - name: Configure Git
