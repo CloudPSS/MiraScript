@@ -42,8 +42,9 @@ impl MonacoCompiler {
         };
         let config: &'static Config = unsafe { &*(&self.config as *const Config) };
         let mut compiler = Compiler::new(input, config);
-        // Drop the old script before replacing the arena it was allocated in.
+        // Drop the old script and arena before creating a new one.
         self.script = None;
+        self.arena = None;
         if let Some(tokens) = compiler.lex() {
             self.tokens = tokens.into();
             let tokens =
@@ -59,6 +60,8 @@ impl MonacoCompiler {
                 self.has_parse_error = self.diagnostics.iter().any(|d| d.is_error());
                 return true;
             }
+            // Clear arena on parse failure to avoid retaining partial AST nodes.
+            self.arena = None;
         }
         self.diagnostics = compiler.diagnostics_collector.drain(..).collect();
         self.has_parse_error = self.diagnostics.iter().any(|d| d.is_error());
