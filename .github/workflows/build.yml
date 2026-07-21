@@ -345,7 +345,6 @@ jobs:
 
     permissions:
       contents: read
-      code-quality: write
 
     steps:
       - name: Configure Git
@@ -374,26 +373,17 @@ jobs:
           cd packages/mirascript
           pnpm run test
 
-      - name: Upload mirascript coverage report
-        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-        uses: actions/upload-code-coverage@v1
-        with:
-          file: packages/mirascript/coverage/cobertura-coverage.xml
-          language: TypeScript
-          label: npm/mirascript
-
       - name: Run typed tests
         run: |
           cd packages/typed
           pnpm run test
 
-      - name: Upload typed coverage report
-        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-        uses: actions/upload-code-coverage@v1
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v7
         with:
-          file: packages/typed/coverage/cobertura-coverage.xml
-          language: TypeScript
-          label: npm/typed
+          path: packages/*/coverage/cobertura-coverage.xml
+          name: typescript-coverage
+          overwrite: true
 
   test-python:
     needs: build-all
@@ -423,7 +413,6 @@ jobs:
 
     permissions:
       contents: read
-      code-quality: write
 
     steps:
       - name: Configure Git
@@ -446,6 +435,8 @@ jobs:
 
       - name: Install wheels
         run: |
+          pip install --upgrade pip
+          pip install --group dev
           pip download "typing-extensions>=4.7.1" "astunparse>=1.6.3;python_version<'3.9'" "maturin>=1.0,<2.0" --dest ./python-artifacts
           pip install --pre --no-index --no-cache-dir --find-links ./python-artifacts mirascript
 
@@ -454,4 +445,58 @@ jobs:
         run: |
           cd crates/python
           rm -rf ./mirascript
-          python -m unittest -b -c tests.black_box -v
+          python -m pytest tests/ --cov=mirascript --cov-report=xml:coverage.xml --cov-report=term -v
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v7
+        with:
+          path: crates/python/coverage.xml
+          name: python-coverage
+          overwrite: true
+
+  upload-coverage:
+    needs: [test-node, test-python]
+
+    permissions:
+      contents: read
+      code-quality: write
+
+    runs-on: ubuntu-slim
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Download typescript coverage report
+        uses: actions/download-artifact@v8
+        with:
+          name: typescript-coverage
+          path: packages/
+
+      - name: Download python coverage report
+        uses: actions/download-artifact@v8
+        with:
+          name: python-coverage
+          path: crates/python/
+
+      - name: Upload mirascript coverage report
+        uses: actions/upload-code-coverage@v1
+        with:
+          file: packages/mirascript/coverage/cobertura-coverage.xml
+          language: TypeScript
+          label: npm/mirascript
+
+      - name: Upload typed coverage report
+        uses: actions/upload-code-coverage@v1
+        with:
+          file: packages/typed/coverage/cobertura-coverage.xml
+          language: TypeScript
+          label: npm/typed
+
+      - name: Upload python coverage report
+        uses: actions/upload-code-coverage@v1
+        with:
+          file: crates/python/coverage.xml
+          language: Python
+          label: python/mirascript

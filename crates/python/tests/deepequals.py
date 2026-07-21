@@ -195,19 +195,3 @@ def assert_not_deep_equal(
         raise AssertionError(f"{base_msg}: {message}")
     else:
         raise AssertionError(base_msg)
-
-
-if __name__ == "__main__":
-    # Quick demonstration / smoke tests
-    examples = [
-        (float("nan"), float("nan"), True),
-        (+0.0, -0.0, False),
-        ([1, float("nan"), +0.0], [1, float("nan"), -0.0], False),
-        ({"a": [1, 2], "b": float("nan")}, {"b": float("nan"), "a": [1, 2]}, True),
-        ({"k1": +0.0}, {"k1": -0.0}, False),
-        ({1, 2, float("nan")}, {2, float("nan"), 1}, True),
-    ]
-
-    for a, b, expected in examples:
-        result = deep_equal(a, b)
-        print(f"deep_equal({a!r}, {b!r}) -> {result}  (expected {expected})")
