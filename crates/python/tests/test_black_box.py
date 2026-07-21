@@ -47,7 +47,7 @@ def test_mira_file(mira_file: Path, vm_helpers: dict) -> None:
     pool = ThreadPoolExecutor(max_workers=MAX_WORKERS) if MAX_WORKERS > 0 else None
 
     try:
-        config_checkpoint(30000 if is_huge else 10000)
+        config_checkpoint(90000 if is_huge else 10000)
         if pool is not None:
             futures = [
                 pool.submit(_run_mira_file, mira_file, dict(vm_helpers))
