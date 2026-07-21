@@ -34,15 +34,24 @@ t_eq((x: 1, 1: [nil, nil, 3])::with([1, '1', 'y'], 4), (x: 1, 1: [nil, (y: 4), 3
 t_eq((x: 1, 1: [nil, nil, 3])::with([2, '1', 'y'], 4), (x: 1, 1: [nil, nil, 3], 2: (1: (y: 4))));
 t_eq(eo::with(['a', 'b', 'c', 'd'], 1), (a: (b: (c: (d: 1)))));
 t_eq(ea::with([1, 2, 3, 4], 1), [nil, [nil, nil, [nil, nil, nil, [nil, nil, nil, nil, 1]]]]);
+t_eq(ea::with(-0, 1), [1]);
 t_eq(ea::with(0, 1), [1]);
+t_eq(ea::with(0.99, 1), [1]);
+t_eq(ea::with(1.02, 1), [nil, 1]);
 t_eq(eo::with(0, 1), (0: 1));
 t_throws(fn { ea::with(2^31 - 1, 1) });
 t_eq(eo::with(2^31 - 1, 1), (2147483647: 1));
 t_throws(fn { ea::with(1e100, 1) });
 t_eq(eo::with(1e100, 1), ('1e+100': 1));
+t_eq(eo::with(-1, 'x'), ('-1': 'x'));
+t_eq(eo::with(-0.2, 'x'), ('-0.2': 'x'));
+t_eq(eo::with(-0, 'x'), ('0': 'x'));
 // no modify
 t_eq(eo, ());
 t_eq(ea, []);
+
+t_throws(fn { [1]::with(-1, 'x') });
+t_throws(fn { [1]::with(-0.2, 'x') });
 
 let obj = (x: 1);
 t_eq(obj::with('x', 2), (x: 2));

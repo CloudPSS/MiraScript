@@ -5,19 +5,19 @@ from ....._helpers.types import is_vm_array, is_vm_record
 from ....._helpers.convert import to_number, to_string
 from ....._helpers.constants import Uninitialized, VM_ARRAY_MAX_LENGTH
 from ....operations.helpers import Element
+from ....types.types import VmConst
 from ..._helpers import (
     _expect_array_or_record,
     _throw_error,
     _expect_const,
 )
-from ..math.round import trunc
 
 
-def _arr_index(index):
-    idx = trunc(to_number(index, math.nan))
-    if math.isnan(idx) or idx < 0:
+def _arr_index(index: VmConst) -> int:
+    num = to_number(index, math.nan)
+    if not math.isfinite(num) or num < 0:
         _throw_error("Array index must be a non-negative integer", index)
-
+    idx = math.trunc(num)
     if idx >= VM_ARRAY_MAX_LENGTH:
         _throw_error(
             f"Array index exceeds maximum limit of {VM_ARRAY_MAX_LENGTH}", index

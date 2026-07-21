@@ -49,12 +49,12 @@ def _make_vm_helpers() -> dict[str, Any]:
     @vm_function
     def t_true(v, message=None):
         logging.debug("t_true: %s", v)
-        assert v, message
+        assert v is True, message
 
     @vm_function
     def t_false(v, message=None):
         logging.debug("t_false: %s", v)
-        assert not v, message
+        assert v is False, message
 
     @vm_function
     def t_throws(fn, message=None):
@@ -108,7 +108,7 @@ def _setup_mirascript():
     """全局初始化 MiraScript 环境。"""
     logging.basicConfig(level=logging.DEBUG)
     sys.setrecursionlimit(10000)
-    config_checkpoint(10000)
+    config_checkpoint(30000)
     if mira_compile is None:
         pytest.skip("mirascript Python API not available")
 
@@ -127,12 +127,7 @@ def pytest_generate_tests(metafunc: pytest.Metafunc):
         ids = []
         for f in files:
             rel = f.relative_to(TEST_DIR).as_posix()
-            test_id = (
-                rel.replace(".mira", "")
-                .replace("/", "_")
-                .replace(".", "_")
-                .replace("-", "_")
-            )
+            test_id = rel
             marks = []
             if rel in SKIP_TESTS:
                 marks.append(
