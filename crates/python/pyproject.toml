@@ -17,8 +17,8 @@ classifiers = [
     "Topic :: Software Development :: Code Generators",
 ]
 dependencies = [
-    "typing-extensions >= 4.7.1",
-    "astunparse >= 1.6.3; python_version < '3.9'",
+    "typing-extensions>=4.7.1",
+    "astunparse>=1.6.3;python_version<'3.9'",
 ]
 
 [project.scripts]
@@ -29,7 +29,7 @@ Repository = "https://github.com/CloudPSS/MiraScript"
 Documentation = "https://mira.cloudpss.net/"
 
 [build-system]
-requires = ["maturin >=1.0,<2.0"]
+requires = ["maturin>=1.0,<2.0"]
 build-backend = "maturin"
 
 [tool.maturin]
@@ -37,7 +37,7 @@ bindings = "pyo3"
 module-name = "mirascript._compiler.core"
 
 [tool.uv]
-environments = ["python_version >= '3.10'"]
+environments = ["python_version>='3.10'"]
 
 [dependency-groups]
 dev = [
