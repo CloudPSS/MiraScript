@@ -238,6 +238,11 @@ dev = [
     { name = "pytest-cov", marker = "python_full_version >= '3.10'" },
     { name = "pytest-snapshot", marker = "python_full_version >= '3.10'" },
 ]
+test = [
+    { name = "pytest", marker = "python_full_version >= '3.10'" },
+    { name = "pytest-cov", marker = "python_full_version >= '3.10'" },
+    { name = "pytest-snapshot", marker = "python_full_version >= '3.10'" },
+]
 
 [package.metadata]
 requires-dist = [
@@ -251,6 +256,11 @@ dev = [
     { name = "maturin", specifier = ">=1.14.1" },
     { name = "poethepoet", specifier = ">=0.48.0" },
     { name = "pyright", specifier = ">=1.1.411" },
+    { name = "pytest", specifier = ">=9.1.1" },
+    { name = "pytest-cov", specifier = ">=7.1.0" },
+    { name = "pytest-snapshot", specifier = ">=0.9.0" },
+]
+test = [
     { name = "pytest", specifier = ">=9.1.1" },
     { name = "pytest-cov", specifier = ">=7.1.0" },
     { name = "pytest-snapshot", specifier = ">=0.9.0" },

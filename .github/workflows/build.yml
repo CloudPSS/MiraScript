@@ -442,7 +442,7 @@ jobs:
           pip install --pre --no-index --no-cache-dir --find-links ./python-artifacts mirascript
 
           cd crates/python
-          pip install --group dev 2>/dev/null || pip install $(python -c "import re;t=open('pyproject.toml', encoding='utf-8').read();m=re.search(r'dev\s*=\s*\[(.*?)\]',t,re.DOTALL);print(' '.join(re.findall(r'\"([^\"]+)\"',m.group(1))))")
+          pip install --group test 2>/dev/null || pip install $(python -c "import re;t=open('pyproject.toml', encoding='utf-8').read();m=re.search(r'test\s*=\s*\[(.*?)\]',t,re.DOTALL);print(' '.join(re.findall(r'\"([^\"]+)\"',m.group(1))))")
 
       - name: Run tests
         shell: bash
