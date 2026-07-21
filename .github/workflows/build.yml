@@ -428,7 +428,7 @@ jobs:
 
       - name: Install wheels
         run: |
-          pip install --pre --find-links ./python-artifacts/ mirascript
+          pip install --verbose --no-cache-dir --pre --find-links ./python-artifacts/ mirascript
 
       - name: Run tests
         shell: bash
