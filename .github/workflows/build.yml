@@ -449,7 +449,7 @@ jobs:
         run: |
           cd crates/python
           rm -rf ./mirascript
-          python -m pytest tests/ --cov=mirascript --cov-report=xml:coverage.xml --cov-report=term -v
+          python -m pytest tests/ --cov=mirascript --cov-report=xml --cov-report=term -v
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v7
