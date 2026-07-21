@@ -8,6 +8,7 @@ jobs:
   build:
     permissions:
       contents: read
+      code-quality: write
 
     uses: ./.github/workflows/build.yml
     secrets: inherit
