@@ -1,9 +1,10 @@
+from __future__ import annotations
 from enum import Enum
 from typing_extensions import Callable, Mapping, Any
 
 from ..._helpers.types import is_vm_const, is_vm_context
 from ..._helpers.constants import kVmScript
-from ..types.context import VmContext, VmContextLike, VmSharedContext
+from ..types.context import VmContext, VmContextLike, get_shared_context
 from ..types.module import VmModule
 from ..types.types import VmAny, VmConst, VmRecord, VmValue
 from ..types.function import VmFunction, vm_function
@@ -22,7 +23,7 @@ LoopBreak = _LoopControl.Break
 """标记当前值为Break"""
 
 
-def Closure(func: "Callable[[], Any]") -> "Callable[[], Any]":
+def Closure(func: Callable[[], Any]) -> Callable[[], Any]:
 
     def closure_wrapper():
         try:
@@ -34,7 +35,7 @@ def Closure(func: "Callable[[], Any]") -> "Callable[[], Any]":
     return closure_wrapper
 
 
-def Script(func: "Callable[..., Any]") -> "Callable[..., Any]":
+def Script(func: Callable[..., Any]) -> Callable[..., Any]:
 
     def script_wrapper(*args, **kwargs):
         try:
@@ -51,7 +52,7 @@ _PUB_ATTR = "__mirascript.mod.pub__"
 
 
 class _Mod(Mapping[str, VmValue]):
-    def __init__(self, pub: "dict[str, Callable[[], Any]]"):
+    def __init__(self, pub: dict[str, Callable[[], Any]]):
         self._pub = pub
 
     def __getitem__(self, key: str) -> VmValue:
@@ -72,7 +73,7 @@ def Module(name: str):
 
     def decorator(kls: type):
 
-        pub: "dict[str, Callable[[], Any]]" = {}
+        pub: dict[str, Callable[[], Any]] = {}
         for attr_name in dir(kls):
             attr = getattr(kls, attr_name)
             pub_name = getattr(attr, _PUB_ATTR, None)
@@ -95,21 +96,21 @@ def Pub(name: str):
     return decorator
 
 
-def Element(value: "VmAny") -> "VmConst | None":
+def Element(value: VmAny) -> VmConst | None:
     AssertInit(value)
     return value if is_vm_const(value) else None
 
 
-def ElementOpt(key: str, value: "VmAny") -> "VmRecord":
+def ElementOpt(key: str, value: VmAny) -> VmRecord:
     AssertInit(value)
     if value is None or not is_vm_const(value):
         return {}
     return {key: value}
 
 
-def Fn(name: "str") -> Callable[["VmFunction"], "VmFunction"]:
+def Fn(name: str) -> Callable[[VmFunction], VmFunction]:
 
-    def decorator(func: "VmFunction"):
+    def decorator(func: VmFunction):
 
         assert callable(func), f"Function {name} must be callable"
 
@@ -128,14 +129,14 @@ def Fn(name: "str") -> Callable[["VmFunction"], "VmFunction"]:
     return decorator
 
 
-def Upvalue(value: "VmAny") -> "VmValue":
+def Upvalue(value: VmAny) -> VmValue:
     AssertInit(value)
     return value  # type: ignore
 
 
-def Context(context: "VmContextLike | None" = None) -> VmContext:
+def Context(context: VmContextLike | None = None) -> VmContext:
     if context is None:
-        return VmSharedContext
+        return get_shared_context()
     if not is_vm_context(context):
         return VmContext(context)
     return context

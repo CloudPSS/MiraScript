@@ -1,7 +1,7 @@
 [project]
 name = "mirascript"
 dynamic = ["version"]
-description = "Python 绑定用于在 Python 中调用 MiraScript 编译器能力，支持脚本编译与执行。"
+description = "MiraScript 是 CloudPSS 维护的表达式优先脚本语言项目。Python 绑定用于在 Python 中调用 MiraScript 编译器能力，支持脚本编译与执行。"
 keywords = ["mirascript", "language", "compiler", "runtime", "vm"]
 readme = "README.md"
 requires-python = ">=3.7"
@@ -17,8 +17,8 @@ classifiers = [
     "Topic :: Software Development :: Code Generators",
 ]
 dependencies = [
-    "typing-extensions>=4.7.1",
-    "astunparse>=1.6.3; python_version < '3.9'",
+    "typing-extensions >= 4.7.1",
+    "astunparse >= 1.6.3; python_version < '3.9'",
 ]
 
 [project.scripts]

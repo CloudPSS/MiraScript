@@ -1,10 +1,11 @@
+from __future__ import annotations
 from typing_extensions import (
     Optional,
     Mapping,
     TypeAlias,
 )
 
-from ..._helpers.types import is_vm_value
+from ..._helpers.types import is_vm_context, is_vm_value
 from ..._helpers.constants import kVmContext
 from ..error import VmError
 from .types import VmValue
@@ -35,10 +36,8 @@ class VmContext(VmContextLike):
         no_defaults: bool = False,
         **kwargs: VmValue,
     ):
-        from .. import lib  # 加载全局库，确保全局库中的变量被注册到 VmSharedContext 中
-
         setattr(self, kVmContext, True)
-        self._data = {} if no_defaults else dict(VmSharedContext)
+        self._data = {} if no_defaults else dict(get_shared_context())
         if values:
             self._checked_merge(values)
         self._checked_merge(kwargs)
@@ -54,10 +53,6 @@ class VmContext(VmContextLike):
         except KeyError:
             raise VmError(f"Global variable '{key}' is not defined.", None) from None
 
-    def __setitem__(self, key, value):
-        _check_kv(key, value)
-        self._data[key] = value
-
     def __iter__(self):
         return iter(self._data)
 
@@ -72,4 +67,19 @@ class VmContext(VmContextLike):
 
 
 # 全局共享上下文
-VmSharedContext = VmContext(no_defaults=True)
+_shared_context: VmContext | None = None
+
+
+def get_shared_context() -> VmContext:
+    global _shared_context
+
+    if _shared_context is None:
+        # 注册全局变量到 VmSharedContext
+        from ..lib._loader import register_globals
+
+        context: dict[str, VmValue] = dict()
+        register_globals(context)
+        _shared_context = VmContext(values=context, no_defaults=True)
+        assert is_vm_context(_shared_context)
+
+    return _shared_context
