@@ -108,7 +108,6 @@ def _setup_mirascript():
     """全局初始化 MiraScript 环境。"""
     logging.basicConfig(level=logging.DEBUG)
     sys.setrecursionlimit(10000)
-    config_checkpoint(30000)
     if mira_compile is None:
         pytest.skip("mirascript Python API not available")
 

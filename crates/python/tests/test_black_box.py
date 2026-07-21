@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from mirascript import VmContext, compile as mira_compile
+from mirascript import VmContext, compile as mira_compile, config_checkpoint
 
 # 并行 workers 数
 MAX_WORKERS = 2
@@ -43,6 +43,7 @@ def test_mira_file(mira_file: Path, vm_helpers: dict) -> None:
     pool = ThreadPoolExecutor(max_workers=MAX_WORKERS) if MAX_WORKERS > 0 else None
 
     try:
+        config_checkpoint(30000 if mira_file.stem.endswith("_huge") else 10000)
         if pool is not None:
             futures = [
                 pool.submit(_run_mira_file, mira_file, dict(vm_helpers))
@@ -56,3 +57,4 @@ def test_mira_file(mira_file: Path, vm_helpers: dict) -> None:
     finally:
         if pool is not None:
             pool.shutdown(wait=False)
+        config_checkpoint()
