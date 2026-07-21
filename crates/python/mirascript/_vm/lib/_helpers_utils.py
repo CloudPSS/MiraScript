@@ -1,3 +1,4 @@
+from __future__ import annotations
 import math
 from types import ModuleType
 
@@ -5,15 +6,17 @@ from ..types import VmModule, vm_function, VmValue
 from ..._helpers.constants import VM_ARRAY_MAX_LENGTH
 from ._helpers import _throw_error
 
+__all__ = ["_wrap_entry", "_create_module", "_array_len"]
 
-def wrap_entry(name: str, value: VmValue, module: str):
+
+def _wrap_entry(name: str, value: VmValue, module: str):
     if callable(value):
         return vm_function(f"{module}.{name}")(value)
     else:
         return value
 
 
-def create_module(name: str, lib: ModuleType) -> VmModule:
+def _create_module(name: str, lib: ModuleType) -> VmModule:
     mod = {}
     keys = (
         lib.__all__
@@ -24,7 +27,7 @@ def create_module(name: str, lib: ModuleType) -> VmModule:
         if key.startswith("_") or key.endswith("_") or not hasattr(lib, key):
             continue
         value = getattr(lib, key)
-        mod[key] = wrap_entry(key, value, name)
+        mod[key] = _wrap_entry(key, value, name)
     return VmModule(name, mod)
 
 

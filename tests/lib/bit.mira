@@ -46,3 +46,27 @@ t_eq(shr(1, nan), 1);
 t_eq(shr(nan, 0), 0);
 t_eq(sar(1, nan), 1);
 t_eq(sar(nan, 0), 0);
+
+// inf 转为 0
+t_eq(b_and(inf, 2^32 - 1), 0);
+t_eq(b_or(inf, 2^32 - 1), -1);
+t_eq(b_xor(inf, 2^32 - 1), -1);
+t_eq(b_not(inf), -1);
+t_eq(shl(1, inf), 1);
+t_eq(shl(inf, 0), 0);
+t_eq(shr(1, inf), 1);
+t_eq(shr(inf, 0), 0);
+t_eq(sar(1, inf), 1);
+t_eq(sar(inf, 0), 0);
+
+// -inf 转为 0
+t_eq(b_and(-inf, 2^32 - 1), 0);
+t_eq(b_or(-inf, 2^32 - 1), -1);
+t_eq(b_xor(-inf, 2^32 - 1), -1);
+t_eq(b_not(-inf), -1);
+t_eq(shl(1, -inf), 1);
+t_eq(shl(-inf, 0), 0);
+t_eq(shr(1, -inf), 1);
+t_eq(shr(-inf, 0), 0);
+t_eq(sar(1, -inf), 1);
+t_eq(sar(-inf, 0), 0);

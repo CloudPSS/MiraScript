@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor
+from os import environ
 from pathlib import Path
 
 import pytest
@@ -14,6 +15,9 @@ from mirascript import VmContext, compile as mira_compile, config_checkpoint
 
 # 并行 workers 数
 MAX_WORKERS = 2
+
+# 跳过大型文件
+SKIP_HUGE = environ.get("SKIP_HUGE", "0") != "0"
 
 
 def _run_mira_file(mira_path: Path, globals_: dict) -> None:
@@ -36,14 +40,14 @@ def _run_mira_file(mira_path: Path, globals_: dict) -> None:
 
 def test_mira_file(mira_file: Path, vm_helpers: dict) -> None:
     """执行单个 Mira 测试文件。"""
-    # 检查是否自动跳过
-    if hasattr(mira_file, "_skip_reason"):
-        pytest.skip(getattr(mira_file, "_skip_reason"))
+    is_huge = mira_file.stem.endswith("_huge")
+    if is_huge and SKIP_HUGE:
+        pytest.skip("Skipping huge test file")
 
     pool = ThreadPoolExecutor(max_workers=MAX_WORKERS) if MAX_WORKERS > 0 else None
 
     try:
-        config_checkpoint(30000 if mira_file.stem.endswith("_huge") else 10000)
+        config_checkpoint(30000 if is_huge else 10000)
         if pool is not None:
             futures = [
                 pool.submit(_run_mira_file, mira_file, dict(vm_helpers))

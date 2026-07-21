@@ -13,7 +13,6 @@ from mirascript import (
     VmError,
     VmModule,
     compile as mira_compile,
-    config_checkpoint,
     vm_function,
 )
 from .deepequals import assert_deep_equal, assert_not_deep_equal
