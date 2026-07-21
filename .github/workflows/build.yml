@@ -446,7 +446,7 @@ jobs:
 
       - name: Install wheels
         run: |
-          pip install "typing-extensions>=4.7.1" "astunparse>=1.6.3;python_version<'3.9'" "maturin>=1.0,<2.0"
+          pip download "typing-extensions>=4.7.1" "astunparse>=1.6.3;python_version<'3.9'" "maturin>=1.0,<2.0" --dest ./python-artifacts
           pip install --pre --no-index --no-cache-dir --find-links ./python-artifacts mirascript
 
       - name: Run tests
