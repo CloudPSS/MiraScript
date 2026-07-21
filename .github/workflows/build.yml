@@ -402,6 +402,8 @@ jobs:
           - '3.14'
           - '3.14t'
         include:
+          - os: ubuntu-latest
+            python: 'pypy3.11'
           - os: windows-latest
             python: '3.7'
           - os: windows-11-arm
