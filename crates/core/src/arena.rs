@@ -1,7 +1,8 @@
 use bumpalo::Bump;
 
-/// Arena allocator for AST nodes. All `bumpalo::boxed::Box<'a, T>` allocations
-/// made through this arena live as long as the arena itself.
+/// Arena allocator for AST nodes.
+///
+/// Allocations made through this arena live until the arena is dropped or [`AstArena::reset`] is called.
 pub struct AstArena {
     bump: Bump,
 }
