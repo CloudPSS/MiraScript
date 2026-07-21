@@ -397,6 +397,7 @@ jobs:
         include:
           - os: windows-latest
             python: '3.7'
+            sdist: true
           - os: windows-11-arm
             python: '3.11'
         exclude:
@@ -428,7 +429,7 @@ jobs:
 
       - name: Install wheels
         run: |
-          pip install --verbose --no-cache-dir --pre --find-links ./python-artifacts/ mirascript
+          pip install --pre --verbose ./python-artifacts/mirascript-*.${{ matrix.sdist == true && 'tar.gz' || 'whl' }}
 
       - name: Run tests
         shell: bash
