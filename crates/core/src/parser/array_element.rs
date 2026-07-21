@@ -10,11 +10,14 @@ pub enum ArrayElementBase<'s, 'a, E, S> {
 
 use ArrayElementBase::*;
 
-pub type ArrayElement<'s, 'a> = ListItem<'s, 'a, ArrayElementBase<'s, 'a, Iterable<'s, 'a>, Expression<'s, 'a>>>;
+pub type ArrayElement<'s, 'a> =
+    ListItem<'s, 'a, ArrayElementBase<'s, 'a, Iterable<'s, 'a>, Expression<'s, 'a>>>;
 
-pub type ArgElement<'s, 'a> = ListItem<'s, 'a, ArrayElementBase<'s, 'a, Expression<'s, 'a>, Expression<'s, 'a>>>;
+pub type ArgElement<'s, 'a> =
+    ListItem<'s, 'a, ArrayElementBase<'s, 'a, Expression<'s, 'a>, Expression<'s, 'a>>>;
 
-pub type ArrayPattern<'s, 'a> = ListItem<'s, 'a, ArrayElementBase<'s, 'a, Pattern<'s, 'a>, Pattern<'s, 'a>>>;
+pub type ArrayPattern<'s, 'a> =
+    ListItem<'s, 'a, ArrayElementBase<'s, 'a, Pattern<'s, 'a>, Pattern<'s, 'a>>>;
 
 impl<'s, 'a, E: AstWalker<'s>, S: AstWalker<'s>> AstWalker<'s> for ArrayElementBase<'s, 'a, E, S> {
     fn collect_diagnostics(&mut self, collector: &mut DiagnosticsCollector<'_, '_>) {

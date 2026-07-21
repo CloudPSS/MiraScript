@@ -94,7 +94,11 @@ impl<'s, 'c> Emitter<'s, 'c> {
         }
     }
 
-    fn emit_failed_pattern<'a>(&mut self, pattern: &'s Pattern<'s, 'a>, bind_type: Option<BindType>) {
+    fn emit_failed_pattern<'a>(
+        &mut self,
+        pattern: &'s Pattern<'s, 'a>,
+        bind_type: Option<BindType>,
+    ) {
         // This function is called from `emit_pattern`,
         // Do not emit diagnostics, initialization, or set markers
         match pattern {

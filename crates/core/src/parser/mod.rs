@@ -74,6 +74,9 @@ pub fn to_input<'s>(tokens: &'s [Token<'s>]) -> Input<'s> {
     TokenSlice::new(tokens)
 }
 
-pub fn parse<'s, 'a>(arena: &'a crate::arena::AstArena, i: &mut Input<'s>) -> Result<Script<'s, 'a>> {
+pub fn parse<'s, 'a>(
+    arena: &'a crate::arena::AstArena,
+    i: &mut Input<'s>,
+) -> Result<Script<'s, 'a>> {
     scripts::script(arena, i)
 }

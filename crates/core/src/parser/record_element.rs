@@ -16,9 +16,11 @@ pub enum RecordElementBase<'s, 'a, E, I> {
 
 use RecordElementBase::*;
 
-pub type RecordElement<'s, 'a> = ListItem<'s, 'a, RecordElementBase<'s, 'a, Expression<'s, 'a>, Expression<'s, 'a>>>;
+pub type RecordElement<'s, 'a> =
+    ListItem<'s, 'a, RecordElementBase<'s, 'a, Expression<'s, 'a>, Expression<'s, 'a>>>;
 
-pub type RecordPattern<'s, 'a> = ListItem<'s, 'a, RecordElementBase<'s, 'a, Pattern<'s, 'a>, Pattern<'s, 'a>>>;
+pub type RecordPattern<'s, 'a> =
+    ListItem<'s, 'a, RecordElementBase<'s, 'a, Pattern<'s, 'a>, Pattern<'s, 'a>>>;
 
 impl<'s, 'a, E, I> RecordElementBase<'s, 'a, E, I> {
     pub fn colon(&self) -> Option<&Token<'s>> {

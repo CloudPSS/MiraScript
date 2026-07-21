@@ -167,9 +167,17 @@ pub enum Expression<'s, 'a> {
     /// 1. `==` `!=` `=~` `!~` equality
     /// 1. `&&` logical and
     /// 1. `||` logical or
-    Infix(ABox<'a, Expression<'s, 'a>>, TokenRef<'s>, ABox<'a, Expression<'s, 'a>>),
+    Infix(
+        ABox<'a, Expression<'s, 'a>>,
+        TokenRef<'s>,
+        ABox<'a, Expression<'s, 'a>>,
+    ),
     /// expression `is` pattern
-    Is(ABox<'a, Expression<'s, 'a>>, TokenRef<'s>, ABox<'a, Pattern<'s, 'a>>),
+    Is(
+        ABox<'a, Expression<'s, 'a>>,
+        TokenRef<'s>,
+        ABox<'a, Pattern<'s, 'a>>,
+    ),
 
     // block-like
     /// `{` statements* expression? `}`
@@ -255,7 +263,11 @@ pub enum Expression<'s, 'a> {
     ///
     /// Just like function declarations, but without the identifier.
     /// See [Statement::Function] for more details.
-    Function(TokenRef<'s>, Option<ParameterList<'s, 'a>>, ABox<'a, Expression<'s, 'a>>),
+    Function(
+        TokenRef<'s>,
+        Option<ParameterList<'s, 'a>>,
+        ABox<'a, Expression<'s, 'a>>,
+    ),
     /// Unknown expression
     Unknown {
         recovered: Option<ABox<'a, Expression<'s, 'a>>>,

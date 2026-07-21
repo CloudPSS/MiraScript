@@ -187,7 +187,10 @@ fn mod_statement<'s, 'a>(arena: &'a AstArena, i: &mut Input<'s>) -> Result<State
         .parse_next(i)
 }
 
-pub(super) fn statement<'s, 'a>(arena: &'a AstArena, i: &mut Input<'s>) -> Result<Statement<'s, 'a>> {
+pub(super) fn statement<'s, 'a>(
+    arena: &'a AstArena,
+    i: &mut Input<'s>,
+) -> Result<Statement<'s, 'a>> {
     dispatch! {peek(any);
         t if *t == Operator::OpenBrace => (|i: &mut Input<'s>| block_expression(arena, i)).map(|e| arena.alloc(e)).map(Statement::BlockExpression),
         t if *t == Keyword::If => (|i: &mut Input<'s>| if_expression(arena, i)).map(|e| arena.alloc(e)).map(Statement::BlockExpression),

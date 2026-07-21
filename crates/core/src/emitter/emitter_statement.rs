@@ -74,7 +74,11 @@ impl<'s, 'c> Emitter<'s, 'c> {
         }
     }
 
-    pub fn emit_statement<'a>(&mut self, stmt: &'s Statement<'s, 'a>, brk: Option<Register>) -> bool {
+    pub fn emit_statement<'a>(
+        &mut self,
+        stmt: &'s Statement<'s, 'a>,
+        brk: Option<Register>,
+    ) -> bool {
         match stmt {
             Expression(expression, _) | BlockExpression(expression) => {
                 self.emit_expression(expression, Register::EMPTY, brk);

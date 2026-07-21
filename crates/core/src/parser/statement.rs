@@ -78,11 +78,19 @@ pub enum Statement<'s, 'a> {
     /// `return expression;` or `return;`
     ///
     /// If the expression is omitted, the return value is `nil`.
-    Return(TokenRef<'s>, Option<ABox<'a, Expression<'s, 'a>>>, TokenRef<'s>),
+    Return(
+        TokenRef<'s>,
+        Option<ABox<'a, Expression<'s, 'a>>>,
+        TokenRef<'s>,
+    ),
     /// `break expression;` or `break;`
     ///
     /// The expression is only allowed in a `loop` expression.
-    Break(TokenRef<'s>, Option<ABox<'a, Expression<'s, 'a>>>, TokenRef<'s>),
+    Break(
+        TokenRef<'s>,
+        Option<ABox<'a, Expression<'s, 'a>>>,
+        TokenRef<'s>,
+    ),
     /// `continue;`
     Continue(TokenRef<'s>, TokenRef<'s>),
     /// Unknown statement.

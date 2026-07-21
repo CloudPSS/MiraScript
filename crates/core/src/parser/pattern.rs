@@ -23,7 +23,11 @@ pub enum Pattern<'s, 'a> {
     /// (pattern_constant | pattern_literal) ( `..` | `..<` ) (pattern_constant | pattern_literal)
     ///
     /// Matches against a range of constant values.
-    Range(ABox<'a, Pattern<'s, 'a>>, TokenRef<'s>, ABox<'a, Pattern<'s, 'a>>),
+    Range(
+        ABox<'a, Pattern<'s, 'a>>,
+        TokenRef<'s>,
+        ABox<'a, Pattern<'s, 'a>>,
+    ),
     /// `_`
     ///
     /// Matches and discards a value.
@@ -73,11 +77,19 @@ pub enum Pattern<'s, 'a> {
     /// pattern `and` pattern
     ///
     /// Matches all of the patterns.
-    And(ABox<'a, Pattern<'s, 'a>>, TokenRef<'s>, ABox<'a, Pattern<'s, 'a>>),
+    And(
+        ABox<'a, Pattern<'s, 'a>>,
+        TokenRef<'s>,
+        ABox<'a, Pattern<'s, 'a>>,
+    ),
     /// pattern `or` pattern
     ///
     /// Matches any of the patterns.
-    Or(ABox<'a, Pattern<'s, 'a>>, TokenRef<'s>, ABox<'a, Pattern<'s, 'a>>),
+    Or(
+        ABox<'a, Pattern<'s, 'a>>,
+        TokenRef<'s>,
+        ABox<'a, Pattern<'s, 'a>>,
+    ),
     /// `not` pattern
     ///
     /// Matches if the pattern does not match.

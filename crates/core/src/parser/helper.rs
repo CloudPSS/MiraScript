@@ -29,10 +29,7 @@ pub(super) fn construct_statements_and_expression<'s, 'a>(
 pub(super) fn statements_and_expression<'s, 'a>(
     arena: &'a AstArena,
     i: &mut Input<'s>,
-) -> Result<(
-    Vec<Statement<'s, 'a>>,
-    Option<ABox<'a, Expression<'s, 'a>>>,
-)> {
+) -> Result<(Vec<Statement<'s, 'a>>, Option<ABox<'a, Expression<'s, 'a>>>)> {
     let (statements, expression): (Vec<_>, _) = (
         repeat(0.., |i: &mut Input<'s>| statement(arena, i)),
         opt(|i: &mut Input<'s>| expression(arena, i)),

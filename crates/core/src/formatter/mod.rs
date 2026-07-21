@@ -66,7 +66,11 @@ pub fn format(input: &Script<'_, '_>, options: &FormatOptions) -> String {
     formatter.done()
 }
 
-pub fn format_statement(input: &Statement<'_, '_>, options: &FormatOptions, indent: usize) -> String {
+pub fn format_statement(
+    input: &Statement<'_, '_>,
+    options: &FormatOptions,
+    indent: usize,
+) -> String {
     let mut formatter = Formatter::new(options, indent);
     let measurement = input.measure(&formatter, indent);
     input.format(&mut formatter, measurement);
