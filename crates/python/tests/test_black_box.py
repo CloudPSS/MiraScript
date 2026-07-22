@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 from typing_extensions import TYPE_CHECKING
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Executor, ThreadPoolExecutor
 from os import environ
 from pathlib import Path
 
@@ -24,7 +24,7 @@ from mirascript import (
 from .deepequals import assert_deep_equal, assert_not_deep_equal
 
 # 并行 workers 数
-MAX_WORKERS = 2
+MAX_WORKERS = int(environ.get("MAX_WORKERS", "2"))
 
 # 跳过大型文件
 SKIP_HUGE = environ.get("SKIP_HUGE", "0") != "0"
@@ -127,22 +127,14 @@ def test_mira_file(mira_file: Path) -> None:
     if is_huge and SKIP_HUGE:
         pytest.skip("Skipping huge test file")
 
-    pool = ThreadPoolExecutor(max_workers=MAX_WORKERS) if MAX_WORKERS > 0 else None
+    with (
+        ThreadPoolExecutor(max_workers=MAX_WORKERS) if MAX_WORKERS > 0 else Executor()
+    ) as pool:
+        config_checkpoint(300 if is_huge else 10)
 
-    try:
-        timeout_fns = None
-        config_checkpoint(120 if is_huge else 10)
-        if pool is not None:
-            futures = [
-                pool.submit(_run_mira_file, mira_file) for _ in range(MAX_WORKERS)
-            ]
-            timeout_fns = _run_mira_file(mira_file)
-            for future in futures:
-                future.result()
-        else:
-            timeout_fns = _run_mira_file(mira_file)
+        for _ in range(MAX_WORKERS):
+            pool.submit(_run_mira_file, mira_file)
+
+        timeout_fns = _run_mira_file(mira_file)
         config_checkpoint()  # 重置检查点配置
         _run_timeout_fns(timeout_fns)
-    finally:
-        if pool is not None:
-            pool.shutdown(wait=False)
