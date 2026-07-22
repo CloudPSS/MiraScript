@@ -2,6 +2,7 @@ import math
 
 from ....._helpers.convert import to_number
 from ....._helpers.types import is_vm_array, is_vm_const
+from ....types.types import VmAny, VmConst, VmValue
 from ....operations import Add, Call, Div, Mul, Sub, Cp
 from ..._helpers import (
     _expect_array,
@@ -32,48 +33,46 @@ __all__ = [
 ]
 
 
-def sizeImpl(matrix):
-    # if not isinstance(matrix, list):
-
+def _size_impl(matrix: VmAny) -> list[int]:
     if not is_vm_array(matrix):
         return []
     if len(matrix) == 0:
         return [0]
 
-    numRows = len(matrix)
-    numCols = 0
+    num_rows = len(matrix)
+    num_cols = 0
 
     for row in matrix:
         if is_vm_array(row):
-            numCols = max(numCols, len(row))
+            num_cols = max(num_cols, len(row))
         else:
-            return [numRows]
-    return [numRows, numCols]
+            return [num_rows]
+    return [num_rows, num_cols]
 
 
-def num(v):
-    return to_number(v if v is not None else None)
+def _num(v: VmAny) -> float:
+    return to_number(v)
 
 
-def size(matrix):
+def size(matrix: VmAny) -> list[float]:
     _required("matrix", matrix, [])
-    return sizeImpl(matrix)
+    return [float(n) for n in _size_impl(matrix)]
 
 
-def transpose(matrix):
+def transpose(matrix) -> VmAny:
     _required("matrix", matrix, [])
-    dims = sizeImpl(matrix)
+    dims = _size_impl(matrix)
 
     if len(dims) < 2:
         return matrix
-    numRows, numCols = dims
+    num_rows, num_cols = dims
 
     transpose = []
 
-    for j in range(numCols):
+    for j in range(num_cols):
         Cp()
         newRow = []
-        for i in range(numRows):
+        for i in range(num_rows):
             row = matrix[i] if i < len(matrix) else None
             item = row[j] if row and j < len(row) else None
             newRow.append(item)
@@ -81,9 +80,9 @@ def transpose(matrix):
     return transpose
 
 
-def entrywiseImpl(a, b, f, vvf=None, mmf=None, vmf=None, mvf=None):
-    aDims = sizeImpl(a)
-    bDims = sizeImpl(b)
+def _entrywise_impl(a, b, f, vvf=None, mmf=None, vmf=None, mvf=None):
+    aDims = _size_impl(a)
+    bDims = _size_impl(b)
 
     if len(aDims) == 0:
         if len(bDims) == 0:
@@ -214,31 +213,31 @@ def entrywise(matrix, scalar, fn):
             return None
         return ret
 
-    return entrywiseImpl(matrix, scalar, f)
+    return _entrywise_impl(matrix, scalar, f)
 
 
 def add(a, b):
     _expect_const("a", a, [])
     _expect_const("b", b, [])
-    return entrywiseImpl(a, b, Add)
+    return _entrywise_impl(a, b, Add)
 
 
 def subtract(a, b):
     _expect_const("a", a, [])
     _expect_const("b", b, [])
-    return entrywiseImpl(a, b, Sub)
+    return _entrywise_impl(a, b, Sub)
 
 
 def entrywise_multiply(a, b):
     _expect_const("a", a, [])
     _expect_const("b", b, [])
-    return entrywiseImpl(a, b, Mul)
+    return _entrywise_impl(a, b, Mul)
 
 
 def entrywise_divide(a, b):
     _expect_const("a", a, [])
     _expect_const("b", b, [])
-    return entrywiseImpl(a, b, Div)
+    return _entrywise_impl(a, b, Div)
 
 
 def multiply(a, b):
@@ -251,7 +250,7 @@ def multiply(a, b):
         for i in range(rr):
             aItem = a[i] if i < len(a) else None
             bItem = b[i] if i < len(b) else None
-            s += num(aItem) * num(bItem)
+            s += _num(aItem) * _num(bItem)
 
         return s
 
@@ -285,7 +284,7 @@ def multiply(a, b):
                 bRow = b[j] if j < len(b) else None
                 bItem = bRow[i] if bRow and i < len(bRow) else None
                 # newRow.append(Mul_(aItem, bItem))
-                item += num(aItem) * num(bItem)
+                item += _num(aItem) * _num(bItem)
             result.append(item)
         return result
 
@@ -303,12 +302,12 @@ def multiply(a, b):
             result.append(sum)
         return result
 
-    return entrywiseImpl(a, b, Mul, vvf=vvf, mmf=mmf, vmf=vmf, mvf=mvf)
+    return _entrywise_impl(a, b, Mul, vvf=vvf, mmf=mmf, vmf=vmf, mvf=mvf)
 
 
 def invert(matrix):
     _expect_const("matrix", matrix, [])
-    dims = sizeImpl(matrix)
+    dims = _size_impl(matrix)
 
     if len(dims) == 0:
         return Div(1, matrix)
@@ -419,28 +418,26 @@ def diagonal(vector, k=0):
     return result
 
 
-def filled(size, value):
+def _filled(size: tuple[VmValue, ...], value: VmConst) -> VmConst:
     s = _get_numbers(size)
     if len(s) == 0:
         return []
 
     while len(s) > 0:
-        # s.insert(0,1)
         repeat = _array_len(s.pop())
         Cp()
-        data = []
-        for i in range(repeat):
-            data.append(value)
+        # 从 MiraScript 语义而言，可以使用同一个引用
+        data = [value] * repeat
         value = data
     return value
 
 
 def zeros(*size):
-    return filled(size, 0)
+    return _filled(size, 0)
 
 
 def ones(*size):
-    return filled(size, 1)
+    return _filled(size, 1)
 
 
 def identity(*size):
@@ -455,13 +452,9 @@ def identity(*size):
     m = _array_len(s[0])
     n = _array_len(s[1])
 
-    result = []
-    for i in range(m):
-        newRow = []
-        for j in range(n):
-            if i == j:
-                newRow.append(1)
-            else:
-                newRow.append(0)
-        result.append(newRow)
+    result = [[0.0] * n for _ in range(m)]
+
+    for i in range(min(m, n)):
+        result[i][i] = 1.0
+
     return result

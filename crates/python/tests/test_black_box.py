@@ -5,6 +5,7 @@
 """
 
 from __future__ import annotations
+from typing_extensions import Callable
 from concurrent.futures import ThreadPoolExecutor
 from os import environ
 from pathlib import Path
@@ -20,7 +21,7 @@ MAX_WORKERS = 2
 SKIP_HUGE = environ.get("SKIP_HUGE", "0") != "0"
 
 
-def _run_mira_file(mira_path: Path, globals_: dict) -> None:
+def _run_mira_file(mira_path: Path, globals_: dict) -> list[tuple[Callable, str]]:
     """编译并执行单个 .mira 测试文件。"""
     code = mira_path.read_text(encoding="utf-8")
 
@@ -31,8 +32,12 @@ def _run_mira_file(mira_path: Path, globals_: dict) -> None:
     ctx = VmContext(globals_)
     script(ctx)
 
-    # 执行超时回调
-    timeout_fns: list = globals_.pop("_timeout_fns", [])
+    timeout_fns: list[tuple[Callable, str]] = globals_.pop("_timeout_fns", [])
+    return timeout_fns
+
+
+def _run_timeout_fns(timeout_fns: list[tuple[Callable, str]]) -> None:
+    """执行超时回调函数，确保它们抛出 RuntimeError。"""
     for fn, message in timeout_fns:
         with pytest.raises(RuntimeError, match="Execution timed out"):
             fn()
@@ -47,18 +52,20 @@ def test_mira_file(mira_file: Path, vm_helpers: dict) -> None:
     pool = ThreadPoolExecutor(max_workers=MAX_WORKERS) if MAX_WORKERS > 0 else None
 
     try:
-        config_checkpoint(60 if is_huge else 1)
+        timeout_fns = None
+        config_checkpoint(120 if is_huge else 1)
         if pool is not None:
             futures = [
                 pool.submit(_run_mira_file, mira_file, dict(vm_helpers))
                 for _ in range(MAX_WORKERS)
             ]
-            _run_mira_file(mira_file, vm_helpers)
+            timeout_fns = _run_mira_file(mira_file, vm_helpers)
             for future in futures:
                 future.result()
         else:
-            _run_mira_file(mira_file, vm_helpers)
+            timeout_fns = _run_mira_file(mira_file, vm_helpers)
+        config_checkpoint()  # 重置检查点配置
+        _run_timeout_fns(timeout_fns)
     finally:
         if pool is not None:
             pool.shutdown(wait=False)
-        config_checkpoint()

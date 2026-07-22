@@ -1,5 +1,5 @@
+from __future__ import annotations
 from ast import (
-    AST,
     Assign,
     AugAssign,
     BinOp,
@@ -26,7 +26,6 @@ from ast import (
     expr_context,
     expr,
     Subscript,
-    iter_fields,
     Constant,
     operator,
     stmt,
@@ -51,7 +50,7 @@ if TYPE_CHECKING:
 
     from .._vm.types.types import VmPrimitive
 
-    T = TypeVar("T", bound=AST)
+    T = TypeVar("T", bound=expr | stmt | arg)
     Ctx: TypeAlias = Literal["Load", "Store", "Del", None]
     Op: TypeAlias = Literal[
         "Add",
@@ -89,9 +88,9 @@ class ASTHelper:
         self,
         lineno: int = 0,
         col_offset: int = 0,
-        end_lineno: "int | None" = None,
-        end_col_offset: "int | None" = None,
-        source_lines: "Sequence[str] | None" = None,
+        end_lineno: int | None = None,
+        end_col_offset: int | None = None,
+        source_lines: Sequence[str] | None = None,
     ):
         self.lineno = lineno
         self.col_offset = col_offset
@@ -99,65 +98,54 @@ class ASTHelper:
         self.end_col_offset = end_col_offset
         self.source_lines = source_lines
 
-    def ctx(self, ctx: "Ctx" = None) -> expr_context:
+    def ctx(self, ctx: Ctx = None) -> expr_context:
         if ctx == "Load" or ctx is None:
-            return self.set_position(Load())
+            return Load()
         elif ctx == "Store":
-            return self.set_position(Store())
+            return Store()
         elif ctx == "Del":
-            return self.set_position(Del())
+            return Del()
         else:
             assert_never(ctx)
             raise ValueError(f"Invalid context: {ctx}")
 
-    def op(self, op: "Op") -> operator:
+    def op(self, op: Op) -> operator:
         kls = getattr(ast, op, None)
         if kls is None or not issubclass(kls, operator):
             raise ValueError(f"Invalid operator: {op}")
-        return self.set_position(kls())
+        return kls()
 
-    def cmpop(self, op: "CmpOp") -> cmpop:
+    def cmpop(self, op: CmpOp) -> cmpop:
         kls = getattr(ast, op, None)
         if kls is None or not issubclass(kls, cmpop):
             raise ValueError(f"Invalid comparison operator: {op}")
-        return self.set_position(kls())
+        return kls()
 
-    def boolop(self, op: "BoolOp") -> boolop:
+    def boolop(self, op: BoolOp) -> boolop:
         kls = getattr(ast, op, None)
         if kls is None or not issubclass(kls, boolop):
             raise ValueError(f"Invalid boolean operator: {op}")
-        return self.set_position(kls())
+        return kls()
 
-    def unaryop(self, op: "UnaryOp") -> unaryop:
+    def unaryop(self, op: UnaryOp) -> unaryop:
         kls = getattr(ast, op, None)
         if kls is None or not issubclass(kls, unaryop):
             raise ValueError(f"Invalid unary operator: {op}")
-        return self.set_position(kls())
+        return kls()
 
-    def set_position(self, node: "T", deep=False) -> "T":
+    def set_position(self, node: T) -> T:
         """为AST节点设置行号和列偏移量"""
 
-        if deep:
-            for field, value in iter_fields(node):
-                if isinstance(value, list):
-                    for item in value:
-                        if isinstance(item, AST):
-                            self.set_position(item, deep=True)
-                elif isinstance(value, AST):
-                    self.set_position(value, deep=True)
-
         # 设置当前节点的位置信息
-        if not hasattr(node, "lineno"):
-            setattr(node, "lineno", self.lineno)
-        if not hasattr(node, "col_offset"):
-            setattr(node, "col_offset", self.col_offset)
-        if self.end_lineno and not hasattr(node, "end_lineno"):
-            setattr(node, "end_lineno", self.end_lineno)
-        if self.end_col_offset and not hasattr(node, "end_col_offset"):
-            setattr(node, "end_col_offset", self.end_col_offset)
+        node.lineno = self.lineno
+        node.col_offset = self.col_offset
+        if self.end_lineno is not None:
+            node.end_lineno = self.end_lineno
+        if self.end_col_offset is not None:
+            node.end_col_offset = self.end_col_offset
         return node
 
-    def load(self, node: "str | expr") -> expr:
+    def load(self, node: str | expr) -> expr:
         """生成一个加载变量的 AST 节点"""
         if isinstance(node, str):
             if node == "None":
@@ -165,13 +153,13 @@ class ASTHelper:
             return self.var(node, ctx=self.ctx("Load"))
         return node
 
-    def store(self, node: "str | Name") -> Name:
+    def store(self, node: str | Name) -> Name:
         """生成一个存储变量的 AST 节点"""
         if isinstance(node, str):
             return self.var(node, ctx=self.ctx("Store"))
         return node
 
-    def var(self, name: str, ctx: "expr_context | None" = None) -> Name:
+    def var(self, name: str, ctx: expr_context | None = None) -> Name:
         """生成一个变量的 AST 节点"""
         return self.set_position(Name(id=name, ctx=ctx or self.ctx("Load")))
 
@@ -179,7 +167,7 @@ class ASTHelper:
         """生成一个整数常量的 AST 节点"""
         return self.set_position(Constant(value=value))
 
-    def const(self, value: "VmPrimitive" = None) -> expr:
+    def const(self, value: VmPrimitive = None) -> expr:
         """生成一个常量的 AST 节点"""
         if is_number(value):
             value = float(value)
@@ -189,7 +177,7 @@ class ASTHelper:
         """生成一个表达式语句的 AST 节点"""
         return self.set_position(Expr(value=value))
 
-    def ret(self, value: "expr | str") -> Return:
+    def ret(self, value: expr | str) -> Return:
         """生成一个返回语句的 AST 节点"""
         return self.set_position(Return(value=self.load(value)))
 
@@ -197,9 +185,7 @@ class ASTHelper:
         """生成一个 pass 语句的 AST 节点"""
         return self.set_position(Pass())
 
-    def subscript(
-        self, value: "str | expr", slice: expr, ctx: "Ctx" = None
-    ) -> Subscript:
+    def subscript(self, value: str | expr, slice: expr, ctx: Ctx = None) -> Subscript:
         """生成一个下标访问的 AST 节点"""
 
         # Compatibility: ast.Index was removed in Python 3.9.
@@ -217,7 +203,7 @@ class ASTHelper:
             )
         )
 
-    def assign(self, target: "str | expr | Iterable[expr]", value: expr) -> Assign:
+    def assign(self, target: str | expr | Iterable[expr], value: expr) -> Assign:
         """生成一个赋值语句的 AST 节点"""
         if isinstance(target, str):
             target = self.store(target)
@@ -228,9 +214,7 @@ class ASTHelper:
             )
         )
 
-    def call(
-        self, func: "expr | str", args: "Iterable[expr | str] | None" = None
-    ) -> Call:
+    def call(self, func: expr | str, args: Iterable[expr | str] | None = None) -> Call:
         """生成一个函数调用的 AST 节点"""
         if args is None:
             args = []
@@ -242,11 +226,11 @@ class ASTHelper:
             )
         )
 
-    def starred(self, value: "expr | str", ctx: "Ctx" = None) -> Starred:
+    def starred(self, value: expr | str, ctx: Ctx = None) -> Starred:
         """生成一个星号表达式的 AST 节点"""
         return self.set_position(Starred(value=self.load(value), ctx=self.ctx(ctx)))
 
-    def tuple(self, elements: "Iterable[expr | str]", ctx: "Ctx" = None) -> Tuple:
+    def tuple(self, elements: Iterable[expr | str], ctx: Ctx = None) -> Tuple:
         """生成一个元组的 AST 节点"""
         elts = [
             self.var(e, ctx=self.ctx(ctx)) if isinstance(e, str) else e
@@ -256,8 +240,8 @@ class ASTHelper:
 
     def dict(
         self,
-        items: "Iterable[tuple[expr | str, expr | str]]",
-        ctx: "Ctx" = None,
+        items: Iterable[tuple[expr | str, expr | str]],
+        ctx: Ctx = None,
     ) -> Dict:
         """生成一个字典的 AST 节点"""
         keys = []
@@ -271,7 +255,7 @@ class ASTHelper:
             values.append(v)
         return self.set_position(Dict(keys=keys, values=values))
 
-    def list(self, elements: "Iterable[expr | str]", ctx: "Ctx" = None) -> List:
+    def list(self, elements: Iterable[expr | str], ctx: Ctx = None) -> List:
         """生成一个列表的 AST 节点"""
         elts = [
             self.var(e, ctx=self.ctx(ctx)) if isinstance(e, str) else e
@@ -281,15 +265,24 @@ class ASTHelper:
 
     def assign_call(
         self,
-        target: "str | expr | Iterable[expr]",
-        func: "expr | str",
-        args: "Iterable[expr | str] | None" = None,
+        target: str | expr | Iterable[expr],
+        func: expr | str,
+        args: Iterable[expr | str] | None = None,
     ) -> Assign:
         """生成一个赋值调用的 AST 节点"""
         call_node = self.call(func, args)
         return self.assign(target, call_node)
 
-    def aug_assign(self, target: "str | Name", op: operator, value: expr) -> AugAssign:
+    def void_call(
+        self,
+        func: expr | str,
+        args: Iterable[expr | str] | None = None,
+    ) -> Expr:
+        """生成一个无返回值调用的 AST 节点"""
+        call_node = self.call(func, args)
+        return self.expr(call_node)
+
+    def aug_assign(self, target: str | Name, op: operator, value: expr) -> AugAssign:
         """生成一个增强赋值的 AST 节点"""
         return self.set_position(
             AugAssign(
@@ -302,9 +295,9 @@ class ASTHelper:
     def func_def(
         self,
         name: str,
-        args: "arguments | None" = None,
-        body: "Iterable[stmt] | None" = None,
-        decorator_list: "Iterable[expr | str] | None" = None,
+        args: arguments | None = None,
+        body: Iterable[stmt] | None = None,
+        decorator_list: Iterable[expr | str] | None = None,
     ) -> FunctionDef:
         """生成一个函数定义的 AST 节点"""
         return self.set_position(
@@ -319,8 +312,8 @@ class ASTHelper:
     def class_def(
         self,
         name: str,
-        body: "Iterable[stmt] | None" = None,
-        decorator_list: "Iterable[expr | str] | None" = None,
+        body: Iterable[stmt] | None = None,
+        decorator_list: Iterable[expr | str] | None = None,
     ) -> ast.ClassDef:
         """生成一个类定义的 AST 节点"""
         return self.set_position(
@@ -333,9 +326,7 @@ class ASTHelper:
             )
         )
 
-    def compare(
-        self, left: "str | expr", op: "cmpop | CmpOp", comparator: expr
-    ) -> Compare:
+    def compare(self, left: str | expr, op: cmpop | CmpOp, comparator: expr) -> Compare:
         """生成一个比较表达式的 AST 节点"""
         if isinstance(op, str):
             op = self.cmpop(op)
@@ -347,9 +338,7 @@ class ASTHelper:
             )
         )
 
-    def binary(
-        self, left: "str | expr", op: "operator | Op", right: "str | expr"
-    ) -> BinOp:
+    def binary(self, left: str | expr, op: operator | Op, right: str | expr) -> BinOp:
         """生成一个二元表达式的 AST 节点"""
         if isinstance(op, str):
             op = self.op(op)
@@ -363,23 +352,21 @@ class ASTHelper:
 
     def args(
         self,
-        args: "Iterable[str] | None" = None,
-        vararg: "str | None" = "vargs",
-        kwarg: "str | None" = "kwargs",
+        args: Iterable[str] | None = None,
+        vararg: str | None = "vargs",
+        kwarg: str | None = "kwargs",
     ) -> arguments:
         """生成一个参数列表的 AST 节点"""
         if args is None:
             args = []
-        return self.set_position(
-            arguments(
-                posonlyargs=[],
-                args=[self.arg(a) for a in args],
-                defaults=[],
-                vararg=self.arg(vararg) if vararg else None,
-                kwarg=self.arg(kwarg) if kwarg else None,
-                kw_defaults=[],
-                kwonlyargs=[],
-            )
+        return arguments(
+            posonlyargs=[],
+            args=[self.arg(a) for a in args],
+            defaults=[],
+            vararg=self.arg(vararg) if vararg else None,
+            kwarg=self.arg(kwarg) if kwarg else None,
+            kw_defaults=[],
+            kwonlyargs=[],
         )
 
     def arg(self, name: str) -> arg:
@@ -394,7 +381,7 @@ class ASTHelper:
         """生成一个 while 表达式的 AST 节点"""
         return self.set_position(While(test=test, body=[], orelse=[]))
 
-    def for_expr(self, target: "str | Name", iter: "str | expr") -> For:
+    def for_expr(self, target: str | Name, iter: str | expr) -> For:
         """生成一个 for 表达式的 AST 节点"""
         return self.set_position(
             For(
@@ -409,7 +396,7 @@ class ASTHelper:
         """生成一个未初始化的虚拟机值的 AST 节点"""
         return self.load("Uninitialized")
 
-    def vm_hint(self, hint: "str | None" = None) -> "Expr | Pass":
+    def vm_hint(self, hint: str | None = None) -> Expr | Pass:
         """生成一个虚拟机提示的 AST 节点"""
         if not hint and self.lineno > 0:
             source = (
@@ -426,8 +413,8 @@ class ASTHelper:
         return self.expr(self.const(hint))
 
     def vm_element(
-        self, args: "str | Iterable[str | expr]", helper_name="Element", spread=False
-    ) -> "Call | Starred":
+        self, args: str | Iterable[str | expr], helper_name="Element", spread=False
+    ) -> Call | Starred:
         """生成一个虚拟机元素的 AST 节点"""
         if isinstance(args, str):
             args = [args]
@@ -437,7 +424,7 @@ class ASTHelper:
         else:
             return call
 
-    def vm_if(self, test: "expr | str", negate: bool) -> If:
+    def vm_if(self, test: expr | str, negate: bool) -> If:
         """生成一个虚拟机条件表达式的 AST 节点"""
 
         return self.if_expr(
@@ -462,7 +449,7 @@ class ASTHelper:
 
     def vm_range_loop(
         self, index: str, start: str, end: str, exclusive=False
-    ) -> "tuple[Sequence[stmt], While]":
+    ) -> tuple[Sequence[stmt], While]:
         """生成一个虚拟机范围循环的 AST 节点"""
         start_name = f"start_{self.lineno}"
         end_name = f"end_{self.lineno}"
