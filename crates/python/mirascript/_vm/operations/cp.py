@@ -2,7 +2,7 @@ from __future__ import annotations
 from time import time
 from math import isfinite, isnan
 from threading import local
-from typing_extensions import Optional
+from typing_extensions import Final
 
 from ..._helpers.checker import is_number
 
@@ -13,7 +13,7 @@ __all__ = [
     "config_checkpoint",
 ]
 
-TIME_ORIGIN: float = time()
+TIME_ORIGIN: Final[float] = time()
 
 
 def _timestamp() -> float:
@@ -21,9 +21,9 @@ def _timestamp() -> float:
     return time() - TIME_ORIGIN
 
 
-CP_DEFAULT_INTERVAL: int = 100
-MAX_DEPTH: int = 128
-CP_DEFAULT_TIMEOUT: float = 0.5  # 默认超时时间，单位秒
+CP_DEFAULT_INTERVAL: Final[int] = 100
+MAX_DEPTH: Final[int] = 128
+CP_DEFAULT_TIMEOUT: Final[float] = 0.5  # 默认超时时间，单位秒
 
 cp_timeout: float = CP_DEFAULT_TIMEOUT
 cp_interval: int = CP_DEFAULT_INTERVAL
@@ -35,7 +35,7 @@ class _ThreadLocalData(local):
     cp: float = float("nan")
 
 
-thread_local = _ThreadLocalData()
+thread_local: Final = _ThreadLocalData()
 
 
 def Cp() -> None:

@@ -28,8 +28,8 @@ MAX_WORKERS = 2
 # 跳过大型文件
 SKIP_HUGE = environ.get("SKIP_HUGE", "0") != "0"
 
-TimeoutFns = list[tuple[Callable, str]]
-VmTestHelpers: TypeAlias = tuple[TimeoutFns, dict[str, VmValue]]
+TimeoutFns: TypeAlias = "list[tuple[Callable, str]]"
+VmTestHelpers: TypeAlias = "tuple[TimeoutFns, dict[str, VmValue]]"
 
 
 def _make_vm_helpers() -> VmTestHelpers:

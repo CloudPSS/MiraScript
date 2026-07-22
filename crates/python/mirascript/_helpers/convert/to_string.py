@@ -4,7 +4,7 @@ import math
 
 from ..._vm.types.types import Uninitialized, VmAny, VmValue
 from ..._vm.error import VmError
-from ..serialize import display_function
+from ..serialize import display
 
 
 def _number_to_string(x: float | int) -> str:
@@ -41,7 +41,7 @@ def _inner_to_string(val: VmValue, useBraces: bool) -> str:
     if isinstance(val, (int, float)):
         return _number_to_string(val)
     if callable(val):
-        return display_function(val)
+        return display(val)
 
     if isinstance(val, (list, tuple)):
         strings = []

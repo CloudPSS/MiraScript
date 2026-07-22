@@ -72,4 +72,8 @@ def vm_function(  # pyright: ignore[reportInconsistentOverload]
     if not callable(name_or_fn):
         raise TypeError("Invalid function")
 
-    return _create_vm_function(name_or_fn.__name__, name_or_fn)
+    original_name = name_or_fn.__name__
+    if original_name.startswith("<") and original_name.endswith(">"):
+        original_name = ""
+
+    return _create_vm_function(original_name, name_or_fn)
