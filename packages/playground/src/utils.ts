@@ -1,5 +1,6 @@
 import type { VmAny } from '@mirascript/mirascript';
 import { monaco, mirascript, ready, mirascriptMonaco } from './loader.js';
+import type { monacoApi } from '@mirascript/monaco';
 
 /** HTML escape */
 export function escapeHtml(value: string): string {
@@ -41,7 +42,7 @@ export async function print(value: VmAny | Error): Promise<string> {
     const model = monaco.editor.createModel(valueStr, 'mirascript');
     const { FormatterProvider } = mirascriptMonaco;
     try {
-        const formatted = await FormatterProvider.format(model);
+        const formatted = await FormatterProvider.format(model as monacoApi.editor.ITextModel);
         if (formatted) {
             return syntaxHighlight(formatted, 'mirascript');
         }

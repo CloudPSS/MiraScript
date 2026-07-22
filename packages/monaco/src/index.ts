@@ -2,6 +2,7 @@ import type { VmContext } from '@mirascript/mirascript';
 import { type editor, languages, registerMonacoApi, type IDisposable, type MonacoApi } from './monaco-api.js';
 import { registerContribution } from './contribute.js';
 import type { LspFeaturesConfig } from './lsp/index.js';
+export type { monaco as monacoApi } from './monaco-api.js';
 
 /** 提供全局变量信息 */
 export type VmContextProvider = (model: editor.ITextModel) => languages.ProviderResult<VmContext>;
