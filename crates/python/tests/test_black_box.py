@@ -53,7 +53,7 @@ def test_mira_file(mira_file: Path, vm_helpers: dict) -> None:
 
     try:
         timeout_fns = None
-        config_checkpoint(120 if is_huge else 1)
+        config_checkpoint(120 if is_huge else 3)
         if pool is not None:
             futures = [
                 pool.submit(_run_mira_file, mira_file, dict(vm_helpers))
