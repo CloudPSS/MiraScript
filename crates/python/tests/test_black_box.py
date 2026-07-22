@@ -5,7 +5,7 @@
 """
 
 from __future__ import annotations
-from typing_extensions import Callable, TypeAlias
+from typing_extensions import TYPE_CHECKING
 from concurrent.futures import ThreadPoolExecutor
 from os import environ
 from pathlib import Path
@@ -19,6 +19,7 @@ from mirascript import (
     VmError,
     VmModule,
     VmValue,
+    VmFunction,
 )
 from .deepequals import assert_deep_equal, assert_not_deep_equal
 
@@ -28,8 +29,11 @@ MAX_WORKERS = 2
 # 跳过大型文件
 SKIP_HUGE = environ.get("SKIP_HUGE", "0") != "0"
 
-TimeoutFns: TypeAlias = "list[tuple[Callable, str]]"
-VmTestHelpers: TypeAlias = "tuple[TimeoutFns, dict[str, VmValue]]"
+if TYPE_CHECKING:
+    from typing_extensions import Callable, TypeAlias
+
+    TimeoutFns: TypeAlias = list[tuple[Callable, str]]
+    VmTestHelpers: TypeAlias = tuple[TimeoutFns, dict[str, VmValue]]
 
 
 def _make_vm_helpers() -> VmTestHelpers:
@@ -38,23 +42,23 @@ def _make_vm_helpers() -> VmTestHelpers:
     timeout_fns: TimeoutFns = []
 
     @vm_function
-    def t_eq(a, b, message=None):
+    def t_eq(a: VmValue, b: VmValue, message: str | None = None):
         assert_deep_equal(a, b, message=message)
 
     @vm_function
-    def t_ne(a, b, message=None):
+    def t_ne(a: VmValue, b: VmValue, message: str | None = None):
         assert_not_deep_equal(a, b, message=message)
 
     @vm_function
-    def t_true(v, message=None):
+    def t_true(v: VmValue, message: str | None = None):
         assert v is True, message
 
     @vm_function
-    def t_false(v, message=None):
+    def t_false(v: VmValue, message: str | None = None):
         assert v is False, message
 
     @vm_function
-    def t_throws(fn, message=None):
+    def t_throws(fn: VmFunction, message: str | None = None):
         try:
             fn()
         except VmError:
@@ -63,13 +67,12 @@ def _make_vm_helpers() -> VmTestHelpers:
         raise AssertionError(msg)
 
     @vm_function
-    def t_timeout(fn, message="Execution timed out"):
+    def t_timeout(fn: VmFunction, message: str = "Execution timed out"):
         timeout_fns.append((fn, message))
 
     @vm_function
-    def t_never(message=None):
-        msg = message or "This should never be called"
-        raise AssertionError(msg)
+    def t_never(message: str = "This should never be called"):
+        raise AssertionError(message)
 
     context = {
         "t_eq": t_eq,
