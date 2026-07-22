@@ -165,13 +165,13 @@ class ASTHelper:
 
     def const_int(self, value: int) -> Constant:
         """生成一个整数常量的 AST 节点"""
-        return self.set_position(Constant(value=value))
+        return self.set_position(Constant(value=value,kind=None))
 
     def const(self, value: VmPrimitive = None) -> expr:
         """生成一个常量的 AST 节点"""
         if is_number(value):
             value = float(value)
-        return self.set_position(Constant(value=value))
+        return self.set_position(Constant(value=value,kind=None))
 
     def expr(self, value: expr) -> Expr:
         """生成一个表达式语句的 AST 节点"""

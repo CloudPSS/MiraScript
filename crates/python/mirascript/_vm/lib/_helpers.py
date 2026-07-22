@@ -99,42 +99,42 @@ def _expect_integer(name: str | int, value: VmAny) -> float:
 
 
 def _expect_number_range(
-    name: str | int, value: VmAny, min_: float | None = None, max_: float | None = None
+    name: str | int, value: VmAny, min: float | None = None, max: float | None = None
 ) -> float:
     value = _expect_number(name, value)
     if not math.isfinite(value):
         return _throw_error(
-            f"{_describe_param(name)} is less than minimum value {min_}: {display(value)}",
+            f"{_describe_param(name)} is less than minimum value {min}: {display(value)}",
             math.nan,
         )
-    if min_ is not None:
-        if value < min_:
+    if min is not None:
+        if value < min:
             return _throw_error(
-                f"{_describe_param(name)} is less than minimum value {min_}: {display(value)}",
-                min_,
+                f"{_describe_param(name)} is less than minimum value {min}: {display(value)}",
+                min,
             )
-    if max_ is not None:
-        if value > max_:
+    if max is not None:
+        if value > max:
             return _throw_error(
-                f"{_describe_param(name)} is greater than maximum value {max_}: {display(value)}",
-                max_,
+                f"{_describe_param(name)} is greater than maximum value {max}: {display(value)}",
+                max,
             )
     return value
 
 
 def _expect_integer_range(
-    name: str | int, value: VmAny, min_: int | float, max_: int | float
+    name: str | int, value: VmAny, min: int | float, max: int | float
 ) -> float:
     value = _expect_integer(name, value)
-    if value < min_:
+    if value < min:
         return _throw_error(
-            f"{_describe_param(name)} is less than minimum value {min_}: {display(value)}",
-            min_,
+            f"{_describe_param(name)} is less than minimum value {min}: {display(value)}",
+            min,
         )
-    if value > max_:
+    if value > max:
         return _throw_error(
-            f"{_describe_param(name)} is greater than maximum value {max_}: {display(value)}",
-            max_,
+            f"{_describe_param(name)} is greater than maximum value {max}: {display(value)}",
+            max,
         )
     return value
 
@@ -189,7 +189,7 @@ def _expect_callable(name: str | int, value: VmAny, recovered: VmAny) -> VmFunct
     return value
 
 
-def _get_numbers(args: "Sequence[VmValue] | None") -> "list[float]":
+def _get_numbers(args: Sequence[VmValue] | None) -> list[float]:
     if not args:
         return []
     use_first = False

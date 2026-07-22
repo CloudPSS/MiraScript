@@ -2,6 +2,7 @@ from __future__ import annotations
 import math
 import re
 
+from ..._vm.types import VmAny
 from ..checker import is_number
 from .to_string import to_string
 
@@ -25,7 +26,7 @@ def _format_number(num):
     return ps if len(ps) < len(s) else s
 
 
-def to_format(value, fmt: str | None = None) -> str:
+def to_format(value: VmAny, fmt: str | None = None) -> str:
     fmt = fmt.strip() if fmt is not None else ""
 
     if is_number(value):
@@ -38,7 +39,7 @@ def to_format(value, fmt: str | None = None) -> str:
                 ff = 0
             elif ff > 100:
                 ff = 100
-            return f"{value:.{math.trunc(ff)}f}"
+            return format(value, f".{math.trunc(ff)}f")
         else:
             return _format_number(value)
     return to_string(value)

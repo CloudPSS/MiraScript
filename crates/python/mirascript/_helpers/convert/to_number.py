@@ -4,7 +4,7 @@ import math
 import re
 
 from ..._vm.error import VmError
-from ..._vm.types import Uninitialized
+from ..._vm.types import Uninitialized, VmAny
 
 
 def _parse_number(s: str) -> float | None:
@@ -56,10 +56,10 @@ T = TypeVar("T")
 
 
 @overload
-def to_number(value) -> float: ...
+def to_number(value: VmAny) -> float: ...
 @overload
-def to_number(value, fallback: T) -> float | T: ...
-def to_number(value, fallback: T = Uninitialized) -> float | T:
+def to_number(value: VmAny, fallback: T) -> float | T: ...
+def to_number(value: VmAny, fallback: T = Uninitialized) -> float | T:
     if isinstance(value, bool):
         return 1.0 if value else 0.0
 
