@@ -1,3 +1,4 @@
+import type { monacoApi } from '@mirascript/monaco';
 import type { editor, IDisposable, IPosition, IRange, Position, Range, Selection, Uri } from '@private/monaco-editor';
 import type { EndOfLine, TextDocument } from 'vscode';
 import { fromPosition, fromRange, toPosition, toRange } from './utils.js';
@@ -14,7 +15,7 @@ const EMPTY_DISPOSABLE: IDisposable = Object.freeze({
 /**
  * Adapts a VS Code TextDocument to a Monaco Editor ITextModel.
  */
-export class ModelAdapter implements editor.ITextModel {
+export class ModelAdapter implements monacoApi.editor.ITextModel {
     /** Get or create a ModelAdapter for a TextDocument */
     static readonly from = createAdapterFactory<TextDocument, ModelAdapter>(
         (document) => new ModelAdapter(document),
@@ -33,6 +34,13 @@ export class ModelAdapter implements editor.ITextModel {
     }
     /** @inheritdoc */
     getCustomLineHeightsDecorations(ownerId?: number): editor.IModelDecoration[] {
+        return [];
+    }
+    /** @inheritdoc */
+    getCustomLineHeightsDecorationsInRange(
+        range: monacoApi.Range,
+        ownerId?: number,
+    ): monacoApi.editor.IModelDecoration[] {
         return [];
     }
     /** @inheritdoc */
