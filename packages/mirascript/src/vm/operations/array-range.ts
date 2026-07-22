@@ -16,10 +16,12 @@ export const $ArrayRange = (start: VmAny, end: VmAny): VmArray => {
     const s = $ToNumber(start);
     const e = $ToNumber(end);
     if (isEmptyRange(s, e)) return [];
-    assertArrayLength(e - s + 1);
+    const n = Math.floor(e - s + 1);
+    assertArrayLength(n);
     const arr = [];
-    for (let i = s; i <= e; i++) {
-        arr.push(i);
+    arr.length = n;
+    for (let i = 0; i < n; i++) {
+        arr[i] = s + i;
     }
     return arr;
 };
@@ -28,10 +30,12 @@ export const $ArrayRangeExclusive = (start: VmAny, end: VmAny): VmArray => {
     const s = $ToNumber(start);
     const e = $ToNumber(end);
     if (isEmptyRange(s, e)) return [];
-    assertArrayLength(e - s);
+    const n = Math.ceil(e - s);
+    assertArrayLength(n);
     const arr = [];
-    for (let i = s; i < e; i++) {
-        arr.push(i);
+    arr.length = n;
+    for (let i = 0; i < n; i++) {
+        arr[i] = s + i;
     }
     return arr;
 };

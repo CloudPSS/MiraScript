@@ -38,7 +38,6 @@ from .slice import Slice, SliceExclusive
 from .helpers import (
     LoopBreak,
     LoopContinue,
-    Closure,
     Script,
     Module,
     Pub,
@@ -104,7 +103,6 @@ __all__ = [
     "SliceExclusive",
     "LoopBreak",
     "LoopContinue",
-    "Closure",
     "Script",
     "Module",
     "Pub",

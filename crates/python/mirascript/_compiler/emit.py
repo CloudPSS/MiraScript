@@ -62,14 +62,12 @@ def emit(
         module = ast.Module(
             body=[
                 ast_helper.vm_hint(hint),
-                ast_helper.set_position(
-                    ast.ImportFrom(
-                        module="mirascript._vm.operations",
-                        names=[
-                            ast.alias(name="*", asname=None, lineno=0, col_offset=0)
-                        ],
-                        level=0,
-                    )
+                ast.ImportFrom(
+                    module="mirascript._vm.operations",
+                    names=[ast.alias(name="*", asname=None, lineno=0, col_offset=0)],
+                    level=0,
+                    lineno=0,
+                    col_offset=0,
                 ),
                 script,
             ],

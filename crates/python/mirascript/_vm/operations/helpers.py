@@ -23,18 +23,6 @@ LoopBreak = _LoopControl.Break
 """标记当前值为Break"""
 
 
-def Closure(func: Callable[[], Any]) -> Callable[[], Any]:
-
-    def closure_wrapper():
-        try:
-            CpEnter()
-            return func()
-        finally:
-            CpExit()
-
-    return closure_wrapper
-
-
 def Script(func: Callable[..., Any]) -> Callable[..., Any]:
 
     def script_wrapper(*args, **kwargs):

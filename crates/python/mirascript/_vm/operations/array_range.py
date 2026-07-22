@@ -5,7 +5,7 @@ from ..types.types import VmAny, VmArray
 from .convert import ToNumber
 
 
-def _assert_array_length(length: float) -> None:
+def _assert_array_length(length: int) -> None:
     if length > VM_ARRAY_MAX_LENGTH:
         raise RuntimeError(
             f"Array length exceeds maximum limit of {VM_ARRAY_MAX_LENGTH}"
@@ -21,12 +21,11 @@ def ArrayRange(start: VmAny, end: VmAny) -> VmArray:
     e = ToNumber(end)
     if _is_empty_range(s, e):
         return []
-    _assert_array_length(e - s + 1)
-    arr: VmArray = []
-    i = s
-    while i <= e:
-        arr.append(i)
-        i += 1.0
+    n = math.floor((e - s) + 1.0)
+    _assert_array_length(n)
+    arr: VmArray = [0.0] * n
+    for i in range(n):
+        arr[i] = s + i
     return arr
 
 
@@ -35,10 +34,9 @@ def ArrayRangeExclusive(start: VmAny, end: VmAny) -> VmArray:
     e = ToNumber(end)
     if _is_empty_range(s, e):
         return []
-    _assert_array_length(e - s)
-    arr: VmArray = []
-    i = s
-    while i < e:
-        arr.append(i)
-        i += 1.0
+    n = math.ceil(e - s)
+    _assert_array_length(n)
+    arr: VmArray = [0.0] * n
+    for i in range(n):
+        arr[i] = s + i
     return arr

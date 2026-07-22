@@ -75,12 +75,15 @@ dev = [
     "poethepoet>=0.48.0",
     "pyright>=1.1.411",
     { include-group = "test" },
+    { include-group = "perf" },
 ]
 test = ["pytest-cov", "pytest-snapshot", "pytest"]
+perf = [{ include-group = "test" }, "pytest-profiling", "snakeviz"]
 
 [tool.poe.tasks]
 init = "maturin develop"
 test = "pytest --cov=mirascript --cov-report=xml --cov-report=lcov --cov-report=term-missing:skip-covered"
+perf = { shell = "pytest --profile $POE_EXTRA_ARGS && snakeviz ./prof/combined.prof", cwd = "${POE_CWD}" }
 format = "black ."
 check = "pyright ."
 debug = { cmd = "python -m mirascript -g debug_output.py", cwd = "${POE_CWD}" }

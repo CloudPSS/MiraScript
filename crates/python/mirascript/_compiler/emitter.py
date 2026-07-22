@@ -81,10 +81,10 @@ class Emitter:
             helper.args(kwarg=None, vararg=None),
             [
                 self.create_regs_array(helper, nreg - 1, 2),
+                helper.void_call("Cp", []),
                 block,
                 helper.ret("LoopContinue"),
             ],
-            ["Closure"],
         )
 
         hint = helper.vm_hint()
