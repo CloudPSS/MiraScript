@@ -5,17 +5,10 @@ from __future__ import annotations
 import logging
 import sys
 from pathlib import Path
-from typing import Any
 
 import pytest
 
-from mirascript import (
-    VmError,
-    VmModule,
-    compile as mira_compile,
-    vm_function,
-)
-from .deepequals import assert_deep_equal, assert_not_deep_equal
+from mirascript import compile as mira_compile
 
 # Mira 测试用例目录
 TEST_DIR = (Path(__file__) / "../../../../tests").resolve()
@@ -30,78 +23,6 @@ def _collect_mira_files() -> list[Path]:
     return sorted(TEST_DIR.rglob("*.mira"))
 
 
-def _make_vm_helpers() -> dict[str, Any]:
-    """创建注入 Mira 脚本的全局辅助函数与变量。"""
-
-    timeout_fns: list[tuple[Any, str | None]] = []
-
-    @vm_function
-    def t_eq(a, b, message=None):
-        logging.debug("t_eq: %s == %s", a, b)
-        assert_deep_equal(a, b, message=message)
-
-    @vm_function
-    def t_ne(a, b, message=None):
-        logging.debug("t_ne: %s != %s", a, b)
-        assert_not_deep_equal(a, b, message=message)
-
-    @vm_function
-    def t_true(v, message=None):
-        logging.debug("t_true: %s", v)
-        assert v is True, message
-
-    @vm_function
-    def t_false(v, message=None):
-        logging.debug("t_false: %s", v)
-        assert v is False, message
-
-    @vm_function
-    def t_throws(fn, message=None):
-        logging.debug("t_throws: expecting exception from %s", fn)
-        try:
-            fn()
-        except VmError:
-            return
-        msg = message or "Expected VmError but none was raised"
-        raise AssertionError(msg)
-
-    @vm_function
-    def t_timeout(fn, message=None):
-        logging.debug("t_timeout: expecting timeout from %s", fn)
-        timeout_fns.append(
-            (fn, message if message is not None else "Execution timed out")
-        )
-
-    @vm_function
-    def t_never(message=None):
-        logging.debug("t_never: this should never be called")
-        msg = message or "This should never be called"
-        raise AssertionError(msg)
-
-    return {
-        "t_eq": t_eq,
-        "t_ne": t_ne,
-        "t_true": t_true,
-        "t_false": t_false,
-        "t_throws": t_throws,
-        "t_timeout": t_timeout,
-        "t_never": t_never,
-        "v_array": [],
-        "v_record": {},
-        "v_nil": None,
-        "v_true": True,
-        "v_false": False,
-        "v_number": 42,
-        "v_string": "Hello, Mira!",
-        "v_fn": vm_function(lambda: "I am a function"),
-        "v_fn_another": vm_function(lambda: "I am another function"),
-        "has_extern": False,
-        "v_module": VmModule("v_module", {}),
-        "v_module_another": VmModule("v_module_another", {}),
-        "_timeout_fns": timeout_fns,
-    }
-
-
 @pytest.fixture(scope="session", autouse=True)
 def _setup_mirascript():
     """全局初始化 MiraScript 环境。"""
@@ -109,12 +30,6 @@ def _setup_mirascript():
     sys.setrecursionlimit(10000)
     if mira_compile is None:
         pytest.skip("mirascript Python API not available")
-
-
-@pytest.fixture
-def vm_helpers() -> dict[str, Any]:
-    """提供注入 Mira 脚本的辅助函数（每个测试独立）。"""
-    return _make_vm_helpers()
 
 
 def pytest_generate_tests(metafunc: pytest.Metafunc):

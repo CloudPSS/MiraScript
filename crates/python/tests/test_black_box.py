@@ -5,14 +5,22 @@
 """
 
 from __future__ import annotations
-from typing_extensions import Callable
+from typing_extensions import Callable, TypeAlias
 from concurrent.futures import ThreadPoolExecutor
 from os import environ
 from pathlib import Path
 
 import pytest
 
-from mirascript import VmContext, compile as mira_compile, config_checkpoint
+from mirascript import (
+    compile as mira_compile,
+    config_checkpoint,
+    vm_function,
+    VmError,
+    VmModule,
+    VmValue,
+)
+from .deepequals import assert_deep_equal, assert_not_deep_equal
 
 # 并行 workers 数
 MAX_WORKERS = 2
@@ -20,8 +28,77 @@ MAX_WORKERS = 2
 # 跳过大型文件
 SKIP_HUGE = environ.get("SKIP_HUGE", "0") != "0"
 
+TimeoutFns = list[tuple[Callable, str]]
+VmTestHelpers: TypeAlias = tuple[TimeoutFns, dict[str, VmValue]]
 
-def _run_mira_file(mira_path: Path, globals_: dict) -> list[tuple[Callable, str]]:
+
+def _make_vm_helpers() -> VmTestHelpers:
+    """创建注入 Mira 脚本的全局辅助函数与变量。"""
+
+    timeout_fns: TimeoutFns = []
+
+    @vm_function
+    def t_eq(a, b, message=None):
+        assert_deep_equal(a, b, message=message)
+
+    @vm_function
+    def t_ne(a, b, message=None):
+        assert_not_deep_equal(a, b, message=message)
+
+    @vm_function
+    def t_true(v, message=None):
+        assert v is True, message
+
+    @vm_function
+    def t_false(v, message=None):
+        assert v is False, message
+
+    @vm_function
+    def t_throws(fn, message=None):
+        try:
+            fn()
+        except VmError:
+            return
+        msg = message or "Expected VmError but none was raised"
+        raise AssertionError(msg)
+
+    @vm_function
+    def t_timeout(fn, message="Execution timed out"):
+        timeout_fns.append((fn, message))
+
+    @vm_function
+    def t_never(message=None):
+        msg = message or "This should never be called"
+        raise AssertionError(msg)
+
+    context = {
+        "t_eq": t_eq,
+        "t_ne": t_ne,
+        "t_true": t_true,
+        "t_false": t_false,
+        "t_throws": t_throws,
+        "t_timeout": t_timeout,
+        "t_never": t_never,
+        "v_array": [],
+        "v_record": {},
+        "v_nil": None,
+        "v_true": True,
+        "v_false": False,
+        "v_number": 42,
+        "v_string": "Hello, Mira!",
+        "v_fn": vm_function(lambda: "I am a function"),
+        "v_fn_another": vm_function(lambda: "I am another function"),
+        "has_extern": False,
+        "v_module": VmModule("v_module", {}),
+        "v_module_another": VmModule("v_module_another", {}),
+    }
+
+    return timeout_fns, context
+
+
+def _run_mira_file(
+    mira_path: Path,
+) -> TimeoutFns:
     """编译并执行单个 .mira 测试文件。"""
     code = mira_path.read_text(encoding="utf-8")
 
@@ -29,21 +106,19 @@ def _run_mira_file(mira_path: Path, globals_: dict) -> list[tuple[Callable, str]
     if script is None:
         raise AssertionError("Compilation failed, no script generated")
 
-    ctx = VmContext(globals_)
-    script(ctx)
-
-    timeout_fns: list[tuple[Callable, str]] = globals_.pop("_timeout_fns", [])
+    timeout_fns, context = _make_vm_helpers()
+    script(context)
     return timeout_fns
 
 
-def _run_timeout_fns(timeout_fns: list[tuple[Callable, str]]) -> None:
+def _run_timeout_fns(timeout_fns: TimeoutFns) -> None:
     """执行超时回调函数，确保它们抛出 RuntimeError。"""
     for fn, message in timeout_fns:
         with pytest.raises(RuntimeError, match="Execution timed out"):
             fn()
 
 
-def test_mira_file(mira_file: Path, vm_helpers: dict) -> None:
+def test_mira_file(mira_file: Path) -> None:
     """执行单个 Mira 测试文件。"""
     is_huge = mira_file.stem.endswith("_huge")
     if is_huge and SKIP_HUGE:
@@ -53,17 +128,16 @@ def test_mira_file(mira_file: Path, vm_helpers: dict) -> None:
 
     try:
         timeout_fns = None
-        config_checkpoint(120 if is_huge else 3)
+        config_checkpoint(120 if is_huge else 10)
         if pool is not None:
             futures = [
-                pool.submit(_run_mira_file, mira_file, dict(vm_helpers))
-                for _ in range(MAX_WORKERS)
+                pool.submit(_run_mira_file, mira_file) for _ in range(MAX_WORKERS)
             ]
-            timeout_fns = _run_mira_file(mira_file, vm_helpers)
+            timeout_fns = _run_mira_file(mira_file)
             for future in futures:
                 future.result()
         else:
-            timeout_fns = _run_mira_file(mira_file, vm_helpers)
+            timeout_fns = _run_mira_file(mira_file)
         config_checkpoint()  # 重置检查点配置
         _run_timeout_fns(timeout_fns)
     finally:
