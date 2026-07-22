@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing_extensions import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .types.types import VmAny
+    from .types import VmAny
 
 
 class VmError(Exception):

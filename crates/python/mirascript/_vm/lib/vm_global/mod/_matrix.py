@@ -3,7 +3,7 @@ import math
 
 from ....._helpers.convert import to_number
 from ....._helpers.types import is_vm_array, is_vm_const
-from ....types.types import VmAny, VmConst, VmValue
+from ....types import VmAny, VmConst, VmValue
 from ....operations import Add, Call, Div, Mul, Sub, Cp
 from ..._helpers import (
     _expect_array,

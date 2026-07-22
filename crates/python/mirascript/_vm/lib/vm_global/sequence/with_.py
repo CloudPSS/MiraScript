@@ -5,7 +5,7 @@ from ....._helpers.types import is_vm_array, is_vm_record
 from ....._helpers.convert import to_number, to_string
 from ....._helpers.constants import Uninitialized, VM_ARRAY_MAX_LENGTH
 from ....operations.helpers import Element
-from ....types.types import VmConst
+from ....types import VmConst
 from ..._helpers import (
     _expect_array_or_record,
     _throw_error,

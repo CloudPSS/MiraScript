@@ -1,5 +1,5 @@
 from ..error import VmError
-from ..types.types import Uninitialized, VmAny
+from ..types import Uninitialized, VmAny
 
 
 def AssertInit(val: VmAny):

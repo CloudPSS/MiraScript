@@ -6,7 +6,7 @@ from ..._helpers.types import is_vm_const, is_vm_context
 from ..._helpers.constants import kVmScript
 from ..types.context import VmContext, VmContextLike, get_shared_context
 from ..types.module import VmModule
-from ..types.types import VmAny, VmConst, VmRecord, VmValue
+from ..types import VmAny, VmConst, VmRecord, VmValue
 from ..types.function import VmFunction, vm_function
 from .common import AssertInit
 from .cp import CpEnter, CpExit

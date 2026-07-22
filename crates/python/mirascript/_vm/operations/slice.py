@@ -3,7 +3,7 @@ import math
 from ..._helpers.checker import is_safe_integer
 from ..._helpers.types import is_vm_array
 from ..error import VmError
-from ..types.types import VmArray
+from ..types import VmArray
 from .common import AssertInit
 from .convert import ToNumber
 from .type_check import Type

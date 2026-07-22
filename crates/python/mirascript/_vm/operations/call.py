@@ -3,7 +3,7 @@ from __future__ import annotations
 from ..._helpers.types import is_vm_const, is_vm_function
 from ..._helpers.constants import kVmFunction
 from ..error import VmError
-from ..types.types import VmAny, VmValue, VmArray
+from ..types import VmAny, VmValue, VmArray
 from .common import AssertInit
 
 

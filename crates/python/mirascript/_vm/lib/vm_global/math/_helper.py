@@ -2,7 +2,7 @@ import math
 import decimal
 from typing_extensions import Callable
 
-from ....types.types import Uninitialized
+from ....types import Uninitialized
 from ..._helpers import _expect_number
 
 

@@ -1,5 +1,5 @@
-from mirascript._helpers.types import is_vm_array
-from mirascript._vm.types.types import Uninitialized
+from ....._helpers.types import is_vm_array
+from ....types import Uninitialized
 from ..._helpers import _expect_array_or_record, _expect_callable
 from ....operations import Call, ToBoolean
 

@@ -1,5 +1,5 @@
 import math
-from ....types.types import Uninitialized
+from ....types import Uninitialized
 from ..._helpers import _expect_number
 from ._helper import _build, _run
 

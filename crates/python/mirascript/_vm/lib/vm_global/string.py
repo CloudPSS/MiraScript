@@ -1,7 +1,7 @@
 from .._helpers import _required, _expect_array
-from ...types.types import VmAny
+from ...types import VmAny
 from ...operations import ToString
-from ...types.types import Uninitialized
+from ...types import Uninitialized
 
 __all__ = [
     "chars",

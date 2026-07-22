@@ -6,7 +6,7 @@ from datetime import datetime as datetime_dt, timezone
 from ...._helpers.checker import is_number
 from ...._helpers.convert import to_number
 from ...._helpers.serialize import display
-from ...types.types import Uninitialized
+from ...types import Uninitialized
 from .._helpers import (
     _describe_param,
     _expect_number_range,

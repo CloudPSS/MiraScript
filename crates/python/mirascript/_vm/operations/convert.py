@@ -1,5 +1,5 @@
 from ..._helpers.convert import to_boolean, to_format, to_number, to_string
-from ..types.types import VmAny
+from ..types import VmAny
 from .common import AssertInit
 
 

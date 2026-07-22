@@ -2,8 +2,7 @@ from typing_extensions import Protocol
 from ast import Module
 
 from .._helpers.constants import kVmScript
-from .._vm.types.context import VmContextLike
-from .._vm.types.types import VmValue
+from .._vm.types import VmValue, VmContextLike
 
 
 class VmScriptLike(Protocol):

@@ -1,13 +1,20 @@
-from mirascript._helpers.types import is_vm_const
+from __future__ import annotations
+from typing_extensions import Callable
 
+from ....._helpers.types import is_vm_const
+from ....types import Uninitialized, VmAny, VmFunction
 from ..._helpers import _expect_callable, _expect_const, _map_vm
 from ....operations import Call, ToBoolean
-from mirascript._vm.types.types import Uninitialized
 
 
-def _map_impl_wrapped(data, fn_name, fn, mapper):
-    _expect_const("data", data, None)
-    _expect_callable(fn_name, fn, data)
+def _map_impl_wrapped(
+    data: VmAny,
+    fn_name: str,
+    fn: VmAny,
+    mapper: Callable[[VmFunction, VmAny, VmAny, VmAny], VmAny],
+) -> VmAny:
+    data = _expect_const("data", data, None)
+    fn = _expect_callable(fn_name, fn, data)
 
     def wrapped(value, index, data_):
         ret = mapper(fn, value, index, data_)
@@ -18,13 +25,13 @@ def _map_impl_wrapped(data, fn_name, fn, mapper):
     return _map_vm(data, wrapped)
 
 
-def map(data=Uninitialized, f=Uninitialized):
+def map(data: VmAny = Uninitialized, f: VmAny = Uninitialized):
     return _map_impl_wrapped(
         data, "f", f, lambda fn, value, key, data_: Call(fn, *(value, key, data_))
     )
 
 
-def filter(data=Uninitialized, predicate=Uninitialized):
+def filter(data: VmAny = Uninitialized, predicate: VmAny = Uninitialized):
     return _map_impl_wrapped(
         data,
         "predicate",
@@ -35,7 +42,7 @@ def filter(data=Uninitialized, predicate=Uninitialized):
     )
 
 
-def filter_map(data=Uninitialized, f=Uninitialized):
+def filter_map(data: VmAny = Uninitialized, f: VmAny = Uninitialized):
     return _map_impl_wrapped(
         data,
         "f",

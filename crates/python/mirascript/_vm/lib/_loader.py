@@ -2,7 +2,7 @@ from __future__ import annotations
 from inspect import ismodule
 from typing_extensions import cast, MutableMapping
 
-from ..types.types import Uninitialized, VmValue
+from ..types import Uninitialized, VmValue
 from . import vm_global
 from ._helpers_utils import _wrap_entry
 

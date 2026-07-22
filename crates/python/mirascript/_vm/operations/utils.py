@@ -2,7 +2,7 @@ import math
 
 from ..._helpers.checker import is_number
 from ..._helpers.types import is_vm_array, is_vm_record, is_vm_wrapper
-from ..types.types import VmValue
+from ..types import VmValue
 
 
 def overload_number_string(a: VmValue, b: VmValue) -> bool:

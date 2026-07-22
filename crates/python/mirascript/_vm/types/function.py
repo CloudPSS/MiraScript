@@ -5,28 +5,32 @@ from typing_extensions import (
     Callable,
     Protocol,
     overload,
+    TYPE_CHECKING,
+    TypeAlias,
 )
 from dataclasses import dataclass
 from inspect import signature
 from types import CodeType
 
 from ..._helpers.constants import kVmFunction
-from .types import VmValue
 
-P = ParamSpec("P")
-V = TypeVar("V", bound=VmValue, covariant=True, default=VmValue)
+if TYPE_CHECKING:
+    from . import VmValue
 
+    P = ParamSpec("P")
+    V = TypeVar("V", bound=VmValue, covariant=True, default=VmValue)
 
-class VmFunction(Protocol[P, V]):
-    """VmFunction 是一个可调用对象，它接受任意数量的参数，并返回一个 VmValue。"""
+    class VmFunction(Protocol[P, V]):
+        """VmFunction 是一个可调用对象，它接受任意数量的参数，并返回一个 VmValue。"""
 
-    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> V: ...
+        def __call__(self, *args: P.args, **kwargs: P.kwargs) -> V: ...
 
-    __name__: str
-    __code__: CodeType
+        __name__: str
+        __code__: CodeType
 
-
-F = TypeVar("F", bound=VmFunction)
+    F = TypeVar("F", bound=VmFunction)
+else:
+    VmFunction: TypeAlias = "Callable[..., VmValue]"
 
 
 @dataclass

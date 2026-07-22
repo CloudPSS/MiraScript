@@ -1,8 +1,8 @@
-from mirascript._vm.types.types import Uninitialized
+from ....types import Uninitialized, VmAny
 from ..._helpers import _expect_array, _expect_number
 
 
-def flatten(data=Uninitialized, depth=1):
+def flatten(data: VmAny = Uninitialized, depth: VmAny = 1):
     _expect_array("data", data, data)
 
     def flat(arr, d):

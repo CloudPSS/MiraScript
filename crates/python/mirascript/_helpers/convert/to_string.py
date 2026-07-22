@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing_extensions import TypeVar, overload
 import math
 
-from ..._vm.types.types import Uninitialized, VmAny, VmValue
+from ..._vm.types import Uninitialized, VmAny, VmValue
 from ..._vm.error import VmError
 from ..serialize import display
 

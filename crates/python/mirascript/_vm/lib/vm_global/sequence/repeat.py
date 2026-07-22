@@ -1,9 +1,9 @@
+from ....types import Uninitialized, VmAny
 from ..._helpers import _expect_const, _expect_number, _required
 from ..._helpers_utils import _array_len
-from mirascript._vm.types.types import Uninitialized
 
 
-def repeat(data=Uninitialized, times=Uninitialized):
+def repeat(data: VmAny = Uninitialized, times: VmAny = Uninitialized):
     _expect_const("data", data, [])
     _required("times", times, [])
     n = _array_len(_expect_number("times", times))

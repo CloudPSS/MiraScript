@@ -8,10 +8,10 @@ from ..._helpers.serialize import display
 from ..._helpers.checker import is_safe_integer
 from ..operations import Type, Cp
 from ..error import VmError
-from ..types.types import Uninitialized
+from ..types import Uninitialized
 
 if TYPE_CHECKING:
-    from ..types.types import (
+    from ..types import (
         VmFunction,
         VmModule,
         VmExtern,

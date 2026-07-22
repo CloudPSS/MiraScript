@@ -1,7 +1,7 @@
 import math
 
 from ..._helpers.constants import VM_ARRAY_MAX_LENGTH
-from ..types.types import VmAny, VmArray
+from ..types import VmAny, VmArray
 from .convert import ToNumber
 
 

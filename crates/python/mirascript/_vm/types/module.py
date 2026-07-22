@@ -3,7 +3,7 @@ from typing_extensions import Mapping, TYPE_CHECKING
 from .wrapper import VmWrapper
 
 if TYPE_CHECKING:
-    from .types import VmValue
+    from . import VmValue
 
 
 class VmModule(VmWrapper["Mapping[str, VmValue]"]):

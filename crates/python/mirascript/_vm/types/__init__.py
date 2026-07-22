@@ -1,19 +1,32 @@
-from .types import (
-    VmExtern,
-    VmPrimitive,
-    VmRecord,
-    VmArray,
-    VmConst,
-    VmImmutable,
-    VmValue,
-    VmAny,
-    VmUninitialized,
-    Uninitialized,
-)
+from __future__ import annotations
+from typing_extensions import TypeAlias, Never
+
+from ..._helpers.constants import VmUninitialized, Uninitialized
 from .function import vm_function, VmFunction
 from .module import VmModule
 from .wrapper import VmWrapper
-from .context import VmContext
+from .context import VmContext, VmContextLike
+
+VmPrimitive: TypeAlias = "str | int | float | bool | None"
+"""Mirascript 原始值"""
+
+VmRecord: TypeAlias = "dict[str, VmConst]"
+"""Mirascript 记录"""
+VmArray: TypeAlias = "list[VmConst]"
+"""Mirascript 数组"""
+
+VmConst: TypeAlias = "VmPrimitive | VmRecord | VmArray"
+"""Mirascript 虚拟机内的值语义值"""
+
+VmImmutable: TypeAlias = "VmConst | VmModule | VmFunction"
+"""Mirascript 虚拟机内的不可变值"""
+VmValue: TypeAlias = "VmImmutable | VmExtern"
+"""Mirascript 虚拟机内的合法值"""
+VmAny: TypeAlias = "VmValue | VmUninitialized"
+"""Mirascript 虚拟机内的值（包括未初始化变量）"""
+
+VmExtern: TypeAlias = Never
+"""Mirascript 虚拟机内的外部对象，Python 环境暂不支持外部对象，因此该类型永远没有值"""
 
 __all__ = [
     "VmExtern",
@@ -22,6 +35,7 @@ __all__ = [
     "VmModule",
     "VmWrapper",
     "VmContext",
+    "VmContextLike",
     "VmPrimitive",
     "VmRecord",
     "VmArray",

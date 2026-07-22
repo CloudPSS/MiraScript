@@ -1,7 +1,7 @@
 from ....._helpers.types import is_vm_array, is_vm_callable
 from ..._helpers import _expect_array_or_record, _required
 from ....operations import Call, ToBoolean, Same
-from ....types.types import Uninitialized
+from ....types import Uninitialized
 
 
 def find(data=Uninitialized, predicate=Uninitialized):

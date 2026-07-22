@@ -1,7 +1,7 @@
 from struct import Struct
 from typing_extensions import Tuple
 
-from .._vm.types.types import VmPrimitive
+from .._vm.types import VmPrimitive
 
 _ORDINAL = Struct("<i")
 _NUM = Struct("<d")

@@ -1,14 +1,16 @@
 from __future__ import annotations
-from typing_extensions import (
-    Optional,
-    Mapping,
-    TypeAlias,
-)
+from typing_extensions import Optional, Mapping, TypeAlias, TYPE_CHECKING
 
 from ..._helpers.types import is_vm_context, is_vm_value
 from ..._helpers.constants import kVmContext
 from ..error import VmError
-from .types import VmValue
+
+if TYPE_CHECKING:
+    from . import VmValue
+
+    VmContextLike: TypeAlias = Mapping[str, VmValue]
+else:
+    VmContextLike = Mapping
 
 
 def _check_kv(key, value):
@@ -22,9 +24,6 @@ def _check_kv(key, value):
             f"Invalid value for global variable '{key}': {value!r}",
             None,
         )
-
-
-VmContextLike: TypeAlias = Mapping[str, VmValue]
 
 
 class VmContext(VmContextLike):

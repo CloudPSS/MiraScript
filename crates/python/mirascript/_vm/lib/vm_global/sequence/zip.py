@@ -3,7 +3,7 @@ from typing_extensions import cast
 
 from ....._helpers.serialize import display
 from ....._helpers.types import is_vm_array
-from ....types.types import VmAny, VmArray, VmRecord
+from ....types import VmAny, VmArray, VmRecord
 from ....operations.cp import Cp
 from ..._helpers import _throw_error
 from .entries import entries

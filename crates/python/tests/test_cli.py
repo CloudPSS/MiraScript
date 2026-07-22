@@ -28,14 +28,17 @@ def _run_main(
     args: list[str], *, prog: str | None = "mirascript"
 ) -> tuple[int, str, str]:
     """运行 main 函数，返回 (exit_code, stdout, stderr)。"""
+
     stdout = StringIO()
     stderr = StringIO()
-    with (
-        patch.object(sys, "argv", [prog or "mirascript", *args]),
-        patch.object(sys, "stdout", stdout),
-        patch.object(sys, "stderr", stderr),
-    ):
-        exit_code = main(prog=prog)
+
+    @patch("sys.argv", [prog or "mirascript", *args])
+    @patch("sys.stdout", stdout)
+    @patch("sys.stderr", stderr)
+    def run_main():
+        return main(prog=prog)
+
+    exit_code = run_main()
     return exit_code, stdout.getvalue(), stderr.getvalue()
 
 
@@ -55,6 +58,7 @@ def test_no_args_when_prog_is_none():
     """prog 为 None（即 __name__ == '__main__' 路径）时也能正常显示帮助。"""
     exit_code, stdout, stderr = _run_main([], prog=None)
     assert exit_code == 1
+    assert "usage:" in stdout or "usage:" in stderr
 
 
 # ---------------------------------------------------------------------------

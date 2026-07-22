@@ -1,7 +1,7 @@
 from __future__ import annotations
 import math
 
-from ...types.types import VmAny
+from ...types import VmAny
 from .._helpers import _expect_number
 
 __all__ = [

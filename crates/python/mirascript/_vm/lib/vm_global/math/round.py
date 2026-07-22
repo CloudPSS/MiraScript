@@ -1,7 +1,7 @@
 import math
 import builtins
 from ..._helpers import _expect_number, _expect_integer_range
-from ....types.types import Uninitialized
+from ....types import Uninitialized
 from ._helper import _run
 
 __all__ = [

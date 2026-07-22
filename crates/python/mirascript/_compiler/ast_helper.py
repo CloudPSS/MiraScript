@@ -48,7 +48,7 @@ from .._helpers.checker import is_number
 
 if TYPE_CHECKING:
 
-    from .._vm.types.types import VmPrimitive
+    from .._vm.types import VmPrimitive
 
     T = TypeVar("T", bound=expr | stmt | arg)
     Ctx: TypeAlias = Literal["Load", "Store", "Del", None]

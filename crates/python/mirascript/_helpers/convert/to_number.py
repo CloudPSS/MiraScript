@@ -4,10 +4,10 @@ import math
 import re
 
 from ..._vm.error import VmError
-from ..._vm.types.types import Uninitialized
+from ..._vm.types import Uninitialized
 
 
-def _parse_number(s: str) -> "float | None":
+def _parse_number(s: str) -> float | None:
     if s == "":
         return None
     ch = s[0]
@@ -28,7 +28,7 @@ def _parse_number(s: str) -> "float | None":
         return None
 
 
-def _string_to_number(s: str) -> "float | None":
+def _string_to_number(s: str) -> float | None:
     s = s.strip()
     if s == "":
         return None
