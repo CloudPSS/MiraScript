@@ -472,7 +472,7 @@ jobs:
       code-quality: write
 
     runs-on: ubuntu-slim
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    if: (github.event_name != 'pull_request' && github.ref_type != 'tag') || github.event.pull_request.head.repo.full_name == github.repository
 
     steps:
       - name: Checkout
