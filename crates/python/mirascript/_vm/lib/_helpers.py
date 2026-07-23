@@ -94,7 +94,7 @@ def _expect_integer(name: str | int, value: VmAny) -> float:
     value = to_number(value, None)
     if value is None:
         return _throw_unexpected_type_error(name, "integer", value, 0)
-    from .vm_global.math.round import trunc
+    from .vm_global.math.to_int import trunc
 
     i = trunc(value)
     if not is_safe_integer(i):

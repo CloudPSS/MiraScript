@@ -3,8 +3,8 @@ from inspect import ismodule
 from typing_extensions import cast, MutableMapping
 
 from ..types import Uninitialized, VmValue
-from . import vm_global
 from ._helpers_utils import _wrap_entry
+from . import vm_global
 
 
 def register_globals(shared_context: MutableMapping[str, VmValue]):

@@ -26,5 +26,5 @@ export const random = VmLib(() => _random(), {
 export * from './arr.js';
 export * from './const.js';
 export * from './unary.js';
-export * from './round.js';
-export { gamma, factorial } from './gamma.js';
+export * from './to-int.js';
+export { gamma, factorial } from './tgamma.js';
