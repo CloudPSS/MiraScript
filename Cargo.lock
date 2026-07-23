@@ -282,7 +282,7 @@ dependencies = [
 
 [[package]]
 name = "mira-constants"
-version = "0.1.75"
+version = "0.1.76"
 dependencies = [
  "mira-core",
  "wasm-bindgen",
@@ -290,7 +290,7 @@ dependencies = [
 
 [[package]]
 name = "mira-core"
-version = "0.1.75"
+version = "0.1.76"
 dependencies = [
  "divan",
  "mimalloc",
@@ -304,7 +304,7 @@ dependencies = [
 
 [[package]]
 name = "mira-napi"
-version = "0.1.75"
+version = "0.1.76"
 dependencies = [
  "mira-core",
  "napi",
@@ -314,7 +314,7 @@ dependencies = [
 
 [[package]]
 name = "mira-python"
-version = "0.1.75"
+version = "0.1.76"
 dependencies = [
  "mira-core",
  "pyo3",
@@ -323,7 +323,7 @@ dependencies = [
 
 [[package]]
 name = "mira-wasm"
-version = "0.1.75"
+version = "0.1.76"
 dependencies = [
  "console_error_panic_hook",
  "mira-core",
