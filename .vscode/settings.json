@@ -48,6 +48,7 @@
   "python-envs.workspaceSearchPaths": ["./crates/python/.venv"],
   "python.analysis.typeCheckingMode": "standard",
   "python.defaultInterpreterPath": "${workspaceFolder}/crates/python/.venv/Scripts/python",
-  "python.testing.pytestArgs": ["crates/python/tests"],
-  "python.testing.pytestEnabled": true
+  "python.testing.pytestArgs": [],
+  "python.testing.pytestEnabled": true,
+  "python.testing.cwd": "${workspaceFolder}/crates/python"
 }
