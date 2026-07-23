@@ -380,6 +380,7 @@ jobs:
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v7
+        if: matrix.os == 'ubuntu-latest' && matrix.node == 'lts/*'
         with:
           path: packages/*/coverage/cobertura-coverage.xml
           name: typescript-coverage
@@ -398,20 +399,25 @@ jobs:
           - macos-latest
           - macos-15-intel
         python:
-          - '3.8'
-          - '3.14'
-          - '3.14t'
+          - { version: '3.8' }
+          - { version: '3.x' }
+          - { version: '3.x', freethreaded: true }
         include:
+          # Sdist test for pypy3.11
           - os: ubuntu-latest
-            python: 'pypy3.11'
+            python: { version: 'pypy3.11' }
             skip_huge: true
+          # Sdist test for python 3.7 on windows-latest
           - os: windows-latest
-            python: '3.7'
+            python: { version: '3.7' }
+
+          # This version is the oldest available on windows-11-arm
           - os: windows-11-arm
-            python: '3.11'
+            python: { version: '3.11' }
         exclude:
+          # This version is not available on windows-11-arm
           - os: windows-11-arm
-            python: '3.8'
+            python: { version: '3.8' }
     runs-on: ${{ matrix.os }}
 
     permissions:
@@ -428,7 +434,8 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v7
         with:
-          python-version: ${{ matrix.python }}
+          python-version: ${{ matrix.python.version }}
+          freethreaded: ${{ matrix.python.freethreaded }}
 
       - name: Download wheels
         uses: actions/download-artifact@v8
@@ -458,7 +465,7 @@ jobs:
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v7
-        if: matrix.skip_huge != true
+        if: matrix.os == 'ubuntu-latest' && matrix.python.version == '3.x' && matrix.python.freethreaded != true
         with:
           path: crates/python/coverage.xml
           name: python-coverage
