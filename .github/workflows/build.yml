@@ -28,17 +28,17 @@ jobs:
       - name: Build
         run: pnpm -r run build
 
-      - name: Pack website artifact
-        run: |
-          mv -f packages/website/build/ website-build/
-          mv -f packages/playground/dist/ website-build/debug/
-
       - name: Build python sdist
         uses: PyO3/maturin-action@v1
         with:
           command: sdist
           args: --out dist
           working-directory: crates/python
+
+      - name: Pack website artifact
+        run: |
+          mv -f packages/website/build/ website-build/
+          mv -f packages/playground/dist/ website-build/debug/
 
       - name: Upload Pages artifact
         uses: actions/upload-artifact@v7
@@ -399,25 +399,25 @@ jobs:
           - macos-latest
           - macos-15-intel
         python:
-          - { version: '3.8' }
-          - { version: '3.x' }
+          - { version: '3.8', freethreaded: false }
+          - { version: '3.x', freethreaded: false }
           - { version: '3.x', freethreaded: true }
         include:
           # Sdist test for pypy3.11
           - os: ubuntu-latest
-            python: { version: 'pypy3.11' }
+            python: { version: 'pypy3.11', freethreaded: false }
             skip_huge: true
           # Sdist test for python 3.7 on windows-latest
           - os: windows-latest
-            python: { version: '3.7' }
+            python: { version: '3.7', freethreaded: false }
 
           # This version is the oldest available on windows-11-arm
           - os: windows-11-arm
-            python: { version: '3.11' }
+            python: { version: '3.11', freethreaded: false }
         exclude:
           # This version is not available on windows-11-arm
           - os: windows-11-arm
-            python: { version: '3.8' }
+            python: { version: '3.8', freethreaded: false }
     runs-on: ${{ matrix.os }}
 
     permissions:
@@ -435,7 +435,7 @@ jobs:
         uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python.version }}
-          freethreaded: ${{ matrix.python.freethreaded }}
+          freethreaded: ${{ matrix.python.freethreaded || false }}
 
       - name: Download wheels
         uses: actions/download-artifact@v8
@@ -470,50 +470,3 @@ jobs:
           path: crates/python/coverage.xml
           name: python-coverage
           overwrite: true
-
-  upload-coverage:
-    needs: [test-node, test-python]
-
-    permissions:
-      contents: read
-      code-quality: write
-
-    runs-on: ubuntu-slim
-    if: (github.event_name != 'pull_request' && github.ref_type != 'tag') || github.event.pull_request.head.repo.full_name == github.repository
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Download typescript coverage report
-        uses: actions/download-artifact@v8
-        with:
-          name: typescript-coverage
-          path: packages/
-
-      - name: Download python coverage report
-        uses: actions/download-artifact@v8
-        with:
-          name: python-coverage
-          path: crates/python/
-
-      - name: Upload mirascript coverage report
-        uses: actions/upload-code-coverage@v1
-        with:
-          file: packages/mirascript/coverage/cobertura-coverage.xml
-          language: TypeScript
-          label: mirascript
-
-      - name: Upload typed coverage report
-        uses: actions/upload-code-coverage@v1
-        with:
-          file: packages/typed/coverage/cobertura-coverage.xml
-          language: TypeScript
-          label: typed
-
-      - name: Upload python coverage report
-        uses: actions/upload-code-coverage@v1
-        with:
-          file: crates/python/coverage.xml
-          language: Python
-          label: mirascript

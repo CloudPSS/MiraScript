@@ -13,10 +13,56 @@ jobs:
   build:
     permissions:
       contents: read
-      code-quality: write
 
     uses: ./.github/workflows/build.yml
     secrets: inherit
+
+  upload-coverage:
+    needs: build
+
+    permissions:
+      contents: read
+      code-quality: write
+
+    runs-on: ubuntu-slim
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Download typescript coverage report
+        uses: actions/download-artifact@v8
+        with:
+          name: typescript-coverage
+          path: packages/
+
+      - name: Download python coverage report
+        uses: actions/download-artifact@v8
+        with:
+          name: python-coverage
+          path: crates/python/
+
+      - name: Upload mirascript coverage report
+        uses: actions/upload-code-coverage@v1
+        with:
+          file: packages/mirascript/coverage/cobertura-coverage.xml
+          language: TypeScript
+          label: mirascript
+
+      - name: Upload typed coverage report
+        uses: actions/upload-code-coverage@v1
+        with:
+          file: packages/typed/coverage/cobertura-coverage.xml
+          language: TypeScript
+          label: typed
+
+      - name: Upload python coverage report
+        uses: actions/upload-code-coverage@v1
+        with:
+          file: crates/python/coverage.xml
+          language: Python
+          label: mirascript
 
   deploy-pages:
     needs: build
