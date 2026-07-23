@@ -3,6 +3,12 @@ from random import random as _random
 
 from ..._helpers import _expect_number
 
+__all__ = [
+    "atan2",
+    "pow",
+    "random",
+]
+
 
 def atan2(y, x):
     return math.atan2(_expect_number("y", y), _expect_number("x", x))

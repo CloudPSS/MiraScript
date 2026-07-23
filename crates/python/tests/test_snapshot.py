@@ -3,10 +3,11 @@
 验证共享上下文中注册的全局键是否与预期一致。
 """
 
+from pytest_snapshot.plugin import Snapshot
 from mirascript._vm.types.context import get_shared_context
 
 
-def test_shared_context_keys(snapshot):
+def test_shared_context_keys(snapshot: Snapshot):
     """VmSharedContext 应包含预期的全局键。"""
     keys = sorted(get_shared_context().keys())
     snapshot.assert_match(repr(keys), "shared_context_keys.txt")

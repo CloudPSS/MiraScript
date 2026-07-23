@@ -3,6 +3,31 @@ from ....types import Uninitialized
 from ..._helpers import _expect_number
 from ._helper import _build, _run
 
+__all__ = [
+    "abs",
+    "sign",
+    "acos",
+    "acosh",
+    "asin",
+    "asinh",
+    "atan",
+    "atanh",
+    "cos",
+    "cosh",
+    "sin",
+    "sinh",
+    "tan",
+    "tanh",
+    "exp",
+    "expm1",
+    "log",
+    "log10",
+    "log1p",
+    "log2",
+    "sqrt",
+    "cbrt",
+]
+
 abs = _build(math.fabs, math.nan, math.inf, math.inf, 0.0, 0.0)
 sign = _build(lambda v: 1 if v > 0 else -1 if v < 0 else v)
 acos = _build(math.acos, math.nan, math.nan, math.nan)
