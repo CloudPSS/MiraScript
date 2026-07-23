@@ -495,18 +495,18 @@ jobs:
         with:
           file: packages/mirascript/coverage/cobertura-coverage.xml
           language: TypeScript
-          label: npm/mirascript
+          label: mirascript
 
       - name: Upload typed coverage report
         uses: actions/upload-code-coverage@v1
         with:
           file: packages/typed/coverage/cobertura-coverage.xml
           language: TypeScript
-          label: npm/typed
+          label: typed
 
       - name: Upload python coverage report
         uses: actions/upload-code-coverage@v1
         with:
           file: crates/python/coverage.xml
           language: Python
-          label: python/mirascript
+          label: mirascript
