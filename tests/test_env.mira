@@ -55,6 +55,9 @@ t_false('ToString' in global);
 t_false('with_' in global);
 t_false('Call_' in global);
 t_false('max_' in global);
+t_false('__dict__' in global);
+t_false('__class__' in global);
+t_false('compile' in global);
 
 if has_extern {
   t_true(v_extern == v_extern);
