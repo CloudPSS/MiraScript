@@ -152,8 +152,6 @@ def test_invalid_variable_value():
 def test_run_mira_file():
     """执行一个 .mira 脚本文件。"""
     hello_file = EXAMPLES_DIR / "01_hello_world.mira"
-    if not hello_file.is_file():
-        pytest.skip("Example file not found")
     exit_code, stdout, stderr = _run_main([str(hello_file)])
     # hello_world.mira 没有 return 语句，结果可能是 nil
     assert exit_code == 0
@@ -162,8 +160,6 @@ def test_run_mira_file():
 def test_run_mira_file_41_fib():
     """执行 fib 示例确认返回值。"""
     fib_file = EXAMPLES_DIR / "41_fib.mira"
-    if not fib_file.is_file():
-        pytest.skip("Example file not found")
     exit_code, stdout, stderr = _run_main([str(fib_file)])
     assert exit_code == 0
 

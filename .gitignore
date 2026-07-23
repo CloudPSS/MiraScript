@@ -45,6 +45,7 @@ node-compile-cache/
 
 # Tests
 coverage/
+.coverage
 .nyc_output/
 .eslint-report/
 *.cpuprofile

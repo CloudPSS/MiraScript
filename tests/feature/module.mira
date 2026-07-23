@@ -51,6 +51,9 @@ t_eq(test.counter, 6);
 t_eq(type(test.inner), "module");
 t_eq(to_string(test.inner), "<module inner>");
 
+t_true('inner' in test);
+t_false('inner' in test.inner);
+
 for key in test {
   t_true(key == 'a' || key == 'b' || key == '@C' || key == 'add' || key == 'inc' || key == 'set_step' || key == 'counter' || key == 'inner');
 }
