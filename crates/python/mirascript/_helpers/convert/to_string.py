@@ -7,7 +7,7 @@ from ..._vm.error import VmError
 from ..serialize import display
 
 
-def _number_to_string(x: float | int) -> str:
+def number_to_string(x: float | int) -> str:
     # 1. If x is nan, return "nan"
     if math.isnan(x):
         return "nan"
@@ -17,14 +17,14 @@ def _number_to_string(x: float | int) -> str:
         return "0"
 
     if x < 0:
-        return "-" + _number_to_string(-x)
+        return "-" + number_to_string(-x)
 
     if math.isinf(x):
         return "inf"
 
     # 5. Python 的 repr() 已经给出了符合规范的最短表示
     # 直接返回（Python 的 repr 遵循与 ECMAScript 相同的 IEEE 754 规则）
-    result = repr(x)
+    result = repr(float(x))
 
     # 去除整数的 .0 后缀（Python 对整数值浮点数会添加 .0）
     if result.endswith(".0") and "e" not in result.lower():
@@ -39,7 +39,7 @@ def _inner_to_string(val: VmValue, useBraces: bool) -> str:
     if isinstance(val, bool):
         return "true" if val else "false"
     if isinstance(val, (int, float)):
-        return _number_to_string(val)
+        return number_to_string(val)
     if callable(val):
         return display(val)
 

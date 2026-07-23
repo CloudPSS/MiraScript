@@ -1,5 +1,6 @@
+from __future__ import annotations
 from abc import ABC, abstractmethod
-from typing_extensions import Sequence, Any, Optional, TypeVar, Generic
+from typing_extensions import Sequence, Any, TypeVar, Generic
 
 T = TypeVar("T")
 
@@ -36,7 +37,7 @@ class VmWrapper(ABC, Generic[T]):
 
     @property
     @abstractmethod
-    def describe(self) -> Optional[str]:
+    def describe(self) -> str | None:
         pass
 
     def __str__(self) -> str:

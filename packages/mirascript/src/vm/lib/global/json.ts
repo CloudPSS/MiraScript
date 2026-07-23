@@ -1,19 +1,31 @@
-import { isVmExtern, isVmModule } from '../../types/index.js';
+import { isVmExtern, isVmModule, type VmValue } from '../../types/index.js';
 import { expectString, required, rethrowError, VmLib } from '../helpers.js';
 const { parse, stringify } = JSON;
 
 export const to_json = VmLib(
     (data) => {
         required('data', data, null);
-        if (isVmExtern(data) || isVmModule(data)) {
-            try {
-                return stringify(data.value) ?? null;
-            } catch (ex) {
-                rethrowError('Failed to convert extern to JSON', ex, '{}');
-            }
-        }
         if (typeof data == 'function') return null;
-        return stringify(data);
+        return stringify(data, (key, value: VmValue) => {
+            if (typeof value == 'function') {
+                return undefined;
+            }
+            if (isVmModule(value)) {
+                return value.value as JSONValue;
+            }
+            if (isVmExtern(value)) {
+                const extern = value.value;
+                if ('toJSON' in extern && typeof extern.toJSON == 'function') {
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+                    return extern.toJSON() as JSONValue;
+                }
+                if (typeof extern == 'function') {
+                    return undefined;
+                }
+                return extern as JSONValue;
+            }
+            return value as JSONValue;
+        });
     },
     {
         summary: '将数据转换为 JSON 字符串',

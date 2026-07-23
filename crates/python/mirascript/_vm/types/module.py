@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing_extensions import Mapping, TYPE_CHECKING
 
 from .wrapper import VmWrapper
@@ -15,20 +16,20 @@ class VmModule(VmWrapper["Mapping[str, VmValue]"]):
         super().__init__(value)
         self.name = name
 
-    def has(self, key):
+    def has(self, key: str) -> bool:
         return key in self.value
 
-    def get(self, key) -> "VmValue":
+    def get(self, key: str) -> VmValue:
         return self.value.get(key, None)
 
-    def keys(self):
+    def keys(self) -> list[str]:
         return list(self.value.keys())
 
-    def same(self, other) -> bool:
+    def same(self, other: VmValue) -> bool:
         return self is other
 
     @property
-    def type(self):
+    def type(self) -> str:
         return "module"
 
     @property

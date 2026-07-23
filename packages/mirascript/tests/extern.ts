@@ -288,6 +288,9 @@ test('extern json', (t) => {
         obj: { a: 1, b: 2 },
         arr: [1, 2, 3],
         func: () => 0,
+        func_json: Object.assign(() => 0, {
+            toJSON: () => 'func_json',
+        }),
         ok: {
             toJSON() {
                 return { ok: true };
@@ -306,8 +309,9 @@ test('extern json', (t) => {
     t.is(e('obj::to_json()'), JSON.stringify({ a: 1, b: 2 }));
     t.is(e('arr::to_json()'), JSON.stringify([1, 2, 3]));
     t.is(e('func::to_json()'), null);
+    t.is(e('func_json::to_json()'), '"func_json"');
     t.is(e('ok::to_json()'), JSON.stringify({ ok: true }));
-    t.throws(() => e('fail::to_json()'), { message: /^Failed to convert extern to JSON: / });
+    t.throws(() => e('fail::to_json()'), { message: /^fail$/ });
     t.is(e('void::to_json()'), JSON.stringify({ toJSON: null }));
 });
 

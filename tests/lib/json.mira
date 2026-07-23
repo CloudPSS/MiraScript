@@ -11,10 +11,33 @@ t_eq(to_json(0.1), '0.1');
 t_eq(to_json(-0), '0');
 t_eq(to_json(1), '1');
 t_eq(to_json(1.5), '1.5');
+t_eq(to_json((1, nan, inf, -inf))::from_json(), (1, nil, nil, nil));
 t_eq(to_json("Hello, World!"), '"Hello, World!"');
 t_eq(to_json("é"), '"é"');
 t_eq(to_json([]), '[]');
+
 t_eq(to_json(v_module), '{}');
+mod test {
+  pub const @C = 1;
+  pub let mut i = 1;
+  pub let b = true;
+  pub let n = nil;
+  pub let s = "Hello, World!";
+  let hidden = 1;
+  pub fn f() {
+    i += hidden;
+  }
+  mod hidden_mod {
+    pub let x = 2;
+  }
+  pub mod m {
+    pub let y = 3;
+  }
+}
+t_eq(to_json(test)::from_json(), ('@C': 1, i: 1, b: true, n: nil, s: "Hello, World!", m: (y: 3)));
+test.f();
+t_eq(to_json(test)::from_json(), ('@C': 1, i: 2, b: true, n: nil, s: "Hello, World!", m: (y: 3)));
+
 if has_extern {
   t_eq(to_json(v_extern), '{}');
 }
@@ -36,6 +59,8 @@ t_throws(fn { from_json() });
 t_throws(fn { from_json('') });
 t_throws(fn { from_json(`'a'`) });
 t_throws(fn { from_json(`NaN`) });
+t_throws(fn { from_json(`Infinity`) });
+t_throws(fn { from_json(`-Infinity`) });
 t_throws(fn { from_json(`{"x":NaN}`) });
 t_throws(fn { from_json(`{"x":nan}`) });
 t_throws(fn { from_json(`{"x":1,}`) });
