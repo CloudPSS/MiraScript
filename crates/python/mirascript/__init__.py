@@ -20,10 +20,11 @@ from ._helpers.types import (
     is_vm_script,
     is_vm_value,
     is_vm_wrapper,
+    get_vm_type,
 )
 from ._helpers.constants import Uninitialized, VmUninitialized
 from ._helpers.convert import to_boolean, to_format, to_number, to_string
-from ._helpers.serialize import serialize, display
+from ._helpers.serialize import serialize, display, Serializer, DisplaySerializer
 from ._vm import (
     VmError,
     vm_function,
@@ -65,7 +66,6 @@ __all__ = [
     "VmExtern",
     "Uninitialized",
     "VmUninitialized",
-    "VmFunction",
     "VmAny",
     # Lib functions
     "lib",
@@ -75,6 +75,8 @@ __all__ = [
     # Conversion functions
     "serialize",
     "display",
+    "Serializer",
+    "DisplaySerializer",
     "to_boolean",
     "to_format",
     "to_number",
@@ -94,4 +96,5 @@ __all__ = [
     "is_vm_script",
     "is_vm_value",
     "is_vm_wrapper",
+    "get_vm_type",
 ]

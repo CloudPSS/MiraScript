@@ -6,8 +6,8 @@ from .._vm.types.module import VmModule
 from .._vm.types.wrapper import VmWrapper
 
 if TYPE_CHECKING:
-    
-    from typing_extensions import  Literal, TypeIs
+
+    from typing_extensions import Literal, TypeIs
     from .._compiler import VmScript
     from .._vm.types import *
 
