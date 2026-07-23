@@ -8,6 +8,7 @@ from ..._helpers.types import (
     is_vm_record,
     is_vm_wrapper,
 )
+from ..types import VmAny, VmRecord, VmValue
 from ..error import VmError
 from .common import AssertInit
 from .convert import ToString
@@ -16,11 +17,8 @@ from .helpers import Element
 from .utils import is_same
 
 
-def In(value, iterable) -> bool:
+def In(value: VmAny, iterable: VmAny) -> bool:
     AssertInit(value)
-    AssertInit(iterable)
-    if is_vm_primitive(iterable):
-        return False
     if is_vm_array(iterable):
         if value is None:
             return value in iterable
@@ -30,23 +28,26 @@ def In(value, iterable) -> bool:
                 return True
 
         return False
+    if is_vm_primitive(iterable):
+        return False
     pk = to_string(value)
     if is_vm_record(iterable):
         return pk in iterable
     if is_vm_wrapper(iterable):
         return iterable.has(pk)
 
+    AssertInit(iterable)
     return False
 
 
-def Length(a) -> float:
+def Length(a: VmAny) -> float:
     AssertInit(a)
     if isinstance(a, (str, list, dict)):
         return float(len(a))
     raise TypeError(f"`Expected array, string or record, got {Type(a)}")
 
 
-def Omit(a, b):
+def Omit(a: VmAny, b: VmAny) -> VmRecord:
     AssertInit(a)
     if not is_vm_record(a):
         return {}
@@ -74,11 +75,7 @@ def Pick(a, b):
 
 
 def Has(obj, key):
-    AssertInit(obj)
     pk = ToString(key)
-    if is_vm_primitive(obj):
-        return False
-
     if is_vm_wrapper(obj):
         return obj.has(pk)
     if is_vm_record(obj):
@@ -91,11 +88,13 @@ def Has(obj, key):
             return 0 <= idx < len(obj)
         except Exception:
             return False
+    if is_vm_primitive(obj):
+        return False
+    AssertInit(obj)
     return False
 
 
-def Get(obj, key):
-    AssertInit(obj)
+def Get(obj: VmAny, key: VmAny) -> VmValue:
     if is_vm_array(obj):
         AssertInit(key)
         index = to_number(key, math.nan)
@@ -108,22 +107,22 @@ def Get(obj, key):
             return None
     if is_vm_primitive(obj):
         return None
-
     pk = ToString(key)
     if is_vm_wrapper(obj):
         return obj.get(pk)
     if is_vm_record(obj):
         return Element(obj.get(pk, None))
+    AssertInit(obj)
     return None
 
 
 def Set(obj, key, val):
-    AssertInit(obj)
-    AssertInit(val)
     pk = ToString(key)
     if not is_vm_extern(obj):
+        AssertInit(obj)
         raise VmError(f"`Expected extern object, got {Type(obj)}", None)
 
+    AssertInit(val)
     obj.set(pk, val)
 
 

@@ -150,28 +150,28 @@ class ASTHelper:
         if isinstance(node, str):
             if node == "None":
                 return self.const(None)
-            return self.var(node, ctx=self.ctx("Load"))
+            return self.var(node, ctx=Load())
         return node
 
     def store(self, node: str | Name) -> Name:
         """生成一个存储变量的 AST 节点"""
         if isinstance(node, str):
-            return self.var(node, ctx=self.ctx("Store"))
+            return self.var(node, ctx=Store())
         return node
 
     def var(self, name: str, ctx: expr_context | None = None) -> Name:
         """生成一个变量的 AST 节点"""
-        return self.set_position(Name(id=name, ctx=ctx or self.ctx("Load")))
+        return self.set_position(Name(id=name, ctx=ctx or Load()))
 
     def const_int(self, value: int) -> Constant:
         """生成一个整数常量的 AST 节点"""
-        return self.set_position(Constant(value=value,kind=None))
+        return self.set_position(Constant(value=value, kind=None))
 
     def const(self, value: VmPrimitive = None) -> expr:
         """生成一个常量的 AST 节点"""
         if is_number(value):
             value = float(value)
-        return self.set_position(Constant(value=value,kind=None))
+        return self.set_position(Constant(value=value, kind=None))
 
     def expr(self, value: expr) -> Expr:
         """生成一个表达式语句的 AST 节点"""

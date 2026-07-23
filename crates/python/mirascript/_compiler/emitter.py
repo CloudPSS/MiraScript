@@ -217,11 +217,11 @@ class Emitter:
             def read():
                 return self.read_param(wide)
 
-            def el_opt(name: "str | ast.expr", value: "str | ast.expr"):
+            def el_opt(name: str | ast.expr, value: str | ast.expr):
                 block.keys.append(None)
                 block.values.append(helper.call("ElementOpt", [name, value]))
 
-            def el(name: "str | ast.expr", value: "str | ast.expr"):
+            def el(name: str | ast.expr, value: str | ast.expr):
                 block.keys.append(helper.load(name))
                 block.values.append(helper.call("Element", [value]))
 

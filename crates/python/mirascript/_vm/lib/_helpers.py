@@ -70,6 +70,8 @@ def _required(name: str | int, value: VmAny, recovered: VmAny) -> VmValue:
 
 
 def _expect_number(name: str | int, value: VmAny) -> float:
+    if isinstance(value, float):
+        return value
     value = _required(name, value, math.nan)
     value = to_number(value)
     if value is None:
@@ -78,6 +80,8 @@ def _expect_number(name: str | int, value: VmAny) -> float:
 
 
 def _expect_string(name: str | int, value: VmAny) -> str:
+    if isinstance(value, str):
+        return value
     value = _required(name, value, "")
     value = to_string(value)
     if value is None:
@@ -196,10 +200,13 @@ def _get_numbers(args: Sequence[VmValue] | None) -> list[float]:
     if len(args) == 1 and is_vm_array(args[0]):
         args = args[0]
         use_first = True
-    numbers = []
-    for i in range(len(args)):
-        arg = args[i]
-        numbers.append(_expect_number(name="values" if use_first else i, value=arg))
+    numbers: list[float] = [0.0] * len(args)
+    for i, arg in enumerate(args):
+        if isinstance(arg, float):
+            numbers[i] = arg
+            continue
+        arg = _expect_number("values" if use_first else i, arg)
+        numbers[i] = arg
     return numbers
 
 
