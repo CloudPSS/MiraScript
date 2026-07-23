@@ -462,6 +462,7 @@ jobs:
           cd crates/python
           rm -rf ./mirascript
           python -m pytest tests/ --cov=mirascript --cov-report=xml --cov-report=term-missing -v
+          sed -i -e 's|filename=".*/site-packages/mirascript/|filename="mirascript/|' coverage.xml
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v7

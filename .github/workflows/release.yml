@@ -119,7 +119,7 @@ jobs:
           packages-dir: python-artifacts/
 
   build-vscode:
-    needs: [build, publish-npm]
+    needs: publish-npm
 
     permissions:
       contents: read
