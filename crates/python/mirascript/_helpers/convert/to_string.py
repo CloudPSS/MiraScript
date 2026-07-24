@@ -4,29 +4,30 @@ import math
 
 from ..._vm.types import Uninitialized, VmAny, VmValue
 from ..._vm.error import VmError
-from ..checker import _MIN_SAFE_INTEGER, _MAX_SAFE_INTEGER
 from ..serialize import display
 
 
 def number_to_string(x: float | int) -> str:
-    # 1. Fast path for safe integers, including +-0
-    if x.is_integer() and _MIN_SAFE_INTEGER <= x <= _MAX_SAFE_INTEGER:
-        return repr(int(x))
+    # 1. Fast path for integers, including +-0
+    if x.is_integer():
+        if -1e21 < x < 1e21:
+            return repr(int(x))
+        x = float(x)  # Convert to float
 
     # 2. If x is nan, return "nan"
     if math.isnan(x):
         return "nan"
 
+    # 3. If x is +-inf, return "inf" or "-inf"
     if math.isinf(x):
         return "inf" if x > 0 else "-inf"
 
-    # 5. Python 的 repr() 已经给出了符合规范的最短表示
-    # 直接返回（Python 的 repr 遵循与 ECMAScript 相同的 IEEE 754 规则）
+    # 4. return the string representation of the float
     result = repr(float(x))
+    # Note: no need to remove trailing ".0" since integers are handled in step 1
 
-    # 去除整数的 .0 后缀（Python 对整数值浮点数会添加 .0）
-    if result.endswith(".0"):
-        result = result[:-2]
+    # 5. fix 1e-09 -> 1e-9
+    result = result.replace("e-0", "e-")
 
     return result
 
