@@ -1,4 +1,5 @@
 import math
+from typing_extensions import Sequence, Iterable as IterableType, Mapping
 
 from ..._helpers.convert import to_number, to_string
 from ..._helpers.convert.to_string import number_to_string
@@ -9,7 +10,7 @@ from ..._helpers.types import (
     is_vm_record,
     is_vm_wrapper,
 )
-from ..types import VmAny, VmRecord, VmValue
+from ..types import VmAny, VmRecord, VmValue, VmConst
 from ..error import VmError
 from .common import AssertInit
 from .convert import ToString
@@ -48,34 +49,34 @@ def Length(a: VmAny) -> float:
     raise TypeError(f"`Expected array, string or record, got {Type(a)}")
 
 
-def Omit(a: VmAny, b: VmAny) -> VmRecord:
-    AssertInit(a)
-    if not is_vm_record(a):
+def Omit(value: VmAny, omitted: Sequence[float | str | int]) -> VmRecord:
+    AssertInit(value)
+    if not is_vm_record(value):
         return {}
     result = {}
 
-    valueKeys = a.keys()
-    omittedSet = set([ToString(x) for x in b])
+    valueKeys = value.keys()
+    omittedSet = set([ToString(x) for x in omitted])
     for key in valueKeys:
         if key not in omittedSet:
-            result[key] = a[key]
+            result[key] = value[key]
     return result
 
 
-def Pick(a, b):
-    AssertInit(a)
-    if not is_vm_record(a):
+def Pick(value: VmAny, picked: Sequence[float | str | int]) -> VmRecord:
+    AssertInit(value)
+    if not is_vm_record(value):
         return {}
     result = {}
-    for key in b:
+    for key in picked:
         k = ToString(key)
-        if k in a:
-            result[k] = a[k]
+        if k in value:
+            result[k] = value[k]
 
     return result
 
 
-def Has(obj, key):
+def Has(obj: VmAny, key: VmAny) -> bool:
     pk = ToString(key)
     if is_vm_wrapper(obj):
         return obj.has(pk)
@@ -117,7 +118,7 @@ def Get(obj: VmAny, key: VmAny) -> VmValue:
     return None
 
 
-def Set(obj, key, val):
+def Set(obj: VmAny, key: VmAny, val: VmAny) -> None:
     pk = ToString(key)
     if not is_vm_extern(obj):
         AssertInit(obj)
@@ -127,7 +128,7 @@ def Set(obj, key, val):
     obj.set(pk, val)
 
 
-def Iterable(value):
+def Iterable(value: VmAny) -> IterableType[VmValue]:
     AssertInit(value)
     if is_vm_wrapper(value):
         return value.keys()
@@ -138,9 +139,10 @@ def Iterable(value):
     raise VmError(f"`Value is not iterable {Type(value)}", None)
 
 
-def RecordSpread(record):
+def RecordSpread(record: VmAny) -> Mapping[str, VmConst]:
     AssertInit(record)
     if record is None:
+        # Cannot spread None in python
         return {}
     if is_vm_record(record):
         return record
@@ -152,7 +154,7 @@ def RecordSpread(record):
     raise VmError(f"`Expected record, extern or nil, got {Type(record)}", None)
 
 
-def ArraySpread(array):
+def ArraySpread(array: VmAny) -> IterableType[VmConst]:
     AssertInit(array)
     if array is None:
         return []

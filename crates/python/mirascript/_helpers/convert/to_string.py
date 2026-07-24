@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing_extensions import TypeVar, overload, TypeIs
+from typing_extensions import TypeVar, overload
 import math
 import sys
 
@@ -12,21 +12,21 @@ MAX_INTEGER = 1e21
 
 if sys.version_info >= (3, 12):
 
-    def is_integer(x: float | int) -> TypeIs[int]:
+    def _is_integer(x: float | int) -> bool:
         return x.is_integer()
 
 else:
 
-    def is_integer(x: float | int) -> TypeIs[int]:
+    def _is_integer(x: float | int) -> bool:
         return isinstance(x, int) or (isinstance(x, float) and x.is_integer())
 
 
 def number_to_string(x: float | int) -> str:
     # 1. Fast path for integers, including +-0
-    if is_integer(x):
-        if -MAX_INTEGER < x < MAX_INTEGER:
-            return repr(int(x))
-        x = float(x)  # Convert to float
+    if _is_integer(x) and -MAX_INTEGER < x < MAX_INTEGER:
+        return repr(int(x))
+
+    x = float(x)  # Convert to float
 
     # 2. If x is nan, return "nan"
     if math.isnan(x):

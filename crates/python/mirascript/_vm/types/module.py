@@ -1,10 +1,10 @@
 from __future__ import annotations
-from typing_extensions import Mapping, TYPE_CHECKING
+from typing_extensions import Mapping, Iterable, TYPE_CHECKING
 
 from .wrapper import VmWrapper
 
 if TYPE_CHECKING:
-    from . import VmValue
+    from . import VmValue, VmAny
 
 
 class VmModule(VmWrapper["Mapping[str, VmValue]"]):
@@ -22,10 +22,10 @@ class VmModule(VmWrapper["Mapping[str, VmValue]"]):
     def get(self, key: str) -> VmValue:
         return self.value.get(key, None)
 
-    def keys(self) -> list[str]:
-        return list(self.value.keys())
+    def keys(self) -> Iterable[str]:
+        return self.value.keys()
 
-    def same(self, other: VmValue) -> bool:
+    def same(self, other: VmAny) -> bool:
         return self is other
 
     @property

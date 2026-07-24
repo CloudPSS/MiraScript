@@ -3,9 +3,7 @@ from typing_extensions import TypeGuard
 
 
 def is_number(a) -> TypeGuard[int | float]:
-    if isinstance(a, bool):
-        return False
-    return isinstance(a, (int, float))
+    return type(a) in (int, float)
 
 
 _MIN_SAFE_INTEGER = -(2**53) + 1

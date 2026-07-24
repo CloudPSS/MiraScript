@@ -1,6 +1,9 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from typing_extensions import Sequence, Any, TypeVar, Generic
+from typing_extensions import TYPE_CHECKING, Iterable, TypeVar, Generic
+
+if TYPE_CHECKING:
+    from . import VmAny
 
 T = TypeVar("T")
 
@@ -19,15 +22,15 @@ class VmWrapper(ABC, Generic[T]):
         pass
 
     @abstractmethod
-    def get(self, key: str) -> Any:
+    def get(self, key: str) -> VmAny:
         pass
 
     @abstractmethod
-    def keys(self) -> Sequence[str]:
+    def keys(self) -> Iterable[str]:
         pass
 
     @abstractmethod
-    def same(self, other: Any) -> bool:
+    def same(self, other: VmAny) -> bool:
         pass
 
     @property

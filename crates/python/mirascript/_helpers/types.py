@@ -9,7 +9,18 @@ if TYPE_CHECKING:
 
     from typing_extensions import Literal, TypeIs
     from .._compiler import VmScript
-    from .._vm.types import *
+    from .._vm.types import (
+        VmFunction,
+        VmContext,
+        VmExtern,
+        VmPrimitive,
+        VmRecord,
+        VmArray,
+        VmConst,
+        VmImmutable,
+        VmValue,
+        VmAny,
+    )
 
 
 def is_vm_script(value) -> TypeIs[VmScript]:

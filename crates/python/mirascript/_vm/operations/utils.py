@@ -2,10 +2,10 @@ import math
 
 from ..._helpers.checker import is_number
 from ..._helpers.types import is_vm_array, is_vm_record, is_vm_wrapper
-from ..types import VmValue
+from ..types import VmAny
 
 
-def overload_number_string(a: VmValue, b: VmValue) -> bool:
+def overload_number_string(a: VmAny, b: VmAny) -> bool:
     if is_number(a) or is_number(b):
         return True
     if isinstance(a, str) or isinstance(b, str):
@@ -13,15 +13,15 @@ def overload_number_string(a: VmValue, b: VmValue) -> bool:
     return True
 
 
-def is_same(a: VmValue, b: VmValue) -> bool:
+def is_same(a: VmAny, b: VmAny) -> bool:
     if is_number(a) and is_number(b):
         return a == b or (math.isnan(a) and math.isnan(b))
     if a is b:
         return True
-    if type(a) is not type(b):
-        return False
-    if isinstance(a, (str, bool)):
-        return a == b
+    ta = type(a)
+    tb = type(b)
+    if ta in (str, bool) or tb in (str, bool):
+        return ta is tb and a == b
     if is_vm_wrapper(a):
         return a.same(b)
     if is_vm_wrapper(b):
