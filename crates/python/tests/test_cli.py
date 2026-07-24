@@ -11,8 +11,6 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-import pytest
-
 from mirascript.__main__ import main
 
 # 示例 .mira 文件目录

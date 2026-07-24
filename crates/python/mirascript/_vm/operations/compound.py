@@ -1,6 +1,7 @@
 import math
 
 from ..._helpers.convert import to_number, to_string
+from ..._helpers.convert.to_string import number_to_string
 from ..._helpers.types import (
     is_vm_array,
     is_vm_extern,
@@ -144,7 +145,7 @@ def RecordSpread(record):
     if is_vm_record(record):
         return record
     if is_vm_array(record):
-        return {to_string(i): record[i] for i in range(len(record))}
+        return {number_to_string(i): record[i] for i in range(len(record))}
     if is_vm_extern(record):
         return {}
 

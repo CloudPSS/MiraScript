@@ -48,8 +48,7 @@ def is_vm_wrapper(value) -> TypeIs[VmWrapper]:
 
 def is_vm_callable(value) -> TypeIs[VmFunction | VmExtern]:
     """检查值是否为 Mirascript 可调用对象"""
-    # if is_vm_extern(value):
-    #     return False
+    # Python 环境暂不支持外部对象，该函数目前等价于 `is_vm_function`
     return is_vm_function(value)
 
 

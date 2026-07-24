@@ -1,11 +1,11 @@
 import json
 import math
 
-from ...types import VmAny, VmValue
-from ...._helpers.types import is_vm_module, is_vm_extern
+from ...._helpers.types import is_vm_module
 from ...._helpers.constants import Uninitialized
 from ...._helpers.checker import is_number
 from ...._helpers.convert.to_string import number_to_string
+from ...types import VmAny, VmValue
 from .._helpers import _expect_string, _required, _rethrow_error
 
 __all__ = [
@@ -29,8 +29,7 @@ def _purify_json(value: VmValue):
         return {str(k): _purify_json(v) for k, v in value.items()}
     if is_vm_module(value):
         return {k: _purify_json(v) for k, v in value.value.items() if not callable(v)}
-    if is_vm_extern(value):
-        return None
+    return None
 
 
 def to_json(value: VmAny = Uninitialized):
