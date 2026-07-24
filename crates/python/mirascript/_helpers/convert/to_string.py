@@ -1,6 +1,7 @@
 from __future__ import annotations
-from typing_extensions import TypeVar, overload
+from typing_extensions import TypeVar, overload, TypeIs
 import math
+import sys
 
 from ..._vm.types import Uninitialized, VmAny, VmValue
 from ..._vm.error import VmError
@@ -9,9 +10,20 @@ from ..serialize import display
 MAX_INTEGER = 1e21
 
 
+if sys.version_info >= (3, 12):
+
+    def is_integer(x: float | int) -> TypeIs[int]:
+        return x.is_integer()
+
+else:
+
+    def is_integer(x: float | int) -> TypeIs[int]:
+        return isinstance(x, int) or (isinstance(x, float) and x.is_integer())
+
+
 def number_to_string(x: float | int) -> str:
     # 1. Fast path for integers, including +-0
-    if x.is_integer():
+    if is_integer(x):
         if -MAX_INTEGER < x < MAX_INTEGER:
             return repr(int(x))
         x = float(x)  # Convert to float
@@ -25,7 +37,7 @@ def number_to_string(x: float | int) -> str:
         return "inf" if x > 0 else "-inf"
 
     # 4. return the string representation of the float
-    result = repr(float(x))
+    result = repr(x)
     # Note: no need to remove trailing ".0" since integers are handled in step 1
 
     # 5. fix 1e-09 -> 1e-9
