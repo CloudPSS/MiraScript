@@ -1,10 +1,12 @@
+from __future__ import annotations
 import math
 import unicodedata
 
 from ..._helpers.convert import to_format
+from ..._helpers.checker import is_number
 from .common import AssertInit
 from .convert import ToNumber, ToBoolean, ToString
-from .utils import is_number, is_same, overload_number_string
+from .utils import is_same, overload_number_string
 
 # String operations
 

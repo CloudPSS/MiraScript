@@ -1,3 +1,4 @@
+from __future__ import annotations
 import math
 from typing_extensions import Sequence, Iterable as IterableType, Mapping
 
