@@ -6,11 +6,13 @@ from ..._vm.types import Uninitialized, VmAny, VmValue
 from ..._vm.error import VmError
 from ..serialize import display
 
+MAX_INTEGER = 1e21
+
 
 def number_to_string(x: float | int) -> str:
     # 1. Fast path for integers, including +-0
     if x.is_integer():
-        if -1e21 < x < 1e21:
+        if -MAX_INTEGER < x < MAX_INTEGER:
             return repr(int(x))
         x = float(x)  # Convert to float
 
