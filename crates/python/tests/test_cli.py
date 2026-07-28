@@ -264,9 +264,18 @@ def test_compile_exception_exits_with_code_2():
     assert exc.value.code == 2
 
 
-def test_get_unparse_prefers_stdlib():
-    unparse = cli._get_unparse()
-    assert unparse is ast.unparse
+if sys.version_info >= (3, 9):
+
+    def test_get_unparse_prefers_stdlib():
+        unparse = cli._get_unparse()
+        assert unparse is ast.unparse
+
+    def test_get_unparse_raises_if_all_missing(monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.delattr(ast, "unparse", raising=False)
+        monkeypatch.delitem(sys.modules, "astunparse", raising=False)
+
+        with pytest.raises(ImportError):
+            cli._get_unparse()
 
 
 def test_get_unparse_fallback_to_astunparse(monkeypatch: pytest.MonkeyPatch):
@@ -282,14 +291,6 @@ def test_get_unparse_fallback_to_astunparse(monkeypatch: pytest.MonkeyPatch):
 
     unparse = cli._get_unparse()
     assert unparse is fake_unparse
-
-
-def test_get_unparse_raises_if_all_missing(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.delattr(ast, "unparse", raising=False)
-    monkeypatch.delitem(sys.modules, "astunparse", raising=False)
-
-    with pytest.raises(ImportError):
-        cli._get_unparse()
 
 
 def test_print_debug_writes_python_file(tmp_path: Path):
