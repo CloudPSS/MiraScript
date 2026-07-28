@@ -5,7 +5,6 @@ import sys
 
 from ..._vm.types import Uninitialized, VmAny, VmValue
 from ..._vm.error import VmError
-from ..serialize import display
 
 MAX_INTEGER = 1e21
 
@@ -21,7 +20,11 @@ else:
         return isinstance(x, int) or (isinstance(x, float) and x.is_integer())
 
 
-def number_to_string(x: float | int) -> str:
+def number_to_string(x: float | int, minus_zero: bool = False) -> str:
+    # 0. If x is -0, return "-0"
+    if minus_zero and x == 0 and math.copysign(1, x) < 0:
+        return "-0"
+
     # 1. Fast path for integers, including +-0
     if _is_integer(x) and -MAX_INTEGER < x < MAX_INTEGER:
         return repr(int(x))
@@ -54,6 +57,8 @@ def _inner_to_string(val: VmValue, useBraces: bool) -> str:
     if isinstance(val, (int, float)):
         return number_to_string(val)
     if callable(val):
+        from ..serialize import display
+
         return display(val)
 
     if isinstance(val, (list, tuple)):
@@ -94,7 +99,7 @@ def to_string(value: VmAny, fallback: T = Uninitialized) -> str | T:
         return x
     except Exception as ex:
         if fallback is Uninitialized:
-            e = VmError(f"Cannot convert to string: {value}", "")
+            e = VmError(f"Cannot convert to string: {value!r}", "")
             e.__cause__ = ex
             raise e
         return fallback

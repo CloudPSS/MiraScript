@@ -5,13 +5,17 @@
 
 from __future__ import annotations
 
+import ast
 import sys
+import types
 from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from mirascript.__main__ import main
+import pytest
+
+import mirascript.__main__ as cli
 
 # 示例 .mira 文件目录
 EXAMPLES_DIR = (Path(__file__).parent / "../../../examples").resolve()
@@ -23,7 +27,7 @@ EXAMPLES_DIR = (Path(__file__).parent / "../../../examples").resolve()
 
 
 def _run_main(
-    args: list[str], *, prog: str | None = "mirascript"
+    args: list[str], *, prog: str | None = "mirascript", stdin: str | None = None
 ) -> tuple[int, str, str]:
     """运行 main 函数，返回 (exit_code, stdout, stderr)。"""
 
@@ -33,8 +37,9 @@ def _run_main(
     @patch("sys.argv", [prog or "mirascript", *args])
     @patch("sys.stdout", stdout)
     @patch("sys.stderr", stderr)
+    @patch("sys.stdin", StringIO(stdin) if stdin is not None else StringIO())
     def run_main():
-        return main(prog=prog)
+        return cli.main(prog=prog)
 
     exit_code = run_main()
     return exit_code, stdout.getvalue(), stderr.getvalue()
@@ -75,21 +80,21 @@ def test_eval_string():
     """通过 --eval 执行字符串表达式。"""
     exit_code, stdout, stderr = _run_main(["-e", 'return "hello";'])
     assert exit_code == 0
-    assert "[OK] hello" in stdout
+    assert stdout == "[OK] 'hello'\n"
 
 
 def test_eval_arithmetic():
     """通过 --eval 执行算术表达式。"""
     exit_code, stdout, stderr = _run_main(["-e", "return 1 + 2 * 3;"])
     assert exit_code == 0
-    assert "[OK] 7" in stdout
+    assert stdout == "[OK] 7\n"
 
 
 def test_eval_with_prog_none():
     """__main__ 直接调用时 --eval 也能正常工作。"""
     exit_code, stdout, stderr = _run_main(["-e", "return 99;"], prog=None)
     assert exit_code == 0
-    assert "[OK] 99" in stdout
+    assert stdout == "[OK] 99\n"
 
 
 # ---------------------------------------------------------------------------
@@ -101,7 +106,7 @@ def test_eval_with_single_variable():
     """通过 -v 传入单个变量。"""
     exit_code, stdout, stderr = _run_main(["-v", "x=10", "-e", "return x;"])
     assert exit_code == 0
-    assert "[OK] 10" in stdout
+    assert stdout == "[OK] 10\n"
 
 
 def test_eval_with_multiple_variables():
@@ -110,7 +115,7 @@ def test_eval_with_multiple_variables():
         ["-v", "a=3", "-v", "b=4", "-e", "return a + b;"]
     )
     assert exit_code == 0
-    assert "[OK] 7" in stdout
+    assert stdout == "[OK] 7\n"
 
 
 def test_eval_with_string_variable():
@@ -119,14 +124,14 @@ def test_eval_with_string_variable():
         ["-v", 'name="Mira"', "-e", 'return "Hello, $name!";']
     )
     assert exit_code == 0
-    assert "[OK] Hello, Mira!" in stdout
+    assert stdout == "[OK] 'Hello, Mira!'\n"
 
 
 def test_eval_with_expression_variable():
     """变量值可以是表达式。"""
     exit_code, stdout, stderr = _run_main(["-v", "x=3*4", "-e", "return x;"])
     assert exit_code == 0
-    assert "[OK] 12" in stdout
+    assert stdout == "[OK] 12\n"
 
 
 def test_invalid_variable_format():
@@ -176,17 +181,9 @@ def test_nonexistent_file():
 
 def test_stdin_input():
     """通过 stdin 传入代码。"""
-    import io
-
-    stdin_mock = io.StringIO("return 123;")
-    with patch.object(sys, "argv", ["mirascript", "-"]), patch.object(
-        sys, "stdin", stdin_mock
-    ), patch.object(sys, "stdout", StringIO()), patch.object(sys, "stderr", StringIO()):
-        exit_code = main()
-        # stdin 模式下会读取 stdin 内容并执行
-        # 注意: main 内部使用 sys.stdin.read()，mock 后应正常
-    # 这里只验证不崩溃即可
-    assert exit_code in (0, 1)
+    exit_code, stdout, stderr = _run_main(["-"], stdin="return 123;")
+    assert exit_code == 0
+    assert stdout == "[OK] 123\n"
 
 
 # ---------------------------------------------------------------------------
@@ -253,3 +250,81 @@ def test_eval_with_no_return():
     """没有 return 语句的 eval（模板模式测试）。"""
     exit_code, stdout, stderr = _run_main(["-t", "-e", "just a string"])
     assert exit_code == 0
+
+
+# ---------------------------------------------------------------------------
+# 白盒：__main__ 内部函数与异常路径
+# ---------------------------------------------------------------------------
+
+
+def test_compile_exception_exits_with_code_2():
+    with patch.object(cli, "compile", side_effect=RuntimeError("boom")):
+        with pytest.raises(SystemExit) as exc:
+            cli._compile("return 1;", "script")
+    assert exc.value.code == 2
+
+
+def test_get_unparse_prefers_stdlib():
+    unparse = cli._get_unparse()
+    assert unparse is ast.unparse
+
+
+def test_get_unparse_fallback_to_astunparse(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.delattr(ast, "unparse", raising=False)
+
+    fake = types.ModuleType("astunparse")
+
+    def fake_unparse(node):
+        return "fake_unparse"
+
+    fake.unparse = fake_unparse  # pyright: ignore[reportAttributeAccessIssue]
+    monkeypatch.setitem(sys.modules, "astunparse", fake)
+
+    unparse = cli._get_unparse()
+    assert unparse is fake_unparse
+
+
+def test_get_unparse_raises_if_all_missing(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.delattr(ast, "unparse", raising=False)
+    monkeypatch.delitem(sys.modules, "astunparse", raising=False)
+
+    with pytest.raises(ImportError):
+        cli._get_unparse()
+
+
+def test_print_debug_writes_python_file(tmp_path: Path):
+    script, diagnostics = cli.compile(
+        "return 42;", input_mode="script", filename="<test>"
+    )
+    assert diagnostics is not None
+    assert script is not None
+
+    out = tmp_path / "debug_out.py"
+    cli._print_debug(script, str(out), {"x": 1})
+
+    content = out.read_text(encoding="utf-8")
+    assert "if __name__ == '__main__'" in content
+    assert "result = script({'x': 1})" in content
+
+
+def test_main_returns_1_when_script_raises():
+    def bad_script(_ctx=None):
+        raise RuntimeError("runtime failure")
+
+    with patch.object(cli, "_compile", return_value=(bad_script, [])):
+        exit_code, stdout, stderr = _run_main(["-e", "return 1;"])
+
+    assert exit_code == 1
+
+
+def test_main_variable_evaluation_exception_returns_1():
+    def compile_side_effect(code, mode, filename=None):
+        if filename and filename.startswith("<variable:"):
+            raise RuntimeError("var compile failure")
+        return cli.compile(code, input_mode=mode, filename=filename)
+
+    with patch.object(cli, "_compile", side_effect=compile_side_effect):
+        exit_code, stdout, stderr = _run_main(["-v", "x=1", "-e", "return 1;"])
+
+    assert exit_code == 1
+    assert "Error evaluating variable" in stderr

@@ -1,6 +1,6 @@
 import { REG_IDENTIFIER_FULL, REG_ORDINAL_FULL } from '@mirascript/constants';
 import type { VmArray, VmExtern, VmFunction, VmModule, VmAny, VmRecord } from '../vm/index.js';
-import { entries, hasOwn, isFinite, isNaN } from '../helpers/utils.js';
+import { entries, hasOwn } from '../helpers/utils.js';
 import {
     getVmFunctionInfo,
     isVmArray,
@@ -10,6 +10,7 @@ import {
     isVmModule,
     isVmRecord,
 } from './types.js';
+import { numberToString } from './convert/to-string.js';
 
 /** 序列化 nil 值 */
 export function serializeNil(): string {
@@ -23,13 +24,7 @@ export function serializeBoolean(value: boolean): string {
 
 /** 序列化数字 */
 export function serializeNumber(value: number): string {
-    if (isNaN(value)) return 'nan';
-    if (!isFinite(value)) return value < 0 ? '-inf' : 'inf';
-    if (value === 0) {
-        if (1 / value < 0) return '-0';
-        return '0';
-    }
-    return String(value);
+    return numberToString(value, true);
 }
 
 /**

@@ -35,7 +35,7 @@ class Diagnostic(DiagnosticPosition):
     诊断信息类
     """
 
-    __cache = {}
+    _cache = {}
 
     code: int
     """诊断代码"""
@@ -61,20 +61,20 @@ class Diagnostic(DiagnosticPosition):
             self.name = "SourceMap"
             self.message = "Source map information"
             return
-        info = Diagnostic.__cache.get(self.code)
+        info = Diagnostic._cache.get(self.code)
         if info is None:
             try:
                 from .core import get_diagnostic_message
 
                 info = get_diagnostic_message(self.code)
-                Diagnostic.__cache[self.code] = info
+                Diagnostic._cache[self.code] = info
             except Exception:
                 info = (
                     "Unknown",
                     f"{self.code}",
                     f"Unknown diagnostic code",
                 )
-            Diagnostic.__cache[self.code] = info
+            Diagnostic._cache[self.code] = info
         self.level = info[0]
         self.name = info[1]
         self.message = info[2]

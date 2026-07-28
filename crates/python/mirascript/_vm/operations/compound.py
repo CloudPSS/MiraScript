@@ -45,9 +45,9 @@ def In(value: VmAny, iterable: VmAny) -> bool:
 
 def Length(a: VmAny) -> float:
     AssertInit(a)
-    if isinstance(a, (str, list, dict)):
+    if isinstance(a, (list, dict)):
         return float(len(a))
-    raise TypeError(f"`Expected array, string or record, got {Type(a)}")
+    raise TypeError(f"`Expected array, record or extern, got {Type(a)}")
 
 
 def Omit(value: VmAny, omitted: Sequence[float | str | int]) -> VmRecord:

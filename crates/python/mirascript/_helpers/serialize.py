@@ -1,11 +1,11 @@
 from __future__ import annotations
-import math
 import re
 from typing_extensions import TYPE_CHECKING, override, Final
 
 
 from .constants import Uninitialized
 from .types import is_vm_function, is_vm_extern, is_vm_array, is_vm_module, is_vm_record
+from .convert.to_string import number_to_string
 
 if TYPE_CHECKING:
     from .._vm.types import VmFunction, VmModule, VmAny, VmArray, VmExtern, VmRecord
@@ -67,15 +67,7 @@ class Serializer:
         return "true" if value else "false"
 
     def serialize_number(self, value: float | int) -> str:
-        if math.isnan(value):
-            return "nan"
-        if not math.isfinite(value):
-            return "-inf" if value < 0 else "inf"
-        if value == 0:
-            if math.copysign(1, value) < 0:
-                return "-0"
-            return "0"
-        return str(value)
+        return number_to_string(value, minus_zero=True)
 
     def _serialize_string_escaped(self, value: str) -> str:
         return self.serialize_string_escape("\\" + value)

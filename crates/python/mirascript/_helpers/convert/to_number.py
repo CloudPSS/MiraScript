@@ -8,8 +8,6 @@ from ..._vm.types import Uninitialized, VmAny
 
 
 def _parse_number(s: str) -> float | None:
-    if s == "":
-        return None
     ch = s[0]
     if ch < "0" or ch > "9":
         return None
@@ -22,7 +20,7 @@ def _parse_number(s: str) -> float | None:
         return float(int(s[2:], 16))
     elif re.match(r"^[0-9][0-9]*$", s):
         return float(int(s, 10))
-    elif re.match(r"^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$", s):
+    elif re.match(r"^[0-9]+(\.[0-9]+)?([eE][+-]?[0-9]+)?$", s):
         return float(s)
     else:
         return None

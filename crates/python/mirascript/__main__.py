@@ -4,7 +4,7 @@ import sys
 import argparse
 import traceback
 
-from . import VmValue, compile, InputMode, VmScript, Diagnostic, VmContext
+from . import VmValue, compile, InputMode, VmScript, Diagnostic, VmContext, display
 
 
 def _compile(
@@ -44,7 +44,8 @@ def _print_debug(script: VmScript, output_file: str, variables: dict):
             "\n\n"
             "if __name__ == '__main__':\n"
             f"    result = script({variables})\n"
-            "    print('[OK]', result)"
+            "    from mirascript import display\n"
+            "    print('[OK]', display(result))"
         )
 
 
@@ -160,7 +161,7 @@ def main(prog: str | None = "mirascript") -> int:
         _print_debug(result, args.generate, variables)
 
     try:
-        print("[OK]", result(VmContext(variables)))
+        print("[OK]", display(result(VmContext(variables))))
     except Exception as e:
         traceback.print_exc()
         return 1

@@ -150,6 +150,7 @@ def get_vm_type(
     value: VmAny,
 ) -> Literal[
     "uninitialized",
+    "nil",
     "boolean",
     "number",
     "string",
@@ -163,6 +164,8 @@ def get_vm_type(
     """获取 Mirascript 类型"""
     if value is Uninitialized:
         return "uninitialized"
+    if value is None:
+        return "nil"
     if isinstance(value, bool):
         return "boolean"
     if isinstance(value, (int, float)):

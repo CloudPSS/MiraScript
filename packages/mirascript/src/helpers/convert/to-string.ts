@@ -5,17 +5,18 @@ import { display, displayFunction } from '../serialize.js';
 import { keys, isNaN } from '../utils.js';
 
 /** 转换为 string */
-function numberToString(value: number): string {
+export function numberToString(value: number, minusZero: boolean): string {
     if (isNaN(value)) return 'nan';
     if (value === Infinity) return 'inf';
     if (value === -Infinity) return '-inf';
+    if (minusZero && value === 0 && 1 / value < 0) return '-0';
     return String(value);
 }
 
 /** 转换为 string */
 export function innerToString(value: VmAny, useBraces: boolean): string {
     if (value == null) return 'nil';
-    if (typeof value == 'number') return numberToString(value);
+    if (typeof value == 'number') return numberToString(value, false);
     if (typeof value == 'string' || typeof value == 'boolean') return String(value);
     if (typeof value == 'function') return displayFunction(value);
     if (isVmWrapper(value)) return value.toString(useBraces);

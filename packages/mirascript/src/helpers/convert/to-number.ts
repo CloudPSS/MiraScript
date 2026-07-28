@@ -1,34 +1,29 @@
 import type { VmAny } from '../../vm/index.js';
 import { VmError } from '../error.js';
 import { display } from '../serialize.js';
-import { isNaN, NegativeInfinity, NotNumber, PositiveInfinity } from '../utils.js';
+import { NegativeInfinity, NotNumber, PositiveInfinity } from '../utils.js';
 
 /** 将字符串转换为数字 */
 function parseNumericLiteral(value: string): number | null {
-    if (value === '') return null;
     const ch0 = value.charAt(0);
     if (ch0 < '0' || ch0 > '9') {
         return null;
     }
     // 二进制
     if (/^0[bB][01]+$/.test(value)) {
-        const num = Number.parseInt(value.slice(2), 2);
-        return isNaN(num) ? null : num;
+        return Number.parseInt(value.slice(2), 2);
     }
     // 八进制
     if (/^0[oO][0-7]+$/.test(value)) {
-        const num = Number.parseInt(value.slice(2), 8);
-        return isNaN(num) ? null : num;
+        return Number.parseInt(value.slice(2), 8);
     }
     // 十六进制
     if (/^0[xX][0-9a-fA-F]+$/.test(value)) {
-        const num = Number.parseInt(value.slice(2), 16);
-        return isNaN(num) ? null : num;
+        return Number.parseInt(value.slice(2), 16);
     }
     // 十进制/科学计数法
     if (/^[0-9]+(\.[0-9]+)?([eE][+-]?[0-9]+)?$/.test(value)) {
-        const num = Number.parseFloat(value);
-        return isNaN(num) ? null : num;
+        return Number.parseFloat(value);
     }
     return null;
 }
