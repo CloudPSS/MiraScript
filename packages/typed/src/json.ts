@@ -190,7 +190,7 @@ function toJSONSchemaImpl(type: Type, options: Required<ToJSONSchemaOptions>): J
             const required: string[] = [];
             for (const field of simplified.fields) {
                 properties[field.name] = toJSONSchemaImpl(field.type, options);
-                if (!field.optional && !loose) {
+                if (!loose && !field.optional) {
                     required.push(field.name);
                 }
             }

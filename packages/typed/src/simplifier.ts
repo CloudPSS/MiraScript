@@ -276,7 +276,7 @@ function simplifyImpl(type: Type, config: Required<SimplifyOptions>): Type {
             if (
                 config.expandTupleSpreads &&
                 element.spread &&
-                typeof simplifiedType === 'object' &&
+                typeof simplifiedType == 'object' &&
                 simplifiedType.kind === 'tuple'
             ) {
                 // Inline tuple spread: ..[A, B] → A, B

@@ -172,7 +172,7 @@ const { valueOf } = Object.prototype;
 function customValueOf(value: VmRecord): VmAny | undefined {
     // eslint-disable-next-line @typescript-eslint/unbound-method
     const thisValueOf = value.valueOf;
-    if (typeof thisValueOf != 'function' || thisValueOf === valueOf) {
+    if (typeof thisValueOf !== 'function' || thisValueOf === valueOf) {
         return undefined;
     }
     const customValue = thisValueOf.call(value) as VmAny | undefined;

@@ -42,9 +42,9 @@
     "@commander-js/extra-typings": "^15.0.0",
     "@mirascript/bindings": "workspace:~",
     "@mirascript/mirascript": "workspace:~",
-    "ansi-styles": "^6.2.3",
+    "ansi-styles": "^7.0.0",
     "commander": "^15.0.0",
-    "supports-color": "^10.2.2"
+    "supports-color": "^11.0.0"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",

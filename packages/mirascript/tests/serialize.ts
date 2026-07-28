@@ -10,30 +10,30 @@ test('serializeString', (t) => {
     t.is(serializeString('你好，世界！'), `'你好，世界！'`);
     t.is(serializeString('こんにちは、世界！'), `'こんにちは、世界！'`);
     t.is(serializeString('👋🌍'), `'👋🌍'`);
-    t.is(serializeString('\0\u0001\n\r\t\b\f\v\\'), String.raw`'\0\x01\n\r\t\b\f\v\\'`);
-    t.is(serializeString('\u202A\u{E0001}'), String.raw`'\u{202a}\u{e0001}'`);
+    t.is(serializeString('\0\u{1}\n\r\t\b\f\v\\'), String.raw`'\0\x01\n\r\t\b\f\v\\'`);
+    t.is(serializeString('\u{202A}\u{E0001}'), String.raw`'\u{202a}\u{e0001}'`);
     t.is(serializeString("'"), String.raw`'\''`);
     t.is(serializeString('"'), `'"'`);
     t.is(serializeString('`'), "'`'");
     t.is(serializeString('`\'"'), `'\`\\'"'`);
     t.is(serializeString('$a'), String.raw`'\$a'`);
     t.is(
-        serializeString('\u000A\u000D\u001C\u001D\u0085\u2028\u2029\uFEFF\u{110BD}'),
+        serializeString('\u{A}\u{D}\u{1C}\u{1D}\u{85}\u{2028}\u{2029}\u{FEFF}\u{110BD}'),
         String.raw`'\n\r\x1c\x1d\u{85}\u{2028}\u{2029}\u{feff}\u{110bd}'`,
     );
-    t.is(serializeString('\u0300xx\nabc\u0300'), `'\\u{300}xx\\nabc\u{300}'`); // starts and ends with combining marks
+    t.is(serializeString('\u{300}xx\nabc\u{300}'), `'\\u{300}xx\\nabc\u{300}'`); // starts and ends with combining marks
     t.is(serializeString('\u{11303}xx\nabc\u{11303}'), `'\\u{11303}xx\\nabc\u{11303}'`); // starts and ends with combining marks outside BMP
-    t.is(serializeString('\u0300xx\nabc\u0300'), `'\\u{300}xx\\nabc\u{300}'`); // starts and ends with combining marks
-    t.is(serializeString('\u0300\nabc\u0300'), `'\\u{300}\\nabc\u{300}'`); // starts and ends with combining marks
-    t.is(serializeString('\u0300xx\n\u0300'), `'\\u{300}xx\\n\u{300}'`); // starts and ends with combining marks
-    t.is(serializeString('\u0300\u0301'), String.raw`'\u{300}\u{301}'`); // all combining marks
-    t.is(serializeString('\u0300'), String.raw`'\u{300}'`); // single combining mark
-    t.is(serializeString('\u0300\u0301xx\nabc\u0300'), `'\\u{300}\\u{301}xx\\nabc\u{300}'`); // starts with combining marks
-    t.is(serializeString('\u0300\n'), String.raw`'\u{300}\n'`); // starts and ends with combining marks
-    t.is(serializeString('\uDC00\uD800'), `'��'`); // broken surrogate
-    t.is(serializeString('\uD800\uDC00'), `'\u{10000}'`); // valid surrogate pair
-    t.is(serializeString('\uD800'), `'�'`); // lone high surrogate
-    t.is(serializeString('\uDC00'), `'�'`); // lone low surrogate
+    t.is(serializeString('\u{300}xx\nabc\u{300}'), `'\\u{300}xx\\nabc\u{300}'`); // starts and ends with combining marks
+    t.is(serializeString('\u{300}\nabc\u{300}'), `'\\u{300}\\nabc\u{300}'`); // starts and ends with combining marks
+    t.is(serializeString('\u{300}xx\n\u{300}'), `'\\u{300}xx\\n\u{300}'`); // starts and ends with combining marks
+    t.is(serializeString('\u{300}\u{301}'), String.raw`'\u{300}\u{301}'`); // all combining marks
+    t.is(serializeString('\u{300}'), String.raw`'\u{300}'`); // single combining mark
+    t.is(serializeString('\u{300}\u{301}xx\nabc\u{300}'), `'\\u{300}\\u{301}xx\\nabc\u{300}'`); // starts with combining marks
+    t.is(serializeString('\u{300}\n'), String.raw`'\u{300}\n'`); // starts and ends with combining marks
+    t.is(serializeString('\u{DC00}\u{D800}'), `'��'`); // broken surrogate
+    t.is(serializeString('\u{10000}'), `'\u{10000}'`); // valid surrogate pair
+    t.is(serializeString('\u{D800}'), `'�'`); // lone high surrogate
+    t.is(serializeString('\u{DC00}'), `'�'`); // lone low surrogate
 });
 
 test('serializeRecordKey', (t) => {
@@ -114,19 +114,19 @@ for (const value of [
     '你好，世界！',
     'こんにちは、世界！',
     '👋🌍',
-    '\0\u0001\n\r\t\b\f\v\\',
-    '\u202A\u{E0001}',
+    '\0\u{1}\n\r\t\b\f\v\\',
+    '\u{202A}\u{E0001}',
     "'",
     '"',
     '`',
     '`\'"',
     '$a',
-    '\u000A\u000D\u001C\u001D\u0085\u2028\u2029\uFEFF',
+    '\u{A}\u{D}\u{1C}\u{1D}\u{85}\u{2028}\u{2029}\u{FEFF}',
 ]) {
     test(`string`, serializeRoundTrip, value);
 }
 
-test(`broken surrogate string`, serializeRoundTrip, '\uDC00\uD800', '\uFFFD\uFFFD');
+test(`broken surrogate string`, serializeRoundTrip, '\u{DC00}\u{D800}', '\u{FFFD}\u{FFFD}');
 
 for (const value of [
     0,

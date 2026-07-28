@@ -140,7 +140,7 @@ export class VmExtern<const T extends object = object> extends VmWrapper<T> {
     override toString(useBraces: boolean): string {
         // eslint-disable-next-line @typescript-eslint/unbound-method
         const { toString } = this.value;
-        if (typeof toString != 'function' || toString === ObjectToString || toString === FunctionToString) {
+        if (typeof toString !== 'function' || toString === ObjectToString || toString === FunctionToString) {
             // When the toString method is not overridden or invalid, provide a better default representation
             return super.toString(useBraces);
         }

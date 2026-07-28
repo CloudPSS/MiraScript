@@ -64,6 +64,6 @@ export async function syntaxHighlight(value: string, languageId: string): Promis
         // 如果高亮结果以 <br/> 结尾且原始值没有换行符，则去掉 <br/>
         highlighted = highlighted.slice(0, -'<br/>'.length);
     }
-    highlighted = highlighted.replaceAll(/(\u00A0)+/g, '$&<wbr>');
+    highlighted = highlighted.replaceAll(/(\u{A0})+/gu, '$&<wbr>');
     return highlighted;
 }

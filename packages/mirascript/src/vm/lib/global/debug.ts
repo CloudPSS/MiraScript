@@ -33,7 +33,7 @@ function serializeValue(
     format: SerializeFormat,
 ): string | null | PromiseLike<string> {
     const { serializer } = options;
-    if (serializer == null || serializer === defaultSerializer) {
+    if (serializer === defaultSerializer || serializer === null) {
         return defaultSerializer(arg, format);
     }
     try {
@@ -234,9 +234,9 @@ if (typeof location != 'undefined') {
     panic.prefix = [badge, `${common} background: #d23d3d; color: #fff;`, reset];
 } else {
     if (supportsColor.stdout) {
-        debug_print.prefix = ['\u001B[44;37m MiraScript \u001B[0m'];
+        debug_print.prefix = ['\u{1B}[44;37m MiraScript \u{1B}[0m'];
     }
     if (supportsColor.stderr) {
-        panic.prefix = ['\u001B[41;37m MiraScript \u001B[0m'];
+        panic.prefix = ['\u{1B}[41;37m MiraScript \u{1B}[0m'];
     }
 }

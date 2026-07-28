@@ -21,8 +21,7 @@ export function createConfig(config?: Config | wasm.Config): wasm.Config {
         let value = config[key as keyof Config] as never;
         if (key === 'input_mode') {
             value = wasm.InputMode[value as InputMode] as never;
-        }
-        if (key === 'diagnostic_position_encoding') {
+        } else if (key === 'diagnostic_position_encoding') {
             value = wasm.DiagnosticPositionEncoding[value as DiagnosticPositionEncoding] as never;
         }
         if (value === undefined) continue;

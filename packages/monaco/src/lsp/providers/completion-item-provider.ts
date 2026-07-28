@@ -159,7 +159,7 @@ const COMMON_GLOBAL_SUGGESTIONS = (
         );
 
         for (const kw of loadSuggestKeywords()) {
-            const exist = suggestions.find(
+            const exist = suggestions.some(
                 (item) => item.label === kw && item.kind === languages.CompletionItemKind.Keyword,
             );
             if (exist) continue;
@@ -451,7 +451,7 @@ export class CompletionItemProvider extends Provider implements languages.Comple
             endColumn: word?.range.startColumn ?? position.column,
         });
 
-        if (context.triggerCharacter === ':' && prev !== '::') {
+        if (prev !== '::' && context.triggerCharacter === ':') {
             return undefined; // 不是 :: 触发的
         }
 

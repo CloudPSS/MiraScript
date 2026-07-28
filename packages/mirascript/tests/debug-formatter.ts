@@ -17,28 +17,28 @@ const s = test.macro<[Partial<typeof debug_print>, readonly VmAny[], readonly un
     const t = (title: string, args: readonly VmAny[], expected: readonly unknown[]) => {
         test(`default ${title}`, s, {}, args, expected);
     };
-    t('', [42, 'test', true], ['\u001B[44;37m MiraScript \u001B[0m %o %s %o', 42, 'test', true]);
-    t('one empty string arg', [''], ['\u001B[44;37m MiraScript \u001B[0m %s', '']);
-    t('two empty string args', ['', ''], ['\u001B[44;37m MiraScript \u001B[0m %s %s', '', '']);
-    t('empty', [], ['\u001B[44;37m MiraScript \u001B[0m']);
-    t('with string', ['test', 'value'], ['\u001B[44;37m MiraScript \u001B[0m %s %s', 'test', 'value']);
-    t('with format', ['%s%o', 3.14, { a: 1 }], ['\u001B[44;37m MiraScript \u001B[0m %s%o', 3.14, { a: 1 }]);
-    t('with less args', ['Value: %d %s', 100], ['\u001B[44;37m MiraScript \u001B[0m Value: %d %%s', 100]);
-    t('with more args', ['Value: %d', 1, 2, 3], ['\u001B[44;37m MiraScript \u001B[0m Value: %d %o %o', 1, 2, 3]);
-    t('with %', ['Progress: 50% complete', 50], ['\u001B[44;37m MiraScript \u001B[0m Progress: 50%% complete %o', 50]);
+    t('', [42, 'test', true], ['\u{1B}[44;37m MiraScript \u{1B}[0m %o %s %o', 42, 'test', true]);
+    t('one empty string arg', [''], ['\u{1B}[44;37m MiraScript \u{1B}[0m %s', '']);
+    t('two empty string args', ['', ''], ['\u{1B}[44;37m MiraScript \u{1B}[0m %s %s', '', '']);
+    t('empty', [], ['\u{1B}[44;37m MiraScript \u{1B}[0m']);
+    t('with string', ['test', 'value'], ['\u{1B}[44;37m MiraScript \u{1B}[0m %s %s', 'test', 'value']);
+    t('with format', ['%s%o', 3.14, { a: 1 }], ['\u{1B}[44;37m MiraScript \u{1B}[0m %s%o', 3.14, { a: 1 }]);
+    t('with less args', ['Value: %d %s', 100], ['\u{1B}[44;37m MiraScript \u{1B}[0m Value: %d %%s', 100]);
+    t('with more args', ['Value: %d', 1, 2, 3], ['\u{1B}[44;37m MiraScript \u{1B}[0m Value: %d %o %o', 1, 2, 3]);
+    t('with %', ['Progress: 50% complete', 50], ['\u{1B}[44;37m MiraScript \u{1B}[0m Progress: 50%% complete %o', 50]);
     t(
         'with %%',
         ['Progress: 50%% complete', 50],
-        ['\u001B[44;37m MiraScript \u001B[0m Progress: 50%% complete %o', 50],
+        ['\u{1B}[44;37m MiraScript \u{1B}[0m Progress: 50%% complete %o', 50],
     );
     t(
         'with %% and format',
         ['Progress: %d%% complete', 50],
-        ['\u001B[44;37m MiraScript \u001B[0m Progress: %d%% complete', 50],
+        ['\u{1B}[44;37m MiraScript \u{1B}[0m Progress: %d%% complete', 50],
     );
-    t('starts with format', ['%s is a string', 'This'], ['\u001B[44;37m MiraScript \u001B[0m %s is a string', 'This']);
-    t('starts with %', ['% is a string', 'This'], ['\u001B[44;37m MiraScript \u001B[0m %% is a string %s', 'This']);
-    t('starts with %%', ['%%%s is a string', 'This'], ['\u001B[44;37m MiraScript \u001B[0m %%%s is a string', 'This']);
+    t('starts with format', ['%s is a string', 'This'], ['\u{1B}[44;37m MiraScript \u{1B}[0m %s is a string', 'This']);
+    t('starts with %', ['% is a string', 'This'], ['\u{1B}[44;37m MiraScript \u{1B}[0m %% is a string %s', 'This']);
+    t('starts with %%', ['%%%s is a string', 'This'], ['\u{1B}[44;37m MiraScript \u{1B}[0m %%%s is a string', 'This']);
 }
 
 {

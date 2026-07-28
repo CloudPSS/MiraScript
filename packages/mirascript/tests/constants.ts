@@ -52,7 +52,7 @@ test('constants', (t) => {
     testRegExp(
         constants.REG_WHITESPACE,
         [' ', '\t', '\n', '\r', '\v', '\f'],
-        ['\0', 'a', '1', '', ' \t', '\b', '\u0007'],
+        ['\0', 'a', '1', '', ' \t', '\b', '\u{7}'],
     );
 
     testRegExp(

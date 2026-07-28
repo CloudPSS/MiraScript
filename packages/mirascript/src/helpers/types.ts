@@ -86,7 +86,7 @@ export function isVmArray(value: VmAny): value is VmArray {
 
 /** 检查值是否为 Mirascript 记录 */
 export function isVmRecord(value: VmAny): value is VmRecord {
-    if (value == null || typeof value !== 'object') return false;
+    if (value == null || typeof value != 'object') return false;
     if (isVmWrapper(value)) return false;
     if (isVmArray(value)) return false;
     value satisfies VmRecord;

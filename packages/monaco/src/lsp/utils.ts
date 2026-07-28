@@ -325,7 +325,7 @@ function serializeForDisplay(value: Exclude<VmValue, VmModule>, maxEntries = 100
         begin = `${hint} ${isArray ? '[' : '('}`;
         end = isArray ? ']' : ')';
         const keys = value.keys();
-        if (keys.length === 0 && !isArray) {
+        if (!isArray && keys.length === 0) {
             if (typeof value.value == 'object') {
                 // 没有可枚举属性，尝试获取所有属性，仅在 LSP 进行展示时使用
                 // 实际程序运行时这些属性仍然不可通过 `keys()` 或 `for .. in` 访问

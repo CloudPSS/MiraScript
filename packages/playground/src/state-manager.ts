@@ -105,8 +105,10 @@ async function saveUrlToClipboard(): Promise<void> {
 
 // Ctrl + S 保存 URL 到剪贴板
 globalThis.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-        e.preventDefault();
-        void saveUrlToClipboard();
+    if (!((e.ctrlKey || e.metaKey) && e.key === 's')) {
+        return;
     }
+
+    e.preventDefault();
+    void saveUrlToClipboard();
 });

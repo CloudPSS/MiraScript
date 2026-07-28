@@ -6,11 +6,13 @@ import type { VmAny } from '../vm/types/index.js';
 export class VmError extends Error {
     constructor(
         message: string,
+        // eslint-disable-next-line unicorn/custom-error-definition
         readonly recovered: VmAny,
     ) {
         super(message);
-        this.name = 'VmError';
     }
+
+    override readonly name = 'VmError';
 
     /** 从其他错误构造 */
     static from(prefix: string, error: unknown, recovered: VmAny): VmError {

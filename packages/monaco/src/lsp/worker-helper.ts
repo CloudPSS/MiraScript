@@ -73,13 +73,15 @@ async function compileWorker(req: Req): Promise<CompileResult> {
     const [key, version, source] = req;
     const [_key, _version, result] = await new Promise<ResOk>((resolve, reject) => {
         const onMessage = (e: MessageEvent<Res>) => {
-            if (e.data[0] === key && e.data[1] === version) {
-                instance.removeEventListener('message', onMessage);
-                if (e.data[2] instanceof Error) {
-                    reject(e.data[2]);
-                } else {
-                    resolve(e.data as ResOk);
-                }
+            if (!(e.data[0] === key && e.data[1] === version)) {
+                return;
+            }
+
+            instance.removeEventListener('message', onMessage);
+            if (e.data[2] instanceof Error) {
+                reject(e.data[2]);
+            } else {
+                resolve(e.data as ResOk);
             }
         };
         instance.addEventListener('message', onMessage);

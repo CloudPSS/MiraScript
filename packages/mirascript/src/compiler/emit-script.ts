@@ -8,6 +8,7 @@ import { DiagnosticCode, formatDiagnostics, parseDiagnostics } from './diagnosti
 export class CompileError extends Error {
     constructor(
         source: ScriptInput,
+        // eslint-disable-next-line unicorn/custom-error-definition
         diagnostics: Uint32Array,
         readonly fileName: string | undefined,
     ) {

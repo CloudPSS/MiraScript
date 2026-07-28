@@ -20,7 +20,7 @@ const FAST_SCRIPT_MAX_LEN = 32;
 
 /** 生成安全的 JS 字符串 */
 function safeStringify(value: string): string {
-    return JSON.stringify(value).replaceAll(/[<>&\u2028\u2029/]/gu, (c) => {
+    return JSON.stringify(value).replaceAll(/[<>&\u{2028}\u{2029}/]/gu, (c) => {
         return String.raw`\u${c.codePointAt(0)?.toString(16).padStart(4, '0')}`;
     });
 }

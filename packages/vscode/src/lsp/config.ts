@@ -183,7 +183,7 @@ class MiraConfigData extends Disposable {
             if (value === undefined) continue;
 
             const vm =
-                value != null && typeof value === 'object' ? new VmExtern(value) : MiraConfigData.createValue(value);
+                value != null && typeof value == 'object' ? new VmExtern(value) : MiraConfigData.createValue(value);
             this.globals.set(key, vm);
         }
         const modules = config.modules ?? {};

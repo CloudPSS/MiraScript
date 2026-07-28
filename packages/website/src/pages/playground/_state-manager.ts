@@ -20,10 +20,13 @@ const defaultMode: InputMode = 'Script';
 
 /** 保存 URL 到剪贴板 */
 function saveUrlToClipboard(e: KeyboardEvent): void {
-    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-        e.preventDefault();
-        void navigator.clipboard.writeText(location.href);
+    if (!((e.ctrlKey || e.metaKey) && e.key === 's')) {
+        return;
     }
+
+    e.preventDefault();
+    setState({});
+    void navigator.clipboard.writeText(location.href);
 }
 
 /** 初始化状态管理器 */
