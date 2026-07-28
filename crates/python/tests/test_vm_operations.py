@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-import math
-import importlib
-import types
-
 import pytest
 
 from mirascript import Uninitialized, VmError, VmModule, operations
+
+mod = VmModule("test", {"x": 1})
 
 
 def test_op_in():
@@ -15,6 +13,10 @@ def test_op_in():
     assert operations.In(None, [None])
     assert not operations.In("a", "abc")
     assert operations.In("a", {"a": 1})
+    assert operations.In("x", mod)
+    assert not operations.In(None, None)
+    with pytest.raises(VmError):
+        operations.In("y", Uninitialized)
 
 
 def test_op_length():
@@ -24,6 +26,10 @@ def test_op_length():
         operations.Length("abc")
     with pytest.raises(TypeError):
         operations.Length(1)
+    with pytest.raises(TypeError):
+        operations.Length(None)
+    with pytest.raises(TypeError):
+        operations.Length(mod)
 
 
 def test_op_omit_pick():
@@ -31,9 +37,11 @@ def test_op_omit_pick():
     assert operations.Omit({"a": 1, "b": 2}, ["a", "x"]) == {"b": 2}
     assert operations.Omit([1, 2, 3], [0]) == {}
     assert operations.Omit(1, [0]) == {}
+    assert operations.Omit(mod, [0]) == {}
     assert operations.Pick({"a": 1, "b": 2}, ["a", "x"]) == {"a": 1}
     assert operations.Pick([1, 2, 3], [0]) == {}
     assert operations.Pick(1, [0]) == {}
+    assert operations.Pick(mod, ["x"]) == {}
 
 
 def test_op_has():
@@ -42,6 +50,9 @@ def test_op_has():
     assert operations.Has([1, 2], 1)
     assert not operations.Has([1, 2], 1.5)
     assert not operations.Has(1, "a")
+    assert not operations.Has(None, "a")
+    assert operations.Has(mod, "x")
+    assert not operations.Has(mod, "y")
 
 
 def test_op_get():

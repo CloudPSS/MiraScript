@@ -18,30 +18,24 @@ class VmWrapper(ABC, Generic[T]):
         return self.__value
 
     @abstractmethod
-    def has(self, key: str) -> bool:
-        pass
+    def has(self, key: str) -> bool: ...
 
     @abstractmethod
-    def get(self, key: str) -> VmAny:
-        pass
+    def get(self, key: str) -> VmAny: ...
 
     @abstractmethod
-    def keys(self) -> Iterable[str]:
-        pass
+    def keys(self) -> Iterable[str]: ...
 
     @abstractmethod
-    def same(self, other: VmAny) -> bool:
-        pass
+    def same(self, other: VmAny) -> bool: ...
 
     @property
     @abstractmethod
-    def type(self) -> str:
-        pass
+    def type(self) -> str: ...
 
     @property
     @abstractmethod
-    def describe(self) -> str | None:
-        pass
+    def describe(self) -> str | None: ...
 
     def __str__(self) -> str:
         if not self.describe:

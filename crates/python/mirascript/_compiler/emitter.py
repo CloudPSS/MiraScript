@@ -200,9 +200,6 @@ class Emitter:
                 self.skip_opcode()
                 body = block.orelse
                 break
-            elif opcode == OpCode.ElIf:
-                self.skip_opcode()
-                raise ValueError("ElIf not supported in Python emitter")
 
             self.read(block.body)
 

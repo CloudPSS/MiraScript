@@ -174,12 +174,6 @@ export class Emitter {
                 this.codeLines.push(body);
                 break;
             }
-            if (opcode === OpCode.ElIf) {
-                this.codeOffset++;
-                const body = this.ident(-1) + `} else `;
-                this.codeLines.push(body);
-                return this.readCode();
-            }
             this.readCode();
         }
         return this.readBlockEnd(OpCode.IfEnd);

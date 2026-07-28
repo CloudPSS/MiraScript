@@ -290,10 +290,6 @@ pub enum OpCode {
     /// ELSE\
     /// } else {
     Else,
-    /// EL_IF IF*\
-    /// } else if *** {\
-    /// This instruction must be followed by an `IF*` instruction\
-    ElIf,
     /// IF_END\
     /// }
     IfEnd,

@@ -120,7 +120,7 @@ def is_vm_immutable(value, check_deep: Literal[True]) -> TypeIs[VmImmutable]: ..
 def is_vm_immutable(value, check_deep=False) -> TypeIs[VmImmutable]:
     """检查值是否为 Mirascript 不可变值"""
     return (
-        is_vm_const(value, check_deep) or is_vm_function(value) or is_vm_module(value)
+        is_vm_function(value) or is_vm_module(value) or is_vm_const(value, check_deep)
     )
 
 

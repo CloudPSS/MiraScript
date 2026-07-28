@@ -1,6 +1,6 @@
-# MiraScript Python Bindings
+# MiraScript
 
-Python 绑定用于在 Python 中调用 MiraScript 编译器能力，支持脚本编译与执行。
+MiraScript 是 CloudPSS 维护的表达式优先脚本语言项目。Python 绑定用于在 Python 中调用 MiraScript 编译器能力，支持脚本编译与执行。
 
 ## 安装
 
