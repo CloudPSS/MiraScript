@@ -13,7 +13,7 @@ from .cp import CpEnter, CpExit
 
 if TYPE_CHECKING:
 
-    from ..._compiler.script import VmScript, VmScriptLike
+    from ..._compiler.script import VmScript
 
 
 class _LoopControl(Enum):
