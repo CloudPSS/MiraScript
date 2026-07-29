@@ -1,10 +1,8 @@
 from __future__ import annotations
-from typing_extensions import Callable
 
-from ....._helpers.types import is_vm_const
-from ....types import Uninitialized, VmAny, VmFunction
+from ....types import Uninitialized, VmAny
 from ..._helpers import _expect_callable, _expect_const, _iterate, _required
-from ....operations import Call, ToBoolean
+from ....operations import Call
 
 
 def fold(

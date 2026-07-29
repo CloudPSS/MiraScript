@@ -1,6 +1,6 @@
 from __future__ import annotations
 from enum import Enum
-from typing_extensions import Callable, Mapping, Any, TYPE_CHECKING, Final
+from typing_extensions import Callable, Mapping, TYPE_CHECKING, Final
 
 from ..._helpers.types import is_vm_const, is_vm_context
 from ..._helpers.constants import kVmScript
@@ -14,6 +14,18 @@ from .cp import CpEnter, CpExit
 if TYPE_CHECKING:
 
     from ..._compiler.script import VmScript
+
+__all__ = [
+    "LoopContinue",
+    "LoopBreak",
+    "Script",
+    "Module",
+    "Pub",
+    "Element",
+    "ElementOpt",
+    "Fn",
+    "Upvalue",
+]
 
 
 class _LoopControl(Enum):
@@ -49,7 +61,8 @@ _PUB_ATTR = "__mirascript.mod.pub__"
 
 
 class _Mod(Mapping[str, VmValue]):
-    def __init__(self, pub: dict[str, Callable[[], Any]]):
+
+    def __init__(self, pub: dict[str, Callable[[], VmAny]]):
         self._pub = pub
 
     def __getitem__(self, key: str) -> VmValue:
@@ -70,13 +83,13 @@ def Module(name: str):
 
     def decorator(kls: type):
 
-        pub: dict[str, Callable[[], Any]] = {}
+        pub: dict[str, Callable[[], VmAny]] = {}
         for attr_name in dir(kls):
             attr = getattr(kls, attr_name)
             pub_name = getattr(attr, _PUB_ATTR, None)
             if pub_name is not None:
                 assert callable(attr), f"Public attribute {pub_name} must be callable"
-                pub[pub_name] = attr
+                pub[pub_name] = attr  # pyright: ignore[reportArgumentType]
 
         return VmModule(name, _Mod(pub))
 
