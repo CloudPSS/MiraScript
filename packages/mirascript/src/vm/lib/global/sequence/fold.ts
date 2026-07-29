@@ -20,7 +20,7 @@ export const fold = VmLib(
             data: { type: 'array | record', description: '要折叠的数组或记录' },
             initial: { type: 'any', description: '初始累积值' },
             f: {
-                type: 'fn(acc: type(initial), value: any, key?: number | string, data?: type(data)) -> type(initial)',
+                type: 'fn(acc: type(initial), value: any, key: number | string, input: type(data)) -> type(initial)',
                 description: '应用于每个元素的函数',
             },
         },
