@@ -45,7 +45,6 @@ from .helpers import (
     ElementOpt,
     Fn,
     Upvalue,
-    Context,
 )
 from .compound import (
     In,
@@ -110,7 +109,6 @@ __all__ = [
     "ElementOpt",
     "Fn",
     "Upvalue",
-    "Context",
     "In",
     "Length",
     "Omit",

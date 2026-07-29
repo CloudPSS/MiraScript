@@ -376,11 +376,9 @@ class Emitter:
 
             if script:
                 args.args.insert(0, helper.arg("context"))
-                args.defaults.insert(0, helper.const(None))
                 code = helper.func_def("script", args, [regs])
                 self.func_script = code
                 code.decorator_list.append(helper.load("Script"))
-                code.body.append(helper.assign_call("context", "Context", ["context"]))
 
             else:
                 func_name = self.wv(reg)

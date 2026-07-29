@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing_extensions import Protocol
 from ast import Module
 
@@ -8,28 +9,27 @@ from .._vm.types import VmValue, VmContextLike
 class VmScriptLike(Protocol):
     """A protocol representing a callable object that can be executed with an optional global context."""
 
-    def __call__(self, global_ctx: "VmContextLike | None" = None) -> VmValue: ...
+    def __call__(self, global_ctx: VmContextLike | None = None) -> VmValue: ...
 
 
 class VmScript(VmScriptLike):
     """A class representing a compiled MiraScript script, which is a callable object with additional metadata."""
 
     ast: Module
-    filename: "str | None"
-    source: "str | None"
+    filename: str | None
+    source: str | None
 
 
 def wrap_vm_script(
-    func: "VmScriptLike | Exception",
+    func: VmScriptLike | Exception,
     *,
-    filename: "str | None" = None,
-    source: "str | None" = None,
-    ast: "Module | None" = None
-) -> "VmScript":
+    filename: str | None = None,
+    source: str | None = None,
+    ast: Module | None = None,
+) -> VmScript:
     if isinstance(func, Exception):
-        err = func
 
-        def error_func(global_ctx: "VmContextLike | None" = None, *args, **kwargs):
+        def error_func(global_ctx: VmContextLike | None = None, *, err=func):
             raise err
 
         func = error_func

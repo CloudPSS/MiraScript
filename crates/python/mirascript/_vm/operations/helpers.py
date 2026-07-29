@@ -1,6 +1,6 @@
 from __future__ import annotations
 from enum import Enum
-from typing_extensions import Callable, Mapping, Any
+from typing_extensions import Callable, Mapping, Any, TYPE_CHECKING, Final
 
 from ..._helpers.types import is_vm_const, is_vm_context
 from ..._helpers.constants import kVmScript
@@ -11,29 +11,38 @@ from ..types.function import VmFunction, vm_function
 from .common import AssertInit
 from .cp import CpEnter, CpExit
 
+if TYPE_CHECKING:
+
+    from ..._compiler.script import VmScript, VmScriptLike
+
 
 class _LoopControl(Enum):
     Continue = object()
     Break = object()
 
 
-LoopContinue = _LoopControl.Continue
+LoopContinue: Final = _LoopControl.Continue
 """标记当前值未返回的值"""
-LoopBreak = _LoopControl.Break
+LoopBreak: Final = _LoopControl.Break
 """标记当前值为Break"""
 
 
-def Script(func: Callable[..., Any]) -> Callable[..., Any]:
+def Script(func: Callable[[VmContextLike], VmValue]) -> VmScript:
 
-    def script_wrapper(*args, **kwargs):
+    def script_wrapper(context: VmContextLike | None = None):
+        if context is None:
+            context = get_shared_context()
+        elif not is_vm_context(context):
+            context = VmContext(context)
+
         try:
             CpEnter()
-            return func(*args, **kwargs)
+            return func(context)
         finally:
             CpExit()
 
     setattr(script_wrapper, kVmScript, True)
-    return script_wrapper
+    return script_wrapper  # type: ignore
 
 
 _PUB_ATTR = "__mirascript.mod.pub__"
@@ -120,11 +129,3 @@ def Fn(name: str) -> Callable[[VmFunction], VmFunction]:
 def Upvalue(value: VmAny) -> VmValue:
     AssertInit(value)
     return value  # type: ignore
-
-
-def Context(context: VmContextLike | None = None) -> VmContext:
-    if context is None:
-        return get_shared_context()
-    if not is_vm_context(context):
-        return VmContext(context)
-    return context
