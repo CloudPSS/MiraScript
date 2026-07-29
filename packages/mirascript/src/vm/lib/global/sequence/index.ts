@@ -11,3 +11,4 @@ export * from './sort.js';
 export * from './unique.js';
 export * from './repeat.js';
 export * from './new.js';
+export * from './fold.js';

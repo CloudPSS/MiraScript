@@ -1,0 +1,88 @@
+// 测试 fold 函数
+
+// 测试 fold 对基本类型的操作
+t_eq(fold(42, 0, fn (acc, x) { acc + x }), 42);
+t_eq(fold("hello", "", fn (acc, x) { `$acc$x` }), "hello");
+t_eq(fold(true, false, fn (acc, x) { acc || x }), true);
+t_eq(fold(1, 10, fn (acc, x) { acc + x }), 11);
+t_eq(fold(nil, 10, fn (acc, x) { [acc, x] }), [10, nil]);
+
+// 测试 fold 对数组的操作
+t_eq(fold([1, 2, 3, 4], 0, fn (acc, x) { acc + x }), 10);
+t_eq(fold([1, 2, 3, 4], 1, fn (acc, x) { acc * x }), 24);
+
+t_eq(fold([1, 2, 3], [], fn (acc, x) { acc::with(len(acc), x * 2) }), [2, 4, 6]);
+
+t_eq(fold([1, 2, 3], 0, fn (acc, x, i) { acc + x * i }), 8);
+
+t_eq(fold([1, 2, 3], 0, fn (acc, x, i, data) { acc + len(data) }), 9);
+
+t_eq(fold([], 42, fn (acc, x) { acc + x }), 42);
+
+// 测试 fold 对记录的操作
+t_eq(fold((a: 1, b: 2, c: 3), 0, fn (acc, x) { acc + x }), 6);
+
+t_eq(fold((a: 1, b: 2, c: 3), "", fn (acc, x, k) { `$acc$k=$x;` }), "a=1;b=2;c=3;");
+
+t_eq(fold((a: 1, b: 2), 0, fn (acc, x, k, data) { acc + len(keys(data)) }), 4);
+
+t_eq(fold((), 42, fn (acc, x) { acc + x }), 42);
+
+// 测试 fold 修改 accumulator 类型
+t_eq(fold([1, 2, 3], (), fn (acc, x) { (value: x, previous: acc) }), (value: 3, previous: (value: 2, previous: (value: 1, previous: ()))));
+
+// 测试 fold 返回 nil
+t_eq(fold([1, 2, 3], 0, fn (acc, x) { nil }), nil);
+
+// 测试 fold accumulator 为函数
+t_eq(
+  fold(
+    [1, 2],
+    fn { 0 },
+    fn (acc, x) {
+      return fn { acc() + x };
+    },
+  )(),
+  3,
+);
+
+// 测试错误处理
+
+// 测试不支持的数据类型
+t_throws(fn () {
+  fold(t_eq, 0, fn (acc, x) { acc });
+});
+
+// 测试不可调用的函数参数
+t_throws(fn () {
+  fold([1, 2, 3], 0, nil);
+});
+
+t_throws(fn () {
+  fold([1, 2, 3], 0, 42);
+});
+
+t_throws(fn () {
+  fold([1, 2, 3], 0, "not a function");
+});
+
+t_throws(fn () {
+  fold([1, 2, 3], 0, []);
+});
+
+t_throws(fn () {
+  fold([1, 2, 3], 0, ());
+});
+
+// 测试缺少参数
+t_throws(fn () {
+  fold([1, 2, 3], 0);
+});
+
+t_throws(fn () {
+  fold([1, 2, 3]);
+});
+
+t_throws(fn () {
+  fold();
+});

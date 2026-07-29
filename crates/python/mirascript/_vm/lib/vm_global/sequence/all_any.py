@@ -12,13 +12,13 @@ def all(data=Uninitialized, fn=Uninitialized):
 
     if is_vm_array(data):
         for i, item in enumerate(data):
-            ret = Call(fn, *(item, i, data))
+            ret = Call(fn, item, i, data)
             if not ToBoolean(ret):
                 return False
         return True
     else:
         for key, item in data.items():
-            ret = Call(fn, *(item, key, data))
+            ret = Call(fn, item, key, data)
             if not ToBoolean(ret):
                 return False
         return True
@@ -30,13 +30,13 @@ def any(data=Uninitialized, fn=Uninitialized):
 
     if is_vm_array(data):
         for i, item in enumerate(data):
-            ret = Call(fn, *(item, i, data))
+            ret = Call(fn, item, i, data)
             if ToBoolean(ret):
                 return True
         return False
     else:
         for key, item in data.items():
-            ret = Call(fn, *(item, key, data))
+            ret = Call(fn, item, key, data)
             if ToBoolean(ret):
                 return True
         return False

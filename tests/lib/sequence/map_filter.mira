@@ -1,5 +1,12 @@
 // 测试 map 函数
 
+// 测试 map 对不同类型数据的操作
+t_eq(map([true], fn { it }), [true]);
+t_eq(map([false], fn { it }), [false]);
+t_eq(map([nil], fn { it }), [nil]);
+t_eq(map([0], fn { it }), [0]);
+t_eq(map([nan], fn { it }), [nan]);
+
 // 测试 map 对基本类型的操作
 t_eq(map(42, fn (x) { x * 2 }), 84);
 t_eq(map("hello", fn (x) { `$x world` }), "hello world");
@@ -48,6 +55,13 @@ t_eq(
 
 // 测试 filter 函数
 
+// 测试 filter 对不同类型数据的操作
+t_eq(filter([true], fn { it }), [true]);
+t_eq(filter([false], fn { it }), []);
+t_throws(fn { filter([nil], fn { it }) });
+t_throws(fn { filter([0], fn { it }) });
+t_throws(fn { filter([nan], fn { it }) });
+
 // 测试 filter 对基本类型的操作
 t_eq(filter(42, fn (x) { x > 40 }), 42);
 t_eq(filter(42, fn (x) { x > 50 }), nil);
@@ -66,6 +80,13 @@ t_eq(filter((a: 1, b: 2, c: 3, d: nil), fn (x, k) { k != "b" }), (a: 1, c: 3, d:
 t_eq(filter((), fn (x) { true }), ());
 
 // 测试 filter_map 函数
+
+// 测试 filter_map 对不同类型数据的操作
+t_eq(filter_map([true], fn { it }), [true]);
+t_eq(filter_map([false], fn { it }), [false]);
+t_eq(filter_map([nil], fn { it }), []);
+t_eq(filter_map([0], fn { it }), [0]);
+t_eq(filter_map([nan], fn { it }), [nan]);
 
 // 测试 filter_map 对基本类型的操作
 t_eq(filter_map(42, fn (x) {

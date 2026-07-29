@@ -13,7 +13,7 @@ from ..._helpers import (
     _required,
     _throw_error,
     _get_numbers,
-    _map_vm,
+    _iterate,
 )
 from ..._helpers_utils import _array_len
 
@@ -209,7 +209,7 @@ def entrywise(matrix, scalar, fn):
     _expect_callable("fn", fn, [])
 
     def f(a, b):
-        ret = Call(fn, *(a, b))
+        ret = Call(fn, a, b)
         if not is_vm_const(ret):
             return None
         return ret
@@ -313,7 +313,7 @@ def invert(matrix):
     if len(dims) == 0:
         return Div(1, matrix)
     if len(dims) == 1:
-        return _map_vm(
+        return _iterate(
             matrix,
             lambda *v: Div(1, v[0]),
         )

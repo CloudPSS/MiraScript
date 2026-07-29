@@ -1,6 +1,6 @@
 from __future__ import annotations
 import math
-from typing_extensions import NoReturn, Sequence, TYPE_CHECKING
+from typing_extensions import NoReturn, Sequence, TYPE_CHECKING, Callable
 
 from ..._helpers.types import is_vm_array, is_vm_const, is_vm_primitive, is_vm_record
 from ..._helpers.convert import to_number, to_string
@@ -8,7 +8,7 @@ from ..._helpers.serialize import display
 from ..._helpers.checker import is_safe_integer
 from ..operations import Type, Cp
 from ..error import VmError
-from ..types import Uninitialized
+from ..types import Uninitialized, VmUninitialized
 
 if TYPE_CHECKING:
     from ..types import (
@@ -210,7 +210,10 @@ def _get_numbers(args: Sequence[VmValue] | None) -> list[float]:
     return numbers
 
 
-def _map_vm(data, mapper):
+def _iterate(
+    data: VmConst,
+    mapper: Callable[[VmConst, float | str | None, VmConst], VmConst | VmUninitialized],
+) -> VmConst:
     if is_vm_primitive(data):
         ret = mapper(data, None, data)
         if ret is Uninitialized:
@@ -221,23 +224,17 @@ def _map_vm(data, mapper):
 
         for i, v in enumerate(data):
             Cp()
-            ret = mapper(v if v is not None else None, i, data)
+            ret = mapper(v, i, data)
             if ret is Uninitialized:
                 continue
-            if is_vm_const(ret):
-                result.append(ret)
-            else:
-                result.append(None)
+            result.append(ret)
         return result
     else:
         entries = []
         for key, value in data.items():
             Cp()
-            ret = mapper(value if value is not None else None, key, data)
+            ret = mapper(value, key, data)
             if ret is Uninitialized:
                 continue
-            if is_vm_const(ret):
-                entries.append((key, ret))
-            else:
-                entries.append((key, None))
+            entries.append((key, ret))
         return dict(entries)

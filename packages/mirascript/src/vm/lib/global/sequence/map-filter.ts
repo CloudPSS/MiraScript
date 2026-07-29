@@ -1,7 +1,7 @@
 import { toBoolean } from '../../../../helpers/convert/to-boolean.js';
 import { $Call } from '../../../operations/index.js';
 import { isVmConst, type VmAny, type VmValue } from '../../../types/index.js';
-import { VmLib, expectCallable, expectConst, map as mapImpl } from '../../helpers.js';
+import { VmLib, expectCallable, expectConst, iterate } from '../../helpers.js';
 
 export * from './with.js';
 export * from './entries.js';
@@ -16,7 +16,7 @@ function mapImplWrapped(
 ): VmValue {
     expectConst('data', data, null);
     expectCallable(fnName, fn, data);
-    return mapImpl(data, (value, index, data) => {
+    return iterate(data, (value, index, data) => {
         const ret = mapper(fn, value, index, data);
         if (ret === undefined || isVmConst(ret)) return ret;
         return null;

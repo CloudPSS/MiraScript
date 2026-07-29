@@ -240,10 +240,10 @@ export function arrayLen(len: number | null | undefined): number {
 }
 
 /** 应用映射函数 */
-export function map(
-    data: VmConst,
+export function iterate<T extends VmConst>(
+    data: T,
     /** 返回 `undefined` 表示跳过该元素 */
-    mapper: (value: VmConst, index: number | string | null, data: VmConst) => VmConst | undefined,
+    mapper: (value: VmConst, index: number | string | null, data: T) => VmConst | undefined,
 ): VmConst {
     if (isVmPrimitive(data)) {
         return mapper(data, null, data) ?? null;
@@ -260,7 +260,7 @@ export function map(
         return result;
     } else {
         const e: Array<[string, VmConst]> = [];
-        for (const [key, value] of entries(data)) {
+        for (const [key, value] of entries<string, VmConst | undefined>(data)) {
             Cp();
             const ret = mapper(value ?? null, key, data);
             if (ret === undefined) continue;

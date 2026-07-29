@@ -15,7 +15,7 @@ def find(data=Uninitialized, predicate=Uninitialized):
     else:
 
         def p(value, key, data):
-            ret = Call(predicate, *(value, key, data))
+            ret = Call(predicate, value, key, data)
             return ToBoolean(ret)
 
     if is_vm_array(data):

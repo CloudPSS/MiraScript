@@ -4,6 +4,7 @@ from .entries import keys, values, entries
 from .all_any import all, any
 from .find import find
 from .flatten import flatten
+from .fold import fold
 from .repeat import repeat
 from .reverse import reverse
 from .sort import sort, sort_by
@@ -33,6 +34,7 @@ __all__ = [
     "unique",
     "unique_by",
     "zip",
+    "fold",
     "new_array",
     "new_record",
 ]

@@ -12,7 +12,7 @@ import {
     throwError,
     getNumbers,
     arrayLen,
-    map,
+    iterate,
     expectInteger,
 } from '../helpers.js';
 
@@ -370,7 +370,7 @@ export const invert = VmLib(
         expectConst('a', a, null);
         const [rows, cols] = sizeImpl(a);
         if (rows == null) return 1 / num(a); // 标量取倒数
-        if (cols == null) return map(a, (v) => 1 / num(v)); // 向量按元素取倒数
+        if (cols == null) return iterate(a, (v) => 1 / num(v)); // 向量按元素取倒数
 
         if (rows !== cols) throwError(`Matrix must be square`, a);
         const m = a as VmConst[][];

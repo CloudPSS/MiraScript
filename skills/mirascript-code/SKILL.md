@@ -292,6 +292,7 @@ let value = maybe_nil!;
 | `filter(data, fn)`                                          | 过滤元素                                  |
 | `filter_map(data, fn)`                                      | 映射并过滤 nil                            |
 | `find(data, fn)`                                            | 查找第一个匹配元素（返回 `(key, value)`） |
+| `fold(data, initial, fn)`                                   | 累积折叠元素                              |
 | `all(data, fn)`                                             | 所有元素满足条件                          |
 | `any(data, fn)`                                             | 存在元素满足条件                          |
 | `sort(data, comparer?)` / `sort_by(data, keyFn, comparer?)` | 排序                                      |
