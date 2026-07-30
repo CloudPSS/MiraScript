@@ -41,3 +41,8 @@ t_eq(empty, nil);
 if has_extern {
   t_eq({ "x": 1, "$y": v_extern }, (x: 1, foo: nil));
 }
+
+// 特殊键（__proto__ 等）
+t_eq({ "__proto__": 1, "constructor": 2 }, (__proto__: 1, constructor: 2));
+t_eq({ "__proto__": 1 }.__proto__, 1);
+t_true('__proto__' in { "__proto__": 1 });

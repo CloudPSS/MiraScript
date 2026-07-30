@@ -297,3 +297,32 @@ if has_extern {
   t_eq(name, "小明");
   t_eq(age, 20);
 }
+
+// 余元中的特殊键（__proto__ 等）
+{
+  let r = (a: 1, __proto__: 2, constructor: 3);
+  t_true(r is (a: 1, ..rest));
+  t_eq(rest, (__proto__: 2, constructor: 3));
+}
+{
+  let r = (a: 1, __proto__: 2, constructor: 3);
+  let (:a, ..rest) = r;
+  t_eq(a, 1);
+  t_eq(rest, (__proto__: 2, constructor: 3));
+}
+// 余元的特殊键值为记录时不应污染原型
+{
+  let r = (a: 1, __proto__: (x: 2));
+  t_true(r is (a: 1, ..rest));
+  t_eq(rest, (__proto__: (x: 2)));
+  t_true('__proto__' in rest);
+  t_eq(rest.__proto__, (x: 2));
+  t_false('x' in rest);
+  t_eq(rest.x, nil);
+}
+// 省略特殊键后余元为空
+{
+  let r = (a: 1, __proto__: 2);
+  t_true(r is (a: 1, __proto__: 2, ..rest));
+  t_eq(rest, ());
+}

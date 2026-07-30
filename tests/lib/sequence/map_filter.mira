@@ -218,3 +218,8 @@ t_eq(
   ),
   (x: nil),
 );
+
+// 特殊键（__proto__ 等）
+t_eq(map((__proto__: 1, constructor: 2), fn (x) { x * 2 }), (__proto__: 2, constructor: 4));
+t_eq(filter((__proto__: 1, constructor: 2), fn (x) { x > 1 }), (constructor: 2));
+t_eq(filter_map((__proto__: 1, constructor: 2), fn (x, k) { `$k=$x` }), (__proto__: '__proto__=1', constructor: 'constructor=2'));

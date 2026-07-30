@@ -28,3 +28,11 @@ if has_extern {
 }
 t_throws(fn () { entries(v_module) });
 t_throws(fn () { entries(fn { }) });
+
+// 特殊键（__proto__ 等）
+{
+  let r = (__proto__: 1, constructor: 2, toString: 3);
+  t_eq(keys(r), ['__proto__', 'constructor', 'toString']);
+  t_eq(values(r), [1, 2, 3]);
+  t_eq(entries(r), [('__proto__', 1), ('constructor', 2), ('toString', 3)]);
+}

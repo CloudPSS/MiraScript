@@ -51,6 +51,18 @@ t_eq(from_json('[1, 2, "3", "NaN"]'), [1, 2, "3", "NaN"]);
 t_eq(from_json('{"a": 1, "b": 2, "c": true, "d": null }'), (a: 1, b: 2, c: true, d: nil));
 t_eq(from_json('{"0": "X"}'), ("X",));
 t_eq(from_json('  "x"  '), 'x');
+
+// 特殊键（__proto__ 等）
+t_eq(from_json('{"__proto__": 1, "constructor": 2}'), (__proto__: 1, constructor: 2));
+t_eq(to_json((__proto__: 1, constructor: 2)), '{"__proto__":1,"constructor":2}');
+{
+  let special = from_json('{"__proto__": {"x": 1}}');
+  t_eq(special, (__proto__: (x: 1)));
+  t_true('__proto__' in special);
+  t_eq(special.__proto__, (x: 1));
+  t_false('x' in special);
+  t_eq(special::to_json()::from_json(), special);
+}
 t_eq(from_json('x', sin), sin);
 t_throws(fn { from_json(nil) });
 t_throws(fn { from_json(sin) });

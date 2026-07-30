@@ -1,5 +1,14 @@
 import { VmError } from '../../helpers/error.js';
-import { hasOwnEnumerable, NotNumber, keys, create, isFinite, keysLength, getRecord } from '../../helpers/utils.js';
+import {
+    hasOwnEnumerable,
+    NotNumber,
+    keys,
+    create,
+    isFinite,
+    keysLength,
+    getRecord,
+    setRecord,
+} from '../../helpers/utils.js';
 import { toNumber, toString } from '../../helpers/convert/index.js';
 import { display } from '../../helpers/serialize.js';
 import {
@@ -63,8 +72,7 @@ export const $Omit = (value: VmAny, omitted: ReadonlyArray<number | string>): Vm
     const omittedSet = new Set(omitted.map($ToString));
     for (const key of valueKeys) {
         if (!omittedSet.has(key)) {
-            /* c8 ignore next */
-            result[key] = value[key] ?? null;
+            setRecord(result, key, value[key]);
         }
     }
     return result;
@@ -78,7 +86,7 @@ export const $Pick = (value: VmAny, picked: ReadonlyArray<number | string>): VmR
     for (const key of picked) {
         const k = $ToString(key);
         if (hasOwnEnumerable(value, k)) {
-            result[k] = value[k] ?? null;
+            setRecord(result, k, value[k]);
         }
     }
     return result;
