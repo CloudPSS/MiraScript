@@ -11,13 +11,13 @@ Get-ChildItem -Path "packages/*" -Directory | ForEach-Object {
   $packageJson = Get-Content "$_\package.json" -Raw | ConvertFrom-Json
 
   if ($packageJson.private -eq $true) {
-    Write-Host "Skipping $target because it is private"
+    Write-Verbose "Skipping $target because it is private"
     return
   }
 
   Push-Location $_
   try {
-    Write-Host "Trusting $target"
+    Write-Information "Trusting $target"
     $output = "$(npm trust list --registry=https://registry.npmjs.org/)"
     if ($LASTEXITCODE -ne 0) {
       Write-Error "Failed to list trust for $target with exit code $LASTEXITCODE"
@@ -31,9 +31,9 @@ Get-ChildItem -Path "packages/*" -Directory | ForEach-Object {
     }
 
     if (-not $id) {
-      Write-Host "No trust ID found for $target"
+      Write-Verbose "No trust ID found for $target"
     } else {
-      Write-Host "Found trust ID $id for $target, revoking trust"
+      Write-Verbose "Found trust ID $id for $target, revoking trust"
       npm trust revoke --registry=https://registry.npmjs.org/ --id $id
     }
 
