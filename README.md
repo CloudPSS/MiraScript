@@ -1,5 +1,5 @@
 <div align="center">
-	<img src="packages/website/static/favicon.svg" width="128" height="128" alt="MiraScript Logo" />
+  <img src="packages/website/static/favicon.svg" width="128" height="128" alt="MiraScript Logo" />
 
   <h1>MiraScript</h1>
 
@@ -7,9 +7,11 @@
     <a href="https://www.npmjs.com/package/@mirascript/mirascript"><img alt="npm @mirascript/mirascript" src="https://img.shields.io/npm/v/%40mirascript%2Fmirascript?style=for-the-badge&logo=npm&label=%40mirascript%2Fmirascript" /></a>
     <a href="https://pypi.org/project/mirascript/"><img alt="PyPI mirascript" src="https://img.shields.io/pypi/v/mirascript?style=for-the-badge&logo=pypi&label=mirascript" /></a>
     <a href="https://open-vsx.org/extension/CloudPSS/mirascript"><img alt="Open VSX MiraScript" src="https://img.shields.io/open-vsx/v/CloudPSS/mirascript?style=for-the-badge&logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMzYgMTM2Jz48cGF0aCBkPSdNMzAgNDQuMkw1Mi42IDVINy4zek00LjYgODguNWg0NS4zTDI3LjIgNDkuNHptNTEgMGwyMi42IDM5LjIgMjIuNi0zOS4yeicgZmlsbD0nI2MxNjBlZic%2BPC9wYXRoPjxwYXRoIGQ9J001Mi42IDVMMzAgNDQuMmg0NS4yek0yNy4yIDQ5LjRsMjIuNyAzOS4xIDIyLjYtMzkuMXptNTEgMEw1NS42IDg4LjVoNDUuMnonIGZpbGw9JyNhNjBlZTUnPjwvcGF0aD48L3N2Zz4%3D&label=MiraScript" /></a>
+    <br/>
+    <a href="https://app.codacy.com/gh/CloudPSS/MiraScript/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade"><img alt="License MIT" src="https://img.shields.io/codacy/grade/bd89e7eb52374e66a3cdce639c985cf0?style=for-the-badge&logo=Codacy" /></a>
+    <a href="https://app.codacy.com/gh/CloudPSS/MiraScript/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_coverage"><img alt="License MIT" src="https://img.shields.io/codacy/coverage/bd89e7eb52374e66a3cdce639c985cf0?style=for-the-badge&logo=Codacy" /></a>
     <a href="LICENSE"><img alt="License MIT" src="https://img.shields.io/badge/License-MIT-2563eb?style=for-the-badge" /></a>
   </p>
-
   <p>
     <b>
       表达式优先、不可变数据为核心的现代脚本语言<br>
@@ -17,9 +19,9 @@
     </b>
   </p>
 
-<hr>
-
 </div>
+
+---
 
 MiraScript 是 CloudPSS 维护的表达式优先脚本语言项目。当前仓库包含语言核心、编译器绑定、命令行工具、编辑器集成、在线 Playground、文档站点与测试集。
 
