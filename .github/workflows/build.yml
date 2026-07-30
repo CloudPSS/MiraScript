@@ -379,10 +379,8 @@ jobs:
           pnpm run test
 
       - name: Send coverage report
-        uses: codacy/codacy-coverage-reporter-action@v1
-        if: github.secret_source == 'Actions'
-        with:
-          project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
+        run: |
+          bash <(curl -Ls https://coverage.codacy.com/get.sh) report --partial --project-token ${{ secrets.CODACY_PROJECT_TOKEN }}
 
   test-python:
     needs: build-all
@@ -463,7 +461,20 @@ jobs:
           sed -i -e 's|filename=".*/site-packages/mirascript/|filename="mirascript/|' cobertura.xml
 
       - name: Send coverage report
-        uses: codacy/codacy-coverage-reporter-action@v1
-        if: github.secret_source == 'Actions'
-        with:
-          project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
+        run: |
+          bash <(curl -Ls https://coverage.codacy.com/get.sh) report --partial --project-token ${{ secrets.CODACY_PROJECT_TOKEN }}
+
+  finalize-coverage:
+    if: always()
+
+    needs: [test-python, test-node]
+
+    runs-on: ubuntu-slim
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Finalize coverage
+        run: |
+          bash <(curl -Ls https://coverage.codacy.com/get.sh) final --project-token ${{ secrets.CODACY_PROJECT_TOKEN }}
