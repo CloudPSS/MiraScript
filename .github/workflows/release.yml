@@ -203,7 +203,7 @@ jobs:
     permissions:
       contents: write
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
 
     steps:
       - name: Download website artifact
@@ -217,3 +217,42 @@ jobs:
           generateReleaseNotes: true
           prerelease: ${{ contains(github.ref, '-') }}
           artifacts: website.zip
+
+  publish-docs:
+    needs: build
+
+    permissions:
+      contents: read
+
+    environment:
+      name: website
+      url: https://mira.cloudpss.net
+
+    runs-on: ubuntu-slim
+
+    steps:
+      - name: Download website artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: website
+          skip-decompress: true
+      - name: Deploy
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ vars.DC_HOST }}
+          port: ${{ secrets.DC_PORT }}
+          username: ${{ vars.DC_USER }}
+          key: ${{ secrets.DC_KEY }}
+          source: ./website.zip
+          target: /root/
+      - name: Post-deploy
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ vars.DC_HOST }}
+          port: ${{ secrets.DC_PORT }}
+          username: ${{ vars.DC_USER }}
+          key: ${{ secrets.DC_KEY }}
+          script: |
+            cd /root/
+            unzip -o ./website.zip -d mira
+            rm -f ./website.zip
