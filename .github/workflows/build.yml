@@ -379,6 +379,7 @@ jobs:
           pnpm run test
 
       - name: Send coverage report
+        shell: bash
         run: |
           bash <(curl -Ls https://coverage.codacy.com/get.sh) report --partial --project-token ${{ secrets.CODACY_PROJECT_TOKEN }}
 
@@ -461,6 +462,7 @@ jobs:
           sed -i -e 's|filename=".*/site-packages/mirascript/|filename="mirascript/|' cobertura.xml
 
       - name: Send coverage report
+        shell: bash
         run: |
           bash <(curl -Ls https://coverage.codacy.com/get.sh) report --partial --project-token ${{ secrets.CODACY_PROJECT_TOKEN }}
 
@@ -476,5 +478,6 @@ jobs:
 
     steps:
       - name: Finalize coverage
+        shell: bash
         run: |
           bash <(curl -Ls https://coverage.codacy.com/get.sh) final --project-token ${{ secrets.CODACY_PROJECT_TOKEN }}
