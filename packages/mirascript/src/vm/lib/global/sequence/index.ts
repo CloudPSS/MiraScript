@@ -12,3 +12,4 @@ export * from './unique.js';
 export * from './repeat.js';
 export * from './new.js';
 export * from './fold.js';
+export * from './group.js';

@@ -12,6 +12,7 @@ from .unique import unique, unique_by
 from .zip import zip
 from .with_ import with_
 from .new import new_array, new_record
+from .group import group_by
 
 globals()["with"] = with_
 __all__ = [
@@ -37,4 +38,5 @@ __all__ = [
     "fold",
     "new_array",
     "new_record",
+    "group_by",
 ]
