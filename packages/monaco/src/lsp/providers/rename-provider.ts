@@ -10,47 +10,49 @@ import { DiagnosticCode } from '@mirascript/constants';
 import { Provider } from './base.js';
 import type { CompileResult } from '../compile-result.js';
 
-/** @inheritdoc */
-export class RenameProvider extends Provider implements languages.RenameProvider {
-    /** 重命名推断字段 */
-    private provideRenameEditsOmitNameFields(
-        model: editor.ITextModel,
-        compiled: CompileResult,
-        edits: languages.IWorkspaceTextEdit[],
-        ref: { range: IRange },
-        oldName: string,
-    ): void {
-        const { omitNameFields } = compiled.groupedTags(model);
-        for (const tag of omitNameFields) {
-            if (Range.equalsRange(tag.references[0]?.range, ref.range)) {
-                const current = model.getValueInRange(tag.range);
-                const paddingLeft = /[^\s(]/u.test(
-                    model.getValueInRange({
-                        startLineNumber: tag.range.startLineNumber,
-                        startColumn: tag.range.startColumn - 1,
-                        endLineNumber: tag.range.startLineNumber,
-                        endColumn: tag.range.startColumn,
-                    }),
-                );
-                const paddingRight = !/\s/u.test(
-                    model.getValueInRange({
-                        startLineNumber: tag.range.endLineNumber,
-                        startColumn: tag.range.endColumn,
-                        endLineNumber: tag.range.endLineNumber,
-                        endColumn: tag.range.endColumn + 1,
-                    }),
-                );
-                edits.push({
-                    resource: model.uri,
-                    versionId: compiled.version,
-                    textEdit: {
-                        range: tag.range,
-                        text: `${paddingLeft ? ' ' : ''}${oldName}${current}${paddingRight ? ' ' : ''}`,
-                    },
-                });
-            }
+/** 重命名推断字段 */
+function provideRenameEditsOmitNameFields(
+    model: editor.ITextModel,
+    compiled: CompileResult,
+    ref: { range: IRange },
+    oldName: string,
+): languages.IWorkspaceTextEdit[] {
+    const edits: languages.IWorkspaceTextEdit[] = [];
+    const { omitNameFields } = compiled.groupedTags(model);
+    for (const tag of omitNameFields) {
+        if (Range.equalsRange(tag.references[0]?.range, ref.range)) {
+            const current = model.getValueInRange(tag.range);
+            const paddingLeft = /[^\s(]/u.test(
+                model.getValueInRange({
+                    startLineNumber: tag.range.startLineNumber,
+                    startColumn: tag.range.startColumn - 1,
+                    endLineNumber: tag.range.startLineNumber,
+                    endColumn: tag.range.startColumn,
+                }),
+            );
+            const paddingRight = !/\s/u.test(
+                model.getValueInRange({
+                    startLineNumber: tag.range.endLineNumber,
+                    startColumn: tag.range.endColumn,
+                    endLineNumber: tag.range.endLineNumber,
+                    endColumn: tag.range.endColumn + 1,
+                }),
+            );
+            edits.push({
+                resource: model.uri,
+                versionId: compiled.version,
+                textEdit: {
+                    range: tag.range,
+                    text: `${paddingLeft ? ' ' : ''}${oldName}${current}${paddingRight ? ' ' : ''}`,
+                },
+            });
         }
     }
+    return edits;
+}
+
+/** @inheritdoc */
+export class RenameProvider extends Provider implements languages.RenameProvider {
     /** @inheritdoc */
     async provideRenameEdits(
         model: editor.ITextModel,
@@ -76,35 +78,39 @@ export class RenameProvider extends Provider implements languages.RenameProvider
                 },
             });
             oldName = model.getValueInRange(d.def.definition.range);
-            this.provideRenameEditsOmitNameFields(model, compiled, edits, d.def.definition, oldName);
+            edits.push(...provideRenameEditsOmitNameFields(model, compiled, d.def.definition, oldName));
         } else {
             oldName = d.def.name;
         }
         for (const ref of references) {
-            edits.push({
-                resource: model.uri,
-                versionId: compiled.version,
-                textEdit: {
-                    range: ref.range,
-                    text: newName,
+            edits.push(
+                {
+                    resource: model.uri,
+                    versionId: compiled.version,
+                    textEdit: {
+                        range: ref.range,
+                        text: newName,
+                    },
                 },
-            });
-            this.provideRenameEditsOmitNameFields(model, compiled, edits, ref, oldName);
+                ...provideRenameEditsOmitNameFields(model, compiled, ref, oldName),
+            );
         }
 
         const { globals } = compiled.groupedTags(model);
         const globalWithSameName = globals.find((g) => g.name === newName);
         if (globalWithSameName) {
             for (const ref of globalWithSameName.references) {
-                edits.push({
-                    resource: model.uri,
-                    versionId: compiled.version,
-                    textEdit: {
-                        range: ref.range,
-                        text: `global.${newName}`,
+                edits.push(
+                    {
+                        resource: model.uri,
+                        versionId: compiled.version,
+                        textEdit: {
+                            range: ref.range,
+                            text: `global.${newName}`,
+                        },
                     },
-                });
-                this.provideRenameEditsOmitNameFields(model, compiled, edits, ref, oldName);
+                    ...provideRenameEditsOmitNameFields(model, compiled, ref, oldName),
+                );
             }
         }
 

@@ -44,6 +44,44 @@ function serializeStringContent(value: string, options: Readonly<SerializeOption
 const STRING_QUOTE = `'`;
 const STRING_REG = new RegExp(String.raw`[${STRING_QUOTE}\\\$\p{C}\u2028\u2029]`, 'gu');
 const STRING_MARK = /^[\p{M}]$/u;
+
+/**
+ * 序列化为特殊字符
+ */
+function serializeSpecialChar(char: string, options: Readonly<SerializeOptions>): string {
+    if (char === STRING_QUOTE) {
+        return serializeStringEscaped(STRING_QUOTE, options);
+    } else if (char === '\0') {
+        return serializeStringEscaped(`0`, options);
+    } else if (char === '\n') {
+        return serializeStringEscaped(`n`, options);
+    } else if (char === '\r') {
+        return serializeStringEscaped(`r`, options);
+    } else if (char === '\t') {
+        return serializeStringEscaped(`t`, options);
+    } else if (char === '\b') {
+        return serializeStringEscaped(`b`, options);
+    } else if (char === '\f') {
+        return serializeStringEscaped(`f`, options);
+    } else if (char === '\v') {
+        return serializeStringEscaped(`v`, options);
+    } else if (char === '\\') {
+        return serializeStringEscaped(`\\`, options);
+    } else if (char === '$') {
+        return serializeStringEscaped(`$`, options);
+    } else {
+        const code = char.codePointAt(0)!;
+        if (code <= 0x7f) {
+            return serializeStringEscaped(`x${code.toString(16).padStart(2, '0')}`, options);
+        } else if (code >= 0xd800 && code <= 0xdfff) {
+            // 无效的代理对
+            return serializeStringContent('�', options);
+        } else {
+            return serializeStringEscaped(`u{${code.toString(16)}}`, options);
+        }
+    }
+}
+
 /**
  * 将 MiraScript 字符串序列化为 MiraScript 字面量。
  */
@@ -62,8 +100,7 @@ function serializeStringImpl(value: string, options: Readonly<SerializeOptions>)
         const cp = value.codePointAt(lastIndex)!;
         const ch = String.fromCodePoint(cp);
         if (!STRING_MARK.test(ch)) break;
-        const c = serializeStringEscaped(`u{${cp.toString(16)}}`, options);
-        ret += c;
+        ret += serializeStringEscaped(`u{${cp.toString(16)}}`, options);
         lastIndex += ch.length;
     }
 
@@ -71,40 +108,9 @@ function serializeStringImpl(value: string, options: Readonly<SerializeOptions>)
     STRING_REG.lastIndex = lastIndex;
     let match: RegExpExecArray | null;
     while ((match = STRING_REG.exec(value)) !== null) {
-        const char = match[0];
         ret += serializeStringContent(value.slice(lastIndex, match.index), options);
         lastIndex = STRING_REG.lastIndex;
-        if (char === STRING_QUOTE) {
-            ret += serializeStringEscaped(STRING_QUOTE, options);
-        } else if (char === '\0') {
-            ret += serializeStringEscaped(`0`, options);
-        } else if (char === '\n') {
-            ret += serializeStringEscaped(`n`, options);
-        } else if (char === '\r') {
-            ret += serializeStringEscaped(`r`, options);
-        } else if (char === '\t') {
-            ret += serializeStringEscaped(`t`, options);
-        } else if (char === '\b') {
-            ret += serializeStringEscaped(`b`, options);
-        } else if (char === '\f') {
-            ret += serializeStringEscaped(`f`, options);
-        } else if (char === '\v') {
-            ret += serializeStringEscaped(`v`, options);
-        } else if (char === '\\') {
-            ret += serializeStringEscaped(`\\`, options);
-        } else if (char === '$') {
-            ret += serializeStringEscaped(`$`, options);
-        } else {
-            const code = char.codePointAt(0)!;
-            if (code <= 0x7f) {
-                ret += serializeStringEscaped(`x${code.toString(16).padStart(2, '0')}`, options);
-            } else if (code >= 0xd800 && code <= 0xdfff) {
-                // 无效的代理对
-                ret += serializeStringContent('�', options);
-            } else {
-                ret += serializeStringEscaped(`u{${code.toString(16)}}`, options);
-            }
-        }
+        ret += serializeSpecialChar(match[0], options);
     }
     ret += serializeStringContent(value.slice(lastIndex), options);
     ret += cq;
