@@ -381,7 +381,7 @@ jobs:
       - name: Send coverage report
         shell: bash
         run: |
-          bash <(curl -Ls https://coverage.codacy.com/get.sh) report --partial --project-token ${{ secrets.CODACY_PROJECT_TOKEN }}
+          bash <(curl -Ls https://coverage.codacy.com/get.sh) report --partial --project-token '${{ secrets.CODACY_PROJECT_TOKEN }}'
 
   test-python:
     needs: build-all
@@ -464,7 +464,7 @@ jobs:
       - name: Send coverage report
         shell: bash
         run: |
-          bash <(curl -Ls https://coverage.codacy.com/get.sh) report --partial --project-token ${{ secrets.CODACY_PROJECT_TOKEN }}
+          bash <(curl -Ls https://coverage.codacy.com/get.sh) report --partial --project-token '${{ secrets.CODACY_PROJECT_TOKEN }}'
 
   finalize-coverage:
     if: ${{ !cancelled() }}
@@ -479,4 +479,4 @@ jobs:
       - name: Finalize coverage
         shell: bash
         run: |
-          bash <(curl -Ls https://coverage.codacy.com/get.sh) final --project-token ${{ secrets.CODACY_PROJECT_TOKEN }}
+          bash <(curl -Ls https://coverage.codacy.com/get.sh) final --project-token '${{ secrets.CODACY_PROJECT_TOKEN }}'
