@@ -1,6 +1,7 @@
 ---
 name: mirascript-code
 description: Guide AI to write correct, idiomatic MiraScript code
+author: CloudPSS
 license: MIT
 requires:
   - mirascript-cli

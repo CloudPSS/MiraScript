@@ -1,6 +1,7 @@
 ---
 name: mirascript-cli
 description: Guide AI to use MiraScript CLI to run and format MiraScript code
+author: CloudPSS
 license: MIT
 ---
 
