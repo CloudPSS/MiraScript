@@ -1,7 +1,13 @@
 import type { VmArray, VmConst, VmRecord } from '../../../types/index.js';
 import { toString } from '../../../../helpers/convert/to-string.js';
 import { VM_ARRAY_MAX_LENGTH } from '../../../../helpers/constants.js';
-import { keys as _keys, values as _values, entries as _entries, PositiveInfinity } from '../../../../helpers/utils.js';
+import {
+    keys as _keys,
+    values as _values,
+    entries as _entries,
+    PositiveInfinity,
+    setRecord,
+} from '../../../../helpers/utils.js';
 import { $Call, $El, $Get } from '../../../operations/index.js';
 import { VmLib, expectCallable, expectIntegerRange } from '../../helpers.js';
 
@@ -15,7 +21,7 @@ export const new_record = VmLib(
             if (entry == null) continue;
             const key = $Get(entry, 0);
             const value = $El($Get(entry, 1));
-            result[toString(key)] = value;
+            setRecord(result, toString(key), value);
         }
         return result;
     },

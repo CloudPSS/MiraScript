@@ -56,8 +56,13 @@ export const entries = VmLib(
                 arr.push({ 0: i, 1: data[i] ?? null });
             }
             return arr;
+        } else {
+            const arr: Array<{ 0: string; 1: VmConst }> = [];
+            for (const [key, value] of _entries(data)) {
+                arr.push({ 0: key, 1: value ?? null });
+            }
+            return arr;
         }
-        return _entries(data).map(([key, value]) => ({ 0: key, 1: value ?? null }));
     },
     {
         summary: '返回数组或记录的键值对列表',

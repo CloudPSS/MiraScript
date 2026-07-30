@@ -36,3 +36,8 @@ t_eq(
   ),
   [nil, nil, nil],
 );
+
+t_eq(new_array(1, fn { '__proto__' }), ['__proto__']);
+t_eq(new_array(1, fn { 'constructor' }), ['constructor']);
+t_eq(new_record(1, fn { ('__proto__', 1) }), (__proto__: 1));
+t_eq(new_record(1, fn { ('constructor', 1) }), (constructor: 1));

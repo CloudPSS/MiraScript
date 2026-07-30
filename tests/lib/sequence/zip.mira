@@ -7,3 +7,5 @@ t_eq(zip([]), []);
 t_eq(zip(()), []);
 t_throws(fn { zip(nil) });
 t_throws(fn { zip((a: [], b: 1)) });
+
+t_eq(zip((__proto__: [1, 2, 3], constructor: ['a', 'b', 'c'])), [(__proto__: 1, constructor: 'a'), (__proto__: 2, constructor: 'b'), (__proto__: 3, constructor: 'c')]);

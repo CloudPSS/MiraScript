@@ -1,5 +1,5 @@
 import { VmError } from '../../helpers/error.js';
-import { hasOwnEnumerable, NotNumber, keys, create, isFinite, keysLength } from '../../helpers/utils.js';
+import { hasOwnEnumerable, NotNumber, keys, create, isFinite, keysLength, getRecord } from '../../helpers/utils.js';
 import { toNumber, toString } from '../../helpers/convert/index.js';
 import { display } from '../../helpers/serialize.js';
 import {
@@ -114,8 +114,7 @@ export const $Get = (obj: VmAny, key: VmAny): VmValue => {
         }
         return obj.get(pk) ?? null;
     }
-    if (!hasOwnEnumerable(obj, pk)) return null;
-    return $El(obj[pk] ?? null);
+    return $El(getRecord(obj, pk) ?? null);
 };
 /** 设置字段 */
 export const $Set = (obj: VmAny, key: VmAny, value: VmAny): void => {

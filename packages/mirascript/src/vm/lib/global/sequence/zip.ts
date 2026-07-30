@@ -1,12 +1,13 @@
 import { display } from '../../../../helpers/serialize.js';
+import { setRecord } from '../../../../helpers/utils.js';
 import { Cp } from '../../../checkpoint.js';
-import { isVmArray, type VmConst, type VmArray } from '../../../types/index.js';
+import { isVmArray, type VmConst, type VmArray, type VmRecord } from '../../../types/index.js';
 import { VmLib, throwError } from '../../helpers.js';
 import { entries } from './entries.js';
 
 export const zip = VmLib(
     (data) => {
-        const ets = entries(data);
+        const ets = entries(data) as Array<{ 0: string | number; 1: VmArray }>;
         let length = 0;
         for (const { 0: key, 1: arr } of ets) {
             if (!isVmArray(arr)) {
@@ -15,15 +16,25 @@ export const zip = VmLib(
             length = Math.max(length, arr.length);
         }
         if (length === 0) return [];
-        const result: Array<Record<number | string, VmConst>> = [];
-        const isArr = isVmArray(data);
-        for (let i = 0; i < length; i++) {
-            Cp();
-            const obj: Record<number | string, VmConst> = isArr ? ([] as Record<number, VmConst>) : {};
-            for (const { 0: key, 1: arr } of ets) {
-                obj[key] = (arr as VmArray)[i] ?? null;
+        const result: Array<VmArray | VmRecord> = [];
+        if (isVmArray(data)) {
+            for (let i = 0; i < length; i++) {
+                Cp();
+                const obj: VmConst[] = [];
+                for (const { 0: key, 1: arr } of ets) {
+                    obj[key as number] = arr[i] ?? null;
+                }
+                result.push(obj);
             }
-            result.push(obj);
+        } else {
+            for (let i = 0; i < length; i++) {
+                Cp();
+                const obj: Record<string, VmConst> = {};
+                for (const { 0: key, 1: arr } of ets) {
+                    setRecord(obj, key as string, arr[i]);
+                }
+                result.push(obj);
+            }
         }
         return result;
     },

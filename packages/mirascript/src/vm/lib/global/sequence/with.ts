@@ -1,7 +1,7 @@
 import { VM_ARRAY_MAX_LENGTH } from '../../../../helpers/constants.js';
 import { toNumber, toString } from '../../../../helpers/convert/index.js';
 import { isVmArray, isVmRecord } from '../../../../helpers/types.js';
-import { isArray, isInteger, isFinite, NotNumber } from '../../../../helpers/utils.js';
+import { isArray, isInteger, isFinite, NotNumber, setRecord, getRecord } from '../../../../helpers/utils.js';
 import { $El } from '../../../operations/helpers.js';
 import type { VmArray, VmConst, VmValue } from '../../../types/index.js';
 import { VmLib, expectArrayOrRecord, expectConst, throwError } from '../../helpers.js';
@@ -46,7 +46,7 @@ const withInner = (obj: VmConst | undefined, key: VmArray, keyIndex: number, val
         result[index] = withInner(result[index], key, keyIndex + 1, value);
     } else {
         const prop = toString(k, undefined);
-        result[prop] = withInner(result[prop], key, keyIndex + 1, value);
+        setRecord(result, prop, withInner(result[prop], key, keyIndex + 1, value));
     }
     return result;
 };
@@ -110,12 +110,12 @@ const _with = VmLib(
                 if (isVmArray(key)) {
                     const firstKey = key[0]!;
                     prop = toString(firstKey, undefined);
-                    val = withInner(result[prop], key, 1, value);
+                    val = withInner(getRecord(result, prop), key, 1, value);
                 } else {
                     prop = toString(key, undefined);
                     val = value;
                 }
-                result[prop] = val;
+                setRecord(result, prop, val);
             }
             return result;
         }
