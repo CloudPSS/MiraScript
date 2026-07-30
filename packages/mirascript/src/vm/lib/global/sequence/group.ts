@@ -32,6 +32,6 @@ export const group_by = VmLib(
             },
         },
         returns: { type: 'record' },
-        examples: ['group_by([1, 2, 3, 4], x => x % 2) // ("0": [2, 4], "1": [1, 3])'],
+        examples: ['group_by([1, 2, 3, 4], fn { it % 2 }) // ("0": [2, 4], "1": [1, 3])'],
     },
 );

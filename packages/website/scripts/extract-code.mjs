@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 /* eslint-disable unicorn/prefer-single-call */
 import { DiagnosticCode, getDiagnosticMessage, getDiagnosticSeverity } from '@mirascript/mirascript/subtle';
-import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const outDir = resolve(import.meta.dirname, '../../../docs/code');
@@ -56,14 +56,10 @@ for (const { code, name, message, severity: sev } of entries) {
   const filePath = resolve(outDir, fileName);
   writtenFiles.add(fileName);
 
-  if (existsSync(filePath)) {
-    continue;
-  }
-
   const lines = [];
   lines.push(`# ${name}`);
   lines.push('');
-  lines.push(`**${severityLabel(sev)}**`);
+  lines.push(`等级：**${severityLabel(sev)}**`);
   lines.push('');
   lines.push(message);
   lines.push('');
@@ -72,9 +68,10 @@ for (const { code, name, message, severity: sev } of entries) {
   console.log(`写入 docs/code/${fileName}`);
 }
 
-// ── _category_.json ─────────────────────────────────────────────────────
+// ── 额外的文件 ─────────────────────────────────────────────────────
 
 writtenFiles.add('_category_.json');
+writtenFiles.add('.gitignore');
 
 // ── 检查多余文件 ────────────────────────────────────────────────────────
 
