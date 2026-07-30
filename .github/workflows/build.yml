@@ -446,13 +446,13 @@ jobs:
       - name: Install wheels
         shell: bash
         run: |
-          pip install --upgrade pip
+          python -m pip install --upgrade pip
 
-          pip download "typing-extensions>=4.7.1" "astunparse>=1.6.3;python_version<'3.9'" "maturin>=1.0,<2.0" --dest ./python-artifacts
-          pip install --pre --no-index --no-cache-dir --find-links ./python-artifacts mirascript
+          python -m pip download "typing-extensions>=4.7.1" "astunparse>=1.6.3;python_version<'3.9'" "maturin>=1.0,<2.0" --dest ./python-artifacts
+          python -m pip install --pre --no-index --no-cache-dir --find-links ./python-artifacts mirascript
 
           cd crates/python
-          pip install --group test 2>/dev/null || pip install $(python -c "import re;t=open('pyproject.toml', encoding='utf-8').read();m=re.search(r'test\s*=\s*\[(.*?)\]',t,re.DOTALL);print(' '.join(re.findall(r'\"([^\"]+)\"',m.group(1))))")
+          python -m pip install --group test 2>/dev/null || python -m pip install $(python -c "import re;t=open('pyproject.toml', encoding='utf-8').read();m=re.search(r'test\s*=\s*\[(.*?)\]',t,re.DOTALL);print(' '.join(re.findall(r'\"([^\"]+)\"',m.group(1))))")
 
       - name: Run tests
         shell: bash
