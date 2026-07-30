@@ -467,7 +467,7 @@ jobs:
           bash <(curl -Ls https://coverage.codacy.com/get.sh) report --partial --project-token ${{ secrets.CODACY_PROJECT_TOKEN }}
 
   finalize-coverage:
-    if: ${{ !cancelled() && jobs.test-python.result != 'skipped' && jobs.test-node.result != 'skipped' }}
+    if: ${{ !cancelled() }}
     needs: [test-python, test-node]
 
     runs-on: ubuntu-slim
