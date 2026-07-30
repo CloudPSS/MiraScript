@@ -1,7 +1,10 @@
 <div align="center">
-  <img src="packages/website/static/favicon.svg" width="128" height="128" alt="MiraScript Logo" />
 
-  <h1>MiraScript</h1>
+  <h1>
+    <img src="packages/website/static/favicon.svg" width="128" height="128" alt="MiraScript Logo" />
+    <br/>
+    MiraScript
+  </h1>
 
   <p>
     <a href="https://www.npmjs.com/package/@mirascript/mirascript"><img alt="npm @mirascript/mirascript" src="https://img.shields.io/npm/v/%40mirascript%2Fmirascript?style=for-the-badge&logo=npm&label=%40mirascript%2Fmirascript" /></a>
