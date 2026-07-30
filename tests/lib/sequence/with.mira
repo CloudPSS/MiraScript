@@ -74,3 +74,4 @@ t_eq(()::with("__proto__", 1), (__proto__: 1));
 t_eq(()::with(["x", "__proto__"], 1), (x: (__proto__: 1)));
 t_eq(()::with(["1", "constructor"], 1), (1: (constructor: 1)));
 t_eq(()::with([0, 1, "constructor"], 1), ([nil, (constructor: 1)],));
+t_eq(()::with(["__proto__", "x"], 1), (__proto__: (x: 1)));
