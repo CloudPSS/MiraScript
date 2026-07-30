@@ -1,7 +1,7 @@
 use crate::{
-    DiagnosticCode, Keyword,
+    DiagnosticCode, Expression, Keyword,
     lexer::TokenKind,
-    parser::{AstWalker, TokenRef},
+    parser::{AstWalker, Range, TokenRef},
 };
 
 use super::Emitter;
@@ -46,5 +46,20 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 literal.range(),
             );
         }
+    }
+
+    pub(super) fn check_range_item(&mut self, item: &Expression<'s>) {
+        if let Expression::Literal(l) = item
+            && !l.is_number_literal()
+        {
+            self.diagnostics
+                .push(DiagnosticCode::NonNumberInRange, l.range());
+        }
+    }
+
+    pub(super) fn check_range(&mut self, range: &Range<'s>) {
+        let Range(start, _, end) = range;
+        self.check_range_item(start);
+        self.check_range_item(end);
     }
 }

@@ -110,12 +110,16 @@ t_true(1 is 1 or '1');
 t_true(1 is 1..2);
 t_true(1.5 is 1.5..1.5);
 t_false(1.5 is 1..<1.5);
+t_true(1.5 is '1'..2);
+t_true(1.5 is 1..<'2');
+t_true(1.5 is '1'..'2');
 
 // 范围操作仅对数字类型有效
 t_false("1.5" is 1..2);
 const @one = '1';
 const @two = '2';
 t_false("1.5" is @one..@two);
+t_true(1.5 is @one..@two);
 
 {
   t_true((1, [2]) is (1, [2, ..rr]) && rr is []);

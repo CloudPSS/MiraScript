@@ -355,6 +355,18 @@ impl<'s, 'c> Emitter<'s, 'c> {
                     );
                     return;
                 }
+                if let Pattern::Literal(_, lp) = l.as_ref()
+                    && !lp.is_number_literal()
+                {
+                    self.diagnostics
+                        .push(DiagnosticCode::NonNumberInRange, l.range());
+                }
+                if let Pattern::Literal(_, rp) = r.as_ref()
+                    && !rp.is_number_literal()
+                {
+                    self.diagnostics
+                        .push(DiagnosticCode::NonNumberInRange, r.range());
+                }
                 let start = self.closures.add_reg();
                 let end = self.closures.add_reg();
                 self.emit_literal_guard(success, pattern, value, Constant::Ordinal(0));

@@ -740,6 +740,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                                 items_regs.push(reg);
                             }
                             Iterable::Range(range) => {
+                                self.check_range(range);
                                 let Range(start, _, end) = range;
                                 let start = self.emit_expression_reg(start, brk);
                                 let end = self.emit_expression_reg(end, brk);
@@ -907,11 +908,13 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 // slice 不能用于 global 关键字，Variable 表达式将处理此错误
                 let arr_reg = self.emit_expression_reg(expression, brk);
                 let start_reg = if let Some(start) = start {
+                    self.check_range_item(start);
                     self.emit_expression_reg(start, brk)
                 } else {
                     Register::EMPTY
                 };
                 let end_reg = if let Some(end) = end {
+                    self.check_range_item(end);
                     self.emit_expression_reg(end, brk)
                 } else {
                     Register::EMPTY
