@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 /* eslint-disable unicorn/prefer-single-call */
-import { compileSync, getVmType } from '@mirascript/mirascript';
+import { getVmType } from '@mirascript/mirascript';
 import { lib, formatDiagnosticMessage } from '@mirascript/mirascript/subtle';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -62,11 +62,6 @@ function renderExample(example) {
     fence += '`';
   }
   lines.push(`${fence}mira`);
-  try {
-    compileSync(example);
-  } catch (e) {
-    console.error(`示例代码编译错误：\n${example}`);
-  }
   lines.push(example);
   lines.push(fence);
   return lines;
