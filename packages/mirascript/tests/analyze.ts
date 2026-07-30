@@ -1,4 +1,4 @@
-import test, { type ThrowsExpectation } from 'ava';
+import test from 'ava';
 import { analyzeGlobalReferences, type GlobalReferenceChain } from '@mirascript/mirascript/subtle';
 
 const analyze = test.macro<[string, GlobalReferenceChain[]]>({
