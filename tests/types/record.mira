@@ -55,7 +55,7 @@ t_eq((0?: nil, 1?: 1), (1: 1));
   t_false('-0' in obj);
 
   t_true('a' in obj);
-  t_false('a' in nil);
+  t_false('a' in { nil });
 
   t_eq(obj[''], 'empty key');
   t_eq(obj[nil], 'empty key');

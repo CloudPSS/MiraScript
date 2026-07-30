@@ -16,8 +16,8 @@ t_throws(fn { !!{ "false" } });
 t_throws(fn { !!{ "0" } });
 t_throws(fn { !!{ "1" } });
 
-t_false(false in true);
-t_false(false in false);
+t_false(false in { true });
+t_false(false in { false });
 
 t_throws(fn {
   let b = true;

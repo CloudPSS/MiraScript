@@ -11,8 +11,8 @@ for str in strs {
   t_eq(str::chars()::join(''), str);
 }
 
-t_false('a' in 'a');
-t_false('' in 'a');
+t_false('a' in { 'a' });
+t_false('' in { 'a' });
 
 t_eq(chars(123), ['1', '2', '3']);
 
