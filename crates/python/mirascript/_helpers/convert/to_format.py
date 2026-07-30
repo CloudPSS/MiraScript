@@ -16,12 +16,12 @@ def _format_number(num):
     ps = ""
     absVal = abs(num)
     if absVal >= 1000 or absVal < 0.001:
-        ps1 = format(num, f".0e")
-        ps2 = format(num, f".5e")
+        ps1 = format(num, ".0e")
+        ps2 = format(num, ".5e")
         ps = ps1 if len(ps1) < len(ps2) else ps2
 
     else:
-        ps = format(float(num), f".6")
+        ps = format(float(num), ".6")
 
     return ps if len(ps) < len(s) else s
 

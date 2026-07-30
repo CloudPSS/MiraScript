@@ -113,11 +113,7 @@ const printParser: PrintOptions['parser'] = function (args) {
             templates.push(i < values.length - 1 ? ' ' : '');
         }
     }
-    return {
-        templates,
-        values,
-        formats,
-    };
+    return { templates, values, formats };
 };
 
 /** 默认格式化函数 */
