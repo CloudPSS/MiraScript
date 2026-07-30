@@ -24,7 +24,7 @@ param (
     $Version = $rootPkg.version
     $NpmTag = if ($Version -match "-") { "next" } else { "latest" }
 
-    Write-Host "Publishing version $Version@$NpmTag" -ForegroundColor Yellow
+    Write-Information "Publishing version $Version@$NpmTag"
 
     # set cargo version for all packages
     foreach ($file in Get-ChildItem -File ./crates/*/Cargo.toml) {
