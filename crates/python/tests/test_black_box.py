@@ -32,7 +32,8 @@ SKIP_HUGE = environ.get("SKIP_HUGE", "0") != "0"
 if TYPE_CHECKING:
     from typing_extensions import Callable, TypeAlias
 
-    TimeoutFns: TypeAlias = "list[tuple[Callable, str]]"
+    TimeoutFn: TypeAlias = Callable[[], None]
+    TimeoutFns: TypeAlias = "list[tuple[TimeoutFn, str]]"
     VmTestHelpers: TypeAlias = "tuple[TimeoutFns, dict[str, VmValue]]"
 
 
@@ -67,7 +68,7 @@ def _make_vm_helpers() -> VmTestHelpers:
         raise AssertionError(msg)
 
     @vm_function
-    def t_timeout(fn: VmFunction, message: str = "Execution timed out"):
+    def t_timeout(fn: TimeoutFn, message: str = "Execution timed out"):
         timeout_fns.append((fn, message))
 
     @vm_function

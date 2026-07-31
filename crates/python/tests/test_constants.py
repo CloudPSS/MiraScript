@@ -1,4 +1,4 @@
-from mirascript import Uninitialized, VmUninitialized
+from mirascript import Uninitialized
 
 
 def test_uninitialized_constant():

@@ -1,7 +1,6 @@
 from __future__ import annotations
 from typing_extensions import TypeVar, overload, TYPE_CHECKING
 import math
-import sys
 
 from ..constants import Uninitialized
 

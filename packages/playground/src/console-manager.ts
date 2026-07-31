@@ -7,7 +7,7 @@ type Message = VmAny[] | string | Error;
 /** 级别 */
 type Level = 'log' | 'error' | 'warn' | 'info';
 const background: Record<Level, string> = {
-    log: 'background: #1177bb; color: #fff;',
+    log: 'background: #17b; color: #fff;',
     error: 'background: #d23d3d; color: #fff;',
     warn: 'background: #c39c00; color: #fff;',
     info: 'background: #369481; color: #fff;',

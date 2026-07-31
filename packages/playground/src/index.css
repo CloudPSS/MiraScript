@@ -23,7 +23,7 @@
   --text-secondary: #666;
   --border-color: #ddd;
   --accent-color: #007acc;
-  --accent-hover: #1177bb;
+  --accent-hover: #17b;
   --success-color: #369481;
   --error-color: #d23d3d;
   --warning-color: #c39c00;
@@ -34,11 +34,11 @@
     --bg-primary: #1e1e1e;
     --bg-secondary: #2d2d30;
     --bg-tertiary: #383838;
-    --text-primary: #cccccc;
+    --text-primary: #ccc;
     --text-secondary: #969696;
     --border-color: #3e3e42;
     --accent-color: #007acc;
-    --accent-hover: #1177bb;
+    --accent-hover: #17b;
     --success-color: #4ec9b0;
     --error-color: #f44747;
     --warning-color: #ffcc02;
@@ -49,11 +49,11 @@
   --bg-primary: #1e1e1e;
   --bg-secondary: #2d2d30;
   --bg-tertiary: #383838;
-  --text-primary: #cccccc;
+  --text-primary: #ccc;
   --text-secondary: #969696;
   --border-color: #3e3e42;
   --accent-color: #007acc;
-  --accent-hover: #1177bb;
+  --accent-hover: #17b;
   --success-color: #4ec9b0;
   --error-color: #f44747;
   --warning-color: #ffcc02;
@@ -412,7 +412,7 @@ body > .toast {
   color: var(--text-primary);
   padding: 12px 16px;
   border-radius: 4px;
-  box-shadow: rgba(0, 0, 0, 0.2) 0px 2px 10px;
+  box-shadow: rgba(0, 0, 0, 20%) 0px 2px 10px;
   z-index: 1000;
   transition:
     opacity 0.3s ease-in-out,
