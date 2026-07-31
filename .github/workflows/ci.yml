@@ -37,6 +37,8 @@ jobs:
         uses: codacy/codacy-analysis-cli-action@master
         with:
           project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
+          allow-network: true
+          skip-uncommitted-files-check: true
           tool: eslint
           format: sarif
           output: results.sarif

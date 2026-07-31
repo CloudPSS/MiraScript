@@ -1,8 +1,6 @@
 # env
 .env
 .secrets
-/.npmrc
-/results.sarif
 
 # compiled output
 /dist/
