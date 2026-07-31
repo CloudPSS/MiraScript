@@ -1,4 +1,6 @@
-"""pytest 共享 fixtures 与配置。"""
+"""
+pytest 共享 fixtures 与配置
+"""
 
 from __future__ import annotations
 

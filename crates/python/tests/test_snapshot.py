@@ -1,4 +1,5 @@
-"""VmSharedContext 快照测试。
+"""
+VmSharedContext 快照测试
 
 验证共享上下文中注册的全局键是否与预期一致。
 """

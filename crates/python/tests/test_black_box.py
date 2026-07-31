@@ -1,4 +1,5 @@
-"""MiraScript 黑盒测试
+"""
+MiraScript 黑盒测试
 
 遍历 tests/ 下所有 .mira 文件，注入辅助函数后在 VM 中执行。
 每个 .mira 文件对应一个参数化测试用例。

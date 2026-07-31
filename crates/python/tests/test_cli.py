@@ -1,4 +1,5 @@
-"""MiraScript CLI (__main__.py) 测试
+"""
+MiraScript CLI (__main__.py) 测试
 
 测试 ``python -m mirascript`` 命令行接口的各种调用方式。
 """
