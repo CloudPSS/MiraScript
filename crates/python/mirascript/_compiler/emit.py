@@ -6,7 +6,6 @@ import linecache
 
 from .script import VmScriptLike, wrap_vm_script, VmScript
 from .emitter import Emitter
-from .ast_helper import ASTHelper
 
 if TYPE_CHECKING:
     from . import InputMode
@@ -35,6 +34,7 @@ def emit(
 ) -> VmScript | None:
     """生成代码"""
     module = None
+    filename = _filename(filename)
     try:
         source_lines = source.splitlines(True)
         gen = Emitter(chunk, source_lines, source_map or [])
@@ -43,25 +43,8 @@ def emit(
             return None
 
         script = gen.func_script
-        ast_helper = ASTHelper()
-        fence = "`" * 5
-        ext = "miratpl" if input_mode == "template" else "mira"
-        filename = _filename(filename)
-        hint = (
-            "\nGenerated from "
-            + filename.replace("\\", "/")
-            + ":\n\n"
-            + fence
-            + ext
-            + "\n"
-            + source.rstrip("\r\n")
-            + "\n"
-            + fence
-            + "\n"
-        )
         module = ast.Module(
             body=[
-                ast_helper.vm_hint(hint),
                 ast.ImportFrom(
                     module="mirascript._vm.operations",
                     names=[ast.alias(name="*", asname=None, lineno=0, col_offset=0)],
@@ -83,7 +66,11 @@ def emit(
             source_lines,
             filename,
         )
-        return wrap_vm_script(result, filename=filename, ast=module, source=source)
+        return wrap_vm_script(
+            result, filename=filename, ast=module, source=source, input_mode=input_mode
+        )
 
     except Exception as e:
-        return wrap_vm_script(e, filename=filename, ast=module, source=source)
+        return wrap_vm_script(
+            e, filename=filename, ast=module, source=source, input_mode=input_mode
+        )

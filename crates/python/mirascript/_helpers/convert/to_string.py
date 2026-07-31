@@ -1,10 +1,15 @@
 from __future__ import annotations
-from typing_extensions import TypeVar, overload
+from typing_extensions import TypeVar, overload, TYPE_CHECKING
 import math
 import sys
 
-from ..._vm.types import Uninitialized, VmAny, VmValue
 from ..._vm.error import VmError
+from ..constants import Uninitialized
+
+if TYPE_CHECKING:
+    from ..._vm.types import VmAny, VmValue
+
+    T = TypeVar("T")
 
 MAX_INTEGER = 1e21
 
@@ -80,9 +85,6 @@ def _inner_to_string(val: VmValue, useBraces: bool) -> str:
             return joined
         return f"({joined})"
     return str(val)
-
-
-T = TypeVar("T")
 
 
 @overload

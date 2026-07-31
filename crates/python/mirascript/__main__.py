@@ -35,12 +35,31 @@ def _get_unparse():
         )
 
 
+def _get_hint(script: VmScript) -> str:
+
+    ext = "miratpl" if script.input_mode == "template" else "mira"
+    return (
+        '"""\nGenerated from '
+        + script.filename.replace("\\", "/")
+        + ":\n\n"
+        + "`````"
+        + ext
+        + "\n"
+        + script.source.rstrip("\r\n")
+        + "\n"
+        + "`````"
+        + '\n"""\n'
+    )
+
+
 def _print_debug(script: VmScript, output_file: str, variables: dict):
     unparse = _get_unparse()
 
     with open(output_file, "w", encoding="utf-8") as f:
         f.write(
-            f"{unparse(script.ast)}"
+            "# type: ignore\n"
+            f"{_get_hint(script)}\n"
+            f"{unparse(script.ast) if script.ast is not None else 'raise NotImplementedError(\"AST is not available\")'}\n"
             "\n\n"
             "if __name__ == '__main__':\n"
             f"    result = script({variables})\n"

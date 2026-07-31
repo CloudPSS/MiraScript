@@ -56,6 +56,9 @@ module-name = "mirascript._compiler.core"
 [tool.uv]
 environments = ["python_version>='3.10'"]
 
+[tool.pyright]
+reportUnnecessaryTypeIgnoreComment = "warning"
+
 [tool.pytest]
 testpaths = ["tests"]
 

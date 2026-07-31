@@ -24,8 +24,6 @@ def values(data=Uninitialized):
 def entries(data=Uninitialized):
     data = _expect_array_or_record("data", data, [])
     if is_vm_array(data):
-        # return list(enumerate(data)) # type: ignore
-
         ret = []
         for i, v in enumerate(data):
             ret.append({"0": i, "1": v if v is not None else None})

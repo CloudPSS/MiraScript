@@ -1,65 +1,48 @@
-from typing_extensions import TypeAlias, Literal
+from __future__ import annotations
+from typing_extensions import TypeAlias, Literal, ClassVar
+from dataclasses import dataclass, field
 
 DiagnosticLevel: TypeAlias = Literal[
     "Error", "Warning", "Info", "Hint", "Reference", "SourceMap", "Unknown"
 ]
 
 
+@dataclass(slots=True, frozen=True, kw_only=True)
 class DiagnosticPosition:
     """诊断位置"""
 
-    start_line: int
+    start_line: int = field()
     """起始行号"""
-    start_column: int
+    start_column: int = field()
     """起始列号"""
-    end_line: int
+    end_line: int = field()
     """结束行号"""
-    end_column: int
+    end_column: int = field()
     """结束列号"""
 
-    def __init__(
-        self,
-        start_line: int,
-        start_column: int,
-        end_line: int,
-        end_column: int,
-    ):
-        self.start_line = start_line
-        self.start_column = start_column
-        self.end_line = end_line
-        self.end_column = end_column
 
-
+@dataclass(slots=True, frozen=True, kw_only=True)
 class Diagnostic(DiagnosticPosition):
     """
     诊断信息类
     """
 
-    _cache = {}
+    _cache: ClassVar[dict[int, tuple[str, str, str]]] = {}
 
-    code: int
+    code: int = field()
     """诊断代码"""
-    level: DiagnosticLevel
+    level: DiagnosticLevel = field(init=False, compare=False)
     """诊断级别"""
-    name: str
+    name: str = field(init=False, compare=False)
     """诊断名称"""
-    message: str
+    message: str = field(init=False, compare=False)
     """诊断消息"""
 
-    def __init__(
-        self,
-        start_line: int,
-        start_column: int,
-        end_line: int,
-        end_column: int,
-        code: int,
-    ):
-        super().__init__(start_line, start_column, end_line, end_column)
-        self.code = code
-        if code == 12000:
-            self.level = "SourceMap"
-            self.name = "SourceMap"
-            self.message = "Source map information"
+    def __post_init__(self):
+        if self.code == 12000:
+            object.__setattr__(self, "level", "SourceMap")
+            object.__setattr__(self, "name", "SourceMap")
+            object.__setattr__(self, "message", "Source map information")
             return
         info = Diagnostic._cache.get(self.code)
         if info is None:
@@ -75,12 +58,14 @@ class Diagnostic(DiagnosticPosition):
                     f"Unknown diagnostic code",
                 )
             Diagnostic._cache[self.code] = info
-        self.level = info[0]
-        self.name = info[1]
-        self.message = info[2]
+        object.__setattr__(self, "level", info[0])
+        object.__setattr__(self, "name", info[1])
+        object.__setattr__(self, "message", info[2])
 
     def __repr__(self) -> str:
-        return f"Diagnostic(code={self.code}, level={self.level}, name={self.name}, start=({self.start_line}, {self.start_column}), end=({self.end_line}, {self.end_column}))"
+        start = f"({self.start_line}, {self.start_column})"
+        end = f"({self.end_line}, {self.end_column})"
+        return f"Diagnostic(code={self.code}, level={self.level}, name={self.name}, start={start}, end={end})"
 
     def __str__(self) -> str:
         return (
@@ -90,13 +75,14 @@ class Diagnostic(DiagnosticPosition):
         )
 
 
+@dataclass(slots=True, frozen=True)
 class SourceMapEntry(DiagnosticPosition):
     """源映射信息"""
 
 
 def decode_diagnostics(
-    diagnostics: "list[int]",
-) -> "tuple[list[Diagnostic], list[SourceMapEntry]]":
+    diagnostics: list[int],
+) -> tuple[list[Diagnostic], list[SourceMapEntry]]:
     """
     解析诊断信息
 
@@ -106,8 +92,8 @@ def decode_diagnostics(
     Returns:
         tuple[list[Diagnostic], list[SourceMapEntry]]: 解析后的诊断信息列表和源映射信息列表
     """
-    diagnostics_list = []
-    source_map_list = []
+    diagnostics_list: list[Diagnostic] = []
+    source_map_list: list[SourceMapEntry] = []
     for i in range(0, len(diagnostics), 5):
         code = diagnostics[i + 4]
         if code == 12000:

@@ -15,15 +15,11 @@ else:
 
 def _check_kv(key, value):
     if not isinstance(key, str):
-        raise VmError(
-            f"Global variable name must be a string, got {type(key).__name__!r}",
-            None,
+        raise TypeError(
+            f"Global variable name must be a string, got {type(key).__name__!r}"
         )
     if not is_vm_value(value):
-        raise VmError(
-            f"Invalid value for global variable '{key}': {value!r}",
-            None,
-        )
+        raise TypeError(f"Invalid value for global variable '{key}': {value!r}")
 
 
 class VmContext(VmContextLike):

@@ -1,13 +1,16 @@
 from __future__ import annotations
+from typing_extensions import TYPE_CHECKING
 import math
 import re
 
-from ..._vm.types import VmAny
 from ..checker import is_number
 from .to_string import to_string
 
+if TYPE_CHECKING:
+    from ..._vm.types import VmAny
 
-def _format_number(num):
+
+def _format_number(num: int | float) -> str:
     if num == 0:
         return "0"
 

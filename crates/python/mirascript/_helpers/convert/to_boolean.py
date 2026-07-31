@@ -1,11 +1,13 @@
 from __future__ import annotations
-from typing_extensions import TypeVar, overload
+from typing_extensions import TypeVar, overload, TYPE_CHECKING
 
-from ..._vm.types import VmAny
 from ..._vm.error import VmError
 from ..constants import Uninitialized
 
-T = TypeVar("T")
+if TYPE_CHECKING:
+    from ..._vm.types import VmAny
+
+    T = TypeVar("T")
 
 
 @overload

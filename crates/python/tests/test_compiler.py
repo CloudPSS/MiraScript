@@ -13,7 +13,11 @@ from mirascript._compiler.consts import (
     read_param,
     split_chunk,
 )
-from mirascript._compiler.diagnostics import Diagnostic, decode_diagnostics
+from mirascript._compiler.diagnostics import (
+    Diagnostic,
+    SourceMapEntry,
+    decode_diagnostics,
+)
 from mirascript._compiler.opcode import OpCode, get_opcode_name
 from mirascript._compiler.script import wrap_vm_script
 
@@ -67,34 +71,43 @@ def test_consts_read_constants_split_and_index_param():
     assert read_index(struct.pack("<i", -300), 0, True) == (-300, 4)
 
 
-def test_diagnostic_paths_and_decode(monkeypatch: pytest.MonkeyPatch):
-    d = Diagnostic(1, 2, 3, 4, 12000)
+def test_diagnostic(monkeypatch: pytest.MonkeyPatch):
+    d = Diagnostic(start_line=1, start_column=2, end_line=3, end_column=4, code=12000)
     assert d.level == "SourceMap"
+    assert (
+        repr(d)
+        == "Diagnostic(code=12000, level=SourceMap, name=SourceMap, start=(1, 2), end=(3, 4))"
+    )
 
     fake_core = types.ModuleType("mirascript._compiler.core")
     monkeypatch.setitem(sys.modules, "mirascript._compiler.core", fake_core)
     Diagnostic._cache.clear()
-    unknown = Diagnostic(1, 1, 1, 1, 987654)
+    unknown = Diagnostic(
+        start_line=1, start_column=1, end_line=1, end_column=1, code=987654
+    )
     assert unknown.level == "Unknown"
-    assert "Unknown diagnostic code" in unknown.message
+    assert (
+        repr(unknown)
+        == "Diagnostic(code=987654, level=Unknown, name=987654, start=(1, 1), end=(1, 1))"
+    )
+    assert unknown.message == "Unknown diagnostic code"
 
+
+def test_diagnostic_decode():
     diagnostics, source_map = decode_diagnostics(
-        [
-            1,
-            2,
-            3,
-            4,
-            1001,
-            10,
-            11,
-            12,
-            13,
-            12000,
-        ]
+        [1, 2, 3, 4, 1001, 10, 11, 12, 13, 12000]
     )
     assert len(diagnostics) == 1
     assert len(source_map) == 1
-    assert "[" in str(diagnostics[0])
+    assert isinstance(diagnostics[0], Diagnostic)
+    assert (
+        str(diagnostics[0]) == "[Error] 发生未知内部错误 (InternalError) at 1:2 - 3:4"
+    )
+    assert isinstance(source_map[0], SourceMapEntry)
+    assert (
+        repr(source_map[0])
+        == "SourceMapEntry(start_line=10, start_column=11, end_line=12, end_column=13)"
+    )
 
 
 def test_opcode_immutability_and_names():
@@ -113,7 +126,12 @@ def test_opcode_immutability_and_names():
 
 
 def test_wrap_vm_script_exception_branch():
-    wrapped = wrap_vm_script(RuntimeError("x"), filename="f", source="s", ast=None)
+    wrapped = wrap_vm_script(
+        RuntimeError("x"), filename="f", source="s", ast=None, input_mode="script"
+    )
     with pytest.raises(RuntimeError):
         wrapped()
-    assert getattr(wrapped, "filename") == "f"
+    assert wrapped.filename == "f"
+    assert wrapped.source == "s"
+    assert wrapped.ast is None
+    assert wrapped.input_mode == "script"

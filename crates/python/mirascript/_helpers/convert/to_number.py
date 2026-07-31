@@ -1,10 +1,15 @@
 from __future__ import annotations
-from typing_extensions import TypeVar, overload
+from typing_extensions import TypeVar, overload, TYPE_CHECKING
 import math
 import re
 
 from ..._vm.error import VmError
-from ..._vm.types import Uninitialized, VmAny
+from ..constants import Uninitialized
+
+if TYPE_CHECKING:
+    from ..._vm.types import VmAny
+
+    T = TypeVar("T")
 
 
 def _parse_number(s: str) -> float | None:
@@ -48,9 +53,6 @@ def _string_to_number(s: str) -> float | None:
         return None
     else:
         return _parse_number(s)
-
-
-T = TypeVar("T")
 
 
 @overload
