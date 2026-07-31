@@ -4,7 +4,7 @@ import math
 from ...._helpers.types import is_vm_module
 from ...._helpers.constants import Uninitialized
 from ...._helpers.checker import is_number
-from ...._helpers.convert.to_string import MAX_INTEGER, number_to_string
+from ...._helpers.convert.string import MAX_INTEGER, number_to_string
 from ...types import VmAny, VmValue
 from .._helpers import _expect_string, _required, _rethrow_error
 

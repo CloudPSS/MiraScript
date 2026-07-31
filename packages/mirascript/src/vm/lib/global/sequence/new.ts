@@ -1,5 +1,5 @@
 import type { VmArray, VmConst, VmRecord } from '../../../types/index.js';
-import { toString } from '../../../../helpers/convert/to-string.js';
+import { toString } from '../../../../helpers/convert/index.js';
 import { VM_ARRAY_MAX_LENGTH } from '../../../../helpers/constants.js';
 import {
     keys as _keys,

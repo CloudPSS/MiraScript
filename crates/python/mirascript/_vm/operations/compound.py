@@ -3,7 +3,7 @@ import math
 from typing_extensions import Sequence, Iterable as IterableType, Mapping
 
 from ..._helpers.convert import to_number, to_string
-from ..._helpers.convert.to_string import number_to_string
+from ..._helpers.convert.string import number_to_string
 from ..._helpers.types import (
     is_vm_array,
     is_vm_extern,

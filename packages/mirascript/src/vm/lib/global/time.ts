@@ -1,6 +1,6 @@
 import { describeParam, expectNumberRange, throwError, throwUnexpectedTypeError, VmLib } from '../helpers.js';
 import { isNaN, NotNumber, isFinite } from '../../../helpers/utils.js';
-import { toNumber } from '../../../helpers/convert/to-number.js';
+import { toNumber } from '../../../helpers/convert/index.js';
 import { display } from '../../../helpers/serialize.js';
 import type { VmAny } from '../../types/index.js';
 

@@ -1,5 +1,5 @@
 import { OpCode } from '@mirascript/constants';
-import { toString } from '../../helpers/convert/to-string.js';
+import { toString } from '../../helpers/convert/index.js';
 import type { VmPrimitive } from '../../vm/index.js';
 import type { ScriptInput, TranspileOptions } from '../types.js';
 import type { IRange } from '../diagnostic.js';

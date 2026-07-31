@@ -1,4 +1,4 @@
-import { toNumber } from '../../../helpers/convert/to-number.js';
+import { toNumber } from '../../../helpers/convert/index.js';
 import { isArray } from '../../../helpers/utils.js';
 import { Cp } from '../../checkpoint.js';
 import { $Add, $Call, $Div, $Mul, $Sub } from '../../operations/index.js';

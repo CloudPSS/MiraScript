@@ -3,7 +3,6 @@ from typing_extensions import TypeVar, overload, TYPE_CHECKING
 import math
 import re
 
-from ..._vm.error import VmError
 from ..constants import Uninitialized
 
 if TYPE_CHECKING:
@@ -72,6 +71,8 @@ def to_number(value: VmAny, fallback: T = Uninitialized) -> float | T:
             return num
 
     if fallback is Uninitialized:
+        from ..._vm.error import VmError
+
         raise VmError(f"Failed to convert value to number: {value}", math.nan)
 
     return fallback

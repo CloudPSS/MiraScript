@@ -5,7 +5,7 @@ from typing_extensions import TYPE_CHECKING, override, Final
 
 from .constants import Uninitialized
 from .types import is_vm_function, is_vm_extern, is_vm_array, is_vm_module, is_vm_record
-from .convert.to_string import number_to_string
+from .convert.string import number_to_string
 
 if TYPE_CHECKING:
     from .._vm.types import VmFunction, VmModule, VmAny, VmArray, VmExtern, VmRecord

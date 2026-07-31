@@ -1,4 +1,4 @@
-import { toBoolean } from '../../../../helpers/convert/to-boolean.js';
+import { toBoolean } from '../../../../helpers/convert/index.js';
 import { $Call } from '../../../operations/call.js';
 import { isSame } from '../../../operations/utils.js';
 import type { VmAny, VmConst, VmValue } from '../../../types/index.js';

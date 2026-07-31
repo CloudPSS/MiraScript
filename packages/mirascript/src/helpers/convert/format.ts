@@ -1,6 +1,6 @@
 import type { VmAny } from '../../vm/index.js';
 import { isFinite } from '../utils.js';
-import { toString } from './to-string.js';
+import { toString } from './string.js';
 
 /** 渲染数字 */
 function formatNumber(finite: number): string {

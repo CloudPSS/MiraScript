@@ -10,7 +10,7 @@ import {
     isVmModule,
     isVmRecord,
 } from './types.js';
-import { numberToString } from './convert/to-string.js';
+import { numberToString } from './convert/string.js';
 
 /** 序列化 nil 值 */
 export function serializeNil(): string {

@@ -4,7 +4,7 @@ import math
 import re
 
 from ..checker import is_number
-from .to_string import to_string
+from .string import to_string
 
 if TYPE_CHECKING:
     from ..._vm.types import VmAny

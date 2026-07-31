@@ -1,4 +1,4 @@
-import { toString } from '../../../../helpers/convert/to-string.js';
+import { toString } from '../../../../helpers/convert/index.js';
 import { fromEntries } from '../../../../helpers/utils.js';
 import { $Call } from '../../../operations/call.js';
 import type { VmConst } from '../../../types/index.js';

@@ -3,7 +3,6 @@ from typing_extensions import TypeVar, overload, TYPE_CHECKING
 import math
 import sys
 
-from ..._vm.error import VmError
 from ..constants import Uninitialized
 
 if TYPE_CHECKING:
@@ -54,7 +53,7 @@ def number_to_string(x: float | int, minus_zero: bool = False) -> str:
     return result
 
 
-def _inner_to_string(val: VmValue, useBraces: bool) -> str:
+def inner_to_string(val: VmValue, useBraces: bool) -> str:
     if val is None:
         return "nil"
     if isinstance(val, bool):
@@ -69,7 +68,7 @@ def _inner_to_string(val: VmValue, useBraces: bool) -> str:
     if isinstance(val, (list, tuple)):
         strings = []
         for v in val:
-            strings.append(_inner_to_string(v, True))
+            strings.append(inner_to_string(v, True))
         joined = (", ").join(strings)
         if not useBraces:
             return joined
@@ -79,7 +78,7 @@ def _inner_to_string(val: VmValue, useBraces: bool) -> str:
         strings = []
 
         for k, v in val.items():
-            strings.append(f"{k}: {_inner_to_string(v,True)}")
+            strings.append(f"{k}: {inner_to_string(v,True)}")
         joined = (", ").join(strings)
         if not useBraces:
             return joined
@@ -97,10 +96,12 @@ def to_string(value: VmAny, fallback: T = Uninitialized) -> str | T:
     if isinstance(value, str):
         return value
     try:
-        x = _inner_to_string(value, False)
+        x = inner_to_string(value, False)
         return x
     except Exception as ex:
         if fallback is Uninitialized:
+            from ..._vm.error import VmError
+
             e = VmError(f"Cannot convert to string: {value!r}", "")
             e.__cause__ = ex
             raise e

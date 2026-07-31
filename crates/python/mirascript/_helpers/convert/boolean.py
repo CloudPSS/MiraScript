@@ -1,7 +1,6 @@
 from __future__ import annotations
 from typing_extensions import TypeVar, overload, TYPE_CHECKING
 
-from ..._vm.error import VmError
 from ..constants import Uninitialized
 
 if TYPE_CHECKING:
@@ -18,5 +17,7 @@ def to_boolean(value: VmAny, fallback: T = Uninitialized) -> bool | T:
     if isinstance(value, bool):
         return value
     if fallback is Uninitialized:
+        from ..._vm.error import VmError
+
         raise VmError(f"Cannot convert to boolean: {value}", False)
     return fallback

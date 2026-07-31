@@ -1,4 +1,4 @@
-import { toNumber } from '../../../../helpers/convert/to-number.js';
+import { toNumber } from '../../../../helpers/convert/index.js';
 import { $Call } from '../../../operations/index.js';
 import type { VmAny, VmConst, VmValue } from '../../../types/index.js';
 import { VmLib, expectArray, expectCallable } from '../../helpers.js';
