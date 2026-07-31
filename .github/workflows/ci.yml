@@ -37,6 +37,7 @@ jobs:
         uses: codacy/codacy-analysis-cli-action@master
         with:
           project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
+          tool: eslint
           format: sarif
           output: results.sarif
           upload: true
