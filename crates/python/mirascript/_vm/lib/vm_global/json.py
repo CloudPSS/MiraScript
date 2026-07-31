@@ -4,7 +4,7 @@ import math
 from ...._helpers.types import is_vm_module
 from ...._helpers.constants import Uninitialized
 from ...._helpers.checker import is_number
-from ...._helpers.convert.string import MAX_INTEGER, number_to_string
+from ...._helpers.convert.string import is_json_integer, number_to_string
 from ...types import VmAny, VmValue
 from .._helpers import _expect_string, _required, _rethrow_error
 
@@ -22,7 +22,7 @@ def _purify_json(value: VmValue):
     if isinstance(value, (int, float)):
         if math.isnan(value) or math.isinf(value):
             return None
-        if value.is_integer() and -MAX_INTEGER < value < MAX_INTEGER:
+        if is_json_integer(value):
             return int(value)
         return float(value)
     if callable(value):

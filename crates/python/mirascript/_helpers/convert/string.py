@@ -10,18 +10,16 @@ if TYPE_CHECKING:
 
     T = TypeVar("T")
 
-MAX_INTEGER = 1e21
+_MAX_INTEGER = 1e21
 
 
-if sys.version_info >= (3, 12):
-
-    def _is_integer(x: float | int) -> bool:
-        return x.is_integer()
-
-else:
-
-    def _is_integer(x: float | int) -> bool:
-        return isinstance(x, int) or (isinstance(x, float) and x.is_integer())
+def is_json_integer(num: float | int) -> bool:
+    """
+    检查是否为 JSON 整数
+    """
+    if isinstance(num, int):
+        return True
+    return num.is_integer() and -_MAX_INTEGER < num < _MAX_INTEGER
 
 
 def number_to_string(x: float | int, minus_zero: bool = False) -> str:
@@ -30,7 +28,7 @@ def number_to_string(x: float | int, minus_zero: bool = False) -> str:
         return "-0"
 
     # 1. Fast path for integers, including +-0
-    if _is_integer(x) and -MAX_INTEGER < x < MAX_INTEGER:
+    if is_json_integer(x):
         return repr(int(x))
 
     x = float(x)  # Convert to float

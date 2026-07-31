@@ -7,7 +7,7 @@ DiagnosticLevel: TypeAlias = Literal[
 ]
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class DiagnosticPosition:
     """诊断位置"""
 
@@ -21,7 +21,7 @@ class DiagnosticPosition:
     """结束列号"""
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class Diagnostic(DiagnosticPosition):
     """
     诊断信息类
@@ -75,7 +75,7 @@ class Diagnostic(DiagnosticPosition):
         )
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class SourceMapEntry(DiagnosticPosition):
     """源映射信息"""
 

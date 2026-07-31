@@ -32,8 +32,8 @@ SKIP_HUGE = environ.get("SKIP_HUGE", "0") != "0"
 if TYPE_CHECKING:
     from typing_extensions import Callable, TypeAlias
 
-    TimeoutFns: TypeAlias = list[tuple[Callable, str]]
-    VmTestHelpers: TypeAlias = tuple[TimeoutFns, dict[str, VmValue]]
+    TimeoutFns: TypeAlias = "list[tuple[Callable, str]]"
+    VmTestHelpers: TypeAlias = "tuple[TimeoutFns, dict[str, VmValue]]"
 
 
 def _make_vm_helpers() -> VmTestHelpers:

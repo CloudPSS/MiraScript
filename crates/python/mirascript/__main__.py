@@ -54,12 +54,13 @@ def _get_hint(script: VmScript) -> str:
 
 def _print_debug(script: VmScript, output_file: str, variables: dict):
     unparse = _get_unparse()
+    code = unparse(script.ast) if script.ast is not None else  'raise NotImplementedError("AST is not available")'
 
     with open(output_file, "w", encoding="utf-8") as f:
         f.write(
             "# type: ignore\n"
             f"{_get_hint(script)}\n"
-            f"{unparse(script.ast) if script.ast is not None else 'raise NotImplementedError(\"AST is not available\")'}\n"
+            f"{code}\n"
             "\n\n"
             "if __name__ == '__main__':\n"
             f"    result = script({variables})\n"

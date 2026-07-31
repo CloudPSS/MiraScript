@@ -1,11 +1,13 @@
+from __future__ import annotations
 import math
+from typing_extensions import Sequence
 
-from ....._helpers.checker import is_number
+from ....._helpers.checker import is_safe_integer, is_number
 from ....._helpers.types import is_vm_array, is_vm_record
 from ....._helpers.convert import to_number, to_string
 from ....._helpers.constants import Uninitialized, VM_ARRAY_MAX_LENGTH
 from ....operations.helpers import Element
-from ....types import VmConst
+from ....types import VmConst, VmAny
 from ..._helpers import (
     _expect_array_or_record,
     _throw_error,
@@ -25,13 +27,17 @@ def _arr_index(index: VmConst) -> int:
     return idx
 
 
-def _is_arr_index(key):
+def _is_arr_index(key: VmConst) -> bool:
     if not is_number(key):
         return False
-    return key.is_integer() and key >= 0 and key <= VM_ARRAY_MAX_LENGTH
+    if not is_safe_integer(key):
+        return False
+    return key >= 0 and key <= VM_ARRAY_MAX_LENGTH
 
 
-def _with_inner(obj, key, key_index, value):
+def _with_inner(
+    obj: VmConst, key: Sequence[VmConst], key_index: int, value: VmConst
+) -> VmConst:
     if key_index >= len(key):
         return value
 
@@ -59,18 +65,19 @@ def _with_inner(obj, key, key_index, value):
     return result
 
 
-def _normalize_entries(data, entries):
+def _normalize_entries(
+    data: VmConst, entries: Sequence[VmAny]
+) -> list[tuple[VmConst, VmConst]]:
     if len(entries) % 2 != 0:
         _throw_error(
             "with_ function requires even number of arguments as key-value pairs", data
         )
 
-    entryData = []
+    entryData: list[tuple[VmConst, VmConst]] = []
 
     for i in range(0, len(entries), 2):
-        key = entries[i]
-        _expect_const("key", key, data)
-        if key is None or key is Uninitialized:
+        key = _expect_const("key", entries[i], data)
+        if key is None:
             continue
 
         if is_vm_array(key):
@@ -85,7 +92,7 @@ def _normalize_entries(data, entries):
     return entryData
 
 
-def with_(data=Uninitialized, *args):
+def with_(data: VmAny = Uninitialized, *args: VmAny) -> VmConst:
     data = _expect_array_or_record("data", data, [])
     if len(args) == 0:
         return data
@@ -94,7 +101,7 @@ def with_(data=Uninitialized, *args):
     if is_vm_array(data):
         result = data.copy()
         for key, element in entryData:
-            index = 0
+            index: int = 0
             val = None
 
             if is_vm_array(key):
@@ -102,7 +109,7 @@ def with_(data=Uninitialized, *args):
                 if index < 0:
                     continue
                 val = _with_inner(
-                    result[int(index)] if index < len(result) else None, key, 1, element
+                    result[index] if index < len(result) else None, key, 1, element
                 )
             else:
                 index = _arr_index(key)
@@ -111,7 +118,7 @@ def with_(data=Uninitialized, *args):
                 val = element
             while index >= len(result):
                 result.append(None)
-            result[int(index)] = val
+            result[index] = val
         return result
     else:
         result = data.copy()
