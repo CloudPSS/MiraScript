@@ -1,16 +1,14 @@
 from __future__ import annotations
 import math
-from typing_extensions import Callable, TypeAlias
+from typing_extensions import Callable
 
 from ....types import Uninitialized, VmAny
 from ..._helpers import _expect_number
 
-F: TypeAlias = "Callable[[float], float | int]"
-
 
 def _run(
     x: VmAny,
-    func: F,
+    func: Callable[[float], float | int],
     nan: float | None = None,
     posinf: float | None = None,
     neginf: float | None = None,
@@ -41,7 +39,7 @@ def _run(
 
 
 def _build(
-    func: F,
+    func: Callable[[float], float | int],
     nan: float | None = None,
     posinf: float | None = None,
     neginf: float | None = None,
