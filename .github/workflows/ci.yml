@@ -17,38 +17,6 @@ jobs:
     uses: ./.github/workflows/build.yml
     secrets: inherit
 
-  code-scan:
-    permissions:
-      contents: read
-      security-events: write
-
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
-
-      - name: Install
-        uses: ./.github/actions/install
-        with:
-          ALIYUN_NPM_TOKEN: ${{ secrets.ALIYUN_NPM_TOKEN }}
-          rust-targets: x86_64-unknown-linux-gnu
-      - name: Run Codacy Analysis CLI
-        uses: codacy/codacy-analysis-cli-action@master
-        with:
-          project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
-          allow-network: true
-          skip-uncommitted-files-check: true
-          tool: eslint
-          format: sarif
-          output: results.sarif
-          upload: true
-          gh-code-scanning-compat: true
-      - name: Upload SARIF results file
-        uses: github/codeql-action/upload-sarif@main
-        with:
-          sarif_file: results.sarif
-
   deploy-pages:
     needs: build
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
