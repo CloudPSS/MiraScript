@@ -55,7 +55,7 @@ class Diagnostic(DiagnosticPosition):
                 info = (
                     "Unknown",
                     f"{self.code}",
-                    f"Unknown diagnostic code",
+                    "Unknown diagnostic code",
                 )
             Diagnostic._cache[self.code] = info
         object.__setattr__(self, "level", info[0])

@@ -6,9 +6,6 @@ MiraScript CLI (__main__.py) 测试
 
 from __future__ import annotations
 
-import ast
-import sys
-import types
 from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -27,20 +24,18 @@ EXAMPLES_DIR = (Path(__file__).parent / "../../../examples").resolve()
 # ---------------------------------------------------------------------------
 
 
-def _run_main(
-    args: list[str], *, prog: str | None = "mirascript", stdin: str | None = None
-) -> tuple[int, str, str]:
+def _run_main(args: list[str], *, stdin: str | None = None) -> tuple[int, str, str]:
     """运行 main 函数，返回 (exit_code, stdout, stderr)。"""
 
     stdout = StringIO()
     stderr = StringIO()
 
-    @patch("sys.argv", [prog or "mirascript", *args])
+    @patch("sys.argv", ["mirascript", *args])
     @patch("sys.stdout", stdout)
     @patch("sys.stderr", stderr)
     @patch("sys.stdin", StringIO(stdin) if stdin is not None else StringIO())
     def run_main():
-        return cli.main(prog=prog)
+        return cli.main()
 
     exit_code = run_main()
     return exit_code, stdout.getvalue(), stderr.getvalue()
@@ -54,13 +49,6 @@ def _run_main(
 def test_no_args_shows_help():
     """不带任何参数时应打印帮助并返回 1。"""
     exit_code, stdout, stderr = _run_main([])
-    assert exit_code == 1
-    assert "usage:" in stdout or "usage:" in stderr
-
-
-def test_no_args_when_prog_is_none():
-    """prog 为 None（即 __name__ == '__main__' 路径）时也能正常显示帮助。"""
-    exit_code, stdout, stderr = _run_main([], prog=None)
     assert exit_code == 1
     assert "usage:" in stdout or "usage:" in stderr
 
@@ -89,13 +77,6 @@ def test_eval_arithmetic():
     exit_code, stdout, stderr = _run_main(["-e", "return 1 + 2 * 3;"])
     assert exit_code == 0
     assert stdout == "[OK] 7\n"
-
-
-def test_eval_with_prog_none():
-    """__main__ 直接调用时 --eval 也能正常工作。"""
-    exit_code, stdout, stderr = _run_main(["-e", "return 99;"], prog=None)
-    assert exit_code == 0
-    assert stdout == "[OK] 99\n"
 
 
 # ---------------------------------------------------------------------------
@@ -263,50 +244,6 @@ def test_compile_exception_exits_with_code_2():
         with pytest.raises(SystemExit) as exc:
             cli._compile("return 1;", "script")
     assert exc.value.code == 2
-
-
-if sys.version_info >= (3, 9):
-
-    def test_get_unparse_prefers_stdlib():
-        unparse = cli._get_unparse()
-        assert unparse is ast.unparse
-
-    def test_get_unparse_raises_if_all_missing(monkeypatch: pytest.MonkeyPatch):
-        monkeypatch.delattr(ast, "unparse", raising=False)
-        monkeypatch.delitem(sys.modules, "astunparse", raising=False)
-
-        with pytest.raises(ImportError):
-            cli._get_unparse()
-
-
-def test_get_unparse_fallback_to_astunparse(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.delattr(ast, "unparse", raising=False)
-
-    fake = types.ModuleType("astunparse")
-
-    def fake_unparse(node):
-        return "fake_unparse"
-
-    fake.unparse = fake_unparse  # pyright: ignore[reportAttributeAccessIssue]
-    monkeypatch.setitem(sys.modules, "astunparse", fake)
-
-    unparse = cli._get_unparse()
-    assert unparse is fake_unparse
-
-
-def test_print_debug_writes_python_file(tmp_path: Path):
-    script, diagnostics = cli.compile(
-        "return 42;", input_mode="script", filename="<test>"
-    )
-    assert diagnostics is not None
-    assert script is not None
-
-    out = tmp_path / "debug_out.py"
-    cli._print_debug(script, str(out), {"x": 1})
-
-    content = out.read_text(encoding="utf-8")
-    assert "if __name__ == '__main__'" in content
-    assert "result = script({'x': 1})" in content
 
 
 def test_main_returns_1_when_script_raises():

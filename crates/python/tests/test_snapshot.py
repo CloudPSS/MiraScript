@@ -18,7 +18,7 @@ def test_shared_context_keys(snapshot: Snapshot):
 def test_module_exports(snapshot: Snapshot):
     """VmModule 应导出预期的属性。"""
     exports = sorted(name for name in dir(mirascript) if not name.startswith("_"))
-    all = sorted(mirascript.__all__)
-    assert exports == all, "导出的属性与 __all__ 不匹配"
+    all_exports = sorted(mirascript.__all__)
+    assert exports == all_exports, "导出的属性与 __all__ 不匹配"
 
     snapshot.assert_match(repr(exports), "exports.txt")

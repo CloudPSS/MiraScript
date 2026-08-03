@@ -4,6 +4,8 @@ import sys
 import argparse
 import traceback
 
+from ._main.unparse import unparse
+from ._main.argparse import create_parser
 from . import VmValue, compile, InputMode, VmScript, Diagnostic, VmContext, display
 
 
@@ -19,94 +21,14 @@ def _compile(
         sys.exit(2)
 
 
-def _get_unparse():
-    import ast
-
-    if hasattr(ast, "unparse"):
-        return ast.unparse
-
-    try:
-        from astunparse import unparse  # pyright: ignore[reportMissingImports]
-
-        return unparse
-    except ImportError:
-        raise ImportError(
-            "Neither 'ast.unparse' nor 'astunparse' is available. Please install 'astunparse' with `pip install astunparse` to enable debug output generation."
-        )
-
-
-def _get_hint(script: VmScript) -> str:
-
-    ext = "miratpl" if script.input_mode == "template" else "mira"
-    return (
-        '"""\nGenerated from '
-        + script.filename.replace("\\", "/")
-        + ":\n\n"
-        + "`````"
-        + ext
-        + "\n"
-        + script.source.rstrip("\r\n")
-        + "\n"
-        + "`````"
-        + '\n"""\n'
-    )
-
-
-def _print_debug(script: VmScript, output_file: str, variables: dict):
-    unparse = _get_unparse()
-    code = unparse(script.ast) if script.ast is not None else  'raise NotImplementedError("AST is not available")'
-
-    with open(output_file, "w", encoding="utf-8") as f:
-        f.write(
-            "# type: ignore\n"
-            f"{_get_hint(script)}\n"
-            f"{code}\n"
-            "\n\n"
-            "if __name__ == '__main__':\n"
-            f"    result = script({variables})\n"
-            "    from mirascript import display\n"
-            "    print('[OK]', display(result))"
-        )
-
-
-def main(prog: str | None = "mirascript") -> int:
-    parser = argparse.ArgumentParser(
-        prog=prog, description="Compile and execute a MiraScript file"
-    )
-    if parser.prog == "__main__.py" and __name__ == "__main__":
+def main() -> int:
+    parser = create_parser()
+    if (
+        parser.prog == "__main__.py" or parser.prog.endswith(" -m mirascript")
+    ) and __name__ == "__main__":
         parser.prog = "python -m mirascript"
-    parser.add_argument(
-        "-t",
-        "--template",
-        action="store_true",
-        help="Indicates the input is a template file",
-    )
-    parser.add_argument(
-        "-g",
-        "--generate",
-        metavar="output.py",
-        action="store",
-        help="Output generated code to the specified file",
-    )
-    parser.add_argument(
-        "-e",
-        "--eval",
-        action="store",
-        metavar="SCRIPT",
-        help="Evaluate a MiraScript code snippet directly from the command line",
-    )
-    parser.add_argument(
-        "script_file",
-        nargs="?",
-        help="Path to the MiraScript file to compile (use '-' for stdin)",
-    )
-    parser.add_argument(
-        "-v",
-        "--variable",
-        action="append",
-        metavar="NAME=VALUE",
-        help="Define a variable for evaluation (can be used multiple times)",
-    )
+    else:
+        parser.prog = "mirascript"
     args = parser.parse_args()
 
     variables: dict[str, VmValue] = {}
@@ -178,11 +100,11 @@ def main(prog: str | None = "mirascript") -> int:
         return 1
 
     if result and args.generate:
-        _print_debug(result, args.generate, variables)
+        unparse(result, args.generate, variables)
 
     try:
         print("[OK]", display(result(VmContext(variables))))
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
         return 1
 
@@ -190,4 +112,4 @@ def main(prog: str | None = "mirascript") -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main(None))
+    sys.exit(main())
