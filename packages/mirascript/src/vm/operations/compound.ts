@@ -69,7 +69,7 @@ export const $Omit = (value: VmAny, omitted: ReadonlyArray<number | string>): Vm
     if (!isVmRecord(value)) return {};
     const result: Record<string, VmConst> = {};
     const valueKeys = keys(value);
-    const omittedSet = new Set(omitted.map($ToString));
+    const omittedSet = new Set(omitted.map(String));
     for (const key of valueKeys) {
         if (!omittedSet.has(key)) {
             setRecord(result, key, value[key]);
@@ -84,7 +84,7 @@ export const $Pick = (value: VmAny, picked: ReadonlyArray<number | string>): VmR
     if (!isVmRecord(value)) return {};
     const result: Record<string, VmConst> = {};
     for (const key of picked) {
-        const k = $ToString(key);
+        const k = String(key);
         if (hasOwnEnumerable(value, k)) {
             setRecord(result, k, value[k]);
         }
