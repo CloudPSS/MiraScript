@@ -21,6 +21,46 @@ def _compile(
         sys.exit(2)
 
 
+def _parse_variable_definition(var: str) -> tuple[str, VmValue] | None:
+    if "=" not in var:
+        print(
+            f"Error: Invalid variable definition '{var}'. Expected format NAME=VALUE.",
+            file=sys.stderr,
+        )
+        return None
+    name, value = var.split("=", 1)
+    try:
+        script, diagnostics = _compile(
+            f"return ({value});", "script", f"<variable:{name}>"
+        )
+        if script is None:
+            print(
+                f"Error: Failed to compile variable '{name}={value}'. Diagnostics:",
+                *[diag for diag in diagnostics if diag.level == "Error"],
+                file=sys.stderr,
+            )
+            return None
+        return name, script()
+    except Exception as e:
+        print(f"Error evaluating variable '{name}={value}': {e}", file=sys.stderr)
+        return None
+
+
+def _parse_variables(variable_list: list[str]) -> dict[str, VmValue] | None:
+    variables: dict[str, VmValue] = {}
+    has_error = False
+    for var in variable_list:
+        result = _parse_variable_definition(var)
+        if result is None:
+            has_error = True
+            continue
+        name, value = result
+        variables[name] = value
+    if has_error:
+        return None
+    return variables
+
+
 def main() -> int:
     parser = create_parser()
     if (
@@ -31,37 +71,9 @@ def main() -> int:
         parser.prog = "mirascript"
     args = parser.parse_args()
 
-    variables: dict[str, VmValue] = {}
-    if args.variable:
-        has_error = False
-        for var in args.variable:
-            if "=" not in var:
-                print(
-                    f"Error: Invalid variable definition '{var}'. Expected format NAME=VALUE.",
-                    file=sys.stderr,
-                )
-                return 1
-            name, value = var.split("=", 1)
-            try:
-                script, diagnostics = _compile(
-                    f"return ({value});", "script", f"<variable:{name}>"
-                )
-                if script is None:
-                    print(
-                        f"Error: Failed to compile variable '{name}={value}'. Diagnostics:",
-                        *[diag for diag in diagnostics if diag.level == "Error"],
-                        file=sys.stderr,
-                    )
-                    has_error = True
-                    continue
-                variables[name] = script()
-            except Exception as e:
-                print(
-                    f"Error evaluating variable '{name}={value}': {e}", file=sys.stderr
-                )
-                has_error = True
-        if has_error:
-            return 1
+    variables = _parse_variables(args.variable) if args.variable else {}
+    if variables is None:
+        return 1
 
     if args.eval:
         script = args.eval
