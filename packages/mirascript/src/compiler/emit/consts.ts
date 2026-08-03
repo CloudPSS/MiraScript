@@ -144,7 +144,6 @@ export function readConsts(constChunk: Uint8Array): VmPrimitive[] {
     while (offset < length) {
         const type = reader.getUint8(offset);
         switch (type) {
-            /* c8 ignore next 2 */
             case 0:
                 consts.push(null);
                 offset += 1;

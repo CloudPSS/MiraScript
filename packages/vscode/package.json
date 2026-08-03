@@ -50,7 +50,7 @@
     "@private/monaco-editor": "^0.0.71",
     "@types/node": "^26.1.2",
     "@types/vscode": "1.125.0",
-    "js-yaml": "^5.2.2",
+    "js-yaml": "^5.2.3",
     "nodemon": "^3.1.14",
     "svg2png-wasm": "^1.4.1"
   },

@@ -227,8 +227,8 @@ export function formatDiagnostics(
     const messages: string[] = [];
     for (const diagnostic of diagnostics) {
         const range = formatRange(diagnostic.range);
-        const codeName = DiagnosticCode[diagnostic.code] || `Unknown(${diagnostic.code})`;
-        let message = getDiagnosticMessage(diagnostic.code);
+        const codeName = DiagnosticCode[diagnostic.code] || `Unknown`;
+        let message = getDiagnosticMessage(diagnostic.code) || `Unknown diagnostic code: ${diagnostic.code}`;
         for (const ref of diagnostic.references) {
             const refRange = formatRange(ref.range);
             message += `\n    (${refRange}): ${getDiagnosticMessage(ref.code)}`;
