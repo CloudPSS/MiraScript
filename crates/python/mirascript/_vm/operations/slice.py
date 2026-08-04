@@ -1,52 +1,50 @@
 import math
 
 from ..._helpers.checker import is_safe_integer
+from ..._helpers.serialize import display
+from ..._helpers.convert import to_number
 from ..._helpers.types import is_vm_array
 from ..error import VmError
-from ..types import VmArray
+from ..types import VmAny, VmArray
 from .common import AssertInit
-from .convert import ToNumber
-from .type_check import Type
 
 
-def _slice_core(value: VmArray, start: float, end: float, exclusive: bool) -> VmArray:
+def _slice_core(value: VmAny, start: VmAny, end: VmAny, exclusive: bool) -> VmArray:
+    AssertInit(value)
+    AssertInit(start)
+    AssertInit(end)
+
+    if not is_vm_array(value):
+        raise VmError(f"`Expected array, got {display(value)}`", [])
     length = len(value)
+    s = to_number(start) if start is not None else 0
+    e = to_number(end) if end is not None else length - (0 if exclusive else 1)
 
-    if math.isnan(start) or (math.isinf(start) and start < 0):
-        start = 0
-    elif math.isinf(start):
+    if math.isnan(s) or (math.isinf(s) and s < 0):
+        s = 0
+    elif math.isinf(s):
         return []
-    elif start < 0:
-        start = length + start
+    elif s < 0:
+        s = length + s
 
-    if math.isnan(end) or (math.isinf(end) and end > 0):
-        end = length if exclusive else length - 1
-    elif math.isinf(end):
+    if math.isnan(e) or (math.isinf(e) and e > 0):
+        e = length if exclusive else length - 1
+    elif math.isinf(e):
         return []
-    elif end < 0:
-        end = length + end
+    elif e < 0:
+        e = length + e
 
-    start = math.ceil(start)
-    if exclusive or not is_safe_integer(end):
-        end = math.ceil(end)
+    s = math.ceil(s)
+    if exclusive or not is_safe_integer(e):
+        e = math.ceil(e)
     else:
-        end = math.trunc(end + 1)
-    return value[start:end]
+        e = math.trunc(e + 1)
+    return value[s:e]
 
 
-def Slice(a, start, end):
-    AssertInit(a)
-    if not is_vm_array(a):
-        raise VmError(f"`Expected array, got {Type(a)}", [])
-    s = ToNumber(start) if start is not None else 0
-    e = ToNumber(end) if end is not None else len(a) - 1
-    return _slice_core(a, s, e, False)
+def Slice(value: VmAny, start: VmAny, end: VmAny) -> VmArray:
+    return _slice_core(value, start, end, False)
 
 
-def SliceExclusive(a, start, end):
-    AssertInit(a)
-    if not is_vm_array(a):
-        raise VmError(f"`Expected array, got {Type(a)}", [])
-    s = ToNumber(start) if start is not None else 0
-    e = ToNumber(end) if end is not None else len(a)
-    return _slice_core(a, s, e, True)
+def SliceExclusive(value: VmAny, start: VmAny, end: VmAny) -> VmArray:
+    return _slice_core(value, start, end, True)

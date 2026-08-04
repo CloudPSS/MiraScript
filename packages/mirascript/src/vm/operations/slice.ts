@@ -1,44 +1,45 @@
 import { VmError } from '../../helpers/error.js';
 import { display } from '../../helpers/serialize.js';
+import { toNumber } from '../../helpers/convert/number.js';
 import { isNaN, isSafeInteger } from '../../helpers/utils.js';
 import { isVmArray } from '../../helpers/types.js';
 import type { VmAny, VmArray } from '../types/index.js';
 import { $AssertInit } from './common.js';
-import { $ToNumber } from './convert.js';
 const { ceil } = Math;
 const { slice } = Array.prototype;
 
-const sliceCore = (value: VmArray, start: number, end: number, exclusive: boolean): VmArray => {
-    const { length } = value;
+const sliceCore = (value: VmAny, start: VmAny, end: VmAny, exclusive: boolean): VmArray => {
+    $AssertInit(value);
+    $AssertInit(start);
+    $AssertInit(end);
 
-    if (isNaN(start)) start = 0;
-    else if (start < 0) start = length + start;
-
-    if (isNaN(end)) end = exclusive ? length : length - 1;
-    else if (end < 0) end = length + end;
-
-    start = ceil(start);
-    if (exclusive || !isSafeInteger(end)) {
-        end = ceil(end);
-    } else {
-        end = end + 1;
+    if (!isVmArray(value)) {
+        throw new VmError(`Expected array, got ${display(value)}`, []);
     }
-    return slice.call(value, start, end) satisfies unknown[] as VmArray;
+    const { length } = value;
+    let s = start != null ? toNumber(start) : 0;
+    let e = end != null ? toNumber(end) : length - (exclusive ? 0 : 1);
+
+    if (isNaN(s)) s = 0;
+    else if (s < 0) s = length + s;
+
+    if (isNaN(e)) e = exclusive ? length : length - 1;
+    else if (e < 0) e = length + e;
+
+    s = ceil(s);
+    if (exclusive || !isSafeInteger(e)) {
+        e = ceil(e);
+    } else {
+        e = e + 1;
+    }
+    return slice.call(value, s, e) satisfies unknown[] as VmArray;
 };
 
 /** 获取数组切片 */
 export const $Slice = (value: VmAny, start: VmAny, end: VmAny): VmArray => {
-    $AssertInit(value);
-    if (!isVmArray(value)) throw new VmError(`Expected array, got ${display(value)}`, []);
-    const s = start != null ? $ToNumber(start) : 0;
-    const e = end != null ? $ToNumber(end) : value.length - 1;
-    return sliceCore(value, s, e, false);
+    return sliceCore(value, start, end, false);
 };
 /** 获取数组切片（不包含结束位置） */
 export const $SliceExclusive = (value: VmAny, start: VmAny, end: VmAny): VmArray => {
-    $AssertInit(value);
-    if (!isVmArray(value)) throw new VmError(`Expected array, got ${display(value)}`, []);
-    const s = start != null ? $ToNumber(start) : 0;
-    const e = end != null ? $ToNumber(end) : value.length;
-    return sliceCore(value, s, e, true);
+    return sliceCore(value, start, end, true);
 };

@@ -1,1 +1,1 @@
-export * as matrix from './matrix.js';
+export * as matrix from './matrix/index.js';

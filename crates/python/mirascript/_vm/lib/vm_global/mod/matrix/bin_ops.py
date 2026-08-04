@@ -1,89 +1,23 @@
 from __future__ import annotations
-import math
 
-from ....._helpers.convert import to_number
-from ....._helpers.types import is_vm_array, is_vm_const
-from ....types import VmAny, VmConst, VmValue
-from ....operations import Add, Call, Div, Mul, Sub, Cp
-from ..._helpers import (
-    _expect_array,
-    _expect_callable,
-    _expect_const,
-    _expect_integer,
-    _required,
-    _throw_error,
-    _get_numbers,
-    _iterate,
-)
-from ..._helpers_utils import _array_len
+from ......_helpers.types import is_vm_const
+from .....operations import Add, Call, Div, Mul, Sub, Cp
+from ...._helpers import _expect_callable, _expect_const, _throw_error
+from ._helper import _size, _num
 
 __all__ = [
-    "size",
     "entrywise",
-    "transpose",
     "add",
     "subtract",
     "entrywise_multiply",
     "entrywise_divide",
     "multiply",
-    "invert",
-    "diagonal",
-    "zeros",
-    "ones",
-    "identity",
 ]
 
 
-def _size_impl(matrix: VmAny) -> list[int]:
-    if not is_vm_array(matrix):
-        return []
-    if len(matrix) == 0:
-        return [0]
-
-    num_rows = len(matrix)
-    num_cols = 0
-
-    for row in matrix:
-        if is_vm_array(row):
-            num_cols = max(num_cols, len(row))
-        else:
-            return [num_rows]
-    return [num_rows, num_cols]
-
-
-def _num(v: VmAny) -> float:
-    return to_number(v)
-
-
-def size(matrix: VmAny) -> list[float]:
-    _required("matrix", matrix, [])
-    return [float(n) for n in _size_impl(matrix)]
-
-
-def transpose(matrix) -> VmAny:
-    _required("matrix", matrix, [])
-    dims = _size_impl(matrix)
-
-    if len(dims) < 2:
-        return matrix
-    num_rows, num_cols = dims
-
-    transpose = []
-
-    for j in range(num_cols):
-        Cp()
-        newRow = []
-        for i in range(num_rows):
-            row = matrix[i] if i < len(matrix) else None
-            item = row[j] if row and j < len(row) else None
-            newRow.append(item)
-        transpose.append(newRow)
-    return transpose
-
-
 def _entrywise_impl(a, b, f, vvf=None, mmf=None, vmf=None, mvf=None):
-    aDims = _size_impl(a)
-    bDims = _size_impl(b)
+    aDims = _size(a)
+    bDims = _size(b)
 
     if len(aDims) == 0:
         if len(bDims) == 0:
@@ -304,158 +238,3 @@ def multiply(a, b):
         return result
 
     return _entrywise_impl(a, b, Mul, vvf=vvf, mmf=mmf, vmf=vmf, mvf=mvf)
-
-
-def invert(matrix):
-    _expect_const("matrix", matrix, [])
-    dims = _size_impl(matrix)
-
-    if len(dims) == 0:
-        return Div(1, matrix)
-    if len(dims) == 1:
-        return _iterate(
-            matrix,
-            lambda *v: Div(1, v[0]),
-        )
-
-    numRows, numCols = dims
-    if numRows != numCols:
-        _throw_error("Only square matrices can be inverted", [])
-    m = matrix
-
-    if numRows == 1:
-        return [[Div(1, m[0][0])]]
-    if numRows == 2:
-        det = Sub(Mul(m[0][0], m[1][1]), Mul(m[0][1], m[1][0]))
-        if det == 0:
-            _throw_error("Matrix is singular and cannot be inverted", [])
-        return [
-            [Div(m[1][1], det), Div(-m[0][1], det)],
-            [Div(-m[1][0], det), Div(m[0][0], det)],
-        ]
-
-    A = []
-    B = []
-
-    for i in range(numRows):
-        aRow = []
-        bRow = []
-        for j in range(numCols):
-            aRow.append(m[i][j] if i < len(m) and j < len(m[i]) else None)
-            bRow.append(1 if i == j else 0)
-        A.append(aRow)
-        B.append(bRow)
-    for c in range(numCols):
-        ABig = abs(A[c][c])
-        rBig = c
-        r = c + 1
-        while r < numRows:
-            if abs(A[r][c]) > ABig:
-                ABig = abs(A[r][c])
-                rBig = r
-            r += 1
-
-        r = rBig
-        if r != c:
-            A[c], A[r] = A[r], A[c]
-            B[c], B[r] = B[r], B[c]
-        AC = A[c]
-        BC = B[c]
-
-        for r in range(numRows):
-            AR = A[r]
-            BR = B[r]
-            if r != c:
-                if AR[c] == 0:
-                    continue
-                factor = Div(-AR[c], AC[c])
-                for col in range(c, numCols):
-                    AR[col] = Add(AR[col], Mul(factor, AC[col]))
-                for col in range(numCols):
-                    BR[col] = Add(BR[col], Mul(factor, BC[col]))
-            else:
-                factor = AC[c]
-                for col in range(c, numCols):
-                    AR[col] = Div(AR[col], factor)
-                for col in range(numCols):
-                    BR[col] = Div(BR[col], factor)
-    return B
-
-
-def diagonal(vector, k=0):
-    _expect_array("vector", vector, [])
-    fk = _expect_integer("k", k)
-    if math.isnan(fk):
-        fk = 0
-
-    if all(is_vm_array(v) for v in vector):
-        diag = []
-        for i in range(len(vector)):
-            row = vector[i]
-            r = i + fk
-            if r < 0:
-                continue
-            if not row or r >= len(row):
-                continue
-            diag.append(row[int(r)])
-
-        return diag
-
-    l = len(vector)
-    m = _array_len(l - fk if fk < 0 else l)
-    n = _array_len(l + fk if fk > 0 else l)
-
-    result = []
-    for i in range(m):
-        newRow = []
-        for j in range(n):
-            if j - i == fk:
-                ai = i if fk >= 0 else j
-                vRow = vector[ai] if ai < len(vector) else None
-                newRow.append(vRow)
-            else:
-                newRow.append(0)
-        result.append(newRow)
-    return result
-
-
-def _filled(size: tuple[VmValue, ...], value: VmConst) -> VmConst:
-    s = _get_numbers(size)
-    if len(s) == 0:
-        return []
-
-    while len(s) > 0:
-        repeat = _array_len(s.pop())
-        Cp()
-        # 从 MiraScript 语义而言，可以使用同一个引用
-        data = [value] * repeat
-        value = data
-    return value
-
-
-def zeros(*size):
-    return _filled(size, 0)
-
-
-def ones(*size):
-    return _filled(size, 1)
-
-
-def identity(*size):
-    s = _get_numbers(size)
-    if len(s) == 0:
-        return []
-    if len(s) > 2:
-        _throw_error("Identity matrix must be 1D or 2D", [])
-    if len(s) == 1:
-        s = [s[0], s[0]]
-
-    m = _array_len(s[0])
-    n = _array_len(s[1])
-
-    result = [[0.0] * n for _ in range(m)]
-
-    for i in range(min(m, n)):
-        result[i][i] = 1.0
-
-    return result
