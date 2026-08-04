@@ -17,7 +17,7 @@ def transpose(matrix: VmAny) -> VmAny:
         return matrix
     num_rows, num_cols = dims
 
-    m = cast(list[list[VmConst]], matrix)
+    m = cast("list[list[VmConst]]", matrix)
     transposed = []
 
     for j in range(num_cols):
