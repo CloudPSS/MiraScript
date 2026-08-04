@@ -29,6 +29,11 @@ export const hasOwnEnumerable = Function.call.bind(
     Object.prototype.propertyIsEnumerable,
 ) as (o: object, v: PropertyKey) => boolean;
 
+/**
+ * Snapshot the inherited keys that require data-property semantics when written
+ * to a VM record. The host is expected not to mutate `Object.prototype` after
+ * MiraScript has been initialized.
+ */
 const SPECIAL_KEYS = new Set(getOwnPropertyNames(Object.prototype));
 /**
  * Set property on an vm record.
@@ -37,7 +42,8 @@ export const setRecord = (obj: Record<string, VmConst | undefined>, key: string,
     if (!SPECIAL_KEYS.has(key)) {
         obj[key] = value ?? null;
     } else {
-        Object.defineProperty(obj, key, {
+        defineProperty(obj, key, {
+            __proto__: null,
             value: value ?? null,
             configurable: true,
             writable: true,
