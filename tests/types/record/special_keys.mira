@@ -1,0 +1,25 @@
+let record = (__proto__: 1, constructor: 2, toString: 3, hasOwnProperty: 4);
+t_eq(record.__proto__, 1);
+t_eq(record['__proto__'], 1);
+t_eq(record.constructor, 2);
+t_eq(record.toString, 3);
+t_eq(record.hasOwnProperty, 4);
+t_true('__proto__' in record);
+t_true('constructor' in record);
+t_false('x' in record);
+
+t_eq((__proto__?: nil), ());
+t_eq((__proto__?: 1), (__proto__: 1));
+t_eq(("__proto__": 1), (__proto__: 1));
+t_eq(('__proto__': 1), ('__proto__': 1));
+t_eq((..record, x: 5), (__proto__: 1, constructor: 2, toString: 3, hasOwnProperty: 4, x: 5));
+t_eq((x: 5, ..record), (x: 5, __proto__: 1, constructor: 2, toString: 3, hasOwnProperty: 4));
+t_eq(record, (__proto__: 1, constructor: 2, toString: 3, hasOwnProperty: 4));
+t_eq(len(keys(record)), 4);
+
+// A special-key value must not mutate the host object's prototype.
+let nested = (__proto__: (y: 2));
+t_eq(nested.__proto__, (y: 2));
+t_false('y' in nested);
+t_eq(nested.y, nil);
+t_eq(keys(nested), ['__proto__']);

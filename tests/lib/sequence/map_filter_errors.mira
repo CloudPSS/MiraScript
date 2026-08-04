@@ -1,0 +1,18 @@
+fn assert_invalid_callback(operation) {
+  t_throws(fn { operation([1, 2, 3], nil) });
+  t_throws(fn { operation([1, 2, 3], 42) });
+  t_throws(fn { operation([1, 2, 3], "not a function") });
+  t_throws(fn { operation([1, 2, 3], []) });
+  t_throws(fn { operation([1, 2, 3], ()) });
+}
+
+assert_invalid_callback(map);
+assert_invalid_callback(filter);
+assert_invalid_callback(filter_map);
+
+// The implementation shares the same immutable-data validation for all three functions.
+t_throws(fn { map(v_fn, fn { it }) });
+t_throws(fn { filter(v_module, fn { true }) });
+if has_extern {
+  t_throws(fn { filter_map(v_extern, fn { it }) });
+}

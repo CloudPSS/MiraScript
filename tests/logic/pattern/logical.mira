@@ -1,0 +1,28 @@
+{
+  let value = [1, 2, 3];
+  let matched_and = value is [x, y, 5] and [0, 0, z];
+  t_false(matched_and);
+  t_eq(x, 1);
+  t_eq(y, 2);
+  t_eq(z, 3);
+
+  let matched_or = value is [a, b, 3] or [3, 2, c];
+  t_true(matched_or);
+  t_eq(a, 1);
+  t_eq(b, 2);
+  t_eq(c, 3);
+}
+
+{
+  let person = (name: "小明", age: 20, city: "北京");
+  let (:name, :age) = person;
+  t_eq(name, "小明");
+  t_eq(age, 20);
+}
+
+{
+  let person = (name: "小明", age: 20, city: "北京");
+  let (:name, :age, ..) = person;
+  t_eq(name, "小明");
+  t_eq(age, 20);
+}

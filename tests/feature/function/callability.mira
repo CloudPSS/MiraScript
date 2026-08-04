@@ -1,0 +1,47 @@
+// Direct calls require an actual callable value.
+t_throws(fn {
+  let value = nil;
+  value();
+});
+t_throws(fn {
+  let value = true;
+  value();
+});
+t_throws(fn {
+  let value = ();
+  value();
+});
+t_throws(fn {
+  let value = [];
+  value();
+});
+t_throws(fn {
+  let value = v_module;
+  value();
+});
+if has_extern {
+  t_throws(fn {
+    let value = v_extern;
+    value();
+  });
+}
+
+let empty = nil;
+let callable = fn { nil };
+let uncallable = false;
+
+t_throws(fn { empty() });
+t_eq(callable(), nil);
+t_throws(fn { uncallable() });
+
+// A computed nil callable short-circuits, while an identifier is checked eagerly.
+t_throws(fn { (uncallable)() });
+t_eq((callable)(), nil);
+t_eq((empty)(), nil);
+
+t_throws(fn { 0::empty() });
+t_eq(0::callable(), nil);
+t_throws(fn { 0::uncallable() });
+t_throws(fn { 0::(uncallable)() });
+t_eq(0::(callable)(), nil);
+t_eq(0::(empty)(), nil);

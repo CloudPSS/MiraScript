@@ -1,0 +1,58 @@
+fn expect_spread_type(..[value, expected_type]) {
+  t_eq(type(value), expected_type);
+}
+fn expect_direct_type(value, expected_type) {
+  t_eq(type(value), expected_type);
+}
+
+expect_spread_type(1, 'number');
+expect_spread_type([], 'array');
+expect_spread_type((), 'record');
+expect_spread_type(fn { }, 'nil');
+expect_direct_type(fn { }, 'function');
+expect_spread_type(v_module, 'nil');
+expect_direct_type(v_module, 'module');
+if has_extern {
+  expect_spread_type(v_extern, 'nil');
+  expect_direct_type(v_extern, 'extern');
+}
+
+fn args(..values) { values }
+t_eq(args(), []);
+t_eq(args(sin), [nil]);
+t_eq(args(1, 2, 3), [1, 2, 3]);
+t_eq(args(1, 2, 3, ..[4, 5]), [1, 2, 3, 4, 5]);
+
+fn split_args(first, ..rest) { (first, rest) }
+t_eq(split_args(), (nil, []));
+t_eq(split_args(1), (1, []));
+t_eq(split_args(1, sin), (1, [nil]));
+t_eq(split_args(sin, 1), (sin, [1]));
+t_eq(split_args(1, 2, 3), (1, [2, 3]));
+t_eq(split_args(1, ..[2, 3]), (1, [2, 3]));
+t_eq(split_args(..[1, 2, 3]), (1, [2, 3]));
+
+fn first_arg(first, ..rest) { first }
+t_eq(first_arg(), nil);
+t_eq(first_arg(1), 1);
+t_eq(first_arg(sin), sin);
+t_eq(first_arg(1, 2, 3), 1);
+t_eq(first_arg(1, ..[2, 3]), 1);
+t_eq(first_arg(..[1, 2, 3]), 1);
+
+fn one_arg(value) { value }
+t_eq(one_arg(), nil);
+t_eq(one_arg(42), 42);
+t_eq(one_arg(1, 2, 3), 1);
+t_eq(one_arg(sin, cos), sin);
+
+fn second_arg(_, value) { value }
+t_eq(second_arg(), nil);
+t_eq(second_arg(42), nil);
+t_eq(second_arg(1, 2, 3), 2);
+t_eq(second_arg(sin, cos), cos);
+
+(fn (..[value]) { t_eq(value, nil) })(sin);
+(fn (..values) { t_eq(values, [nil]) })(sin);
+(fn (..[value]) { t_eq(value, 1) })(1);
+(fn (..values) { t_eq(values, [1]) })(1);

@@ -1,0 +1,27 @@
+let positional = ('x', 'y', nil);
+t_true(0 in positional);
+t_true([0] in positional);
+t_true('0' in positional);
+t_true(00 in positional);
+t_false('00' in positional);
+t_true(2 in positional);
+t_true([2] in positional);
+t_false(nil in positional);
+t_false(3 in positional);
+
+let mut record = (0, 'str', true, nil, (a: 1, b: 2), [1, 2, 3], v_fn);
+t_eq(record.0, 0);
+t_eq(record.1, 'str');
+t_eq(record.2, true);
+t_eq(record.3, nil);
+t_eq(record.4, (a: 1, b: 2));
+t_eq(record.5, [1, 2, 3]);
+t_eq(record.6, nil);
+t_true(3 in record);
+t_true(6 in record);
+t_false(7 in record);
+
+record = (0?: 0, 1?: 'str', 2?: true, 3?: nil, 4?: (a: 1, b: 2), 5?: [1, 2, 3], 6?: v_fn);
+t_eq(record, (0: 0, 1: 'str', 2: true, 4: (a: 1, b: 2), 5: [1, 2, 3]));
+t_false(3 in record);
+t_false(6 in record);

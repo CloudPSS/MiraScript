@@ -1,0 +1,29 @@
+let mut for_values = [];
+for value in 0..5 {
+  if value % 2 == 0 {
+    continue;
+  }
+  for_values = [..for_values, value];
+}
+t_eq(for_values, [1, 3, 5]);
+
+let mut while_value = 0;
+let mut while_values = [];
+while while_value < 5 {
+  while_value += 1;
+  if while_value < 3 {
+    continue;
+  }
+  while_values = [..while_values, while_value];
+}
+t_eq(while_values, [3, 4, 5]);
+
+let mut loop_value = 0;
+let loop_result = loop {
+  loop_value += 1;
+  if loop_value < 3 {
+    continue;
+  }
+  break loop_value;
+};
+t_eq(loop_result, 3);

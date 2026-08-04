@@ -1,0 +1,40 @@
+t_eq(filter_map([true], fn { it }), [true]);
+t_eq(filter_map([false], fn { it }), [false]);
+t_eq(filter_map([nil], fn { it }), []);
+t_eq(filter_map([0], fn { it }), [0]);
+t_eq(filter_map([nan], fn { it }), [nan]);
+
+t_eq(filter_map(42, fn (value) {
+  if value > 40 { value * 2 } else { nil }
+}), 84);
+t_eq(filter_map(42, fn (value) {
+  if value > 50 { value * 2 } else { nil }
+}), nil);
+t_eq(filter_map("hello", fn (value) {
+  if len(chars(value)) > 3 { `$value!` } else { nil }
+}), "hello!");
+
+t_eq(filter_map([1, 2, 3, 4, 5], fn (value) {
+  if value % 2 == 0 { value * 2 } else { nil }
+}), [4, 8]);
+t_eq(filter_map([1, 2, 3, 4], fn (value, index) {
+  if index > 1 { value + index } else { nil }
+}), [5, 7]);
+t_eq(filter_map([1, 2, 3], fn (value, _, data) {
+  if len(data) > 2 { value } else { nil }
+}), [1, 2, 3]);
+t_eq(filter_map([], fn { it }), []);
+
+t_eq(filter_map((a: 1, b: 2, c: 3, d: 4), fn (value) {
+  if value % 2 == 0 { value * 2 } else { nil }
+}), (b: 4, d: 8));
+t_eq(filter_map((a: 1, b: 2, c: 3), fn (value, key) {
+  if key != "b" { `$key=$value` } else { nil }
+}), (a: "a=1", c: "c=3"));
+t_eq(filter_map((), fn { it }), ());
+
+// Values that cannot be stored in a collection are normalized to nil.
+t_eq(filter_map([0], fn { (fn { it }) }), [nil]);
+t_eq(filter_map((x: 1), fn { (fn { it }) }), (x: nil));
+
+t_eq(filter_map((__proto__: 1, constructor: 2), fn (value, key) { `$key=$value` }), (__proto__: '__proto__=1', constructor: 'constructor=2'));

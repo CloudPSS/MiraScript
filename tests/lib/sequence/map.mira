@@ -1,0 +1,33 @@
+t_eq(map([true], fn { it }), [true]);
+t_eq(map([false], fn { it }), [false]);
+t_eq(map([nil], fn { it }), [nil]);
+t_eq(map([0], fn { it }), [0]);
+t_eq(map([nan], fn { it }), [nan]);
+
+t_eq(map(42, fn (value) { value * 2 }), 84);
+t_eq(map("hello", fn (value) { `$value world` }), "hello world");
+t_eq(map(true, fn (value) { !value }), false);
+t_eq(map(nil, fn (value) { value ?? "default" }), "default");
+
+t_eq(map([1, 2, 3], fn (value) { value * 2 }), [2, 4, 6]);
+t_eq(map([1, 2, 3], fn (value, index) { value + index }), [1, 3, 5]);
+t_eq(map([1, 2, 3], fn (_, _, data) { len(data) }), [3, 3, 3]);
+t_eq(map([], fn { it * 2 }), []);
+
+t_eq(map((a: 1, b: 2, c: 3), fn (value) { value * 2 }), (a: 2, b: 4, c: 6));
+t_eq(map((a: 1, b: 2), fn (value, key) { `$key=$value` }), (a: "a=1", b: "b=2"));
+t_eq(map((a: 1, b: 2), fn (_, _, data) { data }), (a: (a: 1, b: 2), b: (a: 1, b: 2)));
+t_eq(map((), fn { it * 2 }), ());
+
+t_eq(map([1, 2, 3], fn (value) {
+  if value > 2 { value } else { nil }
+}), [nil, nil, 3]);
+t_eq(map((a: 1, b: 2, c: 3), fn (value) {
+  if value > 2 { value } else { nil }
+}), (a: nil, b: nil, c: 3));
+
+// Values that cannot be stored in a collection are normalized to nil.
+t_eq(map(0, fn { (fn { it }) }), nil);
+t_eq(map([0], fn { (fn { it }) }), [nil]);
+
+t_eq(map((__proto__: 1, constructor: 2), fn (value) { value * 2 }), (__proto__: 2, constructor: 4));

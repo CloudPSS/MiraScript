@@ -1,0 +1,11 @@
+fn curry_add(x) { (fn (y) { x + y }) }
+
+let add_five = curry_add(5);
+let add_ten = curry_add(10);
+
+t_eq(add_five(3), 8);
+t_eq(add_five(10), 15);
+t_eq(add_ten(3), 13);
+t_eq(add_ten(10), 20);
+t_ne(add_five, add_ten);
+t_false(add_five == add_ten);

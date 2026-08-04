@@ -1,0 +1,48 @@
+fn make_counter(mut value) {
+  (fn {
+    value += 1;
+    value
+  })
+}
+
+let counter1 = make_counter(0);
+let counter2 = make_counter(10);
+t_eq(counter1(), 1);
+t_eq(counter1(), 2);
+t_eq(counter2(), 11);
+t_eq(counter2(), 12);
+t_eq(counter1(), 3);
+t_eq(counter2(), 13);
+
+fn access_later_binding {
+  fn get { value }
+  let value = 123;
+  get()
+}
+t_eq(access_later_binding(), 123);
+
+fn adder {
+  return bind(adder_impl, 0);
+
+  fn bind(f, ..bound_args) { (fn (..args) { f(..bound_args, ..args) }) }
+
+  fn adder_impl(mut sum, ..args) {
+    if args::len() == 0 {
+      return sum;
+    }
+    for value in args {
+      sum += value;
+    }
+    bind(adder_impl, sum)
+  }
+}
+
+let add = adder();
+t_eq(add(1)(2)(3)(), 6);
+t_eq(add(10, 20)(30)(), 60);
+t_eq(add(), 0);
+
+let add_ten = add(1, 2, 3, 4);
+t_eq(add_ten(10)(), 20);
+t_eq(add_ten(20)(), 30);
+t_eq(add_ten(), 10);

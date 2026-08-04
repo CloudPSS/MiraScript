@@ -1,0 +1,27 @@
+t_eq(filter([true], fn { it }), [true]);
+t_eq(filter([false], fn { it }), []);
+t_throws(fn { filter([nil], fn { it }) });
+t_throws(fn { filter([0], fn { it }) });
+t_throws(fn { filter([nan], fn { it }) });
+
+t_eq(filter(42, fn (value) { value > 40 }), 42);
+t_eq(filter(42, fn (value) { value > 50 }), nil);
+t_eq(filter("hello", fn (value) { len(chars(value)) > 3 }), "hello");
+t_eq(filter("hi", fn (value) { len(chars(value)) > 3 }), nil);
+
+t_eq(filter([1, 2, 3, 4, 5], fn (value) { value % 2 == 0 }), [2, 4]);
+t_eq(filter([1, 2, 3, 4, 5], fn (_, index) { index > 2 }), [4, 5]);
+t_eq(filter([1, 2, 3], fn (_, _, data) { len(data) > 2 }), [1, 2, 3]);
+t_eq(filter([], fn { true }), []);
+
+t_eq(filter((a: 1, b: 2, c: 3, d: 4), fn (value) { value % 2 == 0 }), (b: 2, d: 4));
+t_eq(filter((a: 1, b: 2, c: 3, d: nil), fn (_, key) { key != "b" }), (a: 1, c: 3, d: nil));
+t_eq(filter((), fn { true }), ());
+
+// Predicate results are not truthy/falsy converted.
+t_throws(fn { [0]::filter(fn { it }) });
+t_throws(fn { [nan]::filter(fn { it }) });
+t_throws(fn { (nil,)::filter(fn { it }) });
+t_throws(fn { ''::filter(fn { it }) });
+
+t_eq(filter((__proto__: 1, constructor: 2), fn (value) { value > 1 }), (constructor: 2));

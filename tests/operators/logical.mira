@@ -33,7 +33,6 @@ t_eq(F() || T(), true);
 t_throws(fn { F() || O() });
 t_throws(fn { N() || O() });
 t_eq(F() || F(), false);
-t_eq(F() || F(), false);
 t_throws(fn { N() || N() });
 
 // precedence

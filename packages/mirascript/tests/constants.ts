@@ -8,9 +8,9 @@ test('keywords', (t) => {
     t.false(isKeyword(null as never));
     // eslint-disable-next-line unicorn/new-for-builtins
     t.false(isKeyword(new String('nil') as never));
-    t.true(isKeyword('nil'));
-    t.true(isKeyword('fn'));
-    t.true(isKeyword('return'));
+    for (const keyword of constants.KEYWORDS) {
+        t.true(isKeyword(keyword), `Expected "${keyword}" to be recognized as a keyword`);
+    }
 });
 
 const testRegExp = test.macro<[string, RegExp, string[], string[]]>({

@@ -1,0 +1,27 @@
+fn implicit(value) { value * 2 }
+
+fn early(value) {
+  if value < 0 {
+    return 'negative';
+  }
+  if value == 0 {
+    return;
+  }
+  'positive'
+}
+
+fn from_nested_loop(limit) {
+  for value in 0..limit {
+    if value == 3 {
+      return value;
+    }
+  }
+  nil
+}
+
+t_eq(implicit(21), 42);
+t_eq(early(-1), 'negative');
+t_eq(early(0), nil);
+t_eq(early(1), 'positive');
+t_eq(from_nested_loop(5), 3);
+t_eq(from_nested_loop(2), nil);

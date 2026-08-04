@@ -1,0 +1,15 @@
+let 变量 = 40;
+let πValue = 2;
+let _private = 1;
+let $generated = 3;
+const @constant = 4;
+
+t_eq(变量 + πValue, 42);
+t_eq(_private, 1);
+t_eq($generated, 3);
+t_eq(@constant, 4);
+
+let caseSensitive = 1;
+let CaseSensitive = 2;
+t_eq(caseSensitive, 1);
+t_eq(CaseSensitive, 2);

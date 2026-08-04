@@ -1,0 +1,48 @@
+{
+  t_true((1, [2]) is (1, [2, ..rest]) && rest is []);
+  t_true((1, [2]) is not (1, [first, last]) && first is 2 && last is nil);
+}
+
+{
+  let value = 12;
+  t_true(value is bound and > 10 and < 20 is matched);
+  t_eq(bound, 12);
+  t_true(matched);
+}
+
+{
+  let value = (a: (x: (1.23, true, 3, z: ['x', 2, (d: 12)])));
+  t_true(value is (a: (x: (v1, v2, 3, z: [v3, 2, (d: v4)]))));
+  t_eq(v1, 1.23);
+  t_eq(v2, true);
+  t_eq(v3, 'x');
+  t_eq(v4, 12);
+}
+
+{
+  t_false([1, 2, 3] is (a, b, c));
+  t_eq(a, 1);
+  t_eq(b, 2);
+  t_eq(c, 3);
+}
+
+{
+  t_false([1, 2, 3] is ());
+  t_false([1, 2, 3] is (..));
+  t_false([1, 2, 3] is (..rest));
+  t_eq(rest, ());
+}
+
+if has_extern {
+  t_false(v_extern is ());
+  t_false(v_extern is (..));
+  t_false(v_extern is (..rest));
+  t_eq(rest, ());
+}
+
+{
+  t_false((1, 2, 3) is [a, b, c]);
+  t_eq(a, nil);
+  t_eq(b, nil);
+  t_eq(c, nil);
+}

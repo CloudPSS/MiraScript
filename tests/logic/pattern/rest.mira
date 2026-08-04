@@ -1,0 +1,38 @@
+t_false((1, 2, 3) is (1, 2));
+t_true((1, 2) is (1, 2));
+t_false((1, 2) is (1, 2, 3));
+t_false([1, 2, 3] is [1, 2]);
+t_true([1, 2] is [1, 2]);
+t_false([1, 2] is [1, 2, 3]);
+
+t_false((a: 1, b: 2) is (a: 1));
+t_false((a: 1) is (a: 1, b: 2));
+t_true((a: 1, b: 2) is (a: 1, ..));
+t_true((a: 1, b: 2) is (a: 1, ..rest) && rest is (b: 2));
+t_true((a: 1) is (a: 1, ..empty_rest) && empty_rest is ());
+
+// Special keys must remain data and must not mutate the host object's prototype.
+{
+  let record = (a: 1, __proto__: 2, constructor: 3);
+  t_true(record is (a: 1, ..rest));
+  t_eq(rest, (__proto__: 2, constructor: 3));
+  let (:a, ..bound_rest) = record;
+  t_eq(a, 1);
+  t_eq(bound_rest, (__proto__: 2, constructor: 3));
+}
+
+{
+  let record = (a: 1, __proto__: (x: 2));
+  t_true(record is (a: 1, ..rest));
+  t_eq(rest, (__proto__: (x: 2)));
+  t_true('__proto__' in rest);
+  t_eq(rest.__proto__, (x: 2));
+  t_false('x' in rest);
+  t_eq(rest.x, nil);
+}
+
+{
+  let record = (a: 1, __proto__: 2);
+  t_true(record is (a: 1, __proto__: 2, ..rest));
+  t_eq(rest, ());
+}

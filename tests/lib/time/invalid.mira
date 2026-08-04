@@ -1,0 +1,17 @@
+fn assert_invalid(value) {
+  t_throws(fn { to_timestamp(value) });
+  t_throws(fn { to_datetime(value) });
+  t_throws(fn { to_iso8601(value) });
+  t_eq(to_timestamp(value, 'fallback'), 'fallback');
+  t_eq(to_datetime(value, nil, 'fallback'), 'fallback');
+  t_eq(to_iso8601(value, 'fallback'), 'fallback');
+}
+
+assert_invalid(inf);
+assert_invalid('');
+assert_invalid('Hello, World!');
+assert_invalid('1.2e999');
+assert_invalid(false);
+
+// The offset is irrelevant when the input cannot be converted.
+t_eq(to_datetime(inf, 12, 'fallback'), 'fallback');

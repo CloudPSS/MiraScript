@@ -1,0 +1,19 @@
+let value = '1.648010096789e12';
+let expected = (
+  year: 2022,
+  month: 3,
+  day: 23,
+  hour: 4,
+  minute: 34,
+  second: 56,
+  millisecond: 789,
+  dayOfWeek: 3,
+  offset: 0,
+);
+
+t_eq(to_timestamp(value), 1_648_010_096_789);
+t_eq(to_datetime(value), expected);
+t_eq(to_iso8601(value), '2022-03-23T04:34:56.789Z');
+t_eq(to_timestamp(value, 'fallback'), 1_648_010_096_789);
+t_eq(to_datetime(value, nil, 'fallback'), expected);
+t_eq(to_iso8601(value, 'fallback'), '2022-03-23T04:34:56.789Z');

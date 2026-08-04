@@ -1,0 +1,55 @@
+{
+  t_true([1, 2, 3] is [1, ..rest] && rest is [2, 3]);
+  t_true([10] is [x and > 0] && x is 10);
+  t_false([10] is [y and > 10]);
+  t_eq(y, 10);
+}
+
+{
+  let array = [1, 2, 3, 4, 5];
+  let matched = array is [first, ..middle, last];
+  t_true(matched);
+  t_eq(first, 1);
+  t_eq(middle, [2, 3, 4]);
+  t_eq(last, 5);
+}
+
+{
+  let array = [1, 5];
+  let matched = array is [first, ..middle, last];
+  t_true(matched);
+  t_eq(first, 1);
+  t_eq(middle, []);
+  t_eq(last, 5);
+}
+
+{
+  let array = [1];
+  let matched = array is [first, ..middle, last];
+  t_false(matched);
+  t_eq(first, 1);
+  t_eq(middle, []);
+  t_eq(last, 1);
+}
+
+{
+  t_true((1, 2, 3) is (1, ..rest) && rest is (1: 2, 2: 3));
+  t_false([1, 2, 3] is (..bad_rest));
+  t_eq(bad_rest, ());
+}
+
+// Bindings are still populated when the outer shape does not match.
+{
+  t_false([1, 2, 3] is (a, b, c));
+  t_eq(a, 1);
+  t_eq(b, 2);
+  t_eq(c, 3);
+}
+
+// Keywords are valid record keys in patterns.
+{
+  let record = (not: 12);
+  let matched = record is (not: value);
+  t_true(matched);
+  t_eq(value, 12);
+}

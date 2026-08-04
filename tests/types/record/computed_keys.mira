@@ -1,0 +1,17 @@
+let special = ['"', "'"];
+let record = ('", \'': 1, '"': 2, "'": 3, '", \'': 4, '\r\n': 'crlf', '\n': 'lf');
+t_eq(record[special], 4);
+t_eq(record[special.0], 2);
+t_eq(record[special.1], 3);
+t_eq(record['
+'], 'lf');
+t_eq(record['\r\n'], 'crlf');
+
+let simple = (a: 1, b: 2);
+t_true('a' in simple);
+t_true('b' in simple);
+t_false('c' in simple);
+let (a, b, c) = ('a', 'b', 'c');
+t_true(a in simple);
+t_true(b in simple);
+t_false(c in simple);

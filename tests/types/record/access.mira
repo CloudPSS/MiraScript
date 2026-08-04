@@ -1,0 +1,53 @@
+let record = (
+  a: 1,
+  b: 2,
+  c: nil,
+  '': 'empty key',
+  true: 'true value',
+  false: v_false,
+  1: 'one',
+  '-1': 'minus one',
+  '0': 'zero',
+);
+
+t_eq(record.a, 1);
+t_eq(record.b, 2);
+t_eq(record['a'], 1);
+t_eq(record['b'], 2);
+t_eq(record['c'], nil);
+t_eq(record.c, nil);
+t_true('c' in record);
+t_false('d' in record);
+t_true(`${ nil }${ 'c' }` in record);
+
+t_true('' in record);
+t_true(nil in record); // to_string(nil) is ''
+t_true(true in record);
+t_true('true' in record);
+t_true(false in record);
+t_true('false' in record);
+t_true(1 in record);
+t_false(2 in record);
+t_true(-1 in record);
+t_true((1.0 * -1) in record);
+t_true('-1' in record);
+t_true(0 in record);
+t_true('0' in record);
+t_true(-0 in record);
+t_false('-0' in record);
+
+t_false('a' in { nil });
+t_eq(record[''], 'empty key');
+t_eq(record[nil], 'empty key');
+t_eq(record[true], 'true value');
+t_eq(record['true'], 'true value');
+t_eq(record[false], v_false);
+t_eq(record['false'], v_false);
+t_eq(record[1], 'one');
+t_eq(record.1, 'one');
+t_eq(record['1'], 'one');
+t_eq(record[-1], 'minus one');
+t_eq(record['-1'], 'minus one');
+t_eq(record[0], 'zero');
+t_eq(record['0'], 'zero');
+t_eq(record[-0], 'zero');

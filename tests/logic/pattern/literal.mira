@@ -1,0 +1,64 @@
+t_true(nil is nil);
+t_true(nil is == nil);
+t_true(nil is not != nil);
+t_true(true is true);
+t_true(false is false);
+t_true(nan is nan);
+t_false(nan is not nan);
+t_true(inf is inf);
+t_true(0 is -0);
+t_false(-0 is not 0);
+
+// Patterns do not perform the conversions used by ordinary operators.
+t_false('12' is > 0);
+t_false('abc' is > 0);
+t_false(10 is < '20');
+t_true('b' is > 'a');
+t_true('abc' is > 'ab');
+t_false('abc' is < 'ab');
+t_true(true is == true);
+t_false(true is != true);
+t_false(true is != 0);
+t_false(false is != 0);
+t_true(false is == false);
+t_false(false is != false);
+t_false(1 is == '1');
+t_false(1 is != '1');
+t_false(1 is =~ '1');
+t_true('a' is =~ 'A');
+
+const @str = '10';
+const @num = 10;
+t_false(@str is =~ @num);
+t_true(@str =~ @num);
+t_false(@str is >= @num);
+t_true(@str >= @num);
+t_true(@str is >= @str);
+t_true(@str >= @str);
+t_true(@num is >= @num);
+t_true(@num >= @num);
+
+const @record = (1, 2);
+t_true((1, 2) is @record);
+t_true((1, 2) is == @record);
+t_false((1,) is @record);
+t_false((1, 2, 3) is @record);
+t_false([1, 2] is @record);
+t_false([1, 2] is == @record);
+t_false([1, 2] is != @record);
+t_true([1, 2] is not != @record);
+
+t_true(1 is 1 or '1');
+t_true(1 is 1..2);
+t_true(1.5 is 1.5..1.5);
+t_false(1.5 is 1..<1.5);
+t_true(1.5 is '1'..2);
+t_true(1.5 is 1..<'2');
+t_true(1.5 is '1'..'2');
+
+// Range patterns only compare numeric input values.
+t_false("1.5" is 1..2);
+const @one = '1';
+const @two = '2';
+t_false("1.5" is @one..@two);
+t_true(1.5 is @one..@two);

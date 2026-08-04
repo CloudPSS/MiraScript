@@ -1,0 +1,41 @@
+let value = '2022-03-23T12:34:56.789+08:00';
+
+t_eq(to_timestamp(value), 1_648_010_096_789);
+t_eq(
+  to_datetime(value, 8),
+  (
+    year: 2022,
+    month: 3,
+    day: 23,
+    hour: 12,
+    minute: 34,
+    second: 56,
+    millisecond: 789,
+    dayOfWeek: 3,
+    offset: 8,
+  ),
+);
+t_eq(to_datetime(value, '+8'), to_datetime(value, 8));
+t_eq(
+  to_datetime(value),
+  (
+    year: 2022,
+    month: 3,
+    day: 23,
+    hour: 4,
+    minute: 34,
+    second: 56,
+    millisecond: 789,
+    dayOfWeek: 3,
+    offset: 0,
+  ),
+);
+t_eq(to_iso8601(value), '2022-03-23T04:34:56.789Z');
+
+t_throws(fn { to_datetime(value, inf) });
+t_throws(fn { to_datetime(value, -inf) });
+t_throws(fn { to_datetime(value, nan) });
+t_throws(fn { to_datetime(value, 'invalid') });
+t_throws(fn { to_datetime(value, 26) });
+t_throws(fn { to_datetime(value, -26) });
+t_throws(fn { to_datetime(value, -26, 'fallback') });

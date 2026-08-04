@@ -1,0 +1,100 @@
+let mut getter1 = nil;
+let mut getter2 = nil;
+let mut setter1 = nil;
+let mut setter2 = nil;
+
+fn assert_independent_bindings {
+  t_eq(getter1(), 1);
+  t_eq(getter2(), 2);
+  setter1(42);
+  t_eq(getter1(), 42);
+  t_eq(getter2(), 2);
+  setter2(99);
+  t_eq(getter1(), 42);
+  t_eq(getter2(), 99);
+}
+
+for mut value in 1..2 {
+  match value {
+    case 1 {
+      getter1 = fn { value };
+      setter1 = fn {
+        value = it;
+      };
+    }
+    case 2 {
+      getter2 = fn { value };
+      setter2 = fn {
+        value = it;
+      };
+    }
+  }
+}
+assert_independent_bindings();
+
+let mut while_value = 1;
+while while_value is mut value and <= 2 {
+  match value {
+    case 1 {
+      getter1 = fn { value };
+      setter1 = fn {
+        value = it;
+      };
+    }
+    case 2 {
+      getter2 = fn { value };
+      setter2 = fn {
+        value = it;
+      };
+    }
+  }
+  while_value += 1;
+} else {
+  t_eq(while_value, 3);
+}
+assert_independent_bindings();
+
+let mut counter = 1;
+loop {
+  let mut value = counter;
+  match value {
+    case 1 {
+      getter1 = fn { value };
+      setter1 = fn {
+        value = it;
+      };
+    }
+    case 2 {
+      getter2 = fn { value };
+      setter2 = fn {
+        value = it;
+      };
+    }
+  }
+  counter += 1;
+  if counter > 2 {
+    break;
+  }
+}
+assert_independent_bindings();
+
+counter = 1;
+while counter <= 2 {
+  let mut value = counter;
+  match value {
+    case 1 {
+      getter1 = fn { value };
+      setter1 = fn {
+        value = it;
+      };
+    }
+    case 2 {
+      getter2 = fn { value };
+      setter2 = fn {
+        value = it;
+      };
+    }
+  }
+  counter += 1;
+}
+assert_independent_bindings();
