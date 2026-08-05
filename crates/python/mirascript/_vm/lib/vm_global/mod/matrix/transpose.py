@@ -1,5 +1,4 @@
 from __future__ import annotations
-from typing_extensions import cast
 
 from .....types import VmAny, VmConst
 from .....operations import Cp
@@ -17,7 +16,7 @@ def transpose(matrix: VmAny) -> VmAny:
         return matrix
     num_rows, num_cols = dims
 
-    m = cast("list[list[VmConst]]", matrix)
+    m: list[list[VmConst]] = matrix  # type: ignore
     transposed = []
 
     for j in range(num_cols):
