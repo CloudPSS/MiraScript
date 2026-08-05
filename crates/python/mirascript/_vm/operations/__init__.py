@@ -46,18 +46,10 @@ from .helpers import (
     Fn,
     Upvalue,
 )
-from .compound import (
-    In,
-    Length,
-    Omit,
-    Pick,
-    Has,
-    Get,
-    Set,
-    Iterable,
-    RecordSpread,
-    ArraySpread,
-)
+from .compound import Length, Has, Get, Set
+from .record import Omit, Pick
+from .iterable import In, Iterable
+from .spread import RecordSpread, ArraySpread
 from .cp import Cp, CpEnter, CpExit
 from .call import Call, Vargs
 from .array_range import ArrayRange, ArrayRangeExclusive

@@ -1,57 +1,15 @@
 import { VmError } from '../../helpers/error.js';
-import {
-    hasOwnEnumerable,
-    NotNumber,
-    keys,
-    create,
-    isFinite,
-    keysLength,
-    getRecord,
-    setRecord,
-} from '../../helpers/utils.js';
-import { toNumber, toString } from '../../helpers/convert/index.js';
+import { hasOwnEnumerable, NotNumber, isFinite, getRecord, keysLength } from '../../helpers/utils.js';
+import { toNumber } from '../../helpers/convert/index.js';
 import { display } from '../../helpers/serialize.js';
-import {
-    isVmPrimitive,
-    isVmArray,
-    isVmRecord,
-    isVmFunction,
-    isVmExtern,
-    isVmWrapper,
-    isVmConst,
-} from '../../helpers/types.js';
-import { wrapToVmConst } from '../types/boundary.js';
-import type { VmAny, VmRecord, VmValue, VmConst } from '../types/index.js';
-import { isSame } from './utils.js';
+import { isVmArray, isVmRecord, isVmExtern, isVmWrapper } from '../../helpers/types.js';
+import type { VmAny, VmValue } from '../types/index.js';
 import { $AssertInit } from './common.js';
 import { $ToString } from './convert.js';
 import { $El } from './helpers.js';
 
 const { trunc } = Math;
 const { at } = Array.prototype;
-
-/** 检查值是否在可迭代对象中 */
-export const $In = (value: VmAny, iterable: VmAny): boolean => {
-    $AssertInit(value);
-    $AssertInit(iterable);
-    if (iterable == null) return false;
-    if (typeof iterable != 'object') return false;
-    if (isVmArray(iterable)) {
-        if (value == null) {
-            // array may have empty slots
-            for (const item of iterable) if (item == null) return true;
-            return false;
-        }
-        // JS %SameValueZero is same with `isSame` in this context
-        if (isVmPrimitive(value)) return iterable.includes(value);
-        // value is not null here, so it's ok to skip empty slots, since `isSame(null, something)` is always false
-        return iterable.some((item = null) => isSame(item, value satisfies NonNullable<VmValue>));
-    }
-    // iterable is a record or an extern here, value should be a string
-    const key = toString(value, undefined);
-    if (isVmWrapper(iterable)) return iterable.has(key);
-    return hasOwnEnumerable(iterable satisfies VmRecord, key);
-};
 
 /** 获取值的长度 */
 export const $Length = (value: VmAny): number => {
@@ -63,34 +21,6 @@ export const $Length = (value: VmAny): number => {
     throw new VmError(`Value has no length: ${display(value)}`, 0);
 };
 
-/** 删除记录中的指定字段 */
-export const $Omit = (value: VmAny, omitted: ReadonlyArray<number | string>): VmRecord => {
-    $AssertInit(value);
-    if (!isVmRecord(value)) return {};
-    const result: Record<string, VmConst> = {};
-    const valueKeys = keys(value);
-    const omittedSet = new Set(omitted.map(String));
-    for (const key of valueKeys) {
-        if (!omittedSet.has(key)) {
-            setRecord(result, key, value[key]);
-        }
-    }
-    return result;
-};
-
-/** 选择记录中的指定字段 */
-export const $Pick = (value: VmAny, picked: ReadonlyArray<number | string>): VmRecord => {
-    $AssertInit(value);
-    if (!isVmRecord(value)) return {};
-    const result: Record<string, VmConst> = {};
-    for (const key of picked) {
-        const k = String(key);
-        if (hasOwnEnumerable(value, k)) {
-            setRecord(result, k, value[k]);
-        }
-    }
-    return result;
-};
 /** 检查是否拥有字段 */
 export const $Has = (obj: VmAny, key: VmAny): boolean => {
     $AssertInit(obj);
@@ -131,61 +61,4 @@ export const $Set = (obj: VmAny, key: VmAny, value: VmAny): void => {
     const pk = $ToString(key);
     if (!isVmExtern(obj)) throw new VmError(`Expected extern, got ${display(obj)}`, undefined);
     obj.set(pk, value);
-};
-/** 获取可迭代对象 */
-export const $Iterable = (value: VmAny): Iterable<VmValue | undefined> => {
-    $AssertInit(value);
-    if (isVmWrapper(value)) return value.keys();
-    if (isVmArray(value)) return value;
-    if (value != null && typeof value == 'object') return keys(value);
-    throw new VmError(`Value is not iterable: ${display(value)}`, isVmFunction(value) ? [] : [value]);
-};
-/** 展开记录 */
-export const $RecordSpread = (record: VmAny): VmRecord | null => {
-    $AssertInit(record);
-    if (record == null || isVmRecord(record)) return record;
-    if (isVmArray(record)) {
-        const result: Record<string, VmConst> = {};
-        const len = record.length;
-        for (let i = 0; i < len; i++) {
-            const item = record[i];
-            result[i] = item ?? null;
-        }
-        return result;
-    }
-    if (isVmExtern(record)) {
-        const result: Record<string, VmConst> = create(null);
-        for (const key of record.keys()) {
-            const value = record.get(key) ?? null;
-            if (isVmConst(value)) {
-                result[key] = value;
-            }
-        }
-        return result;
-    }
-    throw new VmError(`Expected record, array, extern or nil, got ${display(record)}`, null);
-};
-
-/** 展开数组 */
-export const $ArraySpread = (array: VmAny): Iterable<VmConst | undefined> => {
-    $AssertInit(array);
-    if (array == null) return [];
-    if (isVmArray(array)) return array;
-    if (isVmExtern(array)) {
-        if (array.isArrayLike()) {
-            const result: VmConst[] = [];
-            for (let i = 0, len = array.value.length; i < len; i++) {
-                const item = array.value[i];
-                result.push(wrapToVmConst(item, (v) => array.assumeVmValue(v, i)));
-            }
-            return result;
-        } else if (typeof (array.value as Iterable<unknown>)[Symbol.iterator] == 'function') {
-            const result: VmConst[] = [];
-            for (const item of array.value as Iterable<unknown>) {
-                result.push(wrapToVmConst(item, (v) => array.assumeVmValue(v, Symbol.iterator as never)));
-            }
-            return result;
-        }
-    }
-    throw new VmError(`Expected array, iterable extern or nil, got ${display(array)}`, []);
 };
