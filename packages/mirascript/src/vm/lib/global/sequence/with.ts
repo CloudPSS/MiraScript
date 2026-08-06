@@ -1,6 +1,6 @@
 import { VM_ARRAY_MAX_LENGTH } from '../../../../helpers/constants.js';
 import { toNumber, toString } from '../../../../helpers/convert/index.js';
-import { isVmArray, isVmRecord } from '../../../../helpers/types.js';
+import { isVmArray, isVmRecord } from '../../../../helpers/types/index.js';
 import { isArray, isInteger, isFinite, NotNumber, setRecord, getRecord } from '../../../../helpers/utils.js';
 import { $El } from '../../../operations/helpers.js';
 import type { VmArray, VmConst, VmValue } from '../../../types/index.js';

@@ -2,7 +2,7 @@ import type { Writable } from 'type-fest';
 import type { DiagnosticCode } from '@mirascript/constants';
 import { defineProperty, freeze } from '../../helpers/utils.js';
 import { kVmFunction, VM_FUNCTION_ANONYMOUS_NAME } from '../../helpers/constants.js';
-import { isVmFunction } from '../../helpers/types.js';
+import { isVmFunction } from '../../helpers/types/index.js';
 import type { VmAny, VmValue } from './index.js';
 import { fromVmFunctionProxy } from './boundary.js';
 import type { VmLib } from '../lib/helpers.js';

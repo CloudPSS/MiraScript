@@ -2,7 +2,7 @@ import { VmError } from '../../helpers/error.js';
 import { hasOwnEnumerable, keys } from '../../helpers/utils.js';
 import { toString } from '../../helpers/convert/index.js';
 import { display } from '../../helpers/serialize.js';
-import { isVmPrimitive, isVmArray, isVmFunction, isVmWrapper } from '../../helpers/types.js';
+import { isVmPrimitive, isVmArray, isVmFunction, isVmWrapper } from '../../helpers/types/index.js';
 import type { VmAny, VmRecord, VmValue } from '../types/index.js';
 import { isSame } from './utils.js';
 import { $AssertInit } from './common.js';

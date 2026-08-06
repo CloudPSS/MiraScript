@@ -1,6 +1,6 @@
 import { VmError } from '../../helpers/error.js';
 import { display } from '../../helpers/serialize.js';
-import { isVmExtern, isVmConst } from '../../helpers/types.js';
+import { isVmExtern, isVmConst } from '../../helpers/types/index.js';
 import type { VmExtern, VmFunction, VmAny, VmArray, VmValue } from '../types/index.js';
 import { $AssertInit } from './common.js';
 

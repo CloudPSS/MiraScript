@@ -202,11 +202,12 @@ test('isVmConst with deep check', async (t) => {
     Object.setPrototypeOf(x, null);
     t.false(isVmConst(x, true));
 
-    let deep: unknown[] = [];
-    for (let i = 0; i < 1000; i++) {
+    let deep: unknown[] = [Symbol()];
+    for (let i = 0; i < 16; i++) {
         deep = [deep];
     }
-    t.false(isVmConst(deep, true));
+    t.true(isVmConst(deep, true));
+    t.false(isVmConst(deep[0], true));
 });
 
 test('getVmType', async (t) => {

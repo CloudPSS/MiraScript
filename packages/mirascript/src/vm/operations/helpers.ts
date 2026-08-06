@@ -1,6 +1,6 @@
 import { create, defineProperty, entries } from '../../helpers/utils.js';
 import { VM_FUNCTION_ANONYMOUS_NAME } from '../../helpers/constants.js';
-import { isVmConst } from '../../helpers/types.js';
+import { isVmConst } from '../../helpers/types/index.js';
 import type { VmFunctionLike } from '../types/function.js';
 import { DefaultVmContext, type VmContext } from '../types/context.js';
 import type { VmConst, VmAny, VmValue, VmImmutable } from '../types/index.js';

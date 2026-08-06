@@ -1,7 +1,7 @@
 import { VmError } from '../../helpers/error.js';
 import { getPrototypeOf, getOwnPropertyNames, hasOwn, apply, isArray } from '../../helpers/utils.js';
 import { innerToString } from '../../helpers/convert/string.js';
-import { isVmExtern } from '../../helpers/types.js';
+import { isVmExtern } from '../../helpers/types/index.js';
 import { kVmExtern } from '../../helpers/constants.js';
 import type { VmTypeName, VmAny, VmConst, VmPrimitive, VmValue } from './index.js';
 import { VmWrapper } from './wrapper.js';

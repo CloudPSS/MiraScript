@@ -1,4 +1,5 @@
 from __future__ import annotations
+from pytest import raises
 
 from mirascript import (
     is_vm_script,
@@ -35,9 +36,24 @@ def test_get_vm_type():
     assert get_vm_type("abc") == "string"
     assert get_vm_type([]) == "array"
     assert get_vm_type({}) == "record"
-    assert get_vm_type(lambda x: x) == "unknown"
     assert get_vm_type(func) == "function"
     assert get_vm_type(mod) == "module"
+
+    with raises(TypeError):
+        get_vm_type(lambda x: x)
+    with raises(TypeError):
+
+        class int_d(int):
+            pass
+
+        get_vm_type(int_d(1))
+
+    with raises(TypeError):
+
+        class dict_d(dict):
+            pass
+
+        get_vm_type(dict_d())
 
 
 def test_is_vm_script():

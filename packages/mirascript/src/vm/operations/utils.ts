@@ -1,5 +1,5 @@
 import { isNaN, keys, getRecord } from '../../helpers/utils.js';
-import { getVmType, isVmWrapper } from '../../helpers/types.js';
+import { getVmType, isVmWrapper } from '../../helpers/types/index.js';
 import type { VmAny, VmArray, VmRecord, VmValue } from '../types/index.js';
 
 /**

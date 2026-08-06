@@ -5,6 +5,7 @@ from .operations.cp import config_checkpoint
 from .lib import vm_global as lib
 
 __all__ = [
+    "VmTypeName",
     "VmError",
     "VmExtern",
     "VmFunction",

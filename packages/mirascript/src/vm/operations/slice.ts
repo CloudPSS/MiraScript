@@ -2,7 +2,7 @@ import { VmError } from '../../helpers/error.js';
 import { display } from '../../helpers/serialize.js';
 import { toNumber } from '../../helpers/convert/number.js';
 import { isNaN, isSafeInteger } from '../../helpers/utils.js';
-import { isVmArray } from '../../helpers/types.js';
+import { isVmArray } from '../../helpers/types/index.js';
 import type { VmAny, VmArray } from '../types/index.js';
 import { $AssertInit } from './common.js';
 const { ceil } = Math;

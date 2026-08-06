@@ -2,7 +2,14 @@ import { VM_ARRAY_MAX_LENGTH } from '../../helpers/constants.js';
 import { NotNumber, entries, fromEntries, isSafeInteger, isFinite } from '../../helpers/utils.js';
 import { toBoolean, toNumber, toString } from '../../helpers/convert/index.js';
 import { display } from '../../helpers/serialize.js';
-import { isVmArray, isVmFunction, isVmPrimitive, isVmConst, isVmCallable, isVmRecord } from '../../helpers/types.js';
+import {
+    isVmArray,
+    isVmFunction,
+    isVmPrimitive,
+    isVmConst,
+    isVmCallable,
+    isVmRecord,
+} from '../../helpers/types/index.js';
 import { VmError } from '../../helpers/error.js';
 import type {
     VmExtern,

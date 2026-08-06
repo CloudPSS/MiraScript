@@ -1,5 +1,5 @@
 import { defineProperty, apply } from '../../helpers/utils.js';
-import { isVmExtern, isVmFunction, isVmWrapper } from '../../helpers/types.js';
+import { isVmExtern, isVmFunction, isVmWrapper } from '../../helpers/types/index.js';
 import { kVmFunctionProxy } from '../../helpers/constants.js';
 import { $Call } from '../operations/call.js';
 import type { VmAny, VmConst, VmModule, VmPrimitive, VmValue } from './index.js';

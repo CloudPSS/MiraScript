@@ -1,5 +1,5 @@
 import { hasOwnEnumerable, keys, setRecord } from '../../helpers/utils.js';
-import { isVmRecord } from '../../helpers/types.js';
+import { isVmRecord } from '../../helpers/types/index.js';
 import type { VmAny, VmRecord, VmConst } from '../types/index.js';
 import { $AssertInit } from './common.js';
 

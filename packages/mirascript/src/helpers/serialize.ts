@@ -9,7 +9,7 @@ import {
     isVmFunction,
     isVmModule,
     isVmRecord,
-} from './types.js';
+} from './types/index.js';
 import { numberToString } from './convert/string.js';
 
 /** 序列化 nil 值 */

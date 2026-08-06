@@ -1,5 +1,5 @@
 import { VmError } from '../../helpers/error.js';
-import { getVmType, isVmArray, isVmRecord } from '../../helpers/types.js';
+import { getVmType, isVmArray, isVmRecord } from '../../helpers/types/index.js';
 import type { VmTypeName, VmAny, VmArray, VmRecord, VmValue } from '../types/index.js';
 import { $AssertInit } from './common.js';
 

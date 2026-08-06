@@ -1,5 +1,13 @@
+from __future__ import annotations
 import pytest
+from typing_extensions import Callable
 from mirascript import compile, vm_function
+
+
+def _check(script: str, add: Callable[..., str]):
+    compiled, _ = compile(script)
+    assert compiled is not None
+    assert compiled({"add": add}) == "OK"
 
 
 def test_call_with_optional_args():
@@ -9,9 +17,7 @@ def test_call_with_optional_args():
         assert isinstance(b, int) and b == 2
         return "OK"
 
-    script, _ = compile("add(1)")
-    assert script is not None
-    assert script({"add": add}) == "OK"
+    _check("add(1)", add)
 
 
 def test_call_with_optional_args_set():
@@ -21,9 +27,7 @@ def test_call_with_optional_args_set():
         assert isinstance(b, float) and b == 2
         return "OK"
 
-    script, _ = compile("add(1, 2)")
-    assert script is not None
-    assert script({"add": add}) == "OK"
+    _check("add(1, 2)", add)
 
 
 def test_call_with_less_args():
@@ -33,9 +37,7 @@ def test_call_with_less_args():
         assert b is None
         return "OK"
 
-    script, _ = compile("add(1)")
-    assert script is not None
-    assert script({"add": add}) == "OK"
+    _check("add(1)", add)
 
 
 def test_call_with_more_args():
@@ -45,9 +47,7 @@ def test_call_with_more_args():
         assert isinstance(b, float) and b == 2
         return "OK"
 
-    script, _ = compile("add(1, 2, 3)")
-    assert script is not None
-    assert script({"add": add}) == "OK"
+    _check("add(1, 2, 3)", add)
 
 
 def test_call_with_kwargs():
@@ -57,12 +57,10 @@ def test_call_with_kwargs():
         assert isinstance(b, float) and b == 2
         return "OK"
 
-    script, _ = compile("add(1, 2)")
-    assert script is not None
     with pytest.raises(
         TypeError, match="missing 2 required keyword-only arguments: 'a' and 'b'"
     ):
-        script({"add": add})
+        _check("add(1, 2)", add)
 
 
 def test_call_with_kargs():
@@ -72,9 +70,7 @@ def test_call_with_kargs():
         assert len(kargs) == 0
         return "OK"
 
-    script, _ = compile("add(1)")
-    assert script is not None
-    assert script({"add": add}) == "OK"
+    _check("add(1)", add)
 
 
 def test_call_with_kargs_set():
@@ -84,6 +80,4 @@ def test_call_with_kargs_set():
         assert isinstance(kargs[0], float) and kargs[0] == 2
         return "OK"
 
-    script, _ = compile("add(1, 2)")
-    assert script is not None
-    assert script({"add": add}) == "OK"
+    _check("add(1, 2)", add)

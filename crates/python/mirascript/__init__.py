@@ -26,6 +26,7 @@ from ._helpers.constants import Uninitialized, VmUninitialized
 from ._helpers.convert import to_boolean, to_format, to_number, to_string
 from ._helpers.serialize import serialize, display, Serializer, DisplaySerializer
 from ._vm import (
+    VmTypeName,
     VmError,
     vm_function,
     VmModule,
@@ -52,6 +53,7 @@ __all__ = [
     "VmScript",
     "VmScriptLike",
     # Types
+    "VmTypeName",
     "VmContext",
     "VmModule",
     "VmError",

@@ -4,7 +4,7 @@ from typing_extensions import Mapping, Iterable, TYPE_CHECKING
 from .wrapper import VmWrapper
 
 if TYPE_CHECKING:
-    from . import VmValue, VmAny
+    from . import VmValue, VmAny, VmTypeName
 
 
 class VmModule(VmWrapper["Mapping[str, VmValue]"]):
@@ -29,7 +29,7 @@ class VmModule(VmWrapper["Mapping[str, VmValue]"]):
         return self is other
 
     @property
-    def type(self) -> str:
+    def type(self) -> VmTypeName:
         return "module"
 
     @property

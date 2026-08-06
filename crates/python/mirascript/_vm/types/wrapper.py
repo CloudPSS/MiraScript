@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing_extensions import TYPE_CHECKING, Iterable, TypeVar, Generic
 
 if TYPE_CHECKING:
-    from . import VmAny
+    from . import VmAny, VmTypeName
 
 T = TypeVar("T")
 
@@ -31,7 +31,7 @@ class VmWrapper(ABC, Generic[T]):
 
     @property
     @abstractmethod
-    def type(self) -> str: ...
+    def type(self) -> VmTypeName: ...
 
     @property
     @abstractmethod

@@ -1,11 +1,25 @@
 from __future__ import annotations
-from typing_extensions import TypeAlias, Never
+from typing_extensions import TypeAlias, Never, Literal
 
 from ..._helpers.constants import VmUninitialized, Uninitialized
 from .function import vm_function, VmFunction
 from .module import VmModule
 from .wrapper import VmWrapper
 from .context import VmContext, VmContextLike
+
+VmTypeName: TypeAlias = Literal[
+    "nil",
+    "boolean",
+    "number",
+    "string",
+    "record",
+    "array",
+    "function",
+    "module",
+    "extern",
+]
+
+"""类型名称"""
 
 VmPrimitive: TypeAlias = "str | int | float | bool | None"
 """Mirascript 原始值"""
@@ -29,6 +43,7 @@ VmExtern: TypeAlias = Never
 """Mirascript 虚拟机内的外部对象，Python 环境暂不支持外部对象，因此该类型永远没有值"""
 
 __all__ = [
+    "VmTypeName",
     "VmExtern",
     "vm_function",
     "VmFunction",

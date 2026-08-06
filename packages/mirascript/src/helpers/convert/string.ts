@@ -1,5 +1,5 @@
 import type { VmAny, VmRecord } from '../../vm/index.js';
-import { isVmArray, isVmWrapper } from '../types.js';
+import { isVmArray, isVmWrapper } from '../types/index.js';
 import { VmError } from '../error.js';
 import { display, displayFunction } from '../serialize.js';
 import { keys, isNaN } from '../utils.js';
