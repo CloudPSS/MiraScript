@@ -2,7 +2,7 @@ import type { IntersectionType, Type, RecordType, RecordField } from '../parser.
 import { deduplicateTypeMembers } from './dedup.js';
 import { type SimplifyImplOptions, simplifyImpl } from './impl.js';
 import { resolveTopTypes } from './top-type.js';
-import { isFieldRecordType, isTypeObject } from './utils.js';
+import { isFieldRecordType, isUnionType, isIntersectionType } from './utils.js';
 
 /** Merges explicit record fields across an intersection. */
 function mergeRecordFieldIntersections(types: Array<Extract<RecordType, { fields: RecordField[] }>>): Type {
@@ -43,7 +43,7 @@ function flattenIntersectionTypes(type: IntersectionType, options: SimplifyImplO
     if (!options.flattenIntersections) return types;
     const result: Type[] = [];
     for (const type of types) {
-        if (isTypeObject(type) && type.kind === 'intersection') {
+        if (isIntersectionType(type)) {
             result.push(...flattenIntersectionTypes(type, options));
         } else {
             result.push(type);
@@ -56,7 +56,7 @@ function flattenIntersectionTypes(type: IntersectionType, options: SimplifyImplO
 function distributeIntersectionsOverUnions(types: Type[], options: SimplifyImplOptions): Type {
     let combinations: Type[][] = [[]];
     for (const type of types) {
-        const choices = isTypeObject(type) && type.kind === 'union' ? type.types : [type];
+        const choices = isUnionType(type) ? type.types : [type];
         const next: Type[][] = [];
         for (const combo of combinations) {
             for (const choice of choices) {
@@ -102,10 +102,7 @@ export function simplifyIntersection(type: IntersectionType, options: SimplifyIm
     if (options.deduplicateIntersections) {
         simplifiedTypes = deduplicateTypeMembers(simplifiedTypes);
     }
-    if (
-        options.distributeIntersectionsOverUnions &&
-        simplifiedTypes.some((item) => isTypeObject(item) && item.kind === 'union')
-    ) {
+    if (options.distributeIntersectionsOverUnions && simplifiedTypes.some(isUnionType)) {
         return distributeIntersectionsOverUnions(simplifiedTypes, options);
     }
     if (options.mergeRecordIntersections) {

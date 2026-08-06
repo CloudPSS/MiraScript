@@ -5,12 +5,13 @@ import { resolveTopTypes } from './top-type.js';
 import { isTypeObject } from './utils.js';
 
 /** Flattens nested union nodes when the corresponding option is enabled. */
-function flattenUnionTypes(types: Type[], options: SimplifyImplOptions): Type[] {
+function flattenUnionTypes(type: UnionType, options: SimplifyImplOptions): Type[] {
+    const types = type.types.map((item) => simplifyImpl(item, options));
     if (!options.flattenUnions) return types;
     const result: Type[] = [];
     for (const type of types) {
         if (isTypeObject(type) && type.kind === 'union') {
-            result.push(...flattenUnionTypes(type.types, options));
+            result.push(...flattenUnionTypes(type, options));
         } else {
             result.push(type);
         }
@@ -20,10 +21,7 @@ function flattenUnionTypes(types: Type[], options: SimplifyImplOptions): Type[] 
 
 /** Simplifies a union recursively. */
 export function simplifyUnion(type: UnionType, options: SimplifyImplOptions): Type {
-    let simplifiedTypes = flattenUnionTypes(
-        type.types.map((item) => simplifyImpl(item, options)),
-        options,
-    );
+    let simplifiedTypes = flattenUnionTypes(type, options);
 
     // Top-type elimination: unknown | T → unknown, any | T → any, T | never → T
     const topTypes = resolveTopTypes(options.simplifyTopTypesInUnions);
