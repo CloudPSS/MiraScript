@@ -43,7 +43,7 @@ function stringToNumber(value: string): number | null {
 
 /** 转换为 number */
 export function toNumber<F = undefined>(value: VmAny, fallback?: F): number | Exclude<F, undefined> {
-    if (typeof value === 'number') return value;
+    if (typeof value == 'number') return value;
     if (typeof value == 'boolean') return value ? 1 : 0;
     if (typeof value == 'string') {
         const num = stringToNumber(value);

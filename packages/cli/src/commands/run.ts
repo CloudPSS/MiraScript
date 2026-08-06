@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { readFile, stat } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { text } from 'node:stream/consumers';
@@ -8,9 +9,33 @@ import { startRepl } from '../utils/repl.js';
 
 const DEFAULT_TIMEOUT = 3000;
 
-/* eslint-disable no-console */
-program
-    .command('run', { isDefault: true })
+/** 检查脚本文件 */
+async function checkScriptFile(script: string): Promise<boolean> {
+    try {
+        const s = await stat(script);
+        if (!s.isFile()) {
+            console.error(`脚本路径不是文件: ${script}`);
+            process.exitCode = 2;
+            return false;
+        }
+    } catch (ex) {
+        if ((ex as NodeJS.ErrnoException).code === 'ENOENT') {
+            console.error(`脚本文件不存在: ${script}`);
+            process.exitCode = 2;
+        } else if ((ex as NodeJS.ErrnoException).code === 'EACCES') {
+            console.error(`权限不足: ${(ex as NodeJS.ErrnoException).message}`);
+            process.exitCode = 3;
+        } else {
+            console.error(`无法访问脚本文件: ${(ex as NodeJS.ErrnoException).message}`);
+            process.exitCode = 1;
+        }
+        return false;
+    }
+    return true;
+}
+
+const command = program.command('run', { isDefault: true });
+command
     .description('执行 MiraScript 脚本，默认命令')
     .option(
         '-v, --variable <key=value>',
@@ -49,7 +74,7 @@ program
     )
     .option('--no-template', '使用脚本模式')
     .option('-e, --eval <script>', '要执行的脚本')
-    .argument('[script]', '要执行的脚本文件路径，使用 - 从标准输入读取（如果提供了 -e 则忽略此参数）')
+    .argument('[script]', '要执行的脚本文件路径，使用 - 从标准输入读取')
     .action(async (script, opt) => {
         if (opt.eval == null && script == null) {
             await startRepl();
@@ -57,6 +82,9 @@ program
         }
         configCheckpoint(opt.timeout || Number.POSITIVE_INFINITY);
         if (opt.eval != null) {
+            if (script != null) {
+                command.help({ error: true });
+            }
             const template = !!opt.template;
             await execute(opt.eval, template, opt.variable, template ? 'eval.miratpl' : 'eval.mira');
             return;
@@ -70,27 +98,9 @@ program
             template = !!opt.template;
             url = 'stdin';
         } else {
-            try {
-                const s = await stat(script);
-                if (!s.isFile()) {
-                    console.error(`脚本路径不是文件: ${script}`);
-                    process.exitCode = 2;
-                    return;
-                }
-            } catch (ex) {
-                if ((ex as NodeJS.ErrnoException).code === 'ENOENT') {
-                    console.error(`脚本文件不存在: ${script}`);
-                    process.exitCode = 2;
-                } else if ((ex as NodeJS.ErrnoException).code === 'EACCES') {
-                    console.error(`权限不足: ${(ex as NodeJS.ErrnoException).message}`);
-                    process.exitCode = 3;
-                } else {
-                    console.error(`无法访问脚本文件: ${(ex as NodeJS.ErrnoException).message}`);
-                    process.exitCode = 1;
-                }
+            if (!(await checkScriptFile(script))) {
                 return;
             }
-
             codeStr = await readFile(script, 'utf8');
             template = opt.template ?? script.endsWith('.miratpl');
             url = pathToFileURL(script).href;

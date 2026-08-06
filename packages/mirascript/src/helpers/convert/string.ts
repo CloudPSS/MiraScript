@@ -41,7 +41,7 @@ export function innerToString(value: VmAny, useBraces: boolean): string {
 
 /** 转换为 string */
 export function toString<F = undefined>(value: VmAny, fallback?: F): string | Exclude<F, undefined> {
-    if (typeof value === 'string') return value;
+    if (typeof value == 'string') return value;
     if (value == null) return '';
     try {
         return innerToString(value, false);

@@ -148,30 +148,3 @@ def deep_equal(a: Any, b: Any) -> bool:
 
     # Fallback: use standard equality
     return a == b
-
-
-def assert_deep_equal(a: Any, b: Any, *, message: str | None = None) -> None:
-    """
-    Assert that deep_equal(a, b) is True. Raises AssertionError otherwise.
-    The raised message includes a brief description of the mismatch.
-    """
-    if deep_equal(a, b):
-        return
-    base_msg = "Objects are not equal"
-    if message:
-        raise AssertionError(f"{base_msg}: {message}")
-    else:
-        raise AssertionError(base_msg)
-
-
-def assert_not_deep_equal(a: Any, b: Any, *, message: str | None = None) -> None:
-    """
-    Assert that deep_equal(a, b) is False. Raises AssertionError otherwise.
-    """
-    if not deep_equal(a, b):
-        return
-    base_msg = "Objects are unexpectedly equal"
-    if message:
-        raise AssertionError(f"{base_msg}: {message}")
-    else:
-        raise AssertionError(base_msg)

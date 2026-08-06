@@ -13,16 +13,8 @@ from pathlib import Path
 
 import pytest
 
-from mirascript import (
-    compile as mira_compile,
-    config_checkpoint,
-    vm_function,
-    VmError,
-    VmModule,
-    VmValue,
-    VmFunction,
-)
-from .deepequals import assert_deep_equal, assert_not_deep_equal
+from mirascript import compile as mira_compile, config_checkpoint
+from .black_box import make_vm_helpers
 
 # 并行 workers 数
 MAX_WORKERS = int(environ.get("MAX_WORKERS", "2"))
@@ -31,74 +23,7 @@ MAX_WORKERS = int(environ.get("MAX_WORKERS", "2"))
 SKIP_HUGE = environ.get("SKIP_HUGE", "0") != "0"
 
 if TYPE_CHECKING:
-    from typing_extensions import Callable, TypeAlias
-
-    TimeoutFn: TypeAlias = Callable[[], None]
-    TimeoutFns: TypeAlias = "list[tuple[TimeoutFn, str]]"
-    VmTestHelpers: TypeAlias = "tuple[TimeoutFns, dict[str, VmValue]]"
-
-
-def _make_vm_helpers() -> VmTestHelpers:
-    """创建注入 Mira 脚本的全局辅助函数与变量。"""
-
-    timeout_fns: TimeoutFns = []
-
-    @vm_function
-    def t_eq(a: VmValue, b: VmValue, message: str | None = None):
-        assert_deep_equal(a, b, message=message)
-
-    @vm_function
-    def t_ne(a: VmValue, b: VmValue, message: str | None = None):
-        assert_not_deep_equal(a, b, message=message)
-
-    @vm_function
-    def t_true(v: VmValue, message: str | None = None):
-        assert v is True, message
-
-    @vm_function
-    def t_false(v: VmValue, message: str | None = None):
-        assert v is False, message
-
-    @vm_function
-    def t_throws(fn: VmFunction, message: str | None = None):
-        try:
-            fn()
-        except VmError:
-            return
-        msg = message or "Expected VmError but none was raised"
-        raise AssertionError(msg)
-
-    @vm_function
-    def t_timeout(fn: TimeoutFn, message: str = "Execution timed out"):
-        timeout_fns.append((fn, message))
-
-    @vm_function
-    def t_never(message: str = "This should never be called"):
-        raise AssertionError(message)
-
-    context = {
-        "t_eq": t_eq,
-        "t_ne": t_ne,
-        "t_true": t_true,
-        "t_false": t_false,
-        "t_throws": t_throws,
-        "t_timeout": t_timeout,
-        "t_never": t_never,
-        "v_array": [],
-        "v_record": {},
-        "v_nil": None,
-        "v_true": True,
-        "v_false": False,
-        "v_number": 42,
-        "v_string": "Hello, Mira!",
-        "v_fn": vm_function(lambda: "I am a function"),
-        "v_fn_another": vm_function(lambda: "I am another function"),
-        "has_extern": False,
-        "v_module": VmModule("v_module", {}),
-        "v_module_another": VmModule("v_module_another", {}),
-    }
-
-    return timeout_fns, context
+    from .black_box import TimeoutFns
 
 
 def _run_mira_file(
@@ -111,14 +36,14 @@ def _run_mira_file(
     if script is None:
         raise AssertionError("Compilation failed, no script generated")
 
-    timeout_fns, context = _make_vm_helpers()
+    timeout_fns, context = make_vm_helpers()
     script(context)
     return timeout_fns
 
 
 def _run_timeout_fns(timeout_fns: TimeoutFns) -> None:
     """执行超时回调函数，确保它们抛出 RuntimeError。"""
-    for fn, message in timeout_fns:
+    for fn, _ in timeout_fns:
         with pytest.raises(RuntimeError, match="Execution timed out"):
             fn()
 
@@ -137,6 +62,6 @@ def test_mira_file(mira_file: Path) -> None:
         for _ in range(MAX_WORKERS):
             pool.submit(_run_mira_file, mira_file)
 
-        timeout_fns = _run_mira_file(mira_file)
+        timeout_fns: TimeoutFns = _run_mira_file(mira_file)
         config_checkpoint()  # 重置检查点配置
         _run_timeout_fns(timeout_fns)

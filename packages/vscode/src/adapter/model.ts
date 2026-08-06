@@ -68,104 +68,67 @@ export class ModelAdapter implements monacoApi.editor.ITextModel {
         return this.#document.uri.toString();
     }
     /** @inheritdoc */
-    findMatches(
-        searchString: unknown,
-        searchScope: unknown,
-        isRegex: unknown,
-        matchCase: unknown,
-        wordSeparators: unknown,
-        captureMatches: unknown,
-        limitResultCount?: unknown,
-    ): editor.FindMatch[] {
+    findMatches(): editor.FindMatch[] {
         throw new Error('Method not implemented.');
     }
     /** @inheritdoc */
-    findNextMatch(
-        searchString: string,
-        searchStart: IPosition,
-        isRegex: boolean,
-        matchCase: boolean,
-        wordSeparators: string | null,
-        captureMatches: boolean,
-    ): editor.FindMatch | null {
+    findNextMatch(): editor.FindMatch | null {
         throw new Error('Method not implemented.');
     }
     /** @inheritdoc */
-    findPreviousMatch(
-        searchString: string,
-        searchStart: IPosition,
-        isRegex: boolean,
-        matchCase: boolean,
-        wordSeparators: string | null,
-        captureMatches: boolean,
-    ): editor.FindMatch | null {
+    findPreviousMatch(): editor.FindMatch | null {
         throw new Error('Method not implemented.');
     }
     /** @inheritdoc */
-    deltaDecorations(
-        oldDecorations: string[],
-        newDecorations: editor.IModelDeltaDecoration[],
-        ownerId?: number,
-    ): string[] {
+    deltaDecorations(): string[] {
         return [];
     }
     /** @inheritdoc */
-    getDecorationOptions(id: string): editor.IModelDecorationOptions | null {
+    getDecorationOptions(): editor.IModelDecorationOptions | null {
         return null;
     }
     /** @inheritdoc */
-    getDecorationRange(id: string): Range | null {
+    getDecorationRange(): Range | null {
         return null;
     }
     /** @inheritdoc */
-    getLineDecorations(lineNumber: number, ownerId?: number, filterOutValidation?: boolean): editor.IModelDecoration[] {
+    getLineDecorations(): editor.IModelDecoration[] {
         return [];
     }
     /** @inheritdoc */
-    getLinesDecorations(
-        startLineNumber: number,
-        endLineNumber: number,
-        ownerId?: number,
-        filterOutValidation?: boolean,
-    ): editor.IModelDecoration[] {
+    getLinesDecorations(): editor.IModelDecoration[] {
         return [];
     }
     /** @inheritdoc */
-    getDecorationsInRange(
-        range: IRange,
-        ownerId?: number,
-        filterOutValidation?: boolean,
-        onlyMinimapDecorations?: boolean,
-        onlyMarginDecorations?: boolean,
-    ): editor.IModelDecoration[] {
+    getDecorationsInRange(): editor.IModelDecoration[] {
         return [];
     }
     /** @inheritdoc */
-    getAllDecorations(ownerId?: number, filterOutValidation?: boolean): editor.IModelDecoration[] {
+    getAllDecorations(): editor.IModelDecoration[] {
         return [];
     }
     /** @inheritdoc */
-    getAllMarginDecorations(ownerId?: number): editor.IModelDecoration[] {
+    getAllMarginDecorations(): editor.IModelDecoration[] {
         return [];
     }
     /** @inheritdoc */
-    getOverviewRulerDecorations(ownerId?: number, filterOutValidation?: boolean): editor.IModelDecoration[] {
+    getOverviewRulerDecorations(): editor.IModelDecoration[] {
         return [];
     }
     /** @inheritdoc */
-    getInjectedTextDecorations(ownerId?: number): editor.IModelDecoration[] {
+    getInjectedTextDecorations(): editor.IModelDecoration[] {
         return [];
     }
     /** @inheritdoc */
-    normalizeIndentation(str: string): string {
+    normalizeIndentation(): string {
         throw new Error('Method not implemented.');
     }
     /** @inheritdoc */
-    updateOptions(newOpts: editor.ITextModelUpdateOptions): void {
+    updateOptions(): void {
         throw new Error('Method not implemented.');
     }
     /** @inheritdoc */
-    detectIndentation(defaultInsertSpaces: boolean, defaultTabSize: number): void {
+    detectIndentation(): void {
         throw new Error('Method not implemented.');
     }
     /** @inheritdoc */
@@ -177,23 +140,19 @@ export class ModelAdapter implements monacoApi.editor.ITextModel {
         throw new Error('Method not implemented.');
     }
     /** @inheritdoc */
-    pushEditOperations(
-        beforeCursorState: Selection[] | null,
-        editOperations: editor.IIdentifiedSingleEditOperation[],
-        cursorStateComputer: editor.ICursorStateComputer,
-    ): Selection[] | null {
+    pushEditOperations(): Selection[] | null {
         throw new Error('Method not implemented.');
     }
     /** @inheritdoc */
-    pushEOL(eol: editor.EndOfLineSequence): void {
+    pushEOL(): void {
         throw new Error('Method not implemented.');
     }
     /** @inheritdoc */
-    applyEdits(operations: unknown, computeUndoEdits?: unknown): editor.IValidEditOperation[] {
+    applyEdits(): editor.IValidEditOperation[] {
         throw new Error('Method not implemented.');
     }
     /** @inheritdoc */
-    onDidChangeContent(listener: (e: editor.IModelContentChangedEvent) => void): IDisposable {
+    onDidChangeContent(): IDisposable {
         return EMPTY_DISPOSABLE;
     }
     /** @inheritdoc */
