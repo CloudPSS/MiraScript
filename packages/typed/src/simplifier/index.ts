@@ -1,5 +1,6 @@
 import type { Type } from '../parser.js';
-import { simplifyImpl, type TopType } from './impl.js';
+import { simplifyImpl } from './impl.js';
+import type { TopType } from './top-type.js';
 
 /** Controls which type simplifications are applied. */
 export interface SimplifyOptions {

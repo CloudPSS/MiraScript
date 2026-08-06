@@ -12,55 +12,46 @@ const RE_NUMBER = REG_NUMBER.source;
 const RE_BOOLEAN = 'true|false';
 
 /** Converts a template interpolation part into a regex pattern fragment */
-export function templatePartPattern(part: Type, grouping: boolean): string {
-    let result: string;
-    if (typeof part === 'symbol') {
-        result = RE_ANY;
-    } else if (typeof part === 'string') {
-        switch (part) {
-            case 'number':
-                result = RE_NUMBER;
-                break;
-            case 'boolean':
-                result = RE_BOOLEAN;
-                break;
-            case 'nil':
-            case 'never':
-                result = '';
-                break;
-            case 'array':
-            case 'record':
-            case 'extern':
-            case 'any':
-            case 'unknown':
-            case 'string':
-            default:
-                result = RE_ANY;
-                break;
-        }
-    } else if (part.kind === 'literal') {
+function templatePartPatternImpl(part: Type): string {
+    if (typeof part == 'symbol') {
+        return RE_ANY;
+    }
+    if (typeof part == 'string') {
+        if (part === 'number') return RE_NUMBER;
+        if (part === 'boolean') return RE_BOOLEAN;
+        if (part === 'nil' || part === 'never') return '';
+        return RE_ANY;
+    }
+    if (part.kind === 'literal') {
         if (typeof part.value === 'boolean') {
-            result = String(part.value);
+            return String(part.value);
         } else {
-            result = escapeRegex(part.value);
+            return escapeRegex(part.value);
         }
-    } else if (part.kind === 'union') {
-        const patterns = new Set(part.types.map((p) => templatePartPattern(p, false)));
+    }
+    if (part.kind === 'union') {
+        const patterns = new Set(part.types.map((p) => templatePartPatternImpl(p)));
         if (patterns.has(RE_ANY)) {
-            result = RE_ANY;
+            return RE_ANY;
         } else {
             const hasEmpty = patterns.delete('');
-            result = Array.from(patterns).join('|');
+            let result = Array.from(patterns).join('|');
             if (hasEmpty) {
                 result = `(${result})?`;
             }
+            return result;
         }
-    } else if (part.kind === 'intersection') {
-        // Regex intersection is not representable in general; keep behavior conservative.
-        result = RE_ANY;
-    } else {
-        result = RE_ANY;
     }
+    if (part.kind === 'intersection') {
+        // Regex intersection is not representable in general; keep behavior conservative.
+        return RE_ANY;
+    }
+    return RE_ANY;
+}
+
+/** Converts a template interpolation part into a regex pattern fragment */
+export function templatePartPattern(part: Type, grouping: boolean): string {
+    const result = templatePartPatternImpl(part);
     if (!grouping) return result;
     if (result.startsWith('(')) return result;
     return `(${result})`;

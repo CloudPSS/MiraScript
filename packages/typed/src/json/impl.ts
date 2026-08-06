@@ -1,12 +1,13 @@
 import type { JSONSchema } from 'json-schema-typed';
+import type { Type } from '../parser.js';
 import { simplify } from '../simplifier/index.js';
-import type { LiteralType, Type } from '../parser.js';
+import type { ToJSONSchemaOptions } from './index.js';
 import { string } from './string.js';
 import { template } from './template.js';
 import { tuple } from './tuple.js';
-import type { ToJSONSchemaOptions } from './index.js';
-import { isLiteralType, literalEnum, literal } from './literal.js';
+import { literal } from './literal.js';
 import { record } from './record.js';
+import { intersection, union } from './union-intersection.js';
 
 /** Options for toJSONSchemaImpl */
 export type ToJSONSchemaOptionsImpl = Required<ToJSONSchemaOptions>;
@@ -15,7 +16,7 @@ export type ToJSONSchemaOptionsImpl = Required<ToJSONSchemaOptions>;
 export function toJSONSchemaImpl(type: Type, options: ToJSONSchemaOptionsImpl): JSONSchema {
     const simplified = simplify(type);
     if (typeof simplified == 'symbol') {
-        return {};
+        return true;
     }
     if (typeof simplified == 'string') {
         return string(simplified);
@@ -27,39 +28,10 @@ export function toJSONSchemaImpl(type: Type, options: ToJSONSchemaOptionsImpl): 
         };
     }
     if (simplified.kind === 'union') {
-        const anyOf: JSONSchema[] = [];
-        const literals: LiteralType[] = [];
-        for (const t of simplified.types) {
-            if (isLiteralType(t)) {
-                literals.push(t);
-                continue;
-            }
-            const child = toJSONSchemaImpl(t, options);
-            if (child === true) {
-                return true;
-            }
-            if (child === false) {
-                continue;
-            }
-            anyOf.push(child);
-        }
-        if (literals.length > 0) {
-            anyOf.push(literalEnum(literals));
-        }
-        if (anyOf.length === 0) {
-            return false;
-        }
-        if (anyOf.length === 1) {
-            return anyOf[0]!;
-        }
-        return { anyOf };
+        return union(simplified, options);
     }
     if (simplified.kind === 'intersection') {
-        const allOf = simplified.types.map((t) => toJSONSchemaImpl(t, options));
-        if (allOf.length === 1) {
-            return allOf[0]!;
-        }
-        return { allOf };
+        return intersection(simplified, options);
     }
     if (simplified.kind === 'record') {
         return record(simplified, options);
