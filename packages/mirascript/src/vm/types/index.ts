@@ -1,4 +1,4 @@
-import type { VmExtern } from './extern.js';
+import type { VmExtern } from './extern/index.js';
 import type { VmFunction } from './function.js';
 import type { VmModule } from './module.js';
 
@@ -78,6 +78,6 @@ export {
 export { wrapToVmValue, unwrapFromVmValue } from './boundary.js';
 
 export { type VmContext, type VmContextRecord, defineVmContextValue, createVmContext } from './context.js';
-export { VmExtern } from './extern.js';
+export { VmExtern } from './extern/index.js';
 export { VmFunction, type VmFunctionInfo, type VmFunctionLike, type VmFunctionOption } from './function.js';
 export { VmModule } from './module.js';

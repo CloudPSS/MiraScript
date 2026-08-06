@@ -12,7 +12,8 @@ from .basic import (
     is_vm_array,
     is_vm_record,
 )
-from .composed import is_vm_const, is_vm_immutable, is_vm_value, is_vm_any
+from .const import is_vm_const
+from .composed import is_vm_immutable, is_vm_value, is_vm_any
 from .get_type import get_vm_type
 
 __all__ = [

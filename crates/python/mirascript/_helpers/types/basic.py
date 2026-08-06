@@ -1,13 +1,13 @@
 from __future__ import annotations
-from typing_extensions import TYPE_CHECKING, overload
+from typing_extensions import TYPE_CHECKING
 
-from ..constants import Uninitialized, kVmScript, kVmContext, kVmFunction
+from ..constants import kVmScript, kVmContext, kVmFunction
 from ..._vm.types.module import VmModule
 from ..._vm.types.wrapper import VmWrapper
 
 if TYPE_CHECKING:
 
-    from typing_extensions import Literal, TypeIs
+    from typing_extensions import TypeIs
     from ..._compiler import VmScript
     from ..._vm.types import (
         VmFunction,
@@ -16,9 +16,6 @@ if TYPE_CHECKING:
         VmPrimitive,
         VmRecord,
         VmArray,
-        VmConst,
-        VmImmutable,
-        VmValue,
         VmAny,
     )
 
