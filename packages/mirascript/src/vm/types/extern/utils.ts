@@ -1,4 +1,4 @@
-import { getOwnPropertyNames, getPrototypeOf, hasOwn, isArray } from '../../../helpers/utils.js';
+import { getOwnPropertyNames, getPrototypeOf, isArray } from '../../../helpers/utils.js';
 
 /**
  * Should this extern be treated as array-like?
@@ -31,25 +31,25 @@ export function getKeys(value: object, includeNonEnumerable: boolean): string[] 
     return Array.from(keys);
 }
 
-const pFunction = Function.prototype;
-const pArray = Array.prototype;
-const pObject = Object.prototype;
-/**
- * Can property be accessed on the extern object?
- */
-export function canAccessProperty(value: object, key: string, read: boolean): boolean {
-    // __proto__ and other “private” properties are not accessible
-    if (key.startsWith('_')) return false;
-    // Function-specific properties are not accessible
-    if (typeof value == 'function' && (key === 'prototype' || key === 'arguments' || key === 'caller')) return false;
-    if (hasOwn(value, key)) return true;
-    if (!read) return true;
-    if (!(key in value)) return false;
-    if (key === 'constructor') return false; // constructor is not accessible
-    // property is not readable if it is the same as the prototype's property
-    const prop = (value as Record<string, unknown>)[key];
-    if (key in pFunction && prop === pFunction[key as keyof (() => void)]) return false;
-    if (key in pArray && prop === pArray[key as keyof unknown[]]) return false;
-    if (key in pObject && prop === pObject[key as keyof object]) return false;
+// eslint-disable-next-line @typescript-eslint/unbound-method
+const ObjectToString = Object.prototype.toString;
+// eslint-disable-next-line @typescript-eslint/unbound-method
+const FunctionToString = Function.prototype.toString;
+const ArrayToString = Array.prototype.toString;
+// eslint-disable-next-line @typescript-eslint/unbound-method
+const TypedArrayToString = Uint8Array.prototype.toString;
+
+/** Check toString method of the extern object */
+export function hasCustomToString(value: object): boolean {
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    const { toString } = value;
+    if (typeof toString != 'function') return false;
+    if (
+        toString === ObjectToString ||
+        toString === FunctionToString ||
+        toString === ArrayToString ||
+        toString === TypedArrayToString
+    )
+        return false;
     return true;
 }

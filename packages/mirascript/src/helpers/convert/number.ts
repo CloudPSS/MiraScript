@@ -3,28 +3,22 @@ import { VmError } from '../error.js';
 import { display } from '../serialize.js';
 import { NegativeInfinity, NotNumber, PositiveInfinity } from '../utils.js';
 
+const parseInt = (value: string, radix: number): number => Number.parseInt(value.slice(2), radix);
+
 /** 将字符串转换为数字 */
 function parseNumericLiteral(value: string): number | null {
     const ch0 = value.charAt(0);
-    if (ch0 < '0' || ch0 > '9') {
-        return null;
-    }
+    if (ch0 < '0' || ch0 > '9') return null;
+
     // 二进制
-    if (/^0[bB][01]+$/.test(value)) {
-        return Number.parseInt(value.slice(2), 2);
-    }
+    if (/^0[bB][01]+$/.test(value)) return parseInt(value, 2);
     // 八进制
-    if (/^0[oO][0-7]+$/.test(value)) {
-        return Number.parseInt(value.slice(2), 8);
-    }
+    if (/^0[oO][0-7]+$/.test(value)) return parseInt(value, 8);
     // 十六进制
-    if (/^0[xX][0-9a-fA-F]+$/.test(value)) {
-        return Number.parseInt(value.slice(2), 16);
-    }
+    if (/^0[xX][0-9a-fA-F]+$/.test(value)) return parseInt(value, 16);
     // 十进制/科学计数法
-    if (/^[0-9]+(\.[0-9]+)?([eE][+-]?[0-9]+)?$/.test(value)) {
-        return Number.parseFloat(value);
-    }
+    if (/^[0-9]+(\.[0-9]+)?([eE][+-]?[0-9]+)?$/.test(value)) return Number.parseFloat(value);
+
     return null;
 }
 
@@ -32,18 +26,13 @@ function parseNumericLiteral(value: string): number | null {
 function stringToNumber(value: string): number | null {
     value = value.trim();
     if (value === '') return null;
-    if (value === 'inf' || value === '+inf' || value === 'Infinity' || value === '+Infinity') {
-        return PositiveInfinity;
-    }
-    if (value === '-inf' || value === '-Infinity') {
-        return NegativeInfinity;
-    }
-    if (value === 'nan' || value === 'NaN') {
-        return NotNumber;
-    }
+    if (value === 'inf' || value === '+inf' || value === 'Infinity' || value === '+Infinity') return PositiveInfinity;
+    if (value === '-inf' || value === '-Infinity') return NegativeInfinity;
+    if (value === 'nan' || value === 'NaN') return NotNumber;
+
     if (value.startsWith('-')) {
         const num = parseNumericLiteral(value.slice(1));
-        if (num !== null) return -num;
+        if (num != null) return -num;
         return null;
     } else if (value.startsWith('+')) {
         return parseNumericLiteral(value.slice(1));

@@ -6,8 +6,9 @@ import { kVmExtern } from '../../../helpers/constants.js';
 import type { VmTypeName, VmAny, VmConst, VmPrimitive, VmValue } from '../index.js';
 import { VmWrapper } from '../wrapper.js';
 import { unwrapFromVmValue, wrapToVmValue } from '../boundary.js';
-import { getTag, hasCustomToString } from './repr.js';
-import { canAccessProperty, getKeys, isArrayLike } from './utils.js';
+import { getTag } from './tag.js';
+import { getKeys, isArrayLike, hasCustomToString } from './utils.js';
+import { canAccessProperty } from './access.js';
 
 const ArrayMap = Array.prototype.map;
 

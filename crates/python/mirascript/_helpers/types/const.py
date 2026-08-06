@@ -11,7 +11,7 @@ from .basic import (
 
 if TYPE_CHECKING:
 
-    from typing_extensions import Literal, TypeIs
+    from typing_extensions import TypeIs
     from ..._vm.types import VmConst, VmAny, VmArray, VmRecord
 
 _MAX_DEPTH: Final = 16
@@ -49,11 +49,9 @@ def _is_vm_const_inner(value, depth: int) -> TypeIs[VmConst]:
 
 
 @overload
-def is_vm_const(
-    value: VmAny, check_deep: Literal[False] = False
-) -> TypeIs[VmConst]: ...
+def is_vm_const(value: VmAny) -> TypeIs[VmConst]: ...
 @overload
-def is_vm_const(value, check_deep: Literal[True]) -> TypeIs[VmConst]: ...
+def is_vm_const(value, check_deep: bool) -> TypeIs[VmConst]: ...
 def is_vm_const(value, check_deep=False):
     """检查值是否为 Mirascript 常量"""
     return _is_vm_const_inner(value, _MAX_DEPTH if check_deep else 0)

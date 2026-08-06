@@ -1,13 +1,11 @@
 import { getPrototypeOf } from '../../../helpers/utils.js';
 
 const ObjectPrototype = Object.prototype;
-// eslint-disable-next-line @typescript-eslint/unbound-method
-const ObjectToString = Object.prototype.toString;
-// eslint-disable-next-line @typescript-eslint/unbound-method
-const FunctionToString = Function.prototype.toString;
-const ArrayToString = Array.prototype.toString;
-// eslint-disable-next-line @typescript-eslint/unbound-method
-const TypedArrayToString = Uint8Array.prototype.toString;
+
+/** get js tag of value */
+function getJsObjectTag(value: object): string {
+    return ObjectPrototype.toString.call(value).slice(8, -1);
+}
 
 /** 获取类的名称，如果无法确定则返回 null */
 // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
@@ -24,24 +22,9 @@ function classNameOf(kls: Function): string | null {
     return null;
 }
 
-/** Check toString method of the extern object */
-export function hasCustomToString(value: object): boolean {
-    // eslint-disable-next-line @typescript-eslint/unbound-method
-    const { toString } = value;
-    if (typeof toString != 'function') return false;
-    if (
-        toString === ObjectToString ||
-        toString === FunctionToString ||
-        toString === ArrayToString ||
-        toString === TypedArrayToString
-    )
-        return false;
-    return true;
-}
-
 /** Get the tag of the extern object */
 export function getTag(value: object): string {
-    const tag = ObjectToString.call(value).slice(8, -1);
+    const tag = getJsObjectTag(value);
     if (tag === 'Function') {
         if ('prototype' in value && typeof value.prototype == 'object') {
             const className = classNameOf(value as unknown as new () => unknown);
