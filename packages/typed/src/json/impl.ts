@@ -1,5 +1,5 @@
 import type { JSONSchema } from 'json-schema-typed';
-import { simplify } from '../simplifier.js';
+import { simplify } from '../simplifier/index.js';
 import type { LiteralType, Type } from '../parser.js';
 import { string } from './string.js';
 import { template } from './template.js';
