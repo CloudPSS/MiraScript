@@ -7,7 +7,7 @@ from ._main.unparse import unparse
 from ._main.argparse import create_parser
 from ._main.compile import compile_code
 from ._main.variables import parse_variables
-from . import VmValue, VmContext, display
+from . import VmContext, display
 
 
 def main() -> int:

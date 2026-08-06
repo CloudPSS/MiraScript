@@ -1,5 +1,5 @@
 import test from 'ava';
-import { parse, simplify, stringify } from '../dist/index.js';
+import { parse, simplify, stringify } from '@mirascript/typed';
 import { lib } from '@mirascript/mirascript/subtle';
 import type { VmLibOption } from '../../mirascript/src/vm/lib/helpers.ts';
 

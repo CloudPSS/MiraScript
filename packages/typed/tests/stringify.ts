@@ -1,7 +1,5 @@
 import test, { type ExecutionContext } from 'ava';
-import { parse } from '../dist/parser.js';
-import { stringify } from '../dist/stringify.js';
-import { simplify } from '../dist/simplifier.js';
+import { parse, stringify, simplify } from '@mirascript/typed';
 
 function rt(typeStr: string, t: ExecutionContext) {
     const simplified = simplify(parse(typeStr));

@@ -4,12 +4,7 @@ import ast
 
 from .._helpers.convert import to_string
 from .opcode import OpCode, get_opcode_name
-from .consts import (
-    read_constants,
-    split_chunk,
-    read_index as _read_index,
-    read_param as _read_param,
-)
+from .consts import read_constants, split_chunk, read_index, read_param
 from .ast_helper import ASTHelper
 from .diagnostics import SourceMapEntry
 
@@ -26,11 +21,11 @@ class Emitter:
         self.const_data, self.code_data = split_chunk(chunk)
         self.constants = read_constants(self.const_data)
         self.source_map = source_map
-        self.source_map_index = 0
+        self.source_map_index: int = 0
         self.source_lines = source_lines
 
-        self.func_script = None
-        self.code_offset = 0
+        self.func_script: ast.FunctionDef | None = None
+        self.code_offset: int = 0
         self.closures: List[ast.FunctionDef] = []
 
     @property
@@ -72,7 +67,11 @@ class Emitter:
         return helper.assign(target, values)
 
     def create_loop(
-        self, helper: ASTHelper, nreg, code, increment: ast.AugAssign | None = None
+        self,
+        helper: ASTHelper,
+        nreg: int,
+        code: ast.While | ast.For,
+        increment: ast.AugAssign | None = None,
     ):
         closure_name = f"closure_{self.source_map_index}"
         block = helper.if_expr(test=helper.const(True))
@@ -94,17 +93,18 @@ class Emitter:
 
         result_name = f"{closure_name}_result"
         code.body.append(helper.assign_call(result_name, closure_name, []))
-        code.body.append(increment) if increment else None
+        if increment:
+            code.body.append(increment)
         code.body.append(helper.vm_loop_control(result_name))
         return block, closure
 
     def read_param(self, wide: bool) -> int:
-        value, size = _read_param(self.code_data, self.code_offset, wide)
+        value, size = read_param(self.code_data, self.code_offset, wide)
         self.code_offset += size
         return value
 
     def read_index(self, wide: bool) -> int:
-        value, size = _read_index(self.code_data, self.code_offset, wide)
+        value, size = read_index(self.code_data, self.code_offset, wide)
         self.code_offset += size
         return value
 
@@ -155,7 +155,7 @@ class Emitter:
 
         self.closures.append(closure)  # 进入闭包
         while self.code_offset < len(self.code_data):
-            opcode, wide, helper = self.read_opcode(peek=True)
+            opcode, _, _ = self.read_opcode(peek=True)
 
             if opcode != OpCode.FuncEnd:
                 self.read(closure.body)
@@ -174,7 +174,7 @@ class Emitter:
         if closure is not None:
             self.closures.append(closure)  # 进入闭包
         while self.code_offset < len(self.code_data):
-            opcode, wide, helper = self.read_opcode(peek=True)
+            opcode, _, helper = self.read_opcode(peek=True)
 
             if opcode != end_opcode:
                 self.read(current_blocks_body)
@@ -192,7 +192,7 @@ class Emitter:
         """读取 if else 或 if 结束"""
         body = block.body
         while self.code_offset < len(self.code_data):
-            opcode, wide, helper = self.read_opcode(peek=True)
+            opcode, _, _ = self.read_opcode(peek=True)
 
             if opcode == OpCode.IfEnd:
                 return self.read_block_end(OpCode.IfEnd, body)

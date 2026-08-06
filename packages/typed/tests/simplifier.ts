@@ -1,6 +1,5 @@
 import test from 'ava';
-import { parse } from '../dist/parser.js';
-import { simplify } from '../dist/simplifier.js';
+import { parse, simplify } from '@mirascript/typed';
 
 test('simplify flattens unions and intersections', (t) => {
     t.deepEqual(simplify({ kind: 'union', types: ['string', { kind: 'union', types: ['number'] }] }), {

@@ -1,5 +1,5 @@
 import test from 'ava';
-import { parse, type FunctionType, type TemplateType } from '../dist/parser.js';
+import { parse, type FunctionType, type TemplateType } from '@mirascript/typed';
 
 test('primitive types', (t) => {
     t.is(parse('nil'), 'nil');

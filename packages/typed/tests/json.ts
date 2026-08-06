@@ -1,7 +1,6 @@
 import test from 'ava';
 import { REG_NUMBER } from '@mirascript/constants';
-import { parse } from '../dist/parser.js';
-import { toJSONSchema } from '../dist/json.js';
+import { parse, toJSONSchema } from '@mirascript/typed';
 
 const schema = (s: object) => ({ $schema: 'https://json-schema.org/draft/2020-12/schema', ...s });
 
