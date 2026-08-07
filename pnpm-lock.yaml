@@ -249,8 +249,8 @@ importers:
         specifier: ^26.1.2
         version: 26.1.2
       '@types/vscode':
-        specifier: 1.125.0
-        version: 1.125.0
+        specifier: 1.80.0
+        version: 1.80.0
       js-yaml:
         specifier: ^5.2.3
         version: 5.2.3
@@ -4206,9 +4206,9 @@ packages:
     resolution:
       { integrity: sha512-ko/gIFJRv177XgZsZcBwnqJN5x/Gien8qNOn0D5bQU/zAzVf9Zt3BlcUiLqhV9y4ARk0GbT3tnUiPNgnTXzc/Q== }
 
-  '@types/vscode@1.125.0':
+  '@types/vscode@1.80.0':
     resolution:
-      { integrity: sha512-0icm/ZQAaism87P0ekHqi4/Ju9du+Tm0RUW+y7vqRsxY2cY0FNRX1nAnaW7nT6npPt2tfHiheZ55Zm9UhqonFA== }
+      { integrity: sha512-qK/CmOdS2o7ry3k6YqU4zD3R2AYlJfbwBoSbKpBoP+GpXNE+0NEgJOli4n0bm0diK5kfBnchgCEj4igQz/44Hg== }
 
   '@types/ws@8.18.1':
     resolution:
@@ -4802,10 +4802,6 @@ packages:
   caniuse-api@3.0.0:
     resolution:
       { integrity: sha512-bsTwuIg/BZZK/vreVTYYbSWoe2F+71P7K5QGEX+pT250DZbfU1MQ5prOKpPR+LL6uWKK3KMwMCAS74QB3Um1uw== }
-
-  caniuse-lite@1.0.30001806:
-    resolution:
-      { integrity: sha512-72Cuvd95zbSYPKq6Fhg8eDJRlzgWDf7/mtoZv6Qe/DYNCEBdNxoA3+rZAU2ZhGCpZlns3EssFavaZomckT5Uuw== }
 
   caniuse-lite@1.0.30001807:
     resolution:
@@ -14082,7 +14078,7 @@ snapshots:
 
   '@types/unist@3.0.3': {}
 
-  '@types/vscode@1.125.0': {}
+  '@types/vscode@1.80.0': {}
 
   '@types/ws@8.18.1':
     dependencies:
@@ -14704,11 +14700,9 @@ snapshots:
   caniuse-api@3.0.0:
     dependencies:
       browserslist: 4.28.7
-      caniuse-lite: 1.0.30001806
+      caniuse-lite: 1.0.30001807
       lodash.memoize: 4.1.2
       lodash.uniq: 4.5.0
-
-  caniuse-lite@1.0.30001806: {}
 
   caniuse-lite@1.0.30001807: {}
 
