@@ -26,7 +26,7 @@ jobs:
           check-lockfile: true # Check once at here, and trust the lockfile for the rest of the workflow
 
       - name: Build
-        run: pnpm -r --filter=!packages/website run build
+        run: pnpm -r --filter !@mirascript/website run build
 
       - name: Build python sdist
         uses: PyO3/maturin-action@v1
@@ -552,7 +552,7 @@ jobs:
           bash <(curl -Ls https://coverage.codacy.com/get.sh) report --partial --project-token '${{ secrets.CODACY_PROJECT_TOKEN }}'
 
   finalize-coverage:
-    if: ${{ !cancelled() }}
+    if: ${{ (needs.test-python.result == 'success' || needs.test-python.result == 'failure') && (needs.test-node.result == 'success' || needs.test-node.result == 'failure') }}
     needs: [test-python, test-node]
 
     runs-on: ubuntu-slim
