@@ -296,11 +296,13 @@ jobs:
           name: npm-package
           path: packages/
 
+      - name: Install Pyodide
+        working-directory: crates/python
+        run: uv sync --frozen --only-group pyodide
+
       - name: Build Pyodide wheel
         working-directory: crates/python
-        run: |
-          uv sync --frozen --only-group pyodide
-          uv run --frozen --no-sync pyodide build
+        run: uv run --frozen --no-sync pyodide build
 
       - name: Upload Pyodide wheel
         uses: actions/upload-artifact@v7
@@ -326,7 +328,7 @@ jobs:
           path: packages/website/build/
           if-no-files-found: error
 
-  build-all:
+  merge:
     needs: [build, build-macos, build-windows, build-linux, build-website]
     runs-on: ubuntu-slim
 
@@ -375,7 +377,7 @@ jobs:
           if-no-files-found: error
 
   test-node:
-    needs: build-all
+    needs: merge
     strategy:
       fail-fast: false
       matrix:
@@ -433,7 +435,7 @@ jobs:
           bash <(curl -Ls https://coverage.codacy.com/get.sh) report --partial --project-token '${{ secrets.CODACY_PROJECT_TOKEN }}'
 
   test-python:
-    needs: build-all
+    needs: merge
     strategy:
       fail-fast: false
       matrix:

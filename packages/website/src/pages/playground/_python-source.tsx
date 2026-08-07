@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type JSX } from 'react';
-import type { CompiledArtifact } from '@site/src/components/Mira/runner';
+import type { Results } from '@site/src/components/Mira/runner';
 import type { PythonSourceRequest, PythonSourceResponse } from './_python-source-protocol';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import SourceViewer from './_source-viewer';
@@ -40,7 +40,7 @@ function getWorker(): Worker {
 }
 
 /** 使用 Pyodide 生成 artifact 对应的 Python 源代码。 */
-async function generatePythonSource(artifact: CompiledArtifact, assetsUrl: string): Promise<string> {
+async function generatePythonSource(artifact: Results, assetsUrl: string): Promise<string> {
     const id = ++requestId;
     const request: PythonSourceRequest = {
         id,
@@ -58,12 +58,12 @@ async function generatePythonSource(artifact: CompiledArtifact, assetsUrl: strin
 /** Python 源代码页签状态。 */
 type PythonState =
     | { status: 'idle'; artifact?: null }
-    | { status: 'loading'; artifact: CompiledArtifact }
-    | { status: 'ready'; artifact: CompiledArtifact; source: string }
-    | { status: 'error'; artifact: CompiledArtifact; message: string };
+    | { status: 'loading'; artifact: Results }
+    | { status: 'ready'; artifact: Results; source: string }
+    | { status: 'error'; artifact: Results; message: string };
 
 /** 显示 Python 源码 */
-export default function PythonSourceViewer({ artifact }: { artifact: CompiledArtifact | null }): JSX.Element {
+export default function PythonSourceViewer({ artifact }: { artifact: Results | null }): JSX.Element {
     const assetsUrl = useBaseUrl('/pyodide.g.assets/');
     const currentArtifact = useRef(artifact);
     useEffect(() => {

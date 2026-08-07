@@ -1,6 +1,6 @@
 import { useId, useState, type JSX } from 'react';
 import type { InputMode, VmAny } from '@mirascript/mirascript';
-import type { Result } from './runner';
+import type { Results as Results } from './runner';
 import { getMonacoContext, setMonacoContext } from './monaco-context';
 import { useMonaco } from './monaco';
 import Editor from './editor';
@@ -8,10 +8,10 @@ import styles from './index.module.css';
 import ResultItem from './result';
 
 /** 结果显示 */
-function Results({ results, outdated }: { results: Result[]; outdated: boolean }): JSX.Element {
+function Results({ results, outdated }: { results: Results; outdated: boolean }): JSX.Element {
     return (
         <pre className={`${styles['results']} ${outdated ? styles['results-outdated'] : ''}`}>
-            {results.map((item, index) => (
+            {results.items.map((item, index) => (
                 <ResultItem key={index} item={item} styles={styles} />
             ))}
         </pre>
@@ -35,7 +35,7 @@ export default function Mira({
     context?: Record<string, VmAny>;
 }): JSX.Element {
     const lineCount = value.split('\n').length;
-    const [results, setResults] = useState<Result[]>([]);
+    const [results, setResults] = useState<Results | null>(null);
     const [resultsOutdated, setResultsOutdated] = useState(true);
     const language = mode === 'Template' ? 'mirascript-template' : mode === 'Doc' ? 'mirascript-doc' : 'mirascript';
     const path = `markdown:///${useId()}/live-editor${title ? `?title=${encodeURIComponent(title)}` : ''}`;
@@ -84,7 +84,7 @@ export default function Mira({
             />
         </div>
     );
-    const hasResults = results.length > 0;
+    const hasResults = results && results.items.length > 0;
     return (
         <>
             <div className={`${styles['host']} ${hasResults ? styles['with-results'] : ''}`}>

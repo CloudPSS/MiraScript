@@ -52,9 +52,11 @@ export default {
     plugins: [
         () => ({
             name: 'url-loader',
-            configureWebpack(config) {
+            configureWebpack(config, isServer, utils) {
+                const bundler = utils.currentBundler.instance;
                 return {
                     module: {
+                        noParse: '@mirascript/napi',
                         rules: [
                             {
                                 test: /\.wasm$/,
@@ -62,7 +64,7 @@ export default {
                                 type: 'asset/resource',
                             },
                             {
-                                test: /\.node$/,
+                                test: /\.(node|whl)$/,
                                 type: 'asset/resource',
                             },
                             {
@@ -74,6 +76,11 @@ export default {
                     output: {
                         assetModuleFilename: 'assets/[hash][ext][query]',
                     },
+                    plugins: [
+                        new bundler.IgnorePlugin({
+                            resourceRegExp: /@mirascript\/napi/,
+                        }),
+                    ],
                 };
             },
         }),

@@ -1,14 +1,8 @@
 /// <reference lib="webworker" />
-import type { PyodideInterface } from 'pyodide';
+import type pyodide from 'pyodide';
 import type { PyProxy } from 'pyodide/ffi';
 import type { PythonSourceRequest, PythonSourceResponse } from './_python-source-protocol.js';
 import { devDependencies } from '../../../package.json';
-
-/** Pyodide 静态资源清单。 */
-type AssetsManifest = {
-    path: string;
-    wheels: string[];
-};
 
 /** Python 字典代理。 */
 type PythonNamespace = PyProxy & {
@@ -16,16 +10,15 @@ type PythonNamespace = PyProxy & {
     set(key: string, value: string): void;
 };
 
-/** 浏览器版 Pyodide loader。 */
-type PyodideLoader = {
-    /** 初始化 Pyodide。 */
-    loadPyodide(options: { indexURL: string }): Promise<PyodideInterface>;
-};
-
-let pyodidePromise: Promise<PyodideInterface> | undefined;
+let pyodidePromise: Promise<pyodide.PyodideInterface> | undefined;
 
 /** 加载 Pyodide */
-async function loadPyodide(): Promise<PyodideInterface> {
+async function loadPyodide(): Promise<pyodide.PyodideInterface> {
+    const wheels = Object.entries(await loadWheels()).map(([name, url]) => {
+        const path = `/home/pyodide/${name}`.replaceAll('./', '');
+        const data = fetch(url).then(async (res) => new Uint8Array(await res.arrayBuffer()));
+        return { name, path, data };
+    });
     const backup = globalThis.importScripts;
     globalThis.importScripts = () => {
         throw new Error('importScripts is disabled in this worker');
@@ -33,25 +26,37 @@ async function loadPyodide(): Promise<PyodideInterface> {
     try {
         const PYODIDE_CDN_URL = `https://fastly.jsdelivr.net/pyodide/v${devDependencies.pyodide}/full/`;
         const loaderUrl = new URL('pyodide.mjs', PYODIDE_CDN_URL).href;
-        const loader = (await import(/* webpackIgnore: true */ loaderUrl)) as PyodideLoader;
-        return loader.loadPyodide({ indexURL: PYODIDE_CDN_URL });
+        const loader = (await import(/* webpackIgnore: true */ loaderUrl)) as typeof pyodide;
+
+        const instance = await loader.loadPyodide({
+            indexURL: PYODIDE_CDN_URL,
+        });
+        await Promise.all(
+            wheels.map(async ({ path, data }) => {
+                await (instance.FS as typeof import('node:fs/promises')).writeFile(path, await data);
+            }),
+        );
+        await instance.loadPackage('micropip');
+        const micropip = instance.pyimport('micropip') as { install: (packages: string[]) => Promise<void> };
+        await micropip.install(wheels.map(({ path }) => `emfs:${path}`));
+        return instance;
     } finally {
         globalThis.importScripts = backup;
     }
 }
+/** 加载 Pyodide Wheels */
+async function loadWheels(): Promise<Record<string, string>> {
+    const files = import.meta.webpackContext('../../../pyodide.g.assets/', {
+        regExp: /\.(whl)$/,
+        mode: 'lazy',
+    });
+    const entries = await Promise.all(files.keys().map(async (k) => [k, (await files(k)) as string] as const));
+    return Object.fromEntries(entries);
+}
 
 /** 加载 Pyodide 与 MiraScript wheel。 */
-async function initialize(assetsUrl: string): Promise<PyodideInterface> {
-    pyodidePromise ??= (async () => {
-        const l = loadPyodide();
-        const baseUrl = new URL(assetsUrl, location.href);
-        const response = await fetch(new URL('manifest.json', baseUrl), { cache: 'no-cache' });
-        if (!response.ok) throw new Error(`Failed to load Pyodide manifest: ${response.status} ${response.statusText}`);
-        const manifest = (await response.json()) as AssetsManifest;
-        const pyodide = await l;
-        await pyodide.loadPackage(manifest.wheels.map((wheel) => [baseUrl, manifest.path, wheel].join('/')));
-        return pyodide;
-    })();
+async function initialize(assetsUrl: string): Promise<pyodide.PyodideInterface> {
+    pyodidePromise ??= loadPyodide();
     try {
         return await pyodidePromise;
     } catch (error) {

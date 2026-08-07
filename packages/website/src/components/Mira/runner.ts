@@ -15,19 +15,19 @@ function createFileName(mode: InputMode, fileBaseName = 'live-code'): string {
     return `${fileBaseName}.${ext}`;
 }
 
-/** 结果 */
+/** 结果条目 */
 export type Result = {
     type: 'result' | 'error' | 'log' | 'trace';
     timestamp: number;
     content: Array<string | { value: string; raw: unknown }>;
 };
-
-/** 最近一次成功编译的产物。 */
-export type CompiledArtifact = {
+/** 结果 */
+export type Results = {
+    fileName: string;
     source: string;
     mode: InputMode;
-    fileName: string;
-    javascript: string;
+    javascript: string | null;
+    items: Result[];
 };
 
 /** 打印输出 */
@@ -44,8 +44,7 @@ export async function runMiraScript(
     context?: VmContext,
     fileBaseName?: string,
     trace?: boolean,
-    onCompiled?: (artifact: CompiledArtifact) => void,
-): Promise<Result[]> {
+): Promise<Results> {
     const results: Result[] = [];
     const start = performance.now();
     const now = () => performance.now() - start;
@@ -87,9 +86,8 @@ export async function runMiraScript(
         }
     }
     if (!script) {
-        return results;
+        return { fileName, source, mode, javascript: null, items: results };
     }
-    onCompiled?.({ source, mode, fileName, javascript: script.toString() });
 
     // 运行
     try {
@@ -158,5 +156,5 @@ export async function runMiraScript(
             timestamp: now(),
         });
     }
-    return results;
+    return { fileName, source, mode, javascript: script.toString(), items: results };
 }

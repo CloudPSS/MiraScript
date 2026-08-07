@@ -1,14 +1,12 @@
 // @ts-check
- 
-import { createHash } from 'node:crypto';
-import { glob, readFile, rm, mkdir, cp, writeFile } from 'node:fs/promises';
+import { glob, rm, mkdir, cp } from 'node:fs/promises';
 import { basename, relative, resolve, posix, sep } from 'node:path';
 import { loadPyodide } from 'pyodide';
 
 const DEFAULT_WHEEL_DIR = resolve(import.meta.dirname, '../../../crates/python/dist');
 
 const websiteDir = resolve(import.meta.dirname, '..');
-const outputDir = resolve(websiteDir, 'static/pyodide.g.assets');
+const outputDir = resolve(websiteDir, 'pyodide.g.assets');
 const wheelDir = relative(process.cwd(), resolve(process.argv[2] || DEFAULT_WHEEL_DIR));
 
 const wheels = [];
@@ -45,21 +43,8 @@ if (typeof output !== 'string' || !output.includes('def script')) {
   throw new Error('Pyodide smoke test did not produce Python source.');
 }
 
-const wheelHasher = createHash('sha256');
-for (const wheel of wheels) {
-  wheelHasher.update(await readFile(wheel));
-}
-const wheelHash = wheelHasher.digest('hex').slice(0, 16);
-const wheelOutputDir = resolve(outputDir, `wheels-${wheelHash}`);
 await rm(outputDir, { recursive: true, force: true });
-await mkdir(wheelOutputDir, { recursive: true });
-await writeFile(
-  resolve(outputDir, 'manifest.json'),
-  JSON.stringify({
-    path: `wheels-${wheelHash}`,
-    wheels: wheels.map((w) => basename(w)),
-  }),
-);
+await mkdir(outputDir, { recursive: true });
 for (const wheel of wheels) {
-  await cp(wheel, resolve(wheelOutputDir, basename(wheel)));
+  await cp(wheel, resolve(outputDir, basename(wheel)));
 }

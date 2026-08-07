@@ -1,7 +1,7 @@
 import { useState, type JSX } from 'react';
 import ResultItem from '@site/src/components/Mira/result';
 import SourceViewer from './_source-viewer';
-import type { CompiledArtifact, Result } from '@site/src/components/Mira/runner';
+import type { Results } from '@site/src/components/Mira/runner';
 import PythonSourceViewer from './_python-source';
 import styles from './index.module.css';
 
@@ -15,16 +15,22 @@ const TABS: Record<OutputTab, string> = {
 
 /** 输出面板属性 */
 type ResultPanelProps = {
-    results: Result[];
-    compiledArtifact: CompiledArtifact | null;
+    results: Results | null;
 };
 
 /** 输出面板内容 */
-function ResultPanelContent({ results, compiledArtifact, tab }: ResultPanelProps & { tab: OutputTab }): JSX.Element {
-    if (!compiledArtifact) {
-        if (tab === 'output') {
-            return <div className={styles['compiled-placeholder']}>运行代码后将在这里显示输出结果。</div>;
-        }
+function ResultPanelContent({ results, tab }: ResultPanelProps & { tab: OutputTab }): JSX.Element {
+    if (tab === 'output') {
+        if (!results) return <div className={styles['compiled-placeholder']}>运行代码后将在这里显示输出结果。</div>;
+        return (
+            <>
+                {results.items.map((result, index) => (
+                    <ResultItem key={index} item={result} styles={styles} showTimestamp />
+                ))}
+            </>
+        );
+    }
+    if (!results) {
         const lang = (
             {
                 javascript: 'JavaScript',
@@ -33,24 +39,19 @@ function ResultPanelContent({ results, compiledArtifact, tab }: ResultPanelProps
         )[tab];
         return <div className={styles['compiled-placeholder']}>运行代码后将在这里显示编译生成的 {lang}。</div>;
     }
+    if (!results.javascript) {
+        return <div className={styles['compiled-placeholder']}>编译失败，请查看控制台输出。</div>;
+    }
     switch (tab) {
-        case 'output':
-            return (
-                <>
-                    {results.map((result, index) => (
-                        <ResultItem key={index} item={result} styles={styles} showTimestamp />
-                    ))}
-                </>
-            );
         case 'javascript':
-            return <SourceViewer language="javascript" source={compiledArtifact.javascript} path="file:///playground.js" />;
+            return <SourceViewer language="javascript" source={results.javascript} path="file:///playground.js" />;
         case 'python':
-            return <PythonSourceViewer artifact={compiledArtifact} />;
+            return <PythonSourceViewer artifact={results} />;
     }
 }
 
 /** 输出面板 */
-export default function ResultPanel({ results, compiledArtifact }: ResultPanelProps): JSX.Element {
+export default function ResultPanel({ results }: ResultPanelProps): JSX.Element {
     const [tab, setTab] = useState<OutputTab>('output');
     const tabs = Object.entries(TABS).map(([value, label]) => (
         <button
@@ -73,7 +74,7 @@ export default function ResultPanel({ results, compiledArtifact }: ResultPanelPr
                 </div>
             </div>
             <div className={styles['output-content']}>
-                <ResultPanelContent results={results} compiledArtifact={compiledArtifact} tab={tab} />
+                <ResultPanelContent results={results} tab={tab} />
             </div>
         </>
     );
