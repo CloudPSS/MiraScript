@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 import type { PyodideInterface } from 'pyodide';
 import type { PyProxy } from 'pyodide/ffi';
-import type { PythonSourceRequest, PythonSourceResponse } from './_python-source-protocol';
+import type { PythonSourceRequest, PythonSourceResponse } from './_python-source-protocol.js';
 import { devDependencies } from '../../../package.json';
 
 /** Pyodide 静态资源清单。 */
@@ -44,7 +44,7 @@ async function loadPyodide(): Promise<PyodideInterface> {
 async function initialize(assetsUrl: string): Promise<PyodideInterface> {
     pyodidePromise ??= (async () => {
         const l = loadPyodide();
-        const baseUrl = new URL(assetsUrl, globalThis.location.href);
+        const baseUrl = new URL(assetsUrl, location.href);
         const response = await fetch(new URL('manifest.json', baseUrl), { cache: 'no-cache' });
         if (!response.ok) throw new Error(`Failed to load Pyodide manifest: ${response.status} ${response.statusText}`);
         const manifest = (await response.json()) as AssetsManifest;
