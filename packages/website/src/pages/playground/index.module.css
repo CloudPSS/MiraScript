@@ -7,7 +7,7 @@
     'editor-header output-header'
     'editor-content output-content';
 
-  @media (max-width: 1000px) {
+  @media (width <= 996px) {
     & {
       grid-template-columns: 1fr;
       grid-template-rows: auto 1fr auto 1fr;
@@ -52,11 +52,13 @@
     margin: 0;
     margin-right: auto;
   }
+
   label {
     font-size: 12px;
     color: var(--ifm-font-color-secondary);
     margin-right: -8px;
   }
+
   select {
     background-color: var(--ifm-color-emphasis-100);
     color: var(--text-primary);
@@ -72,6 +74,7 @@
       border-color: var(--ifm-color-primary-dark);
     }
   }
+
   button {
     background-color: var(--ifm-color-primary);
     color: var(--ifm-button-color);

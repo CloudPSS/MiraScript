@@ -13,8 +13,8 @@
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse at 20% 50%, rgba(99, 179, 237, 0.08) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 20%, rgba(159, 122, 234, 0.06) 0%, transparent 50%);
+    radial-gradient(ellipse at 20% 50%, rgba(99 179 237 / 8%) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(159 122 234 / 6%) 0%, transparent 50%);
   pointer-events: none;
 }
 
@@ -57,7 +57,7 @@
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(66, 153, 225, 35%);
+  box-shadow: 0 8px 25px rgba(66 153 225 / 35%);
   color: #fff;
   text-decoration: none;
 }
@@ -72,14 +72,14 @@
   font-weight: 600;
   text-decoration: none;
   transition: all 0.2s ease;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255 255 255 / 8%);
   color: #e2e8f0;
-  border: 1px solid rgba(255, 255, 255, 15%);
+  border: 1px solid rgba(255 255 255 / 15%);
   cursor: pointer;
 }
 
 .btn-secondary:hover {
-  background: rgba(255, 255, 255, 15%);
+  background: rgba(255 255 255 / 15%);
   transform: translateY(-2px);
   color: #fff;
   text-decoration: none;
@@ -117,13 +117,13 @@
   gap: 1.5rem;
 }
 
-@media (max-width: 996px) {
+@media (width <= 996px) {
   .feature-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
-@media (max-width: 600px) {
+@media (width <= 600px) {
   .feature-grid {
     grid-template-columns: 1fr;
   }
@@ -144,7 +144,7 @@
 
   &:hover {
     border-color: var(--ifm-color-primary);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 8%);
+    box-shadow: 0 4px 20px rgba(0 0 0 / 8%);
     transform: translateY(-2px);
   }
 }
@@ -193,7 +193,7 @@
   gap: 1.5rem;
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .code-examples {
     grid-template-columns: 1fr;
   }
