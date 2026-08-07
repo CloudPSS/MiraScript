@@ -84,7 +84,7 @@ type CallReturn<T extends VmValue> =
               : VmValue
           : VmValue;
 /** 调用函数 */
-function $Call<T extends VmValue, A extends readonly VmValue[]>(func: T, args: A): CallReturn<T>;
+function $Call<T extends VmValue, const A extends readonly VmValue[]>(func: T, args: A): CallReturn<T>;
 /** 过滤剩余参数数组 */
 function $VArgs(varags: VmAny[]): VmArray;
 /** 断言值已初始化 */

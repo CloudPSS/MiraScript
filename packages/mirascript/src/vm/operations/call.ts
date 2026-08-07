@@ -27,7 +27,7 @@ type CallReturn<T extends VmValue> =
           : VmValue;
 
 /** 调用函数 */
-export function $Call<T extends VmValue, A extends readonly VmValue[]>(func: T, args: A): CallReturn<T> {
+export function $Call<T extends VmValue, const A extends readonly VmValue[]>(func: T, args: A): CallReturn<T> {
     const argsLen = args.length;
     for (let i = 0; i < argsLen; i++) {
         $AssertInit(args[i]);
