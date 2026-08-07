@@ -1,75 +1,65 @@
-/* eslint-disable no-console */
+// @ts-check
+ 
 import { createHash } from 'node:crypto';
-import { cpSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
-import { basename, dirname, relative, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { glob, readFile, rm, mkdir, cp, writeFile } from 'node:fs/promises';
+import { basename, relative, resolve, posix, sep } from 'node:path';
+import { loadPyodide } from 'pyodide';
+
+const DEFAULT_WHEEL_DIR = resolve(import.meta.dirname, '../../../crates/python/dist');
 
 const websiteDir = resolve(import.meta.dirname, '..');
-const repositoryDir = resolve(websiteDir, '../..');
 const outputDir = resolve(websiteDir, 'static/pyodide.g.assets');
-const wheelDir = resolve(process.env.MIRASCRIPT_PYODIDE_WHEELS || resolve(repositoryDir, 'crates/python/dist'));
-const pyodideDir = dirname(fileURLToPath(import.meta.resolve('pyodide/package.json')));
+const wheelDir = relative(process.cwd(), resolve(process.argv[2] || DEFAULT_WHEEL_DIR));
 
-const runtimeFiles = ['pyodide.mjs', 'pyodide.asm.mjs', 'pyodide.asm.wasm', 'pyodide-lock.json', 'python_stdlib.zip'];
-
-/**
- * 递归查找 wheel。
- * @param {RegExp} pattern 文件名规则
- * @returns {string | undefined} wheel 路径
- */
-function findWheel(pattern) {
-  const pending = [wheelDir];
-  while (pending.length > 0) {
-    const directory = pending.pop();
-    for (const entry of readdirSync(directory, { withFileTypes: true })) {
-      const path = resolve(directory, entry.name);
-      if (entry.isDirectory()) {
-        pending.push(path);
-      } else if (pattern.test(entry.name)) {
-        return path;
-      }
-    }
+const wheels = [];
+for await (const wheel of glob('*.whl', { cwd: wheelDir })) {
+  if (!wheel.endsWith('-any.whl') && !wheel.endsWith('-pyemscripten_2026_0_wasm32.whl')) {
+    continue;
   }
-  return undefined;
+  const url = resolve(wheelDir, wheel);
+  wheels.push(url);
 }
 
-let mirascriptWheel;
-let typingExtensionsWheel;
-try {
-  mirascriptWheel = findWheel(/^mirascript-.*-(?:pyemscripten|pyodide)_.*_wasm32\.whl$/u);
-  typingExtensionsWheel = findWheel(/^typing_extensions-.*-py3-none-any\.whl$/u);
-} catch (error) {
-  if (!(error instanceof Error) || !('code' in error) || error.code !== 'ENOENT') throw error;
+const pyodide = await loadPyodide();
+await pyodide.loadPackage(
+  wheels.map((w) => {
+    const f = relative(process.cwd(), w);
+    return posix.resolve(f.replaceAll(sep, posix.sep));
+  }),
+);
+
+const output = pyodide.runPython(String.raw /* python */ `
+import ast
+from mirascript import compile
+
+outputs = []
+for source, mode in [('return 1 + 2;', 'script'), ('Hello ${1 + 2}', 'template')]:
+    script, diagnostics = compile(source, input_mode=mode, filename=f'smoke.{mode}')
+    if script is None:
+        raise RuntimeError(f'Compilation failed: {diagnostics}')
+    outputs.append(ast.unparse(script.ast))
+'\n'.join(outputs)
+`);
+
+if (typeof output !== 'string' || !output.includes('def script')) {
+  throw new Error('Pyodide smoke test did not produce Python source.');
 }
 
-if (!mirascriptWheel || !typingExtensionsWheel) {
-  throw new Error(
-    `Missing Pyodide wheels under ${wheelDir}. Run \`pyodide build\` in crates/python and download a ` +
-      '`typing_extensions` wheel there, or set MIRASCRIPT_PYODIDE_WHEELS.',
-  );
+const wheelHasher = createHash('sha256');
+for (const wheel of wheels) {
+  wheelHasher.update(await readFile(wheel));
 }
-
-rmSync(outputDir, { recursive: true, force: true });
-mkdirSync(outputDir, { recursive: true });
-for (const file of runtimeFiles) {
-  cpSync(resolve(pyodideDir, file), resolve(outputDir, file));
+const wheelHash = wheelHasher.digest('hex').slice(0, 16);
+const wheelOutputDir = resolve(outputDir, `wheels-${wheelHash}`);
+await rm(outputDir, { recursive: true, force: true });
+await mkdir(wheelOutputDir, { recursive: true });
+await writeFile(
+  resolve(outputDir, 'manifest.json'),
+  JSON.stringify({
+    path: `wheels-${wheelHash}`,
+    wheels: wheels.map((w) => basename(w)),
+  }),
+);
+for (const wheel of wheels) {
+  await cp(wheel, resolve(wheelOutputDir, basename(wheel)));
 }
-
-const mirascriptWheelName = basename(mirascriptWheel);
-const typingExtensionsWheelName = basename(typingExtensionsWheel);
-const wheelHash = createHash('sha256')
-  .update(readFileSync(mirascriptWheel))
-  .update(readFileSync(typingExtensionsWheel))
-  .digest('hex')
-  .slice(0, 16);
-const wheelOutputDir = resolve(outputDir, 'wheels', wheelHash);
-mkdirSync(wheelOutputDir, { recursive: true });
-cpSync(mirascriptWheel, resolve(wheelOutputDir, mirascriptWheelName));
-cpSync(typingExtensionsWheel, resolve(wheelOutputDir, typingExtensionsWheelName));
-const wheels = {
-  mirascript: `wheels/${wheelHash}/${mirascriptWheelName}`,
-  typingExtensions: `wheels/${wheelHash}/${typingExtensionsWheelName}`,
-};
-writeFileSync(resolve(outputDir, 'manifest.json'), `${JSON.stringify({ wheels }, undefined, 2)}\n`);
-
-console.log(`Prepared Pyodide runtime and wheels in ${relative(repositoryDir, outputDir)}`);

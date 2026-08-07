@@ -5,60 +5,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-pyodide:
-    runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Install
-        uses: ./.github/actions/install
-        with:
-          ALIYUN_NPM_TOKEN: ${{ secrets.ALIYUN_NPM_TOKEN }}
-          rust-targets: wasm32-unknown-emscripten
-
-      - name: Setup uv
-        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9
-        with:
-          python-version: '3.14'
-          working-directory: crates/python
-
-      - name: Build Pyodide wheel
-        working-directory: crates/python
-        run: |
-          uv sync --frozen --only-group pyodide
-          uv run --frozen --no-sync pyodide build
-
-      - name: Download website Python dependencies
-        run: |
-          mkdir -p packages/website/pyodide-wheels.g.assets
-          cp crates/python/dist/*pyemscripten*_wasm32.whl packages/website/pyodide-wheels.g.assets/
-          uv export --project crates/python --frozen --no-dev --no-emit-project --format requirements.txt --output-file pyodide-requirements.txt
-          python -m pip download --only-binary=:all: --no-deps --requirement pyodide-requirements.txt --dest packages/website/pyodide-wheels.g.assets
-
-      - name: Upload Pyodide wheel
-        uses: actions/upload-artifact@v7
-        with:
-          name: python-wheel-pyodide
-          path: crates/python/dist/*.whl
-          if-no-files-found: error
-
-      - name: Upload website Python wheels
-        uses: actions/upload-artifact@v7
-        with:
-          name: website-python-wheels
-          path: packages/website/pyodide-wheels.g.assets/*.whl
-          if-no-files-found: error
-
-      - name: Smoke test Pyodide wheel
-        run: node packages/website/scripts/smoke-pyodide.mjs packages/website/pyodide-wheels.g.assets
-
   build:
-    needs: build-pyodide
     runs-on: ubuntu-latest
 
     permissions:
@@ -78,16 +25,8 @@ jobs:
           tools: wasm-bindgen wasm-pack
           check-lockfile: true # Check once at here, and trust the lockfile for the rest of the workflow
 
-      - name: Download website Python wheels
-        uses: actions/download-artifact@v8
-        with:
-          name: website-python-wheels
-          path: packages/website/pyodide-wheels.g.assets/
-
       - name: Build
-        env:
-          MIRASCRIPT_PYODIDE_WHEELS: ${{ github.workspace }}/packages/website/pyodide-wheels.g.assets
-        run: pnpm -r run build
+        run: pnpm -r --filter=!packages/website run build
 
       - name: Build python sdist
         uses: PyO3/maturin-action@v1
@@ -333,8 +272,98 @@ jobs:
           path: crates/python/dist/*.whl
           if-no-files-found: error
 
+  build-pyodide:
+    needs: build
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install
+        uses: ./.github/actions/install
+        with:
+          ALIYUN_NPM_TOKEN: ${{ secrets.ALIYUN_NPM_TOKEN }}
+          rust-targets: wasm32-unknown-emscripten
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: 3.14
+
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9
+        with:
+          working-directory: crates/python
+
+      - name: Build Pyodide wheel
+        working-directory: crates/python
+        run: |
+          uv sync --frozen --only-group pyodide
+          uv run --frozen --no-sync pyodide build
+
+      - name: Download website Python dependencies
+        run: |
+          mkdir -p pyodide-wheels/
+          cp crates/python/dist/*.whl pyodide-wheels/
+          uv export --project crates/python --frozen --no-dev --no-emit-project --format requirements.txt --output-file pyodide-requirements.txt
+          python -m pip download --only-binary=:all: --no-deps --requirement pyodide-requirements.txt --dest pyodide-wheels/
+
+      - name: Smoke test Pyodide wheel
+        working-directory: packages/website
+        run: pnpm prepare-pyodide ../../pyodide-wheels/
+
+      - name: Upload Pyodide wheel
+        uses: actions/upload-artifact@v7
+        with:
+          name: python-wheel-pyodide
+          path: crates/python/dist/*.whl
+          if-no-files-found: error
+
+      - name: Upload website Python wheels
+        uses: actions/upload-artifact@v7
+        with:
+          name: website-python-wheels
+          path: pyodide-wheels/*.whl
+          if-no-files-found: error
+
+  build-website:
+    needs: build-pyodide
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install
+        uses: ./.github/actions/install
+        with:
+          ALIYUN_NPM_TOKEN: ${{ secrets.ALIYUN_NPM_TOKEN }}
+
+      - name: Download website Python wheels
+        uses: actions/download-artifact@v8
+        with:
+          name: website-python-wheels
+          path: pyodide-wheels/
+
+      - name: Build
+        working-directory: packages/website
+        env:
+          MIRASCRIPT_PYODIDE_WHEELS: ${{ github.workspace }}/pyodide-wheels/
+        run: pnpm run build
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: website
+          path: packages/website/build/
+          if-no-files-found: error
+
   build-all:
-    needs: [build, build-macos, build-windows, build-linux]
+    needs: [build, build-macos, build-windows, build-linux, build-pyodide]
     runs-on: ubuntu-slim
 
     permissions:

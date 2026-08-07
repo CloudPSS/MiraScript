@@ -1,13 +1,13 @@
+/// <reference lib="webworker" />
 import type { PyodideInterface } from 'pyodide';
 import type { PyProxy } from 'pyodide/ffi';
 import type { PythonSourceRequest, PythonSourceResponse } from './_python-source-protocol';
+import { devDependencies } from '../../../package.json';
 
 /** Pyodide 静态资源清单。 */
 type AssetsManifest = {
-    wheels: {
-        mirascript: string;
-        typingExtensions: string;
-    };
+    path: string;
+    wheels: string[];
 };
 
 /** Python 字典代理。 */
@@ -24,18 +24,32 @@ type PyodideLoader = {
 
 let pyodidePromise: Promise<PyodideInterface> | undefined;
 
+/** 加载 Pyodide */
+async function loadPyodide(): Promise<PyodideInterface> {
+    const backup = globalThis.importScripts;
+    globalThis.importScripts = () => {
+        throw new Error('importScripts is disabled in this worker');
+    };
+    try {
+        const PYODIDE_CDN_URL = `https://fastly.jsdelivr.net/pyodide/v${devDependencies.pyodide}/full/`;
+        const loaderUrl = new URL('pyodide.mjs', PYODIDE_CDN_URL).href;
+        const loader = (await import(/* webpackIgnore: true */ loaderUrl)) as PyodideLoader;
+        return loader.loadPyodide({ indexURL: PYODIDE_CDN_URL });
+    } finally {
+        globalThis.importScripts = backup;
+    }
+}
+
 /** 加载 Pyodide 与 MiraScript wheel。 */
 async function initialize(assetsUrl: string): Promise<PyodideInterface> {
     pyodidePromise ??= (async () => {
+        const l = loadPyodide();
         const baseUrl = new URL(assetsUrl, globalThis.location.href);
         const response = await fetch(new URL('manifest.json', baseUrl), { cache: 'no-cache' });
         if (!response.ok) throw new Error(`Failed to load Pyodide manifest: ${response.status} ${response.statusText}`);
         const manifest = (await response.json()) as AssetsManifest;
-        const loaderUrl = new URL('pyodide.mjs', baseUrl).href;
-        const loader = (await import(/* webpackIgnore: true */ loaderUrl)) as PyodideLoader;
-        const pyodide = await loader.loadPyodide({ indexURL: baseUrl.href });
-        await pyodide.loadPackage(new URL(manifest.wheels.typingExtensions, baseUrl).href);
-        await pyodide.loadPackage(new URL(manifest.wheels.mirascript, baseUrl).href);
+        const pyodide = await l;
+        await pyodide.loadPackage(manifest.wheels.map((wheel) => [baseUrl, manifest.path, wheel].join('/')));
         return pyodide;
     })();
     try {
