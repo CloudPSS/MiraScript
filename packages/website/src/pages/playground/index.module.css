@@ -99,6 +99,38 @@
   grid-area: output-header;
 }
 
+.output-tabs {
+  display: flex;
+  gap: 4px;
+
+  .output-tab {
+    background: transparent;
+    color: var(--ifm-font-color-secondary);
+    padding: 6px 10px;
+
+    &:hover,
+    &:focus {
+      background-color: var(--ifm-color-emphasis-200);
+    }
+  }
+}
+
+.output-tab-active {
+  background-color: var(--ifm-color-primary) !important;
+  color: var(--ifm-button-color) !important;
+}
+
+.compiled-editor {
+  height: 100%;
+  contain: size;
+}
+
+.compiled-placeholder {
+  padding: 16px;
+  color: var(--ifm-font-color-secondary);
+  font-size: 0.8rem;
+}
+
 .result-item {
   --result-timestamp-width: 6em;
   --result-border-color: var(--ifm-color-emphasis-200);

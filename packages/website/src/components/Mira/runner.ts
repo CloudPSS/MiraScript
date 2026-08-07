@@ -36,6 +36,7 @@ export async function runMiraScript(
     context?: VmContext,
     fileBaseName?: string,
     trace?: boolean,
+    onCompiled?: (source: string | null) => void,
 ): Promise<Result[]> {
     const results: Result[] = [];
     const start = performance.now();
@@ -77,6 +78,7 @@ export async function runMiraScript(
             cache = { fileName, mode, source: source, script: null };
         }
     }
+    onCompiled?.(script?.toString() ?? null);
     if (!script) {
         return results;
     }

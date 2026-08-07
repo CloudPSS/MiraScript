@@ -202,43 +202,6 @@ importers:
         specifier: ^3.1.14
         version: 3.1.14
 
-  packages/playground:
-    dependencies:
-      '@mirascript/bindings':
-        specifier: workspace:~
-        version: link:../bindings
-      '@mirascript/mirascript':
-        specifier: workspace:~
-        version: link:../mirascript
-      '@mirascript/monaco':
-        specifier: workspace:~
-        version: link:../monaco
-      '@private/monaco-editor':
-        specifier: ^0.0.71
-        version: 0.0.71
-    devDependencies:
-      fflate:
-        specifier: ^0.8.3
-        version: 0.8.3
-      js-base64:
-        specifier: ^3.9.2
-        version: 3.9.2
-      lightningcss:
-        specifier: ^1.33.0
-        version: 1.33.0
-      rollup-plugin-sourcemaps2:
-        specifier: ^0.5.8
-        version: 0.5.8(@types/node@26.1.2)(rollup@4.60.1)
-      type-fest:
-        specifier: ^5.8.0
-        version: 5.8.0
-      vite:
-        specifier: ^8.2.0
-        version: 8.2.0(@types/node@26.1.2)(esbuild@0.28.1)(jiti@2.6.1)(terser@5.49.2)(yaml@2.9.0)
-      vite-plugin-checker:
-        specifier: ^0.14.5
-        version: 0.14.5(eslint@10.8.0)(meow@14.1.0)(optionator@0.9.4)(typescript@6.0.3)(vite@8.2.0)
-
   packages/typed:
     dependencies:
       '@mirascript/constants':

@@ -1,11 +1,11 @@
-/** MiraScript 执行上下文 */
+const DTS = /* ts */ `/** MiraScript 执行上下文 */
 type VmContext = {
     /**
-     * 获取指定 key 的值 `global[key]`
+     * 获取指定 key 的值 \`global[key]\`
      * @throws {VmError} 如果值不存在则抛出异常
      */
     get(key: string): VmValue;
-    /** 查找指定 key 是否存在 `key in global` */
+    /** 查找指定 key 是否存在 \`key in global\` */
     has(key: string): boolean;
 };
 /** Mirascript 虚拟机内的未初始化变量 */
@@ -14,13 +14,13 @@ type VmUninitialized = undefined;
 type VmPrimitive = null | number | string | boolean;
 /**
  * Mirascript 数组
- * 数组中的 `undefined`、`null` 及 <empty slot> 均视作 `nil`
+ * 数组中的 \`undefined\`、\`null\` 及 <empty slot> 均视作 \`nil\`
  */
 type VmArray = ReadonlyArray<VmConst | undefined>;
 /**
  * Mirascript 记录
  * 仅拥有且可枚举的字符串键视作存在
- * 字段值 `undefined` 和 `null` 均视作 `nil`
+ * 字段值 \`undefined\` 和 \`null\` 均视作 \`nil\`
  */
 type VmRecord = {
     readonly [key: string]: VmConst | undefined;
@@ -40,7 +40,7 @@ class VmModule<const T extends Record<string, VmImmutable> = Record<string, VmIm
     /** 模块导出 */
     readonly value: T;
 }
-/** 包装 Mirascript `extern` 类型的对象 */
+/** 包装 Mirascript \`extern\` 类型的对象 */
 class VmExtern<const T extends object = object> {
     /** 包装值 */
     readonly value: T;
@@ -50,7 +50,7 @@ class VmExtern<const T extends object = object> {
 /**
  * Mirascript 函数签名
  *
- * 虽然所有输入参数的类型均为 {@linkcode VmValue}，但当参数不足时，对应的参数会被填充为 `undefined`。
+ * 虽然所有输入参数的类型均为 {@linkcode VmValue}，但当参数不足时，对应的参数会被填充为 \`undefined\`。
  */
 type VmFunctionLike = (...args: ReadonlyArray<VmValue | undefined>) => VmAny;
 /** Mirascript 函数 */
@@ -198,3 +198,9 @@ function $IsRecord(value: VmAny): value is VmRecord;
 function $IsArray(value: VmAny): value is VmArray;
 /** 断言值非 nil */
 function $AssertNonNil<T extends VmValue>(value: T | undefined): asserts value is NonNullable<T>;
+`;
+
+/** 注册 MiraScript 的 TS 定义 */
+export function registerTypeScript(monaco: typeof import('@private/monaco-editor')): void {
+    monaco.typescript.javascriptDefaults.addExtraLib(DTS, 'file:///mirascript.d.ts');
+}

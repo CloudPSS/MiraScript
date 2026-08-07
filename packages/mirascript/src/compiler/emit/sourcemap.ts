@@ -20,7 +20,7 @@ const { SOURCE_URL, SOURCE_MAPPING_URL } = ((source, mapping, url) => {
 const SOURCE_OFFSET = 4;
 
 /**
- * Node.js Buffer 类型的简易声明，@mirascript/playground 调试环境下会直接加载此文件
+ * Node.js Buffer 类型的简易声明，浏览器调试环境下会直接加载此文件
  */
 declare class Buffer {
     /** @inheritdoc */

@@ -10,8 +10,14 @@ import { globals } from './_globals';
 import { configCheckpoint } from '@mirascript/mirascript';
 import styles from './index.module.css';
 
+/** 编辑面板属性 */
+type EditorPanelProps = {
+    setResults: React.Dispatch<React.SetStateAction<Result[]>>;
+    setCompiledSource: React.Dispatch<React.SetStateAction<string | null>>;
+};
+
 /** 编辑面板 */
-function EditorPanel({ setResults }: { setResults: React.Dispatch<React.SetStateAction<Result[]>> }): JSX.Element {
+function EditorPanel({ setResults, setCompiledSource }: EditorPanelProps): JSX.Element {
     const [state, setState] = usePlaygroundState();
     const lang = state.mode === 'Script' ? 'mirascript' : 'mirascript-template';
     const run = useRef<(source: string) => Promise<void>>(async () => {
@@ -21,7 +27,7 @@ function EditorPanel({ setResults }: { setResults: React.Dispatch<React.SetState
         run.current = async (source: string) => {
             try {
                 configCheckpoint(800);
-                const results = await runMiraScript(source, state.mode, globals(), 'playground', true);
+                const results = await runMiraScript(source, state.mode, globals(), 'playground', true, setCompiledSource);
                 setResults(results);
             } finally {
                 configCheckpoint();
@@ -99,17 +105,54 @@ function EditorPanel({ setResults }: { setResults: React.Dispatch<React.SetState
     );
 }
 
+/** 输出面板页签 */
+type OutputTab = 'output' | 'source';
+
 /** 输出面板 */
-function OutputPanel({ results }: { results: Result[] }): JSX.Element {
+function OutputPanel({ results, compiledSource }: { results: Result[]; compiledSource: string | null }): JSX.Element {
+    const [tab, setTab] = useState<OutputTab>('output');
     return (
         <>
             <div className={styles['output-header']}>
                 <h3>输出</h3>
+                <div className={styles['output-tabs']} role="tablist" aria-label="输出内容">
+                    <button
+                        className={`${styles['output-tab']} ${tab === 'output' ? styles['output-tab-active'] : ''}`}
+                        role="tab"
+                        aria-selected={tab === 'output'}
+                        onClick={() => setTab('output')}
+                    >
+                        输出
+                    </button>
+                    <button
+                        className={`${styles['output-tab']} ${tab === 'source' ? styles['output-tab-active'] : ''}`}
+                        role="tab"
+                        aria-selected={tab === 'source'}
+                        onClick={() => setTab('source')}
+                    >
+                        JS 源代码
+                    </button>
+                </div>
             </div>
             <div className={styles['output-content']}>
-                {results.map((result, index) => (
-                    <ResultItem key={index} item={result} styles={styles} showTimestamp />
-                ))}
+                {tab === 'output' ? (
+                    results.map((result, index) => <ResultItem key={index} item={result} styles={styles} showTimestamp />)
+                ) : compiledSource == null ? (
+                    <div className={styles['compiled-placeholder']}>运行代码后将在这里显示编译生成的 JavaScript。</div>
+                ) : (
+                    <Editor
+                        wrapperProps={{ className: styles['compiled-editor'] }}
+                        language="javascript"
+                        value={compiledSource}
+                        path="file:///playground.js"
+                        options={{
+                            readOnly: true,
+                            minimap: { enabled: false },
+                            wordWrap: 'on',
+                            wrappingIndent: 'deepIndent',
+                        }}
+                    />
+                )}
             </div>
         </>
     );
@@ -120,10 +163,11 @@ function OutputPanel({ results }: { results: Result[] }): JSX.Element {
  */
 export default function Playground(): JSX.Element {
     const [results, setResults] = useState<Result[]>([]);
+    const [compiledSource, setCompiledSource] = useState<string | null>(null);
     return (
         <Layout wrapperClassName={styles['root']} title="在线编辑器" description="通过浏览器在线编写并运行 MiraScript 代码">
-            <EditorPanel setResults={setResults} />
-            <OutputPanel results={results} />
+            <EditorPanel setResults={setResults} setCompiledSource={setCompiledSource} />
+            <OutputPanel results={results} compiledSource={compiledSource} />
         </Layout>
     );
 }

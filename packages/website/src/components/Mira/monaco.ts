@@ -2,19 +2,16 @@ import ExecutionEnvironment from '@docusaurus/ExecutionEnvironment';
 import type { languages, Uri } from '@private/monaco-editor';
 import { useEffect, useState } from 'react';
 import { loader } from '@monaco-editor/react';
-import { getMonacoContext } from './monaco-context';
+import { registerTypeScript } from './monaco-typescript';
+import { registerMiraScript } from './monaco-mirascript';
 
 /** 加载 monaco */
 async function loadMonaco(): Promise<typeof import('@private/monaco-editor')> {
     const monaco = await import('@private/monaco-editor');
     monaco.editor.setTheme('vs-dark');
 
-    const { registerMiraScript } = await import('@mirascript/monaco');
-    const loader = registerMiraScript(monaco, getMonacoContext);
-    loader.features.codeLens = false;
-    await loader.loadBasicFeatures();
-    monaco.editor.createModel('', 'mirascript').dispose();
-    monaco.editor.createModel('', 'mirascript-template').dispose();
+    await registerMiraScript(monaco);
+    registerTypeScript(monaco);
 
     monaco.editor.registerCommand('run-mirascript', (_, uri: Uri) => {
         const model = monaco.editor.getModel(uri);

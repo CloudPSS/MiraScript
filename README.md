@@ -53,7 +53,6 @@ MiraScript 是 CloudPSS 维护的表达式优先脚本语言项目。当前仓�
 | `@mirascript/mirascript` | `packages/mirascript` | 语言核心 TypeScript API                     |
 | `@mirascript/monaco`     | `packages/monaco`     | Monaco Editor 集成                          |
 | `@mirascript/napi`       | `packages/napi`       | Node.js 原生编译器包                        |
-| `@mirascript/playground` | `packages/playground` | 在线 Playground 前端                        |
 | `@mirascript/typed`      | `packages/typed`      | 类型定义解析与 JSON Schema 生成             |
 | `@mirascript/vscode`     | `packages/vscode`     | Visual Studio Code 扩展                     |
 | `@mirascript/wasm`       | `packages/wasm`       | WebAssembly 编译器包                        |
@@ -88,8 +87,7 @@ pnpm run format
 
 - 构建 CLI：`pnpm --filter @mirascript/cli build`
 - 构建语言核心：`pnpm --filter @mirascript/mirascript build`
-- 启动 Playground：`pnpm --filter @mirascript/playground start`
-- 启动文档站点：`pnpm --filter @mirascript/website start`
+- 启动 Playground 与文档站点：`pnpm --filter @mirascript/website start`
 
 ## 文档与示例
 

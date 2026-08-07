@@ -35,16 +35,11 @@ jobs:
           args: --out dist
           working-directory: crates/python
 
-      - name: Pack website artifact
-        run: |
-          mv -f packages/website/build/ website-build/
-          mv -f packages/playground/dist/ website-build/debug/
-
       - name: Upload Pages artifact
         uses: actions/upload-artifact@v7
         with:
           name: website
-          path: website-build/
+          path: packages/website/build/
           if-no-files-found: error
 
       - name: Upload npm package artifact
