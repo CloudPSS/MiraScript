@@ -18,7 +18,7 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: wasm32-unknown-unknown
+          targets: wasm32-unknown-emscripten
       - uses: actions/setup-python@v7
         with:
           python-version: '3.14'
