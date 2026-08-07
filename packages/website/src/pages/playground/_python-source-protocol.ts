@@ -3,7 +3,6 @@ import type { InputMode } from '@mirascript/mirascript';
 /** Python 源代码生成请求。 */
 export type PythonSourceRequest = {
     id: number;
-    assetsUrl: string;
     source: string;
     mode: InputMode;
     fileName: string;

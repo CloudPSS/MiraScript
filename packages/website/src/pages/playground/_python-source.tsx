@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, type JSX } from 'react';
 import type { Results } from '@site/src/components/Mira/runner';
 import type { PythonSourceRequest, PythonSourceResponse } from './_python-source-protocol';
-import useBaseUrl from '@docusaurus/useBaseUrl';
 import SourceViewer from './_source-viewer';
 import styles from './index.module.css';
 
@@ -20,7 +19,7 @@ const pending = new Map<
 /** 获取 Python 代码生成 worker。 */
 function getWorker(): Worker {
     if (worker) return worker;
-    worker = new Worker(new URL('./_python-source-worker.ts', import.meta.url), { type: 'module' });
+    worker = new Worker(new URL('./_python-source-worker.ts', import.meta.url), { type: 'module', name: 'pyodide' });
     worker.addEventListener('message', (event: MessageEvent<PythonSourceResponse>) => {
         const response = event.data;
         const request = pending.get(response.id);
@@ -40,11 +39,10 @@ function getWorker(): Worker {
 }
 
 /** 使用 Pyodide 生成 artifact 对应的 Python 源代码。 */
-async function generatePythonSource(artifact: Results, assetsUrl: string): Promise<string> {
+async function generatePythonSource(artifact: Results): Promise<string> {
     const id = ++requestId;
     const request: PythonSourceRequest = {
         id,
-        assetsUrl,
         source: artifact.source,
         mode: artifact.mode,
         fileName: artifact.fileName,
@@ -57,14 +55,13 @@ async function generatePythonSource(artifact: Results, assetsUrl: string): Promi
 
 /** Python 源代码页签状态。 */
 type PythonState =
-    | { status: 'idle'; artifact?: null }
+    | { status: 'idle'; artifact?: never }
     | { status: 'loading'; artifact: Results }
     | { status: 'ready'; artifact: Results; source: string }
     | { status: 'error'; artifact: Results; message: string };
 
 /** 显示 Python 源码 */
 export default function PythonSourceViewer({ artifact }: { artifact: Results | null }): JSX.Element {
-    const assetsUrl = useBaseUrl('/pyodide.g.assets/');
     const currentArtifact = useRef(artifact);
     useEffect(() => {
         currentArtifact.current = artifact;
@@ -73,7 +70,7 @@ export default function PythonSourceViewer({ artifact }: { artifact: Results | n
     useEffect(() => {
         if (!artifact || pythonState.artifact === artifact) return;
         setPythonState({ status: 'loading', artifact: artifact });
-        void generatePythonSource(artifact, assetsUrl).then(
+        void generatePythonSource(artifact).then(
             (source) => {
                 if (currentArtifact.current === artifact) {
                     setPythonState({ status: 'ready', artifact: artifact, source });
@@ -89,7 +86,7 @@ export default function PythonSourceViewer({ artifact }: { artifact: Results | n
                 }
             },
         );
-    }, [assetsUrl, artifact, pythonState.status]);
+    }, [artifact, pythonState.status]);
     if (pythonState.status === 'ready' && pythonState.artifact === artifact) {
         return <SourceViewer language="python" source={pythonState.source} path="file:///playground.py" />;
     } else if (pythonState.status === 'error' && pythonState.artifact === artifact) {

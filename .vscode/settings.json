@@ -44,7 +44,7 @@
   },
   "coverage-gutters.coverageBaseDir": "**/coverage",
   "coverage-gutters.coverageFileNames": ["lcov.info"],
-  "cSpell.words": ["cloudpss", "mirascript", "napi"],
+  "cSpell.words": ["cloudpss", "mirascript", "napi", "pyodide"],
   "editor.tabSize": 2,
   "files.eol": "\n",
   "js/ts.tsdk.path": "./node_modules/typescript/lib",

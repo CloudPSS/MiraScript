@@ -10,11 +10,11 @@ type PythonNamespace = PyProxy & {
     set(key: string, value: string): void;
 };
 
-const PYODIDE_CDN_URL = `https://fastly.jsdelivr.net/pyodide/v${devDependencies.pyodide}/full/`;
-let pyodidePromise: Promise<pyodide.PyodideInterface> | undefined;
-
 /** 加载 Pyodide loader */
 async function loadPyodideLoader(): Promise<(typeof pyodide)['loadPyodide']> {
+    const PYODIDE_VERSION = devDependencies.pyodide.replaceAll(/^[~^]/g, '');
+    const PYODIDE_CDN_URL = `https://fastly.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`;
+
     // 在 worker 中禁用 importScripts，防止 Pyodide loader 使用 importScripts 判断环境为 classic worker
     const backup = globalThis.importScripts;
     globalThis.importScripts = () => {
@@ -29,36 +29,44 @@ async function loadPyodideLoader(): Promise<(typeof pyodide)['loadPyodide']> {
     }
 }
 
-/** 加载 Pyodide */
-async function loadPyodide(): Promise<pyodide.PyodideInterface> {
-    const wheels = Object.entries(await loadWheels()).map(([name, url]) => {
-        const path = `/home/pyodide/${name}`.replaceAll('./', '');
-        const data = fetch(url).then(async (res) => new Uint8Array(await res.arrayBuffer()));
-        return { name, path, data };
-    });
-    const loader = await loadPyodideLoader();
-    const instance = await loader({ indexURL: PYODIDE_CDN_URL, packages: ['micropip'] });
-    await Promise.all(
-        wheels.map(async ({ path, data }) => {
-            await (instance.FS as typeof import('node:fs/promises')).writeFile(path, await data);
-        }),
-    );
-    const micropip = instance.pyimport('micropip') as { install: (packages: string[]) => Promise<void> };
-    await micropip.install(wheels.map(({ path }) => `emfs:${path}`));
-    return instance;
-}
 /** 加载 Pyodide Wheels */
-async function loadWheels(): Promise<Record<string, string>> {
+async function loadWheels(): Promise<
+    Array<readonly [name: string, url: string, data: Promise<Uint8Array<ArrayBuffer>>]>
+> {
     const files = import.meta.webpackContext('../../../pyodide.g.assets/', {
         regExp: /\.(whl)$/,
-        mode: 'lazy',
+        mode: 'sync',
+        recursive: false,
     });
-    const entries = await Promise.all(files.keys().map(async (k) => [k, (await files(k)) as string] as const));
-    return Object.fromEntries(entries);
+    const entries = await Promise.all(
+        files.keys().map(async (k) => {
+            const name = k.replace(/^\.\//, '');
+            const url = (await files(k)) as string;
+            const data = fetch(url).then(async (res) => new Uint8Array(await res.arrayBuffer()));
+            return [name, url, data] as const;
+        }),
+    );
+    return entries;
 }
 
+/** 加载 Pyodide */
+async function loadPyodide(): Promise<pyodide.PyodideInterface> {
+    const wheels = await loadWheels();
+    const loader = await loadPyodideLoader();
+    const pyodide = await loader({ packages: ['micropip'] });
+    await Promise.all(
+        wheels.map(async ([name, _, data]) => {
+            await (pyodide.FS as typeof import('node:fs/promises')).writeFile(name, await data);
+        }),
+    );
+    const micropip = pyodide.pyimport('micropip') as { install: (packages: string[]) => Promise<void> };
+    await micropip.install(wheels.map(([name]) => `emfs:${name}`));
+    return pyodide;
+}
+
+let pyodidePromise: Promise<pyodide.PyodideInterface> | undefined;
 /** 加载 Pyodide 与 MiraScript wheel。 */
-async function initialize(assetsUrl: string): Promise<pyodide.PyodideInterface> {
+async function initialize(): Promise<pyodide.PyodideInterface> {
     pyodidePromise ??= loadPyodide();
     try {
         return await pyodidePromise;
@@ -70,7 +78,7 @@ async function initialize(assetsUrl: string): Promise<pyodide.PyodideInterface> 
 
 /** 生成 Python 源代码，但不调用编译得到的 script。 */
 async function generate(request: PythonSourceRequest): Promise<string> {
-    const pyodide = await initialize(request.assetsUrl);
+    const pyodide = await initialize();
     const namespace = pyodide.runPython('dict()') as unknown as PythonNamespace;
     try {
         namespace.set('source', request.source);
