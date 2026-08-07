@@ -10,7 +10,24 @@ type PythonNamespace = PyProxy & {
     set(key: string, value: string): void;
 };
 
+const PYODIDE_CDN_URL = `https://fastly.jsdelivr.net/pyodide/v${devDependencies.pyodide}/full/`;
 let pyodidePromise: Promise<pyodide.PyodideInterface> | undefined;
+
+/** 加载 Pyodide loader */
+async function loadPyodideLoader(): Promise<(typeof pyodide)['loadPyodide']> {
+    // 在 worker 中禁用 importScripts，防止 Pyodide loader 使用 importScripts 判断环境为 classic worker
+    const backup = globalThis.importScripts;
+    globalThis.importScripts = () => {
+        throw new Error('importScripts is disabled in this worker');
+    };
+    try {
+        const loaderUrl = new URL('pyodide.mjs', PYODIDE_CDN_URL).href;
+        const loader = (await import(/* webpackIgnore: true */ loaderUrl)) as typeof pyodide;
+        return loader.loadPyodide;
+    } finally {
+        globalThis.importScripts = backup;
+    }
+}
 
 /** 加载 Pyodide */
 async function loadPyodide(): Promise<pyodide.PyodideInterface> {
@@ -19,30 +36,16 @@ async function loadPyodide(): Promise<pyodide.PyodideInterface> {
         const data = fetch(url).then(async (res) => new Uint8Array(await res.arrayBuffer()));
         return { name, path, data };
     });
-    const backup = globalThis.importScripts;
-    globalThis.importScripts = () => {
-        throw new Error('importScripts is disabled in this worker');
-    };
-    try {
-        const PYODIDE_CDN_URL = `https://fastly.jsdelivr.net/pyodide/v${devDependencies.pyodide}/full/`;
-        const loaderUrl = new URL('pyodide.mjs', PYODIDE_CDN_URL).href;
-        const loader = (await import(/* webpackIgnore: true */ loaderUrl)) as typeof pyodide;
-
-        const instance = await loader.loadPyodide({
-            indexURL: PYODIDE_CDN_URL,
-        });
-        await Promise.all(
-            wheels.map(async ({ path, data }) => {
-                await (instance.FS as typeof import('node:fs/promises')).writeFile(path, await data);
-            }),
-        );
-        await instance.loadPackage('micropip');
-        const micropip = instance.pyimport('micropip') as { install: (packages: string[]) => Promise<void> };
-        await micropip.install(wheels.map(({ path }) => `emfs:${path}`));
-        return instance;
-    } finally {
-        globalThis.importScripts = backup;
-    }
+    const loader = await loadPyodideLoader();
+    const instance = await loader({ indexURL: PYODIDE_CDN_URL, packages: ['micropip'] });
+    await Promise.all(
+        wheels.map(async ({ path, data }) => {
+            await (instance.FS as typeof import('node:fs/promises')).writeFile(path, await data);
+        }),
+    );
+    const micropip = instance.pyimport('micropip') as { install: (packages: string[]) => Promise<void> };
+    await micropip.install(wheels.map(({ path }) => `emfs:${path}`));
+    return instance;
 }
 /** 加载 Pyodide Wheels */
 async function loadWheels(): Promise<Record<string, string>> {
