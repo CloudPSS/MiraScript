@@ -156,7 +156,7 @@ export default {
                 {
                     href: 'https://github.com/CloudPSS/MiraScript',
                     position: 'right',
-                    className: 'navbar__github-link',
+                    className: 'navbar-github-link',
                     title: 'GitHub',
                 },
             ],

@@ -58,7 +58,7 @@ a[class^='skipToContent_'] {
   --ifm-color-primary-lightest: #dcdcfc;
 }
 
-.navbar__github-link {
+.navbar-github-link {
   position: relative;
   margin: 0 calc(var(--ifm-navbar-item-padding-horizontal) - var(--ifm-navbar-item-padding-vertical));
   padding: var(--ifm-navbar-item-padding-vertical);

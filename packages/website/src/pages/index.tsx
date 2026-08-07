@@ -99,8 +99,8 @@ debug_print(user.name!, city);          // '!'  断言非空`,
 /** 代码片段卡片 */
 function CodeSnippet({ title, code, context }: { title: string; code: string; context: Record<string, VmAny> }): JSX.Element {
     return (
-        <div className={styles['codeExample']}>
-            <div className={styles['codeHeader']}>{title}</div>
+        <div className={styles['code-example']}>
+            <div className={styles['code-header']}>{title}</div>
             <Highlight value={code} mode="Script" context={context} autoRun />
         </div>
     );
@@ -109,11 +109,11 @@ function CodeSnippet({ title, code, context }: { title: string; code: string; co
 /** CTA */
 function CtaButtons(): JSX.Element {
     return (
-        <div className={styles['ctaButtons']}>
-            <Link className={styles['btnPrimary']} to="/tutorial/introduction/">
+        <div className={styles['cta-buttons']}>
+            <Link className={styles['btn-primary']} to="/tutorial/introduction/">
                 交互式教程
             </Link>
-            <Link className={styles['btnSecondary']} to="/cheatsheet/">
+            <Link className={styles['btn-secondary']} to="/cheatsheet/">
                 速查手册
             </Link>
         </div>
@@ -154,8 +154,8 @@ export default function Home(): JSX.Element {
     return (
         <Layout title={siteConfig.title} description={siteConfig.tagline}>
             <header className={styles['hero']}>
-                <h1 className={styles['heroTitle']}>MiraScript</h1>
-                <p className={styles['heroTagline']}>
+                <h1 className={styles['hero-title']}>MiraScript</h1>
+                <p className={styles['hero-tagline']}>
                     表达式优先、不可变数据为核心的现代脚本语言
                     <br />
                     简洁、安全、易于嵌入
@@ -165,26 +165,26 @@ export default function Home(): JSX.Element {
 
             <main>
                 <section className={styles['features']}>
-                    <div className={styles['featuresInner']}>
-                        <h2 className={styles['sectionTitle']}>语言特性</h2>
-                        <p className={styles['sectionSubtitle']}>专为嵌入场景打造的表达式语言</p>
-                        <div className={styles['featureGrid']}>
+                    <div className={styles['features-inner']}>
+                        <h2 className={styles['section-title']}>语言特性</h2>
+                        <p className={styles['section-subtitle']}>专为嵌入场景打造的表达式语言</p>
+                        <div className={styles['feature-grid']}>
                             {features.map((f) => (
-                                <div key={f.title} className={styles['featureCard']}>
-                                    <span className={styles['featureIcon']}>{f.icon}</span>
-                                    <h3 className={styles['featureTitle']}>{f.title}</h3>
-                                    <p className={styles['featureDesc']}>{f.desc}</p>
+                                <div key={f.title} className={styles['feature-card']}>
+                                    <span className={styles['feature-icon']}>{f.icon}</span>
+                                    <h3 className={styles['feature-title']}>{f.title}</h3>
+                                    <p className={styles['feature-desc']}>{f.desc}</p>
                                 </div>
                             ))}
                         </div>
                     </div>
                 </section>
 
-                <section className={styles['codeShowcase']}>
-                    <div className={styles['codeShowcaseInner']}>
-                        <h2 className={styles['sectionTitle']}>代码示例</h2>
-                        <p className={styles['sectionSubtitle']}>直观感受 MiraScript 的表达力</p>
-                        <div className={styles['codeExamples']}>
+                <section className={styles['code-showcase']}>
+                    <div className={styles['code-showcase-inner']}>
+                        <h2 className={styles['section-title']}>代码示例</h2>
+                        <p className={styles['section-subtitle']}>直观感受 MiraScript 的表达力</p>
+                        <div className={styles['code-examples']}>
                             {codeExamples.map((ex) => (
                                 <CodeSnippet key={ex.title} {...ex} />
                             ))}
@@ -193,14 +193,14 @@ export default function Home(): JSX.Element {
                 </section>
 
                 <section className={styles['comparison']}>
-                    <div className={styles['comparisonInner']}>
-                        <h2 className={styles['sectionTitle']}>为什么选择 MiraScript</h2>
-                        <p className={styles['sectionSubtitle']}>与传统脚本语言相比的优势</p>
-                        <ul className={styles['comparisonList']}>
+                    <div className={styles['comparison-inner']}>
+                        <h2 className={styles['section-title']}>为什么选择 MiraScript</h2>
+                        <p className={styles['section-subtitle']}>与传统脚本语言相比的优势</p>
+                        <ul className={styles['comparison-list']}>
                             {comparisons.map((c) => (
-                                <li key={c.title} className={styles['comparisonItem']}>
-                                    <span className={styles['comparisonIcon']}>{c.icon}</span>
-                                    <div className={styles['comparisonText']}>
+                                <li key={c.title} className={styles['comparison-item']}>
+                                    <span className={styles['comparison-icon']}>{c.icon}</span>
+                                    <div className={styles['comparison-text']}>
                                         <strong>{c.title}</strong>
                                         <p>{c.desc}</p>
                                     </div>
@@ -211,8 +211,8 @@ export default function Home(): JSX.Element {
                 </section>
             </main>
             <footer className={styles['cta']}>
-                <h2 className={styles['ctaTitle']}>准备好开始了吗？</h2>
-                <p className={styles['ctaDesc']}>跟随教程，几分钟内上手 MiraScript。</p>
+                <h2 className={styles['cta-title']}>准备好开始了吗？</h2>
+                <p className={styles['cta-desc']}>跟随教程，几分钟内上手 MiraScript。</p>
                 <CtaButtons />
             </footer>
         </Layout>
