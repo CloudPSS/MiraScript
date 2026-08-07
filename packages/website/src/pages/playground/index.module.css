@@ -137,6 +137,7 @@
 .result-item {
   --result-timestamp-width: 6em;
   --result-border-color: var(--ifm-color-emphasis-200);
+
   font-size: 0.8rem;
 }
 

@@ -11,8 +11,8 @@
     font-family: var(--ifm-font-family-monospace);
     font-size: 0.9em;
     padding: 0.05em 0.5em;
-
     border-bottom: 1px solid var(--result-border-color);
+
     &:first-child {
       border-top: 1px solid var(--result-border-color);
     }
@@ -49,6 +49,7 @@
     &::before {
       content: '[';
     }
+
     &::after {
       content: 'ms]';
     }
