@@ -5,7 +5,65 @@ on:
   workflow_dispatch:
 
 jobs:
+  build-pyodide:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.14'
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9
+        with:
+          enable-cache: true
+          cache-dependency-glob: crates/python/uv.lock
+
+      - name: Build Pyodide wheel
+        working-directory: crates/python
+        run: |
+          uv sync --frozen --only-group pyodide
+          uv run --frozen --no-sync pyodide build
+
+      - name: Download website Python dependencies
+        run: |
+          mkdir -p packages/website/pyodide-wheels.g.assets
+          cp crates/python/dist/*pyemscripten*_wasm32.whl packages/website/pyodide-wheels.g.assets/
+          uv export --project crates/python --frozen --no-dev --no-emit-project --format requirements.txt --output-file pyodide-requirements.txt
+          python -m pip download --only-binary=:all: --no-deps --requirement pyodide-requirements.txt --dest packages/website/pyodide-wheels.g.assets
+
+      - name: Install JavaScript dependencies
+        uses: ./.github/actions/install
+        with:
+          rust-targets: false
+          ALIYUN_NPM_TOKEN: ${{ secrets.ALIYUN_NPM_TOKEN }}
+          check-lockfile: true
+
+      - name: Smoke test Pyodide wheel
+        run: node packages/website/scripts/smoke-pyodide.mjs packages/website/pyodide-wheels.g.assets
+
+      - name: Upload Pyodide wheel
+        uses: actions/upload-artifact@v7
+        with:
+          name: python-wheel-pyodide
+          path: crates/python/dist/*pyemscripten*_wasm32.whl
+          if-no-files-found: error
+
+      - name: Upload website Python wheels
+        uses: actions/upload-artifact@v7
+        with:
+          name: website-python-wheels
+          path: packages/website/pyodide-wheels.g.assets/*.whl
+          if-no-files-found: error
+
   build:
+    needs: build-pyodide
     runs-on: ubuntu-latest
 
     permissions:
@@ -25,7 +83,15 @@ jobs:
           tools: wasm-bindgen wasm-pack
           check-lockfile: true # Check once at here, and trust the lockfile for the rest of the workflow
 
+      - name: Download website Python wheels
+        uses: actions/download-artifact@v8
+        with:
+          name: website-python-wheels
+          path: packages/website/pyodide-wheels.g.assets/
+
       - name: Build
+        env:
+          MIRASCRIPT_PYODIDE_WHEELS: ${{ github.workspace }}/packages/website/pyodide-wheels.g.assets
         run: pnpm -r run build
 
       - name: Build python sdist

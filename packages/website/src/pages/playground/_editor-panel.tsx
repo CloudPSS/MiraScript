@@ -2,7 +2,7 @@ import { useEffect, useRef, type JSX } from 'react';
 import { configCheckpoint } from '@mirascript/mirascript';
 import Editor from '@site/src/components/Mira/editor';
 import { setMonacoContext } from '@site/src/components/Mira/monaco-context';
-import { runMiraScript, type Result } from '@site/src/components/Mira/runner';
+import { runMiraScript, type CompiledArtifact, type Result } from '@site/src/components/Mira/runner';
 import { EXAMPLES } from './_examples';
 import { globals } from './_globals';
 import { usePlaygroundState } from './_state-manager';
@@ -11,11 +11,11 @@ import styles from './index.module.css';
 /** 编辑面板属性 */
 type EditorPanelProps = {
     setResults: React.Dispatch<React.SetStateAction<Result[]>>;
-    setCompiledSource: React.Dispatch<React.SetStateAction<string | null>>;
+    setCompiledArtifact: React.Dispatch<React.SetStateAction<CompiledArtifact | null>>;
 };
 
 /** 编辑面板 */
-export default function EditorPanel({ setResults, setCompiledSource }: EditorPanelProps): JSX.Element {
+export default function EditorPanel({ setResults, setCompiledArtifact }: EditorPanelProps): JSX.Element {
     const [state, setState] = usePlaygroundState();
     const lang = state.mode === 'Script' ? 'mirascript' : 'mirascript-template';
     const run = useRef<(source: string) => Promise<void>>(async () => {
@@ -25,7 +25,7 @@ export default function EditorPanel({ setResults, setCompiledSource }: EditorPan
         run.current = async (source: string) => {
             try {
                 configCheckpoint(800);
-                const results = await runMiraScript(source, state.mode, globals(), 'playground', true, setCompiledSource);
+                const results = await runMiraScript(source, state.mode, globals(), 'playground', true, setCompiledArtifact);
                 setResults(results);
             } finally {
                 configCheckpoint();

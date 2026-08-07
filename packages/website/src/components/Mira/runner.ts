@@ -22,6 +22,14 @@ export type Result = {
     content: Array<string | { value: string; raw: unknown }>;
 };
 
+/** 最近一次成功编译的产物。 */
+export type CompiledArtifact = {
+    source: string;
+    mode: InputMode;
+    fileName: string;
+    javascript: string;
+};
+
 /** 打印输出 */
 function serialize(value: VmAny): string {
     return serializeForDisplay(value, { maxDepth: 128 });
@@ -36,7 +44,7 @@ export async function runMiraScript(
     context?: VmContext,
     fileBaseName?: string,
     trace?: boolean,
-    onCompiled?: (source: string | null) => void,
+    onCompiled?: (artifact: CompiledArtifact) => void,
 ): Promise<Result[]> {
     const results: Result[] = [];
     const start = performance.now();
@@ -78,10 +86,10 @@ export async function runMiraScript(
             cache = { fileName, mode, source: source, script: null };
         }
     }
-    onCompiled?.(script?.toString() ?? null);
     if (!script) {
         return results;
     }
+    onCompiled?.({ source, mode, fileName, javascript: script.toString() });
 
     // 运行
     try {

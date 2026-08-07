@@ -11,6 +11,10 @@
 
 ## 本地开发
 
+在线编辑器的 Python 源代码展示需要 Pyodide wheel。首次构建前，在 `crates/python` 中执行 `pyodide build`，并将
+`typing_extensions` 的纯 Python wheel 下载到 `crates/python/dist`。也可以通过
+`MIRASCRIPT_PYODIDE_WHEELS` 指向同时包含这两个 wheel 的目录。
+
 ```bash
 pnpm --filter @mirascript/website start
 ```
