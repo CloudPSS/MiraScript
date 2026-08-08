@@ -2,9 +2,9 @@ from __future__ import annotations
 from typing_extensions import TypeAlias, Literal, Final
 from enum import Enum
 
-kVmScript: Final = "mirascript.vm.script"
-kVmFunction: Final = "mirascript.vm.function"
-kVmContext: Final = "mirascript.vm.context"
+kVmScript: Final = "__mirascript_vm_script__"
+kVmFunction: Final = "__mirascript_vm_function__"
+kVmContext: Final = "__mirascript_vm_context__"
 
 
 VM_ARRAY_MAX_LENGTH: Final = 0x100_0000
