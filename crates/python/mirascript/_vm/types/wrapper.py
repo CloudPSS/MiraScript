@@ -10,6 +10,8 @@ T = TypeVar("T")
 
 class VmWrapper(ABC, Generic[T]):
 
+    __slots__ = ("__value",)
+
     def __init__(self, value: T):
         self.__value = value
 

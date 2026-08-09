@@ -1,18 +1,25 @@
 from __future__ import annotations
-from typing_extensions import Mapping, Iterable, TYPE_CHECKING
+from typing_extensions import Mapping, Iterable, TYPE_CHECKING, TypeAlias
 
 from .wrapper import VmWrapper
 
 if TYPE_CHECKING:
     from . import VmValue, VmAny, VmTypeName
 
+    ModuleDict: TypeAlias = Mapping[str, VmValue]
 
-class VmModule(VmWrapper["Mapping[str, VmValue]"]):
+else:
+    ModuleDict = Mapping
+
+
+class VmModule(VmWrapper[ModuleDict]):
     """
     Mirascript 模块包装器
     """
 
-    def __init__(self, name: str, value: "Mapping[str, VmValue]"):
+    __slots__ = ("name",)
+
+    def __init__(self, name: str, value: ModuleDict):
         super().__init__(value)
         self.name = name
 
