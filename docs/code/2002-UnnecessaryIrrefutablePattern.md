@@ -6,16 +6,20 @@
 
 ## 如何修复
 
-绑定模式总能成功时，不必放在 `is` 表达式中，直接声明变量即可。
+对于不影响匹配结果的模式，应当使用 `is` 表达式或 `match` 表达式测试匹配结果，或者使用弃元模式 `_`。
 
 ### 修改前
 
 ```mira
-let matched = value is captured;
+let [x, 1, 2] = arr;
 ```
 
 ### 修复后
 
 ```mira
-let captured = value;
+let succeed = arr is [x, 1, 2];
+```
+
+```mira
+let [x, _, _] = arr;
 ```

@@ -11,7 +11,7 @@
 ### 修改前
 
 ```mira
-let user = { name: "Mira" };
+let user = { "name": "Mira" };
 ```
 
 ### 修复后
