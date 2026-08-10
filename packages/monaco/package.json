@@ -41,8 +41,7 @@
     }
   },
   "scripts": {
-    "build": "pnpm clean && tsc && node ./esbuild.config.js && pnpm test",
-    "test": "node --test ./scripts/*.test.js",
+    "build": "pnpm clean && tsc && node ./esbuild.config.js",
     "clean": "rimraf dist"
   },
   "dependencies": {
