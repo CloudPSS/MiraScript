@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 /* eslint-disable unicorn/prefer-single-call */
 import { DiagnosticCode, getDiagnosticMessage, getDiagnosticSeverity } from '@mirascript/mirascript/subtle';
-import { mkdirSync, readdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readdirSync, renameSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const outDir = resolve(import.meta.dirname, '../../../docs/code');
@@ -46,6 +46,24 @@ for (const [name, code] of Object.entries(DiagnosticCode)) {
 
 entries.sort((a, b) => a.code - b.code);
 
+// ── 按 codename 索引现有文档 ────────────────────────────────────────────
+
+const docFilePattern = /^\d+-(?<codename>[A-Z][A-Za-z0-9]*)\.md$/u;
+
+/** @type {Map<string, string>} */
+const existingDocs = new Map();
+
+for (const fileName of readdirSync(outDir)) {
+  const codename = docFilePattern.exec(fileName)?.groups?.['codename'];
+  if (!codename) continue;
+
+  const duplicate = existingDocs.get(codename);
+  if (duplicate) {
+    throw new Error(`诊断代码 ${codename} 存在多个文档：${duplicate}、${fileName}`);
+  }
+  existingDocs.set(codename, fileName);
+}
+
 // ── 生成文件 ────────────────────────────────────────────────────────────
 
 /** @type {Set<string>} */
@@ -53,6 +71,18 @@ const writtenFiles = new Set();
 
 for (const { code, name, message, severity: sev } of entries) {
   const fileName = `${code}-${name}.md`;
+  const existingFile = existingDocs.get(name);
+  if (existingFile) {
+    writtenFiles.add(fileName);
+    if (existingFile === fileName) {
+      console.log(`保留 docs/code/${fileName}`);
+    } else {
+      renameSync(resolve(outDir, existingFile), resolve(outDir, fileName));
+      console.log(`重命名 docs/code/${existingFile} -> docs/code/${fileName}`);
+    }
+    continue;
+  }
+
   const filePath = resolve(outDir, fileName);
   writtenFiles.add(fileName);
 
@@ -64,14 +94,13 @@ for (const { code, name, message, severity: sev } of entries) {
   lines.push(message);
   lines.push('');
 
-  writeFileSync(filePath, lines.join('\n'));
+  writeFileSync(filePath, lines.join('\n'), { flag: 'wx' });
   console.log(`写入 docs/code/${fileName}`);
 }
 
 // ── 额外的文件 ─────────────────────────────────────────────────────
 
 writtenFiles.add('_category_.json');
-writtenFiles.add('.gitignore');
 
 // ── 检查多余文件 ────────────────────────────────────────────────────────
 
