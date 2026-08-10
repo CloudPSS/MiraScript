@@ -177,7 +177,7 @@ function sourceRepository(): LanguageRegistration['repository'] {
         keywordRule(NUMERIC_KEYWORDS, 'constant.numeric.language'),
         keywordRule(constantKeywords, 'constant.language'),
         keywordRule(CONTROL_KEYWORDS, 'keyword.control'),
-        keywordRule(wordOperators, 'keyword.operator.word'),
+        keywordRule(wordOperators, 'keyword.operator.wordlike'),
         keywordRule(declarationKeywords, 'keyword.declaration'),
         keywordRule(moduleKeywords, 'keyword.control.module'),
         keywordRule(RESERVED_KEYWORDS, 'keyword.reserved'),
@@ -325,7 +325,7 @@ function sourceRepository(): LanguageRegistration['repository'] {
                         1: { name: `keyword.control.loop.${SCOPE_SUFFIX}` },
                         3: { name: `keyword.declaration.mutable.${SCOPE_SUFFIX}` },
                         5: { name: `variable.other.readwrite.${SCOPE_SUFFIX}` },
-                        7: { name: `keyword.operator.word.${SCOPE_SUFFIX}` },
+                        7: { name: `keyword.control.loop.${SCOPE_SUFFIX}` },
                     },
                 },
                 {
@@ -333,7 +333,7 @@ function sourceRepository(): LanguageRegistration['repository'] {
                     captures: {
                         1: { name: `keyword.control.loop.${SCOPE_SUFFIX}` },
                         3: { name: `variable.other.${SCOPE_SUFFIX}` },
-                        5: { name: `keyword.operator.word.${SCOPE_SUFFIX}` },
+                        5: { name: `keyword.control.loop.${SCOPE_SUFFIX}` },
                     },
                 },
             ],
