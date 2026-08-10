@@ -1,6 +1,6 @@
 {
   "name": "mirascript",
-  "version": "0.1.81",
+  "version": "0.1.82",
   "private": true,
   "packageManager": "pnpm@11.20.0",
   "type": "module",
