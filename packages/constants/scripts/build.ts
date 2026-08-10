@@ -15,13 +15,13 @@ const filteredLines = dtsLines.filter((line) => {
 });
 
 let content = filteredLines.join('\n').replace('export class Config {', 'export declare class Config {');
-const messages: Partial<Record<lib.DiagnosticCode, string>> = Object.create(null);
+const messages: Record<number, string> = Object.create(null);
 for (const code in lib.DiagnosticCode) {
     const num = Number(code);
     if (Number.isNaN(num)) continue;
-    const message = lib.get_diagnostic_message(num as lib.DiagnosticCode);
+    const message = lib.get_diagnostic_message(num);
     if (message && message !== 'Unknown error') {
-        messages[num as lib.DiagnosticCode] = message;
+        messages[num] = message;
     }
 }
 

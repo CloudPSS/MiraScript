@@ -1,22 +1,18 @@
 import { load } from 'js-yaml';
 import fs from 'node:fs/promises';
 
-await fs.mkdir(new URL('../syntaxes', import.meta.url), { recursive: true });
+const output = new URL('../syntaxes/', import.meta.url);
+await fs.mkdir(output, { recursive: true });
 
-const shared = load(await fs.readFile(new URL('./shared.tmLanguage.yaml', import.meta.url), 'utf8'));
+for (const filename of ['mira.tmLanguage.json', 'miratpl.tmLanguage.json', 'mira-doc.tmLanguage.json']) {
+    const source = new URL(import.meta.resolve(`@mirascript/textmate/syntaxes/${filename}`));
+    await fs.copyFile(source, new URL(filename, output));
+}
 
 for (const file of await fs.readdir(new URL('./', import.meta.url), { withFileTypes: true })) {
     if (!file.name.endsWith('.yaml')) continue;
-    if (file.name === 'shared.tmLanguage.yaml') continue;
 
     const content = await fs.readFile(new URL(file.name, import.meta.url), 'utf8');
-    let data = load(content);
-    if (!data.repository) {
-        data = { ...shared, ...data };
-    }
-    await fs.writeFile(
-        new URL(`../syntaxes/${file.name.replace(/\.yaml$/, '.json')}`, import.meta.url),
-        JSON.stringify(data, null, 2),
-        'utf8',
-    );
+    const data = load(content);
+    await fs.writeFile(new URL(file.name.replace(/\.yaml$/, '.json'), output), JSON.stringify(data, null, 2), 'utf8');
 }

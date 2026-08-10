@@ -76,7 +76,7 @@ command
     .option('-e, --eval <script>', '要执行的脚本')
     .argument('[script]', '要执行的脚本文件路径，使用 - 从标准输入读取')
     .action(async (script, opt) => {
-        if (opt.eval == null && script == null) {
+        if (script == null && opt.eval == null) {
             await startRepl();
             return;
         }

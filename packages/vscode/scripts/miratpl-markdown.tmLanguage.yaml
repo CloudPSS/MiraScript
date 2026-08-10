@@ -17,8 +17,8 @@ repository:
           3: { name: punctuation.definition.markdown }
         patterns:
           - name: meta.embedded.block.miratpl
-            contentName: string.miratpl
+            contentName: text.miratpl
             begin: (^|\G)(\s*)(.*)
             while: (^|\G)(?!\s*([`~]{3,})\s*$)
             patterns:
-              - name: string.miratpl
+              - include: 'text.miratpl'

@@ -16,67 +16,90 @@ const distRoot = path.join(packageRoot, 'dist');
  * ---
  */
 
-/**
- * Read a markdown file under `src/`.
- * @param {string} relativePath
- * @returns {Promise<string>}
- */
-async function readMarkdown(relativePath) {
+/** Read a markdown file under `src/`. */
+async function readMarkdown(relativePath: string): Promise<string> {
     const fullPath = path.join(srcRoot, relativePath);
     return await readFile(fullPath, 'utf8');
 }
 
 const FRONT_MATTER_RE = /^---\r?\n([\s\S]*?)\r?\n---\r?\n/;
 
-/**
- * Extract front-matter and strip it from markdown.
- * @param {string} markdown
- * @param {string} relativePath
- * @returns {{ attributes: Record<string, unknown>, body: string }}
- */
-function splitFrontMatter(markdown, relativePath) {
+/** Front-matter attributes of a markdown doc. */
+interface FrontMatter {
+    /** The token(s) mapped to the doc body. */
+    token?: unknown;
+    /** Fallback token when `token` is missing. */
+    title?: unknown;
+    /** Whether the token is reserved and must be skipped. */
+    reserved?: unknown;
+}
+
+/** A doc item before the token is normalized to a string. */
+interface RawDocItem {
+    /** The token, possibly an array of tokens. */
+    token: string | string[];
+    /** The markdown body. */
+    body: string;
+    /** Whether the token is reserved. */
+    reserved: boolean;
+    /** The source file relative path. */
+    file: string;
+}
+
+/** A doc item with a normalized string token. */
+interface DocItem {
+    /** The token. */
+    token: string;
+    /** The markdown body. */
+    body: string;
+    /** Whether the token is reserved. */
+    reserved: boolean;
+    /** The source file relative path. */
+    file: string;
+}
+
+/** Extract front-matter and strip it from markdown. */
+function splitFrontMatter(markdown: string, relativePath: string): { attributes: FrontMatter; body: string } {
     const m = FRONT_MATTER_RE.exec(markdown);
     if (!m) {
         throw new Error(`Missing front-matter in ${relativePath}. Add token/order mapping.`);
     }
 
-    const attributes = load(m[1]);
-    let body = markdown.slice(m[0].length);
+    // The regex guarantees both groups exist when `m` is truthy.
+    const yaml = m[1];
+    const fullMatch = m[0];
+    if (yaml === undefined || fullMatch === undefined) {
+        throw new Error(`Missing front-matter in ${relativePath}. Add token/order mapping.`);
+    }
+    const attributes = load(yaml) as FrontMatter;
+    let body = markdown.slice(fullMatch.length);
     // Trim leading newlines and tailing newlines
     body = body.replace(/^\r?\n+/, '').replace(/\r?\n+$/, '') + '\n';
     return { attributes, body };
 }
 
-/**
- * Load docs under a folder like `keyword` or `operator`.
- * @param {string} folder
- * @returns {Promise<Array<[string, string]>>}
- */
-async function loadDocsFromFolder(folder) {
+/** Load docs under a folder like `keyword` or `operator`. */
+async function loadDocsFromFolder(folder: string): Promise<Array<[string, string]>> {
     const dirPath = path.join(srcRoot, folder);
     const dirents = await readdir(dirPath, { withFileTypes: true });
 
-    /** @type {Array<{ token: string; order: number; body: string; file: string }>} */
-    const items = [];
+    const items: DocItem[] = [];
 
-    /**
-     * Check and add an item.
-     * @param {{ token: string | string[]; body: string; reserved: boolean; file: string }} item
-     */
-    function putItem(item) {
+    /** Check and add an item. */
+    function putItem(item: RawDocItem): void {
         if (Array.isArray(item.token)) {
             for (const token of item.token) {
                 items.push({ token, body: item.body, reserved: item.reserved, file: item.file });
             }
             return;
         }
-        if (typeof item.token != 'string' || !item.token.length) {
+        if (!item.token.length) {
             throw new TypeError(`Invalid front-matter field 'token' in ${item.file}`);
         }
         if (item.reserved) {
             return; // skip reserved tokens
         }
-        items.push(item);
+        items.push({ token: item.token, body: item.body, reserved: item.reserved, file: item.file });
     }
 
     for (const dirent of dirents) {
@@ -86,13 +109,15 @@ async function loadDocsFromFolder(folder) {
         const relativePath = path.posix.join(folder, dirent.name);
         const markdown = await readMarkdown(relativePath);
         const { attributes, body } = splitFrontMatter(markdown, relativePath);
-        const { token, title, reserved } = attributes;
-        putItem({ token: token ?? title, body, reserved: Boolean(reserved), file: relativePath });
+        const token = attributes.token ?? attributes.title;
+        if (typeof token !== 'string' && !Array.isArray(token)) {
+            throw new TypeError(`Invalid front-matter field 'token' in ${relativePath}`);
+        }
+        putItem({ token, body, reserved: Boolean(attributes.reserved), file: relativePath });
     }
 
-    const seenToken = new Set();
-    /** @type {Array<[string, string]>} */
-    const entries = [];
+    const seenToken = new Set<string>();
+    const entries: Array<[string, string]> = [];
     for (const item of items) {
         if (seenToken.has(item.token)) {
             throw new Error(`Duplicate token '${item.token}' (found in ${item.file})`);
@@ -104,32 +129,21 @@ async function loadDocsFromFolder(folder) {
     return entries;
 }
 
-/**
- * Render an object literal with string keys and raw markdown values.
- * @param {Array<[string, string]>} entries
- * @returns {string}
- */
-function renderObjectLiteral(entries) {
+/** Render an object literal with string keys and raw markdown values. */
+function renderObjectLiteral(entries: Array<[string, string]>): string {
     const lines = entries.map(([k, v]) => `  ${JSON.stringify(k)}: ${JSON.stringify(v)},`);
     lines.unshift('  __proto__: null,');
     return `Object.freeze({\n${lines.join('\n')}\n})`;
 }
 
-/**
- * Render a `.d.ts` object type with explicit string-literal keys.
- * @param {Array<[string, string]>} entries
- * @returns {string}
- */
-function renderDtsObjectType(entries) {
+/** Render a `.d.ts` object type with explicit string-literal keys. */
+function renderDtsObjectType(entries: Array<[string, string]>): string {
     const lines = entries.map(([k]) => `  readonly ${JSON.stringify(k)}: string;`);
     return `{\n${lines.join('\n')}\n}`;
 }
 
-/**
- * Build `dist/index.js` and `dist/index.d.ts`.
- * @returns {Promise<void>}
- */
-async function main() {
+/** Build `dist/index.js` and `dist/index.d.ts`. */
+async function main(): Promise<void> {
     const keywordEntries = await loadDocsFromFolder('keyword');
     const operatorEntries = await loadDocsFromFolder('operator');
 

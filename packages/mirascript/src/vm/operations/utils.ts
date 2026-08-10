@@ -55,7 +55,7 @@ export const isSame = (a: VmValue, b: VmValue): boolean => {
     // Check all primitive types, and fast path for reference equality
     if (a === b) return true;
     // Any primitives and functions arrive here are not equal
-    if (a == null || typeof a != 'object' || b == null || typeof b != 'object') return false;
+    if (a == null || b == null || typeof a != 'object' || typeof b != 'object') return false;
     const aType = getVmType(a);
     const bType = getVmType(b);
     if (aType !== bType) return false;

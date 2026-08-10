@@ -3,9 +3,10 @@ import { setLanguageConfiguration, configuration } from './language-configuratio
 import { registerMiraScriptTokensProvider } from './tokens-provider.js';
 
 export { configuration };
+export { registerMiraScriptTokensProvider };
 /** 注册 */
 export async function registerBasic(): Promise<IDisposable[]> {
     const { loadModule } = await import('@mirascript/bindings/wasm');
-    await loadModule();
-    return [...setLanguageConfiguration(), ...registerMiraScriptTokensProvider()];
+    const [, tokenProviders] = await Promise.all([loadModule(), registerMiraScriptTokensProvider()]);
+    return [...setLanguageConfiguration(), ...tokenProviders];
 }

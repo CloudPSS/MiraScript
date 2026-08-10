@@ -55,7 +55,6 @@
     "supports-color": "^11.0.0"
   },
   "devDependencies": {
-    "@types/node": "^26.1.2",
     "ava": "^8.0.1",
     "c8": "^12.0.0",
     "tinybench": "^6.1.2",

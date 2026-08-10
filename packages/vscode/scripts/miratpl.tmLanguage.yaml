@@ -1,5 +1,0 @@
-$schema: https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json
-name: MiraScript Template
-scopeName: string.miratpl
-patterns:
-  - include: '#verbatim_string_inner'

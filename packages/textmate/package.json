@@ -1,0 +1,49 @@
+{
+  "name": "@mirascript/textmate",
+  "version": "0.1.80",
+  "author": "CloudPSS",
+  "license": "MIT",
+  "description": "TextMate grammars for MiraScript.",
+  "keywords": [
+    "mirascript",
+    "textmate",
+    "shiki",
+    "syntax-highlighting"
+  ],
+  "homepage": "https://mira.cloudpss.net",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CloudPSS/MiraScript.git",
+    "directory": "packages/textmate"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./syntaxes/mira.tmLanguage.json": "./dist/syntaxes/mira.tmLanguage.json",
+    "./syntaxes/miratpl.tmLanguage.json": "./dist/syntaxes/miratpl.tmLanguage.json",
+    "./syntaxes/mira-doc.tmLanguage.json": "./dist/syntaxes/mira-doc.tmLanguage.json"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "pnpm clean && node ./scripts/build.js && pnpm test",
+    "test": "node --test ./scripts/*.test.js",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@shikijs/types": "^4.4.2"
+  },
+  "devDependencies": {
+    "@mirascript/constants": "workspace:~",
+    "@shikijs/core": "^4.4.2",
+    "@shikijs/engine-oniguruma": "^4.4.2",
+    "@shikijs/vscode-textmate": "^10.0.2"
+  }
+}

@@ -1,0 +1,11 @@
+mod math {
+  pub fn add(mut left, right) { left + right }
+}
+
+const @GREETING = "hello";
+let 用户 = "MiraScript";
+let result = math.add(1, 2);
+let formatted = "value: $(result:>8.2f)";
+let verbatim = @@"literal $用户 and interpolation $$用户"@@;
+
+(message: "$@GREETING, $用户", result, formatted, verbatim)

@@ -41,14 +41,19 @@
     }
   },
   "scripts": {
-    "build": "pnpm clean && tsc && node ./esbuild.config.js",
+    "build": "pnpm clean && tsc && node ./esbuild.config.js && pnpm test",
+    "test": "node --test ./scripts/*.test.js",
     "clean": "rimraf dist"
   },
   "dependencies": {
     "@mirascript/bindings": "workspace:~",
     "@mirascript/constants": "workspace:~",
     "@mirascript/help": "workspace:~",
-    "@mirascript/mirascript": "workspace:~"
+    "@mirascript/mirascript": "workspace:~",
+    "@mirascript/textmate": "workspace:~",
+    "@shikijs/core": "^4.4.2",
+    "@shikijs/engine-oniguruma": "^4.4.2",
+    "@shikijs/vscode-textmate": "^10.0.2"
   },
   "peerDependencies": {
     "monaco-editor": ">= 0.0.40"

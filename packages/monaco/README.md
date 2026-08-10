@@ -6,6 +6,7 @@
 
 - 注册 `mirascript` 与 `mirascript-template` 语言
 - 提供高亮、基础编辑支持与结构化语言能力
+- 使用 `@mirascript/textmate` 与 VS Code、Shiki 共享同一套 TextMate grammar，且不接管 Monaco 主题
 - 支持按需加载补全、诊断、跳转等能力
 - 支持注入全局上下文，增强编辑体验
 

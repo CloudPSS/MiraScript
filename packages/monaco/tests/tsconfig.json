@@ -1,0 +1,9 @@
+{
+  "extends": "@cloudpss/tsconfig",
+  "compilerOptions": {
+    "noEmit": true,
+    "checkJs": true,
+    "types": ["node"]
+  },
+  "include": ["./"]
+}

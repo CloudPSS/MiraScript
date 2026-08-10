@@ -44,11 +44,11 @@
   "dependencies": {
     "@mirascript/mirascript": "workspace:~",
     "@mirascript/monaco": "workspace:~",
+    "@mirascript/textmate": "workspace:~",
     "@mirascript/wasm": "workspace:~"
   },
   "devDependencies": {
     "@private/monaco-editor": "^0.0.71",
-    "@types/node": "^26.1.2",
     "@types/vscode": "1.80.0",
     "js-yaml": "^5.2.3",
     "nodemon": "^3.1.14",
@@ -117,15 +117,15 @@
         "scopeName": "source.mira",
         "path": "./syntaxes/mira.tmLanguage.json",
         "tokenTypes": {
-          "punctuation.definition.template-expression": "other"
+          "meta.interpolation.mira": "other"
         }
       },
       {
         "language": "mirascript-doc",
-        "scopeName": "source.mira",
-        "path": "./syntaxes/mira.tmLanguage.json",
+        "scopeName": "source.mira.doc",
+        "path": "./syntaxes/mira-doc.tmLanguage.json",
         "tokenTypes": {
-          "punctuation.definition.template-expression": "other"
+          "meta.interpolation.mira": "other"
         }
       },
       {
@@ -140,10 +140,10 @@
       },
       {
         "language": "mirascript-template",
-        "scopeName": "string.miratpl",
+        "scopeName": "text.miratpl",
         "path": "./syntaxes/miratpl.tmLanguage.json",
         "tokenTypes": {
-          "punctuation.definition.template-expression": "other"
+          "meta.interpolation.mira": "other"
         }
       },
       {

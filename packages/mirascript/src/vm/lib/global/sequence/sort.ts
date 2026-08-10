@@ -6,7 +6,7 @@ import { VmLib, expectArray, expectCallable } from '../../helpers.js';
 /** 默认比较 */
 function defaultCompare(a: VmValue = null, b: VmValue = null): number {
     if (Object.is(a, b)) return 0;
-    if ((typeof a == 'string' || a == null) && (typeof b == 'string' || b == null)) {
+    if ((a == null || typeof a == 'string') && (b == null || typeof b == 'string')) {
         a ??= '';
         b ??= '';
         if (a < b) return -1;

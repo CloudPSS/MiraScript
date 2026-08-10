@@ -20,6 +20,8 @@ export class MiraScriptMonacoLoader implements IDisposable {
 
         languages.onLanguageEncountered('mirascript-template', _loadBasicFeatures);
         languages.onLanguage('mirascript-template', _loadFullFeatures);
+
+        languages.onLanguageEncountered('mirascript-doc', _loadBasicFeatures);
     }
     features: LspFeaturesConfig = {};
     private _basicFeaturesLoaded = false;
