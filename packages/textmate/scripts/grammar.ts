@@ -504,7 +504,7 @@ function sourceRepository(): LanguageRegistration['repository'] {
 export function createMiraScriptGrammar(): LanguageRegistration {
     return {
         name: 'mirascript',
-        aliases: ['mira', 'Mira', 'mirascript', 'MiraScript'],
+        aliases: ['MiraScript', 'mira', 'Mira'],
         scopeName: 'source.mira',
         patterns: [{ include: '#source' }],
         repository: sourceRepository(),
@@ -517,7 +517,7 @@ export function createMiraScriptGrammar(): LanguageRegistration {
 export function createMiraScriptTemplateGrammar(): LanguageRegistration {
     return {
         name: 'mirascript-template',
-        aliases: ['miratpl', 'MiraTpl', 'mirascript-template', 'MiraScript-Template'],
+        aliases: ['MiraScript-Template', 'miratpl', 'MiraTpl'],
         scopeName: 'text.miratpl',
         patterns: [
             ...interpolationPatterns(1),
