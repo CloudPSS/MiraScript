@@ -67,7 +67,8 @@
         "aliases": [
           "MiraScript",
           "mirascript",
-          "mira"
+          "mira",
+          "Mira"
         ],
         "mimetypes": [
           "text/x-mirascript"
@@ -97,9 +98,10 @@
           ".miratpl"
         ],
         "aliases": [
-          "MiraScriptTemplate",
+          "MiraScript-Template",
           "mirascript-template",
-          "miratpl"
+          "miratpl",
+          "MiraTpl"
         ],
         "mimetypes": [
           "text/x-mirascript-template"
@@ -115,7 +117,7 @@
       {
         "language": "mirascript",
         "scopeName": "source.mira",
-        "path": "./syntaxes/mira.tmLanguage.json",
+        "path": "./syntaxes/mirascript.tmLanguage.json",
         "tokenTypes": {
           "meta.interpolation.mira": "other"
         }
@@ -123,7 +125,7 @@
       {
         "language": "mirascript-doc",
         "scopeName": "source.mira.doc",
-        "path": "./syntaxes/mira-doc.tmLanguage.json",
+        "path": "./syntaxes/mirascript-doc.tmLanguage.json",
         "tokenTypes": {
           "meta.interpolation.mira": "other"
         }
@@ -141,7 +143,7 @@
       {
         "language": "mirascript-template",
         "scopeName": "text.miratpl",
-        "path": "./syntaxes/miratpl.tmLanguage.json",
+        "path": "./syntaxes/mirascript-template.tmLanguage.json",
         "tokenTypes": {
           "meta.interpolation.mira": "other"
         }

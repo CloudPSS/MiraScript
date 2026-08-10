@@ -4,8 +4,12 @@ import fs from 'node:fs/promises';
 const output = new URL('../syntaxes/', import.meta.url);
 await fs.mkdir(output, { recursive: true });
 
-for (const filename of ['mira.tmLanguage.json', 'miratpl.tmLanguage.json', 'mira-doc.tmLanguage.json']) {
-    const source = new URL(import.meta.resolve(`@mirascript/textmate/syntaxes/${filename}`));
+for (const filename of [
+    'mirascript.tmLanguage.json',
+    'mirascript-template.tmLanguage.json',
+    'mirascript-doc.tmLanguage.json',
+]) {
+    const source = new URL(import.meta.resolve(`@mirascript/textmate/${filename}`));
     await fs.copyFile(source, new URL(filename, output));
 }
 

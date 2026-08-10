@@ -24,9 +24,7 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./syntaxes/mira.tmLanguage.json": "./dist/syntaxes/mira.tmLanguage.json",
-    "./syntaxes/miratpl.tmLanguage.json": "./dist/syntaxes/miratpl.tmLanguage.json",
-    "./syntaxes/mira-doc.tmLanguage.json": "./dist/syntaxes/mira-doc.tmLanguage.json"
+    "./*.tmLanguage.json": "./dist/*.tmLanguage.json"
   },
   "scripts": {
     "build": "pnpm clean && node ./scripts/build.ts",
