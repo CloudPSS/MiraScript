@@ -766,7 +766,7 @@ export function createMiraScriptDocGrammar(): LanguageRegistration {
                 patterns: [
                     {
                         begin: String.raw`(?<!\p{XID_Continue})(fn)${IDENTIFIER_END}(?=\s*(?:<|\())`,
-                        beginCaptures: { 1: { name: 'storage.type.function.mira' } },
+                        beginCaptures: { 1: { name: 'support.type.function.mira' } },
                         end: String.raw`(?=\s*(?:,|\)|$))`,
                         patterns: [
                             { include: '#generic-types' },

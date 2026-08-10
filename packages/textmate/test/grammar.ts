@@ -183,12 +183,51 @@ test('distinguishes doc declarations, globals, and nested function types', () =>
     expectScope(tokens, 'PI', 'variable.other.constant.mira', 1);
     expectScope(tokens, '(global)', 'entity.name.label.mira', 0);
     expectScope(tokens, 'fn', 'keyword.declaration.function.mira', 0);
-    expectScope(tokens, 'fn', 'storage.type.function.mira', 2);
+    expectScope(tokens, 'fn', 'support.type.function.mira', 2);
     expectScope(tokens, 'data', 'variable.other.constant.emphasis.mira', 1);
     expectScope(tokens, 'f', 'entity.name.function.emphasis.mira');
     expectScope(tokens, 'value', 'variable.other.constant.emphasis.mira');
     expectScope(tokens, 'type', 'keyword.operator.expression.mira');
     expectScope(tokens, 'data', 'variable.other.mira', 2);
+});
+
+test('keeps nested types in unlabelled and module function signatures', () => {
+    const tokens = tokenize(
+        [
+            'fn map(',
+            '  data: array | record,',
+            '  f: fn(value: any, key: number | string, input: type(data)) -> any,',
+            ') -> type(data)',
+            'mod matrix {',
+            '  pub fn entrywise(',
+            '    a: any | any[] | any[][],',
+            '    b: any | any[] | any[][],',
+            '    f: fn(a: any, b: any) -> any,',
+            '  ) -> any | any[] | any[][];',
+            '}',
+        ].join('\n'),
+        'mirascript-doc',
+    );
+    const declarationFns = tokens.filter((token) => token.text === 'fn' && (token.line === 0 || token.line === 5));
+    const typeFns = tokens.filter((token) => token.text === 'fn' && (token.line === 2 || token.line === 8));
+    assert.equal(declarationFns.length, 2);
+    assert.equal(typeFns.length, 2);
+    for (const token of declarationFns) {
+        assert.ok(token.scopes.includes('keyword.declaration.function.mira'), token.scopes.join(', '));
+        assert.ok(!token.scopes.includes('support.type.function.mira'), token.scopes.join(', '));
+    }
+    for (const token of typeFns) {
+        assert.ok(token.scopes.includes('support.type.function.mira'), token.scopes.join(', '));
+        assert.ok(!token.scopes.includes('keyword.declaration.function.mira'), token.scopes.join(', '));
+    }
+    for (const token of tokens.filter((token) => token.text === 'type')) {
+        assert.ok(token.scopes.includes('keyword.operator.expression.mira'), token.scopes.join(', '));
+    }
+    assert.equal(tokens.filter((token) => token.text === 'type').length, 2);
+    for (const token of tokens.filter((token) => token.text === 'data' && (token.line === 2 || token.line === 3))) {
+        assert.ok(token.scopes.includes('variable.other.mira'), token.scopes.join(', '));
+    }
+    assert.equal(tokens.filter((token) => token.text === 'data' && (token.line === 2 || token.line === 3)).length, 2);
 });
 
 test('keeps tuple and array element types inside their type context', () => {
