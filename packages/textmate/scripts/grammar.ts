@@ -58,7 +58,7 @@ function keywordRule(values: readonly string[], name: string): { name: string; m
 const numericKeywordSet = new Set<string>(NUMERIC_KEYWORDS);
 const constantKeywords = CONSTANT_KEYWORDS.filter((keyword) => !numericKeywordSet.has(keyword));
 const languageVariables = ['_', 'global'];
-const wordOperators = ['not in', 'in', 'is', 'and', 'or', 'not'];
+const wordOperators = ['in', 'is', 'and', 'or', 'not'];
 const declarationKeywords = ['fn', 'op', 'let', 'const', 'mut', 'where'];
 const moduleKeywords = ['mod', 'pub', 'use'];
 const classifiedKeywords = new Set([
@@ -562,7 +562,7 @@ export function createMiraScriptDocGrammar(): LanguageRegistration {
                         },
                     },
                     {
-                        match: String.raw`^(\s*)(${DOC_CONSTANT_IDENTIFIER})(?=\s*(?:=|;|$))`,
+                        match: String.raw`^(\x00)?(${DOC_CONSTANT_IDENTIFIER})(?=\s*(?:=|;|$))`,
                         captures: { 2: { name: 'variable.other.constant.mira' } },
                     },
                 ],

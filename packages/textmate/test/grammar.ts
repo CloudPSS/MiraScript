@@ -62,8 +62,9 @@ test('classifies keyword and numeric families', () => {
     const tokens = tokenize('if true and value not in global { let @常量 = 0xCA_FE; 1.5e+2 }');
     expectScope(tokens, 'if', 'keyword.control.mira');
     expectScope(tokens, 'true', 'constant.language.mira');
-    expectScope(tokens, 'and', 'keyword.operator.word.mira');
-    expectScope(tokens, 'not in', 'keyword.operator.word.mira');
+    expectScope(tokens, 'and', 'keyword.operator.wordlike.mira');
+    expectScope(tokens, 'not', 'keyword.operator.wordlike.mira');
+    expectScope(tokens, 'in', 'keyword.operator.wordlike.mira');
     expectScope(tokens, 'global', 'variable.language.mira');
     expectScope(tokens, '@常量', 'variable.other.constant.mira');
     expectScope(tokens, '0xCA_FE', 'constant.numeric.hex.mira');
@@ -82,12 +83,13 @@ test('does not classify control keywords followed by parentheses as functions', 
 });
 
 test('only classifies type as a keyword in its two contextual forms', () => {
-    const tokens = tokenize('type(value); type Value; let type = 1; type + 1; object.type()');
+    const tokens = tokenize('type(value); type Value; let type = 1; type + 1; object.type(); value::type();');
     expectScope(tokens, 'type', 'keyword.operator.expression.mira', 0);
     expectScope(tokens, 'type', 'keyword.operator.expression.mira', 1);
     expectScope(tokens, 'type', 'variable.other.mira', 2);
     expectScope(tokens, 'type', 'variable.other.mira', 3);
     expectScope(tokens, 'type', 'entity.name.function.member.mira', 4);
+    expectScope(tokens, 'type', 'keyword.operator.expression.mira', 5);
 });
 
 test('handles nested interpolation and format strings', () => {
@@ -165,7 +167,7 @@ test('distinguishes doc declarations, globals, and nested function types', () =>
             '  pub fn determinant(data: array | record) -> number',
             '}',
             '\0(global) mod matrix',
-            'PI',
+            '\0PI',
             '\0(global) PI',
             '\0(global) fn map(',
             '  data: array | record,',
