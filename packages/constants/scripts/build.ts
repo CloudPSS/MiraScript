@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import fs from 'node:fs/promises';
 import * as lib from '../lib/constants.js';
 
@@ -15,7 +14,7 @@ const filteredLines = dtsLines.filter((line) => {
 });
 
 let content = filteredLines.join('\n').replace('export class Config {', 'export declare class Config {');
-const messages: Record<number, string> = Object.create(null);
+const messages: Record<number, string> = {};
 for (const code in lib.DiagnosticCode) {
     const num = Number(code);
     if (Number.isNaN(num)) continue;

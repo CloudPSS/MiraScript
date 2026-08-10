@@ -539,6 +539,7 @@ export function createMiraScriptDocGrammar(): LanguageRegistration {
         repository: {
             doc: {
                 patterns: [
+                    { include: '#global-value' },
                     { include: '#global-constants' },
                     { include: '#inline-parameter' },
                     { include: '#inline-label' },
@@ -550,6 +551,20 @@ export function createMiraScriptDocGrammar(): LanguageRegistration {
                     { include: '#return-type' },
                     { include: '#metadata' },
                     { include: 'source.mira' },
+                ],
+            },
+            'global-value': {
+                patterns: [
+                    {
+                        begin: String.raw`^(\x00)?(\(global\))(\s+)(${IDENTIFIER})(\s*)(=)`,
+                        beginCaptures: {
+                            2: { name: 'entity.name.label.mira' },
+                            4: { name: 'variable.other.constant.mira' },
+                            6: { name: 'keyword.operator.assignment.mira' },
+                        },
+                        end: '$',
+                        patterns: [{ include: '#doc-value' }],
+                    },
                 ],
             },
             'global-constants': {
@@ -640,18 +655,83 @@ export function createMiraScriptDocGrammar(): LanguageRegistration {
                     },
                 ],
             },
+            'doc-value': {
+                patterns: [
+                    { include: '#extern-function-properties' },
+                    { include: '#extern-class-properties' },
+                    { include: '#metadata' },
+                    { include: '#doc-record-value' },
+                    { include: 'source.mira' },
+                ],
+            },
+            'doc-record-value': {
+                patterns: [
+                    {
+                        begin: String.raw`\(`,
+                        beginCaptures: { 0: { name: 'punctuation.section.parens.begin.mira' } },
+                        end: String.raw`\)`,
+                        endCaptures: { 0: { name: 'punctuation.section.parens.end.mira' } },
+                        patterns: [{ include: '#doc-value' }],
+                    },
+                ],
+            },
+            'extern-function-properties': {
+                patterns: [
+                    {
+                        match: String.raw`(${IDENTIFIER})(\s*)(:)(?=\s*/\*\s*<\s*extern\s+(?:(?:async\s+)?function\*?)(?:\s+${IDENTIFIER})?\s*>\s*\*/)`,
+                        captures: {
+                            1: { name: 'entity.name.function.mira' },
+                            3: { name: 'punctuation.separator.key-value.mira' },
+                        },
+                    },
+                ],
+            },
+            'extern-class-properties': {
+                patterns: [
+                    {
+                        match: String.raw`(${IDENTIFIER})(\s*)(:)(?=\s*/\*\s*<\s*extern\s+class(?:\s+${IDENTIFIER})?\s*>\s*\*/)`,
+                        captures: {
+                            1: { name: 'entity.name.type.mira' },
+                            3: { name: 'punctuation.separator.key-value.mira' },
+                        },
+                    },
+                ],
+            },
             metadata: {
                 patterns: [
                     {
-                        name: 'meta.documentation.type-hint.mira',
+                        name: 'comment.block.mira',
+                        contentName: 'meta.documentation.type-hint.mira',
                         begin: String.raw`/\*\s*<`,
                         beginCaptures: { 0: { name: 'punctuation.definition.comment.begin.mira' } },
                         end: String.raw`>\s*\*/`,
                         endCaptures: { 0: { name: 'punctuation.definition.comment.end.mira' } },
                         patterns: [
-                            { name: 'storage.modifier.extern.mira', match: String.raw`\bextern\b` },
-                            { name: 'storage.type.function.mira', match: String.raw`\b(?:async\s+)?function\*?\b` },
-                            { name: 'storage.type.class.mira', match: String.raw`\bclass\b` },
+                            {
+                                match: String.raw`(?<!\p{XID_Continue})(extern)(\s+)(?:(async)(\s+))?(function)(\*)?(?:\s+(${IDENTIFIER}))?`,
+                                captures: {
+                                    1: { name: 'storage.modifier.extern.mira' },
+                                    3: { name: 'storage.modifier.async.mira' },
+                                    5: { name: 'keyword.declaration.function.mira' },
+                                    6: { name: 'keyword.operator.generator.mira' },
+                                    7: { name: 'entity.name.function.mira' },
+                                },
+                            },
+                            {
+                                match: String.raw`(?<!\p{XID_Continue})(extern)(\s+)(class)(?:\s+(${IDENTIFIER}))?`,
+                                captures: {
+                                    1: { name: 'storage.modifier.extern.mira' },
+                                    3: { name: 'keyword.declaration.class.mira' },
+                                    4: { name: 'entity.name.type.mira' },
+                                },
+                            },
+                            {
+                                match: String.raw`(?<!\p{XID_Continue})(extern)(?:\s+(${IDENTIFIER}))?`,
+                                captures: {
+                                    1: { name: 'storage.modifier.extern.mira' },
+                                    2: { name: 'entity.name.type.mira' },
+                                },
+                            },
                             { name: 'entity.name.type.mira', match: IDENTIFIER },
                             { name: 'constant.numeric.mira', match: String.raw`\d+` },
                             { name: 'punctuation.separator.type.mira', match: '[().,<>]' },

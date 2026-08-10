@@ -147,7 +147,7 @@ test('highlights generated documentation syntax', () => {
     expectScope(tokens, '@constant', 'variable.other.constant.mira');
     expectScope(tokens, 'mutable', 'variable.other.readwrite.mira');
     expectScope(tokens, 'extern', 'storage.modifier.extern.mira');
-    expectScope(tokens, 'function', 'storage.type.function.mira');
+    expectScope(tokens, 'function', 'keyword.declaration.function.mira');
     expectScope(tokens, 'transform', 'entity.name.function.mira');
     expectScope(tokens, 'record', 'support.type.builtin.mira');
     expectScope(tokens, 'callback', 'entity.name.function.emphasis.mira');
@@ -208,6 +208,63 @@ test('keeps tuple and array element types inside their type context', () => {
         );
     }
     assert.equal(tokens.filter((token) => token.text === 'number').length, 6);
+});
+
+test('highlights serialized extern record values in documentation mode', () => {
+    const tokens = tokenize(
+        [
+            '(global) globalThis = /* <extern Window> */ (',
+            '  event: nil,',
+            '  customElements: /* <extern CustomElementRegistry> */ (',
+            '    define: /* <extern function> */,',
+            '    get: /* <extern function getValue> */,',
+            '    iterate: /* <extern function*> */,',
+            '    resolve: /* <extern async function resolveValue> */,',
+            '    initialize: /* <extern async function* initializeValue> */,',
+            '    Constructor: /* <extern class> */,',
+            '    Widget: /* <extern class HTMLElement> */',
+            '  ),',
+            '  ../* x162 */',
+            ')',
+        ].join('\n'),
+        'mirascript-doc',
+    );
+    expectScope(tokens, '(global)', 'entity.name.label.mira');
+    expectScope(tokens, 'globalThis', 'variable.other.constant.mira');
+    expectScope(tokens, 'event', 'variable.other.property.mira');
+    expectScope(tokens, 'nil', 'constant.language.mira');
+    expectScope(tokens, 'customElements', 'variable.other.property.mira');
+    expectScope(tokens, 'define', 'entity.name.function.mira');
+    expectScope(tokens, 'get', 'entity.name.function.mira');
+    expectScope(tokens, 'iterate', 'entity.name.function.mira');
+    expectScope(tokens, 'resolve', 'entity.name.function.mira');
+    expectScope(tokens, 'initialize', 'entity.name.function.mira');
+    expectScope(tokens, 'Constructor', 'entity.name.type.mira');
+    expectScope(tokens, 'Widget', 'entity.name.type.mira');
+    expectScope(tokens, 'Window', 'entity.name.type.mira');
+    expectScope(tokens, 'CustomElementRegistry', 'entity.name.type.mira');
+    for (const token of tokens.filter((candidate) => candidate.text === 'function')) {
+        assert.ok(token.scopes.includes('keyword.declaration.function.mira'));
+    }
+    assert.equal(tokens.filter((token) => token.text === 'function').length, 5);
+    for (const token of tokens.filter((candidate) => candidate.text === 'async')) {
+        assert.ok(token.scopes.includes('storage.modifier.async.mira'));
+    }
+    assert.equal(tokens.filter((token) => token.text === 'async').length, 2);
+    for (const token of tokens.filter((candidate) => candidate.text === '*')) {
+        assert.ok(token.scopes.includes('keyword.operator.generator.mira'));
+    }
+    assert.equal(tokens.filter((token) => token.text === '*').length, 2);
+    expectScope(tokens, 'getValue', 'entity.name.function.mira');
+    expectScope(tokens, 'resolveValue', 'entity.name.function.mira');
+    expectScope(tokens, 'initializeValue', 'entity.name.function.mira');
+    expectScope(tokens, 'class', 'keyword.declaration.class.mira', 0);
+    expectScope(tokens, 'class', 'keyword.declaration.class.mira', 1);
+    expectScope(tokens, 'HTMLElement', 'entity.name.type.mira');
+    expectScope(tokens, ' x162 ', 'comment.block.mira');
+    for (const delimiter of tokens.filter((token) => token.text === '/* <' || token.text === '> */')) {
+        assert.ok(delimiter.scopes.includes('comment.block.mira'));
+    }
 });
 
 test('marks invalid numeric and escape sequences', () => {
