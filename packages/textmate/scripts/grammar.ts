@@ -1,3 +1,4 @@
+import type { LanguageRegistration } from '@shikijs/types';
 import {
     CONSTANT_KEYWORDS,
     CONTROL_KEYWORDS,
@@ -28,19 +29,15 @@ const DOC_CONSTANT_IDENTIFIER = String.raw`(?:@+\p{XID_Continue}+|\p{Lu}[\p{XID_
 
 /**
  * Escape a literal value for insertion into an Oniguruma regular expression.
- * @param {string} value
- * @returns {string}
  */
-function escapeRegex(value) {
+function escapeRegex(value: string): string {
     return value.replaceAll(/[\\^$.*+?()[\]{}|]/g, String.raw`\$&`).replaceAll(/\s+/g, String.raw`\s+`);
 }
 
 /**
  * Build a longest-first regular-expression alternation.
- * @param {Iterable<string>} values
- * @returns {string}
  */
-function alternatives(values) {
+function alternatives(values: Iterable<string>): string {
     return [...values]
         .sort((a, b) => b.length - a.length)
         .map(escapeRegex)
@@ -49,11 +46,8 @@ function alternatives(values) {
 
 /**
  * Create a boundary-aware TextMate keyword rule.
- * @param {readonly string[]} values
- * @param {string} name
- * @returns {object | null}
  */
-function keywordRule(values, name) {
+function keywordRule(values: readonly string[], name: string): { name: string; match: string } | null {
     if (values.length === 0) return null;
     return {
         name: `${name}.${SCOPE_SUFFIX}`,
@@ -61,7 +55,7 @@ function keywordRule(values, name) {
     };
 }
 
-const numericKeywordSet = new Set(NUMERIC_KEYWORDS);
+const numericKeywordSet = new Set<string>(NUMERIC_KEYWORDS);
 const constantKeywords = CONSTANT_KEYWORDS.filter((keyword) => !numericKeywordSet.has(keyword));
 const languageVariables = ['_', 'global'];
 const wordOperators = ['not in', 'in', 'is', 'and', 'or', 'not'];
@@ -81,10 +75,8 @@ const otherKeywords = KEYWORDS.filter((keyword) => !classifiedKeywords.has(keywo
 
 /**
  * Create interpolation rules for one exact dollar-sign width.
- * @param {number} dollarCount
- * @returns {object[]}
  */
-function interpolationPatterns(dollarCount) {
+function interpolationPatterns(dollarCount: number) {
     const dollars = String.raw`\$`.repeat(dollarCount);
     return [
         {
@@ -125,11 +117,8 @@ function interpolationPatterns(dollarCount) {
 
 /**
  * Create a quoted-string rule with escapes and single-dollar interpolation.
- * @param {string} quote
- * @param {string} label
- * @returns {object}
  */
-function normalString(quote, label) {
+function normalString(quote: string, label: string) {
     const escapedQuote = escapeRegex(quote);
     return {
         name: `string.quoted.${label}.${SCOPE_SUFFIX}`,
@@ -140,7 +129,7 @@ function normalString(quote, label) {
         patterns: [
             { name: `constant.character.escape.unicode.${SCOPE_SUFFIX}`, match: String.raw`\\u\{[0-9A-Fa-f]+\}` },
             { name: `constant.character.escape.hex.${SCOPE_SUFFIX}`, match: String.raw`\\x[0-9A-Fa-f]{2}` },
-            { name: `constant.character.escape.${SCOPE_SUFFIX}`, match: String.raw`\\[\\'"\`$rntbfv0]` },
+            { name: `constant.character.escape.${SCOPE_SUFFIX}`, match: '\\\\[\\\\\'"\\`$rntbfv0]' },
             { name: `invalid.illegal.escape.${SCOPE_SUFFIX}`, match: String.raw`\\.` },
             ...interpolationPatterns(1),
         ],
@@ -149,12 +138,8 @@ function normalString(quote, label) {
 
 /**
  * Create an exact-width MiraScript verbatim-string rule.
- * @param {number} atCount
- * @param {string} quote
- * @param {string} label
- * @returns {object}
  */
-function verbatimString(atCount, quote, label) {
+function verbatimString(atCount: number, quote: string, label: string) {
     const ats = '@'.repeat(atCount);
     const escapedQuote = escapeRegex(quote);
     return {
@@ -169,7 +154,6 @@ function verbatimString(atCount, quote, label) {
 
 /**
  * Build normal and 1-16 marker verbatim-string rules for every quote style.
- * @returns {object[]}
  */
 function stringPatterns() {
     const quotes = [
@@ -187,9 +171,8 @@ function stringPatterns() {
 
 /**
  * Build the shared repository used by source and template grammars.
- * @returns {object}
  */
-function sourceRepository() {
+function sourceRepository(): LanguageRegistration['repository'] {
     const keywordPatterns = [
         keywordRule(NUMERIC_KEYWORDS, 'constant.numeric.language'),
         keywordRule(constantKeywords, 'constant.language'),
@@ -200,7 +183,7 @@ function sourceRepository() {
         keywordRule(RESERVED_KEYWORDS, 'keyword.reserved'),
         keywordRule(languageVariables, 'variable.language'),
         keywordRule(otherKeywords, 'keyword.other'),
-    ].filter(Boolean);
+    ].filter((p) => p != null);
 
     return {
         source: {
@@ -517,11 +500,9 @@ function sourceRepository() {
 
 /**
  * Create the ordinary MiraScript TextMate grammar.
- * @returns {object}
  */
-export function createMiraScriptGrammar() {
+export function createMiraScriptGrammar(): LanguageRegistration {
     return {
-        $schema: 'https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json',
         name: 'mirascript',
         aliases: ['mira'],
         scopeName: 'source.mira',
@@ -532,11 +513,9 @@ export function createMiraScriptGrammar() {
 
 /**
  * Create the MiraScript template TextMate grammar.
- * @returns {object}
  */
-export function createMiraScriptTemplateGrammar() {
+export function createMiraScriptTemplateGrammar(): LanguageRegistration {
     return {
-        $schema: 'https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json',
         name: 'mirascript-template',
         aliases: ['miratpl'],
         scopeName: 'text.miratpl',
@@ -551,11 +530,9 @@ export function createMiraScriptTemplateGrammar() {
 
 /**
  * Create the generated-document and type-signature TextMate grammar.
- * @returns {object}
  */
-export function createMiraScriptDocGrammar() {
+export function createMiraScriptDocGrammar(): LanguageRegistration {
     return {
-        $schema: 'https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json',
         name: 'mirascript-doc',
         scopeName: 'source.mira.doc',
         patterns: [{ include: '#doc' }],
@@ -850,4 +827,8 @@ export function createMiraScriptDocGrammar() {
     };
 }
 
-export const grammars = [createMiraScriptGrammar(), createMiraScriptTemplateGrammar(), createMiraScriptDocGrammar()];
+export const grammars: LanguageRegistration[] = [
+    createMiraScriptGrammar(),
+    createMiraScriptTemplateGrammar(),
+    createMiraScriptDocGrammar(),
+];

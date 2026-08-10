@@ -28,13 +28,9 @@
     "./syntaxes/miratpl.tmLanguage.json": "./dist/syntaxes/miratpl.tmLanguage.json",
     "./syntaxes/mira-doc.tmLanguage.json": "./dist/syntaxes/mira-doc.tmLanguage.json"
   },
-  "files": [
-    "dist",
-    "README.md"
-  ],
   "scripts": {
-    "build": "pnpm clean && node ./scripts/build.js && pnpm test",
-    "test": "node --test ./scripts/*.test.js",
+    "build": "pnpm clean && node ./scripts/build.ts",
+    "test": "node --test",
     "clean": "rimraf dist"
   },
   "dependencies": {

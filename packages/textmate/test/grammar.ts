@@ -1,11 +1,12 @@
-import { createHighlighterCore } from '@shikijs/core';
+import { createHighlighterCore, type HighlighterCore } from '@shikijs/core';
+import { INITIAL, type StateStack } from '@shikijs/vscode-textmate';
 import { createOnigurumaEngine } from '@shikijs/engine-oniguruma';
 import wasm from '@shikijs/engine-oniguruma/wasm-inlined';
 import assert from 'node:assert/strict';
 import { after, before, test } from 'node:test';
-import { grammars } from './grammar.js';
+import { grammars } from '../scripts/grammar.ts';
 
-let highlighter;
+let highlighter: HighlighterCore;
 
 before(async () => {
     highlighter = await createHighlighterCore({
@@ -19,13 +20,10 @@ after(() => highlighter.dispose());
 
 /**
  * Tokenize complete source while preserving TextMate state across lines.
- * @param {string} code
- * @param {string} language
- * @returns {object[]}
  */
-function tokenize(code, language = 'mirascript') {
+function tokenize(code: string, language = 'mirascript') {
     const grammar = highlighter.getLanguage(language);
-    let state = null;
+    let state: StateStack = INITIAL;
     return code.split('\n').flatMap((line, lineIndex) => {
         const result = grammar.tokenizeLine(line, state);
         state = result.ruleStack;
@@ -39,13 +37,8 @@ function tokenize(code, language = 'mirascript') {
 
 /**
  * Assert that a selected textual token contains the expected scope.
- * @param {object[]} tokens
- * @param {string} text
- * @param {string} scope
- * @param {number} occurrence
- * @returns {void}
  */
-function expectScope(tokens, text, scope, occurrence = 0) {
+function expectScope(tokens: Array<{ text: string; scopes: string[] }>, text: string, scope: string, occurrence = 0) {
     const matching = tokens.filter((token) => token.text === text);
     assert.ok(matching.length > occurrence, `Missing token ${JSON.stringify(text)} #${occurrence}`);
     assert.ok(
@@ -84,7 +77,7 @@ test('does not classify control keywords followed by parentheses as functions', 
     expectScope(tokens, 'call', 'entity.name.function.mira');
     for (const keyword of ['if', 'case']) {
         const token = tokens.find((candidate) => candidate.text === keyword);
-        assert.ok(!token.scopes.includes('entity.name.function.mira'));
+        assert.ok(!token!.scopes.includes('entity.name.function.mira'));
     }
 });
 
@@ -116,8 +109,8 @@ test('matches the exact interpolation width in verbatim strings', () => {
         expectScope(tokens, 'name', 'variable.other.mira', width === 1 ? 1 : 0);
         if (width > 1) {
             const literal = tokens.find((token) => token.text.includes(`${shorter}name`));
-            assert.ok(literal?.scopes.includes('string.quoted.double.verbatim.mira'));
-            assert.ok(!literal.scopes.includes('meta.interpolation.simple.mira'));
+            assert.ok(literal!.scopes.includes('string.quoted.double.verbatim.mira'));
+            assert.ok(!literal!.scopes.includes('meta.interpolation.simple.mira'));
         }
     }
 });

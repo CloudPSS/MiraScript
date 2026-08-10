@@ -419,15 +419,9 @@ jobs:
           name: npm-package
           path: packages/
 
-      - name: Run mirascript tests
+      - name: Run tests
         run: |
-          cd packages/mirascript
-          pnpm run test
-
-      - name: Run typed tests
-        run: |
-          cd packages/typed
-          pnpm run test
+          pnpm -r run test
 
       - name: Send coverage report
         shell: bash
