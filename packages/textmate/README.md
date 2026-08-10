@@ -16,6 +16,6 @@ const highlighter = await createHighlighter({
 
 包内同时导出以下原始 grammar：
 
-- `@mirascript/textmate/syntaxes/mira.tmLanguage.json`
-- `@mirascript/textmate/syntaxes/miratpl.tmLanguage.json`
-- `@mirascript/textmate/syntaxes/mira-doc.tmLanguage.json`
+- `@mirascript/textmate/mirascript.tmLanguage.json`
+- `@mirascript/textmate/mirascript-template.tmLanguage.json`
+- `@mirascript/textmate/mirascript-doc.tmLanguage.json`
