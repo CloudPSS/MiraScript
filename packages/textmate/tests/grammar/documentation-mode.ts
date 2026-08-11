@@ -1,6 +1,14 @@
 import test from 'ava';
 import { tokenize, expectScope } from '../_engine.ts';
 
+test('highlights types', (t) => {
+    const types = ['boolean', 'true', 'false', 'number', 'string', 'array', 'record', 'extern', 'any', 'nil'];
+    const tokens = tokenize(types.map((type) => `fn _${type}(v: ${type}) -> ${type}`).join('\n'), 'mirascript-doc');
+    for (const type of types) {
+        expectScope(t, tokens, type, 'support.type.builtin.mira');
+    }
+});
+
 test('highlights generated documentation syntax', (t) => {
     const tokens = tokenize(
         [

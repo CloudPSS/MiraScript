@@ -18,13 +18,19 @@ const BUILT_IN_TYPES = [
     'any',
     'unknown',
     'never',
+
     'boolean',
+    'true',
+    'false',
+
     'number',
     'string',
+
     'record',
     'array',
     'extern',
     'module',
+
     'nil',
 ];
 const DOC_CONSTANT_IDENTIFIER = String.raw`(?:@+\p{XID_Continue}+|\p{Lu}[\p{XID_Continue}]*)`;
@@ -1011,10 +1017,6 @@ export function createMiraScriptDocGrammar(): LanguageRegistration {
                     {
                         name: 'support.type.builtin.mira',
                         match: `${IDENTIFIER_START}(?:${alternatives(BUILT_IN_TYPES)})${IDENTIFIER_END}`,
-                    },
-                    {
-                        name: 'constant.language.boolean.mira',
-                        match: `${IDENTIFIER_START}(?:true|false)${IDENTIFIER_END}`,
                     },
                     { name: 'keyword.operator.type.mira', match: '[&|]' },
                     { name: 'keyword.operator.spread.mira', match: String.raw`\.\.` },
