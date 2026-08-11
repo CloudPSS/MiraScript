@@ -317,6 +317,13 @@ jobs:
           uv export --frozen --no-dev --no-emit-project --format requirements.txt --output-file pyodide-requirements.txt
           python -m pip download --only-binary=:all: --no-deps --requirement pyodide-requirements.txt --dest dist/
 
+      - name: Upload website wheels
+        uses: actions/upload-artifact@v7
+        with:
+          name: website-wheels
+          path: crates/python/dist/*.whl
+          if-no-files-found: error
+
       - name: Build website
         working-directory: packages/website
         run: pnpm run build
