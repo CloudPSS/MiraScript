@@ -54,9 +54,13 @@ t_eq(to_string(test.inner), "<module inner>");
 t_true('inner' in test);
 t_false('inner' in test.inner);
 
+let keys = ['a', 'b', '@C', 'add', 'counter', 'inc', 'set_step', 'inner'];
+let mut found_keys = [];
 for key in test {
-  t_true(key == 'a' || key == 'b' || key == '@C' || key == 'add' || key == 'inc' || key == 'set_step' || key == 'counter' || key == 'inner');
+  t_true(key in keys);
+  found_keys = [..found_keys, key];
 }
+t_eq(found_keys, keys);
 
 let (:set_step) = test;
 t_eq(set_step, test.set_step);

@@ -79,19 +79,6 @@
         }
       },
       {
-        "id": "mirascript-doc",
-        "extensions": [],
-        "aliases": [],
-        "mimetypes": [
-          "text/x-mirascript-doc"
-        ],
-        "configuration": "./language-configuration.json",
-        "icon": {
-          "light": "./icons/mira-light.svg",
-          "dark": "./icons/mira-dark.svg"
-        }
-      },
-      {
         "id": "mirascript-template",
         "extensions": [
           ".miratpl"
@@ -109,6 +96,14 @@
           "light": "./icons/miratpl-light.svg",
           "dark": "./icons/miratpl-dark.svg"
         }
+      },
+      {
+        "id": "mirascript-doc",
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./icons/mira-light.svg",
+          "dark": "./icons/mira-dark.svg"
+        }
       }
     ],
     "grammars": [
@@ -117,7 +112,9 @@
         "scopeName": "source.mira",
         "path": "./syntaxes/mirascript.tmLanguage.json",
         "tokenTypes": {
-          "meta.interpolation.mira": "other"
+          "meta.interpolation.simple.mira": "other",
+          "meta.interpolation.block.mira": "other",
+          "meta.interpolation.expression.mira": "other"
         }
       },
       {
@@ -125,7 +122,9 @@
         "scopeName": "source.mira.doc",
         "path": "./syntaxes/mirascript-doc.tmLanguage.json",
         "tokenTypes": {
-          "meta.interpolation.mira": "other"
+          "meta.interpolation.simple.mira": "other",
+          "meta.interpolation.block.mira": "other",
+          "meta.interpolation.expression.mira": "other"
         }
       },
       {
@@ -143,7 +142,9 @@
         "scopeName": "text.miratpl",
         "path": "./syntaxes/mirascript-template.tmLanguage.json",
         "tokenTypes": {
-          "meta.interpolation.mira": "other"
+          "meta.interpolation.simple.mira": "other",
+          "meta.interpolation.block.mira": "other",
+          "meta.interpolation.expression.mira": "other"
         }
       },
       {
