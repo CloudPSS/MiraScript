@@ -11,6 +11,7 @@ import { mirascriptDocLanguage, mirascriptLanguage, mirascriptTemplateLanguage }
 
 const SCOPE_SUFFIX = 'mira';
 const IDENTIFIER = REG_IDENTIFIER.source;
+const IDENTIFIER_START = String.raw`(?<!\p{XID_Continue})`;
 const IDENTIFIER_END = String.raw`(?!\p{XID_Continue})`;
 const MAX_VERBATIM_LENGTH = 16;
 const BUILT_IN_TYPES = [
@@ -45,17 +46,6 @@ function alternatives(values: Iterable<string>): string {
         .join('|');
 }
 
-/**
- * Create a boundary-aware TextMate keyword rule.
- */
-function keywordRule(values: readonly string[], name: string): { name: string; match: string } | null {
-    if (values.length === 0) return null;
-    return {
-        name: `${name}.${SCOPE_SUFFIX}`,
-        match: String.raw`(?<!\p{XID_Continue})(?:${alternatives(values)})${IDENTIFIER_END}`,
-    };
-}
-
 const numericKeywordSet = new Set<string>(NUMERIC_KEYWORDS);
 const constantKeywords = CONSTANT_KEYWORDS.filter((keyword) => !numericKeywordSet.has(keyword));
 const languageVariables = ['_', 'global'];
@@ -73,7 +63,7 @@ const classifiedKeywords = new Set([
     'type',
 ]);
 const otherKeywords = KEYWORDS.filter((keyword) => !classifiedKeywords.has(keyword));
-const mirascriptFenceTags = alternatives([mirascriptLanguage.name, ...(mirascriptLanguage.aliases ?? [])]);
+const mirascriptFenceTags = alternatives([mirascriptLanguage.name, ...mirascriptLanguage.aliases]);
 const documentationMiraFenceBegin = String.raw`^(\s*\*\s?)(\x60{3,})\s*((?i:${mirascriptFenceTags}))?\s*$`;
 const documentationOtherFenceBegin = String.raw`^(\s*\*\s?)(\x60{3,})\s*(\S+)(?:\s+.*)?\s*$`;
 const documentationFenceEnd = String.raw`^(?:(\s*\*\s?)(\2\x60*)\s*$)|(?=\*/)`;
@@ -300,6 +290,13 @@ function documentationRepository(sourceInclude = '#source') {
  * Build the shared repository used by source and template grammars.
  */
 function sourceRepository(): LanguageRegistration['repository'] {
+    /**
+     * Create a boundary-aware TextMate keyword rule.
+     */
+    const keywordRule = (values: readonly string[], name: string) => ({
+        name: `${name}.${SCOPE_SUFFIX}`,
+        match: `${IDENTIFIER_START}(?:${alternatives(values)})${IDENTIFIER_END}`,
+    });
     const keywordPatterns = [
         keywordRule(NUMERIC_KEYWORDS, 'constant.numeric.language'),
         keywordRule(constantKeywords, 'constant.language'),
@@ -310,7 +307,7 @@ function sourceRepository(): LanguageRegistration['repository'] {
         keywordRule(RESERVED_KEYWORDS, 'keyword.reserved'),
         keywordRule(languageVariables, 'variable.language'),
         keywordRule(otherKeywords, 'keyword.other'),
-    ].filter((p) => p != null);
+    ];
 
     return {
         source: {
@@ -365,7 +362,7 @@ function sourceRepository(): LanguageRegistration['repository'] {
             patterns: [
                 {
                     name: `meta.function.declaration.${SCOPE_SUFFIX}`,
-                    begin: String.raw`(?<!\p{XID_Continue})(fn)(\s+)(${IDENTIFIER})(\s*)(\()`,
+                    begin: String.raw`${IDENTIFIER_START}(fn)(\s+)(${IDENTIFIER})(\s*)(\()`,
                     beginCaptures: {
                         1: { name: `keyword.declaration.function.${SCOPE_SUFFIX}` },
                         3: { name: `entity.name.function.${SCOPE_SUFFIX}` },
@@ -377,7 +374,7 @@ function sourceRepository(): LanguageRegistration['repository'] {
                 },
                 {
                     name: `meta.function.declaration.${SCOPE_SUFFIX}`,
-                    match: String.raw`(?<!\p{XID_Continue})(fn)(\s+)(${IDENTIFIER})`,
+                    match: String.raw`${IDENTIFIER_START}(fn)(\s+)(${IDENTIFIER})`,
                     captures: {
                         1: { name: `keyword.declaration.function.${SCOPE_SUFFIX}` },
                         3: { name: `entity.name.function.${SCOPE_SUFFIX}` },
@@ -385,7 +382,7 @@ function sourceRepository(): LanguageRegistration['repository'] {
                 },
                 {
                     name: `meta.function.expression.parameters.${SCOPE_SUFFIX}`,
-                    begin: String.raw`(?<!\p{XID_Continue})(fn)(\s*)(\()`,
+                    begin: String.raw`${IDENTIFIER_START}(fn)(\s*)(\()`,
                     beginCaptures: {
                         1: { name: `keyword.declaration.function.${SCOPE_SUFFIX}` },
                         3: { name: `punctuation.section.parameters.begin.${SCOPE_SUFFIX}` },
@@ -399,7 +396,7 @@ function sourceRepository(): LanguageRegistration['repository'] {
         parameters: {
             patterns: [
                 {
-                    match: String.raw`(?<!\p{XID_Continue})(mut)(\s+)(${IDENTIFIER})`,
+                    match: String.raw`${IDENTIFIER_START}(mut)(\s+)(${IDENTIFIER})`,
                     captures: {
                         1: { name: `keyword.declaration.mutable.${SCOPE_SUFFIX}` },
                         3: { name: `variable.emphasis.${SCOPE_SUFFIX}` },
@@ -407,7 +404,7 @@ function sourceRepository(): LanguageRegistration['repository'] {
                 },
                 {
                     name: `keyword.declaration.mutable.${SCOPE_SUFFIX}`,
-                    match: String.raw`(?<!\p{XID_Continue})mut${IDENTIFIER_END}`,
+                    match: `${IDENTIFIER_START}mut${IDENTIFIER_END}`,
                 },
                 { name: `keyword.operator.spread.${SCOPE_SUFFIX}`, match: String.raw`\.\.` },
                 { name: `variable.other.constant.emphasis.${SCOPE_SUFFIX}`, match: IDENTIFIER },
@@ -428,7 +425,7 @@ function sourceRepository(): LanguageRegistration['repository'] {
         'module-declarations': {
             patterns: [
                 {
-                    match: String.raw`(?<!\p{XID_Continue})(mod)(\s+)(${IDENTIFIER})`,
+                    match: String.raw`${IDENTIFIER_START}(mod)(\s+)(${IDENTIFIER})`,
                     captures: {
                         1: { name: `keyword.control.module.${SCOPE_SUFFIX}` },
                         3: { name: `entity.name.namespace.${SCOPE_SUFFIX}` },
@@ -439,7 +436,7 @@ function sourceRepository(): LanguageRegistration['repository'] {
         'for-bindings': {
             patterns: [
                 {
-                    match: String.raw`(?<!\p{XID_Continue})(for)(\s+)(mut)(\s+)(${IDENTIFIER})(\s+)(in)${IDENTIFIER_END}`,
+                    match: String.raw`${IDENTIFIER_START}(for)(\s+)(mut)(\s+)(${IDENTIFIER})(\s+)(in)${IDENTIFIER_END}`,
                     captures: {
                         1: { name: `keyword.control.loop.${SCOPE_SUFFIX}` },
                         3: { name: `keyword.declaration.mutable.${SCOPE_SUFFIX}` },
@@ -448,7 +445,7 @@ function sourceRepository(): LanguageRegistration['repository'] {
                     },
                 },
                 {
-                    match: String.raw`(?<!\p{XID_Continue})(for)(\s+)(${IDENTIFIER})(\s+)(in)${IDENTIFIER_END}`,
+                    match: String.raw`${IDENTIFIER_START}(for)(\s+)(${IDENTIFIER})(\s+)(in)${IDENTIFIER_END}`,
                     captures: {
                         1: { name: `keyword.control.loop.${SCOPE_SUFFIX}` },
                         3: { name: `variable.other.${SCOPE_SUFFIX}` },
@@ -509,7 +506,7 @@ function sourceRepository(): LanguageRegistration['repository'] {
             patterns: [
                 {
                     name: `keyword.operator.expression.${SCOPE_SUFFIX}`,
-                    match: String.raw`(?<!\p{XID_Continue})type${IDENTIFIER_END}(?=\s*\(|\s+${IDENTIFIER})`,
+                    match: String.raw`${IDENTIFIER_START}type${IDENTIFIER_END}(?=\s*\(|\s+${IDENTIFIER})`,
                 },
             ],
         },
@@ -739,7 +736,7 @@ export function createMiraScriptDocGrammar(): LanguageRegistration {
             bindings: {
                 patterns: [
                     {
-                        match: String.raw`(?<!\p{XID_Continue})(let)(\s+)(mut)(\s+)(${IDENTIFIER})`,
+                        match: String.raw`${IDENTIFIER_START}(let)(\s+)(mut)(\s+)(${IDENTIFIER})`,
                         captures: {
                             1: { name: 'keyword.declaration.variable.mira' },
                             3: { name: 'keyword.declaration.mutable.mira' },
@@ -747,7 +744,7 @@ export function createMiraScriptDocGrammar(): LanguageRegistration {
                         },
                     },
                     {
-                        match: String.raw`(?<!\p{XID_Continue})(let|const)(\s+)(${IDENTIFIER})`,
+                        match: String.raw`${IDENTIFIER_START}(let|const)(\s+)(${IDENTIFIER})`,
                         captures: {
                             1: { name: 'keyword.declaration.variable.mira' },
                             3: { name: 'variable.other.constant.mira' },
@@ -758,7 +755,7 @@ export function createMiraScriptDocGrammar(): LanguageRegistration {
             'function-signatures': {
                 patterns: [
                     {
-                        match: String.raw`(?<!\p{XID_Continue})(?:(pub)(\s+))?(fn)(\s+)(${IDENTIFIER})(?=\s*(?:<|\())`,
+                        match: String.raw`${IDENTIFIER_START}(?:(pub)(\s+))?(fn)(\s+)(${IDENTIFIER})(?=\s*(?:<|\())`,
                         captures: {
                             1: { name: 'keyword.control.module.mira' },
                             3: { name: 'keyword.declaration.function.mira' },
@@ -833,7 +830,7 @@ export function createMiraScriptDocGrammar(): LanguageRegistration {
                         endCaptures: { 0: { name: 'punctuation.definition.comment.end.mira' } },
                         patterns: [
                             {
-                                match: String.raw`(?<!\p{XID_Continue})(extern)(\s+)(?:(async)(\s+))?(function)(\*)?(?:\s+(${IDENTIFIER}))?`,
+                                match: String.raw`${IDENTIFIER_START}(extern)(\s+)(?:(async)(\s+))?(function)(\*)?(?:\s+(${IDENTIFIER}))?`,
                                 captures: {
                                     1: { name: 'storage.modifier.extern.mira' },
                                     3: { name: 'storage.modifier.async.mira' },
@@ -843,7 +840,7 @@ export function createMiraScriptDocGrammar(): LanguageRegistration {
                                 },
                             },
                             {
-                                match: String.raw`(?<!\p{XID_Continue})(extern)(\s+)(class)(?:\s+(${IDENTIFIER}))?`,
+                                match: String.raw`${IDENTIFIER_START}(extern)(\s+)(class)(?:\s+(${IDENTIFIER}))?`,
                                 captures: {
                                     1: { name: 'storage.modifier.extern.mira' },
                                     3: { name: 'keyword.declaration.class.mira' },
@@ -851,7 +848,7 @@ export function createMiraScriptDocGrammar(): LanguageRegistration {
                                 },
                             },
                             {
-                                match: String.raw`(?<!\p{XID_Continue})(extern)(?:\s+(${IDENTIFIER}))?`,
+                                match: String.raw`${IDENTIFIER_START}(extern)(?:\s+(${IDENTIFIER}))?`,
                                 captures: {
                                     1: { name: 'storage.modifier.extern.mira' },
                                     2: { name: 'entity.name.type.mira' },
@@ -867,7 +864,7 @@ export function createMiraScriptDocGrammar(): LanguageRegistration {
             'reflection-type': {
                 patterns: [
                     {
-                        match: String.raw`(?<!\p{XID_Continue})(type)(\s*)(\()(\s*)(${IDENTIFIER})(\s*)(\))`,
+                        match: String.raw`${IDENTIFIER_START}(type)(\s*)(\()(\s*)(${IDENTIFIER})(\s*)(\))`,
                         captures: {
                             1: { name: 'keyword.operator.expression.mira' },
                             3: { name: 'punctuation.section.parens.begin.mira' },
@@ -890,7 +887,7 @@ export function createMiraScriptDocGrammar(): LanguageRegistration {
             'function-type': {
                 patterns: [
                     {
-                        begin: String.raw`(?<!\p{XID_Continue})(fn)${IDENTIFIER_END}(?=\s*(?:<|\())`,
+                        begin: String.raw`${IDENTIFIER_START}(fn)${IDENTIFIER_END}(?=\s*(?:<|\())`,
                         beginCaptures: { 1: { name: 'support.type.function.mira' } },
                         end: String.raw`(?=\s*(?:,|\)|$))`,
                         patterns: [
@@ -1013,11 +1010,11 @@ export function createMiraScriptDocGrammar(): LanguageRegistration {
                     { include: '#reflection-type' },
                     {
                         name: 'support.type.builtin.mira',
-                        match: String.raw`(?<!\p{XID_Continue})(?:${alternatives(BUILT_IN_TYPES)})${IDENTIFIER_END}`,
+                        match: `${IDENTIFIER_START}(?:${alternatives(BUILT_IN_TYPES)})${IDENTIFIER_END}`,
                     },
                     {
                         name: 'constant.language.boolean.mira',
-                        match: String.raw`(?<!\p{XID_Continue})(?:true|false)${IDENTIFIER_END}`,
+                        match: `${IDENTIFIER_START}(?:true|false)${IDENTIFIER_END}`,
                     },
                     { name: 'keyword.operator.type.mira', match: '[&|]' },
                     { name: 'keyword.operator.spread.mira', match: String.raw`\.\.` },
