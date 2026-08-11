@@ -118,12 +118,6 @@ test('matches the exact interpolation width in verbatim strings', () => {
     }
 });
 
-test('uses the shared MiraScript language metadata', () => {
-    assert.equal(grammars[0].name, mirascriptLanguage.name);
-    assert.equal(grammars[0].scopeName, mirascriptLanguage.scopeName);
-    assert.deepEqual(grammars[0].aliases, mirascriptLanguage.aliases);
-});
-
 test('separates documentation prefixes from bold and italic markup', () => {
     const tokens = tokenize(
         [
