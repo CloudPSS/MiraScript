@@ -1,5 +1,5 @@
-import type { HighlighterCore, Grammar } from '@shikijs/core';
-import type { StateStack } from '@shikijs/vscode-textmate';
+import type { HighlighterCore, Grammar } from 'shiki/core';
+import type { StateStack } from 'shiki/textmate';
 import { languages, type IDisposable } from '../monaco-api.js';
 import { CONTRIBUTE_IDS } from '../contribute.js';
 
@@ -35,29 +35,35 @@ function tokenScope(scopes: string[]): string {
 /** Shared instance of highlighter. */
 class HighlighterManager implements IDisposable {
     private highlighterPromise: Promise<HighlighterCore> | null = null;
+    private INITIAL!: StateStack;
+    /**
+     * Load the shared highlighter instance.
+     */
+    private async loadHighlighter(): Promise<HighlighterCore> {
+        const [
+            { createHighlighterCore },
+            { createJavaScriptRegexEngine },
+            { INITIAL },
+            { mirascript, mirascriptDoc, mirascriptTemplate },
+        ] = await Promise.all([
+            import('shiki/core'),
+            import('shiki/engine-javascript.mjs'),
+            import('shiki/textmate'),
+            import('@mirascript/textmate'),
+        ]);
+        this.INITIAL = INITIAL;
+        return await createHighlighterCore({
+            langs: [mirascript, mirascriptDoc, mirascriptTemplate],
+            themes: [],
+            engine: createJavaScriptRegexEngine(),
+        });
+    }
 
     /**
      * Get the shared highlighter instance.
      */
     private async getHighlighter(): Promise<HighlighterCore> {
-        if (this.highlighterPromise) return this.highlighterPromise;
-
-        const [
-            { createHighlighterCore },
-            { createOnigurumaEngine },
-            wasm,
-            { mirascript, mirascriptDoc, mirascriptTemplate },
-        ] = await Promise.all([
-            import('@shikijs/core'),
-            import('@shikijs/engine-oniguruma'),
-            import('@shikijs/engine-oniguruma/wasm-inlined'),
-            import('@mirascript/textmate'),
-        ]);
-        this.highlighterPromise = createHighlighterCore({
-            langs: [mirascript, mirascriptDoc, mirascriptTemplate],
-            themes: [],
-            engine: createOnigurumaEngine(wasm),
-        });
+        this.highlighterPromise ??= this.loadHighlighter();
         return this.highlighterPromise;
     }
 
@@ -66,9 +72,8 @@ class HighlighterManager implements IDisposable {
         return {
             create: async () => {
                 const highlighter = await this.getHighlighter();
-                const { INITIAL } = await import('@shikijs/vscode-textmate');
                 const grammar = highlighter.getLanguage(languageId);
-                return new TokensProvider(grammar, INITIAL);
+                return new TokensProvider(grammar, this.INITIAL);
             },
         };
     }
@@ -91,11 +96,11 @@ class HighlighterManager implements IDisposable {
 class TokensProvider implements languages.TokensProvider {
     constructor(
         private readonly grammar: Grammar,
-        private readonly initialState: StateStack,
+        private readonly INITIAL: StateStack,
     ) {}
     /** @inheritdoc */
     getInitialState(): StateStack {
-        return this.initialState;
+        return this.INITIAL;
     }
     /** @inheritdoc */
     tokenize(line: string, state: StateStack): languages.ILineTokens {

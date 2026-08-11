@@ -30,13 +30,11 @@
     "clean": "rimraf dist"
   },
   "dependencies": {
-    "@shikijs/types": "^4.4.2",
-    "@mirascript/constants": "workspace:~"
+    "@mirascript/constants": "workspace:~",
+    "@shikijs/types": "^4.4.3"
   },
   "devDependencies": {
-    "@shikijs/core": "^4.4.2",
-    "@shikijs/engine-oniguruma": "^4.4.2",
-    "@shikijs/vscode-textmate": "^10.0.2",
+    "shiki": "^4.4.3",
     "ava": "^8.0.1",
     "c8": "^12.0.0"
   }

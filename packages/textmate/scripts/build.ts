@@ -1,16 +1,13 @@
-import { createHighlighterCore } from '@shikijs/core';
-import { createOnigurumaEngine } from '@shikijs/engine-oniguruma';
-import wasm from '@shikijs/engine-oniguruma/wasm-inlined';
+import { createHighlighter } from 'shiki';
 import fs from 'node:fs/promises';
 import { grammars } from '../src/index.ts';
 
 const dist = new URL('../dist/', import.meta.url);
 await fs.mkdir(dist, { recursive: true });
 
-const highlighter = await createHighlighterCore({
+const highlighter = await createHighlighter({
     langs: grammars,
     themes: [],
-    engine: createOnigurumaEngine(wasm),
 });
 
 try {
@@ -27,7 +24,7 @@ for (const grammar of grammars) {
         new URL(filename, dist),
         `${JSON.stringify(
             {
-                $schema: 'https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json',
+                $schema: 'https://www.schemastore.org/tmlanguage.json',
                 ...grammar,
             },
             null,

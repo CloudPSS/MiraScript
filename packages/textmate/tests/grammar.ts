@@ -1,18 +1,15 @@
-import { createHighlighterCore, type HighlighterCore } from '@shikijs/core';
-import { INITIAL, type StateStack } from '@shikijs/vscode-textmate';
-import { createOnigurumaEngine } from '@shikijs/engine-oniguruma';
-import wasm from '@shikijs/engine-oniguruma/wasm-inlined';
+import { createHighlighter, type Highlighter } from 'shiki';
+import { INITIAL, type StateStack } from 'shiki/textmate';
 import test, { type ExecutionContext } from 'ava';
 import { grammars } from '../src/index.ts';
 import { mirascriptLanguage } from '../src/language.ts';
 
-let highlighter: HighlighterCore;
+let highlighter: Highlighter;
 
 test.before(async () => {
-    highlighter = await createHighlighterCore({
+    highlighter = await createHighlighter({
         langs: grammars,
         themes: [],
-        engine: createOnigurumaEngine(wasm),
     });
 });
 
