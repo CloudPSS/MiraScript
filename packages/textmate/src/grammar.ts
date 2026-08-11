@@ -872,7 +872,7 @@ export function createMiraScriptDocGrammar(): LanguageRegistration {
                     {
                         match: String.raw`${IDENTIFIER_START}(type)(\s*)(\()(\s*)(${IDENTIFIER})(\s*)(\))`,
                         captures: {
-                            1: { name: 'keyword.operator.expression.mira' },
+                            1: { name: 'support.type.type.mira' },
                             3: { name: 'punctuation.section.parens.begin.mira' },
                             5: { name: 'variable.other.mira' },
                             7: { name: 'punctuation.section.parens.end.mira' },

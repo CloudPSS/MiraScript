@@ -75,7 +75,7 @@ test('distinguishes doc declarations, globals, and nested function types', (t) =
     expectScope(t, tokens, 'data', 'variable.emphasis.mira', 1);
     expectScope(t, tokens, 'f', 'entity.name.function.emphasis.mira');
     expectScope(t, tokens, 'value', 'variable.emphasis.mira');
-    expectScope(t, tokens, 'type', 'keyword.operator.expression.mira');
+    expectScope(t, tokens, 'type', 'support.type.type.mira');
     expectScope(t, tokens, 'data', 'variable.other.mira', 2);
 });
 
@@ -109,7 +109,7 @@ test('keeps nested types in unlabelled and module function signatures', (t) => {
         t.false(token.scopes.includes('keyword.declaration.function.mira'), token.scopes.join(', '));
     }
     for (const token of tokens.filter((token) => token.text === 'type')) {
-        t.true(token.scopes.includes('keyword.operator.expression.mira'), token.scopes.join(', '));
+        t.true(token.scopes.includes('support.type.type.mira'), token.scopes.join(', '));
     }
     t.is(tokens.filter((token) => token.text === 'type').length, 2);
     for (const token of tokens.filter((token) => token.text === 'data' && (token.line === 2 || token.line === 3))) {
