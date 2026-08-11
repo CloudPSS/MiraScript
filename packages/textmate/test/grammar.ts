@@ -260,6 +260,26 @@ test('ends an unterminated documentation fence at the comment boundary', () => {
     assert.ok(!recovered!.scopes.includes('comment.block.documentation.mira'));
 });
 
+test('highlights documentation comments inside documentation mode', () => {
+    const tokens = tokenize(
+        [
+            '/**',
+            ' * **bold** and *italic*',
+            ' * ```mirascript',
+            ' * matrix.identity(3)',
+            ' * ```',
+            ' */',
+            'fn recovered(value: number) -> number',
+        ].join('\n'),
+        'mirascript-doc',
+    );
+    expectScope(tokens, '**bold**', 'markup.bold.documentation.mira');
+    expectScope(tokens, '*italic*', 'markup.italic.documentation.mira');
+    expectScope(tokens, 'identity', 'entity.name.function.member.mira');
+    expectScope(tokens, 'recovered', 'entity.name.function.mira');
+    expectScope(tokens, 'number', 'support.type.builtin.mira');
+});
+
 test('highlights template text and embedded MiraScript', () => {
     const tokens = tokenize('Hello $name: ${ fn_call(1) }', 'mirascript-template');
     expectScope(tokens, 'Hello ', 'string.unquoted.template.mira');

@@ -78,6 +78,8 @@ const documentationMiraFenceBegin = String.raw`^(\s*\*\s?)(\x60{3,})\s*((?i:${mi
 const documentationOtherFenceBegin = String.raw`^(\s*\*\s?)(\x60{3,})\s*(\S+)(?:\s+.*)?\s*$`;
 const documentationFenceEnd = String.raw`^(?:(\s*\*\s?)(\2\x60*)\s*$)|(?=\*/)`;
 const documentationMiraLine = String.raw`^(?!\s*\*\s*\x60{3,}\s*$)(?!.*\*/)(\s*\*\s?)`;
+const documentationInjectionSelector =
+    'L:comment.block.documentation.mira -markup.fenced_code.block.mira -meta.documentation.inline.mira';
 
 /**
  * Create interpolation rules for one exact dollar-sign width.
@@ -176,51 +178,10 @@ function stringPatterns() {
 }
 
 /**
- * Build the shared repository used by source and template grammars.
+ * Build the documentation-comment rules shared by source and doc grammars.
  */
-function sourceRepository(): LanguageRegistration['repository'] {
-    const keywordPatterns = [
-        keywordRule(NUMERIC_KEYWORDS, 'constant.numeric.language'),
-        keywordRule(constantKeywords, 'constant.language'),
-        keywordRule(CONTROL_KEYWORDS, 'keyword.control'),
-        keywordRule(wordOperators, 'keyword.operator.wordlike'),
-        keywordRule(declarationKeywords, 'keyword.declaration'),
-        keywordRule(moduleKeywords, 'keyword.control.module'),
-        keywordRule(RESERVED_KEYWORDS, 'keyword.reserved'),
-        keywordRule(languageVariables, 'variable.language'),
-        keywordRule(otherKeywords, 'keyword.other'),
-    ].filter((p) => p != null);
-
+function documentationRepository(sourceInclude = '#source') {
     return {
-        source: {
-            patterns: [
-                { include: '#comments' },
-                { include: '#strings' },
-                { include: '#function-declarations' },
-                { include: '#module-declarations' },
-                { include: '#for-bindings' },
-                { include: '#record-properties' },
-                { include: '#member-access' },
-                { include: '#type-keyword' },
-                { include: '#keywords' },
-                { include: '#function-calls' },
-                { include: '#numbers' },
-                { include: '#identifiers' },
-                { include: '#operators' },
-                { include: '#punctuation' },
-            ],
-        },
-        comments: {
-            patterns: [
-                { name: `comment.line.double-slash.${SCOPE_SUFFIX}`, match: '//.*$' },
-                {
-                    name: `comment.block.documentation.${SCOPE_SUFFIX}`,
-                    begin: String.raw`/\*\*`,
-                    end: String.raw`\*/`,
-                },
-                { name: `comment.block.${SCOPE_SUFFIX}`, begin: String.raw`/\*`, end: String.raw`\*/` },
-            ],
-        },
         documentation: {
             patterns: [
                 { include: '#documentation-mirascript-fence' },
@@ -297,7 +258,7 @@ function sourceRepository(): LanguageRegistration['repository'] {
                             whileCaptures: {
                                 1: { name: `comment.block.documentation.${SCOPE_SUFFIX}` },
                             },
-                            patterns: [{ include: '#source' }],
+                            patterns: [{ include: sourceInclude }],
                         },
                         {
                             name: `comment.block.documentation.${SCOPE_SUFFIX}`,
@@ -332,6 +293,56 @@ function sourceRepository(): LanguageRegistration['repository'] {
                 },
             ],
         },
+    };
+}
+
+/**
+ * Build the shared repository used by source and template grammars.
+ */
+function sourceRepository(): LanguageRegistration['repository'] {
+    const keywordPatterns = [
+        keywordRule(NUMERIC_KEYWORDS, 'constant.numeric.language'),
+        keywordRule(constantKeywords, 'constant.language'),
+        keywordRule(CONTROL_KEYWORDS, 'keyword.control'),
+        keywordRule(wordOperators, 'keyword.operator.wordlike'),
+        keywordRule(declarationKeywords, 'keyword.declaration'),
+        keywordRule(moduleKeywords, 'keyword.control.module'),
+        keywordRule(RESERVED_KEYWORDS, 'keyword.reserved'),
+        keywordRule(languageVariables, 'variable.language'),
+        keywordRule(otherKeywords, 'keyword.other'),
+    ].filter((p) => p != null);
+
+    return {
+        source: {
+            patterns: [
+                { include: '#comments' },
+                { include: '#strings' },
+                { include: '#function-declarations' },
+                { include: '#module-declarations' },
+                { include: '#for-bindings' },
+                { include: '#record-properties' },
+                { include: '#member-access' },
+                { include: '#type-keyword' },
+                { include: '#keywords' },
+                { include: '#function-calls' },
+                { include: '#numbers' },
+                { include: '#identifiers' },
+                { include: '#operators' },
+                { include: '#punctuation' },
+            ],
+        },
+        comments: {
+            patterns: [
+                { name: `comment.line.double-slash.${SCOPE_SUFFIX}`, match: '//.*$' },
+                {
+                    name: `comment.block.documentation.${SCOPE_SUFFIX}`,
+                    begin: String.raw`/\*\*`,
+                    end: String.raw`\*/`,
+                },
+                { name: `comment.block.${SCOPE_SUFFIX}`, begin: String.raw`/\*`, end: String.raw`\*/` },
+            ],
+        },
+        ...documentationRepository(),
         'format-content': {
             patterns: [
                 { name: `constant.character.escape.format.${SCOPE_SUFFIX}`, match: String.raw`\\.` },
@@ -615,7 +626,7 @@ export function createMiraScriptGrammar(): LanguageRegistration {
         patterns: [{ include: '#source' }],
         repository: sourceRepository(),
         injections: {
-            'L:comment.block.documentation.mira -markup.fenced_code.block.mira -meta.documentation.inline.mira': {
+            [documentationInjectionSelector]: {
                 patterns: [{ include: '#documentation' }],
             },
         },
@@ -644,7 +655,13 @@ export function createMiraScriptDocGrammar(): LanguageRegistration {
     return {
         ...mirascriptDocLanguage,
         patterns: [{ include: '#doc' }],
+        injections: {
+            [documentationInjectionSelector]: {
+                patterns: [{ include: '#documentation' }],
+            },
+        },
         repository: {
+            ...documentationRepository('source.mira#source'),
             doc: {
                 patterns: [
                     { include: '#global-value' },
