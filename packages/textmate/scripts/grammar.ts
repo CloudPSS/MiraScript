@@ -927,7 +927,7 @@ export function createMiraScriptDocGrammar(): LanguageRegistration {
                                 beginCaptures: {
                                     1: { name: 'keyword.operator.spread.mira' },
                                     3: { name: 'keyword.declaration.mutable.mira' },
-                                    5: { name: 'variable.other.constant.emphasis.mira' },
+                                    5: { name: 'variable.emphasis.mira' },
                                     7: { name: 'punctuation.separator.type.mira' },
                                 },
                                 end: String.raw`(?=,|\))`,
@@ -942,7 +942,7 @@ export function createMiraScriptDocGrammar(): LanguageRegistration {
                                 },
                             },
                             { name: 'keyword.operator.spread.mira', match: String.raw`\.\.` },
-                            { name: 'variable.other.constant.emphasis.mira', match: IDENTIFIER },
+                            { name: 'variable.emphasis.mira', match: IDENTIFIER },
                             { name: 'punctuation.separator.parameter.mira', match: ',' },
                         ],
                     },

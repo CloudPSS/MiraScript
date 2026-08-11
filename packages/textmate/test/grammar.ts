@@ -272,6 +272,7 @@ test('highlights generated documentation syntax', () => {
     const tokens = tokenize(
         [
             '\0(parameter) mut value',
+            '\0(parameter) plain',
             '(field) description',
             'let immutable',
             'const @constant',
@@ -286,6 +287,7 @@ test('highlights generated documentation syntax', () => {
     expectScope(tokens, '(parameter)', 'entity.name.label.mira');
     expectScope(tokens, '(field)', 'entity.name.label.mira');
     expectScope(tokens, 'value', 'variable.emphasis.mira');
+    expectScope(tokens, 'plain', 'variable.other.constant.emphasis.mira');
     expectScope(tokens, 'immutable', 'variable.other.constant.mira');
     expectScope(tokens, '@constant', 'variable.other.constant.mira');
     expectScope(tokens, 'mutable', 'variable.other.readwrite.mira');
@@ -296,9 +298,11 @@ test('highlights generated documentation syntax', () => {
     expectScope(tokens, 'callback', 'entity.name.function.emphasis.mira');
     expectScope(tokens, 'boolean', 'support.type.builtin.mira');
     expectScope(tokens, 'MyValue', 'variable.other.mira');
-    expectScope(tokens, 'field', 'variable.other.constant.emphasis.mira');
+    expectScope(tokens, 'field', 'variable.emphasis.mira');
+    expectScope(tokens, 'nested', 'variable.emphasis.mira');
+    expectScope(tokens, 'name', 'variable.other.property.mira');
     assert.ok(
-        !tokens.filter((token) => token.line === 8).some((token) => token.scopes.includes('entity.name.label.mira')),
+        !tokens.filter((token) => token.line === 9).some((token) => token.scopes.includes('entity.name.label.mira')),
     );
     expectScope(tokens, '->', 'keyword.operator.type.mira');
 });
@@ -327,9 +331,9 @@ test('distinguishes doc declarations, globals, and nested function types', () =>
     expectScope(tokens, '(global)', 'entity.name.label.mira', 0);
     expectScope(tokens, 'fn', 'keyword.declaration.function.mira', 0);
     expectScope(tokens, 'fn', 'support.type.function.mira', 2);
-    expectScope(tokens, 'data', 'variable.other.constant.emphasis.mira', 1);
+    expectScope(tokens, 'data', 'variable.emphasis.mira', 1);
     expectScope(tokens, 'f', 'entity.name.function.emphasis.mira');
-    expectScope(tokens, 'value', 'variable.other.constant.emphasis.mira');
+    expectScope(tokens, 'value', 'variable.emphasis.mira');
     expectScope(tokens, 'type', 'keyword.operator.expression.mira');
     expectScope(tokens, 'data', 'variable.other.mira', 2);
 });
@@ -381,8 +385,8 @@ test('keeps tuple and array element types inside their type context', () => {
         ].join('\n'),
         'mirascript-doc',
     );
-    expectScope(tokens, 'matrix', 'variable.other.constant.emphasis.mira');
-    expectScope(tokens, 'size', 'variable.other.constant.emphasis.mira', 1);
+    expectScope(tokens, 'matrix', 'variable.emphasis.mira');
+    expectScope(tokens, 'size', 'variable.emphasis.mira', 1);
     for (const token of tokens.filter((candidate) => candidate.text === 'number')) {
         assert.ok(
             token.scopes.includes('support.type.builtin.mira'),
