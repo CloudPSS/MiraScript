@@ -2,7 +2,7 @@ import { createHighlighterCore } from '@shikijs/core';
 import { createOnigurumaEngine } from '@shikijs/engine-oniguruma';
 import wasm from '@shikijs/engine-oniguruma/wasm-inlined';
 import fs from 'node:fs/promises';
-import { grammars } from './grammar.ts';
+import { grammars } from './index.ts';
 
 const dist = new URL('../dist/', import.meta.url);
 await fs.mkdir(dist, { recursive: true });

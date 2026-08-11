@@ -7,6 +7,7 @@ import {
     REG_IDENTIFIER,
     RESERVED_KEYWORDS,
 } from '@mirascript/constants';
+import { mirascriptDocLanguage, mirascriptLanguage, mirascriptTemplateLanguage } from './language.ts';
 
 const SCOPE_SUFFIX = 'mira';
 const IDENTIFIER = REG_IDENTIFIER.source;
@@ -72,6 +73,11 @@ const classifiedKeywords = new Set([
     'type',
 ]);
 const otherKeywords = KEYWORDS.filter((keyword) => !classifiedKeywords.has(keyword));
+const mirascriptFenceTags = alternatives([mirascriptLanguage.name, ...(mirascriptLanguage.aliases ?? [])]);
+const documentationMiraFenceBegin = String.raw`^(\s*\*\s?)(\x60{3,})\s*((?i:${mirascriptFenceTags}))?\s*$`;
+const documentationOtherFenceBegin = String.raw`^(\s*\*\s?)(\x60{3,})\s*(\S+)(?:\s+.*)?\s*$`;
+const documentationFenceEnd = String.raw`^(?:(\s*\*\s?)(\2\x60*)\s*$)|(?=\*/)`;
+const documentationMiraLine = String.raw`^(?!\s*\*\s*\x60{3,}\s*$)(?!.*\*/)(\s*\*\s?)`;
 
 /**
  * Create interpolation rules for one exact dollar-sign width.
@@ -83,24 +89,24 @@ function interpolationPatterns(dollarCount: number) {
             name: `meta.interpolation.simple.${SCOPE_SUFFIX}`,
             match: `(${dollars})(${IDENTIFIER})`,
             captures: {
-                1: { name: `punctuation.definition.interpolation.begin.${SCOPE_SUFFIX}` },
+                1: { name: `punctuation.definition.template-expression.begin.${SCOPE_SUFFIX}` },
                 2: { name: `variable.other.${SCOPE_SUFFIX}` },
             },
         },
         {
             name: `meta.interpolation.block.${SCOPE_SUFFIX}`,
             begin: String.raw`(${dollars}\{)`,
-            beginCaptures: { 1: { name: `punctuation.definition.interpolation.begin.${SCOPE_SUFFIX}` } },
+            beginCaptures: { 1: { name: `punctuation.definition.template-expression.begin.${SCOPE_SUFFIX}` } },
             end: String.raw`\}`,
-            endCaptures: { 0: { name: `punctuation.definition.interpolation.end.${SCOPE_SUFFIX}` } },
+            endCaptures: { 0: { name: `punctuation.definition.template-expression.end.${SCOPE_SUFFIX}` } },
             patterns: [{ include: '#braced-content' }],
         },
         {
             name: `meta.interpolation.expression.${SCOPE_SUFFIX}`,
             begin: String.raw`(${dollars}\()`,
-            beginCaptures: { 1: { name: `punctuation.definition.interpolation.begin.${SCOPE_SUFFIX}` } },
+            beginCaptures: { 1: { name: `punctuation.definition.template-expression.begin.${SCOPE_SUFFIX}` } },
             end: String.raw`\)`,
-            endCaptures: { 0: { name: `punctuation.definition.interpolation.end.${SCOPE_SUFFIX}` } },
+            endCaptures: { 0: { name: `punctuation.definition.template-expression.end.${SCOPE_SUFFIX}` } },
             patterns: [
                 {
                     begin: ':(?!:)',
@@ -209,19 +215,121 @@ function sourceRepository(): LanguageRegistration['repository'] {
                 { name: `comment.line.double-slash.${SCOPE_SUFFIX}`, match: '//.*$' },
                 {
                     name: `comment.block.documentation.${SCOPE_SUFFIX}`,
-                    begin: String.raw`/\*\*(?!/)`,
+                    begin: String.raw`/\*\*`,
                     end: String.raw`\*/`,
-                    patterns: [
-                        {
-                            name: `storage.type.class.documentation.${SCOPE_SUFFIX}`,
-                            match: String.raw`@(param|returns)\b`,
-                        },
-                        { name: `markup.bold.documentation.${SCOPE_SUFFIX}`, match: String.raw`\*\*[^*]+\*\*` },
-                        { name: `markup.italic.documentation.${SCOPE_SUFFIX}`, match: String.raw`\*[^*]+\*` },
-                        { name: `constant.character.escape.documentation.${SCOPE_SUFFIX}`, match: String.raw`\\\*` },
-                    ],
                 },
                 { name: `comment.block.${SCOPE_SUFFIX}`, begin: String.raw`/\*`, end: String.raw`\*/` },
+            ],
+        },
+        documentation: {
+            patterns: [
+                { include: '#documentation-mirascript-fence' },
+                { include: '#documentation-other-fence' },
+                { include: '#documentation-line' },
+                { include: '#documentation-fragment' },
+            ],
+        },
+        'documentation-inline': {
+            patterns: [
+                {
+                    name: `storage.type.class.documentation.${SCOPE_SUFFIX}`,
+                    match: String.raw`@(param|returns)\b`,
+                },
+                {
+                    name: `markup.bold.documentation.${SCOPE_SUFFIX}`,
+                    match: String.raw`\*\*[^*]+\*\*`,
+                },
+                { name: `markup.italic.documentation.${SCOPE_SUFFIX}`, match: String.raw`\*[^*]+\*` },
+                { name: `constant.character.escape.documentation.${SCOPE_SUFFIX}`, match: String.raw`\\\*` },
+            ],
+        },
+        'documentation-line': {
+            patterns: [
+                {
+                    match: String.raw`^(?!\s*\*/)(\s*\*\s?)(.*?)(?=\*/|$)`,
+                    captures: {
+                        1: { name: `comment.block.documentation.${SCOPE_SUFFIX}` },
+                        2: {
+                            name: `meta.documentation.inline.${SCOPE_SUFFIX}`,
+                            patterns: [{ include: '#documentation-inline' }],
+                        },
+                    },
+                },
+            ],
+        },
+        'documentation-fragment': {
+            patterns: [
+                {
+                    match: String.raw`(?!\*/)(.+?)(?=\*/|$)`,
+                    captures: {
+                        1: {
+                            name: `meta.documentation.inline.${SCOPE_SUFFIX}`,
+                            patterns: [{ include: '#documentation-inline' }],
+                        },
+                    },
+                },
+            ],
+        },
+        'documentation-mirascript-fence': {
+            patterns: [
+                {
+                    name: `markup.fenced_code.block.${SCOPE_SUFFIX}`,
+                    begin: documentationMiraFenceBegin,
+                    beginCaptures: {
+                        1: { name: `comment.block.documentation.${SCOPE_SUFFIX}` },
+                        2: { name: `punctuation.definition.markdown.${SCOPE_SUFFIX}` },
+                        3: { name: `fenced_code.block.language.${SCOPE_SUFFIX}` },
+                    },
+                    end: documentationFenceEnd,
+                    endCaptures: {
+                        1: { name: `comment.block.documentation.${SCOPE_SUFFIX}` },
+                        2: { name: `punctuation.definition.markdown.${SCOPE_SUFFIX}` },
+                    },
+                    patterns: [
+                        {
+                            name: `meta.embedded.block.${SCOPE_SUFFIX}`,
+                            contentName: `source.${SCOPE_SUFFIX}`,
+                            begin: documentationMiraLine,
+                            beginCaptures: {
+                                1: { name: `comment.block.documentation.${SCOPE_SUFFIX}` },
+                            },
+                            while: documentationMiraLine,
+                            whileCaptures: {
+                                1: { name: `comment.block.documentation.${SCOPE_SUFFIX}` },
+                            },
+                            patterns: [{ include: '#source' }],
+                        },
+                        {
+                            name: `comment.block.documentation.${SCOPE_SUFFIX}`,
+                            match: String.raw`^(?!\s*\*/)(\s*\*\s?)`,
+                        },
+                    ],
+                },
+            ],
+        },
+        'documentation-other-fence': {
+            patterns: [
+                {
+                    name: `markup.fenced_code.block.${SCOPE_SUFFIX}`,
+                    contentName: `markup.raw.block.${SCOPE_SUFFIX}`,
+                    begin: documentationOtherFenceBegin,
+                    beginCaptures: {
+                        1: { name: `comment.block.documentation.${SCOPE_SUFFIX}` },
+                        2: { name: `punctuation.definition.markdown.${SCOPE_SUFFIX}` },
+                        3: { name: `fenced_code.block.language.${SCOPE_SUFFIX}` },
+                    },
+                    end: documentationFenceEnd,
+                    endCaptures: {
+                        1: { name: `comment.block.documentation.${SCOPE_SUFFIX}` },
+                        2: { name: `punctuation.definition.markdown.${SCOPE_SUFFIX}` },
+                    },
+                    patterns: [
+                        {
+                            name: `comment.block.documentation.${SCOPE_SUFFIX}`,
+                            match: String.raw`^(?!\s*\*/)(\s*\*\s?)`,
+                        },
+                    ],
+                },
             ],
         },
         'format-content': {
@@ -503,11 +611,14 @@ function sourceRepository(): LanguageRegistration['repository'] {
  */
 export function createMiraScriptGrammar(): LanguageRegistration {
     return {
-        name: 'mirascript',
-        aliases: ['MiraScript', 'mira', 'Mira'],
-        scopeName: 'source.mira',
+        ...mirascriptLanguage,
         patterns: [{ include: '#source' }],
         repository: sourceRepository(),
+        injections: {
+            'L:comment.block.documentation.mira -markup.fenced_code.block.mira -meta.documentation.inline.mira': {
+                patterns: [{ include: '#documentation' }],
+            },
+        },
     };
 }
 
@@ -516,9 +627,7 @@ export function createMiraScriptGrammar(): LanguageRegistration {
  */
 export function createMiraScriptTemplateGrammar(): LanguageRegistration {
     return {
-        name: 'mirascript-template',
-        aliases: ['MiraScript-Template', 'miratpl', 'MiraTpl'],
-        scopeName: 'text.miratpl',
+        ...mirascriptTemplateLanguage,
         patterns: [
             ...interpolationPatterns(1),
             { name: 'string.unquoted.template.mira', match: '[^$]+' },
@@ -533,8 +642,7 @@ export function createMiraScriptTemplateGrammar(): LanguageRegistration {
  */
 export function createMiraScriptDocGrammar(): LanguageRegistration {
     return {
-        name: 'mirascript-doc',
-        scopeName: 'source.mira.doc',
+        ...mirascriptDocLanguage,
         patterns: [{ include: '#doc' }],
         repository: {
             doc: {
@@ -906,9 +1014,3 @@ export function createMiraScriptDocGrammar(): LanguageRegistration {
         },
     };
 }
-
-export const grammars: LanguageRegistration[] = [
-    createMiraScriptGrammar(),
-    createMiraScriptTemplateGrammar(),
-    createMiraScriptDocGrammar(),
-];

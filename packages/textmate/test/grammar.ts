@@ -4,7 +4,8 @@ import { createOnigurumaEngine } from '@shikijs/engine-oniguruma';
 import wasm from '@shikijs/engine-oniguruma/wasm-inlined';
 import assert from 'node:assert/strict';
 import { after, before, test } from 'node:test';
-import { grammars } from '../scripts/grammar.ts';
+import { grammars } from '../scripts/index.ts';
+import { mirascriptLanguage } from '../scripts/language.ts';
 
 let highlighter: HighlighterCore;
 
@@ -94,9 +95,9 @@ test('only classifies type as a keyword in its two contextual forms', () => {
 
 test('handles nested interpolation and format strings', () => {
     const tokens = tokenize('"value ${ if ok { fn_call((1 + 2)) } } / $(value:>8[.]2f)"');
-    expectScope(tokens, '${', 'punctuation.definition.interpolation.begin.mira');
+    expectScope(tokens, '${', 'punctuation.definition.template-expression.begin.mira');
     expectScope(tokens, 'fn_call', 'entity.name.function.mira');
-    expectScope(tokens, '$(', 'punctuation.definition.interpolation.begin.mira');
+    expectScope(tokens, '$(', 'punctuation.definition.template-expression.begin.mira');
     expectScope(tokens, ':', 'punctuation.separator.format.mira');
     expectScope(tokens, '>8', 'string.unquoted.format.mira');
 });
@@ -107,7 +108,7 @@ test('matches the exact interpolation width in verbatim strings', () => {
         const dollars = '$'.repeat(width);
         const shorter = '$'.repeat(Math.max(1, width - 1));
         const tokens = tokenize(`${ats}"literal ${shorter}name ${dollars}name"${ats}`);
-        expectScope(tokens, dollars, 'punctuation.definition.interpolation.begin.mira');
+        expectScope(tokens, dollars, 'punctuation.definition.template-expression.begin.mira');
         expectScope(tokens, 'name', 'variable.other.mira', width === 1 ? 1 : 0);
         if (width > 1) {
             const literal = tokens.find((token) => token.text.includes(`${shorter}name`));
@@ -117,10 +118,152 @@ test('matches the exact interpolation width in verbatim strings', () => {
     }
 });
 
+test('uses the shared MiraScript language metadata', () => {
+    assert.equal(grammars[0].name, mirascriptLanguage.name);
+    assert.equal(grammars[0].scopeName, mirascriptLanguage.scopeName);
+    assert.deepEqual(grammars[0].aliases, mirascriptLanguage.aliases);
+});
+
+test('separates documentation prefixes from bold and italic markup', () => {
+    const tokens = tokenize(
+        [
+            '/**',
+            ' * - *a*: 第一个操作数',
+            ' * - **b**: 第二个操作数',
+            ' * ```mirascript',
+            ' * matrix.add([1, 2], [3, 4]) // [4, 6]',
+            ' * ```',
+            ' */',
+        ].join('\n'),
+    );
+    expectScope(tokens, '*a*', 'markup.italic.documentation.mira');
+    expectScope(tokens, '**b**', 'markup.bold.documentation.mira');
+    for (const line of [1, 2, 3, 4, 5]) {
+        const prefix = tokens.find((token) => token.line === line && token.text.trim() === '*');
+        assert.ok(prefix, `Missing documentation prefix on line ${line}`);
+        assert.equal(prefix.scopes.at(-1), 'comment.block.documentation.mira');
+    }
+});
+
+test('does not consume a documentation terminator as italic markup', () => {
+    const tokens = tokenize('/**\n * *1*/\nlet x = 12;');
+    expectScope(tokens, 'let', 'keyword.declaration.mira');
+    expectScope(tokens, 'x', 'variable.other.mira');
+    assert.ok(
+        !tokens.some((token) => token.text === '*1*' && token.scopes.includes('markup.italic.documentation.mira')),
+    );
+});
+
+test('ends a documentation fence before a prefixed comment terminator', () => {
+    const tokens = tokenize('/**\n * ```mirascript\n * */\n * ```');
+    const trailingLine = tokens.filter((token) => token.line === 3);
+    assert.ok(trailingLine.length > 0);
+    for (const token of trailingLine) {
+        assert.ok(!token.scopes.includes('comment.block.documentation.mira'), token.scopes.join(', '));
+        assert.ok(!token.scopes.includes('markup.fenced_code.block.mira'), token.scopes.join(', '));
+    }
+});
+
+test('closes documentation before an embedded string can consume its terminator', () => {
+    const tokens = tokenize("/**\n * ```mirascript\n * '*/\nlet recovered = 1;");
+    expectScope(tokens, 'let', 'keyword.declaration.mira');
+    expectScope(tokens, 'recovered', 'variable.other.mira');
+    const recovered = tokens.find((token) => token.text === 'recovered');
+    assert.ok(!recovered!.scopes.includes('comment.block.documentation.mira'));
+    assert.ok(!recovered!.scopes.includes('markup.fenced_code.block.mira'));
+});
+
+test('preserves multiline embedded source state between safe documentation lines', () => {
+    const tokens = tokenize("/**\n * ```mirascript\n * 'first\n * second'\n * ```\n */");
+    expectScope(tokens, 'second', 'string.quoted.single.mira');
+});
+
+test('highlights documentation fences for the MiraScript name, aliases, and an omitted tag', () => {
+    const tags = [undefined, mirascriptLanguage.name, ...(mirascriptLanguage.aliases ?? []), 'mIrAsCrIpT'];
+    for (const tag of tags) {
+        const tokens = tokenize(['/**', ` * \`\`\`${tag ?? ''}`, ' * matrix.identity(3)', ' * ```', ' */'].join('\n'));
+        if (tag) expectScope(tokens, tag, 'fenced_code.block.language.mira');
+        expectScope(tokens, 'identity', 'entity.name.function.member.mira');
+    }
+});
+
+test('supports documentation fences with three or more backticks', () => {
+    for (const [openingLength, closingLength] of [
+        [3, 3],
+        [4, 4],
+        [8, 8],
+        [12, 16],
+    ]) {
+        const opening = '`'.repeat(openingLength);
+        const closing = '`'.repeat(closingLength);
+        const tokens = tokenize(
+            [
+                '/**',
+                ` * ${opening}mirascript`,
+                ' * matrix.identity(3)',
+                ` * ${closing}`,
+                ' */',
+                'let outside = 1;',
+            ].join('\n'),
+        );
+        expectScope(tokens, 'identity', 'entity.name.function.member.mira');
+        expectScope(tokens, 'outside', 'variable.other.mira');
+    }
+});
+
+test('keeps unknown documentation fence tags as unparsed code blocks', () => {
+    const tokens = tokenize(
+        ['/**', ' * ````javascript', ' * let value = call(1);', ' * ````', ' */', 'let outside = 1;'].join('\n'),
+    );
+    expectScope(tokens, 'javascript', 'fenced_code.block.language.mira');
+    const body = tokens.find((token) => token.line === 2 && token.text.includes('let value'));
+    assert.ok(body);
+    assert.ok(body.scopes.includes('markup.fenced_code.block.mira'));
+    assert.ok(body.scopes.includes('markup.raw.block.mira'));
+    assert.ok(!body.scopes.includes('keyword.declaration.mira'));
+    assert.ok(!body.scopes.includes('entity.name.function.mira'));
+    expectScope(tokens, 'outside', 'variable.other.mira');
+});
+
+test('highlights MiraScript fenced code inside documentation comments', () => {
+    const tokens = tokenize(
+        [
+            '/**',
+            ' * 创建一个单位矩阵',
+            ' *',
+            ' * - `..size`: 矩阵的维度',
+            ' *',
+            ' * ### 示例',
+            ' * ```mirascript',
+            ' * matrix.identity(3) // [[1, 0, 0], [0, 1, 0], [0, 0, 1]]',
+            ' * ```',
+            ' * @returns the matrix',
+            ' */',
+            'let outside = 2;',
+        ].join('\n'),
+    );
+    expectScope(tokens, 'mirascript', 'fenced_code.block.language.mira');
+    expectScope(tokens, 'identity', 'entity.name.function.member.mira');
+    expectScope(tokens, '3', 'constant.numeric.float.mira');
+    expectScope(tokens, '// [[1, 0, 0], [0, 1, 0], [0, 0, 1]]', 'comment.line.double-slash.mira');
+    expectScope(tokens, '@returns', 'storage.type.class.documentation.mira');
+    expectScope(tokens, 'let', 'keyword.declaration.mira');
+    expectScope(tokens, 'outside', 'variable.other.mira');
+});
+
+test('ends an unterminated documentation fence at the comment boundary', () => {
+    const tokens = tokenize('/**\n * ```mirascript\n * fn call() { nil }\n */\nlet recovered = 1;');
+    expectScope(tokens, 'call', 'entity.name.function.mira');
+    expectScope(tokens, 'let', 'keyword.declaration.mira');
+    expectScope(tokens, 'recovered', 'variable.other.mira');
+    const recovered = tokens.find((token) => token.text === 'recovered');
+    assert.ok(!recovered!.scopes.includes('comment.block.documentation.mira'));
+});
+
 test('highlights template text and embedded MiraScript', () => {
     const tokens = tokenize('Hello $name: ${ fn_call(1) }', 'mirascript-template');
     expectScope(tokens, 'Hello ', 'string.unquoted.template.mira');
-    expectScope(tokens, '$', 'punctuation.definition.interpolation.begin.mira');
+    expectScope(tokens, '$', 'punctuation.definition.template-expression.begin.mira');
     expectScope(tokens, 'name', 'variable.other.mira');
     expectScope(tokens, 'fn_call', 'entity.name.function.mira');
 });
