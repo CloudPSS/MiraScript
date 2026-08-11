@@ -26,7 +26,7 @@
   },
   "scripts": {
     "build": "pnpm clean && tsc && node ./scripts/build.ts",
-    "test": "node --test '--test-coverage-include=src/**/*' --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=lcov.info",
+    "test": "c8 ava",
     "clean": "rimraf dist"
   },
   "dependencies": {
@@ -36,6 +36,8 @@
   "devDependencies": {
     "@shikijs/core": "^4.4.2",
     "@shikijs/engine-oniguruma": "^4.4.2",
-    "@shikijs/vscode-textmate": "^10.0.2"
+    "@shikijs/vscode-textmate": "^10.0.2",
+    "ava": "^8.0.1",
+    "c8": "^12.0.0"
   }
 }

@@ -4,7 +4,8 @@
     "noEmit": true,
     "checkJs": true,
     "erasableSyntaxOnly": true,
-    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
+    "rootDir": "${configDir}/..",
     "types": ["node"],
     "module": "NodeNext"
   },

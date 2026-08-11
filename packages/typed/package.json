@@ -25,7 +25,7 @@
   "scripts": {
     "build": "peggy src/type.peggy --multi-output ./dist --dts --format es --source-map && tsc",
     "clean": "rimraf dist",
-    "test": "c8 ava --no-worker-threads"
+    "test": "c8 ava"
   },
   "devDependencies": {
     "@mirascript/mirascript": "workspace:~",
