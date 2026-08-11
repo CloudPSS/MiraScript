@@ -20,22 +20,20 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    },
-    "./*.tmLanguage.json": "./dist/*.tmLanguage.json"
+    ".": "./dist/index.js",
+    "./*.tmLanguage.json": "./dist/*.tmLanguage.json",
+    "./*": "./dist/*.js"
   },
   "scripts": {
-    "build": "pnpm clean && node ./scripts/build.ts",
+    "build": "pnpm clean && tsc && node ./scripts/build.ts",
     "test": "node --test",
     "clean": "rimraf dist"
   },
   "dependencies": {
-    "@shikijs/types": "^4.4.2"
+    "@shikijs/types": "^4.4.2",
+    "@mirascript/constants": "workspace:~"
   },
   "devDependencies": {
-    "@mirascript/constants": "workspace:~",
     "@shikijs/core": "^4.4.2",
     "@shikijs/engine-oniguruma": "^4.4.2",
     "@shikijs/vscode-textmate": "^10.0.2"

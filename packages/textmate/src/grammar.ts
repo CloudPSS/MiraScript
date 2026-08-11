@@ -168,7 +168,7 @@ function stringPatterns() {
         ['"', 'double'],
         ["'", 'single'],
         ['`', 'backtick'],
-    ];
+    ] as const;
     return [
         ...Array.from({ length: MAX_VERBATIM_LENGTH }, (_, index) => MAX_VERBATIM_LENGTH - index).flatMap((atCount) =>
             quotes.map(([quote, label]) => verbatimString(atCount, quote, label)),

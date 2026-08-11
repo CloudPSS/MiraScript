@@ -2,7 +2,7 @@ import { createHighlighterCore } from '@shikijs/core';
 import { createOnigurumaEngine } from '@shikijs/engine-oniguruma';
 import wasm from '@shikijs/engine-oniguruma/wasm-inlined';
 import fs from 'node:fs/promises';
-import { grammars } from './index.ts';
+import { grammars } from '../src/index.ts';
 
 const dist = new URL('../dist/', import.meta.url);
 await fs.mkdir(dist, { recursive: true });
@@ -36,20 +36,3 @@ for (const grammar of grammars) {
         'utf8',
     );
 }
-
-const js = [];
-const dts = ['import type { LanguageRegistration } from "@shikijs/types";'];
-for (const grammar of grammars) {
-    const { name } = grammar;
-    const id = name.replaceAll(/-[a-z]/g, (match) => match[1].toUpperCase());
-    js.push(`import ${id} from './${grammar.name}.tmLanguage.json' with { type: 'json' };`, `export { ${id} };`);
-    dts.push(`export declare const ${id}: LanguageRegistration;`);
-    if (id !== name) {
-        js.push(`export { ${id} as '${name}' };`);
-        dts.push(`export { ${id} as '${name}' };`);
-    }
-}
-
-await fs.writeFile(new URL('index.js', dist), js.join('\n') + '\n', 'utf8');
-
-await fs.writeFile(new URL('index.d.ts', dist), dts.join('\n') + '\n', 'utf8');

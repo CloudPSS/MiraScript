@@ -5,4 +5,6 @@ export const mirascript = createMiraScriptGrammar();
 export const mirascriptTemplate = createMiraScriptTemplateGrammar();
 export const mirascriptDoc = createMiraScriptDocGrammar();
 
-export const grammars: LanguageRegistration[] = [mirascript, mirascriptTemplate, mirascriptDoc];
+export { mirascriptTemplate as 'mirascript-template', mirascriptDoc as 'mirascript-doc' };
+
+export const grammars: readonly LanguageRegistration[] = Object.freeze([mirascript, mirascriptTemplate, mirascriptDoc]);

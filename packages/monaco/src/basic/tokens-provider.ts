@@ -1,9 +1,7 @@
 import type { HighlighterCore, Grammar } from '@shikijs/core';
 import type { StateStack } from '@shikijs/vscode-textmate';
-import { mirascript, mirascriptDoc, mirascriptTemplate } from '@mirascript/textmate';
 import { languages, type IDisposable } from '../monaco-api.js';
-
-const REGISTRATIONS = [mirascript, mirascriptTemplate, mirascriptDoc];
+import { CONTRIBUTE_IDS } from '../contribute.js';
 
 const TOKENIZE_MAX_LINE_LENGTH = 20000;
 const TOKENIZE_TIME_LIMIT = 500;
@@ -44,13 +42,19 @@ class HighlighterManager implements IDisposable {
     private async getHighlighter(): Promise<HighlighterCore> {
         if (this.highlighterPromise) return this.highlighterPromise;
 
-        const [{ createHighlighterCore }, { createOnigurumaEngine }, wasm] = await Promise.all([
+        const [
+            { createHighlighterCore },
+            { createOnigurumaEngine },
+            wasm,
+            { mirascript, mirascriptDoc, mirascriptTemplate },
+        ] = await Promise.all([
             import('@shikijs/core'),
             import('@shikijs/engine-oniguruma'),
             import('@shikijs/engine-oniguruma/wasm-inlined'),
+            import('@mirascript/textmate'),
         ]);
         this.highlighterPromise = createHighlighterCore({
-            langs: REGISTRATIONS,
+            langs: [mirascript, mirascriptDoc, mirascriptTemplate],
             themes: [],
             engine: createOnigurumaEngine(wasm),
         });
@@ -124,8 +128,8 @@ class TokensProvider implements languages.TokensProvider {
 /** Register TextMate-backed token providers without changing Monaco themes. */
 export function registerMiraScriptTokensProvider(): IDisposable[] {
     const manager = new HighlighterManager();
-    const disposables = REGISTRATIONS.map((reg) =>
-        languages.registerTokensProviderFactory(reg.name, manager.getTokensProviderFactory(reg.name)),
+    const disposables = CONTRIBUTE_IDS.map((id) =>
+        languages.registerTokensProviderFactory(id, manager.getTokensProviderFactory(id)),
     );
     disposables.push(manager);
     return disposables;

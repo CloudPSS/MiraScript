@@ -1,25 +1,25 @@
+import { mirascriptLanguage, mirascriptDocLanguage, mirascriptTemplateLanguage } from '@mirascript/textmate/language';
 import { languages } from './monaco-api.js';
+
+export const CONTRIBUTE_IDS = [mirascriptLanguage.name, mirascriptTemplateLanguage.name, mirascriptDocLanguage.name];
 
 /** 注册语言 */
 export function registerContribution(): void {
     languages.register({
-        id: 'mirascript',
+        id: mirascriptLanguage.name,
         extensions: ['.mira'],
-        aliases: ['MiraScript', 'mira', 'Mira'],
+        aliases: mirascriptLanguage.aliases,
         mimetypes: ['text/x-mirascript'],
     });
 
     languages.register({
-        id: 'mirascript-template',
+        id: mirascriptTemplateLanguage.name,
         extensions: ['.miratpl'],
-        aliases: ['MiraScript-Template', 'miratpl', 'MiraTpl'],
+        aliases: mirascriptTemplateLanguage.aliases,
         mimetypes: ['text/x-mirascript-template'],
     });
 
     languages.register({
-        id: 'mirascript-doc',
-        extensions: [],
-        aliases: [],
-        mimetypes: ['text/x-mirascript-doc'],
+        id: mirascriptDocLanguage.name,
     });
 }

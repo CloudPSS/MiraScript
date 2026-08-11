@@ -4,8 +4,8 @@ import { createOnigurumaEngine } from '@shikijs/engine-oniguruma';
 import wasm from '@shikijs/engine-oniguruma/wasm-inlined';
 import assert from 'node:assert/strict';
 import { after, before, test } from 'node:test';
-import { grammars } from '../scripts/index.ts';
-import { mirascriptLanguage } from '../scripts/language.ts';
+import { grammars } from '../src/index.ts';
+import { mirascriptLanguage } from '../src/language.ts';
 
 let highlighter: HighlighterCore;
 
