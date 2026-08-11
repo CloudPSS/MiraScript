@@ -48,6 +48,7 @@ coverage/
 .coverage
 .nyc_output/
 .eslint-report/
+lcov.info
 *.cpuprofile
 *.heapprofile
 *.heapsnapshot

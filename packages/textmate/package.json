@@ -26,7 +26,7 @@
   },
   "scripts": {
     "build": "pnpm clean && tsc && node ./scripts/build.ts",
-    "test": "node --test",
+    "test": "node --test '--test-coverage-include=src/**/*' --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=lcov.info",
     "clean": "rimraf dist"
   },
   "dependencies": {
