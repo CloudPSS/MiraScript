@@ -79,8 +79,11 @@ export class ProvidersManager extends Disposable {
         // const colorProvider = new ColorProvider();
 
         const definitionReferenceProvider = new DefinitionReferenceProvider();
-        definitionReferenceProvider.createGlobalModel = async (uri) =>
-            ModelAdapter.from(await workspace.openTextDocument(Uri.parse(uri)));
+        definitionReferenceProvider.createGlobalModel = async (uri) => {
+            let file = await workspace.openTextDocument(Uri.parse(uri));
+            file = await languages.setTextDocumentLanguage(file, 'mirascript-doc');
+            return ModelAdapter.from(file);
+        };
 
         const documentHighlightProvider = new DocumentHighlightProvider();
         const documentSymbolProvider = new DocumentSymbolProvider();
