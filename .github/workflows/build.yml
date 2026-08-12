@@ -519,7 +519,7 @@ jobs:
           bash <(curl -Ls https://coverage.codacy.com/get.sh) report --partial --project-token '${{ secrets.CODACY_PROJECT_TOKEN }}'
 
   finalize-coverage:
-    if: ${{ (needs.test-python.result == 'success' || needs.test-python.result == 'failure') && (needs.test-node.result == 'success' || needs.test-node.result == 'failure') }}
+    if: ${{ !cancelled() && (needs.test-python.result == 'success' || needs.test-python.result == 'failure') && (needs.test-node.result == 'success' || needs.test-node.result == 'failure') }}
     needs: [test-python, test-node]
 
     runs-on: ubuntu-slim
