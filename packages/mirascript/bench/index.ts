@@ -4,13 +4,14 @@ import { compile, compileSync, createVmContext } from '@mirascript/mirascript';
 const bench = new Bench({ name: 'simple benchmark', time: 100 });
 const source = `sin(x) + cos(y + PI / 2) + `.repeat(1) + '0';
 const env = { x: 1, y: 2 };
+const COMPILE_PARALLELISM = 1;
 
 bench
     .add('compile', async () => {
-        await Promise.all(Array.from({ length: 10 }).map(async () => compile(source)));
+        await Promise.all(Array.from({ length: COMPILE_PARALLELISM }).map(async () => compile(source)));
     })
     .add('compileSync', () => {
-        compileSync(source);
+        Array.from({ length: COMPILE_PARALLELISM }).map(() => compileSync(source));
     });
 
 bench.add('createVmContext', () => {
