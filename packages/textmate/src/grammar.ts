@@ -34,6 +34,10 @@ const BUILT_IN_TYPES = [
     'nil',
 ];
 const DOC_CONSTANT_IDENTIFIER = String.raw`(?:@+\p{XID_Continue}+|\p{Lu}[\p{XID_Continue}]*)`;
+const DOC_TAG_NAME = String.raw`[^>\r\n]*[^>\s]`;
+const DOC_TAG_CONTENT = String.raw`(?:module|function|extern)(?:[ \t]+${DOC_TAG_NAME})?`;
+const DOC_FIELD_NAME = String.raw`(?:${IDENTIFIER}|\d+|"(?:\\.|[^"\\\r\n])*"|'(?:\\.|[^'\\\r\n])*')`;
+const DOC_TAG_NUMBER = String.raw`\d[\d_]*(?:\.[\d_]+)?(?:[eE][+-]?[\d_]*\d)?`;
 
 /**
  * Escape a literal value for insertion into an Oniguruma regular expression.
@@ -667,27 +671,43 @@ export function createMiraScriptDocGrammar(): LanguageRegistration {
             ...documentationRepository('source.mira#source'),
             doc: {
                 patterns: [
+                    { include: '#tag' },
                     { include: '#global-value' },
                     { include: '#global-constants' },
                     { include: '#inline-parameter' },
+                    { include: '#properties' },
                     { include: '#inline-label' },
+                    { include: '#binding-value' },
                     { include: '#bindings' },
                     { include: '#function-signatures' },
-                    { include: '#properties' },
                     { include: '#generic-types' },
                     { include: '#parameters' },
                     { include: '#return-type' },
-                    { include: '#metadata' },
+                    { include: '#tag-comment' },
                     { include: 'source.mira' },
+                ],
+            },
+            tag: {
+                patterns: [
+                    {
+                        name: 'meta.documentation.tag.mira',
+                        contentName: 'meta.documentation.tag.content.mira',
+                        begin: `(<)(?=${DOC_TAG_CONTENT}>)`,
+                        beginCaptures: { 1: { name: 'punctuation.definition.tag.begin.mira' } },
+                        end: '(>)',
+                        endCaptures: { 1: { name: 'punctuation.definition.tag.end.mira' } },
+                        patterns: [{ include: '#tag-content' }],
+                    },
                 ],
             },
             'global-value': {
                 patterns: [
                     {
+                        name: 'meta.documentation.global-value.mira',
                         begin: String.raw`^(\x00)?(\(global\))(\s+)(${IDENTIFIER})(\s*)(=)`,
                         beginCaptures: {
                             2: { name: 'entity.name.label.mira' },
-                            4: { name: 'variable.other.constant.mira' },
+                            4: { name: 'variable.other.mira' },
                             6: { name: 'keyword.operator.assignment.mira' },
                         },
                         end: '$',
@@ -758,6 +778,31 @@ export function createMiraScriptDocGrammar(): LanguageRegistration {
                     },
                 ],
             },
+            'binding-value': {
+                patterns: [
+                    {
+                        begin: String.raw`${IDENTIFIER_START}(let)(\s+)(mut)(\s+)(${IDENTIFIER})(\s*)(=)`,
+                        beginCaptures: {
+                            1: { name: 'keyword.declaration.variable.mira' },
+                            3: { name: 'keyword.declaration.mutable.mira' },
+                            5: { name: 'variable.other.readwrite.mira' },
+                            7: { name: 'keyword.operator.assignment.mira' },
+                        },
+                        end: '$',
+                        patterns: [{ include: '#doc-value' }],
+                    },
+                    {
+                        begin: String.raw`${IDENTIFIER_START}(let|const)(\s+)(${IDENTIFIER})(\s*)(=)`,
+                        beginCaptures: {
+                            1: { name: 'keyword.declaration.variable.mira' },
+                            3: { name: 'variable.other.constant.mira' },
+                            5: { name: 'keyword.operator.assignment.mira' },
+                        },
+                        end: '$',
+                        patterns: [{ include: '#doc-value' }],
+                    },
+                ],
+            },
             'function-signatures': {
                 patterns: [
                     {
@@ -773,21 +818,60 @@ export function createMiraScriptDocGrammar(): LanguageRegistration {
             properties: {
                 patterns: [
                     {
-                        begin: String.raw`(${IDENTIFIER})(\s*)(\??:)`,
+                        name: 'meta.documentation.field.mira',
+                        begin: String.raw`^(\x00)?(?:(\(field\))(\s+))?(${DOC_FIELD_NAME})(\s*)(\??:)(?=[ \t]*/\*[ \t]*<extern[ \t]+(?:(?:async[ \t]+)?function\*?)(?:[ \t]+${DOC_TAG_NAME})?>[ \t]*\*/)`,
                         beginCaptures: {
-                            1: { name: 'variable.other.property.mira' },
-                            3: { name: 'punctuation.separator.type.mira' },
+                            2: { name: 'entity.name.label.mira' },
+                            4: { name: 'entity.name.function.mira' },
+                            6: { name: 'punctuation.separator.type.mira' },
                         },
                         end: '$',
-                        patterns: [{ include: '#metadata' }, { include: '#type-context' }],
+                        patterns: [
+                            { include: '#tag-comment' },
+                            { include: '#tag' },
+                            { include: '#doc-record-value' },
+                            { include: '#type-context' },
+                        ],
+                    },
+                    {
+                        name: 'meta.documentation.field.mira',
+                        begin: String.raw`^(\x00)?(?:(\(field\))(\s+))?(${DOC_FIELD_NAME})(\s*)(\??:)(?=[ \t]*/\*[ \t]*<extern[ \t]+class(?:[ \t]+${DOC_TAG_NAME})?>[ \t]*\*/)`,
+                        beginCaptures: {
+                            2: { name: 'entity.name.label.mira' },
+                            4: { name: 'entity.name.type.mira' },
+                            6: { name: 'punctuation.separator.type.mira' },
+                        },
+                        end: '$',
+                        patterns: [
+                            { include: '#tag-comment' },
+                            { include: '#tag' },
+                            { include: '#doc-record-value' },
+                            { include: '#type-context' },
+                        ],
+                    },
+                    {
+                        name: 'meta.documentation.field.mira',
+                        begin: String.raw`^(\x00)?(?:(\(field\))(\s+))?(${DOC_FIELD_NAME})(\s*)(\??:)`,
+                        beginCaptures: {
+                            2: { name: 'entity.name.label.mira' },
+                            4: { name: 'variable.other.property.mira' },
+                            6: { name: 'punctuation.separator.type.mira' },
+                        },
+                        end: '$',
+                        patterns: [
+                            { include: '#tag-comment' },
+                            { include: '#tag' },
+                            { include: '#doc-record-value' },
+                            { include: '#type-context' },
+                        ],
                     },
                 ],
             },
             'doc-value': {
                 patterns: [
-                    { include: '#extern-function-properties' },
-                    { include: '#extern-class-properties' },
-                    { include: '#metadata' },
+                    { include: '#tag-properties' },
+                    { include: '#tag-comment' },
+                    { include: '#tag' },
                     { include: '#doc-record-value' },
                     { include: 'source.mira' },
                 ],
@@ -803,21 +887,17 @@ export function createMiraScriptDocGrammar(): LanguageRegistration {
                     },
                 ],
             },
-            'extern-function-properties': {
+            'tag-properties': {
                 patterns: [
                     {
-                        match: String.raw`(${IDENTIFIER})(\s*)(:)(?=\s*/\*\s*<\s*extern\s+(?:(?:async\s+)?function\*?)(?:\s+${IDENTIFIER})?\s*>\s*\*/)`,
+                        match: String.raw`(${DOC_FIELD_NAME})(\s*)(:)(?=[ \t]*/\*[ \t]*<extern[ \t]+(?:(?:async[ \t]+)?function\*?)(?:[ \t]+${DOC_TAG_NAME})?>[ \t]*\*/)`,
                         captures: {
                             1: { name: 'entity.name.function.mira' },
                             3: { name: 'punctuation.separator.key-value.mira' },
                         },
                     },
-                ],
-            },
-            'extern-class-properties': {
-                patterns: [
                     {
-                        match: String.raw`(${IDENTIFIER})(\s*)(:)(?=\s*/\*\s*<\s*extern\s+class(?:\s+${IDENTIFIER})?\s*>\s*\*/)`,
+                        match: String.raw`(${DOC_FIELD_NAME})(\s*)(:)(?=[ \t]*/\*[ \t]*<extern[ \t]+class(?:[ \t]+${DOC_TAG_NAME})?>[ \t]*\*/)`,
                         captures: {
                             1: { name: 'entity.name.type.mira' },
                             3: { name: 'punctuation.separator.key-value.mira' },
@@ -825,45 +905,75 @@ export function createMiraScriptDocGrammar(): LanguageRegistration {
                     },
                 ],
             },
-            metadata: {
+            'tag-comment': {
                 patterns: [
                     {
                         name: 'comment.block.mira',
-                        contentName: 'meta.documentation.type-hint.mira',
-                        begin: String.raw`/\*\s*<`,
-                        beginCaptures: { 0: { name: 'punctuation.definition.comment.begin.mira' } },
-                        end: String.raw`>\s*\*/`,
-                        endCaptures: { 0: { name: 'punctuation.definition.comment.end.mira' } },
-                        patterns: [
-                            {
-                                match: String.raw`${IDENTIFIER_START}(extern)(\s+)(?:(async)(\s+))?(function)(\*)?(?:\s+(${IDENTIFIER}))?`,
-                                captures: {
-                                    1: { name: 'storage.modifier.extern.mira' },
-                                    3: { name: 'storage.modifier.async.mira' },
-                                    5: { name: 'keyword.declaration.function.mira' },
-                                    6: { name: 'keyword.operator.generator.mira' },
-                                    7: { name: 'entity.name.function.mira' },
-                                },
-                            },
-                            {
-                                match: String.raw`${IDENTIFIER_START}(extern)(\s+)(class)(?:\s+(${IDENTIFIER}))?`,
-                                captures: {
-                                    1: { name: 'storage.modifier.extern.mira' },
-                                    3: { name: 'keyword.declaration.class.mira' },
-                                    4: { name: 'entity.name.type.mira' },
-                                },
-                            },
-                            {
-                                match: String.raw`${IDENTIFIER_START}(extern)(?:\s+(${IDENTIFIER}))?`,
-                                captures: {
-                                    1: { name: 'storage.modifier.extern.mira' },
-                                    2: { name: 'entity.name.type.mira' },
-                                },
-                            },
-                            { name: 'entity.name.type.mira', match: IDENTIFIER },
-                            { name: 'constant.numeric.mira', match: String.raw`\d+` },
-                            { name: 'punctuation.separator.type.mira', match: '[().,<>]' },
-                        ],
+                        contentName: 'meta.documentation.tag.mira',
+                        begin: String.raw`(/\*)([ \t]*)(<)(?=${DOC_TAG_CONTENT}>[ \t]*\*/)`,
+                        beginCaptures: {
+                            1: { name: 'punctuation.definition.comment.begin.mira' },
+                            3: { name: 'punctuation.definition.tag.begin.mira' },
+                        },
+                        end: String.raw`(>)([ \t]*)(\*/)`,
+                        endCaptures: {
+                            1: { name: 'punctuation.definition.tag.end.mira' },
+                            3: { name: 'punctuation.definition.comment.end.mira' },
+                        },
+                        patterns: [{ include: '#tag-content' }],
+                    },
+                ],
+            },
+            'tag-content': {
+                patterns: [
+                    {
+                        match: String.raw`(extern)([ \t]+)(?:(async)([ \t]+))?(function)(\*)?(?:([ \t]+)(${DOC_TAG_NAME}))?(?=>)`,
+                        captures: {
+                            1: { name: 'keyword.declaration.extern.mira' },
+                            3: { name: 'keyword.js' },
+                            5: { name: 'keyword.js' },
+                            6: { name: 'keyword.operator.generator.js' },
+                            8: { name: 'entity.name.function.js' },
+                        },
+                    },
+                    {
+                        match: String.raw`(extern)([ \t]+)(class)(?:([ \t]+)(${DOC_TAG_NAME}))?(?=>)`,
+                        captures: {
+                            1: { name: 'keyword.declaration.extern.mira' },
+                            3: { name: 'keyword.js' },
+                            5: { name: 'entity.name.type.js' },
+                        },
+                    },
+                    {
+                        match: String.raw`(extern)([ \t]+)(${DOC_TAG_NAME})(\()(${DOC_TAG_NUMBER})(\))(?=>)`,
+                        captures: {
+                            1: { name: 'keyword.declaration.extern.mira' },
+                            3: { name: 'entity.name.type.js' },
+                            4: { name: 'punctuation.section.parens.begin.mira' },
+                            5: { name: 'constant.numeric.mira' },
+                            6: { name: 'punctuation.section.parens.end.mira' },
+                        },
+                    },
+                    {
+                        match: String.raw`(extern)(?:([ \t]+)(${DOC_TAG_NAME}))?(?=>)`,
+                        captures: {
+                            1: { name: 'keyword.declaration.extern.mira' },
+                            3: { name: 'entity.name.type.js' },
+                        },
+                    },
+                    {
+                        match: String.raw`(module)(?:([ \t]+)(${DOC_TAG_NAME}))?(?=>)`,
+                        captures: {
+                            1: { name: 'keyword.declaration.module.mira' },
+                            3: { name: 'entity.name.namespace.mira' },
+                        },
+                    },
+                    {
+                        match: String.raw`(function)(?:([ \t]+)(${DOC_TAG_NAME}))?(?=>)`,
+                        captures: {
+                            1: { name: 'keyword.declaration.function.mira' },
+                            3: { name: 'entity.name.function.mira' },
+                        },
                     },
                 ],
             },

@@ -400,10 +400,8 @@ export function valueDoc(
             prefix = `let ${name} = `;
         }
         suffix = ';';
-    } else if (/^\d/.test(name)) {
-        prefix = `[${name}]: `;
     } else {
-        prefix = `${name}: `;
+        prefix = `${serializeRecordKey(name)}: `;
     }
     if (isVmModule(value)) {
         let script;

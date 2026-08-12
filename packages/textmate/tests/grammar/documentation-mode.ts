@@ -32,8 +32,8 @@ test('highlights generated documentation syntax', (t) => {
     expectScope(t, tokens, 'immutable', 'variable.other.constant.mira');
     expectScope(t, tokens, '@constant', 'variable.other.constant.mira');
     expectScope(t, tokens, 'mutable', 'variable.other.readwrite.mira');
-    expectScope(t, tokens, 'extern', 'storage.modifier.extern.mira');
-    expectScope(t, tokens, 'function', 'keyword.declaration.function.mira');
+    expectScope(t, tokens, 'extern', 'keyword.declaration.extern.mira');
+    expectScope(t, tokens, 'function', 'keyword.js');
     expectScope(t, tokens, 'transform', 'entity.name.function.mira');
     expectScope(t, tokens, 'record', 'support.type.builtin.mira');
     expectScope(t, tokens, 'callback', 'entity.name.function.emphasis.mira');
@@ -157,7 +157,7 @@ test('highlights serialized extern record values in documentation mode', (t) => 
         'mirascript-doc',
     );
     expectScope(t, tokens, '(global)', 'entity.name.label.mira');
-    expectScope(t, tokens, 'globalThis', 'variable.other.constant.mira');
+    expectScope(t, tokens, 'globalThis', 'variable.other.mira');
     expectScope(t, tokens, 'event', 'variable.other.property.mira');
     expectScope(t, tokens, 'nil', 'constant.language.mira');
     expectScope(t, tokens, 'customElements', 'variable.other.property.mira');
@@ -168,28 +168,181 @@ test('highlights serialized extern record values in documentation mode', (t) => 
     expectScope(t, tokens, 'initialize', 'entity.name.function.mira');
     expectScope(t, tokens, 'Constructor', 'entity.name.type.mira');
     expectScope(t, tokens, 'Widget', 'entity.name.type.mira');
-    expectScope(t, tokens, 'Window', 'entity.name.type.mira');
-    expectScope(t, tokens, 'CustomElementRegistry', 'entity.name.type.mira');
+    expectScope(t, tokens, 'Window', 'entity.name.type.js');
+    expectScope(t, tokens, 'CustomElementRegistry', 'entity.name.type.js');
     for (const token of tokens.filter((candidate) => candidate.text === 'function')) {
-        t.true(token.scopes.includes('keyword.declaration.function.mira'));
+        t.true(token.scopes.includes('keyword.js'));
     }
     t.is(tokens.filter((token) => token.text === 'function').length, 5);
     for (const token of tokens.filter((candidate) => candidate.text === 'async')) {
-        t.true(token.scopes.includes('storage.modifier.async.mira'));
+        t.true(token.scopes.includes('keyword.js'));
     }
     t.is(tokens.filter((token) => token.text === 'async').length, 2);
     for (const token of tokens.filter((candidate) => candidate.text === '*')) {
-        t.true(token.scopes.includes('keyword.operator.generator.mira'));
+        t.true(token.scopes.includes('keyword.operator.generator.js'));
     }
     t.is(tokens.filter((token) => token.text === '*').length, 2);
-    expectScope(t, tokens, 'getValue', 'entity.name.function.mira');
-    expectScope(t, tokens, 'resolveValue', 'entity.name.function.mira');
-    expectScope(t, tokens, 'initializeValue', 'entity.name.function.mira');
-    expectScope(t, tokens, 'class', 'keyword.declaration.class.mira', 0);
-    expectScope(t, tokens, 'class', 'keyword.declaration.class.mira', 1);
-    expectScope(t, tokens, 'HTMLElement', 'entity.name.type.mira');
+    expectScope(t, tokens, 'getValue', 'entity.name.function.js');
+    expectScope(t, tokens, 'resolveValue', 'entity.name.function.js');
+    expectScope(t, tokens, 'initializeValue', 'entity.name.function.js');
+    expectScope(t, tokens, 'class', 'keyword.js', 0);
+    expectScope(t, tokens, 'class', 'keyword.js', 1);
+    expectScope(t, tokens, 'HTMLElement', 'entity.name.type.js');
     expectScope(t, tokens, ' x162 ', 'comment.block.mira');
-    for (const delimiter of tokens.filter((token) => token.text === '/* <' || token.text === '> */')) {
-        t.true(delimiter.scopes.includes('comment.block.mira'));
+    for (const delimiter of tokens.filter((token) => ['/*', '*/'].includes(token.text))) {
+        t.true(delimiter.scopes.includes('comment.block.mira'), delimiter.scopes.join(', '));
     }
+    for (const delimiter of tokens.filter((token) => ['<', '>'].includes(token.text))) {
+        t.true(
+            delimiter.scopes.some((scope) => scope.startsWith('punctuation.definition.tag.')),
+            delimiter.scopes.join(', '),
+        );
+    }
+});
+
+test('highlights inline and comment-only documentation tags', (t) => {
+    const tokens = tokenize(
+        [
+            '<module matrix / arbitrary name>',
+            '<function global.to-string (value)>',
+            '  <extern async function* request animation frame>  ',
+            '/* <module matrix> */',
+            '/*<function render>*/',
+        ].join('\n'),
+        'mirascript-doc',
+    );
+    expectScope(t, tokens, 'module', 'keyword.declaration.module.mira', 0);
+    expectScope(t, tokens, 'module', 'keyword.declaration.module.mira', 1);
+    expectScope(t, tokens, 'matrix / arbitrary name', 'entity.name.namespace.mira');
+    expectScope(t, tokens, 'matrix', 'entity.name.namespace.mira');
+    expectScope(t, tokens, 'function', 'keyword.declaration.function.mira', 0);
+    expectScope(t, tokens, 'function', 'keyword.declaration.function.mira', 2);
+    expectScope(t, tokens, 'global.to-string (value)', 'entity.name.function.mira');
+    expectScope(t, tokens, 'render', 'entity.name.function.mira');
+    expectScope(t, tokens, 'extern', 'keyword.declaration.extern.mira');
+    expectScope(t, tokens, 'async', 'keyword.js');
+    expectScope(t, tokens, 'function', 'keyword.js', 1);
+    expectScope(t, tokens, '*', 'keyword.operator.generator.js');
+    expectScope(t, tokens, 'request animation frame', 'entity.name.function.js');
+    t.is(tokens.filter((token) => token.text === '<').length, 5);
+    t.is(tokens.filter((token) => token.text === '>').length, 5);
+    for (const delimiter of tokens.filter((token) => token.text === '<')) {
+        t.true(delimiter.scopes.includes('punctuation.definition.tag.begin.mira'), delimiter.scopes.join(', '));
+    }
+    for (const delimiter of tokens.filter((token) => token.text === '>')) {
+        t.true(delimiter.scopes.includes('punctuation.definition.tag.end.mira'), delimiter.scopes.join(', '));
+    }
+});
+
+test('highlights multiple inline tags while keeping tag delimiters tight', (t) => {
+    const tokens = tokenize(
+        ['value = <module matrix>', '<extern Array(3)> [1, <extern Object>, [1, <extern Object>]]'].join('\n'),
+        'mirascript-doc',
+    );
+    expectScope(t, tokens, 'module', 'keyword.declaration.module.mira');
+    expectScope(t, tokens, 'matrix', 'entity.name.namespace.mira');
+    expectScope(t, tokens, 'Array', 'entity.name.type.js');
+    expectScope(t, tokens, '(', 'punctuation.section.parens.begin.mira');
+    expectScope(t, tokens, '3', 'constant.numeric.mira');
+    expectScope(t, tokens, ')', 'punctuation.section.parens.end.mira');
+    expectScope(t, tokens, 'Object', 'entity.name.type.js', 0);
+    expectScope(t, tokens, 'Object', 'entity.name.type.js', 1);
+    t.is(tokens.filter((token) => token.text === 'extern').length, 3);
+    t.true(tokens.some((token) => token.scopes.includes('meta.documentation.tag.mira')));
+
+    const invalidTokens = tokenize(
+        [
+            '/* prefix <module matrix> */',
+            '< module matrix>',
+            '<module matrix >',
+            '/* <module matrix> suffix */',
+            '/*',
+            '<module matrix>',
+            '*/',
+        ].join('\n'),
+        'mirascript-doc',
+    );
+    t.false(
+        invalidTokens.some((token) => token.scopes.includes('meta.documentation.tag.mira')),
+        invalidTokens
+            .map((token) => `${token.line}:${JSON.stringify(token.text)} ${token.scopes.join(', ')}`)
+            .join('\n'),
+    );
+    t.false(
+        invalidTokens.some((token) => token.scopes.some((scope) => scope.startsWith('punctuation.definition.tag.'))),
+    );
+
+    const sourceTokens = tokenize('<module matrix>\n/* <extern Navigator> */');
+    t.false(sourceTokens.some((token) => token.scopes.includes('meta.documentation.tag.mira')));
+    t.false(
+        sourceTokens.some((token) => token.scopes.some((scope) => scope.startsWith('punctuation.definition.tag.'))),
+    );
+});
+
+test('highlights extern tags while preserving surrounding document declarations', (t) => {
+    const tokens = tokenize(
+        [
+            'let navigator = /* <extern Navigator> */ (',
+            '  scheduling: /* <extern Scheduling> */,',
+            '  getGamepads: /* <extern function> */,',
+            ');',
+            'let AbortController = /* <extern class AbortController> */;',
+        ].join('\n'),
+        'mirascript-doc',
+    );
+    expectScope(t, tokens, 'navigator', 'variable.other.constant.mira');
+    expectScope(t, tokens, 'scheduling', 'variable.other.property.mira');
+    expectScope(t, tokens, 'getGamepads', 'entity.name.function.mira');
+    expectScope(t, tokens, 'AbortController', 'variable.other.constant.mira', 0);
+    expectScope(t, tokens, 'extern', 'keyword.declaration.extern.mira');
+    expectScope(t, tokens, 'Navigator', 'entity.name.type.js');
+    expectScope(t, tokens, 'Scheduling', 'entity.name.type.js');
+    expectScope(t, tokens, 'function', 'keyword.js');
+    expectScope(t, tokens, 'class', 'keyword.js');
+    expectScope(t, tokens, 'AbortController', 'entity.name.type.js', 1);
+    for (const delimiter of tokens.filter((token) => ['/*', '*/'].includes(token.text))) {
+        t.true(delimiter.scopes.includes('comment.block.mira'), delimiter.scopes.join(', '));
+    }
+});
+
+test('highlights line-leading field declarations and infers callable and class field names', (t) => {
+    const tokens = tokenize(
+        [
+            '(field) navigator: /* <extern Navigator> */',
+            'scheduling: /* <extern Scheduling> */',
+            'getGamepads: /* <extern function> */',
+            'AbortController: /* <extern class AbortController> */;',
+            '(field) requestAnimationFrame: /* <extern function> */;',
+            '(field) 1: value',
+            '(field) "invalid-name": value',
+            '2: /* <extern function> */;',
+            '"class-name": /* <extern class HTMLElement> */;',
+        ].join('\n'),
+        'mirascript-doc',
+    );
+    expectScope(t, tokens, '(field)', 'entity.name.label.mira');
+    expectScope(t, tokens, 'navigator', 'variable.other.property.mira');
+    expectScope(t, tokens, 'scheduling', 'variable.other.property.mira');
+    expectScope(t, tokens, 'getGamepads', 'entity.name.function.mira');
+    expectScope(t, tokens, 'AbortController', 'entity.name.type.mira', 0);
+    expectScope(t, tokens, 'AbortController', 'entity.name.type.js', 1);
+    expectScope(t, tokens, 'requestAnimationFrame', 'entity.name.function.mira');
+    expectScope(t, tokens, '1', 'variable.other.property.mira');
+    expectScope(t, tokens, '"invalid-name"', 'variable.other.property.mira');
+    expectScope(t, tokens, '2', 'entity.name.function.mira');
+    expectScope(t, tokens, '"class-name"', 'entity.name.type.mira');
+    t.true(tokens.some((token) => token.scopes.includes('meta.documentation.field.mira')));
+
+    const indented = tokenize(
+        [
+            '  (field) indented: /* <extern function> */',
+            '  plain: /* <extern class HTMLElement> */',
+            '  (global) value = /* <extern Window> */',
+            '(field) legacy = /* <extern function> */',
+            'legacy = /* <extern class HTMLElement> */',
+        ].join('\n'),
+        'mirascript-doc',
+    );
+    t.false(indented.some((token) => token.scopes.includes('meta.documentation.field.mira')));
+    t.false(indented.some((token) => token.scopes.includes('meta.documentation.global-value.mira')));
 });
