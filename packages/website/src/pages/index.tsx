@@ -365,7 +365,11 @@ export default function Home(): JSX.Element {
                                 READY
                             </span>
                             <p className={styles['section-kicker']}>YOUR TURN</p>
-                            <h2>把下一段想法，写成可运行的表达式。</h2>
+                            <h2>
+                                把下一段想法，
+                                <br />
+                                写成可运行的表达式。
+                            </h2>
                             <p>从交互式教程开始，几分钟内掌握 MiraScript 的核心语法。</p>
                             <CtaButtons />
                         </div>
