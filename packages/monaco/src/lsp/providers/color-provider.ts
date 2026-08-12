@@ -6,6 +6,15 @@ const REG_COLOR_STR = /^(@*)(['"`])(#(?:[0-9a-f]{6}|[0-9a-f]{3}|[0-9a-f]{8}|[0-9
 const { parseInt } = Number;
 
 /** 解析颜色 */
+function parseColorPart(text: string): number {
+    if (text.length === 1) {
+        // 处理单字符的情况，例如 #f00 -> #ff0000
+        text = text + text;
+    }
+    return parseInt(text, 16) / 255;
+}
+
+/** 解析颜色 */
 function parseColorString(text: string):
     | {
           ats: string;
@@ -25,36 +34,21 @@ function parseColorString(text: string):
     if (colorString.startsWith('#')) {
         const colorCode = colorString.slice(1);
 
-        if (colorCode.length === 3) {
-            // 处理 #RGB 格式
+        if (colorCode.length === 3 || colorCode.length === 4) {
+            // 处理短格式的颜色代码，例如 #f00 或 #f00f
             color = {
-                red: parseInt(colorCode[0]! + colorCode[0]!, 16) / 255,
-                green: parseInt(colorCode[1]! + colorCode[1]!, 16) / 255,
-                blue: parseInt(colorCode[2]! + colorCode[2]!, 16) / 255,
-                alpha: 1,
+                red: parseColorPart(colorCode[0]!),
+                green: parseColorPart(colorCode[1]!),
+                blue: parseColorPart(colorCode[2]!),
+                alpha: colorCode[3] ? parseColorPart(colorCode[3]) : 1, // 如果没有 alpha，则假设不透明
             };
-        } else if (colorCode.length === 6) {
+        } else if (colorCode.length === 6 || colorCode.length === 8) {
+            // 处理长格式的颜色代码，例如 #ff0000 或 #ff0000ff
             color = {
-                red: parseInt(colorCode.slice(0, 2), 16) / 255,
-                green: parseInt(colorCode.slice(2, 4), 16) / 255,
-                blue: parseInt(colorCode.slice(4, 6), 16) / 255,
-                alpha: 1, // 假设不透明
-            };
-        } else if (colorCode.length === 8) {
-            // 处理 #RRGGBBAA 格式
-            color = {
-                red: parseInt(colorCode.slice(0, 2), 16) / 255,
-                green: parseInt(colorCode.slice(2, 4), 16) / 255,
-                blue: parseInt(colorCode.slice(4, 6), 16) / 255,
-                alpha: parseInt(colorCode.slice(6, 8), 16) / 255,
-            };
-        } else if (colorCode.length === 4) {
-            // 处理 #RGBA 格式
-            color = {
-                red: parseInt(colorCode[0]! + colorCode[0]!, 16) / 255,
-                green: parseInt(colorCode[1]! + colorCode[1]!, 16) / 255,
-                blue: parseInt(colorCode[2]! + colorCode[2]!, 16) / 255,
-                alpha: parseInt(colorCode[3]! + colorCode[3]!, 16) / 255,
+                red: parseColorPart(colorCode.slice(0, 2)),
+                green: parseColorPart(colorCode.slice(2, 4)),
+                blue: parseColorPart(colorCode.slice(4, 6)),
+                alpha: colorCode.length === 8 ? parseColorPart(colorCode.slice(6, 8)) : 1, // 如果没有 alpha，则假设不透明
             };
         } else {
             return undefined; // 不支持的颜色格式
@@ -69,6 +63,26 @@ function parseColorString(text: string):
         colorString,
         color,
     };
+}
+
+/** 生成颜色 */
+function serializeColorPart(part: number): string {
+    const intPart = Math.round(part * 255);
+    const hex = intPart.toString(16).padStart(2, '0');
+    return hex;
+}
+
+/** 生成颜色 */
+function serializeColor(color: languages.IColor): string {
+    const r = serializeColorPart(color.red);
+    const g = serializeColorPart(color.green);
+    const b = serializeColorPart(color.blue);
+    if (color.alpha >= 1) {
+        return `#${r}${g}${b}`;
+    } else {
+        const a = serializeColorPart(color.alpha);
+        return `#${r}${g}${b}${a}`;
+    }
 }
 
 /** @inheritdoc */
@@ -109,22 +123,6 @@ export class ColorProvider extends Provider implements languages.DocumentColorPr
         token: CancellationToken,
     ): languages.ProviderResult<languages.IColorPresentation[]> {
         const { color } = colorInfo;
-        return [
-            {
-                label: `#${Math.round(color.red * 255)
-                    .toString(16)
-                    .padStart(2, '0')}${Math.round(color.green * 255)
-                    .toString(16)
-                    .padStart(2, '0')}${Math.round(color.blue * 255)
-                    .toString(16)
-                    .padStart(2, '0')}${
-                    color.alpha >= 1
-                        ? ''
-                        : Math.round(color.alpha * 255)
-                              .toString(16)
-                              .padStart(2, '0')
-                }`,
-            },
-        ];
+        return [{ label: serializeColor(color) }];
     }
 }

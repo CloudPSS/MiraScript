@@ -6,7 +6,7 @@ import type { editor, CancellationToken, IMarkdownString, IRange, languages, Pos
 import { codeblock, getDeep, valueDoc, paramsList, serializeNumber, serializeInteger } from '../utils.js';
 import { tokenAt } from '../monaco-private.js';
 import { rangeAt } from '../monaco-utils.js';
-import type { FieldsAccessAt, VariableAccessAt } from '../compile-result.js';
+import type { FieldsAccessAt, LocalDefinition, VariableAccessAt } from '../compile-result.js';
 import { Provider } from './base.js';
 
 const OPERATOR_TOKENS_DESC = Object.keys(HELP_OPERATORS).sort((a, b) => b.length - a.length);
@@ -44,6 +44,25 @@ function operatorAt(lineContent: string, column: number): { token: string; range
     return undefined;
 }
 
+const LOCAL_HOVER = {
+    [DiagnosticCode.ParameterSubPatternImmutable]: '(parameter pattern) ',
+    [DiagnosticCode.ParameterSubPatternMutable]: '(parameter pattern) mut ',
+    [DiagnosticCode.ParameterImmutable]: '(parameter) ',
+    [DiagnosticCode.ParameterMutable]: '(parameter) mut ',
+    [DiagnosticCode.ParameterIt]: '(parameter) it',
+    [DiagnosticCode.ParameterImmutableRest]: '(parameter) ..',
+    [DiagnosticCode.ParameterMutableRest]: '(parameter) ..mut ',
+    [DiagnosticCode.LocalModule]: 'mod ',
+    [DiagnosticCode.LocalImmutable]: 'let ',
+    [DiagnosticCode.LocalConst]: 'const ',
+    [DiagnosticCode.LocalMutable]: 'let mut ',
+    [DiagnosticCode.LocalFunction]: (text: string, model: editor.ITextModel, def: LocalDefinition): string => {
+        return `fn ${text}${paramsList(model, def.fn)}`;
+    },
+} satisfies Partial<
+    Record<DiagnosticCode, string | ((text: string, model: editor.ITextModel, def: LocalDefinition) => string)>
+>;
+
 /** @inheritdoc */
 export class HoverProvider extends Provider implements languages.HoverProvider {
     /** 变量提示 */
@@ -65,69 +84,18 @@ export class HoverProvider extends Provider implements languages.HoverProvider {
         } else {
             let content: IMarkdownString | undefined;
             const tag = def.definition;
-            switch (tag.code) {
-                case DiagnosticCode.ParameterSubPatternImmutable:
+            if (tag.code in LOCAL_HOVER) {
+                const hover = LOCAL_HOVER[tag.code];
+                const text = model.getValueInRange(tag.range);
+                if (typeof hover == 'string') {
                     content = {
-                        value: codeblock(`\0(parameter pattern) ${model.getValueInRange(tag.range)}`),
+                        value: codeblock(`\0${hover}${text}`),
                     };
-                    break;
-                case DiagnosticCode.ParameterSubPatternMutable:
+                } else {
                     content = {
-                        value: codeblock(`\0(parameter pattern) mut ${model.getValueInRange(tag.range)}`),
+                        value: codeblock(`\0${hover(text, model, def)}`),
                     };
-                    break;
-                case DiagnosticCode.ParameterImmutable:
-                    content = {
-                        value: codeblock(`\0(parameter) ${model.getValueInRange(tag.range)}`),
-                    };
-                    break;
-                case DiagnosticCode.ParameterMutable:
-                    content = {
-                        value: codeblock(`\0(parameter) mut ${model.getValueInRange(tag.range)}`),
-                    };
-                    break;
-                case DiagnosticCode.ParameterIt:
-                    content = {
-                        value: codeblock(`\0(parameter) it`),
-                    };
-                    break;
-                case DiagnosticCode.ParameterImmutableRest:
-                    content = {
-                        value: codeblock(`\0(parameter) ..${model.getValueInRange(tag.range)}`),
-                    };
-                    break;
-                case DiagnosticCode.ParameterMutableRest:
-                    content = {
-                        value: codeblock(`\0(parameter) ..mut ${model.getValueInRange(tag.range)}`),
-                    };
-                    break;
-                case DiagnosticCode.LocalFunction: {
-                    const params = paramsList(model, def.fn);
-                    content = {
-                        value: codeblock(`\0fn ${model.getValueInRange(tag.range)}${params}`),
-                    };
-                    break;
                 }
-                case DiagnosticCode.LocalModule:
-                    content = {
-                        value: codeblock(`\0mod ${model.getValueInRange(tag.range)}`),
-                    };
-                    break;
-                case DiagnosticCode.LocalImmutable:
-                    content = {
-                        value: codeblock(`\0let ${model.getValueInRange(tag.range)}`),
-                    };
-                    break;
-                case DiagnosticCode.LocalConst:
-                    content = {
-                        value: codeblock(`\0const ${model.getValueInRange(tag.range)}`),
-                    };
-                    break;
-                case DiagnosticCode.LocalMutable:
-                    content = {
-                        value: codeblock(`\0let mut ${model.getValueInRange(tag.range)}`),
-                    };
-                    break;
             }
             if (ref == null) {
                 range = tag.range;
