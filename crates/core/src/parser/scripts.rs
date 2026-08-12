@@ -33,7 +33,7 @@ pub fn script<'s>(i: &mut Input<'s>) -> Result<Script<'s>> {
         }
         if let Some(e) = e {
             let s = semicolon.parse_next(i)?;
-            statements.push(Statement::Expression(e.into(), s));
+            statements.push(Statement::Expression(AstBox::new_in(e, i.state), s));
         } else if s_empty {
             // eats nothing in this loop and not reach the end
             // eats next token and try again
@@ -61,7 +61,7 @@ pub fn script<'s>(i: &mut Input<'s>) -> Result<Script<'s>> {
             }
         }
     }
-    let (statements, exp) = construct_statements_and_expression(statements, exp);
+    let (statements, exp) = construct_statements_and_expression(statements, exp, i.state);
     let eof = eof.map(TokenRef::borrow).unwrap_or_else(|| {
         Token::unknown_at(0, TokenKind::Eof, DiagnosticCode::UnexpectedToken).into()
     });

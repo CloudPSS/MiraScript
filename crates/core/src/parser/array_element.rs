@@ -1,11 +1,11 @@
 use super::prelude::*;
 
-#[derive(Debug, Clone, PartialEq, strum::EnumIs)]
+#[derive(Debug, PartialEq, strum::EnumIs)]
 pub enum ArrayElementBase<'s, E, S> {
     /// Element
-    Element(Box<E>),
+    Element(AstBox<'s, E>),
     /// `..` Spread
-    Spread(TokenRef<'s>, Box<S>),
+    Spread(TokenRef<'s>, AstBox<'s, S>),
 }
 
 use ArrayElementBase::*;

@@ -8,8 +8,9 @@ use super::{expressions::expression, prelude::*, statements::statement};
 pub(super) fn construct_statements_and_expression<'s>(
     mut statements: Vec<Statement<'s>>,
     expression: Option<Expression<'s>>,
-) -> (Vec<Statement<'s>>, Option<Box<Expression<'s>>>) {
-    let expression = expression.map(Box::new);
+    arena: &'s bumpalo::Bump,
+) -> (Vec<Statement<'s>>, Option<AstBox<'s, Expression<'s>>>) {
+    let expression = expression.map(|expression| AstBox::new_in(expression, arena));
     if expression.is_some() || statements.is_empty() {
         return (statements, expression);
     }
@@ -27,10 +28,12 @@ pub(super) fn construct_statements_and_expression<'s>(
 
 pub(super) fn statements_and_expression<'s>(
     i: &mut Input<'s>,
-) -> Result<(Vec<Statement<'s>>, Option<Box<Expression<'s>>>)> {
+) -> Result<(Vec<Statement<'s>>, Option<AstBox<'s, Expression<'s>>>)> {
     let (statements, expression): (Vec<_>, _) =
         (repeat(0.., statement), opt(expression)).parse_next(i)?;
-    Ok(construct_statements_and_expression(statements, expression))
+    Ok(construct_statements_and_expression(
+        statements, expression, i.state,
+    ))
 }
 
 pub(super) fn literal_token<'s>(i: &mut Input<'s>) -> Result<TokenRef<'s>> {
@@ -55,7 +58,7 @@ pub(super) fn variable_token<'s>(
     move |i: &mut Input<'s>| {
         let t = one_of(|t: &Token<'s>| {
             matches!(&t.kind, &TokenKind::Identifier(_))
-                || matches!(&t.kind, &TokenKind::Keyword(kw) 
+                || matches!(&t.kind, &TokenKind::Keyword(kw)
                     if kw.is_reserved() || kw == Keyword::Underscore || kw == Keyword::Global)
         })
         .parse_next(i)?;

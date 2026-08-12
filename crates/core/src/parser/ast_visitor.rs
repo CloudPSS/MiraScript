@@ -61,6 +61,15 @@ impl<'s, E: AstWalker<'s>> AstWalker<'s> for Option<E> {
     }
 }
 
+impl<'s, E: AstWalker<'s>> AstWalker<'s> for AstBox<'s, E> {
+    fn collect_diagnostics(&mut self, collector: &mut DiagnosticsCollector<'_, '_>) {
+        self.deref_mut().collect_diagnostics(collector);
+    }
+    fn range(&self) -> SourceRange {
+        self.deref().range()
+    }
+}
+
 impl<'s, E: AstWalker<'s>> AstWalker<'s> for Box<E> {
     fn collect_diagnostics(&mut self, collector: &mut DiagnosticsCollector<'_, '_>) {
         self.deref_mut().collect_diagnostics(collector);

@@ -3,11 +3,11 @@ use super::prelude::*;
 /// A range expression.
 ///
 /// `start..end` or `start..<end`
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub struct Range<'s>(
-    pub Box<Expression<'s>>,
+    pub AstBox<'s, Expression<'s>>,
     pub TokenRef<'s>,
-    pub Box<Expression<'s>>,
+    pub AstBox<'s, Expression<'s>>,
 );
 
 impl<'s> Range<'s> {

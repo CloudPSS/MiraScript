@@ -14,7 +14,7 @@ use super::{
     to_input,
 };
 
-fn to_interpolate_expr<'s>(token: &'s Token<'s>) -> Expression<'s> {
+fn to_interpolate_expr<'s>(token: &'s Token<'s>, arena: &'s bumpalo::Bump) -> Expression<'s> {
     let TokenKind::InterpolatedString(parts, _) = &token.kind else {
         unreachable!("Expected InterpolatedString");
     };
@@ -38,7 +38,7 @@ fn to_interpolate_expr<'s>(token: &'s Token<'s>) -> Expression<'s> {
                     DiagnosticCode::UnterminatedInterpolation,
                 );
             }
-            let mut token_input = to_input(tokens);
+            let mut token_input = to_input(tokens, arena);
             let result = (expression, opt(eof.value(()))).parse_next(&mut token_input);
             match result {
                 Ok((expr, Some(_))) => expr,
@@ -61,9 +61,10 @@ fn to_interpolate_expr<'s>(token: &'s Token<'s>) -> Expression<'s> {
 }
 
 fn record_like<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
+    let arena = i.state;
     let (open, parts, close) = record_base(
         expression,
-        |t: &Token<'s>| to_interpolate_expr(t),
+        move |t: &Token<'s>| to_interpolate_expr(t, arena),
         expression,
         expression,
         expression,
@@ -115,7 +116,7 @@ fn array<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
 pub(super) fn interpolation<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     let token = one_of(|t: &Token<'s>| matches!(&t.kind, &TokenKind::InterpolatedString(..)))
         .parse_next(i)?;
-    Ok(to_interpolate_expr(token))
+    Ok(to_interpolate_expr(token, i.state))
 }
 
 /// callable '(' ('..'? arg),* ')'
@@ -127,6 +128,7 @@ type Call<'s> = (
 );
 
 fn pseudo_function<'t, 's: 't, const EXTENSION_CALL: bool>(i: &mut Input<'s>) -> Result<Call<'s>> {
+    let arena = i.state;
     let provided: usize = if EXTENSION_CALL { 1 } else { 0 };
     let (kw_type, (open, args, close)) = (
         token(Keyword::Type),
@@ -137,17 +139,20 @@ fn pseudo_function<'t, 's: 't, const EXTENSION_CALL: bool>(i: &mut Input<'s>) ->
     )
         .parse_next(i)?;
     let exp = if args.len() != (1 - provided) || args.first().is_some_and(|a| a.is_spread()) {
-        vec![ListItem::new(ArrayElementBase::Element(
-            Expression::unknown_range(
-                [],
-                SourceRange {
-                    start: kw_type.range.start,
-                    end: close.range.end,
-                },
-                DiagnosticCode::InvalidTypeCall,
-            )
-            .into(),
-        ))]
+        vec![ListItem::new(
+            ArrayElementBase::Element(AstBox::new_in(
+                Expression::unknown_range(
+                    [],
+                    SourceRange {
+                        start: kw_type.range.start,
+                        end: close.range.end,
+                    },
+                    DiagnosticCode::InvalidTypeCall,
+                ),
+                arena,
+            )),
+            arena,
+        )]
     } else {
         args
     };
@@ -186,31 +191,32 @@ enum AccessIndex<'s> {
     /// `.` identifier
     Access(TokenRef<'s>, TokenRef<'s>),
     /// `[` expression `]`
-    Index(TokenRef<'s>, Box<Expression<'s>>, TokenRef<'s>),
+    Index(TokenRef<'s>, AstBox<'s, Expression<'s>>, TokenRef<'s>),
     ///  `[` additive_expression? (`..` | `..<`) additive_expression? `]`
     Slice(
         TokenRef<'s>,
-        Option<Box<Expression<'s>>>,
+        Option<AstBox<'s, Expression<'s>>>,
         TokenRef<'s>,
-        Option<Box<Expression<'s>>>,
+        Option<AstBox<'s, Expression<'s>>>,
         TokenRef<'s>,
     ),
     /// `!`
     NonNil(TokenRef<'s>),
 }
 fn access_index<'s>(i: &mut Input<'s>) -> Result<AccessIndex<'s>> {
+    let arena = i.state;
     fn access_token<'s>(i: &mut Input<'s>) -> Result<TokenRef<'s>> {
         one_of(|t: &Token<'s>| matches!(t.kind, TokenKind::Identifier(_) | TokenKind::Ordinal(_)))
             .map(TokenRef::borrow)
             .parse_next(i)
     }
-    fn additive<'s>(i: &mut Input<'s>) -> Result<Box<Expression<'s>>> {
+    fn additive<'s>(i: &mut Input<'s>) -> Result<AstBox<'s, Expression<'s>>> {
         let mut precedence_additive = precedence_of(&TokenKind::Operator(Operator::SpreadRange));
         precedence_additive.value += 2;
-        pratt(precedence_additive, false)
+        let expression = pratt(precedence_additive, false)
             .verify_map(verify_expr)
-            .map(Box::new)
-            .parse_next(i)
+            .parse_next(i)?;
+        Ok(AstBox::new_in(expression, i.state))
     }
     fn range_op<'s>(i: &mut Input<'s>) -> Result<TokenRef<'s>> {
         one_of(|t: &Token<'s>| *t == Operator::SpreadRange || *t == Operator::HalfOpenRange)
@@ -240,9 +246,9 @@ fn access_index<'s>(i: &mut Input<'s>) -> Result<AccessIndex<'s>> {
             iterable,
             token(Operator::CloseBracket),
         )
-            .map(|(o, e, c)| match e {
+            .map(move |(o, e, c)| match e {
                 Iterable::Range(r) => AccessIndex::Slice(o, Some(r.0), r.1, Some(r.2), c),
-                Iterable::Value(expr) => AccessIndex::Index(o, Box::new(expr), c),
+                Iterable::Value(expr) => AccessIndex::Index(o, AstBox::new_in(expr, arena), c),
             }),
         // `[` additive (`..` | `..<`) `]`
         (
@@ -257,6 +263,7 @@ fn access_index<'s>(i: &mut Input<'s>) -> Result<AccessIndex<'s>> {
 }
 
 fn extension_call<'s>(i: &mut Input<'s>) -> Result<Call<'s>> {
+    let arena = i.state;
     let parenthesised = |i: &mut Input<'s>| {
         record_like
             .with_taken()
@@ -274,21 +281,28 @@ fn extension_call<'s>(i: &mut Input<'s>) -> Result<Call<'s>> {
     };
     let access_chain = |i: &mut Input<'s>| {
         (variable_token(false, true), repeat(0.., access_index))
-            .map(|(first, rest): (_, Vec<_>)| {
+            .map(move |(first, rest): (_, Vec<_>)| {
                 let mut acc = Expression::Variable(first);
                 for access_index in rest {
                     match access_index {
                         AccessIndex::NonNil(token) => {
-                            acc = Expression::NonNil(Box::new(acc), token);
+                            acc = Expression::NonNil(AstBox::new_in(acc, arena), token);
                         }
                         AccessIndex::Access(dot, token) => {
-                            acc = Expression::Access(Box::new(acc), dot, token);
+                            acc = Expression::Access(AstBox::new_in(acc, arena), dot, token);
                         }
                         AccessIndex::Index(open, exp, close) => {
-                            acc = Expression::Index(Box::new(acc), open, exp, close);
+                            acc = Expression::Index(AstBox::new_in(acc, arena), open, exp, close);
                         }
                         AccessIndex::Slice(left, start, op, end, right) => {
-                            acc = Expression::Slice(Box::new(acc), left, start, op, end, right);
+                            acc = Expression::Slice(
+                                AstBox::new_in(acc, arena),
+                                left,
+                                start,
+                                op,
+                                end,
+                                right,
+                            );
                         }
                     }
                 }
@@ -296,9 +310,13 @@ fn extension_call<'s>(i: &mut Input<'s>) -> Result<Call<'s>> {
             })
             .parse_next(i)
     };
+    let callable = move |i: &mut Input<'s>| {
+        let expression = alt((parenthesised, access_chain)).parse_next(i)?;
+        Ok(Callable::Expression(AstBox::new_in(expression, arena)))
+    };
     alt((
         (
-            alt((parenthesised, access_chain)).map(|e| Callable::Expression(Box::new(e))),
+            callable,
             arg_list(token_or_insert(
                 Operator::OpenParen,
                 DiagnosticCode::MissingOpenParenAfterExtension,
@@ -311,9 +329,10 @@ fn extension_call<'s>(i: &mut Input<'s>) -> Result<Call<'s>> {
 }
 
 fn postfix<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
+    let arena = i.state;
     enum Function<'s> {
         Call(TokenRef<'s>, Vec<ArgElement<'s>>, TokenRef<'s>),
-        TaggedString(Box<Expression<'s>>),
+        TaggedString(AstBox<'s, Expression<'s>>),
         Extension(
             TokenRef<'s>,
             Callable<'s>,
@@ -322,12 +341,12 @@ fn postfix<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
             TokenRef<'s>,
         ),
         Access(TokenRef<'s>, TokenRef<'s>),
-        Index(TokenRef<'s>, Box<Expression<'s>>, TokenRef<'s>),
+        Index(TokenRef<'s>, AstBox<'s, Expression<'s>>, TokenRef<'s>),
         Slice(
             TokenRef<'s>,
-            Option<Box<Expression<'s>>>,
+            Option<AstBox<'s, Expression<'s>>>,
             TokenRef<'s>,
-            Option<Box<Expression<'s>>>,
+            Option<AstBox<'s, Expression<'s>>>,
             TokenRef<'s>,
         ),
         NonNil(TokenRef<'s>),
@@ -338,10 +357,13 @@ fn postfix<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
         alt((
             (token(Operator::ColonColon), extension_call)
                 .map(|(kw, (ex, o, a, c))| Function::Extension(kw, ex, o, a, c)),
-            one_of(|t: &Token<'s>| matches!(t.kind, TokenKind::String(..))).map(|token| {
-                Function::TaggedString(Box::new(Expression::Literal(TokenRef::borrow(token))))
+            one_of(|t: &Token<'s>| matches!(t.kind, TokenKind::String(..))).map(move |token| {
+                Function::TaggedString(AstBox::new_in(
+                    Expression::Literal(TokenRef::borrow(token)),
+                    arena,
+                ))
             }),
-            interpolation.map(|ex| Function::TaggedString(ex.into())),
+            boxed(interpolation).map(Function::TaggedString),
             access_index.map(|t| match t {
                 AccessIndex::NonNil(token) => Function::NonNil(token),
                 AccessIndex::Access(dot, token) => Function::Access(dot, token),
@@ -364,18 +386,18 @@ fn postfix<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
     // left-associative
     Ok(functions.into_iter().fold(first, |acc, exp| match exp {
         Function::Call(o, args, c) => {
-            Expression::Call(Callable::Expression(Box::new(acc)), o, args, c)
+            Expression::Call(Callable::Expression(AstBox::new_in(acc, arena)), o, args, c)
         }
-        Function::TaggedString(ex) => Expression::TaggedString(Box::new(acc), ex),
+        Function::TaggedString(ex) => Expression::TaggedString(AstBox::new_in(acc, arena), ex),
         Function::Extension(e, ex, o, arg, c) => {
-            Expression::Extension(Box::new(acc), e, ex, o, arg, c)
+            Expression::Extension(AstBox::new_in(acc, arena), e, ex, o, arg, c)
         }
-        Function::Access(dot, token) => Expression::Access(Box::new(acc), dot, token),
-        Function::Index(l, index, r) => Expression::Index(Box::new(acc), l, index, r),
+        Function::Access(dot, token) => Expression::Access(AstBox::new_in(acc, arena), dot, token),
+        Function::Index(l, index, r) => Expression::Index(AstBox::new_in(acc, arena), l, index, r),
         Function::Slice(left, start, op, end, right) => {
-            Expression::Slice(Box::new(acc), left, start, op, end, right)
+            Expression::Slice(AstBox::new_in(acc, arena), left, start, op, end, right)
         }
-        Function::NonNil(token) => Expression::NonNil(Box::new(acc), token),
+        Function::NonNil(token) => Expression::NonNil(AstBox::new_in(acc, arena), token),
     }))
 }
 
@@ -425,21 +447,21 @@ fn pratt_prefix<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
         let expr = pratt(precedence, false)
             .verify_map(verify_expr)
             .parse_next(i)?;
-        Ok(Expression::Prefix(op.into(), expr.into()))
+        Ok(Expression::Prefix(op.into(), AstBox::new_in(expr, i.state)))
     } else {
         postfix.parse_next(i)
     }
 }
 
 fn pratt_infix<'s>(
-    left: Box<Expression<'s>>,
+    left: AstBox<'s, Expression<'s>>,
     op: &'s Token<'s>,
     mut precedence: PrecedenceResult,
     allow_range: bool,
     i: &mut Input<'s>,
 ) -> Result<Iterable<'s>> {
     if *op == Keyword::Is {
-        let right = pattern(false).map(Box::new).parse_next(i)?;
+        let right = boxed(pattern(false)).parse_next(i)?;
         return Ok(Iterable::Value(Expression::Is(left, op.into(), right)));
     }
     // 调整优先级以实现右结合
@@ -450,10 +472,10 @@ fn pratt_infix<'s>(
         let expr = pratt(precedence, false)
             .verify_map(verify_expr)
             .parse_next(i)?;
-        Ok(Box::new(expr))
+        Ok(AstBox::new_in(expr, i.state))
     };
     if *op == Operator::Question {
-        let then_exp = expression.parse_next(i)?.into();
+        let then_exp = AstBox::new_in(expression.parse_next(i)?, i.state);
         let colon = token_or_insert(Operator::Colon, DiagnosticCode::MissingColon).parse_next(i)?;
         let else_exp = parse_right(i)?;
         return Ok(Iterable::Value(Expression::Cond(
@@ -500,7 +522,8 @@ fn pratt<'s>(precedence: PrecedenceResult, allow_range: bool) -> impl Parser<'s,
             }
 
             let op = any.parse_next(i)?;
-            match pratt_infix(left.into(), op, op_precedence, allow_range, i)? {
+            let left_box = AstBox::new_in(left, i.state);
+            match pratt_infix(left_box, op, op_precedence, allow_range, i)? {
                 Iterable::Value(e) => left = e,
                 Iterable::Range(r) => return Ok(Iterable::Range(r)),
             }

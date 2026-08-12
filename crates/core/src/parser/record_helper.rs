@@ -21,7 +21,7 @@ fn record_name<'s>(i: &mut Input<'s>) -> Result<TokenRef<'s>> {
     .parse_next(i)
 }
 
-fn record_element<'t, 's: 't, E: Clone + PartialEq + 's, I: Clone + PartialEq + 's>(
+fn record_element<'t, 's: 't, E: PartialEq + 's, I: PartialEq + 's>(
     named: impl Parser<'s, E>,
     mut interpolate_name: impl FnMut(&'s Token<'s>) -> I + Copy,
     omit_named: impl Parser<'s, E>,
@@ -33,9 +33,11 @@ fn record_element<'t, 's: 't, E: Clone + PartialEq + 's, I: Clone + PartialEq + 
     move |i: &mut Input<'s>| {
         let first = peek(any).parse_next(i)?;
         if *first == Operator::Comma {
+            let arena = i.state;
             return Ok(ListItem::new_with_comma(
-                RecordElementBase::Unnamed(missing(first.range.start).into()),
+                RecordElementBase::Unnamed(AstBox::new_in(missing(first.range.start), arena)),
                 token(Operator::Comma).parse_next(i)?,
+                arena,
             ));
         }
         if *first == Operator::CloseBracket
@@ -45,26 +47,29 @@ fn record_element<'t, 's: 't, E: Clone + PartialEq + 's, I: Clone + PartialEq + 
         {
             return fail.parse_next(i);
         }
+        let arena = i.state;
         let result = alt((
             (token(Operator::SpreadRange), spread)
-                .map(|(s, e)| RecordElementBase::Spread(s, e.into())),
-            (one_of(colon), omit_named)
-                .map(|(c, o)| RecordElementBase::OmitNamed(c.into(), o.into())),
+                .map(move |(s, e)| RecordElementBase::Spread(s, AstBox::new_in(e, arena))),
+            (one_of(colon), omit_named).map(move |(c, o)| {
+                RecordElementBase::OmitNamed(c.into(), AstBox::new_in(o, arena))
+            }),
             (
                 one_of(|t: &Token<'s>| t.is_interpolated_string()),
                 one_of(colon),
                 named,
             )
-                .map(|(r, c, n)| {
+                .map(move |(r, c, n)| {
                     RecordElementBase::InterpolateNamed(
-                        Box::new(interpolate_name(r)),
+                        AstBox::new_in(interpolate_name(r), arena),
                         c.into(),
-                        n.into(),
+                        AstBox::new_in(n, arena),
                     )
                 }),
-            (record_name, one_of(colon), named)
-                .map(|(r, c, n)| RecordElementBase::Named(r, c.into(), n.into())),
-            unnamed.map(|u| RecordElementBase::Unnamed(u.into())),
+            (record_name, one_of(colon), named).map(move |(r, c, n)| {
+                RecordElementBase::Named(r, c.into(), AstBox::new_in(n, arena))
+            }),
+            unnamed.map(move |u| RecordElementBase::Unnamed(AstBox::new_in(u, arena))),
         ))
         .parse_next(i)?;
         let last = peek(any).parse_next(i)?;
@@ -83,14 +88,14 @@ fn record_element<'t, 's: 't, E: Clone + PartialEq + 's, I: Clone + PartialEq + 
             || *last == Keyword::Let
             || *last == Keyword::Const
         {
-            return Ok(ListItem::new(result));
+            return Ok(ListItem::new(result, i.state));
         }
         let comma = token_or_insert(Operator::Comma, DiagnosticCode::MissingComma).parse_next(i)?;
-        Ok(ListItem::new_with_comma(result, comma))
+        Ok(ListItem::new_with_comma(result, comma, i.state))
     }
 }
 
-pub(super) fn record_base<'t, 's: 't, E: Clone + PartialEq + 's, I: Clone + PartialEq + 's>(
+pub(super) fn record_base<'t, 's: 't, E: PartialEq + 's, I: PartialEq + 's>(
     named: impl Parser<'s, E>,
     interpolate_name: impl FnMut(&'s Token<'s>) -> I + Copy,
     omit_named: impl Parser<'s, E>,

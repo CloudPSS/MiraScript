@@ -1,38 +1,38 @@
 use super::prelude::*;
 
-#[derive(Debug, Clone, PartialEq, strum::EnumIs)]
+#[derive(Debug, PartialEq, strum::EnumIs)]
 pub enum Statement<'s> {
     /// `';'`
     ///
     /// An empty statement.
     Empty(TokenRef<'s>),
     /// `expression ';'`
-    Expression(Box<Expression<'s>>, TokenRef<'s>),
+    Expression(AstBox<'s, Expression<'s>>, TokenRef<'s>),
     /// `expression_ends_with_block`
     ///
     /// No trailing semicolon in this case. For expressions that end with a semicolon, use [Statement::Expression].
-    BlockExpression(Box<Expression<'s>>),
+    BlockExpression(AstBox<'s, Expression<'s>>),
     /// `'pub'? 'mod' identifier block_expression_no_expr`
     Module(
         Option<TokenRef<'s>>,
         TokenRef<'s>,
         TokenRef<'s>,
-        Box<Expression<'s>>,
+        AstBox<'s, Expression<'s>>,
     ),
     /// `'pub'? 'let' pattern '=' expression ';'`
     Bind(
         Option<TokenRef<'s>>,
         TokenRef<'s>,
-        Box<Pattern<'s>>,
+        AstBox<'s, Pattern<'s>>,
         TokenRef<'s>,
-        Box<Expression<'s>>,
+        AstBox<'s, Expression<'s>>,
         TokenRef<'s>,
     ),
     /// `pattern_rebind '=' expression ';'`
     Rebind(
-        Box<Pattern<'s>>,
+        AstBox<'s, Pattern<'s>>,
         TokenRef<'s>,
-        Box<Expression<'s>>,
+        AstBox<'s, Expression<'s>>,
         TokenRef<'s>,
     ),
     /// `'pub'? 'const' @id '=' expression ';'`
@@ -41,7 +41,7 @@ pub enum Statement<'s> {
         TokenRef<'s>,
         TokenRef<'s>,
         TokenRef<'s>,
-        Box<Expression<'s>>,
+        AstBox<'s, Expression<'s>>,
         TokenRef<'s>,
     ),
     /// `expression ('=' | '+=' | '-=' | '*=' | '/=' | '%=' | '^=' | '&&=' | '||=') expression ';'`
@@ -51,9 +51,9 @@ pub enum Statement<'s> {
     /// - `expression_access` where the accessed is an extern
     /// - `expression_index` where the indexed is an extern
     Assign(
-        Box<Expression<'s>>,
+        AstBox<'s, Expression<'s>>,
         TokenRef<'s>,
-        Box<Expression<'s>>,
+        AstBox<'s, Expression<'s>>,
         TokenRef<'s>,
     ),
     /// `'pub'? 'fn' identifier (parameters) block_expression`
@@ -73,16 +73,24 @@ pub enum Statement<'s> {
         TokenRef<'s>,
         TokenRef<'s>,
         Option<ParameterList<'s>>,
-        Box<Expression<'s>>,
+        AstBox<'s, Expression<'s>>,
     ),
     /// `return expression;` or `return;`
     ///
     /// If the expression is omitted, the return value is `nil`.
-    Return(TokenRef<'s>, Option<Box<Expression<'s>>>, TokenRef<'s>),
+    Return(
+        TokenRef<'s>,
+        Option<AstBox<'s, Expression<'s>>>,
+        TokenRef<'s>,
+    ),
     /// `break expression;` or `break;`
     ///
     /// The expression is only allowed in a `loop` expression.
-    Break(TokenRef<'s>, Option<Box<Expression<'s>>>, TokenRef<'s>),
+    Break(
+        TokenRef<'s>,
+        Option<AstBox<'s, Expression<'s>>>,
+        TokenRef<'s>,
+    ),
     /// `continue;`
     Continue(TokenRef<'s>, TokenRef<'s>),
     /// Unknown statement.

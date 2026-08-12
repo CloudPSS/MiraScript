@@ -2,12 +2,12 @@ use crate::parser::helper::unknown_range;
 
 use super::prelude::*;
 
-#[derive(Debug, Clone, PartialEq, strum::EnumIs)]
+#[derive(Debug, PartialEq, strum::EnumIs)]
 pub enum Pattern<'s> {
     /// `(` pattern `)`
     ///
     /// Grouping pattern.
-    Grouping(TokenRef<'s>, Box<Pattern<'s>>, TokenRef<'s>),
+    Grouping(TokenRef<'s>, AstBox<'s, Pattern<'s>>, TokenRef<'s>),
     /// ( `+` | `-` )? literal
     ///
     /// Matches against a literal value.
@@ -19,11 +19,15 @@ pub enum Pattern<'s> {
     /// ( `>` | `>=` | `<=` | `<` | `==` | `!=` | `=~` | `!~` ) (pattern_constant | pattern_literal)
     ///
     /// Matches against a relation with constant values.
-    Relation(TokenRef<'s>, Box<Pattern<'s>>),
+    Relation(TokenRef<'s>, AstBox<'s, Pattern<'s>>),
     /// (pattern_constant | pattern_literal) ( `..` | `..<` ) (pattern_constant | pattern_literal)
     ///
     /// Matches against a range of constant values.
-    Range(Box<Pattern<'s>>, TokenRef<'s>, Box<Pattern<'s>>),
+    Range(
+        AstBox<'s, Pattern<'s>>,
+        TokenRef<'s>,
+        AstBox<'s, Pattern<'s>>,
+    ),
     /// `_`
     ///
     /// Matches and discards a value.
@@ -73,15 +77,23 @@ pub enum Pattern<'s> {
     /// pattern `and` pattern
     ///
     /// Matches all of the patterns.
-    And(Box<Pattern<'s>>, TokenRef<'s>, Box<Pattern<'s>>),
+    And(
+        AstBox<'s, Pattern<'s>>,
+        TokenRef<'s>,
+        AstBox<'s, Pattern<'s>>,
+    ),
     /// pattern `or` pattern
     ///
     /// Matches any of the patterns.
-    Or(Box<Pattern<'s>>, TokenRef<'s>, Box<Pattern<'s>>),
+    Or(
+        AstBox<'s, Pattern<'s>>,
+        TokenRef<'s>,
+        AstBox<'s, Pattern<'s>>,
+    ),
     /// `not` pattern
     ///
     /// Matches if the pattern does not match.
-    Not(TokenRef<'s>, Box<Pattern<'s>>),
+    Not(TokenRef<'s>, AstBox<'s, Pattern<'s>>),
 
     /// Unknown pattern.
     Unknown {

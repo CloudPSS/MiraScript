@@ -3,7 +3,9 @@ use std::ops::{Deref, DerefMut};
 use crate::{
     diagnostic::SourceRange,
     emitter::variable::Variable,
-    parser::{ArrayElementBase, AstWalker as _, Expression, ParameterList, Pattern, Statement},
+    parser::{
+        ArrayElementBase, AstBox, AstWalker as _, Expression, ParameterList, Pattern, Statement,
+    },
 };
 
 use super::{
@@ -62,7 +64,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
     pub fn declare_block(
         &mut self,
         stmts: &'s Vec<Statement<'s>>,
-        expr: &'s Option<Box<Expression<'s>>>,
+        expr: &'s Option<AstBox<'s, Expression<'s>>>,
         exports: &mut ModuleExports<'s, 'c>,
     ) {
         for stmt in stmts {
@@ -75,7 +77,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
     pub fn emit_block(
         &mut self,
         stmts: &'s Vec<Statement<'s>>,
-        expr: &'s Option<Box<Expression<'s>>>,
+        expr: &'s Option<AstBox<'s, Expression<'s>>>,
         scope_range: SourceRange,
         ret: Register,
         brk: Option<Register>,
@@ -128,7 +130,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
         scope_range: SourceRange,
         args: &'s Option<ParameterList<'s>>,
         stmts: &'s Vec<Statement<'s>>,
-        expr: &'s Option<Box<Expression<'s>>>,
+        expr: &'s Option<AstBox<'s, Expression<'s>>>,
     ) {
         let arg_len = args.as_ref().map_or(1, |args| args.len());
         let mut has_var_args = false;

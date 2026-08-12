@@ -7,10 +7,6 @@ publish = false
 [lib]
 crate-type = ["cdylib"]
 
-[features]
-default = ["mimalloc"]
-mimalloc = ["mira-core/mimalloc"]
-
 [dependencies]
 napi = { version = "3", features = ["serde-json"] }
 napi-derive = "3"

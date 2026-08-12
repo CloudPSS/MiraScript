@@ -30,26 +30,28 @@ pub(super) fn json_start<'s>(i: &mut Input<'s>) -> Result<()> {
 
 enum JsonFieldName<'s> {
     Literal(TokenRef<'s>),
-    Interpolated(Box<Expression<'s>>),
+    Interpolated(AstBox<'s, Expression<'s>>),
 }
 struct JsonElement<'s> {
     key: JsonFieldName<'s>,
     colon: TokenRef<'s>,
-    value: Box<Expression<'s>>,
+    value: AstBox<'s, Expression<'s>>,
     comma: TokenRef<'s>,
 }
 fn json_field_name<'s>(i: &mut Input<'s>) -> Result<JsonFieldName<'s>> {
+    let arena = i.state;
     alt((
         // "xxx"
         one_of(|t: &Token<'s>| matches!(&t.kind, &TokenKind::String(..)))
             .map(|t: &Token<'s>| JsonFieldName::Literal(t.into())),
         // `$xxx`
-        interpolation.map(|e| JsonFieldName::Interpolated(Box::new(e))),
+        interpolation.map(move |e| JsonFieldName::Interpolated(AstBox::new_in(e, arena))),
     ))
     .parse_next(i)
 }
 
 pub(super) fn json_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
+    let arena = i.state;
     // Peek to see if it's a JSON object-like expression
     peek(json_start).parse_next(i)?;
     let open = token(Operator::OpenBrace).parse_next(i)?;
@@ -61,10 +63,10 @@ pub(super) fn json_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
             expression_or_insert(|t| *t == Operator::Comma || *t == Operator::CloseBrace),
             token_or_insert(Operator::Comma, DiagnosticCode::MissingComma),
         )
-            .map(|(key, colon, value, comma)| JsonElement {
+            .map(move |(key, colon, value, comma)| JsonElement {
                 key,
                 colon,
-                value: Box::new(value),
+                value: AstBox::new_in(value, arena),
                 comma,
             }),
     )
@@ -85,9 +87,9 @@ pub(super) fn json_expression<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
             };
             if idx == el_count - 1 && e.comma.is_unknown() {
                 // Remove the trailing comma diagnostic for the last element
-                RecordElement::new(el)
+                RecordElement::new(el, arena)
             } else {
-                RecordElement::new_with_comma(el, e.comma)
+                RecordElement::new_with_comma(el, e.comma, arena)
             }
         })
         .collect();

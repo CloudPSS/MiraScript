@@ -7,10 +7,10 @@ use super::prelude::*;
 /// statement* expression? EOF
 ///
 /// A script is a source file that contains a sequence of statements and an optional expression.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub struct Script<'s>(
     pub Vec<Statement<'s>>,
-    pub Option<Box<Expression<'s>>>,
+    pub Option<AstBox<'s, Expression<'s>>>,
     pub TokenRef<'s>,
 );
 

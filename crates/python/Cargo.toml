@@ -8,10 +8,6 @@ edition = "2021"
 name = "mirascript"
 crate-type = ["cdylib"]
 
-[features]
-default = ["mimalloc"]
-mimalloc = ["mira-core/mimalloc"]
-
 [dependencies]
 serde = "1"
 mira-core = { path = "../core", features = ["serde"] }

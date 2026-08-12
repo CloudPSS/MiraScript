@@ -1,3 +1,4 @@
+use bumpalo::Bump;
 use winnow::stream::{Location, Stream};
 
 use crate::parser::{self, AstWalker};
@@ -68,11 +69,11 @@ impl<'s, 'c: 's> Compiler<'s, 'c> {
         )
     }
 
-    pub fn parse<'t>(&mut self, tokens: &'t [Token<'t>]) -> Option<Script<'t>> {
+    pub fn parse<'t>(&mut self, tokens: &'t [Token<'t>], arena: &'t Bump) -> Option<Script<'t>> {
         assert!(!tokens.is_empty(), "Cannot parse an empty token list");
 
         // Parsing
-        let mut stream = parser::to_input(tokens);
+        let mut stream = parser::to_input(tokens, arena);
         let Ok(mut script) = parser::parse(&mut stream) else {
             let remaining = stream.peek_finish();
             let range = if remaining.is_empty() {
@@ -115,10 +116,11 @@ impl<'s, 'c: 's> Compiler<'s, 'c> {
 
     pub fn compile(input: &str, config: &Config) -> CompileResult {
         let mut compiler = Compiler::new(input, config);
+        let arena = Bump::new();
         let Some(tokens) = compiler.lex() else {
             return (None, compiler.encode_diagnostics());
         };
-        let Some(script) = compiler.parse(&tokens) else {
+        let Some(script) = compiler.parse(&tokens, &arena) else {
             return (None, compiler.encode_diagnostics());
         };
         let Some(chunk) = compiler.emit(&script) else {

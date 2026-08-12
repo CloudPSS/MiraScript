@@ -9,7 +9,7 @@ use super::{
 };
 
 type _ArrayElement<'s, E, S> = ListItem<'s, ArrayElementBase<'s, E, S>>;
-fn array_element<'s, E: Clone + PartialEq + 's, S: Clone + PartialEq + 's>(
+fn array_element<'s, E: PartialEq + 's, S: PartialEq + 's>(
     element: impl Parser<'s, E>,
     spread: impl Parser<'s, S>,
     mut missing: impl FnMut(usize) -> E + Copy,
@@ -21,8 +21,9 @@ fn array_element<'s, E: Clone + PartialEq + 's, S: Clone + PartialEq + 's>(
             let pos = comma.range.start;
             let missing = missing(pos);
             return Ok(ListItem::new_with_comma(
-                ArrayElementBase::Element(Box::new(missing)),
+                ArrayElementBase::Element(AstBox::new_in(missing, i.state)),
                 comma,
+                i.state,
             ));
         }
         if *first == Operator::CloseBracket
@@ -32,13 +33,14 @@ fn array_element<'s, E: Clone + PartialEq + 's, S: Clone + PartialEq + 's>(
         {
             return fail.parse_next(i);
         }
+        let arena = i.state;
         let result = if *first == Operator::SpreadRange {
             (token(Operator::SpreadRange), spread)
-                .map(|(s, e)| ArrayElementBase::Spread(s, e.into()))
+                .map(move |(s, e)| ArrayElementBase::Spread(s, AstBox::new_in(e, arena)))
                 .parse_next(i)?
         } else {
             element
-                .map(|e| ArrayElementBase::Element(Box::new(e)))
+                .map(move |e| ArrayElementBase::Element(AstBox::new_in(e, arena)))
                 .parse_next(i)?
         };
         let last = peek(any).parse_next(i)?;
@@ -57,15 +59,15 @@ fn array_element<'s, E: Clone + PartialEq + 's, S: Clone + PartialEq + 's>(
             || *last == Keyword::Let
             || *last == Keyword::Const
         {
-            return Ok(ListItem::new(result));
+            return Ok(ListItem::new(result, i.state));
         }
         let comma = token_or_insert(Operator::Comma, DiagnosticCode::MissingComma).parse_next(i)?;
-        Ok(ListItem::new_with_comma(result, comma))
+        Ok(ListItem::new_with_comma(result, comma, i.state))
     }
 }
 
 type _ArrayLike<'s, E, S> = (TokenRef<'s>, Vec<_ArrayElement<'s, E, S>>, TokenRef<'s>);
-pub(super) fn array_base<'t, 's: 't, E: Clone + PartialEq + 's, S: Clone + PartialEq + 's>(
+pub(super) fn array_base<'t, 's: 't, E: PartialEq + 's, S: PartialEq + 's>(
     mut open: impl Parser<'s, TokenRef<'s>>,
     mut close: impl Parser<'s, TokenRef<'s>>,
     element: impl Parser<'s, E>,

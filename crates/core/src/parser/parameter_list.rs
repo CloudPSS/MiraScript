@@ -9,7 +9,7 @@ use super::{
 };
 
 /// `(` ...items `)`
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub struct ParameterList<'s>(
     pub TokenRef<'s>,
     pub Vec<ArrayPattern<'s>>,
@@ -42,6 +42,7 @@ impl<'s> AstWalker<'s> for ParameterList<'s> {
 }
 
 pub(super) fn parameter_list<'s>(i: &mut Input<'s>) -> Result<Option<ParameterList<'s>>> {
+    let arena = i.state;
     let list = opt(array_pattern_like(
         token(Operator::OpenParen),
         token_or_insert(Operator::CloseParen, DiagnosticCode::MissingCloseParen),
@@ -67,8 +68,9 @@ pub(super) fn parameter_list<'s>(i: &mut Input<'s>) -> Result<Option<ParameterLi
             unreachable!();
         };
         let pattern = std::mem::replace(&mut **p, Pattern::SpreadDiscard(kw.range.start));
-        *item = ArrayElementBase::Element(Box::new(
+        *item = ArrayElementBase::Element(AstBox::new_in(
             pattern.wrap_as_unknown([kw.clone()], DiagnosticCode::MispositionedRestParameter),
+            arena,
         ));
     }
     Ok(Some(list))

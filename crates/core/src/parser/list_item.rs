@@ -3,8 +3,8 @@ use std::ops::{Deref, DerefMut};
 use super::prelude::*;
 
 /// item ','?
-#[derive(Debug, Clone, PartialEq)]
-pub struct ListItem<'s, T>(pub Box<T>, pub Option<TokenRef<'s>>);
+#[derive(Debug, PartialEq)]
+pub struct ListItem<'s, T: 's>(pub AstBox<'s, T>, pub Option<TokenRef<'s>>);
 
 impl<'s, T: AstWalker<'s>> AstWalker<'s> for ListItem<'s, T> {
     fn collect_diagnostics(&mut self, collector: &mut DiagnosticsCollector<'_, '_>) {
@@ -20,12 +20,12 @@ impl<'s, T: AstWalker<'s>> AstWalker<'s> for ListItem<'s, T> {
 }
 
 impl<'s, T> ListItem<'s, T> {
-    pub fn new_with_comma(item: T, tail_comma: TokenRef<'s>) -> Self {
-        Self(Box::new(item), Some(tail_comma))
+    pub fn new_with_comma(item: T, tail_comma: TokenRef<'s>, arena: &'s bumpalo::Bump) -> Self {
+        Self(AstBox::new_in(item, arena), Some(tail_comma))
     }
 
-    pub fn new(item: T) -> Self {
-        Self(Box::new(item), None)
+    pub fn new(item: T, arena: &'s bumpalo::Bump) -> Self {
+        Self(AstBox::new_in(item, arena), None)
     }
 
     pub fn has_tail_comma(&self) -> bool {
@@ -36,7 +36,7 @@ impl<'s, T> ListItem<'s, T> {
     }
 
     pub fn unwrap(self) -> T {
-        *self.0
+        AstBox::into_inner(self.0)
     }
 }
 

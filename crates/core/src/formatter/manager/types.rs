@@ -32,6 +32,16 @@ impl<T: Formattable> Formattable for Box<T> {
     }
 }
 
+impl<T: Formattable> Formattable for bumpalo::boxed::Box<'_, T> {
+    fn measure(&self, formatter: &FormatManager, indent: usize) -> usize {
+        self.as_ref().measure(formatter, indent)
+    }
+
+    fn format(&self, formatter: &mut FormatManager, complexity: usize) {
+        self.as_ref().format(formatter, complexity)
+    }
+}
+
 impl<T: Formattable> Formattable for Option<T> {
     fn measure(&self, formatter: &FormatManager, indent: usize) -> usize {
         if let Some(value) = self {

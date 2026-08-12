@@ -1,7 +1,7 @@
 use std::pin::Pin;
 
 use mira_core::{
-    Compiler, Config, Script, SourceDiagnostic, diagnostic::encode_diagnostics, lexer::Token,
+    Bump, Compiler, Config, Script, SourceDiagnostic, diagnostic::encode_diagnostics, lexer::Token,
 };
 use wasm_bindgen::prelude::*;
 
@@ -11,8 +11,9 @@ pub struct MonacoCompiler {
     input: Pin<String>,
     has_parse_error: bool,
     diagnostics: Vec<SourceDiagnostic>,
-    tokens: Pin<Box<[Token<'static>]>>,
     script: Option<Script<'static>>,
+    tokens: Pin<Box<[Token<'static>]>>,
+    arena: Box<Bump>,
 }
 
 #[wasm_bindgen]
@@ -24,25 +25,29 @@ impl MonacoCompiler {
             input: Pin::new(input),
             diagnostics: Vec::new(),
             has_parse_error: false,
-            tokens: Box::pin([]),
             script: None,
+            tokens: Box::pin([]),
+            arena: Box::new(Bump::new()),
         }
     }
 
     #[wasm_bindgen]
     pub fn parse(&mut self) -> bool {
+        self.script = None;
+        self.arena.reset();
         let input: &'static str = unsafe {
             let ptr = self.input.as_ptr();
             let len = self.input.len();
             str::from_utf8_unchecked(std::slice::from_raw_parts(ptr, len))
         };
         let config: &'static Config = unsafe { &*(&self.config as *const Config) };
+        let arena: &'static Bump = unsafe { &*(&*self.arena as *const Bump) };
         let mut compiler = Compiler::new(input, config);
         if let Some(tokens) = compiler.lex() {
             self.tokens = tokens.into();
             let tokens =
                 unsafe { std::slice::from_raw_parts(self.tokens.as_ptr(), self.tokens.len()) };
-            if let Some(script) = compiler.parse(tokens) {
+            if let Some(script) = compiler.parse(tokens, arena) {
                 self.script = Some(script);
                 self.diagnostics = compiler.diagnostics_collector.drain(..).collect();
                 self.has_parse_error = self.diagnostics.iter().any(|d| d.is_error());

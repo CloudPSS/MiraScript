@@ -1,6 +1,6 @@
 use super::prelude::*;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum Iterable<'s> {
     Range(Range<'s>),
     Value(Expression<'s>),

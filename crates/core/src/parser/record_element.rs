@@ -1,17 +1,17 @@
 use super::prelude::*;
 
-#[derive(Debug, Clone, PartialEq, strum::EnumIs)]
+#[derive(Debug, PartialEq, strum::EnumIs)]
 pub enum RecordElementBase<'s, E, I> {
     /// name colon Named
-    Named(TokenRef<'s>, TokenRef<'s>, Box<E>),
+    Named(TokenRef<'s>, TokenRef<'s>, AstBox<'s, E>),
     /// interpolated_string colon Named
-    InterpolateNamed(Box<I>, TokenRef<'s>, Box<E>),
+    InterpolateNamed(AstBox<'s, I>, TokenRef<'s>, AstBox<'s, E>),
     /// colon OmitNamed
-    OmitNamed(TokenRef<'s>, Box<E>),
+    OmitNamed(TokenRef<'s>, AstBox<'s, E>),
     /// Unnamed
-    Unnamed(Box<E>),
+    Unnamed(AstBox<'s, E>),
     /// `..` Spread
-    Spread(TokenRef<'s>, Box<E>),
+    Spread(TokenRef<'s>, AstBox<'s, E>),
 }
 
 use RecordElementBase::*;

@@ -93,18 +93,26 @@ fn primary_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
 
 fn not_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
     move |i: &mut Input<'s>| {
+        let arena = i.state;
         (token(Keyword::Not), primary_pattern(rebind))
-            .map(|(kw_not, p)| Pattern::Not(kw_not, Box::new(p)))
+            .map(move |(kw_not, p)| Pattern::Not(kw_not, AstBox::new_in(p, arena)))
             .parse_next(i)
     }
 }
 
 fn and_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
     move |i: &mut Input<'s>| {
+        let arena = i.state;
         separated_foldl1(
             primary_pattern(rebind),
             token(Keyword::And),
-            |left, op, right| Pattern::And(Box::new(left), op, Box::new(right)),
+            move |left, op, right| {
+                Pattern::And(
+                    AstBox::new_in(left, arena),
+                    op,
+                    AstBox::new_in(right, arena),
+                )
+            },
         )
         .parse_next(i)
     }
@@ -112,10 +120,17 @@ fn and_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
 
 fn or_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
     move |i: &mut Input<'s>| {
+        let arena = i.state;
         separated_foldl1(
             and_pattern(rebind),
             token(Keyword::Or),
-            |left, op, right| Pattern::Or(Box::new(left), op, Box::new(right)),
+            move |left, op, right| {
+                Pattern::Or(
+                    AstBox::new_in(left, arena),
+                    op,
+                    AstBox::new_in(right, arena),
+                )
+            },
         )
         .parse_next(i)
     }
@@ -173,17 +188,17 @@ fn relation_pattern<'s>(i: &mut Input<'s>) -> Result<Pattern<'s>> {
     seq!(Pattern::Relation(
         one_of(|t: &Token<'s>| matches!(t.kind, TokenKind::Operator(op) if op.is_relation()))
             .map(TokenRef::borrow),
-        literal_constant_pattern::<true>.map(Box::new),
+        boxed(literal_constant_pattern::<true>),
     ))
     .parse_next(i)
 }
 
 fn range_pattern<'s>(i: &mut Input<'s>) -> Result<Pattern<'s>> {
     seq!(Pattern::Range(
-        literal_constant_pattern::<true>.map(Box::new),
+        boxed(literal_constant_pattern::<true>),
         one_of(|t: &Token<'s>| *t == Operator::SpreadRange || *t == Operator::HalfOpenRange)
             .map(TokenRef::borrow),
-        literal_constant_pattern::<true>.map(Box::new),
+        boxed(literal_constant_pattern::<true>),
     ))
     .parse_next(i)
 }
@@ -372,8 +387,9 @@ fn array_pattern<'s>(rebind: bool) -> impl Parser<'s, Pattern<'s>> {
                     unreachable!();
                 };
                 let pattern = std::mem::replace(&mut **p, Pattern::SpreadDiscard(kw.range.start));
-                *part = ArrayElementBase::Element(Box::new(
+                *part = ArrayElementBase::Element(AstBox::new_in(
                     pattern.wrap_as_unknown([kw.clone()], DiagnosticCode::DuplicateSpreadPattern),
+                    i.state,
                 ));
             }
         }

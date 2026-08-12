@@ -28,7 +28,7 @@ fn fn_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
         token(Keyword::Fn),
         opt(variable_token(false, false)),
         parameter_list,
-        block_expression.map(Box::new),
+        boxed(block_expression),
     )
         .map(|(kw_pub, kw_fn, name, params, body)| {
             let mut name = name.unwrap_or_else(|| {
@@ -50,7 +50,7 @@ fn fn_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
 fn return_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
     seq!(Statement::Return(
         token(Keyword::Return),
-        opt(expression.map(Box::new)),
+        opt(boxed(expression)),
         semicolon,
     ))
     .parse_next(i)
@@ -59,7 +59,7 @@ fn return_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
 fn break_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
     seq!(Statement::Break(
         token(Keyword::Break),
-        opt(expression.map(Box::new)),
+        opt(boxed(expression)),
         semicolon,
     ))
     .parse_next(i)
@@ -73,9 +73,9 @@ fn bind_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
     seq!(Statement::Bind(
         opt(token(Keyword::Pub)),
         token(Keyword::Let),
-        pattern_or_insert(false, |t| *t == Operator::Assign).map(Box::new),
+        boxed(pattern_or_insert(false, |t| *t == Operator::Assign)),
         token_or_insert(Operator::Assign, DiagnosticCode::MissingBindOperator),
-        expression_or_insert(|t| *t == Operator::Semicolon).map(Box::new),
+        boxed(expression_or_insert(|t| *t == Operator::Semicolon)),
         semicolon,
     ))
     .parse_next(i)
@@ -83,9 +83,9 @@ fn bind_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
 
 fn rebind_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
     seq!(Statement::Rebind(
-        pattern_or_insert(true, |t| *t == Operator::Assign).map(Box::new),
+        boxed(pattern_or_insert(true, |t| *t == Operator::Assign)),
         token(Operator::Assign),
-        expression_or_insert(|t| *t == Operator::Semicolon).map(Box::new),
+        boxed(expression_or_insert(|t| *t == Operator::Semicolon)),
         semicolon,
     ))
     .parse_next(i)
@@ -102,7 +102,7 @@ fn const_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
             t
         }),
         token_or_insert(Operator::Assign, DiagnosticCode::MissingBindOperator),
-        expression_or_insert(|t| *t == Operator::Semicolon).map(Box::new),
+        boxed(expression_or_insert(|t| *t == Operator::Semicolon)),
         semicolon,
     ))
     .parse_next(i)
@@ -125,16 +125,12 @@ fn assign_or_expression_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>
     }
 
     // Common expr of expr1 = expr2; and expr1;
-    let expr1 = expression_or_insert(is_assign_op)
-        .map(Box::new)
-        .parse_next(i)?;
+    let expr1 = boxed(expression_or_insert(is_assign_op)).parse_next(i)?;
     let cp = i.checkpoint();
     // Try to parse as assignment first
     let assign: Result<_> = one_of(is_assign_op).parse_next(i);
     if let Ok(assign) = assign {
-        let expr2 = expression_or_insert(|t| *t == Operator::Semicolon)
-            .map(Box::new)
-            .parse_next(i)?;
+        let expr2 = boxed(expression_or_insert(|t| *t == Operator::Semicolon)).parse_next(i)?;
         let semi = semicolon.parse_next(i)?;
         return Ok(Statement::Assign(
             expr1,
@@ -165,7 +161,7 @@ fn mod_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
         opt(token(Keyword::Pub)),
         token(Keyword::Mod),
         opt(variable_token(false, false)),
-        block_expression_no_expr.map(Box::new),
+        boxed(block_expression_no_expr),
     )
         .map(|(kw_pub, kw_mod, name, body)| {
             let name = name.unwrap_or_else(|| {
@@ -183,12 +179,12 @@ fn mod_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
 
 pub(super) fn statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>> {
     dispatch! {peek(any);
-        t if *t == Operator::OpenBrace => block_expression.map(Box::new).map(Statement::BlockExpression),
-        t if *t == Keyword::If => if_expression.map(Box::new).map(Statement::BlockExpression),
-        t if *t == Keyword::Loop => loop_expression.map(Box::new).map(Statement::BlockExpression),
-        t if *t == Keyword::While => while_expression.map(Box::new).map(Statement::BlockExpression),
-        t if *t == Keyword::Match => match_expression.map(Box::new).map(Statement::BlockExpression),
-        t if *t == Keyword::For => for_in_expression.map(Box::new).map(Statement::BlockExpression),
+        t if *t == Operator::OpenBrace => boxed(block_expression).map(Statement::BlockExpression),
+        t if *t == Keyword::If => boxed(if_expression).map(Statement::BlockExpression),
+        t if *t == Keyword::Loop => boxed(loop_expression).map(Statement::BlockExpression),
+        t if *t == Keyword::While => boxed(while_expression).map(Statement::BlockExpression),
+        t if *t == Keyword::Match => boxed(match_expression).map(Statement::BlockExpression),
+        t if *t == Keyword::For => boxed(for_in_expression).map(Statement::BlockExpression),
 
         t if *t == Keyword::Return => return_statement,
         t if *t == Keyword::Break => break_statement,

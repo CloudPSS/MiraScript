@@ -17,11 +17,10 @@ formatter = []
 wasm = ["dep:wasm-bindgen"]
 wasm-constants = ["dep:wasm-bindgen"]
 serde = ["dep:serde"]
-mimalloc = ["dep:mimalloc"]
 
 [dev-dependencies]
 divan = "0.1.21"
-mira-core = { path = ".", features = ["mimalloc"] }
+mira-core = { path = "." }
 
 [dependencies]
 unicode-ident = "1"
@@ -29,8 +28,4 @@ winnow = "1"
 strum = { version = "0.28", features = ["derive"] }
 wasm-bindgen = { version = "0.2", optional = true }
 serde = { version = "1", optional = true, features = ["derive"] }
-
-[target.'cfg(target_os = "windows")'.dependencies]
-mimalloc = { version = "0.1", optional = true, features = [] }
-[target.'cfg(not(target_os = "windows"))'.dependencies]
-mimalloc = { version = "0.1", optional = true, features = ["v2"] }
+bumpalo = { version = "3", features = ["boxed"] }
