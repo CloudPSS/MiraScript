@@ -305,6 +305,30 @@ test('highlights extern tags while preserving surrounding document declarations'
     }
 });
 
+test('highlights extern tags nested in document value arrays', (t) => {
+    const tokens = tokenize(
+        ['a: /* <extern Array(3)> */ [', '  1,', '  /* <extern Object> */,', '  /* <extern Array(2)> */', ']'].join(
+            '\n',
+        ),
+        'mirascript-doc',
+    );
+    expectScope(t, tokens, 'a', 'variable.other.property.mira');
+    expectScope(t, tokens, 'Array', 'entity.name.type.js', 0);
+    expectScope(t, tokens, 'Array', 'entity.name.type.js', 1);
+    expectScope(t, tokens, 'Object', 'entity.name.type.js');
+    expectScope(t, tokens, '3', 'constant.numeric.mira');
+    expectScope(t, tokens, '2', 'constant.numeric.mira');
+    for (const delimiter of tokens.filter((token) => ['(', ')'].includes(token.text))) {
+        t.true(
+            delimiter.scopes.includes(`punctuation.section.parens.${delimiter.text === '(' ? 'begin' : 'end'}.mira`),
+        );
+    }
+    t.is(tokens.filter((token) => token.text === 'extern').length, 3);
+    for (const delimiter of tokens.filter((token) => ['/*', '*/'].includes(token.text))) {
+        t.true(delimiter.scopes.includes('comment.block.mira'), delimiter.scopes.join(', '));
+    }
+});
+
 test('highlights line-leading field declarations and infers callable and class field names', (t) => {
     const tokens = tokenize(
         [
