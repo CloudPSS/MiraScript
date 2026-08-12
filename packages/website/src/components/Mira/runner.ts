@@ -3,11 +3,11 @@ import {
     createVmContext,
     VmFunction,
     type InputMode,
-    type VmAny,
     type VmContext,
     type VmScript,
+    type VmValue,
 } from '@mirascript/mirascript';
-import { lib, serializeForDisplay } from '@mirascript/mirascript/subtle';
+import { lib } from '@mirascript/mirascript/subtle';
 
 /** 创建名称 */
 function createFileName(mode: InputMode, fileBaseName = 'live-code'): string {
@@ -19,7 +19,7 @@ function createFileName(mode: InputMode, fileBaseName = 'live-code'): string {
 export type Result = {
     type: 'result' | 'error' | 'log' | 'trace';
     timestamp: number;
-    content: Array<string | { value: string; raw: unknown }>;
+    content: Array<string | { raw: VmValue }>;
 };
 /** 结果 */
 export type Results = {
@@ -29,11 +29,6 @@ export type Results = {
     javascript: string | null;
     items: Result[];
 };
-
-/** 打印输出 */
-function serialize(value: VmAny): string {
-    return serializeForDisplay(value, { maxDepth: 128 });
-}
 
 const printOptions = { ...lib.debug_print, prefix: [] };
 let cache: { fileName: string; mode: InputMode; source: string; script: VmScript | null } | null = null;
@@ -111,14 +106,11 @@ export async function runMiraScript(
                         continue;
                     case '%o':
                     case '%O':
-                        content.push({
-                            value: serialize(value),
-                            raw: value,
-                        });
+                        content.push({ raw: value });
                         continue;
                     case '':
                     default:
-                        content.push(typeof value == 'string' ? value : { value: serialize(value), raw: value });
+                        content.push(typeof value == 'string' ? value : { raw: value });
                         continue;
                 }
             }
@@ -145,7 +137,7 @@ export async function runMiraScript(
         if (result != null) {
             results.push({
                 type: 'result',
-                content: [{ value: serialize(result), raw: result }],
+                content: [{ raw: result }],
                 timestamp: t,
             });
         }

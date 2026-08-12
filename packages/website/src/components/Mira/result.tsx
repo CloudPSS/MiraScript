@@ -1,7 +1,14 @@
 import type { JSX } from 'react';
+import { isVmFunction, isVmWrapper, type VmAny } from '@mirascript/mirascript';
+import { serializeForDisplay } from '@mirascript/mirascript/subtle';
 import type { Result } from './runner';
 import Highlight from './highlight';
 import styles from './result.module.css';
+
+/** 打印输出 */
+function serialize(value: VmAny): string {
+    return serializeForDisplay(value, { maxDepth: 128 });
+}
 
 /** 提取 HTML 结果 */
 function htmlResult(item: Result): string | undefined {
@@ -35,8 +42,12 @@ export default function ResultItem({
                 if (!item) return null;
                 return <span key={i}>{item}</span>;
             } else {
-                if (!item.value) return null;
-                return <Highlight key={i} code={item.value} language="mirascript" />;
+                const value = serialize(item.raw);
+                if (!value) return null;
+                if (isVmFunction(item.raw) || isVmWrapper(item.raw)) {
+                    return <Highlight key={i} code={value} language="mirascript-doc" />;
+                }
+                return <Highlight key={i} code={value} language="mirascript" />;
             }
         };
         inner = item.content.map((c, i) => H(c, i));
