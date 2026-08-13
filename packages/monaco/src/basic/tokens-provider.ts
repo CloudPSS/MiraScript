@@ -1,5 +1,5 @@
-import type { HighlighterCore, Grammar } from 'shiki/core';
-import type { StateStack } from 'shiki/textmate';
+import type { HighlighterCore, Grammar } from '@shikijs/core';
+import type { StateStack } from '@shikijs/vscode-textmate';
 import { languages, type IDisposable } from '../monaco-api.js';
 import { CONTRIBUTE_IDS } from '../contribute.js';
 
@@ -46,9 +46,9 @@ class HighlighterManager implements IDisposable {
             { INITIAL },
             { mirascript, mirascriptDoc, mirascriptTemplate },
         ] = await Promise.all([
-            import('shiki/core'),
-            import('shiki/engine-javascript.mjs'),
-            import('shiki/textmate'),
+            import('@shikijs/core'),
+            import('@shikijs/engine-javascript'),
+            import('@shikijs/vscode-textmate'),
             import('@mirascript/textmate'),
         ]);
         this.INITIAL = INITIAL;

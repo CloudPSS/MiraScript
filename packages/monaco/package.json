@@ -50,7 +50,9 @@
     "@mirascript/help": "workspace:~",
     "@mirascript/mirascript": "workspace:~",
     "@mirascript/textmate": "workspace:~",
-    "shiki": "^4.4.3"
+    "@shikijs/core": "^4.4.3",
+    "@shikijs/engine-javascript": "^4.4.3",
+    "@shikijs/vscode-textmate": "^10.0.2"
   },
   "peerDependencies": {
     "monaco-editor": ">= 0.0.40"

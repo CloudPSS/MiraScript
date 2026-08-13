@@ -175,12 +175,18 @@ importers:
       '@mirascript/textmate':
         specifier: workspace:~
         version: link:../textmate
+      '@shikijs/core':
+        specifier: ^4.4.3
+        version: 4.4.3
+      '@shikijs/engine-javascript':
+        specifier: ^4.4.3
+        version: 4.4.3
+      '@shikijs/vscode-textmate':
+        specifier: ^10.0.2
+        version: 10.0.2
       monaco-editor:
         specifier: '>= 0.0.40'
         version: 0.56.0
-      shiki:
-        specifier: ^4.4.3
-        version: 4.4.3
     devDependencies:
       type-fest:
         specifier: ^5.8.0
@@ -253,13 +259,19 @@ importers:
       '@mirascript/wasm':
         specifier: workspace:~
         version: link:../wasm
+      '@shikijs/core':
+        specifier: ^4.4.3
+        version: 4.4.3
+      '@shikijs/engine-javascript':
+        specifier: ^4.4.3
+        version: 4.4.3
+      '@shikijs/themes':
+        specifier: ^4.4.3
+        version: 4.4.3
     devDependencies:
       '@private/monaco-editor':
         specifier: ^0.0.71
         version: 0.0.71
-      '@shikijs/themes':
-        specifier: ^4.4.3
-        version: 4.4.3
       '@types/markdown-it':
         specifier: ^14.1.2
         version: 14.1.2
@@ -275,9 +287,6 @@ importers:
       nodemon:
         specifier: ^3.1.14
         version: 3.1.14
-      shiki:
-        specifier: ^4.4.3
-        version: 4.4.3
       svg2png-wasm:
         specifier: ^1.4.1
         version: 1.4.1

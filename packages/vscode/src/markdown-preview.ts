@@ -1,4 +1,4 @@
-import type { HighlighterCore, ShikiTransformer } from 'shiki/core';
+import type { HighlighterCore, ShikiTransformer } from '@shikijs/core';
 import type MarkdownIt from 'markdown-it';
 import type Token from 'markdown-it/lib/token.mjs';
 
@@ -51,8 +51,8 @@ export class MarkdownPreview {
             { default: githubDarkHighContrast },
             { default: githubLightHighContrast },
         ] = await Promise.all([
-            import('shiki/core'),
-            import('shiki/engine/javascript'),
+            import('@shikijs/core'),
+            import('@shikijs/engine-javascript'),
             import('@mirascript/textmate'),
             import('@shikijs/themes/light-plus'),
             import('@shikijs/themes/dark-plus'),
