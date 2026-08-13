@@ -4,14 +4,24 @@ import * as textmate from '@mirascript/textmate';
 const output = new URL('../syntaxes/', import.meta.url);
 await fs.mkdir(output, { recursive: true });
 
+/**
+ * Makes a list of names for the given language, including its aliases and the main name.
+ * @param {string} name
+ * @param {string[]?} aliases
+ * @returns {string[]}
+ */
+function makeNameList(name, aliases) {
+    const names = new Set((aliases ?? []).map((a) => a.toLowerCase()));
+    names.add(name.toLowerCase());
+    return Array.from(names).sort((a, b) => b.length - a.length || a.localeCompare(b));
+}
+
 for (const lang of /** @type {const} */ (['mirascript', 'mirascript-template', 'mirascript-doc'])) {
     const filename = `${lang}.tmLanguage.json`;
     const source = new URL(import.meta.resolve(`@mirascript/textmate/${filename}`));
     await fs.copyFile(source, new URL(filename, output));
     const data = textmate[lang];
-    const names = new Set(data.aliases);
-    names.add(data.name);
-    const list = Array.from(names).sort((a, b) => a.localeCompare(b));
+    const names = makeNameList(data.name, data.aliases);
     await fs.writeFile(
         new URL(`markdown-${filename}`, output),
         JSON.stringify(
@@ -24,7 +34,7 @@ for (const lang of /** @type {const} */ (['mirascript', 'mirascript-template', '
                         patterns: [
                             {
                                 name: 'markup.fenced_code.block.markdown',
-                                begin: `(^|\\G)(\\s*)(\\\`{3,}|~{3,})\\s*(?i:(${list.join('|')})(\\s+[^\`~]*)?$)`,
+                                begin: `(^|\\G)(\\s*)(\\\`{3,}|~{3,})\\s*(?i:(${names.join('|')})(\\s+[^\`~]*)?$)`,
                                 end: String.raw`(^|\G)(\2|\s{0,3})(\3)\s*$`,
                                 beginCaptures: {
                                     3: { name: 'punctuation.definition.markdown' },
