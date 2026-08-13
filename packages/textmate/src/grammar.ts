@@ -9,7 +9,6 @@ import {
 } from '@mirascript/constants';
 import { mirascriptDocLanguage, mirascriptLanguage, mirascriptTemplateLanguage } from './language.ts';
 
-const SCOPE_SUFFIX = 'mira';
 const IDENTIFIER = REG_IDENTIFIER.source;
 const IDENTIFIER_START = String.raw`(?<!\p{XID_Continue})`;
 const IDENTIFIER_END = String.raw`(?!\p{XID_Continue})`;
@@ -88,35 +87,35 @@ function interpolationPatterns(dollarCount: number) {
     const dollars = String.raw`\$`.repeat(dollarCount);
     return [
         {
-            name: `meta.interpolation.simple.${SCOPE_SUFFIX}`,
+            name: `meta.interpolation.simple.mira`,
             match: `(${dollars})(${IDENTIFIER})`,
             captures: {
-                1: { name: `punctuation.definition.template-expression.begin.${SCOPE_SUFFIX}` },
-                2: { name: `variable.other.${SCOPE_SUFFIX}` },
+                1: { name: `punctuation.definition.template-expression.begin.mira` },
+                2: { name: `variable.other.mira` },
             },
         },
         {
-            name: `meta.interpolation.block.${SCOPE_SUFFIX}`,
+            name: `meta.interpolation.block.mira`,
             begin: String.raw`(${dollars}\{)`,
-            beginCaptures: { 1: { name: `punctuation.definition.template-expression.begin.${SCOPE_SUFFIX}` } },
-            contentName: `meta.embedded.expression.${SCOPE_SUFFIX}`,
+            beginCaptures: { 1: { name: `punctuation.definition.template-expression.begin.mira` } },
+            contentName: `meta.embedded.expression.mira`,
             end: String.raw`\}`,
-            endCaptures: { 0: { name: `punctuation.definition.template-expression.end.${SCOPE_SUFFIX}` } },
+            endCaptures: { 0: { name: `punctuation.definition.template-expression.end.mira` } },
             patterns: [{ include: '#braced-content' }],
         },
         {
-            name: `meta.interpolation.expression.${SCOPE_SUFFIX}`,
+            name: `meta.interpolation.expression.mira`,
             begin: String.raw`(${dollars}\()`,
-            beginCaptures: { 1: { name: `punctuation.definition.template-expression.begin.${SCOPE_SUFFIX}` } },
-            contentName: `meta.embedded.expression.${SCOPE_SUFFIX}`,
+            beginCaptures: { 1: { name: `punctuation.definition.template-expression.begin.mira` } },
+            contentName: `meta.embedded.expression.mira`,
             end: String.raw`\)`,
-            endCaptures: { 0: { name: `punctuation.definition.template-expression.end.${SCOPE_SUFFIX}` } },
+            endCaptures: { 0: { name: `punctuation.definition.template-expression.end.mira` } },
             patterns: [
                 {
                     begin: ':(?!:)',
-                    beginCaptures: { 0: { name: `punctuation.separator.format.${SCOPE_SUFFIX}` } },
+                    beginCaptures: { 0: { name: `punctuation.separator.format.mira` } },
                     end: String.raw`(?=\))`,
-                    contentName: `string.unquoted.format.${SCOPE_SUFFIX}`,
+                    contentName: `string.unquoted.format.mira`,
                     patterns: [{ include: '#format-content' }],
                 },
                 { include: '#interpolation-expression-content' },
@@ -131,16 +130,16 @@ function interpolationPatterns(dollarCount: number) {
 function normalString(quote: string, label: string) {
     const escapedQuote = escapeRegex(quote);
     return {
-        name: `string.quoted.${label}.${SCOPE_SUFFIX}`,
+        name: `string.quoted.${label}.mira`,
         begin: escapedQuote,
-        beginCaptures: { 0: { name: `punctuation.definition.string.begin.${SCOPE_SUFFIX}` } },
+        beginCaptures: { 0: { name: `punctuation.definition.string.begin.mira` } },
         end: escapedQuote,
-        endCaptures: { 0: { name: `punctuation.definition.string.end.${SCOPE_SUFFIX}` } },
+        endCaptures: { 0: { name: `punctuation.definition.string.end.mira` } },
         patterns: [
-            { name: `constant.character.escape.unicode.${SCOPE_SUFFIX}`, match: String.raw`\\u\{[0-9A-Fa-f]+\}` },
-            { name: `constant.character.escape.hex.${SCOPE_SUFFIX}`, match: String.raw`\\x[0-9A-Fa-f]{2}` },
-            { name: `constant.character.escape.${SCOPE_SUFFIX}`, match: '\\\\[\\\\\'"\\`$rntbfv0]' },
-            { name: `invalid.illegal.escape.${SCOPE_SUFFIX}`, match: String.raw`\\.` },
+            { name: `constant.character.escape.unicode.mira`, match: String.raw`\\u\{[0-9A-Fa-f]+\}` },
+            { name: `constant.character.escape.hex.mira`, match: String.raw`\\x[0-9A-Fa-f]{2}` },
+            { name: `constant.character.escape.mira`, match: '\\\\[\\\\\'"\\`$rntbfv0]' },
+            { name: `invalid.illegal.escape.mira`, match: String.raw`\\.` },
             ...interpolationPatterns(1),
         ],
     };
@@ -153,11 +152,11 @@ function verbatimString(atCount: number, quote: string, label: string) {
     const ats = '@'.repeat(atCount);
     const escapedQuote = escapeRegex(quote);
     return {
-        name: `string.quoted.${label}.verbatim.${SCOPE_SUFFIX}`,
+        name: `string.quoted.${label}.verbatim.mira`,
         begin: `(?<!@)${ats}${escapedQuote}`,
-        beginCaptures: { 0: { name: `punctuation.definition.string.begin.${SCOPE_SUFFIX}` } },
+        beginCaptures: { 0: { name: `punctuation.definition.string.begin.mira` } },
         end: `${escapedQuote}${ats}(?!@)`,
-        endCaptures: { 0: { name: `punctuation.definition.string.end.${SCOPE_SUFFIX}` } },
+        endCaptures: { 0: { name: `punctuation.definition.string.end.mira` } },
         patterns: interpolationPatterns(atCount),
     };
 }
@@ -185,9 +184,9 @@ function stringPatterns() {
 function delimitedContent(delimiter: 'braces' | 'brackets' | 'parens', begin: string, end: string, include: string) {
     return {
         begin,
-        beginCaptures: { 0: { name: `punctuation.section.${delimiter}.begin.${SCOPE_SUFFIX}` } },
+        beginCaptures: { 0: { name: `punctuation.section.${delimiter}.begin.mira` } },
         end,
-        endCaptures: { 0: { name: `punctuation.section.${delimiter}.end.${SCOPE_SUFFIX}` } },
+        endCaptures: { 0: { name: `punctuation.section.${delimiter}.end.mira` } },
         patterns: [{ include }],
     };
 }
@@ -208,15 +207,15 @@ function documentationRepository(sourceInclude = '#source') {
         'documentation-inline': {
             patterns: [
                 {
-                    name: `storage.type.class.documentation.${SCOPE_SUFFIX}`,
+                    name: `storage.type.class.documentation.mira`,
                     match: String.raw`@(param|returns)\b`,
                 },
                 {
-                    name: `markup.bold.documentation.${SCOPE_SUFFIX}`,
+                    name: `markup.bold.documentation.mira`,
                     match: String.raw`\*\*[^*]+\*\*`,
                 },
-                { name: `markup.italic.documentation.${SCOPE_SUFFIX}`, match: String.raw`\*[^*]+\*` },
-                { name: `constant.character.escape.documentation.${SCOPE_SUFFIX}`, match: String.raw`\\\*` },
+                { name: `markup.italic.documentation.mira`, match: String.raw`\*[^*]+\*` },
+                { name: `constant.character.escape.documentation.mira`, match: String.raw`\\\*` },
             ],
         },
         'documentation-line': {
@@ -224,9 +223,9 @@ function documentationRepository(sourceInclude = '#source') {
                 {
                     match: String.raw`^(?!\s*\*/)(\s*\*\s?)(.*?)(?=\*/|$)`,
                     captures: {
-                        1: { name: `comment.block.documentation.${SCOPE_SUFFIX}` },
+                        1: { name: `comment.block.documentation.mira` },
                         2: {
-                            name: `meta.documentation.inline.${SCOPE_SUFFIX}`,
+                            name: `meta.documentation.inline.mira`,
                             patterns: [{ include: '#documentation-inline' }],
                         },
                     },
@@ -239,7 +238,7 @@ function documentationRepository(sourceInclude = '#source') {
                     match: String.raw`(?!\*/)(.+?)(?=\*/|$)`,
                     captures: {
                         1: {
-                            name: `meta.documentation.inline.${SCOPE_SUFFIX}`,
+                            name: `meta.documentation.inline.mira`,
                             patterns: [{ include: '#documentation-inline' }],
                         },
                     },
@@ -249,34 +248,34 @@ function documentationRepository(sourceInclude = '#source') {
         'documentation-mirascript-fence': {
             patterns: [
                 {
-                    name: `markup.fenced_code.block.${SCOPE_SUFFIX}`,
+                    name: `markup.fenced_code.block.mira`,
                     begin: documentationMiraFenceBegin,
                     beginCaptures: {
-                        1: { name: `comment.block.documentation.${SCOPE_SUFFIX}` },
-                        2: { name: `punctuation.definition.markdown.${SCOPE_SUFFIX}` },
-                        3: { name: `fenced_code.block.language.${SCOPE_SUFFIX}` },
+                        1: { name: `comment.block.documentation.mira` },
+                        2: { name: `punctuation.definition.markdown.mira` },
+                        3: { name: `fenced_code.block.language.mira` },
                     },
                     end: documentationFenceEnd,
                     endCaptures: {
-                        1: { name: `comment.block.documentation.${SCOPE_SUFFIX}` },
-                        2: { name: `punctuation.definition.markdown.${SCOPE_SUFFIX}` },
+                        1: { name: `comment.block.documentation.mira` },
+                        2: { name: `punctuation.definition.markdown.mira` },
                     },
                     patterns: [
                         {
-                            name: `meta.embedded.block.${SCOPE_SUFFIX}`,
-                            contentName: `source.${SCOPE_SUFFIX}`,
+                            name: `meta.embedded.block.mira`,
+                            contentName: `source.mira`,
                             begin: documentationMiraLine,
                             beginCaptures: {
-                                1: { name: `comment.block.documentation.${SCOPE_SUFFIX}` },
+                                1: { name: `comment.block.documentation.mira` },
                             },
                             while: documentationMiraLine,
                             whileCaptures: {
-                                1: { name: `comment.block.documentation.${SCOPE_SUFFIX}` },
+                                1: { name: `comment.block.documentation.mira` },
                             },
                             patterns: [{ include: sourceInclude }],
                         },
                         {
-                            name: `comment.block.documentation.${SCOPE_SUFFIX}`,
+                            name: `comment.block.documentation.mira`,
                             match: String.raw`^(?!\s*\*/)(\s*\*\s?)`,
                         },
                     ],
@@ -286,22 +285,22 @@ function documentationRepository(sourceInclude = '#source') {
         'documentation-other-fence': {
             patterns: [
                 {
-                    name: `markup.fenced_code.block.${SCOPE_SUFFIX}`,
-                    contentName: `markup.raw.block.${SCOPE_SUFFIX}`,
+                    name: `markup.fenced_code.block.mira`,
+                    contentName: `markup.raw.block.mira`,
                     begin: documentationOtherFenceBegin,
                     beginCaptures: {
-                        1: { name: `comment.block.documentation.${SCOPE_SUFFIX}` },
-                        2: { name: `punctuation.definition.markdown.${SCOPE_SUFFIX}` },
-                        3: { name: `fenced_code.block.language.${SCOPE_SUFFIX}` },
+                        1: { name: `comment.block.documentation.mira` },
+                        2: { name: `punctuation.definition.markdown.mira` },
+                        3: { name: `fenced_code.block.language.mira` },
                     },
                     end: documentationFenceEnd,
                     endCaptures: {
-                        1: { name: `comment.block.documentation.${SCOPE_SUFFIX}` },
-                        2: { name: `punctuation.definition.markdown.${SCOPE_SUFFIX}` },
+                        1: { name: `comment.block.documentation.mira` },
+                        2: { name: `punctuation.definition.markdown.mira` },
                     },
                     patterns: [
                         {
-                            name: `comment.block.documentation.${SCOPE_SUFFIX}`,
+                            name: `comment.block.documentation.mira`,
                             match: String.raw`^(?!\s*\*/)(\s*\*\s?)`,
                         },
                     ],
@@ -319,7 +318,7 @@ function sourceRepository(): LanguageRegistration['repository'] {
      * Create a boundary-aware TextMate keyword rule.
      */
     const keywordRule = (values: readonly string[], name: string) => ({
-        name: `${name}.${SCOPE_SUFFIX}`,
+        name: `${name}.mira`,
         match: `${IDENTIFIER_START}(?:${alternatives(values)})${IDENTIFIER_END}`,
     });
     const keywordPatterns = [
@@ -355,29 +354,29 @@ function sourceRepository(): LanguageRegistration['repository'] {
         },
         comments: {
             patterns: [
-                { name: `comment.line.double-slash.${SCOPE_SUFFIX}`, match: '//.*$' },
+                { name: `comment.line.double-slash.mira`, match: '//.*$' },
                 {
-                    name: `comment.block.documentation.${SCOPE_SUFFIX}`,
+                    name: `comment.block.documentation.mira`,
                     begin: String.raw`/\*\*`,
                     end: String.raw`\*/`,
                 },
-                { name: `comment.block.${SCOPE_SUFFIX}`, begin: String.raw`/\*`, end: String.raw`\*/` },
+                { name: `comment.block.mira`, begin: String.raw`/\*`, end: String.raw`\*/` },
             ],
         },
         ...documentationRepository(),
         'format-content': {
             patterns: [
-                { name: `constant.character.escape.format.${SCOPE_SUFFIX}`, match: String.raw`\\.` },
+                { name: `constant.character.escape.format.mira`, match: String.raw`\\.` },
                 {
                     begin: String.raw`\[`,
                     end: String.raw`\]`,
-                    name: `string.unquoted.format.character-class.${SCOPE_SUFFIX}`,
-                    patterns: [{ name: `constant.character.escape.format.${SCOPE_SUFFIX}`, match: String.raw`\\.` }],
+                    name: `string.unquoted.format.character-class.mira`,
+                    patterns: [{ name: `constant.character.escape.format.mira`, match: String.raw`\\.` }],
                 },
                 {
                     begin: String.raw`\(`,
                     end: String.raw`\)`,
-                    name: `string.unquoted.format.group.${SCOPE_SUFFIX}`,
+                    name: `string.unquoted.format.group.mira`,
                     patterns: [{ include: '#format-content' }],
                 },
             ],
@@ -386,34 +385,34 @@ function sourceRepository(): LanguageRegistration['repository'] {
         'function-declarations': {
             patterns: [
                 {
-                    name: `meta.function.declaration.${SCOPE_SUFFIX}`,
+                    name: `meta.function.declaration.mira`,
                     begin: String.raw`${IDENTIFIER_START}(fn)(\s+)(${IDENTIFIER})(\s*)(\()`,
                     beginCaptures: {
-                        1: { name: `keyword.declaration.function.${SCOPE_SUFFIX}` },
-                        3: { name: `entity.name.function.${SCOPE_SUFFIX}` },
-                        5: { name: `punctuation.section.parameters.begin.${SCOPE_SUFFIX}` },
+                        1: { name: `keyword.declaration.function.mira` },
+                        3: { name: `entity.name.function.mira` },
+                        5: { name: `punctuation.section.parameters.begin.mira` },
                     },
                     end: String.raw`\)`,
-                    endCaptures: { 0: { name: `punctuation.section.parameters.end.${SCOPE_SUFFIX}` } },
+                    endCaptures: { 0: { name: `punctuation.section.parameters.end.mira` } },
                     patterns: [{ include: '#parameters' }],
                 },
                 {
-                    name: `meta.function.declaration.${SCOPE_SUFFIX}`,
+                    name: `meta.function.declaration.mira`,
                     match: String.raw`${IDENTIFIER_START}(fn)(\s+)(${IDENTIFIER})`,
                     captures: {
-                        1: { name: `keyword.declaration.function.${SCOPE_SUFFIX}` },
-                        3: { name: `entity.name.function.${SCOPE_SUFFIX}` },
+                        1: { name: `keyword.declaration.function.mira` },
+                        3: { name: `entity.name.function.mira` },
                     },
                 },
                 {
-                    name: `meta.function.expression.parameters.${SCOPE_SUFFIX}`,
+                    name: `meta.function.expression.parameters.mira`,
                     begin: String.raw`${IDENTIFIER_START}(fn)(\s*)(\()`,
                     beginCaptures: {
-                        1: { name: `keyword.declaration.function.${SCOPE_SUFFIX}` },
-                        3: { name: `punctuation.section.parameters.begin.${SCOPE_SUFFIX}` },
+                        1: { name: `keyword.declaration.function.mira` },
+                        3: { name: `punctuation.section.parameters.begin.mira` },
                     },
                     end: String.raw`\)`,
-                    endCaptures: { 0: { name: `punctuation.section.parameters.end.${SCOPE_SUFFIX}` } },
+                    endCaptures: { 0: { name: `punctuation.section.parameters.end.mira` } },
                     patterns: [{ include: '#parameters' }],
                 },
             ],
@@ -423,17 +422,17 @@ function sourceRepository(): LanguageRegistration['repository'] {
                 {
                     match: String.raw`${IDENTIFIER_START}(mut)(\s+)(${IDENTIFIER})`,
                     captures: {
-                        1: { name: `keyword.declaration.mutable.${SCOPE_SUFFIX}` },
-                        3: { name: `variable.emphasis.${SCOPE_SUFFIX}` },
+                        1: { name: `keyword.declaration.mutable.mira` },
+                        3: { name: `variable.emphasis.mira` },
                     },
                 },
                 {
-                    name: `keyword.declaration.mutable.${SCOPE_SUFFIX}`,
+                    name: `keyword.declaration.mutable.mira`,
                     match: `${IDENTIFIER_START}mut${IDENTIFIER_END}`,
                 },
-                { name: `keyword.operator.spread.${SCOPE_SUFFIX}`, match: String.raw`\.\.` },
-                { name: `variable.other.constant.emphasis.${SCOPE_SUFFIX}`, match: IDENTIFIER },
-                { name: `punctuation.separator.parameter.${SCOPE_SUFFIX}`, match: ',' },
+                { name: `keyword.operator.spread.mira`, match: String.raw`\.\.` },
+                { name: `variable.other.constant.emphasis.mira`, match: IDENTIFIER },
+                { name: `punctuation.separator.parameter.mira`, match: ',' },
                 {
                     begin: String.raw`\(`,
                     end: String.raw`\)`,
@@ -452,8 +451,8 @@ function sourceRepository(): LanguageRegistration['repository'] {
                 {
                     match: String.raw`${IDENTIFIER_START}(mod)(\s+)(${IDENTIFIER})`,
                     captures: {
-                        1: { name: `keyword.control.module.${SCOPE_SUFFIX}` },
-                        3: { name: `entity.name.namespace.${SCOPE_SUFFIX}` },
+                        1: { name: `keyword.control.module.mira` },
+                        3: { name: `entity.name.namespace.mira` },
                     },
                 },
             ],
@@ -463,18 +462,18 @@ function sourceRepository(): LanguageRegistration['repository'] {
                 {
                     match: String.raw`${IDENTIFIER_START}(for)(\s+)(mut)(\s+)(${IDENTIFIER})(\s+)(in)${IDENTIFIER_END}`,
                     captures: {
-                        1: { name: `keyword.control.loop.${SCOPE_SUFFIX}` },
-                        3: { name: `keyword.declaration.mutable.${SCOPE_SUFFIX}` },
-                        5: { name: `variable.other.readwrite.${SCOPE_SUFFIX}` },
-                        7: { name: `keyword.control.loop.${SCOPE_SUFFIX}` },
+                        1: { name: `keyword.control.loop.mira` },
+                        3: { name: `keyword.declaration.mutable.mira` },
+                        5: { name: `variable.other.readwrite.mira` },
+                        7: { name: `keyword.control.loop.mira` },
                     },
                 },
                 {
                     match: String.raw`${IDENTIFIER_START}(for)(\s+)(${IDENTIFIER})(\s+)(in)${IDENTIFIER_END}`,
                     captures: {
-                        1: { name: `keyword.control.loop.${SCOPE_SUFFIX}` },
-                        3: { name: `variable.other.${SCOPE_SUFFIX}` },
-                        5: { name: `keyword.control.loop.${SCOPE_SUFFIX}` },
+                        1: { name: `keyword.control.loop.mira` },
+                        3: { name: `variable.other.mira` },
+                        5: { name: `keyword.control.loop.mira` },
                     },
                 },
             ],
@@ -484,8 +483,8 @@ function sourceRepository(): LanguageRegistration['repository'] {
                 {
                     match: String.raw`(${IDENTIFIER})(\s*)(\??:)(?!:)`,
                     captures: {
-                        1: { name: `variable.other.property.${SCOPE_SUFFIX}` },
-                        3: { name: `punctuation.separator.key-value.${SCOPE_SUFFIX}` },
+                        1: { name: `variable.other.property.mira` },
+                        3: { name: `punctuation.separator.key-value.mira` },
                     },
                 },
             ],
@@ -495,23 +494,23 @@ function sourceRepository(): LanguageRegistration['repository'] {
                 {
                     match: String.raw`(\.)(\s*)(\d+)`,
                     captures: {
-                        1: { name: `punctuation.accessor.${SCOPE_SUFFIX}` },
-                        3: { name: `variable.other.property.${SCOPE_SUFFIX}` },
+                        1: { name: `punctuation.accessor.mira` },
+                        3: { name: `variable.other.property.mira` },
                     },
                 },
                 {
                     match: `(\\.)(\\s*)(${IDENTIFIER})(\\s*)(!?)(?=\\s*(?:\\(|@*["'\`]))`,
                     captures: {
-                        1: { name: `punctuation.accessor.${SCOPE_SUFFIX}` },
-                        3: { name: `entity.name.function.member.${SCOPE_SUFFIX}` },
-                        5: { name: `keyword.operator.non-null.${SCOPE_SUFFIX}` },
+                        1: { name: `punctuation.accessor.mira` },
+                        3: { name: `entity.name.function.member.mira` },
+                        5: { name: `keyword.operator.non-null.mira` },
                     },
                 },
                 {
                     match: String.raw`(\.)(\s*)(${IDENTIFIER})`,
                     captures: {
-                        1: { name: `punctuation.accessor.${SCOPE_SUFFIX}` },
-                        3: { name: `variable.other.property.${SCOPE_SUFFIX}` },
+                        1: { name: `punctuation.accessor.mira` },
+                        3: { name: `variable.other.property.mira` },
                     },
                 },
             ],
@@ -521,8 +520,8 @@ function sourceRepository(): LanguageRegistration['repository'] {
                 {
                     match: `(${IDENTIFIER})(\\s*)(!?)(?=\\s*(?:\\(|@*["'\`]))`,
                     captures: {
-                        1: { name: `entity.name.function.${SCOPE_SUFFIX}` },
-                        3: { name: `keyword.operator.non-null.${SCOPE_SUFFIX}` },
+                        1: { name: `entity.name.function.mira` },
+                        3: { name: `keyword.operator.non-null.mira` },
                     },
                 },
             ],
@@ -530,7 +529,7 @@ function sourceRepository(): LanguageRegistration['repository'] {
         'type-keyword': {
             patterns: [
                 {
-                    name: `keyword.operator.expression.${SCOPE_SUFFIX}`,
+                    name: `keyword.operator.expression.mira`,
                     match: String.raw`${IDENTIFIER_START}type${IDENTIFIER_END}(?=\s*\(|\s+${IDENTIFIER})`,
                 },
             ],
@@ -538,23 +537,23 @@ function sourceRepository(): LanguageRegistration['repository'] {
         numbers: {
             patterns: [
                 {
-                    name: `constant.numeric.hex.${SCOPE_SUFFIX}`,
+                    name: `constant.numeric.hex.mira`,
                     match: `0[xX][0-9A-Fa-f](?:[0-9A-Fa-f_]*[0-9A-Fa-f])?${IDENTIFIER_END}`,
                 },
                 {
-                    name: `constant.numeric.octal.${SCOPE_SUFFIX}`,
+                    name: `constant.numeric.octal.mira`,
                     match: `0[oO][0-7](?:[0-7_]*[0-7])?${IDENTIFIER_END}`,
                 },
                 {
-                    name: `constant.numeric.binary.${SCOPE_SUFFIX}`,
+                    name: `constant.numeric.binary.mira`,
                     match: `0[bB][01](?:[01_]*[01])?${IDENTIFIER_END}`,
                 },
                 {
-                    name: `invalid.illegal.numeric.${SCOPE_SUFFIX}`,
+                    name: `invalid.illegal.numeric.mira`,
                     match: String.raw`0[xXoObB]\p{XID_Continue}*`,
                 },
                 {
-                    name: `constant.numeric.float.${SCOPE_SUFFIX}`,
+                    name: `constant.numeric.float.mira`,
                     match: String.raw`\d[\d_]*(?:\.[\d_]+)?(?:[eE][+-]?[\d_]*\d)?${IDENTIFIER_END}`,
                 },
             ],
@@ -562,34 +561,34 @@ function sourceRepository(): LanguageRegistration['repository'] {
         keywords: { patterns: keywordPatterns },
         identifiers: {
             patterns: [
-                { name: `variable.other.constant.${SCOPE_SUFFIX}`, match: String.raw`@+\p{XID_Continue}+` },
-                { name: `variable.other.${SCOPE_SUFFIX}`, match: IDENTIFIER },
+                { name: `variable.other.constant.mira`, match: String.raw`@+\p{XID_Continue}+` },
+                { name: `variable.other.mira`, match: IDENTIFIER },
             ],
         },
         operators: {
             patterns: [
-                { name: `keyword.operator.spread.${SCOPE_SUFFIX}`, match: String.raw`\.\.<|\.\.` },
-                { name: `keyword.operator.bind.${SCOPE_SUFFIX}`, match: '::' },
-                { name: `keyword.operator.conditional.${SCOPE_SUFFIX}`, match: String.raw`\?:` },
+                { name: `keyword.operator.spread.mira`, match: String.raw`\.\.<|\.\.` },
+                { name: `keyword.operator.bind.mira`, match: '::' },
+                { name: `keyword.operator.conditional.mira`, match: String.raw`\?:` },
                 {
-                    name: `keyword.operator.assignment.${SCOPE_SUFFIX}`,
+                    name: `keyword.operator.assignment.mira`,
                     match: String.raw`&&=|\|\|=|\?\?=|\+=|-=|\*=|/=|%=|\^=|=`,
                 },
                 {
-                    name: `keyword.operator.comparison.${SCOPE_SUFFIX}`,
+                    name: `keyword.operator.comparison.mira`,
                     match: '===|!==|>=|<=|==|!=|=~|!~|>|<',
                 },
-                { name: `keyword.operator.logical.${SCOPE_SUFFIX}`, match: String.raw`&&|\|\||\?\?|!` },
-                { name: `keyword.operator.arithmetic.${SCOPE_SUFFIX}`, match: String.raw`\+|-|\*|/|%|\^` },
+                { name: `keyword.operator.logical.mira`, match: String.raw`&&|\|\||\?\?|!` },
+                { name: `keyword.operator.arithmetic.mira`, match: String.raw`\+|-|\*|/|%|\^` },
             ],
         },
         punctuation: {
             patterns: [
-                { name: `punctuation.section.braces.${SCOPE_SUFFIX}`, match: '[{}]' },
-                { name: `punctuation.section.brackets.${SCOPE_SUFFIX}`, match: String.raw`[\[\]]` },
-                { name: `punctuation.section.parens.${SCOPE_SUFFIX}`, match: '[()]' },
-                { name: `punctuation.separator.${SCOPE_SUFFIX}`, match: '[,;:]' },
-                { name: `punctuation.accessor.${SCOPE_SUFFIX}`, match: String.raw`\.` },
+                { name: `punctuation.section.braces.mira`, match: '[{}]' },
+                { name: `punctuation.section.brackets.mira`, match: String.raw`[\[\]]` },
+                { name: `punctuation.section.parens.mira`, match: '[()]' },
+                { name: `punctuation.separator.mira`, match: '[,;:]' },
+                { name: `punctuation.accessor.mira`, match: String.raw`\.` },
             ],
         },
         'braced-content': {
