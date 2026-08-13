@@ -327,7 +327,7 @@ function sourceRepository(): LanguageRegistration['repository'] {
         keywordRule(CONTROL_KEYWORDS, 'keyword.control'),
         keywordRule(wordOperators, 'keyword.operator.wordlike'),
         keywordRule(declarationKeywords, 'keyword.declaration'),
-        keywordRule(moduleKeywords, 'keyword.control.module'),
+        keywordRule(moduleKeywords, 'keyword.module'),
         keywordRule(RESERVED_KEYWORDS, 'keyword.reserved'),
         keywordRule(languageVariables, 'variable.language'),
         keywordRule(otherKeywords, 'keyword.other'),
@@ -451,7 +451,7 @@ function sourceRepository(): LanguageRegistration['repository'] {
                 {
                     match: String.raw`${IDENTIFIER_START}(mod)(\s+)(${IDENTIFIER})`,
                     captures: {
-                        1: { name: `keyword.control.module.mira` },
+                        1: { name: `keyword.module.mira` },
                         3: { name: `entity.name.namespace.mira` },
                     },
                 },
@@ -822,7 +822,7 @@ export function createMiraScriptDocGrammar(): LanguageRegistration {
                     {
                         match: String.raw`${IDENTIFIER_START}(?:(pub)(\s+))?(fn)(\s+)(${IDENTIFIER})(?=\s*(?:<|\())`,
                         captures: {
-                            1: { name: 'keyword.control.module.mira' },
+                            1: { name: 'keyword.module.mira' },
                             3: { name: 'keyword.declaration.function.mira' },
                             5: { name: 'entity.name.function.mira' },
                         },

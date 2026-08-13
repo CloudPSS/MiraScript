@@ -64,9 +64,9 @@ test('distinguishes doc declarations, globals, and nested function types', (t) =
         ].join('\n'),
         'mirascript-doc',
     );
-    expectScope(t, tokens, 'mod', 'keyword.control.module.mira', 0);
+    expectScope(t, tokens, 'mod', 'keyword.module.mira', 0);
     expectScope(t, tokens, 'matrix', 'entity.name.namespace.mira', 0);
-    expectScope(t, tokens, 'pub', 'keyword.control.module.mira');
+    expectScope(t, tokens, 'pub', 'keyword.module.mira');
     expectScope(t, tokens, 'PI', 'variable.other.constant.mira', 0);
     expectScope(t, tokens, 'PI', 'variable.other.constant.mira', 1);
     expectScope(t, tokens, '(global)', 'entity.name.label.mira', 0);

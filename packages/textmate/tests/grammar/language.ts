@@ -3,9 +3,11 @@ import { tokenize, expectScope } from '../_engine.ts';
 
 test('classifies declarations, parameters, properties, calls, and Unicode identifiers', (t) => {
     const tokens = tokenize('mod 数学 { fn 加法(mut 左, ..其余) { 对象.方法(左).属性 } }');
-    expectScope(t, tokens, 'mod', 'keyword.control.module.mira');
+    expectScope(t, tokens, 'mod', 'keyword.module.mira');
     expectScope(t, tokens, '数学', 'entity.name.namespace.mira');
+    expectScope(t, tokens, 'fn', 'keyword.declaration.function.mira');
     expectScope(t, tokens, '加法', 'entity.name.function.mira');
+    expectScope(t, tokens, 'mut', 'keyword.declaration.mutable.mira');
     expectScope(t, tokens, '左', 'variable.emphasis.mira');
     expectScope(t, tokens, '其余', 'variable.other.constant.emphasis.mira');
     expectScope(t, tokens, '方法', 'entity.name.function.member.mira');
