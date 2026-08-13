@@ -189,8 +189,8 @@ importers:
   packages/napi:
     devDependencies:
       '@napi-rs/cli':
-        specifier: ^3.8.5
-        version: 3.8.5(@emnapi/runtime@1.11.2)(@types/node@26.2.0)(supports-color@11.0.0)
+        specifier: ^3.8.6
+        version: 3.8.6(@emnapi/core@1.11.2)(@emnapi/runtime@1.11.2)(@types/node@26.2.0)(supports-color@11.0.0)
       nodemon:
         specifier: ^3.1.14
         version: 3.1.14
@@ -267,11 +267,11 @@ importers:
         specifier: ^14.1.2
         version: 14.1.2
       '@types/vscode':
-        specifier: 1.80.0
-        version: 1.80.0
+        specifier: 1.90.0
+        version: 1.90.0
       '@vscode/test-web':
         specifier: ^0.0.81
-        version: 0.0.81(supports-color@5.5.0)
+        version: 0.0.81(supports-color@11.0.0)
       js-yaml:
         specifier: ^5.2.3
         version: 5.2.3
@@ -2737,15 +2737,21 @@ packages:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
       react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
-  '@napi-rs/cli@3.8.5':
+  '@napi-rs/cli@3.8.6':
     resolution:
-      { integrity: sha512-lOFzFYBeBpnFAajFiyu+RWCrh1j7/Ma7I5z87huUIGlUkyE8eYxIfNBuH8KOOxW3lkkUxP7CMcl5Hfq3EjgEkg== }
+      { integrity: sha512-FnJ9fghsV9Q4zh2aJGPSvQiUlJRC27B6KhzAXcIW2rlSD8keak3mhXw4tJYa3KJkP9whETfsPwqp/DJRnQg5ng== }
     engines: { node: ^20.17.0 || ^22.13.0 || >= 23.5.0 }
     hasBin: true
     peerDependencies:
-      '@emnapi/runtime': 2.0.0-alpha.3
+      '@emnapi/core': ^1.7.1 || ^2.0.0-alpha.4
+      '@emnapi/runtime': ^1.7.1 || ^2.0.0-alpha.4
+      emnapi: ^1.7.1 || ^2.0.0-alpha.4
     peerDependenciesMeta:
+      '@emnapi/core':
+        optional: true
       '@emnapi/runtime':
+        optional: true
+      emnapi:
         optional: true
 
   '@napi-rs/cross-toolchain@1.0.3':
@@ -3044,13 +3050,13 @@ packages:
     resolution:
       { integrity: sha512-SeDnOO0Tk7Okiq6DbXmmBODgOAb9dp9gjlphokTUxmt8U3liIP1ZsozBahH69j/RJv+Rfs6IwUKHTgQYJ/HBAw== }
 
-  '@napi-rs/wasm-runtime@1.2.2':
+  '@napi-rs/wasm-runtime@1.2.3':
     resolution:
-      { integrity: sha512-JfB4kuJQjaoHuCTseIINHtHWeJnvgEcxjwA5t/Y00ZgaOO1Crz3fjT/p8kT28zA/Caz7oiUMn3d6H2yOVCVwuw== }
+      { integrity: sha512-UMduMbqO5s5zF2NkNacMT/yK5Y5QiKvWr2+50bzIIxFDwVJ2h49b+oyjaCGPhJxd2/gC2x39EHv/gHVuu36x2Q== }
     engines: { node: ^20.19.0 || ^22.13.0 || >=23.5.0 }
     peerDependencies:
-      '@emnapi/core': ^1.7.1 || ^2.0.0-alpha.3
-      '@emnapi/runtime': ^1.7.1 || ^2.0.0-alpha.3
+      '@emnapi/core': ^1.7.1 || ^2.0.0-alpha.4
+      '@emnapi/runtime': ^1.7.1 || ^2.0.0-alpha.4
 
   '@napi-rs/wasm-tools-android-arm-eabi@1.1.0':
     resolution:
@@ -4292,9 +4298,9 @@ packages:
     resolution:
       { integrity: sha512-ko/gIFJRv177XgZsZcBwnqJN5x/Gien8qNOn0D5bQU/zAzVf9Zt3BlcUiLqhV9y4ARk0GbT3tnUiPNgnTXzc/Q== }
 
-  '@types/vscode@1.80.0':
+  '@types/vscode@1.90.0':
     resolution:
-      { integrity: sha512-qK/CmOdS2o7ry3k6YqU4zD3R2AYlJfbwBoSbKpBoP+GpXNE+0NEgJOli4n0bm0diK5kfBnchgCEj4igQz/44Hg== }
+      { integrity: sha512-oT+ZJL7qHS9Z8bs0+WKf/kQ27qWYR3trsXpq46YDjFqBsMLG4ygGGjPaJ2tyrH0wJzjOEmDyg9PDJBBhWg9pkQ== }
 
   '@types/ws@8.18.1':
     resolution:
@@ -5730,23 +5736,14 @@ packages:
     resolution:
       { integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow== }
 
-  electron-to-chromium@1.5.404:
+  electron-to-chromium@1.5.405:
     resolution:
-      { integrity: sha512-3WJtd7/lVq2Jnuz6wed1l9+1ZD2u2Tet1/1NBc4Iedkmgbu+I7YuAqdAQ8T+VZtnwysMsAf3IqSq9D1gyZjA2g== }
+      { integrity: sha512-bNglH7lPH5l+yHOes7Zr4VqxhOy4BQ9ZBUX4VdoFgxMpzJk7W1ZoO3Vgd9Pxa9PyjQ76sfm2aKH/nzEcCNRlew== }
 
   emittery@2.0.0:
     resolution:
       { integrity: sha512-FLtgn/CGBXiX3ZtPAm5q4LWWepHChOt55J9u01WFu3dyap2U7IwptlrqoE1COR/kxwdy/DOxIBALSxIW449I1g== }
     engines: { node: '>=22' }
-
-  emnapi@2.0.0-alpha.3:
-    resolution:
-      { integrity: sha512-K9bc9Xx4OwSfhJpdSOpcfIKzn7/6emuubaIorf6I5e7WBAM79665rf6iHr9y50NL4qYMUP/AheTpD1Z4yU1EBw== }
-    peerDependencies:
-      node-addon-api: '>= 6.1.0'
-    peerDependenciesMeta:
-      node-addon-api:
-        optional: true
 
   emoji-regex@10.6.0:
     resolution:
@@ -6334,9 +6331,9 @@ packages:
       { integrity: sha512-NBcGGFbBA9s1VzD41QXDG+3++t9Mn5t1FpLdhESY6oKY4gYTFpX4wO3sqGUa0Srjtbfj3szX0RnemmrVRUdULA== }
     engines: { node: '>=10' }
 
-  globals@17.9.0:
+  globals@17.10.0:
     resolution:
-      { integrity: sha512-m/MvAW61QVU5VDNF1Vj8axt016h8w7L5TU1e9zlab7XIttAT2YAlCwl75K1fOqvMM9apmD7lbCIRhpfkhmxhCg== }
+      { integrity: sha512-V0kztuWST2k8A/VbxAY8+L+7+Rgo3fyA24IHRLrZp7HOzJjV0gHSaZUjK9lpP/IrBSNite2tZ1prhRkinRu1CA== }
     engines: { node: '>=18' }
 
   globby@11.1.0:
@@ -9719,6 +9716,12 @@ packages:
   terser@5.49.2:
     resolution:
       { integrity: sha512-rGbJiKeQ4WDe3EXlDAIaQcwftVfv2Q8o1awFNfvXolJYKkb1AuZY1RTOmqx4LJXZENbWZA7eIsYGHuEzHsi1nQ== }
+    engines: { node: '>=10' }
+    hasBin: true
+
+  terser@5.50.0:
+    resolution:
+      { integrity: sha512-CN9BVxWhgS/hRxtUMjtC2uRWSTcSfQFHMDWma6sKKfIivCD91sM+FOPfvwoaRMqCSrUpe1nv3jDamd9eEQ4y+w== }
     engines: { node: '>=10' }
     hasBin: true
 
@@ -13330,9 +13333,9 @@ snapshots:
     dependencies:
       vary: 1.1.2
 
-  '@koa/router@15.7.0(koa@3.2.1)(supports-color@5.5.0)':
+  '@koa/router@15.7.0(koa@3.2.1)(supports-color@11.0.0)':
     dependencies:
-      debug: 4.4.3(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@11.0.0)
       http-errors: 2.0.1
       koa: 3.2.1
       koa-compose: 4.1.0
@@ -13427,7 +13430,7 @@ snapshots:
       react: 19.2.4
       react-dom: 19.2.4(react@19.2.4)
 
-  '@napi-rs/cli@3.8.5(@emnapi/runtime@1.11.2)(@types/node@26.2.0)(supports-color@11.0.0)':
+  '@napi-rs/cli@3.8.6(@emnapi/core@1.11.2)(@emnapi/runtime@1.11.2)(@types/node@26.2.0)(supports-color@11.0.0)':
     dependencies:
       '@inquirer/prompts': 8.5.2(@types/node@26.2.0)
       '@napi-rs/cross-toolchain': 1.0.3(supports-color@11.0.0)
@@ -13435,7 +13438,6 @@ snapshots:
       '@octokit/rest': 22.0.1
       clipanion: 4.0.0-rc.4(typanion@3.14.0)
       colorette: 2.0.20
-      emnapi: 2.0.0-alpha.3
       es-toolkit: 1.50.0
       js-yaml: 4.3.1
       obug: 2.1.4
@@ -13443,6 +13445,7 @@ snapshots:
       typanion: 3.14.0
       typescript: 6.0.3
     optionalDependencies:
+      '@emnapi/core': 1.11.2
       '@emnapi/runtime': 1.11.2
     transitivePeerDependencies:
       - '@napi-rs/cross-toolchain-arm64-target-aarch64'
@@ -13456,7 +13459,6 @@ snapshots:
       - '@napi-rs/cross-toolchain-x64-target-s390x'
       - '@napi-rs/cross-toolchain-x64-target-x86_64'
       - '@types/node'
-      - node-addon-api
       - supports-color
 
   '@napi-rs/cross-toolchain@1.0.3(supports-color@11.0.0)':
@@ -13510,7 +13512,7 @@ snapshots:
     dependencies:
       '@emnapi/core': 1.11.2
       '@emnapi/runtime': 1.11.2
-      '@napi-rs/wasm-runtime': 1.2.2(@emnapi/core@1.11.2)(@emnapi/runtime@1.11.2)
+      '@napi-rs/wasm-runtime': 1.2.3(@emnapi/core@1.11.2)(@emnapi/runtime@1.11.2)
     optional: true
 
   '@napi-rs/lzma-win32-arm64-msvc@1.5.1':
@@ -13582,7 +13584,7 @@ snapshots:
     dependencies:
       '@emnapi/core': 1.11.2
       '@emnapi/runtime': 1.11.2
-      '@napi-rs/wasm-runtime': 1.2.2(@emnapi/core@1.11.2)(@emnapi/runtime@1.11.2)
+      '@napi-rs/wasm-runtime': 1.2.3(@emnapi/core@1.11.2)(@emnapi/runtime@1.11.2)
     optional: true
 
   '@napi-rs/tar-win32-arm64-msvc@1.1.1':
@@ -13627,14 +13629,14 @@ snapshots:
       '@tybys/wasm-util': 0.10.3
     optional: true
 
-  '@napi-rs/wasm-runtime@1.2.2(@emnapi/core@1.11.2)(@emnapi/runtime@1.11.2)':
+  '@napi-rs/wasm-runtime@1.2.3(@emnapi/core@1.11.2)(@emnapi/runtime@1.11.2)':
     dependencies:
       '@emnapi/core': 1.11.2
       '@emnapi/runtime': 1.11.2
       '@tybys/wasm-util': 0.10.3
     optional: true
 
-  '@napi-rs/wasm-runtime@1.2.2(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)':
+  '@napi-rs/wasm-runtime@1.2.3(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)':
     dependencies:
       '@emnapi/core': 1.9.2
       '@emnapi/runtime': 1.9.2
@@ -13672,7 +13674,7 @@ snapshots:
     dependencies:
       '@emnapi/core': 1.9.2
       '@emnapi/runtime': 1.9.2
-      '@napi-rs/wasm-runtime': 1.2.2(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)
+      '@napi-rs/wasm-runtime': 1.2.3(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)
     optional: true
 
   '@napi-rs/wasm-tools-win32-arm64-msvc@1.1.0':
@@ -14576,7 +14578,7 @@ snapshots:
 
   '@types/unist@3.0.3': {}
 
-  '@types/vscode@1.80.0': {}
+  '@types/vscode@1.90.0': {}
 
   '@types/ws@8.18.1':
     dependencies:
@@ -14700,18 +14702,18 @@ snapshots:
       - rollup
       - supports-color
 
-  '@vscode/test-web@0.0.81(supports-color@5.5.0)':
+  '@vscode/test-web@0.0.81(supports-color@11.0.0)':
     dependencies:
       '@koa/cors': 5.0.0
-      '@koa/router': 15.7.0(koa@3.2.1)(supports-color@5.5.0)
+      '@koa/router': 15.7.0(koa@3.2.1)(supports-color@11.0.0)
       '@playwright/browser-chromium': 1.62.1
       gunzip-maybe: 1.4.2
-      http-proxy-agent: 9.1.0(supports-color@5.5.0)
-      https-proxy-agent: 9.1.0(supports-color@5.5.0)
+      http-proxy-agent: 9.1.0(supports-color@11.0.0)
+      https-proxy-agent: 9.1.0(supports-color@11.0.0)
       koa: 3.2.1
-      koa-morgan: 1.0.1(supports-color@5.5.0)
-      koa-mount: 4.2.0(supports-color@5.5.0)
-      koa-static: 5.0.0(supports-color@5.5.0)
+      koa-morgan: 1.0.1(supports-color@11.0.0)
+      koa-mount: 4.2.0(supports-color@11.0.0)
+      koa-static: 5.0.0(supports-color@11.0.0)
       minimist: 1.2.8
       playwright: 1.62.1
       tar-fs: 3.1.3
@@ -15186,7 +15188,7 @@ snapshots:
     dependencies:
       baseline-browser-mapping: 2.11.13
       caniuse-lite: 1.0.30001809
-      electron-to-chromium: 1.5.404
+      electron-to-chromium: 1.5.405
       node-releases: 2.0.53
       update-browserslist-db: 1.3.1(browserslist@4.28.8)
 
@@ -15731,17 +15733,11 @@ snapshots:
     optionalDependencies:
       supports-color: 11.0.0
 
-  debug@2.6.9(supports-color@5.5.0):
-    dependencies:
-      ms: 2.0.0
-    optionalDependencies:
-      supports-color: 5.5.0
-
-  debug@3.2.7(supports-color@5.5.0):
+  debug@3.2.7(supports-color@11.0.0):
     dependencies:
       ms: 2.1.3
     optionalDependencies:
-      supports-color: 5.5.0
+      supports-color: 11.0.0
 
   debug@4.4.3(supports-color@11.0.0):
     dependencies:
@@ -15898,11 +15894,9 @@ snapshots:
 
   ee-first@1.1.1: {}
 
-  electron-to-chromium@1.5.404: {}
+  electron-to-chromium@1.5.405: {}
 
   emittery@2.0.0: {}
-
-  emnapi@2.0.0-alpha.3: {}
 
   emoji-regex@10.6.0: {}
 
@@ -16049,7 +16043,7 @@ snapshots:
       entities: 4.5.0
       eslint: 10.8.1(jiti@2.6.1)(supports-color@11.0.0)
       find-up-simple: 1.0.1
-      globals: 17.9.0
+      globals: 17.10.0
       indent-string: 5.0.0
       is-builtin-module: 5.0.0
       is-identifier: 1.1.0
@@ -16455,7 +16449,7 @@ snapshots:
     dependencies:
       ini: 2.0.0
 
-  globals@17.9.0: {}
+  globals@17.10.0: {}
 
   globby@11.1.0:
     dependencies:
@@ -16676,7 +16670,7 @@ snapshots:
       he: 1.2.0
       param-case: 3.0.4
       relateurl: 0.2.7
-      terser: 5.49.2
+      terser: 5.50.0
 
   html-minifier-terser@7.2.0:
     dependencies:
@@ -16758,10 +16752,10 @@ snapshots:
 
   http-parser-js@0.5.10: {}
 
-  http-proxy-agent@9.1.0(supports-color@5.5.0):
+  http-proxy-agent@9.1.0(supports-color@11.0.0):
     dependencies:
       agent-base: 9.0.0
-      debug: 4.4.3(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@11.0.0)
       proxy-agent-negotiate: 1.1.0
     transitivePeerDependencies:
       - kerberos
@@ -16799,10 +16793,10 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  https-proxy-agent@9.1.0(supports-color@5.5.0):
+  https-proxy-agent@9.1.0(supports-color@11.0.0):
     dependencies:
       agent-base: 9.0.0
-      debug: 4.4.3(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@11.0.0)
       proxy-agent-negotiate: 1.1.0
     transitivePeerDependencies:
       - kerberos
@@ -17112,31 +17106,31 @@ snapshots:
 
   koa-compose@4.1.0: {}
 
-  koa-morgan@1.0.1(supports-color@5.5.0):
+  koa-morgan@1.0.1(supports-color@11.0.0):
     dependencies:
-      morgan: 1.11.0(supports-color@5.5.0)
+      morgan: 1.11.0(supports-color@11.0.0)
     transitivePeerDependencies:
       - supports-color
 
-  koa-mount@4.2.0(supports-color@5.5.0):
+  koa-mount@4.2.0(supports-color@11.0.0):
     dependencies:
-      debug: 4.4.3(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@11.0.0)
       koa-compose: 4.1.0
     transitivePeerDependencies:
       - supports-color
 
-  koa-send@5.0.1(supports-color@5.5.0):
+  koa-send@5.0.1(supports-color@11.0.0):
     dependencies:
-      debug: 4.4.3(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@11.0.0)
       http-errors: 1.8.1
       resolve-path: 1.4.0
     transitivePeerDependencies:
       - supports-color
 
-  koa-static@5.0.0(supports-color@5.5.0):
+  koa-static@5.0.0(supports-color@11.0.0):
     dependencies:
-      debug: 3.2.7(supports-color@5.5.0)
-      koa-send: 5.0.1(supports-color@5.5.0)
+      debug: 3.2.7(supports-color@11.0.0)
+      koa-send: 5.0.1(supports-color@11.0.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -17950,10 +17944,10 @@ snapshots:
       dompurify: 3.4.8
       marked: 14.0.0
 
-  morgan@1.11.0(supports-color@5.5.0):
+  morgan@1.11.0(supports-color@11.0.0):
     dependencies:
       basic-auth: 2.0.1
-      debug: 2.6.9(supports-color@5.5.0)
+      debug: 2.6.9(supports-color@11.0.0)
       depd: 2.0.0
       on-finished: 2.4.1
       on-headers: 1.1.0
@@ -19689,7 +19683,7 @@ snapshots:
       '@jridgewell/trace-mapping': 0.3.31
       jest-worker: 27.5.1
       schema-utils: 4.3.3
-      terser: 5.49.2
+      terser: 5.50.0
       webpack: 5.109.2(@swc/core@1.15.47)(@swc/html@1.15.47)(clean-css@5.3.3)(cssnano@6.1.2)(csso@5.0.5)(esbuild@0.28.2)(html-minifier-terser@7.2.0)(lightningcss@1.33.0)(postcss@8.5.26)
     optionalDependencies:
       '@swc/core': 1.15.47
@@ -19703,6 +19697,13 @@ snapshots:
       postcss: 8.5.26
 
   terser@5.49.2:
+    dependencies:
+      '@jridgewell/source-map': 0.3.11
+      acorn: 8.18.0
+      commander: 2.20.3
+      source-map-support: 0.5.21
+
+  terser@5.50.0:
     dependencies:
       '@jridgewell/source-map': 0.3.11
       acorn: 8.18.0
