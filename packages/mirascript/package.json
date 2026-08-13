@@ -1,6 +1,6 @@
 {
   "name": "@mirascript/mirascript",
-  "version": "0.1.84",
+  "version": "0.1.85",
   "author": "CloudPSS",
   "license": "MIT",
   "description": "An expression based scripting language.",
