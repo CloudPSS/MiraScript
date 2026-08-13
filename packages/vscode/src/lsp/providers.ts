@@ -1,5 +1,5 @@
 import type { DiagnosticCollection } from 'vscode';
-import { Disposable, languages, workspace, vscode, miraMonaco, miraMonacoLsp, Uri } from '#loader';
+import { languages, workspace, vscode, miraMonaco, miraMonacoLsp, Uri } from '#loader';
 import { ModelAdapter } from '../adapter/model.js';
 import {
     fromCompletionItem,
@@ -20,6 +20,7 @@ import {
     toWorkspaceEdit,
 } from '../adapter/utils.js';
 import { createMonacoApi } from '../adapter/api.js';
+import { DisposableManager } from '../disposable.js';
 const {
     CodeLensProvider,
     CodeActionProvider,
@@ -40,15 +41,9 @@ const diagnosticDisabledSchemes = new Set(['git', 'vsls', 'github', 'azurerepos'
 /**
  * Manages all language service providers.
  */
-export class ProvidersManager extends Disposable {
-    private readonly disposables: Disposable[] = [];
-
+export class ProvidersManager extends DisposableManager {
     constructor() {
-        super(() => {
-            for (const disposable of this.disposables) {
-                disposable.dispose();
-            }
-        });
+        super();
         const api = createMonacoApi();
         api.editor.setModelMarkers = (model, owner, markers) => {
             const doc = (model as ModelAdapter).document;
@@ -56,7 +51,7 @@ export class ProvidersManager extends Disposable {
             let c = this.diagnosticCollections.get(owner);
             if (!c) {
                 c = languages.createDiagnosticCollection(owner);
-                this.disposables.push(c);
+                this.addDisposables(c);
                 this.diagnosticCollections.set(owner, c);
             }
             c.set(
@@ -100,7 +95,7 @@ export class ProvidersManager extends Disposable {
         const completionItemProvider = new CompletionItemProvider();
         const signatureHelpProvider = new SignatureHelpProvider();
 
-        this.disposables.push(
+        this.addDisposables(
             languages.registerCodeActionsProvider(selector, {
                 provideCodeActions: async (document, range, context, token) => {
                     const result = await codeActionProvider.provideCodeActions(

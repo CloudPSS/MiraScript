@@ -1,18 +1,13 @@
 import type { TextDocument } from 'vscode';
-import { Disposable, workspace, window, miraMonacoLsp } from '#loader';
+import { workspace, window, miraMonacoLsp } from '#loader';
 import { ModelAdapter } from '../adapter/model.js';
+import { DisposableManager } from '../disposable.js';
 
 /** 扫描工作区 */
-export class Scanner extends Disposable {
-    protected readonly disposables: Disposable[] = [];
-
+export class Scanner extends DisposableManager {
     constructor() {
-        super(() => {
-            for (const disposable of this.disposables) {
-                disposable.dispose();
-            }
-        });
-        this.disposables.push(
+        super();
+        this.addDisposables(
             window.onDidChangeActiveTextEditor((editor) => {
                 if (editor?.document) {
                     this.analyzeTextDocument(editor.document);
