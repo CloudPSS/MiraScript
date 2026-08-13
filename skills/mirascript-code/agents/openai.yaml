@@ -1,0 +1,4 @@
+interface:
+  display_name: 'MiraScript Code'
+  short_description: 'Write and review idiomatic MiraScript code'
+  default_prompt: 'Use $mirascript-code to write and validate an idiomatic MiraScript solution.'

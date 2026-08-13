@@ -1,0 +1,4 @@
+interface:
+  display_name: 'MiraScript CLI'
+  short_description: 'Run, validate, and format MiraScript code'
+  default_prompt: 'Use $mirascript-cli to run and validate this MiraScript code.'
