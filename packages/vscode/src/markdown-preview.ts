@@ -45,7 +45,7 @@ export class MarkdownPreview {
         const [
             { createHighlighterCore },
             { createJavaScriptRegexEngine },
-            { mirascript, mirascriptTemplate },
+            { mirascript, mirascriptTemplate, mirascriptDoc },
             { default: lightPlus },
             { default: darkPlus },
             { default: githubDarkHighContrast },
@@ -60,7 +60,7 @@ export class MarkdownPreview {
             import('@shikijs/themes/github-light-high-contrast'),
         ]);
         this.highlighter = await createHighlighterCore({
-            langs: [mirascript, mirascriptTemplate],
+            langs: [mirascript, mirascriptTemplate, mirascriptDoc],
             themes: [lightPlus, darkPlus, githubDarkHighContrast, githubLightHighContrast],
             engine: createJavaScriptRegexEngine(),
         });
