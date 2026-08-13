@@ -1,7 +1,8 @@
-import type { HighlighterCore, Grammar } from '@shikijs/core';
+import type { Grammar } from '@shikijs/core';
 import type { StateStack } from '@shikijs/vscode-textmate';
 import { languages, type IDisposable } from '../monaco-api.js';
 import { CONTRIBUTE_IDS } from '../contribute.js';
+import { getHighlighter, getInitialState } from './highlighter-manager.js';
 
 const TOKENIZE_MAX_LINE_LENGTH = 20000;
 const TOKENIZE_TIME_LIMIT = 500;
@@ -60,75 +61,12 @@ function tokenScope(scopes: string[]): string {
     return fallback ? remapScope(fallback) : 'source.mira';
 }
 
-/** Shared instance of highlighter. */
-class HighlighterManager implements IDisposable {
-    private highlighterPromise: Promise<HighlighterCore> | null = null;
-    private INITIAL!: StateStack;
-    /**
-     * Load the shared highlighter instance.
-     */
-    private async loadHighlighter(): Promise<HighlighterCore> {
-        const [
-            { createHighlighterCore },
-            { createJavaScriptRegexEngine },
-            { INITIAL },
-            { mirascript, mirascriptDoc, mirascriptTemplate },
-        ] = await Promise.all([
-            import('@shikijs/core'),
-            import('@shikijs/engine-javascript'),
-            import('@shikijs/vscode-textmate'),
-            import('@mirascript/textmate'),
-        ]);
-        this.INITIAL = INITIAL;
-        return await createHighlighterCore({
-            langs: [mirascript, mirascriptDoc, mirascriptTemplate],
-            themes: [],
-            engine: createJavaScriptRegexEngine(),
-        });
-    }
-
-    /**
-     * Get the shared highlighter instance.
-     */
-    private async getHighlighter(): Promise<HighlighterCore> {
-        this.highlighterPromise ??= this.loadHighlighter();
-        return this.highlighterPromise;
-    }
-
-    /** Get tokens provider factory of language */
-    getTokensProviderFactory(languageId: string): languages.TokensProviderFactory {
-        return {
-            create: async () => {
-                const highlighter = await this.getHighlighter();
-                const grammar = highlighter.getLanguage(languageId);
-                return new TokensProvider(grammar, this.INITIAL);
-            },
-        };
-    }
-    /** @inheritdoc */
-    dispose(): void {
-        const promise = this.highlighterPromise;
-        this.highlighterPromise = null;
-        if (promise) {
-            promise
-                .then((highlighter) => highlighter.dispose())
-                .catch(() => {
-                    // eslint-disable-next-line no-console
-                    console.error('Failed to dispose highlighter');
-                });
-        }
-    }
-}
-
 /** A Monaco tokens provider that uses TextMate grammars. */
 class TokensProvider implements languages.TokensProvider {
-    constructor(
-        private readonly grammar: Grammar,
-        private readonly INITIAL: StateStack,
-    ) {}
+    constructor(private readonly grammar: Grammar) {}
     /** @inheritdoc */
     getInitialState(): StateStack {
-        return this.INITIAL;
+        return getInitialState();
     }
     /** @inheritdoc */
     tokenize(line: string, state: StateStack): languages.ILineTokens {
@@ -160,10 +98,14 @@ class TokensProvider implements languages.TokensProvider {
 
 /** Register TextMate-backed token providers without changing Monaco themes. */
 export function registerMiraScriptTokensProvider(): IDisposable[] {
-    const manager = new HighlighterManager();
     const disposables = CONTRIBUTE_IDS.map((id) =>
-        languages.registerTokensProviderFactory(id, manager.getTokensProviderFactory(id)),
+        languages.registerTokensProviderFactory(id, {
+            create: async () => {
+                const highlighter = await getHighlighter();
+                const grammar = highlighter.getLanguage(id);
+                return new TokensProvider(grammar);
+            },
+        }),
     );
-    disposables.push(manager);
     return disposables;
 }
