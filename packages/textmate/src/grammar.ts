@@ -87,7 +87,7 @@ function interpolationPatterns(dollarCount: number) {
     const dollars = String.raw`\$`.repeat(dollarCount);
     return [
         {
-            name: `meta.interpolation.simple.mira`,
+            name: `meta.embedded.interpolation.simple.mira`,
             match: `(${dollars})(${IDENTIFIER})`,
             captures: {
                 1: { name: `punctuation.definition.template-expression.begin.mira` },
@@ -95,19 +95,17 @@ function interpolationPatterns(dollarCount: number) {
             },
         },
         {
-            name: `meta.interpolation.block.mira`,
+            name: `meta.embedded.interpolation.block.mira`,
             begin: String.raw`(${dollars}\{)`,
             beginCaptures: { 1: { name: `punctuation.definition.template-expression.begin.mira` } },
-            contentName: `meta.embedded.expression.mira`,
             end: String.raw`\}`,
             endCaptures: { 0: { name: `punctuation.definition.template-expression.end.mira` } },
             patterns: [{ include: '#braced-content' }],
         },
         {
-            name: `meta.interpolation.expression.mira`,
+            name: `meta.embedded.interpolation.expression.mira`,
             begin: String.raw`(${dollars}\()`,
             beginCaptures: { 1: { name: `punctuation.definition.template-expression.begin.mira` } },
-            contentName: `meta.embedded.expression.mira`,
             end: String.raw`\)`,
             endCaptures: { 0: { name: `punctuation.definition.template-expression.end.mira` } },
             patterns: [

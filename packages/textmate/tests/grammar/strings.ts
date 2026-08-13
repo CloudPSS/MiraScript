@@ -14,7 +14,7 @@ test('scopes nested interpolation delimiters and strings', (t) => {
     const tokens = tokenize('"$(len([1,2,3])) ${let a = "x${\'y\'}"; a}"');
     expectScope(t, tokens, '(', 'punctuation.section.parens.begin.mira');
     expectScope(t, tokens, '[', 'punctuation.section.brackets.begin.mira');
-    expectScope(t, tokens, ',', 'meta.embedded.expression.mira');
+    expectScope(t, tokens, ',', 'meta.embedded.interpolation.expression.mira');
     expectScope(t, tokens, ']', 'punctuation.section.brackets.end.mira');
     expectScope(t, tokens, ')', 'punctuation.section.parens.end.mira');
     expectScope(t, tokens, '"', 'string.quoted.double.mira', 1);

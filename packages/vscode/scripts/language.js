@@ -7,7 +7,7 @@ await fs.mkdir(output, { recursive: true });
 /**
  * Makes a list of names for the given language, including its aliases and the main name.
  * @param {string} name
- * @param {string[]?} aliases
+ * @param {string[]} [aliases]
  * @returns {string[]}
  */
 function makeNameList(name, aliases) {

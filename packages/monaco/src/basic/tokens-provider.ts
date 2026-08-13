@@ -6,32 +6,58 @@ import { CONTRIBUTE_IDS } from '../contribute.js';
 const TOKENIZE_MAX_LINE_LENGTH = 20000;
 const TOKENIZE_TIME_LIMIT = 500;
 
+const REMAP_PREFIXES: ReadonlyArray<[string, string]> = [
+    ['constant.character.escape.', 'string.escape.'],
+    ['constant.numeric.', 'number.'],
+    ['constant.language.', 'keyword.'],
+    ['support.variable.', 'variable.'],
+    ['entity.name.type.', 'type.'],
+    ['support.type.', 'type.'],
+    ['entity.name.namespace.', 'namespace.'],
+    ['entity.name.function.', 'function.'],
+];
+
+/** Remap scope */
+function remapScope(scope: string): string {
+    for (const [prefix, remap] of REMAP_PREFIXES) {
+        if (scope.startsWith(prefix)) {
+            return remap + scope.slice(prefix.length);
+        }
+    }
+    return scope;
+}
+
+const STYLED_SCOPE_PREFIXES = [
+    'invalid.',
+    'comment.',
+    'string.',
+    'keyword.',
+    'constant.',
+    'variable.',
+    'entity.',
+    'storage.',
+    'support.',
+    'markup.',
+];
+/** Is styled scope */
+function isStyledScope(scope: string): boolean {
+    return STYLED_SCOPE_PREFIXES.some((prefix) => scope.startsWith(prefix));
+}
+
 /** Select the deepest scope that a native Monaco theme can style. */
 function tokenScope(scopes: string[]): string {
-    const inInterpolation = scopes.some((scope) => scope.startsWith('meta.interpolation.'));
-    const stringScope = [...scopes].reverse().find((scope) => scope.startsWith('string.'));
-    let fallback = '';
-    const styledScopePrefixes = [
-        'invalid.',
-        'comment.',
-        'string.',
-        'keyword.',
-        'constant.',
-        'variable.',
-        'entity.',
-        'storage.',
-        'support.',
-        'markup.',
-    ];
-    for (let index = scopes.length - 1; index >= 0; index -= 1) {
-        const scope = scopes[index]!;
-        if (scope === 'source.mira' || scope === 'source.mira.doc' || scope === 'text.miratpl') continue;
-        if (scope.startsWith('meta.')) continue;
-        fallback ||= scope;
-        if (stringScope && inInterpolation && scope.startsWith('punctuation.definition.string.')) return stringScope;
-        if (inInterpolation || styledScopePrefixes.some((prefix) => scope.startsWith(prefix))) return scope;
+    let embedded = scopes.findLastIndex((scope) => scope.startsWith('meta.embedded.'));
+    if (embedded === -1) {
+        embedded = 0;
     }
-    return fallback;
+    let fallback;
+    for (let index = scopes.length - 1; index >= embedded; index -= 1) {
+        const scope = scopes[index]!;
+        fallback ||= scope;
+        if (isStyledScope(scope)) return remapScope(scope);
+        if (scope.startsWith('meta.embedded.')) break;
+    }
+    return fallback ? remapScope(fallback) : 'source.mira';
 }
 
 /** Shared instance of highlighter. */

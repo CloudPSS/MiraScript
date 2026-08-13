@@ -52,7 +52,7 @@
     "@shikijs/themes": "^4.4.3"
   },
   "devDependencies": {
-    "@private/monaco-editor": "^0.0.71",
+    "@private/monaco-editor": "^0.0.72",
     "@types/markdown-it": "^14.1.2",
     "@types/vscode": "1.90.0",
     "@vscode/test-web": "^0.0.81",
@@ -118,42 +118,17 @@
       {
         "language": "mirascript",
         "scopeName": "source.mira",
-        "path": "./syntaxes/mirascript.tmLanguage.json",
-        "tokenTypes": {
-          "meta.interpolation.simple.mira": "other",
-          "meta.interpolation.block.mira": "other",
-          "meta.interpolation.expression.mira": "other"
-        }
+        "path": "./syntaxes/mirascript.tmLanguage.json"
       },
       {
         "language": "mirascript-doc",
         "scopeName": "source.mira.doc",
-        "path": "./syntaxes/mirascript-doc.tmLanguage.json",
-        "tokenTypes": {
-          "meta.interpolation.simple.mira": "other",
-          "meta.interpolation.block.mira": "other",
-          "meta.interpolation.expression.mira": "other"
-        }
+        "path": "./syntaxes/mirascript-doc.tmLanguage.json"
       },
       {
         "language": "mirascript-template",
         "scopeName": "text.miratpl",
-        "path": "./syntaxes/mirascript-template.tmLanguage.json",
-        "tokenTypes": {
-          "meta.interpolation.simple.mira": "other",
-          "meta.interpolation.block.mira": "other",
-          "meta.interpolation.expression.mira": "other"
-        }
-      },
-      {
-        "scopeName": "markdown.mira.codeblock",
-        "path": "./syntaxes/markdown-mirascript.tmLanguage.json",
-        "injectTo": [
-          "text.html.markdown"
-        ],
-        "embeddedLanguages": {
-          "meta.embedded.block.mira": "mirascript"
-        }
+        "path": "./syntaxes/mirascript-template.tmLanguage.json"
       },
       {
         "scopeName": "markdown.mirascript-doc.codeblock",

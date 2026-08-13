@@ -7,3 +7,14 @@ fn tdz {
 }
 
 t_throws(tdz);
+// MiraScript 数学计算示例
+/**
+ * 打印调试信息到控制台
+ * 
+ * - `..args`: 要打印的值，可以是**sin**任意类型
+ * 
+ * ### 示例
+ * ```mirascript
+ * debug_print('aa${a = 1; "$(xx:12213)"}')
+ * ```
+ */

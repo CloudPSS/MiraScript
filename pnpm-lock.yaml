@@ -270,8 +270,8 @@ importers:
         version: 4.4.3
     devDependencies:
       '@private/monaco-editor':
-        specifier: ^0.0.71
-        version: 0.0.71
+        specifier: ^0.0.72
+        version: 0.0.72
       '@types/markdown-it':
         specifier: ^14.1.2
         version: 14.1.2
@@ -324,8 +324,8 @@ importers:
         specifier: ^4.7.0
         version: 4.7.0(monaco-editor@0.56.0)(react-dom@19.2.4)(react@19.2.4)
       '@private/monaco-editor':
-        specifier: ^0.0.71
-        version: 0.0.71
+        specifier: ^0.0.72
+        version: 0.0.72
       fflate:
         specifier: ^0.8.3
         version: 0.8.3
@@ -3442,11 +3442,11 @@ packages:
     resolution:
       { integrity: sha512-wwQAWhWSuHaag8c4q/KN/vCoeOJYshAIvMQwD4GpSb3OiZklFfvAgmj0VCBBImRpuF/aFgIRzllXlVX93Jevww== }
 
-  '@private/monaco-editor@0.0.71':
+  '@private/monaco-editor@0.0.72':
     resolution:
       {
-        integrity: sha512-U4iH61aV+aPLVxsZWuYWOo4UR++kVk45JhfKOQ9ZD8hPk9PW3Uf+shK9UTFnCAtqlQW12mjZrZ/cFrnFnuONSA==,
-        tarball: https://packages.aliyun.com/60c179fc44816b8ed233a8bb/npm/npm-registry/@private/monaco-editor/-/@private/monaco-editor-0.0.71.tgz,
+        integrity: sha512-iW49Ikqf4wxrOK8Chxx3jW5EZZIHZYdJj/mLtU0Sp8FH+0QOqIctMF8fmSECKtO95l5mgmevmBSBCmnXfz0JdA==,
+        tarball: https://packages.aliyun.com/60c179fc44816b8ed233a8bb/npm/npm-registry/@private/monaco-editor/-/@private/monaco-editor-0.0.72.tgz,
       }
 
   '@rollup/pluginutils@5.4.0':
@@ -13965,7 +13965,7 @@ snapshots:
 
   '@polka/url@1.0.0-next.29': {}
 
-  '@private/monaco-editor@0.0.71': {}
+  '@private/monaco-editor@0.0.72': {}
 
   '@rollup/pluginutils@5.4.0(rollup@4.60.1)':
     dependencies:
