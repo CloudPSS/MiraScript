@@ -1,7 +1,8 @@
 import type { monacoApi } from '@mirascript/monaco';
 import type { editor, IDisposable, IPosition, IRange, Position, Range, Selection, Uri } from '@private/monaco-editor';
 import type { EndOfLine, TextDocument } from 'vscode';
-import { fromPosition, fromRange, toPosition, toRange } from './utils.js';
+import { fromPosition, toPosition } from './position.js';
+import { fromRange, toRange } from './range.js';
 import { MIRA_CONTENT_PROVIDER, MIRA_TEXT_SCHEME } from './text-provider.js';
 import { createAdapterFactory } from './base.js';
 

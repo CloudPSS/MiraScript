@@ -1,24 +1,19 @@
 import type { DiagnosticCollection } from 'vscode';
 import { languages, workspace, vscode, miraMonaco, miraMonacoLsp, Uri } from '#loader';
+import { toCodeAction } from '../adapter/code-action.js';
+import { toCodeLens } from '../adapter/code-lens.js';
+import { fromCompletionItem, toCompletionItem } from '../adapter/completion-item.js';
+import { fromDiagnostic, toDiagnostic } from '../adapter/diagnostic.js';
+import { toDocumentSymbol } from '../adapter/document-symbol.js';
+import { toInlayHint } from '../adapter/inlay-hint.js';
+import { toLocation } from '../adapter/location.js';
+import { toMarkdownString } from '../adapter/markdown-string.js';
 import { ModelAdapter } from '../adapter/model.js';
-import {
-    fromCompletionItem,
-    fromDiagnostic,
-    fromPosition,
-    fromRange,
-    toCodeAction,
-    toCodeLens,
-    toCompletionItem,
-    toDiagnostic,
-    toDocumentSymbol,
-    toInlayHint,
-    toLocation,
-    toMarkdownString,
-    toRange,
-    toSignatureHelp,
-    toTextEdit,
-    toWorkspaceEdit,
-} from '../adapter/utils.js';
+import { fromPosition } from '../adapter/position.js';
+import { fromRange, toRange } from '../adapter/range.js';
+import { toSignatureHelp } from '../adapter/signature-help.js';
+import { toTextEdit } from '../adapter/text-edit.js';
+import { toWorkspaceEdit } from '../adapter/workspace-edit.js';
 import { createMonacoApi } from '../adapter/api.js';
 import { DisposableManager } from '../disposable.js';
 const {

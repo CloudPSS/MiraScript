@@ -1,6 +1,18 @@
 import { vscode } from '#loader';
 import * as monaco from '@private/monaco-editor/baseapi';
-import { CompletionItemInsertTextRule } from './utils.js';
+
+export enum CompletionItemInsertTextRule {
+    None = 0,
+    /**
+     * Adjust whitespace/indentation of multiline insert texts to
+     * match the current line indentation.
+     */
+    KeepWhitespace = 1,
+    /**
+     * `insertText` is a snippet.
+     */
+    InsertAsSnippet = 4,
+}
 
 /** 向对象添加语言相关枚举 */
 function addLanguages(obj: Record<string, unknown>): void {
