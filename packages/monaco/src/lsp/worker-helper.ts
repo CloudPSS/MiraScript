@@ -1,6 +1,6 @@
 import type { InputMode } from '@mirascript/constants';
 import { editor } from '../monaco-api.js';
-import type { Ready, CacheKey, Req, Res, ResOk } from './worker.js';
+import type { Ready, CacheKey, Req, Res, ResOk } from './worker-core.js';
 import { CompileResult } from './compile-result.js';
 import { makeModelMarkers } from './diagnostics.js';
 
@@ -89,12 +89,12 @@ async function compileWorker(req: Req): Promise<CompileResult> {
     return new CompileResult(key, version, source, result);
 }
 
-let compileImpl: typeof import('./worker.js').compile;
+let compileImpl: typeof import('./worker-core.js').compile;
 /** 使用当前线程编译 */
 async function compileSync(req: Req): Promise<CompileResult> {
     const [key, version, script, mode] = req;
     if (compileImpl == null) {
-        const mod = await import('./worker.js');
+        const mod = await import('./worker-core.js');
         compileImpl = mod.compile;
     }
     const result = compileImpl(script, mode);

@@ -1,0 +1,68 @@
+import type { InputMode } from '@mirascript/mirascript';
+import type { BcModule } from '@mirascript/bindings/wasm';
+import type { Tagged } from 'type-fest';
+
+const { loadModule } = await import('@mirascript/bindings/wasm');
+const mod = await loadModule();
+const { wasm, createConfig } = mod;
+
+/** Monaco 编译结果 */
+export interface MonacoResult extends BcModule.CompileResult {
+    /** 格式化结果 */
+    formatted?: string;
+}
+
+/** 缓存 Key (model id) */
+export type CacheKey = Tagged<string, 'modelId'>;
+/** 请求参数 */
+export type Req = [key: CacheKey, version: number, script: string, mode: InputMode];
+/** 编译结果 */
+export type ResOk = [key: CacheKey, version: number, result: MonacoResult];
+/** 编译结果 */
+export type ResErr = [key: CacheKey, version: number, error: Error];
+/** 编译结果 */
+export type Res = ResOk | ResErr;
+/** Ready */
+export type Ready = 'mirascript lsp ready';
+
+const configTemplate = createConfig({
+    diagnostic_position_encoding: 'Utf16',
+    diagnostic_tag: true,
+    diagnostic_sourcemap: true,
+    trivia: true,
+    input_mode: 'Template',
+});
+const configScript = createConfig({
+    diagnostic_position_encoding: 'Utf16',
+    diagnostic_tag: true,
+    diagnostic_sourcemap: true,
+    trivia: true,
+    input_mode: 'Script',
+});
+
+/** 编译 */
+export function compile(script: string, mode: InputMode): MonacoResult {
+    const config = mode === 'Script' ? configScript : configTemplate;
+    const compiler = new wasm.MonacoCompiler(script, config);
+    try {
+        const parseOk = compiler.parse();
+        if (!parseOk) {
+            return { diagnostics: compiler.diagnostics(), chunk: undefined };
+        }
+        const chunk = compiler.emit();
+        const formatted = compiler.format();
+        return {
+            diagnostics: compiler.diagnostics(),
+            chunk,
+            formatted,
+        };
+    } finally {
+        try {
+            compiler.free();
+        } catch (ex) {
+            /* 忽略错误 */
+            // eslint-disable-next-line no-console
+            console.error(ex);
+        }
+    }
+}
