@@ -6,7 +6,7 @@ import { Provider } from './providers/base.js';
 import { CodeActionProvider } from './providers/code-action-provider.js';
 import { CodeLensProvider } from './providers/code-lens-provider.js';
 import { ColorProvider } from './providers/color-provider.js';
-import { CompletionItemProvider } from './providers/completion-item-provider.js';
+import { CompletionItemProvider } from './providers/completion-item-provider/index.js';
 import { DefinitionReferenceProvider } from './providers/definition-reference-provider.js';
 import { DocumentHighlightProvider } from './providers/document-highlight-provider.js';
 import { DocumentSymbolProvider } from './providers/document-symbol-provider.js';

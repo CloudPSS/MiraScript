@@ -3,71 +3,16 @@ import type { StateStack } from '@shikijs/vscode-textmate';
 import { languages, type IDisposable } from '../monaco-api.js';
 import { CONTRIBUTE_IDS } from '../contribute.js';
 import { getHighlighter, getInitialState } from './highlighter-manager.js';
+import { textmateScopesToMonaco } from './textmate-to-monaco.js';
 
 const TOKENIZE_MAX_LINE_LENGTH = 20000;
 const TOKENIZE_TIME_LIMIT = 500;
-
-const REMAP_PREFIXES: ReadonlyArray<[string, string]> = [
-    ['constant.character.escape.', 'string.escape.'],
-    ['constant.numeric.', 'number.'],
-    ['constant.language.', 'keyword.'],
-    ['support.variable.', 'variable.'],
-    ['entity.name.type.', 'type.'],
-    ['support.type.', 'type.'],
-    ['entity.name.namespace.', 'namespace.'],
-    ['entity.name.function.', 'function.'],
-];
-
-/** Remap scope */
-function remapScope(scope: string): string {
-    for (const [prefix, remap] of REMAP_PREFIXES) {
-        if (scope.startsWith(prefix)) {
-            return remap + scope.slice(prefix.length);
-        }
-    }
-    return scope;
-}
-
-const STYLED_SCOPE_PREFIXES = [
-    'invalid.',
-    'comment.',
-    'string.',
-    'keyword.',
-    'constant.',
-    'variable.',
-    'entity.',
-    'storage.',
-    'support.',
-    'markup.',
-];
-/** Is styled scope */
-function isStyledScope(scope: string): boolean {
-    return STYLED_SCOPE_PREFIXES.some((prefix) => scope.startsWith(prefix));
-}
-
-/** Select the deepest scope that a native Monaco theme can style. */
-function tokenScope(scopes: string[]): string {
-    let embedded = scopes.findLastIndex((scope) => scope.startsWith('meta.embedded.'));
-    if (embedded === -1) {
-        embedded = 0;
-    }
-    let fallback;
-    for (let index = scopes.length - 1; index >= embedded; index -= 1) {
-        const scope = scopes[index]!;
-        fallback ||= scope;
-        if (isStyledScope(scope)) return remapScope(scope);
-        if (scope.startsWith('meta.embedded.')) break;
-    }
-    return fallback ? remapScope(fallback) : 'source.mira';
-}
 
 /** A Monaco tokens provider that uses TextMate grammars. */
 class TokensProvider implements languages.TokensProvider {
     constructor(private readonly grammar: Grammar) {}
     /** @inheritdoc */
-    getInitialState(): StateStack {
-        return getInitialState();
-    }
+    getInitialState = getInitialState;
     /** @inheritdoc */
     tokenize(line: string, state: StateStack): languages.ILineTokens {
         if (line.length >= TOKENIZE_MAX_LINE_LENGTH) {
@@ -90,7 +35,7 @@ class TokensProvider implements languages.TokensProvider {
             endState: result.ruleStack,
             tokens: result.tokens.map((token) => ({
                 startIndex: token.startIndex,
-                scopes: tokenScope(token.scopes),
+                scopes: textmateScopesToMonaco(token.scopes),
             })),
         };
     }

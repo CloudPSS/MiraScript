@@ -481,19 +481,6 @@ export function getField(obj: VmAny, key: string | number): VmAny {
     }
 }
 
-/** 列出属性 */
-export function listFields(obj: VmAny, includeNonEnumerable: boolean): Array<string | number> {
-    if (obj == null || typeof obj != 'object') return [];
-    if (isVmWrapper(obj)) {
-        try {
-            return obj.keys(includeNonEnumerable);
-        } catch {
-            return [];
-        }
-    }
-    return lib.keys(obj);
-}
-
 /** 是否已弃用 */
 export function isDeprecatedGlobal(globals: MonacoContext, name: string): VmFunctionInfo['deprecated'] {
     if (!globals.has(name)) {
