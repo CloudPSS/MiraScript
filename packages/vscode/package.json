@@ -22,7 +22,7 @@
   "main": "./dist/main.mjs",
   "browser": "./dist/browser.cjs",
   "engines": {
-    "vscode": "^1.80.0"
+    "vscode": "^1.90.0"
   },
   "imports": {
     "#loader": {
@@ -37,26 +37,33 @@
     "build:esbuild": "tsc --noEmit && node ./esbuild.config.js",
     "build": "pnpm build:icon && pnpm build:language-configuration && pnpm build:language && pnpm build:esbuild",
     "watch:language": "nodemon --watch scripts --exec 'pnpm build:language' --ext yaml",
-    "watch:esbuild": "nodemon --watch esbuild.config.js --watch src --ext js,ts --exec 'pnpm build:esbuild'",
+    "watch:esbuild": "nodemon --watch esbuild.config.js --watch media-src --watch src --ext css,js,ts --exec 'pnpm build:esbuild'",
     "watch:ts": "rimraf ./dist && tsc --watch",
+    "start:web": "vscode-test-web --browser=none --extensionDevelopmentPath=./ ../../tests/",
     "clean": "rimraf dist build media syntaxes language-configuration.json"
   },
   "dependencies": {
     "@mirascript/mirascript": "workspace:~",
     "@mirascript/monaco": "workspace:~",
     "@mirascript/textmate": "workspace:~",
-    "@mirascript/wasm": "workspace:~"
+    "@mirascript/wasm": "workspace:~",
+    "@shikijs/themes": "^4.4.3",
+    "shiki": "^4.4.3"
   },
   "devDependencies": {
     "@private/monaco-editor": "^0.0.71",
+    "@types/markdown-it": "^14.1.2",
     "@types/vscode": "1.80.0",
+    "@vscode/test-web": "^0.0.81",
     "js-yaml": "^5.2.3",
     "nodemon": "^3.1.14",
     "svg2png-wasm": "^1.4.1"
   },
   "contributes": {
-    "markdown.previewScripts": [
-      "./media/markdown-preview.js"
+    "markdown.codeBlockEditorProviders": [],
+    "markdown.markdownItPlugins": true,
+    "markdown.previewStyles": [
+      "./media/markdown-preview.css"
     ],
     "languages": [
       {

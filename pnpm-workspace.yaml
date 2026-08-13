@@ -5,6 +5,7 @@ packages:
   - packages/*
 
 allowBuilds:
+  '@playwright/browser-chromium': false
   '@swc/core': true
   core-js: false
   esbuild: false

@@ -111,7 +111,7 @@ test('isVmArrayLikeRecord', (t) => {
     test(r10, false);
 
     // eslint-disable-next-line unicorn/no-new-array
-    const vl: readonly never[] = new Array(2 ** 31);
+    const vl = new Array<never>(2 ** 31);
     t.false(isVmArrayLikeRecordByKeys(vl));
     t.false(isVmArrayLikeRecordByEntries(vl));
 });

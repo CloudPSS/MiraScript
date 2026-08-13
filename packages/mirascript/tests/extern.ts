@@ -217,12 +217,12 @@ test('callback native', (t) => {
     e('fn f{ 2 } o.f = f; o.g = f; o.h = o.g;');
     t.is(o['f'], o['g']);
     t.is(o['h'], o['g']);
-    t.is(o['f']!(), 2);
-    t.is(VmFunction(o['f']!), VmFunction(o['g']!));
-    t.is(VmFunction(o['h']!), VmFunction(o['g']!));
+    t.is(o['f'](), 2);
+    t.is(VmFunction(o['f']), VmFunction(o['g']));
+    t.is(VmFunction(o['h']), VmFunction(o['g']));
 
     e('o.i = fn { it };');
-    const i = o['i']! as (value: unknown) => unknown;
+    const i = o['i'] as (value: unknown) => unknown;
     t.is(i(123), 123);
     t.is(i(i), i);
     t.is(i(o), o);

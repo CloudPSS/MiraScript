@@ -39,6 +39,7 @@ nohup.out
 v8-compile-cache-*/
 node-compile-cache/
 .eslintcache
+.vscode-test-web/
 
 # OS
 .DS_Store

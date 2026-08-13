@@ -9,14 +9,14 @@ function extractExpectedOutput(example: string): string | null {
     const splitted = example.split('//');
     if (splitted.length === 2) {
         // Single-line example without newline, return the part after '//'
-        return splitted[1]!.trim();
+        return splitted[1].trim();
     }
 
     // Multi-line example, extract the final lines prefixed with '//'
     const lines = example.split('\n');
     let result = '';
     for (let i = lines.length - 1; i >= 0; i--) {
-        const line = lines[i]!.trim();
+        const line = lines[i].trim();
         if (!line.startsWith('//')) break;
         result = line.slice(2).trim() + '\n' + result;
     }
