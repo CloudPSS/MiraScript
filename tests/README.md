@@ -21,7 +21,7 @@
 
 ## 黑盒测试上下文
 
-```mira
+```mirascript-doc
 /** 断言两个值严格相等 */
 fn t_eq(a, b, message);
 /** 断言两个值不相等 */

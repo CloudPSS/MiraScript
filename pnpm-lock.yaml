@@ -253,16 +253,13 @@ importers:
       '@mirascript/wasm':
         specifier: workspace:~
         version: link:../wasm
-      '@shikijs/themes':
-        specifier: ^4.4.3
-        version: 4.4.3
-      shiki:
-        specifier: ^4.4.3
-        version: 4.4.3
     devDependencies:
       '@private/monaco-editor':
         specifier: ^0.0.71
         version: 0.0.71
+      '@shikijs/themes':
+        specifier: ^4.4.3
+        version: 4.4.3
       '@types/markdown-it':
         specifier: ^14.1.2
         version: 14.1.2
@@ -278,6 +275,9 @@ importers:
       nodemon:
         specifier: ^3.1.14
         version: 3.1.14
+      shiki:
+        specifier: ^4.4.3
+        version: 4.4.3
       svg2png-wasm:
         specifier: ^1.4.1
         version: 1.4.1
@@ -9713,12 +9713,6 @@ packages:
       uglify-js:
         optional: true
 
-  terser@5.49.2:
-    resolution:
-      { integrity: sha512-rGbJiKeQ4WDe3EXlDAIaQcwftVfv2Q8o1awFNfvXolJYKkb1AuZY1RTOmqx4LJXZENbWZA7eIsYGHuEzHsi1nQ== }
-    engines: { node: '>=10' }
-    hasBin: true
-
   terser@5.50.0:
     resolution:
       { integrity: sha512-CN9BVxWhgS/hRxtUMjtC2uRWSTcSfQFHMDWma6sKKfIivCD91sM+FOPfvwoaRMqCSrUpe1nv3jDamd9eEQ4y+w== }
@@ -16680,7 +16674,7 @@ snapshots:
       entities: 4.5.0
       param-case: 3.0.4
       relateurl: 0.2.7
-      terser: 5.49.2
+      terser: 5.50.0
 
   html-tags@3.3.1: {}
 
@@ -17920,7 +17914,7 @@ snapshots:
       '@jridgewell/trace-mapping': 0.3.31
       jest-worker: 27.5.1
       schema-utils: 4.3.3
-      terser: 5.49.2
+      terser: 5.50.0
       webpack: 5.109.2(@swc/core@1.15.47)(@swc/html@1.15.47)(clean-css@5.3.3)(cssnano@6.1.2)(csso@5.0.5)(esbuild@0.28.2)(html-minifier-terser@7.2.0)(lightningcss@1.33.0)(postcss@8.5.26)
     optionalDependencies:
       '@swc/core': 1.15.47
@@ -19695,13 +19689,6 @@ snapshots:
       html-minifier-terser: 7.2.0
       lightningcss: 1.33.0
       postcss: 8.5.26
-
-  terser@5.49.2:
-    dependencies:
-      '@jridgewell/source-map': 0.3.11
-      acorn: 8.18.0
-      commander: 2.20.3
-      source-map-support: 0.5.21
 
   terser@5.50.0:
     dependencies:

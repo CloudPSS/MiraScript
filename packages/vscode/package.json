@@ -46,15 +46,15 @@
     "@mirascript/mirascript": "workspace:~",
     "@mirascript/monaco": "workspace:~",
     "@mirascript/textmate": "workspace:~",
-    "@mirascript/wasm": "workspace:~",
-    "@shikijs/themes": "^4.4.3",
-    "shiki": "^4.4.3"
+    "@mirascript/wasm": "workspace:~"
   },
   "devDependencies": {
     "@private/monaco-editor": "^0.0.71",
     "@types/markdown-it": "^14.1.2",
     "@types/vscode": "1.90.0",
     "@vscode/test-web": "^0.0.81",
+    "@shikijs/themes": "^4.4.3",
+    "shiki": "^4.4.3",
     "js-yaml": "^5.2.3",
     "nodemon": "^3.1.14",
     "svg2png-wasm": "^1.4.1"
@@ -135,16 +135,6 @@
         }
       },
       {
-        "scopeName": "markdown.mira.codeblock",
-        "path": "./syntaxes/mira-markdown.tmLanguage.json",
-        "injectTo": [
-          "text.html.markdown"
-        ],
-        "embeddedLanguages": {
-          "meta.embedded.block.mira": "mirascript"
-        }
-      },
-      {
         "language": "mirascript-template",
         "scopeName": "text.miratpl",
         "path": "./syntaxes/mirascript-template.tmLanguage.json",
@@ -155,8 +145,38 @@
         }
       },
       {
-        "scopeName": "markdown.miratpl.codeblock",
-        "path": "./syntaxes/miratpl-markdown.tmLanguage.json",
+        "scopeName": "markdown.mira.codeblock",
+        "path": "./syntaxes/markdown-mirascript.tmLanguage.json",
+        "injectTo": [
+          "text.html.markdown"
+        ],
+        "embeddedLanguages": {
+          "meta.embedded.block.mira": "mirascript"
+        }
+      },
+      {
+        "scopeName": "markdown.mirascript-doc.codeblock",
+        "path": "./syntaxes/markdown-mirascript-doc.tmLanguage.json",
+        "injectTo": [
+          "text.html.markdown"
+        ],
+        "embeddedLanguages": {
+          "meta.embedded.block.mira": "mirascript-doc"
+        }
+      },
+      {
+        "scopeName": "markdown.mirascript.codeblock",
+        "path": "./syntaxes/markdown-mirascript.tmLanguage.json",
+        "injectTo": [
+          "text.html.markdown"
+        ],
+        "embeddedLanguages": {
+          "meta.embedded.block.mira": "mirascript"
+        }
+      },
+      {
+        "scopeName": "markdown.mirascript-template.codeblock",
+        "path": "./syntaxes/markdown-mirascript-template.tmLanguage.json",
         "injectTo": [
           "text.html.markdown"
         ],
