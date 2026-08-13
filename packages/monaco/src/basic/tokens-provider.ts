@@ -9,6 +9,7 @@ const TOKENIZE_TIME_LIMIT = 500;
 /** Select the deepest scope that a native Monaco theme can style. */
 function tokenScope(scopes: string[]): string {
     const inInterpolation = scopes.some((scope) => scope.startsWith('meta.interpolation.'));
+    const stringScope = [...scopes].reverse().find((scope) => scope.startsWith('string.'));
     let fallback = '';
     const styledScopePrefixes = [
         'invalid.',
@@ -27,6 +28,7 @@ function tokenScope(scopes: string[]): string {
         if (scope === 'source.mira' || scope === 'source.mira.doc' || scope === 'text.miratpl') continue;
         if (scope.startsWith('meta.')) continue;
         fallback ||= scope;
+        if (stringScope && inInterpolation && scope.startsWith('punctuation.definition.string.')) return stringScope;
         if (inInterpolation || styledScopePrefixes.some((prefix) => scope.startsWith(prefix))) return scope;
     }
     return fallback;

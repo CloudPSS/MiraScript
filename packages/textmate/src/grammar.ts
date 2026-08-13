@@ -99,6 +99,7 @@ function interpolationPatterns(dollarCount: number) {
             name: `meta.interpolation.block.${SCOPE_SUFFIX}`,
             begin: String.raw`(${dollars}\{)`,
             beginCaptures: { 1: { name: `punctuation.definition.template-expression.begin.${SCOPE_SUFFIX}` } },
+            contentName: `meta.embedded.expression.${SCOPE_SUFFIX}`,
             end: String.raw`\}`,
             endCaptures: { 0: { name: `punctuation.definition.template-expression.end.${SCOPE_SUFFIX}` } },
             patterns: [{ include: '#braced-content' }],
@@ -107,6 +108,7 @@ function interpolationPatterns(dollarCount: number) {
             name: `meta.interpolation.expression.${SCOPE_SUFFIX}`,
             begin: String.raw`(${dollars}\()`,
             beginCaptures: { 1: { name: `punctuation.definition.template-expression.begin.${SCOPE_SUFFIX}` } },
+            contentName: `meta.embedded.expression.${SCOPE_SUFFIX}`,
             end: String.raw`\)`,
             endCaptures: { 0: { name: `punctuation.definition.template-expression.end.${SCOPE_SUFFIX}` } },
             patterns: [
@@ -175,6 +177,19 @@ function stringPatterns() {
         ),
         ...quotes.map(([quote, label]) => normalString(quote, label)),
     ];
+}
+
+/**
+ * Create a balanced-delimiter rule whose begin and end retain punctuation scopes.
+ */
+function delimitedContent(delimiter: 'braces' | 'brackets' | 'parens', begin: string, end: string, include: string) {
+    return {
+        begin,
+        beginCaptures: { 0: { name: `punctuation.section.${delimiter}.begin.${SCOPE_SUFFIX}` } },
+        end,
+        endCaptures: { 0: { name: `punctuation.section.${delimiter}.end.${SCOPE_SUFFIX}` } },
+        patterns: [{ include }],
+    };
 }
 
 /**
@@ -579,17 +594,17 @@ function sourceRepository(): LanguageRegistration['repository'] {
         },
         'braced-content': {
             patterns: [
-                { begin: String.raw`\{`, end: String.raw`\}`, patterns: [{ include: '#braced-content' }] },
-                { begin: String.raw`\(`, end: String.raw`\)`, patterns: [{ include: '#parenthesized-content' }] },
-                { begin: String.raw`\[`, end: String.raw`\]`, patterns: [{ include: '#bracketed-content' }] },
+                delimitedContent('braces', String.raw`\{`, String.raw`\}`, '#braced-content'),
+                delimitedContent('parens', String.raw`\(`, String.raw`\)`, '#parenthesized-content'),
+                delimitedContent('brackets', String.raw`\[`, String.raw`\]`, '#bracketed-content'),
                 { include: '#source' },
             ],
         },
         'interpolation-expression-content': {
             patterns: [
-                { begin: String.raw`\(`, end: String.raw`\)`, patterns: [{ include: '#parenthesized-content' }] },
-                { begin: String.raw`\{`, end: String.raw`\}`, patterns: [{ include: '#braced-content' }] },
-                { begin: String.raw`\[`, end: String.raw`\]`, patterns: [{ include: '#bracketed-content' }] },
+                delimitedContent('parens', String.raw`\(`, String.raw`\)`, '#parenthesized-content'),
+                delimitedContent('braces', String.raw`\{`, String.raw`\}`, '#braced-content'),
+                delimitedContent('brackets', String.raw`\[`, String.raw`\]`, '#bracketed-content'),
                 { include: '#comments' },
                 { include: '#strings' },
                 { include: '#function-declarations' },
@@ -607,17 +622,17 @@ function sourceRepository(): LanguageRegistration['repository'] {
         },
         'parenthesized-content': {
             patterns: [
-                { begin: String.raw`\(`, end: String.raw`\)`, patterns: [{ include: '#parenthesized-content' }] },
-                { begin: String.raw`\{`, end: String.raw`\}`, patterns: [{ include: '#braced-content' }] },
-                { begin: String.raw`\[`, end: String.raw`\]`, patterns: [{ include: '#bracketed-content' }] },
+                delimitedContent('parens', String.raw`\(`, String.raw`\)`, '#parenthesized-content'),
+                delimitedContent('braces', String.raw`\{`, String.raw`\}`, '#braced-content'),
+                delimitedContent('brackets', String.raw`\[`, String.raw`\]`, '#bracketed-content'),
                 { include: '#source' },
             ],
         },
         'bracketed-content': {
             patterns: [
-                { begin: String.raw`\[`, end: String.raw`\]`, patterns: [{ include: '#bracketed-content' }] },
-                { begin: String.raw`\{`, end: String.raw`\}`, patterns: [{ include: '#braced-content' }] },
-                { begin: String.raw`\(`, end: String.raw`\)`, patterns: [{ include: '#parenthesized-content' }] },
+                delimitedContent('brackets', String.raw`\[`, String.raw`\]`, '#bracketed-content'),
+                delimitedContent('braces', String.raw`\{`, String.raw`\}`, '#braced-content'),
+                delimitedContent('parens', String.raw`\(`, String.raw`\)`, '#parenthesized-content'),
                 { include: '#source' },
             ],
         },
