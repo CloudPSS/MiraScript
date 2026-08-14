@@ -98,6 +98,9 @@ importers:
       '@mirascript/bindings':
         specifier: workspace:~
         version: link:../bindings
+      '@mirascript/help':
+        specifier: workspace:~
+        version: link:../help
       '@mirascript/mirascript':
         specifier: workspace:~
         version: link:../mirascript

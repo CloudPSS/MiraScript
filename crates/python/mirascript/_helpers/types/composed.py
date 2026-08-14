@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing_extensions import TYPE_CHECKING, overload
 
 from ..constants import Uninitialized
-from .basic import is_vm_function, is_vm_module, is_vm_wrapper, is_vm_callable
+from .basic import is_vm_function, is_vm_module, is_vm_wrapper
 from .const import is_vm_const
 
 if TYPE_CHECKING:
