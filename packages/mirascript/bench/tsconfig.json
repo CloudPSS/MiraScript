@@ -7,6 +7,8 @@
     "noEmit": true,
     "erasableSyntaxOnly": true,
     "module": "NodeNext",
+    "customConditions": [],
+    "types": ["node"],
     "rewriteRelativeImportExtensions": true
   },
 

@@ -1,7 +1,10 @@
 import { Bench } from 'tinybench';
 import { compile, compileSync, createVmContext } from '@mirascript/mirascript';
 
-const bench = new Bench({ name: 'simple benchmark', time: 100 });
+const bench = new Bench({
+    name: 'simple benchmark',
+    time: Number.parseInt(process.env['MIRASCRIPT_BENCH_TIME'] ?? '100', 10),
+});
 const source = `sin(x) + cos(y + PI / 2) + `.repeat(1) + '0';
 const env = { x: 1, y: 2 };
 const COMPILE_PARALLELISM = 1;

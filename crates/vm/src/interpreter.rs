@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::cell::{Cell, RefCell};
 use std::cmp::Ordering;
 use std::rc::Rc;
@@ -17,10 +18,102 @@ use crate::{
 };
 
 static NEXT_EXECUTION_ID: AtomicU64 = AtomicU64::new(1);
+const INLINE_CALL_DEPTH: usize = 8;
 
 struct Frame {
-    registers: RefCell<Vec<MiraAny>>,
+    registers: Vec<MiraAny>,
     parent: Option<usize>,
+}
+
+struct FrameArena {
+    root: Frame,
+    children: Vec<Frame>,
+}
+
+impl FrameArena {
+    fn new(root_register_count: usize) -> Self {
+        Self {
+            root: Frame {
+                registers: vec![MiraAny::Uninitialized; root_register_count + 1],
+                parent: None,
+            },
+            children: Vec::new(),
+        }
+    }
+
+    fn push(&mut self, frame: Frame) -> usize {
+        self.children.push(frame);
+        self.children.len()
+    }
+
+    fn get(&self, frame: usize) -> &Frame {
+        if frame == 0 {
+            &self.root
+        } else {
+            &self.children[frame - 1]
+        }
+    }
+
+    fn get_mut(&mut self, frame: usize) -> &mut Frame {
+        if frame == 0 {
+            &mut self.root
+        } else {
+            &mut self.children[frame - 1]
+        }
+    }
+}
+
+struct CallStack {
+    inline: [Option<Rc<str>>; INLINE_CALL_DEPTH],
+    overflow: Vec<Option<Rc<str>>>,
+    len: usize,
+}
+
+impl CallStack {
+    fn new() -> Self {
+        Self {
+            inline: std::array::from_fn(|_| None),
+            overflow: Vec::new(),
+            len: 0,
+        }
+    }
+
+    fn push(&mut self, name: Option<Rc<str>>) {
+        if self.len < INLINE_CALL_DEPTH {
+            self.inline[self.len] = name;
+        } else {
+            self.overflow.push(name);
+        }
+        self.len += 1;
+    }
+
+    fn pop(&mut self) {
+        if self.len == 0 {
+            return;
+        }
+        self.len -= 1;
+        if self.len < INLINE_CALL_DEPTH {
+            self.inline[self.len] = None;
+        } else {
+            self.overflow.pop();
+        }
+    }
+
+    fn last(&self) -> Option<&Option<Rc<str>>> {
+        if self.len == 0 {
+            None
+        } else if self.len <= INLINE_CALL_DEPTH {
+            Some(&self.inline[self.len - 1])
+        } else {
+            self.overflow.last()
+        }
+    }
+
+    fn iter(&self) -> impl Iterator<Item = &Option<Rc<str>>> {
+        self.inline[..self.len.min(INLINE_CALL_DEPTH)]
+            .iter()
+            .chain(self.overflow.iter())
+    }
 }
 
 #[derive(Debug)]
@@ -43,13 +136,12 @@ pub(crate) fn run(
         options,
         execution,
         started: Instant::now(),
-        checkpoint_count: Cell::new(0),
+        checkpoint_remaining: Cell::new(options.checkpoint_interval.max(1)),
         call_depth: Cell::new(0),
-        frames: RefCell::new(Vec::new()),
-        call_stack: RefCell::new(Vec::new()),
+        frames: RefCell::new(FrameArena::new(program.root.register_count)),
+        call_stack: RefCell::new(CallStack::new()),
     };
-    let root = runtime.create_frame(program.root.register_count, None);
-    let result = match runtime.execute_block(&program.root.body, root)? {
+    let result = match runtime.execute_block(&program.root.body, 0)? {
         Flow::Return(value) => value,
         Flow::Continue => MiraAny::Nil,
         Flow::Break | Flow::LoopContinue => {
@@ -68,40 +160,41 @@ struct Runtime<'a> {
     options: &'a RunOptions,
     execution: u64,
     started: Instant,
-    checkpoint_count: Cell<u32>,
+    checkpoint_remaining: Cell<u32>,
     call_depth: Cell<u32>,
-    frames: RefCell<Vec<Frame>>,
-    call_stack: RefCell<Vec<String>>,
+    frames: RefCell<FrameArena>,
+    call_stack: RefCell<CallStack>,
 }
 
 impl Runtime<'_> {
     fn create_frame(&self, register_count: usize, parent: Option<usize>) -> usize {
         let mut frames = self.frames.borrow_mut();
-        let id = frames.len();
         frames.push(Frame {
-            registers: RefCell::new(vec![MiraAny::Uninitialized; register_count + 1]),
+            registers: vec![MiraAny::Uninitialized; register_count + 1],
             parent,
-        });
-        id
+        })
     }
 
     fn read_register(&self, frame: usize, register: usize) -> MiraAny {
         if register == 0 {
             MiraAny::Nil
         } else {
-            self.frames.borrow()[frame].registers.borrow()[register].clone()
+            self.frames.borrow().get(frame).registers[register].clone()
         }
     }
 
     fn write_register(&self, frame: usize, register: usize, value: MiraAny) {
         if register != 0 {
-            self.frames.borrow()[frame].registers.borrow_mut()[register] = value;
+            self.frames.borrow_mut().get_mut(frame).registers[register] = value;
         }
     }
 
     fn parent_frame(&self, mut frame: usize, level: usize) -> Result<usize> {
         for _ in 0..level {
-            frame = self.frames.borrow()[frame]
+            frame = self
+                .frames
+                .borrow()
+                .get(frame)
                 .parent
                 .ok_or_else(|| MiraError::runtime("invalid upvalue level"))?;
         }
@@ -112,18 +205,20 @@ impl Runtime<'_> {
         for instruction in body {
             let result = self
                 .execute_instruction(instruction, frame)
-                .map_err(|error| {
-                    error.with_runtime_context(
-                        self.call_stack.borrow().last().cloned(),
-                        instruction.offset,
-                        self.call_stack.borrow().clone(),
-                    )
-                })?;
+                .map_err(|error| self.with_runtime_context(error, instruction.offset))?;
             if !matches!(result, Flow::Continue) {
                 return Ok(result);
             }
         }
         Ok(Flow::Continue)
+    }
+
+    fn with_runtime_context(&self, error: MiraError, offset: usize) -> MiraError {
+        let call_stack = self.call_stack.borrow();
+        let display = |name: &Option<Rc<str>>| name.as_deref().unwrap_or("<anonymous>").to_owned();
+        let function = call_stack.last().map(display);
+        let stack = call_stack.iter().map(display).collect();
+        error.with_runtime_context(function, offset, stack)
     }
 
     fn execute_instruction(&self, instruction: &Instruction, frame: usize) -> Result<Flow> {
@@ -374,7 +469,7 @@ impl Runtime<'_> {
                 self.write_register(owner, params[2] as usize, reg(0));
             }
             GetGlobal => {
-                let key = operations::to_string(&self.program.constants[params[1] as usize])?;
+                let key = self.constant_key(params[1] as usize)?;
                 write(0, self.get_global(&key)?);
             }
             GetGlobalDyn => {
@@ -505,7 +600,7 @@ impl Runtime<'_> {
             }
             Call | CallDyn => {
                 let target = if opcode == Call {
-                    let key = operations::to_string(&self.program.constants[params[1] as usize])?;
+                    let key = self.constant_key(params[1] as usize)?;
                     self.get_global(&key)?
                 } else {
                     reg(1)
@@ -516,19 +611,7 @@ impl Runtime<'_> {
                 let spread_count = params[spread_count_index] as usize;
                 let spreads =
                     &params[spread_count_index + 1..spread_count_index + 1 + spread_count];
-                let mut args = Vec::new();
-                for (index, register) in raw_args.iter().enumerate() {
-                    let value = self.read_register(frame, *register as usize);
-                    operations::assert_initialized(&value)?;
-                    if spreads.contains(&(index as i64)) {
-                        for item in operations::array_spread(&value)? {
-                            args.push(item.into_element()?);
-                        }
-                    } else {
-                        args.push(value);
-                    }
-                }
-                let result = self.call(&target, &args)?;
+                let result = self.call_registers(&target, raw_args, spreads, frame)?;
                 write(0, result);
             }
             Has | HasDyn | HasIndex => {
@@ -600,6 +683,60 @@ impl Runtime<'_> {
         Ok(Flow::Continue)
     }
 
+    fn constant_key(&self, index: usize) -> Result<Cow<'_, str>> {
+        match &self.program.constants[index] {
+            MiraAny::String(value) => Ok(Cow::Borrowed(value)),
+            value => operations::to_string(value).map(Cow::Owned),
+        }
+    }
+
+    fn call_registers(
+        &self,
+        target: &MiraAny,
+        registers: &[i64],
+        spreads: &[i64],
+        frame: usize,
+    ) -> Result<MiraAny> {
+        let argument = |register: i64| {
+            let value = self.read_register(frame, register as usize);
+            operations::assert_initialized(&value)?;
+            Ok(value)
+        };
+
+        if spreads.is_empty() {
+            return match registers {
+                [] => self.call(target, &[]),
+                [a] => self.call(target, &[argument(*a)?]),
+                [a, b] => self.call(target, &[argument(*a)?, argument(*b)?]),
+                [a, b, c] => self.call(target, &[argument(*a)?, argument(*b)?, argument(*c)?]),
+                [a, b, c, d] => self.call(
+                    target,
+                    &[argument(*a)?, argument(*b)?, argument(*c)?, argument(*d)?],
+                ),
+                _ => {
+                    let arguments = registers
+                        .iter()
+                        .map(|register| argument(*register))
+                        .collect::<Result<Vec<_>>>()?;
+                    self.call(target, &arguments)
+                }
+            };
+        }
+
+        let mut arguments = Vec::with_capacity(registers.len());
+        for (index, register) in registers.iter().enumerate() {
+            let value = argument(*register)?;
+            if spreads.contains(&(index as i64)) {
+                for item in operations::array_spread(&value)? {
+                    arguments.push(item.into_element()?);
+                }
+            } else {
+                arguments.push(value);
+            }
+        }
+        self.call(target, &arguments)
+    }
+
     fn get_global(&self, key: &str) -> Result<MiraAny> {
         self.context
             .get(key)
@@ -645,7 +782,7 @@ impl Runtime<'_> {
             MiraAny::Function(MiraFunction::Native(function)) => {
                 self.call_stack
                     .borrow_mut()
-                    .push(function.name().to_owned());
+                    .push(Some(function.shared_name()));
                 let mut context = MiraCallContext { runtime: self };
                 let result = function.call(&mut context, args).and_then(|value| {
                     context.runtime.checkpoint()?;
@@ -664,16 +801,15 @@ impl Runtime<'_> {
                     Err(MiraError::ExecutionEnded)
                 } else {
                     let definition = self.program.functions[*function].clone();
-                    let label = name.as_deref().unwrap_or("<anonymous>").to_owned();
-                    self.call_stack.borrow_mut().push(label);
+                    self.call_stack.borrow_mut().push(name.clone());
                     let result = self.call_script(&definition, *frame, args);
                     self.call_stack.borrow_mut().pop();
                     result
                 }
             }
             MiraAny::Extern(value) if value.is_callable()? => {
-                let label = format!("<extern {}>", value.tag()?);
-                self.call_stack.borrow_mut().push(label);
+                let label = Rc::from(format!("<extern {}>", value.tag()?));
+                self.call_stack.borrow_mut().push(Some(label));
                 let mut context = MiraCallContext { runtime: self };
                 let result = value.call(&mut context, args).and_then(|value| {
                     context.runtime.checkpoint()?;
@@ -741,12 +877,14 @@ impl Runtime<'_> {
     }
 
     fn checkpoint_now(&self) -> Result<()> {
-        self.checkpoint_count
-            .set(self.checkpoint_count.get().saturating_add(1));
-        let interval = self.options.checkpoint_interval.max(1);
-        if self.checkpoint_count.get().is_multiple_of(interval)
-            && self.started.elapsed() >= self.options.timeout
-        {
+        let remaining = self.checkpoint_remaining.get();
+        if remaining > 1 {
+            self.checkpoint_remaining.set(remaining - 1);
+            return Ok(());
+        }
+        self.checkpoint_remaining
+            .set(self.options.checkpoint_interval.max(1));
+        if self.started.elapsed() >= self.options.timeout {
             return Err(MiraError::Timeout);
         }
         Ok(())

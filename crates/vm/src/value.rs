@@ -418,6 +418,10 @@ impl MiraNativeFn {
         &self.name
     }
 
+    pub(crate) fn shared_name(&self) -> Rc<str> {
+        Rc::clone(&self.name)
+    }
+
     pub(crate) fn call(
         &self,
         context: &mut MiraCallContext<'_>,

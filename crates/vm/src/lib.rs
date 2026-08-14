@@ -49,8 +49,12 @@ pub struct RuntimeProviders {
     pub debug: std::rc::Rc<dyn Fn(&str)>,
 }
 
-impl Default for RuntimeProviders {
-    fn default() -> Self {
+std::thread_local! {
+    static DEFAULT_RUNTIME_PROVIDERS: RuntimeProviders = RuntimeProviders::system();
+}
+
+impl RuntimeProviders {
+    fn system() -> Self {
         use std::cell::Cell;
         use std::rc::Rc;
         use std::time::{SystemTime, UNIX_EPOCH};
@@ -81,6 +85,12 @@ impl Default for RuntimeProviders {
             }),
             debug: Rc::new(|message| eprintln!("{message}")),
         }
+    }
+}
+
+impl Default for RuntimeProviders {
+    fn default() -> Self {
+        DEFAULT_RUNTIME_PROVIDERS.with(Clone::clone)
     }
 }
 

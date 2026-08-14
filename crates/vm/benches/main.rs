@@ -4,6 +4,11 @@ use mira_vm::{MiraContext, RunOptions, compile};
 // Keep this setup aligned with packages/mirascript/bench/index.ts so the
 // TypeScript and Rust run-only results measure the same script and globals.
 const SIMPLE: &str = "sin(x) + cos(y + PI / 2) + 0";
+const NIL: &str = "nil";
+const CONSTANT: &str = "1";
+const GLOBAL: &str = "x";
+const GLOBAL_ARITHMETIC: &str = "x + y";
+const NATIVE_CALL: &str = "sin(x)";
 const SCALAR: &str = "let mut total = 0; for i in 1..100 { total += i * i; } total";
 const CONTAINER: &str = "[1..100]::map(fn { it * 2 })::sum()";
 const CLOSURE: &str = "fn make(x) { (fn (y) { x + y }) } let add = make(2); add(40)";
@@ -32,6 +37,24 @@ macro_rules! benchmark_case {
             let context = $context;
             let script = compile($source).unwrap();
             bencher.bench_local(|| black_box(script.run(black_box(&context)).unwrap()));
+        }
+    };
+}
+
+macro_rules! run_with_case {
+    ($name:ident, $source:expr, $context:expr) => {
+        #[divan::bench]
+        fn $name(bencher: Bencher) {
+            let context = $context;
+            let options = RunOptions::default();
+            let script = compile($source).unwrap();
+            bencher.bench_local(|| {
+                black_box(
+                    script
+                        .run_with(black_box(&context), black_box(&options))
+                        .unwrap(),
+                )
+            });
         }
     };
 }
@@ -67,21 +90,19 @@ benchmark_case!(
     MiraContext::new()
 );
 
-/// Matches the TypeScript benchmark's pre-created execution configuration more
-/// closely than `run_only_simple`, which also constructs default providers.
-#[divan::bench]
-fn run_with_simple(bencher: Bencher) {
-    let context = simple_context();
-    let options = RunOptions::default();
-    let script = compile(SIMPLE).unwrap();
-    bencher.bench_local(|| {
-        black_box(
-            script
-                .run_with(black_box(&context), black_box(&options))
-                .unwrap(),
-        )
-    });
-}
+// The breakdown cases keep script, context, and options outside the timed loop.
+// Together they isolate fixed run cost, globals, native calls, and dispatch.
+run_with_case!(run_with_nil, NIL, MiraContext::new());
+run_with_case!(run_with_constant, CONSTANT, MiraContext::new());
+run_with_case!(run_with_global, GLOBAL, simple_context());
+run_with_case!(
+    run_with_global_arithmetic,
+    GLOBAL_ARITHMETIC,
+    simple_context()
+);
+run_with_case!(run_with_native_call, NATIVE_CALL, simple_context());
+run_with_case!(run_with_simple, SIMPLE, simple_context());
+run_with_case!(run_with_scalar_loop, SCALAR, MiraContext::new());
 
 #[divan::bench]
 fn native_run_simple(bencher: Bencher) {
