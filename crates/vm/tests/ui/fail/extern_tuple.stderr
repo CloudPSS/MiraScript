@@ -1,0 +1,5 @@
+error: MiraExtern supports named structs only
+ --> tests/ui/fail/extern_tuple.rs:4:19
+  |
+4 | struct Unsupported(u8);
+  |                   ^^^^

@@ -37,6 +37,8 @@ MiraScript 是 CloudPSS 维护的表达式优先脚本语言项目。当前仓�
 | Crate 名称       | 目录               | 说明                                  |
 | ---------------- | ------------------ | ------------------------------------- |
 | `mira-core`      | `crates/core`      | 语言核心实现，包含词法/语法/执行能力  |
+| `mira-vm`        | `crates/vm`        | 原生 Rust 虚拟机、标准库与宿主值桥接  |
+| `mira-vm-derive` | `crates/vm-derive` | Rust record、array 与 extern 派生宏   |
 | `mira-constants` | `crates/constants` | Rust 侧常量导出，供上层包生成常量数据 |
 | `mira-napi`      | `crates/napi`      | Node.js 原生绑定（N-API）             |
 | `mira-wasm`      | `crates/wasm`      | WebAssembly 绑定                      |
@@ -96,6 +98,7 @@ pnpm run format
 - 示例脚本位于 `examples/`
 - VS Code 扩展说明见 `packages/vscode/README.md`
 - Python 绑定说明见 `crates/python/README.md`
+- Rust VM 使用说明见 `crates/vm/README.md`
 
 ## 许可证
 

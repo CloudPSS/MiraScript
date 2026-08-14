@@ -1,0 +1,8 @@
+error: MiraArray supports tuple and unit structs only; use MiraRecord for named structs
+ --> tests/ui/fail/array_named.rs:4:20
+  |
+4 |   struct Unsupported {
+  |  ____________________^
+5 | |     value: u8,
+6 | | }
+  | |_^

@@ -1,0 +1,24 @@
+[package]
+name = "mira-vm"
+description = "Native Rust virtual machine for MiraScript"
+version = "0.1.87"
+edition = "2024"
+publish = false
+
+[lib]
+name = "mira_vm"
+
+[[bench]]
+name = "main"
+harness = false
+
+[dependencies]
+indexmap = "2"
+mira-core = { path = "../core" }
+mira-vm-derive = { path = "../vm-derive" }
+serde_json = { version = "1", features = ["float_roundtrip", "preserve_order"] }
+unicode-normalization = "0.1"
+
+[dev-dependencies]
+divan = "0.1.21"
+trybuild = "1"

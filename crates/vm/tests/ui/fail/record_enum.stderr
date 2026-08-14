@@ -1,0 +1,5 @@
+error: MiraRecord does not support enums
+ --> tests/ui/fail/record_enum.rs:4:1
+  |
+4 | enum Unsupported {
+  | ^^^^

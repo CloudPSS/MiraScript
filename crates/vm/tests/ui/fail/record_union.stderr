@@ -1,0 +1,5 @@
+error: MiraRecord does not support unions
+ --> tests/ui/fail/record_union.rs:4:1
+  |
+4 | union Unsupported {
+  | ^^^^^
