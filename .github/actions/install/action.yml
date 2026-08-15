@@ -58,32 +58,32 @@ runs:
       with:
         tool: ${{ inputs.tools }}
 
-    - name: Setup pnpm
-      if: ${{ inputs.setup-node }}
-      uses: pnpm/action-setup@v6
-      with:
-        cache: true
-
     - name: Setup node
       uses: actions/setup-node@v7
-      if: ${{ inputs.setup-node && inputs.node-version }}
+      if: ${{ inputs.setup-node == 'true' && inputs.node-version }}
       with:
         node-version: ${{ inputs.node-version }}
 
     - name: Setup node
       uses: actions/setup-node@v7
-      if: ${{ inputs.setup-node && !inputs.node-version }}
+      if: ${{ inputs.setup-node == 'true' && !inputs.node-version }}
       with:
         node-version-file: package.json
 
+    - name: Setup pnpm
+      if: ${{ inputs.setup-node == 'true' }}
+      uses: pnpm/action-setup@v6
+      with:
+        cache: true
+
     - name: Install dependencies
       shell: bash
-      if: ${{ inputs.setup-node && inputs.skip-pnpm-install == 'false' }}
+      if: ${{ inputs.setup-node == 'true' && inputs.skip-pnpm-install == 'false' }}
       run: |
         pnpm config set trustLockfile ${{ inputs.check-lockfile == 'false' }}
         pnpm install ${{ inputs.pnpm-args }}
 
     - name: Skip dependencies
       shell: bash
-      if: ${{ inputs.setup-node && inputs.skip-pnpm-install == 'true' }}
+      if: ${{ inputs.setup-node == 'true' && inputs.skip-pnpm-install == 'true' }}
       run: pnpm config set verifyDepsBeforeRun false
