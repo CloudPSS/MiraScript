@@ -51,6 +51,29 @@ fn native_functions_can_call_script_callbacks() {
 }
 
 #[test]
+fn static_globals_resolve_for_each_execution() {
+    let script = compile("value + PI").unwrap();
+
+    let mut first = MiraContext::new();
+    first.insert("value", 1);
+    first.insert("PI", 10);
+    assert_eq!(script.run(&first).unwrap(), MiraAny::from(11));
+
+    first.insert("value", 2);
+    assert_eq!(script.run(&first).unwrap(), MiraAny::from(12));
+
+    let mut second = MiraContext::new();
+    second.insert("value", 5);
+    second.insert("PI", 20);
+    assert_eq!(script.run(&second).unwrap(), MiraAny::from(25));
+
+    assert_eq!(
+        eval("if false { missing } else { 1 }", &MiraContext::empty()).unwrap(),
+        MiraAny::from(1),
+    );
+}
+
+#[test]
 fn rejects_escaping_script_values() {
     let error = eval("fn value { 1 } value", &MiraContext::empty()).unwrap_err();
     assert_eq!(error, MiraError::EscapingClosure);

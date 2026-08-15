@@ -1,5 +1,6 @@
 use std::rc::Rc;
 
+use indexmap::IndexMap;
 use mira_core::OpCode;
 use mira_core::prelude::*;
 
@@ -8,6 +9,7 @@ use crate::{MiraAny, MiraError, Result};
 #[derive(Debug, Clone)]
 pub(crate) struct Program {
     pub constants: Rc<[MiraAny]>,
+    pub global_names: Rc<[String]>,
     pub root: FunctionDef,
     pub functions: Rc<[FunctionDef]>,
 }
@@ -99,7 +101,7 @@ pub(crate) enum Operation {
     },
     GetGlobal {
         destination: usize,
-        constant: usize,
+        slot: usize,
     },
     GetGlobalDyn {
         destination: usize,
@@ -300,6 +302,7 @@ impl Program {
             offset: 0,
             constants,
             functions: Vec::new(),
+            global_names: IndexMap::new(),
             scopes: Vec::new(),
             loop_depth: 0,
         };
@@ -315,6 +318,7 @@ impl Program {
 
         Ok(Self {
             constants: Rc::from(decoder.constants),
+            global_names: Rc::from(decoder.global_names.into_keys().collect::<Vec<_>>()),
             root,
             functions: Rc::from(decoder.functions),
         })
@@ -456,6 +460,7 @@ struct Decoder<'a> {
     offset: usize,
     constants: Vec<MiraAny>,
     functions: Vec<FunctionDef>,
+    global_names: IndexMap<String, ()>,
     scopes: Vec<usize>,
     loop_depth: usize,
 }
@@ -558,6 +563,17 @@ impl Decoder<'_> {
                 format!("constant {index} is not a string"),
             )),
         }
+    }
+
+    fn read_global_slot(&mut self, wide: bool, instruction_offset: usize) -> Result<usize> {
+        let constant = self.read_constant(wide, instruction_offset)?;
+        let name = crate::operations::to_string(&self.constants[constant])?;
+        if let Some(slot) = self.global_names.get_index_of(&name) {
+            return Ok(slot);
+        }
+        let slot = self.global_names.len();
+        self.global_names.insert(name, ());
+        Ok(slot)
     }
 
     fn read_function(
@@ -1000,7 +1016,7 @@ impl Decoder<'_> {
             },
             GetGlobal => Operation::GetGlobal {
                 destination: self.read_register(wide, offset)?,
-                constant: self.read_constant(wide, offset)?,
+                slot: self.read_global_slot(wide, offset)?,
             },
             GetUpvalue | SetUpvalue => {
                 let value = self.read_register(wide, offset)?;
@@ -1078,7 +1094,7 @@ impl Decoder<'_> {
             Call | CallDyn => {
                 let destination = self.read_register(wide, offset)?;
                 let target = if opcode == Call {
-                    CallTarget::Global(self.read_constant(wide, offset)?)
+                    CallTarget::Global(self.read_global_slot(wide, offset)?)
                 } else {
                     CallTarget::Register(self.read_register(wide, offset)?)
                 };

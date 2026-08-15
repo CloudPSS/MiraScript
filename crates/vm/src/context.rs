@@ -39,7 +39,11 @@ impl MiraContext {
     }
 
     pub fn get(&self, name: &str) -> Option<MiraAny> {
-        self.values.get(name).cloned()
+        self.get_ref(name).cloned()
+    }
+
+    pub(crate) fn get_ref(&self, name: &str) -> Option<&MiraAny> {
+        self.values.get(name)
     }
 
     pub fn contains(&self, name: &str) -> bool {

@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use std::cmp::Ordering;
 use std::rc::Rc;
 use std::sync::atomic::{AtomicU64, Ordering as AtomicOrdering};
@@ -17,6 +16,7 @@ use indexmap::IndexMap;
 
 static NEXT_EXECUTION_ID: AtomicU64 = AtomicU64::new(1);
 const INLINE_CALL_DEPTH: usize = 8;
+const INLINE_GLOBAL_SLOTS: usize = 8;
 
 struct Frame {
     registers: Vec<MiraAny>,
@@ -65,6 +65,42 @@ struct CallStack {
     inline: [Option<Rc<str>>; INLINE_CALL_DEPTH],
     overflow: Vec<Option<Rc<str>>>,
     len: usize,
+}
+
+enum GlobalSlots<'a> {
+    Empty,
+    One(Option<&'a MiraAny>),
+    Two([Option<&'a MiraAny>; 2]),
+    Inline([Option<&'a MiraAny>; INLINE_GLOBAL_SLOTS]),
+    Overflow(Vec<Option<&'a MiraAny>>),
+}
+
+impl<'a> GlobalSlots<'a> {
+    fn new(names: &[String], context: &'a MiraContext) -> Self {
+        if names.is_empty() {
+            Self::Empty
+        } else if names.len() == 1 {
+            Self::One(context.get_ref(&names[0]))
+        } else if names.len() == 2 {
+            Self::Two(std::array::from_fn(|index| context.get_ref(&names[index])))
+        } else if names.len() <= INLINE_GLOBAL_SLOTS {
+            Self::Inline(std::array::from_fn(|index| {
+                names.get(index).and_then(|name| context.get_ref(name))
+            }))
+        } else {
+            Self::Overflow(names.iter().map(|name| context.get_ref(name)).collect())
+        }
+    }
+
+    fn get(&self, slot: usize) -> Option<MiraAny> {
+        match self {
+            Self::Empty => None,
+            Self::One(value) => value.cloned(),
+            Self::Two(values) => values[slot].cloned(),
+            Self::Inline(values) => values[slot].cloned(),
+            Self::Overflow(values) => values[slot].cloned(),
+        }
+    }
 }
 
 impl CallStack {
@@ -132,6 +168,7 @@ pub(crate) fn run(
         program,
         context,
         options,
+        globals: GlobalSlots::new(&program.global_names, context),
         execution,
         started: Instant::now(),
         checkpoint_remaining: options.checkpoint_interval.max(1),
@@ -156,6 +193,7 @@ struct Runtime<'a> {
     program: &'a Program,
     context: &'a MiraContext,
     options: &'a RunOptions,
+    globals: GlobalSlots<'a>,
     execution: u64,
     started: Instant,
     checkpoint_remaining: u32,
@@ -598,17 +636,13 @@ impl Runtime<'_> {
                     }
                 }
             }
-            Operation::GetGlobal {
-                destination,
-                constant,
-            } => {
-                let key = self.constant_key(*constant)?;
-                let result = self.get_global(&key)?;
+            Operation::GetGlobal { destination, slot } => {
+                let result = self.get_global_slot(*slot)?;
                 self.write_register(frame, *destination, result);
             }
             Operation::GetGlobalDyn { destination, key } => {
                 let key = operations::to_string(&self.read_register(frame, *key))?;
-                let result = self.get_global(&key)?;
+                let result = self.get_global_name(&key)?;
                 self.write_register(frame, *destination, result);
             }
             Operation::InGlobal { destination, key } => {
@@ -676,10 +710,7 @@ impl Runtime<'_> {
                 spreads,
             } => {
                 let target = match target {
-                    CallTarget::Global(constant) => {
-                        let key = self.constant_key(*constant)?;
-                        self.get_global(&key)?
-                    }
+                    CallTarget::Global(constant) => self.get_global_slot(*constant)?,
                     CallTarget::Register(register) => self.read_register(frame, *register),
                 };
                 let result = self.call_registers(&target, arguments, spreads, frame)?;
@@ -737,13 +768,6 @@ impl Runtime<'_> {
         Ok(Flow::Continue)
     }
 
-    fn constant_key(&self, index: usize) -> Result<Cow<'_, str>> {
-        match &self.program.constants[index] {
-            MiraAny::String(value) => Ok(Cow::Borrowed(value)),
-            value => operations::to_string(value).map(Cow::Owned),
-        }
-    }
-
     fn call_registers(
         &mut self,
         target: &MiraAny,
@@ -791,7 +815,16 @@ impl Runtime<'_> {
         self.call(target, &arguments)
     }
 
-    fn get_global(&self, key: &str) -> Result<MiraAny> {
+    fn get_global_slot(&self, slot: usize) -> Result<MiraAny> {
+        self.globals.get(slot).ok_or_else(|| {
+            MiraError::runtime(format!(
+                "Global variable '{}' is not defined.",
+                self.program.global_names[slot]
+            ))
+        })
+    }
+
+    fn get_global_name(&self, key: &str) -> Result<MiraAny> {
         self.context
             .get(key)
             .ok_or_else(|| MiraError::runtime(format!("Global variable '{key}' is not defined.")))

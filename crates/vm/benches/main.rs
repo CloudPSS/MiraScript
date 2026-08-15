@@ -8,6 +8,7 @@ const NIL: &str = "nil";
 const CONSTANT: &str = "1";
 const GLOBAL: &str = "x";
 const GLOBAL_ARITHMETIC: &str = "x + y";
+const REPEATED_GLOBAL: &str = "x + x + x + x + x + x + x + x";
 const NATIVE_CALL: &str = "sin(x)";
 const SCALAR: &str = "let mut total = 0; for i in 1..100 { total += i * i; } total";
 const CONTAINER: &str = "[1..100]::map(fn { it * 2 })::sum()";
@@ -100,6 +101,7 @@ run_with_case!(
     GLOBAL_ARITHMETIC,
     simple_context()
 );
+run_with_case!(run_with_repeated_global, REPEATED_GLOBAL, simple_context());
 run_with_case!(run_with_native_call, NATIVE_CALL, simple_context());
 run_with_case!(run_with_simple, SIMPLE, simple_context());
 run_with_case!(run_with_scalar_loop, SCALAR, MiraContext::new());
