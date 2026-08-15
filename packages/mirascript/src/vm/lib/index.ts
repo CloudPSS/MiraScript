@@ -17,4 +17,13 @@ for (const [name, value] of entries(mods)) {
     VM_SHARED_CONTEXT_DESCRIPTIONS[name] = description;
 }
 
-export const lib: Readonly<typeof global & typeof mods> = Object.freeze(Object.assign(create(null), global, mods));
+/** 标准库 */
+type LibData = typeof global & typeof mods;
+/** 标准库 */
+export type Lib = {
+    readonly [key in keyof LibData]: LibData[key];
+};
+
+/** 标准库 */
+export const lib: Lib = Object.freeze(Object.assign(create(null), global, mods));
+export type { VmLibOption } from './helpers.js';

@@ -17,7 +17,7 @@ export {
     serializeRecord,
     type SerializeOptions,
 } from './helpers/serialize.js';
-export { lib } from './vm/lib/index.js';
+export { lib, type Lib, type VmLibOption } from './vm/lib/index.js';
 export * from './compiler/diagnostic.js';
 export { emitScript } from './compiler/emit-script.js';
 export { createScript, wrapScript } from './compiler/create-script.js';
