@@ -384,6 +384,7 @@ jobs:
           if-no-files-found: error
 
   test-rust:
+    needs: merge
     strategy:
       fail-fast: false
       matrix:
@@ -413,16 +414,17 @@ jobs:
       - name: Install
         uses: ./.github/actions/install
         with:
+          setup-node: false
           rust-targets: ''
           rust-toolchain: ${{ matrix.toolchain }}
-          skip-pnpm-install: true
-          tools: cargo-llvm-cov
+          tools: ${{ matrix.os == 'ubuntu-latest' && 'cargo-llvm-cov' || '' }}
 
       - name: Run tests
-        run: cargo llvm-cov --workspace --locked --lcov --output-path rust-lcov.info
+        run: cargo ${{ matrix.os == 'ubuntu-latest' && 'llvm-cov' || 'test' }} --workspace --locked --lcov --output-path rust-lcov.info
 
       - name: Send Rust coverage report
         shell: bash
+        if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |
           bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r rust-lcov.info --partial --project-token '${{ secrets.CODACY_PROJECT_TOKEN }}'
 
