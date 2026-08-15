@@ -760,6 +760,17 @@ impl<'a> Runtime<'a> {
                 let result = self.call(target, &[argument])?;
                 self.write_register(frame, *destination, result);
             }
+            Operation::CallGlobal1FromGlobal {
+                destination,
+                slot,
+                argument_slot,
+            } => {
+                let target = self.get_global_slot_ref(*slot)?;
+                let argument = self.get_global_slot_ref(*argument_slot)?;
+                operations::assert_initialized(argument)?;
+                let result = self.call(target, std::slice::from_ref(argument))?;
+                self.write_register(frame, *destination, result);
+            }
             Operation::CallGlobal2 {
                 destination,
                 slot,

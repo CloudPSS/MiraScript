@@ -135,6 +135,10 @@ sin(x) + cos(y + PI / 2) + 0
 
 数值算术已拆分为独立的 typed operation，数字寄存器热路径直接借用并读取 `f64`，非数字值仍回退到原有转换与错误语义。两次完整 benchmark 中标量循环从 7.47–7.54 µs 降至 5.73 µs，改善约 23–24%；全局算术从 129.2–138.7 ns 降至 115.1–116.1 ns，改善约 10–17%；简单脚本进一步改善约 9–10%，其他项目未发现稳定回退。
 
+紧邻 `GetGlobal` 的单参数静态调用进一步 quicken 为 `CallGlobal1FromGlobal`。原全局读取仍保留，因此错误位置和寄存器状态不变；调用参数直接借用当前 context slot，避免第二次 `MiraAny` 克隆。两次完整 benchmark 中 native call 从 138.7–140.7 ns 降至 129.7–131.8 ns，改善约 5–8%；简单脚本从 290.6–290.8 ns 降至 286.2–289.4 ns，其他项目未发现稳定回退。
+
+数学 builtin tag fast path 与独立 `Move` operation 均已实现并进行两轮完整 benchmark，但没有稳定收益，且 `Move` 使标量循环由约 5.73 µs 回退至 5.82–5.96 µs，故两项均已撤回。当前基准中的其他多指令模式只覆盖单一脚本类别，不保留针对 microbenchmark 的 superinstruction。阶段 3 至此完成。
+
 ### 解释器优化路线
 
 优化遵循“先测量、保持语义、逐项提交”的原则。每个阶段都必须通过完整 Rust 黑盒测试，并至少复测简单脚本、标量循环、容器、闭包和标准库调用。
@@ -163,8 +167,8 @@ sin(x) + cos(y + PI / 2) + 0
 #### 阶段 3：quickening 与内建特化
 
 - 已将稳定的零至四参数静态调用 quicken 为 `CallGlobal0..4`，并直接借用每次 run 解析的目标；context 变化或用户覆盖 builtin 时会重新解析。
-- 已完成数值算术 typed operation；继续评估常见数学 builtin 的专用指令，不得绕过统一参数验证、超时和错误模型。
-- 只有跨多类脚本均有稳定收益时保留 superinstruction，避免为单个 microbenchmark 特化。
+- 已完成数值算术 typed operation，并让紧邻全局读取的单参数静态调用直接借用 context 参数；参数验证、超时和错误模型保持不变。
+- 数学 builtin tag fast path、独立 `Move` operation 和其他单类别 superinstruction 未达到保留门槛，均不纳入最终实现。
 
 #### JIT 决策门槛
 

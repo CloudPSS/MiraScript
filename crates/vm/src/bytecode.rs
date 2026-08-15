@@ -146,6 +146,11 @@ pub(crate) enum Operation {
         slot: usize,
         argument: usize,
     },
+    CallGlobal1FromGlobal {
+        destination: usize,
+        slot: usize,
+        argument_slot: usize,
+    },
     CallGlobal2 {
         destination: usize,
         slot: usize,
@@ -681,7 +686,31 @@ impl Decoder<'_> {
                 return Ok((body, opcode));
             }
             self.offset = saved;
-            body.push(self.read_instruction()?);
+            let mut instruction = self.read_instruction()?;
+            if let (
+                Some(Instruction {
+                    kind:
+                        InstructionKind::Op(Operation::GetGlobal {
+                            destination: loaded,
+                            slot: argument_slot,
+                        }),
+                    ..
+                }),
+                InstructionKind::Op(Operation::CallGlobal1 {
+                    destination,
+                    slot,
+                    argument,
+                }),
+            ) = (body.last(), &instruction.kind)
+                && loaded == argument
+            {
+                instruction.kind = InstructionKind::Op(Operation::CallGlobal1FromGlobal {
+                    destination: *destination,
+                    slot: *slot,
+                    argument_slot: *argument_slot,
+                });
+            }
+            body.push(instruction);
         }
     }
 
@@ -1489,5 +1518,17 @@ mod tests {
                 NumericOperation::Pow,
             ]
         );
+    }
+
+    #[test]
+    fn static_calls_borrow_adjacent_global_arguments() {
+        let (chunk, diagnostics) =
+            mira_core::Compiler::compile("function(argument)", &mira_core::Config::new());
+        assert!(diagnostics.is_empty());
+        let program = Program::decode(&chunk.unwrap()).unwrap();
+        assert!(program.root.body.iter().any(|instruction| matches!(
+            instruction.kind,
+            InstructionKind::Op(Operation::CallGlobal1FromGlobal { .. })
+        )));
     }
 }
