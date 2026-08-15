@@ -360,14 +360,14 @@ impl fmt::Debug for MiraExternValue {
 }
 
 pub(crate) trait NativeRuntime {
-    fn call_value(&self, function: &MiraAny, args: &[MiraAny]) -> Result<MiraAny>;
+    fn call_value(&mut self, function: &MiraAny, args: &[MiraAny]) -> Result<MiraAny>;
     fn get_value(&self, value: &MiraAny, key: &MiraAny) -> Result<MiraAny>;
     fn options(&self) -> &RunOptions;
-    fn checkpoint(&self) -> Result<()>;
+    fn checkpoint(&mut self) -> Result<()>;
 }
 
 pub struct MiraCallContext<'a> {
-    pub(crate) runtime: &'a dyn NativeRuntime,
+    pub(crate) runtime: &'a mut dyn NativeRuntime,
 }
 
 impl MiraCallContext<'_> {

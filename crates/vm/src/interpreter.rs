@@ -1,5 +1,4 @@
 use std::borrow::Cow;
-use std::cell::{Cell, RefCell};
 use std::cmp::Ordering;
 use std::rc::Rc;
 use std::sync::atomic::{AtomicU64, Ordering as AtomicOrdering};
@@ -130,16 +129,16 @@ pub(crate) fn run(
     options: &RunOptions,
 ) -> Result<MiraAny> {
     let execution = NEXT_EXECUTION_ID.fetch_add(1, AtomicOrdering::Relaxed);
-    let runtime = Runtime {
+    let mut runtime = Runtime {
         program,
         context,
         options,
         execution,
         started: Instant::now(),
-        checkpoint_remaining: Cell::new(options.checkpoint_interval.max(1)),
-        call_depth: Cell::new(0),
-        frames: RefCell::new(FrameArena::new(program.root.register_count)),
-        call_stack: RefCell::new(CallStack::new()),
+        checkpoint_remaining: options.checkpoint_interval.max(1),
+        call_depth: 0,
+        frames: FrameArena::new(program.root.register_count),
+        call_stack: CallStack::new(),
     };
     let result = match runtime.execute_block(&program.root.body, 0)? {
         Flow::Return(value) => value,
@@ -160,16 +159,15 @@ struct Runtime<'a> {
     options: &'a RunOptions,
     execution: u64,
     started: Instant,
-    checkpoint_remaining: Cell<u32>,
-    call_depth: Cell<u32>,
-    frames: RefCell<FrameArena>,
-    call_stack: RefCell<CallStack>,
+    checkpoint_remaining: u32,
+    call_depth: u32,
+    frames: FrameArena,
+    call_stack: CallStack,
 }
 
 impl Runtime<'_> {
-    fn create_frame(&self, register_count: usize, parent: Option<usize>) -> usize {
-        let mut frames = self.frames.borrow_mut();
-        frames.push(Frame {
+    fn create_frame(&mut self, register_count: usize, parent: Option<usize>) -> usize {
+        self.frames.push(Frame {
             registers: vec![MiraAny::Uninitialized; register_count + 1],
             parent,
         })
@@ -179,13 +177,13 @@ impl Runtime<'_> {
         if register == 0 {
             MiraAny::Nil
         } else {
-            self.frames.borrow().get(frame).registers[register].clone()
+            self.frames.get(frame).registers[register].clone()
         }
     }
 
-    fn write_register(&self, frame: usize, register: usize, value: MiraAny) {
+    fn write_register(&mut self, frame: usize, register: usize, value: MiraAny) {
         if register != 0 {
-            self.frames.borrow_mut().get_mut(frame).registers[register] = value;
+            self.frames.get_mut(frame).registers[register] = value;
         }
     }
 
@@ -193,7 +191,6 @@ impl Runtime<'_> {
         for _ in 0..level {
             frame = self
                 .frames
-                .borrow()
                 .get(frame)
                 .parent
                 .ok_or_else(|| MiraError::runtime("invalid upvalue level"))?;
@@ -201,7 +198,7 @@ impl Runtime<'_> {
         Ok(frame)
     }
 
-    fn execute_block(&self, body: &[Instruction], frame: usize) -> Result<Flow> {
+    fn execute_block(&mut self, body: &[Instruction], frame: usize) -> Result<Flow> {
         for instruction in body {
             let result = self
                 .execute_instruction(instruction, frame)
@@ -214,14 +211,13 @@ impl Runtime<'_> {
     }
 
     fn with_runtime_context(&self, error: MiraError, offset: usize) -> MiraError {
-        let call_stack = self.call_stack.borrow();
         let display = |name: &Option<Rc<str>>| name.as_deref().unwrap_or("<anonymous>").to_owned();
-        let function = call_stack.last().map(display);
-        let stack = call_stack.iter().map(display).collect();
+        let function = self.call_stack.last().map(display);
+        let stack = self.call_stack.iter().map(display).collect();
         error.with_runtime_context(function, offset, stack)
     }
 
-    fn execute_instruction(&self, instruction: &Instruction, frame: usize) -> Result<Flow> {
+    fn execute_instruction(&mut self, instruction: &Instruction, frame: usize) -> Result<Flow> {
         match &instruction.kind {
             InstructionKind::Op { opcode, params } => self.execute_op(*opcode, params, frame),
             InstructionKind::Function {
@@ -300,7 +296,7 @@ impl Runtime<'_> {
     }
 
     fn execute_loop(
-        &self,
+        &mut self,
         register_count: usize,
         kind: &LoopKind,
         body: &[Instruction],
@@ -438,51 +434,57 @@ impl Runtime<'_> {
         Ok(MiraAny::Array(array))
     }
 
-    fn execute_op(&self, opcode: OpCode, params: &[i64], frame: usize) -> Result<Flow> {
+    fn execute_op(&mut self, opcode: OpCode, params: &[i64], frame: usize) -> Result<Flow> {
         use OpCode::*;
-        let reg = |index: usize| self.read_register(frame, params[index] as usize);
-        let write = |index: usize, value: MiraAny| {
-            self.write_register(frame, params[index] as usize, value);
-        };
+        macro_rules! reg {
+            ($index:expr) => {
+                self.read_register(frame, params[$index] as usize)
+            };
+        }
+        macro_rules! write {
+            ($index:expr, $value:expr $(,)?) => {
+                self.write_register(frame, params[$index] as usize, $value)
+            };
+        }
         match opcode {
             Noop => {}
             Break => return Ok(Flow::Break),
             Continue => return Ok(Flow::LoopContinue),
-            Return => return Ok(Flow::Return(reg(0))),
-            Constant => write(0, self.program.constants[params[1] as usize].clone()),
-            Uninit => write(0, MiraAny::Uninitialized),
-            Assign => write(0, reg(1)),
+            Return => return Ok(Flow::Return(reg!(0))),
+            Constant => write!(0, self.program.constants[params[1] as usize].clone()),
+            Uninit => write!(0, MiraAny::Uninitialized),
+            Assign => write!(0, reg!(1)),
             Swap => {
-                let left = reg(0);
-                let right = reg(1);
-                write(0, right);
-                write(1, left);
+                let left = reg!(0);
+                let right = reg!(1);
+                write!(0, right);
+                write!(1, left);
             }
             GetUpvalue => {
                 let owner = self.parent_frame(frame, params[1] as usize)?;
                 let value = self.read_register(owner, params[2] as usize);
                 operations::assert_initialized(&value)?;
-                write(0, value);
+                write!(0, value);
             }
             SetUpvalue => {
                 let owner = self.parent_frame(frame, params[1] as usize)?;
-                self.write_register(owner, params[2] as usize, reg(0));
+                self.write_register(owner, params[2] as usize, reg!(0));
             }
             GetGlobal => {
                 let key = self.constant_key(params[1] as usize)?;
-                write(0, self.get_global(&key)?);
+                write!(0, self.get_global(&key)?);
             }
             GetGlobalDyn => {
-                let key = operations::to_string(&reg(1))?;
-                write(0, self.get_global(&key)?);
+                let key = operations::to_string(&reg!(1))?;
+                write!(0, self.get_global(&key)?);
             }
             InGlobal => {
-                let key = operations::to_string(&reg(1))?;
-                write(0, MiraAny::Boolean(self.context.contains(&key)));
+                let key = operations::to_string(&reg!(1))?;
+                write!(0, MiraAny::Boolean(self.context.contains(&key)));
             }
             Add | Sub | Mul | Div | Mod | Pow => {
-                let left = operations::to_number(&reg(1))?;
-                let right = operations::to_number(&reg(2))?;
+                let left = operations::to_number(&reg!(1))?;
+                let right = operations::to_number(&reg!(2))?;
                 let value = match opcode {
                     Add => left + right,
                     Sub => left - right,
@@ -492,15 +494,15 @@ impl Runtime<'_> {
                     Pow => left.powf(right),
                     _ => unreachable!(),
                 };
-                write(0, MiraAny::Number(value));
+                write!(0, MiraAny::Number(value));
             }
-            Pos | Plus => write(0, MiraAny::Number(operations::to_number(&reg(1))?)),
-            Neg => write(0, MiraAny::Number(-operations::to_number(&reg(1))?)),
-            Not => write(0, MiraAny::Boolean(!operations::to_boolean(&reg(1))?)),
+            Pos | Plus => write!(0, MiraAny::Number(operations::to_number(&reg!(1))?)),
+            Neg => write!(0, MiraAny::Number(-operations::to_number(&reg!(1))?)),
+            Not => write!(0, MiraAny::Boolean(!operations::to_boolean(&reg!(1))?)),
             And | Or => {
-                let left = operations::to_boolean(&reg(1))?;
-                let right = operations::to_boolean(&reg(2))?;
-                write(
+                let left = operations::to_boolean(&reg!(1))?;
+                let right = operations::to_boolean(&reg!(2))?;
+                write!(
                     0,
                     MiraAny::Boolean(if opcode == And {
                         left && right
@@ -510,8 +512,8 @@ impl Runtime<'_> {
                 );
             }
             Eq | Neq | Same | Nsame => {
-                let left = reg(1);
-                let right = reg(2);
+                let left = reg!(1);
+                let right = reg!(2);
                 operations::assert_initialized(&left)?;
                 operations::assert_initialized(&right)?;
                 let mut equal = if opcode == Eq || opcode == Neq {
@@ -525,17 +527,17 @@ impl Runtime<'_> {
                 if opcode == Neq || opcode == Nsame {
                     equal = !equal;
                 }
-                write(0, MiraAny::Boolean(equal));
+                write!(0, MiraAny::Boolean(equal));
             }
             Aeq | Naeq => {
-                let mut equal = operations::approximately_equal(&reg(1), &reg(2))?;
+                let mut equal = operations::approximately_equal(&reg!(1), &reg!(2))?;
                 if opcode == Naeq {
                     equal = !equal;
                 }
-                write(0, MiraAny::Boolean(equal));
+                write!(0, MiraAny::Boolean(equal));
             }
             Lt | Lte | Gt | Gte => {
-                let ordering = operations::compare(&reg(1), &reg(2))?;
+                let ordering = operations::compare(&reg!(1), &reg!(2))?;
                 let result = match (opcode, ordering) {
                     (_, None) => false,
                     (Lt, Some(value)) => value == Ordering::Less,
@@ -544,16 +546,19 @@ impl Runtime<'_> {
                     (Gte, Some(value)) => value != Ordering::Less,
                     _ => unreachable!(),
                 };
-                write(0, MiraAny::Boolean(result));
+                write!(0, MiraAny::Boolean(result));
             }
-            In => write(0, MiraAny::Boolean(operations::in_value(&reg(1), &reg(2))?)),
+            In => write!(
+                0,
+                MiraAny::Boolean(operations::in_value(&reg!(1), &reg!(2))?)
+            ),
             Concat => {
                 let count = params[1] as usize;
                 let mut result = String::new();
                 for index in 0..count {
-                    result.push_str(&operations::format_value(&reg(index + 2), None)?);
+                    result.push_str(&operations::format_value(&reg!(index + 2), None)?);
                 }
-                write(0, MiraAny::String(result));
+                write!(0, MiraAny::String(result));
             }
             Format => {
                 let format = match &self.program.constants[params[2] as usize] {
@@ -561,19 +566,19 @@ impl Runtime<'_> {
                     MiraAny::Nil => None,
                     _ => unreachable!("validated format constant"),
                 };
-                write(
+                write!(
                     0,
-                    MiraAny::String(operations::format_value(&reg(1), format)?),
+                    MiraAny::String(operations::format_value(&reg!(1), format)?),
                 );
             }
-            AssertInit => operations::assert_initialized(&reg(0))?,
-            AssertNonNil => operations::assert_non_nil(&reg(0))?,
-            Type => write(0, MiraAny::String(reg(1).type_name().into())),
-            ToBoolean => write(0, MiraAny::Boolean(operations::to_boolean(&reg(1))?)),
-            ToNumber => write(0, MiraAny::Number(operations::to_number(&reg(1))?)),
-            ToString => write(0, MiraAny::String(operations::to_string(&reg(1))?)),
+            AssertInit => operations::assert_initialized(&reg!(0))?,
+            AssertNonNil => operations::assert_non_nil(&reg!(0))?,
+            Type => write!(0, MiraAny::String(reg!(1).type_name().into())),
+            ToBoolean => write!(0, MiraAny::Boolean(operations::to_boolean(&reg!(1))?)),
+            ToNumber => write!(0, MiraAny::Number(operations::to_number(&reg!(1))?)),
+            ToString => write!(0, MiraAny::String(operations::to_string(&reg!(1))?)),
             IsBoolean | IsNumber | IsString | IsRecord | IsArray => {
-                let value = reg(1);
+                let value = reg!(1);
                 operations::assert_initialized(&value)?;
                 let result = match opcode {
                     IsBoolean => matches!(value, MiraAny::Boolean(_)),
@@ -583,7 +588,7 @@ impl Runtime<'_> {
                     IsArray => matches!(value, MiraAny::Array(_) | MiraAny::RustArray(_)),
                     _ => unreachable!(),
                 };
-                write(0, MiraAny::Boolean(result));
+                write!(0, MiraAny::Boolean(result));
             }
             Pick | Omit => {
                 let count = params[2] as usize;
@@ -592,18 +597,18 @@ impl Runtime<'_> {
                     .map(|index| operations::to_string(&self.program.constants[*index as usize]))
                     .collect();
                 let value = if opcode == Pick {
-                    operations::pick(&reg(1), &keys?)?
+                    operations::pick(&reg!(1), &keys?)?
                 } else {
-                    operations::omit(&reg(1), &keys?)?
+                    operations::omit(&reg!(1), &keys?)?
                 };
-                write(0, value);
+                write!(0, value);
             }
             Call | CallDyn => {
                 let target = if opcode == Call {
                     let key = self.constant_key(params[1] as usize)?;
                     self.get_global(&key)?
                 } else {
-                    reg(1)
+                    reg!(1)
                 };
                 let arg_count = params[2] as usize;
                 let raw_args = &params[3..3 + arg_count];
@@ -612,72 +617,72 @@ impl Runtime<'_> {
                 let spreads =
                     &params[spread_count_index + 1..spread_count_index + 1 + spread_count];
                 let result = self.call_registers(&target, raw_args, spreads, frame)?;
-                write(0, result);
+                write!(0, result);
             }
             Has | HasDyn | HasIndex => {
                 let key = match opcode {
                     Has => self.program.constants[params[2] as usize].clone(),
-                    HasDyn => reg(2),
+                    HasDyn => reg!(2),
                     HasIndex => MiraAny::Number(params[2] as f64),
                     _ => unreachable!(),
                 };
-                write(0, MiraAny::Boolean(self.has_value(&reg(1), &key)?));
+                write!(0, MiraAny::Boolean(self.has_value(&reg!(1), &key)?));
             }
             Get | GetDyn | GetIndex => {
                 let key = match opcode {
                     Get => self.program.constants[params[2] as usize].clone(),
-                    GetDyn => reg(2),
+                    GetDyn => reg!(2),
                     GetIndex => MiraAny::Number(params[2] as f64),
                     _ => unreachable!(),
                 };
-                write(0, self.get_value(&reg(1), &key)?);
+                write!(0, self.get_value(&reg!(1), &key)?);
             }
             Set | SetDyn | SetIndex => {
                 let key = match opcode {
                     Set => self.program.constants[params[2] as usize].clone(),
-                    SetDyn => reg(2),
+                    SetDyn => reg!(2),
                     SetIndex => MiraAny::Number(params[2] as f64),
                     _ => unreachable!(),
                 };
-                operations::set(&reg(1), &key, reg(0))?;
+                operations::set(&reg!(1), &key, reg!(0))?;
             }
-            Slice => write(
+            Slice => write!(
                 0,
                 operations::slice(
-                    &reg(1),
+                    &reg!(1),
                     Some(&MiraAny::Number(params[2] as f64)),
                     Some(&MiraAny::Number(params[3] as f64)),
                     false,
                 )?,
             ),
-            SliceStart => write(
+            SliceStart => write!(
                 0,
                 operations::slice(
-                    &reg(1),
+                    &reg!(1),
                     None,
                     Some(&MiraAny::Number(params[2] as f64)),
                     false,
                 )?,
             ),
-            SliceEnd => write(
+            SliceEnd => write!(
                 0,
                 operations::slice(
-                    &reg(1),
+                    &reg!(1),
                     Some(&MiraAny::Number(params[2] as f64)),
                     None,
                     false,
                 )?,
             ),
-            SliceDyn | SliceExclusiveDyn => write(
+            SliceDyn | SliceExclusiveDyn => write!(
                 0,
                 operations::slice(
-                    &reg(1),
-                    Some(&reg(2)),
-                    Some(&reg(3)),
+                    &reg!(1),
+                    Some(&reg!(2)),
+                    Some(&reg!(3)),
                     opcode == SliceExclusiveDyn,
                 )?,
             ),
-            Length => write(0, MiraAny::Number(operations::length(&reg(1))? as f64)),
+            Length => write!(0, MiraAny::Number(operations::length(&reg!(1))? as f64)),
             _ => return Err(MiraError::runtime(format!("unimplemented opcode {opcode}"))),
         }
         Ok(Flow::Continue)
@@ -691,7 +696,7 @@ impl Runtime<'_> {
     }
 
     fn call_registers(
-        &self,
+        &mut self,
         target: &MiraAny,
         registers: &[i64],
         spreads: &[i64],
@@ -770,25 +775,23 @@ impl Runtime<'_> {
         operations::get_value(value, key)
     }
 
-    fn call(&self, function: &MiraAny, args: &[MiraAny]) -> Result<MiraAny> {
+    fn call(&mut self, function: &MiraAny, args: &[MiraAny]) -> Result<MiraAny> {
         self.checkpoint_now()?;
-        if self.call_depth.get() >= self.options.max_call_depth {
+        if self.call_depth >= self.options.max_call_depth {
             return Err(MiraError::MaxCallDepth {
                 max: self.options.max_call_depth,
             });
         }
-        self.call_depth.set(self.call_depth.get() + 1);
+        self.call_depth += 1;
         let result = match function {
             MiraAny::Function(MiraFunction::Native(function)) => {
-                self.call_stack
-                    .borrow_mut()
-                    .push(Some(function.shared_name()));
+                self.call_stack.push(Some(function.shared_name()));
                 let mut context = MiraCallContext { runtime: self };
                 let result = function.call(&mut context, args).and_then(|value| {
                     context.runtime.checkpoint()?;
                     Ok(value)
                 });
-                self.call_stack.borrow_mut().pop();
+                self.call_stack.pop();
                 result
             }
             MiraAny::Function(MiraFunction::Script {
@@ -801,21 +804,21 @@ impl Runtime<'_> {
                     Err(MiraError::ExecutionEnded)
                 } else {
                     let definition = self.program.functions[*function].clone();
-                    self.call_stack.borrow_mut().push(name.clone());
+                    self.call_stack.push(name.clone());
                     let result = self.call_script(&definition, *frame, args);
-                    self.call_stack.borrow_mut().pop();
+                    self.call_stack.pop();
                     result
                 }
             }
             MiraAny::Extern(value) if value.is_callable()? => {
                 let label = Rc::from(format!("<extern {}>", value.tag()?));
-                self.call_stack.borrow_mut().push(Some(label));
+                self.call_stack.push(Some(label));
                 let mut context = MiraCallContext { runtime: self };
                 let result = value.call(&mut context, args).and_then(|value| {
                     context.runtime.checkpoint()?;
                     Ok(value)
                 });
-                self.call_stack.borrow_mut().pop();
+                self.call_stack.pop();
                 result
             }
             _ => Err(MiraError::runtime(format!(
@@ -823,7 +826,7 @@ impl Runtime<'_> {
                 operations::display(function)
             ))),
         };
-        self.call_depth.set(self.call_depth.get() - 1);
+        self.call_depth -= 1;
         result.map(|value| {
             if matches!(value, MiraAny::Uninitialized) {
                 MiraAny::Nil
@@ -834,7 +837,7 @@ impl Runtime<'_> {
     }
 
     fn call_script(
-        &self,
+        &mut self,
         function: &FunctionDef,
         parent: usize,
         args: &[MiraAny],
@@ -876,14 +879,13 @@ impl Runtime<'_> {
         }
     }
 
-    fn checkpoint_now(&self) -> Result<()> {
-        let remaining = self.checkpoint_remaining.get();
+    fn checkpoint_now(&mut self) -> Result<()> {
+        let remaining = self.checkpoint_remaining;
         if remaining > 1 {
-            self.checkpoint_remaining.set(remaining - 1);
+            self.checkpoint_remaining = remaining - 1;
             return Ok(());
         }
-        self.checkpoint_remaining
-            .set(self.options.checkpoint_interval.max(1));
+        self.checkpoint_remaining = self.options.checkpoint_interval.max(1);
         if self.started.elapsed() >= self.options.timeout {
             return Err(MiraError::Timeout);
         }
@@ -892,7 +894,7 @@ impl Runtime<'_> {
 }
 
 impl NativeRuntime for Runtime<'_> {
-    fn call_value(&self, function: &MiraAny, args: &[MiraAny]) -> Result<MiraAny> {
+    fn call_value(&mut self, function: &MiraAny, args: &[MiraAny]) -> Result<MiraAny> {
         self.call(function, args)
     }
 
@@ -904,7 +906,7 @@ impl NativeRuntime for Runtime<'_> {
         self.options
     }
 
-    fn checkpoint(&self) -> Result<()> {
+    fn checkpoint(&mut self) -> Result<()> {
         self.checkpoint_now()
     }
 }
