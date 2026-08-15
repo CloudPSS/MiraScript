@@ -383,6 +383,49 @@ jobs:
           path: crates/python/dist/*
           if-no-files-found: error
 
+  test-rust:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - ubuntu-24.04-arm
+          - windows-latest
+          - windows-11-arm
+          - macos-latest
+          - macos-15-intel
+        toolchain:
+          - stable
+          - nightly
+    runs-on: ${{ matrix.os }}
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Configure Git
+        run: |
+          git config --global core.autocrlf input
+
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install
+        uses: ./.github/actions/install
+        with:
+          rust-targets: ''
+          rust-toolchain: ${{ matrix.toolchain }}
+          skip-pnpm-install: true
+          tools: cargo-llvm-cov
+
+      - name: Run tests
+        run: cargo llvm-cov --workspace --locked --lcov --output-path rust-lcov.info
+
+      - name: Send Rust coverage report
+        shell: bash
+        run: |
+          bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r rust-lcov.info --partial --project-token '${{ secrets.CODACY_PROJECT_TOKEN }}'
+
   test-node:
     needs: merge
     strategy:
@@ -519,8 +562,8 @@ jobs:
           bash <(curl -Ls https://coverage.codacy.com/get.sh) report --partial --project-token '${{ secrets.CODACY_PROJECT_TOKEN }}'
 
   finalize-coverage:
-    if: ${{ !cancelled() && (needs.test-python.result == 'success' || needs.test-python.result == 'failure') && (needs.test-node.result == 'success' || needs.test-node.result == 'failure') }}
-    needs: [test-python, test-node]
+    if: ${{ !cancelled() && (needs.test-rust.result == 'success' || needs.test-rust.result == 'failure') && (needs.test-python.result == 'success' || needs.test-python.result == 'failure') && (needs.test-node.result == 'success' || needs.test-node.result == 'failure') }}
+    needs: [test-rust, test-python, test-node]
 
     runs-on: ubuntu-slim
 

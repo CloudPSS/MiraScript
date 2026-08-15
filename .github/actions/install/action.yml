@@ -20,6 +20,10 @@ inputs:
   node-version:
     description: 'The Node.js version to use. Default to the version specified in .nvmrc or package.json.'
     required: false
+  rust-toolchain:
+    description: 'The Rust toolchain to use. Default to stable.'
+    required: false
+    default: 'stable'
   rust-targets:
     description: 'Comma-separated list of Rust targets to install. Default to false, will skip Rust setup.'
     required: false
@@ -38,9 +42,10 @@ runs:
         npm config set -L project '//packages.aliyun.com/60c179fc44816b8ed233a8bb/npm/npm-registry/:_authToken' '${{ inputs.ALIYUN_NPM_TOKEN }}'
 
     - name: Setup Rust
-      uses: dtolnay/rust-toolchain@stable
+      uses: dtolnay/rust-toolchain@master
       if: ${{ inputs.rust-targets != 'false' }}
       with:
+        toolchain: ${{ inputs.rust-toolchain }}
         targets: ${{ inputs.rust-targets }}
 
     - name: Setup tools
