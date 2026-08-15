@@ -1,4 +1,3 @@
-import fs from 'node:fs/promises';
 import { builtinModules } from 'node:module';
 import esbuild from 'esbuild';
 import packageJson from './package.json' with { type: 'json' };
