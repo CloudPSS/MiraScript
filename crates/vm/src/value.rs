@@ -121,13 +121,9 @@ pub trait RecordObject {
     fn get(&self, key: &str) -> Result<Option<MiraAny>>;
 }
 
-struct SharedRecord<T> {
-    value: MiraShared<T>,
-}
-
-impl<T: MiraRecord> RecordObject for SharedRecord<T> {
+impl<T: MiraRecord> RecordObject for MiraShared<T> {
     fn identity(&self) -> usize {
-        self.value.identity()
+        self.identity()
     }
 
     fn tag(&self) -> &'static str {
@@ -135,8 +131,7 @@ impl<T: MiraRecord> RecordObject for SharedRecord<T> {
     }
 
     fn keys(&self) -> Result<Vec<String>> {
-        self.value
-            .inner
+        self.inner
             .try_borrow()
             .map(|value| value.keys())
             .map_err(|_| MiraError::BorrowConflict {
@@ -146,8 +141,7 @@ impl<T: MiraRecord> RecordObject for SharedRecord<T> {
     }
 
     fn get(&self, key: &str) -> Result<Option<MiraAny>> {
-        self.value
-            .inner
+        self.inner
             .try_borrow()
             .map_err(|_| MiraError::BorrowConflict {
                 operation: "read",
@@ -165,13 +159,9 @@ pub trait ArrayObject {
     fn get(&self, index: usize) -> Result<Option<MiraAny>>;
 }
 
-struct SharedArray<T> {
-    value: MiraShared<T>,
-}
-
-impl<T: MiraArray> ArrayObject for SharedArray<T> {
+impl<T: MiraArray> ArrayObject for MiraShared<T> {
     fn identity(&self) -> usize {
-        self.value.identity()
+        self.identity()
     }
 
     fn tag(&self) -> &'static str {
@@ -179,8 +169,7 @@ impl<T: MiraArray> ArrayObject for SharedArray<T> {
     }
 
     fn len(&self) -> Result<usize> {
-        self.value
-            .inner
+        self.inner
             .try_borrow()
             .map(|value| value.len())
             .map_err(|_| MiraError::BorrowConflict {
@@ -190,8 +179,7 @@ impl<T: MiraArray> ArrayObject for SharedArray<T> {
     }
 
     fn get(&self, index: usize) -> Result<Option<MiraAny>> {
-        self.value
-            .inner
+        self.inner
             .try_borrow()
             .map_err(|_| MiraError::BorrowConflict {
                 operation: "read",
@@ -201,7 +189,8 @@ impl<T: MiraArray> ArrayObject for SharedArray<T> {
     }
 }
 
-trait ExternObject {
+#[doc(hidden)]
+pub trait ExternObject {
     fn identity(&self) -> usize;
     fn tag(&self) -> Result<String>;
     fn keys(&self) -> Result<Vec<String>>;
@@ -215,13 +204,9 @@ trait ExternObject {
     fn iterate(&self) -> Result<Option<Vec<MiraAny>>>;
 }
 
-struct SharedExtern<T> {
-    value: MiraShared<T>,
-}
-
-impl<T: MiraExtern> ExternObject for SharedExtern<T> {
+impl<T: MiraExtern> ExternObject for MiraShared<T> {
     fn identity(&self) -> usize {
-        self.value.identity()
+        self.identity()
     }
 
     fn tag(&self) -> Result<String> {
@@ -265,10 +250,9 @@ impl<T: MiraExtern> ExternObject for SharedExtern<T> {
     }
 }
 
-impl<T: MiraExtern> SharedExtern<T> {
+impl<T: MiraExtern> MiraShared<T> {
     fn try_read<R>(&self, operation: &'static str, f: impl FnOnce(&T) -> Result<R>) -> Result<R> {
         let value = self
-            .value
             .inner
             .try_borrow()
             .map_err(|_| MiraError::BorrowConflict {
@@ -283,79 +267,14 @@ impl<T: MiraExtern> SharedExtern<T> {
         operation: &'static str,
         f: impl FnOnce(&mut T) -> Result<R>,
     ) -> Result<R> {
-        let mut value =
-            self.value
-                .inner
-                .try_borrow_mut()
-                .map_err(|_| MiraError::BorrowConflict {
-                    operation,
-                    tag: type_name::<T>().into(),
-                })?;
+        let mut value = self
+            .inner
+            .try_borrow_mut()
+            .map_err(|_| MiraError::BorrowConflict {
+                operation,
+                tag: type_name::<T>().into(),
+            })?;
         f(&mut value)
-    }
-}
-
-#[derive(Clone)]
-pub struct MiraExternValue {
-    inner: Rc<dyn ExternObject>,
-}
-
-impl MiraExternValue {
-    pub fn identity(&self) -> usize {
-        self.inner.identity()
-    }
-
-    pub fn tag(&self) -> Result<String> {
-        self.inner.tag()
-    }
-
-    pub fn keys(&self) -> Result<Vec<String>> {
-        self.inner.keys()
-    }
-
-    pub fn has(&self, key: &str) -> Result<bool> {
-        self.inner.has(key)
-    }
-
-    pub fn get(&self, key: &str) -> Result<Option<MiraAny>> {
-        self.inner.get(key)
-    }
-
-    pub fn set(&self, key: &str, value: MiraAny) -> Result<bool> {
-        self.inner.set(key, value)
-    }
-
-    pub fn is_callable(&self) -> Result<bool> {
-        self.inner.is_callable()
-    }
-
-    pub(crate) fn call(
-        &self,
-        context: &mut MiraCallContext<'_>,
-        args: &[MiraAny],
-    ) -> Result<MiraAny> {
-        self.inner.call(context, args)
-    }
-
-    pub fn array_len(&self) -> Result<Option<usize>> {
-        self.inner.array_len()
-    }
-
-    pub fn get_index(&self, index: usize) -> Result<Option<MiraAny>> {
-        self.inner.get_index(index)
-    }
-
-    pub fn iterate(&self) -> Result<Option<Vec<MiraAny>>> {
-        self.inner.iterate()
-    }
-}
-
-impl fmt::Debug for MiraExternValue {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("MiraExternValue")
-            .field("identity", &self.identity())
-            .field("tag", &self.tag().unwrap_or_else(|_| "<borrowed>".into()))
-            .finish()
     }
 }
 
@@ -572,7 +491,7 @@ pub enum MiraAny {
     Record(IndexMap<String, MiraAny>),
     Function(MiraFunction),
     Module(MiraModule),
-    Extern(MiraExternValue),
+    Extern(Rc<dyn ExternObject>),
     #[doc(hidden)]
     RustRecord(Rc<dyn RecordObject>),
     #[doc(hidden)]
@@ -599,7 +518,7 @@ impl MiraAny {
     }
 
     pub fn from_record_shared<T: MiraRecord>(value: MiraShared<T>) -> Self {
-        Self::RustRecord(Rc::new(SharedRecord { value }))
+        Self::RustRecord(Rc::new(value))
     }
 
     pub fn from_array<T: MiraArray>(value: T) -> Self {
@@ -607,7 +526,7 @@ impl MiraAny {
     }
 
     pub fn from_array_shared<T: MiraArray>(value: MiraShared<T>) -> Self {
-        Self::RustArray(Rc::new(SharedArray { value }))
+        Self::RustArray(Rc::new(value))
     }
 
     pub fn from_extern<T: MiraExtern>(value: T) -> Self {
@@ -615,9 +534,7 @@ impl MiraAny {
     }
 
     pub fn from_extern_shared<T: MiraExtern>(value: MiraShared<T>) -> Self {
-        Self::Extern(MiraExternValue {
-            inner: Rc::new(SharedExtern { value }),
-        })
+        Self::Extern(Rc::new(value))
     }
 
     pub fn is_initialized(&self) -> bool {
@@ -755,7 +672,11 @@ impl fmt::Debug for MiraAny {
             Self::Record(value) => f.debug_tuple("Record").field(value).finish(),
             Self::Function(value) => f.debug_tuple("Function").field(value).finish(),
             Self::Module(value) => f.debug_tuple("Module").field(value).finish(),
-            Self::Extern(value) => f.debug_tuple("Extern").field(value).finish(),
+            Self::Extern(value) => f
+                .debug_struct("Extern")
+                .field("tag", &value.tag().unwrap_or_else(|_| "<borrowed>".into()))
+                .field("identity", &value.identity())
+                .finish(),
             Self::RustRecord(value) => f
                 .debug_struct("RustRecord")
                 .field("tag", &value.tag())

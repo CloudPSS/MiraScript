@@ -1,4 +1,4 @@
-use mira_vm::{MiraAny, MiraContext, MiraExtern, MiraRecord, MiraShared, compile};
+use mira_vm::{MiraContext, MiraExtern, MiraRecord, MiraShared, compile};
 
 #[derive(Clone, MiraRecord)]
 struct User {
@@ -21,8 +21,8 @@ fn main() -> mira_vm::Result<()> {
     });
 
     let mut context = MiraContext::new();
-    context.insert("user", MiraAny::from(user.clone()));
-    context.insert("counter", MiraAny::from(counter.clone()));
+    context.insert("user", user.clone());
+    context.insert("counter", counter.clone());
 
     let script = compile("counter.value += 1; `Hello, $(user.name)! Count: $(counter.value)`")?;
     println!("{:?}", script.run(&context)?);

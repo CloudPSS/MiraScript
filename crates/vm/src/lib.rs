@@ -15,8 +15,8 @@ pub use context::MiraContext;
 pub use error::{MiraError, Result};
 pub use mira_vm_derive::{MiraArray, MiraExtern, MiraRecord};
 pub use value::{
-    MiraAny, MiraArray, MiraCallContext, MiraExtern, MiraExternValue, MiraFunction, MiraModule,
-    MiraNativeFn, MiraRecord, MiraShared,
+    MiraAny, MiraArray, MiraCallContext, MiraExtern, MiraFunction, MiraModule, MiraNativeFn,
+    MiraRecord, MiraShared,
 };
 
 #[doc(hidden)]
