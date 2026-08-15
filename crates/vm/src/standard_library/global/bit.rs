@@ -1,0 +1,32 @@
+use crate::standard_library::{insert_native, number};
+use crate::{MiraAny, MiraContext};
+
+pub(super) fn to_u32(value: f64) -> u32 {
+    if !value.is_finite() || value == 0.0 {
+        return 0;
+    }
+    value.trunc().rem_euclid(4_294_967_296.0) as u32
+}
+
+pub(super) fn install(context: &mut MiraContext) {
+    macro_rules! binary {
+        ($name:literal, $operation:expr) => {
+            insert_native(context, $name, |_, args| {
+                let left = to_u32(number(args, 0, "x")?);
+                let right = to_u32(number(args, 1, "y")?);
+                Ok(MiraAny::Number(($operation)(left, right) as f64))
+            });
+        };
+    }
+    binary!("b_and", |a: u32, b: u32| (a & b) as i32);
+    binary!("b_or", |a: u32, b: u32| (a | b) as i32);
+    binary!("b_xor", |a: u32, b: u32| (a ^ b) as i32);
+    binary!("shl", |a: u32, b: u32| a.wrapping_shl(b & 31) as i32);
+    binary!("sar", |a: u32, b: u32| (a as i32) >> (b & 31));
+    binary!("shr", |a: u32, b: u32| a >> (b & 31));
+    insert_native(context, "b_not", |_, args| {
+        Ok(MiraAny::Number(
+            (!to_u32(number(args, 0, "x")?) as i32) as f64,
+        ))
+    });
+}

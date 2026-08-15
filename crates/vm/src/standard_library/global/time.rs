@@ -1,8 +1,10 @@
+//! Time-related global functions.
+
 use indexmap::IndexMap;
 
 use crate::{MiraAny, MiraContext, MiraError, Result, operations};
 
-use super::insert_native;
+use crate::standard_library::insert_native;
 
 pub(super) fn install(context: &mut MiraContext) {
     insert_native(context, "to_timestamp", |call, args| {

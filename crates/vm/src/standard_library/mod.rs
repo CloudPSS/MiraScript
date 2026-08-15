@@ -1,17 +1,11 @@
-mod math;
-mod matrix;
-mod sequence;
-mod text;
-mod time;
+mod global;
+mod module;
 
 use crate::{MiraAny, MiraCallContext, MiraContext, MiraError, MiraNativeFn, Result, operations};
 
 pub(crate) fn install(context: &mut MiraContext) {
-    math::install(context);
-    sequence::install(context);
-    text::install(context);
-    time::install(context);
-    context.insert("matrix", matrix::module());
+    global::install(context);
+    context.insert("matrix", module::matrix::module());
 }
 
 fn native(
