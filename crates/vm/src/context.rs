@@ -30,7 +30,7 @@ impl MiraContext {
     /// # Examples
     ///
     /// ```
-    /// use mira_vm::{MiraAny, MiraContext};
+    /// use mirascript_vm::{MiraAny, MiraContext};
     ///
     /// let mut context = MiraContext::empty();
     /// assert_eq!(context.insert("answer", 42), None);

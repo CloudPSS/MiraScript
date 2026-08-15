@@ -1,6 +1,6 @@
 use std::pin::Pin;
 
-use mira_core::{
+use mirascript_core::{
     Compiler, Config, Script, SourceDiagnostic, diagnostic::encode_diagnostics, lexer::Token,
 };
 use wasm_bindgen::prelude::*;
@@ -73,7 +73,7 @@ impl MonacoCompiler {
         let Some(script) = &self.script else {
             return None;
         };
-        Some(mira_core::format(script, &Default::default()))
+        Some(mirascript_core::format(script, &Default::default()))
     }
 
     #[wasm_bindgen]

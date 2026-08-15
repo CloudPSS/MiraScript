@@ -9,8 +9,8 @@ mod tests;
 use std::rc::Rc;
 
 use indexmap::IndexMap;
-use mira_core::OpCode;
-use mira_core::prelude::*;
+use mirascript_core::OpCode;
+use mirascript_core::prelude::*;
 
 use crate::{MiraAny, MiraError, Result};
 

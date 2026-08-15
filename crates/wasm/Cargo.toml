@@ -1,8 +1,12 @@
 [package]
-name = "mira-wasm"
+name = "mirascript-wasm"
 description = "MiraScript compiler for WebAssembly"
-version = "0.1.87"
-edition = "2024"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
 publish = false
 
 [package.metadata.wasm-pack.profile.release]
@@ -32,14 +36,14 @@ crate-type = ["cdylib", "rlib"]
 [features]
 default = ["console_error", "lsp"]
 console_error = ["dep:console_error_panic_hook"]
-lsp = ["mira-core/formatter"]
+lsp = ["mirascript-core/formatter"]
 
 # [dev-dependencies]
 # wasm-bindgen-test = "0.3.34"
 
 [dependencies]
 wasm-bindgen = "0.2"
-mira-core = { path = "../core", features = ["wasm"] }
+mirascript-core = { workspace = true, features = ["wasm"] }
 
 # The `console_error_panic_hook` crate provides better debugging of panics by
 # logging them with `console.error`. This is great for development, but requires

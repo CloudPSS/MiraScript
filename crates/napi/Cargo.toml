@@ -1,7 +1,12 @@
 [package]
-name = "mira-napi"
-version = "0.1.87"
-edition = "2024"
+name = "mirascript-napi"
+description = "Node.js native bindings for the MiraScript compiler"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
 publish = false
 
 [lib]
@@ -9,12 +14,12 @@ crate-type = ["cdylib"]
 
 [features]
 default = ["mimalloc"]
-mimalloc = ["mira-core/mimalloc"]
+mimalloc = ["mirascript-core/mimalloc"]
 
 [dependencies]
 napi = { version = "3", features = ["serde-json"] }
 napi-derive = "3"
-mira-core = { path = "../core", features = ["serde"] }
+mirascript-core = { workspace = true, features = ["serde"] }
 
 [build-dependencies]
 napi-build = "2"

@@ -1,6 +1,6 @@
 use std::mem::take;
 
-use mira_core::{Compiler, Config};
+use mirascript_core::{Compiler, Config};
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]

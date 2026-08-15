@@ -1,11 +1,20 @@
 [package]
-name = "mira-core"
-version = "0.1.87"
-edition = "2024"
-publish = false
+name = "mirascript-core"
+description = "Compiler and bytecode definitions for the MiraScript language"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation = "https://docs.rs/mirascript-core"
+readme = "README.md"
+keywords = ["mirascript", "compiler", "parser", "scripting", "language"]
+categories = ["compilers", "parser-implementations"]
+publish = ["crates-io"]
 
 [lib]
-name = "mira_core"
+name = "mirascript_core"
 
 [[bench]]
 name = "main"
@@ -21,7 +30,7 @@ mimalloc = ["dep:mimalloc"]
 
 [dev-dependencies]
 divan = "0.1.21"
-mira-core = { path = ".", features = ["mimalloc"] }
+mirascript-core = { path = ".", features = ["mimalloc"] }
 
 [dependencies]
 unicode-ident = "1"

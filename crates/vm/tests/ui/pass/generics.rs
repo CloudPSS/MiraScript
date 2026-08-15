@@ -1,7 +1,7 @@
-use mira_vm::{MiraAny, MiraArray, MiraExtern, MiraRecord, MiraShared};
+use mirascript_vm::{MiraAny, MiraArray, MiraExtern, MiraRecord, MiraShared};
 
 #[derive(Clone, MiraRecord)]
-#[mira(crate = "mira_vm")]
+#[mira(crate = "mirascript_vm")]
 struct Record<T> {
     #[mira(rename = "value")]
     item: T,

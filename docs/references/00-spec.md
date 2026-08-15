@@ -8,10 +8,11 @@ toc_max_heading_level: 6
 
 MiraScript 的工具链包括以下几个部分：
 
-- `mira-core`：编译器，使用 rust 编写，负责将 MiraScript 源代码编译为中间代码，并进行语法检查。
-- `mira-js`：虚拟机及标准库实现，使用 TypeScript 编写，负责执行中间代码。
-- `mira-py`：虚拟机及标准库实现，使用 Python 编写，负责执行中间代码。
-- `mira-lsp`：语言服务器，使用 TypeScript 编写，基于 `mira-core` 和 `mira-js`，提供代码补全、语法检查、跳转定义等功能。
+- `mirascript-core`：编译器，使用 rust 编写，负责将 MiraScript 源代码编译为中间代码，并进行语法检查。
+- `mirascript-rs`：虚拟机及标准库实现，使用 Rust 编写，负责执行中间代码。
+- `mirascript-js`：虚拟机及标准库实现，使用 TypeScript 编写，负责执行中间代码。
+- `mirascript-py`：虚拟机及标准库实现，使用 Python 编写，负责执行中间代码。
+- `mirascript-lsp`：语言服务器，使用 TypeScript 编写，基于 `mirascript-core` 和 `mirascript-js`，提供代码补全、语法检查、跳转定义等功能。
 
 ## 数据类型
 

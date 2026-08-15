@@ -1,4 +1,4 @@
-use mira_core::{DiagnosticCode, Keyword, prelude::*};
+use mirascript_core::{DiagnosticCode, Keyword, prelude::*};
 
 use wasm_bindgen::prelude::*;
 

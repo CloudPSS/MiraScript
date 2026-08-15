@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use mira_core::{
+use mirascript_core::{
     config::{Config as ConfigData, DiagnosticPositionEncoding, InputMode},
     prelude::*,
     Compiler, DiagnosticCode, OpCode,

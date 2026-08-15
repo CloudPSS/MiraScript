@@ -34,15 +34,16 @@ MiraScript 是 CloudPSS 维护的表达式优先脚本语言项目。当前仓�
 
 ## crates 一览
 
-| Crate 名称       | 目录               | 说明                                  |
-| ---------------- | ------------------ | ------------------------------------- |
-| `mira-core`      | `crates/core`      | 语言核心实现，包含词法/语法/执行能力  |
-| `mira-vm`        | `crates/vm`        | 原生 Rust 虚拟机、标准库与宿主值桥接  |
-| `mira-vm-derive` | `crates/vm-derive` | Rust record、array 与 extern 派生宏   |
-| `mira-constants` | `crates/constants` | Rust 侧常量导出，供上层包生成常量数据 |
-| `mira-napi`      | `crates/napi`      | Node.js 原生绑定（N-API）             |
-| `mira-wasm`      | `crates/wasm`      | WebAssembly 绑定                      |
-| `mira-python`    | `crates/python`    | Python 绑定                           |
+| Crate 名称             | 目录                | 说明                                  |
+| ---------------------- | ------------------- | ------------------------------------- |
+| `mirascript`           | `crates/mirascript` | 面向 Rust 用户的统一编译器与 VM 入口  |
+| `mirascript-core`      | `crates/core`       | 词法、语法、编译器与字节码定义        |
+| `mirascript-vm`        | `crates/vm`         | 原生 Rust 虚拟机、标准库与宿主值桥接  |
+| `mirascript-vm-derive` | `crates/vm-derive`  | Rust record、array 与 extern 派生宏   |
+| `mirascript-constants` | `crates/constants`  | Rust 侧常量导出，供上层包生成常量数据 |
+| `mirascript-napi`      | `crates/napi`       | Node.js 原生绑定（N-API）             |
+| `mirascript-wasm`      | `crates/wasm`       | WebAssembly 绑定                      |
+| `mirascript-python`    | `crates/python`     | Python 绑定                           |
 
 ## packages 一览
 

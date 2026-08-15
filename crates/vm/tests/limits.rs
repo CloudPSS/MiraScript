@@ -2,7 +2,7 @@ use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 use std::time::Duration;
 
-use mira_vm::{
+use mirascript_vm::{
     MiraAny, MiraContext, MiraError, MiraNativeFn, MiraRecord, RunOptions, RuntimeProviders,
     compile,
 };
@@ -38,7 +38,7 @@ impl MiraRecord for DropProbe {
         Vec::new()
     }
 
-    fn get(&self, _key: &str) -> mira_vm::Result<Option<MiraAny>> {
+    fn get(&self, _key: &str) -> mirascript_vm::Result<Option<MiraAny>> {
         Ok(None)
     }
 }

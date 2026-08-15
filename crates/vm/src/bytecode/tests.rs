@@ -26,7 +26,8 @@ fn rejects_truncated_header() {
 
 #[test]
 fn decodes_compiler_output() {
-    let (chunk, diagnostics) = mira_core::Compiler::compile("1 + 2", &mira_core::Config::new());
+    let (chunk, diagnostics) =
+        mirascript_core::Compiler::compile("1 + 2", &mirascript_core::Config::new());
     assert!(diagnostics.is_empty());
     Program::decode(&chunk.unwrap()).unwrap();
 }
@@ -131,7 +132,8 @@ fn loop_frame_reuse_excludes_captured_environments() {
     }
 
     let decode = |source: &str| {
-        let (chunk, diagnostics) = mira_core::Compiler::compile(source, &mira_core::Config::new());
+        let (chunk, diagnostics) =
+            mirascript_core::Compiler::compile(source, &mirascript_core::Config::new());
         assert!(diagnostics.is_empty());
         Program::decode(&chunk.unwrap()).unwrap()
     };
@@ -146,9 +148,9 @@ fn loop_frame_reuse_excludes_captured_environments() {
 
 #[test]
 fn static_calls_with_small_fixed_arity_are_quickened() {
-    let (chunk, diagnostics) = mira_core::Compiler::compile(
+    let (chunk, diagnostics) = mirascript_core::Compiler::compile(
         "f(); f(1); f(1, 2); f(1, 2, 3); f(1, 2, 3, 4); nil",
-        &mira_core::Config::new(),
+        &mirascript_core::Config::new(),
     );
     assert!(diagnostics.is_empty());
     let program = Program::decode(&chunk.unwrap()).unwrap();
@@ -170,9 +172,9 @@ fn static_calls_with_small_fixed_arity_are_quickened() {
 
 #[test]
 fn arithmetic_uses_numeric_operations() {
-    let (chunk, diagnostics) = mira_core::Compiler::compile(
+    let (chunk, diagnostics) = mirascript_core::Compiler::compile(
         "[left + right, left - right, left * right, left / right, left % right, left ^ right]",
-        &mira_core::Config::new(),
+        &mirascript_core::Config::new(),
     );
     assert!(diagnostics.is_empty());
     let program = Program::decode(&chunk.unwrap()).unwrap();
@@ -201,7 +203,7 @@ fn arithmetic_uses_numeric_operations() {
 #[test]
 fn static_calls_borrow_adjacent_global_arguments() {
     let (chunk, diagnostics) =
-        mira_core::Compiler::compile("function(argument)", &mira_core::Config::new());
+        mirascript_core::Compiler::compile("function(argument)", &mirascript_core::Config::new());
     assert!(diagnostics.is_empty());
     let program = Program::decode(&chunk.unwrap()).unwrap();
     assert!(program.root.body.iter().any(|instruction| matches!(

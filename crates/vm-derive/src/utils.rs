@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use proc_macro_crate::{FoundCrate, crate_name};
+use quote::format_ident;
 use syn::{Attribute, Error, Field, Generics, LitStr, Path, Result, Type, parse_quote};
 
 pub struct ContainerOptions {
@@ -10,10 +12,29 @@ pub struct ContainerOptions {
 impl Default for ContainerOptions {
     fn default() -> Self {
         Self {
-            crate_path: parse_quote!(::mira_vm),
+            crate_path: default_crate_path(),
             tag: None,
         }
     }
+}
+
+fn default_crate_path() -> Path {
+    for (package, default_name) in [
+        ("mirascript", "mirascript"),
+        ("mirascript-vm", "mirascript_vm"),
+    ] {
+        let found = match crate_name(package) {
+            Ok(found) => found,
+            Err(_) => continue,
+        };
+        let name = match found {
+            FoundCrate::Itself => default_name.to_owned(),
+            FoundCrate::Name(name) => name,
+        };
+        let ident = format_ident!("{name}");
+        return parse_quote!(::#ident);
+    }
+    parse_quote!(::mirascript_vm)
 }
 
 pub fn container_options(attrs: &[Attribute], allow_tag: bool) -> Result<ContainerOptions> {

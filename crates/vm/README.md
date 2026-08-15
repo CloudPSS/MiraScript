@@ -1,23 +1,21 @@
-# mira-vm
+# mirascript-vm
 
-`mira-vm` is the native, single-threaded Rust runtime for MiraScript. It uses
-`mira-core` to compile source, validates the resulting bytecode, and executes it
+`mirascript-vm` is the native, single-threaded Rust runtime for MiraScript. It uses
+`mirascript-core` to compile source, validates the resulting bytecode, and executes it
 without a JavaScript or Python host. `MiraContext::new()` installs the same public
 standard-library surface as the TypeScript VM.
-
-The crate currently remains `publish = false` while its public API is reviewed.
 
 ## Quick start
 
 ```rust
-use mira_vm::{MiraAny, MiraContext, MiraRecord, compile};
+use mirascript_vm::{MiraAny, MiraContext, MiraRecord, compile};
 
 #[derive(Clone, MiraRecord)]
 struct Foo {
     bar: u8,
 }
 
-fn run() -> mira_vm::Result<()> {
+fn run() -> mirascript_vm::Result<()> {
     let mut context = MiraContext::new();
     context.insert("foo", MiraAny::from(Foo { bar: 42 }));
 
@@ -27,7 +25,7 @@ fn run() -> mira_vm::Result<()> {
 }
 
 run()?;
-# Ok::<(), mira_vm::MiraError>(())
+# Ok::<(), mirascript_vm::MiraError>(())
 ```
 
 `compile` returns a validated `MiraScript` that can be reused with different
@@ -50,7 +48,7 @@ process-wide state:
 ```rust
 use std::rc::Rc;
 
-use mira_vm::{MiraAny, MiraContext, RunOptions, RuntimeProviders, compile};
+use mirascript_vm::{MiraAny, MiraContext, RunOptions, RuntimeProviders, compile};
 
 struct Deterministic;
 
@@ -69,7 +67,7 @@ assert_eq!(
     script.run_with(&MiraContext::new(), &options)?,
     MiraAny::Number(0.25),
 );
-# Ok::<(), mira_vm::MiraError>(())
+# Ok::<(), mirascript_vm::MiraError>(())
 ```
 
 Timeout checks are cooperative. Loop backedges, function calls, and returns from
@@ -91,13 +89,15 @@ The derive macros expose Rust values as live views:
 
 Fields support `#[mira(rename = "...")]` and `#[mira(skip)]`. Extern fields also
 support `#[mira(readonly)]`, and an extern type can set `#[mira(tag = "...")]`.
-Use `#[mira(crate = "...")]` when the `mira-vm` dependency is renamed.
+Derives automatically resolve direct `mirascript` and `mirascript-vm`
+dependencies, including Cargo dependency aliases. Use `#[mira(crate = "...")]`
+when the runtime API is exposed through another wrapper crate.
 
 A direct conversion transfers ownership to the VM wrapper. Use `MiraShared<T>`
 when the host must retain and mutate the same object:
 
 ```rust
-use mira_vm::{MiraAny, MiraContext, MiraRecord, MiraShared, compile};
+use mirascript_vm::{MiraAny, MiraContext, MiraRecord, MiraShared, compile};
 
 #[derive(MiraRecord)]
 struct Counter {
@@ -112,7 +112,7 @@ let script = compile("counter.value")?;
 assert_eq!(script.run(&context)?, MiraAny::from(1));
 counter.borrow_mut().value = 2;
 assert_eq!(script.run(&context)?, MiraAny::from(2));
-# Ok::<(), mira_vm::MiraError>(())
+# Ok::<(), mirascript_vm::MiraError>(())
 ```
 
 `MiraShared<T>` uses `Rc<RefCell<T>>`, so host values do not need `Send` or
@@ -126,7 +126,7 @@ functions such as `map`, `filter`, and `fold`.
 
 ## Execution and lifetime model
 
-Bytecode emitted by `mira-core` is decoded into a structured internal instruction
+Bytecode emitted by `mirascript-core` is decoded into a structured internal instruction
 tree. Loading validates chunk boundaries, constant encodings and UTF-8, narrow and
 wide parameters, opcode legality, register and constant references, and nested
 function/control-flow terminators. Runtime errors retain bytecode offsets and call
@@ -202,7 +202,7 @@ interpreter fallback. Single-run startup time alone is not a sufficient reason.
 Run the host-value example with:
 
 ```text
-cargo run -p mira-vm --example host_values
+cargo run -p mirascript-vm --example host_values
 ```
 
 Validate the Rust implementation with:
@@ -211,7 +211,7 @@ Validate the Rust implementation with:
 cargo fmt --all -- --check
 cargo check --workspace
 cargo test --workspace
-cargo bench -p mira-vm --bench main -- --min-time 2 --sample-count 100
+cargo bench -p mirascript-vm --bench main -- --min-time 2 --sample-count 100
 ```
 
 The benchmark suite covers compile-and-run and run-only paths for fixed overhead,

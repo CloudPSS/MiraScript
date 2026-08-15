@@ -1,12 +1,20 @@
 [package]
-name = "mira-vm"
+name = "mirascript-vm"
 description = "Native Rust virtual machine for MiraScript"
-version = "0.1.87"
-edition = "2024"
-publish = false
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation = "https://docs.rs/mirascript-vm"
+readme = "README.md"
+keywords = ["mirascript", "interpreter", "scripting", "language", "vm"]
+categories = ["compilers"]
+publish = ["crates-io"]
 
 [lib]
-name = "mira_vm"
+name = "mirascript_vm"
 
 [[bench]]
 name = "main"
@@ -14,8 +22,8 @@ harness = false
 
 [dependencies]
 indexmap = "2"
-mira-core = { path = "../core" }
-mira-vm-derive = { path = "../vm-derive" }
+mirascript-core.workspace = true
+mirascript-vm-derive.workspace = true
 rand = "0.10"
 serde_json = { version = "1", features = ["float_roundtrip", "preserve_order"] }
 unicode-normalization = "0.1"

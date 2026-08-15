@@ -1,6 +1,6 @@
 use std::panic::{AssertUnwindSafe, catch_unwind};
 
-use mira_core::{Config, compile::CompileResult};
+use mirascript_core::{Config, compile::CompileResult};
 use napi::{
     Either, Env, Result, Task,
     bindgen_prelude::{AsyncTask, Object, Uint8Array, Uint32Array},
@@ -26,7 +26,7 @@ fn extract_args(env: &Env, script: Either<String, Uint8Array>, config: Object) -
 }
 
 fn compile_impl(args: &Compile) -> CompileResult {
-    mira_core::Compiler::compile(&args.script, &args.config)
+    mirascript_core::Compiler::compile(&args.script, &args.config)
 }
 
 fn to_result(data: CompileResult) -> JsCompileResult {

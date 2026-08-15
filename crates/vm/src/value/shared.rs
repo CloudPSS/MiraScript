@@ -13,7 +13,7 @@ impl<T> MiraShared<T> {
     /// # Examples
     ///
     /// ```
-    /// use mira_vm::MiraShared;
+    /// use mirascript_vm::MiraShared;
     ///
     /// let value = MiraShared::new(vec![1, 2]);
     /// value.borrow_mut().push(3);

@@ -1,0 +1,17 @@
+[package]
+name = "mirascript"
+description = "Embeddable Rust compiler and virtual machine for MiraScript"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation = "https://docs.rs/mirascript"
+readme = "README.md"
+keywords = ["mirascript", "interpreter", "compiler", "scripting", "language"]
+categories = ["compilers"]
+publish = ["crates-io"]
+
+[dependencies]
+mirascript-vm.workspace = true

@@ -1,5 +1,5 @@
 use divan::{Bencher, black_box};
-use mira_vm::{MiraContext, RunOptions, compile};
+use mirascript_vm::{MiraContext, RunOptions, compile};
 
 // Keep this setup aligned with packages/mirascript/bench/index.ts so the
 // TypeScript and Rust run-only results measure the same script and globals.

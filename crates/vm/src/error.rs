@@ -9,7 +9,7 @@ pub type Result<T> = std::result::Result<T, MiraError>;
 pub enum MiraError {
     /// Source compilation failed.
     Compile {
-        /// Compiler diagnostics encoded by `mira-core`.
+        /// Compiler diagnostics encoded by `mirascript-core`.
         diagnostics: Vec<u32>,
     },
     /// The compiled bytecode chunk failed structural validation.

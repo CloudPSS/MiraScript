@@ -35,7 +35,7 @@ impl MiraModule {
     ///
     /// ```
     /// use indexmap::IndexMap;
-    /// use mira_vm::{MiraAny, MiraModule};
+    /// use mirascript_vm::{MiraAny, MiraModule};
     ///
     /// let module = MiraModule::new(
     ///     "constants",

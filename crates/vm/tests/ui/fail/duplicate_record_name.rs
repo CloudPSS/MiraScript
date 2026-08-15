@@ -1,4 +1,4 @@
-use mira_vm::MiraRecord;
+use mirascript_vm::MiraRecord;
 
 #[derive(MiraRecord)]
 struct Duplicate {

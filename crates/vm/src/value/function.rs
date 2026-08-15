@@ -58,14 +58,14 @@ impl MiraNativeFn {
     /// # Examples
     ///
     /// ```
-    /// use mira_vm::{MiraAny, MiraContext, MiraNativeFn, eval};
+    /// use mirascript_vm::{MiraAny, MiraContext, MiraNativeFn, eval};
     ///
     /// let mut context = MiraContext::empty();
     /// context.insert_fn("answer", MiraNativeFn::new("host.answer", |_, _| {
     ///     Ok(MiraAny::Number(42.0))
     /// }));
     /// assert_eq!(eval("answer()", &context)?, MiraAny::Number(42.0));
-    /// # Ok::<(), mira_vm::MiraError>(())
+    /// # Ok::<(), mirascript_vm::MiraError>(())
     /// ```
     pub fn new(
         name: impl Into<String>,

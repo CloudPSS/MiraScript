@@ -1,4 +1,4 @@
-use mira_vm::{MiraContext, MiraExtern, MiraRecord, MiraShared, compile};
+use mirascript_vm::{MiraContext, MiraExtern, MiraRecord, MiraShared, compile};
 
 #[derive(Clone, MiraRecord)]
 struct User {
@@ -13,7 +13,7 @@ struct Counter {
     limit: i64,
 }
 
-fn main() -> mira_vm::Result<()> {
+fn main() -> mirascript_vm::Result<()> {
     let user = MiraShared::new(User { name: "Ada".into() });
     let counter = MiraShared::new(Counter {
         value: 1,

@@ -1,7 +1,7 @@
 use std::fs;
 
 use divan::prelude::*;
-use mira_core::{Config, lexer::*};
+use mirascript_core::{Config, lexer::*};
 
 #[divan::bench]
 fn lexing() {

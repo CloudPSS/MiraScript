@@ -3,7 +3,9 @@ use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use indexmap::IndexMap;
-use mira_vm::{MiraAny, MiraContext, MiraError, MiraModule, MiraNativeFn, RunOptions, compile};
+use mirascript_vm::{
+    MiraAny, MiraContext, MiraError, MiraModule, MiraNativeFn, RunOptions, compile,
+};
 
 fn context() -> MiraContext {
     let mut context = MiraContext::new();

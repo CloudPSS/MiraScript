@@ -1,4 +1,4 @@
-use mira_vm::MiraExtern;
+use mirascript_vm::MiraExtern;
 
 #[derive(MiraExtern)]
 struct Unsupported(u8);

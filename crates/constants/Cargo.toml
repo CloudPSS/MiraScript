@@ -1,8 +1,12 @@
 [package]
-name = "mira-constants"
+name = "mirascript-constants"
 description = "MiraScript constants"
-version = "0.1.87"
-edition = "2024"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
 publish = false
 
 [package.metadata.wasm-pack.profile.release]
@@ -20,4 +24,4 @@ default = []
 
 [dependencies]
 wasm-bindgen = "0.2"
-mira-core = { path = "../core", features = ["wasm-constants", "formatter"] }
+mirascript-core = { workspace = true, features = ["wasm-constants", "formatter"] }

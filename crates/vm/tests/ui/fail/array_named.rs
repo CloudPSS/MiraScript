@@ -1,4 +1,4 @@
-use mira_vm::MiraArray;
+use mirascript_vm::MiraArray;
 
 #[derive(MiraArray)]
 struct Unsupported {

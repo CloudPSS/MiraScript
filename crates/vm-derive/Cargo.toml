@@ -1,13 +1,23 @@
 [package]
-name = "mira-vm-derive"
-version = "0.1.87"
-edition = "2024"
-publish = false
+name = "mirascript-vm-derive"
+description = "Derive macros for exposing live Rust values to MiraScript"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation = "https://docs.rs/mirascript-vm-derive"
+readme = "README.md"
+keywords = ["mirascript", "derive", "proc-macro", "scripting"]
+categories = ["development-tools::procedural-macro-helpers"]
+publish = ["crates-io"]
 
 [lib]
 proc-macro = true
 
 [dependencies]
 proc-macro2 = "1"
+proc-macro-crate = "3"
 quote = "1"
 syn = { version = "2", features = ["full", "extra-traits"] }

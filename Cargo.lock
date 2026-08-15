@@ -341,20 +341,27 @@ dependencies = [
 ]
 
 [[package]]
-name = "mira-constants"
+name = "mirascript"
 version = "0.1.87"
 dependencies = [
- "mira-core",
+ "mirascript-vm",
+]
+
+[[package]]
+name = "mirascript-constants"
+version = "0.1.87"
+dependencies = [
+ "mirascript-core",
  "wasm-bindgen",
 ]
 
 [[package]]
-name = "mira-core"
+name = "mirascript-core"
 version = "0.1.87"
 dependencies = [
  "divan",
  "mimalloc",
- "mira-core",
+ "mirascript-core",
  "serde",
  "strum",
  "unicode-ident",
@@ -363,32 +370,32 @@ dependencies = [
 ]
 
 [[package]]
-name = "mira-napi"
+name = "mirascript-napi"
 version = "0.1.87"
 dependencies = [
- "mira-core",
+ "mirascript-core",
  "napi",
  "napi-build",
  "napi-derive",
 ]
 
 [[package]]
-name = "mira-python"
+name = "mirascript-python"
 version = "0.1.87"
 dependencies = [
- "mira-core",
+ "mirascript-core",
  "pyo3",
  "serde",
 ]
 
 [[package]]
-name = "mira-vm"
+name = "mirascript-vm"
 version = "0.1.87"
 dependencies = [
  "divan",
  "indexmap",
- "mira-core",
- "mira-vm-derive",
+ "mirascript-core",
+ "mirascript-vm-derive",
  "rand",
  "serde_json",
  "trybuild",
@@ -396,20 +403,21 @@ dependencies = [
 ]
 
 [[package]]
-name = "mira-vm-derive"
+name = "mirascript-vm-derive"
 version = "0.1.87"
 dependencies = [
+ "proc-macro-crate",
  "proc-macro2",
  "quote",
  "syn 2.0.119",
 ]
 
 [[package]]
-name = "mira-wasm"
+name = "mirascript-wasm"
 version = "0.1.87"
 dependencies = [
  "console_error_panic_hook",
- "mira-core",
+ "mirascript-core",
  "wasm-bindgen",
 ]
 
@@ -496,6 +504,15 @@ name = "portable-atomic"
 version = "1.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "05c8b63e8d9609db387f0324918f81d68fe27748f084ef092fb35954d0539a85"
+
+[[package]]
+name = "proc-macro-crate"
+version = "3.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e67ba7e9b2b56446f1d419b1d807906278ffa1a658a8a5d8a39dcb1f5a78614f"
+dependencies = [
+ "toml_edit",
+]
 
 [[package]]
 name = "proc-macro2"
@@ -808,6 +825,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3165f65f62e28e0115a00b2ebdd37eb6f3b641855f9d636d3cd4103767159ad7"
 dependencies = [
  "serde_core",
+]
+
+[[package]]
+name = "toml_edit"
+version = "0.25.13+spec-1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6975367e4d2ef766d86af01ffad14b622fecc8d4357a998fbc4deb6e9bacaf9b"
+dependencies = [
+ "indexmap",
+ "toml_datetime",
+ "toml_parser",
+ "winnow",
 ]
 
 [[package]]

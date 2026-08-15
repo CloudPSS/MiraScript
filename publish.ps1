@@ -9,6 +9,8 @@ param (
     $ErrorActionPreference = "Stop"
     $env:COREPACK_ENABLE_STRICT = 0
     $env:SKIP_YARN_COREPACK_CHECK = 1
+
+    Push-Location $PSScriptRoot
     yarn version --no-git-tag-version
 
     function Write-Json ($obj, $file) {
@@ -18,24 +20,30 @@ param (
         return Get-Content $file -Raw | ConvertFrom-Json
     }
 
-    Push-Location $PSScriptRoot
-
     $rootPkg = Read-Json ./package.json
     $Version = $rootPkg.version
     $NpmTag = if ($Version -match "-") { "next" } else { "latest" }
 
     Write-Information "Publishing version $Version@$NpmTag"
 
-    # set cargo version for all packages
-    foreach ($file in Get-ChildItem -File ./crates/*/Cargo.toml) {
-        $dirname = Split-Path $file.FullName -Parent | Split-Path -Leaf
-        Write-Output "Updating crates/$dirname to version $Version"
-        $lines = Get-Content $file.FullName
-        $lines = $lines -replace '^version\s*=\s*".*?"$', "version = `"$Version`""
-        $content = "$($lines -join "`n")`n"
-        Set-Content $file.FullName -Value $content -NoNewLine
-        git add $file.FullName
+    # set the shared Cargo package version and exact internal dependency pins
+    Write-Output "Updating Rust workspace to version $Version"
+    $cargoFile = Resolve-Path ./Cargo.toml
+    $cargoContent = Get-Content $cargoFile -Raw
+    $cargoContent = $cargoContent -replace '(?m)^version\s*=\s*".*?"$', "version = `"$Version`""
+    $cargoContent = $cargoContent -replace 'version\s*=\s*"=.*?"', "version = `"=$Version`""
+    Set-Content $cargoFile -Value $cargoContent -NoNewLine
+    git add $cargoFile
+
+    $metadata = cargo metadata --format-version 1 --no-deps | ConvertFrom-Json
+    $wrongVersions = $metadata.packages | Where-Object {
+        $_.source -eq $null -and $_.version -ne $Version
     }
+    if ($wrongVersions) {
+        $details = $wrongVersions | ForEach-Object { "$($_.name)@$($_.version)" }
+        throw "Cargo package versions are out of sync: $($details -join ', ')"
+    }
+
     cargo update --offline
     git add ./Cargo.lock
 

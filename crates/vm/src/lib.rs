@@ -1,6 +1,8 @@
 #![doc = include_str!("../README.md")]
 #![warn(missing_docs)]
 
+extern crate self as mirascript_vm;
+
 mod bytecode;
 mod context;
 mod error;
@@ -14,7 +16,8 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 pub use context::MiraContext;
 pub use error::{MiraError, Result};
-pub use mira_vm_derive::{MiraArray, MiraExtern, MiraRecord};
+pub use mirascript_core as core;
+pub use mirascript_vm_derive::{MiraArray, MiraExtern, MiraRecord};
 pub use value::{
     MiraAny, MiraArray, MiraCallContext, MiraExtern, MiraFunction, MiraModule, MiraNativeFn,
     MiraRecord, MiraShared,
@@ -99,21 +102,21 @@ impl Default for RunOptions {
 /// # Examples
 ///
 /// ```
-/// use mira_vm::{MiraAny, MiraContext, compile};
+/// use mirascript_vm::{MiraAny, MiraContext, compile};
 ///
 /// let script = compile("answer + 1")?;
 /// let mut context = MiraContext::new();
 /// context.insert("answer", 41);
 /// assert_eq!(script.run(&context)?, MiraAny::Number(42.0));
-/// # Ok::<(), mira_vm::MiraError>(())
+/// # Ok::<(), mirascript_vm::MiraError>(())
 /// ```
 pub fn compile(source: &str) -> Result<MiraScript> {
-    compile_with(source, &mira_core::Config::new())
+    compile_with(source, &core::Config::new())
 }
 
-/// Compile source with an explicit [`mira_core::Config`].
-pub fn compile_with(source: &str, config: &mira_core::Config) -> Result<MiraScript> {
-    let (chunk, diagnostics) = mira_core::Compiler::compile(source, config);
+/// Compile source with an explicit [`core::Config`].
+pub fn compile_with(source: &str, config: &core::Config) -> Result<MiraScript> {
+    let (chunk, diagnostics) = core::Compiler::compile(source, config);
     let chunk = chunk.ok_or(MiraError::Compile { diagnostics })?;
     Ok(MiraScript {
         program: Program::decode(&chunk)?,
@@ -125,10 +128,10 @@ pub fn compile_with(source: &str, config: &mira_core::Config) -> Result<MiraScri
 /// # Examples
 ///
 /// ```
-/// use mira_vm::{MiraAny, MiraContext, eval};
+/// use mirascript_vm::{MiraAny, MiraContext, eval};
 ///
 /// assert_eq!(eval("6 * 7", &MiraContext::new())?, MiraAny::Number(42.0));
-/// # Ok::<(), mira_vm::MiraError>(())
+/// # Ok::<(), mirascript_vm::MiraError>(())
 /// ```
 pub fn eval(source: &str, context: &MiraContext) -> Result<MiraAny> {
     compile(source)?.run(context)

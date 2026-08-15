@@ -1,4 +1,4 @@
-use mira_vm::{
+use mirascript_vm::{
     MiraAny, MiraArray, MiraContext, MiraError, MiraExtern, MiraRecord, MiraShared, compile, eval,
 };
 

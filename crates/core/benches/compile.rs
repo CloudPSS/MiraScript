@@ -1,7 +1,7 @@
 use std::fs;
 
 use divan::prelude::*;
-use mira_core::{Compiler, Config};
+use mirascript_core::{Compiler, Config};
 
 #[divan::bench]
 fn compile(bencher: Bencher) {

@@ -1,4 +1,4 @@
-//! Derive macros for exposing live Rust values to `mira-vm`.
+//! Derive macros for exposing live Rust values to `mirascript-vm`.
 
 #![warn(missing_docs)]
 
