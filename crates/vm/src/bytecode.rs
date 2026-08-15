@@ -131,6 +131,30 @@ pub(crate) enum Operation {
         value: usize,
         keys: Box<[usize]>,
     },
+    CallGlobal0 {
+        destination: usize,
+        slot: usize,
+    },
+    CallGlobal1 {
+        destination: usize,
+        slot: usize,
+        argument: usize,
+    },
+    CallGlobal2 {
+        destination: usize,
+        slot: usize,
+        arguments: [usize; 2],
+    },
+    CallGlobal3 {
+        destination: usize,
+        slot: usize,
+        arguments: [usize; 3],
+    },
+    CallGlobal4 {
+        destination: usize,
+        slot: usize,
+        arguments: [usize; 4],
+    },
     Call {
         destination: usize,
         target: CallTarget,
@@ -1133,11 +1157,37 @@ impl Decoder<'_> {
                     }
                     spreads.push(spread);
                 }
-                Operation::Call {
-                    destination,
-                    target,
-                    arguments: arguments.into_boxed_slice(),
-                    spreads: spreads.into_boxed_slice(),
+                match (&target, arguments.as_slice(), spreads.is_empty()) {
+                    (CallTarget::Global(slot), [], true) => Operation::CallGlobal0 {
+                        destination,
+                        slot: *slot,
+                    },
+                    (CallTarget::Global(slot), [argument], true) => Operation::CallGlobal1 {
+                        destination,
+                        slot: *slot,
+                        argument: *argument,
+                    },
+                    (CallTarget::Global(slot), [a, b], true) => Operation::CallGlobal2 {
+                        destination,
+                        slot: *slot,
+                        arguments: [*a, *b],
+                    },
+                    (CallTarget::Global(slot), [a, b, c], true) => Operation::CallGlobal3 {
+                        destination,
+                        slot: *slot,
+                        arguments: [*a, *b, *c],
+                    },
+                    (CallTarget::Global(slot), [a, b, c, d], true) => Operation::CallGlobal4 {
+                        destination,
+                        slot: *slot,
+                        arguments: [*a, *b, *c, *d],
+                    },
+                    _ => Operation::Call {
+                        destination,
+                        target,
+                        arguments: arguments.into_boxed_slice(),
+                        spreads: spreads.into_boxed_slice(),
+                    },
                 }
             }
             Has | Get | Set | HasDyn | GetDyn | SetDyn | HasIndex | GetIndex | SetIndex => {
@@ -1365,5 +1415,29 @@ mod tests {
         let captured =
             decode("let mut first = nil; for value in 1..2 { first = fn { value }; } first()");
         assert_eq!(first_loop(&captured.root.body), Some(false));
+    }
+
+    #[test]
+    fn static_calls_with_small_fixed_arity_are_quickened() {
+        let (chunk, diagnostics) = mira_core::Compiler::compile(
+            "f(); f(1); f(1, 2); f(1, 2, 3); f(1, 2, 3, 4); nil",
+            &mira_core::Config::new(),
+        );
+        assert!(diagnostics.is_empty());
+        let program = Program::decode(&chunk.unwrap()).unwrap();
+        let arities: Vec<_> = program
+            .root
+            .body
+            .iter()
+            .filter_map(|instruction| match &instruction.kind {
+                InstructionKind::Op(Operation::CallGlobal0 { .. }) => Some(0),
+                InstructionKind::Op(Operation::CallGlobal1 { .. }) => Some(1),
+                InstructionKind::Op(Operation::CallGlobal2 { .. }) => Some(2),
+                InstructionKind::Op(Operation::CallGlobal3 { .. }) => Some(3),
+                InstructionKind::Op(Operation::CallGlobal4 { .. }) => Some(4),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(arities, [0, 1, 2, 3, 4]);
     }
 }

@@ -98,13 +98,13 @@ impl<'a> GlobalSlots<'a> {
         }
     }
 
-    fn get(&self, slot: usize) -> Option<MiraAny> {
+    fn get_ref(&self, slot: usize) -> Option<&'a MiraAny> {
         match self {
             Self::Empty => None,
-            Self::One(value) => value.cloned(),
-            Self::Two(values) => values[slot].cloned(),
-            Self::Inline(values) => values[slot].cloned(),
-            Self::Overflow(values) => values[slot].cloned(),
+            Self::One(value) => *value,
+            Self::Two(values) => values[slot],
+            Self::Inline(values) => values[slot],
+            Self::Overflow(values) => values[slot],
         }
     }
 }
@@ -208,7 +208,7 @@ struct Runtime<'a> {
     call_stack: CallStack,
 }
 
-impl Runtime<'_> {
+impl<'a> Runtime<'a> {
     fn create_frame(&mut self, register_count: usize, parent: Option<usize>) -> usize {
         self.frames.push(Frame {
             registers: vec![MiraAny::Uninitialized; register_count + 1],
@@ -733,6 +733,63 @@ impl Runtime<'_> {
                 };
                 self.write_register(frame, *destination, result);
             }
+            Operation::CallGlobal0 { destination, slot } => {
+                let target = self.get_global_slot_ref(*slot)?;
+                let result = self.call(target, &[])?;
+                self.write_register(frame, *destination, result);
+            }
+            Operation::CallGlobal1 {
+                destination,
+                slot,
+                argument,
+            } => {
+                let target = self.get_global_slot_ref(*slot)?;
+                let argument = self.call_argument(frame, *argument)?;
+                let result = self.call(target, &[argument])?;
+                self.write_register(frame, *destination, result);
+            }
+            Operation::CallGlobal2 {
+                destination,
+                slot,
+                arguments: [a, b],
+            } => {
+                let target = self.get_global_slot_ref(*slot)?;
+                let arguments = [
+                    self.call_argument(frame, *a)?,
+                    self.call_argument(frame, *b)?,
+                ];
+                let result = self.call(target, &arguments)?;
+                self.write_register(frame, *destination, result);
+            }
+            Operation::CallGlobal3 {
+                destination,
+                slot,
+                arguments: [a, b, c],
+            } => {
+                let target = self.get_global_slot_ref(*slot)?;
+                let arguments = [
+                    self.call_argument(frame, *a)?,
+                    self.call_argument(frame, *b)?,
+                    self.call_argument(frame, *c)?,
+                ];
+                let result = self.call(target, &arguments)?;
+                self.write_register(frame, *destination, result);
+            }
+            Operation::CallGlobal4 {
+                destination,
+                slot,
+                arguments: [a, b, c, d],
+            } => {
+                let target = self.get_global_slot_ref(*slot)?;
+                let arguments = [
+                    self.call_argument(frame, *a)?,
+                    self.call_argument(frame, *b)?,
+                    self.call_argument(frame, *c)?,
+                    self.call_argument(frame, *d)?,
+                ];
+                let result = self.call(target, &arguments)?;
+                self.write_register(frame, *destination, result);
+            }
             Operation::Call {
                 destination,
                 target,
@@ -805,11 +862,7 @@ impl Runtime<'_> {
         spreads: &[usize],
         frame: usize,
     ) -> Result<MiraAny> {
-        let argument = |register: usize| {
-            let value = self.read_register(frame, register);
-            operations::assert_initialized(&value)?;
-            Ok(value)
-        };
+        let argument = |register: usize| self.call_argument(frame, register);
 
         if spreads.is_empty() {
             return match registers {
@@ -845,8 +898,18 @@ impl Runtime<'_> {
         self.call(target, &arguments)
     }
 
+    fn call_argument(&self, frame: usize, register: usize) -> Result<MiraAny> {
+        let value = self.read_register(frame, register);
+        operations::assert_initialized(&value)?;
+        Ok(value)
+    }
+
     fn get_global_slot(&self, slot: usize) -> Result<MiraAny> {
-        self.globals.get(slot).ok_or_else(|| {
+        self.get_global_slot_ref(slot).cloned()
+    }
+
+    fn get_global_slot_ref(&self, slot: usize) -> Result<&'a MiraAny> {
+        self.globals.get_ref(slot).ok_or_else(|| {
             MiraError::runtime(format!(
                 "Global variable '{}' is not defined.",
                 self.program.global_names[slot]
