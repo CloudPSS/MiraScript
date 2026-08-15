@@ -24,15 +24,24 @@ pub use shared::MiraShared;
 pub enum MiraAny {
     #[doc(hidden)]
     Uninitialized,
+    /// The MiraScript `nil` value.
     #[default]
     Nil,
+    /// A boolean value.
     Boolean(bool),
+    /// A double-precision numeric value.
     Number(f64),
+    /// An owned UTF-8 string.
     String(String),
+    /// An owned MiraScript array.
     Array(Vec<MiraAny>),
+    /// An owned MiraScript record with insertion-ordered keys.
     Record(IndexMap<String, MiraAny>),
+    /// A callable native or script function.
     Function(MiraFunction),
+    /// A native or execution-scoped module.
     Module(MiraModule),
+    /// A live, mutable Rust extern value.
     Extern(Rc<dyn ExternObject>),
     #[doc(hidden)]
     RustRecord(Rc<dyn RecordObject>),
@@ -41,6 +50,7 @@ pub enum MiraAny {
 }
 
 impl MiraAny {
+    /// Return the MiraScript type name for this value.
     pub fn type_name(&self) -> &'static str {
         match self {
             Self::Uninitialized | Self::Nil => "nil",
@@ -55,30 +65,37 @@ impl MiraAny {
         }
     }
 
+    /// Wrap a Rust record in a new [`MiraShared`] allocation.
     pub fn from_record<T: MiraRecord>(value: T) -> Self {
         Self::from_record_shared(MiraShared::new(value))
     }
 
+    /// Wrap an existing shared Rust record as a live read-only view.
     pub fn from_record_shared<T: MiraRecord>(value: MiraShared<T>) -> Self {
         Self::RustRecord(Rc::new(value))
     }
 
+    /// Wrap a Rust array in a new [`MiraShared`] allocation.
     pub fn from_array<T: MiraArray>(value: T) -> Self {
         Self::from_array_shared(MiraShared::new(value))
     }
 
+    /// Wrap an existing shared Rust array as a live read-only view.
     pub fn from_array_shared<T: MiraArray>(value: MiraShared<T>) -> Self {
         Self::RustArray(Rc::new(value))
     }
 
+    /// Wrap a Rust extern in a new [`MiraShared`] allocation.
     pub fn from_extern<T: MiraExtern>(value: T) -> Self {
         Self::from_extern_shared(MiraShared::new(value))
     }
 
+    /// Wrap an existing shared Rust extern as a live mutable object.
     pub fn from_extern_shared<T: MiraExtern>(value: MiraShared<T>) -> Self {
         Self::Extern(Rc::new(value))
     }
 
+    /// Return whether this value is initialized and safe to expose to host code.
     pub fn is_initialized(&self) -> bool {
         !matches!(self, Self::Uninitialized)
     }

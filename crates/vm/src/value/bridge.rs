@@ -6,15 +6,22 @@ use super::{MiraAny, MiraCallContext, MiraShared};
 
 /// A live Rust value that appears as a read-only MiraScript record.
 pub trait MiraRecord: 'static {
+    /// Return the record's visible field names in iteration order.
     fn keys(&self) -> Vec<String>;
+
+    /// Read a field, returning `None` when the field is absent.
     fn get(&self, key: &str) -> Result<Option<MiraAny>>;
 }
 
 /// A live Rust value that appears as a read-only MiraScript array.
 pub trait MiraArray: 'static {
+    /// Return the current array length.
     fn len(&self) -> usize;
+
+    /// Read an element, returning `None` when the index is out of bounds.
     fn get(&self, index: usize) -> Result<Option<MiraAny>>;
 
+    /// Return whether this array currently contains no elements.
     fn is_empty(&self) -> bool {
         self.len() == 0
     }
@@ -22,25 +29,37 @@ pub trait MiraArray: 'static {
 
 /// A live Rust object with MiraScript-visible identity and mutable fields.
 pub trait MiraExtern: 'static {
+    /// Return the type label used in diagnostics and debug output.
     fn tag(&self) -> &str {
         type_name::<Self>()
     }
 
+    /// Return the object's visible field names in iteration order.
     fn keys(&self) -> Vec<String>;
+
+    /// Read a field, returning `None` when the field is absent.
     fn get(&self, key: &str) -> Result<Option<MiraAny>>;
 
+    /// Return whether a field exists.
     fn has(&self, key: &str) -> bool {
         self.keys().iter().any(|candidate| candidate == key)
     }
 
+    /// Write a field and return whether it accepted the value.
+    ///
+    /// The default implementation rejects every write.
     fn set(&mut self, _key: &str, _value: MiraAny) -> Result<bool> {
         Ok(false)
     }
 
+    /// Return whether this extern can be called from MiraScript.
     fn is_callable(&self) -> bool {
         false
     }
 
+    /// Invoke this extern as a function.
+    ///
+    /// Implementations may call script callbacks through `context`.
     fn call(&mut self, _context: &mut MiraCallContext<'_>, _args: &[MiraAny]) -> Result<MiraAny> {
         Err(MiraError::runtime(format!(
             "Not a callable extern: {}",
@@ -48,14 +67,19 @@ pub trait MiraExtern: 'static {
         )))
     }
 
+    /// Return an array-like length, or `None` when indexing is unsupported.
     fn array_len(&self) -> Option<usize> {
         None
     }
 
+    /// Read an array-like element.
+    ///
+    /// By default this delegates to [`MiraExtern::get`] with a decimal key.
     fn get_index(&self, index: usize) -> Result<Option<MiraAny>> {
         self.get(&index.to_string())
     }
 
+    /// Materialize iterable values, or return `None` when iteration is unsupported.
     fn iterate(&self) -> Result<Option<Vec<MiraAny>>> {
         Ok(None)
     }

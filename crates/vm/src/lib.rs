@@ -1,4 +1,5 @@
-//! A native, single-threaded MiraScript virtual machine.
+#![doc = include_str!("../README.md")]
+#![warn(missing_docs)]
 
 mod bytecode;
 mod context;
@@ -35,10 +36,17 @@ pub struct MiraScript {
 /// Limits and injectable providers for one execution.
 #[derive(Clone)]
 pub struct RunOptions {
+    /// Maximum wall-clock time allowed for one execution.
     pub timeout: Duration,
+    /// Number of interpreter checkpoints between timeout-provider checks.
+    ///
+    /// Values below one are treated as one.
     pub checkpoint_interval: u32,
+    /// Maximum nested script, native, and extern call depth.
     pub max_call_depth: u32,
+    /// Maximum number of elements created by bounded array operations.
     pub max_array_len: usize,
+    /// Host implementation for random numbers, time, and debug output.
     pub providers: Rc<dyn RuntimeProviders>,
 }
 
@@ -84,11 +92,26 @@ impl Default for RunOptions {
 }
 
 /// Compile source with the default compiler configuration.
+///
+/// The returned program is validated once and can be reused with multiple
+/// [`MiraContext`] values.
+///
+/// # Examples
+///
+/// ```
+/// use mira_vm::{MiraAny, MiraContext, compile};
+///
+/// let script = compile("answer + 1")?;
+/// let mut context = MiraContext::new();
+/// context.insert("answer", 41);
+/// assert_eq!(script.run(&context)?, MiraAny::Number(42.0));
+/// # Ok::<(), mira_vm::MiraError>(())
+/// ```
 pub fn compile(source: &str) -> Result<MiraScript> {
     compile_with(source, &mira_core::Config::new())
 }
 
-/// Compile source with an explicit compiler configuration.
+/// Compile source with an explicit [`mira_core::Config`].
 pub fn compile_with(source: &str, config: &mira_core::Config) -> Result<MiraScript> {
     let (chunk, diagnostics) = mira_core::Compiler::compile(source, config);
     let chunk = chunk.ok_or(MiraError::Compile { diagnostics })?;
@@ -97,16 +120,27 @@ pub fn compile_with(source: &str, config: &mira_core::Config) -> Result<MiraScri
     })
 }
 
-/// Compile and execute source once.
+/// Compile and execute source once with default [`RunOptions`].
+///
+/// # Examples
+///
+/// ```
+/// use mira_vm::{MiraAny, MiraContext, eval};
+///
+/// assert_eq!(eval("6 * 7", &MiraContext::new())?, MiraAny::Number(42.0));
+/// # Ok::<(), mira_vm::MiraError>(())
+/// ```
 pub fn eval(source: &str, context: &MiraContext) -> Result<MiraAny> {
     compile(source)?.run(context)
 }
 
 impl MiraScript {
+    /// Execute this program with default [`RunOptions`].
     pub fn run(&self, context: &MiraContext) -> Result<MiraAny> {
         self.run_with(context, &RunOptions::default())
     }
 
+    /// Execute this program with explicit limits and runtime providers.
     pub fn run_with(&self, context: &MiraContext, options: &RunOptions) -> Result<MiraAny> {
         interpreter::run(&self.program, context, options)
     }

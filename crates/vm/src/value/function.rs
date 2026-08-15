@@ -12,24 +12,32 @@ pub(crate) trait NativeRuntime {
     fn checkpoint(&mut self) -> Result<()>;
 }
 
+/// Capabilities available to a native callback during one VM execution.
+///
+/// The context cannot outlive the callback invocation.
 pub struct MiraCallContext<'a> {
     pub(crate) runtime: &'a mut dyn NativeRuntime,
 }
 
 impl MiraCallContext<'_> {
+    /// Call a native, script, or callable extern value.
     pub fn call(&mut self, function: &MiraAny, args: &[MiraAny]) -> Result<MiraAny> {
         self.runtime.call_value(function, args)
     }
 
-    /// Read a field using the same rules as a MiraScript expression.
+    /// Read a field or index using the same rules as a MiraScript expression.
     pub fn get(&mut self, value: &MiraAny, key: impl Into<MiraAny>) -> Result<MiraAny> {
         self.runtime.get_value(value, &key.into())
     }
 
+    /// Return the options for the current execution.
     pub fn options(&self) -> &RunOptions {
         self.runtime.options()
     }
 
+    /// Cooperatively check the current execution's timeout.
+    ///
+    /// Long-running native callbacks should call this method periodically.
     pub fn checkpoint(&mut self) -> Result<()> {
         self.runtime.checkpoint()
     }
@@ -38,12 +46,27 @@ impl MiraCallContext<'_> {
 type NativeCallback = dyn for<'a> Fn(&mut MiraCallContext<'a>, &[MiraAny]) -> Result<MiraAny>;
 
 #[derive(Clone)]
+/// A named, single-threaded native function callable from MiraScript.
 pub struct MiraNativeFn {
     callback: Rc<NativeCallback>,
     name: Rc<str>,
 }
 
 impl MiraNativeFn {
+    /// Create a native function with the given diagnostic name.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use mira_vm::{MiraAny, MiraContext, MiraNativeFn, eval};
+    ///
+    /// let mut context = MiraContext::empty();
+    /// context.insert_fn("answer", MiraNativeFn::new("host.answer", |_, _| {
+    ///     Ok(MiraAny::Number(42.0))
+    /// }));
+    /// assert_eq!(eval("answer()", &context)?, MiraAny::Number(42.0));
+    /// # Ok::<(), mira_vm::MiraError>(())
+    /// ```
     pub fn new(
         name: impl Into<String>,
         callback: impl for<'a> Fn(&mut MiraCallContext<'a>, &[MiraAny]) -> Result<MiraAny> + 'static,
@@ -54,12 +77,14 @@ impl MiraNativeFn {
         }
     }
 
+    /// Create a native function named `<native>`.
     pub fn anonymous(
         callback: impl for<'a> Fn(&mut MiraCallContext<'a>, &[MiraAny]) -> Result<MiraAny> + 'static,
     ) -> Self {
         Self::new("<native>", callback)
     }
 
+    /// Return the function name shown in diagnostics and stack traces.
     pub fn name(&self) -> &str {
         &self.name
     }
@@ -97,7 +122,9 @@ impl fmt::Debug for MiraNativeFn {
 }
 
 #[derive(Debug, Clone)]
+/// A native or execution-scoped script function.
 pub enum MiraFunction {
+    /// A host callback that may safely outlive an execution.
     Native(MiraNativeFn),
     #[doc(hidden)]
     Script {
@@ -109,6 +136,7 @@ pub enum MiraFunction {
 }
 
 impl MiraFunction {
+    /// Return the function's diagnostic name, when available.
     pub fn name(&self) -> Option<&str> {
         match self {
             Self::Native(function) => Some(function.name()),

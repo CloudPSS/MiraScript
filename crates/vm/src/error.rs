@@ -1,40 +1,66 @@
 use std::fmt;
 
+/// Result type returned by the MiraScript VM.
 pub type Result<T> = std::result::Result<T, MiraError>;
 
+/// An error produced while compiling, decoding, executing, or bridging values.
 #[derive(Debug, Clone, PartialEq)]
 #[non_exhaustive]
 pub enum MiraError {
+    /// Source compilation failed.
     Compile {
+        /// Compiler diagnostics encoded by `mira-core`.
         diagnostics: Vec<u32>,
     },
+    /// The compiled bytecode chunk failed structural validation.
     InvalidBytecode {
+        /// Byte offset at which validation failed.
         offset: usize,
+        /// Human-readable validation failure.
         reason: String,
     },
+    /// Script execution failed.
     Runtime {
+        /// Human-readable runtime failure.
         message: String,
+        /// Function active at the failure site, when known.
         function: Option<String>,
+        /// Bytecode offset of the failure site, when known.
         offset: Option<usize>,
+        /// Names of active callers, ordered from root to leaf.
         stack: Vec<String>,
     },
+    /// A MiraScript value could not be converted to the requested Rust type.
     Conversion {
+        /// Requested Rust-side value description.
         expected: String,
+        /// MiraScript value type that was encountered.
         actual: String,
+        /// Nested field or index path, when conversion added one.
         path: Option<String>,
     },
+    /// A host extern reported an error.
     Extern {
+        /// Error message supplied by the extern.
         message: String,
     },
+    /// A live Rust value was already borrowed incompatibly.
     BorrowConflict {
+        /// Operation that required the conflicting borrow.
         operation: &'static str,
+        /// Type tag of the bridged Rust value.
         tag: String,
     },
+    /// Execution exceeded [`crate::RunOptions::timeout`].
     Timeout,
+    /// Execution exceeded the configured call-depth limit.
     MaxCallDepth {
+        /// Configured maximum call depth.
         max: u32,
     },
+    /// A script closure or script module attempted to outlive its execution.
     EscapingClosure,
+    /// A previously captured script value was used after execution ended.
     ExecutionEnded,
 }
 
@@ -56,6 +82,9 @@ impl MiraError {
         }
     }
 
+    /// Attach a nested field or index path to a [`MiraError::Conversion`].
+    ///
+    /// Other error variants are returned unchanged.
     pub fn at_path(mut self, path: impl Into<String>) -> Self {
         if let Self::Conversion { path: slot, .. } = &mut self {
             *slot = Some(path.into());

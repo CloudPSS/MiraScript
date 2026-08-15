@@ -15,9 +15,13 @@ pub struct ScriptModule {
 }
 
 #[derive(Clone)]
+/// A named collection of MiraScript-visible values.
 pub enum MiraModule {
+    /// A host-created module that may safely outlive an execution.
     Native {
+        /// Module name used in diagnostics and debug output.
         name: Rc<str>,
+        /// Exported values keyed by field name.
         values: Rc<IndexMap<String, MiraAny>>,
     },
     #[doc(hidden)]
@@ -25,6 +29,21 @@ pub enum MiraModule {
 }
 
 impl MiraModule {
+    /// Create a native module from an ordered map of exported values.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use indexmap::IndexMap;
+    /// use mira_vm::{MiraAny, MiraModule};
+    ///
+    /// let module = MiraModule::new(
+    ///     "constants",
+    ///     IndexMap::from([("answer".into(), MiraAny::Number(42.0))]),
+    /// );
+    /// assert_eq!(module.name(), "constants");
+    /// assert_eq!(module.get_native("answer"), Some(MiraAny::Number(42.0)));
+    /// ```
     pub fn new(name: impl Into<String>, values: IndexMap<String, MiraAny>) -> Self {
         Self::Native {
             name: Rc::from(name.into()),
@@ -32,6 +51,7 @@ impl MiraModule {
         }
     }
 
+    /// Return the module name.
     pub fn name(&self) -> &str {
         match self {
             Self::Native { name, .. } => name,
@@ -39,6 +59,7 @@ impl MiraModule {
         }
     }
 
+    /// Return exported field names in insertion order.
     pub fn keys(&self) -> Vec<String> {
         match self {
             Self::Native { values, .. } => values.keys().cloned().collect(),
@@ -46,6 +67,9 @@ impl MiraModule {
         }
     }
 
+    /// Clone an export from a native module.
+    ///
+    /// Script modules return `None`; they are resolved by the active runtime.
     pub fn get_native(&self, key: &str) -> Option<MiraAny> {
         match self {
             Self::Native { values, .. } => values.get(key).cloned(),
