@@ -419,7 +419,7 @@ jobs:
           tools: ${{ matrix.os == 'ubuntu-latest' && 'cargo-llvm-cov' || '' }}
 
       - name: Run tests
-        run: cargo ${{ matrix.os == 'ubuntu-latest' && 'llvm-cov' || 'test' }} --workspace --locked --lcov --output-path rust-lcov.info
+        run: cargo ${{ matrix.os == 'ubuntu-latest' && 'llvm-cov --lcov --output-path rust-lcov.info' || 'test' }} --workspace --locked
 
       - name: Send Rust coverage report
         shell: bash
