@@ -47,6 +47,7 @@ pub(crate) enum InstructionKind {
         register_count: usize,
         kind: LoopKind,
         body: Rc<[Instruction]>,
+        reuse_frame: bool,
     },
     Record {
         destination: usize,
@@ -235,6 +236,21 @@ pub(crate) enum AccessKey {
 pub(crate) enum SliceBound {
     Constant(i64),
     Register(usize),
+}
+
+fn block_may_capture_frame(body: &[Instruction]) -> bool {
+    body.iter().any(|instruction| match &instruction.kind {
+        InstructionKind::Function { .. } | InstructionKind::Module { .. } => true,
+        InstructionKind::If {
+            then_body,
+            else_body,
+            ..
+        } => block_may_capture_frame(then_body) || block_may_capture_frame(else_body),
+        InstructionKind::Loop { body, .. } => block_may_capture_frame(body),
+        InstructionKind::Op(_) | InstructionKind::Record { .. } | InstructionKind::Array { .. } => {
+            false
+        }
+    })
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -738,10 +754,12 @@ impl Decoder<'_> {
         self.loop_depth -= 1;
         self.scopes.pop();
         let body = block?.0;
+        let reuse_frame = !block_may_capture_frame(&body);
         Ok(InstructionKind::Loop {
             register_count,
             kind,
             body: Rc::from(body),
+            reuse_frame,
         })
     }
 
@@ -1318,5 +1336,34 @@ mod tests {
                 Err(MiraError::InvalidBytecode { .. })
             ));
         }
+    }
+
+    #[test]
+    fn loop_frame_reuse_excludes_captured_environments() {
+        fn first_loop(body: &[Instruction]) -> Option<bool> {
+            body.iter().find_map(|instruction| match &instruction.kind {
+                InstructionKind::Loop { reuse_frame, .. } => Some(*reuse_frame),
+                InstructionKind::If {
+                    then_body,
+                    else_body,
+                    ..
+                } => first_loop(then_body).or_else(|| first_loop(else_body)),
+                _ => None,
+            })
+        }
+
+        let decode = |source: &str| {
+            let (chunk, diagnostics) =
+                mira_core::Compiler::compile(source, &mira_core::Config::new());
+            assert!(diagnostics.is_empty());
+            Program::decode(&chunk.unwrap()).unwrap()
+        };
+
+        let scalar = decode("let mut total = 0; for value in 1..10 { total += value; } total");
+        assert_eq!(first_loop(&scalar.root.body), Some(true));
+
+        let captured =
+            decode("let mut first = nil; for value in 1..2 { first = fn { value }; } first()");
+        assert_eq!(first_loop(&captured.root.body), Some(false));
     }
 }

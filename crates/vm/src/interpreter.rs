@@ -59,6 +59,12 @@ impl FrameArena {
             &mut self.children[frame - 1]
         }
     }
+
+    fn reset(&mut self, frame: usize, parent: Option<usize>) {
+        let frame = self.get_mut(frame);
+        frame.registers.fill(MiraAny::Uninitialized);
+        frame.parent = parent;
+    }
 }
 
 struct CallStack {
@@ -294,7 +300,8 @@ impl Runtime<'_> {
                 register_count,
                 kind,
                 body,
-            } => self.execute_loop(*register_count, kind, body, frame),
+                reuse_frame,
+            } => self.execute_loop(*register_count, kind, body, frame, *reuse_frame),
             InstructionKind::Record {
                 destination,
                 elements,
@@ -338,11 +345,14 @@ impl Runtime<'_> {
         kind: &LoopKind,
         body: &[Instruction],
         parent: usize,
+        reuse_frame: bool,
     ) -> Result<Flow> {
+        let mut reusable_frame = None;
         match kind {
             LoopKind::Infinite => loop {
                 self.checkpoint_now()?;
-                let frame = self.create_frame(register_count, Some(parent));
+                let frame =
+                    self.loop_frame(register_count, parent, reuse_frame, &mut reusable_frame);
                 match self.execute_block(body, frame)? {
                     Flow::Continue | Flow::LoopContinue => {}
                     Flow::Break => return Ok(Flow::Continue),
@@ -353,7 +363,8 @@ impl Runtime<'_> {
                 let items = operations::iterable(&self.read_register(parent, *value))?;
                 for item in items {
                     self.checkpoint_now()?;
-                    let frame = self.create_frame(register_count, Some(parent));
+                    let frame =
+                        self.loop_frame(register_count, parent, reuse_frame, &mut reusable_frame);
                     self.write_register(frame, 1, item);
                     match self.execute_block(body, frame)? {
                         Flow::Continue | Flow::LoopContinue => {}
@@ -376,7 +387,8 @@ impl Runtime<'_> {
                     value <= end
                 } {
                     self.checkpoint_now()?;
-                    let frame = self.create_frame(register_count, Some(parent));
+                    let frame =
+                        self.loop_frame(register_count, parent, reuse_frame, &mut reusable_frame);
                     self.write_register(frame, 1, MiraAny::Number(value));
                     match self.execute_block(body, frame)? {
                         Flow::Continue | Flow::LoopContinue => {}
@@ -388,6 +400,24 @@ impl Runtime<'_> {
                 Ok(Flow::Continue)
             }
         }
+    }
+
+    fn loop_frame(
+        &mut self,
+        register_count: usize,
+        parent: usize,
+        reuse_frame: bool,
+        reusable_frame: &mut Option<usize>,
+    ) -> usize {
+        if let Some(frame) = *reusable_frame {
+            self.frames.reset(frame, Some(parent));
+            return frame;
+        }
+        let frame = self.create_frame(register_count, Some(parent));
+        if reuse_frame {
+            *reusable_frame = Some(frame);
+        }
+        frame
     }
 
     fn build_record(&self, elements: &[RecordElement], frame: usize) -> Result<MiraAny> {
