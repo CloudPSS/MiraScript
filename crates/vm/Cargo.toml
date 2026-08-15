@@ -31,3 +31,4 @@ unicode-normalization = "0.1"
 [dev-dependencies]
 divan = "0.1.21"
 trybuild = "1"
+test_each_file = "0.3"

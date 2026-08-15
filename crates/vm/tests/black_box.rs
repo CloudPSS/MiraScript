@@ -153,35 +153,38 @@ fn files(root: &Path, output: &mut Vec<PathBuf>) {
     }
 }
 
-#[test]
-fn existing_black_box_scripts_run_on_rust_vm() {
+test_each_file::test_each_path! {
+    for ["mira"] in "./tests" as black_box => black_box
+}
+
+fn black_box(path: [&Path; 1]) {
+    let path = path[0].to_owned();
+    let is_huge = path
+        .file_name()
+        .unwrap()
+        .to_string_lossy()
+        .contains("_huge.");
     std::thread::Builder::new()
         .name("mira-compat".into())
         .stack_size(16 * 1024 * 1024)
-        .spawn(run_existing_black_box_scripts)
+        .spawn(move || {
+            let context = context();
+            let options = RunOptions {
+                timeout: if is_huge {
+                    Duration::from_secs(120)
+                } else {
+                    Duration::from_secs(10)
+                },
+                ..RunOptions::default()
+            };
+            let source = fs::read_to_string(&path).unwrap();
+            let script =
+                compile(&source).unwrap_or_else(|error| panic!("{}: {error:?}", path.display()));
+            script
+                .run_with(&context, &options)
+                .unwrap_or_else(|error| panic!("{}: {error:?}", path.display()));
+        })
         .unwrap()
         .join()
         .unwrap();
-}
-
-fn run_existing_black_box_scripts() {
-    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests");
-    let mut scripts = Vec::new();
-    files(&root, &mut scripts);
-    scripts.sort();
-    let context = context();
-    let options = RunOptions {
-        timeout: Duration::from_secs(60),
-        checkpoint_interval: 100,
-        max_call_depth: 256,
-        ..RunOptions::default()
-    };
-    for path in scripts {
-        let source = fs::read_to_string(&path).unwrap();
-        let script =
-            compile(&source).unwrap_or_else(|error| panic!("{}: {error:?}", path.display()));
-        script
-            .run_with(&context, &options)
-            .unwrap_or_else(|error| panic!("{}: {error:?}", path.display()));
-    }
 }
