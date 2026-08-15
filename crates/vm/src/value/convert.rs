@@ -41,7 +41,9 @@ macro_rules! number_from {
     )* };
 }
 
-number_from!(u8, u16, u32, u64, usize, i8, i16, i32, i64, isize, f32, f64);
+number_from!(
+    u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize, f32, f64
+);
 
 impl<T: Into<MiraAny>> From<Option<T>> for MiraAny {
     fn from(value: Option<T>) -> Self {
@@ -269,8 +271,8 @@ macro_rules! signed_integer_try_from {
     )* };
 }
 
-unsigned_integer_try_from!(u8, u16, u32, u64, usize);
-signed_integer_try_from!(i8, i16, i32, i64, isize);
+unsigned_integer_try_from!(u8, u16, u32, u64, u128, usize);
+signed_integer_try_from!(i8, i16, i32, i64, i128, isize);
 
 impl TryFrom<MiraAny> for f64 {
     type Error = MiraError;
