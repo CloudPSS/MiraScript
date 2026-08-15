@@ -5,8 +5,9 @@ use std::time::Instant;
 
 use crate::bytecode::{
     AccessKey, AccessOperation, ArrayElement, AssertOperation, BinaryOperation, CallTarget,
-    Condition, FunctionDef, Instruction, InstructionKind, LoopKind, Operation, PickOmitOperation,
-    Program, RangeEndpoint, RecordElement, RecordKey, SliceBound, UnaryOperation, UpvalueOperation,
+    Condition, FunctionDef, Instruction, InstructionKind, LoopKind, NumericOperation, Operation,
+    PickOmitOperation, Program, RangeEndpoint, RecordElement, RecordKey, SliceBound,
+    UnaryOperation, UpvalueOperation,
 };
 use crate::value::{MiraCallContext, NativeRuntime, ScriptModule};
 use crate::{
@@ -221,6 +222,17 @@ impl<'a> Runtime<'a> {
             MiraAny::Nil
         } else {
             self.frames.get(frame).registers[register].clone()
+        }
+    }
+
+    #[inline]
+    fn read_number(&self, frame: usize, register: usize) -> Result<f64> {
+        if register == 0 {
+            return operations::to_number(&MiraAny::Nil);
+        }
+        match &self.frames.get(frame).registers[register] {
+            MiraAny::Number(value) => Ok(*value),
+            value => operations::to_number(value),
         }
     }
 
@@ -560,6 +572,24 @@ impl<'a> Runtime<'a> {
                 };
                 self.write_register(frame, *destination, result);
             }
+            Operation::Numeric {
+                kind,
+                destination,
+                left,
+                right,
+            } => {
+                let left = self.read_number(frame, *left)?;
+                let right = self.read_number(frame, *right)?;
+                let result = MiraAny::Number(match kind {
+                    NumericOperation::Add => left + right,
+                    NumericOperation::Sub => left - right,
+                    NumericOperation::Mul => left * right,
+                    NumericOperation::Div => left / right,
+                    NumericOperation::Mod => left % right,
+                    NumericOperation::Pow => left.powf(right),
+                });
+                self.write_register(frame, *destination, result);
+            }
             Operation::Binary {
                 kind,
                 destination,
@@ -569,24 +599,6 @@ impl<'a> Runtime<'a> {
                 let left = self.read_register(frame, *left);
                 let right = self.read_register(frame, *right);
                 let result = match kind {
-                    BinaryOperation::Add
-                    | BinaryOperation::Sub
-                    | BinaryOperation::Mul
-                    | BinaryOperation::Div
-                    | BinaryOperation::Mod
-                    | BinaryOperation::Pow => {
-                        let left = operations::to_number(&left)?;
-                        let right = operations::to_number(&right)?;
-                        MiraAny::Number(match kind {
-                            BinaryOperation::Add => left + right,
-                            BinaryOperation::Sub => left - right,
-                            BinaryOperation::Mul => left * right,
-                            BinaryOperation::Div => left / right,
-                            BinaryOperation::Mod => left % right,
-                            BinaryOperation::Pow => left.powf(right),
-                            _ => unreachable!(),
-                        })
-                    }
                     BinaryOperation::Eq
                     | BinaryOperation::Neq
                     | BinaryOperation::Same

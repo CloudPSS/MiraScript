@@ -84,6 +84,12 @@ pub(crate) enum Operation {
         destination: usize,
         value: usize,
     },
+    Numeric {
+        kind: NumericOperation,
+        destination: usize,
+        left: usize,
+        right: usize,
+    },
     Binary {
         kind: BinaryOperation,
         destination: usize,
@@ -196,13 +202,17 @@ pub(crate) enum UnaryOperation {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum BinaryOperation {
+pub(crate) enum NumericOperation {
     Add,
     Sub,
     Mul,
     Div,
     Mod,
     Pow,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum BinaryOperation {
     Eq,
     Neq,
     Lt,
@@ -973,15 +983,25 @@ impl Decoder<'_> {
                 }
                 Operation::Continue
             }
-            Add | Sub | Mul | Div | Mod | Pow | Eq | Neq | Lt | Lte | Gt | Gte | Aeq | Naeq
-            | Same | Nsame | In | And | Or => {
+            Add | Sub | Mul | Div | Mod | Pow => {
                 let kind = match opcode {
-                    Add => BinaryOperation::Add,
-                    Sub => BinaryOperation::Sub,
-                    Mul => BinaryOperation::Mul,
-                    Div => BinaryOperation::Div,
-                    Mod => BinaryOperation::Mod,
-                    Pow => BinaryOperation::Pow,
+                    Add => NumericOperation::Add,
+                    Sub => NumericOperation::Sub,
+                    Mul => NumericOperation::Mul,
+                    Div => NumericOperation::Div,
+                    Mod => NumericOperation::Mod,
+                    Pow => NumericOperation::Pow,
+                    _ => unreachable!(),
+                };
+                Operation::Numeric {
+                    kind,
+                    destination: self.read_register(wide, offset)?,
+                    left: self.read_register(wide, offset)?,
+                    right: self.read_register(wide, offset)?,
+                }
+            }
+            Eq | Neq | Lt | Lte | Gt | Gte | Aeq | Naeq | Same | Nsame | In | And | Or => {
+                let kind = match opcode {
                     Eq => BinaryOperation::Eq,
                     Neq => BinaryOperation::Neq,
                     Lt => BinaryOperation::Lt,
@@ -1439,5 +1459,35 @@ mod tests {
             })
             .collect();
         assert_eq!(arities, [0, 1, 2, 3, 4]);
+    }
+
+    #[test]
+    fn arithmetic_uses_numeric_operations() {
+        let (chunk, diagnostics) = mira_core::Compiler::compile(
+            "[left + right, left - right, left * right, left / right, left % right, left ^ right]",
+            &mira_core::Config::new(),
+        );
+        assert!(diagnostics.is_empty());
+        let program = Program::decode(&chunk.unwrap()).unwrap();
+        let operations: Vec<_> = program
+            .root
+            .body
+            .iter()
+            .filter_map(|instruction| match &instruction.kind {
+                InstructionKind::Op(Operation::Numeric { kind, .. }) => Some(*kind),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(
+            operations,
+            [
+                NumericOperation::Add,
+                NumericOperation::Sub,
+                NumericOperation::Mul,
+                NumericOperation::Div,
+                NumericOperation::Mod,
+                NumericOperation::Pow,
+            ]
+        );
     }
 }
