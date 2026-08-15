@@ -41,7 +41,7 @@ pub(super) fn install(context: &mut MiraContext) {
 
 fn timestamp(call: &crate::MiraCallContext<'_>, value: Option<&MiraAny>) -> Result<i64> {
     match value {
-        None | Some(MiraAny::Nil) => Ok((call.options().providers.now_millis)()),
+        None | Some(MiraAny::Nil) => Ok(call.options().providers.now_millis()),
         Some(MiraAny::Number(value)) if value.is_finite() && value.abs() <= 8.64e15 => {
             Ok(value.trunc() as i64)
         }

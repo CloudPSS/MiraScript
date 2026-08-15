@@ -141,7 +141,7 @@ fn install_debug(context: &mut MiraContext) {
             .map(operations::display)
             .collect::<Vec<_>>()
             .join(" ");
-        (call.options().providers.debug)(&message);
+        call.options().providers.debug(&message);
         Ok(MiraAny::Nil)
     });
     insert_native(context, "panic", |_, args| {

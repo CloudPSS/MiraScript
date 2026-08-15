@@ -8,7 +8,8 @@ mod operations;
 mod standard_library;
 mod value;
 
-use std::time::Duration;
+use std::rc::Rc;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 pub use context::MiraContext;
 pub use error::{MiraError, Result};
@@ -38,60 +39,36 @@ pub struct RunOptions {
     pub checkpoint_interval: u32,
     pub max_call_depth: u32,
     pub max_array_len: usize,
-    pub providers: RuntimeProviders,
+    pub providers: Rc<dyn RuntimeProviders>,
 }
 
 /// Host capabilities used by non-deterministic standard-library functions.
-#[derive(Clone)]
-pub struct RuntimeProviders {
-    pub random: std::rc::Rc<dyn Fn() -> f64>,
-    pub now_millis: std::rc::Rc<dyn Fn() -> i64>,
-    pub debug: std::rc::Rc<dyn Fn(&str)>,
+pub trait RuntimeProviders {
+    /// Return a uniformly distributed random number in `[0, 1)`.
+    fn random(&self) -> f64 {
+        rand::random()
+    }
+
+    /// Return the current Unix timestamp in milliseconds.
+    fn now_millis(&self) -> i64 {
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis() as i64
+    }
+
+    /// Emit one debug message from a script.
+    fn debug(&self, message: &str) {
+        eprintln!("{message}");
+    }
 }
+
+struct SystemRuntimeProviders;
+
+impl RuntimeProviders for SystemRuntimeProviders {}
 
 std::thread_local! {
-    static DEFAULT_RUNTIME_PROVIDERS: RuntimeProviders = RuntimeProviders::system();
-}
-
-impl RuntimeProviders {
-    fn system() -> Self {
-        use std::cell::Cell;
-        use std::rc::Rc;
-        use std::time::{SystemTime, UNIX_EPOCH};
-
-        let seed = Rc::new(Cell::new(
-            SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .unwrap_or_default()
-                .as_nanos() as u64,
-        ));
-        let random_seed = Rc::clone(&seed);
-        Self {
-            random: Rc::new(move || {
-                // A small deterministic generator keeps the runtime dependency-free. Tests can
-                // replace it through `RunOptions::providers`.
-                let mut x = random_seed.get();
-                x ^= x << 13;
-                x ^= x >> 7;
-                x ^= x << 17;
-                random_seed.set(x);
-                (x >> 11) as f64 / ((1u64 << 53) as f64)
-            }),
-            now_millis: Rc::new(|| {
-                SystemTime::now()
-                    .duration_since(UNIX_EPOCH)
-                    .unwrap_or_default()
-                    .as_millis() as i64
-            }),
-            debug: Rc::new(|message| eprintln!("{message}")),
-        }
-    }
-}
-
-impl Default for RuntimeProviders {
-    fn default() -> Self {
-        DEFAULT_RUNTIME_PROVIDERS.with(Clone::clone)
-    }
+    static DEFAULT_RUNTIME_PROVIDERS: Rc<dyn RuntimeProviders> = Rc::new(SystemRuntimeProviders);
 }
 
 impl Default for RunOptions {
@@ -101,7 +78,7 @@ impl Default for RunOptions {
             checkpoint_interval: 100,
             max_call_depth: 128,
             max_array_len: 0x100_0000,
-            providers: RuntimeProviders::default(),
+            providers: DEFAULT_RUNTIME_PROVIDERS.with(Clone::clone),
         }
     }
 }

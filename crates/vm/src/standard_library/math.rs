@@ -68,7 +68,7 @@ pub(super) fn install(context: &mut MiraContext) {
         ))
     });
     insert_native(context, "random", |call, _| {
-        Ok(MiraAny::Number((call.options().providers.random)()))
+        Ok(MiraAny::Number(call.options().providers.random()))
     });
 
     for (name, operation) in [

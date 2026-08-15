@@ -9,6 +9,24 @@ use mira_vm::{
 
 struct DropProbe(Rc<Cell<usize>>);
 
+struct TestRuntimeProviders {
+    messages: Rc<RefCell<Vec<String>>>,
+}
+
+impl RuntimeProviders for TestRuntimeProviders {
+    fn random(&self) -> f64 {
+        0.25
+    }
+
+    fn now_millis(&self) -> i64 {
+        0
+    }
+
+    fn debug(&self, message: &str) {
+        self.messages.borrow_mut().push(message.to_owned());
+    }
+}
+
 impl Drop for DropProbe {
     fn drop(&mut self) {
         self.0.set(self.0.get() + 1);
@@ -87,17 +105,14 @@ fn reusable_scripts_do_not_retain_frames_between_runs() {
 #[test]
 fn limits_and_providers_are_applied_per_run() {
     let messages = Rc::new(RefCell::new(Vec::new()));
-    let captured_messages = Rc::clone(&messages);
     let options = RunOptions {
         timeout: Duration::from_secs(1),
         checkpoint_interval: 1,
         max_call_depth: 8,
         max_array_len: 3,
-        providers: RuntimeProviders {
-            random: Rc::new(|| 0.25),
-            now_millis: Rc::new(|| 0),
-            debug: Rc::new(move |message| captured_messages.borrow_mut().push(message.to_owned())),
-        },
+        providers: Rc::new(TestRuntimeProviders {
+            messages: Rc::clone(&messages),
+        }),
     };
     let context = MiraContext::new();
     let script =

@@ -16,6 +16,7 @@ harness = false
 indexmap = "2"
 mira-core = { path = "../core" }
 mira-vm-derive = { path = "../vm-derive" }
+rand = "0.10"
 serde_json = { version = "1", features = ["float_roundtrip", "preserve_order"] }
 unicode-normalization = "0.1"
 

@@ -477,7 +477,7 @@ Rust VM 以 `packages/mirascript/src/vm/operations` 和 Python 对应实现为�
 
 标准库模块按现有导出名注册到 `MiraContext::new()`。函数参数验证、恢复值和错误消息尽量与 TypeScript 运行时一致。
 
-随机数、当前时间和调试输出通过 provider 注入；默认实现使用 Rust 系统能力，测试使用确定性实现。JSON 使用 `serde_json`，并明确拒绝或规范化不可序列化的 function、module 和 extern。
+随机数、当前时间和调试输出通过对象安全的 `RuntimeProviders` trait 注入，`RunOptions` 以 `Rc<dyn RuntimeProviders>` 持有每次执行使用的实现；默认随机数由 `rand` crate 提供，测试使用确定性实现。JSON 使用 `serde_json`，并明确拒绝或规范化不可序列化的 function、module 和 extern。
 
 ## 错误模型
 

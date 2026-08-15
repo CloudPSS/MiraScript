@@ -28,7 +28,8 @@ writes to fields not marked `#[mira(readonly)]`. Borrow conflicts are reported a
 `MiraError::BorrowConflict` rather than panicking inside the VM.
 
 `MiraScript::run_with` accepts per-run timeout, call-depth, array-length, and provider settings.
-Providers make random numbers, the current time, and debug output deterministic in tests. Native
+Implement `RuntimeProviders` and assign an `Rc<dyn RuntimeProviders>` to `RunOptions::providers`
+to make random numbers, the current time, and debug output deterministic in tests. Native
 functions can call script closures through `MiraCallContext::call` and should use
 `MiraCallContext::checkpoint` during long-running host work.
 
