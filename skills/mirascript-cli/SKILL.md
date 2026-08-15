@@ -1,6 +1,6 @@
 ---
 name: mirascript-cli
-description: 使用官方 MiraScript CLI 运行、验证、调试和格式化 MiraScript 脚本或模板。需要执行 .mira/.miratpl 文件、验证生成的代码片段、注入变量、检查 CLI 错误、进入 REPL，或安全地预览及写回格式化结果时使用。
+description: 使用官方 MiraScript CLI 查询内置手册，以及运行、验证、调试和格式化 MiraScript 脚本或模板。需要查询关键字、操作符或标准库，执行 .mira/.miratpl 文件，验证生成的代码片段，注入变量，检查 CLI 错误，进入 REPL，或安全地预览及写回格式化结果时使用。
 ---
 
 # 使用 MiraScript CLI
@@ -75,6 +75,30 @@ pnpm exec mirascript run --template --eval 'Hello, $name!' --variable "name='Wor
 ```
 
 运行文件时会根据 `.miratpl` 扩展名自动选择模板模式；对 stdin 和 `--eval` 必须显式传 `--template`。仅对可信且确定会终止的代码使用 `--timeout 0`。
+
+## 查询内置手册
+
+不确定当前 CLI 版本支持的关键字、操作符或标准库接口时，先查询随 CLI 发布的手册：
+
+```powershell
+pnpm exec mirascript man keywords
+pnpm exec mirascript man operators
+pnpm exec mirascript man libraries
+```
+
+使用具体主题获取详细说明。关键字和操作符主题会显示语义与示例；标准库函数会显示摘要、参数、返回值和可用示例，模块主题会列出其成员：
+
+```powershell
+pnpm exec mirascript man if
+pnpm exec mirascript man '&&'
+pnpm exec mirascript man debug_print
+pnpm exec mirascript man matrix
+pnpm exec mirascript man matrix.add
+```
+
+标准库成员使用点路径；可选的 `lib.` 前缀也会被接受，如 `lib.matrix.add`。通常省略该前缀，以保持命令简洁。在 PowerShell 中始终给操作符主题加引号，避免 `&&` 等字符被 shell 解释。
+
+`man` 只接受一个必填主题。未知主题会打印该子命令的帮助并以非零状态退出；自动化查询仍需同时检查退出码、stdout 和 stderr。
 
 ## 格式化
 
