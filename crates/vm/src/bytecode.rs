@@ -1,4 +1,3 @@
-use std::cell::RefCell;
 use std::rc::Rc;
 
 use mira_core::OpCode;
@@ -31,10 +30,7 @@ pub(crate) struct Instruction {
 
 #[derive(Debug, Clone)]
 pub(crate) enum InstructionKind {
-    Op {
-        opcode: OpCode,
-        params: Vec<i64>,
-    },
+    Op(Operation),
     Function {
         destination: usize,
         function: usize,
@@ -63,6 +59,180 @@ pub(crate) enum InstructionKind {
         name: String,
         fields: Vec<(String, usize)>,
     },
+}
+
+#[derive(Debug, Clone)]
+pub(crate) enum Operation {
+    Noop,
+    Break,
+    Continue,
+    Return {
+        value: usize,
+    },
+    Constant {
+        destination: usize,
+        constant: usize,
+    },
+    Uninit {
+        destination: usize,
+    },
+    Unary {
+        kind: UnaryOperation,
+        destination: usize,
+        value: usize,
+    },
+    Binary {
+        kind: BinaryOperation,
+        destination: usize,
+        left: usize,
+        right: usize,
+    },
+    Swap {
+        left: usize,
+        right: usize,
+    },
+    Upvalue {
+        kind: UpvalueOperation,
+        value: usize,
+        level: usize,
+        register: usize,
+    },
+    GetGlobal {
+        destination: usize,
+        constant: usize,
+    },
+    GetGlobalDyn {
+        destination: usize,
+        key: usize,
+    },
+    InGlobal {
+        destination: usize,
+        key: usize,
+    },
+    Concat {
+        destination: usize,
+        values: Box<[usize]>,
+    },
+    Format {
+        destination: usize,
+        value: usize,
+        format: usize,
+    },
+    Assert {
+        kind: AssertOperation,
+        value: usize,
+    },
+    PickOmit {
+        kind: PickOmitOperation,
+        destination: usize,
+        value: usize,
+        keys: Box<[usize]>,
+    },
+    Call {
+        destination: usize,
+        target: CallTarget,
+        arguments: Box<[usize]>,
+        spreads: Box<[usize]>,
+    },
+    Access {
+        kind: AccessOperation,
+        destination: usize,
+        value: usize,
+        key: AccessKey,
+    },
+    Slice {
+        destination: usize,
+        value: usize,
+        start: Option<SliceBound>,
+        end: Option<SliceBound>,
+        exclusive: bool,
+    },
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) enum UnaryOperation {
+    Pos,
+    Neg,
+    Not,
+    Plus,
+    Type,
+    ToBoolean,
+    ToNumber,
+    ToString,
+    IsBoolean,
+    IsNumber,
+    IsString,
+    IsRecord,
+    IsArray,
+    Assign,
+    Length,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum BinaryOperation {
+    Add,
+    Sub,
+    Mul,
+    Div,
+    Mod,
+    Pow,
+    Eq,
+    Neq,
+    Lt,
+    Lte,
+    Gt,
+    Gte,
+    Aeq,
+    Naeq,
+    Same,
+    Nsame,
+    In,
+    And,
+    Or,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) enum AssertOperation {
+    Initialized,
+    NonNil,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) enum UpvalueOperation {
+    Get,
+    Set,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) enum PickOmitOperation {
+    Pick,
+    Omit,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) enum AccessOperation {
+    Has,
+    Get,
+    Set,
+}
+
+#[derive(Debug, Clone)]
+pub(crate) enum CallTarget {
+    Global(usize),
+    Register(usize),
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) enum AccessKey {
+    Constant(usize),
+    Register(usize),
+    Index(i64),
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) enum SliceBound {
+    Constant(i64),
+    Register(usize),
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -288,19 +458,6 @@ struct Decoder<'a> {
     functions: Vec<FunctionDef>,
     scopes: Vec<usize>,
     loop_depth: usize,
-}
-
-#[derive(Default)]
-struct ParamList(RefCell<Vec<i64>>);
-
-impl ParamList {
-    fn push(&self, value: i64) {
-        self.0.borrow_mut().push(value);
-    }
-
-    fn into_vec(self) -> Vec<i64> {
-        self.0.into_inner()
-    }
 }
 
 impl Decoder<'_> {
@@ -733,106 +890,205 @@ impl Decoder<'_> {
         offset: usize,
     ) -> Result<InstructionKind> {
         use OpCode::*;
-        let params = ParamList::default();
-        let reg = |this: &mut Self| -> Result<()> {
-            params.push(this.read_register(wide, offset)? as i64);
-            Ok(())
-        };
-        match opcode {
+        let operation = match opcode {
             Noop => {
                 if wide {
                     return Err(self.invalid(offset, "Noop cannot use wide encoding"));
                 }
+                Operation::Noop
             }
-            Break | Continue => {
+            Break => {
                 if wide {
                     return Err(self.invalid(offset, "control opcode cannot use wide encoding"));
                 }
                 if self.loop_depth == 0 {
                     return Err(self.invalid(offset, format!("{opcode} outside a loop")));
                 }
+                Operation::Break
+            }
+            Continue => {
+                if wide {
+                    return Err(self.invalid(offset, "control opcode cannot use wide encoding"));
+                }
+                if self.loop_depth == 0 {
+                    return Err(self.invalid(offset, format!("{opcode} outside a loop")));
+                }
+                Operation::Continue
             }
             Add | Sub | Mul | Div | Mod | Pow | Eq | Neq | Lt | Lte | Gt | Gte | Aeq | Naeq
             | Same | Nsame | In | And | Or => {
-                reg(self)?;
-                reg(self)?;
-                reg(self)?;
+                let kind = match opcode {
+                    Add => BinaryOperation::Add,
+                    Sub => BinaryOperation::Sub,
+                    Mul => BinaryOperation::Mul,
+                    Div => BinaryOperation::Div,
+                    Mod => BinaryOperation::Mod,
+                    Pow => BinaryOperation::Pow,
+                    Eq => BinaryOperation::Eq,
+                    Neq => BinaryOperation::Neq,
+                    Lt => BinaryOperation::Lt,
+                    Lte => BinaryOperation::Lte,
+                    Gt => BinaryOperation::Gt,
+                    Gte => BinaryOperation::Gte,
+                    Aeq => BinaryOperation::Aeq,
+                    Naeq => BinaryOperation::Naeq,
+                    Same => BinaryOperation::Same,
+                    Nsame => BinaryOperation::Nsame,
+                    In => BinaryOperation::In,
+                    And => BinaryOperation::And,
+                    Or => BinaryOperation::Or,
+                    _ => unreachable!(),
+                };
+                Operation::Binary {
+                    kind,
+                    destination: self.read_register(wide, offset)?,
+                    left: self.read_register(wide, offset)?,
+                    right: self.read_register(wide, offset)?,
+                }
             }
             Pos | Neg | Not | Plus | Type | ToBoolean | ToNumber | ToString | IsBoolean
             | IsNumber | IsString | IsRecord | IsArray | Assign | Length => {
-                reg(self)?;
-                reg(self)?;
+                let kind = match opcode {
+                    Pos => UnaryOperation::Pos,
+                    Neg => UnaryOperation::Neg,
+                    Not => UnaryOperation::Not,
+                    Plus => UnaryOperation::Plus,
+                    Type => UnaryOperation::Type,
+                    ToBoolean => UnaryOperation::ToBoolean,
+                    ToNumber => UnaryOperation::ToNumber,
+                    ToString => UnaryOperation::ToString,
+                    IsBoolean => UnaryOperation::IsBoolean,
+                    IsNumber => UnaryOperation::IsNumber,
+                    IsString => UnaryOperation::IsString,
+                    IsRecord => UnaryOperation::IsRecord,
+                    IsArray => UnaryOperation::IsArray,
+                    Assign => UnaryOperation::Assign,
+                    Length => UnaryOperation::Length,
+                    _ => unreachable!(),
+                };
+                Operation::Unary {
+                    kind,
+                    destination: self.read_register(wide, offset)?,
+                    value: self.read_register(wide, offset)?,
+                }
             }
-            AssertInit | AssertNonNil | Uninit | Return => reg(self)?,
-            Swap | GetGlobalDyn => {
-                reg(self)?;
-                reg(self)?;
-            }
-            Constant | GetGlobal => {
-                reg(self)?;
-                params.push(self.read_constant(wide, offset)? as i64);
-            }
+            AssertInit | AssertNonNil => Operation::Assert {
+                kind: if opcode == AssertInit {
+                    AssertOperation::Initialized
+                } else {
+                    AssertOperation::NonNil
+                },
+                value: self.read_register(wide, offset)?,
+            },
+            Uninit => Operation::Uninit {
+                destination: self.read_register(wide, offset)?,
+            },
+            Return => Operation::Return {
+                value: self.read_register(wide, offset)?,
+            },
+            Swap => Operation::Swap {
+                left: self.read_register(wide, offset)?,
+                right: self.read_register(wide, offset)?,
+            },
+            GetGlobalDyn => Operation::GetGlobalDyn {
+                destination: self.read_register(wide, offset)?,
+                key: self.read_register(wide, offset)?,
+            },
+            Constant => Operation::Constant {
+                destination: self.read_register(wide, offset)?,
+                constant: self.read_constant(wide, offset)?,
+            },
+            GetGlobal => Operation::GetGlobal {
+                destination: self.read_register(wide, offset)?,
+                constant: self.read_constant(wide, offset)?,
+            },
             GetUpvalue | SetUpvalue => {
-                reg(self)?;
+                let value = self.read_register(wide, offset)?;
                 let level = self.read_param(wide, offset)?;
                 if level == 0 || level >= self.scopes.len() {
                     return Err(self.invalid(offset, format!("invalid upvalue level {level}")));
                 }
-                let up = self.read_param(wide, offset)?;
+                let register = self.read_param(wide, offset)?;
                 let scope = self.scopes[self.scopes.len() - 1 - level];
-                if up > scope {
+                if register > scope {
                     return Err(self.invalid(
                         offset,
-                        format!("upvalue register {up} is out of range 0..={scope}"),
+                        format!("upvalue register {register} is out of range 0..={scope}"),
                     ));
                 }
-                params.push(level as i64);
-                params.push(up as i64);
+                Operation::Upvalue {
+                    kind: if opcode == GetUpvalue {
+                        UpvalueOperation::Get
+                    } else {
+                        UpvalueOperation::Set
+                    },
+                    value,
+                    level,
+                    register,
+                }
             }
             Format => {
-                reg(self)?;
-                reg(self)?;
-                let constant = self.read_constant(wide, offset)?;
-                if !matches!(self.constants[constant], MiraAny::String(_) | MiraAny::Nil) {
+                let destination = self.read_register(wide, offset)?;
+                let value = self.read_register(wide, offset)?;
+                let format = self.read_constant(wide, offset)?;
+                if !matches!(self.constants[format], MiraAny::String(_) | MiraAny::Nil) {
                     return Err(self.invalid(offset, "format constant must be string or nil"));
                 }
-                params.push(constant as i64);
+                Operation::Format {
+                    destination,
+                    value,
+                    format,
+                }
             }
-            InGlobal => {
-                reg(self)?;
-                reg(self)?;
-            }
+            InGlobal => Operation::InGlobal {
+                destination: self.read_register(wide, offset)?,
+                key: self.read_register(wide, offset)?,
+            },
             Concat => {
-                reg(self)?;
+                let destination = self.read_register(wide, offset)?;
                 let count = self.read_count(wide, offset)?;
-                params.push(count as i64);
+                let mut values = Vec::with_capacity(count);
                 for _ in 0..count {
-                    reg(self)?;
+                    values.push(self.read_register(wide, offset)?);
+                }
+                Operation::Concat {
+                    destination,
+                    values: values.into_boxed_slice(),
                 }
             }
             Pick | Omit => {
-                reg(self)?;
-                reg(self)?;
+                let destination = self.read_register(wide, offset)?;
+                let value = self.read_register(wide, offset)?;
                 let count = self.read_count(wide, offset)?;
-                params.push(count as i64);
+                let mut keys = Vec::with_capacity(count);
                 for _ in 0..count {
-                    params.push(self.read_constant(wide, offset)? as i64);
+                    keys.push(self.read_constant(wide, offset)?);
+                }
+                Operation::PickOmit {
+                    kind: if opcode == Pick {
+                        PickOmitOperation::Pick
+                    } else {
+                        PickOmitOperation::Omit
+                    },
+                    destination,
+                    value,
+                    keys: keys.into_boxed_slice(),
                 }
             }
             Call | CallDyn => {
-                reg(self)?;
-                if opcode == Call {
-                    params.push(self.read_constant(wide, offset)? as i64);
+                let destination = self.read_register(wide, offset)?;
+                let target = if opcode == Call {
+                    CallTarget::Global(self.read_constant(wide, offset)?)
                 } else {
-                    reg(self)?;
-                }
+                    CallTarget::Register(self.read_register(wide, offset)?)
+                };
                 let arg_count = self.read_count(wide, offset)?;
-                params.push(arg_count as i64);
+                let mut arguments = Vec::with_capacity(arg_count);
                 for _ in 0..arg_count {
-                    reg(self)?;
+                    arguments.push(self.read_register(wide, offset)?);
                 }
                 let spread_count = self.read_count(wide, offset)?;
-                params.push(spread_count as i64);
+                let mut spreads = Vec::with_capacity(spread_count);
                 for _ in 0..spread_count {
                     let spread = self.read_param(wide, offset)?;
                     if spread >= arg_count {
@@ -841,47 +1097,78 @@ impl Decoder<'_> {
                             format!("spread argument index {spread} is out of range"),
                         ));
                     }
-                    params.push(spread as i64);
+                    spreads.push(spread);
+                }
+                Operation::Call {
+                    destination,
+                    target,
+                    arguments: arguments.into_boxed_slice(),
+                    spreads: spreads.into_boxed_slice(),
                 }
             }
-            Has | Get | Set => {
-                reg(self)?;
-                reg(self)?;
-                params.push(self.read_constant(wide, offset)? as i64);
+            Has | Get | Set | HasDyn | GetDyn | SetDyn | HasIndex | GetIndex | SetIndex => {
+                let kind = match opcode {
+                    Has | HasDyn | HasIndex => AccessOperation::Has,
+                    Get | GetDyn | GetIndex => AccessOperation::Get,
+                    Set | SetDyn | SetIndex => AccessOperation::Set,
+                    _ => unreachable!(),
+                };
+                let destination = self.read_register(wide, offset)?;
+                let value = self.read_register(wide, offset)?;
+                let key = match opcode {
+                    Has | Get | Set => AccessKey::Constant(self.read_constant(wide, offset)?),
+                    HasDyn | GetDyn | SetDyn => {
+                        AccessKey::Register(self.read_register(wide, offset)?)
+                    }
+                    HasIndex | GetIndex | SetIndex => {
+                        AccessKey::Index(self.read_index(wide, offset)?)
+                    }
+                    _ => unreachable!(),
+                };
+                Operation::Access {
+                    kind,
+                    destination,
+                    value,
+                    key,
+                }
             }
-            HasDyn | GetDyn | SetDyn => {
-                reg(self)?;
-                reg(self)?;
-                reg(self)?;
-            }
-            HasIndex | GetIndex | SetIndex => {
-                reg(self)?;
-                reg(self)?;
-                params.push(self.read_index(wide, offset)?);
-            }
-            Slice => {
-                reg(self)?;
-                reg(self)?;
-                params.push(self.read_index(wide, offset)?);
-                params.push(self.read_index(wide, offset)?);
-            }
-            SliceStart | SliceEnd => {
-                reg(self)?;
-                reg(self)?;
-                params.push(self.read_index(wide, offset)?);
-            }
-            SliceDyn | SliceExclusiveDyn => {
-                reg(self)?;
-                reg(self)?;
-                reg(self)?;
-                reg(self)?;
+            Slice | SliceStart | SliceEnd | SliceDyn | SliceExclusiveDyn => {
+                let destination = self.read_register(wide, offset)?;
+                let value = self.read_register(wide, offset)?;
+                let (start, end, exclusive) = match opcode {
+                    Slice => (
+                        Some(SliceBound::Constant(self.read_index(wide, offset)?)),
+                        Some(SliceBound::Constant(self.read_index(wide, offset)?)),
+                        false,
+                    ),
+                    SliceStart => (
+                        None,
+                        Some(SliceBound::Constant(self.read_index(wide, offset)?)),
+                        false,
+                    ),
+                    SliceEnd => (
+                        Some(SliceBound::Constant(self.read_index(wide, offset)?)),
+                        None,
+                        false,
+                    ),
+                    SliceDyn | SliceExclusiveDyn => (
+                        Some(SliceBound::Register(self.read_register(wide, offset)?)),
+                        Some(SliceBound::Register(self.read_register(wide, offset)?)),
+                        opcode == SliceExclusiveDyn,
+                    ),
+                    _ => unreachable!(),
+                };
+                Operation::Slice {
+                    destination,
+                    value,
+                    start,
+                    end,
+                    exclusive,
+                }
             }
             _ => return Err(self.invalid(offset, format!("unsupported simple opcode {opcode}"))),
-        }
-        Ok(InstructionKind::Op {
-            opcode,
-            params: params.into_vec(),
-        })
+        };
+        Ok(InstructionKind::Op(operation))
     }
 
     fn read_count(&mut self, wide: bool, offset: usize) -> Result<usize> {
