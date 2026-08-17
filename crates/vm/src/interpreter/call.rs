@@ -70,28 +70,32 @@ impl<'a> Runtime<'a> {
     }
 
     pub(super) fn has_value(&self, value: &MiraAny, key: &MiraAny) -> Result<bool> {
-        if let MiraAny::Module(MiraModule::Script(module)) = value {
-            if module.execution != self.execution {
-                return Err(MiraError::ExecutionEnded);
+        if let MiraAny::Module(module) = value {
+            if let MiraModule::Script(module) = module.as_ref() {
+                if module.execution != self.execution {
+                    return Err(MiraError::ExecutionEnded);
+                }
+                return Ok(module.exports.contains_key(&operations::to_string(key)?));
             }
-            return Ok(module.exports.contains_key(&operations::to_string(key)?));
         }
         operations::has(value, key)
     }
 
     pub(super) fn get_value(&self, value: &MiraAny, key: &MiraAny) -> Result<MiraAny> {
-        if let MiraAny::Module(MiraModule::Script(module)) = value {
-            if module.execution != self.execution {
-                return Err(MiraError::ExecutionEnded);
+        if let MiraAny::Module(module) = value {
+            if let MiraModule::Script(module) = module.as_ref() {
+                if module.execution != self.execution {
+                    return Err(MiraError::ExecutionEnded);
+                }
+                let key = operations::to_string(key)?;
+                let value = module
+                    .exports
+                    .get(&key)
+                    .map(|register| self.read_register(module.frame, *register))
+                    .unwrap_or(MiraAny::Nil);
+                operations::assert_initialized(&value)?;
+                return Ok(value);
             }
-            let key = operations::to_string(key)?;
-            let value = module
-                .exports
-                .get(&key)
-                .map(|register| self.read_register(module.frame, *register))
-                .unwrap_or(MiraAny::Nil);
-            operations::assert_initialized(&value)?;
-            return Ok(value);
         }
         operations::get_value(value, key)
     }
@@ -105,32 +109,34 @@ impl<'a> Runtime<'a> {
         }
         self.call_depth += 1;
         let result = match function {
-            MiraAny::Function(MiraFunction::Native(function)) => {
-                self.call_stack.push(Some(function.shared_name()));
-                let mut context = MiraCallContext { runtime: self };
-                let result = function.call(&mut context, args).and_then(|value| {
-                    context.runtime.checkpoint()?;
-                    Ok(value)
-                });
-                self.call_stack.pop();
-                result
-            }
-            MiraAny::Function(MiraFunction::Script {
-                execution,
-                function,
-                frame,
-                name,
-            }) => {
-                if *execution != self.execution {
-                    Err(MiraError::ExecutionEnded)
-                } else {
-                    let definition = self.program.functions[*function].clone();
-                    self.call_stack.push(name.clone());
-                    let result = self.call_script(&definition, *frame, args);
+            MiraAny::Function(function) => match function.as_ref() {
+                MiraFunction::Native(function) => {
+                    self.call_stack.push(Some(function.shared_name()));
+                    let mut context = MiraCallContext { runtime: self };
+                    let result = function.call(&mut context, args).and_then(|value| {
+                        context.runtime.checkpoint()?;
+                        Ok(value)
+                    });
                     self.call_stack.pop();
                     result
                 }
-            }
+                MiraFunction::Script {
+                    execution,
+                    function,
+                    frame,
+                    name,
+                } => {
+                    if *execution != self.execution {
+                        Err(MiraError::ExecutionEnded)
+                    } else {
+                        let definition = self.program.functions[*function].clone();
+                        self.call_stack.push(name.clone());
+                        let result = self.call_script(&definition, *frame, args);
+                        self.call_stack.pop();
+                        result
+                    }
+                }
+            },
             MiraAny::Extern(value) if value.is_callable()? => {
                 let label = Rc::from(format!("<extern {}>", value.tag()?));
                 self.call_stack.push(Some(label));
@@ -180,7 +186,7 @@ impl<'a> Runtime<'a> {
                 .map(MiraAny::into_element)
                 .collect::<Result<Vec<_>>>()?;
             if function.arg_count > 0 {
-                self.write_register(frame, function.arg_count, MiraAny::Array(rest));
+                self.write_register(frame, function.arg_count, MiraAny::Array(rest.into()));
             }
         } else {
             for index in 0..function.arg_count {

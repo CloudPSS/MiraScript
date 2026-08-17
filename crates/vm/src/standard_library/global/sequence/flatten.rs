@@ -7,7 +7,7 @@ pub(super) fn install(context: &mut MiraContext) {
             None | Some(MiraAny::Nil) => 1,
             Some(value) => operations::to_number(value)?.trunc().max(0.0) as usize,
         };
-        Ok(MiraAny::Array(flatten(values, depth)?))
+        Ok(MiraAny::Array(flatten(values, depth)?.into()))
     });
 }
 

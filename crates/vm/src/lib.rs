@@ -19,8 +19,8 @@ pub use error::{MiraError, Result};
 pub use mirascript_core as core;
 pub use mirascript_vm_derive::{MiraArray, MiraExtern, MiraRecord};
 pub use value::{
-    MiraAny, MiraArray, MiraCallContext, MiraExtern, MiraFunction, MiraModule, MiraNativeFn,
-    MiraRecord, MiraShared,
+    MiraAny, MiraArray, MiraCallContext, MiraExtern, MiraFunction, MiraIndirect, MiraModule,
+    MiraNativeFn, MiraRecord, MiraShared,
 };
 
 #[doc(hidden)]

@@ -141,7 +141,7 @@ pub(crate) fn number_to_string(value: f64, minus_zero: bool) -> String {
 pub(crate) fn to_string(value: &MiraAny) -> Result<String> {
     assert_initialized(value)?;
     match value {
-        MiraAny::String(value) => Ok(value.clone()),
+        MiraAny::String(value) => Ok(value.to_string()),
         MiraAny::Nil => Ok(String::new()),
         value => inner_to_string(value, false),
     }
@@ -152,7 +152,7 @@ pub(super) fn inner_to_string(value: &MiraAny, braces: bool) -> Result<String> {
         MiraAny::Uninitialized | MiraAny::Nil => Ok("nil".into()),
         MiraAny::Boolean(value) => Ok(value.to_string()),
         MiraAny::Number(value) => Ok(number_to_string(*value, false)),
-        MiraAny::String(value) => Ok(value.clone()),
+        MiraAny::String(value) => Ok(value.to_string()),
         MiraAny::Function(function) => Ok(match function.name() {
             Some(name) => format!("<function {name}>"),
             None => "<function>".into(),

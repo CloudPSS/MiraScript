@@ -25,7 +25,7 @@ pub(crate) fn has(value: &MiraAny, key: &MiraAny) -> Result<bool> {
 }
 
 pub(crate) fn get(value: &MiraAny, key: &str) -> Result<MiraAny> {
-    get_value(value, &MiraAny::String(key.to_owned()))
+    get_value(value, &MiraAny::String(key.into()))
 }
 
 pub(crate) fn get_value(value: &MiraAny, key: &MiraAny) -> Result<MiraAny> {
@@ -92,21 +92,21 @@ pub(crate) fn set(value: &MiraAny, key: &MiraAny, new_value: MiraAny) -> Result<
 pub(crate) fn pick(value: &MiraAny, keys: &[String]) -> Result<MiraAny> {
     assert_initialized(value)?;
     if !matches!(value, MiraAny::Record(_) | MiraAny::RustRecord(_)) {
-        return Ok(MiraAny::Record(IndexMap::new()));
+        return Ok(MiraAny::Record(IndexMap::new().into()));
     }
     let mut result = IndexMap::new();
     for key in keys {
-        if has(value, &MiraAny::String(key.clone()))? {
+        if has(value, &MiraAny::String(key.clone().into()))? {
             result.insert(key.clone(), get(value, key)?);
         }
     }
-    Ok(MiraAny::Record(result))
+    Ok(MiraAny::Record(result.into()))
 }
 
 pub(crate) fn omit(value: &MiraAny, keys: &[String]) -> Result<MiraAny> {
     assert_initialized(value)?;
     if !matches!(value, MiraAny::Record(_) | MiraAny::RustRecord(_)) {
-        return Ok(MiraAny::Record(IndexMap::new()));
+        return Ok(MiraAny::Record(IndexMap::new().into()));
     }
     let mut result = IndexMap::new();
     for key in value.record_keys()?.unwrap_or_default() {
@@ -114,5 +114,5 @@ pub(crate) fn omit(value: &MiraAny, keys: &[String]) -> Result<MiraAny> {
             result.insert(key.clone(), get(value, &key)?);
         }
     }
-    Ok(MiraAny::Record(result))
+    Ok(MiraAny::Record(result.into()))
 }

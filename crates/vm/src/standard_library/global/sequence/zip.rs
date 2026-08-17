@@ -34,7 +34,7 @@ fn zip(call: &mut MiraCallContext<'_>, value: &MiraAny) -> Result<MiraAny> {
                             unreachable!()
                         };
                         (
-                            key.clone(),
+                            key.to_string(),
                             array.get(index).cloned().unwrap_or(MiraAny::Nil),
                         )
                     })
@@ -45,5 +45,5 @@ fn zip(call: &mut MiraCallContext<'_>, value: &MiraAny) -> Result<MiraAny> {
             }
         }
     }
-    Ok(MiraAny::Array(result))
+    Ok(MiraAny::Array(result.into()))
 }

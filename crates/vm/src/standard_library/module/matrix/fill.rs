@@ -10,12 +10,12 @@ pub(super) fn filled(
 ) -> Result<MiraAny> {
     let dimensions = dimensions(args, call.options().max_array_len)?;
     if dimensions.is_empty() {
-        return Ok(MiraAny::Array(Vec::new()));
+        return Ok(MiraAny::Array(Vec::new().into()));
     }
     let mut result = MiraAny::Number(value);
     for length in dimensions.into_iter().rev() {
         call.checkpoint()?;
-        result = MiraAny::Array(vec![result; length]);
+        result = MiraAny::Array(vec![result; length].into());
     }
     Ok(result)
 }
@@ -41,7 +41,7 @@ pub(super) fn dimensions(args: &[MiraAny], max_len: usize) -> Result<Vec<usize>>
 pub(super) fn identity(call: &mut MiraCallContext<'_>, args: &[MiraAny]) -> Result<MiraAny> {
     let dimensions = dimensions(args, call.options().max_array_len)?;
     if dimensions.is_empty() {
-        return Ok(MiraAny::Array(Vec::new()));
+        return Ok(MiraAny::Array(Vec::new().into()));
     }
     if dimensions.len() > 2 {
         return Err(MiraError::runtime("Invalid matrix size"));
@@ -89,7 +89,7 @@ pub(super) fn diagonal(_call: &mut MiraCallContext<'_>, args: &[MiraAny]) -> Res
             }
             result.push(row[column as usize].clone());
         }
-        return Ok(MiraAny::Array(result));
+        return Ok(MiraAny::Array(result.into()));
     }
     let rows = values.len() + offset.min(0).unsigned_abs();
     let columns = values.len() + offset.max(0) as usize;

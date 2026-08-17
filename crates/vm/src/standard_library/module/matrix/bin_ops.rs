@@ -46,7 +46,8 @@ pub(super) fn entrywise(
                         right.get(index).cloned().unwrap_or(MiraAny::Nil),
                     )
                 })
-                .collect::<Result<Vec<_>>>()?,
+                .collect::<Result<Vec<_>>>()?
+                .into(),
         ));
     }
 
@@ -77,9 +78,9 @@ pub(super) fn entrywise(
                     .unwrap_or(MiraAny::Nil),
             )?);
         }
-        result.push(MiraAny::Array(output));
+        result.push(MiraAny::Array(output.into()));
     }
-    Ok(MiraAny::Array(result))
+    Ok(MiraAny::Array(result.into()))
 }
 
 pub(super) fn broadcast_scalar(
@@ -92,7 +93,8 @@ pub(super) fn broadcast_scalar(
             operations::materialize_array(value)?
                 .into_iter()
                 .map(operation)
-                .collect::<Result<Vec<_>>>()?,
+                .collect::<Result<Vec<_>>>()?
+                .into(),
         ));
     }
     let matrix = as_matrix(value)?;
@@ -110,10 +112,12 @@ pub(super) fn broadcast_scalar(
                                     .unwrap_or(MiraAny::Nil),
                             )
                         })
-                        .collect::<Result<Vec<_>>>()?,
+                        .collect::<Result<Vec<_>>>()?
+                        .into(),
                 ))
             })
-            .collect::<Result<Vec<_>>>()?,
+            .collect::<Result<Vec<_>>>()?
+            .into(),
     ))
 }
 
@@ -132,7 +136,8 @@ pub(super) fn map_nested(
                     operation(value)
                 }
             })
-            .collect::<Result<Vec<_>>>()?,
+            .collect::<Result<Vec<_>>>()?
+            .into(),
     ))
 }
 
@@ -173,9 +178,9 @@ pub(super) fn multiply(_call: &mut MiraCallContext<'_>, args: &[MiraAny]) -> Res
                     }
                     output.push(MiraAny::Number(sum));
                 }
-                result.push(MiraAny::Array(output));
+                result.push(MiraAny::Array(output.into()));
             }
-            Ok(MiraAny::Array(result))
+            Ok(MiraAny::Array(result.into()))
         }
         (1, 2) => {
             if left_shape[0] != right_shape[0] {
@@ -194,7 +199,7 @@ pub(super) fn multiply(_call: &mut MiraCallContext<'_>, args: &[MiraAny]) -> Res
                 }
                 result.push(MiraAny::Number(sum));
             }
-            Ok(MiraAny::Array(result))
+            Ok(MiraAny::Array(result.into()))
         }
         (2, 1) => {
             if left_shape[1] != right_shape[0] {
@@ -210,7 +215,7 @@ pub(super) fn multiply(_call: &mut MiraCallContext<'_>, args: &[MiraAny]) -> Res
                 }
                 result.push(MiraAny::Number(sum));
             }
-            Ok(MiraAny::Array(result))
+            Ok(MiraAny::Array(result.into()))
         }
         _ => unreachable!(),
     }

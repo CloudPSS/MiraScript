@@ -1,6 +1,7 @@
 mod bridge;
 mod convert;
 mod function;
+mod indirect;
 mod module;
 mod shared;
 
@@ -15,11 +16,15 @@ use bridge::{ArrayObject, ExternObject, RecordObject};
 pub use bridge::{MiraArray, MiraBridge, MiraExtern, MiraRecord};
 pub(crate) use function::NativeRuntime;
 pub use function::{MiraCallContext, MiraFunction, MiraNativeFn};
+pub use indirect::MiraIndirect;
 pub use module::MiraModule;
 pub(crate) use module::ScriptModule;
 pub use shared::MiraShared;
 
 /// A value understood by the Rust VM.
+///
+/// Scalar payloads are stored inline. All other payloads use shared
+/// copy-on-write indirection so that every value occupies exactly 16 bytes.
 #[derive(Clone, Default)]
 pub enum MiraAny {
     #[doc(hidden)]
@@ -32,22 +37,24 @@ pub enum MiraAny {
     /// A double-precision numeric value.
     Number(f64),
     /// An owned UTF-8 string.
-    String(String),
+    String(MiraIndirect<String>),
     /// An owned MiraScript array.
-    Array(Vec<MiraAny>),
+    Array(MiraIndirect<Vec<MiraAny>>),
     /// An owned MiraScript record with insertion-ordered keys.
-    Record(IndexMap<String, MiraAny>),
+    Record(MiraIndirect<IndexMap<String, MiraAny>>),
     /// A callable native or script function.
-    Function(MiraFunction),
+    Function(MiraIndirect<MiraFunction>),
     /// A native or execution-scoped module.
-    Module(MiraModule),
+    Module(MiraIndirect<MiraModule>),
     /// A live, mutable Rust extern value.
-    Extern(Rc<dyn ExternObject>),
+    Extern(MiraIndirect<Rc<dyn ExternObject>>),
     #[doc(hidden)]
-    RustRecord(Rc<dyn RecordObject>),
+    RustRecord(MiraIndirect<Rc<dyn RecordObject>>),
     #[doc(hidden)]
-    RustArray(Rc<dyn ArrayObject>),
+    RustArray(MiraIndirect<Rc<dyn ArrayObject>>),
 }
+
+const _: () = assert!(std::mem::size_of::<MiraAny>() == 16);
 
 impl MiraAny {
     /// Return the MiraScript type name for this value.
@@ -72,7 +79,8 @@ impl MiraAny {
 
     /// Wrap an existing shared Rust record as a live read-only view.
     pub fn from_record_shared<T: MiraRecord>(value: MiraShared<T>) -> Self {
-        Self::RustRecord(Rc::new(value))
+        let value: Rc<dyn RecordObject> = Rc::new(value);
+        Self::RustRecord(value.into())
     }
 
     /// Wrap a Rust array in a new [`MiraShared`] allocation.
@@ -82,7 +90,8 @@ impl MiraAny {
 
     /// Wrap an existing shared Rust array as a live read-only view.
     pub fn from_array_shared<T: MiraArray>(value: MiraShared<T>) -> Self {
-        Self::RustArray(Rc::new(value))
+        let value: Rc<dyn ArrayObject> = Rc::new(value);
+        Self::RustArray(value.into())
     }
 
     /// Wrap a Rust extern in a new [`MiraShared`] allocation.
@@ -92,7 +101,8 @@ impl MiraAny {
 
     /// Wrap an existing shared Rust extern as a live mutable object.
     pub fn from_extern_shared<T: MiraExtern>(value: MiraShared<T>) -> Self {
-        Self::Extern(Rc::new(value))
+        let value: Rc<dyn ExternObject> = Rc::new(value);
+        Self::Extern(value.into())
     }
 
     /// Return whether this value is initialized and safe to expose to host code.
@@ -110,10 +120,16 @@ impl MiraAny {
 
     pub(crate) fn contains_script_reference(&self, execution: u64) -> bool {
         match self {
-            Self::Function(MiraFunction::Script {
+            Self::Function(function) => matches!(
+                function.as_ref(),
+                MiraFunction::Script {
                 execution: owner, ..
-            }) => *owner == execution,
-            Self::Module(MiraModule::Script(module)) => module.execution == execution,
+                } if *owner == execution
+            ),
+            Self::Module(module) => matches!(
+                module.as_ref(),
+                MiraModule::Script(module) if module.execution == execution
+            ),
             Self::Array(values) => values
                 .iter()
                 .any(|value| value.contains_script_reference(execution)),

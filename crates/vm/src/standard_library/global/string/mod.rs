@@ -14,7 +14,7 @@ pub(super) fn install(context: &mut MiraContext) {
         Ok(MiraAny::Array(
             string(args, 0, "str")?
                 .chars()
-                .map(|value| MiraAny::String(value.to_string()))
+                .map(|value| MiraAny::String(value.to_string().into()))
                 .collect(),
         ))
     });
@@ -25,7 +25,9 @@ pub(super) fn install(context: &mut MiraContext) {
             None => String::new(),
             Some(value) => operations::to_string(value)?,
         };
-        Ok(MiraAny::String(source.replace(&search, &replacement)))
+        Ok(MiraAny::String(
+            source.replace(&search, &replacement).into(),
+        ))
     });
     insert_native(context, "split", |_, args| {
         let source = string(args, 0, "str")?;
@@ -39,7 +41,7 @@ pub(super) fn install(context: &mut MiraContext) {
             source.split(&separator).map(str::to_owned).collect()
         };
         Ok(MiraAny::Array(
-            parts.into_iter().map(MiraAny::String).collect(),
+            parts.into_iter().map(MiraAny::from).collect(),
         ))
     });
     insert_native(context, "join", |_, args| {
@@ -52,7 +54,7 @@ pub(super) fn install(context: &mut MiraContext) {
             .iter()
             .map(operations::to_string)
             .collect::<Result<Vec<_>>>()?;
-        Ok(MiraAny::String(parts.join(&separator)))
+        Ok(MiraAny::String(parts.join(&separator).into()))
     });
     trim::install(context);
     case::install(context);

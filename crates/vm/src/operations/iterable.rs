@@ -26,10 +26,10 @@ pub(crate) fn iterable(value: &MiraAny) -> Result<Vec<MiraAny>> {
             .record_keys()?
             .unwrap_or_default()
             .into_iter()
-            .map(MiraAny::String)
+            .map(MiraAny::from)
             .collect()),
-        MiraAny::Extern(value) => Ok(value.keys()?.into_iter().map(MiraAny::String).collect()),
-        MiraAny::Module(module) => Ok(module.keys().into_iter().map(MiraAny::String).collect()),
+        MiraAny::Extern(value) => Ok(value.keys()?.into_iter().map(MiraAny::from).collect()),
+        MiraAny::Module(module) => Ok(module.keys().into_iter().map(MiraAny::from).collect()),
         _ => Err(MiraError::runtime(format!(
             "Value is not iterable: {}",
             display(value)

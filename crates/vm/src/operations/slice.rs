@@ -34,9 +34,12 @@ pub(crate) fn slice(
         end as i64 + 1
     }
     .clamp(0, length) as usize;
-    Ok(MiraAny::Array(if start >= end {
-        Vec::new()
-    } else {
-        array[start..end].to_vec()
-    }))
+    Ok(MiraAny::Array(
+        (if start >= end {
+            Vec::new()
+        } else {
+            array[start..end].to_vec()
+        })
+        .into(),
+    ))
 }

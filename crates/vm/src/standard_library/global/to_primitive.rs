@@ -3,10 +3,13 @@ use crate::{MiraAny, MiraContext, MiraError, operations};
 
 pub(super) fn install(context: &mut MiraContext) {
     insert_native(context, "to_string", |_, args| {
-        Ok(MiraAny::String(operations::to_string(
-            args.first()
-                .ok_or_else(|| MiraError::runtime("Parameter 'data' is required"))?,
-        )?))
+        Ok(MiraAny::String(
+            operations::to_string(
+                args.first()
+                    .ok_or_else(|| MiraError::runtime("Parameter 'data' is required"))?,
+            )?
+            .into(),
+        ))
     });
     insert_native(context, "to_number", |_, args| {
         let value = args
@@ -30,9 +33,8 @@ pub(super) fn install(context: &mut MiraContext) {
             Some(value) => Some(operations::to_string(value)?),
             None => unreachable!(),
         };
-        Ok(MiraAny::String(operations::format_value(
-            value,
-            specifier.as_deref(),
-        )?))
+        Ok(MiraAny::String(
+            operations::format_value(value, specifier.as_deref())?.into(),
+        ))
     });
 }

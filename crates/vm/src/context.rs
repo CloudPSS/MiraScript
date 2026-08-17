@@ -48,7 +48,7 @@ impl MiraContext {
     pub fn insert_fn(&mut self, name: impl Into<String>, function: impl Into<MiraNativeFn>) {
         self.insert(
             name,
-            MiraAny::Function(crate::MiraFunction::Native(function.into())),
+            MiraAny::Function(crate::MiraFunction::Native(function.into()).into()),
         );
     }
 

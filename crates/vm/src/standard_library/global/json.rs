@@ -13,9 +13,13 @@ pub(super) fn install(context: &mut MiraContext) {
         }
         let json = to_json_value(call, value, false)?;
         Ok(match json {
-            Some(value) => MiraAny::String(serde_json::to_string(&value).map_err(|error| {
-                MiraError::runtime(format!("Failed to serialize JSON: {error}"))
-            })?),
+            Some(value) => MiraAny::String(
+                serde_json::to_string(&value)
+                    .map_err(|error| {
+                        MiraError::runtime(format!("Failed to serialize JSON: {error}"))
+                    })?
+                    .into(),
+            ),
             None => MiraAny::Nil,
         })
     });
@@ -53,7 +57,7 @@ fn to_json_value(
         } else {
             serde_json::Value::Number(serde_json::Number::from_f64(*value).unwrap())
         }),
-        MiraAny::String(value) => Some(value.clone().into()),
+        MiraAny::String(value) => Some(value.to_string().into()),
         MiraAny::Array(_) | MiraAny::RustArray(_) => Some(serde_json::Value::Array(
             operations::materialize_array(value)?
                 .iter()
@@ -99,7 +103,7 @@ fn from_json_value(value: serde_json::Value) -> MiraAny {
         serde_json::Value::Null => MiraAny::Nil,
         serde_json::Value::Bool(value) => MiraAny::Boolean(value),
         serde_json::Value::Number(value) => MiraAny::Number(value.as_f64().unwrap_or(f64::NAN)),
-        serde_json::Value::String(value) => MiraAny::String(value),
+        serde_json::Value::String(value) => MiraAny::String(value.into()),
         serde_json::Value::Array(values) => {
             MiraAny::Array(values.into_iter().map(from_json_value).collect())
         }
@@ -107,7 +111,8 @@ fn from_json_value(value: serde_json::Value) -> MiraAny {
             values
                 .into_iter()
                 .map(|(key, value)| (key, from_json_value(value)))
-                .collect::<IndexMap<_, _>>(),
+                .collect::<IndexMap<_, _>>()
+                .into(),
         ),
     }
 }

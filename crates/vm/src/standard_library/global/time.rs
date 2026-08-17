@@ -34,7 +34,7 @@ pub(super) fn install(context: &mut MiraContext) {
     });
     insert_native(context, "to_iso8601", |call, args| {
         match timestamp(call, args.first()) {
-            Ok(value) => Ok(MiraAny::String(iso8601(value))),
+            Ok(value) => Ok(MiraAny::String(iso8601(value).into())),
             Err(_) if args.len() > 1 => Ok(args[1].clone()),
             Err(error) => Err(error),
         }
@@ -74,20 +74,23 @@ fn datetime_record(timestamp: i64, offset: f64) -> MiraAny {
     let minute = day_millis / 60_000 % 60;
     let second = day_millis / 1_000 % 60;
     let millisecond = day_millis % 1_000;
-    MiraAny::Record(IndexMap::from([
-        ("year".into(), MiraAny::Number(year as f64)),
-        ("month".into(), MiraAny::Number(month as f64)),
-        ("day".into(), MiraAny::Number(day as f64)),
-        ("hour".into(), MiraAny::Number(hour as f64)),
-        ("minute".into(), MiraAny::Number(minute as f64)),
-        ("second".into(), MiraAny::Number(second as f64)),
-        ("millisecond".into(), MiraAny::Number(millisecond as f64)),
-        (
-            "dayOfWeek".into(),
-            MiraAny::Number((days as i64 + 4).rem_euclid(7) as f64),
-        ),
-        ("offset".into(), MiraAny::Number(offset)),
-    ]))
+    MiraAny::Record(
+        IndexMap::from([
+            ("year".into(), MiraAny::Number(year as f64)),
+            ("month".into(), MiraAny::Number(month as f64)),
+            ("day".into(), MiraAny::Number(day as f64)),
+            ("hour".into(), MiraAny::Number(hour as f64)),
+            ("minute".into(), MiraAny::Number(minute as f64)),
+            ("second".into(), MiraAny::Number(second as f64)),
+            ("millisecond".into(), MiraAny::Number(millisecond as f64)),
+            (
+                "dayOfWeek".into(),
+                MiraAny::Number((days as i64 + 4).rem_euclid(7) as f64),
+            ),
+            ("offset".into(), MiraAny::Number(offset)),
+        ])
+        .into(),
+    )
 }
 
 fn iso8601(timestamp: i64) -> String {

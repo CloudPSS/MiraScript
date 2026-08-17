@@ -21,14 +21,20 @@ pub(super) fn invert(_call: &mut MiraCallContext<'_>, args: &[MiraAny]) -> Resul
     let size = dimensions[0];
     let matrix = as_matrix(value)?;
     if size == 1 {
-        return Ok(MiraAny::Array(vec![MiraAny::Array(vec![MiraAny::Number(
-            1.0 / numeric(
-                matrix
-                    .first()
-                    .and_then(|row| row.first())
-                    .unwrap_or(&MiraAny::Nil),
-            )?,
-        )])]));
+        return Ok(MiraAny::Array(
+            vec![MiraAny::Array(
+                vec![MiraAny::Number(
+                    1.0 / numeric(
+                        matrix
+                            .first()
+                            .and_then(|row| row.first())
+                            .unwrap_or(&MiraAny::Nil),
+                    )?,
+                )]
+                .into(),
+            )]
+            .into(),
+        ));
     }
     if size == 2 {
         let a = numeric(&matrix[0][0])?;
@@ -36,16 +42,25 @@ pub(super) fn invert(_call: &mut MiraCallContext<'_>, args: &[MiraAny]) -> Resul
         let c = numeric(&matrix[1][0])?;
         let d = numeric(&matrix[1][1])?;
         let determinant = a * d - b * c;
-        return Ok(MiraAny::Array(vec![
-            MiraAny::Array(vec![
-                MiraAny::Number(d / determinant),
-                MiraAny::Number(-b / determinant),
-            ]),
-            MiraAny::Array(vec![
-                MiraAny::Number(-c / determinant),
-                MiraAny::Number(a / determinant),
-            ]),
-        ]));
+        return Ok(MiraAny::Array(
+            vec![
+                MiraAny::Array(
+                    vec![
+                        MiraAny::Number(d / determinant),
+                        MiraAny::Number(-b / determinant),
+                    ]
+                    .into(),
+                ),
+                MiraAny::Array(
+                    vec![
+                        MiraAny::Number(-c / determinant),
+                        MiraAny::Number(a / determinant),
+                    ]
+                    .into(),
+                ),
+            ]
+            .into(),
+        ));
     }
     let mut left = vec![vec![0.0; size]; size];
     let mut right = vec![vec![0.0; size]; size];

@@ -116,7 +116,7 @@ fn decode_constants(bytes: &[u8], base_offset: usize) -> Result<Vec<MiraAny>> {
                         reason: "invalid UTF-8 string constant".into(),
                     })?;
                 offset += length;
-                MiraAny::String(value.to_owned())
+                MiraAny::String(value.into())
             }
             _ => {
                 return Err(MiraError::InvalidBytecode {

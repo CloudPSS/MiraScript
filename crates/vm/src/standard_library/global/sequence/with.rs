@@ -15,8 +15,8 @@ fn update_with(data: &MiraAny, entries: &[MiraAny], max_len: usize) -> Result<Mi
         return Err(MiraError::runtime("Expected even number of entries"));
     }
     let mut result = match Data::from_value(data)? {
-        Data::Array(values) => MiraAny::Array(values),
-        Data::Record(values) => MiraAny::Record(values),
+        Data::Array(values) => MiraAny::Array(values.into()),
+        Data::Record(values) => MiraAny::Record(values.into()),
         Data::Primitive(_) => {
             return Err(MiraError::runtime("Argument `data` is not array | record"));
         }
@@ -88,9 +88,9 @@ fn container_for(current: &MiraAny, next: Option<&MiraAny>) -> MiraAny {
     if next.is_some_and(
         |value| matches!(value, MiraAny::Number(number) if number.fract() == 0.0 && *number >= 0.0),
     ) {
-        MiraAny::Array(Vec::new())
+        MiraAny::Array(Vec::new().into())
     } else {
-        MiraAny::Record(IndexMap::new())
+        MiraAny::Record(IndexMap::new().into())
     }
 }
 

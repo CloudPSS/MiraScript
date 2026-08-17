@@ -77,12 +77,15 @@ impl<'a> Runtime<'a> {
                 self.write_register(
                     frame,
                     *destination,
-                    MiraAny::Function(MiraFunction::Script {
-                        execution: self.execution,
-                        function: *function,
-                        frame,
-                        name: None,
-                    }),
+                    MiraAny::Function(
+                        MiraFunction::Script {
+                            execution: self.execution,
+                            function: *function,
+                            frame,
+                            name: None,
+                        }
+                        .into(),
+                    ),
                 );
                 Ok(Flow::Continue)
             }
@@ -139,7 +142,7 @@ impl<'a> Runtime<'a> {
                 self.write_register(
                     frame,
                     *destination,
-                    MiraAny::Module(MiraModule::Script(Rc::new(module))),
+                    MiraAny::Module(MiraModule::Script(Rc::new(module)).into()),
                 );
                 Ok(Flow::Continue)
             }
@@ -262,7 +265,7 @@ impl<'a> Runtime<'a> {
                 }
             }
         }
-        Ok(MiraAny::Record(record))
+        Ok(MiraAny::Record(record.into()))
     }
 
     pub(super) fn build_array(&self, elements: &[ArrayElement], frame: usize) -> Result<MiraAny> {
@@ -305,6 +308,6 @@ impl<'a> Runtime<'a> {
                 )));
             }
         }
-        Ok(MiraAny::Array(array))
+        Ok(MiraAny::Array(array.into()))
     }
 }

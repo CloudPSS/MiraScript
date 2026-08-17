@@ -17,7 +17,7 @@ pub(super) fn install(context: &mut MiraContext) {
                 result.push(value);
             }
         }
-        Ok(MiraAny::Array(result))
+        Ok(MiraAny::Array(result.into()))
     });
     insert_native(context, "unique_by", |call, args| {
         let values = array_value(required(args, 0, "data")?)?;
@@ -26,7 +26,7 @@ pub(super) fn install(context: &mut MiraContext) {
             return Err(MiraError::runtime("Argument `key` is not callable"));
         }
         validate_optional_callable(args.get(2), "equal")?;
-        let original = MiraAny::Array(values.clone());
+        let original = MiraAny::Array(values.clone().into());
         let mut result = Vec::new();
         let mut keys = Vec::new();
         for (index, value) in values.into_iter().enumerate() {
@@ -50,7 +50,7 @@ pub(super) fn install(context: &mut MiraContext) {
                 result.push(value);
             }
         }
-        Ok(MiraAny::Array(result))
+        Ok(MiraAny::Array(result.into()))
     });
 }
 

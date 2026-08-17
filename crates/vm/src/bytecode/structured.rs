@@ -191,7 +191,7 @@ impl Decoder<'_> {
             .ok()
             .and_then(|index| self.constants.get(index))
             .and_then(|value| match value {
-                MiraAny::String(value) => Some(value.clone()),
+                MiraAny::String(value) => Some(value.to_string()),
                 _ => None,
             })
             .ok_or_else(|| self.invalid(offset, "module name must reference a string constant"))?;

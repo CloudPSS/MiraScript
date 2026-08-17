@@ -64,7 +64,7 @@ fn map_like(call: &mut MiraCallContext<'_>, args: &[MiraAny], mode: MapMode) -> 
                     _ => {}
                 }
             }
-            Ok(MiraAny::Array(result))
+            Ok(MiraAny::Array(result.into()))
         }
         Data::Record(values) => {
             let mut result = IndexMap::new();
@@ -74,7 +74,7 @@ fn map_like(call: &mut MiraCallContext<'_>, args: &[MiraAny], mode: MapMode) -> 
                     function,
                     &[
                         value.clone(),
-                        MiraAny::String(key.clone()),
+                        MiraAny::String(key.clone().into()),
                         original.clone(),
                     ],
                 )?;
@@ -91,7 +91,7 @@ fn map_like(call: &mut MiraCallContext<'_>, args: &[MiraAny], mode: MapMode) -> 
                     _ => {}
                 }
             }
-            Ok(MiraAny::Record(result))
+            Ok(MiraAny::Record(result.into()))
         }
     }
 }

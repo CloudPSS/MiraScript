@@ -35,7 +35,9 @@ impl Runtime<'_> {
                     UnaryOperation::Type => MiraAny::String(value.type_name().into()),
                     UnaryOperation::ToBoolean => MiraAny::Boolean(operations::to_boolean(&value)?),
                     UnaryOperation::ToNumber => MiraAny::Number(operations::to_number(&value)?),
-                    UnaryOperation::ToString => MiraAny::String(operations::to_string(&value)?),
+                    UnaryOperation::ToString => {
+                        MiraAny::String(operations::to_string(&value)?.into())
+                    }
                     UnaryOperation::IsBoolean
                     | UnaryOperation::IsNumber
                     | UnaryOperation::IsString
@@ -194,7 +196,7 @@ impl Runtime<'_> {
                         None,
                     )?);
                 }
-                self.write_register(frame, *destination, MiraAny::String(result));
+                self.write_register(frame, *destination, MiraAny::String(result.into()));
             }
             Operation::Format {
                 destination,
@@ -207,7 +209,7 @@ impl Runtime<'_> {
                     _ => unreachable!("validated format constant"),
                 };
                 let result = operations::format_value(&self.read_register(frame, *value), format)?;
-                self.write_register(frame, *destination, MiraAny::String(result));
+                self.write_register(frame, *destination, MiraAny::String(result.into()));
             }
             Operation::Assert { kind, value } => {
                 let value = self.read_register(frame, *value);

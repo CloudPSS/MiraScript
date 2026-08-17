@@ -14,7 +14,7 @@ pub(super) fn install(context: &mut MiraContext) {
                 call.call(generator, &[MiraAny::Number(index as f64)])?,
             )?);
         }
-        Ok(MiraAny::Array(result))
+        Ok(MiraAny::Array(result.into()))
     });
     insert_native(context, "new_record", |call, args| {
         let length = array_length(required(args, 0, "size")?, call.options().max_array_len)?;
@@ -34,6 +34,6 @@ pub(super) fn install(context: &mut MiraContext) {
             let value = operations::get_value(&entry, &MiraAny::Number(1.0))?.into_element()?;
             result.insert(key, value);
         }
-        Ok(MiraAny::Record(result))
+        Ok(MiraAny::Record(result.into()))
     });
 }

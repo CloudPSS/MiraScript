@@ -21,13 +21,13 @@ impl From<bool> for MiraAny {
 
 impl From<String> for MiraAny {
     fn from(value: String) -> Self {
-        Self::String(value)
+        Self::String(value.into())
     }
 }
 
 impl From<&str> for MiraAny {
     fn from(value: &str) -> Self {
-        Self::String(value.to_owned())
+        Self::String(value.into())
     }
 }
 
@@ -53,13 +53,13 @@ impl<T: Into<MiraAny>> From<Option<T>> for MiraAny {
 
 impl<T: Into<MiraAny>> From<Vec<T>> for MiraAny {
     fn from(value: Vec<T>) -> Self {
-        Self::Array(value.into_iter().map(Into::into).collect())
+        Self::Array(value.into_iter().map(Into::into).collect::<Vec<_>>().into())
     }
 }
 
 impl<T: Into<MiraAny>, const N: usize> From<[T; N]> for MiraAny {
     fn from(value: [T; N]) -> Self {
-        Self::Array(value.into_iter().map(Into::into).collect())
+        Self::Array(value.into_iter().map(Into::into).collect::<Vec<_>>().into())
     }
 }
 
@@ -69,7 +69,8 @@ impl<T: Into<MiraAny>> From<IndexMap<String, T>> for MiraAny {
             value
                 .into_iter()
                 .map(|(key, value)| (key, value.into()))
-                .collect(),
+                .collect::<IndexMap<_, _>>()
+                .into(),
         )
     }
 }
@@ -86,7 +87,7 @@ where
             .map(|(key, value)| (key.into(), value.into()))
             .collect();
         entries.sort_by(|a, b| a.0.cmp(&b.0));
-        Self::Record(entries.into_iter().collect())
+        Self::Record(entries.into_iter().collect::<IndexMap<_, _>>().into())
     }
 }
 
@@ -100,20 +101,21 @@ where
             value
                 .into_iter()
                 .map(|(key, value)| (key.into(), value.into()))
-                .collect(),
+                .collect::<IndexMap<_, _>>()
+                .into(),
         )
     }
 }
 
 impl From<MiraNativeFn> for MiraAny {
     fn from(value: MiraNativeFn) -> Self {
-        Self::Function(MiraFunction::Native(value))
+        Self::Function(MiraFunction::Native(value).into())
     }
 }
 
 impl From<MiraModule> for MiraAny {
     fn from(value: MiraModule) -> Self {
-        Self::Module(value)
+        Self::Module(value.into())
     }
 }
 
@@ -139,7 +141,7 @@ impl TryFrom<MiraAny> for String {
 
     fn try_from(value: MiraAny) -> Result<Self> {
         match value {
-            MiraAny::String(value) => Ok(value),
+            MiraAny::String(value) => Ok(value.into_inner()),
             value => Err(MiraError::conversion("String", &value)),
         }
     }
@@ -171,6 +173,7 @@ where
             return Err(MiraError::conversion("Vec", &value));
         };
         values
+            .into_inner()
             .into_iter()
             .enumerate()
             .map(|(index, value)| {
@@ -208,6 +211,7 @@ where
             return Err(MiraError::conversion("record", &value));
         };
         values
+            .into_inner()
             .into_iter()
             .map(|(key, value)| {
                 T::try_from(value)

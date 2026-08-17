@@ -3,9 +3,13 @@ use crate::{MiraAny, MiraContext};
 
 pub(super) fn install(context: &mut MiraContext) {
     insert_native(context, "to_uppercase", |_, args| {
-        Ok(MiraAny::String(string(args, 0, "str")?.to_uppercase()))
+        Ok(MiraAny::String(
+            string(args, 0, "str")?.to_uppercase().into(),
+        ))
     });
     insert_native(context, "to_lowercase", |_, args| {
-        Ok(MiraAny::String(string(args, 0, "str")?.to_lowercase()))
+        Ok(MiraAny::String(
+            string(args, 0, "str")?.to_lowercase().into(),
+        ))
     });
 }

@@ -150,7 +150,7 @@ impl Decoder<'_> {
     fn read_string_constant(&mut self, wide: bool, instruction_offset: usize) -> Result<String> {
         let index = self.read_constant(wide, instruction_offset)?;
         match &self.constants[index] {
-            MiraAny::String(value) => Ok(value.clone()),
+            MiraAny::String(value) => Ok(value.to_string()),
             _ => Err(self.invalid(
                 instruction_offset,
                 format!("constant {index} is not a string"),

@@ -53,8 +53,8 @@ impl Data {
     pub(super) fn original(&self) -> MiraAny {
         match self {
             Self::Primitive(value) => value.clone(),
-            Self::Array(value) => MiraAny::Array(value.clone()),
-            Self::Record(value) => MiraAny::Record(value.clone()),
+            Self::Array(value) => MiraAny::Array(value.clone().into()),
+            Self::Record(value) => MiraAny::Record(value.clone().into()),
         }
     }
 }
@@ -88,7 +88,7 @@ pub(super) fn data_items(data: &Data) -> Vec<(MiraAny, MiraAny)> {
             .collect(),
         Data::Record(values) => values
             .iter()
-            .map(|(key, value)| (MiraAny::String(key.clone()), value.clone()))
+            .map(|(key, value)| (MiraAny::String(key.clone().into()), value.clone()))
             .collect(),
     }
 }
@@ -98,5 +98,5 @@ pub(super) fn array_value(value: &MiraAny) -> Result<Vec<MiraAny>> {
 }
 
 pub(super) fn pair(first: MiraAny, second: MiraAny) -> MiraAny {
-    MiraAny::Record(IndexMap::from([("0".into(), first), ("1".into(), second)]))
+    MiraAny::Record(IndexMap::from([("0".into(), first), ("1".into(), second)]).into())
 }

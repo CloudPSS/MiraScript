@@ -7,7 +7,7 @@ pub(super) fn install(context: &mut MiraContext) {
         if !is_callable(key_function)? {
             return Err(MiraError::runtime("Argument `key` is not callable"));
         }
-        let original = MiraAny::Array(data.clone());
+        let original = MiraAny::Array(data.clone().into());
         let mut groups: IndexMap<String, Vec<MiraAny>> = IndexMap::new();
         for (index, value) in data.into_iter().enumerate() {
             call.checkpoint()?;
@@ -27,7 +27,7 @@ pub(super) fn install(context: &mut MiraContext) {
         Ok(MiraAny::Record(
             groups
                 .into_iter()
-                .map(|(key, values)| (key, MiraAny::Array(values)))
+                .map(|(key, values)| (key, MiraAny::Array(values.into())))
                 .collect(),
         ))
     });

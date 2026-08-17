@@ -71,5 +71,5 @@ pub(in crate::standard_library) fn module() -> MiraAny {
             })
         }),
     );
-    MiraAny::Module(MiraModule::new("matrix", values))
+    MiraAny::Module(MiraModule::new("matrix", values).into())
 }

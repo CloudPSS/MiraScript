@@ -6,7 +6,7 @@ pub(super) fn install(context: &mut MiraContext) {
     insert_native(context, "sort", |call, args| {
         let mut values = array_value(required(args, 0, "data")?)?;
         insertion_sort(call, &mut values, args.get(1))?;
-        Ok(MiraAny::Array(values))
+        Ok(MiraAny::Array(values.into()))
     });
     insert_native(context, "sort_by", |call, args| {
         let values = array_value(required(args, 0, "data")?)?;
@@ -14,7 +14,7 @@ pub(super) fn install(context: &mut MiraContext) {
         if !is_callable(key_function)? {
             return Err(MiraError::runtime("Argument `key` is not callable"));
         }
-        let original = MiraAny::Array(values.clone());
+        let original = MiraAny::Array(values.clone().into());
         let mut keyed = Vec::new();
         for (index, value) in values.into_iter().enumerate() {
             let key = call.call(
@@ -40,7 +40,8 @@ pub(super) fn install(context: &mut MiraContext) {
                         .record_get("1")
                         .map(|item| item.unwrap_or(MiraAny::Nil))
                 })
-                .collect::<Result<Vec<_>>>()?,
+                .collect::<Result<Vec<_>>>()?
+                .into(),
         ))
     });
 }

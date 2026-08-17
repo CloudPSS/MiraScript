@@ -3,6 +3,24 @@ use mirascript_vm::{
 };
 
 #[test]
+fn mira_any_is_16_bytes() {
+    assert_eq!(std::mem::size_of::<MiraAny>(), 16);
+}
+
+#[test]
+fn indirect_containers_are_copy_on_write() {
+    let original = MiraAny::from(vec![1, 2]);
+    let mut changed = original.clone();
+    let MiraAny::Array(values) = &mut changed else {
+        unreachable!();
+    };
+    values.push(MiraAny::from(3));
+
+    assert_eq!(original, MiraAny::from(vec![1, 2]));
+    assert_eq!(changed, MiraAny::from(vec![1, 2, 3]));
+}
+
+#[test]
 fn executes_core_language_features() {
     let context = MiraContext::empty();
     assert_eq!(eval("1 + 2 * 3", &context).unwrap(), MiraAny::from(7));

@@ -1,5 +1,5 @@
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::time::Duration;
 
 use indexmap::IndexMap;
@@ -89,8 +89,8 @@ fn context() -> MiraContext {
             })
         }),
     );
-    context.insert("v_array", MiraAny::Array(Vec::new()));
-    context.insert("v_record", MiraAny::Record(IndexMap::new()));
+    context.insert("v_array", MiraAny::Array(Vec::new().into()));
+    context.insert("v_record", MiraAny::Record(IndexMap::new().into()));
     context.insert("v_nil", MiraAny::Nil);
     context.insert("v_true", true);
     context.insert("v_false", false);
@@ -124,7 +124,7 @@ fn host_equal(left: &MiraAny, right: &MiraAny) -> bool {
             left.len() == right.len()
                 && left
                     .iter()
-                    .zip(right)
+                    .zip(right.iter())
                     .all(|(left, right)| host_equal(left, right))
         }
         (MiraAny::Record(left), MiraAny::Record(right)) => {
@@ -134,22 +134,6 @@ fn host_equal(left: &MiraAny, right: &MiraAny) -> bool {
                     .all(|(key, left)| right.get(key).is_some_and(|right| host_equal(left, right)))
         }
         _ => left == right,
-    }
-}
-
-fn files(root: &Path, output: &mut Vec<PathBuf>) {
-    for entry in fs::read_dir(root).unwrap() {
-        let entry = entry.unwrap();
-        let path = entry.path();
-        if path.is_dir() {
-            files(&path, output);
-        } else if path
-            .extension()
-            .is_some_and(|extension| extension == "mira")
-            && !path.file_name().unwrap().to_string_lossy().starts_with('_')
-        {
-            output.push(path);
-        }
     }
 }
 
