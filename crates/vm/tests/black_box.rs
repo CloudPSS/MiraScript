@@ -148,27 +148,18 @@ fn black_box(path: [&Path; 1]) {
         .unwrap()
         .to_string_lossy()
         .contains("_huge.");
-    std::thread::Builder::new()
-        .name("mira-compat".into())
-        .stack_size(16 * 1024 * 1024)
-        .spawn(move || {
-            let context = context();
-            let options = RunOptions {
-                timeout: if is_huge {
-                    Duration::from_secs(120)
-                } else {
-                    Duration::from_secs(10)
-                },
-                ..RunOptions::default()
-            };
-            let source = fs::read_to_string(&path).unwrap();
-            let script =
-                compile(&source).unwrap_or_else(|error| panic!("{}: {error:?}", path.display()));
-            script
-                .run_with(&context, &options)
-                .unwrap_or_else(|error| panic!("{}: {error:?}", path.display()));
-        })
-        .unwrap()
-        .join()
-        .unwrap();
+    let context = context();
+    let options = RunOptions {
+        timeout: if is_huge {
+            Duration::from_secs(10)
+        } else {
+            Duration::from_secs(1)
+        },
+        ..RunOptions::default()
+    };
+    let source = fs::read_to_string(&path).unwrap();
+    let script = compile(&source).unwrap_or_else(|error| panic!("{}: {error:?}", path.display()));
+    script
+        .run_with(&context, &options)
+        .unwrap_or_else(|error| panic!("{}: {error:?}", path.display()));
 }
