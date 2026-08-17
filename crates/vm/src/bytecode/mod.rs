@@ -59,11 +59,12 @@ struct Decoder<'a> {
 }
 
 impl Decoder<'_> {
-    fn invalid(&self, offset: usize, reason: impl Into<String>) -> MiraError {
+    fn invalid(&self, offset: usize, reason: impl Into<String>) -> Box<MiraError> {
         MiraError::InvalidBytecode {
             offset,
             reason: reason.into(),
         }
+        .into()
     }
 
     fn read_opcode(&mut self) -> Result<(OpCode, bool, usize)> {

@@ -17,9 +17,9 @@ pub(crate) fn array_range(
         (end - start + 1.0).floor()
     };
     if length > max_len as f64 {
-        return Err(MiraError::runtime(format!(
-            "Array length exceeds maximum limit of {max_len}"
-        )));
+        return Err(
+            MiraError::runtime(format!("Array length exceeds maximum limit of {max_len}")).into(),
+        );
     }
     Ok((0..length.max(0.0) as usize)
         .map(|index| MiraAny::Number(start + index as f64))

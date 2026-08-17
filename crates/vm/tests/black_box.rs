@@ -22,7 +22,8 @@ fn context() -> MiraContext {
                         "assertion failed: {left:?} != {right:?}; message={:?}",
                         args.get(2)
                     ),
-                })
+                }
+                .into())
             }
         }),
     );
@@ -39,7 +40,8 @@ fn context() -> MiraContext {
                         "assertion failed: {left:?} == {right:?}; message={:?}",
                         args.get(2)
                     ),
-                })
+                }
+                .into())
             }
         }),
     );
@@ -49,7 +51,8 @@ fn context() -> MiraContext {
             Some(MiraAny::Boolean(true)) => Ok(MiraAny::Nil),
             value => Err(MiraError::Extern {
                 message: format!("expected true, got {value:?}; message={:?}", args.get(1)),
-            }),
+            }
+            .into()),
         }),
     );
     context.insert(
@@ -58,7 +61,8 @@ fn context() -> MiraContext {
             Some(MiraAny::Boolean(false)) => Ok(MiraAny::Nil),
             value => Err(MiraError::Extern {
                 message: format!("expected false, got {value:?}; message={:?}", args.get(1)),
-            }),
+            }
+            .into()),
         }),
     );
     context.insert(
@@ -70,7 +74,8 @@ fn context() -> MiraContext {
             match call.call(function, &[]) {
                 Ok(value) => Err(MiraError::Extern {
                     message: format!("expected function to throw, returned {value:?}"),
-                }),
+                }
+                .into()),
                 Err(_) => Ok(MiraAny::Nil),
             }
         }),
@@ -86,7 +91,8 @@ fn context() -> MiraContext {
         MiraNativeFn::new("t_never", |_, args| {
             Err(MiraError::Extern {
                 message: format!("unexpected execution: {:?}", args.first()),
-            })
+            }
+            .into())
         }),
     );
     context.insert("v_array", MiraAny::Array(Vec::new().into()));

@@ -16,13 +16,15 @@ pub(crate) fn array_spread(value: &MiraAny) -> Result<Vec<MiraAny>> {
                 Err(MiraError::runtime(format!(
                     "Expected array, iterable extern or nil, got {}",
                     display(&MiraAny::Extern(value.clone()))
-                )))
+                ))
+                .into())
             }
         }
         _ => Err(MiraError::runtime(format!(
             "Expected array, iterable extern or nil, got {}",
             display(value)
-        ))),
+        ))
+        .into()),
     }
 }
 
@@ -56,7 +58,8 @@ pub(crate) fn record_spread(value: &MiraAny) -> Result<IndexMap<String, MiraAny>
             return Err(MiraError::runtime(format!(
                 "Expected record, array, extern or nil, got {}",
                 display(value)
-            )));
+            ))
+            .into());
         }
     }
     Ok(result)

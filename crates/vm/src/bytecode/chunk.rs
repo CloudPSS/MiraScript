@@ -5,7 +5,8 @@ pub(super) fn decode_chunk(chunk: &[u8]) -> Result<(&[u8], Vec<MiraAny>)> {
         return Err(MiraError::InvalidBytecode {
             offset: chunk.len(),
             reason: "chunk header is truncated".into(),
-        });
+        }
+        .into());
     }
     let chunk_len = read_u32(chunk, 0)? as usize;
     if chunk_len != chunk.len() - 4 {
@@ -15,7 +16,8 @@ pub(super) fn decode_chunk(chunk: &[u8]) -> Result<(&[u8], Vec<MiraAny>)> {
                 "chunk length header is {chunk_len}, expected {}",
                 chunk.len() - 4
             ),
-        });
+        }
+        .into());
     }
     let code_len = read_u32(chunk, 4)? as usize;
     let constants_len_offset =
@@ -32,7 +34,8 @@ pub(super) fn decode_chunk(chunk: &[u8]) -> Result<(&[u8], Vec<MiraAny>)> {
         return Err(MiraError::InvalidBytecode {
             offset: 4,
             reason: "code section exceeds chunk".into(),
-        });
+        }
+        .into());
     }
     let constants_len = read_u32(chunk, constants_len_offset)? as usize;
     let constants_offset = constants_len_offset + 4;
@@ -43,7 +46,8 @@ pub(super) fn decode_chunk(chunk: &[u8]) -> Result<(&[u8], Vec<MiraAny>)> {
         return Err(MiraError::InvalidBytecode {
             offset: constants_len_offset,
             reason: "constant section length does not match chunk".into(),
-        });
+        }
+        .into());
     }
     let constants = decode_constants(&chunk[constants_offset..], constants_offset)?;
     Ok((&chunk[8..8 + code_len], constants))
@@ -122,7 +126,8 @@ fn decode_constants(bytes: &[u8], base_offset: usize) -> Result<Vec<MiraAny>> {
                 return Err(MiraError::InvalidBytecode {
                     offset: base_offset + tag_offset,
                     reason: format!("unknown constant tag {tag}"),
-                });
+                }
+                .into());
             }
         };
         result.push(value);

@@ -60,42 +60,43 @@ impl<'a> Runtime<'a> {
                 "Global variable '{}' is not defined.",
                 self.program.global_names[slot]
             ))
+            .into()
         })
     }
 
     pub(super) fn get_global_name(&self, key: &str) -> Result<MiraAny> {
-        self.context
-            .get(key)
-            .ok_or_else(|| MiraError::runtime(format!("Global variable '{key}' is not defined.")))
+        self.context.get(key).ok_or_else(|| {
+            MiraError::runtime(format!("Global variable '{key}' is not defined.")).into()
+        })
     }
 
     pub(super) fn has_value(&self, value: &MiraAny, key: &MiraAny) -> Result<bool> {
-        if let MiraAny::Module(module) = value {
-            if let MiraModule::Script(module) = module.as_ref() {
-                if module.execution != self.execution {
-                    return Err(MiraError::ExecutionEnded);
-                }
-                return Ok(module.exports.contains_key(&operations::to_string(key)?));
+        if let MiraAny::Module(module) = value
+            && let MiraModule::Script(module) = module.as_ref()
+        {
+            if module.execution != self.execution {
+                return Err(MiraError::ExecutionEnded.into());
             }
+            return Ok(module.exports.contains_key(&operations::to_string(key)?));
         }
         operations::has(value, key)
     }
 
     pub(super) fn get_value(&self, value: &MiraAny, key: &MiraAny) -> Result<MiraAny> {
-        if let MiraAny::Module(module) = value {
-            if let MiraModule::Script(module) = module.as_ref() {
-                if module.execution != self.execution {
-                    return Err(MiraError::ExecutionEnded);
-                }
-                let key = operations::to_string(key)?;
-                let value = module
-                    .exports
-                    .get(&key)
-                    .map(|register| self.read_register(module.frame, *register))
-                    .unwrap_or(MiraAny::Nil);
-                operations::assert_initialized(&value)?;
-                return Ok(value);
+        if let MiraAny::Module(module) = value
+            && let MiraModule::Script(module) = module.as_ref()
+        {
+            if module.execution != self.execution {
+                return Err(MiraError::ExecutionEnded.into());
             }
+            let key = operations::to_string(key)?;
+            let value = module
+                .exports
+                .get(&key)
+                .map(|register| self.read_register(module.frame, *register))
+                .unwrap_or(MiraAny::Nil);
+            operations::assert_initialized(&value)?;
+            return Ok(value);
         }
         operations::get_value(value, key)
     }
@@ -105,7 +106,8 @@ impl<'a> Runtime<'a> {
         if self.call_depth >= self.options.max_call_depth {
             return Err(MiraError::MaxCallDepth {
                 max: self.options.max_call_depth,
-            });
+            }
+            .into());
         }
         self.call_depth += 1;
         let result = match function {
@@ -127,7 +129,7 @@ impl<'a> Runtime<'a> {
                     name,
                 } => {
                     if *execution != self.execution {
-                        Err(MiraError::ExecutionEnded)
+                        Err(MiraError::ExecutionEnded.into())
                     } else {
                         let definition = self.program.functions[*function].clone();
                         self.call_stack.push(name.clone());
@@ -151,7 +153,8 @@ impl<'a> Runtime<'a> {
             _ => Err(MiraError::runtime(format!(
                 "Value is not callable: {}",
                 operations::display(function)
-            ))),
+            ))
+            .into()),
         };
         self.call_depth -= 1;
         result.map(|value| {
@@ -201,7 +204,7 @@ impl<'a> Runtime<'a> {
             Flow::Return(value) => Ok(value),
             Flow::Continue => Ok(MiraAny::Nil),
             Flow::Break | Flow::LoopContinue => {
-                Err(MiraError::runtime("invalid function control flow"))
+                Err(MiraError::runtime("invalid function control flow").into())
             }
         }
     }
@@ -214,7 +217,7 @@ impl<'a> Runtime<'a> {
         }
         self.checkpoint_remaining = self.options.checkpoint_interval.max(1);
         if self.started.elapsed() >= self.options.timeout {
-            return Err(MiraError::Timeout);
+            return Err(MiraError::Timeout.into());
         }
         Ok(())
     }

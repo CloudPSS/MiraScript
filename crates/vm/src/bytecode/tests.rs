@@ -21,7 +21,7 @@ fn root(body: &[u8], register_count: u8) -> Vec<u8> {
 #[test]
 fn rejects_truncated_header() {
     let error = Program::decode(&[0; 3]).unwrap_err();
-    assert!(matches!(error, MiraError::InvalidBytecode { .. }));
+    assert!(matches!(error.as_ref(), MiraError::InvalidBytecode { .. }));
 }
 
 #[test]
@@ -76,8 +76,10 @@ fn decodes_wide_registers_and_constants() {
 fn rejects_malformed_constants() {
     for constants in [vec![99], vec![4, 0], vec![5, 1, 0, 0, 0, 0xff]] {
         assert!(matches!(
-            Program::decode(&chunk(&root(&[], 0), &constants)),
-            Err(MiraError::InvalidBytecode { .. })
+            Program::decode(&chunk(&root(&[], 0), &constants))
+                .unwrap_err()
+                .as_ref(),
+            MiraError::InvalidBytecode { .. }
         ));
     }
 }
@@ -92,8 +94,8 @@ fn rejects_unknown_truncated_and_out_of_range_instructions() {
     ];
     for code in cases {
         assert!(matches!(
-            Program::decode(&chunk(&code, &[])),
-            Err(MiraError::InvalidBytecode { .. })
+            Program::decode(&chunk(&code, &[])).unwrap_err().as_ref(),
+            MiraError::InvalidBytecode { .. }
         ));
     }
 }
@@ -111,8 +113,8 @@ fn rejects_illegal_nesting_and_wide_terminators() {
         ],
     ] {
         assert!(matches!(
-            Program::decode(&chunk(&code, &[])),
-            Err(MiraError::InvalidBytecode { .. })
+            Program::decode(&chunk(&code, &[])).unwrap_err().as_ref(),
+            MiraError::InvalidBytecode { .. }
         ));
     }
 }

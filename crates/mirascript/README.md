@@ -12,7 +12,7 @@ let mut context = MiraContext::new();
 context.insert("answer", 41);
 
 assert_eq!(script.run(&context)?, MiraAny::Number(42.0));
-# Ok::<(), mirascript::MiraError>(())
+# Ok::<(), Box<mirascript::MiraError>>(())
 ```
 
 Compiler configuration and bytecode definitions are available through the
@@ -26,5 +26,5 @@ assert_eq!(
     script.run(&mirascript::MiraContext::new())?,
     mirascript::MiraAny::Number(42.0),
 );
-# Ok::<(), mirascript::MiraError>(())
+# Ok::<(), Box<mirascript::MiraError>>(())
 ```

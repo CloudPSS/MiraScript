@@ -111,9 +111,12 @@ impl<T: MiraRecord> RecordObject for MiraShared<T> {
         self.inner
             .try_borrow()
             .map(|value| value.keys())
-            .map_err(|_| MiraError::BorrowConflict {
-                operation: "read",
-                tag: type_name::<T>().into(),
+            .map_err(|_| {
+                MiraError::BorrowConflict {
+                    operation: "read",
+                    tag: type_name::<T>().into(),
+                }
+                .into()
             })
     }
 
@@ -149,9 +152,12 @@ impl<T: MiraArray> ArrayObject for MiraShared<T> {
         self.inner
             .try_borrow()
             .map(|value| value.len())
-            .map_err(|_| MiraError::BorrowConflict {
-                operation: "read",
-                tag: type_name::<T>().into(),
+            .map_err(|_| {
+                MiraError::BorrowConflict {
+                    operation: "read",
+                    tag: type_name::<T>().into(),
+                }
+                .into()
             })
     }
 

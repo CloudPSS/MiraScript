@@ -65,7 +65,7 @@ impl MiraNativeFn {
     ///     Ok(MiraAny::Number(42.0))
     /// }));
     /// assert_eq!(eval("answer()", &context)?, MiraAny::Number(42.0));
-    /// # Ok::<(), mirascript_vm::MiraError>(())
+    /// # Ok::<(), Box<mirascript_vm::MiraError>>(())
     /// ```
     pub fn new(
         name: impl Into<String>,

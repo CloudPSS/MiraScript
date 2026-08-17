@@ -56,11 +56,11 @@ pub(crate) fn run(
         Flow::Return(value) => value,
         Flow::Continue => MiraAny::Nil,
         Flow::Break | Flow::LoopContinue => {
-            return Err(MiraError::runtime("invalid root control flow"));
+            return Err(MiraError::runtime("invalid root control flow").into());
         }
     };
     if result.contains_script_reference(execution) {
-        return Err(MiraError::EscapingClosure);
+        return Err(MiraError::EscapingClosure.into());
     }
     Ok(result)
 }

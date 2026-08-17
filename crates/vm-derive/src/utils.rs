@@ -154,7 +154,7 @@ pub fn add_write_bounds(
     let where_clause = generics.make_where_clause();
     for ty in types {
         where_clause.predicates.push(parse_quote!(
-            #ty: ::core::convert::TryFrom<#krate::MiraAny, Error = #krate::MiraError>
+            #ty: ::core::convert::TryFrom<#krate::MiraAny, Error = ::std::boxed::Box<#krate::MiraError>>
         ));
     }
 }

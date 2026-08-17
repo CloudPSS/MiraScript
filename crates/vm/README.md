@@ -25,7 +25,7 @@ fn run() -> mirascript_vm::Result<()> {
 }
 
 run()?;
-# Ok::<(), mirascript_vm::MiraError>(())
+# Ok::<(), Box<mirascript_vm::MiraError>>(())
 ```
 
 `compile` returns a validated `MiraScript` that can be reused with different
@@ -67,7 +67,7 @@ assert_eq!(
     script.run_with(&MiraContext::new(), &options)?,
     MiraAny::Number(0.25),
 );
-# Ok::<(), mirascript_vm::MiraError>(())
+# Ok::<(), Box<mirascript_vm::MiraError>>(())
 ```
 
 Timeout checks are cooperative. Loop backedges, function calls, and returns from
@@ -112,7 +112,7 @@ let script = compile("counter.value")?;
 assert_eq!(script.run(&context)?, MiraAny::from(1));
 counter.borrow_mut().value = 2;
 assert_eq!(script.run(&context)?, MiraAny::from(2));
-# Ok::<(), mirascript_vm::MiraError>(())
+# Ok::<(), Box<mirascript_vm::MiraError>>(())
 ```
 
 `MiraShared<T>` uses `Rc<RefCell<T>>`, so host values do not need `Send` or

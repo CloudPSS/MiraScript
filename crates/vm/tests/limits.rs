@@ -130,14 +130,18 @@ fn limits_and_providers_are_applied_per_run() {
     assert!(matches!(
         compile("repeat(1, 4)")
             .unwrap()
-            .run_with(&context, &options),
-        Err(MiraError::Runtime { .. })
+            .run_with(&context, &options)
+            .unwrap_err()
+            .as_ref(),
+        MiraError::Runtime { .. }
     ));
     assert!(matches!(
         compile("fn recurse { recurse() } recurse()")
             .unwrap()
-            .run_with(&context, &options),
-        Err(MiraError::MaxCallDepth { max: 8 })
+            .run_with(&context, &options)
+            .unwrap_err()
+            .as_ref(),
+        MiraError::MaxCallDepth { max: 8 }
     ));
 }
 
@@ -180,7 +184,11 @@ fn script_function_handles_cached_by_hosts_expire_safely() {
 
     context.insert("cached", cached.borrow_mut().take().unwrap());
     assert_eq!(
-        compile("cached()").unwrap().run(&context).unwrap_err(),
-        MiraError::ExecutionEnded,
+        compile("cached()")
+            .unwrap()
+            .run(&context)
+            .unwrap_err()
+            .as_ref(),
+        &MiraError::ExecutionEnded,
     );
 }

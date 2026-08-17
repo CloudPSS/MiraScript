@@ -11,10 +11,7 @@ pub(crate) fn length(value: &MiraAny) -> Result<usize> {
         }
         MiraAny::Extern(value) => Ok(value.keys()?.len()),
         MiraAny::Module(module) => Ok(module.keys().len()),
-        _ => Err(MiraError::runtime(format!(
-            "Value has no length: {}",
-            display(value)
-        ))),
+        _ => Err(MiraError::runtime(format!("Value has no length: {}", display(value))).into()),
     }
 }
 
@@ -30,19 +27,13 @@ pub(crate) fn iterable(value: &MiraAny) -> Result<Vec<MiraAny>> {
             .collect()),
         MiraAny::Extern(value) => Ok(value.keys()?.into_iter().map(MiraAny::from).collect()),
         MiraAny::Module(module) => Ok(module.keys().into_iter().map(MiraAny::from).collect()),
-        _ => Err(MiraError::runtime(format!(
-            "Value is not iterable: {}",
-            display(value)
-        ))),
+        _ => Err(MiraError::runtime(format!("Value is not iterable: {}", display(value))).into()),
     }
 }
 
 pub(crate) fn materialize_array(value: &MiraAny) -> Result<Vec<MiraAny>> {
     let Some(length) = value.array_len()? else {
-        return Err(MiraError::runtime(format!(
-            "Expected array, got {}",
-            display(value)
-        )));
+        return Err(MiraError::runtime(format!("Expected array, got {}", display(value))).into());
     };
     (0..length)
         .map(|index| Ok(value.array_get(index)?.unwrap_or(MiraAny::Nil)))

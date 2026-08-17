@@ -126,7 +126,7 @@ impl<T: MiraBridge> From<MiraShared<T>> for MiraAny {
 }
 
 impl TryFrom<MiraAny> for bool {
-    type Error = MiraError;
+    type Error = Box<MiraError>;
 
     fn try_from(value: MiraAny) -> Result<Self> {
         match value {
@@ -137,7 +137,7 @@ impl TryFrom<MiraAny> for bool {
 }
 
 impl TryFrom<MiraAny> for String {
-    type Error = MiraError;
+    type Error = Box<MiraError>;
 
     fn try_from(value: MiraAny) -> Result<Self> {
         match value {
@@ -149,9 +149,9 @@ impl TryFrom<MiraAny> for String {
 
 impl<T> TryFrom<MiraAny> for Option<T>
 where
-    T: TryFrom<MiraAny, Error = MiraError>,
+    T: TryFrom<MiraAny, Error = Box<MiraError>>,
 {
-    type Error = MiraError;
+    type Error = Box<MiraError>;
 
     fn try_from(value: MiraAny) -> Result<Self> {
         if value == MiraAny::Nil {
@@ -164,9 +164,9 @@ where
 
 impl<T> TryFrom<MiraAny> for Vec<T>
 where
-    T: TryFrom<MiraAny, Error = MiraError>,
+    T: TryFrom<MiraAny, Error = Box<MiraError>>,
 {
-    type Error = MiraError;
+    type Error = Box<MiraError>;
 
     fn try_from(value: MiraAny) -> Result<Self> {
         let MiraAny::Array(values) = value else {
@@ -185,26 +185,29 @@ where
 
 impl<T, const N: usize> TryFrom<MiraAny> for [T; N]
 where
-    T: TryFrom<MiraAny, Error = MiraError>,
+    T: TryFrom<MiraAny, Error = Box<MiraError>>,
 {
-    type Error = MiraError;
+    type Error = Box<MiraError>;
 
     fn try_from(value: MiraAny) -> Result<Self> {
         let values = Vec::<T>::try_from(value)?;
         let actual = values.len();
-        values.try_into().map_err(|_| MiraError::Conversion {
-            expected: format!("array of length {N}"),
-            actual: format!("array of length {actual}"),
-            path: None,
+        values.try_into().map_err(|_| {
+            MiraError::Conversion {
+                expected: format!("array of length {N}"),
+                actual: format!("array of length {actual}"),
+                path: None,
+            }
+            .into()
         })
     }
 }
 
 impl<T> TryFrom<MiraAny> for IndexMap<String, T>
 where
-    T: TryFrom<MiraAny, Error = MiraError>,
+    T: TryFrom<MiraAny, Error = Box<MiraError>>,
 {
-    type Error = MiraError;
+    type Error = Box<MiraError>;
 
     fn try_from(value: MiraAny) -> Result<Self> {
         let MiraAny::Record(values) = value else {
@@ -225,7 +228,7 @@ where
 macro_rules! unsigned_integer_try_from {
     ($($ty:ty),* $(,)?) => {$ (
         impl TryFrom<MiraAny> for $ty {
-            type Error = MiraError;
+            type Error = Box<MiraError>;
 
             fn try_from(value: MiraAny) -> Result<Self> {
                 let MiraAny::Number(number) = value else {
@@ -240,7 +243,7 @@ macro_rules! unsigned_integer_try_from {
                         expected: stringify!($ty).into(),
                         actual: format!("number {number}"),
                         path: None,
-                    });
+                    }.into());
                 }
                 Ok(number as $ty)
             }
@@ -251,7 +254,7 @@ macro_rules! unsigned_integer_try_from {
 macro_rules! signed_integer_try_from {
     ($($ty:ty),* $(,)?) => {$ (
         impl TryFrom<MiraAny> for $ty {
-            type Error = MiraError;
+            type Error = Box<MiraError>;
 
             fn try_from(value: MiraAny) -> Result<Self> {
                 let MiraAny::Number(number) = value else {
@@ -267,7 +270,7 @@ macro_rules! signed_integer_try_from {
                         expected: stringify!($ty).into(),
                         actual: format!("number {number}"),
                         path: None,
-                    });
+                    }.into());
                 }
                 Ok(number as $ty)
             }
@@ -279,7 +282,7 @@ unsigned_integer_try_from!(u8, u16, u32, u64, u128, usize);
 signed_integer_try_from!(i8, i16, i32, i64, i128, isize);
 
 impl TryFrom<MiraAny> for f64 {
-    type Error = MiraError;
+    type Error = Box<MiraError>;
 
     fn try_from(value: MiraAny) -> Result<Self> {
         match value {
@@ -290,7 +293,7 @@ impl TryFrom<MiraAny> for f64 {
 }
 
 impl TryFrom<MiraAny> for f32 {
-    type Error = MiraError;
+    type Error = Box<MiraError>;
 
     fn try_from(value: MiraAny) -> Result<Self> {
         let value = f64::try_from(value)?;
@@ -299,7 +302,8 @@ impl TryFrom<MiraAny> for f32 {
                 expected: "f32".into(),
                 actual: format!("number {value}"),
                 path: None,
-            });
+            }
+            .into());
         }
         Ok(value as f32)
     }

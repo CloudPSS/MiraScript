@@ -56,11 +56,15 @@ impl<'a> Runtime<'a> {
         Ok(Flow::Continue)
     }
 
-    pub(super) fn with_runtime_context(&self, error: MiraError, offset: usize) -> MiraError {
+    pub(super) fn with_runtime_context(
+        &self,
+        error: Box<MiraError>,
+        offset: usize,
+    ) -> Box<MiraError> {
         let display = |name: &Option<Rc<str>>| name.as_deref().unwrap_or("<anonymous>").to_owned();
         let function = self.call_stack.last().map(display);
         let stack = self.call_stack.iter().map(display).collect();
-        error.with_runtime_context(function, offset, stack)
+        error.with_runtime_context(function, offset, stack).into()
     }
 
     pub(super) fn execute_instruction(
@@ -305,7 +309,8 @@ impl<'a> Runtime<'a> {
                 return Err(MiraError::runtime(format!(
                     "Array length exceeds maximum limit of {}",
                     self.options.max_array_len
-                )));
+                ))
+                .into());
             }
         }
         Ok(MiraAny::Array(array.into()))

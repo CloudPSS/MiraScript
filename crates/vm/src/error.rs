@@ -1,7 +1,7 @@
 use std::fmt;
 
 /// Result type returned by the MiraScript VM.
-pub type Result<T> = std::result::Result<T, MiraError>;
+pub type Result<T> = std::result::Result<T, Box<MiraError>>;
 
 /// An error produced while compiling, decoding, executing, or bridging values.
 #[derive(Debug, Clone, PartialEq)]
@@ -65,28 +65,30 @@ pub enum MiraError {
 }
 
 impl MiraError {
-    pub(crate) fn runtime(message: impl Into<String>) -> Self {
+    pub(crate) fn runtime(message: impl Into<String>) -> Box<Self> {
         Self::Runtime {
             message: message.into(),
             function: None,
             offset: None,
             stack: Vec::new(),
         }
+        .into()
     }
 
-    pub(crate) fn conversion(expected: impl Into<String>, value: &crate::MiraAny) -> Self {
+    pub(crate) fn conversion(expected: impl Into<String>, value: &crate::MiraAny) -> Box<Self> {
         Self::Conversion {
             expected: expected.into(),
             actual: value.type_name().into(),
             path: None,
         }
+        .into()
     }
 
     /// Attach a nested field or index path to a [`MiraError::Conversion`].
     ///
     /// Other error variants are returned unchanged.
-    pub fn at_path(mut self, path: impl Into<String>) -> Self {
-        if let Self::Conversion { path: slot, .. } = &mut self {
+    pub fn at_path(mut self: Box<Self>, path: impl Into<String>) -> Box<Self> {
+        if let Self::Conversion { path: slot, .. } = self.as_mut() {
             *slot = Some(path.into());
         }
         self

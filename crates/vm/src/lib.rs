@@ -31,7 +31,7 @@ pub mod __private {
 use bytecode::Program;
 
 /// A validated, reusable MiraScript program.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct MiraScript {
     program: Program,
 }
@@ -108,7 +108,7 @@ impl Default for RunOptions {
 /// let mut context = MiraContext::new();
 /// context.insert("answer", 41);
 /// assert_eq!(script.run(&context)?, MiraAny::Number(42.0));
-/// # Ok::<(), mirascript_vm::MiraError>(())
+/// # Ok::<(), Box<mirascript_vm::MiraError>>(())
 /// ```
 pub fn compile(source: &str) -> Result<MiraScript> {
     compile_with(source, &core::Config::new())
@@ -131,7 +131,7 @@ pub fn compile_with(source: &str, config: &core::Config) -> Result<MiraScript> {
 /// use mirascript_vm::{MiraAny, MiraContext, eval};
 ///
 /// assert_eq!(eval("6 * 7", &MiraContext::new())?, MiraAny::Number(42.0));
-/// # Ok::<(), mirascript_vm::MiraError>(())
+/// # Ok::<(), Box<mirascript_vm::MiraError>>(())
 /// ```
 pub fn eval(source: &str, context: &MiraContext) -> Result<MiraAny> {
     compile(source)?.run(context)

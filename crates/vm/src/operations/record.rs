@@ -74,18 +74,13 @@ pub(crate) fn set(value: &MiraAny, key: &MiraAny, new_value: MiraAny) -> Result<
     assert_initialized(value)?;
     assert_initialized(&new_value)?;
     let MiraAny::Extern(value) = value else {
-        return Err(MiraError::runtime(format!(
-            "Expected extern, got {}",
-            display(value)
-        )));
+        return Err(MiraError::runtime(format!("Expected extern, got {}", display(value))).into());
     };
     let key = to_string(key)?;
     if value.set(&key, new_value)? {
         Ok(())
     } else {
-        Err(MiraError::runtime(format!(
-            "Extern field `{key}` is missing or read-only"
-        )))
+        Err(MiraError::runtime(format!("Extern field `{key}` is missing or read-only")).into())
     }
 }
 

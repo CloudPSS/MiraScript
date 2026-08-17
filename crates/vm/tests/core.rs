@@ -94,10 +94,10 @@ fn static_globals_resolve_for_each_execution() {
 #[test]
 fn rejects_escaping_script_values() {
     let error = eval("fn value { 1 } value", &MiraContext::empty()).unwrap_err();
-    assert_eq!(error, MiraError::EscapingClosure);
+    assert_eq!(error.as_ref(), &MiraError::EscapingClosure);
 
     let error = eval("mod value { pub let x = 1; } value", &MiraContext::empty()).unwrap_err();
-    assert_eq!(error, MiraError::EscapingClosure);
+    assert_eq!(error.as_ref(), &MiraError::EscapingClosure);
 }
 
 #[derive(Clone, MiraRecord)]
@@ -153,12 +153,15 @@ fn derived_live_values_bridge_rust_and_mirascript() {
     assert_eq!(counter.borrow().value, 5);
     let failed_conversion = eval("counter.value = 'bad'; nil", &context);
     assert!(matches!(
-        failed_conversion,
-        Err(MiraError::Conversion { .. })
+        failed_conversion.unwrap_err().as_ref(),
+        MiraError::Conversion { .. }
     ));
     assert_eq!(counter.borrow().value, 5);
     let readonly_write = eval("counter.limit = 12; nil", &context);
-    assert!(matches!(readonly_write, Err(MiraError::Runtime { .. })));
+    assert!(matches!(
+        readonly_write.unwrap_err().as_ref(),
+        MiraError::Runtime { .. }
+    ));
     assert_eq!(counter.borrow().limit, 9);
     context.insert("counter_alias", MiraAny::from(counter.clone()));
     assert_eq!(
@@ -168,8 +171,8 @@ fn derived_live_values_bridge_rust_and_mirascript() {
 
     let _borrow = foo.borrow_mut();
     assert!(matches!(
-        eval("foo.bar", &context),
-        Err(MiraError::BorrowConflict { .. })
+        eval("foo.bar", &context).unwrap_err().as_ref(),
+        MiraError::BorrowConflict { .. }
     ));
 }
 
@@ -187,12 +190,14 @@ fn checked_integer_conversions_reject_finite_out_of_range_values() {
 #[test]
 fn errors_preserve_diagnostics_and_runtime_context() {
     assert!(matches!(
-        compile("let ="),
-        Err(MiraError::Compile { diagnostics }) if !diagnostics.is_empty()
+        compile("let =").unwrap_err().as_ref(),
+        MiraError::Compile { diagnostics }if !diagnostics.is_empty()
     ));
 
-    let error = eval("fn outer { panic('boom') } outer()", &MiraContext::new()).unwrap_err();
-    match error {
+    match eval("fn outer { panic('boom') } outer()", &MiraContext::new())
+        .unwrap_err()
+        .as_ref()
+    {
         MiraError::Runtime {
             function,
             offset,
