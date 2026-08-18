@@ -738,7 +738,7 @@ class Emitter:
         # 处理数据结构初始化
         elif opcode == OpCode.Module:
             reg = read()
-            nameIdx = read_index()
+            nameIdx = read()
             name = self.constants[nameIdx]
             code = helper.class_def(
                 self.wv(reg),

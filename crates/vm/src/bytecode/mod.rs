@@ -1,4 +1,5 @@
 mod chunk;
+mod constants;
 mod model;
 mod simple;
 mod structured;
@@ -12,7 +13,7 @@ use indexmap::IndexMap;
 use mirascript_core::OpCode;
 use mirascript_core::prelude::*;
 
-use crate::{MiraAny, MiraError, Result};
+use crate::{InvalidBytecodeReason, MiraAny, MiraError, Result};
 
 use chunk::decode_chunk;
 pub(crate) use model::*;
@@ -32,11 +33,17 @@ impl Program {
 
         let (opcode, wide, offset) = decoder.read_opcode()?;
         if !matches!(opcode, OpCode::Func | OpCode::FuncVarg) {
-            return Err(decoder.invalid(offset, "root instruction must be Func"));
+            return Err(MiraError::invalid_bytecode(
+                offset,
+                InvalidBytecodeReason::BadRootStart,
+            ));
         }
         let root = decoder.read_function(opcode, wide, true, offset)?.1;
         if decoder.offset != decoder.code.len() {
-            return Err(decoder.invalid(decoder.offset, "trailing code after root FuncEnd"));
+            return Err(MiraError::invalid_bytecode(
+                decoder.offset,
+                InvalidBytecodeReason::BadRootEnd,
+            ));
         }
 
         Ok(Self {
@@ -59,26 +66,17 @@ struct Decoder<'a> {
 }
 
 impl Decoder<'_> {
-    fn invalid(&self, offset: usize, reason: impl Into<String>) -> Box<MiraError> {
-        MiraError::InvalidBytecode {
-            offset,
-            reason: reason.into(),
-        }
-        .into()
-    }
-
     fn read_opcode(&mut self) -> Result<(OpCode, bool, usize)> {
         let offset = self.offset;
         let raw = *self.code.get(self.offset).ok_or_else(|| {
-            self.invalid(self.offset, "unexpected end of code while reading opcode")
+            MiraError::invalid_bytecode(self.offset, InvalidBytecodeReason::TruncatedOpCode)
         })?;
         self.offset += 1;
         let wide = raw & OpCode::WIDE_MASK != 0;
         let code = raw & !OpCode::WIDE_MASK;
-        let opcode = OpCode::VARIANTS
-            .get(code as usize)
-            .copied()
-            .ok_or_else(|| self.invalid(offset, format!("unknown opcode 0x{code:02x}")))?;
+        let opcode = OpCode::try_from(code).map_err(|_| {
+            MiraError::invalid_bytecode(offset, InvalidBytecodeReason::InvalidOpCode(code))
+        })?;
         Ok((opcode, wide, offset))
     }
 
@@ -88,9 +86,9 @@ impl Decoder<'_> {
             .code
             .get(self.offset..self.offset + width)
             .ok_or_else(|| {
-                self.invalid(
+                MiraError::invalid_bytecode(
                     instruction_offset,
-                    format!("truncated parameter at code offset {}", self.offset),
+                    InvalidBytecodeReason::TruncatedParameter(self.offset),
                 )
             })?;
         self.offset += width;
@@ -107,9 +105,9 @@ impl Decoder<'_> {
             .code
             .get(self.offset..self.offset + width)
             .ok_or_else(|| {
-                self.invalid(
+                MiraError::invalid_bytecode(
                     instruction_offset,
-                    format!("truncated signed parameter at code offset {}", self.offset),
+                    InvalidBytecodeReason::TruncatedParameter(self.offset),
                 )
             })?;
         self.offset += width;
@@ -129,9 +127,9 @@ impl Decoder<'_> {
     fn validate_register(&self, register: usize, offset: usize) -> Result<()> {
         let max = self.scopes.last().copied().unwrap_or(0);
         if register > max {
-            return Err(self.invalid(
+            return Err(MiraError::invalid_bytecode(
                 offset,
-                format!("register {register} is out of range 0..={max}"),
+                InvalidBytecodeReason::RegisterIndexOutOfRange(register, max),
             ));
         }
         Ok(())
@@ -140,9 +138,9 @@ impl Decoder<'_> {
     fn read_constant(&mut self, wide: bool, instruction_offset: usize) -> Result<usize> {
         let index = self.read_param(wide, instruction_offset)?;
         if index >= self.constants.len() {
-            return Err(self.invalid(
+            return Err(MiraError::invalid_bytecode(
                 instruction_offset,
-                format!("constant {index} is out of range"),
+                InvalidBytecodeReason::ConstantIndexOutOfRange(index, self.constants.len()),
             ));
         }
         Ok(index)
@@ -152,9 +150,9 @@ impl Decoder<'_> {
         let index = self.read_constant(wide, instruction_offset)?;
         match &self.constants[index] {
             MiraAny::String(value) => Ok(value.to_string()),
-            _ => Err(self.invalid(
+            _ => Err(MiraError::invalid_bytecode(
                 instruction_offset,
-                format!("constant {index} is not a string"),
+                InvalidBytecodeReason::InvalidConstantType,
             )),
         }
     }
@@ -180,7 +178,10 @@ impl Decoder<'_> {
         let destination = self.read_param(wide, offset)?;
         if root {
             if destination != 0 {
-                return Err(self.invalid(offset, "root function destination must be register 0"));
+                return Err(MiraError::invalid_bytecode(
+                    offset,
+                    InvalidBytecodeReason::BadRootDestination,
+                ));
             }
         } else {
             self.validate_register(destination, offset)?;
@@ -188,9 +189,9 @@ impl Decoder<'_> {
         let arg_count = self.read_param(wide, offset)?;
         let register_count = self.read_param(wide, offset)?;
         if arg_count > register_count {
-            return Err(self.invalid(
+            return Err(MiraError::invalid_bytecode(
                 offset,
-                format!("function has {arg_count} arguments but only {register_count} registers"),
+                InvalidBytecodeReason::FunctionArgCountMismatch(arg_count, register_count),
             ));
         }
 
@@ -214,13 +215,19 @@ impl Decoder<'_> {
         let mut body = Vec::new();
         loop {
             if self.offset >= self.code.len() {
-                return Err(self.invalid(self.offset, "unterminated bytecode block"));
+                return Err(MiraError::invalid_bytecode(
+                    self.offset,
+                    InvalidBytecodeReason::UnterminatedBlock,
+                ));
             }
             let saved = self.offset;
             let (opcode, wide, offset) = self.read_opcode()?;
             if terminals.contains(&opcode) {
                 if wide {
-                    return Err(self.invalid(offset, "block terminator cannot use wide encoding"));
+                    return Err(MiraError::invalid_bytecode(
+                        offset,
+                        InvalidBytecodeReason::UnsupportedWide,
+                    ));
                 }
                 return Ok((body, opcode));
             }
@@ -293,7 +300,10 @@ impl Decoder<'_> {
             | OpCode::ItemRangeExclusiveDyn
             | OpCode::Spread
             | OpCode::Freeze => {
-                return Err(self.invalid(offset, format!("unexpected structural opcode {opcode}")));
+                return Err(MiraError::invalid_bytecode(
+                    offset,
+                    InvalidBytecodeReason::UnexpectedOpCode(opcode),
+                ));
             }
             _ => self.read_simple(opcode, wide, offset)?,
         };

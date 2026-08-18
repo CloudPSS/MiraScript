@@ -1,9 +1,9 @@
-use strum::{Display, VariantArray};
+use strum::{Display, FromRepr, VariantArray};
 
 /// MiraScript OpCodes
 #[cfg_attr(feature = "wasm-constants", wasm_bindgen::prelude::wasm_bindgen)]
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, VariantArray, Display)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, VariantArray, Display, FromRepr)]
 pub enum OpCode {
     // debugging
     /// No operation
@@ -320,6 +320,14 @@ pub enum OpCode {
 impl From<OpCode> for u8 {
     fn from(op: OpCode) -> u8 {
         op as u8
+    }
+}
+
+impl TryFrom<u8> for OpCode {
+    type Error = ();
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        OpCode::from_repr(value).ok_or(())
     }
 }
 

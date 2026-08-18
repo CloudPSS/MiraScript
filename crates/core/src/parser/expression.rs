@@ -320,6 +320,7 @@ impl<'s> Expression<'s> {
         }
     }
 
+    #[allow(dead_code)]
     pub(crate) fn unknown_errors<T: Into<Vec<TokenRef<'s>>>, E: Into<Vec<SourceDiagnostic>>>(
         tokens: T,
         errors: E,

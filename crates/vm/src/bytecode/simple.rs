@@ -9,27 +9,22 @@ impl Decoder<'_> {
     ) -> Result<InstructionKind> {
         use OpCode::*;
         let operation = match opcode {
-            Noop => {
-                if wide {
-                    return Err(self.invalid(offset, "Noop cannot use wide encoding"));
-                }
-                Operation::Noop
-            }
+            Noop => Operation::Noop,
             Break => {
-                if wide {
-                    return Err(self.invalid(offset, "control opcode cannot use wide encoding"));
-                }
                 if self.loop_depth == 0 {
-                    return Err(self.invalid(offset, format!("{opcode} outside a loop")));
+                    return Err(MiraError::invalid_bytecode(
+                        offset,
+                        InvalidBytecodeReason::UnexpectedOpCode(opcode),
+                    ));
                 }
                 Operation::Break
             }
             Continue => {
-                if wide {
-                    return Err(self.invalid(offset, "control opcode cannot use wide encoding"));
-                }
                 if self.loop_depth == 0 {
-                    return Err(self.invalid(offset, format!("{opcode} outside a loop")));
+                    return Err(MiraError::invalid_bytecode(
+                        offset,
+                        InvalidBytecodeReason::UnexpectedOpCode(opcode),
+                    ));
                 }
                 Operation::Continue
             }
@@ -134,14 +129,17 @@ impl Decoder<'_> {
                 let value = self.read_register(wide, offset)?;
                 let level = self.read_param(wide, offset)?;
                 if level == 0 || level >= self.scopes.len() {
-                    return Err(self.invalid(offset, format!("invalid upvalue level {level}")));
+                    return Err(MiraError::invalid_bytecode(
+                        offset,
+                        InvalidBytecodeReason::InvalidUpvalueLevel(level),
+                    ));
                 }
                 let register = self.read_param(wide, offset)?;
                 let scope = self.scopes[self.scopes.len() - 1 - level];
                 if register > scope {
-                    return Err(self.invalid(
+                    return Err(MiraError::invalid_bytecode(
                         offset,
-                        format!("upvalue register {register} is out of range 0..={scope}"),
+                        InvalidBytecodeReason::RegisterIndexOutOfRange(register, scope),
                     ));
                 }
                 Operation::Upvalue {
@@ -160,7 +158,10 @@ impl Decoder<'_> {
                 let value = self.read_register(wide, offset)?;
                 let format = self.read_constant(wide, offset)?;
                 if !matches!(self.constants[format], MiraAny::String(_) | MiraAny::Nil) {
-                    return Err(self.invalid(offset, "format constant must be string or nil"));
+                    return Err(MiraError::invalid_bytecode(
+                        offset,
+                        InvalidBytecodeReason::InvalidConstantType,
+                    ));
                 }
                 Operation::Format {
                     destination,
@@ -174,7 +175,7 @@ impl Decoder<'_> {
             },
             Concat => {
                 let destination = self.read_register(wide, offset)?;
-                let count = self.read_count(wide, offset)?;
+                let count = self.read_param(wide, offset)?;
                 let mut values = Vec::with_capacity(count);
                 for _ in 0..count {
                     values.push(self.read_register(wide, offset)?);
@@ -187,7 +188,7 @@ impl Decoder<'_> {
             Pick | Omit => {
                 let destination = self.read_register(wide, offset)?;
                 let value = self.read_register(wide, offset)?;
-                let count = self.read_count(wide, offset)?;
+                let count = self.read_param(wide, offset)?;
                 let mut keys = Vec::with_capacity(count);
                 for _ in 0..count {
                     keys.push(self.read_constant(wide, offset)?);
@@ -210,19 +211,19 @@ impl Decoder<'_> {
                 } else {
                     CallTarget::Register(self.read_register(wide, offset)?)
                 };
-                let arg_count = self.read_count(wide, offset)?;
+                let arg_count = self.read_param(wide, offset)?;
                 let mut arguments = Vec::with_capacity(arg_count);
                 for _ in 0..arg_count {
                     arguments.push(self.read_register(wide, offset)?);
                 }
-                let spread_count = self.read_count(wide, offset)?;
+                let spread_count = self.read_param(wide, offset)?;
                 let mut spreads = Vec::with_capacity(spread_count);
                 for _ in 0..spread_count {
                     let spread = self.read_param(wide, offset)?;
                     if spread >= arg_count {
-                        return Err(self.invalid(
+                        return Err(MiraError::invalid_bytecode(
                             offset,
-                            format!("spread argument index {spread} is out of range"),
+                            InvalidBytecodeReason::SpreadArgumentIndexOutOfRange(spread, arg_count),
                         ));
                     }
                     spreads.push(spread);
@@ -320,20 +321,13 @@ impl Decoder<'_> {
                     exclusive,
                 }
             }
-            _ => return Err(self.invalid(offset, format!("unsupported simple opcode {opcode}"))),
+            _ => {
+                return Err(MiraError::invalid_bytecode(
+                    offset,
+                    InvalidBytecodeReason::UnexpectedOpCode(opcode),
+                ));
+            }
         };
         Ok(InstructionKind::Op(operation))
-    }
-
-    fn read_count(&mut self, wide: bool, offset: usize) -> Result<usize> {
-        let count = self.read_param(wide, offset)?;
-        let width = if wide { 4 } else { 1 };
-        if count > self.code.len().saturating_sub(self.offset) / width {
-            return Err(self.invalid(
-                offset,
-                format!("dynamic parameter count {count} exceeds code"),
-            ));
-        }
-        Ok(count)
     }
 }

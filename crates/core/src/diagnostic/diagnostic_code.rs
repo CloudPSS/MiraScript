@@ -354,6 +354,8 @@ pub enum DiagnosticCode {
     TagRefEnd = 11999,
 
     SourceMap = 12000,
+
+    Unknown = 65535,
 }
 
 impl From<DiagnosticCode> for u16 {

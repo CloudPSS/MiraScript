@@ -15,7 +15,7 @@ use std::rc::Rc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 pub use context::MiraContext;
-pub use error::{MiraError, Result};
+pub use error::*;
 pub use mirascript_core as core;
 pub use mirascript_vm_derive::{MiraArray, MiraRecord};
 pub use value::{
@@ -117,7 +117,7 @@ pub fn compile(source: &str) -> Result<MiraScript> {
 /// Compile source with an explicit [`core::Config`].
 pub fn compile_with(source: &str, config: &core::Config) -> Result<MiraScript> {
     let (chunk, diagnostics) = core::Compiler::compile(source, config);
-    let chunk = chunk.ok_or(MiraError::Compile { diagnostics })?;
+    let chunk = chunk.ok_or(MiraError::compile(&diagnostics))?;
     Ok(MiraScript {
         program: Program::decode(&chunk)?,
     })

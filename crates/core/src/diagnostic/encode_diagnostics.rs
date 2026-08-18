@@ -2,19 +2,6 @@ use crate::{Config, SourceDiagnostic, config::DiagnosticPositionEncoding};
 
 pub type SerializedDiagnostics = Vec<u32>;
 
-fn encode_diagnostics_none(diagnostics: &[SourceDiagnostic]) -> SerializedDiagnostics {
-    diagnostics
-        .iter()
-        .flat_map(|s| {
-            [
-                s.range.start.try_into().unwrap(),
-                s.range.end.try_into().unwrap(),
-                s.error.code() as u32,
-            ]
-        })
-        .collect()
-}
-
 fn pos_to_line_col(script: &str, config: &Config) -> impl Fn(usize) -> (u32, u32) {
     let code_point_counter =
         if config.diagnostic_position_encoding == DiagnosticPositionEncoding::Utf16 {
@@ -91,10 +78,6 @@ pub fn encode_diagnostics(
 ) -> SerializedDiagnostics {
     if diagnostics.is_empty() {
         return vec![];
-    }
-
-    if config.diagnostic_position_encoding == DiagnosticPositionEncoding::None {
-        return encode_diagnostics_none(diagnostics);
     }
 
     let pos_to_line_col = pos_to_line_col(script, config);

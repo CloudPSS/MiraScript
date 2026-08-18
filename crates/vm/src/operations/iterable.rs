@@ -35,25 +35,6 @@ pub(crate) fn iterable(value: &MiraAny) -> Result<Vec<MiraAny>> {
     }
 }
 
-struct ArrayIterator {
-    value: MiraAny,
-    index: usize,
-    length: usize,
-}
-
-impl Iterator for ArrayIterator {
-    type Item = Result<MiraAny>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.index >= self.length {
-            return None;
-        }
-        let result = self.value.array_get(self.index);
-        self.index += 1;
-        Some(result.map(|v| v.unwrap_or(MiraAny::Nil)))
-    }
-}
-
 pub(crate) fn iterable_array(value: &MiraAny) -> Result<Vec<MiraAny>> {
     let Some(length) = value.array_len()? else {
         return Err(MiraError::runtime(format!(

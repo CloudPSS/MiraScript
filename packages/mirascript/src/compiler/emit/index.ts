@@ -635,7 +635,7 @@ export class Emitter {
             }
             case OpCode.Module: {
                 reg = read();
-                const nameIdx = readIndex();
+                const nameIdx = read();
                 const name = this.constLits[nameIdx];
                 code = `${this.wv(reg)} = $Module(${name}, {`;
                 break;

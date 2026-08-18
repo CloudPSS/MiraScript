@@ -40,24 +40,14 @@ impl Decoder<'_> {
         let register_count = self.read_param(wide, offset)?;
         let kind = match opcode {
             OpCode::Loop => LoopKind::Infinite,
-            OpCode::LoopFor => {
-                if register_count == 0 {
-                    return Err(self.invalid(offset, "for loop requires an iteration register"));
-                }
-                LoopKind::Iterable {
-                    value: self.read_register(wide, offset)?,
-                }
-            }
-            OpCode::LoopRange | OpCode::LoopRangeExclusive => {
-                if register_count == 0 {
-                    return Err(self.invalid(offset, "range loop requires an iteration register"));
-                }
-                LoopKind::Range {
-                    start: self.read_register(wide, offset)?,
-                    end: self.read_register(wide, offset)?,
-                    exclusive: opcode == OpCode::LoopRangeExclusive,
-                }
-            }
+            OpCode::LoopFor => LoopKind::Iterable {
+                value: self.read_register(wide, offset)?,
+            },
+            OpCode::LoopRange | OpCode::LoopRangeExclusive => LoopKind::Range {
+                start: self.read_register(wide, offset)?,
+                end: self.read_register(wide, offset)?,
+                exclusive: opcode == OpCode::LoopRangeExclusive,
+            },
             _ => unreachable!(),
         };
 
@@ -116,14 +106,17 @@ impl Decoder<'_> {
                 }
                 OpCode::Freeze => {
                     if element_wide {
-                        return Err(self.invalid(element_offset, "Freeze cannot use wide encoding"));
+                        return Err(MiraError::invalid_bytecode(
+                            element_offset,
+                            InvalidBytecodeReason::UnsupportedWide,
+                        ));
                     }
                     break;
                 }
                 _ => {
-                    return Err(self.invalid(
+                    return Err(MiraError::invalid_bytecode(
                         element_offset,
-                        format!("opcode {opcode} is not valid inside a record"),
+                        InvalidBytecodeReason::UnexpectedOpCode(opcode),
                     ));
                 }
             }
@@ -166,14 +159,17 @@ impl Decoder<'_> {
                 )),
                 OpCode::Freeze => {
                     if element_wide {
-                        return Err(self.invalid(element_offset, "Freeze cannot use wide encoding"));
+                        return Err(MiraError::invalid_bytecode(
+                            element_offset,
+                            InvalidBytecodeReason::UnsupportedWide,
+                        ));
                     }
                     break;
                 }
                 _ => {
-                    return Err(self.invalid(
+                    return Err(MiraError::invalid_bytecode(
                         element_offset,
-                        format!("opcode {opcode} is not valid inside an array"),
+                        InvalidBytecodeReason::UnexpectedOpCode(opcode),
                     ));
                 }
             }
@@ -186,15 +182,7 @@ impl Decoder<'_> {
 
     pub(super) fn read_module(&mut self, wide: bool, offset: usize) -> Result<InstructionKind> {
         let destination = self.read_register(wide, offset)?;
-        let name_index = self.read_index(wide, offset)?;
-        let name = usize::try_from(name_index)
-            .ok()
-            .and_then(|index| self.constants.get(index))
-            .and_then(|value| match value {
-                MiraAny::String(value) => Some(value.to_string()),
-                _ => None,
-            })
-            .ok_or_else(|| self.invalid(offset, "module name must reference a string constant"))?;
+        let name = self.read_string_constant(wide, offset)?;
         let mut fields = Vec::new();
         loop {
             let (opcode, field_wide, field_offset) = self.read_opcode()?;
@@ -203,22 +191,26 @@ impl Decoder<'_> {
                     let key = self.read_string_constant(field_wide, field_offset)?;
                     let value = self.read_register(field_wide, field_offset)?;
                     if fields.iter().any(|(existing, _)| existing == &key) {
-                        return Err(
-                            self.invalid(field_offset, format!("duplicate module export `{key}`"))
-                        );
+                        return Err(MiraError::invalid_bytecode(
+                            field_offset,
+                            InvalidBytecodeReason::DuplicateExportKey(key),
+                        ));
                     }
                     fields.push((key, value));
                 }
                 OpCode::Freeze => {
                     if field_wide {
-                        return Err(self.invalid(field_offset, "Freeze cannot use wide encoding"));
+                        return Err(MiraError::invalid_bytecode(
+                            field_offset,
+                            InvalidBytecodeReason::UnsupportedWide,
+                        ));
                     }
                     break;
                 }
                 _ => {
-                    return Err(self.invalid(
+                    return Err(MiraError::invalid_bytecode(
                         field_offset,
-                        format!("opcode {opcode} is not valid inside a module"),
+                        InvalidBytecodeReason::UnexpectedOpCode(opcode),
                     ));
                 }
             }

@@ -38,6 +38,7 @@ pub(crate) fn approximately_equal(a: &MiraAny, b: &MiraAny) -> Result<bool> {
         if a == b {
             return Ok(true);
         }
+        use unicode_normalization::UnicodeNormalization;
         Ok(a.to_lowercase().nfc().eq(b.to_lowercase().nfc()))
     }
 }

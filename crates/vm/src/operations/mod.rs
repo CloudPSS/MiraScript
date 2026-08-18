@@ -11,7 +11,6 @@ mod type_check;
 use std::cmp::Ordering;
 
 use indexmap::IndexMap;
-use unicode_normalization::UnicodeNormalization;
 
 use crate::{MiraAny, MiraError, Result};
 

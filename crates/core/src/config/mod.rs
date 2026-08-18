@@ -4,9 +4,12 @@
     any(feature = "wasm", feature = "wasm-constants"),
     wasm_bindgen::prelude::wasm_bindgen
 )]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum InputMode {
+    /// Input is a full script, which may contain multiple statements and declarations.
+    #[default]
     Script,
+    /// Input is a single string literal, which may contain escape sequences.
     Template,
 }
 
@@ -16,13 +19,10 @@ pub enum InputMode {
     any(feature = "wasm", feature = "wasm-constants"),
     wasm_bindgen::prelude::wasm_bindgen
 )]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum DiagnosticPositionEncoding {
-    /// Use the default encoding (UTF-8) and
-    /// 0-based indexing from the start of the file.
-    /// Do not convert positions to line-column format.
-    None,
     /// Convert positions to 1-based UTF-8 line-column format.
+    #[default]
     Utf8,
     /// Convert positions to 1-based UTF-16 line-column format.
     Utf16,

@@ -104,6 +104,7 @@ impl<'s> Statement<'s> {
         }
     }
 
+    #[allow(dead_code)]
     pub(crate) fn unknown_range<T: Into<Vec<TokenRef<'s>>>>(
         tokens: T,
         error_range: SourceRange,
@@ -115,6 +116,7 @@ impl<'s> Statement<'s> {
         }
     }
 
+    #[allow(dead_code)]
     pub(crate) fn unknown_errors<T: Into<Vec<TokenRef<'s>>>, E: Into<Vec<SourceDiagnostic>>>(
         tokens: T,
         errors: E,

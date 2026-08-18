@@ -137,6 +137,7 @@ impl<'o> FormatManager<'o> {
         self.current_indent = self.indent;
     }
 
+    #[allow(dead_code)]
     pub fn line_count(&self) -> usize {
         self.line_count
     }
