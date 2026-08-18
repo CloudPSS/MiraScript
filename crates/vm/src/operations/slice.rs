@@ -7,7 +7,7 @@ pub(crate) fn slice(
     exclusive: bool,
 ) -> Result<MiraAny> {
     assert_initialized(value)?;
-    let array = materialize_array(value)?;
+    let array = iterable_array(value)?;
     let length = array.len() as i64;
     let mut start = match start {
         Some(value) => to_number(value).unwrap_or(f64::NAN),

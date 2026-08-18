@@ -35,8 +35,8 @@ pub(super) fn entrywise(
         });
     }
     if left_shape.len() == 1 && right_shape.len() == 1 {
-        let left = operations::materialize_array(left)?;
-        let right = operations::materialize_array(right)?;
+        let left = operations::iterable_array(left)?;
+        let right = operations::iterable_array(right)?;
         let length = left.len().max(right.len());
         return Ok(MiraAny::Array(
             (0..length)
@@ -90,7 +90,7 @@ pub(super) fn broadcast_scalar(
 ) -> Result<MiraAny> {
     if dimensions.len() == 1 {
         return Ok(MiraAny::Array(
-            operations::materialize_array(value)?
+            operations::iterable_array(value)?
                 .into_iter()
                 .map(operation)
                 .collect::<Result<Vec<_>>>()?
@@ -125,7 +125,7 @@ pub(super) fn map_nested(
     value: &MiraAny,
     operation: &mut impl FnMut(MiraAny) -> Result<MiraAny>,
 ) -> Result<MiraAny> {
-    let values = operations::materialize_array(value)?;
+    let values = operations::iterable_array(value)?;
     Ok(MiraAny::Array(
         values
             .into_iter()
@@ -149,8 +149,8 @@ pub(super) fn multiply(_call: &mut MiraCallContext<'_>, args: &[MiraAny]) -> Res
     match (left_shape.len(), right_shape.len()) {
         (0, _) | (_, 0) => numeric_entrywise(args, |a, b| a * b),
         (1, 1) => {
-            let left = operations::materialize_array(left)?;
-            let right = operations::materialize_array(right)?;
+            let left = operations::iterable_array(left)?;
+            let right = operations::iterable_array(right)?;
             let length = left.len().max(right.len());
             let mut sum = 0.0;
             for index in 0..length {
@@ -186,7 +186,7 @@ pub(super) fn multiply(_call: &mut MiraCallContext<'_>, args: &[MiraAny]) -> Res
             if left_shape[0] != right_shape[0] {
                 return Err(MiraError::runtime("Incompatible matrix dimensions"));
             }
-            let left = operations::materialize_array(left)?;
+            let left = operations::iterable_array(left)?;
             let right = as_matrix(right)?;
             let right_columns: Vec<Vec<_>> = (0..right_shape[1])
                 .map(|column| right.iter().map(|row| row[column].clone()).collect())
@@ -206,7 +206,7 @@ pub(super) fn multiply(_call: &mut MiraCallContext<'_>, args: &[MiraAny]) -> Res
                 return Err(MiraError::runtime("Incompatible matrix dimensions"));
             }
             let left = as_matrix(left)?;
-            let right = operations::materialize_array(right)?;
+            let right = operations::iterable_array(right)?;
             let mut result = Vec::new();
             for left_row in &left {
                 let mut sum = 0.0;

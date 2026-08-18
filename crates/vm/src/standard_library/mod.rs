@@ -42,7 +42,7 @@ fn string(args: &[MiraAny], index: usize, name: &str) -> Result<String> {
 
 fn array(args: &[MiraAny], index: usize, name: &str) -> Result<Vec<MiraAny>> {
     let value = required(args, index, name)?;
-    operations::materialize_array(value).map_err(|_| {
+    operations::iterable_array(value).map_err(|_| {
         MiraError::runtime(format!(
             "Argument `{name}` is not array: {}",
             operations::display(value)

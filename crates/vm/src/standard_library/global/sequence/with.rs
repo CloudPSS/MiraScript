@@ -23,7 +23,7 @@ fn update_with(data: &MiraAny, entries: &[MiraAny], max_len: usize) -> Result<Mi
     };
     for pair in entries.chunks_exact(2) {
         let path = if pair[0].array_len()?.is_some() {
-            operations::materialize_array(&pair[0])?
+            operations::iterable_array(&pair[0])?
         } else if pair[0] == MiraAny::Nil {
             continue;
         } else {

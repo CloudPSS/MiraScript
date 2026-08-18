@@ -8,7 +8,7 @@ pub(super) fn shape(value: &MiraAny) -> Result<Vec<usize>> {
         return Ok(vec![0]);
     }
     let mut columns = 0;
-    for row in operations::materialize_array(value)? {
+    for row in operations::iterable_array(value)? {
         let Some(length) = row.array_len()? else {
             return Ok(vec![rows]);
         };
@@ -22,10 +22,10 @@ pub(super) fn numeric(value: &MiraAny) -> Result<f64> {
 }
 
 pub(super) fn as_matrix(value: &MiraAny) -> Result<Vec<Vec<MiraAny>>> {
-    let values = operations::materialize_array(value)?;
+    let values = operations::iterable_array(value)?;
     if shape(value)?.len() == 1 {
         Ok(vec![values])
     } else {
-        values.iter().map(operations::materialize_array).collect()
+        values.iter().map(operations::iterable_array).collect()
     }
 }

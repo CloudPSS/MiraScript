@@ -34,7 +34,7 @@ impl Data {
                 Ok(Self::Primitive(value.clone()))
             }
             MiraAny::Array(_) | MiraAny::RustArray(_) => {
-                Ok(Self::Array(operations::materialize_array(value)?))
+                Ok(Self::Array(operations::iterable_array(value)?))
             }
             MiraAny::Record(_) | MiraAny::RustRecord(_) => {
                 let mut record = IndexMap::new();
@@ -94,7 +94,7 @@ pub(super) fn data_items(data: &Data) -> Vec<(MiraAny, MiraAny)> {
 }
 
 pub(super) fn array_value(value: &MiraAny) -> Result<Vec<MiraAny>> {
-    operations::materialize_array(value)
+    operations::iterable_array(value)
 }
 
 pub(super) fn pair(first: MiraAny, second: MiraAny) -> MiraAny {

@@ -18,7 +18,7 @@ fn flatten(values: Vec<MiraAny>, depth: usize) -> Result<Vec<MiraAny>> {
     let mut result = Vec::new();
     for value in values {
         if value.array_len()?.is_some() {
-            result.extend(flatten(operations::materialize_array(&value)?, depth - 1)?);
+            result.extend(flatten(operations::iterable_array(&value)?, depth - 1)?);
         } else {
             result.push(value);
         }

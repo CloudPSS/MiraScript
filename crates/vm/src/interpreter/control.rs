@@ -48,7 +48,7 @@ impl<'a> Runtime<'a> {
         for instruction in body {
             let result = self
                 .execute_instruction(instruction, frame)
-                .map_err(|error| self.with_runtime_context(error, instruction.offset))?;
+                .map_err(|error| self.with_runtime_context(*error, instruction.offset))?;
             if !matches!(result, Flow::Continue) {
                 return Ok(result);
             }
@@ -56,11 +56,7 @@ impl<'a> Runtime<'a> {
         Ok(Flow::Continue)
     }
 
-    pub(super) fn with_runtime_context(
-        &self,
-        error: Box<MiraError>,
-        offset: usize,
-    ) -> Box<MiraError> {
+    pub(super) fn with_runtime_context(&self, error: MiraError, offset: usize) -> Box<MiraError> {
         let display = |name: &Option<Rc<str>>| name.as_deref().unwrap_or("<anonymous>").to_owned();
         let function = self.call_stack.last().map(display);
         let stack = self.call_stack.iter().map(display).collect();

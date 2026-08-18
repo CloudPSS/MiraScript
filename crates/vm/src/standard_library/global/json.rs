@@ -59,7 +59,7 @@ fn to_json_value(
         }),
         MiraAny::String(value) => Some(value.to_string().into()),
         MiraAny::Array(_) | MiraAny::RustArray(_) => Some(serde_json::Value::Array(
-            operations::materialize_array(value)?
+            operations::iterable_array(value)?
                 .iter()
                 .map(|item| Ok(to_json_value(call, item, true)?.unwrap_or(serde_json::Value::Null)))
                 .collect::<Result<Vec<_>>>()?,

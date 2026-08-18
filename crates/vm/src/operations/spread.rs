@@ -4,7 +4,7 @@ pub(crate) fn array_spread(value: &MiraAny) -> Result<Vec<MiraAny>> {
     assert_initialized(value)?;
     match value {
         MiraAny::Nil => Ok(Vec::new()),
-        MiraAny::Array(_) | MiraAny::RustArray(_) => materialize_array(value),
+        MiraAny::Array(_) | MiraAny::RustArray(_) => iterable_array(value),
         MiraAny::Extern(value) => {
             if let Some(iterable) = value.iterate()? {
                 Ok(iterable)
@@ -43,7 +43,7 @@ pub(crate) fn record_spread(value: &MiraAny) -> Result<IndexMap<String, MiraAny>
             }
         }
         MiraAny::Array(_) | MiraAny::RustArray(_) => {
-            for (index, item) in materialize_array(value)?.into_iter().enumerate() {
+            for (index, item) in iterable_array(value)?.into_iter().enumerate() {
                 result.insert(index.to_string(), item.into_element()?);
             }
         }

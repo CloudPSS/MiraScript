@@ -22,7 +22,7 @@ pub(super) fn filled(
 
 pub(super) fn dimensions(args: &[MiraAny], max_len: usize) -> Result<Vec<usize>> {
     let values = if args.len() == 1 && args[0].array_len()?.is_some() {
-        operations::materialize_array(&args[0])?
+        operations::iterable_array(&args[0])?
     } else {
         args.to_vec()
     };
@@ -63,7 +63,7 @@ pub(super) fn identity(call: &mut MiraCallContext<'_>, args: &[MiraAny]) -> Resu
 
 pub(super) fn diagonal(_call: &mut MiraCallContext<'_>, args: &[MiraAny]) -> Result<MiraAny> {
     let value = required(args, 0, "x")?;
-    let values = operations::materialize_array(value)?;
+    let values = operations::iterable_array(value)?;
     let offset = match args.get(1) {
         None => 0,
         Some(value) => {
@@ -83,7 +83,7 @@ pub(super) fn diagonal(_call: &mut MiraCallContext<'_>, args: &[MiraAny]) -> Res
             if column < 0 {
                 continue;
             }
-            let row = operations::materialize_array(values)?;
+            let row = operations::iterable_array(values)?;
             if column as usize >= row.len() {
                 break;
             }

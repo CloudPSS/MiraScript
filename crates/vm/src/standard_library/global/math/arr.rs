@@ -54,7 +54,7 @@ pub(super) fn install(context: &mut MiraContext) {
 
 fn numbers(args: &[MiraAny]) -> Result<Vec<f64>> {
     let values = if args.len() == 1 && args[0].array_len()?.is_some() {
-        operations::materialize_array(&args[0])?
+        operations::iterable_array(&args[0])?
     } else {
         args.to_vec()
     };

@@ -46,7 +46,7 @@ pub(crate) fn in_value(needle: &MiraAny, value: &MiraAny) -> Result<bool> {
     assert_initialized(needle)?;
     assert_initialized(value)?;
     match value {
-        MiraAny::Array(_) | MiraAny::RustArray(_) => Ok(materialize_array(value)?
+        MiraAny::Array(_) | MiraAny::RustArray(_) => Ok(iterable_array(value)?
             .iter()
             .any(|candidate| candidate == needle)),
         MiraAny::Record(_) | MiraAny::RustRecord(_) | MiraAny::Extern(_) | MiraAny::Module(_) => {
