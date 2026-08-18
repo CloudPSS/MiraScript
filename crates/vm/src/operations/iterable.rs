@@ -9,7 +9,6 @@ pub(crate) fn length(value: &MiraAny) -> Result<usize> {
         MiraAny::Record(_) | MiraAny::RustRecord(_) => {
             Ok(value.record_keys()?.unwrap_or_default().len())
         }
-        MiraAny::Extern(value) => Ok(value.keys()?.len()),
         MiraAny::Module(module) => Ok(module.keys().len()),
         _ => Err(MiraError::runtime(format!(
             "Value has no length: {}",
@@ -28,7 +27,6 @@ pub(crate) fn iterable(value: &MiraAny) -> Result<Vec<MiraAny>> {
             .into_iter()
             .map(MiraAny::from)
             .collect()),
-        MiraAny::Extern(value) => Ok(value.keys()?.into_iter().map(MiraAny::from).collect()),
         MiraAny::Module(module) => Ok(module.keys().into_iter().map(MiraAny::from).collect()),
         _ => Err(MiraError::runtime(format!(
             "Value is not iterable: {}",

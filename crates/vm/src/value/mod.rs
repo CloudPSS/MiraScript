@@ -12,8 +12,8 @@ use indexmap::IndexMap;
 
 use crate::{MiraError, Result};
 
-use bridge::{ArrayObject, ExternObject, RecordObject};
-pub use bridge::{MiraArray, MiraBridge, MiraExtern, MiraRecord};
+use bridge::{ArrayObject, RecordObject};
+pub use bridge::{MiraArray, MiraBridge, MiraRecord};
 pub(crate) use function::NativeRuntime;
 pub use function::{MiraCallContext, MiraFunction, MiraNativeFn};
 pub use indirect::MiraIndirect;
@@ -46,8 +46,6 @@ pub enum MiraAny {
     Function(MiraIndirect<MiraFunction>),
     /// A native or execution-scoped module.
     Module(MiraIndirect<MiraModule>),
-    /// A live, mutable Rust extern value.
-    Extern(MiraIndirect<Rc<dyn ExternObject>>),
     #[doc(hidden)]
     RustRecord(MiraIndirect<Rc<dyn RecordObject>>),
     #[doc(hidden)]
@@ -68,7 +66,6 @@ impl MiraAny {
             Self::Record(_) | Self::RustRecord(_) => "record",
             Self::Function(_) => "function",
             Self::Module(_) => "module",
-            Self::Extern(_) => "extern",
         }
     }
 
@@ -94,17 +91,6 @@ impl MiraAny {
         Self::RustArray(value.into())
     }
 
-    /// Wrap a Rust extern in a new [`MiraShared`] allocation.
-    pub fn from_extern<T: MiraExtern>(value: T) -> Self {
-        Self::from_extern_shared(MiraShared::new(value))
-    }
-
-    /// Wrap an existing shared Rust extern as a live mutable object.
-    pub fn from_extern_shared<T: MiraExtern>(value: MiraShared<T>) -> Self {
-        let value: Rc<dyn ExternObject> = Rc::new(value);
-        Self::Extern(value.into())
-    }
-
     /// Return whether this value is initialized and safe to expose to host code.
     pub fn is_initialized(&self) -> bool {
         !matches!(self, Self::Uninitialized)
@@ -113,7 +99,7 @@ impl MiraAny {
     pub(crate) fn into_element(self) -> Result<Self> {
         match self {
             Self::Uninitialized => Err(MiraError::runtime("Uninitialized value")),
-            Self::Function(_) | Self::Module(_) | Self::Extern(_) => Ok(Self::Nil),
+            Self::Function(_) | Self::Module(_) => Ok(Self::Nil),
             value => Ok(value),
         }
     }
@@ -160,7 +146,6 @@ impl MiraAny {
         match self {
             Self::Array(array) => Ok(Some(array.len())),
             Self::RustArray(array) => array.len().map(Some),
-            Self::Extern(value) => value.array_len(),
             _ => Ok(None),
         }
     }
@@ -169,7 +154,6 @@ impl MiraAny {
         match self {
             Self::Array(array) => Ok(array.get(index).cloned()),
             Self::RustArray(array) => array.get(index),
-            Self::Extern(value) => value.get_index(index),
             _ => Ok(None),
         }
     }
@@ -229,7 +213,6 @@ impl PartialEq for MiraAny {
             | (Self::RustRecord(_), Self::RustRecord(_)) => same_record(self, other),
             (Self::Function(a), Self::Function(b)) => a.same(b),
             (Self::Module(a), Self::Module(b)) => a.same(b),
-            (Self::Extern(a), Self::Extern(b)) => a.identity() == b.identity(),
             _ => false,
         }
     }
@@ -247,11 +230,6 @@ impl fmt::Debug for MiraAny {
             Self::Record(value) => f.debug_tuple("Record").field(value).finish(),
             Self::Function(value) => f.debug_tuple("Function").field(value).finish(),
             Self::Module(value) => f.debug_tuple("Module").field(value).finish(),
-            Self::Extern(value) => f
-                .debug_struct("Extern")
-                .field("tag", &value.tag().unwrap_or_else(|_| "<borrowed>".into()))
-                .field("identity", &value.identity())
-                .finish(),
             Self::RustRecord(value) => f
                 .debug_struct("RustRecord")
                 .field("tag", &value.tag())

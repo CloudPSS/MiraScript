@@ -5,21 +5,6 @@ pub(crate) fn array_spread(value: &MiraAny) -> Result<Vec<MiraAny>> {
     match value {
         MiraAny::Nil => Ok(Vec::new()),
         MiraAny::Array(_) | MiraAny::RustArray(_) => iterable_array(value),
-        MiraAny::Extern(value) => {
-            if let Some(iterable) = value.iterate()? {
-                Ok(iterable)
-            } else if let Some(length) = value.array_len()? {
-                (0..length)
-                    .map(|index| Ok(value.get_index(index)?.unwrap_or(MiraAny::Nil)))
-                    .collect()
-            } else {
-                Err(MiraError::runtime(format!(
-                    "Expected array, iterable extern or nil, got {}",
-                    display(&MiraAny::Extern(value.clone()))
-                ))
-                .into())
-            }
-        }
         _ => Err(MiraError::runtime(format!(
             "Expected array, iterable extern or nil, got {}",
             display(value)
@@ -45,13 +30,6 @@ pub(crate) fn record_spread(value: &MiraAny) -> Result<IndexMap<String, MiraAny>
         MiraAny::Array(_) | MiraAny::RustArray(_) => {
             for (index, item) in iterable_array(value)?.into_iter().enumerate() {
                 result.insert(index.to_string(), item.into_element()?);
-            }
-        }
-        MiraAny::Extern(value) => {
-            for key in value.keys()? {
-                if let Some(item) = value.get(&key)? {
-                    result.insert(key, item.into_element()?);
-                }
             }
         }
         _ => {

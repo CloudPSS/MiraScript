@@ -14,7 +14,6 @@ pub(super) fn install(context: &mut MiraContext) {
                 .map(MiraAny::from)
                 .collect(),
             MiraAny::Module(module) => module.keys().into_iter().map(MiraAny::from).collect(),
-            MiraAny::Extern(value) => value.keys()?.into_iter().map(MiraAny::from).collect(),
             _ => {
                 return Err(MiraError::runtime(
                     "Argument `data` is not a compound value",

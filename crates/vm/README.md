@@ -83,9 +83,8 @@ implementations reject non-finite, fractional, or out-of-range integer conversio
 
 The derive macros expose Rust values as live views:
 
-- `MiraRecord` supports named and unit structs and is read-only in scripts;
-- `MiraArray` supports tuple and unit structs and is read-only in scripts;
-- `MiraExtern` supports named structs, object identity, and field writes.
+- `MiraRecord` supports structs and is read-only in scripts;
+- `MiraArray` supports tuple and unit structs, `AsRef<[T]` and is read-only in scripts.
 
 Fields support `#[mira(rename = "...")]` and `#[mira(skip)]`. Extern fields also
 support `#[mira(readonly)]`, and an extern type can set `#[mira(tag = "...")]`.

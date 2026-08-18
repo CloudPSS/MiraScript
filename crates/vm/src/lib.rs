@@ -17,10 +17,10 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 pub use context::MiraContext;
 pub use error::{MiraError, Result};
 pub use mirascript_core as core;
-pub use mirascript_vm_derive::{MiraArray, MiraExtern, MiraRecord};
+pub use mirascript_vm_derive::{MiraArray, MiraRecord};
 pub use value::{
-    MiraAny, MiraArray, MiraCallContext, MiraExtern, MiraFunction, MiraIndirect, MiraModule,
-    MiraNativeFn, MiraRecord, MiraShared,
+    MiraAny, MiraArray, MiraCallContext, MiraFunction, MiraIndirect, MiraModule, MiraNativeFn,
+    MiraRecord, MiraShared,
 };
 
 #[doc(hidden)]

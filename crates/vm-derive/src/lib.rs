@@ -4,8 +4,7 @@
 
 use proc_macro::TokenStream;
 
-mod array;
-mod extern_value;
+mod array; 
 mod record;
 mod utils;
 
@@ -26,17 +25,6 @@ pub fn derive_record(input: TokenStream) -> TokenStream {
 /// Tuple fields may use `#[mira(skip)]` and retain their relative order.
 pub fn derive_array(input: TokenStream) -> TokenStream {
     array::expand(syn::parse_macro_input!(input as syn::DeriveInput))
-        .unwrap_or_else(syn::Error::into_compile_error)
-        .into()
-}
-
-#[proc_macro_derive(MiraExtern, attributes(mira))]
-/// Derive a mutable MiraScript extern view for a named-field struct.
-///
-/// Use `#[mira(tag = "Name")]` to override the runtime tag. Fields support
-/// `rename`, `skip`, and `readonly`; fields are writable by default.
-pub fn derive_extern(input: TokenStream) -> TokenStream {
-    extern_value::expand(syn::parse_macro_input!(input as syn::DeriveInput))
         .unwrap_or_else(syn::Error::into_compile_error)
         .into()
 }

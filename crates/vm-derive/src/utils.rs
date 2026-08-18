@@ -146,15 +146,15 @@ pub fn add_read_bounds(
     }
 }
 
-pub fn add_write_bounds(
-    generics: &mut Generics,
-    types: impl IntoIterator<Item = Type>,
-    krate: &Path,
-) {
-    let where_clause = generics.make_where_clause();
-    for ty in types {
-        where_clause.predicates.push(parse_quote!(
-            #ty: ::core::convert::TryFrom<#krate::MiraAny, Error = ::std::boxed::Box<#krate::MiraError>>
-        ));
-    }
-}
+// pub fn add_write_bounds(
+//     generics: &mut Generics,
+//     types: impl IntoIterator<Item = Type>,
+//     krate: &Path,
+// ) {
+//     let where_clause = generics.make_where_clause();
+//     for ty in types {
+//         where_clause.predicates.push(parse_quote!(
+//             #ty: ::core::convert::TryFrom<#krate::MiraAny, Error = ::std::boxed::Box<#krate::MiraError>>
+//         ));
+//     }
+// }

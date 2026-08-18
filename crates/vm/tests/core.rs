@@ -1,5 +1,5 @@
 use mirascript_vm::{
-    MiraAny, MiraArray, MiraContext, MiraError, MiraExtern, MiraRecord, MiraShared, compile, eval,
+    MiraAny, MiraArray, MiraContext, MiraError, MiraRecord, MiraShared, compile, eval,
 };
 
 #[test]
@@ -113,14 +113,6 @@ struct Foo {
 #[allow(dead_code)]
 struct Point(f64, f64, #[mira(skip)] String);
 
-#[derive(Clone, MiraExtern)]
-#[mira(tag = "Counter")]
-struct Counter {
-    value: i64,
-    #[mira(readonly)]
-    limit: i64,
-}
-
 #[test]
 fn derived_live_values_bridge_rust_and_mirascript() {
     let foo = MiraShared::new(Foo {
@@ -129,11 +121,9 @@ fn derived_live_values_bridge_rust_and_mirascript() {
         _secret: "token".into(),
     });
     let point = MiraShared::new(Point(3.0, 4.0, "metadata".into()));
-    let counter = MiraShared::new(Counter { value: 1, limit: 9 });
     let mut context = MiraContext::empty();
     context.insert("foo", MiraAny::from(foo.clone()));
     context.insert("point", MiraAny::from(point));
-    context.insert("counter", MiraAny::from(counter.clone()));
 
     assert_eq!(
         eval("foo.bar + point[0] + point[-1]", &context).unwrap(),
@@ -145,29 +135,6 @@ fn derived_live_values_bridge_rust_and_mirascript() {
     );
     foo.borrow_mut().bar = 7;
     assert_eq!(eval("foo.bar", &context).unwrap(), MiraAny::from(7));
-
-    assert_eq!(
-        eval("counter.value = 5; counter.value", &context).unwrap(),
-        MiraAny::from(5),
-    );
-    assert_eq!(counter.borrow().value, 5);
-    let failed_conversion = eval("counter.value = 'bad'; nil", &context);
-    assert!(matches!(
-        failed_conversion.unwrap_err().as_ref(),
-        MiraError::Conversion { .. }
-    ));
-    assert_eq!(counter.borrow().value, 5);
-    let readonly_write = eval("counter.limit = 12; nil", &context);
-    assert!(matches!(
-        readonly_write.unwrap_err().as_ref(),
-        MiraError::Runtime { .. }
-    ));
-    assert_eq!(counter.borrow().limit, 9);
-    context.insert("counter_alias", MiraAny::from(counter.clone()));
-    assert_eq!(
-        eval("counter == counter_alias", &context).unwrap(),
-        MiraAny::Boolean(true),
-    );
 
     let _borrow = foo.borrow_mut();
     assert!(matches!(

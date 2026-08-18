@@ -158,7 +158,6 @@ pub(super) fn inner_to_string(value: &MiraAny, braces: bool) -> Result<String> {
             None => "<function>".into(),
         }),
         MiraAny::Module(module) => Ok(format!("<module {}>", module.name())),
-        MiraAny::Extern(value) => Ok(format!("<extern {}>", value.tag()?)),
         MiraAny::Array(_) | MiraAny::RustArray(_) => {
             let length = value.array_len()?.unwrap_or(0);
             let mut parts = Vec::with_capacity(length);

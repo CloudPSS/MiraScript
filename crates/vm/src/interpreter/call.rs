@@ -139,17 +139,6 @@ impl<'a> Runtime<'a> {
                     }
                 }
             },
-            MiraAny::Extern(value) if value.is_callable()? => {
-                let label = Rc::from(format!("<extern {}>", value.tag()?));
-                self.call_stack.push(Some(label));
-                let mut context = MiraCallContext { runtime: self };
-                let result = value.call(&mut context, args).and_then(|value| {
-                    context.runtime.checkpoint()?;
-                    Ok(value)
-                });
-                self.call_stack.pop();
-                result
-            }
             _ => Err(MiraError::runtime(format!(
                 "Value is not callable: {}",
                 operations::display(function)

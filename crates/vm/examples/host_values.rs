@@ -1,34 +1,31 @@
-use mirascript_vm::{MiraContext, MiraExtern, MiraRecord, MiraShared, compile};
+use mirascript_vm::{MiraArray, MiraContext, MiraRecord, MiraShared, compile};
 
 #[derive(Clone, MiraRecord)]
 struct User {
     name: String,
 }
 
-#[derive(Clone, MiraExtern)]
-#[mira(tag = "Counter")]
-struct Counter {
-    value: i64,
-    #[mira(readonly)]
-    limit: i64,
-}
+#[derive(Clone, MiraArray)]
+struct Arr(u64, f64, User);
 
 fn main() -> mirascript_vm::Result<()> {
     let user = MiraShared::new(User { name: "Ada".into() });
-    let counter = MiraShared::new(Counter {
-        value: 1,
-        limit: 10,
-    });
+    let arr = MiraShared::new(Arr(1, 10.0, User { name: "Bob".into() }));
 
     let mut context = MiraContext::new();
     context.insert("user", user.clone());
-    context.insert("counter", counter.clone());
+    context.insert("arr", arr.clone());
 
-    let script = compile("counter.value += 1; `Hello, $(user.name)! Count: $(counter.value)`")?;
-    println!("{:?}", script.run(&context)?);
+    let script = compile("`Hello, $(user.name)! $(arr::len())/$arr`")?;
+    assert_eq!(
+        script.run(&context)?,
+        "Hello, Ada! 3/1, 10, (name: Bob)".into()
+    );
 
     user.borrow_mut().name = "Grace".into();
-    println!("{:?}", script.run(&context)?);
-    assert_eq!(counter.borrow().value, 3);
+    assert_eq!(
+        script.run(&context)?,
+        "Hello, Grace! 3/1, 10, (name: Bob)".into()
+    );
     Ok(())
 }

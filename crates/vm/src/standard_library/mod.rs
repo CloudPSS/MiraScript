@@ -53,7 +53,6 @@ fn array(args: &[MiraAny], index: usize, name: &str) -> Result<Vec<MiraAny>> {
 fn is_callable(value: &MiraAny) -> Result<bool> {
     match value {
         MiraAny::Function(_) => Ok(true),
-        MiraAny::Extern(value) => value.is_callable(),
         _ => Ok(false),
     }
 }

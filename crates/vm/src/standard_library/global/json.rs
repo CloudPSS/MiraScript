@@ -85,16 +85,6 @@ fn to_json_value(
             }
             Some(serde_json::Value::Object(map))
         }
-        MiraAny::Extern(value) => {
-            let mut map = serde_json::Map::new();
-            for key in value.keys()? {
-                let item = call.get(&MiraAny::Extern(value.clone()), key.clone())?;
-                if let Some(item) = to_json_value(call, &item, true)? {
-                    map.insert(key, item);
-                }
-            }
-            Some(serde_json::Value::Object(map))
-        }
     })
 }
 

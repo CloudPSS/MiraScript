@@ -49,7 +49,7 @@ pub(crate) fn in_value(needle: &MiraAny, value: &MiraAny) -> Result<bool> {
         MiraAny::Array(_) | MiraAny::RustArray(_) => Ok(iterable_array(value)?
             .iter()
             .any(|candidate| candidate == needle)),
-        MiraAny::Record(_) | MiraAny::RustRecord(_) | MiraAny::Extern(_) | MiraAny::Module(_) => {
+        MiraAny::Record(_) | MiraAny::RustRecord(_) | MiraAny::Module(_) => {
             has(value, &MiraAny::String(to_string(needle)?.into()))
         }
         _ => Ok(false),

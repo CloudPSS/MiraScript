@@ -243,10 +243,7 @@ impl<'a> Runtime<'a> {
                     operations::assert_initialized(&value)?;
                     if *optional
                         && (matches!(value, MiraAny::Nil)
-                            || matches!(
-                                value,
-                                MiraAny::Function(_) | MiraAny::Module(_) | MiraAny::Extern(_)
-                            ))
+                            || matches!(value, MiraAny::Function(_) | MiraAny::Module(_)))
                     {
                         continue;
                     }

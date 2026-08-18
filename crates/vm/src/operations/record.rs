@@ -19,7 +19,6 @@ pub(crate) fn has(value: &MiraAny, key: &MiraAny) -> Result<bool> {
         MiraAny::Record(_) | MiraAny::RustRecord(_) => Ok(value
             .record_keys()?
             .is_some_and(|keys| keys.iter().any(|candidate| candidate == &key))),
-        MiraAny::Extern(value) => value.has(&key),
         MiraAny::Module(module) => Ok(module.keys().iter().any(|candidate| candidate == &key)),
     }
 }
@@ -56,11 +55,6 @@ pub(crate) fn get_value(value: &MiraAny, key: &MiraAny) -> Result<MiraAny> {
             .record_get(&key)?
             .unwrap_or(MiraAny::Nil)
             .into_element(),
-        MiraAny::Extern(value) => {
-            let result = value.get(&key)?.unwrap_or(MiraAny::Nil);
-            assert_initialized(&result)?;
-            Ok(result)
-        }
         MiraAny::Module(module) => {
             let result = module.get_native(&key).unwrap_or(MiraAny::Nil);
             assert_initialized(&result)?;
@@ -70,18 +64,11 @@ pub(crate) fn get_value(value: &MiraAny, key: &MiraAny) -> Result<MiraAny> {
     }
 }
 
-pub(crate) fn set(value: &MiraAny, key: &MiraAny, new_value: MiraAny) -> Result<()> {
-    assert_initialized(value)?;
-    assert_initialized(&new_value)?;
-    let MiraAny::Extern(value) = value else {
-        return Err(MiraError::runtime(format!("Expected extern, got {}", display(value))).into());
-    };
-    let key = to_string(key)?;
-    if value.set(&key, new_value)? {
-        Ok(())
-    } else {
-        Err(MiraError::runtime(format!("Extern field `{key}` is missing or read-only")).into())
-    }
+pub(crate) fn set(obj: &MiraAny, key: &MiraAny, value: MiraAny) -> Result<()> {
+    assert_initialized(obj)?;
+    assert_initialized(key)?;
+    assert_initialized(&value)?;
+    return Err(MiraError::runtime(format!("Expected extern, got {}", display(obj))).into());
 }
 
 pub(crate) fn pick(value: &MiraAny, keys: &[String]) -> Result<MiraAny> {
