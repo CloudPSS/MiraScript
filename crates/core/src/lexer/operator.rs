@@ -192,12 +192,15 @@ impl Operator {
         self.is_equality() || self.is_comparison()
     }
 
+    #[allow(dead_code)]
     pub(crate) fn is_infix(&self) -> bool {
         self.get_bool("infix").unwrap_or(false)
     }
+    #[allow(dead_code)]
     pub(crate) fn is_prefix(&self) -> bool {
         self.get_bool("prefix").unwrap_or(false)
     }
+    #[allow(dead_code)]
     pub(crate) fn is_postfix(&self) -> bool {
         self.get_bool("postfix").unwrap_or(false)
     }
