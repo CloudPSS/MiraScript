@@ -2,12 +2,13 @@ pub use self::compile::{DiagnosticCode, Diagnostics, InvalidBytecodeReason};
 use thiserror::Error;
 
 mod compile;
+mod external;
 
 /// Result type returned by the MiraScript VM.
 pub type Result<T> = std::result::Result<T, Box<MiraError>>;
 
 /// An error produced while compiling, decoding, executing, or bridging values.
-#[derive(Debug, Clone, PartialEq, Error)]
+#[derive(Debug, Error)]
 #[non_exhaustive]
 pub enum MiraError {
     /// The compiled bytecode chunk failed structural validation.
@@ -25,7 +26,7 @@ pub enum MiraError {
         diagnostics: Vec<Diagnostics>,
     },
     /// Script execution failed.
-    #[error("")]
+    #[error("Runtime failure: {message}")]
     Runtime {
         /// Human-readable runtime failure.
         message: String,
@@ -37,7 +38,7 @@ pub enum MiraError {
         stack: Vec<String>,
     },
     /// A MiraScript value could not be converted to the requested Rust type.
-    #[error("")]
+    #[error("Failed to convert {actual} to {expected}")]
     Conversion {
         /// Requested Rust-side value description.
         expected: String,
@@ -46,14 +47,10 @@ pub enum MiraError {
         /// Nested field or index path, when conversion added one.
         path: Option<String>,
     },
-    /// A host extern reported an error.
-    #[error("")]
-    Extern {
-        /// Error message supplied by the extern.
-        message: String,
-    },
     /// A live Rust value was already borrowed incompatibly.
-    #[error("")]
+    #[error(
+        "A live Rust value ({tag}) was already borrowed incompatibly by another {operation} operation"
+    )]
     BorrowConflict {
         /// Operation that required the conflicting borrow.
         operation: &'static str,
@@ -61,20 +58,23 @@ pub enum MiraError {
         tag: String,
     },
     /// Execution exceeded [`crate::RunOptions::timeout`].
-    #[error("")]
+    #[error("execution exceeded the configured timeout")]
     Timeout,
     /// Execution exceeded the configured call-depth limit.
-    #[error("")]
+    #[error("execution exceeded the configured call-depth limit of {max}")]
     MaxCallDepth {
         /// Configured maximum call depth.
         max: u32,
     },
     /// A script closure or script module attempted to outlive its execution.
-    #[error("")]
+    #[error("a script closure or script module attempted to outlive its execution")]
     EscapingClosure,
     /// A previously captured script value was used after execution ended.
-    #[error("")]
+    #[error("a previously captured script value was used after execution ended")]
     ExecutionEnded,
+    /// A host extern reported an error.
+    #[error(transparent)]
+    External(anyhow::Error),
 }
 
 impl MiraError {

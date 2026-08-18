@@ -46,9 +46,11 @@ impl MiraContext {
 
     /// Insert or replace a named native function.
     pub fn insert_fn(&mut self, name: impl Into<String>, function: impl Into<MiraNativeFn>) {
+        let name = name.into();
+        let function = function.into().with_name(name.clone());
         self.insert(
             name,
-            MiraAny::Function(crate::MiraFunction::Native(function.into()).into()),
+            MiraAny::Function(crate::MiraFunction::Native(function).into()),
         );
     }
 

@@ -37,7 +37,7 @@ function severityLabel(s) {
 const entries = [];
 
 for (const [name, code] of Object.entries(DiagnosticCode)) {
-  if (typeof code !== 'number') continue;
+  if (typeof code !== 'number' || code === DiagnosticCode.Unknown) continue;
   const msg = getDiagnosticMessage(code);
   const sev = getDiagnosticSeverity(code);
   if (!msg || !sev) continue;

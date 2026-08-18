@@ -5,7 +5,7 @@ use thiserror::Error;
 use super::MiraError;
 
 /// Represents a diagnostic message produced by the compiler.
-#[derive(Debug, Clone, PartialEq, Error)]
+#[derive(Debug, Error)]
 #[error("{start_line}:{start_col}-{end_line}:{end_col} {code:?}")]
 pub struct Diagnostics {
     /// The diagnostic code associated with this message.
@@ -21,7 +21,7 @@ pub struct Diagnostics {
 }
 
 /// Represents the reason for an invalid bytecode error.
-#[derive(Debug, Clone, PartialEq, Error)]
+#[derive(Debug, Error)]
 pub enum InvalidBytecodeReason {
     /// The chunk header is truncated.
     #[error("chunk header is truncated")]

@@ -21,6 +21,7 @@ name = "main"
 harness = false
 
 [dependencies]
+anyhow = "1"
 indexmap = "2"
 libm = "0.2"
 mirascript-core.workspace = true

@@ -94,10 +94,10 @@ fn static_globals_resolve_for_each_execution() {
 #[test]
 fn rejects_escaping_script_values() {
     let error = eval("fn value { 1 } value", &MiraContext::empty()).unwrap_err();
-    assert_eq!(error.as_ref(), &MiraError::EscapingClosure);
+    assert!(matches!(error.as_ref(), &MiraError::EscapingClosure));
 
     let error = eval("mod value { pub let x = 1; } value", &MiraContext::empty()).unwrap_err();
-    assert_eq!(error.as_ref(), &MiraError::EscapingClosure);
+    assert!(matches!(error.as_ref(), &MiraError::EscapingClosure));
 }
 
 #[derive(Clone, MiraRecord)]

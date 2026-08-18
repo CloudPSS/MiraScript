@@ -43,13 +43,26 @@ impl MiraCallContext<'_> {
     }
 }
 
-type NativeCallback = dyn for<'a> Fn(&mut MiraCallContext<'a>, &[MiraAny]) -> Result<MiraAny>;
+type NativeCallback = dyn Fn(&mut MiraCallContext<'_>, &[MiraAny]) -> Result<MiraAny>;
 
 #[derive(Clone)]
 /// A named, single-threaded native function callable from MiraScript.
 pub struct MiraNativeFn {
     callback: Rc<NativeCallback>,
     name: Rc<str>,
+}
+
+fn wrap_callback<
+    V: Into<MiraAny>,
+    E: Into<anyhow::Error>,
+    F: Fn(&mut MiraCallContext<'_>, &[MiraAny]) -> std::result::Result<V, E> + 'static,
+>(
+    callback: F,
+) -> impl Fn(&mut MiraCallContext<'_>, &[MiraAny]) -> Result<MiraAny> + 'static {
+    move |context, args| match callback(context, args) {
+        Ok(value) => Ok(value.into()),
+        Err(error) => Err(error.into().into()),
+    }
 }
 
 impl MiraNativeFn {
@@ -59,34 +72,109 @@ impl MiraNativeFn {
     ///
     /// ```
     /// use mirascript_vm::{MiraAny, MiraContext, MiraNativeFn, eval};
+    /// use anyhow::bail;
     ///
     /// let mut context = MiraContext::empty();
-    /// context.insert_fn("answer", MiraNativeFn::new("host.answer", |_, _| {
-    ///     Ok(MiraAny::Number(42.0))
+    /// context.insert_fn("answer", MiraNativeFn::new("host.answer", |_, args| {
+    ///     if args.len() != 0 {
+    ///         bail!("expected 0 arguments");
+    ///     }
+    ///     Ok(42)
     /// }));
     /// assert_eq!(eval("answer()", &context)?, MiraAny::Number(42.0));
     /// # Ok::<(), Box<mirascript_vm::MiraError>>(())
     /// ```
-    pub fn new(
+    pub fn new<
+        V: Into<MiraAny>,
+        E: Into<anyhow::Error>,
+        F: Fn(&mut MiraCallContext<'_>, &[MiraAny]) -> std::result::Result<V, E> + 'static,
+    >(
         name: impl Into<String>,
-        callback: impl for<'a> Fn(&mut MiraCallContext<'a>, &[MiraAny]) -> Result<MiraAny> + 'static,
+        callback: F,
     ) -> Self {
-        Self {
-            callback: Rc::new(callback),
+        MiraNativeFn {
             name: Rc::from(name.into()),
+            callback: Rc::new(wrap_callback(callback)),
         }
     }
 
-    /// Create a native function named `<native>`.
-    pub fn anonymous(
-        callback: impl for<'a> Fn(&mut MiraCallContext<'a>, &[MiraAny]) -> Result<MiraAny> + 'static,
+    /// Create a native function named `<anonymous>`.
+    pub fn anonymous<
+        V: Into<MiraAny>,
+        E: Into<anyhow::Error>,
+        F: Fn(&mut MiraCallContext<'_>, &[MiraAny]) -> std::result::Result<V, E> + 'static,
+    >(
+        callback: F,
     ) -> Self {
-        Self::new("<native>", callback)
+        Self::new("<anonymous>", callback)
+    }
+
+    /// Create a native function from a callback that always succeeds.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use mirascript_vm::{MiraAny, MiraContext, MiraNativeFn, eval};
+    ///
+    /// let mut context = MiraContext::empty();
+    /// context.insert_fn("answer", MiraNativeFn::ok(|_, _| 42));
+    /// assert_eq!(eval("answer()", &context)?, MiraAny::Number(42.0));
+    /// # Ok::<(), Box<mirascript_vm::MiraError>>(())
+    /// ```
+    pub fn ok<V: Into<MiraAny>, F: Fn(&mut MiraCallContext<'_>, &[MiraAny]) -> V + 'static>(
+        callback: F,
+    ) -> Self {
+        Self {
+            name: Rc::from("<anonymous>"),
+            callback: Rc::new(move |context, args| Ok(callback(context, args).into())),
+        }
+    }
+
+    /// Create a native function from a callback that always fails.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use mirascript_vm::{MiraAny, MiraContext, MiraNativeFn, MiraError, eval};
+    /// use anyhow::anyhow;
+    ///
+    /// let mut context = MiraContext::empty();
+    /// context.insert_fn("answer", MiraNativeFn::err(|_, _| anyhow!("no answer for you")));
+    /// assert!(matches!(eval("answer()", &context).unwrap_err().as_ref(), MiraError::External { .. }));
+    /// # Ok::<(), Box<mirascript_vm::MiraError>>(())
+    /// ```
+    pub fn err<
+        E: Into<anyhow::Error>,
+        F: Fn(&mut MiraCallContext<'_>, &[MiraAny]) -> E + 'static,
+    >(
+        callback: F,
+    ) -> Self {
+        Self {
+            name: Rc::from("<anonymous>"),
+            callback: Rc::new(move |context, args| Err(callback(context, args).into().into())),
+        }
+    }
+
+    /// Create a native function from a callback that may fail with a [`MiraError`].
+    pub fn builtin(
+        name: impl Into<String>,
+        callback: impl Fn(&mut MiraCallContext<'_>, &[MiraAny]) -> Result<MiraAny> + 'static,
+    ) -> Self {
+        Self {
+            name: Rc::from(name.into()),
+            callback: Rc::new(callback),
+        }
     }
 
     /// Return the function name shown in diagnostics and stack traces.
     pub fn name(&self) -> &str {
         &self.name
+    }
+
+    /// Set the function name shown in diagnostics and stack traces.
+    pub fn with_name(mut self, name: impl Into<String>) -> Self {
+        self.name = Rc::from(name.into());
+        self
     }
 
     pub(crate) fn shared_name(&self) -> Rc<str> {
@@ -103,15 +191,6 @@ impl MiraNativeFn {
 
     pub(super) fn same(&self, other: &Self) -> bool {
         Rc::ptr_eq(&self.callback, &other.callback)
-    }
-}
-
-impl<F> From<F> for MiraNativeFn
-where
-    F: for<'a> Fn(&mut MiraCallContext<'a>, &[MiraAny]) -> Result<MiraAny> + 'static,
-{
-    fn from(value: F) -> Self {
-        Self::anonymous(value)
     }
 }
 

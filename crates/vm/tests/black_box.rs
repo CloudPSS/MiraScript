@@ -3,9 +3,7 @@ use std::path::Path;
 use std::time::Duration;
 
 use indexmap::IndexMap;
-use mirascript_vm::{
-    MiraAny, MiraContext, MiraError, MiraModule, MiraNativeFn, RunOptions, compile,
-};
+use mirascript_vm::{MiraAny, MiraContext, MiraModule, MiraNativeFn, RunOptions, compile};
 
 fn context() -> MiraContext {
     let mut context = MiraContext::new();
@@ -17,13 +15,10 @@ fn context() -> MiraContext {
             if host_equal(&left, &right) {
                 Ok(MiraAny::Nil)
             } else {
-                Err(MiraError::Extern {
-                    message: format!(
-                        "assertion failed: {left:?} != {right:?}; message={:?}",
-                        args.get(2)
-                    ),
-                }
-                .into())
+                anyhow::bail!(
+                    "assertion failed: {left:?} != {right:?}; message={:?}",
+                    args.get(2)
+                )
             }
         }),
     );
@@ -35,13 +30,10 @@ fn context() -> MiraContext {
             if !host_equal(&left, &right) {
                 Ok(MiraAny::Nil)
             } else {
-                Err(MiraError::Extern {
-                    message: format!(
-                        "assertion failed: {left:?} == {right:?}; message={:?}",
-                        args.get(2)
-                    ),
-                }
-                .into())
+                anyhow::bail!(
+                    "assertion failed: {left:?} == {right:?}; message={:?}",
+                    args.get(2)
+                )
             }
         }),
     );
@@ -49,33 +41,24 @@ fn context() -> MiraContext {
         "t_true",
         MiraNativeFn::new("t_true", |_, args| match args.first() {
             Some(MiraAny::Boolean(true)) => Ok(MiraAny::Nil),
-            value => Err(MiraError::Extern {
-                message: format!("expected true, got {value:?}; message={:?}", args.get(1)),
-            }
-            .into()),
+            value => anyhow::bail!("expected true, got {value:?}; message={:?}", args.get(1)),
         }),
     );
     context.insert(
         "t_false",
         MiraNativeFn::new("t_false", |_, args| match args.first() {
             Some(MiraAny::Boolean(false)) => Ok(MiraAny::Nil),
-            value => Err(MiraError::Extern {
-                message: format!("expected false, got {value:?}; message={:?}", args.get(1)),
-            }
-            .into()),
+            value => anyhow::bail!("expected false, got {value:?}; message={:?}", args.get(1)),
         }),
     );
     context.insert(
         "t_throws",
         MiraNativeFn::new("t_throws", |call, args| {
-            let function = args.first().ok_or_else(|| MiraError::Extern {
-                message: "t_throws requires a function".into(),
-            })?;
+            let function = args
+                .first()
+                .ok_or_else(|| anyhow::anyhow!("t_throws requires a function"))?;
             match call.call(function, &[]) {
-                Ok(value) => Err(MiraError::Extern {
-                    message: format!("expected function to throw, returned {value:?}"),
-                }
-                .into()),
+                Ok(value) => anyhow::bail!("expected function to throw, returned {value:?}"),
                 Err(_) => Ok(MiraAny::Nil),
             }
         }),
@@ -84,16 +67,12 @@ fn context() -> MiraContext {
     // defers these calls in the TypeScript runner as well.
     context.insert(
         "t_timeout",
-        MiraNativeFn::new("t_timeout", |_, _| Ok(MiraAny::Nil)),
+        MiraNativeFn::ok(|_, _| MiraAny::Nil).with_name("t_timeout"),
     );
     context.insert(
         "t_never",
-        MiraNativeFn::new("t_never", |_, args| {
-            Err(MiraError::Extern {
-                message: format!("unexpected execution: {:?}", args.first()),
-            }
-            .into())
-        }),
+        MiraNativeFn::err(|_, args| anyhow::anyhow!("unexpected execution: {:?}", args.first()))
+            .with_name("t_never"),
     );
     context.insert("v_array", MiraAny::Array(Vec::new().into()));
     context.insert("v_record", MiraAny::Record(IndexMap::new().into()));
@@ -102,15 +81,10 @@ fn context() -> MiraContext {
     context.insert("v_false", false);
     context.insert("v_number", 42);
     context.insert("v_string", "Hello, Mira!");
-    context.insert(
-        "v_fn",
-        MiraNativeFn::new("v_fn", |_, _| Ok(MiraAny::from("I am a function"))),
-    );
+    context.insert("v_fn", MiraNativeFn::ok(|_, _| "I am a function"));
     context.insert(
         "v_fn_another",
-        MiraNativeFn::new("v_fn_another", |_, _| {
-            Ok(MiraAny::from("I am another function"))
-        }),
+        MiraNativeFn::ok(|_, _| "I am another function"),
     );
     context.insert("v_module", MiraModule::new("v_module", IndexMap::new()));
     context.insert(

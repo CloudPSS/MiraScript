@@ -48,9 +48,7 @@ fn probe_context(drops: &Rc<Cell<usize>>) -> MiraContext {
     let mut context = MiraContext::new();
     context.insert_fn(
         "make_probe",
-        MiraNativeFn::new("make_probe", move |_, _| {
-            Ok(MiraAny::from_record(DropProbe(Rc::clone(&drops))))
-        }),
+        MiraNativeFn::ok(move |_, _| MiraAny::from_record(DropProbe(Rc::clone(&drops)))),
     );
     context
 }
@@ -149,10 +147,7 @@ fn limits_and_providers_are_applied_per_run() {
 fn native_values_and_live_rust_values_may_escape() {
     let drops = Rc::new(Cell::new(0));
     let mut context = probe_context(&drops);
-    context.insert(
-        "native",
-        MiraNativeFn::new("native", |_, _| Ok(MiraAny::Nil)),
-    );
+    context.insert("native", MiraNativeFn::ok(|_, _| MiraAny::Nil));
 
     assert!(matches!(
         compile("native").unwrap().run(&context).unwrap(),
@@ -172,9 +167,9 @@ fn script_function_handles_cached_by_hosts_expire_safely() {
     let mut context = MiraContext::new();
     context.insert_fn(
         "cache",
-        MiraNativeFn::new("cache", move |_, args| {
+        MiraNativeFn::ok(move |_, args| {
             *callback_cache.borrow_mut() = args.first().cloned();
-            Ok(MiraAny::Nil)
+            MiraAny::Nil
         }),
     );
     compile("cache(fn { 42 }); nil")
@@ -183,12 +178,12 @@ fn script_function_handles_cached_by_hosts_expire_safely() {
         .unwrap();
 
     context.insert("cached", cached.borrow_mut().take().unwrap());
-    assert_eq!(
+    assert!(matches!(
         compile("cached()")
             .unwrap()
             .run(&context)
             .unwrap_err()
             .as_ref(),
         &MiraError::ExecutionEnded,
-    );
+    ));
 }
