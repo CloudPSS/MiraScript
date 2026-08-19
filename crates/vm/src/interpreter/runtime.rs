@@ -1,5 +1,7 @@
 use std::{num::NonZeroU64, sync::atomic::AtomicU64, time::Instant};
 
+use crate::value::MiraArena;
+
 use super::{CallStack, FrameArena, GlobalSlots, MiraContext, Program, RunOptions};
 
 static NEXT_EXECUTION_ID: AtomicU64 = AtomicU64::new(1);
@@ -25,6 +27,7 @@ pub struct Runtime<'a> {
     pub(crate) call_depth: u32,
     pub(super) frames: FrameArena,
     pub(super) call_stack: CallStack,
+    pub(crate) arena: MiraArena,
 }
 
 impl<'a> Runtime<'a> {
@@ -45,6 +48,7 @@ impl<'a> Runtime<'a> {
             call_depth: 0,
             frames: FrameArena::new(program.root.register_count),
             call_stack: CallStack::new(),
+            arena: MiraArena::new(),
         }
     }
 }

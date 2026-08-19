@@ -3,7 +3,7 @@ use std::cmp::Ordering;
 use super::*;
 
 impl Runtime<'_> {
-    pub(super) fn execute_op(&mut self, operation: &Operation, frame: usize) -> Result<Flow> {
+    pub(super) fn execute_op(&mut self, operation: &Operation, frame: FrameId) -> Result<Flow> {
         match operation {
             Operation::Noop => {}
             Operation::Break => return Ok(Flow::Break),

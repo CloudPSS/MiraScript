@@ -1,7 +1,10 @@
 use std::fmt;
 use std::rc::Rc;
 
-use crate::{Result, RunOptions, interpreter::ExecutionId};
+use crate::{
+    Result, RunOptions,
+    interpreter::{ExecutionId, FrameId},
+};
 
 use super::MiraAny;
 
@@ -209,7 +212,7 @@ pub enum MiraFunction {
     Script {
         execution: ExecutionId,
         function: usize,
-        frame: usize,
+        frame: FrameId,
         name: Option<Rc<str>>,
     },
 }

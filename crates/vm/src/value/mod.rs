@@ -14,6 +14,7 @@ use indexmap::IndexMap;
 
 use crate::{MiraError, Result, interpreter::ExecutionId};
 
+pub(crate) use arena::MiraArena;
 use bridge::{ArrayObject, RecordObject};
 pub use bridge::{MiraArray, MiraBridge, MiraRecord};
 pub(crate) use function::NativeRuntime;

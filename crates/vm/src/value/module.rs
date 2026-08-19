@@ -3,7 +3,7 @@ use std::rc::Rc;
 
 use indexmap::IndexMap;
 
-use crate::interpreter::ExecutionId;
+use crate::interpreter::{ExecutionId, FrameId};
 
 use super::MiraAny;
 
@@ -11,7 +11,7 @@ use super::MiraAny;
 #[doc(hidden)]
 pub struct ScriptModule {
     pub(crate) execution: ExecutionId,
-    pub frame: usize,
+    pub frame: FrameId,
     pub exports: IndexMap<String, usize>,
     pub name: Rc<str>,
 }

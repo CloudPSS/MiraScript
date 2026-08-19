@@ -1,8 +1,15 @@
 use super::*;
 
+/// Identifies a frame in the call stack.
+/// Root frame is always `0`, and child frames are numbered sequentially starting from `1`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub(crate) struct FrameId(usize);
+
+pub(super) const ROOT_FRAME_ID: FrameId = FrameId(0);
+
 pub(super) struct Frame {
     pub(super) registers: Vec<MiraAny>,
-    pub(super) parent: Option<usize>,
+    pub(super) parent: Option<FrameId>,
 }
 
 pub(super) struct FrameArena {
@@ -21,28 +28,28 @@ impl FrameArena {
         }
     }
 
-    pub(super) fn push(&mut self, frame: Frame) -> usize {
+    pub(super) fn push(&mut self, frame: Frame) -> FrameId {
         self.children.push(frame);
-        self.children.len()
+        FrameId(self.children.len())
     }
 
-    pub(super) fn get(&self, frame: usize) -> &Frame {
-        if frame == 0 {
+    pub(super) fn get(&self, frame: FrameId) -> &Frame {
+        if frame.0 == 0 {
             &self.root
         } else {
-            &self.children[frame - 1]
+            &self.children[frame.0 - 1]
         }
     }
 
-    pub(super) fn get_mut(&mut self, frame: usize) -> &mut Frame {
-        if frame == 0 {
+    pub(super) fn get_mut(&mut self, frame: FrameId) -> &mut Frame {
+        if frame.0 == 0 {
             &mut self.root
         } else {
-            &mut self.children[frame - 1]
+            &mut self.children[frame.0 - 1]
         }
     }
 
-    pub(super) fn reset(&mut self, frame: usize, parent: Option<usize>) {
+    pub(super) fn reset(&mut self, frame: FrameId, parent: Option<FrameId>) {
         let frame = self.get_mut(frame);
         frame.registers.fill(MiraAny::Uninitialized);
         frame.parent = parent;

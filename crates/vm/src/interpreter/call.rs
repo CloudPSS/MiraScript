@@ -6,7 +6,7 @@ impl<'a> Runtime<'a> {
         target: &MiraAny,
         registers: &[usize],
         spreads: &[usize],
-        frame: usize,
+        frame: FrameId,
     ) -> Result<MiraAny> {
         let argument = |register: usize| self.call_argument(frame, register);
 
@@ -44,7 +44,7 @@ impl<'a> Runtime<'a> {
         self.call(target, &arguments)
     }
 
-    pub(super) fn call_argument(&self, frame: usize, register: usize) -> Result<MiraAny> {
+    pub(super) fn call_argument(&self, frame: FrameId, register: usize) -> Result<MiraAny> {
         let value = self.read_register(frame, register);
         operations::assert_initialized(&value)?;
         Ok(value)
@@ -156,7 +156,7 @@ impl<'a> Runtime<'a> {
     pub(super) fn call_script(
         &mut self,
         function: &FunctionDef,
-        parent: usize,
+        parent: FrameId,
         args: &[MiraAny],
     ) -> Result<MiraAny> {
         let frame = self.create_frame(function.register_count, Some(parent));

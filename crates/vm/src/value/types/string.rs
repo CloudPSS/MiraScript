@@ -8,9 +8,9 @@ impl MiraValue {
     }
 
     #[inline]
-    pub fn as_string(&self, runtime: &Runtime) -> Option<&str> {
+    pub fn as_string<'s>(&'s self, runtime: &'s Runtime) -> Option<&str> {
         match self {
-            // Self::String(handle) => runtime.get_string(handle),
+            Self::String(handle) => runtime.get_string(*handle),
             Self::Str(value) => Some(value),
             _ => None,
         }

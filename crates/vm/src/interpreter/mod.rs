@@ -20,11 +20,13 @@ use crate::{
 
 pub(crate) use runtime::ExecutionId;
 pub use runtime::Runtime;
+pub(crate) use state::FrameId;
+use state::{CallStack, Frame, FrameArena, GlobalSlots};
+
+use self::state::ROOT_FRAME_ID;
 
 const INLINE_CALL_DEPTH: usize = 8;
 const INLINE_GLOBAL_SLOTS: usize = 8;
-
-use state::{CallStack, Frame, FrameArena, GlobalSlots};
 
 #[derive(Debug)]
 enum Flow {
@@ -40,7 +42,7 @@ pub(crate) fn run(
     options: &RunOptions,
 ) -> Result<MiraAny> {
     let mut runtime = Runtime::new(program, context, options);
-    let result = match runtime.execute_block(&program.root.body, 0)? {
+    let result = match runtime.execute_block(&program.root.body, ROOT_FRAME_ID)? {
         Flow::Return(value) => value,
         Flow::Continue => MiraAny::Nil,
         Flow::Break | Flow::LoopContinue => {

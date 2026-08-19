@@ -1,14 +1,18 @@
 use super::*;
 
 impl<'a> Runtime<'a> {
-    pub(super) fn create_frame(&mut self, register_count: usize, parent: Option<usize>) -> usize {
+    pub(super) fn create_frame(
+        &mut self,
+        register_count: usize,
+        parent: Option<FrameId>,
+    ) -> FrameId {
         self.frames.push(Frame {
             registers: vec![MiraAny::Uninitialized; register_count + 1],
             parent,
         })
     }
 
-    pub(super) fn read_register(&self, frame: usize, register: usize) -> MiraAny {
+    pub(super) fn read_register(&self, frame: FrameId, register: usize) -> MiraAny {
         if register == 0 {
             MiraAny::Nil
         } else {
@@ -17,7 +21,7 @@ impl<'a> Runtime<'a> {
     }
 
     #[inline]
-    pub(super) fn read_number(&self, frame: usize, register: usize) -> Result<f64> {
+    pub(super) fn read_number(&self, frame: FrameId, register: usize) -> Result<f64> {
         if register == 0 {
             return operations::to_number(&MiraAny::Nil);
         }
@@ -27,13 +31,13 @@ impl<'a> Runtime<'a> {
         }
     }
 
-    pub(super) fn write_register(&mut self, frame: usize, register: usize, value: MiraAny) {
+    pub(super) fn write_register(&mut self, frame: FrameId, register: usize, value: MiraAny) {
         if register != 0 {
             self.frames.get_mut(frame).registers[register] = value;
         }
     }
 
-    pub(super) fn parent_frame(&self, mut frame: usize, level: usize) -> Result<usize> {
+    pub(super) fn parent_frame(&self, mut frame: FrameId, level: usize) -> Result<FrameId> {
         for _ in 0..level {
             frame = self
                 .frames
@@ -44,7 +48,7 @@ impl<'a> Runtime<'a> {
         Ok(frame)
     }
 
-    pub(super) fn execute_block(&mut self, body: &[Instruction], frame: usize) -> Result<Flow> {
+    pub(super) fn execute_block(&mut self, body: &[Instruction], frame: FrameId) -> Result<Flow> {
         for instruction in body {
             let result = self
                 .execute_instruction(instruction, frame)
@@ -66,7 +70,7 @@ impl<'a> Runtime<'a> {
     pub(super) fn execute_instruction(
         &mut self,
         instruction: &Instruction,
-        frame: usize,
+        frame: FrameId,
     ) -> Result<Flow> {
         match &instruction.kind {
             InstructionKind::Op(operation) => self.execute_op(operation, frame),
@@ -154,7 +158,7 @@ impl<'a> Runtime<'a> {
         register_count: usize,
         kind: &LoopKind,
         body: &[Instruction],
-        parent: usize,
+        parent: FrameId,
         reuse_frame: bool,
     ) -> Result<Flow> {
         let mut reusable_frame = None;
@@ -215,10 +219,10 @@ impl<'a> Runtime<'a> {
     pub(super) fn loop_frame(
         &mut self,
         register_count: usize,
-        parent: usize,
+        parent: FrameId,
         reuse_frame: bool,
-        reusable_frame: &mut Option<usize>,
-    ) -> usize {
+        reusable_frame: &mut Option<FrameId>,
+    ) -> FrameId {
         if let Some(frame) = *reusable_frame {
             self.frames.reset(frame, Some(parent));
             return frame;
@@ -230,7 +234,11 @@ impl<'a> Runtime<'a> {
         frame
     }
 
-    pub(super) fn build_record(&self, elements: &[RecordElement], frame: usize) -> Result<MiraAny> {
+    pub(super) fn build_record(
+        &self,
+        elements: &[RecordElement],
+        frame: FrameId,
+    ) -> Result<MiraAny> {
         let mut record = IndexMap::new();
         for element in elements {
             match element {
@@ -265,7 +273,7 @@ impl<'a> Runtime<'a> {
         Ok(MiraAny::Record(record.into()))
     }
 
-    pub(super) fn build_array(&self, elements: &[ArrayElement], frame: usize) -> Result<MiraAny> {
+    pub(super) fn build_array(&self, elements: &[ArrayElement], frame: FrameId) -> Result<MiraAny> {
         let mut array = Vec::new();
         for element in elements {
             match element {
