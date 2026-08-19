@@ -1,16 +1,18 @@
+mod arena;
 mod bridge;
 mod convert;
 mod function;
 mod indirect;
 mod module;
 mod shared;
+mod types;
 
 use std::fmt;
 use std::rc::Rc;
 
 use indexmap::IndexMap;
 
-use crate::{MiraError, Result};
+use crate::{MiraError, Result, interpreter::ExecutionId};
 
 use bridge::{ArrayObject, RecordObject};
 pub use bridge::{MiraArray, MiraBridge, MiraRecord};
@@ -20,6 +22,7 @@ pub use indirect::MiraIndirect;
 pub use module::MiraModule;
 pub(crate) use module::ScriptModule;
 pub use shared::MiraShared;
+pub use types::*;
 
 /// A value understood by the Rust VM.
 ///
@@ -104,7 +107,7 @@ impl MiraAny {
         }
     }
 
-    pub(crate) fn contains_script_reference(&self, execution: u64) -> bool {
+    pub(crate) fn contains_script_reference(&self, execution: ExecutionId) -> bool {
         match self {
             Self::Function(function) => matches!(
                 function.as_ref(),

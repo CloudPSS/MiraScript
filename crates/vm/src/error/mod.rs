@@ -1,4 +1,5 @@
 pub use self::compile::{DiagnosticCode, Diagnostics, InvalidBytecodeReason};
+use crate::MiraValue;
 use thiserror::Error;
 
 mod compile;
@@ -72,6 +73,9 @@ pub enum MiraError {
     /// A previously captured script value was used after execution ended.
     #[error("a previously captured script value was used after execution ended")]
     ExecutionEnded,
+    /// Trying to access an index or field that does not exist in an array or record.
+    #[error("tried to access an index or field that does not exist in an array or record")]
+    MissingIndexOrField,
     /// A host extern reported an error.
     #[error(transparent)]
     External(anyhow::Error),
@@ -88,7 +92,7 @@ impl MiraError {
         .into()
     }
 
-    pub(crate) fn conversion(expected: impl Into<String>, value: &crate::MiraAny) -> Box<Self> {
+    pub(crate) fn conversion(expected: impl Into<String>, value: &MiraValue) -> Box<Self> {
         Self::Conversion {
             expected: expected.into(),
             actual: value.type_name().into(),

@@ -20,7 +20,7 @@ pub use mirascript_core as core;
 pub use mirascript_vm_derive::{MiraArray, MiraRecord};
 pub use value::{
     MiraAny, MiraArray, MiraCallContext, MiraFunction, MiraIndirect, MiraModule, MiraNativeFn,
-    MiraRecord, MiraShared,
+    MiraRecord, MiraShared, MiraValue, Nil,
 };
 
 #[doc(hidden)]

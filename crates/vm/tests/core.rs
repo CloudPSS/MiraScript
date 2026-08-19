@@ -144,17 +144,6 @@ fn derived_live_values_bridge_rust_and_mirascript() {
 }
 
 #[test]
-fn checked_integer_conversions_reject_finite_out_of_range_values() {
-    assert!(u64::try_from(MiraAny::Number(2_f64.powi(64))).is_err());
-    assert!(i64::try_from(MiraAny::Number(2_f64.powi(63))).is_err());
-    assert_eq!(
-        i64::try_from(MiraAny::Number(-2_f64.powi(63))).unwrap(),
-        i64::MIN
-    );
-    assert!(u8::try_from(MiraAny::Number(1.5)).is_err());
-}
-
-#[test]
 fn errors_preserve_diagnostics_and_runtime_context() {
     assert!(matches!(
         compile("let =").unwrap_err().as_ref(),

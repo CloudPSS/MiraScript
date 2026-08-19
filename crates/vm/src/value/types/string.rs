@@ -1,0 +1,25 @@
+use super::MiraValue;
+use crate::interpreter::Runtime;
+
+impl MiraValue {
+    #[inline]
+    pub const fn is_string(&self) -> bool {
+        matches!(self, Self::String(_) | Self::Str(_))
+    }
+
+    #[inline]
+    pub fn as_string(&self, runtime: &Runtime) -> Option<&str> {
+        match self {
+            // Self::String(handle) => runtime.get_string(handle),
+            Self::Str(value) => Some(value),
+            _ => None,
+        }
+    }
+}
+
+impl From<&'static &'static str> for MiraValue {
+    #[inline]
+    fn from(value: &'static &'static str) -> Self {
+        Self::Str(value)
+    }
+}

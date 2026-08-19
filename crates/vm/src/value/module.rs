@@ -3,12 +3,14 @@ use std::rc::Rc;
 
 use indexmap::IndexMap;
 
+use crate::interpreter::ExecutionId;
+
 use super::MiraAny;
 
 #[derive(Debug, Clone)]
 #[doc(hidden)]
 pub struct ScriptModule {
-    pub execution: u64,
+    pub(crate) execution: ExecutionId,
     pub frame: usize,
     pub exports: IndexMap<String, usize>,
     pub name: Rc<str>,

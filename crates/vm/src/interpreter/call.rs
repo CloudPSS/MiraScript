@@ -60,14 +60,13 @@ impl<'a> Runtime<'a> {
                 "Global variable '{}' is not defined.",
                 self.program.global_names[slot]
             ))
-            .into()
         })
     }
 
     pub(super) fn get_global_name(&self, key: &str) -> Result<MiraAny> {
-        self.context.get(key).ok_or_else(|| {
-            MiraError::runtime(format!("Global variable '{key}' is not defined.")).into()
-        })
+        self.context
+            .get(key)
+            .ok_or_else(|| MiraError::runtime(format!("Global variable '{key}' is not defined.")))
     }
 
     pub(super) fn has_value(&self, value: &MiraAny, key: &MiraAny) -> Result<bool> {
@@ -142,8 +141,7 @@ impl<'a> Runtime<'a> {
             _ => Err(MiraError::runtime(format!(
                 "Value is not callable: {}",
                 operations::display(function)
-            ))
-            .into()),
+            ))),
         };
         self.call_depth -= 1;
         result.map(|value| {
@@ -193,7 +191,7 @@ impl<'a> Runtime<'a> {
             Flow::Return(value) => Ok(value),
             Flow::Continue => Ok(MiraAny::Nil),
             Flow::Break | Flow::LoopContinue => {
-                Err(MiraError::runtime("invalid function control flow").into())
+                Err(MiraError::runtime("invalid function control flow"))
             }
         }
     }

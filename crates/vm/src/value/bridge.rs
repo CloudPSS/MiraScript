@@ -5,7 +5,7 @@ use crate::{MiraError, Result};
 use super::{MiraAny, MiraShared};
 
 /// A live Rust value that appears as a read-only MiraScript record.
-pub trait MiraRecord: 'static {
+pub trait MiraRecord: std::any::Any {
     /// Return the record's visible field names in iteration order.
     fn keys(&self) -> Vec<String>;
 
@@ -14,7 +14,7 @@ pub trait MiraRecord: 'static {
 }
 
 /// A live Rust value that appears as a read-only MiraScript array.
-pub trait MiraArray: 'static {
+pub trait MiraArray: std::any::Any {
     /// Return the current array length.
     fn len(&self) -> usize;
 
