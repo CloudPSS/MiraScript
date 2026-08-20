@@ -6,8 +6,9 @@ import PythonSourceViewer from './_python-source';
 import styles from './index.module.css';
 
 /** 输出面板页签 */
-type OutputTab = 'output' | 'javascript' | 'python';
+type OutputTab = 'output' | 'il' | 'javascript' | 'python';
 const TABS: Record<OutputTab, string> = {
+    il: 'MiraScript IL',
     javascript: 'JavaScript 源代码',
     python: 'Python 源代码',
     output: '控制台',
@@ -34,6 +35,7 @@ function ResultPanelContent({ results, tab }: ResultPanelProps & { tab: OutputTa
         const lang = (
             {
                 javascript: 'JavaScript',
+                il: 'MiraScript IL',
                 python: 'Python',
             } as const
         )[tab];
@@ -43,6 +45,8 @@ function ResultPanelContent({ results, tab }: ResultPanelProps & { tab: OutputTa
         return <div className={styles['compiled-placeholder']}>编译失败，请查看控制台输出。</div>;
     }
     switch (tab) {
+        case 'il':
+            return <SourceViewer language="mirascript-il" source={results.il ?? ''} path="file:///playground.mirail" wordWrap="off" />;
         case 'javascript':
             return <SourceViewer language="javascript" source={results.javascript} path="file:///playground.js" />;
         case 'python':

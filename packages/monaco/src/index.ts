@@ -1,6 +1,6 @@
 import type { VmContext } from '@mirascript/mirascript';
 import { type editor, languages, registerMonacoApi, type IDisposable, type MonacoApi } from './monaco-api.js';
-import { registerContribution } from './contribute.js';
+import { CONTRIBUTE_IDS, registerContribution } from './contribute.js';
 import type { LspFeaturesConfig } from './lsp/index.js';
 export type { monaco as monacoApi } from './monaco-api.js';
 
@@ -14,18 +14,21 @@ export class MiraScriptMonacoLoader implements IDisposable {
 
         const _loadBasicFeatures = () => void this.loadBasicFeatures();
         const _loadFullFeatures = () => void this.loadLSPFeatures();
+        const _loadILFeatures = () => void this.loadILFeatures();
 
-        languages.onLanguageEncountered('mirascript', _loadBasicFeatures);
-        languages.onLanguage('mirascript', _loadFullFeatures);
+        languages.onLanguageEncountered(CONTRIBUTE_IDS.mirascript, _loadBasicFeatures);
+        languages.onLanguage(CONTRIBUTE_IDS.mirascript, _loadFullFeatures);
 
-        languages.onLanguageEncountered('mirascript-template', _loadBasicFeatures);
-        languages.onLanguage('mirascript-template', _loadFullFeatures);
+        languages.onLanguageEncountered(CONTRIBUTE_IDS.mirascriptTemplate, _loadBasicFeatures);
+        languages.onLanguage(CONTRIBUTE_IDS.mirascriptTemplate, _loadFullFeatures);
 
-        languages.onLanguageEncountered('mirascript-doc', _loadBasicFeatures);
+        languages.onLanguageEncountered(CONTRIBUTE_IDS.mirascriptDoc, _loadBasicFeatures);
+        languages.onLanguageEncountered(CONTRIBUTE_IDS.mirascriptIl, _loadILFeatures);
     }
     features: LspFeaturesConfig = {};
     private _basicFeaturesLoaded = false;
     private _lspFeaturesLoaded = false;
+    private _ilFeaturesLoaded = false;
     /** 加载基础功能 */
     async loadBasicFeatures(): Promise<void> {
         try {
@@ -50,6 +53,19 @@ export class MiraScriptMonacoLoader implements IDisposable {
         } catch (error) {
             // eslint-disable-next-line no-console
             console.error('Failed to load MiraScript LSP features:', error);
+        }
+    }
+
+    /** 加载 MiraScript IL 基础高亮。 */
+    async loadILFeatures(): Promise<void> {
+        try {
+            const { registerIL } = await import('./il/index.js');
+            if (this._ilFeaturesLoaded || this.disposed) return;
+            this._ilFeaturesLoaded = true;
+            this.disposables.push(registerIL());
+        } catch (error) {
+            // eslint-disable-next-line no-console
+            console.error('Failed to load MiraScript IL features:', error);
         }
     }
 

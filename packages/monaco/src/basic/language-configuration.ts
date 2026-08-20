@@ -1,5 +1,6 @@
 import { type IDisposable, languages } from '../monaco-api.js';
 import { MAX_VERBATIM_LENGTH } from '../constants.js';
+import { CONTRIBUTE_IDS } from '../contribute.js';
 
 /** 缩进配置 */
 function indentAction(action: keyof typeof languages.IndentAction): { indentAction: languages.IndentAction } {
@@ -84,8 +85,8 @@ export const configuration = (): languages.LanguageConfiguration => ({
 /** 注册语言配置 */
 export function setLanguageConfiguration(): IDisposable[] {
     return [
-        languages.setLanguageConfiguration('mirascript', configuration()),
-        languages.setLanguageConfiguration('mirascript-template', configuration()),
-        languages.setLanguageConfiguration('mirascript-doc', configuration()),
+        languages.setLanguageConfiguration(CONTRIBUTE_IDS.mirascript, configuration()),
+        languages.setLanguageConfiguration(CONTRIBUTE_IDS.mirascriptTemplate, configuration()),
+        languages.setLanguageConfiguration(CONTRIBUTE_IDS.mirascriptDoc, configuration()),
     ];
 }

@@ -1,5 +1,4 @@
 import {
-    compile,
     createVmContext,
     VmFunction,
     type InputMode,
@@ -7,7 +6,7 @@ import {
     type VmScript,
     type VmValue,
 } from '@mirascript/mirascript';
-import { lib } from '@mirascript/mirascript/subtle';
+import { compileWithIL, lib } from '@mirascript/mirascript/subtle';
 
 /** 创建名称 */
 function createFileName(mode: InputMode, fileBaseName = 'live-code'): string {
@@ -27,11 +26,13 @@ export type Results = {
     source: string;
     mode: InputMode;
     javascript: string | null;
+    il: string | null;
     items: Result[];
 };
 
 const printOptions = { ...lib.debug_print, prefix: [] };
-let cache: { fileName: string; mode: InputMode; source: string; script: VmScript | null } | null = null;
+let cache: { fileName: string; mode: InputMode; source: string; script: VmScript | null; il: string | null } | null =
+    null;
 /** 运行 MiraScript 代码 */
 export async function runMiraScript(
     source: string,
@@ -48,8 +49,9 @@ export async function runMiraScript(
 
     // 编译
     let script;
+    let il: string | null = null;
     try {
-        const fn = await compile(source, {
+        const compiled = await compileWithIL(source, {
             input_mode: mode,
             diagnostic_position_encoding: 'Utf32',
             fileName,
@@ -66,9 +68,11 @@ export async function runMiraScript(
         }
         if (cacheHit) {
             script = cacheHit.script;
+            il = cacheHit.il;
         } else {
-            script = fn;
-            cache = { fileName, mode, source: source, script: fn };
+            script = compiled.script;
+            il = compiled.il;
+            cache = { fileName, mode, source: source, script, il };
         }
     } catch (error) {
         results.push({
@@ -77,11 +81,11 @@ export async function runMiraScript(
             timestamp: now(),
         });
         if (!cacheHit) {
-            cache = { fileName, mode, source: source, script: null };
+            cache = { fileName, mode, source: source, script: null, il: null };
         }
     }
     if (!script) {
-        return { fileName, source, mode, javascript: null, items: results };
+        return { fileName, source, mode, javascript: null, il: null, items: results };
     }
 
     // 运行
@@ -148,5 +152,5 @@ export async function runMiraScript(
             timestamp: now(),
         });
     }
-    return { fileName, source, mode, javascript: script.toString(), items: results };
+    return { fileName, source, mode, javascript: script.toString(), il, items: results };
 }

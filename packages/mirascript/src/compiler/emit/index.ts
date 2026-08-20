@@ -1,11 +1,11 @@
 import { OpCode } from '@mirascript/constants';
 import { toString } from '../../helpers/convert/index.js';
-import type { VmPrimitive } from '../../vm/index.js';
 import type { ScriptInput, TranspileOptions } from '../types.js';
 import type { IRange } from '../diagnostic.js';
-import { readConsts, toJsLiteral } from './consts.js';
+import { toJsLiteral } from './consts.js';
 import { createSourceMap } from './sourcemap.js';
 import { SCRIPT_PREFIX, SCRIPT_PREFIX_NO_GLOBAL, type ScriptPrefix } from './constants.js';
+import { BytecodeReader } from '../bytecode-reader.js';
 
 /** 生成代码 */
 export function emit(
@@ -31,28 +31,17 @@ function createArray<T>(length: number, fn: (index: number) => T): T[] {
 }
 
 /** 代码生成 */
-export class Emitter {
+export class Emitter extends BytecodeReader {
     constructor(
         readonly source: ScriptInput,
-        readonly chunk: Uint8Array,
+        chunk: Uint8Array,
         readonly sourcemaps: readonly IRange[],
         readonly options: TranspileOptions,
     ) {
+        super(chunk);
         this.pretty = options.pretty ?? false;
-
-        const reader = new DataView(chunk.buffer, chunk.byteOffset, chunk.byteLength);
-        this.chunkSize = reader.getUint32(0, true);
-        this.codeSize = reader.getUint32(4, true);
-        this.constSize = reader.getUint32(8 + this.codeSize, true);
-
-        this.codeReader = new DataView(chunk.buffer, chunk.byteOffset + 8, this.codeSize);
-        this.constVals = readConsts(
-            new Uint8Array(chunk.buffer, chunk.byteOffset + 12 + this.codeSize, this.constSize),
-        );
     }
     readonly pretty: boolean;
-    readonly chunkSize: number;
-    readonly codeSize: number;
     /** 读取常量表 */
     private readConsts(): void {
         const { constVals, constLits } = this;
@@ -60,12 +49,7 @@ export class Emitter {
             constLits.push(toJsLiteral(constVals[i]));
         }
     }
-    readonly constVals: VmPrimitive[];
     readonly constLits: string[] = [];
-
-    readonly constSize: number;
-    private readonly codeReader: DataView;
-    private codeOffset = 0;
     private closureCounter = 0;
     private identCounter = 0;
     /** 记录函数声明所在位置 */
@@ -104,20 +88,6 @@ export class Emitter {
     private wv(i: number, level = 0): string {
         if (!i) return '_';
         return this.rv(i, level);
-    }
-    /** 读取 code param */
-    private readParam(wide: boolean): number {
-        const value = wide
-            ? this.codeReader.getUint32(this.codeOffset, true)
-            : this.codeReader.getUint8(this.codeOffset);
-        this.codeOffset += wide ? 4 : 1;
-        return value;
-    }
-    /** 读取 code param */
-    private readIndex(wide: boolean): number {
-        const value = wide ? this.codeReader.getInt32(this.codeOffset, true) : this.codeReader.getInt8(this.codeOffset);
-        this.codeOffset += wide ? 4 : 1;
-        return value;
     }
     /** 读取闭包 */
     private readClosure(): void {

@@ -3,7 +3,17 @@ import Editor from '@site/src/components/Mira/editor';
 import styles from './index.module.css';
 
 /** 只读源码编辑器。 */
-export default function SourceViewer({ language, source, path }: { language: string; source: string; path: string }): JSX.Element {
+export default function SourceViewer({
+    language,
+    source,
+    path,
+    wordWrap = 'on',
+}: {
+    language: string;
+    source: string;
+    path: string;
+    wordWrap?: 'on' | 'off';
+}): JSX.Element {
     return (
         <Editor
             wrapperProps={{ className: styles['compiled-editor'] }}
@@ -13,7 +23,8 @@ export default function SourceViewer({ language, source, path }: { language: str
             options={{
                 readOnly: true,
                 minimap: { enabled: false },
-                wordWrap: 'on',
+                wordWrap,
+                colorDecorators: false,
                 wrappingIndent: 'deepIndent',
             }}
         />

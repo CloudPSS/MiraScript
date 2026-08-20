@@ -43,7 +43,11 @@ class TokensProvider implements languages.TokensProvider {
 
 /** Register TextMate-backed token providers without changing Monaco themes. */
 export function registerMiraScriptTokensProvider(): IDisposable[] {
-    const disposables = CONTRIBUTE_IDS.map((id) =>
+    const disposables = [
+        CONTRIBUTE_IDS.mirascript,
+        CONTRIBUTE_IDS.mirascriptDoc,
+        CONTRIBUTE_IDS.mirascriptTemplate,
+    ].map((id) =>
         languages.registerTokensProviderFactory(id, {
             create: async () => {
                 const highlighter = await getHighlighter();
