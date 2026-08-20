@@ -1,10 +1,10 @@
 use crate::standard_library::required;
-use crate::{MiraAny, MiraCallContext, MiraError, Result};
+use crate::{MiraAny, MiraError, Result, Runtime};
 
 use super::helpers::{as_matrix, numeric, shape};
 use super::map_nested;
 
-pub(super) fn invert(_call: &mut MiraCallContext<'_>, args: &[MiraAny]) -> Result<MiraAny> {
+pub(super) fn invert(_call: &mut Runtime<'_>, args: &[MiraAny]) -> Result<MiraAny> {
     let value = required(args, 0, "a")?;
     let dimensions = shape(value)?;
     if dimensions.is_empty() {

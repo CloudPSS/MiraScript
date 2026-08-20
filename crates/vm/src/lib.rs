@@ -14,19 +14,15 @@ mod value;
 use std::rc::Rc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-pub use context::MiraContext;
-pub use error::*;
 pub use mirascript_core as core;
 pub use mirascript_vm_derive::{MiraArray, MiraRecord};
-pub use value::{
-    MiraAny, MiraArray, MiraCallContext, MiraFunction, MiraIndirect, MiraModule, MiraNativeFn,
-    MiraRecord, MiraShared, MiraValue, Nil,
-};
 
-#[doc(hidden)]
-pub mod __private {
-    pub use crate::value::MiraBridge;
-}
+pub use context::MiraContext;
+pub use error::*;
+pub(crate) use interpreter::{ExecutionId, FrameId, Runtime};
+pub use value::{
+    MiraAny, MiraArray, MiraFunction, MiraModule, MiraNativeFn, MiraRecord, MiraValue, Nil,
+};
 
 use bytecode::Program;
 

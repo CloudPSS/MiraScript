@@ -47,7 +47,7 @@ pub(super) fn install(context: &mut MiraContext) {
 }
 
 fn insertion_sort(
-    call: &mut MiraCallContext<'_>,
+    call: &mut Runtime<'_>,
     values: &mut [MiraAny],
     comparator: Option<&MiraAny>,
 ) -> Result<()> {
@@ -55,7 +55,7 @@ fn insertion_sort(
 }
 
 fn insertion_sort_by<T>(
-    call: &mut MiraCallContext<'_>,
+    call: &mut Runtime<'_>,
     values: &mut [T],
     comparator: Option<&MiraAny>,
     key: impl Fn(&T) -> Result<MiraAny>,

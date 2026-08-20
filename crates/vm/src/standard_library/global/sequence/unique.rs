@@ -66,7 +66,7 @@ fn validate_optional_callable(value: Option<&MiraAny>, name: &str) -> Result<()>
 }
 
 fn equal(
-    call: &mut MiraCallContext<'_>,
+    call: &mut Runtime<'_>,
     left: &MiraAny,
     right: &MiraAny,
     equaler: Option<&MiraAny>,

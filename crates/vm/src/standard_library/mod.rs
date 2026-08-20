@@ -1,7 +1,7 @@
 mod global;
 mod module;
 
-use crate::{MiraAny, MiraCallContext, MiraContext, MiraError, MiraNativeFn, Result, operations};
+use crate::{MiraAny, MiraContext, MiraError, MiraNativeFn, Result, Runtime, operations};
 
 pub(crate) fn install(context: &mut MiraContext) {
     global::install(context);
@@ -10,7 +10,7 @@ pub(crate) fn install(context: &mut MiraContext) {
 
 fn native(
     name: &'static str,
-    callback: impl for<'a> Fn(&mut MiraCallContext<'a>, &[MiraAny]) -> Result<MiraAny> + 'static,
+    callback: impl for<'a> Fn(&mut Runtime<'a>, &[MiraAny]) -> Result<MiraAny> + 'static,
 ) -> MiraAny {
     MiraAny::from(MiraNativeFn::new(name, callback))
 }
@@ -18,7 +18,7 @@ fn native(
 fn insert_native(
     context: &mut MiraContext,
     name: &'static str,
-    callback: impl for<'a> Fn(&mut MiraCallContext<'a>, &[MiraAny]) -> Result<MiraAny> + 'static,
+    callback: impl for<'a> Fn(&mut Runtime<'a>, &[MiraAny]) -> Result<MiraAny> + 'static,
 ) {
     let display_name = format!("global.{name}");
     context.insert(

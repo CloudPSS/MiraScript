@@ -18,6 +18,8 @@ use crate::{InvalidBytecodeReason, MiraAny, MiraError, Result};
 use chunk::decode_chunk;
 pub(crate) use model::*;
 
+use self::constants::Constant;
+
 impl Program {
     pub fn decode(chunk: &[u8]) -> Result<Self> {
         let (code, constants) = decode_chunk(chunk)?;
@@ -58,7 +60,7 @@ impl Program {
 struct Decoder<'a> {
     code: &'a [u8],
     offset: usize,
-    constants: Vec<MiraAny>,
+    constants: Vec<Constant<'a>>,
     functions: Vec<FunctionDef>,
     global_names: IndexMap<String, ()>,
     scopes: Vec<usize>,

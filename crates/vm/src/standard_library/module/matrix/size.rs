@@ -1,9 +1,9 @@
 use crate::standard_library::required;
-use crate::{MiraAny, MiraCallContext, Result};
+use crate::{MiraAny, Result, Runtime};
 
 use super::helpers::shape;
 
-pub(super) fn size(_call: &mut MiraCallContext<'_>, args: &[MiraAny]) -> Result<MiraAny> {
+pub(super) fn size(_call: &mut Runtime<'_>, args: &[MiraAny]) -> Result<MiraAny> {
     Ok(MiraAny::Array(
         shape(required(args, 0, "matrix")?)?
             .into_iter()

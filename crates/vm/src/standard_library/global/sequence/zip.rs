@@ -6,7 +6,7 @@ pub(super) fn install(context: &mut MiraContext) {
     });
 }
 
-fn zip(call: &mut MiraCallContext<'_>, value: &MiraAny) -> Result<MiraAny> {
+fn zip(call: &mut Runtime<'_>, value: &MiraAny) -> Result<MiraAny> {
     let data = Data::from_value(value)?;
     let items = data_items(&data);
     let mut arrays = Vec::new();

@@ -1,8 +1,8 @@
-use crate::{InvalidBytecodeReason, MiraAny, MiraError, Result};
+use crate::{InvalidBytecodeReason, MiraError, Result};
 
-use super::constants::decode_constants;
+use super::constants::{Constant, decode_constants};
 
-pub(super) fn decode_chunk(chunk: &[u8]) -> Result<(&[u8], Vec<MiraAny>)> {
+pub(super) fn decode_chunk(chunk: &[u8]) -> Result<(&[u8], Vec<Constant<'_>>)> {
     if chunk.len() < 12 {
         return Err(MiraError::invalid_bytecode(
             chunk.len(),

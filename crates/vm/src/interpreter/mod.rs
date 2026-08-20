@@ -13,7 +13,6 @@ use crate::bytecode::{
     PickOmitOperation, Program, RangeEndpoint, RecordElement, RecordKey, SliceBound,
     UnaryOperation, UpvalueOperation,
 };
-use crate::value::{MiraCallContext, NativeRuntime, ScriptModule};
 use crate::{
     MiraAny, MiraContext, MiraError, MiraFunction, MiraModule, Result, RunOptions, operations,
 };

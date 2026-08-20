@@ -1,7 +1,7 @@
 use indexmap::IndexMap;
 
 use crate::standard_library::{insert_native, string};
-use crate::{MiraAny, MiraCallContext, MiraContext, MiraError, Result, operations};
+use crate::{MiraAny, MiraContext, MiraError, Result, Runtime, operations};
 
 pub(super) fn install(context: &mut MiraContext) {
     insert_native(context, "to_json", |call, args| {
@@ -34,7 +34,7 @@ pub(super) fn install(context: &mut MiraContext) {
 }
 
 fn to_json_value(
-    call: &mut MiraCallContext<'_>,
+    call: &mut Runtime,
     value: &MiraAny,
     in_container: bool,
 ) -> Result<Option<serde_json::Value>> {

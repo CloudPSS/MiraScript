@@ -19,7 +19,7 @@ enum MapMode {
     FilterMap,
 }
 
-fn map_like(call: &mut MiraCallContext<'_>, args: &[MiraAny], mode: MapMode) -> Result<MiraAny> {
+fn map_like(call: &mut Runtime<'_>, args: &[MiraAny], mode: MapMode) -> Result<MiraAny> {
     let data = Data::from_value(required(args, 0, "data")?)?;
     let function = required(args, 1, "f")?;
     if !is_callable(function)? {

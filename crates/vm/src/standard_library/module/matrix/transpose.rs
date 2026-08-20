@@ -1,9 +1,9 @@
 use crate::standard_library::required;
-use crate::{MiraAny, MiraCallContext, Result};
+use crate::{MiraAny, Result, Runtime};
 
 use super::helpers::{as_matrix, shape};
 
-pub(super) fn transpose(_call: &mut MiraCallContext<'_>, args: &[MiraAny]) -> Result<MiraAny> {
+pub(super) fn transpose(_call: &mut Runtime<'_>, args: &[MiraAny]) -> Result<MiraAny> {
     let value = required(args, 0, "matrix")?;
     let dimensions = shape(value)?;
     if dimensions.len() < 2 {

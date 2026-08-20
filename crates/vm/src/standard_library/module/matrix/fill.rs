@@ -1,13 +1,9 @@
 use crate::standard_library::required;
-use crate::{MiraAny, MiraCallContext, MiraError, Result, operations};
+use crate::{MiraAny, MiraError, Result, Runtime, operations};
 
 use super::helpers::shape;
 
-pub(super) fn filled(
-    call: &mut MiraCallContext<'_>,
-    args: &[MiraAny],
-    value: f64,
-) -> Result<MiraAny> {
+pub(super) fn filled(call: &mut Runtime<'_>, args: &[MiraAny], value: f64) -> Result<MiraAny> {
     let dimensions = dimensions(args, call.options().max_array_len)?;
     if dimensions.is_empty() {
         return Ok(MiraAny::Array(Vec::new().into()));
@@ -38,7 +34,7 @@ pub(super) fn dimensions(args: &[MiraAny], max_len: usize) -> Result<Vec<usize>>
         .collect()
 }
 
-pub(super) fn identity(call: &mut MiraCallContext<'_>, args: &[MiraAny]) -> Result<MiraAny> {
+pub(super) fn identity(call: &mut Runtime<'_>, args: &[MiraAny]) -> Result<MiraAny> {
     let dimensions = dimensions(args, call.options().max_array_len)?;
     if dimensions.is_empty() {
         return Ok(MiraAny::Array(Vec::new().into()));
@@ -61,7 +57,7 @@ pub(super) fn identity(call: &mut MiraCallContext<'_>, args: &[MiraAny]) -> Resu
     ))
 }
 
-pub(super) fn diagonal(_call: &mut MiraCallContext<'_>, args: &[MiraAny]) -> Result<MiraAny> {
+pub(super) fn diagonal(_call: &mut Runtime<'_>, args: &[MiraAny]) -> Result<MiraAny> {
     let value = required(args, 0, "x")?;
     let values = operations::iterable_array(value)?;
     let offset = match args.get(1) {

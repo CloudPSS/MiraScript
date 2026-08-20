@@ -1,3 +1,8 @@
+use std::{
+    collections::{BTreeMap, HashMap},
+    hash::{BuildHasher, Hash},
+};
+
 use super::MiraValue;
 use crate::{MiraError, Result, interpreter::Runtime};
 use indexmap::IndexMap;
@@ -28,7 +33,7 @@ pub trait MiraRecord: std::any::Any + 'static {
     }
 }
 
-impl MiraRecord for IndexMap<String, MiraValue> {
+impl<T: Into<MiraValue> + Clone + 'static> MiraRecord for IndexMap<String, T> {
     fn len(&self) -> usize {
         self.len()
     }
@@ -48,7 +53,61 @@ impl MiraRecord for IndexMap<String, MiraValue> {
         let val = self
             .get_index(index)
             .ok_or_else(|| Box::new(MiraError::MissingIndexOrField))?;
-        Ok(val.1.clone())
+        Ok(val.1.clone().into())
+    }
+}
+
+impl<T: Into<MiraValue> + Clone + 'static, S: BuildHasher + 'static> MiraRecord
+    for HashMap<String, T, S>
+{
+    fn len(&self) -> usize {
+        self.len()
+    }
+
+    fn index_of(&self, key: &str) -> Option<usize> {
+        self.iter().position(|(k, _)| k == key)
+    }
+
+    fn key(&self, index: usize) -> Result<&str> {
+        let val = self
+            .iter()
+            .nth(index)
+            .ok_or_else(|| Box::new(MiraError::MissingIndexOrField))?;
+        Ok(val.0.as_str())
+    }
+
+    fn get(&self, _runtime: &Runtime<'_>, index: usize) -> Result<MiraValue> {
+        let val = self
+            .iter()
+            .nth(index)
+            .ok_or_else(|| Box::new(MiraError::MissingIndexOrField))?;
+        Ok(val.1.clone().into())
+    }
+}
+
+impl<T: Into<MiraValue> + Clone + 'static> MiraRecord for BTreeMap<String, T> {
+    fn len(&self) -> usize {
+        self.len()
+    }
+
+    fn index_of(&self, key: &str) -> Option<usize> {
+        self.iter().position(|(k, _)| k == key)
+    }
+
+    fn key(&self, index: usize) -> Result<&str> {
+        let val = self
+            .iter()
+            .nth(index)
+            .ok_or_else(|| Box::new(MiraError::MissingIndexOrField))?;
+        Ok(val.0.as_str())
+    }
+
+    fn get(&self, _runtime: &Runtime<'_>, index: usize) -> Result<MiraValue> {
+        let val = self
+            .iter()
+            .nth(index)
+            .ok_or_else(|| Box::new(MiraError::MissingIndexOrField))?;
+        Ok(val.1.clone().into())
     }
 }
 

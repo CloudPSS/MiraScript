@@ -100,7 +100,7 @@ impl<'a> Runtime<'a> {
         operations::get_value(value, key)
     }
 
-    pub(super) fn call(&mut self, function: &MiraAny, args: &[MiraAny]) -> Result<MiraAny> {
+    pub(crate) fn call(&mut self, function: &MiraAny, args: &[MiraAny]) -> Result<MiraAny> {
         self.checkpoint_now()?;
         if self.call_depth >= self.options.max_call_depth {
             return Err(MiraError::MaxCallDepth {
@@ -113,9 +113,8 @@ impl<'a> Runtime<'a> {
             MiraAny::Function(function) => match function.as_ref() {
                 MiraFunction::Native(function) => {
                     self.call_stack.push(Some(function.shared_name()));
-                    let mut context = MiraCallContext { runtime: self };
-                    let result = function.call(&mut context, args).and_then(|value| {
-                        context.runtime.checkpoint()?;
+                    let result = function.call(&mut self, args).and_then(|value| {
+                        self.checkpoint_now()?;
                         Ok(value)
                     });
                     self.call_stack.pop();
@@ -207,23 +206,5 @@ impl<'a> Runtime<'a> {
             return Err(MiraError::Timeout.into());
         }
         Ok(())
-    }
-}
-
-impl NativeRuntime for Runtime<'_> {
-    fn call_value(&mut self, function: &MiraAny, args: &[MiraAny]) -> Result<MiraAny> {
-        self.call(function, args)
-    }
-
-    fn get_value(&self, value: &MiraAny, key: &MiraAny) -> Result<MiraAny> {
-        Runtime::get_value(self, value, key)
-    }
-
-    fn options(&self) -> &RunOptions {
-        self.options
-    }
-
-    fn checkpoint(&mut self) -> Result<()> {
-        self.checkpoint_now()
     }
 }

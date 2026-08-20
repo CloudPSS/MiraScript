@@ -1,5 +1,5 @@
 use crate::standard_library::required;
-use crate::{MiraAny, MiraCallContext, MiraError, Result, operations};
+use crate::{MiraAny, MiraError, Result, Runtime, operations};
 
 use super::helpers::{as_matrix, numeric, shape};
 
@@ -141,7 +141,7 @@ pub(super) fn map_nested(
     ))
 }
 
-pub(super) fn multiply(_call: &mut MiraCallContext<'_>, args: &[MiraAny]) -> Result<MiraAny> {
+pub(super) fn multiply(_call: &mut Runtime<'_>, args: &[MiraAny]) -> Result<MiraAny> {
     let left = required(args, 0, "a")?;
     let right = required(args, 1, "b")?;
     let left_shape = shape(left)?;

@@ -1,6 +1,6 @@
 use crate::value::arena::MiraHandle;
 
-use super::{MiraArray, MiraFunction, MiraModule, MiraRecord};
+use super::{MiraArray, MiraExtern, MiraFunction, MiraModule, MiraRecord};
 
 /// A value understood by the Rust VM.
 ///
@@ -29,6 +29,8 @@ pub enum MiraValue {
     Function(MiraHandle<dyn MiraFunction>),
     /// A MiraScript module.
     Module(MiraHandle<dyn MiraModule>),
+    /// A MiraScript external value.
+    Extern(MiraHandle<dyn MiraExtern>),
 }
 const _: () = assert!(std::mem::size_of::<MiraValue>() == 16);
 
@@ -45,6 +47,7 @@ impl MiraValue {
             Self::Record(_) => "record",
             Self::Function(_) => "function",
             Self::Module(_) => "module",
+            Self::Extern(_) => "extern",
         }
     }
 }
