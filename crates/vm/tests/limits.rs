@@ -3,12 +3,13 @@ use std::rc::Rc;
 use std::time::Duration;
 
 use mirascript_vm::{
-    MiraAny, MiraContext, MiraError, MiraNativeFn, MiraRecord, RunOptions, RuntimeProviders,
-    compile,
+    MiraError, MiraManageable, MiraNativeFn, MiraValue, RunOptions, Runtime, RuntimeErrorKind,
+    RuntimeProviders, compile,
 };
 
 struct DropProbe(Rc<Cell<usize>>);
 
+#[derive(Default)]
 struct TestRuntimeProviders {
     messages: Rc<RefCell<Vec<String>>>,
 }
@@ -33,75 +34,79 @@ impl Drop for DropProbe {
     }
 }
 
-impl MiraRecord for DropProbe {
-    fn keys(&self) -> Vec<String> {
-        Vec::new()
+impl mirascript_vm::MiraRecord for DropProbe {
+    fn len(&self) -> usize {
+        0
     }
 
-    fn get(&self, _key: &str) -> mirascript_vm::Result<Option<MiraAny>> {
-        Ok(None)
+    fn index_of(&self, _key: &str) -> Option<usize> {
+        None
+    }
+
+    fn key(&self, _index: usize) -> mirascript_vm::Result<&str> {
+        Err(MiraError::runtime(RuntimeErrorKind::MissingIndexOrField))
+    }
+
+    fn get(
+        &self,
+        _self_handle: mirascript_vm::MiraHandle<dyn mirascript_vm::MiraRecord>,
+        _runtime: &Runtime,
+        _index: usize,
+    ) -> mirascript_vm::Result<MiraManageable> {
+        Err(MiraError::runtime(RuntimeErrorKind::MissingIndexOrField))
+    }
+
+    fn target_any<'a>(
+        &'a self,
+        _runtime: &'a Runtime,
+    ) -> mirascript_vm::Result<&'a dyn std::any::Any> {
+        Ok(self)
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+        self
     }
 }
 
-fn probe_context(drops: &Rc<Cell<usize>>) -> MiraContext {
+fn probe_runtime(drops: &Rc<Cell<usize>>) -> Runtime {
     let drops = Rc::clone(drops);
-    let mut context = MiraContext::new();
-    context.insert_fn(
+    let mut runtime = Runtime::new();
+    runtime.insert_fn(
         "make_probe",
-        MiraNativeFn::ok(move |_, _| MiraAny::from_record(DropProbe(Rc::clone(&drops)))),
+        MiraNativeFn::builtin("make_probe", move |_, _| {
+            Ok(MiraManageable::from_record(DropProbe(Rc::clone(&drops))))
+        }),
     );
-    context
+    runtime
 }
 
 #[test]
-fn execution_arena_drops_values_on_every_exit_path() {
-    let cases = [
-        ("let probe = make_probe(); nil", RunOptions::default()),
-        (
-            "let probe = make_probe(); panic('boom')",
-            RunOptions::default(),
-        ),
-        (
-            "let probe = make_probe(); loop { }",
-            RunOptions {
-                timeout: Duration::from_millis(10),
-                checkpoint_interval: 1,
-                ..RunOptions::default()
-            },
-        ),
-        (
-            "let probe = make_probe(); fn recurse { recurse() } recurse()",
-            RunOptions {
-                max_call_depth: 4,
-                ..RunOptions::default()
-            },
-        ),
-        (
-            "let probe = make_probe(); for i in 0..10 { let capture = fn { i }; } nil",
-            RunOptions::default(),
-        ),
-    ];
-
-    for (source, options) in cases {
-        let drops = Rc::new(Cell::new(0));
-        let context = probe_context(&drops);
-        let _ = compile(source).unwrap().run_with(&context, &options);
-        assert_eq!(drops.get(), 1, "arena value leaked for {source}");
-    }
-}
-
-#[test]
-fn reusable_scripts_do_not_retain_frames_between_runs() {
+fn runtime_arena_persists_across_runs_and_drops_once() {
     let drops = Rc::new(Cell::new(0));
-    let context = probe_context(&drops);
-    let script = compile("let probe = make_probe(); 42").unwrap();
-    assert_eq!(script.run(&context).unwrap(), MiraAny::from(42));
-    assert_eq!(script.run(&context).unwrap(), MiraAny::from(42));
-    assert_eq!(drops.get(), 2);
+    {
+        let mut runtime = probe_runtime(&drops);
+        let script = compile("make_probe()").unwrap();
+        let value = runtime.run(&script).unwrap();
+        assert!(matches!(value, MiraValue::Record(_)));
+        let string = runtime.run(&compile("'persistent'").unwrap()).unwrap();
+        let array = runtime.run(&compile("[1, 2, 3]").unwrap()).unwrap();
+        assert_eq!(drops.get(), 0);
+        assert_eq!(runtime.run(&compile("42").unwrap()).unwrap(), 42.into());
+        assert_eq!(string.as_string(&runtime).unwrap(), Some("persistent"));
+        runtime.insert_global("old_array", array).unwrap();
+        assert_eq!(
+            runtime
+                .run(&compile("old_array[0] + old_array[2]").unwrap())
+                .unwrap(),
+            4.into()
+        );
+        assert_eq!(drops.get(), 0);
+    }
+    assert_eq!(drops.get(), 1);
 }
 
 #[test]
-fn limits_and_providers_are_applied_per_run() {
+fn limits_and_providers_are_runtime_configuration() {
     let messages = Rc::new(RefCell::new(Vec::new()));
     let options = RunOptions {
         timeout: Duration::from_secs(1),
@@ -112,78 +117,114 @@ fn limits_and_providers_are_applied_per_run() {
             messages: Rc::clone(&messages),
         }),
     };
-    let context = MiraContext::new();
-    let script =
-        compile("debug_print('provider'); (random(), to_timestamp(nil), to_iso8601(nil))").unwrap();
+    let mut runtime = Runtime::with_options(options);
+    let script = compile(
+        "debug_print('provider'); (random(), to_timestamp(nil), to_iso8601(nil))::to_json()",
+    )
+    .unwrap();
+    let value = runtime.run(&script).unwrap();
     assert_eq!(
-        script.run_with(&context, &options).unwrap(),
-        MiraAny::from(indexmap::IndexMap::from([
-            ("0".to_owned(), MiraAny::from(0.25)),
-            ("1".to_owned(), MiraAny::from(0)),
-            ("2".to_owned(), MiraAny::from("1970-01-01T00:00:00.000Z")),
-        ])),
+        value.as_string(&runtime).unwrap(),
+        Some("{\"0\":0.25,\"1\":0,\"2\":\"1970-01-01T00:00:00.000Z\"}")
     );
     assert_eq!(messages.borrow().as_slice(), ["provider"]);
 
     assert!(matches!(
-        compile("repeat(1, 4)")
-            .unwrap()
-            .run_with(&context, &options)
+        runtime
+            .run(&compile("repeat(1, 4)").unwrap())
             .unwrap_err()
             .as_ref(),
-        MiraError::Runtime { .. }
+        MiraError::Runtime {
+            kind: RuntimeErrorKind::ArrayLimit { max: 3, .. },
+            ..
+        }
     ));
     assert!(matches!(
-        compile("fn recurse { recurse() } recurse()")
-            .unwrap()
-            .run_with(&context, &options)
+        runtime
+            .run(&compile("fn recurse { recurse() } recurse()").unwrap())
             .unwrap_err()
             .as_ref(),
-        MiraError::MaxCallDepth { max: 8 }
+        MiraError::Runtime {
+            kind: RuntimeErrorKind::MaxCallDepth { max: 8 },
+            ..
+        }
     ));
 }
 
 #[test]
-fn native_values_and_live_rust_values_may_escape() {
-    let drops = Rc::new(Cell::new(0));
-    let mut context = probe_context(&drops);
-    context.insert("native", MiraNativeFn::ok(|_, _| MiraAny::Nil));
-
-    assert!(matches!(
-        compile("native").unwrap().run(&context).unwrap(),
-        MiraAny::Function(_)
-    ));
-    let value = compile("make_probe() ").unwrap().run(&context).unwrap();
-    assert_eq!(value.type_name(), "record");
-    assert_eq!(drops.get(), 0);
-    drop(value);
-    assert_eq!(drops.get(), 1);
-}
-
-#[test]
-fn script_function_handles_cached_by_hosts_expire_safely() {
-    let cached = Rc::new(RefCell::new(None));
-    let callback_cache = Rc::clone(&cached);
-    let mut context = MiraContext::new();
-    context.insert_fn(
-        "cache",
-        MiraNativeFn::ok(move |_, args| {
-            *callback_cache.borrow_mut() = args.first().cloned();
-            MiraAny::Nil
+fn runtime_rejects_reentrant_run() {
+    let nested = compile("1").unwrap();
+    let mut runtime = Runtime::new();
+    runtime.insert_fn(
+        "reenter",
+        MiraNativeFn::builtin("reenter", move |runtime, _| {
+            runtime.run(&nested).map(Into::into)
         }),
     );
-    compile("cache(fn { 42 }); nil")
-        .unwrap()
-        .run(&context)
+    let error = runtime.run(&compile("reenter()").unwrap()).unwrap_err();
+    assert!(matches!(
+        error.as_ref(),
+        MiraError::Runtime {
+            kind: RuntimeErrorKind::ReentrantRun,
+            ..
+        }
+    ));
+}
+
+#[test]
+fn script_function_handles_expire_after_their_run() {
+    let cached = Rc::new(RefCell::new(None));
+    let callback_cache = Rc::clone(&cached);
+    let mut runtime = Runtime::new();
+    runtime.insert_fn(
+        "cache",
+        MiraNativeFn::ok(move |_, args| {
+            *callback_cache.borrow_mut() = args.first().copied();
+            MiraValue::Nil
+        }),
+    );
+    runtime
+        .run(&compile("cache(fn { 42 }); nil").unwrap())
         .unwrap();
 
-    context.insert("cached", cached.borrow_mut().take().unwrap());
+    runtime
+        .insert_global("cached", cached.borrow_mut().take().unwrap())
+        .unwrap();
+    let error = runtime.run(&compile("cached()").unwrap()).unwrap_err();
     assert!(matches!(
-        compile("cached()")
-            .unwrap()
-            .run(&context)
-            .unwrap_err()
-            .as_ref(),
-        &MiraError::ExecutionEnded,
+        error.as_ref(),
+        MiraError::Runtime {
+            kind: RuntimeErrorKind::ExecutionEnded,
+            ..
+        }
+    ));
+}
+
+#[test]
+fn script_module_handles_expire_after_their_run() {
+    let cached = Rc::new(RefCell::new(None));
+    let callback_cache = Rc::clone(&cached);
+    let mut runtime = Runtime::new();
+    runtime.insert_fn(
+        "cache",
+        MiraNativeFn::ok(move |_, args| {
+            *callback_cache.borrow_mut() = args.first().copied();
+            MiraValue::Nil
+        }),
+    );
+    runtime
+        .run(&compile("mod value { pub let answer = 42; } cache(value); nil").unwrap())
+        .unwrap();
+
+    runtime
+        .insert_global("cached", cached.borrow_mut().take().unwrap())
+        .unwrap();
+    let error = runtime.run(&compile("cached.answer").unwrap()).unwrap_err();
+    assert!(matches!(
+        error.as_ref(),
+        MiraError::Runtime {
+            kind: RuntimeErrorKind::ExecutionEnded,
+            ..
+        }
     ));
 }

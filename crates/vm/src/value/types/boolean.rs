@@ -4,6 +4,7 @@ use super::MiraValue;
 
 impl MiraValue {
     #[inline]
+    /// Return the inline boolean payload, or `None` for another value type.
     pub fn as_boolean(&self) -> Option<bool> {
         match self {
             Self::Boolean(value) => Some(*value),
@@ -33,6 +34,6 @@ impl TryFrom<MiraValue> for bool {
     fn try_from(value: MiraValue) -> Result<Self> {
         value
             .as_boolean()
-            .ok_or_else(|| MiraError::conversion("bool", &value))
+            .ok_or_else(|| MiraError::conversion_type("bool", value.value_type()))
     }
 }

@@ -1,71 +1,95 @@
-use paste::paste;
-use std::{any::Any, ops::Deref};
-
-use crate::interpreter::Runtime;
-
-use super::{
-    MiraValue,
-    types::{MiraArray, MiraFunction, MiraModule, MiraRecord},
+use std::{
+    any::Any,
+    fmt,
+    marker::PhantomData,
+    ops::Deref,
+    rc::Rc,
+    sync::atomic::{AtomicU32, Ordering},
 };
 
+use crate::{MiraError, Result, Runtime, RuntimeErrorKind};
+
+use super::{MiraArray, MiraFunction, MiraModule, MiraRecord, MiraValue};
+
+static NEXT_ARENA_ID: AtomicU32 = AtomicU32::new(1);
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-struct ArenaKey(usize);
+struct ArenaKey(u64);
+
+impl ArenaKey {
+    fn new(arena_id: u32, index: usize, category: &'static str) -> Result<Self> {
+        let index = u32::try_from(index)
+            .ok()
+            .and_then(|index| index.checked_add(1))
+            .ok_or_else(|| MiraError::runtime(RuntimeErrorKind::ArenaExhausted { category }))?;
+        Ok(Self((u64::from(arena_id) << 32) | u64::from(index)))
+    }
+
+    fn arena_id(self) -> u32 {
+        (self.0 >> 32) as u32
+    }
+
+    fn index(self) -> usize {
+        ((self.0 as u32) - 1) as usize
+    }
+}
 
 #[derive(Debug)]
 struct Arena<T> {
-    vec: Vec<Option<T>>,
+    values: Vec<T>,
 }
 
 impl<T> Arena<T> {
     fn new() -> Self {
-        Self { vec: Vec::new() }
+        Self { values: Vec::new() }
     }
 
-    fn insert(&mut self, value: T) -> ArenaKey {
-        let key = ArenaKey(self.vec.len());
-        self.vec.push(Some(value));
-        key
+    fn insert(&mut self, arena_id: u32, category: &'static str, value: T) -> Result<ArenaKey> {
+        let key = ArenaKey::new(arena_id, self.values.len(), category)?;
+        self.values.push(value);
+        Ok(key)
     }
 
-    fn remove(&mut self, key: ArenaKey) -> Option<T> {
-        self.vec.get_mut(key.0).and_then(|slot| slot.take())
+    fn get(&self, arena_id: u32, category: &'static str, key: ArenaKey) -> Result<&T> {
+        if key.arena_id() != arena_id {
+            return Err(MiraError::runtime(RuntimeErrorKind::ForeignHandle));
+        }
+        self.values
+            .get(key.index())
+            .ok_or_else(|| MiraError::runtime(RuntimeErrorKind::InvalidHandle { category }))
     }
 
-    fn get(&self, key: ArenaKey) -> Option<&T> {
-        self.vec.get(key.0).and_then(|slot| slot.as_ref())
+    fn get_mut(&mut self, arena_id: u32, category: &'static str, key: ArenaKey) -> Result<&mut T> {
+        if key.arena_id() != arena_id {
+            return Err(MiraError::runtime(RuntimeErrorKind::ForeignHandle));
+        }
+        self.values
+            .get_mut(key.index())
+            .ok_or_else(|| MiraError::runtime(RuntimeErrorKind::InvalidHandle { category }))
     }
 }
 
+/// A compact, runtime-checked handle to an arena-managed value.
 pub struct MiraHandle<T: Any + ?Sized> {
     key: ArenaKey,
-    _marker: std::marker::PhantomData<&'static T>,
-}
-
-pub enum MiraManageable {
-    Value(MiraValue),
-    String(String),
-    Array(Box<dyn MiraArray>),
-    Record(Box<dyn MiraRecord>),
-    Function(Box<dyn MiraFunction>),
-    Module(Box<dyn MiraModule>),
-}
-
-impl Into<MiraManageable> for MiraValue {
-    fn into(self) -> MiraManageable {
-        MiraManageable::Value(self)
-    }
+    marker: PhantomData<&'static T>,
 }
 
 impl<T: Any + ?Sized> Copy for MiraHandle<T> {}
+
 impl<T: Any + ?Sized> Clone for MiraHandle<T> {
     fn clone(&self) -> Self {
         *self
     }
 }
 
-impl<T: Any + ?Sized> std::fmt::Debug for MiraHandle<T> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_tuple("MiraHandle").field(&self.key.0).finish()
+impl<T: Any + ?Sized> fmt::Debug for MiraHandle<T> {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("MiraHandle")
+            .field("arena", &self.key.arena_id())
+            .field("slot", &self.key.index())
+            .finish()
     }
 }
 
@@ -75,17 +99,134 @@ impl<T: Any + ?Sized> PartialEq for MiraHandle<T> {
     }
 }
 
+impl<T: Any + ?Sized> Eq for MiraHandle<T> {}
+
+impl<T: Any + ?Sized> std::hash::Hash for MiraHandle<T> {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.key.hash(state);
+    }
+}
+
+impl<T: Any + ?Sized> MiraHandle<T> {
+    fn new(key: ArenaKey) -> Self {
+        Self {
+            key,
+            marker: PhantomData,
+        }
+    }
+
+    pub(crate) fn erased_key(self) -> u64 {
+        self.key.0
+    }
+}
+
+macro_rules! impl_handle_cast {
+    ($trait:path, $erase:ident) => {
+        impl<T: $trait> MiraHandle<T> {
+            /// Erase the concrete Rust type while preserving its MiraScript category.
+            pub fn $erase(self) -> MiraHandle<dyn $trait> {
+                MiraHandle::new(self.key)
+            }
+        }
+
+        impl MiraHandle<dyn $trait> {
+            /// Reinterpret an erased handle as a concrete typed handle.
+            ///
+            /// The subsequent Runtime lookup still validates the concrete type,
+            /// so a wrong generated cast returns an error rather than dereferencing
+            /// an invalid pointer.
+            #[doc(hidden)]
+            pub unsafe fn upcast<T: $trait>(self) -> MiraHandle<T> {
+                MiraHandle::new(self.key)
+            }
+        }
+    };
+}
+
+impl_handle_cast!(MiraArray, erase_array);
+impl_handle_cast!(MiraRecord, erase_record);
+impl_handle_cast!(MiraFunction, erase_function);
+impl_handle_cast!(MiraModule, erase_module);
+
+/// An owned value waiting to be inserted into a Runtime arena.
+pub enum MiraManageable {
+    /// A value whose payload is already inline or already belongs to this Runtime.
+    Value(MiraValue),
+    /// An owned string.
+    String(String),
+    /// An owned array implementation.
+    Array(Box<dyn MiraArray>),
+    /// An owned record implementation.
+    Record(Box<dyn MiraRecord>),
+    /// An owned callable implementation.
+    Function(Rc<dyn MiraFunction>),
+    /// An owned module implementation.
+    Module(Box<dyn MiraModule>),
+}
+
+impl From<MiraValue> for MiraManageable {
+    fn from(value: MiraValue) -> Self {
+        Self::Value(value)
+    }
+}
+
+impl From<String> for MiraManageable {
+    fn from(value: String) -> Self {
+        Self::String(value)
+    }
+}
+
+impl From<&str> for MiraManageable {
+    fn from(value: &str) -> Self {
+        Self::String(value.to_owned())
+    }
+}
+
+impl MiraManageable {
+    /// Wrap an array implementation for insertion into a Runtime.
+    pub fn from_array(value: impl MiraArray) -> Self {
+        Self::Array(Box::new(value))
+    }
+
+    /// Wrap a record implementation for insertion into a Runtime.
+    pub fn from_record(value: impl MiraRecord) -> Self {
+        Self::Record(Box::new(value))
+    }
+
+    /// Wrap a function implementation for insertion into a Runtime.
+    pub fn from_function(value: impl MiraFunction) -> Self {
+        Self::Function(Rc::new(value))
+    }
+
+    /// Wrap a module implementation for insertion into a Runtime.
+    pub fn from_module(value: impl MiraModule) -> Self {
+        Self::Module(Box::new(value))
+    }
+
+    /// Build a simple named module from already materialized Runtime values.
+    pub fn map_module(
+        name: impl Into<String>,
+        values: indexmap::IndexMap<String, MiraValue>,
+    ) -> Self {
+        crate::value::types::map_module(name, values)
+    }
+}
+
 pub(crate) struct MiraArena {
+    id: u32,
     strings: Arena<String>,
     arrays: Arena<Box<dyn MiraArray>>,
     records: Arena<Box<dyn MiraRecord>>,
-    functions: Arena<Box<dyn MiraFunction>>,
+    functions: Arena<Rc<dyn MiraFunction>>,
     modules: Arena<Box<dyn MiraModule>>,
 }
 
 impl MiraArena {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
+        let id = NEXT_ARENA_ID.fetch_add(1, Ordering::Relaxed);
+        assert_ne!(id, 0, "MiraScript arena identifier space exhausted");
         Self {
+            id,
             strings: Arena::new(),
             arrays: Arena::new(),
             records: Arena::new(),
@@ -95,130 +236,227 @@ impl MiraArena {
     }
 }
 
-fn insert_boxed<T: ?Sized + Any + 'static>(
-    arena: &mut Arena<Box<T>>,
-    value: Box<T>,
-) -> MiraHandle<T> {
-    let key = arena.insert(value);
-    MiraHandle {
-        key,
-        _marker: std::marker::PhantomData::<&T>,
-    }
-}
-
-impl From<String> for MiraManageable {
-    fn from(value: String) -> Self {
-        MiraManageable::String(value)
-    }
-}
-impl Runtime<'_> {
-    pub fn insert(&mut self, value: MiraManageable) -> MiraValue {
-        match value {
-            MiraManageable::Value(value) => value,
-            MiraManageable::String(value) => MiraValue::new_string(value, self),
+impl Runtime {
+    /// Insert an owned value into this Runtime when necessary.
+    pub fn insert(&mut self, value: impl Into<MiraManageable>) -> Result<MiraValue> {
+        match value.into() {
+            MiraManageable::Value(value) => {
+                self.validate_value(value)?;
+                Ok(value)
+            }
+            MiraManageable::String(value) => Ok(MiraValue::String(self.insert_string(value)?)),
             MiraManageable::Array(value) => {
-                MiraValue::Array(insert_boxed(&mut self.arena.arrays, value))
+                let key = self.arena.arrays.insert(self.arena.id, "array", value)?;
+                Ok(MiraValue::Array(MiraHandle::new(key)))
             }
             MiraManageable::Record(value) => {
-                MiraValue::Record(insert_boxed(&mut self.arena.records, value))
+                let key = self.arena.records.insert(self.arena.id, "record", value)?;
+                Ok(MiraValue::Record(MiraHandle::new(key)))
             }
             MiraManageable::Function(value) => {
-                MiraValue::Function(insert_boxed(&mut self.arena.functions, value))
+                let key = self
+                    .arena
+                    .functions
+                    .insert(self.arena.id, "function", value)?;
+                Ok(MiraValue::Function(MiraHandle::new(key)))
             }
             MiraManageable::Module(value) => {
-                MiraValue::Module(insert_boxed(&mut self.arena.modules, value))
+                let key = self.arena.modules.insert(self.arena.id, "module", value)?;
+                Ok(MiraValue::Module(MiraHandle::new(key)))
             }
         }
     }
 
-    pub fn insert_string(&mut self, value: impl Into<String>) -> MiraHandle<String> {
-        let key = self.arena.strings.insert(value.into());
-        MiraHandle {
-            key,
-            _marker: std::marker::PhantomData::<&String>,
-        }
-    }
-    pub fn take_string(&mut self, handle: MiraHandle<String>) -> Option<String> {
-        self.arena.strings.remove(handle.key)
+    /// Insert an owned string and return its typed handle.
+    pub fn insert_string(&mut self, value: impl Into<String>) -> Result<MiraHandle<String>> {
+        let key = self
+            .arena
+            .strings
+            .insert(self.arena.id, "string", value.into())?;
+        Ok(MiraHandle::new(key))
     }
 
-    pub fn get_string(&self, handle: MiraHandle<String>) -> Option<&str> {
-        self.arena.strings.get(handle.key).map(Deref::deref)
-    }
-}
-
-macro_rules! impl_arena_handle {
-    ($($ty:ty: [$field:ident, $Field:ident]),* $(,)?) => {$ (paste! {
-impl<T: $ty> From<MiraHandle<T>> for MiraHandle<dyn $ty> {
-    fn from(handle: MiraHandle<T>) -> Self {
-        MiraHandle {
-            key: handle.key,
-            _marker: std::marker::PhantomData::<&dyn $ty>,
-        }
-    }
-}
-impl MiraHandle<dyn $ty> {
-    /// Casts the handle to a specific type. This is unsafe because it does not check if the underlying value is actually of type `T`.
-    ///
-    /// # Safety
-    /// The caller must ensure that the underlying value is of type `T`. If it is not, using the returned handle may lead to undefined behavior.
-    pub unsafe fn upcast<T: $ty>(self) -> MiraHandle<T> {
-        MiraHandle {
-            key: self.key,
-            _marker: std::marker::PhantomData::<&T>,
-        }
-    }
-}
-
-impl MiraManageable {
-    pub fn [<from_ $field>](value: impl $ty) -> Self {
-        MiraManageable::$Field(Box::new(value))
-    }
-}
-
-impl Runtime<'_> {
-    pub fn [<insert_ $field>]<T: $ty>(&mut self, value: T) -> MiraHandle<T> {
-        let key = self.arena.[<$field s>].insert(Box::new(value));
-        MiraHandle {
-            key,
-            _marker: std::marker::PhantomData::<&T>,
-        }
+    /// Read a string handle owned by this Runtime.
+    pub fn get_string(&self, handle: MiraHandle<String>) -> Result<&str> {
+        self.arena
+            .strings
+            .get(self.arena.id, "string", handle.key)
+            .map(Deref::deref)
     }
 
-    pub fn [<take_ $field>]<T: $ty>(&mut self, handle: MiraHandle<T>) -> Option<T> {
-        let value = self.arena.[<$field s>].remove(handle.key)?;
-        let value: Box<dyn Any> = value;
-        value.downcast::<T>().ok().map(|boxed| *boxed)
+    /// Mutably read a string handle owned by this Runtime.
+    pub fn get_string_mut(&mut self, handle: MiraHandle<String>) -> Result<&mut String> {
+        self.arena
+            .strings
+            .get_mut(self.arena.id, "string", handle.key)
     }
 
-    pub fn [<get_ $field>]<T: $ty>(&self, handle: MiraHandle<T>) -> Option<&T> {
-        let value = self.arena.[<$field s>].get(handle.key)?;
-        let value: &dyn Any = value.as_ref();
-        value.downcast_ref::<T>()
+    /// Insert an array and return a concrete typed handle.
+    pub fn insert_array<T: MiraArray>(&mut self, value: T) -> Result<MiraHandle<T>> {
+        let key = self
+            .arena
+            .arrays
+            .insert(self.arena.id, "array", Box::new(value))?;
+        Ok(MiraHandle::new(key))
     }
-}
-        })* };
-}
 
-impl_arena_handle! {
-    MiraArray: [array, Array],
-    MiraRecord: [record, Record],
-    MiraFunction: [function, Function],
-    MiraModule: [module, Module],
-}
+    /// Insert a record and return a concrete typed handle.
+    pub fn insert_record<T: MiraRecord>(&mut self, value: T) -> Result<MiraHandle<T>> {
+        let key = self
+            .arena
+            .records
+            .insert(self.arena.id, "record", Box::new(value))?;
+        Ok(MiraHandle::new(key))
+    }
 
-#[cfg(test)]
-mod tests {
-    use std::any::Any;
+    /// Insert a function and return a concrete typed handle.
+    pub fn insert_function<T: MiraFunction>(&mut self, value: T) -> Result<MiraHandle<T>> {
+        let key = self
+            .arena
+            .functions
+            .insert(self.arena.id, "function", Rc::new(value))?;
+        Ok(MiraHandle::new(key))
+    }
 
-    use super::MiraHandle;
+    /// Insert a module and return a concrete typed handle.
+    pub fn insert_module<T: MiraModule>(&mut self, value: T) -> Result<MiraHandle<T>> {
+        let key = self
+            .arena
+            .modules
+            .insert(self.arena.id, "module", Box::new(value))?;
+        Ok(MiraHandle::new(key))
+    }
 
-    impl<T: Any + ?Sized> MiraHandle<T> {
-        pub fn empty() -> Self {
-            MiraHandle {
-                key: super::ArenaKey(0),
-                _marker: std::marker::PhantomData,
-            }
+    pub(crate) fn get_array_dyn(
+        &self,
+        handle: MiraHandle<dyn MiraArray>,
+    ) -> Result<&dyn MiraArray> {
+        self.arena
+            .arrays
+            .get(self.arena.id, "array", handle.key)
+            .map(|value| value.as_ref())
+    }
+
+    pub(crate) fn get_record_dyn(
+        &self,
+        handle: MiraHandle<dyn MiraRecord>,
+    ) -> Result<&dyn MiraRecord> {
+        self.arena
+            .records
+            .get(self.arena.id, "record", handle.key)
+            .map(|value| value.as_ref())
+    }
+
+    pub(crate) fn get_function_dyn(
+        &self,
+        handle: MiraHandle<dyn MiraFunction>,
+    ) -> Result<Rc<dyn MiraFunction>> {
+        self.arena
+            .functions
+            .get(self.arena.id, "function", handle.key)
+            .map(Rc::clone)
+    }
+
+    pub(crate) fn get_module_dyn(
+        &self,
+        handle: MiraHandle<dyn MiraModule>,
+    ) -> Result<&dyn MiraModule> {
+        self.arena
+            .modules
+            .get(self.arena.id, "module", handle.key)
+            .map(|value| value.as_ref())
+    }
+
+    /// Read the concrete target represented by a typed array handle.
+    pub fn get_array<T: MiraArray>(&self, handle: MiraHandle<T>) -> Result<&T> {
+        let value = self.arena.arrays.get(self.arena.id, "array", handle.key)?;
+        value.target_any(self)?.downcast_ref::<T>().ok_or_else(|| {
+            MiraError::runtime(RuntimeErrorKind::HandleTypeMismatch { category: "array" })
+        })
+    }
+
+    /// Mutably read the concrete object stored directly behind an array handle.
+    pub fn get_array_mut<T: MiraArray>(&mut self, handle: MiraHandle<T>) -> Result<&mut T> {
+        let value = self
+            .arena
+            .arrays
+            .get_mut(self.arena.id, "array", handle.key)?;
+        value.as_any_mut().downcast_mut::<T>().ok_or_else(|| {
+            MiraError::runtime(RuntimeErrorKind::HandleTypeMismatch { category: "array" })
+        })
+    }
+
+    /// Read the concrete target represented by a typed record handle.
+    pub fn get_record<T: MiraRecord>(&self, handle: MiraHandle<T>) -> Result<&T> {
+        let value = self
+            .arena
+            .records
+            .get(self.arena.id, "record", handle.key)?;
+        value.target_any(self)?.downcast_ref::<T>().ok_or_else(|| {
+            MiraError::runtime(RuntimeErrorKind::HandleTypeMismatch { category: "record" })
+        })
+    }
+
+    /// Mutably read the concrete object stored directly behind a record handle.
+    pub fn get_record_mut<T: MiraRecord>(&mut self, handle: MiraHandle<T>) -> Result<&mut T> {
+        let value = self
+            .arena
+            .records
+            .get_mut(self.arena.id, "record", handle.key)?;
+        value.as_any_mut().downcast_mut::<T>().ok_or_else(|| {
+            MiraError::runtime(RuntimeErrorKind::HandleTypeMismatch { category: "record" })
+        })
+    }
+
+    /// Read the concrete function stored behind a typed handle.
+    pub fn get_function<T: MiraFunction>(&self, handle: MiraHandle<T>) -> Result<&T> {
+        let value = self
+            .arena
+            .functions
+            .get(self.arena.id, "function", handle.key)?;
+        value.as_any().downcast_ref::<T>().ok_or_else(|| {
+            MiraError::runtime(RuntimeErrorKind::HandleTypeMismatch {
+                category: "function",
+            })
+        })
+    }
+
+    /// Read the concrete module stored behind a typed handle.
+    pub fn get_module<T: MiraModule>(&self, handle: MiraHandle<T>) -> Result<&T> {
+        let value = self
+            .arena
+            .modules
+            .get(self.arena.id, "module", handle.key)?;
+        value.as_any().downcast_ref::<T>().ok_or_else(|| {
+            MiraError::runtime(RuntimeErrorKind::HandleTypeMismatch { category: "module" })
+        })
+    }
+
+    /// Mutably read the concrete module stored behind a typed handle.
+    pub fn get_module_mut<T: MiraModule>(&mut self, handle: MiraHandle<T>) -> Result<&mut T> {
+        let value = self
+            .arena
+            .modules
+            .get_mut(self.arena.id, "module", handle.key)?;
+        value.as_any_mut().downcast_mut::<T>().ok_or_else(|| {
+            MiraError::runtime(RuntimeErrorKind::HandleTypeMismatch { category: "module" })
+        })
+    }
+
+    pub(crate) fn validate_value(&self, value: MiraValue) -> Result<()> {
+        match value {
+            MiraValue::String(handle) => self.get_string(handle).map(|_| ()),
+            MiraValue::Array(handle) => self.get_array_dyn(handle).map(|_| ()),
+            MiraValue::Record(handle) => self.get_record_dyn(handle).map(|_| ()),
+            MiraValue::Function(handle) => self.get_function_dyn(handle).map(|_| ()),
+            MiraValue::Module(handle) => self.get_module_dyn(handle).map(|_| ()),
+            MiraValue::Extern(_) => Err(MiraError::runtime(RuntimeErrorKind::InvalidHandle {
+                category: "extern",
+            })),
+            MiraValue::Nil
+            | MiraValue::Boolean(_)
+            | MiraValue::Number(_)
+            | MiraValue::StaticString(_) => Ok(()),
         }
     }
 }

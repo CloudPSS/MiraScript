@@ -1,11 +1,14 @@
 use super::*;
 
-pub(super) fn install(context: &mut MiraContext) {
-    insert_native(context, "len", |_, args| {
-        let value = required(args, 0, "arr")?;
-        let Some(length) = value.array_len()? else {
-            return Err(MiraError::runtime("Argument `arr` is not an array"));
+pub(super) fn install(context: &mut Runtime) {
+    insert_native(context, "len", |call, args| {
+        let value = *required(args, 0, "arr")?;
+        let Some(length) = operations::array_len(call, value)? else {
+            return Err(MiraError::runtime(RuntimeErrorKind::TypeMismatch {
+                expected: "array",
+                actual: value.value_type(),
+            }));
         };
-        Ok(MiraAny::Number(length as f64))
+        Ok(MiraValue::Number(length as f64))
     });
 }

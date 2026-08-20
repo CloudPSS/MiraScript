@@ -1,4 +1,4 @@
-use mirascript_vm::{MiraAny, MiraArray, MiraRecord, MiraShared};
+use mirascript_vm::{MiraArray, MiraRecord, Runtime};
 
 #[derive(Clone, MiraRecord)]
 #[mira(crate = "mirascript_vm")]
@@ -13,11 +13,12 @@ struct Record<T> {
 struct Array<T>(T, #[mira(skip)] bool);
 
 fn main() {
-    let record = MiraAny::from(MiraShared::new(Record {
+    let mut runtime = Runtime::new();
+    let record = runtime.insert(Record {
         item: 1_u8,
         hidden: true,
-    }));
-    let array = MiraAny::from(Array(2_u16, false));
+    }).unwrap();
+    let array = runtime.insert(Array(2_u16, false)).unwrap();
     assert_eq!(record.type_name(), "record");
     assert_eq!(array.type_name(), "array");
 }

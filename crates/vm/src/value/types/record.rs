@@ -1,103 +1,163 @@
 use std::{
+    any::Any,
     collections::{BTreeMap, HashMap},
     hash::BuildHasher,
 };
 
-use super::MiraValue;
-use crate::{
-    MiraError, Result,
-    interpreter::Runtime,
-    value::arena::{MiraHandle, MiraManageable},
-};
 use indexmap::IndexMap;
 
-/// A record is a collection of key-value pairs, where keys are strings and values are MiraScript constants. Records can be used to represent objects, structs, or any other data structure that has named fields.
-pub trait MiraRecord: std::any::Any + 'static {
-    /// Return the number of fields in the record.
+use crate::{
+    MiraError, Result, Runtime, RuntimeErrorKind,
+    value::{MiraHandle, MiraManageable},
+};
+
+/// A read-only MiraScript record view.
+pub trait MiraRecord: Any + 'static {
+    /// Return the number of fields.
     fn len(&self) -> usize;
 
-    /// Get index of a field by key, in iteration order, Returns [`None`] if the field does not exist.
+    /// Find a field's iteration index.
     fn index_of(&self, key: &str) -> Option<usize>;
 
-    /// Get index of a field by integer key, in iteration order, Returns [`None`] if the field does not exist.
+    /// Find an integer field key without allocating when possible.
     fn index_of_i(&self, key: u32) -> Option<usize> {
-        let key = key.to_string();
-        self.index_of(&key)
+        self.index_of(&key.to_string())
     }
 
-    /// Read a key by index, in iteration order, returning [`MiraError::MissingIndexOrField`] when the index is out of bounds.
+    /// Read a field key by iteration index.
     fn key(&self, index: usize) -> Result<&str>;
 
-    /// Read a field by index, in iteration order, returning [`MiraError::MissingIndexOrField`] when the index is out of bounds.
+    /// Read a field value by iteration index.
     fn get(
         &self,
         self_handle: MiraHandle<dyn MiraRecord>,
-        runtime: &Runtime<'_>,
+        runtime: &Runtime,
         index: usize,
     ) -> Result<MiraManageable>;
 
-    /// Return whether this record currently contains no fields.
+    /// Return whether the record is empty.
     fn is_empty(&self) -> bool {
         self.len() == 0
     }
+
+    #[doc(hidden)]
+    fn target_any<'a>(&'a self, runtime: &'a Runtime) -> Result<&'a dyn Any>;
+
+    #[doc(hidden)]
+    fn as_any_mut(&mut self) -> &mut dyn Any;
 }
 
-/// A shaped record is a record that has a fixed set of fields, where the keys and types of the fields are known at compile time. Shaped records can be used to represent structs or objects with a known schema.
-pub trait MiraShapedRecord: std::any::Any + 'static {
-    /// Return the number of fields in the record.
+/// A fixed-shape record whose field names are known from its Rust type.
+pub trait MiraShapedRecord: Any + 'static {
+    /// Return the fixed number of fields.
     fn len() -> usize;
 
-    /// Get index of a field by key, in iteration order, Returns [`None`] if the field does not exist.
+    /// Find a field's iteration index.
     fn index_of(key: &str) -> Option<usize>;
 
-    /// Get index of a field by integer key, in iteration order, Returns [`None`] if the field does not exist.
+    /// Find an integer field key without allocating when possible.
     fn index_of_i(key: u32) -> Option<usize> {
-        let key = key.to_string();
-        <Self as MiraShapedRecord>::index_of(&key)
+        Self::index_of(&key.to_string())
     }
 
-    /// Read a key by index, in iteration order, returning [`MiraError::MissingIndexOrField`] when the index is out of bounds.
+    /// Read a static field key by iteration index.
     fn key(index: usize) -> Result<&'static str>;
 
-    /// Read a field by index, in iteration order, returning [`MiraError::MissingIndexOrField`] when the index is out of bounds.
+    /// Read a field value by iteration index.
     fn get(
         &self,
         self_handle: MiraHandle<dyn MiraRecord>,
-        runtime: &Runtime<'_>,
+        runtime: &Runtime,
         index: usize,
     ) -> Result<MiraManageable>;
 }
 
 impl<T: MiraShapedRecord> MiraRecord for T {
     fn len(&self) -> usize {
-        <T as MiraShapedRecord>::len()
+        T::len()
     }
 
     fn index_of(&self, key: &str) -> Option<usize> {
-        <T as MiraShapedRecord>::index_of(key)
+        T::index_of(key)
     }
 
     fn index_of_i(&self, key: u32) -> Option<usize> {
-        <T as MiraShapedRecord>::index_of_i(key)
+        T::index_of_i(key)
     }
 
     fn key(&self, index: usize) -> Result<&str> {
-        <T as MiraShapedRecord>::key(index)
+        T::key(index)
     }
 
     fn get(
         &self,
         self_handle: MiraHandle<dyn MiraRecord>,
-        runtime: &Runtime<'_>,
+        runtime: &Runtime,
         index: usize,
     ) -> Result<MiraManageable> {
-        <T as MiraShapedRecord>::get(self, self_handle, runtime, index)
+        T::get(self, self_handle, runtime, index)
+    }
+
+    fn target_any<'a>(&'a self, _runtime: &'a Runtime) -> Result<&'a dyn Any> {
+        Ok(self)
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
     }
 }
 
-impl<T: Into<MiraValue> + Clone + 'static> MiraRecord for IndexMap<String, T> {
+macro_rules! impl_map_record {
+    ($type:ty) => {
+        impl<T: Clone + Into<MiraManageable> + 'static> MiraRecord for $type {
+            fn len(&self) -> usize {
+                <$type>::len(self)
+            }
+
+            fn index_of(&self, key: &str) -> Option<usize> {
+                self.keys().position(|candidate| candidate == key)
+            }
+
+            fn key(&self, index: usize) -> Result<&str> {
+                self.keys()
+                    .nth(index)
+                    .map(String::as_str)
+                    .ok_or_else(|| MiraError::runtime(RuntimeErrorKind::MissingIndexOrField))
+            }
+
+            fn get(
+                &self,
+                _self_handle: MiraHandle<dyn MiraRecord>,
+                _runtime: &Runtime,
+                index: usize,
+            ) -> Result<MiraManageable> {
+                self.values()
+                    .nth(index)
+                    .cloned()
+                    .map(Into::into)
+                    .ok_or_else(|| MiraError::runtime(RuntimeErrorKind::MissingIndexOrField))
+            }
+
+            fn target_any<'a>(&'a self, _runtime: &'a Runtime) -> Result<&'a dyn Any> {
+                Ok(self)
+            }
+
+            fn as_any_mut(&mut self) -> &mut dyn Any {
+                self
+            }
+        }
+
+        impl<T: Clone + Into<MiraManageable> + 'static> From<$type> for MiraManageable {
+            fn from(value: $type) -> Self {
+                Self::from_record(value)
+            }
+        }
+    };
+}
+
+impl<T: Clone + Into<MiraManageable> + 'static> MiraRecord for IndexMap<String, T> {
     fn len(&self) -> usize {
-        self.len()
+        IndexMap::len(self)
     }
 
     fn index_of(&self, key: &str) -> Option<usize> {
@@ -105,233 +165,163 @@ impl<T: Into<MiraValue> + Clone + 'static> MiraRecord for IndexMap<String, T> {
     }
 
     fn key(&self, index: usize) -> Result<&str> {
-        let val = self
-            .get_index(index)
-            .ok_or_else(|| Box::new(MiraError::MissingIndexOrField))?;
-        Ok(val.0.as_str())
+        self.get_index(index)
+            .map(|(key, _)| key.as_str())
+            .ok_or_else(|| MiraError::runtime(RuntimeErrorKind::MissingIndexOrField))
     }
 
     fn get(
         &self,
         _self_handle: MiraHandle<dyn MiraRecord>,
-        _runtime: &Runtime<'_>,
+        _runtime: &Runtime,
         index: usize,
     ) -> Result<MiraManageable> {
-        let val = self
-            .get_index(index)
-            .ok_or_else(|| Box::new(MiraError::MissingIndexOrField))?;
-        Ok(val.1.clone().into().into())
+        self.get_index(index)
+            .map(|(_, value)| value.clone().into())
+            .ok_or_else(|| MiraError::runtime(RuntimeErrorKind::MissingIndexOrField))
+    }
+
+    fn target_any<'a>(&'a self, _runtime: &'a Runtime) -> Result<&'a dyn Any> {
+        Ok(self)
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
     }
 }
 
-impl<T: Into<MiraValue> + Clone + 'static, S: BuildHasher + 'static> MiraRecord
-    for HashMap<String, T, S>
+impl<T: Clone + Into<MiraManageable> + 'static> From<IndexMap<String, T>> for MiraManageable {
+    fn from(value: IndexMap<String, T>) -> Self {
+        Self::from_record(value)
+    }
+}
+
+impl_map_record!(BTreeMap<String, T>);
+
+impl<T, S> MiraRecord for HashMap<String, T, S>
+where
+    T: Clone + Into<MiraManageable> + 'static,
+    S: BuildHasher + 'static,
 {
     fn len(&self) -> usize {
-        self.len()
+        HashMap::len(self)
     }
 
     fn index_of(&self, key: &str) -> Option<usize> {
-        self.iter().position(|(k, _)| k == key)
+        self.keys().position(|candidate| candidate == key)
     }
 
     fn key(&self, index: usize) -> Result<&str> {
-        let val = self
-            .iter()
+        self.keys()
             .nth(index)
-            .ok_or_else(|| Box::new(MiraError::MissingIndexOrField))?;
-        Ok(val.0.as_str())
+            .map(String::as_str)
+            .ok_or_else(|| MiraError::runtime(RuntimeErrorKind::MissingIndexOrField))
     }
 
     fn get(
         &self,
         _self_handle: MiraHandle<dyn MiraRecord>,
-        _runtime: &Runtime<'_>,
+        _runtime: &Runtime,
         index: usize,
     ) -> Result<MiraManageable> {
-        let val = self
-            .iter()
+        self.values()
             .nth(index)
-            .ok_or_else(|| Box::new(MiraError::MissingIndexOrField))?;
-        Ok(val.1.clone().into().into())
+            .cloned()
+            .map(Into::into)
+            .ok_or_else(|| MiraError::runtime(RuntimeErrorKind::MissingIndexOrField))
+    }
+
+    fn target_any<'a>(&'a self, _runtime: &'a Runtime) -> Result<&'a dyn Any> {
+        Ok(self)
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
     }
 }
 
-impl<T: Into<MiraValue> + Clone + 'static> MiraRecord for BTreeMap<String, T> {
-    fn len(&self) -> usize {
-        self.len()
-    }
-
-    fn index_of(&self, key: &str) -> Option<usize> {
-        self.iter().position(|(k, _)| k == key)
-    }
-
-    fn key(&self, index: usize) -> Result<&str> {
-        let val = self
-            .iter()
-            .nth(index)
-            .ok_or_else(|| Box::new(MiraError::MissingIndexOrField))?;
-        Ok(val.0.as_str())
-    }
-
-    fn get(
-        &self,
-        _self_handle: MiraHandle<dyn MiraRecord>,
-        _runtime: &Runtime<'_>,
-        index: usize,
-    ) -> Result<MiraManageable> {
-        let val = self
-            .iter()
-            .nth(index)
-            .ok_or_else(|| Box::new(MiraError::MissingIndexOrField))?;
-        Ok(val.1.clone().into().into())
-    }
-}
-
-impl MiraRecord for () {
-    fn len(&self) -> usize {
+impl MiraShapedRecord for () {
+    fn len() -> usize {
         0
     }
 
-    fn index_of(&self, _key: &str) -> Option<usize> {
+    fn index_of(_key: &str) -> Option<usize> {
         None
     }
 
-    fn key(&self, _index: usize) -> Result<&str> {
-        Err(Box::new(MiraError::MissingIndexOrField))
+    fn key(_index: usize) -> Result<&'static str> {
+        Err(MiraError::runtime(RuntimeErrorKind::MissingIndexOrField))
     }
 
     fn get(
         &self,
         _self_handle: MiraHandle<dyn MiraRecord>,
-        _runtime: &Runtime<'_>,
+        _runtime: &Runtime,
         _index: usize,
     ) -> Result<MiraManageable> {
-        Err(Box::new(MiraError::MissingIndexOrField))
-    }
-
-    fn is_empty(&self) -> bool {
-        true
+        Err(MiraError::runtime(RuntimeErrorKind::MissingIndexOrField))
     }
 }
 
-macro_rules! impl_mira_record_for_tuple {
-    ($len:expr; $(($T:ident, $idx:tt)),+ $(,)?) => {
-        impl<$($T),*> MiraRecord for ($($T,)*)
+impl From<()> for MiraManageable {
+    fn from(value: ()) -> Self {
+        Self::from_record(value)
+    }
+}
+
+macro_rules! impl_tuple_record {
+    ($len:expr; $(($T:ident, $index:tt)),+ $(,)?) => {
+        impl<$($T),+> MiraShapedRecord for ($($T,)+)
         where
-            $(
-                $T: Into<MiraManageable> + Clone + 'static,
-            )*
+            $($T: Clone + Into<MiraManageable> + 'static,)+
         {
-            fn len(&self) -> usize {
-                $len
+            fn len() -> usize { $len }
+
+            fn index_of(key: &str) -> Option<usize> {
+                key.parse::<usize>().ok().filter(|index| *index < $len)
             }
 
-            fn index_of(&self, key: &str) -> Option<usize> {
-                if self.is_empty() {
-                    return None;
-                }
-                match key.parse::<usize>() {
-                    Ok(idx) if idx < $len => Some(idx),
-                    _ => None,
-                }
+            fn index_of_i(key: u32) -> Option<usize> {
+                let key = key as usize;
+                (key < $len).then_some(key)
             }
 
-            fn index_of_i(&self, key: u32) -> Option<usize> {
-                let idx = key as usize;
-                if idx < $len {
-                    Some(idx)
-                } else {
-                    None
-                }
-            }
-
-            fn key(&self, index: usize) -> Result<&'static str> {
+            fn key(index: usize) -> Result<&'static str> {
                 match index {
-                    $(
-                        $idx => Ok(stringify!($idx)),
-                    )*
-                    _ => Err(Box::new(MiraError::MissingIndexOrField)),
+                    $($index => Ok(stringify!($index)),)+
+                    _ => Err(MiraError::runtime(RuntimeErrorKind::MissingIndexOrField)),
                 }
             }
 
             fn get(
                 &self,
                 _self_handle: MiraHandle<dyn MiraRecord>,
-                _runtime: &Runtime<'_>,
-                index: usize
+                _runtime: &Runtime,
+                index: usize,
             ) -> Result<MiraManageable> {
                 match index {
-                    $(
-                        $idx => Ok(self.$idx.clone().into()),
-                    )*
-                    _ => Err(Box::new(MiraError::MissingIndexOrField)),
+                    $($index => Ok(self.$index.clone().into()),)+
+                    _ => Err(MiraError::runtime(RuntimeErrorKind::MissingIndexOrField)),
                 }
             }
+        }
 
-            fn is_empty(&self) -> bool {
-                false
+        impl<$($T),+> From<($($T,)+)> for MiraManageable
+        where
+            $($T: Clone + Into<MiraManageable> + 'static,)+
+        {
+            fn from(value: ($($T,)+)) -> Self {
+                Self::from_record(value)
             }
         }
     };
 }
 
-impl_mira_record_for_tuple!(1; (T0, 0));
-impl_mira_record_for_tuple!(2; (T0, 0), (T1, 1));
-impl_mira_record_for_tuple!(3; (T0, 0), (T1, 1), (T2, 2));
-impl_mira_record_for_tuple!(4; (T0, 0), (T1, 1), (T2, 2), (T3, 3));
-impl_mira_record_for_tuple!(5; (T0, 0), (T1, 1), (T2, 2), (T3, 3), (T4, 4));
-impl_mira_record_for_tuple!(6; (T0, 0), (T1, 1), (T2, 2), (T3, 3), (T4, 4), (T5, 5));
-impl_mira_record_for_tuple!(7; (T0, 0), (T1, 1), (T2, 2), (T3, 3), (T4, 4), (T5, 5), (T6, 6));
-impl_mira_record_for_tuple!(8; (T0, 0), (T1, 1), (T2, 2), (T3, 3), (T4, 4), (T5, 5), (T6, 6), (T7, 7));
-impl_mira_record_for_tuple!(9; (T0, 0), (T1, 1), (T2, 2), (T3, 3), (T4, 4), (T5, 5), (T6, 6), (T7, 7), (T8, 8));
-impl_mira_record_for_tuple!(10; (T0, 0), (T1, 1), (T2, 2), (T3, 3), (T4, 4), (T5, 5), (T6, 6), (T7, 7), (T8, 8), (T9, 9));
-impl_mira_record_for_tuple!(11; (T0, 0), (T1, 1), (T2, 2), (T3, 3), (T4, 4), (T5, 5), (T6, 6), (T7, 7), (T8, 8), (T9, 9), (T10, 10));
-impl_mira_record_for_tuple!(12; (T0, 0), (T1, 1), (T2, 2), (T3, 3), (T4, 4), (T5, 5), (T6, 6), (T7, 7), (T8, 8), (T9, 9), (T10, 10), (T11, 11));
-impl_mira_record_for_tuple!(13; (T0, 0), (T1, 1), (T2, 2), (T3, 3), (T4, 4), (T5, 5), (T6, 6), (T7, 7), (T8, 8), (T9, 9), (T10, 10), (T11, 11), (T12, 12));
-impl_mira_record_for_tuple!(14; (T0, 0), (T1, 1), (T2, 2), (T3, 3), (T4, 4), (T5, 5), (T6, 6), (T7, 7), (T8, 8), (T9, 9), (T10, 10), (T11, 11), (T12, 12), (T13, 13));
-impl_mira_record_for_tuple!(15; (T0, 0), (T1, 1), (T2, 2), (T3, 3), (T4, 4), (T5, 5), (T6, 6), (T7, 7), (T8, 8), (T9, 9), (T10, 10), (T11, 11), (T12, 12), (T13, 13), (T14, 14));
-
-#[cfg(test)]
-mod tests {
-
-    use super::*;
-
-    #[test]
-    fn test_tuple_record() {
-        fn check_record<R: MiraRecord>(record: &R) {
-            assert_eq!(record.len(), 3);
-
-            assert_eq!(record.index_of("0"), Some(0));
-            assert_eq!(record.index_of("1"), Some(1));
-            assert_eq!(record.index_of("2"), Some(2));
-            assert_eq!(record.index_of("3"), None);
-
-            assert_eq!(record.index_of_i(0), Some(0));
-            assert_eq!(record.index_of_i(1), Some(1));
-            assert_eq!(record.index_of_i(2), Some(2));
-            assert_eq!(record.index_of_i(3), None);
-
-            assert_eq!(record.key(0).unwrap(), "0");
-            assert_eq!(record.key(1).unwrap(), "1");
-            assert_eq!(record.key(2).unwrap(), "2");
-            assert!(record.key(3).is_err());
-
-            let runtime: &mut Runtime = &mut unsafe { Runtime::unused() };
-            let handle: MiraHandle<dyn MiraRecord> = MiraHandle::empty();
-            let v0 = record.get(handle, runtime, 0).unwrap();
-            let v0 = runtime.insert(v0);
-            let v1 = record.get(handle, runtime, 1).unwrap();
-            let v1 = runtime.insert(v1);
-            let v2 = record.get(handle, runtime, 2).unwrap();
-            let v2 = runtime.insert(v2);
-            assert_eq!(v0.as_number().unwrap(), 1f64);
-            assert!(v1.as_boolean().unwrap());
-            assert_eq!(v2.as_string(runtime).unwrap(), "Hello");
-            assert!(record.get(handle, runtime, 3).is_err());
-        }
-
-        let record = (1, true, &"Hello");
-        check_record(&record);
-    }
-}
+impl_tuple_record!(1; (T0, 0));
+impl_tuple_record!(2; (T0, 0), (T1, 1));
+impl_tuple_record!(3; (T0, 0), (T1, 1), (T2, 2));
+impl_tuple_record!(4; (T0, 0), (T1, 1), (T2, 2), (T3, 3));
+impl_tuple_record!(5; (T0, 0), (T1, 1), (T2, 2), (T3, 3), (T4, 4));
+impl_tuple_record!(6; (T0, 0), (T1, 1), (T2, 2), (T3, 3), (T4, 4), (T5, 5));
+impl_tuple_record!(7; (T0, 0), (T1, 1), (T2, 2), (T3, 3), (T4, 4), (T5, 5), (T6, 6));
+impl_tuple_record!(8; (T0, 0), (T1, 1), (T2, 2), (T3, 3), (T4, 4), (T5, 5), (T6, 6), (T7, 7));

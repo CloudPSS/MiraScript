@@ -1,18 +1,17 @@
-use mirascript::{MiraAny, MiraContext, MiraRecord, MiraShared, compile};
+use mirascript::{MiraRecord, MiraValue, Runtime, compile};
 
-#[derive(Clone, MiraRecord)]
+#[derive(MiraRecord)]
 struct User {
     name: String,
 }
 
 #[test]
 fn facade_reexports_runtime_and_derives() -> mirascript::Result<()> {
-    let mut context = MiraContext::new();
-    context.insert("user", MiraShared::new(User { name: "Ada".into() }));
+    let mut runtime = Runtime::new();
+    let user = runtime.insert_record(User { name: "Ada".into() })?;
+    runtime.insert_global("user", MiraValue::Record(user.erase_record()))?;
 
-    assert_eq!(
-        compile("user.name")?.run(&context)?,
-        MiraAny::String("Ada".into()),
-    );
+    let value = runtime.run(&compile("user.name")?)?;
+    assert_eq!(value.as_string(&runtime)?, Some("Ada"));
     Ok(())
 }

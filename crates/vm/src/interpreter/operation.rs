@@ -2,65 +2,60 @@ use std::cmp::Ordering;
 
 use super::*;
 
-impl Runtime<'_> {
+impl Runtime {
     pub(super) fn execute_op(&mut self, operation: &Operation, frame: FrameId) -> Result<Flow> {
         match operation {
             Operation::Noop => {}
             Operation::Break => return Ok(Flow::Break),
             Operation::Continue => return Ok(Flow::LoopContinue),
             Operation::Return { value } => {
-                return Ok(Flow::Return(self.read_register(frame, *value)));
+                return Ok(Flow::Return(self.read_register(frame, *value)?));
             }
             Operation::Constant {
                 destination,
                 constant,
-            } => self.write_register(
-                frame,
-                *destination,
-                self.program.constants[*constant].clone(),
-            ),
-            Operation::Uninit { destination } => {
-                self.write_register(frame, *destination, MiraAny::Uninitialized)
+            } => {
+                let value = self.materialize_constant(*constant)?;
+                self.write_register(frame, *destination, value);
             }
+            Operation::Uninit { destination } => self.clear_register(frame, *destination),
             Operation::Unary {
                 kind,
                 destination,
                 value,
             } => {
-                let value = self.read_register(frame, *value);
+                let value = self.read_register(frame, *value)?;
                 let result = match kind {
                     UnaryOperation::Pos | UnaryOperation::Plus => {
-                        MiraAny::Number(operations::to_number(&value)?)
+                        MiraValue::Number(operations::to_number(self, value)?)
                     }
-                    UnaryOperation::Neg => MiraAny::Number(-operations::to_number(&value)?),
-                    UnaryOperation::Not => MiraAny::Boolean(!operations::to_boolean(&value)?),
-                    UnaryOperation::Type => MiraAny::String(value.type_name().into()),
-                    UnaryOperation::ToBoolean => MiraAny::Boolean(operations::to_boolean(&value)?),
-                    UnaryOperation::ToNumber => MiraAny::Number(operations::to_number(&value)?),
+                    UnaryOperation::Neg => MiraValue::Number(-operations::to_number(self, value)?),
+                    UnaryOperation::Not => MiraValue::Boolean(!operations::to_boolean(value)?),
+                    UnaryOperation::Type => self.insert(value.type_name().to_owned())?,
+                    UnaryOperation::ToBoolean => MiraValue::Boolean(operations::to_boolean(value)?),
+                    UnaryOperation::ToNumber => {
+                        MiraValue::Number(operations::to_number(self, value)?)
+                    }
                     UnaryOperation::ToString => {
-                        MiraAny::String(operations::to_string(&value)?.into())
+                        let value = operations::to_string(self, value)?;
+                        self.insert(value)?
                     }
                     UnaryOperation::IsBoolean
                     | UnaryOperation::IsNumber
                     | UnaryOperation::IsString
                     | UnaryOperation::IsRecord
-                    | UnaryOperation::IsArray => {
-                        operations::assert_initialized(&value)?;
-                        MiraAny::Boolean(match kind {
-                            UnaryOperation::IsBoolean => matches!(value, MiraAny::Boolean(_)),
-                            UnaryOperation::IsNumber => matches!(value, MiraAny::Number(_)),
-                            UnaryOperation::IsString => matches!(value, MiraAny::String(_)),
-                            UnaryOperation::IsRecord => {
-                                matches!(value, MiraAny::Record(_) | MiraAny::RustRecord(_))
-                            }
-                            UnaryOperation::IsArray => {
-                                matches!(value, MiraAny::Array(_) | MiraAny::RustArray(_))
-                            }
-                            _ => unreachable!(),
-                        })
-                    }
+                    | UnaryOperation::IsArray => MiraValue::Boolean(match kind {
+                        UnaryOperation::IsBoolean => matches!(value, MiraValue::Boolean(_)),
+                        UnaryOperation::IsNumber => matches!(value, MiraValue::Number(_)),
+                        UnaryOperation::IsString => value.is_string(),
+                        UnaryOperation::IsRecord => matches!(value, MiraValue::Record(_)),
+                        UnaryOperation::IsArray => matches!(value, MiraValue::Array(_)),
+                        _ => unreachable!(),
+                    }),
                     UnaryOperation::Assign => value,
-                    UnaryOperation::Length => MiraAny::Number(operations::length(&value)? as f64),
+                    UnaryOperation::Length => {
+                        MiraValue::Number(operations::length(self, value)? as f64)
+                    }
                 };
                 self.write_register(frame, *destination, result);
             }
@@ -72,7 +67,7 @@ impl Runtime<'_> {
             } => {
                 let left = self.read_number(frame, *left)?;
                 let right = self.read_number(frame, *right)?;
-                let result = MiraAny::Number(match kind {
+                let result = MiraValue::Number(match kind {
                     NumericOperation::Add => left + right,
                     NumericOperation::Sub => left - right,
                     NumericOperation::Mul => left * right,
@@ -88,42 +83,37 @@ impl Runtime<'_> {
                 left,
                 right,
             } => {
-                let left = self.read_register(frame, *left);
-                let right = self.read_register(frame, *right);
+                let left = self.read_register(frame, *left)?;
+                let right = self.read_register(frame, *right)?;
                 let result = match kind {
                     BinaryOperation::Eq
                     | BinaryOperation::Neq
                     | BinaryOperation::Same
                     | BinaryOperation::Nsame => {
-                        operations::assert_initialized(&left)?;
-                        operations::assert_initialized(&right)?;
                         let mut equal =
                             if matches!(kind, BinaryOperation::Eq | BinaryOperation::Neq) {
-                                match (&left, &right) {
-                                    (MiraAny::Number(a), MiraAny::Number(b)) => a == b,
-                                    _ => left == right,
-                                }
+                                operations::equal(self, left, right)?
                             } else {
-                                left == right
+                                operations::same_value(self, left, right)?
                             };
                         if matches!(kind, BinaryOperation::Neq | BinaryOperation::Nsame) {
                             equal = !equal;
                         }
-                        MiraAny::Boolean(equal)
+                        MiraValue::Boolean(equal)
                     }
                     BinaryOperation::Aeq | BinaryOperation::Naeq => {
-                        let mut equal = operations::approximately_equal(&left, &right)?;
+                        let mut equal = operations::approximately_equal(self, left, right)?;
                         if *kind == BinaryOperation::Naeq {
                             equal = !equal;
                         }
-                        MiraAny::Boolean(equal)
+                        MiraValue::Boolean(equal)
                     }
                     BinaryOperation::Lt
                     | BinaryOperation::Lte
                     | BinaryOperation::Gt
                     | BinaryOperation::Gte => {
-                        let ordering = operations::compare(&left, &right)?;
-                        MiraAny::Boolean(match (kind, ordering) {
+                        let ordering = operations::compare(self, left, right)?;
+                        MiraValue::Boolean(match (kind, ordering) {
                             (_, None) => false,
                             (BinaryOperation::Lt, Some(value)) => value == Ordering::Less,
                             (BinaryOperation::Lte, Some(value)) => value != Ordering::Greater,
@@ -132,11 +122,13 @@ impl Runtime<'_> {
                             _ => unreachable!(),
                         })
                     }
-                    BinaryOperation::In => MiraAny::Boolean(operations::in_value(&left, &right)?),
+                    BinaryOperation::In => {
+                        MiraValue::Boolean(operations::in_value(self, left, right)?)
+                    }
                     BinaryOperation::And | BinaryOperation::Or => {
-                        let left = operations::to_boolean(&left)?;
-                        let right = operations::to_boolean(&right)?;
-                        MiraAny::Boolean(if *kind == BinaryOperation::And {
+                        let left = operations::to_boolean(left)?;
+                        let right = operations::to_boolean(right)?;
+                        MiraValue::Boolean(if *kind == BinaryOperation::And {
                             left && right
                         } else {
                             left || right
@@ -146,10 +138,14 @@ impl Runtime<'_> {
                 self.write_register(frame, *destination, result);
             }
             Operation::Swap { left, right } => {
-                let left_value = self.read_register(frame, *left);
-                let right_value = self.read_register(frame, *right);
-                self.write_register(frame, *left, right_value);
-                self.write_register(frame, *right, left_value);
+                let left_value = self.read_register_raw(frame, *left);
+                let right_value = self.read_register_raw(frame, *right);
+                if *left != 0 {
+                    self.frames.get_mut(frame).registers[*left] = right_value;
+                }
+                if *right != 0 {
+                    self.frames.get_mut(frame).registers[*right] = left_value;
+                }
             }
             Operation::Upvalue {
                 kind,
@@ -160,12 +156,11 @@ impl Runtime<'_> {
                 let owner = self.parent_frame(frame, *level)?;
                 match kind {
                     UpvalueOperation::Get => {
-                        let result = self.read_register(owner, *register);
-                        operations::assert_initialized(&result)?;
+                        let result = self.read_register(owner, *register)?;
                         self.write_register(frame, *value, result);
                     }
                     UpvalueOperation::Set => {
-                        let result = self.read_register(frame, *value);
+                        let result = self.read_register(frame, *value)?;
                         self.write_register(owner, *register, result);
                     }
                 }
@@ -175,16 +170,18 @@ impl Runtime<'_> {
                 self.write_register(frame, *destination, result);
             }
             Operation::GetGlobalDyn { destination, key } => {
-                let key = operations::to_string(&self.read_register(frame, *key))?;
+                let key = self.read_register(frame, *key)?;
+                let key = operations::to_string(self, key)?;
                 let result = self.get_global_name(&key)?;
                 self.write_register(frame, *destination, result);
             }
             Operation::InGlobal { destination, key } => {
-                let key = operations::to_string(&self.read_register(frame, *key))?;
+                let key = self.read_register(frame, *key)?;
+                let key = operations::to_string(self, key)?;
                 self.write_register(
                     frame,
                     *destination,
-                    MiraAny::Boolean(self.context.contains(&key)),
+                    MiraValue::Boolean(self.globals.contains_key(&key)),
                 );
             }
             Operation::Concat {
@@ -193,52 +190,52 @@ impl Runtime<'_> {
             } => {
                 let mut result = String::new();
                 for value in values {
-                    result.push_str(&operations::format_value(
-                        &self.read_register(frame, *value),
-                        None,
-                    )?);
+                    let value = self.read_register(frame, *value)?;
+                    result.push_str(&operations::format_value(self, value, None)?);
                 }
-                self.write_register(frame, *destination, MiraAny::String(result.into()));
+                let result = self.insert(result)?;
+                self.write_register(frame, *destination, result);
             }
             Operation::Format {
                 destination,
                 value,
                 format,
             } => {
-                let format = match &self.program.constants[*format] {
-                    MiraAny::String(value) => Some(value.as_str()),
-                    MiraAny::Nil => None,
-                    _ => unreachable!("validated format constant"),
-                };
-                let result = operations::format_value(&self.read_register(frame, *value), format)?;
-                self.write_register(frame, *destination, MiraAny::String(result.into()));
+                let format = self.constant_string(*format)?.map(str::to_owned);
+                let value = self.read_register(frame, *value)?;
+                let result = operations::format_value(self, value, format.as_deref())?;
+                let result = self.insert(result)?;
+                self.write_register(frame, *destination, result);
             }
-            Operation::Assert { kind, value } => {
-                let value = self.read_register(frame, *value);
-                match kind {
-                    AssertOperation::Initialized => operations::assert_initialized(&value)?,
-                    AssertOperation::NonNil => operations::assert_non_nil(&value)?,
+            Operation::Assert { kind, value } => match kind {
+                AssertOperation::Initialized => {
+                    if self.read_register_raw(frame, *value).is_none() {
+                        return Err(MiraError::runtime(RuntimeErrorKind::UninitializedValue));
+                    }
                 }
-            }
+                AssertOperation::NonNil => {
+                    operations::assert_non_nil(self.read_register(frame, *value)?)?;
+                }
+            },
             Operation::PickOmit {
                 kind,
                 destination,
                 value,
                 keys,
             } => {
-                let keys: Result<Vec<_>> = keys
+                let keys = keys
                     .iter()
-                    .map(|index| operations::to_string(&self.program.constants[*index]))
-                    .collect();
-                let source = self.read_register(frame, *value);
+                    .map(|index| self.active_program().constants[*index].to_source_string())
+                    .collect::<Vec<_>>();
+                let source = self.read_register(frame, *value)?;
                 let result = match kind {
-                    PickOmitOperation::Pick => operations::pick(&source, &keys?)?,
-                    PickOmitOperation::Omit => operations::omit(&source, &keys?)?,
+                    PickOmitOperation::Pick => operations::pick(self, source, &keys)?,
+                    PickOmitOperation::Omit => operations::omit(self, source, &keys)?,
                 };
                 self.write_register(frame, *destination, result);
             }
             Operation::CallGlobal0 { destination, slot } => {
-                let target = self.get_global_slot_ref(*slot)?;
+                let target = self.get_global_slot(*slot)?;
                 let result = self.call(target, &[])?;
                 self.write_register(frame, *destination, result);
             }
@@ -247,8 +244,8 @@ impl Runtime<'_> {
                 slot,
                 argument,
             } => {
-                let target = self.get_global_slot_ref(*slot)?;
-                let argument = self.call_argument(frame, *argument)?;
+                let target = self.get_global_slot(*slot)?;
+                let argument = self.read_register(frame, *argument)?;
                 let result = self.call(target, &[argument])?;
                 self.write_register(frame, *destination, result);
             }
@@ -257,10 +254,9 @@ impl Runtime<'_> {
                 slot,
                 argument_slot,
             } => {
-                let target = self.get_global_slot_ref(*slot)?;
-                let argument = self.get_global_slot_ref(*argument_slot)?;
-                operations::assert_initialized(argument)?;
-                let result = self.call(target, std::slice::from_ref(argument))?;
+                let target = self.get_global_slot(*slot)?;
+                let argument = self.get_global_slot(*argument_slot)?;
+                let result = self.call(target, &[argument])?;
                 self.write_register(frame, *destination, result);
             }
             Operation::CallGlobal2 {
@@ -268,10 +264,10 @@ impl Runtime<'_> {
                 slot,
                 arguments: [a, b],
             } => {
-                let target = self.get_global_slot_ref(*slot)?;
+                let target = self.get_global_slot(*slot)?;
                 let arguments = [
-                    self.call_argument(frame, *a)?,
-                    self.call_argument(frame, *b)?,
+                    self.read_register(frame, *a)?,
+                    self.read_register(frame, *b)?,
                 ];
                 let result = self.call(target, &arguments)?;
                 self.write_register(frame, *destination, result);
@@ -281,11 +277,11 @@ impl Runtime<'_> {
                 slot,
                 arguments: [a, b, c],
             } => {
-                let target = self.get_global_slot_ref(*slot)?;
+                let target = self.get_global_slot(*slot)?;
                 let arguments = [
-                    self.call_argument(frame, *a)?,
-                    self.call_argument(frame, *b)?,
-                    self.call_argument(frame, *c)?,
+                    self.read_register(frame, *a)?,
+                    self.read_register(frame, *b)?,
+                    self.read_register(frame, *c)?,
                 ];
                 let result = self.call(target, &arguments)?;
                 self.write_register(frame, *destination, result);
@@ -295,12 +291,12 @@ impl Runtime<'_> {
                 slot,
                 arguments: [a, b, c, d],
             } => {
-                let target = self.get_global_slot_ref(*slot)?;
+                let target = self.get_global_slot(*slot)?;
                 let arguments = [
-                    self.call_argument(frame, *a)?,
-                    self.call_argument(frame, *b)?,
-                    self.call_argument(frame, *c)?,
-                    self.call_argument(frame, *d)?,
+                    self.read_register(frame, *a)?,
+                    self.read_register(frame, *b)?,
+                    self.read_register(frame, *c)?,
+                    self.read_register(frame, *d)?,
                 ];
                 let result = self.call(target, &arguments)?;
                 self.write_register(frame, *destination, result);
@@ -312,10 +308,10 @@ impl Runtime<'_> {
                 spreads,
             } => {
                 let target = match target {
-                    CallTarget::Global(constant) => self.get_global_slot(*constant)?,
-                    CallTarget::Register(register) => self.read_register(frame, *register),
+                    CallTarget::Global(slot) => self.get_global_slot(*slot)?,
+                    CallTarget::Register(register) => self.read_register(frame, *register)?,
                 };
-                let result = self.call_registers(&target, arguments, spreads, frame)?;
+                let result = self.call_registers(target, arguments, spreads, frame)?;
                 self.write_register(frame, *destination, result);
             }
             Operation::Access {
@@ -325,23 +321,23 @@ impl Runtime<'_> {
                 key,
             } => {
                 let key = match key {
-                    AccessKey::Constant(constant) => self.program.constants[*constant].clone(),
-                    AccessKey::Register(register) => self.read_register(frame, *register),
-                    AccessKey::Index(index) => MiraAny::Number(*index as f64),
+                    AccessKey::Constant(constant) => self.materialize_constant(*constant)?,
+                    AccessKey::Register(register) => self.read_register(frame, *register)?,
+                    AccessKey::Index(index) => MiraValue::Number(*index as f64),
                 };
-                let source = self.read_register(frame, *value);
+                let source = self.read_register(frame, *value)?;
                 match kind {
                     AccessOperation::Has => {
-                        let result = MiraAny::Boolean(self.has_value(&source, &key)?);
+                        let result = MiraValue::Boolean(self.has_value(source, key)?);
                         self.write_register(frame, *destination, result);
                     }
                     AccessOperation::Get => {
-                        let result = self.get_value(&source, &key)?;
+                        let result = self.get_value(source, key)?;
                         self.write_register(frame, *destination, result);
                     }
                     AccessOperation::Set => {
-                        let assigned = self.read_register(frame, *destination);
-                        operations::set(&source, &key, assigned)?;
+                        let assigned = self.read_register(frame, *destination)?;
+                        operations::set(self, source, key, assigned)?;
                     }
                 }
             }
@@ -352,18 +348,22 @@ impl Runtime<'_> {
                 end,
                 exclusive,
             } => {
-                let bound = |bound: &SliceBound| match bound {
-                    SliceBound::Constant(value) => MiraAny::Number(*value as f64),
-                    SliceBound::Register(register) => self.read_register(frame, *register),
+                let start = match start {
+                    Some(SliceBound::Constant(value)) => Some(MiraValue::Number(*value as f64)),
+                    Some(SliceBound::Register(register)) => {
+                        Some(self.read_register(frame, *register)?)
+                    }
+                    None => None,
                 };
-                let start = start.as_ref().map(bound);
-                let end = end.as_ref().map(bound);
-                let result = operations::slice(
-                    &self.read_register(frame, *value),
-                    start.as_ref(),
-                    end.as_ref(),
-                    *exclusive,
-                )?;
+                let end = match end {
+                    Some(SliceBound::Constant(value)) => Some(MiraValue::Number(*value as f64)),
+                    Some(SliceBound::Register(register)) => {
+                        Some(self.read_register(frame, *register)?)
+                    }
+                    None => None,
+                };
+                let value = self.read_register(frame, *value)?;
+                let result = operations::slice(self, value, start, end, *exclusive)?;
                 self.write_register(frame, *destination, result);
             }
         }

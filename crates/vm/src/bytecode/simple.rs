@@ -157,7 +157,10 @@ impl Decoder<'_> {
                 let destination = self.read_register(wide, offset)?;
                 let value = self.read_register(wide, offset)?;
                 let format = self.read_constant(wide, offset)?;
-                if !matches!(self.constants[format], MiraAny::String(_) | MiraAny::Nil) {
+                if !matches!(
+                    self.constants[format],
+                    crate::bytecode::Constant::String(_) | crate::bytecode::Constant::Nil
+                ) {
                     return Err(MiraError::invalid_bytecode(
                         offset,
                         InvalidBytecodeReason::InvalidConstantType,

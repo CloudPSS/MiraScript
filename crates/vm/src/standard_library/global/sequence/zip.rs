@@ -1,18 +1,18 @@
 use super::*;
 
-pub(super) fn install(context: &mut MiraContext) {
+pub(super) fn install(context: &mut Runtime) {
     insert_native(context, "zip", |call, args| {
-        zip(call, required(args, 0, "data")?)
+        zip(call, *required(args, 0, "data")?)
     });
 }
 
-fn zip(call: &mut Runtime<'_>, value: &MiraAny) -> Result<MiraAny> {
-    let data = Data::from_value(value)?;
-    let items = data_items(&data);
+fn zip(call: &mut Runtime, value: MiraValue) -> Result<MiraValue> {
+    let data = Data::from_value(call, value)?;
+    let items = data_items(call, &data)?;
     let mut arrays = Vec::new();
     let mut length = 0;
     for (key, value) in items {
-        let array = array_value(&value)?;
+        let array = array_value(call, value)?;
         length = length.max(array.len());
         arrays.push((key, array));
     }
@@ -20,30 +20,29 @@ fn zip(call: &mut Runtime<'_>, value: &MiraAny) -> Result<MiraAny> {
     for index in 0..length {
         call.checkpoint()?;
         match &data {
-            Data::Array(_) => result.push(MiraAny::Array(
-                arrays
-                    .iter()
-                    .map(|(_, array)| array.get(index).cloned().unwrap_or(MiraAny::Nil))
-                    .collect(),
-            )),
-            Data::Record(_) => result.push(MiraAny::Record(
-                arrays
-                    .iter()
-                    .map(|(key, array)| {
-                        let MiraAny::String(key) = key else {
-                            unreachable!()
-                        };
-                        (
-                            key.to_string(),
-                            array.get(index).cloned().unwrap_or(MiraAny::Nil),
-                        )
-                    })
-                    .collect(),
-            )),
+            Data::Array(_) => result.push(
+                call.insert(
+                    arrays
+                        .iter()
+                        .map(|(_, array)| array.get(index).copied().unwrap_or(MiraValue::Nil))
+                        .collect::<Vec<_>>(),
+                )?,
+            ),
+            Data::Record(_) => {
+                let mut record = IndexMap::new();
+                for (key, array) in &arrays {
+                    let key = operations::to_string(call, *key)?;
+                    record.insert(key, array.get(index).copied().unwrap_or(MiraValue::Nil));
+                }
+                result.push(call.insert(record)?);
+            }
             Data::Primitive(_) => {
-                return Err(MiraError::runtime("Argument `data` is not array | record"));
+                return Err(MiraError::runtime(RuntimeErrorKind::TypeMismatch {
+                    expected: "array or record",
+                    actual: value.value_type(),
+                }));
             }
         }
     }
-    Ok(MiraAny::Array(result.into()))
+    call.insert(result)
 }

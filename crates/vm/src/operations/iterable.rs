@@ -1,48 +1,47 @@
 use super::*;
 
-pub(crate) fn length(value: &MiraAny) -> Result<usize> {
-    assert_initialized(value)?;
-    if let Some(length) = value.array_len()? {
+pub(crate) fn length(runtime: &Runtime, value: MiraValue) -> Result<usize> {
+    if let Some(length) = array_len(runtime, value)? {
         return Ok(length);
     }
     match value {
-        MiraAny::Record(_) | MiraAny::RustRecord(_) => {
-            Ok(value.record_keys()?.unwrap_or_default().len())
-        }
-        MiraAny::Module(module) => Ok(module.keys().len()),
-        _ => Err(MiraError::runtime(format!(
-            "Value has no length: {}",
-            display(value)
-        ))),
+        MiraValue::Record(_) => Ok(record_keys(runtime, value)?.unwrap_or_default().len()),
+        MiraValue::Module(_) => Ok(module_keys(runtime, value)?.unwrap_or_default().len()),
+        value => Err(MiraError::runtime(RuntimeErrorKind::TypeMismatch {
+            expected: "array, record, or module",
+            actual: value.value_type(),
+        })),
     }
 }
 
-pub(crate) fn iterable(value: &MiraAny) -> Result<Vec<MiraAny>> {
-    assert_initialized(value)?;
+pub(crate) fn iterable(runtime: &mut Runtime, value: MiraValue) -> Result<Vec<MiraValue>> {
     match value {
-        MiraAny::Array(_) | MiraAny::RustArray(_) => iterable_array(value),
-        MiraAny::Record(_) | MiraAny::RustRecord(_) => Ok(value
-            .record_keys()?
+        MiraValue::Array(_) => iterable_array(runtime, value),
+        MiraValue::Record(_) => record_keys(runtime, value)?
             .unwrap_or_default()
             .into_iter()
-            .map(MiraAny::from)
-            .collect()),
-        MiraAny::Module(module) => Ok(module.keys().into_iter().map(MiraAny::from).collect()),
-        _ => Err(MiraError::runtime(format!(
-            "Value is not iterable: {}",
-            display(value)
-        ))),
+            .map(|key| runtime.insert(key))
+            .collect(),
+        MiraValue::Module(_) => module_keys(runtime, value)?
+            .unwrap_or_default()
+            .into_iter()
+            .map(|key| runtime.insert(key))
+            .collect(),
+        value => Err(MiraError::runtime(RuntimeErrorKind::TypeMismatch {
+            expected: "iterable value",
+            actual: value.value_type(),
+        })),
     }
 }
 
-pub(crate) fn iterable_array(value: &MiraAny) -> Result<Vec<MiraAny>> {
-    let Some(length) = value.array_len()? else {
-        return Err(MiraError::runtime(format!(
-            "Expected array, got {}",
-            display(value)
-        )));
+pub(crate) fn iterable_array(runtime: &mut Runtime, value: MiraValue) -> Result<Vec<MiraValue>> {
+    let Some(length) = array_len(runtime, value)? else {
+        return Err(MiraError::runtime(RuntimeErrorKind::TypeMismatch {
+            expected: "array",
+            actual: value.value_type(),
+        }));
     };
     (0..length)
-        .map(|index| Ok(value.array_get(index)?.unwrap_or(MiraAny::Nil)))
+        .map(|index| Ok(array_get(runtime, value, index)?.unwrap_or(MiraValue::Nil)))
         .collect()
 }

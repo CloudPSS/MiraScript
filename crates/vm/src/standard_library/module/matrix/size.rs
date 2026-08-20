@@ -1,13 +1,12 @@
 use crate::standard_library::required;
-use crate::{MiraAny, Result, Runtime};
+use crate::{MiraValue, Result, Runtime};
 
 use super::helpers::shape;
 
-pub(super) fn size(_call: &mut Runtime<'_>, args: &[MiraAny]) -> Result<MiraAny> {
-    Ok(MiraAny::Array(
-        shape(required(args, 0, "matrix")?)?
-            .into_iter()
-            .map(|value| MiraAny::Number(value as f64))
-            .collect(),
-    ))
+pub(super) fn size(call: &mut Runtime, args: &[MiraValue]) -> Result<MiraValue> {
+    let values = shape(call, *required(args, 0, "matrix")?)?
+        .into_iter()
+        .map(|value| MiraValue::Number(value as f64))
+        .collect::<Vec<_>>();
+    call.insert(values)
 }

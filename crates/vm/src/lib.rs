@@ -4,44 +4,66 @@
 extern crate self as mirascript_vm;
 
 mod bytecode;
-mod context;
 mod error;
 mod interpreter;
 mod operations;
 mod standard_library;
 mod value;
 
-use std::rc::Rc;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::{
+    num::NonZeroU64,
+    rc::Rc,
+    sync::atomic::{AtomicU64, Ordering},
+    time::{Duration, SystemTime, UNIX_EPOCH},
+};
 
 pub use mirascript_core as core;
 pub use mirascript_vm_derive::{MiraArray, MiraRecord};
 
-pub use context::MiraContext;
 pub use error::*;
-pub(crate) use interpreter::{ExecutionId, FrameId, Runtime};
+pub use interpreter::Runtime;
 pub use value::{
-    MiraAny, MiraArray, MiraFunction, MiraModule, MiraNativeFn, MiraRecord, MiraValue, Nil,
+    MiraArray, MiraExtern, MiraFunction, MiraHandle, MiraManageable, MiraModule, MiraNativeFn,
+    MiraRecord, MiraShapedArray, MiraShapedRecord, MiraValue, Nil,
 };
 
 use bytecode::Program;
 
+static NEXT_SCRIPT_ID: AtomicU64 = AtomicU64::new(1);
+
+/// Stable identity shared by clones of one compiled script.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct ScriptId(NonZeroU64);
+
+impl ScriptId {
+    fn new() -> Self {
+        let id = NEXT_SCRIPT_ID.fetch_add(1, Ordering::Relaxed);
+        Self(NonZeroU64::new(id).expect("MiraScript identifier space exhausted"))
+    }
+}
+
 /// A validated, reusable MiraScript program.
 #[derive(Clone, Debug)]
 pub struct MiraScript {
-    program: Program,
+    id: ScriptId,
+    program: Rc<Program>,
 }
 
-/// Limits and injectable providers for one execution.
+impl MiraScript {
+    /// Return the stable identity shared by clones of this script.
+    pub fn id(&self) -> ScriptId {
+        self.id
+    }
+}
+
+/// Limits and injectable providers used for each Runtime execution.
 #[derive(Clone)]
 pub struct RunOptions {
     /// Maximum wall-clock time allowed for one execution.
     pub timeout: Duration,
     /// Number of interpreter checkpoints between timeout-provider checks.
-    ///
-    /// Values below one are treated as one.
     pub checkpoint_interval: u32,
-    /// Maximum nested script, native, and extern call depth.
+    /// Maximum nested script and native call depth.
     pub max_call_depth: u32,
     /// Maximum number of elements created by bounded array operations.
     pub max_array_len: usize,
@@ -71,7 +93,6 @@ pub trait RuntimeProviders {
 }
 
 struct SystemRuntimeProviders;
-
 impl RuntimeProviders for SystemRuntimeProviders {}
 
 std::thread_local! {
@@ -92,18 +113,12 @@ impl Default for RunOptions {
 
 /// Compile source with the default compiler configuration.
 ///
-/// The returned program is validated once and can be reused with multiple
-/// [`MiraContext`] values.
-///
-/// # Examples
-///
 /// ```
-/// use mirascript_vm::{MiraAny, MiraContext, compile};
+/// use mirascript_vm::{MiraValue, Runtime, compile};
 ///
-/// let script = compile("answer + 1")?;
-/// let mut context = MiraContext::new();
-/// context.insert("answer", 41);
-/// assert_eq!(script.run(&context)?, MiraAny::Number(42.0));
+/// let script = compile("6 * 7")?;
+/// let mut runtime = Runtime::new();
+/// assert_eq!(runtime.run(&script)?, MiraValue::Number(42.0));
 /// # Ok::<(), Box<mirascript_vm::MiraError>>(())
 /// ```
 pub fn compile(source: &str) -> Result<MiraScript> {
@@ -113,34 +128,18 @@ pub fn compile(source: &str) -> Result<MiraScript> {
 /// Compile source with an explicit [`core::Config`].
 pub fn compile_with(source: &str, config: &core::Config) -> Result<MiraScript> {
     let (chunk, diagnostics) = core::Compiler::compile(source, config);
-    let chunk = chunk.ok_or(MiraError::compile(&diagnostics))?;
+    let chunk = chunk.ok_or_else(|| MiraError::compile(&diagnostics))?;
     Ok(MiraScript {
-        program: Program::decode(&chunk)?,
+        id: ScriptId::new(),
+        program: Rc::new(Program::decode(&chunk)?),
     })
 }
 
-/// Compile and execute source once with default [`RunOptions`].
-///
-/// # Examples
-///
-/// ```
-/// use mirascript_vm::{MiraAny, MiraContext, eval};
-///
-/// assert_eq!(eval("6 * 7", &MiraContext::new())?, MiraAny::Number(42.0));
-/// # Ok::<(), Box<mirascript_vm::MiraError>>(())
-/// ```
-pub fn eval(source: &str, context: &MiraContext) -> Result<MiraAny> {
-    compile(source)?.run(context)
-}
-
-impl MiraScript {
-    /// Execute this program with default [`RunOptions`].
-    pub fn run(&self, context: &MiraContext) -> Result<MiraAny> {
-        self.run_with(context, &RunOptions::default())
-    }
-
-    /// Execute this program with explicit limits and runtime providers.
-    pub fn run_with(&self, context: &MiraContext, options: &RunOptions) -> Result<MiraAny> {
-        interpreter::run(&self.program, context, options)
-    }
+/// Items used by the derive macros. They are not a stable user-facing API.
+#[doc(hidden)]
+pub mod __private {
+    pub use crate::value::types::{
+        MiraField, shaped_array_from_array, shaped_array_from_record, shaped_record_from_array,
+        shaped_record_from_record,
+    };
 }

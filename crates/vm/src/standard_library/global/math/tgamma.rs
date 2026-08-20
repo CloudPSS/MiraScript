@@ -1,12 +1,12 @@
-use crate::MiraContext;
+use crate::Runtime;
 use crate::standard_library::{insert_native, number};
 
-pub(super) fn install(context: &mut MiraContext) {
-    insert_native(context, "gamma", |_, args| {
-        Ok(gamma(number(args, 0, "x")?).into())
+pub(super) fn install(context: &mut Runtime) {
+    insert_native(context, "gamma", |call, args| {
+        Ok(gamma(number(call, args, 0, "x")?).into())
     });
-    insert_native(context, "factorial", |_, args| {
-        let value = number(args, 0, "x")?;
+    insert_native(context, "factorial", |call, args| {
+        let value = number(call, args, 0, "x")?;
         Ok((if value.is_nan() || value < 0.0 {
             f64::NAN
         } else {

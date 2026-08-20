@@ -1,9 +1,9 @@
 use super::*;
 
-pub(super) fn install(context: &mut MiraContext) {
+pub(super) fn install(context: &mut Runtime) {
     insert_native(context, "unique", |call, args| {
-        let values = array_value(required(args, 0, "data")?)?;
-        validate_optional_callable(args.get(1), "equal")?;
+        let values = array_value(call, *required(args, 0, "data")?)?;
+        validate_optional_callable(args.get(1))?;
         let mut result = Vec::new();
         for value in values {
             let mut found = false;
@@ -17,26 +17,24 @@ pub(super) fn install(context: &mut MiraContext) {
                 result.push(value);
             }
         }
-        Ok(MiraAny::Array(result.into()))
+        call.insert(result)
     });
     insert_native(context, "unique_by", |call, args| {
-        let values = array_value(required(args, 0, "data")?)?;
+        let values = array_value(call, *required(args, 0, "data")?)?;
         let key_function = required(args, 1, "key")?;
         if !is_callable(key_function)? {
-            return Err(MiraError::runtime("Argument `key` is not callable"));
+            return Err(MiraError::runtime(RuntimeErrorKind::NotCallable {
+                actual: key_function.value_type(),
+            }));
         }
-        validate_optional_callable(args.get(2), "equal")?;
-        let original = MiraAny::Array(values.clone().into());
+        validate_optional_callable(args.get(2))?;
+        let original = call.insert(values.clone())?;
         let mut result = Vec::new();
         let mut keys = Vec::new();
         for (index, value) in values.into_iter().enumerate() {
             let key = call.call(
-                key_function,
-                &[
-                    value.clone(),
-                    MiraAny::Number(index as f64),
-                    original.clone(),
-                ],
+                *key_function,
+                &[value, MiraValue::Number(index as f64), original],
             )?;
             let mut found = false;
             for existing in &keys {
@@ -50,33 +48,35 @@ pub(super) fn install(context: &mut MiraContext) {
                 result.push(value);
             }
         }
-        Ok(MiraAny::Array(result.into()))
+        call.insert(result)
     });
 }
 
-fn validate_optional_callable(value: Option<&MiraAny>, name: &str) -> Result<()> {
-    if let Some(value) = value.filter(|value| **value != MiraAny::Nil)
+fn validate_optional_callable(value: Option<&MiraValue>) -> Result<()> {
+    if let Some(value) = value.filter(|value| **value != MiraValue::Nil)
         && !is_callable(value)?
     {
-        return Err(MiraError::runtime(format!(
-            "Argument `{name}` is not callable"
-        )));
+        return Err(MiraError::runtime(RuntimeErrorKind::NotCallable {
+            actual: value.value_type(),
+        }));
     }
     Ok(())
 }
 
 fn equal(
-    call: &mut Runtime<'_>,
-    left: &MiraAny,
-    right: &MiraAny,
-    equaler: Option<&MiraAny>,
+    call: &mut Runtime,
+    left: &MiraValue,
+    right: &MiraValue,
+    equaler: Option<&MiraValue>,
 ) -> Result<bool> {
-    if let Some(equaler) = equaler.filter(|value| **value != MiraAny::Nil) {
+    if let Some(equaler) = equaler.filter(|value| **value != MiraValue::Nil) {
         if !is_callable(equaler)? {
-            return Err(MiraError::runtime("Argument `equal` is not callable"));
+            return Err(MiraError::runtime(RuntimeErrorKind::NotCallable {
+                actual: equaler.value_type(),
+            }));
         }
-        operations::to_boolean(&call.call(equaler, &[left.clone(), right.clone()])?)
+        operations::to_boolean(call.call(*equaler, &[*left, *right])?)
     } else {
-        Ok(left == right)
+        operations::same_value(call, *left, *right)
     }
 }

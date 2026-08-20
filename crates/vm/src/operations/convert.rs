@@ -1,31 +1,35 @@
 use super::*;
 
-pub(crate) fn to_boolean(value: &MiraAny) -> Result<bool> {
-    assert_initialized(value)?;
+pub(crate) fn to_boolean(value: MiraValue) -> Result<bool> {
     match value {
-        MiraAny::Boolean(value) => Ok(*value),
-        _ => Err(MiraError::runtime(format!(
-            "Failed to convert value to boolean: {}",
-            display(value)
-        ))),
+        MiraValue::Boolean(value) => Ok(value),
+        value => Err(MiraError::runtime(RuntimeErrorKind::TypeMismatch {
+            expected: "boolean",
+            actual: value.value_type(),
+        })),
     }
 }
 
-pub(crate) fn to_number(value: &MiraAny) -> Result<f64> {
-    assert_initialized(value)?;
+pub(crate) fn to_number(runtime: &Runtime, value: MiraValue) -> Result<f64> {
     match value {
-        MiraAny::Number(value) => Ok(*value),
-        MiraAny::Boolean(value) => Ok(if *value { 1.0 } else { 0.0 }),
-        MiraAny::String(value) => parse_number(value).ok_or_else(|| {
-            MiraError::runtime(format!(
-                "Failed to convert value to number: {}",
-                display(&MiraAny::String(value.clone()))
-            ))
+        MiraValue::Number(value) => Ok(value),
+        MiraValue::Boolean(value) => Ok(if value { 1.0 } else { 0.0 }),
+        MiraValue::String(handle) => parse_number(runtime.get_string(handle)?).ok_or_else(|| {
+            MiraError::runtime(RuntimeErrorKind::TypeMismatch {
+                expected: "number-convertible value",
+                actual: value.value_type(),
+            })
         }),
-        _ => Err(MiraError::runtime(format!(
-            "Failed to convert value to number: {}",
-            display(value)
-        ))),
+        MiraValue::StaticString(value) => parse_number(value).ok_or_else(|| {
+            MiraError::runtime(RuntimeErrorKind::TypeMismatch {
+                expected: "number-convertible value",
+                actual: crate::MiraType::String,
+            })
+        }),
+        value => Err(MiraError::runtime(RuntimeErrorKind::TypeMismatch {
+            expected: "number-convertible value",
+            actual: value.value_type(),
+        })),
     }
 }
 
@@ -138,46 +142,57 @@ pub(crate) fn number_to_string(value: f64, minus_zero: bool) -> String {
     value.to_string()
 }
 
-pub(crate) fn to_string(value: &MiraAny) -> Result<String> {
-    assert_initialized(value)?;
+pub(crate) fn to_string(runtime: &mut Runtime, value: MiraValue) -> Result<String> {
     match value {
-        MiraAny::String(value) => Ok(value.to_string()),
-        MiraAny::Nil => Ok(String::new()),
-        value => inner_to_string(value, false),
+        MiraValue::String(handle) => Ok(runtime.get_string(handle)?.to_owned()),
+        MiraValue::StaticString(value) => Ok(value.to_string()),
+        MiraValue::Nil => Ok(String::new()),
+        value => inner_to_string(runtime, value, false),
     }
 }
 
-pub(super) fn inner_to_string(value: &MiraAny, braces: bool) -> Result<String> {
+pub(super) fn inner_to_string(
+    runtime: &mut Runtime,
+    value: MiraValue,
+    braces: bool,
+) -> Result<String> {
     match value {
-        MiraAny::Uninitialized | MiraAny::Nil => Ok("nil".into()),
-        MiraAny::Boolean(value) => Ok(value.to_string()),
-        MiraAny::Number(value) => Ok(number_to_string(*value, false)),
-        MiraAny::String(value) => Ok(value.to_string()),
-        MiraAny::Function(function) => Ok(match function.name() {
-            Some(name) => format!("<function {name}>"),
-            None => "<function>".into(),
-        }),
-        MiraAny::Module(module) => Ok(format!("<module {}>", module.name())),
-        MiraAny::Array(_) | MiraAny::RustArray(_) => {
-            let length = value.array_len()?.unwrap_or(0);
-            let mut parts = Vec::with_capacity(length);
-            for index in 0..length {
-                parts.push(inner_to_string(
-                    &value.array_get(index)?.unwrap_or(MiraAny::Nil),
-                    true,
-                )?);
+        MiraValue::Nil => Ok("nil".into()),
+        MiraValue::Boolean(value) => Ok(value.to_string()),
+        MiraValue::Number(value) => Ok(number_to_string(value, false)),
+        MiraValue::String(handle) => Ok(runtime.get_string(handle)?.to_owned()),
+        MiraValue::StaticString(value) => Ok(value.to_string()),
+        MiraValue::Function(handle) => {
+            let function = runtime.get_function_dyn(handle)?;
+            Ok(if function.name() == "<anonymous>" {
+                "<function>".into()
+            } else {
+                format!("<function {}>", function.name())
+            })
+        }
+        MiraValue::Module(handle) => {
+            let name = runtime.get_module_dyn(handle)?.name().to_owned();
+            Ok(format!("<module {name}>"))
+        }
+        MiraValue::Array(_) => {
+            let values = iterable_array(runtime, value)?;
+            let mut parts = Vec::with_capacity(values.len());
+            for item in values {
+                parts.push(inner_to_string(runtime, item, true)?);
             }
             let body = parts.join(", ");
             Ok(if braces { format!("[{body}]") } else { body })
         }
-        MiraAny::Record(_) | MiraAny::RustRecord(_) => {
-            let mut parts = Vec::new();
-            for key in value.record_keys()?.unwrap_or_default() {
-                let item = value.record_get(&key)?.unwrap_or(MiraAny::Nil);
-                parts.push(format!("{key}: {}", inner_to_string(&item, true)?));
+        MiraValue::Record(_) => {
+            let keys = record_keys(runtime, value)?.unwrap_or_default();
+            let mut parts = Vec::with_capacity(keys.len());
+            for key in keys {
+                let item = record_get(runtime, value, &key)?.unwrap_or(MiraValue::Nil);
+                parts.push(format!("{key}: {}", inner_to_string(runtime, item, true)?));
             }
             let body = parts.join(", ");
             Ok(if braces { format!("({body})") } else { body })
         }
+        MiraValue::Extern(_) => Ok("<extern>".into()),
     }
 }

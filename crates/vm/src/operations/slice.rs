@@ -1,20 +1,20 @@
 use super::*;
 
 pub(crate) fn slice(
-    value: &MiraAny,
-    start: Option<&MiraAny>,
-    end: Option<&MiraAny>,
+    runtime: &mut Runtime,
+    value: MiraValue,
+    start: Option<MiraValue>,
+    end: Option<MiraValue>,
     exclusive: bool,
-) -> Result<MiraAny> {
-    assert_initialized(value)?;
-    let array = iterable_array(value)?;
+) -> Result<MiraValue> {
+    let array = iterable_array(runtime, value)?;
     let length = array.len() as i64;
     let mut start = match start {
-        Some(value) => to_number(value).unwrap_or(f64::NAN),
+        Some(value) => to_number(runtime, value).unwrap_or(f64::NAN),
         None => 0.0,
     };
     let mut end = match end {
-        Some(value) => to_number(value).unwrap_or(f64::NAN),
+        Some(value) => to_number(runtime, value).unwrap_or(f64::NAN),
         None => (length - if exclusive { 0 } else { 1 }) as f64,
     };
     if start.is_nan() {
@@ -34,12 +34,9 @@ pub(crate) fn slice(
         end as i64 + 1
     }
     .clamp(0, length) as usize;
-    Ok(MiraAny::Array(
-        (if start >= end {
-            Vec::new()
-        } else {
-            array[start..end].to_vec()
-        })
-        .into(),
-    ))
+    runtime.insert(if start >= end {
+        Vec::new()
+    } else {
+        array[start..end].to_vec()
+    })
 }

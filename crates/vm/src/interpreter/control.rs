@@ -1,49 +1,110 @@
-use super::*;
+use std::any::Any;
 
-impl<'a> Runtime<'a> {
+use indexmap::IndexMap;
+
+use super::*;
+use crate::{MiraHandle, MiraManageable, bytecode::Program};
+
+pub(crate) struct ScriptModule {
+    pub(crate) execution: ExecutionId,
+    pub(crate) _program: Rc<Program>,
+    pub(crate) frame: FrameId,
+    pub(crate) exports: IndexMap<String, usize>,
+    pub(crate) name: Rc<str>,
+}
+
+impl MiraModule for ScriptModule {
+    fn name(&self) -> &str {
+        &self.name
+    }
+
+    fn len(&self) -> usize {
+        self.exports.len()
+    }
+
+    fn index_of(&self, key: &str) -> Option<usize> {
+        self.exports.get_index_of(key)
+    }
+
+    fn key(&self, index: usize) -> Result<&str> {
+        self.exports
+            .get_index(index)
+            .map(|(key, _)| key.as_str())
+            .ok_or_else(|| MiraError::runtime(RuntimeErrorKind::MissingIndexOrField))
+    }
+
+    fn get(
+        &self,
+        _self_handle: MiraHandle<dyn MiraModule>,
+        runtime: &Runtime,
+        index: usize,
+    ) -> Result<MiraManageable> {
+        if self.execution != runtime.execution {
+            return Err(MiraError::runtime(RuntimeErrorKind::ExecutionEnded));
+        }
+        let (_, register) = self
+            .exports
+            .get_index(index)
+            .ok_or_else(|| MiraError::runtime(RuntimeErrorKind::MissingIndexOrField))?;
+        runtime.read_register(self.frame, *register).map(Into::into)
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
+    }
+}
+
+impl Runtime {
     pub(super) fn create_frame(
         &mut self,
         register_count: usize,
         parent: Option<FrameId>,
     ) -> FrameId {
         self.frames.push(Frame {
-            registers: vec![MiraAny::Uninitialized; register_count + 1],
+            registers: vec![None; register_count + 1],
             parent,
         })
     }
 
-    pub(super) fn read_register(&self, frame: FrameId, register: usize) -> MiraAny {
+    pub(super) fn read_register_raw(&self, frame: FrameId, register: usize) -> MiraAny {
         if register == 0 {
-            MiraAny::Nil
+            Some(MiraValue::Nil)
         } else {
-            self.frames.get(frame).registers[register].clone()
+            self.frames.get(frame).registers[register]
         }
+    }
+
+    pub(super) fn read_register(&self, frame: FrameId, register: usize) -> Result<MiraValue> {
+        self.read_register_raw(frame, register)
+            .ok_or_else(|| MiraError::runtime(RuntimeErrorKind::UninitializedValue))
     }
 
     #[inline]
     pub(super) fn read_number(&self, frame: FrameId, register: usize) -> Result<f64> {
-        if register == 0 {
-            return operations::to_number(&MiraAny::Nil);
-        }
-        match &self.frames.get(frame).registers[register] {
-            MiraAny::Number(value) => Ok(*value),
-            value => operations::to_number(value),
+        operations::to_number(self, self.read_register(frame, register)?)
+    }
+
+    pub(super) fn write_register(&mut self, frame: FrameId, register: usize, value: MiraValue) {
+        if register != 0 {
+            self.frames.get_mut(frame).registers[register] = Some(value);
         }
     }
 
-    pub(super) fn write_register(&mut self, frame: FrameId, register: usize, value: MiraAny) {
+    pub(super) fn clear_register(&mut self, frame: FrameId, register: usize) {
         if register != 0 {
-            self.frames.get_mut(frame).registers[register] = value;
+            self.frames.get_mut(frame).registers[register] = None;
         }
     }
 
     pub(super) fn parent_frame(&self, mut frame: FrameId, level: usize) -> Result<FrameId> {
         for _ in 0..level {
-            frame = self
-                .frames
-                .get(frame)
-                .parent
-                .ok_or_else(|| MiraError::runtime("invalid upvalue level"))?;
+            frame = self.frames.get(frame).parent.ok_or_else(|| {
+                MiraError::runtime(RuntimeErrorKind::InvalidUpvalueLevel { level })
+            })?;
         }
         Ok(frame)
     }
@@ -64,7 +125,7 @@ impl<'a> Runtime<'a> {
         let display = |name: &Option<Rc<str>>| name.as_deref().unwrap_or("<anonymous>").to_owned();
         let function = self.call_stack.last().map(display);
         let stack = self.call_stack.iter().map(display).collect();
-        error.with_runtime_context(function, offset, stack).into()
+        Box::new(error.with_runtime_context(function, offset, stack))
     }
 
     pub(super) fn execute_instruction(
@@ -78,19 +139,15 @@ impl<'a> Runtime<'a> {
                 destination,
                 function,
             } => {
-                self.write_register(
+                let function = ScriptFunction {
+                    execution: self.execution,
+                    program: Rc::clone(self.active_program()),
+                    function: *function,
                     frame,
-                    *destination,
-                    MiraAny::Function(
-                        MiraFunction::Script {
-                            execution: self.execution,
-                            function: *function,
-                            frame,
-                            name: None,
-                        }
-                        .into(),
-                    ),
-                );
+                    name: None,
+                };
+                let value = self.insert(MiraManageable::from_function(function))?;
+                self.write_register(frame, *destination, value);
                 Ok(Flow::Continue)
             }
             InstructionKind::If {
@@ -99,14 +156,18 @@ impl<'a> Runtime<'a> {
                 then_body,
                 else_body,
             } => {
-                let value = self.read_register(frame, *register);
+                let raw = self.read_register_raw(frame, *register);
                 let matches = match condition {
-                    Condition::Truthy => operations::to_boolean(&value)?,
-                    Condition::Falsy => !operations::to_boolean(&value)?,
-                    Condition::Initialized => value.is_initialized(),
-                    Condition::Uninitialized => !value.is_initialized(),
-                    Condition::Nil => matches!(value, MiraAny::Nil),
-                    Condition::NonNil => !matches!(value, MiraAny::Nil),
+                    Condition::Truthy => operations::to_boolean(raw.ok_or_else(|| {
+                        MiraError::runtime(RuntimeErrorKind::UninitializedValue)
+                    })?)?,
+                    Condition::Falsy => !operations::to_boolean(raw.ok_or_else(|| {
+                        MiraError::runtime(RuntimeErrorKind::UninitializedValue)
+                    })?)?,
+                    Condition::Initialized => raw.is_some(),
+                    Condition::Uninitialized => raw.is_none(),
+                    Condition::Nil => matches!(raw, Some(MiraValue::Nil)),
+                    Condition::NonNil => !matches!(raw, Some(MiraValue::Nil)),
                 };
                 self.execute_block(if matches { then_body } else { else_body }, frame)
             }
@@ -139,15 +200,13 @@ impl<'a> Runtime<'a> {
             } => {
                 let module = ScriptModule {
                     execution: self.execution,
+                    _program: Rc::clone(self.active_program()),
                     frame,
                     exports: fields.iter().cloned().collect(),
                     name: Rc::from(name.as_str()),
                 };
-                self.write_register(
-                    frame,
-                    *destination,
-                    MiraAny::Module(MiraModule::Script(Rc::new(module)).into()),
-                );
+                let value = self.insert(MiraManageable::from_module(module))?;
+                self.write_register(frame, *destination, value);
                 Ok(Flow::Continue)
             }
         }
@@ -174,7 +233,8 @@ impl<'a> Runtime<'a> {
                 }
             },
             LoopKind::Iterable { value } => {
-                let items = operations::iterable(&self.read_register(parent, *value))?;
+                let value = self.read_register(parent, *value)?;
+                let items = operations::iterable(self, value)?;
                 for item in items {
                     self.checkpoint_now()?;
                     let frame =
@@ -193,8 +253,8 @@ impl<'a> Runtime<'a> {
                 end,
                 exclusive,
             } => {
-                let mut value = operations::to_number(&self.read_register(parent, *start))?;
-                let end = operations::to_number(&self.read_register(parent, *end))?;
+                let mut value = self.read_number(parent, *start)?;
+                let end = self.read_number(parent, *end)?;
                 while if *exclusive {
                     value < end
                 } else {
@@ -203,7 +263,7 @@ impl<'a> Runtime<'a> {
                     self.checkpoint_now()?;
                     let frame =
                         self.loop_frame(register_count, parent, reuse_frame, &mut reusable_frame);
-                    self.write_register(frame, 1, MiraAny::Number(value));
+                    self.write_register(frame, 1, MiraValue::Number(value));
                     match self.execute_block(body, frame)? {
                         Flow::Continue | Flow::LoopContinue => {}
                         Flow::Break => break,
@@ -216,7 +276,7 @@ impl<'a> Runtime<'a> {
         }
     }
 
-    pub(super) fn loop_frame(
+    fn loop_frame(
         &mut self,
         register_count: usize,
         parent: FrameId,
@@ -234,11 +294,7 @@ impl<'a> Runtime<'a> {
         frame
     }
 
-    pub(super) fn build_record(
-        &self,
-        elements: &[RecordElement],
-        frame: FrameId,
-    ) -> Result<MiraAny> {
+    fn build_record(&mut self, elements: &[RecordElement], frame: FrameId) -> Result<MiraValue> {
         let mut record = IndexMap::new();
         for element in elements {
             match element {
@@ -247,43 +303,48 @@ impl<'a> Runtime<'a> {
                     value,
                     optional,
                 } => {
-                    let value = self.read_register(frame, *value);
-                    operations::assert_initialized(&value)?;
+                    let value = self.read_register(frame, *value)?;
                     if *optional
-                        && (matches!(value, MiraAny::Nil)
-                            || matches!(value, MiraAny::Function(_) | MiraAny::Module(_)))
+                        && matches!(
+                            value,
+                            MiraValue::Nil | MiraValue::Function(_) | MiraValue::Module(_)
+                        )
                     {
                         continue;
                     }
                     let key = match key {
                         RecordKey::Constant(key) => key.clone(),
                         RecordKey::Dynamic(register) => {
-                            operations::to_string(&self.read_register(frame, *register))?
+                            let key = self.read_register(frame, *register)?;
+                            operations::to_string(self, key)?
                         }
                         RecordKey::Index(index) => index.to_string(),
                     };
-                    record.insert(key, value.into_element()?);
+                    record.insert(key, operations::into_element(value));
                 }
                 RecordElement::Spread(register) => {
-                    let spread = operations::record_spread(&self.read_register(frame, *register))?;
-                    record.extend(spread);
+                    let value = self.read_register(frame, *register)?;
+                    record.extend(operations::record_spread(self, value)?);
                 }
             }
         }
-        Ok(MiraAny::Record(record.into()))
+        self.insert(record)
     }
 
-    pub(super) fn build_array(&self, elements: &[ArrayElement], frame: FrameId) -> Result<MiraAny> {
+    fn build_array(&mut self, elements: &[ArrayElement], frame: FrameId) -> Result<MiraValue> {
         let mut array = Vec::new();
         for element in elements {
             match element {
-                ArrayElement::Item(register) => {
-                    array.push(self.read_register(frame, *register).into_element()?)
-                }
+                ArrayElement::Item(register) => array.push(operations::into_element(
+                    self.read_register(frame, *register)?,
+                )),
                 ArrayElement::Spread(register) => {
-                    for item in operations::array_spread(&self.read_register(frame, *register))? {
-                        array.push(item.into_element()?);
-                    }
+                    let value = self.read_register(frame, *register)?;
+                    array.extend(
+                        operations::array_spread(self, value)?
+                            .into_iter()
+                            .map(operations::into_element),
+                    );
                 }
                 ArrayElement::Range {
                     start,
@@ -291,29 +352,29 @@ impl<'a> Runtime<'a> {
                     exclusive,
                 } => {
                     let start = match start {
-                        RangeEndpoint::Constant(value) => MiraAny::Number(*value as f64),
-                        RangeEndpoint::Dynamic(register) => self.read_register(frame, *register),
+                        RangeEndpoint::Constant(value) => MiraValue::Number(*value as f64),
+                        RangeEndpoint::Dynamic(register) => self.read_register(frame, *register)?,
                     };
                     let end = match end {
-                        RangeEndpoint::Constant(value) => MiraAny::Number(*value as f64),
-                        RangeEndpoint::Dynamic(register) => self.read_register(frame, *register),
+                        RangeEndpoint::Constant(value) => MiraValue::Number(*value as f64),
+                        RangeEndpoint::Dynamic(register) => self.read_register(frame, *register)?,
                     };
                     array.extend(operations::array_range(
-                        &start,
-                        &end,
+                        self,
+                        start,
+                        end,
                         *exclusive,
                         self.options.max_array_len.saturating_sub(array.len()),
                     )?);
                 }
             }
             if array.len() > self.options.max_array_len {
-                return Err(MiraError::runtime(format!(
-                    "Array length exceeds maximum limit of {}",
-                    self.options.max_array_len
-                ))
-                .into());
+                return Err(MiraError::runtime(RuntimeErrorKind::ArrayLimit {
+                    requested: array.len(),
+                    max: self.options.max_array_len,
+                }));
             }
         }
-        Ok(MiraAny::Array(array.into()))
+        self.insert(array)
     }
 }

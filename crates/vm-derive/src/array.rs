@@ -5,7 +5,7 @@ use syn::{Data, DeriveInput, Error, Fields, Index, Result};
 use crate::utils::{add_read_bounds, container_options, field_options};
 
 pub fn expand(input: DeriveInput) -> Result<TokenStream> {
-    let options = container_options(&input.attrs, false)?;
+    let options = container_options(&input.attrs)?;
     let krate = options.crate_path;
     let ident = input.ident;
 
@@ -29,7 +29,7 @@ pub fn expand(input: DeriveInput) -> Result<TokenStream> {
     match fields {
         Fields::Unnamed(fields) => {
             for (index, field) in fields.unnamed.into_iter().enumerate() {
-                let options = field_options(&field, false, false)?;
+                let options = field_options(&field, false)?;
                 if !options.skip {
                     exported.push((Index::from(index), field.ty));
                 }
@@ -55,35 +55,67 @@ pub fn expand(input: DeriveInput) -> Result<TokenStream> {
     let getters = exported
         .iter()
         .enumerate()
-        .map(|(exported_index, (field, _))| {
-            quote!(#exported_index => ::core::option::Option::Some(
-            ::core::convert::Into::<#krate::MiraAny>::into(self.#field.clone())
-        ),)
+        .map(|(exported_index, (field, ty))| {
+            quote! {
+                #exported_index => {
+                    let parent = unsafe { self_handle.upcast::<Self>() };
+                    ::core::result::Result::Ok(
+                        <#ty as #krate::__private::MiraField>::from_array(
+                            &self.#field,
+                            parent,
+                            |parent: &Self| &parent.#field,
+                        )
+                    )
+                },
+            }
         });
 
     Ok(quote! {
-        impl #impl_generics #krate::MiraArray for #ident #ty_generics #where_clause {
-            fn len(&self) -> usize {
+        impl #impl_generics #krate::MiraShapedArray for #ident #ty_generics #where_clause {
+            fn len() -> usize {
                 #len
             }
 
-            fn get(&self, index: usize) -> #krate::Result<::core::option::Option<#krate::MiraAny>> {
-                ::core::result::Result::Ok(match index {
+            fn get(
+                &self,
+                self_handle: #krate::MiraHandle<dyn #krate::MiraArray>,
+                _runtime: &#krate::Runtime,
+                index: usize,
+            ) -> #krate::Result<#krate::MiraManageable> {
+                match index {
                     #(#getters)*
-                    _ => ::core::option::Option::None,
-                })
+                    _ => ::core::result::Result::Err(#krate::MiraError::runtime(
+                        #krate::RuntimeErrorKind::MissingIndexOrField,
+                    )),
+                }
             }
         }
 
-        impl #impl_generics ::core::convert::From<#ident #ty_generics> for #krate::MiraAny #where_clause {
+        impl #impl_generics ::core::convert::From<#ident #ty_generics>
+            for #krate::MiraManageable #where_clause
+        {
             fn from(value: #ident #ty_generics) -> Self {
-                #krate::MiraAny::from_array(value)
+                #krate::MiraManageable::from_array(value)
             }
         }
 
-        impl #impl_generics #krate::__private::MiraBridge for #ident #ty_generics #where_clause {
-            fn into_mira_shared(value: #krate::MiraShared<Self>) -> #krate::MiraAny {
-                #krate::MiraAny::from_array_shared(value)
+        impl #impl_generics #krate::__private::MiraField
+            for #ident #ty_generics #where_clause
+        {
+            fn from_record<P: #krate::MiraRecord>(
+                &self,
+                parent: #krate::MiraHandle<P>,
+                getter: fn(&P) -> &Self,
+            ) -> #krate::MiraManageable {
+                #krate::__private::shaped_array_from_record(parent, getter)
+            }
+
+            fn from_array<P: #krate::MiraArray>(
+                &self,
+                parent: #krate::MiraHandle<P>,
+                getter: fn(&P) -> &Self,
+            ) -> #krate::MiraManageable {
+                #krate::__private::shaped_array_from_array(parent, getter)
             }
         }
     })

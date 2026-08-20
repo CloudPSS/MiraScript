@@ -1,42 +1,61 @@
-use super::*;
+use std::any::Any;
 
-impl<'a> Runtime<'a> {
+use super::*;
+use crate::{MiraManageable, bytecode::Program};
+
+pub(crate) struct ScriptFunction {
+    pub(crate) execution: ExecutionId,
+    pub(crate) program: Rc<Program>,
+    pub(crate) function: usize,
+    pub(crate) frame: FrameId,
+    pub(crate) name: Option<Rc<str>>,
+}
+
+impl MiraFunction for ScriptFunction {
+    fn call(&self, runtime: &mut Runtime, args: &[MiraValue]) -> Result<MiraManageable> {
+        if self.execution != runtime.execution {
+            return Err(MiraError::runtime(RuntimeErrorKind::ExecutionEnded));
+        }
+        let definition = self.program.functions[self.function].clone();
+        runtime
+            .call_script(&definition, self.frame, args)
+            .map(Into::into)
+    }
+
+    fn name(&self) -> &str {
+        self.name.as_deref().unwrap_or("<anonymous>")
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
+impl Runtime {
     pub(super) fn call_registers(
         &mut self,
-        target: &MiraAny,
+        target: MiraValue,
         registers: &[usize],
         spreads: &[usize],
         frame: FrameId,
-    ) -> Result<MiraAny> {
-        let argument = |register: usize| self.call_argument(frame, register);
-
+    ) -> Result<MiraValue> {
         if spreads.is_empty() {
-            return match registers {
-                [] => self.call(target, &[]),
-                [a] => self.call(target, &[argument(*a)?]),
-                [a, b] => self.call(target, &[argument(*a)?, argument(*b)?]),
-                [a, b, c] => self.call(target, &[argument(*a)?, argument(*b)?, argument(*c)?]),
-                [a, b, c, d] => self.call(
-                    target,
-                    &[argument(*a)?, argument(*b)?, argument(*c)?, argument(*d)?],
-                ),
-                _ => {
-                    let arguments = registers
-                        .iter()
-                        .map(|register| argument(*register))
-                        .collect::<Result<Vec<_>>>()?;
-                    self.call(target, &arguments)
-                }
-            };
+            let arguments = registers
+                .iter()
+                .map(|register| self.read_register(frame, *register))
+                .collect::<Result<Vec<_>>>()?;
+            return self.call(target, &arguments);
         }
 
         let mut arguments = Vec::with_capacity(registers.len());
         for (index, register) in registers.iter().enumerate() {
-            let value = argument(*register)?;
+            let value = self.read_register(frame, *register)?;
             if spreads.contains(&index) {
-                for item in operations::array_spread(&value)? {
-                    arguments.push(item.into_element()?);
-                }
+                arguments.extend(
+                    operations::array_spread(self, value)?
+                        .into_iter()
+                        .map(operations::into_element),
+                );
             } else {
                 arguments.push(value);
             }
@@ -44,120 +63,64 @@ impl<'a> Runtime<'a> {
         self.call(target, &arguments)
     }
 
-    pub(super) fn call_argument(&self, frame: FrameId, register: usize) -> Result<MiraAny> {
-        let value = self.read_register(frame, register);
-        operations::assert_initialized(&value)?;
-        Ok(value)
-    }
-
-    pub(super) fn get_global_slot(&self, slot: usize) -> Result<MiraAny> {
-        self.get_global_slot_ref(slot).cloned()
-    }
-
-    pub(super) fn get_global_slot_ref(&self, slot: usize) -> Result<&'a MiraAny> {
-        self.globals.get_ref(slot).ok_or_else(|| {
-            MiraError::runtime(format!(
-                "Global variable '{}' is not defined.",
-                self.program.global_names[slot]
-            ))
+    pub(super) fn get_global_slot(&self, slot: usize) -> Result<MiraValue> {
+        let name = &self.active_program().global_names[slot];
+        self.globals.get(name).copied().ok_or_else(|| {
+            MiraError::runtime(RuntimeErrorKind::UndefinedGlobal { name: name.clone() })
         })
     }
 
-    pub(super) fn get_global_name(&self, key: &str) -> Result<MiraAny> {
-        self.context
-            .get(key)
-            .ok_or_else(|| MiraError::runtime(format!("Global variable '{key}' is not defined.")))
+    pub(super) fn get_global_name(&self, key: &str) -> Result<MiraValue> {
+        self.globals.get(key).copied().ok_or_else(|| {
+            MiraError::runtime(RuntimeErrorKind::UndefinedGlobal {
+                name: key.to_owned(),
+            })
+        })
     }
 
-    pub(super) fn has_value(&self, value: &MiraAny, key: &MiraAny) -> Result<bool> {
-        if let MiraAny::Module(module) = value
-            && let MiraModule::Script(module) = module.as_ref()
-        {
-            if module.execution != self.execution {
-                return Err(MiraError::ExecutionEnded.into());
-            }
-            return Ok(module.exports.contains_key(&operations::to_string(key)?));
-        }
-        operations::has(value, key)
+    pub(super) fn has_value(&mut self, value: MiraValue, key: MiraValue) -> Result<bool> {
+        operations::has(self, value, key, None)
     }
 
-    pub(super) fn get_value(&self, value: &MiraAny, key: &MiraAny) -> Result<MiraAny> {
-        if let MiraAny::Module(module) = value
-            && let MiraModule::Script(module) = module.as_ref()
-        {
-            if module.execution != self.execution {
-                return Err(MiraError::ExecutionEnded.into());
-            }
-            let key = operations::to_string(key)?;
-            let value = module
-                .exports
-                .get(&key)
-                .map(|register| self.read_register(module.frame, *register))
-                .unwrap_or(MiraAny::Nil);
-            operations::assert_initialized(&value)?;
-            return Ok(value);
-        }
-        operations::get_value(value, key)
+    pub(super) fn get_value(&mut self, value: MiraValue, key: MiraValue) -> Result<MiraValue> {
+        operations::get_value(self, value, key, None)
     }
 
-    pub(crate) fn call(&mut self, function: &MiraAny, args: &[MiraAny]) -> Result<MiraAny> {
+    /// Call a function value owned by this Runtime.
+    pub fn call(&mut self, function: MiraValue, args: &[MiraValue]) -> Result<MiraValue> {
         self.checkpoint_now()?;
         if self.call_depth >= self.options.max_call_depth {
-            return Err(MiraError::MaxCallDepth {
+            return Err(MiraError::runtime(RuntimeErrorKind::MaxCallDepth {
                 max: self.options.max_call_depth,
-            }
-            .into());
+            }));
         }
-        self.call_depth += 1;
-        let result = match function {
-            MiraAny::Function(function) => match function.as_ref() {
-                MiraFunction::Native(function) => {
-                    self.call_stack.push(Some(function.shared_name()));
-                    let result = function.call(&mut self, args).and_then(|value| {
-                        self.checkpoint_now()?;
-                        Ok(value)
-                    });
-                    self.call_stack.pop();
-                    result
-                }
-                MiraFunction::Script {
-                    execution,
-                    function,
-                    frame,
-                    name,
-                } => {
-                    if *execution != self.execution {
-                        Err(MiraError::ExecutionEnded.into())
-                    } else {
-                        let definition = self.program.functions[*function].clone();
-                        self.call_stack.push(name.clone());
-                        let result = self.call_script(&definition, *frame, args);
-                        self.call_stack.pop();
-                        result
-                    }
-                }
-            },
-            _ => Err(MiraError::runtime(format!(
-                "Value is not callable: {}",
-                operations::display(function)
-            ))),
+        let MiraValue::Function(handle) = function else {
+            return Err(MiraError::runtime(RuntimeErrorKind::NotCallable {
+                actual: function.value_type(),
+            }));
         };
+
+        self.call_depth += 1;
+        let callable = self.get_function_dyn(handle)?;
+        self.call_stack.push(Some(Rc::from(callable.name())));
+        let result = callable
+            .call(self, args)
+            .and_then(|value| self.insert(value))
+            .and_then(|value| {
+                self.checkpoint_now()?;
+                Ok(value)
+            });
+        self.call_stack.pop();
         self.call_depth -= 1;
-        result.map(|value| {
-            if matches!(value, MiraAny::Uninitialized) {
-                MiraAny::Nil
-            } else {
-                value
-            }
-        })
+        result
     }
 
     pub(super) fn call_script(
         &mut self,
         function: &FunctionDef,
         parent: FrameId,
-        args: &[MiraAny],
-    ) -> Result<MiraAny> {
+        args: &[MiraValue],
+    ) -> Result<MiraValue> {
         let frame = self.create_frame(function.register_count, Some(parent));
         if function.variadic {
             let fixed = function.arg_count.saturating_sub(1);
@@ -165,32 +128,35 @@ impl<'a> Runtime<'a> {
                 self.write_register(
                     frame,
                     index + 1,
-                    args.get(index).cloned().unwrap_or(MiraAny::Nil),
+                    args.get(index).copied().unwrap_or(MiraValue::Nil),
                 );
             }
             let rest = args
                 .iter()
                 .skip(fixed)
-                .cloned()
-                .map(MiraAny::into_element)
-                .collect::<Result<Vec<_>>>()?;
+                .copied()
+                .map(operations::into_element)
+                .collect::<Vec<_>>();
             if function.arg_count > 0 {
-                self.write_register(frame, function.arg_count, MiraAny::Array(rest.into()));
+                let rest = self.insert(rest)?;
+                self.write_register(frame, function.arg_count, rest);
             }
         } else {
             for index in 0..function.arg_count {
                 self.write_register(
                     frame,
                     index + 1,
-                    args.get(index).cloned().unwrap_or(MiraAny::Nil),
+                    args.get(index).copied().unwrap_or(MiraValue::Nil),
                 );
             }
         }
         match self.execute_block(&function.body, frame)? {
             Flow::Return(value) => Ok(value),
-            Flow::Continue => Ok(MiraAny::Nil),
+            Flow::Continue => Ok(MiraValue::Nil),
             Flow::Break | Flow::LoopContinue => {
-                Err(MiraError::runtime("invalid function control flow"))
+                Err(MiraError::runtime(RuntimeErrorKind::InvalidControlFlow {
+                    context: "function",
+                }))
             }
         }
     }
@@ -203,8 +169,12 @@ impl<'a> Runtime<'a> {
         }
         self.checkpoint_remaining = self.options.checkpoint_interval.max(1);
         if self.started.elapsed() >= self.options.timeout {
-            return Err(MiraError::Timeout.into());
+            return Err(MiraError::runtime(RuntimeErrorKind::Timeout));
         }
         Ok(())
+    }
+
+    pub(crate) fn checkpoint(&mut self) -> Result<()> {
+        self.checkpoint_now()
     }
 }

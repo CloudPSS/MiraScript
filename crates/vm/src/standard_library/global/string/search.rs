@@ -1,20 +1,20 @@
 use crate::standard_library::{insert_native, string};
-use crate::{MiraAny, MiraContext};
+use crate::{MiraValue, Runtime};
 
-pub(super) fn install(context: &mut MiraContext) {
-    insert_native(context, "starts_with", |_, args| {
-        Ok(MiraAny::Boolean(
-            string(args, 0, "str")?.starts_with(&string(args, 1, "search")?),
-        ))
+pub(super) fn install(context: &mut Runtime) {
+    insert_native(context, "starts_with", |call, args| {
+        let source = string(call, args, 0, "str")?;
+        let search = string(call, args, 1, "search")?;
+        Ok(MiraValue::Boolean(source.starts_with(&search)))
     });
-    insert_native(context, "ends_with", |_, args| {
-        Ok(MiraAny::Boolean(
-            string(args, 0, "str")?.ends_with(&string(args, 1, "search")?),
-        ))
+    insert_native(context, "ends_with", |call, args| {
+        let source = string(call, args, 0, "str")?;
+        let search = string(call, args, 1, "search")?;
+        Ok(MiraValue::Boolean(source.ends_with(&search)))
     });
-    insert_native(context, "contains", |_, args| {
-        Ok(MiraAny::Boolean(
-            string(args, 0, "str")?.contains(&string(args, 1, "search")?),
-        ))
+    insert_native(context, "contains", |call, args| {
+        let source = string(call, args, 0, "str")?;
+        let search = string(call, args, 1, "search")?;
+        Ok(MiraValue::Boolean(source.contains(&search)))
     });
 }

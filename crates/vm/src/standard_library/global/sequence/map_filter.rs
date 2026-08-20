@@ -1,6 +1,6 @@
 use super::*;
 
-pub(super) fn install(context: &mut MiraContext) {
+pub(super) fn install(context: &mut Runtime) {
     insert_native(context, "map", |call, args| {
         map_like(call, args, MapMode::Map)
     });
@@ -19,25 +19,27 @@ enum MapMode {
     FilterMap,
 }
 
-fn map_like(call: &mut Runtime<'_>, args: &[MiraAny], mode: MapMode) -> Result<MiraAny> {
-    let data = Data::from_value(required(args, 0, "data")?)?;
+fn map_like(call: &mut Runtime, args: &[MiraValue], mode: MapMode) -> Result<MiraValue> {
+    let data = Data::from_value(call, *required(args, 0, "data")?)?;
     let function = required(args, 1, "f")?;
     if !is_callable(function)? {
-        return Err(MiraError::runtime("Argument `f` is not callable"));
+        return Err(MiraError::runtime(RuntimeErrorKind::NotCallable {
+            actual: function.value_type(),
+        }));
     }
-    let original = data.original();
+    let original = data.original(call)?;
     match data {
         Data::Primitive(value) => {
-            let mapped = call.call(function, &[value.clone(), MiraAny::Nil, value.clone()])?;
+            let mapped = call.call(*function, &[value, MiraValue::Nil, value])?;
             match mode {
                 MapMode::Map => const_value(mapped),
-                MapMode::Filter => Ok(if operations::to_boolean(&mapped)? {
+                MapMode::Filter => Ok(if operations::to_boolean(mapped)? {
                     value
                 } else {
-                    MiraAny::Nil
+                    MiraValue::Nil
                 }),
-                MapMode::FilterMap => Ok(if mapped == MiraAny::Nil {
-                    MiraAny::Nil
+                MapMode::FilterMap => Ok(if mapped == MiraValue::Nil {
+                    MiraValue::Nil
                 } else {
                     const_value(mapped)?
                 }),
@@ -48,50 +50,40 @@ fn map_like(call: &mut Runtime<'_>, args: &[MiraAny], mode: MapMode) -> Result<M
             for (index, value) in values.into_iter().enumerate() {
                 call.checkpoint()?;
                 let mapped = call.call(
-                    function,
-                    &[
-                        value.clone(),
-                        MiraAny::Number(index as f64),
-                        original.clone(),
-                    ],
+                    *function,
+                    &[value, MiraValue::Number(index as f64), original],
                 )?;
                 match mode {
                     MapMode::Map => result.push(const_value(mapped)?),
-                    MapMode::Filter if operations::to_boolean(&mapped)? => result.push(value),
-                    MapMode::FilterMap if mapped != MiraAny::Nil => {
+                    MapMode::Filter if operations::to_boolean(mapped)? => result.push(value),
+                    MapMode::FilterMap if mapped != MiraValue::Nil => {
                         result.push(const_value(mapped)?)
                     }
                     _ => {}
                 }
             }
-            Ok(MiraAny::Array(result.into()))
+            call.insert(result)
         }
         Data::Record(values) => {
             let mut result = IndexMap::new();
             for (key, value) in values {
                 call.checkpoint()?;
-                let mapped = call.call(
-                    function,
-                    &[
-                        value.clone(),
-                        MiraAny::String(key.clone().into()),
-                        original.clone(),
-                    ],
-                )?;
+                let key_value = call.insert(key.clone())?;
+                let mapped = call.call(*function, &[value, key_value, original])?;
                 match mode {
                     MapMode::Map => {
                         result.insert(key, const_value(mapped)?);
                     }
-                    MapMode::Filter if operations::to_boolean(&mapped)? => {
+                    MapMode::Filter if operations::to_boolean(mapped)? => {
                         result.insert(key, value);
                     }
-                    MapMode::FilterMap if mapped != MiraAny::Nil => {
+                    MapMode::FilterMap if mapped != MiraValue::Nil => {
                         result.insert(key, const_value(mapped)?);
                     }
                     _ => {}
                 }
             }
-            Ok(MiraAny::Record(result.into()))
+            call.insert(result)
         }
     }
 }

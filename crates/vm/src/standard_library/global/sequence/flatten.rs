@@ -1,24 +1,26 @@
 use super::*;
 
-pub(super) fn install(context: &mut MiraContext) {
-    insert_native(context, "flatten", |_, args| {
-        let values = array_value(required(args, 0, "data")?)?;
+pub(super) fn install(context: &mut Runtime) {
+    insert_native(context, "flatten", |call, args| {
+        let values = array_value(call, *required(args, 0, "data")?)?;
         let depth = match args.get(1) {
-            None | Some(MiraAny::Nil) => 1,
-            Some(value) => operations::to_number(value)?.trunc().max(0.0) as usize,
+            None | Some(MiraValue::Nil) => 1,
+            Some(value) => operations::to_number(call, *value)?.trunc().max(0.0) as usize,
         };
-        Ok(MiraAny::Array(flatten(values, depth)?.into()))
+        let values = flatten(call, values, depth)?;
+        call.insert(values)
     });
 }
 
-fn flatten(values: Vec<MiraAny>, depth: usize) -> Result<Vec<MiraAny>> {
+fn flatten(runtime: &mut Runtime, values: Vec<MiraValue>, depth: usize) -> Result<Vec<MiraValue>> {
     if depth == 0 {
         return Ok(values);
     }
     let mut result = Vec::new();
     for value in values {
-        if value.array_len()?.is_some() {
-            result.extend(flatten(operations::iterable_array(&value)?, depth - 1)?);
+        if operations::array_len(runtime, value)?.is_some() {
+            let values = operations::iterable_array(runtime, value)?;
+            result.extend(flatten(runtime, values, depth - 1)?);
         } else {
             result.push(value);
         }

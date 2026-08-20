@@ -1,11 +1,11 @@
 use crate::standard_library::{insert_native, number};
-use crate::{MiraAny, MiraContext};
+use crate::{MiraValue, Runtime};
 
-pub(super) fn install(context: &mut MiraContext) {
+pub(super) fn install(context: &mut Runtime) {
     macro_rules! unary {
         ($name:literal, $operation:expr) => {
-            insert_native(context, $name, |_, args| {
-                Ok(MiraAny::Number(($operation)(number(args, 0, "x")?)))
+            insert_native(context, $name, |call, args| {
+                Ok(MiraValue::Number(($operation)(number(call, args, 0, "x")?)))
             });
         };
     }

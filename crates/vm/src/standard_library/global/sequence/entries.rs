@@ -1,51 +1,64 @@
 use super::*;
 
-pub(super) fn install(context: &mut MiraContext) {
-    insert_native(context, "keys", |_, args| {
-        let value = required(args, 0, "data")?;
-        let keys: Vec<MiraAny> = match value {
-            MiraAny::Array(_) | MiraAny::RustArray(_) => (0..value.array_len()?.unwrap_or(0))
-                .map(|index| MiraAny::Number(index as f64))
+pub(super) fn install(context: &mut Runtime) {
+    insert_native(context, "keys", |call, args| {
+        let value = *required(args, 0, "data")?;
+        let keys: Vec<MiraValue> = match value {
+            MiraValue::Array(_) => (0..operations::array_len(call, value)?.unwrap_or(0))
+                .map(|index| MiraValue::Number(index as f64))
                 .collect(),
-            MiraAny::Record(_) | MiraAny::RustRecord(_) => value
-                .record_keys()?
+            MiraValue::Record(_) => operations::record_keys(call, value)?
                 .unwrap_or_default()
                 .into_iter()
-                .map(MiraAny::from)
-                .collect(),
-            MiraAny::Module(module) => module.keys().into_iter().map(MiraAny::from).collect(),
-            _ => {
-                return Err(MiraError::runtime(
-                    "Argument `data` is not a compound value",
-                ));
+                .map(|key| call.insert(key))
+                .collect::<Result<Vec<_>>>()?,
+            MiraValue::Module(_) => operations::module_keys(call, value)?
+                .unwrap_or_default()
+                .into_iter()
+                .map(|key| call.insert(key))
+                .collect::<Result<Vec<_>>>()?,
+            value => {
+                return Err(MiraError::runtime(RuntimeErrorKind::TypeMismatch {
+                    expected: "compound value",
+                    actual: value.value_type(),
+                }));
             }
         };
-        Ok(MiraAny::Array(keys.into()))
+        call.insert(keys)
     });
-    insert_native(context, "values", |_, args| {
-        let data = Data::from_value(required(args, 0, "data")?)?;
+    insert_native(context, "values", |call, args| {
+        let data = Data::from_value(call, *required(args, 0, "data")?)?;
         match data {
-            Data::Array(values) => Ok(MiraAny::Array(values.into())),
-            Data::Record(values) => Ok(MiraAny::Array(values.into_values().collect())),
-            Data::Primitive(_) => Err(MiraError::runtime("Argument `data` is not array | record")),
+            Data::Array(values) => call.insert(values),
+            Data::Record(values) => call.insert(values.into_values().collect::<Vec<_>>()),
+            Data::Primitive(value) => Err(MiraError::runtime(RuntimeErrorKind::TypeMismatch {
+                expected: "array or record",
+                actual: value.value_type(),
+            })),
         }
     });
-    insert_native(context, "entries", |_, args| {
-        let data = Data::from_value(required(args, 0, "data")?)?;
-        let entries: Vec<MiraAny> = match data {
-            Data::Array(values) => values
-                .into_iter()
-                .enumerate()
-                .map(|(index, value)| pair(MiraAny::Number(index as f64), value))
-                .collect(),
-            Data::Record(values) => values
-                .into_iter()
-                .map(|(key, value)| pair(MiraAny::String(key.into()), value))
-                .collect(),
-            Data::Primitive(_) => {
-                return Err(MiraError::runtime("Argument `data` is not array | record"));
+    insert_native(context, "entries", |call, args| {
+        let data = Data::from_value(call, *required(args, 0, "data")?)?;
+        let mut entries = Vec::new();
+        match data {
+            Data::Array(values) => {
+                for (index, value) in values.into_iter().enumerate() {
+                    entries.push(pair(call, MiraValue::Number(index as f64), value)?);
+                }
             }
-        };
-        Ok(MiraAny::Array(entries.into()))
+            Data::Record(values) => {
+                for (key, value) in values {
+                    let key = call.insert(key)?;
+                    entries.push(pair(call, key, value)?);
+                }
+            }
+            Data::Primitive(value) => {
+                return Err(MiraError::runtime(RuntimeErrorKind::TypeMismatch {
+                    expected: "array or record",
+                    actual: value.value_type(),
+                }));
+            }
+        }
+        call.insert(entries)
     });
 }

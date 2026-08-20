@@ -1,76 +1,67 @@
 use crate::standard_library::required;
-use crate::{MiraAny, MiraError, Result, Runtime};
+use crate::{MiraError, MiraValue, Result, Runtime, RuntimeErrorKind};
 
-use super::helpers::{as_matrix, numeric, shape};
+use super::helpers::{as_matrix, from_matrix, numeric, shape};
 use super::map_nested;
 
-pub(super) fn invert(_call: &mut Runtime<'_>, args: &[MiraAny]) -> Result<MiraAny> {
-    let value = required(args, 0, "a")?;
-    let dimensions = shape(value)?;
+pub(super) fn invert(call: &mut Runtime, args: &[MiraValue]) -> Result<MiraValue> {
+    let value = *required(args, 0, "a")?;
+    let dimensions = shape(call, value)?;
     if dimensions.is_empty() {
-        return Ok(MiraAny::Number(1.0 / numeric(value)?));
+        return Ok(MiraValue::Number(1.0 / numeric(call, value)?));
     }
     if dimensions.len() == 1 {
-        return map_nested(value, &mut |value| {
-            Ok(MiraAny::Number(1.0 / numeric(&value)?))
+        return map_nested(call, value, &mut |runtime, value| {
+            Ok(MiraValue::Number(1.0 / numeric(runtime, value)?))
         });
     }
     if dimensions[0] != dimensions[1] {
-        return Err(MiraError::runtime("Matrix must be square"));
+        return Err(MiraError::runtime(RuntimeErrorKind::MatrixMustBeSquare));
     }
     let size = dimensions[0];
-    let matrix = as_matrix(value)?;
+    let matrix = as_matrix(call, value)?;
     if size == 1 {
-        return Ok(MiraAny::Array(
-            vec![MiraAny::Array(
-                vec![MiraAny::Number(
-                    1.0 / numeric(
-                        matrix
-                            .first()
-                            .and_then(|row| row.first())
-                            .unwrap_or(&MiraAny::Nil),
-                    )?,
-                )]
-                .into(),
-            )]
-            .into(),
-        ));
+        let value = matrix
+            .first()
+            .and_then(|row| row.first())
+            .copied()
+            .unwrap_or(MiraValue::Nil);
+        return from_matrix(
+            call,
+            vec![vec![MiraValue::Number(1.0 / numeric(call, value)?)]],
+        );
     }
     if size == 2 {
-        let a = numeric(&matrix[0][0])?;
-        let b = numeric(&matrix[0][1])?;
-        let c = numeric(&matrix[1][0])?;
-        let d = numeric(&matrix[1][1])?;
+        let a = numeric(call, matrix[0][0])?;
+        let b = numeric(call, matrix[0][1])?;
+        let c = numeric(call, matrix[1][0])?;
+        let d = numeric(call, matrix[1][1])?;
         let determinant = a * d - b * c;
-        return Ok(MiraAny::Array(
+        return from_matrix(
+            call,
             vec![
-                MiraAny::Array(
-                    vec![
-                        MiraAny::Number(d / determinant),
-                        MiraAny::Number(-b / determinant),
-                    ]
-                    .into(),
-                ),
-                MiraAny::Array(
-                    vec![
-                        MiraAny::Number(-c / determinant),
-                        MiraAny::Number(a / determinant),
-                    ]
-                    .into(),
-                ),
-            ]
-            .into(),
-        ));
+                vec![
+                    MiraValue::Number(d / determinant),
+                    MiraValue::Number(-b / determinant),
+                ],
+                vec![
+                    MiraValue::Number(-c / determinant),
+                    MiraValue::Number(a / determinant),
+                ],
+            ],
+        );
     }
     let mut left = vec![vec![0.0; size]; size];
     let mut right = vec![vec![0.0; size]; size];
     for row in 0..size {
         for column in 0..size {
             left[row][column] = numeric(
+                call,
                 matrix
                     .get(row)
                     .and_then(|row| row.get(column))
-                    .unwrap_or(&MiraAny::Nil),
+                    .copied()
+                    .unwrap_or(MiraValue::Nil),
             )?;
             right[row][column] = if row == column { 1.0 } else { 0.0 };
         }
@@ -110,10 +101,11 @@ pub(super) fn invert(_call: &mut Runtime<'_>, args: &[MiraAny]) -> Result<MiraAn
             }
         }
     }
-    Ok(MiraAny::Array(
+    from_matrix(
+        call,
         right
             .into_iter()
-            .map(|row| MiraAny::Array(row.into_iter().map(MiraAny::Number).collect()))
+            .map(|row| row.into_iter().map(MiraValue::Number).collect())
             .collect(),
-    ))
+    )
 }

@@ -1,127 +1,142 @@
 use super::*;
 
-pub(super) fn install(context: &mut MiraContext) {
-    insert_native(context, "with", |call, args| {
-        update_with(
-            required(args, 0, "data")?,
-            &args[1..],
-            call.options().max_array_len,
-        )
+pub(super) fn install(runtime: &mut Runtime) {
+    insert_native(runtime, "with", |call, args| {
+        let max = call.options().max_array_len;
+        update_with(call, *required(args, 0, "data")?, &args[1..], max)
     });
 }
 
-fn update_with(data: &MiraAny, entries: &[MiraAny], max_len: usize) -> Result<MiraAny> {
+fn update_with(
+    runtime: &mut Runtime,
+    data: MiraValue,
+    entries: &[MiraValue],
+    max_len: usize,
+) -> Result<MiraValue> {
     if !entries.len().is_multiple_of(2) {
-        return Err(MiraError::runtime("Expected even number of entries"));
+        return Err(MiraError::runtime(
+            RuntimeErrorKind::InvalidUpdateEntryCount {
+                actual: entries.len(),
+            },
+        ));
     }
-    let mut result = match Data::from_value(data)? {
-        Data::Array(values) => MiraAny::Array(values.into()),
-        Data::Record(values) => MiraAny::Record(values.into()),
-        Data::Primitive(_) => {
-            return Err(MiraError::runtime("Argument `data` is not array | record"));
-        }
-    };
+    if !matches!(data, MiraValue::Array(_) | MiraValue::Record(_)) {
+        return Err(MiraError::runtime(RuntimeErrorKind::TypeMismatch {
+            expected: "array or record",
+            actual: data.value_type(),
+        }));
+    }
+    let mut result = data;
     for pair in entries.chunks_exact(2) {
-        let path = if pair[0].array_len()?.is_some() {
-            operations::iterable_array(&pair[0])?
-        } else if pair[0] == MiraAny::Nil {
+        let path = if operations::array_len(runtime, pair[0])?.is_some() {
+            operations::iterable_array(runtime, pair[0])?
+        } else if pair[0] == MiraValue::Nil {
             continue;
         } else {
-            vec![pair[0].clone()]
+            vec![pair[0]]
         };
-        if path.is_empty() || path.contains(&MiraAny::Nil) {
+        if path.is_empty() || path.contains(&MiraValue::Nil) {
             continue;
         }
-        result = set_path(result, &path, const_value(pair[1].clone())?, max_len)?;
+        result = set_path(runtime, result, &path, const_value(pair[1])?, max_len)?;
     }
     Ok(result)
 }
 
 fn set_path(
-    mut data: MiraAny,
-    path: &[MiraAny],
-    value: MiraAny,
+    runtime: &mut Runtime,
+    data: MiraValue,
+    path: &[MiraValue],
+    value: MiraValue,
     max_len: usize,
-) -> Result<MiraAny> {
+) -> Result<MiraValue> {
     if path.is_empty() {
         return Ok(value);
     }
-    match &mut data {
-        MiraAny::Array(values) => {
-            let index = array_index(&path[0], max_len)?;
+    match data {
+        MiraValue::Array(_) => {
+            let mut values = operations::iterable_array(runtime, data)?;
+            let index = array_index(runtime, path[0], max_len)?;
             while values.len() <= index {
-                values.push(MiraAny::Nil);
+                values.push(MiraValue::Nil);
             }
-            let current = values[index].clone();
-            values[index] = set_path(
-                container_for(&current, path.get(1)),
-                &path[1..],
-                value,
-                max_len,
-            )?;
+            let current = values[index];
+            let current = container_for(runtime, current, path.get(1).copied())?;
+            values[index] = set_path(runtime, current, &path[1..], value, max_len)?;
+            runtime.insert(values)
         }
-        MiraAny::Record(values) => {
-            let key = operations::to_string(&path[0])?;
-            let current = values.get(&key).cloned().unwrap_or(MiraAny::Nil);
-            values.insert(
-                key,
-                set_path(
-                    container_for(&current, path.get(1)),
-                    &path[1..],
-                    value,
-                    max_len,
-                )?,
-            );
+        MiraValue::Record(_) => {
+            let mut values = IndexMap::new();
+            for key in operations::record_keys(runtime, data)?.unwrap_or_default() {
+                let item = operations::record_get(runtime, data, &key)?.unwrap_or(MiraValue::Nil);
+                values.insert(key, item);
+            }
+            let key = operations::to_string(runtime, path[0])?;
+            let current = values.get(&key).copied().unwrap_or(MiraValue::Nil);
+            let current = container_for(runtime, current, path.get(1).copied())?;
+            values.insert(key, set_path(runtime, current, &path[1..], value, max_len)?);
+            runtime.insert(values)
         }
-        _ => {
-            data = container_for(&data, path.first());
-            return set_path(data, path, value, max_len);
+        current => {
+            let container = container_for(runtime, current, path.first().copied())?;
+            set_path(runtime, container, path, value, max_len)
         }
     }
-    Ok(data)
 }
 
-fn container_for(current: &MiraAny, next: Option<&MiraAny>) -> MiraAny {
-    if matches!(current, MiraAny::Array(_) | MiraAny::Record(_)) {
-        return current.clone();
+fn container_for(
+    runtime: &mut Runtime,
+    current: MiraValue,
+    next: Option<MiraValue>,
+) -> Result<MiraValue> {
+    if matches!(current, MiraValue::Array(_) | MiraValue::Record(_)) {
+        return Ok(current);
     }
     if next.is_some_and(
-        |value| matches!(value, MiraAny::Number(number) if number.fract() == 0.0 && *number >= 0.0),
+        |value| matches!(value, MiraValue::Number(number) if number.fract() == 0.0 && number >= 0.0),
     ) {
-        MiraAny::Array(Vec::new().into())
+        runtime.insert(Vec::<MiraValue>::new())
     } else {
-        MiraAny::Record(IndexMap::new().into())
+        runtime.insert(IndexMap::<String, MiraValue>::new())
     }
 }
 
-fn array_index(value: &MiraAny, max_len: usize) -> Result<usize> {
-    let index = operations::to_number(value)?;
+fn array_index(runtime: &Runtime, value: MiraValue, max_len: usize) -> Result<usize> {
+    let index = operations::to_number(runtime, value)?;
     if !index.is_finite() || index < 0.0 {
         return Err(MiraError::runtime(
-            "Array index must be a non-negative integer",
+            RuntimeErrorKind::InvalidIntegerArgument {
+                name: "index",
+                constraint: "a non-negative integer",
+            },
         ));
     }
     let index = index.trunc() as usize;
     if index >= max_len {
-        return Err(MiraError::runtime(format!(
-            "Array index exceeds maximum limit of {max_len}"
-        )));
+        return Err(MiraError::runtime(RuntimeErrorKind::ArrayLimit {
+            requested: index.saturating_add(1),
+            max: max_len,
+        }));
     }
     Ok(index)
 }
 
-pub(super) fn array_length(value: &MiraAny, max_len: usize) -> Result<usize> {
-    let length = operations::to_number(value)?;
+pub(super) fn array_length(runtime: &Runtime, value: MiraValue, max_len: usize) -> Result<usize> {
+    let length = operations::to_number(runtime, value)?;
     if !length.is_finite() || length <= -1.0 {
         return Err(MiraError::runtime(
-            "Array length must be a non-negative integer",
+            RuntimeErrorKind::InvalidIntegerArgument {
+                name: "length",
+                constraint: "a non-negative integer",
+            },
         ));
     }
     let length = length.trunc() as usize;
     if length > max_len {
-        return Err(MiraError::runtime(format!(
-            "Array length exceeds maximum limit of {max_len}"
-        )));
+        return Err(MiraError::runtime(RuntimeErrorKind::ArrayLimit {
+            requested: length,
+            max: max_len,
+        }));
     }
     Ok(length)
 }

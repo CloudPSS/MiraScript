@@ -4,6 +4,7 @@ use crate::{MiraError, Result};
 
 impl MiraValue {
     #[inline]
+    /// Return the inline numeric payload, or `None` for another value type.
     pub fn as_number(&self) -> Option<f64> {
         match self {
             Self::Number(value) => Some(*value),
@@ -37,17 +38,13 @@ macro_rules! unsigned_integer_try_from {
             type Error = Box<MiraError>;
 
             fn try_from(value: MiraValue) -> Result<Self> {
-                let number = value.as_number().ok_or_else(|| MiraError::conversion(stringify!($ty), &value))?;
+                let number = value.as_number().ok_or_else(|| MiraError::conversion_type(stringify!($ty), value.value_type()))?;
                 if !number.is_finite()
                     || number.trunc() != number
                     || number < 0.0
                     || number >= 2_f64.powi(<$ty>::BITS as i32)
                 {
-                    return Err(MiraError::Conversion {
-                        expected: stringify!($ty).into(),
-                        actual: format!("number {number}"),
-                        path: None,
-                    }.into());
+                    return Err(MiraError::conversion_number(stringify!($ty), number));
                 }
                 Ok(number as $ty)
             }
@@ -62,7 +59,7 @@ macro_rules! signed_integer_try_from {
 
             fn try_from(value: MiraValue) -> Result<Self> {
                 let MiraValue::Number(number) = value else {
-                    return Err(MiraError::conversion(stringify!($ty), &value));
+                    return Err(MiraError::conversion_type(stringify!($ty), value.value_type()));
                 };
                 let limit = 2_f64.powi(<$ty>::BITS as i32 - 1);
                 if !number.is_finite()
@@ -70,11 +67,7 @@ macro_rules! signed_integer_try_from {
                     || number < -limit
                     || number >= limit
                 {
-                    return Err(MiraError::Conversion {
-                        expected: stringify!($ty).into(),
-                        actual: format!("number {number}"),
-                        path: None,
-                    }.into());
+                    return Err(MiraError::conversion_number(stringify!($ty), number));
                 }
                 Ok(number as $ty)
             }
@@ -91,7 +84,7 @@ impl TryFrom<MiraValue> for f64 {
     fn try_from(value: MiraValue) -> Result<Self> {
         match value {
             MiraValue::Number(value) => Ok(value),
-            value => Err(MiraError::conversion("f64", &value)),
+            value => Err(MiraError::conversion_type("f64", value.value_type())),
         }
     }
 }
@@ -102,12 +95,7 @@ impl TryFrom<MiraValue> for f32 {
     fn try_from(value: MiraValue) -> Result<Self> {
         let value = f64::try_from(value)?;
         if value.is_finite() && (value < f32::MIN as f64 || value > f32::MAX as f64) {
-            return Err(MiraError::Conversion {
-                expected: "f32".into(),
-                actual: format!("number {value}"),
-                path: None,
-            }
-            .into());
+            return Err(MiraError::conversion_number("f32", value));
         }
         Ok(value as f32)
     }

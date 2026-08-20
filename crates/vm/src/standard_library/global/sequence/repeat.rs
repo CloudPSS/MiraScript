@@ -1,9 +1,13 @@
 use super::*;
 
-pub(super) fn install(context: &mut MiraContext) {
+pub(super) fn install(context: &mut Runtime) {
     insert_native(context, "repeat", |call, args| {
-        let value = const_value(required(args, 0, "data")?.clone())?;
-        let length = array_length(required(args, 1, "times")?, call.options().max_array_len)?;
-        Ok(MiraAny::Array(vec![value; length].into()))
+        let value = const_value(*required(args, 0, "data")?)?;
+        let length = array_length(
+            call,
+            *required(args, 1, "times")?,
+            call.options().max_array_len,
+        )?;
+        call.insert(vec![value; length])
     });
 }

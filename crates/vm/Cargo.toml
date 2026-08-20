@@ -28,12 +28,8 @@ mirascript-core.workspace = true
 mirascript-vm-derive.workspace = true
 rand = "0.10"
 serde_json = { version = "1", features = ["float_roundtrip", "preserve_order"] }
-thin-cell = "0.2"
 thiserror = "2"
 unicode-normalization = "0.1"
-slotmap = "1"
-paste = "1"
-strum = { version = "0.28", features = ["derive"] }
 
 [dev-dependencies]
 divan = "0.1.21"

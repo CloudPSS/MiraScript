@@ -2,15 +2,15 @@
 
 use indexmap::IndexMap;
 
-use crate::{MiraAny, MiraContext, MiraError, Result, operations};
+use crate::{MiraError, MiraValue, Result, Runtime, RuntimeErrorKind, operations};
 
 use crate::standard_library::insert_native;
 
-pub(super) fn install(context: &mut MiraContext) {
+pub(super) fn install(context: &mut Runtime) {
     insert_native(context, "to_timestamp", |call, args| {
         match timestamp(call, args.first()) {
-            Ok(value) => Ok(MiraAny::Number(value as f64)),
-            Err(_) if args.len() > 1 => Ok(args[1].clone()),
+            Ok(value) => Ok(MiraValue::Number(value as f64)),
+            Err(_) if args.len() > 1 => Ok(args[1]),
             Err(error) => Err(error),
         }
     });
@@ -18,54 +18,51 @@ pub(super) fn install(context: &mut MiraContext) {
         let fallback = args.get(2);
         let timestamp = match timestamp(call, args.first()) {
             Ok(value) => value,
-            Err(_) if fallback.is_some() => return Ok(fallback.unwrap().clone()),
+            Err(_) if fallback.is_some() => return Ok(*fallback.unwrap()),
             Err(error) => return Err(error),
         };
         let offset = match args.get(1) {
-            None | Some(MiraAny::Nil) => 0.0,
-            Some(value) => operations::to_number(value)?,
+            None | Some(MiraValue::Nil) => 0.0,
+            Some(value) => operations::to_number(call, *value)?,
         };
         if !offset.is_finite() || !(-24.0..=24.0).contains(&offset) {
-            return Err(MiraError::runtime(
-                "Argument `offset` must be between -24 and 24",
-            ));
+            return Err(MiraError::runtime(RuntimeErrorKind::TimeOffsetOutOfRange));
         }
-        Ok(datetime_record(timestamp, offset))
+        call.insert(datetime_record(timestamp, offset))
     });
     insert_native(context, "to_iso8601", |call, args| {
         match timestamp(call, args.first()) {
-            Ok(value) => Ok(MiraAny::String(iso8601(value).into())),
-            Err(_) if args.len() > 1 => Ok(args[1].clone()),
+            Ok(value) => call.insert(iso8601(value)),
+            Err(_) if args.len() > 1 => Ok(args[1]),
             Err(error) => Err(error),
         }
     });
 }
 
-fn timestamp(call: &crate::Runtime<'_>, value: Option<&MiraAny>) -> Result<i64> {
+fn timestamp(call: &mut crate::Runtime, value: Option<&MiraValue>) -> Result<i64> {
     match value {
-        None | Some(MiraAny::Nil) => Ok(call.options().providers.now_millis()),
-        Some(MiraAny::Number(value)) if value.is_finite() && value.abs() <= 8.64e15 => {
+        None | Some(MiraValue::Nil) => Ok(call.options().providers.now_millis()),
+        Some(MiraValue::Number(value)) if value.is_finite() && value.abs() <= 8.64e15 => {
             Ok(value.trunc() as i64)
         }
-        Some(MiraAny::String(value)) => {
-            if let Ok(number) = operations::to_number(&MiraAny::String(value.clone()))
+        Some(value @ (MiraValue::String(_) | MiraValue::StaticString(_))) => {
+            if let Ok(number) = operations::to_number(call, *value)
                 && number.is_finite()
                 && number.abs() <= 8.64e15
             {
                 return Ok(number.trunc() as i64);
             }
-            parse_iso8601(value).ok_or_else(|| {
-                MiraError::runtime("Argument `datetime` cannot be parsed as datetime")
-            })
+            let source = value.as_string(call)?.expect("matched string");
+            parse_iso8601(source)
+                .ok_or_else(|| MiraError::runtime(RuntimeErrorKind::InvalidDateTime))
         }
-        Some(value) => Err(MiraError::runtime(format!(
-            "Argument `datetime` is not a valid timestamp: {}",
-            operations::display(value)
-        ))),
+        Some(value) => Err(MiraError::runtime(RuntimeErrorKind::InvalidTimestamp {
+            actual: value.value_type(),
+        })),
     }
 }
 
-fn datetime_record(timestamp: i64, offset: f64) -> MiraAny {
+fn datetime_record(timestamp: i64, offset: f64) -> IndexMap<String, MiraValue> {
     let adjusted = timestamp as i128 + (offset * 3_600_000.0).trunc() as i128;
     let days = adjusted.div_euclid(86_400_000);
     let day_millis = adjusted.rem_euclid(86_400_000) as i64;
@@ -74,23 +71,20 @@ fn datetime_record(timestamp: i64, offset: f64) -> MiraAny {
     let minute = day_millis / 60_000 % 60;
     let second = day_millis / 1_000 % 60;
     let millisecond = day_millis % 1_000;
-    MiraAny::Record(
-        IndexMap::from([
-            ("year".into(), MiraAny::Number(year as f64)),
-            ("month".into(), MiraAny::Number(month as f64)),
-            ("day".into(), MiraAny::Number(day as f64)),
-            ("hour".into(), MiraAny::Number(hour as f64)),
-            ("minute".into(), MiraAny::Number(minute as f64)),
-            ("second".into(), MiraAny::Number(second as f64)),
-            ("millisecond".into(), MiraAny::Number(millisecond as f64)),
-            (
-                "dayOfWeek".into(),
-                MiraAny::Number((days as i64 + 4).rem_euclid(7) as f64),
-            ),
-            ("offset".into(), MiraAny::Number(offset)),
-        ])
-        .into(),
-    )
+    IndexMap::from([
+        ("year".into(), MiraValue::Number(year as f64)),
+        ("month".into(), MiraValue::Number(month as f64)),
+        ("day".into(), MiraValue::Number(day as f64)),
+        ("hour".into(), MiraValue::Number(hour as f64)),
+        ("minute".into(), MiraValue::Number(minute as f64)),
+        ("second".into(), MiraValue::Number(second as f64)),
+        ("millisecond".into(), MiraValue::Number(millisecond as f64)),
+        (
+            "dayOfWeek".into(),
+            MiraValue::Number((days as i64 + 4).rem_euclid(7) as f64),
+        ),
+        ("offset".into(), MiraValue::Number(offset)),
+    ])
 }
 
 fn iso8601(timestamp: i64) -> String {

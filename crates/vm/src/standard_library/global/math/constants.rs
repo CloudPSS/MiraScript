@@ -1,8 +1,8 @@
 use std::f64::consts;
 
-use crate::MiraContext;
+use crate::Runtime;
 
-pub(super) fn install(context: &mut MiraContext) {
+pub(super) fn install(context: &mut Runtime) {
     for (name, value) in [
         ("PI", consts::PI),
         ("E", consts::E),
@@ -15,6 +15,8 @@ pub(super) fn install(context: &mut MiraContext) {
         ("LOG2E", consts::LOG2_E),
         ("LOG10E", consts::LOG10_E),
     ] {
-        context.insert(name, value);
+        context
+            .insert_global(name, value)
+            .expect("numeric standard-library globals are inline");
     }
 }

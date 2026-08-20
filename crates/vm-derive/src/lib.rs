@@ -4,7 +4,7 @@
 
 use proc_macro::TokenStream;
 
-mod array; 
+mod array;
 mod record;
 mod utils;
 

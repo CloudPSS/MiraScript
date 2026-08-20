@@ -1,24 +1,22 @@
 use super::*;
 
-pub(super) fn install(context: &mut MiraContext) {
+pub(super) fn install(context: &mut Runtime) {
     insert_native(context, "find", |call, args| {
-        let data = Data::from_value(required(args, 0, "data")?)?;
+        let data = Data::from_value(call, *required(args, 0, "data")?)?;
         let predicate = required(args, 1, "predicate")?;
         let callable = is_callable(predicate)?;
-        let original = data.original();
-        for (key, value) in data_items(&data) {
+        let original = data.original(call)?;
+        for (key, value) in data_items(call, &data)? {
             call.checkpoint()?;
             let found = if callable {
-                operations::to_boolean(
-                    &call.call(predicate, &[value.clone(), key.clone(), original.clone()])?,
-                )?
+                operations::to_boolean(call.call(*predicate, &[value, key, original])?)?
             } else {
-                &value == predicate
+                operations::same_value(call, value, *predicate)?
             };
             if found {
-                return Ok(pair(key, value));
+                return pair(call, key, value);
             }
         }
-        Ok(MiraAny::Nil)
+        Ok(MiraValue::Nil)
     });
 }

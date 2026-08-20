@@ -1,100 +1,104 @@
 use super::*;
 
-pub(crate) fn has(value: &MiraAny, key: &MiraAny) -> Result<bool> {
-    assert_initialized(value)?;
-    let key = to_string(key)?;
+pub(crate) fn has(
+    runtime: &mut Runtime,
+    value: MiraValue,
+    key: MiraValue,
+    known_key: Option<&str>,
+) -> Result<bool> {
+    let key = match known_key {
+        Some(key) => key.to_owned(),
+        None => to_string(runtime, key)?,
+    };
     match value {
-        MiraAny::Nil
-        | MiraAny::Boolean(_)
-        | MiraAny::Number(_)
-        | MiraAny::String(_)
-        | MiraAny::Function(_)
-        | MiraAny::Uninitialized => Ok(false),
-        MiraAny::Array(_) | MiraAny::RustArray(_) => {
+        MiraValue::Array(_) => {
             let Ok(index) = key.parse::<usize>() else {
                 return Ok(false);
             };
-            Ok(index < value.array_len()?.unwrap_or(0))
+            Ok(index < array_len(runtime, value)?.unwrap_or(0))
         }
-        MiraAny::Record(_) | MiraAny::RustRecord(_) => Ok(value
-            .record_keys()?
+        MiraValue::Record(_) => Ok(record_keys(runtime, value)?
             .is_some_and(|keys| keys.iter().any(|candidate| candidate == &key))),
-        MiraAny::Module(module) => Ok(module.keys().iter().any(|candidate| candidate == &key)),
+        MiraValue::Module(_) => Ok(module_keys(runtime, value)?
+            .is_some_and(|keys| keys.iter().any(|candidate| candidate == &key))),
+        _ => Ok(false),
     }
 }
 
-pub(crate) fn get(value: &MiraAny, key: &str) -> Result<MiraAny> {
-    get_value(value, &MiraAny::String(key.into()))
+pub(crate) fn get(runtime: &mut Runtime, value: MiraValue, key: &str) -> Result<MiraValue> {
+    get_value(runtime, value, MiraValue::Nil, Some(key))
 }
 
-pub(crate) fn get_value(value: &MiraAny, key: &MiraAny) -> Result<MiraAny> {
-    assert_initialized(value)?;
-    if matches!(value, MiraAny::Array(_) | MiraAny::RustArray(_)) {
-        let index = match to_number(key) {
+pub(crate) fn get_value(
+    runtime: &mut Runtime,
+    value: MiraValue,
+    key: MiraValue,
+    known_key: Option<&str>,
+) -> Result<MiraValue> {
+    if matches!(value, MiraValue::Array(_)) {
+        let index = match to_number(runtime, key) {
             Ok(index) if index.is_finite() => index.trunc() as isize,
-            _ => return Ok(MiraAny::Nil),
+            _ => return Ok(MiraValue::Nil),
         };
-        let length = value.array_len()?.unwrap_or(0);
+        let length = array_len(runtime, value)?.unwrap_or(0);
         let index = if index < 0 {
             length.checked_add_signed(index)
         } else {
             Some(index as usize)
         };
         return match index {
-            Some(index) if index < length => value
-                .array_get(index)?
-                .unwrap_or(MiraAny::Nil)
-                .into_element(),
-            _ => Ok(MiraAny::Nil),
+            Some(index) if index < length => Ok(into_element(
+                array_get(runtime, value, index)?.unwrap_or(MiraValue::Nil),
+            )),
+            _ => Ok(MiraValue::Nil),
         };
     }
 
-    let key = to_string(key)?;
+    let key = match known_key {
+        Some(key) => key.to_owned(),
+        None => to_string(runtime, key)?,
+    };
     match value {
-        MiraAny::Record(_) | MiraAny::RustRecord(_) => value
-            .record_get(&key)?
-            .unwrap_or(MiraAny::Nil)
-            .into_element(),
-        MiraAny::Module(module) => {
-            let result = module.get_native(&key).unwrap_or(MiraAny::Nil);
-            assert_initialized(&result)?;
-            Ok(result)
-        }
-        _ => Ok(MiraAny::Nil),
+        MiraValue::Record(_) => Ok(into_element(
+            record_get(runtime, value, &key)?.unwrap_or(MiraValue::Nil),
+        )),
+        MiraValue::Module(_) => Ok(module_get(runtime, value, &key)?.unwrap_or(MiraValue::Nil)),
+        _ => Ok(MiraValue::Nil),
     }
 }
 
-pub(crate) fn set(obj: &MiraAny, key: &MiraAny, value: MiraAny) -> Result<()> {
-    assert_initialized(obj)?;
-    assert_initialized(key)?;
-    assert_initialized(&value)?;
-    return Err(MiraError::runtime(format!("Expected extern, got {}", display(obj))).into());
+pub(crate) fn set(
+    _runtime: &mut Runtime,
+    obj: MiraValue,
+    _key: MiraValue,
+    _value: MiraValue,
+) -> Result<()> {
+    Err(MiraError::runtime(RuntimeErrorKind::TypeMismatch {
+        expected: "mutable extern",
+        actual: obj.value_type(),
+    }))
 }
 
-pub(crate) fn pick(value: &MiraAny, keys: &[String]) -> Result<MiraAny> {
-    assert_initialized(value)?;
-    if !matches!(value, MiraAny::Record(_) | MiraAny::RustRecord(_)) {
-        return Ok(MiraAny::Record(IndexMap::new().into()));
-    }
+pub(crate) fn pick(runtime: &mut Runtime, value: MiraValue, keys: &[String]) -> Result<MiraValue> {
     let mut result = IndexMap::new();
-    for key in keys {
-        if has(value, &MiraAny::String(key.clone().into()))? {
-            result.insert(key.clone(), get(value, key)?);
+    if matches!(value, MiraValue::Record(_)) {
+        for key in keys {
+            if has(runtime, value, MiraValue::Nil, Some(key))? {
+                result.insert(key.clone(), get(runtime, value, key)?);
+            }
         }
     }
-    Ok(MiraAny::Record(result.into()))
+    runtime.insert(result)
 }
 
-pub(crate) fn omit(value: &MiraAny, keys: &[String]) -> Result<MiraAny> {
-    assert_initialized(value)?;
-    if !matches!(value, MiraAny::Record(_) | MiraAny::RustRecord(_)) {
-        return Ok(MiraAny::Record(IndexMap::new().into()));
-    }
+pub(crate) fn omit(runtime: &mut Runtime, value: MiraValue, keys: &[String]) -> Result<MiraValue> {
     let mut result = IndexMap::new();
-    for key in value.record_keys()?.unwrap_or_default() {
-        if !keys.contains(&key) {
-            result.insert(key.clone(), get(value, &key)?);
+    if let Some(existing) = record_keys(runtime, value)? {
+        for key in existing {
+            if !keys.contains(&key) {
+                result.insert(key.clone(), get(runtime, value, &key)?);
+            }
         }
     }
-    Ok(MiraAny::Record(result.into()))
+    runtime.insert(result)
 }

@@ -7,9 +7,9 @@ mod string;
 mod time;
 mod to_primitive;
 
-use crate::MiraContext;
+use crate::Runtime;
 
-pub(super) fn install(context: &mut MiraContext) {
+pub(super) fn install(context: &mut Runtime) {
     math::install(context);
     bit::install(context);
     sequence::install(context);

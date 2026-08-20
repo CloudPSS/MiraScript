@@ -1,15 +1,29 @@
 use crate::{InvalidBytecodeReason, MiraError, Result};
 
-pub(super) enum Constant<'a> {
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) enum Constant {
     Nil,
     True,
     False,
     Int(i32),
     Float(f64),
-    String(&'a str),
+    String(Box<str>),
 }
 
-pub(super) fn decode_constants(bytes: &[u8], base_offset: usize) -> Result<Vec<Constant<'_>>> {
+impl Constant {
+    pub(crate) fn to_source_string(&self) -> String {
+        match self {
+            Self::Nil => String::new(),
+            Self::True => true.to_string(),
+            Self::False => false.to_string(),
+            Self::Int(value) => value.to_string(),
+            Self::Float(value) => crate::operations::number_to_string(*value, false),
+            Self::String(value) => value.to_string(),
+        }
+    }
+}
+
+pub(super) fn decode_constants(bytes: &[u8], base_offset: usize) -> Result<Vec<Constant>> {
     let mut result = Vec::new();
     let mut offset = 0;
     while offset < bytes.len() {
@@ -62,7 +76,7 @@ pub(super) fn decode_constants(bytes: &[u8], base_offset: usize) -> Result<Vec<C
                     )
                 })?;
                 offset += length;
-                Constant::String(value)
+                Constant::String(value.into())
             }
             _ => {
                 return Err(MiraError::invalid_bytecode(

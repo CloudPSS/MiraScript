@@ -17,49 +17,52 @@ mod zip;
 use indexmap::IndexMap;
 
 use crate::standard_library::{const_value, insert_native, is_callable, required};
-use crate::{MiraAny, MiraContext, MiraError, Result, Runtime, operations};
+use crate::{MiraError, MiraValue, Result, Runtime, RuntimeErrorKind, operations};
 
 use with::array_length;
 
 pub(super) enum Data {
-    Primitive(MiraAny),
-    Array(Vec<MiraAny>),
-    Record(IndexMap<String, MiraAny>),
+    Primitive(MiraValue),
+    Array(Vec<MiraValue>),
+    Record(IndexMap<String, MiraValue>),
 }
 
 impl Data {
-    pub(super) fn from_value(value: &MiraAny) -> Result<Self> {
+    pub(super) fn from_value(runtime: &mut Runtime, value: MiraValue) -> Result<Self> {
         match value {
-            MiraAny::Nil | MiraAny::Boolean(_) | MiraAny::Number(_) | MiraAny::String(_) => {
-                Ok(Self::Primitive(value.clone()))
-            }
-            MiraAny::Array(_) | MiraAny::RustArray(_) => {
-                Ok(Self::Array(operations::iterable_array(value)?))
-            }
-            MiraAny::Record(_) | MiraAny::RustRecord(_) => {
+            MiraValue::Nil
+            | MiraValue::Boolean(_)
+            | MiraValue::Number(_)
+            | MiraValue::String(_)
+            | MiraValue::StaticString(_) => Ok(Self::Primitive(value)),
+            MiraValue::Array(_) => Ok(Self::Array(operations::iterable_array(runtime, value)?)),
+            MiraValue::Record(_) => {
                 let mut record = IndexMap::new();
-                for key in value.record_keys()?.unwrap_or_default() {
-                    record.insert(key.clone(), value.record_get(&key)?.unwrap_or(MiraAny::Nil));
+                for key in operations::record_keys(runtime, value)?.unwrap_or_default() {
+                    record.insert(
+                        key.clone(),
+                        operations::record_get(runtime, value, &key)?.unwrap_or(MiraValue::Nil),
+                    );
                 }
                 Ok(Self::Record(record))
             }
-            _ => Err(MiraError::runtime(format!(
-                "Expected nil, number, boolean, string, array or record, got {}",
-                operations::display(value)
-            ))),
+            value => Err(MiraError::runtime(RuntimeErrorKind::TypeMismatch {
+                expected: "nil, number, boolean, string, array, or record",
+                actual: value.value_type(),
+            })),
         }
     }
 
-    pub(super) fn original(&self) -> MiraAny {
+    pub(super) fn original(&self, runtime: &mut Runtime) -> Result<MiraValue> {
         match self {
-            Self::Primitive(value) => value.clone(),
-            Self::Array(value) => MiraAny::Array(value.clone().into()),
-            Self::Record(value) => MiraAny::Record(value.clone().into()),
+            Self::Primitive(value) => Ok(*value),
+            Self::Array(value) => runtime.insert(value.clone()),
+            Self::Record(value) => runtime.insert(value.clone()),
         }
     }
 }
 
-pub(super) fn install(context: &mut MiraContext) {
+pub(super) fn install(context: &mut Runtime) {
     len::install(context);
     entries::install(context);
     map_filter::install(context);
@@ -77,26 +80,33 @@ pub(super) fn install(context: &mut MiraContext) {
     with::install(context);
 }
 
-pub(super) fn data_items(data: &Data) -> Vec<(MiraAny, MiraAny)> {
-    match data {
-        Data::Primitive(value) => vec![(MiraAny::Nil, value.clone())],
+pub(super) fn data_items(
+    runtime: &mut Runtime,
+    data: &Data,
+) -> Result<Vec<(MiraValue, MiraValue)>> {
+    Ok(match data {
+        Data::Primitive(value) => vec![(MiraValue::Nil, *value)],
         Data::Array(values) => values
             .iter()
-            .cloned()
+            .copied()
             .enumerate()
-            .map(|(index, value)| (MiraAny::Number(index as f64), value))
+            .map(|(index, value)| (MiraValue::Number(index as f64), value))
             .collect(),
         Data::Record(values) => values
             .iter()
-            .map(|(key, value)| (MiraAny::String(key.clone().into()), value.clone()))
-            .collect(),
-    }
+            .map(|(key, value)| Ok((runtime.insert(key.clone())?, *value)))
+            .collect::<Result<Vec<_>>>()?,
+    })
 }
 
-pub(super) fn array_value(value: &MiraAny) -> Result<Vec<MiraAny>> {
-    operations::iterable_array(value)
+pub(super) fn array_value(runtime: &mut Runtime, value: MiraValue) -> Result<Vec<MiraValue>> {
+    operations::iterable_array(runtime, value)
 }
 
-pub(super) fn pair(first: MiraAny, second: MiraAny) -> MiraAny {
-    MiraAny::Record(IndexMap::from([("0".into(), first), ("1".into(), second)]).into())
+pub(super) fn pair(
+    runtime: &mut Runtime,
+    first: MiraValue,
+    second: MiraValue,
+) -> Result<MiraValue> {
+    runtime.insert(IndexMap::from([("0".into(), first), ("1".into(), second)]))
 }

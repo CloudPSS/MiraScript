@@ -1,39 +1,45 @@
 use super::*;
 
-pub(super) fn install(context: &mut MiraContext) {
+pub(super) fn install(context: &mut Runtime) {
     insert_native(context, "new_array", |call, args| {
-        let length = array_length(required(args, 0, "length")?, call.options().max_array_len)?;
+        let max = call.options().max_array_len;
+        let length = array_length(call, *required(args, 0, "length")?, max)?;
         let generator = required(args, 1, "generator")?;
         if !is_callable(generator)? {
-            return Err(MiraError::runtime("Argument `generator` is not callable"));
+            return Err(MiraError::runtime(RuntimeErrorKind::NotCallable {
+                actual: generator.value_type(),
+            }));
         }
         let mut result = Vec::with_capacity(length);
         for index in 0..length {
             call.checkpoint()?;
             result.push(const_value(
-                call.call(generator, &[MiraAny::Number(index as f64)])?,
+                call.call(*generator, &[MiraValue::Number(index as f64)])?,
             )?);
         }
-        Ok(MiraAny::Array(result.into()))
+        call.insert(result)
     });
     insert_native(context, "new_record", |call, args| {
-        let length = array_length(required(args, 0, "size")?, call.options().max_array_len)?;
+        let max = call.options().max_array_len;
+        let length = array_length(call, *required(args, 0, "size")?, max)?;
         let generator = required(args, 1, "generator")?;
         if !is_callable(generator)? {
-            return Err(MiraError::runtime("Argument `generator` is not callable"));
+            return Err(MiraError::runtime(RuntimeErrorKind::NotCallable {
+                actual: generator.value_type(),
+            }));
         }
         let mut result = IndexMap::new();
         for index in 0..length {
             call.checkpoint()?;
-            let entry = call.call(generator, &[MiraAny::Number(index as f64)])?;
-            if entry == MiraAny::Nil {
+            let entry = call.call(*generator, &[MiraValue::Number(index as f64)])?;
+            if entry == MiraValue::Nil {
                 continue;
             }
-            let key =
-                operations::to_string(&operations::get_value(&entry, &MiraAny::Number(0.0))?)?;
-            let value = operations::get_value(&entry, &MiraAny::Number(1.0))?.into_element()?;
-            result.insert(key, value);
+            let key_value = operations::get_value(call, entry, MiraValue::Number(0.0), None)?;
+            let key = operations::to_string(call, key_value)?;
+            let value = operations::get_value(call, entry, MiraValue::Number(1.0), None)?;
+            result.insert(key, const_value(value)?);
         }
-        Ok(MiraAny::Record(result.into()))
+        call.insert(result)
     });
 }

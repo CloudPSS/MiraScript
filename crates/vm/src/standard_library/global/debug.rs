@@ -1,22 +1,24 @@
 use crate::standard_library::insert_native;
-use crate::{MiraAny, MiraContext, MiraError, operations};
+use crate::{MiraError, MiraValue, Runtime, RuntimeErrorKind, operations};
 
-pub(super) fn install(context: &mut MiraContext) {
+pub(super) fn install(context: &mut Runtime) {
     insert_native(context, "debug_print", |call, args| {
         let message = args
             .iter()
-            .map(operations::display)
+            .map(|value| operations::display(call, *value))
             .collect::<Vec<_>>()
             .join(" ");
         call.options().providers.debug(&message);
-        Ok(MiraAny::Nil)
+        Ok(MiraValue::Nil)
     });
-    insert_native(context, "panic", |_, args| {
+    insert_native(context, "panic", |call, args| {
         let message = args
             .first()
-            .map(operations::to_string)
+            .map(|value| operations::to_string(call, *value))
             .transpose()?
             .unwrap_or_else(|| "MiraScript panic".into());
-        Err(MiraError::runtime(message))
+        Err(MiraError::runtime(RuntimeErrorKind::UserMessage {
+            message,
+        }))
     });
 }

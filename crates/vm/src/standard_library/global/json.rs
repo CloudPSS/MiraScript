@@ -1,108 +1,114 @@
 use indexmap::IndexMap;
 
 use crate::standard_library::{insert_native, string};
-use crate::{MiraAny, MiraContext, MiraError, Result, Runtime, operations};
+use crate::{MiraError, MiraValue, Result, Runtime, RuntimeErrorKind, operations};
 
-pub(super) fn install(context: &mut MiraContext) {
-    insert_native(context, "to_json", |call, args| {
-        let Some(value) = args.first() else {
-            return Err(MiraError::runtime("Argument `data` is required"));
+pub(super) fn install(runtime: &mut Runtime) {
+    insert_native(runtime, "to_json", |call, args| {
+        let Some(value) = args.first().copied() else {
+            return Err(MiraError::runtime(RuntimeErrorKind::MissingArgument {
+                name: "data",
+            }));
         };
-        if matches!(value, MiraAny::Function(_)) {
-            return Ok(MiraAny::Nil);
+        if matches!(value, MiraValue::Function(_)) {
+            return Ok(MiraValue::Nil);
         }
-        let json = to_json_value(call, value, false)?;
-        Ok(match json {
-            Some(value) => MiraAny::String(
-                serde_json::to_string(&value)
-                    .map_err(|error| {
-                        MiraError::runtime(format!("Failed to serialize JSON: {error}"))
-                    })?
-                    .into(),
-            ),
-            None => MiraAny::Nil,
-        })
+        let Some(json) = to_json_value(call, value, false)? else {
+            return Ok(MiraValue::Nil);
+        };
+        let source = serde_json::to_string(&json)
+            .map_err(|source| MiraError::runtime(RuntimeErrorKind::JsonSerialization { source }))?;
+        call.insert(source)
     });
-    insert_native(context, "from_json", |_, args| {
-        let source = string(args, 0, "json")?;
+    insert_native(runtime, "from_json", |call, args| {
+        let source = string(call, args, 0, "json")?;
         match serde_json::from_str::<serde_json::Value>(&source) {
-            Ok(value) => Ok(from_json_value(value)),
-            Err(_) if args.len() > 1 => Ok(args[1].clone()),
-            Err(error) => Err(MiraError::runtime(format!("Invalid JSON: {error}"))),
+            Ok(value) => from_json_value(call, value),
+            Err(_) if args.len() > 1 => Ok(args[1]),
+            Err(source) => Err(MiraError::runtime(RuntimeErrorKind::InvalidJson { source })),
         }
     });
 }
 
 fn to_json_value(
-    call: &mut Runtime,
-    value: &MiraAny,
+    runtime: &mut Runtime,
+    value: MiraValue,
     in_container: bool,
 ) -> Result<Option<serde_json::Value>> {
     Ok(match value {
-        MiraAny::Uninitialized | MiraAny::Function(_) => {
+        MiraValue::Function(_) => {
             if in_container {
                 None
             } else {
                 return Ok(None);
             }
         }
-        MiraAny::Nil => Some(serde_json::Value::Null),
-        MiraAny::Boolean(value) => Some((*value).into()),
-        MiraAny::Number(value) => Some(if !value.is_finite() {
+        MiraValue::Nil => Some(serde_json::Value::Null),
+        MiraValue::Boolean(value) => Some(value.into()),
+        MiraValue::Number(value) => Some(if !value.is_finite() {
             serde_json::Value::Null
-        } else if *value == 0.0 {
+        } else if value == 0.0 {
             serde_json::Value::Number(0.into())
-        } else if value.fract() == 0.0 && *value >= i64::MIN as f64 && *value <= i64::MAX as f64 {
-            serde_json::Value::Number((*value as i64).into())
+        } else if value.fract() == 0.0 && value >= i64::MIN as f64 && value <= i64::MAX as f64 {
+            serde_json::Value::Number((value as i64).into())
         } else {
-            serde_json::Value::Number(serde_json::Number::from_f64(*value).unwrap())
+            serde_json::Value::Number(serde_json::Number::from_f64(value).unwrap())
         }),
-        MiraAny::String(value) => Some(value.to_string().into()),
-        MiraAny::Array(_) | MiraAny::RustArray(_) => Some(serde_json::Value::Array(
-            operations::iterable_array(value)?
-                .iter()
-                .map(|item| Ok(to_json_value(call, item, true)?.unwrap_or(serde_json::Value::Null)))
-                .collect::<Result<Vec<_>>>()?,
-        )),
-        MiraAny::Record(_) | MiraAny::RustRecord(_) => {
+        MiraValue::String(handle) => Some(runtime.get_string(handle)?.to_owned().into()),
+        MiraValue::StaticString(value) => Some(value.to_string().into()),
+        MiraValue::Array(_) => {
+            let values = operations::iterable_array(runtime, value)?;
+            let mut result = Vec::with_capacity(values.len());
+            for item in values {
+                result.push(to_json_value(runtime, item, true)?.unwrap_or(serde_json::Value::Null));
+            }
+            Some(serde_json::Value::Array(result))
+        }
+        MiraValue::Record(_) => {
             let mut map = serde_json::Map::new();
-            for key in value.record_keys()?.unwrap_or_default() {
-                if let Some(item) =
-                    to_json_value(call, &value.record_get(&key)?.unwrap_or(MiraAny::Nil), true)?
-                {
+            for key in operations::record_keys(runtime, value)?.unwrap_or_default() {
+                let item = operations::record_get(runtime, value, &key)?.unwrap_or(MiraValue::Nil);
+                if let Some(item) = to_json_value(runtime, item, true)? {
                     map.insert(key, item);
                 }
             }
             Some(serde_json::Value::Object(map))
         }
-        MiraAny::Module(module) => {
+        MiraValue::Module(_) => {
             let mut map = serde_json::Map::new();
-            for key in module.keys() {
-                let item = call.get(value, key.clone())?;
-                if let Some(item) = to_json_value(call, &item, true)? {
+            for key in operations::module_keys(runtime, value)?.unwrap_or_default() {
+                let item = operations::module_get(runtime, value, &key)?.unwrap_or(MiraValue::Nil);
+                if let Some(item) = to_json_value(runtime, item, true)? {
                     map.insert(key, item);
                 }
             }
             Some(serde_json::Value::Object(map))
         }
+        MiraValue::Extern(_) => None,
     })
 }
 
-fn from_json_value(value: serde_json::Value) -> MiraAny {
+fn from_json_value(runtime: &mut Runtime, value: serde_json::Value) -> Result<MiraValue> {
     match value {
-        serde_json::Value::Null => MiraAny::Nil,
-        serde_json::Value::Bool(value) => MiraAny::Boolean(value),
-        serde_json::Value::Number(value) => MiraAny::Number(value.as_f64().unwrap_or(f64::NAN)),
-        serde_json::Value::String(value) => MiraAny::String(value.into()),
-        serde_json::Value::Array(values) => {
-            MiraAny::Array(values.into_iter().map(from_json_value).collect())
+        serde_json::Value::Null => Ok(MiraValue::Nil),
+        serde_json::Value::Bool(value) => Ok(MiraValue::Boolean(value)),
+        serde_json::Value::Number(value) => {
+            Ok(MiraValue::Number(value.as_f64().unwrap_or(f64::NAN)))
         }
-        serde_json::Value::Object(values) => MiraAny::Record(
-            values
+        serde_json::Value::String(value) => runtime.insert(value),
+        serde_json::Value::Array(values) => {
+            let values = values
                 .into_iter()
-                .map(|(key, value)| (key, from_json_value(value)))
-                .collect::<IndexMap<_, _>>()
-                .into(),
-        ),
+                .map(|value| from_json_value(runtime, value))
+                .collect::<Result<Vec<_>>>()?;
+            runtime.insert(values)
+        }
+        serde_json::Value::Object(values) => {
+            let mut result = IndexMap::with_capacity(values.len());
+            for (key, value) in values {
+                result.insert(key, from_json_value(runtime, value)?);
+            }
+            runtime.insert(result)
+        }
     }
 }

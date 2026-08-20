@@ -1,10 +1,10 @@
 use std::rc::Rc;
 
-use crate::MiraAny;
+use super::constants::Constant;
 
 #[derive(Debug, Clone)]
 pub(crate) struct Program {
-    pub constants: Rc<[MiraAny]>,
+    pub constants: Rc<[Constant]>,
     pub global_names: Rc<[String]>,
     pub root: FunctionDef,
     pub functions: Rc<[FunctionDef]>,

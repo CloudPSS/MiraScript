@@ -1,58 +1,61 @@
 use crate::standard_library::required;
-use crate::{MiraAny, MiraError, Result, Runtime, operations};
+use crate::{MiraError, MiraValue, Result, Runtime, RuntimeErrorKind, operations};
 
-use super::helpers::{as_matrix, numeric, shape};
+use super::helpers::{as_matrix, from_matrix, numeric, shape};
 
 pub(super) fn numeric_entrywise(
-    args: &[MiraAny],
+    runtime: &mut Runtime,
+    args: &[MiraValue],
     operation: impl Fn(f64, f64) -> f64,
-) -> Result<MiraAny> {
-    let left = required(args, 0, "a")?;
-    let right = required(args, 1, "b")?;
-    entrywise(left, right, &mut |a, b| {
-        Ok(MiraAny::Number(operation(numeric(&a)?, numeric(&b)?)))
+) -> Result<MiraValue> {
+    let left = *required(args, 0, "a")?;
+    let right = *required(args, 1, "b")?;
+    entrywise(runtime, left, right, &mut |runtime, a, b| {
+        Ok(MiraValue::Number(operation(
+            numeric(runtime, a)?,
+            numeric(runtime, b)?,
+        )))
     })
 }
 
 pub(super) fn entrywise(
-    left: &MiraAny,
-    right: &MiraAny,
-    operation: &mut impl FnMut(MiraAny, MiraAny) -> Result<MiraAny>,
-) -> Result<MiraAny> {
-    let left_shape = shape(left)?;
-    let right_shape = shape(right)?;
+    runtime: &mut Runtime,
+    left: MiraValue,
+    right: MiraValue,
+    operation: &mut impl FnMut(&mut Runtime, MiraValue, MiraValue) -> Result<MiraValue>,
+) -> Result<MiraValue> {
+    let left_shape = shape(runtime, left)?;
+    let right_shape = shape(runtime, right)?;
     if left_shape.is_empty() && right_shape.is_empty() {
-        return operation(left.clone(), right.clone());
+        return operation(runtime, left, right);
     }
     if left_shape.is_empty() {
-        return broadcast_scalar(right, &right_shape, &mut |value| {
-            operation(left.clone(), value)
+        return broadcast_scalar(runtime, right, &right_shape, &mut |runtime, value| {
+            operation(runtime, left, value)
         });
     }
     if right_shape.is_empty() {
-        return broadcast_scalar(left, &left_shape, &mut |value| {
-            operation(value, right.clone())
+        return broadcast_scalar(runtime, left, &left_shape, &mut |runtime, value| {
+            operation(runtime, value, right)
         });
     }
     if left_shape.len() == 1 && right_shape.len() == 1 {
-        let left = operations::iterable_array(left)?;
-        let right = operations::iterable_array(right)?;
+        let left = operations::iterable_array(runtime, left)?;
+        let right = operations::iterable_array(runtime, right)?;
         let length = left.len().max(right.len());
-        return Ok(MiraAny::Array(
-            (0..length)
-                .map(|index| {
-                    operation(
-                        left.get(index).cloned().unwrap_or(MiraAny::Nil),
-                        right.get(index).cloned().unwrap_or(MiraAny::Nil),
-                    )
-                })
-                .collect::<Result<Vec<_>>>()?
-                .into(),
-        ));
+        let mut result = Vec::with_capacity(length);
+        for index in 0..length {
+            result.push(operation(
+                runtime,
+                left.get(index).copied().unwrap_or(MiraValue::Nil),
+                right.get(index).copied().unwrap_or(MiraValue::Nil),
+            )?);
+        }
+        return runtime.insert(result);
     }
 
-    let left_matrix = as_matrix(left)?;
-    let right_matrix = as_matrix(right)?;
+    let left_matrix = as_matrix(runtime, left)?;
+    let right_matrix = as_matrix(runtime, right)?;
     let rows = left_matrix.len().max(right_matrix.len());
     let left_columns = left_matrix.iter().map(Vec::len).max().unwrap_or(0);
     let right_columns = right_matrix.iter().map(Vec::len).max().unwrap_or(0);
@@ -66,107 +69,100 @@ pub(super) fn entrywise(
             let left_column = if left_columns == 1 { 0 } else { column };
             let right_column = if right_columns == 1 { 0 } else { column };
             output.push(operation(
+                runtime,
                 left_matrix
                     .get(left_row)
                     .and_then(|row| row.get(left_column))
-                    .cloned()
-                    .unwrap_or(MiraAny::Nil),
+                    .copied()
+                    .unwrap_or(MiraValue::Nil),
                 right_matrix
                     .get(right_row)
                     .and_then(|row| row.get(right_column))
-                    .cloned()
-                    .unwrap_or(MiraAny::Nil),
+                    .copied()
+                    .unwrap_or(MiraValue::Nil),
             )?);
         }
-        result.push(MiraAny::Array(output.into()));
+        result.push(output);
     }
-    Ok(MiraAny::Array(result.into()))
+    from_matrix(runtime, result)
 }
 
-pub(super) fn broadcast_scalar(
-    value: &MiraAny,
+fn broadcast_scalar(
+    runtime: &mut Runtime,
+    value: MiraValue,
     dimensions: &[usize],
-    operation: &mut impl FnMut(MiraAny) -> Result<MiraAny>,
-) -> Result<MiraAny> {
+    operation: &mut impl FnMut(&mut Runtime, MiraValue) -> Result<MiraValue>,
+) -> Result<MiraValue> {
     if dimensions.len() == 1 {
-        return Ok(MiraAny::Array(
-            operations::iterable_array(value)?
-                .into_iter()
-                .map(operation)
-                .collect::<Result<Vec<_>>>()?
-                .into(),
-        ));
+        let values = operations::iterable_array(runtime, value)?;
+        let mut result = Vec::with_capacity(values.len());
+        for value in values {
+            result.push(operation(runtime, value)?);
+        }
+        return runtime.insert(result);
     }
-    let matrix = as_matrix(value)?;
-    Ok(MiraAny::Array(
-        (0..dimensions[0])
-            .map(|row| {
-                Ok(MiraAny::Array(
-                    (0..dimensions[1])
-                        .map(|column| {
-                            operation(
-                                matrix
-                                    .get(row)
-                                    .and_then(|row| row.get(column))
-                                    .cloned()
-                                    .unwrap_or(MiraAny::Nil),
-                            )
-                        })
-                        .collect::<Result<Vec<_>>>()?
-                        .into(),
-                ))
-            })
-            .collect::<Result<Vec<_>>>()?
-            .into(),
-    ))
+    let matrix = as_matrix(runtime, value)?;
+    let mut result = Vec::with_capacity(dimensions[0]);
+    for row in 0..dimensions[0] {
+        let mut output = Vec::with_capacity(dimensions[1]);
+        for column in 0..dimensions[1] {
+            let value = matrix
+                .get(row)
+                .and_then(|row| row.get(column))
+                .copied()
+                .unwrap_or(MiraValue::Nil);
+            output.push(operation(runtime, value)?);
+        }
+        result.push(output);
+    }
+    from_matrix(runtime, result)
 }
 
 pub(super) fn map_nested(
-    value: &MiraAny,
-    operation: &mut impl FnMut(MiraAny) -> Result<MiraAny>,
-) -> Result<MiraAny> {
-    let values = operations::iterable_array(value)?;
-    Ok(MiraAny::Array(
-        values
-            .into_iter()
-            .map(|value| {
-                if value.array_len()?.is_some() {
-                    map_nested(&value, operation)
-                } else {
-                    operation(value)
-                }
-            })
-            .collect::<Result<Vec<_>>>()?
-            .into(),
-    ))
+    runtime: &mut Runtime,
+    value: MiraValue,
+    operation: &mut impl FnMut(&mut Runtime, MiraValue) -> Result<MiraValue>,
+) -> Result<MiraValue> {
+    let values = operations::iterable_array(runtime, value)?;
+    let mut result = Vec::with_capacity(values.len());
+    for value in values {
+        if operations::array_len(runtime, value)?.is_some() {
+            result.push(map_nested(runtime, value, operation)?);
+        } else {
+            result.push(operation(runtime, value)?);
+        }
+    }
+    runtime.insert(result)
 }
 
-pub(super) fn multiply(_call: &mut Runtime<'_>, args: &[MiraAny]) -> Result<MiraAny> {
-    let left = required(args, 0, "a")?;
-    let right = required(args, 1, "b")?;
-    let left_shape = shape(left)?;
-    let right_shape = shape(right)?;
+pub(super) fn multiply(runtime: &mut Runtime, args: &[MiraValue]) -> Result<MiraValue> {
+    let left = *required(args, 0, "a")?;
+    let right = *required(args, 1, "b")?;
+    let left_shape = shape(runtime, left)?;
+    let right_shape = shape(runtime, right)?;
     match (left_shape.len(), right_shape.len()) {
-        (0, _) | (_, 0) => numeric_entrywise(args, |a, b| a * b),
+        (0, _) | (_, 0) => numeric_entrywise(runtime, args, |a, b| a * b),
         (1, 1) => {
-            let left = operations::iterable_array(left)?;
-            let right = operations::iterable_array(right)?;
+            let left = operations::iterable_array(runtime, left)?;
+            let right = operations::iterable_array(runtime, right)?;
             let length = left.len().max(right.len());
             let mut sum = 0.0;
             for index in 0..length {
-                sum += numeric(left.get(index).unwrap_or(&MiraAny::Nil))?
-                    * numeric(right.get(index).unwrap_or(&MiraAny::Nil))?;
+                sum += numeric(runtime, left.get(index).copied().unwrap_or(MiraValue::Nil))?
+                    * numeric(runtime, right.get(index).copied().unwrap_or(MiraValue::Nil))?;
             }
-            Ok(MiraAny::Number(sum))
+            Ok(MiraValue::Number(sum))
         }
         (2, 2) => {
             if left_shape[1] != right_shape[0] {
-                return Err(MiraError::runtime("Incompatible matrix dimensions"));
+                return Err(MiraError::runtime(
+                    RuntimeErrorKind::IncompatibleMatrixDimensions,
+                ));
             }
-            let left = as_matrix(left)?;
-            let right = as_matrix(right)?;
+            let left = as_matrix(runtime, left)?;
+            let right = as_matrix(runtime, right)?;
             let right_columns: Vec<Vec<_>> = (0..right_shape[1])
-                .map(|column| right.iter().map(|row| row[column].clone()).collect())
+                .map(|column| right.iter().map(|row| row[column]).collect())
                 .collect();
             let mut result = Vec::new();
             for left_row in &left {
@@ -174,48 +170,52 @@ pub(super) fn multiply(_call: &mut Runtime<'_>, args: &[MiraAny]) -> Result<Mira
                 for right_column in &right_columns {
                     let mut sum = 0.0;
                     for (left_value, right_value) in left_row.iter().zip(right_column) {
-                        sum += numeric(left_value)? * numeric(right_value)?;
+                        sum += numeric(runtime, *left_value)? * numeric(runtime, *right_value)?;
                     }
-                    output.push(MiraAny::Number(sum));
+                    output.push(MiraValue::Number(sum));
                 }
-                result.push(MiraAny::Array(output.into()));
+                result.push(output);
             }
-            Ok(MiraAny::Array(result.into()))
+            from_matrix(runtime, result)
         }
         (1, 2) => {
             if left_shape[0] != right_shape[0] {
-                return Err(MiraError::runtime("Incompatible matrix dimensions"));
+                return Err(MiraError::runtime(
+                    RuntimeErrorKind::IncompatibleMatrixDimensions,
+                ));
             }
-            let left = operations::iterable_array(left)?;
-            let right = as_matrix(right)?;
+            let left = operations::iterable_array(runtime, left)?;
+            let right = as_matrix(runtime, right)?;
             let right_columns: Vec<Vec<_>> = (0..right_shape[1])
-                .map(|column| right.iter().map(|row| row[column].clone()).collect())
+                .map(|column| right.iter().map(|row| row[column]).collect())
                 .collect();
             let mut result = Vec::new();
             for right_column in &right_columns {
                 let mut sum = 0.0;
                 for (left_value, right_value) in left.iter().zip(right_column) {
-                    sum += numeric(left_value)? * numeric(right_value)?;
+                    sum += numeric(runtime, *left_value)? * numeric(runtime, *right_value)?;
                 }
-                result.push(MiraAny::Number(sum));
+                result.push(MiraValue::Number(sum));
             }
-            Ok(MiraAny::Array(result.into()))
+            runtime.insert(result)
         }
         (2, 1) => {
             if left_shape[1] != right_shape[0] {
-                return Err(MiraError::runtime("Incompatible matrix dimensions"));
+                return Err(MiraError::runtime(
+                    RuntimeErrorKind::IncompatibleMatrixDimensions,
+                ));
             }
-            let left = as_matrix(left)?;
-            let right = operations::iterable_array(right)?;
+            let left = as_matrix(runtime, left)?;
+            let right = operations::iterable_array(runtime, right)?;
             let mut result = Vec::new();
             for left_row in &left {
                 let mut sum = 0.0;
                 for (left_value, right_value) in left_row.iter().zip(&right) {
-                    sum += numeric(left_value)? * numeric(right_value)?;
+                    sum += numeric(runtime, *left_value)? * numeric(runtime, *right_value)?;
                 }
-                result.push(MiraAny::Number(sum));
+                result.push(MiraValue::Number(sum));
             }
-            Ok(MiraAny::Array(result.into()))
+            runtime.insert(result)
         }
         _ => unreachable!(),
     }

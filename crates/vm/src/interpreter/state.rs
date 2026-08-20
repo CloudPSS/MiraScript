@@ -1,5 +1,8 @@
 use super::*;
 
+/// `None` is reserved for an uninitialized VM register.
+pub(crate) type MiraAny = Option<MiraValue>;
+
 /// Identifies a frame in the call stack.
 /// Root frame is always `0`, and child frames are numbered sequentially starting from `1`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -21,7 +24,7 @@ impl FrameArena {
     pub(super) fn new(root_register_count: usize) -> Self {
         Self {
             root: Frame {
-                registers: vec![MiraAny::Uninitialized; root_register_count + 1],
+                registers: vec![None; root_register_count + 1],
                 parent: None,
             },
             children: Vec::new(),
@@ -51,7 +54,7 @@ impl FrameArena {
 
     pub(super) fn reset(&mut self, frame: FrameId, parent: Option<FrameId>) {
         let frame = self.get_mut(frame);
-        frame.registers.fill(MiraAny::Uninitialized);
+        frame.registers.fill(None);
         frame.parent = parent;
     }
 }
@@ -60,42 +63,6 @@ pub(super) struct CallStack {
     inline: [Option<Rc<str>>; INLINE_CALL_DEPTH],
     overflow: Vec<Option<Rc<str>>>,
     len: usize,
-}
-
-pub(super) enum GlobalSlots<'a> {
-    Empty,
-    One(Option<&'a MiraAny>),
-    Two([Option<&'a MiraAny>; 2]),
-    Inline([Option<&'a MiraAny>; INLINE_GLOBAL_SLOTS]),
-    Overflow(Vec<Option<&'a MiraAny>>),
-}
-
-impl<'a> GlobalSlots<'a> {
-    pub(super) fn new(names: &[String], context: &'a MiraContext) -> Self {
-        if names.is_empty() {
-            Self::Empty
-        } else if names.len() == 1 {
-            Self::One(context.get_ref(&names[0]))
-        } else if names.len() == 2 {
-            Self::Two(std::array::from_fn(|index| context.get_ref(&names[index])))
-        } else if names.len() <= INLINE_GLOBAL_SLOTS {
-            Self::Inline(std::array::from_fn(|index| {
-                names.get(index).and_then(|name| context.get_ref(name))
-            }))
-        } else {
-            Self::Overflow(names.iter().map(|name| context.get_ref(name)).collect())
-        }
-    }
-
-    pub(super) fn get_ref(&self, slot: usize) -> Option<&'a MiraAny> {
-        match self {
-            Self::Empty => None,
-            Self::One(value) => *value,
-            Self::Two(values) => values[slot],
-            Self::Inline(values) => values[slot],
-            Self::Overflow(values) => values[slot],
-        }
-    }
 }
 
 impl CallStack {

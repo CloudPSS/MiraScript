@@ -13,12 +13,12 @@ use indexmap::IndexMap;
 use mirascript_core::OpCode;
 use mirascript_core::prelude::*;
 
-use crate::{InvalidBytecodeReason, MiraAny, MiraError, Result};
+use crate::{InvalidBytecodeReason, MiraError, Result};
 
 use chunk::decode_chunk;
 pub(crate) use model::*;
 
-use self::constants::Constant;
+pub(crate) use self::constants::Constant;
 
 impl Program {
     pub fn decode(chunk: &[u8]) -> Result<Self> {
@@ -60,7 +60,7 @@ impl Program {
 struct Decoder<'a> {
     code: &'a [u8],
     offset: usize,
-    constants: Vec<Constant<'a>>,
+    constants: Vec<Constant>,
     functions: Vec<FunctionDef>,
     global_names: IndexMap<String, ()>,
     scopes: Vec<usize>,
@@ -151,7 +151,7 @@ impl Decoder<'_> {
     fn read_string_constant(&mut self, wide: bool, instruction_offset: usize) -> Result<String> {
         let index = self.read_constant(wide, instruction_offset)?;
         match &self.constants[index] {
-            MiraAny::String(value) => Ok(value.to_string()),
+            Constant::String(value) => Ok(value.to_string()),
             _ => Err(MiraError::invalid_bytecode(
                 instruction_offset,
                 InvalidBytecodeReason::InvalidConstantType,
@@ -161,7 +161,7 @@ impl Decoder<'_> {
 
     fn read_global_slot(&mut self, wide: bool, instruction_offset: usize) -> Result<usize> {
         let constant = self.read_constant(wide, instruction_offset)?;
-        let name = crate::operations::to_string(&self.constants[constant])?;
+        let name = self.constants[constant].to_source_string();
         if let Some(slot) = self.global_names.get_index_of(&name) {
             return Ok(slot);
         }

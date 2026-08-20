@@ -45,12 +45,12 @@ fn decodes_every_constant_encoding() {
     assert_eq!(
         program.constants.as_ref(),
         &[
-            MiraAny::Nil,
-            MiraAny::Boolean(true),
-            MiraAny::Boolean(false),
-            MiraAny::Number(-7.0),
-            MiraAny::Number(1.25),
-            MiraAny::String("x".into()),
+            Constant::Nil,
+            Constant::True,
+            Constant::False,
+            Constant::Int(-7),
+            Constant::Float(1.25),
+            Constant::String("x".into()),
         ],
     );
 }

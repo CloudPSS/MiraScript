@@ -1,219 +1,136 @@
 # mirascript-vm
 
-`mirascript-vm` is the native, single-threaded Rust runtime for MiraScript. It uses
-`mirascript-core` to compile source, validates the resulting bytecode, and executes it
-without a JavaScript or Python host. `MiraContext::new()` installs the same public
-standard-library surface as the TypeScript VM.
+`mirascript-vm` is the native, single-threaded Rust runtime for MiraScript. Source
+is compiled and validated independently from execution: a `MiraScript` contains
+only the decoded program and owned constant table, while a `Runtime` owns globals,
+the standard library, execution state, and every dynamically allocated value.
 
 ## Quick start
 
 ```rust
-use mirascript_vm::{MiraAny, MiraContext, MiraRecord, compile};
+use mirascript_vm::{MiraRecord, MiraValue, Runtime, compile};
 
-#[derive(Clone, MiraRecord)]
+#[derive(MiraRecord)]
 struct Foo {
     bar: u8,
 }
 
-fn run() -> mirascript_vm::Result<()> {
-    let mut context = MiraContext::new();
-    context.insert("foo", MiraAny::from(Foo { bar: 42 }));
+let script = compile("foo.bar")?;
+let mut runtime = Runtime::new();
+let foo = runtime.insert_record(Foo { bar: 42 })?;
+runtime.insert_global("foo", MiraValue::Record(foo.erase_record()))?;
 
-    let script = compile("foo.bar")?;
-    assert_eq!(script.run(&context)?, MiraAny::from(42));
-    Ok(())
-}
-
-run()?;
+assert_eq!(runtime.run(&script)?, MiraValue::Number(42.0));
 # Ok::<(), Box<mirascript_vm::MiraError>>(())
 ```
 
-`compile` returns a validated `MiraScript` that can be reused with different
-contexts. `eval` is the convenience API for compile-and-run-once. User globals
-inserted into a context may replace standard-library globals with the same name.
+One script can run in multiple runtimes, and one runtime can run any number of
+scripts. Each run resets frames, registers, the call stack, timeout accounting,
+and its execution generation. Globals, standard-library values, the arena, and
+materialized string constants remain until the runtime is dropped. Re-entering
+`Runtime::run` from a native callback returns `RuntimeErrorKind::ReentrantRun`.
 
-## Execution options and host providers
+## Values and arena ownership
 
-`MiraScript::run_with` accepts per-run limits:
+`MiraValue` is a 16-byte, copyable value. Nil, booleans, numbers, and truly static
+strings are inline; dynamic strings, arrays, records, functions, and modules use
+typed handles into the owning runtime's append-only arena. Checked lookups reject
+foreign, out-of-range, and wrongly typed handles.
 
-- `timeout`: 100 ms by default;
-- `checkpoint_interval`: 100 interpreter checkpoints by default;
-- `max_call_depth`: 128 by default;
-- `max_array_len`: `0x100_0000` by default.
+The compiled constant table never contains runtime handles. A string constant is
+allocated only when its bytecode instruction executes and is cached by
+`(ScriptId, constant_index)` in that runtime. Unexecuted branches allocate
+nothing, clones of one script share the cache identity, and different runtimes
+materialize their own copies.
 
-Random numbers, the current time, and debug output are supplied by the object-safe
-`RuntimeProviders` trait. Tests can replace the default providers without changing
-process-wide state:
+Use `Runtime::insert` for an owned `MiraManageable`, or the category-specific
+`insert_string`, `insert_array`, `insert_record`, `insert_function`, and
+`insert_module` methods when a typed `MiraHandle<T>` is needed. The matching
+checked `get_*` and `get_*_mut` methods let the host inspect or mutate live values.
+
+## Host records, arrays, functions, and modules
+
+All compound behavior is dispatched through `dyn MiraArray`, `dyn MiraRecord`,
+`dyn MiraFunction`, and `dyn MiraModule`. Script and host implementations use the
+same traits; `MiraManageable` carries an owned value until `Runtime::insert`
+places it in the correct arena.
+
+`#[derive(MiraRecord)]` supports named structs and `#[derive(MiraArray)]` supports
+tuple and unit structs. Both preserve `#[mira(rename = "...")]`,
+`#[mira(skip)]`, generics, dependency aliases, and `#[mira(crate = "...")]`.
+Nested derived records and arrays are projection views: they retain a typed parent
+handle and read the field from the runtime on every access instead of cloning it.
+
+```rust
+use mirascript_vm::{MiraRecord, MiraValue, Runtime, compile};
+
+#[derive(MiraRecord)]
+struct Position { x: f64, y: f64 }
+
+#[derive(MiraRecord)]
+struct User { name: String, position: Position }
+
+let mut runtime = Runtime::new();
+let user = runtime.insert_record(User {
+    name: "Ada".into(),
+    position: Position { x: 3.0, y: 4.0 },
+})?;
+runtime.insert_global("user", MiraValue::Record(user.erase_record()))?;
+
+let script = compile("user.position.x")?;
+assert_eq!(runtime.run(&script)?, MiraValue::Number(3.0));
+runtime.get_record_mut(user)?.position.x = 10.0;
+assert_eq!(runtime.run(&script)?, MiraValue::Number(10.0));
+# Ok::<(), Box<mirascript_vm::MiraError>>(())
+```
+
+`MiraExtern` is currently only a public, sealed marker. It has no constructor or
+derive macro, and downstream crates cannot implement it.
+
+## Execution options and providers
+
+`Runtime::with_options` configures the timeout, checkpoint interval, maximum call
+depth, maximum bounded array length, and a `RuntimeProviders` implementation for
+random numbers, time, and debug output.
 
 ```rust
 use std::rc::Rc;
-
-use mirascript_vm::{MiraAny, MiraContext, RunOptions, RuntimeProviders, compile};
+use mirascript_vm::{RunOptions, Runtime, RuntimeProviders, compile};
 
 struct Deterministic;
-
 impl RuntimeProviders for Deterministic {
-    fn random(&self) -> f64 {
-        0.25
-    }
+    fn random(&self) -> f64 { 0.25 }
 }
 
-let options = RunOptions {
+let mut runtime = Runtime::with_options(RunOptions {
     providers: Rc::new(Deterministic),
     ..RunOptions::default()
-};
-let script = compile("random()")?;
-assert_eq!(
-    script.run_with(&MiraContext::new(), &options)?,
-    MiraAny::Number(0.25),
-);
+});
+assert_eq!(runtime.run(&compile("random()")?)?.as_number(), Some(0.25));
 # Ok::<(), Box<mirascript_vm::MiraError>>(())
 ```
 
-Timeout checks are cooperative. Loop backedges, function calls, and returns from
-native code reach checkpoints; a blocking host callback cannot be preempted and
-should call `MiraCallContext::checkpoint` during long-running work.
+Timeout checks are cooperative. Loop backedges and function calls reach
+checkpoints; a blocking native callback cannot be preempted.
 
-## Values and live Rust bridges
+## Lifetimes and errors
 
-`MiraAny` represents VM registers and public return values. Script-owned arrays
-and records use `Vec<MiraAny>` and `IndexMap<String, MiraAny>`; the ordered map
-keeps field iteration and serialization deterministic. Checked `TryFrom<MiraAny>`
-implementations reject non-finite, fractional, or out-of-range integer conversions.
+Strings, arrays, and records returned from a run remain valid in that runtime.
+Script closures and modules retain their shared decoded program and execution
+generation but cannot escape as results; cached callables from an older run return
+`RuntimeErrorKind::ExecutionEnded`. The runtime has no garbage collector: all arena
+values are released together when it is dropped.
 
-The derive macros expose Rust values as live views:
-
-- `MiraRecord` supports structs and is read-only in scripts;
-- `MiraArray` supports tuple and unit structs, `AsRef<[T]` and is read-only in scripts.
-
-Fields support `#[mira(rename = "...")]` and `#[mira(skip)]`. Extern fields also
-support `#[mira(readonly)]`, and an extern type can set `#[mira(tag = "...")]`.
-Derives automatically resolve direct `mirascript` and `mirascript-vm`
-dependencies, including Cargo dependency aliases. Use `#[mira(crate = "...")]`
-when the runtime API is exposed through another wrapper crate.
-
-A direct conversion transfers ownership to the VM wrapper. Use `MiraShared<T>`
-when the host must retain and mutate the same object:
-
-```rust
-use mirascript_vm::{MiraAny, MiraContext, MiraRecord, MiraShared, compile};
-
-#[derive(MiraRecord)]
-struct Counter {
-    value: i64,
-}
-
-let counter = MiraShared::new(Counter { value: 1 });
-let mut context = MiraContext::new();
-context.insert("counter", MiraAny::from(counter.clone()));
-let script = compile("counter.value")?;
-
-assert_eq!(script.run(&context)?, MiraAny::from(1));
-counter.borrow_mut().value = 2;
-assert_eq!(script.run(&context)?, MiraAny::from(2));
-# Ok::<(), Box<mirascript_vm::MiraError>>(())
-```
-
-`MiraShared<T>` uses `Rc<RefCell<T>>`, so host values do not need `Send` or
-`Sync`. VM-side dynamic borrow conflicts become `MiraError::BorrowConflict`
-instead of panics.
-
-Native functions receive a `MiraCallContext`. They can read values using VM
-access rules, call script callbacks, inspect run options, and cooperate with
-timeout checks. This is also the path used by callback-based standard-library
-functions such as `map`, `filter`, and `fold`.
-
-## Execution and lifetime model
-
-Bytecode emitted by `mirascript-core` is decoded into a structured internal instruction
-tree. Loading validates chunk boundaries, constant encodings and UTF-8, narrow and
-wide parameters, opcode legality, register and constant references, and nested
-function/control-flow terminators. Runtime errors retain bytecode offsets and call
-stack context.
-
-Each run owns a frame arena:
-
-- function frames store registers and their captured parent frame;
-- loops reuse a frame only when their body cannot create a closure or module;
-- script functions store an instruction definition and an integer frame handle;
-- upvalue operations walk parent handles by lexical level.
-
-The arena intentionally has no runtime garbage collector. Script closures and
-script modules cannot escape `run`; returning one produces
-`MiraError::EscapingClosure`. If a host callback improperly caches one, later use
-returns `MiraError::ExecutionEnded` rather than dereferencing stale memory.
-Native functions, native modules, and live Rust values may escape safely.
-
-## Runtime structure and TypeScript parity
-
-The Rust source layout follows the TypeScript VM where the implementations share
-a concept:
-
-- `src/operations/` mirrors conversion, type checks, operators, record access,
-  iterables, spread, slices, and ranges from
-  `packages/mirascript/src/vm/operations/`;
-- `src/standard_library/global/` mirrors global math, bit, sequence, string,
-  JSON, conversion, debug, and time modules;
-- `src/standard_library/module/matrix/` mirrors the TypeScript matrix module;
-- bytecode decoding, interpreter state/control/calls, and values are split by
-  responsibility under their own directories.
-
-`MiraContext::new()` installs math and bit functions, string operations, sequence
-operations, JSON and primitive conversion, debug and time providers, and the
-`matrix` module. Parameter validation, fallback behavior, and errors are kept
-compatible with the TypeScript runtime; host-specific JavaScript behavior is not
-copied when it is outside MiraScript semantics.
-
-## Error model
-
-`MiraError` separates compilation diagnostics, invalid bytecode, runtime errors,
-Rust conversion failures, extern failures, live-value borrow conflicts, timeouts,
-call-depth exhaustion, escaping script references, and expired executions.
-Conversion errors can add a nested field or index using `MiraError::at_path`.
-
-## Performance
-
-The retained optimizations target behavior shared by real workloads:
-
-- static global names resolve to borrowed per-run slots;
-- calls with zero to four arguments avoid heap argument vectors;
-- the call stack keeps common depths inline;
-- checkpoints use a countdown;
-- frame/register state is exclusively borrowed by the runtime;
-- decoded instructions use typed fields instead of generic parameter vectors;
-- loops without captured environments reuse their frame;
-- static small-arity calls and adjacent global arguments are quickened;
-- numeric arithmetic has a typed fast path with semantic fallback.
-
-On the original Windows benchmark host, the simple run-only script improved from
-672 ns to roughly 286–289 ns, while the scalar loop improved from 15.38 us to
-about 5.73 us. These are historical, harness-specific measurements; compare only
-runs made on the same host with the same Divan/Tinybench duration.
-
-JIT is not the default next step. It is worth evaluating only when representative,
-long-running numeric workloads remain dispatch-bound and need a material further
-gain. A viable JIT must also cover platform support, executable-memory policy,
-compile latency, host/extern callbacks, timeout checkpoints, error stacks, and an
-interpreter fallback. Single-run startup time alone is not a sufficient reason.
+`MiraError` separates compiler diagnostics, invalid bytecode, structured runtime
+failures, conversion failures with field/index paths, and arbitrary host errors.
+Runtime errors retain bytecode offsets and call-stack context.
 
 ## Development
 
-Run the host-value example with:
-
-```text
-cargo run -p mirascript-vm --example host_values
-```
-
-Validate the Rust implementation with:
-
 ```text
 cargo fmt --all -- --check
-cargo check --workspace
+cargo check --workspace --all-targets
 cargo test --workspace
-cargo bench -p mirascript-vm --bench main -- --min-time 2 --sample-count 100
+cargo doc --workspace --no-deps
+git diff --check
 ```
-
-The benchmark suite covers compile-and-run and run-only paths for fixed overhead,
-global access, native calls, scalar loops, containers, closures, and standard
-library calls. Performance changes should pass the full compatibility and
-lifetime test suite and improve more than a single microbenchmark.

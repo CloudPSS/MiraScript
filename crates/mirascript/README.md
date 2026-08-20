@@ -2,29 +2,33 @@
 
 `mirascript` is the batteries-included Rust interface to the MiraScript compiler
 and virtual machine. It re-exports the complete `mirascript-vm` API, including
-the derive macros for exposing live Rust values to scripts.
+the `MiraRecord` and `MiraArray` derive macros.
+
+Compilation and execution are independent. A compiled script is reusable, while
+the runtime owns globals, standard-library values, execution state, and its arena:
 
 ```rust
-use mirascript::{MiraAny, MiraContext, compile};
+use mirascript::{MiraValue, Runtime, compile};
 
 let script = compile("answer + 1")?;
-let mut context = MiraContext::new();
-context.insert("answer", 41);
+let mut runtime = Runtime::new();
+runtime.insert_global("answer", 41)?;
 
-assert_eq!(script.run(&context)?, MiraAny::Number(42.0));
+assert_eq!(runtime.run(&script)?, MiraValue::Number(42.0));
 # Ok::<(), Box<mirascript::MiraError>>(())
 ```
 
-Compiler configuration and bytecode definitions are available through the
-`core` module, while the complete runtime crate is also available as `vm`.
+Compiler configuration and bytecode definitions are available through `core`,
+and the complete runtime crate is also available as `vm`.
 
 ```rust
 let config = mirascript::core::Config::new();
 let script = mirascript::compile_with("40 + 2", &config)?;
+let mut runtime = mirascript::Runtime::new();
 
 assert_eq!(
-    script.run(&mirascript::MiraContext::new())?,
-    mirascript::MiraAny::Number(42.0),
+    runtime.run(&script)?,
+    mirascript::MiraValue::Number(42.0),
 );
 # Ok::<(), Box<mirascript::MiraError>>(())
 ```

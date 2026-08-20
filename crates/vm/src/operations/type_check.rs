@@ -1,17 +1,8 @@
 use super::*;
 
-pub(crate) fn assert_initialized(value: &MiraAny) -> Result<()> {
-    if matches!(value, MiraAny::Uninitialized) {
-        Err(MiraError::runtime("Uninitialized value"))
-    } else {
-        Ok(())
-    }
-}
-
-pub(crate) fn assert_non_nil(value: &MiraAny) -> Result<()> {
-    assert_initialized(value)?;
-    if matches!(value, MiraAny::Nil) {
-        Err(MiraError::runtime("Expected non-nil value"))
+pub(crate) fn assert_non_nil(value: MiraValue) -> Result<()> {
+    if matches!(value, MiraValue::Nil) {
+        Err(MiraError::runtime(RuntimeErrorKind::ExpectedNonNil))
     } else {
         Ok(())
     }

@@ -1,15 +1,14 @@
 use super::MiraError;
 
-impl Into<Box<MiraError>> for anyhow::Error {
-    fn into(self) -> Box<MiraError> {
-        let err = match self.downcast::<MiraError>() {
+impl From<anyhow::Error> for Box<MiraError> {
+    fn from(error: anyhow::Error) -> Self {
+        let error = match error.downcast::<MiraError>() {
             Ok(error) => return Box::new(error),
             Err(error) => error,
         };
-        let err = match err.downcast::<Box<MiraError>>() {
-            Ok(error) => return error,
-            Err(error) => error,
-        };
-        Box::new(MiraError::External(err))
+        match error.downcast::<Box<MiraError>>() {
+            Ok(error) => error,
+            Err(error) => Box::new(MiraError::External(error)),
+        }
     }
 }

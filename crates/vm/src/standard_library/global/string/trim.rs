@@ -1,28 +1,23 @@
+use crate::Runtime;
 use crate::standard_library::{insert_native, string};
-use crate::{MiraAny, MiraContext};
 
 use super::is_javascript_whitespace;
 
-pub(super) fn install(context: &mut MiraContext) {
-    insert_native(context, "trim_start", |_, args| {
-        Ok(MiraAny::String(
-            string(args, 0, "str")?
+pub(super) fn install(context: &mut Runtime) {
+    insert_native(context, "trim_start", |call, args| {
+        let value = string(call, args, 0, "str")?;
+        call.insert(
+            value
                 .trim_start_matches(is_javascript_whitespace)
-                .into(),
-        ))
+                .to_owned(),
+        )
     });
-    insert_native(context, "trim_end", |_, args| {
-        Ok(MiraAny::String(
-            string(args, 0, "str")?
-                .trim_end_matches(is_javascript_whitespace)
-                .into(),
-        ))
+    insert_native(context, "trim_end", |call, args| {
+        let value = string(call, args, 0, "str")?;
+        call.insert(value.trim_end_matches(is_javascript_whitespace).to_owned())
     });
-    insert_native(context, "trim", |_, args| {
-        Ok(MiraAny::String(
-            string(args, 0, "str")?
-                .trim_matches(is_javascript_whitespace)
-                .into(),
-        ))
+    insert_native(context, "trim", |call, args| {
+        let value = string(call, args, 0, "str")?;
+        call.insert(value.trim_matches(is_javascript_whitespace).to_owned())
     });
 }

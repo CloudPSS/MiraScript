@@ -1,40 +1,39 @@
 use crate::standard_library::insert_native;
-use crate::{MiraAny, MiraContext, MiraError, operations};
+use crate::{MiraError, MiraValue, Runtime, RuntimeErrorKind, operations};
 
-pub(super) fn install(context: &mut MiraContext) {
-    insert_native(context, "to_string", |_, args| {
-        Ok(MiraAny::String(
-            operations::to_string(
-                args.first()
-                    .ok_or_else(|| MiraError::runtime("Parameter 'data' is required"))?,
-            )?
-            .into(),
-        ))
+pub(super) fn install(context: &mut Runtime) {
+    insert_native(context, "to_string", |call, args| {
+        let value = *args.first().ok_or_else(|| {
+            MiraError::runtime(RuntimeErrorKind::MissingArgument { name: "data" })
+        })?;
+        let value = operations::to_string(call, value)?;
+        call.insert(value)
     });
-    insert_native(context, "to_number", |_, args| {
-        let value = args
-            .first()
-            .ok_or_else(|| MiraError::runtime("Parameter 'data' is required"))?;
-        match operations::to_number(value) {
-            Ok(value) => Ok(MiraAny::Number(value)),
-            Err(_) if args.len() > 1 => Ok(args[1].clone()),
+    insert_native(context, "to_number", |call, args| {
+        let value = *args.first().ok_or_else(|| {
+            MiraError::runtime(RuntimeErrorKind::MissingArgument { name: "data" })
+        })?;
+        match operations::to_number(call, value) {
+            Ok(value) => Ok(MiraValue::Number(value)),
+            Err(_) if args.len() > 1 => Ok(args[1]),
             Err(error) => Err(error),
         }
     });
-    insert_native(context, "format", |_, args| {
-        let value = args
-            .first()
-            .ok_or_else(|| MiraError::runtime("Parameter 'data' is required"))?;
+    insert_native(context, "format", |call, args| {
+        let value = *args.first().ok_or_else(|| {
+            MiraError::runtime(RuntimeErrorKind::MissingArgument { name: "data" })
+        })?;
         if args.len() < 2 {
-            return Err(MiraError::runtime("Parameter 'format' is required"));
+            return Err(MiraError::runtime(RuntimeErrorKind::MissingArgument {
+                name: "format",
+            }));
         }
         let specifier = match args.get(1) {
-            Some(MiraAny::Nil) => None,
-            Some(value) => Some(operations::to_string(value)?),
+            Some(MiraValue::Nil) => None,
+            Some(value) => Some(operations::to_string(call, *value)?),
             None => unreachable!(),
         };
-        Ok(MiraAny::String(
-            operations::format_value(value, specifier.as_deref())?.into(),
-        ))
+        let value = operations::format_value(call, value, specifier.as_deref())?;
+        call.insert(value)
     });
 }
