@@ -111,6 +111,9 @@ fn native_run_simple(bencher: Bencher) {
     });
 }
 
+#[global_allocator]
+static GLOBAL_ALLOCATOR: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 fn main() {
     divan::main();
 }

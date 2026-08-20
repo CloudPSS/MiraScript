@@ -16,9 +16,9 @@ impl MiraFunction for ScriptFunction {
         if self.execution != runtime.execution {
             return Err(MiraError::runtime(RuntimeErrorKind::ExecutionEnded));
         }
-        let definition = self.program.functions[self.function].clone();
+        let definition = &self.program.functions[self.function];
         runtime
-            .call_script(&definition, self.frame, args)
+            .call_script(definition, self.frame, args)
             .map(Into::into)
     }
 

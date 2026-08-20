@@ -26,8 +26,8 @@ impl Decoder<'_> {
         Ok(InstructionKind::If {
             condition,
             register,
-            then_body: Rc::from(then_body),
-            else_body: Rc::from(else_body),
+            then_body: Box::from(then_body),
+            else_body: Box::from(else_body),
         })
     }
 
@@ -61,7 +61,7 @@ impl Decoder<'_> {
         Ok(InstructionKind::Loop {
             register_count,
             kind,
-            body: Rc::from(body),
+            body: Box::from(body),
             reuse_frame,
         })
     }

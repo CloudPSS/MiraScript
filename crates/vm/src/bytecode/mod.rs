@@ -7,7 +7,6 @@ mod structured;
 #[cfg(test)]
 mod tests;
 
-use std::rc::Rc;
 
 use indexmap::IndexMap;
 use mirascript_core::OpCode;
@@ -49,10 +48,10 @@ impl Program {
         }
 
         Ok(Self {
-            constants: Rc::from(decoder.constants),
-            global_names: Rc::from(decoder.global_names.into_keys().collect::<Vec<_>>()),
+            constants: Box::from(decoder.constants),
+            global_names: Box::from(decoder.global_names.into_keys().collect::<Vec<_>>()),
             root,
-            functions: Rc::from(decoder.functions),
+            functions: Box::from(decoder.functions),
         })
     }
 }
@@ -208,7 +207,7 @@ impl Decoder<'_> {
             arg_count,
             register_count,
             variadic: opcode == OpCode::FuncVarg,
-            body: Rc::from(body),
+            body: Box::from(body),
         };
         Ok((destination, function))
     }

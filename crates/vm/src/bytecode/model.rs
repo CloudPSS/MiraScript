@@ -1,32 +1,30 @@
-use std::rc::Rc;
-
 use super::constants::Constant;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub(crate) struct Program {
-    pub constants: Rc<[Constant]>,
-    pub global_names: Rc<[String]>,
+    pub constants: Box<[Constant]>,
+    pub global_names: Box<[String]>,
     pub root: FunctionDef,
-    pub functions: Rc<[FunctionDef]>,
+    pub functions: Box<[FunctionDef]>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub(crate) struct FunctionDef {
     #[allow(dead_code)] // Retained for function-level diagnostics and future source maps.
     pub offset: usize,
     pub arg_count: usize,
     pub register_count: usize,
     pub variadic: bool,
-    pub body: Rc<[Instruction]>,
+    pub body: Box<[Instruction]>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub(crate) struct Instruction {
     pub offset: usize,
     pub kind: InstructionKind,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub(crate) enum InstructionKind {
     Op(Operation),
     Function {
@@ -36,13 +34,13 @@ pub(crate) enum InstructionKind {
     If {
         condition: Condition,
         register: usize,
-        then_body: Rc<[Instruction]>,
-        else_body: Rc<[Instruction]>,
+        then_body: Box<[Instruction]>,
+        else_body: Box<[Instruction]>,
     },
     Loop {
         register_count: usize,
         kind: LoopKind,
-        body: Rc<[Instruction]>,
+        body: Box<[Instruction]>,
         reuse_frame: bool,
     },
     Record {

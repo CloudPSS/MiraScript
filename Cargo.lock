@@ -408,6 +408,7 @@ dependencies = [
  "divan",
  "indexmap",
  "libm",
+ "mimalloc",
  "mirascript-core",
  "mirascript-vm-derive",
  "rand",
