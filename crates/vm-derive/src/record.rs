@@ -1,29 +1,22 @@
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{Data, DeriveInput, Error, Fields, Result};
+use syn::{DeriveInput, Fields, Result, spanned::Spanned};
 
-use crate::utils::{add_read_bounds, container_options, field_options, reject_duplicate_names};
+use crate::container::container_options;
+use crate::field::{field_options, into_fields};
+use crate::utils::{add_read_bounds, reject_duplicate_names};
+
+enum ExportField {
+    Named(syn::Ident),
+    Unnamed(usize),
+}
 
 pub fn expand(input: DeriveInput) -> Result<TokenStream> {
     let options = container_options(&input.attrs)?;
     let krate = options.crate_path;
     let ident = input.ident;
 
-    let fields = match input.data {
-        Data::Struct(data) => data.fields,
-        Data::Enum(value) => {
-            return Err(Error::new_spanned(
-                value.enum_token,
-                "MiraRecord does not support enums",
-            ));
-        }
-        Data::Union(value) => {
-            return Err(Error::new_spanned(
-                value.union_token,
-                "MiraRecord does not support unions",
-            ));
-        }
-    };
+    let fields = into_fields(input.data, "MiraRecord")?;
 
     let mut exported = Vec::new();
     match fields {
@@ -38,29 +31,47 @@ pub fn expand(input: DeriveInput) -> Result<TokenStream> {
                     .rename
                     .map(|name| name.value())
                     .unwrap_or_else(|| field_ident.to_string());
-                exported.push((field_ident, exported_name, field.ty));
+                exported.push((
+                    ExportField::Named(field_ident.clone()),
+                    field_ident.span(),
+                    exported_name,
+                    field.ty,
+                ));
             }
         }
         Fields::Unit => {}
         Fields::Unnamed(fields) => {
-            return Err(Error::new_spanned(
-                fields,
-                "MiraRecord supports named and unit structs; use MiraArray for tuple structs",
-            ));
+            for (index, field) in fields.unnamed.into_iter().enumerate() {
+                let options = field_options(&field, false)?;
+                if options.skip {
+                    continue;
+                }
+                let exported_name = options
+                    .rename
+                    .map(|name| name.value())
+                    .unwrap_or_else(|| index.to_string());
+                exported.push((
+                    ExportField::Unnamed(index),
+                    field.span(),
+                    exported_name,
+                    field.ty,
+                ));
+            }
         }
     }
 
     reject_duplicate_names(
-        &exported
+        exported
             .iter()
-            .map(|(ident, name, _)| (name.clone(), ident.span()))
-            .collect::<Vec<_>>(),
+            .map(|(_, span, name, _)| (name.as_str(), span))
+            .collect::<Vec<_>>()
+            .as_slice(),
     )?;
 
     let mut generics = input.generics;
     add_read_bounds(
         &mut generics,
-        exported.iter().map(|(_, _, ty)| ty.clone()),
+        exported.iter().map(|(_, _, _, ty)| ty.clone()),
         &krate,
     );
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
@@ -68,25 +79,35 @@ pub fn expand(input: DeriveInput) -> Result<TokenStream> {
     let key_matches = exported
         .iter()
         .enumerate()
-        .map(|(index, (_, name, _))| quote!(#name => ::core::option::Option::Some(#index),));
+        .map(|(index, (_, _, name, _))| quote!(#name => ::core::option::Option::Some(#index),));
     let index_matches = exported
         .iter()
         .enumerate()
-        .map(|(index, (_, name, _))| quote!(#index => ::core::result::Result::Ok(#name),));
-    let getters = exported.iter().enumerate().map(|(index, (field, _, ty))| {
-        quote! {
-            #index => {
-                let parent = unsafe { self_handle.upcast::<Self>() };
-                ::core::result::Result::Ok(
-                    <#ty as #krate::__private::MiraField>::from_record(
-                        &self.#field,
-                        parent,
-                        |parent: &Self| &parent.#field,
+        .map(|(index, (_, _, name, _))| quote!(#index => ::core::result::Result::Ok(#name),));
+    let getters = exported
+        .iter()
+        .enumerate()
+        .map(|(index, (field, _, _, ty))| {
+            let field = match field {
+                ExportField::Named(ident) => quote!(#ident),
+                ExportField::Unnamed(index) => {
+                    let index = syn::Index::from(*index);
+                    quote!(#index)
+                }
+            };
+            quote! {
+                #index => {
+                    let parent = unsafe { self_handle.upcast::<Self>() };
+                    ::core::result::Result::Ok(
+                        <#ty as #krate::__private::MiraField>::from_record(
+                            &self.#field,
+                            parent,
+                            |parent: &Self| &parent.#field,
+                        )
                     )
-                )
-            },
-        }
-    });
+                },
+            }
+        });
 
     Ok(quote! {
         impl #impl_generics #krate::MiraShapedRecord for #ident #ty_generics #where_clause {

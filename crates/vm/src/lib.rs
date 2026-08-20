@@ -17,7 +17,10 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
+pub use core::config::InputMode;
 pub use mirascript_core as core;
+/// Re-export the compiler configuration type from `mirascript-core` for convenience.
+pub type CompileConfig = core::Config;
 pub use mirascript_vm_derive::{MiraArray, MiraRecord};
 
 pub use error::*;
@@ -122,11 +125,23 @@ impl Default for RunOptions {
 /// # Ok::<(), Box<mirascript_vm::MiraError>>(())
 /// ```
 pub fn compile(source: &str) -> Result<MiraScript> {
-    compile_with(source, &core::Config::new())
+    compile_with(source, &CompileConfig::new())
 }
 
-/// Compile source with an explicit [`core::Config`].
-pub fn compile_with(source: &str, config: &core::Config) -> Result<MiraScript> {
+/// Compile source with an explicit [`CompileConfig`].
+///
+/// ```
+/// use mirascript_vm::{MiraValue, Runtime, CompileConfig, InputMode, compile_with};
+///
+/// let mut config = CompileConfig::new();
+/// config.input_mode = InputMode::Template;
+/// let script = compile_with("Hello, $name!", &config)?;
+/// let mut runtime = Runtime::new();
+/// runtime.insert_global("name", &"Alice")?;
+/// assert_eq!(runtime.run(&script)?.as_string(&runtime)?.unwrap(), "Hello, Alice!");
+/// # Ok::<(), Box<mirascript_vm::MiraError>>(())
+/// ```
+pub fn compile_with(source: &str, config: &CompileConfig) -> Result<MiraScript> {
     let (chunk, diagnostics) = core::Compiler::compile(source, config);
     let chunk = chunk.ok_or_else(|| MiraError::compile(&diagnostics))?;
     Ok(MiraScript {

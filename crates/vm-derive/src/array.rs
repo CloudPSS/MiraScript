@@ -1,29 +1,17 @@
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{Data, DeriveInput, Error, Fields, Index, Result};
+use syn::{DeriveInput, Error, Fields, Index, Result};
 
-use crate::utils::{add_read_bounds, container_options, field_options};
+use crate::container::container_options;
+use crate::field::{field_options, into_fields};
+use crate::utils::add_read_bounds;
 
 pub fn expand(input: DeriveInput) -> Result<TokenStream> {
     let options = container_options(&input.attrs)?;
     let krate = options.crate_path;
     let ident = input.ident;
 
-    let fields = match input.data {
-        Data::Struct(data) => data.fields,
-        Data::Enum(value) => {
-            return Err(Error::new_spanned(
-                value.enum_token,
-                "MiraArray does not support enums",
-            ));
-        }
-        Data::Union(value) => {
-            return Err(Error::new_spanned(
-                value.union_token,
-                "MiraArray does not support unions",
-            ));
-        }
-    };
+    let fields = into_fields(input.data, "MiraArray")?;
 
     let mut exported = Vec::new();
     match fields {
