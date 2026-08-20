@@ -219,9 +219,10 @@ class ILEmitter extends BytecodeReader {
     }
 
     /** 首次遇到源码行时读取其内容。 */
-    private readSourceLine(range: IRange | undefined): string {
+    private readSourceLine(code: OpCode, range: IRange | undefined): string {
         const lineNumber = range?.startLineNumber;
         if (!lineNumber || this.annotatedSourceLines.has(lineNumber)) return '';
+        if (code === OpCode.Constant) return '';
         this.annotatedSourceLines.add(lineNumber);
         return sourceLine(this.sourceLines, range);
     }
@@ -241,9 +242,19 @@ class ILEmitter extends BytecodeReader {
             const operands = this.readOperands(opcode, wide);
             const offsetText = offset.toString(16).padStart(8, '0');
             const operandText = operands.length ? ` ${operands.join(', ')}` : '';
-            const range = this.sourceMap?.ranges[this.instructionIndex++];
+            let range: IRange | undefined;
+            if (opcode === OpCode.Noop) {
+                // Noop 指令不对应任何源码行，因此不增加 instructionIndex。
+            } else {
+                const currentIndex = this.instructionIndex;
+                if (currentIndex !== 0) {
+                    // 不为第一条指令映射源码
+                    range = this.sourceMap?.ranges[currentIndex];
+                }
+                this.instructionIndex++;
+            }
             const text = `${offsetText}  ${'  '.repeat(this.indent)}${name}${operandText}`;
-            instructions.push({ text, comment: this.readSourceLine(range) });
+            instructions.push({ text, comment: this.readSourceLine(opcode, range) });
             if (OPEN_AFTER.has(opcode)) this.indent++;
         }
         const inlineCommentLengths = instructions
