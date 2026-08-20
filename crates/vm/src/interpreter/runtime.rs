@@ -99,9 +99,9 @@ impl Runtime {
         self.frames = FrameArena::new(script.program.root.register_count);
         self.call_stack = CallStack::new();
 
-        let body = &script.program.root.body;
         let result = (|| {
-            let value = match self.execute_block(&body, ROOT_FRAME_ID)? {
+            let body = &script.program.root.body;
+            let value = match self.execute_block(body, ROOT_FRAME_ID)? {
                 Flow::Return(value) => value,
                 Flow::Continue => MiraValue::Nil,
                 Flow::Break | Flow::LoopContinue => {
