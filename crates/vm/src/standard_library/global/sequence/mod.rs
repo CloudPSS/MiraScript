@@ -34,7 +34,7 @@ impl Data {
             | MiraValue::Boolean(_)
             | MiraValue::Number(_)
             | MiraValue::String(_)
-            | MiraValue::StaticString(_) => Ok(Self::Primitive(value)),
+            | MiraValue::StaticStr(_) => Ok(Self::Primitive(value)),
             MiraValue::Array(_) => Ok(Self::Array(operations::iterable_array(runtime, value)?)),
             MiraValue::Record(_) => {
                 let mut record = IndexMap::new();

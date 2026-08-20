@@ -16,7 +16,7 @@ pub enum MiraValue {
     /// A double-precision numeric value.
     Number(f64),
     /// A compile-time static UTF-8 string stored as a thin pointer.
-    StaticString(&'static &'static str),
+    StaticStr(&'static &'static str),
     /// A runtime-owned UTF-8 string.
     String(MiraHandle<String>),
     /// A MiraScript array.
@@ -43,7 +43,7 @@ impl MiraValue {
             Self::Nil => MiraType::Nil,
             Self::Boolean(_) => MiraType::Boolean,
             Self::Number(_) => MiraType::Number,
-            Self::StaticString(_) | Self::String(_) => MiraType::String,
+            Self::StaticStr(_) | Self::String(_) => MiraType::String,
             Self::Array(_) => MiraType::Array,
             Self::Record(_) => MiraType::Record,
             Self::Function(_) => MiraType::Function,
@@ -77,7 +77,7 @@ impl PartialEq for MiraValue {
             (Self::Number(left), Self::Number(right)) => {
                 left == right || (left.is_nan() && right.is_nan())
             }
-            (Self::StaticString(left), Self::StaticString(right)) => left == right,
+            (Self::StaticStr(left), Self::StaticStr(right)) => left == right,
             (Self::String(left), Self::String(right)) => left == right,
             (Self::Array(left), Self::Array(right)) => left == right,
             (Self::Record(left), Self::Record(right)) => left == right,

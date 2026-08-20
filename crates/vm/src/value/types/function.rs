@@ -1,8 +1,31 @@
 use std::{any::Any, fmt, rc::Rc};
 
-use crate::{Result, Runtime, value::MiraManageable};
+use crate::{MiraHandle, Result, Runtime, value::MiraManageable};
 
 use super::MiraValue;
+
+impl MiraValue {
+    /// Create a `MiraValue` representing a callable function.
+    #[inline]
+    pub fn function(value: MiraHandle<impl MiraFunction>) -> Self {
+        Self::Function(value.erase_function())
+    }
+
+    /// Check whether this value is a callable function.
+    #[inline]
+    pub const fn is_function(self) -> bool {
+        matches!(self, Self::Function(_))
+    }
+
+    /// Return the function handle, or `None` for another value type.
+    #[inline]
+    pub fn as_function(&self) -> Option<MiraHandle<dyn MiraFunction>> {
+        match self {
+            Self::Function(value) => Some(*value),
+            _ => None,
+        }
+    }
+}
 
 const ANONYMOUS_FN_NAME: &str = "<anonymous>";
 

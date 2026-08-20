@@ -55,7 +55,7 @@ All compound behavior is dispatched through `dyn MiraArray`, `dyn MiraRecord`,
 same traits; `MiraManageable` carries an owned value until `Runtime::insert`
 places it in the correct arena.
 
-`#[derive(MiraRecord)]` supports named structs and `#[derive(MiraArray)]` supports
+`#[derive(MiraRecord)]` supports all structs and `#[derive(MiraArray)]` supports
 tuple and unit structs. Both preserve `#[mira(rename = "...")]`,
 `#[mira(skip)]`, generics, dependency aliases, and `#[mira(crate = "...")]`.
 Nested derived records and arrays are projection views: they retain a typed parent

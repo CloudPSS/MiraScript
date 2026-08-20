@@ -86,10 +86,10 @@ fn default_compare(runtime: &mut Runtime, left: MiraValue, right: MiraValue) -> 
     }
     if matches!(
         left,
-        MiraValue::Nil | MiraValue::String(_) | MiraValue::StaticString(_)
+        MiraValue::Nil | MiraValue::String(_) | MiraValue::StaticStr(_)
     ) && matches!(
         right,
-        MiraValue::Nil | MiraValue::String(_) | MiraValue::StaticString(_)
+        MiraValue::Nil | MiraValue::String(_) | MiraValue::StaticStr(_)
     ) {
         return operations::to_string(runtime, left)
             .unwrap_or_default()

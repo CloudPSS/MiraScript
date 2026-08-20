@@ -55,7 +55,7 @@ fn to_json_value(
             serde_json::Value::Number(serde_json::Number::from_f64(value).unwrap())
         }),
         MiraValue::String(handle) => Some(runtime.get_string(handle)?.to_owned().into()),
-        MiraValue::StaticString(value) => Some(value.to_string().into()),
+        MiraValue::StaticStr(value) => Some(value.to_string().into()),
         MiraValue::Array(_) => {
             let values = operations::iterable_array(runtime, value)?;
             let mut result = Vec::with_capacity(values.len());

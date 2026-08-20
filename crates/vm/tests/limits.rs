@@ -92,7 +92,7 @@ fn runtime_arena_persists_across_runs_and_drops_once() {
         let array = runtime.run(&compile("[1, 2, 3]").unwrap()).unwrap();
         assert_eq!(drops.get(), 0);
         assert_eq!(runtime.run(&compile("42").unwrap()).unwrap(), 42.into());
-        assert_eq!(string.as_string(&runtime).unwrap(), Some("persistent"));
+        assert_eq!(string.as_str(&runtime).unwrap(), Some("persistent"));
         runtime.insert_global("old_array", array).unwrap();
         assert_eq!(
             runtime
@@ -124,7 +124,7 @@ fn limits_and_providers_are_runtime_configuration() {
     .unwrap();
     let value = runtime.run(&script).unwrap();
     assert_eq!(
-        value.as_string(&runtime).unwrap(),
+        value.as_str(&runtime).unwrap(),
         Some("{\"0\":0.25,\"1\":0,\"2\":\"1970-01-01T00:00:00.000Z\"}")
     );
     assert_eq!(messages.borrow().as_slice(), ["provider"]);

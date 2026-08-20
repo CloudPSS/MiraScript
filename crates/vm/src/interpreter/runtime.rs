@@ -1,4 +1,5 @@
 use std::{
+    any::Any,
     collections::{HashMap, HashSet},
     num::NonZeroU64,
     rc::Rc,
@@ -12,6 +13,7 @@ use crate::{
     MiraError, MiraManageable, MiraNativeFn, MiraScript, MiraValue, Result, RunOptions,
     RuntimeErrorKind, ScriptId,
     bytecode::{Constant, Program},
+    compile,
     value::MiraArena,
 };
 
@@ -73,6 +75,12 @@ impl Runtime {
         };
         crate::standard_library::install(&mut runtime);
         runtime
+    }
+
+    /// Compile and execute a MiraScript program in this Runtime.
+    pub fn eval(&mut self, script: &str) -> Result<MiraValue> {
+        let script = compile(script)?;
+        self.run(&script)
     }
 
     /// Execute a compiled script in this Runtime.
@@ -216,11 +224,7 @@ impl Runtime {
                 .as_any()
                 .is::<super::ScriptFunction>()),
             MiraValue::Module(handle) => {
-                if self
-                    .get_module_dyn(handle)?
-                    .as_any()
-                    .is::<super::ScriptModule>()
-                {
+                if <dyn Any>::is::<super::ScriptModule>(self.get_module_dyn(handle)?) {
                     return Ok(true);
                 }
                 if !visited.insert((2, handle.erased_key())) {
@@ -275,6 +279,12 @@ impl Runtime {
     }
 }
 
+impl Default for Runtime {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{MiraValue, Runtime, compile};
@@ -291,7 +301,7 @@ mod tests {
         assert_eq!(first.materialized_constant_count(), 0);
 
         let first_value = first.run(&repeated).unwrap();
-        assert_eq!(first_value.as_string(&first).unwrap(), Some("cached"));
+        assert_eq!(first_value.as_str(&first).unwrap(), Some("cached"));
         assert_eq!(first.materialized_constant_count(), 1);
         first.run(&repeated_clone).unwrap();
         assert_eq!(first.materialized_constant_count(), 1);
@@ -304,11 +314,5 @@ mod tests {
         assert!(matches!(first_value, MiraValue::String(_)));
         assert!(matches!(second_value, MiraValue::String(_)));
         assert!(second.insert(first_value).is_err());
-    }
-}
-
-impl Default for Runtime {
-    fn default() -> Self {
-        Self::new()
     }
 }

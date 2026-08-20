@@ -138,7 +138,7 @@ pub fn compile(source: &str) -> Result<MiraScript> {
 /// let script = compile_with("Hello, $name!", &config)?;
 /// let mut runtime = Runtime::new();
 /// runtime.insert_global("name", &"Alice")?;
-/// assert_eq!(runtime.run(&script)?.as_string(&runtime)?.unwrap(), "Hello, Alice!");
+/// assert_eq!(runtime.run(&script)?.as_str(&runtime)?.unwrap(), "Hello, Alice!");
 /// # Ok::<(), Box<mirascript_vm::MiraError>>(())
 /// ```
 pub fn compile_with(source: &str, config: &CompileConfig) -> Result<MiraScript> {

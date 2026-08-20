@@ -5,6 +5,31 @@ use crate::{
     value::{MiraHandle, MiraManageable},
 };
 
+use super::MiraValue;
+
+impl MiraValue {
+    /// Create a `MiraValue` representing an array value.
+    #[inline]
+    pub fn array(value: MiraHandle<impl MiraArray>) -> Self {
+        Self::Array(value.erase_array())
+    }
+
+    /// Check whether this value is an array value.
+    #[inline]
+    pub const fn is_array(self) -> bool {
+        matches!(self, Self::Array(_))
+    }
+
+    /// Return the array handle, or `None` for another value type.
+    #[inline]
+    pub fn as_array(&self) -> Option<MiraHandle<dyn MiraArray>> {
+        match self {
+            Self::Array(value) => Some(*value),
+            _ => None,
+        }
+    }
+}
+
 /// A read-only MiraScript array view.
 pub trait MiraArray: Any + 'static {
     /// Return the number of elements.

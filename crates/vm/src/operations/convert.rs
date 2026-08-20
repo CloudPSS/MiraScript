@@ -20,7 +20,7 @@ pub(crate) fn to_number(runtime: &Runtime, value: MiraValue) -> Result<f64> {
                 actual: value.value_type(),
             })
         }),
-        MiraValue::StaticString(value) => parse_number(value).ok_or_else(|| {
+        MiraValue::StaticStr(value) => parse_number(value).ok_or_else(|| {
             MiraError::runtime(RuntimeErrorKind::TypeMismatch {
                 expected: "number-convertible value",
                 actual: crate::MiraType::String,
@@ -145,7 +145,7 @@ pub(crate) fn number_to_string(value: f64, minus_zero: bool) -> String {
 pub(crate) fn to_string(runtime: &mut Runtime, value: MiraValue) -> Result<String> {
     match value {
         MiraValue::String(handle) => Ok(runtime.get_string(handle)?.to_owned()),
-        MiraValue::StaticString(value) => Ok(value.to_string()),
+        MiraValue::StaticStr(value) => Ok(value.to_string()),
         MiraValue::Nil => Ok(String::new()),
         value => inner_to_string(runtime, value, false),
     }
@@ -161,7 +161,7 @@ pub(super) fn inner_to_string(
         MiraValue::Boolean(value) => Ok(value.to_string()),
         MiraValue::Number(value) => Ok(number_to_string(value, false)),
         MiraValue::String(handle) => Ok(runtime.get_string(handle)?.to_owned()),
-        MiraValue::StaticString(value) => Ok(value.to_string()),
+        MiraValue::StaticStr(value) => Ok(value.to_string()),
         MiraValue::Function(handle) => {
             let function = runtime.get_function_dyn(handle)?;
             Ok(if function.name() == "<anonymous>" {

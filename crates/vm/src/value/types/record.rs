@@ -11,6 +11,31 @@ use crate::{
     value::{MiraHandle, MiraManageable},
 };
 
+use super::MiraValue;
+
+impl MiraValue {
+    /// Create a `MiraValue` representing a record.
+    #[inline]
+    pub fn record(value: MiraHandle<impl MiraRecord>) -> Self {
+        Self::Record(value.erase_record())
+    }
+
+    /// Check whether this value is a record.
+    #[inline]
+    pub const fn is_record(self) -> bool {
+        matches!(self, Self::Record(_))
+    }
+
+    /// Return the record handle, or `None` for another value type.
+    #[inline]
+    pub fn as_record(&self) -> Option<MiraHandle<dyn MiraRecord>> {
+        match self {
+            Self::Record(value) => Some(*value),
+            _ => None,
+        }
+    }
+}
+
 /// A read-only MiraScript record view.
 pub trait MiraRecord: Any + 'static {
     /// Return the number of fields.

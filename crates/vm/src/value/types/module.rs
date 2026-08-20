@@ -9,6 +9,29 @@ use crate::{
 
 use super::MiraValue;
 
+impl MiraValue {
+    /// Create a `MiraValue` representing a module value.
+    #[inline]
+    pub fn module(value: MiraHandle<impl MiraModule>) -> Self {
+        Self::Module(value.erase_module())
+    }
+
+    /// Check whether this value is a module value.
+    #[inline]
+    pub const fn is_module(self) -> bool {
+        matches!(self, Self::Module(_))
+    }
+
+    /// Return the module handle, or `None` for another value type.
+    #[inline]
+    pub fn as_module(&self) -> Option<MiraHandle<dyn MiraModule>> {
+        match self {
+            Self::Module(value) => Some(*value),
+            _ => None,
+        }
+    }
+}
+
 /// A named collection of MiraScript-visible values.
 pub trait MiraModule: Any + 'static {
     /// Return the module name shown in diagnostics.
@@ -35,12 +58,6 @@ pub trait MiraModule: Any + 'static {
     fn is_empty(&self) -> bool {
         self.len() == 0
     }
-
-    #[doc(hidden)]
-    fn as_any(&self) -> &dyn Any;
-
-    #[doc(hidden)]
-    fn as_any_mut(&mut self) -> &mut dyn Any;
 }
 
 pub(crate) struct MiraMapModule {
@@ -87,14 +104,6 @@ impl MiraModule for MiraMapModule {
             .get_index(index)
             .map(|(_, value)| (*value).into())
             .ok_or_else(|| MiraError::runtime(RuntimeErrorKind::MissingIndexOrField))
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn as_any_mut(&mut self) -> &mut dyn Any {
-        self
     }
 }
 

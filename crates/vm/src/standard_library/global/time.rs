@@ -45,14 +45,14 @@ fn timestamp(call: &mut crate::Runtime, value: Option<&MiraValue>) -> Result<i64
         Some(MiraValue::Number(value)) if value.is_finite() && value.abs() <= 8.64e15 => {
             Ok(value.trunc() as i64)
         }
-        Some(value @ (MiraValue::String(_) | MiraValue::StaticString(_))) => {
+        Some(value @ (MiraValue::String(_) | MiraValue::StaticStr(_))) => {
             if let Ok(number) = operations::to_number(call, *value)
                 && number.is_finite()
                 && number.abs() <= 8.64e15
             {
                 return Ok(number.trunc() as i64);
             }
-            let source = value.as_string(call)?.expect("matched string");
+            let source = value.as_str(call)?.expect("matched string");
             parse_iso8601(source)
                 .ok_or_else(|| MiraError::runtime(RuntimeErrorKind::InvalidDateTime))
         }

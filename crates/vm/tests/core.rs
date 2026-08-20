@@ -154,7 +154,7 @@ fn derived_values_are_live_runtime_views() {
         52.into(),
     );
     let name = eval(&mut runtime, "user.display_name").unwrap();
-    assert_eq!(name.as_string(&runtime).unwrap(), Some("Ada"));
+    assert_eq!(name.as_str(&runtime).unwrap(), Some("Ada"));
 
     let user_value = runtime.get_record_mut(user).unwrap();
     user_value.age = 7;

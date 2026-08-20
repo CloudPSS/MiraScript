@@ -12,6 +12,6 @@ fn facade_reexports_runtime_and_derives() -> mirascript::Result<()> {
     runtime.insert_global("user", MiraValue::Record(user.erase_record()))?;
 
     let value = runtime.run(&compile("user.name")?)?;
-    assert_eq!(value.as_string(&runtime)?, Some("Ada"));
+    assert_eq!(value.as_str(&runtime)?, Some("Ada"));
     Ok(())
 }

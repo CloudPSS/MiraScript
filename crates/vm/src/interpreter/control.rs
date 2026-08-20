@@ -1,5 +1,3 @@
-use std::any::Any;
-
 use indexmap::IndexMap;
 
 use super::*;
@@ -47,14 +45,6 @@ impl MiraModule for ScriptModule {
             .get_index(index)
             .ok_or_else(|| MiraError::runtime(RuntimeErrorKind::MissingIndexOrField))?;
         runtime.read_register(self.frame, *register).map(Into::into)
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn as_any_mut(&mut self) -> &mut dyn Any {
-        self
     }
 }
 

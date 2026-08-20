@@ -427,7 +427,7 @@ impl Runtime {
             .arena
             .modules
             .get(self.arena.id, "module", handle.key)?;
-        value.as_any().downcast_ref::<T>().ok_or_else(|| {
+        (value as &dyn Any).downcast_ref::<T>().ok_or_else(|| {
             MiraError::runtime(RuntimeErrorKind::HandleTypeMismatch { category: "module" })
         })
     }
@@ -438,7 +438,7 @@ impl Runtime {
             .arena
             .modules
             .get_mut(self.arena.id, "module", handle.key)?;
-        value.as_any_mut().downcast_mut::<T>().ok_or_else(|| {
+        (value as &mut dyn Any).downcast_mut::<T>().ok_or_else(|| {
             MiraError::runtime(RuntimeErrorKind::HandleTypeMismatch { category: "module" })
         })
     }
@@ -456,7 +456,7 @@ impl Runtime {
             MiraValue::Nil
             | MiraValue::Boolean(_)
             | MiraValue::Number(_)
-            | MiraValue::StaticString(_) => Ok(()),
+            | MiraValue::StaticStr(_) => Ok(()),
         }
     }
 }

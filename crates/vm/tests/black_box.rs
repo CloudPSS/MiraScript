@@ -16,8 +16,8 @@ fn runtime(options: RunOptions) -> Runtime {
                 if runtime.values_equal(left, right)? {
                     Ok(MiraValue::Nil)
                 } else {
-                    let left_string = left.as_string(runtime)?.map(str::to_owned);
-                    let right_string = right.as_string(runtime)?.map(str::to_owned);
+                    let left_string = left.as_str(runtime)?.map(str::to_owned);
+                    let right_string = right.as_str(runtime)?.map(str::to_owned);
                     anyhow::bail!(
                         "assertion failed: {left:?} {left_string:?} != {right:?} {right_string:?}; message={:?}",
                         args.get(2)
