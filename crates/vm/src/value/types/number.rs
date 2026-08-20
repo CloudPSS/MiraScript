@@ -1,4 +1,5 @@
 use super::MiraValue;
+use crate::value::arena::MiraManageable;
 use crate::{MiraError, Result};
 
 impl MiraValue {
@@ -16,6 +17,11 @@ macro_rules! number_from {
         impl From<$ty> for MiraValue {
             fn from(value: $ty) -> Self {
                 Self::Number(value as f64)
+            }
+        }
+        impl From<$ty> for MiraManageable {
+            fn from(value: $ty) -> Self {
+                std::convert::Into::<MiraValue>::into(value as f64).into()
             }
         }
     )* };
