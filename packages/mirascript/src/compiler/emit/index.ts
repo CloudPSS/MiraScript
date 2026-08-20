@@ -1,5 +1,4 @@
 import { OpCode } from '@mirascript/constants';
-import { toString } from '../../helpers/convert/index.js';
 import type { ScriptInput, TranspileOptions } from '../types.js';
 import type { IRange } from '../diagnostic.js';
 import { toJsLiteral } from './consts.js';
@@ -65,13 +64,7 @@ export class Emitter extends BytecodeReader {
     private useGlobal = false;
     /** 读取全局变量 */
     private rg(constIdx: number): string {
-        const constName = this.constVals[constIdx]!;
-        let lit;
-        if (typeof constName == 'string') {
-            lit = this.constLits[constIdx]!;
-        } else {
-            lit = toJsLiteral(toString(constName, undefined));
-        }
+        const lit = this.constLits[constIdx]!;
         this.useGlobal = true;
         return `global.get(${lit})`;
     }

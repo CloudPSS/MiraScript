@@ -177,21 +177,21 @@ impl Runtime {
     }
 
     pub(crate) fn materialize_constant(&mut self, index: usize) -> Result<MiraValue> {
-        let script = self
-            .active_script
-            .expect("constant materialization requires an active script");
-        if let Some(value) = self.constant_cache.get(&(script, index)) {
-            return Ok(*value);
-        }
-        let constant = self.active_program().constants[index].clone();
+        let constant = &self.active_program().constants[index];
         match constant {
             Constant::Nil => Ok(MiraValue::Nil),
             Constant::True => Ok(MiraValue::Boolean(true)),
             Constant::False => Ok(MiraValue::Boolean(false)),
-            Constant::Int(value) => Ok(MiraValue::Number(f64::from(value))),
-            Constant::Float(value) => Ok(MiraValue::Number(value)),
+            Constant::Int(value) => Ok(MiraValue::Number(f64::from(*value))),
+            Constant::Float(value) => Ok(MiraValue::Number(*value)),
             Constant::String(value) => {
-                let value = self.insert(value.into_string())?;
+                let script = self
+                    .active_script
+                    .expect("constant materialization requires an active script");
+                if let Some(value) = self.constant_cache.get(&(script, index)) {
+                    return Ok(*value);
+                }
+                let value = self.insert(value.clone().into_string())?;
                 self.constant_cache.insert((script, index), value);
                 Ok(value)
             }

@@ -881,7 +881,7 @@ impl<'s, 'c> Emitter<'s, 'c> {
                         .push(DiagnosticCode::GlobalVariable, id.range());
                     match id.kind {
                         TokenKind::Identifier(id) => self.op_global(r, ret, id),
-                        TokenKind::Ordinal(ord) => self.op_global_num(r, ret, ord as f64),
+                        TokenKind::Ordinal(ord) => self.op_global(r, ret, ord.to_string()),
                         _ => unreachable!("Expected identifier token"),
                     };
                 }

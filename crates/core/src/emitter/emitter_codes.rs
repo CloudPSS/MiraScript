@@ -120,10 +120,6 @@ impl<'s, 'c> Emitter<'s, 'c> {
         let const_id = self.add_const_string(name);
         self.op_2(mapping, GetGlobal, reg, const_id);
     }
-    pub fn op_global_num(&mut self, mapping: SourceRange, reg: Register, name: f64) {
-        let const_id = self.add_const_number(name);
-        self.op_2(mapping, GetGlobal, reg, const_id);
-    }
     pub fn op_global_dyn(&mut self, mapping: SourceRange, reg: Register, name: Register) {
         self.op_2(mapping, GetGlobalDyn, reg, name);
     }
