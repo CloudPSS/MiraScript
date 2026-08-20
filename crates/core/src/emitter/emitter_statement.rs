@@ -104,6 +104,18 @@ impl<'s, 'c> Emitter<'s, 'c> {
                 false
             }
             Bind(_, _, pattern, _, expression, _) => {
+                if let Pattern::Bind(_, id_token) = pattern.as_ref() {
+                    let Some(id) = id_token.to_id_name() else {
+                        return false;
+                    };
+                    let Some((_, variable)) = self.scopes.find_variable(id) else {
+                        return false;
+                    };
+                    self.closures.initialize_variable(variable);
+                    let register = variable.register();
+                    self.emit_expression(expression, register, brk);
+                    return false;
+                }
                 let value_reg = self.emit_expression_reg(expression, brk);
                 self.emit_pattern(Register::EMPTY, pattern, value_reg, Some(BindType::Let));
                 false

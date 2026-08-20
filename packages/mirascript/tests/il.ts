@@ -5,26 +5,12 @@ test('compileWithIL returns an executable script and readable IL', async (t) => 
     const { script, il } = await compileWithIL('let x = 1 + 2; x', { pretty: true });
 
     t.is(script(), 3);
-    t.regex(il, /^\.constants$/m);
-    t.regex(il, /^ {2}#0 = 1$/m);
-    t.regex(il, /^\.code$/m);
-    t.regex(il, /^00000000 {2}FUNC %0, 0, \d+ +; let x = 1 \+ 2; x$/m);
-    t.regex(il, /^000000[0-9a-f]{2} {4}ADD %\d+, %\d+, %\d+$/m);
-    t.regex(il, /^000000[0-9a-f]{2} {2}FUNC_END$/m);
-    t.is(il.match(/; let x = 1 \+ 2; x$/gm)?.length, 1);
+    t.snapshot(il, 'il.txt');
 });
 
 test('IL preserves structured instruction indentation', async (t) => {
     const { il } = await compileWithIL('if true { [1, 2] } else { (value: 3) }');
-
-    t.regex(il, /^000000[0-9a-f]{2} {4}IF %\d+$/m);
-    t.regex(il, /^000000[0-9a-f]{2} {6}ARRAY %\d+$/m);
-    t.regex(il, /^000000[0-9a-f]{2} {8}ITEM %\d+$/m);
-    t.regex(il, /^000000[0-9a-f]{2} {6}FREEZE$/m);
-    t.regex(il, /^000000[0-9a-f]{2} {4}ELSE$/m);
-    t.regex(il, /^000000[0-9a-f]{2} {6}RECORD %\d+$/m);
-    t.regex(il, /^000000[0-9a-f]{2} {8}FIELD #\d+, %\d+$/m);
-    t.regex(il, /^000000[0-9a-f]{2} {4}IF_END$/m);
+    t.snapshot(il, 'il-structured.txt');
 });
 
 test('IL marks wide instructions', async (t) => {
@@ -32,9 +18,7 @@ test('IL marks wide instructions', async (t) => {
     const { script, il } = await compileWithIL(source);
 
     t.is((script() as unknown[]).length, 300);
-    t.regex(il, /\bFUNC\.WIDE\b/);
-    t.regex(il, /\bCONSTANT\.WIDE\b/);
-    t.regex(il, /^ {2}#299 = 299$/m);
+    t.snapshot(il, 'il-wide.txt');
 });
 
 test('IL appends original source lines from source maps', async (t) => {

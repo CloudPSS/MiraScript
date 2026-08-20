@@ -219,10 +219,9 @@ class ILEmitter extends BytecodeReader {
     }
 
     /** 首次遇到源码行时读取其内容。 */
-    private readSourceLine(code: OpCode, range: IRange | undefined): string {
+    private readSourceLine(range: IRange | undefined): string {
         const lineNumber = range?.startLineNumber;
         if (!lineNumber || this.annotatedSourceLines.has(lineNumber)) return '';
-        if (code === OpCode.Constant) return '';
         this.annotatedSourceLines.add(lineNumber);
         return sourceLine(this.sourceLines, range);
     }
@@ -254,7 +253,7 @@ class ILEmitter extends BytecodeReader {
                 this.instructionIndex++;
             }
             const text = `${offsetText}  ${'  '.repeat(this.indent)}${name}${operandText}`;
-            instructions.push({ text, comment: this.readSourceLine(opcode, range) });
+            instructions.push({ text, comment: this.readSourceLine(range) });
             if (OPEN_AFTER.has(opcode)) this.indent++;
         }
         const inlineCommentLengths = instructions
