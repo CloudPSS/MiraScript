@@ -19,9 +19,9 @@ export {
 } from './helpers/serialize.js';
 export { lib, type Lib, type VmLibOption } from './vm/lib/index.js';
 export * from './compiler/diagnostic.js';
+export { compileVerbose } from './compiler/verbose.js';
 export { emitScript } from './compiler/emit-script.js';
-export { emitIL, type ILSourceMap } from './compiler/emit-il.js';
-export { compileWithIL, type VmILCompileResult } from './compiler/compile-il.js';
 export { createScript, wrapScript } from './compiler/create-script.js';
+export { BytecodeReader } from './compiler/bytecode/index.js';
 export { generateBytecode, generateBytecodeSync, type VmBytecodeResult } from './compiler/generate-bytecode.js';
 export { type GlobalReferenceChain, analyzeGlobalReferences } from './helpers/analyze.js';

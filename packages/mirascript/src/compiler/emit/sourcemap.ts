@@ -2,7 +2,7 @@ import { SourceMapGenerator } from 'source-map-js';
 import type { IRange } from '../diagnostic.js';
 import type { ScriptInput, TranspileOptions } from '../types.js';
 import type { ScriptPrefix } from './constants.js';
-import { toJsLiteral } from './consts.js';
+import { toJsLiteral } from './utils.js';
 
 const ORIGIN = `mira://MiraScript/`;
 const { SOURCE_URL, SOURCE_MAPPING_URL } = ((source, mapping, url) => {

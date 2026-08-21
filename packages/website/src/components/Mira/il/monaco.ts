@@ -1,14 +1,14 @@
-import { languages, type IDisposable } from '../monaco-api.js';
-import { CONTRIBUTE_IDS } from '../contribute.js';
+const MIRASCRIPT_IL = 'mirascript-il';
 
 /** 注册 MiraScript IL 的基础 Monarch 高亮。 */
-export function registerIL(): IDisposable {
-    return languages.setMonarchTokensProvider(CONTRIBUTE_IDS.mirascriptIl, {
+export function registerIL(monaco: typeof import('@private/monaco-editor')): void {
+    monaco.languages.register({ id: MIRASCRIPT_IL });
+    monaco.languages.setMonarchTokensProvider(MIRASCRIPT_IL, {
         defaultToken: '',
         tokenizer: {
             root: [
                 [/;.*$/, 'comment'],
-                [/^\s*\.(?:constants|code)\b/, 'keyword.directive'],
+                [/^\s*\.\w+\s*$/, 'keyword.directive'],
                 [/^[0-9a-f]{8}\b/, 'number.hex'],
                 [/\b[A-Z][A-Z_]*(?:\.WIDE)?\b/, 'keyword'],
                 [/%\d+\b/, 'variable'],

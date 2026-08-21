@@ -6,7 +6,8 @@ import {
     type VmScript,
     type VmValue,
 } from '@mirascript/mirascript';
-import { compileWithIL, lib } from '@mirascript/mirascript/subtle';
+import { lib, compileVerbose } from '@mirascript/mirascript/subtle';
+import { emitIL } from './il';
 
 /** 创建名称 */
 function createFileName(mode: InputMode, fileBaseName = 'live-code'): string {
@@ -51,12 +52,13 @@ export async function runMiraScript(
     let script;
     let il: string | null = null;
     try {
-        const compiled = await compileWithIL(source, {
+        const compiled = await compileVerbose(source, {
             input_mode: mode,
             diagnostic_position_encoding: 'Utf32',
             fileName,
             sourceMap: true,
             pretty: true,
+            bytecode: true,
         });
         if (trace) {
             const t = now();
@@ -71,7 +73,7 @@ export async function runMiraScript(
             il = cacheHit.il;
         } else {
             script = compiled.script;
-            il = compiled.il;
+            il = emitIL(source, compiled.bytecode, compiled.diagnostics);
             cache = { fileName, mode, source: source, script, il };
         }
     } catch (error) {

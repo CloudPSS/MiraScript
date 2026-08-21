@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { loader } from '@monaco-editor/react';
 import { registerTypeScript } from './monaco-typescript';
 import { registerMiraScript } from './monaco-mirascript';
+import { registerIL } from './il/monaco';
 
 /** 加载 monaco */
 async function loadMonaco(): Promise<typeof import('@private/monaco-editor')> {
@@ -12,6 +13,7 @@ async function loadMonaco(): Promise<typeof import('@private/monaco-editor')> {
 
     await registerMiraScript(monaco);
     registerTypeScript(monaco);
+    registerIL(monaco);
 
     monaco.editor.registerCommand('run-mirascript', (_, uri: Uri) => {
         const model = monaco.editor.getModel(uri);

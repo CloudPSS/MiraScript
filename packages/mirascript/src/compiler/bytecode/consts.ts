@@ -1,21 +1,5 @@
 /* eslint-disable no-useless-assignment */
 import type { VmPrimitive } from '../../vm/index.js';
-const { stringify } = JSON;
-/** 将值转为 JS 字面量 */
-export function toJsLiteral(value: VmPrimitive | undefined): string {
-    /* c8 ignore next 2 */
-    if (value === null) return 'null';
-    if (value === undefined) return 'undefined';
-    if (typeof value == 'string') {
-        return stringify(value);
-    }
-    // JSON 无法处理 NaN 等特殊数字
-    if (value === 0) {
-        if (1 / value === -Infinity) return '-0';
-        return '0';
-    }
-    return String(value satisfies number | boolean);
-}
 
 const DECODER = new TextDecoder();
 const { fromCharCode } = String;

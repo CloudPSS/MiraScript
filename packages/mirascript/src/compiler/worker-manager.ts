@@ -23,15 +23,6 @@ export async function compileWorker(
 }
 
 /**
- * 生成 MiraScript 对应的 JavaScript 代码与 IL
- */
-export async function compileILWorker(
-    ...args: Parameters<WorkerMethod<typeof WorkerApi, 'compileIL'>>
-): Promise<ReturnType<WorkerMethod<typeof WorkerApi, 'compileIL'>>> {
-    return await pool.call('compileIL', args);
-}
-
-/**
  * 清理工作池
  */
 export function destroyWorkerPool(): void {

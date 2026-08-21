@@ -2,7 +2,7 @@ import { getModule, loadModule } from '@mirascript/bindings';
 import type { CompileOptions, ScriptInput } from './types.js';
 
 /** MiraScript 字节码 */
-export type VmBytecodeResult = [code: Uint8Array | undefined, diagnostics: Uint32Array];
+export type VmBytecodeResult = [code: Uint8Array<ArrayBuffer> | undefined, diagnostics: Uint32Array<ArrayBuffer>];
 
 /**
  * 生成 MiraScript 字节码
@@ -10,7 +10,7 @@ export type VmBytecodeResult = [code: Uint8Array | undefined, diagnostics: Uint3
 export function generateBytecodeSync(script: ScriptInput, options: CompileOptions): VmBytecodeResult {
     const module = getModule();
     const result = module.compileSync(script, options);
-    return [result.chunk, result.diagnostics];
+    return [result.chunk as Uint8Array<ArrayBuffer> | undefined, result.diagnostics as Uint32Array<ArrayBuffer>];
 }
 
 /**
@@ -22,5 +22,5 @@ export async function generateBytecode(script: ScriptInput, options: CompileOpti
     }
     const module = await loadModule();
     const result = 'compile' in module ? await module.compile(script, options) : module.compileSync(script, options);
-    return [result.chunk, result.diagnostics];
+    return [result.chunk as Uint8Array<ArrayBuffer> | undefined, result.diagnostics as Uint32Array<ArrayBuffer>];
 }

@@ -14,7 +14,6 @@ export class MiraScriptMonacoLoader implements IDisposable {
 
         const _loadBasicFeatures = () => void this.loadBasicFeatures();
         const _loadFullFeatures = () => void this.loadLSPFeatures();
-        const _loadILFeatures = () => void this.loadILFeatures();
 
         languages.onLanguageEncountered(CONTRIBUTE_IDS.mirascript, _loadBasicFeatures);
         languages.onLanguage(CONTRIBUTE_IDS.mirascript, _loadFullFeatures);
@@ -23,12 +22,10 @@ export class MiraScriptMonacoLoader implements IDisposable {
         languages.onLanguage(CONTRIBUTE_IDS.mirascriptTemplate, _loadFullFeatures);
 
         languages.onLanguageEncountered(CONTRIBUTE_IDS.mirascriptDoc, _loadBasicFeatures);
-        languages.onLanguageEncountered(CONTRIBUTE_IDS.mirascriptIl, _loadILFeatures);
     }
     features: LspFeaturesConfig = {};
     private _basicFeaturesLoaded = false;
     private _lspFeaturesLoaded = false;
-    private _ilFeaturesLoaded = false;
     /** 加载基础功能 */
     async loadBasicFeatures(): Promise<void> {
         try {
@@ -53,19 +50,6 @@ export class MiraScriptMonacoLoader implements IDisposable {
         } catch (error) {
             // eslint-disable-next-line no-console
             console.error('Failed to load MiraScript LSP features:', error);
-        }
-    }
-
-    /** 加载 MiraScript IL 基础高亮。 */
-    async loadILFeatures(): Promise<void> {
-        try {
-            const { registerIL } = await import('./il/index.js');
-            if (this._ilFeaturesLoaded || this.disposed) return;
-            this._ilFeaturesLoaded = true;
-            this.disposables.push(registerIL());
-        } catch (error) {
-            // eslint-disable-next-line no-console
-            console.error('Failed to load MiraScript IL features:', error);
         }
     }
 

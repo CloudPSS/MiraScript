@@ -1,10 +1,10 @@
 import { OpCode } from '@mirascript/constants';
 import type { ScriptInput, TranspileOptions } from '../types.js';
 import type { IRange } from '../diagnostic.js';
-import { toJsLiteral } from './consts.js';
 import { createSourceMap } from './sourcemap.js';
 import { SCRIPT_PREFIX, SCRIPT_PREFIX_NO_GLOBAL, type ScriptPrefix } from './constants.js';
-import { BytecodeReader } from '../bytecode-reader.js';
+import { BytecodeReader } from '../bytecode/index.js';
+import { createArray, toJsLiteral } from './utils.js';
 
 /** 生成代码 */
 export function emit(
@@ -17,16 +17,6 @@ export function emit(
     gen.read();
     const code = gen.codeLines.join('\n');
     return code;
-}
-
-/** 创建数组 */
-function createArray<T>(length: number, fn: (index: number) => T): T[] {
-    // micro bench shows that this is faster than Array.from
-    const result: T[] = [];
-    for (let i = 0; i < length; i++) {
-        result.push(fn(i));
-    }
-    return result;
 }
 
 /** 代码生成 */
@@ -87,8 +77,7 @@ export class Emitter extends BytecodeReader {
         this.closureCounter++;
         this.identCounter++;
         while (this.codeOffset < this.codeSize) {
-            const opcode_raw = this.codeReader.getUint8(this.codeOffset);
-            const opcode = opcode_raw & 0x7f;
+            const opcode = this.peekOpcode();
             if (opcode !== OpCode.FuncEnd) {
                 this.readCode();
                 continue;
@@ -105,8 +94,7 @@ export class Emitter extends BytecodeReader {
     /** 读取块结束 */
     private readBlockEnd(end: OpCode): void {
         while (this.codeOffset < this.codeSize) {
-            const opcode_raw = this.codeReader.getUint8(this.codeOffset);
-            const opcode = opcode_raw & 0x7f;
+            const opcode = this.peekOpcode();
             if (opcode !== end) {
                 this.readCode();
                 continue;
@@ -126,8 +114,7 @@ export class Emitter extends BytecodeReader {
     private readIfElse(): void {
         this.identCounter++;
         while (this.codeOffset < this.codeSize) {
-            const opcode_raw = this.codeReader.getUint8(this.codeOffset);
-            const opcode = opcode_raw & 0x7f;
+            const opcode = this.peekOpcode();
             if (opcode === OpCode.IfEnd) {
                 return this.readBlockEnd(OpCode.IfEnd);
             }
@@ -146,11 +133,10 @@ export class Emitter extends BytecodeReader {
     private readModule(obj: number): void {
         this.identCounter++;
         while (this.codeOffset < this.codeSize) {
-            const opcode_raw = this.codeReader.getUint8(this.codeOffset++);
-            const opcode = opcode_raw & 0x7f;
-            const wide = opcode_raw >= 0x80;
+            const { opcode, wide } = this.readOpcode();
             const read = () => this.readParam(wide);
             let code: string;
+            // eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check
             switch (opcode) {
                 case OpCode.Field: {
                     const field = read();
@@ -185,11 +171,10 @@ export class Emitter extends BytecodeReader {
     private readRecord(obj: number): void {
         this.identCounter++;
         while (this.codeOffset < this.codeSize) {
-            const opcode_raw = this.codeReader.getUint8(this.codeOffset++);
-            const opcode = opcode_raw & 0x7f;
-            const wide = opcode_raw >= 0x80;
+            const { opcode, wide } = this.readOpcode();
             const read = () => this.readParam(wide);
             let code: string;
+            // eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check
             switch (opcode) {
                 case OpCode.FieldOpt:
                 case OpCode.Field: {
@@ -252,11 +237,10 @@ export class Emitter extends BytecodeReader {
     private readArray(arr: number): void {
         this.identCounter++;
         while (this.codeOffset < this.codeSize) {
-            const opcode_raw = this.codeReader.getUint8(this.codeOffset++);
-            const opcode = opcode_raw & 0x7f;
-            const wide = opcode_raw >= 0x80;
+            const { opcode, wide } = this.readOpcode();
             const read = () => this.readParam(wide);
             let code: string;
+            // eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check
             switch (opcode) {
                 case OpCode.Item: {
                     const value = read();
@@ -306,14 +290,13 @@ export class Emitter extends BytecodeReader {
 
     /** 读取代码 */
     private readCode(): void {
-        const opcode_raw = this.codeReader.getUint8(this.codeOffset++);
-        const opcode = opcode_raw & 0x7f;
-        const wide = opcode_raw >= 0x80;
+        const { opcode, wide } = this.readOpcode();
         const read = () => this.readParam(wide);
         const readIndex = () => this.readIndex(wide);
         const ident = this.ident();
         let code: string;
         let reg = 0;
+        // eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check
         switch (opcode) {
             case OpCode.FuncVarg:
             case OpCode.Func: {
@@ -688,6 +671,7 @@ export class Emitter extends BytecodeReader {
             }
         }
         this.codeLines.push(ident + code);
+        // eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check
         switch (opcode) {
             case OpCode.FuncVarg:
             case OpCode.Func: {

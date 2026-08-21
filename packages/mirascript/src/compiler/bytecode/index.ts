@@ -1,6 +1,6 @@
 import type { OpCode } from '@mirascript/constants';
-import type { VmPrimitive } from '../vm/index.js';
-import { readConsts } from './emit/consts.js';
+import type { VmPrimitive } from '../../vm/index.js';
+import { readConsts } from './consts.js';
 
 /** MiraScript 字节码读取器。 */
 export class BytecodeReader {
@@ -32,6 +32,12 @@ export class BytecodeReader {
         const offset = this.codeOffset;
         const raw = this.codeReader.getUint8(this.codeOffset++);
         return { opcode: raw & 0x7f, wide: raw >= 0x80, offset };
+    }
+
+    /** 读取操作码。 */
+    protected peekOpcode(): OpCode {
+        const raw = this.codeReader.getUint8(this.codeOffset);
+        return raw & 0x7f;
     }
 
     /** 读取无符号参数。 */

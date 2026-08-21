@@ -13,21 +13,23 @@ function indentAction(action: keyof typeof languages.IndentAction): { indentActi
     return { indentAction: languages.IndentAction[action] };
 }
 
+/** 括号配置 */
+function brackets(): languages.CharacterPair[] {
+    const brackets: languages.CharacterPair[] = [];
+    for (let i = 0; i < MAX_VERBATIM_LENGTH; i++) {
+        const prefix = '$'.repeat(MAX_VERBATIM_LENGTH - i - 1);
+        brackets.push([`${prefix}{`, '}'], [`${prefix}(`, ')']);
+    }
+    brackets.push(['[', ']']);
+    return brackets;
+}
+
 export const configuration = (): languages.LanguageConfiguration => ({
     comments: {
         lineComment: { comment: '//' },
         blockComment: ['/*', '*/'],
     },
-    brackets: [
-        ...Array.from({ length: MAX_VERBATIM_LENGTH }).flatMap((_, i): languages.CharacterPair[] => {
-            const prefix = '$'.repeat(MAX_VERBATIM_LENGTH - i - 1);
-            return [
-                [`${prefix}{`, '}'],
-                [`${prefix}(`, ')'],
-            ];
-        }),
-        ['[', ']'],
-    ],
+    brackets: brackets(),
     wordPattern: /((?<!\.\s*)[\d_]+\.[\d_]+([eE][+-]?[\d_]+)?)|([^`~!#%^&*()\-=+[{\]}\\|;:'",.<>/?\s]+)/g,
     autoClosingPairs: [
         { open: '{', close: '}' },

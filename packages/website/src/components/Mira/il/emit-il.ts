@@ -1,8 +1,6 @@
-import { OpCode } from '@mirascript/constants';
-import type { ScriptInput } from '@mirascript/constants';
-import { BytecodeReader } from './bytecode-reader.js';
-import type { IRange } from './diagnostic.js';
-import { serialize } from '../helpers/serialize.js';
+import type { ScriptInput } from '@mirascript/mirascript';
+import { BytecodeReader, OpCode, serialize } from '@mirascript/mirascript/subtle';
+import type { IRange } from '@private/monaco-editor';
 
 /** IL 操作数类型。 */
 type OperandKind = 'register' | 'constant' | 'index' | 'unsigned';
@@ -150,7 +148,7 @@ function sourceLine(lines: readonly string[], range: IRange | undefined): string
 }
 
 /** MiraScript IL 生成器。 */
-class ILEmitter extends BytecodeReader {
+export class ILEmitter extends BytecodeReader {
     /** 当前结构缩进。 */
     private indent = 0;
     /** 当前字节码指令对应的源码映射序号。 */
@@ -226,13 +224,17 @@ class ILEmitter extends BytecodeReader {
         return sourceLine(this.sourceLines, range);
     }
 
-    /** 生成完整 IL。 */
-    emit(): string {
+    /** 生成常量表 */
+    private emitConstants(): void {
         this.lines.push('.constants');
         for (let i = 0; i < this.constVals.length; i++) {
             this.lines.push(`  #${i} = ${serialize(this.constVals[i])}`);
         }
-        this.lines.push('', '.code');
+    }
+
+    /** 生成代码段 */
+    private emitCode(): void {
+        this.lines.push('.code');
         const instructions: Array<{ text: string; comment: string }> = [];
         while (this.hasCode) {
             const { opcode, wide, offset } = this.readOpcode();
@@ -269,11 +271,15 @@ class ILEmitter extends BytecodeReader {
                 return `${text.padEnd(commentColumn)}; ${comment}`;
             }),
         );
+    }
+
+    /** 生成完整 IL。 */
+    emit(): string {
+        this.emitCode();
+        this.lines.push('');
+        this.emitConstants();
+        this.lines.push('', '.end');
+
         return this.lines.join('\n');
     }
-}
-
-/** 将 MiraScript 字节码转换为可读 IL。 */
-export function emitIL(chunk: Uint8Array, sourceMap?: ILSourceMap): string {
-    return new ILEmitter(chunk, sourceMap).emit();
 }
