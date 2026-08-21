@@ -10,14 +10,34 @@ impl Runtime {
         destination: RegisterId,
         left: RegisterId,
         right: RegisterId,
-        operation: impl FnOnce(f64, f64) -> f64,
+        operation: impl Fn(f64, f64) -> f64,
     ) -> Result<()> {
-        let (left, right) = self.read_numbers(frame, left, right)?;
-        self.write_register(
-            frame,
-            destination,
-            MiraValue::Number(operation(left, right)),
-        );
+        let registers = &mut self.frames.get_mut(frame).registers;
+        let [left, right] = registers.get_n([left, right]);
+
+        if let (Some(MiraValue::Number(left)), Some(MiraValue::Number(right))) = (left, right) {
+            let result = MiraValue::Number(operation(left, right));
+            if destination.is_nil() {
+                return Ok(());
+            }
+            registers.get_mut(destination).replace(result);
+            return Ok(());
+        }
+
+        // Convert left first to retain the existing error precedence.
+        let left = operations::to_number(
+            self,
+            left.ok_or_else(|| MiraError::runtime(RuntimeErrorKind::UninitializedValue))?,
+        )?;
+        let right = operations::to_number(
+            self,
+            right.ok_or_else(|| MiraError::runtime(RuntimeErrorKind::UninitializedValue))?,
+        )?;
+        let result = MiraValue::Number(operation(left, right));
+        if destination.is_nil() {
+            return Ok(());
+        }
+        self.write_register(frame, destination, result);
         Ok(())
     }
 

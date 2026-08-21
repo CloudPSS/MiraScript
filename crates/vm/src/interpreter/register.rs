@@ -1,3 +1,5 @@
+use crate::MiraValue::Nil;
+
 use super::*;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -36,6 +38,7 @@ impl Registers {
         }
     }
 
+    #[inline]
     pub(super) fn reset(&mut self, count: usize) {
         self.inline.fill(None);
         self.overflow
@@ -57,6 +60,7 @@ impl Registers {
         }
     }
 
+    #[inline(always)]
     fn check(&self, register: RegisterId) {
         let _id = register.0;
         #[cfg(debug_assertions)]
@@ -69,7 +73,7 @@ impl Registers {
     }
 
     #[inline]
-    fn get(&self, register: RegisterId) -> &Option<MiraValue> {
+    pub(super) fn get(&self, register: RegisterId) -> &Option<MiraValue> {
         self.check(register);
         let id = register.0 - 1;
         if id < INLINE_REGISTER_COUNT {
@@ -88,6 +92,20 @@ impl Registers {
         } else {
             &mut self.overflow[id - INLINE_REGISTER_COUNT]
         }
+    }
+
+    #[inline]
+    pub(super) fn get_n<const N: usize>(
+        &self,
+        registers: [RegisterId; N],
+    ) -> [Option<MiraValue>; N] {
+        let mut values: [Option<MiraValue>; N] = [Some(Nil); N];
+        for (i, &register) in registers.iter().enumerate() {
+            if !register.is_nil() {
+                values[i] = *self.get(register);
+            }
+        }
+        values
     }
 }
 
@@ -114,40 +132,6 @@ impl Runtime {
     #[inline]
     pub(super) fn read_number(&self, frame: FrameId, register: RegisterId) -> Result<f64> {
         operations::to_number(self, self.read_register(frame, register)?)
-    }
-
-    #[inline]
-    pub(super) fn read_numbers(
-        &self,
-        frame: FrameId,
-        left: RegisterId,
-        right: RegisterId,
-    ) -> Result<(f64, f64)> {
-        let registers = &self.frames.get(frame).registers;
-        let read = |register: RegisterId| {
-            if register.is_nil() {
-                Some(MiraValue::Nil)
-            } else {
-                *registers.get(register)
-            }
-        };
-        let left = read(left);
-        let right = read(right);
-
-        if let (Some(MiraValue::Number(left)), Some(MiraValue::Number(right))) = (left, right) {
-            return Ok((left, right));
-        }
-
-        // Convert left first to retain the existing error precedence.
-        let left = operations::to_number(
-            self,
-            left.ok_or_else(|| MiraError::runtime(RuntimeErrorKind::UninitializedValue))?,
-        )?;
-        let right = operations::to_number(
-            self,
-            right.ok_or_else(|| MiraError::runtime(RuntimeErrorKind::UninitializedValue))?,
-        )?;
-        Ok((left, right))
     }
 
     #[inline]

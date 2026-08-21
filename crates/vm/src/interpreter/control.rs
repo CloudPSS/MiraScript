@@ -78,6 +78,7 @@ impl Runtime {
         Ok(Flow::Continue)
     }
 
+    #[cold]
     pub(super) fn with_runtime_context(&self, error: MiraError, offset: usize) -> Box<MiraError> {
         let display = |handle| {
             self.get_function_dyn(handle)
@@ -257,7 +258,7 @@ impl Runtime {
     }
 
     fn build_record(&mut self, elements: &[RecordElement], frame: FrameId) -> Result<MiraValue> {
-        let mut record = IndexMap::new();
+        let mut record = IndexMap::with_capacity(elements.len());
         for element in elements {
             match element {
                 RecordElement::Field {
@@ -294,7 +295,7 @@ impl Runtime {
     }
 
     fn build_array(&mut self, elements: &[ArrayElement], frame: FrameId) -> Result<MiraValue> {
-        let mut array = Vec::new();
+        let mut array = Vec::with_capacity(elements.len());
         for element in elements {
             match element {
                 ArrayElement::Item(register) => array.push(operations::into_element(
