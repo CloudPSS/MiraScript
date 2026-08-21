@@ -1,7 +1,7 @@
 use indexmap::IndexMap;
 
 use super::*;
-use crate::{MiraHandle, MiraManageable, bytecode::Program};
+use crate::{FunctionName, MiraHandle, MiraManageable, bytecode::Program};
 
 pub(crate) struct ScriptModule {
     pub(crate) execution: ExecutionId,
@@ -79,7 +79,7 @@ impl Runtime {
     }
 
     pub(super) fn with_runtime_context(&self, error: MiraError, offset: usize) -> Box<MiraError> {
-        let display = |name: &Option<Rc<str>>| name.as_deref().unwrap_or("<anonymous>").to_owned();
+        let display = |name: &FunctionName| name.as_ref().to_owned();
         let function = self.call_stack.last().map(display);
         let stack = self.call_stack.iter().map(display).collect();
         Box::new(error.with_runtime_context(function, offset, stack))
@@ -101,7 +101,7 @@ impl Runtime {
                     program: Rc::clone(self.active_program()),
                     function: *function,
                     frame,
-                    name: None,
+                    name: FunctionName::anonymous(),
                 };
                 let value = self.insert(MiraManageable::from_function(function))?;
                 self.write_register(frame, *destination, value);
@@ -183,7 +183,7 @@ impl Runtime {
         let mut reusable_frame = None;
         match kind {
             LoopKind::Infinite => loop {
-                self.checkpoint_now()?;
+                self.checkpoint()?;
                 let frame =
                     self.loop_frame(register_count, parent, reuse_frame, &mut reusable_frame);
                 match self.execute_block(body, frame)? {
@@ -196,7 +196,7 @@ impl Runtime {
                 let value = self.read_register(parent, *value)?;
                 let items = operations::iterable(self, value)?;
                 for item in items {
-                    self.checkpoint_now()?;
+                    self.checkpoint()?;
                     let frame =
                         self.loop_frame(register_count, parent, reuse_frame, &mut reusable_frame);
                     self.write_register(frame, 1, item);
@@ -220,7 +220,7 @@ impl Runtime {
                 } else {
                     value <= end
                 } {
-                    self.checkpoint_now()?;
+                    self.checkpoint()?;
                     let frame =
                         self.loop_frame(register_count, parent, reuse_frame, &mut reusable_frame);
                     self.write_register(frame, 1, MiraValue::Number(value));

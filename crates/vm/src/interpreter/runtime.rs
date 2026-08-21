@@ -41,7 +41,6 @@ pub struct Runtime {
     pub(crate) program: Option<Rc<Program>>,
     pub(crate) started: Instant,
     pub(crate) checkpoint_remaining: u32,
-    pub(crate) call_depth: u32,
     pub(super) frames: FrameArena,
     pub(super) call_stack: CallStack,
 }
@@ -66,7 +65,6 @@ impl Runtime {
             program: None,
             started: Instant::now(),
             checkpoint_remaining,
-            call_depth: 0,
             frames: FrameArena::new(0),
             call_stack: CallStack::new(),
         };
@@ -92,7 +90,6 @@ impl Runtime {
         self.program = Some(Rc::clone(&script.program));
         self.started = Instant::now();
         self.checkpoint_remaining = self.options.checkpoint_interval.max(1);
-        self.call_depth = 0;
         self.frames = FrameArena::new(script.program.root.register_count);
         self.call_stack = CallStack::new();
 
@@ -116,7 +113,6 @@ impl Runtime {
         self.running = false;
         self.active_script = None;
         self.program = None;
-        self.call_depth = 0;
         self.call_stack = CallStack::new();
         result
     }

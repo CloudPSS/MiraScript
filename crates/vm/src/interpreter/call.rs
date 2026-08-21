@@ -1,12 +1,12 @@
 use super::*;
-use crate::{MiraManageable, bytecode::Program};
+use crate::{FunctionName, MiraManageable, bytecode::Program};
 
 pub(crate) struct ScriptFunction {
     pub(crate) execution: ExecutionId,
     pub(crate) program: Rc<Program>,
     pub(crate) function: usize,
     pub(crate) frame: FrameId,
-    pub(crate) name: Option<Rc<str>>,
+    pub(crate) name: FunctionName,
 }
 
 impl MiraFunction for ScriptFunction {
@@ -15,13 +15,48 @@ impl MiraFunction for ScriptFunction {
             return Err(MiraError::runtime(RuntimeErrorKind::ExecutionEnded));
         }
         let definition = &self.program.functions[self.function];
-        runtime
-            .call_script(definition, self.frame, args)
-            .map(Into::into)
+        let frame = runtime.create_frame(definition.register_count, Some(self.frame));
+        if definition.variadic {
+            let fixed = definition.arg_count.saturating_sub(1);
+            for index in 0..fixed {
+                runtime.write_register(
+                    frame,
+                    RegisterId::new(index + 1),
+                    args.get(index).copied().unwrap_or(MiraValue::Nil),
+                );
+            }
+            let rest = args
+                .iter()
+                .skip(fixed)
+                .copied()
+                .map(operations::into_element)
+                .collect::<Vec<_>>();
+            if definition.arg_count > 0 {
+                let rest = runtime.insert(rest)?;
+                runtime.write_register(frame, RegisterId::new(definition.arg_count), rest);
+            }
+        } else {
+            for index in 0..definition.arg_count {
+                runtime.write_register(
+                    frame,
+                    RegisterId::new(index + 1),
+                    args.get(index).copied().unwrap_or(MiraValue::Nil),
+                );
+            }
+        }
+        match runtime.execute_block(&definition.body, frame)? {
+            Flow::Return(value) => Ok(value.into()),
+            Flow::Continue => Ok(MiraValue::nil().into()),
+            Flow::Break | Flow::LoopContinue => {
+                Err(MiraError::runtime(RuntimeErrorKind::InvalidControlFlow {
+                    context: "function",
+                }))
+            }
+        }
     }
 
-    fn name(&self) -> &str {
-        self.name.as_deref().unwrap_or("<anonymous>")
+    fn name(&self) -> FunctionName {
+        self.name.clone()
     }
 }
 
@@ -83,8 +118,8 @@ impl Runtime {
 
     /// Call a function value owned by this Runtime.
     pub fn call(&mut self, function: MiraValue, args: &[MiraValue]) -> Result<MiraValue> {
-        self.checkpoint_now()?;
-        if self.call_depth >= self.options.max_call_depth {
+        self.checkpoint()?;
+        if self.call_stack.depth() >= self.options.max_call_depth as usize {
             return Err(MiraError::runtime(RuntimeErrorKind::MaxCallDepth {
                 max: self.options.max_call_depth,
             }));
@@ -95,68 +130,20 @@ impl Runtime {
             }));
         };
 
-        self.call_depth += 1;
         let callable = self.get_function_dyn(handle)?;
-        self.call_stack.push(Some(Rc::from(callable.name())));
+        self.call_stack.push(callable.name());
         let result = callable
             .call(self, args)
             .and_then(|value| self.insert(value))
             .and_then(|value| {
-                self.checkpoint_now()?;
+                self.checkpoint()?;
                 Ok(value)
             });
         self.call_stack.pop();
-        self.call_depth -= 1;
         result
     }
 
-    pub(super) fn call_script(
-        &mut self,
-        function: &FunctionDef,
-        parent: FrameId,
-        args: &[MiraValue],
-    ) -> Result<MiraValue> {
-        let frame = self.create_frame(function.register_count, Some(parent));
-        if function.variadic {
-            let fixed = function.arg_count.saturating_sub(1);
-            for index in 0..fixed {
-                self.write_register(
-                    frame,
-                    RegisterId::new(index + 1),
-                    args.get(index).copied().unwrap_or(MiraValue::Nil),
-                );
-            }
-            let rest = args
-                .iter()
-                .skip(fixed)
-                .copied()
-                .map(operations::into_element)
-                .collect::<Vec<_>>();
-            if function.arg_count > 0 {
-                let rest = self.insert(rest)?;
-                self.write_register(frame, RegisterId::new(function.arg_count), rest);
-            }
-        } else {
-            for index in 0..function.arg_count {
-                self.write_register(
-                    frame,
-                    RegisterId::new(index + 1),
-                    args.get(index).copied().unwrap_or(MiraValue::Nil),
-                );
-            }
-        }
-        match self.execute_block(&function.body, frame)? {
-            Flow::Return(value) => Ok(value),
-            Flow::Continue => Ok(MiraValue::Nil),
-            Flow::Break | Flow::LoopContinue => {
-                Err(MiraError::runtime(RuntimeErrorKind::InvalidControlFlow {
-                    context: "function",
-                }))
-            }
-        }
-    }
-
-    pub(super) fn checkpoint_now(&mut self) -> Result<()> {
+    pub(crate) fn checkpoint(&mut self) -> Result<()> {
         let remaining = self.checkpoint_remaining;
         if remaining > 1 {
             self.checkpoint_remaining = remaining - 1;
@@ -167,9 +154,5 @@ impl Runtime {
             return Err(MiraError::runtime(RuntimeErrorKind::Timeout));
         }
         Ok(())
-    }
-
-    pub(crate) fn checkpoint(&mut self) -> Result<()> {
-        self.checkpoint_now()
     }
 }

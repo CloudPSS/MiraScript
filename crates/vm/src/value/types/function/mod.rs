@@ -4,6 +4,10 @@ use crate::{MiraHandle, Result, Runtime, value::MiraManageable};
 
 use super::MiraValue;
 
+mod name;
+
+pub use name::FunctionName;
+
 impl MiraValue {
     /// Create a `MiraValue` representing a callable function.
     #[inline]
@@ -27,16 +31,14 @@ impl MiraValue {
     }
 }
 
-const ANONYMOUS_FN_NAME: &str = "<anonymous>";
-
 /// A callable MiraScript function implementation.
 pub trait MiraFunction: Any {
     /// Invoke the function.
     fn call(&self, runtime: &mut Runtime, args: &[MiraValue]) -> Result<MiraManageable>;
 
     /// Return the function name shown in diagnostics and stack traces.
-    fn name(&self) -> &str {
-        ANONYMOUS_FN_NAME
+    fn name(&self) -> FunctionName {
+        FunctionName::anonymous()
     }
 }
 
@@ -46,7 +48,7 @@ type NativeCallback = dyn Fn(&mut Runtime, &[MiraValue]) -> Result<MiraManageabl
 #[derive(Clone)]
 pub struct MiraNativeFn {
     callback: Rc<NativeCallback>,
-    name: Option<Rc<str>>,
+    name: FunctionName,
 }
 
 fn wrap_callback<V, E, F>(
@@ -65,7 +67,7 @@ where
 
 impl MiraNativeFn {
     /// Create a named native callback.
-    pub fn new<V, E, F>(name: impl Into<String>, callback: F) -> Self
+    pub fn new<V, E, F>(name: impl Into<FunctionName>, callback: F) -> Self
     where
         V: Into<MiraManageable>,
         E: Into<anyhow::Error>,
@@ -73,7 +75,7 @@ impl MiraNativeFn {
     {
         Self {
             callback: Rc::new(wrap_callback(callback)),
-            name: Some(Rc::from(name.into())),
+            name: name.into(),
         }
     }
 
@@ -86,7 +88,7 @@ impl MiraNativeFn {
     {
         Self {
             callback: Rc::new(wrap_callback(callback)),
-            name: None,
+            name: FunctionName::anonymous(),
         }
     }
 
@@ -98,7 +100,7 @@ impl MiraNativeFn {
     {
         Self {
             callback: Rc::new(move |runtime, args| Ok(callback(runtime, args).into())),
-            name: None,
+            name: FunctionName::anonymous(),
         }
     }
 
@@ -114,24 +116,24 @@ impl MiraNativeFn {
                     callback(runtime, args).into(),
                 ))
             }),
-            name: None,
+            name: FunctionName::anonymous(),
         }
     }
 
     /// Create an internal callback already using the VM result type.
     pub fn builtin(
-        name: impl Into<String>,
+        name: impl Into<FunctionName>,
         callback: impl Fn(&mut Runtime, &[MiraValue]) -> Result<MiraManageable> + 'static,
     ) -> Self {
         Self {
             callback: Rc::new(callback),
-            name: Some(Rc::from(name.into())),
+            name: name.into(),
         }
     }
 
     /// Replace the diagnostic name.
-    pub fn with_name(mut self, name: impl Into<String>) -> Self {
-        self.name = Some(Rc::from(name.into()));
+    pub fn with_name(mut self, name: impl Into<FunctionName>) -> Self {
+        self.name = name.into();
         self
     }
 }
@@ -141,8 +143,8 @@ impl MiraFunction for MiraNativeFn {
         (self.callback)(runtime, args)
     }
 
-    fn name(&self) -> &str {
-        self.name.as_deref().unwrap_or(ANONYMOUS_FN_NAME)
+    fn name(&self) -> FunctionName {
+        self.name.clone()
     }
 }
 

@@ -16,7 +16,7 @@ pub use field::{
     MiraField, shaped_array_from_array, shaped_array_from_record, shaped_record_from_array,
     shaped_record_from_record,
 };
-pub use function::{MiraFunction, MiraNativeFn};
+pub use function::{FunctionName, MiraFunction, MiraNativeFn};
 pub use module::MiraModule;
 pub(crate) use module::map_module;
 pub use nil::Nil;

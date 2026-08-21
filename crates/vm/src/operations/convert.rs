@@ -164,10 +164,11 @@ pub(super) fn inner_to_string(
         MiraValue::StaticStr(value) => Ok(value.to_string()),
         MiraValue::Function(handle) => {
             let function = runtime.get_function_dyn(handle)?;
-            Ok(if function.name() == "<anonymous>" {
+            let name = function.name();
+            Ok(if name == "<anonymous>" {
                 "<function>".into()
             } else {
-                format!("<function {}>", function.name())
+                format!("<function {}>", name)
             })
         }
         MiraValue::Module(handle) => {

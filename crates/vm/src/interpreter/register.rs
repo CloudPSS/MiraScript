@@ -22,7 +22,7 @@ impl From<usize> for RegisterId {
     }
 }
 
-const INLINE_REGISTER_COUNT: usize = 8;
+const INLINE_REGISTER_COUNT: usize = 16;
 
 #[derive(Debug)]
 pub(super) struct Registers {
