@@ -2,6 +2,7 @@ mod call;
 mod control;
 mod operation;
 mod runtime;
+mod script_reference;
 mod state;
 
 use std::rc::Rc;

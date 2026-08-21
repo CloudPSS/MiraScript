@@ -1,0 +1,5 @@
+error: duplicate `skip` option
+ --> tests/ui/fail/duplicate_skip.rs:6:18
+  |
+6 |     #[mira(skip, skip)]
+  |                  ^^^^

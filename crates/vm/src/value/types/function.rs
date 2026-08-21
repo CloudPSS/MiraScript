@@ -38,9 +38,6 @@ pub trait MiraFunction: Any + 'static {
     fn name(&self) -> &str {
         ANONYMOUS_FN_NAME
     }
-
-    #[doc(hidden)]
-    fn as_any(&self) -> &dyn Any;
 }
 
 type NativeCallback = dyn Fn(&mut Runtime, &[MiraValue]) -> Result<MiraManageable>;
@@ -146,10 +143,6 @@ impl MiraFunction for MiraNativeFn {
 
     fn name(&self) -> &str {
         self.name.as_deref().unwrap_or(ANONYMOUS_FN_NAME)
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
     }
 }
 

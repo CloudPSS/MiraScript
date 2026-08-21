@@ -55,17 +55,6 @@ impl mirascript_vm::MiraRecord for DropProbe {
     ) -> mirascript_vm::Result<MiraManageable> {
         Err(MiraError::runtime(RuntimeErrorKind::MissingIndexOrField))
     }
-
-    fn target_any<'a>(
-        &'a self,
-        _runtime: &'a Runtime,
-    ) -> mirascript_vm::Result<&'a dyn std::any::Any> {
-        Ok(self)
-    }
-
-    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
-        self
-    }
 }
 
 fn probe_runtime(drops: &Rc<Cell<usize>>) -> Runtime {

@@ -114,10 +114,6 @@ impl<T: Any + ?Sized> MiraHandle<T> {
             marker: PhantomData,
         }
     }
-
-    pub(crate) fn erased_key(self) -> u64 {
-        self.key.0
-    }
 }
 
 macro_rules! impl_handle_cast {
@@ -370,7 +366,8 @@ impl Runtime {
     /// Read the concrete target represented by a typed array handle.
     pub fn get_array<T: MiraArray>(&self, handle: MiraHandle<T>) -> Result<&T> {
         let value = self.arena.arrays.get(self.arena.id, "array", handle.key)?;
-        value.target_any(self)?.downcast_ref::<T>().ok_or_else(|| {
+        let value: &dyn Any = value.resolve(self)?.unwrap_or(value.as_ref());
+        value.downcast_ref::<T>().ok_or_else(|| {
             MiraError::runtime(RuntimeErrorKind::HandleTypeMismatch { category: "array" })
         })
     }
@@ -381,7 +378,8 @@ impl Runtime {
             .arena
             .arrays
             .get_mut(self.arena.id, "array", handle.key)?;
-        value.as_any_mut().downcast_mut::<T>().ok_or_else(|| {
+        let value: &mut dyn Any = value.as_mut();
+        value.downcast_mut::<T>().ok_or_else(|| {
             MiraError::runtime(RuntimeErrorKind::HandleTypeMismatch { category: "array" })
         })
     }
@@ -392,7 +390,8 @@ impl Runtime {
             .arena
             .records
             .get(self.arena.id, "record", handle.key)?;
-        value.target_any(self)?.downcast_ref::<T>().ok_or_else(|| {
+        let value: &dyn Any = value.resolve(self)?.unwrap_or(value.as_ref());
+        value.downcast_ref::<T>().ok_or_else(|| {
             MiraError::runtime(RuntimeErrorKind::HandleTypeMismatch { category: "record" })
         })
     }
@@ -403,7 +402,8 @@ impl Runtime {
             .arena
             .records
             .get_mut(self.arena.id, "record", handle.key)?;
-        value.as_any_mut().downcast_mut::<T>().ok_or_else(|| {
+        let value: &mut dyn Any = value.as_mut();
+        value.downcast_mut::<T>().ok_or_else(|| {
             MiraError::runtime(RuntimeErrorKind::HandleTypeMismatch { category: "record" })
         })
     }
@@ -414,7 +414,8 @@ impl Runtime {
             .arena
             .functions
             .get(self.arena.id, "function", handle.key)?;
-        value.as_any().downcast_ref::<T>().ok_or_else(|| {
+        let value: &dyn Any = value.as_ref();
+        value.downcast_ref::<T>().ok_or_else(|| {
             MiraError::runtime(RuntimeErrorKind::HandleTypeMismatch {
                 category: "function",
             })
@@ -427,7 +428,8 @@ impl Runtime {
             .arena
             .modules
             .get(self.arena.id, "module", handle.key)?;
-        (value as &dyn Any).downcast_ref::<T>().ok_or_else(|| {
+        let value: &dyn Any = value.as_ref();
+        value.downcast_ref::<T>().ok_or_else(|| {
             MiraError::runtime(RuntimeErrorKind::HandleTypeMismatch { category: "module" })
         })
     }
@@ -438,7 +440,8 @@ impl Runtime {
             .arena
             .modules
             .get_mut(self.arena.id, "module", handle.key)?;
-        (value as &mut dyn Any).downcast_mut::<T>().ok_or_else(|| {
+        let value: &mut dyn Any = value.as_mut();
+        value.downcast_mut::<T>().ok_or_else(|| {
             MiraError::runtime(RuntimeErrorKind::HandleTypeMismatch { category: "module" })
         })
     }

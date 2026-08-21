@@ -1,0 +1,5 @@
+error: duplicate `rename` option
+ --> tests/ui/fail/duplicate_rename.rs:6:32
+  |
+6 |     #[mira(rename = "value_1", rename = "value_2")]
+  |                                ^^^^^^

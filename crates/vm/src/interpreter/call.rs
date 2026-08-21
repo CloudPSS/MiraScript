@@ -1,5 +1,3 @@
-use std::any::Any;
-
 use super::*;
 use crate::{MiraManageable, bytecode::Program};
 
@@ -24,10 +22,6 @@ impl MiraFunction for ScriptFunction {
 
     fn name(&self) -> &str {
         self.name.as_deref().unwrap_or("<anonymous>")
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
     }
 }
 

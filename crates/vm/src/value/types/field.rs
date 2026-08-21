@@ -1,5 +1,4 @@
 use std::{
-    any::Any,
     collections::{BTreeMap, HashMap},
     hash::BuildHasher,
 };
@@ -20,6 +19,7 @@ use super::{MiraArray, MiraRecord, MiraShapedArray, MiraShapedRecord};
 #[doc(hidden)]
 pub trait MiraField: Sized + 'static {
     /// Project a field from a record parent.
+    #[allow(clippy::wrong_self_convention)]
     fn from_record<P: MiraRecord>(
         &self,
         parent: MiraHandle<P>,
@@ -27,6 +27,7 @@ pub trait MiraField: Sized + 'static {
     ) -> MiraManageable;
 
     /// Project a field from an array parent.
+    #[allow(clippy::wrong_self_convention)]
     fn from_array<P: MiraArray>(
         &self,
         parent: MiraHandle<P>,
@@ -129,12 +130,8 @@ impl<P: MiraRecord, T: MiraShapedRecord> MiraRecord for RecordFromRecord<P, T> {
         )
     }
 
-    fn target_any<'a>(&'a self, runtime: &'a Runtime) -> Result<&'a dyn Any> {
-        Ok((self.getter)(runtime.get_record(self.parent)?))
-    }
-
-    fn as_any_mut(&mut self) -> &mut dyn Any {
-        self
+    fn resolve<'a>(&self, runtime: &'a Runtime) -> Result<Option<&'a dyn MiraRecord>> {
+        Ok(Some((self.getter)(runtime.get_record(self.parent)?)))
     }
 }
 
@@ -174,12 +171,8 @@ impl<P: MiraArray, T: MiraShapedRecord> MiraRecord for RecordFromArray<P, T> {
         )
     }
 
-    fn target_any<'a>(&'a self, runtime: &'a Runtime) -> Result<&'a dyn Any> {
-        Ok((self.getter)(runtime.get_array(self.parent)?))
-    }
-
-    fn as_any_mut(&mut self) -> &mut dyn Any {
-        self
+    fn resolve<'a>(&self, runtime: &'a Runtime) -> Result<Option<&'a dyn MiraRecord>> {
+        Ok(Some((self.getter)(runtime.get_array(self.parent)?)))
     }
 }
 
@@ -207,12 +200,8 @@ impl<P: MiraRecord, T: MiraShapedArray> MiraArray for ArrayFromRecord<P, T> {
         )
     }
 
-    fn target_any<'a>(&'a self, runtime: &'a Runtime) -> Result<&'a dyn Any> {
-        Ok((self.getter)(runtime.get_record(self.parent)?))
-    }
-
-    fn as_any_mut(&mut self) -> &mut dyn Any {
-        self
+    fn resolve<'a>(&self, runtime: &'a Runtime) -> Result<Option<&'a dyn MiraArray>> {
+        Ok(Some((self.getter)(runtime.get_record(self.parent)?)))
     }
 }
 
@@ -240,12 +229,8 @@ impl<P: MiraArray, T: MiraShapedArray> MiraArray for ArrayFromArray<P, T> {
         )
     }
 
-    fn target_any<'a>(&'a self, runtime: &'a Runtime) -> Result<&'a dyn Any> {
-        Ok((self.getter)(runtime.get_array(self.parent)?))
-    }
-
-    fn as_any_mut(&mut self) -> &mut dyn Any {
-        self
+    fn resolve<'a>(&self, runtime: &'a Runtime) -> Result<Option<&'a dyn MiraArray>> {
+        Ok(Some((self.getter)(runtime.get_array(self.parent)?)))
     }
 }
 

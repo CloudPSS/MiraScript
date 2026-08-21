@@ -1,10 +1,6 @@
 use mirascript_vm::{
-    MiraArray, MiraError, MiraRecord, MiraValue, Result, Runtime, RuntimeErrorKind, compile,
+    MiraArray, MiraError, MiraRecord, MiraValue, Runtime, RuntimeErrorKind, compile,
 };
-
-fn eval(runtime: &mut Runtime, source: &str) -> Result<MiraValue> {
-    runtime.run(&compile(source)?)
-}
 
 #[test]
 fn values_and_registers_are_16_bytes() {
@@ -15,29 +11,25 @@ fn values_and_registers_are_16_bytes() {
 #[test]
 fn executes_core_language_features() {
     let mut runtime = Runtime::new();
-    assert_eq!(eval(&mut runtime, "1 + 2 * 3").unwrap(), 7.into());
+    assert_eq!(runtime.eval("1 + 2 * 3").unwrap(), 7.into());
     assert_eq!(
-        eval(
-            &mut runtime,
-            "let value = (a: 1, b: [2, 3]); value.b[-1] + value.a",
-        )
-        .unwrap(),
+        runtime
+            .eval("let value = (a: 1, b: [2, 3]); value.b[-1] + value.a",)
+            .unwrap(),
         4.into(),
     );
     assert_eq!(
-        eval(
-            &mut runtime,
-            "fn add(a, b) { a + b } fn twice(f, x) { f(f(x)) } twice(fn (x) { add(x, 2) }, 3)",
-        )
-        .unwrap(),
+        runtime
+            .eval(
+                "fn add(a, b) { a + b } fn twice(f, x) { f(f(x)) } twice(fn (x) { add(x, 2) }, 3)",
+            )
+            .unwrap(),
         7.into(),
     );
     assert_eq!(
-        eval(
-            &mut runtime,
-            "let mut total = 0; for value in 1..5 { total += value; } total",
-        )
-        .unwrap(),
+        runtime
+            .eval("let mut total = 0; for value in 1..5 { total += value; } total",)
+            .unwrap(),
         15.into(),
     );
 }
@@ -65,14 +57,13 @@ fn script_and_runtime_are_independently_reusable() {
 #[test]
 fn closures_capture_each_loop_iteration_but_cannot_escape() {
     let mut runtime = Runtime::new();
-    let result = eval(
-        &mut runtime,
+    let result = runtime.eval(
         "let mut first = nil; let mut second = nil; for value in 1..2 { if value == 1 { first = fn { value }; } else { second = fn { value }; } } first() * 10 + second()",
     )
     .unwrap();
     assert_eq!(result, 12.into());
 
-    let error = eval(&mut runtime, "fn value { 1 } value").unwrap_err();
+    let error = runtime.eval("fn value { 1 } value").unwrap_err();
     assert!(matches!(
         error.as_ref(),
         MiraError::Runtime {
@@ -81,7 +72,9 @@ fn closures_capture_each_loop_iteration_but_cannot_escape() {
         }
     ));
 
-    let error = eval(&mut runtime, "mod value { pub let x = 1; } value").unwrap_err();
+    let error = runtime
+        .eval("mod value { pub let x = 1; } value")
+        .unwrap_err();
     assert!(matches!(
         error.as_ref(),
         MiraError::Runtime {
@@ -94,14 +87,11 @@ fn closures_capture_each_loop_iteration_but_cannot_escape() {
         "wrap",
         mirascript_vm::MiraNativeFn::ok(|_, args| args.to_vec()),
     );
-    let error = eval(&mut runtime, "wrap(fn { 1 })").unwrap_err();
-    assert!(matches!(
-        error.as_ref(),
-        MiraError::Runtime {
-            kind: RuntimeErrorKind::EscapingClosure,
-            ..
-        }
-    ));
+    let value = runtime.eval("wrap(fn { 1 })").unwrap();
+    assert!(value.is_array());
+    runtime.insert_global("value", value).unwrap();
+    let inner = runtime.eval("value[0]").unwrap();
+    assert!(inner.is_nil());
 }
 
 #[derive(MiraRecord)]
@@ -146,21 +136,19 @@ fn derived_values_are_live_runtime_views() {
         .unwrap();
 
     assert_eq!(
-        eval(
-            &mut runtime,
-            "user.age + user.position.x + point[0] + point[-1]",
-        )
-        .unwrap(),
+        runtime
+            .eval("user.age + user.position.x + point[0] + point[-1]",)
+            .unwrap(),
         52.into(),
     );
-    let name = eval(&mut runtime, "user.display_name").unwrap();
+    let name = runtime.eval("user.display_name").unwrap();
     assert_eq!(name.as_str(&runtime).unwrap(), Some("Ada"));
 
     let user_value = runtime.get_record_mut(user).unwrap();
     user_value.age = 7;
     user_value.position.x = 10.0;
     assert_eq!(
-        eval(&mut runtime, "user.age + user.position.x").unwrap(),
+        runtime.eval("user.age + user.position.x").unwrap(),
         17.into(),
     );
 
@@ -198,7 +186,8 @@ fn errors_preserve_diagnostics_and_runtime_context() {
     ));
 
     let mut runtime = Runtime::new();
-    match eval(&mut runtime, "fn outer { panic('boom') } outer()")
+    match runtime
+        .eval("fn outer { panic('boom') } outer()")
         .unwrap_err()
         .as_ref()
     {

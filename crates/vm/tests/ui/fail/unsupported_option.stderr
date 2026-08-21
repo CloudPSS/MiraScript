@@ -1,0 +1,5 @@
+error: unsupported Mira derive option
+ --> tests/ui/fail/unsupported_option.rs:4:8
+  |
+4 | #[mira(unsupported_option)]
+  |        ^^^^^^^^^^^^^^^^^^

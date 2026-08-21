@@ -1,6 +1,5 @@
 use std::{
-    any::Any,
-    collections::{HashMap, HashSet},
+    collections::HashMap,
     num::NonZeroU64,
     rc::Rc,
     sync::atomic::{AtomicU64, Ordering},
@@ -110,7 +109,7 @@ impl Runtime {
                     }));
                 }
             };
-            if self.contains_active_script_reference(value)? {
+            if self.contains_script_reference(value)? {
                 return Err(MiraError::runtime(RuntimeErrorKind::EscapingClosure));
             }
             Ok(value)
@@ -206,70 +205,6 @@ impl Runtime {
                 index,
                 expected: "string",
             })),
-        }
-    }
-
-    pub(crate) fn contains_active_script_reference(&mut self, value: MiraValue) -> Result<bool> {
-        self.contains_active_script_reference_inner(value, &mut HashSet::new())
-    }
-
-    fn contains_active_script_reference_inner(
-        &mut self,
-        value: MiraValue,
-        visited: &mut HashSet<(u8, u64)>,
-    ) -> Result<bool> {
-        match value {
-            MiraValue::Function(handle) => Ok(self
-                .get_function_dyn(handle)?
-                .as_any()
-                .is::<super::ScriptFunction>()),
-            MiraValue::Module(handle) => {
-                if <dyn Any>::is::<super::ScriptModule>(self.get_module_dyn(handle)?) {
-                    return Ok(true);
-                }
-                if !visited.insert((2, handle.erased_key())) {
-                    return Ok(false);
-                }
-                let value = MiraValue::Module(handle);
-                for key in crate::operations::module_keys(self, value)?.unwrap_or_default() {
-                    if let Some(item) = crate::operations::module_get(self, value, &key)?
-                        && self.contains_active_script_reference_inner(item, visited)?
-                    {
-                        return Ok(true);
-                    }
-                }
-                Ok(false)
-            }
-            MiraValue::Array(handle) => {
-                if !visited.insert((0, handle.erased_key())) {
-                    return Ok(false);
-                }
-                let value = MiraValue::Array(handle);
-                let length = crate::operations::array_len(self, value)?.unwrap_or_default();
-                for index in 0..length {
-                    if let Some(item) = crate::operations::array_get(self, value, index)?
-                        && self.contains_active_script_reference_inner(item, visited)?
-                    {
-                        return Ok(true);
-                    }
-                }
-                Ok(false)
-            }
-            MiraValue::Record(handle) => {
-                if !visited.insert((1, handle.erased_key())) {
-                    return Ok(false);
-                }
-                let value = MiraValue::Record(handle);
-                for key in crate::operations::record_keys(self, value)?.unwrap_or_default() {
-                    if let Some(item) = crate::operations::record_get(self, value, &key)?
-                        && self.contains_active_script_reference_inner(item, visited)?
-                    {
-                        return Ok(true);
-                    }
-                }
-                Ok(false)
-            }
-            _ => Ok(false),
         }
     }
 

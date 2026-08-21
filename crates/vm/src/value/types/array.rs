@@ -31,7 +31,7 @@ impl MiraValue {
 }
 
 /// A read-only MiraScript array view.
-pub trait MiraArray: Any + 'static {
+pub trait MiraArray: Any {
     /// Return the number of elements.
     fn len(&self) -> usize;
 
@@ -49,10 +49,10 @@ pub trait MiraArray: Any + 'static {
     }
 
     #[doc(hidden)]
-    fn target_any<'a>(&'a self, _runtime: &'a Runtime) -> Result<&'a dyn Any>;
-
-    #[doc(hidden)]
-    fn as_any_mut(&mut self) -> &mut dyn Any;
+    fn resolve<'a>(&self, runtime: &'a Runtime) -> Result<Option<&'a dyn MiraArray>> {
+        let _ = runtime;
+        Ok(None)
+    }
 }
 
 /// A fixed-shape array whose length is known from its Rust type.
@@ -82,14 +82,6 @@ impl<T: MiraShapedArray> MiraArray for T {
     ) -> Result<MiraManageable> {
         T::get(self, self_handle, runtime, index)
     }
-
-    fn target_any<'a>(&'a self, _runtime: &'a Runtime) -> Result<&'a dyn Any> {
-        Ok(self)
-    }
-
-    fn as_any_mut(&mut self) -> &mut dyn Any {
-        self
-    }
 }
 
 impl<T: Clone + Into<MiraManageable> + 'static> MiraArray for Vec<T> {
@@ -108,14 +100,6 @@ impl<T: Clone + Into<MiraManageable> + 'static> MiraArray for Vec<T> {
             .cloned()
             .map(Into::into)
             .ok_or_else(|| MiraError::runtime(RuntimeErrorKind::MissingIndexOrField))
-    }
-
-    fn target_any<'a>(&'a self, _runtime: &'a Runtime) -> Result<&'a dyn Any> {
-        Ok(self)
-    }
-
-    fn as_any_mut(&mut self) -> &mut dyn Any {
-        self
     }
 }
 
@@ -142,14 +126,6 @@ impl<T: Clone + Into<MiraManageable> + 'static, const N: usize> MiraArray for [T
             .map(Into::into)
             .ok_or_else(|| MiraError::runtime(RuntimeErrorKind::MissingIndexOrField))
     }
-
-    fn target_any<'a>(&'a self, _runtime: &'a Runtime) -> Result<&'a dyn Any> {
-        Ok(self)
-    }
-
-    fn as_any_mut(&mut self) -> &mut dyn Any {
-        self
-    }
 }
 
 impl<T: Clone + Into<MiraManageable> + 'static, const N: usize> From<[T; N]> for MiraManageable {
@@ -174,14 +150,6 @@ impl<T: Clone + Into<MiraManageable> + 'static> MiraArray for Box<[T]> {
             .cloned()
             .map(Into::into)
             .ok_or_else(|| MiraError::runtime(RuntimeErrorKind::MissingIndexOrField))
-    }
-
-    fn target_any<'a>(&'a self, _runtime: &'a Runtime) -> Result<&'a dyn Any> {
-        Ok(self)
-    }
-
-    fn as_any_mut(&mut self) -> &mut dyn Any {
-        self
     }
 }
 

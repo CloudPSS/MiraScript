@@ -37,7 +37,7 @@ impl MiraValue {
 }
 
 /// A read-only MiraScript record view.
-pub trait MiraRecord: Any + 'static {
+pub trait MiraRecord: Any {
     /// Return the number of fields.
     fn len(&self) -> usize;
 
@@ -66,10 +66,10 @@ pub trait MiraRecord: Any + 'static {
     }
 
     #[doc(hidden)]
-    fn target_any<'a>(&'a self, runtime: &'a Runtime) -> Result<&'a dyn Any>;
-
-    #[doc(hidden)]
-    fn as_any_mut(&mut self) -> &mut dyn Any;
+    fn resolve<'a>(&self, runtime: &'a Runtime) -> Result<Option<&'a dyn MiraRecord>> {
+        let _ = runtime;
+        Ok(None)
+    }
 }
 
 /// A fixed-shape record whose field names are known from its Rust type.
@@ -122,14 +122,6 @@ impl<T: MiraShapedRecord> MiraRecord for T {
     ) -> Result<MiraManageable> {
         T::get(self, self_handle, runtime, index)
     }
-
-    fn target_any<'a>(&'a self, _runtime: &'a Runtime) -> Result<&'a dyn Any> {
-        Ok(self)
-    }
-
-    fn as_any_mut(&mut self) -> &mut dyn Any {
-        self
-    }
 }
 
 macro_rules! impl_map_record {
@@ -161,14 +153,6 @@ macro_rules! impl_map_record {
                     .cloned()
                     .map(Into::into)
                     .ok_or_else(|| MiraError::runtime(RuntimeErrorKind::MissingIndexOrField))
-            }
-
-            fn target_any<'a>(&'a self, _runtime: &'a Runtime) -> Result<&'a dyn Any> {
-                Ok(self)
-            }
-
-            fn as_any_mut(&mut self) -> &mut dyn Any {
-                self
             }
         }
 
@@ -204,14 +188,6 @@ impl<T: Clone + Into<MiraManageable> + 'static> MiraRecord for IndexMap<String, 
         self.get_index(index)
             .map(|(_, value)| value.clone().into())
             .ok_or_else(|| MiraError::runtime(RuntimeErrorKind::MissingIndexOrField))
-    }
-
-    fn target_any<'a>(&'a self, _runtime: &'a Runtime) -> Result<&'a dyn Any> {
-        Ok(self)
-    }
-
-    fn as_any_mut(&mut self) -> &mut dyn Any {
-        self
     }
 }
 
@@ -254,14 +230,6 @@ where
             .cloned()
             .map(Into::into)
             .ok_or_else(|| MiraError::runtime(RuntimeErrorKind::MissingIndexOrField))
-    }
-
-    fn target_any<'a>(&'a self, _runtime: &'a Runtime) -> Result<&'a dyn Any> {
-        Ok(self)
-    }
-
-    fn as_any_mut(&mut self) -> &mut dyn Any {
-        self
     }
 }
 

@@ -2,11 +2,11 @@ use mirascript_vm::{MiraArray, MiraRecord, Runtime};
 
 #[derive(Clone, MiraRecord)]
 #[mira(crate = "mirascript_vm")]
-struct Record<T> {
+struct Record<'a, T: Into<u8>> {
     #[mira(rename = "value")]
     item: T,
     #[mira(skip)]
-    hidden: bool,
+    hidden: &'a bool,
 }
 
 #[derive(Clone, MiraArray)]
@@ -20,7 +20,7 @@ fn main() {
     let record = runtime
         .insert(Record {
             item: 1_u8,
-            hidden: true,
+            hidden: &true,
         })
         .unwrap();
     let array = runtime.insert(Array(2_u16, false)).unwrap();
