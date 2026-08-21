@@ -1,3 +1,5 @@
+use serde_json::value;
+
 use crate::MiraValue::Nil;
 
 use super::*;
@@ -126,7 +128,14 @@ impl Runtime {
 
     #[inline]
     pub(super) fn read_number(&self, frame: FrameId, register: RegisterId) -> Result<f64> {
-        operations::to_number(self, self.read_register(frame, register)?)
+        let value = self.read_register_raw(frame, register);
+        if let Some(MiraValue::Number(number)) = value {
+            return Ok(number);
+        }
+        let Some(value) = value else {
+            return Err(MiraError::runtime(RuntimeErrorKind::UninitializedValue));
+        };
+        operations::to_number(self, value)
     }
 
     #[inline]
