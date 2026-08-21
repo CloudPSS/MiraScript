@@ -57,7 +57,7 @@ places it in the correct arena.
 
 `#[derive(MiraRecord)]` supports all structs and `#[derive(MiraArray)]` supports
 tuple and unit structs. Both preserve `#[mira(rename = "...")]`,
-`#[mira(skip)]`, generics, dependency aliases, and `#[mira(crate = "...")]`.
+`#[mira(skip)]`, generics, dependency aliases, and `#[mira(crate = ...)]`.
 Nested derived records and arrays are projection views: they retain a typed parent
 handle and read the field from the runtime on every access instead of cloning it.
 

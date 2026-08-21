@@ -1,7 +1,7 @@
 use mirascript_vm::{MiraArray, MiraRecord, Runtime};
 
 #[derive(Clone, MiraRecord)]
-#[mira(crate = "mirascript_vm")]
+#[mira(crate = mirascript_vm)]
 struct Record<'a, T: Into<u8>> {
     #[mira(rename = "value")]
     item: T,

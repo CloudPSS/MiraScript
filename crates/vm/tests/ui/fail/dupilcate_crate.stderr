@@ -1,5 +1,5 @@
 error: duplicate `crate` option
- --> tests/ui/fail/dupilcate_crate.rs:4:22
+ --> tests/ui/fail/dupilcate_crate.rs:4:20
   |
-4 | #[mira(crate = "xx", crate = "yy")]
-  |                      ^^^^^
+4 | #[mira(crate = xx, crate = yy)]
+  |                    ^^^^^

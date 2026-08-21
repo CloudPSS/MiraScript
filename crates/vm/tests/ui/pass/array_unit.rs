@@ -1,7 +1,7 @@
 use mirascript_vm::{MiraArray, Runtime};
 
 #[derive(Clone, MiraArray)]
-#[mira(crate = "mirascript_vm")]
+#[mira(crate = mirascript_vm)]
 struct Array;
 
 fn main() {

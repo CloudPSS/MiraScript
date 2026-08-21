@@ -1,6 +1,6 @@
 use proc_macro_crate::{FoundCrate, crate_name};
 use quote::format_ident;
-use syn::{Attribute, LitStr, Path, Result, parse_quote};
+use syn::{Attribute, Path, Result, parse_quote};
 
 pub struct ContainerOptions {
     pub crate_path: Path,
@@ -43,8 +43,8 @@ pub fn container_options(attrs: &[Attribute]) -> Result<ContainerOptions> {
                     return Err(meta.error("duplicate `crate` option"));
                 }
                 saw_crate = true;
-                let value = meta.value()?.parse::<LitStr>()?;
-                options.crate_path = value.parse()?;
+                let value = meta.value()?.parse::<Path>()?;
+                options.crate_path = value;
                 Ok(())
             } else {
                 Err(meta.error("unsupported Mira derive option"))
