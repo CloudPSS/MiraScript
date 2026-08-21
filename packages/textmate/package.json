@@ -1,6 +1,6 @@
 {
   "name": "@mirascript/textmate",
-  "version": "0.1.87",
+  "version": "0.1.88",
   "author": "CloudPSS",
   "license": "MIT",
   "description": "TextMate grammars for MiraScript.",
