@@ -20,5 +20,7 @@ fn main() {
         "example"
     );
     assert_eq!(runtime.eval("record.2").unwrap().as_number().unwrap(), 1f64);
+
+    assert!(runtime.eval("record.1").unwrap().is_nil());
     assert!(!runtime.eval("'1' in record").unwrap().as_boolean().unwrap(),);
 }

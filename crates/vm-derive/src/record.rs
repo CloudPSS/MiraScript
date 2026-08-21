@@ -1,10 +1,10 @@
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{DeriveInput, Fields, Result, spanned::Spanned};
+use syn::{DeriveInput, Fields, Result, parse_quote, spanned::Spanned};
 
-use crate::container::container_options;
 use crate::field::{field_options, into_fields};
 use crate::utils::{add_read_bounds, reject_duplicate_names};
+use crate::{container::container_options, utils::create_getter};
 
 enum ExportField {
     Named(syn::Ident),
@@ -13,9 +13,6 @@ enum ExportField {
 
 pub fn expand(input: DeriveInput) -> Result<TokenStream> {
     let options = container_options(&input.attrs)?;
-    let krate = options.crate_path;
-    let ident = input.ident;
-
     let fields = into_fields(input.data, "MiraRecord")?;
 
     let mut exported = Vec::new();
@@ -68,6 +65,7 @@ pub fn expand(input: DeriveInput) -> Result<TokenStream> {
             .as_slice(),
     )?;
 
+    let krate = options.crate_path;
     let mut generics = input.generics;
     add_read_bounds(
         &mut generics,
@@ -95,20 +93,10 @@ pub fn expand(input: DeriveInput) -> Result<TokenStream> {
                     quote!(#index)
                 }
             };
-            quote! {
-                #index => {
-                    let parent = unsafe { self_handle.upcast::<Self>() };
-                    ::core::result::Result::Ok(
-                        <#ty as #krate::__private::MiraField>::from_record(
-                            &self.#field,
-                            parent,
-                            |parent: &Self| &parent.#field,
-                        )
-                    )
-                },
-            }
+            create_getter(&krate, index, field, ty, parse_quote!(from_record))
         });
 
+    let ident = input.ident;
     Ok(quote! {
         impl #impl_generics #krate::MiraShapedRecord for #ident #ty_generics #where_clause {
             fn len() -> usize {

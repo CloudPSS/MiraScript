@@ -1,16 +1,13 @@
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{DeriveInput, Error, Fields, Index, Result};
+use syn::{DeriveInput, Error, Fields, Index, Result, parse_quote};
 
-use crate::container::container_options;
 use crate::field::{field_options, into_fields};
 use crate::utils::add_read_bounds;
+use crate::{container::container_options, utils::create_getter};
 
 pub fn expand(input: DeriveInput) -> Result<TokenStream> {
     let options = container_options(&input.attrs)?;
-    let krate = options.crate_path;
-    let ident = input.ident;
-
     let fields = into_fields(input.data, "MiraArray")?;
 
     let mut exported = Vec::new();
@@ -32,6 +29,7 @@ pub fn expand(input: DeriveInput) -> Result<TokenStream> {
         }
     }
 
+    let krate = options.crate_path;
     let mut generics = input.generics;
     add_read_bounds(
         &mut generics,
@@ -40,24 +38,11 @@ pub fn expand(input: DeriveInput) -> Result<TokenStream> {
     );
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
     let len = exported.len();
-    let getters = exported
-        .iter()
-        .enumerate()
-        .map(|(exported_index, (field, ty))| {
-            quote! {
-                #exported_index => {
-                    let parent = unsafe { self_handle.upcast::<Self>() };
-                    ::core::result::Result::Ok(
-                        <#ty as #krate::__private::MiraField>::from_array(
-                            &self.#field,
-                            parent,
-                            |parent: &Self| &parent.#field,
-                        )
-                    )
-                },
-            }
-        });
+    let getters = exported.iter().enumerate().map(|(index, (field, ty))| {
+        create_getter(&krate, index, quote!(#field), ty, parse_quote!(from_array))
+    });
 
+    let ident = input.ident;
     Ok(quote! {
         impl #impl_generics #krate::MiraShapedArray for #ident #ty_generics #where_clause {
             fn len() -> usize {

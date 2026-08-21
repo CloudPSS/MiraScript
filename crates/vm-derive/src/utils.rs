@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
-use syn::{Error, Generics, Path, Result, Type, parse_quote};
+use proc_macro2::TokenStream;
+use quote::quote;
+use syn::{Error, Generics, Ident, Path, Result, Type, parse_quote};
 
 pub fn reject_duplicate_names(names: &[(&str, &proc_macro2::Span)]) -> Result<()> {
     let mut seen = HashMap::new();
@@ -36,5 +38,26 @@ pub fn add_read_bounds(
         where_clause
             .predicates
             .push(parse_quote!(#ty: #krate::__private::MiraField));
+    }
+}
+
+pub fn create_getter(
+    krate: &Path,
+    index: usize,
+    field: TokenStream,
+    ty: &Type,
+    from: Ident,
+) -> TokenStream {
+    quote! {
+        #index => {
+            let parent = unsafe { self_handle.upcast::<Self>() };
+            ::core::result::Result::Ok(
+                <#ty as #krate::__private::MiraField>::#from(
+                    &self.#field,
+                    parent,
+                    |parent: &Self| &parent.#field,
+                )
+            )
+        },
     }
 }
