@@ -7,12 +7,11 @@ mod structured;
 #[cfg(test)]
 mod tests;
 
-
 use indexmap::IndexMap;
 use mirascript_core::OpCode;
 use mirascript_core::prelude::*;
 
-use crate::{InvalidBytecodeReason, MiraError, Result};
+use crate::{InvalidBytecodeReason, MiraError, Result, interpreter::std_slot};
 
 use chunk::decode_chunk;
 pub(crate) use model::*;
@@ -49,7 +48,7 @@ impl Program {
 
         Ok(Self {
             constants: Box::from(decoder.constants),
-            global_names: Box::from(decoder.global_names.into_keys().collect::<Vec<_>>()),
+            global_names: Box::from(decoder.global_names.into_iter().collect::<Vec<_>>()),
             root,
             functions: Box::from(decoder.functions),
         })
@@ -61,7 +60,7 @@ struct Decoder<'a> {
     offset: usize,
     constants: Vec<Constant>,
     functions: Vec<FunctionDef>,
-    global_names: IndexMap<String, ()>,
+    global_names: IndexMap<String, Option<usize>>,
     scopes: Vec<usize>,
     loop_depth: usize,
 }
@@ -165,7 +164,8 @@ impl Decoder<'_> {
             return Ok(slot);
         }
         let slot = self.global_names.len();
-        self.global_names.insert(name, ());
+        let std_slot = std_slot(&name);
+        self.global_names.insert(name, std_slot);
         Ok(slot)
     }
 

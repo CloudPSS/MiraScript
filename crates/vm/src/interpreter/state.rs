@@ -1,20 +1,5 @@
 use super::*;
 
-/// `None` is reserved for an uninitialized VM register.
-pub(crate) type MiraAny = Option<MiraValue>;
-
-/// Identifies a frame in the call stack.
-/// Root frame is always `0`, and child frames are numbered sequentially starting from `1`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub(crate) struct FrameId(usize);
-
-pub(super) const ROOT_FRAME_ID: FrameId = FrameId(0);
-
-pub(super) struct Frame {
-    pub(super) registers: Vec<MiraAny>,
-    pub(super) parent: Option<FrameId>,
-}
-
 pub(super) struct FrameArena {
     root: Frame,
     children: Vec<Frame>,
@@ -23,10 +8,7 @@ pub(super) struct FrameArena {
 impl FrameArena {
     pub(super) fn new(root_register_count: usize) -> Self {
         Self {
-            root: Frame {
-                registers: vec![None; root_register_count + 1],
-                parent: None,
-            },
+            root: Frame::new(root_register_count, None),
             children: Vec::new(),
         }
     }
@@ -54,8 +36,7 @@ impl FrameArena {
 
     pub(super) fn reset(&mut self, frame: FrameId, parent: Option<FrameId>) {
         let frame = self.get_mut(frame);
-        frame.registers.fill(None);
-        frame.parent = parent;
+        frame.reset(parent);
     }
 }
 

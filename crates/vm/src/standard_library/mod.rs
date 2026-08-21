@@ -8,7 +8,7 @@ pub(crate) fn install(runtime: &mut Runtime) {
     let matrix = module::matrix::module(runtime)
         .expect("standard-library module construction must fit in a fresh Runtime arena");
     runtime
-        .insert_global("matrix", matrix)
+        .insert_std("matrix", matrix)
         .expect("standard-library module handle must belong to its Runtime");
 }
 
@@ -26,7 +26,7 @@ fn insert_native(
 ) {
     let display_name = format!("global.{name}");
     runtime
-        .insert_global(name, MiraNativeFn::new(display_name, callback))
+        .insert_std(name, MiraNativeFn::new(display_name, callback))
         .expect("standard-library function allocation must fit in a fresh Runtime arena");
 }
 

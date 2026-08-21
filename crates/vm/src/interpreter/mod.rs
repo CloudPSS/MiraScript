@@ -1,6 +1,9 @@
 mod call;
 mod control;
+mod frame;
+mod globals;
 mod operation;
+mod register;
 mod runtime;
 mod script_reference;
 mod state;
@@ -17,12 +20,13 @@ use crate::{MiraError, MiraFunction, MiraModule, MiraValue, Result, RuntimeError
 
 pub(crate) use call::ScriptFunction;
 pub(crate) use control::ScriptModule;
+use frame::Frame;
+pub(crate) use frame::FrameId;
+pub(crate) use globals::{Globals, std_slot};
+pub(crate) use register::RegisterId;
 pub(crate) use runtime::ExecutionId;
 pub use runtime::Runtime;
-pub(crate) use state::FrameId;
-use state::{CallStack, Frame, FrameArena, MiraAny};
-
-use self::state::ROOT_FRAME_ID;
+use state::{CallStack, FrameArena};
 
 const INLINE_CALL_DEPTH: usize = 8;
 

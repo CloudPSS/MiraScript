@@ -3,7 +3,7 @@ use super::constants::Constant;
 #[derive(Debug)]
 pub(crate) struct Program {
     pub constants: Box<[Constant]>,
-    pub global_names: Box<[String]>,
+    pub global_names: Box<[(String, Option<usize>)]>,
     pub root: FunctionDef,
     pub functions: Box<[FunctionDef]>,
 }

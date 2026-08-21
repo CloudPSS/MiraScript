@@ -16,7 +16,7 @@ pub(super) fn install(context: &mut Runtime) {
         ("LOG10E", consts::LOG10_E),
     ] {
         context
-            .insert_global(name, value)
+            .insert_std(name, value)
             .expect("numeric standard-library globals are inline");
     }
 }

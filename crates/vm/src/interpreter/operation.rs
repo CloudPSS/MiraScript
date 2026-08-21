@@ -140,12 +140,8 @@ impl Runtime {
             Operation::Swap { left, right } => {
                 let left_value = self.read_register_raw(frame, *left);
                 let right_value = self.read_register_raw(frame, *right);
-                if *left != 0 {
-                    self.frames.get_mut(frame).registers[*left] = right_value;
-                }
-                if *right != 0 {
-                    self.frames.get_mut(frame).registers[*right] = left_value;
-                }
+                self.write_register_raw(frame, *left, right_value);
+                self.write_register_raw(frame, *right, left_value);
             }
             Operation::Upvalue {
                 kind,

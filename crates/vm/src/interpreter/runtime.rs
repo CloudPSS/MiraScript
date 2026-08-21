@@ -6,8 +6,6 @@ use std::{
     time::Instant,
 };
 
-use indexmap::IndexMap;
-
 use crate::{
     MiraError, MiraManageable, MiraNativeFn, MiraScript, MiraValue, Result, RunOptions,
     RuntimeErrorKind, ScriptId,
@@ -16,7 +14,7 @@ use crate::{
     value::MiraArena,
 };
 
-use super::{CallStack, Flow, FrameArena, ROOT_FRAME_ID};
+use super::{CallStack, Flow, FrameArena, FrameId, Globals};
 
 static NEXT_EXECUTION_ID: AtomicU64 = AtomicU64::new(1);
 
@@ -35,7 +33,7 @@ pub(crate) struct ExecutionId(NonZeroU64);
 pub struct Runtime {
     pub(crate) execution: ExecutionId,
     pub(crate) options: RunOptions,
-    pub(crate) globals: IndexMap<String, MiraValue>,
+    pub(crate) globals: Globals,
     pub(crate) arena: MiraArena,
     constant_cache: HashMap<(ScriptId, usize), MiraValue>,
     running: bool,
@@ -60,7 +58,7 @@ impl Runtime {
         let mut runtime = Self {
             execution: next_execution_id(),
             options,
-            globals: IndexMap::new(),
+            globals: Globals::new(),
             arena: MiraArena::new(),
             constant_cache: HashMap::new(),
             running: false,
@@ -100,7 +98,7 @@ impl Runtime {
 
         let result = (|| {
             let body = &script.program.root.body;
-            let value = match self.execute_block(body, ROOT_FRAME_ID)? {
+            let value = match self.execute_block(body, FrameId::ROOT)? {
                 Flow::Return(value) => value,
                 Flow::Continue => MiraValue::Nil,
                 Flow::Break | Flow::LoopContinue => {
@@ -151,7 +149,7 @@ impl Runtime {
 
     /// Clone a global value by name.
     pub fn get_global(&self, name: &str) -> Option<MiraValue> {
-        self.globals.get(name).copied()
+        self.globals.get(name)
     }
 
     /// Return whether a global name is defined.
@@ -161,7 +159,7 @@ impl Runtime {
 
     /// Iterate over global names in insertion order.
     pub fn global_names(&self) -> impl Iterator<Item = &str> {
-        self.globals.keys().map(String::as_str)
+        self.globals.keys()
     }
 
     /// Compare values using MiraScript's structural equality semantics.

@@ -58,14 +58,15 @@ impl Runtime {
     }
 
     pub(super) fn get_global_slot(&self, slot: usize) -> Result<MiraValue> {
-        let name = &self.active_program().global_names[slot];
-        self.globals.get(name).copied().ok_or_else(|| {
+        let (name, std_slot) = &self.active_program().global_names[slot];
+
+        self.globals.get_hint(name, *std_slot).ok_or_else(|| {
             MiraError::runtime(RuntimeErrorKind::UndefinedGlobal { name: name.clone() })
         })
     }
 
     pub(super) fn get_global_name(&self, key: &str) -> Result<MiraValue> {
-        self.globals.get(key).copied().ok_or_else(|| {
+        self.globals.get(key).ok_or_else(|| {
             MiraError::runtime(RuntimeErrorKind::UndefinedGlobal {
                 name: key.to_owned(),
             })
@@ -121,7 +122,7 @@ impl Runtime {
             for index in 0..fixed {
                 self.write_register(
                     frame,
-                    index + 1,
+                    RegisterId::new(index + 1),
                     args.get(index).copied().unwrap_or(MiraValue::Nil),
                 );
             }
@@ -133,13 +134,13 @@ impl Runtime {
                 .collect::<Vec<_>>();
             if function.arg_count > 0 {
                 let rest = self.insert(rest)?;
-                self.write_register(frame, function.arg_count, rest);
+                self.write_register(frame, RegisterId::new(function.arg_count), rest);
             }
         } else {
             for index in 0..function.arg_count {
                 self.write_register(
                     frame,
-                    index + 1,
+                    RegisterId::new(index + 1),
                     args.get(index).copied().unwrap_or(MiraValue::Nil),
                 );
             }

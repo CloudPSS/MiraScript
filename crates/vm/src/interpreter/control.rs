@@ -7,7 +7,7 @@ pub(crate) struct ScriptModule {
     pub(crate) execution: ExecutionId,
     pub(crate) _program: Rc<Program>,
     pub(crate) frame: FrameId,
-    pub(crate) exports: IndexMap<String, usize>,
+    pub(crate) exports: IndexMap<String, RegisterId>,
     pub(crate) name: Rc<str>,
 }
 
@@ -54,40 +54,7 @@ impl Runtime {
         register_count: usize,
         parent: Option<FrameId>,
     ) -> FrameId {
-        self.frames.push(Frame {
-            registers: vec![None; register_count + 1],
-            parent,
-        })
-    }
-
-    pub(super) fn read_register_raw(&self, frame: FrameId, register: usize) -> MiraAny {
-        if register == 0 {
-            Some(MiraValue::Nil)
-        } else {
-            self.frames.get(frame).registers[register]
-        }
-    }
-
-    pub(super) fn read_register(&self, frame: FrameId, register: usize) -> Result<MiraValue> {
-        self.read_register_raw(frame, register)
-            .ok_or_else(|| MiraError::runtime(RuntimeErrorKind::UninitializedValue))
-    }
-
-    #[inline]
-    pub(super) fn read_number(&self, frame: FrameId, register: usize) -> Result<f64> {
-        operations::to_number(self, self.read_register(frame, register)?)
-    }
-
-    pub(super) fn write_register(&mut self, frame: FrameId, register: usize, value: MiraValue) {
-        if register != 0 {
-            self.frames.get_mut(frame).registers[register] = Some(value);
-        }
-    }
-
-    pub(super) fn clear_register(&mut self, frame: FrameId, register: usize) {
-        if register != 0 {
-            self.frames.get_mut(frame).registers[register] = None;
-        }
+        self.frames.push(Frame::new(register_count, parent))
     }
 
     pub(super) fn parent_frame(&self, mut frame: FrameId, level: usize) -> Result<FrameId> {
@@ -192,7 +159,10 @@ impl Runtime {
                     execution: self.execution,
                     _program: Rc::clone(self.active_program()),
                     frame,
-                    exports: fields.iter().cloned().collect(),
+                    exports: fields
+                        .iter()
+                        .map(|(f, r)| (f.clone(), RegisterId::new(*r)))
+                        .collect(),
                     name: Rc::from(name.as_str()),
                 };
                 let value = self.insert(MiraManageable::from_module(module))?;
