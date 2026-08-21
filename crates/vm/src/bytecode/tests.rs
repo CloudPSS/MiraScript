@@ -173,7 +173,7 @@ fn static_calls_with_small_fixed_arity_are_quickened() {
 }
 
 #[test]
-fn arithmetic_uses_numeric_operations() {
+fn arithmetic_uses_specialized_numeric_operations() {
     let (chunk, diagnostics) = mirascript_core::Compiler::compile(
         "[left + right, left - right, left * right, left / right, left % right, left ^ right]",
         &mirascript_core::CompileConfig::new(),
@@ -185,21 +185,16 @@ fn arithmetic_uses_numeric_operations() {
         .body
         .iter()
         .filter_map(|instruction| match &instruction.kind {
-            InstructionKind::Op(Operation::Numeric { kind, .. }) => Some(*kind),
+            InstructionKind::Op(Operation::Add { .. }) => Some("add"),
+            InstructionKind::Op(Operation::Sub { .. }) => Some("sub"),
+            InstructionKind::Op(Operation::Mul { .. }) => Some("mul"),
+            InstructionKind::Op(Operation::Div { .. }) => Some("div"),
+            InstructionKind::Op(Operation::Mod { .. }) => Some("mod"),
+            InstructionKind::Op(Operation::Pow { .. }) => Some("pow"),
             _ => None,
         })
         .collect();
-    assert_eq!(
-        operations,
-        [
-            NumericOperation::Add,
-            NumericOperation::Sub,
-            NumericOperation::Mul,
-            NumericOperation::Div,
-            NumericOperation::Mod,
-            NumericOperation::Pow,
-        ]
-    );
+    assert_eq!(operations, ["add", "sub", "mul", "div", "mod", "pow"]);
 }
 
 #[test]

@@ -78,8 +78,32 @@ pub(crate) enum Operation {
         destination: usize,
         value: usize,
     },
-    Numeric {
-        kind: NumericOperation,
+    Add {
+        destination: usize,
+        left: usize,
+        right: usize,
+    },
+    Sub {
+        destination: usize,
+        left: usize,
+        right: usize,
+    },
+    Mul {
+        destination: usize,
+        left: usize,
+        right: usize,
+    },
+    Div {
+        destination: usize,
+        left: usize,
+        right: usize,
+    },
+    Mod {
+        destination: usize,
+        left: usize,
+        right: usize,
+    },
+    Pow {
         destination: usize,
         left: usize,
         right: usize,
@@ -198,16 +222,6 @@ pub(crate) enum UnaryOperation {
     IsArray,
     Assign,
     Length,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum NumericOperation {
-    Add,
-    Sub,
-    Mul,
-    Div,
-    Mod,
-    Pow,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

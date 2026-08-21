@@ -12,9 +12,8 @@ use std::rc::Rc;
 
 use crate::bytecode::{
     AccessKey, AccessOperation, ArrayElement, AssertOperation, BinaryOperation, CallTarget,
-    Condition, Instruction, InstructionKind, LoopKind, NumericOperation, Operation,
-    PickOmitOperation, RangeEndpoint, RecordElement, RecordKey, SliceBound, UnaryOperation,
-    UpvalueOperation,
+    Condition, Instruction, InstructionKind, LoopKind, Operation, PickOmitOperation, RangeEndpoint,
+    RecordElement, RecordKey, SliceBound, UnaryOperation, UpvalueOperation,
 };
 use crate::{MiraError, MiraFunction, MiraModule, MiraValue, Result, RuntimeErrorKind, operations};
 

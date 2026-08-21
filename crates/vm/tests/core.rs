@@ -35,6 +35,21 @@ fn executes_core_language_features() {
 }
 
 #[test]
+fn numeric_operations_preserve_number_conversion() {
+    let mut runtime = Runtime::new();
+    for (source, expected) in [
+        (r#""2" + true"#, 3),
+        (r#""4" - true"#, 3),
+        (r#""3" * true"#, 3),
+        (r#""6" / true"#, 6),
+        (r#""7" % "4""#, 3),
+        (r#""2" ^ "3""#, 8),
+    ] {
+        assert_eq!(runtime.eval(source).unwrap(), expected.into(), "{source}");
+    }
+}
+
+#[test]
 fn script_and_runtime_are_independently_reusable() {
     let script = compile("value + PI").unwrap();
 

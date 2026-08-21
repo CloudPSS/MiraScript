@@ -135,6 +135,42 @@ impl Runtime {
     }
 
     #[inline]
+    pub(super) fn read_numbers(
+        &self,
+        frame: FrameId,
+        left: impl Into<RegisterId>,
+        right: impl Into<RegisterId>,
+    ) -> Result<(f64, f64)> {
+        let left = left.into();
+        let right = right.into();
+        let registers = &self.frames.get(frame).registers;
+        let read = |register: RegisterId| {
+            if register.is_nil() {
+                Some(MiraValue::Nil)
+            } else {
+                *registers.get(register)
+            }
+        };
+        let left = read(left);
+        let right = read(right);
+
+        if let (Some(MiraValue::Number(left)), Some(MiraValue::Number(right))) = (left, right) {
+            return Ok((left, right));
+        }
+
+        // Convert left first to retain the existing error precedence.
+        let left = operations::to_number(
+            self,
+            left.ok_or_else(|| MiraError::runtime(RuntimeErrorKind::UninitializedValue))?,
+        )?;
+        let right = operations::to_number(
+            self,
+            right.ok_or_else(|| MiraError::runtime(RuntimeErrorKind::UninitializedValue))?,
+        )?;
+        Ok((left, right))
+    }
+
+    #[inline]
     pub(super) fn write_register_raw(
         &mut self,
         frame: FrameId,

@@ -3,6 +3,24 @@ use std::cmp::Ordering;
 use super::*;
 
 impl Runtime {
+    #[inline]
+    fn execute_numeric(
+        &mut self,
+        frame: FrameId,
+        destination: usize,
+        left: usize,
+        right: usize,
+        operation: impl FnOnce(f64, f64) -> f64,
+    ) -> Result<()> {
+        let (left, right) = self.read_numbers(frame, left, right)?;
+        self.write_register(
+            frame,
+            destination,
+            MiraValue::Number(operation(left, right)),
+        );
+        Ok(())
+    }
+
     pub(super) fn execute_op(&mut self, operation: &Operation, frame: FrameId) -> Result<Flow> {
         match operation {
             Operation::Noop => {}
@@ -59,24 +77,36 @@ impl Runtime {
                 };
                 self.write_register(frame, *destination, result);
             }
-            Operation::Numeric {
-                kind,
+            Operation::Add {
                 destination,
                 left,
                 right,
-            } => {
-                let left = self.read_number(frame, *left)?;
-                let right = self.read_number(frame, *right)?;
-                let result = MiraValue::Number(match kind {
-                    NumericOperation::Add => left + right,
-                    NumericOperation::Sub => left - right,
-                    NumericOperation::Mul => left * right,
-                    NumericOperation::Div => left / right,
-                    NumericOperation::Mod => left % right,
-                    NumericOperation::Pow => left.powf(right),
-                });
-                self.write_register(frame, *destination, result);
-            }
+            } => self.execute_numeric(frame, *destination, *left, *right, |a, b| a + b)?,
+            Operation::Sub {
+                destination,
+                left,
+                right,
+            } => self.execute_numeric(frame, *destination, *left, *right, |a, b| a - b)?,
+            Operation::Mul {
+                destination,
+                left,
+                right,
+            } => self.execute_numeric(frame, *destination, *left, *right, |a, b| a * b)?,
+            Operation::Div {
+                destination,
+                left,
+                right,
+            } => self.execute_numeric(frame, *destination, *left, *right, |a, b| a / b)?,
+            Operation::Mod {
+                destination,
+                left,
+                right,
+            } => self.execute_numeric(frame, *destination, *left, *right, |a, b| a % b)?,
+            Operation::Pow {
+                destination,
+                left,
+                right,
+            } => self.execute_numeric(frame, *destination, *left, *right, f64::powf)?,
             Operation::Binary {
                 kind,
                 destination,

@@ -29,20 +29,41 @@ impl Decoder<'_> {
                 Operation::Continue
             }
             Add | Sub | Mul | Div | Mod | Pow => {
-                let kind = match opcode {
-                    Add => NumericOperation::Add,
-                    Sub => NumericOperation::Sub,
-                    Mul => NumericOperation::Mul,
-                    Div => NumericOperation::Div,
-                    Mod => NumericOperation::Mod,
-                    Pow => NumericOperation::Pow,
+                let destination = self.read_register(wide, offset)?;
+                let left = self.read_register(wide, offset)?;
+                let right = self.read_register(wide, offset)?;
+                match opcode {
+                    Add => Operation::Add {
+                        destination,
+                        left,
+                        right,
+                    },
+                    Sub => Operation::Sub {
+                        destination,
+                        left,
+                        right,
+                    },
+                    Mul => Operation::Mul {
+                        destination,
+                        left,
+                        right,
+                    },
+                    Div => Operation::Div {
+                        destination,
+                        left,
+                        right,
+                    },
+                    Mod => Operation::Mod {
+                        destination,
+                        left,
+                        right,
+                    },
+                    Pow => Operation::Pow {
+                        destination,
+                        left,
+                        right,
+                    },
                     _ => unreachable!(),
-                };
-                Operation::Numeric {
-                    kind,
-                    destination: self.read_register(wide, offset)?,
-                    left: self.read_register(wide, offset)?,
-                    right: self.read_register(wide, offset)?,
                 }
             }
             Eq | Neq | Lt | Lte | Gt | Gte | Aeq | Naeq | Same | Nsame | In | And | Or => {
