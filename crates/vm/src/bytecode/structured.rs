@@ -100,9 +100,10 @@ impl Decoder<'_> {
                     });
                 }
                 OpCode::Spread => {
-                    elements.push(RecordElement::Spread(
-                        self.read_register(element_wide, element_offset)?,
-                    ));
+                    elements.push(RecordElement::Spread(self.read_register(
+                        element_wide,
+                        element_offset,
+                    )?));
                 }
                 OpCode::Freeze => {
                     if element_wide {

@@ -7,9 +7,9 @@ impl Runtime {
     fn execute_numeric(
         &mut self,
         frame: FrameId,
-        destination: usize,
-        left: usize,
-        right: usize,
+        destination: RegisterId,
+        left: RegisterId,
+        right: RegisterId,
         operation: impl FnOnce(f64, f64) -> f64,
     ) -> Result<()> {
         let (left, right) = self.read_numbers(frame, left, right)?;

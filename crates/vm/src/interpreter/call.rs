@@ -67,14 +67,15 @@ impl Runtime {
     pub(super) fn call_registers(
         &mut self,
         target: MiraValue,
-        registers: &[usize],
+        registers: &[RegisterId],
         spreads: &[usize],
         frame: FrameId,
     ) -> Result<MiraValue> {
         if spreads.is_empty() {
             let arguments = registers
                 .iter()
-                .map(|register| self.read_register(frame, *register))
+                .copied()
+                .map(|register| self.read_register(frame, register))
                 .collect::<Result<Vec<_>>>()?;
             return self.call(target, &arguments);
         }

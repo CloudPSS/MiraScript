@@ -1,3 +1,5 @@
+use crate::interpreter::RegisterId;
+
 use super::constants::Constant;
 
 #[derive(Debug)]
@@ -28,12 +30,12 @@ pub(crate) struct Instruction {
 pub(crate) enum InstructionKind {
     Op(Operation),
     Function {
-        destination: usize,
+        destination: RegisterId,
         function: usize,
     },
     If {
         condition: Condition,
-        register: usize,
+        register: RegisterId,
         then_body: Box<[Instruction]>,
         else_body: Box<[Instruction]>,
     },
@@ -44,17 +46,17 @@ pub(crate) enum InstructionKind {
         reuse_frame: bool,
     },
     Record {
-        destination: usize,
+        destination: RegisterId,
         elements: Vec<RecordElement>,
     },
     Array {
-        destination: usize,
+        destination: RegisterId,
         elements: Vec<ArrayElement>,
     },
     Module {
-        destination: usize,
+        destination: RegisterId,
         name: String,
-        fields: Vec<(String, usize)>,
+        fields: Vec<(String, RegisterId)>,
     },
 }
 
@@ -64,141 +66,141 @@ pub(crate) enum Operation {
     Break,
     Continue,
     Return {
-        value: usize,
+        value: RegisterId,
     },
     Constant {
-        destination: usize,
+        destination: RegisterId,
         constant: usize,
     },
     Uninit {
-        destination: usize,
+        destination: RegisterId,
     },
     Unary {
         kind: UnaryOperation,
-        destination: usize,
-        value: usize,
+        destination: RegisterId,
+        value: RegisterId,
     },
     Add {
-        destination: usize,
-        left: usize,
-        right: usize,
+        destination: RegisterId,
+        left: RegisterId,
+        right: RegisterId,
     },
     Sub {
-        destination: usize,
-        left: usize,
-        right: usize,
+        destination: RegisterId,
+        left: RegisterId,
+        right: RegisterId,
     },
     Mul {
-        destination: usize,
-        left: usize,
-        right: usize,
+        destination: RegisterId,
+        left: RegisterId,
+        right: RegisterId,
     },
     Div {
-        destination: usize,
-        left: usize,
-        right: usize,
+        destination: RegisterId,
+        left: RegisterId,
+        right: RegisterId,
     },
     Mod {
-        destination: usize,
-        left: usize,
-        right: usize,
+        destination: RegisterId,
+        left: RegisterId,
+        right: RegisterId,
     },
     Pow {
-        destination: usize,
-        left: usize,
-        right: usize,
+        destination: RegisterId,
+        left: RegisterId,
+        right: RegisterId,
     },
     Binary {
         kind: BinaryOperation,
-        destination: usize,
-        left: usize,
-        right: usize,
+        destination: RegisterId,
+        left: RegisterId,
+        right: RegisterId,
     },
     Swap {
-        left: usize,
-        right: usize,
+        left: RegisterId,
+        right: RegisterId,
     },
     Upvalue {
         kind: UpvalueOperation,
-        value: usize,
+        value: RegisterId,
         level: usize,
-        register: usize,
+        register: RegisterId,
     },
     GetGlobal {
-        destination: usize,
+        destination: RegisterId,
         slot: usize,
     },
     GetGlobalDyn {
-        destination: usize,
-        key: usize,
+        destination: RegisterId,
+        key: RegisterId,
     },
     InGlobal {
-        destination: usize,
-        key: usize,
+        destination: RegisterId,
+        key: RegisterId,
     },
     Concat {
-        destination: usize,
-        values: Box<[usize]>,
+        destination: RegisterId,
+        values: Box<[RegisterId]>,
     },
     Format {
-        destination: usize,
-        value: usize,
+        destination: RegisterId,
+        value: RegisterId,
         format: usize,
     },
     Assert {
         kind: AssertOperation,
-        value: usize,
+        value: RegisterId,
     },
     PickOmit {
         kind: PickOmitOperation,
-        destination: usize,
-        value: usize,
+        destination: RegisterId,
+        value: RegisterId,
         keys: Box<[usize]>,
     },
     CallGlobal0 {
-        destination: usize,
+        destination: RegisterId,
         slot: usize,
     },
     CallGlobal1 {
-        destination: usize,
+        destination: RegisterId,
         slot: usize,
-        argument: usize,
+        argument: RegisterId,
     },
     CallGlobal1FromGlobal {
-        destination: usize,
+        destination: RegisterId,
         slot: usize,
         argument_slot: usize,
     },
     CallGlobal2 {
-        destination: usize,
+        destination: RegisterId,
         slot: usize,
-        arguments: [usize; 2],
+        arguments: [RegisterId; 2],
     },
     CallGlobal3 {
-        destination: usize,
+        destination: RegisterId,
         slot: usize,
-        arguments: [usize; 3],
+        arguments: [RegisterId; 3],
     },
     CallGlobal4 {
-        destination: usize,
+        destination: RegisterId,
         slot: usize,
-        arguments: [usize; 4],
+        arguments: [RegisterId; 4],
     },
     Call {
-        destination: usize,
+        destination: RegisterId,
         target: CallTarget,
-        arguments: Box<[usize]>,
+        arguments: Box<[RegisterId]>,
         spreads: Box<[usize]>,
     },
     Access {
         kind: AccessOperation,
-        destination: usize,
-        value: usize,
+        destination: RegisterId,
+        value: RegisterId,
         key: AccessKey,
     },
     Slice {
-        destination: usize,
-        value: usize,
+        destination: RegisterId,
+        value: RegisterId,
         start: Option<SliceBound>,
         end: Option<SliceBound>,
         exclusive: bool,
@@ -269,20 +271,20 @@ pub(crate) enum AccessOperation {
 #[derive(Debug, Clone)]
 pub(crate) enum CallTarget {
     Global(usize),
-    Register(usize),
+    Register(RegisterId),
 }
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) enum AccessKey {
     Constant(usize),
-    Register(usize),
+    Register(RegisterId),
     Index(i64),
 }
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) enum SliceBound {
     Constant(i64),
-    Register(usize),
+    Register(RegisterId),
 }
 
 pub(super) fn block_may_capture_frame(body: &[Instruction]) -> bool {
@@ -314,11 +316,11 @@ pub(crate) enum Condition {
 pub(crate) enum LoopKind {
     Infinite,
     Iterable {
-        value: usize,
+        value: RegisterId,
     },
     Range {
-        start: usize,
-        end: usize,
+        start: RegisterId,
+        end: RegisterId,
         exclusive: bool,
     },
 }
@@ -326,7 +328,7 @@ pub(crate) enum LoopKind {
 #[derive(Debug, Clone)]
 pub(crate) enum RecordKey {
     Constant(String),
-    Dynamic(usize),
+    Dynamic(RegisterId),
     Index(i64),
 }
 
@@ -334,25 +336,25 @@ pub(crate) enum RecordKey {
 pub(crate) enum RecordElement {
     Field {
         key: RecordKey,
-        value: usize,
+        value: RegisterId,
         optional: bool,
     },
-    Spread(usize),
+    Spread(RegisterId),
 }
 
 #[derive(Debug, Clone)]
 pub(crate) enum ArrayElement {
-    Item(usize),
+    Item(RegisterId),
     Range {
         start: RangeEndpoint,
         end: RangeEndpoint,
         exclusive: bool,
     },
-    Spread(usize),
+    Spread(RegisterId),
 }
 
 #[derive(Debug, Clone)]
 pub(crate) enum RangeEndpoint {
     Constant(i64),
-    Dynamic(usize),
+    Dynamic(RegisterId),
 }

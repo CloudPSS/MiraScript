@@ -11,7 +11,10 @@ use indexmap::IndexMap;
 use mirascript_core::OpCode;
 use mirascript_core::prelude::*;
 
-use crate::{InvalidBytecodeReason, MiraError, Result, interpreter::std_slot};
+use crate::{
+    InvalidBytecodeReason, MiraError, Result,
+    interpreter::{RegisterId, std_slot},
+};
 
 use chunk::decode_chunk;
 pub(crate) use model::*;
@@ -118,21 +121,16 @@ impl Decoder<'_> {
         })
     }
 
-    fn read_register(&mut self, wide: bool, instruction_offset: usize) -> Result<usize> {
+    fn read_register(&mut self, wide: bool, instruction_offset: usize) -> Result<RegisterId> {
         let register = self.read_param(wide, instruction_offset)?;
-        self.validate_register(register, instruction_offset)?;
-        Ok(register)
-    }
-
-    fn validate_register(&self, register: usize, offset: usize) -> Result<()> {
         let max = self.scopes.last().copied().unwrap_or(0);
         if register > max {
             return Err(MiraError::invalid_bytecode(
-                offset,
+                instruction_offset,
                 InvalidBytecodeReason::RegisterIndexOutOfRange(register, max),
             ));
         }
-        Ok(())
+        Ok(RegisterId::new(register))
     }
 
     fn read_constant(&mut self, wide: bool, instruction_offset: usize) -> Result<usize> {
@@ -175,17 +173,13 @@ impl Decoder<'_> {
         wide: bool,
         root: bool,
         offset: usize,
-    ) -> Result<(usize, FunctionDef)> {
-        let destination = self.read_param(wide, offset)?;
-        if root {
-            if destination != 0 {
-                return Err(MiraError::invalid_bytecode(
-                    offset,
-                    InvalidBytecodeReason::BadRootDestination,
-                ));
-            }
-        } else {
-            self.validate_register(destination, offset)?;
+    ) -> Result<(RegisterId, FunctionDef)> {
+        let destination = self.read_register(wide, offset)?;
+        if root && !destination.is_nil() {
+            return Err(MiraError::invalid_bytecode(
+                offset,
+                InvalidBytecodeReason::BadRootDestination,
+            ));
         }
         let arg_count = self.read_param(wide, offset)?;
         let register_count = self.read_param(wide, offset)?;

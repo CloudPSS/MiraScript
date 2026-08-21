@@ -10,15 +10,8 @@ impl RegisterId {
     }
 
     #[inline]
-    const fn is_nil(self) -> bool {
+    pub const fn is_nil(self) -> bool {
         self.0 == 0
-    }
-}
-
-impl From<usize> for RegisterId {
-    #[inline]
-    fn from(value: usize) -> Self {
-        Self(value)
     }
 }
 
@@ -103,9 +96,8 @@ impl Runtime {
     pub(super) fn read_register_raw(
         &self,
         frame: FrameId,
-        register: impl Into<RegisterId>,
+        register: RegisterId,
     ) -> Option<MiraValue> {
-        let register = register.into();
         if register.is_nil() {
             Some(MiraValue::Nil)
         } else {
@@ -114,23 +106,13 @@ impl Runtime {
     }
 
     #[inline]
-    pub(super) fn read_register(
-        &self,
-        frame: FrameId,
-        register: impl Into<RegisterId>,
-    ) -> Result<MiraValue> {
-        let register = register.into();
+    pub(super) fn read_register(&self, frame: FrameId, register: RegisterId) -> Result<MiraValue> {
         self.read_register_raw(frame, register)
             .ok_or_else(|| MiraError::runtime(RuntimeErrorKind::UninitializedValue))
     }
 
     #[inline]
-    pub(super) fn read_number(
-        &self,
-        frame: FrameId,
-        register: impl Into<RegisterId>,
-    ) -> Result<f64> {
-        let register = register.into();
+    pub(super) fn read_number(&self, frame: FrameId, register: RegisterId) -> Result<f64> {
         operations::to_number(self, self.read_register(frame, register)?)
     }
 
@@ -138,11 +120,9 @@ impl Runtime {
     pub(super) fn read_numbers(
         &self,
         frame: FrameId,
-        left: impl Into<RegisterId>,
-        right: impl Into<RegisterId>,
+        left: RegisterId,
+        right: RegisterId,
     ) -> Result<(f64, f64)> {
-        let left = left.into();
-        let right = right.into();
         let registers = &self.frames.get(frame).registers;
         let read = |register: RegisterId| {
             if register.is_nil() {
@@ -174,10 +154,9 @@ impl Runtime {
     pub(super) fn write_register_raw(
         &mut self,
         frame: FrameId,
-        register: impl Into<RegisterId>,
+        register: RegisterId,
         value: Option<MiraValue>,
     ) {
-        let register = register.into();
         if !register.is_nil() {
             *self.frames.get_mut(frame).registers.get_mut(register) = value;
         }
@@ -187,14 +166,14 @@ impl Runtime {
     pub(super) fn write_register(
         &mut self,
         frame: FrameId,
-        register: impl Into<RegisterId>,
+        register: RegisterId,
         value: MiraValue,
     ) {
         self.write_register_raw(frame, register, Some(value));
     }
 
     #[inline]
-    pub(super) fn clear_register(&mut self, frame: FrameId, register: impl Into<RegisterId>) {
+    pub(super) fn clear_register(&mut self, frame: FrameId, register: RegisterId) {
         self.write_register_raw(frame, register, None);
     }
 }

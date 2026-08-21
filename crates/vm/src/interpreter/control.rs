@@ -164,10 +164,7 @@ impl Runtime {
                     execution: self.execution,
                     _program: Rc::clone(self.active_program()),
                     frame,
-                    exports: fields
-                        .iter()
-                        .map(|(f, r)| (f.clone(), RegisterId::new(*r)))
-                        .collect(),
+                    exports: fields.iter().map(|(f, r)| (f.clone(), *r)).collect(),
                     name: Rc::from(name.as_str()),
                 };
                 let value = self.insert(MiraManageable::from_module(module))?;
@@ -204,7 +201,7 @@ impl Runtime {
                     self.checkpoint()?;
                     let frame =
                         self.loop_frame(register_count, parent, reuse_frame, &mut reusable_frame);
-                    self.write_register(frame, 1, item);
+                    self.write_register(frame, RegisterId::new(1), item);
                     match self.execute_block(body, frame)? {
                         Flow::Continue | Flow::LoopContinue => {}
                         Flow::Break => break,
@@ -228,7 +225,7 @@ impl Runtime {
                     self.checkpoint()?;
                     let frame =
                         self.loop_frame(register_count, parent, reuse_frame, &mut reusable_frame);
-                    self.write_register(frame, 1, MiraValue::Number(value));
+                    self.write_register(frame, RegisterId::new(1), MiraValue::Number(value));
                     match self.execute_block(body, frame)? {
                         Flow::Continue | Flow::LoopContinue => {}
                         Flow::Break => break,
