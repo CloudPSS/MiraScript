@@ -95,17 +95,12 @@ impl Registers {
     }
 
     #[inline]
-    pub(super) fn get_n<const N: usize>(
-        &self,
-        registers: [RegisterId; N],
-    ) -> [Option<MiraValue>; N] {
-        let mut values: [Option<MiraValue>; N] = [Some(Nil); N];
-        for (i, &register) in registers.iter().enumerate() {
-            if !register.is_nil() {
-                values[i] = *self.get(register);
-            }
+    pub(super) fn read(&self, register: RegisterId) -> Option<MiraValue> {
+        if register.is_nil() {
+            Some(Nil)
+        } else {
+            *self.get(register)
         }
-        values
     }
 }
 

@@ -13,7 +13,8 @@ impl Runtime {
         operation: impl Fn(f64, f64) -> f64,
     ) -> Result<()> {
         let registers = &mut self.frames.get_mut(frame).registers;
-        let [left, right] = registers.get_n([left, right]);
+        let left = registers.read(left);
+        let right = registers.read(right);
 
         if let (Some(MiraValue::Number(left)), Some(MiraValue::Number(right))) = (left, right) {
             let result = MiraValue::Number(operation(left, right));
