@@ -451,15 +451,13 @@ class ASTHelper:
         self, index: str, start: str, end: str, exclusive=False
     ) -> tuple[Sequence[stmt], While]:
         """生成一个虚拟机范围循环的 AST 节点"""
-        start_name = f"start_{self.lineno}"
-        end_name = f"end_{self.lineno}"
+        end_name = f"end_{index}"
         prepare = []
         hint = self.vm_hint()
         if not isinstance(hint, Pass):
             prepare.append(hint)
-        prepare.append(self.assign_call(start_name, "ToNumber", [self.load(start)]))
+        prepare.append(self.assign_call(index, "ToNumber", [self.load(start)]))
         prepare.append(self.assign_call(end_name, "ToNumber", [self.load(end)]))
-        prepare.append(self.assign(index, self.load(start_name)))
         return prepare, self.while_expr(
             self.compare(
                 self.load(index),

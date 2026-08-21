@@ -1,0 +1,25 @@
+let mut count = 0;
+for i in 1..10 {
+  count += 1;
+}
+t_eq(count, 10);
+
+for i in 1..<10 {
+  count += 1;
+}
+t_eq(count, 19);
+
+for i in 1..9.2 {
+  count += 1;
+}
+t_eq(count, 28);
+
+for i in 1..<'1' {
+  count += 1;
+}
+t_eq(count, 28);
+
+for i in 1..'1' {
+  count += 1;
+}
+t_eq(count, 29);

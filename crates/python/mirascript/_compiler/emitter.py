@@ -70,6 +70,7 @@ class Emitter:
         self,
         helper: ASTHelper,
         nreg: int,
+        nloop_reg: int,
         code: ast.While | ast.For,
         increment: ast.AugAssign | None = None,
     ):
@@ -79,7 +80,7 @@ class Emitter:
             closure_name,
             helper.args(kwarg=None, vararg=None),
             [
-                self.create_regs_array(helper, nreg - 1, 2),
+                self.create_regs_array(helper, nreg, nloop_reg),
                 helper.void_call("Cp", []),
                 block,
                 helper.ret("LoopContinue"),
@@ -793,7 +794,7 @@ class Emitter:
                 self.wv(1, -1), helper.call("Iterable", [self.rv(iterable)])
             )
 
-            loop_node = self.create_loop(helper, nreg, code)
+            loop_node = self.create_loop(helper, nreg, 1, code)
 
         elif opcode in (OpCode.LoopRange, OpCode.LoopRangeExclusive):
             assert current_blocks_body is not None
@@ -812,6 +813,7 @@ class Emitter:
             loop_node = self.create_loop(
                 helper,
                 nreg,
+                1,
                 code,
                 helper.aug_assign(self.wv(1, -1), helper.op("Add"), helper.const(1)),
             )
@@ -820,7 +822,7 @@ class Emitter:
 
             code = helper.while_expr(helper.const(True))
 
-            loop_node = self.create_loop(helper, nreg, code)
+            loop_node = self.create_loop(helper, nreg, 0, code)
 
         elif opcode == OpCode.Break:
             code = helper.ret("LoopBreak")
