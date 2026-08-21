@@ -18,7 +18,7 @@ pub use operator::Operator;
 pub use token::Token;
 pub use token_kind::TokenKind;
 
-use crate::Config;
+use crate::CompileConfig;
 
 #[allow(unused)]
 pub(crate) use self::{
@@ -27,7 +27,7 @@ pub(crate) use self::{
     trivia::{Trivia, TriviaList},
 };
 
-pub type Input<'s> = Stateful<LocatingSlice<&'s str>, &'s Config>;
+pub type Input<'s> = Stateful<LocatingSlice<&'s str>, &'s CompileConfig>;
 pub(crate) type Result<Output> = ModalResult<Output, EmptyError>;
 trait Parser<'s, Output>: winnow::Parser<Input<'s>, Output, ErrMode<EmptyError>> {}
 
@@ -42,7 +42,7 @@ mod prelude {
     pub(super) use winnow::stream::{Location as _, Stream as _};
 }
 
-pub fn to_input<'s>(text: &'s str, config: &'s Config) -> Input<'s> {
+pub fn to_input<'s>(text: &'s str, config: &'s CompileConfig) -> Input<'s> {
     Input {
         input: LocatingSlice::new(text),
         state: config,

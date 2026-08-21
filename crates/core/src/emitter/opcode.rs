@@ -306,7 +306,7 @@ pub enum OpCode {
     /// return %value;
     Return,
     /// CALL %ret `f` `argn` %1 %2 ... %argn `spread_n` `spread_arg_a` ...\
-    /// %ret = GLOBAL[CONSTANTS[f]](%1, %2, ... , %argn);
+    /// %ret = GLOBAL\[CONSTANTS\[f]](%1, %2, ... , %argn);
     ///
     /// If spread_arg_a is present, arg at that index will be spread
     Call,

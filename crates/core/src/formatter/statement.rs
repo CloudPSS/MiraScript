@@ -1,4 +1,4 @@
-use crate::{Expression, Pattern, Statement, parser::TokenRef};
+use crate::parser::{Expression, Pattern, Statement, TokenRef};
 
 use super::prelude::*;
 

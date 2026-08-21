@@ -3,7 +3,7 @@ use std::{fmt::Display, ops::Deref};
 use super::prelude::*;
 
 #[derive(Debug)]
-pub enum TokenRef<'s> {
+pub(crate) enum TokenRef<'s> {
     /// A reference to a token that is owned by the parser.
     Owned(Box<Token<'s>>),
     /// A reference to a token that is borrowed from the input.

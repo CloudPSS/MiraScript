@@ -4,7 +4,7 @@ use super::prelude::*;
 ///
 /// `start..end` or `start..<end`
 #[derive(Debug, Clone, PartialEq)]
-pub struct Range<'s>(
+pub(crate) struct Range<'s>(
     pub Box<Expression<'s>>,
     pub TokenRef<'s>,
     pub Box<Expression<'s>>,

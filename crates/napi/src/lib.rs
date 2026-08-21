@@ -1,6 +1,6 @@
 use std::panic::{AssertUnwindSafe, catch_unwind};
 
-use mirascript_core::{Config, compile::CompileResult};
+use mirascript_core::{CompileConfig, CompileResult};
 use napi::{
     Either, Env, Result, Task,
     bindgen_prelude::{AsyncTask, Object, Uint8Array, Uint32Array},
@@ -21,7 +21,7 @@ fn extract_args(env: &Env, script: Either<String, Uint8Array>, config: Object) -
             String::from_utf8_lossy(slice).into_owned()
         }
     };
-    let config: Config = env.from_js_value(config)?;
+    let config: CompileConfig = env.from_js_value(config)?;
     Ok(Compile { script, config })
 }
 
@@ -60,7 +60,7 @@ pub fn compile_sync(
 
 pub struct Compile {
     pub script: String,
-    pub config: Config,
+    pub config: CompileConfig,
 }
 
 #[napi]

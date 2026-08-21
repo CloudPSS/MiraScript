@@ -1,16 +1,15 @@
 use std::collections::HashMap;
 
 use mirascript_core::{
-    config::{Config as ConfigData, DiagnosticPositionEncoding, InputMode},
-    prelude::*,
-    Compiler, DiagnosticCode, OpCode,
+    prelude::*, CompileConfig, Compiler, DiagnosticCode, DiagnosticPositionEncoding, InputMode,
+    OpCode,
 };
 use pyo3::{exceptions::PyValueError, prelude::*, types::PyDict};
 
 #[pyclass]
 #[derive(Debug)]
 struct Config {
-    pub data: ConfigData,
+    pub data: CompileConfig,
 }
 
 #[pymethods]
@@ -18,7 +17,7 @@ impl Config {
     #[new]
     #[pyo3(signature = (**data))]
     fn new(data: Option<&Bound<'_, PyDict>>) -> PyResult<Self> {
-        let mut config = ConfigData::new();
+        let mut config = CompileConfig::new();
         config.diagnostic_position_encoding = DiagnosticPositionEncoding::Utf32;
         config.diagnostic_sourcemap = true;
         let Some(data) = data else {
@@ -53,7 +52,7 @@ fn op_codes() -> PyResult<HashMap<String, u8>> {
 
 #[pyfunction]
 fn compile(script: String, config: PyRef<'_, Config>) -> PyResult<(Option<Vec<u8>>, Vec<u32>)> {
-    let config: &ConfigData = &config.data;
+    let config = &config.data;
     let (chunk, diagnostics) = Compiler::compile(&script, config);
     Ok((chunk, diagnostics))
 }

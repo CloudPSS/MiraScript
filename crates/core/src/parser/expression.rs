@@ -3,7 +3,7 @@ use crate::parser::helper::unknown_range;
 use super::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
-pub enum Callable<'s> {
+pub(crate) enum Callable<'s> {
     /// `type`
     Type(TokenRef<'s>),
     /// expression
@@ -29,7 +29,7 @@ impl<'s> AstWalker<'s> for Callable<'s> {
 
 /// `else` (block_expr | if_expr)
 #[derive(Debug, Clone, PartialEq)]
-pub struct ElseBlock<'s>(pub TokenRef<'s>, pub Box<Expression<'s>>);
+pub(crate) struct ElseBlock<'s>(pub TokenRef<'s>, pub Box<Expression<'s>>);
 
 impl<'s> AstWalker<'s> for ElseBlock<'s> {
     fn collect_diagnostics(&mut self, collector: &mut DiagnosticsCollector<'_, '_>) {
@@ -43,7 +43,7 @@ impl<'s> AstWalker<'s> for ElseBlock<'s> {
 
 /// `case` pattern (`if` expression)? block_expression
 #[derive(Debug, Clone, PartialEq)]
-pub struct MatchCase<'s>(
+pub(crate) struct MatchCase<'s>(
     pub TokenRef<'s>,
     pub Pattern<'s>,
     pub Option<(TokenRef<'s>, Expression<'s>)>,
@@ -68,7 +68,7 @@ impl<'s> AstWalker<'s> for MatchCase<'s> {
 }
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
-pub enum Expression<'s> {
+pub(crate) enum Expression<'s> {
     // primary
     /// number | string | ordinal | `true` | `false` | `nil`
     Literal(TokenRef<'s>),

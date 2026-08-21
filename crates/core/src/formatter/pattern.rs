@@ -1,4 +1,4 @@
-use crate::{Operator, Pattern};
+use crate::{Operator, parser::Pattern};
 
 use super::prelude::*;
 

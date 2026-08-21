@@ -1,7 +1,6 @@
 use crate::{
-    DiagnosticCode, Expression, Keyword,
-    lexer::TokenKind,
-    parser::{AstWalker, Range, TokenRef},
+    DiagnosticCode, Keyword, TokenKind,
+    parser::{AstWalker, Expression, Range, TokenRef},
 };
 
 use super::Emitter;

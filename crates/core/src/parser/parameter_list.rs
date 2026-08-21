@@ -10,7 +10,7 @@ use super::{
 
 /// `(` ...items `)`
 #[derive(Debug, Clone, PartialEq)]
-pub struct ParameterList<'s>(
+pub(crate) struct ParameterList<'s>(
     pub TokenRef<'s>,
     pub Vec<ArrayPattern<'s>>,
     pub TokenRef<'s>,

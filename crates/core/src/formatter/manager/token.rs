@@ -1,8 +1,8 @@
 use std::ops::Deref;
 
 use crate::{
-    Expression,
     lexer::{NumberInfo, StringFragment, Token, TokenKind},
+    parser::Expression,
 };
 
 use super::types::{FormatManager, Formattable};

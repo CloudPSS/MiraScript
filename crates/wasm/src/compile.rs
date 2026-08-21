@@ -1,6 +1,6 @@
 use std::mem::take;
 
-use mirascript_core::{Compiler, Config};
+use mirascript_core::{CompileConfig, Compiler};
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -20,7 +20,7 @@ impl CompileResult {
     }
 }
 
-fn compile_impl(input: &str, config: &Config) -> CompileResult {
+fn compile_impl(input: &str, config: &CompileConfig) -> CompileResult {
     let result = Compiler::compile(input, config);
     CompileResult {
         diagnostics: result.1,
@@ -29,12 +29,12 @@ fn compile_impl(input: &str, config: &Config) -> CompileResult {
 }
 
 #[wasm_bindgen]
-pub unsafe fn compile_buffer(script: &[u8], config: &Config) -> CompileResult {
+pub unsafe fn compile_buffer(script: &[u8], config: &CompileConfig) -> CompileResult {
     let script = unsafe { std::str::from_utf8_unchecked(script) };
     compile_impl(script, config)
 }
 
 #[wasm_bindgen]
-pub fn compile(script: &str, config: &Config) -> CompileResult {
+pub fn compile(script: &str, config: &CompileConfig) -> CompileResult {
     compile_impl(script, config)
 }

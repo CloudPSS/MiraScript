@@ -1,4 +1,7 @@
-use crate::{Expression, Operator, parser::MatchCase};
+use crate::{
+    Operator,
+    parser::{Expression, MatchCase},
+};
 
 use super::prelude::*;
 

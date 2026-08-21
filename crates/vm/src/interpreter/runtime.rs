@@ -1,10 +1,4 @@
-use std::{
-    collections::HashMap,
-    num::NonZeroU64,
-    rc::Rc,
-    sync::atomic::{AtomicU64, Ordering},
-    time::Instant,
-};
+use std::{collections::HashMap, num::NonZeroU64, rc::Rc, time::Instant};
 
 use crate::{
     MiraError, MiraManageable, MiraNativeFn, MiraScript, MiraValue, Result, RunOptions,
@@ -16,15 +10,25 @@ use crate::{
 
 use super::{CallStack, Flow, FrameArena, FrameId, Globals};
 
-static NEXT_EXECUTION_ID: AtomicU64 = AtomicU64::new(1);
-
-fn next_execution_id() -> ExecutionId {
-    let id = NEXT_EXECUTION_ID.fetch_add(1, Ordering::Relaxed);
-    ExecutionId(NonZeroU64::new(id).expect("MiraScript execution identifier space exhausted"))
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(crate) struct ExecutionId(NonZeroU64);
+
+impl ExecutionId {
+    const INITIAL: Self = Self(NonZeroU64::MIN);
+
+    // Script references are resolved through this Runtime's arena before this
+    // generation is compared, so foreign Runtime values remain guarded by the
+    // arena identifier and the generation only needs to be Runtime-local.
+    fn next(self) -> Self {
+        let id = self
+            .0
+            .get()
+            .checked_add(1)
+            .and_then(NonZeroU64::new)
+            .expect("MiraScript execution identifier space exhausted");
+        Self(id)
+    }
+}
 
 /// Persistent state used to execute compiled MiraScript programs.
 ///
@@ -55,7 +59,7 @@ impl Runtime {
     pub fn with_options(options: RunOptions) -> Self {
         let checkpoint_remaining = options.checkpoint_interval.max(1);
         let mut runtime = Self {
-            execution: next_execution_id(),
+            execution: ExecutionId::INITIAL,
             options,
             globals: Globals::new(),
             arena: MiraArena::new(),
@@ -85,13 +89,13 @@ impl Runtime {
         }
 
         self.running = true;
-        self.execution = next_execution_id();
+        self.execution = self.execution.next();
         self.active_script = Some(script.id);
         self.program = Some(Rc::clone(&script.program));
         self.started = Instant::now();
         self.checkpoint_remaining = self.options.checkpoint_interval.max(1);
-        self.frames = FrameArena::new(script.program.root.register_count);
-        self.call_stack = CallStack::new();
+        self.frames.begin_run(script.program.root.register_count);
+        debug_assert_eq!(self.call_stack.depth(), 0);
 
         let result = (|| {
             let body = &script.program.root.body;
@@ -113,7 +117,7 @@ impl Runtime {
         self.running = false;
         self.active_script = None;
         self.program = None;
-        self.call_stack = CallStack::new();
+        debug_assert_eq!(self.call_stack.depth(), 0);
         result
     }
 

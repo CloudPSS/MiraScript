@@ -21,8 +21,8 @@ use crate::{MiraError, MiraFunction, MiraModule, MiraValue, Result, RuntimeError
 pub(crate) use call::ScriptFunction;
 use call_stack::CallStack;
 pub(crate) use control::ScriptModule;
+use frame::FrameArena;
 pub(crate) use frame::FrameId;
-use frame::{Frame, FrameArena};
 pub(crate) use globals::{Globals, std_slot};
 pub(crate) use register::RegisterId;
 pub(crate) use runtime::ExecutionId;

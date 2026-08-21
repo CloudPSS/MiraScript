@@ -1,23 +1,25 @@
 #![doc = include_str!("../README.md")]
 
-pub mod compile;
-pub mod config;
-pub mod diagnostic;
-pub mod emitter;
-pub mod lexer;
-pub mod parser;
+mod compile;
+mod config;
+mod diagnostic;
+mod emitter;
+mod lexer;
+mod parser;
 
-pub use compile::Compiler;
-pub use config::Config;
-pub use diagnostic::{DiagnosticCode, SerializedDiagnostics, SourceDiagnostic, SourceRange};
+pub use compile::{CompileResult, Compiler};
+pub use config::{CompileConfig, DiagnosticPositionEncoding, InputMode};
+pub use diagnostic::{
+    DiagnosticCode, SerializedDiagnostics, SourceDiagnostic, SourceRange, encode_diagnostics,
+};
 pub use emitter::OpCode;
-pub use lexer::{Keyword, Operator};
-pub use parser::{Expression, Pattern, Script, Statement};
+pub use lexer::{Keyword, Operator, Token, TokenKind};
+pub use parser::Script;
 
 #[cfg(feature = "formatter")]
 pub mod formatter;
 #[cfg(feature = "formatter")]
-pub use formatter::{format, format_statement};
+pub use formatter::format;
 
 pub mod prelude {
     pub use std::str::FromStr as _;
@@ -27,4 +29,4 @@ pub mod prelude {
 
 #[cfg(all(feature = "mimalloc", not(target_family = "wasm")))]
 #[global_allocator]
-static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+static GLOBAL_ALLOCATOR: mimalloc::MiMalloc = mimalloc::MiMalloc;

@@ -1,5 +1,3 @@
-use std::ops::Deref;
-
 use crate::diagnostic::DiagnosticsCollector;
 
 use super::prelude::*;
@@ -9,9 +7,9 @@ use super::prelude::*;
 /// A script is a source file that contains a sequence of statements and an optional expression.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Script<'s>(
-    pub Vec<Statement<'s>>,
-    pub Option<Box<Expression<'s>>>,
-    pub TokenRef<'s>,
+    pub(crate) Vec<Statement<'s>>,
+    pub(crate) Option<Box<Expression<'s>>>,
+    pub(crate) TokenRef<'s>,
 );
 
 impl<'s> AstWalker<'s> for Script<'s> {
@@ -30,13 +28,5 @@ impl<'s> AstWalker<'s> for Script<'s> {
             ([], Some(expr), eof) => expr.range().start..eof.range.end,
             ([s, ..], _, eof) => s.range().start..eof.range.end,
         }
-    }
-}
-
-impl<'s> Deref for Script<'s> {
-    type Target = Vec<Statement<'s>>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
     }
 }

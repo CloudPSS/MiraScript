@@ -1,7 +1,7 @@
 use super::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
-pub enum Statement<'s> {
+pub(crate) enum Statement<'s> {
     /// `';'`
     ///
     /// An empty statement.

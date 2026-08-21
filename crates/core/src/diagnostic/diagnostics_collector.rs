@@ -1,6 +1,6 @@
 use std::ops::{Deref, DerefMut};
 
-use crate::Config;
+use crate::CompileConfig;
 
 use super::{
     DiagnosticCode, SerializedDiagnostics, SourceDiagnostic, SourceRange, encode_diagnostics,
@@ -9,11 +9,11 @@ use super::{
 pub struct DiagnosticsCollector<'s, 'c> {
     data: Vec<SourceDiagnostic>,
     pub script: &'s str,
-    pub config: &'c Config,
+    pub config: &'c CompileConfig,
 }
 
 impl<'s, 'c> DiagnosticsCollector<'s, 'c> {
-    pub fn new(config: &'c Config, script: &'s str) -> Self {
+    pub fn new(config: &'c CompileConfig, script: &'s str) -> Self {
         Self {
             config,
             script,

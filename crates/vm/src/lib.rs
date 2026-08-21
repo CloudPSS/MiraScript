@@ -17,10 +17,8 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
-pub use core::config::InputMode;
+pub use core::{CompileConfig, DiagnosticPositionEncoding, InputMode};
 pub use mirascript_core as core;
-/// Re-export the compiler configuration type from `mirascript-core` for convenience.
-pub type CompileConfig = core::Config;
 pub use mirascript_vm_derive::{MiraArray, MiraRecord};
 
 pub use error::*;

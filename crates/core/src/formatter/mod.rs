@@ -15,7 +15,7 @@ mod prelude {
     pub(super) use super::manager::{FormatManager as Formatter, Formattable};
 }
 
-use crate::{Script, Statement};
+use crate::Script;
 
 use prelude::*;
 
@@ -63,12 +63,5 @@ pub fn format(input: &Script<'_>, options: &FormatOptions) -> String {
     } else {
         formatter.new_line();
     }
-    formatter.done()
-}
-
-pub fn format_statement(input: &Statement<'_>, options: &FormatOptions, indent: usize) -> String {
-    let mut formatter = Formatter::new(options, indent);
-    let measurement = input.measure(&formatter, indent);
-    input.format(&mut formatter, measurement);
     formatter.done()
 }

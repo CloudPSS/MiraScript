@@ -22,7 +22,7 @@ Compiler configuration and bytecode definitions are available through `core`,
 and the complete runtime crate is also available as `vm`.
 
 ```rust
-let config = mirascript::core::Config::new();
+let config = mirascript::core::CompileConfig::new();
 let script = mirascript::compile_with("40 + 2", &config)?;
 let mut runtime = mirascript::Runtime::new();
 

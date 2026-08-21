@@ -1,13 +1,13 @@
 use std::pin::Pin;
 
 use mirascript_core::{
-    Compiler, Config, Script, SourceDiagnostic, diagnostic::encode_diagnostics, lexer::Token,
+    CompileConfig, Compiler, Script, SourceDiagnostic, Token, encode_diagnostics,
 };
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
 pub struct MonacoCompiler {
-    config: Config,
+    config: CompileConfig,
     input: Pin<String>,
     has_parse_error: bool,
     diagnostics: Vec<SourceDiagnostic>,
@@ -18,7 +18,7 @@ pub struct MonacoCompiler {
 #[wasm_bindgen]
 impl MonacoCompiler {
     #[wasm_bindgen(constructor)]
-    pub fn new(input: String, config: &Config) -> Self {
+    pub fn new(input: String, config: &CompileConfig) -> Self {
         Self {
             config: config.clone(),
             input: Pin::new(input),
@@ -36,7 +36,7 @@ impl MonacoCompiler {
             let len = self.input.len();
             str::from_utf8_unchecked(std::slice::from_raw_parts(ptr, len))
         };
-        let config: &'static Config = unsafe { &*(&self.config as *const Config) };
+        let config: &'static CompileConfig = unsafe { &*(&self.config as *const CompileConfig) };
         let mut compiler = Compiler::new(input, config);
         if let Some(tokens) = compiler.lex() {
             self.tokens = tokens.into();

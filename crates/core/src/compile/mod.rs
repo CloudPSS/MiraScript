@@ -3,7 +3,7 @@ use winnow::stream::{Location, Stream};
 use crate::parser::{self, AstWalker};
 use crate::{
     Script,
-    config::{Config, InputMode},
+    config::{CompileConfig, InputMode},
 };
 use crate::{diagnostic::DiagnosticsCollector, emitter};
 use crate::{
@@ -21,12 +21,12 @@ pub type CompileResult = (Option<Vec<u8>>, SerializedDiagnostics);
 
 pub struct Compiler<'s, 'c> {
     pub script: &'s str,
-    pub config: &'c Config,
+    pub config: &'c CompileConfig,
     pub diagnostics_collector: DiagnosticsCollector<'s, 'c>,
 }
 
 impl<'s, 'c: 's> Compiler<'s, 'c> {
-    pub fn new(script: &'s str, config: &'c Config) -> Self {
+    pub fn new(script: &'s str, config: &'c CompileConfig) -> Self {
         Self {
             script,
             config,
@@ -113,7 +113,7 @@ impl<'s, 'c: 's> Compiler<'s, 'c> {
         self.diagnostics_collector.encode()
     }
 
-    pub fn compile(input: &str, config: &Config) -> CompileResult {
+    pub fn compile(input: &str, config: &CompileConfig) -> CompileResult {
         let mut compiler = Compiler::new(input, config);
         let Some(tokens) = compiler.lex() else {
             return (None, compiler.encode_diagnostics());

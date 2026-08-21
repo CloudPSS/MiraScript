@@ -40,7 +40,7 @@ pub enum DiagnosticPositionEncoding {
     wasm_bindgen::prelude::wasm_bindgen
 )]
 #[derive(Debug, Clone, PartialEq)]
-pub struct Config {
+pub struct CompileConfig {
     #[cfg(feature = "formatter")]
     pub trivia: bool,
 
@@ -57,7 +57,7 @@ pub struct Config {
 }
 
 #[cfg_attr(feature = "wasm", wasm_bindgen::prelude::wasm_bindgen)]
-impl Config {
+impl CompileConfig {
     #[cfg_attr(feature = "wasm", wasm_bindgen::prelude::wasm_bindgen(constructor))]
     pub fn new() -> Self {
         Self {
@@ -76,7 +76,7 @@ impl Config {
     }
 }
 
-impl Default for Config {
+impl Default for CompileConfig {
     fn default() -> Self {
         Self::new()
     }

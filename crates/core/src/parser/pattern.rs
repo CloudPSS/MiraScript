@@ -3,7 +3,7 @@ use crate::parser::helper::unknown_range;
 use super::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
-pub enum Pattern<'s> {
+pub(crate) enum Pattern<'s> {
     /// `(` pattern `)`
     ///
     /// Grouping pattern.

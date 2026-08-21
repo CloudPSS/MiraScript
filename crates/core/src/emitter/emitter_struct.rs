@@ -1,5 +1,5 @@
 use crate::{
-    Config,
+    CompileConfig,
     diagnostic::{DiagnosticCode, DiagnosticsCollector},
     emitter::emitter_closure::Closures,
     parser::AstWalker,
@@ -8,7 +8,7 @@ use crate::{
 use super::{chunk::Chunk, emitter_scope::Scopes};
 
 pub(super) struct Emitter<'s, 'c> {
-    pub config: &'c Config,
+    pub config: &'c CompileConfig,
     pub chunk: Chunk<'s>,
     pub closures: Closures,
     pub scopes: Scopes<'s>,

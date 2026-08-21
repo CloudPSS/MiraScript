@@ -27,7 +27,7 @@ const INLINE_REGISTER_COUNT: usize = 16;
 #[derive(Debug)]
 pub(super) struct Registers {
     inline: [Option<MiraValue>; INLINE_REGISTER_COUNT],
-    overflow: Box<[Option<MiraValue>]>,
+    overflow: Vec<Option<MiraValue>>,
     #[cfg(debug_assertions)]
     pub(super) max_register: usize,
 }
@@ -35,22 +35,22 @@ pub(super) struct Registers {
 impl Registers {
     #[inline]
     pub(super) fn new(count: usize) -> Self {
-        let need_overflow = count > INLINE_REGISTER_COUNT;
-        if need_overflow {
-            let overflow_count = count - INLINE_REGISTER_COUNT;
-            Self {
-                inline: [None; INLINE_REGISTER_COUNT],
-                overflow: vec![None; overflow_count].into_boxed_slice(),
-                #[cfg(debug_assertions)]
-                max_register: count,
-            }
-        } else {
-            Self {
-                inline: [None; INLINE_REGISTER_COUNT],
-                overflow: Box::new([]),
-                #[cfg(debug_assertions)]
-                max_register: count,
-            }
+        Self {
+            inline: [None; INLINE_REGISTER_COUNT],
+            overflow: vec![None; count.saturating_sub(INLINE_REGISTER_COUNT)],
+            #[cfg(debug_assertions)]
+            max_register: count,
+        }
+    }
+
+    pub(super) fn reset(&mut self, count: usize) {
+        self.inline.fill(None);
+        self.overflow
+            .resize(count.saturating_sub(INLINE_REGISTER_COUNT), None);
+        self.overflow.fill(None);
+        #[cfg(debug_assertions)]
+        {
+            self.max_register = count;
         }
     }
 

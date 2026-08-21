@@ -54,7 +54,7 @@ impl Runtime {
         register_count: usize,
         parent: Option<FrameId>,
     ) -> FrameId {
-        self.frames.push(Frame::new(register_count, parent))
+        self.frames.push(register_count, parent)
     }
 
     pub(super) fn parent_frame(&self, mut frame: FrameId, level: usize) -> Result<FrameId> {

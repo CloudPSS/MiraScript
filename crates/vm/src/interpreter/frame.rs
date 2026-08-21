@@ -27,11 +27,17 @@ impl Frame {
         self.registers.fill(None);
         self.parent = parent;
     }
+
+    fn reset_with_count(&mut self, register_count: usize, parent: Option<FrameId>) {
+        self.registers.reset(register_count);
+        self.parent = parent;
+    }
 }
 
 pub(super) struct FrameArena {
     root: Frame,
     children: Vec<Frame>,
+    active_children: usize,
 }
 
 impl FrameArena {
@@ -39,18 +45,33 @@ impl FrameArena {
         Self {
             root: Frame::new(root_register_count, None),
             children: Vec::new(),
+            active_children: 0,
         }
     }
 
-    pub(super) fn push(&mut self, frame: Frame) -> FrameId {
-        self.children.push(frame);
-        FrameId(self.children.len())
+    pub(super) fn begin_run(&mut self, root_register_count: usize) {
+        self.root.reset_with_count(root_register_count, None);
+        // Inactive frames retain capacity only. Script references carry the
+        // previous execution generation and cannot resolve them in this run.
+        self.active_children = 0;
+    }
+
+    pub(super) fn push(&mut self, register_count: usize, parent: Option<FrameId>) -> FrameId {
+        let index = self.active_children;
+        self.active_children += 1;
+        if let Some(frame) = self.children.get_mut(index) {
+            frame.reset_with_count(register_count, parent);
+        } else {
+            self.children.push(Frame::new(register_count, parent));
+        }
+        FrameId(self.active_children)
     }
 
     pub(super) fn get(&self, frame: FrameId) -> &Frame {
         if frame.0 == 0 {
             &self.root
         } else {
+            debug_assert!(frame.0 <= self.active_children);
             &self.children[frame.0 - 1]
         }
     }
@@ -59,6 +80,7 @@ impl FrameArena {
         if frame.0 == 0 {
             &mut self.root
         } else {
+            debug_assert!(frame.0 <= self.active_children);
             &mut self.children[frame.0 - 1]
         }
     }
@@ -66,5 +88,30 @@ impl FrameArena {
     pub(super) fn reset(&mut self, frame: FrameId, parent: Option<FrameId>) {
         let frame = self.get_mut(frame);
         frame.reset(parent);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::MiraValue;
+
+    use super::*;
+
+    #[test]
+    fn reuses_frames_without_leaking_register_values_between_runs() {
+        let mut arena = FrameArena::new(20);
+        *arena.root.registers.get_mut(1.into()) = Some(MiraValue::Number(1.0));
+        let child = arena.push(20, Some(FrameId::ROOT));
+        *arena.get_mut(child).registers.get_mut(20.into()) = Some(MiraValue::Number(2.0));
+
+        arena.begin_run(2);
+        assert_eq!(arena.root.registers.get_mut(1.into()).take(), None);
+
+        let reused = arena.push(2, Some(FrameId::ROOT));
+        assert_eq!(reused, child);
+        assert_eq!(
+            arena.get_mut(reused).registers.get_mut(1.into()).take(),
+            None
+        );
     }
 }

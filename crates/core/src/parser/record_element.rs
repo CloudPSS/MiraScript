@@ -1,7 +1,7 @@
 use super::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
-pub enum RecordElementBase<'s, E, I> {
+pub(crate) enum RecordElementBase<'s, E, I> {
     /// name colon Named
     Named(TokenRef<'s>, TokenRef<'s>, Box<E>),
     /// interpolated_string colon Named
@@ -16,9 +16,10 @@ pub enum RecordElementBase<'s, E, I> {
 
 use RecordElementBase::*;
 
-pub type RecordElement<'s> = ListItem<'s, RecordElementBase<'s, Expression<'s>, Expression<'s>>>;
+pub(crate) type RecordElement<'s> =
+    ListItem<'s, RecordElementBase<'s, Expression<'s>, Expression<'s>>>;
 
-pub type RecordPattern<'s> = ListItem<'s, RecordElementBase<'s, Pattern<'s>, Pattern<'s>>>;
+pub(crate) type RecordPattern<'s> = ListItem<'s, RecordElementBase<'s, Pattern<'s>, Pattern<'s>>>;
 
 impl<'s, E, I> RecordElementBase<'s, E, I> {
     pub fn colon(&self) -> Option<&Token<'s>> {

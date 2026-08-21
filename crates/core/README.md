@@ -5,9 +5,9 @@ definitions, diagnostics, and optional formatter. Most embedders should depend
 on the higher-level `mirascript` crate instead.
 
 ```rust
-use mirascript_core::{Compiler, Config};
+use mirascript_core::{Compiler, CompileConfig};
 
-let (chunk, diagnostics) = Compiler::compile("40 + 2", &Config::new());
+let (chunk, diagnostics) = Compiler::compile("40 + 2", &CompileConfig::new());
 assert!(chunk.is_some());
 assert!(diagnostics.is_empty());
 ```
