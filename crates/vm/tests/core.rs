@@ -207,10 +207,23 @@ fn errors_preserve_diagnostics_and_runtime_context() {
         .as_ref()
     {
         MiraError::Runtime { trace, .. } => {
-            assert!(trace.function.is_some());
+            assert_eq!(trace.function.as_deref(), Some("<anonymous>"));
             assert!(trace.offset.is_some());
-            assert!(!trace.stack.is_empty());
+            assert_eq!(trace.stack, ["<anonymous>"]);
         }
         error => panic!("expected runtime error with context, got {error:?}"),
+    }
+
+    match runtime
+        .eval("[1]::map(fn { panic('boom') })")
+        .unwrap_err()
+        .as_ref()
+    {
+        MiraError::Runtime { trace, .. } => {
+            assert_eq!(trace.function.as_deref(), Some("<anonymous>"));
+            assert!(trace.offset.is_some());
+            assert_eq!(trace.stack, ["global.map", "<anonymous>"]);
+        }
+        error => panic!("expected nested runtime error with context, got {error:?}"),
     }
 }

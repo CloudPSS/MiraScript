@@ -79,8 +79,14 @@ impl Runtime {
     }
 
     pub(super) fn with_runtime_context(&self, error: MiraError, offset: usize) -> Box<MiraError> {
-        let display = |name: &FunctionName| name.as_ref().to_owned();
-        let function = self.call_stack.last().map(display);
+        let display = |handle| {
+            self.get_function_dyn(handle)
+                .expect("call stack function handles must remain valid")
+                .name()
+                .as_ref()
+                .to_owned()
+        };
+        let function = self.call_stack.last().map(&display);
         let stack = self.call_stack.iter().map(display).collect();
         Box::new(error.with_runtime_context(function, offset, stack))
     }

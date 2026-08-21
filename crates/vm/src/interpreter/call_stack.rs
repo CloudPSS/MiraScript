@@ -1,17 +1,17 @@
-use crate::FunctionName;
+use crate::{MiraFunction, MiraHandle};
 
 const INLINE_CALL_DEPTH: usize = 4;
 
 pub(super) struct CallStack {
-    inline: [Option<FunctionName>; INLINE_CALL_DEPTH],
-    overflow: Vec<FunctionName>,
+    inline: [Option<MiraHandle<dyn MiraFunction>>; INLINE_CALL_DEPTH],
+    overflow: Vec<MiraHandle<dyn MiraFunction>>,
     len: usize,
 }
 
 impl CallStack {
     pub(super) fn new() -> Self {
         Self {
-            inline: std::array::from_fn(|_| None),
+            inline: [None; INLINE_CALL_DEPTH],
             overflow: Vec::new(),
             len: 0,
         }
@@ -21,11 +21,11 @@ impl CallStack {
         self.len
     }
 
-    pub(super) fn push(&mut self, name: FunctionName) {
+    pub(super) fn push(&mut self, function: MiraHandle<dyn MiraFunction>) {
         if self.len < INLINE_CALL_DEPTH {
-            self.inline[self.len] = Some(name);
+            self.inline[self.len] = Some(function);
         } else {
-            self.overflow.push(name);
+            self.overflow.push(function);
         }
         self.len += 1;
     }
@@ -42,20 +42,20 @@ impl CallStack {
         }
     }
 
-    pub(super) fn last(&self) -> Option<&FunctionName> {
+    pub(super) fn last(&self) -> Option<MiraHandle<dyn MiraFunction>> {
         if self.len == 0 {
             None
         } else if self.len <= INLINE_CALL_DEPTH {
-            self.inline[self.len - 1].as_ref()
+            self.inline[self.len - 1]
         } else {
-            self.overflow.last()
+            self.overflow.last().copied()
         }
     }
 
-    pub(super) fn iter(&self) -> impl Iterator<Item = &FunctionName> {
+    pub(super) fn iter(&self) -> impl Iterator<Item = MiraHandle<dyn MiraFunction>> + '_ {
         self.inline[..self.len.min(INLINE_CALL_DEPTH)]
             .iter()
-            .filter_map(|x| x.as_ref())
-            .chain(self.overflow.iter())
+            .filter_map(|function| *function)
+            .chain(self.overflow.iter().copied())
     }
 }

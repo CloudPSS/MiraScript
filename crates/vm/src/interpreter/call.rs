@@ -131,7 +131,7 @@ impl Runtime {
         };
 
         let callable = self.get_function_dyn(handle)?;
-        self.call_stack.push(callable.name());
+        self.call_stack.push(handle);
         let result = callable
             .call(self, args)
             .and_then(|value| self.insert(value))
