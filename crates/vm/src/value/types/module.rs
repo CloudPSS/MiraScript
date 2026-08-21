@@ -33,7 +33,7 @@ impl MiraValue {
 }
 
 /// A named collection of MiraScript-visible values.
-pub trait MiraModule: Any + 'static {
+pub trait MiraModule: Any {
     /// Return the module name shown in diagnostics.
     fn name(&self) -> &str;
 

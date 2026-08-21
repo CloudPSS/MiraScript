@@ -30,7 +30,7 @@ impl MiraValue {
 const ANONYMOUS_FN_NAME: &str = "<anonymous>";
 
 /// A callable MiraScript function implementation.
-pub trait MiraFunction: Any + 'static {
+pub trait MiraFunction: Any {
     /// Invoke the function.
     fn call(&self, runtime: &mut Runtime, args: &[MiraValue]) -> Result<MiraManageable>;
 

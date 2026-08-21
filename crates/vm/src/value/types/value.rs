@@ -6,7 +6,7 @@ use super::{MiraArray, MiraExtern, MiraFunction, MiraModule, MiraRecord};
 ///
 /// Scalar payloads are stored inline. Runtime-owned payloads are represented by
 /// checked handles into a [`crate::Runtime`] arena.
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub enum MiraValue {
     /// The MiraScript `nil` value.
     #[default]
@@ -55,36 +55,6 @@ impl MiraValue {
     /// Return the MiraScript type name for this value.
     #[inline]
     pub const fn type_name(self) -> &'static str {
-        match self.value_type() {
-            MiraType::Nil => "nil",
-            MiraType::Boolean => "boolean",
-            MiraType::Number => "number",
-            MiraType::String => "string",
-            MiraType::Array => "array",
-            MiraType::Record => "record",
-            MiraType::Function => "function",
-            MiraType::Module => "module",
-            MiraType::Extern => "extern",
-        }
-    }
-}
-
-impl PartialEq for MiraValue {
-    fn eq(&self, other: &Self) -> bool {
-        match (*self, *other) {
-            (Self::Nil, Self::Nil) => true,
-            (Self::Boolean(left), Self::Boolean(right)) => left == right,
-            (Self::Number(left), Self::Number(right)) => {
-                left == right || (left.is_nan() && right.is_nan())
-            }
-            (Self::StaticStr(left), Self::StaticStr(right)) => left == right,
-            (Self::String(left), Self::String(right)) => left == right,
-            (Self::Array(left), Self::Array(right)) => left == right,
-            (Self::Record(left), Self::Record(right)) => left == right,
-            (Self::Function(left), Self::Function(right)) => left == right,
-            (Self::Module(left), Self::Module(right)) => left == right,
-            (Self::Extern(left), Self::Extern(right)) => left == right,
-            _ => false,
-        }
+        self.value_type().name()
     }
 }

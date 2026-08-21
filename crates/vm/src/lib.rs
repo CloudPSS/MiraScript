@@ -27,7 +27,7 @@ pub use error::*;
 pub use interpreter::Runtime;
 pub use value::{
     MiraArray, MiraExtern, MiraFunction, MiraHandle, MiraManageable, MiraModule, MiraNativeFn,
-    MiraRecord, MiraShapedArray, MiraShapedRecord, MiraValue, Nil,
+    MiraRecord, MiraShapedArray, MiraShapedRecord, MiraType, MiraValue, Nil,
 };
 
 use bytecode::Program;

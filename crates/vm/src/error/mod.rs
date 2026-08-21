@@ -1,53 +1,14 @@
-pub use self::compile::{DiagnosticCode, Diagnostics, InvalidBytecodeReason};
-
-use std::fmt;
-
-use thiserror::Error;
-
 mod compile;
 mod external;
 
+use thiserror::Error;
+
+use crate::MiraType;
+
+pub use self::compile::{DiagnosticCode, Diagnostics, InvalidBytecodeReason};
+
 /// Result type returned by the MiraScript VM.
 pub type Result<T> = std::result::Result<T, Box<MiraError>>;
-
-/// A MiraScript runtime value category.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum MiraType {
-    /// The `nil` value.
-    Nil,
-    /// A boolean value.
-    Boolean,
-    /// A numeric value.
-    Number,
-    /// A string value.
-    String,
-    /// An array value.
-    Array,
-    /// A record value.
-    Record,
-    /// A callable function.
-    Function,
-    /// A module value.
-    Module,
-    /// A reserved external value.
-    Extern,
-}
-
-impl fmt::Display for MiraType {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.write_str(match self {
-            Self::Nil => "nil",
-            Self::Boolean => "boolean",
-            Self::Number => "number",
-            Self::String => "string",
-            Self::Array => "array",
-            Self::Record => "record",
-            Self::Function => "function",
-            Self::Module => "module",
-            Self::Extern => "extern",
-        })
-    }
-}
 
 /// One segment in a failed Rust value conversion path.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
