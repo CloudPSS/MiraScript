@@ -1,3 +1,5 @@
+use crate::value::ANONYMOUS_FN_NAME;
+
 use super::*;
 
 pub(crate) fn to_boolean(value: MiraValue) -> Result<bool> {
@@ -165,7 +167,7 @@ pub(super) fn inner_to_string(
         MiraValue::Function(handle) => {
             let function = runtime.get_function_dyn(handle)?;
             let name = function.name();
-            Ok(if name == "<anonymous>" {
+            Ok(if name == ANONYMOUS_FN_NAME {
                 "<function>".into()
             } else {
                 format!("<function {}>", name)

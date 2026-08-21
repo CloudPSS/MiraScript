@@ -24,8 +24,8 @@ pub use mirascript_vm_derive::{MiraArray, MiraRecord};
 pub use error::*;
 pub use interpreter::Runtime;
 pub use value::{
-    FunctionName, MiraArray, MiraExtern, MiraFunction, MiraHandle, MiraManageable, MiraModule,
-    MiraNativeFn, MiraRecord, MiraShapedArray, MiraShapedRecord, MiraType, MiraValue, Nil,
+    MiraArray, MiraExtern, MiraFunction, MiraHandle, MiraManageable, MiraModule, MiraNativeFn,
+    MiraRecord, MiraShapedArray, MiraShapedRecord, MiraType, MiraValue, Nil,
 };
 
 use bytecode::Program;

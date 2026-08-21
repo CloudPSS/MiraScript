@@ -1,7 +1,7 @@
 use indexmap::IndexMap;
 
 use super::*;
-use crate::{FunctionName, MiraHandle, MiraManageable, bytecode::Program};
+use crate::{MiraHandle, MiraManageable, bytecode::Program, value::ANONYMOUS_FN_NAME};
 
 pub(crate) struct ScriptModule {
     pub(crate) execution: ExecutionId,
@@ -83,7 +83,6 @@ impl Runtime {
             self.get_function_dyn(handle)
                 .expect("call stack function handles must remain valid")
                 .name()
-                .as_ref()
                 .to_owned()
         };
         let function = self.call_stack.last().map(&display);
@@ -107,7 +106,7 @@ impl Runtime {
                     program: Rc::clone(self.active_program()),
                     function: *function,
                     frame,
-                    name: FunctionName::anonymous(),
+                    name: ANONYMOUS_FN_NAME.into(),
                 };
                 let value = self.insert(MiraManageable::from_function(function))?;
                 self.write_register(frame, *destination, value);

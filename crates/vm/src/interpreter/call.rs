@@ -1,12 +1,15 @@
+use std::borrow::Cow;
+
+use crate::{MiraManageable, bytecode::Program};
+
 use super::*;
-use crate::{FunctionName, MiraManageable, bytecode::Program};
 
 pub(crate) struct ScriptFunction {
     pub(crate) execution: ExecutionId,
     pub(crate) program: Rc<Program>,
     pub(crate) function: usize,
     pub(crate) frame: FrameId,
-    pub(crate) name: FunctionName,
+    pub(crate) name: Cow<'static, str>,
 }
 
 impl MiraFunction for ScriptFunction {
@@ -55,8 +58,8 @@ impl MiraFunction for ScriptFunction {
         }
     }
 
-    fn name(&self) -> FunctionName {
-        self.name.clone()
+    fn name(&self) -> &str {
+        self.name.as_ref()
     }
 }
 
