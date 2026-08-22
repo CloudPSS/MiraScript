@@ -141,10 +141,11 @@ impl Runtime {
 
         let callable = self.get_function_dyn(handle)?;
         self.call_stack.push(handle);
-        let result = callable.call(self, args)?;
-        let result = self.insert(result)?;
+        let result = callable
+            .call(self, args)
+            .and_then(|value| self.insert(value));
         self.call_stack.pop();
-        Ok(result)
+        result
     }
 
     #[cold]
