@@ -22,7 +22,6 @@ harness = false
 
 [dependencies]
 anyhow = "1"
-boxing = "0.1.2"
 indexmap = "2"
 libm = "0.2"
 mirascript-core.workspace = true
@@ -36,4 +35,6 @@ unicode-normalization = "0.1"
 divan = "0.1.21"
 trybuild = "1"
 test_each_file = "0.3"
+
+[target.'cfg(any(target_arch = "x86_64", target_arch = "aarch64"))'.dev-dependencies]
 mimalloc = { version = "0.1" }

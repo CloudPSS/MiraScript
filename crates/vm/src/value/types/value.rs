@@ -1,6 +1,4 @@
-use std::{fmt, num::NonZeroU8};
-
-use boxing::nan::raw::{RawBox, RawTag, Value};
+use std::fmt;
 
 use crate::{MiraType, value::arena::MiraHandle};
 
@@ -22,7 +20,7 @@ enum ValueTag {
 
 impl ValueTag {
     #[inline]
-    fn raw(self) -> RawTag {
+    fn header(self) -> u16 {
         let (negative, value) = match self {
             Self::Nil => (false, 1),
             Self::Boolean => (false, 2),
@@ -35,10 +33,7 @@ impl ValueTag {
             Self::Extern => (true, 2),
             Self::Uninitialized => (true, 3),
         };
-        RawTag::new(
-            negative,
-            NonZeroU8::new(value).expect("value tags are non-zero"),
-        )
+        0x7FF8 | (u16::from(negative) << 15) | value
     }
 
     #[inline]
@@ -62,6 +57,58 @@ impl ValueTag {
     }
 }
 
+/// The raw bit representation used by [`MiraValue`].
+///
+/// Numeric values use their `f64` bit pattern. Tagged values use a quiet NaN
+/// header and store a fixed little-endian six-byte payload in the low 48 bits.
+#[repr(transparent)]
+#[derive(Clone, Copy)]
+struct RawValue(u64);
+
+impl RawValue {
+    const QUIET_NAN: u64 = 0x7FF8_0000_0000_0000;
+    const SIGN_MASK: u64 = 0x8000_0000_0000_0000;
+    const PAYLOAD_MASK: u64 = 0x0000_FFFF_FFFF_FFFF;
+
+    #[inline]
+    fn number(value: f64) -> Self {
+        let bits = value.to_bits();
+        if value.is_nan() {
+            Self(Self::QUIET_NAN | (bits & Self::SIGN_MASK))
+        } else {
+            Self(bits)
+        }
+    }
+
+    #[inline]
+    fn tagged(tag: ValueTag, payload: [u8; 6]) -> Self {
+        Self((u64::from(tag.header()) << 48) | Self::payload_bits(payload))
+    }
+
+    #[inline]
+    fn empty(tag: ValueTag) -> Self {
+        Self::tagged(tag, [0; 6])
+    }
+
+    #[inline]
+    fn tag(self) -> Option<ValueTag> {
+        ValueTag::from_header((self.0 >> 48) as u16)
+    }
+
+    #[inline]
+    fn payload(self) -> [u8; 6] {
+        let bytes = (self.0 & Self::PAYLOAD_MASK).to_le_bytes();
+        bytes[..6].try_into().expect("six-byte MiraValue payload")
+    }
+
+    #[inline]
+    fn payload_bits(payload: [u8; 6]) -> u64 {
+        u64::from_le_bytes([
+            payload[0], payload[1], payload[2], payload[3], payload[4], payload[5], 0, 0,
+        ])
+    }
+}
+
 /// A decoded view of a compact [`MiraValue`].
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(crate) enum MiraValueKind {
@@ -82,30 +129,32 @@ pub(crate) enum MiraValueKind {
 /// Numbers are stored inline as `f64`. Other values use checked tags and a
 /// 48-bit payload in a NaN-box. Runtime-owned payloads remain checked handles
 /// into a [`crate::Runtime`] arena.
-#[repr(transparent)]
+#[repr(C, align(8))]
 #[derive(Clone, Copy)]
 pub struct MiraValue(u64);
 
 const _: () = assert!(std::mem::size_of::<MiraValue>() == 8);
 const _: () = assert!(std::mem::align_of::<MiraValue>() == 8);
-const _: () = assert!(std::mem::size_of::<Value>() == 8);
 
 impl MiraValue {
-    const PAYLOAD_MASK: usize = 0x0000_FFFF_FFFF_FFFF;
+    #[inline]
+    fn from_raw(raw: RawValue) -> Self {
+        Self(raw.0)
+    }
 
     #[inline]
-    fn from_raw(raw: RawBox) -> Self {
-        Self(raw.into_float_unchecked().to_bits())
+    fn raw(self) -> RawValue {
+        RawValue(self.0)
     }
 
     #[inline]
     fn empty(tag: ValueTag) -> Self {
-        Self::from_raw(RawBox::from_value(Value::empty(tag.raw())))
+        Self::from_raw(RawValue::empty(tag))
     }
 
     #[inline]
     fn handle<T: std::any::Any + ?Sized>(tag: ValueTag, handle: MiraHandle<T>) -> Self {
-        Self::from_raw(RawBox::from_value(Value::new(tag.raw(), handle.payload())))
+        Self::from_raw(RawValue::tagged(tag, handle.payload()))
     }
 
     #[inline]
@@ -115,28 +164,28 @@ impl MiraValue {
 
     #[inline]
     pub(super) fn boxed_boolean(value: bool) -> Self {
-        Self::from_raw(RawBox::from_value(Value::new(
-            ValueTag::Boolean.raw(),
+        Self::from_raw(RawValue::tagged(
+            ValueTag::Boolean,
             [u8::from(value), 0, 0, 0, 0, 0],
-        )))
+        ))
     }
 
     #[inline]
     pub(super) fn boxed_number(value: f64) -> Self {
-        Self::from_raw(RawBox::from_float(value))
+        Self::from_raw(RawValue::number(value))
     }
 
     #[inline]
     pub(super) fn boxed_static_str(value: &'static &'static str) -> Self {
         let address = (value as *const &'static str).expose_provenance();
         assert!(
-            address <= Self::PAYLOAD_MASK,
+            (address as u64) <= RawValue::PAYLOAD_MASK,
             "Pointer too large to store in MiraValue"
         );
-        Self::from_raw(RawBox::from_value(Value::new(
-            ValueTag::StaticStr.raw(),
+        Self::from_raw(RawValue::tagged(
+            ValueTag::StaticStr,
             Self::address_payload(address),
-        )))
+        ))
     }
 
     #[inline]
@@ -186,17 +235,8 @@ impl MiraValue {
     }
 
     #[inline]
-    fn raw_value(&self) -> Value {
-        // SAFETY: Every non-float MiraValue is constructed through RawBox from
-        // a Value whose tag is non-zero. Value is exactly eight bytes with no
-        // padding. Callers first check `tag`, so the original representation
-        // can be restored by bitcast.
-        unsafe { std::mem::transmute::<u64, Value>(self.0) }
-    }
-
-    #[inline]
     fn tag(&self) -> Option<ValueTag> {
-        ValueTag::from_header((self.0 >> 48) as u16)
+        self.raw().tag()
     }
 
     #[inline]
@@ -206,7 +246,7 @@ impl MiraValue {
 
     #[inline]
     pub(super) fn boxed_boolean_value(&self) -> Option<bool> {
-        (self.tag() == Some(ValueTag::Boolean)).then(|| self.raw_value().data()[0] != 0)
+        (self.tag() == Some(ValueTag::Boolean)).then(|| self.raw().payload()[0] != 0)
     }
 
     #[inline]
@@ -215,36 +255,12 @@ impl MiraValue {
     }
 
     fn address_payload(address: usize) -> [u8; 6] {
-        let bytes = address.to_ne_bytes();
-        let mut payload = [0; 6];
-        let length = bytes.len().min(payload.len());
-        #[cfg(target_endian = "little")]
-        {
-            payload[..length].copy_from_slice(&bytes[..length]);
-        }
-        #[cfg(target_endian = "big")]
-        {
-            let payload_start = payload.len() - length;
-            let bytes_start = bytes.len() - length;
-            payload[payload_start..].copy_from_slice(&bytes[bytes_start..]);
-        }
-        payload
+        let bytes = (address as u64).to_le_bytes();
+        bytes[..6].try_into().expect("six-byte pointer payload")
     }
 
     fn payload_address(payload: [u8; 6]) -> usize {
-        let mut bytes = [0; std::mem::size_of::<usize>()];
-        let length = bytes.len().min(payload.len());
-        #[cfg(target_endian = "little")]
-        {
-            bytes[..length].copy_from_slice(&payload[..length]);
-        }
-        #[cfg(target_endian = "big")]
-        {
-            let bytes_start = bytes.len() - length;
-            let payload_start = payload.len() - length;
-            bytes[bytes_start..].copy_from_slice(&payload[payload_start..]);
-        }
-        usize::from_ne_bytes(bytes)
+        usize::try_from(RawValue::payload_bits(payload)).expect("pointer payload fits usize")
     }
 
     #[inline]
@@ -253,24 +269,24 @@ impl MiraValue {
             return MiraValueKind::Number(f64::from_bits(self.0));
         };
 
-        let value = self.raw_value();
+        let payload = self.raw().payload();
         match tag {
             ValueTag::Nil => MiraValueKind::Nil,
-            ValueTag::Boolean => MiraValueKind::Boolean(value.data()[0] != 0),
+            ValueTag::Boolean => MiraValueKind::Boolean(payload[0] != 0),
             ValueTag::StaticStr => {
-                let address = Self::payload_address(*value.data());
+                let address = Self::payload_address(payload);
                 let pointer = std::ptr::with_exposed_provenance::<&'static str>(address);
                 // SAFETY: `str` only accepts an outer static reference. Its
                 // provenance was exposed by the constructor and restored here,
                 // and the checked tag prevents interpreting another payload.
                 MiraValueKind::StaticStr(unsafe { &*pointer })
             }
-            ValueTag::String => MiraValueKind::String(MiraHandle::from_payload(*value.data())),
-            ValueTag::Array => MiraValueKind::Array(MiraHandle::from_payload(*value.data())),
-            ValueTag::Record => MiraValueKind::Record(MiraHandle::from_payload(*value.data())),
-            ValueTag::Function => MiraValueKind::Function(MiraHandle::from_payload(*value.data())),
-            ValueTag::Module => MiraValueKind::Module(MiraHandle::from_payload(*value.data())),
-            ValueTag::Extern => MiraValueKind::Extern(MiraHandle::from_payload(*value.data())),
+            ValueTag::String => MiraValueKind::String(MiraHandle::from_payload(payload)),
+            ValueTag::Array => MiraValueKind::Array(MiraHandle::from_payload(payload)),
+            ValueTag::Record => MiraValueKind::Record(MiraHandle::from_payload(payload)),
+            ValueTag::Function => MiraValueKind::Function(MiraHandle::from_payload(payload)),
+            ValueTag::Module => MiraValueKind::Module(MiraHandle::from_payload(payload)),
+            ValueTag::Extern => MiraValueKind::Extern(MiraHandle::from_payload(payload)),
             ValueTag::Uninitialized => panic!("uninitialized register escaped as MiraValue"),
         }
     }
@@ -341,6 +357,32 @@ mod tests {
     use crate::Runtime;
 
     static STATIC_TEXT: &str = "static text";
+
+    #[test]
+    fn raw_value_layout_roundtrips() {
+        let payload = [1, 2, 3, 4, 5, 6];
+        let raw = RawValue::tagged(ValueTag::Nil, payload);
+
+        assert_eq!(raw.0, 0x7FF9_0605_0403_0201);
+        assert_eq!(raw.tag(), Some(ValueTag::Nil));
+        assert_eq!(raw.payload(), payload);
+
+        for tag in [
+            ValueTag::Boolean,
+            ValueTag::StaticStr,
+            ValueTag::String,
+            ValueTag::Array,
+            ValueTag::Record,
+            ValueTag::Function,
+            ValueTag::Module,
+            ValueTag::Extern,
+            ValueTag::Uninitialized,
+        ] {
+            let raw = RawValue::tagged(tag, payload);
+            assert_eq!(raw.tag(), Some(tag));
+            assert_eq!(raw.payload(), payload);
+        }
+    }
 
     #[test]
     fn scalar_nan_box_roundtrips() {

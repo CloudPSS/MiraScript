@@ -433,7 +433,7 @@ jobs:
       matrix:
         target:
           - s390x-unknown-linux-gnu
-          # - i686-unknown-linux-gnu
+          - i686-unknown-linux-gnu
         toolchain:
           - stable
           - nightly
@@ -460,6 +460,40 @@ jobs:
 
       - name: Run cross-platform tests
         run: cross test --package mirascript-vm --target ${{ matrix.target }} --locked
+
+  test-rust-miri:
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - s390x-unknown-linux-gnu
+          - i686-unknown-linux-gnu
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install
+        uses: ./.github/actions/install
+        with:
+          setup-node: false
+          rust-targets: ${{ matrix.target }}
+          rust-toolchain: nightly
+
+      - name: Install Miri
+        run: rustup component add miri rust-src --toolchain nightly
+
+      - name: Run VM tests under Miri
+        env:
+          MIRIFLAGS: -Zmiri-permissive-provenance
+        run: |
+          cargo +nightly miri test --package mirascript-vm --lib --target ${{ matrix.target }} --locked value::types::value::tests
+          cargo +nightly miri test --package mirascript-vm --lib --target ${{ matrix.target }} --locked value::arena::tests
+          cargo +nightly miri test --package mirascript-vm --lib --target ${{ matrix.target }} --locked interpreter::register::tests
 
   test-node:
     needs: merge
