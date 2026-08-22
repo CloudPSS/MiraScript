@@ -111,10 +111,6 @@ fn native_run_simple(bencher: Bencher) {
     });
 }
 
-#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
-#[global_allocator]
-static GLOBAL_ALLOCATOR: mimalloc::MiMalloc = mimalloc::MiMalloc;
-
 fn main() {
     divan::main();
 }
