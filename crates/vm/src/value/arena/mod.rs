@@ -1,55 +1,14 @@
-use std::{
-    any::Any,
-    fmt,
-    marker::PhantomData,
-    ops::Deref,
-    rc::Rc,
-    sync::atomic::{AtomicU32, Ordering},
-};
+mod id;
+mod key;
+
+use std::{any::Any, fmt, marker::PhantomData, ops::Deref, rc::Rc};
 
 use crate::{MiraError, Result, Runtime, RuntimeErrorKind};
 
 use super::{MiraArray, MiraFunction, MiraModule, MiraRecord, MiraValue, MiraValueKind};
 
-static NEXT_ARENA_ID: AtomicU32 = AtomicU32::new(1);
-const ARENA_KEY_COMPONENT_BITS: u32 = 24;
-const ARENA_KEY_COMPONENT_MAX: u32 = (1 << ARENA_KEY_COMPONENT_BITS) - 1;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-struct ArenaKey(u64);
-
-impl ArenaKey {
-    fn new(arena_id: u32, index: usize, category: &'static str) -> Result<Self> {
-        let index = u32::try_from(index)
-            .ok()
-            .and_then(|index| index.checked_add(1))
-            .filter(|index| *index <= ARENA_KEY_COMPONENT_MAX)
-            .ok_or_else(|| MiraError::runtime(RuntimeErrorKind::ArenaExhausted { category }))?;
-        debug_assert!((1..=ARENA_KEY_COMPONENT_MAX).contains(&arena_id));
-        Ok(Self(
-            (u64::from(arena_id) << ARENA_KEY_COMPONENT_BITS) | u64::from(index),
-        ))
-    }
-
-    fn arena_id(self) -> u32 {
-        (self.0 >> ARENA_KEY_COMPONENT_BITS) as u32
-    }
-
-    fn index(self) -> usize {
-        ((self.0 as u32 & ARENA_KEY_COMPONENT_MAX) - 1) as usize
-    }
-
-    fn payload(self) -> [u8; 6] {
-        let bytes = self.0.to_le_bytes();
-        bytes[..6].try_into().expect("six-byte arena key")
-    }
-
-    fn from_payload(payload: [u8; 6]) -> Self {
-        let mut bytes = [0; 8];
-        bytes[..6].copy_from_slice(&payload);
-        Self(u64::from_le_bytes(bytes))
-    }
-}
+use id::ArenaId;
+use key::ArenaKey;
 
 #[derive(Debug)]
 struct Arena<T> {
@@ -61,13 +20,13 @@ impl<T> Arena<T> {
         Self { values: Vec::new() }
     }
 
-    fn insert(&mut self, arena_id: u32, category: &'static str, value: T) -> Result<ArenaKey> {
+    fn insert(&mut self, arena_id: ArenaId, category: &'static str, value: T) -> Result<ArenaKey> {
         let key = ArenaKey::new(arena_id, self.values.len(), category)?;
         self.values.push(value);
         Ok(key)
     }
 
-    fn get(&self, arena_id: u32, category: &'static str, key: ArenaKey) -> Result<&T> {
+    fn get(&self, arena_id: ArenaId, category: &'static str, key: ArenaKey) -> Result<&T> {
         if key.arena_id() != arena_id {
             return Err(MiraError::runtime(RuntimeErrorKind::ForeignHandle));
         }
@@ -76,7 +35,12 @@ impl<T> Arena<T> {
             .ok_or_else(|| MiraError::runtime(RuntimeErrorKind::InvalidHandle { category }))
     }
 
-    fn get_mut(&mut self, arena_id: u32, category: &'static str, key: ArenaKey) -> Result<&mut T> {
+    fn get_mut(
+        &mut self,
+        arena_id: ArenaId,
+        category: &'static str,
+        key: ArenaKey,
+    ) -> Result<&mut T> {
         if key.arena_id() != arena_id {
             return Err(MiraError::runtime(RuntimeErrorKind::ForeignHandle));
         }
@@ -104,7 +68,7 @@ impl<T: Any + ?Sized> fmt::Debug for MiraHandle<T> {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter
             .debug_struct("MiraHandle")
-            .field("arena", &self.key.arena_id())
+            .field("arena", &self.key.arena_id().get())
             .field("slot", &self.key.index())
             .finish()
     }
@@ -234,7 +198,7 @@ impl MiraManageable {
 }
 
 pub(crate) struct MiraArena {
-    id: u32,
+    id: ArenaId,
     strings: Arena<String>,
     arrays: Arena<Box<dyn MiraArray>>,
     records: Arena<Box<dyn MiraRecord>>,
@@ -244,13 +208,8 @@ pub(crate) struct MiraArena {
 
 impl MiraArena {
     pub(crate) fn new() -> Self {
-        let id = NEXT_ARENA_ID.fetch_add(1, Ordering::Relaxed);
-        assert!(
-            (1..=ARENA_KEY_COMPONENT_MAX).contains(&id),
-            "MiraScript arena identifier space exhausted"
-        );
         Self {
-            id,
+            id: ArenaId::next(),
             strings: Arena::new(),
             arrays: Arena::new(),
             records: Arena::new(),
@@ -494,22 +453,3 @@ impl Runtime {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn arena_key_roundtrips_through_six_byte_payload() {
-        for (arena_id, index) in [(1, 0), (17, 42), (ARENA_KEY_COMPONENT_MAX, 16_777_214)] {
-            let key = ArenaKey::new(arena_id, index, "test").unwrap();
-            assert_eq!(ArenaKey::from_payload(key.payload()), key);
-            assert_eq!(key.arena_id(), arena_id);
-            assert_eq!(key.index(), index);
-        }
-    }
-
-    #[test]
-    fn arena_key_rejects_a_slot_outside_the_24_bit_component() {
-        assert!(ArenaKey::new(1, ARENA_KEY_COMPONENT_MAX as usize, "test").is_err());
-    }
-}
