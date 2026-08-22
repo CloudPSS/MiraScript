@@ -1,6 +1,6 @@
 import { builtinModules } from 'node:module';
 import esbuild from 'esbuild';
-import packageJson from './package.json' with { type: 'json' };
+import { definePlugin } from 'esbuild-plugin-define';
 
 // Universal bundle
 await esbuild.build({
@@ -9,18 +9,19 @@ await esbuild.build({
     charset: 'utf8',
     entryPoints: { main: './src/main.ts' },
     outExtension: { '.js': '.mjs' },
-    minify: false,
+    minify: true,
     outdir: './dist',
     target: 'esnext',
     bundle: true,
     packages: 'bundle',
     platform: 'browser',
-    conditions: [],
-    external: [
-        'vscode',
-        ...builtinModules.flatMap((m) => [m, `node:${m}`]),
-        ...Object.keys(packageJson.dependencies || {}),
+    plugins: [
+        definePlugin({
+            'navigator.userAgentData': '',
+            'navigator.userAgent': 'Chrome/100',
+        }),
     ],
+    external: ['vscode', ...builtinModules.flatMap((m) => [m, `node:${m}`])],
 });
 
 // Web bundle
