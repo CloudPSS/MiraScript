@@ -121,9 +121,11 @@ impl Runtime {
         &mut self,
         name: &'static str,
         value: impl Into<MiraManageable>,
-    ) -> Result<usize> {
-        let value = self.insert(value)?;
-        Ok(self.globals.insert_std(name, value))
+    ) -> usize {
+        let value = self
+            .insert(value)
+            .expect("standard-library function allocation must fit in a fresh Runtime arena");
+        self.globals.insert_std(name, value)
     }
 }
 

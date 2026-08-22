@@ -657,6 +657,7 @@ check_math_unary('round', round, -0.499_999_999_999_999_94, -0);
   for (f, expected) in func::entries() {
     let fun = global[f];
     t_eq(type(fun), 'function');
+    t_eq(to_string(fun), `<function global.$f>`);
     check_math_unary(f, fun, 0, expected.0);
     check_math_unary(f, fun, false, expected.0);
     check_math_unary(f, fun, -0, expected.1);
