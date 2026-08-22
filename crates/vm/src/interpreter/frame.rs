@@ -1,4 +1,4 @@
-use super::register::Registers;
+use super::register::{MiraAny, Registers};
 
 /// Identifies a frame in the call stack.
 /// Root frame is always `0`, and child frames are numbered sequentially starting from `1`.
@@ -24,7 +24,7 @@ impl Frame {
     }
 
     pub fn reset(&mut self, parent: Option<FrameId>) {
-        self.registers.fill(None);
+        self.registers.fill(MiraAny::uninitialized());
         self.parent = parent;
     }
 
@@ -113,13 +113,22 @@ mod tests {
             .replace(MiraValue::number(2.0));
 
         arena.begin_run(2);
-        assert_eq!(arena.root.registers.read(RegisterId::new(1)), None);
+        assert!(
+            arena
+                .root
+                .registers
+                .read(RegisterId::new(1))
+                .is_uninitialized()
+        );
 
         let reused = arena.push(2, Some(FrameId::ROOT));
         assert_eq!(reused, child);
-        assert_eq!(
-            arena.get_mut(reused).registers.read(RegisterId::new(1)),
-            None
+        assert!(
+            arena
+                .get_mut(reused)
+                .registers
+                .read(RegisterId::new(1))
+                .is_uninitialized()
         );
     }
 }

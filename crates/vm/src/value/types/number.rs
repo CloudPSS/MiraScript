@@ -12,7 +12,7 @@ impl MiraValue {
     /// Check whether this value is a numeric value.
     #[inline]
     pub fn is_number(&self) -> bool {
-        self.as_number().is_some()
+        self.is_float()
     }
 
     /// Return the inline numeric payload, or `None` for another value type.

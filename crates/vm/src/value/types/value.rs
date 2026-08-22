@@ -230,7 +230,7 @@ impl MiraValue {
     }
 
     #[inline]
-    fn is_float(&self) -> bool {
+    pub(super) fn is_float(&self) -> bool {
         self.tag().is_none()
     }
 

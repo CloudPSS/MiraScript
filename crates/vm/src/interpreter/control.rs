@@ -125,16 +125,12 @@ impl Runtime {
             } => {
                 let raw = self.read_register_raw(frame, *register);
                 let matches = match condition {
-                    Condition::Truthy => operations::to_boolean(raw.ok_or_else(|| {
-                        MiraError::runtime(RuntimeErrorKind::UninitializedValue)
-                    })?)?,
-                    Condition::Falsy => !operations::to_boolean(raw.ok_or_else(|| {
-                        MiraError::runtime(RuntimeErrorKind::UninitializedValue)
-                    })?)?,
-                    Condition::Initialized => raw.is_some(),
-                    Condition::Uninitialized => raw.is_none(),
-                    Condition::Nil => raw.as_ref().is_some_and(MiraValue::is_nil),
-                    Condition::NonNil => !raw.as_ref().is_some_and(MiraValue::is_nil),
+                    Condition::Truthy => operations::to_boolean(raw.check()?)?,
+                    Condition::Falsy => !operations::to_boolean(raw.check()?)?,
+                    Condition::Initialized => !raw.is_uninitialized(),
+                    Condition::Uninitialized => raw.is_uninitialized(),
+                    Condition::Nil => raw.unwrap().is_nil(),
+                    Condition::NonNil => !raw.unwrap().is_nil(),
                 };
                 self.execute_block(if matches { then_body } else { else_body }, frame)
             }

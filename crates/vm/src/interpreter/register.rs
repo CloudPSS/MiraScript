@@ -1,32 +1,43 @@
 use super::*;
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug)]
 pub(crate) struct MiraAny(MiraValue);
 
 const _: () = assert!(std::mem::size_of::<MiraAny>() == 8);
 
 impl MiraAny {
     #[inline]
-    fn uninitialized() -> Self {
+    pub(super) fn uninitialized() -> Self {
         Self(MiraValue::uninitialized())
     }
 
     #[inline]
-    fn from_option(value: Option<MiraValue>) -> Self {
-        match value {
-            Some(value) => Self(value),
-            None => Self::uninitialized(),
+    pub(super) fn replace(&mut self, value: MiraValue) -> MiraAny {
+        std::mem::replace(self, Self(value))
+    }
+
+    #[inline]
+    pub(super) fn unwrap(self) -> MiraValue {
+        self.0
+    }
+    #[inline]
+    pub(super) fn check(self) -> Result<MiraValue> {
+        if self.is_uninitialized() {
+            Err(MiraError::runtime(RuntimeErrorKind::UninitializedValue))
+        } else {
+            Ok(self.0)
         }
     }
-
     #[inline]
-    fn to_option(self) -> Option<MiraValue> {
-        (!self.0.is_uninitialized()).then_some(self.0)
+    pub(super) fn is_uninitialized(self) -> bool {
+        self.0.is_uninitialized()
     }
+}
 
+impl From<MiraValue> for MiraAny {
     #[inline]
-    pub(super) fn replace(&mut self, value: MiraValue) -> Option<MiraValue> {
-        std::mem::replace(self, Self(value)).to_option()
+    fn from(value: MiraValue) -> Self {
+        Self(value)
     }
 }
 
@@ -81,12 +92,12 @@ impl Registers {
     }
 
     #[inline]
-    pub(super) fn fill(&mut self, value: Option<MiraValue>) {
+    pub(super) fn fill(&mut self, value: MiraAny) {
         for slot in self.inline.iter_mut() {
-            *slot = MiraAny::from_option(value);
+            *slot = value;
         }
         for slot in self.overflow.iter_mut() {
-            *slot = MiraAny::from_option(value);
+            *slot = value;
         }
     }
 
@@ -125,44 +136,37 @@ impl Registers {
     }
 
     #[inline]
-    pub(super) fn read(&self, register: RegisterId) -> Option<MiraValue> {
+    pub(super) fn read(&self, register: RegisterId) -> MiraAny {
         if register.is_nil() {
-            Some(MiraValue::nil())
+            MiraAny::from(MiraValue::nil())
         } else {
-            self.get(register).to_option()
+            *self.get(register)
         }
     }
 }
 
 impl Runtime {
     #[inline]
-    pub(super) fn read_register_raw(
-        &self,
-        frame: FrameId,
-        register: RegisterId,
-    ) -> Option<MiraValue> {
+    pub(super) fn read_register_raw(&self, frame: FrameId, register: RegisterId) -> MiraAny {
         if register.is_nil() {
-            Some(MiraValue::nil())
+            MiraAny::from(MiraValue::nil())
         } else {
-            self.frames.get(frame).registers.get(register).to_option()
+            *self.frames.get(frame).registers.get(register)
         }
     }
 
     #[inline]
     pub(super) fn read_register(&self, frame: FrameId, register: RegisterId) -> Result<MiraValue> {
-        self.read_register_raw(frame, register)
-            .ok_or_else(|| MiraError::runtime(RuntimeErrorKind::UninitializedValue))
+        self.read_register_raw(frame, register).check()
     }
 
     #[inline]
     pub(super) fn read_number(&self, frame: FrameId, register: RegisterId) -> Result<f64> {
         let value = self.read_register_raw(frame, register);
-        if let Some(number) = value.as_ref().and_then(MiraValue::as_number) {
+        if let Some(number) = value.unwrap().as_number() {
             return Ok(number);
         }
-        let Some(value) = value else {
-            return Err(MiraError::runtime(RuntimeErrorKind::UninitializedValue));
-        };
+        let value = value.check()?;
         operations::to_number(self, value)
     }
 
@@ -171,10 +175,10 @@ impl Runtime {
         &mut self,
         frame: FrameId,
         register: RegisterId,
-        value: Option<MiraValue>,
+        value: impl Into<MiraAny>,
     ) {
         if !register.is_nil() {
-            *self.frames.get_mut(frame).registers.get_mut(register) = MiraAny::from_option(value);
+            *self.frames.get_mut(frame).registers.get_mut(register) = value.into();
         }
     }
 
@@ -185,12 +189,12 @@ impl Runtime {
         register: RegisterId,
         value: MiraValue,
     ) {
-        self.write_register_raw(frame, register, Some(value));
+        self.write_register_raw(frame, register, value);
     }
 
     #[inline]
     pub(super) fn clear_register(&mut self, frame: FrameId, register: RegisterId) {
-        self.write_register_raw(frame, register, None);
+        self.write_register_raw(frame, register, MiraAny::uninitialized());
     }
 }
 
@@ -208,10 +212,10 @@ mod tests {
 
     #[test]
     fn uninitialized_is_distinct_from_nil() {
-        assert_eq!(MiraAny::uninitialized().to_option(), None);
+        assert!(MiraAny::uninitialized().check().is_err());
         assert_eq!(
-            MiraAny::from_option(Some(MiraValue::nil())).to_option(),
-            Some(MiraValue::nil())
+            MiraAny::from(MiraValue::nil()).check().unwrap(),
+            MiraValue::nil()
         );
     }
 }

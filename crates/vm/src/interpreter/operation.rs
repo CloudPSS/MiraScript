@@ -16,10 +16,7 @@ impl Runtime {
         let left = registers.read(left);
         let right = registers.read(right);
 
-        if let (Some(left), Some(right)) = (
-            left.as_ref().and_then(MiraValue::as_number),
-            right.as_ref().and_then(MiraValue::as_number),
-        ) {
+        if let (Some(left), Some(right)) = (left.unwrap().as_number(), right.unwrap().as_number()) {
             let result = MiraValue::number(operation(left, right));
             if destination.is_nil() {
                 return Ok(());
@@ -29,14 +26,8 @@ impl Runtime {
         }
 
         // Convert left first to retain the existing error precedence.
-        let left = operations::to_number(
-            self,
-            left.ok_or_else(|| MiraError::runtime(RuntimeErrorKind::UninitializedValue))?,
-        )?;
-        let right = operations::to_number(
-            self,
-            right.ok_or_else(|| MiraError::runtime(RuntimeErrorKind::UninitializedValue))?,
-        )?;
+        let left = operations::to_number(self, left.check()?)?;
+        let right = operations::to_number(self, right.check()?)?;
         let result = MiraValue::number(operation(left, right));
         if destination.is_nil() {
             return Ok(());
@@ -259,9 +250,7 @@ impl Runtime {
             }
             Operation::Assert { kind, value } => match kind {
                 AssertOperation::Initialized => {
-                    if self.read_register_raw(frame, *value).is_none() {
-                        return Err(MiraError::runtime(RuntimeErrorKind::UninitializedValue));
-                    }
+                    self.read_register(frame, *value)?;
                 }
                 AssertOperation::NonNil => {
                     operations::assert_non_nil(self.read_register(frame, *value)?)?;
