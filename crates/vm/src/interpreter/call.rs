@@ -99,17 +99,26 @@ impl Runtime {
     pub(super) fn get_global_slot(&self, slot: usize) -> Result<MiraValue> {
         let (name, std_slot) = &self.active_program().global_names[slot];
 
-        self.globals.get_hint(name, *std_slot).ok_or_else(|| {
-            MiraError::runtime(RuntimeErrorKind::UndefinedGlobal { name: name.clone() })
-        })
+        if let Some(value) = self.globals.get_hint(name, *std_slot) {
+            Ok(value)
+        } else {
+            self.undefined_global(name)
+        }
     }
 
     pub(super) fn get_global_name(&self, key: &str) -> Result<MiraValue> {
-        self.globals.get(key).ok_or_else(|| {
-            MiraError::runtime(RuntimeErrorKind::UndefinedGlobal {
-                name: key.to_owned(),
-            })
-        })
+        if let Some(value) = self.globals.get(key) {
+            Ok(value)
+        } else {
+            self.undefined_global(key)
+        }
+    }
+    #[cold]
+    #[inline(never)]
+    fn undefined_global(&self, name: &str) -> Result<MiraValue> {
+        Err(MiraError::runtime(RuntimeErrorKind::UndefinedGlobal {
+            name: name.to_owned(),
+        }))
     }
 
     pub(super) fn has_value(&mut self, value: MiraValue, key: MiraValue) -> Result<bool> {
@@ -124,27 +133,33 @@ impl Runtime {
     pub fn call(&mut self, function: MiraValue, args: &[MiraValue]) -> Result<MiraValue> {
         self.checkpoint()?;
         if self.call_stack.depth() >= self.options.max_call_depth as usize {
-            return Err(MiraError::runtime(RuntimeErrorKind::MaxCallDepth {
-                max: self.options.max_call_depth,
-            }));
+            return self.err_call_depth();
         }
         let MiraValue::Function(handle) = function else {
-            return Err(MiraError::runtime(RuntimeErrorKind::NotCallable {
-                actual: function.value_type(),
-            }));
+            return self.err_not_callable(function);
         };
 
         let callable = self.get_function_dyn(handle)?;
         self.call_stack.push(handle);
-        let result = callable
-            .call(self, args)
-            .and_then(|value| self.insert(value))
-            .and_then(|value| {
-                self.checkpoint()?;
-                Ok(value)
-            });
+        let result = callable.call(self, args)?;
+        let result = self.insert(result)?;
         self.call_stack.pop();
-        result
+        Ok(result)
+    }
+
+    #[cold]
+    #[inline(never)]
+    fn err_call_depth(&self) -> Result<MiraValue> {
+        Err(MiraError::runtime(RuntimeErrorKind::MaxCallDepth {
+            max: self.options.max_call_depth,
+        }))
+    }
+    #[cold]
+    #[inline(never)]
+    fn err_not_callable(&self, value: MiraValue) -> Result<MiraValue> {
+        Err(MiraError::runtime(RuntimeErrorKind::NotCallable {
+            actual: value.value_type(),
+        }))
     }
 
     pub(crate) fn checkpoint(&mut self) -> Result<()> {

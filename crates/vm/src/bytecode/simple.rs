@@ -33,12 +33,36 @@ impl Decoder<'_> {
                 let left = self.read_register(wide, offset)?;
                 let right = self.read_register(wide, offset)?;
                 match opcode {
-                    Add => Operation::Add { destination, left, right },
-                    Sub => Operation::Sub { destination, left, right },
-                    Mul => Operation::Mul { destination, left, right },
-                    Div => Operation::Div { destination, left, right },
-                    Mod => Operation::Mod { destination, left, right },
-                    Pow => Operation::Pow { destination, left, right },
+                    Add => Operation::Add {
+                        destination,
+                        left,
+                        right,
+                    },
+                    Sub => Operation::Sub {
+                        destination,
+                        left,
+                        right,
+                    },
+                    Mul => Operation::Mul {
+                        destination,
+                        left,
+                        right,
+                    },
+                    Div => Operation::Div {
+                        destination,
+                        left,
+                        right,
+                    },
+                    Mod => Operation::Mod {
+                        destination,
+                        left,
+                        right,
+                    },
+                    Pow => Operation::Pow {
+                        destination,
+                        left,
+                        right,
+                    },
                     _ => unreachable!(),
                 }
             }
@@ -272,8 +296,12 @@ impl Decoder<'_> {
                 let value = self.read_register(wide, offset)?;
                 let key = match opcode {
                     Has | Get | Set => AccessKey::Constant(self.read_constant(wide, offset)?),
-                    HasDyn | GetDyn | SetDyn => AccessKey::Register(self.read_register(wide, offset)?),
-                    HasIndex | GetIndex | SetIndex => AccessKey::Index(self.read_index(wide, offset)?),
+                    HasDyn | GetDyn | SetDyn => {
+                        AccessKey::Register(self.read_register(wide, offset)?)
+                    }
+                    HasIndex | GetIndex | SetIndex => {
+                        AccessKey::Index(self.read_index(wide, offset)?)
+                    }
                     _ => unreachable!(),
                 };
                 Operation::Access {

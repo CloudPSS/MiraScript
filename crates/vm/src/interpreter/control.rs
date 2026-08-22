@@ -68,9 +68,12 @@ impl Runtime {
 
     pub(super) fn execute_block(&mut self, body: &[Instruction], frame: FrameId) -> Result<Flow> {
         for instruction in body {
-            let result = self
-                .execute_instruction(instruction, frame)
-                .map_err(|error| self.with_runtime_context(*error, instruction.offset))?;
+            let result = match self.execute_instruction(instruction, frame) {
+                Ok(result) => result,
+                Err(error) => {
+                    return Err(self.with_runtime_context(*error, instruction.offset));
+                }
+            };
             if !matches!(result, Flow::Continue) {
                 return Ok(result);
             }
@@ -79,6 +82,7 @@ impl Runtime {
     }
 
     #[cold]
+    #[inline(never)]
     pub(super) fn with_runtime_context(&self, error: MiraError, offset: usize) -> Box<MiraError> {
         let display = |handle| {
             self.get_function_dyn(handle)
