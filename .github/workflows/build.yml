@@ -427,6 +427,40 @@ jobs:
         run: |
           bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r rust-lcov.info --partial --project-token '${{ secrets.CODACY_PROJECT_TOKEN }}'
 
+  test-rust-cross:
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - s390x-unknown-linux-gnu
+          - i686-unknown-linux-gnu
+        toolchain:
+          - stable
+          - nightly
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Configure Git
+        run: |
+          git config --global core.autocrlf input
+
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install
+        uses: ./.github/actions/install
+        with:
+          setup-node: false
+          rust-targets: ${{ matrix.target }}
+          rust-toolchain: ${{ matrix.toolchain }}
+          tools: cross
+
+      - name: Run cross-platform VM tests under QEMU
+        run: cross test --package mirascript-vm --lib --test core --target ${{ matrix.target }} --locked
+
   test-node:
     needs: merge
     strategy:
