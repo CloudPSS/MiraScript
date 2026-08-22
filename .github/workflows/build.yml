@@ -459,7 +459,7 @@ jobs:
           tools: cross
 
       - name: Run cross-platform tests
-        run: cross test --target ${{ matrix.target }} --locked
+        run: cross test --package mirascript-vm --target ${{ matrix.target }} --locked
 
   test-node:
     needs: merge
