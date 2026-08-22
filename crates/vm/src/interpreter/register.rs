@@ -1,6 +1,34 @@
-use crate::MiraValue::Nil;
-
 use super::*;
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) struct MiraAny(MiraValue);
+
+const _: () = assert!(std::mem::size_of::<MiraAny>() == 8);
+
+impl MiraAny {
+    #[inline]
+    fn uninitialized() -> Self {
+        Self(MiraValue::uninitialized())
+    }
+
+    #[inline]
+    fn from_option(value: Option<MiraValue>) -> Self {
+        match value {
+            Some(value) => Self(value),
+            None => Self::uninitialized(),
+        }
+    }
+
+    #[inline]
+    fn to_option(self) -> Option<MiraValue> {
+        (!self.0.is_uninitialized()).then_some(self.0)
+    }
+
+    #[inline]
+    pub(super) fn replace(&mut self, value: MiraValue) -> Option<MiraValue> {
+        std::mem::replace(self, Self(value)).to_option()
+    }
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub(crate) struct RegisterId(usize);
@@ -21,8 +49,8 @@ const INLINE_REGISTER_COUNT: usize = 16;
 
 #[derive(Debug)]
 pub(super) struct Registers {
-    inline: [Option<MiraValue>; INLINE_REGISTER_COUNT],
-    overflow: Vec<Option<MiraValue>>,
+    inline: [MiraAny; INLINE_REGISTER_COUNT],
+    overflow: Vec<MiraAny>,
     #[cfg(debug_assertions)]
     pub(super) max_register: usize,
 }
@@ -31,8 +59,8 @@ impl Registers {
     #[inline]
     pub(super) fn new(count: usize) -> Self {
         Self {
-            inline: [None; INLINE_REGISTER_COUNT],
-            overflow: vec![None; count.saturating_sub(INLINE_REGISTER_COUNT)],
+            inline: std::array::from_fn(|_| MiraAny::uninitialized()),
+            overflow: vec![MiraAny::uninitialized(); count.saturating_sub(INLINE_REGISTER_COUNT)],
             #[cfg(debug_assertions)]
             max_register: count,
         }
@@ -40,10 +68,12 @@ impl Registers {
 
     #[inline]
     pub(super) fn reset(&mut self, count: usize) {
-        self.inline.fill(None);
-        self.overflow
-            .resize(count.saturating_sub(INLINE_REGISTER_COUNT), None);
-        self.overflow.fill(None);
+        self.inline.fill(MiraAny::uninitialized());
+        self.overflow.resize(
+            count.saturating_sub(INLINE_REGISTER_COUNT),
+            MiraAny::uninitialized(),
+        );
+        self.overflow.fill(MiraAny::uninitialized());
         #[cfg(debug_assertions)]
         {
             self.max_register = count;
@@ -53,10 +83,10 @@ impl Registers {
     #[inline]
     pub(super) fn fill(&mut self, value: Option<MiraValue>) {
         for slot in self.inline.iter_mut() {
-            *slot = value;
+            *slot = MiraAny::from_option(value);
         }
         for slot in self.overflow.iter_mut() {
-            *slot = value;
+            *slot = MiraAny::from_option(value);
         }
     }
 
@@ -73,7 +103,7 @@ impl Registers {
     }
 
     #[inline]
-    pub(super) fn get(&self, register: RegisterId) -> &Option<MiraValue> {
+    pub(super) fn get(&self, register: RegisterId) -> &MiraAny {
         self.check(register);
         let id = register.0 - 1;
         if id < INLINE_REGISTER_COUNT {
@@ -84,7 +114,7 @@ impl Registers {
     }
 
     #[inline]
-    pub(super) fn get_mut(&mut self, register: RegisterId) -> &mut Option<MiraValue> {
+    pub(super) fn get_mut(&mut self, register: RegisterId) -> &mut MiraAny {
         self.check(register);
         let id = register.0 - 1;
         if id < INLINE_REGISTER_COUNT {
@@ -97,9 +127,9 @@ impl Registers {
     #[inline]
     pub(super) fn read(&self, register: RegisterId) -> Option<MiraValue> {
         if register.is_nil() {
-            Some(Nil)
+            Some(MiraValue::nil())
         } else {
-            *self.get(register)
+            self.get(register).to_option()
         }
     }
 }
@@ -112,9 +142,9 @@ impl Runtime {
         register: RegisterId,
     ) -> Option<MiraValue> {
         if register.is_nil() {
-            Some(MiraValue::Nil)
+            Some(MiraValue::nil())
         } else {
-            *self.frames.get(frame).registers.get(register)
+            self.frames.get(frame).registers.get(register).to_option()
         }
     }
 
@@ -127,7 +157,7 @@ impl Runtime {
     #[inline]
     pub(super) fn read_number(&self, frame: FrameId, register: RegisterId) -> Result<f64> {
         let value = self.read_register_raw(frame, register);
-        if let Some(MiraValue::Number(number)) = value {
+        if let Some(number) = value.as_ref().and_then(MiraValue::as_number) {
             return Ok(number);
         }
         let Some(value) = value else {
@@ -144,7 +174,7 @@ impl Runtime {
         value: Option<MiraValue>,
     ) {
         if !register.is_nil() {
-            *self.frames.get_mut(frame).registers.get_mut(register) = value;
+            *self.frames.get_mut(frame).registers.get_mut(register) = MiraAny::from_option(value);
         }
     }
 
@@ -161,5 +191,27 @@ impl Runtime {
     #[inline]
     pub(super) fn clear_register(&mut self, frame: FrameId, register: RegisterId) {
         self.write_register_raw(frame, register, None);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn mira_any_is_copy_and_eight_bytes() {
+        fn assert_copy<T: Copy>() {}
+
+        assert_copy::<MiraAny>();
+        assert_eq!(std::mem::size_of::<MiraAny>(), 8);
+    }
+
+    #[test]
+    fn uninitialized_is_distinct_from_nil() {
+        assert_eq!(MiraAny::uninitialized().to_option(), None);
+        assert_eq!(
+            MiraAny::from_option(Some(MiraValue::nil())).to_option(),
+            Some(MiraValue::nil())
+        );
     }
 }

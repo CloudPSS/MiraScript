@@ -15,7 +15,10 @@ use crate::bytecode::{
     Condition, Instruction, InstructionKind, LoopKind, Operation, PickOmitOperation, RangeEndpoint,
     RecordElement, RecordKey, SliceBound, UnaryOperation, UpvalueOperation,
 };
-use crate::{MiraError, MiraFunction, MiraModule, MiraValue, Result, RuntimeErrorKind, operations};
+use crate::{
+    MiraError, MiraFunction, MiraModule, MiraValue, MiraValueKind, Result, RuntimeErrorKind,
+    operations,
+};
 
 pub(crate) use call::ScriptFunction;
 use call_stack::CallStack;

@@ -100,24 +100,25 @@ mod tests {
     #[test]
     fn reuses_frames_without_leaking_register_values_between_runs() {
         let mut arena = FrameArena::new(20);
-        *arena.root.registers.get_mut(RegisterId::new(1)) = Some(MiraValue::Number(1.0));
+        arena
+            .root
+            .registers
+            .get_mut(RegisterId::new(1))
+            .replace(MiraValue::number(1.0));
         let child = arena.push(20, Some(FrameId::ROOT));
-        *arena.get_mut(child).registers.get_mut(RegisterId::new(20)) = Some(MiraValue::Number(2.0));
+        arena
+            .get_mut(child)
+            .registers
+            .get_mut(RegisterId::new(20))
+            .replace(MiraValue::number(2.0));
 
         arena.begin_run(2);
-        assert_eq!(
-            arena.root.registers.get_mut(RegisterId::new(1)).take(),
-            None
-        );
+        assert_eq!(arena.root.registers.read(RegisterId::new(1)), None);
 
         let reused = arena.push(2, Some(FrameId::ROOT));
         assert_eq!(reused, child);
         assert_eq!(
-            arena
-                .get_mut(reused)
-                .registers
-                .get_mut(RegisterId::new(1))
-                .take(),
+            arena.get_mut(reused).registers.read(RegisterId::new(1)),
             None
         );
     }

@@ -4,7 +4,8 @@ pub(super) fn install(context: &mut Runtime) {
     insert_native(context, "flatten", |call, args| {
         let values = array_value(call, *required(args, 0, "data")?)?;
         let depth = match args.get(1) {
-            None | Some(MiraValue::Nil) => 1,
+            None => 1,
+            Some(value) if value.is_nil() => 1,
             Some(value) => operations::to_number(call, *value)?.trunc().max(0.0) as usize,
         };
         let values = flatten(call, values, depth)?;

@@ -11,10 +11,10 @@ fn runtime(options: RunOptions) -> Runtime {
         .insert_global(
             "t_eq",
             MiraNativeFn::new("t_eq", |runtime, args| {
-                let left = args.first().copied().unwrap_or(MiraValue::Nil);
-                let right = args.get(1).copied().unwrap_or(MiraValue::Nil);
+                let left = args.first().cloned().unwrap_or(MiraValue::nil());
+                let right = args.get(1).cloned().unwrap_or(MiraValue::nil());
                 if runtime.values_equal(left, right)? {
-                    Ok(MiraValue::Nil)
+                    Ok(MiraValue::nil())
                 } else {
                     let left_string = left.as_str(runtime)?.map(str::to_owned);
                     let right_string = right.as_str(runtime)?.map(str::to_owned);
@@ -30,10 +30,10 @@ fn runtime(options: RunOptions) -> Runtime {
         .insert_global(
             "t_ne",
             MiraNativeFn::new("t_ne", |runtime, args| {
-                let left = args.first().copied().unwrap_or(MiraValue::Nil);
-                let right = args.get(1).copied().unwrap_or(MiraValue::Nil);
+                let left = args.first().cloned().unwrap_or(MiraValue::nil());
+                let right = args.get(1).cloned().unwrap_or(MiraValue::nil());
                 if !runtime.values_equal(left, right)? {
-                    Ok(MiraValue::Nil)
+                    Ok(MiraValue::nil())
                 } else {
                     anyhow::bail!(
                         "assertion failed: {left:?} == {right:?}; message={:?}",
@@ -46,18 +46,26 @@ fn runtime(options: RunOptions) -> Runtime {
     runtime
         .insert_global(
             "t_true",
-            MiraNativeFn::new("t_true", |_, args| match args.first() {
-                Some(MiraValue::Boolean(true)) => Ok(MiraValue::Nil),
-                value => anyhow::bail!("expected true, got {value:?}; message={:?}", args.get(1)),
+            MiraNativeFn::new("t_true", |_, args| {
+                let value = args.first();
+                if value.and_then(MiraValue::as_boolean) == Some(true) {
+                    Ok(MiraValue::nil())
+                } else {
+                    anyhow::bail!("expected true, got {value:?}; message={:?}", args.get(1))
+                }
             }),
         )
         .unwrap();
     runtime
         .insert_global(
             "t_false",
-            MiraNativeFn::new("t_false", |_, args| match args.first() {
-                Some(MiraValue::Boolean(false)) => Ok(MiraValue::Nil),
-                value => anyhow::bail!("expected false, got {value:?}; message={:?}", args.get(1)),
+            MiraNativeFn::new("t_false", |_, args| {
+                let value = args.first();
+                if value.and_then(MiraValue::as_boolean) == Some(false) {
+                    Ok(MiraValue::nil())
+                } else {
+                    anyhow::bail!("expected false, got {value:?}; message={:?}", args.get(1))
+                }
             }),
         )
         .unwrap();
@@ -70,13 +78,13 @@ fn runtime(options: RunOptions) -> Runtime {
                     .ok_or_else(|| anyhow::anyhow!("t_throws requires a function"))?;
                 match runtime.call(function, &[]) {
                     Ok(value) => anyhow::bail!("expected function to throw, returned {value:?}"),
-                    Err(_) => Ok(MiraValue::Nil),
+                    Err(_) => Ok(MiraValue::nil()),
                 }
             }),
         )
         .unwrap();
     runtime
-        .insert_global("t_timeout", MiraNativeFn::ok(|_, _| MiraValue::Nil))
+        .insert_global("t_timeout", MiraNativeFn::ok(|_, _| MiraValue::nil()))
         .unwrap();
     runtime
         .insert_global(
@@ -92,7 +100,7 @@ fn runtime(options: RunOptions) -> Runtime {
     runtime
         .insert_global("v_record", IndexMap::<String, MiraValue>::new())
         .unwrap();
-    runtime.insert_global("v_nil", MiraValue::Nil).unwrap();
+    runtime.insert_global("v_nil", MiraValue::nil()).unwrap();
     runtime.insert_global("v_true", true).unwrap();
     runtime.insert_global("v_false", false).unwrap();
     runtime.insert_global("v_number", 42).unwrap();

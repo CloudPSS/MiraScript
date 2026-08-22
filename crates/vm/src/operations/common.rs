@@ -1,7 +1,8 @@
 use super::*;
 
 pub(crate) fn display(runtime: &mut Runtime, value: MiraValue) -> String {
-    inner_to_string(runtime, value, true).unwrap_or_else(|_| format!("<{}>", value.type_name()))
+    let type_name = value.type_name();
+    inner_to_string(runtime, value, true).unwrap_or_else(|_| format!("<{type_name}>"))
 }
 
 pub(crate) fn format_value(
@@ -10,7 +11,7 @@ pub(crate) fn format_value(
     format: Option<&str>,
 ) -> Result<String> {
     let format = format.unwrap_or_default().trim();
-    if let MiraValue::Number(value) = value {
+    if let Some(value) = value.as_number() {
         if !value.is_finite() {
             return Ok(number_to_string(value, false));
         }

@@ -11,26 +11,26 @@ use crate::{
     value::{MiraHandle, MiraManageable},
 };
 
-use super::MiraValue;
+use super::{MiraValue, MiraValueKind};
 
 impl MiraValue {
     /// Create a `MiraValue` representing a record.
     #[inline]
-    pub fn record(value: MiraHandle<impl MiraRecord>) -> Self {
-        Self::Record(value.erase_record())
+    pub fn record<T: MiraRecord + ?Sized>(value: MiraHandle<T>) -> Self {
+        Self::from_record_handle(value.erase_record())
     }
 
     /// Check whether this value is a record.
     #[inline]
-    pub const fn is_record(self) -> bool {
-        matches!(self, Self::Record(_))
+    pub fn is_record(&self) -> bool {
+        matches!(self.kind(), MiraValueKind::Record(_))
     }
 
     /// Return the record handle, or `None` for another value type.
     #[inline]
     pub fn as_record(&self) -> Option<MiraHandle<dyn MiraRecord>> {
-        match self {
-            Self::Record(value) => Some(*value),
+        match self.kind() {
+            MiraValueKind::Record(value) => Some(value),
             _ => None,
         }
     }

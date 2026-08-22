@@ -48,7 +48,7 @@ impl CallStack {
         } else if self.len <= INLINE_CALL_DEPTH {
             self.inline[self.len - 1]
         } else {
-            self.overflow.last().copied()
+            self.overflow.last().cloned()
         }
     }
 
@@ -56,6 +56,6 @@ impl CallStack {
         self.inline[..self.len.min(INLINE_CALL_DEPTH)]
             .iter()
             .filter_map(|function| *function)
-            .chain(self.overflow.iter().copied())
+            .chain(self.overflow.iter().cloned())
     }
 }

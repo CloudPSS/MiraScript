@@ -25,13 +25,13 @@ impl MiraFunction for ScriptFunction {
                 runtime.write_register(
                     frame,
                     RegisterId::new(index + 1),
-                    args.get(index).copied().unwrap_or(MiraValue::Nil),
+                    args.get(index).cloned().unwrap_or(MiraValue::nil()),
                 );
             }
             let rest = args
                 .iter()
                 .skip(fixed)
-                .copied()
+                .cloned()
                 .map(operations::into_element)
                 .collect::<Vec<_>>();
             if definition.arg_count > 0 {
@@ -43,7 +43,7 @@ impl MiraFunction for ScriptFunction {
                 runtime.write_register(
                     frame,
                     RegisterId::new(index + 1),
-                    args.get(index).copied().unwrap_or(MiraValue::Nil),
+                    args.get(index).cloned().unwrap_or(MiraValue::nil()),
                 );
             }
         }
@@ -74,7 +74,7 @@ impl Runtime {
         if spreads.is_empty() {
             let arguments = registers
                 .iter()
-                .copied()
+                .cloned()
                 .map(|register| self.read_register(frame, register))
                 .collect::<Result<Vec<_>>>()?;
             return self.call(target, &arguments);
@@ -135,7 +135,7 @@ impl Runtime {
         if self.call_stack.depth() >= self.options.max_call_depth as usize {
             return self.err_call_depth();
         }
-        let MiraValue::Function(handle) = function else {
+        let MiraValueKind::Function(handle) = function.kind() else {
             return self.err_not_callable(function);
         };
 

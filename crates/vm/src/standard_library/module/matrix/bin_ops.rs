@@ -11,7 +11,7 @@ pub(super) fn numeric_entrywise(
     let left = *required(args, 0, "a")?;
     let right = *required(args, 1, "b")?;
     entrywise(runtime, left, right, &mut |runtime, a, b| {
-        Ok(MiraValue::Number(operation(
+        Ok(MiraValue::number(operation(
             numeric(runtime, a)?,
             numeric(runtime, b)?,
         )))
@@ -47,8 +47,8 @@ pub(super) fn entrywise(
         for index in 0..length {
             result.push(operation(
                 runtime,
-                left.get(index).copied().unwrap_or(MiraValue::Nil),
-                right.get(index).copied().unwrap_or(MiraValue::Nil),
+                left.get(index).cloned().unwrap_or(MiraValue::nil()),
+                right.get(index).cloned().unwrap_or(MiraValue::nil()),
             )?);
         }
         return runtime.insert(result);
@@ -73,13 +73,13 @@ pub(super) fn entrywise(
                 left_matrix
                     .get(left_row)
                     .and_then(|row| row.get(left_column))
-                    .copied()
-                    .unwrap_or(MiraValue::Nil),
+                    .cloned()
+                    .unwrap_or(MiraValue::nil()),
                 right_matrix
                     .get(right_row)
                     .and_then(|row| row.get(right_column))
-                    .copied()
-                    .unwrap_or(MiraValue::Nil),
+                    .cloned()
+                    .unwrap_or(MiraValue::nil()),
             )?);
         }
         result.push(output);
@@ -109,8 +109,8 @@ fn broadcast_scalar(
             let value = matrix
                 .get(row)
                 .and_then(|row| row.get(column))
-                .copied()
-                .unwrap_or(MiraValue::Nil);
+                .cloned()
+                .unwrap_or(MiraValue::nil());
             output.push(operation(runtime, value)?);
         }
         result.push(output);
@@ -148,10 +148,15 @@ pub(super) fn multiply(runtime: &mut Runtime, args: &[MiraValue]) -> Result<Mira
             let length = left.len().max(right.len());
             let mut sum = 0.0;
             for index in 0..length {
-                sum += numeric(runtime, left.get(index).copied().unwrap_or(MiraValue::Nil))?
-                    * numeric(runtime, right.get(index).copied().unwrap_or(MiraValue::Nil))?;
+                sum += numeric(
+                    runtime,
+                    left.get(index).cloned().unwrap_or(MiraValue::nil()),
+                )? * numeric(
+                    runtime,
+                    right.get(index).cloned().unwrap_or(MiraValue::nil()),
+                )?;
             }
-            Ok(MiraValue::Number(sum))
+            Ok(MiraValue::number(sum))
         }
         (2, 2) => {
             if left_shape[1] != right_shape[0] {
@@ -172,7 +177,7 @@ pub(super) fn multiply(runtime: &mut Runtime, args: &[MiraValue]) -> Result<Mira
                     for (left_value, right_value) in left_row.iter().zip(right_column) {
                         sum += numeric(runtime, *left_value)? * numeric(runtime, *right_value)?;
                     }
-                    output.push(MiraValue::Number(sum));
+                    output.push(MiraValue::number(sum));
                 }
                 result.push(output);
             }
@@ -195,7 +200,7 @@ pub(super) fn multiply(runtime: &mut Runtime, args: &[MiraValue]) -> Result<Mira
                 for (left_value, right_value) in left.iter().zip(right_column) {
                     sum += numeric(runtime, *left_value)? * numeric(runtime, *right_value)?;
                 }
-                result.push(MiraValue::Number(sum));
+                result.push(MiraValue::number(sum));
             }
             runtime.insert(result)
         }
@@ -213,7 +218,7 @@ pub(super) fn multiply(runtime: &mut Runtime, args: &[MiraValue]) -> Result<Mira
                 for (left_value, right_value) in left_row.iter().zip(&right) {
                     sum += numeric(runtime, *left_value)? * numeric(runtime, *right_value)?;
                 }
-                result.push(MiraValue::Number(sum));
+                result.push(MiraValue::number(sum));
             }
             runtime.insert(result)
         }

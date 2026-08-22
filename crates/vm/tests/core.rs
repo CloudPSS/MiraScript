@@ -3,9 +3,11 @@ use mirascript_vm::{
 };
 
 #[test]
-fn values_and_registers_are_16_bytes() {
-    assert_eq!(std::mem::size_of::<MiraValue>(), 16);
-    assert_eq!(std::mem::size_of::<Option<MiraValue>>(), 16);
+fn values_are_copy_and_eight_bytes() {
+    fn assert_copy<T: Copy>() {}
+
+    assert_copy::<MiraValue>();
+    assert_eq!(std::mem::size_of::<MiraValue>(), 8);
 }
 
 #[test]
@@ -144,10 +146,10 @@ fn derived_values_are_live_runtime_views() {
         .insert_array(Point(3.0, 4.0, "metadata".into()))
         .unwrap();
     runtime
-        .insert_global("user", MiraValue::Record(user.erase_record()))
+        .insert_global("user", MiraValue::record(user))
         .unwrap();
     runtime
-        .insert_global("point", MiraValue::Array(point.erase_array()))
+        .insert_global("point", MiraValue::array(point))
         .unwrap();
 
     assert_eq!(

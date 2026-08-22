@@ -7,26 +7,26 @@ use crate::{
     value::{MiraHandle, MiraManageable},
 };
 
-use super::MiraValue;
+use super::{MiraValue, MiraValueKind};
 
 impl MiraValue {
     /// Create a `MiraValue` representing a module value.
     #[inline]
-    pub fn module(value: MiraHandle<impl MiraModule>) -> Self {
-        Self::Module(value.erase_module())
+    pub fn module<T: MiraModule + ?Sized>(value: MiraHandle<T>) -> Self {
+        Self::from_module_handle(value.erase_module())
     }
 
     /// Check whether this value is a module value.
     #[inline]
-    pub const fn is_module(self) -> bool {
-        matches!(self, Self::Module(_))
+    pub fn is_module(&self) -> bool {
+        matches!(self.kind(), MiraValueKind::Module(_))
     }
 
     /// Return the module handle, or `None` for another value type.
     #[inline]
     pub fn as_module(&self) -> Option<MiraHandle<dyn MiraModule>> {
-        match self {
-            Self::Module(value) => Some(*value),
+        match self.kind() {
+            MiraValueKind::Module(value) => Some(value),
             _ => None,
         }
     }

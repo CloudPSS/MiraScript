@@ -133,8 +133,8 @@ impl Runtime {
                     })?)?,
                     Condition::Initialized => raw.is_some(),
                     Condition::Uninitialized => raw.is_none(),
-                    Condition::Nil => matches!(raw, Some(MiraValue::Nil)),
-                    Condition::NonNil => !matches!(raw, Some(MiraValue::Nil)),
+                    Condition::Nil => raw.as_ref().is_some_and(MiraValue::is_nil),
+                    Condition::NonNil => !raw.as_ref().is_some_and(MiraValue::is_nil),
                 };
                 self.execute_block(if matches { then_body } else { else_body }, frame)
             }
@@ -230,7 +230,7 @@ impl Runtime {
                     self.checkpoint()?;
                     let frame =
                         self.loop_frame(register_count, parent, reuse_frame, &mut reusable_frame);
-                    self.write_register(frame, RegisterId::new(1), MiraValue::Number(value));
+                    self.write_register(frame, RegisterId::new(1), MiraValue::number(value));
                     match self.execute_block(body, frame)? {
                         Flow::Continue | Flow::LoopContinue => {}
                         Flow::Break => break,
@@ -271,12 +271,7 @@ impl Runtime {
                     optional,
                 } => {
                     let value = self.read_register(frame, *value)?;
-                    if *optional
-                        && matches!(
-                            value,
-                            MiraValue::Nil | MiraValue::Function(_) | MiraValue::Module(_)
-                        )
-                    {
+                    if *optional && (value.is_nil() || value.is_function() || value.is_module()) {
                         continue;
                     }
                     let key = match key {
@@ -319,11 +314,11 @@ impl Runtime {
                     exclusive,
                 } => {
                     let start = match start {
-                        RangeEndpoint::Constant(value) => MiraValue::Number(*value as f64),
+                        RangeEndpoint::Constant(value) => MiraValue::number(*value as f64),
                         RangeEndpoint::Dynamic(register) => self.read_register(frame, *register)?,
                     };
                     let end = match end {
-                        RangeEndpoint::Constant(value) => MiraValue::Number(*value as f64),
+                        RangeEndpoint::Constant(value) => MiraValue::number(*value as f64),
                         RangeEndpoint::Dynamic(register) => self.read_register(frame, *register)?,
                     };
                     array.extend(operations::array_range(

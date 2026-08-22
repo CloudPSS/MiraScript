@@ -14,7 +14,7 @@ pub(super) fn install(context: &mut Runtime) {
             insert_native(context, $name, |call, args| {
                 let left = to_u32(number(call, args, 0, "x")?);
                 let right = to_u32(number(call, args, 1, "y")?);
-                Ok(MiraValue::Number(($operation)(left, right) as f64))
+                Ok(MiraValue::number(($operation)(left, right) as f64))
             });
         };
     }
@@ -25,7 +25,7 @@ pub(super) fn install(context: &mut Runtime) {
     binary!("sar", |a: u32, b: u32| (a as i32) >> (b & 31));
     binary!("shr", |a: u32, b: u32| a >> (b & 31));
     insert_native(context, "b_not", |call, args| {
-        Ok(MiraValue::Number(
+        Ok(MiraValue::number(
             (!to_u32(number(call, args, 0, "x")?) as i32) as f64,
         ))
     });

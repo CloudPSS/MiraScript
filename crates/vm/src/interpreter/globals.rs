@@ -88,7 +88,7 @@ impl Globals {
         self.context
             .get(name)
             .or_else(|| self.std.get(name))
-            .copied()
+            .cloned()
     }
 
     pub fn get_hint(&self, name: &str, index: Option<usize>) -> Option<MiraValue> {

@@ -101,7 +101,7 @@ impl Runtime {
             let body = &script.program.root.body;
             let value = match self.execute_block(body, FrameId::ROOT)? {
                 Flow::Return(value) => value,
-                Flow::Continue => MiraValue::Nil,
+                Flow::Continue => MiraValue::nil(),
                 Flow::Break | Flow::LoopContinue => {
                     return Err(MiraError::runtime(RuntimeErrorKind::InvalidControlFlow {
                         context: "root",
@@ -143,8 +143,10 @@ impl Runtime {
         let handle = self
             .insert_function(function)
             .expect("a fresh native function arena slot must be available");
-        self.globals
-            .insert(name, MiraValue::Function(handle.erase_function()));
+        self.globals.insert(
+            name,
+            MiraValue::from_function_handle(handle.erase_function()),
+        );
     }
 
     /// Clone a global value by name.
@@ -176,11 +178,11 @@ impl Runtime {
     pub(crate) fn materialize_constant(&mut self, index: usize) -> Result<MiraValue> {
         let constant = &self.active_program().constants[index];
         match constant {
-            Constant::Nil => Ok(MiraValue::Nil),
-            Constant::True => Ok(MiraValue::Boolean(true)),
-            Constant::False => Ok(MiraValue::Boolean(false)),
-            Constant::Int(value) => Ok(MiraValue::Number(f64::from(*value))),
-            Constant::Float(value) => Ok(MiraValue::Number(*value)),
+            Constant::Nil => Ok(MiraValue::nil()),
+            Constant::True => Ok(MiraValue::boolean(true)),
+            Constant::False => Ok(MiraValue::boolean(false)),
+            Constant::Int(value) => Ok(MiraValue::number(f64::from(*value))),
+            Constant::Float(value) => Ok(MiraValue::number(*value)),
             Constant::String(value) => {
                 let script = self
                     .active_script
@@ -220,7 +222,7 @@ impl Default for Runtime {
 
 #[cfg(test)]
 mod tests {
-    use crate::{MiraValue, Runtime, compile};
+    use crate::{Runtime, compile};
 
     #[test]
     fn string_constants_are_materialized_lazily_and_cached_per_script() {
@@ -244,8 +246,8 @@ mod tests {
         let mut second = Runtime::new();
         let second_value = second.run(&repeated).unwrap();
         assert_eq!(second.materialized_constant_count(), 1);
-        assert!(matches!(first_value, MiraValue::String(_)));
-        assert!(matches!(second_value, MiraValue::String(_)));
+        assert!(first_value.is_string());
+        assert!(second_value.is_string());
         assert!(second.insert(first_value).is_err());
     }
 }

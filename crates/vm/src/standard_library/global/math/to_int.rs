@@ -11,7 +11,8 @@ pub(super) fn install(context: &mut Runtime) {
         insert_native(context, name, move |call, args| {
             let value = number(call, args, 0, "x")?;
             let digits = match args.get(1) {
-                None | Some(MiraValue::Nil) => 0,
+                None => 0,
+                Some(value) if value.is_nil() => 0,
                 Some(value) => {
                     let digits = operations::to_number(call, *value)?;
                     if !digits.is_finite() {
@@ -34,10 +35,10 @@ pub(super) fn install(context: &mut Runtime) {
                 ));
             }
             if digits == 0 {
-                Ok(MiraValue::Number(operation(value)))
+                Ok(MiraValue::number(operation(value)))
             } else {
                 let factor = 10f64.powi(digits);
-                Ok(MiraValue::Number(operation(value * factor) / factor))
+                Ok(MiraValue::number(operation(value * factor) / factor))
             }
         });
     }

@@ -5,7 +5,7 @@ pub(super) fn install(context: &mut Runtime) {
     macro_rules! unary {
         ($name:literal, $operation:expr) => {
             insert_native(context, $name, |call, args| {
-                Ok(MiraValue::Number(($operation)(number(call, args, 0, "x")?)))
+                Ok(MiraValue::number(($operation)(number(call, args, 0, "x")?)))
             });
         };
     }

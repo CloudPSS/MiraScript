@@ -18,9 +18,9 @@ struct Foo {
 let script = compile("foo.bar")?;
 let mut runtime = Runtime::new();
 let foo = runtime.insert_record(Foo { bar: 42 })?;
-runtime.insert_global("foo", MiraValue::Record(foo.erase_record()))?;
+runtime.insert_global("foo", MiraValue::record(foo))?;
 
-assert_eq!(runtime.run(&script)?, MiraValue::Number(42.0));
+assert_eq!(runtime.run(&script)?, MiraValue::number(42.0));
 # Ok::<(), Box<mirascript_vm::MiraError>>(())
 ```
 
@@ -32,10 +32,10 @@ materialized string constants remain until the runtime is dropped. Re-entering
 
 ## Values and arena ownership
 
-`MiraValue` is a 16-byte, copyable value. Nil, booleans, numbers, and truly static
-strings are inline; dynamic strings, arrays, records, functions, and modules use
-typed handles into the owning runtime's append-only arena. Checked lookups reject
-foreign, out-of-range, and wrongly typed handles.
+`MiraValue` is an 8-byte, copyable NaN-box. Nil, booleans, numbers, and truly
+static strings are inline; dynamic strings, arrays, records, functions, and
+modules use 48-bit typed handles into the owning runtime's append-only arena.
+Checked lookups reject foreign, out-of-range, and wrongly typed handles.
 
 The compiled constant table never contains runtime handles. A string constant is
 allocated only when its bytecode instruction executes and is cached by
@@ -75,12 +75,12 @@ let user = runtime.insert_record(User {
     name: "Ada".into(),
     position: Position { x: 3.0, y: 4.0 },
 })?;
-runtime.insert_global("user", MiraValue::Record(user.erase_record()))?;
+runtime.insert_global("user", MiraValue::record(user))?;
 
 let script = compile("user.position.x")?;
-assert_eq!(runtime.run(&script)?, MiraValue::Number(3.0));
+assert_eq!(runtime.run(&script)?, MiraValue::number(3.0));
 runtime.get_record_mut(user)?.position.x = 10.0;
-assert_eq!(runtime.run(&script)?, MiraValue::Number(10.0));
+assert_eq!(runtime.run(&script)?, MiraValue::number(10.0));
 # Ok::<(), Box<mirascript_vm::MiraError>>(())
 ```
 

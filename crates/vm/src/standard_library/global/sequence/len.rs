@@ -9,6 +9,6 @@ pub(super) fn install(context: &mut Runtime) {
                 actual: value.value_type(),
             }));
         };
-        Ok(MiraValue::Number(length as f64))
+        Ok(MiraValue::number(length as f64))
     });
 }

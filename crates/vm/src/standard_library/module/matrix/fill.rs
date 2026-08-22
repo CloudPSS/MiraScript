@@ -8,7 +8,7 @@ pub(super) fn filled(call: &mut Runtime, args: &[MiraValue], value: f64) -> Resu
     if dimensions.is_empty() {
         return call.insert(Vec::<MiraValue>::new());
     }
-    let mut result = MiraValue::Number(value);
+    let mut result = MiraValue::number(value);
     for length in dimensions.into_iter().rev() {
         call.checkpoint()?;
         result = call.insert(vec![result; length])?;
@@ -51,7 +51,7 @@ pub(super) fn identity(call: &mut Runtime, args: &[MiraValue]) -> Result<MiraVal
     let values = (0..rows)
         .map(|row| {
             (0..columns)
-                .map(|column| MiraValue::Number(if row == column { 1.0 } else { 0.0 }))
+                .map(|column| MiraValue::number(if row == column { 1.0 } else { 0.0 }))
                 .collect::<Vec<_>>()
         })
         .collect::<Vec<_>>();
@@ -100,7 +100,7 @@ pub(super) fn diagonal(call: &mut Runtime, args: &[MiraValue]) -> Result<MiraVal
                     if row as isize + offset == column as isize {
                         values[if offset >= 0 { row } else { column }]
                     } else {
-                        MiraValue::Number(0.0)
+                        MiraValue::number(0.0)
                     }
                 })
                 .collect::<Vec<_>>()

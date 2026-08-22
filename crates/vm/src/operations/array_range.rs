@@ -24,6 +24,6 @@ pub(crate) fn array_range(
         }));
     }
     Ok((0..length.max(0.0) as usize)
-        .map(|index| MiraValue::Number(start + index as f64))
+        .map(|index| MiraValue::number(start + index as f64))
         .collect())
 }

@@ -3,21 +3,21 @@ use super::*;
 pub(super) fn install(context: &mut Runtime) {
     insert_native(context, "keys", |call, args| {
         let value = *required(args, 0, "data")?;
-        let keys: Vec<MiraValue> = match value {
-            MiraValue::Array(_) => (0..operations::array_len(call, value)?.unwrap_or(0))
-                .map(|index| MiraValue::Number(index as f64))
+        let keys: Vec<MiraValue> = match value.kind() {
+            MiraValueKind::Array(_) => (0..operations::array_len(call, value)?.unwrap_or(0))
+                .map(|index| MiraValue::number(index as f64))
                 .collect(),
-            MiraValue::Record(_) => operations::record_keys(call, value)?
+            MiraValueKind::Record(_) => operations::record_keys(call, value)?
                 .unwrap_or_default()
                 .into_iter()
                 .map(|key| call.insert(key))
                 .collect::<Result<Vec<_>>>()?,
-            MiraValue::Module(_) => operations::module_keys(call, value)?
+            MiraValueKind::Module(_) => operations::module_keys(call, value)?
                 .unwrap_or_default()
                 .into_iter()
                 .map(|key| call.insert(key))
                 .collect::<Result<Vec<_>>>()?,
-            value => {
+            _ => {
                 return Err(MiraError::runtime(RuntimeErrorKind::TypeMismatch {
                     expected: "compound value",
                     actual: value.value_type(),
@@ -43,7 +43,7 @@ pub(super) fn install(context: &mut Runtime) {
         match data {
             Data::Array(values) => {
                 for (index, value) in values.into_iter().enumerate() {
-                    entries.push(pair(call, MiraValue::Number(index as f64), value)?);
+                    entries.push(pair(call, MiraValue::number(index as f64), value)?);
                 }
             }
             Data::Record(values) => {

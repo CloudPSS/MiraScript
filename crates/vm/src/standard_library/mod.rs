@@ -55,19 +55,17 @@ fn array(
     name: &'static str,
 ) -> Result<Vec<MiraValue>> {
     let value = *required(args, index, name)?;
+    let actual = value.value_type();
     operations::iterable_array(runtime, value).map_err(|_| {
         MiraError::runtime(RuntimeErrorKind::TypeMismatch {
             expected: "array",
-            actual: value.value_type(),
+            actual,
         })
     })
 }
 
 fn is_callable(value: &MiraValue) -> Result<bool> {
-    match value {
-        MiraValue::Function(_) => Ok(true),
-        _ => Ok(false),
-    }
+    Ok(value.is_function())
 }
 
 fn const_value(value: MiraValue) -> Result<MiraValue> {

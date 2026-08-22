@@ -123,7 +123,7 @@ impl Decoder<'_> {
 
     fn read_register(&mut self, wide: bool, instruction_offset: usize) -> Result<RegisterId> {
         let register = self.read_param(wide, instruction_offset)?;
-        let max = self.scopes.last().copied().unwrap_or(0);
+        let max = self.scopes.last().cloned().unwrap_or(0);
         if register > max {
             return Err(MiraError::invalid_bytecode(
                 instruction_offset,

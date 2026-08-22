@@ -17,7 +17,7 @@ mod zip;
 use indexmap::IndexMap;
 
 use crate::standard_library::{const_value, insert_native, is_callable, required};
-use crate::{MiraError, MiraValue, Result, Runtime, RuntimeErrorKind, operations};
+use crate::{MiraError, MiraValue, MiraValueKind, Result, Runtime, RuntimeErrorKind, operations};
 
 use with::array_length;
 
@@ -29,24 +29,25 @@ pub(super) enum Data {
 
 impl Data {
     pub(super) fn from_value(runtime: &mut Runtime, value: MiraValue) -> Result<Self> {
-        match value {
-            MiraValue::Nil
-            | MiraValue::Boolean(_)
-            | MiraValue::Number(_)
-            | MiraValue::String(_)
-            | MiraValue::StaticStr(_) => Ok(Self::Primitive(value)),
-            MiraValue::Array(_) => Ok(Self::Array(operations::iterable_array(runtime, value)?)),
-            MiraValue::Record(_) => {
+        match value.kind() {
+            MiraValueKind::Nil
+            | MiraValueKind::Boolean(_)
+            | MiraValueKind::Number(_)
+            | MiraValueKind::String(_)
+            | MiraValueKind::StaticStr(_) => Ok(Self::Primitive(value)),
+            MiraValueKind::Array(_) => Ok(Self::Array(operations::iterable_array(runtime, value)?)),
+            MiraValueKind::Record(_) => {
                 let mut record = IndexMap::new();
                 for key in operations::record_keys(runtime, value)?.unwrap_or_default() {
                     record.insert(
                         key.clone(),
-                        operations::record_get(runtime, value, &key)?.unwrap_or(MiraValue::Nil),
+                        operations::record_get(runtime, value, &key)?
+                            .unwrap_or_else(MiraValue::nil),
                     );
                 }
                 Ok(Self::Record(record))
             }
-            value => Err(MiraError::runtime(RuntimeErrorKind::TypeMismatch {
+            _ => Err(MiraError::runtime(RuntimeErrorKind::TypeMismatch {
                 expected: "nil, number, boolean, string, array, or record",
                 actual: value.value_type(),
             })),
@@ -85,12 +86,12 @@ pub(super) fn data_items(
     data: &Data,
 ) -> Result<Vec<(MiraValue, MiraValue)>> {
     Ok(match data {
-        Data::Primitive(value) => vec![(MiraValue::Nil, *value)],
+        Data::Primitive(value) => vec![(MiraValue::nil(), *value)],
         Data::Array(values) => values
             .iter()
-            .copied()
+            .cloned()
             .enumerate()
-            .map(|(index, value)| (MiraValue::Number(index as f64), value))
+            .map(|(index, value)| (MiraValue::number(index as f64), value))
             .collect(),
         Data::Record(values) => values
             .iter()

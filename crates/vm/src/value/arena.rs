@@ -9,9 +9,11 @@ use std::{
 
 use crate::{MiraError, Result, Runtime, RuntimeErrorKind};
 
-use super::{MiraArray, MiraFunction, MiraModule, MiraRecord, MiraValue};
+use super::{MiraArray, MiraFunction, MiraModule, MiraRecord, MiraValue, MiraValueKind};
 
 static NEXT_ARENA_ID: AtomicU32 = AtomicU32::new(1);
+const ARENA_KEY_COMPONENT_BITS: u32 = 24;
+const ARENA_KEY_COMPONENT_MAX: u32 = (1 << ARENA_KEY_COMPONENT_BITS) - 1;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 struct ArenaKey(u64);
@@ -21,16 +23,31 @@ impl ArenaKey {
         let index = u32::try_from(index)
             .ok()
             .and_then(|index| index.checked_add(1))
+            .filter(|index| *index <= ARENA_KEY_COMPONENT_MAX)
             .ok_or_else(|| MiraError::runtime(RuntimeErrorKind::ArenaExhausted { category }))?;
-        Ok(Self((u64::from(arena_id) << 32) | u64::from(index)))
+        debug_assert!((1..=ARENA_KEY_COMPONENT_MAX).contains(&arena_id));
+        Ok(Self(
+            (u64::from(arena_id) << ARENA_KEY_COMPONENT_BITS) | u64::from(index),
+        ))
     }
 
     fn arena_id(self) -> u32 {
-        (self.0 >> 32) as u32
+        (self.0 >> ARENA_KEY_COMPONENT_BITS) as u32
     }
 
     fn index(self) -> usize {
-        ((self.0 as u32) - 1) as usize
+        ((self.0 as u32 & ARENA_KEY_COMPONENT_MAX) - 1) as usize
+    }
+
+    fn payload(self) -> [u8; 6] {
+        let bytes = self.0.to_le_bytes();
+        bytes[..6].try_into().expect("six-byte arena key")
+    }
+
+    fn from_payload(payload: [u8; 6]) -> Self {
+        let mut bytes = [0; 8];
+        bytes[..6].copy_from_slice(&payload);
+        Self(u64::from_le_bytes(bytes))
     }
 }
 
@@ -114,11 +131,19 @@ impl<T: Any + ?Sized> MiraHandle<T> {
             marker: PhantomData,
         }
     }
+
+    pub(crate) fn payload(self) -> [u8; 6] {
+        self.key.payload()
+    }
+
+    pub(crate) fn from_payload(payload: [u8; 6]) -> Self {
+        Self::new(ArenaKey::from_payload(payload))
+    }
 }
 
 macro_rules! impl_handle_cast {
     ($trait:path, $erase:ident) => {
-        impl<T: $trait> MiraHandle<T> {
+        impl<T: $trait + ?Sized> MiraHandle<T> {
             /// Erase the concrete Rust type while preserving its MiraScript category.
             pub fn $erase(self) -> MiraHandle<dyn $trait> {
                 MiraHandle::new(self.key)
@@ -220,7 +245,10 @@ pub(crate) struct MiraArena {
 impl MiraArena {
     pub(crate) fn new() -> Self {
         let id = NEXT_ARENA_ID.fetch_add(1, Ordering::Relaxed);
-        assert_ne!(id, 0, "MiraScript arena identifier space exhausted");
+        assert!(
+            (1..=ARENA_KEY_COMPONENT_MAX).contains(&id),
+            "MiraScript arena identifier space exhausted"
+        );
         Self {
             id,
             strings: Arena::new(),
@@ -237,28 +265,30 @@ impl Runtime {
     pub fn insert(&mut self, value: impl Into<MiraManageable>) -> Result<MiraValue> {
         match value.into() {
             MiraManageable::Value(value) => {
-                self.validate_value(value)?;
+                self.validate_value(&value)?;
                 Ok(value)
             }
-            MiraManageable::String(value) => Ok(MiraValue::String(self.insert_string(value)?)),
+            MiraManageable::String(value) => {
+                Ok(MiraValue::from_string_handle(self.insert_string(value)?))
+            }
             MiraManageable::Array(value) => {
                 let key = self.arena.arrays.insert(self.arena.id, "array", value)?;
-                Ok(MiraValue::Array(MiraHandle::new(key)))
+                Ok(MiraValue::from_array_handle(MiraHandle::new(key)))
             }
             MiraManageable::Record(value) => {
                 let key = self.arena.records.insert(self.arena.id, "record", value)?;
-                Ok(MiraValue::Record(MiraHandle::new(key)))
+                Ok(MiraValue::from_record_handle(MiraHandle::new(key)))
             }
             MiraManageable::Function(value) => {
                 let key = self
                     .arena
                     .functions
                     .insert(self.arena.id, "function", value)?;
-                Ok(MiraValue::Function(MiraHandle::new(key)))
+                Ok(MiraValue::from_function_handle(MiraHandle::new(key)))
             }
             MiraManageable::Module(value) => {
                 let key = self.arena.modules.insert(self.arena.id, "module", value)?;
-                Ok(MiraValue::Module(MiraHandle::new(key)))
+                Ok(MiraValue::from_module_handle(MiraHandle::new(key)))
             }
         }
     }
@@ -446,20 +476,40 @@ impl Runtime {
         })
     }
 
-    pub(crate) fn validate_value(&self, value: MiraValue) -> Result<()> {
-        match value {
-            MiraValue::String(handle) => self.get_string(handle).map(|_| ()),
-            MiraValue::Array(handle) => self.get_array_dyn(handle).map(|_| ()),
-            MiraValue::Record(handle) => self.get_record_dyn(handle).map(|_| ()),
-            MiraValue::Function(handle) => self.get_function_dyn(handle).map(|_| ()),
-            MiraValue::Module(handle) => self.get_module_dyn(handle).map(|_| ()),
-            MiraValue::Extern(_) => Err(MiraError::runtime(RuntimeErrorKind::InvalidHandle {
+    pub(crate) fn validate_value(&self, value: &MiraValue) -> Result<()> {
+        match value.kind() {
+            MiraValueKind::String(handle) => self.get_string(handle).map(|_| ()),
+            MiraValueKind::Array(handle) => self.get_array_dyn(handle).map(|_| ()),
+            MiraValueKind::Record(handle) => self.get_record_dyn(handle).map(|_| ()),
+            MiraValueKind::Function(handle) => self.get_function_dyn(handle).map(|_| ()),
+            MiraValueKind::Module(handle) => self.get_module_dyn(handle).map(|_| ()),
+            MiraValueKind::Extern(_) => Err(MiraError::runtime(RuntimeErrorKind::InvalidHandle {
                 category: "extern",
             })),
-            MiraValue::Nil
-            | MiraValue::Boolean(_)
-            | MiraValue::Number(_)
-            | MiraValue::StaticStr(_) => Ok(()),
+            MiraValueKind::Nil
+            | MiraValueKind::Boolean(_)
+            | MiraValueKind::Number(_)
+            | MiraValueKind::StaticStr(_) => Ok(()),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn arena_key_roundtrips_through_six_byte_payload() {
+        for (arena_id, index) in [(1, 0), (17, 42), (ARENA_KEY_COMPONENT_MAX, 16_777_214)] {
+            let key = ArenaKey::new(arena_id, index, "test").unwrap();
+            assert_eq!(ArenaKey::from_payload(key.payload()), key);
+            assert_eq!(key.arena_id(), arena_id);
+            assert_eq!(key.index(), index);
+        }
+    }
+
+    #[test]
+    fn arena_key_rejects_a_slot_outside_the_24_bit_component() {
+        assert!(ArenaKey::new(1, ARENA_KEY_COMPONENT_MAX as usize, "test").is_err());
     }
 }

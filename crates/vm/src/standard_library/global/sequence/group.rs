@@ -15,7 +15,7 @@ pub(super) fn install(context: &mut Runtime) {
             call.checkpoint()?;
             let key = call.call(
                 *key_function,
-                &[value, MiraValue::Number(index as f64), original],
+                &[value, MiraValue::number(index as f64), original],
             )?;
             groups
                 .entry(operations::to_string(call, key)?)

@@ -16,13 +16,13 @@ pub(super) fn install(context: &mut Runtime) {
                 let matched =
                     operations::to_boolean(call.call(*predicate, &[value, key, original])?)?;
                 if every && !matched {
-                    return Ok(MiraValue::Boolean(false));
+                    return Ok(MiraValue::boolean(false));
                 }
                 if !every && matched {
-                    return Ok(MiraValue::Boolean(true));
+                    return Ok(MiraValue::boolean(true));
                 }
             }
-            Ok(MiraValue::Boolean(every))
+            Ok(MiraValue::boolean(every))
         });
     }
 }

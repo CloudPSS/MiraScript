@@ -21,7 +21,7 @@ pub(super) fn install(context: &mut Runtime) {
         for (index, value) in values.into_iter().enumerate() {
             let key = call.call(
                 *key_function,
-                &[value, MiraValue::Number(index as f64), original],
+                &[value, MiraValue::number(index as f64), original],
             )?;
             keyed.push((key, value));
         }
@@ -49,7 +49,7 @@ fn insertion_sort_by<T>(
     comparator: Option<&MiraValue>,
     key: impl Fn(&T) -> Result<MiraValue>,
 ) -> Result<()> {
-    if let Some(value) = comparator.filter(|value| **value != MiraValue::Nil)
+    if let Some(value) = comparator.filter(|value| **value != MiraValue::nil())
         && !is_callable(value)?
     {
         return Err(MiraError::runtime(RuntimeErrorKind::NotCallable {
@@ -62,7 +62,7 @@ fn insertion_sort_by<T>(
             let left = key(&values[position - 1])?;
             let right = key(&values[position])?;
             let ordering =
-                if let Some(comparator) = comparator.filter(|value| **value != MiraValue::Nil) {
+                if let Some(comparator) = comparator.filter(|value| **value != MiraValue::nil()) {
                     let compared = call.call(*comparator, &[left, right])?;
                     operations::to_number(call, compared)?
                         .partial_cmp(&0.0)
@@ -84,13 +84,7 @@ fn default_compare(runtime: &mut Runtime, left: MiraValue, right: MiraValue) -> 
     if left == right {
         return Ordering::Equal;
     }
-    if matches!(
-        left,
-        MiraValue::Nil | MiraValue::String(_) | MiraValue::StaticStr(_)
-    ) && matches!(
-        right,
-        MiraValue::Nil | MiraValue::String(_) | MiraValue::StaticStr(_)
-    ) {
+    if (left.is_nil() || left.is_string()) && (right.is_nil() || right.is_string()) {
         return operations::to_string(runtime, left)
             .unwrap_or_default()
             .cmp(&operations::to_string(runtime, right).unwrap_or_default());

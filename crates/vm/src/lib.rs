@@ -23,9 +23,10 @@ pub use mirascript_vm_derive::{MiraArray, MiraRecord};
 
 pub use error::*;
 pub use interpreter::Runtime;
+pub(crate) use value::MiraValueKind;
 pub use value::{
     MiraArray, MiraExtern, MiraFunction, MiraHandle, MiraManageable, MiraModule, MiraNativeFn,
-    MiraRecord, MiraShapedArray, MiraShapedRecord, MiraType, MiraValue, Nil,
+    MiraRecord, MiraShapedArray, MiraShapedRecord, MiraType, MiraValue,
 };
 
 use bytecode::Program;
@@ -119,7 +120,7 @@ impl Default for RunOptions {
 ///
 /// let script = compile("6 * 7")?;
 /// let mut runtime = Runtime::new();
-/// assert_eq!(runtime.run(&script)?, MiraValue::Number(42.0));
+/// assert_eq!(runtime.run(&script)?, MiraValue::number(42.0));
 /// # Ok::<(), Box<mirascript_vm::MiraError>>(())
 /// ```
 pub fn compile(source: &str) -> Result<MiraScript> {

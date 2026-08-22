@@ -30,16 +30,16 @@ fn map_like(call: &mut Runtime, args: &[MiraValue], mode: MapMode) -> Result<Mir
     let original = data.original(call)?;
     match data {
         Data::Primitive(value) => {
-            let mapped = call.call(*function, &[value, MiraValue::Nil, value])?;
+            let mapped = call.call(*function, &[value, MiraValue::nil(), value])?;
             match mode {
                 MapMode::Map => const_value(mapped),
                 MapMode::Filter => Ok(if operations::to_boolean(mapped)? {
                     value
                 } else {
-                    MiraValue::Nil
+                    MiraValue::nil()
                 }),
-                MapMode::FilterMap => Ok(if mapped == MiraValue::Nil {
-                    MiraValue::Nil
+                MapMode::FilterMap => Ok(if mapped == MiraValue::nil() {
+                    MiraValue::nil()
                 } else {
                     const_value(mapped)?
                 }),
@@ -51,12 +51,12 @@ fn map_like(call: &mut Runtime, args: &[MiraValue], mode: MapMode) -> Result<Mir
                 call.checkpoint()?;
                 let mapped = call.call(
                     *function,
-                    &[value, MiraValue::Number(index as f64), original],
+                    &[value, MiraValue::number(index as f64), original],
                 )?;
                 match mode {
                     MapMode::Map => result.push(const_value(mapped)?),
                     MapMode::Filter if operations::to_boolean(mapped)? => result.push(value),
-                    MapMode::FilterMap if mapped != MiraValue::Nil => {
+                    MapMode::FilterMap if mapped != MiraValue::nil() => {
                         result.push(const_value(mapped)?)
                     }
                     _ => {}
@@ -77,7 +77,7 @@ fn map_like(call: &mut Runtime, args: &[MiraValue], mode: MapMode) -> Result<Mir
                     MapMode::Filter if operations::to_boolean(mapped)? => {
                         result.insert(key, value);
                     }
-                    MapMode::FilterMap if mapped != MiraValue::Nil => {
+                    MapMode::FilterMap if mapped != MiraValue::nil() => {
                         result.insert(key, const_value(mapped)?);
                     }
                     _ => {}

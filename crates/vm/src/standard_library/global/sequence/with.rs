@@ -20,7 +20,7 @@ fn update_with(
             },
         ));
     }
-    if !matches!(data, MiraValue::Array(_) | MiraValue::Record(_)) {
+    if !data.is_array() && !data.is_record() {
         return Err(MiraError::runtime(RuntimeErrorKind::TypeMismatch {
             expected: "array or record",
             actual: data.value_type(),
@@ -30,12 +30,12 @@ fn update_with(
     for pair in entries.chunks_exact(2) {
         let path = if operations::array_len(runtime, pair[0])?.is_some() {
             operations::iterable_array(runtime, pair[0])?
-        } else if pair[0] == MiraValue::Nil {
+        } else if pair[0] == MiraValue::nil() {
             continue;
         } else {
             vec![pair[0]]
         };
-        if path.is_empty() || path.contains(&MiraValue::Nil) {
+        if path.is_empty() || path.contains(&MiraValue::nil()) {
             continue;
         }
         result = set_path(runtime, result, &path, const_value(pair[1])?, max_len)?;
@@ -53,32 +53,33 @@ fn set_path(
     if path.is_empty() {
         return Ok(value);
     }
-    match data {
-        MiraValue::Array(_) => {
+    match data.kind() {
+        MiraValueKind::Array(_) => {
             let mut values = operations::iterable_array(runtime, data)?;
             let index = array_index(runtime, path[0], max_len)?;
             while values.len() <= index {
-                values.push(MiraValue::Nil);
+                values.push(MiraValue::nil());
             }
             let current = values[index];
-            let current = container_for(runtime, current, path.get(1).copied())?;
+            let current = container_for(runtime, current, path.get(1).cloned())?;
             values[index] = set_path(runtime, current, &path[1..], value, max_len)?;
             runtime.insert(values)
         }
-        MiraValue::Record(_) => {
+        MiraValueKind::Record(_) => {
             let mut values = IndexMap::new();
             for key in operations::record_keys(runtime, data)?.unwrap_or_default() {
-                let item = operations::record_get(runtime, data, &key)?.unwrap_or(MiraValue::Nil);
+                let item =
+                    operations::record_get(runtime, data, &key)?.unwrap_or_else(MiraValue::nil);
                 values.insert(key, item);
             }
             let key = operations::to_string(runtime, path[0])?;
-            let current = values.get(&key).copied().unwrap_or(MiraValue::Nil);
-            let current = container_for(runtime, current, path.get(1).copied())?;
+            let current = values.get(&key).cloned().unwrap_or_else(MiraValue::nil);
+            let current = container_for(runtime, current, path.get(1).cloned())?;
             values.insert(key, set_path(runtime, current, &path[1..], value, max_len)?);
             runtime.insert(values)
         }
-        current => {
-            let container = container_for(runtime, current, path.first().copied())?;
+        _ => {
+            let container = container_for(runtime, data, path.first().cloned())?;
             set_path(runtime, container, path, value, max_len)
         }
     }
@@ -89,12 +90,14 @@ fn container_for(
     current: MiraValue,
     next: Option<MiraValue>,
 ) -> Result<MiraValue> {
-    if matches!(current, MiraValue::Array(_) | MiraValue::Record(_)) {
+    if current.is_array() || current.is_record() {
         return Ok(current);
     }
-    if next.is_some_and(
-        |value| matches!(value, MiraValue::Number(number) if number.fract() == 0.0 && number >= 0.0),
-    ) {
+    if next.is_some_and(|value| {
+        value
+            .as_number()
+            .is_some_and(|number| number.fract() == 0.0 && number >= 0.0)
+    }) {
         runtime.insert(Vec::<MiraValue>::new())
     } else {
         runtime.insert(IndexMap::<String, MiraValue>::new())

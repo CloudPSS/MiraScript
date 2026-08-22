@@ -9,7 +9,7 @@ use crate::standard_library::insert_native;
 pub(super) fn install(context: &mut Runtime) {
     insert_native(context, "to_timestamp", |call, args| {
         match timestamp(call, args.first()) {
-            Ok(value) => Ok(MiraValue::Number(value as f64)),
+            Ok(value) => Ok(MiraValue::number(value as f64)),
             Err(_) if args.len() > 1 => Ok(args[1]),
             Err(error) => Err(error),
         }
@@ -22,7 +22,8 @@ pub(super) fn install(context: &mut Runtime) {
             Err(error) => return Err(error),
         };
         let offset = match args.get(1) {
-            None | Some(MiraValue::Nil) => 0.0,
+            None => 0.0,
+            Some(value) if value.is_nil() => 0.0,
             Some(value) => operations::to_number(call, *value)?,
         };
         if !offset.is_finite() || !(-24.0..=24.0).contains(&offset) {
@@ -41,11 +42,16 @@ pub(super) fn install(context: &mut Runtime) {
 
 fn timestamp(call: &mut crate::Runtime, value: Option<&MiraValue>) -> Result<i64> {
     match value {
-        None | Some(MiraValue::Nil) => Ok(call.options().providers.now_millis()),
-        Some(MiraValue::Number(value)) if value.is_finite() && value.abs() <= 8.64e15 => {
-            Ok(value.trunc() as i64)
+        None => Ok(call.options().providers.now_millis()),
+        Some(value) if value.is_nil() => Ok(call.options().providers.now_millis()),
+        Some(value)
+            if value
+                .as_number()
+                .is_some_and(|number| number.is_finite() && number.abs() <= 8.64e15) =>
+        {
+            Ok(value.as_number().expect("checked number").trunc() as i64)
         }
-        Some(value @ (MiraValue::String(_) | MiraValue::StaticStr(_))) => {
+        Some(value) if value.is_string() => {
             if let Ok(number) = operations::to_number(call, *value)
                 && number.is_finite()
                 && number.abs() <= 8.64e15
@@ -72,18 +78,18 @@ fn datetime_record(timestamp: i64, offset: f64) -> IndexMap<String, MiraValue> {
     let second = day_millis / 1_000 % 60;
     let millisecond = day_millis % 1_000;
     IndexMap::from([
-        ("year".into(), MiraValue::Number(year as f64)),
-        ("month".into(), MiraValue::Number(month as f64)),
-        ("day".into(), MiraValue::Number(day as f64)),
-        ("hour".into(), MiraValue::Number(hour as f64)),
-        ("minute".into(), MiraValue::Number(minute as f64)),
-        ("second".into(), MiraValue::Number(second as f64)),
-        ("millisecond".into(), MiraValue::Number(millisecond as f64)),
+        ("year".into(), MiraValue::number(year as f64)),
+        ("month".into(), MiraValue::number(month as f64)),
+        ("day".into(), MiraValue::number(day as f64)),
+        ("hour".into(), MiraValue::number(hour as f64)),
+        ("minute".into(), MiraValue::number(minute as f64)),
+        ("second".into(), MiraValue::number(second as f64)),
+        ("millisecond".into(), MiraValue::number(millisecond as f64)),
         (
             "dayOfWeek".into(),
-            MiraValue::Number((days as i64 + 4).rem_euclid(7) as f64),
+            MiraValue::number((days as i64 + 4).rem_euclid(7) as f64),
         ),
-        ("offset".into(), MiraValue::Number(offset)),
+        ("offset".into(), MiraValue::number(offset)),
     ])
 }
 

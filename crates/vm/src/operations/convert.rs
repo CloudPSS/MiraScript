@@ -3,9 +3,9 @@ use crate::value::ANONYMOUS_FN_NAME;
 use super::*;
 
 pub(crate) fn to_boolean(value: MiraValue) -> Result<bool> {
-    match value {
-        MiraValue::Boolean(value) => Ok(value),
-        value => Err(MiraError::runtime(RuntimeErrorKind::TypeMismatch {
+    match value.kind() {
+        MiraValueKind::Boolean(value) => Ok(value),
+        _ => Err(MiraError::runtime(RuntimeErrorKind::TypeMismatch {
             expected: "boolean",
             actual: value.value_type(),
         })),
@@ -13,22 +13,24 @@ pub(crate) fn to_boolean(value: MiraValue) -> Result<bool> {
 }
 
 pub(crate) fn to_number(runtime: &Runtime, value: MiraValue) -> Result<f64> {
-    match value {
-        MiraValue::Number(value) => Ok(value),
-        MiraValue::Boolean(value) => Ok(if value { 1.0 } else { 0.0 }),
-        MiraValue::String(handle) => parse_number(runtime.get_string(handle)?).ok_or_else(|| {
-            MiraError::runtime(RuntimeErrorKind::TypeMismatch {
-                expected: "number-convertible value",
-                actual: value.value_type(),
+    match value.kind() {
+        MiraValueKind::Number(value) => Ok(value),
+        MiraValueKind::Boolean(value) => Ok(if value { 1.0 } else { 0.0 }),
+        MiraValueKind::String(handle) => {
+            parse_number(runtime.get_string(handle)?).ok_or_else(|| {
+                MiraError::runtime(RuntimeErrorKind::TypeMismatch {
+                    expected: "number-convertible value",
+                    actual: value.value_type(),
+                })
             })
-        }),
-        MiraValue::StaticStr(value) => parse_number(value).ok_or_else(|| {
+        }
+        MiraValueKind::StaticStr(value) => parse_number(value).ok_or_else(|| {
             MiraError::runtime(RuntimeErrorKind::TypeMismatch {
                 expected: "number-convertible value",
                 actual: crate::MiraType::String,
             })
         }),
-        value => Err(MiraError::runtime(RuntimeErrorKind::TypeMismatch {
+        _ => Err(MiraError::runtime(RuntimeErrorKind::TypeMismatch {
             expected: "number-convertible value",
             actual: value.value_type(),
         })),
@@ -145,11 +147,11 @@ pub(crate) fn number_to_string(value: f64, minus_zero: bool) -> String {
 }
 
 pub(crate) fn to_string(runtime: &mut Runtime, value: MiraValue) -> Result<String> {
-    match value {
-        MiraValue::String(handle) => Ok(runtime.get_string(handle)?.to_owned()),
-        MiraValue::StaticStr(value) => Ok(value.to_string()),
-        MiraValue::Nil => Ok(String::new()),
-        value => inner_to_string(runtime, value, false),
+    match value.kind() {
+        MiraValueKind::String(handle) => Ok(runtime.get_string(handle)?.to_owned()),
+        MiraValueKind::StaticStr(value) => Ok(value.to_string()),
+        MiraValueKind::Nil => Ok(String::new()),
+        _ => inner_to_string(runtime, value, false),
     }
 }
 
@@ -158,13 +160,13 @@ pub(super) fn inner_to_string(
     value: MiraValue,
     braces: bool,
 ) -> Result<String> {
-    match value {
-        MiraValue::Nil => Ok("nil".into()),
-        MiraValue::Boolean(value) => Ok(value.to_string()),
-        MiraValue::Number(value) => Ok(number_to_string(value, false)),
-        MiraValue::String(handle) => Ok(runtime.get_string(handle)?.to_owned()),
-        MiraValue::StaticStr(value) => Ok(value.to_string()),
-        MiraValue::Function(handle) => {
+    match value.kind() {
+        MiraValueKind::Nil => Ok("nil".into()),
+        MiraValueKind::Boolean(value) => Ok(value.to_string()),
+        MiraValueKind::Number(value) => Ok(number_to_string(value, false)),
+        MiraValueKind::String(handle) => Ok(runtime.get_string(handle)?.to_owned()),
+        MiraValueKind::StaticStr(value) => Ok(value.to_string()),
+        MiraValueKind::Function(handle) => {
             let function = runtime.get_function_dyn(handle)?;
             let name = function.name();
             Ok(if name == ANONYMOUS_FN_NAME {
@@ -173,11 +175,11 @@ pub(super) fn inner_to_string(
                 format!("<function {}>", name)
             })
         }
-        MiraValue::Module(handle) => {
+        MiraValueKind::Module(handle) => {
             let name = runtime.get_module_dyn(handle)?.name().to_owned();
             Ok(format!("<module {name}>"))
         }
-        MiraValue::Array(_) => {
+        MiraValueKind::Array(_) => {
             let values = iterable_array(runtime, value)?;
             let mut parts = Vec::with_capacity(values.len());
             for item in values {
@@ -186,16 +188,16 @@ pub(super) fn inner_to_string(
             let body = parts.join(", ");
             Ok(if braces { format!("[{body}]") } else { body })
         }
-        MiraValue::Record(_) => {
+        MiraValueKind::Record(_) => {
             let keys = record_keys(runtime, value)?.unwrap_or_default();
             let mut parts = Vec::with_capacity(keys.len());
             for key in keys {
-                let item = record_get(runtime, value, &key)?.unwrap_or(MiraValue::Nil);
+                let item = record_get(runtime, value, &key)?.unwrap_or_else(MiraValue::nil);
                 parts.push(format!("{key}: {}", inner_to_string(runtime, item, true)?));
             }
             let body = parts.join(", ");
             Ok(if braces { format!("({body})") } else { body })
         }
-        MiraValue::Extern(_) => Ok("<extern>".into()),
+        MiraValueKind::Extern(_) => Ok("<extern>".into()),
     }
 }

@@ -5,30 +5,27 @@ use super::MiraValue;
 impl MiraValue {
     /// Create a `MiraValue` representing a boolean value.
     #[inline]
-    pub const fn boolean(value: bool) -> Self {
-        Self::Boolean(value)
+    pub fn boolean(value: bool) -> Self {
+        Self::boxed_boolean(value)
     }
 
     /// Check whether this value is a boolean value.
     #[inline]
-    pub const fn is_boolean(self) -> bool {
-        matches!(self, Self::Boolean(_))
+    pub fn is_boolean(&self) -> bool {
+        self.as_boolean().is_some()
     }
 
     /// Return the inline boolean payload, or `None` for another value type.
     #[inline]
     pub fn as_boolean(&self) -> Option<bool> {
-        match self {
-            Self::Boolean(value) => Some(*value),
-            _ => None,
-        }
+        self.boxed_boolean_value()
     }
 }
 
 impl From<bool> for MiraValue {
     #[inline]
     fn from(value: bool) -> Self {
-        Self::Boolean(value)
+        Self::boolean(value)
     }
 }
 
@@ -64,7 +61,7 @@ mod tests {
         assert!(value.is_boolean());
         assert_eq!(value.as_boolean(), Some(false));
 
-        let value = MiraValue::Nil;
+        let value = MiraValue::nil();
         assert!(!value.is_boolean());
         assert_eq!(value.as_boolean(), None);
     }
@@ -75,7 +72,7 @@ mod tests {
         let boolean: bool = value.try_into().unwrap();
         assert!(boolean);
 
-        let value = MiraValue::Nil;
+        let value = MiraValue::nil();
         assert!(bool::try_from(value).is_err());
     }
 }

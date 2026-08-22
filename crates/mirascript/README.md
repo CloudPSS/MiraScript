@@ -14,7 +14,7 @@ let script = compile("answer + 1")?;
 let mut runtime = Runtime::new();
 runtime.insert_global("answer", 41)?;
 
-assert_eq!(runtime.run(&script)?, MiraValue::Number(42.0));
+assert_eq!(runtime.run(&script)?, MiraValue::number(42.0));
 # Ok::<(), Box<mirascript::MiraError>>(())
 ```
 
@@ -28,7 +28,7 @@ let mut runtime = mirascript::Runtime::new();
 
 assert_eq!(
     runtime.run(&script)?,
-    mirascript::MiraValue::Number(42.0),
+    mirascript::MiraValue::number(42.0),
 );
 # Ok::<(), Box<mirascript::MiraError>>(())
 ```

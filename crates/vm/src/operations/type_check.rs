@@ -1,7 +1,7 @@
 use super::*;
 
 pub(crate) fn assert_non_nil(value: MiraValue) -> Result<()> {
-    if matches!(value, MiraValue::Nil) {
+    if value.is_nil() {
         Err(MiraError::runtime(RuntimeErrorKind::ExpectedNonNil))
     } else {
         Ok(())

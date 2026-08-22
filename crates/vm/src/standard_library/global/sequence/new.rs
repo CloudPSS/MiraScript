@@ -14,7 +14,7 @@ pub(super) fn install(context: &mut Runtime) {
         for index in 0..length {
             call.checkpoint()?;
             result.push(const_value(
-                call.call(*generator, &[MiraValue::Number(index as f64)])?,
+                call.call(*generator, &[MiraValue::number(index as f64)])?,
             )?);
         }
         call.insert(result)
@@ -31,13 +31,13 @@ pub(super) fn install(context: &mut Runtime) {
         let mut result = IndexMap::new();
         for index in 0..length {
             call.checkpoint()?;
-            let entry = call.call(*generator, &[MiraValue::Number(index as f64)])?;
-            if entry == MiraValue::Nil {
+            let entry = call.call(*generator, &[MiraValue::number(index as f64)])?;
+            if entry == MiraValue::nil() {
                 continue;
             }
-            let key_value = operations::get_value(call, entry, MiraValue::Number(0.0), None)?;
+            let key_value = operations::get_value(call, entry, MiraValue::number(0.0), None)?;
             let key = operations::to_string(call, key_value)?;
-            let value = operations::get_value(call, entry, MiraValue::Number(1.0), None)?;
+            let value = operations::get_value(call, entry, MiraValue::number(1.0), None)?;
             result.insert(key, const_value(value)?);
         }
         call.insert(result)

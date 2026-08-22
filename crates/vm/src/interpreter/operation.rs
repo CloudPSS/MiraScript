@@ -16,8 +16,11 @@ impl Runtime {
         let left = registers.read(left);
         let right = registers.read(right);
 
-        if let (Some(MiraValue::Number(left)), Some(MiraValue::Number(right))) = (left, right) {
-            let result = MiraValue::Number(operation(left, right));
+        if let (Some(left), Some(right)) = (
+            left.as_ref().and_then(MiraValue::as_number),
+            right.as_ref().and_then(MiraValue::as_number),
+        ) {
+            let result = MiraValue::number(operation(left, right));
             if destination.is_nil() {
                 return Ok(());
             }
@@ -34,7 +37,7 @@ impl Runtime {
             self,
             right.ok_or_else(|| MiraError::runtime(RuntimeErrorKind::UninitializedValue))?,
         )?;
-        let result = MiraValue::Number(operation(left, right));
+        let result = MiraValue::number(operation(left, right));
         if destination.is_nil() {
             return Ok(());
         }
@@ -66,14 +69,14 @@ impl Runtime {
                 let value = self.read_register(frame, *value)?;
                 let result = match kind {
                     UnaryOperation::Pos | UnaryOperation::Plus => {
-                        MiraValue::Number(operations::to_number(self, value)?)
+                        MiraValue::number(operations::to_number(self, value)?)
                     }
-                    UnaryOperation::Neg => MiraValue::Number(-operations::to_number(self, value)?),
-                    UnaryOperation::Not => MiraValue::Boolean(!operations::to_boolean(value)?),
+                    UnaryOperation::Neg => MiraValue::number(-operations::to_number(self, value)?),
+                    UnaryOperation::Not => MiraValue::boolean(!operations::to_boolean(value)?),
                     UnaryOperation::Type => self.insert(value.type_name().to_owned())?,
-                    UnaryOperation::ToBoolean => MiraValue::Boolean(operations::to_boolean(value)?),
+                    UnaryOperation::ToBoolean => MiraValue::boolean(operations::to_boolean(value)?),
                     UnaryOperation::ToNumber => {
-                        MiraValue::Number(operations::to_number(self, value)?)
+                        MiraValue::number(operations::to_number(self, value)?)
                     }
                     UnaryOperation::ToString => {
                         let value = operations::to_string(self, value)?;
@@ -83,17 +86,17 @@ impl Runtime {
                     | UnaryOperation::IsNumber
                     | UnaryOperation::IsString
                     | UnaryOperation::IsRecord
-                    | UnaryOperation::IsArray => MiraValue::Boolean(match kind {
-                        UnaryOperation::IsBoolean => matches!(value, MiraValue::Boolean(_)),
-                        UnaryOperation::IsNumber => matches!(value, MiraValue::Number(_)),
+                    | UnaryOperation::IsArray => MiraValue::boolean(match kind {
+                        UnaryOperation::IsBoolean => value.is_boolean(),
+                        UnaryOperation::IsNumber => value.is_number(),
                         UnaryOperation::IsString => value.is_string(),
-                        UnaryOperation::IsRecord => matches!(value, MiraValue::Record(_)),
-                        UnaryOperation::IsArray => matches!(value, MiraValue::Array(_)),
+                        UnaryOperation::IsRecord => value.is_record(),
+                        UnaryOperation::IsArray => value.is_array(),
                         _ => unreachable!(),
                     }),
                     UnaryOperation::Assign => value,
                     UnaryOperation::Length => {
-                        MiraValue::Number(operations::length(self, value)? as f64)
+                        MiraValue::number(operations::length(self, value)? as f64)
                     }
                 };
                 self.write_register(frame, *destination, result);
@@ -150,21 +153,21 @@ impl Runtime {
                         if matches!(kind, BinaryOperation::Neq | BinaryOperation::Nsame) {
                             equal = !equal;
                         }
-                        MiraValue::Boolean(equal)
+                        MiraValue::boolean(equal)
                     }
                     BinaryOperation::Aeq | BinaryOperation::Naeq => {
                         let mut equal = operations::approximately_equal(self, left, right)?;
                         if *kind == BinaryOperation::Naeq {
                             equal = !equal;
                         }
-                        MiraValue::Boolean(equal)
+                        MiraValue::boolean(equal)
                     }
                     BinaryOperation::Lt
                     | BinaryOperation::Lte
                     | BinaryOperation::Gt
                     | BinaryOperation::Gte => {
                         let ordering = operations::compare(self, left, right)?;
-                        MiraValue::Boolean(match (kind, ordering) {
+                        MiraValue::boolean(match (kind, ordering) {
                             (_, None) => false,
                             (BinaryOperation::Lt, Some(value)) => value == Ordering::Less,
                             (BinaryOperation::Lte, Some(value)) => value != Ordering::Greater,
@@ -174,12 +177,12 @@ impl Runtime {
                         })
                     }
                     BinaryOperation::In => {
-                        MiraValue::Boolean(operations::in_value(self, left, right)?)
+                        MiraValue::boolean(operations::in_value(self, left, right)?)
                     }
                     BinaryOperation::And | BinaryOperation::Or => {
                         let left = operations::to_boolean(left)?;
                         let right = operations::to_boolean(right)?;
-                        MiraValue::Boolean(if *kind == BinaryOperation::And {
+                        MiraValue::boolean(if *kind == BinaryOperation::And {
                             left && right
                         } else {
                             left || right
@@ -228,7 +231,7 @@ impl Runtime {
                 self.write_register(
                     frame,
                     *destination,
-                    MiraValue::Boolean(self.globals.contains_key(&key)),
+                    MiraValue::boolean(self.globals.contains_key(&key)),
                 );
             }
             Operation::Concat {
@@ -370,12 +373,12 @@ impl Runtime {
                 let key = match key {
                     AccessKey::Constant(constant) => self.materialize_constant(*constant)?,
                     AccessKey::Register(register) => self.read_register(frame, *register)?,
-                    AccessKey::Index(index) => MiraValue::Number(*index as f64),
+                    AccessKey::Index(index) => MiraValue::number(*index as f64),
                 };
                 let source = self.read_register(frame, *value)?;
                 match kind {
                     AccessOperation::Has => {
-                        let result = MiraValue::Boolean(self.has_value(source, key)?);
+                        let result = MiraValue::boolean(self.has_value(source, key)?);
                         self.write_register(frame, *destination, result);
                     }
                     AccessOperation::Get => {
@@ -396,14 +399,14 @@ impl Runtime {
                 exclusive,
             } => {
                 let start = match start {
-                    Some(SliceBound::Constant(value)) => Some(MiraValue::Number(*value as f64)),
+                    Some(SliceBound::Constant(value)) => Some(MiraValue::number(*value as f64)),
                     Some(SliceBound::Register(register)) => {
                         Some(self.read_register(frame, *register)?)
                     }
                     None => None,
                 };
                 let end = match end {
-                    Some(SliceBound::Constant(value)) => Some(MiraValue::Number(*value as f64)),
+                    Some(SliceBound::Constant(value)) => Some(MiraValue::number(*value as f64)),
                     Some(SliceBound::Register(register)) => {
                         Some(self.read_register(frame, *register)?)
                     }

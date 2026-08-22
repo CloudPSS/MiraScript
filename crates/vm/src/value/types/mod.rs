@@ -20,6 +20,6 @@ pub(crate) use function::ANONYMOUS_FN_NAME;
 pub use function::{MiraFunction, MiraNativeFn};
 pub use module::MiraModule;
 pub(crate) use module::map_module;
-pub use nil::Nil;
 pub use record::{MiraRecord, MiraShapedRecord};
 pub use value::MiraValue;
+pub(crate) use value::MiraValueKind;

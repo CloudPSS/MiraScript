@@ -8,11 +8,11 @@ pub(super) fn invert(call: &mut Runtime, args: &[MiraValue]) -> Result<MiraValue
     let value = *required(args, 0, "a")?;
     let dimensions = shape(call, value)?;
     if dimensions.is_empty() {
-        return Ok(MiraValue::Number(1.0 / numeric(call, value)?));
+        return Ok(MiraValue::number(1.0 / numeric(call, value)?));
     }
     if dimensions.len() == 1 {
         return map_nested(call, value, &mut |runtime, value| {
-            Ok(MiraValue::Number(1.0 / numeric(runtime, value)?))
+            Ok(MiraValue::number(1.0 / numeric(runtime, value)?))
         });
     }
     if dimensions[0] != dimensions[1] {
@@ -24,11 +24,11 @@ pub(super) fn invert(call: &mut Runtime, args: &[MiraValue]) -> Result<MiraValue
         let value = matrix
             .first()
             .and_then(|row| row.first())
-            .copied()
-            .unwrap_or(MiraValue::Nil);
+            .cloned()
+            .unwrap_or(MiraValue::nil());
         return from_matrix(
             call,
-            vec![vec![MiraValue::Number(1.0 / numeric(call, value)?)]],
+            vec![vec![MiraValue::number(1.0 / numeric(call, value)?)]],
         );
     }
     if size == 2 {
@@ -41,12 +41,12 @@ pub(super) fn invert(call: &mut Runtime, args: &[MiraValue]) -> Result<MiraValue
             call,
             vec![
                 vec![
-                    MiraValue::Number(d / determinant),
-                    MiraValue::Number(-b / determinant),
+                    MiraValue::number(d / determinant),
+                    MiraValue::number(-b / determinant),
                 ],
                 vec![
-                    MiraValue::Number(-c / determinant),
-                    MiraValue::Number(a / determinant),
+                    MiraValue::number(-c / determinant),
+                    MiraValue::number(a / determinant),
                 ],
             ],
         );
@@ -60,8 +60,8 @@ pub(super) fn invert(call: &mut Runtime, args: &[MiraValue]) -> Result<MiraValue
                 matrix
                     .get(row)
                     .and_then(|row| row.get(column))
-                    .copied()
-                    .unwrap_or(MiraValue::Nil),
+                    .cloned()
+                    .unwrap_or(MiraValue::nil()),
             )?;
             right[row][column] = if row == column { 1.0 } else { 0.0 };
         }
@@ -105,7 +105,7 @@ pub(super) fn invert(call: &mut Runtime, args: &[MiraValue]) -> Result<MiraValue
         call,
         right
             .into_iter()
-            .map(|row| row.into_iter().map(MiraValue::Number).collect())
+            .map(|row| row.into_iter().map(MiraValue::number).collect())
             .collect(),
     )
 }

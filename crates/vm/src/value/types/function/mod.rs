@@ -2,7 +2,7 @@ use std::any::Any;
 
 use crate::{MiraHandle, Result, Runtime, value::MiraManageable};
 
-use super::MiraValue;
+use super::{MiraValue, MiraValueKind};
 
 mod native;
 
@@ -13,21 +13,21 @@ pub(crate) const ANONYMOUS_FN_NAME: &str = "<anonymous>";
 impl MiraValue {
     /// Create a `MiraValue` representing a callable function.
     #[inline]
-    pub fn function(value: MiraHandle<impl MiraFunction>) -> Self {
-        Self::Function(value.erase_function())
+    pub fn function<T: MiraFunction + ?Sized>(value: MiraHandle<T>) -> Self {
+        Self::from_function_handle(value.erase_function())
     }
 
     /// Check whether this value is a callable function.
     #[inline]
-    pub const fn is_function(self) -> bool {
-        matches!(self, Self::Function(_))
+    pub fn is_function(&self) -> bool {
+        matches!(self.kind(), MiraValueKind::Function(_))
     }
 
     /// Return the function handle, or `None` for another value type.
     #[inline]
     pub fn as_function(&self) -> Option<MiraHandle<dyn MiraFunction>> {
-        match self {
-            Self::Function(value) => Some(*value),
+        match self.kind() {
+            MiraValueKind::Function(value) => Some(value),
             _ => None,
         }
     }

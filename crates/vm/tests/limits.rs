@@ -76,7 +76,7 @@ fn runtime_arena_persists_across_runs_and_drops_once() {
         let mut runtime = probe_runtime(&drops);
         let script = compile("make_probe()").unwrap();
         let value = runtime.run(&script).unwrap();
-        assert!(matches!(value, MiraValue::Record(_)));
+        assert!(value.is_record());
         let string = runtime.run(&compile("'persistent'").unwrap()).unwrap();
         let array = runtime.run(&compile("[1, 2, 3]").unwrap()).unwrap();
         assert_eq!(drops.get(), 0);
@@ -168,8 +168,8 @@ fn script_function_handles_expire_after_their_run() {
     runtime.insert_fn(
         "cache",
         MiraNativeFn::ok(move |_, args| {
-            *callback_cache.borrow_mut() = args.first().copied();
-            MiraValue::Nil
+            *callback_cache.borrow_mut() = args.first().cloned();
+            MiraValue::nil()
         }),
     );
     runtime
@@ -197,8 +197,8 @@ fn script_module_handles_expire_after_their_run() {
     runtime.insert_fn(
         "cache",
         MiraNativeFn::ok(move |_, args| {
-            *callback_cache.borrow_mut() = args.first().copied();
-            MiraValue::Nil
+            *callback_cache.borrow_mut() = args.first().cloned();
+            MiraValue::nil()
         }),
     );
     runtime

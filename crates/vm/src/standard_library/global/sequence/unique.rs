@@ -34,7 +34,7 @@ pub(super) fn install(context: &mut Runtime) {
         for (index, value) in values.into_iter().enumerate() {
             let key = call.call(
                 *key_function,
-                &[value, MiraValue::Number(index as f64), original],
+                &[value, MiraValue::number(index as f64), original],
             )?;
             let mut found = false;
             for existing in &keys {
@@ -53,7 +53,7 @@ pub(super) fn install(context: &mut Runtime) {
 }
 
 fn validate_optional_callable(value: Option<&MiraValue>) -> Result<()> {
-    if let Some(value) = value.filter(|value| **value != MiraValue::Nil)
+    if let Some(value) = value.filter(|value| **value != MiraValue::nil())
         && !is_callable(value)?
     {
         return Err(MiraError::runtime(RuntimeErrorKind::NotCallable {
@@ -69,7 +69,7 @@ fn equal(
     right: &MiraValue,
     equaler: Option<&MiraValue>,
 ) -> Result<bool> {
-    if let Some(equaler) = equaler.filter(|value| **value != MiraValue::Nil) {
+    if let Some(equaler) = equaler.filter(|value| **value != MiraValue::nil()) {
         if !is_callable(equaler)? {
             return Err(MiraError::runtime(RuntimeErrorKind::NotCallable {
                 actual: equaler.value_type(),

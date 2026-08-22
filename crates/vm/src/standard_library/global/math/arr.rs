@@ -7,36 +7,36 @@ pub(super) fn install(context: &mut Runtime) {
         let mut result = f64::NEG_INFINITY;
         for value in values {
             if value.is_nan() {
-                return Ok(MiraValue::Number(f64::NAN));
+                return Ok(MiraValue::number(f64::NAN));
             }
             if value > result || (value == 0.0 && result == 0.0 && value.is_sign_positive()) {
                 result = value;
             }
         }
-        Ok(MiraValue::Number(result))
+        Ok(MiraValue::number(result))
     });
     insert_native(context, "min", |call, args| {
         let values = numbers(call, args)?;
         let mut result = f64::INFINITY;
         for value in values {
             if value.is_nan() {
-                return Ok(MiraValue::Number(f64::NAN));
+                return Ok(MiraValue::number(f64::NAN));
             }
             if value < result || (value == 0.0 && result == 0.0 && value.is_sign_negative()) {
                 result = value;
             }
         }
-        Ok(MiraValue::Number(result))
+        Ok(MiraValue::number(result))
     });
     insert_native(context, "hypot", |call, args| {
         let values = numbers(call, args)?;
         if values.iter().any(|value| value.is_infinite()) {
-            return Ok(MiraValue::Number(f64::INFINITY));
+            return Ok(MiraValue::number(f64::INFINITY));
         }
         if values.iter().any(|value| value.is_nan()) {
-            return Ok(MiraValue::Number(f64::NAN));
+            return Ok(MiraValue::number(f64::NAN));
         }
-        Ok(MiraValue::Number(
+        Ok(MiraValue::number(
             values.into_iter().fold(0.0_f64, f64::hypot),
         ))
     });
@@ -45,10 +45,10 @@ pub(super) fn install(context: &mut Runtime) {
         for value in numbers(call, args)? {
             total += value;
         }
-        Ok(MiraValue::Number(total))
+        Ok(MiraValue::number(total))
     });
     insert_native(context, "product", |call, args| {
-        Ok(MiraValue::Number(
+        Ok(MiraValue::number(
             numbers(call, args)?.into_iter().product(),
         ))
     });

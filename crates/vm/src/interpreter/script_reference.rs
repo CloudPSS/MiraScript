@@ -1,6 +1,6 @@
 use std::{any::Any, collections::HashSet};
 
-use crate::{MiraHandle, MiraModule, MiraValue, Result};
+use crate::{MiraHandle, MiraModule, MiraValue, MiraValueKind, Result};
 
 use super::Runtime;
 
@@ -15,18 +15,17 @@ impl Runtime {
         value: MiraValue,
         visited: &mut HashSet<MiraHandle<dyn MiraModule>>,
     ) -> Result<bool> {
-        match value {
-            MiraValue::Function(handle) => Ok(<dyn Any>::is::<super::ScriptFunction>(
+        match value.kind() {
+            MiraValueKind::Function(handle) => Ok(<dyn Any>::is::<super::ScriptFunction>(
                 self.get_function_dyn(handle)?.as_ref(),
             )),
-            MiraValue::Module(handle) => {
+            MiraValueKind::Module(handle) => {
                 if <dyn Any>::is::<super::ScriptModule>(self.get_module_dyn(handle)?) {
                     return Ok(true);
                 }
                 if !visited.insert(handle) {
                     return Ok(false);
                 }
-                let value = MiraValue::Module(handle);
                 for key in crate::operations::module_keys(self, value)?.unwrap_or_default() {
                     if let Some(item) = crate::operations::module_get(self, value, &key)?
                         && self.contains_script_reference_inner(item, visited)?

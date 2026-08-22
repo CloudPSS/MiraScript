@@ -5,26 +5,26 @@ use crate::{
     value::{MiraHandle, MiraManageable},
 };
 
-use super::MiraValue;
+use super::{MiraValue, MiraValueKind};
 
 impl MiraValue {
     /// Create a `MiraValue` representing an array value.
     #[inline]
-    pub fn array(value: MiraHandle<impl MiraArray>) -> Self {
-        Self::Array(value.erase_array())
+    pub fn array<T: MiraArray + ?Sized>(value: MiraHandle<T>) -> Self {
+        Self::from_array_handle(value.erase_array())
     }
 
     /// Check whether this value is an array value.
     #[inline]
-    pub const fn is_array(self) -> bool {
-        matches!(self, Self::Array(_))
+    pub fn is_array(&self) -> bool {
+        matches!(self.kind(), MiraValueKind::Array(_))
     }
 
     /// Return the array handle, or `None` for another value type.
     #[inline]
     pub fn as_array(&self) -> Option<MiraHandle<dyn MiraArray>> {
-        match self {
-            Self::Array(value) => Some(*value),
+        match self.kind() {
+            MiraValueKind::Array(value) => Some(value),
             _ => None,
         }
     }

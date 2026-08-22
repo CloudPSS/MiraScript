@@ -5,23 +5,20 @@ use crate::{MiraError, Result};
 impl MiraValue {
     /// Create a `MiraValue` representing a numeric value.
     #[inline]
-    pub const fn number(value: f64) -> Self {
-        Self::Number(value)
+    pub fn number(value: f64) -> Self {
+        Self::boxed_number(value)
     }
 
     /// Check whether this value is a numeric value.
     #[inline]
-    pub const fn is_number(self) -> bool {
-        matches!(self, Self::Number(_))
+    pub fn is_number(&self) -> bool {
+        self.as_number().is_some()
     }
 
     /// Return the inline numeric payload, or `None` for another value type.
     #[inline]
     pub fn as_number(&self) -> Option<f64> {
-        match self {
-            Self::Number(value) => Some(*value),
-            _ => None,
-        }
+        self.boxed_number_value()
     }
 }
 
@@ -29,7 +26,7 @@ macro_rules! number_from {
     ($($ty:ty),* $(,)?) => {$ (
         impl From<$ty> for MiraValue {
             fn from(value: $ty) -> Self {
-                Self::Number(value as f64)
+                Self::number(value as f64)
             }
         }
         impl From<$ty> for MiraManageable {
@@ -70,7 +67,7 @@ macro_rules! signed_integer_try_from {
             type Error = Box<MiraError>;
 
             fn try_from(value: MiraValue) -> Result<Self> {
-                let MiraValue::Number(number) = value else {
+                let Some(number) = value.as_number() else {
                     return Err(MiraError::conversion_type(stringify!($ty), value.value_type()));
                 };
                 let limit = 2_f64.powi(<$ty>::BITS as i32 - 1);
@@ -94,10 +91,9 @@ impl TryFrom<MiraValue> for f64 {
     type Error = Box<MiraError>;
 
     fn try_from(value: MiraValue) -> Result<Self> {
-        match value {
-            MiraValue::Number(value) => Ok(value),
-            value => Err(MiraError::conversion_type("f64", value.value_type())),
-        }
+        value
+            .as_number()
+            .ok_or_else(|| MiraError::conversion_type("f64", value.value_type()))
     }
 }
 
@@ -119,24 +115,24 @@ mod tests {
 
     #[test]
     fn test_number() {
-        assert_eq!(MiraValue::number(42.0), MiraValue::Number(42.0));
+        assert_eq!(MiraValue::number(42.0), MiraValue::number(42.0));
     }
 
     #[test]
     fn test_number_is_number() {
-        assert!(MiraValue::Number(42.0).is_number());
-        assert!(!MiraValue::Nil.is_number());
+        assert!(MiraValue::number(42.0).is_number());
+        assert!(!MiraValue::nil().is_number());
     }
 
     #[test]
     fn test_number_as_number() {
-        assert_eq!(MiraValue::Number(42.0).as_number(), Some(42.0));
-        assert_eq!(MiraValue::Nil.as_number(), None);
+        assert_eq!(MiraValue::number(42.0).as_number(), Some(42.0));
+        assert_eq!(MiraValue::nil().as_number(), None);
     }
 
     #[test]
     fn test_number_try_from() {
-        let value = MiraValue::Number(42.0);
+        let value = MiraValue::number(42.0);
         assert_eq!(u8::try_from(value).unwrap(), 42u8);
         assert_eq!(i32::try_from(value).unwrap(), 42i32);
         assert_eq!(u128::try_from(value).unwrap(), 42u128);
@@ -145,7 +141,7 @@ mod tests {
     }
     #[test]
     fn test_number_try_from_underflow() {
-        let value = MiraValue::Number(-1.0);
+        let value = MiraValue::number(-1.0);
         assert!(u8::try_from(value).is_err());
         assert!(u32::try_from(value).is_err());
         assert!(u128::try_from(value).is_err());
@@ -153,19 +149,19 @@ mod tests {
 
     #[test]
     fn test_number_try_from_overflow() {
-        let value = MiraValue::Number(256.0);
+        let value = MiraValue::number(256.0);
         assert!(u8::try_from(value).is_err());
-        let value = MiraValue::Number(2_f64.powi(32));
+        let value = MiraValue::number(2_f64.powi(32));
         assert!(u32::try_from(value).is_err());
-        let value = MiraValue::Number(2_f64.powi(128));
+        let value = MiraValue::number(2_f64.powi(128));
         assert!(u128::try_from(value).is_err());
-        let value = MiraValue::Number(f64::MAX);
+        let value = MiraValue::number(f64::MAX);
         assert!(f32::try_from(value).is_err());
     }
 
     #[test]
     fn test_number_try_from_non_integer() {
-        let value = MiraValue::Number(42.5);
+        let value = MiraValue::number(42.5);
         assert!(u8::try_from(value).is_err());
         assert!(i32::try_from(value).is_err());
         assert!(u128::try_from(value).is_err());
@@ -173,11 +169,11 @@ mod tests {
 
     #[test]
     fn test_number_try_from_non_finite() {
-        let value = MiraValue::Number(f64::INFINITY);
+        let value = MiraValue::number(f64::INFINITY);
         assert!(u8::try_from(value).is_err());
         assert!(i32::try_from(value).is_err());
         assert!(u128::try_from(value).is_err());
-        let value = MiraValue::Number(f64::NAN);
+        let value = MiraValue::number(f64::NAN);
         assert!(u8::try_from(value).is_err());
         assert!(i32::try_from(value).is_err());
         assert!(u128::try_from(value).is_err());
@@ -185,21 +181,21 @@ mod tests {
 
     #[test]
     fn test_number_try_from_non_number() {
-        assert!(f64::try_from(MiraValue::Nil).is_err());
+        assert!(f64::try_from(MiraValue::nil()).is_err());
 
-        let value = MiraValue::Boolean(true);
+        let value = MiraValue::boolean(true);
         assert!(u8::try_from(value).is_err());
         assert!(i32::try_from(value).is_err());
         assert!(u128::try_from(value).is_err());
 
-        let value = MiraValue::StaticStr(&"42");
+        let value = MiraValue::str(&"42");
         assert!(u8::try_from(value).is_err());
         assert!(f64::try_from(value).is_err());
     }
 
     #[test]
     fn test_number_try_from_negative_zero() {
-        let value = MiraValue::Number(-0.0);
+        let value = MiraValue::number(-0.0);
         assert_eq!(u8::try_from(value).unwrap(), 0u8);
         assert_eq!(i32::try_from(value).unwrap(), 0i32);
         assert_eq!(u128::try_from(value).unwrap(), 0u128);
@@ -209,10 +205,10 @@ mod tests {
 
     #[test]
     fn test_number_into() {
-        assert_eq!(MiraValue::from(42u8), MiraValue::Number(42.0));
-        assert_eq!(MiraValue::from(42i32), MiraValue::Number(42.0));
-        assert_eq!(MiraValue::from(42u128), MiraValue::Number(42.0));
-        assert_eq!(MiraValue::from(42f32), MiraValue::Number(42.0));
-        assert_eq!(MiraValue::from(42f64), MiraValue::Number(42.0));
+        assert_eq!(MiraValue::from(42u8), MiraValue::number(42.0));
+        assert_eq!(MiraValue::from(42i32), MiraValue::number(42.0));
+        assert_eq!(MiraValue::from(42u128), MiraValue::number(42.0));
+        assert_eq!(MiraValue::from(42f32), MiraValue::number(42.0));
+        assert_eq!(MiraValue::from(42f64), MiraValue::number(42.0));
     }
 }
