@@ -11,10 +11,10 @@ export async function init(): Promise<void> {
 }
 
 /** 创建可重用的配置 */
-export function createConfig(config?: Config | wasm.Config): wasm.Config {
-    if (!config) return new wasm.Config();
-    if (config instanceof wasm.Config) return config;
-    const cfg = new wasm.Config();
+export function createConfig(config?: Config | wasm.CompileConfig): wasm.CompileConfig {
+    if (!config) return new wasm.CompileConfig();
+    if (config instanceof wasm.CompileConfig) return config;
+    const cfg = new wasm.CompileConfig();
     for (const key in config) {
         if (key === 'free') continue; // 忽略 free 方法
         if (!Object.hasOwn(config, key)) continue;
@@ -41,9 +41,9 @@ export interface CompileResult {
 
 /** 编译 */
 function compileImpl<T>(
-    compiler: (script: T, config: wasm.Config) => wasm.CompileResult,
+    compiler: (script: T, config: wasm.CompileConfig) => wasm.CompileResult,
     script: T,
-    config: Config | wasm.Config,
+    config: Config | wasm.CompileConfig,
 ): CompileResult {
     const cfg = createConfig(config);
     const result = compiler(script, cfg);
@@ -61,7 +61,7 @@ function compileImpl<T>(
 }
 
 /** 编译 MiraScript 代码 */
-export function compileSync(script: ScriptInput, config: Config | wasm.Config): CompileResult {
+export function compileSync(script: ScriptInput, config: Config | wasm.CompileConfig): CompileResult {
     return typeof script == 'string'
         ? compileImpl(wasm.compile, script, config)
         : compileImpl(wasm.compile_buffer, script, config);

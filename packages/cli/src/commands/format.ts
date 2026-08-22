@@ -3,15 +3,15 @@ import fs from 'node:fs/promises';
 import { program } from '@commander-js/extra-typings';
 import { loadModule, type BcModule } from '@mirascript/bindings/wasm';
 
-let templateConfig: BcModule.wasm.Config | null = null;
-let scriptConfig: BcModule.wasm.Config | null = null;
+let templateConfig: BcModule.wasm.CompileConfig | null = null;
+let scriptConfig: BcModule.wasm.CompileConfig | null = null;
 
 /** 获取配置 */
-async function getConfig(templateMode: boolean): Promise<BcModule.wasm.Config> {
+async function getConfig(templateMode: boolean): Promise<BcModule.wasm.CompileConfig> {
     const mod = await loadModule();
     if (templateMode) {
         if (!templateConfig) {
-            templateConfig = new mod.wasm.Config();
+            templateConfig = new mod.wasm.CompileConfig();
             templateConfig.input_mode = mod.wasm.InputMode.Template;
             templateConfig.trivia = true;
             templateConfig.diagnostic_position_encoding = mod.wasm.DiagnosticPositionEncoding.Utf8;
@@ -19,7 +19,7 @@ async function getConfig(templateMode: boolean): Promise<BcModule.wasm.Config> {
         return templateConfig;
     } else {
         if (!scriptConfig) {
-            scriptConfig = new mod.wasm.Config();
+            scriptConfig = new mod.wasm.CompileConfig();
             scriptConfig.input_mode = mod.wasm.InputMode.Script;
             scriptConfig.trivia = true;
             scriptConfig.diagnostic_position_encoding = mod.wasm.DiagnosticPositionEncoding.Utf8;

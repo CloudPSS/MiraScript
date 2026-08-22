@@ -13,7 +13,7 @@ const filteredLines = dtsLines.filter((line) => {
     );
 });
 
-let content = filteredLines.join('\n').replace('export class Config {', 'export declare class Config {');
+let content = filteredLines.join('\n').replace('export class CompileConfig {', 'export declare class CompileConfig {');
 const messages: Record<number, string> = {};
 for (const code in lib.DiagnosticCode) {
     const num = Number(code);

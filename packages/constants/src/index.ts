@@ -15,7 +15,7 @@ export * from './regex.js';
 
 /** 配置选项 */
 export type Config = Partial<
-    Omit<wasm.Config, 'free' | 'input_mode' | 'diagnostic_position_encoding' | typeof Symbol.dispose>
+    Omit<wasm.CompileConfig, 'free' | 'input_mode' | 'diagnostic_position_encoding' | typeof Symbol.dispose>
 > & {
     input_mode?: InputMode;
     diagnostic_position_encoding?: DiagnosticPositionEncoding;
