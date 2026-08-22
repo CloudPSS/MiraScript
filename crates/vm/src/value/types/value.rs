@@ -224,7 +224,9 @@ impl MiraValue {
         }
         #[cfg(target_endian = "big")]
         {
-            payload[payload.len() - length..].copy_from_slice(&bytes[bytes.len() - length..]);
+            let payload_start = payload.len() - length;
+            let bytes_start = bytes.len() - length;
+            payload[payload_start..].copy_from_slice(&bytes[bytes_start..]);
         }
         payload
     }
@@ -238,7 +240,9 @@ impl MiraValue {
         }
         #[cfg(target_endian = "big")]
         {
-            bytes[bytes.len() - length..].copy_from_slice(&payload[payload.len() - length..]);
+            let bytes_start = bytes.len() - length;
+            let payload_start = payload.len() - length;
+            bytes[bytes_start..].copy_from_slice(&payload[payload_start..]);
         }
         usize::from_ne_bytes(bytes)
     }
