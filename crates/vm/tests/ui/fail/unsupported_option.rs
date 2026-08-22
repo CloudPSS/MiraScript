@@ -8,4 +8,7 @@ struct Record {
     another: u8,
 }
 
+#[derive(MiraRecord)]
+struct Record2(#[mira(unsupported_option)] u8);
+
 fn main() {}
