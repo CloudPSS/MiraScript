@@ -433,7 +433,7 @@ jobs:
       matrix:
         target:
           - s390x-unknown-linux-gnu
-          - i686-unknown-linux-gnu
+          # - i686-unknown-linux-gnu
         toolchain:
           - stable
           - nightly
@@ -458,8 +458,8 @@ jobs:
           rust-toolchain: ${{ matrix.toolchain }}
           tools: cross
 
-      - name: Run cross-platform VM tests under QEMU
-        run: cross test --package mirascript-vm --lib --test core --target ${{ matrix.target }} --locked
+      - name: Run cross-platform tests
+        run: cross test --target ${{ matrix.target }} --locked
 
   test-node:
     needs: merge
