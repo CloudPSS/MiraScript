@@ -12,6 +12,7 @@
     "format:mira": "pnpm exec mirascript format --write './**/*.mira'",
     "format:rs": "cargo fmt --all",
     "format:ts": "prettier --cache --cache-strategy content --write .",
+    "cov:rs": "cargo llvm-cov --all-features --lcov --output-path target/lcov.info",
     "format": "pnpm run format:mira && pnpm run format:rs && pnpm run format:ts",
     "lint": "eslint --cache --cache-location node_modules/.cache/eslint/ --cache-strategy content"
   },

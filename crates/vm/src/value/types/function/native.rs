@@ -110,6 +110,17 @@ impl MiraFunction for MiraNativeFn {
     }
 }
 
+impl<V, E, F> From<F> for MiraNativeFn
+where
+    V: Into<MiraManageable>,
+    E: Into<anyhow::Error>,
+    F: Fn(&mut Runtime, &[MiraValue]) -> std::result::Result<V, E> + 'static,
+{
+    fn from(callback: F) -> Self {
+        Self::anonymous(callback)
+    }
+}
+
 impl From<MiraNativeFn> for MiraManageable {
     fn from(value: MiraNativeFn) -> Self {
         Self::from_function(value)
@@ -122,5 +133,64 @@ impl fmt::Debug for MiraNativeFn {
             .debug_tuple("MiraNativeFn")
             .field(&self.name())
             .finish()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::Runtime;
+
+    #[test]
+    fn test_ok_fn() {
+        let mut runtime = Runtime::new();
+        runtime.insert_fn(
+            "add",
+            MiraNativeFn::ok(|_, args| {
+                let sum: f64 = args.iter().map(|arg| arg.as_number().unwrap_or(0.0)).sum();
+                sum
+            }),
+        );
+
+        assert_eq!(
+            runtime.eval("add(1, 2, 3)").unwrap().as_number().unwrap(),
+            6.0
+        );
+        assert_eq!(
+            runtime.eval("add(10, 20)").unwrap().as_number().unwrap(),
+            30.0
+        );
+        assert_eq!(runtime.eval("add()").unwrap().as_number().unwrap(), 0.0);
+    }
+
+    #[test]
+    fn test_err_fn() {
+        let mut runtime = Runtime::new();
+        runtime.insert_fn(
+            "fail",
+            MiraNativeFn::err(|_, _| anyhow::anyhow!("This function always fails")),
+        );
+
+        assert!(matches!(
+            runtime.eval("fail()").unwrap_err().as_ref(),
+            crate::MiraError::External(e) if e.to_string() == "This function always fails"
+        ));
+
+        assert_eq!(
+            format!(
+                "{:?}",
+                runtime
+                    .get_function(unsafe {
+                        runtime
+                            .get_global("fail")
+                            .unwrap()
+                            .as_function()
+                            .unwrap()
+                            .upcast::<MiraNativeFn>()
+                    })
+                    .unwrap()
+            ),
+            "MiraNativeFn(\"fail\")"
+        );
     }
 }

@@ -89,3 +89,22 @@ pub(super) fn decode_constants(bytes: &[u8], base_offset: usize) -> Result<Vec<C
     }
     Ok(result)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn to_source_string() {
+        assert_eq!(Constant::Nil.to_source_string(), "");
+        assert_eq!(Constant::True.to_source_string(), "true");
+        assert_eq!(Constant::False.to_source_string(), "false");
+        assert_eq!(Constant::Int(42).to_source_string(), "42");
+        assert_eq!(Constant::Float(3.0).to_source_string(), "3");
+        assert_eq!(Constant::Float(-0.0).to_source_string(), "0");
+        assert_eq!(Constant::Float(1.2).to_source_string(), "1.2");
+        assert_eq!(
+            Constant::String("Hello, World!".into()).to_source_string(),
+            "Hello, World!"
+        );
+    }
+}

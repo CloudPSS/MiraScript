@@ -39,3 +39,40 @@ enum Flow {
     LoopContinue,
     Return(MiraValue),
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_runtime() {
+        let mut runtime = Runtime::default();
+        runtime.insert_fn("custom", |runtime: &mut Runtime, args: &[MiraValue]| {
+            if args.is_empty() {
+                anyhow::bail!("Expected at least one argument");
+            }
+            let mut sum = 0.0;
+            for arg in args {
+                sum += operations::to_number(runtime, *arg)?;
+            }
+            Ok(sum)
+        });
+
+        assert_eq!(
+            runtime
+                .eval("custom(1, 2, 3)")
+                .unwrap()
+                .as_number()
+                .unwrap(),
+            6.0
+        );
+        assert_eq!(
+            runtime.eval("custom(10, 20)").unwrap().as_number().unwrap(),
+            30.0
+        );
+        assert!(matches!(
+            runtime.eval("custom()").unwrap_err().as_ref(),
+            MiraError::External(e) if e.to_string() == "Expected at least one argument"
+        ));
+    }
+}

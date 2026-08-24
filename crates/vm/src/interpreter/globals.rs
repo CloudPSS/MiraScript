@@ -296,4 +296,33 @@ mod tests {
 
         assert_eq!(runtime.eval("sin(0)").unwrap().as_number().unwrap(), 0.0);
     }
+
+    #[test]
+    fn remove_nonexistent() {
+        let mut runtime = Runtime::new();
+
+        assert!(!runtime.contains_global("nonexistent"));
+
+        // Remove the global and verify it is no longer present.
+        let removed = runtime.remove_global("nonexistent");
+        assert!(removed.is_none());
+    }
+
+    #[test]
+    fn iter_global_names() {
+        let mut runtime = Runtime::new();
+
+        let names: Vec<_> = runtime.global_names().collect();
+        assert!(names.contains(&"sin"));
+        assert!(names.contains(&"cos"));
+
+        runtime.insert_global("foo", 42).unwrap();
+        runtime.insert_global("bar", "Hello").unwrap();
+
+        let names: Vec<_> = runtime.global_names().collect();
+        assert!(names.contains(&"sin"));
+        assert!(names.contains(&"cos"));
+        assert!(names.contains(&"foo"));
+        assert!(names.contains(&"bar"));
+    }
 }

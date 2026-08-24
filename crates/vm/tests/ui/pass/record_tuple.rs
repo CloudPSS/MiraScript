@@ -2,7 +2,7 @@ use mirascript_vm::{MiraRecord, Runtime};
 
 #[derive(Clone, MiraRecord)]
 #[mira(crate = ::mirascript_vm)]
-struct Record<T>(String, #[mira(skip)] (), T);
+struct Record<T>(#[mira(rename = "new")] String, #[mira(skip)] (), T);
 
 fn main() {
     let mut runtime = Runtime::new();
@@ -12,7 +12,7 @@ fn main() {
     runtime.insert_global("record", record).unwrap();
     assert_eq!(
         runtime
-            .eval("record.0")
+            .eval("record.new")
             .unwrap()
             .as_str(&runtime)
             .unwrap()
@@ -23,4 +23,7 @@ fn main() {
 
     assert!(runtime.eval("record.1").unwrap().is_nil());
     assert!(!runtime.eval("'1' in record").unwrap().as_boolean().unwrap(),);
+
+    assert!(runtime.eval("record.0").unwrap().is_nil());
+    assert!(!runtime.eval("'0' in record").unwrap().as_boolean().unwrap(),);
 }
