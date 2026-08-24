@@ -138,7 +138,7 @@ fn assign_or_expression_statement<'s>(i: &mut Input<'s>) -> Result<Statement<'s>
         let semi = semicolon.parse_next(i)?;
         return Ok(Statement::Assign(
             expr1,
-            TokenRef::Borrowed(assign),
+            TokenRef::borrow(assign),
             expr2,
             semi,
         ));
