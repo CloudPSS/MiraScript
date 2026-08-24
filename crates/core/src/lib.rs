@@ -27,6 +27,6 @@ pub mod prelude {
     pub use strum::VariantArray as _;
 }
 
-#[cfg(all(feature = "mimalloc", not(target_family = "wasm")))]
+#[cfg(all(feature = "mimalloc", not(target_family = "wasm"), not(miri)))]
 #[global_allocator]
 static GLOBAL_ALLOCATOR: mimalloc::MiMalloc = mimalloc::MiMalloc;
