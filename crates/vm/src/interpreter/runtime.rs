@@ -1,8 +1,7 @@
 use std::{collections::HashMap, num::NonZeroU64, rc::Rc, time::Instant};
 
 use crate::{
-    MiraError, MiraManageable, MiraNativeFn, MiraScript, MiraValue, Result, RunOptions,
-    RuntimeErrorKind, ScriptId,
+    MiraError, MiraScript, MiraValue, Result, RunOptions, RuntimeErrorKind, ScriptId,
     bytecode::{Constant, Program},
     compile,
     value::MiraArena,
@@ -124,44 +123,6 @@ impl Runtime {
     /// Return the Runtime's execution configuration.
     pub fn options(&self) -> &RunOptions {
         &self.options
-    }
-
-    /// Insert or replace a global after converting it into a Runtime value.
-    pub fn insert_global(
-        &mut self,
-        name: impl Into<String>,
-        value: impl Into<MiraManageable>,
-    ) -> Result<Option<MiraValue>> {
-        let value = self.insert(value)?;
-        Ok(self.globals.insert(name.into(), value))
-    }
-
-    /// Insert a named native function into the global namespace.
-    pub fn insert_fn(&mut self, name: impl Into<String>, function: impl Into<MiraNativeFn>) {
-        let name = name.into();
-        let function = function.into().with_name(name.clone());
-        let handle = self
-            .insert_function(function)
-            .expect("a fresh native function arena slot must be available");
-        self.globals.insert(
-            name,
-            MiraValue::from_function_handle(handle.erase_function()),
-        );
-    }
-
-    /// Clone a global value by name.
-    pub fn get_global(&self, name: &str) -> Option<MiraValue> {
-        self.globals.get(name)
-    }
-
-    /// Return whether a global name is defined.
-    pub fn contains_global(&self, name: &str) -> bool {
-        self.globals.contains_key(name)
-    }
-
-    /// Iterate over global names in insertion order.
-    pub fn global_names(&self) -> impl Iterator<Item = &str> {
-        self.globals.keys()
     }
 
     /// Compare values using MiraScript's structural equality semantics.

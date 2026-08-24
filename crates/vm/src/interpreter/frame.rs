@@ -1,4 +1,4 @@
-use super::register::{MiraAny, Registers};
+use super::{MiraAny, register::Registers};
 
 /// Identifies a frame in the call stack.
 /// Root frame is always `0`, and child frames are numbered sequentially starting from `1`.
