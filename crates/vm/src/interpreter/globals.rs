@@ -94,8 +94,11 @@ impl Globals {
     pub fn get_hint(&self, name: &str, index: Option<usize>) -> Option<MiraValue> {
         if let Some(index) = index
             && let Some((std_name, value)) = self.std.get_index(index)
-            && std_name == name
         {
+            debug_assert_eq!(
+                std_name, name,
+                "standard-library global name collision: expected {std_name}, got {name}"
+            );
             Some(*value)
         } else {
             self.get(name)

@@ -58,6 +58,12 @@ pub trait MiraModule: Any {
     fn is_empty(&self) -> bool {
         self.len() == 0
     }
+
+    #[doc(hidden)]
+    fn resolve<'a>(&self, runtime: &'a Runtime) -> Result<Option<&'a dyn MiraModule>> {
+        let _ = runtime;
+        Ok(None)
+    }
 }
 
 pub(crate) struct MiraMapModule {
