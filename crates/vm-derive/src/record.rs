@@ -39,7 +39,7 @@ pub fn expand(input: DeriveInput) -> Result<TokenStream> {
         Fields::Unit => {}
         Fields::Unnamed(fields) => {
             for (index, field) in fields.unnamed.into_iter().enumerate() {
-                let options = field_options(&field, false)?;
+                let options = field_options(&field, true)?;
                 if options.skip {
                     continue;
                 }
