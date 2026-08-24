@@ -55,7 +55,7 @@ pub(crate) fn lex_impl<'s>(
 ) -> Result<Vec<Token<'s>>> {
     let mut tokens = vec![];
     loop {
-        #[cfg_attr(not(feature = "formatter"), allow(unused))]
+        #[cfg_attr(not(feature = "formatter"), allow(unused, clippy::let_unit_value))]
         let leading_trivia = trivia::leading_trivia(input)?;
         #[cfg_attr(not(feature = "formatter"), allow(unused_mut))]
         let mut token = tokens::token(input, tokens.last_mut())?;
@@ -70,7 +70,7 @@ pub(crate) fn lex_impl<'s>(
             break;
         }
 
-        #[cfg_attr(not(feature = "formatter"), allow(unused))]
+        #[cfg_attr(not(feature = "formatter"), allow(unused, clippy::let_unit_value))]
         let tailing_trivia = trivia::tailing_trivia(input)?;
 
         if matches!(token.kind, TokenKind::Empty) {

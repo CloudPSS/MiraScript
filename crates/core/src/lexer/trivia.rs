@@ -80,9 +80,7 @@ fn to_trivia_list<'s>(v: Vec<Trivia<'s>>) -> TriviaList<'s> {
     v.into_boxed_slice()
 }
 #[cfg(not(feature = "formatter"))]
-fn to_trivia_list<'s>(_: ()) -> TriviaList<'s> {
-    ()
-}
+fn to_trivia_list<'s>(_: ()) -> TriviaList<'s> {}
 
 pub(super) fn leading_trivia<'s>(i: &mut Input<'s>) -> Result<TriviaList<'s>> {
     repeat(0.., alt((line_comment, block_comment, new_line)))
@@ -109,7 +107,10 @@ pub(super) fn tailing_trivia<'s>(i: &mut Input<'s>) -> Result<TriviaList<'s>> {
             repeat(1.., block_comment.verify(block_comment_verifier)),
             alt((line_comment, new_line)),
         )
-            .map(|(b, e): (Vec<_>, _)| to_trivia_list(b.into_iter().chain([e]).collect())),
+            .map(|(b, e): (Vec<_>, _)| {
+                #[cfg_attr(not(feature = "formatter"), allow(clippy::unit_arg))]
+                to_trivia_list(b.into_iter().chain([e]).collect())
+            }),
         repeat(0..=1, alt((line_comment, new_line))).map(to_trivia_list),
     ))
     .parse_next(i)
