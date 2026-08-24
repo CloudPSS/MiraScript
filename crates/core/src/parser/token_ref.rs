@@ -34,7 +34,10 @@ impl<'s> TokenRef<'s> {
         self.0.map_addr(|addr| addr & !FLAG_MASK)
     }
 
-    fn inner(&self) -> &Token<'s> {
+    fn inner<'t>(&'t self) -> &'s Token<'s>
+    where
+        's: 't,
+    {
         // SAFETY: The inner pointer is constructed in a way that it is guaranteed to be non-null and properly aligned. The FLAG_MASK is used to store ownership information in the least significant bit of the pointer, which does not affect the validity of the pointer itself.
         unsafe {
             self.ptr()
