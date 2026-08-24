@@ -412,6 +412,7 @@ dependencies = [
  "mirascript-vm-derive",
  "paste",
  "rand",
+ "serde",
  "serde_json",
  "test_each_file",
  "thiserror",

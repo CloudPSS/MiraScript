@@ -27,6 +27,7 @@ libm = "0.2"
 mirascript-core.workspace = true
 mirascript-vm-derive.workspace = true
 rand = "0.10"
+serde = "1"
 serde_json = { version = "1", features = ["float_roundtrip", "preserve_order"] }
 thiserror = "2"
 unicode-normalization = "0.1"

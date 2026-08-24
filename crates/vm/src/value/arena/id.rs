@@ -15,7 +15,7 @@ impl ArenaId {
 
     fn next_from(next_id: &AtomicU16) -> Self {
         let id = next_id
-            .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |id| {
+            .try_update(Ordering::Relaxed, Ordering::Relaxed, |id| {
                 let id = NonZeroU16::new(id).expect("next arena identifier must be non-zero");
                 Some(Self(id).wrapping_next().get())
             })

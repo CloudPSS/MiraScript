@@ -40,3 +40,23 @@ fn test_complex() {
         r#"{"key":"records","items":[{"key":"numbers","items":[1,2,3]},{"key":"numbers","items":[1,2,3]}]}"#
     );
 }
+
+#[test]
+fn json_round_trips_wide_nested_values() {
+    let entries = (0..256)
+        .map(|index| format!(r#""key{index}":[{index},"line\n雪",{{"ok":true}}]"#))
+        .collect::<Vec<_>>()
+        .join(",");
+    let mut source = format!("{{{entries}}}");
+    for _ in 0..32 {
+        source = format!("[{source}]");
+    }
+
+    let mut runtime = Runtime::new();
+    runtime
+        .insert_global("json_source", source.clone())
+        .unwrap();
+    let result = runtime.eval("json_source::from_json()::to_json()").unwrap();
+
+    assert_eq!(result.as_str(&runtime).unwrap().unwrap(), source);
+}

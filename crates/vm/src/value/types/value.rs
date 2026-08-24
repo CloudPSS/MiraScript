@@ -294,16 +294,19 @@ impl MiraValue {
     /// Return this value's MiraScript category.
     #[inline]
     pub fn value_type(&self) -> MiraType {
-        match self.kind() {
-            MiraValueKind::Nil => MiraType::Nil,
-            MiraValueKind::Boolean(_) => MiraType::Boolean,
-            MiraValueKind::Number(_) => MiraType::Number,
-            MiraValueKind::StaticStr(_) | MiraValueKind::String(_) => MiraType::String,
-            MiraValueKind::Array(_) => MiraType::Array,
-            MiraValueKind::Record(_) => MiraType::Record,
-            MiraValueKind::Function(_) => MiraType::Function,
-            MiraValueKind::Module(_) => MiraType::Module,
-            MiraValueKind::Extern(_) => MiraType::Extern,
+        let Some(tag) = self.tag() else {
+            return MiraType::Number;
+        };
+        match tag {
+            ValueTag::Nil => MiraType::Nil,
+            ValueTag::Boolean => MiraType::Boolean,
+            ValueTag::StaticStr | ValueTag::String => MiraType::String,
+            ValueTag::Array => MiraType::Array,
+            ValueTag::Record => MiraType::Record,
+            ValueTag::Function => MiraType::Function,
+            ValueTag::Module => MiraType::Module,
+            ValueTag::Extern => MiraType::Extern,
+            ValueTag::Uninitialized => panic!("uninitialized register escaped as MiraValue"),
         }
     }
 
