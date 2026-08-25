@@ -599,21 +599,21 @@ jobs:
 
       - name: Run cargo tests
         run: |
-          source <(cargo llvm-cov show-env --sh)
-          cargo test --workspace --locked
+          source <(cargo llvm-cov show-env --sh --target x86_64-unknown-linux-gnu)
+          cargo test --workspace --locked --target x86_64-unknown-linux-gnu
 
       - name: Run python tests
         working-directory: crates/python
         run: |
-          source <(cargo llvm-cov show-env --sh)
+          source <(cargo llvm-cov show-env --sh --target x86_64-unknown-linux-gnu)
           uv sync --frozen --python 3.14
           uv run --frozen poe init
-          uv run --frozen poe test
+          uv run --frozen poe test --target x86_64-unknown-linux-gnu
 
       - name: Build node napi
         run: |
-          source <(cargo llvm-cov show-env --sh)
-          pnpm -r --filter @mirascript/napi run build
+          source <(cargo llvm-cov show-env --sh --target x86_64-unknown-linux-gnu)
+          pnpm -r --filter @mirascript/napi run build --target x86_64-unknown-linux-gnu
 
       - name: Run node tests
         run: |
@@ -623,8 +623,8 @@ jobs:
       - name: Collect coverage
         shell: bash
         run: |
-          source <(cargo llvm-cov show-env --sh)
-          cargo llvm-cov report --lcov --output-path target/lcov.info
+          source <(cargo llvm-cov show-env --sh --target x86_64-unknown-linux-gnu)
+          cargo llvm-cov report --lcov --output-path target/lcov.info --target x86_64-unknown-linux-gnu
 
       - name: Send coverage report
         shell: bash
