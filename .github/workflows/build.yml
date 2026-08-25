@@ -276,17 +276,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Setup Python
-        uses: actions/setup-python@v7
-        with:
-          python-version: 3.14
-
-      - name: Setup UV
-        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d
-
       - name: Install
         uses: ./.github/actions/install
         with:
+          setup-uv: true
           ALIYUN_NPM_TOKEN: ${{ secrets.ALIYUN_NPM_TOKEN }}
           rust-targets: wasm32-unknown-emscripten
 
@@ -598,7 +591,7 @@ jobs:
 
   finalize-coverage:
     if: ${{ !cancelled() && (needs.test-rust.result == 'success' || needs.test-rust.result == 'failure') && (needs.test-python.result == 'success' || needs.test-python.result == 'failure') && (needs.test-node.result == 'success' || needs.test-node.result == 'failure') }}
-    needs: [test-rust, test-python, test-node]
+    needs: [test-rust, test-python, test-node, coverage]
 
     runs-on: ubuntu-slim
 
@@ -610,3 +603,54 @@ jobs:
         shell: bash
         run: |
           bash <(curl -Ls https://coverage.codacy.com/get.sh) final --project-token '${{ secrets.CODACY_PROJECT_TOKEN }}'
+
+  coverage:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Configure Git
+        run: |
+          git config --global core.autocrlf input
+
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install
+        uses: ./.github/actions/install
+        with:
+          setup-uv: true
+          ALIYUN_NPM_TOKEN: ${{ secrets.ALIYUN_NPM_TOKEN }}
+          rust-targets: ''
+          rust-toolchain: ${{ matrix.toolchain }}
+          tools: wasm-bindgen wasm-pack cargo-llvm-cov
+
+      - name: Configure llvm-cov
+        run: |
+          cargo llvm-cov show-env >> $GITHUB_ENV
+
+      - name: Run cargo tests
+        run: cargo test --workspace --locked
+
+      - name: Run node tests
+        run: |
+          pnpm -r --filter @mirascript/mirascript... run build
+          pnpm -r --filter @mirascript/mirascript... run test
+
+      - name: Run python tests
+        working-directory: crates/python
+        run: |
+          uv sync --frozen
+          uv run --frozen test
+
+      - name: Collect coverage
+        shell: bash
+        run: |
+          cargo llvm-cov report --lcov --output-path rust-lcov.info
+
+      - name: Send coverage report
+        shell: bash
+        run: |
+          bash <(curl -Ls https://coverage.codacy.com/get.sh) report --partial --project-token '${{ secrets.CODACY_PROJECT_TOKEN }}'

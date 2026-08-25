@@ -2,6 +2,10 @@ name: Install
 description: Install all required tools and dependencies for building and testing MiraScript.
 
 inputs:
+  setup-uv:
+    description: 'Whether to setup uv. Default to false.'
+    required: false
+    default: 'false'
   setup-node:
     description: 'Whether to setup node. Default to true.'
     required: false
@@ -39,6 +43,9 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    - name: Setup UV
+      if: ${{ inputs.setup-uv == 'true' }}
+      uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d
     - name: Set private token
       if: ${{ inputs.ALIYUN_NPM_TOKEN }}
       shell: bash
