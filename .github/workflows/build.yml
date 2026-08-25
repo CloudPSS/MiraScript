@@ -631,6 +631,14 @@ jobs:
           source <(cargo llvm-cov show-env --sh)
           cargo test --workspace --locked
 
+      - name: Run python tests
+        working-directory: crates/python
+        run: |
+          source <(cargo llvm-cov show-env --sh)
+          uv sync --frozen --python 3.14
+          uv run --frozen poe init
+          uv run --frozen poe test
+
       - name: Build node napi
         run: |
           source <(cargo llvm-cov show-env --sh)
@@ -638,15 +646,8 @@ jobs:
 
       - name: Run node tests
         run: |
-          pnpm -r --filter @mirascript/mirascript... --filter !@mirascript/napi run build
-          pnpm -r --filter @mirascript/mirascript... run test
-
-      - name: Run python tests
-        working-directory: crates/python
-        run: |
-          source <(cargo llvm-cov show-env --sh)
-          uv sync --frozen
-          uv run --frozen test
+          pnpm -r --filter @mirascript/website --filter !@mirascript/napi run build
+          pnpm -r run test
 
       - name: Collect coverage
         shell: bash
