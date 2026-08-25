@@ -32,9 +32,12 @@ impl MiraManageable {
     }
 }
 
-impl From<MiraValue> for MiraManageable {
-    fn from(value: MiraValue) -> Self {
-        Self::Value(value)
+impl<T> From<T> for MiraManageable
+where
+    T: Into<MiraValue>,
+{
+    fn from(value: T) -> Self {
+        Self::Value(value.into())
     }
 }
 

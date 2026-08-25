@@ -1,4 +1,4 @@
-use crate::{MiraType, value::arena::MiraManageable};
+use crate::MiraType;
 
 use super::{MiraValue, value::ValueTag};
 
@@ -21,15 +21,6 @@ impl<T: Into<MiraValue>> From<Option<T>> for MiraValue {
         match value {
             Some(v) => v.into(),
             None => MiraValue::nil(),
-        }
-    }
-}
-
-impl<T: Into<MiraManageable>> From<Option<T>> for MiraManageable {
-    fn from(value: Option<T>) -> Self {
-        match value {
-            Some(v) => v.into(),
-            None => MiraValue::nil().into(),
         }
     }
 }

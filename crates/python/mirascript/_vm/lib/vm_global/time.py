@@ -32,7 +32,7 @@ def _from_number(datetime: float | int, fallback: bool) -> float | None:
 
 
 def _timestamp(datetime, fallback: bool) -> float | None:
-    if datetime is None:
+    if datetime is None or datetime is Uninitialized:
         return time() * 1000.0
     if is_number(datetime):
         return _from_number(datetime, fallback)

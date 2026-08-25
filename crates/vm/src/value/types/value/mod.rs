@@ -188,4 +188,15 @@ mod tests {
 
         assert_eq!(value.as_str(&runtime).unwrap(), Some(STATIC_TEXT));
     }
+
+    #[test]
+    fn dbg_fmt() {
+        assert_eq!(
+            format!("{:?}", MiraValue::from(&STATIC_TEXT)),
+            format!("StaticStr(\"{}\")", STATIC_TEXT)
+        );
+        assert_eq!(format!("{:?}", MiraValue::default()), "Nil");
+        assert_eq!(format!("{:?}", MiraValue::from(false)), "Boolean(false)");
+        assert_eq!(format!("{:?}", MiraValue::from(12)), "Number(12.0)");
+    }
 }

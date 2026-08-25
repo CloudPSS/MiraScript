@@ -28,10 +28,10 @@ pub(super) fn install(context: &mut Runtime) {
                 name: "format",
             }));
         }
-        let specifier = match args.get(1) {
-            Some(value) if value.is_nil() => None,
-            Some(value) => Some(operations::to_string(call, *value)?),
-            None => unreachable!(),
+        let specifier = if args[1].is_nil() {
+            None
+        } else {
+            Some(operations::to_string(call, args[1])?)
         };
         let value = operations::format_value(call, value, specifier.as_deref())?;
         call.insert(value)

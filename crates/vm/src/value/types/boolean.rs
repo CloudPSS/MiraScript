@@ -1,4 +1,4 @@
-use crate::{MiraError, MiraType, Result, value::arena::MiraManageable};
+use crate::{MiraError, MiraType, Result};
 
 use super::{MiraValue, value::RawValue, value::ValueTag};
 
@@ -33,13 +33,6 @@ impl From<bool> for MiraValue {
     #[inline]
     fn from(value: bool) -> Self {
         Self::boolean(value)
-    }
-}
-
-impl From<bool> for MiraManageable {
-    #[inline]
-    fn from(value: bool) -> Self {
-        std::convert::Into::<MiraValue>::into(value).into()
     }
 }
 

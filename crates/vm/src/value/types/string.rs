@@ -1,4 +1,4 @@
-use crate::{MiraHandle, MiraType, Result, Runtime, value::arena::MiraManageable};
+use crate::{MiraHandle, MiraType, Result, Runtime};
 
 use super::{
     MiraValue, MiraValueKind, Payload,
@@ -42,12 +42,5 @@ impl From<&'static &'static str> for MiraValue {
     #[inline]
     fn from(value: &'static &'static str) -> Self {
         Self::str(value)
-    }
-}
-
-impl From<&'static &'static str> for MiraManageable {
-    #[inline]
-    fn from(value: &'static &'static str) -> Self {
-        std::convert::Into::<MiraValue>::into(value).into()
     }
 }

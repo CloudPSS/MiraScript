@@ -17,8 +17,8 @@ pub(super) fn install(context: &mut Runtime) {
 }
 
 fn gamma(value: f64) -> f64 {
-    if value == value.trunc() && 0.0 < value && value <= 171.0 {
-        return FACTORIAL[value.trunc() as usize - 1];
+    if value == value.trunc() && value > 0f64 && value <= FACTORIAL.len() as f64 {
+        return FACTORIAL[value as usize - 1];
     }
     libm::tgamma(value)
 }

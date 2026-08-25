@@ -12,6 +12,8 @@ assert_invalid('');
 assert_invalid('Hello, World!');
 assert_invalid('1.2e999');
 assert_invalid(false);
+assert_invalid(922_337_203_685_477_580);
+assert_invalid('922337203685477580');
 
 // The offset is irrelevant when the input cannot be converted.
 t_eq(to_datetime(inf, 12, 'fallback'), 'fallback');

@@ -10,164 +10,88 @@ pub(crate) fn overload_number(a: &MiraValue, b: &MiraValue) -> bool {
     true
 }
 
-pub(crate) fn equal(runtime: &mut Runtime, left: MiraValue, right: MiraValue) -> Result<bool> {
+fn equal_with(
+    runtime: &mut Runtime,
+    left: MiraValue,
+    right: MiraValue,
+    num_equal: impl Fn(f64, f64) -> bool,
+    inner_equal: impl Fn(&mut Runtime, MiraValue, MiraValue) -> Result<bool>,
+) -> Result<bool> {
     Ok(match (left.kind(), right.kind()) {
-        (MiraValueKind::Nil, MiraValueKind::Nil) => true,
-        (MiraValueKind::Boolean(left), MiraValueKind::Boolean(right)) => left == right,
-        (MiraValueKind::Number(left), MiraValueKind::Number(right)) => left == right,
+        (MiraValueKind::Number(left), MiraValueKind::Number(right)) => num_equal(left, right),
         _ if left.is_string() && right.is_string() => {
-            to_string(runtime, left)? == to_string(runtime, right)?
+            left.as_str(runtime)? == right.as_str(runtime)?
         }
         (MiraValueKind::Array(_), MiraValueKind::Array(_)) => {
-            let left_values = iterable_array(runtime, left)?;
-            let right_values = iterable_array(runtime, right)?;
-            if left_values.len() != right_values.len() {
-                false
-            } else {
-                let mut same = true;
-                for (left, right) in left_values.into_iter().zip(right_values) {
-                    if !same_value(runtime, left, right)? {
-                        same = false;
-                        break;
-                    }
-                }
-                same
+            let left_len = array_len(runtime, left)?.unwrap_or_default();
+            let right_len = array_len(runtime, right)?.unwrap_or_default();
+            if left_len != right_len {
+                return Ok(false);
             }
+            for index in 0..left_len {
+                let Some(left_value) = array_get(runtime, left, index)? else {
+                    return Ok(false);
+                };
+                let Some(right_value) = array_get(runtime, right, index)? else {
+                    return Ok(false);
+                };
+                if !inner_equal(runtime, left_value, right_value)? {
+                    return Ok(false);
+                }
+            }
+            true
         }
         (MiraValueKind::Record(_), MiraValueKind::Record(_)) => {
             let left_keys = record_keys(runtime, left)?.unwrap_or_default();
             let right_keys = record_keys(runtime, right)?.unwrap_or_default();
             if left_keys.len() != right_keys.len() {
-                false
-            } else {
-                let mut same = true;
-                for key in left_keys {
-                    let Some(left_value) = record_get(runtime, left, &key)? else {
-                        same = false;
-                        break;
-                    };
-                    let Some(right_value) = record_get(runtime, right, &key)? else {
-                        same = false;
-                        break;
-                    };
-                    if !same_value(runtime, left_value, right_value)? {
-                        same = false;
-                        break;
-                    }
-                }
-                same
+                return Ok(false);
             }
+            for key in left_keys {
+                let Some(left_value) = record_get(runtime, left, &key)? else {
+                    return Ok(false);
+                };
+                let Some(right_value) = record_get(runtime, right, &key)? else {
+                    return Ok(false);
+                };
+                if !inner_equal(runtime, left_value, right_value)? {
+                    return Ok(false);
+                }
+            }
+            true
         }
-        _ => left == right,
+        (left, right) => left == right,
     })
+}
+
+pub(crate) fn equal(runtime: &mut Runtime, left: MiraValue, right: MiraValue) -> Result<bool> {
+    equal_with(
+        runtime,
+        left,
+        right,
+        |left, right| left == right,
+        same_value,
+    )
 }
 
 pub(crate) fn same_value(runtime: &mut Runtime, left: MiraValue, right: MiraValue) -> Result<bool> {
-    Ok(match (left.kind(), right.kind()) {
-        (MiraValueKind::Nil, MiraValueKind::Nil) => true,
-        (MiraValueKind::Boolean(left), MiraValueKind::Boolean(right)) => left == right,
-        (MiraValueKind::Number(left), MiraValueKind::Number(right)) => {
-            left == right || (left.is_nan() && right.is_nan())
-        }
-        _ if left.is_string() && right.is_string() => {
-            to_string(runtime, left)? == to_string(runtime, right)?
-        }
-        (MiraValueKind::Array(_), MiraValueKind::Array(_)) => {
-            let left_values = iterable_array(runtime, left)?;
-            let right_values = iterable_array(runtime, right)?;
-            if left_values.len() != right_values.len() {
-                false
-            } else {
-                let mut same = true;
-                for (left, right) in left_values.into_iter().zip(right_values) {
-                    if !same_value(runtime, left, right)? {
-                        same = false;
-                        break;
-                    }
-                }
-                same
-            }
-        }
-        (MiraValueKind::Record(_), MiraValueKind::Record(_)) => {
-            let left_keys = record_keys(runtime, left)?.unwrap_or_default();
-            let right_keys = record_keys(runtime, right)?.unwrap_or_default();
-            if left_keys.len() != right_keys.len() {
-                false
-            } else {
-                let mut same = true;
-                for key in left_keys {
-                    let Some(left_value) = record_get(runtime, left, &key)? else {
-                        same = false;
-                        break;
-                    };
-                    let Some(right_value) = record_get(runtime, right, &key)? else {
-                        same = false;
-                        break;
-                    };
-                    if !same_value(runtime, left_value, right_value)? {
-                        same = false;
-                        break;
-                    }
-                }
-                same
-            }
-        }
-        _ => left == right,
-    })
+    equal_with(
+        runtime,
+        left,
+        right,
+        |left, right| left == right || (left.is_nan() && right.is_nan()),
+        same_value,
+    )
 }
 
 pub(crate) fn host_equal(runtime: &mut Runtime, left: MiraValue, right: MiraValue) -> Result<bool> {
-    Ok(match (left.kind(), right.kind()) {
-        (MiraValueKind::Nil, MiraValueKind::Nil) => true,
-        (MiraValueKind::Boolean(left), MiraValueKind::Boolean(right)) => left == right,
-        (MiraValueKind::Number(left), MiraValueKind::Number(right)) => {
-            left.to_bits() == right.to_bits() || (left.is_nan() && right.is_nan())
-        }
-        _ if left.is_string() && right.is_string() => {
-            to_string(runtime, left)? == to_string(runtime, right)?
-        }
-        (MiraValueKind::Array(_), MiraValueKind::Array(_)) => {
-            let left_values = iterable_array(runtime, left)?;
-            let right_values = iterable_array(runtime, right)?;
-            if left_values.len() != right_values.len() {
-                false
-            } else {
-                let mut same = true;
-                for (left, right) in left_values.into_iter().zip(right_values) {
-                    if !host_equal(runtime, left, right)? {
-                        same = false;
-                        break;
-                    }
-                }
-                same
-            }
-        }
-        (MiraValueKind::Record(_), MiraValueKind::Record(_)) => {
-            let left_keys = record_keys(runtime, left)?.unwrap_or_default();
-            let right_keys = record_keys(runtime, right)?.unwrap_or_default();
-            if left_keys.len() != right_keys.len() {
-                false
-            } else {
-                let mut same = true;
-                for key in left_keys {
-                    let Some(left_value) = record_get(runtime, left, &key)? else {
-                        same = false;
-                        break;
-                    };
-                    let Some(right_value) = record_get(runtime, right, &key)? else {
-                        same = false;
-                        break;
-                    };
-                    if !host_equal(runtime, left_value, right_value)? {
-                        same = false;
-                        break;
-                    }
-                }
-                same
-            }
-        }
-        _ => left == right,
-    })
+    equal_with(
+        runtime,
+        left,
+        right,
+        |left, right| left.to_bits() == right.to_bits() || (left.is_nan() && right.is_nan()),
+        host_equal,
+    )
 }
 
 pub(crate) fn compare(

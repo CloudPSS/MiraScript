@@ -1,5 +1,4 @@
 use super::{MiraValue, value::RawValue};
-use crate::value::arena::MiraManageable;
 use crate::{MiraError, Result};
 
 impl MiraValue {
@@ -31,22 +30,6 @@ macro_rules! number_from {
         impl From<$ty> for MiraValue {
             fn from(value: $ty) -> Self {
                 Self::number(value as f64)
-            }
-        }
-        impl From<$ty> for MiraManageable {
-            fn from(value: $ty) -> Self {
-                std::convert::Into::<MiraValue>::into(value as f64).into()
-            }
-        }
-
-        impl TryFrom<MiraManageable> for $ty {
-            type Error = Box<MiraError>;
-
-            fn try_from(value: MiraManageable) -> Result<Self> {
-                let MiraManageable::Value(value) = value else {
-                    return Err(MiraError::conversion_type(stringify!($ty), value.value_type()));
-                };
-                Self::try_from(value)
             }
         }
     )* };
@@ -105,6 +88,7 @@ impl TryFrom<MiraValue> for f32 {
 
 #[cfg(test)]
 mod tests {
+
     use super::*;
 
     #[test]
@@ -160,23 +144,6 @@ mod tests {
         assert!(u8::try_from(value).is_err());
         assert!(i32::try_from(value).is_err());
         assert!(u128::try_from(value).is_err());
-    }
-
-    #[test]
-    fn test_number_try_from_manageable() {
-        let value: fn() -> MiraManageable = || MiraValue::number(42.0).into();
-        assert_eq!(u8::try_from(value()).unwrap(), 42u8);
-        assert_eq!(i32::try_from(value()).unwrap(), 42i32);
-        assert_eq!(u128::try_from(value()).unwrap(), 42u128);
-        assert_eq!(f32::try_from(value()).unwrap(), 42f32);
-        assert_eq!(f64::try_from(value()).unwrap(), 42f64);
-
-        let value: fn() -> MiraManageable = || "hello".into();
-        assert!(u8::try_from(value()).is_err());
-        assert!(i32::try_from(value()).is_err());
-        assert!(u128::try_from(value()).is_err());
-        assert!(f32::try_from(value()).is_err());
-        assert!(f64::try_from(value()).is_err());
     }
 
     #[test]

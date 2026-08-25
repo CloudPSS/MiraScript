@@ -84,3 +84,17 @@ impl_handle_cast!(MiraArray, erase_array);
 impl_handle_cast!(MiraRecord, erase_record);
 impl_handle_cast!(MiraFunction, erase_function);
 impl_handle_cast!(MiraModule, erase_module);
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::value::arena::ArenaId;
+
+    #[test]
+    fn test_fmt() {
+        let handle =
+            MiraHandle::<dyn MiraArray>::new(ArenaKey::new(ArenaId::from(1), 2, "array").unwrap());
+        let expected = "MiraHandle { arena: 1, slot: 2 }";
+        assert_eq!(format!("{handle:?}"), expected);
+    }
+}
