@@ -2,7 +2,7 @@
 $ErrorActionPreference = "Stop"
 
 Remove-Item Env:https_proxy -ErrorAction SilentlyContinue
-# 触发 2FA 验证
+# Trigger 2FA
 npm login --registry=https://registry.npmjs.org/
 npm trust list --registry=https://registry.npmjs.org/
 

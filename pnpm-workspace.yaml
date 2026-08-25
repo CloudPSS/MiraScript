@@ -4,10 +4,6 @@ configDependencies:
 packages:
   - packages/*
 
-registries:
-  'https://packages.aliyun.com/60c179fc44816b8ed233a8bb/npm/npm-registry/':
-    scopes: ['@private']
-
 allowBuilds:
   '@playwright/browser-chromium': false
   '@swc/core': true
