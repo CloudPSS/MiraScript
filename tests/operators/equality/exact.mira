@@ -30,6 +30,9 @@ t_false(0 == "0");
 t_false(false == "");
 t_false(false == nil);
 
+t_false((a: 1, b: 2) == (a: 1));
+t_false((b: 1) == (a: 1));
+t_false((a: 1, b: '2') == (a: 1, b: 2));
 t_true((1, 2, 3) == (1, 2, 3));
 t_true([1, 2, 3, nil, "xx", ("a", [true])] == [1, 2, 3, nil, "xx", ("a", [true])]);
 t_true([1, 2, 3] != (1, 2, 3));
@@ -42,6 +45,7 @@ t_false([1, 2] == (1, 2));
 t_false((1, 2, 3) == (1, 2, 4));
 t_false([1, 2, 3] == [1, 2, 4]);
 t_true((nan,) == (nan,));
+t_true((x: nan) == (x: -nan));
 t_false([nil] == []);
 t_false((nil, nil) == (a: nil, b: nil));
 t_false((a: nil) == ());
