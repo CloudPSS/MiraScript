@@ -626,21 +626,21 @@ jobs:
           rust-targets: ''
           tools: wasm-bindgen wasm-pack cargo-llvm-cov
 
-      - name: Configure llvm-cov
-        run: |
-          cargo llvm-cov show-env >> $GITHUB_ENV
-
       - name: Run cargo tests
-        run: cargo test --workspace --locked
+        run: |
+          source <(cargo llvm-cov show-env --sh)
+          cargo test --workspace --locked
 
       - name: Run node tests
         run: |
+          source <(cargo llvm-cov show-env --sh)
           pnpm -r --filter @mirascript/mirascript... run build
           pnpm -r --filter @mirascript/mirascript... run test
 
       - name: Run python tests
         working-directory: crates/python
         run: |
+          source <(cargo llvm-cov show-env --sh)
           uv sync --frozen
           uv run --frozen test
 
