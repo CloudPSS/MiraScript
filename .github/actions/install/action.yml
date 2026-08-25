@@ -50,6 +50,7 @@ runs:
       if: ${{ inputs.ALIYUN_NPM_TOKEN }}
       shell: bash
       run: |
+        npm config set -L project '@private:registry' 'https://packages.aliyun.com/60c179fc44816b8ed233a8bb/npm/npm-registry/'
         npm config set -L project '//packages.aliyun.com/60c179fc44816b8ed233a8bb/npm/npm-registry/:_authToken' '${{ inputs.ALIYUN_NPM_TOKEN }}'
 
     - name: Setup Rust
