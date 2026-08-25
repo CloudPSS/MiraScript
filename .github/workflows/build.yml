@@ -633,8 +633,9 @@ jobs:
 
       - name: Run node tests
         run: |
+          pnpm -r --filter @mirascript/mirascript... --filter !@mirascript/napi run build
           source <(cargo llvm-cov show-env --sh)
-          pnpm -r --filter @mirascript/mirascript... run build
+          pnpm -r --filter @mirascript/napi run build
           pnpm -r --filter @mirascript/mirascript... run test
 
       - name: Run python tests
