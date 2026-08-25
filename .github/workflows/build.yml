@@ -617,7 +617,8 @@ jobs:
 
       - name: Build node packages
         run: |
-          pnpm -r --filter !@mirascript/website --filter !@mirascript/napi run build
+          pnpm -r --filter !@mirascript/website --filter !@mirascript/napi --filter !@mirascript/mirascript run build
+          pnpm -r --filter @mirascript/mirascript run build:ts
 
       - name: Run node tests
         run: |
