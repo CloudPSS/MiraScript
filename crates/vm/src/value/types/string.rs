@@ -1,26 +1,30 @@
-use super::{MiraValue, MiraValueKind};
-use crate::{Result, Runtime, value::arena::MiraManageable};
+use crate::{MiraHandle, MiraType, Result, Runtime, value::arena::MiraManageable};
+
+use super::{
+    MiraValue, MiraValueKind, Payload,
+    value::{RawValue, ValueTag},
+};
 
 impl MiraValue {
     /// Create a `MiraValue` representing a static string.
     #[inline]
     pub fn str(value: &'static &'static str) -> Self {
-        Self::boxed_static_str(value)
+        Self::from_raw(RawValue::tagged(
+            ValueTag::StaticStr,
+            Payload::from_address(std::ptr::from_ref(value)).to_bytes(),
+        ))
     }
 
-    /// Allocate an owned string in a Runtime and return its value handle.
+    /// Create a `MiraValue` representing a string value.
     #[inline]
-    pub fn new_string(value: impl Into<String>, runtime: &mut Runtime) -> Result<Self> {
-        runtime.insert_string(value).map(Self::from_string_handle)
+    pub const fn string(value: MiraHandle<String>) -> Self {
+        Self::handle(ValueTag::String, value)
     }
 
     /// Return whether this value is a static or arena-managed string.
     #[inline]
     pub fn is_string(&self) -> bool {
-        matches!(
-            self.kind(),
-            MiraValueKind::String(_) | MiraValueKind::StaticStr(_)
-        )
+        matches!(self.value_type(), MiraType::String)
     }
 
     /// Borrow this value's string payload from its owning Runtime.

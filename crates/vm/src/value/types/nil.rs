@@ -1,18 +1,18 @@
-use crate::value::arena::MiraManageable;
+use crate::{MiraType, value::arena::MiraManageable};
 
-use super::MiraValue;
+use super::{MiraValue, value::ValueTag};
 
 impl MiraValue {
     /// Return a `MiraValue` representing the MiraScript `nil` value.
     #[inline]
-    pub fn nil() -> Self {
-        Self::boxed_nil()
+    pub const fn nil() -> Self {
+        Self::empty(ValueTag::Nil)
     }
 
     /// Check whether this value is the MiraScript `nil` value.
     #[inline]
-    pub fn is_nil(&self) -> bool {
-        self.boxed_is_nil()
+    pub const fn is_nil(&self) -> bool {
+        matches!(self.value_type(), MiraType::Nil)
     }
 }
 

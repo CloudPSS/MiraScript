@@ -1,6 +1,6 @@
 use crate::{MiraError, Result, RuntimeErrorKind};
 
-use super::ArenaId;
+use super::{ArenaId, Payload};
 
 const ARENA_INDEX_BITS: u32 = 32;
 
@@ -18,23 +18,21 @@ impl ArenaKey {
         ))
     }
 
-    pub fn arena_id(self) -> ArenaId {
+    pub const fn arena_id(self) -> ArenaId {
         ArenaId::from((self.0 >> ARENA_INDEX_BITS) as u16)
     }
 
-    pub fn index(self) -> usize {
+    pub const fn index(self) -> usize {
         ((self.0 as u32) - 1) as usize
     }
 
-    pub fn payload(self) -> [u8; 6] {
-        let bytes = self.0.to_le_bytes();
-        bytes[..6].try_into().expect("six-byte arena key")
+    pub const fn payload(self) -> [u8; 6] {
+        Payload::from_bits(self.0).to_bytes()
     }
 
-    pub fn from_payload(payload: [u8; 6]) -> Self {
-        let mut bytes = [0; 8];
-        bytes[..6].copy_from_slice(&payload);
-        Self(u64::from_le_bytes(bytes))
+    pub const fn from_payload(payload: [u8; 6]) -> Self {
+        let bytes = Payload::from_bytes(payload).to_bits();
+        Self(bytes)
     }
 }
 

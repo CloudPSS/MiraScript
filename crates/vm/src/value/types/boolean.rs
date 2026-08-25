@@ -1,24 +1,31 @@
-use crate::{MiraError, Result, value::arena::MiraManageable};
+use crate::{MiraError, MiraType, Result, value::arena::MiraManageable};
 
-use super::MiraValue;
+use super::{MiraValue, value::RawValue, value::ValueTag};
 
 impl MiraValue {
     /// Create a `MiraValue` representing a boolean value.
     #[inline]
-    pub fn boolean(value: bool) -> Self {
-        Self::boxed_boolean(value)
+    pub const fn boolean(value: bool) -> Self {
+        Self::from_raw(RawValue::tagged(
+            ValueTag::Boolean,
+            [value as u8, 0, 0, 0, 0, 0],
+        ))
     }
 
     /// Check whether this value is a boolean value.
     #[inline]
-    pub fn is_boolean(&self) -> bool {
-        self.as_boolean().is_some()
+    pub const fn is_boolean(&self) -> bool {
+        matches!(self.value_type(), MiraType::Boolean)
     }
 
     /// Return the inline boolean payload, or `None` for another value type.
     #[inline]
-    pub fn as_boolean(&self) -> Option<bool> {
-        self.boxed_boolean_value()
+    pub const fn as_boolean(&self) -> Option<bool> {
+        if !self.is_boolean() {
+            None
+        } else {
+            Some(self.raw().payload()[0] != 0)
+        }
     }
 }
 

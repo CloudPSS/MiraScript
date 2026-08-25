@@ -46,3 +46,21 @@ impl fmt::Display for MiraType {
         formatter.write_str(self.name())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn type_display() {
+        assert_eq!(MiraType::Nil.to_string(), "nil");
+        assert_eq!(MiraType::Boolean.to_string(), "boolean");
+        assert_eq!(MiraType::Number.to_string(), "number");
+        assert_eq!(MiraType::String.to_string(), "string");
+        assert_eq!(MiraType::Array.to_string(), "array");
+        assert_eq!(MiraType::Record.to_string(), "record");
+        assert_eq!(MiraType::Function.to_string(), "function");
+        assert_eq!(MiraType::Module.to_string(), "module");
+        assert_eq!(MiraType::Extern.to_string(), "extern");
+    }
+}

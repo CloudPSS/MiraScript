@@ -41,18 +41,18 @@ impl<T: Any + ?Sized> hash::Hash for MiraHandle<T> {
 }
 
 impl<T: Any + ?Sized> MiraHandle<T> {
-    pub(super) fn new(key: ArenaKey) -> Self {
+    pub(super) const fn new(key: ArenaKey) -> Self {
         Self {
             key,
             marker: PhantomData,
         }
     }
 
-    pub(crate) fn payload(self) -> [u8; 6] {
+    pub(crate) const fn payload(self) -> [u8; 6] {
         self.key.payload()
     }
 
-    pub(crate) fn from_payload(payload: [u8; 6]) -> Self {
+    pub(crate) const fn from_payload(payload: [u8; 6]) -> Self {
         Self::new(ArenaKey::from_payload(payload))
     }
 }
@@ -61,7 +61,7 @@ macro_rules! impl_handle_cast {
     ($trait:path, $erase:ident) => {
         impl<T: $trait + ?Sized> MiraHandle<T> {
             /// Erase the concrete Rust type while preserving its MiraScript category.
-            pub fn $erase(self) -> MiraHandle<dyn $trait> {
+            pub const fn $erase(self) -> MiraHandle<dyn $trait> {
                 MiraHandle::new(self.key)
             }
         }

@@ -27,11 +27,11 @@ impl ArenaId {
         Self(NonZeroU16::new(self.get().wrapping_add(1)).unwrap_or(NonZeroU16::MIN))
     }
 
-    pub fn get(self) -> u16 {
+    pub const fn get(self) -> u16 {
         self.0.get()
     }
 
-    pub fn from(id: u16) -> Self {
+    pub const fn from(id: u16) -> Self {
         Self(NonZeroU16::new(id).expect("arena key identifier must be non-zero"))
     }
 }

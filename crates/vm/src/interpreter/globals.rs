@@ -161,10 +161,7 @@ impl Runtime {
         let handle = self
             .insert_function(function)
             .expect("a fresh native function arena slot must be available");
-        self.globals.insert(
-            name,
-            MiraValue::from_function_handle(handle.erase_function()),
-        );
+        self.globals.insert(name, MiraValue::function(handle));
     }
 
     /// Clone a global value by name.

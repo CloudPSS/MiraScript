@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use super::{MiraArray, MiraFunction, MiraModule, MiraRecord, MiraValue};
+use crate::{MiraArray, MiraFunction, MiraModule, MiraRecord, MiraType, MiraValue};
 
 /// An owned value waiting to be inserted into a Runtime arena.
 pub enum MiraManageable {
@@ -16,6 +16,20 @@ pub enum MiraManageable {
     Function(Rc<dyn MiraFunction>),
     /// An owned module implementation.
     Module(Box<dyn MiraModule>),
+}
+
+impl MiraManageable {
+    /// Return the MiraScript type of this value.
+    pub fn value_type(&self) -> MiraType {
+        match self {
+            Self::Value(value) => value.value_type(),
+            Self::String(_) => MiraType::String,
+            Self::Array(_) => MiraType::Array,
+            Self::Record(_) => MiraType::Record,
+            Self::Function(_) => MiraType::Function,
+            Self::Module(_) => MiraType::Module,
+        }
+    }
 }
 
 impl From<MiraValue> for MiraManageable {
@@ -63,5 +77,83 @@ impl MiraManageable {
         values: indexmap::IndexMap<String, MiraValue>,
     ) -> Self {
         crate::value::types::map_module(name, values)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{Runtime, value::map_module};
+
+    use super::*;
+
+    #[test]
+    fn test_value() {
+        let value: MiraManageable = MiraValue::number(42.0).into();
+        assert_eq!(value.value_type(), MiraType::Number);
+        let mut runtime = Runtime::new();
+        runtime.insert_global("test_value", value).unwrap();
+        let result = runtime.eval("test_value + 1").unwrap();
+        assert_eq!(result.as_number().unwrap(), 43.0);
+    }
+
+    #[test]
+    fn test_string() {
+        let value: MiraManageable = "Hello".into();
+        assert_eq!(value.value_type(), MiraType::String);
+        let mut runtime = Runtime::new();
+        runtime.insert_global("test_string", value).unwrap();
+        let result = runtime.eval("'$test_string World!'").unwrap();
+        assert_eq!(result.as_str(&runtime).unwrap(), Some("Hello World!"));
+    }
+
+    #[test]
+    fn test_array() {
+        let value: MiraManageable =
+            MiraManageable::from_array(vec![MiraValue::number(1.0), MiraValue::number(2.0)]);
+        assert_eq!(value.value_type(), MiraType::Array);
+        let mut runtime = Runtime::new();
+        runtime.insert_global("test_array", value).unwrap();
+        let result = runtime.eval("test_array[0] + test_array[1]").unwrap();
+        assert_eq!(result.as_number().unwrap(), 3.0);
+    }
+
+    #[test]
+    fn test_record() {
+        let value: MiraManageable = MiraManageable::from_record(std::collections::HashMap::<
+            String,
+            MiraValue,
+        >::from_iter([
+            ("a".to_string(), MiraValue::number(1.0)),
+            ("b".to_string(), MiraValue::number(2.0)),
+        ]));
+        assert_eq!(value.value_type(), MiraType::Record);
+        let mut runtime = Runtime::new();
+        runtime.insert_global("test_record", value).unwrap();
+        let result = runtime.eval("test_record.a + test_record.b").unwrap();
+        assert_eq!(result.as_number().unwrap(), 3.0);
+    }
+
+    #[test]
+    fn test_function() {
+        let value: MiraManageable = MiraManageable::from_function(
+            |_: &mut Runtime, args: &[MiraValue]| -> crate::Result<MiraManageable> {
+                Ok(MiraValue::number(args.len() as f64).into())
+            },
+        );
+        assert_eq!(value.value_type(), MiraType::Function);
+        let mut runtime = Runtime::new();
+        runtime.insert_global("test_function", value).unwrap();
+        let result = runtime.eval("test_function(1, 2, 3)").unwrap();
+        assert_eq!(result.as_number().unwrap(), 3.0);
+    }
+
+    #[test]
+    fn test_module() {
+        let value: MiraManageable = map_module("test", indexmap::IndexMap::new());
+        assert_eq!(value.value_type(), MiraType::Module);
+        let mut runtime = Runtime::new();
+        runtime.insert_global("test_module", value).unwrap();
+        let result = runtime.eval("test_module").unwrap();
+        assert!(result.is_module());
     }
 }

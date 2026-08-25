@@ -8,7 +8,7 @@ use std::{any::Any, ops::Deref, rc::Rc};
 
 use crate::{MiraError, Result, Runtime, RuntimeErrorKind};
 
-use super::{MiraArray, MiraFunction, MiraModule, MiraRecord, MiraValue, MiraValueKind};
+use super::{MiraArray, MiraFunction, MiraModule, MiraRecord, MiraValue, MiraValueKind, Payload};
 
 pub use handle::MiraHandle;
 use id::ArenaId;
@@ -47,23 +47,26 @@ impl Runtime {
                 Ok(value)
             }
             MiraManageable::String(value) => {
-                Ok(MiraValue::from_string_handle(self.insert_string(value)?))
+                let key = self.arena.strings.insert(self.arena.id, value)?;
+                Ok(MiraValue::string(MiraHandle::new(key)))
             }
             MiraManageable::Array(value) => {
                 let key = self.arena.arrays.insert(self.arena.id, value)?;
-                Ok(MiraValue::from_array_handle(MiraHandle::new(key)))
+                Ok(MiraValue::array(MiraHandle::<dyn MiraArray>::new(key)))
             }
             MiraManageable::Record(value) => {
                 let key = self.arena.records.insert(self.arena.id, value)?;
-                Ok(MiraValue::from_record_handle(MiraHandle::new(key)))
+                Ok(MiraValue::record(MiraHandle::<dyn MiraRecord>::new(key)))
             }
             MiraManageable::Function(value) => {
                 let key = self.arena.functions.insert(self.arena.id, value)?;
-                Ok(MiraValue::from_function_handle(MiraHandle::new(key)))
+                Ok(MiraValue::function(MiraHandle::<dyn MiraFunction>::new(
+                    key,
+                )))
             }
             MiraManageable::Module(value) => {
                 let key = self.arena.modules.insert(self.arena.id, value)?;
-                Ok(MiraValue::from_module_handle(MiraHandle::new(key)))
+                Ok(MiraValue::module(MiraHandle::<dyn MiraModule>::new(key)))
             }
         }
     }

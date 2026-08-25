@@ -8,8 +8,10 @@ mod nil;
 mod number;
 mod record;
 mod string;
+mod uninitialized;
 mod value;
 
+use super::Payload;
 pub use array::{MiraArray, MiraShapedArray};
 pub use r#extern::MiraExtern;
 pub use field::{
