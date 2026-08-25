@@ -359,24 +359,40 @@ impl Runtime {
                 value,
                 key,
             } => {
-                let key = match key {
-                    AccessKey::Constant(constant) => self.materialize_constant(*constant)?,
-                    AccessKey::Register(register) => self.read_register(frame, *register)?,
-                    AccessKey::Index(index) => MiraValue::number(*index as f64),
-                };
                 let source = self.read_register(frame, *value)?;
-                match kind {
-                    AccessOperation::Has => {
-                        let result = MiraValue::boolean(self.has_value(source, key)?);
+                match (kind, key) {
+                    (AccessOperation::Has, AccessKey::Index(index)) => {
+                        let result = MiraValue::boolean(operations::has_i(self, source, *index)?);
                         self.write_register(frame, *destination, result);
                     }
-                    AccessOperation::Get => {
-                        let result = self.get_value(source, key)?;
+                    (AccessOperation::Get, AccessKey::Index(index)) => {
+                        let result = operations::get_i(self, source, *index)?;
                         self.write_register(frame, *destination, result);
                     }
-                    AccessOperation::Set => {
-                        let assigned = self.read_register(frame, *destination)?;
-                        operations::set(self, source, key, assigned)?;
+                    _ => {
+                        let key = match key {
+                            AccessKey::Constant(constant) => {
+                                self.materialize_constant(*constant)?
+                            }
+                            AccessKey::Register(register) => {
+                                self.read_register(frame, *register)?
+                            }
+                            AccessKey::Index(index) => MiraValue::number(*index as f64),
+                        };
+                        match kind {
+                            AccessOperation::Has => {
+                                let result = MiraValue::boolean(self.has_value(source, key)?);
+                                self.write_register(frame, *destination, result);
+                            }
+                            AccessOperation::Get => {
+                                let result = self.get_value(source, key)?;
+                                self.write_register(frame, *destination, result);
+                            }
+                            AccessOperation::Set => {
+                                let assigned = self.read_register(frame, *destination)?;
+                                operations::set(self, source, key, assigned)?;
+                            }
+                        }
                     }
                 }
             }

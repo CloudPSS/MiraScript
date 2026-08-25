@@ -91,6 +91,24 @@ pub(crate) fn record_get(
     runtime.insert(manageable).map(Some)
 }
 
+pub(crate) fn record_get_i(
+    runtime: &mut Runtime,
+    value: MiraValue,
+    key: u32,
+) -> Result<Option<MiraValue>> {
+    let MiraValueKind::Record(handle) = value.kind() else {
+        return Ok(None);
+    };
+    let manageable = {
+        let record = runtime.get_record_dyn(handle)?;
+        let Some(index) = record.index_of_i(key) else {
+            return Ok(None);
+        };
+        record.get(handle, runtime, index)?
+    };
+    runtime.insert(manageable).map(Some)
+}
+
 pub(crate) fn module_keys(runtime: &Runtime, value: MiraValue) -> Result<Option<Vec<String>>> {
     let MiraValueKind::Module(handle) = value.kind() else {
         return Ok(None);

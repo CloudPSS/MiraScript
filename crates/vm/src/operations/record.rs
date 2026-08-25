@@ -25,6 +25,13 @@ pub(crate) fn has(
     }
 }
 
+pub(crate) fn has_i(runtime: &mut Runtime, value: MiraValue, key: i64) -> Result<bool> {
+    let (MiraValueKind::Record(handle), Ok(key)) = (value.kind(), u32::try_from(key)) else {
+        return has(runtime, value, MiraValue::number(key as f64), None);
+    };
+    Ok(runtime.get_record_dyn(handle)?.index_of_i(key).is_some())
+}
+
 pub(crate) fn get(runtime: &mut Runtime, value: MiraValue, key: &str) -> Result<MiraValue> {
     get_value(runtime, value, MiraValue::nil(), Some(key))
 }
@@ -69,6 +76,15 @@ pub(crate) fn get_value(
     }
 }
 
+pub(crate) fn get_i(runtime: &mut Runtime, value: MiraValue, key: i64) -> Result<MiraValue> {
+    let (MiraValueKind::Record(_), Ok(key)) = (value.kind(), u32::try_from(key)) else {
+        return get_value(runtime, value, MiraValue::number(key as f64), None);
+    };
+    Ok(into_element(
+        record_get_i(runtime, value, key)?.unwrap_or_else(MiraValue::nil),
+    ))
+}
+
 pub(crate) fn set(
     _runtime: &mut Runtime,
     obj: MiraValue,
@@ -103,4 +119,73 @@ pub(crate) fn omit(runtime: &mut Runtime, value: MiraValue, keys: &[String]) -> 
         }
     }
     runtime.insert(result)
+}
+
+#[cfg(test)]
+mod tests {
+    use std::{cell::Cell, rc::Rc};
+
+    use crate::{MiraHandle, MiraManageable, MiraRecord};
+
+    use super::*;
+
+    struct LookupCounters {
+        string: Rc<Cell<usize>>,
+        integer: Rc<Cell<usize>>,
+    }
+
+    impl MiraRecord for LookupCounters {
+        fn len(&self) -> usize {
+            1
+        }
+
+        fn index_of(&self, key: &str) -> Option<usize> {
+            self.string.set(self.string.get() + 1);
+            (key == "0").then_some(0)
+        }
+
+        fn index_of_i(&self, key: u32) -> Option<usize> {
+            self.integer.set(self.integer.get() + 1);
+            (key == 0).then_some(0)
+        }
+
+        fn key(&self, index: usize) -> Result<&str> {
+            (index == 0)
+                .then_some("0")
+                .ok_or_else(|| MiraError::runtime(RuntimeErrorKind::MissingIndexOrField))
+        }
+
+        fn get(
+            &self,
+            _self_handle: MiraHandle<dyn MiraRecord>,
+            _runtime: &Runtime,
+            index: usize,
+        ) -> Result<MiraManageable> {
+            (index == 0)
+                .then(|| MiraManageable::from(42))
+                .ok_or_else(|| MiraError::runtime(RuntimeErrorKind::MissingIndexOrField))
+        }
+    }
+
+    #[test]
+    fn constant_record_indexes_use_integer_lookup() {
+        let string = Rc::new(Cell::new(0));
+        let integer = Rc::new(Cell::new(0));
+        let mut runtime = Runtime::new();
+        runtime
+            .insert_global(
+                "record",
+                MiraManageable::from_record(LookupCounters {
+                    string: string.clone(),
+                    integer: integer.clone(),
+                }),
+            )
+            .unwrap();
+
+        assert_eq!(runtime.eval("record.0").unwrap().as_number(), Some(42.0));
+        assert!(runtime.eval("record[-1]").unwrap().is_nil());
+
+        assert_eq!(integer.get(), 1);
+        assert_eq!(string.get(), 1);
+    }
 }

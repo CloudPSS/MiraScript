@@ -10,6 +10,8 @@ const GLOBAL: &str = "x";
 const GLOBAL_ARITHMETIC: &str = "x + y";
 const REPEATED_GLOBAL: &str = "x + x + x + x + x + x + x + x";
 const NATIVE_CALL: &str = "sin(x)";
+const RECORD_INDEX: &str =
+    "record.0 + record.1 + record.0 + record.1 + record.0 + record.1 + record.0 + record.1";
 const SCALAR: &str = "let mut total = 0; for i in 1..100 { total += i * i; } total";
 const CONTAINER: &str = "[1..100]::map(fn { it * 2 })::sum()";
 const CLOSURE: &str = "fn make(x) { (fn (y) { x + y }) } let add = make(2); add(40)";
@@ -19,6 +21,12 @@ fn simple_runtime() -> Runtime {
     let mut runtime = Runtime::new();
     runtime.insert_global("x", 1).unwrap();
     runtime.insert_global("y", 2).unwrap();
+    runtime
+}
+
+fn record_runtime() -> Runtime {
+    let mut runtime = Runtime::new();
+    runtime.insert_global("record", (1, 2)).unwrap();
     runtime
 }
 
@@ -99,6 +107,7 @@ run_with_case!(
 );
 run_with_case!(run_with_repeated_global, REPEATED_GLOBAL, simple_runtime());
 run_with_case!(run_with_native_call, NATIVE_CALL, simple_runtime());
+run_with_case!(run_with_record_index, RECORD_INDEX, record_runtime());
 run_with_case!(run_with_simple, SIMPLE, simple_runtime());
 run_with_case!(run_with_scalar_loop, SCALAR, Runtime::new());
 
