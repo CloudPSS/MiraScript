@@ -291,11 +291,11 @@ jobs:
 
       - name: Install Pyodide
         working-directory: crates/python
-        run: uv sync --frozen --only-group pyodide
+        run: uv sync --frozen --only-group pyodide --python 3.14
 
       - name: Build Pyodide wheel
         working-directory: crates/python
-        run: uv run --frozen --no-sync pyodide build
+        run: uv run --frozen pyodide build
 
       - name: Upload Pyodide wheel
         uses: actions/upload-artifact@v7
@@ -624,7 +624,6 @@ jobs:
           setup-uv: true
           ALIYUN_NPM_TOKEN: ${{ secrets.ALIYUN_NPM_TOKEN }}
           rust-targets: ''
-          rust-toolchain: ${{ matrix.toolchain }}
           tools: wasm-bindgen wasm-pack cargo-llvm-cov
 
       - name: Configure llvm-cov
