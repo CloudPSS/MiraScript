@@ -90,6 +90,15 @@ mod tests {
     use super::*;
     use crate::value::arena::ArenaId;
 
+    impl<T: Any + ?Sized> MiraHandle<T> {
+        pub(crate) fn empty() -> Self {
+            Self {
+                key: ArenaKey::new(ArenaId::from(1), 1, "test").unwrap(),
+                marker: PhantomData,
+            }
+        }
+    }
+
     #[test]
     fn test_fmt() {
         let handle =

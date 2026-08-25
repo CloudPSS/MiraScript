@@ -27,3 +27,21 @@ mod private {
 /// The trait is sealed intentionally: external values are not implemented by
 /// this release and downstream crates cannot implement this marker.
 pub trait MiraExtern: std::any::Any + private::Sealed + 'static {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    #[should_panic(expected = "External values are not implemented in this release.")]
+    fn create_extern() {
+        let value = MiraValue::r#extern(MiraHandle::<dyn MiraExtern>::empty());
+        assert!(value.is_extern());
+    }
+
+    #[test]
+    fn check_extern() {
+        let value = MiraValue::empty(ValueTag::Extern);
+        assert!(value.is_extern());
+    }
+}

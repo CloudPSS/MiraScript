@@ -124,7 +124,7 @@ impl Default for RunOptions {
 /// # Ok::<(), Box<mirascript_vm::MiraError>>(())
 /// ```
 pub fn compile(source: &str) -> Result<MiraScript> {
-    compile_with(source, &CompileConfig::new())
+    compile_with(source, &CompileConfig::default())
 }
 
 /// Compile source with an explicit [`CompileConfig`].
