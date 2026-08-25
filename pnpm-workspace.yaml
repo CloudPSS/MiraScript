@@ -1,5 +1,5 @@
 configDependencies:
-  '@cloudpss/pnpm-plugin-config': '~4.0.8'
+  '@cloudpss/pnpm-plugin-config': ~4.1.0
 
 packages:
   - packages/*
@@ -26,8 +26,8 @@ publicHoistPattern:
   - '@docusaurus/*'
 
 catalog:
-  '@cloudpss/commitlint-config': ~4.0.8
-  '@cloudpss/eslint-config': ~4.0.8
-  '@cloudpss/lint-staged-config': ~4.0.8
-  '@cloudpss/prettier-config': ~4.0.8
-  '@cloudpss/tsconfig': ~4.0.8
+  '@cloudpss/commitlint-config': ~4.1.0
+  '@cloudpss/eslint-config': ~4.1.0
+  '@cloudpss/lint-staged-config': ~4.1.0
+  '@cloudpss/prettier-config': ~4.1.0
+  '@cloudpss/tsconfig': ~4.1.0

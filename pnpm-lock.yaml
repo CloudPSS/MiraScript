@@ -5,16 +5,16 @@ importers:
   .:
     configDependencies:
       '@cloudpss/pnpm-plugin-config':
-        specifier: ~4.0.8
-        version: 4.0.8
+        specifier: ~4.1.0
+        version: 4.1.0
 
 packages:
-  '@cloudpss/pnpm-plugin-config@4.0.8':
+  '@cloudpss/pnpm-plugin-config@4.1.0':
     resolution:
-      { integrity: sha512-zqDDlvTzbmFw5OzfA6aWs3pxC9TJu5K6Tpo+TJ1K+sum/syUSIDeA+K38SHWwFdI1vjTasE2ct8A15eO/J+sBg== }
+      { integrity: sha512-kYMs2S59APt9x8dsi1AepV1OrQAKax62DtJrL34FH/hECH7+dS+7Wv+Kk54yYQYwMaGthFhs3kDrFwv330Ej9A== }
 
 snapshots:
-  '@cloudpss/pnpm-plugin-config@4.0.8': {}
+  '@cloudpss/pnpm-plugin-config@4.1.0': {}
 
 ---
 lockfileVersion: '9.0'
@@ -27,41 +27,41 @@ settings:
 catalogs:
   default:
     '@cloudpss/commitlint-config':
-      specifier: ~4.0.8
-      version: 4.0.8
+      specifier: ~4.1.0
+      version: 4.1.0
     '@cloudpss/eslint-config':
-      specifier: ~4.0.8
-      version: 4.0.8
+      specifier: ~4.1.0
+      version: 4.1.0
     '@cloudpss/lint-staged-config':
-      specifier: ~4.0.8
-      version: 4.0.8
+      specifier: ~4.1.0
+      version: 4.1.0
     '@cloudpss/prettier-config':
-      specifier: ~4.0.8
-      version: 4.0.8
+      specifier: ~4.1.0
+      version: 4.1.0
     '@cloudpss/tsconfig':
-      specifier: ~4.0.8
-      version: 4.0.8
+      specifier: ~4.1.0
+      version: 4.1.0
 
-pnpmfileChecksum: sha256-cuV1UUv3qi3w+EahqwT6FgI1vAXOGG93T1bjk+PdvYs=
+pnpmfileChecksum: sha256-x/boBeKZoejXuRUcJjANE9H5F1+Xc4haz4SeBdiJRa8=
 
 importers:
   .:
     devDependencies:
       '@cloudpss/commitlint-config':
         specifier: 'catalog:'
-        version: 4.0.8(@types/node@26.2.0)(conventional-commits-parser@7.1.2)(typescript@6.0.3)
+        version: 4.1.0(@types/node@26.2.0)(conventional-commits-parser@7.1.2)(typescript@6.0.3)
       '@cloudpss/eslint-config':
         specifier: 'catalog:'
-        version: 4.0.8(jiti@2.6.1)(supports-color@11.0.0)(typescript@6.0.3)
+        version: 4.1.0(jiti@2.6.1)(supports-color@11.0.0)(typescript@6.0.3)
       '@cloudpss/lint-staged-config':
         specifier: 'catalog:'
-        version: 4.0.8(jiti@2.6.1)(supports-color@11.0.0)
+        version: 4.1.0(jiti@2.6.1)(supports-color@11.0.0)
       '@cloudpss/prettier-config':
         specifier: 'catalog:'
-        version: 4.0.8
+        version: 4.1.0
       '@cloudpss/tsconfig':
         specifier: 'catalog:'
-        version: 4.0.8(typescript@6.0.3)
+        version: 4.1.0(typescript@6.0.3)
       '@mirascript/cli':
         specifier: workspace:*
         version: link:packages/cli
@@ -1259,25 +1259,25 @@ packages:
     peerDependencies:
       typescript: '>=4.5.2'
 
-  '@cloudpss/commitlint-config@4.0.8':
+  '@cloudpss/commitlint-config@4.1.0':
     resolution:
-      { integrity: sha512-dMDdojrPN1fm6JAQELclPEzfAD0wvp4jLMyS+fapCb1lrH4C1chQMeaG7A5OgOJOldu9i+o8oXRNcPW114M/Cw== }
+      { integrity: sha512-YtB4iAyGyOyyDHF9uLWzs14EoRqrHG5y228gTReUIVv8X8CZdaS4aWff1A1yYR5Xv/lqzEPzTIEZoJ1sz6rJ0w== }
 
-  '@cloudpss/eslint-config@4.0.8':
+  '@cloudpss/eslint-config@4.1.0':
     resolution:
-      { integrity: sha512-0zmAt2tTHAMHq97p3CFs2uVLzsOZRISLBfuUgxF1ph6AjwQhqZhlNT2aPlgA2AsH3K2FgZBi3cTeM4pl9gaIJw== }
+      { integrity: sha512-qejiry7t4S6LhYzSv0w7U+CwYnu84YITvfar2CQ5lx0RuGXJYjL7l9Qv3kaCtotMDYZv36JsTy6CEqWwErnt4g== }
 
-  '@cloudpss/lint-staged-config@4.0.8':
+  '@cloudpss/lint-staged-config@4.1.0':
     resolution:
-      { integrity: sha512-t9ZF1P3c/DAKSExts7nZcU83DzZxXQ+OuuiaQHxBVsXHtZMq0oy0vXCK4EQbCfsnIUhcDSjZD0IAPqj6kJbEfg== }
+      { integrity: sha512-hiuvN9PV4gliN8zR7K2GA5Kpy8H4Sp2iHA5nMLVQJ4vVUnkV+0g8m0Tw50D9ZKtenDsRh95kvmx5GJuBUk7MTg== }
 
-  '@cloudpss/prettier-config@4.0.8':
+  '@cloudpss/prettier-config@4.1.0':
     resolution:
-      { integrity: sha512-JmfH22AdpATbJu/+Iyhzdj1MxX0bajzFozM5xHDzMz5uqiYAlPJC8jFB3/qtICKguDxyHgtUnDXEQbhhZAzwcA== }
+      { integrity: sha512-hgZCWtYv1KacrOL2VPLBTIs6ASC7MnTwts0CCuAR8/6/4jLe9x9pcta3nSWwwDryV0UutvimfGQGWtiYRoJ97Q== }
 
-  '@cloudpss/tsconfig@4.0.8':
+  '@cloudpss/tsconfig@4.1.0':
     resolution:
-      { integrity: sha512-3RHfHcRmDiabNpFS37cQaDPZ2kQ955wJSOSeoi5qAns1ZkOjJ+QrmugYUEuJoQOpDEakTV33UgBRxVFXGQvK8Q== }
+      { integrity: sha512-TGD1WHoDxj8039O8knTbgkeVF+p6q1ZikVRjN6rTGkfXGsYLhJ7GsR18gAebKZgtNLpX+83kYIOuznEke/PjsQ== }
     peerDependencies:
       typescript: '>=5'
 
@@ -3995,9 +3995,17 @@ packages:
     resolution:
       { integrity: sha512-QP2ESEe/ImWY0HDwNAnK9PvEffUyhLTnWkk7KXzHfyeWAnlrDe1fN77bXl6ia8KT3wPlmA7t9/VPRpnf4Ex9sg== }
 
+  '@types/express-serve-static-core@5.1.3':
+    resolution:
+      { integrity: sha512-dPfW8NFiOF4wOHc7+N/QSxlY9cfSsenewGbAz8C8U/MULPd/YZ27LvJUIlzaXie7e6Ove9YunJGgC9tbHD2cKw== }
+
   '@types/express@4.17.25':
     resolution:
       { integrity: sha512-dVd04UKsfpINUnK0yBoYHDF3xu7xVH4BuDotC/xGuycx4CgbP48X/KF/586bcObxT0HENHXEU8Nqtu6NR+eKhw== }
+
+  '@types/express@5.0.6':
+    resolution:
+      { integrity: sha512-sKYVuV7Sv9fbPIt/442koC7+IIwK5olP1KWeD88e/idgoJqDm3JV/YUiPwkoKK92ylff2MGxSz1CSjsXelx0YA== }
 
   '@types/hast@3.0.5':
     resolution:
@@ -4126,6 +4134,10 @@ packages:
   '@types/serve-static@1.15.10':
     resolution:
       { integrity: sha512-tRs1dB+g8Itk72rlSI2ZrW6vZg0YrLI81iQSTkMmOqnqCaNr/8Ek4VwWcN5vZgCYWbg/JJSGBlUaYGAOP73qBw== }
+
+  '@types/serve-static@2.2.0':
+    resolution:
+      { integrity: sha512-8mam4H1NHLtu7nmtalF7eyBH14QyOASmcxHhSfEoRyr0nP/YdoesEtU+uSRvMe96TW/HPTtkoKqQLl53N7UXMQ== }
 
   '@types/sockjs@0.3.36':
     resolution:
@@ -11190,7 +11202,7 @@ snapshots:
     dependencies:
       typescript: 6.0.3
 
-  '@cloudpss/commitlint-config@4.0.8(@types/node@26.2.0)(conventional-commits-parser@7.1.2)(typescript@6.0.3)':
+  '@cloudpss/commitlint-config@4.1.0(@types/node@26.2.0)(conventional-commits-parser@7.1.2)(typescript@6.0.3)':
     dependencies:
       '@commitlint/cli': 21.2.2(@types/node@26.2.0)(conventional-commits-parser@7.1.2)(typescript@6.0.3)
     transitivePeerDependencies:
@@ -11199,9 +11211,9 @@ snapshots:
       - conventional-commits-parser
       - typescript
 
-  '@cloudpss/eslint-config@4.0.8(jiti@2.6.1)(supports-color@11.0.0)(typescript@6.0.3)':
+  '@cloudpss/eslint-config@4.1.0(jiti@2.6.1)(supports-color@11.0.0)(typescript@6.0.3)':
     dependencies:
-      '@cloudpss/tsconfig': 4.0.8(typescript@6.0.3)
+      '@cloudpss/tsconfig': 4.1.0(typescript@6.0.3)
       '@eslint/compat': 2.1.0(eslint@10.9.0)
       '@eslint/js': 10.0.1(eslint@10.9.0)
       eslint: 10.9.0(jiti@2.6.1)(supports-color@11.0.0)
@@ -11214,7 +11226,7 @@ snapshots:
       - supports-color
       - typescript
 
-  '@cloudpss/lint-staged-config@4.0.8(jiti@2.6.1)(supports-color@11.0.0)':
+  '@cloudpss/lint-staged-config@4.1.0(jiti@2.6.1)(supports-color@11.0.0)':
     dependencies:
       eslint: 10.9.0(jiti@2.6.1)(supports-color@11.0.0)
       husky: 9.1.7
@@ -11224,11 +11236,11 @@ snapshots:
       - jiti
       - supports-color
 
-  '@cloudpss/prettier-config@4.0.8':
+  '@cloudpss/prettier-config@4.1.0':
     dependencies:
       prettier: 3.9.6
 
-  '@cloudpss/tsconfig@4.0.8(typescript@6.0.3)':
+  '@cloudpss/tsconfig@4.1.0(typescript@6.0.3)':
     dependencies:
       typescript: 6.0.3
 
@@ -14175,7 +14187,7 @@ snapshots:
 
   '@types/connect-history-api-fallback@1.5.4':
     dependencies:
-      '@types/express-serve-static-core': 4.19.9
+      '@types/express-serve-static-core': 5.1.3
       '@types/node': 26.2.0
 
   '@types/connect@3.4.38':
@@ -14203,12 +14215,25 @@ snapshots:
       '@types/range-parser': 1.2.7
       '@types/send': 1.2.1
 
+  '@types/express-serve-static-core@5.1.3':
+    dependencies:
+      '@types/node': 26.2.0
+      '@types/qs': 6.15.1
+      '@types/range-parser': 1.2.7
+      '@types/send': 1.2.1
+
   '@types/express@4.17.25':
     dependencies:
       '@types/body-parser': 1.19.6
       '@types/express-serve-static-core': 4.19.9
       '@types/qs': 6.15.1
       '@types/serve-static': 1.15.10
+
+  '@types/express@5.0.6':
+    dependencies:
+      '@types/body-parser': 1.19.6
+      '@types/express-serve-static-core': 5.1.3
+      '@types/serve-static': 2.2.0
 
   '@types/hast@3.0.5':
     dependencies:
@@ -14307,13 +14332,18 @@ snapshots:
 
   '@types/serve-index@1.9.4':
     dependencies:
-      '@types/express': 4.17.25
+      '@types/express': 5.0.6
 
   '@types/serve-static@1.15.10':
     dependencies:
       '@types/http-errors': 2.0.5
       '@types/node': 26.2.0
       '@types/send': 0.17.6
+
+  '@types/serve-static@2.2.0':
+    dependencies:
+      '@types/http-errors': 2.0.5
+      '@types/node': 26.2.0
 
   '@types/sockjs@0.3.36':
     dependencies:

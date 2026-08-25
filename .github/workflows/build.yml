@@ -571,21 +571,6 @@ jobs:
           rm -rf ./mirascript
           python -m pytest tests/ -v
 
-  finalize-coverage:
-    if: ${{ !cancelled() && (needs.test-rust.result == 'success' || needs.test-rust.result == 'failure') && (needs.test-python.result == 'success' || needs.test-python.result == 'failure') && (needs.test-node.result == 'success' || needs.test-node.result == 'failure') }}
-    needs: [test-rust, test-python, test-node, coverage]
-
-    runs-on: ubuntu-slim
-
-    permissions:
-      contents: read
-
-    steps:
-      - name: Finalize coverage
-        shell: bash
-        run: |
-          bash <(curl -Ls https://coverage.codacy.com/get.sh) final --project-token '${{ secrets.CODACY_PROJECT_TOKEN }}'
-
   coverage:
     runs-on: ubuntu-latest
 
@@ -635,9 +620,9 @@ jobs:
         shell: bash
         run: |
           source <(cargo llvm-cov show-env --sh)
-          cargo llvm-cov report --lcov --output-path rust-lcov.info
+          cargo llvm-cov report --lcov --output-path target/lcov.info
 
       - name: Send coverage report
         shell: bash
         run: |
-          bash <(curl -Ls https://coverage.codacy.com/get.sh) report --partial --project-token '${{ secrets.CODACY_PROJECT_TOKEN }}'
+          bash <(curl -Ls https://coverage.codacy.com/get.sh) report --project-token '${{ secrets.CODACY_PROJECT_TOKEN }}'
