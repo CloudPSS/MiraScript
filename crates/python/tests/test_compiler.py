@@ -20,6 +20,15 @@ from mirascript._compiler.diagnostics import (
 )
 from mirascript._compiler.opcode import OpCode, get_opcode_name
 from mirascript._compiler.script import wrap_vm_script
+from mirascript._compiler.core import Config
+
+
+def test_compile_config():
+    config = Config()
+    assert isinstance(config, Config)
+
+    with pytest.raises(ValueError):
+        Config(input_mode="invalid")
 
 
 def test_consts_read_constant_and_errors():
@@ -71,24 +80,24 @@ def test_consts_read_constants_split_and_index_param():
     assert read_index(struct.pack("<i", -300), 0, True) == (-300, 4)
 
 
-def test_diagnostic(monkeypatch: pytest.MonkeyPatch):
+def test_diagnostic():
+    Diagnostic._cache.clear()
     d = Diagnostic(start_line=1, start_column=2, end_line=3, end_column=4, code=12000)
     assert d.level == "SourceMap"
     assert (
         repr(d)
         == "Diagnostic(code=12000, level=SourceMap, name=SourceMap, start=(1, 2), end=(3, 4))"
     )
+    assert d.message == "Source map entry"
 
-    fake_core = types.ModuleType("mirascript._compiler.core")
-    monkeypatch.setitem(sys.modules, "mirascript._compiler.core", fake_core)
     Diagnostic._cache.clear()
     unknown = Diagnostic(
-        start_line=1, start_column=1, end_line=1, end_column=1, code=987654
+        start_line=1, start_column=1, end_line=1, end_column=1, code=65535
     )
     assert unknown.level == "Unknown"
     assert (
         repr(unknown)
-        == "Diagnostic(code=987654, level=Unknown, name=987654, start=(1, 1), end=(1, 1))"
+        == "Diagnostic(code=65535, level=Unknown, name=65535, start=(1, 1), end=(1, 1))"
     )
     assert unknown.message == "Unknown diagnostic code"
 

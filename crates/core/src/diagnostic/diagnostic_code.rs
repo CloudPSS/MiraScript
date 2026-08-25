@@ -368,7 +368,7 @@ impl TryFrom<u16> for DiagnosticCode {
     type Error = ();
 
     fn try_from(value: u16) -> Result<Self, Self::Error> {
-        DiagnosticCode::from_repr(value).ok_or(())
+        DiagnosticCode::from_code(value).ok_or(())
     }
 }
 
@@ -378,7 +378,12 @@ impl DiagnosticCode {
     }
 
     pub fn from_code(code: u16) -> Option<Self> {
-        DiagnosticCode::from_repr(code)
+        let r = DiagnosticCode::from_repr(code)?;
+        if r == DiagnosticCode::Unknown {
+            None
+        } else {
+            Some(r)
+        }
     }
 
     pub fn message(&self) -> &'static str {

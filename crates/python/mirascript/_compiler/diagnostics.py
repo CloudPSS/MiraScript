@@ -42,7 +42,7 @@ class Diagnostic(DiagnosticPosition):
         if self.code == 12000:
             object.__setattr__(self, "level", "SourceMap")
             object.__setattr__(self, "name", "SourceMap")
-            object.__setattr__(self, "message", "Source map information")
+            object.__setattr__(self, "message", "Source map entry")
             return
         info = Diagnostic._cache.get(self.code)
         if info is None:
