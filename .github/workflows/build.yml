@@ -409,16 +409,9 @@ jobs:
           setup-node: false
           rust-targets: ''
           rust-toolchain: ${{ matrix.toolchain }}
-          tools: ${{ matrix.os == 'ubuntu-latest' && 'cargo-llvm-cov' || '' }}
 
       - name: Run tests
-        run: cargo ${{ matrix.os == 'ubuntu-latest' && 'llvm-cov --lcov --output-path rust-lcov.info' || 'test' }} --workspace --locked
-
-      - name: Send Rust coverage report
-        shell: bash
-        if: ${{ matrix.os == 'ubuntu-latest' }}
-        run: |
-          bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r rust-lcov.info --partial --project-token '${{ secrets.CODACY_PROJECT_TOKEN }}'
+        run: cargo test --workspace --locked
 
   test-rust-cross:
     strategy:
@@ -501,11 +494,6 @@ jobs:
         run: |
           pnpm -r run test
 
-      - name: Send coverage report
-        shell: bash
-        run: |
-          bash <(curl -Ls https://coverage.codacy.com/get.sh) report --partial --project-token '${{ secrets.CODACY_PROJECT_TOKEN }}'
-
   test-python:
     needs: merge
     strategy:
@@ -581,13 +569,7 @@ jobs:
         run: |
           cd crates/python
           rm -rf ./mirascript
-          python -m pytest tests/ --cov=mirascript --cov-report=xml:cobertura.xml --cov-report=term-missing -v
-          sed -i -e 's|filename=".*/site-packages/mirascript/|filename="mirascript/|' cobertura.xml
-
-      - name: Send coverage report
-        shell: bash
-        run: |
-          bash <(curl -Ls https://coverage.codacy.com/get.sh) report --partial --project-token '${{ secrets.CODACY_PROJECT_TOKEN }}'
+          python -m pytest tests/ -v
 
   finalize-coverage:
     if: ${{ !cancelled() && (needs.test-rust.result == 'success' || needs.test-rust.result == 'failure') && (needs.test-python.result == 'success' || needs.test-python.result == 'failure') && (needs.test-node.result == 'success' || needs.test-node.result == 'failure') }}
@@ -646,7 +628,7 @@ jobs:
 
       - name: Run node tests
         run: |
-          pnpm -r --filter @mirascript/website --filter !@mirascript/napi run build
+          pnpm -r --filter !@mirascript/website --filter !@mirascript/napi run build
           pnpm -r run test
 
       - name: Collect coverage
