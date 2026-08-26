@@ -44,7 +44,7 @@ runs:
   using: 'composite'
   steps:
     - name: Setup UV
-      if: ${{ inputs.setup-uv != '' }}
+      if: ${{ inputs.setup-uv != 'false' }}
       uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d
       with:
         cache-suffix: ${{ inputs.setup-uv }}
