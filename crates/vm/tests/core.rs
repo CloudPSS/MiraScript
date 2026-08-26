@@ -131,6 +131,18 @@ struct User {
 #[allow(dead_code)]
 struct Point(f64, f64, #[mira(skip)] String);
 
+#[derive(MiraArray)]
+struct Pair(f64, f64);
+
+#[derive(MiraRecord)]
+struct RecordWithNestedShapes {
+    position: Position,
+    pair: Pair,
+}
+
+#[derive(MiraArray)]
+struct ArrayWithNestedShapes(Position, Pair);
+
 #[test]
 fn derived_values_are_live_runtime_views() {
     let mut runtime = Runtime::new();
@@ -178,6 +190,69 @@ fn derived_values_are_live_runtime_views() {
             ..
         }
     ));
+}
+
+#[test]
+fn nested_derived_shapes_remain_live_for_record_and_array_parents() {
+    let mut runtime = Runtime::new();
+    let record = runtime
+        .insert_record(RecordWithNestedShapes {
+            position: Position { x: 1.0, y: 2.0 },
+            pair: Pair(3.0, 4.0),
+        })
+        .unwrap();
+    let array = runtime
+        .insert_array(ArrayWithNestedShapes(
+            Position { x: 5.0, y: 6.0 },
+            Pair(7.0, 8.0),
+        ))
+        .unwrap();
+    runtime
+        .insert_global("record", MiraValue::record(record))
+        .unwrap();
+    runtime
+        .insert_global("array", MiraValue::array(array))
+        .unwrap();
+
+    assert_eq!(
+        runtime
+            .eval("record.position.x + record.pair[1] + array[0].y + array[1][0]",)
+            .unwrap(),
+        18.into(),
+    );
+    assert_eq!(
+        runtime
+            .eval("record.position::keys()::len() + record.pair::len() + array[0]::keys()::len() + array[1]::len()",)
+            .unwrap(),
+        8.into(),
+    );
+
+    let projected_position = runtime
+        .eval("record.position")
+        .unwrap()
+        .as_record()
+        .unwrap();
+    let projected_position = unsafe { projected_position.upcast::<Position>() };
+    let projected_pair = runtime.eval("array[1]").unwrap().as_array().unwrap();
+    let projected_pair = unsafe { projected_pair.upcast::<Pair>() };
+    assert_eq!(runtime.get_record(projected_position).unwrap().x, 1.0);
+    assert_eq!(runtime.get_array(projected_pair).unwrap().1, 8.0);
+
+    let value = runtime.get_record_mut(record).unwrap();
+    value.position.x = 10.0;
+    value.pair.1 = 40.0;
+    let value = runtime.get_array_mut(array).unwrap();
+    value.0.y = 60.0;
+    value.1.0 = 70.0;
+
+    assert_eq!(runtime.get_record(projected_position).unwrap().x, 10.0);
+    assert_eq!(runtime.get_array(projected_pair).unwrap().0, 70.0);
+    assert_eq!(
+        runtime
+            .eval("record.position.x + record.pair[1] + array[0].y + array[1][0]",)
+            .unwrap(),
+        180.into(),
+    );
 }
 
 #[test]

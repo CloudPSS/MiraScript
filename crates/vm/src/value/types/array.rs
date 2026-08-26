@@ -158,3 +158,83 @@ impl<T: Clone + Into<MiraManageable> + 'static> From<Box<[T]>> for MiraManageabl
         Self::from_array(value)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn assert_missing_index(error: &MiraError) {
+        assert!(matches!(
+            error,
+            MiraError::Runtime {
+                kind: RuntimeErrorKind::MissingIndexOrField,
+                ..
+            }
+        ));
+    }
+
+    fn assert_value(value: MiraManageable, expected: MiraValue) {
+        assert!(matches!(value, MiraManageable::Value(value) if value == expected));
+    }
+
+    #[test]
+    fn owned_array_shapes_expose_values_and_bounds() {
+        let mut runtime = Runtime::new();
+
+        let vector = runtime.insert_array(vec![1_i32, 2]).unwrap();
+        let value = MiraValue::array(vector);
+        assert!(value.is_array());
+        assert_eq!(value.as_array(), Some(vector.erase_array()));
+        assert!(MiraValue::nil().as_array().is_none());
+        let array = runtime.get_array(vector).unwrap();
+        assert_eq!(array.len(), 2);
+        assert!(!array.is_empty());
+        assert!(MiraArray::resolve(array, &runtime).unwrap().is_none());
+        assert_value(
+            array.get(vector.erase_array(), &runtime, 1).unwrap(),
+            2.into(),
+        );
+        assert_missing_index(
+            array
+                .get(vector.erase_array(), &runtime, usize::MAX)
+                .err()
+                .unwrap()
+                .as_ref(),
+        );
+
+        let fixed = runtime.insert_array([3_i32, 4]).unwrap();
+        let array = runtime.get_array(fixed).unwrap();
+        assert_eq!(array.len(), 2);
+        assert_value(
+            array.get(fixed.erase_array(), &runtime, 0).unwrap(),
+            3.into(),
+        );
+        assert_missing_index(
+            array
+                .get(fixed.erase_array(), &runtime, 2)
+                .err()
+                .unwrap()
+                .as_ref(),
+        );
+
+        let boxed = runtime
+            .insert_array(Vec::from([5_i32, 6]).into_boxed_slice())
+            .unwrap();
+        let array = runtime.get_array(boxed).unwrap();
+        assert_eq!(array.len(), 2);
+        assert_value(
+            array.get(boxed.erase_array(), &runtime, 1).unwrap(),
+            6.into(),
+        );
+        assert_missing_index(
+            array
+                .get(boxed.erase_array(), &runtime, 2)
+                .err()
+                .unwrap()
+                .as_ref(),
+        );
+
+        let empty = runtime.insert_array(Vec::<i32>::new()).unwrap();
+        assert!(runtime.get_array(empty).unwrap().is_empty());
+    }
+}
