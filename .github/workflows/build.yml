@@ -35,6 +35,26 @@ jobs:
           args: --out dist
           working-directory: crates/python
 
+      - name: Generate Python test requirements
+        working-directory: crates/python
+        shell: python
+        run: |
+          from pathlib import Path
+          import tomllib
+
+          with Path("pyproject.toml").open("rb") as pyproject_file:
+              pyproject = tomllib.load(pyproject_file)
+
+          requirements = [
+              *pyproject["project"].get("dependencies", []),
+              *pyproject["build-system"].get("requires", []),
+              *pyproject.get("dependency-groups", {}).get("test", []),
+          ]
+          Path("dist/test-requirements.txt").write_text(
+              "\n".join(requirements) + "\n",
+              encoding="utf-8",
+          )
+
       - name: Upload npm package artifact
         uses: actions/upload-artifact@v7
         with:
@@ -556,11 +576,9 @@ jobs:
         run: |
           python -m pip install --upgrade pip
 
-          python -m pip download "typing-extensions>=4.7.1" "astunparse>=1.6.3;python_version<'3.9'" "maturin>=1.0,<2.0" --dest ./python-artifacts
+          python -m pip download --requirement ./python-artifacts/test-requirements.txt --dest ./python-artifacts
           python -m pip install --pre --no-index --no-cache-dir --find-links ./python-artifacts mirascript
-
-          cd crates/python
-          python -m pip install --group test 2>/dev/null || python -m pip install $(python -c "import re;t=open('pyproject.toml', encoding='utf-8').read();m=re.search(r'test\s*=\s*\[(.*?)\]',t,re.DOTALL);print(' '.join(re.findall(r'\"([^\"]+)\"',m.group(1))))")
+          python -m pip install --no-index --no-cache-dir --find-links ./python-artifacts --requirement ./python-artifacts/test-requirements.txt
 
       - name: Run tests
         shell: bash
