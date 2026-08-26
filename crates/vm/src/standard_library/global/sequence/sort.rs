@@ -2,13 +2,13 @@ use std::cmp::Ordering;
 
 use super::*;
 
-pub(super) fn install(context: &mut Runtime) {
-    insert_native(context, "sort", |call, args| {
+pub(super) fn install(runtime: &mut Runtime) {
+    global_builtin!(runtime, fn sort(call, args) {
         let mut values = array_value(call, *required(args, 0, "data")?)?;
         insertion_sort(call, &mut values, args.get(1))?;
         call.insert(values)
     });
-    insert_native(context, "sort_by", |call, args| {
+    global_builtin!(runtime, fn sort_by(call, args) {
         let values = array_value(call, *required(args, 0, "data")?)?;
         let key_function = required(args, 1, "key")?;
         if !is_callable(key_function)? {

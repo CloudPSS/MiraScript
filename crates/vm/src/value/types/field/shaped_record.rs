@@ -1,6 +1,6 @@
 use super::*;
 
-struct RecordFromRecord<P: MiraRecord + 'static, T> {
+struct RecordFromRecord<P: MiraRecord, T> {
     parent: MiraHandle<P>,
     index: usize,
     getter: MiraFieldGetter<P, T>,
@@ -45,7 +45,7 @@ impl<P: MiraRecord, T: MiraShapedRecord> MiraRecord for RecordFromRecord<P, T> {
     }
 }
 
-struct RecordFromArray<P: MiraArray + 'static, T> {
+struct RecordFromArray<P: MiraArray, T> {
     parent: MiraHandle<P>,
     index: usize,
     getter: MiraFieldGetter<P, T>,

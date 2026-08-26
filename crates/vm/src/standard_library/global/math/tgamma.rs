@@ -1,22 +1,22 @@
 use crate::Runtime;
-use crate::standard_library::{insert_native, number};
+use crate::standard_library::{global_builtin, number};
 
 pub(super) fn install(context: &mut Runtime) {
-    insert_native(context, "gamma", |call, args| {
-        Ok(gamma(number(call, args, 0, "x")?).into())
+    global_builtin!(context, fn gamma(call, args) {
+        Ok(tgamma(number(call, args, 0, "x")?).into())
     });
-    insert_native(context, "factorial", |call, args| {
+    global_builtin!(context, fn factorial(call, args) {
         let value = number(call, args, 0, "x")?;
         Ok((if value.is_nan() || value < 0.0 {
             f64::NAN
         } else {
-            gamma(value + 1.0)
+            tgamma(value + 1.0)
         })
         .into())
     });
 }
 
-fn gamma(value: f64) -> f64 {
+fn tgamma(value: f64) -> f64 {
     if value == value.trunc() && value > 0f64 && value <= FACTORIAL.len() as f64 {
         return FACTORIAL[value as usize - 1];
     }

@@ -1,7 +1,7 @@
 use super::*;
 
 pub(super) fn install(context: &mut Runtime) {
-    insert_native(context, "fold", |call, args| {
+    global_builtin!(context, fn fold(call, args) {
         let data = Data::from_value(call, *required(args, 0, "data")?)?;
         let mut accumulator = *required(args, 1, "initial")?;
         let function = required(args, 2, "f")?;

@@ -2,7 +2,7 @@ mod case;
 mod search;
 mod trim;
 
-use crate::standard_library::{array, insert_native, string};
+use crate::standard_library::{array, global_builtin, string};
 use crate::{Result, Runtime, operations};
 
 pub(super) fn is_javascript_whitespace(value: char) -> bool {
@@ -10,7 +10,7 @@ pub(super) fn is_javascript_whitespace(value: char) -> bool {
 }
 
 pub(super) fn install(context: &mut Runtime) {
-    insert_native(context, "chars", |call, args| {
+    global_builtin!(context, fn chars(call, args) {
         let source = string(call, args, 0, "str")?;
         let values = source
             .chars()
@@ -18,7 +18,7 @@ pub(super) fn install(context: &mut Runtime) {
             .collect::<Result<Vec<_>>>()?;
         call.insert(values)
     });
-    insert_native(context, "replace", |call, args| {
+    global_builtin!(context, fn replace(call, args) {
         let source = string(call, args, 0, "str")?;
         let search = string(call, args, 1, "search")?;
         let replacement = match args.get(2) {
@@ -27,7 +27,7 @@ pub(super) fn install(context: &mut Runtime) {
         };
         call.insert(source.replace(&search, &replacement))
     });
-    insert_native(context, "split", |call, args| {
+    global_builtin!(context, fn split(call, args) {
         let source = string(call, args, 0, "str")?;
         let separator = match args.get(1) {
             None => String::new(),
@@ -44,7 +44,7 @@ pub(super) fn install(context: &mut Runtime) {
             .collect::<Result<Vec<_>>>()?;
         call.insert(parts)
     });
-    insert_native(context, "join", |call, args| {
+    global_builtin!(context, fn join(call, args) {
         let values = array(call, args, 0, "arr")?;
         let separator = match args.get(1) {
             None => String::new(),

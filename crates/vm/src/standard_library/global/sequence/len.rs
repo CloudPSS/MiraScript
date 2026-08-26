@@ -1,7 +1,7 @@
 use super::*;
 
 pub(super) fn install(context: &mut Runtime) {
-    insert_native(context, "len", |call, args| {
+    global_builtin!(context, fn len(call, args) {
         let value = *required(args, 0, "arr")?;
         let Some(length) = operations::array_len(call, value)? else {
             return Err(MiraError::runtime(RuntimeErrorKind::TypeMismatch {

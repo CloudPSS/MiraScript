@@ -1,15 +1,15 @@
-use crate::standard_library::insert_native;
+use crate::standard_library::global_builtin;
 use crate::{MiraError, MiraValue, Runtime, RuntimeErrorKind, operations};
 
-pub(super) fn install(context: &mut Runtime) {
-    insert_native(context, "to_string", |call, args| {
+pub(super) fn install(runtime: &mut Runtime) {
+    global_builtin!(runtime, fn to_string(call, args) {
         let value = args.first().cloned().ok_or_else(|| {
             MiraError::runtime(RuntimeErrorKind::MissingArgument { name: "data" })
         })?;
         let value = operations::to_string(call, value)?;
         call.insert(value)
     });
-    insert_native(context, "to_number", |call, args| {
+    global_builtin!(runtime, fn to_number(call, args) {
         let value = args.first().cloned().ok_or_else(|| {
             MiraError::runtime(RuntimeErrorKind::MissingArgument { name: "data" })
         })?;
@@ -19,7 +19,7 @@ pub(super) fn install(context: &mut Runtime) {
             Err(error) => Err(error),
         }
     });
-    insert_native(context, "format", |call, args| {
+    global_builtin!(runtime, fn format(call, args) {
         let value = args.first().cloned().ok_or_else(|| {
             MiraError::runtime(RuntimeErrorKind::MissingArgument { name: "data" })
         })?;

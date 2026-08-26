@@ -57,7 +57,7 @@ pub trait MiraArray: Any {
 }
 
 /// A fixed-shape array whose length is known from its Rust type.
-pub trait MiraShapedArray: Any + 'static {
+pub trait MiraShapedArray: Any {
     /// Return the fixed number of elements.
     fn len() -> usize;
 

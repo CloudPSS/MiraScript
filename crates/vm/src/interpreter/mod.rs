@@ -47,16 +47,18 @@ mod tests {
     #[test]
     fn test_runtime() {
         let mut runtime = Runtime::default();
-        runtime.insert_fn("custom", |runtime: &mut Runtime, args: &[MiraValue]| {
-            if args.is_empty() {
-                anyhow::bail!("Expected at least one argument");
-            }
-            let mut sum = 0.0;
-            for arg in args {
-                sum += operations::to_number(runtime, *arg)?;
-            }
-            Ok(sum)
-        });
+        runtime
+            .insert_fn("custom", |runtime: &mut Runtime, args: &[MiraValue]| {
+                if args.is_empty() {
+                    anyhow::bail!("Expected at least one argument");
+                }
+                let mut sum = 0.0;
+                for arg in args {
+                    sum += operations::to_number(runtime, *arg)?;
+                }
+                Ok(sum)
+            })
+            .unwrap();
 
         assert_eq!(
             runtime

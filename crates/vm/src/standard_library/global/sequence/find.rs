@@ -1,7 +1,7 @@
 use super::*;
 
 pub(super) fn install(context: &mut Runtime) {
-    insert_native(context, "find", |call, args| {
+    global_builtin!(context, fn find(call, args) {
         let data = Data::from_value(call, *required(args, 0, "data")?)?;
         let predicate = required(args, 1, "predicate")?;
         let callable = is_callable(predicate)?;

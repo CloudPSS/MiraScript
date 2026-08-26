@@ -26,7 +26,7 @@ mod private {
 ///
 /// The trait is sealed intentionally: external values are not implemented by
 /// this release and downstream crates cannot implement this marker.
-pub trait MiraExtern: std::any::Any + private::Sealed + 'static {}
+pub trait MiraExtern: std::any::Any + private::Sealed {}
 
 #[cfg(test)]
 mod tests {

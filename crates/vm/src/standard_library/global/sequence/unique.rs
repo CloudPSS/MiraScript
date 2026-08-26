@@ -1,7 +1,7 @@
 use super::*;
 
-pub(super) fn install(context: &mut Runtime) {
-    insert_native(context, "unique", |call, args| {
+pub(super) fn install(runtime: &mut Runtime) {
+    global_builtin!(runtime, fn unique(call, args) {
         let values = array_value(call, *required(args, 0, "data")?)?;
         validate_optional_callable(args.get(1))?;
         let mut result = Vec::new();
@@ -19,7 +19,7 @@ pub(super) fn install(context: &mut Runtime) {
         }
         call.insert(result)
     });
-    insert_native(context, "unique_by", |call, args| {
+    global_builtin!(runtime, fn unique_by(call, args) {
         let values = array_value(call, *required(args, 0, "data")?)?;
         let key_function = required(args, 1, "key")?;
         if !is_callable(key_function)? {

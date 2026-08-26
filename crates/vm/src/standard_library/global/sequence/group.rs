@@ -1,7 +1,7 @@
 use super::*;
 
 pub(super) fn install(context: &mut Runtime) {
-    insert_native(context, "group_by", |call, args| {
+    global_builtin!(context, fn group_by(call, args) {
         let data = array_value(call, *required(args, 0, "data")?)?;
         let key_function = required(args, 1, "key")?;
         if !is_callable(key_function)? {

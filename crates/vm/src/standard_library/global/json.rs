@@ -7,14 +7,13 @@ use serde::{
     ser::{SerializeMap, SerializeSeq},
 };
 
-use crate::{MiraError, MiraValue, MiraValueKind, Result, Runtime, RuntimeErrorKind};
 use crate::{
-    MiraType,
-    standard_library::{insert_native, string},
+    MiraError, MiraType, MiraValue, MiraValueKind, Result, Runtime, RuntimeErrorKind,
+    standard_library::{global_builtin, string},
 };
 
 pub(super) fn install(runtime: &mut Runtime) {
-    insert_native(runtime, "to_json", |call, args| {
+    global_builtin!(runtime, fn to_json(call, args) {
         let Some(value) = args.first().cloned() else {
             return Err(MiraError::runtime(RuntimeErrorKind::MissingArgument {
                 name: "data",
@@ -40,9 +39,9 @@ pub(super) fn install(runtime: &mut Runtime) {
             })),
         }
     });
-    insert_native(runtime, "from_json", |call, args| {
+    global_builtin!(runtime, fn from_json(call, args) {
         let source = string(call, args, 0, "json")?;
-        match from_json(call, &source) {
+        match parse_json(call, &source) {
             Ok(value) => Ok(value),
             Err(DeserializeError::Invalid(_)) if args.len() > 1 => Ok(args[1]),
             Err(DeserializeError::Invalid(source)) => {
@@ -354,7 +353,7 @@ impl<'de> Visitor<'de> for DeserializeValue<'_, '_> {
     }
 }
 
-fn from_json(
+fn parse_json(
     runtime: &mut Runtime,
     source: &str,
 ) -> std::result::Result<MiraValue, DeserializeError> {

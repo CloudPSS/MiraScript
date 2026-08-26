@@ -5,17 +5,17 @@ use time::{Duration, Timestamp};
 
 use crate::{MiraError, MiraType, MiraValue, Result, Runtime, RuntimeErrorKind, operations};
 
-use crate::standard_library::insert_native;
+use crate::standard_library::global_builtin;
 
-pub(super) fn install(context: &mut Runtime) {
-    insert_native(context, "to_timestamp", |call, args| {
+pub(super) fn install(runtime: &mut Runtime) {
+    global_builtin!(runtime, fn to_timestamp(call, args) {
         match timestamp(call, args.first()) {
             Ok(value) => Ok(MiraValue::number(value.as_milliseconds() as f64)),
             Err(_) if args.len() > 1 => Ok(args[1]),
             Err(error) => Err(error),
         }
     });
-    insert_native(context, "to_datetime", |call, args| {
+    global_builtin!(runtime, fn to_datetime(call, args) {
         let timestamp = match timestamp(call, args.first()) {
             Ok(value) => value,
             Err(_) if args.len() > 2 => return Ok(args[2]),
@@ -32,7 +32,7 @@ pub(super) fn install(context: &mut Runtime) {
         call.insert(datetime_record(timestamp, offset))
     });
 
-    insert_native(context, "to_iso8601", |call, args| {
+    global_builtin!(runtime, fn to_iso8601(call, args) {
         match timestamp(call, args.first()) {
             Ok(value) => {
                 const FMT_CONFIG: time::format_description::well_known::iso8601::EncodedConfig =

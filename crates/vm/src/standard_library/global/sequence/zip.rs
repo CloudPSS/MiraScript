@@ -1,12 +1,12 @@
 use super::*;
 
-pub(super) fn install(context: &mut Runtime) {
-    insert_native(context, "zip", |call, args| {
-        zip(call, *required(args, 0, "data")?)
+pub(super) fn install(runtime: &mut Runtime) {
+    global_builtin!(runtime, fn zip(call, args) {
+        zip_impl(call, *required(args, 0, "data")?)
     });
 }
 
-fn zip(call: &mut Runtime, value: MiraValue) -> Result<MiraValue> {
+fn zip_impl(call: &mut Runtime, value: MiraValue) -> Result<MiraValue> {
     let data = Data::from_value(call, value)?;
     let items = data_items(call, &data)?;
     let mut arrays = Vec::new();

@@ -1,13 +1,13 @@
 use super::*;
 
 pub(super) fn install(context: &mut Runtime) {
-    insert_native(context, "map", |call, args| {
+    global_builtin!(context, fn map(call, args) {
         map_like(call, args, MapMode::Map)
     });
-    insert_native(context, "filter", |call, args| {
+    global_builtin!(context, fn filter(call, args) {
         map_like(call, args, MapMode::Filter)
     });
-    insert_native(context, "filter_map", |call, args| {
+    global_builtin!(context, fn filter_map(call, args) {
         map_like(call, args, MapMode::FilterMap)
     });
 }

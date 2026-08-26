@@ -3,12 +3,15 @@ use crate::{MiraError, MiraValue, Result, Runtime, RuntimeErrorKind, operations}
 
 use super::helpers::{from_matrix, shape};
 
-pub(super) fn filled(call: &mut Runtime, args: &[MiraValue], value: f64) -> Result<MiraValue> {
+pub(super) fn filled<const VALUE: i32>(
+    call: &mut Runtime,
+    args: &[MiraValue],
+) -> Result<MiraValue> {
     let dimensions = dimensions(call, args, call.options().max_array_len)?;
     if dimensions.is_empty() {
         return call.insert(Vec::<MiraValue>::new());
     }
-    let mut result = MiraValue::number(value);
+    let mut result = MiraValue::from(VALUE);
     for length in dimensions.into_iter().rev() {
         call.checkpoint()?;
         result = call.insert(vec![result; length])?;

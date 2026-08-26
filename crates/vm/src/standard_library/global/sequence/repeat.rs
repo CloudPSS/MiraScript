@@ -1,7 +1,7 @@
 use super::*;
 
 pub(super) fn install(context: &mut Runtime) {
-    insert_native(context, "repeat", |call, args| {
+    global_builtin!(context, fn repeat(call, args) {
         let value = const_value(*required(args, 0, "data")?)?;
         let length = array_length(
             call,

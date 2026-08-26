@@ -1,29 +1,13 @@
+mod builtin;
 mod global;
 mod module;
 
-use crate::{MiraError, MiraNativeFn, MiraValue, Result, Runtime, RuntimeErrorKind, operations};
+use crate::{MiraError, MiraValue, Result, Runtime, RuntimeErrorKind, operations};
+use builtin::{builtin_fn, global_builtin};
 
 pub(crate) fn install(runtime: &mut Runtime) {
     global::install(runtime);
-    let matrix = module::matrix::module(runtime)
-        .expect("standard-library module construction must fit in a fresh Runtime arena");
-    runtime.insert_std("matrix", matrix);
-}
-
-fn native(
-    name: &'static str,
-    callback: impl Fn(&mut Runtime, &[MiraValue]) -> Result<MiraValue> + 'static,
-) -> MiraNativeFn {
-    MiraNativeFn::new(name, callback)
-}
-
-fn insert_native(
-    runtime: &mut Runtime,
-    name: &'static str,
-    callback: impl Fn(&mut Runtime, &[MiraValue]) -> Result<MiraValue> + 'static,
-) {
-    let display_name = format!("global.{name}");
-    runtime.insert_std(name, MiraNativeFn::new(display_name, callback));
+    module::matrix::install(runtime).unwrap();
 }
 
 fn required<'a>(args: &'a [MiraValue], index: usize, name: &'static str) -> Result<&'a MiraValue> {

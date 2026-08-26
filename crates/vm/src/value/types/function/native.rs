@@ -28,21 +28,8 @@ where
 }
 
 impl MiraNativeFn {
-    /// Create a named native callback.
-    pub fn new<V, E, F>(name: impl Into<Cow<'static, str>>, callback: F) -> Self
-    where
-        V: Into<MiraManageable>,
-        E: Into<anyhow::Error>,
-        F: Fn(&mut Runtime, &[MiraValue]) -> std::result::Result<V, E> + 'static,
-    {
-        Self {
-            callback: Rc::new(wrap_callback(callback)),
-            name: name.into(),
-        }
-    }
-
-    /// Create an anonymous native callback.
-    pub fn anonymous<V, E, F>(callback: F) -> Self
+    /// Create a native callback.
+    pub fn new<V, E, F>(callback: F) -> Self
     where
         V: Into<MiraManageable>,
         E: Into<anyhow::Error>,
@@ -82,17 +69,6 @@ impl MiraNativeFn {
         }
     }
 
-    /// Create an internal callback already using the VM result type.
-    pub fn builtin(
-        name: impl Into<Cow<'static, str>>,
-        callback: impl Fn(&mut Runtime, &[MiraValue]) -> Result<MiraManageable> + 'static,
-    ) -> Self {
-        Self {
-            callback: Rc::new(callback),
-            name: name.into(),
-        }
-    }
-
     /// Replace the diagnostic name.
     pub fn with_name(mut self, name: impl Into<Cow<'static, str>>) -> Self {
         self.name = name.into();
@@ -117,7 +93,7 @@ where
     F: Fn(&mut Runtime, &[MiraValue]) -> std::result::Result<V, E> + 'static,
 {
     fn from(callback: F) -> Self {
-        Self::anonymous(callback)
+        Self::new(callback)
     }
 }
 
@@ -144,13 +120,15 @@ mod tests {
     #[test]
     fn test_ok_fn() {
         let mut runtime = Runtime::new();
-        runtime.insert_fn(
-            "add",
-            MiraNativeFn::ok(|_, args| {
-                let sum: f64 = args.iter().map(|arg| arg.as_number().unwrap_or(0.0)).sum();
-                sum
-            }),
-        );
+        runtime
+            .insert_fn(
+                "add",
+                MiraNativeFn::ok(|_, args| {
+                    let sum: f64 = args.iter().map(|arg| arg.as_number().unwrap_or(0.0)).sum();
+                    sum
+                }),
+            )
+            .unwrap();
 
         assert_eq!(
             runtime.eval_unchecked("add(1, 2, 3)").as_number_unchecked(),
@@ -166,10 +144,12 @@ mod tests {
     #[test]
     fn test_err_fn() {
         let mut runtime = Runtime::new();
-        runtime.insert_fn(
-            "fail",
-            MiraNativeFn::err(|_, _| anyhow::anyhow!("This function always fails")),
-        );
+        runtime
+            .insert_fn(
+                "fail",
+                MiraNativeFn::err(|_, _| anyhow::anyhow!("This function always fails")),
+            )
+            .unwrap();
 
         assert!(matches!(
             runtime.eval("fail()").unwrap_err().as_ref(),

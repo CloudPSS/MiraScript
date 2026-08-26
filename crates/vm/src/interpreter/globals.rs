@@ -1,4 +1,4 @@
-use std::{cell::LazyCell, collections::HashMap};
+use std::{cell::LazyCell, collections::HashMap, ops::Deref};
 
 use indexmap::IndexMap;
 
@@ -71,7 +71,7 @@ impl GlobalData {
 }
 
 pub(crate) struct Globals {
-    std: IndexMap<String, MiraAny>,
+    std: IndexMap<&'static str, MiraAny>,
     context: GlobalData,
 }
 
@@ -98,12 +98,12 @@ impl Globals {
             "standard-library globals must be initialized"
         );
 
-        self.std.insert(name.to_string(), value.into());
+        self.std.insert(name, value.into());
         self.std.len() - 1
     }
 
     fn insert(&mut self, name: String, value: MiraValue) -> Option<MiraValue> {
-        if let Some(std_slot) = self.std.get_mut(&name) {
+        if let Some(std_slot) = self.std.get_mut(name.as_str()) {
             return read_global(Some(std::mem::replace(std_slot, value.into())));
         }
         self.context.insert(name, value)
@@ -120,7 +120,7 @@ impl Globals {
             && let Some((std_name, value)) = self.std.get_index(index)
         {
             debug_assert_eq!(
-                std_name, name,
+                *std_name, name,
                 "standard-library global name collision: expected {std_name}, got {name}"
             );
             read_global(Some(*value))
@@ -134,7 +134,7 @@ impl Globals {
     }
 
     fn keys(&self) -> impl Iterator<Item = &str> {
-        let mut keys = self.std.keys().map(String::as_str).collect::<Vec<_>>();
+        let mut keys = self.std.keys().map(Deref::deref).collect::<Vec<_>>();
         match &self.context {
             GlobalData::Vec(vec) => keys.extend(vec.iter().map(|(k, _)| k.as_str())),
             GlobalData::Map(map) => keys.extend(map.keys().map(String::as_str)),
@@ -205,7 +205,7 @@ impl Runtime {
 }
 
 thread_local! {
-    static RUNTIME: LazyCell<IndexMap<String, ()>> = LazyCell::new(||{
+    static RUNTIME: LazyCell<IndexMap<&'static str, ()>> = LazyCell::new(||{
         let runtime = Runtime::new();
         let std = runtime.globals.std;
         std.into_keys().map(|name| (name, ())).collect()

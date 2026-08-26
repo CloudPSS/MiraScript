@@ -1,7 +1,7 @@
 use super::*;
 
 pub(super) fn install(context: &mut Runtime) {
-    insert_native(context, "new_array", |call, args| {
+    global_builtin!(context, fn new_array(call, args) {
         let max = call.options().max_array_len;
         let length = array_length(call, *required(args, 0, "length")?, max)?;
         let generator = required(args, 1, "generator")?;
@@ -19,7 +19,7 @@ pub(super) fn install(context: &mut Runtime) {
         }
         call.insert(result)
     });
-    insert_native(context, "new_record", |call, args| {
+    global_builtin!(context, fn new_record(call, args) {
         let max = call.options().max_array_len;
         let length = array_length(call, *required(args, 0, "size")?, max)?;
         let generator = required(args, 1, "generator")?;

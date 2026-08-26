@@ -1,7 +1,7 @@
 use super::*;
 
 pub(super) fn install(context: &mut Runtime) {
-    insert_native(context, "keys", |call, args| {
+    global_builtin!(context, fn keys(call, args) {
         let value = *required(args, 0, "data")?;
         let keys: Vec<MiraValue> = match value.kind() {
             MiraValueKind::Array(_) => (0..operations::array_len(call, value)?.unwrap_or(0))
@@ -26,7 +26,7 @@ pub(super) fn install(context: &mut Runtime) {
         };
         call.insert(keys)
     });
-    insert_native(context, "values", |call, args| {
+    global_builtin!(context, fn values(call, args) {
         let data = Data::from_value(call, *required(args, 0, "data")?)?;
         match data {
             Data::Array(values) => call.insert(values),
@@ -37,7 +37,7 @@ pub(super) fn install(context: &mut Runtime) {
             })),
         }
     });
-    insert_native(context, "entries", |call, args| {
+    global_builtin!(context, fn entries(call, args) {
         let data = Data::from_value(call, *required(args, 0, "data")?)?;
         let mut entries = Vec::new();
         match data {

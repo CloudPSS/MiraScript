@@ -4,23 +4,23 @@ mod tgamma;
 mod to_int;
 mod unary;
 
-use crate::standard_library::{insert_native, number};
+use crate::standard_library::{global_builtin, number};
 use crate::{MiraValue, Runtime};
 
 pub(super) fn install(context: &mut Runtime) {
     constants::install(context);
     unary::install(context);
-    insert_native(context, "atan2", |call, args| {
+    global_builtin!(context, fn atan2(call, args) {
         Ok(MiraValue::number(
             number(call, args, 0, "x")?.atan2(number(call, args, 1, "y")?),
         ))
     });
-    insert_native(context, "pow", |call, args| {
+    global_builtin!(context, fn pow(call, args) {
         Ok(MiraValue::number(
             number(call, args, 0, "x")?.powf(number(call, args, 1, "y")?),
         ))
     });
-    insert_native(context, "random", |call, _| {
+    global_builtin!(context, fn random(call, _args) {
         Ok(MiraValue::number(call.options().providers.random()))
     });
     to_int::install(context);

@@ -72,7 +72,7 @@ pub trait MiraRecord: Any {
 }
 
 /// A fixed-shape record whose field names are known from its Rust type.
-pub trait MiraShapedRecord: Any + 'static {
+pub trait MiraShapedRecord: Any {
     /// Return the fixed number of fields.
     fn len() -> usize;
 

@@ -63,9 +63,7 @@ fn probe_runtime(drops: &Rc<Cell<usize>>) -> Runtime {
     runtime
         .insert_fn(
             "make_probe",
-            MiraNativeFn::builtin("make_probe", move |_, _| {
-                Ok(MiraManageable::from_record(DropProbe(Rc::clone(&drops))))
-            }),
+            MiraNativeFn::ok(move |_, _| MiraManageable::from_record(DropProbe(Rc::clone(&drops)))),
         )
         .unwrap();
     runtime
@@ -149,9 +147,7 @@ fn runtime_rejects_reentrant_run() {
     runtime
         .insert_fn(
             "reenter",
-            MiraNativeFn::builtin("reenter", move |runtime, _| {
-                runtime.run(&nested).map(Into::into)
-            }),
+            MiraNativeFn::new(move |runtime, _| runtime.run(&nested)),
         )
         .unwrap();
     let error = runtime.run(&compile("reenter()").unwrap()).unwrap_err();

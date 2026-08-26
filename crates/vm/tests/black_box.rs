@@ -8,9 +8,9 @@ use mirascript_vm::{MiraManageable, MiraNativeFn, MiraValue, RunOptions, Runtime
 fn runtime(options: RunOptions) -> Runtime {
     let mut runtime = Runtime::with_options(options);
     runtime
-        .insert_global(
+        .insert_fn(
             "t_eq",
-            MiraNativeFn::new("t_eq", |runtime, args| {
+            MiraNativeFn::new(  |runtime, args| {
                 let left = args.first().cloned().unwrap_or(MiraValue::NIL);
                 let right = args.get(1).cloned().unwrap_or(MiraValue::NIL);
                 if runtime.values_equal(left, right)? {
@@ -27,9 +27,9 @@ fn runtime(options: RunOptions) -> Runtime {
         )
         .unwrap();
     runtime
-        .insert_global(
+        .insert_fn(
             "t_ne",
-            MiraNativeFn::new("t_ne", |runtime, args| {
+            MiraNativeFn::new(|runtime, args| {
                 let left = args.first().cloned().unwrap_or(MiraValue::NIL);
                 let right = args.get(1).cloned().unwrap_or(MiraValue::NIL);
                 if !runtime.values_equal(left, right)? {
@@ -44,9 +44,9 @@ fn runtime(options: RunOptions) -> Runtime {
         )
         .unwrap();
     runtime
-        .insert_global(
+        .insert_fn(
             "t_true",
-            MiraNativeFn::new("t_true", |_, args| {
+            MiraNativeFn::new(|_, args| {
                 let value = args.first();
                 if value.and_then(MiraValue::as_boolean) == Some(true) {
                     Ok(MiraValue::NIL)
@@ -57,9 +57,9 @@ fn runtime(options: RunOptions) -> Runtime {
         )
         .unwrap();
     runtime
-        .insert_global(
+        .insert_fn(
             "t_false",
-            MiraNativeFn::new("t_false", |_, args| {
+            MiraNativeFn::new(|_, args| {
                 let value = args.first();
                 if value.and_then(MiraValue::as_boolean) == Some(false) {
                     Ok(MiraValue::NIL)
@@ -70,9 +70,9 @@ fn runtime(options: RunOptions) -> Runtime {
         )
         .unwrap();
     runtime
-        .insert_global(
+        .insert_fn(
             "t_throws",
-            MiraNativeFn::new("t_throws", |runtime, args| {
+            MiraNativeFn::new(|runtime, args| {
                 let function = *args
                     .first()
                     .ok_or_else(|| anyhow::anyhow!("t_throws requires a function"))?;

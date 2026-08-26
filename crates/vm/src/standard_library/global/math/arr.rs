@@ -1,8 +1,8 @@
-use crate::standard_library::insert_native;
+use crate::standard_library::global_builtin;
 use crate::{MiraValue, Result, Runtime, operations};
 
 pub(super) fn install(context: &mut Runtime) {
-    insert_native(context, "max", |call, args| {
+    global_builtin!(context, fn max(call, args) {
         let values = numbers(call, args)?;
         let mut result = f64::NEG_INFINITY;
         for value in values {
@@ -15,7 +15,7 @@ pub(super) fn install(context: &mut Runtime) {
         }
         Ok(MiraValue::number(result))
     });
-    insert_native(context, "min", |call, args| {
+    global_builtin!(context, fn min(call, args) {
         let values = numbers(call, args)?;
         let mut result = f64::INFINITY;
         for value in values {
@@ -28,7 +28,7 @@ pub(super) fn install(context: &mut Runtime) {
         }
         Ok(MiraValue::number(result))
     });
-    insert_native(context, "hypot", |call, args| {
+    global_builtin!(context, fn hypot(call, args) {
         let values = numbers(call, args)?;
         if values.iter().any(|value| value.is_infinite()) {
             return Ok(MiraValue::number(f64::INFINITY));
@@ -40,14 +40,14 @@ pub(super) fn install(context: &mut Runtime) {
             values.into_iter().fold(0.0_f64, f64::hypot),
         ))
     });
-    insert_native(context, "sum", |call, args| {
+    global_builtin!(context, fn sum(call, args) {
         let mut total = -0.0;
         for value in numbers(call, args)? {
             total += value;
         }
         Ok(MiraValue::number(total))
     });
-    insert_native(context, "product", |call, args| {
+    global_builtin!(context, fn product(call, args) {
         Ok(MiraValue::number(
             numbers(call, args)?.into_iter().product(),
         ))

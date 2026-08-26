@@ -1,27 +1,12 @@
-use crate::standard_library::number;
-use crate::{MiraFunction, MiraManageable, MiraValue, Runtime};
+use crate::standard_library::{global_builtin, number};
+use crate::{MiraValue, Runtime};
 
 pub(super) fn install(context: &mut Runtime) {
     macro_rules! unary {
-        ($name:ident, $operation:expr) => {
-            #[allow(non_camel_case_types)]
-            struct $name;
-
-            impl MiraFunction for $name {
-                fn call(
-                    &self,
-                    runtime: &mut Runtime,
-                    args: &[MiraValue],
-                ) -> crate::Result<MiraManageable> {
-                    Ok(MiraValue::number(($operation)(number(runtime, args, 0, "x")?)).into())
-                }
-
-                fn name(&self) -> &'static str {
-                    concat!("global.", stringify!($name))
-                }
-            }
-
-            context.insert_std(stringify!($name), MiraManageable::from_function($name));
+        ($name: ident, $operation: expr) => {
+            global_builtin!(context, fn $name(call, args) {
+                Ok(MiraValue::number(($operation)(number(call, args, 0, "x")?)).into())
+            });
         };
     }
 

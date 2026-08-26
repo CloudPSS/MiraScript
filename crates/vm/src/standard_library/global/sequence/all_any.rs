@@ -1,28 +1,28 @@
 use super::*;
 
 pub(super) fn install(context: &mut Runtime) {
-    for (name, every) in [("all", true), ("any", false)] {
-        insert_native(context, name, move |call, args| {
-            let data = Data::from_value(call, *required(args, 0, "data")?)?;
-            let predicate = required(args, 1, "predicate")?;
-            if !is_callable(predicate)? {
-                return Err(MiraError::runtime(RuntimeErrorKind::NotCallable {
-                    actual: predicate.value_type(),
-                }));
-            }
-            let original = data.original(call)?;
-            for (key, value) in data_items(call, &data)? {
-                call.checkpoint()?;
-                let matched =
-                    operations::to_boolean(call.call(*predicate, &[value, key, original])?)?;
-                if every && !matched {
-                    return Ok(MiraValue::boolean(false));
-                }
-                if !every && matched {
-                    return Ok(MiraValue::boolean(true));
-                }
-            }
-            Ok(MiraValue::boolean(every))
-        });
+    global_builtin!(context, fn all: all_any::<true>);
+    global_builtin!(context, fn any: all_any::<false>);
+}
+
+fn all_any<const EVERY: bool>(call: &mut Runtime, args: &[MiraValue]) -> Result<MiraValue> {
+    let data = Data::from_value(call, *required(args, 0, "data")?)?;
+    let predicate = required(args, 1, "predicate")?;
+    if !is_callable(predicate)? {
+        return Err(MiraError::runtime(RuntimeErrorKind::NotCallable {
+            actual: predicate.value_type(),
+        }));
     }
+    let original = data.original(call)?;
+    for (key, value) in data_items(call, &data)? {
+        call.checkpoint()?;
+        let matched = operations::to_boolean(call.call(*predicate, &[value, key, original])?)?;
+        if EVERY && !matched {
+            return Ok(MiraValue::boolean(false));
+        }
+        if !EVERY && matched {
+            return Ok(MiraValue::boolean(true));
+        }
+    }
+    Ok(MiraValue::boolean(EVERY))
 }

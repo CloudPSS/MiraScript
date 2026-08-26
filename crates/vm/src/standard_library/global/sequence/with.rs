@@ -1,7 +1,7 @@
 use super::*;
 
 pub(super) fn install(runtime: &mut Runtime) {
-    insert_native(runtime, "with", |call, args| {
+    global_builtin!(runtime, fn with(call, args) {
         let max = call.options().max_array_len;
         update_with(call, *required(args, 0, "data")?, &args[1..], max)
     });

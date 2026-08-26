@@ -7,7 +7,7 @@ use mirascript_vm::{
 fn anonymous_fn() {
     let mut runtime = Runtime::new();
     let handle = runtime
-        .insert_function(MiraNativeFn::anonymous(|_, _| {
+        .insert_function(MiraNativeFn::new(|_, _| {
             Ok::<_, mirascript_vm::MiraError>(42)
         }))
         .unwrap();
