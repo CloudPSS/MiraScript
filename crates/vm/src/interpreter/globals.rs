@@ -155,13 +155,15 @@ impl Runtime {
     }
 
     /// Insert a named native function into the global namespace.
-    pub fn insert_fn(&mut self, name: impl Into<String>, function: impl Into<MiraNativeFn>) {
+    pub fn insert_fn(
+        &mut self,
+        name: impl Into<String>,
+        function: impl Into<MiraNativeFn>,
+    ) -> Result<Option<MiraValue>> {
         let name = name.into();
         let function = function.into().with_name(name.clone());
-        let handle = self
-            .insert_function(function)
-            .expect("a fresh native function arena slot must be available");
-        self.globals.insert(name, MiraValue::function(handle));
+        let handle = self.insert_function(function)?;
+        Ok(self.globals.insert(name, MiraValue::function(handle)))
     }
 
     /// Clone a global value by name.

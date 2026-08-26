@@ -11,7 +11,7 @@ struct Root {
 struct Item {
     value: u8,
     name: String,
-    // children: Box<[Item]>,
+    children: Box<[Item]>,
 }
 
 #[derive(MiraRecord)]
@@ -28,10 +28,16 @@ fn main() {
             Item {
                 value: 1,
                 name: "one".to_string(),
+                children: Box::new([Item {
+                    value: 11,
+                    name: "child".to_string(),
+                    children: Box::new([]),
+                }]),
             },
             Item {
                 value: 2,
                 name: "two".to_string(),
+                children: Box::new([]),
             },
         ],
         arr: Box::new([
@@ -61,5 +67,11 @@ fn main() {
             .eval_unchecked("root.list[1].name")
             .as_str_unchecked(&runtime),
         "two"
+    );
+    assert_eq!(
+        runtime
+            .eval_unchecked("root.list[0].children[0].value")
+            .as_number_unchecked(),
+        11f64
     );
 }

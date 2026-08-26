@@ -4,9 +4,13 @@ use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use syn::{Error, Generics, Ident, Path, Result, Type, parse_quote};
 
-pub fn reject_duplicate_names(names: &[(&str, &proc_macro2::Span)]) -> Result<()> {
+use crate::generic_visiter::type_uses_generic_parameter;
+
+pub fn reject_duplicate_names<'a>(
+    names: impl Iterator<Item = (&'a str, &'a proc_macro2::Span)>,
+) -> Result<()> {
     let mut seen = HashMap::new();
-    for &(name, span) in names {
+    for (name, span) in names {
         if let Some(previous) = seen.insert(name, span) {
             let mut error = Error::new(*span, format!("duplicate Mira field name `{name}`"));
             error.combine(Error::new(*previous, "first exported with this name here"));
@@ -21,6 +25,10 @@ pub fn add_read_bounds<'a>(
     types: impl IntoIterator<Item = &'a Type>,
     krate: &'a Path,
 ) {
+    let types = types
+        .into_iter()
+        .filter(|ty| type_uses_generic_parameter(generics, ty))
+        .collect::<Vec<_>>();
     for parameter in generics.type_params_mut() {
         parameter.bounds.push(parse_quote!('static));
     }

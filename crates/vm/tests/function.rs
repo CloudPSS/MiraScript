@@ -39,3 +39,34 @@ fn anonymous_fn() {
         MiraValue::from(42)
     );
 }
+
+#[test]
+fn ok() {
+    let mut runtime = Runtime::new();
+    runtime
+        .insert_fn("ok", MiraNativeFn::ok(|_, _| 42))
+        .unwrap();
+    assert_eq!(runtime.eval_unchecked("ok()").as_number_unchecked(), 42f64);
+    assert_eq!(runtime.eval_unchecked("ok(1)").as_number_unchecked(), 42f64);
+}
+
+#[test]
+fn err() {
+    let mut runtime = Runtime::new();
+    runtime
+        .insert_fn(
+            "err",
+            MiraNativeFn::err(|_, _| MiraError::Compile {
+                diagnostics: vec![],
+            }),
+        )
+        .unwrap();
+    assert!(matches!(
+        runtime.eval("err()").unwrap_err().as_ref(),
+        MiraError::Compile { diagnostics: _ }
+    ));
+    assert!(matches!(
+        runtime.eval("err(12)").unwrap_err().as_ref(),
+        MiraError::Compile { diagnostics: _ }
+    ));
+}

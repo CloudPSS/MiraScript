@@ -62,9 +62,7 @@ pub fn expand(input: DeriveInput) -> Result<TokenStream> {
     reject_duplicate_names(
         exported
             .iter()
-            .map(|(_, span, name, _)| (name.as_str(), span))
-            .collect::<Vec<_>>()
-            .as_slice(),
+            .map(|(_, span, name, _)| (name.as_str(), span)),
     )?;
 
     let krate = options.crate_path;

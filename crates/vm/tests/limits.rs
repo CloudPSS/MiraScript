@@ -60,12 +60,14 @@ impl mirascript_vm::MiraRecord for DropProbe {
 fn probe_runtime(drops: &Rc<Cell<usize>>) -> Runtime {
     let drops = Rc::clone(drops);
     let mut runtime = Runtime::new();
-    runtime.insert_fn(
-        "make_probe",
-        MiraNativeFn::builtin("make_probe", move |_, _| {
-            Ok(MiraManageable::from_record(DropProbe(Rc::clone(&drops))))
-        }),
-    );
+    runtime
+        .insert_fn(
+            "make_probe",
+            MiraNativeFn::builtin("make_probe", move |_, _| {
+                Ok(MiraManageable::from_record(DropProbe(Rc::clone(&drops))))
+            }),
+        )
+        .unwrap();
     runtime
 }
 
@@ -144,12 +146,14 @@ fn limits_and_providers_are_runtime_configuration() {
 fn runtime_rejects_reentrant_run() {
     let nested = compile("1").unwrap();
     let mut runtime = Runtime::new();
-    runtime.insert_fn(
-        "reenter",
-        MiraNativeFn::builtin("reenter", move |runtime, _| {
-            runtime.run(&nested).map(Into::into)
-        }),
-    );
+    runtime
+        .insert_fn(
+            "reenter",
+            MiraNativeFn::builtin("reenter", move |runtime, _| {
+                runtime.run(&nested).map(Into::into)
+            }),
+        )
+        .unwrap();
     let error = runtime.run(&compile("reenter()").unwrap()).unwrap_err();
     assert!(matches!(
         error.as_ref(),
@@ -165,13 +169,15 @@ fn script_function_handles_expire_after_their_run() {
     let cached = Rc::new(RefCell::new(None));
     let callback_cache = Rc::clone(&cached);
     let mut runtime = Runtime::new();
-    runtime.insert_fn(
-        "cache",
-        MiraNativeFn::ok(move |_, args| {
-            *callback_cache.borrow_mut() = args.first().cloned();
-            MiraValue::NIL
-        }),
-    );
+    runtime
+        .insert_fn(
+            "cache",
+            MiraNativeFn::ok(move |_, args| {
+                *callback_cache.borrow_mut() = args.first().cloned();
+                MiraValue::NIL
+            }),
+        )
+        .unwrap();
     runtime
         .run(&compile("cache(fn { 42 }); nil").unwrap())
         .unwrap();
@@ -194,13 +200,15 @@ fn script_module_handles_expire_after_their_run() {
     let cached = Rc::new(RefCell::new(None));
     let callback_cache = Rc::clone(&cached);
     let mut runtime = Runtime::new();
-    runtime.insert_fn(
-        "cache",
-        MiraNativeFn::ok(move |_, args| {
-            *callback_cache.borrow_mut() = args.first().cloned();
-            MiraValue::NIL
-        }),
-    );
+    runtime
+        .insert_fn(
+            "cache",
+            MiraNativeFn::ok(move |_, args| {
+                *callback_cache.borrow_mut() = args.first().cloned();
+                MiraValue::NIL
+            }),
+        )
+        .unwrap();
     runtime
         .run(&compile("mod value { pub let answer = 42; } cache(value); nil").unwrap())
         .unwrap();

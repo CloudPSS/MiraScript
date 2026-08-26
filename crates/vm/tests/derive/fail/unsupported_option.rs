@@ -1,4 +1,4 @@
-use mirascript_vm::MiraRecord;
+use mirascript_vm::{MiraArray, MiraRecord};
 
 #[derive(MiraRecord)]
 #[mira(unsupported_option)]
@@ -10,5 +10,8 @@ struct Record {
 
 #[derive(MiraRecord)]
 struct Record2(#[mira(unsupported_option)] u8);
+
+#[derive(MiraArray)]
+struct Array(#[mira(unsupported_option)] u8);
 
 fn main() {}

@@ -68,8 +68,7 @@ fn set_path(
         MiraValueKind::Record(_) => {
             let mut values = IndexMap::new();
             for key in operations::record_keys(runtime, data)?.unwrap_or_default() {
-                let item =
-                    operations::record_get(runtime, data, &key)?.unwrap_or(MiraValue::NIL);
+                let item = operations::record_get(runtime, data, &key)?.unwrap_or(MiraValue::NIL);
                 values.insert(key, item);
             }
             let key = operations::to_string(runtime, path[0])?;

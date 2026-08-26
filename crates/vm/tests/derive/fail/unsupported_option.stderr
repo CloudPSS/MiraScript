@@ -9,3 +9,9 @@ error: unsupported Mira field option
    |
 12 | struct Record2(#[mira(unsupported_option)] u8);
    |                       ^^^^^^^^^^^^^^^^^^
+
+error: unsupported Mira field option
+  --> tests/derive/fail/unsupported_option.rs:15:21
+   |
+15 | struct Array(#[mira(unsupported_option)] u8);
+   |                     ^^^^^^^^^^^^^^^^^^

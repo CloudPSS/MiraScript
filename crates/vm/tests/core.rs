@@ -100,10 +100,12 @@ fn closures_capture_each_loop_iteration_but_cannot_escape() {
         }
     ));
 
-    runtime.insert_fn(
-        "wrap",
-        mirascript_vm::MiraNativeFn::ok(|_, args| args.to_vec()),
-    );
+    runtime
+        .insert_fn(
+            "wrap",
+            mirascript_vm::MiraNativeFn::ok(|_, args| args.to_vec()),
+        )
+        .unwrap();
     let value = runtime.eval_unchecked("wrap(fn { 1 })");
     assert!(value.is_array());
     runtime.insert_global("value", value).unwrap();
