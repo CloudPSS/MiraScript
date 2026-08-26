@@ -2,9 +2,11 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{DeriveInput, Error, Fields, Index, Result, parse_quote};
 
-use crate::field::{field_options, into_fields};
-use crate::utils::add_read_bounds;
-use crate::{container::container_options, utils::create_getter};
+use crate::{
+    container::container_options,
+    field::{field_options, into_fields},
+    utils::{add_read_bounds, create_getter, impl_common},
+};
 
 pub fn expand(input: DeriveInput) -> Result<TokenStream> {
     let options = container_options(&input.attrs)?;
@@ -43,6 +45,7 @@ pub fn expand(input: DeriveInput) -> Result<TokenStream> {
     });
 
     let ident = input.ident;
+    let common_impl = impl_common(&ident, &generics, &krate, "array");
     Ok(quote! {
         impl #impl_generics #krate::MiraShapedArray for #ident #ty_generics #where_clause {
             fn len() -> usize {
@@ -64,34 +67,6 @@ pub fn expand(input: DeriveInput) -> Result<TokenStream> {
             }
         }
 
-        impl #impl_generics ::core::convert::From<#ident #ty_generics>
-            for #krate::MiraManageable #where_clause
-        {
-            fn from(value: #ident #ty_generics) -> Self {
-                #krate::MiraManageable::from_array(value)
-            }
-        }
-
-        impl #impl_generics #krate::__private::MiraField
-            for #ident #ty_generics #where_clause
-        {
-            fn from_record<P: #krate::MiraRecord>(
-                &self,
-                parent: #krate::MiraHandle<P>,
-                index: usize,
-                getter: #krate::__private::MiraFieldGetter<P, Self>,
-            ) -> #krate::MiraManageable {
-                #krate::__private::shaped_array_from_record(parent, index, getter)
-            }
-
-            fn from_array<P: #krate::MiraArray>(
-                &self,
-                parent: #krate::MiraHandle<P>,
-                index: usize,
-                getter: #krate::__private::MiraFieldGetter<P, Self>,
-            ) -> #krate::MiraManageable {
-                #krate::__private::shaped_array_from_array(parent, index, getter)
-            }
-        }
+        #common_impl
     })
 }

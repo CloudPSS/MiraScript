@@ -2,9 +2,11 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{DeriveInput, Fields, Result, parse_quote, spanned::Spanned};
 
-use crate::field::{field_options, into_fields};
-use crate::utils::{add_read_bounds, reject_duplicate_names};
-use crate::{container::container_options, utils::create_getter};
+use crate::{
+    container::container_options,
+    field::{field_options, into_fields},
+    utils::{add_read_bounds, create_getter, impl_common, reject_duplicate_names},
+};
 
 enum ExportField {
     Named(syn::Ident),
@@ -97,6 +99,7 @@ pub fn expand(input: DeriveInput) -> Result<TokenStream> {
         });
 
     let ident = input.ident;
+    let common_impl = impl_common(&ident, &generics, &krate, "record");
     Ok(quote! {
         impl #impl_generics #krate::MiraShapedRecord for #ident #ty_generics #where_clause {
             fn len() -> usize {
@@ -134,34 +137,6 @@ pub fn expand(input: DeriveInput) -> Result<TokenStream> {
             }
         }
 
-        impl #impl_generics ::core::convert::From<#ident #ty_generics>
-            for #krate::MiraManageable #where_clause
-        {
-            fn from(value: #ident #ty_generics) -> Self {
-                #krate::MiraManageable::from_record(value)
-            }
-        }
-
-        impl #impl_generics #krate::__private::MiraField
-            for #ident #ty_generics #where_clause
-        {
-            fn from_record<P: #krate::MiraRecord>(
-                &self,
-                parent: #krate::MiraHandle<P>,
-                index: usize,
-                getter: #krate::__private::MiraFieldGetter<P, Self>,
-            ) -> #krate::MiraManageable {
-                #krate::__private::shaped_record_from_record(parent, index, getter)
-            }
-
-            fn from_array<P: #krate::MiraArray>(
-                &self,
-                parent: #krate::MiraHandle<P>,
-                index: usize,
-                getter: #krate::__private::MiraFieldGetter<P, Self>,
-            ) -> #krate::MiraManageable {
-                #krate::__private::shaped_record_from_array(parent, index, getter)
-            }
-        }
+        #common_impl
     })
 }

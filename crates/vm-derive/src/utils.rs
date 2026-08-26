@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use proc_macro2::TokenStream;
+use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use syn::{Error, Generics, Ident, Path, Result, Type, parse_quote};
 
@@ -60,5 +60,53 @@ pub fn create_getter(
                 )
             )
         },
+    }
+}
+
+pub(crate) fn impl_common(
+    ident: &Ident,
+    generics: &Generics,
+    krate: &Path,
+    impl_type: &'static str,
+) -> TokenStream {
+    let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
+    let from_type = Ident::new(&format!("from_{impl_type}"), Span::call_site());
+    let shaped_type_from_array =
+        Ident::new(&format!("shaped_{impl_type}_from_array"), Span::call_site());
+    let shaped_type_from_record = Ident::new(
+        &format!("shaped_{impl_type}_from_record"),
+        Span::call_site(),
+    );
+
+    quote! {
+        impl #impl_generics ::core::convert::From<#ident #ty_generics>
+            for #krate::MiraManageable #where_clause
+        {
+            fn from(value: #ident #ty_generics) -> Self {
+                #krate::MiraManageable::#from_type(value)
+            }
+        }
+
+        impl #impl_generics #krate::__private::MiraField
+            for #ident #ty_generics #where_clause
+        {
+            fn from_record<P: #krate::MiraRecord>(
+                &self,
+                parent: #krate::MiraHandle<P>,
+                index: usize,
+                getter: #krate::__private::MiraFieldGetter<P, Self>,
+            ) -> #krate::MiraManageable {
+                #krate::__private::#shaped_type_from_record(parent, index, getter)
+            }
+
+            fn from_array<P: #krate::MiraArray>(
+                &self,
+                parent: #krate::MiraHandle<P>,
+                index: usize,
+                getter: #krate::__private::MiraFieldGetter<P, Self>,
+            ) -> #krate::MiraManageable {
+                #krate::__private::#shaped_type_from_array(parent, index, getter)
+            }
+        }
     }
 }
