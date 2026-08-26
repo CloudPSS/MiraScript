@@ -88,7 +88,10 @@ pub trait MiraShapedRecord: Any + 'static {
     fn key(index: usize) -> Result<&'static str>;
 
     /// Read a field value by iteration index.
-    fn get(
+    ///
+    /// You should not call this method directly; use [`MiraRecord::get`] instead.
+    #[doc(hidden)]
+    fn get_shaped(
         &self,
         self_handle: MiraHandle<dyn MiraRecord>,
         runtime: &Runtime,
@@ -119,7 +122,7 @@ impl<T: MiraShapedRecord> MiraRecord for T {
         runtime: &Runtime,
         index: usize,
     ) -> Result<MiraManageable> {
-        T::get(self, self_handle, runtime, index)
+        T::get_shaped(self, self_handle, runtime, index)
     }
 }
 

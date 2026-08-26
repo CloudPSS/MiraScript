@@ -152,8 +152,8 @@ pub fn compile_with(source: &str, config: &CompileConfig) -> Result<MiraScript> 
 /// Items used by the derive macros. They are not a stable user-facing API.
 #[doc(hidden)]
 pub mod __private {
-    pub use crate::value::types::{
-        MiraField, shaped_array_from_array, shaped_array_from_record, shaped_record_from_array,
-        shaped_record_from_record,
+    pub use crate::value::types::field::{
+        MiraField, MiraFieldGetter, array_from_array, array_from_record, shaped_array_from_array,
+        shaped_array_from_record, shaped_record_from_array, shaped_record_from_record,
     };
 }

@@ -119,7 +119,7 @@ pub fn expand(input: DeriveInput) -> Result<TokenStream> {
                 }
             }
 
-            fn get(
+            fn get_shaped(
                 &self,
                 self_handle: #krate::MiraHandle<dyn #krate::MiraRecord>,
                 _runtime: &#krate::Runtime,
@@ -148,17 +148,19 @@ pub fn expand(input: DeriveInput) -> Result<TokenStream> {
             fn from_record<P: #krate::MiraRecord>(
                 &self,
                 parent: #krate::MiraHandle<P>,
-                getter: fn(&P) -> &Self,
+                index: usize,
+                getter: #krate::__private::MiraFieldGetter<P, Self>,
             ) -> #krate::MiraManageable {
-                #krate::__private::shaped_record_from_record(parent, getter)
+                #krate::__private::shaped_record_from_record(parent, index, getter)
             }
 
             fn from_array<P: #krate::MiraArray>(
                 &self,
                 parent: #krate::MiraHandle<P>,
-                getter: fn(&P) -> &Self,
+                index: usize,
+                getter: #krate::__private::MiraFieldGetter<P, Self>,
             ) -> #krate::MiraManageable {
-                #krate::__private::shaped_record_from_array(parent, getter)
+                #krate::__private::shaped_record_from_array(parent, index, getter)
             }
         }
     })

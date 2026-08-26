@@ -55,7 +55,8 @@ pub fn create_getter(
                 <#ty as #krate::__private::MiraField>::#from(
                     &self.#field,
                     parent,
-                    |parent: &Self| &parent.#field,
+                    #index,
+                    |parent: &Self, index: usize| &parent.#field,
                 )
             )
         },

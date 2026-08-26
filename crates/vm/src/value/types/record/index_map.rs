@@ -1,13 +1,12 @@
 use indexmap::IndexMap;
 
 use crate::{
-    MiraError, Result, Runtime, RuntimeErrorKind,
-    value::{MiraHandle, MiraManageable},
+    __private::MiraField, MiraError, MiraHandle, MiraManageable, Result, Runtime, RuntimeErrorKind,
 };
 
 use super::MiraRecord;
 
-impl<T: Clone + Into<MiraManageable> + 'static> MiraRecord for IndexMap<String, T> {
+impl<T: MiraField> MiraRecord for IndexMap<String, T> {
     fn len(&self) -> usize {
         IndexMap::len(self)
     }
@@ -24,17 +23,24 @@ impl<T: Clone + Into<MiraManageable> + 'static> MiraRecord for IndexMap<String, 
 
     fn get(
         &self,
-        _self_handle: MiraHandle<dyn MiraRecord>,
+        self_handle: MiraHandle<dyn MiraRecord>,
         _runtime: &Runtime,
         index: usize,
     ) -> Result<MiraManageable> {
+        let self_handle = unsafe { self_handle.upcast::<Self>() };
         self.get_index(index)
-            .map(|(_, value)| value.clone().into())
+            .map(|(_, v)| {
+                v.from_record(self_handle, index, |s, index| {
+                    s.get_index(index)
+                        .map(|(_, v)| v)
+                        .expect("IndexMap changed unexpectedly")
+                })
+            })
             .ok_or_else(|| MiraError::runtime(RuntimeErrorKind::MissingIndexOrField))
     }
 }
 
-impl<T: Clone + Into<MiraManageable> + 'static> From<IndexMap<String, T>> for MiraManageable {
+impl<T: MiraField> From<IndexMap<String, T>> for MiraManageable {
     fn from(value: IndexMap<String, T>) -> Self {
         Self::from_record(value)
     }
@@ -54,7 +60,7 @@ mod tests {
     #[test]
     fn one_element_index_map_record() {
         let mut map = IndexMap::new();
-        map.insert("0".to_string(), 1);
-        test_record(map, r#"{"0": 1}"#);
+        map.insert("0".to_string(), "a");
+        test_record(map, r#"{"0": "a"}"#);
     }
 }

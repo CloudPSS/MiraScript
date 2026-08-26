@@ -1,7 +1,7 @@
 mod array;
 mod boolean;
 mod r#extern;
-mod field;
+pub mod field;
 mod function;
 mod module;
 mod nil;
@@ -14,10 +14,6 @@ mod value;
 use super::Payload;
 pub use array::{MiraArray, MiraShapedArray};
 pub use r#extern::MiraExtern;
-pub use field::{
-    MiraField, shaped_array_from_array, shaped_array_from_record, shaped_record_from_array,
-    shaped_record_from_record,
-};
 pub(crate) use function::ANONYMOUS_FN_NAME;
 pub use function::{MiraFunction, MiraNativeFn};
 pub use module::MiraModule;

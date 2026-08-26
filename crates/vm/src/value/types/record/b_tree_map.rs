@@ -1,13 +1,12 @@
 use std::collections::BTreeMap;
 
 use crate::{
-    MiraError, Result, Runtime, RuntimeErrorKind,
-    value::{MiraHandle, MiraManageable},
+    __private::MiraField, MiraError, MiraHandle, MiraManageable, Result, Runtime, RuntimeErrorKind,
 };
 
 use super::MiraRecord;
 
-impl<T: Clone + Into<MiraManageable> + 'static> MiraRecord for BTreeMap<String, T> {
+impl<T: MiraField> MiraRecord for BTreeMap<String, T> {
     fn len(&self) -> usize {
         BTreeMap::len(self)
     }
@@ -25,19 +24,25 @@ impl<T: Clone + Into<MiraManageable> + 'static> MiraRecord for BTreeMap<String, 
 
     fn get(
         &self,
-        _self_handle: MiraHandle<dyn MiraRecord>,
+        self_handle: MiraHandle<dyn MiraRecord>,
         _runtime: &Runtime,
         index: usize,
     ) -> Result<MiraManageable> {
+        let self_handle = unsafe { self_handle.upcast::<Self>() };
         self.values()
             .nth(index)
-            .cloned()
-            .map(Into::into)
+            .map(|v| {
+                v.from_record(self_handle, index, |s, index| {
+                    s.values()
+                        .nth(index)
+                        .expect("BTreeMap changed unexpectedly")
+                })
+            })
             .ok_or_else(|| MiraError::runtime(RuntimeErrorKind::MissingIndexOrField))
     }
 }
 
-impl<T: Clone + Into<MiraManageable> + 'static> From<BTreeMap<String, T>> for MiraManageable {
+impl<T: MiraField> From<BTreeMap<String, T>> for MiraManageable {
     fn from(value: BTreeMap<String, T>) -> Self {
         Self::from_record(value)
     }

@@ -1,17 +1,12 @@
 use std::{collections::HashMap, hash::BuildHasher};
 
 use crate::{
-    MiraError, Result, Runtime, RuntimeErrorKind,
-    value::{MiraHandle, MiraManageable},
+    __private::MiraField, MiraError, MiraHandle, MiraManageable, Result, Runtime, RuntimeErrorKind,
 };
 
 use super::MiraRecord;
 
-impl<T, S> MiraRecord for HashMap<String, T, S>
-where
-    T: Clone + Into<MiraManageable> + 'static,
-    S: BuildHasher + 'static,
-{
+impl<T: MiraField, S: BuildHasher + 'static> MiraRecord for HashMap<String, T, S> {
     fn len(&self) -> usize {
         HashMap::len(self)
     }
@@ -29,21 +24,23 @@ where
 
     fn get(
         &self,
-        _self_handle: MiraHandle<dyn MiraRecord>,
+        self_handle: MiraHandle<dyn MiraRecord>,
         _runtime: &Runtime,
         index: usize,
     ) -> Result<MiraManageable> {
+        let self_handle = unsafe { self_handle.upcast::<Self>() };
         self.values()
             .nth(index)
-            .cloned()
-            .map(Into::into)
+            .map(|v| {
+                v.from_record(self_handle, index, |s, index| {
+                    s.values().nth(index).expect("HashMap changed unexpectedly")
+                })
+            })
             .ok_or_else(|| MiraError::runtime(RuntimeErrorKind::MissingIndexOrField))
     }
 }
 
-impl<T: Clone + Into<MiraManageable> + 'static, S: BuildHasher + 'static>
-    From<HashMap<String, T, S>> for MiraManageable
-{
+impl<T: MiraField, S: BuildHasher + 'static> From<HashMap<String, T, S>> for MiraManageable {
     fn from(value: HashMap<String, T, S>) -> Self {
         Self::from_record(value)
     }
@@ -63,7 +60,7 @@ mod tests {
     #[test]
     fn one_element_hash_map_record() {
         let mut map = HashMap::new();
-        map.insert("0".to_string(), 1);
-        test_record(map, r#"{"0": 1}"#);
+        map.insert("0".to_string(), 12);
+        test_record(map, r#"{"0": 12}"#);
     }
 }

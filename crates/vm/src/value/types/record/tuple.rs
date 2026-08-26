@@ -1,9 +1,9 @@
 use crate::{
-    MiraError, Result, Runtime, RuntimeErrorKind,
-    value::{MiraHandle, MiraManageable},
+    __private::MiraField, MiraError, MiraHandle, MiraManageable, MiraShapedRecord, Result, Runtime,
+    RuntimeErrorKind,
 };
 
-use super::{MiraRecord, MiraShapedRecord};
+use super::MiraRecord;
 
 impl MiraShapedRecord for () {
     fn len() -> usize {
@@ -22,7 +22,7 @@ impl MiraShapedRecord for () {
         Err(MiraError::runtime(RuntimeErrorKind::MissingIndexOrField))
     }
 
-    fn get(
+    fn get_shaped(
         &self,
         _self_handle: MiraHandle<dyn MiraRecord>,
         _runtime: &Runtime,
@@ -42,7 +42,7 @@ macro_rules! impl_tuple_record {
     ($len:expr; $(($T:ident, $index:tt)),+ $(,)?) => {
         impl<$($T),+> MiraShapedRecord for ($($T,)+)
         where
-            $($T: Clone + Into<MiraManageable> + 'static,)+
+            $($T: MiraField,)+
         {
             fn len() -> usize { $len }
 
@@ -62,14 +62,15 @@ macro_rules! impl_tuple_record {
                 }
             }
 
-            fn get(
+            fn get_shaped(
                 &self,
-                _self_handle: MiraHandle<dyn MiraRecord>,
+                self_handle: MiraHandle<dyn MiraRecord>,
                 _runtime: &Runtime,
                 index: usize,
             ) -> Result<MiraManageable> {
+                let self_handle = unsafe { self_handle.upcast::<Self>() };
                 match index {
-                    $($index => Ok(self.$index.clone().into()),)+
+                    $($index => Ok(<$T as MiraField>::from_record(&self.$index, self_handle, $index, |s, _| &s.$index)),)+
                     _ => Err(MiraError::runtime(RuntimeErrorKind::MissingIndexOrField)),
                 }
             }
@@ -77,7 +78,7 @@ macro_rules! impl_tuple_record {
 
         impl<$($T),+> From<($($T,)+)> for MiraManageable
         where
-            $($T: Clone + Into<MiraManageable> + 'static,)+
+            $($T: MiraField,)+
         {
             fn from(value: ($($T,)+)) -> Self {
                 Self::from_record(value)
@@ -97,7 +98,7 @@ impl_tuple_record!(8; (T0, 0), (T1, 1), (T2, 2), (T3, 3), (T4, 4), (T5, 5), (T6,
 
 #[cfg(test)]
 mod tests {
-    use crate::value::types::record::test_record;
+    use crate::{MiraValue, value::types::record::test_record};
 
     #[test]
     fn empty_tuple_record() {
@@ -113,13 +114,13 @@ mod tests {
     }
     #[test]
     fn three_element_tuple_record() {
-        test_record((1, "x", false), r#"{"0": 1, "1": "x", "2": false}"#);
+        test_record((1, &"x", false), r#"{"0": 1, "1": "x", "2": false}"#);
     }
     #[test]
     fn four_element_tuple_record() {
         test_record(
-            (1, "x", false, (1, 2, 3)),
-            r#"{"0": 1, "1": "x", "2": false, "3": {"0": 1, "1": 2, "2": 3}}"#,
+            (1, &"x", false, MiraValue::nil()),
+            r#"{"0": 1, "1": "x", "2": false, "3": null}"#,
         );
     }
 }

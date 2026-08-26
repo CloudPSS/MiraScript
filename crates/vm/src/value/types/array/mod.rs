@@ -1,9 +1,10 @@
+mod arr;
+mod boxed_slice;
+mod vec;
+
 use std::any::Any;
 
-use crate::{
-    MiraError, Result, Runtime, RuntimeErrorKind,
-    value::{MiraHandle, MiraManageable},
-};
+use crate::{MiraHandle, MiraManageable, Result, Runtime};
 
 use super::{MiraValue, MiraValueKind, value::ValueTag};
 
@@ -61,7 +62,10 @@ pub trait MiraShapedArray: Any + 'static {
     fn len() -> usize;
 
     /// Read one element by index.
-    fn get(
+    ///
+    /// You should not call this method directly; use [`MiraArray::get`] instead.
+    #[doc(hidden)]
+    fn get_shaped(
         &self,
         self_handle: MiraHandle<dyn MiraArray>,
         runtime: &Runtime,
@@ -80,87 +84,14 @@ impl<T: MiraShapedArray> MiraArray for T {
         runtime: &Runtime,
         index: usize,
     ) -> Result<MiraManageable> {
-        T::get(self, self_handle, runtime, index)
-    }
-}
-
-impl<T: Clone + Into<MiraManageable> + 'static> MiraArray for Vec<T> {
-    fn len(&self) -> usize {
-        Vec::len(self)
-    }
-
-    fn get(
-        &self,
-        _self_handle: MiraHandle<dyn MiraArray>,
-        _runtime: &Runtime,
-        index: usize,
-    ) -> Result<MiraManageable> {
-        self.as_slice()
-            .get(index)
-            .cloned()
-            .map(Into::into)
-            .ok_or_else(|| MiraError::runtime(RuntimeErrorKind::MissingIndexOrField))
-    }
-}
-
-impl<T: Clone + Into<MiraManageable> + 'static> From<Vec<T>> for MiraManageable {
-    fn from(value: Vec<T>) -> Self {
-        Self::from_array(value)
-    }
-}
-
-impl<T: Clone + Into<MiraManageable> + 'static, const N: usize> MiraArray for [T; N] {
-    fn len(&self) -> usize {
-        N
-    }
-
-    fn get(
-        &self,
-        _self_handle: MiraHandle<dyn MiraArray>,
-        _runtime: &Runtime,
-        index: usize,
-    ) -> Result<MiraManageable> {
-        self.as_slice()
-            .get(index)
-            .cloned()
-            .map(Into::into)
-            .ok_or_else(|| MiraError::runtime(RuntimeErrorKind::MissingIndexOrField))
-    }
-}
-
-impl<T: Clone + Into<MiraManageable> + 'static, const N: usize> From<[T; N]> for MiraManageable {
-    fn from(value: [T; N]) -> Self {
-        Self::from_array(value)
-    }
-}
-
-impl<T: Clone + Into<MiraManageable> + 'static> MiraArray for Box<[T]> {
-    fn len(&self) -> usize {
-        self.as_ref().len()
-    }
-
-    fn get(
-        &self,
-        _self_handle: MiraHandle<dyn MiraArray>,
-        _runtime: &Runtime,
-        index: usize,
-    ) -> Result<MiraManageable> {
-        self.as_ref()
-            .get(index)
-            .cloned()
-            .map(Into::into)
-            .ok_or_else(|| MiraError::runtime(RuntimeErrorKind::MissingIndexOrField))
-    }
-}
-
-impl<T: Clone + Into<MiraManageable> + 'static> From<Box<[T]>> for MiraManageable {
-    fn from(value: Box<[T]>) -> Self {
-        Self::from_array(value)
+        T::get_shaped(self, self_handle, runtime, index)
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::{MiraError, RuntimeErrorKind};
+
     use super::*;
 
     fn assert_missing_index(error: &MiraError) {
