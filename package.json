@@ -27,7 +27,7 @@
     "@cloudpss/prettier-config": "catalog:",
     "@cloudpss/tsconfig": "catalog:",
     "@mirascript/cli": "workspace:*",
-    "@types/node": "^26.2.0",
+    "@types/node": "^26.3.0",
     "better-typescript-lib": "^2.12.0",
     "esbuild": "^0.28.2",
     "rimraf": "^6.1.3",
