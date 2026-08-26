@@ -4,6 +4,7 @@ use mirascript_vm::{MiraRecord, Runtime};
 #[mira(crate = ::mirascript_vm)]
 struct Record<T>(#[mira(rename = "new")] String, #[mira(skip)] (), T);
 
+#[test]
 fn main() {
     let mut runtime = Runtime::new();
     let record = runtime

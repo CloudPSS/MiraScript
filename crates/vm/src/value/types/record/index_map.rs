@@ -63,4 +63,23 @@ mod tests {
         map.insert("0".to_string(), "a");
         test_record(map, r#"{"0": "a"}"#);
     }
+
+    #[test]
+    fn two_element_index_map_record() {
+        let mut map: IndexMap<String, Vec<String>> = IndexMap::new();
+        map.insert("0".to_string(), vec!["x".to_string(), "y".to_string()]);
+        map.insert(
+            "1".to_string(),
+            vec!["a".to_string(), "b".to_string(), "c".to_string()],
+        );
+        test_record(map, r#"{"0": ["x", "y"], "1": ["a", "b", "c"]}"#);
+    }
+
+    #[test]
+    fn three_element_index_map_record() {
+        let mut map: IndexMap<String, Box<[Vec<i32>]>> = IndexMap::new();
+        map.insert("0".to_string(), [[1, 2, 3].into(), [4, 5, 6].into()].into());
+        map.insert("1".to_string(), [[7, 8].into(), [9].into()].into());
+        test_record(map, r#"{"0": [[1, 2, 3], [4, 5, 6]], "1": [[7, 8], [9]]}"#);
+    }
 }

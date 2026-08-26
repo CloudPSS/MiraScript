@@ -1,4 +1,4 @@
-use mirascript_vm::{MiraRecord, Runtime};
+use mirascript_vm::{MiraError, MiraRecord, MiraValue, Runtime, RuntimeErrorKind};
 
 #[derive(Clone, MiraRecord)]
 #[mira(crate = mirascript_vm)]
@@ -10,16 +10,19 @@ struct Record<T> {
     hidden: bool,
 }
 
+#[test]
 fn main() {
     let mut runtime = Runtime::new();
     let record = runtime
-        .insert(Record {
+        .insert_record(Record {
             key: "example".to_string(),
             item: 1_u8,
             hidden: true,
         })
         .unwrap();
-    runtime.insert_global("record", record).unwrap();
+    runtime
+        .insert_global("record", MiraValue::record(record))
+        .unwrap();
     assert_eq!(
         runtime
             .eval("record.key")
@@ -47,4 +50,16 @@ fn main() {
             .as_boolean()
             .unwrap(),
     );
+    let record = runtime.take_record(record).unwrap();
+    assert_eq!(record.key, "example");
+    assert_eq!(record.item, 1_u8);
+    assert!(record.hidden);
+
+    assert!(matches!(
+        runtime.eval("record.key").unwrap_err().as_ref(),
+        MiraError::Runtime {
+            kind: RuntimeErrorKind::InvalidHandle { .. },
+            ..
+        }
+    ));
 }

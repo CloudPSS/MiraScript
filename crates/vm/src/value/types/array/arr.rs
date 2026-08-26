@@ -49,3 +49,14 @@ impl<T: MiraField, const N: usize> From<[T; N]> for MiraManageable {
         Self::from_array(value)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::value::types::array::test_array;
+
+    #[test]
+    fn array_array() {
+        let arr = [[1, 2], [3, 4]];
+        test_array(arr, r#"[[1, 2], [3, 4]]"#);
+    }
+}

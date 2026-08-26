@@ -1,0 +1,70 @@
+fn return_in_while_cond {
+  let r = 6;
+  let b = while {
+    let i = 12;
+    return i + r;
+  } {
+    t_never();
+  };
+}
+
+t_eq(return_in_while_cond(), 18); // while 循环的返回值
+
+fn return_in_while_body {
+  let r = 6;
+  let b = while true {
+    let i = 12;
+    return i + r;
+  };
+}
+
+t_eq(return_in_while_body(), 18); // while 循环的返回值
+
+fn return_in_loop {
+  let mut i = 0;
+  let b = loop {
+    i += 1;
+    if i == 3 {
+      return i * 2; // 返回 6
+    } else {
+      continue;
+    }
+    if i == 5 {
+      t_never();
+    }
+  };
+}
+
+t_eq(return_in_loop(), 6); // loop 循环的返回值
+
+fn return_in_for_range {
+  let mut i = 0;
+  let b = for i in 0..10 {
+    if i == 3 {
+      return i * 2; // 返回 6
+    } else {
+      continue;
+    }
+    if i == 5 {
+      t_never();
+    }
+  };
+}
+
+t_eq(return_in_for_range(), 6); // for 循环的返回值
+
+fn return_in_for_array {
+  let mut i = 0;
+  let b = for i in ['a', 'b', 'c', 'd'] {
+    if i == 'c' {
+      return i; // 返回 'c'
+    } else {
+      continue;
+    }
+    if i == 'd' {
+      t_never();
+    }
+  };
+}
+
+t_eq(return_in_for_array(), 'c'); // for 循环的返回值

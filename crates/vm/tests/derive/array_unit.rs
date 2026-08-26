@@ -4,6 +4,7 @@ use mirascript_vm::{MiraArray, Runtime};
 #[mira(crate = mirascript_vm)]
 struct Array;
 
+#[test]
 fn main() {
     let mut runtime = Runtime::new();
     let array = Array;

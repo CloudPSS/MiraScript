@@ -49,3 +49,20 @@ impl<T: MiraField> From<Vec<T>> for MiraManageable {
         Self::from_array(value)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::value::types::array::test_array;
+
+    #[test]
+    fn vec_array() {
+        let arr = vec![[1, 2], [3, 4]];
+        test_array(arr, r#"[[1, 2], [3, 4]]"#);
+    }
+
+    #[test]
+    fn in_vec_array() {
+        let arr = vec![vec!["x"], vec!["y", "z"]];
+        test_array(arr, r#"[["x"], ["y", "z"]]"#);
+    }
+}

@@ -1,11 +1,11 @@
 error: unsupported Mira derive option
- --> tests/ui/fail/unsupported_option.rs:4:8
+ --> tests/derive/fail/unsupported_option.rs:4:8
   |
 4 | #[mira(unsupported_option)]
   |        ^^^^^^^^^^^^^^^^^^
 
 error: unsupported Mira field option
-  --> tests/ui/fail/unsupported_option.rs:12:23
+  --> tests/derive/fail/unsupported_option.rs:12:23
    |
 12 | struct Record2(#[mira(unsupported_option)] u8);
    |                       ^^^^^^^^^^^^^^^^^^

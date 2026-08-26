@@ -98,19 +98,28 @@ impl_tuple_record!(8; (T0, 0), (T1, 1), (T2, 2), (T3, 3), (T4, 4), (T5, 5), (T6,
 
 #[cfg(test)]
 mod tests {
-    use crate::{MiraValue, value::types::record::test_record};
+    use crate::{MiraValue, Runtime, value::types::record::test_record};
 
     #[test]
     fn empty_tuple_record() {
         test_record((), "{}");
+
+        let mut runtime = Runtime::new();
+        runtime.insert_global("tuple", ()).unwrap();
+        assert!(runtime.eval("tuple.0").unwrap().is_nil());
     }
     #[test]
     fn one_element_tuple_record() {
         test_record((1,), r#"{"0": 1}"#);
+
+        let mut runtime = Runtime::new();
+        runtime.insert_global("tuple", (1,)).unwrap();
+        assert_eq!(runtime.eval("tuple.0").unwrap().as_number().unwrap(), 1.0);
+        assert!(runtime.eval("tuple.1").unwrap().is_nil());
     }
     #[test]
     fn two_element_tuple_record() {
-        test_record((1, 2), r#"{"0": 1, "1": 2}"#);
+        test_record((1, [1, 2, 3]), r#"{"0": 1, "1": [1, 2, 3]}"#);
     }
     #[test]
     fn three_element_tuple_record() {

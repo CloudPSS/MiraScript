@@ -49,3 +49,20 @@ impl<T: MiraField> From<Box<[T]>> for MiraManageable {
         Self::from_array(value)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::value::types::array::test_array;
+
+    #[test]
+    fn boxed_slice_array() {
+        let arr: Box<[_]> = Box::new([[1, 2], [3, 4]]);
+        test_array(arr, r#"[[1, 2], [3, 4]]"#);
+    }
+    #[test]
+
+    fn in_boxed_slice_array() {
+        let arr: Box<[Box<[_]>]> = Box::new([Box::new(["x"]), Box::new(["y", "z"])]);
+        test_array(arr, r#"[["x"], ["y", "z"]]"#);
+    }
+}

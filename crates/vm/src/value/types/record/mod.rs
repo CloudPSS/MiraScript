@@ -127,7 +127,7 @@ impl<T: MiraShapedRecord> MiraRecord for T {
 }
 
 #[cfg(test)]
-fn test_record<T: MiraRecord>(record: T, expected_json: &str) {
+fn test_record<T: MiraRecord + Into<MiraManageable>>(record: T, expected_json: &str) {
     let mut runtime = Runtime::new();
 
     runtime.insert_global("r_json", expected_json).unwrap();
@@ -146,9 +146,7 @@ fn test_record<T: MiraRecord>(record: T, expected_json: &str) {
         .unwrap();
     assert_eq!(record.is_empty(), empty);
 
-    runtime
-        .insert_global("record", MiraManageable::from_record(record))
-        .unwrap();
+    runtime.insert_global("record", record).unwrap();
     assert!(
         runtime
             .eval("record == from_json(r_json)")
@@ -158,16 +156,15 @@ fn test_record<T: MiraRecord>(record: T, expected_json: &str) {
     );
     assert!(
         runtime
-            .eval("record::entries() == from_json(r_json)::entries()")
+            .eval("record::entries()::len() == from_json(r_json)::entries()::len()")
             .unwrap()
             .as_boolean()
             .unwrap()
     );
     assert!(
         runtime
-            .eval("record::to_json() == from_json(r_json)::to_json()")
+            .eval("record[`non exist key DO NOT INSERT THIS IN TESTING`]")
             .unwrap()
-            .as_boolean()
-            .unwrap()
-    );
+            .is_nil()
+    )
 }

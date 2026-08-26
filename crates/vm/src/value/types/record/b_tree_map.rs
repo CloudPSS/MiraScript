@@ -65,4 +65,12 @@ mod tests {
         map.insert("0".to_string(), 1);
         test_record(map, r#"{"0": 1}"#);
     }
+
+    #[test]
+    fn two_element_b_tree_map_record() {
+        let mut map = BTreeMap::new();
+        map.insert("0".to_string(), [1, 2, 3]);
+        map.insert("1".to_string(), [4, 5, 6]);
+        test_record(map, r#"{"0": [1, 2, 3], "1": [4, 5, 6]}"#);
+    }
 }

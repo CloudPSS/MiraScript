@@ -41,6 +41,17 @@ where
     }
 }
 
+impl TryFrom<MiraManageable> for MiraValue {
+    type Error = ();
+
+    fn try_from(value: MiraManageable) -> Result<Self, Self::Error> {
+        match value {
+            MiraManageable::Value(value) => Ok(value),
+            _ => Err(()),
+        }
+    }
+}
+
 impl From<String> for MiraManageable {
     fn from(value: String) -> Self {
         Self::String(value)

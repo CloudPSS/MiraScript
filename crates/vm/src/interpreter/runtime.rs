@@ -89,15 +89,16 @@ impl Runtime {
 
         self.running = true;
         self.execution = self.execution.next();
-        self.active_script = Some(script.id);
-        self.program = Some(Rc::clone(&script.program));
+        self.active_script = Some(script.id());
+        self.program = Some(script.program());
         self.started = Instant::now();
         self.checkpoint_remaining = self.options.checkpoint_interval.max(1);
-        self.frames.begin_run(script.program.root.register_count);
+        self.frames
+            .begin_run(script.program_ref().root.register_count);
         debug_assert_eq!(self.call_stack.depth(), 0);
 
         let result = (|| {
-            let body = &script.program.root.body;
+            let body = &script.program_ref().root.body;
             let value = match self.execute_block(body, FrameId::ROOT)? {
                 Flow::Return(value) => value,
                 Flow::Continue => MiraValue::nil(),

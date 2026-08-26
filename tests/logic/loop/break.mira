@@ -8,3 +8,27 @@ let r = while count < 5 {
 
 t_eq(r, 6);
 t_eq(count, 3); // 循环结束时 count 的值
+
+let r2 = loop {
+  count += 1;
+  if count == 5 {
+    break count * 3; // 返回 15
+  }
+};
+
+t_eq(r2, 15);
+t_eq(count, 5);
+
+let r3 = for i in 0..10 {
+  if i == 7 {
+    break i + 1; // 返回 8
+  }
+};
+t_eq(r3, 8);
+
+let r4 = for i in ['x', 'y', 'z'] {
+  if i == 'y' {
+    break i; // 返回 'y'
+  }
+};
+t_eq(r4, 'y');

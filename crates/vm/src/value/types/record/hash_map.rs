@@ -63,4 +63,12 @@ mod tests {
         map.insert("0".to_string(), 12);
         test_record(map, r#"{"0": 12}"#);
     }
+
+    #[test]
+    fn two_element_hash_map_record() {
+        let mut map = HashMap::new();
+        map.insert("0".to_string(), ["x", "y"]);
+        map.insert("1".to_string(), ["a", "b"]);
+        test_record(map, r#"{"0": ["x", "y"], "1": ["a", "b"]}"#);
+    }
 }

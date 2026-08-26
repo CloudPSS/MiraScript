@@ -4,59 +4,30 @@
 extern crate self as mirascript_vm;
 
 mod bytecode;
+mod compile;
 mod error;
 mod interpreter;
 mod operations;
+mod runtime_providers;
 mod standard_library;
 mod value;
 
-use std::{
-    num::NonZeroU64,
-    rc::Rc,
-    sync::atomic::{AtomicU64, Ordering},
-    time::{Duration, SystemTime, UNIX_EPOCH},
-};
+use std::{rc::Rc, time::Duration};
 
 pub use core::{CompileConfig, DiagnosticPositionEncoding, InputMode};
 pub use mirascript_core as core;
 pub use mirascript_vm_derive::{MiraArray, MiraRecord};
 
+use bytecode::Program;
+pub use compile::{MiraScript, ScriptId};
 pub use error::*;
 pub use interpreter::Runtime;
+pub use runtime_providers::{RuntimeProviders, default_runtime_providers};
 pub(crate) use value::MiraValueKind;
 pub use value::{
     MiraArray, MiraExtern, MiraFunction, MiraHandle, MiraManageable, MiraModule, MiraNativeFn,
     MiraRecord, MiraShapedArray, MiraShapedRecord, MiraType, MiraValue,
 };
-
-use bytecode::Program;
-
-static NEXT_SCRIPT_ID: AtomicU64 = AtomicU64::new(1);
-
-/// Stable identity shared by clones of one compiled script.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct ScriptId(NonZeroU64);
-
-impl ScriptId {
-    fn new() -> Self {
-        let id = NEXT_SCRIPT_ID.fetch_add(1, Ordering::Relaxed);
-        Self(NonZeroU64::new(id).expect("MiraScript identifier space exhausted"))
-    }
-}
-
-/// A validated, reusable MiraScript program.
-#[derive(Clone, Debug)]
-pub struct MiraScript {
-    id: ScriptId,
-    program: Rc<Program>,
-}
-
-impl MiraScript {
-    /// Return the stable identity shared by clones of this script.
-    pub fn id(&self) -> ScriptId {
-        self.id
-    }
-}
 
 /// Limits and injectable providers used for each Runtime execution.
 #[derive(Clone)]
@@ -73,34 +44,6 @@ pub struct RunOptions {
     pub providers: Rc<dyn RuntimeProviders>,
 }
 
-/// Host capabilities used by non-deterministic standard-library functions.
-pub trait RuntimeProviders {
-    /// Return a uniformly distributed random number in `[0, 1)`.
-    fn random(&self) -> f64 {
-        rand::random()
-    }
-
-    /// Return the current Unix timestamp in milliseconds.
-    fn now_millis(&self) -> i64 {
-        SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_millis() as i64
-    }
-
-    /// Emit one debug message from a script.
-    fn debug(&self, message: &str) {
-        eprintln!("{message}");
-    }
-}
-
-struct SystemRuntimeProviders;
-impl RuntimeProviders for SystemRuntimeProviders {}
-
-std::thread_local! {
-    static DEFAULT_RUNTIME_PROVIDERS: Rc<dyn RuntimeProviders> = Rc::new(SystemRuntimeProviders);
-}
-
 impl Default for RunOptions {
     fn default() -> Self {
         Self {
@@ -108,7 +51,7 @@ impl Default for RunOptions {
             checkpoint_interval: 100,
             max_call_depth: 128,
             max_array_len: 0x100_0000,
-            providers: DEFAULT_RUNTIME_PROVIDERS.with(Clone::clone),
+            providers: default_runtime_providers(),
         }
     }
 }
@@ -143,10 +86,7 @@ pub fn compile(source: &str) -> Result<MiraScript> {
 pub fn compile_with(source: &str, config: &CompileConfig) -> Result<MiraScript> {
     let (chunk, diagnostics) = core::Compiler::compile(source, config);
     let chunk = chunk.ok_or_else(|| MiraError::compile(&diagnostics))?;
-    Ok(MiraScript {
-        id: ScriptId::new(),
-        program: Rc::new(Program::decode(&chunk)?),
-    })
+    Ok(MiraScript::new(Program::decode(&chunk)?))
 }
 
 /// Items used by the derive macros. They are not a stable user-facing API.
