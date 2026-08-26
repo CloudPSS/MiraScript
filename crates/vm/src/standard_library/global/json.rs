@@ -24,7 +24,7 @@ pub(super) fn install(runtime: &mut Runtime) {
             value.kind(),
             MiraValueKind::Function(_) | MiraValueKind::Extern(_)
         ) {
-            return Ok(MiraValue::nil());
+            return Ok(MiraValue::NIL);
         }
         let context = SerializeContext::new(call);
         let source = serde_json::to_string(&SerializeValue {
@@ -296,7 +296,7 @@ impl<'de> Visitor<'de> for DeserializeValue<'_, '_> {
     }
 
     fn visit_unit<E: serde::de::Error>(self) -> std::result::Result<Self::Value, E> {
-        Ok(MiraValue::nil())
+        Ok(MiraValue::NIL)
     }
 
     fn visit_bool<E: serde::de::Error>(self, value: bool) -> std::result::Result<Self::Value, E> {

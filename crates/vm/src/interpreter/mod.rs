@@ -62,12 +62,13 @@ mod tests {
             runtime
                 .eval("custom(1, 2, 3)")
                 .unwrap()
-                .as_number()
-                .unwrap(),
+                .as_number_unchecked(),
             6.0
         );
         assert_eq!(
-            runtime.eval("custom(10, 20)").unwrap().as_number().unwrap(),
+            runtime
+                .eval_unchecked("custom(10, 20)")
+                .as_number_unchecked(),
             30.0
         );
         assert!(matches!(

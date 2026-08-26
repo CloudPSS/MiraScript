@@ -14,7 +14,7 @@ fn anonymous_fn() {
     runtime
         .insert_global("f", MiraValue::function(handle))
         .unwrap();
-    assert_eq!(runtime.eval("f()").unwrap().as_number().unwrap(), 42f64);
+    assert_eq!(runtime.eval_unchecked("f()").as_number_unchecked(), 42f64);
 
     let func = runtime.take_function(handle).unwrap();
     assert!(matches!(

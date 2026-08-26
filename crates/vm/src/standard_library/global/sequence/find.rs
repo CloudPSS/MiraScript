@@ -17,6 +17,6 @@ pub(super) fn install(context: &mut Runtime) {
                 return pair(call, key, value);
             }
         }
-        Ok(MiraValue::nil())
+        Ok(MiraValue::NIL)
     });
 }

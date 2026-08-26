@@ -30,16 +30,16 @@ fn map_like(call: &mut Runtime, args: &[MiraValue], mode: MapMode) -> Result<Mir
     let original = data.original(call)?;
     match data {
         Data::Primitive(value) => {
-            let mapped = call.call(*function, &[value, MiraValue::nil(), value])?;
+            let mapped = call.call(*function, &[value, MiraValue::NIL, value])?;
             match mode {
                 MapMode::Map => const_value(mapped),
                 MapMode::Filter => Ok(if operations::to_boolean(mapped)? {
                     value
                 } else {
-                    MiraValue::nil()
+                    MiraValue::NIL
                 }),
-                MapMode::FilterMap => Ok(if mapped == MiraValue::nil() {
-                    MiraValue::nil()
+                MapMode::FilterMap => Ok(if mapped == MiraValue::NIL {
+                    MiraValue::NIL
                 } else {
                     const_value(mapped)?
                 }),
@@ -56,7 +56,7 @@ fn map_like(call: &mut Runtime, args: &[MiraValue], mode: MapMode) -> Result<Mir
                 match mode {
                     MapMode::Map => result.push(const_value(mapped)?),
                     MapMode::Filter if operations::to_boolean(mapped)? => result.push(value),
-                    MapMode::FilterMap if mapped != MiraValue::nil() => {
+                    MapMode::FilterMap if mapped != MiraValue::NIL => {
                         result.push(const_value(mapped)?)
                     }
                     _ => {}
@@ -77,7 +77,7 @@ fn map_like(call: &mut Runtime, args: &[MiraValue], mode: MapMode) -> Result<Mir
                     MapMode::Filter if operations::to_boolean(mapped)? => {
                         result.insert(key, value);
                     }
-                    MapMode::FilterMap if mapped != MiraValue::nil() => {
+                    MapMode::FilterMap if mapped != MiraValue::NIL => {
                         result.insert(key, const_value(mapped)?);
                     }
                     _ => {}

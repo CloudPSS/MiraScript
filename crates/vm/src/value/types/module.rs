@@ -150,7 +150,7 @@ mod tests {
 
         assert!(value.is_module());
         assert_eq!(value.as_module(), Some(module.erase_module()));
-        assert!(MiraValue::nil().as_module().is_none());
+        assert!(MiraValue::NIL.as_module().is_none());
 
         let value = runtime.get_module(module).unwrap();
         assert_eq!(value.name(), "test");

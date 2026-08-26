@@ -34,9 +34,9 @@ fn main() {
     runtime.insert_global("record", record).unwrap();
     runtime.insert_global("tuple", tuple).unwrap();
     assert_eq!(
-        runtime.eval("record.value").unwrap().as_number().unwrap(),
+        runtime.eval_unchecked("record.value").as_number_unchecked(),
         1f64
     );
-    assert_eq!(runtime.eval("array.0").unwrap().as_number().unwrap(), 2f64);
-    assert_eq!(runtime.eval("tuple.0").unwrap().as_number().unwrap(), 3f64);
+    assert_eq!(runtime.eval_unchecked("array.0").as_number_unchecked(), 2f64);
+    assert_eq!(runtime.eval_unchecked("tuple.0").as_number_unchecked(), 3f64);
 }

@@ -66,7 +66,7 @@ impl RawValue {
     const SIGN_MASK: u64 = 0x8000_0000_0000_0000;
 
     #[inline]
-    pub const fn number(value: f64) -> Self {
+    pub const fn from_number(value: f64) -> Self {
         let bits = value.to_bits();
         if value.is_nan() {
             Self(Self::QUIET_NAN | (bits & Self::SIGN_MASK))
@@ -76,13 +76,13 @@ impl RawValue {
     }
 
     #[inline]
-    pub const fn tagged(tag: ValueTag, payload: [u8; 6]) -> Self {
+    pub const fn from_tagged(tag: ValueTag, payload: [u8; 6]) -> Self {
         Self(((tag.header() as u64) << 48) | Payload::from_bytes(payload).to_bits())
     }
 
     #[inline]
-    pub const fn empty(tag: ValueTag) -> Self {
-        Self::tagged(tag, [0; 6])
+    pub const fn from_empty(tag: ValueTag) -> Self {
+        Self::from_tagged(tag, [0; 6])
     }
 
     #[inline]
@@ -94,6 +94,11 @@ impl RawValue {
     pub const fn payload(self) -> [u8; 6] {
         Payload::from_bits(self.0 & Payload::MASK).to_bytes()
     }
+
+    #[inline]
+    pub const fn number(self) -> f64 {
+        f64::from_bits(self.0)
+    }
 }
 
 #[cfg(test)]
@@ -103,7 +108,7 @@ mod tests {
     #[test]
     fn raw_value_layout_roundtrips() {
         let payload = [1, 2, 3, 4, 5, 6];
-        let raw = RawValue::tagged(ValueTag::Nil, payload);
+        let raw = RawValue::from_tagged(ValueTag::Nil, payload);
 
         assert_eq!(raw.0, 0x7FF9_0605_0403_0201);
         assert_eq!(raw.tag(), Some(ValueTag::Nil));
@@ -120,7 +125,7 @@ mod tests {
             ValueTag::Extern,
             ValueTag::Uninitialized,
         ] {
-            let raw = RawValue::tagged(tag, payload);
+            let raw = RawValue::from_tagged(tag, payload);
             assert_eq!(raw.tag(), Some(tag));
             assert_eq!(raw.payload(), payload);
         }

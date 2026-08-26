@@ -106,8 +106,8 @@ mod tests {
         assert_eq!(value.value_type(), MiraType::Number);
         let mut runtime = Runtime::new();
         runtime.insert_global("test_value", value).unwrap();
-        let result = runtime.eval("test_value + 1").unwrap();
-        assert_eq!(result.as_number().unwrap(), 43.0);
+        let result = runtime.eval_unchecked("test_value + 1");
+        assert_eq!(result.as_number_unchecked(), 43.0);
     }
 
     #[test]
@@ -116,7 +116,7 @@ mod tests {
         assert_eq!(value.value_type(), MiraType::String);
         let mut runtime = Runtime::new();
         runtime.insert_global("test_string", value).unwrap();
-        let result = runtime.eval("'$test_string World!'").unwrap();
+        let result = runtime.eval_unchecked("'$test_string World!'");
         assert_eq!(result.as_str(&runtime).unwrap(), Some("Hello World!"));
     }
 
@@ -127,8 +127,8 @@ mod tests {
         assert_eq!(value.value_type(), MiraType::Array);
         let mut runtime = Runtime::new();
         runtime.insert_global("test_array", value).unwrap();
-        let result = runtime.eval("test_array[0] + test_array[1]").unwrap();
-        assert_eq!(result.as_number().unwrap(), 3.0);
+        let result = runtime.eval_unchecked("test_array[0] + test_array[1]");
+        assert_eq!(result.as_number_unchecked(), 3.0);
     }
 
     #[test]
@@ -143,8 +143,8 @@ mod tests {
         assert_eq!(value.value_type(), MiraType::Record);
         let mut runtime = Runtime::new();
         runtime.insert_global("test_record", value).unwrap();
-        let result = runtime.eval("test_record.a + test_record.b").unwrap();
-        assert_eq!(result.as_number().unwrap(), 3.0);
+        let result = runtime.eval_unchecked("test_record.a + test_record.b");
+        assert_eq!(result.as_number_unchecked(), 3.0);
     }
 
     #[test]
@@ -157,8 +157,8 @@ mod tests {
         assert_eq!(value.value_type(), MiraType::Function);
         let mut runtime = Runtime::new();
         runtime.insert_global("test_function", value).unwrap();
-        let result = runtime.eval("test_function(1, 2, 3)").unwrap();
-        assert_eq!(result.as_number().unwrap(), 3.0);
+        let result = runtime.eval_unchecked("test_function(1, 2, 3)");
+        assert_eq!(result.as_number_unchecked(), 3.0);
     }
 
     #[test]
@@ -167,7 +167,7 @@ mod tests {
         assert_eq!(value.value_type(), MiraType::Module);
         let mut runtime = Runtime::new();
         runtime.insert_global("test_module", value).unwrap();
-        let result = runtime.eval("test_module").unwrap();
+        let result = runtime.eval_unchecked("test_module");
         assert!(result.is_module());
     }
 }

@@ -49,7 +49,7 @@ fn insertion_sort_by<T>(
     comparator: Option<&MiraValue>,
     key: impl Fn(&T) -> Result<MiraValue>,
 ) -> Result<()> {
-    if let Some(value) = comparator.filter(|value| **value != MiraValue::nil())
+    if let Some(value) = comparator.filter(|value| **value != MiraValue::NIL)
         && !is_callable(value)?
     {
         return Err(MiraError::runtime(RuntimeErrorKind::NotCallable {
@@ -62,7 +62,7 @@ fn insertion_sort_by<T>(
             let left = key(&values[position - 1])?;
             let right = key(&values[position])?;
             let ordering =
-                if let Some(comparator) = comparator.filter(|value| **value != MiraValue::nil()) {
+                if let Some(comparator) = comparator.filter(|value| **value != MiraValue::NIL) {
                     let compared = call.call(*comparator, &[left, right])?;
                     operations::to_number(call, compared)?
                         .partial_cmp(&0.0)

@@ -12,7 +12,7 @@ fn main() {
     let array = runtime.insert(array).unwrap();
     runtime.insert_global("array", array).unwrap();
     assert_eq!(
-        runtime.eval("array::len()").unwrap().as_number().unwrap(),
+        runtime.eval_unchecked("array::len()").as_number_unchecked(),
         0f64
     );
     assert_eq!(
@@ -24,5 +24,5 @@ fn main() {
             .unwrap(),
         "[]"
     );
-    assert!(runtime.eval("array.0").unwrap().is_nil());
+    assert!(runtime.eval_unchecked("array.0").is_nil());
 }

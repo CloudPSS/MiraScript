@@ -53,7 +53,7 @@ pub(super) fn install(context: &mut Runtime) {
 }
 
 fn validate_optional_callable(value: Option<&MiraValue>) -> Result<()> {
-    if let Some(value) = value.filter(|value| **value != MiraValue::nil())
+    if let Some(value) = value.filter(|value| **value != MiraValue::NIL)
         && !is_callable(value)?
     {
         return Err(MiraError::runtime(RuntimeErrorKind::NotCallable {
@@ -69,7 +69,7 @@ fn equal(
     right: &MiraValue,
     equaler: Option<&MiraValue>,
 ) -> Result<bool> {
-    if let Some(equaler) = equaler.filter(|value| **value != MiraValue::nil()) {
+    if let Some(equaler) = equaler.filter(|value| **value != MiraValue::NIL) {
         if !is_callable(equaler)? {
             return Err(MiraError::runtime(RuntimeErrorKind::NotCallable {
                 actual: equaler.value_type(),

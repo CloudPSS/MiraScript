@@ -13,7 +13,7 @@ fn values_are_copy_and_eight_bytes() {
 #[test]
 fn executes_core_language_features() {
     let mut runtime = Runtime::new();
-    assert_eq!(runtime.eval("1 + 2 * 3").unwrap(), 7.into());
+    assert_eq!(runtime.eval_unchecked("1 + 2 * 3"), 7.into());
     assert_eq!(
         runtime
             .eval("let value = (a: 1, b: [2, 3]); value.b[-1] + value.a",)
@@ -104,10 +104,10 @@ fn closures_capture_each_loop_iteration_but_cannot_escape() {
         "wrap",
         mirascript_vm::MiraNativeFn::ok(|_, args| args.to_vec()),
     );
-    let value = runtime.eval("wrap(fn { 1 })").unwrap();
+    let value = runtime.eval_unchecked("wrap(fn { 1 })");
     assert!(value.is_array());
     runtime.insert_global("value", value).unwrap();
-    let inner = runtime.eval("value[0]").unwrap();
+    let inner = runtime.eval_unchecked("value[0]");
     assert!(inner.is_nil());
 }
 
@@ -170,14 +170,14 @@ fn derived_values_are_live_runtime_views() {
             .unwrap(),
         52.into(),
     );
-    let name = runtime.eval("user.display_name").unwrap();
+    let name = runtime.eval_unchecked("user.display_name");
     assert_eq!(name.as_str(&runtime).unwrap(), Some("Ada"));
 
     let user_value = runtime.get_record_mut(user).unwrap();
     user_value.age = 7;
     user_value.position.x = 10.0;
     assert_eq!(
-        runtime.eval("user.age + user.position.x").unwrap(),
+        runtime.eval_unchecked("user.age + user.position.x"),
         17.into(),
     );
 
@@ -233,7 +233,7 @@ fn nested_derived_shapes_remain_live_for_record_and_array_parents() {
         .as_record()
         .unwrap();
     let projected_position = unsafe { projected_position.upcast::<Position>() };
-    let projected_pair = runtime.eval("array[1]").unwrap().as_array().unwrap();
+    let projected_pair = runtime.eval_unchecked("array[1]").as_array().unwrap();
     let projected_pair = unsafe { projected_pair.upcast::<Pair>() };
     assert_eq!(runtime.get_record(projected_position).unwrap().x, 1.0);
     assert_eq!(runtime.get_array(projected_pair).unwrap().1, 8.0);

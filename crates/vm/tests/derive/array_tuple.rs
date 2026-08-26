@@ -12,7 +12,7 @@ fn main() {
         .unwrap();
     runtime.insert_global("array", array).unwrap();
     assert_eq!(
-        runtime.eval("array::len()").unwrap().as_number().unwrap(),
+        runtime.eval_unchecked("array::len()").as_number_unchecked(),
         2f64
     );
     assert_eq!(
@@ -24,13 +24,15 @@ fn main() {
             .unwrap(),
         "example"
     );
-    assert_eq!(runtime.eval("array.1").unwrap().as_number().unwrap(), 1f64);
-    assert!(runtime.eval("array.2").unwrap().is_nil());
+    assert_eq!(
+        runtime.eval_unchecked("array.1").as_number_unchecked(),
+        1f64
+    );
+    assert!(runtime.eval_unchecked("array.2").is_nil());
     assert!(
         runtime
             .eval("'example' in array")
             .unwrap()
-            .as_boolean()
-            .unwrap()
+            .as_boolean_unchecked()
     );
 }

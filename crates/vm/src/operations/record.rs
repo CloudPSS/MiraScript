@@ -33,7 +33,7 @@ pub(crate) fn has_i(runtime: &mut Runtime, value: MiraValue, key: i64) -> Result
 }
 
 pub(crate) fn get(runtime: &mut Runtime, value: MiraValue, key: &str) -> Result<MiraValue> {
-    get_value(runtime, value, MiraValue::nil(), Some(key))
+    get_value(runtime, value, MiraValue::NIL, Some(key))
 }
 
 pub(crate) fn get_value(
@@ -45,7 +45,7 @@ pub(crate) fn get_value(
     if value.is_array() {
         let index = match to_number(runtime, key) {
             Ok(index) if index.is_finite() => index.trunc() as isize,
-            _ => return Ok(MiraValue::nil()),
+            _ => return Ok(MiraValue::NIL),
         };
         let length = array_len(runtime, value)?.unwrap_or(0);
         let index = if index < 0 {
@@ -55,9 +55,9 @@ pub(crate) fn get_value(
         };
         return match index {
             Some(index) if index < length => Ok(into_element(
-                array_get(runtime, value, index)?.unwrap_or_else(MiraValue::nil),
+                array_get(runtime, value, index)?.unwrap_or(MiraValue::NIL),
             )),
-            _ => Ok(MiraValue::nil()),
+            _ => Ok(MiraValue::NIL),
         };
     }
 
@@ -67,12 +67,10 @@ pub(crate) fn get_value(
     };
     match value.kind() {
         MiraValueKind::Record(_) => Ok(into_element(
-            record_get(runtime, value, &key)?.unwrap_or_else(MiraValue::nil),
+            record_get(runtime, value, &key)?.unwrap_or(MiraValue::NIL),
         )),
-        MiraValueKind::Module(_) => {
-            Ok(module_get(runtime, value, &key)?.unwrap_or_else(MiraValue::nil))
-        }
-        _ => Ok(MiraValue::nil()),
+        MiraValueKind::Module(_) => Ok(module_get(runtime, value, &key)?.unwrap_or(MiraValue::NIL)),
+        _ => Ok(MiraValue::NIL),
     }
 }
 
@@ -81,7 +79,7 @@ pub(crate) fn get_i(runtime: &mut Runtime, value: MiraValue, key: i64) -> Result
         return get_value(runtime, value, MiraValue::number(key as f64), None);
     };
     Ok(into_element(
-        record_get_i(runtime, value, key)?.unwrap_or_else(MiraValue::nil),
+        record_get_i(runtime, value, key)?.unwrap_or(MiraValue::NIL),
     ))
 }
 
@@ -101,7 +99,7 @@ pub(crate) fn pick(runtime: &mut Runtime, value: MiraValue, keys: &[String]) -> 
     let mut result = IndexMap::new();
     if value.is_record() {
         for key in keys {
-            if has(runtime, value, MiraValue::nil(), Some(key))? {
+            if has(runtime, value, MiraValue::NIL, Some(key))? {
                 result.insert(key.clone(), get(runtime, value, key)?);
             }
         }
@@ -182,8 +180,8 @@ mod tests {
             )
             .unwrap();
 
-        assert_eq!(runtime.eval("record.0").unwrap().as_number(), Some(42.0));
-        assert!(runtime.eval("record[-1]").unwrap().is_nil());
+        assert_eq!(runtime.eval_unchecked("record.0").as_number(), Some(42.0));
+        assert!(runtime.eval_unchecked("record[-1]").is_nil());
 
         assert_eq!(integer.get(), 1);
         assert_eq!(string.get(), 1);

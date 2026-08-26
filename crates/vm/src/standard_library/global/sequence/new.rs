@@ -32,7 +32,7 @@ pub(super) fn install(context: &mut Runtime) {
         for index in 0..length {
             call.checkpoint()?;
             let entry = call.call(*generator, &[MiraValue::number(index as f64)])?;
-            if entry == MiraValue::nil() {
+            if entry == MiraValue::NIL {
                 continue;
             }
             let key_value = operations::get_value(call, entry, MiraValue::number(0.0), None)?;

@@ -153,14 +153,14 @@ mod tests {
         );
 
         assert_eq!(
-            runtime.eval("add(1, 2, 3)").unwrap().as_number().unwrap(),
+            runtime.eval_unchecked("add(1, 2, 3)").as_number_unchecked(),
             6.0
         );
         assert_eq!(
-            runtime.eval("add(10, 20)").unwrap().as_number().unwrap(),
+            runtime.eval_unchecked("add(10, 20)").as_number_unchecked(),
             30.0
         );
-        assert_eq!(runtime.eval("add()").unwrap().as_number().unwrap(), 0.0);
+        assert_eq!(runtime.eval_unchecked("add()").as_number_unchecked(), 0.0);
     }
 
     #[test]

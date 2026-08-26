@@ -18,7 +18,7 @@ pub(super) fn transpose(call: &mut Runtime, args: &[MiraValue]) -> Result<MiraVa
                         .get(row)
                         .and_then(|row| row.get(column))
                         .cloned()
-                        .unwrap_or(MiraValue::nil())
+                        .unwrap_or(MiraValue::NIL)
                 })
                 .collect::<Vec<_>>()
         })

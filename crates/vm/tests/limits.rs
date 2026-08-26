@@ -169,7 +169,7 @@ fn script_function_handles_expire_after_their_run() {
         "cache",
         MiraNativeFn::ok(move |_, args| {
             *callback_cache.borrow_mut() = args.first().cloned();
-            MiraValue::nil()
+            MiraValue::NIL
         }),
     );
     runtime
@@ -198,7 +198,7 @@ fn script_module_handles_expire_after_their_run() {
         "cache",
         MiraNativeFn::ok(move |_, args| {
             *callback_cache.borrow_mut() = args.first().cloned();
-            MiraValue::nil()
+            MiraValue::NIL
         }),
     );
     runtime

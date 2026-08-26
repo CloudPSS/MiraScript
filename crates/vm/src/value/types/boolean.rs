@@ -6,11 +6,16 @@ impl MiraValue {
     /// Create a `MiraValue` representing a boolean value.
     #[inline]
     pub const fn boolean(value: bool) -> Self {
-        Self::from_raw(RawValue::tagged(
+        Self::from_raw(RawValue::from_tagged(
             ValueTag::Boolean,
             [value as u8, 0, 0, 0, 0, 0],
         ))
     }
+
+    /// A `MiraValue` representing the boolean value `true`.
+    pub const TRUE: MiraValue = MiraValue::boolean(true);
+    /// A `MiraValue` representing the boolean value `false`.
+    pub const FALSE: MiraValue = MiraValue::boolean(false);
 
     /// Check whether this value is a boolean value.
     #[inline]
@@ -21,11 +26,18 @@ impl MiraValue {
     /// Return the inline boolean payload, or `None` for another value type.
     #[inline]
     pub const fn as_boolean(&self) -> Option<bool> {
-        if !self.is_boolean() {
-            None
+        if self.is_boolean() {
+            Some(self.as_boolean_unchecked())
         } else {
-            Some(self.raw().payload()[0] != 0)
+            None
         }
+    }
+
+    /// Return the inline boolean payload.
+    #[inline]
+    pub const fn as_boolean_unchecked(self) -> bool {
+        debug_assert!(self.is_boolean(), "MiraValue is not a boolean");
+        self.raw().payload()[0] != 0
     }
 }
 
@@ -61,7 +73,7 @@ mod tests {
         assert!(value.is_boolean());
         assert_eq!(value.as_boolean(), Some(false));
 
-        let value = MiraValue::nil();
+        let value = MiraValue::NIL;
         assert!(!value.is_boolean());
         assert_eq!(value.as_boolean(), None);
     }
@@ -72,7 +84,7 @@ mod tests {
         let boolean: bool = value.try_into().unwrap();
         assert!(boolean);
 
-        let value = MiraValue::nil();
+        let value = MiraValue::NIL;
         assert!(bool::try_from(value).is_err());
     }
 }

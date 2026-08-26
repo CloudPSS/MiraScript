@@ -41,8 +41,7 @@ impl Data {
                 for key in operations::record_keys(runtime, value)?.unwrap_or_default() {
                     record.insert(
                         key.clone(),
-                        operations::record_get(runtime, value, &key)?
-                            .unwrap_or_else(MiraValue::nil),
+                        operations::record_get(runtime, value, &key)?.unwrap_or(MiraValue::NIL),
                     );
                 }
                 Ok(Self::Record(record))
@@ -86,7 +85,7 @@ pub(super) fn data_items(
     data: &Data,
 ) -> Result<Vec<(MiraValue, MiraValue)>> {
     Ok(match data {
-        Data::Primitive(value) => vec![(MiraValue::nil(), *value)],
+        Data::Primitive(value) => vec![(MiraValue::NIL, *value)],
         Data::Array(values) => values
             .iter()
             .cloned()

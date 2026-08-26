@@ -81,6 +81,11 @@ impl Runtime {
         self.run(&script)
     }
 
+    /// Compile and execute a MiraScript program in this Runtime, returning the result or panicking on error.
+    pub fn eval_unchecked(&mut self, script: &str) -> MiraValue {
+        self.eval(script).expect("evaluation failed")
+    }
+
     /// Execute a compiled script in this Runtime.
     pub fn run(&mut self, script: &MiraScript) -> Result<MiraValue> {
         if self.running {
@@ -101,7 +106,7 @@ impl Runtime {
             let body = &script.program_ref().root.body;
             let value = match self.execute_block(body, FrameId::ROOT)? {
                 Flow::Return(value) => value,
-                Flow::Continue => MiraValue::nil(),
+                Flow::Continue => MiraValue::NIL,
                 Flow::Break | Flow::LoopContinue => {
                     return Err(MiraError::runtime(RuntimeErrorKind::InvalidControlFlow {
                         context: "root",
@@ -140,7 +145,7 @@ impl Runtime {
     pub(crate) fn materialize_constant(&mut self, index: usize) -> Result<MiraValue> {
         let constant = &self.active_program().constants[index];
         match constant {
-            Constant::Nil => Ok(MiraValue::nil()),
+            Constant::Nil => Ok(MiraValue::NIL),
             Constant::True => Ok(MiraValue::boolean(true)),
             Constant::False => Ok(MiraValue::boolean(false)),
             Constant::Int(value) => Ok(MiraValue::number(f64::from(*value))),

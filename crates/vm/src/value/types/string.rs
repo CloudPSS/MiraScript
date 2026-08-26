@@ -6,16 +6,16 @@ use super::{
 };
 
 impl MiraValue {
-    /// Create a `MiraValue` representing a static string.
+    /// Create a [`MiraValue`] representing a static string.
     #[inline]
     pub fn str(value: &'static &'static str) -> Self {
-        Self::from_raw(RawValue::tagged(
+        Self::from_raw(RawValue::from_tagged(
             ValueTag::StaticStr,
             Payload::from_address(std::ptr::from_ref(value)).to_bytes(),
         ))
     }
 
-    /// Create a `MiraValue` representing a string value.
+    /// Create a [`MiraValue`] representing a string value.
     #[inline]
     pub const fn string(value: MiraHandle<String>) -> Self {
         Self::handle(ValueTag::String, value)

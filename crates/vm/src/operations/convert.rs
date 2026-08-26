@@ -192,7 +192,7 @@ pub(super) fn inner_to_string(
             let keys = record_keys(runtime, value)?.unwrap_or_default();
             let mut parts = Vec::with_capacity(keys.len());
             for key in keys {
-                let item = record_get(runtime, value, &key)?.unwrap_or_else(MiraValue::nil);
+                let item = record_get(runtime, value, &key)?.unwrap_or(MiraValue::NIL);
                 parts.push(format!("{key}: {}", inner_to_string(runtime, item, true)?));
             }
             let body = parts.join(", ");

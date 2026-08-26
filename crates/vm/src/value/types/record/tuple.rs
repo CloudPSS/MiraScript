@@ -106,7 +106,7 @@ mod tests {
 
         let mut runtime = Runtime::new();
         runtime.insert_global("tuple", ()).unwrap();
-        assert!(runtime.eval("tuple.0").unwrap().is_nil());
+        assert!(runtime.eval_unchecked("tuple.0").is_nil());
     }
     #[test]
     fn one_element_tuple_record() {
@@ -114,8 +114,8 @@ mod tests {
 
         let mut runtime = Runtime::new();
         runtime.insert_global("tuple", (1,)).unwrap();
-        assert_eq!(runtime.eval("tuple.0").unwrap().as_number().unwrap(), 1.0);
-        assert!(runtime.eval("tuple.1").unwrap().is_nil());
+        assert_eq!(runtime.eval_unchecked("tuple.0").as_number_unchecked(), 1.0);
+        assert!(runtime.eval_unchecked("tuple.1").is_nil());
     }
     #[test]
     fn two_element_tuple_record() {
@@ -128,7 +128,7 @@ mod tests {
     #[test]
     fn four_element_tuple_record() {
         test_record(
-            (1, &"x", false, MiraValue::nil()),
+            (1, &"x", false, MiraValue::NIL),
             r#"{"0": 1, "1": "x", "2": false, "3": null}"#,
         );
     }

@@ -25,7 +25,7 @@ pub(super) fn invert(call: &mut Runtime, args: &[MiraValue]) -> Result<MiraValue
             .first()
             .and_then(|row| row.first())
             .cloned()
-            .unwrap_or(MiraValue::nil());
+            .unwrap_or(MiraValue::NIL);
         return from_matrix(
             call,
             vec![vec![MiraValue::number(1.0 / numeric(call, value)?)]],
@@ -61,7 +61,7 @@ pub(super) fn invert(call: &mut Runtime, args: &[MiraValue]) -> Result<MiraValue
                     .get(row)
                     .and_then(|row| row.get(column))
                     .cloned()
-                    .unwrap_or(MiraValue::nil()),
+                    .unwrap_or(MiraValue::NIL),
             )?;
             right[row][column] = if row == column { 1.0 } else { 0.0 };
         }

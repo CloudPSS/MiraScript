@@ -2,11 +2,20 @@ use super::{MiraValue, value::RawValue};
 use crate::{MiraError, Result};
 
 impl MiraValue {
-    /// Create a `MiraValue` representing a numeric value.
+    /// Create a [`MiraValue`] representing a numeric value.
     #[inline]
     pub const fn number(value: f64) -> Self {
-        Self::from_raw(RawValue::number(value))
+        Self::from_raw(RawValue::from_number(value))
     }
+
+    /// A [`MiraValue`] representing the numeric value `0.0`.
+    pub const ZERO: MiraValue = MiraValue::number(0.0);
+    /// A [`MiraValue`] representing the numeric value `1.0`.
+    pub const ONE: MiraValue = MiraValue::number(1.0);
+    /// A [`MiraValue`] representing the numeric value `-1.0`.
+    pub const NEGATIVE_ONE: MiraValue = MiraValue::number(-1.0);
+    /// A [`MiraValue`] representing the numeric value `f64::NAN`.
+    pub const NAN: MiraValue = MiraValue::number(f64::NAN);
 
     /// Check whether this value is a numeric value.
     #[inline]
@@ -14,14 +23,20 @@ impl MiraValue {
         self.tag().is_none()
     }
 
-    /// Return the inline numeric payload, or `None` for another value type.
+    /// Return the inline numeric payload, or [`None`] for another value type.
     #[inline]
     pub const fn as_number(&self) -> Option<f64> {
         if self.is_number() {
-            Some(f64::from_bits(self.raw().0))
+            Some(self.as_number_unchecked())
         } else {
             None
         }
+    }
+    /// Return the inline numeric payload.
+    #[inline]
+    pub const fn as_number_unchecked(self) -> f64 {
+        debug_assert!(self.is_number(), "MiraValue is not a number");
+        self.raw().number()
     }
 }
 
@@ -99,13 +114,13 @@ mod tests {
     #[test]
     fn test_number_is_number() {
         assert!(MiraValue::number(42.0).is_number());
-        assert!(!MiraValue::nil().is_number());
+        assert!(!MiraValue::NIL.is_number());
     }
 
     #[test]
     fn test_number_as_number() {
         assert_eq!(MiraValue::number(42.0).as_number(), Some(42.0));
-        assert_eq!(MiraValue::nil().as_number(), None);
+        assert_eq!(MiraValue::NIL.as_number(), None);
     }
 
     #[test]
@@ -160,7 +175,7 @@ mod tests {
 
     #[test]
     fn test_number_try_from_non_number() {
-        assert!(f64::try_from(MiraValue::nil()).is_err());
+        assert!(f64::try_from(MiraValue::NIL).is_err());
 
         let value = MiraValue::boolean(true);
         assert!(u8::try_from(value).is_err());

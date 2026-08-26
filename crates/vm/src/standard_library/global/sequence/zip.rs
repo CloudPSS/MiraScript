@@ -24,7 +24,7 @@ fn zip(call: &mut Runtime, value: MiraValue) -> Result<MiraValue> {
                 call.insert(
                     arrays
                         .iter()
-                        .map(|(_, array)| array.get(index).cloned().unwrap_or(MiraValue::nil()))
+                        .map(|(_, array)| array.get(index).cloned().unwrap_or(MiraValue::NIL))
                         .collect::<Vec<_>>(),
                 )?,
             ),
@@ -32,7 +32,7 @@ fn zip(call: &mut Runtime, value: MiraValue) -> Result<MiraValue> {
                 let mut record = IndexMap::new();
                 for (key, array) in &arrays {
                     let key = operations::to_string(call, *key)?;
-                    record.insert(key, array.get(index).cloned().unwrap_or(MiraValue::nil()));
+                    record.insert(key, array.get(index).cloned().unwrap_or(MiraValue::NIL));
                 }
                 result.push(call.insert(record)?);
             }

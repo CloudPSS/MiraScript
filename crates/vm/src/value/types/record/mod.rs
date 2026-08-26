@@ -142,8 +142,7 @@ fn test_record<T: MiraRecord + Into<MiraManageable>>(record: T, expected_json: &
     let empty = runtime
         .eval("from_json(r_json)::keys()::len() == 0")
         .unwrap()
-        .as_boolean()
-        .unwrap();
+        .as_boolean_unchecked();
     assert_eq!(record.is_empty(), empty);
 
     runtime.insert_global("record", record).unwrap();
@@ -151,15 +150,13 @@ fn test_record<T: MiraRecord + Into<MiraManageable>>(record: T, expected_json: &
         runtime
             .eval("record == from_json(r_json)")
             .unwrap()
-            .as_boolean()
-            .unwrap()
+            .as_boolean_unchecked()
     );
     assert!(
         runtime
             .eval("record::entries()::len() == from_json(r_json)::entries()::len()")
             .unwrap()
-            .as_boolean()
-            .unwrap()
+            .as_boolean_unchecked()
     );
     assert!(
         runtime

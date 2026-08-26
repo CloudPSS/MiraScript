@@ -22,7 +22,7 @@ pub(crate) fn record_spread(
             for key in record_keys(runtime, value)?.unwrap_or_default() {
                 result.insert(
                     key.clone(),
-                    into_element(record_get(runtime, value, &key)?.unwrap_or_else(MiraValue::nil)),
+                    into_element(record_get(runtime, value, &key)?.unwrap_or(MiraValue::NIL)),
                 );
             }
         }

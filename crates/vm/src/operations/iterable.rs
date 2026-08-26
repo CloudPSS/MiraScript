@@ -42,6 +42,6 @@ pub(crate) fn iterable_array(runtime: &mut Runtime, value: MiraValue) -> Result<
         }));
     };
     (0..length)
-        .map(|index| Ok(array_get(runtime, value, index)?.unwrap_or_else(MiraValue::nil)))
+        .map(|index| Ok(array_get(runtime, value, index)?.unwrap_or(MiraValue::NIL)))
         .collect()
 }

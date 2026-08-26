@@ -147,7 +147,7 @@ pub(crate) fn in_value(runtime: &mut Runtime, needle: MiraValue, value: MiraValu
         }
         MiraValueKind::Record(_) | MiraValueKind::Module(_) => {
             let key = to_string(runtime, needle)?;
-            has(runtime, value, MiraValue::nil(), Some(&key))
+            has(runtime, value, MiraValue::NIL, Some(&key))
         }
         _ => Ok(false),
     }

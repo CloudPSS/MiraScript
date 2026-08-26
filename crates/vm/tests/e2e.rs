@@ -56,7 +56,7 @@ fn json_round_trips_wide_nested_values() {
     runtime
         .insert_global("json_source", source.clone())
         .unwrap();
-    let result = runtime.eval("json_source::from_json()::to_json()").unwrap();
+    let result = runtime.eval_unchecked("json_source::from_json()::to_json()");
 
     assert_eq!(result.as_str(&runtime).unwrap().unwrap(), source);
 }

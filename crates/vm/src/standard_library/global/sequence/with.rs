@@ -30,12 +30,12 @@ fn update_with(
     for pair in entries.chunks_exact(2) {
         let path = if operations::array_len(runtime, pair[0])?.is_some() {
             operations::iterable_array(runtime, pair[0])?
-        } else if pair[0] == MiraValue::nil() {
+        } else if pair[0] == MiraValue::NIL {
             continue;
         } else {
             vec![pair[0]]
         };
-        if path.is_empty() || path.contains(&MiraValue::nil()) {
+        if path.is_empty() || path.contains(&MiraValue::NIL) {
             continue;
         }
         result = set_path(runtime, result, &path, const_value(pair[1])?, max_len)?;
@@ -58,7 +58,7 @@ fn set_path(
             let mut values = operations::iterable_array(runtime, data)?;
             let index = array_index(runtime, path[0], max_len)?;
             while values.len() <= index {
-                values.push(MiraValue::nil());
+                values.push(MiraValue::NIL);
             }
             let current = values[index];
             let current = container_for(runtime, current, path.get(1).cloned())?;
@@ -69,11 +69,11 @@ fn set_path(
             let mut values = IndexMap::new();
             for key in operations::record_keys(runtime, data)?.unwrap_or_default() {
                 let item =
-                    operations::record_get(runtime, data, &key)?.unwrap_or_else(MiraValue::nil);
+                    operations::record_get(runtime, data, &key)?.unwrap_or(MiraValue::NIL);
                 values.insert(key, item);
             }
             let key = operations::to_string(runtime, path[0])?;
-            let current = values.get(&key).cloned().unwrap_or_else(MiraValue::nil);
+            let current = values.get(&key).cloned().unwrap_or(MiraValue::NIL);
             let current = container_for(runtime, current, path.get(1).cloned())?;
             values.insert(key, set_path(runtime, current, &path[1..], value, max_len)?);
             runtime.insert(values)

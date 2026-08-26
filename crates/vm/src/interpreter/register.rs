@@ -97,7 +97,7 @@ impl Registers {
     #[inline]
     pub(super) fn read(&self, register: RegisterId) -> MiraAny {
         if register.is_nil() {
-            MiraAny::from(MiraValue::nil())
+            MiraAny::from(MiraValue::NIL)
         } else {
             *self.get(register)
         }
@@ -108,7 +108,7 @@ impl Runtime {
     #[inline]
     pub(super) fn read_register_raw(&self, frame: FrameId, register: RegisterId) -> MiraAny {
         if register.is_nil() {
-            MiraAny::from(MiraValue::nil())
+            MiraAny::from(MiraValue::NIL)
         } else {
             *self.frames.get(frame).registers.get(register)
         }
@@ -173,8 +173,8 @@ mod tests {
     fn uninitialized_is_distinct_from_nil() {
         assert!(MiraAny::uninitialized().check().is_err());
         assert_eq!(
-            MiraAny::from(MiraValue::nil()).check().unwrap(),
-            MiraValue::nil()
+            MiraAny::from(MiraValue::NIL).check().unwrap(),
+            MiraValue::NIL
         );
     }
 }

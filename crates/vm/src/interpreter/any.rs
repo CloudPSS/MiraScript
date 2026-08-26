@@ -8,7 +8,7 @@ const _: () = assert!(std::mem::size_of::<MiraAny>() == 8);
 impl MiraAny {
     #[inline]
     pub fn uninitialized() -> Self {
-        Self(MiraValue::uninitialized())
+        Self(MiraValue::UNINITIALIZED)
     }
 
     #[inline]

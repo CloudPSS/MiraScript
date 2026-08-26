@@ -9,7 +9,7 @@ pub(super) fn install(context: &mut Runtime) {
             .collect::<Vec<_>>()
             .join(" ");
         call.options().providers.debug(&message);
-        Ok(MiraValue::nil())
+        Ok(MiraValue::NIL)
     });
     insert_native(context, "panic", |call, args| {
         let message = args

@@ -47,8 +47,8 @@ pub(super) fn entrywise(
         for index in 0..length {
             result.push(operation(
                 runtime,
-                left.get(index).cloned().unwrap_or(MiraValue::nil()),
-                right.get(index).cloned().unwrap_or(MiraValue::nil()),
+                left.get(index).cloned().unwrap_or(MiraValue::NIL),
+                right.get(index).cloned().unwrap_or(MiraValue::NIL),
             )?);
         }
         return runtime.insert(result);
@@ -74,12 +74,12 @@ pub(super) fn entrywise(
                     .get(left_row)
                     .and_then(|row| row.get(left_column))
                     .cloned()
-                    .unwrap_or(MiraValue::nil()),
+                    .unwrap_or(MiraValue::NIL),
                 right_matrix
                     .get(right_row)
                     .and_then(|row| row.get(right_column))
                     .cloned()
-                    .unwrap_or(MiraValue::nil()),
+                    .unwrap_or(MiraValue::NIL),
             )?);
         }
         result.push(output);
@@ -110,7 +110,7 @@ fn broadcast_scalar(
                 .get(row)
                 .and_then(|row| row.get(column))
                 .cloned()
-                .unwrap_or(MiraValue::nil());
+                .unwrap_or(MiraValue::NIL);
             output.push(operation(runtime, value)?);
         }
         result.push(output);
@@ -148,13 +148,8 @@ pub(super) fn multiply(runtime: &mut Runtime, args: &[MiraValue]) -> Result<Mira
             let length = left.len().max(right.len());
             let mut sum = 0.0;
             for index in 0..length {
-                sum += numeric(
-                    runtime,
-                    left.get(index).cloned().unwrap_or(MiraValue::nil()),
-                )? * numeric(
-                    runtime,
-                    right.get(index).cloned().unwrap_or(MiraValue::nil()),
-                )?;
+                sum += numeric(runtime, left.get(index).cloned().unwrap_or(MiraValue::NIL))?
+                    * numeric(runtime, right.get(index).cloned().unwrap_or(MiraValue::NIL))?;
             }
             Ok(MiraValue::number(sum))
         }

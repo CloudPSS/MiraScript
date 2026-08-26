@@ -48,7 +48,7 @@ impl MiraValue {
 
     #[inline]
     pub(super) const fn empty(tag: ValueTag) -> Self {
-        Self::from_raw(RawValue::empty(tag))
+        Self::from_raw(RawValue::from_empty(tag))
     }
 
     #[inline]
@@ -56,7 +56,7 @@ impl MiraValue {
         tag: ValueTag,
         handle: MiraHandle<T>,
     ) -> Self {
-        Self::from_raw(RawValue::tagged(tag, handle.payload()))
+        Self::from_raw(RawValue::from_tagged(tag, handle.payload()))
     }
 
     #[inline]
@@ -165,18 +165,18 @@ mod tests {
     fn scalar_nan_box_roundtrips() {
         for number in [0.0, -0.0, 42.5, f64::INFINITY, f64::NEG_INFINITY] {
             assert_eq!(
-                MiraValue::number(number).as_number().unwrap().to_bits(),
+                MiraValue::number(number).as_number_unchecked().to_bits(),
                 number.to_bits()
             );
         }
 
         for nan in [f64::NAN, -f64::NAN] {
-            let decoded = MiraValue::number(nan).as_number().unwrap();
+            let decoded = MiraValue::number(nan).as_number_unchecked();
             assert!(decoded.is_nan());
             assert_eq!(decoded.is_sign_negative(), nan.is_sign_negative());
         }
 
-        assert!(MiraValue::nil().is_nil());
+        assert!(MiraValue::NIL.is_nil());
         assert_eq!(MiraValue::boolean(false).as_boolean(), Some(false));
         assert_eq!(MiraValue::boolean(true).as_boolean(), Some(true));
     }

@@ -104,8 +104,7 @@ fn test_array<T: MiraArray + Into<MiraManageable>>(array: T, expected_json: &str
     let empty = runtime
         .eval("from_json(a_json)::len() == 0")
         .unwrap()
-        .as_boolean()
-        .unwrap();
+        .as_boolean_unchecked();
     assert_eq!(array.is_empty(), empty);
 
     runtime.insert_global("array", array).unwrap();
@@ -113,7 +112,6 @@ fn test_array<T: MiraArray + Into<MiraManageable>>(array: T, expected_json: &str
         runtime
             .eval("array == from_json(a_json)")
             .unwrap()
-            .as_boolean()
-            .unwrap()
+            .as_boolean_unchecked()
     );
 }

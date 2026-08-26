@@ -33,22 +33,18 @@ fn main() {
         "example"
     );
     assert_eq!(
-        runtime.eval("record.value").unwrap().as_number().unwrap(),
+        runtime.eval_unchecked("record.value").as_number_unchecked(),
         1f64
     );
     assert!(
         !runtime
-            .eval("'hidden' in record")
-            .unwrap()
-            .as_boolean()
-            .unwrap(),
+            .eval_unchecked("'hidden' in record")
+            .as_boolean_unchecked(),
     );
     assert!(
         !runtime
-            .eval("'item' in record")
-            .unwrap()
-            .as_boolean()
-            .unwrap(),
+            .eval_unchecked("'item' in record")
+            .as_boolean_unchecked(),
     );
     let record = runtime.take_record(record).unwrap();
     assert_eq!(record.key, "example");

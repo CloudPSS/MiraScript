@@ -31,7 +31,7 @@ pub(crate) use type_check::*;
 pub(crate) fn into_element(value: MiraValue) -> MiraValue {
     match value.kind() {
         MiraValueKind::Function(_) | MiraValueKind::Module(_) | MiraValueKind::Extern(_) => {
-            MiraValue::nil()
+            MiraValue::NIL
         }
         _ => value,
     }

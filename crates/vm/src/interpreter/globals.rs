@@ -181,7 +181,7 @@ impl Runtime {
             None
         } else {
             self.globals
-                .insert(name.to_string(), MiraValue::uninitialized())
+                .insert(name.to_string(), MiraValue::UNINITIALIZED)
         }
     }
 
@@ -233,13 +233,13 @@ mod tests {
         // Insert a global and verify it can be retrieved.
         runtime.insert_global("foo", 42).unwrap();
         assert_eq!(
-            runtime.get_global("foo").unwrap().as_number().unwrap(),
+            runtime.get_global("foo").unwrap().as_number_unchecked(),
             42.0
         );
 
         // Remove the global and verify it is no longer present.
         let removed = runtime.remove_global("foo");
-        assert_eq!(removed.unwrap().as_number().unwrap(), 42.0);
+        assert_eq!(removed.unwrap().as_number_unchecked(), 42.0);
         assert!(runtime.get_global("foo").is_none());
 
         // Insert a new global with the same name and verify it can be retrieved.
@@ -259,13 +259,13 @@ mod tests {
         // Insert a global and verify it can be retrieved.
         runtime.insert_global("sin", 42).unwrap();
         assert_eq!(
-            runtime.get_global("sin").unwrap().as_number().unwrap(),
+            runtime.get_global("sin").unwrap().as_number_unchecked(),
             42.0
         );
 
         // Remove the global and verify it is no longer present.
         let removed = runtime.remove_global("sin");
-        assert_eq!(removed.unwrap().as_number().unwrap(), 42.0);
+        assert_eq!(removed.unwrap().as_number_unchecked(), 42.0);
         assert!(runtime.get_global("sin").is_none());
 
         // Insert a new global with the same name and verify it can be retrieved.
@@ -291,7 +291,7 @@ mod tests {
         runtime.insert_global("sin", removed.unwrap()).unwrap();
         assert!(runtime.get_global("sin").unwrap().is_function());
 
-        assert_eq!(runtime.eval("sin(0)").unwrap().as_number().unwrap(), 0.0);
+        assert_eq!(runtime.eval_unchecked("sin(0)").as_number_unchecked(), 0.0);
     }
 
     #[test]

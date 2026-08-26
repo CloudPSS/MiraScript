@@ -56,8 +56,8 @@ mod tests {
 
     #[test]
     fn boxed_slice_array() {
-        let arr: Box<[_]> = Box::new([[1, 2], [3, 4]]);
-        test_array(arr, r#"[[1, 2], [3, 4]]"#);
+        let arr: Box<[Box<[_]>]> = Box::new([Box::new([1, 2]), Box::new([3, 4, 5])]);
+        test_array(arr, r#"[[1, 2], [3, 4, 5]]"#);
     }
     #[test]
 

@@ -21,12 +21,11 @@ fn main() {
         "{}"
     );
 
-    assert!(runtime.eval("record.anything").unwrap().is_nil());
+    assert!(runtime.eval_unchecked("record.anything").is_nil());
     assert!(
         !runtime
             .eval("'anything' in record")
             .unwrap()
-            .as_boolean()
-            .unwrap(),
+            .as_boolean_unchecked(),
     );
 }

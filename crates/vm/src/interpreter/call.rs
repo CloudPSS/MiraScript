@@ -25,7 +25,7 @@ impl MiraFunction for ScriptFunction {
                 runtime.write_register(
                     frame,
                     RegisterId::new(index + 1),
-                    args.get(index).cloned().unwrap_or(MiraValue::nil()),
+                    args.get(index).cloned().unwrap_or(MiraValue::NIL),
                 );
             }
             let rest = args
@@ -43,13 +43,13 @@ impl MiraFunction for ScriptFunction {
                 runtime.write_register(
                     frame,
                     RegisterId::new(index + 1),
-                    args.get(index).cloned().unwrap_or(MiraValue::nil()),
+                    args.get(index).cloned().unwrap_or(MiraValue::NIL),
                 );
             }
         }
         match runtime.execute_block(&definition.body, frame)? {
             Flow::Return(value) => Ok(value.into()),
-            Flow::Continue => Ok(MiraValue::nil().into()),
+            Flow::Continue => Ok(MiraValue::NIL.into()),
             Flow::Break | Flow::LoopContinue => {
                 Err(MiraError::runtime(RuntimeErrorKind::InvalidControlFlow {
                     context: "function",
