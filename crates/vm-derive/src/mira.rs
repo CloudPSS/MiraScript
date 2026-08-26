@@ -732,3 +732,23 @@ fn returns_result(output: &ReturnType) -> bool {
                 && matches!(segment.arguments, PathArguments::AngleBracketed(_))
         })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::expand;
+    use proc_macro2::TokenStream;
+    use quote::quote;
+
+    #[test]
+    fn external_modules_are_rejected_without_rustc_diagnostics() {
+        let error = expand(
+            TokenStream::new(),
+            quote!(
+                mod external;
+            ),
+        )
+        .expect_err("external modules must be rejected");
+
+        assert_eq!(error.to_string(), "`#[mira]` requires an inline module");
+    }
+}
