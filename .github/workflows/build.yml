@@ -279,7 +279,7 @@ jobs:
       - name: Install
         uses: ./.github/actions/install
         with:
-          setup-uv: true
+          setup-uv: pyodide
           ALIYUN_NPM_TOKEN: ${{ secrets.ALIYUN_NPM_TOKEN }}
           rust-targets: wasm32-unknown-emscripten
 

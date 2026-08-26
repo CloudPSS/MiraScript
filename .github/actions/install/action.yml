@@ -44,8 +44,10 @@ runs:
   using: 'composite'
   steps:
     - name: Setup UV
-      if: ${{ inputs.setup-uv == 'true' }}
+      if: ${{ inputs.setup-uv != '' }}
       uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d
+      with:
+        cache-suffix: ${{ inputs.setup-uv }}
     - name: Set private token
       if: ${{ inputs.ALIYUN_NPM_TOKEN }}
       shell: bash
