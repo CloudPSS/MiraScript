@@ -3,7 +3,7 @@ use crate::{MiraError, MiraValue, Result, Runtime, RuntimeErrorKind, operations}
 
 use super::helpers::{from_matrix, shape};
 
-pub(super) fn filled<const VALUE: i32>(
+pub(in crate::standard_library::module) fn filled<const VALUE: i32>(
     call: &mut Runtime,
     args: &[MiraValue],
 ) -> Result<MiraValue> {
@@ -41,7 +41,10 @@ pub(super) fn dimensions(
         .collect()
 }
 
-pub(super) fn identity(call: &mut Runtime, args: &[MiraValue]) -> Result<MiraValue> {
+pub(in crate::standard_library::module) fn identity(
+    call: &mut Runtime,
+    args: &[MiraValue],
+) -> Result<MiraValue> {
     let dimensions = dimensions(call, args, call.options().max_array_len)?;
     if dimensions.is_empty() {
         return call.insert(Vec::<MiraValue>::new());
@@ -61,7 +64,10 @@ pub(super) fn identity(call: &mut Runtime, args: &[MiraValue]) -> Result<MiraVal
     from_matrix(call, values)
 }
 
-pub(super) fn diagonal(call: &mut Runtime, args: &[MiraValue]) -> Result<MiraValue> {
+pub(in crate::standard_library::module) fn diagonal(
+    call: &mut Runtime,
+    args: &[MiraValue],
+) -> Result<MiraValue> {
     let value = *required(args, 0, "x")?;
     let values = operations::iterable_array(call, value)?;
     let offset = match args.get(1) {

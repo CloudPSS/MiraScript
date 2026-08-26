@@ -8,8 +8,22 @@ mod array;
 mod container;
 mod field;
 mod generic_visiter;
+mod mira;
 mod record;
 mod utils;
+
+#[proc_macro_attribute]
+/// Expose a Rust function or inline module as a MiraScript value.
+///
+/// The generated companion constant defaults to the upper-case Rust item name.
+/// Use `const = NAME` to override the Rust constant, `rename = "mira.name"`
+/// to override the diagnostic name, and `use = "export"` to override a direct
+/// parent module's export key.
+pub fn mira(attr: TokenStream, input: TokenStream) -> TokenStream {
+    mira::expand(attr.into(), input.into())
+        .unwrap_or_else(syn::Error::into_compile_error)
+        .into()
+}
 
 #[proc_macro_derive(MiraRecord, attributes(mira))]
 /// Derive a read-only MiraScript record view for a named-field struct.

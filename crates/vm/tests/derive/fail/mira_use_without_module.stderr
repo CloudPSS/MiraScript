@@ -1,0 +1,5 @@
+error: `use` is only valid on a direct child of a `#[mira]` module
+ --> tests/derive/fail/mira_use_without_module.rs:3:14
+  |
+3 | #[mira(use = "sum")]
+  |              ^^^^^

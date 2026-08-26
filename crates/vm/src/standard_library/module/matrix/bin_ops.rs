@@ -3,7 +3,7 @@ use crate::{MiraError, MiraValue, Result, Runtime, RuntimeErrorKind, operations}
 
 use super::helpers::{as_matrix, from_matrix, numeric, shape};
 
-pub(super) fn numeric_entrywise(
+pub(in crate::standard_library::module) fn numeric_entrywise(
     runtime: &mut Runtime,
     args: &[MiraValue],
     operation: impl Fn(f64, f64) -> f64,
@@ -18,7 +18,7 @@ pub(super) fn numeric_entrywise(
     })
 }
 
-pub(super) fn entrywise(
+pub(in crate::standard_library::module) fn entrywise(
     runtime: &mut Runtime,
     left: MiraValue,
     right: MiraValue,
@@ -118,7 +118,7 @@ fn broadcast_scalar(
     from_matrix(runtime, result)
 }
 
-pub(super) fn map_nested(
+pub(in crate::standard_library::module) fn map_nested(
     runtime: &mut Runtime,
     value: MiraValue,
     operation: &mut impl FnMut(&mut Runtime, MiraValue) -> Result<MiraValue>,
@@ -135,7 +135,10 @@ pub(super) fn map_nested(
     runtime.insert(result)
 }
 
-pub(super) fn multiply(runtime: &mut Runtime, args: &[MiraValue]) -> Result<MiraValue> {
+pub(in crate::standard_library::module) fn multiply(
+    runtime: &mut Runtime,
+    args: &[MiraValue],
+) -> Result<MiraValue> {
     let left = *required(args, 0, "a")?;
     let right = *required(args, 1, "b")?;
     let left_shape = shape(runtime, left)?;

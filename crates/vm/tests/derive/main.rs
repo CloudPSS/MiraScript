@@ -8,6 +8,7 @@ mod array_tuple;
 mod array_unit;
 mod complex;
 mod generics;
+mod mira_module;
 mod record_named;
 mod record_tuple;
 mod record_unit;

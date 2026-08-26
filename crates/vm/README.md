@@ -84,6 +84,45 @@ assert_eq!(runtime.run(&script)?, MiraValue::number(10.0));
 # Ok::<(), Box<mirascript_vm::MiraError>>(())
 ```
 
+Use `#[mira]` to expose native functions and inline modules. The original Rust
+function is unchanged; the macro adds an upper-case companion constant that can
+be inserted into a runtime. Inside a Mira module, function diagnostic names are
+qualified while export keys remain local.
+
+```rust
+use mirascript_vm::{Runtime, mira};
+
+#[mira]
+mod arithmetic {
+    use mirascript_vm::MiraValue;
+
+    #[mira]
+    pub const ANSWER: usize = 42;
+
+    #[mira]
+    pub fn add(a: f64, b: f64) -> f64 { a + b }
+
+    #[mira]
+    pub fn sum(start: f64, rest: &[MiraValue]) -> mirascript_vm::Result<f64> {
+        rest.iter().try_fold(start, |sum, value| {
+            Ok(sum + f64::try_from(*value)?)
+        })
+    }
+}
+
+assert_eq!(arithmetic::add(1.0, 2.0), 3.0);
+let mut runtime = Runtime::new();
+runtime.insert_global("arithmetic", ARITHMETIC)?;
+assert_eq!(runtime.eval("arithmetic.add(1, 2)")?, 3.into());
+assert_eq!(runtime.eval("arithmetic.sum(1, 2, 3)")?, 6.into());
+# Ok::<(), Box<mirascript_vm::MiraError>>(())
+```
+
+`const = NAME` overrides the Rust companion constant, `rename = "full.name"`
+overrides the `MiraFunction` or `MiraModule` diagnostic name, and `use = "key"`
+overrides the direct parent module's export key. Consecutive `#[mira]` modules
+build dotted default names; an unmarked module starts a new naming root.
+
 `MiraExtern` is currently only a public, sealed marker. It has no constructor or
 derive macro, and downstream crates cannot implement it.
 

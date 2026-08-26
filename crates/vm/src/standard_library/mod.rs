@@ -7,7 +7,7 @@ use builtin::{builtin_fn, global_builtin};
 
 pub(crate) fn install(runtime: &mut Runtime) {
     global::install(runtime);
-    module::matrix::install(runtime).unwrap();
+    runtime.insert_std("matrix", module::MATRIX);
 }
 
 fn required<'a>(args: &'a [MiraValue], index: usize, name: &'static str) -> Result<&'a MiraValue> {

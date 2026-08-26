@@ -1,0 +1,5 @@
+error: Mira functions cannot be generic
+ --> tests/derive/fail/mira_generic_function.rs:4:12
+  |
+4 | fn identity<T>(value: T) -> T {
+  |            ^^^

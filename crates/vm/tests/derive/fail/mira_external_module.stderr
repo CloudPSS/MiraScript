@@ -1,0 +1,13 @@
+error[E0658]: file modules in proc macro input are unstable
+ --> tests/derive/fail/mira_external_module.rs:4:1
+  |
+4 | mod external;
+  | ^^^^^^^^^^^^^
+  |
+  = note: see issue #54727 <https://github.com/rust-lang/rust/issues/54727> for more information
+
+error: `#[mira]` requires an inline module
+ --> tests/derive/fail/mira_external_module.rs:4:1
+  |
+4 | mod external;
+  | ^^^^^^^^^^^^^

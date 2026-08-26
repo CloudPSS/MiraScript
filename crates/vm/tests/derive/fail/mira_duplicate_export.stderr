@@ -1,0 +1,11 @@
+error: duplicate Mira module export `value`
+ --> tests/derive/fail/mira_duplicate_export.rs:9:11
+  |
+9 |     const SECOND: usize = 2;
+  |           ^^^^^^
+
+error: first exported with this name here
+ --> tests/derive/fail/mira_duplicate_export.rs:6:8
+  |
+6 |     fn first() {}
+  |        ^^^^^

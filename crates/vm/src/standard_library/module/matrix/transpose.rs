@@ -3,7 +3,10 @@ use crate::{MiraValue, Result, Runtime};
 
 use super::helpers::{as_matrix, from_matrix, shape};
 
-pub(super) fn transpose(call: &mut Runtime, args: &[MiraValue]) -> Result<MiraValue> {
+pub(in crate::standard_library::module) fn transpose(
+    call: &mut Runtime,
+    args: &[MiraValue],
+) -> Result<MiraValue> {
     let value = *required(args, 0, "matrix")?;
     let dimensions = shape(call, value)?;
     if dimensions.len() < 2 {

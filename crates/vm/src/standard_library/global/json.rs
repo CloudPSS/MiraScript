@@ -13,43 +13,46 @@ use crate::{
 };
 
 pub(super) fn install(runtime: &mut Runtime) {
-    global_builtin!(runtime, fn to_json(call, args) {
-        let Some(value) = args.first().cloned() else {
-            return Err(MiraError::runtime(RuntimeErrorKind::MissingArgument {
-                name: "data",
-            }));
-        };
-        if matches!(
-            value.kind(),
-            MiraValueKind::Function(_) | MiraValueKind::Extern(_)
-        ) {
-            return Ok(MiraValue::NIL);
-        }
-        let context = SerializeContext::new(call);
-        let source = serde_json::to_string(&SerializeValue {
-            context: &context,
-            value,
-        });
-        let runtime_error = context.into_runtime_error();
-        match (source, runtime_error) {
-            (Ok(source), _) => call.insert(source),
-            (Err(_), Some(error)) => Err(error),
-            (Err(source), None) => Err(MiraError::runtime(RuntimeErrorKind::JsonSerialization {
-                source,
-            })),
-        }
-    });
-    global_builtin!(runtime, fn from_json(call, args) {
-        let source = string(call, args, 0, "json")?;
-        match parse_json(call, &source) {
-            Ok(value) => Ok(value),
-            Err(DeserializeError::Invalid(_)) if args.len() > 1 => Ok(args[1]),
-            Err(DeserializeError::Invalid(source)) => {
-                Err(MiraError::runtime(RuntimeErrorKind::InvalidJson { source }))
+    global_builtin!(
+        runtime,
+        fn to_json(call, args) {
+            let Some(value) = args.first().cloned() else {
+                return Err(MiraError::runtime(RuntimeErrorKind::MissingArgument {
+                    name: "data",
+                }));
+            };
+            if matches!(
+                value.kind(),
+                MiraValueKind::Function(_) | MiraValueKind::Extern(_)
+            ) {
+                return Ok(MiraValue::NIL);
             }
-            Err(DeserializeError::Runtime(error)) => Err(error),
+            let context = SerializeContext::new(call);
+            let source = serde_json::to_string(&SerializeValue {
+                context: &context,
+                value,
+            });
+            let runtime_error = context.into_runtime_error();
+            match (source, runtime_error) {
+                (Ok(source), _) => call.insert(source),
+                (Err(_), Some(error)) => Err(error),
+                (Err(source), None) => Err(MiraError::runtime(RuntimeErrorKind::JsonSerialization {
+                    source,
+                })),
+            }
         }
-    });
+        fn from_json(call, args) {
+            let source = string(call, args, 0, "json")?;
+            match parse_json(call, &source) {
+                Ok(value) => Ok(value),
+                Err(DeserializeError::Invalid(_)) if args.len() > 1 => Ok(args[1]),
+                Err(DeserializeError::Invalid(source)) => {
+                    Err(MiraError::runtime(RuntimeErrorKind::InvalidJson { source }))
+                }
+                Err(DeserializeError::Runtime(error)) => Err(error),
+            }
+        }
+    );
 }
 
 struct SerializeContext<'runtime> {

@@ -4,7 +4,10 @@ use crate::{MiraError, MiraValue, Result, Runtime, RuntimeErrorKind};
 use super::helpers::{as_matrix, from_matrix, numeric, shape};
 use super::map_nested;
 
-pub(super) fn invert(call: &mut Runtime, args: &[MiraValue]) -> Result<MiraValue> {
+pub(in crate::standard_library::module) fn invert(
+    call: &mut Runtime,
+    args: &[MiraValue],
+) -> Result<MiraValue> {
     let value = *required(args, 0, "a")?;
     let dimensions = shape(call, value)?;
     if dimensions.is_empty() {

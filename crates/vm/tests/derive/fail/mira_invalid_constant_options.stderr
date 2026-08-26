@@ -1,0 +1,5 @@
+error: `rename` is not valid on a Rust constant; use `use` for its export key
+ --> tests/derive/fail/mira_invalid_constant_options.rs:5:21
+  |
+5 |     #[mira(rename = "values.answer")]
+  |                     ^^^^^^^^^^^^^^^
