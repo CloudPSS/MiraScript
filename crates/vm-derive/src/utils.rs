@@ -16,10 +16,10 @@ pub fn reject_duplicate_names(names: &[(&str, &proc_macro2::Span)]) -> Result<()
     Ok(())
 }
 
-pub fn add_read_bounds(
-    generics: &mut Generics,
-    types: impl IntoIterator<Item = Type>,
-    krate: &Path,
+pub fn add_read_bounds<'a>(
+    generics: &'a mut Generics,
+    types: impl IntoIterator<Item = &'a Type>,
+    krate: &'a Path,
 ) {
     for parameter in generics.type_params_mut() {
         parameter.bounds.push(parse_quote!('static));

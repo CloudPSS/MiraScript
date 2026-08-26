@@ -33,19 +33,16 @@ pub fn expand(input: DeriveInput) -> Result<TokenStream> {
 
     let krate = options.crate_path;
     let mut generics = input.generics;
-    add_read_bounds(
-        &mut generics,
-        exported.iter().map(|(_, ty)| ty.clone()),
-        &krate,
-    );
-    let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
-    let len = exported.len();
+    add_read_bounds(&mut generics, exported.iter().map(|(_, ty)| ty), &krate);
     let getters = exported.iter().enumerate().map(|(index, (field, ty))| {
         create_getter(&krate, index, quote!(#field), ty, parse_quote!(from_array))
     });
 
     let ident = input.ident;
+    let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
+    let len = exported.len();
     let common_impl = impl_common(&ident, &generics, &krate, "array");
+
     Ok(quote! {
         impl #impl_generics #krate::MiraShapedArray for #ident #ty_generics #where_clause {
             fn len() -> usize {

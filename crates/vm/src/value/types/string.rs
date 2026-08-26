@@ -36,6 +36,14 @@ impl MiraValue {
             _ => Ok(None),
         }
     }
+
+    /// Borrow this value's string payload from its owning Runtime.
+    #[inline]
+    pub fn as_str_unchecked<'s>(&self, runtime: &'s Runtime) -> &'s str {
+        self.as_str(runtime)
+            .expect("Runtime error")
+            .expect("Value is not a string")
+    }
 }
 
 impl From<&'static &'static str> for MiraValue {

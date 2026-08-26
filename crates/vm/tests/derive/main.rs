@@ -6,6 +6,7 @@ fn derive_macros_reject_shapes() {
 
 mod array_tuple;
 mod array_unit;
+mod complex;
 mod generics;
 mod record_named;
 mod record_tuple;

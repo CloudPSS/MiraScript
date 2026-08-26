@@ -10,7 +10,7 @@ use crate::{
 
 enum ExportField {
     Named(syn::Ident),
-    Unnamed(usize),
+    Unnamed(syn::Index),
 }
 
 pub fn expand(input: DeriveInput) -> Result<TokenStream> {
@@ -50,7 +50,7 @@ pub fn expand(input: DeriveInput) -> Result<TokenStream> {
                     .map(|name| name.value())
                     .unwrap_or_else(|| index.to_string());
                 exported.push((
-                    ExportField::Unnamed(index),
+                    ExportField::Unnamed(syn::Index::from(index)),
                     field.span(),
                     exported_name,
                     field.ty,
@@ -71,11 +71,9 @@ pub fn expand(input: DeriveInput) -> Result<TokenStream> {
     let mut generics = input.generics;
     add_read_bounds(
         &mut generics,
-        exported.iter().map(|(_, _, _, ty)| ty.clone()),
+        exported.iter().map(|(_, _, _, ty)| ty),
         &krate,
     );
-    let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
-    let len = exported.len();
     let key_matches = exported
         .iter()
         .enumerate()
@@ -90,16 +88,16 @@ pub fn expand(input: DeriveInput) -> Result<TokenStream> {
         .map(|(index, (field, _, _, ty))| {
             let field = match field {
                 ExportField::Named(ident) => quote!(#ident),
-                ExportField::Unnamed(index) => {
-                    let index = syn::Index::from(*index);
-                    quote!(#index)
-                }
+                ExportField::Unnamed(index) => quote!(#index),
             };
             create_getter(&krate, index, field, ty, parse_quote!(from_record))
         });
 
     let ident = input.ident;
+    let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
+    let len = exported.len();
     let common_impl = impl_common(&ident, &generics, &krate, "record");
+
     Ok(quote! {
         impl #impl_generics #krate::MiraShapedRecord for #ident #ty_generics #where_clause {
             fn len() -> usize {
