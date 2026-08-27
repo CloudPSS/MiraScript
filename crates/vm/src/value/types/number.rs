@@ -151,6 +151,16 @@ mod tests {
         assert_eq!(f64::try_from(value).unwrap(), 42f64);
     }
     #[test]
+    fn test_number_from_mira() {
+        let runtime = Runtime::new();
+        let value = MiraValue::number(42.0);
+        assert_eq!(u8::from_mira(&runtime, value).unwrap(), 42u8);
+        assert_eq!(i32::from_mira(&runtime, value).unwrap(), 42i32);
+        assert_eq!(u128::from_mira(&runtime, value).unwrap(), 42u128);
+        assert_eq!(f32::from_mira(&runtime, value).unwrap(), 42f32);
+        assert_eq!(f64::from_mira(&runtime, value).unwrap(), 42f64);
+    }
+    #[test]
     fn test_number_try_from_underflow() {
         let value = MiraValue::number(-1.0);
         assert!(u8::try_from(value).is_err());

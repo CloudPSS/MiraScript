@@ -16,10 +16,8 @@ pub fn native_argument_optional<'a, T>(
 where
     T: TryFromMira<'a>,
 {
-    if let Some(value) = value
-        && !value.is_nil()
-    {
-        Ok(Some(T::from_mira(runtime, value)?))
+    if let Some(value) = value {
+        Ok(Option::<T>::from_mira(runtime, value)?)
     } else {
         Ok(None)
     }

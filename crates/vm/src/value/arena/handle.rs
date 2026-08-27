@@ -1,6 +1,6 @@
 use std::{any::Any, fmt, hash, marker::PhantomData};
 
-use super::{ArenaKey, MiraArray, MiraFunction, MiraModule, MiraRecord};
+use super::{ArenaKey, MiraArray, MiraFunction, MiraModule, MiraRecord, MiraValue};
 
 /// A compact, runtime-checked handle to an arena-managed value.
 pub struct MiraHandle<T: Any + ?Sized> {
@@ -56,6 +56,22 @@ impl<T: Any + ?Sized> MiraHandle<T> {
         Self::new(ArenaKey::from_payload(payload))
     }
 }
+
+macro_rules! impl_cast {
+    ($t:ty, $f:ident) => {
+        impl From<MiraHandle<$t>> for MiraValue {
+            fn from(value: MiraHandle<$t>) -> Self {
+                Self::$f(value)
+            }
+        }
+    };
+}
+
+impl_cast!(dyn MiraArray, array);
+impl_cast!(dyn MiraRecord, record);
+impl_cast!(dyn MiraFunction, function);
+impl_cast!(dyn MiraModule, module);
+impl_cast!(String, string);
 
 macro_rules! impl_handle_cast {
     ($trait:path, $erase:ident) => {
