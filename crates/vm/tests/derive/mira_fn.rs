@@ -24,8 +24,8 @@ fn function_accept_str() {
 #[test]
 fn function_accept_optional() {
     #[mira]
-    fn inv(value: Option<bool>) -> bool {
-        !value.unwrap_or(false)
+    fn inv(value: Option<bool>) -> Option<bool> {
+        value.map(|v| !v)
     }
 
     let mut runtime = Runtime::new();
@@ -35,8 +35,8 @@ fn function_accept_optional() {
         runtime.eval("inv(1)").unwrap_err().to_string(),
         "failed to convert value: expected Rust bool, got MiraScript number"
     );
-    assert!(runtime.eval_unchecked("inv()").as_boolean_unchecked());
-    assert!(runtime.eval_unchecked("inv(nil)").as_boolean_unchecked());
+    assert!(runtime.eval_unchecked("inv()").is_nil());
+    assert!(runtime.eval_unchecked("inv(nil)").is_nil());
 }
 
 #[test]
