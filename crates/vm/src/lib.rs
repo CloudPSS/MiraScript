@@ -101,6 +101,6 @@ pub mod __private {
 
     pub use crate::value::types::function::{
         MiraFunction, MiraNativeFn,
-        helper::{native_argument, native_result},
+        helper::{native_argument, native_argument_optional, native_result},
     };
 }
