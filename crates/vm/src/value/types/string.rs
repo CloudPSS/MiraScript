@@ -1,4 +1,4 @@
-use crate::{MiraHandle, MiraType, Result, Runtime};
+use crate::{MiraError, MiraHandle, MiraType, Result, Runtime, TryFromMira};
 
 use super::{
     MiraValue, MiraValueKind, Payload,
@@ -50,5 +50,12 @@ impl From<&'static &'static str> for MiraValue {
     #[inline]
     fn from(value: &'static &'static str) -> Self {
         Self::str(value)
+    }
+}
+
+impl<'a> TryFromMira<'a> for &'a str {
+    fn from_mira(runtime: &'a Runtime, value: MiraValue) -> Result<Self> {
+        let str = value.as_str(runtime)?;
+        str.ok_or_else(|| MiraError::conversion_type("&str", value.value_type()))
     }
 }

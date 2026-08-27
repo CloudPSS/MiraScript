@@ -53,7 +53,7 @@ pub fn expand(item: ItemMod, options: Options, parent: Option<&Context>) -> Resu
     let vis = &item.vis;
     let unsafety = &item.unsafety;
     let cfg = conditional_attrs(attrs);
-    let hidden = format_ident!("__MiraModule_{}", rust_name, span = ident.span());
+    let hidden = format_ident!("__MiraModule_{rust_name}", span = ident.span());
     let module_name = LitStr::new(&full_name, ident.span());
     let len = exports.len();
     let key_matches = exports.iter().enumerate().map(|(index, export)| {

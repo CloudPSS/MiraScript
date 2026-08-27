@@ -1,5 +1,5 @@
 use super::{MiraValue, value::RawValue};
-use crate::{MiraError, Result};
+use crate::{MiraError, Result, Runtime, TryFromMira};
 
 impl MiraValue {
     /// Create a [`MiraValue`] representing a numeric value.
@@ -73,6 +73,12 @@ macro_rules! integer_try_from {
                 Ok(number as $ty)
             }
         }
+
+        impl TryFromMira<'_> for $ty {
+            fn from_mira(_runtime: &Runtime, value: MiraValue) -> Result<Self> {
+                Self::try_from(value)
+            }
+        }
     )* };
 }
 integer_try_from!(
@@ -89,6 +95,12 @@ impl TryFrom<MiraValue> for f64 {
     }
 }
 
+impl TryFromMira<'_> for f64 {
+    fn from_mira(_runtime: &Runtime, value: MiraValue) -> Result<Self> {
+        f64::try_from(value)
+    }
+}
+
 impl TryFrom<MiraValue> for f32 {
     type Error = Box<MiraError>;
 
@@ -98,6 +110,12 @@ impl TryFrom<MiraValue> for f32 {
             return Err(MiraError::conversion_number("f32", value));
         }
         Ok(value as f32)
+    }
+}
+
+impl TryFromMira<'_> for f32 {
+    fn from_mira(_runtime: &Runtime, value: MiraValue) -> Result<Self> {
+        f32::try_from(value)
     }
 }
 

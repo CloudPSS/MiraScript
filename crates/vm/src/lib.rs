@@ -26,7 +26,7 @@ pub use runtime_providers::{RuntimeProviders, default_runtime_providers};
 pub(crate) use value::MiraValueKind;
 pub use value::{
     MiraArray, MiraExtern, MiraFunction, MiraHandle, MiraManageable, MiraModule, MiraNativeFn,
-    MiraRecord, MiraShapedArray, MiraShapedRecord, MiraType, MiraValue,
+    MiraRecord, MiraShapedArray, MiraShapedRecord, MiraType, MiraValue, TryFromMira,
 };
 
 /// Limits and injectable providers used for each Runtime execution.
@@ -92,30 +92,15 @@ pub fn compile_with(source: &str, config: &CompileConfig) -> Result<MiraScript> 
 /// Items used by the derive macros. They are not a stable user-facing API.
 #[doc(hidden)]
 pub mod __private {
-    use crate::{MiraError, MiraManageable, MiraValue, Result};
+    pub use crate::{MiraError, MiraManageable, MiraValue, Result};
 
     pub use crate::value::types::field::{
         MiraField, MiraFieldGetter, array_from_array, array_from_record, shaped_array_from_array,
         shaped_array_from_record, shaped_record_from_array, shaped_record_from_record,
     };
 
-    /// Convert one fixed native-function argument.
-    pub fn native_argument<T>(value: MiraValue) -> Result<T>
-    where
-        T: TryFrom<MiraValue>,
-        T::Error: Into<anyhow::Error>,
-    {
-        T::try_from(value).map_err(|error| Box::<MiraError>::from(error.into()))
-    }
-
-    /// Convert a fallible native-function return value.
-    pub fn native_result<T, E>(result: std::result::Result<T, E>) -> Result<MiraManageable>
-    where
-        T: Into<MiraManageable>,
-        E: Into<anyhow::Error>,
-    {
-        result
-            .map(Into::into)
-            .map_err(|error| Box::<MiraError>::from(error.into()))
-    }
+    pub use crate::value::types::function::{
+        MiraFunction, MiraNativeFn,
+        helper::{native_argument, native_result},
+    };
 }

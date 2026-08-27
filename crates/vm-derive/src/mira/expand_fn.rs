@@ -29,7 +29,7 @@ pub fn expand(item: ItemFn, options: Options, parent: Option<&Context>) -> Resul
         .clone()
         .unwrap_or_else(|| upper_ident(ident));
     let krate = options.crate_path(parent);
-    let hidden = format_ident!("__MiraFunction_{}", rust_name, span = ident.span());
+    let hidden = format_ident!("__MiraFunction_{rust_name}", span = ident.span());
     let vis = &item.vis;
     let cfg = conditional_attrs(&item.attrs);
     let call = function_call(&item, &krate)?;
@@ -175,6 +175,7 @@ fn function_call(item: &ItemFn, krate: &Path) -> Result<TokenStream> {
         );
         quote! {
             let #variable: #ty = #krate::__private::native_argument(
+                runtime,
                 *args.get(#index).ok_or_else(|| #krate::MiraError::runtime(
                     #krate::RuntimeErrorKind::MissingArgument { name: #argument_name },
                 ))?,

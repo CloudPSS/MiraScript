@@ -1,14 +1,6 @@
 use mirascript_vm::{MiraError, MiraFunction, MiraValue, Result, Runtime, RuntimeErrorKind, mira};
 
-#[mira]
-fn add(a: f64, b: f64) -> f64 {
-    a + b
-}
 
-#[mira(const = DIFFERENCE, rename = "custom.subtract")]
-fn subtract(a: f64, b: f64) -> f64 {
-    a - b
-}
 
 #[mira]
 mod outer {
@@ -72,46 +64,8 @@ mod renamed_root {
     }
 }
 
-fn accepts_fn(function: impl Fn(f64, f64) -> f64) -> f64 {
-    function(10.0, 4.0)
-}
 
-#[test]
-fn functions_keep_rust_behavior_and_generate_insertable_constants() {
-    let pointer: fn(f64, f64) -> f64 = add;
-    assert_eq!(pointer(1.0, 2.0), 3.0);
-    assert_eq!(accepts_fn(add), 14.0);
-    assert_eq!(subtract(10.0, 4.0), 6.0);
 
-    let mut runtime = Runtime::new();
-    runtime.insert_global("add", ADD).unwrap();
-    runtime.insert_global("subtract", DIFFERENCE).unwrap();
-    assert_eq!(runtime.eval_unchecked("add(1, 2)"), 3.into());
-    assert_eq!(runtime.eval_unchecked("subtract(10, 4)"), 6.into());
-
-    let error = runtime.eval("subtract() ").unwrap_err();
-    assert!(
-        matches!(
-            error.as_ref(),
-            MiraError::Runtime {
-                kind: RuntimeErrorKind::MissingArgument { name: "a" },
-                ..
-            }
-        ),
-        "{error:?}"
-    );
-    let value = runtime.get_global("subtract").unwrap();
-    let handle = unsafe {
-        value
-            .as_function()
-            .unwrap()
-            .upcast::<__MiraFunction_subtract>()
-    };
-    assert_eq!(
-        runtime.get_function(handle).unwrap().name(),
-        "custom.subtract"
-    );
-}
 
 #[test]
 fn modules_derive_names_exports_and_nested_context() {

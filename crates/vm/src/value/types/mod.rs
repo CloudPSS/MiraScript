@@ -2,7 +2,7 @@ mod array;
 mod boolean;
 mod r#extern;
 pub mod field;
-mod function;
+pub mod function;
 mod module;
 mod nil;
 mod number;

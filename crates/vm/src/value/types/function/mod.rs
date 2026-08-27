@@ -4,7 +4,8 @@ use crate::{MiraHandle, Result, Runtime, value::MiraManageable};
 
 use super::{MiraValue, MiraValueKind, value::ValueTag};
 
-mod native;
+pub mod helper;
+pub mod native;
 
 pub use native::MiraNativeFn;
 

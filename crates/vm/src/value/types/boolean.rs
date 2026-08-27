@@ -1,4 +1,4 @@
-use crate::{MiraError, MiraType, Result};
+use crate::{MiraError, MiraType, Result, Runtime, TryFromMira};
 
 use super::{MiraValue, value::RawValue, value::ValueTag};
 
@@ -59,6 +59,12 @@ impl TryFrom<MiraValue> for bool {
     }
 }
 
+impl TryFromMira<'_> for bool {
+    fn from_mira(_runtime: &Runtime, value: MiraValue) -> Result<Self> {
+        bool::try_from(value)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -86,5 +92,6 @@ mod tests {
 
         let value = MiraValue::NIL;
         assert!(bool::try_from(value).is_err());
+        assert!(bool::from_mira(&Runtime::new(), value).is_err());
     }
 }

@@ -1,7 +1,8 @@
+use crate::mira;
+
 #[path = "matrix/mod.rs"]
 mod matrix_impl;
-
-#[crate::mira]
+#[mira]
 pub(super) mod matrix {
     use crate::standard_library::{const_value, is_callable, required};
     use crate::{MiraError, MiraValue, Result, Runtime, RuntimeErrorKind};
