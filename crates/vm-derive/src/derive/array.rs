@@ -2,7 +2,7 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{DeriveInput, Error, Fields, Index, Result, parse_quote};
 
-use crate::{
+use super::{
     container::container_options,
     field::{field_options, into_fields},
     utils::{add_read_bounds, create_getter, impl_common},

@@ -4,12 +4,8 @@
 
 use proc_macro::TokenStream;
 
-mod array;
-mod container;
-mod field;
-mod generic_visiter;
+mod derive;
 mod mira;
-mod record;
 mod utils;
 
 #[proc_macro_attribute]
@@ -31,7 +27,7 @@ pub fn mira(attr: TokenStream, input: TokenStream) -> TokenStream {
 /// Fields may use `#[mira(rename = "name")]` or `#[mira(skip)]`. Generic field
 /// types receive the conversion bounds required by the generated implementation.
 pub fn derive_record(input: TokenStream) -> TokenStream {
-    record::expand(syn::parse_macro_input!(input as syn::DeriveInput))
+    derive::record::expand(syn::parse_macro_input!(input as syn::DeriveInput))
         .unwrap_or_else(syn::Error::into_compile_error)
         .into()
 }
@@ -41,7 +37,7 @@ pub fn derive_record(input: TokenStream) -> TokenStream {
 ///
 /// Tuple fields may use `#[mira(skip)]` and retain their relative order.
 pub fn derive_array(input: TokenStream) -> TokenStream {
-    array::expand(syn::parse_macro_input!(input as syn::DeriveInput))
+    derive::array::expand(syn::parse_macro_input!(input as syn::DeriveInput))
         .unwrap_or_else(syn::Error::into_compile_error)
         .into()
 }

@@ -1,81 +1,15 @@
+mod meta;
+
 use std::collections::HashMap;
 
 use proc_macro2::{Span, TokenStream};
 use quote::{ToTokens, format_ident, quote};
 use syn::{
-    Attribute, Error, FnArg, Ident, Item, ItemConst, ItemFn, ItemMod, LitStr, Meta, Path,
-    PathArguments, Result, ReturnType, Type, parse::Parser, spanned::Spanned,
+    Attribute, Error, FnArg, Ident, Item, ItemConst, ItemFn, ItemMod, LitStr, Path, PathArguments,
+    Result, ReturnType, Type, spanned::Spanned,
 };
 
-use crate::container::ContainerOptions;
-
-#[derive(Default)]
-struct Options {
-    const_name: Option<Ident>,
-    rename: Option<LitStr>,
-    use_name: Option<LitStr>,
-    crate_path: Option<Path>,
-    skip: bool,
-}
-
-impl Options {
-    fn parse_meta(&mut self, meta: syn::meta::ParseNestedMeta<'_>) -> Result<()> {
-        if meta.path.is_ident("const") {
-            if self.const_name.is_some() {
-                return Err(meta.error("duplicate `const` option"));
-            }
-            self.const_name = Some(meta.value()?.parse()?);
-            Ok(())
-        } else if meta.path.is_ident("rename") {
-            if self.rename.is_some() {
-                return Err(meta.error("duplicate `rename` option"));
-            }
-            self.rename = Some(meta.value()?.parse()?);
-            Ok(())
-        } else if meta.path.is_ident("use") {
-            if self.use_name.is_some() {
-                return Err(meta.error("duplicate `use` option"));
-            }
-            self.use_name = Some(meta.value()?.parse()?);
-            Ok(())
-        } else if meta.path.is_ident("crate") {
-            if self.crate_path.is_some() {
-                return Err(meta.error("duplicate `crate` option"));
-            }
-            self.crate_path = Some(meta.value()?.parse()?);
-            Ok(())
-        } else if meta.path.is_ident("skip") {
-            if self.skip {
-                return Err(meta.error("duplicate `skip` option"));
-            }
-            self.skip = true;
-            Ok(())
-        } else {
-            Err(meta.error("unsupported `mira` option"))
-        }
-    }
-
-    fn validate(&self) -> Result<()> {
-        if self.skip
-            && (self.const_name.is_some()
-                || self.rename.is_some()
-                || self.use_name.is_some()
-                || self.crate_path.is_some())
-        {
-            return Err(Error::new(
-                Span::call_site(),
-                "`skip` cannot be combined with another `mira` option",
-            ));
-        }
-        Ok(())
-    }
-}
-
-#[derive(Clone)]
-struct Context {
-    full_name: String,
-    crate_path: Path,
-}
+use meta::{Context, Options};
 
 struct Export {
     key: String,
@@ -89,9 +23,7 @@ struct Expanded {
 }
 
 pub fn expand(attr: TokenStream, input: TokenStream) -> Result<TokenStream> {
-    let mut options = Options::default();
-    syn::meta::parser(|meta| options.parse_meta(meta)).parse2(attr)?;
-    options.validate()?;
+    let options = Options::parse(attr)?;
 
     let item = syn::parse2::<Item>(input)?;
     if options.skip {
@@ -118,10 +50,6 @@ pub fn expand(attr: TokenStream, input: TokenStream) -> Result<TokenStream> {
     }
 }
 
-fn default_crate_path() -> Path {
-    ContainerOptions::default().crate_path
-}
-
 fn expand_function(item: ItemFn, options: Options, parent: Option<&Context>) -> Result<Expanded> {
     validate_function(&item)?;
     let ident = &item.sig.ident;
@@ -144,11 +72,7 @@ fn expand_function(item: ItemFn, options: Options, parent: Option<&Context>) -> 
         .const_name
         .clone()
         .unwrap_or_else(|| upper_ident(ident));
-    let krate = options
-        .crate_path
-        .clone()
-        .or_else(|| parent.map(|parent| parent.crate_path.clone()))
-        .unwrap_or_else(default_crate_path);
+    let krate = options.crate_path(parent);
     let hidden = format_ident!("__MiraFunction_{}", rust_name, span = ident.span());
     let vis = &item.vis;
     let cfg = conditional_attrs(&item.attrs);
@@ -348,11 +272,7 @@ fn expand_module(item: ItemMod, options: Options, parent: Option<&Context>) -> R
         .const_name
         .clone()
         .unwrap_or_else(|| upper_ident(ident));
-    let krate = options
-        .crate_path
-        .clone()
-        .or_else(|| parent.map(|parent| parent.crate_path.clone()))
-        .unwrap_or_else(default_crate_path);
+    let krate = options.crate_path(parent);
     let context = Context {
         full_name: full_name.clone(),
         crate_path: krate.clone(),
@@ -471,7 +391,7 @@ fn expand_module(item: ItemMod, options: Options, parent: Option<&Context>) -> R
 
 fn expand_child(mut item: Item, parent: &Context) -> Result<Expanded> {
     let options = match item_attrs_mut(&mut item) {
-        Some(attrs) => take_options(attrs)?,
+        Some(attrs) => Options::parse_from_attrs(attrs)?,
         None => None,
     };
     let Some(options) = options else {
@@ -514,7 +434,7 @@ fn expand_unmarked(item: Item) -> Result<Expanded> {
     let mut expanded = Vec::with_capacity(items.len());
     for mut child in items {
         let options = match item_attrs_mut(&mut child) {
-            Some(attrs) => take_options(attrs)?,
+            Some(attrs) => Options::parse_from_attrs(attrs)?,
             None => None,
         };
         let tokens = match options {
@@ -593,32 +513,6 @@ fn expand_constant(item: ItemConst, options: Options, _parent: &Context) -> Resu
     })
 }
 
-fn take_options(attrs: &mut Vec<Attribute>) -> Result<Option<Options>> {
-    let mut options = Options::default();
-    let mut found = false;
-    let mut retained = Vec::with_capacity(attrs.len());
-    for attr in attrs.drain(..) {
-        if is_mira_attr(&attr) {
-            found = true;
-            match &attr.meta {
-                Meta::Path(_) => {}
-                Meta::List(_) => attr.parse_nested_meta(|meta| options.parse_meta(meta))?,
-                Meta::NameValue(_) => {
-                    return Err(Error::new_spanned(attr, "expected `#[mira(...)]`"));
-                }
-            }
-        } else {
-            retained.push(attr);
-        }
-    }
-    *attrs = retained;
-    if !found {
-        return Ok(None);
-    }
-    options.validate()?;
-    Ok(Some(options))
-}
-
 fn item_attrs_mut(item: &mut Item) -> Option<&mut Vec<Attribute>> {
     match item {
         Item::Const(item) => Some(&mut item.attrs),
@@ -639,13 +533,6 @@ fn item_attrs_mut(item: &mut Item) -> Option<&mut Vec<Attribute>> {
         Item::Verbatim(_) => None,
         _ => None,
     }
-}
-
-fn is_mira_attr(attr: &Attribute) -> bool {
-    attr.path()
-        .segments
-        .last()
-        .is_some_and(|segment| segment.ident == "mira")
 }
 
 fn conditional_attrs(attrs: &[Attribute]) -> Vec<&Attribute> {

@@ -1,6 +1,6 @@
-use proc_macro_crate::{FoundCrate, crate_name};
-use quote::format_ident;
-use syn::{Attribute, Path, Result, parse_quote};
+use syn::{Attribute, Path, Result};
+
+use crate::utils::default_crate_path;
 
 pub struct ContainerOptions {
     pub crate_path: Path,
@@ -12,25 +12,6 @@ impl Default for ContainerOptions {
             crate_path: default_crate_path(),
         }
     }
-}
-
-fn default_crate_path() -> Path {
-    for (package, default_name) in [
-        ("mirascript", "mirascript"),
-        ("mirascript-vm", "mirascript_vm"),
-    ] {
-        let found = match crate_name(package) {
-            Ok(found) => found,
-            Err(_) => continue,
-        };
-        let name = match found {
-            FoundCrate::Itself => default_name.to_owned(),
-            FoundCrate::Name(name) => name,
-        };
-        let ident = format_ident!("{name}");
-        return parse_quote!(::#ident);
-    }
-    parse_quote!(::mirascript_vm)
 }
 
 pub fn container_options(attrs: &[Attribute]) -> Result<ContainerOptions> {
