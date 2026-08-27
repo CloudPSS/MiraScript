@@ -105,20 +105,20 @@ fn add(a, b) { a + b }
 
 MiraScript 采用**编译 + 跨平台执行**架构，性能与兼容性兼备：
 
-1.  **Rust 编译器**
+1. **Rust 编译器**
 
-    源码解析 → 生成字节码，执行效率高、安全性强。
+   源码解析 → 生成字节码，执行效率高、安全性强。
 
-2.  **双 Runtime 执行环境**
+2. **双 Runtime 执行环境**
 
-    提供 **JavaScript / Python** 字节码转译能力，**一次编写，前后端一致运行**，无缝对接 CloudPSS 前端与 SDK。
+   提供 **JavaScript / Python** 字节码转译能力，**一次编写，前后端一致运行**，无缝对接 CloudPSS 前端与 SDK。
 
-3.  **专业编辑工具链**
+3. **专业编辑工具链**
 
-    支持 [Monaco](https://www.npmjs.com/package/@mirascript/monaco) / [VS Code](https://marketplace.visualstudio.com/items?itemName=CloudPSS.mirascript) ([Open VSX](https://open-vsx.org/extension/CloudPSS/mirascript)) 插件，提供：
-    - 语法高亮、自动补全、签名提示
-    - 实时代码诊断、重构、格式化
-    - 内嵌提示（Inlay Hints）
+   支持 [Monaco](https://www.npmjs.com/package/@mirascript/monaco) / [VS Code](https://marketplace.visualstudio.com/items?itemName=CloudPSS.mirascript) ([Open VSX](https://open-vsx.org/extension/CloudPSS/mirascript)) 插件，提供：
+   - 语法高亮、自动补全、签名提示
+   - 实时代码诊断、重构、格式化
+   - 内嵌提示（Inlay Hints）
 
 ## 开放开源
 

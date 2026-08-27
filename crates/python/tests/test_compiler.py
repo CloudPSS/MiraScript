@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import struct
-import sys
-import types
 
 import pytest
 
