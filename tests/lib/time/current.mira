@@ -1,5 +1,5 @@
 t_ne(to_timestamp(nil), nan);
-t_ne(to_timestamp() > 0);
+t_true(to_timestamp() > 0);
 t_eq(to_datetime().year::type(), 'number');
 t_eq(to_datetime(nil).year::type(), 'number');
 t_eq(to_datetime(nil, 8).year::type(), 'number');

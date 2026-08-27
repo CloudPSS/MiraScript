@@ -59,3 +59,11 @@ impl<'a> TryFromMira<'a> for &'a str {
         str.ok_or_else(|| MiraError::conversion_type("&str", value.value_type()))
     }
 }
+
+impl TryFromMira<'_> for String {
+    fn from_mira(runtime: &Runtime, value: MiraValue) -> Result<Self> {
+        let str = value.as_str(runtime)?;
+        str.map(str::to_owned)
+            .ok_or_else(|| MiraError::conversion_type("String", value.value_type()))
+    }
+}

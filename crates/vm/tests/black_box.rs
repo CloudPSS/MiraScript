@@ -3,97 +3,124 @@ use std::path::Path;
 use std::time::Duration;
 
 use indexmap::IndexMap;
-use mirascript_vm::{MiraManageable, MiraNativeFn, MiraValue, RunOptions, Runtime, compile};
+use mirascript_vm::{MiraManageable, MiraNativeFn, MiraValue, RunOptions, Runtime, compile, mira};
+
+#[mira]
+fn t_eq(
+    runtime: &mut Runtime,
+    left: MiraValue,
+    right: MiraValue,
+    message: Option<String>,
+) -> Result<MiraValue, anyhow::Error> {
+    if runtime.values_equal(left, right)? {
+        Ok(MiraValue::NIL)
+    } else {
+        let left_string = left.as_str(runtime)?.map(str::to_owned);
+        let right_string = right.as_str(runtime)?.map(str::to_owned);
+        anyhow::bail!(
+            "assertion failed: {left:?} {left_string:?} != {right:?} {right_string:?}; message={:?}",
+            message
+        )
+    }
+}
+
+#[mira]
+fn t_ne(
+    runtime: &mut Runtime,
+    left: MiraValue,
+    right: MiraValue,
+    message: Option<String>,
+) -> Result<MiraValue, anyhow::Error> {
+    if !runtime.values_equal(left, right)? {
+        Ok(MiraValue::NIL)
+    } else {
+        let left_string = left.as_str(runtime)?.map(str::to_owned);
+        let right_string = right.as_str(runtime)?.map(str::to_owned);
+        anyhow::bail!(
+            "assertion failed: {left:?} {left_string:?} == {right:?} {right_string:?}; message={:?}",
+            message
+        )
+    }
+}
+
+#[mira]
+fn t_true(
+    runtime: &mut Runtime,
+    value: MiraValue,
+    message: Option<String>,
+) -> Result<MiraValue, anyhow::Error> {
+    if value.as_boolean() == Some(true) {
+        Ok(MiraValue::NIL)
+    } else {
+        let value_string = value.as_str(runtime)?.map(str::to_owned);
+        anyhow::bail!(
+            "assertion failed: expected true, got {value:?} {value_string:?}; message={:?}",
+            message
+        )
+    }
+}
+
+#[mira]
+fn t_false(
+    runtime: &mut Runtime,
+    value: MiraValue,
+    message: Option<String>,
+) -> Result<MiraValue, anyhow::Error> {
+    if value.as_boolean() == Some(false) {
+        Ok(MiraValue::NIL)
+    } else {
+        let value_string = value.as_str(runtime)?.map(str::to_owned);
+        anyhow::bail!(
+            "assertion failed: expected false, got {value:?} {value_string:?}; message={:?}",
+            message
+        )
+    }
+}
+
+#[mira]
+fn t_throws(
+    runtime: &mut Runtime,
+    function: MiraValue,
+    message: Option<String>,
+) -> Result<MiraValue, anyhow::Error> {
+    match runtime.call(function, &[]) {
+        Ok(value) => {
+            let value_string = value.as_str(runtime)?.map(str::to_owned);
+            anyhow::bail!(
+                "assertion failed: expected function to throw, returned {value:?} {value_string:?}; message={:?}",
+                message
+            )
+        }
+        Err(_) => Ok(MiraValue::NIL),
+    }
+}
+
+#[mira]
+fn t_timeout(
+    _runtime: &mut Runtime,
+    _function: MiraValue,
+    _message: Option<String>,
+) -> Result<MiraValue, anyhow::Error> {
+    // This is a placeholder for a timeout test. In this black-box test, we don't actually implement a timeout mechanism, so we just return Nil to indicate the test passed.
+    Ok(MiraValue::NIL)
+}
+
+#[mira]
+fn t_never(message: Option<String>) -> Result<MiraValue, anyhow::Error> {
+    anyhow::bail!("unexpected execution: message={:?}", message)
+}
 
 fn runtime(options: RunOptions) -> Runtime {
     let mut runtime = Runtime::with_options(options);
-    runtime
-        .insert_fn(
-            "t_eq",
-            MiraNativeFn::new(  |runtime, args| {
-                let left = args.first().cloned().unwrap_or(MiraValue::NIL);
-                let right = args.get(1).cloned().unwrap_or(MiraValue::NIL);
-                if runtime.values_equal(left, right)? {
-                    Ok(MiraValue::NIL)
-                } else {
-                    let left_string = left.as_str(runtime)?.map(str::to_owned);
-                    let right_string = right.as_str(runtime)?.map(str::to_owned);
-                    anyhow::bail!(
-                        "assertion failed: {left:?} {left_string:?} != {right:?} {right_string:?}; message={:?}",
-                        args.get(2)
-                    )
-                }
-            }),
-        )
-        .unwrap();
-    runtime
-        .insert_fn(
-            "t_ne",
-            MiraNativeFn::new(|runtime, args| {
-                let left = args.first().cloned().unwrap_or(MiraValue::NIL);
-                let right = args.get(1).cloned().unwrap_or(MiraValue::NIL);
-                if !runtime.values_equal(left, right)? {
-                    Ok(MiraValue::NIL)
-                } else {
-                    anyhow::bail!(
-                        "assertion failed: {left:?} == {right:?}; message={:?}",
-                        args.get(2)
-                    )
-                }
-            }),
-        )
-        .unwrap();
-    runtime
-        .insert_fn(
-            "t_true",
-            MiraNativeFn::new(|_, args| {
-                let value = args.first();
-                if value.and_then(MiraValue::as_boolean) == Some(true) {
-                    Ok(MiraValue::NIL)
-                } else {
-                    anyhow::bail!("expected true, got {value:?}; message={:?}", args.get(1))
-                }
-            }),
-        )
-        .unwrap();
-    runtime
-        .insert_fn(
-            "t_false",
-            MiraNativeFn::new(|_, args| {
-                let value = args.first();
-                if value.and_then(MiraValue::as_boolean) == Some(false) {
-                    Ok(MiraValue::NIL)
-                } else {
-                    anyhow::bail!("expected false, got {value:?}; message={:?}", args.get(1))
-                }
-            }),
-        )
-        .unwrap();
-    runtime
-        .insert_fn(
-            "t_throws",
-            MiraNativeFn::new(|runtime, args| {
-                let function = *args
-                    .first()
-                    .ok_or_else(|| anyhow::anyhow!("t_throws requires a function"))?;
-                match runtime.call(function, &[]) {
-                    Ok(value) => anyhow::bail!("expected function to throw, returned {value:?}"),
-                    Err(_) => Ok(MiraValue::NIL),
-                }
-            }),
-        )
-        .unwrap();
-    runtime
-        .insert_global("t_timeout", MiraNativeFn::ok(|_, _| MiraValue::NIL))
-        .unwrap();
-    runtime
-        .insert_global(
-            "t_never",
-            MiraNativeFn::err(|_, args| {
-                anyhow::anyhow!("unexpected execution: {:?}", args.first())
-            }),
-        )
-        .unwrap();
+
+    runtime.insert_global("t_eq", T_EQ).unwrap();
+    runtime.insert_global("t_ne", T_NE).unwrap();
+    runtime.insert_global("t_true", T_TRUE).unwrap();
+    runtime.insert_global("t_false", T_FALSE).unwrap();
+    runtime.insert_global("t_throws", T_THROWS).unwrap();
+    runtime.insert_global("t_timeout", T_TIMEOUT).unwrap();
+    runtime.insert_global("t_never", T_NEVER).unwrap();
+
     runtime
         .insert_global("v_array", Vec::<MiraValue>::new())
         .unwrap();
