@@ -169,17 +169,27 @@ fn function_call(item: &ItemFn, krate: &Path) -> Result<TokenStream> {
     let conversions = fixed.iter().enumerate().map(|(index, argument)| {
         let variable = format_ident!("__mira_arg_{index}");
         let ty = &argument.ty;
+        let optional = is_optional(ty);
         let argument_name = LitStr::new(
             &argument.pat.to_token_stream().to_string(),
             argument.pat.span(),
         );
-        quote! {
-            let #variable: #ty = #krate::__private::native_argument(
-                runtime,
-                *args.get(#index).ok_or_else(|| #krate::MiraError::runtime(
-                    #krate::RuntimeErrorKind::MissingArgument { name: #argument_name },
-                ))?,
-            )?;
+        if optional {
+            quote! {
+                let #variable: #ty = #krate::__private::native_argument_optional(
+                    runtime,
+                    args.get(#index).copied(),
+                )?;
+            }
+        } else {
+            quote! {
+                let #variable: #ty = #krate::__private::native_argument(
+                    runtime,
+                    *args.get(#index).ok_or_else(|| #krate::MiraError::runtime(
+                        #krate::RuntimeErrorKind::MissingArgument { name: #argument_name },
+                    ))?,
+                )?;
+            }
         }
     });
     let fixed_variables = (0..fixed.len()).map(|index| format_ident!("__mira_arg_{index}"));
@@ -226,6 +236,17 @@ fn is_rest(ty: &Type) -> bool {
         return false;
     };
     is_path_name(&slice.elem, "MiraValue")
+}
+
+fn is_optional(ty: &Type) -> bool {
+    let Type::Path(path) = ty else {
+        return false;
+    };
+    path.qself.is_none()
+        && path.path.segments.last().is_some_and(|segment| {
+            segment.ident == "Option"
+                && matches!(segment.arguments, PathArguments::AngleBracketed(_))
+        })
 }
 
 fn is_path_name(ty: &Type, name: &str) -> bool {

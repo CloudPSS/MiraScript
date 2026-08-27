@@ -1,7 +1,5 @@
 use mirascript_vm::{MiraError, MiraFunction, MiraValue, Result, Runtime, RuntimeErrorKind, mira};
 
-
-
 #[mira]
 mod outer {
     use super::*;
@@ -63,9 +61,6 @@ mod renamed_root {
         }
     }
 }
-
-
-
 
 #[test]
 fn modules_derive_names_exports_and_nested_context() {

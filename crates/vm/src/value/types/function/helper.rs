@@ -8,7 +8,7 @@ where
     T::from_mira(runtime, value)
 }
 
-/// Convert one fixed native-function argument.
+/// Convert one optional native-function argument.
 pub fn native_argument_optional<'a, T>(
     runtime: &'a Runtime,
     value: Option<MiraValue>,
