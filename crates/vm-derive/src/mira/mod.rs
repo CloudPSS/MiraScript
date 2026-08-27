@@ -1,3 +1,4 @@
+mod expand_const;
 mod expand_fn;
 mod expand_mod;
 mod meta;

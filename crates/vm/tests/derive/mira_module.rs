@@ -41,6 +41,8 @@ mod outer {
     }
 
     pub(super) mod mid {
+        use super::*;
+
         #[mira]
         pub(crate) mod inner {
             #[mira]

@@ -40,6 +40,43 @@ fn function_accept_optional() {
 }
 
 #[test]
+fn function_accept_rest() {
+    #[mira]
+    fn sum(len: Option<usize>, rest: &[MiraValue]) -> anyhow::Result<Option<f64>> {
+        if let Some(len) = len
+            && len != rest.len()
+        {
+            anyhow::bail!("expected {len} arguments, got {}", rest.len());
+        }
+        let mut total = 0f64;
+        for item in rest {
+            let number = item
+                .as_number()
+                .ok_or_else(|| anyhow::anyhow!("expected number, got {}", item.value_type()))?;
+            total += number;
+        }
+        Ok(Some(total))
+    }
+
+    let mut runtime = Runtime::new();
+    runtime.insert_global("sum", SUM).unwrap();
+    assert_eq!(runtime.eval_unchecked("sum(nil, 1, 2, 3)"), 6.into());
+    assert!(
+        runtime
+            .eval("sum(1, 'a')")
+            .unwrap_err()
+            .to_string()
+            .contains("expected number, got string")
+    );
+    assert_eq!(
+        runtime.eval("sum(1)").unwrap_err().to_string(),
+        "expected 1 arguments, got 0"
+    );
+    assert_eq!(runtime.eval_unchecked("sum(nil)"), 0.into());
+    assert_eq!(runtime.eval_unchecked("sum()"), 0.into());
+}
+
+#[test]
 fn function_accept_bool() {
     #[mira]
     fn inv(value: bool) -> bool {

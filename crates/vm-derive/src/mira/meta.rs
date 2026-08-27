@@ -3,13 +3,6 @@ use syn::{Attribute, Error, Ident, LitStr, Meta, Path, Result, parse::Parser};
 
 use crate::utils::default_crate_path;
 
-fn is_mira_attr(attr: &Attribute) -> bool {
-    attr.path()
-        .segments
-        .last()
-        .is_some_and(|segment| segment.ident == "mira")
-}
-
 #[derive(Clone)]
 pub(crate) struct Context {
     pub full_name: String,
@@ -34,41 +27,50 @@ impl Options {
     }
 }
 
+fn is_mira_attr(attr: &Attribute) -> bool {
+    attr.path()
+        .segments
+        .last()
+        .is_some_and(|segment| segment.ident == "mira")
+}
+
+fn parse_field<T: syn::parse::Parse>(
+    meta: &syn::meta::ParseNestedMeta<'_>,
+    name: &str,
+    field: &mut Option<T>,
+) -> Result<bool> {
+    if !meta.path.is_ident(name) {
+        return Ok(false);
+    }
+    if field.is_some() {
+        return Err(meta.error(format!("duplicate `{name}` option")));
+    }
+    *field = Some(meta.value()?.parse()?);
+    Ok(true)
+}
+
 impl Options {
     fn parse_meta(&mut self, meta: syn::meta::ParseNestedMeta<'_>) -> Result<()> {
-        if meta.path.is_ident("const") {
-            if self.const_name.is_some() {
-                return Err(meta.error("duplicate `const` option"));
-            }
-            self.const_name = Some(meta.value()?.parse()?);
-            Ok(())
-        } else if meta.path.is_ident("rename") {
-            if self.rename.is_some() {
-                return Err(meta.error("duplicate `rename` option"));
-            }
-            self.rename = Some(meta.value()?.parse()?);
-            Ok(())
-        } else if meta.path.is_ident("use") {
-            if self.use_name.is_some() {
-                return Err(meta.error("duplicate `use` option"));
-            }
-            self.use_name = Some(meta.value()?.parse()?);
-            Ok(())
-        } else if meta.path.is_ident("crate") {
-            if self.crate_path.is_some() {
-                return Err(meta.error("duplicate `crate` option"));
-            }
-            self.crate_path = Some(meta.value()?.parse()?);
-            Ok(())
-        } else if meta.path.is_ident("skip") {
+        if parse_field(&meta, "const", &mut self.const_name)? {
+            return Ok(());
+        }
+        if parse_field(&meta, "rename", &mut self.rename)? {
+            return Ok(());
+        }
+        if parse_field(&meta, "use", &mut self.use_name)? {
+            return Ok(());
+        }
+        if parse_field(&meta, "crate", &mut self.crate_path)? {
+            return Ok(());
+        }
+        if meta.path.is_ident("skip") {
             if self.skip {
                 return Err(meta.error("duplicate `skip` option"));
             }
             self.skip = true;
-            Ok(())
-        } else {
-            Err(meta.error("unsupported `mira` option"))
+            return Ok(());
         }
+        Err(meta.error("unsupported `mira` option"))
     }
 
     fn validate(&self) -> Result<()> {

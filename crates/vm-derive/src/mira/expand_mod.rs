@@ -1,9 +1,12 @@
 use std::collections::HashMap;
 
 use quote::{ToTokens, format_ident, quote};
-use syn::{Attribute, Error, Item, ItemConst, ItemMod, LitStr, Result};
+use syn::{Attribute, Error, Item, ItemMod, LitStr, Result};
 
-use super::{Context, Expanded, Export, Options, expand_fn::expand as expand_fn, utils::*};
+use super::{
+    Context, Expanded, Export, Options, expand_const::expand as expand_const,
+    expand_fn::expand as expand_fn, utils::*,
+};
 
 pub fn expand(item: ItemMod, options: Options, parent: Option<&Context>) -> Result<Expanded> {
     let ident = &item.ident;
@@ -148,145 +151,48 @@ fn expand_child(mut item: Item, parent: &Context) -> Result<Expanded> {
         Some(attrs) => Options::parse_from_attrs(attrs)?,
         None => None,
     };
-    let Some(options) = options else {
-        return expand_unmarked(item);
-    };
-    if options.skip {
-        return Ok(Expanded {
+    if let Some(options) = options
+        && !options.skip
+    {
+        match item {
+            Item::Fn(item) => expand_fn(item, options, Some(parent)),
+            Item::Mod(item) => expand(item, options, Some(parent)),
+            Item::Const(item) => expand_const(item, options, parent),
+            item => Err(Error::new_spanned(
+                item,
+                "a `#[mira]` module can export functions, constants, and inline modules",
+            )),
+        }
+    } else {
+        Ok(Expanded {
             tokens: item.into_token_stream(),
             export: None,
-        });
+        })
     }
-    match item {
-        Item::Fn(item) => expand_fn(item, options, Some(parent)),
-        Item::Mod(item) => expand(item, options, Some(parent)),
-        Item::Const(item) => expand_constant(item, options, parent),
-        item => Err(Error::new_spanned(
-            item,
-            "a `#[mira]` module can export functions, constants, and inline modules",
-        )),
-    }
-}
-
-fn expand_unmarked(item: Item) -> Result<Expanded> {
-    let Item::Mod(mut module) = item else {
-        return Ok(Expanded {
-            tokens: item.into_token_stream(),
-            export: None,
-        });
-    };
-    let Some((_, items)) = module.content.take() else {
-        return Err(Error::new_spanned(
-            module,
-            "file modules cannot appear inside a `#[mira]` module",
-        ));
-    };
-    let attrs = &module.attrs;
-    let vis = &module.vis;
-    let unsafety = &module.unsafety;
-    let ident = &module.ident;
-    let mut expanded = Vec::with_capacity(items.len());
-    for mut child in items {
-        let options = match item_attrs_mut(&mut child) {
-            Some(attrs) => Options::parse_from_attrs(attrs)?,
-            None => None,
-        };
-        let tokens = match options {
-            Some(options) if options.skip => child.into_token_stream(),
-            Some(options) => {
-                if let Some(use_name) = options.use_name {
-                    return Err(Error::new_spanned(
-                        use_name,
-                        "`use` is only valid on a direct child of a `#[mira]` module",
-                    ));
-                }
-                match child {
-                    Item::Fn(item) => expand_fn(item, options, None)?.tokens,
-                    Item::Mod(item) => expand(item, options, None)?.tokens,
-                    Item::Const(item) => {
-                        return Err(Error::new_spanned(
-                            item,
-                            "`#[mira]` constants are only valid inside a `#[mira]` module",
-                        ));
-                    }
-                    item => {
-                        return Err(Error::new_spanned(
-                            item,
-                            "`#[mira]` supports functions and inline modules",
-                        ));
-                    }
-                }
-            }
-            None => expand_unmarked(child)?.tokens,
-        };
-        expanded.push(tokens);
-    }
-    Ok(Expanded {
-        tokens: quote! {
-            #(#attrs)*
-            #vis #unsafety mod #ident {
-                #(#expanded)*
-            }
-        },
-        export: None,
-    })
-}
-
-fn expand_constant(item: ItemConst, options: Options, _parent: &Context) -> Result<Expanded> {
-    if let Some(const_name) = options.const_name {
-        return Err(Error::new_spanned(
-            const_name,
-            "`const` is not valid on a Rust constant",
-        ));
-    }
-    if let Some(rename) = options.rename {
-        return Err(Error::new_spanned(
-            rename,
-            "`rename` is not valid on a Rust constant; use `use` for its export key",
-        ));
-    }
-    if let Some(crate_path) = options.crate_path {
-        return Err(Error::new_spanned(
-            crate_path,
-            "`crate` is inherited from the containing `#[mira]` module",
-        ));
-    }
-    let ident = item.ident.clone();
-    let key = options
-        .use_name
-        .as_ref()
-        .map(LitStr::value)
-        .unwrap_or_else(|| rust_name(&ident));
-    Ok(Expanded {
-        tokens: item.into_token_stream(),
-        export: Some(Export {
-            key,
-            accessor: quote!(#ident),
-            span: ident.span(),
-        }),
-    })
 }
 
 fn item_attrs_mut(item: &mut Item) -> Option<&mut Vec<Attribute>> {
-    match item {
-        Item::Const(item) => Some(&mut item.attrs),
-        Item::Enum(item) => Some(&mut item.attrs),
-        Item::ExternCrate(item) => Some(&mut item.attrs),
-        Item::Fn(item) => Some(&mut item.attrs),
-        Item::ForeignMod(item) => Some(&mut item.attrs),
-        Item::Impl(item) => Some(&mut item.attrs),
-        Item::Macro(item) => Some(&mut item.attrs),
-        Item::Mod(item) => Some(&mut item.attrs),
-        Item::Static(item) => Some(&mut item.attrs),
-        Item::Struct(item) => Some(&mut item.attrs),
-        Item::Trait(item) => Some(&mut item.attrs),
-        Item::TraitAlias(item) => Some(&mut item.attrs),
-        Item::Type(item) => Some(&mut item.attrs),
-        Item::Union(item) => Some(&mut item.attrs),
-        Item::Use(item) => Some(&mut item.attrs),
-        Item::Verbatim(_) => None,
-        _ => None,
-    }
+    use syn::Item::*;
+
+    Some(match item {
+        Const(x) => &mut x.attrs,
+        Enum(x) => &mut x.attrs,
+        ExternCrate(x) => &mut x.attrs,
+        Fn(x) => &mut x.attrs,
+        ForeignMod(x) => &mut x.attrs,
+        Impl(x) => &mut x.attrs,
+        Macro(x) => &mut x.attrs,
+        Mod(x) => &mut x.attrs,
+        Static(x) => &mut x.attrs,
+        Struct(x) => &mut x.attrs,
+        Trait(x) => &mut x.attrs,
+        TraitAlias(x) => &mut x.attrs,
+        Type(x) => &mut x.attrs,
+        Union(x) => &mut x.attrs,
+        Use(x) => &mut x.attrs,
+        Verbatim(_) => return None,
+        _ => return None,
+    })
 }
 
 fn reject_duplicate_exports(exports: &[Export]) -> Result<()> {
