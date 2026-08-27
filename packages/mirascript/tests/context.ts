@@ -9,6 +9,7 @@ import {
     type VmFunction,
     type VmContext,
     type VmContextRecord,
+    type VmValue,
 } from '@mirascript/mirascript';
 import { DefaultVmContext, lib } from '@mirascript/mirascript/subtle';
 
@@ -62,17 +63,25 @@ test('EmptyContext', (t) => {
     checkContext(t, context);
 });
 
-test('ValueContext', (t) => {
-    const env: VmContextRecord = {
-        a: 1,
-        b: [1, 2, 3],
-        sin: 'sin',
-        $ud: undefined,
-        $nul: null,
-    };
-    const context = createVmContext(env, null, (key) => key);
-    const keys = checkContext(t, context);
+const COMMON_ENV: VmContextRecord = {
+    a: 1,
+    b: [1, 2, 3],
+    sin: 'sin',
+    $ud: undefined,
+    $nul: null,
+    $set: new Set() as never,
+    $date: new Date() as never,
+    $fn: (() => 0) as never,
+};
 
+const COMMON_DESCRIBER = (key: string): string | undefined => key;
+
+function checkValueContext(
+    t: ExecutionContext,
+    context: VmContext,
+    keys: ReadonlySet<string>,
+    env: VmContextRecord,
+): void {
     t.is(context.get('sin'), 'sin');
     t.deepEqual(context.get('a'), 1);
     t.deepEqual(context.get('b'), [1, 2, 3]);
@@ -88,6 +97,9 @@ test('ValueContext', (t) => {
     t.true(keys.has('$ud'));
     t.true(keys.has('$nul'));
 
+    t.true(context.has('$ud'));
+    t.true(context.has('$nul'));
+
     t.is(context.get('$ud'), null);
     t.is(context.get('$nul'), null);
 
@@ -98,62 +110,9 @@ test('ValueContext', (t) => {
     t.is(context.describe('$ud'), '$ud');
     t.is(context.describe('$nul'), '$nul');
 
-    env['c'] = [4, 5];
-    t.true(context.has('c'));
-    t.is(context.get('c'), env['c']);
-    t.is(context.describe('c'), 'c');
-});
-
-test('Value2Context', (t) => {
-    const env: VmContextRecord = {
-        a: 1,
-        b: [1, 2, 3],
-        sin: 'sin',
-        $ud: undefined,
-        $nul: null,
-        $set: new Set() as never,
-        $date: new Date() as never,
-        $fn: (() => 0) as never,
-    };
-    const context = createVmContext(env, { c: [4, 5], $ud2: undefined, $nul2: null }, (key) => key);
-    const keys = checkContext(t, context);
-
-    t.is(context.get('sin'), 'sin');
-    t.deepEqual(context.get('a'), 1);
-    t.deepEqual(context.get('b'), [1, 2, 3]);
-    t.true(isVmExtern(context.get('c')));
-
-    t.true(context.has('a'));
-    t.true(context.has('b'));
-    t.true(context.has('c'));
-
-    t.true(keys.has('a'));
-    t.true(keys.has('b'));
-    t.true(keys.has('c'));
-
-    t.true(keys.has('$ud'));
-    t.true(keys.has('$nul'));
-    t.true(keys.has('$ud2'));
-    t.true(keys.has('$nul2'));
-
-    t.is(context.get('$ud'), null);
-    t.is(context.get('$nul'), null);
-    t.is(context.get('$ud2'), null);
-    t.is(context.get('$nul2'), null);
-
     t.true(context.has('$set'));
     t.true(context.has('$date'));
     t.true(context.has('$fn'));
-
-    t.is(context.describe('sin'), 'sin');
-    t.is(context.describe('a'), 'a');
-    t.is(context.describe('b'), 'b');
-    t.is(context.describe('c'), 'c');
-    t.is(context.describe('$ud'), '$ud');
-    t.is(context.describe('$nul'), '$nul');
-    t.is(context.describe('$ud2'), '$ud2');
-    t.is(context.describe('$nul2'), '$nul2');
-
     t.is(context.describe('$set'), '$set');
     t.is(context.describe('$date'), '$date');
     t.is(context.describe('$fn'), '$fn');
@@ -162,14 +121,49 @@ test('Value2Context', (t) => {
     t.true(context.has('c'));
     t.is(context.get('c'), env['c']);
     t.is(context.describe('c'), 'c');
+
+    delete env['c'];
+    t.false(context.has('c'));
+    t.throws(() => context.get('c'), { message: `Global variable 'c' is not defined.`, instanceOf: VmError });
+    t.is(context.describe('c'), undefined);
+}
+
+test('ValueContext', (t) => {
+    const env: VmContextRecord = { ...COMMON_ENV };
+    const context = createVmContext(env, null, COMMON_DESCRIBER);
+
+    const keys = checkContext(t, context);
+    checkValueContext(t, context, keys, env);
 });
+
+test('Value2Context', (t) => {
+    const env: VmContextRecord = { ...COMMON_ENV };
+    const context = createVmContext(env, { e: [4, 5], $ud2: undefined, $nul2: null }, COMMON_DESCRIBER);
+
+    const keys = checkContext(t, context);
+    checkValueContext(t, context, keys, env);
+
+    t.true(isVmExtern(context.get('e')));
+    t.true(context.has('e'));
+    t.true(keys.has('e'));
+
+    t.true(keys.has('$ud2'));
+    t.true(keys.has('$nul2'));
+
+    t.is(context.get('$ud2'), null);
+    t.is(context.get('$nul2'), null);
+
+    t.is(context.describe('$ud2'), '$ud2');
+    t.is(context.describe('$nul2'), '$nul2');
+});
+
 test('Value2Context extern only', (t) => {
     const extern: Record<string, unknown> = {
         $set: new Set(),
         $date: new Date(),
         $fn: () => 0,
     };
-    const context = createVmContext(null, extern, (key) => key);
+    const context = createVmContext(null, extern, COMMON_DESCRIBER);
     const keys = checkContext(t, context);
 
     t.true(context.has('$set'));
@@ -194,30 +188,22 @@ test('Value2Context extern only', (t) => {
     t.is(context.describe('$fn'), '$fn');
 });
 
-test('FactoryContext', (t) => {
-    const context = createVmContext(
-        (key) => (key.length === 1 ? 'k_' + key : !key ? null : undefined),
-        () => ['d'],
-        (key) => key,
-    );
+const FACTORY_ENV = (key: string): VmValue | undefined => {
+    if (key.length === 1) return 'k_' + key;
+    if (!key) return null;
+    return undefined;
+};
 
+function checkFactoryContext(t: ExecutionContext, context: VmContext): void {
     t.is(context.get(''), null);
     t.throws(() => context.get('aa'), { message: `Global variable 'aa' is not defined.`, instanceOf: VmError });
-
     t.true(context.has(''));
     t.false(context.has('aa'));
-
-    const keys = checkContext(t, context);
 
     t.true(context.has('a'));
     t.true(context.has('b'));
     t.true(context.has('c'));
     t.true(context.has('d'));
-
-    t.false(keys.has('a'));
-    t.false(keys.has('b'));
-    t.false(keys.has('c'));
-    t.true(keys.has('d'));
 
     t.is(context.get('a'), 'k_a');
     t.is(context.get('b'), 'k_b');
@@ -229,27 +215,28 @@ test('FactoryContext', (t) => {
     t.is(context.describe('c'), 'c');
     t.is(context.describe('d'), 'd');
     t.is(context.describe('aa'), undefined);
+}
+
+test('FactoryContext', (t) => {
+    const context = createVmContext(FACTORY_ENV, () => ['d'], COMMON_DESCRIBER);
+    const keys = checkContext(t, context);
+    checkFactoryContext(t, context);
+
+    t.false(keys.has('a'));
+    t.false(keys.has('b'));
+    t.false(keys.has('c'));
+    t.true(keys.has('d'));
 });
 
 test('FactoryContextNoEnumerator', (t) => {
-    const context = createVmContext((key) => (key.length === 1 ? 'k_' + key : !key ? null : undefined));
-
+    const context = createVmContext(FACTORY_ENV, null, COMMON_DESCRIBER);
     const keys = checkContext(t, context);
-
-    t.true(context.has('a'));
-    t.true(context.has('b'));
-    t.true(context.has('c'));
-    t.true(context.has('d'));
+    checkFactoryContext(t, context);
 
     t.false(keys.has('a'));
     t.false(keys.has('b'));
     t.false(keys.has('c'));
     t.false(keys.has('d'));
-
-    t.is(context.get('a'), 'k_a');
-    t.is(context.get('b'), 'k_b');
-    t.is(context.get('c'), 'k_c');
-    t.is(context.get('d'), 'k_d');
 });
 
 test('defineVmContextValue', (t) => {
