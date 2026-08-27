@@ -200,7 +200,7 @@ fn function_call(item: &ItemFn, krate: &Path) -> Result<TokenStream> {
     arguments.extend(fixed_variables.map(|variable| quote!(#variable)));
     if rest {
         let fixed_len = fixed.len();
-        arguments.push(quote!(&args[#fixed_len..]));
+        arguments.push(quote!(if args.len() > #fixed_len { &args[#fixed_len..] } else { &[] }));
     }
     let ident = &item.sig.ident;
     let invocation = quote!(#ident(#(#arguments),*));
