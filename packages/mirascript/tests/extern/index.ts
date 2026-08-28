@@ -1,12 +1,5 @@
 import test from 'ava';
-import {
-    createVmContext,
-    VmExtern,
-    VmFunction,
-    unwrapFromVmValue,
-    type VmArray,
-    type VmRecord,
-} from '@mirascript/mirascript';
+import { createVmContext, VmExtern, unwrapFromVmValue } from '@mirascript/mirascript';
 import { exec } from './_exec.ts';
 
 test('extern wrap value', (t) => {

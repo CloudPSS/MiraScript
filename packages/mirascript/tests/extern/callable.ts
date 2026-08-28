@@ -1,11 +1,8 @@
 import test from 'ava';
 import {
-    compileSync,
     createVmContext,
     isVmExtern,
     type VmExtern,
-    type VmContext,
-    type VmValue,
     unwrapFromVmValue,
     isVmCallable,
     isVmFunction,
