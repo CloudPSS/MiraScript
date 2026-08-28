@@ -1,0 +1,17 @@
+error: expected `#[mira(...)]`
+ --> tests/derive/fail/mira_invalid_format.rs:5:5
+  |
+5 |     #[mira = "path"]
+  |     ^^^^^^^^^^^^^^^^
+
+error: key-value macro attributes are not supported
+ --> tests/derive/fail/mira_invalid_format.rs:9:1
+  |
+9 | #[mira = "path"]
+  | ^^^^^^^^^^^^^^^^
+
+error: unexpected literal in nested attribute, expected ident
+ --> tests/derive/fail/mira_invalid_format.rs:9:10
+  |
+9 | #[mira = "path"]
+  |          ^^^^^^

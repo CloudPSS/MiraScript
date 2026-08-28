@@ -1,0 +1,31 @@
+error: `#[mira]` constants are only valid inside a `#[mira]` module
+ --> tests/derive/fail/mira_unsupported_item.rs:4:1
+  |
+4 | const TEST: u8 = 1;
+  | ^^^^^^^^^^^^^^^^^^^
+
+error: `#[mira]` supports functions and inline modules
+ --> tests/derive/fail/mira_unsupported_item.rs:7:1
+  |
+7 | / struct TestStruct {
+8 | |     value: u8,
+9 | | }
+  | |_^
+
+error: `#[mira]` supports functions and inline modules
+  --> tests/derive/fail/mira_unsupported_item.rs:12:1
+   |
+12 | enum TestEnum {}
+   | ^^^^^^^^^^^^^^^^
+
+error: `#[mira]` supports functions and inline modules
+  --> tests/derive/fail/mira_unsupported_item.rs:15:1
+   |
+15 | use std::rc::Rc;
+   | ^^^^^^^^^^^^^^^^
+
+error: `#[mira]` supports functions and inline modules
+  --> tests/derive/fail/mira_unsupported_item.rs:18:1
+   |
+18 | type TestType = u8;
+   | ^^^^^^^^^^^^^^^^^^^

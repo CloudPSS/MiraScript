@@ -1,0 +1,5 @@
+error: duplicate `mira` attribute
+ --> tests/derive/fail/mira_duplicate_mira.rs:7:5
+  |
+7 |     #[mira]
+  |     ^^^^^^^
