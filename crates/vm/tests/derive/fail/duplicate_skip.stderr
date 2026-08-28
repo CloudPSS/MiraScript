@@ -3,3 +3,9 @@ error: duplicate `skip` option
   |
 6 |     #[mira(skip, skip)]
   |                  ^^^^
+
+error: unsupported `mira` option
+  --> tests/derive/fail/duplicate_skip.rs:10:8
+   |
+10 | #[mira(skip, skip)]
+   |        ^^^^

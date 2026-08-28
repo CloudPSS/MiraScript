@@ -15,3 +15,15 @@ error: unsupported Mira field option
    |
 15 | struct Array(#[mira(unsupported_option)] u8);
    |                     ^^^^^^^^^^^^^^^^^^
+
+error: unsupported `mira` option
+  --> tests/derive/fail/unsupported_option.rs:17:8
+   |
+17 | #[mira(unsupported_option)]
+   |        ^^^^^^^^^^^^^^^^^^
+
+error[E0601]: `main` function not found in crate `$CRATE`
+  --> tests/derive/fail/unsupported_option.rs:18:13
+   |
+18 | fn main() {}
+   |             ^ consider adding a `main` function to `$DIR/tests/derive/fail/unsupported_option.rs`

@@ -5,7 +5,6 @@ mod meta;
 mod utils;
 
 use proc_macro2::{Span, TokenStream};
-use quote::ToTokens;
 use syn::{Error, Item, Result};
 
 use meta::{Context, Options};
@@ -25,9 +24,6 @@ pub fn expand(attr: TokenStream, input: TokenStream) -> Result<TokenStream> {
     let options = Options::parse(attr)?;
 
     let item = syn::parse2::<Item>(input)?;
-    if options.skip {
-        return Ok(item.into_token_stream());
-    }
     if let Some(use_name) = options.use_name.as_ref() {
         return Err(Error::new_spanned(
             use_name,

@@ -3,3 +3,9 @@ error: duplicate `crate` option
   |
 4 | #[mira(crate = xx, crate = yy)]
   |                    ^^^^^
+
+error: duplicate `crate` option
+  --> tests/derive/fail/dupilcate_crate.rs:10:20
+   |
+10 | #[mira(crate = xx, crate = yy)]
+   |                    ^^^^^

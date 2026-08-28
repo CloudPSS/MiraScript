@@ -10,7 +10,7 @@
     <br/>
     <a href="https://app.codacy.com/gh/CloudPSS/MiraScript/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade"><img alt="License MIT" src="https://img.shields.io/codacy/grade/bd89e7eb52374e66a3cdce639c985cf0?logo=Codacy" /></a>
     <a href="https://app.codacy.com/gh/CloudPSS/MiraScript/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_coverage"><img alt="License MIT" src="https://img.shields.io/codacy/coverage/bd89e7eb52374e66a3cdce639c985cf0?logo=Codacy" /></a>
-    <a href="LICENSE"><img alt="License MIT" src="https://img.shields.io/github/license/CloudPSS/MiraScript" /></a>
+    <a href="LICENSE"><img alt="License MIT" src="https://img.shields.io/github/license/CloudPSS/MiraScript?color=blue" /></a>
   </p>
   <p>
     <b>

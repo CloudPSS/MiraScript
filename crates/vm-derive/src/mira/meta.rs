@@ -1,4 +1,4 @@
-use proc_macro2::{Span, TokenStream};
+use proc_macro2::TokenStream;
 use syn::{Attribute, Error, Ident, LitStr, Meta, Path, Result, parse::Parser};
 
 use crate::utils::default_crate_path;
@@ -15,7 +15,6 @@ pub(crate) struct Options {
     pub rename: Option<LitStr>,
     pub use_name: Option<LitStr>,
     pub crate_path: Option<Path>,
-    pub skip: bool,
 }
 
 impl Options {
@@ -63,35 +62,12 @@ impl Options {
         if parse_field(&meta, "crate", &mut self.crate_path)? {
             return Ok(());
         }
-        if meta.path.is_ident("skip") {
-            if self.skip {
-                return Err(meta.error("duplicate `skip` option"));
-            }
-            self.skip = true;
-            return Ok(());
-        }
         Err(meta.error("unsupported `mira` option"))
-    }
-
-    fn validate(&self) -> Result<()> {
-        if self.skip
-            && (self.const_name.is_some()
-                || self.rename.is_some()
-                || self.use_name.is_some()
-                || self.crate_path.is_some())
-        {
-            return Err(Error::new(
-                Span::call_site(),
-                "`skip` cannot be combined with another `mira` option",
-            ));
-        }
-        Ok(())
     }
 
     pub fn parse(attr: TokenStream) -> Result<Self> {
         let mut options = Self::default();
         syn::meta::parser(|meta| options.parse_meta(meta)).parse2(attr)?;
-        options.validate()?;
         Ok(options)
     }
 
@@ -108,7 +84,6 @@ impl Options {
                     Meta::Path(_) => {}
                     Meta::List(_) => {
                         attr.parse_nested_meta(|meta| opt.parse_meta(meta))?;
-                        opt.validate()?;
                     }
                     Meta::NameValue(_) => {
                         return Err(Error::new_spanned(attr, "expected `#[mira(...)]`"));

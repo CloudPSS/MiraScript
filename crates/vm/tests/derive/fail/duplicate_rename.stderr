@@ -3,3 +3,9 @@ error: duplicate `rename` option
   |
 6 |     #[mira(rename = "value_1", rename = "value_2")]
   |                                ^^^^^^
+
+error: duplicate `rename` option
+  --> tests/derive/fail/duplicate_rename.rs:10:28
+   |
+10 | #[mira(rename = "value_1", rename = "value_2")]
+   |                            ^^^^^^

@@ -151,23 +151,20 @@ fn expand_child(mut item: Item, parent: &Context) -> Result<Expanded> {
         Some(attrs) => Options::parse_from_attrs(attrs)?,
         None => None,
     };
-    if let Some(options) = options
-        && !options.skip
-    {
-        match item {
-            Item::Fn(item) => expand_fn(item, options, Some(parent)),
-            Item::Mod(item) => expand(item, options, Some(parent)),
-            Item::Const(item) => expand_const(item, options, parent),
-            item => Err(Error::new_spanned(
-                item,
-                "a `#[mira]` module can export functions, constants, and inline modules",
-            )),
-        }
-    } else {
-        Ok(Expanded {
+    let Some(options) = options else {
+        return Ok(Expanded {
             tokens: item.into_token_stream(),
             export: None,
-        })
+        });
+    };
+    match item {
+        Item::Fn(item) => expand_fn(item, options, Some(parent)),
+        Item::Mod(item) => expand(item, options, Some(parent)),
+        Item::Const(item) => expand_const(item, options, parent),
+        item => Err(Error::new_spanned(
+            item,
+            "a `#[mira]` module can export functions, constants, and inline modules",
+        )),
     }
 }
 

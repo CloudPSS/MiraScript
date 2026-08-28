@@ -1,4 +1,4 @@
-use mirascript_vm::MiraRecord;
+use mirascript_vm::{MiraRecord, mira};
 
 #[derive(MiraRecord)]
 struct Duplicate {
@@ -6,5 +6,8 @@ struct Duplicate {
     #[mira(rename = "value_1", rename = "value_2")]
     another: u8,
 }
+
+#[mira(rename = "value_1", rename = "value_2")]
+fn test() {}
 
 fn main() {}
