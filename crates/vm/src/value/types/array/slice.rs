@@ -1,3 +1,5 @@
+use std::{boxed::Box, rc::Rc, vec::Vec};
+
 use crate::{
     __private::{MiraField, MiraFieldGetter, array_from_array, array_from_record},
     MiraError, MiraHandle, MiraManageable, MiraRecord, Result, Runtime, RuntimeErrorKind,
@@ -58,12 +60,13 @@ macro_rules! impl_slice (
             #[cfg(test)]
             mod tests {
                 use crate::value::types::array::test_array;
+                use super::*;
 
                 type Arr<T> = $ty;
 
                 #[test]
                 fn int_array() {
-                    let arr: Arr<Arr<_>> = [[1, 2].into(), [3, 4, 5].into()].into();
+                    let arr: Arr<Arr<i32>> = [[1, 2].into(), [3, 4, 5].into()].into();
                     test_array(arr, r#"[[1, 2], [3, 4, 5]]"#);
                 }
                 #[test]
@@ -78,5 +81,5 @@ macro_rules! impl_slice (
 );
 
 impl_slice!(boxed_slice, Box<[T]>, as_ref);
-impl_slice!(rc_slice, std::rc::Rc<[T]>, as_ref);
+impl_slice!(rc_slice, Rc<[T]>, as_ref);
 impl_slice!(vec, Vec<T>, as_slice);

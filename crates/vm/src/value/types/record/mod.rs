@@ -1,6 +1,5 @@
-mod b_tree_map;
-mod hash_map;
 mod index_map;
+mod map;
 mod tuple;
 
 use std::any::Any;

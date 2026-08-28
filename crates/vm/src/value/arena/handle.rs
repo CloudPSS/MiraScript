@@ -89,7 +89,7 @@ macro_rules! impl_handle_cast {
             /// so a wrong generated cast returns an error rather than dereferencing
             /// an invalid pointer.
             #[doc(hidden)]
-            pub unsafe fn upcast<T: $trait>(self) -> MiraHandle<T> {
+            pub unsafe fn upcast<T: $trait + ?Sized>(self) -> MiraHandle<T> {
                 MiraHandle::new(self.key)
             }
         }
