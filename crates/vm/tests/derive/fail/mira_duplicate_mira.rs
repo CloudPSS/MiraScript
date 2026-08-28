@@ -4,8 +4,14 @@ use mirascript_vm::mira;
 #[mira]
 mod duplicate {
     #[mira]
-    #[mira]
     mod inner {}
+}
+
+#[mira]
+mod outer {
+    #[mira]
+    #[mira]
+    mod duplicate {}
 }
 
 fn main() {}

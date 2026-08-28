@@ -1,5 +1,47 @@
-error: duplicate `mira` attribute
- --> tests/derive/fail/mira_duplicate_mira.rs:7:5
+error[E0428]: the name `__MiraModule_duplicate` is defined multiple times
+ --> tests/derive/fail/mira_duplicate_mira.rs:4:1
   |
-7 |     #[mira]
-  |     ^^^^^^^
+3 | #[mira]
+  | ------- previous definition of the type `__MiraModule_duplicate` here
+4 | #[mira]
+  | ^^^^^^^ `__MiraModule_duplicate` redefined here
+  |
+  = note: `__MiraModule_duplicate` must be defined only once in the type namespace of this module
+  = note: this error originates in the attribute macro `mira` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0428]: the name `DUPLICATE` is defined multiple times
+ --> tests/derive/fail/mira_duplicate_mira.rs:4:1
+  |
+3 | #[mira]
+  | ------- previous definition of the value `DUPLICATE` here
+4 | #[mira]
+  | ^^^^^^^ `DUPLICATE` redefined here
+  |
+  = note: `DUPLICATE` must be defined only once in the value namespace of this module
+  = note: this error originates in the attribute macro `mira` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: duplicate `mira` attribute
+  --> tests/derive/fail/mira_duplicate_mira.rs:13:5
+   |
+13 |     #[mira]
+   |     ^^^^^^^
+
+error[E0119]: conflicting implementations of trait `MiraModule` for type `duplicate::__MiraModule_duplicate`
+ --> tests/derive/fail/mira_duplicate_mira.rs:4:1
+  |
+3 | #[mira]
+  | ------- first implementation here
+4 | #[mira]
+  | ^^^^^^^ conflicting implementation for `duplicate::__MiraModule_duplicate`
+  |
+  = note: this error originates in the attribute macro `mira` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0119]: conflicting implementations of trait `From<duplicate::__MiraModule_duplicate>` for type `MiraManageable`
+ --> tests/derive/fail/mira_duplicate_mira.rs:4:1
+  |
+3 | #[mira]
+  | ------- first implementation here
+4 | #[mira]
+  | ^^^^^^^ conflicting implementation for `MiraManageable`
+  |
+  = note: this error originates in the attribute macro `mira` (in Nightly builds, run with -Z macro-backtrace for more info)
