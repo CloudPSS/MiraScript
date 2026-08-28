@@ -55,8 +55,14 @@ mod tests {
     use crate::value::types::array::test_array;
 
     #[test]
-    fn array_array() {
-        let arr = [[1, 2], [3, 4]];
-        test_array(arr, r#"[[1, 2], [3, 4]]"#);
+    fn int_array() {
+        let arr = [[1, 2], [100, 200]];
+        test_array(arr, r#"[[1, 2], [100, 200]]"#);
+    }
+
+    #[test]
+    fn str_array() {
+        let arr = [["x", "y"], ["Hello", "World"]];
+        test_array(arr, r#"[["x", "y"], ["Hello", "World"]]"#);
     }
 }

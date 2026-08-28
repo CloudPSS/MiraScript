@@ -1,6 +1,5 @@
 mod arr;
-mod boxed_slice;
-mod vec;
+mod slice;
 
 use std::any::Any;
 
