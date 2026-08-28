@@ -1,4 +1,4 @@
-use std::{boxed::Box, rc::Rc, vec::Vec};
+use std::{boxed::Box, vec::Vec};
 
 use crate::{
     __private::{MiraField, MiraFieldGetter, array_from_array, array_from_record},
@@ -81,5 +81,4 @@ macro_rules! impl_slice (
 );
 
 impl_slice!(boxed_slice, Box<[T]>, as_ref);
-impl_slice!(rc_slice, Rc<[T]>, as_ref);
 impl_slice!(vec, Vec<T>, as_slice);
