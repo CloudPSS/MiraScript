@@ -15,4 +15,6 @@ struct Record2(#[mira(unsupported_option)] u8);
 struct Array(#[mira(unsupported_option)] u8);
 
 #[mira(unsupported_option)]
+fn test() {}
+
 fn main() {}
