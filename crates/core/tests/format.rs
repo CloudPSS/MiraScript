@@ -1,14 +1,29 @@
 use mirascript_core::{
-    CompileConfig, InputMode,
-    formatter::{FormatError, FormatOptions, format_document, format_ranges},
+    CompileConfig, InputMode, SourceRange,
+    formatter::{FormatEdit, FormatError, FormatOptions, format_document, format_ranges},
 };
 
-fn format_source(source: &str, width: usize) -> String {
+fn format_source(source: &str, line_width: usize) -> String {
     format_document(
         source,
         &CompileConfig::default(),
         &FormatOptions {
-            line_width: width,
+            line_width,
+            ..FormatOptions::default()
+        },
+    )
+    .unwrap()
+    .value
+    .unwrap()
+}
+
+fn format_range(source: &str, ranges: &[SourceRange], line_width: usize) -> Vec<FormatEdit> {
+    format_ranges(
+        source,
+        &CompileConfig::default(),
+        ranges,
+        &FormatOptions {
+            line_width,
             ..FormatOptions::default()
         },
     )
@@ -298,17 +313,7 @@ fn invalid_ranges_are_rejected_without_panicking() {
 #[test]
 fn range_formatting_returns_non_overlapping_edits() {
     let source = "let x=[1,2,3,4];\nlet y=[5,6,7,8];\n";
-    let outcome = format_ranges(
-        source,
-        &CompileConfig::default(),
-        &[6..14, 8..16, 28..34],
-        &FormatOptions {
-            line_width: 12,
-            ..FormatOptions::default()
-        },
-    )
-    .unwrap();
-    let edits = outcome.value.unwrap();
+    let edits = format_range(source, &[6..14, 8..16, 28..34], 12);
     assert!(!edits.is_empty());
     assert!(
         edits
@@ -344,24 +349,11 @@ fn range_formatting_can_select_a_pattern() {
     let source = "let (first,second)=[1,2];\n";
     let selection = source.find("second").unwrap();
     let range = selection..selection + "second".len();
-    let outcome = format_ranges(
-        source,
-        &CompileConfig::default(),
-        std::slice::from_ref(&range),
-        &FormatOptions::default(),
-    )
-    .unwrap();
-    let edits = outcome.value.unwrap();
+    let edits = format_range(source, std::slice::from_ref(&range), 80);
     assert_eq!(edits.len(), 0, "a leaf bind pattern is already canonical");
 
     let tuple_end = source.find('=').unwrap();
     let range = 4..tuple_end;
-    let outcome = format_ranges(
-        source,
-        &CompileConfig::default(),
-        std::slice::from_ref(&range),
-        &FormatOptions::default(),
-    )
-    .unwrap();
-    assert_eq!(outcome.value.unwrap()[0].text, "(first, second)");
+    let edits = format_range(source, std::slice::from_ref(&range), 80);
+    assert_eq!(edits[0].text, "(first, second)");
 }

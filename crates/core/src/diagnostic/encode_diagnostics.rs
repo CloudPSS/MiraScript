@@ -2,24 +2,31 @@ use crate::{CompileConfig, SourceDiagnostic, config::DiagnosticPositionEncoding}
 
 pub type SerializedDiagnostics = Vec<u32>;
 
-fn pos_to_line_col(script: &str, config: &CompileConfig) -> impl Fn(usize) -> (u32, u32) {
-    let code_point_counter =
-        if config.diagnostic_position_encoding == DiagnosticPositionEncoding::Utf16 {
-            |s: &str| s.encode_utf16().count()
-        } else if config.diagnostic_position_encoding == DiagnosticPositionEncoding::Utf32 {
-            |s: &str| s.chars().count()
-        } else {
-            |s: &str| s.len()
-        };
+type CodePointCounter = fn(&str) -> usize;
 
-    const LONG_LINE_THRESHOLD: usize = 1024;
-    struct Offset {
-        pub offset: usize,
-        pub line: usize,
-        pub col: usize,
+fn code_point_counter(encoding: DiagnosticPositionEncoding) -> CodePointCounter {
+    match encoding {
+        DiagnosticPositionEncoding::Utf16 => |s: &str| s.encode_utf16().count(),
+        DiagnosticPositionEncoding::Utf32 => |s: &str| s.chars().count(),
+        DiagnosticPositionEncoding::Utf8 => |s: &str| s.len(),
     }
+}
+
+/// A struct to hold the offset, line number, and column number of a position in the source code.
+struct Offset {
+    /// The offset of the position in the source code, in utf-8 bytes.
+    pub offset: usize,
+    /// The line number of the position in the source code, starting from 1.
+    pub line: usize,
+    /// The column number of the position in the source code, starting from 1.
+    pub col: usize,
+}
+
+fn prefill_offsets(script: &str, code_point_counter: CodePointCounter) -> Vec<Offset> {
+    const LONG_LINE_THRESHOLD: usize = 1024;
+
     // offsets of line starts
-    let offsets: Vec<_> = script
+    script
         .lines()
         .enumerate()
         .flat_map(|(n, line)| {
@@ -51,7 +58,12 @@ fn pos_to_line_col(script: &str, config: &CompileConfig) -> impl Fn(usize) -> (u
             }
             markers
         })
-        .collect();
+        .collect()
+}
+
+fn pos_to_line_col(script: &str, config: &CompileConfig) -> impl Fn(usize) -> (u32, u32) {
+    let code_point_counter = code_point_counter(config.diagnostic_position_encoding);
+    let offsets = prefill_offsets(script, code_point_counter);
     move |pos: usize| {
         if pos == 0 {
             return (1u32, 1u32);
