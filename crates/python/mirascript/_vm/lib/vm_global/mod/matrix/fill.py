@@ -60,8 +60,7 @@ def diagonal(vector, k=0):
 
     if all(is_vm_array(v) for v in vector):
         diag = []
-        for i in range(len(vector)):
-            row = vector[i]
+        for i, row in enumerate(vector):
             r = i + fk
             if r < 0:
                 continue

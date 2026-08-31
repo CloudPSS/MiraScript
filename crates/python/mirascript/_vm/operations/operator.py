@@ -63,40 +63,28 @@ def Div(a, b) -> float:
 def Mod(a, b) -> float:
     x = ToNumber(a)
     y = ToNumber(b)
-    """
-    IEEE 754 标准的取余运算 (remainder operation)
-    对应 ECMAScript 的 % 运算符
-    
-    规范定义：
-    1. If either operand is NaN, the result is NaN.
-    2. If x is ±Infinity, the result is NaN.
-    3. If y is ±Infinity and x is finite, the result is x.
-    4. If y is ±0, the result is NaN.
-    5. If x is ±0 and y is nonzero and finite, the result is x.
-    6. Otherwise, the result has the same sign as x and magnitude:
-       abs(x) - floor(abs(x) / abs(y)) × abs(y)
-    """
-    # 1. If either operand is NaN, return NaN
+    # IEEE 754 标准的取余运算 (remainder operation)
+    # 对应 ECMAScript 的 % 运算符
+
+    # 1. If either operand is NaN, the result is NaN.
     if math.isnan(x) or math.isnan(y):
         return math.nan
 
-    # 2. If x is ±Infinity, return NaN
+    # 2. If x is ±Infinity, the result is NaN.
     if math.isinf(x):
         return math.nan
 
-    # 3. If y is ±Infinity and x is finite, return x
+    # 3. If y is ±Infinity and x is finite, the result is x.
     if math.isinf(y):
         return x
 
-    # 4. If y is ±0, return NaN
+    # 4. If y is ±0, the result is NaN.
     if y == 0:
         return math.nan
 
-    # 5. If x is ±0 and y is nonzero and finite, return x (保留符号)
-    if x == 0:
-        return x  # 保留 +0 或 -0 的符号
-
-    # 6. 计算取余：结果符号与 x 相同
+    # 5. If x is ±0 and y is nonzero and finite, the result is x.
+    # 6. Otherwise, the result has the same sign as x and magnitude:
+    #    abs(x) - floor(abs(x) / abs(y)) × abs(y)
     # Python 的 % 运算符结果符号与除数相同，不符合 IEEE 754
     # 需要使用 math.fmod，它的结果符号与被除数相同
     return math.fmod(x, y)
