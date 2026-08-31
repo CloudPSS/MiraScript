@@ -659,7 +659,7 @@ jobs:
         shell: bash
         run: |
           source <(cargo llvm-cov show-env --sh)
-          cargo llvm-cov report --lcov --output-path target/lcov.info
+          cargo llvm-cov report --cobertura --output-path target/cobertura-coverage.xml
 
       - name: Send coverage report
         if: ${{ !cancelled() }}

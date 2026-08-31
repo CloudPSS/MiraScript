@@ -42,7 +42,7 @@
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.tabSize": 4
   },
-  "coverage-gutters.coverageFileNames": ["lcov.info"],
+  "coverage-gutters.coverageFileNames": ["cobertura-coverage.xml"],
   "cSpell.words": ["cloudpss", "mirascript", "napi", "pyodide"],
   "editor.tabSize": 2,
   "files.eol": "\n",
