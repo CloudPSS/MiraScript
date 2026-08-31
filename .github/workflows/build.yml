@@ -668,7 +668,7 @@ jobs:
           reporter() {
             bash <(curl -Ls https://coverage.codacy.com/get.sh) "$@"
           }
-          reporter report --coverage-reports 'target/cobertura-coverage.xml' --partial
-          reporter report --coverage-reports 'crates/python/coverage/cobertura-coverage.xml' --partial
-          reporter report --coverage-reports 'packages/*/coverage/cobertura-coverage.xml' --partial
+          for coverage_file in $(find . -name 'cobertura-coverage.xml' -type f); do
+            reporter report --coverage-reports "$coverage_file" --partial
+          done
           reporter final
