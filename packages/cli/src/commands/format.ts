@@ -2,7 +2,7 @@
 import fs from 'node:fs/promises';
 import { text as readText } from 'node:stream/consumers';
 import { InvalidArgumentError, program } from '@commander-js/extra-typings';
-import { loadModule } from '@mirascript/bindings';
+import { loadModule } from '@mirascript/bindings/wasm';
 import { formatDiagnosticMessage, parseDiagnostics } from '@mirascript/mirascript/subtle';
 
 const DEFAULT_LINE_WIDTH = 80;

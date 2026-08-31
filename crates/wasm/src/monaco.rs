@@ -66,17 +66,6 @@ impl MonacoCompiler {
     }
 
     #[wasm_bindgen]
-    pub fn format(&self) -> Option<String> {
-        if self.has_parse_error {
-            return None;
-        }
-        let Some(script) = &self.script else {
-            return None;
-        };
-        Some(mirascript_core::format(script, &Default::default()))
-    }
-
-    #[wasm_bindgen]
     pub fn diagnostics(&self) -> Vec<u32> {
         encode_diagnostics(&self.input, &self.diagnostics, &self.config)
     }
