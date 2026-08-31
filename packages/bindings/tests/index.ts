@@ -25,9 +25,12 @@ test('loadModule', async (t) => {
 
 test('WASM range formatting preserves template literal content', async (t) => {
     const module = await loadWasm();
-    const source = '<p>状态: ${\n  if active { "活跃" } else { "非活跃" }\n}</p>';
-    const start = source.indexOf('if active');
-    const end = source.indexOf(' }\n}</p>') + ' }'.length;
-    const result = module.formatSync(source, { input_mode: 'Template', trivia: true }, undefined, [{ start, end }]);
-    t.deepEqual(result.edits, []);
+    const expression = 'if active { "活跃" } else { "非活跃" }';
+    for (const source of [`<p>状态: \${\n  ${expression}\n}</p>`, `<p>状态: \${\n\n  ${expression}\n}</p>`]) {
+        const start = source.indexOf(expression);
+        const result = module.formatSync(source, { input_mode: 'Template', trivia: true }, undefined, [
+            { start, end: start + expression.length },
+        ]);
+        t.deepEqual(result.edits, []);
+    }
 });

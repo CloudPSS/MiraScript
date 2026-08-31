@@ -221,4 +221,3 @@ pub fn format_ranges(
         },
     ))
 }
-

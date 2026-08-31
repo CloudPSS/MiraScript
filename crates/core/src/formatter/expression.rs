@@ -187,14 +187,15 @@ fn format_if_expression(
                 .append(formatter.space())
                 .append(body)
         });
+    let leading = formatter.leading_trivia(&keyword.leading_trivia);
     let doc = formatter
-        .token(keyword)
+        .token_without_leading(keyword)
         .append(formatter.space())
         .append(condition.format(formatter))
         .append(formatter.space())
         .append(body)
         .append(else_block);
-    if grouped { doc.group() } else { doc }
+    leading.append(if grouped { doc.group() } else { doc })
 }
 
 impl Formattable for Expression<'_> {

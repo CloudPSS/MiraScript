@@ -111,7 +111,9 @@ impl<'o> FormatManager<'o> {
         let doc = if initial_column == 0 {
             doc
         } else {
-            self.text(prefix.clone())
+            // 这个前缀只用于让 pretty renderer 从节点的实际源码列开始计算。
+            // 将它标记为受保护文本，避免节点以 hardline 开头时在移除前被行末清理掉。
+            self.source_text(&prefix)
                 .append(doc.nest(initial_column as isize))
         };
         let mut rendered = AnnotatedString::default();

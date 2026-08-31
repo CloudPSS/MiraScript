@@ -201,6 +201,27 @@ fn template_range_formatting_does_not_replace_literal_content() {
 }
 
 #[test]
+fn template_range_layout_ignores_a_leading_blank_line() {
+    let config = CompileConfig {
+        input_mode: InputMode::Template,
+        ..CompileConfig::default()
+    };
+    let expression = "if active { \"活跃\" } else { \"非活跃\" }";
+    for source in [
+        format!("<p>状态: ${{\n  {expression}\n}}</p>"),
+        format!("<p>状态: ${{\n\n  {expression}\n}}</p>"),
+    ] {
+        let start = source.find(expression).unwrap();
+        let selected = start..start + expression.len();
+        let edits = format_ranges(&source, &config, &[selected], &FormatOptions::default())
+            .unwrap()
+            .value
+            .unwrap();
+        assert_eq!(edits, [], "{source}");
+    }
+}
+
+#[test]
 fn tab_indentation_uses_the_configured_tab_size() {
     let outcome = format_document(
         "let x=[1111,2222,3333];",
