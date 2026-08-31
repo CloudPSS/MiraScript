@@ -31,6 +31,35 @@ fn number_constant(exp: &Expression<'_>) -> Option<f64> {
     }
 }
 
+fn integer_literal(exp: &Expression<'_>) -> Option<i32> {
+    let (negative, value) = match exp {
+        Expression::Prefix(op, expression) if op.kind == Operator::Plus => {
+            (false, number_constant(expression.as_ref()))
+        }
+        Expression::Prefix(op, expression) if op.kind == Operator::Minus => {
+            (true, number_constant(expression.as_ref()))
+        }
+        _ => (false, number_constant(exp)),
+    };
+
+    let value = value? * if negative { -1.0 } else { 1.0 };
+    if value.fract() != 0.0 || value < (i32::MIN as f64) || value > (i32::MAX as f64) {
+        return None;
+    }
+    Some(value as i32)
+}
+
+fn item_range_literal(range: &Range<'_>) -> Option<(i32, i32)> {
+    let start = integer_literal(&range.0)?;
+    let end = integer_literal(&range.2)?;
+    let end = if range.exclusive() {
+        end.checked_sub(1)?
+    } else {
+        end
+    };
+    Some((start, end))
+}
+
 impl<'s, 'c> Emitter<'s, 'c> {
     fn declare_callable_expr(&mut self, callable: &'s Expression<'s>) {
         // 此时的 Grouping 用于标记 callable 为复杂表达式以启用空安全，跳过 declare_expression 的 Grouping 处理
@@ -741,11 +770,13 @@ impl<'s, 'c> Emitter<'s, 'c> {
                             }
                             Iterable::Range(range) => {
                                 self.check_range(range);
-                                let Range(start, _, end) = range;
-                                let start = self.emit_expression_reg(start, brk);
-                                let end = self.emit_expression_reg(end, brk);
-                                items_regs.push(start);
-                                items_regs.push(end);
+                                if item_range_literal(range).is_none() {
+                                    let Range(start, _, end) = range;
+                                    let start = self.emit_expression_reg(start, brk);
+                                    let end = self.emit_expression_reg(end, brk);
+                                    items_regs.push(start);
+                                    items_regs.push(end);
+                                }
                             }
                         },
                         ArrayElementBase::Spread(_, expression) => {
@@ -764,19 +795,28 @@ impl<'s, 'c> Emitter<'s, 'c> {
                                 reg_index += 1;
                             }
                             Iterable::Range(range) => {
-                                let start = items_regs[reg_index];
-                                let end = items_regs[reg_index + 1];
-                                self.op_2(
-                                    item.range(),
-                                    if range.exclusive() {
-                                        OpCode::ItemRangeExclusiveDyn
-                                    } else {
-                                        OpCode::ItemRangeDyn
-                                    },
-                                    start,
-                                    end,
-                                );
-                                reg_index += 2;
+                                if let Some((start, end)) = item_range_literal(range) {
+                                    self.op_2(
+                                        item.range(),
+                                        OpCode::ItemRange,
+                                        OpParam::from(start),
+                                        OpParam::from(end),
+                                    );
+                                } else {
+                                    let start = items_regs[reg_index];
+                                    let end = items_regs[reg_index + 1];
+                                    self.op_2(
+                                        item.range(),
+                                        if range.exclusive() {
+                                            OpCode::ItemRangeExclusiveDyn
+                                        } else {
+                                            OpCode::ItemRangeDyn
+                                        },
+                                        start,
+                                        end,
+                                    );
+                                    reg_index += 2;
+                                }
                             }
                         },
                         ArrayElementBase::Spread(_, _) => {

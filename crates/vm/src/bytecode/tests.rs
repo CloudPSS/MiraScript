@@ -33,6 +33,75 @@ fn decodes_compiler_output() {
 }
 
 #[test]
+fn integer_literal_array_ranges_use_constant_endpoints() {
+    let (chunk, diagnostics) = mirascript_core::Compiler::compile(
+        "[1.0..2e0, -1.0..<2, 1_000..0x3E9, +1..+2, -2147483648..2147483647]",
+        &mirascript_core::CompileConfig::new(),
+    );
+    assert!(diagnostics.is_empty());
+    let program = Program::decode(&chunk.unwrap()).unwrap();
+    let Some(InstructionKind::Array { elements, .. }) = program
+        .root
+        .body
+        .iter()
+        .map(|instruction| &instruction.kind)
+        .find(|instruction| matches!(instruction, InstructionKind::Array { .. }))
+    else {
+        panic!("expected array instruction");
+    };
+
+    let ranges: Vec<_> = elements
+        .iter()
+        .map(|element| match element {
+            ArrayElement::Range {
+                start: RangeEndpoint::Constant(start),
+                end: RangeEndpoint::Constant(end),
+                exclusive,
+            } => (*start, *end, *exclusive),
+            _ => panic!("expected constant array range"),
+        })
+        .collect();
+    assert_eq!(
+        ranges,
+        [
+            (1, 2, false),
+            (-1, 1, false),
+            (1_000, 1_001, false),
+            (1, 2, false),
+            (-2_147_483_648, 2_147_483_647, false),
+        ]
+    );
+}
+
+#[test]
+fn non_integer_literal_array_ranges_keep_dynamic_endpoints() {
+    let (chunk, diagnostics) = mirascript_core::Compiler::compile(
+        "[1.1..<2, 1..2e-1, 1 + 0..2, 1..1 + 1, 0..<-2147483648]",
+        &mirascript_core::CompileConfig::new(),
+    );
+    assert!(diagnostics.is_empty());
+    let program = Program::decode(&chunk.unwrap()).unwrap();
+    let Some(InstructionKind::Array { elements, .. }) = program
+        .root
+        .body
+        .iter()
+        .map(|instruction| &instruction.kind)
+        .find(|instruction| matches!(instruction, InstructionKind::Array { .. }))
+    else {
+        panic!("expected array instruction");
+    };
+
+    assert!(elements.iter().all(|element| matches!(
+        element,
+        ArrayElement::Range {
+            start: RangeEndpoint::Dynamic(_),
+            end: RangeEndpoint::Dynamic(_),
+            ..
+        }
+    )));
+}
+
+#[test]
 fn decodes_every_constant_encoding() {
     let mut constants = vec![0, 1, 2, 3];
     constants.extend_from_slice(&(-7_i32).to_le_bytes());
