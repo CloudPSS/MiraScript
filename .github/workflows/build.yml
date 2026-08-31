@@ -656,7 +656,6 @@ jobs:
           pnpm -r run test
 
       - name: Collect coverage
-        shell: bash
         run: |
           source <(cargo llvm-cov show-env --sh)
           cargo llvm-cov report --cobertura --output-path target/cobertura-coverage.xml
@@ -666,7 +665,9 @@ jobs:
         env:
           CODACY_REPORTER_OPTIONS: --project-token ${{ secrets.CODACY_PROJECT_TOKEN }}
         run: |
-          alias reporter="bash <(curl -Ls https://coverage.codacy.com/get.sh)"
+          reporter() {
+            bash <(curl -Ls https://coverage.codacy.com/get.sh) "$@"
+          }
           reporter report --coverage-reports 'target/cobertura-coverage.xml' --partial
           reporter report --coverage-reports 'crates/python/coverage/cobertura-coverage.xml' --partial
           reporter report --coverage-reports 'packages/*/coverage/cobertura-coverage.xml' --partial

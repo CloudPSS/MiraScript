@@ -81,8 +81,13 @@ const compileAndRun = test.macro<[string, boolean]>({
         const code = await fs.promises.readFile(codeUrl, 'utf8');
 
         const script = await compile(code, { pretty: true, sourceMap: true, fileName: codeUrl.href });
+        t.is(script.source, code);
+
         runScript(t, file, extern, script);
+
         const scriptCopy = createScript(code, 'Script', script.toString());
+        t.not(scriptCopy, script);
+
         runScript(t, file, extern, scriptCopy);
     },
     title: (providedTitle = 'test', code) => code || providedTitle,
