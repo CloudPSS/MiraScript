@@ -1,5 +1,5 @@
 use crate::{
-    Script, SourceDiagnostic, SourceRange, Token,
+    Script, SourceDiagnostic, SourceRange, Token, TokenKind,
     formatter::{FormatEdit, FormatOptions, preserve_line_endings, render_node},
     parser::{
         ArrayElementBase, AstWalker, Callable, Expression, Iterable, ParameterList, Pattern,
@@ -258,14 +258,35 @@ fn collect_expression<'s, 'a>(expression: &'a Expression<'s>, nodes: &mut Vec<Fo
     }
 }
 
+fn collect_tokens<'a, 's>(tokens: &'a [Token<'s>], output: &mut Vec<&'a Token<'s>>) {
+    for token in tokens {
+        output.push(token);
+        if let TokenKind::InterpolatedString(parts, _) = &token.kind {
+            for (_, tokens, _) in parts {
+                collect_tokens(tokens, output);
+            }
+        }
+    }
+}
+
 fn expanded_range(tokens: &[Token<'_>], range: SourceRange) -> SourceRange {
-    let first = tokens
+    let mut all_tokens = Vec::new();
+    collect_tokens(tokens, &mut all_tokens);
+    let first = all_tokens
         .iter()
-        .find(|token| token.range.end > range.start || token.range == range);
-    let last = tokens
+        .copied()
+        .filter(|token| {
+            token.range.start <= range.start
+                && (token.range.end > range.start || token.range == range)
+        })
+        .min_by_key(|token| token.range.len());
+    let last = all_tokens
         .iter()
-        .rev()
-        .find(|token| token.range.start < range.end || token.range == range);
+        .copied()
+        .filter(|token| {
+            token.range.end >= range.end && (token.range.start < range.end || token.range == range)
+        })
+        .min_by_key(|token| token.range.len());
     match (first, last) {
         (Some(first), Some(last)) => first.full_range().start..last.full_range().end,
         _ => range,

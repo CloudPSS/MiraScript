@@ -433,7 +433,9 @@ jobs:
           rust-toolchain: ${{ matrix.toolchain }}
 
       - name: Run tests
-        run: cargo test --workspace --locked
+        run: |
+          cargo test --workspace --locked
+          cargo test --workspace --all-features --locked
 
   test-rust-cross:
     strategy:
@@ -626,7 +628,9 @@ jobs:
       - name: Run cargo tests
         run: |
           source <(cargo llvm-cov show-env --sh)
+          cargo check --workspace --all-targets --all-features --locked
           cargo test --workspace --locked
+          cargo test --workspace --all-features --locked
 
       - name: Run python tests
         working-directory: crates/python

@@ -18,8 +18,6 @@ pub use parser::Script;
 
 #[cfg(feature = "formatter")]
 pub mod formatter;
-#[cfg(feature = "formatter")]
-pub use formatter::format;
 
 pub mod prelude {
     pub use std::str::FromStr as _;
