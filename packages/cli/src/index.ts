@@ -11,4 +11,6 @@ const binName = Object.keys(pkg.bin)[0];
 if (binName) {
     p = program.name(binName);
 }
-export default p.version(pkg.version).description(pkg.description);
+p.version(pkg.version).description(pkg.description);
+
+export default p;
