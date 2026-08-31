@@ -5,7 +5,13 @@ t_eq(1::trim(), "1");
 let line_terminators = "\r\n\u{2028}\u{2029}";
 let white_spaces = "\t\v\f\u{FEFF}\u{20}\u{A0}\u{1680}\u{2000}\u{2001}\u{2002}\u{2003}\u{2004}\u{2005}\u{2006}\u{2007}\u{2008}\u{2009}\u{200A}\u{202F}\u{205F}\u{3000}";
 
-let whitespaces = [..chars(line_terminators), ..chars(white_spaces), line_terminators, white_spaces, "$line_terminators$white_spaces"];
+let whitespaces = [
+  ..chars(line_terminators),
+  ..chars(white_spaces),
+  line_terminators,
+  white_spaces,
+  "$line_terminators$white_spaces",
+];
 
 for c in whitespaces {
   t_eq(c::trim(), "");

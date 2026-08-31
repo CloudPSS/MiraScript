@@ -88,7 +88,16 @@ fn analyze_person(person) {
 }
 
 debug_print("记录模式:");
-let person_tests = [(name: "Alice", age: 30), (name: "Bob", age: 70), (name: "Charlie", age: 25), (name: "David", age: 10), (name: "Eve"), (age: 45), (), (name: "Frank", age: 80, city: "New York")];
+let person_tests = [
+  (name: "Alice", age: 30),
+  (name: "Bob", age: 70),
+  (name: "Charlie", age: 25),
+  (name: "David", age: 10),
+  (name: "Eve"),
+  (age: 45),
+  (),
+  (name: "Frank", age: 80, city: "New York"),
+];
 for test in person_tests {
   debug_print(" ", test, ": ", analyze_person(test));
 }
@@ -115,15 +124,27 @@ for test in number_tests {
 fn analyze_nested_structure(data) {
   match data {
     case (users: [], ..) { "用户列表为空" }
-    case (users: [(name: "admin", ..admin_info)], ..) { "只有管理员: $admin_info" }
-    case (users: [first, ..others], config: (debug: true)) { "调试模式，用户: $first，还有 ${ len(others) } 个用户" }
-    case (users: users, config: config) { "有 ${ len(users) } 个用户，配置: $config" }
+    case (users: [(name: "admin", ..admin_info)], ..) {
+      "只有管理员: $admin_info"
+    }
+    case (users: [first, ..others], config: (debug: true)) {
+      "调试模式，用户: $first，还有 ${ len(others) } 个用户"
+    }
+    case (users: users, config: config) {
+      "有 ${ len(users) } 个用户，配置: $config"
+    }
     case _ { "未知结构" }
   }
 }
 
 debug_print("嵌套模式:");
-let nested_tests = [(users: [], config: (debug: false)), (users: [(name: "admin", role: "administrator")], config: (debug: false)), (users: [(name: "alice"), (name: "bob")], config: (debug: true)), (users: [(name: "charlie")], config: (timeout: 5000)), ()];
+let nested_tests = [
+  (users: [], config: (debug: false)),
+  (users: [(name: "admin", role: "administrator")], config: (debug: false)),
+  (users: [(name: "alice"), (name: "bob")], config: (debug: true)),
+  (users: [(name: "charlie")], config: (timeout: 5000)),
+  (),
+];
 for test in nested_tests {
   debug_print(" ", analyze_nested_structure(test));
 }
@@ -131,15 +152,30 @@ for test in nested_tests {
 // 使用模式匹配进行数据转换
 fn transform_user(user) {
   match user {
-    case (name: n, email: e, active: true) { (display_name: n, contact: e, status: "active") }
-    case (name: n, email: e, active: false) { (display_name: n, contact: e, status: "inactive") }
-    case (name: n, active: status) { (display_name: n, contact: "no-email", status: if status { "active" } else { "inactive" }) }
+    case (name: n, email: e, active: true) {
+      (display_name: n, contact: e, status: "active")
+    }
+    case (name: n, email: e, active: false) {
+      (display_name: n, contact: e, status: "inactive")
+    }
+    case (name: n, active: status) {
+      (
+        display_name: n,
+        contact: "no-email",
+        status: if status { "active" } else { "inactive" },
+      )
+    }
     case _ { (display_name: "unknown", contact: "no-email", status: "unknown") }
   }
 }
 
 debug_print("数据转换:");
-let user_data = [(name: "Alice", email: "alice@example.com", active: true), (name: "Bob", email: "bob@example.com", active: false), (name: "Charlie", active: true), (id: 123)];
+let user_data = [
+  (name: "Alice", email: "alice@example.com", active: true),
+  (name: "Bob", email: "bob@example.com", active: false),
+  (name: "Charlie", active: true),
+  (id: 123),
+];
 for user in user_data {
   debug_print("  转换前:", user);
   debug_print("  转换后:", transform_user(user));

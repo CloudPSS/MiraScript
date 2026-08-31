@@ -19,7 +19,7 @@ mimalloc = ["mirascript-core/mimalloc"]
 [dependencies]
 napi = { version = "3", features = ["serde-json"] }
 napi-derive = "3"
-mirascript-core = { workspace = true, features = ["serde"] }
+mirascript-core = { workspace = true, features = ["serde", "formatter"] }
 
 [build-dependencies]
 napi-build = "2"

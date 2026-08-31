@@ -38,6 +38,19 @@ impl DerefMut for Token<'_> {
 }
 
 impl<'s> Token<'s> {
+    #[cfg(feature = "formatter")]
+    pub(crate) fn full_range(&self) -> SourceRange {
+        let start = self
+            .leading_trivia
+            .first()
+            .map_or(self.range.start, |trivia| trivia.range().start);
+        let end = self
+            .tailing_trivia
+            .last()
+            .map_or(self.range.end, |trivia| trivia.range().end);
+        start..end
+    }
+
     pub(crate) fn new(kind: TokenKind<'s>, range: SourceRange) -> Self {
         Token {
             kind,

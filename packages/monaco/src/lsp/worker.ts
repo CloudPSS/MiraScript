@@ -1,21 +1,30 @@
 /// <reference lib="webworker" />
-import type { Ready, Req, ResErr, ResOk } from './worker-core.js';
+import type { Ready, Req, Res } from './worker-core.js';
 
 void Promise.resolve().then(async () => {
-    const { compile } = await import('./worker-core.js');
-    addEventListener('message', (event: MessageEvent) => {
-        const data = event.data as Req;
-        if (!Array.isArray(data)) return;
-        const [key, version, script, mode] = data;
+    const { compile, formatSource } = await import('./worker-core.js');
+    addEventListener('message', (event: MessageEvent<Req>) => {
+        const request = event.data;
+        if (!request || typeof request !== 'object' || typeof request.id !== 'number') return;
         try {
-            const result = compile(script, mode);
-            const transfer = [];
-            if (result.chunk) transfer.push(result.chunk.buffer);
-            if (result.diagnostics) transfer.push(result.diagnostics.buffer);
-            postMessage([key, version, result] satisfies ResOk, { transfer });
+            if (request.kind === 'compile') {
+                const result = compile(request.script, request.mode);
+                const transfer: ArrayBuffer[] = [];
+                if (result.chunk) transfer.push(result.chunk.buffer as ArrayBuffer);
+                if (result.diagnostics) transfer.push(result.diagnostics.buffer as ArrayBuffer);
+                postMessage({ id: request.id, ok: true, kind: 'compile', result } satisfies Res, { transfer });
+            } else {
+                const result = formatSource(request.script, request.mode, request.options, request.ranges);
+                postMessage({ id: request.id, ok: true, kind: 'format', result } satisfies Res, {
+                    transfer: [result.diagnostics.buffer as ArrayBuffer],
+                });
+            }
         } catch (error) {
-            const e = error instanceof Error ? error : new Error(String(error));
-            postMessage([key, version, e] satisfies ResErr);
+            postMessage({
+                id: request.id,
+                ok: false,
+                error: error instanceof Error ? error.message : String(error),
+            } satisfies Res);
         }
     });
     postMessage('mirascript lsp ready' satisfies Ready);

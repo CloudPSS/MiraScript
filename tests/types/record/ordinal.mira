@@ -21,7 +21,15 @@ t_true(3 in record);
 t_true(6 in record);
 t_false(7 in record);
 
-record = (0?: 0, 1?: 'str', 2?: true, 3?: nil, 4?: (a: 1, b: 2), 5?: [1, 2, 3], 6?: v_fn);
+record = (
+  0?: 0,
+  1?: 'str',
+  2?: true,
+  3?: nil,
+  4?: (a: 1, b: 2),
+  5?: [1, 2, 3],
+  6?: v_fn,
+);
 t_eq(record, (0: 0, 1: 'str', 2: true, 4: (a: 1, b: 2), 5: [1, 2, 3]));
 t_false(3 in record);
 t_false(6 in record);

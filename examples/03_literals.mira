@@ -79,7 +79,9 @@ debug_print("ASCII 转义:", ascii);
 
 // 逐字字符串
 let verbatim = @"逐字字符串: \n \t \\ \""@;
-let verbatim_complex = @@"使用 @"单个at"@ 在字符串中，使用$${ "与 @ 数量相等的 `$` 插值" }"@@;
+let verbatim_complex = @@"使用 @"单个at"@ 在字符串中，使用$${
+  "与 @ 数量相等的 `$` 插值"
+}"@@;
 debug_print("逐字字符串:");
 debug_print(verbatim);
 debug_print(verbatim_complex);
@@ -124,7 +126,12 @@ let inferred_record = (:username, :score, status: "active");
 debug_print("键名推断:", inferred_record);
 
 // 省略 nil 值
-let optional_record = (required: "value", optional?: "present", nil_value?: nil, another?: nil); // 这个键会被省略
+let optional_record = (
+  required: "value",
+  optional?: "present",
+  nil_value?: nil,
+  another?: nil,
+); // 这个键会被省略
 debug_print("省略nil值:", optional_record);
 
 // 数组字面量
@@ -183,14 +190,29 @@ debug_print("复杂函数:", complex_function(3), "和", complex_function(6));
 debug_print("=== 嵌套字面量示例 ===");
 
 // 数组和记录中不能存储函数
-let complex_data = (id: 1, info: (name: "MiraScript", version: "1.0", features: ["pattern_matching", "null_safety", "immutability"]), config: (debug: true, limits: (max_iterations: 1000, timeout: 30.0)), fn: fn { }, fn_omit?: fn { });
+let complex_data = (
+  id: 1,
+  info: (
+    name: "MiraScript",
+    version: "1.0",
+    features: ["pattern_matching", "null_safety", "immutability"],
+  ),
+  config: (debug: true, limits: (max_iterations: 1000, timeout: 30.0)),
+  fn: fn { },
+  fn_omit?: fn { },
+);
 
 debug_print("复杂嵌套数据:");
 debug_print("项目名:", complex_data.info.name);
 debug_print("版本:", complex_data.info.version);
 debug_print("特性:", complex_data.info.features);
 debug_print("最大迭代次数:", complex_data.config.limits.max_iterations);
-debug_print("记录中的函数: fn:", complex_data.fn, ",'fn_omit' in complex_data:", 'fn_omit' in complex_data);
+debug_print(
+  "记录中的函数: fn:",
+  complex_data.fn,
+  ",'fn_omit' in complex_data:",
+  'fn_omit' in complex_data,
+);
 
 debug_print("=== 字面量使用总结 ===");
 debug_print("MiraScript 支持丰富的字面量语法:");

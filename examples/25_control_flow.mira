@@ -23,7 +23,9 @@ fn describe_value(value) {
     case "" { "这是空字符串" }
     case [] { "这是空数组" }
     case [single] { "这是只有一个元素的数组: $single" }
-    case [first, ..rest] { "这是数组，第一个元素是 $first，还有 ${ len(rest) } 个元素" }
+    case [first, ..rest] {
+      "这是数组，第一个元素是 $first，还有 ${ len(rest) } 个元素"
+    }
     case (name: n) { "这是有名字的记录: $n" }
     case () { "这是没有名字的记录" }
     case _ { "未知类型: ${ type(value) }" }

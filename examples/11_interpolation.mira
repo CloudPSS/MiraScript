@@ -21,17 +21,31 @@ let age = 30;
 let active = true;
 
 debug_print("用户信息: ${
-  if active { `$name (${ age }岁) - 活跃用户` } else { `$name (${ age }岁) - 非活跃用户` }
+  if active {
+    `$name (${ age }岁) - 活跃用户`
+  } else {
+    `$name (${ age }岁) - 非活跃用户`
+  }
 }");
 
 // 嵌套插值
-let users = [(name: "Bob", score: 85), (name: "Charlie", score: 92), (name: "David", score: 78)];
+let users = [
+  (name: "Bob", score: 85),
+  (name: "Charlie", score: 92),
+  (name: "David", score: 78),
+];
 
 debug_print("成绩报告: ${
   let mut report = "";
   for user in users {
     report = `$report${ user.name }: ${ user.score }分${
-      if user.score >= 90 { " (优秀)" } else if user.score >= 80 { " (良好)" } else { " (及格)" }
+      if user.score >= 90 {
+        " (优秀)"
+      } else if user.score >= 80 {
+        " (良好)"
+      } else {
+        " (及格)"
+      }
     }\n`;
   }
   report

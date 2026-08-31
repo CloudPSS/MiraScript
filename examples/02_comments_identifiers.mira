@@ -8,15 +8,15 @@
 // 单行注释以 // 开头，直到行末结束
 
 /*
- 这是多行注释
- 可以跨越多行
- 不支持嵌套
-*/
+ * 这是多行注释
+ * 可以跨越多行
+ * 不支持嵌套
+ */
 
 /* 这也是多行注释，可以在一行内 */
 
 // 注释可以用于文档说明
-/** 
+/**
  * 计算两个数的和
  * @param a 第一个数
  * @param b 第二个数
@@ -87,7 +87,10 @@ let very_long_variable_name_that_describes_something_important = "长变量名";
 let aVeryLongCamelCaseVariableNameThatIsStillValid = "长驼峰变量名";
 
 debug_print("长标识符:");
-debug_print("长变量名:", very_long_variable_name_that_describes_something_important);
+debug_print(
+  "长变量名:",
+  very_long_variable_name_that_describes_something_important,
+);
 debug_print("长驼峰名:", aVeryLongCamelCaseVariableNameThatIsStillValid);
 
 // ============================================================================
@@ -111,7 +114,16 @@ debug_print("平均值:", avg);
 
 // 记录键名可以是任字符串，
 // 当键名是有效标识符或序数时，可以直接使用
-let record_with_various_keys = (normal_key: "普通键", _private_key: "私有键", CamelCaseKey: "驼峰键", $dollar: "dollar 键", @at: "at 键", 键名: "中文键名", 123: "数字键（序数）", 'space in key': "带空格的键名");
+let record_with_various_keys = (
+  normal_key: "普通键",
+  _private_key: "私有键",
+  CamelCaseKey: "驼峰键",
+  $dollar: "dollar 键",
+  @at: "at 键",
+  键名: "中文键名",
+  123: "数字键（序数）",
+  'space in key': "带空格的键名",
+);
 
 debug_print("记录键名示例:");
 debug_print("normal_key:", record_with_various_keys.normal_key);
@@ -158,11 +170,11 @@ debug_print("数组求和:", sum_array([1, 2, 3, 4, 5]));
 // ============================================================================
 
 /*
- 多行注释适合用于：
- 1. 文件头部的版权和说明信息
- 2. 大段的文档说明
- 3. 临时注释掉大块代码
-*/
+ * 多行注释适合用于：
+ * 1. 文件头部的版权和说明信息
+ * 2. 大段的文档说明
+ * 3. 临时注释掉大块代码
+ */
 
 // 单行注释适合用于：
 // 1. 简短的解释说明
@@ -173,13 +185,14 @@ fn complex_algorithm(data) {
   // TODO: 实现更高效的算法
   // FIXME: 处理边界情况
 
-  /* 算法说明：
-     这个函数实现了一个复杂的数据处理算法
-     输入：data - 要处理的数据数组
-     输出：处理后的结果
-     时间复杂度：O(n)
-     空间复杂度：O(1)
-  */
+  /*
+   * 算法说明：
+   * 这个函数实现了一个复杂的数据处理算法
+   * 输入：data - 要处理的数据数组
+   * 输出：处理后的结果
+   * 时间复杂度：O(n)
+   * 空间复杂度：O(1)
+   */
 
   let mut result = []; // 存储结果
 
@@ -187,7 +200,7 @@ fn complex_algorithm(data) {
     if item > 0 { // 只处理正数
       result = [..result, item * 2]; // 乘以2并添加到结果
     }
-  // 负数和零被忽略
+    // 负数和零被忽略
   }
 
   result // 返回处理结果

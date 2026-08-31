@@ -127,6 +127,18 @@ export class ProvidersManager extends DisposableManager {
                     return result.map(toTextEdit);
                 },
             }),
+            languages.registerDocumentRangeFormattingEditProvider(selector, {
+                provideDocumentRangeFormattingEdits: async (document, range, options, token) => {
+                    const result = await formatterProvider.provideDocumentRangeFormattingEdits(
+                        ModelAdapter.from(document),
+                        fromRange(range),
+                        options,
+                        token,
+                    );
+                    if (!result) return result;
+                    return result.map(toTextEdit);
+                },
+            }),
             languages.registerDocumentSemanticTokensProvider(
                 selector,
                 {

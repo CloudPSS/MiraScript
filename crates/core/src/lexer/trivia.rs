@@ -9,10 +9,22 @@ use super::prelude::*;
 #[cfg(feature = "formatter")]
 #[derive(Debug, Clone, PartialEq, strum::EnumIs)]
 pub enum Trivia<'s> {
-    LineComment(&'s str),
-    BlockComment(&'s str),
-    UnterminatedBlockComment(&'s str),
-    NewLine,
+    LineComment(&'s str, SourceRange),
+    BlockComment(&'s str, SourceRange),
+    UnterminatedBlockComment(&'s str, SourceRange),
+    NewLine(SourceRange),
+}
+
+#[cfg(feature = "formatter")]
+impl Trivia<'_> {
+    pub fn range(&self) -> &SourceRange {
+        match self {
+            Self::LineComment(_, range)
+            | Self::BlockComment(_, range)
+            | Self::UnterminatedBlockComment(_, range)
+            | Self::NewLine(range) => range,
+        }
+    }
 }
 
 #[cfg(not(feature = "formatter"))]
@@ -24,7 +36,10 @@ fn line_comment<'s>(i: &mut Input<'s>) -> Result<Trivia<'s>> {
 
     #[cfg(feature = "formatter")]
     {
-        parser.map(|s: &str| Trivia::LineComment(s)).parse_next(i)
+        parser
+            .with_span()
+            .map(|(s, range): (&str, SourceRange)| Trivia::LineComment(s, range))
+            .parse_next(i)
     }
     #[cfg(not(feature = "formatter"))]
     {
@@ -34,40 +49,46 @@ fn line_comment<'s>(i: &mut Input<'s>) -> Result<Trivia<'s>> {
 
 /// 块注释
 fn block_comment<'s>(i: &mut Input<'s>) -> Result<Trivia<'s>> {
-    let (mapper1, mapper2);
+    let parser = preceded(
+        (space0, "/*"),
+        alt((
+            terminated(take_until(0.., "*/"), "*/").map(|s: &str| (s, true)),
+            repeat::<_, _, String, _, _>(0.., any)
+                .take()
+                .map(|s: &str| (s, false)),
+        )),
+    );
     #[cfg(feature = "formatter")]
     {
-        (mapper1, mapper2) = (
-            |s: &'s str| Trivia::BlockComment(s),
-            |s: &'s str| Trivia::UnterminatedBlockComment(s),
-        );
+        parser
+            .with_span()
+            .map(|((s, terminated), range): ((&str, bool), SourceRange)| {
+                if terminated {
+                    Trivia::BlockComment(s, range)
+                } else {
+                    Trivia::UnterminatedBlockComment(s, range)
+                }
+            })
+            .parse_next(i)
     }
     #[cfg(not(feature = "formatter"))]
     {
-        (mapper1, mapper2) = (|_: &'s str| (), |_: &'s str| ())
+        parser.value(()).parse_next(i)
     }
-    preceded(
-        (space0, "/*"),
-        alt((
-            terminated(take_until(0.., "*/").map(mapper1), "*/"),
-            repeat::<_, _, String, _, _>(0.., any).take().map(mapper2),
-        )),
-    )
-    .parse_next(i)
 }
 
 /// 折行
+#[cfg(feature = "formatter")]
 fn new_line<'s>(i: &mut Input<'s>) -> Result<Trivia<'s>> {
-    let result;
-    #[cfg(feature = "formatter")]
-    {
-        result = Trivia::NewLine;
-    }
-    #[cfg(not(feature = "formatter"))]
-    {
-        result = ();
-    }
-    (space0, line_ending).value(result).parse_next(i)
+    (space0, line_ending)
+        .with_span()
+        .map(|(_, range)| Trivia::NewLine(range))
+        .parse_next(i)
+}
+
+#[cfg(not(feature = "formatter"))]
+fn new_line<'s>(i: &mut Input<'s>) -> Result<Trivia<'s>> {
+    (space0, line_ending).value(()).parse_next(i)
 }
 
 #[cfg(feature = "formatter")]
@@ -91,7 +112,7 @@ pub(super) fn leading_trivia<'s>(i: &mut Input<'s>) -> Result<TriviaList<'s>> {
 pub(super) fn tailing_trivia<'s>(i: &mut Input<'s>) -> Result<TriviaList<'s>> {
     #[cfg(feature = "formatter")]
     fn block_comment_verifier(s: &Trivia<'_>) -> bool {
-        let &Trivia::BlockComment(s) = s else {
+        let Trivia::BlockComment(s, _) = s else {
             return false;
         };
         // 不包含换行，不是文档注释

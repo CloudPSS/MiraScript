@@ -14,8 +14,14 @@ t_eq(filter([1, 2, 3, 4, 5], fn (_, index) { index > 2 }), [4, 5]);
 t_eq(filter([1, 2, 3], fn (_, _, data) { len(data) > 2 }), [1, 2, 3]);
 t_eq(filter([], fn { true }), []);
 
-t_eq(filter((a: 1, b: 2, c: 3, d: 4), fn (value) { value % 2 == 0 }), (b: 2, d: 4));
-t_eq(filter((a: 1, b: 2, c: 3, d: nil), fn (_, key) { key != "b" }), (a: 1, c: 3, d: nil));
+t_eq(
+  filter((a: 1, b: 2, c: 3, d: 4), fn (value) { value % 2 == 0 }),
+  (b: 2, d: 4),
+);
+t_eq(
+  filter((a: 1, b: 2, c: 3, d: nil), fn (_, key) { key != "b" }),
+  (a: 1, c: 3, d: nil),
+);
 t_eq(filter((), fn { true }), ());
 
 // Predicate results are not truthy/falsy converted.
@@ -24,4 +30,7 @@ t_throws(fn { [nan]::filter(fn { it }) });
 t_throws(fn { (nil,)::filter(fn { it }) });
 t_throws(fn { ''::filter(fn { it }) });
 
-t_eq(filter((__proto__: 1, constructor: 2), fn (value) { value > 1 }), (constructor: 2));
+t_eq(
+  filter((__proto__: 1, constructor: 2), fn (value) { value > 1 }),
+  (constructor: 2),
+);

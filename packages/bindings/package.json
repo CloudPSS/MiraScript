@@ -34,10 +34,15 @@
   "scripts": {
     "watch": "pnpm build --watch",
     "build": "pnpm clean && tsc",
+    "test": "c8 ava --no-worker-threads",
     "clean": "rimraf dist"
   },
   "dependencies": {
     "@mirascript/napi": "workspace:~",
     "@mirascript/wasm": "workspace:~"
+  },
+  "devDependencies": {
+    "ava": "^8.0.1",
+    "c8": "^12.0.0"
   }
 }

@@ -17,30 +17,32 @@
     
     <div class="info">
         <p>你的年龄: $age 岁</p>
-        <p>状态: ${ if active { "活跃" } else { "非活跃" } }</p>
+        <p>状态: ${
+          if active { "活跃" } else { "非活跃" }
+        }</p>
         <p>注册时间: ${
-            let data = to_datetime(register_date);
-            `$(data.year) 年 $(data.month) 月 $(data.day) 日 $(data.hour):$(data.minute):$(data.second)`
+          let data = to_datetime(register_date);
+          `$(data.year) 年 $(data.month) 月 $(data.day) 日 $(data.hour):$(data.minute):$(data.second)`
         }</p>
     </div>
     
     <h2>你的分数</h2>
     <ul>
         ${
-            let mut html = "";
-            for score in scores {
-                html = `$html<li>${ score.subject }: ${ score.points }分</li>\n        `;
-            }
-            html
+          let mut html = "";
+          for score in scores {
+            html = `$html<li>${ score.subject }: ${ score.points }分</li>\n        `;
+          }
+          html
         }
     </ul>
     
     <div class="summary">
         <p>总分: $(sum(scores::map(fn { it.points })))</p>
         <p>平均分: ${
-            let total = sum(scores::map(fn { it.points }));
-            let count = len(scores);
-            if count > 0 { total / count } else { 0 }
+          let total = sum(scores::map(fn { it.points }));
+          let count = len(scores);
+          if count > 0 { total / count } else { 0 }
         }</p>
     </div>
     

@@ -5,197 +5,190 @@ use crate::{
     parser::Expression,
 };
 
-use super::types::{FormatManager, Formattable};
+use super::{FormatDoc, FormatManager, Formattable};
 
 impl Formattable for Token<'_> {
-    fn measure(&self, formatter: &FormatManager, indent: usize) -> usize {
-        let len = match &self.kind {
-            TokenKind::InterpolatedString(parts, _) => {
-                parts.iter().map(|part| part.0.len()).sum::<usize>()
-            }
-            _ => self.range.len(),
-        };
-        if len > formatter.width(indent) { 1 } else { 0 }
-    }
-
-    fn format(&self, formatter: &mut FormatManager, _: usize) {
-        formatter.write_token(self);
+    fn format(&self, formatter: &FormatManager) -> FormatDoc {
+        formatter.token(self)
     }
 }
 
-impl<'o> FormatManager<'o> {
-    pub fn write_str_token<'s>(
-        &mut self,
-        s: &Token<'_>,
-        expressions: &[Expression<'s>],
-        measurement: usize,
-    ) {
-        for trivia in &s.leading_trivia {
-            self.write_leading_trivia(trivia);
+fn grouped_digits(s: &str, group_size: usize, min_size: usize, right_to_left: bool) -> String {
+    if group_size == 0 || s.len() <= group_size || (min_size != 0 && s.len() < min_size) {
+        return s.to_owned();
+    }
+    let mut output = String::with_capacity(s.len() + s.len() / group_size);
+    for (index, byte) in s.bytes().enumerate() {
+        let insert = if right_to_left {
+            index > 0 && (s.len() - index).is_multiple_of(group_size)
+        } else {
+            index > 0 && index.is_multiple_of(group_size)
+        };
+        if insert {
+            output.push('_');
         }
-        let (TokenKind::String(_, info) | TokenKind::InterpolatedString(_, info)) = &s.kind else {
+        output.push(byte as char);
+    }
+    output
+}
+
+fn normalized_number(value: f64, info: &NumberInfo<'_>) -> String {
+    match info {
+        NumberInfo::Invalid => format!("{value:e}"),
+        NumberInfo::Decimal(source) => {
+            let source = source.replace('_', "");
+            let (mantissa, exponent) = source
+                .find(['e', 'E'])
+                .map_or((source.as_str(), None), |index| {
+                    (&source[..index], Some(&source[index + 1..]))
+                });
+            let (integer, fraction) = mantissa.find('.').map_or((mantissa, None), |index| {
+                (&mantissa[..index], Some(&mantissa[index + 1..]))
+            });
+            let mut output = grouped_digits(integer, 3, 5, true);
+            if let Some(fraction) = fraction.filter(|fraction| !fraction.is_empty()) {
+                output.push('.');
+                output.push_str(&grouped_digits(fraction, 3, 5, false));
+            }
+            if let Some(exponent) = exponent.filter(|exponent| !exponent.is_empty()) {
+                output.push('e');
+                output.push_str(exponent);
+            }
+            output
+        }
+        NumberInfo::Hexadecimal(value) => {
+            format!("0x{}", grouped_digits(&format!("{value:X}"), 4, 0, true))
+        }
+        NumberInfo::Octal(value) => {
+            format!("0o{}", grouped_digits(&format!("{value:o}"), 6, 0, true))
+        }
+        NumberInfo::Binary(value) => {
+            format!("0b{}", grouped_digits(&format!("{value:b}"), 8, 0, true))
+        }
+    }
+}
+
+impl FormatManager<'_> {
+    pub fn string_token(&self, token: &Token<'_>, expressions: &[Expression<'_>]) -> FormatDoc {
+        let (TokenKind::String(_, info) | TokenKind::InterpolatedString(_, info)) = &token.kind
+        else {
             unreachable!();
         };
-        let quote = info.quote;
-        let dollars = String::from_iter(std::iter::repeat_n('$', std::cmp::max(info.ats, 1)));
-        if let Some(quote) = quote {
-            self.write_str(&String::from_iter(std::iter::repeat_n('@', info.ats)));
-            self.write_str(&quote.to_string());
+        let mut docs = vec![self.leading_trivia(&token.leading_trivia)];
+        let dollars = "$".repeat(info.ats.max(1));
+        if let Some(quote) = info.quote {
+            docs.push(self.text("@".repeat(info.ats)));
+            docs.push(self.text(quote.to_string()));
         }
-        let mut exprs = expressions.iter();
-        for str in info.content.iter() {
-            match str {
-                StringFragment::Literal(text) => self.write_str(text),
-                StringFragment::EscapedChar(_, text) => {
-                    self.write_str("\\");
-                    self.write_str(&text[0..1]);
-                    self.write_str(&text[1..].to_ascii_uppercase());
+        let mut expressions = expressions.iter();
+        let mut line_indent = 0;
+        let mut at_line_start = true;
+        for fragment in info.content.iter() {
+            match fragment {
+                StringFragment::Literal(text) => {
+                    docs.push(self.source_text(text));
+                    update_line_indent(
+                        text,
+                        self.options.tab_size,
+                        &mut line_indent,
+                        &mut at_line_start,
+                    );
                 }
-                StringFragment::Interpolation(_, _, fmt, surround) => {
-                    let surround = surround.as_deref();
-                    self.write_str(&dollars);
-                    if let Some((start, _)) = surround {
-                        self.write_str(&start.to_string());
+                StringFragment::EscapedChar(_, text) => {
+                    docs.push(self.text(format!(
+                        "\\{}{}",
+                        &text[..1],
+                        text[1..].to_ascii_uppercase()
+                    )));
+                }
+                StringFragment::Interpolation(_, _, format, surround) => {
+                    docs.push(self.text(dollars.clone()));
+                    if let Some((start, _)) = surround.as_deref() {
+                        docs.push(self.text(start.to_string()));
                     }
-                    if let Some(e) = exprs.next() {
-                        e.format(self, measurement);
+                    if let Some(expression) = expressions.next() {
+                        docs.push(expression.format(self).nest(line_indent as isize));
                     }
-                    if !fmt.is_empty() {
-                        self.write_str(":");
-                        self.write_str(fmt);
+                    if !format.is_empty() {
+                        docs.push(self.text(format!(":{format}")));
                     }
-                    if let Some((_, end)) = surround {
-                        self.write_str(&end.to_string());
+                    if let Some((_, end)) = surround.as_deref() {
+                        docs.push(self.text(end.to_string()));
                     }
                 }
                 StringFragment::InvalidEscapedChar(_, _)
                 | StringFragment::EndOfString
-                | StringFragment::EndOfFile => (),
+                | StringFragment::EndOfFile => {}
             }
         }
-
-        if let Some(quote) = quote {
-            self.write_str(&quote.to_string());
-            self.write_str(&String::from_iter(std::iter::repeat_n('@', info.ats)));
+        if let Some(quote) = info.quote {
+            docs.push(self.text(quote.to_string()));
+            docs.push(self.text("@".repeat(info.ats)));
         }
-
-        for trivia in &s.tailing_trivia {
-            self.write_tailing_trivia(trivia);
-        }
+        docs.push(self.tailing_trivia(&token.tailing_trivia));
+        self.concat(docs)
     }
 
-    fn write_num_part(&mut self, s: &str, group_size: usize, min_size: usize, right_to_left: bool) {
-        debug_assert!(
-            s.is_ascii(),
-            "Expected ASCII string for underscore insertion, got: {}",
-            s
-        );
-
-        if group_size == 0 || s.len() <= group_size {
-            return self.write_str(s);
-        }
-        if min_size != 0 && s.len() < min_size {
-            return self.write_str(s);
-        }
-
-        let bytes = s.as_bytes();
-
-        if right_to_left {
-            let len = bytes.len();
-            for (i, &b) in bytes.iter().enumerate() {
-                if i > 0 && (len - i).is_multiple_of(group_size) {
-                    self.write_char('_');
-                }
-                self.write_char(b as char);
+    pub fn token_body(&self, kind: &TokenKind<'_>) -> FormatDoc {
+        let text = match kind {
+            TokenKind::String(_, _) | TokenKind::InterpolatedString(_, _) => unreachable!(),
+            TokenKind::Identifier(value) => (*value).to_owned(),
+            TokenKind::Ordinal(value) => value.to_string(),
+            TokenKind::Number(value, info) => normalized_number(*value, info),
+            TokenKind::Operator(operator) => operator.to_string(),
+            TokenKind::Keyword(keyword) => {
+                let keyword: &str = keyword.into();
+                keyword.to_owned()
             }
-        } else {
-            for (i, &b) in bytes.iter().enumerate() {
-                if i > 0 && i % group_size == 0 {
-                    self.write_char('_');
-                }
-                self.write_char(b as char);
-            }
-        }
+            TokenKind::Eof | TokenKind::Empty | TokenKind::Unknown { .. } => String::new(),
+        };
+        self.text(text)
     }
 
-    fn write_token_body(&mut self, s: &TokenKind<'_>) {
-        match s {
-            TokenKind::String(_, _) | TokenKind::InterpolatedString(_, _) => {
-                unreachable!();
-            }
-            TokenKind::Identifier(s) => self.write_str(s),
-            TokenKind::Ordinal(s) => self.write_str(&s.to_string()),
-            TokenKind::Number(s, i) => match i.as_ref() {
-                NumberInfo::Invalid => self.write_str(&format!("{:e}", s)),
-                NumberInfo::Decimal(s) => {
-                    let s = if s.find('_').is_some() {
-                        s.chars().filter(|c| *c != '_').collect::<String>()
-                    } else {
-                        s.to_string()
-                    };
-
-                    let (integer_part, fractional_part, exponent_part) =
-                        match (s.find(['e', 'E']), s.find('.')) {
-                            (Some(e), Some(d)) => (&s[..d], &s[d + 1..e], &s[e + 1..]),
-                            (Some(e), None) => (&s[..e], "", &s[e + 1..]),
-                            (None, Some(d)) => (&s[..d], &s[d + 1..], ""),
-                            (None, None) => (s.as_ref(), "", ""),
-                        };
-                    self.write_num_part(integer_part, 3, 5, true);
-                    if !fractional_part.is_empty() {
-                        self.write_str(".");
-                        self.write_num_part(fractional_part, 3, 5, false);
-                    }
-                    if !exponent_part.is_empty() {
-                        self.write_str("e");
-                        self.write_str(exponent_part);
-                    }
-                }
-                NumberInfo::Hexadecimal(v) => {
-                    self.write_str("0x");
-                    self.write_num_part(&format!("{:X}", v), 4, 0, true);
-                }
-                NumberInfo::Octal(v) => {
-                    self.write_str("0o");
-                    self.write_num_part(&format!("{:o}", v), 6, 0, true);
-                }
-                NumberInfo::Binary(v) => {
-                    self.write_str("0b");
-                    self.write_num_part(&format!("{:b}", v), 8, 0, true);
-                }
-            },
-            TokenKind::Operator(operator) => self.write_str(&operator.to_string()),
-            TokenKind::Keyword(keyword) => self.write_str(keyword.into()),
-            TokenKind::Eof => (),
-            TokenKind::Empty | TokenKind::Unknown { .. } => (),
-        }
-    }
-
-    pub fn write_token(&mut self, s: &Token<'_>) {
+    pub fn token(&self, token: &Token<'_>) -> FormatDoc {
         if matches!(
-            s.kind,
+            token.kind,
             TokenKind::String(_, _) | TokenKind::InterpolatedString(_, _)
         ) {
-            return self.write_str_token(s, &[], 0);
+            return self.string_token(token, &[]);
         }
-        for trivia in &s.leading_trivia {
-            self.write_leading_trivia(trivia);
-        }
-        self.write_token_body(&s.kind);
-        for trivia in &s.tailing_trivia {
-            self.write_tailing_trivia(trivia);
-        }
+        self.leading_trivia(&token.leading_trivia)
+            .append(self.token_body(&token.kind))
+            .append(self.tailing_trivia(&token.tailing_trivia))
     }
 
-    pub fn write_token_or<'s, T, F>(&mut self, s: Option<T>, fallback: F)
+    pub fn token_without_leading(&self, token: &Token<'_>) -> FormatDoc {
+        self.token_body(&token.kind)
+            .append(self.tailing_trivia(&token.tailing_trivia))
+    }
+
+    pub fn token_or<'s, T, F>(&self, token: Option<T>, fallback: F) -> FormatDoc
     where
         T: Deref<Target = Token<'s>>,
         F: Into<TokenKind<'s>>,
     {
-        if let Some(s) = s.as_deref() {
-            self.write_token(s);
-        } else {
-            self.write_token_body(&fallback.into());
+        token.as_deref().map_or_else(
+            || self.token_body(&fallback.into()),
+            |token| self.token(token),
+        )
+    }
+}
+
+fn update_line_indent(
+    text: &str,
+    tab_size: usize,
+    line_indent: &mut usize,
+    at_line_start: &mut bool,
+) {
+    for character in text.chars() {
+        match character {
+            '\r' | '\n' => {
+                *line_indent = 0;
+                *at_line_start = true;
+            }
+            ' ' if *at_line_start => *line_indent += 1,
+            '\t' if *at_line_start => *line_indent += tab_size,
+            _ => *at_line_start = false,
         }
     }
 }

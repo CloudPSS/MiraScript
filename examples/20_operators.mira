@@ -51,7 +51,12 @@ fn side_effect(value) {
 debug_print("短路求值:");
 debug_print("%o && side_effect(%o) => %o", false, 1, false && side_effect(1));
 debug_print("%o || side_effect(%o) => %o", true, 2, true || side_effect(2));
-debug_print("%o ?? side_effect(%o) => %o", 'value', 3, 'value' ?? side_effect(3));
+debug_print(
+  "%o ?? side_effect(%o) => %o",
+  'value',
+  3,
+  'value' ?? side_effect(3),
+);
 
 // 包含运算符
 let record = (a: 1, b: 2, c: 3);

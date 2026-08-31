@@ -1,10 +1,14 @@
 // A line comment may end a statement line.
 let answer = 40; // ignored
 
-/* A block comment may span
-multiple lines.*/
+/*
+ * A block comment may span
+ * multiple lines.
+ */
 let increment = 2;
 
 t_eq(answer + increment, 42);
-t_eq(1 /* between operands */+ 2, 3);
-t_eq({ /* empty block */}, nil);
+t_eq(1 /* between operands */ + 2, 3);
+t_eq({
+  /* empty block */
+}, nil);

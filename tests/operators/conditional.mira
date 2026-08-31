@@ -1,4 +1,6 @@
-fn foo { it > 10 ? "Greater than 10" : it > 0 ? "Between 1 and 10" : "Zero or negative" }
+fn foo {
+  it > 10 ? "Greater than 10" : it > 0 ? "Between 1 and 10" : "Zero or negative"
+}
 
 t_eq(foo(12), "Greater than 10");
 t_eq(foo(5), "Between 1 and 10");
@@ -11,11 +13,14 @@ t_throws(fn { nil ? "Yes" : "No" });
   let [c, d, e, f] = ['c', 'd', 3, 4];
   fn scope {
     let [mut a, mut b] = [1, 2];
-    ['x', 'y'] is [c, d] ? [5, 6, 7, 8] is [a, b, e, f] && {
-      t_eq([a, b, e, f], [5, 6, 7, 8]);
-      t_eq([c, d], ['x', 'y']);
-      true
-    } : 0;
+    ['x', 'y'] is [c, d] ?
+      [5, 6, 7, 8] is [a, b, e, f] &&
+        {
+          t_eq([a, b, e, f], [5, 6, 7, 8]);
+          t_eq([c, d], ['x', 'y']);
+          true
+        } :
+      0;
     [a, b, c, d, e, f]
   }
 

@@ -10,11 +10,23 @@ let mb = [[7, 1, 5], [8, 2, 6]];
 t_eq(matrix.entrywise(sa, 1, fn { (fn { }) }), nil);
 t_eq(matrix.entrywise(sa, 1, fn { 'x' }), 'x');
 t_eq(matrix.entrywise(va, 1, fn { 'x' }), ['x', 'x', 'x']);
-t_eq(matrix.entrywise([[], [1], [1, 2]], 1, fn { 'x' }), [['x', 'x'], ['x', 'x'], ['x', 'x']]);
-t_eq(matrix.entrywise([1, 2], ['a', 'b', 'c'], fn (x, y) { (x, y) }), [(1, 'a'), (2, 'b'), (nil, 'c')]);
-t_eq(matrix.entrywise([nil, nan], nil, fn (x, y) { (x, y) }), [(nil, nil), (nan, nil)]);
+t_eq(
+  matrix.entrywise([[], [1], [1, 2]], 1, fn { 'x' }),
+  [['x', 'x'], ['x', 'x'], ['x', 'x']],
+);
+t_eq(
+  matrix.entrywise([1, 2], ['a', 'b', 'c'], fn (x, y) { (x, y) }),
+  [(1, 'a'), (2, 'b'), (nil, 'c')],
+);
+t_eq(
+  matrix.entrywise([nil, nan], nil, fn (x, y) { (x, y) }),
+  [(nil, nil), (nan, nil)],
+);
 t_eq(matrix.entrywise([[nil]], [[nan]], fn (x, y) { (x, y) }), [[(nil, nan)]]);
-t_eq(matrix.entrywise([[1], [2]], [[3, 4]], fn (x, y) { x + y }), [[4, 5], [5, 6]]);
+t_eq(
+  matrix.entrywise([[1], [2]], [[3, 4]], fn (x, y) { x + y }),
+  [[4, 5], [5, 6]],
+);
 t_throws(fn { matrix.entrywise([1], [2], 3) });
 
 t_eq(matrix.add(sa, sb), 3);
@@ -55,8 +67,14 @@ t_throws(fn { matrix.entrywise_multiply(nil, [[1]]) });
 
 t_eq(matrix.entrywise_divide(va, sb), [0.5, 1, 1.5]);
 t_throws(fn { matrix.entrywise_divide(va, vb) });
-t_eq(matrix.entrywise_divide(sa, mb), [[0.142_857_142_857_142_85, 1, 0.2], [0.125, 0.5, 0.166_666_666_666_666_667]]);
-t_eq(matrix.entrywise_divide(ma, sb), [[0.5, 1.5, 2], [1, 1.5, 3.5], [1, 2.5, 4.5]]);
+t_eq(
+  matrix.entrywise_divide(sa, mb),
+  [[0.142_857_142_857_142_85, 1, 0.2], [0.125, 0.5, 0.166_666_666_666_666_667]],
+);
+t_eq(
+  matrix.entrywise_divide(ma, sb),
+  [[0.5, 1.5, 2], [1, 1.5, 3.5], [1, 2.5, 4.5]],
+);
 t_throws(fn { matrix.entrywise_divide(1, nil) });
 t_throws(fn { matrix.entrywise_divide(1, [nil]) });
 t_throws(fn { matrix.entrywise_divide(1, [[nil]]) });
@@ -89,7 +107,10 @@ t_eq(matrix.invert(2), 0.5);
 t_eq(matrix.invert(0), inf);
 t_eq(matrix.invert(-0), -inf);
 t_eq(matrix.invert(va), [1, 0.5, 0.333_333_333_333_333_333]);
-t_eq(matrix.invert(ma), [[2, 1.75, -2.25], [1, -0.25, -0.25], [-1, -0.25, 0.75]]);
+t_eq(
+  matrix.invert(ma),
+  [[2, 1.75, -2.25], [1, -0.25, -0.25], [-1, -0.25, 0.75]],
+);
 t_throws(fn { matrix.invert(mb) });
 t_eq(matrix.invert([[1, 2], [3, 4]]), [[-2, 1], [1.5, -0.5]]);
 t_eq(matrix.invert([[1]]), [[1]]);
@@ -102,4 +123,7 @@ t_throws(fn { matrix.invert([[nil]]) });
 t_eq(matrix.multiply(ma, matrix.invert(ma)), [[1, 0, 0], [0, 1, 0], [0, 0, 1]]);
 t_eq(matrix.multiply(matrix.invert(ma), ma), [[1, 0, 0], [0, 1, 0], [0, 0, 1]]);
 
-t_eq(matrix.transpose([[1, 2, 3]])::matrix.add([[1, 2], [3, 4], [5, 6]]), [[2, 3], [5, 6], [8, 9]]);
+t_eq(
+  matrix.transpose([[1, 2, 3]])::matrix.add([[1, 2], [3, 4], [5, 6]]),
+  [[2, 3], [5, 6], [8, 9]],
+);

@@ -2,129 +2,111 @@ use crate::parser::{Expression, Pattern, Statement, TokenRef};
 
 use super::prelude::*;
 
-fn format_bind(
-    pattern: &Pattern,
-    op: &TokenRef,
-    expression: &Expression,
-    semicolon: &TokenRef,
-    formatter: &mut Formatter,
-) {
-    formatter.format(pattern);
-    formatter.write_space();
-    formatter.write_token(op);
-    formatter.write_space();
-    formatter.format(expression);
-    formatter.write_token(semicolon);
+fn assignment(
+    left: FormatDoc,
+    operator: &TokenRef<'_>,
+    expression: &Expression<'_>,
+    semicolon: &TokenRef<'_>,
+    formatter: &Formatter,
+) -> FormatDoc {
+    left.append(formatter.space())
+        .append(formatter.token(operator))
+        .append(formatter.space())
+        .append(expression.format(formatter))
+        .append(formatter.token(semicolon))
+}
+
+fn bind(
+    pattern: &Pattern<'_>,
+    operator: &TokenRef<'_>,
+    expression: &Expression<'_>,
+    semicolon: &TokenRef<'_>,
+    formatter: &Formatter,
+) -> FormatDoc {
+    assignment(
+        pattern.format(formatter),
+        operator,
+        expression,
+        semicolon,
+        formatter,
+    )
 }
 
 impl Formattable for Statement<'_> {
-    fn measure(&self, formatter: &Formatter, indent: usize) -> usize {
+    fn format(&self, formatter: &Formatter) -> FormatDoc {
         use Statement::*;
         match self {
-            BlockExpression(expression) => usize::max(1, expression.measure(formatter, indent)),
-            _ => 1,
-        }
-    }
-
-    fn format(&self, formatter: &mut Formatter, complexity: usize) {
-        use Statement::*;
-        match self {
-            Empty(semicolon) => formatter.write_token(semicolon),
-            Expression(expression, semicolon) => {
-                formatter.format(expression.as_ref());
-                formatter.write_token(semicolon);
+            Empty(semicolon) => formatter.token(semicolon),
+            Expression(expression, semicolon) => expression
+                .format(formatter)
+                .append(formatter.token(semicolon)),
+            BlockExpression(expression) => expression.format(formatter),
+            Module(keyword_pub, keyword_mod, identifier, body) => keyword_pub
+                .as_deref()
+                .map_or_else(Formatter::nil, |keyword| {
+                    formatter.token(keyword).append(formatter.space())
+                })
+                .append(formatter.token(keyword_mod))
+                .append(formatter.space())
+                .append(formatter.token(identifier))
+                .append(formatter.space())
+                .append(body.format(formatter)),
+            Bind(keyword_pub, keyword_let, pattern, operator, expression, semicolon) => keyword_pub
+                .as_deref()
+                .map_or_else(Formatter::nil, |keyword| {
+                    formatter.token(keyword).append(formatter.space())
+                })
+                .append(formatter.token(keyword_let))
+                .append(formatter.space())
+                .append(bind(pattern, operator, expression, semicolon, formatter)),
+            Rebind(pattern, operator, expression, semicolon) => {
+                bind(pattern, operator, expression, semicolon, formatter)
             }
-            BlockExpression(expression) => expression.format(formatter, complexity),
-            Module(kw_pub, kw_mod, id, body) => {
-                if let Some(kw_pub) = kw_pub {
-                    formatter.write_token(kw_pub);
-                    formatter.write_space();
-                }
-                formatter.write_token(kw_mod);
-                formatter.write_space();
-                formatter.write_token(id);
-                formatter.write_space();
-                body.format(formatter, complexity);
+            Const(keyword_pub, keyword_const, identifier, operator, expression, semicolon) => {
+                let left = keyword_pub
+                    .as_deref()
+                    .map_or_else(Formatter::nil, |keyword| {
+                        formatter.token(keyword).append(formatter.space())
+                    })
+                    .append(formatter.token(keyword_const))
+                    .append(formatter.space())
+                    .append(formatter.token(identifier));
+                assignment(left, operator, expression, semicolon, formatter)
             }
-            Bind(kw_pub, kw_let, pattern, op, expression, semicolon) => {
-                if let Some(kw_pub) = kw_pub {
-                    formatter.write_token(kw_pub);
-                    formatter.write_space();
-                }
-                formatter.write_token(kw_let);
-                formatter.write_space();
-                format_bind(pattern, op, expression, semicolon, formatter);
+            Assign(assignee, operator, expression, semicolon) => assignment(
+                assignee.format(formatter),
+                operator,
+                expression,
+                semicolon,
+                formatter,
+            ),
+            Function(keyword_pub, keyword_fn, identifier, parameters, body) => keyword_pub
+                .as_deref()
+                .map_or_else(Formatter::nil, |keyword| {
+                    formatter.token(keyword).append(formatter.space())
+                })
+                .append(formatter.token(keyword_fn))
+                .append(formatter.space())
+                .append(formatter.token(identifier))
+                .append(parameters.format(formatter))
+                .append(formatter.space())
+                .append(body.format(formatter)),
+            Return(keyword, expression, semicolon) | Break(keyword, expression, semicolon) => {
+                formatter
+                    .token(keyword)
+                    .append(
+                        expression
+                            .as_deref()
+                            .map_or_else(Formatter::nil, |expression| {
+                                formatter.space().append(expression.format(formatter))
+                            }),
+                    )
+                    .append(formatter.token(semicolon))
             }
-            Rebind(pattern, op, expression, semicolon) => {
-                format_bind(pattern, op, expression, semicolon, formatter);
+            Continue(keyword, semicolon) => {
+                formatter.token(keyword).append(formatter.token(semicolon))
             }
-            Const(kw_pub, kw_const, id, op, expression, semicolon) => {
-                if let Some(kw_pub) = kw_pub {
-                    formatter.write_token(kw_pub);
-                    formatter.write_space();
-                }
-                formatter.write_token(kw_const);
-                formatter.write_space();
-                formatter.write_token(id);
-                formatter.write_space();
-                formatter.write_token(op);
-                formatter.write_space();
-                formatter.format(expression);
-                formatter.write_token(semicolon);
-            }
-            Assign(assignee, op, expression, semicolon) => {
-                formatter.format(assignee);
-                formatter.write_space();
-                formatter.write_token(op);
-                formatter.write_space();
-                formatter.format(expression);
-                formatter.write_token(semicolon);
-            }
-            Function(kw_pub, kw_fn, id, parameter_list, expression) => {
-                if let Some(kw_pub) = kw_pub {
-                    formatter.write_token(kw_pub);
-                    formatter.write_space();
-                }
-                formatter.write_token(kw_fn);
-                formatter.write_space();
-                formatter.write_token(id);
-                let mut p_complexity = 0;
-                if let Some(parameter_list) = parameter_list {
-                    p_complexity = formatter.measure(parameter_list);
-                    parameter_list.format(formatter, p_complexity);
-                }
-                formatter.write_space();
-                let e_complexity = formatter.measure(expression);
-                expression.format(
-                    formatter,
-                    if p_complexity > 0 {
-                        e_complexity.max(1)
-                    } else {
-                        e_complexity
-                    },
-                );
-            }
-            Return(kw, expression, semicolon) => {
-                formatter.write_token(kw);
-                if let Some(expr) = expression {
-                    formatter.write_space();
-                    formatter.format(expr);
-                }
-                formatter.write_token(semicolon);
-            }
-            Break(kw, expression, semicolon) => {
-                formatter.write_token(kw);
-                if let Some(expr) = expression {
-                    formatter.write_space();
-                    formatter.format(expr);
-                }
-                formatter.write_token(semicolon);
-            }
-            Continue(kw, semicolon) => {
-                formatter.write_token(kw);
-                formatter.write_token(semicolon);
-            }
-            Unknown { .. } => (),
+            Unknown { .. } => Formatter::nil(),
         }
     }
 }

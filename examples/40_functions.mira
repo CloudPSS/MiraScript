@@ -33,7 +33,11 @@ fn map_array(array, func) {
 
 debug_print("高阶函数:");
 debug_print("apply_twice(double, %o) = %o", 3, apply_twice(double, 3));
-debug_print("map_array(%o, square) = %o", [1, 2, 3], map_array([1, 2, 3], square));
+debug_print(
+  "map_array(%o, square) = %o",
+  [1, 2, 3],
+  map_array([1, 2, 3], square),
+);
 
 // 闭包示例
 fn create_counter(initial) {
@@ -102,18 +106,7 @@ fn reduce_array(array, func, initial) {
   acc
 }
 
-let numbers = [
-  1,
-  2,
-  3,
-  4,
-  5,
-  6,
-  7,
-  8,
-  9,
-  10,
-];
+let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
 let evens = numbers::filter_array(fn { it % 2 == 0 });
 let sum = numbers::reduce_array(fn (acc, x) { acc + x }, 0);
@@ -132,7 +125,9 @@ debug_print("柯里化:");
 debug_print("add_five(%o) = %o", 3, add_five(3));
 
 // 部分应用
-fn partial_apply(func, first_arg) { (fn (second_arg) { func(first_arg, second_arg) }) }
+fn partial_apply(func, first_arg) {
+  (fn (second_arg) { func(first_arg, second_arg) })
+}
 
 let multiply_by_three = partial_apply(multiply, 3);
 debug_print("部分应用:");

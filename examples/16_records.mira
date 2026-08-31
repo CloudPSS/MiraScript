@@ -8,16 +8,31 @@ debug_print("基本记录:", person);
 // 序数记录
 let coordinates = (10, 20, 30); // 相当于 (0: 10, 1: 20, 2: 30)
 debug_print("坐标:", coordinates);
-debug_print("X: %o, Y: %o, Z: %o", coordinates.0, coordinates[1], coordinates.2);
+debug_print(
+  "X: %o, Y: %o, Z: %o",
+  coordinates.0,
+  coordinates[1],
+  coordinates.2,
+);
 
 // 混合命名记录
-let mixed = ("first", "second", name: "Bob", "third"); // 0: "first" 1: "second" name: "Bob" 2: "third"
+let mixed = (
+  "first",
+  "second",
+  name: "Bob",
+  "third",
+); // 0: "first" 1: "second" name: "Bob" 2: "third"
 debug_print("混合记录:", mixed);
 
 // 记录展开
 let base_config = (debug: true, timeout: 5000, retries: 3);
 
-let extended_config = (host: "localhost", port: 8080, ..base_config, timeout: 10000); // 覆盖展开的值
+let extended_config = (
+  host: "localhost",
+  port: 8080,
+  ..base_config,
+  timeout: 10000,
+); // 覆盖展开的值
 
 debug_print("展开记录:");
 debug_print("base_config:", base_config);
@@ -36,7 +51,12 @@ let inferred_record = (:name, :age, city: "Boston");
 debug_print("推断键名:", inferred_record);
 
 // 省略 nil 值的示例
-let optional_record = (required: "value", nil_value?: nil, optional?: "present", another_nil?: nil); // 这个键会被省略 这个键会保留 这个键也会被省略
+let optional_record = (
+  required: "value",
+  nil_value?: nil,
+  optional?: "present",
+  another_nil?: nil,
+); // 这个键会被省略 这个键会保留 这个键也会被省略
 debug_print("省略 nil 值:", optional_record);
 
 // 记录模式匹配
@@ -52,15 +72,31 @@ fn analyze_person(p) {
 }
 
 debug_print("记录模式匹配:");
-for v in [(name: "Alice", age: 30), (name: "Bob", age: 25), (name: "Charlie", age: 15), (name: "David"), ("x", "y")] {
+for v in [
+  (name: "Alice", age: 30),
+  (name: "Bob", age: 25),
+  (name: "Charlie", age: 15),
+  (name: "David"),
+  ("x", "y"),
+] {
   debug_print("analyze_person(%o) = %o", v, analyze_person(v));
 }
 
 // 记录解构
-let user = (id: 123, profile: (name: "Eve", email: "eve@example.com", preferences: (theme: "dark", language: "en")));
+let user = (
+  id: 123,
+  profile: (
+    name: "Eve",
+    email: "eve@example.com",
+    preferences: (theme: "dark", language: "en"),
+  ),
+);
 
 // 嵌套解构
-let (id: user_id, profile: (name: user_name, :email, preferences: (:theme, :language))) = user;
+let (
+  id: user_id,
+  profile: (name: user_name, :email, preferences: (:theme, :language)),
+) = user;
 debug_print("解构结果:");
 debug_print("ID: %o", user_id);
 debug_print("Name: %o", user_name);
@@ -90,7 +126,13 @@ debug_print(create_greeting((name: "Bob", title: "Dr.")));
 debug_print(create_greeting((id: 123)));
 
 // 记录的嵌套访问
-let company = (name: "TechCorp", departments: (engineering: (head: "Alice", members: ["Bob", "Charlie", "David"]), marketing: (head: "Eve", members: ["Frank", "Grace"])));
+let company = (
+  name: "TechCorp",
+  departments: (
+    engineering: (head: "Alice", members: ["Bob", "Charlie", "David"]),
+    marketing: (head: "Eve", members: ["Frank", "Grace"]),
+  ),
+);
 
 debug_print("嵌套访问:");
 debug_print("Engineering head: %o", company.departments.engineering.head);

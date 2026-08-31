@@ -35,10 +35,14 @@ fn factorial(n) {
 
 // 快速幂算法
 fn fast_power(base, exp) {
-  if exp == 0 { 1 } else if exp % 2 == 0 {
+  if exp == 0 {
+    1
+  } else if exp % 2 == 0 {
     let half = fast_power(base, exp / 2);
     half * half
-  } else { base * fast_power(base, exp - 1) }
+  } else {
+    base * fast_power(base, exp - 1)
+  }
 }
 
 // 最大公约数（欧几里得算法）
@@ -51,7 +55,13 @@ fn lcm(a, b) { abs(a * b) / gcd(a, b) }
 
 // 判断是否为质数
 fn is_prime(n) {
-  if n < 2 { false } else if n == 2 { true } else if n % 2 == 0 { false } else {
+  if n < 2 {
+    false
+  } else if n == 2 {
+    true
+  } else if n % 2 == 0 {
+    false
+  } else {
     let mut i = 3;
     loop {
       if i * i > n {
@@ -67,7 +77,11 @@ fn is_prime(n) {
 
 // 生成斐波那契数列
 fn fibonacci_sequence(count) {
-  if count <= 0 { [] } else if count == 1 { [1] } else {
+  if count <= 0 {
+    []
+  } else if count == 1 {
+    [1]
+  } else {
     let mut result = [1, 1];
     let mut i = 2;
     while i < count {
@@ -81,7 +95,11 @@ fn fibonacci_sequence(count) {
 
 // 计算平方根（牛顿法）
 fn sqrt_newton(x) {
-  if x < 0 { nan } else if x == 0 { 0 } else {
+  if x < 0 {
+    nan
+  } else if x == 0 {
+    0
+  } else {
     let mut guess = x / 2;
     let mut i = 0;
     while i < 10 { // 10次迭代应该足够精确
@@ -96,20 +114,28 @@ fn sqrt_newton(x) {
 }
 
 // 计算圆的面积和周长
-fn circle_properties(radius) { (radius: radius, area: PI * radius^2, circumference: 2 * PI * radius) }
+fn circle_properties(radius) {
+  (radius: radius, area: PI * radius^2, circumference: 2 * PI * radius)
+}
 
 // 解二次方程 ax² + bx + c = 0
 fn quadratic_equation(a, b, c) {
   if a == 0 {
     if b == 0 {
       if c == 0 { "无穷多解" } else { "无解" }
-    } else { (solution: -c / b) }
+    } else {
+      (solution: -c / b)
+    }
   } else {
     let discriminant = b^2 - 4 * a * c;
     if discriminant > 0 {
       let sqrt_d = sqrt_newton(discriminant);
       (solution1: (-b + sqrt_d) / (2 * a), solution2: (-b - sqrt_d) / (2 * a))
-    } else if discriminant == 0 { (solution: -b / (2 * a)) } else { "无实数解" }
+    } else if discriminant == 0 {
+      (solution: -b / (2 * a))
+    } else {
+      "无实数解"
+    }
   }
 }
 
@@ -134,7 +160,9 @@ fn variance(numbers) {
       sum_sq_diff += (num - avg)^2;
     }
     sum_sq_diff / len(numbers)
-  } else { nil }
+  } else {
+    nil
+  }
 }
 
 // 测试数学函数
@@ -171,18 +199,7 @@ debug_print("x² - 4x + 4 = 0:", quadratic_equation(1, -4, 4));
 debug_print("x² + x + 1 = 0:", quadratic_equation(1, 1, 1));
 
 debug_print("统计计算:");
-let data = [
-  1,
-  2,
-  3,
-  4,
-  5,
-  6,
-  7,
-  8,
-  9,
-  10,
-];
+let data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 debug_print("数据:", data);
 debug_print("总和:", sum(data));
 debug_print("平均值:", average(data));

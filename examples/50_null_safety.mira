@@ -14,8 +14,16 @@ debug_print("empty_user.profile.age = %o", empty_user.profile.age); // 返回 ni
 // 使用空合并操作符提供默认值
 debug_print("使用空合并操作符:");
 debug_print("user.name ?? %o = %o", 'Unknown', user.name ?? 'Unknown');
-debug_print("empty_user.name ?? %o = %o", 'Unknown', empty_user.name ?? 'Unknown');
-debug_print("user.profile.phone ?? %o = %o", 'No phone', user.profile.phone ?? 'No phone');
+debug_print(
+  "empty_user.name ?? %o = %o",
+  'Unknown',
+  empty_user.name ?? 'Unknown',
+);
+debug_print(
+  "user.profile.phone ?? %o = %o",
+  'No phone',
+  user.profile.phone ?? 'No phone',
+);
 
 // 非空断言示例（小心使用！）
 debug_print("非空断言示例:");
@@ -64,7 +72,11 @@ fn get_user_name(user_option) {
   }
 }
 
-let users = [(id: 1, name: "Alice"), (id: 2, name: "Bob"), (id: 3, name: "Charlie")];
+let users = [
+  (id: 1, name: "Alice"),
+  (id: 2, name: "Bob"),
+  (id: 3, name: "Charlie"),
+];
 
 debug_print("Option 模式:");
 debug_print(get_user_name(find_user(users, 2)));
@@ -76,16 +88,30 @@ let deeply_nested = (level1: (level2: (level3: (value: "深层值"))));
 let broken_nested = (level1: (level2: nil));
 
 debug_print("链式空安全:");
-debug_print("deeply_nested.level1.level2.level3.value = %o", deeply_nested.level1.level2.level3.value);
-debug_print("broken_nested.level1.level2.level3.value = %o", broken_nested.level1.level2.level3.value);
+debug_print(
+  "deeply_nested.level1.level2.level3.value = %o",
+  deeply_nested.level1.level2.level3.value,
+);
+debug_print(
+  "broken_nested.level1.level2.level3.value = %o",
+  broken_nested.level1.level2.level3.value,
+);
 
 // 使用 if 表达式进行空检查
 fn safe_access(obj) {
   if obj.level1 is not nil {
     if obj.level1.level2 is not nil {
-      if obj.level1.level2.level3 is not nil { obj.level1.level2.level3.value ?? "No value" } else { "Level3 missing" }
-    } else { "Level2 missing" }
-  } else { "Level1 missing" }
+      if obj.level1.level2.level3 is not nil {
+        obj.level1.level2.level3.value ?? "No value"
+      } else {
+        "Level3 missing"
+      }
+    } else {
+      "Level2 missing"
+    }
+  } else {
+    "Level1 missing"
+  }
 }
 
 debug_print("使用 if 进行空检查:");
@@ -103,7 +129,14 @@ debug_print("real_array[%o] = %o", 0, real_array[0]);
 debug_print("real_array[%o] = %o", 10, real_array[10]); // 超出范围返回 nil
 
 // 使用空合并创建默认结构
-fn create_user_with_defaults(input) { (name: input.name ?? "Anonymous", age: input.age ?? 0, email: input.email ?? "no-email@example.com", active: input.active ?? true) }
+fn create_user_with_defaults(input) {
+  (
+    name: input.name ?? "Anonymous",
+    age: input.age ?? 0,
+    email: input.email ?? "no-email@example.com",
+    active: input.active ?? true,
+  )
+}
 
 let partial_user = (name: "John");
 let full_user = create_user_with_defaults(partial_user);
@@ -117,5 +150,13 @@ fn process_user_email(user) { user.profile.email::trim() }
 let user_with_email = (profile: (email: "  ALICE@EXAMPLE.COM  "));
 
 debug_print("空值传播:");
-debug_print("process_user_email(%o) = %o", user_with_email, process_user_email(user_with_email));
-debug_print("process_user_email(%o) = %o", empty_user, process_user_email(empty_user));
+debug_print(
+  "process_user_email(%o) = %o",
+  user_with_email,
+  process_user_email(user_with_email),
+);
+debug_print(
+  "process_user_email(%o) = %o",
+  empty_user,
+  process_user_email(empty_user),
+);

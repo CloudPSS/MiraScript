@@ -47,10 +47,11 @@ if !T() {
 
 {
   let a = 1;
-  if 2 is a && {
-    t_eq(a, 2);
-    true
-  } {
+  if 2 is a &&
+    {
+      t_eq(a, 2);
+      true
+    } {
     t_eq(a, 2);
   } else {
     t_never();
@@ -59,10 +60,11 @@ if !T() {
 }
 {
   let a = 1;
-  if 2 is a && {
-    t_eq(a, 2);
-    false
-  } {
+  if 2 is a &&
+    {
+      t_eq(a, 2);
+      false
+    } {
     t_never();
   } else {
     t_eq(a, 2);
@@ -71,12 +73,13 @@ if !T() {
 }
 {
   let a = 1;
-  if 2 is a && {
-    let c = 3 is a;
-    t_eq(a, 3);
-    t_eq(c, true);
-    true
-  } {
+  if 2 is a &&
+    {
+      let c = 3 is a;
+      t_eq(a, 3);
+      t_eq(c, true);
+      true
+    } {
     let c = 3 is a;
     t_eq(a, 3);
     t_eq(c, true);

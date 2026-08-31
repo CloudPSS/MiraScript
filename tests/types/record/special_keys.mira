@@ -12,8 +12,14 @@ t_eq((__proto__?: nil), ());
 t_eq((__proto__?: 1), (__proto__: 1));
 t_eq(("__proto__": 1), (__proto__: 1));
 t_eq(('__proto__': 1), ('__proto__': 1));
-t_eq((..record, x: 5), (__proto__: 1, constructor: 2, toString: 3, hasOwnProperty: 4, x: 5));
-t_eq((x: 5, ..record), (x: 5, __proto__: 1, constructor: 2, toString: 3, hasOwnProperty: 4));
+t_eq(
+  (..record, x: 5),
+  (__proto__: 1, constructor: 2, toString: 3, hasOwnProperty: 4, x: 5),
+);
+t_eq(
+  (x: 5, ..record),
+  (x: 5, __proto__: 1, constructor: 2, toString: 3, hasOwnProperty: 4),
+);
 t_eq(record, (__proto__: 1, constructor: 2, toString: 3, hasOwnProperty: 4));
 t_eq(len(keys(record)), 4);
 

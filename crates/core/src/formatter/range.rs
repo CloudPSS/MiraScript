@@ -3,24 +3,13 @@ use crate::parser::Range;
 use super::prelude::*;
 
 impl Formattable for Range<'_> {
-    fn measure(&self, formatter: &Formatter, indent: usize) -> usize {
-        let inner = usize::max(
-            self.0.measure(formatter, indent),
-            self.2.measure(formatter, indent),
-        );
-        if inner > 0 { inner + 1 } else { 0 }
-    }
-
-    fn format(&self, formatter: &mut Formatter, complexity: usize) {
-        let inner_complexity = if complexity > 0 { complexity - 1 } else { 0 };
-        self.0.format(formatter, inner_complexity);
-        if complexity > 0 {
-            formatter.new_line();
-        }
-        formatter.write_token(&self.1);
-        if complexity > 0 {
-            formatter.new_line();
-        }
-        self.2.format(formatter, inner_complexity);
+    fn format(&self, formatter: &Formatter) -> FormatDoc {
+        self.0
+            .format(formatter)
+            .append(formatter.line_())
+            .append(formatter.token(&self.1))
+            .append(formatter.line_())
+            .append(self.2.format(formatter))
+            .group()
     }
 }

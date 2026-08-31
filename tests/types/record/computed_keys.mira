@@ -1,5 +1,12 @@
 let special = ['"', "'"];
-let record = ('", \'': 1, '"': 2, "'": 3, '", \'': 4, '\r\n': 'crlf', '\n': 'lf');
+let record = (
+  '", \'': 1,
+  '"': 2,
+  "'": 3,
+  '", \'': 4,
+  '\r\n': 'crlf',
+  '\n': 'lf',
+);
 t_eq(record[special], 4);
 t_eq(record[special.0], 2);
 t_eq(record[special.1], 3);

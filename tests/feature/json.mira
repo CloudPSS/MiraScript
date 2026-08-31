@@ -4,7 +4,7 @@ t_eq({ "$y": true }, (foo: true));
 t_eq({ "$y": true }[y], true);
 t_eq({ "$y": true }.foo, true);
 
-fn implicit_return_json { { "x": 1, "$it": { "z": 7, "w": [1, 2, { "x": 0 }] } } }
+fn implicit_return_json { { "x": 1, "$it": { "z": 7, "w": [1, 2, {"x": 0}] } } }
 t_eq(implicit_return_json('foo'), (x: 1, foo: (z: 7, w: [1, 2, (x: 0)])));
 
 fn return_json {

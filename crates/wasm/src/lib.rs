@@ -1,6 +1,7 @@
 use wasm_bindgen::prelude::*;
 
 mod compile;
+mod format;
 mod monaco;
 
 #[wasm_bindgen(start)]

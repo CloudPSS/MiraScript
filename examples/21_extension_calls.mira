@@ -21,20 +21,13 @@ let result2 = numbers::add_to_all(10)::filter_greater_than(12);
 debug_print("结果: %o", result2);
 
 // 更复杂的链式调用
-let data = [
-  1,
-  2,
-  3,
-  4,
-  5,
-  6,
-  7,
-  8,
-  9,
-  10,
-];
+let data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
-let processed = data::filter(fn { it % 2 == 0 })::map(fn { it * 2 })::filter(fn { it > 10 })::sum(); // 过滤偶数 每个元素乘以2 过滤大于10的 求和
+let processed = data
+  ::filter(fn { it % 2 == 0 })
+  ::map(fn { it * 2 })
+  ::filter(fn { it > 10 })
+  ::sum(); // 过滤偶数 每个元素乘以2 过滤大于10的 求和
 
 debug_print("链式处理结果: %o", processed);
 
@@ -51,7 +44,9 @@ fn add_field(record, key, value) { (..record, `$key`: value) }
 
 fn update_field(record, key, value) { (..record, `$key`: value) }
 
-let updated_person = person::add_field("country", "USA")::update_field("age", 31);
+let updated_person = person
+  ::add_field("country", "USA")
+  ::update_field("age", 31);
 
 debug_print("更新后的记录: %o", updated_person);
 
@@ -62,7 +57,10 @@ fn add(x, y) { x + y }
 
 fn multiply(x, y) { x * y }
 
-let math_result = 2::power(3)::add(2)::multiply(3); // 2^3 = 8 8 + 2 = 10 10 * 3 = 30
+let math_result = 2
+  ::power(3)
+  ::add(2)
+  ::multiply(3); // 2^3 = 8 8 + 2 = 10 10 * 3 = 30
 
 debug_print("数学链式计算: %o", math_result);
 

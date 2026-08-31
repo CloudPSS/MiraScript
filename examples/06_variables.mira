@@ -69,9 +69,18 @@ debug_print("First: %o", first);
 debug_print("Rest: %o", rest);
 
 // 嵌套解构
-let nested_data = (id: 123, user: (profile: (name: "Charlie", age: 35), settings: (theme: "dark", lang: "en")));
+let nested_data = (
+  id: 123,
+  user: (
+    profile: (name: "Charlie", age: 35),
+    settings: (theme: "dark", lang: "en"),
+  ),
+);
 
-let (:id, user: (profile: (name: user_name, :age), settings: (:theme, :lang))) = nested_data;
+let (
+  :id,
+  user: (profile: (name: user_name, :age), settings: (:theme, :lang)),
+) = nested_data;
 
 debug_print("嵌套解构:");
 debug_print("ID: %o", id);
@@ -115,7 +124,9 @@ debug_print("First item: %o", first_item); // 应该是 1
 debug_print("Second item: %o", second_item); // 应该是 2，第三个元素被忽略
 
 // 在函数中使用解构参数
-fn process_point((x, y)) { "Point at ($x, $y), distance from origin: ${ sqrt(x * x + y * y) }" }
+fn process_point((x, y)) {
+  "Point at ($x, $y), distance from origin: ${ sqrt(x * x + y * y) }"
+}
 
 fn process_person((name: n, age: a)) { "Person $n is $a years old" }
 
@@ -124,7 +135,11 @@ debug_print(process_point((3, 4)));
 debug_print(process_person((name: "David", age: 40)));
 
 // 在循环中使用解构
-let people = [(name: "Alice", age: 30), (name: "Bob", age: 25), (name: "Charlie", age: 35)];
+let people = [
+  (name: "Alice", age: 30),
+  (name: "Bob", age: 25),
+  (name: "Charlie", age: 35),
+];
 
 debug_print("循环中的解构:");
 for (name: n, age: a) in people {

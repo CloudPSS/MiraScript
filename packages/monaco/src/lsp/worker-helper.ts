@@ -1,141 +1,188 @@
 import type { InputMode } from '@mirascript/constants';
 import { editor } from '../monaco-api.js';
-import type { Ready, CacheKey, Req, Res, ResOk } from './worker-core.js';
+import type {
+    CacheKey,
+    CompileRequest,
+    FormatRequest,
+    OffsetRange,
+    Ready,
+    Req,
+    Res,
+    RequestId,
+    WorkerFormatOptions,
+} from './worker-core.js';
 import { CompileResult } from './compile-result.js';
 import { makeModelMarkers } from './diagnostics.js';
 
-/** 缓存 */
+/** 编译缓存项。 */
 type CacheValue = {
     readonly version: number;
     readonly result: Promise<CompileResult>;
     readonly mode: InputMode;
     lastAccess: number;
 };
-/** 编译结果缓存，避免重复编译 */
-const cache = new Map<CacheKey, CacheValue>();
-let worker: Promise<Worker> | undefined = undefined;
 
-// 清理缓存
+const cache = new Map<CacheKey, CacheValue>();
+let worker: Promise<Worker> | undefined;
+let requestSequence = 0;
+
 const CACHE_MAX_AGE = 30000;
 setInterval(() => {
     const now = Date.now();
     for (const [key, { lastAccess }] of cache) {
-        if (now - lastAccess > CACHE_MAX_AGE) {
-            cache.delete(key);
-        }
+        if (now - lastAccess > CACHE_MAX_AGE) cache.delete(key);
     }
 }, CACHE_MAX_AGE);
 
-/** 使用 worker 进行编译 */
-async function compileWorker(req: Req): Promise<CompileResult> {
+/** 生成当前进程内唯一的请求标识。 */
+function nextRequestId(): RequestId {
+    requestSequence = (requestSequence + 1) % Number.MAX_SAFE_INTEGER;
+    return requestSequence as RequestId;
+}
+
+/** 从 Monaco model 推断编译输入模式。 */
+function modeOf(model: editor.ITextModel): InputMode {
+    return model.getLanguageId() === 'mirascript-template' ? 'Template' : 'Script';
+}
+
+/** 创建并等待 LSP worker 就绪。 */
+async function getWorker(): Promise<Worker> {
     if (!worker) {
-        const w = new Worker(new URL('#lsp/worker', import.meta.url), {
+        const instance = new Worker(new URL('#lsp/worker', import.meta.url), {
             type: 'module',
             name: '@mirascript/lsp-server',
         });
         worker = new Promise((resolve, reject) => {
-            const onError = (e: ErrorEvent) => {
+            const timeout = setTimeout(() => {
                 cleanUp();
-                reject(new Error(`Worker failed to start: ${e.message}`));
-            };
-            const onMessage = (e: MessageEvent<Ready | Error>) => {
-                if (e.data === 'mirascript lsp ready') {
-                    cleanUp();
-                    resolve(w);
-                } else if (e.data instanceof Error) {
-                    cleanUp();
-                    reject(e.data);
-                }
-            };
-            w.addEventListener('error', onError);
-            w.addEventListener('message', onMessage);
-            const cleanUp = () => {
-                w.removeEventListener('error', onError);
-                w.removeEventListener('message', onMessage);
-            };
-            setTimeout(() => {
-                onError(new ErrorEvent('error', { message: 'Worker did not respond in time' }));
+                reject(new Error('Worker did not respond in time'));
             }, 30000);
+            const cleanUp = () => {
+                clearTimeout(timeout);
+                instance.removeEventListener('error', onError);
+                instance.removeEventListener('message', onMessage);
+            };
+            const onError = (event: ErrorEvent) => {
+                cleanUp();
+                reject(new Error(`Worker failed to start: ${event.message}`));
+            };
+            const onMessage = (event: MessageEvent<Ready>) => {
+                if (event.data !== 'mirascript lsp ready') return;
+                cleanUp();
+                resolve(instance);
+            };
+            instance.addEventListener('error', onError);
+            instance.addEventListener('message', onMessage);
         });
     }
+    return worker;
+}
 
-    try {
-        await worker;
-    } catch (ex) {
-        // eslint-disable-next-line no-console
-        console.error('Failed to initialize worker, use sync compile:', ex);
-        USE_WORKER = false;
-        return compileSync(req);
-    }
-
-    const instance = await worker;
-    instance.postMessage(req);
-    const [key, version, source] = req;
-    const [_key, _version, result] = await new Promise<ResOk>((resolve, reject) => {
-        const onMessage = (e: MessageEvent<Res>) => {
-            if (!(e.data[0] === key && e.data[1] === version)) {
-                return;
-            }
-
+/** 发送带标识的 worker 请求并等待对应响应。 */
+async function requestWorker(request: Req): Promise<Res> {
+    const instance = await getWorker();
+    return new Promise<Res>((resolve) => {
+        const onMessage = (event: MessageEvent<Res>) => {
+            if (event.data?.id !== request.id) return;
             instance.removeEventListener('message', onMessage);
-            if (e.data[2] instanceof Error) {
-                reject(e.data[2]);
-            } else {
-                resolve(e.data as ResOk);
-            }
+            resolve(event.data);
         };
         instance.addEventListener('message', onMessage);
+        instance.postMessage(request);
     });
-    return new CompileResult(key, version, source, result);
 }
 
 let compileImpl: typeof import('./worker-core.js').compile;
-/** 使用当前线程编译 */
-async function compileSync(req: Req): Promise<CompileResult> {
-    const [key, version, script, mode] = req;
-    if (compileImpl == null) {
-        const mod = await import('./worker-core.js');
-        compileImpl = mod.compile;
+/** 在当前线程执行编译。 */
+async function compileSync(request: CompileRequest): Promise<CompileResult> {
+    compileImpl ??= (await import('./worker-core.js')).compile;
+    const result = compileImpl(request.script, request.mode);
+    return new CompileResult(request.key, request.version, request.script, result);
+}
+
+/** 优先使用 worker 编译，失败时回退当前线程。 */
+async function compileWorker(request: CompileRequest): Promise<CompileResult> {
+    try {
+        const response = await requestWorker(request);
+        if (!response.ok) throw new Error(response.error);
+        if (response.kind !== 'compile') throw new Error('Unexpected formatter response to compile request');
+        return new CompileResult(request.key, request.version, request.script, response.result);
+    } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to use MiraScript worker, falling back to the current thread:', error);
+        USE_WORKER = false;
+        worker = undefined;
+        return compileSync(request);
     }
-    const result = compileImpl(script, mode);
-    return new CompileResult(key, version, script, result);
 }
 
 let USE_WORKER = typeof Worker === 'function';
+
 /** 编译并设置缓存 */
 export async function compile(model: editor.ITextModel): Promise<CompileResult> {
     const version = model.getVersionId();
-    const mode = model.getLanguageId() === 'mirascript-template' ? 'Template' : 'Script';
-    const cacheKey = model.id as CacheKey;
-    const cached = cache.get(cacheKey);
+    const mode = modeOf(model);
+    const key = model.id as CacheKey;
+    const cached = cache.get(key);
     if (cached?.version === version && cached.mode === mode) {
         cached.lastAccess = Date.now();
         return cached.result;
     }
 
-    const value = model.getValue();
-    const req: Req = [cacheKey, version, value, mode];
-    const res = USE_WORKER ? compileWorker(req) : compileSync(req);
-    void res.then(async (result) => {
+    const script = model.getValue();
+    const request: CompileRequest = { kind: 'compile', id: nextRequestId(), key, version, script, mode };
+    const result = USE_WORKER ? compileWorker(request) : compileSync(request);
+    void result.then(async (compiled) => {
         if (model.isDisposed()) return;
         const setModelMarkers = editor?.setModelMarkers;
-        if (typeof setModelMarkers != 'function') return;
-        const markers = await makeModelMarkers(model, result);
-        if (!markers) return;
-        setModelMarkers(model, 'mirascript', markers);
+        if (typeof setModelMarkers !== 'function') return;
+        const markers = await makeModelMarkers(model, compiled);
+        if (markers) setModelMarkers(model, 'mirascript', markers);
     });
-    const item: CacheValue = {
-        version,
-        lastAccess: Date.now(),
-        mode,
-        result: res,
+    const item: CacheValue = { version, lastAccess: Date.now(), mode, result };
+    cache.set(key, item);
+    result.catch(() => {
+        if (cache.get(key) === item) cache.delete(key);
+    });
+    return result;
+}
+
+let formatImpl: typeof import('./worker-core.js').formatSource;
+
+/** 对指定 model 发起独立的按需格式化请求。 */
+export async function formatModel(
+    model: editor.ITextModel,
+    ranges: readonly OffsetRange[] | undefined,
+    options: WorkerFormatOptions,
+): Promise<{
+    readonly diagnostics: Uint32Array;
+    readonly edits: ReadonlyArray<{ start: number; end: number; text: string }>;
+}> {
+    const request: FormatRequest = {
+        kind: 'format',
+        id: nextRequestId(),
+        key: model.id as CacheKey,
+        version: model.getVersionId(),
+        script: model.getValue(),
+        mode: modeOf(model),
+        ranges,
+        options,
     };
-    cache.set(cacheKey, item);
-    res.catch(() => {
-        const current = cache.get(cacheKey);
-        if (current === item) {
-            cache.delete(cacheKey);
-        }
-    });
-    return res;
+    if (!USE_WORKER) {
+        formatImpl ??= (await import('./worker-core.js')).formatSource;
+        return formatImpl(request.script, request.mode, request.options, request.ranges);
+    }
+    try {
+        const response = await requestWorker(request);
+        if (!response.ok) throw new Error(response.error);
+        if (response.kind !== 'format') throw new Error('Unexpected compile response to format request');
+        return response.result;
+    } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to use MiraScript worker, formatting on the current thread:', error);
+        USE_WORKER = false;
+        worker = undefined;
+        formatImpl ??= (await import('./worker-core.js')).formatSource;
+        return formatImpl(request.script, request.mode, request.options, request.ranges);
+    }
 }

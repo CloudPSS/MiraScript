@@ -28,7 +28,9 @@ fn analyze_data(data) {
     // 数组模式，匹配单元素数组，并绑定该元素到变量 single
     case [single] { "Array with one element: $single" }
     // 数组模式，匹配长度大于等于 1 的数组，绑定第一个元素到 first，剩余元素到 rest
-    case [first, ..rest] { "Array starting with $first, has ${ len(rest) } more elements" }
+    case [first, ..rest] {
+      "Array starting with $first, has ${ len(rest) } more elements"
+    }
     // 记录模式，匹配特定字段值的记录，其中 name 为字面量模式，age 为复合的关系模式
     case (name: "John", age: > 18 and < 65) { "Working-age John" }
     // 记录模式，其中 name 和 age 都是复合模式，绑定变量同时进行关系判断
@@ -70,4 +72,7 @@ fn is_palindrome {
 
 debug_print("Is 'racecar' a palindrome? ", is_palindrome("racecar"));
 debug_print("Is 'hello' a palindrome? ", is_palindrome("hello"));
-debug_print("Is 'a man a plan a canal panama' a palindrome? ", is_palindrome("a man a plan a canal panama"));
+debug_print(
+  "Is 'a man a plan a canal panama' a palindrome? ",
+  is_palindrome("a man a plan a canal panama"),
+);

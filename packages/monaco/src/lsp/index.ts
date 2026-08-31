@@ -94,8 +94,7 @@ export async function registerLSP(
     registerIfEnabled('formatter', FormatterProvider, (language, provider) => {
         return [
             languages.registerDocumentFormattingEditProvider(language, provider),
-            // languages.registerDocumentRangeFormattingEditProvider(language, provider),
-            // languages.registerOnTypeFormattingEditProvider(language, provider),
+            languages.registerDocumentRangeFormattingEditProvider(language, provider),
         ];
     });
 

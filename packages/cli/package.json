@@ -36,7 +36,8 @@
   "scripts": {
     "watch": "pnpm build --watch",
     "build": "pnpm clean && pnpm tsc && node ./esbuild.config.js",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist",
+    "test": "c8 ava --no-worker-threads"
   },
   "dependencies": {
     "@commander-js/extra-typings": "^15.0.0",
@@ -48,6 +49,8 @@
     "supports-color": "^11.0.0"
   },
   "devDependencies": {
+    "ava": "^8.0.1",
+    "c8": "^12.0.0",
     "type-fest": "^5.8.0"
   }
 }
