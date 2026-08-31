@@ -34,7 +34,7 @@
   "scripts": {
     "watch": "pnpm build --watch",
     "build": "pnpm clean && tsc",
-    "test": "c8 ava --no-worker-threads",
+    "test": "c8 ava",
     "clean": "rimraf dist"
   },
   "dependencies": {

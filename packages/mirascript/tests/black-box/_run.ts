@@ -64,8 +64,9 @@ function createContext(t: ExecutionContext, timeout_fn: Array<[() => unknown, st
 const TEST_DIR = new URL('../../../../tests', import.meta.url);
 
 const runScript = (t: ExecutionContext, file: string, extern: boolean, script: VmScript) => {
+    const timeout = file.endsWith('_huge.mira') ? 5000 : 500;
     const timeout_fn: Array<[() => unknown, string]> = [];
-    configCheckpoint(file.endsWith('_huge.mira') ? 5000 : 500);
+    configCheckpoint(timeout);
     script(createContext(t, timeout_fn, extern));
     // 在脚本之后执行，否则脚本本身超时
     configCheckpoint();

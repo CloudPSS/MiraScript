@@ -37,7 +37,7 @@
     "watch": "pnpm build --watch",
     "build": "pnpm clean && pnpm tsc && node ./esbuild.config.js",
     "clean": "rimraf dist",
-    "test": "c8 ava --no-worker-threads"
+    "test": "c8 ava"
   },
   "dependencies": {
     "@commander-js/extra-typings": "^15.0.0",
