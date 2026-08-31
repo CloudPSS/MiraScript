@@ -55,7 +55,7 @@
     "@types/vscode": "1.90.0",
     "@vscode/test-web": "^0.0.81",
     "esbuild-plugin-define": "^0.6.0",
-    "js-yaml": "^5.4.0",
+    "js-yaml": "^5.4.1",
     "nodemon": "^3.1.14",
     "svg2png-wasm": "^1.4.1"
   },

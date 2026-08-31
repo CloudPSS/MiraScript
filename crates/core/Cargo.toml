@@ -42,5 +42,5 @@ pretty = { version = "0.12", optional = true }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 mimalloc = { version = "0.1", optional = true, features = [] }
-[target.'cfg(not(target_os = "windows"))'.dependencies]
+[target.'cfg(all(not(target_os = "windows"), not(target_family = "wasm")))'.dependencies]
 mimalloc = { version = "0.1", optional = true, features = ["v2"] }
