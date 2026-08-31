@@ -4,6 +4,9 @@ on:
   workflow_call:
   workflow_dispatch:
 
+env:
+  FORCE_COLOR: 1
+
 jobs:
   build:
     runs-on: ubuntu-latest
