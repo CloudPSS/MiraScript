@@ -173,6 +173,19 @@ fn preserve_line_endings(source: &str, output: String) -> String {
     }
 }
 
+fn trim_single_content_line(output: String) -> String {
+    if output
+        .lines()
+        .filter(|line| !line.is_empty())
+        .take(2)
+        .count()
+        != 1
+    {
+        return output;
+    }
+    output.trim().to_owned()
+}
+
 pub fn format_document(
     source: &str,
     config: &CompileConfig,
@@ -186,7 +199,7 @@ pub fn format_document(
             let output = if config.input_mode == crate::InputMode::Template {
                 format_raw(script, options)
             } else {
-                format(script, options)
+                trim_single_content_line(format(script, options))
             };
             Some(preserve_line_endings(source, output))
         }

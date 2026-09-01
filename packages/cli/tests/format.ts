@@ -39,6 +39,10 @@ test('formats stdin with width options and reports syntax errors', async (t) => 
     const empty = await run(['format', '-']);
     t.is(empty.code, 0);
     t.is(empty.stdout, '\n');
+
+    const singleLine = await run(['format', '-'], '  \n  \n[1,2]\n  \n');
+    t.is(singleLine.code, 0);
+    t.is(singleLine.stdout, '[1, 2]');
 });
 
 test('check and write use deterministic exit codes', async (t) => {
@@ -49,7 +53,7 @@ test('check and write use deterministic exit codes', async (t) => {
         t.is((await run(['format', '--check', file])).code, 1);
         t.is((await run(['format', '--write', file])).code, 0);
         t.is((await run(['format', '--check', file])).code, 0);
-        t.is(await readFile(file, 'utf8'), 'let x = [1, 2, 3, 4];\n');
+        t.is(await readFile(file, 'utf8'), 'let x = [1, 2, 3, 4];');
     } finally {
         await rm(directory, { recursive: true, force: true });
     }

@@ -36,12 +36,18 @@ fn format_range(source: &str, ranges: &[SourceRange], line_width: usize) -> Vec<
 fn layout_uses_available_width_instead_of_item_count() {
     assert_eq!(
         format_source("let x=[1,2,3,4,5,6,7,8];", 80),
-        "let x = [1, 2, 3, 4, 5, 6, 7, 8];\n"
+        "let x = [1, 2, 3, 4, 5, 6, 7, 8];"
     );
     assert_eq!(
         format_source("let x=[1111,2222,3333,4444];", 20),
         "let x = [\n  1111,\n  2222,\n  3333,\n  4444,\n];\n"
     );
+}
+
+#[test]
+fn single_content_line_discards_surrounding_blank_lines() {
+    assert_eq!(format_source("  \n  \n[1,2]\n  \n", 80), "[1, 2]");
+    assert_eq!(format_source("\r\n\t\r\n  [1,2]  \r\n\r\n", 80), "[1, 2]");
 }
 
 #[test]

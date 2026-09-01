@@ -42,3 +42,10 @@ test('WASM range formatting preserves template literal content', async (t) => {
         t.deepEqual(result.edits, []);
     }
 });
+
+test('WASM document formatting trims a single content line', async (t) => {
+    const module = await wasm.loadModule();
+    const source = '  \n  \n[1,2]\n  \n';
+    const result = module.formatSync(source, { input_mode: 'Script', trivia: true });
+    t.deepEqual(result.edits, [{ start: 0, end: source.length, text: '[1, 2]' }]);
+});
