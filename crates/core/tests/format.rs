@@ -51,11 +51,16 @@ fn single_content_line_discards_surrounding_blank_lines() {
 }
 
 #[test]
-fn long_infix_chains_break_after_operators() {
+fn infix_chains_group_by_precedence_and_break_before_operators() {
     assert_eq!(
         format_source("let x=first+second+third+fourth;", 20),
-        "let x = first +\n  second +\n  third +\n  fourth;\n"
+        "let x = first\n  + second\n  + third\n  + fourth;\n"
     );
+    assert_eq!(
+        format_source("1+1*2+1+1+(1+1)+1", 20),
+        "1\n  + 1 * 2\n  + 1\n  + 1\n  + (1 + 1)\n  + 1\n"
+    );
+    assert_eq!(format_source("1+-2+!false", 10), "1\n  + -2\n  + !false\n");
 }
 
 #[test]

@@ -380,13 +380,13 @@ fn postfix<'s>(i: &mut Input<'s>) -> Result<Expression<'s>> {
 }
 
 #[derive(Default)]
-struct PrecedenceResult {
-    value: u8,
-    can_be_prefix: bool,
-    right_associative: bool,
+pub(crate) struct PrecedenceResult {
+    pub value: u8,
+    pub can_be_prefix: bool,
+    pub right_associative: bool,
 }
 
-fn precedence_of(t: &TokenKind<'_>) -> PrecedenceResult {
+pub(crate) fn precedence_of(t: &TokenKind<'_>) -> PrecedenceResult {
     use crate::lexer::{Keyword::*, Operator::*, TokenKind::*};
     let (precedence, can_be_prefix) = match t {
         Operator(Caret) => (200, false),

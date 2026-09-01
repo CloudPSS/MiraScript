@@ -1,30 +1,43 @@
 use crate::{
-    Operator,
-    parser::{ElseBlock, Expression, MatchCase, Statement, TokenRef},
+    Operator, TokenKind,
+    parser::{ElseBlock, Expression, MatchCase, Statement, TokenRef, precedence_of},
 };
 
 use super::prelude::*;
 
+fn expression_precedence(token: &TokenKind<'_>) -> u8 {
+    precedence_of(token).value
+}
+
 fn collect_infix<'s, 'a>(
     expression: &'a Expression<'s>,
+    precedence: u8,
     operands: &mut Vec<&'a Expression<'s>>,
     operators: &mut Vec<&'a crate::parser::TokenRef<'s>>,
 ) {
     if let Expression::Infix(left, operator, right) = expression
-        && **operator != Operator::Caret
+        && expression_precedence(&operator.kind) == precedence
     {
-        collect_infix(left, operands, operators);
+        collect_infix(left, precedence, operands, operators);
         operators.push(operator);
-        collect_infix(right, operands, operators);
+        collect_infix(right, precedence, operands, operators);
     } else {
         operands.push(expression);
     }
 }
 
 fn format_infix(expression: &Expression<'_>, formatter: &Formatter) -> FormatDoc {
+    let Expression::Infix(_, root_operator, _) = expression else {
+        return expression.format(formatter);
+    };
     let mut operands = Vec::new();
     let mut operators = Vec::new();
-    collect_infix(expression, &mut operands, &mut operators);
+    collect_infix(
+        expression,
+        expression_precedence(&root_operator.kind),
+        &mut operands,
+        &mut operators,
+    );
     let mut operands = operands.into_iter();
     let Some(first) = operands.next() else {
         return Formatter::nil();
@@ -34,9 +47,9 @@ fn format_infix(expression: &Expression<'_>, formatter: &Formatter) -> FormatDoc
         .zip(operands)
         .map(|(operator, operand)| {
             formatter
-                .space()
+                .line()
                 .append(formatter.token(operator))
-                .append(formatter.line())
+                .append(formatter.space())
                 .append(operand.format(formatter))
         });
     first
