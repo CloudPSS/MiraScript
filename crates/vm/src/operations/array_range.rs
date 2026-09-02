@@ -1,18 +1,18 @@
 use super::*;
 
-pub(crate) fn array_range(
+pub fn array_range(
     runtime: &Runtime,
     start: MiraValue,
     end: MiraValue,
     exclusive: bool,
     max_len: usize,
-) -> Result<Vec<MiraValue>> {
+) -> Result<impl Iterator<Item = MiraValue>> {
     let start = to_number(runtime, start)?;
     let end = to_number(runtime, end)?;
-    if !start.is_finite() || !end.is_finite() || start > end {
-        return Ok(Vec::new());
-    }
-    let length = if exclusive {
+
+    let length = if !start.is_finite() || !end.is_finite() || start > end {
+        0.0
+    } else if exclusive {
         (end - start).ceil()
     } else {
         (end - start + 1.0).floor()
@@ -23,7 +23,5 @@ pub(crate) fn array_range(
             max: max_len,
         }));
     }
-    Ok((0..length.max(0.0) as usize)
-        .map(|index| MiraValue::number(start + index as f64))
-        .collect())
+    Ok((0..length.max(0.0) as usize).map(move |index| MiraValue::number(start + index as f64)))
 }

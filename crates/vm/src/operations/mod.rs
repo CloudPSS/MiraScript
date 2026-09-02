@@ -12,7 +12,7 @@ use std::cmp::Ordering;
 
 use indexmap::IndexMap;
 
-use crate::{MiraError, MiraValue, MiraValueKind, Result, Runtime, RuntimeErrorKind};
+use crate::{MiraError, MiraType, MiraValue, MiraValueKind, Result, Runtime, RuntimeErrorKind};
 
 use common::javascript_exponent;
 use convert::inner_to_string;
@@ -38,10 +38,10 @@ pub(crate) fn into_element(value: MiraValue) -> MiraValue {
 }
 
 pub(crate) fn array_len(runtime: &Runtime, value: MiraValue) -> Result<Option<usize>> {
-    match value.kind() {
-        MiraValueKind::Array(handle) => Ok(Some(runtime.get_array_dyn(handle)?.len())),
-        _ => Ok(None),
+    if value.value_type() != MiraType::Array {
+        return Ok(None);
     }
+    length(runtime, value).map(Some)
 }
 
 pub(crate) fn array_get(

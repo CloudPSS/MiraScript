@@ -1,12 +1,10 @@
 use super::*;
 
 pub(crate) fn length(runtime: &Runtime, value: MiraValue) -> Result<usize> {
-    if let Some(length) = array_len(runtime, value)? {
-        return Ok(length);
-    }
     match value.kind() {
-        MiraValueKind::Record(_) => Ok(record_keys(runtime, value)?.unwrap_or_default().len()),
-        MiraValueKind::Module(_) => Ok(module_keys(runtime, value)?.unwrap_or_default().len()),
+        MiraValueKind::Record(h) => Ok(runtime.get_record_dyn(h)?.len()),
+        MiraValueKind::Module(h) => Ok(runtime.get_module_dyn(h)?.len()),
+        MiraValueKind::Array(h) => Ok(runtime.get_array_dyn(h)?.len()),
         _ => Err(MiraError::runtime(RuntimeErrorKind::TypeMismatch {
             expected: "array, record, or module",
             actual: value.value_type(),

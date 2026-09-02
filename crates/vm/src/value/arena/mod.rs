@@ -177,7 +177,9 @@ macro_rules! impl_typed_functions {
                     .map(|value| value.as_ref())
             }
 
-            #[doc = concat!("Read the concrete target represented by a typed ", stringify!($name), " handle.")]
+            /// Read the concrete target represented by a typed
+            #[doc = stringify!($name)]
+            /// handle.
             pub fn [<get_ $name>]<T: $trait>(&self, handle: MiraHandle<T>) -> Result<&T> {
                 let value = self.arena.$field.get(self.arena.id, handle.key)?;
                 let value: &dyn Any = value.resolve(self)?.unwrap_or(value.as_ref());

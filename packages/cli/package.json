@@ -42,8 +42,8 @@
   "dependencies": {
     "@commander-js/extra-typings": "^15.0.0",
     "@mirascript/bindings": "workspace:~",
-    "@mirascript/mirascript": "workspace:~",
     "@mirascript/help": "workspace:~",
+    "@mirascript/mirascript": "workspace:~",
     "ansi-styles": "^7.0.0",
     "commander": "^15.0.0",
     "supports-color": "^11.0.0"
@@ -51,6 +51,6 @@
   "devDependencies": {
     "ava": "^8.0.1",
     "c8": "^12.0.0",
-    "type-fest": "^5.8.0"
+    "type-fest": "^5.9.0"
   }
 }

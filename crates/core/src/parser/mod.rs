@@ -31,6 +31,7 @@ mod token_ref;
 
 pub(crate) use array_element::{ArgElement, ArrayElement, ArrayElementBase, ArrayPattern};
 pub(crate) use ast_visitor::*;
+#[cfg(feature = "formatter")]
 pub(crate) use basic_expressions::precedence_of;
 pub(crate) use expression::{Callable, ElseBlock, Expression, MatchCase};
 pub(crate) use iterable::Iterable;
