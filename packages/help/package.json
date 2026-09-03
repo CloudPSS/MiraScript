@@ -1,6 +1,6 @@
 {
   "name": "@mirascript/help",
-  "version": "0.1.92",
+  "version": "0.1.93-alpha.1",
   "author": "CloudPSS",
   "license": "MIT",
   "description": "Help documentation for Mirascript core language.",
