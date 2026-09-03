@@ -16,8 +16,11 @@ mod zip;
 
 use indexmap::IndexMap;
 
-use crate::standard_library::{const_value, global_builtin, is_callable, required};
-use crate::{MiraError, MiraValue, MiraValueKind, Result, Runtime, RuntimeErrorKind, operations};
+use crate::standard_library::{callable, const_value, global_builtin, optional_callable, required};
+use crate::{
+    MiraError, MiraFunctionHandle, MiraValue, MiraValueKind, Result, Runtime, RuntimeErrorKind,
+    operations,
+};
 
 use with::array_length;
 

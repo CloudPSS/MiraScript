@@ -1,5 +1,7 @@
 use std::{any::Any, fmt, hash, marker::PhantomData};
 
+use crate::MiraExtern;
+
 use super::{ArenaKey, MiraArray, MiraFunction, MiraModule, MiraRecord, MiraValue};
 
 /// A compact, runtime-checked handle to an arena-managed value.
@@ -100,6 +102,19 @@ impl_handle_cast!(MiraArray, erase_array);
 impl_handle_cast!(MiraRecord, erase_record);
 impl_handle_cast!(MiraFunction, erase_function);
 impl_handle_cast!(MiraModule, erase_module);
+
+/// A handle to a MiraScript string value.
+pub type MiraStringHandle = MiraHandle<String>;
+/// A handle to a MiraScript array value.
+pub type MiraArrayHandle = MiraHandle<dyn MiraArray>;
+/// A handle to a MiraScript record value.
+pub type MiraRecordHandle = MiraHandle<dyn MiraRecord>;
+/// A handle to a MiraScript function value.
+pub type MiraFunctionHandle = MiraHandle<dyn MiraFunction>;
+/// A handle to a MiraScript module value.
+pub type MiraModuleHandle = MiraHandle<dyn MiraModule>;
+/// A handle to a MiraScript extern value.
+pub type MiraExternHandle = MiraHandle<dyn MiraExtern>;
 
 #[cfg(test)]
 mod tests {

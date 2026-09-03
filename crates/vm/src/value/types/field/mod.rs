@@ -4,8 +4,8 @@ mod shaped_array;
 mod shaped_record;
 
 use crate::{
-    MiraArray, MiraHandle, MiraManageable, MiraRecord, MiraShapedArray, MiraShapedRecord,
-    MiraValue, Result, Runtime,
+    MiraArray, MiraArrayHandle, MiraHandle, MiraManageable, MiraRecord, MiraShapedArray,
+    MiraShapedRecord, MiraValue, Result, Runtime,
 };
 
 pub use array::{array_from_array, array_from_record};

@@ -2,9 +2,9 @@ mod raw;
 
 use std::fmt;
 
-use crate::{MiraType, value::arena::MiraHandle};
+use crate::{MiraType, value::arena::*};
 
-use super::{MiraArray, MiraExtern, MiraFunction, MiraModule, MiraRecord, Payload};
+use super::Payload;
 
 pub(super) use raw::*;
 
@@ -15,12 +15,12 @@ pub(crate) enum MiraValueKind {
     Boolean(bool),
     Number(f64),
     StaticStr(&'static &'static str),
-    String(MiraHandle<String>),
-    Array(MiraHandle<dyn MiraArray>),
-    Record(MiraHandle<dyn MiraRecord>),
-    Function(MiraHandle<dyn MiraFunction>),
-    Module(MiraHandle<dyn MiraModule>),
-    Extern(MiraHandle<dyn MiraExtern>),
+    String(MiraStringHandle),
+    Array(MiraArrayHandle),
+    Record(MiraRecordHandle),
+    Function(MiraFunctionHandle),
+    Module(MiraModuleHandle),
+    Extern(MiraExternHandle),
 }
 
 /// A compact value understood by the Rust VM.
@@ -120,7 +120,14 @@ impl MiraValue {
 impl Default for MiraValue {
     #[inline]
     fn default() -> Self {
-        Self::empty(ValueTag::Nil)
+        MiraValue::NIL
+    }
+}
+
+impl Default for &MiraValue {
+    #[inline]
+    fn default() -> Self {
+        &MiraValue::NIL
     }
 }
 

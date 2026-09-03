@@ -1,9 +1,10 @@
 mod arr;
+mod handle;
 mod slice;
 
 use std::any::Any;
 
-use crate::{MiraHandle, MiraManageable, Result, Runtime};
+use crate::{MiraArrayHandle, MiraHandle, MiraManageable, Result, Runtime};
 
 use super::{MiraValue, MiraValueKind, value::ValueTag};
 
@@ -22,7 +23,7 @@ impl MiraValue {
 
     /// Return the array handle, or `None` for another value type.
     #[inline]
-    pub fn as_array(&self) -> Option<MiraHandle<dyn MiraArray>> {
+    pub fn as_array(&self) -> Option<MiraArrayHandle> {
         match self.kind() {
             MiraValueKind::Array(value) => Some(value),
             _ => None,
@@ -38,7 +39,7 @@ pub trait MiraArray: Any {
     /// Read one element by index.
     fn get(
         &self,
-        self_handle: MiraHandle<dyn MiraArray>,
+        self_handle: MiraArrayHandle,
         runtime: &Runtime,
         index: usize,
     ) -> Result<MiraManageable>;
@@ -66,7 +67,7 @@ pub trait MiraShapedArray: Any {
     #[doc(hidden)]
     fn get_shaped(
         &self,
-        self_handle: MiraHandle<dyn MiraArray>,
+        self_handle: MiraArrayHandle,
         runtime: &Runtime,
         index: usize,
     ) -> Result<MiraManageable>;
@@ -79,7 +80,7 @@ impl<T: MiraShapedArray> MiraArray for T {
 
     fn get(
         &self,
-        self_handle: MiraHandle<dyn MiraArray>,
+        self_handle: MiraArrayHandle,
         runtime: &Runtime,
         index: usize,
     ) -> Result<MiraManageable> {

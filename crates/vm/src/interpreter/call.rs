@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use crate::{MiraManageable, bytecode::Program};
+use crate::{MiraHandle, MiraManageable, bytecode::Program};
 
 use super::*;
 
@@ -131,14 +131,21 @@ impl Runtime {
 
     /// Call a function value owned by this Runtime.
     pub fn call(&mut self, function: MiraValue, args: &[MiraValue]) -> Result<MiraValue> {
-        self.checkpoint()?;
-        if self.call_stack.depth() >= self.options.max_call_depth as usize {
-            return self.err_call_depth();
-        }
         let MiraValueKind::Function(handle) = function.kind() else {
             return self.err_not_callable(function);
         };
+        self.call_function(handle, args)
+    }
 
+    pub(crate) fn call_function(
+        &mut self,
+        handle: MiraHandle<dyn MiraFunction>,
+        args: &[MiraValue],
+    ) -> Result<MiraValue> {
+        if self.call_stack.depth() >= self.options.max_call_depth as usize {
+            return self.err_call_depth();
+        }
+        self.checkpoint()?;
         let callable = self.get_function_dyn(handle)?;
         self.call_stack.push(handle);
         let result = callable

@@ -4,12 +4,12 @@ pub(super) fn install(context: &mut Runtime) {
     global_builtin!(context, fn find(call, args) {
         let data = Data::from_value(call, *required(args, 0, "data")?)?;
         let predicate = required(args, 1, "predicate")?;
-        let callable = is_callable(predicate)?;
+        let callable = predicate.as_function();
         let original = data.original(call)?;
         for (key, value) in data_items(call, &data)? {
             call.checkpoint()?;
-            let found = if callable {
-                operations::to_boolean(call.call(*predicate, &[value, key, original])?)?
+            let found = if let Some(callable) = callable {
+                operations::to_boolean(callable.call(call, &[value, key, original])?)?
             } else {
                 operations::same_value(call, value, *predicate)?
             };

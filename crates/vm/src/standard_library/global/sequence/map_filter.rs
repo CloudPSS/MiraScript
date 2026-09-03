@@ -21,16 +21,11 @@ enum MapMode {
 
 fn map_like(call: &mut Runtime, args: &[MiraValue], mode: MapMode) -> Result<MiraValue> {
     let data = Data::from_value(call, *required(args, 0, "data")?)?;
-    let function = required(args, 1, "f")?;
-    if !is_callable(function)? {
-        return Err(MiraError::runtime(RuntimeErrorKind::NotCallable {
-            actual: function.value_type(),
-        }));
-    }
+    let function = callable(args, 1, "f")?;
     let original = data.original(call)?;
     match data {
         Data::Primitive(value) => {
-            let mapped = call.call(*function, &[value, MiraValue::NIL, value])?;
+            let mapped = function.call(call, &[value, MiraValue::NIL, value])?;
             match mode {
                 MapMode::Map => const_value(mapped),
                 MapMode::Filter => Ok(if operations::to_boolean(mapped)? {
@@ -49,10 +44,8 @@ fn map_like(call: &mut Runtime, args: &[MiraValue], mode: MapMode) -> Result<Mir
             let mut result = Vec::new();
             for (index, value) in values.into_iter().enumerate() {
                 call.checkpoint()?;
-                let mapped = call.call(
-                    *function,
-                    &[value, MiraValue::number(index as f64), original],
-                )?;
+                let mapped =
+                    function.call(call, &[value, MiraValue::number(index as f64), original])?;
                 match mode {
                     MapMode::Map => result.push(const_value(mapped)?),
                     MapMode::Filter if operations::to_boolean(mapped)? => result.push(value),
@@ -69,7 +62,7 @@ fn map_like(call: &mut Runtime, args: &[MiraValue], mode: MapMode) -> Result<Mir
             for (key, value) in values {
                 call.checkpoint()?;
                 let key_value = call.insert(key.clone())?;
-                let mapped = call.call(*function, &[value, key_value, original])?;
+                let mapped = function.call(call, &[value, key_value, original])?;
                 match mode {
                     MapMode::Map => {
                         result.insert(key, const_value(mapped)?);

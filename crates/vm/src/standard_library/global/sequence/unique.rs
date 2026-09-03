@@ -3,12 +3,12 @@ use super::*;
 pub(super) fn install(runtime: &mut Runtime) {
     global_builtin!(runtime, fn unique(call, args) {
         let values = array_value(call, *required(args, 0, "data")?)?;
-        validate_optional_callable(args.get(1))?;
+        let equaler = optional_callable(args, 1, "equaler")?;
         let mut result = Vec::new();
         for value in values {
             let mut found = false;
             for existing in &result {
-                if equal(call, &value, existing, args.get(1))? {
+                if equal(call, &value, existing, equaler)? {
                     found = true;
                     break;
                 }
@@ -21,24 +21,19 @@ pub(super) fn install(runtime: &mut Runtime) {
     });
     global_builtin!(runtime, fn unique_by(call, args) {
         let values = array_value(call, *required(args, 0, "data")?)?;
-        let key_function = required(args, 1, "key")?;
-        if !is_callable(key_function)? {
-            return Err(MiraError::runtime(RuntimeErrorKind::NotCallable {
-                actual: key_function.value_type(),
-            }));
-        }
-        validate_optional_callable(args.get(2))?;
+        let key_function = callable(args, 1, "key")?;
+        let equaler = optional_callable(args, 2, "equaler")?;
         let original = call.insert(values.clone())?;
         let mut result = Vec::new();
         let mut keys = Vec::new();
         for (index, value) in values.into_iter().enumerate() {
-            let key = call.call(
-                *key_function,
+            let key = key_function.call(
+                call,
                 &[value, MiraValue::number(index as f64), original],
             )?;
             let mut found = false;
             for existing in &keys {
-                if equal(call, &key, existing, args.get(2))? {
+                if equal(call, &key, existing, equaler)? {
                     found = true;
                     break;
                 }
@@ -52,30 +47,14 @@ pub(super) fn install(runtime: &mut Runtime) {
     });
 }
 
-fn validate_optional_callable(value: Option<&MiraValue>) -> Result<()> {
-    if let Some(value) = value.filter(|value| **value != MiraValue::NIL)
-        && !is_callable(value)?
-    {
-        return Err(MiraError::runtime(RuntimeErrorKind::NotCallable {
-            actual: value.value_type(),
-        }));
-    }
-    Ok(())
-}
-
 fn equal(
     call: &mut Runtime,
     left: &MiraValue,
     right: &MiraValue,
-    equaler: Option<&MiraValue>,
+    equaler: Option<MiraFunctionHandle>,
 ) -> Result<bool> {
-    if let Some(equaler) = equaler.filter(|value| **value != MiraValue::NIL) {
-        if !is_callable(equaler)? {
-            return Err(MiraError::runtime(RuntimeErrorKind::NotCallable {
-                actual: equaler.value_type(),
-            }));
-        }
-        operations::to_boolean(call.call(*equaler, &[*left, *right])?)
+    if let Some(equaler) = equaler {
+        operations::to_boolean(equaler.call(call, &[*left, *right])?)
     } else {
         operations::same_value(call, *left, *right)
     }

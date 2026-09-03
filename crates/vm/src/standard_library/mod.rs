@@ -2,7 +2,9 @@ mod builtin;
 mod global;
 mod module;
 
-use crate::{MiraError, MiraValue, Result, Runtime, RuntimeErrorKind, operations};
+use crate::{
+    MiraError, MiraFunctionHandle, MiraValue, Result, Runtime, RuntimeErrorKind, operations,
+};
 use builtin::{builtin_fn, global_builtin};
 
 pub(crate) fn install(runtime: &mut Runtime) {
@@ -44,8 +46,27 @@ fn array(
     })
 }
 
-fn is_callable(value: &MiraValue) -> Result<bool> {
-    Ok(value.is_function())
+fn callable(args: &[MiraValue], index: usize, name: &'static str) -> Result<MiraFunctionHandle> {
+    let value = *required(args, index, name)?;
+    if let Some(h) = value.as_function() {
+        Ok(h)
+    } else {
+        Err(MiraError::runtime(RuntimeErrorKind::NotCallable {
+            actual: value.value_type(),
+        }))
+    }
+}
+
+fn optional_callable(
+    args: &[MiraValue],
+    index: usize,
+    name: &'static str,
+) -> Result<Option<MiraFunctionHandle>> {
+    let value = args.get(index).unwrap_or_default();
+    if value.is_nil() {
+        return Ok(None);
+    }
+    callable(args, index, name).map(Some)
 }
 
 fn const_value(value: MiraValue) -> Result<MiraValue> {

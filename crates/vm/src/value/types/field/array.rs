@@ -14,7 +14,7 @@ impl<P: MiraRecord, T: MiraArray> MiraArray for ArrayFromRecord<P, T> {
 
     fn get(
         &self,
-        self_handle: MiraHandle<dyn MiraArray>,
+        self_handle: MiraArrayHandle,
         runtime: &Runtime,
         index: usize,
     ) -> Result<MiraManageable> {
@@ -48,7 +48,7 @@ impl<P: MiraArray, T: MiraArray> MiraArray for ArrayFromArray<P, T> {
 
     fn get(
         &self,
-        self_handle: MiraHandle<dyn MiraArray>,
+        self_handle: MiraArrayHandle,
         runtime: &Runtime,
         index: usize,
     ) -> Result<MiraManageable> {

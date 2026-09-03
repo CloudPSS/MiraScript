@@ -1,11 +1,12 @@
 use std::any::Any;
 
-use crate::{MiraHandle, Result, Runtime, value::MiraManageable};
+use crate::{MiraFunctionHandle, MiraHandle, Result, Runtime, value::MiraManageable};
 
 use super::{MiraValue, MiraValueKind, value::ValueTag};
 
-pub mod helper;
-pub mod native;
+mod handle;
+pub(crate) mod helper;
+pub(crate) mod native;
 
 pub use native::MiraNativeFn;
 
@@ -26,7 +27,7 @@ impl MiraValue {
 
     /// Return the function handle, or `None` for another value type.
     #[inline]
-    pub fn as_function(&self) -> Option<MiraHandle<dyn MiraFunction>> {
+    pub fn as_function(&self) -> Option<MiraFunctionHandle> {
         match self.kind() {
             MiraValueKind::Function(value) => Some(value),
             _ => None,

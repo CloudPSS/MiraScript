@@ -2,7 +2,8 @@ use std::{boxed::Box, vec::Vec};
 
 use crate::{
     __private::{MiraField, MiraFieldGetter, array_from_array, array_from_record},
-    MiraError, MiraHandle, MiraManageable, MiraRecord, Result, Runtime, RuntimeErrorKind,
+    MiraArrayHandle, MiraError, MiraHandle, MiraManageable, MiraRecord, Result, Runtime,
+    RuntimeErrorKind,
 };
 
 use super::MiraArray;
@@ -19,7 +20,7 @@ macro_rules! impl_slice (
 
                 fn get(
                     &self,
-                    self_handle: MiraHandle<dyn MiraArray>,
+                    self_handle: MiraArrayHandle,
                     _runtime: &Runtime,
                     index: usize,
                 ) -> Result<MiraManageable> {

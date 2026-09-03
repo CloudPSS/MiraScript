@@ -1,6 +1,7 @@
 use crate::{
     __private::{MiraField, MiraFieldGetter, shaped_array_from_array, shaped_array_from_record},
-    MiraError, MiraHandle, MiraManageable, MiraRecord, Result, Runtime, RuntimeErrorKind,
+    MiraArrayHandle, MiraError, MiraHandle, MiraManageable, MiraRecord, Result, Runtime,
+    RuntimeErrorKind,
 };
 
 use super::{MiraArray, MiraShapedArray};
@@ -12,7 +13,7 @@ impl<T: MiraField, const N: usize> MiraShapedArray for [T; N] {
 
     fn get_shaped(
         &self,
-        self_handle: MiraHandle<dyn MiraArray>,
+        self_handle: MiraArrayHandle,
         _runtime: &Runtime,
         index: usize,
     ) -> Result<MiraManageable> {

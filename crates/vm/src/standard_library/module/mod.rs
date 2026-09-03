@@ -4,8 +4,8 @@ use crate::mira;
 mod matrix_impl;
 #[mira]
 pub(super) mod matrix {
-    use crate::standard_library::{const_value, is_callable, required};
-    use crate::{MiraError, MiraValue, Result, Runtime, RuntimeErrorKind};
+    use crate::standard_library::{callable, const_value, required};
+    use crate::{MiraValue, Result, Runtime};
 
     use super::matrix_impl as i;
 
@@ -73,15 +73,10 @@ pub(super) mod matrix {
     fn entrywise(runtime: &mut Runtime, args: &[MiraValue]) -> Result<MiraValue> {
         let left = required(args, 0, "a")?;
         let right = required(args, 1, "b")?;
-        let function = required(args, 2, "f")?;
-        if !is_callable(function)? {
-            return Err(MiraError::runtime(RuntimeErrorKind::NotCallable {
-                actual: function.value_type(),
-            }));
-        }
+        let function = callable(args, 2, "f")?;
         i::entrywise(runtime, *left, *right, &mut |runtime, a, b| {
             runtime.checkpoint()?;
-            const_value(runtime.call(*function, &[a, b])?)
+            const_value(function.call(runtime, &[a, b])?)
         })
     }
 }

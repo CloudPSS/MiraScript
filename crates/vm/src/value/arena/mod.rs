@@ -10,7 +10,10 @@ use crate::{MiraError, Result, Runtime, RuntimeErrorKind};
 
 use super::{MiraArray, MiraFunction, MiraModule, MiraRecord, MiraValue, MiraValueKind, Payload};
 
-pub use handle::MiraHandle;
+pub use handle::{
+    MiraArrayHandle, MiraExternHandle, MiraFunctionHandle, MiraHandle, MiraModuleHandle,
+    MiraRecordHandle, MiraStringHandle,
+};
 use id::ArenaId;
 use key::ArenaKey;
 pub use manageable::MiraManageable;

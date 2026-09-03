@@ -22,29 +22,31 @@ fn equal_with(
         _ if left.is_string() && right.is_string() => {
             left.as_str(runtime)? == right.as_str(runtime)?
         }
-        (MiraValueKind::Array(_), MiraValueKind::Array(_)) => {
-            let left_len = array_len(runtime, left)?.unwrap_or_default();
-            let right_len = array_len(runtime, right)?.unwrap_or_default();
+        (MiraValueKind::Array(lh), MiraValueKind::Array(rh)) => {
+            if lh == rh {
+                return Ok(true);
+            }
+            let left_len = lh.len(runtime)?;
+            let right_len = rh.len(runtime)?;
             if left_len != right_len {
                 return Ok(false);
             }
             for index in 0..left_len {
-                let Some(left_value) = array_get(runtime, left, index)? else {
-                    return Ok(false);
-                };
-                let Some(right_value) = array_get(runtime, right, index)? else {
-                    return Ok(false);
-                };
+                let left_value = lh.get(runtime, index)?;
+                let right_value = rh.get(runtime, index)?;
                 if !inner_equal(runtime, left_value, right_value)? {
                     return Ok(false);
                 }
             }
             true
         }
-        (MiraValueKind::Record(_), MiraValueKind::Record(_)) => {
+        (MiraValueKind::Record(lh), MiraValueKind::Record(rh)) => {
+            if lh == rh {
+                return Ok(true);
+            }
             let left_keys = record_keys(runtime, left)?.unwrap_or_default();
-            let right_keys = record_keys(runtime, right)?.unwrap_or_default();
-            if left_keys.len() != right_keys.len() {
+            let right_len = rh.len(runtime)?;
+            if left_keys.len() != right_len {
                 return Ok(false);
             }
             for key in left_keys {

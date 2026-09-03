@@ -1,8 +1,8 @@
 mod array;
 mod boolean;
 mod r#extern;
-pub mod field;
-pub mod function;
+pub(crate) mod field;
+pub(crate) mod function;
 mod module;
 mod nil;
 mod number;
