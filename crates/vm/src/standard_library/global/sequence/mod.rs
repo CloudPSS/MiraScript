@@ -26,7 +26,7 @@ use with::array_length;
 
 pub(super) enum Data {
     Primitive(MiraValue),
-    Array(Vec<MiraValue>),
+    Array(MiraValue),
     Record(IndexMap<String, MiraValue>),
 }
 
@@ -38,7 +38,7 @@ impl Data {
             | MiraValueKind::Number(_)
             | MiraValueKind::String(_)
             | MiraValueKind::StaticStr(_) => Ok(Self::Primitive(value)),
-            MiraValueKind::Array(_) => Ok(Self::Array(operations::iterable_array(runtime, value)?)),
+            MiraValueKind::Array(_) => Ok(Self::Array(value)),
             MiraValueKind::Record(_) => {
                 let mut record = IndexMap::new();
                 for key in operations::record_keys(runtime, value)?.unwrap_or_default() {
@@ -59,7 +59,7 @@ impl Data {
     pub(super) fn original(&self, runtime: &mut Runtime) -> Result<MiraValue> {
         match self {
             Self::Primitive(value) => Ok(*value),
-            Self::Array(value) => runtime.insert(value.clone()),
+            Self::Array(value) => Ok(*value),
             Self::Record(value) => runtime.insert(value.clone()),
         }
     }
@@ -87,19 +87,52 @@ pub(super) fn data_items(
     runtime: &mut Runtime,
     data: &Data,
 ) -> Result<Vec<(MiraValue, MiraValue)>> {
-    Ok(match data {
-        Data::Primitive(value) => vec![(MiraValue::NIL, *value)],
-        Data::Array(values) => values
-            .iter()
-            .cloned()
-            .enumerate()
-            .map(|(index, value)| (MiraValue::number(index as f64), value))
-            .collect(),
-        Data::Record(values) => values
-            .iter()
-            .map(|(key, value)| Ok((runtime.insert(key.clone())?, *value)))
-            .collect::<Result<Vec<_>>>()?,
-    })
+    iterate_data(
+        runtime,
+        data,
+        |_, length| Ok(Vec::with_capacity(length)),
+        |_, key, value, items| {
+            items.push((key, value));
+            Ok(true)
+        },
+    )
+}
+
+pub(super) fn iterate_data<T>(
+    runtime: &mut Runtime,
+    data: &Data,
+    init: impl FnOnce(&mut Runtime, usize) -> Result<T>,
+    mut body: impl FnMut(&mut Runtime, MiraValue, MiraValue, &mut T) -> Result<bool>,
+) -> Result<T> {
+    match data {
+        Data::Primitive(value) => {
+            let mut acc = init(runtime, 1)?;
+            body(runtime, MiraValue::NIL, *value, &mut acc)?;
+            Ok(acc)
+        }
+        Data::Array(value) => {
+            let iter = operations::iterate_array(runtime, *value)?;
+            let mut acc = init(runtime, iter.len())?;
+            for entry in iter {
+                let index = entry.index();
+                let value = entry.get(runtime)?;
+                if !body(runtime, MiraValue::number(index as f64), value, &mut acc)? {
+                    break;
+                }
+            }
+            Ok(acc)
+        }
+        Data::Record(values) => {
+            let mut acc = init(runtime, values.len())?;
+            for (key, value) in values {
+                let key = runtime.insert(key.clone())?;
+                if !body(runtime, key, *value, &mut acc)? {
+                    break;
+                }
+            }
+            Ok(acc)
+        }
+    }
 }
 
 pub(super) fn array_value(runtime: &mut Runtime, value: MiraValue) -> Result<Vec<MiraValue>> {

@@ -29,7 +29,10 @@ pub(super) fn install(context: &mut Runtime) {
     global_builtin!(context, fn values(call, args) {
         let data = Data::from_value(call, *required(args, 0, "data")?)?;
         match data {
-            Data::Array(values) => call.insert(values),
+            Data::Array(value) => {
+                let values = operations::iterable_array(call, value)?;
+                call.insert(values)
+            }
             Data::Record(values) => call.insert(values.into_values().collect::<Vec<_>>()),
             Data::Primitive(value) => Err(MiraError::runtime(RuntimeErrorKind::TypeMismatch {
                 expected: "array or record",
@@ -41,8 +44,12 @@ pub(super) fn install(context: &mut Runtime) {
         let data = Data::from_value(call, *required(args, 0, "data")?)?;
         let mut entries = Vec::new();
         match data {
-            Data::Array(values) => {
-                for (index, value) in values.into_iter().enumerate() {
+            Data::Array(value) => {
+                let iter = operations::iterate_array(call, value)?;
+                entries.reserve(iter.len());
+                for entry in iter {
+                    let index = entry.index();
+                    let value = entry.get(call)?;
                     entries.push(pair(call, MiraValue::number(index as f64), value)?);
                 }
             }

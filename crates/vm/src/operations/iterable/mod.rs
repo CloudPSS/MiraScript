@@ -1,4 +1,8 @@
+mod array;
+
 use super::*;
+
+pub(crate) use array::*;
 
 pub(crate) fn length(runtime: &Runtime, value: MiraValue) -> Result<usize> {
     match value.kind() {
@@ -32,14 +36,21 @@ pub(crate) fn iterable(runtime: &mut Runtime, value: MiraValue) -> Result<Vec<Mi
     }
 }
 
-pub(crate) fn iterable_array(runtime: &mut Runtime, value: MiraValue) -> Result<Vec<MiraValue>> {
-    let Some(length) = array_len(runtime, value)? else {
-        return Err(MiraError::runtime(RuntimeErrorKind::TypeMismatch {
-            expected: "array",
-            actual: value.value_type(),
-        }));
-    };
-    (0..length)
-        .map(|index| Ok(array_get(runtime, value, index)?.unwrap_or(MiraValue::NIL)))
-        .collect()
+pub(crate) fn in_value(runtime: &mut Runtime, needle: MiraValue, value: MiraValue) -> Result<bool> {
+    match value.kind() {
+        MiraValueKind::Array(_) => {
+            for entry in iterate_array(runtime, value)? {
+                let element = entry.get(runtime)?;
+                if same_value(runtime, element, needle)? {
+                    return Ok(true);
+                }
+            }
+            Ok(false)
+        }
+        MiraValueKind::Record(_) | MiraValueKind::Module(_) => {
+            let key = to_string(runtime, needle)?;
+            has(runtime, value, MiraValue::NIL, Some(&key))
+        }
+        _ => Ok(false),
+    }
 }

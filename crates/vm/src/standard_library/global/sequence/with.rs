@@ -27,7 +27,7 @@ fn update_with(
         }));
     }
     let mut result = data;
-    for pair in entries.chunks_exact(2) {
+    for pair in entries.as_chunks::<2>().0 {
         let path = if operations::array_len(runtime, pair[0])?.is_some() {
             operations::iterable_array(runtime, pair[0])?
         } else if pair[0] == MiraValue::NIL {

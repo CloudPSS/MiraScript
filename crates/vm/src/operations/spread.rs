@@ -27,7 +27,11 @@ pub(crate) fn record_spread(
             }
         }
         MiraValueKind::Array(_) => {
-            for (index, item) in iterable_array(runtime, value)?.into_iter().enumerate() {
+            let iter = iterate_array(runtime, value)?;
+            result = IndexMap::with_capacity(iter.len());
+            for entry in iter {
+                let index = entry.index();
+                let item = entry.get(runtime)?;
                 result.insert(index.to_string(), into_element(item));
             }
         }

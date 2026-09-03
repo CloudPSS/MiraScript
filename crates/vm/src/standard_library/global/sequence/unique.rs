@@ -2,10 +2,12 @@ use super::*;
 
 pub(super) fn install(runtime: &mut Runtime) {
     global_builtin!(runtime, fn unique(call, args) {
-        let values = array_value(call, *required(args, 0, "data")?)?;
+        let value = *required(args, 0, "data")?;
         let equaler = optional_callable(args, 1, "equaler")?;
-        let mut result = Vec::new();
-        for value in values {
+        let iter = operations::iterate_array(call, value)?;
+        let mut result = Vec::with_capacity(iter.len());
+        for entry in iter {
+            let value = entry.get(call)?;
             let mut found = false;
             for existing in &result {
                 if equal(call, &value, existing, equaler)? {
@@ -20,16 +22,18 @@ pub(super) fn install(runtime: &mut Runtime) {
         call.insert(result)
     });
     global_builtin!(runtime, fn unique_by(call, args) {
-        let values = array_value(call, *required(args, 0, "data")?)?;
+        let data = *required(args, 0, "data")?;
         let key_function = callable(args, 1, "key")?;
         let equaler = optional_callable(args, 2, "equaler")?;
-        let original = call.insert(values.clone())?;
-        let mut result = Vec::new();
-        let mut keys = Vec::new();
-        for (index, value) in values.into_iter().enumerate() {
+        let iter = operations::iterate_array(call, data)?;
+        let mut result = Vec::with_capacity(iter.len());
+        let mut keys = Vec::with_capacity(iter.len());
+        for entry in iter {
+            let index = entry.index();
+            let value = entry.get(call)?;
             let key = key_function.call(
                 call,
-                &[value, MiraValue::number(index as f64), original],
+                &[value, MiraValue::number(index as f64), data],
             )?;
             let mut found = false;
             for existing in &keys {

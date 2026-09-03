@@ -40,9 +40,12 @@ fn map_like(call: &mut Runtime, args: &[MiraValue], mode: MapMode) -> Result<Mir
                 }),
             }
         }
-        Data::Array(values) => {
-            let mut result = Vec::new();
-            for (index, value) in values.into_iter().enumerate() {
+        Data::Array(value) => {
+            let iter = operations::iterate_array(call, value)?;
+            let mut result = Vec::with_capacity(iter.len());
+            for entry in iter {
+                let index = entry.index();
+                let value = entry.get(call)?;
                 call.checkpoint()?;
                 let mapped =
                     function.call(call, &[value, MiraValue::number(index as f64), original])?;

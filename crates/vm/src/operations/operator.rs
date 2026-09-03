@@ -31,8 +31,9 @@ fn equal_with(
             if left_len != right_len {
                 return Ok(false);
             }
-            for index in 0..left_len {
-                let left_value = lh.get(runtime, index)?;
+            for entry in iterate_array(runtime, left)? {
+                let index = entry.index();
+                let left_value = entry.get(runtime)?;
                 let right_value = rh.get(runtime, index)?;
                 if !inner_equal(runtime, left_value, right_value)? {
                     return Ok(false);
@@ -134,23 +135,5 @@ pub(crate) fn approximately_equal(
         }
         use unicode_normalization::UnicodeNormalization;
         Ok(a.to_lowercase().nfc().eq(b.to_lowercase().nfc()))
-    }
-}
-
-pub(crate) fn in_value(runtime: &mut Runtime, needle: MiraValue, value: MiraValue) -> Result<bool> {
-    match value.kind() {
-        MiraValueKind::Array(_) => {
-            for candidate in iterable_array(runtime, value)? {
-                if same_value(runtime, candidate, needle)? {
-                    return Ok(true);
-                }
-            }
-            Ok(false)
-        }
-        MiraValueKind::Record(_) | MiraValueKind::Module(_) => {
-            let key = to_string(runtime, needle)?;
-            has(runtime, value, MiraValue::NIL, Some(&key))
-        }
-        _ => Ok(false),
     }
 }

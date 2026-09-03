@@ -7,8 +7,8 @@ pub(crate) fn slice(
     end: Option<MiraValue>,
     exclusive: bool,
 ) -> Result<MiraValue> {
-    let array = iterable_array(runtime, value)?;
-    let length = array.len() as i64;
+    let iter = iterate_array(runtime, value)?;
+    let length = iter.len() as i64;
     let mut start = match start {
         Some(value) => to_number(runtime, value).unwrap_or(f64::NAN),
         None => 0.0,
@@ -34,9 +34,13 @@ pub(crate) fn slice(
         end as i64 + 1
     }
     .clamp(0, length) as usize;
-    runtime.insert(if start >= end {
-        Vec::new()
-    } else {
-        array[start..end].to_vec()
-    })
+    let mut result = Vec::with_capacity(end.saturating_sub(start));
+    for entry in iter {
+        let index = entry.index();
+        let item = entry.get(runtime)?;
+        if index >= start && index < end {
+            result.push(item);
+        }
+    }
+    runtime.insert(result)
 }

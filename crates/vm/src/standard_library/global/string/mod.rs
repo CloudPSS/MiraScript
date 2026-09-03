@@ -2,7 +2,7 @@ mod case;
 mod search;
 mod trim;
 
-use crate::standard_library::{array, global_builtin, string};
+use crate::standard_library::{global_builtin, required, string};
 use crate::{Result, Runtime, operations};
 
 pub(super) fn is_javascript_whitespace(value: char) -> bool {
@@ -45,15 +45,17 @@ pub(super) fn install(context: &mut Runtime) {
         call.insert(parts)
     });
     global_builtin!(context, fn join(call, args) {
-        let values = array(call, args, 0, "arr")?;
+        let value = *required(args, 0, "arr")?;
+        let iter = operations::iterate_array(call, value)?;
         let separator = match args.get(1) {
             None => String::new(),
             Some(value) => operations::to_string(call, *value)?,
         };
-        let parts = values
-            .iter()
-            .map(|value| operations::to_string(call, *value))
-            .collect::<Result<Vec<_>>>()?;
+        let mut parts = Vec::with_capacity(iter.len());
+        for entry in iter {
+            let value = entry.get(call)?;
+            parts.push(operations::to_string(call, value)?);
+        }
         call.insert(parts.join(&separator))
     });
     trim::install(context);

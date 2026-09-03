@@ -8,7 +8,8 @@ pub(super) fn shape(runtime: &mut Runtime, value: MiraValue) -> Result<Vec<usize
         return Ok(vec![0]);
     }
     let mut columns = 0;
-    for row in operations::iterable_array(runtime, value)? {
+    for entry in operations::iterate_array(runtime, value)? {
+        let row = entry.get(runtime)?;
         let Some(length) = operations::array_len(runtime, row)? else {
             return Ok(vec![rows]);
         };
@@ -22,14 +23,16 @@ pub(super) fn numeric(runtime: &Runtime, value: MiraValue) -> Result<f64> {
 }
 
 pub(super) fn as_matrix(runtime: &mut Runtime, value: MiraValue) -> Result<Vec<Vec<MiraValue>>> {
-    let values = operations::iterable_array(runtime, value)?;
     if shape(runtime, value)?.len() == 1 {
-        Ok(vec![values])
+        Ok(vec![operations::iterable_array(runtime, value)?])
     } else {
-        values
-            .into_iter()
-            .map(|value| operations::iterable_array(runtime, value))
-            .collect()
+        let iter = operations::iterate_array(runtime, value)?;
+        let mut rows = Vec::with_capacity(iter.len());
+        for entry in iter {
+            let value = entry.get(runtime)?;
+            rows.push(operations::iterable_array(runtime, value)?);
+        }
+        Ok(rows)
     }
 }
 

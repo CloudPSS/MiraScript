@@ -180,9 +180,10 @@ pub(super) fn inner_to_string(
             Ok(format!("<module {name}>"))
         }
         MiraValueKind::Array(_) => {
-            let values = iterable_array(runtime, value)?;
-            let mut parts = Vec::with_capacity(values.len());
-            for item in values {
+            let iter = iterate_array(runtime, value)?;
+            let mut parts = Vec::with_capacity(iter.len());
+            for entry in iter {
+                let item = entry.get(runtime)?;
                 parts.push(inner_to_string(runtime, item, true)?);
             }
             let body = parts.join(", ");

@@ -55,13 +55,17 @@ pub(super) fn install(context: &mut Runtime) {
 }
 
 fn numbers(runtime: &mut Runtime, args: &[MiraValue]) -> Result<Vec<f64>> {
-    let values = if args.len() == 1 && operations::array_len(runtime, args[0])?.is_some() {
-        operations::iterable_array(runtime, args[0])?
+    if args.len() == 1 && operations::array_len(runtime, args[0])?.is_some() {
+        let iter = operations::iterate_array(runtime, args[0])?;
+        let mut numbers = Vec::with_capacity(iter.len());
+        for entry in iter {
+            let value = entry.get(runtime)?;
+            numbers.push(operations::to_number(runtime, value)?);
+        }
+        Ok(numbers)
     } else {
-        args.to_vec()
-    };
-    values
-        .iter()
-        .map(|value| operations::to_number(runtime, *value))
-        .collect()
+        args.iter()
+            .map(|value| operations::to_number(runtime, *value))
+            .collect()
+    }
 }

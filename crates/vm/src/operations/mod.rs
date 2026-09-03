@@ -6,7 +6,6 @@ mod operator;
 mod record;
 mod slice;
 mod spread;
-mod type_check;
 
 use std::cmp::Ordering;
 
@@ -25,7 +24,6 @@ pub(crate) use operator::*;
 pub(crate) use record::*;
 pub(crate) use slice::*;
 pub(crate) use spread::*;
-pub(crate) use type_check::*;
 
 #[inline]
 pub(crate) fn into_element(value: MiraValue) -> MiraValue {

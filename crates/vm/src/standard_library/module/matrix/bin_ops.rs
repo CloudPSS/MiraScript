@@ -40,16 +40,33 @@ pub(in crate::standard_library::module) fn entrywise(
         });
     }
     if left_shape.len() == 1 && right_shape.len() == 1 {
-        let left = operations::iterable_array(runtime, left)?;
-        let right = operations::iterable_array(runtime, right)?;
-        let length = left.len().max(right.len());
-        let mut result = Vec::with_capacity(length);
-        for index in 0..length {
-            result.push(operation(
-                runtime,
-                left.get(index).cloned().unwrap_or(MiraValue::NIL),
-                right.get(index).cloned().unwrap_or(MiraValue::NIL),
-            )?);
+        let (iterated, other, iterated_is_left) = if left_shape[0] >= right_shape[0] {
+            (left, right, true)
+        } else {
+            (right, left, false)
+        };
+        let other_handle = other.as_array().expect("one-dimensional value is an array");
+        let other_length = if iterated_is_left {
+            right_shape[0]
+        } else {
+            left_shape[0]
+        };
+        let iter = operations::iterate_array(runtime, iterated)?;
+        let mut result = Vec::with_capacity(iter.len());
+        for entry in iter {
+            let index = entry.index();
+            let value = entry.get(runtime)?;
+            let other = if index < other_length {
+                other_handle.get(runtime, index)?
+            } else {
+                MiraValue::NIL
+            };
+            let (left, right) = if iterated_is_left {
+                (value, other)
+            } else {
+                (other, value)
+            };
+            result.push(operation(runtime, left, right)?);
         }
         return runtime.insert(result);
     }
@@ -94,9 +111,10 @@ fn broadcast_scalar(
     operation: &mut impl FnMut(&mut Runtime, MiraValue) -> Result<MiraValue>,
 ) -> Result<MiraValue> {
     if dimensions.len() == 1 {
-        let values = operations::iterable_array(runtime, value)?;
-        let mut result = Vec::with_capacity(values.len());
-        for value in values {
+        let iter = operations::iterate_array(runtime, value)?;
+        let mut result = Vec::with_capacity(iter.len());
+        for entry in iter {
+            let value = entry.get(runtime)?;
             result.push(operation(runtime, value)?);
         }
         return runtime.insert(result);
@@ -123,9 +141,10 @@ pub(in crate::standard_library::module) fn map_nested(
     value: MiraValue,
     operation: &mut impl FnMut(&mut Runtime, MiraValue) -> Result<MiraValue>,
 ) -> Result<MiraValue> {
-    let values = operations::iterable_array(runtime, value)?;
-    let mut result = Vec::with_capacity(values.len());
-    for value in values {
+    let iter = operations::iterate_array(runtime, value)?;
+    let mut result = Vec::with_capacity(iter.len());
+    for entry in iter {
+        let value = entry.get(runtime)?;
         if operations::array_len(runtime, value)?.is_some() {
             result.push(map_nested(runtime, value, operation)?);
         } else {
@@ -146,13 +165,32 @@ pub(in crate::standard_library::module) fn multiply(
     match (left_shape.len(), right_shape.len()) {
         (0, _) | (_, 0) => numeric_entrywise(runtime, args, |a, b| a * b),
         (1, 1) => {
-            let left = operations::iterable_array(runtime, left)?;
-            let right = operations::iterable_array(runtime, right)?;
-            let length = left.len().max(right.len());
+            let (iterated, other, iterated_is_left) = if left_shape[0] >= right_shape[0] {
+                (left, right, true)
+            } else {
+                (right, left, false)
+            };
+            let other_handle = other.as_array().expect("one-dimensional value is an array");
+            let other_length = if iterated_is_left {
+                right_shape[0]
+            } else {
+                left_shape[0]
+            };
             let mut sum = 0.0;
-            for index in 0..length {
-                sum += numeric(runtime, left.get(index).cloned().unwrap_or(MiraValue::NIL))?
-                    * numeric(runtime, right.get(index).cloned().unwrap_or(MiraValue::NIL))?;
+            for entry in operations::iterate_array(runtime, iterated)? {
+                let index = entry.index();
+                let value = entry.get(runtime)?;
+                let other = if index < other_length {
+                    other_handle.get(runtime, index)?
+                } else {
+                    MiraValue::NIL
+                };
+                let (left, right) = if iterated_is_left {
+                    (value, other)
+                } else {
+                    (other, value)
+                };
+                sum += numeric(runtime, left)? * numeric(runtime, right)?;
             }
             Ok(MiraValue::number(sum))
         }

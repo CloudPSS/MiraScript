@@ -24,21 +24,27 @@ pub(super) fn dimensions(
     args: &[MiraValue],
     max_len: usize,
 ) -> Result<Vec<usize>> {
-    let values = if args.len() == 1 && operations::array_len(runtime, args[0])?.is_some() {
-        operations::iterable_array(runtime, args[0])?
+    if args.len() == 1 && operations::array_len(runtime, args[0])?.is_some() {
+        let iter = operations::iterate_array(runtime, args[0])?;
+        let mut dimensions = Vec::with_capacity(iter.len());
+        for entry in iter {
+            let value = entry.get(runtime)?;
+            dimensions.push(dimension(runtime, value, max_len)?);
+        }
+        Ok(dimensions)
     } else {
-        args.to_vec()
-    };
-    values
-        .iter()
-        .map(|value| {
-            let value = operations::to_number(runtime, *value)?;
-            if !value.is_finite() || value <= -1.0 || value.trunc() as usize > max_len {
-                return Err(MiraError::runtime(RuntimeErrorKind::InvalidMatrixSize));
-            }
-            Ok(value.trunc() as usize)
-        })
-        .collect()
+        args.iter()
+            .map(|value| dimension(runtime, *value, max_len))
+            .collect()
+    }
+}
+
+fn dimension(runtime: &Runtime, value: MiraValue, max_len: usize) -> Result<usize> {
+    let value = operations::to_number(runtime, value)?;
+    if !value.is_finite() || value <= -1.0 || value.trunc() as usize > max_len {
+        return Err(MiraError::runtime(RuntimeErrorKind::InvalidMatrixSize));
+    }
+    Ok(value.trunc() as usize)
 }
 
 pub(in crate::standard_library::module) fn identity(
@@ -69,7 +75,6 @@ pub(in crate::standard_library::module) fn diagonal(
     args: &[MiraValue],
 ) -> Result<MiraValue> {
     let value = *required(args, 0, "x")?;
-    let values = operations::iterable_array(call, value)?;
     let offset = match args.get(1) {
         None => 0,
         Some(value) => {
@@ -85,21 +90,30 @@ pub(in crate::standard_library::module) fn diagonal(
             offset.trunc() as isize
         }
     };
-    if shape(call, value)?.len() == 2 {
-        let mut result = Vec::new();
-        for (row, values) in values.iter().enumerate() {
+    let dimensions = shape(call, value)?;
+    if dimensions.len() == 2 {
+        let iter = operations::iterate_array(call, value)?;
+        let mut result = Vec::with_capacity(iter.len());
+        for entry in iter {
+            let row = entry.index();
+            let values = entry.get(call)?;
             let column = row as isize + offset;
             if column < 0 {
                 continue;
             }
-            let row = operations::iterable_array(call, *values)?;
-            if column as usize >= row.len() {
+            let Some(row_length) = operations::array_len(call, values)? else {
+                break;
+            };
+            if column as usize >= row_length {
                 break;
             }
-            result.push(row[column as usize]);
+            result.push(
+                operations::array_get(call, values, column as usize)?.unwrap_or(MiraValue::NIL),
+            );
         }
         return call.insert(result);
     }
+    let values = operations::iterable_array(call, value)?;
     let rows = values.len() + offset.min(0).unsigned_abs();
     let columns = values.len() + offset.max(0) as usize;
     let result = (0..rows)

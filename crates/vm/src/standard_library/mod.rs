@@ -30,22 +30,6 @@ fn string(
     operations::to_string(runtime, *required(args, index, name)?)
 }
 
-fn array(
-    runtime: &mut Runtime,
-    args: &[MiraValue],
-    index: usize,
-    name: &'static str,
-) -> Result<Vec<MiraValue>> {
-    let value = *required(args, index, name)?;
-    let actual = value.value_type();
-    operations::iterable_array(runtime, value).map_err(|_| {
-        MiraError::runtime(RuntimeErrorKind::TypeMismatch {
-            expected: "array",
-            actual,
-        })
-    })
-}
-
 fn callable(args: &[MiraValue], index: usize, name: &'static str) -> Result<MiraFunctionHandle> {
     let value = *required(args, index, name)?;
     if let Some(h) = value.as_function() {

@@ -9,15 +9,16 @@ fn all_any<const EVERY: bool>(call: &mut Runtime, args: &[MiraValue]) -> Result<
     let data = Data::from_value(call, *required(args, 0, "data")?)?;
     let predicate = callable(args, 1, "predicate")?;
     let original = data.original(call)?;
-    for (key, value) in data_items(call, &data)? {
-        call.checkpoint()?;
-        let matched = operations::to_boolean(predicate.call(call, &[value, key, original])?)?;
-        if EVERY && !matched {
-            return Ok(MiraValue::boolean(false));
-        }
-        if !EVERY && matched {
-            return Ok(MiraValue::boolean(true));
-        }
-    }
-    Ok(MiraValue::boolean(EVERY))
+    let result = iterate_data(
+        call,
+        &data,
+        |_, _| Ok(EVERY),
+        |call, key, value, result| {
+            call.checkpoint()?;
+            let matched = operations::to_boolean(predicate.call(call, &[value, key, original])?)?;
+            *result = if EVERY { matched } else { *result || matched };
+            Ok(if EVERY { *result } else { !*result })
+        },
+    )?;
+    Ok(MiraValue::boolean(result))
 }

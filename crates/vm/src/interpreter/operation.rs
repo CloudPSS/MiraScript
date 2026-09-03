@@ -253,7 +253,10 @@ impl Runtime {
                     self.read_register(frame, *value)?;
                 }
                 AssertOperation::NonNil => {
-                    operations::assert_non_nil(self.read_register(frame, *value)?)?;
+                    let value = self.read_register(frame, *value)?;
+                    if value.is_nil() {
+                        return Err(MiraError::runtime(RuntimeErrorKind::ExpectedNonNil));
+                    }
                 }
             },
             Operation::PickOmit {

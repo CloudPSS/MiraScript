@@ -6,17 +6,26 @@ pub(super) fn install(context: &mut Runtime) {
         let predicate = required(args, 1, "predicate")?;
         let callable = predicate.as_function();
         let original = data.original(call)?;
-        for (key, value) in data_items(call, &data)? {
-            call.checkpoint()?;
-            let found = if let Some(callable) = callable {
-                operations::to_boolean(callable.call(call, &[value, key, original])?)?
-            } else {
-                operations::same_value(call, value, *predicate)?
-            };
-            if found {
-                return pair(call, key, value);
-            }
+        let found = iterate_data(
+            call,
+            &data,
+            |_, _| Ok(None),
+            |call, key, value, found| {
+                call.checkpoint()?;
+                let matched = if let Some(callable) = callable {
+                    operations::to_boolean(callable.call(call, &[value, key, original])?)?
+                } else {
+                    operations::same_value(call, value, *predicate)?
+                };
+                if matched {
+                    *found = Some((key, value));
+                }
+                Ok(!matched)
+            },
+        )?;
+        match found {
+            Some((key, value)) => pair(call, key, value),
+            None => Ok(MiraValue::NIL),
         }
-        Ok(MiraValue::NIL)
     });
 }
