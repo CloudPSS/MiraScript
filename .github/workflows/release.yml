@@ -13,7 +13,7 @@ jobs:
     outputs:
       run-id: ${{ steps.ci.outputs.run-id }}
 
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
     timeout-minutes: 65
     steps:
       - name: Checkout
