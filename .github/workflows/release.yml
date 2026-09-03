@@ -5,17 +5,60 @@ on:
     tags: ['v*']
 
 jobs:
-  build:
+  resolve-ci:
     permissions:
+      actions: read
       contents: read
 
-    uses: ./.github/workflows/build.yml
-    secrets: inherit
+    outputs:
+      run-id: ${{ steps.ci.outputs.run-id }}
+
+    runs-on: ubuntu-slim
+    timeout-minutes: 65
+    steps:
+      - name: Find successful CI run
+        id: ci
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for attempt in {1..120}; do
+            runs=$(gh run list \
+              --workflow ci.yml \
+              --commit "$GITHUB_SHA" \
+              --event push \
+              --limit 100 \
+              --json databaseId,status,conclusion,url)
+
+            run_id=$(jq -r '[.[] | select(.conclusion == "success")][0].databaseId // empty' <<< "$runs")
+            if [[ -n "$run_id" ]]; then
+              run_url=$(jq -r --argjson run_id "$run_id" '.[] | select(.databaseId == $run_id) | .url' <<< "$runs")
+              echo "Using successful CI run: $run_url"
+              echo "run-id=$run_id" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+
+            active_run=$(jq -r '[.[] | select(.status != "completed")][0].url // empty' <<< "$runs")
+            if [[ -n "$active_run" ]]; then
+              echo "Waiting for CI run: $active_run"
+            elif [[ "$(jq 'length' <<< "$runs")" -gt 0 && "$attempt" -ge 10 ]]; then
+              echo "No successful push CI run exists for commit $GITHUB_SHA:" >&2
+              jq -r '.[] | "\(.url): \(.status) / \(.conclusion)"' <<< "$runs" >&2
+              exit 1
+            else
+              echo "Waiting for a push CI run for commit $GITHUB_SHA"
+            fi
+
+            sleep 30
+          done
+
+          echo "Timed out waiting for a successful push CI run for commit $GITHUB_SHA" >&2
+          exit 1
 
   publish-npm:
-    needs: build
+    needs: resolve-ci
 
     permissions:
+      actions: read
       contents: read
       id-token: write
 
@@ -38,6 +81,8 @@ jobs:
         with:
           name: npm-package
           path: packages/
+          github-token: ${{ github.token }}
+          run-id: ${{ needs.resolve-ci.outputs.run-id }}
 
       - name: Publish to npm
         env:
@@ -95,9 +140,10 @@ jobs:
           done
 
   publish-pypi:
-    needs: build
+    needs: resolve-ci
 
     permissions:
+      actions: read
       contents: read
       id-token: write
 
@@ -112,6 +158,8 @@ jobs:
         with:
           name: python-artifacts
           path: python-artifacts/
+          github-token: ${{ github.token }}
+          run-id: ${{ needs.resolve-ci.outputs.run-id }}
 
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
@@ -119,7 +167,7 @@ jobs:
           packages-dir: python-artifacts/
 
   publish-crates:
-    needs: build
+    needs: resolve-ci
 
     permissions:
       contents: read
@@ -147,9 +195,10 @@ jobs:
         run: cargo publish --registry crates-io
 
   build-vscode:
-    needs: publish-npm
+    needs: [resolve-ci, publish-npm]
 
     permissions:
+      actions: read
       contents: read
 
     runs-on: ubuntu-latest
@@ -167,6 +216,8 @@ jobs:
         with:
           name: npm-package
           path: packages/
+          github-token: ${{ github.token }}
+          run-id: ${{ needs.resolve-ci.outputs.run-id }}
 
       - name: Build vscode package
         run: |
@@ -226,9 +277,10 @@ jobs:
         run: npx ${{ matrix.marketplace.pkg }} publish -p ${{ secrets.PAT }} -i *.vsix
 
   publish-github:
-    needs: build
+    needs: resolve-ci
 
     permissions:
+      actions: read
       contents: write
 
     runs-on: ubuntu-slim
@@ -239,6 +291,8 @@ jobs:
         with:
           name: website
           skip-decompress: true
+          github-token: ${{ github.token }}
+          run-id: ${{ needs.resolve-ci.outputs.run-id }}
       - name: Create GitHub Release
         uses: ncipollo/release-action@v1
         with:
@@ -247,9 +301,10 @@ jobs:
           artifacts: website.zip
 
   publish-docs:
-    needs: build
+    needs: resolve-ci
 
     permissions:
+      actions: read
       contents: read
 
     environment:
@@ -264,6 +319,8 @@ jobs:
         with:
           name: website
           skip-decompress: true
+          github-token: ${{ github.token }}
+          run-id: ${{ needs.resolve-ci.outputs.run-id }}
       - name: Deploy
         uses: appleboy/scp-action@v1
         with:
