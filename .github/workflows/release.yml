@@ -16,6 +16,8 @@ jobs:
     runs-on: ubuntu-slim
     timeout-minutes: 65
     steps:
+      - name: Checkout
+        uses: actions/checkout@v7
       - name: Find successful CI run
         id: ci
         env:
