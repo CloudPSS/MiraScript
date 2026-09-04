@@ -190,10 +190,9 @@ pub(super) fn inner_to_string(
             Ok(if braces { format!("[{body}]") } else { body })
         }
         MiraValueKind::Record(_) => {
-            let keys = record_keys(runtime, value)?.unwrap_or_default();
-            let mut parts = Vec::with_capacity(keys.len());
-            for key in keys {
-                let item = record_get(runtime, value, &key)?.unwrap_or(MiraValue::NIL);
+            let entries = iterable_record(runtime, value)?;
+            let mut parts = Vec::with_capacity(entries.len());
+            for (key, item) in entries {
                 parts.push(format!("{key}: {}", inner_to_string(runtime, item, true)?));
             }
             let body = parts.join(", ");

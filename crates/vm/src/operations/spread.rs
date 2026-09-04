@@ -19,11 +19,10 @@ pub(crate) fn record_spread(
     match value.kind() {
         MiraValueKind::Nil => {}
         MiraValueKind::Record(_) => {
-            for key in record_keys(runtime, value)?.unwrap_or_default() {
-                result.insert(
-                    key.clone(),
-                    into_element(record_get(runtime, value, &key)?.unwrap_or(MiraValue::NIL)),
-                );
+            let entries = iterable_record(runtime, value)?;
+            result = IndexMap::with_capacity(entries.len());
+            for (key, item) in entries {
+                result.insert(key, into_element(item));
             }
         }
         MiraValueKind::Array(_) => {

@@ -7,15 +7,11 @@ pub(super) fn install(context: &mut Runtime) {
             MiraValueKind::Array(_) => (0..operations::array_len(call, value)?.unwrap_or(0))
                 .map(|index| MiraValue::number(index as f64))
                 .collect(),
-            MiraValueKind::Record(_) => operations::record_keys(call, value)?
-                .unwrap_or_default()
-                .into_iter()
-                .map(|key| call.insert(key))
+            MiraValueKind::Record(_) => operations::iterate_record(call, value)?
+                .map(|entry| call.insert(entry.key(call)?.to_owned()))
                 .collect::<Result<Vec<_>>>()?,
-            MiraValueKind::Module(_) => operations::module_keys(call, value)?
-                .unwrap_or_default()
-                .into_iter()
-                .map(|key| call.insert(key))
+            MiraValueKind::Module(_) => operations::iterate_module(call, value)?
+                .map(|entry| call.insert(entry.key(call)?.to_owned()))
                 .collect::<Result<Vec<_>>>()?,
             _ => {
                 return Err(MiraError::runtime(RuntimeErrorKind::TypeMismatch {

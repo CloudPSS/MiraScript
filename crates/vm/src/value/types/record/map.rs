@@ -7,7 +7,7 @@ use crate::{
     __private::MiraField, MiraError, MiraHandle, MiraManageable, Result, Runtime, RuntimeErrorKind,
 };
 
-use super::MiraRecord;
+use super::{MiraRecord, MiraRecordEntry, MiraRecordIter};
 
 macro_rules! impl_map (
     ($m:ident, $ty:ty, $dt:ty $(, $($generics:tt)*)? ) => {
@@ -47,6 +47,28 @@ macro_rules! impl_map (
                             })
                         })
                         .ok_or_else(|| MiraError::runtime(RuntimeErrorKind::MissingIndexOrField))
+                }
+
+                fn iter<'a>(
+                    &'a self,
+                    self_handle: MiraHandle<dyn MiraRecord>,
+                    _runtime: &'a Runtime,
+                ) -> Option<MiraRecordIter<'a>> {
+                    let self_handle = unsafe { self_handle.upcast::<Self>() };
+                    Some(Box::new(<$ty>::iter(self).enumerate().map(
+                        move |(index, (key, value))| {
+                            Ok(MiraRecordEntry::new(
+                                index,
+                                key,
+                                value.from_record(self_handle, index, |s, index| {
+                                    <$ty>::values(s).nth(index).expect(concat!(
+                                        stringify!($ty),
+                                        " changed unexpectedly"
+                                    ))
+                                }),
+                            ))
+                        },
+                    )))
                 }
             }
 

@@ -8,6 +8,32 @@ use crate::{MiraArrayHandle, MiraHandle, MiraManageable, Result, Runtime};
 
 use super::{MiraValue, MiraValueKind, value::ValueTag};
 
+/// One element produced by [`MiraArray::iter`].
+pub struct MiraArrayEntry {
+    index: usize,
+    value: MiraManageable,
+}
+
+impl MiraArrayEntry {
+    /// Create an entry for an array element at its iteration index.
+    pub fn new(index: usize, value: MiraManageable) -> Self {
+        Self { index, value }
+    }
+
+    /// Return the element index.
+    pub fn index(&self) -> usize {
+        self.index
+    }
+
+    /// Consume the entry and return its value for insertion into a [`Runtime`].
+    pub fn into_value(self) -> MiraManageable {
+        self.value
+    }
+}
+
+/// A sequential iterator over array elements.
+pub type MiraArrayIter<'a> = Box<dyn ExactSizeIterator<Item = Result<MiraArrayEntry>> + 'a>;
+
 impl MiraValue {
     /// Create a `MiraValue` representing an array value.
     #[inline]
@@ -43,6 +69,20 @@ pub trait MiraArray: Any {
         runtime: &Runtime,
         index: usize,
     ) -> Result<MiraManageable>;
+
+    /// Return a more efficient sequential iterator when indexed reads are unsuitable.
+    ///
+    /// The default `None` keeps full materialization on [`MiraArray::get`]. Implementations
+    /// backed by containers without constant-time indexed access can return an iterator to
+    /// avoid repeatedly traversing from the beginning.
+    fn iter<'a>(
+        &'a self,
+        self_handle: MiraArrayHandle,
+        runtime: &'a Runtime,
+    ) -> Option<MiraArrayIter<'a>> {
+        let _ = (self_handle, runtime);
+        None
+    }
 
     /// Return whether the array is empty.
     fn is_empty(&self) -> bool {

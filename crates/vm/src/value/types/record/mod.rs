@@ -12,6 +12,38 @@ use crate::{
 
 use super::{MiraValue, MiraValueKind, value::ValueTag};
 
+/// One field produced by [`MiraRecord::iter`].
+pub struct MiraRecordEntry<'a> {
+    index: usize,
+    key: &'a str,
+    value: MiraManageable,
+}
+
+impl<'a> MiraRecordEntry<'a> {
+    /// Create an entry for a record field at its iteration index.
+    pub fn new(index: usize, key: &'a str, value: MiraManageable) -> Self {
+        Self { index, key, value }
+    }
+
+    /// Return the field's iteration index.
+    pub fn index(&self) -> usize {
+        self.index
+    }
+
+    /// Return the field name.
+    pub fn key(&self) -> &'a str {
+        self.key
+    }
+
+    /// Consume the entry and return its value for insertion into a [`Runtime`].
+    pub fn into_value(self) -> MiraManageable {
+        self.value
+    }
+}
+
+/// A sequential iterator over record fields.
+pub type MiraRecordIter<'a> = Box<dyn ExactSizeIterator<Item = Result<MiraRecordEntry<'a>>> + 'a>;
+
 impl MiraValue {
     /// Create a `MiraValue` representing a record.
     #[inline]
@@ -58,6 +90,20 @@ pub trait MiraRecord: Any {
         runtime: &Runtime,
         index: usize,
     ) -> Result<MiraManageable>;
+
+    /// Return a more efficient sequential field iterator when indexed reads are unsuitable.
+    ///
+    /// The default `None` keeps full materialization on [`MiraRecord::key`] and
+    /// [`MiraRecord::get`]. Implementations backed by containers without constant-time indexed
+    /// access can return an iterator to avoid repeatedly traversing from the beginning.
+    fn iter<'a>(
+        &'a self,
+        self_handle: MiraHandle<dyn MiraRecord>,
+        runtime: &'a Runtime,
+    ) -> Option<MiraRecordIter<'a>> {
+        let _ = (self_handle, runtime);
+        None
+    }
 
     /// Return whether the record is empty.
     fn is_empty(&self) -> bool {

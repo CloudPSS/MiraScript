@@ -66,11 +66,7 @@ fn set_path(
             runtime.insert(values)
         }
         MiraValueKind::Record(_) => {
-            let mut values = IndexMap::new();
-            for key in operations::record_keys(runtime, data)?.unwrap_or_default() {
-                let item = operations::record_get(runtime, data, &key)?.unwrap_or(MiraValue::NIL);
-                values.insert(key, item);
-            }
+            let mut values = operations::iterable_record(runtime, data)?;
             let key = operations::to_string(runtime, path[0])?;
             let current = values.get(&key).cloned().unwrap_or(MiraValue::NIL);
             let current = container_for(runtime, current, path.get(1).cloned())?;

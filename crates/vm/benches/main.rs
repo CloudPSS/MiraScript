@@ -1,4 +1,7 @@
+use std::collections::{BTreeMap, HashMap};
+
 use divan::{Bencher, black_box};
+use indexmap::IndexMap;
 use mirascript_vm::{RunOptions, Runtime, compile};
 
 // Keep this setup aligned with packages/mirascript/bench/index.ts so the
@@ -12,6 +15,9 @@ const REPEATED_GLOBAL: &str = "x + x + x + x + x + x + x + x";
 const NATIVE_CALL: &str = "sin(x)";
 const RECORD_INDEX: &str =
     "record.0 + record.1 + record.0 + record.1 + record.0 + record.1 + record.0 + record.1";
+const RECORD_ITERATION: &str = "record::values()::sum()";
+const MODULE_ITERATION: &str =
+    "let mut total = 0; for i in 1..100 { total += keys(matrix)::len(); } total";
 const SCALAR: &str = "let mut total = 0; for i in 1..100 { total += i * i; } total";
 const CONTAINER: &str = "[1..100]::map(fn { it * 2 })::sum()";
 const CLOSURE: &str = "fn make(x) { (fn (y) { x + y }) } let add = make(2); add(40)";
@@ -27,6 +33,33 @@ fn simple_runtime() -> Runtime {
 fn record_runtime() -> Runtime {
     let mut runtime = Runtime::new();
     runtime.insert_global("record", (1, 2)).unwrap();
+    runtime
+}
+
+fn record_iteration_runtime() -> Runtime {
+    let mut runtime = Runtime::new();
+    let record = (0..64)
+        .map(|index| (format!("field_{index}"), index))
+        .collect::<IndexMap<_, _>>();
+    runtime.insert_global("record", record).unwrap();
+    runtime
+}
+
+fn hash_record_iteration_runtime() -> Runtime {
+    let mut runtime = Runtime::new();
+    let record = (0..64)
+        .map(|index| (format!("field_{index}"), index))
+        .collect::<HashMap<_, _>>();
+    runtime.insert_global("record", record).unwrap();
+    runtime
+}
+
+fn btree_record_iteration_runtime() -> Runtime {
+    let mut runtime = Runtime::new();
+    let record = (0..64)
+        .map(|index| (format!("field_{index}"), index))
+        .collect::<BTreeMap<_, _>>();
+    runtime.insert_global("record", record).unwrap();
     runtime
 }
 
@@ -108,6 +141,22 @@ run_with_case!(
 run_with_case!(run_with_repeated_global, REPEATED_GLOBAL, simple_runtime());
 run_with_case!(run_with_native_call, NATIVE_CALL, simple_runtime());
 run_with_case!(run_with_record_index, RECORD_INDEX, record_runtime());
+run_with_case!(
+    run_with_record_iteration,
+    RECORD_ITERATION,
+    record_iteration_runtime()
+);
+run_with_case!(
+    run_with_hash_record_iteration,
+    RECORD_ITERATION,
+    hash_record_iteration_runtime()
+);
+run_with_case!(
+    run_with_btree_record_iteration,
+    RECORD_ITERATION,
+    btree_record_iteration_runtime()
+);
+run_with_case!(run_with_module_iteration, MODULE_ITERATION, Runtime::new());
 run_with_case!(run_with_simple, SIMPLE, simple_runtime());
 run_with_case!(run_with_scalar_loop, SCALAR, Runtime::new());
 

@@ -60,17 +60,6 @@ pub(crate) fn array_get(
     runtime.insert(manageable).map(Some)
 }
 
-pub(crate) fn record_keys(runtime: &Runtime, value: MiraValue) -> Result<Option<Vec<String>>> {
-    let MiraValueKind::Record(handle) = value.kind() else {
-        return Ok(None);
-    };
-    let record = runtime.get_record_dyn(handle)?;
-    (0..record.len())
-        .map(|index| record.key(index).map(str::to_owned))
-        .collect::<Result<Vec<_>>>()
-        .map(Some)
-}
-
 pub(crate) fn record_get(
     runtime: &mut Runtime,
     value: MiraValue,
@@ -105,17 +94,6 @@ pub(crate) fn record_get_i(
         record.get(handle, runtime, index)?
     };
     runtime.insert(manageable).map(Some)
-}
-
-pub(crate) fn module_keys(runtime: &Runtime, value: MiraValue) -> Result<Option<Vec<String>>> {
-    let MiraValueKind::Module(handle) = value.kind() else {
-        return Ok(None);
-    };
-    let module = runtime.get_module_dyn(handle)?;
-    (0..module.len())
-        .map(|index| module.key(index).map(str::to_owned))
-        .collect::<Result<Vec<_>>>()
-        .map(Some)
 }
 
 pub(crate) fn module_get(

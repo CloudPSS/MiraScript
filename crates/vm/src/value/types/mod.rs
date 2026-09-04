@@ -12,12 +12,12 @@ mod uninitialized;
 mod value;
 
 use super::Payload;
-pub use array::{MiraArray, MiraShapedArray};
+pub use array::{MiraArray, MiraArrayEntry, MiraArrayIter, MiraShapedArray};
 pub use r#extern::MiraExtern;
 pub(crate) use function::ANONYMOUS_FN_NAME;
 pub use function::{MiraFunction, MiraNativeFn};
 pub use module::MiraModule;
 pub(crate) use module::map_module;
-pub use record::{MiraRecord, MiraShapedRecord};
+pub use record::{MiraRecord, MiraRecordEntry, MiraRecordIter, MiraShapedRecord};
 pub use value::MiraValue;
 pub(crate) use value::MiraValueKind;

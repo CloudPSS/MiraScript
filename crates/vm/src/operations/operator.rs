@@ -45,18 +45,18 @@ fn equal_with(
             if lh == rh {
                 return Ok(true);
             }
-            let left_keys = record_keys(runtime, left)?.unwrap_or_default();
+            let left_entries = iterate_record(runtime, left)?;
             let right_len = rh.len(runtime)?;
-            if left_keys.len() != right_len {
+            if left_entries.len() != right_len {
                 return Ok(false);
             }
-            for key in left_keys {
-                let Some(left_value) = record_get(runtime, left, &key)? else {
+            for entry in left_entries {
+                let key = entry.key(runtime)?.to_owned();
+                let left_value = entry.get(runtime)?;
+                let Some(right_index) = rh.index_of(runtime, &key)? else {
                     return Ok(false);
                 };
-                let Some(right_value) = record_get(runtime, right, &key)? else {
-                    return Ok(false);
-                };
+                let right_value = rh.get(runtime, right_index)?;
                 if !inner_equal(runtime, left_value, right_value)? {
                     return Ok(false);
                 }

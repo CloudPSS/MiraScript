@@ -26,10 +26,9 @@ impl Runtime {
                 if !visited.insert(handle) {
                     return Ok(false);
                 }
-                for key in crate::operations::module_keys(self, value)?.unwrap_or_default() {
-                    if let Some(item) = crate::operations::module_get(self, value, &key)?
-                        && self.contains_script_reference_inner(item, visited)?
-                    {
+                for entry in crate::operations::iterate_module(self, value)? {
+                    let item = entry.get(self)?;
+                    if self.contains_script_reference_inner(item, visited)? {
                         return Ok(true);
                     }
                 }

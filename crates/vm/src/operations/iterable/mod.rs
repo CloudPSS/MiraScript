@@ -1,8 +1,12 @@
 mod array;
+mod module;
+mod record;
 
 use super::*;
 
 pub(crate) use array::*;
+pub(crate) use module::*;
+pub(crate) use record::*;
 
 pub(crate) fn length(runtime: &Runtime, value: MiraValue) -> Result<usize> {
     match value.kind() {
@@ -19,15 +23,11 @@ pub(crate) fn length(runtime: &Runtime, value: MiraValue) -> Result<usize> {
 pub(crate) fn iterable(runtime: &mut Runtime, value: MiraValue) -> Result<Vec<MiraValue>> {
     match value.kind() {
         MiraValueKind::Array(_) => iterable_array(runtime, value),
-        MiraValueKind::Record(_) => record_keys(runtime, value)?
-            .unwrap_or_default()
-            .into_iter()
-            .map(|key| runtime.insert(key))
+        MiraValueKind::Record(_) => iterate_record(runtime, value)?
+            .map(|entry| runtime.insert(entry.key(runtime)?.to_owned()))
             .collect(),
-        MiraValueKind::Module(_) => module_keys(runtime, value)?
-            .unwrap_or_default()
-            .into_iter()
-            .map(|key| runtime.insert(key))
+        MiraValueKind::Module(_) => iterate_module(runtime, value)?
+            .map(|entry| runtime.insert(entry.key(runtime)?.to_owned()))
             .collect(),
         _ => Err(MiraError::runtime(RuntimeErrorKind::TypeMismatch {
             expected: "iterable value",

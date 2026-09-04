@@ -40,13 +40,7 @@ impl Data {
             | MiraValueKind::StaticStr(_) => Ok(Self::Primitive(value)),
             MiraValueKind::Array(_) => Ok(Self::Array(value)),
             MiraValueKind::Record(_) => {
-                let mut record = IndexMap::new();
-                for key in operations::record_keys(runtime, value)?.unwrap_or_default() {
-                    record.insert(
-                        key.clone(),
-                        operations::record_get(runtime, value, &key)?.unwrap_or(MiraValue::NIL),
-                    );
-                }
+                let record = operations::iterable_record(runtime, value)?;
                 Ok(Self::Record(record))
             }
             _ => Err(MiraError::runtime(RuntimeErrorKind::TypeMismatch {

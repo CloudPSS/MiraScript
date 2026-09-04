@@ -8,7 +8,7 @@ use serde::{
 };
 
 use crate::{
-    MiraError, MiraType, MiraValue, MiraValueKind, Result, Runtime, RuntimeErrorKind,
+    MiraError, MiraType, MiraValue, MiraValueKind, Result, Runtime, RuntimeErrorKind, operations,
     standard_library::{global_builtin, string},
 };
 
@@ -103,67 +103,26 @@ impl SerializeValue<'_, '_> {
         result.map_err(|error| self.context.serializer_error(error))
     }
 
-    fn record_key<M: SerializeMap>(
-        &self,
-        map: &mut M,
-        handle: crate::MiraHandle<dyn crate::MiraRecord>,
-        index: usize,
-    ) -> std::result::Result<(), M::Error> {
-        let runtime = self.context.runtime.borrow();
-        let record = runtime
-            .get_record_dyn(handle)
-            .map_err(|error| self.context.serializer_error(error))?;
-        let key = record
-            .key(index)
-            .map_err(|error| self.context.serializer_error(error))?;
-        map.serialize_key(key)
-    }
-
-    fn record_item<E: serde::ser::Error>(
-        &self,
-        handle: crate::MiraHandle<dyn crate::MiraRecord>,
-        index: usize,
-    ) -> std::result::Result<MiraValue, E> {
-        let result: Result<MiraValue> = (|| {
-            let mut runtime = self.context.runtime.borrow_mut();
-            let manageable = {
-                let record = runtime.get_record_dyn(handle)?;
-                record.get(handle, &runtime, index)?
-            };
-            runtime.insert(manageable)
-        })();
-        result.map_err(|error| self.context.serializer_error(error))
-    }
-
     fn module_key<M: SerializeMap>(
         &self,
         map: &mut M,
-        handle: crate::MiraHandle<dyn crate::MiraModule>,
-        index: usize,
+        entry: operations::ModuleEntry,
     ) -> std::result::Result<(), M::Error> {
         let runtime = self.context.runtime.borrow();
-        let module = runtime
-            .get_module_dyn(handle)
-            .map_err(|error| self.context.serializer_error(error))?;
-        let key = module
-            .key(index)
+        let key = entry
+            .key(&runtime)
             .map_err(|error| self.context.serializer_error(error))?;
         map.serialize_key(key)
     }
 
     fn module_item<E: serde::ser::Error>(
         &self,
-        handle: crate::MiraHandle<dyn crate::MiraModule>,
-        index: usize,
+        entry: operations::ModuleEntry,
     ) -> std::result::Result<MiraValue, E> {
-        let result: Result<MiraValue> = (|| {
+        let result: Result<MiraValue> = {
             let mut runtime = self.context.runtime.borrow_mut();
-            let manageable = {
-                let module = runtime.get_module_dyn(handle)?;
-                module.get(handle, &runtime, index)?
-            };
-            runtime.insert(manageable)
-        })();
+            entry.get(&mut runtime)
+        };
         result.map_err(|error| self.context.serializer_error(error))
     }
 }
@@ -209,21 +168,18 @@ impl Serialize for SerializeValue<'_, '_> {
                 }
                 sequence.end()
             }
-            MiraValueKind::Record(handle) => {
-                let length = {
-                    let runtime = self.context.runtime.borrow();
-                    runtime
-                        .get_record_dyn(handle)
-                        .map_err(|error| self.context.serializer_error(error))?
-                        .len()
-                };
+            MiraValueKind::Record(_) => {
+                let entries = {
+                    let mut runtime = self.context.runtime.borrow_mut();
+                    operations::iterable_record(&mut runtime, self.value)
+                }
+                .map_err(|error| self.context.serializer_error(error))?;
                 let mut map = serializer.serialize_map(None)?;
-                for index in 0..length {
-                    let value = self.record_item(handle, index)?;
+                for (key, value) in entries {
                     if matches!(value.value_type(), MiraType::Function | MiraType::Extern) {
                         continue;
                     }
-                    self.record_key(&mut map, handle, index)?;
+                    map.serialize_key(&key)?;
                     map.serialize_value(&SerializeValue {
                         context: self.context,
                         value,
@@ -231,21 +187,19 @@ impl Serialize for SerializeValue<'_, '_> {
                 }
                 map.end()
             }
-            MiraValueKind::Module(handle) => {
-                let length = {
+            MiraValueKind::Module(_) => {
+                let iter = {
                     let runtime = self.context.runtime.borrow();
-                    runtime
-                        .get_module_dyn(handle)
+                    operations::iterate_module(&runtime, self.value)
                         .map_err(|error| self.context.serializer_error(error))?
-                        .len()
                 };
                 let mut map = serializer.serialize_map(None)?;
-                for index in 0..length {
-                    let value = self.module_item(handle, index)?;
+                for entry in iter {
+                    let value = self.module_item(entry)?;
                     if matches!(value.value_type(), MiraType::Function | MiraType::Extern) {
                         continue;
                     }
-                    self.module_key(&mut map, handle, index)?;
+                    self.module_key(&mut map, entry)?;
                     map.serialize_value(&SerializeValue {
                         context: self.context,
                         value,

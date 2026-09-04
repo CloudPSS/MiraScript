@@ -17,10 +17,8 @@ pub(crate) fn has(
             };
             Ok(index < array_len(runtime, value)?.unwrap_or(0))
         }
-        MiraValueKind::Record(_) => Ok(record_keys(runtime, value)?
-            .is_some_and(|keys| keys.iter().any(|candidate| candidate == &key))),
-        MiraValueKind::Module(_) => Ok(module_keys(runtime, value)?
-            .is_some_and(|keys| keys.iter().any(|candidate| candidate == &key))),
+        MiraValueKind::Record(handle) => Ok(handle.index_of(runtime, &key)?.is_some()),
+        MiraValueKind::Module(handle) => Ok(handle.index_of(runtime, &key)?.is_some()),
         _ => Ok(false),
     }
 }
@@ -109,11 +107,15 @@ pub(crate) fn pick(runtime: &mut Runtime, value: MiraValue, keys: &[String]) -> 
 
 pub(crate) fn omit(runtime: &mut Runtime, value: MiraValue, keys: &[String]) -> Result<MiraValue> {
     let mut result = IndexMap::new();
-    if let Some(existing) = record_keys(runtime, value)? {
-        for key in existing {
-            if !keys.contains(&key) {
-                result.insert(key.clone(), get(runtime, value, &key)?);
+    if value.is_record() {
+        for entry in iterate_record(runtime, value)? {
+            let key = entry.key(runtime)?;
+            if keys.iter().any(|candidate| candidate == key) {
+                continue;
             }
+            let key = key.to_owned();
+            let value = into_element(entry.get(runtime)?);
+            result.insert(key, value);
         }
     }
     runtime.insert(result)
