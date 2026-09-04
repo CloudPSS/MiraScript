@@ -8,53 +8,54 @@ use crate::{MiraError, MiraType, MiraValue, Result, Runtime, RuntimeErrorKind, o
 use crate::standard_library::global_builtin;
 
 pub(super) fn install(runtime: &mut Runtime) {
-    global_builtin!(runtime, fn to_timestamp(call, args) {
-        match timestamp(call, args.first()) {
-            Ok(value) => Ok(MiraValue::number(value.as_milliseconds() as f64)),
-            Err(_) if args.len() > 1 => Ok(args[1]),
-            Err(error) => Err(error),
-        }
-    });
-    global_builtin!(runtime, fn to_datetime(call, args) {
-        let timestamp = match timestamp(call, args.first()) {
-            Ok(value) => value,
-            Err(_) if args.len() > 2 => return Ok(args[2]),
-            Err(error) => return Err(error),
-        };
-        let offset = match args.get(1) {
-            None => 0.0,
-            Some(value) if value.is_nil() => 0.0,
-            Some(value) => operations::to_number(call, *value)?,
-        };
-        if !offset.is_finite() || !(-24.0..=24.0).contains(&offset) {
-            return Err(MiraError::runtime(RuntimeErrorKind::TimeOffsetOutOfRange));
-        }
-        call.insert(datetime_record(timestamp, offset))
-    });
-
-    global_builtin!(runtime, fn to_iso8601(call, args) {
-        match timestamp(call, args.first()) {
-            Ok(value) => {
-                const FMT_CONFIG: time::format_description::well_known::iso8601::EncodedConfig =
-                    time::format_description::well_known::iso8601::Config::DEFAULT
-                        .set_time_precision(
-                            time::format_description::well_known::iso8601::TimePrecision::Second {
-                                decimal_digits: Some(std::num::NonZeroU8::new(3u8).unwrap()),
-                            },
-                        )
-                        .encode();
-                let format = time::format_description::well_known::Iso8601::<FMT_CONFIG>;
-
-                call.insert(value.format(&format).map_err(|_| {
-                    MiraError::runtime(RuntimeErrorKind::InvalidTimestamp {
-                        actual: MiraType::Number,
-                    })
-                })?)
+    global_builtin!(runtime,
+        fn to_timestamp(call, args) {
+            match timestamp(call, args.first()) {
+                Ok(value) => Ok(MiraValue::number(value.as_milliseconds() as f64)),
+                Err(_) if args.len() > 1 => Ok(args[1]),
+                Err(error) => Err(error),
             }
-            Err(_) if args.len() > 1 => Ok(args[1]),
-            Err(error) => Err(error),
         }
-    });
+        fn to_datetime(call, args) {
+            let timestamp = match timestamp(call, args.first()) {
+                Ok(value) => value,
+                Err(_) if args.len() > 2 => return Ok(args[2]),
+                Err(error) => return Err(error),
+            };
+            let offset = match args.get(1) {
+                None => 0.0,
+                Some(value) if value.is_nil() => 0.0,
+                Some(value) => operations::to_number(call, *value)?,
+            };
+            if !offset.is_finite() || !(-24.0..=24.0).contains(&offset) {
+                return Err(MiraError::runtime(RuntimeErrorKind::TimeOffsetOutOfRange));
+            }
+            call.insert(datetime_record(timestamp, offset))
+        }
+        fn to_iso8601(call, args) {
+            match timestamp(call, args.first()) {
+                Ok(value) => {
+                    const FMT_CONFIG: time::format_description::well_known::iso8601::EncodedConfig =
+                        time::format_description::well_known::iso8601::Config::DEFAULT
+                            .set_time_precision(
+                                time::format_description::well_known::iso8601::TimePrecision::Second {
+                                    decimal_digits: Some(std::num::NonZeroU8::new(3u8).unwrap()),
+                                },
+                            )
+                            .encode();
+                    let format = time::format_description::well_known::Iso8601::<FMT_CONFIG>;
+
+                    call.insert(value.format(&format).map_err(|_| {
+                        MiraError::runtime(RuntimeErrorKind::InvalidTimestamp {
+                            actual: MiraType::Number,
+                        })
+                    })?)
+                }
+                Err(_) if args.len() > 1 => Ok(args[1]),
+                Err(error) => Err(error),
+            }
+        }
+    );
 }
 
 fn now(call: &mut crate::Runtime) -> Result<Timestamp> {

@@ -56,15 +56,18 @@ macro_rules! global_builtin (
         let name: &'static str = stringify!($id);
         let full_name: &'static str = concat!("global.", stringify!($id));
 
-        #[allow(nonstandard_style)]
-        fn $id(
-            call: &mut $crate::Runtime,
-            args: &[$crate::MiraValue],
-        ) -> $crate::Result<$crate::MiraValue> {
-            $impl(call, args)
+        {
+            // 让高亮工作
+            #[allow(nonstandard_style, unused)]
+            fn $id(
+                call: &mut $crate::Runtime,
+                args: &[$crate::MiraValue],
+            ) -> $crate::Result<$crate::MiraValue> {
+                unimplemented!();
+            }
         }
 
-        let f = $crate::standard_library::builtin_fn(full_name, $id);
+        let f = $crate::standard_library::builtin_fn(full_name, $impl);
         $runtime.insert_std(name, f);
     }};
     (@item $runtime:ident, fn $id:ident : $impl:expr ; $($rest:tt)*) => {{
