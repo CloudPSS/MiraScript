@@ -3,8 +3,6 @@ import { compileSync, createVmContext, type VmRecord, type VmValue } from '@mira
 
 const execute = (source: string): VmValue => compileSync(source)(createVmContext());
 
-const expectRecord = (value: VmValue): VmRecord => value as VmRecord;
-
 test('dangerous record keys remain own data properties', (t) => {
     const sources = [
         `(__proto__: (polluted: true))`,
@@ -18,7 +16,7 @@ test('dangerous record keys remain own data properties', (t) => {
     ];
 
     for (const source of sources) {
-        const record = expectRecord(execute(source));
+        const record = execute(source) as VmRecord;
         t.is(Object.getPrototypeOf(record), Object.prototype, source);
         t.true(Object.hasOwn(record, '__proto__'), source);
         t.deepEqual(record['__proto__'], { polluted: true }, source);
@@ -27,9 +25,9 @@ test('dangerous record keys remain own data properties', (t) => {
 });
 
 test('constructor.prototype paths stay inside the result record', (t) => {
-    const result = expectRecord(execute(`()::with(['constructor', 'prototype', 'polluted'], true)`));
-    const constructor = expectRecord(result.constructor);
-    const prototype = expectRecord(constructor['prototype']!);
+    const result = execute(`()::with(['constructor', 'prototype', 'polluted'], true)`) as VmRecord;
+    const constructor = result.constructor as unknown as VmRecord;
+    const prototype = constructor['prototype']!;
 
     t.deepEqual(prototype, { polluted: true });
     t.false(Object.hasOwn(Object.prototype, 'polluted'));

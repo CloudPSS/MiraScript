@@ -1,5 +1,6 @@
 import { REG_IDENTIFIER_FULL, REG_ORDINAL_FULL } from '@mirascript/constants';
 import type { VmArray, VmExtern, VmFunction, VmModule, VmAny, VmRecord } from '../vm/index.js';
+import { rethrowControl } from '../vm/effects/state.js';
 import { entries, hasOwn } from '../helpers/utils.js';
 import {
     getVmFunctionInfo,
@@ -263,8 +264,9 @@ export function displayFunction(value: VmFunction): string {
     try {
         const name = getVmFunctionInfo(value)?.fullName;
         return name ? `<function ${name}>` : `<function>`;
-        /* c8 ignore next 3 */
-    } catch {
+        /* c8 ignore next 4 */
+    } catch (error) {
+        rethrowControl(error);
         return `<function>`;
     }
 }
@@ -273,8 +275,9 @@ export function displayFunction(value: VmFunction): string {
 export function displayModule(value: VmModule): string {
     try {
         return value.toString(true);
-        /* c8 ignore next 3 */
-    } catch {
+        /* c8 ignore next 4 */
+    } catch (error) {
+        rethrowControl(error);
         return `<module>`;
     }
 }
@@ -288,8 +291,9 @@ export function displayExtern(value: VmExtern): string {
             return tag;
         }
         return `${tag} ${rep}`;
-        /* c8 ignore next 3 */
-    } catch {
+        /* c8 ignore next 4 */
+    } catch (error) {
+        rethrowControl(error);
         return `<extern>`;
     }
 }

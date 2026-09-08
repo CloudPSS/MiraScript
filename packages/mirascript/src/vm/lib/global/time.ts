@@ -3,6 +3,9 @@ import { isNaN, NotNumber, isFinite } from '../../../helpers/utils.js';
 import { toNumber } from '../../../helpers/convert/index.js';
 import { display } from '../../../helpers/serialize.js';
 import type { VmAny } from '../../types/index.js';
+import { wrapEffect } from '../../effects/wrap.js';
+
+const now = wrapEffect('memo', () => Date.now());
 
 const fromNumber = (datetime: number, fallback: boolean): number | null => {
     const n = new Date(datetime).getTime();
@@ -13,7 +16,7 @@ const fromNumber = (datetime: number, fallback: boolean): number | null => {
 
 const getTimestamp = (datetime: VmAny, fallback: boolean): number | null => {
     if (datetime == null) {
-        return Date.now();
+        return now();
     }
     if (typeof datetime == 'number') {
         return fromNumber(datetime, fallback);

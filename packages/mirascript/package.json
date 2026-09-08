@@ -29,6 +29,10 @@
       "@mirascript/dev": "./src/subtle.ts",
       "default": "./dist/subtle.js"
     },
+    "./experimental-context": {
+      "@mirascript/dev": "./src/experimental-context.ts",
+      "default": "./dist/experimental-context.js"
+    },
     "./package.json": "./package.json"
   },
   "imports": {

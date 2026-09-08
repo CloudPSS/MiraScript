@@ -1,4 +1,5 @@
 import type { VmAny, VmRecord } from '../../vm/index.js';
+import { rethrowControl } from '../../vm/effects/state.js';
 import { isVmArray, isVmWrapper } from '../types/index.js';
 import { VmError } from '../error.js';
 import { display, displayFunction } from '../serialize.js';
@@ -46,6 +47,7 @@ export function toString<F = undefined>(value: VmAny, fallback?: F): string | Ex
     try {
         return innerToString(value, false);
     } catch (ex) {
+        rethrowControl(ex);
         if (fallback === undefined) {
             const e = new VmError(`Failed to convert value to string: ${display(value)}`, '');
             e.cause = ex;

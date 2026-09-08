@@ -1,4 +1,5 @@
 import type { VmAny } from '../vm/types/index.js';
+import { rethrowControl } from '../vm/effects/state.js';
 
 /**
  * VM 预期的错误
@@ -16,6 +17,7 @@ export class VmError extends Error {
 
     /** 从其他错误构造 */
     static from(prefix: string, error: unknown, recovered: VmAny): VmError {
+        rethrowControl(error);
         if (prefix) {
             if (prefix.endsWith(':')) {
                 prefix += ' ';

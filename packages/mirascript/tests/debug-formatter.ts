@@ -1,6 +1,6 @@
 import test from 'ava';
+import type { VmAny } from '@mirascript/mirascript';
 import { lib } from '@mirascript/mirascript/subtle';
-import type { VmAny } from '../src/index.ts';
 const { debug_print } = lib;
 
 const s = test.macro<[Partial<typeof debug_print>, readonly VmAny[], readonly unknown[]]>({

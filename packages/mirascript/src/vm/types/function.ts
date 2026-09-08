@@ -13,7 +13,7 @@ import type { VmLib } from '../lib/helpers.js';
  * 虽然所有输入参数的类型均为 {@linkcode VmValue}，但当参数不足时，对应的参数会被填充为 `undefined`。
  */
 // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-export type VmFunctionLike = (...args: ReadonlyArray<VmValue | undefined>) => VmAny | void;
+export type VmFunctionLike = (this: void, ...args: ReadonlyArray<VmValue | undefined>) => VmAny | void;
 
 /** Mirascript 函数 */
 export type VmFunction<T extends VmFunctionLike = VmFunctionLike> = T & { readonly [kVmFunction]: VmFunctionInfo };
@@ -53,11 +53,13 @@ const nameIfNotAnonymous = <T>({ name }: { name: string | undefined }, fallback:
     return name;
 };
 
+/** Mirascript 函数创建选项 */
+export type VmFunctionOptionLike<T extends VmFunctionLike = VmFunctionLike> = NoInfer<
+    VmFunctionOption | VmFunction | VmLib<T>
+>;
+
 /** 创建 Mirascript 函数 */
-export function VmFunction<T extends VmFunctionLike>(
-    fn: T,
-    option: NoInfer<VmFunctionOption | VmFunction | VmLib<T>> = {},
-): VmFunction<T> {
+export function VmFunction<T extends VmFunctionLike>(fn: T, option: VmFunctionOptionLike<T> = {}): VmFunction<T> {
     if (typeof fn != 'function') {
         throw new TypeError('Invalid function');
     }

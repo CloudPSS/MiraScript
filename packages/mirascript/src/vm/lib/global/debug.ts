@@ -3,6 +3,8 @@ import { VmError } from '../../../helpers/error.js';
 import { toString } from '../../../helpers/convert/index.js';
 import type { VmAny } from '../../types/index.js';
 import { VmLib } from '../helpers.js';
+import { wrapEffect } from '../../effects/wrap.js';
+import { rethrowControl } from '../../effects/state.js';
 
 /** 序列化格式 */
 type SerializeFormat =
@@ -38,7 +40,8 @@ function serializeValue(
     }
     try {
         return serializer.call(options, arg, format);
-    } catch {
+    } catch (error) {
+        rethrowControl(error);
         return defaultSerializer(arg, format);
     }
 }
@@ -184,10 +187,10 @@ type PrintOptions = {
 };
 
 /** 进行输出 */
-function doPrint(opt: PrintOptions, args: readonly VmAny[]): void {
+const doPrint = wrapEffect('once', (opt: PrintOptions, args: readonly VmAny[]): void => {
     const formatResult = opt.parser(args);
     void Promise.resolve(opt.formatter(formatResult)).then((printed) => opt.logger(...printed));
-}
+});
 
 export const debug_print = VmLib(
     (...args) => {

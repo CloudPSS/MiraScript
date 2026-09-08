@@ -33,6 +33,12 @@ test('VmFunction', (t) => {
     t.is(recreateFn, VmFunction(recreateFn));
     t.is(recreateFn.name, 'add');
     t.is(getVmFunctionInfo(recreateFn)?.fullName, 'math.add');
+
+    t.is(getVmFunctionInfo(null), undefined);
+    t.is(
+        getVmFunctionInfo(() => 1),
+        undefined,
+    );
 });
 
 test('VmModule', async (t) => {

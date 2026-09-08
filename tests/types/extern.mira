@@ -8,11 +8,15 @@ if !has_extern {
 t_eq(v_extern::keys()::len(), 0);
 
 let x_key = 'x';
+t_false(x_key in v_extern);
 v_extern.x = 1;
 t_eq(v_extern::keys()::len(), 1);
 t_eq(v_extern[x_key], 1);
 t_eq(v_extern.x, 1);
 t_true(x_key in v_extern);
+t_false(v_extern is (:x));
+t_eq(x, 1);
+t_false(v_extern is (x: _, ..));
 
 let y_key = 2;
 v_extern[y_key] = 2;

@@ -1,4 +1,5 @@
 import { expectNumber, VmLib } from '../../helpers.js';
+import { wrapEffect } from '../../../effects/wrap.js';
 const { atan2: _atan2, pow: _pow, random: _random } = Math;
 
 export const atan2 = VmLib((x, y) => _atan2(expectNumber(0, x), expectNumber(1, y)), {
@@ -17,11 +18,14 @@ export const pow = VmLib((x, y) => _pow(expectNumber(0, x), expectNumber(1, y)),
     },
     returns: { type: 'number' },
 });
-export const random = VmLib(() => _random(), {
-    summary: '返回 [0, 1) 之间的伪随机数',
-    params: {},
-    returns: { type: 'number' },
-});
+export const random = VmLib(
+    wrapEffect('memo', () => _random()),
+    {
+        summary: '返回 [0, 1) 之间的伪随机数',
+        params: {},
+        returns: { type: 'number' },
+    },
+);
 
 export * from './arr.js';
 export * from './const.js';
