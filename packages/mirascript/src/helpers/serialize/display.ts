@@ -1,6 +1,8 @@
-import type { VmExtern, VmFunction, VmModule } from '../../vm/index.js';
+import type { VmAny, VmExtern, VmFunction, VmModule } from '../../vm/index.js';
 import { rethrowControl } from '../../vm/effects/state.js';
 import { getVmFunctionInfo } from '../types/index.js';
+import type { SerializeOptions } from './interface.js';
+import { DEFAULT_OPTIONS, mergeOptions, serializeImpl } from './serialize.js';
 
 /** 将 MiraScript 函数转化为 MiraScript 字符串 */
 export function displayFunction(value: VmFunction): string {
@@ -39,4 +41,20 @@ export function displayExtern(value: VmExtern): string {
         rethrowControl(error);
         return `<extern>`;
     }
+}
+
+export const DISPLAY_OPTIONS = Object.freeze({
+    ...DEFAULT_OPTIONS,
+    maxDepth: 3,
+    serializeFunction: displayFunction,
+    serializeModule: displayModule,
+    serializeExtern: displayExtern,
+} satisfies SerializeOptions);
+
+/**
+ * 将 MiraScript 值转化为 MiraScript 字符串。
+ */
+export function display(value: VmAny, options?: Partial<SerializeOptions>): string {
+    const opt = mergeOptions(DISPLAY_OPTIONS, options);
+    return serializeImpl(value, 0, opt);
 }

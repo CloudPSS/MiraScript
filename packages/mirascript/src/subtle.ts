@@ -6,7 +6,7 @@ export * as convert from './helpers/convert/index.js';
 export { DefaultVmContext } from './vm/types/context.js';
 export * as operations from './vm/operations/index.js';
 export {
-    display as serializeForDisplay,
+    serializeForDisplay,
     serialize,
     serializeNil,
     serializeBoolean,

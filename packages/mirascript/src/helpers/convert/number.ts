@@ -1,6 +1,6 @@
 import type { VmAny } from '../../vm/index.js';
 import { VmError } from '../error.js';
-import { display } from '../serialize/index.js';
+import { display } from '../serialize/display.js';
 import { NegativeInfinity, NotNumber, PositiveInfinity } from '../utils.js';
 
 const parseInt = (value: string, radix: number): number => Number.parseInt(value.slice(2), radix);

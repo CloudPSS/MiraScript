@@ -1,7 +1,7 @@
 import { describeParam, expectNumberRange, throwError, throwUnexpectedTypeError, VmLib } from '../helpers.js';
 import { isNaN, NotNumber, isFinite } from '../../../helpers/utils.js';
 import { toNumber } from '../../../helpers/convert/index.js';
-import { display } from '../../../helpers/serialize/index.js';
+import { display } from '../../../helpers/serialize/display.js';
 import type { VmAny } from '../../types/index.js';
 import { wrapEffect } from '../../effects/wrap.js';
 

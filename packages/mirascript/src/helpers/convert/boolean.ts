@@ -1,6 +1,6 @@
 import type { VmAny } from '../../vm/index.js';
 import { VmError } from '../error.js';
-import { display } from '../serialize/index.js';
+import { display } from '../serialize/display.js';
 
 /** 转换为 boolean */
 export function toBoolean<F = undefined>(value: VmAny, fallback?: F): boolean | Exclude<F, undefined> {

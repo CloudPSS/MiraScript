@@ -3,7 +3,7 @@ import { rethrowControl } from '../../vm/effects/state.js';
 import { isVmArray, isVmWrapper } from '../types/index.js';
 import { VmError } from '../error.js';
 import { keys } from '../utils.js';
-import { display } from '../serialize/index.js';
+import { display } from '../serialize/display.js';
 import { numberToString } from '../serialize/simple.js';
 import { displayFunction } from '../serialize/display.js';
 

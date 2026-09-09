@@ -1,5 +1,5 @@
 import { VmError } from '../../helpers/error.js';
-import { display } from '../../helpers/serialize/index.js';
+import { display } from '../../helpers/serialize/display.js';
 import { toNumber } from '../../helpers/convert/number.js';
 import { isNaN, isSafeInteger } from '../../helpers/utils.js';
 import { isVmArray } from '../../helpers/types/index.js';

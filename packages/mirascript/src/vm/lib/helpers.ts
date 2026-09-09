@@ -1,7 +1,7 @@
 import { VM_ARRAY_MAX_LENGTH } from '../../helpers/constants.js';
 import { NotNumber, entries, fromEntries, isSafeInteger, isFinite } from '../../helpers/utils.js';
 import { toBoolean, toNumber, toString } from '../../helpers/convert/index.js';
-import { display } from '../../helpers/serialize/index.js';
+import { display } from '../../helpers/serialize/display.js';
 import {
     isVmArray,
     isVmFunction,
