@@ -1,7 +1,7 @@
 import { VmError } from '../../helpers/error.js';
 import { hasOwnEnumerable, NotNumber, isFinite, getRecord, keysLength } from '../../helpers/utils.js';
 import { toNumber } from '../../helpers/convert/index.js';
-import { display } from '../../helpers/serialize.js';
+import { display } from '../../helpers/serialize/index.js';
 import { isVmArray, isVmRecord, isVmExtern, isVmWrapper } from '../../helpers/types/index.js';
 import type { VmAny, VmValue } from '../types/index.js';
 import { $AssertInit } from './common.js';

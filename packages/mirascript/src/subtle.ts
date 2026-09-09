@@ -16,7 +16,7 @@ export {
     serializeArray,
     serializeRecord,
     type SerializeOptions,
-} from './helpers/serialize.js';
+} from './helpers/serialize/index.js';
 export { lib, type Lib, type VmLibOption } from './vm/lib/index.js';
 export * from './compiler/diagnostic.js';
 export { compileVerbose } from './compiler/verbose.js';

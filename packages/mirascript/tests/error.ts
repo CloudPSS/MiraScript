@@ -1,15 +1,25 @@
-import test from 'ava';
-import { VmError } from '../dist/index.js';
+import test, { type ExecutionContext } from 'ava';
+import { VmError, type VmValue } from '../dist/index.js';
+
+function checkVmError(
+    t: ExecutionContext,
+    vmError: VmError,
+    message: string,
+    originalError: Error,
+    recoveredValue: VmValue,
+) {
+    t.is(vmError.message, message);
+    t.is(vmError.recovered, recoveredValue);
+    t.is(vmError.cause, originalError);
+    t.is(vmError.stack, originalError.stack);
+}
 
 test('from error', (t) => {
     const originalError = new Error('Original error message');
     const recoveredValue = 42;
     const vmError = VmError.from('Prefix', originalError, recoveredValue);
 
-    t.is(vmError.message, 'Prefix: Original error message');
-    t.is(vmError.recovered, recoveredValue);
-    t.is(vmError.cause, originalError);
-    t.is(vmError.stack, originalError.stack);
+    checkVmError(t, vmError, 'Prefix: Original error message', originalError, recoveredValue);
 });
 
 test('from non-error', (t) => {
@@ -20,7 +30,7 @@ test('from non-error', (t) => {
     t.is(vmError.message, 'Error occurred: Some error string');
     t.is(vmError.recovered, recoveredValue);
     t.is(vmError.cause, originalError);
-    t.not(vmError.stack, undefined);
+    t.true(typeof vmError.stack == 'string' && vmError.stack.length > 0);
 });
 
 test('from empty prefix', (t) => {
@@ -28,10 +38,7 @@ test('from empty prefix', (t) => {
     const recoveredValue = 'recovered';
     const vmError = VmError.from('', originalError, recoveredValue);
 
-    t.is(vmError.message, 'No prefix error');
-    t.is(vmError.recovered, recoveredValue);
-    t.is(vmError.cause, originalError);
-    t.is(vmError.stack, originalError.stack);
+    checkVmError(t, vmError, 'No prefix error', originalError, recoveredValue);
 });
 
 test('from prefix without colon', (t) => {
@@ -39,10 +46,7 @@ test('from prefix without colon', (t) => {
     const recoveredValue = true;
     const vmError = VmError.from('Warning', originalError, recoveredValue);
 
-    t.is(vmError.message, 'Warning: Missing colon');
-    t.is(vmError.recovered, recoveredValue);
-    t.is(vmError.cause, originalError);
-    t.is(vmError.stack, originalError.stack);
+    checkVmError(t, vmError, 'Warning: Missing colon', originalError, recoveredValue);
 });
 
 test('from prefix with colon', (t) => {
@@ -50,10 +54,7 @@ test('from prefix with colon', (t) => {
     const recoveredValue = false;
     const vmError = VmError.from('Error:', originalError, recoveredValue);
 
-    t.is(vmError.message, 'Error: Has colon');
-    t.is(vmError.recovered, recoveredValue);
-    t.is(vmError.cause, originalError);
-    t.is(vmError.stack, originalError.stack);
+    checkVmError(t, vmError, 'Error: Has colon', originalError, recoveredValue);
 });
 
 test('recovered value types', (t) => {

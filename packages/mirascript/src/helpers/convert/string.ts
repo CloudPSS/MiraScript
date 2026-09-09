@@ -2,17 +2,10 @@ import type { VmAny, VmRecord } from '../../vm/index.js';
 import { rethrowControl } from '../../vm/effects/state.js';
 import { isVmArray, isVmWrapper } from '../types/index.js';
 import { VmError } from '../error.js';
-import { display, displayFunction } from '../serialize.js';
-import { keys, isNaN } from '../utils.js';
-
-/** 转换为 string */
-export function numberToString(value: number, minusZero: boolean): string {
-    if (isNaN(value)) return 'nan';
-    if (value === Infinity) return 'inf';
-    if (value === -Infinity) return '-inf';
-    if (minusZero && value === 0 && 1 / value < 0) return '-0';
-    return String(value);
-}
+import { keys } from '../utils.js';
+import { display } from '../serialize/index.js';
+import { numberToString } from '../serialize/simple.js';
+import { displayFunction } from '../serialize/display.js';
 
 /** 转换为 string */
 export function innerToString(value: VmAny, useBraces: boolean): string {

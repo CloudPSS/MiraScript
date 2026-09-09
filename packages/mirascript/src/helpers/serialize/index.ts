@@ -1,122 +1,21 @@
 import { REG_IDENTIFIER_FULL, REG_ORDINAL_FULL } from '@mirascript/constants';
-import type { VmArray, VmExtern, VmFunction, VmModule, VmAny, VmRecord } from '../vm/index.js';
-import { rethrowControl } from '../vm/effects/state.js';
-import { entries, hasOwn } from '../helpers/utils.js';
+import type { VmArray, VmAny, VmRecord } from '../../vm/index.js';
+import { entries, hasOwn } from '../utils.js';
 import {
-    getVmFunctionInfo,
     isVmArray,
     isVmArrayLikeRecordByEntries,
     isVmExtern,
     isVmFunction,
     isVmModule,
     isVmRecord,
-} from './types/index.js';
-import { numberToString } from './convert/string.js';
+} from '../types/index.js';
+import type { SerializeOptions } from './interface.js';
+import { serializeNil, serializeBoolean, serializeNumber } from './simple.js';
+import { serializeStringImpl } from './string.js';
+import { displayExtern, displayFunction, displayModule } from './display.js';
 
-/** 序列化 nil 值 */
-export function serializeNil(): string {
-    return 'nil';
-}
-
-/** 序列化布尔值 */
-export function serializeBoolean(value: boolean): string {
-    return value ? 'true' : 'false';
-}
-
-/** 序列化数字 */
-export function serializeNumber(value: number): string {
-    return numberToString(value, true);
-}
-
-/**
- * 将 MiraScript 转义字符串序列化为 MiraScript 字面量。
- */
-function serializeStringEscaped(escaped: string, options: Readonly<SerializeOptions>): string {
-    return options.serializeStringEscape('\\' + escaped, options);
-}
-
-/**
- * 将 MiraScript 普通字符串序列化为 MiraScript 字面量。
- */
-function serializeStringContent(value: string, options: Readonly<SerializeOptions>): string {
-    return options.serializeStringContent(value, options);
-}
-
-const STRING_QUOTE = `'`;
-const STRING_REG = new RegExp(String.raw`[${STRING_QUOTE}\\\$\p{C}\u2028\u2029]`, 'gu');
-const STRING_MARK = /^[\p{M}]$/u;
-
-/**
- * 序列化为特殊字符
- */
-function serializeSpecialChar(char: string, options: Readonly<SerializeOptions>): string {
-    if (char === STRING_QUOTE) {
-        return serializeStringEscaped(STRING_QUOTE, options);
-    } else if (char === '\0') {
-        return serializeStringEscaped(`0`, options);
-    } else if (char === '\n') {
-        return serializeStringEscaped(`n`, options);
-    } else if (char === '\r') {
-        return serializeStringEscaped(`r`, options);
-    } else if (char === '\t') {
-        return serializeStringEscaped(`t`, options);
-    } else if (char === '\b') {
-        return serializeStringEscaped(`b`, options);
-    } else if (char === '\f') {
-        return serializeStringEscaped(`f`, options);
-    } else if (char === '\v') {
-        return serializeStringEscaped(`v`, options);
-    } else if (char === '\\') {
-        return serializeStringEscaped(`\\`, options);
-    } else if (char === '$') {
-        return serializeStringEscaped(`$`, options);
-    } else {
-        const code = char.codePointAt(0)!;
-        if (code <= 0x7f) {
-            return serializeStringEscaped(`x${code.toString(16).padStart(2, '0')}`, options);
-        } else if (code >= 0xd800 && code <= 0xdfff) {
-            // 无效的代理对
-            return serializeStringContent('�', options);
-        } else {
-            return serializeStringEscaped(`u{${code.toString(16)}}`, options);
-        }
-    }
-}
-
-/**
- * 将 MiraScript 字符串序列化为 MiraScript 字面量。
- */
-function serializeStringImpl(value: string, options: Readonly<SerializeOptions>): string {
-    const oq = options.serializeStringQuote(STRING_QUOTE, true, options);
-    const cq = options.serializeStringQuote(STRING_QUOTE, false, options);
-    if (value.length === 0) {
-        return oq + cq;
-    }
-
-    let ret = oq;
-    let lastIndex = 0;
-
-    // 当开头字符是 \p{M} 时，使用转义序列化
-    while (value.length > lastIndex) {
-        const cp = value.codePointAt(lastIndex)!;
-        const ch = String.fromCodePoint(cp);
-        if (!STRING_MARK.test(ch)) break;
-        ret += serializeStringEscaped(`u{${cp.toString(16)}}`, options);
-        lastIndex += ch.length;
-    }
-
-    // 序列化字符串内容，遇到特殊字符时使用转义序列化
-    STRING_REG.lastIndex = lastIndex;
-    let match: RegExpExecArray | null;
-    while ((match = STRING_REG.exec(value)) !== null) {
-        ret += serializeStringContent(value.slice(lastIndex, match.index), options);
-        lastIndex = STRING_REG.lastIndex;
-        ret += serializeSpecialChar(match[0], options);
-    }
-    ret += serializeStringContent(value.slice(lastIndex), options);
-    ret += cq;
-    return ret;
-}
+export type { SerializeOptions };
+export { serializeNil, serializeBoolean, serializeNumber };
 
 /**
  * 将 MiraScript 字符串序列化为 MiraScript 字面量。
@@ -259,83 +158,12 @@ export function serialize(value: VmAny, options?: Partial<SerializeOptions>): st
     return serializeImpl(value, 0, getSerializeOptions(options));
 }
 
-/** 将 MiraScript 函数转化为 MiraScript 字符串 */
-export function displayFunction(value: VmFunction): string {
-    try {
-        const name = getVmFunctionInfo(value)?.fullName;
-        return name ? `<function ${name}>` : `<function>`;
-        /* c8 ignore next 4 */
-    } catch (error) {
-        rethrowControl(error);
-        return `<function>`;
-    }
-}
-
-/** 将 MiraScript 模块转化为 MiraScript 字符串 */
-export function displayModule(value: VmModule): string {
-    try {
-        return value.toString(true);
-        /* c8 ignore next 4 */
-    } catch (error) {
-        rethrowControl(error);
-        return `<module>`;
-    }
-}
-
-/** 将 MiraScript 外部值转化为 MiraScript 字符串 */
-export function displayExtern(value: VmExtern): string {
-    try {
-        const tag = `<extern ${value.tag}>`;
-        const rep = value.toString(true);
-        if (rep === tag || rep.length > 50) {
-            return tag;
-        }
-        return `${tag} ${rep}`;
-        /* c8 ignore next 4 */
-    } catch (error) {
-        rethrowControl(error);
-        return `<extern>`;
-    }
-}
-
 /**
  * 将 MiraScript 值转化为 MiraScript 字符串。
  */
 export function display(value: VmAny, options?: Partial<SerializeOptions>): string {
     const opt = mergeOptions(DISPLAY_OPTIONS, options);
     return serializeImpl(value, 0, opt);
-}
-
-/** 序列化设置 */
-export interface SerializeOptions {
-    /** 最大递归深度，超过该深度的值将被序列化为 `nil`，默认值为 128 */
-    maxDepth: number;
-    /** 序列化 nil 值 */
-    serializeNil: (options: SerializeOptions) => string;
-    /** 序列化布尔值 */
-    serializeBoolean: (value: boolean, options: SerializeOptions) => string;
-    /** 序列化数字 */
-    serializeNumber: (value: number, options: SerializeOptions) => string;
-    /** 序列化字符串 */
-    serializeString: (value: string, options: SerializeOptions) => string;
-    /** 序列化字符串引号 */
-    serializeStringQuote: (value: string, open: boolean, options: SerializeOptions) => string;
-    /** 序列化字符串转义序列 */
-    serializeStringEscape: (value: string, options: SerializeOptions) => string;
-    /** 序列化字符串常规内容 */
-    serializeStringContent: (value: string, options: SerializeOptions) => string;
-    /** 序列化数组 */
-    serializeArray: (value: VmArray, depth: number, options: SerializeOptions) => string;
-    /** 序列化记录 */
-    serializeRecord: (value: VmRecord, depth: number, options: SerializeOptions) => string;
-    /** 序列化属性名 */
-    serializePropName: (value: number | string, options: SerializeOptions) => string;
-    /** 序列化函数 */
-    serializeFunction: (value: VmFunction, options: SerializeOptions) => string;
-    /** 序列化模块 */
-    serializeModule: (value: VmModule, depth: number, options: SerializeOptions) => string;
-    /** 序列化外部值 */
-    serializeExtern: (value: VmExtern, depth: number, options: SerializeOptions) => string;
 }
 
 /** 是否为默认选项 */

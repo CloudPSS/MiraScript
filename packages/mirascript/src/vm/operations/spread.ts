@@ -1,6 +1,6 @@
 import { VmError } from '../../helpers/error.js';
 import { create } from '../../helpers/utils.js';
-import { display } from '../../helpers/serialize.js';
+import { display } from '../../helpers/serialize/index.js';
 import { isVmArray, isVmRecord, isVmExtern, isVmConst } from '../../helpers/types/index.js';
 import { wrapToVmConst } from '../types/boundary.js';
 import type { VmAny, VmRecord, VmConst } from '../types/index.js';

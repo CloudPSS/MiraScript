@@ -1,4 +1,4 @@
-import { display } from '../../../../helpers/serialize.js';
+import { display } from '../../../../helpers/serialize/index.js';
 import { setRecord } from '../../../../helpers/utils.js';
 import { Cp } from '../../../checkpoint.js';
 import { isVmArray, type VmConst, type VmArray, type VmRecord } from '../../../types/index.js';
