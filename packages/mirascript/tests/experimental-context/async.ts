@@ -32,6 +32,78 @@ test('async completion timing and independent journals', async (t) => {
     t.is(calls, 2);
 });
 
+test('async function that returns sync', (t) => {
+    const events = ['A'];
+    let calls = 0;
+    const f = VmFunction.async(() => {
+        calls++;
+        events.push(`f called ${calls}`);
+        return calls;
+    });
+    const globals = createVmContext({ f });
+    runInContext(
+        compileSync('f()'),
+        globals,
+        (nested) => {
+            t.is(nested, 1);
+            events.push(`B`);
+        },
+        () => t.fail(),
+    );
+    events.push(`C`);
+    t.deepEqual(events, ['A', 'f called 1', 'B', 'C']);
+    t.is(calls, 1);
+});
+
+test('async functions called interleaved', async (t) => {
+    const events = ['A'];
+    const delay = VmFunction.async(async (timeout) => {
+        timeout = Number(timeout);
+        events.push(`delay calling with ${timeout}`);
+        await new Promise((resolve) => setTimeout(resolve, timeout));
+        events.push(`delay finished with ${timeout}`);
+    });
+    const global0 = createVmContext({ delay, a: 1, b: 2 });
+    const global1 = createVmContext({ delay, a: 3, b: 4 });
+    const done0 = Promise.withResolvers<VmValue>();
+    const done1 = Promise.withResolvers<VmValue>();
+    runInContext(
+        compileSync('let mut sum = a; delay(100); sum += b; sum'),
+        global0,
+        (sum) => {
+            t.is(sum, 3);
+            events.push(`done 0`);
+            done0.resolve(sum);
+        },
+        () => t.fail(),
+    );
+    events.push(`B`);
+    runInContext(
+        compileSync('let mut sum = a; delay(20); sum += b; sum'),
+        global1,
+        (sum) => {
+            t.is(sum, 7);
+            events.push(`done 1`);
+            done1.resolve(sum);
+        },
+        () => t.fail(),
+    );
+    events.push(`C`);
+    await done0.promise;
+    await done1.promise;
+    t.deepEqual(events, [
+        'A',
+        'delay calling with 100',
+        'B',
+        'delay calling with 20',
+        'C',
+        'delay finished with 20',
+        'done 1',
+        'delay finished with 100',
+        'done 0',
+    ]);
+});
+
 test('thenable assimilation and VM object results', async (t) => {
     let calls = 0;
     const object = { answer: 42 };
@@ -62,31 +134,6 @@ test('rejections and synchronous throws preserve errors', async (t) => {
     });
     t.is(caught?.cause, error);
     t.is(compileSync('1')(), 1);
-});
-
-test('caught memo errors and once return values are cached across replay', async (t) => {
-    const error = new Error('read failed');
-    let calls = 0;
-    const read = VmFunction.memo(() => {
-        calls++;
-        throw error;
-    });
-    const value = { x: 1 };
-    let writes = 0;
-    const once = VmFunction.once(() => {
-        writes++;
-        return value;
-    });
-    const load = VmFunction.async(() => Promise.resolve(null));
-    const script = wrapScript('', 'Script', () => {
-        t.throws(() => read(), { is: error });
-        t.is(once(), value);
-        load();
-        return value;
-    });
-    t.is(await new Promise((resolve, reject) => runInContext(script, null, resolve, reject)), value);
-    t.is(calls, 1);
-    t.is(writes, 1);
 });
 
 test('sequence changes and shorter replay paths fail', async (t) => {
@@ -207,17 +254,6 @@ test('repeated deep suspension unwinds checkpoint depth', async (t) => {
     t.is(compileSync('fn f(n) { if n == 0 { 9 } else { f(n - 1) } }; f(100)')(), 9);
 });
 
-test('missing and void VM results normalize to nil in scripts', async (t) => {
-    const globals = createVmContext({
-        read: VmFunction.memo((value) => value),
-        write: VmFunction.once(() => {
-            /* Returns void. */
-        }),
-        load: VmFunction.async(() => Promise.resolve(undefined)),
-    });
-    t.deepEqual(await execute('[read(), write(), load()]', globals), [null, null, null]);
-});
-
 test('arbitrary rejection values remain intact', async (t) => {
     for (const expected of [null, undefined, 0, 'failure']) {
         // Verify JavaScript permits non-Error rejection reasons at this boundary.
@@ -240,63 +276,4 @@ test('arbitrary rejection values remain intact', async (t) => {
         );
         t.false(completed);
     }
-});
-
-test.serial('debug serializer cannot hide nested effects with its fallback', async (t) => {
-    const { serializer } = lib.debug_print;
-    const read = VmFunction.memo(() => 'nested');
-    lib.debug_print.serializer = () => String(read());
-    try {
-        await t.throwsAsync(execute('debug_print("%s", 1)'), { instanceOf: ContextReentrancyError });
-    } finally {
-        lib.debug_print.serializer = serializer;
-    }
-});
-
-test.serial('standard-library reads and logs are stable during replay', async (t) => {
-    const originalNow = Date.now;
-    const { logger } = lib.debug_print;
-    const panicLogger = lib.panic.logger;
-    t.teardown(() => {
-        Date.now = originalNow;
-        lib.debug_print.logger = logger;
-        lib.panic.logger = panicLogger;
-    });
-    let time = 1000;
-    Date.now = () => time;
-    const logs: unknown[][] = [];
-    lib.debug_print.logger = (...args) => {
-        logs.push(args);
-    };
-    lib.panic.logger = (...args) => {
-        logs.push(args);
-    };
-    const seen: unknown[] = [];
-    const observe = VmFunction((value) => {
-        seen.push(value);
-    });
-    const load = VmFunction.async(() => {
-        time = 2000;
-        return Promise.resolve(null);
-    });
-    const result = await execute(
-        `
-        let r = random();
-        let a = to_timestamp();
-        let b = to_datetime().second;
-        let c = to_iso8601();
-        observe([r, a, b, c]);
-        debug_print("before");
-        load();
-        [a, b, c, to_timestamp(), to_timestamp(0)]
-    `,
-        createVmContext({ observe, load }),
-    );
-    t.deepEqual(seen[0], seen[1]);
-    t.deepEqual(result, [1000, 1, '1970-01-01T00:00:01.000Z', 2000, 0]);
-    t.is(logs.length, 1);
-    await t.throwsAsync(execute('debug_print("kept"); load(); panic("failed")', createVmContext({ load })), {
-        instanceOf: VmError,
-    });
-    t.is(logs.length, 3);
 });

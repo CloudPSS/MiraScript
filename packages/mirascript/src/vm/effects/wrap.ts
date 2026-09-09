@@ -1,4 +1,4 @@
-import { apply } from '../../helpers/utils.js';
+import { apply, isPromiseLike } from '../../helpers/utils.js';
 import {
     AsyncRequiredError,
     ContextReentrancyError,
@@ -37,7 +37,7 @@ export function wrapEffect<A extends readonly unknown[], R>(
             context.inHost = true;
             try {
                 const value = apply(fn, this, args);
-                if (kind === 'async') {
+                if (kind === 'async' && isPromiseLike(value)) {
                     const pending: EffectSlot = slot;
                     pending.ready = Promise.resolve(value).then(
                         (result) => {

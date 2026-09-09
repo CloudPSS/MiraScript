@@ -122,3 +122,14 @@ test('managed effects run once per logical call through closures and higher-orde
     t.deepEqual(writes, [1, 2, 3]);
     t.deepEqual(loads, [1, 2, 3]);
 });
+
+test('missing and void VM results normalize to nil in scripts', async (t) => {
+    const globals = createVmContext({
+        read: VmFunction.memo((value) => value),
+        write: VmFunction.once(() => {
+            /* Returns void. */
+        }),
+        load: VmFunction.async(() => Promise.resolve(undefined)),
+    });
+    t.deepEqual(await execute('[read(), write(), load()]', globals), [null, null, null]);
+});

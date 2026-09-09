@@ -39,12 +39,13 @@ const SPECIAL_KEYS = new Set(getOwnPropertyNames(Object.prototype));
  * Set property on an vm record.
  */
 export const setRecord = (obj: Record<string, VmConst | undefined>, key: string, value: VmConst | undefined): void => {
+    value ??= null;
     if (!SPECIAL_KEYS.has(key)) {
-        obj[key] = value ?? null;
+        obj[key] = value;
     } else {
         defineProperty(obj, key, {
             __proto__: null,
-            value: value ?? null,
+            value,
             configurable: true,
             writable: true,
             enumerable: true,
@@ -58,4 +59,12 @@ export const setRecord = (obj: Record<string, VmConst | undefined>, key: string,
 export const getRecord = (obj: VmRecord, key: string): VmConst | undefined => {
     if (!hasOwnEnumerable(obj, key)) return undefined;
     return obj[key] ?? null;
+};
+
+/**
+ * Checks if a value is Promise-like (i.e., has a `then` method).
+ */
+export const isPromiseLike = (value: unknown): value is PromiseLike<unknown> => {
+    if (value == null || typeof value != 'object') return false;
+    return typeof (value as PromiseLike<unknown>).then == 'function';
 };

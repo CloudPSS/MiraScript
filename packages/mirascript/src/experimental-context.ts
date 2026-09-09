@@ -82,7 +82,7 @@ import { defineProperty } from './helpers/utils.js';
 type VmAsyncFunctionLike = (
     this: void,
     ...args: ReadonlyArray<VmValue | undefined>
-) => PromiseLike<ReturnType<VmFunctionLike>>;
+) => PromiseLike<ReturnType<VmFunctionLike>> | ReturnType<VmFunctionLike>;
 
 /** 保留异步函数的参数类型，将完成值作为同步返回值 */
 type ResumedFunction<T extends VmAsyncFunctionLike> = T extends (...args: infer A extends readonly unknown[]) => unknown
