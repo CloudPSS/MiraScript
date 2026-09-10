@@ -1,7 +1,7 @@
 import test from 'ava';
 import { parse, simplify, stringify } from '@mirascript/typed';
 import { lib } from '@mirascript/mirascript/subtle';
-import type { VmLibOption } from '../../mirascript/src/vm/lib/helpers.ts';
+import type { VmLibOption } from '../../mirascript/dist/vm/lib/helpers.d.ts';
 
 const lt = test.macro<[name: string, param: string, value: VmLibOption]>({
     exec: (t, name, param, value) => {
@@ -26,9 +26,11 @@ const lt = test.macro<[name: string, param: string, value: VmLibOption]>({
 type Lib = {
     [name: string]: VmLibOption | Lib;
 };
-function testLib(lib: Lib) {
+function testLib(lib: Lib, path: readonly string[]) {
     for (const [name, value] of Object.entries(lib)) {
+        const p = [...path, name];
         if ('summary' in value || 'params' in value || 'returns' in value) {
+            const name = p.join('.');
             for (const param of Object.keys(value.params ?? {})) {
                 test(lt, name, param, value as VmLibOption);
             }
@@ -36,8 +38,8 @@ function testLib(lib: Lib) {
                 test(lt, name, 'returns', value as VmLibOption);
             }
         } else {
-            testLib(value as Lib);
+            testLib(value as Lib, p);
         }
     }
 }
-testLib(lib);
+testLib(lib, []);
