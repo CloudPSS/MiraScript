@@ -1,14 +1,16 @@
+import { isFinite, isNaN, isInteger } from '../../../../helpers/utils.js';
+
 /** Internal Cartesian pairs. Public values are records, never arrays. */
 export type C = readonly [number, number];
 const { abs, atan2, cos, sin, cosh, sinh, hypot, log, log1p, exp, expm1, sqrt, LN2 } = Math;
 const inf = Infinity;
 export const copySign = (x: number, y: number): number => (y < 0 || Object.is(y, -0) ? -abs(x) : abs(x));
 // A vanishing Cartesian factor remains zero even when the radial factor overflows.
-const radial = (r: number, x: number): number => (x === 0 && !Number.isNaN(r) ? copySign(0, r) * x : r * x);
+const radial = (r: number, x: number): number => (x === 0 && !isNaN(r) ? copySign(0, r) * x : r * x);
 /** Divide a sum without overflowing the sum or prematurely underflowing its terms. */
 function sumOver(x: number, y: number, q: number): number {
     const sum = x + y;
-    return !Number.isFinite(sum) && Number.isFinite(x) && Number.isFinite(y) ? x / q + y / q : sum / q;
+    return !isFinite(sum) && isFinite(x) && isFinite(y) ? x / q + y / q : sum / q;
 }
 export const add = ([a, b]: C, [c, d]: C): C => [a + c, b + d];
 export const subtract = ([a, b]: C, [c, d]: C): C => [a - c, b - d];
@@ -17,7 +19,7 @@ export const conj = ([a, b]: C): C => [a, -b];
 /** Multiply Cartesian components, rescaling overflowing finite products. */
 export function multiply([a, b]: C, [c, d]: C): C {
     if (b === 0 && d === 0) return [a * c, radial(a, d) + radial(c, b)];
-    if ([a, b, c, d].every(Number.isFinite) && [a * c, b * d, a * d, b * c].some((x) => !Number.isFinite(x))) {
+    if ([a, b, c, d].every(isFinite) && [a * c, b * d, a * d, b * c].some((x) => !isFinite(x))) {
         const s = Math.max(abs(a), abs(b)),
             t = Math.max(abs(c), abs(d));
         return [
@@ -31,7 +33,7 @@ export function multiply([a, b]: C, [c, d]: C): C {
 export function divide([a, b]: C, [c, d]: C): C {
     const s = Math.max(abs(c), abs(d));
     if (s === 0) return [copySign(inf, c) * a, copySign(inf, c) * b];
-    if (s === inf && Number.isFinite(a) && Number.isFinite(b)) {
+    if (s === inf && isFinite(a) && isFinite(b)) {
         c = copySign(abs(c) === inf ? 1 : 0, c);
         d = copySign(abs(d) === inf ? 1 : 0, d);
         return [0 * (a * c + b * d), 0 * (b * c - a * d)];
@@ -39,7 +41,7 @@ export function divide([a, b]: C, [c, d]: C): C {
     c /= s;
     d /= s;
     const q = c * c + d * d;
-    if ((!Number.isFinite(a / s) || !Number.isFinite(b / s)) && Number.isFinite(a) && Number.isFinite(b)) {
+    if ((!isFinite(a / s) || !isFinite(b / s)) && isFinite(a) && isFinite(b)) {
         const u = Math.max(abs(a), abs(b));
         return [((((a / u) * c + (b / u) * d) / q) * u) / s, ((((b / u) * c - (a / u) * d) / q) * u) / s];
     }
@@ -63,8 +65,8 @@ export const logBase = (z: C, base: number): C => {
 /** Compute the principal square root with scaled finite components. */
 export function squareRoot([x, y]: C): C {
     if (abs(y) === inf) return [inf, y];
-    if (x === inf) return [inf, Number.isNaN(y) ? NaN : copySign(0, y)];
-    if (x === -inf) return [Number.isNaN(y) ? NaN : 0, copySign(inf, y)];
+    if (x === inf) return [inf, isNaN(y) ? NaN : copySign(0, y)];
+    if (x === -inf) return [isNaN(y) ? NaN : 0, copySign(inf, y)];
     const s = Math.max(abs(x), abs(y));
     if (s === 0) return [0, y];
     const t = sqrt(s) * sqrt((hypot(x / s, y / s) + abs(x) / s) / 2);
@@ -85,12 +87,12 @@ export function power(z: C, w: C): C {
     if (w[0] === 0 && w[1] === 0) return [1, 0];
     if (w[0] === 1 && w[1] === 0) return z;
     if (z[0] === 0 && z[1] === 0) {
-        if (w[1] !== 0 || Number.isNaN(w[0])) return [NaN, NaN];
+        if (w[1] !== 0 || isNaN(w[0])) return [NaN, NaN];
         return polar(w[0] > 0 ? 0 : inf, w[0] * atan2(z[1], z[0]));
     }
     if (w[1] === 0) {
         // Preserve exact real integer powers, including their zero imaginary part.
-        if (z[1] === 0 && Number.isInteger(w[0])) return [Math.pow(z[0], w[0]), copySign(0, z[1])];
+        if (z[1] === 0 && isInteger(w[0])) return [Math.pow(z[0], w[0]), copySign(0, z[1])];
         return polar(exp(logAbs(z) * w[0]), atan2(z[1], z[0]) * w[0]);
     }
     return exponential(multiply(w, logarithm(z)));
