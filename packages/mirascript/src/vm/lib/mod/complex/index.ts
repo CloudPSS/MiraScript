@@ -14,7 +14,7 @@ const record = ([re, im]: k.C) => ({ 0: re, 1: im });
 function unary(f: (z: k.C) => k.C, summary: string) {
     return VmLib((z: VmAny) => record(f(parse(z, 'z'))), {
         summary,
-        params: { z: { type: 'any', description: '复数 record 或可转换为数字的值' } },
+        params: { z: { type: 'number | (number, number)', description: '复数 record 或可转换为数字的值' } },
         returns: { type: '(number, number)' },
     });
 }
@@ -22,7 +22,10 @@ function unary(f: (z: k.C) => k.C, summary: string) {
 function binary(f: (a: k.C, b: k.C) => k.C, summary: string) {
     return VmLib((a: VmAny, b: VmAny) => record(f(parse(a, 'a'), parse(b, 'b'))), {
         summary,
-        params: { a: { type: 'any', description: '左操作数' }, b: { type: 'any', description: '右操作数' } },
+        params: {
+            a: { type: 'number | (number, number)', description: '左操作数' },
+            b: { type: 'number | (number, number)', description: '右操作数' },
+        },
         returns: { type: '(number, number)' },
     });
 }
@@ -30,7 +33,7 @@ function binary(f: (a: k.C, b: k.C) => k.C, summary: string) {
 function scalar(f: (z: k.C) => number, summary: string) {
     return VmLib((z: VmAny) => f(parse(z, 'z')), {
         summary,
-        params: { z: { type: 'any', description: '复数 record 或可转换为数字的值' } },
+        params: { z: { type: 'number | (number, number)', description: '复数 record 或可转换为数字的值' } },
         returns: { type: 'number' },
     });
 }

@@ -15,6 +15,7 @@ import {
     type VmFunctionInfo,
     type VmValue,
     type VmExtern,
+    isVmArrayLikeRecordByKeys,
 } from '@mirascript/mirascript';
 import { lib, operations, serializeRecordKey, serializeString } from '@mirascript/mirascript/subtle';
 import type { LocalDefinition } from './compile-result.js';
@@ -308,14 +309,16 @@ function serializeForDisplay(value: Exclude<VmValue, VmModule>, maxEntries = 100
         begin = '(';
         end = ')';
 
+        const omitKey = isVmArrayLikeRecordByKeys(keys);
+
         for (const key of keys) {
             if (entries.length > maxEntries) {
                 entries.push(`../* x${keys.length - entries.length} */`);
                 break;
             }
-            const sk = serializeRecordKey(key);
-            const sv = serializeField(value, key, maxWidth - sk.length - 4);
-            const entry = `${sk}: ${sv}`;
+            const sk = omitKey ? '' : `${serializeRecordKey(key)}: `;
+            const sv = serializeField(value, key, maxWidth - sk.length - 2);
+            const entry = `${sk}${sv}`;
             entries.push(entry);
             resultLength += entry.length;
         }
