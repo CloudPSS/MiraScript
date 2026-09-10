@@ -1,6 +1,6 @@
 //! Cartesian kernels mirror the TypeScript implementation; only the VM boundary
 //! performs conversion. No host complex value escapes into MiraScript.
-use std::f64::consts::{LN_2, PI};
+use std::f64::consts::LN_2;
 
 use crate::standard_library::required;
 use crate::{MiraValue, Result, Runtime, operations};
@@ -80,6 +80,14 @@ pub(super) fn multiply((a, b): C, (c, d): C) -> C {
     }
     (a * c - b * d, a * d + b * c)
 }
+fn sum_over(x: f64, y: f64, q: f64) -> f64 {
+    let sum = x + y;
+    if !sum.is_finite() && x.is_finite() && y.is_finite() {
+        x / q + y / q
+    } else {
+        sum / q
+    }
+}
 pub(super) fn divide((a, b): C, (mut c, mut d): C) -> C {
     // f64::max ignores a NaN, unlike Math.max.
     if c.is_nan() || d.is_nan() {
@@ -104,7 +112,10 @@ pub(super) fn divide((a, b): C, (mut c, mut d): C) -> C {
             ((b / u * c - a / u * d) / q * u) / s,
         );
     }
-    ((a / s * c + b / s * d) / q, (b / s * c - a / s * d) / q)
+    (
+        sum_over(a / s * c, b / s * d, q),
+        sum_over(b / s * c, -a / s * d, q),
+    )
 }
 pub(super) fn polar(r: f64, theta: f64) -> C {
     (radial(r, theta.cos()), radial(r, theta.sin()))
@@ -231,20 +242,38 @@ pub(super) fn asin((x, y): C) -> C {
     if s > 1e150 {
         return (x.atan2(y.abs()), (log_abs((x, y)) + LN_2).copysign(y));
     }
-    let r = (x + 1.0).hypot(y);
-    let t = (x - 1.0).hypot(y);
-    let a = r / 2.0 + t / 2.0;
-    let am1 = if x.abs() <= 1.0 {
-        (y * (y / (r + (1.0 + x))) + y * (y / (t + (1.0 - x)))) / 2.0
-    } else {
-        a - 1.0
-    };
-    let im = (am1 + (am1 * (a + 1.0)).sqrt()).ln_1p();
-    ((x / a).clamp(-1.0, 1.0).asin(), im.copysign(y))
+    let (h, im) = inverse_geometry(x, y);
+    (x.atan2(h), im)
 }
-pub(super) fn acos(z: C) -> C {
-    let (x, y) = asin(z);
-    (PI / 2.0 - x, -y)
+fn inverse_geometry(x: f64, y: f64) -> C {
+    let ax = x.abs();
+    let r = (ax + 1.0).hypot(y);
+    let t = (ax - 1.0).hypot(y);
+    let a = r / 2.0 + t / 2.0;
+    let delta = if ax <= 1.0 {
+        (y / (r + (1.0 + ax)).sqrt()).hypot(y / (t + (1.0 - ax)).sqrt()) / std::f64::consts::SQRT_2
+    } else {
+        (a - 1.0).sqrt()
+    };
+    let gap = if ax <= 1.0 {
+        (1.0 - ax).sqrt().hypot(delta)
+    } else {
+        (y / (r + (ax + 1.0)).sqrt()).hypot(y / (t + (ax - 1.0)).sqrt()) / std::f64::consts::SQRT_2
+    };
+    (
+        gap * (a + ax).sqrt(),
+        (delta * (delta + (a + 1.0).sqrt())).ln_1p().copysign(y),
+    )
+}
+pub(super) fn acos((x, y): C) -> C {
+    if y == 0.0 && x.abs() <= 1.0 {
+        return (x.acos(), -y);
+    }
+    if !x.is_nan() && !y.is_nan() && x.abs().max(y.abs()) > 1e150 {
+        return (y.abs().atan2(x), -(log_abs((x, y)) + LN_2).copysign(y));
+    }
+    let (h, im) = inverse_geometry(x, y);
+    (h.atan2(x), -im)
 }
 pub(super) fn atan((x, y): C) -> C {
     if y == 0.0 {

@@ -1,0 +1,16 @@
+// Relative checks for tiny results: an absolute tolerance would accept zero.
+fn relative(actual, expected) {
+  t_true(abs(actual / expected - 1) < 1e-12, `$actual != $expected`);
+}
+relative(complex.asinh(1e-200)[0], 1e-200);
+relative(complex.asin((0, 1e-200))[1], 1e-200);
+relative(complex.acos((1, 1e-20))[0], 1e-10);
+relative(complex.acosh((1, 1e-20))[0], 1e-10);
+relative(complex.acosh((1, 1e-20))[1], 1e-10);
+relative(complex.asin((1, 1e-20))[1], 1e-10);
+relative(complex.log1p(1e-200)[0], 1e-200);
+relative(complex.expm1(1e-200)[0], 1e-200);
+relative(complex.atan((0, 1e-200))[1], 1e-200);
+relative(complex.divide((1e308, 1e308), (1, 1))[0], 1e308);
+t_eq(complex.divide((5e-324, 5e-324), (1, 1)), (5e-324, 0));
+t_eq(complex.multiply((1e308, 1e308), (2, -2)), (inf, 0));
