@@ -14,8 +14,8 @@ t_throws(fn { nil ? "Yes" : "No" });
   fn scope {
     let [mut a, mut b] = [1, 2];
     ['x', 'y'] is [c, d] ?
-      [5, 6, 7, 8] is [a, b, e, f] &&
-        {
+      [5, 6, 7, 8] is [a, b, e, f]
+        && {
           t_eq([a, b, e, f], [5, 6, 7, 8]);
           t_eq([c, d], ['x', 'y']);
           true
