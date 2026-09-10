@@ -151,6 +151,42 @@ debug_print("3×3 单位矩阵:", matrix.identity(3));
 debug_print("2×3 零矩阵:", matrix.zeros(2, 3));
 ```
 
+## 内置模块：`complex`
+
+MiraScript 提供了 [`complex` 模块](./15-complex.md) 用于复数运算。复数使用普通 record `(实部, 虚部)` 表示，`complex.I` 是虚数单位 `(0, 1)`：
+
+```mira
+let z = (3, 4);
+
+debug_print("实部:", complex.real(z)); // 3
+debug_print("虚部:", complex.imag(z)); // 4
+debug_print("模:", complex.abs(z));   // 5
+debug_print("共轭:", complex.conj(z)); // (3, -4)
+```
+
+使用 `complex.from` 可以显式转换输入。其他复数函数的参数也使用相同规则：record 同时包含 `0`、`1` 字段时，分别按 `to_number` 语义转换，忽略其他字段；其他输入整体按数字转换，虚部补 `0`。无法转换的值会报错，数组 `[3, 4]` 不会被当作复数。
+
+```mira
+debug_print(complex.from(3));                         // (3, 0)
+debug_print(complex.from(('3', '4', name: '示例'))); // (3, 4)
+debug_print(complex.add(1, 2));                       // (3, 0)
+debug_print(complex.multiply((1, 2), (3, 4)));         // (-5, 10)
+debug_print(complex.multiply(complex.I, complex.I));  // (-1, 0)
+```
+
+复数运算通过模块函数完成，不改变 `+`、`*` 等运算符的含义。运算结果始终是复数 record，只有 `real`、`imag`、`abs`、`arg` 等结果必定为实数的函数返回 number。
+
+模块还提供幂根、指数对数、三角及双曲函数，以及对应的反函数。多值函数返回主值，角度单位为弧度；`polar(r, theta)` 用模和辐角构造复数：
+
+```mira
+debug_print(complex.sqrt(-4));        // (0, 2)
+debug_print(complex.log(-1));         // (0, PI)
+debug_print(complex.polar(2, 0));     // (2, 0)
+debug_print(complex.arg(complex.I));  // PI / 2
+```
+
+完整接口、符号零与特殊数值规则见[复数计算](./15-complex.md)。
+
 ## 小结
 
 - `mod name { }` 定义模块，`pub` 标记公开成员
@@ -158,3 +194,4 @@ debug_print("2×3 零矩阵:", matrix.zeros(2, 3));
 - 可变成员只能通过模块内部函数修改
 - 模块可以嵌套，也可以遍历和解构
 - `matrix` 模块提供矩阵运算功能
+- `complex` 模块使用 `(实部, 虚部)` record 提供复数运算功能
