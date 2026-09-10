@@ -1,0 +1,56 @@
+// Finite inputs can overflow even though the same functions accept Infinity.
+t_eq(complex.exp(1000), (inf, 0));
+t_eq(complex.expm1(1000), (inf, 0));
+t_eq(complex.sinh(1000), (inf, 0));
+t_eq(complex.sinh(-1000), (-inf, 0));
+t_eq(complex.cosh(1000), (inf, 0));
+t_eq(complex.sin((0, 1000)), (0, inf));
+t_eq(complex.cos((0, 1000)), (inf, -0));
+
+// Real multiplication and nonfinite Cartesian components use distinct paths.
+t_eq(complex.multiply(3, 4), (12, 0));
+t_eq(complex.multiply((-3, -0), (4, -0)), (-12, 0));
+t_eq(complex.multiply((inf, 1), (1, 2)), (inf, inf));
+t_eq(complex.multiply((1, inf), (1, 2)), (-inf, inf));
+t_eq(complex.multiply((1, 2), (nan, 1)), (nan, nan));
+
+// Scaling must also handle a finite numerator divided by a tiny divisor.
+t_eq(complex.divide((1e308, 1e308), (1e-308, 1e-308)), (inf, 0));
+t_eq(complex.divide((1, 1e308), (1e-308, 1e-308)), (inf, inf));
+t_eq(complex.divide((0, 0), (nan, 1)), (nan, nan));
+t_eq(complex.divide((inf, 1), (1, 2)), (inf, -inf));
+t_eq(complex.divide((1, inf), (1, 2)), (inf, inf));
+t_eq(complex.divide((1, 2), (0, inf)), (0, -0));
+t_eq(complex.divide((1, 2), (inf, inf)), (0, 0));
+t_eq(complex.divide((inf, 1), (inf, 0)), (nan, nan));
+t_eq(complex.divide((1, inf), (inf, 0)), (nan, nan));
+
+// Integer overflow retains the sign of an odd power of a negative real base.
+t_eq(complex.pow(1e200, 2), (inf, 0));
+t_eq(complex.pow(-1e200, 3), (-inf, 0));
+t_eq(complex.pow(-1e200, 2), (inf, 0));
+t_eq(complex.pow(1e-200, -2), (inf, 0));
+t_eq(complex.pow(0, nan), (nan, nan));
+let root = complex.pow(4, 0.5);
+t_true(root[0] =~ 2);
+t_eq(root[1], 0);
+let square = complex.pow((1, 1), 2);
+t_true(abs(square[0]) < 1e-12);
+t_true(square[1] =~ 2);
+let imaginary_root = complex.pow((-4, -0), 0.5);
+t_true(abs(imaginary_root[0]) < 1e-12);
+t_true(imaginary_root[1] =~ -2);
+
+// Zero bases and noninteger exponents are resolved before the real-integer
+// power path. NaN and infinities are valid numerical inputs, not domain errors.
+t_eq(complex.pow(0, -1)[0], inf);
+t_eq(complex.pow((-0, -0), -1)[0], -inf);
+t_eq(complex.pow(nan, 2), (nan, 0));
+t_eq(complex.pow(inf, 2), (inf, 0));
+t_eq(complex.pow(-inf, 3), (-inf, 0));
+t_eq(complex.pow(-inf, -2), (0, 0));
+t_eq(complex.pow(-1e-200, 3), (-0, 0));
+t_eq(complex.pow(-2, -3), (-0.125, 0));
+
+// The log1p argument rounds to -1 immediately next to the lower singularity.
+t_eq(complex.atan((0, -0.999_999_999_999_999_8)), (0, -inf));
