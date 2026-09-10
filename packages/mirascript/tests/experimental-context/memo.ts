@@ -1,12 +1,7 @@
 import test from 'ava';
-import { compileSync, createVmContext, VmError, VmExtern, VmFunction, type VmValue } from '@mirascript/mirascript';
-import { lib, wrapScript, serializeForDisplay, convert } from '@mirascript/mirascript/subtle';
-import {
-    AsyncRequiredError,
-    ContextReentrancyError,
-    ReplayMismatchError,
-    runInContext,
-} from '@mirascript/mirascript/experimental-context';
+import { createVmContext, VmError, VmFunction } from '@mirascript/mirascript';
+import { lib, wrapScript } from '@mirascript/mirascript/subtle';
+import { ContextReentrancyError, runInContext } from '@mirascript/mirascript/experimental-context';
 import { execute } from './_helpers.ts';
 
 test('caught memo errors and once return values are cached across replay', async (t) => {

@@ -1,6 +1,6 @@
 import test from 'ava';
 import { compileSync, createVmContext, VmError, VmExtern, VmFunction, type VmValue } from '@mirascript/mirascript';
-import { lib, wrapScript, serializeForDisplay, convert } from '@mirascript/mirascript/subtle';
+import { wrapScript, serializeForDisplay, convert } from '@mirascript/mirascript/subtle';
 import {
     AsyncRequiredError,
     ContextReentrancyError,
