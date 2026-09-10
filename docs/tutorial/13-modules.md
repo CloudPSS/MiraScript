@@ -128,7 +128,7 @@ debug_print("mul(3, 4) =", mul(3, 4));
 
 ## 内置模块：`matrix`
 
-MiraScript 提供了 [`matrix` 模块](../lib/10-matrix.md) 用于矩阵运算。矩阵用二维数组表示：
+MiraScript 提供了 [`matrix` 模块](../lib/20-matrix.md) 用于矩阵运算。矩阵用二维数组表示：
 
 ```mira
 let m = [[1, 2], [3, 4]];
@@ -153,25 +153,25 @@ debug_print("2×3 零矩阵:", matrix.zeros(2, 3));
 
 ## 内置模块：`complex`
 
-MiraScript 提供了 [`complex` 模块](./15-complex.md) 用于复数运算。复数使用普通 record `(实部, 虚部)` 表示，`complex.I` 是虚数单位 `(0, 1)`：
+MiraScript 提供了 [`complex` 模块](../lib/10-complex.md) 用于复数运算。复数使用普通 record `(实部, 虚部)` 表示，`complex.I` 是虚数单位 `(0, 1)`：
 
 ```mira
 let z = (3, 4);
 
 debug_print("实部:", complex.real(z)); // 3
 debug_print("虚部:", complex.imag(z)); // 4
-debug_print("模:", complex.abs(z));   // 5
+debug_print("模:", complex.abs(z));    // 5
 debug_print("共轭:", complex.conj(z)); // (3, -4)
 ```
 
 使用 `complex.from` 可以显式转换输入。其他复数函数的参数也使用相同规则：record 同时包含 `0`、`1` 字段时，分别按 `to_number` 语义转换，忽略其他字段；其他输入整体按数字转换，虚部补 `0`。无法转换的值会报错，数组 `[3, 4]` 不会被当作复数。
 
 ```mira
-debug_print(complex.from(3));                         // (3, 0)
+debug_print(complex.from(3));                        // (3, 0)
 debug_print(complex.from(('3', '4', name: '示例'))); // (3, 4)
-debug_print(complex.add(1, 2));                       // (3, 0)
-debug_print(complex.multiply((1, 2), (3, 4)));         // (-5, 10)
-debug_print(complex.multiply(complex.I, complex.I));  // (-1, 0)
+debug_print(complex.add(1, 2));                      // (3, 0)
+debug_print(complex.multiply((1, 2), (3, 4)));       // (-5, 10)
+debug_print(complex.multiply(complex.I, complex.I)); // (-1, 0)
 ```
 
 复数运算通过模块函数完成，不改变 `+`、`*` 等运算符的含义。运算结果始终是复数 record，只有 `real`、`imag`、`abs`、`arg` 等结果必定为实数的函数返回 number。
@@ -184,8 +184,6 @@ debug_print(complex.log(-1));         // (0, PI)
 debug_print(complex.polar(2, 0));     // (2, 0)
 debug_print(complex.arg(complex.I));  // PI / 2
 ```
-
-完整接口、符号零与特殊数值规则见[复数计算](./15-complex.md)。
 
 ## 小结
 
