@@ -1,0 +1,39 @@
+fn near(actual, expected) {
+  t_eq(type(actual), 'record');
+  t_eq(len(keys(actual)), 2);
+  for i in [0, 1] {
+    t_eq(type(actual[i]), 'number');
+    t_true(
+      abs(actual[i] - expected[i]) <= 1e-12 * max(1, abs(expected[i])),
+      `$actual != $expected`,
+    );
+  }
+}
+t_eq(complex.add(1, 2), (3, 0));
+t_eq(complex.subtract((3, 4), (1, 2)), (2, 2));
+t_eq(complex.multiply((3, 4), (1, 2)), (-5, 10));
+near(complex.divide((3, 4), (1, 2)), (2.2, -0.4));
+t_eq(complex.neg((3, 4)), (-3, -4));
+t_eq(complex.conj((3, 4)), (3, -4));
+t_eq(complex.abs((3, 4)), 5);
+t_true(complex.arg((0, 1)) =~ PI / 2);
+near(complex.polar(2, PI / 2), (0, 2));
+near(complex.polar(-2, 0), (-2, 0));
+near(
+  complex.pow((1, 1), (2, 1)),
+  (-0.309_743_504_928_493_6, 0.857_658_012_588_735_8),
+);
+t_eq(complex.pow(-2, 3), (-8, 0));
+t_eq(complex.pow((nan, nan), 0), (1, 0));
+t_eq(complex.pow((2, -0), 1), (2, -0));
+near(complex.sqrt(-4), (0, 2));
+near(complex.sqrt((3, 4)), (2, 1));
+near(complex.cbrt(-8), (1, 1.732_050_807_568_877_2));
+near(complex.divide((1e308, 1e308), (1e308, 1e308)), (1, 0));
+near(
+  complex.sqrt((1e308, 1e308)),
+  (1.098_684_113_467_81e154, 4.550_898_605_622_273e153),
+);
+let tiny = complex.sqrt((1e-300, 0));
+t_true(abs(tiny[0] / 1e-150 - 1) < 1e-12);
+t_true(abs(complex.abs((1e-300, 1e-300)) / 1e-300 - sqrt(2)) < 1e-12);

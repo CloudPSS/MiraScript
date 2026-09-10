@@ -1,0 +1,56 @@
+t_eq(complex.log(0), (-inf, 0));
+t_eq(complex.log((-0, -0)), (-inf, -PI));
+t_eq(complex.sqrt((-4, -0)), (0, -2));
+t_eq(1 / complex.sqrt((4, -0))[1], -inf);
+t_eq(1 / complex.arg((1, -0)), -inf);
+t_eq(complex.arg((-1, -0)), -PI);
+t_eq(complex.log((-1, -0)), (0, -PI));
+t_eq(complex.sqrt((inf, -0)), (inf, -0));
+t_eq(complex.sqrt((-inf, -0)), (0, -inf));
+t_eq(complex.sqrt((nan, inf)), (inf, inf));
+t_eq(complex.exp((inf, 0)), (inf, 0));
+t_eq(complex.abs((inf, nan)), inf);
+t_eq(complex.divide((1, 2), 0), (inf, inf));
+t_eq(complex.divide(0, 0), (nan, nan));
+t_eq(complex.divide((1, 2), (inf, 0)), (0, 0));
+t_eq(complex.pow(0, 2), (0, 0));
+t_eq(complex.pow(0, -2)[0], inf);
+t_eq(complex.pow(0, (1, 1)), (nan, nan));
+t_eq(complex.atan((0, 1)), (0, inf));
+t_eq(complex.atanh(1)[0], inf);
+t_true(complex.asin((2, 0))[1] > 0);
+t_true(complex.asin((2, -0))[1] < 0);
+t_true(complex.acos((2, 0))[1] < 0);
+t_true(complex.acosh((-2, -0))[1] < 0);
+t_true(complex.atanh((2, 0))[1] > 0);
+t_true(complex.atanh((2, -0))[1] < 0);
+for name in [
+  'sqrt',
+  'cbrt',
+  'exp',
+  'expm1',
+  'log',
+  'log1p',
+  'log2',
+  'log10',
+  'sin',
+  'cos',
+  'tan',
+  'sinh',
+  'cosh',
+  'tanh',
+  'asin',
+  'acos',
+  'atan',
+  'asinh',
+  'acosh',
+  'atanh',
+] {
+  let f = complex[name];
+  let z = f((nan, nan));
+  t_eq(z, (nan, nan));
+}
+t_true(abs(complex.log((1e308, 1e308))[0] - 709.542_782_232_446) < 1e-12);
+t_true(abs(complex.asinh((1e308, 1e308))[0] - 710.235_929_413_005_9) < 1e-12);
+t_eq(complex.tan((0, 1000)), (0, 1));
+t_eq(complex.tanh((1000, 0)), (1, 0));
