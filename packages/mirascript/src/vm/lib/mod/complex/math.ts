@@ -1,58 +1,33 @@
-import { isFinite, isNaN, isInteger } from '../../../../helpers/utils.js';
+import { isNaN, isInteger } from '../../../../helpers/utils.js';
+import { multiply, polar } from './basic.js';
+import { copySign, radial, inf, type C } from './utils.js';
+const {
+    abs,
+    atan2,
+    cos,
+    sin,
+    cosh,
+    sinh,
+    hypot,
+    log,
+    log1p,
+    exp,
+    expm1,
+    sqrt,
+    max,
+    min,
+    pow,
+    asin,
+    acos,
+    atan,
+    LN2,
+    SQRT2,
+} = Math;
 
-/** Internal Cartesian pairs. Public values are records, never arrays. */
-export type C = readonly [number, number];
-const { abs, atan2, cos, sin, cosh, sinh, hypot, log, log1p, exp, expm1, sqrt, LN2 } = Math;
-const inf = Infinity;
-export const copySign = (x: number, y: number): number => (y < 0 || Object.is(y, -0) ? -abs(x) : abs(x));
-// A vanishing Cartesian factor remains zero even when the radial factor overflows.
-const radial = (r: number, x: number): number => (x === 0 && !isNaN(r) ? copySign(0, r) * x : r * x);
-/** Divide a sum without overflowing the sum or prematurely underflowing its terms. */
-function sumOver(x: number, y: number, q: number): number {
-    const sum = x + y;
-    return !isFinite(sum) && isFinite(x) && isFinite(y) ? x / q + y / q : sum / q;
-}
-export const add = ([a, b]: C, [c, d]: C): C => [a + c, b + d];
-export const subtract = ([a, b]: C, [c, d]: C): C => [a - c, b - d];
-export const neg = ([a, b]: C): C => [-a, -b];
-export const conj = ([a, b]: C): C => [a, -b];
-/** Multiply Cartesian components, rescaling overflowing finite products. */
-export function multiply([a, b]: C, [c, d]: C): C {
-    if (b === 0 && d === 0) return [a * c, radial(a, d) + radial(c, b)];
-    if ([a, b, c, d].every(isFinite) && [a * c, b * d, a * d, b * c].some((x) => !isFinite(x))) {
-        const s = Math.max(abs(a), abs(b)),
-            t = Math.max(abs(c), abs(d));
-        return [
-            ((a / s) * (c / t) - (b / s) * (d / t)) * Math.min(s, t) * Math.max(s, t),
-            ((a / s) * (d / t) + (b / s) * (c / t)) * Math.min(s, t) * Math.max(s, t),
-        ];
-    }
-    return [a * c - b * d, a * d + b * c];
-}
-/** Scale the divisor before computing the Cartesian quotient. */
-export function divide([a, b]: C, [c, d]: C): C {
-    const s = Math.max(abs(c), abs(d));
-    if (s === 0) return [copySign(inf, c) * a, copySign(inf, c) * b];
-    if (s === inf && isFinite(a) && isFinite(b)) {
-        c = copySign(abs(c) === inf ? 1 : 0, c);
-        d = copySign(abs(d) === inf ? 1 : 0, d);
-        return [0 * (a * c + b * d), 0 * (b * c - a * d)];
-    }
-    c /= s;
-    d /= s;
-    const q = c * c + d * d;
-    if ((!isFinite(a / s) || !isFinite(b / s)) && isFinite(a) && isFinite(b)) {
-        const u = Math.max(abs(a), abs(b));
-        return [((((a / u) * c + (b / u) * d) / q) * u) / s, ((((b / u) * c - (a / u) * d) / q) * u) / s];
-    }
-    // Divide before adding to avoid overflow for large, balanced inputs.
-    return [sumOver((a / s) * c, (b / s) * d, q), sumOver((b / s) * c, -(a / s) * d, q)];
-}
-export const polar = (r: number, theta: number): C => [radial(r, cos(theta)), radial(r, sin(theta))];
 /** Compute log of the modulus without overflowing the modulus itself. */
 export function logAbs([x, y]: C): number {
-    const a = Math.max(abs(x), abs(y));
-    const b = Math.min(abs(x), abs(y));
+    const a = max(abs(x), abs(y));
+    const b = min(abs(x), abs(y));
     if (a === inf) return inf;
     if (a === 0) return -inf;
     return log(a) + 0.5 * log1p((b / a) ** 2);
@@ -67,7 +42,7 @@ export function squareRoot([x, y]: C): C {
     if (abs(y) === inf) return [inf, y];
     if (x === inf) return [inf, isNaN(y) ? NaN : copySign(0, y)];
     if (x === -inf) return [isNaN(y) ? NaN : 0, copySign(inf, y)];
-    const s = Math.max(abs(x), abs(y));
+    const s = max(abs(x), abs(y));
     if (s === 0) return [0, y];
     const t = sqrt(s) * sqrt((hypot(x / s, y / s) + abs(x) / s) / 2);
     return x >= 0 ? [t, y / t / 2] : [abs(y) / t / 2, copySign(t, y)];
@@ -92,7 +67,7 @@ export function power(z: C, w: C): C {
     }
     if (w[1] === 0) {
         // Preserve exact real integer powers, including their zero imaginary part.
-        if (z[1] === 0 && isInteger(w[0])) return [Math.pow(z[0], w[0]), copySign(0, z[1])];
+        if (z[1] === 0 && isInteger(w[0])) return [pow(z[0], w[0]), copySign(0, z[1])];
         return polar(exp(logAbs(z) * w[0]), atan2(z[1], z[0]) * w[0]);
     }
     return exponential(multiply(w, logarithm(z)));
@@ -115,8 +90,8 @@ export function hyperbolicTangent([x, y]: C): C {
 }
 /** Geometric inverse avoids cancellation from log(z + sqrt(z*z + 1)). */
 export function arcSine([x, y]: C): C {
-    if (y === 0 && abs(x) <= 1) return [Math.asin(x), y];
-    const s = Math.max(abs(x), abs(y));
+    if (y === 0 && abs(x) <= 1) return [asin(x), y];
+    const s = max(abs(x), abs(y));
     if (s > 1e150) {
         const angle = atan2(x, abs(y));
         return [angle, copySign(logAbs([x, y]) + LN2, y)];
@@ -130,21 +105,20 @@ function inverseGeometry(x: number, y: number): C {
         r = hypot(ax + 1, y),
         t = hypot(ax - 1, y),
         a = r / 2 + t / 2;
-    const delta = ax <= 1 ? hypot(y / sqrt(r + (1 + ax)), y / sqrt(t + (1 - ax))) / Math.SQRT2 : sqrt(a - 1);
-    const gap =
-        ax <= 1 ? hypot(sqrt(1 - ax), delta) : hypot(y / sqrt(r + (ax + 1)), y / sqrt(t + (ax - 1))) / Math.SQRT2;
+    const delta = ax <= 1 ? hypot(y / sqrt(r + (1 + ax)), y / sqrt(t + (1 - ax))) / SQRT2 : sqrt(a - 1);
+    const gap = ax <= 1 ? hypot(sqrt(1 - ax), delta) : hypot(y / sqrt(r + (ax + 1)), y / sqrt(t + (ax - 1))) / SQRT2;
     return [gap * sqrt(a + ax), copySign(log1p(delta * (delta + sqrt(a + 1))), y)];
 }
 /** Compute the principal inverse cosine without subtracting nearly equal angles. */
 export function arcCosine([x, y]: C): C {
-    if (y === 0 && abs(x) <= 1) return [Math.acos(x), -y];
-    if (Math.max(abs(x), abs(y)) > 1e150) return [atan2(abs(y), x), -copySign(logAbs([x, y]) + LN2, y)];
+    if (y === 0 && abs(x) <= 1) return [acos(x), -y];
+    if (max(abs(x), abs(y)) > 1e150) return [atan2(abs(y), x), -copySign(logAbs([x, y]) + LN2, y)];
     const [h, im] = inverseGeometry(x, y);
     return [atan2(h, x), -im];
 }
 /** Compute principal inverse tangent from angles and log moduli. */
 export function arcTangent([x, y]: C): C {
-    if (y === 0) return [Math.atan(x), y];
+    if (y === 0) return [atan(x), y];
     const re = (atan2(x, 1 - y) + atan2(x, 1 + y)) / 2;
     const h = hypot(x, y - 1);
     const im =

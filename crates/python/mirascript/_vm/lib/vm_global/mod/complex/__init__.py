@@ -2,87 +2,52 @@
 
 from __future__ import annotations
 
-import math
-from typing_extensions import Callable
+import math as _math
 
-from ......_helpers.types import is_vm_record
 from .....types import Uninitialized, VmAny
 from ...._helpers import _expect_number
-from . import _kernel as k
+from . import basic as b
+from . import math as m
+from .utils import binary, record, scalar, unary
 
-
-def _parse(value: VmAny, name: str) -> k.C:
-    if is_vm_record(value) and "0" in value and "1" in value:
-        return (
-            _expect_number(f"{name}.0", value["0"]),
-            _expect_number(f"{name}.1", value["1"]),
-        )
-    return (_expect_number(name, value), 0.0)
-
-
-def _record(z: k.C) -> dict[str, float]:
-    return {"0": z[0], "1": z[1]}
-
-
-def _unary(f: Callable[[k.C], k.C]):
-    def call(z: VmAny = Uninitialized):
-        return _record(f(_parse(z, "z")))
-
-    return call
-
-
-def _binary(f: Callable[[k.C, k.C], k.C]):
-    def call(a: VmAny = Uninitialized, b: VmAny = Uninitialized):
-        return _record(f(_parse(a, "a"), _parse(b, "b")))
-
-    return call
-
-
-def _scalar(f: Callable[[k.C], float]):
-    def call(z: VmAny = Uninitialized):
-        return f(_parse(z, "z"))
-
-    return call
-
-
-I = _record((0.0, 1.0))
+I = record((0.0, 1.0))
 # "from" is a Python keyword but remains the public MiraScript member name.
-globals()["from"] = _unary(lambda z: z)
-real = _scalar(lambda z: z[0])
-imag = _scalar(lambda z: z[1])
-abs = _scalar(lambda z: math.hypot(*z))
-arg = _scalar(lambda z: math.atan2(z[1], z[0]))
-conj = _unary(k.conj)
-neg = _unary(k.neg)
-add = _binary(k.add)
-subtract = _binary(k.subtract)
-multiply = _binary(k.multiply)
-divide = _binary(k.divide)
-pow = _binary(k.pow)
-sqrt = _unary(k.sqrt)
-cbrt = _unary(k.cbrt)
-exp = _unary(k.exp)
-expm1 = _unary(k.expm1)
-log = _unary(k.log)
-log1p = _unary(k.log1p)
-log2 = _unary(lambda z: k.log_base(z, math.log(2)))
-log10 = _unary(lambda z: k.log_base(z, math.log(10)))
-sin = _unary(k.sin)
-cos = _unary(k.cos)
-tan = _unary(k.tan)
-sinh = _unary(k.sinh)
-cosh = _unary(k.cosh)
-tanh = _unary(k.tanh)
-asin = _unary(k.asin)
-acos = _unary(k.acos)
-atan = _unary(k.atan)
-asinh = _unary(k.asinh)
-acosh = _unary(k.acosh)
-atanh = _unary(k.atanh)
+globals()["from"] = unary(lambda z: z)
+real = scalar(lambda z: z[0])
+imag = scalar(lambda z: z[1])
+abs = scalar(lambda z: _math.hypot(*z))
+arg = scalar(lambda z: _math.atan2(z[1], z[0]))
+conj = unary(b.conj)
+neg = unary(b.neg)
+add = binary(b.add)
+subtract = binary(b.subtract)
+multiply = binary(b.multiply)
+divide = binary(b.divide)
+pow = binary(m.pow)
+sqrt = unary(m.sqrt)
+cbrt = unary(m.cbrt)
+exp = unary(m.exp)
+expm1 = unary(m.expm1)
+log = unary(m.log)
+log1p = unary(m.log1p)
+log2 = unary(lambda z: m.log_base(z, _math.log(2)))
+log10 = unary(lambda z: m.log_base(z, _math.log(10)))
+sin = unary(m.sin)
+cos = unary(m.cos)
+tan = unary(m.tan)
+sinh = unary(m.sinh)
+cosh = unary(m.cosh)
+tanh = unary(m.tanh)
+asin = unary(m.asin)
+acos = unary(m.acos)
+atan = unary(m.atan)
+asinh = unary(m.asinh)
+acosh = unary(m.acosh)
+atanh = unary(m.atanh)
 
 
 def polar(r: VmAny = Uninitialized, theta: VmAny = Uninitialized):
-    return _record(k.polar(_expect_number("r", r), _expect_number("theta", theta)))
+    return record(b.polar(_expect_number("r", r), _expect_number("theta", theta)))
 
 
 __all__ = [
