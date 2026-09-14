@@ -1,45 +1,49 @@
-import { expectString, VmLib } from '../../helpers.js';
+import type { VmAny } from '../../../../index.js';
+import { expectString, VmLib, type VmLibOption } from '../../helpers.js';
 
-export const starts_with = VmLib(
-    (str, search) => {
-        return expectString('str', str).startsWith(expectString('search', search));
-    },
-    {
-        summary: '检查字符串是否以指定子串开头',
-        params: {
-            str: { type: 'string', description: '要检查的字符串' },
-            search: { type: 'string', description: '要匹配的子串' },
+/** 生成函数 */
+function build(
+    f: (str: string, search: string) => boolean,
+    summary: string,
+    examples: string[],
+): ((str: VmAny, search: VmAny) => boolean) & VmLibOption {
+    return VmLib(
+        (str, search) => {
+            const s_str = expectString('str', str);
+            const s_search = expectString('search', search);
+            return f(s_str, s_search);
         },
-        returns: { type: 'boolean' },
-        examples: ['starts_with("mira", "mi") // true'],
+        {
+            summary,
+            params: {
+                str: { type: 'string', description: '要检查的字符串' },
+                search: { type: 'string', description: '要匹配的子串' },
+            },
+            returns: { type: 'boolean' },
+            examples,
+        },
+    );
+}
+
+export const starts_with = build(
+    (str, search) => {
+        return str.startsWith(search);
     },
+    '检查字符串是否以指定子串开头',
+    ['starts_with("mira", "mi") // true'],
 );
-export const ends_with = VmLib(
+export const ends_with = build(
     (str, search) => {
-        return expectString('str', str).endsWith(expectString('search', search));
+        return str.endsWith(search);
     },
-    {
-        summary: '检查字符串是否以指定子串结尾',
-        params: {
-            str: { type: 'string', description: '要检查的字符串' },
-            search: { type: 'string', description: '要匹配的子串' },
-        },
-        returns: { type: 'boolean' },
-        examples: ['ends_with("mira", "ra") // true'],
-    },
+    '检查字符串是否以指定子串结尾',
+    ['ends_with("mira", "ra") // true'],
 );
 
-export const contains = VmLib(
+export const contains = build(
     (str, search) => {
-        return expectString('str', str).includes(expectString('search', search));
+        return str.includes(search);
     },
-    {
-        summary: '检查字符串是否包含指定子串',
-        params: {
-            str: { type: 'string', description: '要检查的字符串' },
-            search: { type: 'string', description: '要匹配的子串' },
-        },
-        returns: { type: 'boolean' },
-        examples: ['contains("hello", "ll") // true'],
-    },
+    '检查字符串是否包含指定子串',
+    ['contains("hello", "ll") // true'],
 );
