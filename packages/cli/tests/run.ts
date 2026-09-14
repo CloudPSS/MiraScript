@@ -7,7 +7,7 @@ import { writeFile } from 'node:fs/promises';
 test('runs inline scripts and templates', async (t) => {
     const script = await run(['run', '--eval', '1 + 2']);
     t.is(script.code, 0);
-    t.is(script.stdout, '3\n');
+    t.snapshot(script.stdout);
     t.is(script.stderr, '');
 
     const template = await run(['run', '--template', '--eval', 'Hello, $(name)!', '--variable', "name='Mira'"]);
@@ -19,7 +19,7 @@ test('runs inline scripts and templates', async (t) => {
 test('runs scripts from stdin', async (t) => {
     const script = await run(['run', '-'], '1 + 2');
     t.is(script.code, 0);
-    t.is(script.stdout, '3\n');
+    t.snapshot(script.stdout);
     t.is(script.stderr, '');
 });
 test('runs script file', async (t) => {
@@ -27,6 +27,6 @@ test('runs script file', async (t) => {
     await writeFile(p, '1 + 2');
     const script = await run(['run', p]);
     t.is(script.code, 0);
-    t.is(script.stdout, '3\n');
+    t.snapshot(script.stdout);
     t.is(script.stderr, '');
 });
