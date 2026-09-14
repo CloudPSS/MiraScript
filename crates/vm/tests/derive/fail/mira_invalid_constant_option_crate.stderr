@@ -1,0 +1,5 @@
+error: `crate` is inherited from the containing `#[mira]` module
+ --> tests/derive/fail/mira_invalid_constant_option_crate.rs:5:20
+  |
+5 |     #[mira(crate = my_crate)]
+  |                    ^^^^^^^^

@@ -1,0 +1,47 @@
+error: a `#[mira]` module can export functions, constants, and inline modules
+ --> tests/derive/fail/mira_mod_invalid_export.rs:6:5
+  |
+6 |     type Ty = f64;
+  |     ^^^^^^^^^^^^^^
+
+error: a `#[mira]` module can export functions, constants, and inline modules
+ --> tests/derive/fail/mira_mod_invalid_export.rs:8:5
+  |
+8 |     trait T {}
+  |     ^^^^^^^^^^
+
+error: a `#[mira]` module can export functions, constants, and inline modules
+  --> tests/derive/fail/mira_mod_invalid_export.rs:10:5
+   |
+10 | /     enum E {
+11 | |         Value,
+12 | |     }
+   | |_____^
+
+error: a `#[mira]` module can export functions, constants, and inline modules
+  --> tests/derive/fail/mira_mod_invalid_export.rs:14:5
+   |
+14 |     union U {}
+   |     ^^^^^^^^^^
+
+error: a `#[mira]` module can export functions, constants, and inline modules
+  --> tests/derive/fail/mira_mod_invalid_export.rs:18:5
+   |
+18 |     macro_rules! m {}
+   |     ^^^^^^^^^^^^^^^^^
+
+error: a `#[mira]` module can export functions, constants, and inline modules
+  --> tests/derive/fail/mira_mod_invalid_export.rs:22:5
+   |
+22 |     static S: u32 = 42;
+   |     ^^^^^^^^^^^^^^^^^^^
+
+error: a `#[mira]` module can export functions, constants, and inline modules
+  --> tests/derive/fail/mira_mod_invalid_export.rs:26:5
+   |
+26 | /     impl Default for E {
+27 | |         fn default() -> Self {
+28 | |             Self::Value
+29 | |         }
+30 | |     }
+   | |_____^

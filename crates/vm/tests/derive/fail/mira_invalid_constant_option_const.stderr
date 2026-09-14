@@ -1,0 +1,5 @@
+error: `const` is not valid on a Rust constant
+ --> tests/derive/fail/mira_invalid_constant_option_const.rs:5:20
+  |
+5 |     #[mira(const = M_ANSWER)]
+  |                    ^^^^^^^^

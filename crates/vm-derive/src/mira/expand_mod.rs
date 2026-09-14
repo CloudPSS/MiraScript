@@ -42,13 +42,27 @@ pub fn expand(item: ItemMod, options: Options, parent: Option<&Context>) -> Resu
     };
 
     let mut expanded_items = Vec::with_capacity(items.len());
+    let mut expanded_errors = Vec::new();
     let mut exports = Vec::new();
     for child in items.iter().cloned() {
-        let expanded = expand_child(child, &context)?;
-        if let Some(export) = expanded.export {
-            exports.push(export);
+        match expand_child(child, &context) {
+            Ok(expanded) => {
+                if let Some(export) = expanded.export {
+                    exports.push(export);
+                }
+                expanded_items.push(expanded.tokens);
+            }
+            Err(err) => {
+                expanded_errors.push(err);
+            }
         }
-        expanded_items.push(expanded.tokens);
+    }
+    if !expanded_errors.is_empty() {
+        let mut first = expanded_errors.remove(0);
+        for err in expanded_errors {
+            first.combine(err);
+        }
+        return Err(first);
     }
     reject_duplicate_exports(&exports)?;
 
