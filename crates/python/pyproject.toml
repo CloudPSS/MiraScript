@@ -68,13 +68,16 @@ branch = true
 [tool.coverage.xml]
 output = "coverage/cobertura-coverage.xml"
 
+[tool.coverage.lcov]
+output = "coverage/lcov.info"
+
 [dependency-groups]
 pyodide = ["pyodide-build==0.39.0; python_version >= '3.12'"]
 dev = [
     "black>=26.5.1",
-    "maturin>=1.14.1",
+    "maturin>=1.15.0",
     "poethepoet>=0.48.0",
-    "pyright>=1.1.411",
+    "pyright>=1.1.414",
     { include-group = "test" },
     { include-group = "perf" },
 ]
@@ -83,7 +86,7 @@ perf = [{ include-group = "test" }, "pytest-profiling", "snakeviz"]
 
 [tool.poe.tasks]
 init = "maturin develop"
-test = "pytest --cov=mirascript --cov-report=xml --cov-report=term-missing:skip-covered"
+test = "pytest --cov=mirascript --cov-report=xml --cov-report=lcov --cov-report=term-missing:skip-covered"
 perf = { shell = "pytest --profile $POE_EXTRA_ARGS && snakeviz ./prof/combined.prof", cwd = "${POE_CWD}" }
 format = "black ."
 check = "pyright --pythonversion 3.7 ."

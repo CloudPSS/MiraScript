@@ -1,6 +1,6 @@
 {
   "all": true,
-  "reporter": ["text", "cobertura"],
+  "reporter": ["text", "cobertura", "lcov"],
   "src": ["src"],
   "skip-full": true
 }
