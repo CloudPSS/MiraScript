@@ -62,8 +62,8 @@ test_each_file::test_each_path! {
     for ["mira"] in "./tests" as black_box => black_box
 }
 
-fn black_box(path: [&Path; 1]) {
-    let path = path[0].to_owned();
+fn black_box([path]: [&Path; 1]) {
+    let path = path.to_owned();
     let is_huge = path
         .file_name()
         .unwrap()

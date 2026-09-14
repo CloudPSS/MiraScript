@@ -389,6 +389,7 @@ dependencies = [
  "pretty",
  "serde",
  "strum",
+ "test_each_file",
  "unicode-ident",
  "wasm-bindgen",
  "winnow",

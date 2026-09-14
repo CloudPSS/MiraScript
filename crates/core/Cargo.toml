@@ -31,6 +31,7 @@ mimalloc = ["dep:mimalloc"]
 [dev-dependencies]
 divan = "0.1.21"
 mirascript-core = { path = ".", features = ["mimalloc", "formatter"] }
+test_each_file = "0.3"
 
 [dependencies]
 unicode-ident = "1"
