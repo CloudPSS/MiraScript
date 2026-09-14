@@ -1,8 +1,8 @@
 import type { VmAny } from '../../../index.js';
-import { expectIntegerRange, expectNumber, VmLib, type VmLibOption } from '../../helpers.js';
+import { expectIntegerRange, expectNumber, VmLib } from '../../helpers.js';
 
 /** 生成函数 */
-function build(f: (x: number) => number, summary: string): ((x: VmAny, n: VmAny) => number) & VmLibOption {
+function build(f: (x: number) => number, summary: string): VmLib<(x: VmAny, n: VmAny) => number> {
     return VmLib(
         (x, n) => {
             const xn = expectNumber('x', x);

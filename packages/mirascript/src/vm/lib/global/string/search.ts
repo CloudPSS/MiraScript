@@ -1,12 +1,12 @@
 import type { VmAny } from '../../../../index.js';
-import { expectString, VmLib, type VmLibOption } from '../../helpers.js';
+import { expectString, VmLib } from '../../helpers.js';
 
 /** 生成函数 */
 function build(
     f: (str: string, search: string) => boolean,
     summary: string,
     examples: string[],
-): ((str: VmAny, search: VmAny) => boolean) & VmLibOption {
+): VmLib<(str: VmAny, search: VmAny) => boolean> {
     return VmLib(
         (str, search) => {
             const s_str = expectString('str', str);
