@@ -1,6 +1,6 @@
 import { Cp } from '../../../checkpoint.js';
 import { $Add, $Call, $Div, $Mul, $Sub } from '../../../operations/index.js';
-import { isVmConst, type VmConst } from '../../../types/index.js';
+import { isVmConst, type VmAny, type VmConst } from '../../../types/index.js';
 import { VmLib, expectCallable, expectConst, throwError } from '../../helpers.js';
 import { num, size } from './helpers.js';
 const { max } = Math;
@@ -153,78 +153,46 @@ export const entrywise = VmLib(
     },
 );
 
-export const add = VmLib(
-    (a, b) => {
-        expectConst('a', a, null);
-        expectConst('b', b, null);
-        return entrywiseImpl(a, b, $Add);
-    },
-    {
-        summary: '逐项相加',
-        params: {
-            a: { type: 'number | number[] | number[][]', description: '第一个操作数' },
-            b: { type: 'number | number[] | number[][]', description: '第二个操作数' },
+/** 生成函数 */
+function build(
+    f: (a: VmConst, b: VmConst) => VmConst,
+    summary: string,
+    examples: string[],
+): VmLib<(a: VmAny, b: VmAny) => VmConst> {
+    return VmLib(
+        (a, b) => {
+            expectConst('a', a, null);
+            expectConst('b', b, null);
+            return f(a, b);
         },
-        returns: { type: 'number | number[] | number[][]' },
-        examples: ['matrix.add([1, 2], [3, 4]) // [4, 6]'],
-    },
-);
-
-export const subtract = VmLib(
-    (a, b) => {
-        expectConst('a', a, null);
-        expectConst('b', b, null);
-        return entrywiseImpl(a, b, $Sub);
-    },
-    {
-        summary: '逐项相减',
-        params: {
-            a: { type: 'number | number[] | number[][]', description: '第一个操作数' },
-            b: { type: 'number | number[] | number[][]', description: '第二个操作数' },
+        {
+            summary,
+            params: {
+                a: { type: 'number | number[] | number[][]', description: '第一个操作数' },
+                b: { type: 'number | number[] | number[][]', description: '第二个操作数' },
+            },
+            returns: { type: 'number | number[] | number[][]' },
+            examples,
         },
-        returns: { type: 'number | number[] | number[][]' },
-        examples: ['matrix.subtract([3, 4], [1, 2]) // [2, 2]'],
-    },
-);
+    );
+}
 
-export const entrywise_multiply = VmLib(
-    (a, b) => {
-        expectConst('a', a, null);
-        expectConst('b', b, null);
-        return entrywiseImpl(a, b, $Mul);
-    },
-    {
-        summary: '逐项相乘',
-        params: {
-            a: { type: 'number | number[] | number[][]', description: '第一个操作数' },
-            b: { type: 'number | number[] | number[][]', description: '第二个操作数' },
-        },
-        returns: { type: 'number | number[] | number[][]' },
-        examples: ['matrix.entrywise_multiply([1, 2], [3, 4]) // [3, 8]'],
-    },
-);
+export const add = build((a, b) => entrywiseImpl(a, b, $Add), '逐项相加', ['matrix.add([1, 2], [3, 4]) // [4, 6]']);
 
-export const entrywise_divide = VmLib(
-    (a, b) => {
-        expectConst('a', a, null);
-        expectConst('b', b, null);
-        return entrywiseImpl(a, b, $Div);
-    },
-    {
-        summary: '逐项相除',
-        params: {
-            a: { type: 'number | number[] | number[][]', description: '第一个操作数' },
-            b: { type: 'number | number[] | number[][]', description: '第二个操作数' },
-        },
-        returns: { type: 'number | number[] | number[][]' },
-        examples: ['matrix.entrywise_divide([4, 6], [2, 3]) // [2, 2]'],
-    },
-);
+export const subtract = build((a, b) => entrywiseImpl(a, b, $Sub), '逐项相减', [
+    'matrix.subtract([3, 4], [1, 2]) // [2, 2]',
+]);
 
-export const multiply = VmLib(
+export const entrywise_multiply = build((a, b) => entrywiseImpl(a, b, $Mul), '逐项相乘', [
+    'matrix.entrywise_multiply([1, 2], [3, 4]) // [3, 8]',
+]);
+
+export const entrywise_divide = build((a, b) => entrywiseImpl(a, b, $Div), '逐项相除', [
+    'matrix.entrywise_divide([4, 6], [2, 3]) // [2, 2]',
+]);
+
+export const multiply = build(
     (a, b) => {
-        expectConst('a', a, null);
-        expectConst('b', b, null);
         return entrywiseImpl(
             a,
             b,
@@ -279,13 +247,6 @@ export const multiply = VmLib(
             },
         );
     },
-    {
-        summary: '矩阵相乘',
-        params: {
-            a: { type: 'number | number[] | number[][]', description: '第一个操作数' },
-            b: { type: 'number | number[] | number[][]', description: '第二个操作数' },
-        },
-        returns: { type: 'number | number[] | number[][]' },
-        examples: ['matrix.multiply([[1, 2], [3, 4]], [5, 6]) // [17, 39]'],
-    },
+    '矩阵相乘',
+    ['matrix.multiply([[1, 2], [3, 4]], [5, 6]) // [17, 39]'],
 );
