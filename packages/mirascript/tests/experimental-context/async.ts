@@ -55,6 +55,17 @@ test('async function that returns sync', (t) => {
     t.is(calls, 1);
 });
 
+test('pure functions behave like async functions inside a context', async (t) => {
+    const calls: unknown[] = [];
+    const load = VmFunction.pure((value) => {
+        calls.push(value);
+        return value === 1 ? value : Promise.resolve(value);
+    });
+    const result = await execute('[load(1), load(2)]', createVmContext({ load }));
+    t.deepEqual(result, [1, 2]);
+    t.deepEqual(calls, [1, 2]);
+});
+
 test('async functions called interleaved', async (t) => {
     const events = ['A'];
     const delay = VmFunction.async(async (timeout) => {

@@ -22,7 +22,9 @@ export function wrapEffect<A extends readonly unknown[], R>(
         const context = currentContext;
         if (!context) {
             if (kind === 'async') throw new AsyncRequiredError();
-            return apply(fn, this, args) as R;
+            const value = apply(fn, this, args);
+            if (kind === 'pure' && isPromiseLike(value)) throw new AsyncRequiredError();
+            return value as R;
         }
         throwIfFailed(context);
         if (context.inHost) failContext(new ContextReentrancyError());
@@ -37,7 +39,7 @@ export function wrapEffect<A extends readonly unknown[], R>(
             context.inHost = true;
             try {
                 const value = apply(fn, this, args);
-                if (kind === 'async' && isPromiseLike(value)) {
+                if ((kind === 'async' || kind === 'pure') && isPromiseLike(value)) {
                     const pending: EffectSlot = slot;
                     pending.ready = Promise.resolve(value).then(
                         (result) => {

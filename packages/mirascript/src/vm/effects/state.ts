@@ -23,7 +23,7 @@ export class ContextReentrancyError extends Error {
 }
 
 /** 函数重新执行时的处理方式 */
-export type EffectKind = 'memo' | 'once' | 'async';
+export type EffectKind = 'memo' | 'once' | 'async' | 'pure';
 /** 一次逻辑调用的执行状态与结果 */
 export type EffectSlot = {
     token: symbol;

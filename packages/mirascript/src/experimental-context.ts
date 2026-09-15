@@ -1,7 +1,9 @@
-import { VmFunction, type VmFunctionLike, type VmFunctionOptionLike } from './vm/types/function.js';
-import { wrapEffect } from './vm/effects/wrap.js';
-import type { VmValue } from './vm/types/index.js';
 import { defineProperty } from './helpers/utils.js';
+import { VmFunction, type VmFunctionLike, type VmFunctionOptionLike } from './vm/types/function.js';
+import type { VmValue } from './vm/types/index.js';
+import { runInContext } from './vm/effects/run.js';
+import { wrapEffect } from './vm/effects/wrap.js';
+import { AsyncRequiredError, ReplayMismatchError, ContextReentrancyError } from './vm/effects/state.js';
 
 /**
  * ## 实验性执行上下文
@@ -35,16 +37,17 @@ import { defineProperty } from './helpers/utils.js';
  * `import '@mirascript/mirascript/experimental-context'` 仅安装扩展。
  * `import type` 不会安装运行时方法。模块声明增强在包含该入口的整个 TypeScript 编译项目中生效。
  *
- * | 方法                            | 用途                          | 在执行上下文中的行 * 为                             |
- * | ------------------------------- | ----------------------------- |  * ------------------------------------------------ |
- * | `VmFunction.memo(fn, option?)`  | 随机数、时间、外部状态读取    | 每个逻辑调用缓存结果或异 * 常                       |
- * | `VmFunction.once(fn, option?)`  | 输出等立即发生的副作用        | 每个逻辑调用只执行一次，缓存结果或异 * 常，不回滚   |
- * | `VmFunction.async(fn, option?)` | 返回 PromiseLike 的 Host 操作 | 启动一次，等待完成，在原逻辑调用处返 * 回结果或抛错 |
+ * | 方法                            | 用途                              | 在执行上下文中的行为                             |
+ * | ------------------------------- | --------------------------------- | ------------------------------------------------ |
+ * | `VmFunction.memo(fn, option?)`  | 随机数、时间、外部状态读取        | 每个逻辑调用缓存结果或异常                       |
+ * | `VmFunction.once(fn, option?)`  | 输出等立即发生的副作用            | 每个逻辑调用只执行一次，缓存结果或异常，不回滚   |
+ * | `VmFunction.async(fn, option?)` | 必须在上下文中调用的异步 Host 操作 | 启动一次，等待完成，在原逻辑调用处返回结果或抛错 |
+ * | `VmFunction.pure(fn, option?)`  | 可同步或异步完成的纯 Host 操作     | 与 `async` 相同                                  |
  *
- * 三个方法都直接返回已包装的 `VmFunction`，`option` 与普通构造器一致。
+ * 四个方法都直接返回已包装的 `VmFunction`，`option` 与普通构造器一致。
  * 输入参数遵循 `VmFunctionLike`，包含缺省参数的 `undefined`；返回值或异步完成值必须为
- * `VmAny | void`。三个方法均为泛型函数，像普通 `VmFunction` 一样保留输入函数的类型；
- * `async` 保留参数与 `this` 类型，将 PromiseLike 的完成值作为同步返回值。
+ * `VmAny | void`。四个方法均为泛型函数，像普通 `VmFunction` 一样保留输入函数的类型；
+ * `async/pure` 保留参数与 `this` 类型，将 PromiseLike 的完成值作为同步返回值。
  * 包装器不转换普通 JS 对象，调用方自行检查或断言 VM 参数与脚本结果。
  *
  * `runInContext(script, globals, onDone, onError)` 接受 `VmScript` 和
@@ -54,7 +57,10 @@ import { defineProperty } from './helpers/utils.js';
  * 同步时直接传播，异步时作为微任务异常抛出。
  *
  * 普通 `script(globals)` 保持同步，不创建 effect journal。
- * `memo/once` 在上下文外直接执行，`async` 则在启动 Host 实现之前抛出 `AsyncRequiredError`。
+ * `memo/once` 在上下文外直接执行；
+ * `async` 在启动 Host 实现之前抛出 `AsyncRequiredError`；
+ * `pure` 在上下文外先执行 Host 实现：同步完成时直接返回结果，返回 PromiseLike 时才抛出
+ * `AsyncRequiredError`。因此 `pure` 只适用于即使未等待异步结果也不会产生副作用的函数。
  * 实验入口同时导出 `ReplayMismatchError` 和 `ContextReentrancyError`。
  *
  * 内置 `random`、时间转换函数未传日期或传入 `nil` 时的当前时间读取，以及
@@ -85,8 +91,10 @@ type VmAsyncFunctionLike = (
 ) => PromiseLike<ReturnType<VmFunctionLike>> | ReturnType<VmFunctionLike>;
 
 /** 保留异步函数的参数类型，将完成值作为同步返回值 */
-type ResumedFunction<T extends VmAsyncFunctionLike> = T extends (...args: infer A extends readonly unknown[]) => unknown
-    ? (this: void, ...args: A) => Awaited<ReturnType<T>>
+type ResumedFunction<T extends VmAsyncFunctionLike | VmFunctionLike> = T extends (
+    ...args: infer A extends readonly unknown[]
+) => infer R
+    ? (this: void, ...args: A) => Awaited<R>
     : never;
 
 declare module './vm/types/function.js' {
@@ -95,8 +103,13 @@ declare module './vm/types/function.js' {
         function memo<T extends VmFunctionLike>(fn: T, option?: VmFunctionOptionLike<T>): VmFunction<T>;
         /** 创建副作用函数，每次逻辑调用最多执行一次，不支持回滚 */
         function once<T extends VmFunctionLike>(fn: T, option?: VmFunctionOptionLike<T>): VmFunction<T>;
-        /** 创建可挂起的异步函数，需要通过 runInContext 执行 */
+        /** 创建可挂起的异步函数，需要通过 {@link runInContext} 执行 */
         function async<T extends VmAsyncFunctionLike>(
+            fn: T,
+            option?: VmFunctionOptionLike<ResumedFunction<T>>,
+        ): VmFunction<ResumedFunction<T>>;
+        /** 创建可同步调用的纯函数，异步完成时需要通过 {@link runInContext} 执行 */
+        function pure<T extends VmAsyncFunctionLike>(
             fn: T,
             option?: VmFunctionOptionLike<ResumedFunction<T>>,
         ): VmFunction<ResumedFunction<T>>;
@@ -104,10 +117,13 @@ declare module './vm/types/function.js' {
 }
 
 /** 创建 effect 函数，已标记的 Mirascript 函数也需要重新包装 */
-function createEffectWrapper(kind: 'memo' | 'once' | 'async') {
-    return (fn: VmFunctionLike | VmAsyncFunctionLike, option?: VmFunctionOptionLike) => {
+function createEffectWrapper(kind: 'memo' | 'once' | 'async' | 'pure') {
+    return <T extends VmFunctionLike | VmAsyncFunctionLike>(
+        fn: T,
+        option?: VmFunctionOptionLike<ResumedFunction<T>>,
+    ) => {
         if (typeof fn != 'function') throw new TypeError('Invalid function');
-        const wrapped = wrapEffect<ReadonlyArray<VmValue | undefined>, ReturnType<VmFunctionLike>>(kind, fn);
+        const wrapped = wrapEffect(kind, fn) as ResumedFunction<T>;
         defineProperty(wrapped, 'name', { value: fn.name, configurable: true });
         return VmFunction(wrapped, option);
     };
@@ -116,6 +132,6 @@ function createEffectWrapper(kind: 'memo' | 'once' | 'async') {
 defineProperty(VmFunction, 'memo', { value: createEffectWrapper('memo') });
 defineProperty(VmFunction, 'once', { value: createEffectWrapper('once') });
 defineProperty(VmFunction, 'async', { value: createEffectWrapper('async') });
+defineProperty(VmFunction, 'pure', { value: createEffectWrapper('pure') });
 
-export { runInContext } from './vm/effects/run.js';
-export { AsyncRequiredError, ReplayMismatchError, ContextReentrancyError } from './vm/effects/state.js';
+export { runInContext, AsyncRequiredError, ReplayMismatchError, ContextReentrancyError };

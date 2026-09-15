@@ -52,6 +52,26 @@ test('sync async-call failure never starts the implementation, including extern 
     t.is(calls, 0);
 });
 
+test('pure functions run without a context until they return PromiseLike', (t) => {
+    const error = new Error('sync');
+    const sync = VmFunction.pure((value) => {
+        if (value === 0) throw error;
+        return value;
+    });
+    t.is(sync(1), 1);
+    t.throws(() => sync(0), { is: error });
+    t.is(compileSync('f(2)')(createVmContext({ f: sync })), 2);
+
+    let calls = 0;
+    const asynchronous = VmFunction.pure(() => {
+        calls++;
+        return Promise.resolve(1);
+    });
+    t.throws(() => asynchronous(), { instanceOf: AsyncRequiredError });
+    t.throws(() => new VmExtern(() => asynchronous()).call([]), { instanceOf: AsyncRequiredError });
+    t.is(calls, 2);
+});
+
 test('constructors preserve names, VM markers and all option sources', (t) => {
     const original = () => 3;
     const existing = VmFunction(original, { summary: 'original' });
@@ -67,10 +87,12 @@ test('constructors preserve names, VM markers and all option sources', (t) => {
         t.is(getVmFunctionInfo(factory(original, lib.random))?.summary, lib.random.summary);
         t.is(getVmFunctionInfo(factory(original, lib.random))?.isLib, true);
     }
-    const asynchronous = VmFunction.async(() => Promise.resolve(1), { name: 'load', summary: 'async' });
-    t.true(isVmFunction(asynchronous));
-    t.is(asynchronous.name, 'load');
-    t.is(getVmFunctionInfo(asynchronous)?.summary, 'async');
+    for (const factory of [VmFunction.async, VmFunction.pure]) {
+        const asynchronous = factory(() => Promise.resolve(1), { name: 'load', summary: 'async' });
+        t.true(isVmFunction(asynchronous));
+        t.is(asynchronous.name, 'load');
+        t.is(getVmFunctionInfo(asynchronous)?.summary, 'async');
+    }
 });
 
 test('memo and once retain synchronous values, undefined and exceptions', (t) => {
