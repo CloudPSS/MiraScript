@@ -8,7 +8,7 @@ import {
 } from '../../monaco-api.js';
 import { DiagnosticCode } from '@mirascript/constants';
 import { Provider } from './base.js';
-import type { CompileResult } from '../compile-result.js';
+import type { CompileResult } from '../compile-result/index.js';
 
 /** 重命名推断字段 */
 function provideRenameEditsOmitNameFields(

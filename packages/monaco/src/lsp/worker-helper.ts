@@ -11,7 +11,7 @@ import type {
     RequestId,
     WorkerFormatOptions,
 } from './worker-core.js';
-import { CompileResult } from './compile-result.js';
+import { CompileResult } from './compile-result/index.js';
 import { makeModelMarkers } from './diagnostics.js';
 
 /** 编译缓存项。 */

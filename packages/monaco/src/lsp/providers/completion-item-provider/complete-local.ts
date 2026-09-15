@@ -3,7 +3,7 @@ import { type editor, languages, type IPosition } from '../../../monaco-api.js';
 import { DESC_LOCAL, type CustomCompletionItem } from './interface.js';
 import { completion, filterText } from './utils.js';
 import { Provider } from '../base.js';
-import type { LocalDefinition } from '../../compile-result.js';
+import type { LocalDefinition } from '../../compile-result/index.js';
 
 /** 创建局部变量 */
 function createLocalCompletionItem(

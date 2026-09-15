@@ -1,7 +1,7 @@
 import { languages, Range, type CancellationToken, type editor } from '../../monaco-api.js';
 import { DiagnosticCode } from '@mirascript/constants';
 import { Provider } from './base.js';
-import type { SourceScope } from '../compile-result.js';
+import type { SourceScope } from '../compile-result/index.js';
 
 /** @inheritdoc */
 export class DocumentSymbolProvider extends Provider implements languages.DocumentSymbolProvider {

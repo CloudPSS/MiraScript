@@ -18,7 +18,7 @@ import {
     isVmArrayLikeRecordByKeys,
 } from '@mirascript/mirascript';
 import { lib, operations, serializeRecordKey, serializeString } from '@mirascript/mirascript/subtle';
-import type { LocalDefinition } from './compile-result.js';
+import type { LocalDefinition } from './compile-result/index.js';
 import type { MonacoContext } from './providers/base.js';
 
 const UNKNOWN_REPR = '/* .. */';

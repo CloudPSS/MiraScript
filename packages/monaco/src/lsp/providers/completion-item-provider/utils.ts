@@ -1,7 +1,7 @@
 import { getVmFunctionInfo, type VmValue, isVmExtern, isVmModule, type VmFunctionInfo } from '@mirascript/mirascript';
 import { type editor, type IPosition, type IRange, languages, Range } from '../../../monaco-api.js';
 import { paramsList } from '../../utils.js';
-import type { LocalDefinition } from '../../compile-result.js';
+import type { LocalDefinition } from '../../compile-result/index.js';
 import type { CustomCompletionItem } from './interface.js';
 
 /** 构造 filterText */

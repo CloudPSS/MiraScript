@@ -2,7 +2,7 @@ import type { VmContext, VmAny } from '@mirascript/mirascript';
 import { DefaultVmContext, type IRange } from '@mirascript/mirascript/subtle';
 import type { VmContextProvider } from '../../index.js';
 import { type editor, Emitter, type IEvent, type IPosition } from '../../monaco-api.js';
-import type { CompileResult, FieldsAccessAt, VariableAccessAt } from '../compile-result.js';
+import type { CompileResult, FieldsAccessAt, VariableAccessAt } from '../compile-result/index.js';
 import { compile } from '../worker-helper.js';
 import { wordAt } from '../monaco-utils.js';
 

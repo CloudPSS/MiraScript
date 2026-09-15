@@ -1,7 +1,7 @@
 import { DiagnosticCode, getDiagnosticMessage, formatDiagnosticMessage } from '@mirascript/mirascript/subtle';
 import { type editor, MarkerSeverity, MarkerTag, Uri, type IRange } from '../monaco-api.js';
 import { Provider } from './providers/base.js';
-import type { CompileResult, SourceDiagnostic } from './compile-result.js';
+import type { CompileResult, SourceDiagnostic } from './compile-result/index.js';
 import { isDeprecatedGlobal } from './utils.js';
 
 const formatMessage = (model: editor.ITextModel, code: DiagnosticCode, $0?: string | IRange): string => {

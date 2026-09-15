@@ -6,7 +6,7 @@ import type { editor, CancellationToken, IMarkdownString, IRange, languages, Pos
 import { codeblock, getDeep, valueDoc, paramsList, serializeNumber, serializeInteger } from '../utils.js';
 import { tokenAt } from '../monaco-private.js';
 import { rangeAt } from '../monaco-utils.js';
-import type { FieldsAccessAt, LocalDefinition, VariableAccessAt } from '../compile-result.js';
+import type { FieldsAccessAt, LocalDefinition, VariableAccessAt } from '../compile-result/index.js';
 import { Provider } from './base.js';
 
 const OPERATOR_TOKENS_DESC = Object.keys(HELP_OPERATORS).sort((a, b) => b.length - a.length);

@@ -2,7 +2,7 @@ import { DiagnosticCode } from '@mirascript/constants';
 import { type editor, type languages, Range, type CancellationToken } from '../../monaco-api.js';
 import { getDiagnosticCode } from '../diagnostics.js';
 import { Provider, type MonacoContext } from './base.js';
-import type { CompileResult } from '../compile-result.js';
+import type { CompileResult } from '../compile-result/index.js';
 
 /** Create code action based on diagnostic marker */
 function createCodeAction(
