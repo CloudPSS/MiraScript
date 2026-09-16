@@ -86,7 +86,7 @@ export const unique_by = VmLib(
             },
             equal: {
                 type: 'fn(a: any, b: any) -> boolean',
-                description: '用于判同两个元素的函数，返回一个布尔值，默认使用严格相等比较',
+                description: '用于判同两个去重键的函数，返回一个布尔值，默认使用严格相等比较',
             },
         },
         returns: { type: 'array' },

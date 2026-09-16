@@ -8,8 +8,8 @@ export const size = VmLib(
     },
     {
         summary: '获取矩阵尺寸',
-        params: { matrix: { type: 'any[][]', description: '要获取尺寸的矩阵' } },
-        returns: { type: '[number, number]' },
-        examples: ['matrix.size([[1, 2], [3, 4]]) // [2, 2]'],
+        params: { matrix: { type: 'any[] | any[][]', description: '要获取尺寸的矩阵' } },
+        returns: { type: '[number] | [number, number]' },
+        examples: ['matrix.size(["x", "y"]) // [2]', 'matrix.size([[1, 2], [3, 4]]) // [2, 2]'],
     },
 );
