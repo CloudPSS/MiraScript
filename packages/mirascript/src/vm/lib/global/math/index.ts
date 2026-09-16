@@ -2,11 +2,11 @@ import { expectNumber, VmLib } from '../../helpers.js';
 import { wrapEffect } from '../../../effects/wrap.js';
 const { atan2: _atan2, pow: _pow, random: _random } = Math;
 
-export const atan2 = VmLib((x, y) => _atan2(expectNumber(0, x), expectNumber(1, y)), {
+export const atan2 = VmLib((y, x) => _atan2(expectNumber(0, y), expectNumber(1, x)), {
     summary: '返回从原点到点 (x, y) 的角度（弧度）',
     params: {
-        x: { type: 'number', description: 'x 坐标' },
         y: { type: 'number', description: 'y 坐标' },
+        x: { type: 'number', description: 'x 坐标' },
     },
     returns: { type: 'number' },
 });
