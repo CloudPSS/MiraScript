@@ -57,6 +57,7 @@ export async function completeGlobal(
                 suggestions.push({
                     insertText: `${prefix}.${f}`,
                     filterText: filterText(f, char),
+                    sortText: `ZzZzZz__${key}__${f}`,
                     range,
                     additionalTextEdits: edits,
                     vmParent: element,
