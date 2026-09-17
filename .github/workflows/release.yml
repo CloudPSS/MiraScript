@@ -248,21 +248,27 @@ jobs:
   publish-vscode:
     needs: build-vscode
 
+    # Prepared oidc publishing for Visual Studio Marketplace
+    # + `id-token` `command` `run`
+    # - `pkg` `run`
+
     strategy:
       matrix:
         marketplace:
           - name: Open VSX
             url: https://open-vsx.org/extension/CloudPSS/mirascript
+            pkg: ovsx
             command: npx ovsx publish --trusted-publishing
             prerelease: true
           - name: Visual Studio Marketplace
             url: https://marketplace.visualstudio.com/items?itemName=CloudPSS.mirascript
+            pkg: '@vscode/vsce@^3'
             command: npx @vscode/vsce publish --oidc
             prerelease: false
 
     permissions:
       contents: read
-      id-token: write
+      # id-token: write
 
     environment:
       name: ${{ matrix.marketplace.name }}
@@ -277,7 +283,8 @@ jobs:
 
       - name: Publish to ${{ matrix.marketplace.name }}
         if: matrix.marketplace.prerelease || ! contains(github.ref, '-')
-        run: ${{ matrix.marketplace.command }} -i *.vsix
+        run: npx ${{ matrix.marketplace.pkg }} publish -p ${{ secrets.PAT }} -i *.vsix
+        # run: ${{ matrix.marketplace.command }} -i *.vsix
 
   publish-github:
     needs: resolve-ci
