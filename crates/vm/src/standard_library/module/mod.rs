@@ -1,5 +1,7 @@
+mod complex;
 mod matrix;
 
+pub(super) use complex::COMPLEX;
 pub(super) use matrix::MATRIX;
 
 #[cfg(test)]

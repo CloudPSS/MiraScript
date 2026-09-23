@@ -1,0 +1,76 @@
+// Cross-runtime result classifications. Finite reference values are tested in functions.mira.
+// N: NaN; P/M: +/-Infinity; p/m: +/-zero; +/-: finite nonzero.
+let expected = (
+  from: 'MMM-MmMpM+MPMN-M---m-p-+-P-NmMm-mmmpm+mPmNpMp-pmppp+pPpN+M+-+m+p+++P+NPMP-PmPpP+PPPNNMN-NmNpN+NPNN',
+  neg: 'PPP+PpPmP-PMPN+P+++p+m+-+M+NpPp+pppmp-pMpNmPm+mpmmm-mMmN-P-+-p-m---M-NMPM+MpMmM-MMMNNPN+NpNmN-NMNN',
+  conj: 'MPM+MpMmM-MMMN-P-+-p-m---M-NmPm+mpmmm-mMmNpPp+pppmp-pMpN+P+++p+m+-+M+NPPP+PpPmP-PMPNNPN+NpNmN-NMNN',
+  sqrt: 'PMpMpMpPpPPPNPPM+-p-p+++PPNNPM+-pmpp++PPNNPM+-pmpp++PPNNPM+-+m+p++PPNNPMPmPmPpPpPPPNPMNNNNNNNNPPNN',
+  cbrt: 'PMPMPMPPPPPPNNPM+-+-++++PPNNPM+-pmpp++PPNNPM+-pmpp++PPNNPM+-+m+p++PPNNPMPmPmPpPpPPNNNNNNNNNNNNNNNN',
+  exp: 'NNpmpmppppNNNNNN+-+m+p++NNNNNN+-+m+p++NNNNNN+-+m+p++NNNNNN+-+m+p++NNNNNNPMPmPpPPNNNNNNNNNNNNNNNNNN',
+  expm1: 'NN-m-m-p-pNNNNNN---m-p-+NNNNNN--mmmp-+NNNNNN--pmpp-+NNNNNN+-+m+p++NNNNNNPMPmPpPPNNNNNNNNNNNNNNNNNN',
+  log: 'P-P-P-P+P+P+NNP-+-p-p+++P+NNP-p-M-M+p+P+NNP-p-MmMpp+P+NNP-+-pmpp++P+NNP-PmPmPpPpP+NNNNNNNNNNNNNNNN',
+  log1p: 'P-P-P-P+P+P+NNP-p-MmMpp+P+NNP-+-pmpp++P+NNP-+-pmpp++P+NNP-+-+m+p++P+NNP-PmPmPpPpP+NNNNNNNNNNNNNNNN',
+  log2: 'P-P-P-P+P+P+NNP-+-p-p+++P+NNP-p-M-M+p+P+NNP-p-MmMpp+P+NNP-+-pmpp++P+NNP-PmPmPpPpP+NNNNNNNNNNNNNNNN',
+  log10: 'P-P-P-P+P+P+NNP-+-p-p+++P+NNP-p-M-M+p+P+NNP-p-MmMpp+P+NNP-+-pmpp++P+NNP-PmPmPpPpP+NNNNNNNNNNNNNNNN',
+  sin: 'NNNNNNNNNNNNNNMM---m-p-+MPNNmMm-mmmpm+mPNNpMp-pmppp+pPNNPM+-+m+p++PPNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN',
+  cos: 'NNNNNNNNNNNNNNPM+-+m+p++PPNNPm+m+m+p+pPpNNPp+p+p+m+mPmNNPP+++p+m+-PMNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN',
+  tan: 'NNNNNNNNNNNNNNm----m-p-+m+NNm-m-mmmpm+m+NNp-p-pmppp+p+NNp-+-+m+p++p+NNNNNNNNNNNNNNNNNNNNNNNNNNNNNN',
+  sinh: 'NNMMMmMpMPNNNNNN---m-p-+NNNNNNm-mmmpm+NNNNNNp-pmppp+NNNNNN+-+m+p++NNNNNNPMPmPpPPNNNNNNNNNNNNNNNNNN',
+  cosh: 'NNPPPpPmPMNNNNNN+++p+m+-NNNNNN+p+p+m+mNNNNNN+m+m+p+pNNNNNN+-+m+p++NNNNNNPMPmPpPPNNNNNNNNNNNNNNNNNN',
+  tanh: 'NN-m-m-p-pNNNNNN---m-p-+NNNNNNm-mmmpm+NNNNNNp-pmppp+NNNNNN+-+m+p++NNNNNN+m+m+p+pNNNNNNNNNNNNNNNNNN',
+  asin: '-M-M-M-P-P-PNPmM---m-p-+mPNNmMm-mmmpm+mPNNpMp-pmppp+pPNNpM+-+m+p++pPNN+M+M+M+P+P+PNPNMNNNNNNNNNPNN',
+  acos: '+P+P+P+M+M+MNM+P+++p+m+-+MNN+P+++p+m+-+MNN+P+++p+m+-+MNN+P++pppm+-+MNN+PpPpPpMpM+MNMNPNNNNNNNNNMNN',
+  atan: '-N-m-m-p-p-NNN-N---m-p-+-NNN-NmMmmmpmP-NNN+NpMpmpppP+NNN+N+-+m+p+++NNN+N+m+m+p+p+NNNNNNNNmNpNNNNNN',
+  asinh: 'M-MmMmMpMpM+MNM----m-p-+M+NNM-m-mmmpm+M+NNP-p-pmppp+P+NNP-+-+m+p++P+NNP-PmPmPpPpP+PNPNNNNNNNNNPNNN',
+  acosh: 'P-P-P-P+P+P+PNP-+-p-p+++P+NNP-+-p-p+++P+NNP-+-p-p+++P+NNP-+-pmpp++P+NNP-PmPmPpPpP+PNPNNNNNNNNNPNNN',
+  atanh: 'N-N-N-N+N+N+NNm---MmMp-+m+NNm-m-mmmpm+m+mNp-p-pmppp+p+pNp-+-PmPp++p+NNN-N-N-N+N+N+NNNNNNNNNNNNNNNN',
+);
+fn classify(x) {
+  if x is nan {
+    'N'
+  } else if x == inf {
+    'P'
+  } else if x == -inf {
+    'M'
+  } else if x == 0 {
+    if 1 / x == inf { 'p' } else { 'm' }
+  } else {
+    if x > 0 { '+' } else { '-' }
+  }
+}
+fn signature(z) { `$((z[0])::classify())$((z[1])::classify())` }
+let values = [-inf, -1, -0, 0, 1, inf, nan];
+for name in [
+  'from',
+  'neg',
+  'conj',
+  'sqrt',
+  'cbrt',
+  'exp',
+  'expm1',
+  'log',
+  'log1p',
+  'log2',
+  'log10',
+  'sin',
+  'cos',
+  'tan',
+  'sinh',
+  'cosh',
+  'tanh',
+  'asin',
+  'acos',
+  'atan',
+  'asinh',
+  'acosh',
+  'atanh',
+] {
+  let result = values
+    ::map(
+      fn (x) {
+        values::map(fn (y) { complex[name]((x, y))::signature() })::join('')
+      },
+    )
+    ::join('');
+  t_eq(result, expected[name], name);
+}

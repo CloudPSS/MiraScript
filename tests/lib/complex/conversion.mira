@@ -1,0 +1,96 @@
+for value in [
+  0,
+  -0,
+  1,
+  -2.5,
+  true,
+  false,
+  ' 2 ',
+  '-0',
+  '0xff',
+  'nan',
+  'inf',
+  '-inf',
+] {
+  let z = complex.from(value);
+  t_eq(type(z), 'record');
+  t_eq(len(keys(z)), 2);
+  t_eq(z[0], to_number(value));
+  t_eq(z[1], 0);
+  t_eq(complex.real(value), to_number(value));
+  t_eq(complex.imag(value), 0);
+}
+t_eq(complex.I, (0, 1));
+t_eq(complex.from(('2', true, ignored: nil)), (2, 1));
+t_eq(complex.from((1: '3', 0: '-2', extra: fn { })), (-2, 3));
+t_eq(complex.from((0, -0)), (0, -0));
+t_eq(1 / complex.imag((0, -0)), -inf);
+for value in [
+  nil,
+  '',
+  'bad',
+  [],
+  [1, 2],
+  (),
+  (0: 1),
+  (1: 2),
+  (real: 1, imag: 2),
+  (nil, 1),
+  (1, nil),
+  ((1, 2), 3),
+  (1, 'bad'),
+  fn { },
+] {
+  t_throws(fn { complex.from(value) });
+  t_throws(fn { complex.add(value, 1) });
+  t_throws(fn { complex.add(1, value) });
+  t_throws(fn { complex.real(value) });
+  t_throws(fn { complex.imag(value) });
+}
+for name in [
+  'from',
+  'real',
+  'imag',
+  'abs',
+  'arg',
+  'conj',
+  'neg',
+  'sqrt',
+  'cbrt',
+  'exp',
+  'expm1',
+  'log',
+  'log1p',
+  'log2',
+  'log10',
+  'sin',
+  'cos',
+  'tan',
+  'sinh',
+  'cosh',
+  'tanh',
+  'asin',
+  'acos',
+  'atan',
+  'asinh',
+  'acosh',
+  'atanh',
+] {
+  let f = complex[name];
+  t_throws(fn { f() });
+  t_throws(fn { f((nil, 0)) });
+  t_throws(fn { f((0, nil)) });
+}
+for name in ['add', 'subtract', 'multiply', 'divide', 'pow', 'polar'] {
+  let f = complex[name];
+  t_throws(fn { f() });
+  t_throws(fn { f(1) });
+  t_throws(fn { f(nil, 1) });
+  t_throws(fn { f(1, nil) });
+}
+t_throws(fn { complex.polar((1, 2), 0) });
+t_eq(complex.polar('2', false), (2, 0));
+for name in ['real', 'imag', 'abs', 'arg'] {
+  let f = complex[name];
+  t_eq(type(f((3, 4))), 'number');
+}

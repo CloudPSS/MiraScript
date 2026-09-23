@@ -10,6 +10,7 @@ use builtin::{builtin_fn, global_builtin};
 pub(crate) fn install(runtime: &mut Runtime) {
     global::install(runtime);
     runtime.insert_std("matrix", module::MATRIX);
+    runtime.insert_std("complex", module::COMPLEX);
 }
 
 fn required<'a>(args: &'a [MiraValue], index: usize, name: &'static str) -> Result<&'a MiraValue> {

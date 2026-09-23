@@ -5,5 +5,5 @@ from .string import *
 from .bit import *
 from .json import *
 from .to_primitive import *
-from .mod import matrix
+from .mod import matrix, complex
 from .time import *
