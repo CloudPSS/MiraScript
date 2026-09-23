@@ -72,6 +72,8 @@ export type RecordType =
           kind: 'record';
           /** Fields in the record */
           fields: RecordField[];
+          /** Rest type of the record, spreading a record type into the record (`(fieldA: typeA, ..restType)`) */
+          rest?: Type;
       }
     | {
           /** Tag */
@@ -180,6 +182,7 @@ function resolveGenerics(type: Type, scope = new Map<string, GenericType>()): Ty
             for (const field of type.fields) {
                 field.type = resolveGenerics(field.type, scope);
             }
+            if (type.rest != null) type.rest = resolveGenerics(type.rest, scope);
         } else {
             if (type.key != null) type.key = resolveGenerics(type.key, scope);
             if (type.value != null) type.value = resolveGenerics(type.value, scope);

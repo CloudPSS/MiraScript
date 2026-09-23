@@ -22,6 +22,8 @@ export interface SimplifyOptions {
     mergeRecordIntersections?: boolean;
     /** Inline tuple spread elements (..[A, B] → A, B). */
     expandTupleSpreads?: boolean;
+    /** Inline record rest types (..(a: T) → a: T). */
+    expandRecordSpreads?: boolean;
     /**
      * Eliminate / absorb top types in unions.
      * - `unknown | T` → `unknown`
@@ -54,6 +56,7 @@ const DEFAULT_OPTIONS: Required<SimplifyOptions> = {
     distributeIntersectionsOverUnions: true,
     mergeRecordIntersections: true,
     expandTupleSpreads: true,
+    expandRecordSpreads: true,
     simplifyTopTypesInUnions: true,
     simplifyTopTypesInIntersections: true,
     normalizeGenericRecord: true,

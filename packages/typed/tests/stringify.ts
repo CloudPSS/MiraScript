@@ -75,6 +75,19 @@ test('stringify record generic', (t) => {
     t.is(stringify(simplify(parse('record<"$(string)", number>'))), 'record<`$(string)`, number>');
 });
 
+test('stringify record rest', (t) => {
+    t.is(stringify(simplify(parse('(..MyType)'))), '(..MyType)');
+    t.is(stringify(simplify(parse('(a: number, ..MyType)'))), '(a: number, ..MyType)');
+    t.is(stringify(simplify(parse('(a: number, ..record<string, string>)'))), '(a: number, ..record<string>)');
+    // Record literals are inlined
+    t.is(stringify(simplify(parse('(a: number, ..(b: string))'))), '(a: number, b: string)');
+    // Anonymous fields are kept anonymous
+    t.is(stringify(simplify(parse('(number, ..MyType)'))), '(number, ..MyType)');
+    rt('(a: number, ..MyType)', t);
+    rt('(a: number, ..record<string, string>)', t);
+    rt('(..record<number, string>)', t);
+});
+
 test('stringify function', (t) => {
     t.is(stringify(simplify(parse('fn()'))), 'fn()');
     t.is(stringify(simplify(parse('fn() -> number'))), 'fn() -> number');

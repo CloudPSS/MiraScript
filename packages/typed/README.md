@@ -39,6 +39,7 @@ console.log(toJSONSchema(parse('(a: number)'), { loose: true }));
   - 匿名字段：`(typeA, typeB)` （只包含一个匿名字段时尾随 `,` 不能省略 `(type,)`）
   - 可选属性：`(field?: type)`
   - 支持使用字符串做字段名以包含特殊字符：`("field-name": type)`
+  - 剩余字段须为最后一个字段：`(fieldA: typeA, ..restType)`
 - 函数类型：`fn(arg: type, ..rest: type) -> returnType`
   - 无返回值：`fn(arg: type)`
   - 无参数：`fn() -> returnType`

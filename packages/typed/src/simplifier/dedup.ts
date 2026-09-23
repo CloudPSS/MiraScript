@@ -19,9 +19,11 @@ function getTypeDedupKey(type: Type, symbols: Map<symbol, number>): string {
             return `intersection:[${type.types.map((t) => getTypeDedupKey(t, symbols)).join(',')}]`;
         case 'record':
             if ('fields' in type) {
-                return `recordFields:[${type.fields
+                const fields = type.fields
                     .map((f) => `${f.name}:${String(Boolean(f.optional))}:${getTypeDedupKey(f.type, symbols)}`)
-                    .join(',')}]`;
+                    .join(',');
+                const rest = type.rest == null ? 'none' : getTypeDedupKey(type.rest, symbols);
+                return `recordFields:[${fields}]:${rest}`;
             }
             return `recordKV:${type.key == null ? 'none' : getTypeDedupKey(type.key, symbols)}:${getTypeDedupKey(type.value, symbols)}`;
         case 'literal':

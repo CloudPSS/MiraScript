@@ -94,15 +94,17 @@ function stringifyImpl(type: Type, parentPrecedence: number): string {
 
         case 'record': {
             if ('fields' in type) {
-                if (type.fields.length === 0) {
+                const rest = type.rest == null ? null : `..${stringifyImpl(type.rest, 0)}`;
+                if (rest == null && type.fields.length === 0) {
                     return '()';
                 }
                 // Check if all fields are anonymous (name === positional index)
                 const allAnonymous = type.fields.every((f, i) => f.name === String(i) && !f.optional);
                 if (allAnonymous) {
                     const types = type.fields.map((f) => stringifyImpl(f.type, 0));
+                    if (rest != null) types.push(rest);
                     // Single anonymous field needs trailing comma to distinguish from grouping
-                    const trailing = type.fields.length === 1 ? ',' : '';
+                    const trailing = rest == null && type.fields.length === 1 ? ',' : '';
                     return `(${types.join(', ')}${trailing})`;
                 } else {
                     const fields = type.fields.map((f) => {
@@ -111,6 +113,7 @@ function stringifyImpl(type: Type, parentPrecedence: number): string {
                         const typeStr = stringifyImpl(f.type, 0);
                         return `${name}${colon} ${typeStr}`;
                     });
+                    if (rest != null) fields.push(rest);
                     return `(${fields.join(', ')})`;
                 }
             }

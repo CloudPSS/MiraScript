@@ -43,10 +43,16 @@ function intersection(types) {
 }
 
 function record(fields) {
+  const result = { kind: "record", fields: [] };
   for(let i = 0; i < fields.length; i++) {
+    if (fields[i].spread) {
+      result.rest = fields[i].type;
+      continue;
+    }
     fields[i].name ??= String(i);
+    result.fields.push(fields[i]);
   }
-  return { kind: "record", fields };
+  return result;
 }
 
 function literal(value) {
@@ -227,10 +233,21 @@ RecordType
   = "(" _ fields:FieldList? _ ")" { return record(fields ?? []); }
 
 FieldList
-  = @Field|1.., _ "," _ | ( _ "," _ )?
+  = fields:Field|1.., _ "," _ | ( _ "," _ )? {
+      for (let i = 0; i < fields.length - 1; i++) {
+        if (fields[i].spread) throw new Error("Rest field must be last");
+      }
+      return fields;
+    }
 
 Field
-  = name:FieldName opt:("?"?) _ ":" _ t:Type {
+  = spread:".." _ t:Type {
+      return {
+        spread: true,
+        type: t
+      };
+    }
+  / name:FieldName opt:("?"?) _ ":" _ t:Type {
       return {
         name,
         optional: opt != null,

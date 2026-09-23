@@ -106,3 +106,69 @@ test('record type with bad field name', (t) => {
     t.throws(() => parse('(1a: number)'));
     t.throws(() => parse('("field$(name)": number)'));
 });
+
+test('record type with rest field', (t) => {
+    t.deepEqual(parse('(a: number, ..record<string, string>)'), {
+        kind: 'record',
+        fields: [{ name: 'a', optional: false, type: 'number' }],
+        rest: { kind: 'record', key: 'string', value: 'string' },
+    });
+});
+
+test('record type with only a rest field', (t) => {
+    t.deepEqual(parse('(..MyType)'), {
+        kind: 'record',
+        fields: [],
+        rest: 'MyType',
+    });
+});
+
+test('record type with rest field of a record literal', (t) => {
+    t.deepEqual(parse('(a: number, ..(b: string, c?: boolean))'), {
+        kind: 'record',
+        fields: [{ name: 'a', optional: false, type: 'number' }],
+        rest: {
+            kind: 'record',
+            fields: [
+                { name: 'b', optional: false, type: 'string' },
+                { name: 'c', optional: true, type: 'boolean' },
+            ],
+        },
+    });
+});
+
+test('record type with anonymous fields and rest field', (t) => {
+    t.deepEqual(parse('(number, ..rule)'), {
+        kind: 'record',
+        fields: [{ name: '0', type: 'number' }],
+        rest: 'rule',
+    });
+});
+
+test('record type with trailing comma after rest field', (t) => {
+    t.deepEqual(parse('(a: number, ..rule,)'), {
+        kind: 'record',
+        fields: [{ name: 'a', optional: false, type: 'number' }],
+        rest: 'rule',
+    });
+});
+
+test('record type with mispositioned rest field', (t) => {
+    t.throws(() => parse('(..rule, a: number)'));
+    t.throws(() => parse('(..rule, ..other)'));
+    t.throws(() => parse('(..)'));
+});
+
+test('record rest resolves enclosing generic parameters', (t) => {
+    const direct = parse('fn<T>(x: (..T)) -> T');
+    if (typeof direct !== 'object' || direct.kind !== 'function') return t.fail('Expected a function');
+    t.deepEqual(direct.params[0]?.type, { kind: 'record', fields: [], rest: direct.typeParams?.[0] });
+
+    const nested = parse('fn<T>(x: (..(y: T))) -> T');
+    if (typeof nested !== 'object' || nested.kind !== 'function') return t.fail('Expected a function');
+    t.deepEqual(nested.params[0]?.type, {
+        kind: 'record',
+        fields: [],
+        rest: { kind: 'record', fields: [{ name: 'y', optional: false, type: nested.typeParams?.[0] }] },
+    });
+});

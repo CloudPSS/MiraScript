@@ -7,7 +7,9 @@ import { isFieldRecordType, isUnionType, isIntersectionType } from './utils.js';
 /** Merges explicit record fields across an intersection. */
 function mergeRecordFieldIntersections(types: Array<Extract<RecordType, { fields: RecordField[] }>>): Type {
     const merged = new Map<string, { optional: boolean; type: Type }>();
+    const rests: Type[] = [];
     for (const record of types) {
+        if (record.rest != null) rests.push(record.rest);
         for (const field of record.fields) {
             const prev = merged.get(field.name);
             if (prev == null) {
@@ -27,7 +29,7 @@ function mergeRecordFieldIntersections(types: Array<Extract<RecordType, { fields
         }
     }
 
-    return {
+    const result: Extract<RecordType, { fields: RecordField[] }> = {
         kind: 'record',
         fields: Array.from(merged.entries()).map(([name, field]) => ({
             name,
@@ -35,6 +37,13 @@ function mergeRecordFieldIntersections(types: Array<Extract<RecordType, { fields
             type: field.type,
         })),
     };
+    // Rest types of all members apply to the rest fields of the merged record
+    if (rests.length === 1) {
+        result.rest = rests[0]!;
+    } else if (rests.length > 1) {
+        result.rest = { kind: 'intersection', types: rests };
+    }
+    return result;
 }
 
 /** Flattens nested intersection nodes when the corresponding option is enabled. */
