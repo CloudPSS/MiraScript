@@ -412,6 +412,9 @@ fn interpolation<'s>(dollars: &'s str) -> impl Parser<'s, StringFragment<'s>> {
             Some(ch) if is_identifier_start(ch) || is_identifier_special(ch) => {
                 // '$' identifier
                 let (mut kind, range) = identifier(true).with_span().parse_next(i)?;
+                if kind == Keyword::Type {
+                    kind = TokenKind::Identifier(Keyword::Type.into());
+                }
                 if let TokenKind::Keyword(kw) = kind
                     && !kw.is_constant()
                 {

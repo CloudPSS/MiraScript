@@ -58,3 +58,22 @@
     case _ { t_never() }
   }
 }
+
+// type as identifier name - in function definition
+{
+  fn g(type) {
+    t_eq(type::type(), 'string');
+    t_eq(type, 'type');
+  }
+
+  g('type');
+}
+
+// type as identifier name - in interpolation
+{
+  let type = 'type';
+  t_eq("|${type}|", '|type|');
+  t_eq("|${type::type()}|", '|string|');
+  t_eq("|$(type)|", '|type|');
+  t_eq("|$type|", '|type|');
+}
