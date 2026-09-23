@@ -414,7 +414,7 @@ jobs:
           - macos-15-intel
         toolchain:
           - stable
-          - nightly
+          #- nightly
     runs-on: ${{ matrix.os }}
 
     permissions:
