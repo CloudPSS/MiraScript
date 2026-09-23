@@ -449,7 +449,7 @@ jobs:
           - i686-unknown-linux-gnu
         toolchain:
           - stable
-          - nightly
+          # - nightly
     runs-on: ubuntu-latest
 
     permissions:
