@@ -74,13 +74,14 @@ MiraScript 是一门表达式优先、不可变数据为核心的脚本语言。
 | 序列         | `[1..9]` / `[1..<10]`                       | `1:9`                                                       |
 | 记录（对象） | `(a: 1, b: 'str')` / `{"a": 1, "b": "str"}` | `{a: 1, b: 'str'}` / `{"a": 1, "b": "str"}`                 |
 | 格式化字符串 | `'$(data.value) kW'`                        | `print('$1 kW', [data.value])`                              |
-| 矩阵操作     | `matrix.add(mA, mB)`                        | `mA + mB`                                                   |
 | 函数调用     | `map(values(cells), fn { it.key })`         | `values(cells).map(mapper(v, i, arr) = v.key)`              |
 | 数值近似相等 | `x =~ y` / `value !~ 1`                     | `x == y` / `value != 1`                                     |
 | 字符串比较   | `str == "Alice"`                            | `equalText(str, "Alice")`                                   |
 | 函数声明     | `fn add(x, y) { x + y }`                    | `add(x, y) = x + y`                                         |
 | 类型判断     | `type(x) == 'string'`                       | `is(x, 'string')`                                           |
 | 空值合并     | `context.Vm ?? 1`                           | `is(context, 'Object') ? (context.Vm ? context.Vm : 1) : 1` |
+| 矩阵操作     | `matrix.add(mA, mB)`                        | `mA + mB`                                                   |
+| 复数操作     | `complex.add(cA, cB)`                       | `cA + cB`                                                   |
 
 <style>
   @media print {
