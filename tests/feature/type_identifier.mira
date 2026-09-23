@@ -72,8 +72,8 @@
 // type as identifier name - in interpolation
 {
   let type = 'type';
-  t_eq("|${type}|", '|type|');
-  t_eq("|${type::type()}|", '|string|');
+  t_eq("|${ type }|", '|type|');
+  t_eq("|${ type::type() }|", '|string|');
   t_eq("|$(type)|", '|type|');
   t_eq("|$type|", '|type|');
 }
