@@ -15,12 +15,7 @@ export function toJSONSchema(
     type: Type,
     options?: ToJSONSchemaOptions,
 ): JSONSchema.Interface & { $schema: typeof $schema } {
-    let schema = toJSONSchemaImpl(type, { loose: options?.loose ?? false });
-    if (schema === true) {
-        schema = {};
-    } else if (schema === false) {
-        schema = { not: true };
-    }
+    const schema = toJSONSchemaImpl(type, { loose: options?.loose ?? false });
     return {
         ...schema,
         $schema,

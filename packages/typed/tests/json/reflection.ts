@@ -17,14 +17,14 @@ test('never union JSON schema', (t) => {
             kind: 'union',
             types: [],
         }),
-        schema({ not: true }),
+        schema({ not: {} }),
     );
     t.deepEqual(
         toJSONSchema({
             kind: 'union',
             types: ['never', 'never'],
         }),
-        schema({ not: true }),
+        schema({ not: {} }),
     );
     t.deepEqual(
         toJSONSchema({

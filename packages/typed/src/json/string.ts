@@ -1,8 +1,9 @@
 import type { JSONSchema } from 'json-schema-typed';
 import type { KnownType, NamedType } from '../parser.js';
+import { anySchema, neverSchema } from './boolean.js';
 
 /** Converts a KnownType or NamedType into JSON Schema */
-export function string(type: KnownType | NamedType): JSONSchema {
+export function string(type: KnownType | NamedType): JSONSchema.Interface {
     switch (type) {
         case 'string':
             return { type: 'string' };
@@ -13,18 +14,18 @@ export function string(type: KnownType | NamedType): JSONSchema {
         case 'nil':
             return { type: 'null' };
         case 'array':
-            return { type: 'array', items: true };
+            return { type: 'array', items: anySchema };
         case 'record':
             return { type: 'object' };
         case 'extern':
-            return true;
+            return anySchema;
         case 'any':
-            return true;
+            return anySchema;
         case 'unknown':
-            return true;
+            return anySchema;
         case 'never':
-            return false;
+            return neverSchema;
         default:
-            return true;
+            return anySchema;
     }
 }

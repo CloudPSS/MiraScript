@@ -3,6 +3,7 @@ import type { RecordField, RecordType, Type } from '../parser.js';
 import { toJSONSchemaImpl, type ToJSONSchemaOptionsImpl } from './impl.js';
 import { templatePartPattern, RE_ANY } from './template.js';
 import { isLiteralType } from './literal.js';
+import { anySchema, booleanSchema } from './boolean.js';
 
 /**
  * Merges the JSON Schema of a record rest type (`..restType`) into the schema being built,
@@ -14,11 +15,11 @@ function restType(
     required: string[],
     patternProperties: Map<string, JSONSchema>,
     options: ToJSONSchemaOptionsImpl,
-): JSONSchema {
+): JSONSchema.Interface {
     const schema = toJSONSchemaImpl(rest, options);
     // Rest types that are not records (e.g. `..string`, `..MyType`) do not constrain the rest fields,
     // consistent with tuple spreads where non-array rest elements are treated as `any`.
-    if (typeof schema === 'boolean' || schema.type !== 'object') return true;
+    if (schema.type !== 'object') return anySchema;
     for (const [name, property] of Object.entries(schema.properties ?? {})) {
         // Explicit fields take precedence over the fields spread from the rest type.
         if (properties.has(name)) continue;
@@ -30,7 +31,9 @@ function restType(
     for (const [pattern, property] of Object.entries(schema.patternProperties ?? {})) {
         patternProperties.set(pattern, property);
     }
-    return schema.additionalProperties ?? true;
+    const { additionalProperties } = schema;
+    if (typeof additionalProperties === 'boolean') return booleanSchema(additionalProperties);
+    return additionalProperties ?? anySchema;
 }
 
 /** Keep rest patterns from constraining fields already named in the record. */
@@ -47,7 +50,7 @@ function fieldsRecord(
     fields: readonly RecordField[],
     rest: Type | undefined,
     options: ToJSONSchemaOptionsImpl,
-): JSONSchema {
+): JSONSchema.Interface {
     if (typeof rest === 'object') {
         if (rest.kind === 'union') {
             return { anyOf: rest.types.map((branch) => fieldsRecord(fields, branch, options)) };
@@ -59,7 +62,7 @@ function fieldsRecord(
     const properties = new Map<string, JSONSchema>();
     const required: string[] = [];
     const patternProperties = new Map<string, JSONSchema>();
-    let additionalProperties: JSONSchema = options.loose;
+    let additionalProperties: JSONSchema = booleanSchema(options.loose);
     for (const field of fields) {
         properties.set(field.name, toJSONSchemaImpl(field.type, options));
         if (!options.loose && !field.optional && !required.includes(field.name)) {
@@ -69,7 +72,7 @@ function fieldsRecord(
     if (rest != null) {
         additionalProperties = restType(rest, properties, required, patternProperties, options);
     }
-    const schema: JSONSchema = {
+    const schema: JSONSchema.Interface = {
         type: 'object',
         properties: Object.fromEntries(properties),
         additionalProperties,
@@ -89,22 +92,22 @@ function fieldsRecord(
 }
 
 /** Convert generic record into JSON Schema */
-function genericRecord(key: Type, value: Type, options: ToJSONSchemaOptionsImpl): JSONSchema {
+function genericRecord(key: Type, value: Type, options: ToJSONSchemaOptionsImpl): JSONSchema.Interface {
     const valueSchema = toJSONSchemaImpl(value, options);
 
     if (typeof key == 'object') {
         if (isLiteralType(key)) {
-            const schema: JSONSchema = {
+            const schema: JSONSchema.Interface = {
                 type: 'object',
                 properties: { [String(key.value)]: valueSchema },
-                additionalProperties: options.loose,
+                additionalProperties: booleanSchema(options.loose),
             };
             return schema;
         } else if (key.kind === 'union' && key.types.every(isLiteralType)) {
-            const schema: JSONSchema = {
+            const schema: JSONSchema.Interface = {
                 type: 'object',
                 properties: Object.fromEntries(key.types.map((t) => [String(t.value), valueSchema])),
-                additionalProperties: options.loose,
+                additionalProperties: booleanSchema(options.loose),
             };
             return schema;
         }
@@ -116,16 +119,16 @@ function genericRecord(key: Type, value: Type, options: ToJSONSchemaOptionsImpl)
             additionalProperties: valueSchema,
         };
     }
-    const schema: JSONSchema = {
+    const schema: JSONSchema.Interface = {
         type: 'object',
         patternProperties: { [`^${pattern}$`]: valueSchema },
-        additionalProperties: options.loose,
+        additionalProperties: booleanSchema(options.loose),
     };
     return schema;
 }
 
 /** Converts a RecordType into JSON Schema */
-export function record(simplified: RecordType, options: ToJSONSchemaOptionsImpl): JSONSchema {
+export function record(simplified: RecordType, options: ToJSONSchemaOptionsImpl): JSONSchema.Interface {
     if ('fields' in simplified) {
         return fieldsRecord(simplified.fields, simplified.rest, options);
     }

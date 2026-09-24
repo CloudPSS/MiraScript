@@ -47,7 +47,7 @@ test('record key-value JSON schema', (t) => {
         schema({
             type: 'object',
             patternProperties: { [`^${REG_NUMBER.source}$`]: { type: 'boolean' } },
-            additionalProperties: false,
+            additionalProperties: { not: {} },
         }),
     );
     t.deepEqual(
@@ -55,7 +55,7 @@ test('record key-value JSON schema', (t) => {
         schema({
             type: 'object',
             properties: { id: { type: 'boolean' }, name: { type: 'boolean' } },
-            additionalProperties: false,
+            additionalProperties: { not: {} },
         }),
     );
     t.deepEqual(
@@ -63,7 +63,7 @@ test('record key-value JSON schema', (t) => {
         schema({
             type: 'object',
             patternProperties: { '^id|name|true|false$': { type: 'boolean' } },
-            additionalProperties: false,
+            additionalProperties: { not: {} },
         }),
     );
     t.deepEqual(
@@ -71,7 +71,7 @@ test('record key-value JSON schema', (t) => {
         schema({
             type: 'object',
             properties: { id: { type: 'boolean' } },
-            additionalProperties: false,
+            additionalProperties: { not: {} },
         }),
     );
 });
@@ -82,7 +82,7 @@ test('loose mode JSON schema allows arbitrary additional properties', (t) => {
         schema({
             type: 'object',
             properties: { a: { type: 'number' } },
-            additionalProperties: true,
+            additionalProperties: {},
         }),
     );
     t.deepEqual(
@@ -97,7 +97,7 @@ test('loose mode JSON schema allows arbitrary additional properties', (t) => {
         schema({
             type: 'object',
             patternProperties: { [`^${REG_NUMBER.source}$`]: { type: 'boolean' } },
-            additionalProperties: true,
+            additionalProperties: {},
         }),
     );
     t.deepEqual(
@@ -105,7 +105,7 @@ test('loose mode JSON schema allows arbitrary additional properties', (t) => {
         schema({
             type: 'object',
             properties: { id: { type: 'boolean' }, name: { type: 'boolean' } },
-            additionalProperties: true,
+            additionalProperties: {},
         }),
     );
 });

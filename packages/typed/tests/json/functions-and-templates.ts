@@ -5,9 +5,9 @@ import { parse, toJSONSchema } from '@mirascript/typed';
 const schema = (s: object) => ({ $schema: 'https://json-schema.org/draft/2020-12/schema', ...s });
 
 test('function type JSON schema', (t) => {
-    t.deepEqual(toJSONSchema(parse('fn(arg: number, ..rest: string) -> boolean')), schema({ not: true }));
-    t.deepEqual(toJSONSchema(parse('fn() -> number')), schema({ not: true }));
-    t.deepEqual(toJSONSchema(parse('fn(callback: fn(result: string) -> any)')), schema({ not: true }));
+    t.deepEqual(toJSONSchema(parse('fn(arg: number, ..rest: string) -> boolean')), schema({ not: {} }));
+    t.deepEqual(toJSONSchema(parse('fn() -> number')), schema({ not: {} }));
+    t.deepEqual(toJSONSchema(parse('fn(callback: fn(result: string) -> any)')), schema({ not: {} }));
 });
 
 test('template type JSON schema', (t) => {

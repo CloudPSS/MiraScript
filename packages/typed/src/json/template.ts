@@ -58,7 +58,7 @@ export function templatePartPattern(part: Type, grouping: boolean): string {
 }
 
 /** Converts a TemplateType into a JSON Schema pattern */
-export function template(type: TemplateType): JSONSchema {
+export function template(type: TemplateType): JSONSchema.Interface {
     const pattern = `^${type.parts
         .map((p) => {
             if (typeof p == 'object' && p.kind === 'literal' && typeof p.value === 'string') {

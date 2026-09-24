@@ -8,15 +8,16 @@ import { tuple } from './tuple.js';
 import { literal } from './literal.js';
 import { record } from './record.js';
 import { intersection, union } from './union-intersection.js';
+import { anySchema, neverSchema } from './boolean.js';
 
 /** Options for toJSONSchemaImpl */
 export type ToJSONSchemaOptionsImpl = Required<ToJSONSchemaOptions>;
 
 /** Converts a Type object into JSON Schema */
-export function toJSONSchemaImpl(type: Type, options: ToJSONSchemaOptionsImpl): JSONSchema {
+export function toJSONSchemaImpl(type: Type, options: ToJSONSchemaOptionsImpl): JSONSchema.Interface {
     const simplified = simplify(type);
     if (typeof simplified == 'symbol') {
-        return true;
+        return anySchema;
     }
     if (typeof simplified == 'string') {
         return string(simplified);
@@ -40,7 +41,7 @@ export function toJSONSchemaImpl(type: Type, options: ToJSONSchemaOptionsImpl): 
         return literal(simplified);
     }
     if (simplified.kind === 'function') {
-        return false;
+        return neverSchema;
     }
     if (simplified.kind === 'template') {
         return template(simplified);
@@ -49,9 +50,9 @@ export function toJSONSchemaImpl(type: Type, options: ToJSONSchemaOptionsImpl): 
         return tuple(simplified, options);
     }
     if (simplified.kind === 'reflection') {
-        return true;
+        return anySchema;
     }
     /* c8 ignore next 3 */
     simplified satisfies never;
-    return true;
+    return anySchema;
 }

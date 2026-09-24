@@ -1,11 +1,12 @@
 import type { JSONSchema } from 'json-schema-typed';
 import type { TupleType } from '../parser.js';
 import { toJSONSchemaImpl, type ToJSONSchemaOptionsImpl } from './impl.js';
+import { anySchema, booleanSchema } from './boolean.js';
 
 /**
  * Converts a TupleType into JSON Schema
  */
-export function tuple(tuple: TupleType, options: ToJSONSchemaOptionsImpl): JSONSchema {
+export function tuple(tuple: TupleType, options: ToJSONSchemaOptionsImpl): JSONSchema.Interface {
     // Collect element schemas, unwrapping array from rest elements (..T[] → T).
     // Non-array rest (e.g. ..string) is treated as any ({}).
     const elementSchemas = tuple.elements.map((e) => {
@@ -14,7 +15,7 @@ export function tuple(tuple: TupleType, options: ToJSONSchemaOptionsImpl): JSONS
         if (typeof t == 'object' && t.kind === 'array') {
             return toJSONSchemaImpl(t.element, options);
         }
-        return true;
+        return anySchema;
     });
 
     const prefixItems = [];
@@ -30,23 +31,23 @@ export function tuple(tuple: TupleType, options: ToJSONSchemaOptionsImpl): JSONS
     for (; i < elementSchemas.length; i++) {
         const schema = elementSchemas[i]!;
         items.push(schema);
-        if (schema === true) {
+        if (schema === anySchema) {
             hasAny = true;
         }
     }
 
-    const schema: JSONSchema = { type: 'array' };
+    const schema: JSONSchema.Interface = { type: 'array' };
     if (prefixItems.length > 0) {
         schema.prefixItems = prefixItems;
     }
     if (hasAny) {
-        schema.items = true;
+        schema.items = anySchema;
     } else if (items.length > 1) {
         schema.items = { anyOf: items };
     } else if (items.length === 1) {
         schema.items = items[0]!;
     } else {
-        schema.items = options.loose;
+        schema.items = booleanSchema(options.loose);
     }
     return schema;
 }

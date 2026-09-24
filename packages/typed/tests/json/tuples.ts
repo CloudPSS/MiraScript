@@ -9,7 +9,7 @@ test('tuple JSON schema', (t) => {
         schema({
             type: 'array',
             prefixItems: [{ type: 'number' }, { type: 'string' }],
-            items: false,
+            items: { not: {} },
         }),
     );
 });
@@ -65,7 +65,7 @@ test('tuple with bare rest element JSON schema (non-array)', (t) => {
         schema({
             type: 'array',
             prefixItems: [{ type: 'number' }],
-            items: true,
+            items: {},
         }),
     );
 });
@@ -76,7 +76,7 @@ test('tuple with user-type rest element JSON schema', (t) => {
         schema({
             type: 'array',
             prefixItems: [{ type: 'number' }],
-            items: true,
+            items: {},
         }),
     );
 });
@@ -87,7 +87,7 @@ test('tuple with bare rest in middle JSON schema', (t) => {
         schema({
             type: 'array',
             prefixItems: [{ type: 'number' }],
-            items: true,
+            items: {},
         }),
     );
 });
@@ -98,7 +98,7 @@ test('single element tuple JSON schema', (t) => {
         schema({
             type: 'array',
             prefixItems: [{ type: 'number' }],
-            items: false,
+            items: { not: {} },
         }),
     );
 });
@@ -108,7 +108,7 @@ test('empty tuple JSON schema', (t) => {
         toJSONSchema(parse('[]')),
         schema({
             type: 'array',
-            items: false,
+            items: { not: {} },
         }),
     );
 });
@@ -122,11 +122,11 @@ test('nested tuple JSON schema', (t) => {
                 {
                     type: 'array',
                     prefixItems: [{ type: 'number' }, { type: 'string' }],
-                    items: false,
+                    items: { not: {} },
                 },
                 { type: 'boolean' },
             ],
-            items: false,
+            items: { not: {} },
         }),
     );
 });
