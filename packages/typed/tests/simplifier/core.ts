@@ -1,5 +1,5 @@
 import test from 'ava';
-import { parse, simplify } from '@mirascript/typed';
+import { type FunctionType, parse, simplify } from '@mirascript/typed';
 
 test('simplify flattens unions and intersections', (t) => {
     t.deepEqual(simplify({ kind: 'union', types: ['string', { kind: 'union', types: ['number'] }] }), {
@@ -26,6 +26,17 @@ test('simplify flattens unions and intersections', (t) => {
             },
             'string',
         ],
+    });
+});
+
+test('simplify dedup generics', (t) => {
+    const ty = parse('fn <T>() -> (T | T & T)');
+    const sty = simplify(ty) as FunctionType;
+    t.deepEqual(sty, {
+        kind: 'function',
+        typeParams: [sty.returns],
+        params: [],
+        returns: sty.returns,
     });
 });
 

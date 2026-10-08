@@ -165,16 +165,17 @@ function resolveGenerics(type: Type, scope = new Map<string, GenericType>()): Ty
         if (type.returns != null) type.returns = resolveGenerics(type.returns, newScope);
         return type;
     }
+    if (type.kind === 'literal' || type.kind === 'reflection') {
+        return type;
+    }
+    if (type.kind === 'tuple') {
+        for (const element of type.elements) {
+            element.type = resolveGenerics(element.type, scope);
+        }
+        return type;
+    }
     if (type.kind === 'array') {
         type.element = resolveGenerics(type.element, scope);
-        return type;
-    }
-    if (type.kind === 'union') {
-        type.types = type.types.map((t) => resolveGenerics(t, scope));
-        return type;
-    }
-    if (type.kind === 'intersection') {
-        type.types = type.types.map((t) => resolveGenerics(t, scope));
         return type;
     }
     if (type.kind === 'record') {
@@ -189,20 +190,16 @@ function resolveGenerics(type: Type, scope = new Map<string, GenericType>()): Ty
         }
         return type;
     }
-    if (type.kind === 'literal') {
+    if (type.kind === 'union') {
+        type.types = type.types.map((t) => resolveGenerics(t, scope));
+        return type;
+    }
+    if (type.kind === 'intersection') {
+        type.types = type.types.map((t) => resolveGenerics(t, scope));
         return type;
     }
     if (type.kind === 'template') {
         type.parts = type.parts.map((part) => resolveGenerics(part, scope));
-        return type;
-    }
-    if (type.kind === 'tuple') {
-        for (const element of type.elements) {
-            element.type = resolveGenerics(element.type, scope);
-        }
-        return type;
-    }
-    if (type.kind === 'reflection') {
         return type;
     }
     /* c8 ignore next 3 */
