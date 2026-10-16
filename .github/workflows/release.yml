@@ -106,41 +106,6 @@ jobs:
           cd ../..
           pnpm -r publish --no-git-checks --access public --registry https://registry.npmjs.org/ --tag $TAG
 
-      - name: Sync to npmmirror
-        run: |
-          for package_dir in packages/*; do
-            if [[ ! -d "$package_dir" ]]; then
-              continue
-            fi
-
-            package_json="$package_dir/package.json"
-            if [[ ! -f "$package_json" ]]; then
-              continue
-            fi
-
-            is_private=$(jq -r '.private // false' "$package_json")
-            if [[ "$is_private" == "true" ]]; then
-              continue
-            fi
-
-            package_name=$(jq -r '.name // empty' "$package_json")
-            if [[ -z "$package_name" ]]; then
-              continue
-            fi
-
-            echo "Syncing $package_name"
-            response=$(curl -fsSL -X PUT "https://registry-direct.npmmirror.com/$package_name/sync")
-            ok=$(jq -r '.ok' <<< "$response")
-
-            if [[ "$ok" != "true" ]]; then
-              jq -r '(.error // "Sync failed"), (.reason // empty)' <<< "$response" >&2
-              exit 1
-            fi
-
-            log_id=$(jq -r '.logId' <<< "$response")
-            echo "OK, see https://registry-direct.npmmirror.com/-/package/$package_name/syncs/$log_id/log"
-          done
-
   publish-pypi:
     needs: resolve-ci
 
@@ -285,6 +250,53 @@ jobs:
         if: matrix.marketplace.prerelease || ! contains(github.ref, '-')
         run: npx ${{ matrix.marketplace.pkg }} publish -p ${{ secrets.PAT }} -i *.vsix
         # run: ${{ matrix.marketplace.command }} -i *.vsix
+
+  sync-npmmirror:
+    needs: build-vscode
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Sync to npmmirror
+        run: |
+          for package_dir in packages/*; do
+            if [[ ! -d "$package_dir" ]]; then
+              continue
+            fi
+
+            package_json="$package_dir/package.json"
+            if [[ ! -f "$package_json" ]]; then
+              continue
+            fi
+
+            is_private=$(jq -r '.private // false' "$package_json")
+            if [[ "$is_private" == "true" ]]; then
+              continue
+            fi
+
+            package_name=$(jq -r '.name // empty' "$package_json")
+            if [[ -z "$package_name" ]]; then
+              continue
+            fi
+
+            echo "Syncing $package_name"
+            response=$(curl -fsSL -X PUT "https://registry-direct.npmmirror.com/$package_name/sync")
+            ok=$(jq -r '.ok' <<< "$response")
+
+            if [[ "$ok" != "true" ]]; then
+              jq -r '(.error // "Sync failed"), (.reason // empty)' <<< "$response" >&2
+              exit 1
+            fi
+
+            log_id=$(jq -r '.logId' <<< "$response")
+            echo "OK, see https://registry-direct.npmmirror.com/-/package/$package_name/syncs/$log_id/log"
+          done
 
   publish-github:
     needs: resolve-ci

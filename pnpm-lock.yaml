@@ -5,16 +5,16 @@ importers:
   .:
     configDependencies:
       '@cloudpss/pnpm-plugin-config':
-        specifier: ~4.1.2
-        version: 4.1.2
+        specifier: ~4.1.3
+        version: 4.1.3
 
 packages:
-  '@cloudpss/pnpm-plugin-config@4.1.2':
+  '@cloudpss/pnpm-plugin-config@4.1.3':
     resolution:
-      { integrity: sha512-tJo6uZs/4LKpExxSsSoc+oA5M2oMiq+Ps4U/HAEoQFGga0OBJPje0KSOKIQtC6PPDwOhRYpxt3XVgAjIMCmzLg== }
+      { integrity: sha512-mXT25YgQHdbN4T+YbTetPqFiCyDLz/DUDBkmYssD7F4Bo/iFTCnEC3lyD5EgBnGJninR0ue/8Lu3ihJGIEl5oA== }
 
 snapshots:
-  '@cloudpss/pnpm-plugin-config@4.1.2': {}
+  '@cloudpss/pnpm-plugin-config@4.1.3': {}
 
 ---
 lockfileVersion: '9.0'
@@ -27,20 +27,20 @@ settings:
 catalogs:
   default:
     '@cloudpss/commitlint-config':
-      specifier: ~4.1.2
-      version: 4.1.2
+      specifier: ~4.1.3
+      version: 4.1.3
     '@cloudpss/eslint-config':
-      specifier: ~4.1.2
-      version: 4.1.2
+      specifier: ~4.1.3
+      version: 4.1.3
     '@cloudpss/lint-staged-config':
-      specifier: ~4.1.2
-      version: 4.1.2
+      specifier: ~4.1.3
+      version: 4.1.3
     '@cloudpss/prettier-config':
-      specifier: ~4.1.2
-      version: 4.1.2
+      specifier: ~4.1.3
+      version: 4.1.3
     '@cloudpss/tsconfig':
-      specifier: ~4.1.2
-      version: 4.1.2
+      specifier: ~4.1.3
+      version: 4.1.3
 
 pnpmfileChecksum: sha256-8SucbjgMEwEQTWaLmid9zIniFtu2pH/Mb82UBjYsqfk=
 
@@ -49,19 +49,19 @@ importers:
     devDependencies:
       '@cloudpss/commitlint-config':
         specifier: 'catalog:'
-        version: 4.1.2(@types/node@26.6.5)(conventional-commits-parser@7.1.3)(typescript@6.0.3)
+        version: 4.1.3(@types/node@26.6.5)(conventional-commits-parser@7.1.3)(typescript@6.0.3)
       '@cloudpss/eslint-config':
         specifier: 'catalog:'
-        version: 4.1.2(jiti@2.6.1)(supports-color@11.0.0)(typescript@6.0.3)
+        version: 4.1.3(jiti@2.6.1)(supports-color@11.0.0)(typescript@6.0.3)
       '@cloudpss/lint-staged-config':
         specifier: 'catalog:'
-        version: 4.1.2(jiti@2.6.1)(supports-color@11.0.0)
+        version: 4.1.3(jiti@2.6.1)(supports-color@11.0.0)
       '@cloudpss/prettier-config':
         specifier: 'catalog:'
-        version: 4.1.2
+        version: 4.1.3
       '@cloudpss/tsconfig':
         specifier: 'catalog:'
-        version: 4.1.2(typescript@6.0.3)
+        version: 4.1.3(typescript@6.0.3)
       '@mirascript/cli':
         specifier: workspace:*
         version: link:packages/cli
@@ -1291,25 +1291,25 @@ packages:
     resolution:
       { integrity: sha512-buipgOVDkkPXNR5+xBpDw7Zk2n1EvU7qBJCNUcL7rhQ//kfpOXPAvQ511Os0vpLYJ1pZnvudNytkQt2hst3wqA== }
 
-  '@cloudpss/commitlint-config@4.1.2':
+  '@cloudpss/commitlint-config@4.1.3':
     resolution:
-      { integrity: sha512-DKMI2GIADl2GHfU1ZN+FbPrbWndzpgN4+5ycG/5AfFjAnZq+33jccomJ1DuXZgNJVp7DIthddP0bswXuoJeBnA== }
+      { integrity: sha512-yVaCs8dsIT7k4ftr8IctcnLyH6OqRVpRRxkBKPTg0n+ue1cjOIJscqVqOQx/t9ID6bi9TXcvuf/5yunWt66JPA== }
 
-  '@cloudpss/eslint-config@4.1.2':
+  '@cloudpss/eslint-config@4.1.3':
     resolution:
-      { integrity: sha512-JyiYELs0fEb72rcGS2+n8HRhLXri62XhQ63tKoSJ/KH9To9E1gtVAuT/IfKbcvvMQZgGStwqt2S8x7aYktz2pw== }
+      { integrity: sha512-k9+fHWbZnspbCjclq9rc+nxg/BQF/Lc70ynIXpEc2fspmgSJwnpLyLTRINshHrRXiwHLgyvO4O3K8zvmkYO6dw== }
 
-  '@cloudpss/lint-staged-config@4.1.2':
+  '@cloudpss/lint-staged-config@4.1.3':
     resolution:
-      { integrity: sha512-8nc5bNjcuL5nWVUABJO4dypv7/9FDVrS3nr9Z+jJwKgnyeC532Oq5Z67fTc9y08wDuZJ3G9uWvyaln+Ayh56yA== }
+      { integrity: sha512-WrS4JuluYBb8+pIptWj3caiMFVcCxUt/OGXCyY1VVNwm0VbU0tHxk7+WJbVLbUVoqIyZHBr7FH9AAQt8Y71Yew== }
 
-  '@cloudpss/prettier-config@4.1.2':
+  '@cloudpss/prettier-config@4.1.3':
     resolution:
-      { integrity: sha512-Zve/FXciEAVpPN52Fvd/affN66cwGa9CeDLAEjaHacPxU7yyt6tfzjoOOmZo/PzxLdQGWL127dL4Slsvdn1sCA== }
+      { integrity: sha512-aDK4QBvpd28jkimU3oXi6SFw+hmfl2tEHrWfsZVhtgGX5CzEsM11Y2X85s7+rbHOnEWDni+H4s+oQe9mjw1+DA== }
 
-  '@cloudpss/tsconfig@4.1.2':
+  '@cloudpss/tsconfig@4.1.3':
     resolution:
-      { integrity: sha512-out7QvYsx6ct2mwSPDzU6gaxglZTDHr767ynASwsaCG1QN6faFIzlY7c3qeTP5HtUO5DaaXcPVnCCZm7VDeiaA== }
+      { integrity: sha512-HbxJkty3QQNTzgIBlgskPE5C3h5ztaJ8HhgLy68Q/j7AxNtxFBGOebQIgNtGJRZXyV8E56y2Cna6vaJf5lSeXA== }
     peerDependencies:
       typescript: '>=5'
 
@@ -5824,12 +5824,16 @@ packages:
       typescript:
         optional: true
 
-  eslint-plugin-unicorn@77.0.0:
+  eslint-plugin-unicorn@78.0.0:
     resolution:
-      { integrity: sha512-aayznMCKTXlPAsoyUjRok862sz3BJAfxpQX/t79AT/uVQTmWsCx3FXfXo+9hfhL8aR2mMZQYyXoDZo3/ly6lJw== }
+      { integrity: sha512-XTDqxcJeAmh2lhgU75TpuMDdFtPDnAU+DCW56nR5UzXTG+uOyvOGjV80O11my7kNb2bYSCPlWa8c4K8/rwlYog== }
     engines: { node: '>=22' }
     peerDependencies:
       eslint: '>=10.4'
+      typescript: '*'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
 
   eslint-scope@9.1.2:
     resolution:
@@ -8137,6 +8141,10 @@ packages:
   parse5@7.3.0:
     resolution:
       { integrity: sha512-IInvU7fabl34qmi9gY8XOVxhYyMyuH2xUNpb2q8/Y+7552KlejkRvqvD19nMoUW/uQGGbqNpA6Tufu5FL5BZgw== }
+
+  parse5@8.0.1:
+    resolution:
+      { integrity: sha512-z1e/HMG90obSGeidlli3hj7cbocou0/wa5HacvI3ASx34PecNjNQeaHNo5WIZpWofN9kgkqV1q5YvXe3F0FoPw== }
 
   parseurl@1.3.3:
     resolution:
@@ -11398,7 +11406,7 @@ snapshots:
       hashery: 1.5.1
       keyv: 5.6.0
 
-  '@cloudpss/commitlint-config@4.1.2(@types/node@26.6.5)(conventional-commits-parser@7.1.3)(typescript@6.0.3)':
+  '@cloudpss/commitlint-config@4.1.3(@types/node@26.6.5)(conventional-commits-parser@7.1.3)(typescript@6.0.3)':
     dependencies:
       '@commitlint/cli': 21.2.3(@types/node@26.6.5)(conventional-commits-parser@7.1.3)(typescript@6.0.3)
     transitivePeerDependencies:
@@ -11407,21 +11415,21 @@ snapshots:
       - conventional-commits-parser
       - typescript
 
-  '@cloudpss/eslint-config@4.1.2(jiti@2.6.1)(supports-color@11.0.0)(typescript@6.0.3)':
+  '@cloudpss/eslint-config@4.1.3(jiti@2.6.1)(supports-color@11.0.0)(typescript@6.0.3)':
     dependencies:
-      '@cloudpss/tsconfig': 4.1.2(typescript@6.0.3)
+      '@cloudpss/tsconfig': 4.1.3(typescript@6.0.3)
       '@eslint/js': 10.0.1(eslint@10.12.0)
       eslint: 10.12.0(jiti@2.6.1)(supports-color@11.0.0)
       eslint-config-prettier: 10.1.8(eslint@10.12.0)
       eslint-plugin-jsdoc: 65.3.4(eslint@10.12.0)(supports-color@11.0.0)(typescript@6.0.3)
-      eslint-plugin-unicorn: 77.0.0(eslint@10.12.0)
+      eslint-plugin-unicorn: 78.0.0(eslint@10.12.0)(supports-color@11.0.0)(typescript@6.0.3)
       typescript-eslint: 8.71.2(eslint@10.12.0)(supports-color@11.0.0)(typescript@6.0.3)
     transitivePeerDependencies:
       - jiti
       - supports-color
       - typescript
 
-  '@cloudpss/lint-staged-config@4.1.2(jiti@2.6.1)(supports-color@11.0.0)':
+  '@cloudpss/lint-staged-config@4.1.3(jiti@2.6.1)(supports-color@11.0.0)':
     dependencies:
       eslint: 10.12.0(jiti@2.6.1)(supports-color@11.0.0)
       husky: 9.1.7
@@ -11431,11 +11439,11 @@ snapshots:
       - jiti
       - supports-color
 
-  '@cloudpss/prettier-config@4.1.2':
+  '@cloudpss/prettier-config@4.1.3':
     dependencies:
       prettier: 3.9.10
 
-  '@cloudpss/tsconfig@4.1.2(typescript@6.0.3)':
+  '@cloudpss/tsconfig@4.1.3(typescript@6.0.3)':
     dependencies:
       typescript: 6.0.3
 
@@ -16132,7 +16140,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-unicorn@77.0.0(eslint@10.12.0):
+  eslint-plugin-unicorn@78.0.0(eslint@10.12.0)(supports-color@11.0.0)(typescript@6.0.3):
     dependencies:
       '@eslint-community/eslint-utils': 4.10.1(eslint@10.12.0)
       '@eslint/css-tree': 4.1.1
@@ -16148,6 +16156,8 @@ snapshots:
       identifier-regex: 1.1.0
       indent-string: 5.0.0
       is-builtin-module: 5.0.0
+      micromark: 4.0.3(supports-color@11.0.0)
+      parse5: 8.0.1
       pluralize: 8.0.0
       quote-js-string: 0.1.0
       regjsparser: 0.13.4
@@ -16155,6 +16165,10 @@ snapshots:
       semver: 7.8.5
       strip-indent: 4.1.1
       yaml: 2.9.1
+    optionalDependencies:
+      typescript: 6.0.3
+    transitivePeerDependencies:
+      - supports-color
 
   eslint-scope@9.1.2:
     dependencies:
@@ -18410,6 +18424,10 @@ snapshots:
   parse5@7.3.0:
     dependencies:
       entities: 6.0.1
+
+  parse5@8.0.1:
+    dependencies:
+      entities: 8.1.0
 
   parseurl@1.3.3: {}
 

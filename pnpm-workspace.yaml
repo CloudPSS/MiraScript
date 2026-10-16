@@ -1,5 +1,5 @@
 configDependencies:
-  '@cloudpss/pnpm-plugin-config': ~4.1.2
+  '@cloudpss/pnpm-plugin-config': ~4.1.3
 
 packages:
   - packages/*
