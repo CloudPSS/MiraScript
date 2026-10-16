@@ -372,14 +372,14 @@ dependencies = [
 
 [[package]]
 name = "mirascript"
-version = "0.1.101"
+version = "0.1.102"
 dependencies = [
  "mirascript-vm",
 ]
 
 [[package]]
 name = "mirascript-constants"
-version = "0.1.101"
+version = "0.1.102"
 dependencies = [
  "mirascript-core",
  "wasm-bindgen",
@@ -387,7 +387,7 @@ dependencies = [
 
 [[package]]
 name = "mirascript-core"
-version = "0.1.101"
+version = "0.1.102"
 dependencies = [
  "divan",
  "mimalloc",
@@ -403,7 +403,7 @@ dependencies = [
 
 [[package]]
 name = "mirascript-napi"
-version = "0.1.101"
+version = "0.1.102"
 dependencies = [
  "mirascript-core",
  "napi",
@@ -413,7 +413,7 @@ dependencies = [
 
 [[package]]
 name = "mirascript-python"
-version = "0.1.101"
+version = "0.1.102"
 dependencies = [
  "mirascript-core",
  "pyo3",
@@ -422,7 +422,7 @@ dependencies = [
 
 [[package]]
 name = "mirascript-vm"
-version = "0.1.101"
+version = "0.1.102"
 dependencies = [
  "anyhow",
  "divan",
@@ -443,7 +443,7 @@ dependencies = [
 
 [[package]]
 name = "mirascript-vm-derive"
-version = "0.1.101"
+version = "0.1.102"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2",
@@ -453,7 +453,7 @@ dependencies = [
 
 [[package]]
 name = "mirascript-wasm"
-version = "0.1.101"
+version = "0.1.102"
 dependencies = [
  "console_error_panic_hook",
  "mirascript-core",
