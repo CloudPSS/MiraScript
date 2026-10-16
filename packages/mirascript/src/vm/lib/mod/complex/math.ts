@@ -27,9 +27,9 @@ const {
 /** Compute log of the modulus without overflowing the modulus itself. */
 export function logAbs([x, y]: C): number {
     const a = max(abs(x), abs(y));
-    const b = min(abs(x), abs(y));
     if (a === inf) return inf;
     if (a === 0) return -inf;
+    const b = min(abs(x), abs(y));
     return log(a) + 0.5 * log1p((b / a) ** 2);
 }
 export const logarithm = (z: C): C => [logAbs(z), atan2(z[1], z[0])];

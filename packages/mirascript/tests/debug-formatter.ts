@@ -22,7 +22,7 @@ const s = test.macro<[Partial<typeof debug_print>, readonly VmAny[], readonly un
     t('two empty string args', ['', ''], ['\u{1B}[44;37m MiraScript \u{1B}[0m %s %s', '', '']);
     t('empty', [], ['\u{1B}[44;37m MiraScript \u{1B}[0m']);
     t('with string', ['test', 'value'], ['\u{1B}[44;37m MiraScript \u{1B}[0m %s %s', 'test', 'value']);
-    t('with format', ['%s%o', 3.14, { a: 1 }], ['\u{1B}[44;37m MiraScript \u{1B}[0m %s%o', 3.14, { a: 1 }]);
+    t('with format', ['%s%o', 1.23, { a: 1 }], ['\u{1B}[44;37m MiraScript \u{1B}[0m %s%o', 1.23, { a: 1 }]);
     t('with less args', ['Value: %d %s', 100], ['\u{1B}[44;37m MiraScript \u{1B}[0m Value: %d %%s', 100]);
     t('with more args', ['Value: %d', 1, 2, 3], ['\u{1B}[44;37m MiraScript \u{1B}[0m Value: %d %o %o', 1, 2, 3]);
     t('with %', ['Progress: 50% complete', 50], ['\u{1B}[44;37m MiraScript \u{1B}[0m Progress: 50%% complete %o', 50]);
@@ -50,7 +50,7 @@ const s = test.macro<[Partial<typeof debug_print>, readonly VmAny[], readonly un
     t('one empty string arg', [''], ['%s', '']);
     t('two empty string args', ['', ''], ['%s %s', '', '']);
     t('with string', ['test', 'value'], ['%s %s', 'test', 'value']);
-    t('with format', ['%s%o', 3.14, { a: 1 }], ['%s%o', 3.14, { a: 1 }]);
+    t('with format', ['%s%o', 1.23, { a: 1 }], ['%s%o', 1.23, { a: 1 }]);
     t('with less args', ['Value: %d %s', 100], ['Value: %d %%s', 100]);
     t('with more args', ['Value: %d', 1, 2, 3], ['Value: %d %o %o', 1, 2, 3]);
     t('with %', ['Progress: 50% complete', 50], ['Progress: 50%% complete %o', 50]);
@@ -70,7 +70,7 @@ const s = test.macro<[Partial<typeof debug_print>, readonly VmAny[], readonly un
     t('one empty string arg', [''], ['%s %s', 'FMT:', '']);
     t('two empty string args', ['', ''], ['%s %s %s', 'FMT:', '', '']);
     t('with string', ['test', 'value'], ['%s %s %s', 'FMT:', 'test', 'value']);
-    t('with format', ['%s%o', 3.14, { a: 1 }], ['%s %s%o', 'FMT:', 3.14, { a: 1 }]);
+    t('with format', ['%s%o', 1.23, { a: 1 }], ['%s %s%o', 'FMT:', 1.23, { a: 1 }]);
     t('with less args', ['Value: %d %s', 100], ['%s Value: %d %%s', 'FMT:', 100]);
     t('with more args', ['Value: %d', 1, 2, 3], ['%s Value: %d %o %o', 'FMT:', 1, 2, 3]);
     t('with %', ['Progress: 50% complete', 50], ['%s Progress: 50%% complete %o', 'FMT:', 50]);
@@ -96,7 +96,7 @@ const s = test.macro<[Partial<typeof debug_print>, readonly VmAny[], readonly un
     t('one empty string arg', [''], ['%s', '']);
     t('two empty string args', ['', ''], ['%s %s', '', '']);
     t('with string', ['test', 'value'], ['%s %s', 'test', 'value']);
-    t('with format', ['%s%s', 3.14, { a: 1 }], ['%s%s', String(3.14), String({ a: 1 })]);
+    t('with format', ['%s%s', 1.23, { a: 1 }], ['%s%s', String(1.23), String({ a: 1 })]);
     t('with less args', ['Value: %s %s', 100], ['Value: %s %%s', String(100)]);
     t('with more args', ['Value: %s', 1, 2, 3], ['Value: %s %s %s', String(1), String(2), String(3)]);
     t('with %', ['Progress: 50% complete', 50], ['Progress: 50%% complete %s', String(50)]);

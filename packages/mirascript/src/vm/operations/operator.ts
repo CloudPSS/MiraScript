@@ -125,10 +125,10 @@ export const $Aeq = (a: VmAny, b: VmAny): boolean => {
     if (overloadNumberString(a, b)) {
         const an = $ToNumber(a);
         const bn = $ToNumber(b);
-        const EPS = 1e-15;
         if (isNaN(an) || isNaN(bn)) return false;
         // Since Inf - Inf is NaN, we must check for equality first
         if (an === bn) return true;
+        const EPS = 1e-15;
         const absoluteDifference = abs(an - bn);
         if (absoluteDifference < EPS) return true;
         const base = min(abs(an), abs(bn));

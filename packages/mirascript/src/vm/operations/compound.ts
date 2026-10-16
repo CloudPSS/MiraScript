@@ -24,6 +24,8 @@ export const $Length = (value: VmAny): number => {
 /** 检查是否拥有字段 */
 export const $Has = (obj: VmAny, key: VmAny): boolean => {
     $AssertInit(obj);
+    // Convert the key before checking the target to preserve validation and extern side effects.
+    // eslint-disable-next-line unicorn/no-declarations-before-early-exit
     const pk = $ToString(key);
     if (obj == null || typeof obj != 'object') return false;
     if (isVmWrapper(obj)) return obj.has(pk);
@@ -39,6 +41,8 @@ export const $Get = (obj: VmAny, key: VmAny): VmValue => {
         if (!isFinite(index)) return null;
         return $El((at.call(obj, trunc(index)) ?? null) as VmAny);
     }
+    // Convert the key before checking the target to preserve validation and extern side effects.
+    // eslint-disable-next-line unicorn/no-declarations-before-early-exit
     const pk = $ToString(key);
     if (obj == null || typeof obj != 'object') return null;
     if (isVmWrapper(obj)) {
@@ -58,6 +62,8 @@ export const $Get = (obj: VmAny, key: VmAny): VmValue => {
 export const $Set = (obj: VmAny, key: VmAny, value: VmAny): void => {
     $AssertInit(obj);
     $AssertInit(value);
+    // Convert the key before checking the target to preserve validation and extern side effects.
+    // eslint-disable-next-line unicorn/no-declarations-before-early-exit
     const pk = $ToString(key);
     if (!isVmExtern(obj)) throw new VmError(`Expected extern, got ${display(obj)}`, undefined);
     obj.set(pk, value);

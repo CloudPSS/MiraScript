@@ -44,20 +44,17 @@ export function makeScopes(tags: GroupedTags, fullRange: IRange): ScopeInfo {
             const aRange = scopeA.range;
             const bRange = scopeB.range;
             const isContained = Range.containsRange(bRange, aRange);
-            if (isContained) {
-                // 选择最近的父作用域
-                if (!parent || Range.containsRange(parent.range, bRange)) {
-                    parent = scopeB;
-                }
+            // 选择最近的父作用域
+            if (isContained && (!parent || Range.containsRange(parent.range, bRange))) {
+                parent = scopeB;
             }
         }
-        if (parent) {
-            if (parent.parent === scopeA) {
-                continue; // 防止作用域大小相等导致的循环引用
-            }
-            scopeA.parent = parent;
-            (parent.children as Writable<SourceScope[]>).push(scopeA);
+        if (!parent) continue;
+        if (parent.parent === scopeA) {
+            continue; // 防止作用域大小相等导致的循环引用
         }
+        scopeA.parent = parent;
+        (parent.children as Writable<SourceScope[]>).push(scopeA);
     }
 
     // 3. 按 BFS 顺序排序作用域
@@ -116,20 +113,18 @@ export function makeScopes(tags: GroupedTags, fullRange: IRange): ScopeInfo {
         );
         for (const local of scope.locals) {
             scopeMap.set(local, scope);
-            if (local.definition.code === DiagnosticCode.LocalFunction) {
-                const funcScope = scope.children.find(
-                    (s) => Range.compareRangesUsingStarts(s.range, local.definition.range) > 0,
-                );
-                if (funcScope) {
-                    const args = funcScope.locals.filter((l): l is LocalDefinition<ParameterDefinitionType> =>
-                        ParameterDefinitionType.includes(l.definition.code as ParameterDefinitionType),
-                    );
-                    (local as Writable<LocalDefinition>).fn = {
-                        scope: funcScope,
-                        args,
-                    };
-                }
-            }
+            if (local.definition.code !== DiagnosticCode.LocalFunction) continue;
+            const funcScope = scope.children.find(
+                (s) => Range.compareRangesUsingStarts(s.range, local.definition.range) > 0,
+            );
+            if (!funcScope) continue;
+            const args = funcScope.locals.filter((l): l is LocalDefinition<ParameterDefinitionType> =>
+                ParameterDefinitionType.includes(l.definition.code as ParameterDefinitionType),
+            );
+            (local as Writable<LocalDefinition>).fn = {
+                scope: funcScope,
+                args,
+            };
         }
     }
 

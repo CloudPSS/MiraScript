@@ -14,7 +14,7 @@ export function simplifyTuple(type: TupleType, options: SimplifyImplOptions): Tu
             // Inline tuple spread: ..[A, B] → A, B
             return simplifiedType.elements;
         }
-        return [{ ...element, type: simplifiedType }];
+        return { ...element, type: simplifiedType };
     });
     return type;
 }

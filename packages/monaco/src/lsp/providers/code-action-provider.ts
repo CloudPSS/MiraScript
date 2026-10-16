@@ -193,7 +193,7 @@ export class CodeActionProvider extends Provider implements languages.CodeAction
         const actions = [];
         for (const marker of markers) {
             const action = createCodeAction(result, context, model, marker);
-            if (action == null || (only && action.kind ? action.kind !== only : false)) {
+            if (action == null || (only && action.kind && action.kind !== only)) {
                 continue;
             }
             actions.push(action);

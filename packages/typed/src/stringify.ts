@@ -68,9 +68,12 @@ function stringifyImpl(type: Type, parentPrecedence: number): string {
         case 'array': {
             const inner = stringifyImpl(type.element, 0);
             // Use postfix notation for simple types, generic for complex
-            if (typeof type.element === 'string' || typeof type.element === 'symbol') {
-                result = `${inner}[]`;
-            } else if (type.element.kind === 'literal' || type.element.kind === 'reflection') {
+            if (
+                typeof type.element === 'string' ||
+                typeof type.element === 'symbol' ||
+                type.element.kind === 'literal' ||
+                type.element.kind === 'reflection'
+            ) {
                 result = `${inner}[]`;
             } else {
                 return `array<${inner}>`;

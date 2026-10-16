@@ -48,14 +48,13 @@ const compileAndRun = test.macro<[string, RegExp | VmValue, Options?]>({
                 t.deepEqual(script(), expected);
             }
         }
-        if (wrappedScriptSource) {
-            // create from source code
-            const script = createScript(`{\n${code}\n}`, 'Script', wrappedScriptSource);
-            if (expectError) {
-                t.throws(() => script(), expectError);
-            } else {
-                t.deepEqual(script(), expected);
-            }
+        if (!wrappedScriptSource) return;
+        // create from source code
+        const script = createScript(`{\n${code}\n}`, 'Script', wrappedScriptSource);
+        if (expectError) {
+            t.throws(() => script(), expectError);
+        } else {
+            t.deepEqual(script(), expected);
         }
     },
     title: (providedTitle = 'test', code) => {

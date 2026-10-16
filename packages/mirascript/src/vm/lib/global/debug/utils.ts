@@ -126,21 +126,20 @@ const printFormatter: PrintOptions['formatter'] = function ({
     let needAwait = false;
     for (let i = 0; i < templates.length; i++) {
         format += templates[i]!.replaceAll('%', '%%');
-        if (i < values.length) {
-            const f = formats[i] ?? '';
-            const v = values[i]!;
-            const serialized = serializeValue(this, v, f);
-            if (serialized == null) {
-                format += f || (typeof v == 'string' ? '%s' : '%o');
-                formattedValues.push(v);
-            } else if (typeof serialized == 'string') {
-                format += '%s';
-                formattedValues.push(serialized);
-            } else {
-                needAwait = true;
-                format += '%s';
-                formattedValues.push(serialized);
-            }
+        if (i >= values.length) continue;
+        const f = formats[i] ?? '';
+        const v = values[i]!;
+        const serialized = serializeValue(this, v, f);
+        if (serialized == null) {
+            format += f || (typeof v == 'string' ? '%s' : '%o');
+            formattedValues.push(v);
+        } else if (typeof serialized == 'string') {
+            format += '%s';
+            formattedValues.push(serialized);
+        } else {
+            needAwait = true;
+            format += '%s';
+            formattedValues.push(serialized);
         }
     }
     if (!needAwait) {

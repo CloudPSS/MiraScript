@@ -11,10 +11,10 @@ const COMPILE_PARALLELISM = 1;
 
 bench
     .add('compile', async () => {
-        await Promise.all(Array.from({ length: COMPILE_PARALLELISM }).map(async () => compile(source)));
+        await Promise.all(Array.from({ length: COMPILE_PARALLELISM }, async () => compile(source)));
     })
     .add('compileSync', () => {
-        Array.from({ length: COMPILE_PARALLELISM }).map(() => compileSync(source));
+        Array.from({ length: COMPILE_PARALLELISM }, () => compileSync(source));
     });
 
 bench.add('createVmContext', () => {

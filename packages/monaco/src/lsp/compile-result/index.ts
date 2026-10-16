@@ -256,7 +256,7 @@ export class CompileResult {
             !chainParts.every(
                 (part, index) =>
                     // 如果是最后一个部分，则可以为空（表示当前位置的字段名），否则必须是合法的标识符
-                    (index === chainParts.length - 1 ? !part : false) ||
+                    (index === chainParts.length - 1 && !part) ||
                     REG_IDENTIFIER_FULL.test(part) ||
                     REG_ORDINAL_FULL.test(part),
             )

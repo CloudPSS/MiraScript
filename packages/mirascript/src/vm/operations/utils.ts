@@ -8,8 +8,7 @@ import type { VmAny, VmArray, VmRecord, VmValue } from '../types/index.js';
  */
 export const overloadNumberString = (a: VmAny, b: VmAny): boolean => {
     if (typeof a == 'number' || typeof b == 'number') return true;
-    if (typeof a == 'string' || typeof b == 'string') return false;
-    return true;
+    return typeof a != 'string' && typeof b != 'string';
 };
 
 const isArraySame = (a: VmArray, b: VmArray): boolean => {

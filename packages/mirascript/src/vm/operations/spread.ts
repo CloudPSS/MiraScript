@@ -46,10 +46,9 @@ export const $ArraySpread = (array: VmAny): Iterable<VmConst | undefined> => {
             }
             return result;
         } else if (typeof (array.value as Iterable<unknown>)[Symbol.iterator] == 'function') {
-            const result: VmConst[] = [];
-            for (const item of array.value as Iterable<unknown>) {
-                result.push(wrapToVmConst(item, (v) => array.assumeVmValue(v, Symbol.iterator as never)));
-            }
+            const result: VmConst[] = Array.from(array.value as Iterable<unknown>, (item) =>
+                wrapToVmConst(item, (v) => array.assumeVmValue(v, Symbol.iterator as never)),
+            );
             return result;
         }
     }

@@ -127,7 +127,6 @@ function s(x: number): number {
 function tgamma(x: number): number {
     const u = f64ToBits(x);
     const ix = Number((u >> 32n) & 0x7fff_ffffn);
-    const sign = u >> 63n !== 0n;
 
     /* special cases */
     if (ix >= 0x7ff0_0000) {
@@ -140,6 +139,7 @@ function tgamma(x: number): number {
         return 1 / x;
     }
 
+    const sign = u >> 63n !== 0n;
     /* integer arguments */
     /* raise inexact when non-integer */
     if (x === floor(x)) {

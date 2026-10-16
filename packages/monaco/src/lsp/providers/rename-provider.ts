@@ -20,33 +20,32 @@ function provideRenameEditsOmitNameFields(
     const edits: languages.IWorkspaceTextEdit[] = [];
     const { omitNameFields } = compiled.groupedTags(model);
     for (const tag of omitNameFields) {
-        if (Range.equalsRange(tag.references[0]?.range, ref.range)) {
-            const current = model.getValueInRange(tag.range);
-            const paddingLeft = /[^\s(]/u.test(
-                model.getValueInRange({
-                    startLineNumber: tag.range.startLineNumber,
-                    startColumn: tag.range.startColumn - 1,
-                    endLineNumber: tag.range.startLineNumber,
-                    endColumn: tag.range.startColumn,
-                }),
-            );
-            const paddingRight = !/\s/u.test(
-                model.getValueInRange({
-                    startLineNumber: tag.range.endLineNumber,
-                    startColumn: tag.range.endColumn,
-                    endLineNumber: tag.range.endLineNumber,
-                    endColumn: tag.range.endColumn + 1,
-                }),
-            );
-            edits.push({
-                resource: model.uri,
-                versionId: compiled.version,
-                textEdit: {
-                    range: tag.range,
-                    text: `${paddingLeft ? ' ' : ''}${oldName}${current}${paddingRight ? ' ' : ''}`,
-                },
-            });
-        }
+        if (!Range.equalsRange(tag.references[0]?.range, ref.range)) continue;
+        const current = model.getValueInRange(tag.range);
+        const paddingLeft = /[^\s(]/u.test(
+            model.getValueInRange({
+                startLineNumber: tag.range.startLineNumber,
+                startColumn: tag.range.startColumn - 1,
+                endLineNumber: tag.range.startLineNumber,
+                endColumn: tag.range.startColumn,
+            }),
+        );
+        const paddingRight = !/\s/u.test(
+            model.getValueInRange({
+                startLineNumber: tag.range.endLineNumber,
+                startColumn: tag.range.endColumn,
+                endLineNumber: tag.range.endLineNumber,
+                endColumn: tag.range.endColumn + 1,
+            }),
+        );
+        edits.push({
+            resource: model.uri,
+            versionId: compiled.version,
+            textEdit: {
+                range: tag.range,
+                text: `${paddingLeft ? ' ' : ''}${oldName}${current}${paddingRight ? ' ' : ''}`,
+            },
+        });
     }
     return edits;
 }

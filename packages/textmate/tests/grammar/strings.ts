@@ -29,11 +29,10 @@ test('matches the exact interpolation width in verbatim strings', (t) => {
         const tokens = tokenize(`${ats}"literal ${shorter}name ${dollars}name"${ats}`);
         expectScope(t, tokens, dollars, 'punctuation.definition.template-expression.begin.mira');
         expectScope(t, tokens, 'name', 'variable.other.mira', width === 1 ? 1 : 0);
-        if (width > 1) {
-            const literal = tokens.find((token) => token.text.includes(`${shorter}name`));
-            t.true(literal!.scopes.includes('string.quoted.double.verbatim.mira'));
-            t.false(literal!.scopes.includes('meta.interpolation.simple.mira'));
-        }
+        if (width <= 1) continue;
+        const literal = tokens.find((token) => token.text.includes(`${shorter}name`));
+        t.true(literal!.scopes.includes('string.quoted.double.verbatim.mira'));
+        t.false(literal!.scopes.includes('meta.interpolation.simple.mira'));
     }
 });
 

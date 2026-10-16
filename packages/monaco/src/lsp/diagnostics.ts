@@ -60,10 +60,8 @@ export function getDiagnosticCode(marker: editor.IMarkerData | undefined | null)
         if (codeName in DiagnosticCode) {
             return DiagnosticCode[codeName as keyof typeof DiagnosticCode];
         }
-    } else if (typeof code == 'string') {
-        if (code in DiagnosticCode) {
-            return DiagnosticCode[code as keyof typeof DiagnosticCode];
-        }
+    } else if (typeof code == 'string' && code in DiagnosticCode) {
+        return DiagnosticCode[code as keyof typeof DiagnosticCode];
     }
     return undefined;
 }
@@ -142,25 +140,24 @@ export async function makeModelMarkers(
                 continue;
             }
             const deprecated = isDeprecatedGlobal(context, name);
-            if (deprecated) {
-                const replacement = deprecated.use;
-                if (replacement) {
-                    const message = formatMessage(model, deprecated.message, replacement);
-                    for (const ref of g.references) {
-                        markers.push(
-                            makeMarkerData(model, ref.range, deprecated.message, message, MarkerSeverity.Hint, [
-                                MarkerTag.Deprecated,
-                            ]),
-                        );
-                    }
-                } else {
-                    for (const ref of g.references) {
-                        markers.push(
-                            makeMarkerData(model, ref.range, deprecated.message, undefined, MarkerSeverity.Hint, [
-                                MarkerTag.Deprecated,
-                            ]),
-                        );
-                    }
+            if (!deprecated) continue;
+            const replacement = deprecated.use;
+            if (replacement) {
+                const message = formatMessage(model, deprecated.message, replacement);
+                for (const ref of g.references) {
+                    markers.push(
+                        makeMarkerData(model, ref.range, deprecated.message, message, MarkerSeverity.Hint, [
+                            MarkerTag.Deprecated,
+                        ]),
+                    );
+                }
+            } else {
+                for (const ref of g.references) {
+                    markers.push(
+                        makeMarkerData(model, ref.range, deprecated.message, undefined, MarkerSeverity.Hint, [
+                            MarkerTag.Deprecated,
+                        ]),
+                    );
                 }
             }
         }
