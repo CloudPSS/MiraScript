@@ -108,22 +108,23 @@ jobs:
 
       - uses: actions/setup-python@v7
         with:
+          # Keep this interpreter below 3.15 to select abi3 instead of abi3t.
           python-version: 3.14
-      - name: Build python wheel
+      - name: Build abi3 python wheel
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.arch }}-apple-darwin
-          args: --release --out dist
+          args: --release --out dist -i python
           working-directory: crates/python
 
       - uses: actions/setup-python@v7
         with:
-          python-version: 3.14t
-      - name: Build free-threaded python wheel
+          python-version: 3.15t
+      - name: Build abi3t python wheel
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.arch }}-apple-darwin
-          args: --release --out dist -i python3.14t
+          args: --release --out dist -i python
           working-directory: crates/python
 
       - name: Upload napi artifact
@@ -173,22 +174,23 @@ jobs:
 
       - uses: actions/setup-python@v7
         with:
+          # Keep this interpreter below 3.15 to select abi3 instead of abi3t.
           python-version: 3.14
-      - name: Build python wheel
+      - name: Build abi3 python wheel
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.arch }}-pc-windows-msvc
-          args: --release --out dist
+          args: --release --out dist -i python
           working-directory: crates/python
 
       - uses: actions/setup-python@v7
         with:
-          python-version: 3.14t
-      - name: Build free-threaded python wheel
+          python-version: 3.15t
+      - name: Build abi3t python wheel
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.arch }}-pc-windows-msvc
-          args: --release --out dist -i python3.14t
+          args: --release --out dist -i python
           working-directory: crates/python
 
       - name: Upload napi artifact
@@ -242,23 +244,23 @@ jobs:
           cd packages/napi
           pnpm run build --use-cross --target ${{ matrix.arch }}-unknown-linux-musl --release
 
-      - name: Build gnu python wheel
+      - name: Build gnu abi3 python wheel
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.arch }}-unknown-linux-gnu
-          args: --release --out dist
+          args: --release --out dist -i python3.9
           working-directory: crates/python
           manylinux: ${{ matrix.arch == 'aarch64' && '2_28' || '2_17' }}
 
-      - name: Build musl python wheel
+      - name: Build musl abi3 python wheel
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.arch }}-unknown-linux-musl
-          args: --release --out dist
+          args: --release --out dist -i python3.9
           working-directory: crates/python
           manylinux: 'musllinux_1_2'
 
-      - name: Build gnu free-threaded python wheel
+      - name: Build gnu abi3t python wheel
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.arch }}-unknown-linux-gnu
@@ -266,7 +268,7 @@ jobs:
           working-directory: crates/python
           manylinux: ${{ matrix.arch == 'aarch64' && '2_28' || '2_17' }}
 
-      - name: Build musl free-threaded python wheel
+      - name: Build musl abi3t python wheel
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.arch }}-unknown-linux-musl
@@ -534,7 +536,7 @@ jobs:
           - macos-latest
           - macos-15-intel
         python:
-          - { version: '3.8', freethreaded: false }
+          - { version: '3.9', freethreaded: false }
           - { version: '3.x', freethreaded: false }
           - { version: '3.x', freethreaded: true }
         include:
@@ -542,7 +544,8 @@ jobs:
           - os: ubuntu-latest
             python: { version: 'pypy3.11', freethreaded: false }
             skip_huge: true
-          # Sdist test for python 3.7 on windows-latest
+          # Keep Python 3.7 sdist regression coverage.
+          # Known issue: the PyO3 0.30 extension currently fails to load on 3.7.
           - os: windows-latest
             python: { version: '3.7', freethreaded: false }
 
@@ -639,7 +642,7 @@ jobs:
         working-directory: crates/python
         run: |
           source <(cargo llvm-cov show-env --sh)
-          uv sync --frozen --python 3.14
+          uv sync --frozen --python 3.15
           uv run --frozen poe init
           uv run --frozen poe test
 
