@@ -27,7 +27,7 @@ test('record with rest field JSON schema', (t) => {
                 c: { type: 'boolean' },
             },
             required: ['a', 'b'],
-            additionalProperties: { not: {} },
+            additionalProperties: false,
         }),
     );
     // Explicit fields take precedence over the rest record
@@ -40,7 +40,7 @@ test('record with rest field JSON schema', (t) => {
                 b: { type: 'boolean' },
             },
             required: ['a', 'b'],
-            additionalProperties: { not: {} },
+            additionalProperties: false,
         }),
     );
 });
@@ -54,7 +54,7 @@ test('record with generic rest field JSON schema', (t) => {
                 a: { type: 'number' },
             },
             required: ['a'],
-            additionalProperties: {},
+            additionalProperties: true,
         }),
     );
     t.deepEqual(
@@ -66,7 +66,7 @@ test('record with generic rest field JSON schema', (t) => {
             },
             required: ['a'],
             patternProperties: { [`^${REG_NUMBER.source}$`]: { type: 'boolean' } },
-            additionalProperties: { not: {} },
+            additionalProperties: false,
         }),
     );
     t.deepEqual(
@@ -78,7 +78,7 @@ test('record with generic rest field JSON schema', (t) => {
                 id: { type: 'boolean' },
             },
             required: ['a'],
-            additionalProperties: { not: {} },
+            additionalProperties: false,
         }),
     );
 });
@@ -93,7 +93,7 @@ test('record with non-record rest field JSON schema', (t) => {
                 a: { type: 'number' },
             },
             required: ['a'],
-            additionalProperties: {},
+            additionalProperties: true,
         }),
     );
     t.deepEqual(
@@ -104,7 +104,7 @@ test('record with non-record rest field JSON schema', (t) => {
                 a: { type: 'number' },
             },
             required: ['a'],
-            additionalProperties: {},
+            additionalProperties: true,
         }),
     );
 });
@@ -118,7 +118,7 @@ test('record with rest field in loose mode JSON schema', (t) => {
                 a: { type: 'number' },
                 b: { type: 'string' },
             },
-            additionalProperties: {},
+            additionalProperties: true,
         }),
     );
 });
@@ -177,7 +177,7 @@ test('record rest intersection keeps key restrictions from each member', (t) => 
                     type: 'object',
                     properties: {},
                     patternProperties: { [`^${REG_NUMBER.source}$`]: { type: 'number' } },
-                    additionalProperties: { not: {} },
+                    additionalProperties: false,
                 },
             ],
         }),

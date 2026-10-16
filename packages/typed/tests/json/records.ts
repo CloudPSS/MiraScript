@@ -13,7 +13,7 @@ test('record JSON schema', (t) => {
                 b: { type: 'string' },
             },
             required: ['a'],
-            additionalProperties: { not: {} },
+            additionalProperties: false,
         }),
     );
 });
@@ -28,7 +28,7 @@ test('record with anonymous field JSON schema', (t) => {
                 '1': { type: 'string' },
             },
             required: ['0', '1'],
-            additionalProperties: { not: {} },
+            additionalProperties: false,
         }),
     );
 });
@@ -45,7 +45,7 @@ test('record with mixed anonymous and named fields JSON schema', (t) => {
                 '3': { type: 'null' },
             },
             required: ['0', 'b', '3'],
-            additionalProperties: { not: {} },
+            additionalProperties: false,
         }),
     );
 });
@@ -56,7 +56,7 @@ test('empty record JSON schema', (t) => {
         schema({
             type: 'object',
             properties: {},
-            additionalProperties: { not: {} },
+            additionalProperties: false,
         }),
     );
 });
@@ -70,7 +70,7 @@ test('record with string field name JSON schema', (t) => {
                 'field-name': { type: 'number' },
             },
             required: ['field-name'],
-            additionalProperties: { not: {} },
+            additionalProperties: false,
         }),
     );
 });

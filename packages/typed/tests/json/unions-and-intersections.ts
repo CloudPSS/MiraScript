@@ -34,7 +34,7 @@ test('intersection JSON schema', (t) => {
                 b: { type: 'string' },
             },
             required: ['a', 'b'],
-            additionalProperties: { not: {} },
+            additionalProperties: false,
         }),
     );
     t.deepEqual(
@@ -47,7 +47,7 @@ test('intersection JSON schema', (t) => {
                 },
             },
             required: ['a'],
-            additionalProperties: { not: {} },
+            additionalProperties: false,
         }),
     );
     t.deepEqual(
@@ -58,13 +58,13 @@ test('intersection JSON schema', (t) => {
                     type: 'object',
                     properties: { t: { type: 'string' }, x: { type: 'number' } },
                     required: ['t', 'x'],
-                    additionalProperties: { not: {} },
+                    additionalProperties: false,
                 },
                 {
                     type: 'object',
                     properties: { t: { type: 'string' }, y: { type: 'number' } },
                     required: ['t', 'y'],
-                    additionalProperties: { not: {} },
+                    additionalProperties: false,
                 },
             ],
         }),
@@ -77,19 +77,19 @@ test('intersection JSON schema', (t) => {
                     type: 'object',
                     properties: { t: { type: 'string' }, x: { type: 'number' } },
                     required: ['t', 'x'],
-                    additionalProperties: { not: {} },
+                    additionalProperties: false,
                 },
                 {
                     type: 'object',
                     properties: { t: { type: 'string' }, y: { type: 'number' }, z: { type: 'boolean' } },
                     required: ['t', 'y', 'z'],
-                    additionalProperties: { not: {} },
+                    additionalProperties: false,
                 },
                 {
                     type: 'object',
                     properties: { t: { type: 'string' }, y: { type: 'number' }, w: { type: 'null' } },
                     required: ['t', 'y', 'w'],
-                    additionalProperties: { not: {} },
+                    additionalProperties: false,
                 },
             ],
         }),
@@ -105,7 +105,7 @@ test('intersection JSON schema', (t) => {
                         x: { type: 'string' },
                     },
                     required: ['a', 'x'],
-                    additionalProperties: { not: {} },
+                    additionalProperties: false,
                 },
                 {
                     type: 'object',
@@ -114,7 +114,7 @@ test('intersection JSON schema', (t) => {
                         y: { type: 'string' },
                     },
                     required: ['a', 'y'],
-                    additionalProperties: { not: {} },
+                    additionalProperties: false,
                 },
                 {
                     type: 'object',
@@ -123,7 +123,7 @@ test('intersection JSON schema', (t) => {
                         x: { type: 'string' },
                     },
                     required: ['b', 'x'],
-                    additionalProperties: { not: {} },
+                    additionalProperties: false,
                 },
                 {
                     type: 'object',
@@ -132,7 +132,7 @@ test('intersection JSON schema', (t) => {
                         y: { type: 'string' },
                     },
                     required: ['b', 'y'],
-                    additionalProperties: { not: {} },
+                    additionalProperties: false,
                 },
             ],
         }),
@@ -147,7 +147,7 @@ test('intersection JSON schema', (t) => {
                 },
             },
             required: ['0'],
-            additionalProperties: { not: {} },
+            additionalProperties: false,
         }),
     );
     t.deepEqual(
@@ -159,7 +159,7 @@ test('intersection JSON schema', (t) => {
                     allOf: [{ type: 'number' }, { type: 'string' }],
                 },
             },
-            additionalProperties: { not: {} },
+            additionalProperties: false,
         }),
     );
 });

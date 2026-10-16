@@ -1,10 +1,12 @@
 import type { JSONSchema } from 'json-schema-typed';
 
-/** Object forms of the JSON Schema boolean schemas, for clients that do not accept boolean schemas. */
+/** Object forms of boolean schemas, used when an object schema is required. */
 export const anySchema: JSONSchema.Interface = {};
 export const neverSchema: JSONSchema.Interface = { not: {} };
 
-/** Converts an internal boolean option into its object-form JSON Schema equivalent. */
-export function booleanSchema(value: boolean): JSONSchema.Interface {
-    return value ? anySchema : neverSchema;
+/** Prefer boolean schemas in positions that accept them. */
+export function compactSchema(schema: JSONSchema.Interface): JSONSchema {
+    if (schema === anySchema) return true;
+    if (schema === neverSchema) return false;
+    return schema;
 }

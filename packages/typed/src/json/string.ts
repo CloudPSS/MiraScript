@@ -14,7 +14,7 @@ export function string(type: KnownType | NamedType): JSONSchema.Interface {
         case 'nil':
             return { type: 'null' };
         case 'array':
-            return { type: 'array', items: anySchema };
+            return { type: 'array', items: true };
         case 'record':
             return { type: 'object' };
         case 'extern':

@@ -1,8 +1,13 @@
 import type { Type } from '../parser.js';
 
+/** Keep names and literals from colliding with structural separators in a key. */
+function encodeKeyString(value: string): string {
+    return `${value.length}:${value}`;
+}
+
 /** Builds a stable key for type-level deduplication within one simplify call. */
 function getTypeDedupKey(type: Type, symbols: Map<symbol, number>): string {
-    if (typeof type === 'string') return `string:${type}`;
+    if (typeof type === 'string') return `string:${encodeKeyString(type)}`;
     if (typeof type === 'symbol') {
         const existing = symbols.get(type);
         if (existing != null) return `symbol:${existing}`;
@@ -20,28 +25,34 @@ function getTypeDedupKey(type: Type, symbols: Map<symbol, number>): string {
         case 'record':
             if ('fields' in type) {
                 const fields = type.fields
-                    .map((f) => `${f.name}:${String(Boolean(f.optional))}:${getTypeDedupKey(f.type, symbols)}`)
+                    .map(
+                        (f) =>
+                            `${encodeKeyString(f.name)}:${String(Boolean(f.optional))}:${getTypeDedupKey(f.type, symbols)}`,
+                    )
                     .join(',');
                 const rest = type.rest == null ? 'none' : getTypeDedupKey(type.rest, symbols);
                 return `recordFields:[${fields}]:${rest}`;
             }
             return `recordKV:${type.key == null ? 'none' : getTypeDedupKey(type.key, symbols)}:${getTypeDedupKey(type.value, symbols)}`;
         case 'literal':
-            return `literal:${typeof type.value}:${String(type.value)}`;
+            return `literal:${typeof type.value}:${encodeKeyString(String(type.value))}`;
         case 'template':
             return `template:[${type.parts.map((p) => getTypeDedupKey(p, symbols)).join(',')}]`;
         case 'function':
-            return `function:${
-                type.name ?? ''
-            }:<${(type.typeParams ?? []).map((p) => getTypeDedupKey(p, symbols)).join(',')}>(${type.params
-                .map((p) => `${p.name}:${String(Boolean(p.spread))}:${getTypeDedupKey(p.type, symbols)}`)
+            return `function:${encodeKeyString(
+                type.name ?? '',
+            )}:<${(type.typeParams ?? []).map((p) => getTypeDedupKey(p, symbols)).join(',')}>(${type.params
+                .map(
+                    (p) =>
+                        `${encodeKeyString(p.name)}:${String(Boolean(p.spread))}:${getTypeDedupKey(p.type, symbols)}`,
+                )
                 .join(',')})=>${type.returns == null ? 'void' : getTypeDedupKey(type.returns, symbols)}`;
         case 'tuple':
             return `tuple:[${type.elements
                 .map((e) => `${String(Boolean(e.spread))}:${getTypeDedupKey(e.type, symbols)}`)
                 .join(',')}]`;
         case 'reflection':
-            return `reflection:${type.name}`;
+            return `reflection:${encodeKeyString(type.name)}`;
         default:
             return 'unknown';
     }

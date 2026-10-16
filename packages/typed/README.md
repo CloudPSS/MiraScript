@@ -20,6 +20,7 @@ console.log(toJSONSchema(type));
 
 console.log(toJSONSchema(parse('(a: number)'), { loose: false }));
 console.log(toJSONSchema(parse('(a: number)'), { loose: true }));
+console.log(toJSONSchema(parse('number'), { $schema: false })); // { type: 'number' }
 ```
 
 ## 类型语法概览

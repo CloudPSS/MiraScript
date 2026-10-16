@@ -8,10 +8,10 @@ import { tuple } from './tuple.js';
 import { literal } from './literal.js';
 import { record } from './record.js';
 import { intersection, union } from './union-intersection.js';
-import { anySchema, neverSchema } from './boolean.js';
+import { anySchema, neverSchema, compactSchema } from './boolean.js';
 
 /** Options for toJSONSchemaImpl */
-export type ToJSONSchemaOptionsImpl = Required<ToJSONSchemaOptions>;
+export type ToJSONSchemaOptionsImpl = Required<Omit<ToJSONSchemaOptions, '$schema'>>;
 
 /** Converts a Type object into JSON Schema */
 export function toJSONSchemaImpl(type: Type, options: ToJSONSchemaOptionsImpl): JSONSchema.Interface {
@@ -25,7 +25,7 @@ export function toJSONSchemaImpl(type: Type, options: ToJSONSchemaOptionsImpl): 
     if (simplified.kind === 'array') {
         return {
             type: 'array',
-            items: toJSONSchemaImpl(simplified.element, options),
+            items: compactSchema(toJSONSchemaImpl(simplified.element, options)),
         };
     }
     if (simplified.kind === 'union') {

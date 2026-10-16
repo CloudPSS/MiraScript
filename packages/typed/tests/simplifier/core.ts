@@ -40,6 +40,15 @@ test('simplify dedup generics', (t) => {
     });
 });
 
+test('simplify dedup preserves types with separators in names and literals', (t) => {
+    for (const source of [
+        '("a:false:string:number,b": string) | (a: number, b: string)',
+        '["a,false:literal:string:b", "c"] | ["a", "b,false:literal:string:c"]',
+    ]) {
+        t.deepEqual(simplify(parse(source)), parse(source));
+    }
+});
+
 test('simplify distributes intersections over unions and merges record fields', (t) => {
     t.deepEqual(simplify(parse('(t: string) & ((x: number) | (y: number))')), {
         kind: 'union',

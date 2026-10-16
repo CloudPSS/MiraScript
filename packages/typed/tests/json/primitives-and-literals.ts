@@ -8,7 +8,7 @@ test('primitive JSON schemas', (t) => {
     t.deepEqual(toJSONSchema(parse('number')), schema({ type: 'number' }));
     t.deepEqual(toJSONSchema(parse('boolean')), schema({ type: 'boolean' }));
     t.deepEqual(toJSONSchema(parse('nil')), schema({ type: 'null' }));
-    t.deepEqual(toJSONSchema(parse('array')), schema({ type: 'array', items: {} }));
+    t.deepEqual(toJSONSchema(parse('array')), schema({ type: 'array', items: true }));
     t.deepEqual(toJSONSchema(parse('record')), schema({ type: 'object' }));
     t.deepEqual(toJSONSchema(parse('any')), schema({}));
     t.deepEqual(toJSONSchema(parse('unknown')), schema({}));
@@ -60,7 +60,7 @@ test('mixed union JSON schema', (t) => {
                     type: 'object',
                     properties: { search: { type: 'string' } },
                     required: ['search'],
-                    additionalProperties: { not: {} },
+                    additionalProperties: false,
                 },
                 { enum: ['private', 'public'] },
             ],

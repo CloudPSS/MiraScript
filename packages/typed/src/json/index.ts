@@ -6,18 +6,23 @@ export type { JSONSchema } from 'json-schema-typed';
 
 /** Options for toJSONSchema */
 export interface ToJSONSchemaOptions {
-    /** When true, object schemas allow arbitrary additional properties */
+    /** When true, allow missing/extra object fields and omit tuple length constraints. */
     loose?: boolean;
+    /** Include the JSON Schema dialect declaration. Defaults to true. */
+    $schema?: boolean;
 }
 
 /** Converts a Type object into JSON Schema */
 export function toJSONSchema(
     type: Type,
-    options?: ToJSONSchemaOptions,
-): JSONSchema.Interface & { $schema: typeof $schema } {
+    options?: ToJSONSchemaOptions & { $schema?: true },
+): JSONSchema.Interface & { $schema: typeof $schema };
+/** Converts a Type object into JSON Schema */
+export function toJSONSchema(type: Type, options: ToJSONSchemaOptions): JSONSchema.Interface;
+/** Converts a Type object into JSON Schema */
+export function toJSONSchema(type: Type, options?: ToJSONSchemaOptions): JSONSchema.Interface {
     const schema = toJSONSchemaImpl(type, { loose: options?.loose ?? false });
-    return {
-        ...schema,
-        $schema,
-    };
+    const result = (options?.$schema ?? true) ? { $schema } : {};
+    Object.assign(schema, result);
+    return schema;
 }
