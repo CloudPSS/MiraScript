@@ -4,6 +4,8 @@ MiraScript 是 CloudPSS 维护的表达式优先脚本语言项目。Python 绑�
 
 ## 安装
 
+需要 Python 3.9 或更高版本。
+
 ```bash
 pip install mirascript
 ```

@@ -133,8 +133,7 @@ def Fn(name: str) -> Callable[[VmFunction], VmFunction]:
             finally:
                 CpExit()
 
-        if hasattr(func.__code__, "replace"):
-            func.__code__ = func.__code__.replace(co_name=name)
+        func.__code__ = func.__code__.replace(co_name=name)
 
         return vm_function(name)(fn_wrapper)
 

@@ -33,7 +33,6 @@ from ast import (
     unaryop,
 )
 import ast
-import sys
 from typing_extensions import (
     TypeVar,
     Iterable,
@@ -187,13 +186,6 @@ class ASTHelper:
 
     def subscript(self, value: str | expr, slice: expr, ctx: Ctx = None) -> Subscript:
         """生成一个下标访问的 AST 节点"""
-
-        # Compatibility: ast.Index was removed in Python 3.9.
-        # Use ast.Index for older Pythons, and plain expr (ast.Constant) for 3.9+.
-        if sys.version_info < (3, 9):
-            from ast import Index
-
-            slice = self.set_position(Index(value=slice))
 
         return self.set_position(
             Subscript(
