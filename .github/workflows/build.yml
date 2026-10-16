@@ -555,7 +555,7 @@ jobs:
         exclude:
           # This version is not available on windows-11-arm
           - os: windows-11-arm
-            python: { version: '3.8', freethreaded: false }
+            python: { version: '3.9', freethreaded: false }
     runs-on: ${{ matrix.os }}
 
     permissions:
