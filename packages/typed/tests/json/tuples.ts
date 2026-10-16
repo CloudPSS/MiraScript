@@ -205,7 +205,7 @@ test('tuple homogeneity shares symbol identities across element types', (t) => {
     const b = Symbol('T');
     const field = (type: symbol) => ({ kind: 'record' as const, fields: [{ name: 'value', type }] });
     const distinct = toJSONSchema({ kind: 'tuple', elements: [{ type: field(a) }, { type: field(b) }] });
-    t.is(distinct.prefixItems?.length, 2);
+    t.is((distinct.prefixItems as unknown[])?.length, 2);
     const same = toJSONSchema({ kind: 'tuple', elements: [{ type: field(a) }, { type: field(a) }] });
     t.is(same.prefixItems, undefined);
     t.deepEqual(same.items, {
