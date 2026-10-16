@@ -191,8 +191,8 @@ test('tuple homogeneity distinguishes type keys containing separators', (t) => {
         }),
     );
     const result = toJSONSchema(parse('[("a:false:string:number,b": string), (a: number, b: string)]'));
-    t.is(result.prefixItems?.length, 2);
-    t.deepEqual(result.prefixItems?.[0], {
+    t.is((result.prefixItems as unknown[])?.length, 2);
+    t.deepEqual((result.prefixItems as unknown[])[0], {
         type: 'object',
         properties: { 'a:false:string:number,b': { type: 'string' } },
         required: ['a:false:string:number,b'],
