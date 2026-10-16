@@ -69,10 +69,10 @@ export const unique_by = VmLib(
                     break;
                 }
             }
-            if (!found) {
-                arr.push(v);
-                keys.push(k);
-            }
+            if (found) continue;
+
+            arr.push(v);
+            keys.push(k);
         }
         return arr;
     },

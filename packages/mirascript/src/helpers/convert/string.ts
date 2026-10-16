@@ -15,10 +15,7 @@ export function innerToString(value: VmAny, useBraces: boolean): string {
     if (typeof value == 'function') return displayFunction(value);
     if (isVmWrapper(value)) return value.toString(useBraces);
     if (isVmArray(value)) {
-        const strings: string[] = [];
-        for (const item of value) {
-            strings.push(innerToString(item, true));
-        }
+        const strings: string[] = Array.from(value, (item) => innerToString(item, true));
         // 在 join 过程中会自动把 null/undefined 和 empty slot 转为 ''
         // 与 innerToString 行为不一致
         const results = strings.join(', ');

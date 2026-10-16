@@ -6,9 +6,9 @@ import { DiagnosticCode, formatDiagnostics, parseDiagnostics } from './diagnosti
 
 /** 编译错误 */
 export class CompileError extends Error {
+    // eslint-disable-next-line unicorn/custom-error-definition
     constructor(
         source: ScriptInput,
-        // eslint-disable-next-line unicorn/custom-error-definition
         diagnostics: Uint32Array,
         readonly fileName: string | undefined,
     ) {

@@ -10,8 +10,7 @@ export function isVmArrayLikeRecordByEntries(entries: ReadonlyArray<readonly [st
     const firstKey = entries[0]![0];
     if (firstKey !== '0') return false;
     const lastKey = entries[length - 1]![0];
-    if (lastKey !== String(length - 1)) return false;
-    return true;
+    return lastKey === String(length - 1);
 }
 
 /** 检查是否为仅包含从 0 开始的连续数字键的 MiraScript 记录 */
@@ -22,8 +21,7 @@ export function isVmArrayLikeRecordByKeys(keys: readonly string[]): boolean {
     const firstKey = keys[0]!;
     if (firstKey !== '0') return false;
     const lastKey = keys[length - 1]!;
-    if (lastKey !== String(length - 1)) return false;
-    return true;
+    return lastKey === String(length - 1);
 }
 
 /** 检查是否为仅包含从 0 开始的连续数字键的 MiraScript 记录 */

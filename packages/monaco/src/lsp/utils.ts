@@ -438,7 +438,7 @@ export function valueDoc(
     if (value !== undefined) {
         try {
             valueStr = serializeForDisplay(value, type === 'declare' ? 1000 : 100, type === 'declare' ? 80 : 40);
-        } catch (ex) {
+        } catch {
             // 序列化失败，保持默认值
         }
     }

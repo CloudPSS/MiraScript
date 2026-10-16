@@ -31,7 +31,7 @@ function mergeRecordFieldIntersections(types: Array<Extract<RecordType, { fields
 
     const result: Extract<RecordType, { fields: RecordField[] }> = {
         kind: 'record',
-        fields: Array.from(merged.entries()).map(([name, field]) => ({
+        fields: Array.from(merged, ([name, field]) => ({
             name,
             optional: field.optional,
             type: field.type,

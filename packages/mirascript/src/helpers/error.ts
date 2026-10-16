@@ -5,9 +5,9 @@ import { rethrowControl } from '../vm/effects/state.js';
  * VM 预期的错误
  */
 export class VmError extends Error {
+    // eslint-disable-next-line unicorn/custom-error-definition
     constructor(
         message: string,
-        // eslint-disable-next-line unicorn/custom-error-definition
         readonly recovered: VmAny,
     ) {
         super(message);

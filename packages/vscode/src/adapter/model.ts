@@ -320,7 +320,7 @@ export class ModelAdapter implements monacoApi.editor.ITextModel {
     }
     /** @inheritdoc */
     isValidRange(range: IRange): boolean {
-        return this.validateRange(range).isEmpty() === false;
+        return !this.validateRange(range).isEmpty();
     }
     /** @inheritdoc */
     validateRange(range: IRange): Range {

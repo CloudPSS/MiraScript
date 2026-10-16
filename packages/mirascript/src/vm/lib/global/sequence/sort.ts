@@ -35,10 +35,7 @@ export const sort = VmLib(
     (data, comparator) => {
         expectArray('data', data, null);
         const compare = cmp(comparator, data);
-        const arr: VmConst[] = [];
-        for (const v of data) {
-            arr.push(v ?? null);
-        }
+        const arr: VmConst[] = Array.from(data, (v) => v ?? null);
         arr.sort(compare);
         return arr;
     },

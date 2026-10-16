@@ -1,9 +1,7 @@
 import { defineProperty } from './helpers/utils.js';
 import { VmFunction, type VmFunctionLike, type VmFunctionOptionLike } from './vm/types/function.js';
 import type { VmValue } from './vm/types/index.js';
-import { runInContext } from './vm/effects/run.js';
 import { wrapEffect } from './vm/effects/wrap.js';
-import { AsyncRequiredError, ReplayMismatchError, ContextReentrancyError } from './vm/effects/state.js';
 
 /**
  * ## 实验性执行上下文
@@ -134,4 +132,5 @@ defineProperty(VmFunction, 'once', { value: createEffectWrapper('once') });
 defineProperty(VmFunction, 'async', { value: createEffectWrapper('async') });
 defineProperty(VmFunction, 'pure', { value: createEffectWrapper('pure') });
 
-export { runInContext, AsyncRequiredError, ReplayMismatchError, ContextReentrancyError };
+export { runInContext } from './vm/effects/run.js';
+export { AsyncRequiredError, ReplayMismatchError, ContextReentrancyError } from './vm/effects/state.js';

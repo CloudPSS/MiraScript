@@ -136,4 +136,4 @@ const _with = VmLib(
         ],
     },
 );
-export { _with as 'with' };
+export { _with as with };

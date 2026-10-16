@@ -18,7 +18,7 @@ export function printTable<T>(
         const value = map[key];
         if (value === undefined) continue;
 
-        const firstLine = formatter(value, key).split('\n')[0];
+        const [firstLine] = formatter(value, key).split('\n', 1);
         write('  ', styles.dim);
         write(key, styles.greenBright);
         write(' '.repeat(maxKeyLength - key.length), styles.dim);

@@ -61,23 +61,25 @@ export default function Mira({
                 onMount={(editor, monaco: typeof import('@private/monaco-editor')) => {
                     setMonacoContext(editor.getModel(), context);
 
-                    if (mode !== 'Doc') {
-                        editor.addAction({
-                            id: 'run-mirascript',
-                            label: '运行',
-                            keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
-                            run: (editor) => {
-                                void import('./runner').then(async ({ runMiraScript }) => {
-                                    const code = editor.getValue();
-                                    const results = await runMiraScript(code, mode, getMonacoContext(editor.getModel()!));
-                                    setResults(results);
-                                    setResultsOutdated(code !== editor.getValue());
-                                });
-                            },
-                        });
-                        if (autoRun) {
-                            void editor.getAction('run-mirascript')?.run();
-                        }
+                    if (mode === 'Doc') {
+                        return;
+                    }
+
+                    editor.addAction({
+                        id: 'run-mirascript',
+                        label: '运行',
+                        keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
+                        run: (editor) => {
+                            void import('./runner').then(async ({ runMiraScript }) => {
+                                const code = editor.getValue();
+                                const results = await runMiraScript(code, mode, getMonacoContext(editor.getModel()!));
+                                setResults(results);
+                                setResultsOutdated(code !== editor.getValue());
+                            });
+                        },
+                    });
+                    if (autoRun) {
+                        void editor.getAction('run-mirascript')?.run();
                     }
                 }}
                 onChange={() => setResultsOutdated(true)}

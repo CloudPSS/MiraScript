@@ -61,7 +61,7 @@
   "devDependencies": {
     "ava": "^8.0.1",
     "c8": "^12.0.0",
-    "tinybench": "^6.2.1",
+    "tinybench": "^6.2.2",
     "type-fest": "^5.10.0"
   }
 }

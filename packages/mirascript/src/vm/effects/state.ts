@@ -36,6 +36,7 @@ export type EffectSlot = {
 /** 内部挂起信号，不作为脚本结果或公开 API */
 export class SuspensionError extends Error {
     override readonly name = 'SuspensionError';
+    // eslint-disable-next-line unicorn/custom-error-definition
     constructor(readonly slot: EffectSlot) {
         super('Host effect suspended');
     }
