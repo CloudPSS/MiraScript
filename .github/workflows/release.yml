@@ -106,6 +106,44 @@ jobs:
           cd ../..
           pnpm -r publish --no-git-checks --access public --registry https://registry.npmjs.org/ --tag $TAG
 
+      - name: Wait for npm package availability
+        timeout-minutes: 35
+        run: |
+          # npm scans new versions before making them available for installation.
+          # https://github.blog/changelog/2026-07-28-npm-publish-time-malware-scanning-and-dual-use-metadata/
+          shopt -s nullglob
+          mapfile -t pending < <(jq -r 'select(.private != true) | "\(.name)/\(.version)"' \
+            packages/*/package.json packages/napi/npm/*/package.json)
+          deadline=$((SECONDS + 1800))
+
+          while true; do
+            remaining=()
+            for package_version in "${pending[@]}"; do
+              if tarball=$(curl -fsSL --connect-timeout 5 --max-time 15 \
+                "https://registry.npmjs.org/$package_version" | jq -er '.dist.tarball') && \
+                curl -fsSL --connect-timeout 5 --max-time 60 --output /dev/null "$tarball"; then
+                echo "Available: $package_version"
+              else
+                echo "Waiting for $package_version"
+                remaining+=("$package_version")
+              fi
+            done
+
+            if [[ "${#remaining[@]}" -eq 0 ]]; then
+              echo "All published npm packages are available"
+              exit 0
+            fi
+
+            pending=("${remaining[@]}")
+            if [[ "$SECONDS" -ge "$deadline" ]]; then
+              echo "Timed out waiting for npm packages after publishing:" >&2
+              printf '  %s\n' "${pending[@]}" >&2
+              exit 1
+            fi
+
+            sleep 30
+          done
+
   publish-pypi:
     needs: resolve-ci
 
@@ -252,7 +290,7 @@ jobs:
         # run: ${{ matrix.marketplace.command }} -i *.vsix
 
   sync-npmmirror:
-    needs: build-vscode
+    needs: publish-npm
 
     runs-on: ubuntu-latest
 
