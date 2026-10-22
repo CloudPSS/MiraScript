@@ -29,13 +29,13 @@
   },
   "devDependencies": {
     "@mirascript/mirascript": "workspace:~",
-    "ava": "^8.0.1",
+    "ava": "^8.1.0",
     "c8": "^12.0.0",
-    "js-yaml": "^5.4.3",
-    "peggy": "^5.1.0"
+    "js-yaml": "^5.5.0",
+    "peggy": "^5.1.1"
   },
   "dependencies": {
     "@mirascript/constants": "workspace:~",
-    "json-schema-typed": "^8.0.2"
+    "json-schema-typed": "^9.0.0"
   }
 }
