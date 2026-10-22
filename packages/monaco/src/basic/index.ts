@@ -9,5 +9,5 @@ export { registerMiraScriptTokensProvider };
 export async function registerBasic(): Promise<IDisposable[]> {
     const { loadModule } = await import('@mirascript/bindings/wasm');
     await loadModule();
-    return [...setLanguageConfiguration(), ...registerMiraScriptTokensProvider()];
+    return [...setLanguageConfiguration(), ...(await registerMiraScriptTokensProvider())];
 }

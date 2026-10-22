@@ -2,7 +2,6 @@ import type { Grammar } from '@shikijs/core';
 import type { StateStack } from '@shikijs/vscode-textmate';
 import { languages, type IDisposable } from '../monaco-api.js';
 import { CONTRIBUTE_IDS } from '../contribute.js';
-import { getHighlighter, getInitialState } from './highlighter-manager.js';
 import { textmateScopesToMonaco } from './textmate-to-monaco.js';
 
 const TOKENIZE_MAX_LINE_LENGTH = 20000;
@@ -10,9 +9,14 @@ const TOKENIZE_TIME_LIMIT = 500;
 
 /** A Monaco tokens provider that uses TextMate grammars. */
 class TokensProvider implements languages.TokensProvider {
-    constructor(private readonly grammar: Grammar) {}
+    constructor(
+        private readonly grammar: Grammar,
+        private readonly initialState: StateStack,
+    ) {}
     /** @inheritdoc */
-    getInitialState = getInitialState;
+    getInitialState(): StateStack {
+        return this.initialState;
+    }
     /** @inheritdoc */
     tokenize(line: string, state: StateStack): languages.ILineTokens {
         if (line.length >= TOKENIZE_MAX_LINE_LENGTH) {
@@ -42,19 +46,17 @@ class TokensProvider implements languages.TokensProvider {
 }
 
 /** Register TextMate-backed token providers without changing Monaco themes. */
-export function registerMiraScriptTokensProvider(): IDisposable[] {
+export async function registerMiraScriptTokensProvider(): Promise<IDisposable[]> {
+    const { getHighlighter, INITIAL } = await import('./highlighter-manager.js');
+    const highlighter = await getHighlighter();
     const disposables = [
         CONTRIBUTE_IDS.mirascript,
         CONTRIBUTE_IDS.mirascriptDoc,
         CONTRIBUTE_IDS.mirascriptTemplate,
-    ].map((id) =>
-        languages.registerTokensProviderFactory(id, {
-            create: async () => {
-                const highlighter = await getHighlighter();
-                const grammar = highlighter.getLanguage(id);
-                return new TokensProvider(grammar);
-            },
-        }),
-    );
+    ].map((id) => {
+        // Register the resolved provider so existing models are notified after async loading.
+        const grammar = highlighter.getLanguage(id);
+        return languages.setTokensProvider(id, new TokensProvider(grammar, INITIAL));
+    });
     return disposables;
 }
