@@ -44,7 +44,8 @@ param (
         throw "Cargo package versions are out of sync: $($details -join ', ')"
     }
 
-    cargo update --offline
+    # Refresh workspace versions without re-resolving third-party dependencies from the offline cache.
+    cargo update --workspace --offline
     git add ./Cargo.lock
 
     # set npm version for all packages
