@@ -59,6 +59,9 @@ jobs:
   publish-npm:
     needs: resolve-ci
 
+    outputs:
+      packages: ${{ steps.publish.outputs.packages }}
+
     permissions:
       actions: read
       contents: read
@@ -87,6 +90,7 @@ jobs:
           run-id: ${{ needs.resolve-ci.outputs.run-id }}
 
       - name: Publish to npm
+        id: publish
         env:
           TAG: ${{ contains(github.ref, '-') && 'next' || 'latest' }}
         run: |
@@ -106,14 +110,27 @@ jobs:
           cd ../..
           pnpm -r publish --no-git-checks --access public --registry https://registry.npmjs.org/ --tag $TAG
 
+          shopt -s nullglob
+          packages=$(jq -sc 'map(select(.private != true) | "\(.name)/\(.version)")' \
+            packages/*/package.json packages/napi/npm/*/package.json)
+          echo "packages=$packages" >> "$GITHUB_OUTPUT"
+
+  wait-npm:
+    needs: publish-npm
+
+    permissions: {}
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
       - name: Wait for npm package availability
-        timeout-minutes: 35
+        env:
+          PACKAGES: ${{ needs.publish-npm.outputs.packages }}
         run: |
           # npm scans new versions before making them available for installation.
           # https://github.blog/changelog/2026-07-28-npm-publish-time-malware-scanning-and-dual-use-metadata/
-          shopt -s nullglob
-          mapfile -t pending < <(jq -r 'select(.private != true) | "\(.name)/\(.version)"' \
-            packages/*/package.json packages/napi/npm/*/package.json)
+          package_versions=$(jq -er '.[]' <<< "$PACKAGES")
+          mapfile -t pending <<< "$package_versions"
           deadline=$((SECONDS + 1800))
 
           while true; do
@@ -200,7 +217,7 @@ jobs:
         run: cargo publish --registry crates-io
 
   build-vscode:
-    needs: [resolve-ci, publish-npm]
+    needs: [resolve-ci, wait-npm]
 
     permissions:
       actions: read
@@ -290,7 +307,7 @@ jobs:
         # run: ${{ matrix.marketplace.command }} -i *.vsix
 
   sync-npmmirror:
-    needs: publish-npm
+    needs: wait-npm
 
     runs-on: ubuntu-latest
 
