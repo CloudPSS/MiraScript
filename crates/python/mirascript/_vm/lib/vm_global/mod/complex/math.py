@@ -1,229 +1,187 @@
-"""Transcendental Cartesian complex operations."""
+"""Complex standard-library functions with MiraScript special-value semantics."""
 
 from __future__ import annotations
 
+import cmath
 import math
 
+from typing_extensions import Callable
+
 from .basic import multiply, polar
-from .utils import C, INF, NAN, div, math_call, maximum, minimum, radial
+from .utils import INF, NAN, math_call, radial
 
 
-def _log_abs(z: C) -> float:
-    x, y = z
-    a, b = maximum(abs(x), abs(y)), minimum(abs(x), abs(y))
-    if a == INF:
-        return INF
-    if a == 0:
-        return -INF
-    return math_call(math.log, a) + 0.5 * math_call(math.log1p, div(b, a) * div(b, a))
+def log(z: complex) -> complex:
+    if cmath.isnan(z):
+        return complex(NAN, NAN)
+    if z == 0:
+        return complex(-INF, cmath.phase(z))
+    return cmath.log(z)
 
 
-def log(z: C) -> C:
-    return (_log_abs(z), math.atan2(z[1], z[0]))
+def log_base(z: complex, base: float) -> complex:
+    w = log(z)
+    return complex(w.real / base, w.imag / base)
 
 
-def log_base(z: C, base: float) -> C:
-    a, b = log(z)
-    return (a / base, b / base)
+def exp(z: complex) -> complex:
+    if cmath.isnan(z) or not math.isfinite(z.imag):
+        return complex(NAN, NAN)
+    try:
+        return cmath.exp(z)
+    except OverflowError:
+        return polar(INF, z.imag)
 
 
-def sqrt(z: C) -> C:
-    x, y = z
-    if abs(y) == INF:
-        return (INF, y)
-    if x == INF:
-        return (INF, NAN if math.isnan(y) else math.copysign(0, y))
-    if x == -INF:
-        return (NAN if math.isnan(y) else 0.0, math.copysign(INF, y))
-    s = maximum(abs(x), abs(y))
-    if s == 0:
-        return (0.0, y)
-    t = math_call(math.sqrt, s) * math_call(
-        math.sqrt, (math.hypot(x / s, y / s) + abs(x) / s) / 2
-    )
-    return (t, div(y, t) / 2) if x >= 0 else (div(abs(y), t) / 2, math.copysign(t, y))
-
-
-def exp(z: C) -> C:
-    return polar(math_call(math.exp, z[0]), z[1])
-
-
-def expm1(z: C) -> C:
-    x, y = z
+def expm1(z: complex) -> complex:
+    # cmath has no expm1; subtracting one from exp loses tiny real components.
+    x, y = z.real, z.imag
     half_sin = math_call(math.sin, y / 2)
-    return (
+    return complex(
         math_call(math.expm1, x) * math_call(math.cos, y) - 2 * half_sin * half_sin,
         radial(math_call(math.exp, x), math_call(math.sin, y)),
     )
 
 
-def log1p(z: C) -> C:
-    x, y = z
-    re = (
-        0.5 * math_call(math.log1p, x * (2 + x) + y * y)
-        if abs(x) < 0.5 and abs(y) < 0.5
-        else _log_abs((1 + x, y))
-    )
-    return (re, math.atan2(y, 1 + x))
+def log1p(z: complex) -> complex:
+    # Keep log1p's near-zero accuracy and the sign of an imaginary zero.
+    x, y = z.real, z.imag
+    if abs(x) < 0.5 and abs(y) < 0.5:
+        return complex(0.5 * math.log1p(x * (2 + x) + y * y), math.atan2(y, 1 + x))
+    return log(complex(1 + x, y))
 
 
-def pow(z: C, w: C) -> C:
-    if w[0] == 0 and w[1] == 0:
-        return (1.0, 0.0)
-    if w[0] == 1 and w[1] == 0:
+def pow(z: complex, w: complex) -> complex:
+    if w == 0:
+        return complex(1.0, 0.0)
+    if w == 1:
         return z
-    if z[0] == 0 and z[1] == 0:
-        if w[1] != 0 or math.isnan(w[0]):
-            return (NAN, NAN)
-        return polar(0.0 if w[0] > 0 else INF, w[0] * math.atan2(z[1], z[0]))
-    if w[1] == 0:
-        if z[1] == 0 and math.isfinite(w[0]) and w[0].is_integer():
-            try:
-                re = math.pow(z[0], w[0])
-            except OverflowError:
-                re = -INF if z[0] < 0 and w[0] % 2 != 0 else INF
-            except ValueError:
-                re = NAN
-            return (re, math.copysign(0, z[1]))
-        return polar(
-            math_call(math.exp, _log_abs(z) * w[0]),
-            math.atan2(z[1], z[0]) * w[0],
-        )
+    if z == 0:
+        if w.imag != 0 or math.isnan(w.real):
+            return complex(NAN, NAN)
+        return polar(0.0 if w.real > 0 else INF, w.real * cmath.phase(z))
+    if w.imag == 0 and z.imag == 0 and math.isfinite(w.real) and w.real.is_integer():
+        try:
+            re = math.pow(z.real, w.real)
+        except OverflowError:
+            re = -INF if z.real < 0 and w.real % 2 != 0 else INF
+        except ValueError:
+            re = NAN
+        return complex(re, math.copysign(0, z.imag))
+    if cmath.isfinite(z) and cmath.isfinite(w):
+        try:
+            result = z**w
+            if cmath.isfinite(result) and result.real != 0 and result.imag != 0:
+                return result
+        except (OverflowError, ZeroDivisionError):
+            pass
+    if w.imag == 0:
+        return polar(math_call(math.exp, log(z).real * w.real), cmath.phase(z) * w.real)
     return exp(multiply(w, log(z)))
 
 
-def cbrt(z: C) -> C:
-    return polar(math_call(math.exp, _log_abs(z) / 3), math.atan2(z[1], z[0]) / 3)
+def cbrt(z: complex) -> complex:
+    return polar(math_call(math.exp, log(z).real / 3), cmath.phase(z) / 3)
 
 
-def sin(z: C) -> C:
-    x, y = z
-    return (
-        radial(math_call(math.cosh, y), math_call(math.sin, x)),
-        radial(math_call(math.sinh, y), math_call(math.cos, x)),
-    )
-
-
-def cos(z: C) -> C:
-    x, y = z
-    return (
-        radial(math_call(math.cosh, y), math_call(math.cos, x)),
-        -radial(math_call(math.sinh, y), math_call(math.sin, x)),
-    )
-
-
-def sinh(z: C) -> C:
-    x, y = z
-    return (
-        radial(math_call(math.sinh, x), math_call(math.cos, y)),
-        radial(math_call(math.cosh, x), math_call(math.sin, y)),
-    )
-
-
-def cosh(z: C) -> C:
-    x, y = z
-    return (
-        radial(math_call(math.cosh, x), math_call(math.cos, y)),
-        radial(math_call(math.sinh, x), math_call(math.sin, y)),
-    )
-
-
-def tan(z: C) -> C:
-    x, y = z
-    t = math_call(math.exp, -2 * abs(y))
-    cx, sx = math_call(math.cos, x), math_call(math.sin, x)
-    denominator = (1 - t) * (1 - t) + 4 * t * cx * cx
-    return (
-        div(4 * t * sx * cx, denominator),
-        math.copysign(div(-math_call(math.expm1, -4 * abs(y)), denominator), y),
-    )
-
-
-def tanh(z: C) -> C:
-    a, b = tan((z[1], z[0]))
-    return (b, a)
-
-
-def asin(z: C) -> C:
-    x, y = z
-    if y == 0 and abs(x) <= 1:
-        return (math.asin(x), y)
-    s = maximum(abs(x), abs(y))
-    if s > 1e150:
-        return (math.atan2(x, abs(y)), math.copysign(_log_abs(z) + math.log(2), y))
-    h, im = _inverse_geometry(x, y)
-    return (math.atan2(x, h), im)
-
-
-def _inverse_geometry(x: float, y: float) -> C:
-    ax = abs(x)
-    r, t = math.hypot(ax + 1, y), math.hypot(ax - 1, y)
-    a = r / 2 + t / 2
-    delta = (
-        math.hypot(
-            div(y, math_call(math.sqrt, r + (1 + ax))),
-            div(y, math_call(math.sqrt, t + (1 - ax))),
+def _trig(f: Callable[[complex], complex], z: complex) -> complex:
+    if cmath.isnan(z) or not math.isfinite(z.real):
+        return complex(NAN, NAN)
+    try:
+        return f(z)
+    except OverflowError:
+        # Preserve zero components when the hyperbolic factor overflows.
+        x, y = z.real, z.imag
+        if f is cmath.sin:
+            return complex(
+                radial(math_call(math.cosh, y), math.sin(x)),
+                radial(math_call(math.sinh, y), math.cos(x)),
+            )
+        return complex(
+            radial(math_call(math.cosh, y), math.cos(x)),
+            -radial(math_call(math.sinh, y), math.sin(x)),
         )
-        / math.sqrt(2)
-        if ax <= 1
-        else math_call(math.sqrt, a - 1)
-    )
-    gap = (
-        math.hypot(math_call(math.sqrt, 1 - ax), delta)
-        if ax <= 1
-        else math.hypot(
-            div(y, math_call(math.sqrt, r + (ax + 1))),
-            div(y, math_call(math.sqrt, t + (ax - 1))),
-        )
-        / math.sqrt(2)
-    )
-    return (
-        gap * math_call(math.sqrt, a + ax),
-        math.copysign(
-            math_call(math.log1p, delta * (delta + math_call(math.sqrt, a + 1))),
-            y,
-        ),
-    )
 
 
-def acos(z: C) -> C:
-    x, y = z
-    if y == 0 and abs(x) <= 1:
-        return (math.acos(x), -y)
-    if maximum(abs(x), abs(y)) > 1e150:
-        return (
-            math.atan2(abs(y), x),
-            -math.copysign(_log_abs(z) + math.log(2), y),
-        )
-    h, im = _inverse_geometry(x, y)
-    return (math.atan2(h, x), -im)
+def sin(z: complex) -> complex:
+    return _trig(cmath.sin, z)
 
 
-def atan(z: C) -> C:
-    x, y = z
-    if y == 0:
-        return (math.atan(x), y)
-    re = (math.atan2(x, 1 - y) + math.atan2(x, 1 + y)) / 2
+def cos(z: complex) -> complex:
+    return _trig(cmath.cos, z)
+
+
+def tan(z: complex) -> complex:
+    if cmath.isnan(z) or not math.isfinite(z.real):
+        return complex(NAN, NAN)
+    return cmath.tan(z)
+
+
+def sinh(z: complex) -> complex:
+    if cmath.isnan(z) or not math.isfinite(z.imag):
+        return complex(NAN, NAN)
+    try:
+        return cmath.sinh(z)
+    except OverflowError:
+        w = sin(complex(-z.imag, z.real))
+        return complex(w.imag, -w.real)
+
+
+def cosh(z: complex) -> complex:
+    if cmath.isnan(z) or not math.isfinite(z.imag):
+        return complex(NAN, NAN)
+    try:
+        return cmath.cosh(z)
+    except OverflowError:
+        return cos(complex(-z.imag, z.real))
+
+
+def tanh(z: complex) -> complex:
+    if cmath.isnan(z) or not math.isfinite(z.imag):
+        return complex(NAN, NAN)
+    return cmath.tanh(z)
+
+
+def asin(z: complex) -> complex:
+    if cmath.isnan(z):
+        return complex(NAN, math.copysign(INF, z.imag) if cmath.isinf(z) else NAN)
+    return cmath.asin(z)
+
+
+def acos(z: complex) -> complex:
+    if cmath.isnan(z):
+        return complex(NAN, -math.copysign(INF, z.imag) if cmath.isinf(z) else NAN)
+    return cmath.acos(z)
+
+
+def atan(z: complex) -> complex:
+    x, y = z.real, z.imag
+    if y != 0 and not cmath.isfinite(z):
+        if math.isinf(y) or cmath.isnan(z) or not math.isfinite(4 * y):
+            return complex((math.atan2(x, 1 - y) + math.atan2(x, 1 + y)) / 2, NAN)
+    if x == 0 and abs(y) == 1:
+        return complex(x, math.copysign(INF, y))
     h = math.hypot(x, y - 1)
-    if h == 0:
-        im = INF
-    elif abs(y) < 0.5 * h:
-        im = 0.25 * math_call(math.log1p, div(div(4 * y, h), h))
-    else:
-        im = (_log_abs((x, y + 1)) - _log_abs((x, y - 1))) / 2
-    return (re, im)
+    # Retain the shared runtime's rounded log1p singularity near -i.
+    if h != 0 and abs(y) < 0.5 * h and (4 * y / h) / h == -1:
+        return complex(cmath.atan(z).real, -INF)
+    return cmath.atan(z)
 
 
-def asinh(z: C) -> C:
-    a, b = asin((-z[1], z[0]))
-    return (b, -a)
+def asinh(z: complex) -> complex:
+    if cmath.isnan(z) and not cmath.isinf(z):
+        return complex(NAN, NAN)
+    return cmath.asinh(z)
 
 
-def acosh(z: C) -> C:
-    a, b = acos(z)
-    return (abs(b), math.copysign(a, z[1]))
+def acosh(z: complex) -> complex:
+    if cmath.isnan(z) and not cmath.isinf(z):
+        return complex(NAN, NAN)
+    return cmath.acosh(z)
 
 
-def atanh(z: C) -> C:
-    a, b = atan((-z[1], z[0]))
-    return (b, -a)
+def atanh(z: complex) -> complex:
+    if not cmath.isfinite(z) or (z.imag == 0 and abs(z.real) >= 0.5):
+        w = atan(complex(-z.imag, z.real))
+        return complex(w.imag, -w.real)
+    return cmath.atanh(z)
