@@ -545,6 +545,10 @@ jobs:
             python: { version: 'pypy3.11', freethreaded: false }
             skip_huge: true
             sdist: true
+          # Build and test the sdist with GraalPy on Linux.
+          - os: ubuntu-latest
+            python: { version: 'graalpy-25.x', freethreaded: false }
+            sdist: true
           # Test the sdist on the minimum supported CPython version.
           - os: windows-latest
             python: { version: '3.9', freethreaded: false }
@@ -591,7 +595,10 @@ jobs:
       - name: Install wheels
         shell: bash
         run: |
-          python -m pip install --upgrade pip
+          # GraalPy requires its bundled pip with compatibility patches.
+          #if [[ "${{ matrix.python.version }}" != graalpy* ]]; then
+          #  python -m pip install --upgrade pip
+          #fi
 
           python -m pip download --requirement ./python-sdist/test-requirements.txt --dest ./python-artifacts
           python -m pip install --pre --no-index --no-cache-dir --find-links ./python-artifacts ${{ matrix.sdist && '--no-binary=mirascript' || '' }} mirascript
