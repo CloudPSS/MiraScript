@@ -595,11 +595,6 @@ jobs:
       - name: Install wheels
         shell: bash
         run: |
-          # GraalPy requires its bundled pip with compatibility patches.
-          #if [[ "${{ matrix.python.version }}" != graalpy* ]]; then
-          #  python -m pip install --upgrade pip
-          #fi
-
           python -m pip download --requirement ./python-sdist/test-requirements.txt --dest ./python-artifacts
           python -m pip install --pre --no-index --no-cache-dir --find-links ./python-artifacts ${{ matrix.sdist && '--no-binary=mirascript' || '' }} mirascript
           python -m pip install --no-index --no-cache-dir --find-links ./python-artifacts --requirement ./python-sdist/test-requirements.txt
