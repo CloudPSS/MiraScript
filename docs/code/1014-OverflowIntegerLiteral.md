@@ -6,16 +6,16 @@
 
 ## 如何修复
 
-将整数控制在可表示范围内，或改用较小的单位。
+将整数控制在可表示范围内，或改用十进制（浮点）表示。
 
 ### 修改前
 
 ```mira
-let mask = 0xFFFFFFFFFFFFFFFFFFFFFFFF;
+let value = 0xFFFFFFFFFFFFFFFFFFFFFFFF;
 ```
 
 ### 修复后
 
 ```mira
-let mask = 0xFFFFFFFF;
+let value = 7.922_816_251_426_434e+28;
 ```
