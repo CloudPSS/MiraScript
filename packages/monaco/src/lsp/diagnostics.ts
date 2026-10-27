@@ -74,7 +74,11 @@ const makeMarker = (
     const { range, code } = diagnostic;
     let unnecessary = false;
     const deprecated = false;
-    if (code === DiagnosticCode.UnusedLocalVariable || code === DiagnosticCode.UnusedLocalFunction) {
+    if (
+        code === DiagnosticCode.UnusedLocalVariable ||
+        code === DiagnosticCode.UnusedLocalFunction ||
+        code === DiagnosticCode.UnreachableCode
+    ) {
         unnecessary = true;
         severity = MarkerSeverity.Hint;
     }

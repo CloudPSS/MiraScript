@@ -94,6 +94,9 @@ impl<'s, 'c: 's> Compiler<'s, 'c> {
     }
 
     pub fn emit(&mut self, script: &Script<'s>) -> Option<Vec<u8>> {
+        if self.config.diagnostic_hint {
+            crate::control_flow::analyze(script, &mut self.diagnostics_collector);
+        }
         // Emitting
         let bytecode = emitter::emit(script, &mut self.diagnostics_collector);
 

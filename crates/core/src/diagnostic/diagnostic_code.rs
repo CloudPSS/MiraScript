@@ -218,10 +218,11 @@ pub enum DiagnosticCode {
 
     #[strum(message = "考虑移除多余的括号")]
     UnnecessaryParentheses,
-
     // For analyzer
     #[strum(message = "常量 $0 建议使用大写")]
     PreferUppercaseConstant,
+    #[strum(message = "此处的代码不可达")]
+    UnreachableCode,
 
     HintEnd = 4999,
     // Reference 5000~5999

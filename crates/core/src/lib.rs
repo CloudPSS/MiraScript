@@ -2,6 +2,7 @@
 
 mod compile;
 mod config;
+mod control_flow;
 mod diagnostic;
 mod emitter;
 mod lexer;

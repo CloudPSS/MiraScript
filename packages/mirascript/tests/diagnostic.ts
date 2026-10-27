@@ -3,10 +3,24 @@ import {
     getDiagnosticMessage,
     formatDiagnostics,
     formatDiagnosticMessage,
+    getDiagnosticSeverity,
+    parseDiagnostics,
     DiagnosticCode,
     type SourceDiagnostic,
     type SourceReference,
 } from '@mirascript/mirascript/subtle';
+
+test('unreachable code is parsed as a hint', (t) => {
+    const code = DiagnosticCode.UnreachableCode;
+    t.is(getDiagnosticSeverity(code), 'hint');
+    t.is(getDiagnosticMessage(code), '此处的代码不可达');
+    const parsed = parseDiagnostics('return; 1', new Uint32Array([1, 9, 1, 10, code]));
+    t.deepEqual(parsed.hints, [
+        { code, range: { startLineNumber: 1, startColumn: 9, endLineNumber: 1, endColumn: 10 }, references: [] },
+    ]);
+    t.deepEqual(parsed.errors, []);
+    t.deepEqual(parsed.warnings, []);
+});
 
 test('getDiagnosticMessage with invalid code', (t) => {
     const invalidCodes = [-1, 0xffff, 1.5, Number.NaN, Number.POSITIVE_INFINITY, 'x', {}, '1'];
