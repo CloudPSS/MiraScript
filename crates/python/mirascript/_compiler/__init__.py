@@ -1,3 +1,4 @@
+from __future__ import annotations
 from pathlib import Path
 from typing_extensions import Literal, TypeAlias
 
@@ -14,8 +15,8 @@ def compile(
     script: str,
     *,
     input_mode: InputMode = "script",
-    filename: "str | Path | None" = None,
-) -> "tuple[VmScript | None, list[Diagnostic]]":
+    filename: str | Path | None = None,
+) -> tuple[VmScript | None, list[Diagnostic]]:
     """
     编译 MiraScript 代码，生成 Python 函数
 

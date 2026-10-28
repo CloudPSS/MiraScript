@@ -1,3 +1,4 @@
+from __future__ import annotations
 from ....types import Uninitialized, VmAny
 from ..._helpers import _expect_array, _expect_number
 

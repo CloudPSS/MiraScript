@@ -4,6 +4,7 @@ VmSharedContext 快照测试
 验证共享上下文中注册的全局键是否与预期一致。
 """
 
+from __future__ import annotations
 from pytest_snapshot.plugin import Snapshot
 from mirascript._vm.types.context import get_shared_context
 import mirascript

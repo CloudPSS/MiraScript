@@ -1,3 +1,4 @@
+from __future__ import annotations
 from .._helpers import _required, _expect_array
 from ...types import VmAny
 from ...operations import ToString

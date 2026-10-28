@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+
 class OpCodes:
     """MiraScript 操作码"""
 

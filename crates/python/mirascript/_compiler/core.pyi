@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing_extensions import Literal
 
 class Config:
@@ -17,7 +18,7 @@ class Config:
         """
         ...
 
-def compile(script: str, config: Config) -> "tuple[bytes | None, list[int]]":
+def compile(script: str, config: Config) -> tuple[bytes | None, list[int]]:
     """
     编译 MiraScript 代码，生成字节码
 

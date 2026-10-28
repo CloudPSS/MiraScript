@@ -1,3 +1,4 @@
+from __future__ import annotations
 from struct import Struct
 from typing_extensions import Tuple
 
