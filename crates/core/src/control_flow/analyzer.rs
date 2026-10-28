@@ -1,52 +1,22 @@
-//! Conservative, intraprocedural reachability analysis. This pass never changes the AST or bytecode.
-
 use crate::{
     DiagnosticCode, Keyword, Operator, SourceRange,
     diagnostic::DiagnosticsCollector,
     parser::{
         ArrayElementBase, AstWalker, Callable, ElseBlock, Expression, Iterable, MatchCase, Pattern,
-        RecordElementBase, Script, Statement,
+        RecordElementBase, Statement,
     },
 };
 
-/// Possible exits from evaluating a node. No exits means evaluation does not terminate.
-#[derive(Clone, Copy)]
-struct Flow(u8);
+use super::Flow;
 
-impl Flow {
-    const NEVER: Self = Self(0);
-    const NORMAL: Self = Self(1);
-    const RETURN: Self = Self(2);
-    const BREAK: Self = Self(4);
-    const CONTINUE: Self = Self(8);
-
-    fn has(self, exit: Self) -> bool {
-        self.0 & exit.0 != 0
-    }
-
-    fn union(self, other: Self) -> Self {
-        Self(self.0 | other.0)
-    }
-
-    fn abrupt(self) -> Self {
-        Self(self.0 & !Self::NORMAL.0)
-    }
-
-    fn then(self, next: Self) -> Self {
-        if self.has(Self::NORMAL) {
-            self.abrupt().union(next)
-        } else {
-            self
-        }
-    }
-}
-
-pub(crate) fn analyze(script: &Script<'_>, diagnostics: &mut DiagnosticsCollector<'_, '_>) {
-    Analyzer { diagnostics }.block(&script.0, script.1.as_deref(), false);
-}
-
-struct Analyzer<'a, 's, 'c> {
+pub(super) struct Analyzer<'a, 's, 'c> {
     diagnostics: &'a mut DiagnosticsCollector<'s, 'c>,
+}
+
+impl<'a, 's, 'c> Analyzer<'a, 's, 'c> {
+    pub(super) fn new(diagnostics: &'a mut DiagnosticsCollector<'s, 'c>) -> Self {
+        Self { diagnostics }
+    }
 }
 
 impl Analyzer<'_, '_, '_> {
@@ -63,7 +33,7 @@ impl Analyzer<'_, '_, '_> {
         }
     }
 
-    fn block(
+    pub(super) fn block(
         &mut self,
         stmts: &[Statement<'_>],
         tail: Option<&Expression<'_>>,
@@ -294,7 +264,7 @@ impl Analyzer<'_, '_, '_> {
             Cond(cond, _, yes, _, no) => self.branches(cond, yes, Some(no), in_loop),
             Loop(_, body) => {
                 let body = self.expr(body, true);
-                let exits = Flow(body.0 & Flow::RETURN.0);
+                let exits = body & Flow::RETURN;
                 if body.has(Flow::BREAK) {
                     exits.union(Flow::NORMAL)
                 } else {
@@ -316,7 +286,7 @@ impl Analyzer<'_, '_, '_> {
                 let no = no
                     .as_ref()
                     .map_or(Flow::NORMAL, |no| self.expr(&no.1, false));
-                let mut result = no.union(Flow(body.0 & Flow::RETURN.0));
+                let mut result = no.union(body & Flow::RETURN);
                 if body.has(Flow::BREAK) {
                     result = result.union(Flow::NORMAL);
                 }
@@ -393,7 +363,7 @@ impl Analyzer<'_, '_, '_> {
             }
             Flow::NEVER
         };
-        let mut exits = Flow((cond_flow.0 | body_flow.0) & Flow::RETURN.0).union(no_flow);
+        let mut exits = ((cond_flow | body_flow) & Flow::RETURN).union(no_flow);
         if cond_flow.has(Flow::BREAK) || body_flow.has(Flow::BREAK) {
             exits = exits.union(Flow::NORMAL);
         }
