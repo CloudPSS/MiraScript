@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from mirascript import compile as mira_compile
+from mirascript import compile as mira_compile, config_checkpoint
 
 # Mira 测试用例目录
 TEST_DIR = (Path(__file__) / "../../../../tests").resolve()
@@ -34,6 +34,12 @@ def _setup_mirascript():
     sys.setrecursionlimit(10000)
     if mira_compile is None:
         pytest.skip("mirascript Python API not available")
+
+
+@pytest.fixture(scope="function", autouse=True)
+def _reset_checkpoint():
+    """在每个测试函数前重置检查点配置。"""
+    config_checkpoint()
 
 
 def pytest_generate_tests(metafunc: pytest.Metafunc):

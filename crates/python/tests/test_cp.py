@@ -23,8 +23,6 @@ def test_config_checkpoint():
 
 
 def test_stack_overflow():
-    config_checkpoint()
-
     assert thread_local.cp_depth == 0
     assert thread_local.cp_counter == 0
     assert math.isnan(thread_local.cp)
@@ -36,6 +34,7 @@ def test_stack_overflow():
     f();
     """)
     assert script is not None
+    config_checkpoint(timeout=20)
     with pytest.raises(RuntimeError, match="Maximum call depth exceeded"):
         script()
     with pytest.raises(RuntimeError, match="Maximum call depth exceeded"):
