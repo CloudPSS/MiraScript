@@ -52,14 +52,14 @@
     "bench": "node ./bench/index.ts"
   },
   "dependencies": {
-    "@cloudpss/worker": "^0.1.11",
+    "@cloudpss/worker": "^0.1.15",
     "@mirascript/bindings": "workspace:~",
     "@mirascript/constants": "workspace:~",
     "source-map-js": "^1.2.2",
     "supports-color": "^11.0.0"
   },
   "devDependencies": {
-    "ava": "^8.1.0",
+    "ava": "^8.3.0",
     "c8": "^12.0.0",
     "tinybench": "^6.2.2",
     "type-fest": "^5.10.0"
