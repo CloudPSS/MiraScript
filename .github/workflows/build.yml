@@ -452,7 +452,7 @@ jobs:
         toolchain:
           - stable
           # - nightly
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     permissions:
       contents: read
@@ -529,7 +529,7 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - ubuntu-latest
+          - ubuntu-24.04
           - ubuntu-24.04-arm
           - windows-latest
           - windows-11-arm
@@ -656,6 +656,7 @@ jobs:
 
       - name: Build node packages
         run: |
+          unset CARGO_BUILD_TARGET
           pnpm -r --filter !@mirascript/website --filter !@mirascript/napi run build
           pnpm -r --filter @mirascript/mirascript run build:ts
 
