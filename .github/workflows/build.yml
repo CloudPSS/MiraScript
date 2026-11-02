@@ -452,7 +452,7 @@ jobs:
         toolchain:
           - stable
           # - nightly
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-24.04 # Workaround: wait for docker update to ≥29.4.3
 
     permissions:
       contents: read
@@ -529,14 +529,14 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - ubuntu-24.04
-          - ubuntu-24.04-arm
+          - ubuntu-latest
+          - ubuntu-26.04-arm
           - windows-latest
           - windows-11-arm
           - macos-latest
           - macos-15-intel
         python:
-          - { version: '3.9', freethreaded: false }
+          - { version: '3.11', freethreaded: false }
           - { version: '3.x', freethreaded: false }
           - { version: '3.x', freethreaded: true }
         include:
@@ -553,14 +553,6 @@ jobs:
           - os: windows-latest
             python: { version: '3.9', freethreaded: false }
             sdist: true
-
-          # This version is the oldest available on windows-11-arm
-          - os: windows-11-arm
-            python: { version: '3.11', freethreaded: false }
-        exclude:
-          # This version is not available on windows-11-arm
-          - os: windows-11-arm
-            python: { version: '3.9', freethreaded: false }
     runs-on: ${{ matrix.os }}
 
     permissions:
