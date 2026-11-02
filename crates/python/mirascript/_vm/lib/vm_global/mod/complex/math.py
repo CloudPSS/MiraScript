@@ -69,12 +69,9 @@ def pow(z: complex, w: complex) -> complex:
             re = NAN
         return complex(re, math.copysign(0, z.imag))
     if cmath.isfinite(z) and cmath.isfinite(w):
-        try:
-            result = z**w
-            if cmath.isfinite(result) and result.real != 0 and result.imag != 0:
-                return result
-        except (OverflowError, ZeroDivisionError):
-            pass
+        result = z**w
+        if cmath.isfinite(result) and result.real != 0 and result.imag != 0:
+            return result
     if w.imag == 0:
         return polar(math_call(math.exp, log(z).real * w.real), cmath.phase(z) * w.real)
     return exp(multiply(w, log(z)))
