@@ -31,6 +31,41 @@ jobs:
       - name: Build
         run: pnpm -r --filter !@mirascript/website run build
 
+      - name: Build vscode package
+        run: |
+          mkdir -p ~/vscode-build
+
+          cd packages/vscode
+          pnpm pack --out mirascript-vscode.tgz
+          tar -xzf mirascript-vscode.tgz --strip-components=1 -C ~/vscode-build/
+
+          cd ~/vscode-build
+          touch .vscodeignore # Make vsce happy
+          node --input-type=commonjs <<'NODE'
+          const assert = require('node:assert/strict');
+          const pkg = require('./package.json');
+          for (const field of ['dependencies', 'peerDependencies']) {
+            assert.deepEqual(pkg[field] ?? {}, {}, `${field} must be empty for bundled VSIX packaging`);
+          }
+          NODE
+          npm pkg set name="mirascript"
+          npm pkg delete scripts dependencies devDependencies peerDependencies
+
+          # CI may run on a branch before a release tag is pushed.
+          version=$(jq -r '.version' package.json)
+          prerelease=()
+          if [[ "$version" == *-* ]]; then
+            prerelease+=(--pre-release)
+          fi
+          npx @vscode/vsce package --no-dependencies "${prerelease[@]}"
+
+      - name: Upload vscode artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: vscode-package
+          path: ~/vscode-build/*.vsix
+          if-no-files-found: error
+
       - name: Build python sdist
         uses: PyO3/maturin-action@v1
         with:

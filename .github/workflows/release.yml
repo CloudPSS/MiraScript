@@ -216,57 +216,9 @@ jobs:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
         run: cargo publish --registry crates-io
 
-  build-vscode:
-    needs: [resolve-ci, wait-npm]
-
-    permissions:
-      actions: read
-      contents: read
-
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Install
-        uses: ./.github/actions/install
-        with:
-          ALIYUN_NPM_TOKEN: ${{ secrets.ALIYUN_NPM_TOKEN }}
-
-      - name: Download npm package artifact
-        uses: actions/download-artifact@v8
-        with:
-          name: npm-package
-          path: packages/
-          github-token: ${{ github.token }}
-          run-id: ${{ needs.resolve-ci.outputs.run-id }}
-
-      - name: Build vscode package
-        run: |
-          mkdir -p ~/vscode-build
-          cp .npmrc ~/vscode-build/
-
-          cd packages/vscode
-          pnpm build
-          pnpm pack --out mirascript-vscode.tgz
-          tar -xzf mirascript-vscode.tgz --strip-components=1 -C ~/vscode-build/
-
-          cd ~/vscode-build
-          touch .vscodeignore # Make vsce happy
-          npm pkg set name="mirascript"
-          npm pkg delete scripts devDependencies
-          npm install
-          npx @vscode/vsce package ${{ contains(github.ref, '-') && '--pre-release' || '' }}
-
-      - name: Upload vscode artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: vscode-package
-          path: ~/vscode-build/*.vsix
-          if-no-files-found: error
-
   publish-vscode:
-    needs: build-vscode
+    # The web extension loads versioned npm packages from esm.sh at runtime.
+    needs: [resolve-ci, wait-npm]
 
     # Prepared oidc publishing for Visual Studio Marketplace
     # + `id-token` `command` `run`
@@ -285,6 +237,7 @@ jobs:
             prerelease: false
 
     permissions:
+      actions: read
       contents: read
       id-token: write
 
@@ -298,6 +251,8 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           name: vscode-package
+          github-token: ${{ github.token }}
+          run-id: ${{ needs.resolve-ci.outputs.run-id }}
 
       - name: Publish to ${{ matrix.marketplace.name }}
         if: matrix.marketplace.prerelease || ! contains(github.ref, '-')
