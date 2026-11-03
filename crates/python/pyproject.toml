@@ -49,7 +49,7 @@ bindings = "pyo3"
 module-name = "mirascript._compiler.core"
 
 [tool.uv]
-environments = ["python_version>='3.10'"]
+environments = ["python_version>='3.12'"]
 
 [tool.pyright]
 reportUnnecessaryTypeIgnoreComment = "warning"
