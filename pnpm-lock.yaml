@@ -5,17 +5,17 @@ importers:
   .:
     configDependencies:
       '@cloudpss/pnpm-plugin-config':
-        specifier: ~4.1.5
-        version: 4.1.5
+        specifier: ~4.1.6
+        version: 4.1.6
     packageManagerDependencies:
       pnpm:
         specifier: 12.16.1
         version: 12.16.1
 
 packages:
-  '@cloudpss/pnpm-plugin-config@4.1.5':
+  '@cloudpss/pnpm-plugin-config@4.1.6':
     resolution:
-      { integrity: sha512-Bu9CropanqESnLVSntAwm7ijx8fl85J82OZ/dvFwFyFpT9JzMXj8778IZ404heA/+ozbfUjy0jwkALUwQ971vA== }
+      { integrity: sha512-B88jorMWyARCekVosGkzh0xGtjA0gD0noxLDOhv/yG/VsJ+ChOYH7lGA/uKOq6EcyAW0i5khvbseV9uROcbrQQ== }
 
   '@pnpm/exe.android-arm64@12.16.1':
     resolution:
@@ -115,7 +115,7 @@ packages:
     hasBin: true
 
 snapshots:
-  '@cloudpss/pnpm-plugin-config@4.1.5': {}
+  '@cloudpss/pnpm-plugin-config@4.1.6': {}
 
   '@pnpm/exe.android-arm64@12.16.1':
     optional: true
@@ -187,41 +187,41 @@ settings:
 catalogs:
   default:
     '@cloudpss/commitlint-config':
-      specifier: ~4.1.5
-      version: 4.1.5
+      specifier: ~4.1.6
+      version: 4.1.6
     '@cloudpss/eslint-config':
-      specifier: ~4.1.5
-      version: 4.1.5
+      specifier: ~4.1.6
+      version: 4.1.6
     '@cloudpss/lint-staged-config':
-      specifier: ~4.1.5
-      version: 4.1.5
+      specifier: ~4.1.6
+      version: 4.1.6
     '@cloudpss/prettier-config':
-      specifier: ~4.1.5
-      version: 4.1.5
+      specifier: ~4.1.6
+      version: 4.1.6
     '@cloudpss/tsconfig':
-      specifier: ~4.1.5
-      version: 4.1.5
+      specifier: ~4.1.6
+      version: 4.1.6
 
-pnpmfileChecksum: sha256-8SucbjgMEwEQTWaLmid9zIniFtu2pH/Mb82UBjYsqfk=
+pnpmfileChecksum: sha256-goZKnse+KAYYIxok5AJIbNrp3mh8F0yCBLSY2Tj/MUA=
 
 importers:
   .:
     devDependencies:
       '@cloudpss/commitlint-config':
         specifier: 'catalog:'
-        version: 4.1.5(conventional-commits-parser@7.1.4)(typescript@6.0.3)
+        version: 4.1.6(conventional-commits-parser@7.1.4)(typescript@6.0.3)
       '@cloudpss/eslint-config':
         specifier: 'catalog:'
-        version: 4.1.5(jiti@2.7.0)(supports-color@11.0.0)(typescript@6.0.3)
+        version: 4.1.6(jiti@2.7.0)(supports-color@11.0.0)(typescript@6.0.3)
       '@cloudpss/lint-staged-config':
         specifier: 'catalog:'
-        version: 4.1.5(jiti@2.7.0)(supports-color@11.0.0)
+        version: 4.1.6(jiti@2.7.0)(supports-color@11.0.0)
       '@cloudpss/prettier-config':
         specifier: 'catalog:'
-        version: 4.1.5
+        version: 4.1.6
       '@cloudpss/tsconfig':
         specifier: 'catalog:'
-        version: 4.1.5(typescript@6.0.3)
+        version: 4.1.6(typescript@6.0.3)
       '@mirascript/cli':
         specifier: workspace:*
         version: link:packages/cli
@@ -352,11 +352,11 @@ importers:
         specifier: workspace:~
         version: link:../textmate
       '@shikijs/core':
-        specifier: ^4.5.0
-        version: 4.5.0
+        specifier: ^4.6.0
+        version: 4.6.0
       '@shikijs/engine-javascript':
-        specifier: ^4.5.0
-        version: 4.5.0
+        specifier: ^4.6.0
+        version: 4.6.0
       '@shikijs/vscode-textmate':
         specifier: ^10.1.0
         version: 10.1.0
@@ -383,8 +383,8 @@ importers:
         specifier: workspace:~
         version: link:../constants
       '@shikijs/types':
-        specifier: ^4.5.0
-        version: 4.5.0
+        specifier: ^4.6.0
+        version: 4.6.0
     devDependencies:
       ava:
         specifier: ^8.3.0
@@ -393,8 +393,8 @@ importers:
         specifier: ^12.0.0
         version: 12.0.0
       shiki:
-        specifier: ^4.5.0
-        version: 4.5.0
+        specifier: ^4.6.0
+        version: 4.6.0
 
   packages/typed:
     dependencies:
@@ -439,14 +439,14 @@ importers:
         specifier: ^0.0.72
         version: 0.0.72
       '@shikijs/core':
-        specifier: ^4.5.0
-        version: 4.5.0
+        specifier: ^4.6.0
+        version: 4.6.0
       '@shikijs/engine-javascript':
-        specifier: ^4.5.0
-        version: 4.5.0
+        specifier: ^4.6.0
+        version: 4.6.0
       '@shikijs/themes':
-        specifier: ^4.5.0
-        version: 4.5.0
+        specifier: ^4.6.0
+        version: 4.6.0
       '@types/markdown-it':
         specifier: ^14.2.0
         version: 14.2.0
@@ -1440,25 +1440,25 @@ packages:
     resolution:
       { integrity: sha512-buipgOVDkkPXNR5+xBpDw7Zk2n1EvU7qBJCNUcL7rhQ//kfpOXPAvQ511Os0vpLYJ1pZnvudNytkQt2hst3wqA== }
 
-  '@cloudpss/commitlint-config@4.1.5':
+  '@cloudpss/commitlint-config@4.1.6':
     resolution:
-      { integrity: sha512-iqdHlulTR+rs0u6boIIoi/y6wyuZRYcr1zLypTUEfbgG1c954arknC7Dhf1L20YWmDHp6lL4/AQzFdorNBEfKg== }
+      { integrity: sha512-wa6x/ZgEHF2TWtE5Lr7DTKxyY58upVLvVgwZf39VDAsuaYclZHCK+xt9eT3NEp4GTYok6ed77nErf2DkdKoyDw== }
 
-  '@cloudpss/eslint-config@4.1.5':
+  '@cloudpss/eslint-config@4.1.6':
     resolution:
-      { integrity: sha512-ZROm0cj+KIxEuKe1/6Gd8B5q82rimqII9uLoTUkMlF1STEKPADt3MsJKytwR4jckZZvMNZghhiOAXcqWti3rZA== }
+      { integrity: sha512-easL8+I5uBgH5xmwGCK4iUeSUSgPOh1aPLOCPBLSE1KyN7AQhszUVwLRzvXEUluqdiRvj43QXPWk9otnNL+wOA== }
 
-  '@cloudpss/lint-staged-config@4.1.5':
+  '@cloudpss/lint-staged-config@4.1.6':
     resolution:
-      { integrity: sha512-sw3u/PTFMaYEKlliPvKaNXW9jkVkwTH1RuPlVdKeoSjqxPbjBcBOPHoBZgAoOwPca/dz8Mgk6eemj2vxjf5+kQ== }
+      { integrity: sha512-GOph2Yd2hfI2yfK+PhTKYOfrWJ5ZRLgn2Ykvj1DP+OFCZ6G5XwtPjClJBs/E4+c67KhpUW7rIQzckZ746KA7YQ== }
 
-  '@cloudpss/prettier-config@4.1.5':
+  '@cloudpss/prettier-config@4.1.6':
     resolution:
-      { integrity: sha512-6DWZb/ljLG7mSGfzdBMwjqtLkG+MimLeNwI3OdQOEiainB6FaTybwO7AJtiSst4V26NJhHifsl76Mu8hw47B5Q== }
+      { integrity: sha512-25wjFiuJsLQ8RUiVuBLm/FA5bxp+udHHLXLB2jTyLF2hcV8a69ox7SowNX42/NgiKbwAK6s5IsgqKhzbfpjCVg== }
 
-  '@cloudpss/tsconfig@4.1.5':
+  '@cloudpss/tsconfig@4.1.6':
     resolution:
-      { integrity: sha512-eEInttbGIhRHAPwUMSgq6wex2H7VVO7dLcKlvqzfYA6A7u0D6QoSTR8xoqOYwaYdk0z5N0fVfLRgfiqe8CZpeQ== }
+      { integrity: sha512-cS7nCnYvxNN37NXeEDFGPlKwO6CHZlzUTBlJwR/m9Ms0d+8luNUcBx1pxDxk2uCxLHKSIloMRQBkXYCTSq9krw== }
     peerDependencies:
       typescript: '>=5'
 
@@ -1577,9 +1577,9 @@ packages:
       conventional-commits-parser:
         optional: true
 
-  '@conventional-changelog/template@1.4.0':
+  '@conventional-changelog/template@1.4.1':
     resolution:
-      { integrity: sha512-aalGyl7dbB5PArRebDIX43ZvBlXrYm9uWzGJ26t+4SzJVPsOuvfILGGbw5X4yX7i50YEmJ8zvbiWnqH/AAnZqg== }
+      { integrity: sha512-mHyyEL0eIEqJ6+aF24+AdZRo4bu4W5GdUiCiCx5X7kfDY51ye8GQJ264uOINObrRSKxtSRCOWPpl9hbOy4UzxQ== }
     engines: { node: '>=22' }
 
   '@csstools/cascade-layer-name-parser@2.0.5':
@@ -3753,39 +3753,39 @@ packages:
     resolution:
       { integrity: sha512-E2B0JhYFmVAwdDiG14+DW0Di4Ze4Jg10Pc4/lILUrd5DRCaklduz2OvJ5HYQ6G+hd+WTzqQb3QnDNfK4yvAFYw== }
 
-  '@shikijs/core@4.5.0':
+  '@shikijs/core@4.6.0':
     resolution:
-      { integrity: sha512-6CIgwq+bt2JZ3OSjb/nBkkwEf/CfpHcbam+Mg5Pllco7HAGRQ2/EFhZrrJtbyNTgKwknfVS+llsXGygiDGwJWw== }
+      { integrity: sha512-bfd4OKgvoyXYiYmMRuleA656P4V7M/Du9lcTl38Ngm6KszMj7bq4J1IGZwSYR4c95Tv5UQALtYNWUwaI9UT3xw== }
     engines: { node: '>=20' }
 
-  '@shikijs/engine-javascript@4.5.0':
+  '@shikijs/engine-javascript@4.6.0':
     resolution:
-      { integrity: sha512-Ed6UdEj84LyYkwnxM5CvSMWAD+id9ExTYri0/+x41U9zrgNifPSS9lZm0JqBP0VfYI8yr8tY5nbNq9+p9R0kFA== }
+      { integrity: sha512-K0oqxFoL+kEMdz89mHLFO15Tsbv3kFZ6WR1cXZKMvLSc+oqaM00A6pyga1qSeXB22dP0tTiSApRcGBaKWsEccg== }
     engines: { node: '>=20' }
 
-  '@shikijs/engine-oniguruma@4.5.0':
+  '@shikijs/engine-oniguruma@4.6.0':
     resolution:
-      { integrity: sha512-dKVmbJecVdB9recl8a/CU4jdpNXyjJQrIcesIkpS70s5HS02ohpnCSpMUbotPnEUzbAcLQ+S4hwZYbkBBiTcJw== }
+      { integrity: sha512-aggd6Q7SuJOXNnsUbfG2XesxBJKBMAw/PDTUo9PyRjMaaJJ2dNrI+q0C+25ARXAK9yLHAlwxc9oRT2u68YKZ7w== }
     engines: { node: '>=20' }
 
-  '@shikijs/langs@4.5.0':
+  '@shikijs/langs@4.6.0':
     resolution:
-      { integrity: sha512-wwBTqwduXSz0X4v9Qa2EWeFaYJEw1clCncWjoRNQRbVDu3SPRTRWucnouYapKj3b8Q+sk/41Vbc4B5c8nuYzLA== }
+      { integrity: sha512-1yMEX3oCVV54LUq/ovfpRkDQoYDkcvjSWFFa/YLUDMiSoRzMi2uxLJYbv41ahT8Lu9lFMaa7hecd3Q39trqUyg== }
     engines: { node: '>=20' }
 
-  '@shikijs/primitive@4.5.0':
+  '@shikijs/primitive@4.6.0':
     resolution:
-      { integrity: sha512-UM7ShlA8oz0OWxLLO8BmO9Ip6fVqdkt8yF0EH7nOCqHfrx1eEAzF0ZUVK7L+I8NEgeu1PEWSRlxaiPPeCb4iDg== }
+      { integrity: sha512-c54+TQEo9ToqgfL/AU8FpjnV09+GA9Oa7M5ROkkXteZfp5XzpAJGXjjvZQFQioJOwm/w/6Z3lIzQstAkl8coag== }
     engines: { node: '>=20' }
 
-  '@shikijs/themes@4.5.0':
+  '@shikijs/themes@4.6.0':
     resolution:
-      { integrity: sha512-zGb87H3UBbpuI4yoh5UguB1XbU+2BDU3kflM7UfZ+Cy2hWo9lBtqjSVK20gmLY6ukYl040hAypGXMgud9vul8Q== }
+      { integrity: sha512-qHAVAs80RiGD+IRuH9G+JPDOEc9A/kHsng4EzCUCwB9bLzW6Z0y9WETh2YyCcADJBmfrIaJ1Jp7KBNP6FHkgtQ== }
     engines: { node: '>=20' }
 
-  '@shikijs/types@4.5.0':
+  '@shikijs/types@4.6.0':
     resolution:
-      { integrity: sha512-drtPrtD8N0DENyD2cyt6Ajy+IWsiCLgMxODwLTpvH1UsN6a9jf90tNTPjqwHvA+0Lzu9e0txk8DjfqH1p9UJRw== }
+      { integrity: sha512-+ENG1adsKt/X7cRYw1Nl7BEpBmPOjmQ7bR/eGmHuMlT8gtOFf3KEi5l31DJYyAWhW6Y6bjP1plU7FmaxWGENFw== }
     engines: { node: '>=20' }
 
   '@shikijs/vscode-textmate@10.1.0':
@@ -4566,6 +4566,11 @@ packages:
   ajv-formats@3.0.1:
     resolution:
       { integrity: sha512-8iUql50EUR+uUcdRQ3HDqa6EVyo3docL8g5WJ3FNcWmu62IbkGUue/pEyLBW8VGKKucTPgqeks4fIU1DA4yowQ== }
+    peerDependencies:
+      ajv: ^8.0.0
+    peerDependenciesMeta:
+      ajv:
+        optional: true
 
   ajv-keywords@3.5.2:
     resolution:
@@ -5135,9 +5140,9 @@ packages:
       { integrity: sha512-+W/5efTR7y5HRD7gACw9yQjqMVvEMLBHmboM/kPWam+H+Hmyrgjh6YncVKK122YZkXrLudzTuAukUw9FnMf7IQ== }
     engines: { node: 10.* || >= 12.* }
 
-  cli-truncate@6.1.1:
+  cli-truncate@6.2.0:
     resolution:
-      { integrity: sha512-06p9vyLahLa4zkGcgsGxU6iEkSOiuI4fhCH6Emhe2lPAcoUv73n72DnODsnHA+5wwXGnV0n9M9/qOQJSjYhFhw== }
+      { integrity: sha512-5uyZew3nYoDgyltqSI8OER6DuyecorYOSVDAXl9wQ9Y8Re/HaQ/5qP0HmTUOUQqmvtpB+mlsf1gG/FUS3U1gLQ== }
     engines: { node: '>=22' }
 
   cli-width@4.1.0:
@@ -5963,9 +5968,9 @@ packages:
       typescript:
         optional: true
 
-  eslint-plugin-unicorn@78.0.0:
+  eslint-plugin-unicorn@79.0.0:
     resolution:
-      { integrity: sha512-XTDqxcJeAmh2lhgU75TpuMDdFtPDnAU+DCW56nR5UzXTG+uOyvOGjV80O11my7kNb2bYSCPlWa8c4K8/rwlYog== }
+      { integrity: sha512-k7MWrjoVTVCnjKpgaxBuScPNSPomLvDpsd9uADpWrIFzrnwiec27eWhGrmmyuTj1bC3xVNYP4QfG3MEzEw6ifg== }
     engines: { node: '>=22' }
     peerDependencies:
       eslint: '>=10.4'
@@ -6864,11 +6869,6 @@ packages:
     resolution:
       { integrity: sha512-zymm5+u+sCsSWyD9qNaejV3DFvhCKclKdizYaJUuHA83RLjb7nSuGnddCHGv0hk+KY7BMAlsWeK4Ueg6EV6XQg== }
     engines: { node: '>=8' }
-
-  is-fullwidth-code-point@5.1.0:
-    resolution:
-      { integrity: sha512-5XHYaSyiqADb4RnZ1Bdad6cPp8Toise4TzEjcOYDHZkTCbKgiUl7WTUCpNWHuxmDt91wnsZBc9xinNzopv3JMQ== }
-    engines: { node: '>=18' }
 
   is-glob@4.0.3:
     resolution:
@@ -9372,9 +9372,9 @@ packages:
       { integrity: sha512-PcByqNyT/38F2kDNi006HAMRJaULuBzq/FOsw3qdZvX/GA9W/jamDaRskgHjubHiftXK5sIFxLNkvrXUwcof6Q== }
     engines: { node: '>= 0.4' }
 
-  shiki@4.5.0:
+  shiki@4.6.0:
     resolution:
-      { integrity: sha512-OcRW72ngQvc+MSVWBRIovC/BTW589iUE/Vxav7VeM4RcY9MUjqB+IR6ILG1k9nuW6LiG/nct9uma4/MBtnZbmQ== }
+      { integrity: sha512-imjLsVHgPuWhvpU3P+zOekvMYqnel7QmKsFC4Sn0fCuAvaaalBsxwKEsrU8Ko5BdFnZA6Go/8a0RzahS634UgA== }
     engines: { node: '>=20' }
 
   side-channel-list@1.0.1:
@@ -9446,9 +9446,9 @@ packages:
       { integrity: sha512-ZA6oR3T/pEyuqwMgAKT0/hAv8oAXckzbkmR0UkUosQ+Mc4RxGoJkRmwHgHufaenlyAgE1Mxgpdcrf75y6XcnDg== }
     engines: { node: '>=14.16' }
 
-  slice-ansi@9.0.1:
+  slice-ansi@10.0.0:
     resolution:
-      { integrity: sha512-aBY19bn/XA+hKOKX0qL7Z0UfdBsbQvc9hn993U8ALUjzxCvDcuZqLoRXjGJrUARWAlwMnsRVD9sw2AFNOYvalA== }
+      { integrity: sha512-2rOYDG420YH3p2PbRAu6LdYnGuMZldshqZS2qqFh/WEzAytVo7b8n1HhubLtRunvqjao74MmGfW4sY4ex0YvpQ== }
     engines: { node: '>=22' }
 
   snake-case@3.0.4:
@@ -11405,7 +11405,7 @@ snapshots:
       hashery: 1.5.1
       keyv: 5.6.0
 
-  '@cloudpss/commitlint-config@4.1.5(conventional-commits-parser@7.1.4)(typescript@6.0.3)':
+  '@cloudpss/commitlint-config@4.1.6(conventional-commits-parser@7.1.4)(typescript@6.0.3)':
     dependencies:
       '@commitlint/cli': 21.2.4(conventional-commits-parser@7.1.4)(typescript@6.0.3)
     transitivePeerDependencies:
@@ -11413,21 +11413,21 @@ snapshots:
       - conventional-commits-parser
       - typescript
 
-  '@cloudpss/eslint-config@4.1.5(jiti@2.7.0)(supports-color@11.0.0)(typescript@6.0.3)':
+  '@cloudpss/eslint-config@4.1.6(jiti@2.7.0)(supports-color@11.0.0)(typescript@6.0.3)':
     dependencies:
-      '@cloudpss/tsconfig': 4.1.5(typescript@6.0.3)
+      '@cloudpss/tsconfig': 4.1.6(typescript@6.0.3)
       '@eslint/js': 10.0.1(eslint@10.14.0)
       eslint: 10.14.0(jiti@2.7.0)(supports-color@11.0.0)
       eslint-config-prettier: 10.1.8(eslint@10.14.0)
       eslint-plugin-jsdoc: 65.4.2(eslint@10.14.0)(supports-color@11.0.0)(typescript@6.0.3)
-      eslint-plugin-unicorn: 78.0.0(eslint@10.14.0)(supports-color@11.0.0)(typescript@6.0.3)
+      eslint-plugin-unicorn: 79.0.0(eslint@10.14.0)(supports-color@11.0.0)(typescript@6.0.3)
       typescript-eslint: 8.72.1(eslint@10.14.0)(supports-color@11.0.0)(typescript@6.0.3)
     transitivePeerDependencies:
       - jiti
       - supports-color
       - typescript
 
-  '@cloudpss/lint-staged-config@4.1.5(jiti@2.7.0)(supports-color@11.0.0)':
+  '@cloudpss/lint-staged-config@4.1.6(jiti@2.7.0)(supports-color@11.0.0)':
     dependencies:
       eslint: 10.14.0(jiti@2.7.0)(supports-color@11.0.0)
       husky: 9.1.7
@@ -11437,11 +11437,11 @@ snapshots:
       - jiti
       - supports-color
 
-  '@cloudpss/prettier-config@4.1.5':
+  '@cloudpss/prettier-config@4.1.6':
     dependencies:
       prettier: 3.9.10
 
-  '@cloudpss/tsconfig@4.1.5(typescript@6.0.3)':
+  '@cloudpss/tsconfig@4.1.6(typescript@6.0.3)':
     dependencies:
       typescript: 6.0.3
 
@@ -11569,7 +11569,7 @@ snapshots:
     optionalDependencies:
       conventional-commits-parser: 7.1.4
 
-  '@conventional-changelog/template@1.4.0': {}
+  '@conventional-changelog/template@1.4.1': {}
 
   '@csstools/cascade-layer-name-parser@2.0.5(@csstools/css-parser-algorithms@3.0.5)(@csstools/css-tokenizer@3.0.4)':
     dependencies:
@@ -14202,40 +14202,40 @@ snapshots:
 
   '@rspack/lite-tapable@1.1.0': {}
 
-  '@shikijs/core@4.5.0':
+  '@shikijs/core@4.6.0':
     dependencies:
-      '@shikijs/primitive': 4.5.0
-      '@shikijs/types': 4.5.0
+      '@shikijs/primitive': 4.6.0
+      '@shikijs/types': 4.6.0
       '@shikijs/vscode-textmate': 10.1.0
       '@types/hast': 3.0.5
       hast-util-to-html: 9.0.6
 
-  '@shikijs/engine-javascript@4.5.0':
+  '@shikijs/engine-javascript@4.6.0':
     dependencies:
-      '@shikijs/types': 4.5.0
+      '@shikijs/types': 4.6.0
       '@shikijs/vscode-textmate': 10.1.0
       oniguruma-to-es: 4.3.6
 
-  '@shikijs/engine-oniguruma@4.5.0':
+  '@shikijs/engine-oniguruma@4.6.0':
     dependencies:
-      '@shikijs/types': 4.5.0
+      '@shikijs/types': 4.6.0
       '@shikijs/vscode-textmate': 10.1.0
 
-  '@shikijs/langs@4.5.0':
+  '@shikijs/langs@4.6.0':
     dependencies:
-      '@shikijs/types': 4.5.0
+      '@shikijs/types': 4.6.0
 
-  '@shikijs/primitive@4.5.0':
+  '@shikijs/primitive@4.6.0':
     dependencies:
-      '@shikijs/types': 4.5.0
+      '@shikijs/types': 4.6.0
       '@shikijs/vscode-textmate': 10.1.0
       '@types/hast': 3.0.5
 
-  '@shikijs/themes@4.5.0':
+  '@shikijs/themes@4.6.0':
     dependencies:
-      '@shikijs/types': 4.5.0
+      '@shikijs/types': 4.6.0
 
-  '@shikijs/types@4.5.0':
+  '@shikijs/types@4.6.0':
     dependencies:
       '@shikijs/vscode-textmate': 10.1.0
       '@types/hast': 3.0.5
@@ -14627,7 +14627,7 @@ snapshots:
 
   '@types/sax@1.2.7':
     dependencies:
-      '@types/node': 26.6.6
+      '@types/node': 17.0.45
 
   '@types/send@0.17.6':
     dependencies:
@@ -15050,7 +15050,7 @@ snapshots:
       chunkd: 2.0.1
       ci-info: 4.4.0
       ci-parallel-vars: 1.0.1
-      cli-truncate: 6.1.1
+      cli-truncate: 6.2.0
       code-excerpt: 4.0.0
       common-path-prefix: 3.0.0
       concordance: 5.0.4
@@ -15462,9 +15462,9 @@ snapshots:
     optionalDependencies:
       '@colors/colors': 1.5.0
 
-  cli-truncate@6.1.1:
+  cli-truncate@6.2.0:
     dependencies:
-      slice-ansi: 9.0.1
+      slice-ansi: 10.0.0
       string-width: 8.3.0
 
   cli-width@4.1.0: {}
@@ -15592,11 +15592,11 @@ snapshots:
 
   conventional-changelog-angular@9.4.0:
     dependencies:
-      '@conventional-changelog/template': 1.4.0
+      '@conventional-changelog/template': 1.4.1
 
   conventional-changelog-conventionalcommits@10.4.1:
     dependencies:
-      '@conventional-changelog/template': 1.4.0
+      '@conventional-changelog/template': 1.4.1
 
   conventional-commits-parser@7.1.4:
     dependencies:
@@ -16132,7 +16132,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-unicorn@78.0.0(eslint@10.14.0)(supports-color@11.0.0)(typescript@6.0.3):
+  eslint-plugin-unicorn@79.0.0(eslint@10.14.0)(supports-color@11.0.0)(typescript@6.0.3):
     dependencies:
       '@eslint-community/eslint-utils': 4.10.1(eslint@10.14.0)
       '@eslint/css-tree': 4.1.2
@@ -17022,10 +17022,6 @@ snapshots:
   is-extglob@2.1.1: {}
 
   is-fullwidth-code-point@3.0.0: {}
-
-  is-fullwidth-code-point@5.1.0:
-    dependencies:
-      get-east-asian-width: 1.7.0
 
   is-glob@4.0.3:
     dependencies:
@@ -19417,14 +19413,14 @@ snapshots:
 
   shell-quote@1.12.0: {}
 
-  shiki@4.5.0:
+  shiki@4.6.0:
     dependencies:
-      '@shikijs/core': 4.5.0
-      '@shikijs/engine-javascript': 4.5.0
-      '@shikijs/engine-oniguruma': 4.5.0
-      '@shikijs/langs': 4.5.0
-      '@shikijs/themes': 4.5.0
-      '@shikijs/types': 4.5.0
+      '@shikijs/core': 4.6.0
+      '@shikijs/engine-javascript': 4.6.0
+      '@shikijs/engine-oniguruma': 4.6.0
+      '@shikijs/langs': 4.6.0
+      '@shikijs/themes': 4.6.0
+      '@shikijs/types': 4.6.0
       '@shikijs/vscode-textmate': 10.1.0
       '@types/hast': 3.0.5
 
@@ -19489,10 +19485,10 @@ snapshots:
 
   slash@5.1.0: {}
 
-  slice-ansi@9.0.1:
+  slice-ansi@10.0.0:
     dependencies:
-      ansi-styles: 6.2.3
-      is-fullwidth-code-point: 5.1.0
+      ansi-styles: 7.0.0
+      string-width: 8.3.0
 
   snake-case@3.0.4:
     dependencies:

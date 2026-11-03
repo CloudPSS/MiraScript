@@ -6,10 +6,10 @@ export function simplifyTuple(type: TupleType, options: SimplifyImplOptions): Tu
     type.elements = type.elements.flatMap((element) => {
         const simplifiedType = simplifyImpl(element.type, options);
         if (
-            options.expandTupleSpreads &&
-            element.spread &&
             typeof simplifiedType == 'object' &&
-            simplifiedType.kind === 'tuple'
+            simplifiedType.kind === 'tuple' &&
+            options.expandTupleSpreads &&
+            element.spread
         ) {
             // Inline tuple spread: ..[A, B] → A, B
             return simplifiedType.elements;

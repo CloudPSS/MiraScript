@@ -577,12 +577,12 @@ jobs:
         include:
           # Sdist test for pypy3.11
           - os: ubuntu-latest
-            python: { version: 'pypy3.11', freethreaded: false }
+            python: { version: 'pypy3.12', freethreaded: false }
             skip_huge: true
             sdist: true
           # Build and test the sdist with GraalPy on Linux.
           - os: ubuntu-latest
-            python: { version: 'graalpy-25.x', freethreaded: false }
+            python: { version: 'graalpy3.13', freethreaded: false }
             sdist: true
           # Test the sdist on the minimum supported CPython version.
           - os: windows-latest
