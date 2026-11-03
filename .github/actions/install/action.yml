@@ -90,6 +90,7 @@ runs:
       shell: bash
       if: ${{ inputs.setup-node == 'true' && inputs.skip-pnpm-install == 'false' }}
       run: |
+        pnpm config set --json minimumReleaseAgeExclude '["@cloudpss/*", "@private/*"]'
         pnpm config set trustLockfile ${{ inputs.check-lockfile == 'false' }}
         pnpm install ${{ inputs.pnpm-args }}
 
