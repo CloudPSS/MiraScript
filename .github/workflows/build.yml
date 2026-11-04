@@ -606,6 +606,7 @@ jobs:
         with:
           python-version: ${{ matrix.python.version }}
           freethreaded: ${{ matrix.python.freethreaded || false }}
+          check-latest: true
 
       - name: Download wheels
         uses: actions/download-artifact@v8
