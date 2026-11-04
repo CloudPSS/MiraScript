@@ -582,7 +582,7 @@ jobs:
             sdist: true
           # Build and test the sdist with GraalPy on Linux.
           - os: ubuntu-latest
-            python: { version: 'graalpy3.13', freethreaded: false }
+            python: { version: 'graalpy-25.x', freethreaded: false }
             sdist: true
           # Test the sdist on the minimum supported CPython version.
           - os: windows-latest
