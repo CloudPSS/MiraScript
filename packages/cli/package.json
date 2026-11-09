@@ -40,16 +40,16 @@
     "test": "FORCE_COLOR=1 c8 ava"
   },
   "dependencies": {
-    "@commander-js/extra-typings": "^15.0.0",
+    "@commander-js/extra-typings": "^15.1.0",
     "@mirascript/bindings": "workspace:~",
     "@mirascript/help": "workspace:~",
     "@mirascript/mirascript": "workspace:~",
     "ansi-styles": "^7.0.0",
-    "commander": "^15.0.0",
+    "commander": "^15.1.0",
     "supports-color": "^11.0.0"
   },
   "devDependencies": {
-    "ava": "^8.3.0",
+    "ava": "^8.4.0",
     "c8": "^12.0.0",
     "type-fest": "^5.10.0"
   }
